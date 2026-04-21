@@ -1,0 +1,19 @@
+package sqlite
+
+import (
+	"changeme/internal/domain"
+
+	"go.uber.org/fx"
+)
+
+var Module = fx.Module("sqlite",
+	fx.Provide(
+		func(db *DB) domain.TrackRepository { return NewTrackRepository(db) },
+		func(db *DB) domain.AlbumRepository { return NewAlbumRepository(db) },
+		func(db *DB) domain.ArtistRepository { return NewArtistRepository(db) },
+		func(db *DB) domain.GenreRepository { return NewGenreRepository(db) },
+		func(db *DB) domain.ComposerRepository { return NewComposerRepository(db) },
+		func(db *DB) domain.PlaylistRepository { return NewPlaylistRepository(db) },
+		func(db *DB) domain.LyricRepository { return NewLyricRepository(db) },
+	),
+)

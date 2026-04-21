@@ -3,7 +3,7 @@ package sqlite
 import (
 	"embed"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
@@ -20,20 +20,20 @@ type DB struct {
 	*sqlx.DB
 }
 
-func NewDB(dbPath string) (*DB, error) {
+func NewDB(dbPath string, logger *slog.Logger) (*DB, error) {
 	db, err := sqlx.Connect("sqlite3", dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	if err := runMigrations(db); err != nil {
+	if err := runMigrations(db, logger); err != nil {
 		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
 
 	return &DB{db}, nil
 }
 
-func runMigrations(db *sqlx.DB) error {
+func runMigrations(db *sqlx.DB, logger *slog.Logger) error {
 	driver, err := sqlite3.WithInstance(db.DB, &sqlite3.Config{})
 	if err != nil {
 		return fmt.Errorf("could not create database driver: %w", err)
@@ -53,6 +53,6 @@ func runMigrations(db *sqlx.DB) error {
 		return fmt.Errorf("could not run up migrations: %w", err)
 	}
 
-	log.Println("Database migrations applied successfully")
+	logger.Info("Database migrations applied successfully")
 	return nil
 }

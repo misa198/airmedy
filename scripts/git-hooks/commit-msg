@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Regex for Conventional Commits
+# type(scope): description
+commit_msg_file=$1
+commit_msg=$(cat "$commit_msg_file")
+pattern="^(feat|fix|chore|docs|style|refactor|perf|test)(\([a-z0-9_-]+\))?: .+"
+
+if [[ ! $commit_msg =~ $pattern ]]; then
+    echo "Error: Invalid commit message format."
+    echo "Expected: <type>(<scope>): <description>"
+    echo "Examples:"
+    echo "  feat(core): add audio playback"
+    echo "  fix(ui): resolve overlap in track list"
+    echo "  chore: update dependencies"
+    exit 1
+fi

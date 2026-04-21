@@ -4,6 +4,7 @@ This document defines the foundational mandates and technical standards for the 
 
 ## Technical Stack
 - **Framework:** Wails v3 (Go backend, Web frontend)
+- **Dependency Injection:** uber-go/fx
 - **Frontend:** Vue.js 3 (Composition API), Pinia (State Management), Vue I18n (Localization)
 - **UI Components:** ShadCN-vue, Tailwind CSS
 - **Database:** SQLite (Relational data & Lyrics storage)
@@ -22,12 +23,20 @@ This document defines the foundational mandates and technical standards for the 
     - Business logic resides in `internal/domain` and `internal/app`.
     - External integrations (Wails, SQLite, Bleve) reside in `internal/infra`.
     - Dependencies must always point inwards towards the domain.
+- **Dependency Injection**: Use `uber-go/fx` for all dependency management. Define components as `fx.Module` and use `fx.Provide` for constructors. Avoid global state and manual instantiation.
+- **Logging**: Use `log/slog` for structured logging. Logs are automatically rotated daily and kept for 7 days via `lumberjack`. Inject `*slog.Logger` where needed.
 - **Surgical Backend**: Keep Wails bindings thin in `internal/infra/wails`. They should only translate frontend requests to application service calls.
 - **Reactive State**: Use Pinia for all global UI states (playback queue, current track, user settings). Avoid prop drilling.
 - **Component Design**: Follow ShadCN-vue patterns for consistent UI/UX. Prioritize reusable, accessible components.
 
+### 3. Git & Commits
+- **Convention**: Use Conventional Commits (`type(scope): description`). 
+    - Types: `feat`, `fix`, `chore`, `docs`, `style`, `refactor`, `perf`, `test`.
+    - Scopes: `core`, `app`, `infra`, `domain`, `ui`, `meta`.
+- **Hooks**: Ensure git hooks are installed via `task setup:hooks`. The `commit-msg` hook enforces the convention.
 
-### 3. Data Integrity & Safety
+### 4. Data Integrity & Safety
+
 - **Schema Migrations:** Use a structured migration tool for SQLite. Never perform destructive schema changes without a migration path.
 - **Metadata:** Always treat the user's original music files as read-only unless the user explicitly triggers a "Save Metadata" action.
 - **Error Handling:** Implement robust error handling in Go and propagate meaningful errors to the frontend via Wails.

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	_ "embed"
 	"log"
@@ -10,6 +11,7 @@ import (
 	"changeme/internal/infra/wails"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"go.uber.org/fx"
 )
 
 //go:embed all:frontend/dist
@@ -20,17 +22,25 @@ func init() {
 }
 
 func main() {
-	coreApp, err := app.NewApp()
-	if err != nil {
+	var greetService *wails.GreetService
+
+	fxApp := fx.New(
+		app.Module,
+		fx.Populate(&greetService),
+		fx.NopLogger, // Keep logs clean for now
+	)
+
+	startCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	if err := fxApp.Start(startCtx); err != nil {
 		log.Fatal(err)
 	}
-	defer coreApp.Close()
 
-	app := application.New(application.Options{
+	wailsApp := application.New(application.Options{
 		Name:        "airmedy",
 		Description: "A modern music player",
 		Services: []application.Service{
-			application.NewService(&wails.GreetService{}),
+			application.NewService(greetService),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
@@ -40,7 +50,7 @@ func main() {
 		},
 	})
 
-	app.Window.NewWithOptions(application.WebviewWindowOptions{
+	wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title: "Airmedy",
 		Mac: application.MacWindow{
 			InvisibleTitleBarHeight: 50,
@@ -54,13 +64,19 @@ func main() {
 	go func() {
 		for {
 			now := time.Now().Format(time.RFC1123)
-			app.Event.Emit("time", now)
+			wailsApp.Event.Emit("time", now)
 			time.Sleep(time.Second)
 		}
 	}()
 
-	err = app.Run()
+	err := wailsApp.Run()
 	if err != nil {
+		log.Fatal(err)
+	}
+
+	stopCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	if err := fxApp.Stop(stopCtx); err != nil {
 		log.Fatal(err)
 	}
 }

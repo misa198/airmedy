@@ -8,8 +8,10 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/mattn/go-sqlite3 v1.14.42
+	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.74
 	go.senan.xyz/taglib v0.11.1
+	go.uber.org/fx v1.24.0
 )
 
 require (
@@ -70,10 +72,14 @@ require (
 	github.com/wailsapp/go-webview2 v1.0.23 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	go.etcd.io/bbolt v1.4.0 // indirect
+	go.uber.org/dig v1.19.0 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
+	go.uber.org/zap v1.26.0 // indirect
 	golang.org/x/crypto v0.47.0 // indirect
 	golang.org/x/net v0.49.0 // indirect
 	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/text v0.33.0 // indirect
 	google.golang.org/protobuf v1.36.7 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )

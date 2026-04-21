@@ -34,6 +34,13 @@ tasks:
     cmds:
       - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
 
+  setup:hooks:
+    summary: Installs git hooks
+    cmds:
+      - mkdir -p .git/hooks
+      - cp scripts/git-hooks/commit-msg .git/hooks/commit-msg
+      - chmod +x .git/hooks/commit-msg
+
   setup:docker:
     summary: Builds Docker image for cross-compilation (~800MB download)
     cmds:

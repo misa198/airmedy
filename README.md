@@ -42,18 +42,20 @@ Now that you have your project set up, it's time to explore the features that Wa
 
 ## Project Structure
 
-Take a moment to familiarize yourself with your project structure:
+Airmedy follows a clean, modular architecture. For a comprehensive overview of the directory structure and file responsibilities, see [FILES.md](./FILES.md).
 
-- `frontend/`: Contains your frontend code (HTML, CSS, JavaScript/TypeScript)
-- `main.go`: The entry point of your Go backend
-- `app.go`: Define your application structure and methods here
-- `wails.json`: Configuration file for your Wails project
+- `internal/domain`: Core business logic, models, and interfaces (Hexagonal Core).
+- `internal/infra`: Concrete implementations for database, search, and metadata (Adapters).
+- `internal/app`: Application services and dependency injection.
+- `frontend/`: Vue.js 3 user interface with ShadCN-vue and Pinia.
+- `build/`: Platform-specific configuration and assets.
+- `main.go`: Application entry point.
 
 ## Next Steps
 
-1. Modify the frontend in the `frontend/` directory to create your desired UI.
-2. Add backend functionality in `main.go`.
-3. Use `wails3 dev` to see your changes in real-time.
-4. When ready, build your application with `wails3 build`.
+1. **Development Roadmap:** Refer to [PLAN.md](./PLAN.md) for the current project status and upcoming features.
+2. **Project Mandates:** See [GEMINI.md](./GEMINI.md) for technical standards and development guidelines.
+3. **Design System:** Check [THEME.md](./THEME.md) for information on styling and palettes.
+4. **Development:** Use `wails3 dev` to start the application with hot-reloading.
 
 Happy coding with Wails3! If you encounter any issues or have questions, don't hesitate to consult the documentation or reach out to the Wails community.
