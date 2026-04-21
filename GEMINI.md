@@ -38,7 +38,10 @@ This document defines the foundational mandates and technical standards for the 
 - **Window Management:** Support "close to tray" behavior where music continues playing after the main window is closed.
 
 ## Implementation Workflow
-1. **Research:** Analyze existing Go/Vue patterns in the codebase.
+1. **Research:** Analyze existing Go/Vue patterns and identify all requirements.
 2. **Strategy:** Update `PLAN.md` if a task requires architectural changes.
-3. **Execution:** Apply surgical changes with accompanying unit or component tests.
+3. **Execution (The Implementation Loop):**
+    - **Implement:** Apply surgical changes with accompanying unit or component tests.
+    - **Review & Recheck:** Perform a critical self-review of the code and re-verify against the original requirements and project mandates.
+    - **Fix or Continue:** Address any discrepancies, bugs, or missing features identified during review before moving on.
 4. **Validation:** Verify performance with large datasets and OS-level integrations.

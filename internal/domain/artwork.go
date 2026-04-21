@@ -1,0 +1,9 @@
+package domain
+
+import "context"
+
+type ArtworkCache interface {
+	Save(ctx context.Context, data []byte, mimeType string) (string, error) // Returns the path/key to the cached artwork
+	GetPath(key string) string
+	Exists(key string) bool
+}

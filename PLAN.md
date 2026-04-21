@@ -31,9 +31,9 @@ This is a greenfield project establishing the entire architecture:
 - [x] Define project structure (frontend/src, backend/internal).
 
 ### Phase 2: Data Layer & Core Backend
-- [ ] Initialize SQLite database and define schemas (Tracks, Albums, Artists, Playlists, Genres, Composers, Lyrics).
-- [ ] Integrate an embedded search engine (Bleve) and configure indexing rules.
-- [ ] Implement a metadata extraction module supporting target formats (MP3, FLAC, ALAC, WAV, OGG, etc.) using libraries like `taglib-go` or `dhowden/tag`.
+- [x] Initialize SQLite database and define schemas (Tracks, Albums, Artists, Playlists, Genres, Composers, Lyrics).
+- [x] Integrate an embedded search engine (Bleve) and configure indexing rules.
+- [x] Implement a metadata extraction module supporting target formats (MP3, FLAC, ALAC, WAV, OGG, etc.) using libraries like `taglib-go` or `dhowden/tag`. (Implemented via `go.senan.xyz/taglib`)
 
 ### Phase 3: Music Import & Library Management
 - [ ] Build Wails bindings for opening folder selection dialogs.
