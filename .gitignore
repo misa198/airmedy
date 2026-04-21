@@ -1,0 +1,57 @@
+# Wails
+.task
+bin
+frontend/dist
+frontend/node_modules
+build/linux/appimage/build
+build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
+
+# Binary / Build Outputs
+build/bin/
+frontend/dist/
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Dependencies
+node_modules/
+vendor/
+pnpm-debug.log
+
+# Local configuration / Secrets
+.env
+*.env.local
+*.env.*.local
+
+# Wails specific
+.wails/
+
+# Database & Search Indexes
+*.db
+*.sqlite
+*.sqlite3
+bleve_index/
+*.bleve/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Go
+go.work

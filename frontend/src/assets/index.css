@@ -1,0 +1,27 @@
+@import "tailwindcss";
+@config "../../tailwind.config.js";
+
+@layer base {
+  :root {
+    --bg-main: #0A0A0A;
+    --bg-glass: rgba(25, 25, 25, 0.6);
+    --bg-glass-elevated: rgba(45, 45, 45, 0.4);
+    --border-glass: rgba(255, 255, 255, 0.1);
+    
+    --primary: #E11D48;
+    --primary-gradient: linear-gradient(135deg, #E11D48 0%, #FB7185 100%);
+    --text-main: #FFFFFF;
+    --text-muted: #A1A1AA;
+    --accent-favorite: #EF4444;
+
+    /* Fallback dynamic variables */
+    --dynamic-primary: var(--primary);
+    --dynamic-surface: var(--bg-glass);
+    --dynamic-glow: transparent;
+  }
+
+  body {
+    @apply bg-background text-white font-sans antialiased;
+    background-color: var(--bg-main);
+  }
+}
