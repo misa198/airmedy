@@ -1,3 +1,8 @@
+DROP TABLE IF EXISTS album_artists;
+DROP TABLE IF EXISTS track_composers;
+DROP TABLE IF EXISTS track_genres;
+DROP TABLE IF EXISTS track_album_artists;
+DROP TABLE IF EXISTS track_artists;
 DROP TABLE IF EXISTS watched_folders;
 DROP TABLE IF EXISTS lyrics;
 DROP TABLE IF EXISTS playlist_tracks;

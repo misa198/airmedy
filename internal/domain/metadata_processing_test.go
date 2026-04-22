@@ -55,7 +55,7 @@ func TestSplitArtists(t *testing.T) {
 	}{
 		{"Artist A, Artist B", []string{"Artist A", "Artist B"}},
 		{"Artist A feat. Artist B", []string{"Artist A", "Artist B"}},
-		{"Artist A & Artist B / Artist C", []string{"Artist A", "Artist B", "Artist C"}},
+		{"Artist A & Artist B | Artist C", []string{"Artist A", "Artist B", "Artist C"}},
 		{"Artist A featuring Artist B with Artist C", []string{"Artist A", "Artist B", "Artist C"}},
 		{"Artist A vs. Artist B", []string{"Artist A", "Artist B"}},
 		{"Artist A and Artist B", []string{"Artist A", "Artist B"}},

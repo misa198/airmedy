@@ -41,7 +41,6 @@ To facilitate UI rendering without multiple network round-trips or complex clien
 - `id` (TEXT PRIMARY KEY)
 - `title` (TEXT NOT NULL), `sort_title` (TEXT NOT NULL)
 - `normalization_key` (TEXT)
-- `artist_id` (TEXT) -> Primary Album Artist.
 - `year` (INTEGER), `artwork_key` (TEXT)
 - `created_at`, `updated_at` (DATETIME)
 
@@ -59,7 +58,7 @@ To facilitate UI rendering without multiple network round-trips or complex clien
   Map entities together, tracking the `position` of each relation to preserve the original tag ordering.
 
 ### 2.3 Query Logic & Optimized JOINs
-All retrieval operations in `track_repository.go` and `album_repository.go` utilize SQL `LEFT JOIN`s to populate DTOs in a single query. Indexes are maintained on all foreign keys (`artist_id`, `album_id`, etc.) to ensure sub-millisecond join performance even with 10,000+ tracks.
+All retrieval operations in `track_repository.go` and `album_repository.go` utilize SQL `LEFT JOIN`s to populate DTOs in a single query. Indexes are maintained on all foreign keys (`album_id`, etc.) to ensure sub-millisecond join performance even with 10,000+ tracks.
 
 ---
 

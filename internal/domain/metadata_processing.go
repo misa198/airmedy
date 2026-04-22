@@ -79,13 +79,13 @@ func SplitArtists(s string) []string {
 		return nil
 	}
 
-	// Hard delimiters: , ; / | \ //
+	// Hard delimiters: , ; |
 	// Keywords: ft., feat., featuring, with, vs., &, and
 	
 	// We use a multi-stage split approach.
 	// First, replace all delimiters/keywords with a unique marker.
 	
-	delimiters := []string{",", ";", "/", "|", "\\\\", "//"}
+	delimiters := []string{",", ";", "|"}
 	keywords := []string{" ft. ", " feat. ", " featuring ", " with ", " vs. ", " & ", " and "}
 
 	res := s
