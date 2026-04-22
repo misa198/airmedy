@@ -23,10 +23,11 @@ func init() {
 
 func main() {
 	var greetService *wails.GreetService
+	var libraryService *wails.LibraryService
 
 	fxApp := fx.New(
 		app.Module,
-		fx.Populate(&greetService),
+		fx.Populate(&greetService, &libraryService),
 		fx.NopLogger, // Keep logs clean for now
 	)
 
@@ -41,6 +42,7 @@ func main() {
 		Description: "A modern music player",
 		Services: []application.Service{
 			application.NewService(greetService),
+			application.NewService(libraryService),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),

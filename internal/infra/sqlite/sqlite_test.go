@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"testing"
 
@@ -12,7 +13,7 @@ func TestSqliteRepositories(t *testing.T) {
 	dbPath := "test.db"
 	defer os.Remove(dbPath)
 
-	db, err := NewDB(dbPath)
+	db, err := NewDB(dbPath, slog.Default())
 	if err != nil {
 		t.Fatalf("Failed to create test db: %v", err)
 	}

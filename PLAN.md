@@ -36,10 +36,10 @@ This is a greenfield project establishing the entire architecture:
 - [x] Implement a metadata extraction module supporting target formats (MP3, FLAC, ALAC, WAV, OGG, etc.) using libraries like `taglib-go` or `dhowden/tag`. (Implemented via `go.senan.xyz/taglib`)
 
 ### Phase 3: Music Import & Library Management
-- [ ] Build Wails bindings for opening folder selection dialogs.
-- [ ] Implement recursive directory scanning for initial import.
-- [ ] Integrate `fsnotify` for real-time folder watching and database updates.
-- [ ] Implement manual sync trigger from the UI.
+- [x] Build Wails bindings for opening folder selection dialogs.
+- [x] Implement recursive directory scanning for initial import.
+- [x] Integrate `fsnotify` for real-time folder watching and database updates.
+- [x] Implement manual sync trigger from the UI.
 
 ### Phase 4: Frontend Architecture & UI Shell
 - [ ] Create main layout: Sidebar (Navigation, Playlists), Main Content Area, and Player Footer.

@@ -86,3 +86,10 @@ type Lyric struct {
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
+
+// WatchedFolder represents a directory being watched for music files
+type WatchedFolder struct {
+	ID        string    `json:"id" db:"id"`
+	Path      string    `json:"path" db:"path"`
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+}

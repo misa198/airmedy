@@ -65,3 +65,39 @@ tasks:
     summary: Builds and runs the Docker image
     cmds:
       - task: common:run:docker
+
+  test:go:
+    summary: Runs all Go unit tests
+    cmds:
+      - go test ./...
+
+  test:ui:
+    summary: Runs all frontend tests
+    dir: frontend
+    cmds:
+      - pnpm test
+
+  test:
+    summary: Runs all tests (Go and UI)
+    cmds:
+      - task: test:go
+      - task: test:ui
+
+  lint:go:
+    summary: Lints Go code
+    cmds:
+      - golangci-lint run
+
+  lint:ui:
+    summary: Lints frontend code
+    dir: frontend
+    cmds:
+      - pnpm lint
+
+  verify:
+    summary: Runs all tests and linters to verify the project state
+    cmds:
+      - task: test:go
+      - task: lint:go
+      - task: test:ui
+      - task: lint:ui

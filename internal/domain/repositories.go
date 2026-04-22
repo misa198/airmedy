@@ -57,3 +57,10 @@ type LyricRepository interface {
 	Upsert(ctx context.Context, lyric *Lyric) error
 	Delete(ctx context.Context, trackID string) error
 }
+
+type WatchedFolderRepository interface {
+	GetByID(ctx context.Context, id string) (*WatchedFolder, error)
+	GetAll(ctx context.Context) ([]*WatchedFolder, error)
+	Save(ctx context.Context, folder *WatchedFolder) error
+	Delete(ctx context.Context, id string) error
+}

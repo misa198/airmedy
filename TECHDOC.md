@@ -111,3 +111,23 @@ When the user executes a search, `Search(queryStr)`:
 2. Requests the `id` and `type` fields to be returned in the hit results.
 3. Limits the `Size` to 50 results to ensure rapid UI rendering.
 4. Returns a unified slice of `SearchResult` objects containing the entity ID, the entity Type (Track, Album, Artist), and the relevance `Score`, allowing the frontend to split the results into separate categorized carousel lists.
+
+---
+
+## 5. Library Synchronization & File Watching
+
+The `LibraryService` (`internal/app/library/service.go`) manages the ingestion of music files and keeps the database in sync with the physical file system.
+
+### 5.1 Watched Folders & Persistence
+- **Table:** `watched_folders` stores user-selected root directories.
+- **Service Lifecycle:** On `OnStart`, the service loads all watched folders and recursively adds them to the `fsnotify` watcher.
+
+### 5.2 The Import Pipeline
+1. **Recursive Scan:** Uses `filepath.WalkDir` to find supported audio extensions (.mp3, .flac, .m4a, .wav, .ogg, .opus, .aiff).
+2. **Metadata Extraction:** Calls the `MetadataExtractor` to parse tags.
+3. **Entity Resolution:** Generates deterministic MD5-based UUIDs for Artists, Albums, and Tracks. This ensures that even if a file is moved, if the metadata is identical and we use the same seeds, we can maintain relational consistency (though Track IDs are currently path-based to simplify sync).
+4. **Persistence:** Batch-upserts data into SQLite and indexes it in Bleve.
+5. **Real-time Updates:** The `fsnotify` event loop handles:
+    - `Create`/`Write`: Triggers `ImportFile`.
+    - `Remove`/`Rename`: Deletes the entity from the database and index using the path-based deterministic ID.
+6. **Frontend Notification:** Emits Wails events (`library:updated`, `library:sync-started`, `library:sync-finished`) to keep the UI reactive.

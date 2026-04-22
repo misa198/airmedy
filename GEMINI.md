@@ -41,16 +41,22 @@ This document defines the foundational mandates and technical standards for the 
 - **Metadata:** Always treat the user's original music files as read-only unless the user explicitly triggers a "Save Metadata" action.
 - **Error Handling:** Implement robust error handling in Go and propagate meaningful errors to the frontend via Wails.
 
-### 4. macOS Integration
+### 5. Testing & Verification
+- **Mandatory Tests:** ALL bug fixes and new features MUST be accompanied by relevant unit tests (Go) or component tests (Vue).
+- **Regression Testing:** Before completing any directive, run all existing tests to ensure no regressions were introduced.
+- **Verification:** A task is only complete when behavioral correctness has been verified through both automated tests and manual verification of the UI/UX.
+
+### 6. macOS Integration
 - **Now Playing:** Ensure seamless integration with the macOS "Now Playing" widget and media keys.
 - **AirPlay 2:** Prioritize native AirPlay 2 support for audio output.
 - **Window Management:** Support "close to tray" behavior where music continues playing after the main window is closed.
 
 ## Implementation Workflow
-1. **Research:** Analyze existing Go/Vue patterns and identify all requirements.
-2. **Strategy:** Update `PLAN.md` if a task requires architectural changes.
+1. **Research:** Analyze existing Go/Vue patterns and identify all requirements. **ALWAYS reproduce bugs with a test case first.**
+2. **Strategy:** Update `PLAN.md` if a task requires architectural changes or new testing strategies.
 3. **Execution (The Implementation Loop):**
-    - **Implement:** Apply surgical changes with accompanying unit or component tests.
+    - **Implement:** Apply surgical changes. **New code MUST have accompanying unit or component tests.**
+    - **Verify:** Execute `task verify` (or equivalent) to run all tests and linters.
     - **Review & Recheck:** Perform a critical self-review of the code and re-verify against the original requirements and project mandates.
     - **Fix or Continue:** Address any discrepancies, bugs, or missing features identified during review before moving on.
 4. **Validation:** Verify performance with large datasets and OS-level integrations.
