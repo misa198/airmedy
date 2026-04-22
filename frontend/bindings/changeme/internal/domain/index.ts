@@ -7,6 +7,9 @@ export {
     Artist,
     Composer,
     Genre,
+    PlaybackState,
+    PlayerStatus,
+    RepeatMode,
     SyncProgress,
     TrackDTO,
     WatchedFolder

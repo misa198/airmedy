@@ -3,6 +3,7 @@ package app
 import (
 	"changeme/internal/app/config"
 	"changeme/internal/app/library"
+	"changeme/internal/app/player"
 	"changeme/internal/domain"
 	"changeme/internal/infra/artwork"
 	"changeme/internal/infra/bleve"
@@ -25,10 +26,12 @@ var Module = fx.Module("app",
 		func() domain.MetadataExtractor { return metadata.NewTagLibExtractor() },
 		library.NewLibraryService,
 		wails.NewLibraryService,
+		wails.NewPlayerService,
 		func() *wails.GreetService { return &wails.GreetService{} },
 	),
 	sqlite.Module,
 	logging.Module,
+	player.Module,
 	fx.Invoke(func(lc fx.Lifecycle, db *sqlite.DB, search domain.SearchService, lib *library.LibraryService) {
 		lc.Append(fx.Hook{
 			OnStart: func(ctx context.Context) error {

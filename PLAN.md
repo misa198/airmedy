@@ -59,11 +59,16 @@ This is a greenfield project establishing the entire architecture:
 
 
 ### Phase 6: Audio Playback Engine & Player UI
-- [ ] Develop the Go audio playback engine supporting all requested formats and gapless playback if possible.
-- [ ] Implement 4 Player UI modes: Sticky (bottom bar), Miniplayer, Full Window, and Full Screen.
-- [ ] **Dynamic Theming:** Implement palette extraction from artwork (Vibrant/Muted) and real-time CSS variable updates with contrast validation.
-- [ ] Build the queue management system (persisting state to settings/database).
-- [ ] Integrate with macOS "Now Playing" and implement AirPlay 2 support.
+- [x] **Backend: Audio Player Interface** - Define `domain.AudioPlayer` and `domain.PlayerState`.
+- [x] **Backend: macOS Native Player** - Implement `AVFoundation` adapter via CGo (supporting gapless and AirPlay 2).
+- [x] **Backend: Queue Management** - Implement `QueueService` with shuffle/repeat and Wails bindings.
+- [ ] **Backend: OS Integration** - Implement macOS "Now Playing" and Media Key support (`MPRemoteCommandCenter`).
+- [ ] **Backend: Dynamic Theming** - Implement artwork palette extraction and event emission.
+- [ ] **Frontend: Player Store** - Create Pinia store to sync with backend playback state.
+- [ ] **Frontend: Player UI Modes** - Implement Sticky, Miniplayer, Full Window, and Full Screen modes.
+- [ ] **Frontend: Queue UI** - Build the queue management drawer/popover.
+- [ ] **Frontend: Dynamic Theming** - Bind extracted colors to CSS variables for real-time UI updates.
+
 
 ### Phase 7: Advanced Features
 - [ ] **Search:** Implement the unified search UI with horizontal scrolling carousels for different entity types.

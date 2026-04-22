@@ -3,7 +3,9 @@
 
 import * as GreetService from "./greetservice.js";
 import * as LibraryService from "./libraryservice.js";
+import * as PlayerService from "./playerservice.js";
 export {
     GreetService,
-    LibraryService
+    LibraryService,
+    PlayerService
 };

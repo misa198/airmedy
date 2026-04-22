@@ -178,3 +178,28 @@ The track listing logic from `TracksView.vue` was encapsulated into a reusable c
 - **Virtualization:** Rendering only the visible rows to maintain 60fps performance even in lists with 1,000+ items.
 - **Configurable Columns:** Toggleable artwork, album name, and artist name columns depending on the context (e.g., hiding the album column when viewed inside an album detail page).
 - **Global Playback Hooks:** Centralized logic for triggering playback and queueing.
+
+---
+
+## 8. Phase 6: Audio Playback & OS Integration
+
+Airmedy's audio engine strictly adheres to the Hexagonal Architecture. To meet the stringent requirements of low CPU usage, native AirPlay 2 support, and OS-level "Now Playing" integration, we utilize platform-native media APIs wrapped in a unified Go interface.
+
+### 8.1 Audio Engine Abstraction
+- **Domain Interface (`internal/domain/audio.go`):** Defines `AudioPlayer` interface (`Play()`, `Pause()`, `Seek(position)`, `SetVolume(level)`, `SetTrack(track TrackDTO)`).
+- **Infrastructure Adapter (`internal/infra/audio/avfoundation.go`):** On macOS, this adapter uses CGo to bridge to Objective-C and `AVFoundation` (`AVPlayer` / `AVQueuePlayer` for gapless). This guarantees native support for AirPlay 2 targets and minimizes battery consumption.
+
+### 8.2 Queue Management System
+- **Service (`internal/app/player/queue_service.go`):** Maintains the source of truth for the playback queue.
+- **Wails Bindings:** Exposes methods to the Vue frontend like `PlayNext(trackID)`, `AddToQueue(trackID)`, `ClearQueue()`, and emits real-time events (`player:track-changed`, `player:state-changed`, `player:progress`) via Wails events.
+
+### 8.3 Dynamic Theming (Artwork Palette)
+- **Palette Extraction:** When a new track starts, the Go backend extracts dominant/vibrant colors from the artwork using a quantization algorithm (e.g., k-means or median-cut).
+- **CSS Variable Injection:** The extracted RGB values are sent via Wails events to the Pinia store. The root `App.vue` binds these values to CSS variables (e.g., `--theme-vibrant`, `--theme-muted`), allowing real-time CSS transitions across the entire application shell.
+
+### 8.4 Player UI Modes
+The frontend employs a responsive state machine (in Pinia) to toggle between:
+1. **Sticky (Default):** A persistent bottom-bar `PlayerFooter.vue`.
+2. **Miniplayer:** A floating, frameless Wails window (implemented by resizing the main window and hiding the sidebar/main views).
+3. **Full Window:** The player expands to take over the main content area, displaying large artwork and lyrics.
+4. **Full Screen:** Traditional immersive full-screen view.

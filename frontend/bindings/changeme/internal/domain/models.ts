@@ -235,6 +235,98 @@ export class Genre {
 }
 
 /**
+ * PlaybackState represents the current state of the audio player
+ */
+export enum PlaybackState {
+    /**
+     * The Go zero value for the underlying type of the enum.
+     */
+    $zero = "",
+
+    PlaybackStatePlaying = "playing",
+    PlaybackStatePaused = "paused",
+    PlaybackStateStopped = "stopped",
+};
+
+/**
+ * PlayerStatus represents the full state of the playback engine for the UI
+ */
+export class PlayerStatus {
+    "track_id": string;
+    "playback_state": PlaybackState;
+
+    /**
+     * Current position in seconds
+     */
+    "position": number;
+
+    /**
+     * Total duration in seconds
+     */
+    "duration": number;
+
+    /**
+     * 0.0 to 1.0
+     */
+    "volume": number;
+    "muted": boolean;
+    "repeat_mode": RepeatMode;
+    "shuffle": boolean;
+
+    /** Creates a new PlayerStatus instance. */
+    constructor($$source: Partial<PlayerStatus> = {}) {
+        if (!("track_id" in $$source)) {
+            this["track_id"] = "";
+        }
+        if (!("playback_state" in $$source)) {
+            this["playback_state"] = PlaybackState.$zero;
+        }
+        if (!("position" in $$source)) {
+            this["position"] = 0;
+        }
+        if (!("duration" in $$source)) {
+            this["duration"] = 0;
+        }
+        if (!("volume" in $$source)) {
+            this["volume"] = 0;
+        }
+        if (!("muted" in $$source)) {
+            this["muted"] = false;
+        }
+        if (!("repeat_mode" in $$source)) {
+            this["repeat_mode"] = RepeatMode.$zero;
+        }
+        if (!("shuffle" in $$source)) {
+            this["shuffle"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new PlayerStatus instance from a string or object.
+     */
+    static createFrom($$source: any = {}): PlayerStatus {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new PlayerStatus($$parsedSource as Partial<PlayerStatus>);
+    }
+}
+
+/**
+ * RepeatMode represents the repeat behavior of the player
+ */
+export enum RepeatMode {
+    /**
+     * The Go zero value for the underlying type of the enum.
+     */
+    $zero = "",
+
+    RepeatModeOff = "off",
+    RepeatModeOne = "one",
+    RepeatModeAll = "all",
+};
+
+/**
  * SyncProgress represents the current progress of a library sync
  */
 export class SyncProgress {
