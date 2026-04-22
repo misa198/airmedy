@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import * as LibraryService from '../../bindings/changeme/internal/infra/wails/libraryservice'
 import type { AlbumDTO, TrackDTO } from '../../bindings/changeme/internal/domain/models'
 import TrackTable from '../components/TrackTable.vue'
-import { Disc, User, Play, Clock, Calendar, ArrowLeft } from 'lucide-vue-next'
+import { Disc, User, Play, Clock, Calendar, ArrowLeft, MoreVertical, Music } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()

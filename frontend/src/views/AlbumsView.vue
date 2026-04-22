@@ -2,8 +2,10 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import * as LibraryService from '../../bindings/changeme/internal/infra/wails/libraryservice'
-import { Disc, Search, Play, User } from 'lucide-vue-next'
-import type { AlbumDTO, Artist } from '../../bindings/changeme/internal/domain/models'
+import { Disc, Search } from 'lucide-vue-next'
+import type { AlbumDTO } from '../../bindings/changeme/internal/domain/models'
+import VirtualizedGrid from '../components/VirtualizedGrid.vue'
+import AlbumCard from '../components/AlbumCard.vue'
 
 const router = useRouter()
 const albums = ref<AlbumDTO[]>([])
@@ -14,7 +16,6 @@ const loadAlbums = async () => {
   isLoading.value = true
   try {
     const result = await LibraryService.GetAllAlbums()
-    // result is (AlbumDTO | null)[]
     albums.value = result.filter((a): a is AlbumDTO => a !== null).sort((a, b) => 
       (a.title || '').localeCompare(b.title || '')
     )
@@ -64,7 +65,7 @@ onMounted(loadAlbums)
       </div>
     </div>
 
-    <div class="flex-1 overflow-y-auto px-6 py-8">
+    <div class="flex-1 overflow-hidden px-6 py-8">
       <div v-if="isLoading" class="h-full flex items-center justify-center">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
@@ -74,54 +75,20 @@ onMounted(loadAlbums)
         <p>No albums found in your library.</p>
       </div>
 
-      <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
-        <div 
-          v-for="album in filteredAlbums" 
-          :key="album.id"
-          class="group cursor-pointer"
-          @click="navigateToAlbum(album.id)"
-        >
-          <div class="aspect-square bg-muted rounded-lg border overflow-hidden relative mb-3 shadow-sm group-hover:shadow-md transition-all">
-            <div v-if="album.artwork_key" class="w-full h-full">
-              <img 
-                :src="`/artwork/${album.artwork_key}`" 
-                :alt="album.title"
-                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-            </div>
-            <div v-else class="w-full h-full flex items-center justify-center text-muted-foreground/40 group-hover:scale-105 transition-transform duration-500">
-              <Disc class="w-1/3 h-1/3" />
-            </div>
-            
-            <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <button class="w-12 h-12 bg-primary text-primary-foreground rounded-full shadow-xl flex items-center justify-center transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-                <Play class="w-6 h-6 fill-current ml-1" />
-              </button>
-            </div>
-          </div>
-          
-          <div class="space-y-1 px-1">
-            <h3 class="font-medium text-sm truncate group-hover:text-primary transition-colors cursor-pointer" @click.stop="navigateToAlbum(album.id)">{{ album.title || 'Unknown Album' }}</h3>
-            <div class="text-xs text-muted-foreground truncate flex items-center gap-1">
-              <User class="w-3 h-3 flex-shrink-0" />
-              <div class="truncate">
-                <template v-if="album.artists && album.artists.length > 0">
-                  <span v-for="(artist, i) in (album.artists.filter(a => !!a) as Artist[])" :key="artist.id || i">
-                    <span 
-                      :class="[artist.id ? 'hover:text-primary cursor-pointer transition-colors' : '']"
-                      @click.stop="artist.id && navigateToArtist(artist.id)"
-                    >
-                      {{ artist.name }}
-                    </span>
-                    <span v-if="i < album.artists.filter(a => !!a).length - 1" class="mr-1">,</span>
-                  </span>
-                </template>
-                <span v-else>Unknown Artist</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <VirtualizedGrid 
+        v-else 
+        :items="filteredAlbums" 
+        :item-height="250" 
+        :min-column-width="180"
+      >
+        <template #default="{ item: album }">
+          <AlbumCard 
+            :album="album" 
+            @click="navigateToAlbum"
+            @artist-click="navigateToArtist"
+          />
+        </template>
+      </VirtualizedGrid>
     </div>
   </div>
 </template>

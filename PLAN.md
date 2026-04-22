@@ -54,7 +54,7 @@ This is a greenfield project establishing the entire architecture:
 - [x] **Album/Recently Added Views:** Grid layout with covers, titles, and artists.
 - [x] **Detail Views:** Album details (artwork, tracklist) and Artist details (header, albums grid, tracks).
 - [x] **Deep Linking:** Full parameterized routing for Albums and Artists.
-- [ ] **Genre/Composer Views:** Implement 2-column layout with track listing for selected entity.
+- [x] **Genre/Composer Views:** Implement 2-column layout with track listing for selected entity.
 - [x] **Reusable Components:** `TrackTable` and `EntityExplorerLayout`.
 
 
