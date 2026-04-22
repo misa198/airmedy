@@ -1,5 +1,25 @@
 <script setup lang="ts">
+import { onMounted, watch } from 'vue'
 import MainLayout from './layouts/MainLayout.vue'
+import { usePlayerStore } from './stores/player'
+import { hexToRgba } from './lib/utils'
+
+const playerStore = usePlayerStore()
+
+onMounted(() => {
+  playerStore.init()
+})
+
+watch(
+  () => playerStore.theme,
+  (colors) => {
+    if (!colors) return
+    const root = document.documentElement
+    root.style.setProperty('--dynamic-primary', colors.vibrant)
+    root.style.setProperty('--dynamic-surface', hexToRgba(colors.dominant, 0.15))
+    root.style.setProperty('--dynamic-glow', `0 0 40px ${hexToRgba(colors.vibrant, 0.3)}`)
+  },
+)
 </script>
 
 <template>

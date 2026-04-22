@@ -12,7 +12,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'play': [track: TrackDTO]
+  'play-track': [track: TrackDTO, index: number]
 }>()
 
 const navigateToAlbum = (id: string) => {
@@ -71,7 +71,7 @@ const formatDuration = (seconds: number) => {
         ]">
           <div class="text-center text-muted-foreground group-hover:hidden">{{ index + 1 }}</div>
           <div class="hidden group-hover:flex items-center justify-center">
-            <button @click="emit('play', item)" class="text-primary hover:scale-110 transition-transform">
+            <button @click="emit('play-track', item, index)" class="text-primary hover:scale-110 transition-transform">
               <Play class="w-4 h-4 fill-current" />
             </button>
           </div>

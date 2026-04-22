@@ -4,7 +4,7 @@ package audio
 
 /*
 #cgo CFLAGS: -x objective-c -fobjc-arc
-#cgo LDFLAGS: -framework Foundation -framework AVFoundation -framework CoreMedia
+#cgo LDFLAGS: -framework Foundation -framework AppKit -framework AVFoundation -framework CoreMedia -framework MediaPlayer
 #include <stdlib.h>
 
 void* InitPlayer();
@@ -15,6 +15,11 @@ void SeekPlayer(void* player, double seconds);
 void SetVolumePlayer(void* player, float volume);
 void LoadPlayer(void* player, const char* url);
 double GetCurrentTimePlayer(void* player);
+
+void SetupRemoteCommandCenter(void* player);
+void UpdateNowPlayingInfo(void* player, const char* title, const char* artist,
+    const char* album, double duration, double position, const char* artworkPath);
+void ClearNowPlayingInfo(void* player);
 */
 import "C"
 import (
@@ -28,6 +33,12 @@ import (
 var (
 	onTrackEndCallback func()
 	callbackMutex      sync.Mutex
+
+	onRemotePlayCallback     func()
+	onRemotePauseCallback    func()
+	onRemoteNextCallback     func()
+	onRemotePreviousCallback func()
+	remoteCallbackMu         sync.Mutex
 )
 
 //export goHandleTrackEnd
@@ -39,7 +50,43 @@ func goHandleTrackEnd() {
 	}
 }
 
-// DarwinPlayer implements domain.AudioPlayer using AVFoundation on macOS.
+//export goHandleRemotePlay
+func goHandleRemotePlay() {
+	remoteCallbackMu.Lock()
+	defer remoteCallbackMu.Unlock()
+	if onRemotePlayCallback != nil {
+		onRemotePlayCallback()
+	}
+}
+
+//export goHandleRemotePause
+func goHandleRemotePause() {
+	remoteCallbackMu.Lock()
+	defer remoteCallbackMu.Unlock()
+	if onRemotePauseCallback != nil {
+		onRemotePauseCallback()
+	}
+}
+
+//export goHandleRemoteNext
+func goHandleRemoteNext() {
+	remoteCallbackMu.Lock()
+	defer remoteCallbackMu.Unlock()
+	if onRemoteNextCallback != nil {
+		onRemoteNextCallback()
+	}
+}
+
+//export goHandleRemotePrevious
+func goHandleRemotePrevious() {
+	remoteCallbackMu.Lock()
+	defer remoteCallbackMu.Unlock()
+	if onRemotePreviousCallback != nil {
+		onRemotePreviousCallback()
+	}
+}
+
+// DarwinPlayer implements domain.AudioPlayer and domain.NowPlayingController using AVFoundation on macOS.
 type DarwinPlayer struct {
 	logger        *slog.Logger
 	playerPointer unsafe.Pointer
@@ -123,4 +170,55 @@ func (p *DarwinPlayer) OnTrackEnd(callback func()) {
 	callbackMutex.Lock()
 	defer callbackMutex.Unlock()
 	onTrackEndCallback = callback
+}
+
+// --- NowPlayingController ---
+
+func (p *DarwinPlayer) SetupRemoteCommands() {
+	C.SetupRemoteCommandCenter(p.playerPointer)
+}
+
+func (p *DarwinPlayer) SetRemoteCallbacks(play, pause, next, previous func()) {
+	remoteCallbackMu.Lock()
+	defer remoteCallbackMu.Unlock()
+	onRemotePlayCallback = play
+	onRemotePauseCallback = pause
+	onRemoteNextCallback = next
+	onRemotePreviousCallback = previous
+}
+
+func (p *DarwinPlayer) UpdateNowPlaying(track *domain.TrackDTO, position float64, artworkPath string) {
+	title := C.CString(track.Title)
+	defer C.free(unsafe.Pointer(title))
+
+	artist := ""
+	if len(track.Artists) > 0 {
+		artist = track.Artists[0].Name
+	}
+	cArtist := C.CString(artist)
+	defer C.free(unsafe.Pointer(cArtist))
+
+	albumTitle := ""
+	if track.Album != nil {
+		albumTitle = track.Album.Title
+	}
+	cAlbum := C.CString(albumTitle)
+	defer C.free(unsafe.Pointer(cAlbum))
+
+	cArtwork := C.CString(artworkPath)
+	defer C.free(unsafe.Pointer(cArtwork))
+
+	C.UpdateNowPlayingInfo(
+		p.playerPointer,
+		title,
+		cArtist,
+		cAlbum,
+		C.double(float64(track.Duration)),
+		C.double(position),
+		cArtwork,
+	)
+}
+
+func (p *DarwinPlayer) ClearNowPlaying() {
+	C.ClearNowPlayingInfo(p.playerPointer)
 }

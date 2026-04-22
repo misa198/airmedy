@@ -30,6 +30,22 @@ type PlayerStatus struct {
 	Shuffle       bool          `json:"shuffle"`
 }
 
+// ThemeColors holds extracted palette data from the current track's artwork
+type ThemeColors struct {
+	Vibrant  string `json:"vibrant"`  // hex e.g. "#E11D48" — highest saturation cluster
+	Muted    string `json:"muted"`    // hex — lowest saturation cluster
+	Dominant string `json:"dominant"` // hex — largest pixel-count cluster
+}
+
+// NowPlayingController is an optional interface implemented by platform players
+// that support OS-level Now Playing info and media key remote commands.
+type NowPlayingController interface {
+	SetupRemoteCommands()
+	SetRemoteCallbacks(play, pause, next, previous func())
+	UpdateNowPlaying(track *TrackDTO, position float64, artworkPath string)
+	ClearNowPlaying()
+}
+
 // AudioPlayer is the interface for platform-native audio playback engines
 type AudioPlayer interface {
 	// Control operations

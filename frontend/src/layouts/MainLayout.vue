@@ -7,7 +7,13 @@ import {
 } from '@/components/ui/resizable'
 import Sidebar from '@/components/Sidebar.vue'
 import PlayerFooter from '@/components/PlayerFooter.vue'
+import MiniPlayer from '@/components/MiniPlayer.vue'
+import FullScreenPlayer from '@/components/FullScreenPlayer.vue'
+import QueueDrawer from '@/components/QueueDrawer.vue'
 import { RouterView } from 'vue-router'
+import { usePlayerStore } from '@/stores/player'
+
+const playerStore = usePlayerStore()
 import { GetPlatform } from '../../bindings/changeme/internal/infra/wails/greetservice'
 
 const isMac = ref(false)
@@ -51,8 +57,15 @@ onMounted(async () => {
       </ResizablePanelGroup>
     </div>
 
-    <!-- Persistent Player Footer -->
-    <PlayerFooter />
+    <!-- Player (mode-dependent) -->
+    <MiniPlayer v-if="playerStore.playerMode === 'mini'" />
+    <PlayerFooter v-else-if="playerStore.playerMode === 'sticky'" />
+
+    <!-- FullScreen player overlays the entire UI -->
+    <FullScreenPlayer v-if="playerStore.playerMode === 'fullscreen'" />
+
+    <!-- Queue Drawer (slides in from right, above footer) -->
+    <QueueDrawer />
   </div>
 </template>
 

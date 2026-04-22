@@ -3,6 +3,9 @@ import { ref, onMounted, computed } from 'vue'
 import * as LibraryService from '../../bindings/changeme/internal/infra/wails/libraryservice'
 import type { TrackDTO } from '../../bindings/changeme/internal/domain/models'
 import TrackTable from '../components/TrackTable.vue'
+import { usePlayerStore } from '../stores/player'
+
+const playerStore = usePlayerStore()
 
 const tracks = ref<TrackDTO[]>([])
 const isLoading = ref(true)
@@ -55,11 +58,12 @@ onMounted(loadTracks)
     </div>
 
     <!-- Reusable Track Table -->
-    <TrackTable 
-      :tracks="filteredTracks" 
-      :is-loading="isLoading" 
-      :show-album="true" 
-      :show-artwork="true" 
+    <TrackTable
+      :tracks="filteredTracks"
+      :is-loading="isLoading"
+      :show-album="true"
+      :show-artwork="true"
+      @play-track="(_, index) => playerStore.playTracks(filteredTracks, index)"
     />
   </div>
 </template>

@@ -5,6 +5,9 @@ import * as LibraryService from '../../bindings/changeme/internal/infra/wails/li
 import type { AlbumDTO, TrackDTO } from '../../bindings/changeme/internal/domain/models'
 import TrackTable from '../components/TrackTable.vue'
 import { Disc, User, Play, Clock, Calendar, ArrowLeft, MoreVertical, Music } from 'lucide-vue-next'
+import { usePlayerStore } from '../stores/player'
+
+const playerStore = usePlayerStore()
 
 const route = useRoute()
 const router = useRouter()
@@ -94,7 +97,10 @@ const formatTotalDuration = (tracks: TrackDTO[]) => {
           </div>
 
           <div class="flex items-center gap-4 pt-2">
-            <button class="px-8 py-3 bg-primary text-primary-foreground rounded-full font-bold shadow-lg hover:scale-105 transition-transform flex items-center gap-2">
+            <button
+              class="px-8 py-3 bg-primary text-primary-foreground rounded-full font-bold shadow-lg hover:scale-105 transition-transform flex items-center gap-2"
+              @click="playerStore.playTracks(tracks, 0)"
+            >
               <Play class="w-5 h-5 fill-current" />
               Play
             </button>
@@ -107,7 +113,12 @@ const formatTotalDuration = (tracks: TrackDTO[]) => {
 
       <!-- Track List -->
       <div class="px-2 pb-12">
-        <TrackTable :tracks="tracks" :show-artwork="false" :show-album="false" />
+        <TrackTable
+          :tracks="tracks"
+          :show-artwork="false"
+          :show-album="false"
+          @play-track="(_, index) => playerStore.playTracks(tracks, index)"
+        />
       </div>
 
       <!-- Album Footer Metadata -->

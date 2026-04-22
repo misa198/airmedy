@@ -3,16 +3,13 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Play, Disc, Clock, MoreVertical, Music, User } from 'lucide-vue-next'
 import type { TrackDTO, AlbumDTO, Artist } from '../../bindings/changeme/internal/domain/models'
+import { usePlayerStore } from '../stores/player'
 
 const router = useRouter()
+const playerStore = usePlayerStore()
 const props = defineProps<{
   tracks: TrackDTO[]
-  albums?: AlbumDTO[] // Optional explicit albums (for sorting/completeness)
-}>()
-
-const emit = defineEmits<{
-  'play': [track: TrackDTO]
-  'play-album': [album: AlbumDTO]
+  albums?: AlbumDTO[]
 }>()
 
 const navigateToArtist = (id: string) => {
@@ -87,7 +84,10 @@ const formatDuration = (seconds: number) => {
             <Disc class="w-16 h-16" />
           </div>
           <div v-if="group.album" class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <button @click="emit('play-album', group.album)" class="w-12 h-12 bg-primary text-primary-foreground rounded-full shadow-xl flex items-center justify-center transform scale-90 group-hover:scale-100 transition-all duration-300">
+            <button
+              class="w-12 h-12 bg-primary text-primary-foreground rounded-full shadow-xl flex items-center justify-center transform scale-90 group-hover:scale-100 transition-all duration-300"
+              @click="playerStore.playTracks(group.tracks, 0)"
+            >
               <Play class="w-6 h-6 fill-current ml-1" />
             </button>
           </div>
@@ -123,7 +123,10 @@ const formatDuration = (seconds: number) => {
           >
             <div class="text-center text-muted-foreground group-hover/track:hidden">{{ track.track_number || index + 1 }}</div>
             <div class="hidden group-hover/track:flex items-center justify-center">
-              <button @click="emit('play', track)" class="text-primary hover:scale-110 transition-transform">
+              <button
+                class="text-primary hover:scale-110 transition-transform"
+                @click="playerStore.playTracks(group.tracks, index)"
+              >
                 <Play class="w-4 h-4 fill-current" />
               </button>
             </div>

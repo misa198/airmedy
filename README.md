@@ -57,6 +57,7 @@ Airmedy follows a clean, modular architecture. For a comprehensive overview of t
 2. **Project Mandates:** See [GEMINI.md](./GEMINI.md) for technical standards and development guidelines.
 3. **Technical Architecture:** Review [TECHDOC.md](./TECHDOC.md) for an exhaustive look into DB schemas and metadata logic.
 4. **Design System & Layout:** Check [THEME.md](./THEME.md) for styling and [Wireframe.md](./Wireframe.md) for user flow diagrams.
-5. **Development:** Use `wails3 dev` to start the application with hot-reloading.
+5. **Development:** Use `wails3 dev` to start the application with hot-reloading. Read WAILS3.md for best practices and tips on using Wails3 effectively.
+6. **Golang**: Check out [GOLANG.md](./GOLANG.md) for best practices and coding standards.
 
 Happy coding with Wails3! If you encounter any issues or have questions, don't hesitate to consult the documentation or reach out to the Wails community.

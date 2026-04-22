@@ -1,44 +1,103 @@
 package player
 
 import (
+	"context"
 	"log/slog"
 	"sync"
+	"time"
 
 	"changeme/internal/domain"
+	"changeme/internal/infra/artwork"
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"go.uber.org/fx"
 )
 
 // PlayerService coordinates playback and queue management.
 type PlayerService struct {
-	mu     sync.RWMutex
-	player domain.AudioPlayer
-	queue  *QueueService
-	logger *slog.Logger
+	mu           sync.RWMutex
+	player       domain.AudioPlayer
+	queue        *QueueService
+	logger       *slog.Logger
+	artworkCache domain.ArtworkCache
+	nowPlaying   domain.NowPlayingController // nil on non-darwin or when unsupported
+	currentTrack *domain.TrackDTO
+
+	tickerMu     sync.Mutex
+	tickerCancel context.CancelFunc
+	tickInterval time.Duration
+
+	// emitStatusHook overrides event emission in tests (nil in production).
+	emitStatusHook func()
 }
 
-func NewPlayerService(player domain.AudioPlayer, queue *QueueService, logger *slog.Logger) *PlayerService {
+func NewPlayerService(
+	player domain.AudioPlayer,
+	queue *QueueService,
+	logger *slog.Logger,
+	artworkCache domain.ArtworkCache,
+	lc fx.Lifecycle,
+) *PlayerService {
 	s := &PlayerService{
-		player: player,
-		queue:  queue,
-		logger: logger,
+		player:       player,
+		queue:        queue,
+		logger:       logger,
+		artworkCache: artworkCache,
+		tickInterval: 500 * time.Millisecond,
 	}
 	s.player.OnTrackEnd(s.HandleTrackEnd)
+
+	if npc, ok := player.(domain.NowPlayingController); ok {
+		s.nowPlaying = npc
+		npc.SetRemoteCallbacks(
+			func() { _ = s.Play() },
+			func() { _ = s.Pause() },
+			func() { _ = s.Next() },
+			func() { _ = s.Previous() },
+		)
+		npc.SetupRemoteCommands()
+	}
+
+	lc.Append(fx.Hook{
+		OnStop: func(_ context.Context) error {
+			s.stopPositionTicker()
+			return nil
+		},
+	})
+
 	return s
 }
 
 // Play starts or resumes playback.
 func (s *PlayerService) Play() error {
-	return s.player.Play()
+	err := s.player.Play()
+	if err == nil {
+		s.startPositionTicker()
+		s.emitStatus()
+	}
+	return err
 }
 
 // Pause pauses playback.
 func (s *PlayerService) Pause() error {
-	return s.player.Pause()
+	err := s.player.Pause()
+	if err == nil {
+		s.stopPositionTicker()
+		s.emitStatus()
+	}
+	return err
 }
 
 // Stop stops playback.
 func (s *PlayerService) Stop() error {
-	return s.player.Stop()
+	err := s.player.Stop()
+	if err == nil {
+		s.stopPositionTicker()
+		if s.nowPlaying != nil {
+			s.nowPlaying.ClearNowPlaying()
+		}
+		s.emitStatus()
+	}
+	return err
 }
 
 // Next plays the next track in the queue.
@@ -100,7 +159,10 @@ func (s *PlayerService) SetRepeatMode(mode domain.RepeatMode) error {
 
 // GetStatus returns the current status of the player.
 func (s *PlayerService) GetStatus() domain.PlayerStatus {
-	return s.player.GetStatus()
+	status := s.player.GetStatus()
+	status.RepeatMode = s.queue.repeatMode
+	status.Shuffle = s.queue.shuffle
+	return status
 }
 
 // GetQueue returns the current queue.
@@ -111,6 +173,8 @@ func (s *PlayerService) GetQueue() []*domain.TrackDTO {
 // Internal helpers
 
 func (s *PlayerService) loadAndPlay(track *domain.TrackDTO) error {
+	s.stopPositionTicker()
+
 	if err := s.player.Load(track); err != nil {
 		s.logger.Error("failed to load track", "track", track.Path, "error", err)
 		return err
@@ -119,26 +183,108 @@ func (s *PlayerService) loadAndPlay(track *domain.TrackDTO) error {
 		s.logger.Error("failed to play track", "track", track.Path, "error", err)
 		return err
 	}
+
+	s.mu.Lock()
+	s.currentTrack = track
+	s.mu.Unlock()
+
+	s.startPositionTicker()
 	s.emitStatus()
+
+	if s.nowPlaying != nil {
+		artworkPath := ""
+		if track.ArtworkKey != "" {
+			artworkPath = s.artworkCache.GetPath(track.ArtworkKey)
+		}
+		s.nowPlaying.UpdateNowPlaying(track, 0, artworkPath)
+	}
+
+	go s.extractAndEmitPalette(track)
+
 	return nil
 }
 
+func (s *PlayerService) extractAndEmitPalette(track *domain.TrackDTO) {
+	if track.ArtworkKey == "" {
+		return
+	}
+	path := s.artworkCache.GetPath(track.ArtworkKey)
+	colors, err := artwork.ExtractPalette(path)
+	if err != nil {
+		s.logger.Warn("palette extraction failed", "error", err)
+		return
+	}
+	app := application.Get()
+	if app != nil {
+		app.Event.Emit("player:theme", colors)
+	}
+}
+
 func (s *PlayerService) emitStatus() {
+	if s.emitStatusHook != nil {
+		s.emitStatusHook()
+		return
+	}
 	app := application.Get()
 	if app == nil {
 		return
 	}
-	// Get current status from player
 	status := s.player.GetStatus()
-	// Enrich status with queue info
 	status.RepeatMode = s.queue.repeatMode
 	status.Shuffle = s.queue.shuffle
-
 	app.Event.Emit("player:status", status)
+}
+
+func (s *PlayerService) startPositionTicker() {
+	s.tickerMu.Lock()
+	defer s.tickerMu.Unlock()
+
+	if s.tickerCancel != nil {
+		s.tickerCancel()
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	s.tickerCancel = cancel
+
+	go func() {
+		ticker := time.NewTicker(s.tickInterval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				s.mu.RLock()
+				track := s.currentTrack
+				s.mu.RUnlock()
+
+				s.emitStatus()
+
+				if s.nowPlaying != nil && track != nil {
+					status := s.player.GetStatus()
+					artworkPath := ""
+					if track.ArtworkKey != "" {
+						artworkPath = s.artworkCache.GetPath(track.ArtworkKey)
+					}
+					s.nowPlaying.UpdateNowPlaying(track, status.Position, artworkPath)
+				}
+			}
+		}
+	}()
+}
+
+func (s *PlayerService) stopPositionTicker() {
+	s.tickerMu.Lock()
+	defer s.tickerMu.Unlock()
+	if s.tickerCancel != nil {
+		s.tickerCancel()
+		s.tickerCancel = nil
+	}
 }
 
 // HandleTrackEnd is called by the native player when a track finishes playing.
 func (s *PlayerService) HandleTrackEnd() {
+	s.stopPositionTicker()
 	s.logger.Info("track ended, moving to next")
 	if err := s.Next(); err != nil {
 		s.logger.Error("failed to play next track", "error", err)

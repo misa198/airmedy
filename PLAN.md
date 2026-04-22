@@ -62,12 +62,12 @@ This is a greenfield project establishing the entire architecture:
 - [x] **Backend: Audio Player Interface** - Define `domain.AudioPlayer` and `domain.PlayerState`.
 - [x] **Backend: macOS Native Player** - Implement `AVFoundation` adapter via CGo (supporting gapless and AirPlay 2).
 - [x] **Backend: Queue Management** - Implement `QueueService` with shuffle/repeat and Wails bindings.
-- [ ] **Backend: OS Integration** - Implement macOS "Now Playing" and Media Key support (`MPRemoteCommandCenter`).
-- [ ] **Backend: Dynamic Theming** - Implement artwork palette extraction and event emission.
-- [ ] **Frontend: Player Store** - Create Pinia store to sync with backend playback state.
-- [ ] **Frontend: Player UI Modes** - Implement Sticky, Miniplayer, Full Window, and Full Screen modes.
-- [ ] **Frontend: Queue UI** - Build the queue management drawer/popover.
-- [ ] **Frontend: Dynamic Theming** - Bind extracted colors to CSS variables for real-time UI updates.
+- [x] **Backend: OS Integration** - Implement macOS "Now Playing" and Media Key support (`MPRemoteCommandCenter`).
+- [x] **Backend: Dynamic Theming** - Implement artwork palette extraction and event emission.
+- [x] **Frontend: Player Store** - Create Pinia store to sync with backend playback state.
+- [x] **Frontend: Player UI Modes** - Implement Sticky, Miniplayer, Full Window, and Full Screen modes.
+- [x] **Frontend: Queue UI** - Build the queue management drawer/popover.
+- [x] **Frontend: Dynamic Theming** - Bind extracted colors to CSS variables for real-time UI updates.
 
 
 ### Phase 7: Advanced Features

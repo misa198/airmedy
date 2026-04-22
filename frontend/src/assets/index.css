@@ -1,6 +1,18 @@
 @import "tailwindcss";
 @config "../../tailwind.config.js";
 
+/* Enable CSS custom property transitions in WebKit/Safari (used by Wails on macOS) */
+@property --dynamic-primary {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #E11D48;
+}
+@property --dynamic-surface {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(25, 25, 25, 0.6);
+}
+
 @layer base {
   :root {
     --bg-main: #0A0A0A;
@@ -23,5 +35,6 @@
   body {
     @apply bg-background text-white font-sans antialiased;
     background-color: var(--bg-main);
+    transition: --dynamic-primary 1.5s ease-in-out, --dynamic-surface 1.5s ease-in-out;
   }
 }
