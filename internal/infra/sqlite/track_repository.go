@@ -119,13 +119,129 @@ func (r *trackRepository) GetByPath(ctx context.Context, path string) (*domain.T
 
 type trackRow struct {
 	domain.Track
-	AlbumTitle sql.NullString `db:"album_title"`
-	ArtistNames sql.NullString `db:"artist_names"`
+	AlbumTitle      sql.NullString `db:"album_title"`
+	AlbumArtworkKey sql.NullString `db:"album_artwork_key"`
+	AlbumYear       sql.NullInt64  `db:"album_year"`
+	ArtistNames     sql.NullString `db:"artist_names"`
+	ArtistIDs       sql.NullString `db:"artist_ids"`
+}
+
+func (r *trackRepository) GetByAlbumID(ctx context.Context, albumID string) ([]*domain.TrackDTO, error) {
+	query := fmt.Sprintf(`
+		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year, 
+		       GROUP_CONCAT(art.name, '; ') AS artist_names,
+		       GROUP_CONCAT(art.id, '; ') AS artist_ids
+		FROM tracks t
+		LEFT JOIN albums a ON t.album_id = a.id
+		LEFT JOIN track_artists ta ON t.id = ta.track_id
+		LEFT JOIN artists art ON ta.artist_id = art.id
+		WHERE t.album_id = ?
+		GROUP BY t.id
+		ORDER BY t.disc_number, t.track_number, t.sort_title
+	`, trackSelectFields)
+	var rows []trackRow
+	err := r.db.SelectContext(ctx, &rows, query, albumID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tracks by album id: %w", err)
+	}
+	return r.scanTrackRows(rows), nil
+}
+
+func (r *trackRepository) GetByArtistID(ctx context.Context, artistID string) ([]*domain.TrackDTO, error) {
+	query := fmt.Sprintf(`
+		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year, 
+		       GROUP_CONCAT(art.name, '; ') AS artist_names,
+		       GROUP_CONCAT(art.id, '; ') AS artist_ids
+		FROM tracks t
+		LEFT JOIN albums a ON t.album_id = a.id
+		LEFT JOIN track_artists ta ON t.id = ta.track_id
+		LEFT JOIN artists art ON ta.artist_id = art.id
+		WHERE t.id IN (SELECT track_id FROM track_artists WHERE artist_id = ?)
+		GROUP BY t.id
+		ORDER BY t.year DESC, t.sort_title
+	`, trackSelectFields)
+	var rows []trackRow
+	err := r.db.SelectContext(ctx, &rows, query, artistID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tracks by artist id: %w", err)
+	}
+	return r.scanTrackRows(rows), nil
+}
+
+func (r *trackRepository) GetByGenreID(ctx context.Context, genreID string) ([]*domain.TrackDTO, error) {
+	query := fmt.Sprintf(`
+		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year, 
+		       GROUP_CONCAT(art.name, '; ') AS artist_names,
+		       GROUP_CONCAT(art.id, '; ') AS artist_ids
+		FROM tracks t
+		LEFT JOIN albums a ON t.album_id = a.id
+		LEFT JOIN track_artists ta ON t.id = ta.track_id
+		LEFT JOIN artists art ON ta.artist_id = art.id
+		WHERE t.id IN (SELECT track_id FROM track_genres WHERE genre_id = ?)
+		GROUP BY t.id
+		ORDER BY t.sort_title
+	`, trackSelectFields)
+	var rows []trackRow
+	err := r.db.SelectContext(ctx, &rows, query, genreID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tracks by genre id: %w", err)
+	}
+	return r.scanTrackRows(rows), nil
+}
+
+func (r *trackRepository) GetByComposerID(ctx context.Context, composerID string) ([]*domain.TrackDTO, error) {
+	query := fmt.Sprintf(`
+		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year, 
+		       GROUP_CONCAT(art.name, '; ') AS artist_names,
+		       GROUP_CONCAT(art.id, '; ') AS artist_ids
+		FROM tracks t
+		LEFT JOIN albums a ON t.album_id = a.id
+		LEFT JOIN track_artists ta ON t.id = ta.track_id
+		LEFT JOIN artists art ON ta.artist_id = art.id
+		WHERE t.id IN (SELECT track_id FROM track_composers WHERE composer_id = ?)
+		GROUP BY t.id
+		ORDER BY t.sort_title
+	`, trackSelectFields)
+	var rows []trackRow
+	err := r.db.SelectContext(ctx, &rows, query, composerID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tracks by composer id: %w", err)
+	}
+	return r.scanTrackRows(rows), nil
+}
+
+func (r *trackRepository) scanTrackRows(rows []trackRow) []*domain.TrackDTO {
+	dtos := make([]*domain.TrackDTO, len(rows))
+	for i, row := range rows {
+		dtos[i] = &domain.TrackDTO{Track: row.Track}
+		if row.AlbumTitle.Valid {
+			dtos[i].Album = &domain.Album{
+				ID:         row.Track.AlbumID,
+				Title:      row.AlbumTitle.String,
+				ArtworkKey: row.AlbumArtworkKey.String,
+				Year:       int(row.AlbumYear.Int64),
+			}
+		}
+		if row.ArtistNames.Valid && row.ArtistIDs.Valid {
+			names := strings.Split(row.ArtistNames.String, "; ")
+			ids := strings.Split(row.ArtistIDs.String, "; ")
+			for j, name := range names {
+				id := ""
+				if j < len(ids) {
+					id = ids[j]
+				}
+				dtos[i].Artists = append(dtos[i].Artists, &domain.Artist{ID: id, Name: name})
+			}
+		}
+	}
+	return dtos
 }
 
 func (r *trackRepository) GetByPathPrefix(ctx context.Context, prefix string) ([]*domain.TrackDTO, error) {
 	query := fmt.Sprintf(`
-		SELECT %s, a.title AS album_title, GROUP_CONCAT(art.name, '; ') AS artist_names
+		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year, 
+		       GROUP_CONCAT(art.name, '; ') AS artist_names,
+		       GROUP_CONCAT(art.id, '; ') AS artist_ids
 		FROM tracks t
 		LEFT JOIN albums a ON t.album_id = a.id
 		LEFT JOIN track_artists ta ON t.id = ta.track_id
@@ -139,26 +255,14 @@ func (r *trackRepository) GetByPathPrefix(ctx context.Context, prefix string) ([
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tracks by path prefix: %w", err)
 	}
-
-	dtos := make([]*domain.TrackDTO, len(rows))
-	for i, row := range rows {
-		dtos[i] = &domain.TrackDTO{Track: row.Track}
-		if row.AlbumTitle.Valid {
-			dtos[i].Album = &domain.Album{ID: row.Track.AlbumID, Title: row.AlbumTitle.String}
-		}
-		if row.ArtistNames.Valid {
-			names := strings.Split(row.ArtistNames.String, "; ")
-			for _, name := range names {
-				dtos[i].Artists = append(dtos[i].Artists, &domain.Artist{Name: name})
-			}
-		}
-	}
-	return dtos, nil
+	return r.scanTrackRows(rows), nil
 }
 
 func (r *trackRepository) GetAll(ctx context.Context) ([]*domain.TrackDTO, error) {
 	query := fmt.Sprintf(`
-		SELECT %s, a.title AS album_title, GROUP_CONCAT(art.name, '; ') AS artist_names
+		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year, 
+		       GROUP_CONCAT(art.name, '; ') AS artist_names,
+		       GROUP_CONCAT(art.id, '; ') AS artist_ids
 		FROM tracks t
 		LEFT JOIN albums a ON t.album_id = a.id
 		LEFT JOIN track_artists ta ON t.id = ta.track_id
@@ -171,21 +275,7 @@ func (r *trackRepository) GetAll(ctx context.Context) ([]*domain.TrackDTO, error
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all tracks: %w", err)
 	}
-
-	dtos := make([]*domain.TrackDTO, len(rows))
-	for i, row := range rows {
-		dtos[i] = &domain.TrackDTO{Track: row.Track}
-		if row.AlbumTitle.Valid {
-			dtos[i].Album = &domain.Album{ID: row.Track.AlbumID, Title: row.AlbumTitle.String}
-		}
-		if row.ArtistNames.Valid {
-			names := strings.Split(row.ArtistNames.String, "; ")
-			for _, name := range names {
-				dtos[i].Artists = append(dtos[i].Artists, &domain.Artist{Name: name})
-			}
-		}
-	}
-	return dtos, nil
+	return r.scanTrackRows(rows), nil
 }
 
 type trackDB struct {
@@ -195,7 +285,9 @@ type trackDB struct {
 
 func (r *trackRepository) Save(ctx context.Context, track *domain.Track) error {
 	now := time.Now()
-	track.CreatedAt = now
+	if track.CreatedAt.IsZero() {
+		track.CreatedAt = now
+	}
 	track.UpdatedAt = now
 
 	dbTrack := trackDB{
@@ -209,13 +301,13 @@ func (r *trackRepository) Save(ctx context.Context, track *domain.Track) error {
 			album_id, year, track_number, total_tracks, disc_number, total_discs,
 			duration, bitrate, sample_rate, format, artwork_key, 
 			raw_artist_names, raw_album_artist_names, raw_genre_names, raw_composer_names,
-			file_size, mtime, created_at, updated_at
+			copyright, other_metadata, file_size, mtime, created_at, updated_at
 		) VALUES (
 			:id, :path, :title, :sort_title,
 			:album_id, :year, :track_number, :total_tracks, :disc_number, :total_discs,
 			:duration, :bitrate, :sample_rate, :format, :artwork_key,
 			:raw_artist_names, :raw_album_artist_names, :raw_genre_names, :raw_composer_names,
-			:file_size, :mtime, :created_at, :updated_at
+			:copyright, :other_metadata, :file_size, :mtime, :created_at, :updated_at
 		)`
 
 	_, err := r.db.NamedExecContext(ctx, query, dbTrack)
@@ -227,6 +319,9 @@ func (r *trackRepository) Save(ctx context.Context, track *domain.Track) error {
 
 func (r *trackRepository) Upsert(ctx context.Context, track *domain.Track) error {
 	now := time.Now()
+	if track.CreatedAt.IsZero() {
+		track.CreatedAt = now
+	}
 	track.UpdatedAt = now
 
 	dbTrack := trackDB{
@@ -240,13 +335,13 @@ func (r *trackRepository) Upsert(ctx context.Context, track *domain.Track) error
 			album_id, year, track_number, total_tracks, disc_number, total_discs,
 			duration, bitrate, sample_rate, format, artwork_key,
 			raw_artist_names, raw_album_artist_names, raw_genre_names, raw_composer_names,
-			file_size, mtime, created_at, updated_at
+			copyright, other_metadata, file_size, mtime, created_at, updated_at
 		) VALUES (
 			:id, :path, :title, :sort_title,
 			:album_id, :year, :track_number, :total_tracks, :disc_number, :total_discs,
 			:duration, :bitrate, :sample_rate, :format, :artwork_key,
 			:raw_artist_names, :raw_album_artist_names, :raw_genre_names, :raw_composer_names,
-			:file_size, :mtime, :created_at, :updated_at
+			:copyright, :other_metadata, :file_size, :mtime, :created_at, :updated_at
 		) ON CONFLICT(path) DO UPDATE SET
 			title = excluded.title,
 			sort_title = excluded.sort_title,
@@ -265,6 +360,8 @@ func (r *trackRepository) Upsert(ctx context.Context, track *domain.Track) error
 			raw_album_artist_names = excluded.raw_album_artist_names,
 			raw_genre_names = excluded.raw_genre_names,
 			raw_composer_names = excluded.raw_composer_names,
+			copyright = excluded.copyright,
+			other_metadata = excluded.other_metadata,
 			file_size = excluded.file_size,
 			mtime = excluded.mtime,
 			updated_at = excluded.updated_at

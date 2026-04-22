@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS albums (
     sort_title TEXT NOT NULL,
     normalization_key TEXT,
     year INTEGER,
+    copyright TEXT,
     artwork_key TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -55,6 +56,8 @@ CREATE TABLE IF NOT EXISTS tracks (
     raw_album_artist_names TEXT,
     raw_genre_names TEXT,
     raw_composer_names TEXT,
+    copyright TEXT,
+    other_metadata TEXT,
     file_size INTEGER DEFAULT 0,
     mtime DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

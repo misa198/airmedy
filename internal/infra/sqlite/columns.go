@@ -17,6 +17,8 @@ const trackSelectFields = `
 	COALESCE(t.raw_album_artist_names, '') AS raw_album_artist_names,
 	COALESCE(t.raw_genre_names, '') AS raw_genre_names,
 	COALESCE(t.raw_composer_names, '') AS raw_composer_names,
+	COALESCE(t.copyright, '') AS copyright,
+	COALESCE(t.other_metadata, '{}') AS other_metadata,
 	COALESCE(t.file_size, 0) AS file_size,
 	t.mtime,
 	t.created_at, t.updated_at
@@ -26,6 +28,7 @@ const albumSelectFields = `
 	a.id, a.title, a.sort_title, 
 	COALESCE(a.normalization_key, '') AS normalization_key,
 	COALESCE(a.year, 0) AS year, 
+	COALESCE(a.copyright, '') AS copyright,
 	COALESCE(a.artwork_key, '') AS artwork_key, 
 	a.created_at, a.updated_at
 `

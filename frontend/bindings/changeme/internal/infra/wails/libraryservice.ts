@@ -13,6 +13,18 @@ export function AddFolder(path: string): $CancellablePromise<void> {
     return $Call.ByID(2789466282, path);
 }
 
+export function GetAlbumByID(id: string): $CancellablePromise<domain$0.AlbumDTO | null> {
+    return $Call.ByID(3337931472, id).then(($result: any) => {
+        return $$createType1($result);
+    });
+}
+
+export function GetAlbumsByArtistID(artistID: string): $CancellablePromise<(domain$0.AlbumDTO | null)[]> {
+    return $Call.ByID(1076010318, artistID).then(($result: any) => {
+        return $$createType2($result);
+    });
+}
+
 export function GetAllAlbums(): $CancellablePromise<(domain$0.AlbumDTO | null)[]> {
     return $Call.ByID(2644391788).then(($result: any) => {
         return $$createType2($result);
@@ -43,9 +55,57 @@ export function GetAllTracks(): $CancellablePromise<(domain$0.TrackDTO | null)[]
     });
 }
 
+export function GetArtistByID(id: string): $CancellablePromise<domain$0.Artist | null> {
+    return $Call.ByID(3230361870, id).then(($result: any) => {
+        return $$createType4($result);
+    });
+}
+
+export function GetComposerByID(id: string): $CancellablePromise<domain$0.Composer | null> {
+    return $Call.ByID(325560727, id).then(($result: any) => {
+        return $$createType7($result);
+    });
+}
+
+export function GetGenreByID(id: string): $CancellablePromise<domain$0.Genre | null> {
+    return $Call.ByID(222074596, id).then(($result: any) => {
+        return $$createType10($result);
+    });
+}
+
+export function GetRecentlyAddedAlbums(limit: number): $CancellablePromise<(domain$0.AlbumDTO | null)[]> {
+    return $Call.ByID(1918903465, limit).then(($result: any) => {
+        return $$createType2($result);
+    });
+}
+
 export function GetSyncStatus(): $CancellablePromise<domain$0.SyncProgress | null> {
     return $Call.ByID(618214912).then(($result: any) => {
         return $$createType16($result);
+    });
+}
+
+export function GetTracksByAlbumID(albumID: string): $CancellablePromise<(domain$0.TrackDTO | null)[]> {
+    return $Call.ByID(1363720402, albumID).then(($result: any) => {
+        return $$createType14($result);
+    });
+}
+
+export function GetTracksByArtistID(artistID: string): $CancellablePromise<(domain$0.TrackDTO | null)[]> {
+    return $Call.ByID(3110984398, artistID).then(($result: any) => {
+        return $$createType14($result);
+    });
+}
+
+export function GetTracksByComposerID(composerID: string): $CancellablePromise<(domain$0.TrackDTO | null)[]> {
+    return $Call.ByID(1239947303, composerID).then(($result: any) => {
+        return $$createType14($result);
+    });
+}
+
+export function GetTracksByGenreID(genreID: string): $CancellablePromise<(domain$0.TrackDTO | null)[]> {
+    return $Call.ByID(3265648650, genreID).then(($result: any) => {
+        return $$createType14($result);
     });
 }
 

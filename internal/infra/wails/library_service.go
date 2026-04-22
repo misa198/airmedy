@@ -77,20 +77,60 @@ func (s *LibraryService) GetAllTracks() ([]*domain.TrackDTO, error) {
 	return s.trackRepo.GetAll(context.Background())
 }
 
+func (s *LibraryService) GetTracksByAlbumID(albumID string) ([]*domain.TrackDTO, error) {
+	return s.trackRepo.GetByAlbumID(context.Background(), albumID)
+}
+
+func (s *LibraryService) GetTracksByArtistID(artistID string) ([]*domain.TrackDTO, error) {
+	return s.trackRepo.GetByArtistID(context.Background(), artistID)
+}
+
+func (s *LibraryService) GetTracksByGenreID(genreID string) ([]*domain.TrackDTO, error) {
+	return s.trackRepo.GetByGenreID(context.Background(), genreID)
+}
+
+func (s *LibraryService) GetTracksByComposerID(composerID string) ([]*domain.TrackDTO, error) {
+	return s.trackRepo.GetByComposerID(context.Background(), composerID)
+}
+
 func (s *LibraryService) GetAllAlbums() ([]*domain.AlbumDTO, error) {
 	return s.albumRepo.GetAll(context.Background())
+}
+
+func (s *LibraryService) GetAlbumByID(id string) (*domain.AlbumDTO, error) {
+	return s.albumRepo.GetByID(context.Background(), id)
+}
+
+func (s *LibraryService) GetRecentlyAddedAlbums(limit int) ([]*domain.AlbumDTO, error) {
+	return s.albumRepo.GetRecentlyAdded(context.Background(), limit)
+}
+
+func (s *LibraryService) GetAlbumsByArtistID(artistID string) ([]*domain.AlbumDTO, error) {
+	return s.albumRepo.GetByArtistID(context.Background(), artistID)
 }
 
 func (s *LibraryService) GetAllArtists() ([]*domain.Artist, error) {
 	return s.artistRepo.GetAll(context.Background())
 }
 
+func (s *LibraryService) GetArtistByID(id string) (*domain.Artist, error) {
+	return s.artistRepo.GetByID(context.Background(), id)
+}
+
 func (s *LibraryService) GetAllGenres() ([]*domain.Genre, error) {
 	return s.genreRepo.GetAll(context.Background())
 }
 
+func (s *LibraryService) GetGenreByID(id string) (*domain.Genre, error) {
+	return s.genreRepo.GetByID(context.Background(), id)
+}
+
 func (s *LibraryService) GetAllComposers() ([]*domain.Composer, error) {
 	return s.composerRepo.GetAll(context.Background())
+}
+
+func (s *LibraryService) GetComposerByID(id string) (*domain.Composer, error) {
+	return s.composerRepo.GetByID(context.Background(), id)
 }
 
 func (s *LibraryService) GetSyncStatus() (*domain.SyncProgress, error) {

@@ -52,7 +52,9 @@ func (r *artistRepository) GetAll(ctx context.Context) ([]*domain.Artist, error)
 
 func (r *artistRepository) Save(ctx context.Context, artist *domain.Artist) error {
 	now := time.Now()
-	artist.CreatedAt = now
+	if artist.CreatedAt.IsZero() {
+		artist.CreatedAt = now
+	}
 	artist.UpdatedAt = now
 
 	query := `
@@ -71,6 +73,9 @@ func (r *artistRepository) Save(ctx context.Context, artist *domain.Artist) erro
 
 func (r *artistRepository) Upsert(ctx context.Context, artist *domain.Artist) error {
 	now := time.Now()
+	if artist.CreatedAt.IsZero() {
+		artist.CreatedAt = now
+	}
 	artist.UpdatedAt = now
 
 	query := `

@@ -6,6 +6,10 @@ type TrackRepository interface {
 	GetByID(ctx context.Context, id string) (*TrackDTO, error)
 	GetByPath(ctx context.Context, path string) (*TrackDTO, error)
 	GetByPathPrefix(ctx context.Context, prefix string) ([]*TrackDTO, error)
+	GetByAlbumID(ctx context.Context, albumID string) ([]*TrackDTO, error)
+	GetByArtistID(ctx context.Context, artistID string) ([]*TrackDTO, error)
+	GetByGenreID(ctx context.Context, genreID string) ([]*TrackDTO, error)
+	GetByComposerID(ctx context.Context, composerID string) ([]*TrackDTO, error)
 	GetAll(ctx context.Context) ([]*TrackDTO, error)
 	Save(ctx context.Context, track *Track) error
 	Delete(ctx context.Context, id string) error
@@ -22,6 +26,8 @@ type TrackRepository interface {
 
 type AlbumRepository interface {
 	GetByID(ctx context.Context, id string) (*AlbumDTO, error)
+	GetByArtistID(ctx context.Context, artistID string) ([]*AlbumDTO, error)
+	GetRecentlyAdded(ctx context.Context, limit int) ([]*AlbumDTO, error)
 	GetByNormalizationKey(ctx context.Context, key string) (*Album, error)
 	GetAll(ctx context.Context) ([]*AlbumDTO, error)
 	Save(ctx context.Context, album *Album) error

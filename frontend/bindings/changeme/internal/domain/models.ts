@@ -18,6 +18,7 @@ export class Album {
     "sort_title": string;
     "normalization_key": string;
     "year": number;
+    "copyright": string;
     "artwork_key": string;
     "created_at": time$0.Time;
     "updated_at": time$0.Time;
@@ -38,6 +39,9 @@ export class Album {
         }
         if (!("year" in $$source)) {
             this["year"] = 0;
+        }
+        if (!("copyright" in $$source)) {
+            this["copyright"] = "";
         }
         if (!("artwork_key" in $$source)) {
             this["artwork_key"] = "";
@@ -70,6 +74,7 @@ export class AlbumDTO {
     "sort_title": string;
     "normalization_key": string;
     "year": number;
+    "copyright": string;
     "artwork_key": string;
     "created_at": time$0.Time;
     "updated_at": time$0.Time;
@@ -92,6 +97,9 @@ export class AlbumDTO {
         if (!("year" in $$source)) {
             this["year"] = 0;
         }
+        if (!("copyright" in $$source)) {
+            this["copyright"] = "";
+        }
         if (!("artwork_key" in $$source)) {
             this["artwork_key"] = "";
         }
@@ -109,10 +117,10 @@ export class AlbumDTO {
      * Creates a new AlbumDTO instance from a string or object.
      */
     static createFrom($$source: any = {}): AlbumDTO {
-        const $$createField8_0 = $$createType2;
+        const $$createField9_0 = $$createType2;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("artists" in $$parsedSource) {
-            $$parsedSource["artists"] = $$createField8_0($$parsedSource["artists"]);
+            $$parsedSource["artists"] = $$createField9_0($$parsedSource["artists"]);
         }
         return new AlbumDTO($$parsedSource as Partial<AlbumDTO>);
     }
@@ -285,6 +293,8 @@ export class TrackDTO {
     "raw_album_artist_names": string;
     "raw_genre_names": string;
     "raw_composer_names": string;
+    "copyright": string;
+    "other_metadata": string;
     "file_size": number;
     "mtime": time$0.Time;
     "created_at": time$0.Time;
@@ -354,6 +364,12 @@ export class TrackDTO {
         if (!("raw_composer_names" in $$source)) {
             this["raw_composer_names"] = "";
         }
+        if (!("copyright" in $$source)) {
+            this["copyright"] = "";
+        }
+        if (!("other_metadata" in $$source)) {
+            this["other_metadata"] = "";
+        }
         if (!("file_size" in $$source)) {
             this["file_size"] = 0;
         }
@@ -374,26 +390,26 @@ export class TrackDTO {
      * Creates a new TrackDTO instance from a string or object.
      */
     static createFrom($$source: any = {}): TrackDTO {
-        const $$createField23_0 = $$createType2;
-        const $$createField24_0 = $$createType4;
         const $$createField25_0 = $$createType2;
-        const $$createField26_0 = $$createType7;
-        const $$createField27_0 = $$createType10;
+        const $$createField26_0 = $$createType4;
+        const $$createField27_0 = $$createType2;
+        const $$createField28_0 = $$createType7;
+        const $$createField29_0 = $$createType10;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("artists" in $$parsedSource) {
-            $$parsedSource["artists"] = $$createField23_0($$parsedSource["artists"]);
+            $$parsedSource["artists"] = $$createField25_0($$parsedSource["artists"]);
         }
         if ("album" in $$parsedSource) {
-            $$parsedSource["album"] = $$createField24_0($$parsedSource["album"]);
+            $$parsedSource["album"] = $$createField26_0($$parsedSource["album"]);
         }
         if ("album_artists" in $$parsedSource) {
-            $$parsedSource["album_artists"] = $$createField25_0($$parsedSource["album_artists"]);
+            $$parsedSource["album_artists"] = $$createField27_0($$parsedSource["album_artists"]);
         }
         if ("genres" in $$parsedSource) {
-            $$parsedSource["genres"] = $$createField26_0($$parsedSource["genres"]);
+            $$parsedSource["genres"] = $$createField28_0($$parsedSource["genres"]);
         }
         if ("composers" in $$parsedSource) {
-            $$parsedSource["composers"] = $$createField27_0($$parsedSource["composers"]);
+            $$parsedSource["composers"] = $$createField29_0($$parsedSource["composers"]);
         }
         return new TrackDTO($$parsedSource as Partial<TrackDTO>);
     }

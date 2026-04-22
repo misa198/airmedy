@@ -18,9 +18,21 @@ const routes = [
     component: () => import('../views/AlbumsView.vue')
   },
   {
+    path: '/albums/:id',
+    name: 'album-detail',
+    component: () => import('../views/AlbumDetailView.vue')
+  },
+  {
     path: '/artists',
     name: 'artists',
-    component: () => import('../views/ArtistsView.vue')
+    component: () => import('../views/ArtistsView.vue'),
+    children: [
+      {
+        path: ':id',
+        name: 'artist-detail',
+        component: () => import('../views/ArtistDetailView.vue')
+      }
+    ]
   },
   {
     path: '/tracks',
@@ -30,12 +42,26 @@ const routes = [
   {
     path: '/genres',
     name: 'genres',
-    component: () => import('../views/GenresView.vue')
+    component: () => import('../views/GenresView.vue'),
+    children: [
+      {
+        path: ':id',
+        name: 'genre-detail',
+        component: () => import('../views/GenreDetailView.vue')
+      }
+    ]
   },
   {
     path: '/composers',
     name: 'composers',
-    component: () => import('../views/ComposersView.vue')
+    component: () => import('../views/ComposersView.vue'),
+    children: [
+      {
+        path: ':id',
+        name: 'composer-detail',
+        component: () => import('../views/ComposerDetailView.vue')
+      }
+    ]
   },
   {
     path: '/search',

@@ -50,9 +50,13 @@ This is a greenfield project establishing the entire architecture:
 ### Phase 5: Core UX Views & Virtualization
 - [x] Implement `vue-virtual-scroller` (or similar) for robust performance on large datasets.
 - [x] **Tracks View:** Table format with customizable, reorderable, and sortable columns. Support large/small row options.
-- [ ] **Artist/Genre/Composer Views:** 2-column layout (list on left, details and albums on right).
+- [x] **Artist View:** Standardized 2-column layout (list on left, detail view on right).
 - [x] **Album/Recently Added Views:** Grid layout with covers, titles, and artists.
-- [ ] **Detail Views:** Album details (tracklist, metadata) and Artist details.
+- [x] **Detail Views:** Album details (artwork, tracklist) and Artist details (header, albums grid, tracks).
+- [x] **Deep Linking:** Full parameterized routing for Albums and Artists.
+- [ ] **Genre/Composer Views:** Implement 2-column layout with track listing for selected entity.
+- [x] **Reusable Components:** `TrackTable` and `EntityExplorerLayout`.
+
 
 ### Phase 6: Audio Playback Engine & Player UI
 - [ ] Develop the Go audio playback engine supporting all requested formats and gapless playback if possible.

@@ -27,6 +27,8 @@ func TestSqliteRepositories(t *testing.T) {
 		Path:      "/path/to/test.mp3",
 		Title:     "Test Track",
 		SortTitle: "Test Track",
+		Copyright: "Test Copyright",
+		OtherMetadata: `{"test":"meta"}`,
 		Format:    "mp3",
 		AlbumID:   "",
 	}
@@ -43,6 +45,12 @@ func TestSqliteRepositories(t *testing.T) {
 	if savedTrackDTO.Title != "Test Track" {
 		t.Errorf("Expected title 'Test Track', got '%s'", savedTrackDTO.Title)
 	}
+	if savedTrackDTO.Copyright != "Test Copyright" {
+		t.Errorf("Expected copyright 'Test Copyright', got '%s'", savedTrackDTO.Copyright)
+	}
+	if savedTrackDTO.OtherMetadata != `{"test":"meta"}` {
+		t.Errorf("Expected other_metadata '{\"test\":\"meta\"}', got '%s'", savedTrackDTO.OtherMetadata)
+	}
 
 	// Test Upsert
 	track.Title = "Updated Track"
@@ -54,5 +62,26 @@ func TestSqliteRepositories(t *testing.T) {
 	updatedTrackDTO, _ := trackRepo.GetByID(ctx, "test-1")
 	if updatedTrackDTO.Title != "Updated Track" {
 		t.Errorf("Expected title 'Updated Track', got '%s'", updatedTrackDTO.Title)
+	}
+
+	// Test Album Copyright
+	albumRepo := NewAlbumRepository(db)
+	album := &domain.Album{
+		ID:        "test-album-1",
+		Title:     "Test Album",
+		SortTitle: "Test Album",
+		Copyright: "Album Copyright",
+	}
+	err = albumRepo.Save(ctx, album)
+	if err != nil {
+		t.Fatalf("Failed to save album: %v", err)
+	}
+
+	savedAlbumDTO, err := albumRepo.GetByID(ctx, "test-album-1")
+	if err != nil {
+		t.Fatalf("Failed to get album: %v", err)
+	}
+	if savedAlbumDTO.Copyright != "Album Copyright" {
+		t.Errorf("Expected album copyright 'Album Copyright', got '%s'", savedAlbumDTO.Copyright)
 	}
 }

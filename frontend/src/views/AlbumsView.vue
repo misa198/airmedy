@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import * as LibraryService from '../../bindings/changeme/internal/infra/wails/libraryservice'
 import { Disc, Search, Play, User } from 'lucide-vue-next'
-import type { AlbumDTO } from '../../bindings/changeme/internal/domain/models'
+import type { AlbumDTO, Artist } from '../../bindings/changeme/internal/domain/models'
 
+const router = useRouter()
 const albums = ref<AlbumDTO[]>([])
 const isLoading = ref(true)
 const searchQuery = ref('')
@@ -21,6 +23,14 @@ const loadAlbums = async () => {
   } finally {
     isLoading.value = false
   }
+}
+
+const navigateToAlbum = (id: string) => {
+  router.push(`/albums/${id}`)
+}
+
+const navigateToArtist = (id: string) => {
+  if (id) router.push(`/artists/${id}`)
 }
 
 const filteredAlbums = computed(() => {
@@ -69,6 +79,7 @@ onMounted(loadAlbums)
           v-for="album in filteredAlbums" 
           :key="album.id"
           class="group cursor-pointer"
+          @click="navigateToAlbum(album.id)"
         >
           <div class="aspect-square bg-muted rounded-lg border overflow-hidden relative mb-3 shadow-sm group-hover:shadow-md transition-all">
             <div v-if="album.artwork_key" class="w-full h-full">
@@ -90,11 +101,24 @@ onMounted(loadAlbums)
           </div>
           
           <div class="space-y-1 px-1">
-            <h3 class="font-medium text-sm truncate group-hover:text-primary transition-colors">{{ album.title || 'Unknown Album' }}</h3>
-            <p class="text-xs text-muted-foreground truncate flex items-center gap-1">
-              <User class="w-3 h-3" />
-              {{ album.artists && album.artists.length > 0 ? album.artists.map(a => a?.name).filter(Boolean).join(', ') : 'Unknown Artist' }}
-            </p>
+            <h3 class="font-medium text-sm truncate group-hover:text-primary transition-colors cursor-pointer" @click.stop="navigateToAlbum(album.id)">{{ album.title || 'Unknown Album' }}</h3>
+            <div class="text-xs text-muted-foreground truncate flex items-center gap-1">
+              <User class="w-3 h-3 flex-shrink-0" />
+              <div class="truncate">
+                <template v-if="album.artists && album.artists.length > 0">
+                  <span v-for="(artist, i) in (album.artists.filter(a => !!a) as Artist[])" :key="artist.id || i">
+                    <span 
+                      :class="[artist.id ? 'hover:text-primary cursor-pointer transition-colors' : '']"
+                      @click.stop="artist.id && navigateToArtist(artist.id)"
+                    >
+                      {{ artist.name }}
+                    </span>
+                    <span v-if="i < album.artists.filter(a => !!a).length - 1" class="mr-1">,</span>
+                  </span>
+                </template>
+                <span v-else>Unknown Artist</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

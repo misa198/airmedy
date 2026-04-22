@@ -150,5 +150,31 @@ The Airmedy frontend is built as a Single Page Application (SPA) using Vue 3, Vi
   - **Main Content (Right Panel):** A scrollable area where the `router-view` injects the active page.
   - **Player Footer (Fixed Bottom):** A persistent audio control bar that remains visible across all route transitions.
 
-### 6.3 State Management (Pinia)
-- The shell relies on Pinia stores (e.g., `usePlayerStore`, `useLibraryStore`) to maintain continuous playback state globally, decoupled from the active route.
+---
+
+## 7. Phase 5: Navigation & Entity Exploration Architecture
+
+Phase 5 introduces a robust navigation system and entity exploration UI, focusing on deep linking and reusable layout patterns for large music libraries.
+
+### 7.1 Unified 2-Column Explorer (`EntityExplorerLayout.vue`)
+To handle thousands of artists, genres, or composers, we use a standardized 2-column layout:
+- **Left Column:** A searchable, virtualized list (using `vue-recycle-scroller`) for high-performance browsing of entities.
+- **Right Column:** A detail area (injected via `<slot>` or `<router-view>`) that displays the selected entity's metadata, albums, and tracks.
+- **State Synchronization:** The selection state is synced with the URL via Vue Router, allowing the back/forward buttons to work as expected.
+
+### 7.2 Deep Linking & Parameterized Routing
+The frontend routing was expanded to support direct access to any entity:
+- `/albums/:id`: `AlbumDetailView.vue`
+- `/artists/:id`: `ArtistDetailView.vue` (nested under `/artists`)
+- `/genres/:id`, `/composers/:id`: (Proposed)
+
+### 7.3 Data Transfer Optimization
+To populate these detail views, the backend repositories were extended with targeted retrieval methods:
+- `GetTracksByAlbumID`, `GetTracksByArtistID`, `GetAlbumsByArtistID`, etc.
+- These methods utilize indexed SQL `JOIN`s to return fully-formed DTOs, minimizing the number of asynchronous calls required from the frontend to render a complete detail page.
+
+### 7.4 Reusable Track Table (`TrackTable.vue`)
+The track listing logic from `TracksView.vue` was encapsulated into a reusable component. This component supports:
+- **Virtualization:** Rendering only the visible rows to maintain 60fps performance even in lists with 1,000+ items.
+- **Configurable Columns:** Toggleable artwork, album name, and artist name columns depending on the context (e.g., hiding the album column when viewed inside an album detail page).
+- **Global Playback Hooks:** Centralized logic for triggering playback and queueing.

@@ -23,6 +23,8 @@ type Track struct {
 	RawAlbumArtistNames string    `json:"raw_album_artist_names" db:"raw_album_artist_names"`
 	RawGenreNames       string    `json:"raw_genre_names" db:"raw_genre_names"`
 	RawComposerNames    string    `json:"raw_composer_names" db:"raw_composer_names"`
+	Copyright           string    `json:"copyright" db:"copyright"`
+	OtherMetadata       string    `json:"other_metadata" db:"other_metadata"`
 	FileSize            int64     `json:"file_size" db:"file_size"`
 	Mtime               time.Time `json:"mtime" db:"mtime"`
 	CreatedAt           time.Time `json:"created_at" db:"created_at"`
@@ -46,6 +48,7 @@ type Album struct {
 	SortTitle        string    `json:"sort_title" db:"sort_title"`
 	NormalizationKey string    `json:"normalization_key" db:"normalization_key"`
 	Year             int       `json:"year" db:"year"`
+	Copyright        string    `json:"copyright" db:"copyright"`
 	ArtworkKey       string    `json:"artwork_key" db:"artwork_key"`
 	CreatedAt        time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at" db:"updated_at"`

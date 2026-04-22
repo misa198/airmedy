@@ -63,6 +63,88 @@ func (r *albumRepository) GetByNormalizationKey(ctx context.Context, key string)
 type albumRow struct {
 	domain.Album
 	ArtistNames sql.NullString `db:"artist_names"`
+	ArtistIDs   sql.NullString `db:"artist_ids"`
+}
+
+func (r *albumRepository) GetByArtistID(ctx context.Context, artistID string) ([]*domain.AlbumDTO, error) {
+	query := fmt.Sprintf(`
+		SELECT %s, 
+		  COALESCE(
+		    GROUP_CONCAT(DISTINCT aa_art.name), 
+		    GROUP_CONCAT(DISTINCT t_art.name)
+		  ) AS artist_names,
+		  COALESCE(
+		    GROUP_CONCAT(DISTINCT aa_art.id), 
+		    GROUP_CONCAT(DISTINCT t_art.id)
+		  ) AS artist_ids
+		FROM albums a
+		LEFT JOIN album_artists aa ON a.id = aa.album_id
+		LEFT JOIN artists aa_art ON aa.artist_id = aa_art.id
+		LEFT JOIN tracks t ON a.id = t.album_id
+		LEFT JOIN track_artists ta ON t.id = ta.track_id
+		LEFT JOIN artists t_art ON ta.artist_id = t_art.id
+		WHERE a.id IN (SELECT album_id FROM album_artists WHERE artist_id = ?)
+		   OR a.id IN (SELECT DISTINCT album_id FROM tracks t JOIN track_artists ta ON t.id = ta.track_id WHERE ta.artist_id = ?)
+		GROUP BY a.id
+		ORDER BY a.year DESC, a.sort_title
+	`, albumSelectFields)
+	var rows []albumRow
+	err := r.db.SelectContext(ctx, &rows, query, artistID, artistID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get albums by artist id: %w", err)
+	}
+	return r.scanAlbumRows(rows), nil
+}
+
+func (r *albumRepository) GetRecentlyAdded(ctx context.Context, limit int) ([]*domain.AlbumDTO, error) {
+	query := fmt.Sprintf(`
+		SELECT %s, 
+		  COALESCE(
+		    GROUP_CONCAT(DISTINCT aa_art.name), 
+		    GROUP_CONCAT(DISTINCT t_art.name)
+		  ) AS artist_names,
+		  COALESCE(
+		    GROUP_CONCAT(DISTINCT aa_art.id), 
+		    GROUP_CONCAT(DISTINCT t_art.id)
+		  ) AS artist_ids
+		FROM albums a
+		LEFT JOIN album_artists aa ON a.id = aa.album_id
+		LEFT JOIN artists aa_art ON aa.artist_id = aa_art.id
+		LEFT JOIN tracks t ON a.id = t.album_id
+		LEFT JOIN track_artists ta ON t.id = ta.track_id
+		LEFT JOIN artists t_art ON ta.artist_id = t_art.id
+		GROUP BY a.id
+		ORDER BY a.created_at DESC
+		LIMIT ?
+	`, albumSelectFields)
+	var rows []albumRow
+	err := r.db.SelectContext(ctx, &rows, query, limit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recently added albums: %w", err)
+	}
+	return r.scanAlbumRows(rows), nil
+}
+
+func (r *albumRepository) scanAlbumRows(rows []albumRow) []*domain.AlbumDTO {
+	dtos := make([]*domain.AlbumDTO, len(rows))
+	for i, row := range rows {
+		dtos[i] = &domain.AlbumDTO{Album: row.Album}
+		if row.ArtistNames.Valid && row.ArtistIDs.Valid {
+			names := strings.Split(row.ArtistNames.String, ",")
+			ids := strings.Split(row.ArtistIDs.String, ",")
+			for j, name := range names {
+				name = strings.TrimSpace(name)
+				if name != "" {
+					id := ""
+					if j < len(ids) {
+						id = strings.TrimSpace(ids[j])
+					}
+					dtos[i].Artists = append(dtos[i].Artists, &domain.Artist{ID: id, Name: name})
+				}
+			}
+		}
+	}
+	return dtos
 }
 
 func (r *albumRepository) GetAll(ctx context.Context) ([]*domain.AlbumDTO, error) {
@@ -71,7 +153,11 @@ func (r *albumRepository) GetAll(ctx context.Context) ([]*domain.AlbumDTO, error
 		  COALESCE(
 		    GROUP_CONCAT(DISTINCT aa_art.name), 
 		    GROUP_CONCAT(DISTINCT t_art.name)
-		  ) AS artist_names
+		  ) AS artist_names,
+		  COALESCE(
+		    GROUP_CONCAT(DISTINCT aa_art.id), 
+		    GROUP_CONCAT(DISTINCT t_art.id)
+		  ) AS artist_ids
 		FROM albums a
 		LEFT JOIN album_artists aa ON a.id = aa.album_id
 		LEFT JOIN artists aa_art ON aa.artist_id = aa_art.id
@@ -86,33 +172,21 @@ func (r *albumRepository) GetAll(ctx context.Context) ([]*domain.AlbumDTO, error
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all albums: %w", err)
 	}
-
-	dtos := make([]*domain.AlbumDTO, len(rows))
-	for i, row := range rows {
-		dtos[i] = &domain.AlbumDTO{Album: row.Album}
-		if row.ArtistNames.Valid {
-			names := strings.Split(row.ArtistNames.String, ",")
-			for _, name := range names {
-				name = strings.TrimSpace(name)
-				if name != "" {
-					dtos[i].Artists = append(dtos[i].Artists, &domain.Artist{Name: name})
-				}
-			}
-		}
-	}
-	return dtos, nil
+	return r.scanAlbumRows(rows), nil
 }
 
 func (r *albumRepository) Save(ctx context.Context, album *domain.Album) error {
 	now := time.Now()
-	album.CreatedAt = now
+	if album.CreatedAt.IsZero() {
+		album.CreatedAt = now
+	}
 	album.UpdatedAt = now
 
 	query := `
 		INSERT INTO albums (
-			id, title, sort_title, normalization_key, year, artwork_key, created_at, updated_at
+			id, title, sort_title, normalization_key, year, copyright, artwork_key, created_at, updated_at
 		) VALUES (
-			:id, :title, :sort_title, :normalization_key, :year, :artwork_key, :created_at, :updated_at
+			:id, :title, :sort_title, :normalization_key, :year, :copyright, :artwork_key, :created_at, :updated_at
 		)`
 
 	_, err := r.db.NamedExecContext(ctx, query, album)
@@ -124,18 +198,22 @@ func (r *albumRepository) Save(ctx context.Context, album *domain.Album) error {
 
 func (r *albumRepository) Upsert(ctx context.Context, album *domain.Album) error {
 	now := time.Now()
+	if album.CreatedAt.IsZero() {
+		album.CreatedAt = now
+	}
 	album.UpdatedAt = now
 
 	query := `
 		INSERT INTO albums (
-			id, title, sort_title, normalization_key, year, artwork_key, created_at, updated_at
+			id, title, sort_title, normalization_key, year, copyright, artwork_key, created_at, updated_at
 		) VALUES (
-			:id, :title, :sort_title, :normalization_key, :year, :artwork_key, :created_at, :updated_at
+			:id, :title, :sort_title, :normalization_key, :year, :copyright, :artwork_key, :created_at, :updated_at
 		) ON CONFLICT(id) DO UPDATE SET
 			title = excluded.title,
 			sort_title = excluded.sort_title,
 			normalization_key = excluded.normalization_key,
 			year = excluded.year,
+			copyright = excluded.copyright,
 			artwork_key = excluded.artwork_key,
 			updated_at = excluded.updated_at
 	`

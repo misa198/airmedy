@@ -2,6 +2,7 @@ package metadata
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"strconv"
@@ -35,6 +36,11 @@ func (e *taglibExtractor) Extract(ctx context.Context, path string) (*domain.Tra
 			Format: strings.TrimPrefix(filepath.Ext(path), "."),
 		},
 		Album: &domain.Album{},
+	}
+
+	// Capture all metadata as JSON for migration/fallback
+	if metadataJSON, err := json.Marshal(tags); err == nil {
+		dto.Track.OtherMetadata = string(metadataJSON)
 	}
 
 	// Raw values for display
@@ -87,6 +93,9 @@ func (e *taglibExtractor) Extract(ctx context.Context, path string) (*domain.Tra
 	if dto.Track.SortTitle == "" {
 		dto.Track.SortTitle = domain.NormalizeSort(dto.Track.Title)
 	}
+
+	dto.Track.Copyright = firstTag(tags, "COPYRIGHT", "TCOP", "cprt", "©cpr")
+	dto.Album.Copyright = dto.Track.Copyright
 
 	dto.Album.Title = firstTag(tags, "ALBUM")
 	dto.Album.SortTitle = firstTag(tags, "ALBUMSORT", "TSOA", "soal")

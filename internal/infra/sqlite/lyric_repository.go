@@ -32,7 +32,9 @@ func (r *lyricRepository) GetByTrackID(ctx context.Context, trackID string) (*do
 
 func (r *lyricRepository) Save(ctx context.Context, l *domain.Lyric) error {
 	now := time.Now()
-	l.CreatedAt = now
+	if l.CreatedAt.IsZero() {
+		l.CreatedAt = now
+	}
 	l.UpdatedAt = now
 
 	_, err := r.db.NamedExecContext(ctx, "INSERT INTO lyrics (track_id, content, source, created_at, updated_at) VALUES (:track_id, :content, :source, :created_at, :updated_at)", l)
@@ -44,6 +46,9 @@ func (r *lyricRepository) Save(ctx context.Context, l *domain.Lyric) error {
 
 func (r *lyricRepository) Upsert(ctx context.Context, l *domain.Lyric) error {
 	now := time.Now()
+	if l.CreatedAt.IsZero() {
+		l.CreatedAt = now
+	}
 	l.UpdatedAt = now
 
 	query := `
