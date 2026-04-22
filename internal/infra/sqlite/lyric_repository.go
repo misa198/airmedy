@@ -19,7 +19,8 @@ func NewLyricRepository(db *DB) domain.LyricRepository {
 
 func (r *lyricRepository) GetByTrackID(ctx context.Context, trackID string) (*domain.Lyric, error) {
 	var l domain.Lyric
-	err := r.db.GetContext(ctx, &l, "SELECT * FROM lyrics WHERE track_id = ?", trackID)
+	query := fmt.Sprintf("SELECT %s FROM lyrics WHERE track_id = ?", lyricSelectFields)
+	err := r.db.GetContext(ctx, &l, query, trackID)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}

@@ -40,6 +40,18 @@ func (r *composerRepository) GetByName(ctx context.Context, name string) (*domai
 	return &c, nil
 }
 
+func (r *composerRepository) GetByNormalizationKey(ctx context.Context, key string) (*domain.Composer, error) {
+	var c domain.Composer
+	err := r.db.GetContext(ctx, &c, "SELECT * FROM composers WHERE normalization_key = ?", key)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get composer by normalization key: %w", err)
+	}
+	return &c, nil
+}
+
 func (r *composerRepository) GetAll(ctx context.Context) ([]*domain.Composer, error) {
 	var composers []*domain.Composer
 	err := r.db.SelectContext(ctx, &composers, "SELECT * FROM composers ORDER BY name")
@@ -50,7 +62,7 @@ func (r *composerRepository) GetAll(ctx context.Context) ([]*domain.Composer, er
 }
 
 func (r *composerRepository) Save(ctx context.Context, c *domain.Composer) error {
-	_, err := r.db.NamedExecContext(ctx, "INSERT INTO composers (id, name) VALUES (:id, :name)", c)
+	_, err := r.db.NamedExecContext(ctx, "INSERT INTO composers (id, name, normalization_key) VALUES (:id, :name, :normalization_key)", c)
 	if err != nil {
 		return fmt.Errorf("failed to save composer: %w", err)
 	}
@@ -58,9 +70,24 @@ func (r *composerRepository) Save(ctx context.Context, c *domain.Composer) error
 }
 
 func (r *composerRepository) Upsert(ctx context.Context, c *domain.Composer) error {
-	_, err := r.db.NamedExecContext(ctx, "INSERT INTO composers (id, name) VALUES (:id, :name) ON CONFLICT(name) DO UPDATE SET id = id", c)
+	query := `
+		INSERT INTO composers (id, name, normalization_key) 
+		VALUES (:id, :name, :normalization_key) 
+		ON CONFLICT(id) DO UPDATE SET 
+			normalization_key = excluded.normalization_key
+	`
+	_, err := r.db.NamedExecContext(ctx, query, c)
 	if err != nil {
 		return fmt.Errorf("failed to upsert composer: %w", err)
+	}
+	return nil
+}
+
+func (r *composerRepository) DeleteOrphaned(ctx context.Context) error {
+	query := `DELETE FROM composers WHERE id NOT IN (SELECT composer_id FROM track_composers)`
+	_, err := r.db.ExecContext(ctx, query)
+	if err != nil {
+		return fmt.Errorf("failed to delete orphaned composers: %w", err)
 	}
 	return nil
 }

@@ -51,3 +51,26 @@ func (c *diskArtworkCache) Exists(key string) bool {
 	_, err := os.Stat(filepath.Join(c.basePath, key))
 	return err == nil
 }
+
+func (c *diskArtworkCache) CleanupOrphaned(ctx context.Context, activeKeys map[string]bool) error {
+	files, err := ioutil.ReadDir(c.basePath)
+	if err != nil {
+		return fmt.Errorf("failed to read artwork cache directory: %w", err)
+	}
+
+	for _, f := range files {
+		if f.IsDir() {
+			continue
+		}
+
+		if !activeKeys[f.Name()] {
+			filePath := filepath.Join(c.basePath, f.Name())
+			if err := os.Remove(filePath); err != nil {
+				// We don't want to fail the whole cleanup if one file fails to delete
+				continue
+			}
+		}
+	}
+
+	return nil
+}

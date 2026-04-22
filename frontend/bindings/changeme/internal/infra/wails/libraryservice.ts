@@ -13,9 +13,45 @@ export function AddFolder(path: string): $CancellablePromise<void> {
     return $Call.ByID(2789466282, path);
 }
 
+export function GetAllAlbums(): $CancellablePromise<(domain$0.AlbumDTO | null)[]> {
+    return $Call.ByID(2644391788).then(($result: any) => {
+        return $$createType2($result);
+    });
+}
+
+export function GetAllArtists(): $CancellablePromise<(domain$0.Artist | null)[]> {
+    return $Call.ByID(2362731224).then(($result: any) => {
+        return $$createType5($result);
+    });
+}
+
+export function GetAllComposers(): $CancellablePromise<(domain$0.Composer | null)[]> {
+    return $Call.ByID(461477571).then(($result: any) => {
+        return $$createType8($result);
+    });
+}
+
+export function GetAllGenres(): $CancellablePromise<(domain$0.Genre | null)[]> {
+    return $Call.ByID(243062740).then(($result: any) => {
+        return $$createType11($result);
+    });
+}
+
+export function GetAllTracks(): $CancellablePromise<(domain$0.TrackDTO | null)[]> {
+    return $Call.ByID(310167268).then(($result: any) => {
+        return $$createType14($result);
+    });
+}
+
+export function GetSyncStatus(): $CancellablePromise<domain$0.SyncProgress | null> {
+    return $Call.ByID(618214912).then(($result: any) => {
+        return $$createType16($result);
+    });
+}
+
 export function GetWatchedFolders(): $CancellablePromise<(domain$0.WatchedFolder | null)[]> {
     return $Call.ByID(265880194).then(($result: any) => {
-        return $$createType2($result);
+        return $$createType19($result);
     });
 }
 
@@ -27,7 +63,28 @@ export function SelectFolder(): $CancellablePromise<string> {
     return $Call.ByID(1031094819);
 }
 
+export function SyncAll(): $CancellablePromise<void> {
+    return $Call.ByID(3735902819);
+}
+
 // Private type creation functions
-const $$createType0 = domain$0.WatchedFolder.createFrom;
+const $$createType0 = domain$0.AlbumDTO.createFrom;
 const $$createType1 = $Create.Nullable($$createType0);
 const $$createType2 = $Create.Array($$createType1);
+const $$createType3 = domain$0.Artist.createFrom;
+const $$createType4 = $Create.Nullable($$createType3);
+const $$createType5 = $Create.Array($$createType4);
+const $$createType6 = domain$0.Composer.createFrom;
+const $$createType7 = $Create.Nullable($$createType6);
+const $$createType8 = $Create.Array($$createType7);
+const $$createType9 = domain$0.Genre.createFrom;
+const $$createType10 = $Create.Nullable($$createType9);
+const $$createType11 = $Create.Array($$createType10);
+const $$createType12 = domain$0.TrackDTO.createFrom;
+const $$createType13 = $Create.Nullable($$createType12);
+const $$createType14 = $Create.Array($$createType13);
+const $$createType15 = domain$0.SyncProgress.createFrom;
+const $$createType16 = $Create.Nullable($$createType15);
+const $$createType17 = domain$0.WatchedFolder.createFrom;
+const $$createType18 = $Create.Nullable($$createType17);
+const $$createType19 = $Create.Array($$createType18);

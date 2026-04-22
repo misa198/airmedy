@@ -26,6 +26,11 @@ func NewDB(dbPath string, logger *slog.Logger) (*DB, error) {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
+	// Enable foreign keys
+	if _, err := db.Exec("PRAGMA foreign_keys = ON;"); err != nil {
+		return nil, fmt.Errorf("failed to enable foreign keys: %w", err)
+	}
+
 	if err := runMigrations(db, logger); err != nil {
 		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}

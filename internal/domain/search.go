@@ -9,8 +9,8 @@ type SearchResult struct {
 }
 
 type SearchService interface {
-	IndexTrack(ctx context.Context, track *Track) error
-	IndexAlbum(ctx context.Context, album *Album) error
+	IndexTrack(ctx context.Context, track *TrackDTO) error
+	IndexAlbum(ctx context.Context, album *AlbumDTO) error
 	IndexArtist(ctx context.Context, artist *Artist) error
 	Search(ctx context.Context, query string) ([]SearchResult, error)
 	DeleteFromIndex(ctx context.Context, id string) error

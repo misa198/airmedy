@@ -55,7 +55,8 @@ Airmedy follows a clean, modular architecture. For a comprehensive overview of t
 
 1. **Development Roadmap:** Refer to [PLAN.md](./PLAN.md) for the current project status and upcoming features.
 2. **Project Mandates:** See [GEMINI.md](./GEMINI.md) for technical standards and development guidelines.
-3. **Design System:** Check [THEME.md](./THEME.md) for information on styling and palettes.
-4. **Development:** Use `wails3 dev` to start the application with hot-reloading.
+3. **Technical Architecture:** Review [TECHDOC.md](./TECHDOC.md) for an exhaustive look into DB schemas and metadata logic.
+4. **Design System & Layout:** Check [THEME.md](./THEME.md) for styling and [Wireframe.md](./Wireframe.md) for user flow diagrams.
+5. **Development:** Use `wails3 dev` to start the application with hot-reloading.
 
 Happy coding with Wails3! If you encounter any issues or have questions, don't hesitate to consult the documentation or reach out to the Wails community.

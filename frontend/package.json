@@ -19,7 +19,10 @@
     "radix-vue": "^1.9.17",
     "tailwind-merge": "^3.5.0",
     "vue": "^3.2.45",
-    "vue-i18n": "^11.3.2"
+    "vue-i18n": "^11.3.2",
+    "vue-resizable-panels": "^0.0.1",
+    "vue-router": "^4.6.4",
+    "vue-virtual-scroller": "2.0.0-beta.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.4",

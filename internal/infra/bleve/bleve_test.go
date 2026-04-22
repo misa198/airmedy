@@ -19,11 +19,17 @@ func TestBleveSearchService(t *testing.T) {
 	defer service.Close()
 
 	ctx := context.Background()
-	track := &domain.Track{
-		ID:         "track-1",
-		Title:      "Bohemian Rhapsody",
-		ArtistName: "Queen",
-		AlbumName:  "A Night at the Opera",
+	track := &domain.TrackDTO{
+		Track: domain.Track{
+			ID:    "track-1",
+			Title: "Bohemian Rhapsody",
+		},
+		Artists: []*domain.Artist{
+			{Name: "Queen"},
+		},
+		Album: &domain.Album{
+			Title: "A Night at the Opera",
+		},
 	}
 
 	err = service.IndexTrack(ctx, track)

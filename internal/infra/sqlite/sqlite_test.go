@@ -23,13 +23,12 @@ func TestSqliteRepositories(t *testing.T) {
 	trackRepo := NewTrackRepository(db)
 
 	track := &domain.Track{
-		ID:             "test-1",
-		Path:           "/path/to/test.mp3",
-		Title:          "Test Track",
-		SortTitle:      "Test Track",
-		ArtistName:     "Test Artist",
-		SortArtistName: "Test Artist",
-		Format:         "mp3",
+		ID:        "test-1",
+		Path:      "/path/to/test.mp3",
+		Title:     "Test Track",
+		SortTitle: "Test Track",
+		Format:    "mp3",
+		AlbumID:   "",
 	}
 
 	err = trackRepo.Save(ctx, track)
@@ -37,12 +36,12 @@ func TestSqliteRepositories(t *testing.T) {
 		t.Fatalf("Failed to save track: %v", err)
 	}
 
-	savedTrack, err := trackRepo.GetByID(ctx, "test-1")
+	savedTrackDTO, err := trackRepo.GetByID(ctx, "test-1")
 	if err != nil {
 		t.Fatalf("Failed to get track: %v", err)
 	}
-	if savedTrack.Title != "Test Track" {
-		t.Errorf("Expected title 'Test Track', got '%s'", savedTrack.Title)
+	if savedTrackDTO.Title != "Test Track" {
+		t.Errorf("Expected title 'Test Track', got '%s'", savedTrackDTO.Title)
 	}
 
 	// Test Upsert
@@ -52,8 +51,8 @@ func TestSqliteRepositories(t *testing.T) {
 		t.Fatalf("Failed to upsert track: %v", err)
 	}
 
-	updatedTrack, _ := trackRepo.GetByID(ctx, "test-1")
-	if updatedTrack.Title != "Updated Track" {
-		t.Errorf("Expected title 'Updated Track', got '%s'", updatedTrack.Title)
+	updatedTrackDTO, _ := trackRepo.GetByID(ctx, "test-1")
+	if updatedTrackDTO.Title != "Updated Track" {
+		t.Errorf("Expected title 'Updated Track', got '%s'", updatedTrackDTO.Title)
 	}
 }

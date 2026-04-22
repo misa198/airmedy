@@ -30,30 +30,33 @@ To facilitate UI rendering without multiple network round-trips or complex clien
 
 ### 2.2 SQL Tables & Relationships
 
-**`artists`**
+**`artists`**, **`genres`**, **`composers`**
 - `id` (TEXT PRIMARY KEY)
 - `name` (TEXT NOT NULL)
-- `sort_name` (TEXT NOT NULL)
+- `sort_name` (TEXT NOT NULL) - *Artists only*
+- `normalization_key` (TEXT) - Stripped lowercase key used for deduplication.
 - `created_at`, `updated_at` (DATETIME)
 
 **`albums`**
 - `id` (TEXT PRIMARY KEY)
 - `title` (TEXT NOT NULL), `sort_title` (TEXT NOT NULL)
-- `artist_id` (TEXT) -> `FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE SET NULL`
+- `normalization_key` (TEXT)
+- `artist_id` (TEXT) -> Primary Album Artist.
 - `year` (INTEGER), `artwork_key` (TEXT)
 - `created_at`, `updated_at` (DATETIME)
-
-**`genres`** & **`composers`**
-- `id` (TEXT PRIMARY KEY), `name` (TEXT NOT NULL UNIQUE)
 
 **`tracks`** (The central entity)
 - `id` (TEXT PRIMARY KEY)
 - `path` (TEXT NOT NULL UNIQUE)
 - `title`, `sort_title` (TEXT)
-- **Relationships:**
-    - `artist_id`, `album_id`, `genre_id`, `composer_id` -> All `ON DELETE SET NULL`.
-- **Metadata fields:** `year`, `track_number`, `total_tracks`, `disc_number`, `total_discs`, `duration` (seconds), `bitrate`, `sample_rate`, `format`, `artwork_key`.
+- `album_id` (TEXT) -> `FOREIGN KEY (album_id) REFERENCES albums(id) ON DELETE SET NULL`
+- **Metadata fields:** `year`, `track_number`, `total_tracks`, `disc_number`, `total_discs`, `duration` (seconds), `bitrate`, `sample_rate`, `format`, `artwork_key`, `file_size`, `mtime`.
+- **Raw tags:** `raw_artist_names`, `raw_album_artist_names`, `raw_genre_names`, `raw_composer_names` to retain original string values.
 - `created_at`, `updated_at` (DATETIME)
+
+**Junction Tables (Many-to-Many Relationships)**
+- `track_artists`, `track_album_artists`, `track_genres`, `track_composers`, `album_artists`: 
+  Map entities together, tracking the `position` of each relation to preserve the original tag ordering.
 
 ### 2.3 Query Logic & Optimized JOINs
 All retrieval operations in `track_repository.go` and `album_repository.go` utilize SQL `LEFT JOIN`s to populate DTOs in a single query. Indexes are maintained on all foreign keys (`artist_id`, `album_id`, etc.) to ensure sub-millisecond join performance even with 10,000+ tracks.

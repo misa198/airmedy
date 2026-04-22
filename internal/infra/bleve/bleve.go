@@ -46,15 +46,19 @@ func buildIndexMapping() mapping.IndexMapping {
 	artistFieldMapping := bleve.NewTextFieldMapping()
 	artistFieldMapping.Analyzer = "en"
 	trackMapping.AddFieldMappingsAt("artist_name", artistFieldMapping)
+	trackMapping.AddFieldMappingsAt("artist_names", artistFieldMapping)
 
 	albumFieldMapping := bleve.NewTextFieldMapping()
 	albumFieldMapping.Analyzer = "en"
 	trackMapping.AddFieldMappingsAt("album_name", albumFieldMapping)
 
+	trackMapping.AddFieldMappingsAt("genres", artistFieldMapping)
+
 	// Album mapping
 	albumDocMapping := bleve.NewDocumentMapping()
 	albumDocMapping.AddFieldMappingsAt("title", titleFieldMapping)
 	albumDocMapping.AddFieldMappingsAt("artist_name", artistFieldMapping)
+	albumDocMapping.AddFieldMappingsAt("artist_names", artistFieldMapping)
 
 	// Artist mapping
 	artistDocMapping := bleve.NewDocumentMapping()
@@ -68,25 +72,54 @@ func buildIndexMapping() mapping.IndexMapping {
 	return indexMapping
 }
 
-func (s *bleveSearchService) IndexTrack(ctx context.Context, track *domain.Track) error {
+func (s *bleveSearchService) IndexTrack(ctx context.Context, track *domain.TrackDTO) error {
 	doc := map[string]interface{}{
-		"id":          track.ID,
-		"type":        "track",
-		"title":       track.Title,
-		"artist_name": track.ArtistName,
-		"album_name":  track.AlbumName,
+		"id":    track.Track.ID,
+		"type":  "track",
+		"title": track.Track.Title,
 	}
-	return s.index.Index(track.ID, doc)
+
+	var artistNames []string
+	for _, a := range track.Artists {
+		artistNames = append(artistNames, a.Name)
+	}
+	if len(artistNames) > 0 {
+		doc["artist_names"] = artistNames
+		doc["artist_name"] = artistNames[0] // fallback for old queries
+	}
+
+	if track.Album != nil {
+		doc["album_name"] = track.Album.Title
+	}
+
+	var genreNames []string
+	for _, g := range track.Genres {
+		genreNames = append(genreNames, g.Name)
+	}
+	if len(genreNames) > 0 {
+		doc["genres"] = genreNames
+	}
+
+	return s.index.Index(track.Track.ID, doc)
 }
 
-func (s *bleveSearchService) IndexAlbum(ctx context.Context, album *domain.Album) error {
+func (s *bleveSearchService) IndexAlbum(ctx context.Context, album *domain.AlbumDTO) error {
 	doc := map[string]interface{}{
-		"id":          album.ID,
-		"type":        "album",
-		"title":       album.Title,
-		"artist_name": album.ArtistName,
+		"id":    album.Album.ID,
+		"type":  "album",
+		"title": album.Album.Title,
 	}
-	return s.index.Index(album.ID, doc)
+
+	var artistNames []string
+	for _, a := range album.Artists {
+		artistNames = append(artistNames, a.Name)
+	}
+	if len(artistNames) > 0 {
+		doc["artist_names"] = artistNames
+		doc["artist_name"] = artistNames[0]
+	}
+
+	return s.index.Index(album.Album.ID, doc)
 }
 
 func (s *bleveSearchService) IndexArtist(ctx context.Context, artist *domain.Artist) error {

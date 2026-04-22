@@ -19,7 +19,8 @@ func NewPlaylistRepository(db *DB) domain.PlaylistRepository {
 
 func (r *playlistRepository) GetByID(ctx context.Context, id string) (*domain.Playlist, error) {
 	var p domain.Playlist
-	err := r.db.GetContext(ctx, &p, "SELECT * FROM playlists WHERE id = ?", id)
+	query := fmt.Sprintf("SELECT %s FROM playlists WHERE id = ?", playlistSelectFields)
+	err := r.db.GetContext(ctx, &p, query, id)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -31,7 +32,8 @@ func (r *playlistRepository) GetByID(ctx context.Context, id string) (*domain.Pl
 
 func (r *playlistRepository) GetAll(ctx context.Context) ([]*domain.Playlist, error) {
 	var playlists []*domain.Playlist
-	err := r.db.SelectContext(ctx, &playlists, "SELECT * FROM playlists ORDER BY name")
+	query := fmt.Sprintf("SELECT %s FROM playlists ORDER BY name", playlistSelectFields)
+	err := r.db.SelectContext(ctx, &playlists, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all playlists: %w", err)
 	}
@@ -74,16 +76,25 @@ func (r *playlistRepository) RemoveTrack(ctx context.Context, playlistID, trackI
 	return nil
 }
 
-func (r *playlistRepository) GetTracks(ctx context.Context, playlistID string) ([]*domain.Track, error) {
-	var tracks []*domain.Track
-	query := `
-		SELECT t.* FROM tracks t
+func (r *playlistRepository) GetTracks(ctx context.Context, playlistID string) ([]*domain.TrackDTO, error) {
+	query := fmt.Sprintf(`
+		SELECT %s FROM tracks t
 		JOIN playlist_tracks pt ON t.id = pt.track_id
 		WHERE pt.playlist_id = ?
-		ORDER BY pt.position`
+		ORDER BY pt.position`, trackSelectFields)
+	
+	var tracks []domain.Track
 	err := r.db.SelectContext(ctx, &tracks, query, playlistID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get playlist tracks: %w", err)
 	}
-	return tracks, nil
+
+	tr := &trackRepository{db: r.db}
+	dtos := make([]*domain.TrackDTO, len(tracks))
+	for i, track := range tracks {
+		dto := &domain.TrackDTO{Track: track}
+		tr.populateRelationships(ctx, dto)
+		dtos[i] = dto
+	}
+	return dtos, nil
 }

@@ -10,6 +10,396 @@ import { Create as $Create } from "@wailsio/runtime";
 import * as time$0 from "../../../time/models.js";
 
 /**
+ * Album represents a music album
+ */
+export class Album {
+    "id": string;
+    "title": string;
+    "sort_title": string;
+    "normalization_key": string;
+    "year": number;
+    "artwork_key": string;
+    "created_at": time$0.Time;
+    "updated_at": time$0.Time;
+
+    /** Creates a new Album instance. */
+    constructor($$source: Partial<Album> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("title" in $$source)) {
+            this["title"] = "";
+        }
+        if (!("sort_title" in $$source)) {
+            this["sort_title"] = "";
+        }
+        if (!("normalization_key" in $$source)) {
+            this["normalization_key"] = "";
+        }
+        if (!("year" in $$source)) {
+            this["year"] = 0;
+        }
+        if (!("artwork_key" in $$source)) {
+            this["artwork_key"] = "";
+        }
+        if (!("created_at" in $$source)) {
+            this["created_at"] = null;
+        }
+        if (!("updated_at" in $$source)) {
+            this["updated_at"] = null;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Album instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Album {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new Album($$parsedSource as Partial<Album>);
+    }
+}
+
+/**
+ * AlbumDTO represents an album with its related entities populated for the frontend
+ */
+export class AlbumDTO {
+    "id": string;
+    "title": string;
+    "sort_title": string;
+    "normalization_key": string;
+    "year": number;
+    "artwork_key": string;
+    "created_at": time$0.Time;
+    "updated_at": time$0.Time;
+    "artists"?: (Artist | null)[];
+
+    /** Creates a new AlbumDTO instance. */
+    constructor($$source: Partial<AlbumDTO> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("title" in $$source)) {
+            this["title"] = "";
+        }
+        if (!("sort_title" in $$source)) {
+            this["sort_title"] = "";
+        }
+        if (!("normalization_key" in $$source)) {
+            this["normalization_key"] = "";
+        }
+        if (!("year" in $$source)) {
+            this["year"] = 0;
+        }
+        if (!("artwork_key" in $$source)) {
+            this["artwork_key"] = "";
+        }
+        if (!("created_at" in $$source)) {
+            this["created_at"] = null;
+        }
+        if (!("updated_at" in $$source)) {
+            this["updated_at"] = null;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new AlbumDTO instance from a string or object.
+     */
+    static createFrom($$source: any = {}): AlbumDTO {
+        const $$createField8_0 = $$createType2;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("artists" in $$parsedSource) {
+            $$parsedSource["artists"] = $$createField8_0($$parsedSource["artists"]);
+        }
+        return new AlbumDTO($$parsedSource as Partial<AlbumDTO>);
+    }
+}
+
+/**
+ * Artist represents a music artist
+ */
+export class Artist {
+    "id": string;
+    "name": string;
+    "sort_name": string;
+    "normalization_key": string;
+    "created_at": time$0.Time;
+    "updated_at": time$0.Time;
+
+    /** Creates a new Artist instance. */
+    constructor($$source: Partial<Artist> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("sort_name" in $$source)) {
+            this["sort_name"] = "";
+        }
+        if (!("normalization_key" in $$source)) {
+            this["normalization_key"] = "";
+        }
+        if (!("created_at" in $$source)) {
+            this["created_at"] = null;
+        }
+        if (!("updated_at" in $$source)) {
+            this["updated_at"] = null;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Artist instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Artist {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new Artist($$parsedSource as Partial<Artist>);
+    }
+}
+
+/**
+ * Composer represents a music composer
+ */
+export class Composer {
+    "id": string;
+    "name": string;
+    "normalization_key": string;
+
+    /** Creates a new Composer instance. */
+    constructor($$source: Partial<Composer> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("normalization_key" in $$source)) {
+            this["normalization_key"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Composer instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Composer {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new Composer($$parsedSource as Partial<Composer>);
+    }
+}
+
+/**
+ * Genre represents a music genre
+ */
+export class Genre {
+    "id": string;
+    "name": string;
+    "normalization_key": string;
+
+    /** Creates a new Genre instance. */
+    constructor($$source: Partial<Genre> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("normalization_key" in $$source)) {
+            this["normalization_key"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Genre instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Genre {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new Genre($$parsedSource as Partial<Genre>);
+    }
+}
+
+/**
+ * SyncProgress represents the current progress of a library sync
+ */
+export class SyncProgress {
+    "current": number;
+    "total": number;
+    "path": string;
+
+    /** Creates a new SyncProgress instance. */
+    constructor($$source: Partial<SyncProgress> = {}) {
+        if (!("current" in $$source)) {
+            this["current"] = 0;
+        }
+        if (!("total" in $$source)) {
+            this["total"] = 0;
+        }
+        if (!("path" in $$source)) {
+            this["path"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new SyncProgress instance from a string or object.
+     */
+    static createFrom($$source: any = {}): SyncProgress {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new SyncProgress($$parsedSource as Partial<SyncProgress>);
+    }
+}
+
+/**
+ * TrackDTO represents a track with its related entities populated for the frontend
+ */
+export class TrackDTO {
+    "id": string;
+    "path": string;
+    "title": string;
+    "sort_title": string;
+    "album_id": string;
+    "year": number;
+    "track_number": number;
+    "total_tracks": number;
+    "disc_number": number;
+    "total_discs": number;
+
+    /**
+     * in seconds
+     */
+    "duration": number;
+    "bitrate": number;
+    "sample_rate": number;
+    "format": string;
+    "artwork_key": string;
+    "raw_artist_names": string;
+    "raw_album_artist_names": string;
+    "raw_genre_names": string;
+    "raw_composer_names": string;
+    "file_size": number;
+    "mtime": time$0.Time;
+    "created_at": time$0.Time;
+    "updated_at": time$0.Time;
+    "artists"?: (Artist | null)[];
+    "album"?: Album | null;
+    "album_artists"?: (Artist | null)[];
+    "genres"?: (Genre | null)[];
+    "composers"?: (Composer | null)[];
+
+    /** Creates a new TrackDTO instance. */
+    constructor($$source: Partial<TrackDTO> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("path" in $$source)) {
+            this["path"] = "";
+        }
+        if (!("title" in $$source)) {
+            this["title"] = "";
+        }
+        if (!("sort_title" in $$source)) {
+            this["sort_title"] = "";
+        }
+        if (!("album_id" in $$source)) {
+            this["album_id"] = "";
+        }
+        if (!("year" in $$source)) {
+            this["year"] = 0;
+        }
+        if (!("track_number" in $$source)) {
+            this["track_number"] = 0;
+        }
+        if (!("total_tracks" in $$source)) {
+            this["total_tracks"] = 0;
+        }
+        if (!("disc_number" in $$source)) {
+            this["disc_number"] = 0;
+        }
+        if (!("total_discs" in $$source)) {
+            this["total_discs"] = 0;
+        }
+        if (!("duration" in $$source)) {
+            this["duration"] = 0;
+        }
+        if (!("bitrate" in $$source)) {
+            this["bitrate"] = 0;
+        }
+        if (!("sample_rate" in $$source)) {
+            this["sample_rate"] = 0;
+        }
+        if (!("format" in $$source)) {
+            this["format"] = "";
+        }
+        if (!("artwork_key" in $$source)) {
+            this["artwork_key"] = "";
+        }
+        if (!("raw_artist_names" in $$source)) {
+            this["raw_artist_names"] = "";
+        }
+        if (!("raw_album_artist_names" in $$source)) {
+            this["raw_album_artist_names"] = "";
+        }
+        if (!("raw_genre_names" in $$source)) {
+            this["raw_genre_names"] = "";
+        }
+        if (!("raw_composer_names" in $$source)) {
+            this["raw_composer_names"] = "";
+        }
+        if (!("file_size" in $$source)) {
+            this["file_size"] = 0;
+        }
+        if (!("mtime" in $$source)) {
+            this["mtime"] = null;
+        }
+        if (!("created_at" in $$source)) {
+            this["created_at"] = null;
+        }
+        if (!("updated_at" in $$source)) {
+            this["updated_at"] = null;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new TrackDTO instance from a string or object.
+     */
+    static createFrom($$source: any = {}): TrackDTO {
+        const $$createField23_0 = $$createType2;
+        const $$createField24_0 = $$createType4;
+        const $$createField25_0 = $$createType2;
+        const $$createField26_0 = $$createType7;
+        const $$createField27_0 = $$createType10;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("artists" in $$parsedSource) {
+            $$parsedSource["artists"] = $$createField23_0($$parsedSource["artists"]);
+        }
+        if ("album" in $$parsedSource) {
+            $$parsedSource["album"] = $$createField24_0($$parsedSource["album"]);
+        }
+        if ("album_artists" in $$parsedSource) {
+            $$parsedSource["album_artists"] = $$createField25_0($$parsedSource["album_artists"]);
+        }
+        if ("genres" in $$parsedSource) {
+            $$parsedSource["genres"] = $$createField26_0($$parsedSource["genres"]);
+        }
+        if ("composers" in $$parsedSource) {
+            $$parsedSource["composers"] = $$createField27_0($$parsedSource["composers"]);
+        }
+        return new TrackDTO($$parsedSource as Partial<TrackDTO>);
+    }
+}
+
+/**
  * WatchedFolder represents a directory being watched for music files
  */
 export class WatchedFolder {
@@ -40,3 +430,16 @@ export class WatchedFolder {
         return new WatchedFolder($$parsedSource as Partial<WatchedFolder>);
     }
 }
+
+// Private type creation functions
+const $$createType0 = Artist.createFrom;
+const $$createType1 = $Create.Nullable($$createType0);
+const $$createType2 = $Create.Array($$createType1);
+const $$createType3 = Album.createFrom;
+const $$createType4 = $Create.Nullable($$createType3);
+const $$createType5 = Genre.createFrom;
+const $$createType6 = $Create.Nullable($$createType5);
+const $$createType7 = $Create.Array($$createType6);
+const $$createType8 = Composer.createFrom;
+const $$createType9 = $Create.Nullable($$createType8);
+const $$createType10 = $Create.Array($$createType9);

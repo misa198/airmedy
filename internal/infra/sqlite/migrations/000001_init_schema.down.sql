@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS watched_folders;
 DROP TABLE IF EXISTS lyrics;
 DROP TABLE IF EXISTS playlist_tracks;
 DROP TABLE IF EXISTS playlists;

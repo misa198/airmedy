@@ -8,7 +8,9 @@ This document provides an overview of the project's directory structure and the 
 - `PLAN.md`: Development roadmap and current status of project phases.
 - `GEMINI.md`: Project mandates and technical standards for AI interactions.
 - `Taskfile.yml`: Task runner configuration for common development operations.
+- `TECHDOC.md`: Comprehensive technical architecture and database documentation.
 - `THEME.md`: Documentation for the application's design system and theming.
+- `Wireframe.md`, `Wireframe.mmd`: Application layout wireframes and user flow diagrams.
 - `go.mod`, `go.sum`: Go module definition and dependencies.
 
 ## Backend (`/internal`)
@@ -17,9 +19,10 @@ The backend follows a Hexagonal Architecture (Ports & Adapters).
 
 ### `/internal/domain` (Core)
 Contains the business logic, entity models, and interface definitions (ports). This layer has no external dependencies.
-- `models.go`: Core data structures (Track, Album, Artist, Playlist, etc.).
+- `models.go`: Core data structures (Track, Album, Artist, Playlist, etc.) and DTOs.
 - `repositories.go`: Interface definitions for database operations.
 - `metadata.go`: Interface for metadata extraction.
+- `metadata_processing.go`: Business logic for string splitting, deduplication, and tag normalization.
 - `search.go`: Interface for search indexing and querying.
 - `artwork.go`: Interface for artwork caching and retrieval.
 

@@ -13,7 +13,6 @@ CREATE TABLE IF NOT EXISTS albums (
     title TEXT NOT NULL,
     sort_title TEXT NOT NULL,
     artist_id TEXT,
-    artist_name TEXT,
     year INTEGER,
     artwork_key TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -40,18 +39,10 @@ CREATE TABLE IF NOT EXISTS tracks (
     title TEXT NOT NULL,
     sort_title TEXT NOT NULL,
     artist_id TEXT,
-    artist_name TEXT NOT NULL,
-    sort_artist_name TEXT NOT NULL,
     album_id TEXT,
-    album_name TEXT,
-    sort_album_name TEXT,
     album_artist_id TEXT,
-    album_artist_name TEXT,
-    sort_album_artist_name TEXT,
     genre_id TEXT,
-    genre_name TEXT,
     composer_id TEXT,
-    composer_name TEXT,
     year INTEGER,
     track_number INTEGER,
     total_tracks INTEGER,
@@ -66,6 +57,7 @@ CREATE TABLE IF NOT EXISTS tracks (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE SET NULL,
     FOREIGN KEY (album_id) REFERENCES albums(id) ON DELETE SET NULL,
+    FOREIGN KEY (album_artist_id) REFERENCES artists(id) ON DELETE SET NULL,
     FOREIGN KEY (genre_id) REFERENCES genres(id) ON DELETE SET NULL,
     FOREIGN KEY (composer_id) REFERENCES composers(id) ON DELETE SET NULL
 );
@@ -99,9 +91,15 @@ CREATE TABLE IF NOT EXISTS lyrics (
     FOREIGN KEY (track_id) REFERENCES tracks(id) ON DELETE CASCADE
 );
 
+-- Create WatchedFolders table
+CREATE TABLE IF NOT EXISTS watched_folders (
+    id TEXT PRIMARY KEY,
+    path TEXT NOT NULL UNIQUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_tracks_artist_id ON tracks(artist_id);
 CREATE INDEX IF NOT EXISTS idx_tracks_album_id ON tracks(album_id);
 CREATE INDEX IF NOT EXISTS idx_albums_artist_id ON albums(artist_id);
 CREATE INDEX IF NOT EXISTS idx_tracks_sort_title ON tracks(sort_title);
-CREATE INDEX IF NOT EXISTS idx_tracks_sort_artist_name ON tracks(sort_artist_name);

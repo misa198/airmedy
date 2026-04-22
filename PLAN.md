@@ -31,9 +31,10 @@ This is a greenfield project establishing the entire architecture:
 - [x] Define project structure (frontend/src, backend/internal).
 
 ### Phase 2: Data Layer & Core Backend
-- [x] Initialize SQLite database and define normalized schemas (Tracks, Albums, Artists, Playlists, Genres, Composers, Lyrics).
+- [x] Initialize SQLite database and define schemas (Tracks, Albums, Artists, Playlists, Genres, Composers, Lyrics).
+- [x] Implement robust Many-to-Many junction tables (e.g., track_artists, track_genres) to support multiple tags per file.
 - [x] Integrate an embedded search engine (Bleve) and configure indexing rules using DTOs for multi-table coverage.
-- [x] Implement a metadata extraction module and resolve entities into a normalized relational graph.
+- [x] Implement a metadata extraction module and resolve entities into a fully normalized relational graph.
 
 ### Phase 3: Music Import & Library Management
 - [x] Build Wails bindings for opening folder selection dialogs.

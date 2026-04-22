@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"changeme/internal/app"
+	"changeme/internal/domain"
 	"changeme/internal/infra/wails"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -24,10 +25,11 @@ func init() {
 func main() {
 	var greetService *wails.GreetService
 	var libraryService *wails.LibraryService
+	var artworkCache domain.ArtworkCache
 
 	fxApp := fx.New(
 		app.Module,
-		fx.Populate(&greetService, &libraryService),
+		fx.Populate(&greetService, &libraryService, &artworkCache),
 		fx.NopLogger, // Keep logs clean for now
 	)
 
@@ -45,7 +47,7 @@ func main() {
 			application.NewService(libraryService),
 		},
 		Assets: application.AssetOptions{
-			Handler: application.AssetFileServerFS(assets),
+			Handler: wails.NewAssetHandler(assets, artworkCache),
 		},
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
@@ -53,7 +55,11 @@ func main() {
 	})
 
 	wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title: "Airmedy",
+		Title:     "Airmedy",
+		Width:     1280,
+		Height:    800,
+		MinWidth:  1024,
+		MinHeight: 768,
 		Mac: application.MacWindow{
 			InvisibleTitleBarHeight: 50,
 			Backdrop:                application.MacBackdropTranslucent,

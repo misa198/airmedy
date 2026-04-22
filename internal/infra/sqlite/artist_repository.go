@@ -29,6 +29,18 @@ func (r *artistRepository) GetByID(ctx context.Context, id string) (*domain.Arti
 	return &artist, nil
 }
 
+func (r *artistRepository) GetByNormalizationKey(ctx context.Context, key string) (*domain.Artist, error) {
+	var artist domain.Artist
+	err := r.db.GetContext(ctx, &artist, "SELECT * FROM artists WHERE normalization_key = ?", key)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get artist by normalization key: %w", err)
+	}
+	return &artist, nil
+}
+
 func (r *artistRepository) GetAll(ctx context.Context) ([]*domain.Artist, error) {
 	var artists []*domain.Artist
 	err := r.db.SelectContext(ctx, &artists, "SELECT * FROM artists ORDER BY sort_name")
@@ -45,9 +57,9 @@ func (r *artistRepository) Save(ctx context.Context, artist *domain.Artist) erro
 
 	query := `
 		INSERT INTO artists (
-			id, name, sort_name, created_at, updated_at
+			id, name, sort_name, normalization_key, created_at, updated_at
 		) VALUES (
-			:id, :name, :sort_name, :created_at, :updated_at
+			:id, :name, :sort_name, :normalization_key, :created_at, :updated_at
 		)`
 
 	_, err := r.db.NamedExecContext(ctx, query, artist)
@@ -63,18 +75,33 @@ func (r *artistRepository) Upsert(ctx context.Context, artist *domain.Artist) er
 
 	query := `
 		INSERT INTO artists (
-			id, name, sort_name, created_at, updated_at
+			id, name, sort_name, normalization_key, created_at, updated_at
 		) VALUES (
-			:id, :name, :sort_name, :created_at, :updated_at
+			:id, :name, :sort_name, :normalization_key, :created_at, :updated_at
 		) ON CONFLICT(id) DO UPDATE SET
 			name = excluded.name,
 			sort_name = excluded.sort_name,
+			normalization_key = excluded.normalization_key,
 			updated_at = excluded.updated_at
 	`
 
 	_, err := r.db.NamedExecContext(ctx, query, artist)
 	if err != nil {
 		return fmt.Errorf("failed to upsert artist: %w", err)
+	}
+	return nil
+}
+
+func (r *artistRepository) DeleteOrphaned(ctx context.Context) error {
+	query := `
+		DELETE FROM artists 
+		WHERE id NOT IN (SELECT artist_id FROM track_artists)
+		  AND id NOT IN (SELECT artist_id FROM track_album_artists)
+		  AND id NOT IN (SELECT artist_id FROM album_artists)
+	`
+	_, err := r.db.ExecContext(ctx, query)
+	if err != nil {
+		return fmt.Errorf("failed to delete orphaned artists: %w", err)
 	}
 	return nil
 }
