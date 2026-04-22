@@ -31,9 +31,9 @@ This is a greenfield project establishing the entire architecture:
 - [x] Define project structure (frontend/src, backend/internal).
 
 ### Phase 2: Data Layer & Core Backend
-- [x] Initialize SQLite database and define schemas (Tracks, Albums, Artists, Playlists, Genres, Composers, Lyrics).
-- [x] Integrate an embedded search engine (Bleve) and configure indexing rules.
-- [x] Implement a metadata extraction module supporting target formats (MP3, FLAC, ALAC, WAV, OGG, etc.) using libraries like `taglib-go` or `dhowden/tag`. (Implemented via `go.senan.xyz/taglib`)
+- [x] Initialize SQLite database and define normalized schemas (Tracks, Albums, Artists, Playlists, Genres, Composers, Lyrics).
+- [x] Integrate an embedded search engine (Bleve) and configure indexing rules using DTOs for multi-table coverage.
+- [x] Implement a metadata extraction module and resolve entities into a normalized relational graph.
 
 ### Phase 3: Music Import & Library Management
 - [x] Build Wails bindings for opening folder selection dialogs.
@@ -42,15 +42,15 @@ This is a greenfield project establishing the entire architecture:
 - [x] Implement manual sync trigger from the UI.
 
 ### Phase 4: Frontend Architecture & UI Shell
-- [ ] Create main layout: Sidebar (Navigation, Playlists), Main Content Area, and Player Footer.
-- [ ] Set up Vue Router with main routes: Home, Recently Added, Artists, Albums, Tracks, Genres, Composers, Search, Settings.
-- [ ] Implement the 'Home' view layout with placeholder sections (Recently Listened, Most Listened, Suggested).
+- [x] Create main layout: Sidebar (Navigation, Playlists), Main Content Area, and Player Footer.
+- [x] Set up Vue Router with main routes: Home, Recently Added, Artists, Albums, Tracks, Genres, Composers, Search, Settings.
+- [x] Implement the 'Home' view layout with placeholder sections (Recently Listened, Most Listened, Suggested).
 
 ### Phase 5: Core UX Views & Virtualization
-- [ ] Implement `vue-virtual-scroller` (or similar) for robust performance on large datasets.
-- [ ] **Tracks View:** Table format with customizable, reorderable, and sortable columns. Support large/small row options.
+- [x] Implement `vue-virtual-scroller` (or similar) for robust performance on large datasets.
+- [x] **Tracks View:** Table format with customizable, reorderable, and sortable columns. Support large/small row options.
 - [ ] **Artist/Genre/Composer Views:** 2-column layout (list on left, details and albums on right).
-- [ ] **Album/Recently Added Views:** Grid layout with covers, titles, and artists.
+- [x] **Album/Recently Added Views:** Grid layout with covers, titles, and artists.
 - [ ] **Detail Views:** Album details (tracklist, metadata) and Artist details.
 
 ### Phase 6: Audio Playback Engine & Player UI

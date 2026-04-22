@@ -32,12 +32,16 @@ Application services that coordinate domain logic and infrastructure.
 Concrete implementations (adapters) for the domain interfaces.
 - `sqlite/`: Database implementation using SQLite.
   - `migrations/`: SQL migration files for schema versioning.
-  - `*_repository.go`: Repository implementations for various entities.
+  - `*_repository.go`: Repository implementations for various entities (Tracks, Albums, Artists, Playlists, Genres, Composers, Lyrics, Watched Folders).
+  - `columns.go`: Shared column definitions for SQL queries.
+  - `sqlite.go`: Database connection and initialization logic.
 - `bleve/`: Search indexing implementation using Bleve.
 - `metadata/`: Metadata extraction using TagLib.
 - `artwork/`: Artwork caching and storage.
 - `logging/`: Structured logging setup using `slog`.
 - `wails/`: Wails bindings for exposing backend services to the frontend.
+  - `assets.go`: Asset handler for serving album artwork.
+  - `library_service.go`: Main Wails bindings for library management.
 
 ## Frontend (`/frontend`)
 
@@ -51,7 +55,8 @@ Vue.js 3 based user interface.
 ### `/frontend/src`
 - `main.ts`: Frontend entry point.
 - `App.vue`: Root Vue component.
-- `components/`: Reusable Vue components.
+- `components/`: Reusable Vue components (Sidebar, PlayerFooter, etc.).
+- `views/`: Main page components (Home, Albums, Artists, Tracks, etc.).
 - `stores/`: Pinia state management modules.
 - `locales/`: I18n localization files.
 - `lib/`: Utility functions and shared libraries.

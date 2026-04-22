@@ -8,13 +8,23 @@ Airmedy's aesthetic is inspired by modern macOS and Apple Music: **depth, transl
 - **Content First:** The UI should recede, allowing album art and typography to lead.
 - **Interactive Fluidity:** Every interaction should feel soft and weighted (no abrupt state changes).
 
-## 2. Color Palette (System Variables)
+## 2. Layout Analysis
+The interface adheres to a clearly defined hierarchical structure, optimized for navigation on a horizontal desktop:
 
-### Base Surfaces
-- `--bg-main`: `#0A0A0A` (Deepest base layer)
-- `--bg-glass`: `rgba(25, 25, 25, 0.6)` (Primary translucent surface)
-- `--bg-glass-elevated`: `rgba(45, 45, 45, 0.4)` (Secondary/Hover surfaces)
-- `--border-glass`: `rgba(255, 255, 255, 0.1)` (The "silk" edge)
+- **Left Sidebar:** Uses a hierarchical menu system (Navigation Drawer). Items are grouped (Apple Music, Library, Playlists) to help users quickly locate them. Width is fixed at `240px` with a heavy glass blur (`30px`) to provide a grounded feel.
+- **Main Content:** Adopts a "Hero Section" layout with a large album image on the left and metadata information (album name, artist) on the right. Below is a traditional table-style tracklist, but with simplified lines for a more spacious feel.
+- **Right Lyrics:** A separate control panel for lyrics, ensuring a synchronized audio-visual experience.
+- **Playback Bar:** Fixed at the bottom, integrating both the progress bar and navigation buttons. Height: `80px`, Blur: `30px`, Top Border: `1px solid var(--border-glass)`.
+
+## 3. Layout Analysis & Structure
+The interface adheres to a clearly defined hierarchical 3-column structure, optimized for navigation on a horizontal desktop:
+
+- **Left Sidebar:** Uses a hierarchical menu system (Navigation Drawer). Items are grouped (Apple Music, Library, Playlists) to help users quickly locate them. Width is fixed at `240px` with a heavy glass blur (`30px`) to provide a grounded feel.
+- **Main Content (Middle Column):** Adopts a "Hero Section" layout.
+    - **Top Section:** Large album cover image on the left; artist/album metadata in the middle/right.
+    - **Bottom Section:** Traditional table-style tracklist stretching below, but with simplified lines for a more spacious feel.
+- **Right Lyrics (Third Column):** A separate control panel for lyrics with an acrylic blur effect, ensuring a synchronized audio-visual experience.
+- **Player Bar:** Fixed at the bottom as the foundational control layer.
 
 ### Accents & Semantic
 - `--primary`: `#E11D48` (Rose/Red - Primary Action)
@@ -23,8 +33,8 @@ Airmedy's aesthetic is inspired by modern macOS and Apple Music: **depth, transl
 - `--text-muted`: `#A1A1AA` (Secondary Metadata)
 - `--accent-favorite`: `#EF4444` (Heart / Favorite)
 
-## 3. Dynamic Theming (Artwork Sync)
-As shown in the reference image, Airmedy must dynamically adjust its color palette to match the currently playing track's album art.
+## 4. Dynamic Theming (Artwork Sync)
+Airmedy must dynamically adjust its color palette to match the currently playing track's album art.
 
 ### Implementation Logic
 - **Color Extraction:** Extract the `Vibrant` and `Muted` palettes from the album artwork upon track change.
@@ -38,70 +48,39 @@ The following variables should be updated dynamically:
 - `--dynamic-surface`: Derived from artwork dominant color with low opacity (10-20%).
 - `--dynamic-glow`: A subtle drop shadow or outer glow based on the artwork's core hue.
 
-## 4. UI Architecture & Layout
-As per the reference designs, the application follows a sophisticated 3-panel structural layout.
-
-### A. The Global Shell
-- **Sidebar (Left):** `240px` width. Fixed navigation, library, and pinned playlists. Uses a heavier glass blur (`30px`) to provide a grounded feel.
-- **Top Bar (Navigation & Now Playing):**
-    - **Search:** Integrated on the top left.
-    - **Now Playing (Center):** A pill-shaped or rectangular compact display showing `Title - Artist` with a slim progress bar underneath.
-    - **Global Controls (Right):** Volume slider, AirPlay, Lyrics toggle, and Queue toggle.
-- **Main View (Center):** Dynamic content area that changes based on navigation.
-- **Lyrics Panel (Right):** An optional, toggleable panel for real-time synced lyrics.
-
-### B. Detailed View Patterns
-- **Album/Playlist Detail:**
-    - **Hero Section:** Large high-res cover art on the left; Title, Artist, and metadata on the right.
-    - **Action Cluster:** Prominent "Play" and "Shuffle" buttons using `var(--primary)`.
-    - **Tracklist:** Table-style layout. The currently playing track features an animated 3-bar EQ frequency indicator instead of a track number.
-- **Search Results:** Unified layout using horizontal carousels for different categories (Artists, Albums, Songs) as described in the project spec.
-
-### C. Immersive Modes
-- **Full-Screen / Lyrics Mode:**
-    - **Background:** Ultra-blurred, high-saturation expansion of the album artwork.
-    - **Typography:** Large, bold, center-aligned or right-aligned lyrics with active line highlighting.
-    - **Floating Info Card:** A small, highly translucent glass card at the bottom left containing track info and quality badges (e.g., "256", "Lossless").
-
-## 5. Components & Interactive Details
-- **Buttons:** Rounded corners (`full` for action buttons, `8px` for others).
-- **Progress Bars:** Ultra-thin (`4px`), expanding to `6px` on hover with a visible white thumb.
-- **Icons:** Use thin-stroke, modern icon sets (e.g., Lucide or Phosphor) to maintain the high-end macOS feel.
-- **Context Menus:** Custom glassmorphic menus for all list items (Right-click: Add to Playlist, Play Next, etc.).
-
-## 6. Typography
-... (rest of the file)
-
-- **Primary Font:** Inter or System Default (San Francisco on macOS).
+## 5. Typography
+- **Font Style:** Uses a modern Sans-serif font (Apple's San Francisco or Inter).
+- **Weight:** Flexible use of Bold (for album/song titles) to Regular (for playlists).
+- **Spacing:** Wide line-height spacing in the lyrics section makes it easy for users to follow along with the rhythm.
 - **Scale:**
     - **H1 (Hero):** 32px, Bold, Tracking -0.02em.
     - **H2 (Album/Section):** 20px, Semibold.
     - **Body (Tracks):** 14px, Medium.
     - **Metadata (Artist/Time):** 12px, Regular, 60% Opacity.
 
-## 5. Component Specifications
+## 6. Visual Effects
+These effects create the premium feel of the interface:
+
+- **Acrylic Blur:** The sidebar and lyrics panel use a background blur effect. This creates depth (Z-axis), making the interface feel like it has multiple layers stacked on top of each other instead of a flat surface.
+- **Transparency:** Cards and control bars don't use solid colors but have a slight transparency, allowing colors from the album art to "bleed" through (color bleeding), creating visual connection across the entire screen.
+- **Gradients:** In Fullscreen mode, a gradient layer transitioning from black to the album's main color is applied as a background for the lyrics, ensuring aesthetics while maintaining good readability.
+- **Rounded Corners:** Large rounded corners (approximately 12-16px) for album art and buttons create a soft, friendly, and modern feel.
+
+## 7. Components & Interactive Details
+- **Buttons:** Rounded corners (`full` for action buttons, `8px` for others).
+- **Progress Bars:** Ultra-thin (`4px`), expanding to `6px` on hover with a visible white thumb.
+- **Icons:** Use thin-stroke, modern icon sets (e.g., Lucide or Phosphor) to maintain the high-end macOS feel.
+- **Context Menus:** Custom glassmorphic menus for all list items (Right-click: Add to Playlist, Play Next, etc.).
 
 ### Cards (Albums/Artists)
 - **Border Radius:** `12px`
 - **Hover State:** Scale up by 2% (`scale(1.02)`), increase border brightness.
 - **Shadow:** Subtle `0 10px 15px -3px rgba(0, 0, 0, 0.4)`.
 
-### Controls & Sliders
-- **Progress Bar:** Track `#27272A` (Dark Gray), Fill `var(--primary)`.
-- **Thumb:** Appears only on hover; pure white, circular.
-- **Buttons:** Backgroundless for secondary actions; solid blur for primary.
-
-### Player Bar (The "Sticky")
-- **Height:** `80px`
-- **Blur:** Heavy (`30px`) to differentiate from the main scroll area.
-- **Top Border:** `1px solid var(--border-glass)`.
-
-## 6. Interactive Motion
+## 8. Interactive Motion
 - **Transitions:** `all 0.3s cubic-bezier(0.4, 0, 0.2, 1)`
 - **List Hover:** Soft fade-in of background (`rgba(255, 255, 255, 0.05)`).
 - **Navigation:** Slide and fade transitions between library views.
 
-## 7. Responsive Context
-- **Sidebar Width:** `240px` (Fixed on desktop, collapsible on smaller windows).
-- **Grid Spacing:** `24px` gutter for Home/Recently Added.
-- **Row Padding:** `12px` vertical padding for track tables.
+## 9. UX Summary
+This interface prioritizes **"Content-first."** All decorative elements (blur, transparency) serve to highlight the most important entity: the music and the artist. The use of modern visual effects reduces the heaviness of Dark Mode, transforming the application into a digital work of art rather than a purely file management tool.

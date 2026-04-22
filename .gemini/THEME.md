@@ -26,7 +26,7 @@ When creating or modifying components:
 
 ## 4. Layout Constraints
 - **Sidebar:** `240px` width, `30px` blur.
-- **Player Bar:** `80px` height, `30px` blur, `1px` top border.
+- **Player Bar:** `80px` height, `30px` blur, `1px` top border, fixed at the bottom.
 - **Grids/Lists:** Always use `vue-virtual-scroller` for tracks.
 
 Refer to the root `THEME.md` for the full design specification.

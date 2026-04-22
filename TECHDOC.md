@@ -23,8 +23,10 @@ The core application module wires infrastructure adapters to domain interfaces:
 
 The persistent data layer is managed by SQLite. Schema is versioned via migrations (`internal/infra/sqlite/migrations`).
 
-### 2.1 Domain Models & Denormalization
-The `Track` domain model (`internal/domain/models.go`) intentionally denormalizes data. It stores both IDs (e.g., `ArtistID`) and Names (e.g., `ArtistName`) of related entities. This optimizes UI rendering by avoiding massive JOINs on the `tracks` table when fetching lists of thousands of songs.
+### 2.1 Domain Models & Strict Normalization
+The domain layer enforces strict normalization. The primary models `Track` and `Album` (`internal/domain/models.go`) contain only their own intrinsic properties and Foreign Key IDs for related entities. 
+
+To facilitate UI rendering without multiple network round-trips or complex client-side joining, we use **Data Transfer Objects (DTOs)** like `TrackDTO` and `AlbumDTO`. These DTOs embed the base model and include pointers to populated related entities (Artist, Album, Genre, Composer).
 
 ### 2.2 SQL Tables & Relationships
 
@@ -38,34 +40,23 @@ The `Track` domain model (`internal/domain/models.go`) intentionally denormalize
 - `id` (TEXT PRIMARY KEY)
 - `title` (TEXT NOT NULL), `sort_title` (TEXT NOT NULL)
 - `artist_id` (TEXT) -> `FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE SET NULL`
-- `artist_name` (TEXT), `year` (INTEGER), `artwork_key` (TEXT)
+- `year` (INTEGER), `artwork_key` (TEXT)
+- `created_at`, `updated_at` (DATETIME)
 
 **`genres`** & **`composers`**
 - `id` (TEXT PRIMARY KEY), `name` (TEXT NOT NULL UNIQUE)
 
 **`tracks`** (The central entity)
 - `id` (TEXT PRIMARY KEY)
-- `path` (TEXT NOT NULL UNIQUE): The critical uniqueness constraint for file system sync.
+- `path` (TEXT NOT NULL UNIQUE)
 - `title`, `sort_title` (TEXT)
 - **Relationships:**
-    - `artist_id`, `album_id`, `genre_id`, `composer_id` -> All `ON DELETE SET NULL` to preserve track entries if taxonomies are purged.
-- **Denormalized fields:** `artist_name`, `sort_artist_name`, `album_name`, `sort_album_name`, `album_artist_name`, `genre_name`, `composer_name`.
+    - `artist_id`, `album_id`, `genre_id`, `composer_id` -> All `ON DELETE SET NULL`.
 - **Metadata fields:** `year`, `track_number`, `total_tracks`, `disc_number`, `total_discs`, `duration` (seconds), `bitrate`, `sample_rate`, `format`, `artwork_key`.
+- `created_at`, `updated_at` (DATETIME)
 
-**`playlists`** & **`playlist_tracks`**
-- `playlists`: Standard `id`, `name`, `description` table.
-- `playlist_tracks`: A junction table with a composite primary key (`playlist_id`, `track_id`).
-    - Uses `ON DELETE CASCADE` for both foreign keys to auto-clean when playlists or tracks are deleted.
-    - Includes `position` (INTEGER NOT NULL) to maintain custom user sorting.
-
-**`lyrics`**
-- `track_id` (TEXT PRIMARY KEY) -> `ON DELETE CASCADE` referencing `tracks(id)`.
-- `content` (TEXT), `source` (TEXT).
-
-### 2.3 Query Edge Cases & Idempotency
-- **Track Upserts:** The `Upsert` method in `track_repository.go` uses SQLite's `ON CONFLICT(path) DO UPDATE SET...`. This ensures that if the file watcher detects a change to an existing file path, the database updates all metadata and timestamps without duplicating the track or requiring a prior `SELECT` check.
-- **Sorting:** `GetAll` in `track_repository.go` enforces a strict canonical sort order: `ORDER BY sort_artist_name, sort_album_name, disc_number, track_number`.
-- **Playlist Fetching:** `GetTracks` in `playlist_repository.go` uses a JOIN on `playlist_tracks` ordered by `pt.position` to guarantee the UI receives the exact user-defined queue sequence.
+### 2.3 Query Logic & Optimized JOINs
+All retrieval operations in `track_repository.go` and `album_repository.go` utilize SQL `LEFT JOIN`s to populate DTOs in a single query. Indexes are maintained on all foreign keys (`artist_id`, `album_id`, etc.) to ensure sub-millisecond join performance even with 10,000+ tracks.
 
 ---
 
@@ -130,4 +121,32 @@ The `LibraryService` (`internal/app/library/service.go`) manages the ingestion o
 5. **Real-time Updates:** The `fsnotify` event loop handles:
     - `Create`/`Write`: Triggers `ImportFile`.
     - `Remove`/`Rename`: Deletes the entity from the database and index using the path-based deterministic ID.
-6. **Frontend Notification:** Emits Wails events (`library:updated`, `library:sync-started`, `library:sync-finished`) to keep the UI reactive.
+6. Frontend Notification: Emits Wails events (`library:updated`, `library:sync-started`, `library:sync-finished`) to keep the UI reactive.
+
+---
+
+## 6. Frontend Architecture & Shell Layout
+
+The Airmedy frontend is built as a Single Page Application (SPA) using Vue 3, Vite, and Wails v3.
+
+### 6.1 Routing (Vue Router)
+- **Mode:** `createWebHashHistory()` is utilized to avoid client-side routing conflicts within the Wails application context, ensuring hot-reloads and navigation functions without 404 errors.
+- **Routes:** The core navigation structure includes:
+  - `/` (Home)
+  - `/recently-added`
+  - `/artists`
+  - `/albums`
+  - `/tracks`
+  - `/genres`
+  - `/search`
+  - `/settings`
+
+### 6.2 Application Shell Layout
+- **Resizable Panels:** The main application shell uses Resizable panel components (via ShadCN-vue / vue-resizable-panels) to provide a native macOS-like experience. This allows the user to click and drag the boundary between the Sidebar and the Main Content area.
+- **Structure:**
+  - **Sidebar (Left Panel):** Contains primary navigation links, Library sections, and user Playlists.
+  - **Main Content (Right Panel):** A scrollable area where the `router-view` injects the active page.
+  - **Player Footer (Fixed Bottom):** A persistent audio control bar that remains visible across all route transitions.
+
+### 6.3 State Management (Pinia)
+- The shell relies on Pinia stores (e.g., `usePlayerStore`, `useLibraryStore`) to maintain continuous playback state globally, decoupled from the active route.
