@@ -48,11 +48,16 @@ func NewPlayerService(
 
 	if npc, ok := player.(domain.NowPlayingController); ok {
 		s.nowPlaying = npc
+		// Wrap in goroutines: MPRemoteCommandCenter callbacks fire on the macOS
+		// main thread. Calling app.Event.Emit() from there deadlocks because
+		// Wails also needs the main thread to dispatch to the WebView.
+		// Spawning a goroutine hands the work to the Go scheduler immediately,
+		// freeing the main thread and letting the Wails event reach the frontend.
 		npc.SetRemoteCallbacks(
-			func() { _ = s.Play() },
-			func() { _ = s.Pause() },
-			func() { _ = s.Next() },
-			func() { _ = s.Previous() },
+			func() { go func() { _ = s.Play() }() },
+			func() { go func() { _ = s.Pause() }() },
+			func() { go func() { _ = s.Next() }() },
+			func() { go func() { _ = s.Previous() }() },
 		)
 		npc.SetupRemoteCommands()
 	}
