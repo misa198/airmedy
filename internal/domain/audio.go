@@ -46,6 +46,28 @@ type NowPlayingController interface {
 	ClearNowPlaying()
 }
 
+// EQBand represents a single frequency band in the equalizer
+type EQBand struct {
+	Index     int     `json:"index" db:"band_index"`
+	Frequency float64 `json:"frequency" db:"frequency"`
+	Gain      float64 `json:"gain" db:"gain"`           // in dB, -12 to +12
+	Bandwidth float64 `json:"bandwidth" db:"bandwidth"` // Q factor
+}
+
+// EQProfile represents a named equalizer preset
+type EQProfile struct {
+	ID        string    `json:"id" db:"id"`
+	Name      string    `json:"name" db:"name"`
+	IsActive  bool      `json:"is_active" db:"is_active"`
+	Bands     []EQBand  `json:"bands"`
+}
+
+// EQController is an optional interface implemented by audio players that support EQ
+type EQController interface {
+	SetEQBand(index int, frequency, gain, bandwidth float64) error
+	SetEQEnabled(enabled bool) error
+}
+
 // AudioPlayer is the interface for platform-native audio playback engines
 type AudioPlayer interface {
 	// Control operations

@@ -20,6 +20,8 @@ void SetupRemoteCommandCenter(void* player);
 void UpdateNowPlayingInfo(void* player, const char* title, const char* artist,
     const char* album, double duration, double position, const char* artworkPath);
 void ClearNowPlayingInfo(void* player);
+void SetEQBand(void* player, int index, double freq, double gain, double bandwidth);
+void SetEQEnabled(void* player, int enabled);
 */
 import "C"
 import (
@@ -170,6 +172,22 @@ func (p *DarwinPlayer) OnTrackEnd(callback func()) {
 	callbackMutex.Lock()
 	defer callbackMutex.Unlock()
 	onTrackEndCallback = callback
+}
+
+// --- EQController ---
+
+func (p *DarwinPlayer) SetEQBand(index int, frequency, gain, bandwidth float64) error {
+	C.SetEQBand(p.playerPointer, C.int(index), C.double(frequency), C.double(gain), C.double(bandwidth))
+	return nil
+}
+
+func (p *DarwinPlayer) SetEQEnabled(enabled bool) error {
+	val := 0
+	if enabled {
+		val = 1
+	}
+	C.SetEQEnabled(p.playerPointer, C.int(val))
+	return nil
 }
 
 // --- NowPlayingController ---

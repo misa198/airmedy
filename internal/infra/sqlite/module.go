@@ -16,5 +16,6 @@ var Module = fx.Module("sqlite",
 		func(db *DB) domain.PlaylistRepository { return NewPlaylistRepository(db) },
 		func(db *DB) domain.LyricRepository { return NewLyricRepository(db) },
 		func(db *DB) domain.WatchedFolderRepository { return NewWatchedFolderRepository(db) },
+		func(db *DB) domain.EQRepository { return NewEQRepository(db) },
 	),
 )

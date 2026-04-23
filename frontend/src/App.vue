@@ -4,13 +4,17 @@ import MainLayout from './layouts/MainLayout.vue'
 import { hexToRgba } from './lib/utils'
 import { usePlayerStore } from './stores/player'
 import { useDeviceStore } from './stores/device'
+import { usePlaylistsStore } from './stores/playlists'
 
 const playerStore = usePlayerStore()
 const deviceStore = useDeviceStore()
+const playlistsStore = usePlaylistsStore()
 
 onMounted(() => {
   playerStore.init()
   deviceStore.init()
+  deviceStore.checkFullscreen()
+  playlistsStore.loadAll()
 })
 
 watch(

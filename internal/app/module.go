@@ -2,8 +2,11 @@ package app
 
 import (
 	"changeme/internal/app/config"
+	"changeme/internal/app/eq"
 	"changeme/internal/app/library"
+	"changeme/internal/app/lyrics"
 	"changeme/internal/app/player"
+	"changeme/internal/app/playlist"
 	"changeme/internal/domain"
 	"changeme/internal/infra/artwork"
 	"changeme/internal/infra/bleve"
@@ -27,14 +30,24 @@ var Module = fx.Module("app",
 		library.NewLibraryService,
 		wails.NewLibraryService,
 		wails.NewPlayerService,
+		wails.NewSearchService,
+		wails.NewPlaylistService,
+		wails.NewLyricsService,
+		wails.NewEQService,
 		func() *wails.GreetService { return &wails.GreetService{} },
 	),
 	sqlite.Module,
 	logging.Module,
 	player.Module,
-	fx.Invoke(func(lc fx.Lifecycle, db *sqlite.DB, search domain.SearchService, lib *library.LibraryService) {
+	playlist.Module,
+	lyrics.Module,
+	eq.Module,
+	fx.Invoke(func(lc fx.Lifecycle, db *sqlite.DB, search domain.SearchService, lib *library.LibraryService, eqSvc *eq.EQService) {
 		lc.Append(fx.Hook{
 			OnStart: func(ctx context.Context) error {
+				if err := eqSvc.SeedDefaults(ctx); err != nil {
+					slog.Error("Failed to seed EQ defaults", "error", err)
+				}
 				return lib.Start(ctx)
 			},
 			OnStop: func(ctx context.Context) error {

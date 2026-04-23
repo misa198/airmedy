@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"changeme/internal/app/lyrics"
 	"changeme/internal/domain"
 	"changeme/internal/infra/artwork"
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -19,6 +20,7 @@ type PlayerService struct {
 	queue        *QueueService
 	logger       *slog.Logger
 	artworkCache domain.ArtworkCache
+	lyricsService *lyrics.LyricsService
 	nowPlaying   domain.NowPlayingController // nil on non-darwin or when unsupported
 	currentTrack *domain.TrackDTO
 
@@ -35,14 +37,16 @@ func NewPlayerService(
 	queue *QueueService,
 	logger *slog.Logger,
 	artworkCache domain.ArtworkCache,
+	lyricsService *lyrics.LyricsService,
 	lc fx.Lifecycle,
 ) *PlayerService {
 	s := &PlayerService{
-		player:       player,
-		queue:        queue,
-		logger:       logger,
-		artworkCache: artworkCache,
-		tickInterval: 500 * time.Millisecond,
+		player:        player,
+		queue:         queue,
+		logger:        logger,
+		artworkCache:  artworkCache,
+		lyricsService: lyricsService,
+		tickInterval:  500 * time.Millisecond,
 	}
 	s.player.OnTrackEnd(s.HandleTrackEnd)
 
@@ -217,6 +221,7 @@ func (s *PlayerService) loadAndPlay(track *domain.TrackDTO) error {
 	}
 
 	go s.extractAndEmitPalette(track)
+	go s.fetchAndEmitLyrics(track)
 
 	return nil
 }
@@ -234,6 +239,37 @@ func (s *PlayerService) extractAndEmitPalette(track *domain.TrackDTO) {
 	app := application.Get()
 	if app != nil {
 		app.Event.Emit("player:theme", colors)
+	}
+}
+
+func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
+	if s.lyricsService == nil {
+		return
+	}
+	ctx := context.Background()
+
+	// Check the database first.
+	lyric, err := s.lyricsService.GetLyrics(ctx, track.ID)
+	if err != nil {
+		s.logger.Warn("failed to get lyrics from db", "track_id", track.ID, "error", err)
+	}
+
+	// If not cached, try the external API.
+	if lyric == nil {
+		lyric, err = s.lyricsService.FetchFromExternal(ctx, track)
+		if err != nil {
+			s.logger.Warn("failed to fetch lyrics from external", "track_id", track.ID, "error", err)
+		}
+	}
+
+	a := application.Get()
+	if a == nil {
+		return
+	}
+	if lyric != nil {
+		a.Event.Emit("player:lyrics", lyric)
+	} else {
+		a.Event.Emit("player:lyrics", nil)
 	}
 }
 

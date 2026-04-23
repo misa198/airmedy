@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { Events } from '@wailsio/runtime'
 import * as PlayerService from '../../bindings/changeme/internal/infra/wails/playerservice'
 import { PlaybackState, PlayerStatus, RepeatMode } from '../../bindings/changeme/internal/domain/models'
-import type { TrackDTO } from '../../bindings/changeme/internal/domain/models'
+import type { Lyric, TrackDTO } from '../../bindings/changeme/internal/domain/models'
 
 export interface ThemeColors {
   vibrant: string
@@ -22,6 +22,8 @@ export const usePlayerStore = defineStore('player', () => {
   const isQueueOpen = ref(false)
   const isLyricsOpen = ref(false)
   const playerMode = ref<PlayerMode>('sticky')
+  const lyrics = ref<Lyric | null>(null)
+  const lyricsLoading = ref(false)
 
   // Computed
   const isPlaying = computed(
@@ -78,6 +80,11 @@ export const usePlayerStore = defineStore('player', () => {
 
     Events.On('player:theme', (ev: Events.WailsEvent) => {
       theme.value = ev.data as ThemeColors
+    })
+
+    Events.On('player:lyrics', (ev: Events.WailsEvent) => {
+      lyrics.value = (ev.data as Lyric) ?? null
+      lyricsLoading.value = false
     })
   }
 
@@ -143,6 +150,8 @@ export const usePlayerStore = defineStore('player', () => {
   async function playTracks(tracks: TrackDTO[], startIndex: number) {
     queue.value = tracks
     currentTrack.value = tracks[startIndex] ?? null
+    lyrics.value = null
+    lyricsLoading.value = true
     await PlayerService.PlayTracks(tracks, startIndex)
   }
 
@@ -166,6 +175,8 @@ export const usePlayerStore = defineStore('player', () => {
     isQueueOpen,
     isLyricsOpen,
     playerMode,
+    lyrics,
+    lyricsLoading,
     // Computed
     isPlaying,
     isPaused,

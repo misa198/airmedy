@@ -1,0 +1,126 @@
+<script setup lang="ts">
+import { ref, onMounted, computed } from 'vue'
+import { Slider } from '@/components/ui/slider'
+import * as EQService from '../../bindings/changeme/internal/infra/wails/eqservice'
+import type { EQProfile } from '../../bindings/changeme/internal/domain/models'
+
+const profiles = ref<EQProfile[]>([])
+const activeProfile = ref<EQProfile | null>(null)
+const enabled = ref(true)
+
+const FREQ_LABELS = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k']
+
+onMounted(async () => {
+  try {
+    const [all, active] = await Promise.all([
+      EQService.GetAllProfiles(),
+      EQService.GetActiveProfile(),
+    ])
+    profiles.value = all.filter(Boolean) as EQProfile[]
+    activeProfile.value = active
+  } catch (e) {
+    console.error('Failed to load EQ profiles', e)
+  }
+})
+
+const bands = computed(() => {
+  return activeProfile.value?.bands?.slice().sort((a, b) => (a?.index ?? 0) - (b?.index ?? 0)) ?? []
+})
+
+async function selectProfile(id: string) {
+  await EQService.ApplyProfile(id)
+  const p = profiles.value.find((x) => x.id === id)
+  if (p) {
+    activeProfile.value = { ...p }
+    profiles.value = profiles.value.map((x) => ({ ...x, is_active: x.id === id }))
+  }
+}
+
+async function updateBand(bandIndex: number, gain: number) {
+  if (!activeProfile.value) return
+  await EQService.UpdateBand(activeProfile.value.id, bandIndex, gain)
+  if (activeProfile.value.bands) {
+    activeProfile.value.bands = activeProfile.value.bands.map((b) =>
+      b && b.index === bandIndex ? { ...b, gain } : b
+    )
+  }
+}
+
+async function toggleEnabled() {
+  enabled.value = !enabled.value
+  await EQService.SetEnabled(enabled.value)
+}
+
+function getBandGain(index: number): number {
+  return bands.value.find((b) => b?.index === index)?.gain ?? 0
+}
+</script>
+
+<template>
+  <div class="space-y-4">
+    <!-- Header row: profile selector + enable toggle -->
+    <div class="flex items-center justify-between gap-3">
+      <select
+        v-if="profiles.length > 0"
+        :value="activeProfile?.id"
+        class="flex-1 bg-white/[0.05] border border-white/[0.08] text-sm text-white rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-white/20"
+        @change="selectProfile(($event.target as HTMLSelectElement).value)"
+      >
+        <option
+          v-for="p in profiles"
+          :key="p.id"
+          :value="p.id"
+          class="bg-[#1A1A1A]"
+        >
+          {{ p.name }}
+        </option>
+      </select>
+
+      <!-- Enable/Disable toggle -->
+      <button
+        class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors"
+        :class="enabled
+          ? 'bg-white/[0.1] text-white hover:bg-white/[0.14]'
+          : 'bg-white/[0.03] text-white/40 hover:bg-white/[0.06]'"
+        @click="toggleEnabled"
+      >
+        <span class="w-1.5 h-1.5 rounded-full" :class="enabled ? 'bg-green-400' : 'bg-white/20'" />
+        {{ enabled ? 'On' : 'Off' }}
+      </button>
+    </div>
+
+    <!-- 10-band vertical sliders -->
+    <div class="flex items-end justify-between gap-1 h-40 px-1">
+      <div
+        v-for="(label, i) in FREQ_LABELS"
+        :key="i"
+        class="flex flex-col items-center flex-1 min-w-0 h-full"
+      >
+        <!-- Gain value -->
+        <p class="text-[10px] text-white/30 mb-1 tabular-nums w-full text-center">
+          {{ getBandGain(i) >= 0 ? '+' : '' }}{{ getBandGain(i).toFixed(1) }}
+        </p>
+        <!-- Vertical slider via CSS rotation wrapper -->
+        <div class="flex-1 flex items-center justify-center w-full">
+          <div class="relative" style="width: 24px; height: 80px;">
+            <div
+              class="absolute inset-0 flex items-center justify-center"
+              style="transform: rotate(-90deg); transform-origin: center; width: 80px; height: 24px; top: 50%; left: 50%; margin-top: -12px; margin-left: -40px;"
+            >
+              <Slider
+                :model-value="getBandGain(i)"
+                :min="-12"
+                :max="12"
+                :step="0.5"
+                class="w-full"
+                @update:model-value="(val: number) => updateBand(i, val)"
+              />
+            </div>
+          </div>
+        </div>
+        <!-- Freq label -->
+        <p class="text-[10px] text-white/30 mt-1">{{ label }}</p>
+      </div>
+    </div>
+  </div>
+</template>

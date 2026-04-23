@@ -52,6 +52,27 @@ func (r *playlistRepository) Save(ctx context.Context, p *domain.Playlist) error
 	return nil
 }
 
+func (r *playlistRepository) Update(ctx context.Context, p *domain.Playlist) error {
+	p.UpdatedAt = time.Now()
+	_, err := r.db.ExecContext(ctx,
+		"UPDATE playlists SET name = ?, description = ?, updated_at = ? WHERE id = ?",
+		p.Name, p.Description, p.UpdatedAt, p.ID,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update playlist: %w", err)
+	}
+	return nil
+}
+
+func (r *playlistRepository) CountTracks(ctx context.Context, playlistID string) (int, error) {
+	var count int
+	err := r.db.GetContext(ctx, &count, "SELECT COUNT(*) FROM playlist_tracks WHERE playlist_id = ?", playlistID)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count playlist tracks: %w", err)
+	}
+	return count, nil
+}
+
 func (r *playlistRepository) Delete(ctx context.Context, id string) error {
 	_, err := r.db.ExecContext(ctx, "DELETE FROM playlists WHERE id = ?", id)
 	if err != nil {

@@ -71,10 +71,10 @@ This is a greenfield project establishing the entire architecture:
 
 
 ### Phase 7: Advanced Features
-- [ ] **Search:** Implement the unified search UI with horizontal scrolling carousels for different entity types.
-- [ ] **Playlists:** Build CRUD operations for playlists and the playlist detail table view.
-- [ ] **EQ:** Implement the graphic equalizer backend and UI with multiple profiles.
-- [ ] **Lyrics:** Build the scrolling lyrics UI, automatic search integration, and manual entry/fallback logic.
+- [x] **Search:** Implement the unified search UI with horizontal scrolling carousels for different entity types.
+- [x] **Playlists:** Build CRUD operations for playlists and the playlist detail table view.
+- [x] **EQ:** Implement the graphic equalizer backend and UI with multiple profiles.
+- [x] **Lyrics:** Build the scrolling lyrics UI, automatic search integration, and manual entry/fallback logic.
 
 ### Phase 8: Polish & Release
 - [ ] Implement context menus globally (add to playlist, play next, favorite, open album, delete).

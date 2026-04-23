@@ -71,10 +71,12 @@ type PlaylistRepository interface {
 	GetByID(ctx context.Context, id string) (*Playlist, error)
 	GetAll(ctx context.Context) ([]*Playlist, error)
 	Save(ctx context.Context, playlist *Playlist) error
+	Update(ctx context.Context, playlist *Playlist) error
 	Delete(ctx context.Context, id string) error
 	AddTrack(ctx context.Context, playlistID, trackID string, position int) error
 	RemoveTrack(ctx context.Context, playlistID, trackID string) error
 	GetTracks(ctx context.Context, playlistID string) ([]*TrackDTO, error)
+	CountTracks(ctx context.Context, playlistID string) (int, error)
 }
 
 type LyricRepository interface {
@@ -82,6 +84,15 @@ type LyricRepository interface {
 	Save(ctx context.Context, lyric *Lyric) error
 	Upsert(ctx context.Context, lyric *Lyric) error
 	Delete(ctx context.Context, trackID string) error
+}
+
+type EQRepository interface {
+	GetActive(ctx context.Context) (*EQProfile, error)
+	GetAll(ctx context.Context) ([]*EQProfile, error)
+	GetByID(ctx context.Context, id string) (*EQProfile, error)
+	Save(ctx context.Context, profile *EQProfile) error
+	Delete(ctx context.Context, id string) error
+	SetActive(ctx context.Context, id string) error
 }
 
 type WatchedFolderRepository interface {

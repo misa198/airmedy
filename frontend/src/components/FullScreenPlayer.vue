@@ -236,7 +236,12 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
 
                   <!-- Content Area -->
                   <div class="flex-1 overflow-hidden">
-                    <LyricsView :current-position="store.position" @seek="(time) => store.seek(time)" />
+                    <LyricsView
+                      :lyrics="store.lyrics?.content"
+                      :is-loading="store.lyricsLoading"
+                      :current-position="store.position"
+                      @seek="(time) => store.seek(time)"
+                    />
                   </div>
                 </div>
               </div>

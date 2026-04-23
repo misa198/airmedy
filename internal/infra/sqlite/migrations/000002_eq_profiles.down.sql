@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS eq_bands;
+DROP TABLE IF EXISTS eq_profiles;

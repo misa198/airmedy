@@ -4,6 +4,7 @@ import * as LibraryService from '../../bindings/changeme/internal/infra/wails/li
 import { RotateCcw, Plus, Trash2, Folder, CheckCircle2, AlertCircle, Loader2 } from 'lucide-vue-next'
 import type { WatchedFolder, SyncProgress } from '../../bindings/changeme/internal/domain/models'
 import { Events } from '@wailsio/runtime'
+import EQPanel from '@/components/EQPanel.vue'
 
 const folders = ref<WatchedFolder[]>([])
 const isSyncing = ref(false)
@@ -205,6 +206,11 @@ onUnmounted(() => {
         <h2 class="text-xl font-semibold mb-1">Appearance</h2>
         <p class="text-sm text-white/40 mb-4">Theming and UI customizations coming soon.</p>
         <div class="h-10 w-32 bg-secondary rounded-md"></div>
+      </section>
+
+      <section class="bg-card rounded-xl ring-1 ring-white/[0.06] p-6">
+        <h2 class="text-xl font-semibold mb-4">Equalizer</h2>
+        <EQPanel />
       </section>
     </div>
   </div>

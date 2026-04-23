@@ -203,6 +203,90 @@ export class Composer {
 }
 
 /**
+ * EQBand represents a single frequency band in the equalizer
+ */
+export class EQBand {
+    "index": number;
+    "frequency": number;
+
+    /**
+     * in dB, -12 to +12
+     */
+    "gain": number;
+
+    /**
+     * Q factor
+     */
+    "bandwidth": number;
+
+    /** Creates a new EQBand instance. */
+    constructor($$source: Partial<EQBand> = {}) {
+        if (!("index" in $$source)) {
+            this["index"] = 0;
+        }
+        if (!("frequency" in $$source)) {
+            this["frequency"] = 0;
+        }
+        if (!("gain" in $$source)) {
+            this["gain"] = 0;
+        }
+        if (!("bandwidth" in $$source)) {
+            this["bandwidth"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new EQBand instance from a string or object.
+     */
+    static createFrom($$source: any = {}): EQBand {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new EQBand($$parsedSource as Partial<EQBand>);
+    }
+}
+
+/**
+ * EQProfile represents a named equalizer preset
+ */
+export class EQProfile {
+    "id": string;
+    "name": string;
+    "is_active": boolean;
+    "bands": EQBand[];
+
+    /** Creates a new EQProfile instance. */
+    constructor($$source: Partial<EQProfile> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("is_active" in $$source)) {
+            this["is_active"] = false;
+        }
+        if (!("bands" in $$source)) {
+            this["bands"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new EQProfile instance from a string or object.
+     */
+    static createFrom($$source: any = {}): EQProfile {
+        const $$createField3_0 = $$createType4;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("bands" in $$parsedSource) {
+            $$parsedSource["bands"] = $$createField3_0($$parsedSource["bands"]);
+        }
+        return new EQProfile($$parsedSource as Partial<EQProfile>);
+    }
+}
+
+/**
  * Genre represents a music genre
  */
 export class Genre {
@@ -231,6 +315,46 @@ export class Genre {
     static createFrom($$source: any = {}): Genre {
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         return new Genre($$parsedSource as Partial<Genre>);
+    }
+}
+
+/**
+ * Lyric represents a music lyric
+ */
+export class Lyric {
+    "track_id": string;
+    "content": string;
+    "source": string;
+    "created_at": time$0.Time;
+    "updated_at": time$0.Time;
+
+    /** Creates a new Lyric instance. */
+    constructor($$source: Partial<Lyric> = {}) {
+        if (!("track_id" in $$source)) {
+            this["track_id"] = "";
+        }
+        if (!("content" in $$source)) {
+            this["content"] = "";
+        }
+        if (!("source" in $$source)) {
+            this["source"] = "";
+        }
+        if (!("created_at" in $$source)) {
+            this["created_at"] = null;
+        }
+        if (!("updated_at" in $$source)) {
+            this["updated_at"] = null;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Lyric instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Lyric {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new Lyric($$parsedSource as Partial<Lyric>);
     }
 }
 
@@ -309,6 +433,46 @@ export class PlayerStatus {
     static createFrom($$source: any = {}): PlayerStatus {
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         return new PlayerStatus($$parsedSource as Partial<PlayerStatus>);
+    }
+}
+
+/**
+ * Playlist represents a music playlist
+ */
+export class Playlist {
+    "id": string;
+    "name": string;
+    "description": string;
+    "created_at": time$0.Time;
+    "updated_at": time$0.Time;
+
+    /** Creates a new Playlist instance. */
+    constructor($$source: Partial<Playlist> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("description" in $$source)) {
+            this["description"] = "";
+        }
+        if (!("created_at" in $$source)) {
+            this["created_at"] = null;
+        }
+        if (!("updated_at" in $$source)) {
+            this["updated_at"] = null;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Playlist instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Playlist {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new Playlist($$parsedSource as Partial<Playlist>);
     }
 }
 
@@ -483,10 +647,10 @@ export class TrackDTO {
      */
     static createFrom($$source: any = {}): TrackDTO {
         const $$createField25_0 = $$createType2;
-        const $$createField26_0 = $$createType4;
+        const $$createField26_0 = $$createType6;
         const $$createField27_0 = $$createType2;
-        const $$createField28_0 = $$createType7;
-        const $$createField29_0 = $$createType10;
+        const $$createField28_0 = $$createType9;
+        const $$createField29_0 = $$createType12;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("artists" in $$parsedSource) {
             $$parsedSource["artists"] = $$createField25_0($$parsedSource["artists"]);
@@ -543,11 +707,13 @@ export class WatchedFolder {
 const $$createType0 = Artist.createFrom;
 const $$createType1 = $Create.Nullable($$createType0);
 const $$createType2 = $Create.Array($$createType1);
-const $$createType3 = Album.createFrom;
-const $$createType4 = $Create.Nullable($$createType3);
-const $$createType5 = Genre.createFrom;
+const $$createType3 = EQBand.createFrom;
+const $$createType4 = $Create.Array($$createType3);
+const $$createType5 = Album.createFrom;
 const $$createType6 = $Create.Nullable($$createType5);
-const $$createType7 = $Create.Array($$createType6);
-const $$createType8 = Composer.createFrom;
-const $$createType9 = $Create.Nullable($$createType8);
-const $$createType10 = $Create.Array($$createType9);
+const $$createType7 = Genre.createFrom;
+const $$createType8 = $Create.Nullable($$createType7);
+const $$createType9 = $Create.Array($$createType8);
+const $$createType10 = Composer.createFrom;
+const $$createType11 = $Create.Nullable($$createType10);
+const $$createType12 = $Create.Array($$createType11);

@@ -26,11 +26,15 @@ func main() {
 	var greetService *wails.GreetService
 	var libraryService *wails.LibraryService
 	var playerService *wails.PlayerService
+	var searchService *wails.SearchService
+	var playlistService *wails.PlaylistService
+	var lyricsService *wails.LyricsService
+	var eqService *wails.EQService
 	var artworkCache domain.ArtworkCache
 
 	fxApp := fx.New(
 		app.Module,
-		fx.Populate(&greetService, &libraryService, &playerService, &artworkCache),
+		fx.Populate(&greetService, &libraryService, &playerService, &searchService, &playlistService, &lyricsService, &eqService, &artworkCache),
 		fx.NopLogger, // Keep logs clean for now
 	)
 
@@ -47,6 +51,10 @@ func main() {
 			application.NewService(greetService),
 			application.NewService(libraryService),
 			application.NewService(playerService),
+			application.NewService(searchService),
+			application.NewService(playlistService),
+			application.NewService(lyricsService),
+			application.NewService(eqService),
 		},
 		Assets: application.AssetOptions{
 			Handler: wails.NewAssetHandler(assets, artworkCache),
