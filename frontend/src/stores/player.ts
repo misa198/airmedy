@@ -122,6 +122,19 @@ export const usePlayerStore = defineStore('player', () => {
     await PlayerService.SetRepeatMode(m)
   }
 
+  async function cycleRepeat() {
+    switch (repeatMode.value) {
+      case RepeatMode.RepeatModeOff:
+        await setRepeatMode(RepeatMode.RepeatModeAll)
+        break
+      case RepeatMode.RepeatModeAll:
+        await setRepeatMode(RepeatMode.RepeatModeOne)
+        break
+      default:
+        await setRepeatMode(RepeatMode.RepeatModeOff)
+    }
+  }
+
   async function playTracks(tracks: TrackDTO[], startIndex: number) {
     queue.value = tracks
     currentTrack.value = tracks[startIndex] ?? null
@@ -166,5 +179,6 @@ export const usePlayerStore = defineStore('player', () => {
     setRepeatMode,
     playTracks,
     toggleQueue,
+    cycleRepeat,
   }
 })

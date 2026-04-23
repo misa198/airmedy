@@ -7,28 +7,24 @@ const store = usePlayerStore()
 </script>
 
 <template>
-  <div
-    class="h-16 bg-card/90 backdrop-blur border-t flex items-center px-4 gap-3 shadow-lg"
-  >
+  <div class="h-14 bg-background/80 backdrop-blur-2xl border-t border-white/[0.06] flex items-center px-4 gap-3">
     <!-- Artwork + track info -->
     <div class="flex items-center gap-3 flex-1 min-w-0">
-      <div
-        class="w-10 h-10 bg-accent rounded flex-shrink-0 overflow-hidden border"
-      >
+      <div class="w-9 h-9 rounded-md flex-shrink-0 overflow-hidden ring-1 ring-white/10">
         <img
           v-if="store.artworkUrl"
           :src="store.artworkUrl"
           class="w-full h-full object-cover"
         />
-        <div v-else class="w-full h-full flex items-center justify-center text-muted-foreground/30">
-          <Music class="w-4 h-4" />
+        <div v-else class="w-full h-full bg-white/5 flex items-center justify-center">
+          <Music class="w-4 h-4 text-white/20" />
         </div>
       </div>
       <div class="min-w-0">
-        <div class="text-sm font-medium truncate">
+        <div class="text-sm font-medium truncate leading-tight">
           {{ store.currentTrack?.title ?? 'Not Playing' }}
         </div>
-        <div class="text-xs text-muted-foreground truncate">
+        <div class="text-xs text-white/40 truncate leading-tight mt-0.5">
           {{ store.currentTrack?.artists?.map((a) => a?.name).filter(Boolean).join(', ') ?? '' }}
         </div>
       </div>
@@ -37,24 +33,24 @@ const store = usePlayerStore()
     <!-- Controls -->
     <div class="flex items-center gap-3">
       <button
-        class="w-8 h-8 bg-primary rounded-full flex items-center justify-center hover:scale-105 transition-transform"
+        class="w-7 h-7 bg-white rounded-full flex items-center justify-center hover:scale-105 transition-transform"
         @click="store.togglePlayPause()"
       >
-        <Pause v-if="store.isPlaying" class="w-4 h-4 fill-current" />
-        <Play v-else class="w-4 h-4 fill-current ml-0.5" />
+        <Pause v-if="store.isPlaying" class="w-3.5 h-3.5 fill-current text-black" />
+        <Play v-else class="w-3.5 h-3.5 fill-current text-black ml-0.5" />
       </button>
-      <button class="text-muted-foreground hover:text-foreground transition-colors" @click="store.next()">
+      <button class="text-white/40 hover:text-white/70 transition-colors" @click="store.next()">
         <SkipForward class="w-4 h-4 fill-current" />
       </button>
     </div>
 
-    <!-- Progress + expand -->
+    <!-- Time + expand -->
     <div class="flex items-center gap-2">
-      <span class="text-[10px] text-muted-foreground font-mono">
+      <span class="text-[10px] text-white/30 tabular-nums">
         {{ formatTime(store.position) }} / {{ formatTime(store.duration) }}
       </span>
       <button
-        class="text-muted-foreground hover:text-foreground transition-colors"
+        class="text-white/40 hover:text-white/70 transition-colors"
         @click="store.playerMode = 'sticky'"
       >
         <Maximize2 class="w-4 h-4" />

@@ -35,8 +35,8 @@ onMounted(async () => {
       <ResizablePanelGroup direction="horizontal">
         <!-- Sidebar Panel -->
         <ResizablePanel 
-          :default-size="25" 
-          :min-size="24" 
+          :default-size="20" 
+          :min-size="20" 
           :max-size="35"
           class="h-full overflow-hidden"
         >

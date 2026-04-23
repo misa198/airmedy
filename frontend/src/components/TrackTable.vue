@@ -2,6 +2,7 @@
 import { useRouter } from 'vue-router'
 import { Music, Clock, User, Disc, MoreVertical, Play } from 'lucide-vue-next'
 import type { TrackDTO, Artist } from '../../bindings/changeme/internal/domain/models'
+import { formatTime } from '../lib/utils'
 
 const router = useRouter()
 const props = defineProps<{
@@ -23,19 +24,14 @@ const navigateToArtist = (id: string) => {
   if (id) router.push(`/artists/${id}`)
 }
 
-const formatDuration = (seconds: number) => {
-  if (!seconds) return '0:00'
-  const mins = Math.floor(seconds / 60)
-  const secs = Math.floor(seconds % 60)
-  return `${mins}:${secs.toString().padStart(2, '0')}`
-}
+
 </script>
 
 <template>
   <div class="h-full flex flex-col overflow-hidden">
-    <!-- Table Header (Sticky) -->
+    <!-- Table Header -->
     <div :class="[
-      'grid gap-4 px-6 py-2 border-b text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted/30',
+      'grid gap-4 px-6 py-2 border-b border-white/[0.06] text-[10px] font-semibold text-white/30 uppercase tracking-widest',
       showAlbum ? 'grid-cols-[48px_1fr_1fr_1fr_80px_48px]' : 'grid-cols-[48px_1fr_1fr_80px_48px]'
     ]">
       <div class="text-center">#</div>
@@ -66,7 +62,7 @@ const formatDuration = (seconds: number) => {
         v-slot="{ item, index }"
       >
         <div :class="[
-          'grid gap-4 px-6 h-[56px] items-center text-sm hover:bg-accent/50 group transition-colors border-b border-transparent hover:border-accent',
+          'grid gap-4 px-6 h-[56px] items-center text-sm hover:bg-white/[0.04] group transition-colors',
           showAlbum ? 'grid-cols-[48px_1fr_1fr_1fr_80px_48px]' : 'grid-cols-[48px_1fr_1fr_80px_48px]'
         ]">
           <div class="text-center text-muted-foreground group-hover:hidden">{{ index + 1 }}</div>
@@ -77,7 +73,7 @@ const formatDuration = (seconds: number) => {
           </div>
           
           <div class="font-medium truncate flex items-center gap-3">
-            <div v-if="showArtwork" class="w-8 h-8 bg-muted rounded flex-shrink-0 overflow-hidden border">
+            <div v-if="showArtwork" class="w-8 h-8 bg-white/5 rounded flex-shrink-0 overflow-hidden">
               <img v-if="item.artwork_key" :src="`/artwork/${item.artwork_key}`" class="w-full h-full object-cover" />
               <div v-else class="w-full h-full flex items-center justify-center text-muted-foreground/30">
                 <Music class="w-4 h-4" />
@@ -112,10 +108,10 @@ const formatDuration = (seconds: number) => {
             </span>
           </div>
           <div class="text-center text-muted-foreground font-mono text-xs">
-            {{ formatDuration(item.duration) }}
+            {{ formatTime(item.duration) }}
           </div>
           <div class="flex items-center justify-end opacity-0 group-hover:opacity-100">
-            <button class="p-2 hover:bg-accent rounded-full text-muted-foreground hover:text-foreground">
+            <button class="p-2 hover:bg-white/8 rounded-full text-white/30 hover:text-white/70 transition-colors">
               <MoreVertical class="w-4 h-4" />
             </button>
           </div>

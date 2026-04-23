@@ -175,9 +175,9 @@ onMounted(() => {
     const DOWNSCALE_FACTOR = 0.15
     const w = container.clientWidth
     const h = container.clientHeight
+    renderer!.setSize(w * DOWNSCALE_FACTOR, h * DOWNSCALE_FACTOR)
     canvas.style.width = `${w}px`
     canvas.style.height = `${h}px`
-    renderer!.setSize(w * DOWNSCALE_FACTOR, h * DOWNSCALE_FACTOR)
     program.uniforms.uResolution.value = [canvas.width, canvas.height]
     renderer!.render({ scene: mesh })
   }

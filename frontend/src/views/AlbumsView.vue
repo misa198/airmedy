@@ -6,6 +6,7 @@ import { Disc, Search } from 'lucide-vue-next'
 import type { AlbumDTO } from '../../bindings/changeme/internal/domain/models'
 import VirtualizedGrid from '../components/VirtualizedGrid.vue'
 import AlbumCard from '../components/AlbumCard.vue'
+import { Input } from '@/components/ui/input'
 
 const router = useRouter()
 const albums = ref<AlbumDTO[]>([])
@@ -48,19 +49,19 @@ onMounted(loadAlbums)
 
 <template>
   <div class="h-full flex flex-col overflow-hidden bg-background">
-    <div class="p-6 pb-4 border-b">
+    <div class="p-6 pb-4 border-b border-white/[0.06]">
       <div class="flex items-center justify-between mb-4">
         <h1 class="text-3xl font-bold">Albums</h1>
-        <div class="text-sm text-muted-foreground">{{ filteredAlbums.length }} albums</div>
+        <div class="text-sm text-white/40">{{ filteredAlbums.length }} albums</div>
       </div>
       
       <div class="relative max-w-sm">
-        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <input 
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+        <Input
           v-model="searchQuery"
-          type="text" 
-          placeholder="Search albums..." 
-          class="w-full bg-accent/50 border rounded-md pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+          type="text"
+          placeholder="Search albums..."
+          class="pl-10 pr-4"
         />
       </div>
     </div>
@@ -70,7 +71,7 @@ onMounted(loadAlbums)
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
       
-      <div v-else-if="filteredAlbums.length === 0" class="h-full flex flex-col items-center justify-center text-muted-foreground">
+      <div v-else-if="filteredAlbums.length === 0" class="h-full flex flex-col items-center justify-center text-white/40">
         <Disc class="w-12 h-12 mb-4 opacity-20" />
         <p>No albums found in your library.</p>
       </div>

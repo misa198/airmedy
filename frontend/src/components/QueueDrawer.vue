@@ -17,17 +17,17 @@ const store = usePlayerStore()
   >
     <div
       v-if="store.isQueueOpen"
-      class="fixed right-0 top-0 bottom-0 w-80 bg-card/95 backdrop-blur-xl border-l border-border z-50 flex flex-col shadow-2xl"
+      class="fixed right-0 top-0 bottom-0 w-72 bg-background/90 backdrop-blur-2xl border-l border-white/[0.06] z-50 flex flex-col"
     >
       <!-- Header -->
-      <div class="flex items-center justify-between p-4 border-b">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
         <div class="flex items-center gap-2 font-semibold">
           <ListMusic class="w-4 h-4 text-primary" />
           <span>Queue</span>
           <span class="text-xs text-muted-foreground font-normal ml-1">({{ store.queue.length }})</span>
         </div>
         <button
-          class="p-2 rounded-full hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+          class="p-1.5 rounded-full hover:bg-white/8 transition-colors text-white/40 hover:text-white"
           @click="store.toggleQueue()"
         >
           <X class="w-4 h-4" />
@@ -50,12 +50,12 @@ const store = usePlayerStore()
           v-slot="{ item, index }"
         >
           <button
-            class="w-full flex items-center gap-3 px-4 h-16 text-left hover:bg-accent/50 transition-colors border-b border-transparent hover:border-accent group"
+            class="w-full flex items-center gap-3 px-4 h-16 text-left hover:bg-white/[0.04] transition-colors group"
             :class="{ 'bg-primary/10 border-l-2 border-l-primary': store.currentTrack?.id === item.id }"
             @click="store.playTracks(store.queue, index)"
           >
             <!-- Artwork -->
-            <div class="w-10 h-10 rounded bg-muted flex-shrink-0 overflow-hidden border">
+            <div class="w-10 h-10 rounded-md bg-white/5 flex-shrink-0 overflow-hidden">
               <img
                 v-if="item.artwork_key"
                 :src="`/artwork/${item.artwork_key}`"

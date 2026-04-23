@@ -4,6 +4,7 @@ import * as LibraryService from '../../bindings/changeme/internal/infra/wails/li
 import type { TrackDTO } from '../../bindings/changeme/internal/domain/models'
 import TrackTable from '../components/TrackTable.vue'
 import { usePlayerStore } from '../stores/player'
+import { Input } from '@/components/ui/input'
 
 const playerStore = usePlayerStore()
 
@@ -39,19 +40,18 @@ onMounted(loadTracks)
 <template>
   <div class="h-full flex flex-col overflow-hidden bg-background">
     <!-- Header -->
-    <div class="p-6 pb-4 border-b">
+    <div class="p-6 pb-4 border-b border-white/[0.06]">
       <div class="flex items-center justify-between mb-4">
         <h1 class="text-3xl font-bold">Tracks</h1>
-        <div class="text-sm text-muted-foreground">{{ filteredTracks.length }} tracks</div>
+        <div class="text-sm text-white/40">{{ filteredTracks.length }} tracks</div>
       </div>
       
       <div class="flex items-center gap-4">
         <div class="relative flex-1 max-w-sm">
-          <input 
+          <Input
             v-model="searchQuery"
-            type="text" 
-            placeholder="Filter tracks..." 
-            class="w-full bg-accent/50 border rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+            type="text"
+            placeholder="Filter tracks..."
           />
         </div>
       </div>

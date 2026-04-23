@@ -36,23 +36,23 @@ onMounted(loadRecentlyAdded)
 
 <template>
   <div class="h-full flex flex-col overflow-hidden bg-background">
-    <div class="p-6 pb-4 border-b">
+    <div class="p-6 pb-4 border-b border-white/[0.06]">
       <div class="flex items-center justify-between mb-2">
         <h1 class="text-3xl font-bold">Recently Added</h1>
-        <div class="text-sm text-muted-foreground flex items-center gap-2">
+        <div class="text-sm text-white/40 flex items-center gap-2">
           <Clock class="w-4 h-4" />
           Last 50 albums
         </div>
       </div>
-      <p class="text-muted-foreground text-sm">Albums recently added to your library.</p>
+      <p class="text-white/40 text-sm">Albums recently added to your library.</p>
     </div>
 
     <div class="flex-1 overflow-hidden px-6 py-8">
       <div v-if="isLoading" class="h-full flex items-center justify-center">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
-      
-      <div v-else-if="albums.length === 0" class="h-full flex flex-col items-center justify-center text-muted-foreground">
+
+      <div v-else-if="albums.length === 0" class="h-full flex flex-col items-center justify-center text-white/40">
         <Disc class="w-12 h-12 mb-4 opacity-20" />
         <p>No albums found in your library.</p>
       </div>

@@ -52,8 +52,8 @@ const formatTotalDuration = (tracks: TrackDTO[]) => {
 <template>
   <div class="h-full flex flex-col bg-background overflow-hidden">
     <!-- Header/Back Button -->
-    <div class="p-4 border-b flex items-center gap-4 bg-muted/5">
-      <button @click="router.back()" class="p-2 hover:bg-accent rounded-full transition-colors">
+    <div class="p-4 border-b border-white/[0.06] flex items-center gap-4">
+      <button @click="router.back()" class="p-2 hover:bg-white/[0.06] rounded-full transition-colors">
         <ArrowLeft class="w-5 h-5" />
       </button>
       <div class="font-medium">Album Details</div>
@@ -65,10 +65,10 @@ const formatTotalDuration = (tracks: TrackDTO[]) => {
 
     <div v-else-if="album" class="flex-1 overflow-y-auto">
       <!-- Album Hero Section -->
-      <div class="p-8 md:p-12 flex flex-col md:flex-row gap-8 items-end bg-gradient-to-b from-accent/30 to-background">
-        <div class="w-48 h-48 md:w-64 md:h-64 rounded-lg shadow-2xl overflow-hidden border bg-muted flex-shrink-0">
+      <div class="p-8 md:p-12 flex flex-col md:flex-row gap-8 items-end bg-gradient-to-b from-dynamic-surface to-transparent">
+        <div class="w-48 h-48 md:w-64 md:h-64 rounded-lg shadow-2xl overflow-hidden ring-1 ring-white/[0.08] bg-white/5 flex-shrink-0">
           <img v-if="album.artwork_key" :src="`/artwork/${album.artwork_key}`" class="w-full h-full object-cover" />
-          <div v-else class="w-full h-full flex items-center justify-center text-muted-foreground/20">
+          <div v-else class="w-full h-full flex items-center justify-center text-white/10">
             <Disc class="w-24 h-24" />
           </div>
         </div>
@@ -76,8 +76,8 @@ const formatTotalDuration = (tracks: TrackDTO[]) => {
         <div class="flex-1 space-y-4">
           <div class="space-y-2">
             <h1 class="text-4xl md:text-6xl font-bold tracking-tight">{{ album.title || 'Unknown Album' }}</h1>
-            <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground">
-              <div class="flex items-center gap-2 text-foreground font-semibold">
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-white/40">
+              <div class="flex items-center gap-2 text-white font-semibold">
                 <User class="w-4 h-4" />
                 <span>{{ album.artists?.map(a => a?.name).join(', ') || 'Unknown Artist' }}</span>
               </div>
@@ -98,13 +98,13 @@ const formatTotalDuration = (tracks: TrackDTO[]) => {
 
           <div class="flex items-center gap-4 pt-2">
             <button
-              class="px-8 py-3 bg-primary text-primary-foreground rounded-full font-bold shadow-lg hover:scale-105 transition-transform flex items-center gap-2"
+              class="px-8 py-3 bg-white text-black rounded-full font-bold shadow-lg hover:scale-105 transition-transform flex items-center gap-2"
               @click="playerStore.playTracks(tracks, 0)"
             >
               <Play class="w-5 h-5 fill-current" />
               Play
             </button>
-            <button class="p-3 border rounded-full hover:bg-accent transition-colors">
+            <button class="p-3 ring-1 ring-white/[0.08] rounded-full hover:bg-white/[0.06] transition-colors">
               <MoreVertical class="w-5 h-5" />
             </button>
           </div>
@@ -122,7 +122,7 @@ const formatTotalDuration = (tracks: TrackDTO[]) => {
       </div>
 
       <!-- Album Footer Metadata -->
-      <div v-if="album.copyright" class="px-8 pb-12 text-sm text-muted-foreground border-t pt-8 mt-4">
+      <div v-if="album.copyright" class="px-8 pb-12 text-sm text-white/30 border-t border-white/[0.06] pt-8 mt-4">
         <div class="flex items-center gap-2">
           <span class="font-semibold">Copyright:</span>
           <span>{{ album.copyright }}</span>

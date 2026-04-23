@@ -1,6 +1,7 @@
 <script setup lang="ts" generic="T extends { id: string; name: string }">
 import { ref, computed } from 'vue'
 import { Search, Play } from 'lucide-vue-next'
+import { Input } from '@/components/ui/input'
 
 const props = defineProps<{
   title: string
@@ -30,16 +31,16 @@ const filteredItems = computed(() => {
 <template>
   <div class="h-full flex overflow-hidden bg-background">
     <!-- Left Column: Navigation List -->
-    <div class="w-64 md:w-80 border-r flex flex-col overflow-hidden bg-muted/10">
+    <div class="w-64 md:w-80 border-r border-white/[0.06] flex flex-col overflow-hidden bg-background">
       <div class="p-6 pb-4">
         <h1 class="text-2xl font-bold mb-4">{{ title }}</h1>
         <div class="relative">
-          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input 
+          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+          <Input
             v-model="searchQuery"
-            type="text" 
-            :placeholder="searchPlaceholder || 'Search...'" 
-            class="w-full bg-accent/50 border rounded-md pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+            type="text"
+            :placeholder="searchPlaceholder || 'Search...'"
+            class="pl-10 pr-4"
           />
         </div>
       </div>
@@ -57,25 +58,25 @@ const filteredItems = computed(() => {
           key-field="id"
           v-slot="{ item }"
         >
-          <div 
+          <div
             @click="emit('select', item.id)"
             :class="[
               'flex items-center gap-3 p-2 rounded-lg group transition-colors cursor-pointer mb-1',
-              selectedId === item.id ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-accent/50'
+              selectedId === item.id ? 'bg-white/[0.08] text-white font-medium' : 'hover:bg-white/[0.04]'
             ]"
           >
             <div :class="[
-              'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border transition-colors',
-              selectedId === item.id ? 'bg-primary-foreground/10 border-primary-foreground/20' : 'bg-muted group-hover:border-primary/50'
+              'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ring-1 transition-colors',
+              selectedId === item.id ? 'bg-white/10 ring-white/[0.12]' : 'bg-white/5 ring-white/[0.06] group-hover:ring-white/[0.12]'
             ]">
               <component :is="icon" v-if="icon" class="w-4 h-4" />
               <span v-else class="text-xs font-bold">{{ item.name.charAt(0).toUpperCase() }}</span>
             </div>
             <div class="flex-1 truncate font-medium">{{ item.name || 'Unknown' }}</div>
-            <button 
+            <button
               v-if="selectedId !== item.id"
               @click.stop="emit('play', item)"
-              class="p-1.5 opacity-0 group-hover:opacity-100 bg-primary text-primary-foreground rounded-full shadow-lg transition-all scale-90 hover:scale-100"
+              class="p-1.5 opacity-0 group-hover:opacity-100 bg-white text-black rounded-full shadow-lg transition-all scale-90 hover:scale-100"
             >
               <Play class="w-3 h-3 fill-current" />
             </button>
@@ -87,7 +88,7 @@ const filteredItems = computed(() => {
     <!-- Right Column: Detail View -->
     <div class="flex-1 overflow-hidden bg-background relative">
       <slot v-if="selectedId"></slot>
-      <div v-if="!selectedId && !isLoading" class="h-full flex flex-col items-center justify-center text-muted-foreground animate-in fade-in duration-500">
+      <div v-if="!selectedId && !isLoading" class="h-full flex flex-col items-center justify-center text-white/40 animate-in fade-in duration-500">
         <component :is="icon" v-if="icon" class="w-16 h-16 mb-4 opacity-10" />
         <p class="text-lg">Select an item to view details</p>
       </div>

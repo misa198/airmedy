@@ -7,6 +7,7 @@ Airmedy's aesthetic is inspired by modern macOS and Apple Music: **depth, transl
 - **Hierarchy through Elevation:** Use background blurs and subtle borders rather than heavy shadows to create depth.
 - **Content First:** The UI should recede, allowing album art and typography to lead.
 - **Interactive Fluidity:** Every interaction should feel soft and weighted (no abrupt state changes).
+- **Apple Like:** Emulate the premium feel of Apple Music's interface, with a focus on clean lines, spacious layouts, and a harmonious color palette that adapts to the music.
 
 ## 2. Layout Analysis
 The interface adheres to a clearly defined hierarchical structure, optimized for navigation on a horizontal desktop:
