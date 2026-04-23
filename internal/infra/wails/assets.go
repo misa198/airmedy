@@ -4,6 +4,8 @@ import (
 	"embed"
 	"io/fs"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"strings"
 
@@ -17,6 +19,15 @@ func NewAssetHandler(assets embed.FS, artworkCache domain.ArtworkCache) http.Han
 	}
 
 	embeddedHandler := http.FileServer(http.FS(distFS))
+
+	var devProxy http.Handler
+	if !IsProduction {
+		target, err := url.Parse("http://localhost:9245")
+		if err != nil {
+			panic(err)
+		}
+		devProxy = httputil.NewSingleHostReverseProxy(target)
+	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/artwork/") {
@@ -33,6 +44,11 @@ func NewAssetHandler(assets embed.FS, artworkCache domain.ArtworkCache) http.Han
 			}
 
 			http.ServeFile(w, r, filePath)
+			return
+		}
+
+		if !IsProduction && devProxy != nil {
+			devProxy.ServeHTTP(w, r)
 			return
 		}
 

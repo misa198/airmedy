@@ -31,7 +31,7 @@ const fillPct = computed(() => {
 <template>
   <div :class="cn('relative h-4 flex items-center group/slider cursor-pointer select-none', props.class)">
     <!-- Visual track -->
-    <div class="absolute w-full h-[2px] rounded-full bg-white/15">
+    <div class="absolute w-full h-1 rounded-full bg-white/15">
       <div
         class="h-full rounded-full bg-white"
         :style="{ width: fillPct + '%' }"
@@ -39,7 +39,7 @@ const fillPct = computed(() => {
     </div>
     <!-- Thumb — visible on hover only -->
     <div
-      class="absolute w-[10px] h-[10px] rounded-full bg-white shadow pointer-events-none opacity-0 group-hover/slider:opacity-100 transition-opacity duration-150 -translate-x-1/2"
+      class="absolute w-3 h-3 rounded-full bg-white shadow pointer-events-none opacity-0 group-hover/slider:opacity-100 transition-opacity duration-150 -translate-x-1/2"
       :style="{ left: fillPct + '%' }"
     />
     <!-- Invisible native input for interaction and accessibility -->

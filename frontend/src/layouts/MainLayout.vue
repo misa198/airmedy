@@ -47,7 +47,7 @@ onMounted(async () => {
         
         <!-- View Content Panel -->
         <ResizablePanel 
-          :default-size="75" 
+          :default-size="80" 
           class="h-full flex flex-col overflow-hidden"
         >
           <main :class="['flex-1 overflow-y-auto overflow-x-hidden', isMac ? 'pt-10' : '']">
@@ -55,6 +55,20 @@ onMounted(async () => {
           </main>
         </ResizablePanel>
       </ResizablePanelGroup>
+
+      <!-- Queue Sidebar (with transition) -->
+      <div 
+        class="h-full bg-background transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0"
+        :class="[
+          playerStore.isQueueOpen && playerStore.playerMode !== 'fullscreen' 
+            ? 'w-80 border-l border-white/[0.06]' 
+            : 'w-0 border-l-0 border-transparent'
+        ]"
+      >
+        <div class="w-80 h-full">
+          <QueueDrawer />
+        </div>
+      </div>
     </div>
 
     <!-- Player (mode-dependent) -->
@@ -62,10 +76,9 @@ onMounted(async () => {
     <PlayerFooter v-else-if="playerStore.playerMode === 'sticky'" />
 
     <!-- FullScreen player overlays the entire UI -->
-    <FullScreenPlayer v-if="playerStore.playerMode === 'fullscreen'" />
-
-    <!-- Queue Drawer (slides in from right, above footer) -->
-    <QueueDrawer />
+    <Transition name="slide-up">
+      <FullScreenPlayer v-show="playerStore.playerMode === 'fullscreen'" />
+    </Transition>
   </div>
 </template>
 
@@ -73,5 +86,15 @@ onMounted(async () => {
 /* Ensure the layout takes up the full screen and doesn't scroll at the root level */
 :global(body) {
   @apply overflow-hidden;
+}
+
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: transform 0.5s cubic-bezier(0.6, 0, 0.4, 1);
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+  transform: translateY(100%);
 }
 </style>
