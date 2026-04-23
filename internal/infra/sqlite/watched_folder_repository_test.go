@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"changeme/internal/domain"
+	"airmedy/internal/domain"
 )
 
 func TestWatchedFolderRepository(t *testing.T) {

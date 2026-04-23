@@ -2,8 +2,8 @@ package wails
 
 import (
 	"context"
-	"changeme/internal/app/library"
-	"changeme/internal/domain"
+	"airmedy/internal/app/library"
+	"airmedy/internal/domain"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 

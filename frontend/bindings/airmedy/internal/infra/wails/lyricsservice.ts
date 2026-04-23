@@ -10,26 +10,26 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 import * as domain$0 from "../../domain/models.js";
 
 export function DeleteLyrics(trackID: string): $CancellablePromise<void> {
-    return $Call.ByID(200832657, trackID);
+    return $Call.ByID(433055224, trackID);
 }
 
 /**
  * FetchLyrics fetches lyrics from lrclib.net for the given track and returns the result.
  */
 export function FetchLyrics(trackID: string, track: domain$0.TrackDTO | null): $CancellablePromise<domain$0.Lyric | null> {
-    return $Call.ByID(1312226886, trackID, track).then(($result: any) => {
+    return $Call.ByID(1354700981, trackID, track).then(($result: any) => {
         return $$createType1($result);
     });
 }
 
 export function GetLyrics(trackID: string): $CancellablePromise<domain$0.Lyric | null> {
-    return $Call.ByID(2377212206, trackID).then(($result: any) => {
+    return $Call.ByID(3051041221, trackID).then(($result: any) => {
         return $$createType1($result);
     });
 }
 
 export function SaveLyrics(trackID: string, content: string, source: string): $CancellablePromise<void> {
-    return $Call.ByID(199281567, trackID, content, source);
+    return $Call.ByID(4037936082, trackID, content, source);
 }
 
 // Private type creation functions

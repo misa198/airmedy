@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import * as LibraryService from '../../bindings/changeme/internal/infra/wails/libraryservice'
+import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import { RotateCcw, Plus, Trash2, Folder, CheckCircle2, AlertCircle, Loader2 } from 'lucide-vue-next'
-import type { WatchedFolder, SyncProgress } from '../../bindings/changeme/internal/domain/models'
+import type { WatchedFolder, SyncProgress } from '../../bindings/airmedy/internal/domain/models'
 import { Events } from '@wailsio/runtime'
 import EQPanel from '@/components/EQPanel.vue'
 

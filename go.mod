@@ -1,4 +1,4 @@
-module changeme
+module airmedy
 
 go 1.25
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"changeme/internal/domain"
+	"airmedy/internal/domain"
 
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/mapping"

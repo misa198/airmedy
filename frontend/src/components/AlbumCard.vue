@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Disc, Play, User } from 'lucide-vue-next'
-import type { AlbumDTO, Artist } from '../../bindings/changeme/internal/domain/models'
+import type { AlbumDTO, Artist } from '../../bindings/airmedy/internal/domain/models'
 
 defineProps<{
   album: AlbumDTO

@@ -29,7 +29,7 @@ import (
 	"sync"
 	"unsafe"
 
-	"changeme/internal/domain"
+	"airmedy/internal/domain"
 )
 
 var (

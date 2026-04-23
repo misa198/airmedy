@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"changeme/internal/domain"
+	"airmedy/internal/domain"
 
 	"go.senan.xyz/taglib"
 )

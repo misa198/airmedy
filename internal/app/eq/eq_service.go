@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"changeme/internal/domain"
+	"airmedy/internal/domain"
 
 	"github.com/google/uuid"
 )

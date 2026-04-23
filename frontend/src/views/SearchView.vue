@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import AlbumCard from '@/components/AlbumCard.vue'
 import { useSearchStore } from '@/stores/search'
 import { usePlayerStore } from '@/stores/player'
-import type { TrackDTO } from '../../bindings/changeme/internal/domain/models'
+import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 
 const router = useRouter()
 const store = useSearchStore()

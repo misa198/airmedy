@@ -1,7 +1,7 @@
 package player
 
 import (
-	"changeme/internal/infra/audio"
+	"airmedy/internal/infra/audio"
 
 	"go.uber.org/fx"
 )

@@ -3,7 +3,7 @@ package metadata
 import (
 	"testing"
 
-	"changeme/internal/domain"
+	"airmedy/internal/domain"
 )
 
 func TestNormalizeSort(t *testing.T) {

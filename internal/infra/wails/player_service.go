@@ -1,8 +1,8 @@
 package wails
 
 import (
-	"changeme/internal/app/player"
-	"changeme/internal/domain"
+	"airmedy/internal/app/player"
+	"airmedy/internal/domain"
 )
 
 // PlayerService is the Wails binding for playback controls.

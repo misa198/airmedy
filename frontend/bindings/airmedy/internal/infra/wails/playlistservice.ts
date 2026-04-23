@@ -10,43 +10,43 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 import * as domain$0 from "../../domain/models.js";
 
 export function AddTrackToPlaylist(playlistID: string, trackID: string): $CancellablePromise<void> {
-    return $Call.ByID(1405837185, playlistID, trackID);
+    return $Call.ByID(3952904816, playlistID, trackID);
 }
 
 export function CreatePlaylist(name: string, description: string): $CancellablePromise<domain$0.Playlist | null> {
-    return $Call.ByID(2042029434, name, description).then(($result: any) => {
+    return $Call.ByID(783157459, name, description).then(($result: any) => {
         return $$createType1($result);
     });
 }
 
 export function DeletePlaylist(id: string): $CancellablePromise<void> {
-    return $Call.ByID(3884324893, id);
+    return $Call.ByID(1239427820, id);
 }
 
 export function GetAllPlaylists(): $CancellablePromise<(domain$0.Playlist | null)[]> {
-    return $Call.ByID(3022665926).then(($result: any) => {
+    return $Call.ByID(3723506981).then(($result: any) => {
         return $$createType2($result);
     });
 }
 
 export function GetPlaylistByID(id: string): $CancellablePromise<domain$0.Playlist | null> {
-    return $Call.ByID(3588384454, id).then(($result: any) => {
+    return $Call.ByID(4053493933, id).then(($result: any) => {
         return $$createType1($result);
     });
 }
 
 export function GetPlaylistTracks(playlistID: string): $CancellablePromise<(domain$0.TrackDTO | null)[]> {
-    return $Call.ByID(1659766486, playlistID).then(($result: any) => {
+    return $Call.ByID(1937479585, playlistID).then(($result: any) => {
         return $$createType5($result);
     });
 }
 
 export function RemoveTrackFromPlaylist(playlistID: string, trackID: string): $CancellablePromise<void> {
-    return $Call.ByID(3970339877, playlistID, trackID);
+    return $Call.ByID(1450009730, playlistID, trackID);
 }
 
 export function UpdatePlaylist(id: string, name: string, description: string): $CancellablePromise<void> {
-    return $Call.ByID(3144759743, id, name, description);
+    return $Call.ByID(1309793242, id, name, description);
 }
 
 // Private type creation functions

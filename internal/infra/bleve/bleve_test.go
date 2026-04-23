@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"changeme/internal/domain"
+	"airmedy/internal/domain"
 )
 
 func TestBleveSearchService(t *testing.T) {

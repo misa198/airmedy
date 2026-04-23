@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"changeme/internal/app/lyrics"
-	"changeme/internal/domain"
-	"changeme/internal/infra/artwork"
+	"airmedy/internal/app/lyrics"
+	"airmedy/internal/domain"
+	"airmedy/internal/infra/artwork"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/fx"
 )

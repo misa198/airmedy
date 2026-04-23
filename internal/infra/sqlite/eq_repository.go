@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"changeme/internal/domain"
+	"airmedy/internal/domain"
 )
 
 type eqRepository struct {

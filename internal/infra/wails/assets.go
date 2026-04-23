@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"changeme/internal/domain"
+	"airmedy/internal/domain"
 )
 
 func NewAssetHandler(assets embed.FS, artworkCache domain.ArtworkCache) http.Handler {

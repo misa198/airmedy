@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"changeme/internal/domain"
+	"airmedy/internal/domain"
 )
 
 type diskArtworkCache struct {

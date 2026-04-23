@@ -5,7 +5,7 @@ package audio
 import (
 	"log/slog"
 
-	"changeme/internal/domain"
+	"airmedy/internal/domain"
 )
 
 // MockPlayer is a no-op implementation of domain.AudioPlayer for non-macOS platforms or testing.

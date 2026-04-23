@@ -3,8 +3,8 @@ package wails
 import (
 	"context"
 
-	"changeme/internal/app/lyrics"
-	"changeme/internal/domain"
+	"airmedy/internal/app/lyrics"
+	"airmedy/internal/domain"
 )
 
 type LyricsService struct {

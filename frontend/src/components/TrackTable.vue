@@ -2,7 +2,7 @@
 import { Clock, Disc, MoreVertical, Music, Play, User } from 'lucide-vue-next'
 import { nextTick, onActivated, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import type { Artist, TrackDTO } from '../../bindings/changeme/internal/domain/models'
+import type { Artist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import { formatTime } from '../lib/utils'
 import { usePlayerStore } from '../stores/player'
 

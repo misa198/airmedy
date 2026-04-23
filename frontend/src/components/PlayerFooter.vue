@@ -16,7 +16,7 @@ import {
   Mic2,
 } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
-import { RepeatMode } from '../../bindings/changeme/internal/domain/models'
+import { RepeatMode } from '../../bindings/airmedy/internal/domain/models'
 import { formatTime } from '../lib/utils'
 import { Slider } from '@/components/ui/slider'
 

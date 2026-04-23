@@ -7,9 +7,9 @@ import (
 	"log"
 	"time"
 
-	"changeme/internal/app"
-	"changeme/internal/domain"
-	"changeme/internal/infra/wails"
+	"airmedy/internal/app"
+	"airmedy/internal/domain"
+	"airmedy/internal/infra/wails"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/fx"

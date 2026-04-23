@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"changeme/internal/domain"
+	"airmedy/internal/domain"
 )
 
 type trackRepository struct {

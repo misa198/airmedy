@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import * as LibraryService from '../../bindings/changeme/internal/infra/wails/libraryservice'
-import type { Composer, TrackDTO } from '../../bindings/changeme/internal/domain/models'
+import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
+import type { Composer, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import GroupedAlbumList from '../components/GroupedAlbumList.vue'
 import { UserCircle, Music, Play } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'

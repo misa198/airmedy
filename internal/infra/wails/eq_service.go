@@ -3,8 +3,8 @@ package wails
 import (
 	"context"
 
-	"changeme/internal/app/eq"
-	"changeme/internal/domain"
+	"airmedy/internal/app/eq"
+	"airmedy/internal/domain"
 )
 
 type EQService struct {

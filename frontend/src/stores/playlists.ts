@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import * as PlaylistService from '../../bindings/changeme/internal/infra/wails/playlistservice'
-import type { Playlist } from '../../bindings/changeme/internal/domain/models'
+import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
+import type { Playlist } from '../../bindings/airmedy/internal/domain/models'
 
 export const usePlaylistsStore = defineStore('playlists', () => {
   const playlists = ref<Playlist[]>([])

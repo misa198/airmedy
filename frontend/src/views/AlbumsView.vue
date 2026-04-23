@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import * as LibraryService from '../../bindings/changeme/internal/infra/wails/libraryservice'
+import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import { Disc, Search } from 'lucide-vue-next'
-import type { AlbumDTO, TrackDTO } from '../../bindings/changeme/internal/domain/models'
+import type { AlbumDTO, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import VirtualizedGrid from '../components/VirtualizedGrid.vue'
 import AlbumCard from '../components/AlbumCard.vue'
 import { Input } from '@/components/ui/input'

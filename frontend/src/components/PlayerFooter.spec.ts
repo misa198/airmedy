@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import PlayerFooter from './PlayerFooter.vue'
 import { usePlayerStore } from '../stores/player'
-import { PlaybackState, RepeatMode } from '../../bindings/changeme/internal/domain/models'
+import { PlaybackState, RepeatMode } from '../../bindings/airmedy/internal/domain/models'
 
 vi.mock('@wailsio/runtime', () => ({
   Events: { On: vi.fn(), Off: vi.fn() },
@@ -15,7 +15,7 @@ vi.mock('@wailsio/runtime', () => ({
   Call: { ByID: vi.fn().mockResolvedValue(null) },
 }))
 
-vi.mock('../../bindings/changeme/internal/infra/wails/playerservice', () => ({
+vi.mock('../../bindings/airmedy/internal/infra/wails/playerservice', () => ({
   GetStatus: vi.fn().mockResolvedValue(null),
   GetQueue: vi.fn().mockResolvedValue([]),
   Play: vi.fn(),

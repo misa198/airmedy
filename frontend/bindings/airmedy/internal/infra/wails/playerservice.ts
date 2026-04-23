@@ -15,59 +15,59 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 import * as domain$0 from "../../domain/models.js";
 
 export function GetQueue(): $CancellablePromise<(domain$0.TrackDTO | null)[]> {
-    return $Call.ByID(533657436).then(($result: any) => {
+    return $Call.ByID(3092492609).then(($result: any) => {
         return $$createType2($result);
     });
 }
 
 export function GetStatus(): $CancellablePromise<domain$0.PlayerStatus> {
-    return $Call.ByID(1457539731).then(($result: any) => {
+    return $Call.ByID(2225965096).then(($result: any) => {
         return $$createType3($result);
     });
 }
 
 export function Next(): $CancellablePromise<void> {
-    return $Call.ByID(4192570598);
+    return $Call.ByID(777386567);
 }
 
 export function Pause(): $CancellablePromise<void> {
-    return $Call.ByID(3359510743);
+    return $Call.ByID(1548241692);
 }
 
 export function Play(): $CancellablePromise<void> {
-    return $Call.ByID(2740923477);
+    return $Call.ByID(447319412);
 }
 
 export function PlayTracks(tracks: (domain$0.TrackDTO | null)[], startIndex: number): $CancellablePromise<void> {
-    return $Call.ByID(2021690605, tracks, startIndex);
+    return $Call.ByID(831343208, tracks, startIndex);
 }
 
 export function Previous(): $CancellablePromise<void> {
-    return $Call.ByID(275807114);
+    return $Call.ByID(4076836127);
 }
 
 export function Seek(position: number): $CancellablePromise<void> {
-    return $Call.ByID(201227107, position);
+    return $Call.ByID(3998650994, position);
 }
 
 export function SetMuted(muted: boolean): $CancellablePromise<void> {
-    return $Call.ByID(821275176, muted);
+    return $Call.ByID(2392530493, muted);
 }
 
 export function SetRepeatMode(mode: string): $CancellablePromise<void> {
-    return $Call.ByID(3682635369, mode);
+    return $Call.ByID(986951570, mode);
 }
 
 export function SetShuffle(enabled: boolean): $CancellablePromise<void> {
-    return $Call.ByID(3455733206, enabled);
+    return $Call.ByID(890663075, enabled);
 }
 
 export function SetVolume(volume: number): $CancellablePromise<void> {
-    return $Call.ByID(3604988375, volume);
+    return $Call.ByID(1067437308, volume);
 }
 
 export function Stop(): $CancellablePromise<void> {
-    return $Call.ByID(3235842495);
+    return $Call.ByID(2479813202);
 }
 
 // Private type creation functions

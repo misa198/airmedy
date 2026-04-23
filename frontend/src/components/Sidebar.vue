@@ -159,17 +159,17 @@ function toggleContextMenu(id: string, e: MouseEvent) {
         </p>
       </div>
     </div>
-  </div>
 
-  <!-- Dialogs -->
-  <CreatePlaylistDialog
-    v-model:open="createDialogOpen"
-    @confirm="handleCreate"
-  />
-  <CreatePlaylistDialog
-    v-model:open="renameDialogOpen"
-    :initial-name="renamingName"
-    title="Rename Playlist"
-    @confirm="handleRename"
-  />
+    <!-- Dialogs -->
+    <CreatePlaylistDialog
+      v-model:open="createDialogOpen"
+      @confirm="handleCreate"
+    />
+    <CreatePlaylistDialog
+      v-model:open="renameDialogOpen"
+      :initial-name="renamingName"
+      title="Rename Playlist"
+      @confirm="handleRename"
+    />
+  </div>
 </template>

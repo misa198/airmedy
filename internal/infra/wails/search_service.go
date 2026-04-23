@@ -3,7 +3,7 @@ package wails
 import (
 	"context"
 
-	"changeme/internal/domain"
+	"airmedy/internal/domain"
 )
 
 type SearchResultSet struct {

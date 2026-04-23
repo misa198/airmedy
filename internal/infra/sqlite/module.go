@@ -1,7 +1,7 @@
 package sqlite
 
 import (
-	"changeme/internal/domain"
+	"airmedy/internal/domain"
 
 	"go.uber.org/fx"
 )

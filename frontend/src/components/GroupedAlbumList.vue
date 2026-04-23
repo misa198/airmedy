@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Play, Disc } from 'lucide-vue-next'
-import type { TrackDTO, AlbumDTO } from '../../bindings/changeme/internal/domain/models'
+import type { TrackDTO, AlbumDTO } from '../../bindings/airmedy/internal/domain/models'
 import { usePlayerStore } from '../stores/player'
 import TrackTable from './TrackTable.vue'
 

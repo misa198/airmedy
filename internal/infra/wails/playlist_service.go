@@ -3,8 +3,8 @@ package wails
 import (
 	"context"
 
-	"changeme/internal/app/playlist"
-	"changeme/internal/domain"
+	"airmedy/internal/app/playlist"
+	"airmedy/internal/domain"
 )
 
 type PlaylistService struct {

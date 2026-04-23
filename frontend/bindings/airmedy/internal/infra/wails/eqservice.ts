@@ -10,37 +10,37 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 import * as domain$0 from "../../domain/models.js";
 
 export function ApplyProfile(id: string): $CancellablePromise<void> {
-    return $Call.ByID(346874121, id);
+    return $Call.ByID(1891702200, id);
 }
 
 export function CreateProfile(name: string): $CancellablePromise<domain$0.EQProfile | null> {
-    return $Call.ByID(3548148201, name).then(($result: any) => {
+    return $Call.ByID(4064694210, name).then(($result: any) => {
         return $$createType1($result);
     });
 }
 
 export function DeleteProfile(id: string): $CancellablePromise<void> {
-    return $Call.ByID(2818463180, id);
+    return $Call.ByID(3089149179, id);
 }
 
 export function GetActiveProfile(): $CancellablePromise<domain$0.EQProfile | null> {
-    return $Call.ByID(4149770507).then(($result: any) => {
+    return $Call.ByID(3246786438).then(($result: any) => {
         return $$createType1($result);
     });
 }
 
 export function GetAllProfiles(): $CancellablePromise<(domain$0.EQProfile | null)[]> {
-    return $Call.ByID(1746732793).then(($result: any) => {
+    return $Call.ByID(2567533384).then(($result: any) => {
         return $$createType2($result);
     });
 }
 
 export function SetEnabled(enabled: boolean): $CancellablePromise<void> {
-    return $Call.ByID(1983124297, enabled);
+    return $Call.ByID(342202204, enabled);
 }
 
 export function UpdateBand(profileID: string, bandIndex: number, gain: number): $CancellablePromise<void> {
-    return $Call.ByID(1651130346, profileID, bandIndex, gain);
+    return $Call.ByID(1712355375, profileID, bandIndex, gain);
 }
 
 // Private type creation functions

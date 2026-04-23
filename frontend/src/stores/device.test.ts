@@ -27,7 +27,7 @@ vi.mock('@wailsio/runtime', () => ({
 
 // Mock Greetservice bindings
 const mockGetPlatform = vi.fn()
-vi.mock('../../bindings/changeme/internal/infra/wails/greetservice', () => ({
+vi.mock('../../bindings/airmedy/internal/infra/wails/greetservice', () => ({
   GetPlatform: () => mockGetPlatform(),
 }))
 
@@ -42,20 +42,35 @@ describe('useDeviceStore', () => {
   it('starts with default values', () => {
     const store = useDeviceStore()
     expect(store.isMac).toBe(false)
+    expect(store.isWindows).toBe(false)
+    expect(store.isLinux).toBe(false)
     expect(store.isWindowFullscreen).toBe(false)
   })
 
-  it('init identifies platform', async () => {
+  it('init identifies mac platform', async () => {
     mockGetPlatform.mockResolvedValue('darwin')
     const store = useDeviceStore()
     await store.init()
     expect(store.isMac).toBe(true)
+    expect(store.isWindows).toBe(false)
+    expect(store.isLinux).toBe(false)
   })
 
-  it('init identifies non-mac platform', async () => {
+  it('init identifies windows platform', async () => {
     mockGetPlatform.mockResolvedValue('windows')
     const store = useDeviceStore()
     await store.init()
     expect(store.isMac).toBe(false)
+    expect(store.isWindows).toBe(true)
+    expect(store.isLinux).toBe(false)
+  })
+
+  it('init identifies linux platform', async () => {
+    mockGetPlatform.mockResolvedValue('linux')
+    const store = useDeviceStore()
+    await store.init()
+    expect(store.isMac).toBe(false)
+    expect(store.isWindows).toBe(false)
+    expect(store.isLinux).toBe(true)
   })
 })

@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"changeme/internal/domain"
+	"airmedy/internal/domain"
 )
 
 // QueueService manages the playback queue, including shuffling and repeat modes.

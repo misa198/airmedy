@@ -17,7 +17,7 @@ import {
   X,
 } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
-import { RepeatMode } from '../../bindings/changeme/internal/domain/models'
+import { RepeatMode } from '../../bindings/airmedy/internal/domain/models'
 import { formatTime } from '../lib/utils'
 import { usePlayerStore } from '../stores/player'
 import { useDeviceStore } from '../stores/device'
@@ -94,7 +94,7 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
       <!-- Top bar -->
       <div class="flex items-center justify-between px-6 py-4">
         <button class="p-2 rounded-full hover:bg-white/8 transition-all text-white/60 hover:text-white"
-          :class="{ 'mt-8': deviceStore.isMac && !deviceStore.isWindowFullscreen }" @click="store.playerMode = 'sticky'">
+          :class="{ 'mt-8': (deviceStore.isMac || deviceStore.isWindows) && !deviceStore.isWindowFullscreen }" @click="store.playerMode = 'sticky'">
           <Minimize2 class="w-5 h-5" />
         </button>
         <span class="text-xs font-semibold text-white/40 uppercase tracking-[0.2em]">Now Playing</span>

@@ -10,7 +10,7 @@ import (
 	"math"
 	"os"
 
-	"changeme/internal/domain"
+	"airmedy/internal/domain"
 )
 
 // ExtractPalette reads an image file and returns a dominant color palette.

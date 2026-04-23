@@ -10,7 +10,7 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 import * as $models from "./models.js";
 
 export function Search(query: string): $CancellablePromise<$models.SearchResultSet | null> {
-    return $Call.ByID(2620303146, query).then(($result: any) => {
+    return $Call.ByID(2942894663, query).then(($result: any) => {
         return $$createType1($result);
     });
 }

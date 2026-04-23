@@ -2,8 +2,8 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ListMusic } from 'lucide-vue-next'
-import * as PlaylistService from '../../bindings/changeme/internal/infra/wails/playlistservice'
-import type { Playlist, TrackDTO } from '../../bindings/changeme/internal/domain/models'
+import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
+import type { Playlist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import TrackTable from '@/components/TrackTable.vue'
 import { usePlayerStore } from '@/stores/player'
 

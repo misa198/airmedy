@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"changeme/internal/domain"
+	"airmedy/internal/domain"
 )
 
 type watchedFolderRepository struct {

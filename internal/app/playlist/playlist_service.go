@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	"changeme/internal/domain"
+	"airmedy/internal/domain"
 
 	"github.com/google/uuid"
 )

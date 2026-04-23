@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, onActivated } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import * as LibraryService from '../../bindings/changeme/internal/infra/wails/libraryservice'
-import type { AlbumDTO, TrackDTO } from '../../bindings/changeme/internal/domain/models'
+import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
+import type { AlbumDTO, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import TrackTable from '../components/TrackTable.vue'
 import { Disc, User, Play, Clock, Calendar, ArrowLeft, MoreVertical, Music } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'

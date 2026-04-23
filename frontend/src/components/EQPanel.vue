@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { Slider } from '@/components/ui/slider'
-import * as EQService from '../../bindings/changeme/internal/infra/wails/eqservice'
-import type { EQProfile } from '../../bindings/changeme/internal/domain/models'
+import * as EQService from '../../bindings/airmedy/internal/infra/wails/eqservice'
+import type { EQProfile } from '../../bindings/airmedy/internal/domain/models'
 
 const profiles = ref<EQProfile[]>([])
 const activeProfile = ref<EQProfile | null>(null)

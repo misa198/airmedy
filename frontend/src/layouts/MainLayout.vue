@@ -25,7 +25,7 @@ const deviceStore = useDeviceStore()
       <ResizablePanelGroup direction="horizontal">
         <!-- Sidebar Panel -->
         <ResizablePanel :default-size="20" :min-size="20" :max-size="35" class="h-full overflow-hidden">
-          <Sidebar :class="deviceStore.isMac && !deviceStore.isWindowFullscreen ? 'pt-10' : 'pt-4'" />
+          <Sidebar :class="(deviceStore.isMac || deviceStore.isWindows) && !deviceStore.isWindowFullscreen ? 'pt-10' : 'pt-4'" />
         </ResizablePanel>
 
         <ResizableHandle with-handle />
@@ -44,7 +44,8 @@ const deviceStore = useDeviceStore()
 
       <!-- Queue Sidebar (with transition) -->
       <div class="h-full bg-background transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0" :class="[
-        playerStore.isQueueOpen ? 'w-80 border-l border-white/[0.06]' : 'w-0 border-l-0 border-transparent'
+        playerStore.isQueueOpen ? 'w-80 border-l border-white/[0.06]' : 'w-0 border-l-0 border-transparent',
+        (deviceStore.isMac || deviceStore.isWindows) && !deviceStore.isWindowFullscreen ? 'pt-10' : 'pt-4'
       ]">
         <div class="w-80 h-full">
           <QueueDrawer />
@@ -53,7 +54,8 @@ const deviceStore = useDeviceStore()
 
       <!-- Lyrics Sidebar (with transition) -->
       <div class="h-full bg-background transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0" :class="[
-        playerStore.isLyricsOpen ? 'w-80 border-l border-white/[0.06]' : 'w-0 border-l-0 border-transparent'
+        playerStore.isLyricsOpen ? 'w-80 border-l border-white/[0.06]' : 'w-0 border-l-0 border-transparent',
+        (deviceStore.isMac || deviceStore.isWindows) && !deviceStore.isWindowFullscreen ? 'pt-10' : 'pt-4'
       ]">
         <div class="w-80 h-full">
           <LyricsDrawer />

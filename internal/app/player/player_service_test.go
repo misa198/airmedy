@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"changeme/internal/domain"
+	"airmedy/internal/domain"
 )
 
 // fakePlayer is a test double for domain.AudioPlayer.

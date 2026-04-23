@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { PlaybackState, RepeatMode } from '../../bindings/changeme/internal/domain/models'
+import { PlaybackState, RepeatMode } from '../../bindings/airmedy/internal/domain/models'
 
 // Mock Wails runtime — must be before any import that uses it
 vi.mock('@wailsio/runtime', () => ({
@@ -21,7 +21,7 @@ vi.mock('@wailsio/runtime', () => ({
 // Mock PlayerService bindings
 const mockGetStatus = vi.fn()
 const mockGetQueue = vi.fn()
-vi.mock('../../bindings/changeme/internal/infra/wails/playerservice', () => ({
+vi.mock('../../bindings/airmedy/internal/infra/wails/playerservice', () => ({
   GetStatus: () => mockGetStatus(),
   GetQueue: () => mockGetQueue(),
   Play: vi.fn(),

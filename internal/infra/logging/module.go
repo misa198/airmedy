@@ -1,7 +1,7 @@
 package logging
 
 import (
-	"changeme/internal/app/config"
+	"airmedy/internal/app/config"
 	"context"
 	"io"
 	"log/slog"

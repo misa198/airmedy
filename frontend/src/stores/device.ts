@@ -1,10 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { Events, Window } from '@wailsio/runtime'
-import { GetPlatform } from '../../bindings/changeme/internal/infra/wails/greetservice'
+import { GetPlatform } from '../../bindings/airmedy/internal/infra/wails/greetservice'
 
 export const useDeviceStore = defineStore('device', () => {
   const isMac = ref(false)
+  const isWindows = ref(false)
+  const isLinux = ref(false)
   const isWindowFullscreen = ref(false)
 
   async function checkFullscreen() {
@@ -23,6 +25,8 @@ export const useDeviceStore = defineStore('device', () => {
       const platform = await GetPlatform()
       console.log('[DeviceStore] Platform:', platform)
       isMac.value = platform === 'darwin'
+      isWindows.value = platform === 'windows'
+      isLinux.value = platform === 'linux'
       await checkFullscreen()
     } catch (e) {
       console.error('Failed to init device store', e)
@@ -43,6 +47,8 @@ export const useDeviceStore = defineStore('device', () => {
 
   return {
     isMac,
+    isWindows,
+    isLinux,
     isWindowFullscreen,
     init,
     checkFullscreen,

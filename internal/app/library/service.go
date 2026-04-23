@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"changeme/internal/domain"
+	"airmedy/internal/domain"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/google/uuid"

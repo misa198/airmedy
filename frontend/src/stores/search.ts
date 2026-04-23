@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import * as SearchService from '../../bindings/changeme/internal/infra/wails/searchservice'
-import type { SearchResultSet } from '../../bindings/changeme/internal/infra/wails/models'
+import * as SearchService from '../../bindings/airmedy/internal/infra/wails/searchservice'
+import type { SearchResultSet } from '../../bindings/airmedy/internal/infra/wails/models'
 
 export const useSearchStore = defineStore('search', () => {
   const query = ref('')

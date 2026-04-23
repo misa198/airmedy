@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { Events } from '@wailsio/runtime'
-import * as PlayerService from '../../bindings/changeme/internal/infra/wails/playerservice'
-import { PlaybackState, PlayerStatus, RepeatMode } from '../../bindings/changeme/internal/domain/models'
-import type { Lyric, TrackDTO } from '../../bindings/changeme/internal/domain/models'
+import * as PlayerService from '../../bindings/airmedy/internal/infra/wails/playerservice'
+import { PlaybackState, PlayerStatus, RepeatMode } from '../../bindings/airmedy/internal/domain/models'
+import type { Lyric, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 
 export interface ThemeColors {
   vibrant: string

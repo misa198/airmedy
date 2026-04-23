@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import * as LibraryService from '../../bindings/changeme/internal/infra/wails/libraryservice'
+import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import { User } from 'lucide-vue-next'
-import type { Artist, TrackDTO } from '../../bindings/changeme/internal/domain/models'
+import type { Artist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import EntityExplorerLayout from '../components/EntityExplorerLayout.vue'
 import { usePlayerStore } from '@/stores/player'
 

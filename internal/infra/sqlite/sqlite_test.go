@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"changeme/internal/domain"
+	"airmedy/internal/domain"
 )
 
 func TestSqliteRepositories(t *testing.T) {
