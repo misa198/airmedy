@@ -54,12 +54,6 @@ async function onSeekEnd() {
   isSeeking.value = false
 }
 
-const openLyrics = () => {
-  store.playerMode = 'fullscreen'
-  if (!store.isLyricsOpen) {
-    store.toggleLyrics()
-  }
-}
 </script>
 
 <template>
@@ -131,7 +125,7 @@ const openLyrics = () => {
           @update:model-value="(v) => store.setVolume(v)" />
       </div>
       <button class="transition-colors"
-        :class="store.isLyricsOpen ? 'text-primary' : 'text-white/40 hover:text-white/70'" @click="openLyrics">
+        :class="store.isLyricsOpen ? 'text-primary' : 'text-white/40 hover:text-white/70'" @click="store.toggleLyrics()">
         <Mic2 class="w-4 h-4" />
       </button>
       <button class="transition-colors"

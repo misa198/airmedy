@@ -2,6 +2,7 @@
 import FullScreenPlayer from '@/components/FullScreenPlayer.vue'
 import MiniPlayer from '@/components/MiniPlayer.vue'
 import PlayerFooter from '@/components/PlayerFooter.vue'
+import LyricsDrawer from '@/components/LyricsDrawer.vue'
 import QueueDrawer from '@/components/QueueDrawer.vue'
 import Sidebar from '@/components/Sidebar.vue'
 import {
@@ -43,12 +44,19 @@ const deviceStore = useDeviceStore()
 
       <!-- Queue Sidebar (with transition) -->
       <div class="h-full bg-background transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0" :class="[
-        playerStore.isQueueOpen && playerStore.playerMode !== 'fullscreen'
-          ? 'w-80 border-l border-white/[0.06]'
-          : 'w-0 border-l-0 border-transparent'
+        playerStore.isQueueOpen ? 'w-80 border-l border-white/[0.06]' : 'w-0 border-l-0 border-transparent'
       ]">
         <div class="w-80 h-full">
           <QueueDrawer />
+        </div>
+      </div>
+
+      <!-- Lyrics Sidebar (with transition) -->
+      <div class="h-full bg-background transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0" :class="[
+        playerStore.isLyricsOpen ? 'w-80 border-l border-white/[0.06]' : 'w-0 border-l-0 border-transparent'
+      ]">
+        <div class="w-80 h-full">
+          <LyricsDrawer />
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { Events } from '@wailsio/runtime'
 import * as PlayerService from '../../bindings/changeme/internal/infra/wails/playerservice'
 import { PlaybackState, PlayerStatus, RepeatMode } from '../../bindings/changeme/internal/domain/models'
@@ -51,6 +51,14 @@ export const usePlayerStore = defineStore('player', () => {
     return key ? `/artwork/${key}` : null
   })
 
+  // Clear lyrics immediately whenever the playing track changes
+  watch(currentTrack, (newTrack, oldTrack) => {
+    if (newTrack?.id !== oldTrack?.id) {
+      lyrics.value = null
+      lyricsLoading.value = true
+    }
+  })
+
   // Actions
   async function init() {
     console.log('[PlayerStore] Initializing...')
@@ -83,7 +91,12 @@ export const usePlayerStore = defineStore('player', () => {
     })
 
     Events.On('player:lyrics', (ev: Events.WailsEvent) => {
-      lyrics.value = (ev.data as Lyric) ?? null
+      const lyric = (ev.data as Lyric) ?? null
+      // Discard stale lyrics from a previous track (race condition on fast skipping)
+      if (lyric && lyric.track_id !== currentTrack.value?.id) return
+      // Discard a stale null if we already have correct lyrics for the current track
+      if (!lyric && lyrics.value?.track_id === currentTrack.value?.id) return
+      lyrics.value = lyric
       lyricsLoading.value = false
     })
   }
@@ -150,8 +163,6 @@ export const usePlayerStore = defineStore('player', () => {
   async function playTracks(tracks: TrackDTO[], startIndex: number) {
     queue.value = tracks
     currentTrack.value = tracks[startIndex] ?? null
-    lyrics.value = null
-    lyricsLoading.value = true
     await PlayerService.PlayTracks(tracks, startIndex)
   }
 
