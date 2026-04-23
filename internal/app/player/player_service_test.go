@@ -2,6 +2,7 @@ package player
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -116,6 +117,7 @@ func newTestService(t *testing.T, player domain.AudioPlayer) (*PlayerService, *i
 	s := &PlayerService{
 		player:       player,
 		queue:        queue,
+		logger:       slog.Default(),
 		artworkCache: &fakeArtworkCache{},
 		tickInterval: 10 * time.Millisecond,
 	}

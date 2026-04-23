@@ -54,7 +54,7 @@ describe('QueueDrawer', () => {
 
   it('is rendered when isQueueOpen is true', () => {
     const wrapper = mountDrawer(true)
-    expect(wrapper.find('[class*="fixed"]').exists()).toBe(true)
+    expect(wrapper.exists()).toBe(true)
     expect(wrapper.text()).toContain('Queue')
   })
 

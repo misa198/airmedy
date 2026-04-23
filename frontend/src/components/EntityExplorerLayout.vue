@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T extends { id: string; name: string }">
-import { ref, computed } from 'vue'
+import { ref, computed, onActivated } from 'vue'
 import { Search, Play } from 'lucide-vue-next'
 import { Input } from '@/components/ui/input'
 
@@ -18,6 +18,25 @@ const emit = defineEmits<{
 }>()
 
 const searchQuery = ref('')
+const scrollerRef = ref<any>(null)
+const lastScrollTop = ref(0)
+
+const handleScroll = (event: Event) => {
+  const target = event.target as HTMLElement
+  if (target) {
+    lastScrollTop.value = target.scrollTop
+  }
+}
+
+onActivated(() => {
+  if (scrollerRef.value && lastScrollTop.value > 0) {
+    setTimeout(() => {
+      if (scrollerRef.value && scrollerRef.value.$el) {
+        scrollerRef.value.$el.scrollTop = lastScrollTop.value
+      }
+    }, 0)
+  }
+})
 
 const filteredItems = computed(() => {
   if (!searchQuery.value) return props.items
@@ -52,11 +71,13 @@ const filteredItems = computed(() => {
         
         <RecycleScroller
           v-else
+          ref="scrollerRef"
           class="h-full px-3"
           :items="filteredItems"
           :item-size="56"
           key-field="id"
           v-slot="{ item }"
+          @scroll.passive="handleScroll"
         >
           <div
             @click="emit('select', item.id)"

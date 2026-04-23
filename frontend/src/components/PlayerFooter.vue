@@ -13,6 +13,7 @@ import {
   Maximize2,
   Music,
   ListMusic,
+  Mic2,
 } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
 import { RepeatMode } from '../../bindings/changeme/internal/domain/models'
@@ -51,6 +52,13 @@ function onSeekStart() {
 async function onSeekEnd() {
   await store.seek((seekValue.value / 100) * store.duration)
   isSeeking.value = false
+}
+
+const openLyrics = () => {
+  store.playerMode = 'fullscreen'
+  if (!store.isLyricsOpen) {
+    store.toggleLyrics()
+  }
 }
 </script>
 
@@ -122,6 +130,10 @@ async function onSeekEnd() {
         <Slider :model-value="store.muted ? 0 : store.volume" :min="0" :max="1" :step="0.01" class="flex-1"
           @update:model-value="(v) => store.setVolume(v)" />
       </div>
+      <button class="transition-colors"
+        :class="store.isLyricsOpen ? 'text-primary' : 'text-white/40 hover:text-white/70'" @click="openLyrics">
+        <Mic2 class="w-4 h-4" />
+      </button>
       <button class="transition-colors"
         :class="store.isQueueOpen ? 'text-primary' : 'text-white/40 hover:text-white/70'" @click="store.toggleQueue()">
         <ListMusic class="w-4 h-4" />

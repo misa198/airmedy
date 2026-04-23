@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { onMounted, watch } from 'vue'
 import MainLayout from './layouts/MainLayout.vue'
-import { usePlayerStore } from './stores/player'
 import { hexToRgba } from './lib/utils'
+import { usePlayerStore } from './stores/player'
+import { useDeviceStore } from './stores/device'
 
 const playerStore = usePlayerStore()
+const deviceStore = useDeviceStore()
 
 onMounted(() => {
   playerStore.init()
+  deviceStore.init()
 })
 
 watch(
@@ -20,6 +23,13 @@ watch(
     root.style.setProperty('--dynamic-glow', `0 0 40px ${hexToRgba(colors.vibrant, 0.3)}`)
   },
 )
+
+// Re-check when the player mode changes to fullscreen
+watch(() => playerStore.playerMode, (newMode) => {
+  if (newMode === 'fullscreen') {
+    deviceStore.checkFullscreen()
+  }
+})
 </script>
 
 <template>
@@ -28,7 +38,9 @@ watch(
 
 <style>
 /* Global styles */
-html, body, #app {
+html,
+body,
+#app {
   height: 100%;
   width: 100%;
   margin: 0;

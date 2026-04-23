@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T extends { id: string }">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, onActivated, computed } from 'vue'
 
 const props = defineProps<{
   items: T[]
@@ -9,6 +9,8 @@ const props = defineProps<{
 }>()
 
 const containerRef = ref<HTMLElement | null>(null)
+const scrollerRef = ref<any>(null)
+const lastScrollTop = ref(0)
 const containerWidth = ref(0)
 const columns = ref(2)
 
@@ -23,6 +25,13 @@ const updateColumns = () => {
   columns.value = calculatedCols
 }
 
+const handleScroll = (event: Event) => {
+  const target = event.target as HTMLElement
+  if (target) {
+    lastScrollTop.value = target.scrollTop
+  }
+}
+
 let resizeObserver: ResizeObserver | null = null
 
 onMounted(() => {
@@ -32,6 +41,17 @@ onMounted(() => {
       updateColumns()
     })
     resizeObserver.observe(containerRef.value)
+  }
+})
+
+onActivated(() => {
+  if (scrollerRef.value && lastScrollTop.value > 0) {
+    // Small timeout to ensure the scroller has initialized after being re-attached to DOM
+    setTimeout(() => {
+      if (scrollerRef.value && scrollerRef.value.$el) {
+        scrollerRef.value.$el.scrollTop = lastScrollTop.value
+      }
+    }, 0)
   }
 })
 
@@ -60,11 +80,13 @@ const totalItemHeight = computed(() => itemHeight.value + gap.value)
   <div ref="containerRef" class="h-full w-full overflow-hidden">
     <RecycleScroller
       v-if="columns > 0"
+      ref="scrollerRef"
       class="h-full w-full"
       :items="rows"
       :item-size="totalItemHeight"
       key-field="id"
       v-slot="{ item: row }"
+      @scroll.passive="handleScroll"
     >
       <div 
         class="grid gap-6 px-1" 

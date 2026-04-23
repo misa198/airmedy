@@ -2,6 +2,7 @@
 import { Play, Pause, SkipForward, Maximize2, Music } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
 import { formatTime } from '../lib/utils'
+import MarqueeText from './MarqueeText.vue'
 
 const store = usePlayerStore()
 </script>
@@ -20,13 +21,15 @@ const store = usePlayerStore()
           <Music class="w-4 h-4 text-white/20" />
         </div>
       </div>
-      <div class="min-w-0">
-        <div class="text-sm font-medium truncate leading-tight">
-          {{ store.currentTrack?.title ?? 'Not Playing' }}
-        </div>
-        <div class="text-xs text-white/40 truncate leading-tight mt-0.5">
-          {{ store.currentTrack?.artists?.map((a) => a?.name).filter(Boolean).join(', ') ?? '' }}
-        </div>
+      <div class="min-w-0 flex-1">
+        <MarqueeText
+          :text="store.currentTrack?.title ?? 'Not Playing'"
+          content-class="text-sm font-medium leading-tight"
+        />
+        <MarqueeText
+          :text="store.currentTrack?.artists?.map((a) => a?.name).filter(Boolean).join(', ') ?? ''"
+          content-class="text-xs text-white/40 leading-tight mt-0.5"
+        />
       </div>
     </div>
 

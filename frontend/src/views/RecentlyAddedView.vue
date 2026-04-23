@@ -3,11 +3,13 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import * as LibraryService from '../../bindings/changeme/internal/infra/wails/libraryservice'
 import { Disc, Clock } from 'lucide-vue-next'
-import type { AlbumDTO } from '../../bindings/changeme/internal/domain/models'
+import type { AlbumDTO, TrackDTO } from '../../bindings/changeme/internal/domain/models'
 import VirtualizedGrid from '../components/VirtualizedGrid.vue'
 import AlbumCard from '../components/AlbumCard.vue'
+import { usePlayerStore } from '@/stores/player'
 
 const router = useRouter()
+const playerStore = usePlayerStore()
 const albums = ref<AlbumDTO[]>([])
 const isLoading = ref(true)
 
@@ -29,6 +31,17 @@ const navigateToAlbum = (id: string) => {
 
 const navigateToArtist = (id: string) => {
   if (id) router.push(`/artists/${id}`)
+}
+
+const playAlbum = async (id: string) => {
+  try {
+    const tracks = await LibraryService.GetTracksByAlbumID(id)
+    if (tracks && tracks.length > 0) {
+      playerStore.playTracks(tracks.filter((t): t is TrackDTO => t !== null), 0)
+    }
+  } catch (err) {
+    console.error('Failed to play album:', err)
+  }
 }
 
 onMounted(loadRecentlyAdded)
@@ -62,12 +75,14 @@ onMounted(loadRecentlyAdded)
         :items="albums" 
         :item-height="250" 
         :min-column-width="180"
+        :gap="40"
       >
         <template #default="{ item: album }">
           <AlbumCard 
             :album="album" 
             @click="navigateToAlbum"
             @artist-click="navigateToArtist"
+            @play="playAlbum"
           />
         </template>
       </VirtualizedGrid>

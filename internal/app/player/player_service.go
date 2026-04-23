@@ -109,7 +109,7 @@ func (s *PlayerService) Stop() error {
 func (s *PlayerService) Next() error {
 	track := s.queue.Next()
 	if track == nil {
-		return s.player.Stop()
+		return s.Stop()
 	}
 	return s.loadAndPlay(track)
 }
@@ -118,24 +118,36 @@ func (s *PlayerService) Next() error {
 func (s *PlayerService) Previous() error {
 	track := s.queue.Previous()
 	if track == nil {
-		return s.player.Stop()
+		return s.Stop()
 	}
 	return s.loadAndPlay(track)
 }
 
 // Seek moves playback to the specified position in seconds.
 func (s *PlayerService) Seek(position float64) error {
-	return s.player.Seek(position)
+	err := s.player.Seek(position)
+	if err == nil {
+		s.emitStatus()
+	}
+	return err
 }
 
 // SetVolume sets the playback volume (0.0 to 1.0).
 func (s *PlayerService) SetVolume(volume float64) error {
-	return s.player.SetVolume(volume)
+	err := s.player.SetVolume(volume)
+	if err == nil {
+		s.emitStatus()
+	}
+	return err
 }
 
 // SetMuted mutes or unmutes playback.
 func (s *PlayerService) SetMuted(muted bool) error {
-	return s.player.SetMuted(muted)
+	err := s.player.SetMuted(muted)
+	if err == nil {
+		s.emitStatus()
+	}
+	return err
 }
 
 // PlayTracks sets a new queue and starts playing from the specified index.

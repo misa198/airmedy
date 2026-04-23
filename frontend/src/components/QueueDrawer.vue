@@ -1,9 +1,27 @@
 <script setup lang="ts">
+import { ref, watch, nextTick } from 'vue'
 import { Music, X, ListMusic } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
 import { formatTime } from '../lib/utils'
 
 const store = usePlayerStore()
+const scroller = ref<any>(null)
+
+const scrollToCurrentTrack = () => {
+  if (!scroller.value || !store.currentTrack) return
+  const index = store.queue.findIndex(t => t.id === store.currentTrack?.id)
+  if (index !== -1) {
+    scroller.value.scrollToItem(index)
+  }
+}
+
+watch(() => store.isQueueOpen, (open) => {
+  if (open) {
+    setTimeout(() => {
+      scrollToCurrentTrack()
+    }, 100)
+  }
+}, { immediate: true })
 </script>
 
 <template>
@@ -34,6 +52,7 @@ const store = usePlayerStore()
 
       <RecycleScroller
         v-else
+        ref="scroller"
         class="h-full"
         :items="store.queue"
         :item-size="64"

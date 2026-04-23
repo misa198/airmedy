@@ -3,11 +3,13 @@ import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import * as LibraryService from '../../bindings/changeme/internal/infra/wails/libraryservice'
 import { Tag } from 'lucide-vue-next'
-import type { Genre } from '../../bindings/changeme/internal/domain/models'
+import type { Genre, TrackDTO } from '../../bindings/changeme/internal/domain/models'
 import EntityExplorerLayout from '../components/EntityExplorerLayout.vue'
+import { usePlayerStore } from '@/stores/player'
 
 const router = useRouter()
 const route = useRoute()
+const playerStore = usePlayerStore()
 const genres = ref<Genre[]>([])
 const isLoading = ref(true)
 
@@ -29,6 +31,17 @@ const onSelect = (id: string) => {
   router.push(`/genres/${id}`)
 }
 
+const onPlay = async (genre: Genre) => {
+  try {
+    const tracks = await LibraryService.GetTracksByGenreID(genre.id)
+    if (tracks && tracks.length > 0) {
+      playerStore.playTracks(tracks.filter((t): t is TrackDTO => t !== null), 0)
+    }
+  } catch (err) {
+    console.error('Failed to play genre:', err)
+  }
+}
+
 onMounted(loadGenres)
 </script>
 
@@ -41,9 +54,12 @@ onMounted(loadGenres)
     :icon="Tag"
     search-placeholder="Search genres..."
     @select="onSelect"
+    @play="onPlay"
   >
     <router-view v-slot="{ Component }">
-      <component :is="Component" :key="route.params.id" />
+      <KeepAlive :max="5">
+        <component :is="Component" :key="route.params.id" />
+      </KeepAlive>
     </router-view>
   </EntityExplorerLayout>
 </template>

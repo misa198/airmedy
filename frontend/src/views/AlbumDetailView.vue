@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, onActivated } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import * as LibraryService from '../../bindings/changeme/internal/infra/wails/libraryservice'
 import type { AlbumDTO, TrackDTO } from '../../bindings/changeme/internal/domain/models'
@@ -14,6 +14,26 @@ const router = useRouter()
 const album = ref<AlbumDTO | null>(null)
 const tracks = ref<TrackDTO[]>([])
 const isLoading = ref(true)
+
+const scrollContainerRef = ref<HTMLElement | null>(null)
+const lastScrollTop = ref(0)
+
+const handleScroll = (event: Event) => {
+  const target = event.target as HTMLElement
+  if (target) {
+    lastScrollTop.value = target.scrollTop
+  }
+}
+
+onActivated(() => {
+  if (scrollContainerRef.value && lastScrollTop.value > 0) {
+    setTimeout(() => {
+      if (scrollContainerRef.value) {
+        scrollContainerRef.value.scrollTop = lastScrollTop.value
+      }
+    }, 0)
+  }
+})
 
 const loadAlbumDetails = async (id: string) => {
   isLoading.value = true
@@ -63,7 +83,7 @@ const formatTotalDuration = (tracks: TrackDTO[]) => {
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
     </div>
 
-    <div v-else-if="album" class="flex-1 overflow-y-auto">
+    <div v-else-if="album" ref="scrollContainerRef" class="flex-1 overflow-y-auto" @scroll.passive="handleScroll">
       <!-- Album Hero Section -->
       <div class="p-8 md:p-12 flex flex-col md:flex-row gap-8 items-end bg-gradient-to-b from-dynamic-surface to-transparent">
         <div class="w-48 h-48 md:w-64 md:h-64 rounded-lg shadow-2xl overflow-hidden ring-1 ring-white/[0.08] bg-white/5 flex-shrink-0">

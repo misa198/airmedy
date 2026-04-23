@@ -20,6 +20,7 @@ export const usePlayerStore = defineStore('player', () => {
   const currentTrack = ref<TrackDTO | null>(null)
   const theme = ref<ThemeColors | null>(null)
   const isQueueOpen = ref(false)
+  const isLyricsOpen = ref(false)
   const playerMode = ref<PlayerMode>('sticky')
 
   // Computed
@@ -50,6 +51,7 @@ export const usePlayerStore = defineStore('player', () => {
 
   // Actions
   async function init() {
+    console.log('[PlayerStore] Initializing...')
     try {
       const s = await PlayerService.GetStatus()
       status.value = s
@@ -68,6 +70,9 @@ export const usePlayerStore = defineStore('player', () => {
       if (s?.track_id) {
         const found = queue.value.find((t) => t.id === s.track_id)
         if (found) currentTrack.value = found
+      } else if (s?.playback_state === PlaybackState.PlaybackStateStopped) {
+        // Keep the current track even when stopped so the UI can show it as the last active track
+        // unless we explicitly want to clear it. For now, we keep it.
       }
     })
 
@@ -141,8 +146,15 @@ export const usePlayerStore = defineStore('player', () => {
     await PlayerService.PlayTracks(tracks, startIndex)
   }
 
+
   function toggleQueue() {
     isQueueOpen.value = !isQueueOpen.value
+    if (isQueueOpen.value) isLyricsOpen.value = false
+  }
+
+  function toggleLyrics() {
+    isLyricsOpen.value = !isLyricsOpen.value
+    if (isLyricsOpen.value) isQueueOpen.value = false
   }
 
   return {
@@ -152,6 +164,7 @@ export const usePlayerStore = defineStore('player', () => {
     currentTrack,
     theme,
     isQueueOpen,
+    isLyricsOpen,
     playerMode,
     // Computed
     isPlaying,
@@ -179,6 +192,7 @@ export const usePlayerStore = defineStore('player', () => {
     setRepeatMode,
     playTracks,
     toggleQueue,
+    toggleLyrics,
     cycleRepeat,
   }
 })

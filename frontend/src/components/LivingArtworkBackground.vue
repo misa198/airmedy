@@ -3,7 +3,10 @@ import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { Renderer, Program, Mesh, Triangle } from 'ogl'
 import type { ThemeColors } from '../stores/player'
 
-const props = defineProps<{ theme: ThemeColors | null }>()
+const props = defineProps<{
+  theme: ThemeColors | null,
+  isPlaying?: boolean,
+}>()
 const containerRef = ref<HTMLDivElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
@@ -189,13 +192,19 @@ onMounted(() => {
     return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f]
   }
 
-  const FRAME_MS = 1000 / 10 // 10 fps cap — motion is too slow to need 60 fps
+  const FRAME_MS = 1000 / 30 // 30 fps cap — motion is too slow to need 60 fps
   let lastTime = 0
+  let currentUtime = 0
+
   function render(time: number) {
     rafId = requestAnimationFrame(render)
     if (time - lastTime < FRAME_MS) return
     const dt = Math.min((time - lastTime) / 1000, 0.1)
     lastTime = time
+
+    // Slow down speed if not playing
+    const speed = props.isPlaying ? 1.0 : 0.1
+    currentUtime += dt * speed
 
     const { c1, c2, c3, base } = targetColors.value
     const f = 1 - Math.exp(-dt * 1.5)
@@ -204,7 +213,7 @@ onMounted(() => {
     curC3 = lerp3(curC3, c3, f)
     curBase = lerp3(curBase, base, f)
 
-    program.uniforms.uTime.value = time / 1000
+    program.uniforms.uTime.value = currentUtime
     program.uniforms.uColor1.value = curC1
     program.uniforms.uColor2.value = curC2
     program.uniforms.uColor3.value = curC3
