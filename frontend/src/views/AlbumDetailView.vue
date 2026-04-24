@@ -154,7 +154,6 @@ const formatTotalDuration = (tracks: TrackDTO[]) => {
       <!-- Album Footer Metadata -->
       <div v-if="album.copyright" class="px-8 pb-12 text-sm text-white/30 border-t border-white/[0.06] pt-8 mt-4">
         <div class="flex items-center gap-2">
-          <span class="font-semibold">Copyright:</span>
           <span>{{ album.copyright }}</span>
         </div>
       </div>

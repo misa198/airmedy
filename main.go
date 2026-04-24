@@ -5,6 +5,7 @@ import (
 	"embed"
 	_ "embed"
 	"log"
+	"sync"
 	"time"
 
 	"airmedy/internal/app"
@@ -86,6 +87,23 @@ func main() {
 		e.Cancel()
 	})
 
+	var stopOnce sync.Once
+	stopFX := func() {
+		stopOnce.Do(func() {
+			stopCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if err := fxApp.Stop(stopCtx); err != nil {
+				log.Printf("error stopping services: %v", err)
+			}
+		})
+	}
+
+	// Cmd+Q fires ApplicationWillTerminate, bypassing WindowClosing.
+	// Save state here before the process exits.
+	wailsApp.Event.OnApplicationEvent(events.Mac.ApplicationWillTerminate, func(_ *application.ApplicationEvent) {
+		stopFX()
+	})
+
 	systemTray := wailsApp.SystemTray.New()
 	systemTray.SetTemplateIcon(icons.SystrayMacTemplate)
 	systemTray.SetTooltip("Airmedy")
@@ -113,9 +131,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	stopCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-	if err := fxApp.Stop(stopCtx); err != nil {
-		log.Fatal(err)
-	}
+	stopFX()
 }

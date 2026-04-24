@@ -40,7 +40,7 @@ onMounted(loadTracks)
 <template>
   <div class="h-full flex flex-col overflow-hidden bg-background">
     <!-- Header -->
-    <div class="p-6 pb-4 border-b border-white/[0.06]">
+    <div class="p-6 pb-4 border-b border-white/[0.06] select-none">
       <div class="flex items-center justify-between mb-4">
         <h1 class="text-3xl font-bold">Tracks</h1>
         <div class="text-sm text-white/40">{{ filteredTracks.length }} tracks</div>

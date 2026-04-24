@@ -103,3 +103,8 @@ type WatchedFolderRepository interface {
 	Save(ctx context.Context, folder *WatchedFolder) error
 	Delete(ctx context.Context, id string) error
 }
+
+type PlayerStateRepository interface {
+	Save(ctx context.Context, state *PlayerState) error
+	Load(ctx context.Context) (*PlayerState, error)
+}

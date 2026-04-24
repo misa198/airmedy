@@ -2,7 +2,10 @@ package player
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
+	"math/rand"
+	"os"
 	"sync"
 	"time"
 
@@ -15,14 +18,16 @@ import (
 
 // PlayerService coordinates playback and queue management.
 type PlayerService struct {
-	mu           sync.RWMutex
-	player       domain.AudioPlayer
-	queue        *QueueService
-	logger       *slog.Logger
-	artworkCache domain.ArtworkCache
+	mu            sync.RWMutex
+	player        domain.AudioPlayer
+	queue         *QueueService
+	logger        *slog.Logger
+	artworkCache  domain.ArtworkCache
 	lyricsService *lyrics.LyricsService
-	nowPlaying   domain.NowPlayingController // nil on non-darwin or when unsupported
-	currentTrack *domain.TrackDTO
+	nowPlaying    domain.NowPlayingController // nil on non-darwin or when unsupported
+	currentTrack  *domain.TrackDTO
+	trackRepo     domain.TrackRepository
+	stateRepo     domain.PlayerStateRepository
 
 	tickerMu     sync.Mutex
 	tickerCancel context.CancelFunc
@@ -38,6 +43,8 @@ func NewPlayerService(
 	logger *slog.Logger,
 	artworkCache domain.ArtworkCache,
 	lyricsService *lyrics.LyricsService,
+	trackRepo domain.TrackRepository,
+	stateRepo domain.PlayerStateRepository,
 	lc fx.Lifecycle,
 ) *PlayerService {
 	s := &PlayerService{
@@ -46,6 +53,8 @@ func NewPlayerService(
 		logger:        logger,
 		artworkCache:  artworkCache,
 		lyricsService: lyricsService,
+		trackRepo:     trackRepo,
+		stateRepo:     stateRepo,
 		tickInterval:  500 * time.Millisecond,
 	}
 	s.player.OnTrackEnd(s.HandleTrackEnd)
@@ -67,8 +76,13 @@ func NewPlayerService(
 	}
 
 	lc.Append(fx.Hook{
-		OnStop: func(_ context.Context) error {
+		OnStart: func(ctx context.Context) error {
+			s.restoreState(ctx)
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
 			s.stopPositionTicker()
+			s.saveState(ctx)
 			return nil
 		},
 	})
@@ -76,8 +90,17 @@ func NewPlayerService(
 	return s
 }
 
-// Play starts or resumes playback.
+// Play starts or resumes playback. If no track is loaded and the queue is empty,
+// loads all library tracks in random order and begins playing.
 func (s *PlayerService) Play() error {
+	s.mu.RLock()
+	ct := s.currentTrack
+	s.mu.RUnlock()
+
+	if ct == nil && len(s.queue.GetQueue()) == 0 {
+		return s.playAll()
+	}
+
 	err := s.player.Play()
 	if err == nil {
 		s.startPositionTicker()
@@ -351,4 +374,131 @@ func (s *PlayerService) HandleTrackEnd() {
 	if err := s.Next(); err != nil {
 		s.logger.Error("failed to play next track", "error", err)
 	}
+}
+
+func (s *PlayerService) playAll() error {
+	ctx := context.Background()
+	tracks, err := s.trackRepo.GetAll(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to load library tracks: %w", err)
+	}
+	if len(tracks) == 0 {
+		return nil
+	}
+
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	rng.Shuffle(len(tracks), func(i, j int) { tracks[i], tracks[j] = tracks[j], tracks[i] })
+
+	s.queue.SetQueue(tracks, 0)
+
+	app := application.Get()
+	if app != nil {
+		app.Event.Emit("player:queue-updated", s.queue.GetQueue())
+	}
+
+	track := s.queue.GetCurrentTrack()
+	if track == nil {
+		return nil
+	}
+	return s.loadAndPlay(track)
+}
+
+func (s *PlayerService) saveState(ctx context.Context) {
+	s.mu.RLock()
+	ct := s.currentTrack
+	s.mu.RUnlock()
+
+	queue := s.queue.GetQueue()
+	ids := make([]string, len(queue))
+	for i, t := range queue {
+		ids[i] = t.ID
+	}
+
+	status := s.player.GetStatus()
+
+	currentID := ""
+	if ct != nil {
+		currentID = ct.ID
+	}
+
+	state := &domain.PlayerState{
+		QueueTrackIDs:  ids,
+		CurrentTrackID: currentID,
+		Position:       status.Position,
+		Volume:         status.Volume,
+		Muted:          status.Muted,
+		Shuffle:        s.queue.shuffle,
+		RepeatMode:     s.queue.repeatMode,
+	}
+	if err := s.stateRepo.Save(ctx, state); err != nil {
+		s.logger.Error("failed to save player state", "error", err)
+	}
+}
+
+func (s *PlayerService) restoreState(ctx context.Context) {
+	state, err := s.stateRepo.Load(ctx)
+	if err != nil {
+		s.logger.Error("failed to load player state", "error", err)
+		return
+	}
+	if state == nil || len(state.QueueTrackIDs) == 0 {
+		return
+	}
+
+	var validTracks []*domain.TrackDTO
+	for _, id := range state.QueueTrackIDs {
+		track, err := s.trackRepo.GetByID(ctx, id)
+		if err != nil || track == nil {
+			continue
+		}
+		if _, err := os.Stat(track.Path); err != nil {
+			continue
+		}
+		validTracks = append(validTracks, track)
+	}
+
+	if len(validTracks) == 0 {
+		return
+	}
+
+	s.queue.SetRepeatMode(state.RepeatMode)
+	if state.Shuffle {
+		s.queue.SetShuffle(true)
+	}
+
+	currentIndex := 0
+	var currentTrack *domain.TrackDTO
+	for i, t := range validTracks {
+		if t.ID == state.CurrentTrackID {
+			currentIndex = i
+			currentTrack = t
+			break
+		}
+	}
+
+	s.queue.SetQueue(validTracks, currentIndex)
+
+	if currentTrack == nil {
+		return
+	}
+
+	if err := s.player.Load(currentTrack); err != nil {
+		s.logger.Error("failed to load track on restore", "track", currentTrack.Path, "error", err)
+		return
+	}
+	if err := s.player.Seek(state.Position); err != nil {
+		s.logger.Warn("failed to seek to saved position on restore", "error", err)
+	}
+	if err := s.player.SetVolume(state.Volume); err != nil {
+		s.logger.Warn("failed to restore volume", "error", err)
+	}
+	if err := s.player.SetMuted(state.Muted); err != nil {
+		s.logger.Warn("failed to restore mute state", "error", err)
+	}
+
+	s.mu.Lock()
+	s.currentTrack = currentTrack
+	s.mu.Unlock()
+
+	s.emitStatus()
 }

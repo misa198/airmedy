@@ -92,7 +92,7 @@ watch(() => store.isQueueOpen, (open) => {
 
           <!-- Duration + index -->
           <div class="text-right flex-shrink-0">
-            <div class="text-xs font-mono text-muted-foreground">{{ formatTime(item.duration) }}</div>
+            <div class="text-xs text-muted-foreground mb-1">{{ formatTime(item.duration) }}</div>
             <div class="text-xs text-muted-foreground/50 mt-0.5">{{ index + 1 }}</div>
           </div>
         </button>

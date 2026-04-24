@@ -106,9 +106,47 @@ func (s *QueueService) Previous() *domain.TrackDTO {
 }
 
 // InsertAfterCurrent inserts a track immediately after the current position.
+// If the track is currently playing, it is a no-op.
+// If the track is already in the queue, it is moved to the next position instead of duplicated.
 func (s *QueueService) InsertAfterCurrent(track *domain.TrackDTO) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	list := s.activeList()
+
+	// Currently playing — no-op.
+	if s.currentIndex >= 0 && s.currentIndex < len(list) && list[s.currentIndex].ID == track.ID {
+		return
+	}
+
+	// Already in queue — remove it first, then re-insert after current.
+	existingIdx := -1
+	for i, t := range list {
+		if i != s.currentIndex && t.ID == track.ID {
+			existingIdx = i
+			break
+		}
+	}
+
+	if existingIdx >= 0 {
+		if s.shuffle {
+			s.shuffledList = sliceRemove(s.shuffledList, existingIdx)
+			if existingIdx < s.currentIndex {
+				s.currentIndex--
+			}
+			for i, t := range s.originalList {
+				if t.ID == track.ID {
+					s.originalList = sliceRemove(s.originalList, i)
+					break
+				}
+			}
+		} else {
+			s.originalList = sliceRemove(s.originalList, existingIdx)
+			if existingIdx < s.currentIndex {
+				s.currentIndex--
+			}
+		}
+	}
 
 	insertAt := s.currentIndex + 1
 	if insertAt > len(s.originalList) {
@@ -123,6 +161,13 @@ func (s *QueueService) InsertAfterCurrent(track *domain.TrackDTO) {
 		}
 		s.shuffledList = sliceInsert(s.shuffledList, si, track)
 	}
+}
+
+func sliceRemove(list []*domain.TrackDTO, at int) []*domain.TrackDTO {
+	out := make([]*domain.TrackDTO, len(list)-1)
+	copy(out, list[:at])
+	copy(out[at:], list[at+1:])
+	return out
 }
 
 func sliceInsert(list []*domain.TrackDTO, at int, t *domain.TrackDTO) []*domain.TrackDTO {

@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import TrackTable from '../components/TrackTable.vue'
 import { usePlayerStore } from '../stores/player'
+import { useFavoritesStore } from '../stores/favorites'
 import { Heart } from 'lucide-vue-next'
 
 const playerStore = usePlayerStore()
+const favoritesStore = useFavoritesStore()
 const tracks = ref<TrackDTO[]>([])
 const isLoading = ref(true)
 
@@ -23,8 +25,9 @@ const loadTracks = async () => {
 }
 
 onMounted(loadTracks)
+watch(() => favoritesStore.version, loadTracks)
 </script>
-
+p-6 pb-4 border-b border-white/[0.06] select-none
 <template>
   <div class="h-full flex flex-col overflow-hidden bg-background">
     <div class="p-6 pb-4 border-b border-white/[0.06]">

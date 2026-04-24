@@ -62,7 +62,7 @@ onMounted(loadAlbums)
 
 <template>
   <div class="h-full flex flex-col overflow-hidden bg-background">
-    <div class="p-6 pb-4 border-b border-white/[0.06]">
+    <div class="p-6 pb-4 border-b border-white/[0.06] select-none">
       <div class="flex items-center justify-between mb-4">
         <h1 class="text-3xl font-bold">Albums</h1>
         <div class="text-sm text-white/40">{{ filteredAlbums.length }} albums</div>

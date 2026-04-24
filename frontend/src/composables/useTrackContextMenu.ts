@@ -1,6 +1,7 @@
 import { Heart, ListEnd, ListPlus, Disc, User, Pencil, Trash2 } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { usePlaylistsStore } from '@/stores/playlists'
+import { useFavoritesStore } from '@/stores/favorites'
 import type { ContextMenuItem } from './useContextMenu'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import * as PlayerService from '../../bindings/airmedy/internal/infra/wails/playerservice'
@@ -9,6 +10,7 @@ import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/lib
 
 export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
   const playlistsStore = usePlaylistsStore()
+  const favoritesStore = useFavoritesStore()
   const router = useRouter()
 
   function buildMenuItems(track: TrackDTO): ContextMenuItem[] {
@@ -23,7 +25,7 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
         label: track.is_favorite ? 'Remove from Favorites' : 'Add to Favorites',
         icon: Heart,
         action: async () => {
-          await LibraryService.ToggleFavorite(track.id)
+          await favoritesStore.toggle(track.id)
           track.is_favorite = !track.is_favorite
         },
       },

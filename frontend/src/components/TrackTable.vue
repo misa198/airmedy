@@ -102,7 +102,7 @@ const isCurrentTrack = (trackId: string) => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col overflow-hidden @container">
+  <div class="h-full flex flex-col overflow-hidden select-none @container">
     <!-- Table Header -->
     <div :class="[
       'grid gap-4 px-6 py-2 border-b border-white/[0.06] text-[10px] font-semibold text-white/80 uppercase tracking-widest',

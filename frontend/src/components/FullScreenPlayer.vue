@@ -87,7 +87,7 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#0A0A0A]">
+  <div class="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#0A0A0A] select-none">
     <LivingArtworkBackground :theme="store.theme" :is-playing="store.isPlaying" />
 
     <div class="relative z-10 flex flex-col h-full">

@@ -79,13 +79,9 @@ function toggleContextMenu(id: string, e: MouseEvent) {
   <div class="flex flex-col h-full bg-background w-full" @click="contextMenuId = null">
     <!-- Main nav -->
     <nav class="px-3 py-2 space-y-0.5">
-      <RouterLink
-        v-for="item in navItems"
-        :key="item.name"
-        :to="item.to"
+      <RouterLink v-for="item in navItems" :key="item.name" :to="item.to"
         class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-white/50 hover:text-white hover:bg-white/[0.05]"
-        active-class="bg-white/[0.08] text-white font-medium"
-      >
+        active-class="bg-white/[0.08] !text-primary font-medium">
         <component :is="item.icon" class="w-4 h-4 flex-shrink-0" />
         <span class="text-sm">{{ item.name }}</span>
       </RouterLink>
@@ -103,25 +99,17 @@ function toggleContextMenu(id: string, e: MouseEvent) {
         </div>
         <button
           class="w-6 h-6 flex items-center justify-center rounded text-white/30 hover:text-white hover:bg-white/[0.06] transition-colors"
-          @click.stop="openCreateDialog"
-          title="New playlist"
-        >
+          @click.stop="openCreateDialog" title="New playlist">
           <Plus class="w-3.5 h-3.5" />
         </button>
       </div>
 
       <!-- Playlist list -->
       <div class="space-y-0.5">
-        <div
-          v-for="playlist in playlistsStore.playlists"
-          :key="playlist.id"
-          class="relative group"
-        >
-          <RouterLink
-            :to="`/playlists/${playlist.id}`"
+        <div v-for="playlist in playlistsStore.playlists" :key="playlist.id" class="relative group">
+          <RouterLink :to="`/playlists/${playlist.id}`"
             class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-white/50 hover:text-white hover:bg-white/[0.05] pr-8"
-            active-class="bg-white/[0.08] text-white font-medium"
-          >
+            active-class="bg-white/[0.08] text-white font-medium">
             <Music class="w-4 h-4 flex-shrink-0" />
             <span class="text-sm truncate">{{ playlist.name }}</span>
           </RouterLink>
@@ -129,27 +117,22 @@ function toggleContextMenu(id: string, e: MouseEvent) {
           <!-- Context menu trigger -->
           <button
             class="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded text-white/0 group-hover:text-white/40 hover:!text-white hover:bg-white/[0.08] transition-colors opacity-0 group-hover:opacity-100"
-            @click.stop="(e) => toggleContextMenu(playlist.id, e)"
-          >
+            @click.stop="(e) => toggleContextMenu(playlist.id, e)">
             <MoreHorizontal class="w-3.5 h-3.5" />
           </button>
 
           <!-- Context menu -->
-          <div
-            v-if="contextMenuId === playlist.id"
+          <div v-if="contextMenuId === playlist.id"
             class="absolute right-0 top-full mt-1 z-50 w-40 rounded-lg bg-[#1A1A1A] ring-1 ring-white/[0.08] shadow-xl py-1"
-            @click.stop
-          >
+            @click.stop>
             <button
               class="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors"
-              @click="openRenameDialog(playlist.id, playlist.name)"
-            >
+              @click="openRenameDialog(playlist.id, playlist.name)">
               <Pencil class="w-3.5 h-3.5" />Rename
             </button>
             <button
               class="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-red-400/80 hover:text-red-400 hover:bg-white/[0.06] transition-colors"
-              @click="deletePlaylist(playlist.id)"
-            >
+              @click="deletePlaylist(playlist.id)">
               <Trash2 class="w-3.5 h-3.5" />Delete
             </button>
           </div>
@@ -163,15 +146,8 @@ function toggleContextMenu(id: string, e: MouseEvent) {
     </div>
 
     <!-- Dialogs -->
-    <CreatePlaylistDialog
-      v-model:open="createDialogOpen"
-      @confirm="handleCreate"
-    />
-    <CreatePlaylistDialog
-      v-model:open="renameDialogOpen"
-      :initial-name="renamingName"
-      title="Rename Playlist"
-      @confirm="handleRename"
-    />
+    <CreatePlaylistDialog v-model:open="createDialogOpen" @confirm="handleCreate" />
+    <CreatePlaylistDialog v-model:open="renameDialogOpen" :initial-name="renamingName" title="Rename Playlist"
+      @confirm="handleRename" />
   </div>
 </template>

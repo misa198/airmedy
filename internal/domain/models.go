@@ -116,3 +116,14 @@ type WatchedFolder struct {
 	Path      string    `json:"path" db:"path"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 }
+
+// PlayerState holds the playback state to persist across app restarts
+type PlayerState struct {
+	QueueTrackIDs  []string   `json:"queue_track_ids"`
+	CurrentTrackID string     `json:"current_track_id"`
+	Position       float64    `json:"position"`
+	Volume         float64    `json:"volume"`
+	Muted          bool       `json:"muted"`
+	Shuffle        bool       `json:"shuffle"`
+	RepeatMode     RepeatMode `json:"repeat_mode"`
+}
