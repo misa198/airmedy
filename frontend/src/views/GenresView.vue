@@ -47,12 +47,12 @@ onMounted(loadGenres)
 
 <template>
   <EntityExplorerLayout
-    title="Genres"
+    :title="$t('library.genres')"
     :items="genres"
     :is-loading="isLoading"
     :selected-id="(route.params.id as string)"
     :icon="Tag"
-    search-placeholder="Search genres..."
+    :search-placeholder="`${$t('sidebar.search')} ${$t('library.genres').toLowerCase()}...`"
     @select="onSelect"
     @play="onPlay"
   >

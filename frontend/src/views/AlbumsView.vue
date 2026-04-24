@@ -64,8 +64,8 @@ onMounted(loadAlbums)
   <div class="h-full flex flex-col overflow-hidden bg-background">
     <div class="p-6 pb-4 border-b border-white/[0.06] select-none">
       <div class="flex items-center justify-between mb-4">
-        <h1 class="text-3xl font-bold">Albums</h1>
-        <div class="text-sm text-white/40">{{ filteredAlbums.length }} albums</div>
+        <h1 class="text-3xl font-bold">{{ $t('library.albums') }}</h1>
+        <div class="text-sm text-white/40">{{ filteredAlbums.length }} {{ $t('library.albums').toLowerCase() }}</div>
       </div>
       
       <div class="relative max-w-sm">
@@ -73,7 +73,7 @@ onMounted(loadAlbums)
         <Input
           v-model="searchQuery"
           type="text"
-          placeholder="Search albums..."
+          :placeholder="`${$t('sidebar.search')} ${$t('library.albums').toLowerCase()}...`"
           class="pl-10 pr-4"
         />
       </div>
@@ -86,7 +86,7 @@ onMounted(loadAlbums)
       
       <div v-else-if="filteredAlbums.length === 0" class="h-full flex flex-col items-center justify-center text-white/40">
         <Disc class="w-12 h-12 mb-4 opacity-20" />
-        <p>No albums found in your library.</p>
+        <p>{{ $t('library.no_albums') }}</p>
       </div>
 
       <VirtualizedGrid 

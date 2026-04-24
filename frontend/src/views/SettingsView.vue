@@ -1,16 +1,39 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
-import { RotateCcw, Plus, Trash2, Folder, CheckCircle2, AlertCircle, Loader2 } from 'lucide-vue-next'
+import * as SettingsService from '../../bindings/airmedy/internal/infra/wails/settingsservice'
+import { RotateCcw, Plus, Trash2, Folder, CheckCircle2, AlertCircle, Loader2, Languages } from 'lucide-vue-next'
 import type { WatchedFolder, SyncProgress } from '../../bindings/airmedy/internal/domain/models'
 import { Events } from '@wailsio/runtime'
 import EQPanel from '@/components/EQPanel.vue'
+import { useI18n } from 'vue-i18n'
 
+const { t, locale } = useI18n()
 const folders = ref<WatchedFolder[]>([])
 const isSyncing = ref(false)
 const isLoading = ref(true)
 const message = ref({ text: '', type: '' })
 const syncProgress = ref<SyncProgress | null>(null)
+
+const loadSettings = async () => {
+  try {
+    const settings = await SettingsService.GetSettings()
+    if (settings && settings.language) {
+      locale.value = settings.language
+    }
+  } catch (err) {
+    console.error('Failed to load settings:', err)
+  }
+}
+
+const updateLanguage = async (newLang: string) => {
+  try {
+    locale.value = newLang
+    await SettingsService.SaveSettings({ language: newLang })
+  } catch (err) {
+    console.error('Failed to save language setting:', err)
+  }
+}
 
 const loadFolders = async () => {
   isLoading.value = true
@@ -44,7 +67,7 @@ const handleSyncProgress = (ev: Events.WailsEvent) => {
 const handleSyncFinished = () => {
   isSyncing.value = false
   syncProgress.value = null
-  showMessage('Library sync complete', 'success')
+  showMessage(t('settings.sync.sync_complete'), 'success')
 }
 
 const addFolder = async () => {
@@ -53,11 +76,11 @@ const addFolder = async () => {
     if (path) {
       await LibraryService.AddFolder(path)
       await loadFolders()
-      showMessage('Folder added successfully', 'success')
+      showMessage(t('settings.folders.added_success'), 'success')
     }
   } catch (err) {
     console.error('Failed to add folder:', err)
-    showMessage('Failed to add folder', 'error')
+    showMessage(t('settings.folders.added_error'), 'error')
   }
 }
 
@@ -65,10 +88,10 @@ const removeFolder = async (id: string) => {
   try {
     await LibraryService.RemoveFolder(id)
     await loadFolders()
-    showMessage('Folder removed successfully', 'success')
+    showMessage(t('settings.folders.removed_success'), 'success')
   } catch (err) {
     console.error('Failed to remove folder:', err)
-    showMessage('Failed to remove folder', 'error')
+    showMessage(t('settings.folders.removed_error'), 'error')
   }
 }
 
@@ -77,10 +100,10 @@ const syncLibrary = async () => {
   isSyncing.value = true
   try {
     await LibraryService.SyncAll()
-    showMessage('Library sync started', 'success')
+    showMessage(t('settings.sync.sync_started'), 'success')
   } catch (err) {
     console.error('Sync failed:', err)
-    showMessage('Sync failed to start', 'error')
+    showMessage(t('settings.sync.sync_failed'), 'error')
     isSyncing.value = false
   }
 }
@@ -94,6 +117,7 @@ const showMessage = (text: string, type: string) => {
 
 onMounted(() => {
   loadFolders()
+  loadSettings()
   Events.On('library:sync-started', handleSyncStarted)
   Events.On('library:sync-progress', handleSyncProgress)
   Events.On('library:sync-finished', handleSyncFinished)
@@ -107,7 +131,7 @@ onUnmounted(() => {
 <template>
   <div class="p-8 max-w-4xl mx-auto">
     <div class="flex items-center justify-between mb-8">
-      <h1 class="text-3xl font-bold">Settings</h1>
+      <h1 class="text-3xl font-bold">{{ t('settings.title') }}</h1>
       
       <button 
         @click="syncLibrary" 
@@ -115,7 +139,7 @@ onUnmounted(() => {
         class="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-all disabled:opacity-50"
       >
         <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': isSyncing }" />
-        {{ isSyncing ? 'Syncing...' : 'Sync Library' }}
+        {{ isSyncing ? t('settings.sync.syncing') : t('settings.sync.sync_library') }}
       </button>
     </div>
 
@@ -124,7 +148,7 @@ onUnmounted(() => {
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-3">
           <Loader2 class="w-5 h-5 animate-spin text-primary" />
-          <h2 class="font-semibold">Syncing Music Library...</h2>
+          <h2 class="font-semibold">{{ t('settings.sync.syncing_library') }}</h2>
         </div>
         <span class="text-sm font-medium text-white/40 bg-white/[0.06] px-2 py-1 rounded">
           {{ syncProgress.current }} / {{ syncProgress.total }}
@@ -159,8 +183,8 @@ onUnmounted(() => {
       <section class="bg-card rounded-xl ring-1 ring-white/[0.06] p-6">
         <div class="flex items-center justify-between mb-6">
           <div>
-            <h2 class="text-xl font-semibold mb-1">Music Library</h2>
-            <p class="text-sm text-white/40">Manage the folders where Airmedy looks for music.</p>
+            <h2 class="text-xl font-semibold mb-1">{{ t('settings.folders.title') }}</h2>
+            <p class="text-sm text-white/40">{{ t('settings.folders.description') }}</p>
           </div>
           <button
             @click="addFolder"
@@ -168,7 +192,7 @@ onUnmounted(() => {
             class="flex items-center gap-2 px-3 py-1.5 bg-white/[0.06] text-white rounded-md hover:bg-white/[0.09] transition-colors text-sm font-medium disabled:opacity-50"
           >
             <Plus class="w-4 h-4" />
-            Add Folder
+            {{ t('settings.folders.add_folder') }}
           </button>
         </div>
 
@@ -178,9 +202,9 @@ onUnmounted(() => {
         
         <div v-else-if="folders.length === 0" class="py-12 text-center border border-dashed border-white/[0.08] rounded-lg">
           <Folder class="w-12 h-12 mx-auto text-white/40 mb-4 opacity-20" />
-          <p class="text-white/40">No music folders added yet.</p>
+          <p class="text-white/40">{{ t('settings.folders.no_folders') }}</p>
           <button @click="addFolder" :disabled="isSyncing" class="mt-4 text-primary hover:underline font-medium text-sm disabled:opacity-50">
-            Add your first folder
+            {{ t('settings.folders.add_first') }}
           </button>
         </div>
 
@@ -194,7 +218,7 @@ onUnmounted(() => {
               @click="removeFolder(folder.id)"
               :disabled="isSyncing"
               class="p-2 text-white/30 hover:text-destructive hover:bg-destructive/10 rounded-md transition-all disabled:opacity-50"
-              title="Remove folder"
+              :title="t('settings.folders.remove_folder')"
             >
               <Trash2 class="w-4 h-4" />
             </button>
@@ -202,14 +226,43 @@ onUnmounted(() => {
         </ul>
       </section>
 
-      <section class="bg-card rounded-xl ring-1 ring-white/[0.06] p-6 opacity-50">
-        <h2 class="text-xl font-semibold mb-1">Appearance</h2>
-        <p class="text-sm text-white/40 mb-4">Theming and UI customizations coming soon.</p>
-        <div class="h-10 w-32 bg-secondary rounded-md"></div>
+      <section class="bg-card rounded-xl ring-1 ring-white/[0.06] p-6">
+        <h2 class="text-xl font-semibold mb-1">{{ t('settings.appearance.title') }}</h2>
+        <p class="text-sm text-white/40 mb-6">{{ t('settings.appearance.coming_soon') }}</p>
+        
+        <div class="flex items-center justify-between max-w-md">
+          <div class="flex items-center gap-3">
+            <div class="p-2 bg-white/[0.04] rounded-lg">
+              <Languages class="w-5 h-5 text-white/60" />
+            </div>
+            <div>
+              <p class="text-sm font-medium">{{ t('settings.appearance.language') }}</p>
+              <p class="text-xs text-white/30">{{ t('settings.appearance.select_language', 'Select application language') }}</p>
+            </div>
+          </div>
+          <select 
+            :value="locale" 
+            @change="e => updateLanguage((e.target as HTMLSelectElement).value)"
+            class="bg-white/[0.06] border-0 text-sm rounded-md focus:ring-primary focus:border-primary block p-2 transition-colors hover:bg-white/[0.1] outline-none"
+          >
+            <option value="en">English</option>
+            <option value="zh">中文 (Chinese)</option>
+            <option value="vi">Tiếng Việt (Vietnamese)</option>
+            <option value="ja">日本語 (Japanese)</option>
+            <option value="ko">한국어 (Korean)</option>
+            <option value="de">Deutsch (German)</option>
+            <option value="fr">Français (French)</option>
+            <option value="es">Español (Spanish)</option>
+            <option value="pt">Português (Portuguese)</option>
+            <option value="it">Italiano (Italian)</option>
+            <option value="ru">Русский (Russian)</option>
+            <option value="th">ไทย (Thai)</option>
+          </select>
+        </div>
       </section>
 
       <section class="bg-card rounded-xl ring-1 ring-white/[0.06] p-6">
-        <h2 class="text-xl font-semibold mb-4">Equalizer</h2>
+        <h2 class="text-xl font-semibold mb-4">{{ t('settings.equalizer.title') }}</h2>
         <EQPanel />
       </section>
     </div>

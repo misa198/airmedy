@@ -61,8 +61,8 @@ const plainLines = computed<string[]>(() => {
       v-else-if="!lyrics"
       class="flex-1 flex flex-col items-center justify-center text-white/20 p-12 text-center"
     >
-      <p class="text-lg font-medium text-white/40">Lyrics are not available for this track.</p>
-      <p class="text-sm text-white/20 mt-2">We're working on bringing lyrics to your collection soon.</p>
+      <p class="text-lg font-medium text-white/40">{{ $t('player.lyrics_not_available') }}</p>
+      <p class="text-sm text-white/20 mt-2">{{ $t('player.lyrics_coming_soon') }}</p>
     </div>
 
     <!-- Synced lyrics -->

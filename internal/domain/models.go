@@ -127,3 +127,8 @@ type PlayerState struct {
 	Shuffle        bool       `json:"shuffle"`
 	RepeatMode     RepeatMode `json:"repeat_mode"`
 }
+
+// AppSettings holds general application settings
+type AppSettings struct {
+	Language string `json:"language"`
+}

@@ -4,6 +4,7 @@
 export {
     Album,
     AlbumDTO,
+    AppSettings,
     Artist,
     Composer,
     EQBand,

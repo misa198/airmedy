@@ -8,6 +8,7 @@ import * as LyricsService from "./lyricsservice.js";
 import * as PlayerService from "./playerservice.js";
 import * as PlaylistService from "./playlistservice.js";
 import * as SearchService from "./searchservice.js";
+import * as SettingsService from "./settingsservice.js";
 import * as WindowService from "./windowservice.js";
 export {
     EQService,
@@ -17,6 +18,7 @@ export {
     PlayerService,
     PlaylistService,
     SearchService,
+    SettingsService,
     WindowService
 };
 

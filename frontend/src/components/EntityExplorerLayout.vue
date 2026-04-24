@@ -58,7 +58,7 @@ const filteredItems = computed(() => {
           <Input
             v-model="searchQuery"
             type="text"
-            :placeholder="searchPlaceholder || 'Search...'"
+            :placeholder="searchPlaceholder || `${$t('sidebar.search')}...`"
             class="pl-10 pr-4"
           />
         </div>
@@ -93,7 +93,7 @@ const filteredItems = computed(() => {
               <component :is="icon" v-if="icon" class="w-4 h-4" />
               <span v-else class="text-xs font-bold">{{ item.name.charAt(0).toUpperCase() }}</span>
             </div>
-            <div class="flex-1 truncate font-medium">{{ item.name || 'Unknown' }}</div>
+            <div class="flex-1 truncate font-medium">{{ item.name || $t('library.unknown') }}</div>
             <button
               v-if="selectedId !== item.id"
               @click.stop="emit('play', item)"
@@ -111,7 +111,7 @@ const filteredItems = computed(() => {
       <slot v-if="selectedId"></slot>
       <div v-if="!selectedId && !isLoading" class="h-full flex flex-col items-center justify-center text-white/40 animate-in fade-in duration-500">
         <component :is="icon" v-if="icon" class="w-16 h-16 mb-4 opacity-10" />
-        <p class="text-lg">Select an item to view details</p>
+        <p class="text-lg">{{ $t('library.select_item') }}</p>
       </div>
     </div>
   </div>

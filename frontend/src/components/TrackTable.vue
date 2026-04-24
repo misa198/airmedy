@@ -111,9 +111,9 @@ const isCurrentTrack = (trackId: string) => {
         : 'grid-cols-[minmax(0,1fr)_80px] @[450px]:grid-cols-[40px_minmax(0,1fr)_80px_40px] @[650px]:grid-cols-[40px_minmax(0,1fr)_minmax(0,1fr)_80px_40px]'
     ]">
       <div class="text-center hidden @[450px]:block">#</div>
-      <div class="min-w-0">Title</div>
-      <div class="min-w-0 hidden @[650px]:block">Artist</div>
-      <div class="min-w-0 hidden @[1000px]:block" v-if="showAlbum">Album</div>
+      <div class="min-w-0">{{ $t('library.title') }}</div>
+      <div class="min-w-0 hidden @[650px]:block">{{ $t('library.artist') }}</div>
+      <div class="min-w-0 hidden @[1000px]:block" v-if="showAlbum">{{ $t('library.album') }}</div>
       <div class="flex items-center gap-1 justify-center">
         <Clock class="w-3 h-3" />
       </div>
@@ -128,7 +128,7 @@ const isCurrentTrack = (trackId: string) => {
 
       <div v-else-if="tracks.length === 0" class="h-full flex flex-col items-center justify-center text-white/80">
         <Music class="w-12 h-12 mb-4 opacity-20" />
-        <p>No tracks found.</p>
+        <p>{{ $t('library.no_tracks') }}</p>
       </div>
 
       <RecycleScroller v-else ref="scrollerRef" class="h-full" :items="tracks" :item-size="56" key-field="id"
@@ -177,7 +177,7 @@ const isCurrentTrack = (trackId: string) => {
                 <Music class="w-4 h-4" />
               </div>
             </div>
-            <span class="truncate">{{ item.title || 'Unknown Title' }}</span>
+            <span class="truncate">{{ item.title || $t('library.unknown_title') }}</span>
           </div>
           <div class="text-white/80 truncate flex items-center gap-2 pr-4 min-w-0 hidden @[650px]:flex">
             <User class="w-3 h-3 opacity-50 flex-shrink-0" />
@@ -191,14 +191,14 @@ const isCurrentTrack = (trackId: string) => {
                   <span v-if="i < item.artists.filter(a => !!a).length - 1" class="mr-1">,</span>
                 </span>
               </template>
-              <span v-else>{{ item.raw_artist_names || 'Unknown Artist' }}</span>
+              <span v-else>{{ item.raw_artist_names || $t('library.unknown_artist') }}</span>
             </div>
           </div>
           <div v-if="showAlbum" class="text-white/80 truncate flex items-center gap-2 min-w-0 hidden @[1000px]:flex">
             <Disc class="w-3 h-3 opacity-50" />
             <span class="truncate group-hover:text-primary transition-colors cursor-pointer"
               @click.stop="item.album?.id && navigateToAlbum(item.album.id)">
-              {{ item.album?.title || 'Unknown Album' }}
+              {{ item.album?.title || $t('library.unknown_album') }}
             </span>
           </div>
           <div class="text-center text-white/80 text-xs">

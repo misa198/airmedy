@@ -109,11 +109,11 @@ const formatTotalDuration = (tracks: TrackDTO[]) => {
           <div class="flex-1 space-y-4 @container min-w-0">
             <div class="space-y-2">
               <h1 class="text-2xl @sm:text-3xl @md:text-4xl @lg:text-5xl font-bold tracking-tight line-clamp-2">{{
-                album.title || 'Unknown Album' }}</h1>
+                album.title || $t('library.unknown_album') }}</h1>
               <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-white/40">
                 <div class="flex items-center gap-2 text-white font-semibold min-w-0">
                   <User class="w-4 h-4 flex-shrink-0" />
-                  <span class="line-clamp-1">{{album.artists?.map(a => a?.name).join(', ') || 'Unknown Artist'}}</span>
+                  <span class="line-clamp-1">{{album.artists?.map(a => a?.name).join(', ') || $t('library.unknown_artist')}}</span>
                 </div>
                 <div v-if="album.year" class="flex items-center gap-2">
                   <Calendar class="w-4 h-4" />
@@ -121,7 +121,7 @@ const formatTotalDuration = (tracks: TrackDTO[]) => {
                 </div>
                 <div class="flex items-center gap-2">
                   <Music class="w-4 h-4" />
-                  <span>{{ tracks.length }} songs</span>
+                  <span>{{ tracks.length }} {{ $t('library.songs') }}</span>
                 </div>
                 <div class="flex items-center gap-2">
                   <Clock class="w-4 h-4" />
@@ -135,7 +135,7 @@ const formatTotalDuration = (tracks: TrackDTO[]) => {
                 class="px-8 py-3 bg-white text-black rounded-full font-bold shadow-lg hover:scale-105 transition-transform flex items-center gap-2"
                 @click="playerStore.playTracks(tracks, 0)">
                 <Play class="w-5 h-5 fill-current" />
-                Play
+                {{ $t('common.play') }}
               </button>
               <button class="p-3 ring-1 ring-white/[0.08] rounded-full hover:bg-white/[0.06] transition-colors">
                 <MoreVertical class="w-5 h-5" />

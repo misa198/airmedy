@@ -47,12 +47,12 @@ onMounted(loadArtists)
 
 <template>
   <EntityExplorerLayout
-    title="Artists"
+    :title="$t('library.artists')"
     :items="artists"
     :is-loading="isLoading"
     :selected-id="(route.params.id as string)"
     :icon="User"
-    search-placeholder="Search artists..."
+    :search-placeholder="`${$t('sidebar.search')} ${$t('library.artists').toLowerCase()}...`"
     @select="onSelect"
     @play="onPlay"
   >

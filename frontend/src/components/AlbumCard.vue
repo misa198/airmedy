@@ -41,7 +41,7 @@ const emit = defineEmits<{
     </div>
 
     <div class="space-y-1 px-1">
-      <h3 class="font-medium text-sm truncate group-hover:text-white transition-colors">{{ album.title || 'Unknown Album' }}</h3>
+      <h3 class="font-medium text-sm truncate group-hover:text-white transition-colors">{{ album.title || $t('library.unknown_album') }}</h3>
       <div class="text-xs text-white/40 truncate flex items-center gap-1">
         <User class="w-3 h-3 flex-shrink-0" />
         <div class="truncate">
@@ -56,7 +56,7 @@ const emit = defineEmits<{
               <span v-if="i < album.artists.filter(a => !!a).length - 1" class="mr-1">,</span>
             </span>
           </template>
-          <span v-else>Unknown Artist</span>
+          <span v-else>{{ $t('library.unknown_artist') }}</span>
         </div>
       </div>
     </div>

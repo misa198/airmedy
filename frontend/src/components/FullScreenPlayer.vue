@@ -26,7 +26,9 @@ import LyricsView from './LyricsView.vue'
 import MarqueeText from './MarqueeText.vue'
 import TrackTable from './TrackTable.vue'
 import TabSwitcher from './ui/TabSwitcher.vue'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const store = usePlayerStore()
 const deviceStore = useDeviceStore()
 
@@ -53,16 +55,16 @@ const activeTab = computed({
   },
 })
 
-const tabOptions = [
-  { value: 'lyrics', label: 'Lyrics', icon: Mic2 },
-  { value: 'queue', label: 'Up Next', icon: ListMusic },
-]
+const tabOptions = computed(() => [
+  { value: 'lyrics', label: t('player.lyrics'), icon: Mic2 },
+  { value: 'queue', label: t('player.up_next'), icon: ListMusic },
+])
 
 const displayPosition = computed(() =>
   isSeeking.value ? (seekValue.value / 100) * store.duration : store.position,
 )
 
-const trackTitle = computed(() => store.currentTrack?.title ?? 'Not Playing')
+const trackTitle = computed(() => store.currentTrack?.title ?? t('player.not_playing'))
 const trackArtist = computed(() =>
   store.currentTrack?.artists?.map((a) => a?.name).filter(Boolean).join(', ') ?? '',
 )
@@ -97,7 +99,7 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
           :class="{ 'mt-8': (deviceStore.isMac || deviceStore.isWindows) && !deviceStore.isWindowFullscreen }" @click="store.playerMode = 'sticky'">
           <Minimize2 class="w-5 h-5" />
         </button>
-        <span class="text-xs font-semibold text-white/40 uppercase tracking-[0.2em]">Now Playing</span>
+        <span class="text-xs font-semibold text-white/40 uppercase tracking-[0.2em]">{{ t('player.now_playing') }}</span>
         <div class="flex items-center gap-2">
           <TabSwitcher v-model="activeTab" :options="tabOptions" />
         </div>
@@ -150,23 +152,23 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
               <!-- Controls -->
               <div class="flex items-center gap-7">
                 <button :class="store.shuffle ? 'text-white/80' : 'text-white/30 hover:text-white/80'"
-                  class="transition-colors" @click="store.setShuffle(!store.shuffle)">
+                  class="transition-colors" @click="store.setShuffle(!store.shuffle)" :title="t('player.shuffle')">
                   <Shuffle class="w-5 h-5" />
                 </button>
-                <button class="text-white/80 hover:text-white transition-colors" @click="store.previous()">
+                <button class="text-white/80 hover:text-white transition-colors" @click="store.previous()" :title="t('player.previous')">
                   <SkipBack class="w-7 h-7 fill-current" />
                 </button>
                 <button
                   class="w-14 h-14 bg-white rounded-full flex items-center justify-center hover:scale-105 transition-transform shadow-xl"
-                  @click="store.togglePlayPause()">
+                  @click="store.togglePlayPause()" :title="store.isPlaying ? t('player.pause') : t('player.play')">
                   <Pause v-if="store.isPlaying" class="w-6 h-6 fill-current text-black" />
                   <Play v-else class="w-6 h-6 fill-current text-black ml-0.5" />
                 </button>
-                <button class="text-white/80 hover:text-white transition-colors" @click="store.next()">
+                <button class="text-white/80 hover:text-white transition-colors" @click="store.next()" :title="t('player.next')">
                   <SkipForward class="w-7 h-7 fill-current" />
                 </button>
                 <button :class="repeatActive ? 'text-white/80' : 'text-white/30 hover:text-white/80'"
-                  class="transition-colors" @click="store.cycleRepeat()">
+                  class="transition-colors" @click="store.cycleRepeat()" :title="t('player.repeat')">
                   <component :is="repeatIcon" class="w-5 h-5" />
                 </button>
               </div>
@@ -174,7 +176,7 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
               <!-- Volume -->
               <div class="flex items-center gap-3 w-full max-w-[220px]">
                 <button class="text-white/80 hover:text-white/80 transition-colors flex-shrink-0"
-                  @click="store.setMuted(!store.muted)">
+                  @click="store.setMuted(!store.muted)" :title="store.muted ? t('player.unmute') : t('player.mute')">
                   <VolumeX v-if="store.muted" class="w-4 h-4" />
                   <Volume2 v-else class="w-4 h-4" />
                 </button>
@@ -202,7 +204,7 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
                   <div class="flex items-center justify-between px-6 py-4 border-b border-white/5">
                     <div class="flex items-center gap-2 text-white/80">
                       <ListMusic class="w-4 h-4" />
-                      <span class="text-sm font-semibold uppercase tracking-wider">Up Next</span>
+                      <span class="text-sm font-semibold uppercase tracking-wider">{{ t('player.up_next') }}</span>
                     </div>
                     <button @click="store.isQueueOpen = false"
                       class="text-white/40 hover:text-white transition-colors p-1 hover:bg-white/5 rounded-full">
@@ -226,7 +228,7 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
                   <div class="flex items-center justify-between px-6 py-4 border-b border-white/5">
                     <div class="flex items-center gap-2 text-white/80">
                       <Mic2 class="w-4 h-4" />
-                      <span class="text-sm font-semibold uppercase tracking-wider">Lyrics</span>
+                      <span class="text-sm font-semibold uppercase tracking-wider">{{ t('player.lyrics') }}</span>
                     </div>
                     <button @click="store.isLyricsOpen = false"
                       class="text-white/40 hover:text-white transition-colors p-1 hover:bg-white/5 rounded-full">

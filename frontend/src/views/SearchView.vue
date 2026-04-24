@@ -53,7 +53,7 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists()
         <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
         <Input
           v-model="inputValue"
-          placeholder="Search tracks, albums, artists..."
+          :placeholder="$t('library.search_placeholder')"
           class="pl-10 bg-white/[0.05] border-white/[0.08] text-white placeholder:text-white/30 focus-visible:ring-white/20"
           autofocus
         />
@@ -66,8 +66,8 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists()
       <!-- Empty state (no query) -->
       <div v-if="!inputValue.trim()" class="flex flex-col items-center justify-center h-64 text-center">
         <Search class="w-12 h-12 text-white/10 mb-4" />
-        <p class="text-white/40 text-lg font-medium">Search your library</p>
-        <p class="text-white/20 text-sm mt-1">Find tracks, albums, and artists</p>
+        <p class="text-white/40 text-lg font-medium">{{ $t('library.search_placeholder') }}</p>
+        <p class="text-white/20 text-sm mt-1">{{ $t('library.search_description') }}</p>
       </div>
 
       <!-- Loading skeleton -->
@@ -86,8 +86,8 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists()
         class="flex flex-col items-center justify-center h-64 text-center"
       >
         <Music class="w-12 h-12 text-white/10 mb-4" />
-        <p class="text-white/40 text-lg font-medium">No results found</p>
-        <p class="text-white/20 text-sm mt-1">Try a different search term</p>
+        <p class="text-white/40 text-lg font-medium">{{ $t('library.no_results') }}</p>
+        <p class="text-white/20 text-sm mt-1">{{ $t('library.try_different_search') }}</p>
       </div>
 
       <!-- Results -->
@@ -95,7 +95,7 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists()
 
         <!-- Tracks -->
         <section v-if="hasTracks()">
-          <h2 class="text-sm font-semibold text-white/40 uppercase tracking-widest mb-3">Tracks</h2>
+          <h2 class="text-sm font-semibold text-white/40 uppercase tracking-widest mb-3">{{ $t('library.tracks') }}</h2>
           <div class="space-y-0.5">
             <div
               v-for="track in store.results!.tracks!.filter(Boolean).slice(0, 8)"
@@ -139,7 +139,7 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists()
 
         <!-- Albums -->
         <section v-if="hasAlbums()">
-          <h2 class="text-sm font-semibold text-white/40 uppercase tracking-widest mb-3">Albums</h2>
+          <h2 class="text-sm font-semibold text-white/40 uppercase tracking-widest mb-3">{{ $t('library.albums') }}</h2>
           <div class="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
             <div
               v-for="album in store.results!.albums!.filter(Boolean)"
@@ -158,7 +158,7 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists()
 
         <!-- Artists -->
         <section v-if="hasArtists()">
-          <h2 class="text-sm font-semibold text-white/40 uppercase tracking-widest mb-3">Artists</h2>
+          <h2 class="text-sm font-semibold text-white/40 uppercase tracking-widest mb-3">{{ $t('library.artists') }}</h2>
           <div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
             <div
               v-for="artist in store.results!.artists!.filter(Boolean)"

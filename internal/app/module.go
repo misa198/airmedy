@@ -1,6 +1,7 @@
 package app
 
 import (
+	"airmedy/internal/app/appsettings"
 	"airmedy/internal/app/config"
 	"airmedy/internal/app/eq"
 	"airmedy/internal/app/library"
@@ -36,6 +37,7 @@ var Module = fx.Module("app",
 		wails.NewLyricsService,
 		wails.NewEQService,
 		wails.NewWindowService,
+		wails.NewSettingsService,
 		func() *wails.GreetService { return &wails.GreetService{} },
 	),
 	sqlite.Module,
@@ -44,6 +46,7 @@ var Module = fx.Module("app",
 	playlist.Module,
 	lyrics.Module,
 	eq.Module,
+	appsettings.Module,
 	fx.Invoke(func(lc fx.Lifecycle, db *sqlite.DB, search domain.SearchService, lib *library.LibraryService, eqSvc *eq.EQService) {
 		lc.Append(fx.Hook{
 			OnStart: func(ctx context.Context) error {

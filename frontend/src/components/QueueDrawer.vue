@@ -3,7 +3,9 @@ import { ref, watch, nextTick } from 'vue'
 import { Music, X, ListMusic } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
 import { formatTime } from '../lib/utils'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const store = usePlayerStore()
 const scroller = ref<any>(null)
 
@@ -32,7 +34,7 @@ watch(() => store.isQueueOpen, (open) => {
     <div class="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
       <div class="flex items-center gap-2 font-semibold">
         <ListMusic class="w-4 h-4 text-primary" />
-        <span>Queue</span>
+        <span>{{ t('player.queue') }}</span>
         <span class="text-xs text-muted-foreground font-normal ml-1">({{ store.queue.length }})</span>
       </div>
       <button
@@ -47,7 +49,7 @@ watch(() => store.isQueueOpen, (open) => {
     <div class="flex-1 overflow-y-auto">
       <div v-if="store.queue.length === 0" class="h-full flex flex-col items-center justify-center text-muted-foreground gap-3">
         <Music class="w-10 h-10 opacity-20" />
-        <p class="text-sm">Queue is empty</p>
+        <p class="text-sm">{{ t('player.queue_empty') }}</p>
       </div>
 
       <RecycleScroller
@@ -83,10 +85,10 @@ watch(() => store.isQueueOpen, (open) => {
               class="text-sm font-medium truncate"
               :class="store.currentTrack?.id === item.id ? 'text-primary' : ''"
             >
-              {{ item.title || 'Unknown Title' }}
+              {{ item.title || t('library.unknown_title') }}
             </div>
             <div class="text-xs text-muted-foreground truncate">
-              {{ item.artists?.map((a) => a?.name).filter(Boolean).join(', ') || item.raw_artist_names || 'Unknown Artist' }}
+              {{ item.artists?.map((a) => a?.name).filter(Boolean).join(', ') || item.raw_artist_names || t('library.unknown_artist') }}
             </div>
           </div>
 

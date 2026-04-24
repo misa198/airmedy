@@ -6,13 +6,26 @@ import { hexToRgba } from './lib/utils'
 import { usePlayerStore } from './stores/player'
 import { useDeviceStore } from './stores/device'
 import { usePlaylistsStore } from './stores/playlists'
+import * as SettingsService from '../bindings/airmedy/internal/infra/wails/settingsservice'
+import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
+const { locale } = useI18n()
 const playerStore = usePlayerStore()
 const deviceStore = useDeviceStore()
 const playlistsStore = usePlaylistsStore()
 
-onMounted(() => {
+onMounted(async () => {
+  // Load settings
+  try {
+    const settings = await SettingsService.GetSettings()
+    if (settings && settings.language) {
+      locale.value = settings.language
+    }
+  } catch (err) {
+    console.error('Failed to load settings:', err)
+  }
+
   if (route.name === 'mini-player') return
   playerStore.init()
   deviceStore.init()

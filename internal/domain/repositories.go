@@ -108,3 +108,8 @@ type PlayerStateRepository interface {
 	Save(ctx context.Context, state *PlayerState) error
 	Load(ctx context.Context) (*PlayerState, error)
 }
+
+type SettingsRepository interface {
+	Save(ctx context.Context, settings *AppSettings) error
+	Load(ctx context.Context) (*AppSettings, error)
+}

@@ -21,7 +21,9 @@ import { RepeatMode } from '../../bindings/airmedy/internal/domain/models'
 import { formatTime } from '../lib/utils'
 import { Slider } from '@/components/ui/slider'
 import * as WindowService from '../../bindings/airmedy/internal/infra/wails/windowservice'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const store = usePlayerStore()
 
 const isSeeking = ref(false)
@@ -31,10 +33,10 @@ const displayPosition = computed(() =>
   isSeeking.value ? (seekValue.value / 100) * store.duration : store.position,
 )
 
-const trackTitle = computed(() => store.currentTrack?.title ?? 'Not Playing')
+const trackTitle = computed(() => store.currentTrack?.title ?? t('player.not_playing'))
 const trackArtist = computed(() => {
   const artists = store.currentTrack?.artists
-  if (!artists || artists.length === 0) return 'Select a track to start listening'
+  if (!artists || artists.length === 0) return t('player.select_track')
   return artists.filter((a): a is NonNullable<typeof a> => a !== null).map((a) => a.name).join(', ')
 })
 
@@ -80,23 +82,23 @@ async function onSeekEnd() {
       <div class="flex items-center gap-5">
         <button class="transition-opacity"
           :class="store.shuffle ? 'text-primary opacity-100' : 'text-white/40 hover:text-white/70'"
-          @click="store.setShuffle(!store.shuffle)">
+          @click="store.setShuffle(!store.shuffle)" :title="t('player.shuffle')">
           <Shuffle class="w-4 h-4" />
         </button>
-        <button class="text-white/70 hover:text-white transition-colors" @click="store.previous()">
+        <button class="text-white/70 hover:text-white transition-colors" @click="store.previous()" :title="t('player.previous')">
           <SkipBack class="w-5 h-5 fill-current" />
         </button>
         <button
           class="w-8 h-8 bg-white rounded-full flex items-center justify-center hover:scale-105 transition-transform"
-          @click="store.togglePlayPause()">
+          @click="store.togglePlayPause()" :title="store.isPlaying ? t('player.pause') : t('player.play')">
           <Pause v-if="store.isPlaying" class="w-4 h-4 fill-current text-black" />
           <Play v-else class="w-4 h-4 fill-current text-black ml-0.5" />
         </button>
-        <button class="text-white/70 hover:text-white transition-colors" @click="store.next()">
+        <button class="text-white/70 hover:text-white transition-colors" @click="store.next()" :title="t('player.next')">
           <SkipForward class="w-5 h-5 fill-current" />
         </button>
         <button class="transition-colors" :class="repeatActive ? 'text-primary' : 'text-white/40 hover:text-white/70'"
-          @click="store.cycleRepeat()">
+          @click="store.cycleRepeat()" :title="t('player.repeat')">
           <component :is="repeatIcon" class="w-4 h-4" />
         </button>
       </div>
@@ -119,7 +121,7 @@ async function onSeekEnd() {
     <div class="flex items-center justify-end gap-4 w-1/4 min-w-[200px]">
       <div class="flex items-center gap-2 w-28">
         <button class="text-white/40 hover:text-white/70 transition-colors flex-shrink-0"
-          @click="store.setMuted(!store.muted)">
+          @click="store.setMuted(!store.muted)" :title="store.muted ? t('player.unmute') : t('player.mute')">
           <VolumeX v-if="store.muted" class="w-4 h-4" />
           <Volume2 v-else class="w-4 h-4" />
         </button>
@@ -127,17 +129,17 @@ async function onSeekEnd() {
           @update:model-value="(v) => store.setVolume(v)" />
       </div>
       <button class="transition-colors"
-        :class="store.isLyricsOpen ? 'text-primary' : 'text-white/40 hover:text-white/70'" @click="store.toggleLyrics()">
+        :class="store.isLyricsOpen ? 'text-primary' : 'text-white/40 hover:text-white/70'" @click="store.toggleLyrics()" :title="t('player.lyrics')">
         <Mic2 class="w-4 h-4" />
       </button>
       <button class="transition-colors"
-        :class="store.isQueueOpen ? 'text-primary' : 'text-white/40 hover:text-white/70'" @click="store.toggleQueue()">
+        :class="store.isQueueOpen ? 'text-primary' : 'text-white/40 hover:text-white/70'" @click="store.toggleQueue()" :title="t('player.queue')">
         <ListMusic class="w-4 h-4" />
       </button>
-      <button class="text-white/40 hover:text-white/70 transition-colors" @click="WindowService.ToggleMiniPlayer()">
+      <button class="text-white/40 hover:text-white/70 transition-colors" @click="WindowService.ToggleMiniPlayer()" :title="t('player.mini_player')">
         <PictureInPicture2 class="w-4 h-4" />
       </button>
-      <button class="text-white/40 hover:text-white/70 transition-colors" @click="store.playerMode = 'fullscreen'">
+      <button class="text-white/40 hover:text-white/70 transition-colors" @click="store.playerMode = 'fullscreen'" :title="t('player.fullscreen')">
         <Maximize2 class="w-4 h-4" />
       </button>
     </div>

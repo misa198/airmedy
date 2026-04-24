@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
 import { Input } from '@/components/ui/input'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const props = defineProps<{
   open: boolean
   initialName?: string
@@ -43,17 +45,17 @@ function cancel() {
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="cancel" />
         <div class="relative z-10 w-80 rounded-xl bg-[#1A1A1A] ring-1 ring-white/[0.08] shadow-2xl p-5"
           @keydown.esc="cancel" @keydown.enter="submit">
-          <h3 class="text-sm font-semibold text-white mb-4">{{ title ?? 'New Playlist' }}</h3>
-          <Input ref="inputRef" v-model="name" placeholder="Playlist name"
+          <h3 class="text-sm font-semibold text-white mb-4">{{ title ?? t('sidebar.new_playlist') }}</h3>
+          <Input ref="inputRef" v-model="name" :placeholder="t('sidebar.playlist_name')"
             class="bg-white/[0.05] border-white/[0.08] text-white placeholder:text-white/30 focus-visible:ring-white/20"
             autofocus />
           <div class="flex justify-end gap-2 mt-4">
             <button
               class="px-3 py-1.5 text-sm text-white/50 hover:text-white rounded-lg hover:bg-white/[0.05] transition-colors"
-              @click="cancel">Cancel</button>
+              @click="cancel">{{ t('common.cancel') }}</button>
             <button
               class="px-3 py-1.5 text-sm text-white bg-white/[0.12] hover:bg-white/[0.18] rounded-lg transition-colors font-medium disabled:opacity-40"
-              :disabled="!name.trim()" @click="submit">{{ title === 'Rename Playlist' ? 'Rename' : 'Create' }}</button>
+              :disabled="!name.trim()" @click="submit">{{ title === t('sidebar.rename_playlist_title') ? t('sidebar.rename') : t('common.create') }}</button>
           </div>
         </div>
       </div>

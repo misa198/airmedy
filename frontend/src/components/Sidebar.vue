@@ -16,26 +16,28 @@ import {
   Trash2,
   Heart,
 } from 'lucide-vue-next'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { usePlaylistsStore } from '@/stores/playlists'
 import CreatePlaylistDialog from './CreatePlaylistDialog.vue'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const router = useRouter()
 const playlistsStore = usePlaylistsStore()
 
-const navItems = [
-  { name: 'Home', icon: Home, to: '/' },
-  { name: 'Recently Added', icon: Clock, to: '/recently-added' },
-  { name: 'Artists', icon: Users, to: '/artists' },
-  { name: 'Albums', icon: Disc, to: '/albums' },
-  { name: 'Tracks', icon: Music, to: '/tracks' },
-  { name: 'Favorites', icon: Heart, to: '/favorites' },
-  { name: 'Genres', icon: ListMusic, to: '/genres' },
-  { name: 'Composers', icon: PenTool, to: '/composers' },
-  { name: 'Search', icon: Search, to: '/search' },
-  { name: 'Settings', icon: Settings, to: '/settings' },
-]
+const navItems = computed(() => [
+  { name: t('sidebar.home'), icon: Home, to: '/' },
+  { name: t('sidebar.recently_added'), icon: Clock, to: '/recently-added' },
+  { name: t('sidebar.artists'), icon: Users, to: '/artists' },
+  { name: t('sidebar.albums'), icon: Disc, to: '/albums' },
+  { name: t('sidebar.tracks'), icon: Music, to: '/tracks' },
+  { name: t('sidebar.favorites'), icon: Heart, to: '/favorites' },
+  { name: t('sidebar.genres'), icon: ListMusic, to: '/genres' },
+  { name: t('sidebar.composers'), icon: PenTool, to: '/composers' },
+  { name: t('sidebar.search'), icon: Search, to: '/search' },
+  { name: t('sidebar.settings'), icon: Settings, to: '/settings' },
+])
 
 const createDialogOpen = ref(false)
 const renameDialogOpen = ref(false)
@@ -95,11 +97,11 @@ function toggleContextMenu(id: string, e: MouseEvent) {
       <div class="flex items-center justify-between px-3 py-2">
         <div class="flex items-center gap-2 text-white/30">
           <Library class="w-3.5 h-3.5" />
-          <span class="text-xs font-semibold uppercase tracking-widest">Playlists</span>
+          <span class="text-xs font-semibold uppercase tracking-widest">{{ t('sidebar.playlists') }}</span>
         </div>
         <button
           class="w-6 h-6 flex items-center justify-center rounded text-white/30 hover:text-white hover:bg-white/[0.06] transition-colors"
-          @click.stop="openCreateDialog" title="New playlist">
+          @click.stop="openCreateDialog" :title="t('sidebar.new_playlist')">
           <Plus class="w-3.5 h-3.5" />
         </button>
       </div>
@@ -128,26 +130,26 @@ function toggleContextMenu(id: string, e: MouseEvent) {
             <button
               class="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors"
               @click="openRenameDialog(playlist.id, playlist.name)">
-              <Pencil class="w-3.5 h-3.5" />Rename
+              <Pencil class="w-3.5 h-3.5" />{{ t('sidebar.rename') }}
             </button>
             <button
               class="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-red-400/80 hover:text-red-400 hover:bg-white/[0.06] transition-colors"
               @click="deletePlaylist(playlist.id)">
-              <Trash2 class="w-3.5 h-3.5" />Delete
+              <Trash2 class="w-3.5 h-3.5" />{{ t('sidebar.delete') }}
             </button>
           </div>
         </div>
 
         <!-- Empty state -->
         <p v-if="playlistsStore.playlists.length === 0" class="px-3 py-2 text-xs text-white/20">
-          No playlists yet
+          {{ t('sidebar.no_playlists') }}
         </p>
       </div>
     </div>
 
     <!-- Dialogs -->
     <CreatePlaylistDialog v-model:open="createDialogOpen" @confirm="handleCreate" />
-    <CreatePlaylistDialog v-model:open="renameDialogOpen" :initial-name="renamingName" title="Rename Playlist"
+    <CreatePlaylistDialog v-model:open="renameDialogOpen" :initial-name="renamingName" :title="t('sidebar.rename_playlist_title')"
       @confirm="handleRename" />
   </div>
 </template>

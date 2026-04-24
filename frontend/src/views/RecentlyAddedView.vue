@@ -51,13 +51,13 @@ onMounted(loadRecentlyAdded)
   <div class="h-full flex flex-col overflow-hidden bg-background">
     <div class="p-6 pb-4 border-b border-white/[0.06] select-none">
       <div class="flex items-center justify-between mb-2">
-        <h1 class="text-3xl font-bold">Recently Added</h1>
+        <h1 class="text-3xl font-bold">{{ $t('library.recently_added') }}</h1>
         <div class="text-sm text-white/40 flex items-center gap-2">
           <Clock class="w-4 h-4" />
           Last 50 albums
         </div>
       </div>
-      <p class="text-white/40 text-sm">Albums recently added to your library.</p>
+      <p class="text-white/40 text-sm">{{ $t('library.recently_added_desc', 'Albums recently added to your library.') }}</p>
     </div>
 
     <div class="flex-1 overflow-hidden px-6 py-8">
@@ -67,7 +67,7 @@ onMounted(loadRecentlyAdded)
 
       <div v-else-if="albums.length === 0" class="h-full flex flex-col items-center justify-center text-white/40">
         <Disc class="w-12 h-12 mb-4 opacity-20" />
-        <p>No albums found in your library.</p>
+        <p>{{ $t('library.no_albums') }}</p>
       </div>
 
       <VirtualizedGrid 

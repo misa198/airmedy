@@ -2,7 +2,9 @@
 import { computed, ref, watch } from 'vue'
 import { Mic2, X } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const store = usePlayerStore()
 
 const LRC_PATTERN = /^\[(\d+):(\d+\.\d+)\]/m
@@ -68,7 +70,7 @@ watch(activeIndex, (newIndex) => {
     <div class="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] gap-2">
       <div class="flex items-center gap-2 font-semibold flex-shrink-0">
         <Mic2 class="w-4 h-4 text-primary" />
-        <span>Lyrics</span>
+        <span>{{ t('player.lyrics') }}</span>
       </div>
 
       <!-- View type toggle (only when synced lyrics are available) -->
@@ -83,14 +85,14 @@ watch(activeIndex, (newIndex) => {
           :class="viewType === 'synced' ? 'text-white' : 'text-white/40 hover:text-white/70'"
           @click="viewType = 'synced'"
         >
-          Synced
+          {{ t('player.synced') }}
         </button>
         <button
           class="relative z-10 px-2.5 py-1 rounded-full transition-colors duration-200 text-center"
           :class="viewType === 'plain' ? 'text-white' : 'text-white/40 hover:text-white/70'"
           @click="viewType = 'plain'"
         >
-          Plain
+          {{ t('player.plain') }}
         </button>
       </div>
 
@@ -120,7 +122,7 @@ watch(activeIndex, (newIndex) => {
         class="h-full flex flex-col items-center justify-center text-muted-foreground gap-3 px-6 text-center"
       >
         <Mic2 class="w-10 h-10 opacity-20" />
-        <p class="text-sm">Lyrics are not available for this track.</p>
+        <p class="text-sm">{{ t('player.lyrics_not_available') }}</p>
       </div>
 
       <!-- Synced view -->
