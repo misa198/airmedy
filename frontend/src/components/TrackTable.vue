@@ -135,6 +135,7 @@ const isCurrentTrack = (trackId: string) => {
         v-slot="{ item, index }" @scroll.passive="(e: Event) => { handleScroll(e); contextMenu.close() }">
         <div :class="[
           'grid gap-4 px-6 h-[56px] items-center text-sm hover:bg-foreground/[0.04] group transition-colors',
+          index % 2 === 0 ? 'bg-foreground/[0.02]' : 'bg-transparent',
           showAlbum
             ? 'grid-cols-[minmax(0,1fr)_80px] @[450px]:grid-cols-[40px_minmax(0,1fr)_80px_40px] @[700px]:grid-cols-[40px_minmax(0,1fr)_minmax(0,1fr)_80px_40px] @[1000px]:grid-cols-[40px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_80px_40px]'
             : 'grid-cols-[minmax(0,1fr)_80px] @[450px]:grid-cols-[40px_minmax(0,1fr)_80px_40px] @[650px]:grid-cols-[40px_minmax(0,1fr)_minmax(0,1fr)_80px_40px]'

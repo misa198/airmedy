@@ -61,8 +61,7 @@ export const usePlayerStore = defineStore('player', () => {
   })
 
   // Actions
-  async function init() {
-    console.log('[PlayerStore] Initializing...')
+  async function syncState() {
     try {
       const s = await PlayerService.GetStatus()
       status.value = s
@@ -72,8 +71,13 @@ export const usePlayerStore = defineStore('player', () => {
         currentTrack.value = queue.value.find((t) => t.id === s.track_id) ?? null
       }
     } catch (e) {
-      console.error('Failed to init player store', e)
+      console.error('Failed to sync player state', e)
     }
+  }
+
+  async function init() {
+    console.log('[PlayerStore] Initializing...')
+    await syncState()
 
     Events.On('player:status', (ev: Events.WailsEvent) => {
       const s = ev.data as PlayerStatus
@@ -231,6 +235,7 @@ export const usePlayerStore = defineStore('player', () => {
     artworkUrl,
     // Actions
     init,
+    syncState,
     play,
     pause,
     togglePlayPause,
