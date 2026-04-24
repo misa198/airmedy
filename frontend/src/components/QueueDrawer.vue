@@ -31,14 +31,14 @@ watch(() => store.isQueueOpen, (open) => {
     class="h-full w-full bg-background flex flex-col"
   >
     <!-- Header -->
-    <div class="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-foreground/[0.06]">
       <div class="flex items-center gap-2 font-semibold">
         <ListMusic class="w-4 h-4 text-primary" />
         <span>{{ t('player.queue') }}</span>
         <span class="text-xs text-muted-foreground font-normal ml-1">({{ store.queue.length }})</span>
       </div>
       <button
-        class="p-1.5 rounded-full hover:bg-white/8 transition-colors text-white/40 hover:text-white"
+        class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-foreground/40 hover:text-foreground"
         @click="store.toggleQueue()"
       >
         <X class="w-4 h-4" />
@@ -62,12 +62,12 @@ watch(() => store.isQueueOpen, (open) => {
         v-slot="{ item, index }"
       >
         <button
-          class="w-full flex items-center gap-3 px-4 h-16 text-left hover:bg-white/[0.04] transition-colors group"
+          class="w-full flex items-center gap-3 px-4 h-16 text-left hover:bg-foreground/[0.04] transition-colors group"
           :class="{ 'bg-primary/10 border-l-2 border-l-primary': store.currentTrack?.id === item.id }"
           @click="store.playTracks(store.queue, index)"
         >
           <!-- Artwork -->
-          <div class="w-10 h-10 rounded-md bg-white/5 flex-shrink-0 overflow-hidden">
+          <div class="w-10 h-10 rounded-md bg-foreground/5 flex-shrink-0 overflow-hidden">
             <img
               v-if="item.artwork_key"
               :src="`/artwork/${item.artwork_key}`"

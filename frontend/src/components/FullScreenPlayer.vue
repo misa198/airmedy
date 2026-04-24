@@ -89,10 +89,10 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#0A0A0A] select-none">
+  <div class="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#0A0A0A] select-none dark">
     <LivingArtworkBackground :theme="store.theme" :is-playing="store.isPlaying" />
 
-    <div class="relative z-10 flex flex-col h-full">
+    <div class="relative z-10 flex flex-col h-full text-white">
       <!-- Top bar -->
       <div class="flex items-center justify-between px-6 py-4">
         <button class="p-2 rounded-full hover:bg-white/8 transition-all text-white/60 hover:text-white"
@@ -161,8 +161,8 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
                 <button
                   class="w-14 h-14 bg-white rounded-full flex items-center justify-center hover:scale-105 transition-transform shadow-xl"
                   @click="store.togglePlayPause()" :title="store.isPlaying ? t('player.pause') : t('player.play')">
-                  <Pause v-if="store.isPlaying" class="w-6 h-6 fill-current text-black" />
-                  <Play v-else class="w-6 h-6 fill-current text-black ml-0.5" />
+                  <Pause v-if="store.isPlaying" class="w-6 h-6 fill-current text-[#0A0A0A]" />
+                  <Play v-else class="w-6 h-6 fill-current text-[#0A0A0A] ml-0.5" />
                 </button>
                 <button class="text-white/80 hover:text-white transition-colors" @click="store.next()" :title="t('player.next')">
                   <SkipForward class="w-7 h-7 fill-current" />
@@ -215,6 +215,7 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
                   <!-- Content Area -->
                   <div class="flex-1 overflow-hidden">
                     <TrackTable :tracks="store.queue" :show-album="false" :show-artwork="true" :scroll-to-current="true"
+                      class="dark"
                       @play-track="(track, index) => store.playTracks(store.queue, index)" />
                   </div>
                 </div>
@@ -242,6 +243,7 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
                       :lyrics="store.lyrics?.content"
                       :is-loading="store.lyricsLoading"
                       :current-position="store.position"
+                      class="dark"
                       @seek="(time) => store.seek(time)"
                     />
                   </div>

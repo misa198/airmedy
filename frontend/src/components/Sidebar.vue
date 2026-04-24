@@ -82,25 +82,25 @@ function toggleContextMenu(id: string, e: MouseEvent) {
     <!-- Main nav -->
     <nav class="px-3 py-2 space-y-0.5">
       <RouterLink v-for="item in navItems" :key="item.name" :to="item.to"
-        class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-white/50 hover:text-white hover:bg-white/[0.05]"
-        active-class="bg-white/[0.08] !text-primary font-medium">
+        class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-foreground/50 hover:text-foreground hover:bg-foreground/[0.05]"
+        active-class="bg-foreground/[0.08] !text-primary font-medium">
         <component :is="item.icon" class="w-4 h-4 flex-shrink-0" />
         <span class="text-sm">{{ item.name }}</span>
       </RouterLink>
     </nav>
 
     <!-- Divider -->
-    <div class="mx-3 border-t border-white/[0.06] my-1" />
+    <div class="mx-3 border-t border-foreground/[0.06] my-1" />
 
     <!-- Playlists section -->
     <div class="flex-1 overflow-y-auto px-3 pb-2">
       <div class="flex items-center justify-between px-3 py-2">
-        <div class="flex items-center gap-2 text-white/30">
+        <div class="flex items-center gap-2 text-foreground/30">
           <Library class="w-3.5 h-3.5" />
           <span class="text-xs font-semibold uppercase tracking-widest">{{ t('sidebar.playlists') }}</span>
         </div>
         <button
-          class="w-6 h-6 flex items-center justify-center rounded text-white/30 hover:text-white hover:bg-white/[0.06] transition-colors"
+          class="w-6 h-6 flex items-center justify-center rounded text-foreground/30 hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
           @click.stop="openCreateDialog" :title="t('sidebar.new_playlist')">
           <Plus class="w-3.5 h-3.5" />
         </button>
@@ -110,30 +110,30 @@ function toggleContextMenu(id: string, e: MouseEvent) {
       <div class="space-y-0.5">
         <div v-for="playlist in playlistsStore.playlists" :key="playlist.id" class="relative group">
           <RouterLink :to="`/playlists/${playlist.id}`"
-            class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-white/50 hover:text-white hover:bg-white/[0.05] pr-8"
-            active-class="bg-white/[0.08] !text-primary font-medium">
+            class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-foreground/50 hover:text-foreground hover:bg-foreground/[0.05] pr-8"
+            active-class="bg-foreground/[0.08] !text-primary font-medium">
             <Music class="w-4 h-4 flex-shrink-0" />
             <span class="text-sm truncate">{{ playlist.name }}</span>
           </RouterLink>
 
           <!-- Context menu trigger -->
           <button
-            class="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded text-white/0 group-hover:text-white/40 hover:!text-white hover:bg-white/[0.08] transition-colors opacity-0 group-hover:opacity-100"
+            class="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded text-foreground/0 group-hover:text-foreground/40 hover:!text-foreground hover:bg-foreground/[0.08] transition-colors opacity-0 group-hover:opacity-100"
             @click.stop="(e) => toggleContextMenu(playlist.id, e)">
             <MoreHorizontal class="w-3.5 h-3.5" />
           </button>
 
           <!-- Context menu -->
           <div v-if="contextMenuId === playlist.id"
-            class="absolute right-0 top-full mt-1 z-50 w-40 rounded-lg bg-[#1A1A1A] ring-1 ring-white/[0.08] shadow-xl py-1"
+            class="absolute right-0 top-full mt-1 z-50 w-40 rounded-lg bg-[#1A1A1A] ring-1 ring-foreground/[0.08] shadow-xl py-1"
             @click.stop>
             <button
-              class="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors"
+              class="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-foreground/70 hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
               @click="openRenameDialog(playlist.id, playlist.name)">
               <Pencil class="w-3.5 h-3.5" />{{ t('sidebar.rename') }}
             </button>
             <button
-              class="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-red-400/80 hover:text-red-400 hover:bg-white/[0.06] transition-colors"
+              class="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-red-400/80 hover:text-red-400 hover:bg-foreground/[0.06] transition-colors"
               @click="deletePlaylist(playlist.id)">
               <Trash2 class="w-3.5 h-3.5" />{{ t('sidebar.delete') }}
             </button>
@@ -141,7 +141,7 @@ function toggleContextMenu(id: string, e: MouseEvent) {
         </div>
 
         <!-- Empty state -->
-        <p v-if="playlistsStore.playlists.length === 0" class="px-3 py-2 text-xs text-white/20">
+        <p v-if="playlistsStore.playlists.length === 0" class="px-3 py-2 text-xs text-foreground/20">
           {{ t('sidebar.no_playlists') }}
         </p>
       </div>

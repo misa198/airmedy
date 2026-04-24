@@ -8,32 +8,32 @@ export default {
     extend: {
       colors: {
         background: 'var(--bg-main)',
-        foreground: '#FFFFFF',
+        foreground: 'var(--text-main)',
         glass: 'var(--bg-glass)',
         'glass-elevated': 'var(--bg-glass-elevated)',
         'border-glass': 'var(--border-glass)',
-        border: 'rgba(255, 255, 255, 0.1)',
+        border: 'var(--border-glass)',
         primary: {
           DEFAULT: 'var(--primary)',
-          foreground: '#FFFFFF',
+          foreground: 'var(--primary-foreground)',
         },
         card: {
-          DEFAULT: '#1A1A1A',
-          foreground: '#FFFFFF',
+          DEFAULT: 'var(--bg-glass-elevated)',
+          foreground: 'var(--text-main)',
         },
         accent: {
-          DEFAULT: '#2D2D2D',
-          foreground: '#FFFFFF',
+          DEFAULT: 'var(--bg-glass-elevated)',
+          foreground: 'var(--text-main)',
         },
         muted: {
-          DEFAULT: '#27272A',
+          DEFAULT: 'var(--bg-glass)',
           foreground: 'var(--text-muted)',
         },
         sidebar: {
-          DEFAULT: '#0A0A0A',
-          foreground: '#FFFFFF',
-          accent: '#2D2D2D',
-          'accent-foreground': '#FFFFFF',
+          DEFAULT: 'var(--bg-main)',
+          foreground: 'var(--text-main)',
+          accent: 'var(--bg-glass-elevated)',
+          'accent-foreground': 'var(--text-main)',
         },
         dynamic: {
           primary: 'var(--dynamic-primary)',

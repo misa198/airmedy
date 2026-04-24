@@ -42,19 +42,19 @@ function cancel() {
   <Teleport to="body">
     <Transition name="fade" @after-enter="focusInput">
       <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center" @click.self="cancel">
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="cancel" />
-        <div class="relative z-10 w-80 rounded-xl bg-[#1A1A1A] ring-1 ring-white/[0.08] shadow-2xl p-5"
+        <div class="absolute inset-0 bg-background/60 backdrop-blur-sm" @click="cancel" />
+        <div class="relative z-10 w-80 rounded-xl bg-[#1A1A1A] ring-1 ring-foreground/[0.08] shadow-2xl p-5"
           @keydown.esc="cancel" @keydown.enter="submit">
-          <h3 class="text-sm font-semibold text-white mb-4">{{ title ?? t('sidebar.new_playlist') }}</h3>
+          <h3 class="text-sm font-semibold text-foreground mb-4">{{ title ?? t('sidebar.new_playlist') }}</h3>
           <Input ref="inputRef" v-model="name" :placeholder="t('sidebar.playlist_name')"
-            class="bg-white/[0.05] border-white/[0.08] text-white placeholder:text-white/30 focus-visible:ring-white/20"
+            class="bg-foreground/[0.05] border-foreground/[0.08] text-foreground placeholder:text-foreground/30 focus-visible:ring-foreground/20"
             autofocus />
           <div class="flex justify-end gap-2 mt-4">
             <button
-              class="px-3 py-1.5 text-sm text-white/50 hover:text-white rounded-lg hover:bg-white/[0.05] transition-colors"
+              class="px-3 py-1.5 text-sm text-foreground/50 hover:text-foreground rounded-lg hover:bg-foreground/[0.05] transition-colors"
               @click="cancel">{{ t('common.cancel') }}</button>
             <button
-              class="px-3 py-1.5 text-sm text-white bg-white/[0.12] hover:bg-white/[0.18] rounded-lg transition-colors font-medium disabled:opacity-40"
+              class="px-3 py-1.5 text-sm text-foreground bg-foreground/[0.12] hover:bg-foreground/[0.18] rounded-lg transition-colors font-medium disabled:opacity-40"
               :disabled="!name.trim()" @click="submit">{{ title === t('sidebar.rename_playlist_title') ? t('sidebar.rename') : t('common.create') }}</button>
           </div>
         </div>

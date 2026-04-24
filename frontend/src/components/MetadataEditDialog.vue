@@ -77,101 +77,101 @@ function cancel() {
         class="fixed inset-0 z-50 flex items-center justify-center"
         @click.self="cancel"
       >
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="cancel" />
+        <div class="absolute inset-0 bg-background/60 backdrop-blur-sm" @click="cancel" />
         <div
-          class="relative z-10 w-[480px] max-h-[85vh] overflow-y-auto rounded-xl bg-[#1A1A1A] ring-1 ring-white/[0.08] shadow-2xl p-5"
+          class="relative z-10 w-[480px] max-h-[85vh] overflow-y-auto rounded-xl bg-[#1A1A1A] ring-1 ring-foreground/[0.08] shadow-2xl p-5"
           @keydown.esc="cancel"
         >
-          <h3 class="text-sm font-semibold text-white mb-4">{{ t('library.edit_metadata') }}</h3>
+          <h3 class="text-sm font-semibold text-foreground mb-4">{{ t('library.edit_metadata') }}</h3>
 
           <div class="space-y-3">
             <div>
-              <label class="block text-xs text-white/40 mb-1">{{ t('library.title') }}</label>
+              <label class="block text-xs text-foreground/40 mb-1">{{ t('library.title') }}</label>
               <Input
                 v-model="form.Title"
                 :placeholder="t('library.title')"
-                class="bg-white/[0.05] border-white/[0.08] text-white placeholder:text-white/20 focus-visible:ring-white/20"
+                class="bg-foreground/[0.05] border-foreground/[0.08] text-foreground placeholder:text-foreground/20 focus-visible:ring-foreground/20"
               />
             </div>
             <div>
-              <label class="block text-xs text-white/40 mb-1">{{ t('library.artist') }}</label>
+              <label class="block text-xs text-foreground/40 mb-1">{{ t('library.artist') }}</label>
               <Input
                 v-model="form.Artist"
                 :placeholder="t('library.artist')"
-                class="bg-white/[0.05] border-white/[0.08] text-white placeholder:text-white/20 focus-visible:ring-white/20"
+                class="bg-foreground/[0.05] border-foreground/[0.08] text-foreground placeholder:text-foreground/20 focus-visible:ring-foreground/20"
               />
             </div>
             <div>
-              <label class="block text-xs text-white/40 mb-1">{{ t('library.album') }}</label>
+              <label class="block text-xs text-foreground/40 mb-1">{{ t('library.album') }}</label>
               <Input
                 v-model="form.AlbumTitle"
                 :placeholder="t('library.album')"
-                class="bg-white/[0.05] border-white/[0.08] text-white placeholder:text-white/20 focus-visible:ring-white/20"
+                class="bg-foreground/[0.05] border-foreground/[0.08] text-foreground placeholder:text-foreground/20 focus-visible:ring-foreground/20"
               />
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-xs text-white/40 mb-1">{{ t('library.genre') }}</label>
+                <label class="block text-xs text-foreground/40 mb-1">{{ t('library.genre') }}</label>
                 <Input
                   v-model="form.Genre"
                   :placeholder="t('library.genre')"
-                  class="bg-white/[0.05] border-white/[0.08] text-white placeholder:text-white/20 focus-visible:ring-white/20"
+                  class="bg-foreground/[0.05] border-foreground/[0.08] text-foreground placeholder:text-foreground/20 focus-visible:ring-foreground/20"
                 />
               </div>
               <div>
-                <label class="block text-xs text-white/40 mb-1">{{ t('library.composer') }}</label>
+                <label class="block text-xs text-foreground/40 mb-1">{{ t('library.composer') }}</label>
                 <Input
                   v-model="form.Composer"
                   :placeholder="t('library.composer')"
-                  class="bg-white/[0.05] border-white/[0.08] text-white placeholder:text-white/20 focus-visible:ring-white/20"
+                  class="bg-foreground/[0.05] border-foreground/[0.08] text-foreground placeholder:text-foreground/20 focus-visible:ring-foreground/20"
                 />
               </div>
             </div>
             <div class="grid grid-cols-3 gap-3">
               <div>
-                <label class="block text-xs text-white/40 mb-1">{{ t('library.year') }}</label>
+                <label class="block text-xs text-foreground/40 mb-1">{{ t('library.year') }}</label>
                 <Input
                   :model-value="form.Year.toString()"
                   :placeholder="t('library.year')"
-                  class="bg-white/[0.05] border-white/[0.08] text-white placeholder:text-white/20 focus-visible:ring-white/20"
+                  class="bg-foreground/[0.05] border-foreground/[0.08] text-foreground placeholder:text-foreground/20 focus-visible:ring-foreground/20"
                   @update:model-value="setInt('Year', $event as string)"
                 />
               </div>
               <div>
-                <label class="block text-xs text-white/40 mb-1">{{ t('library.track') }}</label>
+                <label class="block text-xs text-foreground/40 mb-1">{{ t('library.track') }}</label>
                 <Input
                   :model-value="form.TrackNumber.toString()"
                   placeholder="0"
-                  class="bg-white/[0.05] border-white/[0.08] text-white placeholder:text-white/20 focus-visible:ring-white/20"
+                  class="bg-foreground/[0.05] border-foreground/[0.08] text-foreground placeholder:text-foreground/20 focus-visible:ring-foreground/20"
                   @update:model-value="setInt('TrackNumber', $event as string)"
                 />
               </div>
               <div>
-                <label class="block text-xs text-white/40 mb-1">{{ t('library.total') }}</label>
+                <label class="block text-xs text-foreground/40 mb-1">{{ t('library.total') }}</label>
                 <Input
                   :model-value="form.TotalTracks.toString()"
                   placeholder="0"
-                  class="bg-white/[0.05] border-white/[0.08] text-white placeholder:text-white/20 focus-visible:ring-white/20"
+                  class="bg-foreground/[0.05] border-foreground/[0.08] text-foreground placeholder:text-foreground/20 focus-visible:ring-foreground/20"
                   @update:model-value="setInt('TotalTracks', $event as string)"
                 />
               </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-xs text-white/40 mb-1">{{ t('library.disc') }}</label>
+                <label class="block text-xs text-foreground/40 mb-1">{{ t('library.disc') }}</label>
                 <Input
                   :model-value="form.DiscNumber.toString()"
                   placeholder="0"
-                  class="bg-white/[0.05] border-white/[0.08] text-white placeholder:text-white/20 focus-visible:ring-white/20"
+                  class="bg-foreground/[0.05] border-foreground/[0.08] text-foreground placeholder:text-foreground/20 focus-visible:ring-foreground/20"
                   @update:model-value="setInt('DiscNumber', $event as string)"
                 />
               </div>
               <div>
-                <label class="block text-xs text-white/40 mb-1">{{ t('library.total_discs') }}</label>
+                <label class="block text-xs text-foreground/40 mb-1">{{ t('library.total_discs') }}</label>
                 <Input
                   :model-value="form.TotalDiscs.toString()"
                   placeholder="0"
-                  class="bg-white/[0.05] border-white/[0.08] text-white placeholder:text-white/20 focus-visible:ring-white/20"
+                  class="bg-foreground/[0.05] border-foreground/[0.08] text-foreground placeholder:text-foreground/20 focus-visible:ring-foreground/20"
                   @update:model-value="setInt('TotalDiscs', $event as string)"
                 />
               </div>
@@ -182,11 +182,11 @@ function cancel() {
 
           <div class="flex justify-end gap-2 mt-5">
             <button
-              class="px-3 py-1.5 text-sm text-white/50 hover:text-white rounded-lg hover:bg-white/[0.05] transition-colors"
+              class="px-3 py-1.5 text-sm text-foreground/50 hover:text-foreground rounded-lg hover:bg-foreground/[0.05] transition-colors"
               @click="cancel"
             >{{ t('common.cancel') }}</button>
             <button
-              class="px-3 py-1.5 text-sm text-white bg-white/[0.12] hover:bg-white/[0.18] rounded-lg transition-colors font-medium disabled:opacity-40"
+              class="px-3 py-1.5 text-sm text-foreground bg-foreground/[0.12] hover:bg-foreground/[0.18] rounded-lg transition-colors font-medium disabled:opacity-40"
               :disabled="saving"
               @click="save"
             >{{ saving ? t('common.saving') : t('common.save') }}</button>

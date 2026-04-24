@@ -6,7 +6,7 @@ import { hexToRgba } from './lib/utils'
 import { usePlayerStore } from './stores/player'
 import { useDeviceStore } from './stores/device'
 import { usePlaylistsStore } from './stores/playlists'
-import * as SettingsService from '../bindings/airmedy/internal/infra/wails/settingsservice'
+import { useAppStore } from './stores/app'
 import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
@@ -14,17 +14,12 @@ const { locale } = useI18n()
 const playerStore = usePlayerStore()
 const deviceStore = useDeviceStore()
 const playlistsStore = usePlaylistsStore()
+const appStore = useAppStore()
 
 onMounted(async () => {
   // Load settings
-  try {
-    const settings = await SettingsService.GetSettings()
-    if (settings && settings.language) {
-      locale.value = settings.language
-    }
-  } catch (err) {
-    console.error('Failed to load settings:', err)
-  }
+  await appStore.loadSettings()
+  locale.value = appStore.language
 
   if (route.name === 'mini-player') return
   playerStore.init()
@@ -33,14 +28,25 @@ onMounted(async () => {
   playlistsStore.loadAll()
 })
 
+const updateDynamicColors = (colors: any) => {
+  if (!colors) return
+  const root = document.documentElement
+  const isDark = root.classList.contains('dark')
+  
+  root.style.setProperty('--dynamic-primary', colors.vibrant)
+  root.style.setProperty('--dynamic-surface', hexToRgba(colors.dominant, isDark ? 0.15 : 0.05))
+  root.style.setProperty('--dynamic-glow', `0 0 40px ${hexToRgba(colors.vibrant, isDark ? 0.3 : 0.1)}`)
+}
+
 watch(
   () => playerStore.theme,
-  (colors) => {
-    if (!colors) return
-    const root = document.documentElement
-    root.style.setProperty('--dynamic-primary', colors.vibrant)
-    root.style.setProperty('--dynamic-surface', hexToRgba(colors.dominant, 0.15))
-    root.style.setProperty('--dynamic-glow', `0 0 40px ${hexToRgba(colors.vibrant, 0.3)}`)
+  (colors) => updateDynamicColors(colors),
+)
+
+watch(
+  () => appStore.theme,
+  () => {
+    updateDynamicColors(playerStore.theme)
   },
 )
 
@@ -48,6 +54,7 @@ watch(() => playerStore.playerMode, (newMode) => {
   if (newMode === 'fullscreen') {
     deviceStore.checkFullscreen()
   }
+  updateDynamicColors(playerStore.theme)
 })
 </script>
 

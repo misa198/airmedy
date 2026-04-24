@@ -35,7 +35,11 @@
     },
     "appearance": {
       "title": "外观",
-      "coming_soon": "主题和 UI 自定义即将推出。",
+      "theme": "主题",
+      "theme_desc": "选择应用主题",
+      "system": "系统",
+      "light": "浅色",
+      "dark": "深色",
       "language": "语言",
       "select_language": "选择应用程序语言"
     },

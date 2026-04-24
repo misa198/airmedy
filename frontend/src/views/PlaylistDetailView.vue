@@ -54,15 +54,15 @@ function playTrack(_track: TrackDTO, index: number) {
     <!-- Header -->
     <div class="px-6 pt-6 pb-4 flex-shrink-0 @container min-w-0">
       <div v-if="isLoading" class="space-y-2">
-        <div class="h-7 w-48 bg-white/[0.06] rounded animate-pulse" />
-        <div class="h-4 w-32 bg-white/[0.04] rounded animate-pulse" />
+        <div class="h-7 w-48 bg-foreground/[0.06] rounded animate-pulse" />
+        <div class="h-4 w-32 bg-foreground/[0.04] rounded animate-pulse" />
       </div>
       <template v-else-if="playlist">
         <div class="flex items-center gap-3 mb-1">
-          <ListMusic class="w-6 h-6 text-white/30 flex-shrink-0" />
-          <h1 class="text-xl @sm:text-2xl font-bold text-white line-clamp-2">{{ playlist.name }}</h1>
+          <ListMusic class="w-6 h-6 text-foreground/30 flex-shrink-0" />
+          <h1 class="text-xl @sm:text-2xl font-bold text-foreground line-clamp-2">{{ playlist.name }}</h1>
         </div>
-        <p class="text-sm text-white/30 pl-9">
+        <p class="text-sm text-foreground/30 pl-9">
           {{ tracks.length }} tracks · {{ totalDuration }}
         </p>
       </template>

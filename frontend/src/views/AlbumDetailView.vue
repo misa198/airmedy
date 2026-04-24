@@ -91,7 +91,7 @@ const formatTotalDuration = (tracks: TrackDTO[]) => {
         :style="{ '--dynamic-surface': albumTheme ? hexToRgba(albumTheme.dominant, 0.15) : 'var(--bg-glass)' }">
         <!-- Top Navigation -->
         <div class="pt-4 px-4 md:pt-5 md:px-8">
-          <button @click="router.back()" class="p-2 hover:bg-white/[0.06] rounded-full transition-colors">
+          <button @click="router.back()" class="p-2 hover:bg-foreground/[0.06] rounded-full transition-colors">
             <ArrowLeft class="w-6 h-6" />
           </button>
         </div>
@@ -99,9 +99,9 @@ const formatTotalDuration = (tracks: TrackDTO[]) => {
         <!-- Album Details Hero -->
         <div class="px-8 pb-8 md:px-12 md:pb-12 pt-4 flex flex-col md:flex-row gap-8 items-end">
           <div
-            class="w-48 h-48 md:w-64 md:h-64 rounded-lg shadow-2xl overflow-hidden ring-1 ring-white/[0.08] bg-white/5 flex-shrink-0">
+            class="w-48 h-48 md:w-64 md:h-64 rounded-lg shadow-2xl overflow-hidden ring-1 ring-foreground/[0.08] bg-foreground/5 flex-shrink-0">
             <img v-if="album.artwork_key" :src="'/artwork/' + album.artwork_key" class="w-full h-full object-cover" />
-            <div v-else class="w-full h-full flex items-center justify-center text-white/10">
+            <div v-else class="w-full h-full flex items-center justify-center text-foreground/10">
               <Disc class="w-24 h-24" />
             </div>
           </div>
@@ -110,8 +110,8 @@ const formatTotalDuration = (tracks: TrackDTO[]) => {
             <div class="space-y-2">
               <h1 class="text-2xl @sm:text-3xl @md:text-4xl @lg:text-5xl font-bold tracking-tight line-clamp-2">{{
                 album.title || $t('library.unknown_album') }}</h1>
-              <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-white/40">
-                <div class="flex items-center gap-2 text-white font-semibold min-w-0">
+              <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-foreground/40">
+                <div class="flex items-center gap-2 text-foreground font-semibold min-w-0">
                   <User class="w-4 h-4 flex-shrink-0" />
                   <span class="line-clamp-1">{{album.artists?.map(a => a?.name).join(', ') || $t('library.unknown_artist')}}</span>
                 </div>
@@ -132,12 +132,12 @@ const formatTotalDuration = (tracks: TrackDTO[]) => {
 
             <div class="flex items-center gap-4 pt-2">
               <button
-                class="px-8 py-3 bg-white text-black rounded-full font-bold shadow-lg hover:scale-105 transition-transform flex items-center gap-2"
+                class="px-8 py-3 bg-foreground text-background rounded-full font-bold shadow-lg hover:scale-105 transition-transform flex items-center gap-2"
                 @click="playerStore.playTracks(tracks, 0)">
                 <Play class="w-5 h-5 fill-current" />
                 {{ $t('common.play') }}
               </button>
-              <button class="p-3 ring-1 ring-white/[0.08] rounded-full hover:bg-white/[0.06] transition-colors">
+              <button class="p-3 ring-1 ring-foreground/[0.08] rounded-full hover:bg-foreground/[0.06] transition-colors">
                 <MoreVertical class="w-5 h-5" />
               </button>
             </div>
@@ -152,7 +152,7 @@ const formatTotalDuration = (tracks: TrackDTO[]) => {
       </div>
 
       <!-- Album Footer Metadata -->
-      <div v-if="album.copyright" class="px-8 pb-12 text-sm text-white/30 border-t border-white/[0.06] pt-8 mt-4">
+      <div v-if="album.copyright" class="px-8 pb-12 text-sm text-foreground/30 border-t border-foreground/[0.06] pt-8 mt-4">
         <div class="flex items-center gap-2">
           <span>{{ album.copyright }}</span>
         </div>

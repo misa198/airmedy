@@ -132,10 +132,18 @@ export class AlbumDTO {
 export class AppSettings {
     "language": string;
 
+    /**
+     * "system", "light", "dark"
+     */
+    "theme": string;
+
     /** Creates a new AppSettings instance. */
     constructor($$source: Partial<AppSettings> = {}) {
         if (!("language" in $$source)) {
             this["language"] = "";
+        }
+        if (!("theme" in $$source)) {
+            this["theme"] = "";
         }
 
         Object.assign(this, $$source);

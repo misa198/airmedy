@@ -105,7 +105,7 @@ const isCurrentTrack = (trackId: string) => {
   <div class="h-full flex flex-col overflow-hidden select-none @container">
     <!-- Table Header -->
     <div :class="[
-      'grid gap-4 px-6 py-2 border-b border-white/[0.06] text-[10px] font-semibold text-white/80 uppercase tracking-widest',
+      'grid gap-4 px-6 py-2 border-b border-foreground/[0.06] text-[10px] font-semibold text-foreground/80 uppercase tracking-widest',
       showAlbum
         ? 'grid-cols-[minmax(0,1fr)_80px] @[450px]:grid-cols-[40px_minmax(0,1fr)_80px_40px] @[700px]:grid-cols-[40px_minmax(0,1fr)_minmax(0,1fr)_80px_40px] @[1000px]:grid-cols-[40px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_80px_40px]'
         : 'grid-cols-[minmax(0,1fr)_80px] @[450px]:grid-cols-[40px_minmax(0,1fr)_80px_40px] @[650px]:grid-cols-[40px_minmax(0,1fr)_minmax(0,1fr)_80px_40px]'
@@ -126,7 +126,7 @@ const isCurrentTrack = (trackId: string) => {
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
 
-      <div v-else-if="tracks.length === 0" class="h-full flex flex-col items-center justify-center text-white/80">
+      <div v-else-if="tracks.length === 0" class="h-full flex flex-col items-center justify-center text-foreground/80">
         <Music class="w-12 h-12 mb-4 opacity-20" />
         <p>{{ $t('library.no_tracks') }}</p>
       </div>
@@ -134,7 +134,7 @@ const isCurrentTrack = (trackId: string) => {
       <RecycleScroller v-else ref="scrollerRef" class="h-full" :items="tracks" :item-size="56" key-field="id"
         v-slot="{ item, index }" @scroll.passive="(e: Event) => { handleScroll(e); contextMenu.close() }">
         <div :class="[
-          'grid gap-4 px-6 h-[56px] items-center text-sm hover:bg-white/[0.04] group transition-colors',
+          'grid gap-4 px-6 h-[56px] items-center text-sm hover:bg-foreground/[0.04] group transition-colors',
           showAlbum
             ? 'grid-cols-[minmax(0,1fr)_80px] @[450px]:grid-cols-[40px_minmax(0,1fr)_80px_40px] @[700px]:grid-cols-[40px_minmax(0,1fr)_minmax(0,1fr)_80px_40px] @[1000px]:grid-cols-[40px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_80px_40px]'
             : 'grid-cols-[minmax(0,1fr)_80px] @[450px]:grid-cols-[40px_minmax(0,1fr)_80px_40px] @[650px]:grid-cols-[40px_minmax(0,1fr)_minmax(0,1fr)_80px_40px]'
@@ -160,7 +160,7 @@ const isCurrentTrack = (trackId: string) => {
 
             <!-- Other Tracks -->
             <template v-else>
-              <div class="text-white/80 group-hover:hidden">{{ index + 1 }}</div>
+              <div class="text-foreground/80 group-hover:hidden">{{ index + 1 }}</div>
               <div class="hidden group-hover:block">
                 <button @click="emit('play-track', item, index)"
                   class="text-primary hover:scale-110 transition-transform">
@@ -171,15 +171,15 @@ const isCurrentTrack = (trackId: string) => {
           </div>
 
           <div class="font-medium truncate flex items-center gap-3 min-w-0">
-            <div v-if="showArtwork" class="w-8 h-8 bg-white/5 rounded flex-shrink-0 overflow-hidden">
+            <div v-if="showArtwork" class="w-8 h-8 bg-foreground/5 rounded flex-shrink-0 overflow-hidden">
               <img v-if="item.artwork_key" :src="`/artwork/${item.artwork_key}`" class="w-full h-full object-cover" />
-              <div v-else class="w-full h-full flex items-center justify-center text-white/80/30">
+              <div v-else class="w-full h-full flex items-center justify-center text-foreground/30">
                 <Music class="w-4 h-4" />
               </div>
             </div>
             <span class="truncate">{{ item.title || $t('library.unknown_title') }}</span>
           </div>
-          <div class="text-white/80 truncate flex items-center gap-2 pr-4 min-w-0 hidden @[650px]:flex">
+          <div class="text-foreground/80 truncate flex items-center gap-2 pr-4 min-w-0 hidden @[650px]:flex">
             <User class="w-3 h-3 opacity-50 flex-shrink-0" />
             <div class="truncate">
               <template v-if="item.artists && item.artists.length > 0">
@@ -194,19 +194,19 @@ const isCurrentTrack = (trackId: string) => {
               <span v-else>{{ item.raw_artist_names || $t('library.unknown_artist') }}</span>
             </div>
           </div>
-          <div v-if="showAlbum" class="text-white/80 truncate flex items-center gap-2 min-w-0 hidden @[1000px]:flex">
+          <div v-if="showAlbum" class="text-foreground/80 truncate flex items-center gap-2 min-w-0 hidden @[1000px]:flex">
             <Disc class="w-3 h-3 opacity-50" />
             <span class="truncate group-hover:text-primary transition-colors cursor-pointer"
               @click.stop="item.album?.id && navigateToAlbum(item.album.id)">
               {{ item.album?.title || $t('library.unknown_album') }}
             </span>
           </div>
-          <div class="text-center text-white/80 text-xs">
+          <div class="text-center text-foreground/80 text-xs">
             {{ formatTime(item.duration) }}
           </div>
           <div class="flex items-center justify-end opacity-0 group-hover:opacity-100 hidden @[450px]:flex">
             <button
-              class="p-2 hover:bg-white/8 rounded-full text-white/30 hover:text-white/70 transition-colors"
+              class="p-2 hover:bg-foreground/8 rounded-full text-foreground/30 hover:text-foreground/70 transition-colors"
               @click.stop="openContextMenu($event, item)"
             >
               <MoreVertical class="w-4 h-4" />

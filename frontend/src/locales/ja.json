@@ -35,7 +35,11 @@
     },
     "appearance": {
       "title": "外観",
-      "coming_soon": "テーマとUIのカスタマイズは近日公開予定です。",
+      "theme": "テーマ",
+      "theme_desc": "アプリケーションのテーマを選択",
+      "system": "システム",
+      "light": "ライト",
+      "dark": "ダーク",
       "language": "言語",
       "select_language": "アプリの言語を選択"
     },

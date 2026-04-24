@@ -35,7 +35,11 @@
     },
     "appearance": {
       "title": "디자인",
-      "coming_soon": "테마 및 UI 사용자 지정 기능이 곧 제공될 예정입니다.",
+      "theme": "테마",
+      "theme_desc": "애플리케이션 테마 선택",
+      "system": "시스템",
+      "light": "라이트",
+      "dark": "다크",
       "language": "언어",
       "select_language": "애플리케이션 언어 선택"
     },

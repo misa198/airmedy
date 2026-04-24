@@ -62,14 +62,14 @@ onMounted(loadAlbums)
 
 <template>
   <div class="h-full flex flex-col overflow-hidden bg-background">
-    <div class="p-6 pb-4 border-b border-white/[0.06] select-none">
+    <div class="p-6 pb-4 border-b border-foreground/[0.06] select-none">
       <div class="flex items-center justify-between mb-4">
         <h1 class="text-3xl font-bold">{{ $t('library.albums') }}</h1>
-        <div class="text-sm text-white/40">{{ filteredAlbums.length }} {{ $t('library.albums').toLowerCase() }}</div>
+        <div class="text-sm text-foreground/40">{{ filteredAlbums.length }} {{ $t('library.albums').toLowerCase() }}</div>
       </div>
       
       <div class="relative max-w-sm">
-        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40" />
         <Input
           v-model="searchQuery"
           type="text"
@@ -84,7 +84,7 @@ onMounted(loadAlbums)
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
       
-      <div v-else-if="filteredAlbums.length === 0" class="h-full flex flex-col items-center justify-center text-white/40">
+      <div v-else-if="filteredAlbums.length === 0" class="h-full flex flex-col items-center justify-center text-foreground/40">
         <Disc class="w-12 h-12 mb-4 opacity-20" />
         <p>{{ $t('library.no_albums') }}</p>
       </div>

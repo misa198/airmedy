@@ -35,7 +35,11 @@
     },
     "appearance": {
       "title": "Appearance",
-      "coming_soon": "Theming and UI customizations coming soon.",
+      "theme": "Theme",
+      "theme_desc": "Select application theme",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark",
       "language": "Language",
       "select_language": "Select application language"
     },

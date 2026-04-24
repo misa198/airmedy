@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
-import * as SettingsService from '../../bindings/airmedy/internal/infra/wails/settingsservice'
-import { RotateCcw, Plus, Trash2, Folder, CheckCircle2, AlertCircle, Loader2, Languages } from 'lucide-vue-next'
+import { RotateCcw, Plus, Trash2, Folder, CheckCircle2, AlertCircle, Loader2, Languages, Monitor, Sun, Moon } from 'lucide-vue-next'
 import type { WatchedFolder, SyncProgress } from '../../bindings/airmedy/internal/domain/models'
 import { Events } from '@wailsio/runtime'
 import EQPanel from '@/components/EQPanel.vue'
 import { useI18n } from 'vue-i18n'
+import { useAppStore } from '@/stores/app'
 import {
   Select,
   SelectContent,
@@ -15,32 +15,13 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
+const appStore = useAppStore()
 const folders = ref<WatchedFolder[]>([])
 const isSyncing = ref(false)
 const isLoading = ref(true)
 const message = ref({ text: '', type: '' })
 const syncProgress = ref<SyncProgress | null>(null)
-
-const loadSettings = async () => {
-  try {
-    const settings = await SettingsService.GetSettings()
-    if (settings && settings.language) {
-      locale.value = settings.language
-    }
-  } catch (err) {
-    console.error('Failed to load settings:', err)
-  }
-}
-
-const updateLanguage = async (newLang: string) => {
-  try {
-    locale.value = newLang
-    await SettingsService.SaveSettings({ language: newLang })
-  } catch (err) {
-    console.error('Failed to save language setting:', err)
-  }
-}
 
 const loadFolders = async () => {
   isLoading.value = true
@@ -124,7 +105,6 @@ const showMessage = (text: string, type: string) => {
 
 onMounted(() => {
   loadFolders()
-  loadSettings()
   Events.On('library:sync-started', handleSyncStarted)
   Events.On('library:sync-progress', handleSyncProgress)
   Events.On('library:sync-finished', handleSyncFinished)
@@ -157,19 +137,19 @@ onUnmounted(() => {
           <Loader2 class="w-5 h-5 animate-spin text-primary" />
           <h2 class="font-semibold">{{ t('settings.sync.syncing_library') }}</h2>
         </div>
-        <span class="text-sm font-medium text-white/40 bg-white/[0.06] px-2 py-1 rounded">
+        <span class="text-sm font-medium text-foreground/40 bg-foreground/[0.06] px-2 py-1 rounded">
           {{ syncProgress.current }} / {{ syncProgress.total }}
         </span>
       </div>
 
-      <div class="w-full bg-white/[0.06] rounded-full h-2 mb-3 overflow-hidden">
+      <div class="w-full bg-foreground/[0.06] rounded-full h-2 mb-3 overflow-hidden">
         <div 
           class="bg-primary h-full transition-all duration-300 ease-out"
           :style="{ width: `${(syncProgress.current / (syncProgress.total || 1)) * 100}%` }"
         ></div>
       </div>
       
-      <p class="text-xs text-white/30 truncate italic">
+      <p class="text-xs text-foreground/30 truncate italic">
         Importing: {{ syncProgress.path }}
       </p>
     </div>
@@ -187,16 +167,16 @@ onUnmounted(() => {
     </div>
 
     <div class="space-y-8">
-      <section class="bg-card rounded-xl ring-1 ring-white/[0.06] p-6">
+      <section class="bg-card rounded-xl ring-1 ring-foreground/[0.06] p-6">
         <div class="flex items-center justify-between mb-6">
           <div>
             <h2 class="text-xl font-semibold mb-1">{{ t('settings.folders.title') }}</h2>
-            <p class="text-sm text-white/40">{{ t('settings.folders.description') }}</p>
+            <p class="text-sm text-foreground/40">{{ t('settings.folders.description') }}</p>
           </div>
           <button
             @click="addFolder"
             :disabled="isSyncing"
-            class="flex items-center gap-2 px-3 py-1.5 bg-white/[0.06] text-white rounded-md hover:bg-white/[0.09] transition-colors text-sm font-medium disabled:opacity-50"
+            class="flex items-center gap-2 px-3 py-1.5 bg-foreground/[0.06] text-foreground rounded-md hover:bg-foreground/[0.09] transition-colors text-sm font-medium disabled:opacity-50"
           >
             <Plus class="w-4 h-4" />
             {{ t('settings.folders.add_folder') }}
@@ -204,27 +184,27 @@ onUnmounted(() => {
         </div>
 
         <div v-if="isLoading" class="py-12 flex justify-center">
-          <RotateCcw class="w-8 h-8 animate-spin text-white/30" />
+          <RotateCcw class="w-8 h-8 animate-spin text-foreground/30" />
         </div>
         
-        <div v-else-if="folders.length === 0" class="py-12 text-center border border-dashed border-white/[0.08] rounded-lg">
-          <Folder class="w-12 h-12 mx-auto text-white/40 mb-4 opacity-20" />
-          <p class="text-white/40">{{ t('settings.folders.no_folders') }}</p>
+        <div v-else-if="folders.length === 0" class="py-12 text-center border border-dashed border-foreground/[0.08] rounded-lg">
+          <Folder class="w-12 h-12 mx-auto text-foreground/40 mb-4 opacity-20" />
+          <p class="text-foreground/40">{{ t('settings.folders.no_folders') }}</p>
           <button @click="addFolder" :disabled="isSyncing" class="mt-4 text-primary hover:underline font-medium text-sm disabled:opacity-50">
             {{ t('settings.folders.add_first') }}
           </button>
         </div>
 
-        <ul v-else class="divide-y divide-white/[0.04] ring-1 ring-white/[0.06] rounded-lg overflow-hidden bg-background/50">
-          <li v-for="folder in folders" :key="folder.id" class="flex items-center justify-between p-4 hover:bg-white/[0.04] transition-colors">
+        <ul v-else class="divide-y divide-foreground/[0.04] ring-1 ring-foreground/[0.06] rounded-lg overflow-hidden bg-background/50">
+          <li v-for="folder in folders" :key="folder.id" class="flex items-center justify-between p-4 hover:bg-foreground/[0.04] transition-colors">
             <div class="flex items-center gap-3 overflow-hidden">
-              <Folder class="w-5 h-5 text-white/30 flex-shrink-0" />
+              <Folder class="w-5 h-5 text-foreground/30 flex-shrink-0" />
               <span class="text-sm font-medium truncate" :title="folder.path">{{ folder.path }}</span>
             </div>
             <button 
               @click="removeFolder(folder.id)"
               :disabled="isSyncing"
-              class="p-2 text-white/30 hover:text-destructive hover:bg-destructive/10 rounded-md transition-all disabled:opacity-50"
+              class="p-2 text-foreground/30 hover:text-destructive hover:bg-destructive/10 rounded-md transition-all disabled:opacity-50"
               :title="t('settings.folders.remove_folder')"
             >
               <Trash2 class="w-4 h-4" />
@@ -233,46 +213,91 @@ onUnmounted(() => {
         </ul>
       </section>
 
-      <section class="bg-card rounded-xl ring-1 ring-white/[0.06] p-6">
-        <h2 class="text-xl font-semibold mb-1">{{ t('settings.appearance.title') }}</h2>
-        <p class="text-sm text-white/40 mb-6">{{ t('settings.appearance.coming_soon') }}</p>
+      <section class="bg-card rounded-xl ring-1 ring-foreground/[0.06] p-6">
+        <h2 class="text-xl font-semibold mb-6">{{ t('settings.appearance.title') }}</h2>
         
-        <div class="flex items-center justify-between max-w-md">
-          <div class="flex items-center gap-3">
-            <div class="p-2 bg-white/[0.04] rounded-lg">
-              <Languages class="w-5 h-5 text-white/60" />
+        <div class="space-y-8">
+          <!-- Theme Selection -->
+          <div class="flex items-center justify-between max-w-md">
+            <div class="flex items-center gap-3">
+              <div class="p-2 bg-foreground/[0.04] rounded-lg">
+                <Sun v-if="appStore.theme === 'light'" class="w-5 h-5 text-foreground/60" />
+                <Moon v-else-if="appStore.theme === 'dark'" class="w-5 h-5 text-foreground/60" />
+                <Monitor v-else class="w-5 h-5 text-foreground/60" />
+              </div>
+              <div>
+                <p class="text-sm font-medium">{{ t('settings.appearance.theme', 'Theme') }}</p>
+                <p class="text-xs text-foreground/30">{{ t('settings.appearance.theme_desc', 'Select application theme') }}</p>
+              </div>
             </div>
-            <div>
-              <p class="text-sm font-medium">{{ t('settings.appearance.language') }}</p>
-              <p class="text-xs text-white/30">{{ t('settings.appearance.select_language', 'Select application language') }}</p>
-            </div>
+            <Select 
+              :model-value="appStore.theme" 
+              @update:model-value="val => appStore.updateTheme(val as any)"
+            >
+              <SelectTrigger class="w-[180px] bg-foreground/[0.06] border-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="system">
+                  <div class="flex items-center gap-2">
+                    <Monitor class="w-4 h-4" />
+                    <span>{{ t('settings.appearance.system', 'System') }}</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="light">
+                  <div class="flex items-center gap-2">
+                    <Sun class="w-4 h-4" />
+                    <span>{{ t('settings.appearance.light', 'Light') }}</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="dark">
+                  <div class="flex items-center gap-2">
+                    <Moon class="w-4 h-4" />
+                    <span>{{ t('settings.appearance.dark', 'Dark') }}</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <Select 
-            :model-value="locale" 
-            @update:model-value="val => updateLanguage(val)"
-          >
-            <SelectTrigger class="w-[180px] bg-white/[0.06] border-0">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="en">English</SelectItem>
-              <SelectItem value="zh">中文 (Chinese)</SelectItem>
-              <SelectItem value="vi">Tiếng Việt (Vietnamese)</SelectItem>
-              <SelectItem value="ja">日本語 (Japanese)</SelectItem>
-              <SelectItem value="ko">한국어 (Korean)</SelectItem>
-              <SelectItem value="de">Deutsch (German)</SelectItem>
-              <SelectItem value="fr">Français (French)</SelectItem>
-              <SelectItem value="es">Español (Spanish)</SelectItem>
-              <SelectItem value="pt">Português (Portuguese)</SelectItem>
-              <SelectItem value="it">Italiano (Italian)</SelectItem>
-              <SelectItem value="ru">Русский (Russian)</SelectItem>
-              <SelectItem value="th">ไทย (Thai)</SelectItem>
-            </SelectContent>
-          </Select>
+
+          <!-- Language Selection -->
+          <div class="flex items-center justify-between max-w-md">
+            <div class="flex items-center gap-3">
+              <div class="p-2 bg-foreground/[0.04] rounded-lg">
+                <Languages class="w-5 h-5 text-foreground/60" />
+              </div>
+              <div>
+                <p class="text-sm font-medium">{{ t('settings.appearance.language') }}</p>
+                <p class="text-xs text-foreground/30">{{ t('settings.appearance.select_language', 'Select application language') }}</p>
+              </div>
+            </div>
+            <Select 
+              :model-value="appStore.language" 
+              @update:model-value="val => { appStore.language = val; appStore.updateTheme(appStore.theme) }"
+            >
+              <SelectTrigger class="w-[180px] bg-foreground/[0.06] border-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="zh">中文 (Chinese)</SelectItem>
+                <SelectItem value="vi">Tiếng Việt (Vietnamese)</SelectItem>
+                <SelectItem value="ja">日本語 (Japanese)</SelectItem>
+                <SelectItem value="ko">한국어 (Korean)</SelectItem>
+                <SelectItem value="de">Deutsch (German)</SelectItem>
+                <SelectItem value="fr">Français (French)</SelectItem>
+                <SelectItem value="es">Español (Spanish)</SelectItem>
+                <SelectItem value="pt">Português (Portuguese)</SelectItem>
+                <SelectItem value="it">Italiano (Italian)</SelectItem>
+                <SelectItem value="ru">Русский (Russian)</SelectItem>
+                <SelectItem value="th">ไทย (Thai)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </section>
 
-      <section class="bg-card rounded-xl ring-1 ring-white/[0.06] p-6">
+      <section class="bg-card rounded-xl ring-1 ring-foreground/[0.06] p-6">
         <h2 class="text-xl font-semibold mb-4">{{ t('settings.equalizer.title') }}</h2>
         <EQPanel />
       </section>

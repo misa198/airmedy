@@ -97,23 +97,23 @@ function handleSubmenuItemClick(item: ContextMenuItem) {
       <!-- Menu panel -->
       <div
         ref="menuEl"
-        class="fixed z-[999] min-w-[200px] rounded-2xl bg-black/80 backdrop-blur-xl ring-1 ring-white/10 shadow-2xl p-1.5 select-none"
+        class="fixed z-[999] min-w-[200px] rounded-2xl bg-background/80 backdrop-blur-xl ring-1 ring-foreground/10 shadow-2xl p-1.5 select-none"
         :style="{ left: adjustedX + 'px', top: adjustedY + 'px' }"
       >
         <template v-for="(item, index) in items" :key="index">
           <div
             v-if="item.separator"
-            class="my-1 mx-2 border-t border-white/10"
+            class="my-1 mx-2 border-t border-foreground/10"
           />
           <div
             v-else
             class="relative flex items-center gap-3 px-3 py-1.5 text-sm cursor-default transition-all rounded-lg mx-0.5"
             :class="[
               item.disabled
-                ? 'text-white/20 cursor-not-allowed'
+                ? 'text-foreground/20 cursor-not-allowed'
                 : item.danger
                   ? 'text-red-400/80 hover:text-red-400 hover:bg-red-500/20'
-                  : 'text-white/80 hover:text-white hover:bg-white/15',
+                  : 'text-foreground/80 hover:text-foreground hover:bg-foreground/15',
             ]"
             @click="handleItemClick(item)"
             @mouseenter="handleMouseEnter(item, index, $event)"
@@ -129,7 +129,7 @@ function handleSubmenuItemClick(item: ContextMenuItem) {
       <div
         v-if="activeSubmenuIndex !== null && items[activeSubmenuIndex]?.children?.length"
         ref="submenuEl"
-        class="fixed z-[1000] min-w-[180px] max-h-64 overflow-y-auto rounded-2xl bg-black/80 backdrop-blur-xl ring-1 ring-white/10 shadow-2xl p-1.5 select-none"
+        class="fixed z-[1000] min-w-[180px] max-h-64 overflow-y-auto rounded-2xl bg-background/80 backdrop-blur-xl ring-1 ring-foreground/10 shadow-2xl p-1.5 select-none"
         :style="{ left: submenuX + 'px', top: submenuY + 'px' }"
         @mouseleave="activeSubmenuIndex = null"
       >
@@ -137,13 +137,13 @@ function handleSubmenuItemClick(item: ContextMenuItem) {
           v-for="(child, ci) in items[activeSubmenuIndex]!.children"
           :key="ci"
           class="flex items-center gap-3 px-3 py-1.5 text-sm cursor-default transition-all rounded-lg mx-0.5"
-          :class="child.disabled ? 'text-white/20' : 'text-white/80 hover:text-white hover:bg-white/15'"
+          :class="child.disabled ? 'text-foreground/20' : 'text-foreground/80 hover:text-foreground hover:bg-foreground/15'"
           @click="handleSubmenuItemClick(child)"
         >
           <component :is="child.icon" v-if="child.icon" class="w-4 h-4 shrink-0 opacity-70" />
           <span>{{ child.label }}</span>
         </div>
-        <div v-if="!items[activeSubmenuIndex]!.children!.length" class="px-3 py-1.5 text-sm text-white/30">
+        <div v-if="!items[activeSubmenuIndex]!.children!.length" class="px-3 py-1.5 text-sm text-foreground/30">
           No playlists
         </div>
       </div>

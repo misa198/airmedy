@@ -72,7 +72,7 @@ function getBandGain(index: number): number {
         :model-value="activeProfile?.id"
         @update:model-value="selectProfile"
       >
-        <SelectTrigger class="flex-1 bg-white/[0.05] border border-white/[0.08] text-sm text-white rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-white/20">
+        <SelectTrigger class="flex-1 bg-foreground/[0.05] border border-foreground/[0.08] text-sm text-foreground rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-foreground/20">
           <SelectValue placeholder="Select Profile" />
         </SelectTrigger>
         <SelectContent>
@@ -90,11 +90,11 @@ function getBandGain(index: number): number {
       <button
         class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors"
         :class="enabled
-          ? 'bg-white/[0.1] text-white hover:bg-white/[0.14]'
-          : 'bg-white/[0.03] text-white/40 hover:bg-white/[0.06]'"
+          ? 'bg-foreground/[0.1] text-foreground hover:bg-foreground/[0.14]'
+          : 'bg-foreground/[0.03] text-foreground/40 hover:bg-foreground/[0.06]'"
         @click="toggleEnabled"
       >
-        <span class="w-1.5 h-1.5 rounded-full" :class="enabled ? 'bg-green-400' : 'bg-white/20'" />
+        <span class="w-1.5 h-1.5 rounded-full" :class="enabled ? 'bg-green-400' : 'bg-foreground/20'" />
         {{ enabled ? 'On' : 'Off' }}
       </button>
     </div>
@@ -107,7 +107,7 @@ function getBandGain(index: number): number {
         class="flex flex-col items-center flex-1 min-w-0 h-full"
       >
         <!-- Gain value -->
-        <p class="text-[10px] text-white/30 mb-1 tabular-nums w-full text-center">
+        <p class="text-[10px] text-foreground/30 mb-1 tabular-nums w-full text-center">
           {{ getBandGain(i) >= 0 ? '+' : '' }}{{ getBandGain(i).toFixed(1) }}
         </p>
         <!-- Vertical slider via CSS rotation wrapper -->
@@ -129,7 +129,7 @@ function getBandGain(index: number): number {
           </div>
         </div>
         <!-- Freq label -->
-        <p class="text-[10px] text-white/30 mt-1">{{ label }}</p>
+        <p class="text-[10px] text-foreground/30 mt-1">{{ label }}</p>
       </div>
     </div>
   </div>

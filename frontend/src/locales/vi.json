@@ -35,7 +35,11 @@
     },
     "appearance": {
       "title": "Giao diện",
-      "coming_soon": "Tính năng thay đổi chủ đề và tùy chỉnh giao diện sắp ra mắt.",
+      "theme": "Giao diện",
+      "theme_desc": "Chọn giao diện ứng dụng",
+      "system": "Hệ thống",
+      "light": "Sáng",
+      "dark": "Tối",
       "language": "Ngôn ngữ",
       "select_language": "Chọn ngôn ngữ ứng dụng"
     },

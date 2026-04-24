@@ -18,7 +18,7 @@ const emit = defineEmits<{
     class="group cursor-pointer"
     @click="emit('click', album.id)"
   >
-    <div class="aspect-square bg-white/5 rounded-lg ring-1 ring-white/[0.06] overflow-hidden relative mb-3 transition-all">
+    <div class="aspect-square bg-foreground/5 rounded-lg ring-1 ring-foreground/[0.06] overflow-hidden relative mb-3 transition-all">
       <div v-if="album.artwork_key" class="w-full h-full">
         <img
           :src="`/artwork/${album.artwork_key}`"
@@ -26,14 +26,14 @@ const emit = defineEmits<{
           class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
       </div>
-      <div v-else class="w-full h-full flex items-center justify-center text-white/20 group-hover:scale-105 transition-transform duration-500">
+      <div v-else class="w-full h-full flex items-center justify-center text-foreground/20 group-hover:scale-105 transition-transform duration-500">
         <Disc class="w-1/3 h-1/3" />
       </div>
 
-      <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+      <div class="absolute inset-0 bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
         <button
           @click.stop="emit('play', album.id)"
-          class="w-12 h-12 bg-white text-black rounded-full shadow-xl flex items-center justify-center transform translate-y-4 group-hover:translate-y-0 transition-all duration-300"
+          class="w-12 h-12 bg-foreground text-background rounded-full shadow-xl flex items-center justify-center transform translate-y-4 group-hover:translate-y-0 transition-all duration-300"
         >
           <Play class="w-6 h-6 fill-current ml-1" />
         </button>
@@ -41,8 +41,8 @@ const emit = defineEmits<{
     </div>
 
     <div class="space-y-1 px-1">
-      <h3 class="font-medium text-sm truncate group-hover:text-white transition-colors">{{ album.title || $t('library.unknown_album') }}</h3>
-      <div class="text-xs text-white/40 truncate flex items-center gap-1">
+      <h3 class="font-medium text-sm truncate group-hover:text-foreground transition-colors">{{ album.title || $t('library.unknown_album') }}</h3>
+      <div class="text-xs text-foreground/40 truncate flex items-center gap-1">
         <User class="w-3 h-3 flex-shrink-0" />
         <div class="truncate">
           <template v-if="album.artists && album.artists.length > 0">

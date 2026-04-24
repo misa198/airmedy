@@ -57,7 +57,7 @@ onUnmounted(() => {
       </aside>
 
       <!-- Resizer Handle -->
-      <div class="w-px bg-white/[0.06] cursor-col-resize hover:bg-white/10 transition-colors relative z-10"
+      <div class="w-px bg-foreground/[0.06] cursor-col-resize hover:bg-foreground/10 transition-colors relative z-10"
         @mousedown="startResizing">
         <div class="absolute inset-y-0 -left-1 -right-1 cursor-col-resize" />
       </div>
@@ -74,7 +74,7 @@ onUnmounted(() => {
       <!-- Queue Sidebar (with transition) -->
       <div class="h-full bg-background transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 pt-4"
         :class="[
-          playerStore.isQueueOpen ? 'w-80 border-l border-white/[0.06]' : 'w-0 border-l-0 border-transparent',
+          playerStore.isQueueOpen ? 'w-80 border-l border-foreground/[0.06]' : 'w-0 border-l-0 border-transparent',
         ]">
         <div class="w-80 h-full">
           <QueueDrawer />
@@ -84,7 +84,7 @@ onUnmounted(() => {
       <!-- Lyrics Sidebar (with transition) -->
       <div class="h-full bg-background transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 pt-4"
         :class="[
-          playerStore.isLyricsOpen ? 'w-80 border-l border-white/[0.06]' : 'w-0 border-l-0 border-transparent',
+          playerStore.isLyricsOpen ? 'w-80 border-l border-foreground/[0.06]' : 'w-0 border-l-0 border-transparent',
         ]">
         <div class="w-80 h-full">
           <LyricsDrawer />

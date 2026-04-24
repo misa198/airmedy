@@ -11,7 +11,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-full w-full bg-background text-foreground overflow-hidden">
+  <div class="h-full w-full bg-[#0A0A0A] text-white overflow-hidden dark">
     <MiniPlayerFloating />
   </div>
 </template>

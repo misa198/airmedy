@@ -131,4 +131,5 @@ type PlayerState struct {
 // AppSettings holds general application settings
 type AppSettings struct {
 	Language string `json:"language"`
+	Theme    string `json:"theme"` // "system", "light", "dark"
 }

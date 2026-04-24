@@ -30,13 +30,13 @@ watch(() => favoritesStore.version, loadTracks)
 
 <template>
   <div class="h-full flex flex-col overflow-hidden bg-background">
-    <div class="p-6 pb-4 border-b border-white/[0.06]">
+    <div class="p-6 pb-4 border-b border-foreground/[0.06]">
       <div class="flex items-center justify-between mb-1">
         <div class="flex items-center gap-3">
           <Heart class="w-7 h-7 text-primary fill-primary" />
           <h1 class="text-3xl font-bold">{{ $t('library.favorites') }}</h1>
         </div>
-        <div class="text-sm text-white/40">{{ tracks.length }} {{ $t('library.tracks').toLowerCase() }}</div>
+        <div class="text-sm text-foreground/40">{{ tracks.length }} {{ $t('library.tracks').toLowerCase() }}</div>
       </div>
     </div>
 

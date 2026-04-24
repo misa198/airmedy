@@ -50,11 +50,11 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists()
     <!-- Search bar -->
     <div class="px-6 pt-6 pb-4 flex-shrink-0">
       <div class="relative max-w-xl">
-        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/30 pointer-events-none" />
         <Input
           v-model="inputValue"
           :placeholder="$t('library.search_placeholder')"
-          class="pl-10 bg-white/[0.05] border-white/[0.08] text-white placeholder:text-white/30 focus-visible:ring-white/20"
+          class="pl-10 bg-foreground/[0.05] border-foreground/[0.08] text-foreground placeholder:text-foreground/30 focus-visible:ring-foreground/20"
           autofocus
         />
       </div>
@@ -65,17 +65,17 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists()
 
       <!-- Empty state (no query) -->
       <div v-if="!inputValue.trim()" class="flex flex-col items-center justify-center h-64 text-center">
-        <Search class="w-12 h-12 text-white/10 mb-4" />
-        <p class="text-white/40 text-lg font-medium">{{ $t('library.search_placeholder') }}</p>
-        <p class="text-white/20 text-sm mt-1">{{ $t('library.search_description') }}</p>
+        <Search class="w-12 h-12 text-foreground/10 mb-4" />
+        <p class="text-foreground/40 text-lg font-medium">{{ $t('library.search_placeholder') }}</p>
+        <p class="text-foreground/20 text-sm mt-1">{{ $t('library.search_description') }}</p>
       </div>
 
       <!-- Loading skeleton -->
       <div v-else-if="store.loading" class="space-y-8 mt-2">
         <div v-for="i in 2" :key="i" class="space-y-3">
-          <div class="h-4 w-24 bg-white/[0.06] rounded animate-pulse" />
+          <div class="h-4 w-24 bg-foreground/[0.06] rounded animate-pulse" />
           <div class="flex gap-3">
-            <div v-for="j in 4" :key="j" class="w-40 h-14 bg-white/[0.04] rounded-lg animate-pulse" />
+            <div v-for="j in 4" :key="j" class="w-40 h-14 bg-foreground/[0.04] rounded-lg animate-pulse" />
           </div>
         </div>
       </div>
@@ -85,9 +85,9 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists()
         v-else-if="inputValue.trim() && !store.loading && !hasResults()"
         class="flex flex-col items-center justify-center h-64 text-center"
       >
-        <Music class="w-12 h-12 text-white/10 mb-4" />
-        <p class="text-white/40 text-lg font-medium">{{ $t('library.no_results') }}</p>
-        <p class="text-white/20 text-sm mt-1">{{ $t('library.try_different_search') }}</p>
+        <Music class="w-12 h-12 text-foreground/10 mb-4" />
+        <p class="text-foreground/40 text-lg font-medium">{{ $t('library.no_results') }}</p>
+        <p class="text-foreground/20 text-sm mt-1">{{ $t('library.try_different_search') }}</p>
       </div>
 
       <!-- Results -->
@@ -95,42 +95,42 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists()
 
         <!-- Tracks -->
         <section v-if="hasTracks()">
-          <h2 class="text-sm font-semibold text-white/40 uppercase tracking-widest mb-3">{{ $t('library.tracks') }}</h2>
+          <h2 class="text-sm font-semibold text-foreground/40 uppercase tracking-widest mb-3">{{ $t('library.tracks') }}</h2>
           <div class="space-y-0.5">
             <div
               v-for="track in store.results!.tracks!.filter(Boolean).slice(0, 8)"
               :key="track!.id"
-              class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/[0.04] cursor-pointer group transition-colors"
+              class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-foreground/[0.04] cursor-pointer group transition-colors"
               @dblclick="playTrack(track!)"
               @click.exact="playTrack(track!)"
             >
               <!-- Artwork -->
-              <div class="w-9 h-9 flex-shrink-0 rounded bg-white/[0.06] overflow-hidden ring-1 ring-white/[0.06]">
+              <div class="w-9 h-9 flex-shrink-0 rounded bg-foreground/[0.06] overflow-hidden ring-1 ring-foreground/[0.06]">
                 <img
                   v-if="track!.artwork_key"
                   :src="`/artwork/${track!.artwork_key}`"
                   class="w-full h-full object-cover"
                 />
-                <div v-else class="w-full h-full flex items-center justify-center text-white/20">
+                <div v-else class="w-full h-full flex items-center justify-center text-foreground/20">
                   <Music class="w-4 h-4" />
                 </div>
               </div>
 
               <!-- Info -->
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-white truncate">{{ track!.title }}</p>
-                <p class="text-xs text-white/40 truncate">
+                <p class="text-sm font-medium text-foreground truncate">{{ track!.title }}</p>
+                <p class="text-xs text-foreground/40 truncate">
                   {{ track!.artists?.map((a) => a?.name).join(', ') || track!.raw_artist_names }}
                 </p>
               </div>
 
               <!-- Album -->
-              <p class="text-xs text-white/30 truncate max-w-[160px] hidden md:block">
+              <p class="text-xs text-foreground/30 truncate max-w-[160px] hidden md:block">
                 {{ track!.album?.title }}
               </p>
 
               <!-- Duration -->
-              <span class="text-xs text-white/30 flex-shrink-0">
+              <span class="text-xs text-foreground/30 flex-shrink-0">
                 {{ formatDuration(track!.duration ?? 0) }}
               </span>
             </div>
@@ -139,7 +139,7 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists()
 
         <!-- Albums -->
         <section v-if="hasAlbums()">
-          <h2 class="text-sm font-semibold text-white/40 uppercase tracking-widest mb-3">{{ $t('library.albums') }}</h2>
+          <h2 class="text-sm font-semibold text-foreground/40 uppercase tracking-widest mb-3">{{ $t('library.albums') }}</h2>
           <div class="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
             <div
               v-for="album in store.results!.albums!.filter(Boolean)"
@@ -158,7 +158,7 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists()
 
         <!-- Artists -->
         <section v-if="hasArtists()">
-          <h2 class="text-sm font-semibold text-white/40 uppercase tracking-widest mb-3">{{ $t('library.artists') }}</h2>
+          <h2 class="text-sm font-semibold text-foreground/40 uppercase tracking-widest mb-3">{{ $t('library.artists') }}</h2>
           <div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
             <div
               v-for="artist in store.results!.artists!.filter(Boolean)"
@@ -166,10 +166,10 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists()
               class="flex-shrink-0 w-32 cursor-pointer group"
               @click="navigateToArtist(artist!.id)"
             >
-              <div class="aspect-square rounded-full bg-white/[0.06] ring-1 ring-white/[0.06] flex items-center justify-center mb-2 overflow-hidden group-hover:bg-white/[0.1] transition-colors">
-                <User class="w-8 h-8 text-white/20" />
+              <div class="aspect-square rounded-full bg-foreground/[0.06] ring-1 ring-foreground/[0.06] flex items-center justify-center mb-2 overflow-hidden group-hover:bg-foreground/[0.1] transition-colors">
+                <User class="w-8 h-8 text-foreground/20" />
               </div>
-              <p class="text-xs text-center text-white/70 truncate group-hover:text-white transition-colors">{{ artist!.name }}</p>
+              <p class="text-xs text-center text-foreground/70 truncate group-hover:text-foreground transition-colors">{{ artist!.name }}</p>
             </div>
           </div>
         </section>

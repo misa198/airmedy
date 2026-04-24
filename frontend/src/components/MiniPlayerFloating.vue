@@ -66,17 +66,17 @@ function onVolumeLeave() {
 watch(() => store.theme, (colors) => {
   if (!colors) return
   const root = document.documentElement
-  root.style.setProperty('--dynamic-white/80', colors.vibrant)
+  root.style.setProperty('--dynamic-primary', colors.vibrant)
   root.style.setProperty('--dynamic-surface', hexToRgba(colors.dominant, 0.15))
   root.style.setProperty('--dynamic-glow', `0 0 40px ${hexToRgba(colors.vibrant, 0.3)}`)
 })
 </script>
 
 <template>
-  <div class="relative w-full h-full overflow-hidden select-none" style="-webkit-app-region: drag"
+  <div class="relative w-full h-full overflow-hidden select-none dark" style="-webkit-app-region: drag"
     @mouseenter="isHovered = true" @mouseleave="isHovered = false">
     <!-- Artwork fills entire window -->
-    <div class="absolute inset-0 bg-background" style="-webkit-app-region: no-drag">
+    <div class="absolute inset-0 bg-[#0A0A0A]" style="-webkit-app-region: no-drag">
       <img v-if="store.artworkUrl" :src="store.artworkUrl" :alt="trackTitle" class="w-full h-full object-cover" />
       <div v-else class="w-full h-full flex items-center justify-center bg-white/5">
         <Music class="w-16 h-16 text-white/20" />
@@ -130,7 +130,7 @@ watch(() => store.theme, (colors) => {
     <div class="absolute bottom-0 left-0 right-0 px-3 pb-2 transition-opacity duration-200"
       :class="isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
       style="-webkit-app-region: no-drag">
-      <MarqueeText :text="trackTitle" content-class="text font-semibold leading-tight" />
+      <MarqueeText :text="trackTitle" content-class="text font-semibold leading-tight text-white" />
       <MarqueeText :text="trackArtist" content-class="text-xs text-white/50 leading-tight mt-0.5" />
 
       <!-- Seek bar -->
@@ -157,8 +157,8 @@ watch(() => store.theme, (colors) => {
         <button
           class="w-9 h-9 bg-white rounded-full flex items-center justify-center hover:scale-105 transition-transform shrink-0"
           @click="store.togglePlayPause()">
-          <Pause v-if="store.isPlaying" class="w-[18px] h-[18px] fill-current text-black" />
-          <Play v-else class="w-[18px] h-[18px] fill-current text-black ml-0.5" />
+          <Pause v-if="store.isPlaying" class="w-[18px] h-[18px] fill-current text-[#0A0A0A]" />
+          <Play v-else class="w-[18px] h-[18px] fill-current text-[#0A0A0A] ml-0.5" />
         </button>
         <button class="text-white/80 hover:text-white/90 transition-colors" @click="store.next()">
           <SkipForward class="w-4 h-4 fill-current" />

@@ -35,7 +35,11 @@
     },
     "appearance": {
       "title": "Aparência",
-      "coming_soon": "Personalização de temas e interface em breve.",
+      "theme": "Tema",
+      "theme_desc": "Selecionar tema do aplicativo",
+      "system": "Sistema",
+      "light": "Claro",
+      "dark": "Escuro",
       "language": "Idioma",
       "select_language": "Selecionar idioma do aplicativo"
     },

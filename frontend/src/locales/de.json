@@ -35,7 +35,11 @@
     },
     "appearance": {
       "title": "Erscheinungsbild",
-      "coming_soon": "Themen und UI-Anpassungen folgen in Kürze.",
+      "theme": "Thema",
+      "theme_desc": "Anwendungsthema auswählen",
+      "system": "System",
+      "light": "Hell",
+      "dark": "Dunkel",
       "language": "Sprache",
       "select_language": "Anwendungssprache auswählen"
     },
