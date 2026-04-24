@@ -14,11 +14,13 @@ import {
   Music,
   ListMusic,
   Mic2,
+  PictureInPicture2,
 } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
 import { RepeatMode } from '../../bindings/airmedy/internal/domain/models'
 import { formatTime } from '../lib/utils'
 import { Slider } from '@/components/ui/slider'
+import * as WindowService from '../../bindings/airmedy/internal/infra/wails/windowservice'
 
 const store = usePlayerStore()
 
@@ -131,6 +133,9 @@ async function onSeekEnd() {
       <button class="transition-colors"
         :class="store.isQueueOpen ? 'text-primary' : 'text-white/40 hover:text-white/70'" @click="store.toggleQueue()">
         <ListMusic class="w-4 h-4" />
+      </button>
+      <button class="text-white/40 hover:text-white/70 transition-colors" @click="WindowService.ToggleMiniPlayer()">
+        <PictureInPicture2 class="w-4 h-4" />
       </button>
       <button class="text-white/40 hover:text-white/70 transition-colors" @click="store.playerMode = 'fullscreen'">
         <Maximize2 class="w-4 h-4" />

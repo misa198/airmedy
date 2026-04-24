@@ -82,6 +82,11 @@ const routes = [
     path: '/settings',
     name: 'settings',
     component: () => import('../views/SettingsView.vue')
+  },
+  {
+    path: '/mini-player',
+    name: 'mini-player',
+    component: () => import('../views/MiniPlayerWindowView.vue')
   }
 ]
 

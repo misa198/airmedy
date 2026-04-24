@@ -33,11 +33,12 @@ func main() {
 	var playlistService *wails.PlaylistService
 	var lyricsService *wails.LyricsService
 	var eqService *wails.EQService
+	var windowService *wails.WindowService
 	var artworkCache domain.ArtworkCache
 
 	fxApp := fx.New(
 		app.Module,
-		fx.Populate(&greetService, &libraryService, &playerService, &searchService, &playlistService, &lyricsService, &eqService, &artworkCache),
+		fx.Populate(&greetService, &libraryService, &playerService, &searchService, &playlistService, &lyricsService, &eqService, &windowService, &artworkCache),
 		fx.NopLogger, // Keep logs clean for now
 	)
 
@@ -58,6 +59,7 @@ func main() {
 			application.NewService(playlistService),
 			application.NewService(lyricsService),
 			application.NewService(eqService),
+			application.NewService(windowService),
 		},
 		Assets: application.AssetOptions{
 			Handler: wails.NewAssetHandler(assets, artworkCache),
@@ -86,6 +88,35 @@ func main() {
 		mainWindow.Hide()
 		e.Cancel()
 	})
+	windowService.SetMainWindow(mainWindow)
+
+	miniPlayerWindow := wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
+		Title:               "Mini Player",
+		Width:               300,
+		Height:              300,
+		MinWidth:            280,
+		MinHeight:           280,
+		MaxWidth:            500,
+		MaxHeight:           500,
+		Hidden:              true,
+		AlwaysOnTop:         true,
+		DisableResize:       false,
+		MinimiseButtonState: application.ButtonHidden,
+		MaximiseButtonState: application.ButtonHidden,
+		CloseButtonState:    application.ButtonHidden,
+		Mac: application.MacWindow{
+			InvisibleTitleBarHeight: 28,
+			Backdrop:                application.MacBackdropTranslucent,
+			TitleBar:                application.MacTitleBarHiddenInset,
+		},
+		BackgroundColour: application.NewRGB(27, 38, 54),
+		URL:              "/#/mini-player",
+	})
+	miniPlayerWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
+		windowService.CloseMiniPlayer()
+		e.Cancel()
+	})
+	windowService.SetMiniWindow(miniPlayerWindow)
 
 	var stopOnce sync.Once
 	stopFX := func() {

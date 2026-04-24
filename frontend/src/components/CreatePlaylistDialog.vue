@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import { Input } from '@/components/ui/input'
 
 const props = defineProps<{
@@ -12,12 +12,18 @@ const emit = defineEmits<{
   'update:open': [value: boolean]
   confirm: [name: string]
 }>()
-
 const name = ref(props.initialName ?? '')
+const inputRef = ref<any>(null)
 
 watch(() => props.open, (val) => {
-  if (val) name.value = props.initialName ?? ''
+  if (val) {
+    name.value = props.initialName ?? ''
+  }
 })
+
+function focusInput() {
+  inputRef.value?.$el?.focus()
+}
 
 function submit() {
   if (!name.value.trim()) return
@@ -32,35 +38,22 @@ function cancel() {
 
 <template>
   <Teleport to="body">
-    <Transition name="fade">
-      <div
-        v-if="open"
-        class="fixed inset-0 z-50 flex items-center justify-center"
-        @click.self="cancel"
-      >
+    <Transition name="fade" @after-enter="focusInput">
+      <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center" @click.self="cancel">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="cancel" />
-        <div
-          class="relative z-10 w-80 rounded-xl bg-[#1A1A1A] ring-1 ring-white/[0.08] shadow-2xl p-5"
-          @keydown.esc="cancel"
-          @keydown.enter="submit"
-        >
+        <div class="relative z-10 w-80 rounded-xl bg-[#1A1A1A] ring-1 ring-white/[0.08] shadow-2xl p-5"
+          @keydown.esc="cancel" @keydown.enter="submit">
           <h3 class="text-sm font-semibold text-white mb-4">{{ title ?? 'New Playlist' }}</h3>
-          <Input
-            v-model="name"
-            placeholder="Playlist name"
+          <Input ref="inputRef" v-model="name" placeholder="Playlist name"
             class="bg-white/[0.05] border-white/[0.08] text-white placeholder:text-white/30 focus-visible:ring-white/20"
-            autofocus
-          />
+            autofocus />
           <div class="flex justify-end gap-2 mt-4">
             <button
               class="px-3 py-1.5 text-sm text-white/50 hover:text-white rounded-lg hover:bg-white/[0.05] transition-colors"
-              @click="cancel"
-            >Cancel</button>
+              @click="cancel">Cancel</button>
             <button
               class="px-3 py-1.5 text-sm text-white bg-white/[0.12] hover:bg-white/[0.18] rounded-lg transition-colors font-medium disabled:opacity-40"
-              :disabled="!name.trim()"
-              @click="submit"
-            >{{ title === 'Rename Playlist' ? 'Rename' : 'Create' }}</button>
+              :disabled="!name.trim()" @click="submit">{{ title === 'Rename Playlist' ? 'Rename' : 'Create' }}</button>
           </div>
         </div>
       </div>
@@ -69,6 +62,21 @@ function cancel() {
 </template>
 
 <style scoped>
-.fade-enter-active, .fade-leave-active { transition: opacity 0.15s; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s linear;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.fade-enter-active .relative {
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.fade-enter-from .relative {
+  transform: scale(0.96);
+}
 </style>

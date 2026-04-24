@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import { onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import MainLayout from './layouts/MainLayout.vue'
 import { hexToRgba } from './lib/utils'
 import { usePlayerStore } from './stores/player'
 import { useDeviceStore } from './stores/device'
 import { usePlaylistsStore } from './stores/playlists'
 
+const route = useRoute()
 const playerStore = usePlayerStore()
 const deviceStore = useDeviceStore()
 const playlistsStore = usePlaylistsStore()
 
 onMounted(() => {
+  if (route.name === 'mini-player') return
   playerStore.init()
   deviceStore.init()
   deviceStore.checkFullscreen()
@@ -28,7 +31,6 @@ watch(
   },
 )
 
-// Re-check when the player mode changes to fullscreen
 watch(() => playerStore.playerMode, (newMode) => {
   if (newMode === 'fullscreen') {
     deviceStore.checkFullscreen()
@@ -37,7 +39,8 @@ watch(() => playerStore.playerMode, (newMode) => {
 </script>
 
 <template>
-  <MainLayout />
+  <RouterView v-if="route.name === 'mini-player'" />
+  <MainLayout v-else />
 </template>
 
 <style>

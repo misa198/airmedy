@@ -103,7 +103,14 @@ export const usePlayerStore = defineStore('player', () => {
 
     Events.On('player:queue-updated', (ev: Events.WailsEvent) => {
       const q = ev.data as TrackDTO[]
-      if (Array.isArray(q)) queue.value = q.filter(Boolean) as TrackDTO[]
+      if (Array.isArray(q)) {
+        queue.value = q.filter(Boolean) as TrackDTO[]
+        // Re-sync currentTrack in case player:status arrived before queue-updated
+        if (status.value?.track_id) {
+          const found = queue.value.find((t) => t.id === status.value!.track_id)
+          if (found) currentTrack.value = found
+        }
+      }
     })
 
     Events.On('library:track-updated', (ev: Events.WailsEvent) => {

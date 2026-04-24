@@ -23,6 +23,7 @@ const emit = defineEmits<{
       'placeholder:text-muted-foreground',
       'focus:outline-none focus:ring-2 focus:ring-primary/20',
       'disabled:cursor-not-allowed disabled:opacity-50',
+      'transition-all duration-200 ease-in-out',
       props.class
     )"
   />

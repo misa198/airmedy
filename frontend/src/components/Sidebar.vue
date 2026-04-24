@@ -109,7 +109,7 @@ function toggleContextMenu(id: string, e: MouseEvent) {
         <div v-for="playlist in playlistsStore.playlists" :key="playlist.id" class="relative group">
           <RouterLink :to="`/playlists/${playlist.id}`"
             class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-white/50 hover:text-white hover:bg-white/[0.05] pr-8"
-            active-class="bg-white/[0.08] text-white font-medium">
+            active-class="bg-white/[0.08] !text-primary font-medium">
             <Music class="w-4 h-4 flex-shrink-0" />
             <span class="text-sm truncate">{{ playlist.name }}</span>
           </RouterLink>
