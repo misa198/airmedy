@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"airmedy/internal/domain"
+	"airmedy/internal/infra/artwork"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/google/uuid"
@@ -25,6 +26,7 @@ type LibraryService struct {
 	composerRepo      domain.ComposerRepository
 	watchedFolderRepo domain.WatchedFolderRepository
 	metadataExtractor domain.MetadataExtractor
+	metadataWriter    domain.MetadataWriter
 	artworkCache      domain.ArtworkCache
 	searchService     domain.SearchService
 	logger            *slog.Logger
@@ -39,6 +41,7 @@ func NewLibraryService(
 	composerRepo domain.ComposerRepository,
 	watchedFolderRepo domain.WatchedFolderRepository,
 	metadataExtractor domain.MetadataExtractor,
+	metadataWriter domain.MetadataWriter,
 	artworkCache domain.ArtworkCache,
 	searchService domain.SearchService,
 	logger *slog.Logger,
@@ -56,6 +59,7 @@ func NewLibraryService(
 		composerRepo:      composerRepo,
 		watchedFolderRepo: watchedFolderRepo,
 		metadataExtractor: metadataExtractor,
+		metadataWriter:    metadataWriter,
 		artworkCache:      artworkCache,
 		searchService:     searchService,
 		logger:            logger.With("module", "library"),
@@ -554,4 +558,84 @@ func isSubPath(parent, child string) bool {
 		return false
 	}
 	return !strings.HasPrefix(rel, "..") && rel != ".." && rel != "."
+}
+
+// DeleteTrack removes a track from the library (DB, search index, orphan cleanup).
+func (s *LibraryService) DeleteTrack(ctx context.Context, id string) error {
+	if err := s.searchService.DeleteFromIndex(ctx, id); err != nil {
+		s.logger.Warn("Failed to delete track from search index", "id", id, "error", err)
+	}
+	if err := s.trackRepo.Delete(ctx, id); err != nil {
+		return fmt.Errorf("failed to delete track: %w", err)
+	}
+	if err := s.albumRepo.DeleteOrphaned(ctx); err != nil {
+		s.logger.Warn("Failed to delete orphaned albums", "error", err)
+	}
+	if err := s.artistRepo.DeleteOrphaned(ctx); err != nil {
+		s.logger.Warn("Failed to delete orphaned artists", "error", err)
+	}
+	if err := s.genreRepo.DeleteOrphaned(ctx); err != nil {
+		s.logger.Warn("Failed to delete orphaned genres", "error", err)
+	}
+	if err := s.composerRepo.DeleteOrphaned(ctx); err != nil {
+		s.logger.Warn("Failed to delete orphaned composers", "error", err)
+	}
+	if app := application.Get(); app != nil {
+		app.Event.Emit("library:track-deleted", id)
+		app.Event.Emit("library:updated", nil)
+	}
+	return nil
+}
+
+// ToggleFavorite toggles the favorite state of a track. Returns the new state.
+func (s *LibraryService) ToggleFavorite(ctx context.Context, id string) (bool, error) {
+	newState, err := s.trackRepo.ToggleFavorite(ctx, id)
+	if err != nil {
+		return false, fmt.Errorf("failed to toggle favorite: %w", err)
+	}
+	dto, err := s.trackRepo.GetByID(ctx, id)
+	if err == nil && dto != nil {
+		if app := application.Get(); app != nil {
+			app.Event.Emit("library:track-updated", dto)
+		}
+	}
+	return newState, nil
+}
+
+// UpdateMetadata writes tag changes to the audio file and re-imports to update DB and search.
+func (s *LibraryService) UpdateMetadata(ctx context.Context, id string, fields domain.MetadataUpdate) error {
+	track, err := s.trackRepo.GetByID(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed to get track: %w", err)
+	}
+	if track == nil {
+		return fmt.Errorf("track not found: %s", id)
+	}
+	if err := s.metadataWriter.WriteMetadata(ctx, track.Path, fields); err != nil {
+		return fmt.Errorf("failed to write metadata: %w", err)
+	}
+	return s.ImportFile(ctx, track.Path)
+}
+
+// GetAlbumColors returns the theme colors for an album's artwork.
+func (s *LibraryService) GetAlbumColors(ctx context.Context, id string) (*domain.ThemeColors, error) {
+	album, err := s.albumRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get album: %w", err)
+	}
+	if album == nil {
+		return nil, fmt.Errorf("album not found: %s", id)
+	}
+
+	if album.ArtworkKey == "" {
+		return nil, nil
+	}
+
+	path := s.artworkCache.GetPath(album.ArtworkKey)
+	colors, err := artwork.ExtractPalette(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract palette: %w", err)
+	}
+
+	return colors, nil
 }

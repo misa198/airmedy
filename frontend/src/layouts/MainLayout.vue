@@ -5,58 +5,87 @@ import PlayerFooter from '@/components/PlayerFooter.vue'
 import LyricsDrawer from '@/components/LyricsDrawer.vue'
 import QueueDrawer from '@/components/QueueDrawer.vue'
 import Sidebar from '@/components/Sidebar.vue'
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup
-} from '@/components/ui/resizable'
 import { usePlayerStore } from '@/stores/player'
 import { useDeviceStore } from '@/stores/device'
 import { RouterView } from 'vue-router'
+import { ref, onUnmounted } from 'vue'
 
+const SIDEBAR_MIN_WIDTH = 230;
+const SIDEBAR_MAX_WIDTH = 400;
 const playerStore = usePlayerStore()
 const deviceStore = useDeviceStore()
+
+const isResizing = ref(false)
+
+const startResizing = (e: MouseEvent) => {
+  e.preventDefault()
+  isResizing.value = true
+  document.addEventListener('mousemove', handleMouseMove)
+  document.addEventListener('mouseup', stopResizing)
+  document.body.style.cursor = 'col-resize'
+  document.body.style.userSelect = 'none'
+}
+
+const handleMouseMove = (e: MouseEvent) => {
+  if (!isResizing.value) return
+  const newWidth = Math.max(SIDEBAR_MIN_WIDTH, Math.min(SIDEBAR_MAX_WIDTH, e.clientX))
+  playerStore.sidebarWidth = newWidth
+}
+
+const stopResizing = () => {
+  isResizing.value = false
+  document.removeEventListener('mousemove', handleMouseMove)
+  document.removeEventListener('mouseup', stopResizing)
+  document.body.style.cursor = ''
+  document.body.style.userSelect = ''
+}
+
+onUnmounted(() => {
+  stopResizing()
+})
 </script>
 
 <template>
   <div class="h-full w-full flex flex-col overflow-hidden bg-background text-foreground">
     <!-- Main Content Area -->
     <div class="flex-1 min-h-0 flex overflow-hidden">
-      <ResizablePanelGroup direction="horizontal">
-        <!-- Sidebar Panel -->
-        <ResizablePanel :default-size="20" :min-size="20" :max-size="35" class="h-full overflow-hidden">
-          <Sidebar :class="(deviceStore.isMac || deviceStore.isWindows) && !deviceStore.isWindowFullscreen ? 'pt-10' : 'pt-4'" />
-        </ResizablePanel>
+      <!-- Sidebar Panel -->
+      <aside :style="{ width: playerStore.sidebarWidth + 'px' }"
+        class="h-full overflow-hidden flex-shrink-0 select-none">
+        <Sidebar
+          :class="(deviceStore.isMac || deviceStore.isWindows) && !deviceStore.isWindowFullscreen ? 'pt-10' : 'pt-4'" />
+      </aside>
 
-        <ResizableHandle with-handle />
+      <!-- Resizer Handle -->
+      <div class="w-px bg-white/[0.06] cursor-col-resize hover:bg-white/10 transition-colors relative z-10"
+        @mousedown="startResizing">
+        <div class="absolute inset-y-0 -left-1 -right-1 cursor-col-resize" />
+      </div>
 
-        <!-- View Content Panel -->
-        <ResizablePanel :default-size="80" class="h-full flex flex-col overflow-hidden">
-          <main :class="['flex-1 overflow-hidden']">
-            <RouterView v-slot="{ Component }">
-              <KeepAlive :max="10">
-                <component :is="Component" />
-              </KeepAlive>
-            </RouterView>
-          </main>
-        </ResizablePanel>
-      </ResizablePanelGroup>
+      <!-- View Content Panel -->
+      <main class="flex-1 min-w-0 flex flex-col overflow-hidden">
+        <RouterView v-slot="{ Component }">
+          <KeepAlive :max="10">
+            <component :is="Component" />
+          </KeepAlive>
+        </RouterView>
+      </main>
 
       <!-- Queue Sidebar (with transition) -->
-      <div class="h-full bg-background transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0" :class="[
-        playerStore.isQueueOpen ? 'w-80 border-l border-white/[0.06]' : 'w-0 border-l-0 border-transparent',
-        (deviceStore.isMac || deviceStore.isWindows) && !deviceStore.isWindowFullscreen ? 'pt-10' : 'pt-4'
-      ]">
+      <div class="h-full bg-background transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 pt-4"
+        :class="[
+          playerStore.isQueueOpen ? 'w-80 border-l border-white/[0.06]' : 'w-0 border-l-0 border-transparent',
+        ]">
         <div class="w-80 h-full">
           <QueueDrawer />
         </div>
       </div>
 
       <!-- Lyrics Sidebar (with transition) -->
-      <div class="h-full bg-background transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0" :class="[
-        playerStore.isLyricsOpen ? 'w-80 border-l border-white/[0.06]' : 'w-0 border-l-0 border-transparent',
-        (deviceStore.isMac || deviceStore.isWindows) && !deviceStore.isWindowFullscreen ? 'pt-10' : 'pt-4'
-      ]">
+      <div class="h-full bg-background transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 pt-4"
+        :class="[
+          playerStore.isLyricsOpen ? 'w-80 border-l border-white/[0.06]' : 'w-0 border-l-0 border-transparent',
+        ]">
         <div class="w-80 h-full">
           <LyricsDrawer />
         </div>

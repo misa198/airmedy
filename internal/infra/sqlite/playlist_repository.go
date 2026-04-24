@@ -90,32 +90,57 @@ func (r *playlistRepository) AddTrack(ctx context.Context, playlistID, trackID s
 }
 
 func (r *playlistRepository) RemoveTrack(ctx context.Context, playlistID, trackID string) error {
-	_, err := r.db.ExecContext(ctx, "DELETE FROM playlist_tracks WHERE playlist_id = ? AND track_id = ?", playlistID, trackID)
+	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("failed to remove track from playlist: %w", err)
+		return err
 	}
-	return nil
+	defer tx.Rollback()
+
+	// Get the position of the track being removed
+	var pos int
+	err = tx.GetContext(ctx, &pos, "SELECT position FROM playlist_tracks WHERE playlist_id = ? AND track_id = ?", playlistID, trackID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil // Track not in playlist
+		}
+		return err
+	}
+
+	// Remove the track
+	_, err = tx.ExecContext(ctx, "DELETE FROM playlist_tracks WHERE playlist_id = ? AND track_id = ?", playlistID, trackID)
+	if err != nil {
+		return err
+	}
+
+	// Update positions of tracks after the removed one
+	_, err = tx.ExecContext(ctx, "UPDATE playlist_tracks SET position = position - 1 WHERE playlist_id = ? AND position > ?", playlistID, pos)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func (r *playlistRepository) GetTracks(ctx context.Context, playlistID string) ([]*domain.TrackDTO, error) {
 	query := fmt.Sprintf(`
-		SELECT %s FROM tracks t
+		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year, 
+		       GROUP_CONCAT(art.name, '; ') AS artist_names,
+		       GROUP_CONCAT(art.id, '; ') AS artist_ids
+		FROM tracks t
+		LEFT JOIN albums a ON t.album_id = a.id
+		LEFT JOIN track_artists ta ON t.id = ta.track_id
+		LEFT JOIN artists art ON ta.artist_id = art.id
 		JOIN playlist_tracks pt ON t.id = pt.track_id
 		WHERE pt.playlist_id = ?
+		GROUP BY t.id, pt.position
 		ORDER BY pt.position`, trackSelectFields)
 	
-	var tracks []domain.Track
-	err := r.db.SelectContext(ctx, &tracks, query, playlistID)
+	var rows []trackRow
+	err := r.db.SelectContext(ctx, &rows, query, playlistID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get playlist tracks: %w", err)
 	}
 
 	tr := &trackRepository{db: r.db}
-	dtos := make([]*domain.TrackDTO, len(tracks))
-	for i, track := range tracks {
-		dto := &domain.TrackDTO{Track: track}
-		tr.populateRelationships(ctx, dto)
-		dtos[i] = dto
-	}
-	return dtos, nil
+	return tr.scanTrackRows(rows), nil
 }

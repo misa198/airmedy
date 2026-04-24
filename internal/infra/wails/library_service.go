@@ -137,3 +137,23 @@ func (s *LibraryService) GetSyncStatus() (*domain.SyncProgress, error) {
 	// This is a dummy method to ensure SyncProgress model is generated for the frontend.
 	return nil, nil
 }
+
+func (s *LibraryService) GetFavoriteTracks() ([]*domain.TrackDTO, error) {
+	return s.trackRepo.GetFavorites(context.Background())
+}
+
+func (s *LibraryService) ToggleFavorite(trackID string) (bool, error) {
+	return s.libService.ToggleFavorite(context.Background(), trackID)
+}
+
+func (s *LibraryService) DeleteTrack(trackID string) error {
+	return s.libService.DeleteTrack(context.Background(), trackID)
+}
+
+func (s *LibraryService) UpdateTrackMetadata(trackID string, update domain.MetadataUpdate) error {
+	return s.libService.UpdateMetadata(context.Background(), trackID, update)
+}
+
+func (s *LibraryService) GetAlbumColors(id string) (*domain.ThemeColors, error) {
+	return s.libService.GetAlbumColors(context.Background(), id)
+}

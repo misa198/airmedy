@@ -58,9 +58,9 @@ watch(() => route.params.id, (newId) => {
           </div>
         </div>
 
-        <div class="flex-1 text-center md:text-left space-y-4">
+        <div class="flex-1 text-center md:text-left space-y-4 @container min-w-0">
           <div class="space-y-1">
-            <h1 class="text-4xl md:text-7xl font-bold tracking-tight">{{ artist.name || 'Unknown Artist' }}</h1>
+            <h1 class="text-3xl @sm:text-4xl @md:text-5xl @lg:text-7xl font-bold tracking-tight line-clamp-2">{{ artist.name || 'Unknown Artist' }}</h1>
             <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 text-white/40">
               <span class="flex items-center gap-1"><Disc class="w-4 h-4" /> {{ albums.length }} albums</span>
               <span class="flex items-center gap-1"><Music class="w-4 h-4" /> {{ tracks.length }} songs</span>

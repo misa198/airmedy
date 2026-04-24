@@ -13,6 +13,10 @@ import (
 	"go.senan.xyz/taglib"
 )
 
+func NewTagLibWriter() domain.MetadataWriter {
+	return &taglibExtractor{}
+}
+
 type taglibExtractor struct{}
 
 func NewTagLibExtractor() domain.MetadataExtractor {
@@ -206,4 +210,21 @@ func allTags(tags map[string][]string, sep string, keys ...string) string {
 		}
 	}
 	return strings.Join(all, sep)
+}
+
+func (e *taglibExtractor) WriteMetadata(_ context.Context, path string, fields domain.MetadataUpdate) error {
+	tags := map[string][]string{
+		"TITLE":       {fields.Title},
+		"ARTIST":      {fields.Artist},
+		"ALBUM":       {fields.AlbumTitle},
+		"DATE":        {strconv.Itoa(fields.Year)},
+		"TRACKNUMBER": {fmt.Sprintf("%d/%d", fields.TrackNumber, fields.TotalTracks)},
+		"DISCNUMBER":  {fmt.Sprintf("%d/%d", fields.DiscNumber, fields.TotalDiscs)},
+		"GENRE":       {fields.Genre},
+		"COMPOSER":    {fields.Composer},
+	}
+	if err := taglib.WriteTags(path, tags, taglib.Clear); err != nil {
+		return fmt.Errorf("failed to write metadata to %s: %w", path, err)
+	}
+	return nil
 }

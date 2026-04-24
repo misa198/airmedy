@@ -149,6 +149,9 @@ type mockArtworkCache struct{ domain.ArtworkCache }
 func (m *mockArtworkCache) Save(ctx context.Context, data []byte, mimeType string) (string, error) { return "", nil }
 func (m *mockArtworkCache) CleanupOrphaned(ctx context.Context, activeKeys map[string]bool) error { return nil }
 
+type mockMetadataWriter struct{}
+func (m *mockMetadataWriter) WriteMetadata(_ context.Context, _ string, _ domain.MetadataUpdate) error { return nil }
+
 func TestLibraryService_SyncFolder(t *testing.T) {
 	// Create a temporary directory for testing sync
 	tempDir, err := os.MkdirTemp("", "airmedy_test_sync")
@@ -173,6 +176,7 @@ func TestLibraryService_SyncFolder(t *testing.T) {
 		&mockComposerRepo{},
 		&mockFolderRepo{},
 		&mockMetadataExtractor{},
+		&mockMetadataWriter{},
 		&mockArtworkCache{},
 		&mockSearchService{},
 		slog.Default(),
@@ -247,6 +251,7 @@ func TestLibraryService_AddWatchedFolder_CoveringExisting(t *testing.T) {
 		&mockComposerRepo{},
 		folderRepo,
 		&mockMetadataExtractor{},
+		&mockMetadataWriter{},
 		&mockArtworkCache{},
 		&mockSearchService{},
 		slog.Default(),

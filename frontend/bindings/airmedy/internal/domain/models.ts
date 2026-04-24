@@ -359,6 +359,66 @@ export class Lyric {
 }
 
 /**
+ * MetadataUpdate holds user-editable fields for writing tags back to an audio file.
+ */
+export class MetadataUpdate {
+    "Title": string;
+    "Artist": string;
+    "AlbumTitle": string;
+    "Genre": string;
+    "Composer": string;
+    "Year": number;
+    "TrackNumber": number;
+    "TotalTracks": number;
+    "DiscNumber": number;
+    "TotalDiscs": number;
+
+    /** Creates a new MetadataUpdate instance. */
+    constructor($$source: Partial<MetadataUpdate> = {}) {
+        if (!("Title" in $$source)) {
+            this["Title"] = "";
+        }
+        if (!("Artist" in $$source)) {
+            this["Artist"] = "";
+        }
+        if (!("AlbumTitle" in $$source)) {
+            this["AlbumTitle"] = "";
+        }
+        if (!("Genre" in $$source)) {
+            this["Genre"] = "";
+        }
+        if (!("Composer" in $$source)) {
+            this["Composer"] = "";
+        }
+        if (!("Year" in $$source)) {
+            this["Year"] = 0;
+        }
+        if (!("TrackNumber" in $$source)) {
+            this["TrackNumber"] = 0;
+        }
+        if (!("TotalTracks" in $$source)) {
+            this["TotalTracks"] = 0;
+        }
+        if (!("DiscNumber" in $$source)) {
+            this["DiscNumber"] = 0;
+        }
+        if (!("TotalDiscs" in $$source)) {
+            this["TotalDiscs"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new MetadataUpdate instance from a string or object.
+     */
+    static createFrom($$source: any = {}): MetadataUpdate {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new MetadataUpdate($$parsedSource as Partial<MetadataUpdate>);
+    }
+}
+
+/**
  * PlaybackState represents the current state of the audio player
  */
 export enum PlaybackState {
@@ -523,6 +583,49 @@ export class SyncProgress {
 }
 
 /**
+ * ThemeColors holds extracted palette data from the current track's artwork
+ */
+export class ThemeColors {
+    /**
+     * hex e.g. "#E11D48" — highest saturation cluster
+     */
+    "vibrant": string;
+
+    /**
+     * hex — lowest saturation cluster
+     */
+    "muted": string;
+
+    /**
+     * hex — largest pixel-count cluster
+     */
+    "dominant": string;
+
+    /** Creates a new ThemeColors instance. */
+    constructor($$source: Partial<ThemeColors> = {}) {
+        if (!("vibrant" in $$source)) {
+            this["vibrant"] = "";
+        }
+        if (!("muted" in $$source)) {
+            this["muted"] = "";
+        }
+        if (!("dominant" in $$source)) {
+            this["dominant"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ThemeColors instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ThemeColors {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ThemeColors($$parsedSource as Partial<ThemeColors>);
+    }
+}
+
+/**
  * TrackDTO represents a track with its related entities populated for the frontend
  */
 export class TrackDTO {
@@ -552,6 +655,7 @@ export class TrackDTO {
     "copyright": string;
     "other_metadata": string;
     "file_size": number;
+    "is_favorite": boolean;
     "mtime": time$0.Time;
     "created_at": time$0.Time;
     "updated_at": time$0.Time;
@@ -629,6 +733,9 @@ export class TrackDTO {
         if (!("file_size" in $$source)) {
             this["file_size"] = 0;
         }
+        if (!("is_favorite" in $$source)) {
+            this["is_favorite"] = false;
+        }
         if (!("mtime" in $$source)) {
             this["mtime"] = null;
         }
@@ -646,26 +753,26 @@ export class TrackDTO {
      * Creates a new TrackDTO instance from a string or object.
      */
     static createFrom($$source: any = {}): TrackDTO {
-        const $$createField25_0 = $$createType2;
-        const $$createField26_0 = $$createType6;
-        const $$createField27_0 = $$createType2;
-        const $$createField28_0 = $$createType9;
-        const $$createField29_0 = $$createType12;
+        const $$createField26_0 = $$createType2;
+        const $$createField27_0 = $$createType6;
+        const $$createField28_0 = $$createType2;
+        const $$createField29_0 = $$createType9;
+        const $$createField30_0 = $$createType12;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("artists" in $$parsedSource) {
-            $$parsedSource["artists"] = $$createField25_0($$parsedSource["artists"]);
+            $$parsedSource["artists"] = $$createField26_0($$parsedSource["artists"]);
         }
         if ("album" in $$parsedSource) {
-            $$parsedSource["album"] = $$createField26_0($$parsedSource["album"]);
+            $$parsedSource["album"] = $$createField27_0($$parsedSource["album"]);
         }
         if ("album_artists" in $$parsedSource) {
-            $$parsedSource["album_artists"] = $$createField27_0($$parsedSource["album_artists"]);
+            $$parsedSource["album_artists"] = $$createField28_0($$parsedSource["album_artists"]);
         }
         if ("genres" in $$parsedSource) {
-            $$parsedSource["genres"] = $$createField28_0($$parsedSource["genres"]);
+            $$parsedSource["genres"] = $$createField29_0($$parsedSource["genres"]);
         }
         if ("composers" in $$parsedSource) {
-            $$parsedSource["composers"] = $$createField29_0($$parsedSource["composers"]);
+            $$parsedSource["composers"] = $$createField30_0($$parsedSource["composers"]);
         }
         return new TrackDTO($$parsedSource as Partial<TrackDTO>);
     }

@@ -278,6 +278,43 @@ func (r *trackRepository) GetAll(ctx context.Context) ([]*domain.TrackDTO, error
 	return r.scanTrackRows(rows), nil
 }
 
+func (r *trackRepository) GetFavorites(ctx context.Context) ([]*domain.TrackDTO, error) {
+	query := fmt.Sprintf(`
+		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year,
+		       GROUP_CONCAT(art.name, '; ') AS artist_names,
+		       GROUP_CONCAT(art.id, '; ') AS artist_ids
+		FROM tracks t
+		LEFT JOIN albums a ON t.album_id = a.id
+		LEFT JOIN track_artists ta ON t.id = ta.track_id
+		LEFT JOIN artists art ON ta.artist_id = art.id
+		WHERE t.is_favorite = 1
+		GROUP BY t.id
+		ORDER BY t.sort_title
+	`, trackSelectFields)
+	var rows []trackRow
+	err := r.db.SelectContext(ctx, &rows, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get favorite tracks: %w", err)
+	}
+	return r.scanTrackRows(rows), nil
+}
+
+func (r *trackRepository) ToggleFavorite(ctx context.Context, id string) (bool, error) {
+	_, err := r.db.ExecContext(ctx,
+		"UPDATE tracks SET is_favorite = NOT is_favorite, updated_at = ? WHERE id = ?",
+		time.Now(), id,
+	)
+	if err != nil {
+		return false, fmt.Errorf("failed to toggle favorite: %w", err)
+	}
+	var val bool
+	err = r.db.GetContext(ctx, &val, "SELECT is_favorite FROM tracks WHERE id = ?", id)
+	if err != nil {
+		return false, fmt.Errorf("failed to read favorite state: %w", err)
+	}
+	return val, nil
+}
+
 type trackDB struct {
 	domain.Track
 	AlbumID sql.NullString `db:"album_id"`
@@ -299,15 +336,15 @@ func (r *trackRepository) Save(ctx context.Context, track *domain.Track) error {
 		INSERT INTO tracks (
 			id, path, title, sort_title,
 			album_id, year, track_number, total_tracks, disc_number, total_discs,
-			duration, bitrate, sample_rate, format, artwork_key, 
+			duration, bitrate, sample_rate, format, artwork_key,
 			raw_artist_names, raw_album_artist_names, raw_genre_names, raw_composer_names,
-			copyright, other_metadata, file_size, mtime, created_at, updated_at
+			copyright, other_metadata, file_size, is_favorite, mtime, created_at, updated_at
 		) VALUES (
 			:id, :path, :title, :sort_title,
 			:album_id, :year, :track_number, :total_tracks, :disc_number, :total_discs,
 			:duration, :bitrate, :sample_rate, :format, :artwork_key,
 			:raw_artist_names, :raw_album_artist_names, :raw_genre_names, :raw_composer_names,
-			:copyright, :other_metadata, :file_size, :mtime, :created_at, :updated_at
+			:copyright, :other_metadata, :file_size, :is_favorite, :mtime, :created_at, :updated_at
 		)`
 
 	_, err := r.db.NamedExecContext(ctx, query, dbTrack)
@@ -335,13 +372,13 @@ func (r *trackRepository) Upsert(ctx context.Context, track *domain.Track) error
 			album_id, year, track_number, total_tracks, disc_number, total_discs,
 			duration, bitrate, sample_rate, format, artwork_key,
 			raw_artist_names, raw_album_artist_names, raw_genre_names, raw_composer_names,
-			copyright, other_metadata, file_size, mtime, created_at, updated_at
+			copyright, other_metadata, file_size, is_favorite, mtime, created_at, updated_at
 		) VALUES (
 			:id, :path, :title, :sort_title,
 			:album_id, :year, :track_number, :total_tracks, :disc_number, :total_discs,
 			:duration, :bitrate, :sample_rate, :format, :artwork_key,
 			:raw_artist_names, :raw_album_artist_names, :raw_genre_names, :raw_composer_names,
-			:copyright, :other_metadata, :file_size, :mtime, :created_at, :updated_at
+			:copyright, :other_metadata, :file_size, :is_favorite, :mtime, :created_at, :updated_at
 		) ON CONFLICT(path) DO UPDATE SET
 			title = excluded.title,
 			sort_title = excluded.sort_title,

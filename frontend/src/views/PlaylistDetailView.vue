@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ListMusic } from 'lucide-vue-next'
 import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
@@ -16,9 +16,11 @@ const tracks = ref<TrackDTO[]>([])
 const isLoading = ref(true)
 
 async function load() {
+  const id = route.params.id as string
+  if (!id) return
+
   isLoading.value = true
   try {
-    const id = route.params.id as string
     const [p, t] = await Promise.all([
       PlaylistService.GetPlaylistByID(id),
       PlaylistService.GetPlaylistTracks(id),
@@ -32,6 +34,7 @@ async function load() {
   }
 }
 
+watch(() => route.params.id, load)
 onMounted(load)
 
 const totalDuration = computed(() => {
@@ -49,7 +52,7 @@ function playTrack(_track: TrackDTO, index: number) {
 <template>
   <div class="flex flex-col h-full overflow-hidden">
     <!-- Header -->
-    <div class="px-6 pt-6 pb-4 flex-shrink-0">
+    <div class="px-6 pt-6 pb-4 flex-shrink-0 @container min-w-0">
       <div v-if="isLoading" class="space-y-2">
         <div class="h-7 w-48 bg-white/[0.06] rounded animate-pulse" />
         <div class="h-4 w-32 bg-white/[0.04] rounded animate-pulse" />
@@ -57,7 +60,7 @@ function playTrack(_track: TrackDTO, index: number) {
       <template v-else-if="playlist">
         <div class="flex items-center gap-3 mb-1">
           <ListMusic class="w-6 h-6 text-white/30 flex-shrink-0" />
-          <h1 class="text-2xl font-bold text-white">{{ playlist.name }}</h1>
+          <h1 class="text-xl @sm:text-2xl font-bold text-white line-clamp-2">{{ playlist.name }}</h1>
         </div>
         <p class="text-sm text-white/30 pl-9">
           {{ tracks.length }} tracks · {{ totalDuration }}

@@ -178,6 +178,15 @@ func (s *PlayerService) SetRepeatMode(mode domain.RepeatMode) error {
 	return nil
 }
 
+// PlayNext inserts a track immediately after the currently playing track.
+func (s *PlayerService) PlayNext(track *domain.TrackDTO) {
+	s.queue.InsertAfterCurrent(track)
+	app := application.Get()
+	if app != nil {
+		app.Event.Emit("player:queue-updated", s.queue.GetQueue())
+	}
+}
+
 // GetStatus returns the current status of the player.
 func (s *PlayerService) GetStatus() domain.PlayerStatus {
 	status := s.player.GetStatus()

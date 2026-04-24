@@ -12,6 +12,8 @@ import (
 	"airmedy/internal/infra/wails"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
+	"github.com/wailsapp/wails/v3/pkg/icons"
 	"go.uber.org/fx"
 )
 
@@ -60,15 +62,15 @@ func main() {
 			Handler: wails.NewAssetHandler(assets, artworkCache),
 		},
 		Mac: application.MacOptions{
-			ApplicationShouldTerminateAfterLastWindowClosed: true,
+			ApplicationShouldTerminateAfterLastWindowClosed: false,
 		},
 	})
 
-	wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
+	mainWindow := wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:     "Airmedy",
 		Width:     1280,
 		Height:    800,
-		MinWidth:  1024,
+		MinWidth:  1060,
 		MinHeight: 768,
 		Mac: application.MacWindow{
 			InvisibleTitleBarHeight: 50,
@@ -78,6 +80,25 @@ func main() {
 		BackgroundColour: application.NewRGB(27, 38, 54),
 		URL:              "/",
 	})
+
+	mainWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
+		mainWindow.Hide()
+		e.Cancel()
+	})
+
+	systemTray := wailsApp.SystemTray.New()
+	systemTray.SetTemplateIcon(icons.SystrayMacTemplate)
+	systemTray.SetTooltip("Airmedy")
+	trayMenu := application.NewMenu()
+	trayMenu.Add("Show Airmedy").OnClick(func(_ *application.Context) {
+		mainWindow.Show()
+		mainWindow.Focus()
+	})
+	trayMenu.AddSeparator()
+	trayMenu.Add("Quit").OnClick(func(_ *application.Context) {
+		wailsApp.Quit()
+	})
+	systemTray.SetMenu(trayMenu)
 
 	go func() {
 		for {

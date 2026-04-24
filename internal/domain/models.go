@@ -26,6 +26,7 @@ type Track struct {
 	Copyright           string    `json:"copyright" db:"copyright"`
 	OtherMetadata       string    `json:"other_metadata" db:"other_metadata"`
 	FileSize            int64     `json:"file_size" db:"file_size"`
+	IsFavorite          bool      `json:"is_favorite" db:"is_favorite"`
 	Mtime               time.Time `json:"mtime" db:"mtime"`
 	CreatedAt           time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt           time.Time `json:"updated_at" db:"updated_at"`

@@ -20,6 +20,7 @@ const trackSelectFields = `
 	COALESCE(t.copyright, '') AS copyright,
 	COALESCE(t.other_metadata, '{}') AS other_metadata,
 	COALESCE(t.file_size, 0) AS file_size,
+	COALESCE(t.is_favorite, 0) AS is_favorite,
 	t.mtime,
 	t.created_at, t.updated_at
 `

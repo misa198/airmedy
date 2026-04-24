@@ -3,28 +3,28 @@
 
 /* Enable CSS custom property transitions in WebKit/Safari (used by Wails on macOS) */
 @property --dynamic-primary {
-  syntax: '<color>';
+  syntax: "<color>";
   inherits: true;
-  initial-value: #E11D48;
+  initial-value: #e11d48;
 }
 @property --dynamic-surface {
-  syntax: '<color>';
+  syntax: "<color>";
   inherits: true;
   initial-value: rgba(25, 25, 25, 0.6);
 }
 
 @layer base {
   :root {
-    --bg-main: #0A0A0A;
+    --bg-main: #0a0a0a;
     --bg-glass: rgba(25, 25, 25, 0.6);
     --bg-glass-elevated: rgba(45, 45, 45, 0.4);
     --border-glass: rgba(255, 255, 255, 0.1);
-    
-    --primary: #E11D48;
-    --primary-gradient: linear-gradient(135deg, #E11D48 0%, #FB7185 100%);
-    --text-main: #FFFFFF;
-    --text-muted: #A1A1AA;
-    --accent-favorite: #EF4444;
+
+    --primary: #e11d48;
+    --primary-gradient: linear-gradient(135deg, #e11d48 0%, #fb7185 100%);
+    --text-main: #ffffff;
+    --text-muted: #a1a1aa;
+    --accent-favorite: #ef4444;
 
     /* Fallback dynamic variables */
     --dynamic-primary: var(--primary);
@@ -35,6 +35,13 @@
   body {
     @apply bg-background text-white font-sans antialiased;
     background-color: var(--bg-main);
-    transition: --dynamic-primary 1.5s ease-in-out, --dynamic-surface 1.5s ease-in-out;
+    transition:
+      --dynamic-primary 1.5s ease-in-out,
+      --dynamic-surface 1.5s ease-in-out;
   }
+}
+
+img {
+  -webkit-user-drag: none;
+  user-select: none;
 }

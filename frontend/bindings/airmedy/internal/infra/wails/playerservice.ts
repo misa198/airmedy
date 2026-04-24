@@ -38,6 +38,10 @@ export function Play(): $CancellablePromise<void> {
     return $Call.ByID(447319412);
 }
 
+export function PlayNext(track: domain$0.TrackDTO | null): $CancellablePromise<void> {
+    return $Call.ByID(2410423757, track);
+}
+
 export function PlayTracks(tracks: (domain$0.TrackDTO | null)[], startIndex: number): $CancellablePromise<void> {
     return $Call.ByID(831343208, tracks, startIndex);
 }

@@ -65,3 +65,7 @@ func (s *PlayerService) GetStatus() domain.PlayerStatus {
 func (s *PlayerService) GetQueue() []*domain.TrackDTO {
 	return s.service.GetQueue()
 }
+
+func (s *PlayerService) PlayNext(track *domain.TrackDTO) {
+	s.service.PlayNext(track)
+}

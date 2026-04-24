@@ -14,6 +14,7 @@ import {
   MoreHorizontal,
   Pencil,
   Trash2,
+  Heart,
 } from 'lucide-vue-next'
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
@@ -29,6 +30,7 @@ const navItems = [
   { name: 'Artists', icon: Users, to: '/artists' },
   { name: 'Albums', icon: Disc, to: '/albums' },
   { name: 'Tracks', icon: Music, to: '/tracks' },
+  { name: 'Favorites', icon: Heart, to: '/favorites' },
   { name: 'Genres', icon: ListMusic, to: '/genres' },
   { name: 'Composers', icon: PenTool, to: '/composers' },
   { name: 'Search', icon: Search, to: '/search' },

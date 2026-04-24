@@ -21,6 +21,7 @@ export const usePlayerStore = defineStore('player', () => {
   const theme = ref<ThemeColors | null>(null)
   const isQueueOpen = ref(false)
   const isLyricsOpen = ref(false)
+  const sidebarWidth = ref(260)
   const playerMode = ref<PlayerMode>('sticky')
   const lyrics = ref<Lyric | null>(null)
   const lyricsLoading = ref(false)
@@ -98,6 +99,26 @@ export const usePlayerStore = defineStore('player', () => {
       if (!lyric && lyrics.value?.track_id === currentTrack.value?.id) return
       lyrics.value = lyric
       lyricsLoading.value = false
+    })
+
+    Events.On('player:queue-updated', (ev: Events.WailsEvent) => {
+      const q = ev.data as TrackDTO[]
+      if (Array.isArray(q)) queue.value = q.filter(Boolean) as TrackDTO[]
+    })
+
+    Events.On('library:track-updated', (ev: Events.WailsEvent) => {
+      const updated = ev.data as TrackDTO
+      if (!updated?.id) return
+      const idx = queue.value.findIndex(t => t.id === updated.id)
+      if (idx !== -1) queue.value[idx] = updated
+      if (currentTrack.value?.id === updated.id) currentTrack.value = updated
+    })
+
+    Events.On('library:track-deleted', (ev: Events.WailsEvent) => {
+      const id = ev.data as string
+      if (!id) return
+      queue.value = queue.value.filter(t => t.id !== id)
+      if (currentTrack.value?.id === id) currentTrack.value = null
     })
   }
 
@@ -185,6 +206,7 @@ export const usePlayerStore = defineStore('player', () => {
     theme,
     isQueueOpen,
     isLyricsOpen,
+    sidebarWidth,
     playerMode,
     lyrics,
     lyricsLoading,

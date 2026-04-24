@@ -10,11 +10,13 @@ export {
     EQProfile,
     Genre,
     Lyric,
+    MetadataUpdate,
     PlaybackState,
     PlayerStatus,
     Playlist,
     RepeatMode,
     SyncProgress,
+    ThemeColors,
     TrackDTO,
     WatchedFolder
 } from "./models.js";

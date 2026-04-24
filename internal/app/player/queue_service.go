@@ -105,6 +105,34 @@ func (s *QueueService) Previous() *domain.TrackDTO {
 	return list[s.currentIndex]
 }
 
+// InsertAfterCurrent inserts a track immediately after the current position.
+func (s *QueueService) InsertAfterCurrent(track *domain.TrackDTO) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	insertAt := s.currentIndex + 1
+	if insertAt > len(s.originalList) {
+		insertAt = len(s.originalList)
+	}
+	s.originalList = sliceInsert(s.originalList, insertAt, track)
+
+	if s.shuffle {
+		si := s.currentIndex + 1
+		if si > len(s.shuffledList) {
+			si = len(s.shuffledList)
+		}
+		s.shuffledList = sliceInsert(s.shuffledList, si, track)
+	}
+}
+
+func sliceInsert(list []*domain.TrackDTO, at int, t *domain.TrackDTO) []*domain.TrackDTO {
+	out := make([]*domain.TrackDTO, len(list)+1)
+	copy(out, list[:at])
+	out[at] = t
+	copy(out[at+1:], list[at:])
+	return out
+}
+
 // SetShuffle enables or disables shuffling.
 func (s *QueueService) SetShuffle(enabled bool) {
 	s.mu.Lock()
