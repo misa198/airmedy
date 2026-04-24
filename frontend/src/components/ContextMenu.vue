@@ -97,30 +97,30 @@ function handleSubmenuItemClick(item: ContextMenuItem) {
       <!-- Menu panel -->
       <div
         ref="menuEl"
-        class="fixed z-[999] min-w-[180px] rounded-lg bg-[#1A1A1A] ring-1 ring-white/[0.08] shadow-2xl py-1 select-none"
+        class="fixed z-[999] min-w-[200px] rounded-2xl bg-black/80 backdrop-blur-xl ring-1 ring-white/10 shadow-2xl p-1.5 select-none"
         :style="{ left: adjustedX + 'px', top: adjustedY + 'px' }"
       >
         <template v-for="(item, index) in items" :key="index">
           <div
             v-if="item.separator"
-            class="my-1 mx-2 border-t border-white/[0.06]"
+            class="my-1 mx-2 border-t border-white/10"
           />
           <div
             v-else
-            class="relative flex items-center gap-2.5 px-3 py-1.5 text-sm cursor-default transition-colors"
+            class="relative flex items-center gap-3 px-3 py-1.5 text-sm cursor-default transition-all rounded-lg mx-0.5"
             :class="[
               item.disabled
-                ? 'text-white/25 cursor-not-allowed'
+                ? 'text-white/20 cursor-not-allowed'
                 : item.danger
-                  ? 'text-red-400/80 hover:text-red-400 hover:bg-white/[0.06]'
-                  : 'text-white/70 hover:text-white hover:bg-white/[0.06]',
+                  ? 'text-red-400/80 hover:text-red-400 hover:bg-red-500/20'
+                  : 'text-white/80 hover:text-white hover:bg-white/15',
             ]"
             @click="handleItemClick(item)"
             @mouseenter="handleMouseEnter(item, index, $event)"
           >
-            <component :is="item.icon" v-if="item.icon" class="w-3.5 h-3.5 shrink-0 opacity-70" />
+            <component :is="item.icon" v-if="item.icon" class="w-4 h-4 shrink-0 opacity-70" />
             <span class="flex-1">{{ item.label }}</span>
-            <ChevronRight v-if="item.children?.length" class="w-3.5 h-3.5 opacity-40 ml-auto" />
+            <ChevronRight v-if="item.children?.length" class="w-4 h-4 opacity-40 ml-auto" />
           </div>
         </template>
       </div>
@@ -129,18 +129,18 @@ function handleSubmenuItemClick(item: ContextMenuItem) {
       <div
         v-if="activeSubmenuIndex !== null && items[activeSubmenuIndex]?.children?.length"
         ref="submenuEl"
-        class="fixed z-[1000] min-w-[160px] max-h-64 overflow-y-auto rounded-lg bg-[#1A1A1A] ring-1 ring-white/[0.08] shadow-2xl py-1 select-none"
+        class="fixed z-[1000] min-w-[180px] max-h-64 overflow-y-auto rounded-2xl bg-black/80 backdrop-blur-xl ring-1 ring-white/10 shadow-2xl p-1.5 select-none"
         :style="{ left: submenuX + 'px', top: submenuY + 'px' }"
         @mouseleave="activeSubmenuIndex = null"
       >
         <div
           v-for="(child, ci) in items[activeSubmenuIndex]!.children"
           :key="ci"
-          class="flex items-center gap-2.5 px-3 py-1.5 text-sm cursor-default transition-colors"
-          :class="child.disabled ? 'text-white/25' : 'text-white/70 hover:text-white hover:bg-white/[0.06]'"
+          class="flex items-center gap-3 px-3 py-1.5 text-sm cursor-default transition-all rounded-lg mx-0.5"
+          :class="child.disabled ? 'text-white/20' : 'text-white/80 hover:text-white hover:bg-white/15'"
           @click="handleSubmenuItemClick(child)"
         >
-          <component :is="child.icon" v-if="child.icon" class="w-3.5 h-3.5 shrink-0 opacity-70" />
+          <component :is="child.icon" v-if="child.icon" class="w-4 h-4 shrink-0 opacity-70" />
           <span>{{ child.label }}</span>
         </div>
         <div v-if="!items[activeSubmenuIndex]!.children!.length" class="px-3 py-1.5 text-sm text-white/30">

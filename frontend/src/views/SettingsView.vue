@@ -7,6 +7,13 @@ import type { WatchedFolder, SyncProgress } from '../../bindings/airmedy/interna
 import { Events } from '@wailsio/runtime'
 import EQPanel from '@/components/EQPanel.vue'
 import { useI18n } from 'vue-i18n'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 const { t, locale } = useI18n()
 const folders = ref<WatchedFolder[]>([])
@@ -240,24 +247,28 @@ onUnmounted(() => {
               <p class="text-xs text-white/30">{{ t('settings.appearance.select_language', 'Select application language') }}</p>
             </div>
           </div>
-          <select 
-            :value="locale" 
-            @change="e => updateLanguage((e.target as HTMLSelectElement).value)"
-            class="bg-white/[0.06] border-0 text-sm rounded-md focus:ring-primary focus:border-primary block p-2 transition-colors hover:bg-white/[0.1] outline-none"
+          <Select 
+            :model-value="locale" 
+            @update:model-value="val => updateLanguage(val)"
           >
-            <option value="en">English</option>
-            <option value="zh">中文 (Chinese)</option>
-            <option value="vi">Tiếng Việt (Vietnamese)</option>
-            <option value="ja">日本語 (Japanese)</option>
-            <option value="ko">한국어 (Korean)</option>
-            <option value="de">Deutsch (German)</option>
-            <option value="fr">Français (French)</option>
-            <option value="es">Español (Spanish)</option>
-            <option value="pt">Português (Portuguese)</option>
-            <option value="it">Italiano (Italian)</option>
-            <option value="ru">Русский (Russian)</option>
-            <option value="th">ไทย (Thai)</option>
-          </select>
+            <SelectTrigger class="w-[180px] bg-white/[0.06] border-0">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="en">English</SelectItem>
+              <SelectItem value="zh">中文 (Chinese)</SelectItem>
+              <SelectItem value="vi">Tiếng Việt (Vietnamese)</SelectItem>
+              <SelectItem value="ja">日本語 (Japanese)</SelectItem>
+              <SelectItem value="ko">한국어 (Korean)</SelectItem>
+              <SelectItem value="de">Deutsch (German)</SelectItem>
+              <SelectItem value="fr">Français (French)</SelectItem>
+              <SelectItem value="es">Español (Spanish)</SelectItem>
+              <SelectItem value="pt">Português (Portuguese)</SelectItem>
+              <SelectItem value="it">Italiano (Italian)</SelectItem>
+              <SelectItem value="ru">Русский (Russian)</SelectItem>
+              <SelectItem value="th">ไทย (Thai)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </section>
 

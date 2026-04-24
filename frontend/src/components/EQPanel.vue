@@ -3,6 +3,13 @@ import { ref, onMounted, computed } from 'vue'
 import { Slider } from '@/components/ui/slider'
 import * as EQService from '../../bindings/airmedy/internal/infra/wails/eqservice'
 import type { EQProfile } from '../../bindings/airmedy/internal/domain/models'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 const profiles = ref<EQProfile[]>([])
 const activeProfile = ref<EQProfile | null>(null)
@@ -60,21 +67,24 @@ function getBandGain(index: number): number {
   <div class="space-y-4">
     <!-- Header row: profile selector + enable toggle -->
     <div class="flex items-center justify-between gap-3">
-      <select
+      <Select
         v-if="profiles.length > 0"
-        :value="activeProfile?.id"
-        class="flex-1 bg-white/[0.05] border border-white/[0.08] text-sm text-white rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-white/20"
-        @change="selectProfile(($event.target as HTMLSelectElement).value)"
+        :model-value="activeProfile?.id"
+        @update:model-value="selectProfile"
       >
-        <option
-          v-for="p in profiles"
-          :key="p.id"
-          :value="p.id"
-          class="bg-[#1A1A1A]"
-        >
-          {{ p.name }}
-        </option>
-      </select>
+        <SelectTrigger class="flex-1 bg-white/[0.05] border border-white/[0.08] text-sm text-white rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-white/20">
+          <SelectValue placeholder="Select Profile" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem
+            v-for="p in profiles"
+            :key="p.id"
+            :value="p.id"
+          >
+            {{ p.name }}
+          </SelectItem>
+        </SelectContent>
+      </Select>
 
       <!-- Enable/Disable toggle -->
       <button
