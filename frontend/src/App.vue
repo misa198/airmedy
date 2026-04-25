@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import MainLayout from './layouts/MainLayout.vue'
 import { hexToRgba } from './lib/utils'
 import { usePlayerStore } from './stores/player'
@@ -8,8 +8,10 @@ import { useDeviceStore } from './stores/device'
 import { usePlaylistsStore } from './stores/playlists'
 import { useAppStore } from './stores/app'
 import { useI18n } from 'vue-i18n'
+import { Events } from '@wailsio/runtime'
 
 const route = useRoute()
+const router = useRouter()
 const { locale } = useI18n()
 const playerStore = usePlayerStore()
 const deviceStore = useDeviceStore()
@@ -26,6 +28,11 @@ onMounted(async () => {
   deviceStore.init()
   deviceStore.checkFullscreen()
   playlistsStore.loadAll()
+
+  // Handle global events
+  Events.On('open-settings', () => {
+    router.push('/settings')
+  })
 })
 
 const updateDynamicColors = (colors: any) => {

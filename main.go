@@ -5,6 +5,7 @@ import (
 	"embed"
 	_ "embed"
 	"log"
+	"runtime"
 	"sync"
 	"time"
 
@@ -70,6 +71,48 @@ func main() {
 			ApplicationShouldTerminateAfterLastWindowClosed: false,
 		},
 	})
+
+	// Create application menu
+	menu := application.NewMenu()
+	if runtime.GOOS == "darwin" {
+		appMenu := menu.AddSubmenu("airmedy")
+		appMenu.AddRole(application.About)
+		appMenu.AddSeparator()
+		appMenu.Add("Settings...").
+			SetAccelerator("Cmd+,").
+			OnClick(func(ctx *application.Context) {
+				wailsApp.Event.Emit("open-settings")
+			})
+		appMenu.AddSeparator()
+		appMenu.AddRole(application.ServicesMenu)
+		appMenu.AddSeparator()
+		appMenu.AddRole(application.Hide)
+		appMenu.AddRole(application.HideOthers)
+		appMenu.AddRole(application.ShowAll)
+		appMenu.AddSeparator()
+		appMenu.AddRole(application.Quit)
+
+		menu.AddRole(application.FileMenu)
+		menu.AddRole(application.EditMenu)
+		menu.AddRole(application.ViewMenu)
+		menu.AddRole(application.WindowMenu)
+		menu.AddRole(application.HelpMenu)
+	} else {
+		fileMenu := menu.AddSubmenu("File")
+		fileMenu.Add("Settings...").
+			SetAccelerator("Ctrl+,").
+			OnClick(func(ctx *application.Context) {
+				wailsApp.Event.Emit("open-settings")
+			})
+		fileMenu.AddSeparator()
+		fileMenu.AddRole(application.Quit)
+
+		menu.AddRole(application.EditMenu)
+		menu.AddRole(application.ViewMenu)
+		menu.AddRole(application.WindowMenu)
+		menu.AddRole(application.HelpMenu)
+	}
+	wailsApp.Menu.SetApplicationMenu(menu)
 
 	mainWindow := wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:     "Airmedy",
