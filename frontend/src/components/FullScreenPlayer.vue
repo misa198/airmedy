@@ -31,14 +31,11 @@ const activeTab = computed({
   },
   set: (val: string | null) => {
     if (val === 'lyrics') {
-      store.isLyricsOpen = true
-      store.isQueueOpen = false
+      store.openLyrics()
     } else if (val === 'queue') {
-      store.isQueueOpen = true
-      store.isLyricsOpen = false
+      store.openQueue()
     } else {
-      store.isLyricsOpen = false
-      store.isQueueOpen = false
+      store.closeAllDrawers()
     }
   },
 })
@@ -144,7 +141,7 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
                 v-if="store.isQueueOpen"
                 key="queue"
                 :queue="store.queue"
-                @close="store.isQueueOpen = false"
+                @close="store.closeAllDrawers()"
                 @play-track="(index) => store.playTracks(store.queue, index)"
               />
 
@@ -155,7 +152,7 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
                 :lyrics="store.lyrics?.content"
                 :loading="store.lyricsLoading"
                 :position="store.position"
-                @close="store.isLyricsOpen = false"
+                @close="store.closeAllDrawers()"
                 @seek="(time) => store.seek(time)"
               />
             </Transition>

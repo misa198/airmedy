@@ -204,19 +204,31 @@ export const usePlayerStore = defineStore('player', () => {
 
 
   function toggleQueue() {
-    isQueueOpen.value = !isQueueOpen.value
     if (isQueueOpen.value) {
-      isLyricsOpen.value = false
-      isTrackInfoOpen.value = false
+      isQueueOpen.value = false
+    } else {
+      openQueue()
     }
   }
 
+  function openQueue() {
+    isQueueOpen.value = true
+    isLyricsOpen.value = false
+    isTrackInfoOpen.value = false
+  }
+
   function toggleLyrics() {
-    isLyricsOpen.value = !isLyricsOpen.value
     if (isLyricsOpen.value) {
-      isQueueOpen.value = false
-      isTrackInfoOpen.value = false
+      isLyricsOpen.value = false
+    } else {
+      openLyrics()
     }
+  }
+
+  function openLyrics() {
+    isLyricsOpen.value = true
+    isQueueOpen.value = false
+    isTrackInfoOpen.value = false
   }
 
   function openTrackInfo(track: TrackDTO | null) {
@@ -225,6 +237,12 @@ export const usePlayerStore = defineStore('player', () => {
     isTrackInfoOpen.value = true
     isQueueOpen.value = false
     isLyricsOpen.value = false
+  }
+
+  function closeAllDrawers() {
+    isQueueOpen.value = false
+    isLyricsOpen.value = false
+    isTrackInfoOpen.value = false
   }
 
   return {
@@ -269,8 +287,11 @@ export const usePlayerStore = defineStore('player', () => {
     playTracks,
     shuffleTracks,
     toggleQueue,
+    openQueue,
     toggleLyrics,
+    openLyrics,
     openTrackInfo,
+    closeAllDrawers,
     cycleRepeat,
   }
 })

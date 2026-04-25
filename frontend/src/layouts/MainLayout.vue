@@ -29,9 +29,7 @@ const anyDrawerOpen = computed(() =>
 )
 
 const closeAllDrawers = () => {
-  playerStore.isQueueOpen = false
-  playerStore.isLyricsOpen = false
-  playerStore.isTrackInfoOpen = false
+  playerStore.closeAllDrawers()
 }
 
 const startResizing = (e: MouseEvent) => {
