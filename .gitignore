@@ -9,6 +9,7 @@ build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
 # Binary / Build Outputs
 build/bin/
 frontend/dist/
+frontend/bindings/
 bin/
 *.exe
 *.exe~
