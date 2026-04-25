@@ -15,7 +15,7 @@ void main() {
 
 // Pass 1 — horizontal Gaussian, Y-remapped to bottom slice of artwork
 const H_FRAG = /* glsl */`
-precision highp float;
+precision mediump float;
 uniform sampler2D tMap;
 uniform float uStep;  // blur step in UV space (horizontal)
 uniform float uRatio; // panelH / windowH — portion of artwork to show
@@ -42,7 +42,7 @@ void main() {
 
 // Pass 2 — vertical Gaussian + brightness + gradient alpha fade
 const V_FRAG = /* glsl */`
-precision highp float;
+precision mediump float;
 uniform sampler2D tMap;
 uniform float uStep;       // blur step in UV space (vertical)
 uniform float uBrightness;
