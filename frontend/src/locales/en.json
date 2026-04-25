@@ -156,5 +156,16 @@
     "search_placeholder": "Search your library",
     "search_description": "Find tracks, albums, and artists",
     "try_different_search": "Try a different search term"
+  },
+  "context_menu": {
+    "play_next": "Play Next",
+    "add_to_favorites": "Add to Favorites",
+    "remove_from_favorites": "Remove from Favorites",
+    "add_to_playlist": "Add to Playlist",
+    "no_playlists": "No playlists",
+    "go_to_album": "Go to Album",
+    "go_to_artist": "Go to Artist",
+    "edit_metadata": "Edit Metadata",
+    "remove_from_library": "Remove from Library"
   }
 }

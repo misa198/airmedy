@@ -1,5 +1,6 @@
 import { Heart, ListEnd, ListPlus, Disc, User, Pencil, Trash2 } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
 import { useFavoritesStore } from '@/stores/favorites'
 import type { ContextMenuItem } from './useContextMenu'
@@ -9,6 +10,7 @@ import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/pl
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 
 export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
+  const { t } = useI18n()
   const playlistsStore = usePlaylistsStore()
   const favoritesStore = useFavoritesStore()
   const router = useRouter()
@@ -16,13 +18,13 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
   function buildMenuItems(track: TrackDTO): ContextMenuItem[] {
     return [
       {
-        label: 'Play Next',
+        label: t('context_menu.play_next'),
         icon: ListEnd,
         action: () => { PlayerService.PlayNext(track) },
       },
       { separator: true },
       {
-        label: track.is_favorite ? 'Remove from Favorites' : 'Add to Favorites',
+        label: track.is_favorite ? t('context_menu.remove_from_favorites') : t('context_menu.add_to_favorites'),
         icon: Heart,
         action: async () => {
           await favoritesStore.toggle(track.id)
@@ -30,18 +32,18 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
         },
       },
       {
-        label: 'Add to Playlist',
+        label: t('context_menu.add_to_playlist'),
         icon: ListPlus,
         children: playlistsStore.playlists.length
           ? playlistsStore.playlists.map(p => ({
               label: p.name,
               action: () => { PlaylistService.AddTrackToPlaylist(p.id, track.id) },
             }))
-          : [{ label: 'No playlists', disabled: true }],
+          : [{ label: t('context_menu.no_playlists'), disabled: true }],
       },
       { separator: true },
       {
-        label: 'Go to Album',
+        label: t('context_menu.go_to_album'),
         icon: Disc,
         disabled: !track.album?.id,
         action: () => {
@@ -49,7 +51,7 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
         },
       },
       {
-        label: 'Go to Artist',
+        label: t('context_menu.go_to_artist'),
         icon: User,
         disabled: !track.artists?.[0]?.id,
         action: () => {
@@ -58,12 +60,12 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
       },
       { separator: true },
       {
-        label: 'Edit Metadata',
+        label: t('context_menu.edit_metadata'),
         icon: Pencil,
         action: () => onEditMetadata(track),
       },
       {
-        label: 'Remove from Library',
+        label: t('context_menu.remove_from_library'),
         icon: Trash2,
         danger: true,
         action: () => { LibraryService.DeleteTrack(track.id) },

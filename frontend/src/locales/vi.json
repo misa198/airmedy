@@ -155,5 +155,16 @@
     "search_placeholder": "Tìm kiếm trong thư viện",
     "search_description": "Tìm bài hát, album và nghệ sĩ",
     "try_different_search": "Thử một từ khóa tìm kiếm khác"
+  },
+  "context_menu": {
+    "play_next": "Phát tiếp theo",
+    "add_to_favorites": "Thêm vào yêu thích",
+    "remove_from_favorites": "Xóa khỏi yêu thích",
+    "add_to_playlist": "Thêm vào danh sách phát",
+    "no_playlists": "Không có danh sách phát",
+    "go_to_album": "Đi tới Album",
+    "go_to_artist": "Đi tới Nghệ sĩ",
+    "edit_metadata": "Chỉnh sửa siêu dữ liệu",
+    "remove_from_library": "Xóa khỏi thư viện"
   }
 }

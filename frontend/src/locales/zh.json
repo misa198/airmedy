@@ -155,5 +155,16 @@
     "search_placeholder": "搜索您的媒体库",
     "search_description": "查找曲目、专辑和艺术家",
     "try_different_search": "尝试不同的搜索词"
+  },
+  "context_menu": {
+    "play_next": "下一首播放",
+    "add_to_favorites": "添加到收藏",
+    "remove_from_favorites": "从收藏中移除",
+    "add_to_playlist": "添加到播放列表",
+    "no_playlists": "暂无播放列表",
+    "go_to_album": "前往专辑",
+    "go_to_artist": "前往艺术家",
+    "edit_metadata": "编辑元数据",
+    "remove_from_library": "从媒体库中移除"
   }
 }

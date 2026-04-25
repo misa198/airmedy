@@ -1,39 +1,27 @@
 <script setup lang="ts">
-import { Slider } from '@/components/ui/slider'
 import {
   ListMusic,
   Mic2,
   Minimize2,
-  Music,
-  Pause,
-  Play,
-  Repeat,
-  Repeat1,
-  Shuffle,
-  SkipBack,
-  SkipForward,
-  Volume2,
-  VolumeX,
-  X,
 } from 'lucide-vue-next'
-import { computed, ref } from 'vue'
-import { RepeatMode } from '../../bindings/airmedy/internal/domain/models'
-import { formatTime } from '../lib/utils'
+import { computed } from 'vue'
 import { usePlayerStore } from '../stores/player'
 import { useDeviceStore } from '../stores/device'
 import LivingArtworkBackground from './LivingArtworkBackground.vue'
-import LyricsView from './LyricsView.vue'
-import MarqueeText from './MarqueeText.vue'
-import TrackTable from './TrackTable.vue'
 import TabSwitcher from './ui/TabSwitcher.vue'
 import { useI18n } from 'vue-i18n'
+
+import PlayerArtwork from './player/PlayerArtwork.vue'
+import PlayerTrackInfo from './player/PlayerTrackInfo.vue'
+import PlayerSeekBar from './player/PlayerSeekBar.vue'
+import PlayerPlaybackControls from './player/PlayerPlaybackControls.vue'
+import PlayerVolumeControl from './player/PlayerVolumeControl.vue'
+import PlayerQueuePanel from './player/PlayerQueuePanel.vue'
+import PlayerLyricsPanel from './player/PlayerLyricsPanel.vue'
 
 const { t } = useI18n()
 const store = usePlayerStore()
 const deviceStore = useDeviceStore()
-
-const isSeeking = ref(false)
-const seekValue = ref(0)
 
 const activeTab = computed({
   get: () => {
@@ -60,30 +48,11 @@ const tabOptions = computed(() => [
   { value: 'queue', label: t('player.up_next'), icon: ListMusic },
 ])
 
-const displayPosition = computed(() =>
-  isSeeking.value ? (seekValue.value / 100) * store.duration : store.position,
-)
-
 const trackTitle = computed(() => store.currentTrack?.title ?? t('player.not_playing'))
 const trackArtist = computed(() =>
   store.currentTrack?.artists?.map((a) => a?.name).filter(Boolean).join(', ') ?? '',
 )
 const albumTitle = computed(() => store.currentTrack?.album?.title ?? '')
-
-const repeatIcon = computed(() =>
-  store.repeatMode === RepeatMode.RepeatModeOne ? Repeat1 : Repeat,
-)
-const repeatActive = computed(
-  () =>
-    store.repeatMode === RepeatMode.RepeatModeOne ||
-    store.repeatMode === RepeatMode.RepeatModeAll,
-)
-
-function onSeekStart() { isSeeking.value = true }
-async function onSeekEnd() {
-  await store.seek((seekValue.value / 100) * store.duration)
-  isSeeking.value = false
-}
 
 const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
 </script>
@@ -109,80 +78,54 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
       <div class="flex-1 flex items-center justify-center px-8 w-full max-w-[1400px] mx-auto overflow-hidden">
         <div
           class="flex-1 flex flex-row items-center justify-center h-full transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] relative @container"
-          :class="!showRightColumn ? 'gap-0' : 'gap-12'">
+          :class="!showRightColumn ? 'gap-0' : 'gap-12 lg:gap-16 xl:gap-20 2xl:gap-24 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]'">
           <!-- Left Column: Cover and Controls -->
           <div
             class="flex flex-col items-center justify-center transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
             :class="!showRightColumn ? 'w-full max-w-lg' : 'w-1/2 max-w-md'">
             <div class="flex flex-col items-center justify-center gap-6 w-full">
               <!-- Artwork -->
-              <div
-                class="rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.6)] overflow-hidden flex-shrink-0 ring-1 ring-white/8 transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)]"
-                :class="[
-                  !showRightColumn ? 'w-64 h-64 md:w-80 md:h-80' : 'w-56 h-56 md:w-64 md:h-64',
-                  store.isPlaying ? 'scale-100' : 'scale-[0.80]'
-                ]">
-                <img v-if="store.artworkUrl" :src="store.artworkUrl" :alt="trackTitle"
-                  class="w-full h-full object-cover" />
-                <div v-else class="w-full h-full bg-white/5 flex items-center justify-center">
-                  <Music class="w-20 h-20 text-white/15" />
-                </div>
-              </div>
+              <PlayerArtwork
+                :artwork-url="store.artworkUrl"
+                :track-title="trackTitle"
+                :is-playing="store.isPlaying"
+                :show-right-column="showRightColumn"
+              />
 
               <!-- Track info -->
-              <div class="text-center w-full max-w-sm mx-auto">
-                <MarqueeText :text="trackTitle"
-                  content-class="text-2xl font-bold text-white tracking-tight text-center" />
-                <MarqueeText :text="trackArtist" content-class="text-base text-white/80 mt-1 text-center" />
-                <MarqueeText v-if="albumTitle" :text="albumTitle"
-                  content-class="text-sm text-white/60 mt-0.5 text-center" />
-              </div>
+              <PlayerTrackInfo
+                :title="trackTitle"
+                :artist="trackArtist"
+                :album="albumTitle"
+              />
 
               <!-- Seek bar -->
-              <div class="w-full max-w-sm space-y-1.5">
-                <Slider :model-value="isSeeking ? seekValue : store.progressPercent" :min="0" :max="100" :step="0.1"
-                  @update:model-value="(v) => (seekValue = v)" @mousedown="onSeekStart" @mouseup="onSeekEnd"
-                  @touchstart="onSeekStart" @touchend="onSeekEnd" />
-                <div class="flex justify-between text-[10.5px] text-white/60 tabular-nums">
-                  <span>{{ formatTime(displayPosition) }}</span>
-                  <span>{{ formatTime(store.duration) }}</span>
-                </div>
-              </div>
+              <PlayerSeekBar
+                :progress-percent="store.progressPercent"
+                :position="store.position"
+                :duration="store.duration"
+                @seek="(v) => store.seek(v)"
+              />
 
               <!-- Controls -->
-              <div class="flex items-center gap-7">
-                <button :class="store.shuffle ? 'text-white/80' : 'text-white/30 hover:text-white/80'"
-                  class="transition-colors" @click="store.setShuffle(!store.shuffle)" :title="t('player.shuffle')">
-                  <Shuffle class="w-5 h-5" />
-                </button>
-                <button class="text-white/80 hover:text-white transition-colors" @click="store.previous()" :title="t('player.previous')">
-                  <SkipBack class="w-7 h-7 fill-current" />
-                </button>
-                <button
-                  class="w-14 h-14 bg-white rounded-full flex items-center justify-center hover:scale-105 transition-transform shadow-xl"
-                  @click="store.togglePlayPause()" :title="store.isPlaying ? t('player.pause') : t('player.play')">
-                  <Pause v-if="store.isPlaying" class="w-6 h-6 fill-current text-[#0A0A0A]" />
-                  <Play v-else class="w-6 h-6 fill-current text-[#0A0A0A] ml-0.5" />
-                </button>
-                <button class="text-white/80 hover:text-white transition-colors" @click="store.next()" :title="t('player.next')">
-                  <SkipForward class="w-7 h-7 fill-current" />
-                </button>
-                <button :class="repeatActive ? 'text-white/80' : 'text-white/30 hover:text-white/80'"
-                  class="transition-colors" @click="store.cycleRepeat()" :title="t('player.repeat')">
-                  <component :is="repeatIcon" class="w-5 h-5" />
-                </button>
-              </div>
+              <PlayerPlaybackControls
+                :is-playing="store.isPlaying"
+                :shuffle="store.shuffle"
+                :repeat-mode="store.repeatMode"
+                @toggle-play="store.togglePlayPause()"
+                @next="store.next()"
+                @previous="store.previous()"
+                @toggle-shuffle="store.setShuffle(!store.shuffle)"
+                @cycle-repeat="store.cycleRepeat()"
+              />
 
               <!-- Volume -->
-              <div class="flex items-center gap-3 w-full max-w-[220px]">
-                <button class="text-white/80 hover:text-white/80 transition-colors flex-shrink-0"
-                  @click="store.setMuted(!store.muted)" :title="store.muted ? t('player.unmute') : t('player.mute')">
-                  <VolumeX v-if="store.muted" class="w-4 h-4" />
-                  <Volume2 v-else class="w-4 h-4" />
-                </button>
-                <Slider :model-value="store.muted ? 0 : store.volume" :min="0" :max="1" :step="0.01" class="flex-1"
-                  @update:model-value="(v) => store.setVolume(v)" />
-              </div>
+              <PlayerVolumeControl
+                :volume="store.volume"
+                :muted="store.muted"
+                @update:volume="(v) => store.setVolume(v)"
+                @update:muted="(v) => store.setMuted(v)"
+              />
             </div>
           </div>
 
@@ -197,58 +140,24 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
               leave-active-class="transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
               leave-from-class="opacity-100 translate-x-0" leave-to-class="opacity-0 translate-x-24">
               <!-- Right Column: Queue -->
-              <div v-if="store.isQueueOpen" key="queue"
-                class="absolute left-0 h-[85%] my-auto bg-black/30 backdrop-blur-3xl rounded-3xl border border-white/10 flex flex-col overflow-hidden shadow-2xl w-[50cqw] max-w-xl">
-                <div class="flex-1 flex flex-col h-full">
-                  <!-- Queue Header -->
-                  <div class="flex items-center justify-between px-6 py-4 border-b border-white/5">
-                    <div class="flex items-center gap-2 text-white/80">
-                      <ListMusic class="w-4 h-4" />
-                      <span class="text-sm font-semibold uppercase tracking-wider">{{ t('player.up_next') }}</span>
-                    </div>
-                    <button @click="store.isQueueOpen = false"
-                      class="text-white/40 hover:text-white transition-colors p-1 hover:bg-white/5 rounded-full">
-                      <X class="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <!-- Content Area -->
-                  <div class="flex-1 overflow-hidden">
-                    <TrackTable :tracks="store.queue" :show-album="false" :show-artwork="true" :scroll-to-current="true"
-                      class="dark"
-                      @play-track="(track, index) => store.playTracks(store.queue, index)" />
-                  </div>
-                </div>
-              </div>
+              <PlayerQueuePanel
+                v-if="store.isQueueOpen"
+                key="queue"
+                :queue="store.queue"
+                @close="store.isQueueOpen = false"
+                @play-track="(index) => store.playTracks(store.queue, index)"
+              />
 
               <!-- Right Column: Lyrics -->
-              <div v-else-if="store.isLyricsOpen" key="lyrics"
-                class="absolute left-0 h-[85%] my-auto bg-black/30 backdrop-blur-3xl rounded-3xl border border-white/10 flex flex-col overflow-hidden shadow-2xl w-[50cqw] max-w-xl">
-                <div class="flex-1 flex flex-col h-full">
-                  <!-- Lyrics Header -->
-                  <div class="flex items-center justify-between px-6 py-4 border-b border-white/5">
-                    <div class="flex items-center gap-2 text-white/80">
-                      <Mic2 class="w-4 h-4" />
-                      <span class="text-sm font-semibold uppercase tracking-wider">{{ t('player.lyrics') }}</span>
-                    </div>
-                    <button @click="store.isLyricsOpen = false"
-                      class="text-white/40 hover:text-white transition-colors p-1 hover:bg-white/5 rounded-full">
-                      <X class="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <!-- Content Area -->
-                  <div class="flex-1 overflow-hidden">
-                    <LyricsView
-                      :lyrics="store.lyrics?.content"
-                      :is-loading="store.lyricsLoading"
-                      :current-position="store.position"
-                      class="dark"
-                      @seek="(time) => store.seek(time)"
-                    />
-                  </div>
-                </div>
-              </div>
+              <PlayerLyricsPanel
+                v-else-if="store.isLyricsOpen"
+                key="lyrics"
+                :lyrics="store.lyrics?.content"
+                :loading="store.lyricsLoading"
+                :position="store.position"
+                @close="store.isLyricsOpen = false"
+                @seek="(time) => store.seek(time)"
+              />
             </Transition>
           </div>
         </div>
