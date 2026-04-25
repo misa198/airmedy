@@ -1,24 +1,40 @@
-# macOS FFmpeg Static Libraries
+# FFmpeg Static Libraries
 
-Pre-built minimal FFmpeg static libraries for macOS. Required for non-AVFoundation audio formats (OGG, OPUS, APE, WavPack, DSD).
+Pre-built minimal FFmpeg static libraries. Required for non-native audio formats (OGG, OPUS, APE, WavPack, DSD).
 
 ## Directory Structure
 
 ```
-darwin/
-  arm64/   libavcodec.a  libavformat.a  libavutil.a  libswresample.a
-  amd64/   libavcodec.a  libavformat.a  libavutil.a  libswresample.a
+ffmpeg_libs/
+  include/              Headers (shared across all platforms)
+  darwin/
+    arm64/              macOS Apple Silicon
+    amd64/              macOS Intel
+  linux/
+    amd64/              Linux x86_64
+    arm64/              Linux ARM64
+  windows/
+    amd64/              Windows x86_64
 ```
 
-## Rebuilding
+## Building
 
-Run from the repo root:
+| Platform | Script | Shell |
+|----------|--------|-------|
+| macOS | `bash scripts/build-ffmpeg-darwin.sh` | Terminal |
+| Linux | `bash scripts/build-ffmpeg-linux.sh` | bash |
+| Windows | `bash scripts/build-ffmpeg-windows.sh` | MSYS2 MINGW64 |
 
-```bash
-bash scripts/build-ffmpeg-darwin.sh
+### Prerequisites
+
+**macOS:** Xcode CLI tools. `nasm` optional (`brew install nasm` for SIMD).
+
+**Linux:** `gcc make curl`. `nasm` optional (`apt install nasm`). For arm64 cross-compile: `apt install gcc-aarch64-linux-gnu`.
+
+**Windows (MSYS2 MINGW64):**
 ```
-
-This downloads FFmpeg source, builds minimal static libs for both arm64 and amd64, and copies them here. Requires Xcode Command Line Tools and `nasm` (`brew install nasm`).
+pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-nasm make diffutils curl
+```
 
 ## Included Codecs/Demuxers
 

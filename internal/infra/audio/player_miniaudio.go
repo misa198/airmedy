@@ -5,9 +5,6 @@ package audio
 /*
 #cgo CFLAGS: -I${SRCDIR}/miniaudio -I${SRCDIR} -std=c11
 
-#cgo linux  pkg-config: libavcodec libavformat libavutil libswresample
-#cgo linux  LDFLAGS: -lpthread -lm -ldl
-
 
 #include "miniaudio_wrapper.h"
 #include <stdlib.h>

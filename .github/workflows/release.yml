@@ -36,8 +36,7 @@ jobs:
             {"os":"macos","arch":"arm64","runner":"macos-latest","task_prefix":"darwin","ext":""},
             {"os":"linux","arch":"amd64","runner":"ubuntu-latest","task_prefix":"linux","ext":""},
             {"os":"linux","arch":"arm64","runner":"ubuntu-24.04-arm","task_prefix":"linux","ext":""},
-            {"os":"windows","arch":"amd64","runner":"windows-latest","task_prefix":"windows","ext":".exe"},
-            {"os":"windows","arch":"arm64","runner":"windows-latest","task_prefix":"windows","ext":".exe"}
+            {"os":"windows","arch":"amd64","runner":"windows-latest","task_prefix":"windows","ext":".exe"}
           ]}'
           MATRIX=$(echo "$ALL" | jq -c --arg os "$OS" --arg arch "$ARCH" \
             '.include |= map(select(($os=="all" or .os==$os) and ($arch=="all" or .arch==$arch)))')
@@ -125,33 +124,6 @@ jobs:
           export CGO_ENABLED=1
           export PKG_CONFIG_PATH="/mingw64/lib/pkgconfig"
           wails3 task windows:build ARCH=amd64
-
-      # ── Windows arm64 (Zig cross-compile; FFmpeg dynamic via MSYS2 import libs) ──
-      - name: Install Zig (Windows arm64)
-        if: matrix.os == 'windows' && matrix.arch == 'arm64'
-        uses: goto-bus-stop/setup-zig@v2
-        with:
-          version: 0.14.0
-
-      - name: Install Windows arm64 FFmpeg via MSYS2
-        if: matrix.os == 'windows' && matrix.arch == 'arm64'
-        shell: C:\msys64\usr\bin\bash.exe -eo pipefail {0}
-        run: pacman -S --noconfirm --needed mingw-w64-x86_64-ffmpeg mingw-w64-x86_64-pkg-config mingw-w64-x86_64-gcc
-
-      - name: Build (Windows arm64)
-        if: matrix.os == 'windows' && matrix.arch == 'arm64'
-        shell: C:\msys64\usr\bin\bash.exe -eo pipefail {0}
-        env:
-          MSYS2_PATH_TYPE: inherit
-        run: |
-          cd "${{ github.workspace }}"
-          export PATH="/mingw64/bin:$PATH"
-          export CGO_ENABLED=1
-          export CC="zig cc -target aarch64-windows-gnu"
-          export PKG_CONFIG_PATH="/mingw64/lib/pkgconfig"
-          export CGO_CFLAGS="$(pkg-config --cflags libavcodec libavformat libavutil libswresample)"
-          export CGO_LDFLAGS="$(pkg-config --libs libavcodec libavformat libavutil libswresample)"
-          wails3 task windows:build ARCH=arm64
 
       # ── Artifact ────────────────────────────────────────────────────────
       - name: Stage artifact
