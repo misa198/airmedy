@@ -4,7 +4,7 @@
 # type(scope): description
 commit_msg_file=$1
 commit_msg=$(cat "$commit_msg_file")
-pattern="^(feat|fix|chore|docs|style|refactor|perf|test)(\([a-z0-9_-]+\))?: .+"
+pattern="^(feat|fix|chore|docs|style|refactor|perf|test|build|ci)(\([a-z0-9_-]+\))?: .+"
 
 if [[ ! $commit_msg =~ $pattern ]]; then
     echo "Error: Invalid commit message format."

@@ -53,6 +53,10 @@ tasks:
       GOOS: windows
       CGO_ENABLED: '{{.CGO_ENABLED | default "1"}}'
       GOARCH: '{{.ARCH | default ARCH}}'
+      PATH: 'C:\msys64\mingw64\bin;{{env "PATH"}}'
+      CC: C:\msys64\mingw64\bin\gcc.exe
+      CGO_CFLAGS: -IC:\msys64\mingw64\include
+      CGO_LDFLAGS: -LC:\msys64\mingw64\lib
 
   build:docker:
     summary: Cross-compiles for Windows using Docker with Zig (for CGO builds on non-Windows)
