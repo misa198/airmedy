@@ -4,8 +4,15 @@ import { useRoute, useRouter } from 'vue-router'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { Artist, AlbumDTO, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import GroupedAlbumList from '../components/GroupedAlbumList.vue'
-import { User, Play, Disc, Music } from 'lucide-vue-next'
+import { User, Shuffle, Disc, Music, Play, MoreVertical } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
+import { useI18n } from 'vue-i18n'
+import { useContextMenu } from '@/composables/useContextMenu'
+import { useGroupContextMenu } from '@/composables/useGroupContextMenu'
+import ContextMenu from '../components/ContextMenu.vue'
+import DetailsButton from '@/components/ui/DetailsButton.vue'
+
+const { t } = useI18n()
 
 const route = useRoute()
 const router = useRouter()
@@ -14,6 +21,13 @@ const artist = ref<Artist | null>(null)
 const albums = ref<AlbumDTO[]>([])
 const tracks = ref<TrackDTO[]>([])
 const isLoading = ref(true)
+
+const contextMenu = useContextMenu()
+const { buildMenuItems } = useGroupContextMenu()
+
+function openContextMenu(e: MouseEvent) {
+  contextMenu.open(e, buildMenuItems(tracks.value))
+}
 
 const loadArtistDetails = async (id: string) => {
   isLoading.value = true
@@ -51,8 +65,10 @@ watch(() => route.params.id, (newId) => {
 
     <div v-else-if="artist" class="flex-1 overflow-y-auto">
       <!-- Artist Hero Section -->
-      <div class="p-8 md:p-12 flex flex-col md:flex-row gap-8 items-center bg-gradient-to-b from-dynamic-surface to-transparent border-b border-foreground/[0.06]">
-        <div class="w-32 h-32 md:w-42 md:h-42 rounded-full shadow-2xl overflow-hidden ring-2 ring-foreground/[0.08] bg-foreground/5 flex-shrink-0">
+      <div
+        class="p-8 md:p-12 flex flex-col md:flex-row gap-8 items-center bg-gradient-to-b from-dynamic-surface to-transparent border-b border-foreground/[0.06]">
+        <div
+          class="w-32 h-32 xl:w-42 xl:h-42 rounded-full shadow-2xl overflow-hidden ring-2 ring-foreground/[0.08] bg-foreground/5 flex-shrink-0">
           <div class="w-full h-full flex items-center justify-center text-foreground/10">
             <User class="w-16 h-16 lg:w-24 lg:h-24" />
           </div>
@@ -60,21 +76,28 @@ watch(() => route.params.id, (newId) => {
 
         <div class="flex-1 text-center md:text-left space-y-4 @container min-w-0">
           <div class="space-y-1">
-            <h1 class="text-3xl @sm:text-4xl @md:text-5xl @lg:text-7xl font-bold tracking-tight line-clamp-2">{{ artist.name || 'Unknown Artist' }}</h1>
-            <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 text-foreground/40">
-              <span class="flex items-center gap-1"><Disc class="w-4 h-4" /> {{ albums.length }} albums</span>
-              <span class="flex items-center gap-1"><Music class="w-4 h-4" /> {{ tracks.length }} songs</span>
+            <h1
+              class="text-3xl @sm:text-4xl @md:text-5xl @lg:text-7xl font-bold tracking-tight line-clamp-2 hyphens-auto">
+              {{
+                artist.name || t('library.unknown_artist') }}</h1>
+            <div
+              class="text-sm flex flex-wrap items-center justify-center md:justify-start gap-4 text-foreground/40">
+              <span class="flex items-center gap-1">
+                <Disc class="w-4 h-4" /> {{ t('artist.albums_count', { count: albums.length }) }}
+              </span>
+              <span class="flex items-center gap-1">
+                <Music class="w-4 h-4" /> {{ t('artist.songs_count', { count: tracks.length }) }}
+              </span>
             </div>
           </div>
 
-          <div class="flex items-center justify-center md:justify-start gap-4">
-            <button
-              class="px-8 py-3 bg-foreground text-background rounded-full font-bold shadow-lg hover:scale-105 transition-transform flex items-center gap-2"
-              @click="playerStore.playTracks(tracks, 0); playerStore.setShuffle(true)"
-            >
-              <Play class="w-5 h-5 fill-current" />
-              Shuffle Play
-            </button>
+          <div class="flex items-center justify-center md:justify-start gap-4 flex-wrap">
+            <DetailsButton :icon="Play" :label="t('common.play')"
+              @click="playerStore.playTracks(tracks, 0); playerStore.setShuffle(false)" />
+            <div class="flex gap-2">
+              <DetailsButton :icon="Shuffle" variant="outline" @click="playerStore.shuffleTracks(tracks)" />
+              <DetailsButton :icon="MoreVertical" variant="outline" @click="openContextMenu" />
+            </div>
           </div>
         </div>
       </div>
@@ -83,5 +106,8 @@ watch(() => route.params.id, (newId) => {
         <GroupedAlbumList :tracks="tracks" :albums="albums" />
       </div>
     </div>
+
+    <ContextMenu :visible="contextMenu.visible.value" :x="contextMenu.x.value" :y="contextMenu.y.value"
+      :items="contextMenu.items.value" @close="contextMenu.close()" />
   </div>
 </template>

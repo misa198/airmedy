@@ -34,10 +34,34 @@ func (s *QueueService) SetQueue(tracks []*domain.TrackDTO, startIndex int) {
 
 	s.originalList = tracks
 	if s.shuffle {
-		s.rebuildShuffle(startIndex)
+		s.rebuildShuffle(startIndex, false)
 	} else {
 		s.currentIndex = startIndex
 	}
+}
+
+// ShuffleTracks replaces the queue, enables shuffle, and shuffles all tracks.
+func (s *QueueService) ShuffleTracks(tracks []*domain.TrackDTO) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.originalList = tracks
+	s.shuffle = true
+
+	if len(tracks) == 0 {
+		s.shuffledList = nil
+		s.currentIndex = -1
+		return
+	}
+
+	shuffled := make([]*domain.TrackDTO, len(tracks))
+	copy(shuffled, tracks)
+	s.rng.Shuffle(len(shuffled), func(i, j int) {
+		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
+	})
+
+	s.shuffledList = shuffled
+	s.currentIndex = 0
 }
 
 // GetCurrentTrack returns the track currently at the head of the queue.
@@ -111,7 +135,10 @@ func (s *QueueService) Previous() *domain.TrackDTO {
 func (s *QueueService) InsertAfterCurrent(track *domain.TrackDTO) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.insertAfterCurrentLocked(track)
+}
 
+func (s *QueueService) insertAfterCurrentLocked(track *domain.TrackDTO) {
 	list := s.activeList()
 
 	// Currently playing — no-op.
@@ -163,6 +190,18 @@ func (s *QueueService) InsertAfterCurrent(track *domain.TrackDTO) {
 	}
 }
 
+// InsertListAfterCurrent inserts a list of tracks immediately after the current position.
+func (s *QueueService) InsertListAfterCurrent(tracks []*domain.TrackDTO) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Insert in reverse order using the locked version to maintain correct final order
+	// and keep implementation simple while avoiding repeated locking.
+	for i := len(tracks) - 1; i >= 0; i-- {
+		s.insertAfterCurrentLocked(tracks[i])
+	}
+}
+
 func sliceRemove(list []*domain.TrackDTO, at int) []*domain.TrackDTO {
 	out := make([]*domain.TrackDTO, len(list)-1)
 	copy(out, list[:at])
@@ -189,7 +228,7 @@ func (s *QueueService) SetShuffle(enabled bool) {
 
 	s.shuffle = enabled
 	if s.shuffle {
-		s.rebuildShuffle(s.currentIndex)
+		s.rebuildShuffle(s.currentIndex, true)
 	} else {
 		// Restore original index
 		if s.currentIndex >= 0 && s.currentIndex < len(s.shuffledList) {
@@ -227,7 +266,7 @@ func (s *QueueService) activeList() []*domain.TrackDTO {
 	return s.originalList
 }
 
-func (s *QueueService) rebuildShuffle(keepIndex int) {
+func (s *QueueService) rebuildShuffle(keepIndex int, pickRandom bool) {
 	if len(s.originalList) == 0 {
 		s.shuffledList = nil
 		s.currentIndex = -1
@@ -239,7 +278,11 @@ func (s *QueueService) rebuildShuffle(keepIndex int) {
 	copy(shuffled, s.originalList)
 
 	var currentTrack *domain.TrackDTO
-	if keepIndex >= 0 && keepIndex < len(s.originalList) {
+	if pickRandom {
+		idx := s.rng.Intn(len(shuffled))
+		currentTrack = shuffled[idx]
+		shuffled = append(shuffled[:idx], shuffled[idx+1:]...)
+	} else if keepIndex >= 0 && keepIndex < len(s.originalList) {
 		currentTrack = s.originalList[keepIndex]
 		// Remove it from the list to shuffle
 		shuffled = append(shuffled[:keepIndex], shuffled[keepIndex+1:]...)

@@ -4,9 +4,13 @@ import { useRoute, useRouter } from 'vue-router'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { AlbumDTO, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import TrackTable from '../components/TrackTable.vue'
-import { Disc, User, Play, Clock, Calendar, ArrowLeft, MoreVertical, Music } from 'lucide-vue-next'
+import { Disc, User, Play, Clock, Calendar, ArrowLeft, MoreVertical, Music, Shuffle } from 'lucide-vue-next'
 import { usePlayerStore, type ThemeColors } from '../stores/player'
 import { hexToRgba } from '../lib/utils'
+import { useContextMenu } from '@/composables/useContextMenu'
+import { useGroupContextMenu } from '@/composables/useGroupContextMenu'
+import ContextMenu from '../components/ContextMenu.vue'
+import DetailsButton from '@/components/ui/DetailsButton.vue'
 
 const playerStore = usePlayerStore()
 
@@ -19,6 +23,13 @@ const albumTheme = ref<ThemeColors | null>(null)
 
 const scrollContainerRef = ref<HTMLElement | null>(null)
 const lastScrollTop = ref(0)
+
+const contextMenu = useContextMenu()
+const { buildMenuItems } = useGroupContextMenu()
+
+function openContextMenu(e: MouseEvent) {
+  contextMenu.open(e, buildMenuItems(tracks.value))
+}
 
 const handleScroll = (event: Event) => {
   const target = event.target as HTMLElement
@@ -99,7 +110,7 @@ const formatTotalDuration = (tracks: TrackDTO[]) => {
         <!-- Album Details Hero -->
         <div class="px-8 pb-8 md:px-12 md:pb-12 pt-4 flex flex-col md:flex-row gap-8 items-end">
           <div
-            class="w-48 h-48 md:w-64 md:h-64 rounded-lg shadow-2xl overflow-hidden ring-1 ring-foreground/[0.08] bg-foreground/5 flex-shrink-0">
+            class="w-48 h-48 rounded-lg shadow-2xl overflow-hidden ring-1 ring-foreground/[0.08] bg-foreground/5 flex-shrink-0">
             <img v-if="album.artwork_key" :src="'/artwork/' + album.artwork_key" class="w-full h-full object-cover" />
             <div v-else class="w-full h-full flex items-center justify-center text-foreground/10">
               <Disc class="w-24 h-24" />
@@ -113,33 +124,33 @@ const formatTotalDuration = (tracks: TrackDTO[]) => {
               <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-foreground/40">
                 <div class="flex items-center gap-2 text-foreground font-semibold min-w-0">
                   <User class="w-4 h-4 flex-shrink-0" />
-                  <span class="line-clamp-1">{{album.artists?.map(a => a?.name).join(', ') || $t('library.unknown_artist')}}</span>
+                  <span class="line-clamp-1">{{album.artists?.map(a => a?.name).join(', ') ||
+                    $t('library.unknown_artist')}}</span>
                 </div>
-                <div v-if="album.year" class="flex items-center gap-2">
-                  <Calendar class="w-4 h-4" />
-                  <span>{{ album.year }}</span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <Music class="w-4 h-4" />
-                  <span>{{ tracks.length }} {{ $t('library.songs') }}</span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <Clock class="w-4 h-4" />
-                  <span>{{ formatTotalDuration(tracks) }}</span>
+                <div class="flex gap-2 text-sm items-end flex-wrap">
+                  <div v-if="album.year" class="flex items-center gap-2">
+                    <Calendar class="w-4 h-4" />
+                    <span>{{ album.year }}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <Music class="w-4 h-4" />
+                    <span>{{ tracks.length }} {{ $t('library.songs') }}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <Clock class="w-4 h-4" />
+                    <span>{{ formatTotalDuration(tracks) }}</span>
+                  </div>
                 </div>
               </div>
             </div>
 
             <div class="flex items-center gap-4 pt-2">
-              <button
-                class="px-8 py-3 bg-foreground text-background rounded-full font-bold shadow-lg hover:scale-105 transition-transform flex items-center gap-2"
-                @click="playerStore.playTracks(tracks, 0)">
-                <Play class="w-5 h-5 fill-current" />
-                {{ $t('common.play') }}
-              </button>
-              <button class="p-3 ring-1 ring-foreground/[0.08] rounded-full hover:bg-foreground/[0.06] transition-colors">
-                <MoreVertical class="w-5 h-5" />
-              </button>
+              <DetailsButton :icon="Play" :label="$t('common.play')"
+                @click="playerStore.playTracks(tracks, 0); playerStore.setShuffle(false)" />
+              <div class="flex gap-2">
+                <DetailsButton :icon="Shuffle" variant="outline" @click="playerStore.shuffleTracks(tracks)" />
+                <DetailsButton :icon="MoreVertical" variant="outline" @click="openContextMenu" />
+              </div>
             </div>
           </div>
         </div>
@@ -152,11 +163,13 @@ const formatTotalDuration = (tracks: TrackDTO[]) => {
       </div>
 
       <!-- Album Footer Metadata -->
-      <div v-if="album.copyright" class="px-8 pb-12 text-sm text-foreground/30 border-t border-foreground/[0.06] pt-8 mt-4">
-        <div class="flex items-center gap-2">
-          <span>{{ album.copyright }}</span>
-        </div>
+      <div v-if="album.copyright"
+        class="px-8 pb-12 text-sm text-foreground/30 border-t border-foreground/[0.06] pt-8 mt-4">
+        {{ album.copyright }}
       </div>
     </div>
+
+    <ContextMenu :visible="contextMenu.visible.value" :x="contextMenu.x.value" :y="contextMenu.y.value"
+      :items="contextMenu.items.value" @close="contextMenu.close()" />
   </div>
 </template>

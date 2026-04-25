@@ -158,7 +158,7 @@ func (r *trackRepository) GetByArtistID(ctx context.Context, artistID string) ([
 		LEFT JOIN artists art ON ta.artist_id = art.id
 		WHERE t.id IN (SELECT track_id FROM track_artists WHERE artist_id = ?)
 		GROUP BY t.id
-		ORDER BY t.year DESC, t.sort_title
+		ORDER BY t.year DESC, a.title, t.disc_number, t.track_number, t.sort_title
 	`, trackSelectFields)
 	var rows []trackRow
 	err := r.db.SelectContext(ctx, &rows, query, artistID)
@@ -179,19 +179,19 @@ func (r *trackRepository) GetByGenreID(ctx context.Context, genreID string) ([]*
 		LEFT JOIN artists art ON ta.artist_id = art.id
 		WHERE t.id IN (SELECT track_id FROM track_genres WHERE genre_id = ?)
 		GROUP BY t.id
-		ORDER BY t.sort_title
-	`, trackSelectFields)
-	var rows []trackRow
-	err := r.db.SelectContext(ctx, &rows, query, genreID)
-	if err != nil {
+		ORDER BY t.year DESC, a.title, t.disc_number, t.track_number, t.sort_title
+		`, trackSelectFields)
+		var rows []trackRow
+		err := r.db.SelectContext(ctx, &rows, query, genreID)
+		if err != nil {
 		return nil, fmt.Errorf("failed to get tracks by genre id: %w", err)
-	}
-	return r.scanTrackRows(rows), nil
-}
+		}
+		return r.scanTrackRows(rows), nil
+		}
 
-func (r *trackRepository) GetByComposerID(ctx context.Context, composerID string) ([]*domain.TrackDTO, error) {
-	query := fmt.Sprintf(`
-		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year, 
+		func (r *trackRepository) GetByComposerID(ctx context.Context, composerID string) ([]*domain.TrackDTO, error) {
+		query := fmt.Sprintf(`
+		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year,
 		       GROUP_CONCAT(art.name, '; ') AS artist_names,
 		       GROUP_CONCAT(art.id, '; ') AS artist_ids
 		FROM tracks t
@@ -200,8 +200,9 @@ func (r *trackRepository) GetByComposerID(ctx context.Context, composerID string
 		LEFT JOIN artists art ON ta.artist_id = art.id
 		WHERE t.id IN (SELECT track_id FROM track_composers WHERE composer_id = ?)
 		GROUP BY t.id
-		ORDER BY t.sort_title
-	`, trackSelectFields)
+		ORDER BY t.year DESC, a.title, t.disc_number, t.track_number, t.sort_title
+		`, trackSelectFields)
+
 	var rows []trackRow
 	err := r.db.SelectContext(ctx, &rows, query, composerID)
 	if err != nil {

@@ -42,6 +42,10 @@ export function PlayNext(track: domain$0.TrackDTO | null): $CancellablePromise<v
     return $Call.ByID(2410423757, track);
 }
 
+export function PlayNextTracks(tracks: (domain$0.TrackDTO | null)[]): $CancellablePromise<void> {
+    return $Call.ByID(948008917, tracks);
+}
+
 export function PlayTracks(tracks: (domain$0.TrackDTO | null)[], startIndex: number): $CancellablePromise<void> {
     return $Call.ByID(831343208, tracks, startIndex);
 }
@@ -68,6 +72,10 @@ export function SetShuffle(enabled: boolean): $CancellablePromise<void> {
 
 export function SetVolume(volume: number): $CancellablePromise<void> {
     return $Call.ByID(1067437308, volume);
+}
+
+export function ShuffleTracks(tracks: (domain$0.TrackDTO | null)[]): $CancellablePromise<void> {
+    return $Call.ByID(3550810531, tracks);
 }
 
 export function Stop(): $CancellablePromise<void> {

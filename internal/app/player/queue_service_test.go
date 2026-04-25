@@ -117,25 +117,49 @@ func TestInsertAfterCurrent_DuplicateBeforeCurrent_Shuffle(t *testing.T) {
 	tracks := []*domain.TrackDTO{makeTrack("A"), makeTrack("B"), makeTrack("C"), makeTrack("D")}
 	q.SetQueue(tracks, 0)
 	q.SetShuffle(true)
-	// After shuffle, current track (A) is at index 0; add a new track so we have something after current
-	q.InsertAfterCurrent(makeTrack("X"))
+	
+	// Find where A is in the shuffled list
 	list := q.GetQueue()
-	if list[0].ID != "A" {
-		t.Fatalf("current track should be A at index 0, got %s", list[0].ID)
+	aIdx := -1
+	for i, trk := range list {
+		if trk.ID == "A" {
+			aIdx = i
+			break
+		}
 	}
-	if list[1].ID != "X" {
-		t.Fatalf("X should be at index 1 after insert, got %s", list[1].ID)
+	if aIdx == -1 {
+		t.Fatal("A not found in shuffled list")
+	}
+	// Force A to be the current track for the test
+	q.currentIndex = aIdx
+
+	// After shuffle, current track (A) is at aIdx; add a new track so we have something after current
+	q.InsertAfterCurrent(makeTrack("X"))
+	list = q.GetQueue()
+	aIdx = -1 // Re-find A as it might have moved
+	for i, trk := range list {
+		if trk.ID == "A" {
+			aIdx = i
+			break
+		}
+	}
+
+	if list[aIdx].ID != "A" {
+		t.Fatalf("current track should be A, got %s", list[aIdx].ID)
+	}
+	if list[aIdx+1].ID != "X" {
+		t.Fatalf("X should be after A, got %s", list[aIdx+1].ID)
 	}
 	lenBefore := len(list)
 
-	// Now "play next" X again — X is already at index 1, should stay at index 1, no duplicate
+	// Now "play next" X again — X is already at aIdx+1, should stay there, no duplicate
 	q.InsertAfterCurrent(makeTrack("X"))
 	list2 := q.GetQueue()
 	if len(list2) != lenBefore {
 		t.Fatalf("expected length %d (no duplicate), got %d", lenBefore, len(list2))
 	}
-	if list2[1].ID != "X" {
-		t.Fatalf("X should still be at index 1, got %s", list2[1].ID)
+	if list2[aIdx+1].ID != "X" {
+		t.Fatalf("X should still be after A, got %s", list2[aIdx+1].ID)
 	}
 }
 

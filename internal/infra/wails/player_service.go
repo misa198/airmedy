@@ -50,6 +50,10 @@ func (s *PlayerService) PlayTracks(tracks []*domain.TrackDTO, startIndex int) er
 	return s.service.PlayTracks(tracks, startIndex)
 }
 
+func (s *PlayerService) ShuffleTracks(tracks []*domain.TrackDTO) error {
+	return s.service.ShuffleTracks(tracks)
+}
+
 func (s *PlayerService) SetShuffle(enabled bool) error {
 	return s.service.SetShuffle(enabled)
 }
@@ -68,4 +72,8 @@ func (s *PlayerService) GetQueue() []*domain.TrackDTO {
 
 func (s *PlayerService) PlayNext(track *domain.TrackDTO) {
 	s.service.PlayNext(track)
+}
+
+func (s *PlayerService) PlayNextTracks(tracks []*domain.TrackDTO) {
+	s.service.PlayNextTracks(tracks)
 }

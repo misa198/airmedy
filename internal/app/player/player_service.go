@@ -189,6 +189,24 @@ func (s *PlayerService) PlayTracks(tracks []*domain.TrackDTO, startIndex int) er
 	return s.loadAndPlay(track)
 }
 
+// ShuffleTracks shuffles the given tracks and starts playing the first one.
+func (s *PlayerService) ShuffleTracks(tracks []*domain.TrackDTO) error {
+	s.queue.ShuffleTracks(tracks)
+	track := s.queue.GetCurrentTrack()
+	if track == nil {
+		return nil
+	}
+	err := s.loadAndPlay(track)
+	if err == nil {
+		s.emitStatus()
+		app := application.Get()
+		if app != nil && app.Event != nil {
+			app.Event.Emit("player:queue-updated", s.queue.GetQueue())
+		}
+	}
+	return err
+}
+
 // SetShuffle enables or disables shuffling.
 func (s *PlayerService) SetShuffle(enabled bool) error {
 	s.queue.SetShuffle(enabled)
@@ -206,6 +224,15 @@ func (s *PlayerService) SetRepeatMode(mode domain.RepeatMode) error {
 // PlayNext inserts a track immediately after the currently playing track.
 func (s *PlayerService) PlayNext(track *domain.TrackDTO) {
 	s.queue.InsertAfterCurrent(track)
+	app := application.Get()
+	if app != nil && app.Event != nil {
+		app.Event.Emit("player:queue-updated", s.queue.GetQueue())
+	}
+}
+
+// PlayNextTracks inserts a list of tracks immediately after the currently playing track.
+func (s *PlayerService) PlayNextTracks(tracks []*domain.TrackDTO) {
+	s.queue.InsertListAfterCurrent(tracks)
 	app := application.Get()
 	if app != nil && app.Event != nil {
 		app.Event.Emit("player:queue-updated", s.queue.GetQueue())

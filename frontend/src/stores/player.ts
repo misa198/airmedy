@@ -202,6 +202,12 @@ export const usePlayerStore = defineStore('player', () => {
     await PlayerService.PlayTracks(tracks, startIndex)
   }
 
+  async function shuffleTracks(tracks: TrackDTO[]) {
+    if (!tracks.length) return
+    await PlayerService.ShuffleTracks(tracks)
+    // The backend emits player:status and player:queue-updated which will update our local state
+  }
+
 
   function toggleQueue() {
     isQueueOpen.value = !isQueueOpen.value
@@ -267,6 +273,7 @@ export const usePlayerStore = defineStore('player', () => {
     setShuffle,
     setRepeatMode,
     playTracks,
+    shuffleTracks,
     toggleQueue,
     toggleLyrics,
     openTrackInfo,

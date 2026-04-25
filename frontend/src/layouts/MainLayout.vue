@@ -12,8 +12,8 @@ import { RouterView } from 'vue-router'
 import { ref, computed, onUnmounted } from 'vue'
 
 const SIDEBAR_MIN_WIDTH = 230;
-const SIDEBAR_MAX_WIDTH = 400;
-const OVERLAY_BREAKPOINT = 1400;
+const SIDEBAR_MAX_WIDTH = 250;
+const OVERLAY_BREAKPOINT = 1240;
 const playerStore = usePlayerStore()
 const deviceStore = useDeviceStore()
 

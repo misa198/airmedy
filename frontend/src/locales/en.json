@@ -151,6 +151,8 @@
     "no_results": "No results found",
     "songs": "songs",
     "unknown_artist": "Unknown Artist",
+    "unknown_composer": "Unknown Composer",
+    "unknown_genre": "Unknown Genre",
     "unknown_title": "Unknown Title",
     "unknown_album": "Unknown Album",
     "unknown": "Unknown",
@@ -171,6 +173,10 @@
     "remove_from_library": "Remove from Library",
     "track_info": "Track info"
   },
+  "artist": {
+    "albums_count": "{count} albums",
+    "songs_count": "{count} songs"
+  },
   "track_info": {
     "title": "Track Info",
     "details": "Details",
@@ -183,5 +189,11 @@
     "sample_rate": "Sample Rate",
     "file_size": "File Size",
     "lossless": "Lossless"
+  },
+  "composer": {
+    "compositions_count": "{count} compositions"
+  },
+  "genre": {
+    "tracks_count": "{count} tracks"
   }
 }

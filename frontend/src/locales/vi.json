@@ -150,6 +150,8 @@
     "no_results": "Không tìm thấy kết quả",
     "songs": "bài hát",
     "unknown_artist": "Nghệ sĩ không xác định",
+    "unknown_composer": "Nhà soạn nhạc không xác định",
+    "unknown_genre": "Thể loại không xác định",
     "unknown_title": "Tiêu đề không xác định",
     "unknown_album": "Album không xác định",
     "unknown": "Không xác định",
@@ -182,5 +184,15 @@
     "sample_rate": "Tỷ lệ lấy mẫu",
     "file_size": "Kích thước tệp",
     "lossless": "Lossless"
+  },
+  "artist": {
+    "albums_count": "{count} album",
+    "songs_count": "{count} bài hát"
+  },
+  "composer": {
+    "compositions_count": "{count} tác phẩm"
+  },
+  "genre": {
+    "tracks_count": "{count} bài hát"
   }
 }
