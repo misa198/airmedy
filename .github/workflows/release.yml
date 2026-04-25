@@ -39,17 +39,19 @@ jobs:
             {"os":"windows","arch":"amd64","runner":"windows-latest","task_prefix":"windows","ext":".exe"},
             {"os":"windows","arch":"arm64","runner":"windows-latest","task_prefix":"windows","ext":".exe"}
           ]}'
-          MATRIX=$(echo "$ALL" | jq --arg os "$OS" --arg arch "$ARCH" \
-            '.include |= map(select(($os=="all" or .os==$os) and ($arch=="all" or .arch==$arch))) | {include:.}')
-          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+          MATRIX=$(echo "$ALL" | jq -c --arg os "$OS" --arg arch "$ARCH" \
+            '.include |= map(select(($os=="all" or .os==$os) and ($arch=="all" or .arch==$arch)))')
+          echo "matrix<<EOF" >> $GITHUB_OUTPUT
+          echo "$MATRIX" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
   build:
-    name: ${{ matrix.os }}-${{ matrix.arch }}
     needs: prepare
-    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    name: ${{ matrix.os }}-${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
 
     steps:
       - uses: actions/checkout@v4
@@ -65,7 +67,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
 
@@ -113,9 +115,12 @@ jobs:
 
       - name: Build (Windows amd64)
         if: matrix.os == 'windows' && matrix.arch == 'amd64'
-        shell: C:\msys64\usr\bin\bash.exe --login -eo pipefail {0}
+        shell: C:\msys64\usr\bin\bash.exe -eo pipefail {0}
+        env:
+          MSYS2_PATH_TYPE: inherit
         run: |
-          export PATH="/mingw64/bin:/c/hostedtoolcache/windows/go/$(go version | awk '{print $3}' | sed 's/go//')/x64/bin:$PATH"
+          cd "${{ github.workspace }}"
+          export PATH="/mingw64/bin:$PATH"
           export CC=gcc
           export CGO_ENABLED=1
           export PKG_CONFIG_PATH="/mingw64/lib/pkgconfig"
@@ -130,19 +135,23 @@ jobs:
 
       - name: Install Windows arm64 FFmpeg via MSYS2
         if: matrix.os == 'windows' && matrix.arch == 'arm64'
-        shell: C:\msys64\usr\bin\bash.exe --login -eo pipefail {0}
-        run: pacman -S --noconfirm --needed mingw-w64-x86_64-ffmpeg
+        shell: C:\msys64\usr\bin\bash.exe -eo pipefail {0}
+        run: pacman -S --noconfirm --needed mingw-w64-x86_64-ffmpeg mingw-w64-x86_64-pkg-config mingw-w64-x86_64-gcc
 
       - name: Build (Windows arm64)
         if: matrix.os == 'windows' && matrix.arch == 'arm64'
-        shell: C:\msys64\usr\bin\bash.exe --login -eo pipefail {0}
+        shell: C:\msys64\usr\bin\bash.exe -eo pipefail {0}
+        env:
+          MSYS2_PATH_TYPE: inherit
         run: |
+          cd "${{ github.workspace }}"
           export PATH="/mingw64/bin:$PATH"
           export CGO_ENABLED=1
           export CC="zig cc -target aarch64-windows-gnu"
+          export PKG_CONFIG_PATH="/mingw64/lib/pkgconfig"
           export CGO_CFLAGS="$(pkg-config --cflags libavcodec libavformat libavutil libswresample)"
           export CGO_LDFLAGS="$(pkg-config --libs libavcodec libavformat libavutil libswresample)"
-          PKG_CONFIG_PATH=/mingw64/lib/pkgconfig task windows:build ARCH=arm64
+          task windows:build ARCH=arm64
 
       # ── Artifact ────────────────────────────────────────────────────────
       - name: Stage artifact
@@ -175,6 +184,6 @@ jobs:
           tag_name: ${{ github.event.inputs.version }}
           name: ${{ github.event.inputs.version }}
           prerelease: true
-          generate_release_notes: true
+          generate_release_notes: false
           fail_on_unmatched_files: false
           files: artifacts/**
