@@ -38,6 +38,15 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
+  const updateLanguage = async (newLanguage: string) => {
+    language.value = newLanguage
+    try {
+      await SettingsService.SaveSettings({ theme: theme.value, language: newLanguage })
+    } catch (err) {
+      console.error('Failed to save language setting:', err)
+    }
+  }
+
   // Watch for system theme changes if set to 'system'
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     if (theme.value === 'system') {
@@ -49,6 +58,7 @@ export const useAppStore = defineStore('app', () => {
     theme,
     language,
     loadSettings,
-    updateTheme
+    updateTheme,
+    updateLanguage
   }
 })

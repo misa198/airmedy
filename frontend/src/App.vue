@@ -50,6 +50,13 @@ watch(
   },
 )
 
+watch(
+  () => appStore.language,
+  (newLang) => {
+    locale.value = newLang
+  },
+)
+
 watch(() => playerStore.playerMode, (newMode) => {
   if (newMode === 'fullscreen') {
     deviceStore.checkFullscreen()

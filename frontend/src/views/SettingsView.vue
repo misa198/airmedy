@@ -273,7 +273,7 @@ onUnmounted(() => {
             </div>
             <Select 
               :model-value="appStore.language" 
-              @update:model-value="val => { appStore.language = val; appStore.updateTheme(appStore.theme) }"
+              @update:model-value="val => appStore.updateLanguage(val)"
             >
               <SelectTrigger class="w-[180px] bg-foreground/[0.06] border-0">
                 <SelectValue />
