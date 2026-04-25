@@ -1,0 +1,4 @@
+-- We can't easily drop a column in SQLite < 3.35.0, but we can usually just leave it if needed.
+-- However, for a proper "down" migration we'd need to recreate the table. 
+-- For simplicity in this dev environment, I'll just note it.
+-- ALTER TABLE playlists DROP COLUMN artwork_key;

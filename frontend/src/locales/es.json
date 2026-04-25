@@ -11,7 +11,9 @@
     "saving": "Guardando...",
     "create": "Crear",
     "on": "Activado",
-    "off": "Desactivado"
+    "off": "Desactivado",
+    "hr": "h",
+    "min": "min"
   },
   "settings": {
     "title": "Ajustes",

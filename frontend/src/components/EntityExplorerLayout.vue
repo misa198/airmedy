@@ -41,7 +41,7 @@ onActivated(() => {
 const filteredItems = computed(() => {
   if (!searchQuery.value) return props.items
   const query = searchQuery.value.toLowerCase()
-  return props.items.filter(item => 
+  return props.items.filter(item =>
     (item.name || '').toLowerCase().includes(query)
   )
 })
@@ -55,12 +55,8 @@ const filteredItems = computed(() => {
         <h1 class="text-2xl font-bold mb-4">{{ title }}</h1>
         <div class="relative">
           <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40" />
-          <Input
-            v-model="searchQuery"
-            type="text"
-            :placeholder="searchPlaceholder || `${$t('sidebar.search')}...`"
-            class="pl-10 pr-4"
-          />
+          <Input v-model="searchQuery" type="text" :placeholder="searchPlaceholder || `${$t('sidebar.search')}...`"
+            class="pl-10 pr-4" />
         </div>
       </div>
 
@@ -68,24 +64,13 @@ const filteredItems = computed(() => {
         <div v-if="isLoading" class="h-full flex items-center justify-center">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
-        
-        <RecycleScroller
-          v-else
-          ref="scrollerRef"
-          class="h-full px-3"
-          :items="filteredItems"
-          :item-size="56"
-          key-field="id"
-          v-slot="{ item }"
-          @scroll.passive="handleScroll"
-        >
-          <div
-            @click="emit('select', item.id)"
-            :class="[
-              'flex items-center gap-3 p-2 rounded-lg group transition-colors cursor-pointer mb-1',
-              selectedId === item.id ? 'bg-foreground/[0.08] text-foreground font-medium' : 'hover:bg-foreground/[0.04]'
-            ]"
-          >
+
+        <RecycleScroller v-else ref="scrollerRef" class="h-full px-3" :items="filteredItems" :item-size="56"
+          key-field="id" v-slot="{ item }" @scroll.passive="handleScroll">
+          <div @click="emit('select', item.id)" :class="[
+            'flex items-center gap-3 p-2 rounded-lg group transition-colors cursor-pointer mb-1',
+            selectedId === item.id ? 'bg-foreground/[0.08] text-foreground font-medium' : 'hover:bg-foreground/[0.04]'
+          ]">
             <div :class="[
               'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ring-1 transition-colors',
               selectedId === item.id ? 'bg-foreground/10 ring-foreground/[0.12]' : 'bg-foreground/5 ring-foreground/[0.06] group-hover:ring-foreground/[0.12]'
@@ -94,11 +79,8 @@ const filteredItems = computed(() => {
               <span v-else class="text-xs font-bold">{{ item.name.charAt(0).toUpperCase() }}</span>
             </div>
             <div class="flex-1 truncate font-medium">{{ item.name || $t('library.unknown') }}</div>
-            <button
-              v-if="selectedId !== item.id"
-              @click.stop="emit('play', item)"
-              class="p-1.5 opacity-0 group-hover:opacity-100 bg-foreground text-background rounded-full shadow-lg transition-all scale-90 hover:scale-100"
-            >
+            <button @click.stop="emit('play', item)"
+              class="p-1.5 opacity-0 group-hover:opacity-100 bg-foreground text-background rounded-full shadow-lg transition-all scale-90 hover:scale-100">
               <Play class="w-3 h-3 fill-current" />
             </button>
           </div>
@@ -109,7 +91,8 @@ const filteredItems = computed(() => {
     <!-- Right Column: Detail View -->
     <div class="flex-1 overflow-hidden bg-background relative">
       <slot v-if="selectedId"></slot>
-      <div v-if="!selectedId && !isLoading" class="h-full flex flex-col items-center justify-center text-foreground/40 animate-in fade-in duration-500">
+      <div v-if="!selectedId && !isLoading"
+        class="h-full flex flex-col items-center justify-center text-foreground/40 animate-in fade-in duration-500">
         <component :is="icon" v-if="icon" class="w-16 h-16 mb-4 opacity-10" />
         <p class="text-lg">{{ $t('library.select_item') }}</p>
       </div>

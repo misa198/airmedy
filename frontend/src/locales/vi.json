@@ -11,7 +11,9 @@
     "saving": "Đang lưu...",
     "create": "Tạo",
     "on": "Bật",
-    "off": "Tắt"
+    "off": "Tắt",
+    "hr": "giờ",
+    "min": "phút"
   },
   "settings": {
     "title": "Cài đặt",

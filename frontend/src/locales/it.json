@@ -11,7 +11,9 @@
     "saving": "Salvataggio...",
     "create": "Crea",
     "on": "Attivo",
-    "off": "Disattivo"
+    "off": "Disattivo",
+    "hr": "h",
+    "min": "min"
   },
   "settings": {
     "title": "Impostazioni",

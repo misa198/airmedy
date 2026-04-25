@@ -10,9 +10,11 @@
     "save": "Speichern",
     "saving": "Wird gespeichert...",
     "create": "Erstellen",
-    "on": "Ein",
-    "off": "Aus"
-  },
+    "on": "An",
+    "off": "Aus",
+    "hr": "Std.",
+    "min": "Min."
+    },
   "settings": {
     "title": "Einstellungen",
     "sync": {

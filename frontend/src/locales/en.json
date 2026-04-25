@@ -11,7 +11,9 @@
     "saving": "Saving...",
     "create": "Create",
     "on": "On",
-    "off": "Off"
+    "off": "Off",
+    "hr": "hr",
+    "min": "min"
   },
   "settings": {
     "title": "Settings",

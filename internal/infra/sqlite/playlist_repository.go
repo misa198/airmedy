@@ -45,7 +45,7 @@ func (r *playlistRepository) Save(ctx context.Context, p *domain.Playlist) error
 	p.CreatedAt = now
 	p.UpdatedAt = now
 
-	_, err := r.db.NamedExecContext(ctx, "INSERT INTO playlists (id, name, description, created_at, updated_at) VALUES (:id, :name, :description, :created_at, :updated_at)", p)
+	_, err := r.db.NamedExecContext(ctx, "INSERT INTO playlists (id, name, description, artwork_key, created_at, updated_at) VALUES (:id, :name, :description, :artwork_key, :created_at, :updated_at)", p)
 	if err != nil {
 		return fmt.Errorf("failed to save playlist: %w", err)
 	}
@@ -55,8 +55,8 @@ func (r *playlistRepository) Save(ctx context.Context, p *domain.Playlist) error
 func (r *playlistRepository) Update(ctx context.Context, p *domain.Playlist) error {
 	p.UpdatedAt = time.Now()
 	_, err := r.db.ExecContext(ctx,
-		"UPDATE playlists SET name = ?, description = ?, updated_at = ? WHERE id = ?",
-		p.Name, p.Description, p.UpdatedAt, p.ID,
+		"UPDATE playlists SET name = ?, description = ?, artwork_key = ?, updated_at = ? WHERE id = ?",
+		p.Name, p.Description, p.ArtworkKey, p.UpdatedAt, p.ID,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to update playlist: %w", err)

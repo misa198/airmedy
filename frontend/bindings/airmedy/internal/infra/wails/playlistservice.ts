@@ -35,14 +35,28 @@ export function GetPlaylistByID(id: string): $CancellablePromise<domain$0.Playli
     });
 }
 
+export function GetPlaylistColors(id: string): $CancellablePromise<domain$0.ThemeColors | null> {
+    return $Call.ByID(2874653605, id).then(($result: any) => {
+        return $$createType4($result);
+    });
+}
+
 export function GetPlaylistTracks(playlistID: string): $CancellablePromise<(domain$0.TrackDTO | null)[]> {
     return $Call.ByID(1937479585, playlistID).then(($result: any) => {
-        return $$createType5($result);
+        return $$createType7($result);
     });
+}
+
+export function RemovePlaylistArtwork(id: string): $CancellablePromise<void> {
+    return $Call.ByID(3995918165, id);
 }
 
 export function RemoveTrackFromPlaylist(playlistID: string, trackID: string): $CancellablePromise<void> {
     return $Call.ByID(1450009730, playlistID, trackID);
+}
+
+export function SelectAndSetPlaylistArtwork(id: string): $CancellablePromise<string> {
+    return $Call.ByID(140882432, id);
 }
 
 export function UpdatePlaylist(id: string, name: string, description: string): $CancellablePromise<void> {
@@ -53,6 +67,8 @@ export function UpdatePlaylist(id: string, name: string, description: string): $
 const $$createType0 = domain$0.Playlist.createFrom;
 const $$createType1 = $Create.Nullable($$createType0);
 const $$createType2 = $Create.Array($$createType1);
-const $$createType3 = domain$0.TrackDTO.createFrom;
+const $$createType3 = domain$0.ThemeColors.createFrom;
 const $$createType4 = $Create.Nullable($$createType3);
-const $$createType5 = $Create.Array($$createType4);
+const $$createType5 = domain$0.TrackDTO.createFrom;
+const $$createType6 = $Create.Nullable($$createType5);
+const $$createType7 = $Create.Array($$createType6);

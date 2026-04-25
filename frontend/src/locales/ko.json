@@ -9,10 +9,12 @@
     "cancel": "취소",
     "save": "저장",
     "saving": "저장 중...",
-    "create": "만들기",
+    "create": "생성",
     "on": "켜짐",
-    "off": "꺼짐"
-  },
+    "off": "꺼짐",
+    "hr": "시간",
+    "min": "분"
+    },
   "settings": {
     "title": "설정",
     "sync": {

@@ -11,7 +11,9 @@
     "saving": "Enregistrement...",
     "create": "Créer",
     "on": "Activé",
-    "off": "Désactivé"
+    "off": "Désactivé",
+    "hr": "h",
+    "min": "min"
   },
   "settings": {
     "title": "Paramètres",

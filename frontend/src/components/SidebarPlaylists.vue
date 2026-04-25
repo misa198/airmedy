@@ -3,6 +3,7 @@ import {
   Library,
   Plus,
   Music,
+  Heart,
   MoreHorizontal,
   Pencil,
   Trash2,
@@ -83,6 +84,12 @@ function openPlaylistContextMenu(playlist: Playlist, e: MouseEvent) {
 
     <!-- Playlist list -->
     <div class="space-y-0.5">
+      <SidebarItem
+        to="/playlists/favorites"
+        :icon="Heart"
+        :label="t('sidebar.favorites')"
+      />
+
       <SidebarItem
         v-for="playlist in playlistsStore.playlists"
         :key="playlist.id"

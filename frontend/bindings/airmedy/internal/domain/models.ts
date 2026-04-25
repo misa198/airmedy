@@ -547,6 +547,7 @@ export class Playlist {
     "id": string;
     "name": string;
     "description": string;
+    "artwork_key": string | null;
     "created_at": time$0.Time;
     "updated_at": time$0.Time;
 
@@ -560,6 +561,9 @@ export class Playlist {
         }
         if (!("description" in $$source)) {
             this["description"] = "";
+        }
+        if (!("artwork_key" in $$source)) {
+            this["artwork_key"] = null;
         }
         if (!("created_at" in $$source)) {
             this["created_at"] = null;

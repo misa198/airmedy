@@ -11,7 +11,9 @@
     "saving": "Salvando...",
     "create": "Criar",
     "on": "Ligado",
-    "off": "Desligado"
+    "off": "Desligado",
+    "hr": "h",
+    "min": "min"
   },
   "settings": {
     "title": "Configurações",

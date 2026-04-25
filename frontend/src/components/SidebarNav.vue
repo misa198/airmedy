@@ -9,7 +9,6 @@ import {
   PenTool,
   Search,
   Settings,
-  Heart,
 } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -23,7 +22,6 @@ const navItems = computed(() => [
   { name: t('sidebar.artists'), icon: Users, to: '/artists' },
   { name: t('sidebar.albums'), icon: Disc, to: '/albums' },
   { name: t('sidebar.tracks'), icon: Music, to: '/tracks' },
-  { name: t('sidebar.favorites'), icon: Heart, to: '/favorites' },
   { name: t('sidebar.genres'), icon: ListMusic, to: '/genres' },
   { name: t('sidebar.composers'), icon: PenTool, to: '/composers' },
 ])

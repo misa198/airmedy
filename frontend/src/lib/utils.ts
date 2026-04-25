@@ -19,3 +19,10 @@ export function hexToRgba(hex: string, alpha: number): string {
   const b = parseInt(clean.substring(4, 6), 16)
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
+
+export function formatTotalDuration(totalSeconds: number, t: (key: string) => string): string {
+  const hours = Math.floor(totalSeconds / 3600)
+  const mins = Math.floor((totalSeconds % 3600) / 60)
+  if (hours > 0) return `${hours} ${t('common.hr')} ${mins} ${t('common.min')}`
+  return `${mins} ${t('common.min')}`
+}
