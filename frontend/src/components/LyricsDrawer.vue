@@ -47,7 +47,7 @@ watch(activeIndex, (newIndex) => {
     <div class="flex items-center justify-between px-4 py-3 border-b border-foreground/[0.06] gap-2">
       <div class="flex items-center gap-2 font-semibold flex-shrink-0">
         <Mic2 class="w-4 h-4 text-primary" />
-        <span>{{ t('player.lyrics') }}</span>
+        <div class="max-w-[100px] truncate">{{ t('player.lyrics') }}</div>
       </div>
 
       <!-- View type toggle (only when synced lyrics are available) -->
@@ -56,12 +56,14 @@ watch(activeIndex, (newIndex) => {
         <div
           class="absolute inset-y-0.5 w-1/2 rounded-full bg-foreground/10 transition-transform duration-200 ease-in-out"
           :class="viewType === 'plain' ? 'translate-x-full' : 'translate-x-0'" />
-        <button class="relative z-10 px-2.5 py-1 rounded-full transition-colors duration-200 text-center"
+        <button
+          class="relative max-w-[70px] truncate z-10 px-2.5 py-1 rounded-full transition-colors duration-200 text-center"
           :class="viewType === 'synced' ? 'text-foreground' : 'text-foreground/40 hover:text-foreground/70'"
           @click="viewType = 'synced'">
           {{ t('player.synced') }}
         </button>
-        <button class="relative z-10 px-2.5 py-1 rounded-full transition-colors duration-200 text-center"
+        <button
+          class="relative relative max-w-[70px] truncate z-10 px-2.5 py-1 rounded-full transition-colors duration-200 text-center"
           :class="viewType === 'plain' ? 'text-foreground' : 'text-foreground/40 hover:text-foreground/70'"
           @click="viewType = 'plain'">
           {{ t('player.plain') }}
@@ -95,8 +97,7 @@ watch(activeIndex, (newIndex) => {
         class="h-full overflow-y-auto px-4 py-10 scrollbar-hide">
         <div class="space-y-4">
           <div v-for="(line, index) in syncedLines" :key="index" ref="lineRefs"
-            class="transition-all duration-150 cursor-pointer select-none leading-snug py-1 origin-left"
-            :class="[
+            class="transition-all duration-150 cursor-pointer select-none leading-snug py-1 origin-left" :class="[
               index === activeIndex
                 ? 'text-foreground opacity-100'
                 : index < activeIndex

@@ -18,7 +18,7 @@ const artworkUrl = computed(() => {
 const isLossless = computed(() => {
   if (!track.value) return false
   const fmt = track.value.format.toLowerCase()
-  return ['flac', 'alac', 'wav', 'aiff', 'dsf', 'dff', 'ape'].includes(fmt) || track.value.bitrate >= 1411 || track.value.sample_rate >= 44100
+  return ['flac', 'alac', 'wav', 'aiff', 'dsf', 'dff', 'ape'].includes(fmt) || track.value.bitrate >= 1411 || track.value.sample_rate >= 96000
 })
 
 const details = computed(() => {
@@ -85,7 +85,7 @@ function formatFileSize(bytes: number) {
         <!-- Basic Info -->
         <div class="text-center mb-8 w-full px-4">
           <h1 class="text-lg font-bold mb-1 tracking-tight leading-tight">{{ track.title || t('library.unknown_title')
-          }}</h1>
+            }}</h1>
           <p class="text-xs text-foreground/50 font-medium mb-3">
             {{ track.raw_artist_names || t('library.unknown_artist') }}
             <span v-if="track.album?.title" class="mx-1 opacity-30">•</span>

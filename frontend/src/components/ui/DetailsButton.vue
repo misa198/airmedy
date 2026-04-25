@@ -28,6 +28,6 @@ const Icon = toRef(props, 'icon')
         'px-4 gap-x-2': label
     }">
         <Icon class="w-5 h-5 fill-current" />
-        <span class="text-sm @lg:text-medium">{{ label }}</span>
+        <span class="text-sm @lg:text-medium font-bold">{{ label }}</span>
     </button>
 </template>

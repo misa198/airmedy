@@ -32,10 +32,28 @@ const forwarded = useForwardPropsEmits(props, emits)
       )"
     >
       <SelectViewport
-        :class="cn('p-1.5', position === 'popper' && 'h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]')"
+        :class="cn('p-1.5', position === 'popper' && 'w-full min-w-[var(--radix-select-trigger-width)]')"
       >
-        <slot />
+        <div :class="cn('overflow-x-hidden overflow-y-auto select-scrollbar', position === 'popper' && 'max-h-[min(var(--radix-select-content-available-height),20rem)]')">
+          <slot />
+        </div>
       </SelectViewport>
     </SelectContent>
   </SelectPortal>
 </template>
+
+<style scoped>
+.select-scrollbar::-webkit-scrollbar {
+  width: 2px;
+}
+.select-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.select-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(161, 161, 170, 0.4);
+  border-radius: 9999px;
+}
+.select-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(161, 161, 170, 0.6);
+}
+</style>
