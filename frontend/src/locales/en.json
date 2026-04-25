@@ -74,7 +74,13 @@
       "select_language": "Select application language"
     },
     "equalizer": {
-      "title": "Equalizer"
+      "title": "Equalizer",
+      "new_profile": "New Profile",
+      "profile_name_placeholder": "Profile name",
+      "add_profile": "Add Profile",
+      "delete_profile": "Delete Profile",
+      "rename_profile": "Rename Profile",
+      "select_profile": "Select Profile"
     }
   },
   "sidebar": {
@@ -113,7 +119,6 @@
     "fullscreen": "Fullscreen",
     "now_playing": "Now Playing",
     "up_next": "Up Next",
-    "lyrics": "Lyrics",
     "queue_empty": "Queue is empty",
     "synced": "Synced",
     "plain": "Plain",

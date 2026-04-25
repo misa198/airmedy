@@ -14,7 +14,7 @@
     "off": "Aus",
     "hr": "Std.",
     "min": "Min."
-    },
+  },
   "settings": {
     "title": "Einstellungen",
     "sync": {
@@ -74,7 +74,13 @@
       "select_language": "Anwendungssprache auswählen"
     },
     "equalizer": {
-      "title": "Equalizer"
+      "title": "Equalizer",
+      "new_profile": "Neues Profil",
+      "profile_name_placeholder": "Profilname",
+      "add_profile": "Profil hinzufügen",
+      "delete_profile": "Profil löschen",
+      "rename_profile": "Profil umbenennen",
+      "select_profile": "Profil auswählen"
     }
   },
   "sidebar": {

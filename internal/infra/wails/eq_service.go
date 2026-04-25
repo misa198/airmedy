@@ -35,6 +35,10 @@ func (s *EQService) UpdateBand(profileID string, bandIndex int, gain float64) er
 	return s.service.UpdateBand(context.Background(), profileID, bandIndex, gain)
 }
 
+func (s *EQService) RenameProfile(id, name string) error {
+	return s.service.RenameProfile(context.Background(), id, name)
+}
+
 func (s *EQService) DeleteProfile(id string) error {
 	return s.service.DeleteProfile(context.Background(), id)
 }

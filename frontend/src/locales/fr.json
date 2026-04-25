@@ -74,7 +74,13 @@
       "select_language": "Sélectionner la langue de l'application"
     },
     "equalizer": {
-      "title": "Égaliseur"
+      "title": "Égaliseur",
+      "new_profile": "Nouveau profil",
+      "profile_name_placeholder": "Nom du profil",
+      "add_profile": "Ajouter un profil",
+      "delete_profile": "Supprimer le profil",
+      "rename_profile": "Renommer le profil",
+      "select_profile": "Sélectionner un profil"
     }
   },
   "sidebar": {
@@ -183,5 +189,5 @@
     "isrc": "ISRC",
     "play_count": "Lectures",
     "lossless": "Sans perte"
-    }
+  }
 }

@@ -74,7 +74,13 @@
       "select_language": "Chọn ngôn ngữ ứng dụng"
     },
     "equalizer": {
-      "title": "Bộ cân bằng âm"
+      "title": "Bộ cân bằng âm",
+      "new_profile": "Hồ sơ mới",
+      "profile_name_placeholder": "Tên hồ sơ",
+      "add_profile": "Thêm hồ sơ",
+      "delete_profile": "Xóa hồ sơ",
+      "rename_profile": "Đổi tên hồ sơ",
+      "select_profile": "Chọn hồ sơ"
     }
   },
   "sidebar": {

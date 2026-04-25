@@ -57,10 +57,11 @@ type EQBand struct {
 
 // EQProfile represents a named equalizer preset
 type EQProfile struct {
-	ID        string    `json:"id" db:"id"`
-	Name      string    `json:"name" db:"name"`
-	IsActive  bool      `json:"is_active" db:"is_active"`
-	Bands     []EQBand  `json:"bands"`
+	ID        string   `json:"id" db:"id"`
+	Name      string   `json:"name" db:"name"`
+	IsActive  bool     `json:"is_active" db:"is_active"`
+	IsDefault bool     `json:"is_default" db:"is_default"`
+	Bands     []EQBand `json:"bands"`
 }
 
 // EQController is an optional interface implemented by audio players that support EQ

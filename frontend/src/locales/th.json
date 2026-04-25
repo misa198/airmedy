@@ -74,7 +74,13 @@
       "select_language": "เลือกภาษาของแอปพลิเคชัน"
     },
     "equalizer": {
-      "title": "อีควอไลเซอร์"
+      "title": "อีควอไลเซอร์",
+      "new_profile": "โปรไฟล์ใหม่",
+      "profile_name_placeholder": "ชื่อโปรไฟล์",
+      "add_profile": "เพิ่มโปรไฟล์",
+      "delete_profile": "ลบโปรไฟล์",
+      "rename_profile": "เปลี่ยนชื่อโปรไฟล์",
+      "select_profile": "เลือกโปรไฟล์"
     }
   },
   "sidebar": {

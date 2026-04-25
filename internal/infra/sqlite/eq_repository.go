@@ -18,7 +18,7 @@ func NewEQRepository(db *DB) domain.EQRepository {
 
 func (r *eqRepository) GetByID(ctx context.Context, id string) (*domain.EQProfile, error) {
 	var p domain.EQProfile
-	err := r.db.GetContext(ctx, &p, "SELECT id, name, is_active FROM eq_profiles WHERE id = ?", id)
+	err := r.db.GetContext(ctx, &p, "SELECT id, name, is_active, is_default FROM eq_profiles WHERE id = ?", id)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -35,7 +35,7 @@ func (r *eqRepository) GetByID(ctx context.Context, id string) (*domain.EQProfil
 
 func (r *eqRepository) GetActive(ctx context.Context) (*domain.EQProfile, error) {
 	var p domain.EQProfile
-	err := r.db.GetContext(ctx, &p, "SELECT id, name, is_active FROM eq_profiles WHERE is_active = 1 LIMIT 1")
+	err := r.db.GetContext(ctx, &p, "SELECT id, name, is_active, is_default FROM eq_profiles WHERE is_active = 1 LIMIT 1")
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -52,12 +52,13 @@ func (r *eqRepository) GetActive(ctx context.Context) (*domain.EQProfile, error)
 
 func (r *eqRepository) GetAll(ctx context.Context) ([]*domain.EQProfile, error) {
 	type row struct {
-		ID       string `db:"id"`
-		Name     string `db:"name"`
-		IsActive bool   `db:"is_active"`
+		ID        string `db:"id"`
+		Name      string `db:"name"`
+		IsActive  bool   `db:"is_active"`
+		IsDefault bool   `db:"is_default"`
 	}
 	var rows []row
-	if err := r.db.SelectContext(ctx, &rows, "SELECT id, name, is_active FROM eq_profiles ORDER BY name"); err != nil {
+	if err := r.db.SelectContext(ctx, &rows, "SELECT id, name, is_active, is_default FROM eq_profiles ORDER BY created_at ASC"); err != nil {
 		return nil, fmt.Errorf("failed to get all eq profiles: %w", err)
 	}
 	profiles := make([]*domain.EQProfile, len(rows))
@@ -66,15 +67,15 @@ func (r *eqRepository) GetAll(ctx context.Context) ([]*domain.EQProfile, error) 
 		if err != nil {
 			return nil, err
 		}
-		profiles[i] = &domain.EQProfile{ID: row.ID, Name: row.Name, IsActive: row.IsActive, Bands: bands}
+		profiles[i] = &domain.EQProfile{ID: row.ID, Name: row.Name, IsActive: row.IsActive, IsDefault: row.IsDefault, Bands: bands}
 	}
 	return profiles, nil
 }
 
 func (r *eqRepository) Save(ctx context.Context, p *domain.EQProfile) error {
 	_, err := r.db.ExecContext(ctx,
-		"INSERT OR REPLACE INTO eq_profiles (id, name, is_active) VALUES (?, ?, ?)",
-		p.ID, p.Name, p.IsActive,
+		"INSERT OR REPLACE INTO eq_profiles (id, name, is_active, is_default) VALUES (?, ?, ?, ?)",
+		p.ID, p.Name, p.IsActive, p.IsDefault,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to save eq profile: %w", err)

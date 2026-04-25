@@ -54,10 +54,11 @@ func (s *EQService) SeedDefaults(ctx context.Context) error {
 	}
 	for i, preset := range defaultPresets {
 		p := &domain.EQProfile{
-			ID:       uuid.New().String(),
-			Name:     preset.name,
-			IsActive: i == 0, // Flat is active by default
-			Bands:    makeBands(preset.gain),
+			ID:        uuid.New().String(),
+			Name:      preset.name,
+			IsActive:  i == 0, // Flat is active by default
+			IsDefault: true,
+			Bands:     makeBands(preset.gain),
 		}
 		if err := s.repo.Save(ctx, p); err != nil {
 			return fmt.Errorf("failed to seed preset %s: %w", preset.name, err)
@@ -132,6 +133,18 @@ func (s *EQService) UpdateBand(ctx context.Context, profileID string, bandIndex 
 		_ = s.player.SetEQBand(bandIndex, p.Bands[bandIndex].Frequency, gain, p.Bands[bandIndex].Bandwidth)
 	}
 	return nil
+}
+
+func (s *EQService) RenameProfile(ctx context.Context, id, name string) error {
+	p, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if p == nil {
+		return fmt.Errorf("eq profile not found: %s", id)
+	}
+	p.Name = name
+	return s.repo.Save(ctx, p)
 }
 
 func (s *EQService) DeleteProfile(ctx context.Context, id string) error {

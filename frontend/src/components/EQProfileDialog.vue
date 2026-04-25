@@ -5,10 +5,12 @@ import Modal from '@/components/ui/Modal.vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
+
 const props = defineProps<{
   open: boolean
+  title: string
+  confirmLabel: string
   initialName?: string
-  title?: string
 }>()
 
 const emit = defineEmits<{
@@ -30,11 +32,11 @@ function submit() {
 </script>
 
 <template>
-  <Modal :open="open" :title="title ?? t('sidebar.new_playlist')" @close="emit('update:open', false)">
+  <Modal :open="open" :title="title" @close="emit('update:open', false)">
     <Input
       v-model="name"
-      :placeholder="t('sidebar.playlist_name')"
-      class="bg-foreground/[0.05] border-foreground/[0.08] text-foreground placeholder:text-foreground/30 focus-visible:ring-foreground/20"
+      :placeholder="t('settings.equalizer.profile_name_placeholder')"
+      class="bg-foreground/[0.05] border-foreground/[0.08] text-foreground placeholder:text-foreground/20 focus-visible:ring-foreground/20"
       autofocus
       @keydown.enter="submit" />
     <div class="flex justify-end gap-2 mt-4">
@@ -44,7 +46,7 @@ function submit() {
       <button
         class="px-3 py-1.5 text-sm text-foreground bg-foreground/[0.12] hover:bg-foreground/[0.18] rounded-lg transition-colors font-medium disabled:opacity-40"
         :disabled="!name.trim()"
-        @click="submit">{{ title === t('sidebar.rename_playlist_title') ? t('sidebar.rename') : t('common.create') }}</button>
+        @click="submit">{{ confirmLabel }}</button>
     </div>
   </Modal>
 </template>

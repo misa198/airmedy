@@ -74,7 +74,13 @@
       "select_language": "Seleziona la lingua dell'applicazione"
     },
     "equalizer": {
-      "title": "Equalizzatore"
+      "title": "Equalizzatore",
+      "new_profile": "Nuovo profilo",
+      "profile_name_placeholder": "Nome profilo",
+      "add_profile": "Aggiungi profilo",
+      "delete_profile": "Elimina profilo",
+      "rename_profile": "Rinomina profilo",
+      "select_profile": "Seleziona profilo"
     }
   },
   "sidebar": {

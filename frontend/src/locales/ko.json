@@ -14,7 +14,7 @@
     "off": "꺼짐",
     "hr": "시간",
     "min": "분"
-    },
+  },
   "settings": {
     "title": "설정",
     "sync": {
@@ -74,7 +74,13 @@
       "select_language": "애플리케이션 언어 선택"
     },
     "equalizer": {
-      "title": "이퀄라이저"
+      "title": "이퀄라이저",
+      "new_profile": "새 프로필",
+      "profile_name_placeholder": "프로필 이름",
+      "add_profile": "프로필 추가",
+      "delete_profile": "프로필 삭제",
+      "rename_profile": "프로필 이름 바꾸기",
+      "select_profile": "프로필 선택"
     }
   },
   "sidebar": {
@@ -183,5 +189,5 @@
     "isrc": "ISRC",
     "play_count": "재생 횟수",
     "lossless": "무손실"
-    }
+  }
 }

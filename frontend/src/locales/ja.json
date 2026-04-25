@@ -74,7 +74,13 @@
       "select_language": "アプリの言語を選択"
     },
     "equalizer": {
-      "title": "イコライザー"
+      "title": "イコライザー",
+      "new_profile": "新しいプロファイル",
+      "profile_name_placeholder": "プロファイル名",
+      "add_profile": "プロファイルを追加",
+      "delete_profile": "プロファイルを削除",
+      "rename_profile": "プロファイルの名前を変更",
+      "select_profile": "プロファイルを選択"
     }
   },
   "sidebar": {
