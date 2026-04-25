@@ -2,6 +2,8 @@ package wails
 
 import (
 	"context"
+	"fmt"
+
 	"airmedy/internal/app/library"
 	"airmedy/internal/domain"
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -38,7 +40,11 @@ func NewLibraryService(
 }
 
 func (s *LibraryService) SelectFolder() (string, error) {
-	return application.Get().Dialog.OpenFile().
+	app := application.Get()
+	if app == nil {
+		return "", fmt.Errorf("application not initialized")
+	}
+	return app.Dialog.OpenFile().
 		CanChooseDirectories(true).
 		CanChooseFiles(false).
 		SetTitle("Select Music Folder").

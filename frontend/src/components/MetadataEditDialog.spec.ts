@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import MetadataEditDialog from './MetadataEditDialog.vue'
 import { MetadataUpdate, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
+import { createTestI18n, setupTestPinia } from '../lib/test-utils'
 
 vi.mock('@wailsio/runtime', () => ({
   Events: { On: vi.fn(), Off: vi.fn() },
@@ -40,7 +41,10 @@ function makeTrack(): TrackDTO {
 function mountDialog(props: Record<string, unknown> = {}) {
   return mount(MetadataEditDialog, {
     props: { open: true, track: makeTrack(), ...props },
-    global: { stubs: { Teleport: true, Transition: true } },
+    global: { 
+      plugins: [createTestI18n(), setupTestPinia()],
+      stubs: { Teleport: true, Transition: true } 
+    },
   })
 }
 
@@ -51,7 +55,7 @@ describe('MetadataEditDialog', () => {
 
   it('renders form when open', () => {
     const w = mountDialog()
-    expect(w.text()).toContain('Edit Metadata')
+    expect(w.text()).toContain('metadata.edit_title')
   })
 
   it('initializes title input from track', () => {
@@ -63,14 +67,14 @@ describe('MetadataEditDialog', () => {
 
   it('calls UpdateTrackMetadata on save', async () => {
     const w = mountDialog()
-    const saveBtn = w.findAll('button').find(b => b.text() === 'Save')
+    const saveBtn = w.findAll('button').find(b => b.text() === 'common.save')
     await saveBtn!.trigger('click')
     expect(updateFn).toHaveBeenCalledWith('track-1', expect.any(MetadataUpdate))
   })
 
   it('emits update:open=false after successful save', async () => {
     const w = mountDialog()
-    const saveBtn = w.findAll('button').find(b => b.text() === 'Save')
+    const saveBtn = w.findAll('button').find(b => b.text() === 'common.save')
     await saveBtn!.trigger('click')
     await w.vm.$nextTick()
     const updateOpen = w.emitted('update:open')
@@ -80,13 +84,13 @@ describe('MetadataEditDialog', () => {
 
   it('closes on Cancel click', async () => {
     const w = mountDialog()
-    const cancelBtn = w.findAll('button').find(b => b.text() === 'Cancel')
+    const cancelBtn = w.findAll('button').find(b => b.text() === 'common.cancel')
     await cancelBtn!.trigger('click')
     expect(w.emitted('update:open')).toEqual([[false]])
   })
 
   it('does not render dialog when closed', () => {
     const w = mountDialog({ open: false, track: null })
-    expect(w.text()).not.toContain('Edit Metadata')
+    expect(w.text()).not.toContain('metadata.edit_title')
   })
 })

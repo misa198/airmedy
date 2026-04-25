@@ -65,6 +65,7 @@ export const usePlayerStore = defineStore('player', () => {
     try {
       const s = await PlayerService.GetStatus()
       status.value = s
+      theme.value = s.theme
       const q = await PlayerService.GetQueue()
       queue.value = (q.filter(Boolean) as TrackDTO[])
       if (s.track_id) {
@@ -82,6 +83,7 @@ export const usePlayerStore = defineStore('player', () => {
     Events.On('player:status', (ev: Events.WailsEvent) => {
       const s = ev.data as PlayerStatus
       status.value = s
+      if (s.theme) theme.value = s.theme
       if (s?.track_id) {
         const found = queue.value.find((t) => t.id === s.track_id)
         if (found) currentTrack.value = found

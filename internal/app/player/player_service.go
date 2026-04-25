@@ -12,6 +12,7 @@ import (
 	"airmedy/internal/app/lyrics"
 	"airmedy/internal/domain"
 	"airmedy/internal/infra/artwork"
+
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/fx"
 )
@@ -26,6 +27,7 @@ type PlayerService struct {
 	lyricsService *lyrics.LyricsService
 	nowPlaying    domain.NowPlayingController // nil on non-darwin or when unsupported
 	currentTrack  *domain.TrackDTO
+	currentTheme  *domain.ThemeColors
 	trackRepo     domain.TrackRepository
 	stateRepo     domain.PlayerStateRepository
 
@@ -205,16 +207,19 @@ func (s *PlayerService) SetRepeatMode(mode domain.RepeatMode) error {
 func (s *PlayerService) PlayNext(track *domain.TrackDTO) {
 	s.queue.InsertAfterCurrent(track)
 	app := application.Get()
-	if app != nil {
+	if app != nil && app.Event != nil {
 		app.Event.Emit("player:queue-updated", s.queue.GetQueue())
 	}
 }
 
 // GetStatus returns the current status of the player.
 func (s *PlayerService) GetStatus() domain.PlayerStatus {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	status := s.player.GetStatus()
 	status.RepeatMode = s.queue.repeatMode
 	status.Shuffle = s.queue.shuffle
+	status.Theme = s.currentTheme
 	return status
 }
 
@@ -239,6 +244,7 @@ func (s *PlayerService) loadAndPlay(track *domain.TrackDTO) error {
 
 	s.mu.Lock()
 	s.currentTrack = track
+	s.currentTheme = nil
 	s.mu.Unlock()
 
 	s.startPositionTicker()
@@ -268,8 +274,13 @@ func (s *PlayerService) extractAndEmitPalette(track *domain.TrackDTO) {
 		s.logger.Warn("palette extraction failed", "error", err)
 		return
 	}
+
+	s.mu.Lock()
+	s.currentTheme = colors
+	s.mu.Unlock()
+
 	app := application.Get()
-	if app != nil {
+	if app != nil && app.Event != nil {
 		app.Event.Emit("player:theme", colors)
 	}
 }
@@ -295,7 +306,7 @@ func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
 	}
 
 	a := application.Get()
-	if a == nil {
+	if a == nil || a.Event == nil {
 		return
 	}
 	if lyric != nil {
@@ -311,12 +322,10 @@ func (s *PlayerService) emitStatus() {
 		return
 	}
 	app := application.Get()
-	if app == nil {
+	if app == nil || app.Event == nil {
 		return
 	}
-	status := s.player.GetStatus()
-	status.RepeatMode = s.queue.repeatMode
-	status.Shuffle = s.queue.shuffle
+	status := s.GetStatus()
 	app.Event.Emit("player:status", status)
 }
 
@@ -370,7 +379,7 @@ func (s *PlayerService) stopPositionTicker() {
 // HandleTrackEnd is called by the native player when a track finishes playing.
 func (s *PlayerService) HandleTrackEnd() {
 	s.stopPositionTicker()
-	s.logger.Info("track ended, moving to next")
+	s.logger.Debug("track ended, moving to next")
 	if err := s.Next(); err != nil {
 		s.logger.Error("failed to play next track", "error", err)
 	}
@@ -392,7 +401,7 @@ func (s *PlayerService) playAll() error {
 	s.queue.SetQueue(tracks, 0)
 
 	app := application.Get()
-	if app != nil {
+	if app != nil && app.Event != nil {
 		app.Event.Emit("player:queue-updated", s.queue.GetQueue())
 	}
 
@@ -499,6 +508,9 @@ func (s *PlayerService) restoreState(ctx context.Context) {
 	s.mu.Lock()
 	s.currentTrack = currentTrack
 	s.mu.Unlock()
+
+	go s.extractAndEmitPalette(currentTrack)
+	go s.fetchAndEmitLyrics(currentTrack)
 
 	s.emitStatus()
 }

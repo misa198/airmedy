@@ -267,7 +267,7 @@ func (s *LibraryService) RemoveWatchedFolder(ctx context.Context, id string, kee
 	}
 
 	// 7. Notify frontend
-	if app := application.Get(); app != nil {
+	if app := application.Get(); app != nil && app.Event != nil {
 		app.Event.Emit("library:updated", nil)
 	}
 
@@ -313,7 +313,7 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 		return nil
 	})
 
-	if app := application.Get(); app != nil {
+	if app := application.Get(); app != nil && app.Event != nil {
 		app.Event.Emit("library:sync-started", map[string]interface{}{
 			"path":  root,
 			"total": total,
@@ -336,7 +336,7 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 		}
 
 		current++
-		if app := application.Get(); app != nil {
+		if app := application.Get(); app != nil && app.Event != nil {
 			app.Event.Emit("library:sync-progress", domain.SyncProgress{
 				Current: current,
 				Total:   total,
@@ -363,7 +363,7 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 	}
 
 	s.logger.Info("Finished folder sync", "root", root)
-	if app := application.Get(); app != nil {
+	if app := application.Get(); app != nil && app.Event != nil {
 		app.Event.Emit("library:sync-finished", root)
 	}
 	return nil
@@ -417,7 +417,7 @@ func (s *LibraryService) ImportFile(ctx context.Context, path string) error {
 	}
 
 	// Notify frontend
-	if app := application.Get(); app != nil {
+	if app := application.Get(); app != nil && app.Event != nil {
 		app.Event.Emit("library:updated", dto)
 	}
 
@@ -580,7 +580,7 @@ func (s *LibraryService) DeleteTrack(ctx context.Context, id string) error {
 	if err := s.composerRepo.DeleteOrphaned(ctx); err != nil {
 		s.logger.Warn("Failed to delete orphaned composers", "error", err)
 	}
-	if app := application.Get(); app != nil {
+	if app := application.Get(); app != nil && app.Event != nil {
 		app.Event.Emit("library:track-deleted", id)
 		app.Event.Emit("library:updated", nil)
 	}
@@ -595,7 +595,7 @@ func (s *LibraryService) ToggleFavorite(ctx context.Context, id string) (bool, e
 	}
 	dto, err := s.trackRepo.GetByID(ctx, id)
 	if err == nil && dto != nil {
-		if app := application.Get(); app != nil {
+		if app := application.Get(); app != nil && app.Event != nil {
 			app.Event.Emit("library:track-updated", dto)
 		}
 	}

@@ -95,7 +95,7 @@ jobs:
       - name: Build (Linux)
         if: matrix.os == 'linux'
         shell: bash
-        run: task linux:build ARCH=${{ matrix.arch }}
+        run: wails3 task linux:build ARCH=${{ matrix.arch }}
         env:
           CGO_ENABLED: '1'
 
@@ -103,7 +103,7 @@ jobs:
       - name: Build (macOS)
         if: matrix.os == 'macos'
         shell: bash
-        run: task darwin:build ARCH=${{ matrix.arch }}
+        run: wails3 task darwin:build ARCH=${{ matrix.arch }}
         env:
           CGO_ENABLED: '1'
 
@@ -124,7 +124,7 @@ jobs:
           export CC=gcc
           export CGO_ENABLED=1
           export PKG_CONFIG_PATH="/mingw64/lib/pkgconfig"
-          task windows:build ARCH=amd64
+          wails3 task windows:build ARCH=amd64
 
       # ── Windows arm64 (Zig cross-compile; FFmpeg dynamic via MSYS2 import libs) ──
       - name: Install Zig (Windows arm64)
@@ -151,7 +151,7 @@ jobs:
           export PKG_CONFIG_PATH="/mingw64/lib/pkgconfig"
           export CGO_CFLAGS="$(pkg-config --cflags libavcodec libavformat libavutil libswresample)"
           export CGO_LDFLAGS="$(pkg-config --libs libavcodec libavformat libavutil libswresample)"
-          task windows:build ARCH=arm64
+          wails3 task windows:build ARCH=arm64
 
       # ── Artifact ────────────────────────────────────────────────────────
       - name: Stage artifact

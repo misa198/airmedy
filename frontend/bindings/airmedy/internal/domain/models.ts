@@ -492,6 +492,7 @@ export class PlayerStatus {
     "muted": boolean;
     "repeat_mode": RepeatMode;
     "shuffle": boolean;
+    "theme": ThemeColors | null;
 
     /** Creates a new PlayerStatus instance. */
     constructor($$source: Partial<PlayerStatus> = {}) {
@@ -519,6 +520,9 @@ export class PlayerStatus {
         if (!("shuffle" in $$source)) {
             this["shuffle"] = false;
         }
+        if (!("theme" in $$source)) {
+            this["theme"] = null;
+        }
 
         Object.assign(this, $$source);
     }
@@ -527,7 +531,11 @@ export class PlayerStatus {
      * Creates a new PlayerStatus instance from a string or object.
      */
     static createFrom($$source: any = {}): PlayerStatus {
+        const $$createField8_0 = $$createType6;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("theme" in $$parsedSource) {
+            $$parsedSource["theme"] = $$createField8_0($$parsedSource["theme"]);
+        }
         return new PlayerStatus($$parsedSource as Partial<PlayerStatus>);
     }
 }
@@ -790,10 +798,10 @@ export class TrackDTO {
      */
     static createFrom($$source: any = {}): TrackDTO {
         const $$createField26_0 = $$createType2;
-        const $$createField27_0 = $$createType6;
+        const $$createField27_0 = $$createType8;
         const $$createField28_0 = $$createType2;
-        const $$createField29_0 = $$createType9;
-        const $$createField30_0 = $$createType12;
+        const $$createField29_0 = $$createType11;
+        const $$createField30_0 = $$createType14;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("artists" in $$parsedSource) {
             $$parsedSource["artists"] = $$createField26_0($$parsedSource["artists"]);
@@ -852,11 +860,13 @@ const $$createType1 = $Create.Nullable($$createType0);
 const $$createType2 = $Create.Array($$createType1);
 const $$createType3 = EQBand.createFrom;
 const $$createType4 = $Create.Array($$createType3);
-const $$createType5 = Album.createFrom;
+const $$createType5 = ThemeColors.createFrom;
 const $$createType6 = $Create.Nullable($$createType5);
-const $$createType7 = Genre.createFrom;
+const $$createType7 = Album.createFrom;
 const $$createType8 = $Create.Nullable($$createType7);
-const $$createType9 = $Create.Array($$createType8);
-const $$createType10 = Composer.createFrom;
-const $$createType11 = $Create.Nullable($$createType10);
-const $$createType12 = $Create.Array($$createType11);
+const $$createType9 = Genre.createFrom;
+const $$createType10 = $Create.Nullable($$createType9);
+const $$createType11 = $Create.Array($$createType10);
+const $$createType12 = Composer.createFrom;
+const $$createType13 = $Create.Nullable($$createType12);
+const $$createType14 = $Create.Array($$createType13);

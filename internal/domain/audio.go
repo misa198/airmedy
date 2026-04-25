@@ -28,6 +28,7 @@ type PlayerStatus struct {
 	Muted         bool          `json:"muted"`
 	RepeatMode    RepeatMode    `json:"repeat_mode"`
 	Shuffle       bool          `json:"shuffle"`
+	Theme         *ThemeColors  `json:"theme"`
 }
 
 // ThemeColors holds extracted palette data from the current track's artwork

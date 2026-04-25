@@ -108,7 +108,8 @@ describe('usePlayerStore', () => {
     expect(store.isQueueOpen).toBe(false)
   })
 
-  it('init fetches status and queue from backend', async () => {
+  it('init fetches status, theme and queue from backend', async () => {
+    const fakeTheme = { vibrant: '#ff0000', muted: '#00ff00', dominant: '#0000ff' }
     const fakeStatus = {
       track_id: '',
       playback_state: PlaybackState.PlaybackStateStopped,
@@ -118,6 +119,7 @@ describe('usePlayerStore', () => {
       muted: false,
       repeat_mode: RepeatMode.RepeatModeOff,
       shuffle: false,
+      theme: fakeTheme,
     }
     mockGetStatus.mockResolvedValue(fakeStatus)
     mockGetQueue.mockResolvedValue([])
@@ -126,6 +128,7 @@ describe('usePlayerStore', () => {
     await store.init()
 
     expect(store.status).toEqual(fakeStatus)
+    expect(store.theme).toEqual(fakeTheme)
     expect(store.queue).toEqual([])
   })
 })
