@@ -1,4 +1,4 @@
-import { Heart, ListEnd, ListPlus, Disc, User, Pencil, Trash2, Info } from 'lucide-vue-next'
+import { Heart, ListEnd, ListPlus, Disc, User, Pencil, Trash2, Info, RefreshCw } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
@@ -9,6 +9,7 @@ import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import * as PlayerService from '../../bindings/airmedy/internal/infra/wails/playerservice'
 import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
+import * as LyricsService from '../../bindings/airmedy/internal/infra/wails/lyricsservice'
 
 export interface TrackContextMenuOptions {
   excludePlayNext?: boolean
@@ -37,6 +38,20 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
       label: t('context_menu.track_info'),
       icon: Info,
       action: () => { playerStore.openTrackInfo(track) },
+    })
+
+    items.push({
+      label: t('context_menu.refresh_lyrics'),
+      icon: RefreshCw,
+      action: async () => {
+        const isCurrentTrack = playerStore.currentTrack?.id === track.id
+        if (isCurrentTrack) playerStore.lyricsLoading = true
+        const lyric = await LyricsService.FetchLyrics(track.id, track)
+        if (isCurrentTrack) {
+          playerStore.lyrics = lyric ?? null
+          playerStore.lyricsLoading = false
+        }
+      },
     })
 
     items.push({ separator: true })

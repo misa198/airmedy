@@ -176,7 +176,8 @@
     "go_to_artist": "Vai all'Artista",
     "edit_metadata": "Modifica Metadati",
     "remove_from_library": "Rimuovi dalla Libreria",
-    "track_info": "Informazioni traccia"
+    "track_info": "Informazioni traccia",
+    "refresh_lyrics": "Aggiorna testi"
   },
   "track_info": {
     "title": "Informazioni traccia",

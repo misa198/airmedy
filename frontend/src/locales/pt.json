@@ -167,7 +167,8 @@
     "try_different_search": "Tente um termo de busca diferente"
   },
   "context_menu": {
-    "track_info": "Informações da faixa"
+    "track_info": "Informações da faixa",
+    "refresh_lyrics": "Atualizar letra"
   },
   "track_info": {
     "title": "Informações da faixa",

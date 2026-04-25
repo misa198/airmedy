@@ -167,7 +167,8 @@
     "try_different_search": "Versuche es mit einem anderen Suchbegriff"
   },
   "context_menu": {
-    "track_info": "Titelinformationen"
+    "track_info": "Titelinformationen",
+    "refresh_lyrics": "Lyrics aktualisieren"
   },
   "track_info": {
     "title": "Titelinformationen",

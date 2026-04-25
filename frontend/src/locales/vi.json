@@ -178,7 +178,8 @@
     "go_to_artist": "Đi tới Nghệ sĩ",
     "edit_metadata": "Chỉnh sửa siêu dữ liệu",
     "remove_from_library": "Xóa khỏi thư viện",
-    "track_info": "Thông tin bài hát"
+    "track_info": "Thông tin bài hát",
+    "refresh_lyrics": "Làm mới lời bài hát"
   },
   "track_info": {
     "title": "Thông tin bài hát",

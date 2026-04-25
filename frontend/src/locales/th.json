@@ -167,7 +167,8 @@
     "try_different_search": "ลองใช้คำค้นหาอื่น"
   },
   "context_menu": {
-    "track_info": "ข้อมูลเพลง"
+    "track_info": "ข้อมูลเพลง",
+    "refresh_lyrics": "รีเฟรชเนื้อเพลง"
   },
   "track_info": {
     "title": "ข้อมูลเพลง",

@@ -167,7 +167,8 @@
     "try_different_search": "다른 검색어를 입력해 보세요"
   },
   "context_menu": {
-    "track_info": "트랙 정보"
+    "track_info": "트랙 정보",
+    "refresh_lyrics": "가사 새로고침"
   },
   "track_info": {
     "title": "트랙 정보",

@@ -167,7 +167,8 @@
     "try_different_search": "Essayez un autre terme de recherche"
   },
   "context_menu": {
-    "track_info": "Informations sur la piste"
+    "track_info": "Informations sur la piste",
+    "refresh_lyrics": "Actualiser les paroles"
   },
   "track_info": {
     "title": "Informations sur la piste",

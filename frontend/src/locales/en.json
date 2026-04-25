@@ -178,7 +178,8 @@
     "go_to_artist": "Go to Artist",
     "edit_metadata": "Edit Metadata",
     "remove_from_library": "Remove from Library",
-    "track_info": "Track info"
+    "track_info": "Track info",
+    "refresh_lyrics": "Refresh Lyrics"
   },
   "artist": {
     "albums_count": "{count} albums",

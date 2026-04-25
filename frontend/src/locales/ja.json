@@ -167,7 +167,8 @@
     "try_different_search": "別の検索語を試してください"
   },
   "context_menu": {
-    "track_info": "トラック情報"
+    "track_info": "トラック情報",
+    "refresh_lyrics": "歌詞を更新"
   },
   "track_info": {
     "title": "トラック情報",

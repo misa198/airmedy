@@ -167,7 +167,8 @@
     "try_different_search": "Попробуйте другой поисковый запрос"
   },
   "context_menu": {
-    "track_info": "Информация о треке"
+    "track_info": "Информация о треке",
+    "refresh_lyrics": "Обновить текст"
   },
   "track_info": {
     "title": "Информация о треке",
