@@ -99,13 +99,56 @@ describe('usePlayerStore', () => {
     expect(store.artworkUrl).toBeNull()
   })
 
-  it('toggleQueue flips isQueueOpen', () => {
+  it('toggleQueue flips isQueueOpen and closes other drawers', () => {
     const store = usePlayerStore()
-    expect(store.isQueueOpen).toBe(false)
+    store.isLyricsOpen = true
+    store.isTrackInfoOpen = true
+
     store.toggleQueue()
     expect(store.isQueueOpen).toBe(true)
+    expect(store.isLyricsOpen).toBe(false)
+    expect(store.isTrackInfoOpen).toBe(false)
+
     store.toggleQueue()
     expect(store.isQueueOpen).toBe(false)
+  })
+
+  it('toggleLyrics flips isLyricsOpen and closes other drawers', () => {
+    const store = usePlayerStore()
+    store.isQueueOpen = true
+    store.isTrackInfoOpen = true
+
+    store.toggleLyrics()
+    expect(store.isLyricsOpen).toBe(true)
+    expect(store.isQueueOpen).toBe(false)
+    expect(store.isTrackInfoOpen).toBe(false)
+
+    store.toggleLyrics()
+    expect(store.isLyricsOpen).toBe(false)
+  })
+
+  it('openTrackInfo opens track info and closes other drawers', () => {
+    const store = usePlayerStore()
+    store.isQueueOpen = true
+    store.isLyricsOpen = true
+
+    store.openTrackInfo({ id: 't1' } as any)
+    expect(store.isTrackInfoOpen).toBe(true)
+    expect(store.isQueueOpen).toBe(false)
+    expect(store.isLyricsOpen).toBe(false)
+    expect(store.trackInfoTrack?.id).toBe('t1')
+  })
+
+  it('closeAllDrawers closes all drawers', () => {
+    const store = usePlayerStore()
+    store.isQueueOpen = true
+    store.isLyricsOpen = true
+    store.isTrackInfoOpen = true
+
+    store.closeAllDrawers()
+    expect(store.isQueueOpen).toBe(false)
+    expect(store.isLyricsOpen).toBe(false)
+    expect(store.isTrackInfoOpen).toBe(false)
   })
 
   it('init fetches status, theme and queue from backend', async () => {

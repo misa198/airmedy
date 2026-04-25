@@ -305,6 +305,11 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 	var total int
 	_ = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err == nil && !d.IsDir() {
+			filename := filepath.Base(path)
+			if strings.HasPrefix(filename, ".") {
+				return nil
+			}
+
 			ext := strings.ToLower(filepath.Ext(path))
 			if supportedExtensions[ext] {
 				total++
@@ -324,8 +329,15 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 	var current int
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return err
+			s.logger.Warn("Error walking path", "path", path, "error", err)
+			return nil
 		}
+
+		filename := filepath.Base(path)
+		if strings.HasPrefix(filename, ".") {
+			return nil
+		}
+
 		if d.IsDir() {
 			return nil
 		}
@@ -355,7 +367,10 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 			}
 		}
 
-		return s.ImportFile(ctx, path)
+		if err := s.ImportFile(ctx, path); err != nil {
+			s.logger.Error("Failed to import file", "path", path, "error", err)
+		}
+		return nil
 	})
 
 	if err != nil {

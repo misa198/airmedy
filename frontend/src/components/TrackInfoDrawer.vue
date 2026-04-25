@@ -66,7 +66,7 @@ function formatFileSize(bytes: number) {
       </div>
       <button
         class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-foreground/40 hover:text-foreground"
-        @click="store.isTrackInfoOpen = false">
+        @click="store.closeAllDrawers()">
         <X class="w-4 h-4" />
       </button>
     </div>
