@@ -3,6 +3,7 @@
 #include "miniaudio/miniaudio.h"
 #include "miniaudio_wrapper.h"
 #include <stdlib.h>
+#include <windows.h>
 
 struct MaPlayer {
     ma_engine     engine;
@@ -57,8 +58,27 @@ int ma_player_load(MaPlayer* p, const char* path) {
         p->sound_loaded = 0;
     }
 
-    ma_result result = ma_sound_init_from_file(
-        &p->engine, path, MA_SOUND_FLAG_DECODE, NULL, NULL, &p->sound);
+    /*
+     * MinGW/Zig builds use plain fopen() which is ANSI-codepage on Windows.
+     * Convert the UTF-8 path to a wide string and use the _w variant so
+     * any Unicode filename (Chinese, Korean, etc.) opens correctly.
+     */
+    int wLen = MultiByteToWideChar(CP_UTF8, 0, path, -1, NULL, 0);
+    if (wLen == 0) {
+        ma_mutex_unlock(&p->mu);
+        return (int)MA_INVALID_ARGS;
+    }
+    wchar_t* wPath = (wchar_t*)malloc(wLen * sizeof(wchar_t));
+    if (!wPath) {
+        ma_mutex_unlock(&p->mu);
+        return (int)MA_OUT_OF_MEMORY;
+    }
+    MultiByteToWideChar(CP_UTF8, 0, path, -1, wPath, wLen);
+
+    ma_result result = ma_sound_init_from_file_w(
+        &p->engine, wPath, MA_SOUND_FLAG_DECODE, NULL, NULL, &p->sound);
+    free(wPath);
+
     if (result != MA_SUCCESS) {
         ma_mutex_unlock(&p->mu);
         return (int)result;
