@@ -137,6 +137,7 @@
     "recently_added": "Recently Added",
     "recently_added_desc": "Albums recently added to your library.",
     "title": "Title",
+    "duration": "Duration",
     "artist": "Artist",
     "album": "Album",
     "genre": "Genre",
@@ -189,7 +190,15 @@
     "format": "Format",
     "bitrate": "Bitrate",
     "sample_rate": "Sample Rate",
+    "duration": "Duration",
     "file_size": "File Size",
+    "bpm": "BPM",
+    "disc": "Disc",
+    "track": "Track",
+    "file_path": "File Path",
+    "label": "Label",
+    "isrc": "ISRC",
+    "play_count": "Play Count",
     "lossless": "Lossless"
   },
   "composer": {

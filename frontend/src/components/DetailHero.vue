@@ -2,7 +2,7 @@
 import { useRouter } from 'vue-router'
 import { ArrowLeft } from 'lucide-vue-next'
 import { hexToRgba } from '@/lib/utils'
-import type { ThemeColors } from '@/stores/player'
+import type { ThemeColors } from '../../bindings/airmedy/internal/domain/models'
 
 interface Props {
   theme?: ThemeColors | null

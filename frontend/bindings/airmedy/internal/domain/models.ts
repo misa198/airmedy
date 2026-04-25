@@ -408,6 +408,9 @@ export class MetadataUpdate {
     "TotalTracks": number;
     "DiscNumber": number;
     "TotalDiscs": number;
+    "BPM": number;
+    "Label": string;
+    "ISRC": string;
 
     /** Creates a new MetadataUpdate instance. */
     constructor($$source: Partial<MetadataUpdate> = {}) {
@@ -440,6 +443,15 @@ export class MetadataUpdate {
         }
         if (!("TotalDiscs" in $$source)) {
             this["TotalDiscs"] = 0;
+        }
+        if (!("BPM" in $$source)) {
+            this["BPM"] = 0;
+        }
+        if (!("Label" in $$source)) {
+            this["Label"] = "";
+        }
+        if (!("ISRC" in $$source)) {
+            this["ISRC"] = "";
         }
 
         Object.assign(this, $$source);
@@ -701,6 +713,10 @@ export class TrackDTO {
     "raw_genre_names": string;
     "raw_composer_names": string;
     "copyright": string;
+    "bpm": number;
+    "label": string;
+    "isrc": string;
+    "play_count": number;
     "other_metadata": string;
     "file_size": number;
     "is_favorite": boolean;
@@ -775,6 +791,18 @@ export class TrackDTO {
         if (!("copyright" in $$source)) {
             this["copyright"] = "";
         }
+        if (!("bpm" in $$source)) {
+            this["bpm"] = 0;
+        }
+        if (!("label" in $$source)) {
+            this["label"] = "";
+        }
+        if (!("isrc" in $$source)) {
+            this["isrc"] = "";
+        }
+        if (!("play_count" in $$source)) {
+            this["play_count"] = 0;
+        }
         if (!("other_metadata" in $$source)) {
             this["other_metadata"] = "";
         }
@@ -801,26 +829,26 @@ export class TrackDTO {
      * Creates a new TrackDTO instance from a string or object.
      */
     static createFrom($$source: any = {}): TrackDTO {
-        const $$createField26_0 = $$createType2;
-        const $$createField27_0 = $$createType8;
-        const $$createField28_0 = $$createType2;
-        const $$createField29_0 = $$createType11;
-        const $$createField30_0 = $$createType14;
+        const $$createField30_0 = $$createType2;
+        const $$createField31_0 = $$createType8;
+        const $$createField32_0 = $$createType2;
+        const $$createField33_0 = $$createType11;
+        const $$createField34_0 = $$createType14;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("artists" in $$parsedSource) {
-            $$parsedSource["artists"] = $$createField26_0($$parsedSource["artists"]);
+            $$parsedSource["artists"] = $$createField30_0($$parsedSource["artists"]);
         }
         if ("album" in $$parsedSource) {
-            $$parsedSource["album"] = $$createField27_0($$parsedSource["album"]);
+            $$parsedSource["album"] = $$createField31_0($$parsedSource["album"]);
         }
         if ("album_artists" in $$parsedSource) {
-            $$parsedSource["album_artists"] = $$createField28_0($$parsedSource["album_artists"]);
+            $$parsedSource["album_artists"] = $$createField32_0($$parsedSource["album_artists"]);
         }
         if ("genres" in $$parsedSource) {
-            $$parsedSource["genres"] = $$createField29_0($$parsedSource["genres"]);
+            $$parsedSource["genres"] = $$createField33_0($$parsedSource["genres"]);
         }
         if ("composers" in $$parsedSource) {
-            $$parsedSource["composers"] = $$createField30_0($$parsedSource["composers"]);
+            $$parsedSource["composers"] = $$createField34_0($$parsedSource["composers"]);
         }
         return new TrackDTO($$parsedSource as Partial<TrackDTO>);
     }

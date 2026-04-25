@@ -316,6 +316,17 @@ func (r *trackRepository) ToggleFavorite(ctx context.Context, id string) (bool, 
 	return val, nil
 }
 
+func (r *trackRepository) IncrementPlayCount(ctx context.Context, id string) error {
+	_, err := r.db.ExecContext(ctx,
+		"UPDATE tracks SET play_count = play_count + 1, updated_at = ? WHERE id = ?",
+		time.Now(), id,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to increment play count: %w", err)
+	}
+	return nil
+}
+
 type trackDB struct {
 	domain.Track
 	AlbumID sql.NullString `db:"album_id"`
@@ -339,13 +350,13 @@ func (r *trackRepository) Save(ctx context.Context, track *domain.Track) error {
 			album_id, year, track_number, total_tracks, disc_number, total_discs,
 			duration, bitrate, sample_rate, format, artwork_key,
 			raw_artist_names, raw_album_artist_names, raw_genre_names, raw_composer_names,
-			copyright, other_metadata, file_size, is_favorite, mtime, created_at, updated_at
+			copyright, bpm, label, isrc, play_count, other_metadata, file_size, is_favorite, mtime, created_at, updated_at
 		) VALUES (
 			:id, :path, :title, :sort_title,
 			:album_id, :year, :track_number, :total_tracks, :disc_number, :total_discs,
 			:duration, :bitrate, :sample_rate, :format, :artwork_key,
 			:raw_artist_names, :raw_album_artist_names, :raw_genre_names, :raw_composer_names,
-			:copyright, :other_metadata, :file_size, :is_favorite, :mtime, :created_at, :updated_at
+			:copyright, :bpm, :label, :isrc, :play_count, :other_metadata, :file_size, :is_favorite, :mtime, :created_at, :updated_at
 		)`
 
 	_, err := r.db.NamedExecContext(ctx, query, dbTrack)
@@ -373,13 +384,13 @@ func (r *trackRepository) Upsert(ctx context.Context, track *domain.Track) error
 			album_id, year, track_number, total_tracks, disc_number, total_discs,
 			duration, bitrate, sample_rate, format, artwork_key,
 			raw_artist_names, raw_album_artist_names, raw_genre_names, raw_composer_names,
-			copyright, other_metadata, file_size, is_favorite, mtime, created_at, updated_at
+			copyright, bpm, label, isrc, play_count, other_metadata, file_size, is_favorite, mtime, created_at, updated_at
 		) VALUES (
 			:id, :path, :title, :sort_title,
 			:album_id, :year, :track_number, :total_tracks, :disc_number, :total_discs,
 			:duration, :bitrate, :sample_rate, :format, :artwork_key,
 			:raw_artist_names, :raw_album_artist_names, :raw_genre_names, :raw_composer_names,
-			:copyright, :other_metadata, :file_size, :is_favorite, :mtime, :created_at, :updated_at
+			:copyright, :bpm, :label, :isrc, :play_count, :other_metadata, :file_size, :is_favorite, :mtime, :created_at, :updated_at
 		) ON CONFLICT(path) DO UPDATE SET
 			title = excluded.title,
 			sort_title = excluded.sort_title,
@@ -399,6 +410,9 @@ func (r *trackRepository) Upsert(ctx context.Context, track *domain.Track) error
 			raw_genre_names = excluded.raw_genre_names,
 			raw_composer_names = excluded.raw_composer_names,
 			copyright = excluded.copyright,
+			bpm = excluded.bpm,
+			label = excluded.label,
+			isrc = excluded.isrc,
 			other_metadata = excluded.other_metadata,
 			file_size = excluded.file_size,
 			mtime = excluded.mtime,

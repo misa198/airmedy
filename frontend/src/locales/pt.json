@@ -136,6 +136,7 @@
     "recently_added": "Adicionados Recentemente",
     "recently_added_desc": "Álbuns adicionados recentemente à sua biblioteca.",
     "title": "Título",
+    "duration": "Duração",
     "artist": "Artista",
     "album": "Álbum",
     "genre": "Gênero",
@@ -173,7 +174,15 @@
     "format": "Formato",
     "bitrate": "Taxa de bits",
     "sample_rate": "Taxa de amostragem",
+    "duration": "Duração",
     "file_size": "Tamanho do arquivo",
+    "bpm": "BPM",
+    "disc": "Disco",
+    "track": "Faixa",
+    "file_path": "Caminho do arquivo",
+    "label": "Gravadora",
+    "isrc": "ISRC",
+    "play_count": "Reproduções",
     "lossless": "Sem perdas"
   }
 }

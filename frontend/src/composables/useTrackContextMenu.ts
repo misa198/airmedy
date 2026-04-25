@@ -10,6 +10,11 @@ import * as PlayerService from '../../bindings/airmedy/internal/infra/wails/play
 import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 
+export interface TrackContextMenuOptions {
+  excludePlayNext?: boolean
+  excludeDelete?: boolean
+}
+
 export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
   const { t } = useI18n()
   const playlistsStore = usePlaylistsStore()
@@ -17,67 +22,90 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
   const playerStore = usePlayerStore()
   const router = useRouter()
 
-  function buildMenuItems(track: TrackDTO): ContextMenuItem[] {
-    return [
-      {
+  function buildMenuItems(track: TrackDTO, options: TrackContextMenuOptions = {}): ContextMenuItem[] {
+    const items: ContextMenuItem[] = []
+
+    if (!options.excludePlayNext) {
+      items.push({
         label: t('context_menu.play_next'),
         icon: ListEnd,
         action: () => { PlayerService.PlayNext(track) },
+      })
+    }
+
+    items.push({
+      label: t('context_menu.track_info'),
+      icon: Info,
+      action: () => { playerStore.openTrackInfo(track) },
+    })
+
+    items.push({ separator: true })
+
+    const isFavorite = favoritesStore.isFavorite(track)
+    items.push({
+      label: isFavorite ? t('context_menu.remove_from_favorites') : t('context_menu.add_to_favorites'),
+      icon: Heart,
+      action: async () => {
+        await favoritesStore.toggle(track.id)
       },
-      {
-        label: t('context_menu.track_info'),
-        icon: Info,
-        action: () => { playerStore.openTrackInfo(track) },
+    })
+
+    items.push({
+      label: t('context_menu.add_to_playlist'),
+      icon: ListPlus,
+      children: playlistsStore.playlists.length
+        ? playlistsStore.playlists.map(p => ({
+            label: p.name,
+            action: () => { PlaylistService.AddTrackToPlaylist(p.id, track.id) },
+          }))
+        : [{ label: t('context_menu.no_playlists'), disabled: true }],
+    })
+
+    items.push({ separator: true })
+
+    items.push({
+      label: t('context_menu.go_to_album'),
+      icon: Disc,
+      disabled: !track.album?.id,
+      action: () => {
+        if (track.album?.id) router.push(`/albums/${track.album.id}`)
       },
-      { separator: true },
-      {
-        label: track.is_favorite ? t('context_menu.remove_from_favorites') : t('context_menu.add_to_favorites'),
-        icon: Heart,
-        action: async () => {
-          await favoritesStore.toggle(track.id)
-          track.is_favorite = !track.is_favorite
-        },
-      },
-      {
-        label: t('context_menu.add_to_playlist'),
-        icon: ListPlus,
-        children: playlistsStore.playlists.length
-          ? playlistsStore.playlists.map(p => ({
-              label: p.name,
-              action: () => { PlaylistService.AddTrackToPlaylist(p.id, track.id) },
-            }))
-          : [{ label: t('context_menu.no_playlists'), disabled: true }],
-      },
-      { separator: true },
-      {
-        label: t('context_menu.go_to_album'),
-        icon: Disc,
-        disabled: !track.album?.id,
-        action: () => {
-          if (track.album?.id) router.push(`/albums/${track.album.id}`)
-        },
-      },
-      {
-        label: t('context_menu.go_to_artist'),
+    })
+
+    const artistItems = (track.artists || [])
+      .filter((a): a is NonNullable<typeof a> => !!a && !!a.id)
+      .map(a => ({
+        label: a.name,
         icon: User,
-        disabled: !track.artists?.[0]?.id,
-        action: () => {
-          if (track.artists?.[0]?.id) router.push(`/artists/${track.artists[0].id}`)
-        },
-      },
-      { separator: true },
-      {
-        label: t('context_menu.edit_metadata'),
-        icon: Pencil,
-        action: () => onEditMetadata(track),
-      },
-      {
+        action: () => router.push(`/artists/${a.id}`),
+      }))
+
+    items.push({
+      label: t('context_menu.go_to_artist'),
+      icon: User,
+      disabled: artistItems.length === 0,
+      action: artistItems.length === 1 ? artistItems[0].action : undefined,
+      children: artistItems.length > 1 ? artistItems : undefined,
+    })
+
+    items.push({ separator: true })
+
+    items.push({
+      label: t('context_menu.edit_metadata'),
+      icon: Pencil,
+      action: () => onEditMetadata(track),
+    })
+
+    if (!options.excludeDelete) {
+      items.push({
         label: t('context_menu.remove_from_library'),
         icon: Trash2,
         danger: true,
         action: () => { LibraryService.DeleteTrack(track.id) },
-      },
-    ]
+      })
+    }
+
+    return items
   }
 
   return { buildMenuItems }

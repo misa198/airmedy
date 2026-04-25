@@ -136,6 +136,7 @@
     "recently_added": "Zuletzt hinzugefügt",
     "recently_added_desc": "Zuletzt zu deiner Mediathek hinzugefügte Alben.",
     "title": "Titel",
+    "duration": "Dauer",
     "artist": "Künstler",
     "album": "Album",
     "genre": "Genre",
@@ -173,7 +174,15 @@
     "format": "Format",
     "bitrate": "Bitrate",
     "sample_rate": "Abtastrate",
+    "duration": "Dauer",
     "file_size": "Dateigröße",
+    "bpm": "BPM",
+    "disc": "Disc",
+    "track": "Track",
+    "file_path": "Dateipfad",
+    "label": "Label",
+    "isrc": "ISRC",
+    "play_count": "Wiedergaben",
     "lossless": "Verlustfrei"
   }
 }

@@ -106,11 +106,6 @@ function openPlaylistContextMenu(playlist: Playlist, e: MouseEvent) {
           </button>
         </template>
       </SidebarItem>
-
-      <!-- Empty state -->
-      <p v-if="playlistsStore.playlists.length === 0" class="px-3 py-2 text-xs text-foreground/30">
-        {{ t('sidebar.no_playlists') }}
-      </p>
     </div>
   </div>
 

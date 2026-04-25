@@ -5,10 +5,7 @@ import { useRouter } from 'vue-router'
 import type { Artist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import { formatTime } from '../lib/utils'
 import { usePlayerStore } from '../stores/player'
-import { useContextMenu } from '@/composables/useContextMenu'
-import { useTrackContextMenu } from '@/composables/useTrackContextMenu'
-import ContextMenu from './ContextMenu.vue'
-import MetadataEditDialog from './MetadataEditDialog.vue'
+import TrackContextMenu from './TrackContextMenu.vue'
 
 const router = useRouter()
 const playerStore = usePlayerStore()
@@ -27,6 +24,7 @@ const emit = defineEmits<{
 
 const scrollerRef = ref<any>(null)
 const lastScrollTop = ref(0)
+const trackContextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
 
 const scrollToCurrentTrack = () => {
   if (!scrollerRef.value || !playerStore.currentTrack || props.tracks.length === 0) return
@@ -75,16 +73,8 @@ onActivated(() => {
   }
 })
 
-const contextMenu = useContextMenu()
-const editingTrack = ref<TrackDTO | null>(null)
-const metadataOpen = ref(false)
-const { buildMenuItems } = useTrackContextMenu((track) => {
-  editingTrack.value = track
-  metadataOpen.value = true
-})
-
 function openContextMenu(e: MouseEvent, item: TrackDTO) {
-  contextMenu.open(e, buildMenuItems(item))
+  trackContextMenu.value?.open(e, item)
 }
 
 const navigateToAlbum = (id: string) => {
@@ -115,7 +105,7 @@ const isCurrentTrack = (trackId: string) => {
       <div class="min-w-0 hidden @[650px]:block">{{ $t('library.artist') }}</div>
       <div class="min-w-0 hidden @[1000px]:block" v-if="showAlbum">{{ $t('library.album') }}</div>
       <div class="flex items-center gap-1 justify-center">
-        <Clock class="w-3 h-3" />
+        {{ $t('library.duration') }}
       </div>
       <div class="hidden @[450px]:block"></div>
     </div>
@@ -126,22 +116,21 @@ const isCurrentTrack = (trackId: string) => {
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
 
-      <div v-else-if="tracks.length === 0" class="h-full flex flex-col items-center justify-center text-foreground/80">
+      <div v-else-if="tracks.length === 0"
+        class="h-full flex flex-col items-center justify-center text-foreground/80 py-10">
         <Music class="w-12 h-12 mb-4 opacity-20" />
         <p>{{ $t('library.no_tracks') }}</p>
       </div>
 
       <RecycleScroller v-else ref="scrollerRef" class="h-full" :items="tracks" :item-size="56" key-field="id"
-        v-slot="{ item, index }" @scroll.passive="(e: Event) => { handleScroll(e); contextMenu.close() }">
+        v-slot="{ item, index }" @scroll.passive="(e: Event) => { handleScroll(e); trackContextMenu?.close() }">
         <div :class="[
           'grid gap-4 px-6 h-[56px] items-center text-sm hover:bg-foreground/[0.04] group transition-colors',
           index % 2 === 0 ? 'bg-foreground/[0.02]' : 'bg-transparent',
           showAlbum
             ? 'grid-cols-[minmax(0,1fr)_80px] @[450px]:grid-cols-[40px_minmax(0,1fr)_80px_40px] @[700px]:grid-cols-[40px_minmax(0,1fr)_minmax(0,1fr)_80px_40px] @[1000px]:grid-cols-[40px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_80px_40px]'
             : 'grid-cols-[minmax(0,1fr)_80px] @[450px]:grid-cols-[40px_minmax(0,1fr)_80px_40px] @[650px]:grid-cols-[40px_minmax(0,1fr)_minmax(0,1fr)_80px_40px]'
-        ]"
-          @contextmenu="openContextMenu($event, item)"
-        >
+        ]" @contextmenu="openContextMenu($event, item)" @dblclick="emit('play-track', item, index)">
           <!-- Index / Playing Indicator / Play Button -->
           <div class="hidden @[450px]:flex items-center justify-center h-full">
             <!-- Currently Active Track (Playing or Paused) -->
@@ -195,7 +184,8 @@ const isCurrentTrack = (trackId: string) => {
               <span v-else>{{ item.raw_artist_names || $t('library.unknown_artist') }}</span>
             </div>
           </div>
-          <div v-if="showAlbum" class="text-foreground/80 truncate flex items-center gap-2 min-w-0 hidden @[1000px]:flex">
+          <div v-if="showAlbum"
+            class="text-foreground/80 truncate flex items-center gap-2 min-w-0 hidden @[1000px]:flex">
             <Disc class="w-3 h-3 opacity-50" />
             <span class="truncate group-hover:text-primary transition-colors cursor-pointer"
               @click.stop="item.album?.id && navigateToAlbum(item.album.id)">
@@ -208,8 +198,7 @@ const isCurrentTrack = (trackId: string) => {
           <div class="flex items-center justify-end opacity-0 group-hover:opacity-100 hidden @[450px]:flex">
             <button
               class="p-2 hover:bg-foreground/8 rounded-full text-foreground/30 hover:text-foreground/70 transition-colors"
-              @click.stop="openContextMenu($event, item)"
-            >
+              @click.stop="openContextMenu($event, item)">
               <MoreVertical class="w-4 h-4" />
             </button>
           </div>
@@ -218,14 +207,7 @@ const isCurrentTrack = (trackId: string) => {
     </div>
   </div>
 
-  <ContextMenu
-    :visible="contextMenu.visible.value"
-    :x="contextMenu.x.value"
-    :y="contextMenu.y.value"
-    :items="contextMenu.items.value"
-    @close="contextMenu.close()"
-  />
-  <MetadataEditDialog v-model:open="metadataOpen" :track="editingTrack" />
+  <TrackContextMenu ref="trackContextMenu" />
 </template>
 
 <style scoped>

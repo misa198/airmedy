@@ -136,6 +136,7 @@
     "recently_added": "Aggiunti di recente",
     "recently_added_desc": "Album aggiunti di recente alla tua libreria.",
     "title": "Titolo",
+    "duration": "Durata",
     "artist": "Artista",
     "album": "Album",
     "genre": "Genere",
@@ -182,7 +183,15 @@
     "format": "Formato",
     "bitrate": "Bitrate",
     "sample_rate": "Frequenza di campionamento",
+    "duration": "Durata",
     "file_size": "Dimensione file",
+    "bpm": "BPM",
+    "disc": "Disco",
+    "track": "Traccia",
+    "file_path": "Percorso file",
+    "label": "Etichetta",
+    "isrc": "ISRC",
+    "play_count": "Riproduzioni",
     "lossless": "Lossless"
   }
 }

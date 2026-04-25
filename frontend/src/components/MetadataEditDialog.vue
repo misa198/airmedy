@@ -38,6 +38,9 @@ watch(
         TotalTracks: t.total_tracks ?? 0,
         DiscNumber: t.disc_number ?? 0,
         TotalDiscs: t.total_discs ?? 0,
+        BPM: t.bpm ?? 0,
+        Label: t.label ?? '',
+        ISRC: t.isrc ?? '',
       })
       error.value = ''
     }
@@ -127,6 +130,24 @@ function cancel() {
                 />
               </div>
             </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs text-foreground/40 mb-1">{{ t('track_info.label') }}</label>
+                <Input
+                  v-model="form.Label"
+                  :placeholder="t('track_info.label')"
+                  class="bg-foreground/[0.05] border-foreground/[0.08] text-foreground placeholder:text-foreground/20 focus-visible:ring-foreground/20"
+                />
+              </div>
+              <div>
+                <label class="block text-xs text-foreground/40 mb-1">{{ t('track_info.isrc') }}</label>
+                <Input
+                  v-model="form.ISRC"
+                  :placeholder="t('track_info.isrc')"
+                  class="bg-foreground/[0.05] border-foreground/[0.08] text-foreground placeholder:text-foreground/20 focus-visible:ring-foreground/20"
+                />
+              </div>
+            </div>
             <div class="grid grid-cols-3 gap-3">
               <div>
                 <label class="block text-xs text-foreground/40 mb-1">{{ t('library.year') }}</label>
@@ -146,6 +167,17 @@ function cancel() {
                   @update:model-value="setInt('TrackNumber', $event as string)"
                 />
               </div>
+              <div>
+                <label class="block text-xs text-foreground/40 mb-1">{{ t('track_info.bpm') }}</label>
+                <Input
+                  :model-value="form.BPM.toString()"
+                  placeholder="0"
+                  class="bg-foreground/[0.05] border-foreground/[0.08] text-foreground placeholder:text-foreground/20 focus-visible:ring-foreground/20"
+                  @update:model-value="setInt('BPM', $event as string)"
+                />
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block text-xs text-foreground/40 mb-1">{{ t('library.total') }}</label>
                 <Input

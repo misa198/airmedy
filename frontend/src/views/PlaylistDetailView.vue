@@ -5,9 +5,9 @@ import { useI18n } from 'vue-i18n'
 import { Play, Shuffle, MoreVertical, Clock, Music, ListMusic, X, Heart } from 'lucide-vue-next'
 import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
-import type { Playlist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
+import type { Playlist, TrackDTO, ThemeColors } from '../../bindings/airmedy/internal/domain/models'
 import TrackTable from '@/components/TrackTable.vue'
-import { usePlayerStore, type ThemeColors } from '@/stores/player'
+import { usePlayerStore } from '@/stores/player'
 import { useFavoritesStore } from '@/stores/favorites'
 import { formatTotalDuration } from '@/lib/utils'
 import DetailsButton from '@/components/ui/DetailsButton.vue'
@@ -16,6 +16,7 @@ import { useGroupContextMenu } from '@/composables/useGroupContextMenu'
 import { useRestoreScroll } from '@/composables/useRestoreScroll'
 import ContextMenu from '@/components/ContextMenu.vue'
 import DetailHero from '@/components/DetailHero.vue'
+import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
 
 const route = useRoute()
 const { t } = useI18n()
@@ -25,6 +26,8 @@ const favoritesStore = useFavoritesStore()
 const playlist = ref<Playlist | null>(null)
 const tracks = ref<TrackDTO[]>([])
 const isLoading = ref(true)
+
+useLibraryUpdates(tracks)
 const playlistTheme = ref<ThemeColors | null>(null)
 
 const { scrollContainerRef, handleScroll } = useRestoreScroll()
@@ -85,7 +88,7 @@ async function loadTheme() {
   
   try {
     // 1. Try playlist custom theme
-    let colors = null
+    let colors: ThemeColors | null = null
     if (playlist.value.id !== 'favorites') {
       colors = await PlaylistService.GetPlaylistColors(playlist.value.id)
     }

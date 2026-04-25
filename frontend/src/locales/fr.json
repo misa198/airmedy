@@ -136,6 +136,7 @@
     "recently_added": "Ajoutés récemment",
     "recently_added_desc": "Albums récemment ajoutés à votre bibliothèque.",
     "title": "Titre",
+    "duration": "Durée",
     "artist": "Artiste",
     "album": "Album",
     "genre": "Genre",
@@ -172,8 +173,16 @@
     "composer": "Compositeur",
     "format": "Format",
     "bitrate": "Débit binaire",
-    "sample_rate": "Taux d'échantillonnage",
+    "sample_rate": "Fréquence d'échantillonnage",
+    "duration": "Durée",
     "file_size": "Taille du fichier",
+    "bpm": "BPM",
+    "disc": "Disque",
+    "track": "Piste",
+    "file_path": "Chemin du fichier",
+    "label": "Label",
+    "isrc": "ISRC",
+    "play_count": "Lectures",
     "lossless": "Sans perte"
-  }
+    }
 }

@@ -274,6 +274,13 @@ func (s *PlayerService) loadAndPlay(track *domain.TrackDTO) error {
 	s.currentTheme = nil
 	s.mu.Unlock()
 
+	// Increment play count
+	go func(id string) {
+		if err := s.trackRepo.IncrementPlayCount(context.Background(), id); err != nil {
+			s.logger.Warn("failed to increment play count", "track_id", id, "error", err)
+		}
+	}(track.ID)
+
 	s.startPositionTicker()
 	s.emitStatus()
 

@@ -19,6 +19,9 @@ type MetadataUpdate struct {
 	TotalTracks int
 	DiscNumber  int
 	TotalDiscs  int
+	BPM         int
+	Label       string
+	ISRC        string
 }
 
 // MetadataWriter writes tag data back to audio files.

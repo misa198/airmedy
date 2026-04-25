@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { Renderer, Program, Mesh, Triangle } from 'ogl'
-import type { ThemeColors } from '../stores/player'
+import type { ThemeColors } from '../../bindings/airmedy/internal/domain/models'
 
 const props = defineProps<{
   theme: ThemeColors | null,

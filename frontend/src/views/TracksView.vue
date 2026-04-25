@@ -5,12 +5,15 @@ import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import TrackTable from '../components/TrackTable.vue'
 import { usePlayerStore } from '../stores/player'
 import { Input } from '@/components/ui/input'
+import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
 
 const playerStore = usePlayerStore()
 
 const tracks = ref<TrackDTO[]>([])
 const isLoading = ref(true)
 const searchQuery = ref('')
+
+useLibraryUpdates(tracks)
 
 const loadTracks = async () => {
   isLoading.value = true

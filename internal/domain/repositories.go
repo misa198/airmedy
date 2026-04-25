@@ -13,6 +13,7 @@ type TrackRepository interface {
 	GetAll(ctx context.Context) ([]*TrackDTO, error)
 	GetFavorites(ctx context.Context) ([]*TrackDTO, error)
 	ToggleFavorite(ctx context.Context, id string) (bool, error)
+	IncrementPlayCount(ctx context.Context, id string) error
 	Save(ctx context.Context, track *Track) error
 	Delete(ctx context.Context, id string) error
 	DeleteByPathPrefix(ctx context.Context, prefix string) error

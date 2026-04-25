@@ -3,10 +3,10 @@ import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
-import type { AlbumDTO, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
+import type { AlbumDTO, TrackDTO, ThemeColors } from '../../bindings/airmedy/internal/domain/models'
 import TrackTable from '@/components/TrackTable.vue'
 import { Disc, User, Play, Clock, Calendar, MoreVertical, Music, Shuffle } from 'lucide-vue-next'
-import { usePlayerStore, type ThemeColors } from '../stores/player'
+import { usePlayerStore } from '../stores/player'
 import { formatTotalDuration } from '../lib/utils'
 import { useContextMenu } from '@/composables/useContextMenu'
 import { useGroupContextMenu } from '@/composables/useGroupContextMenu'
@@ -14,6 +14,7 @@ import { useRestoreScroll } from '@/composables/useRestoreScroll'
 import ContextMenu from '@/components/ContextMenu.vue'
 import DetailsButton from '@/components/ui/DetailsButton.vue'
 import DetailHero from '@/components/DetailHero.vue'
+import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
 
 const playerStore = usePlayerStore()
 const { t } = useI18n()
@@ -22,6 +23,8 @@ const route = useRoute()
 const album = ref<AlbumDTO | null>(null)
 const tracks = ref<TrackDTO[]>([])
 const isLoading = ref(true)
+
+useLibraryUpdates(tracks)
 const albumTheme = ref<ThemeColors | null>(null)
 
 const { scrollContainerRef, handleScroll } = useRestoreScroll()

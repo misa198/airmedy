@@ -101,6 +101,10 @@ func (e *taglibExtractor) Extract(ctx context.Context, path string) (*domain.Tra
 	dto.Track.Copyright = firstTag(tags, "COPYRIGHT", "TCOP", "cprt", "©cpr")
 	dto.Album.Copyright = dto.Track.Copyright
 
+	dto.Track.BPM, _ = strconv.Atoi(firstTag(tags, "BPM", "TBPM", "tmpo"))
+	dto.Track.Label = firstTag(tags, "LABEL", "PUBLISHER", "TPUB", "pub ")
+	dto.Track.ISRC = firstTag(tags, "ISRC", "TSRC")
+
 	dto.Album.Title = firstTag(tags, "ALBUM")
 	dto.Album.SortTitle = firstTag(tags, "ALBUMSORT", "TSOA", "soal")
 	if dto.Album.SortTitle == "" {
@@ -222,6 +226,9 @@ func (e *taglibExtractor) WriteMetadata(_ context.Context, path string, fields d
 		"DISCNUMBER":  {fmt.Sprintf("%d/%d", fields.DiscNumber, fields.TotalDiscs)},
 		"GENRE":       {fields.Genre},
 		"COMPOSER":    {fields.Composer},
+		"BPM":         {strconv.Itoa(fields.BPM)},
+		"LABEL":       {fields.Label},
+		"ISRC":        {fields.ISRC},
 	}
 	if err := taglib.WriteTags(path, tags, taglib.Clear); err != nil {
 		return fmt.Errorf("failed to write metadata to %s: %w", path, err)

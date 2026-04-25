@@ -136,6 +136,7 @@
     "recently_added": "최근 추가된 항목",
     "recently_added_desc": "라이브러리에 최근 추가된 앨범.",
     "title": "제목",
+    "duration": "재생 시간",
     "artist": "아티스트",
     "album": "앨범",
     "genre": "장르",
@@ -172,8 +173,16 @@
     "composer": "작곡가",
     "format": "형식",
     "bitrate": "비트레이트",
-    "sample_rate": "샘플링 레이트",
+    "sample_rate": "샘플 레이트",
+    "duration": "재생 시간",
     "file_size": "파일 크기",
+    "bpm": "BPM",
+    "disc": "디스크",
+    "track": "트랙",
+    "file_path": "파일 경로",
+    "label": "레이블",
+    "isrc": "ISRC",
+    "play_count": "재생 횟수",
     "lossless": "무손실"
-  }
+    }
 }

@@ -136,6 +136,7 @@
     "recently_added": "最近添加",
     "recently_added_desc": "最近添加到您的媒体库的专辑。",
     "title": "标题",
+    "duration": "时长",
     "artist": "艺术家",
     "album": "专辑",
     "genre": "流派",
@@ -184,7 +185,15 @@
     "format": "格式",
     "bitrate": "比特率",
     "sample_rate": "采样率",
+    "duration": "时长",
     "file_size": "文件大小",
+    "bpm": "BPM",
+    "disc": "碟号",
+    "track": "曲号",
+    "file_path": "文件路径",
+    "label": "唱片公司",
+    "isrc": "ISRC",
+    "play_count": "播放次数",
     "lossless": "无损"
   },
   "artist": {

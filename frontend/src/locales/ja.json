@@ -136,6 +136,7 @@
     "recently_added": "最近追加された項目",
     "recently_added_desc": "ライブラリに最近追加されたアルバム。",
     "title": "タイトル",
+    "duration": "再生時間",
     "artist": "アーティスト",
     "album": "アルバム",
     "genre": "ジャンル",
@@ -173,7 +174,15 @@
     "format": "フォーマット",
     "bitrate": "ビットレート",
     "sample_rate": "サンプルレート",
+    "duration": "再生時間",
     "file_size": "ファイルサイズ",
+    "bpm": "BPM",
+    "disc": "ディスク",
+    "track": "トラック",
+    "file_path": "ファイルパス",
+    "label": "レーベル",
+    "isrc": "ISRC",
+    "play_count": "再生回数",
     "lossless": "ロスレス"
   }
 }

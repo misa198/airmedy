@@ -136,6 +136,7 @@
     "recently_added": "Thêm gần đây",
     "recently_added_desc": "Các album vừa được thêm vào thư viện của bạn.",
     "title": "Tiêu đề",
+    "duration": "Thời lượng",
     "artist": "Nghệ sĩ",
     "album": "Album",
     "genre": "Thể loại",
@@ -184,7 +185,15 @@
     "format": "Định dạng",
     "bitrate": "Tốc độ bit",
     "sample_rate": "Tỷ lệ lấy mẫu",
+    "duration": "Thời lượng",
     "file_size": "Kích thước tệp",
+    "bpm": "BPM",
+    "disc": "Đĩa",
+    "track": "Bài",
+    "file_path": "Đường dẫn",
+    "label": "Hãng đĩa",
+    "isrc": "ISRC",
+    "play_count": "Số lần phát",
     "lossless": "Lossless"
   },
   "artist": {

@@ -24,6 +24,10 @@ type Track struct {
 	RawGenreNames       string    `json:"raw_genre_names" db:"raw_genre_names"`
 	RawComposerNames    string    `json:"raw_composer_names" db:"raw_composer_names"`
 	Copyright           string    `json:"copyright" db:"copyright"`
+	BPM                 int       `json:"bpm" db:"bpm"`
+	Label               string    `json:"label" db:"label"`
+	ISRC                string    `json:"isrc" db:"isrc"`
+	PlayCount           int       `json:"play_count" db:"play_count"`
 	OtherMetadata       string    `json:"other_metadata" db:"other_metadata"`
 	FileSize            int64     `json:"file_size" db:"file_size"`
 	IsFavorite          bool      `json:"is_favorite" db:"is_favorite"`
