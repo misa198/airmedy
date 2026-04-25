@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-
-interface LyricLine {
-  text: string
-  time: number
-}
+import type { LyricLine } from '../composables/useLyrics'
 
 const props = defineProps<{
   lines: LyricLine[]
@@ -53,7 +49,8 @@ watch(activeIndex, (newIndex) => {
         ]"
         @click="emit('seek', line.time)"
       >
-        {{ line.text }}
+        <div>{{ line.text }}</div>
+        <div v-if="line.secondary" class="text-lg md:text-2xl font-bold mt-1 opacity-80">{{ line.secondary }}</div>
       </div>
     </div>
   </div>

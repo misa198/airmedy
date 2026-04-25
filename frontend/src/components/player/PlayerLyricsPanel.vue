@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Mic2, X } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
-import LyricsView from '../LyricsView.vue'
+import LyricsView from '../PlayerLyrics.vue'
 
 defineProps<{
   lyrics?: string

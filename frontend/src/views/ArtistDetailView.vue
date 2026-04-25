@@ -52,9 +52,9 @@ watch(() => route.params.id, (newId) => {
     <div v-else-if="artist" class="flex-1 overflow-y-auto">
       <!-- Artist Hero Section -->
       <div class="p-8 md:p-12 flex flex-col md:flex-row gap-8 items-center bg-gradient-to-b from-dynamic-surface to-transparent border-b border-foreground/[0.06]">
-        <div class="w-40 h-40 md:w-56 md:h-56 rounded-full shadow-2xl overflow-hidden ring-2 ring-foreground/[0.08] bg-foreground/5 flex-shrink-0">
+        <div class="w-32 h-32 md:w-42 md:h-42 rounded-full shadow-2xl overflow-hidden ring-2 ring-foreground/[0.08] bg-foreground/5 flex-shrink-0">
           <div class="w-full h-full flex items-center justify-center text-foreground/10">
-            <User class="w-24 h-24" />
+            <User class="w-16 h-16 lg:w-24 lg:h-24" />
           </div>
         </div>
 

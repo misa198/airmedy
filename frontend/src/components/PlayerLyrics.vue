@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { toRef } from 'vue'
 import PlainLyricsView from './PlainLyricsView.vue'
 import SyncedLyricsView from './SyncedLyricsView.vue'
+import { useLyrics } from '../composables/useLyrics'
 
 const props = defineProps<{
   lyrics?: string
@@ -13,33 +14,7 @@ const emit = defineEmits<{
   seek: [time: number]
 }>()
 
-const LRC_PATTERN = /^\[(\d+):(\d+\.\d+)\]/m
-
-const isSynced = computed(() => !!props.lyrics && LRC_PATTERN.test(props.lyrics))
-
-interface SyncedLine {
-  text: string
-  time: number
-}
-
-const syncedLines = computed<SyncedLine[]>(() => {
-  if (!props.lyrics) return []
-  const linePattern = /^\[(\d+):(\d+\.\d+)\](.*)/
-  return props.lyrics
-    .split('\n')
-    .flatMap(line => {
-      const match = line.match(linePattern)
-      if (!match) return []
-      const minutes = parseInt(match[1], 10)
-      const seconds = parseFloat(match[2])
-      return [{ text: match[3].trim(), time: minutes * 60 + seconds }]
-    })
-})
-
-const plainLines = computed<string[]>(() => {
-  if (!props.lyrics) return []
-  return props.lyrics.split('\n').filter(l => l.trim())
-})
+const { isSynced, syncedLines, plainLines } = useLyrics(toRef(props, 'lyrics'))
 </script>
 
 <template>

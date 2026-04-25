@@ -50,7 +50,7 @@ const filteredItems = computed(() => {
 <template>
   <div class="h-full flex overflow-hidden bg-background">
     <!-- Left Column: Navigation List -->
-    <div class="w-64 md:w-80 border-r border-foreground/[0.06] flex flex-col overflow-hidden bg-background">
+    <div class="w-72 border-r border-foreground/[0.06] flex flex-col overflow-hidden bg-background">
       <div class="p-6 pb-4">
         <h1 class="text-2xl font-bold mb-4">{{ title }}</h1>
         <div class="relative">
