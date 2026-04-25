@@ -50,13 +50,13 @@ func (r *playerStateRepository) Save(ctx context.Context, state *domain.PlayerSt
 
 func (r *playerStateRepository) Load(ctx context.Context) (*domain.PlayerState, error) {
 	type row struct {
-		QueueTrackIDs  string  `db:"queue_track_ids"`
-		CurrentTrackID string  `db:"current_track_id"`
-		Position       float64 `db:"position"`
-		Volume         float64 `db:"volume"`
-		Muted          bool    `db:"muted"`
-		Shuffle        bool    `db:"shuffle"`
-		RepeatMode     string  `db:"repeat_mode"`
+		QueueTrackIDs  string         `db:"queue_track_ids"`
+		CurrentTrackID sql.NullString `db:"current_track_id"`
+		Position       float64        `db:"position"`
+		Volume         float64        `db:"volume"`
+		Muted          bool           `db:"muted"`
+		Shuffle        bool           `db:"shuffle"`
+		RepeatMode     string         `db:"repeat_mode"`
 	}
 	var r2 row
 	err := r.db.GetContext(ctx, &r2,
@@ -77,7 +77,7 @@ func (r *playerStateRepository) Load(ctx context.Context) (*domain.PlayerState, 
 
 	return &domain.PlayerState{
 		QueueTrackIDs:  ids,
-		CurrentTrackID: r2.CurrentTrackID,
+		CurrentTrackID: r2.CurrentTrackID.String,
 		Position:       r2.Position,
 		Volume:         r2.Volume,
 		Muted:          r2.Muted,

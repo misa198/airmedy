@@ -26,12 +26,12 @@ func NewTagLibExtractor() domain.MetadataExtractor {
 func (e *taglibExtractor) Extract(ctx context.Context, path string) (*domain.TrackDTO, error) {
 	tags, err := taglib.ReadTags(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read tags from %s: %w", path, err)
+		return nil, fmt.Errorf("failed to read tags: %w", err)
 	}
 
 	props, err := taglib.ReadProperties(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read properties from %s: %w", path, err)
+		return nil, fmt.Errorf("failed to read properties: %w", err)
 	}
 
 	dto := &domain.TrackDTO{
@@ -172,7 +172,7 @@ func splitMultipleTags(tags map[string][]string, keys ...string) []string {
 func (e *taglibExtractor) ExtractArtwork(ctx context.Context, path string) ([]byte, string, error) {
 	data, err := taglib.ReadImage(path)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to read image from %s: %w", path, err)
+		return nil, "", fmt.Errorf("failed to read image: %w", err)
 	}
 
 	if data == nil {
@@ -181,7 +181,7 @@ func (e *taglibExtractor) ExtractArtwork(ctx context.Context, path string) ([]by
 
 	props, err := taglib.ReadProperties(path)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to read properties for artwork %s: %w", path, err)
+		return nil, "", fmt.Errorf("failed to read properties for artwork: %w", err)
 	}
 
 	mimeType := "image/jpeg"
