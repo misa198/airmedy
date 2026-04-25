@@ -33,6 +33,33 @@
       "removed_error": "Impossibile rimuovere la cartella",
       "remove_folder": "Rimuovi cartella"
     },
+    "categories": {
+      "general": "Generale",
+      "library": "Biblioteca",
+      "equalization": "Equalizzazione",
+      "about": "Informazioni"
+    },
+    "general": {
+      "behavior": "Comportamento",
+      "appearance": "Aspetto"
+    },
+    "behavior": {
+      "start_at_login": "Avvia al login",
+      "start_at_login_desc": "Avvia automaticamente Airmedy al login",
+      "updated": "Impostazione di avvio aggiornata",
+      "error": "Errore durante l'aggiornamento dell'impostazione di avvio"
+    },
+    "library": {
+      "title": "Gestione della biblioteca"
+    },
+    "about": {
+      "description": "Un lettore musicale moderno e multipiattaforma focalizzato su prestazioni ed eleganza.",
+      "version": "Versione",
+      "github": "Repository GitHub",
+      "license": "Informazioni sulla licenza",
+      "open_data_folder": "Apri la cartella dei dati dell'applicazione",
+      "copyright": "Collaboratori di Airmedy. Costruito con Wails e Vue."
+    },
     "appearance": {
       "title": "Aspetto",
       "theme": "Tema",

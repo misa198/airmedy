@@ -33,6 +33,33 @@
       "removed_error": "移除文件夹失败",
       "remove_folder": "移除文件夹"
     },
+    "categories": {
+      "general": "通用",
+      "library": "媒体库",
+      "equalization": "均衡器",
+      "about": "关于"
+    },
+    "general": {
+      "behavior": "行为",
+      "appearance": "外观"
+    },
+    "behavior": {
+      "start_at_login": "开机启动",
+      "start_at_login_desc": "登录时自动启动 Airmedy",
+      "updated": "启动设置已更新",
+      "error": "更新启动设置失败"
+    },
+    "library": {
+      "title": "媒体库管理"
+    },
+    "about": {
+      "description": "一款专注于性能和优雅的现代跨平台音乐播放器。",
+      "version": "版本",
+      "github": "GitHub 仓库",
+      "license": "许可证信息",
+      "open_data_folder": "打开应用数据文件夹",
+      "copyright": "Airmedy 贡献者。使用 Wails 和 Vue 构建。"
+    },
     "appearance": {
       "title": "外观",
       "theme": "主题",

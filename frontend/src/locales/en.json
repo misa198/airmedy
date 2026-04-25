@@ -33,6 +33,33 @@
       "removed_error": "Failed to remove folder",
       "remove_folder": "Remove folder"
     },
+    "categories": {
+      "general": "General",
+      "library": "Library",
+      "equalization": "Equalization",
+      "about": "About"
+    },
+    "general": {
+      "behavior": "Behavior",
+      "appearance": "Appearance"
+    },
+    "behavior": {
+      "start_at_login": "Start at login",
+      "start_at_login_desc": "Automatically launch Airmedy when you sign in",
+      "updated": "Startup setting updated",
+      "error": "Failed to update startup setting"
+    },
+    "library": {
+      "title": "Library Management"
+    },
+    "about": {
+      "description": "A modern, cross-platform music player focused on performance and elegance.",
+      "version": "Version",
+      "github": "GitHub Repository",
+      "license": "License Info",
+      "open_data_folder": "Open Application Data Folder",
+      "copyright": "Airmedy Contributors. Built with Wails & Vue."
+    },
     "appearance": {
       "title": "Appearance",
       "theme": "Theme",

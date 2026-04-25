@@ -7,12 +7,25 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
+import * as appsettings$0 from "../../app/appsettings/models.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
 import * as domain$0 from "../../domain/models.js";
+
+export function GetAppInfo(): $CancellablePromise<appsettings$0.AppInfo | null> {
+    return $Call.ByID(3451912781).then(($result: any) => {
+        return $$createType1($result);
+    });
+}
 
 export function GetSettings(): $CancellablePromise<domain$0.AppSettings | null> {
     return $Call.ByID(3355188131).then(($result: any) => {
-        return $$createType1($result);
+        return $$createType3($result);
     });
+}
+
+export function OpenAppDataFolder(): $CancellablePromise<void> {
+    return $Call.ByID(3178071057);
 }
 
 export function SaveSettings(settings: domain$0.AppSettings | null): $CancellablePromise<void> {
@@ -20,5 +33,7 @@ export function SaveSettings(settings: domain$0.AppSettings | null): $Cancellabl
 }
 
 // Private type creation functions
-const $$createType0 = domain$0.AppSettings.createFrom;
+const $$createType0 = appsettings$0.AppInfo.createFrom;
 const $$createType1 = $Create.Nullable($$createType0);
+const $$createType2 = domain$0.AppSettings.createFrom;
+const $$createType3 = $Create.Nullable($$createType2);

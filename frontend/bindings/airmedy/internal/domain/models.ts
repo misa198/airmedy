@@ -136,6 +136,7 @@ export class AppSettings {
      * "system", "light", "dark"
      */
     "theme": string;
+    "start_at_login": boolean;
 
     /** Creates a new AppSettings instance. */
     constructor($$source: Partial<AppSettings> = {}) {
@@ -144,6 +145,9 @@ export class AppSettings {
         }
         if (!("theme" in $$source)) {
             this["theme"] = "";
+        }
+        if (!("start_at_login" in $$source)) {
+            this["start_at_login"] = false;
         }
 
         Object.assign(this, $$source);

@@ -33,6 +33,33 @@
       "removed_error": "Fehler beim Entfernen des Ordners",
       "remove_folder": "Ordner entfernen"
     },
+    "categories": {
+      "general": "Allgemein",
+      "library": "Bibliothek",
+      "equalization": "Equalizer",
+      "about": "Über"
+    },
+    "general": {
+      "behavior": "Verhalten",
+      "appearance": "Erscheinungsbild"
+    },
+    "behavior": {
+      "start_at_login": "Beim Anmelden starten",
+      "start_at_login_desc": "Startet Airmedy automatisch beim Anmelden",
+      "updated": "Autostart-Einstellung aktualisiert",
+      "error": "Fehler beim Aktualisieren der Autostart-Einstellung"
+    },
+    "library": {
+      "title": "Bibliotheksverwaltung"
+    },
+    "about": {
+      "description": "Ein moderner, plattformübergreifender Musikplayer, der auf Leistung und Eleganz setzt.",
+      "version": "Version",
+      "github": "GitHub-Repository",
+      "license": "Lizenzinformationen",
+      "open_data_folder": "Anwendungsdatenordner öffnen",
+      "copyright": "Airmedy Mitwirkende. Erstellt mit Wails & Vue."
+    },
     "appearance": {
       "title": "Erscheinungsbild",
       "theme": "Thema",

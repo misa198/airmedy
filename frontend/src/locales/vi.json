@@ -33,6 +33,33 @@
       "removed_error": "Xóa thư mục thất bại",
       "remove_folder": "Xóa thư mục"
     },
+    "categories": {
+      "general": "Chung",
+      "library": "Thư viện",
+      "equalization": "Bộ cân bằng",
+      "about": "Giới thiệu"
+    },
+    "general": {
+      "behavior": "Hành vi",
+      "appearance": "Giao diện"
+    },
+    "behavior": {
+      "start_at_login": "Khởi động cùng hệ thống",
+      "start_at_login_desc": "Tự động chạy Airmedy khi bạn đăng nhập",
+      "updated": "Đã cập nhật cài đặt khởi động",
+      "error": "Cập nhật cài đặt khởi động thất bại"
+    },
+    "library": {
+      "title": "Quản lý thư viện"
+    },
+    "about": {
+      "description": "Trình phát nhạc đa nền tảng hiện đại, tập trung vào hiệu suất và sự tinh tế.",
+      "version": "Phiên bản",
+      "github": "Kho lưu trữ GitHub",
+      "license": "Thông tin bản quyền",
+      "open_data_folder": "Mở thư mục dữ liệu ứng dụng",
+      "copyright": "Người đóng góp Airmedy. Được xây dựng với Wails & Vue."
+    },
     "appearance": {
       "title": "Giao diện",
       "theme": "Giao diện",

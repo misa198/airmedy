@@ -82,7 +82,7 @@ function toggleContextMenu(id: string, e: MouseEvent) {
     <!-- Main nav -->
     <nav class="px-3 py-2 space-y-0.5">
       <RouterLink v-for="item in navItems" :key="item.name" :to="item.to"
-        class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-foreground/50 hover:text-foreground hover:bg-foreground/[0.05]"
+        class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-foreground/60 hover:text-foreground hover:bg-foreground/[0.05]"
         active-class="bg-foreground/[0.08] !text-primary font-medium">
         <component :is="item.icon" class="w-4 h-4 flex-shrink-0" />
         <span class="text-sm">{{ item.name }}</span>
@@ -110,7 +110,7 @@ function toggleContextMenu(id: string, e: MouseEvent) {
       <div class="space-y-0.5">
         <div v-for="playlist in playlistsStore.playlists" :key="playlist.id" class="relative group">
           <RouterLink :to="`/playlists/${playlist.id}`"
-            class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-foreground/50 hover:text-foreground hover:bg-foreground/[0.05] pr-8"
+            class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-foreground/60 hover:text-foreground hover:bg-foreground/[0.05] pr-8"
             active-class="bg-foreground/[0.08] !text-primary font-medium">
             <Music class="w-4 h-4 flex-shrink-0" />
             <span class="text-sm truncate">{{ playlist.name }}</span>

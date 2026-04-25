@@ -67,20 +67,13 @@ function getBandGain(index: number): number {
   <div class="space-y-4">
     <!-- Header row: profile selector + enable toggle -->
     <div class="flex items-center justify-between gap-3">
-      <Select
-        v-if="profiles.length > 0"
-        :model-value="activeProfile?.id"
-        @update:model-value="selectProfile"
-      >
-        <SelectTrigger class="flex-1 bg-foreground/[0.05] border border-foreground/[0.08] text-sm text-foreground rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-foreground/20">
+      <Select v-if="profiles.length > 0" :model-value="activeProfile?.id" @update:model-value="selectProfile">
+        <SelectTrigger
+          class="flex-1 bg-foreground/[0.05] border border-foreground/[0.08] text-sm text-foreground rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-foreground/20">
           <SelectValue placeholder="Select Profile" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem
-            v-for="p in profiles"
-            :key="p.id"
-            :value="p.id"
-          >
+          <SelectItem v-for="p in profiles" :key="p.id" :value="p.id">
             {{ p.name }}
           </SelectItem>
         </SelectContent>
@@ -88,12 +81,10 @@ function getBandGain(index: number): number {
 
       <!-- Enable/Disable toggle -->
       <button
-        class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors"
+        class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors w-18 h-10 border border-foreground/[0.08]"
         :class="enabled
           ? 'bg-foreground/[0.1] text-foreground hover:bg-foreground/[0.14]'
-          : 'bg-foreground/[0.03] text-foreground/40 hover:bg-foreground/[0.06]'"
-        @click="toggleEnabled"
-      >
+          : 'bg-foreground/[0.03] text-foreground/40 hover:bg-foreground/[0.06]'" @click="toggleEnabled">
         <span class="w-1.5 h-1.5 rounded-full" :class="enabled ? 'bg-green-400' : 'bg-foreground/20'" />
         {{ enabled ? 'On' : 'Off' }}
       </button>
@@ -101,35 +92,23 @@ function getBandGain(index: number): number {
 
     <!-- 10-band vertical sliders -->
     <div class="flex items-end justify-between gap-1 h-40 px-1">
-      <div
-        v-for="(label, i) in FREQ_LABELS"
-        :key="i"
-        class="flex flex-col items-center flex-1 min-w-0 h-full"
-      >
+      <div v-for="(label, i) in FREQ_LABELS" :key="i" class="flex flex-col items-center flex-1 min-w-0 h-full">
         <!-- Gain value -->
-        <p class="text-[10px] text-foreground/30 mb-1 tabular-nums w-full text-center">
+        <p class="text-[10px] text-foreground/80 mb-1 tabular-nums w-full text-center">
           {{ getBandGain(i) >= 0 ? '+' : '' }}{{ getBandGain(i).toFixed(1) }}
         </p>
         <!-- Vertical slider via CSS rotation wrapper -->
         <div class="flex-1 flex items-center justify-center w-full">
           <div class="relative" style="width: 24px; height: 80px;">
-            <div
-              class="absolute inset-0 flex items-center justify-center"
-              style="transform: rotate(-90deg); transform-origin: center; width: 80px; height: 24px; top: 50%; left: 50%; margin-top: -12px; margin-left: -40px;"
-            >
-              <Slider
-                :model-value="getBandGain(i)"
-                :min="-12"
-                :max="12"
-                :step="0.5"
-                class="w-full"
-                @update:model-value="(val: number) => updateBand(i, val)"
-              />
+            <div class="absolute inset-0 flex items-center justify-center"
+              style="transform: rotate(-90deg); transform-origin: center; width: 80px; height: 24px; top: 50%; left: 50%; margin-top: -12px; margin-left: -40px;">
+              <Slider :model-value="getBandGain(i)" :min="-12" :max="12" :step="0.5" class="w-full"
+                @update:model-value="(val: number) => updateBand(i, val)" />
             </div>
           </div>
         </div>
         <!-- Freq label -->
-        <p class="text-[10px] text-foreground/30 mt-1">{{ label }}</p>
+        <p class="text-[10px] text-foreground/80 mt-1">{{ label }}</p>
       </div>
     </div>
   </div>

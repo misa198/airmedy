@@ -77,10 +77,11 @@ This is a greenfield project establishing the entire architecture:
 - [x] **Lyrics:** Build the scrolling lyrics UI, automatic search integration, and manual entry/fallback logic.
 
 ### Phase 8: Polish & Release
+- [ ] Refactor UI settings, group settings into categories (General, Library, Equalization, About).
 - [ ] Implement context menus globally (add to playlist, play next, favorite, open album, delete).
 - [ ] Build the metadata editing dialog and save functionality.
-- [ ] Ensure seamless window closing while music continues playing in the background (system tray integration).
-- [ ] Final optimization, UI polish, and cross-platform build configurations.
+- [x] Ensure seamless window closing while music continues playing in the background (system tray integration).
+- [x] Final optimization, UI polish, and cross-platform build configurations.
 
 ## 6. Verification & Testing
 - Write unit tests for the Go metadata extraction, search indexing, and database layers.

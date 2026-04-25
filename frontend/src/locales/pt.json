@@ -33,6 +33,33 @@
       "removed_error": "Falha ao remover pasta",
       "remove_folder": "Remover pasta"
     },
+    "categories": {
+      "general": "Geral",
+      "library": "Biblioteca",
+      "equalization": "Equalização",
+      "about": "Sobre"
+    },
+    "general": {
+      "behavior": "Comportamento",
+      "appearance": "Aparência"
+    },
+    "behavior": {
+      "start_at_login": "Iniciar no login",
+      "start_at_login_desc": "Iniciar o Airmedy automaticamente ao entrar",
+      "updated": "Configuração de inicialização atualizada",
+      "error": "Falha ao atualizar a configuração de inicialização"
+    },
+    "library": {
+      "title": "Gerenciamento de Biblioteca"
+    },
+    "about": {
+      "description": "Um player de música moderno e multiplataforma focado em desempenho e elegância.",
+      "version": "Versão",
+      "github": "Repositório GitHub",
+      "license": "Informações da licença",
+      "open_data_folder": "Abrir pasta de dados do aplicativo",
+      "copyright": "Contribuidores do Airmedy. Construído com Wails e Vue."
+    },
     "appearance": {
       "title": "Aparência",
       "theme": "Tema",

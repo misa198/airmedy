@@ -33,6 +33,33 @@
       "removed_error": "フォルダーの削除に失敗しました",
       "remove_folder": "フォルダーを削除"
     },
+    "categories": {
+      "general": "一般",
+      "library": "ライブラリ",
+      "equalization": "イコライザー",
+      "about": "情報"
+    },
+    "general": {
+      "behavior": "動作",
+      "appearance": "外観"
+    },
+    "behavior": {
+      "start_at_login": "ログイン時に起動",
+      "start_at_login_desc": "サインイン時に Airmedy を自動的に起動します",
+      "updated": "起動設定が更新されました",
+      "error": "起動設定の更新に失敗しました"
+    },
+    "library": {
+      "title": "ライブラリ管理"
+    },
+    "about": {
+      "description": "パフォーマンスとエレガンスに焦点を当てた、モダンなクロスプラットフォームの音楽プレーヤー。",
+      "version": "バージョン",
+      "github": "GitHub リポジトリ",
+      "license": "ライセンス情報",
+      "open_data_folder": "アプリケーションデータフォルダを開く",
+      "copyright": "Airmedy 貢献者。Wails と Vue で構築。"
+    },
     "appearance": {
       "title": "外観",
       "theme": "テーマ",

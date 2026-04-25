@@ -7,6 +7,8 @@ import VueVirtualScroller from 'vue-virtual-scroller'
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
 import './assets/index.css'
 
+window.addEventListener('contextmenu', (e) => e.preventDefault())
+
 const app = createApp(App)
 
 app.use(pinia)

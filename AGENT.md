@@ -41,6 +41,12 @@ Defined tokens: `background`, `foreground`, `glass`, `glass-elevated`, `border-g
 #### Package Manager
 Use **pnpm** for all commands (`pnpm build`, `pnpm test`, `pnpm dev`). Never use npm.
 
+### 2.1 Internationalization (i18n)
+- **Frontend Localization:** Use `vue-i18n`. All user-facing strings MUST be localized via `frontend/src/locales/en.json`.
+- **No Hardcoding:** Never hardcode strings in templates or scripts. Use `$t()` or `t()` from `useI18n()`.
+- **No Inline Fallbacks:** Localized keys must exist in the locale files; do not provide inline fallback strings in the code.
+- **Workflow:** Add keys to `en.json` first, then use them in components.
+
 ### 2.5 Frontend Component Architecture
 
 #### Component Classification

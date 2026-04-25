@@ -5,6 +5,7 @@ import * as SettingsService from '../../bindings/airmedy/internal/infra/wails/se
 export const useAppStore = defineStore('app', () => {
   const theme = ref<'system' | 'light' | 'dark'>('system')
   const language = ref('en')
+  const startAtLogin = ref(false)
 
   const applyTheme = (newTheme: 'system' | 'light' | 'dark') => {
     const root = document.documentElement
@@ -21,6 +22,7 @@ export const useAppStore = defineStore('app', () => {
       if (settings) {
         if (settings.theme) theme.value = settings.theme as any
         if (settings.language) language.value = settings.language
+        startAtLogin.value = !!settings.start_at_login
         applyTheme(theme.value)
       }
     } catch (err) {
@@ -32,7 +34,11 @@ export const useAppStore = defineStore('app', () => {
     theme.value = newTheme
     applyTheme(newTheme)
     try {
-      await SettingsService.SaveSettings({ theme: newTheme, language: language.value })
+      await SettingsService.SaveSettings({ 
+        theme: newTheme, 
+        language: language.value,
+        start_at_login: startAtLogin.value
+      })
     } catch (err) {
       console.error('Failed to save theme setting:', err)
     }
@@ -41,9 +47,26 @@ export const useAppStore = defineStore('app', () => {
   const updateLanguage = async (newLanguage: string) => {
     language.value = newLanguage
     try {
-      await SettingsService.SaveSettings({ theme: theme.value, language: newLanguage })
+      await SettingsService.SaveSettings({ 
+        theme: theme.value, 
+        language: newLanguage,
+        start_at_login: startAtLogin.value
+      })
     } catch (err) {
       console.error('Failed to save language setting:', err)
+    }
+  }
+
+  const updateStartAtLogin = async (enabled: boolean) => {
+    startAtLogin.value = enabled
+    try {
+      await SettingsService.SaveSettings({ 
+        theme: theme.value, 
+        language: language.value,
+        start_at_login: enabled
+      })
+    } catch (err) {
+      console.error('Failed to save startup setting:', err)
     }
   }
 
@@ -57,8 +80,10 @@ export const useAppStore = defineStore('app', () => {
   return {
     theme,
     language,
+    startAtLogin,
     loadSettings,
     updateTheme,
-    updateLanguage
+    updateLanguage,
+    updateStartAtLogin
   }
 })

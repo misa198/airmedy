@@ -33,6 +33,33 @@
       "removed_error": "Échec de la suppression du dossier",
       "remove_folder": "Supprimer le dossier"
     },
+    "categories": {
+      "general": "Général",
+      "library": "Bibliothèque",
+      "equalization": "Égalisation",
+      "about": "À propos"
+    },
+    "general": {
+      "behavior": "Comportement",
+      "appearance": "Apparence"
+    },
+    "behavior": {
+      "start_at_login": "Lancer au démarrage",
+      "start_at_login_desc": "Lancer automatiquement Airmedy à la connexion",
+      "updated": "Paramètre de démarrage mis à jour",
+      "error": "Échec de la mise à jour du paramètre de démarrage"
+    },
+    "library": {
+      "title": "Gestion de la bibliothèque"
+    },
+    "about": {
+      "description": "Un lecteur de musique moderne et multiplateforme axé sur la performance et l'élégance.",
+      "version": "Version",
+      "github": "Dépôt GitHub",
+      "license": "Informations sur la licence",
+      "open_data_folder": "Ouvrir le dossier des données de l'application",
+      "copyright": "Contributeurs Airmedy. Construit avec Wails & Vue."
+    },
     "appearance": {
       "title": "Apparence",
       "theme": "Thème",

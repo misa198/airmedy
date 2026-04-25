@@ -33,6 +33,33 @@
       "removed_error": "Error al eliminar la carpeta",
       "remove_folder": "Eliminar carpeta"
     },
+    "categories": {
+      "general": "General",
+      "library": "Biblioteca",
+      "equalization": "Ecualización",
+      "about": "Acerca de"
+    },
+    "general": {
+      "behavior": "Comportamiento",
+      "appearance": "Apariencia"
+    },
+    "behavior": {
+      "start_at_login": "Iniciar al iniciar sesión",
+      "start_at_login_desc": "Iniciar Airmedy automáticamente al iniciar sesión",
+      "updated": "Ajuste de inicio actualizado",
+      "error": "Error al actualizar el ajuste de inicio"
+    },
+    "library": {
+      "title": "Gestión de la biblioteca"
+    },
+    "about": {
+      "description": "Un reproductor de música moderno y multiplataforma centrado en el rendimiento y la elegancia.",
+      "version": "Versión",
+      "github": "Repositorio GitHub",
+      "license": "Información de la licencia",
+      "open_data_folder": "Abrir la carpeta de datos de la aplicación",
+      "copyright": "Colaboradores de Airmedy. Construido con Wails y Vue."
+    },
     "appearance": {
       "title": "Apariencia",
       "theme": "Tema",
