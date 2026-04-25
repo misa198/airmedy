@@ -76,6 +76,68 @@ func (s *QueueService) GetCurrentTrack() *domain.TrackDTO {
 	return nil
 }
 
+// PeekNext returns the next track in the queue without moving the index.
+func (s *QueueService) PeekNext() *domain.TrackDTO {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	list := s.activeList()
+	if len(list) == 0 {
+		return nil
+	}
+
+	if s.repeatMode == domain.RepeatModeOne {
+		if s.currentIndex >= 0 && s.currentIndex < len(list) {
+			return list[s.currentIndex]
+		}
+	}
+
+	nextIndex := s.currentIndex + 1
+	if nextIndex >= len(list) {
+		if s.repeatMode == domain.RepeatModeAll {
+			nextIndex = 0
+		} else {
+			return nil
+		}
+	}
+
+	if nextIndex >= 0 && nextIndex < len(list) {
+		return list[nextIndex]
+	}
+	return nil
+}
+
+// PeekPrevious returns the previous track in the queue without moving the index.
+func (s *QueueService) PeekPrevious() *domain.TrackDTO {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	list := s.activeList()
+	if len(list) == 0 {
+		return nil
+	}
+
+	if s.repeatMode == domain.RepeatModeOne {
+		if s.currentIndex >= 0 && s.currentIndex < len(list) {
+			return list[s.currentIndex]
+		}
+	}
+
+	prevIndex := s.currentIndex - 1
+	if prevIndex < 0 {
+		if s.repeatMode == domain.RepeatModeAll {
+			prevIndex = len(list) - 1
+		} else {
+			return nil
+		}
+	}
+
+	if prevIndex >= 0 && prevIndex < len(list) {
+		return list[prevIndex]
+	}
+	return nil
+}
+
 // Next moves to the next track based on repeat and shuffle settings.
 // Returns nil if there are no more tracks to play.
 func (s *QueueService) Next() *domain.TrackDTO {
@@ -255,6 +317,30 @@ func (s *QueueService) GetQueue() []*domain.TrackDTO {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.activeList()
+}
+
+// IsEmpty returns true if the queue has no tracks.
+func (s *QueueService) IsEmpty() bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return len(s.activeList()) == 0
+}
+
+// UpdateTrack updates the metadata of a track if it exists in the queue.
+func (s *QueueService) UpdateTrack(track *domain.TrackDTO) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, t := range s.originalList {
+		if t.ID == track.ID {
+			t.IsFavorite = track.IsFavorite
+		}
+	}
+	for _, t := range s.shuffledList {
+		if t.ID == track.ID {
+			t.IsFavorite = track.IsFavorite
+		}
+	}
 }
 
 // Internal helpers

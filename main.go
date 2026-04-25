@@ -187,16 +187,9 @@ func main() {
 	systemTray.SetTemplateIcon(icons.SystrayMacTemplate)
 	systemTray.SetIcon(trayIcon)
 	systemTray.SetTooltip("Airmedy")
-	trayMenu := application.NewMenu()
-	trayMenu.Add("Show Airmedy").OnClick(func(_ *application.Context) {
-		mainWindow.Show()
-		mainWindow.Focus()
-	})
-	trayMenu.AddSeparator()
-	trayMenu.Add("Quit").OnClick(func(_ *application.Context) {
-		wailsApp.Quit()
-	})
-	systemTray.SetMenu(trayMenu)
+
+	trayManager := wails.NewTrayManager(wailsApp, playerService.GetService(), libraryService)
+	trayManager.Setup(systemTray, mainWindow)
 
 	go func() {
 		for {

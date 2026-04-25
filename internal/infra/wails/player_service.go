@@ -14,6 +14,10 @@ func NewPlayerService(service *player.PlayerService) *PlayerService {
 	return &PlayerService{service: service}
 }
 
+func (s *PlayerService) GetService() *player.PlayerService {
+	return s.service
+}
+
 func (s *PlayerService) Play() error {
 	return s.service.Play()
 }

@@ -37,6 +37,9 @@ type PlayerService struct {
 
 	// emitStatusHook overrides event emission in tests (nil in production).
 	emitStatusHook func()
+
+	statusListeners []func(domain.PlayerStatus)
+	queueListeners  []func([]*domain.TrackDTO)
 }
 
 func NewPlayerService(
@@ -90,6 +93,20 @@ func NewPlayerService(
 	})
 
 	return s
+}
+
+// AddStatusListener registers a callback that will be called whenever the player status changes.
+func (s *PlayerService) AddStatusListener(f func(domain.PlayerStatus)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.statusListeners = append(s.statusListeners, f)
+}
+
+// AddQueueListener registers a callback that will be called whenever the queue changes.
+func (s *PlayerService) AddQueueListener(f func([]*domain.TrackDTO)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.queueListeners = append(s.queueListeners, f)
 }
 
 // Play starts or resumes playback. If no track is loaded and the queue is empty,
@@ -199,10 +216,7 @@ func (s *PlayerService) ShuffleTracks(tracks []*domain.TrackDTO) error {
 	err := s.loadAndPlay(track)
 	if err == nil {
 		s.emitStatus()
-		app := application.Get()
-		if app != nil && app.Event != nil {
-			app.Event.Emit("player:queue-updated", s.queue.GetQueue())
-		}
+		s.emitQueue()
 	}
 	return err
 }
@@ -224,19 +238,13 @@ func (s *PlayerService) SetRepeatMode(mode domain.RepeatMode) error {
 // PlayNext inserts a track immediately after the currently playing track.
 func (s *PlayerService) PlayNext(track *domain.TrackDTO) {
 	s.queue.InsertAfterCurrent(track)
-	app := application.Get()
-	if app != nil && app.Event != nil {
-		app.Event.Emit("player:queue-updated", s.queue.GetQueue())
-	}
+	s.emitQueue()
 }
 
 // PlayNextTracks inserts a list of tracks immediately after the currently playing track.
 func (s *PlayerService) PlayNextTracks(tracks []*domain.TrackDTO) {
 	s.queue.InsertListAfterCurrent(tracks)
-	app := application.Get()
-	if app != nil && app.Event != nil {
-		app.Event.Emit("player:queue-updated", s.queue.GetQueue())
-	}
+	s.emitQueue()
 }
 
 // GetStatus returns the current status of the player.
@@ -253,6 +261,44 @@ func (s *PlayerService) GetStatus() domain.PlayerStatus {
 // GetQueue returns the current queue.
 func (s *PlayerService) GetQueue() []*domain.TrackDTO {
 	return s.queue.GetQueue()
+}
+
+// IsQueueEmpty returns true if the queue has no tracks.
+func (s *PlayerService) IsQueueEmpty() bool {
+	return s.queue.IsEmpty()
+}
+
+// GetCurrentTrack returns the currently playing track.
+func (s *PlayerService) GetCurrentTrack() *domain.TrackDTO {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.currentTrack
+}
+
+// PeekNextTrack returns the next track in the queue.
+func (s *PlayerService) PeekNextTrack() *domain.TrackDTO {
+	return s.queue.PeekNext()
+}
+
+// PeekPreviousTrack returns the previous track in the queue.
+func (s *PlayerService) PeekPreviousTrack() *domain.TrackDTO {
+	return s.queue.PeekPrevious()
+}
+
+// SyncTrack updates the metadata of a track in the current player state if it matches.
+func (s *PlayerService) SyncTrack(track *domain.TrackDTO) {
+	s.mu.Lock()
+	if s.currentTrack != nil && s.currentTrack.ID == track.ID {
+		s.currentTrack.IsFavorite = track.IsFavorite
+		// Copy other relevant fields if needed, but for now focus on Favorite
+		s.mu.Unlock()
+		s.emitStatus()
+	} else {
+		s.mu.Unlock()
+	}
+
+	// Also update in queue if present
+	s.queue.UpdateTrack(track)
 }
 
 // Internal helpers
@@ -357,12 +403,40 @@ func (s *PlayerService) emitStatus() {
 		s.emitStatusHook()
 		return
 	}
+	status := s.GetStatus()
+
+	s.mu.RLock()
+	listeners := make([]func(domain.PlayerStatus), len(s.statusListeners))
+	copy(listeners, s.statusListeners)
+	s.mu.RUnlock()
+
+	for _, f := range listeners {
+		f(status)
+	}
+
 	app := application.Get()
 	if app == nil || app.Event == nil {
 		return
 	}
-	status := s.GetStatus()
 	app.Event.Emit("player:status", status)
+}
+
+func (s *PlayerService) emitQueue() {
+	queue := s.queue.GetQueue()
+
+	s.mu.RLock()
+	listeners := make([]func([]*domain.TrackDTO), len(s.queueListeners))
+	copy(listeners, s.queueListeners)
+	s.mu.RUnlock()
+
+	for _, f := range listeners {
+		f(queue)
+	}
+
+	app := application.Get()
+	if app != nil && app.Event != nil {
+		app.Event.Emit("player:queue-updated", queue)
+	}
 }
 
 func (s *PlayerService) startPositionTicker() {
@@ -435,11 +509,7 @@ func (s *PlayerService) playAll() error {
 	rng.Shuffle(len(tracks), func(i, j int) { tracks[i], tracks[j] = tracks[j], tracks[i] })
 
 	s.queue.SetQueue(tracks, 0)
-
-	app := application.Get()
-	if app != nil && app.Event != nil {
-		app.Event.Emit("player:queue-updated", s.queue.GetQueue())
-	}
+	s.emitQueue()
 
 	track := s.queue.GetCurrentTrack()
 	if track == nil {

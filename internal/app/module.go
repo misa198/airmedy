@@ -47,9 +47,14 @@ var Module = fx.Module("app",
 	lyrics.Module,
 	eq.Module,
 	appsettings.Module,
-	fx.Invoke(func(lc fx.Lifecycle, db *sqlite.DB, search domain.SearchService, lib *library.LibraryService, eqSvc *eq.EQService) {
+	fx.Invoke(func(lc fx.Lifecycle, db *sqlite.DB, search domain.SearchService, lib *library.LibraryService, playerSvc *player.PlayerService, eqSvc *eq.EQService) {
 		lc.Append(fx.Hook{
 			OnStart: func(ctx context.Context) error {
+				// Wire library to player to sync track metadata changes (e.g. favorites)
+				lib.AddTrackUpdateListener(func(track *domain.TrackDTO) {
+					playerSvc.SyncTrack(track)
+				})
+
 				if err := eqSvc.SeedDefaults(ctx); err != nil {
 					slog.Error("Failed to seed EQ defaults", "error", err)
 				}

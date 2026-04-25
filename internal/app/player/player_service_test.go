@@ -107,6 +107,21 @@ type fakeLifecycle struct{}
 
 func (l *fakeLifecycle) Append(_ interface{ OnStart() }) {}
 
+type fakeTrackRepo struct {
+	domain.TrackRepository
+}
+
+func (r *fakeTrackRepo) IncrementPlayCount(_ context.Context, _ string) error { return nil }
+
+type fakePlayerStateRepo struct {
+	domain.PlayerStateRepository
+}
+
+func (r *fakePlayerStateRepo) SaveState(_ context.Context, _ domain.PlayerStatus) error { return nil }
+func (r *fakePlayerStateRepo) RestoreState(_ context.Context) (domain.PlayerStatus, error) {
+	return domain.PlayerStatus{}, nil
+}
+
 // newTestService builds a PlayerService with fast tick interval for tests.
 // emitCount is incremented by a goroutine — callers should wait briefly.
 func newTestService(t *testing.T, player domain.AudioPlayer) (*PlayerService, *int64) {
@@ -119,6 +134,8 @@ func newTestService(t *testing.T, player domain.AudioPlayer) (*PlayerService, *i
 		queue:        queue,
 		logger:       slog.Default(),
 		artworkCache: &fakeArtworkCache{},
+		trackRepo:    &fakeTrackRepo{},
+		stateRepo:    &fakePlayerStateRepo{},
 		tickInterval: 10 * time.Millisecond,
 	}
 	s.player.OnTrackEnd(s.HandleTrackEnd)

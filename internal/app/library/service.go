@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"airmedy/internal/domain"
@@ -31,6 +32,9 @@ type LibraryService struct {
 	searchService     domain.SearchService
 	logger            *slog.Logger
 	watcher           *fsnotify.Watcher
+
+	trackUpdateListeners []func(*domain.TrackDTO)
+	mu                   sync.RWMutex
 }
 
 func NewLibraryService(
@@ -65,6 +69,23 @@ func NewLibraryService(
 		logger:            logger.With("module", "library"),
 		watcher:           watcher,
 	}, nil
+}
+
+func (s *LibraryService) AddTrackUpdateListener(l func(*domain.TrackDTO)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.trackUpdateListeners = append(s.trackUpdateListeners, l)
+}
+
+func (s *LibraryService) notifyTrackUpdated(track *domain.TrackDTO) {
+	s.mu.RLock()
+	listeners := make([]func(*domain.TrackDTO), len(s.trackUpdateListeners))
+	copy(listeners, s.trackUpdateListeners)
+	s.mu.RUnlock()
+
+	for _, l := range listeners {
+		l(track)
+	}
 }
 
 func (s *LibraryService) Start(ctx context.Context) error {
@@ -431,9 +452,10 @@ func (s *LibraryService) ImportFile(ctx context.Context, path string) error {
 		s.logger.Warn("Failed to index track", "path", path, "error", err)
 	}
 
-	// Notify frontend
+	// Notify internal listeners and frontend
+	s.notifyTrackUpdated(dto)
 	if app := application.Get(); app != nil && app.Event != nil {
-		app.Event.Emit("library:updated", dto)
+		app.Event.Emit("library:track-updated", dto)
 	}
 
 	return nil
@@ -610,6 +632,7 @@ func (s *LibraryService) ToggleFavorite(ctx context.Context, id string) (bool, e
 	}
 	dto, err := s.trackRepo.GetByID(ctx, id)
 	if err == nil && dto != nil {
+		s.notifyTrackUpdated(dto)
 		if app := application.Get(); app != nil && app.Event != nil {
 			app.Event.Emit("library:track-updated", dto)
 		}
