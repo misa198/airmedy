@@ -4,6 +4,7 @@ import MiniPlayer from '@/components/MiniPlayer.vue'
 import PlayerFooter from '@/components/PlayerFooter.vue'
 import LyricsDrawer from '@/components/LyricsDrawer.vue'
 import QueueDrawer from '@/components/QueueDrawer.vue'
+import TrackInfoDrawer from '@/components/TrackInfoDrawer.vue'
 import Sidebar from '@/components/Sidebar.vue'
 import { usePlayerStore } from '@/stores/player'
 import { useDeviceStore } from '@/stores/device'
@@ -88,6 +89,16 @@ onUnmounted(() => {
         ]">
         <div class="w-80 h-full">
           <LyricsDrawer />
+        </div>
+      </div>
+
+      <!-- Track Info Sidebar (with transition) -->
+      <div class="h-full bg-background transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 pt-4"
+        :class="[
+          playerStore.isTrackInfoOpen ? 'w-80 border-l border-foreground/[0.06]' : 'w-0 border-l-0 border-transparent',
+        ]">
+        <div class="w-80 h-full">
+          <TrackInfoDrawer />
         </div>
       </div>
     </div>

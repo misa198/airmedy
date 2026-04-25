@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Slider } from '@/components/ui/slider'
 import * as EQService from '../../bindings/airmedy/internal/infra/wails/eqservice'
 import type { EQProfile } from '../../bindings/airmedy/internal/domain/models'
@@ -11,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
+const { t } = useI18n()
 const profiles = ref<EQProfile[]>([])
 const activeProfile = ref<EQProfile | null>(null)
 const enabled = ref(true)
@@ -86,7 +88,7 @@ function getBandGain(index: number): number {
           ? 'bg-foreground/[0.1] text-foreground hover:bg-foreground/[0.14]'
           : 'bg-foreground/[0.03] text-foreground/40 hover:bg-foreground/[0.06]'" @click="toggleEnabled">
         <span class="w-1.5 h-1.5 rounded-full" :class="enabled ? 'bg-green-400' : 'bg-foreground/20'" />
-        {{ enabled ? 'On' : 'Off' }}
+        {{ enabled ? t('common.on') : t('common.off') }}
       </button>
     </div>
 

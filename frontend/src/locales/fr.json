@@ -9,7 +9,9 @@
     "cancel": "Annuler",
     "save": "Enregistrer",
     "saving": "Enregistrement...",
-    "create": "Créer"
+    "create": "Créer",
+    "on": "Activé",
+    "off": "Désactivé"
   },
   "settings": {
     "title": "Paramètres",
@@ -155,5 +157,21 @@
     "search_placeholder": "Rechercher dans votre bibliothèque",
     "search_description": "Trouvez des pistes, des albums et des artistes",
     "try_different_search": "Essayez un autre terme de recherche"
+  },
+  "context_menu": {
+    "track_info": "Informations sur la piste"
+  },
+  "track_info": {
+    "title": "Informations sur la piste",
+    "details": "Détails",
+    "album": "Album",
+    "genre": "Genre",
+    "year": "Année",
+    "composer": "Compositeur",
+    "format": "Format",
+    "bitrate": "Débit binaire",
+    "sample_rate": "Taux d'échantillonnage",
+    "file_size": "Taille du fichier",
+    "lossless": "Sans perte"
   }
 }

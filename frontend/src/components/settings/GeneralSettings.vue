@@ -14,15 +14,11 @@ import {
 const { t } = useI18n()
 const appStore = useAppStore()
 
-const emit = defineEmits(['message'])
-
 const toggleStartAtLogin = async (enabled: boolean) => {
   try {
     await appStore.updateStartAtLogin(enabled)
-    emit('message', { text: t('settings.behavior.updated'), type: 'success' })
   } catch (err) {
     console.error('Failed to save settings:', err)
-    emit('message', { text: t('settings.behavior.error'), type: 'error' })
   }
 }
 </script>
@@ -36,7 +32,7 @@ const toggleStartAtLogin = async (enabled: boolean) => {
       </div>
       
       <div class="bg-card rounded-2xl border border-foreground/[0.06] divide-y divide-foreground/[0.06]">
-        <div class="p-5 flex items-center justify-between">
+        <div class="p-5 flex items-center justify-between gap-x-2">
           <div>
             <p class="text-sm font-semibold">{{ t('settings.behavior.start_at_login') }}</p>
             <p class="text-xs text-foreground/40 mt-1">{{ t('settings.behavior.start_at_login_desc') }}</p>
@@ -56,7 +52,7 @@ const toggleStartAtLogin = async (enabled: boolean) => {
       </div>
       
       <div class="bg-card rounded-2xl border border-foreground/[0.06] divide-y divide-foreground/[0.06]">
-        <div class="p-5 flex items-center justify-between">
+        <div class="p-5 flex items-center justify-between gap-x-2">
           <div class="flex items-center gap-4">
             <div class="p-2 bg-foreground/[0.04] rounded-xl">
               <Sun v-if="appStore.theme === 'light'" class="w-5 h-5 text-foreground/60" />
@@ -83,7 +79,7 @@ const toggleStartAtLogin = async (enabled: boolean) => {
           </Select>
         </div>
 
-        <div class="p-5 flex items-center justify-between">
+        <div class="p-5 flex items-center justify-between gap-x-2">
           <div class="flex items-center gap-4">
             <div class="p-2 bg-foreground/[0.04] rounded-xl">
               <Languages class="w-5 h-5 text-foreground/60" />

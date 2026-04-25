@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { 
-  Folder, CheckCircle2, AlertCircle, Settings, 
+import {
+  Folder, Settings,
   Sliders, Info
 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
@@ -14,7 +14,6 @@ const { t } = useI18n()
 
 // State
 const activeCategory = ref('general')
-const message = ref({ text: '', type: '' })
 
 const categories = computed(() => [
   { id: 'general', name: t('settings.categories.general'), icon: Settings },
@@ -23,12 +22,6 @@ const categories = computed(() => [
   { id: 'about', name: t('settings.categories.about'), icon: Info },
 ])
 
-const showMessage = (msg: { text: string, type: string }) => {
-  message.value = msg
-  setTimeout(() => {
-    message.value = { text: '', type: '' }
-  }, 3000)
-}
 </script>
 
 <template>
@@ -59,37 +52,14 @@ const showMessage = (msg: { text: string, type: string }) => {
     <!-- Main Content -->
     <main class="flex-1 overflow-y-auto custom-scrollbar">
       <div class="max-w-3xl p-8 mx-auto">
-        <!-- Message Toast (Simple) -->
-        <transition 
-          enter-active-class="transition duration-300 ease-out"
-          enter-from-class="transform -translate-y-4 opacity-0"
-          enter-to-class="transform translate-y-0 opacity-100"
-          leave-active-class="transition duration-200 ease-in"
-          leave-from-class="opacity-100"
-          leave-to-class="opacity-0"
-        >
-          <div v-if="message.text" 
-            :class="[
-              'mb-8 p-4 rounded-xl flex items-center gap-3 border shadow-sm',
-              message.type === 'error' ? 'bg-destructive/10 border-destructive/20 text-destructive' : 'bg-primary/10 border-primary/20 text-primary'
-            ]"
-          >
-            <AlertCircle v-if="message.type === 'error'" class="w-5 h-5" />
-            <CheckCircle2 v-else class="w-5 h-5" />
-            <p class="text-sm font-medium">{{ message.text }}</p>
-          </div>
-        </transition>
-
         <!-- General Settings -->
-        <GeneralSettings 
-          v-if="activeCategory === 'general'" 
-          @message="showMessage" 
+        <GeneralSettings
+          v-if="activeCategory === 'general'"
         />
 
         <!-- Library Settings -->
-        <LibrarySettings 
-          v-if="activeCategory === 'library'" 
-          @message="showMessage" 
+        <LibrarySettings
+          v-if="activeCategory === 'library'"
         />
 
         <!-- Equalization -->

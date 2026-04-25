@@ -9,7 +9,9 @@
     "cancel": "Cancelar",
     "save": "Guardar",
     "saving": "Guardando...",
-    "create": "Crear"
+    "create": "Crear",
+    "on": "Activado",
+    "off": "Desactivado"
   },
   "settings": {
     "title": "Ajustes",
@@ -165,6 +167,20 @@
     "go_to_album": "Ir al Álbum",
     "go_to_artist": "Ir al Artista",
     "edit_metadata": "Editar metadatos",
-    "remove_from_library": "Eliminar de la biblioteca"
+    "remove_from_library": "Eliminar de la biblioteca",
+    "track_info": "Información de la pista"
+  },
+  "track_info": {
+    "title": "Información de la pista",
+    "details": "Detalles",
+    "album": "Álbum",
+    "genre": "Género",
+    "year": "Año",
+    "composer": "Compositor",
+    "format": "Formato",
+    "bitrate": "Tasa de bits",
+    "sample_rate": "Frecuencia de muestreo",
+    "file_size": "Tamaño del archivo",
+    "lossless": "Sin pérdida"
   }
 }

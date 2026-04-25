@@ -65,7 +65,8 @@ async function onSeekEnd() {
     class="h-[72px] bg-background/80 backdrop-blur-2xl border-t border-foreground/[0.06] flex items-center justify-between px-6 gap-6">
     <!-- Track Info -->
     <div class="flex items-center justify-start gap-3 w-1/4 min-w-[200px]">
-      <div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 shadow-lg ring-1 ring-foreground/10">
+      <div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 shadow-lg ring-1 ring-foreground/10 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+        @click="store.openTrackInfo(store.currentTrack)">
         <img v-if="store.artworkUrl" :src="store.artworkUrl" :alt="trackTitle" class="w-full h-full object-cover" />
         <div v-else class="w-full h-full bg-foreground/5 flex items-center justify-center">
           <Music class="w-5 h-5 text-foreground/20" />

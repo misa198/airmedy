@@ -9,7 +9,9 @@
     "cancel": "キャンセル",
     "save": "保存",
     "saving": "保存中...",
-    "create": "作成"
+    "create": "作成",
+    "on": "オン",
+    "off": "オフ"
   },
   "settings": {
     "title": "設定",
@@ -155,5 +157,21 @@
     "search_placeholder": "ライブラリを検索",
     "search_description": "トラック、アルバム、アーティストを探す",
     "try_different_search": "別の検索語を試してください"
+  },
+  "context_menu": {
+    "track_info": "トラック情報"
+  },
+  "track_info": {
+    "title": "トラック情報",
+    "details": "詳細",
+    "album": "アルバム",
+    "genre": "ジャンル",
+    "year": "年",
+    "composer": "作曲家",
+    "format": "フォーマット",
+    "bitrate": "ビットレート",
+    "sample_rate": "サンプルレート",
+    "file_size": "ファイルサイズ",
+    "lossless": "ロスレス"
   }
 }

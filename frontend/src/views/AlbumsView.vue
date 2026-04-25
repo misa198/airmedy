@@ -1,16 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import { Disc, Search } from 'lucide-vue-next'
-import type { AlbumDTO, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
-import VirtualizedGrid from '../components/VirtualizedGrid.vue'
-import AlbumCard from '../components/AlbumCard.vue'
+import type { AlbumDTO } from '../../bindings/airmedy/internal/domain/models'
+import AlbumGrid from '../components/AlbumGrid.vue'
 import { Input } from '@/components/ui/input'
-import { usePlayerStore } from '@/stores/player'
 
-const router = useRouter()
-const playerStore = usePlayerStore()
 const albums = ref<AlbumDTO[]>([])
 const isLoading = ref(true)
 const searchQuery = ref('')
@@ -19,7 +14,7 @@ const loadAlbums = async () => {
   isLoading.value = true
   try {
     const result = await LibraryService.GetAllAlbums()
-    albums.value = result.filter((a): a is AlbumDTO => a !== null).sort((a, b) => 
+    albums.value = result.filter((a): a is AlbumDTO => a !== null).sort((a, b) =>
       (a.title || '').localeCompare(b.title || '')
     )
   } catch (err) {
@@ -29,30 +24,11 @@ const loadAlbums = async () => {
   }
 }
 
-const navigateToAlbum = (id: string) => {
-  router.push(`/albums/${id}`)
-}
-
-const navigateToArtist = (id: string) => {
-  if (id) router.push(`/artists/${id}`)
-}
-
-const playAlbum = async (id: string) => {
-  try {
-    const tracks = await LibraryService.GetTracksByAlbumID(id)
-    if (tracks && tracks.length > 0) {
-      playerStore.playTracks(tracks.filter((t): t is TrackDTO => t !== null), 0)
-    }
-  } catch (err) {
-    console.error('Failed to play album:', err)
-  }
-}
-
 const filteredAlbums = computed(() => {
   if (!searchQuery.value) return albums.value
   const query = searchQuery.value.toLowerCase()
-  return albums.value.filter(album => 
-    album.title.toLowerCase().includes(query) || 
+  return albums.value.filter(album =>
+    album.title.toLowerCase().includes(query) ||
     (album.artists && album.artists.some(a => a?.name?.toLowerCase().includes(query)))
   )
 })
@@ -89,22 +65,7 @@ onMounted(loadAlbums)
         <p>{{ $t('library.no_albums') }}</p>
       </div>
 
-      <VirtualizedGrid 
-        v-else 
-        :items="filteredAlbums" 
-        :item-height="250" 
-        :min-column-width="180"
-        :gap="45"
-      >
-        <template #default="{ item: album }">
-          <AlbumCard 
-            :album="album" 
-            @click="navigateToAlbum"
-            @artist-click="navigateToArtist"
-            @play="playAlbum"
-          />
-        </template>
-      </VirtualizedGrid>
+      <AlbumGrid v-else :albums="filteredAlbums" :gap="45" />
     </div>
   </div>
 </template>

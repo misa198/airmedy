@@ -43,7 +43,7 @@ function cancel() {
     <Transition name="fade" @after-enter="focusInput">
       <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center" @click.self="cancel">
         <div class="absolute inset-0 bg-background/60 backdrop-blur-sm" @click="cancel" />
-        <div class="relative z-10 w-80 rounded-xl bg-[#1A1A1A] ring-1 ring-foreground/[0.08] shadow-2xl p-5"
+        <div class="relative z-10 w-80 rounded-xl bg-popover ring-1 ring-foreground/[0.08] shadow-2xl p-5"
           @keydown.esc="cancel" @keydown.enter="submit">
           <h3 class="text-sm font-semibold text-foreground mb-4">{{ title ?? t('sidebar.new_playlist') }}</h3>
           <Input ref="inputRef" v-model="name" :placeholder="t('sidebar.playlist_name')"

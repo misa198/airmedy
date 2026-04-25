@@ -9,7 +9,9 @@
     "cancel": "Hủy",
     "save": "Lưu",
     "saving": "Đang lưu...",
-    "create": "Tạo"
+    "create": "Tạo",
+    "on": "Bật",
+    "off": "Tắt"
   },
   "settings": {
     "title": "Cài đặt",
@@ -111,8 +113,8 @@
     "now_playing": "Đang phát",
     "up_next": "Tiếp theo",
     "queue_empty": "Hàng chờ trống",
-    "synced": "Đã đồng bộ",
-    "plain": "Văn bản thuần",
+    "synced": "Đồng bộ",
+    "plain": "Văn bản",
     "lyrics_not_available": "Không có lời bài hát cho bài hát này.",
     "lyrics_coming_soon": "Chúng tôi đang nỗ lực mang lời bài hát đến với bộ sưu tập của bạn sớm."
   },
@@ -165,6 +167,20 @@
     "go_to_album": "Đi tới Album",
     "go_to_artist": "Đi tới Nghệ sĩ",
     "edit_metadata": "Chỉnh sửa siêu dữ liệu",
-    "remove_from_library": "Xóa khỏi thư viện"
+    "remove_from_library": "Xóa khỏi thư viện",
+    "track_info": "Thông tin bài hát"
+  },
+  "track_info": {
+    "title": "Thông tin bài hát",
+    "details": "Chi tiết",
+    "album": "Album",
+    "genre": "Thể loại",
+    "year": "Năm",
+    "composer": "Nhà soạn nhạc",
+    "format": "Định dạng",
+    "bitrate": "Tốc độ bit",
+    "sample_rate": "Tỷ lệ lấy mẫu",
+    "file_size": "Kích thước tệp",
+    "lossless": "Lossless"
   }
 }

@@ -1,8 +1,9 @@
-import { Heart, ListEnd, ListPlus, Disc, User, Pencil, Trash2 } from 'lucide-vue-next'
+import { Heart, ListEnd, ListPlus, Disc, User, Pencil, Trash2, Info } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
 import { useFavoritesStore } from '@/stores/favorites'
+import { usePlayerStore } from '@/stores/player'
 import type { ContextMenuItem } from './useContextMenu'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import * as PlayerService from '../../bindings/airmedy/internal/infra/wails/playerservice'
@@ -13,6 +14,7 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
   const { t } = useI18n()
   const playlistsStore = usePlaylistsStore()
   const favoritesStore = useFavoritesStore()
+  const playerStore = usePlayerStore()
   const router = useRouter()
 
   function buildMenuItems(track: TrackDTO): ContextMenuItem[] {
@@ -21,6 +23,11 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
         label: t('context_menu.play_next'),
         icon: ListEnd,
         action: () => { PlayerService.PlayNext(track) },
+      },
+      {
+        label: t('context_menu.track_info'),
+        icon: Info,
+        action: () => { playerStore.openTrackInfo(track) },
       },
       { separator: true },
       {

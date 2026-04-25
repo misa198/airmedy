@@ -11,7 +11,8 @@ const store = usePlayerStore()
   <div class="h-14 bg-background/80 backdrop-blur-2xl border-t border-foreground/[0.06] flex items-center px-4 gap-3">
     <!-- Artwork + track info -->
     <div class="flex items-center gap-3 flex-1 min-w-0">
-      <div class="w-9 h-9 rounded-md flex-shrink-0 overflow-hidden ring-1 ring-foreground/10">
+      <div class="w-9 h-9 rounded-md flex-shrink-0 overflow-hidden ring-1 ring-foreground/10 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+        @click="store.openTrackInfo(store.currentTrack)">
         <img
           v-if="store.artworkUrl"
           :src="store.artworkUrl"

@@ -21,6 +21,8 @@ export const usePlayerStore = defineStore('player', () => {
   const theme = ref<ThemeColors | null>(null)
   const isQueueOpen = ref(false)
   const isLyricsOpen = ref(false)
+  const isTrackInfoOpen = ref(false)
+  const trackInfoTrack = ref<TrackDTO | null>(null)
   const sidebarWidth = ref(260)
   const playerMode = ref<PlayerMode>('sticky')
   const lyrics = ref<Lyric | null>(null)
@@ -203,12 +205,26 @@ export const usePlayerStore = defineStore('player', () => {
 
   function toggleQueue() {
     isQueueOpen.value = !isQueueOpen.value
-    if (isQueueOpen.value) isLyricsOpen.value = false
+    if (isQueueOpen.value) {
+      isLyricsOpen.value = false
+      isTrackInfoOpen.value = false
+    }
   }
 
   function toggleLyrics() {
     isLyricsOpen.value = !isLyricsOpen.value
-    if (isLyricsOpen.value) isQueueOpen.value = false
+    if (isLyricsOpen.value) {
+      isQueueOpen.value = false
+      isTrackInfoOpen.value = false
+    }
+  }
+
+  function openTrackInfo(track: TrackDTO | null) {
+    if (!track) return
+    trackInfoTrack.value = track
+    isTrackInfoOpen.value = true
+    isQueueOpen.value = false
+    isLyricsOpen.value = false
   }
 
   return {
@@ -219,6 +235,8 @@ export const usePlayerStore = defineStore('player', () => {
     theme,
     isQueueOpen,
     isLyricsOpen,
+    isTrackInfoOpen,
+    trackInfoTrack,
     sidebarWidth,
     playerMode,
     lyrics,
@@ -251,6 +269,7 @@ export const usePlayerStore = defineStore('player', () => {
     playTracks,
     toggleQueue,
     toggleLyrics,
+    openTrackInfo,
     cycleRepeat,
   }
 })

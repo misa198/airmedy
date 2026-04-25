@@ -9,7 +9,9 @@
     "cancel": "Cancelar",
     "save": "Salvar",
     "saving": "Salvando...",
-    "create": "Criar"
+    "create": "Criar",
+    "on": "Ligado",
+    "off": "Desligado"
   },
   "settings": {
     "title": "Configurações",
@@ -54,7 +56,7 @@
     },
     "about": {
       "description": "Um player de música moderno e multiplataforma focado em desempenho e elegância.",
-      "version": "Versão",
+      "version": "Versione",
       "github": "Repositório GitHub",
       "license": "Informações da licença",
       "open_data_folder": "Abrir pasta de dados do aplicativo",
@@ -155,5 +157,21 @@
     "search_placeholder": "Buscar em sua biblioteca",
     "search_description": "Encontre faixas, álbuns e artistas",
     "try_different_search": "Tente um termo de busca diferente"
+  },
+  "context_menu": {
+    "track_info": "Informações da faixa"
+  },
+  "track_info": {
+    "title": "Informações da faixa",
+    "details": "Detalhes",
+    "album": "Álbum",
+    "genre": "Género",
+    "year": "Ano",
+    "composer": "Compositor",
+    "format": "Formato",
+    "bitrate": "Taxa de bits",
+    "sample_rate": "Taxa de amostragem",
+    "file_size": "Tamanho do arquivo",
+    "lossless": "Sem perdas"
   }
 }

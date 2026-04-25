@@ -9,7 +9,9 @@
     "cancel": "取消",
     "save": "保存",
     "saving": "保存中...",
-    "create": "创建"
+    "create": "创建",
+    "on": "开",
+    "off": "关"
   },
   "settings": {
     "title": "设置",
@@ -165,6 +167,20 @@
     "go_to_album": "前往专辑",
     "go_to_artist": "前往艺术家",
     "edit_metadata": "编辑元数据",
-    "remove_from_library": "从媒体库中移除"
+    "remove_from_library": "从媒体库中移除",
+    "track_info": "歌曲信息"
+  },
+  "track_info": {
+    "title": "歌曲信息",
+    "details": "详情",
+    "album": "专辑",
+    "genre": "流派",
+    "year": "年份",
+    "composer": "作曲家",
+    "format": "格式",
+    "bitrate": "比特率",
+    "sample_rate": "采样率",
+    "file_size": "文件大小",
+    "lossless": "无损"
   }
 }

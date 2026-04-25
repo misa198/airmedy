@@ -9,7 +9,9 @@
     "cancel": "ยกเลิก",
     "save": "บันทึก",
     "saving": "กำลังบันทึก...",
-    "create": "สร้าง"
+    "create": "สร้าง",
+    "on": "เปิด",
+    "off": "ปิด"
   },
   "settings": {
     "title": "การตั้งค่า",
@@ -155,5 +157,21 @@
     "search_placeholder": "ค้นหาในคลังเพลงของคุณ",
     "search_description": "ค้นหาเพลง อัลบั้ม และศิลปิน",
     "try_different_search": "ลองใช้คำค้นหาอื่น"
+  },
+  "context_menu": {
+    "track_info": "ข้อมูลเพลง"
+  },
+  "track_info": {
+    "title": "ข้อมูลเพลง",
+    "details": "รายละเอียด",
+    "album": "อัลบั้ม",
+    "genre": "แนวเพลง",
+    "year": "ปี",
+    "composer": "ผู้ประพันธ์",
+    "format": "รูปแบบ",
+    "bitrate": "บิตเรต",
+    "sample_rate": "อัตราสุ่ม",
+    "file_size": "ขนาดไฟล์",
+    "lossless": "ไม่สูญเสียคุณภาพ"
   }
 }

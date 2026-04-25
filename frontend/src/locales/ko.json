@@ -9,7 +9,9 @@
     "cancel": "취소",
     "save": "저장",
     "saving": "저장 중...",
-    "create": "만들기"
+    "create": "만들기",
+    "on": "켜짐",
+    "off": "꺼짐"
   },
   "settings": {
     "title": "설정",
@@ -155,5 +157,21 @@
     "search_placeholder": "라이브러리 검색",
     "search_description": "트랙, 앨범, 아티스트 찾기",
     "try_different_search": "다른 검색어를 입력해 보세요"
+  },
+  "context_menu": {
+    "track_info": "트랙 정보"
+  },
+  "track_info": {
+    "title": "트랙 정보",
+    "details": "상세 정보",
+    "album": "앨범",
+    "genre": "장르",
+    "year": "연도",
+    "composer": "작곡가",
+    "format": "형식",
+    "bitrate": "비트레이트",
+    "sample_rate": "샘플링 레이트",
+    "file_size": "파일 크기",
+    "lossless": "무손실"
   }
 }

@@ -9,23 +9,25 @@
     "cancel": "Annulla",
     "save": "Salva",
     "saving": "Salvataggio...",
-    "create": "Crea"
+    "create": "Crea",
+    "on": "Attivo",
+    "off": "Disattivo"
   },
   "settings": {
     "title": "Impostazioni",
     "sync": {
       "syncing": "Sincronizzazione...",
-      "sync_library": "Sincronizza libreria",
+      "sync_library": "Sincronizza Libreria",
       "syncing_library": "Sincronizzazione libreria musicale...",
       "sync_complete": "Sincronizzazione libreria completata",
       "sync_started": "Sincronizzazione libreria avviata",
-      "sync_failed": "Impossibile avviare la sincronizzazione"
+      "sync_failed": "Avvio sincronizzazione fallito"
     },
     "folders": {
-      "title": "Libreria musicale",
-      "description": "Gestisci le cartelle in cui Airmedy cerca la musica.",
-      "add_folder": "Aggiungi cartella",
-      "no_folders": "Nessuna cartella musicale ancora aggiunta.",
+      "title": "Libreria Musicale",
+      "description": "Gestisci le cartelle in cui Airmedy cerca musica.",
+      "add_folder": "Aggiungi Cartella",
+      "no_folders": "Nessuna cartella musicale aggiunta.",
       "add_first": "Aggiungi la tua prima cartella",
       "added_success": "Cartella aggiunta con successo",
       "added_error": "Impossibile aggiungere la cartella",
@@ -35,7 +37,7 @@
     },
     "categories": {
       "general": "Generale",
-      "library": "Biblioteca",
+      "library": "Libreria",
       "equalization": "Equalizzazione",
       "about": "Informazioni"
     },
@@ -45,20 +47,20 @@
     },
     "behavior": {
       "start_at_login": "Avvia al login",
-      "start_at_login_desc": "Avvia automaticamente Airmedy al login",
+      "start_at_login_desc": "Avvia automaticamente Airmedy all'accesso",
       "updated": "Impostazione di avvio aggiornata",
-      "error": "Errore durante l'aggiornamento dell'impostazione di avvio"
+      "error": "Impossibile aggiornare l'impostazione di avvio"
     },
     "library": {
-      "title": "Gestione della biblioteca"
+      "title": "Gestione Libreria"
     },
     "about": {
       "description": "Un lettore musicale moderno e multipiattaforma focalizzato su prestazioni ed eleganza.",
       "version": "Versione",
       "github": "Repository GitHub",
-      "license": "Informazioni sulla licenza",
-      "open_data_folder": "Apri la cartella dei dati dell'applicazione",
-      "copyright": "Collaboratori di Airmedy. Costruito con Wails e Vue."
+      "license": "Informazioni Licenza",
+      "open_data_folder": "Apri Cartella Dati Applicazione",
+      "copyright": "Contributori Airmedy. Creato con Wails & Vue."
     },
     "appearance": {
       "title": "Aspetto",
@@ -86,12 +88,12 @@
     "search": "Cerca",
     "settings": "Impostazioni",
     "playlists": "Playlist",
-    "new_playlist": "Nuova playlist",
+    "new_playlist": "Nuova Playlist",
     "playlist_name": "Nome playlist",
     "rename": "Rinomina",
     "delete": "Elimina",
-    "no_playlists": "Ancora nessuna playlist",
-    "rename_playlist_title": "Rinomina playlist"
+    "no_playlists": "Nessuna playlist",
+    "rename_playlist_title": "Rinomina Playlist"
   },
   "player": {
     "not_playing": "Nessuna riproduzione",
@@ -106,10 +108,10 @@
     "unmute": "Attiva audio",
     "lyrics": "Testi",
     "queue": "Coda",
-    "mini_player": "Mini player",
+    "mini_player": "Mini Player",
     "fullscreen": "Schermo intero",
     "now_playing": "In riproduzione",
-    "up_next": "Prossimo brano",
+    "up_next": "Prossimo",
     "queue_empty": "La coda è vuota",
     "synced": "Sincronizzato",
     "plain": "Testo semplice",
@@ -118,9 +120,9 @@
   },
   "home": {
     "title": "Home",
-    "recently_listened": "Segnaposto ascoltati di recente",
-    "most_listened": "Segnaposto più ascoltati",
-    "suggested": "Segnaposto suggeriti"
+    "recently_listened": "Ascoltati di recente",
+    "most_listened": "I più ascoltati",
+    "suggested": "Suggeriti"
   },
   "library": {
     "tracks": "Brani",
@@ -137,16 +139,16 @@
     "genre": "Genere",
     "composer": "Compositore",
     "year": "Anno",
-    "track": "Brano",
+    "track": "Traccia",
     "total": "Totale",
     "disc": "Disco",
     "total_discs": "Dischi totali",
-    "edit_metadata": "Modifica metadati",
+    "edit_metadata": "Modifica Metadati",
     "save_metadata_error": "Impossibile salvare i metadati. Controlla i permessi del file.",
     "no_tracks": "Nessun brano trovato",
     "no_albums": "Nessun album trovato",
     "no_results": "Nessun risultato trovato",
-    "songs": "canzoni",
+    "songs": "brani",
     "unknown_artist": "Artista sconosciuto",
     "unknown_title": "Titolo sconosciuto",
     "unknown_album": "Album sconosciuto",
@@ -158,13 +160,27 @@
   },
   "context_menu": {
     "play_next": "Riproduci dopo",
-    "add_to_favorites": "Aggiungi ai preferiti",
-    "remove_from_favorites": "Rimuovi dai preferiti",
-    "add_to_playlist": "Aggiungi alla playlist",
+    "add_to_favorites": "Aggiungi ai Preferiti",
+    "remove_from_favorites": "Rimuovi dai Preferiti",
+    "add_to_playlist": "Aggiungi alla Playlist",
     "no_playlists": "Nessuna playlist",
-    "go_to_album": "Vai all'album",
-    "go_to_artist": "Vai all'artista",
-    "edit_metadata": "Modifica metadati",
-    "remove_from_library": "Rimuovi dalla libreria"
+    "go_to_album": "Vai all'Album",
+    "go_to_artist": "Vai all'Artista",
+    "edit_metadata": "Modifica Metadati",
+    "remove_from_library": "Rimuovi dalla Libreria",
+    "track_info": "Informazioni traccia"
+  },
+  "track_info": {
+    "title": "Informazioni traccia",
+    "details": "Dettagli",
+    "album": "Album",
+    "genre": "Genere",
+    "year": "Anno",
+    "composer": "Compositore",
+    "format": "Formato",
+    "bitrate": "Bitrate",
+    "sample_rate": "Frequenza di campionamento",
+    "file_size": "Dimensione file",
+    "lossless": "Lossless"
   }
 }

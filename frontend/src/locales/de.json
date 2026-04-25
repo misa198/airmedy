@@ -9,7 +9,9 @@
     "cancel": "Abbrechen",
     "save": "Speichern",
     "saving": "Wird gespeichert...",
-    "create": "Erstellen"
+    "create": "Erstellen",
+    "on": "Ein",
+    "off": "Aus"
   },
   "settings": {
     "title": "Einstellungen",
@@ -155,5 +157,21 @@
     "search_placeholder": "Mediathek durchsuchen",
     "search_description": "Titel, Alben und Künstler finden",
     "try_different_search": "Versuche es mit einem anderen Suchbegriff"
+  },
+  "context_menu": {
+    "track_info": "Titelinformationen"
+  },
+  "track_info": {
+    "title": "Titelinformationen",
+    "details": "Details",
+    "album": "Album",
+    "genre": "Genre",
+    "year": "Jahr",
+    "composer": "Komponist",
+    "format": "Format",
+    "bitrate": "Bitrate",
+    "sample_rate": "Abtastrate",
+    "file_size": "Dateigröße",
+    "lossless": "Verlustfrei"
   }
 }

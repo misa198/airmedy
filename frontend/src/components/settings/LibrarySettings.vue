@@ -2,18 +2,18 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as LibraryService from '../../../bindings/airmedy/internal/infra/wails/libraryservice'
-import { RotateCcw, Plus, Trash2, Folder, Loader2 } from 'lucide-vue-next'
+import { RotateCcw, Plus, Trash2, Folder, Loader2, CheckCircle2 } from 'lucide-vue-next'
 import type { WatchedFolder, SyncProgress } from '../../../bindings/airmedy/internal/domain/models'
 import { Events } from '@wailsio/runtime'
 
 const { t } = useI18n()
-const emit = defineEmits(['message'])
 
 // State
 const folders = ref<WatchedFolder[]>([])
 const isSyncing = ref(false)
 const isLoading = ref(true)
 const syncProgress = ref<SyncProgress | null>(null)
+const syncComplete = ref(false)
 
 const loadFolders = async () => {
   isLoading.value = true
@@ -33,11 +33,9 @@ const addFolder = async () => {
     if (path) {
       await LibraryService.AddFolder(path)
       await loadFolders()
-      emit('message', { text: t('settings.folders.added_success'), type: 'success' })
     }
   } catch (err) {
     console.error('Failed to add folder:', err)
-    emit('message', { text: t('settings.folders.added_error'), type: 'error' })
   }
 }
 
@@ -45,10 +43,8 @@ const removeFolder = async (id: string) => {
   try {
     await LibraryService.RemoveFolder(id)
     await loadFolders()
-    emit('message', { text: t('settings.folders.removed_success'), type: 'success' })
   } catch (err) {
     console.error('Failed to remove folder:', err)
-    emit('message', { text: t('settings.folders.removed_error'), type: 'error' })
   }
 }
 
@@ -57,10 +53,8 @@ const syncLibrary = async () => {
   isSyncing.value = true
   try {
     await LibraryService.SyncAll()
-    emit('message', { text: t('settings.sync.sync_started'), type: 'success' })
   } catch (err) {
     console.error('Sync failed:', err)
-    emit('message', { text: t('settings.sync.sync_failed'), type: 'error' })
     isSyncing.value = false
   }
 }
@@ -68,6 +62,7 @@ const syncLibrary = async () => {
 const handleSyncStarted = (ev: Events.WailsEvent) => {
   const data = ev.data as any
   isSyncing.value = true
+  syncComplete.value = false
   syncProgress.value = {
     current: 0,
     total: data.total || 0,
@@ -83,8 +78,7 @@ const handleSyncProgress = (ev: Events.WailsEvent) => {
 
 const handleSyncFinished = () => {
   isSyncing.value = false
-  syncProgress.value = null
-  emit('message', { text: t('settings.sync.sync_complete'), type: 'success' })
+  syncComplete.value = true
 }
 
 onMounted(() => {
@@ -115,25 +109,28 @@ onUnmounted(() => {
     </div>
 
     <!-- Sync Progress -->
-    <div v-if="isSyncing && syncProgress" class="p-6 bg-primary/5 rounded-2xl border border-primary/10 mb-8">
+    <div v-if="syncProgress" class="p-6 bg-primary/5 rounded-2xl border border-primary/10 mb-8">
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-3">
-          <Loader2 class="w-5 h-5 animate-spin text-primary" />
-          <h3 class="font-bold">{{ t('settings.sync.syncing_library') }}</h3>
+          <CheckCircle2 v-if="syncComplete" class="w-5 h-5 text-primary" />
+          <Loader2 v-else class="w-5 h-5 animate-spin text-primary" />
+          <h3 class="font-bold">{{ syncComplete ? t('settings.sync.sync_complete') : t('settings.sync.syncing_library') }}</h3>
         </div>
         <span class="text-xs font-bold bg-primary/10 text-primary px-2 py-1 rounded-lg">
           {{ syncProgress.current }} / {{ syncProgress.total }}
         </span>
       </div>
-      <div class="w-full bg-foreground/[0.06] rounded-full h-2 mb-3 overflow-hidden">
-        <div 
-          class="bg-primary h-full transition-all duration-300 ease-out"
-          :style="{ width: `${(syncProgress.current / (syncProgress.total || 1)) * 100}%` }"
-        ></div>
-      </div>
-      <p class="text-[10px] text-foreground/40 truncate font-medium">
-        Importing: {{ syncProgress.path }}
-      </p>
+      <template v-if="isSyncing">
+        <div class="w-full bg-foreground/[0.06] rounded-full h-2 mb-3 overflow-hidden">
+          <div
+            class="bg-primary h-full transition-all duration-300 ease-out"
+            :style="{ width: `${(syncProgress.current / (syncProgress.total || 1)) * 100}%` }"
+          ></div>
+        </div>
+        <p class="text-[10px] text-foreground/40 truncate font-medium">
+          Importing: {{ syncProgress.path }}
+        </p>
+      </template>
     </div>
 
     <section class="bg-card rounded-2xl border border-foreground/[0.06] p-6">

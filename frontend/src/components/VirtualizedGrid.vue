@@ -6,6 +6,8 @@ const props = defineProps<{
   itemHeight?: number
   gap?: number
   minColumnWidth?: number
+  squareItems?: boolean
+  textAreaHeight?: number
 }>()
 
 const containerRef = ref<HTMLElement | null>(null)
@@ -73,7 +75,15 @@ const rows = computed(() => {
   return result
 })
 
-const totalItemHeight = computed(() => itemHeight.value + gap.value)
+const totalItemHeight = computed(() => {
+  if (props.squareItems && containerWidth.value && columns.value) {
+    const COLUMN_GAP = 24 // gap-6 hardcoded in template
+    const ROW_PADDING = 8 // px-1 (4px each side) hardcoded in template
+    const cardWidth = (containerWidth.value - ROW_PADDING - (columns.value - 1) * COLUMN_GAP) / columns.value
+    return Math.ceil(cardWidth) + (props.textAreaHeight ?? 0) + gap.value
+  }
+  return itemHeight.value + gap.value
+})
 </script>
 
 <template>

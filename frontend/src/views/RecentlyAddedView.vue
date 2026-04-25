@@ -1,15 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import { Disc, Clock } from 'lucide-vue-next'
-import type { AlbumDTO, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
-import VirtualizedGrid from '../components/VirtualizedGrid.vue'
-import AlbumCard from '../components/AlbumCard.vue'
-import { usePlayerStore } from '@/stores/player'
+import type { AlbumDTO } from '../../bindings/airmedy/internal/domain/models'
+import AlbumGrid from '../components/AlbumGrid.vue'
 
-const router = useRouter()
-const playerStore = usePlayerStore()
 const albums = ref<AlbumDTO[]>([])
 const isLoading = ref(true)
 
@@ -22,25 +17,6 @@ const loadRecentlyAdded = async () => {
     console.error('Failed to load recently added albums:', err)
   } finally {
     isLoading.value = false
-  }
-}
-
-const navigateToAlbum = (id: string) => {
-  router.push(`/albums/${id}`)
-}
-
-const navigateToArtist = (id: string) => {
-  if (id) router.push(`/artists/${id}`)
-}
-
-const playAlbum = async (id: string) => {
-  try {
-    const tracks = await LibraryService.GetTracksByAlbumID(id)
-    if (tracks && tracks.length > 0) {
-      playerStore.playTracks(tracks.filter((t): t is TrackDTO => t !== null), 0)
-    }
-  } catch (err) {
-    console.error('Failed to play album:', err)
   }
 }
 
@@ -70,22 +46,7 @@ onMounted(loadRecentlyAdded)
         <p>{{ $t('library.no_albums') }}</p>
       </div>
 
-      <VirtualizedGrid 
-        v-else 
-        :items="albums" 
-        :item-height="250" 
-        :min-column-width="180"
-        :gap="40"
-      >
-        <template #default="{ item: album }">
-          <AlbumCard 
-            :album="album" 
-            @click="navigateToAlbum"
-            @artist-click="navigateToArtist"
-            @play="playAlbum"
-          />
-        </template>
-      </VirtualizedGrid>
+      <AlbumGrid v-else :albums="albums" :gap="40" />
     </div>
   </div>
 </template>
