@@ -4,17 +4,17 @@
         <key>CFBundlePackageType</key>
             <string>APPL</string>
         <key>CFBundleName</key>
-            <string>My Product</string>
+            <string>Airmedy</string>
         <key>CFBundleExecutable</key>
             <string>airmedy</string>
         <key>CFBundleIdentifier</key>
-            <string>com.example.airmedy</string>
+            <string>me.misa198.airmedy</string>
         <key>CFBundleVersion</key>
-            <string>0.1.0</string>
+            <string>1.0.0</string>
         <key>CFBundleGetInfoString</key>
-            <string>This is a comment</string>
+            <string>Airmedy</string>
         <key>CFBundleShortVersionString</key>
-            <string>0.1.0</string>
+            <string>1.0.0</string>
         <key>CFBundleIconFile</key>
             <string>icons</string>
         <key>CFBundleIconName</key>
@@ -24,6 +24,6 @@
         <key>NSHighResolutionCapable</key>
             <string>true</string>
         <key>NSHumanReadableCopyright</key>
-            <string>© 2026, My Company</string>
+            <string>© 2026, misa198</string>
     </dict>
 </plist>

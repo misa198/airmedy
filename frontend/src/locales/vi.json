@@ -61,8 +61,7 @@
       "version": "Phiên bản",
       "github": "Kho lưu trữ GitHub",
       "license": "Thông tin bản quyền",
-      "open_data_folder": "Mở thư mục dữ liệu ứng dụng",
-      "copyright": "Người đóng góp Airmedy. Được xây dựng với Wails & Vue."
+      "open_data_folder": "Mở thư mục dữ liệu ứng dụng"
     },
     "appearance": {
       "title": "Giao diện",

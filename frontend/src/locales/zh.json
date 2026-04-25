@@ -61,8 +61,7 @@
       "version": "版本",
       "github": "GitHub 仓库",
       "license": "许可证信息",
-      "open_data_folder": "打开应用数据文件夹",
-      "copyright": "Airmedy 贡献者。使用 Wails 和 Vue 构建。"
+      "open_data_folder": "打开应用数据文件夹"
     },
     "appearance": {
       "title": "外观",

@@ -61,8 +61,7 @@
       "version": "Version",
       "github": "GitHub Repository",
       "license": "License Info",
-      "open_data_folder": "Open Application Data Folder",
-      "copyright": "Airmedy Contributors. Built with Wails & Vue."
+      "open_data_folder": "Open Application Data Folder"
     },
     "appearance": {
       "title": "Appearance",

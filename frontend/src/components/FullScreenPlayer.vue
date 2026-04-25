@@ -61,12 +61,17 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
     <div class="relative z-10 flex flex-col h-full text-white">
       <!-- Top bar -->
       <div class="flex items-center justify-between px-6 py-4">
-        <button class="p-2 rounded-full hover:bg-white/8 transition-all text-white/60 hover:text-white"
-          :class="{ 'mt-8': (deviceStore.isMac || deviceStore.isWindows) && !deviceStore.isWindowFullscreen }" @click="store.playerMode = 'sticky'">
-          <Minimize2 class="w-5 h-5" />
-        </button>
-        <span class="text-xs font-semibold text-white/40 uppercase tracking-[0.2em]">{{ t('player.now_playing') }}</span>
-        <div class="flex items-center gap-2">
+        <div class="w-[120px]">
+          <button class="p-2 rounded-full hover:bg-white/8 transition-all text-white/60 hover:text-white"
+            :class="{ 'mt-8': (deviceStore.isMac || deviceStore.isWindows) && !deviceStore.isWindowFullscreen }"
+            @click="store.playerMode = 'sticky'">
+            <Minimize2 class="w-5 h-5" />
+          </button>
+        </div>
+        <span class="text-xs font-semibold text-white/40 uppercase tracking-[0.2em]">
+          {{ t('player.now_playing') }}
+        </span>
+        <div class="flex items-center gap-2 w-[120px] justify-end">
           <TabSwitcher v-model="activeTab" :options="tabOptions" />
         </div>
       </div>
@@ -82,47 +87,25 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
             :class="!showRightColumn ? 'w-full max-w-lg' : 'w-1/2 max-w-md'">
             <div class="flex flex-col items-center justify-center gap-6 w-full">
               <!-- Artwork -->
-              <PlayerArtwork
-                :artwork-url="store.artworkUrl"
-                :track-title="trackTitle"
-                :is-playing="store.isPlaying"
-                :show-right-column="showRightColumn"
-              />
+              <PlayerArtwork :artwork-url="store.artworkUrl" :track-title="trackTitle" :is-playing="store.isPlaying"
+                :show-right-column="showRightColumn" />
 
               <!-- Track info -->
-              <PlayerTrackInfo
-                :title="trackTitle"
-                :artist="trackArtist"
-                :album="albumTitle"
-              />
+              <PlayerTrackInfo :title="trackTitle" :artist="trackArtist" :album="albumTitle" />
 
               <!-- Seek bar -->
-              <PlayerSeekBar
-                :progress-percent="store.progressPercent"
-                :position="store.position"
-                :duration="store.duration"
-                @seek="(v) => store.seek(v)"
-              />
+              <PlayerSeekBar :progress-percent="store.progressPercent" :position="store.position"
+                :duration="store.duration" @seek="(v) => store.seek(v)" />
 
               <!-- Controls -->
-              <PlayerPlaybackControls
-                :is-playing="store.isPlaying"
-                :shuffle="store.shuffle"
-                :repeat-mode="store.repeatMode"
-                @toggle-play="store.togglePlayPause()"
-                @next="store.next()"
-                @previous="store.previous()"
-                @toggle-shuffle="store.setShuffle(!store.shuffle)"
-                @cycle-repeat="store.cycleRepeat()"
-              />
+              <PlayerPlaybackControls :is-playing="store.isPlaying" :shuffle="store.shuffle"
+                :repeat-mode="store.repeatMode" @toggle-play="store.togglePlayPause()" @next="store.next()"
+                @previous="store.previous()" @toggle-shuffle="store.setShuffle(!store.shuffle)"
+                @cycle-repeat="store.cycleRepeat()" />
 
               <!-- Volume -->
-              <PlayerVolumeControl
-                :volume="store.volume"
-                :muted="store.muted"
-                @update:volume="(v) => store.setVolume(v)"
-                @update:muted="(v) => store.setMuted(v)"
-              />
+              <PlayerVolumeControl :volume="store.volume" :muted="store.muted"
+                @update:volume="(v) => store.setVolume(v)" @update:muted="(v) => store.setMuted(v)" />
             </div>
           </div>
 
@@ -137,24 +120,13 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
               leave-active-class="transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
               leave-from-class="opacity-100 translate-x-0" leave-to-class="opacity-0 translate-x-24">
               <!-- Right Column: Queue -->
-              <PlayerQueuePanel
-                v-if="store.isQueueOpen"
-                key="queue"
-                :queue="store.queue"
-                @close="store.closeAllDrawers()"
-                @play-track="(index) => store.playTracks(store.queue, index)"
-              />
+              <PlayerQueuePanel v-if="store.isQueueOpen" key="queue" :queue="store.queue"
+                @close="store.closeAllDrawers()" @play-track="(index) => store.playTracks(store.queue, index)" />
 
               <!-- Right Column: Lyrics -->
-              <PlayerLyricsPanel
-                v-else-if="store.isLyricsOpen"
-                key="lyrics"
-                :lyrics="store.lyrics?.content"
-                :loading="store.lyricsLoading"
-                :position="store.position"
-                @close="store.closeAllDrawers()"
-                @seek="(time) => store.seek(time)"
-              />
+              <PlayerLyricsPanel v-else-if="store.isLyricsOpen" key="lyrics" :lyrics="store.lyrics?.content"
+                :loading="store.lyricsLoading" :position="store.position" @close="store.closeAllDrawers()"
+                @seek="(time) => store.seek(time)" />
             </Transition>
           </div>
         </div>

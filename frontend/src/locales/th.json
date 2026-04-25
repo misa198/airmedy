@@ -61,8 +61,7 @@
       "version": "เวอร์ชัน",
       "github": "พื้นที่เก็บข้อมูล GitHub",
       "license": "ข้อมูลใบอนุญาต",
-      "open_data_folder": "เปิดโฟลเดอร์ข้อมูลแอปพลิเคชัน",
-      "copyright": "ผู้สนับสนุน Airmedy สร้างด้วย Wails และ Vue"
+      "open_data_folder": "เปิดโฟลเดอร์ข้อมูลแอปพลิเคชัน"
     },
     "appearance": {
       "title": "ลักษณะที่ปรากฏ",

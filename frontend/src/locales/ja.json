@@ -61,8 +61,7 @@
       "version": "バージョン",
       "github": "GitHub リポジトリ",
       "license": "ライセンス情報",
-      "open_data_folder": "アプリケーションデータフォルダを開く",
-      "copyright": "Airmedy 貢献者。Wails と Vue で構築。"
+      "open_data_folder": "アプリケーションデータフォルダを開く"
     },
     "appearance": {
       "title": "外観",

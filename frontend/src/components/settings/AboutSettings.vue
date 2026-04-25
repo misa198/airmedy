@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as SettingsService from '../../../bindings/airmedy/internal/infra/wails/settingsservice'
 import { Github, FileText, Folder, ExternalLink } from 'lucide-vue-next'
+import { Browser } from '@wailsio/runtime';
 
 const { t } = useI18n()
 
@@ -39,19 +40,16 @@ onMounted(() => {
     <div class="text-center py-8">
       <img src="/airmedy.png" alt="Airmedy" class="w-24 h-24 mx-auto mb-6 drop-shadow-2xl" />
       <h2 class="text-3xl font-black mb-2">{{ appInfo?.name || 'Airmedy' }}</h2>
-      <p class="text-sm font-bold text-primary mb-2">{{ t("settings.about.version") }} {{ appInfo?.version || '0.1.0' }}</p>
+      <p class="text-sm font-bold text-primary mb-2">{{ t("settings.about.version") }} {{ appInfo?.version || '1.0.0' }}
+      </p>
       <p class="text-sm text-foreground/40 max-w-sm mx-auto leading-relaxed">
         {{ t('settings.about.description') }}
       </p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <a 
-        v-if="appInfo?.github_url"
-        :href="appInfo.github_url" 
-        target="_blank"
-        class="flex items-center justify-between p-5 bg-card rounded-2xl border border-foreground/[0.06] hover:bg-foreground/[0.02] transition-all group"
-      >
+      <button v-if="appInfo?.github_url" @click="Browser.OpenURL(appInfo.github_url)"
+        class="flex items-center justify-between p-5 bg-card rounded-2xl border border-foreground/[0.06] hover:bg-foreground/[0.02] transition-all group">
         <div class="flex items-center gap-4">
           <div class="p-2 bg-foreground/[0.04] rounded-xl group-hover:scale-110 transition-transform">
             <Github class="w-5 h-5 text-foreground/60" />
@@ -59,14 +57,10 @@ onMounted(() => {
           <span class="text-sm font-bold">{{ t('settings.about.github') }}</span>
         </div>
         <ExternalLink class="w-4 h-4 text-foreground/20" />
-      </a>
+      </button>
 
-      <a 
-        v-if="appInfo?.license_url"
-        :href="appInfo.license_url" 
-        target="_blank"
-        class="flex items-center justify-between p-5 bg-card rounded-2xl border border-foreground/[0.06] hover:bg-foreground/[0.02] transition-all group"
-      >
+      <button v-if="appInfo?.license_url" @click="Browser.OpenURL(appInfo.license_url)"
+        class="flex items-center justify-between p-5 bg-card rounded-2xl border border-foreground/[0.06] hover:bg-foreground/[0.02] transition-all group">
         <div class="flex items-center gap-4">
           <div class="p-2 bg-foreground/[0.04] rounded-xl group-hover:scale-110 transition-transform">
             <FileText class="w-5 h-5 text-foreground/60" />
@@ -74,12 +68,10 @@ onMounted(() => {
           <span class="text-sm font-bold">{{ t('settings.about.license') }}</span>
         </div>
         <ExternalLink class="w-4 h-4 text-foreground/20" />
-      </a>
+      </button>
 
-      <button 
-        @click="openAppDataFolder"
-        class="md:col-span-2 flex items-center justify-between p-5 bg-card rounded-2xl border border-foreground/[0.06] hover:bg-foreground/[0.02] transition-all group"
-      >
+      <button @click="openAppDataFolder"
+        class="md:col-span-2 flex items-center justify-between p-5 bg-card rounded-2xl border border-foreground/[0.06] hover:bg-foreground/[0.02] transition-all group">
         <div class="flex items-center gap-4">
           <div class="p-2 bg-foreground/[0.04] rounded-xl group-hover:scale-110 transition-transform">
             <Folder class="w-5 h-5 text-foreground/60" />
@@ -89,9 +81,5 @@ onMounted(() => {
         <ExternalLink class="w-4 h-4 text-foreground/20" />
       </button>
     </div>
-    
-    <p class="text-[10px] text-center text-foreground/20 font-medium">
-      &copy; {{ new Date().getFullYear() }} {{ t('settings.about.copyright') }}
-    </p>
   </div>
 </template>

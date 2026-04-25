@@ -61,8 +61,7 @@
       "version": "Version",
       "github": "GitHub-Repository",
       "license": "Lizenzinformationen",
-      "open_data_folder": "Anwendungsdatenordner öffnen",
-      "copyright": "Airmedy Mitwirkende. Erstellt mit Wails & Vue."
+      "open_data_folder": "Anwendungsdatenordner öffnen"
     },
     "appearance": {
       "title": "Erscheinungsbild",

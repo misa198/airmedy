@@ -3,9 +3,9 @@ set -e
 
 # Build configuration
 APP_NAME="airmedy"
-BUNDLE_ID="com.example.airmedy"
-VERSION="0.1.0"
-BUILD_NUMBER="0.1.0"
+BUNDLE_ID="me.misa198.airmedy"
+VERSION="1.0.0"
+BUILD_NUMBER="1.0.0"
 BUILD_DIR="build/ios"
 TARGET="simulator"
 

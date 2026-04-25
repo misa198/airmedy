@@ -61,8 +61,7 @@
       "version": "버전",
       "github": "GitHub 저장소",
       "license": "라이선스 정보",
-      "open_data_folder": "애플리케이션 데이터 폴더 열기",
-      "copyright": "Airmedy 기여자. Wails 및 Vue로 구축됨."
+      "open_data_folder": "애플리케이션 데이터 폴더 열기"
     },
     "appearance": {
       "title": "디자인",

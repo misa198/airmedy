@@ -1,15 +1,15 @@
 {
 	"fixed": {
-		"file_version": "0.1.0"
+		"file_version": "1.0.0"
 	},
 	"info": {
 		"0000": {
-			"ProductVersion": "0.1.0",
-			"CompanyName": "My Company",
+			"ProductVersion": "1.0.0",
+			"CompanyName": "misa198",
 			"FileDescription": "A airmedy application",
-			"LegalCopyright": "© 2026, My Company",
-			"ProductName": "My Product",
-			"Comments": "This is a comment"
+			"LegalCopyright": "© 2026, misa198",
+			"ProductName": "Airmedy",
+			"Comments": "Airmedy"
 		}
 	}
 }

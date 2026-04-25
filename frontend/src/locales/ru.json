@@ -61,8 +61,7 @@
       "version": "Версия",
       "github": "Репозиторий GitHub",
       "license": "Лицензия",
-      "open_data_folder": "Открыть папку с данными приложения",
-      "copyright": "Участники Airmedy. Создано с помощью Wails и Vue."
+      "open_data_folder": "Открыть папку с данными приложения"
     },
     "appearance": {
       "title": "Внешний вид",

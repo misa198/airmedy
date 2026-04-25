@@ -5,17 +5,17 @@
     <key>CFBundleExecutable</key>
     <string>airmedy</string>
     <key>CFBundleIdentifier</key>
-    <string>com.example.airmedy.dev</string>
+    <string>me.misa198.airmedy.dev</string>
     <key>CFBundleName</key>
-    <string>My Product (Dev)</string>
+    <string>Airmedy (Dev)</string>
     <key>CFBundleDisplayName</key>
-    <string>My Product (Dev)</string>
+    <string>Airmedy (Dev)</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.1.0-dev</string>
+    <string>1.0.0-dev</string>
     <key>CFBundleVersion</key>
-    <string>0.1.0</string>
+    <string>1.0.0</string>
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>MinimumOSVersion</key>
@@ -52,11 +52,11 @@
     <true/>
     
     <key>NSHumanReadableCopyright</key>
-    <string>© 2026, My Company</string>
+    <string>© 2026, misa198</string>
     
     
     <key>CFBundleGetInfoString</key>
-    <string>This is a comment</string>
+    <string>Airmedy</string>
     
 </dict>
 </plist>

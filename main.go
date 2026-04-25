@@ -22,6 +22,9 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+//go:embed assets/tray-icon.png
+var trayIcon []byte
+
 func init() {
 	application.RegisterEvent[string]("time")
 }
@@ -182,6 +185,7 @@ func main() {
 
 	systemTray := wailsApp.SystemTray.New()
 	systemTray.SetTemplateIcon(icons.SystrayMacTemplate)
+	systemTray.SetIcon(trayIcon)
 	systemTray.SetTooltip("Airmedy")
 	trayMenu := application.NewMenu()
 	trayMenu.Add("Show Airmedy").OnClick(func(_ *application.Context) {

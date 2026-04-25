@@ -6,12 +6,12 @@
 name: "airmedy"
 arch: ${GOARCH}
 platform: "linux"
-version: "0.1.0"
+version: "1.0.0"
 section: "default"
 priority: "extra"
 maintainer: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}>
 description: "A airmedy application"
-vendor: "My Company"
+vendor: "misa198"
 homepage: "https://wails.io"
 license: "MIT"
 release: "1"

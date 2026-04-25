@@ -8,14 +8,14 @@
   IgnorableNamespaces="uap3">
   
   <Identity 
-    Name="com.example.airmedy"
-    Publisher="CN=My Company"
-    Version="0.1.0.0" 
+    Name="me.misa198.airmedy"
+    Publisher="CN=misa198"
+    Version="1.0.0.0" 
     ProcessorArchitecture="x64" />
   
   <Properties>
-    <DisplayName>My Product</DisplayName>
-    <PublisherDisplayName>My Company</PublisherDisplayName>
+    <DisplayName>Airmedy</DisplayName>
+    <PublisherDisplayName>misa198</PublisherDisplayName>
     <Description>A airmedy application</Description>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
@@ -29,9 +29,9 @@
   </Resources>
   
   <Applications>
-    <Application Id="com.example.airmedy" Executable="airmedy" EntryPoint="Windows.FullTrustApplication">
+    <Application Id="me.misa198.airmedy" Executable="airmedy" EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="My Product"
+        DisplayName="Airmedy"
         Description="A airmedy application"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
