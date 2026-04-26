@@ -53,6 +53,17 @@ func main() {
 		log.Fatal(err)
 	}
 
+	var stopOnce sync.Once
+	stopFX := func() {
+		stopOnce.Do(func() {
+			stopCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if err := fxApp.Stop(stopCtx); err != nil {
+				log.Printf("error stopping services: %v", err)
+			}
+		})
+	}
+
 	wailsApp := application.New(application.Options{
 		Name:        "airmedy",
 		Description: "A modern music player",
@@ -166,19 +177,7 @@ func main() {
 	})
 	windowService.SetMiniWindow(miniPlayerWindow)
 
-	var stopOnce sync.Once
-	stopFX := func() {
-		stopOnce.Do(func() {
-			stopCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-			if err := fxApp.Stop(stopCtx); err != nil {
-				log.Printf("error stopping services: %v", err)
-			}
-		})
-	}
-
-	// Cmd+Q fires ApplicationWillTerminate, bypassing WindowClosing.
-	// Save state here before the process exits.
+	// Cmd+Q fires ApplicationWillTerminate, bypassing WindowClosing on macOS.
 	wailsApp.Event.OnApplicationEvent(events.Mac.ApplicationWillTerminate, func(_ *application.ApplicationEvent) {
 		stopFX()
 	})

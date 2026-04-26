@@ -134,6 +134,7 @@ func (s *PlayerService) Pause() error {
 	if err == nil {
 		s.stopPositionTicker()
 		s.emitStatus()
+		s.saveState(context.Background())
 	}
 	return err
 }
@@ -147,6 +148,7 @@ func (s *PlayerService) Stop() error {
 			s.nowPlaying.ClearNowPlaying()
 		}
 		s.emitStatus()
+		s.saveState(context.Background())
 	}
 	return err
 }
@@ -340,6 +342,8 @@ func (s *PlayerService) loadAndPlay(track *domain.TrackDTO) error {
 
 	go s.extractAndEmitPalette(track)
 	go s.fetchAndEmitLyrics(track)
+
+	s.saveState(context.Background())
 
 	return nil
 }

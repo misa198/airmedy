@@ -24,8 +24,30 @@ import (
 var Module = fx.Module("app",
 	fx.Provide(
 		config.NewConfig,
-		func(c *config.Config, logger *slog.Logger) (*sqlite.DB, error) { return sqlite.NewDB(c.DBPath(), logger) },
-		func(c *config.Config) (domain.SearchService, error) { return bleve.NewBleveSearchService(c.IndexPath()) },
+		func(lc fx.Lifecycle, c *config.Config, logger *slog.Logger) (*sqlite.DB, error) {
+			db, err := sqlite.NewDB(c.DBPath(), logger)
+			if err != nil {
+				return nil, err
+			}
+			lc.Append(fx.Hook{
+				OnStop: func(ctx context.Context) error {
+					return db.Close()
+				},
+			})
+			return db, nil
+		},
+		func(lc fx.Lifecycle, c *config.Config) (domain.SearchService, error) {
+			search, err := bleve.NewBleveSearchService(c.IndexPath())
+			if err != nil {
+				return nil, err
+			}
+			lc.Append(fx.Hook{
+				OnStop: func(ctx context.Context) error {
+					return search.Close()
+				},
+			})
+			return search, nil
+		},
 		func(c *config.Config) (domain.ArtworkCache, error) { return artwork.NewDiskArtworkCache(c.ArtworkCachePath()) },
 		func() domain.MetadataExtractor { return metadata.NewTagLibExtractor() },
 		func() domain.MetadataWriter { return metadata.NewTagLibWriter() },
@@ -64,10 +86,7 @@ var Module = fx.Module("app",
 				if err := lib.Stop(ctx); err != nil {
 					slog.Error("Failed to stop library service", "error", err)
 				}
-				if err := search.Close(); err != nil {
-					return err
-				}
-				return db.Close()
+				return nil
 			},
 		})
 	}),
