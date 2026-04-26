@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Disc, Music, Search, User, Library, PenTool } from 'lucide-vue-next'
+import LazyImg from '@/components/LazyImg.vue'
 import { Input } from '@/components/ui/input'
 import AlbumCard from '@/components/AlbumCard.vue'
 import ArtistCard from '@/components/ArtistCard.vue'
@@ -101,7 +102,7 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists() || hasPlayli
               @click="navigateToAlbum(track.album?.id)">
               <div
                 class="w-12 h-12 flex-shrink-0 rounded-lg bg-foreground/[0.06] overflow-hidden ring-1 ring-foreground/[0.06]">
-                <img v-if="track.artwork_key || track.album?.artwork_key"
+                <LazyImg v-if="track.artwork_key || track.album?.artwork_key"
                   :src="buildArtworkUrl(track.artwork_key || track.album?.artwork_key, 'sm')"
                   class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                 <div v-else class="w-full h-full flex items-center justify-center text-foreground/20">

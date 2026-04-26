@@ -3,6 +3,7 @@ import { ref, watch } from 'vue'
 import { Music, X, ListMusic, MoreVertical } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
 import { formatTime, buildArtworkUrl } from '../lib/utils'
+import LazyImg from '@/components/LazyImg.vue'
 import { useI18n } from 'vue-i18n'
 import TrackContextMenu from './TrackContextMenu.vue'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
@@ -76,7 +77,7 @@ watch(() => store.isQueueOpen, (open) => {
         >
           <!-- Artwork -->
           <div class="w-10 h-10 rounded-md bg-foreground/5 flex-shrink-0 overflow-hidden">
-            <img
+            <LazyImg
               v-if="item.artwork_key"
               :src="buildArtworkUrl(item.artwork_key, 'sm')"
               :alt="item.title"

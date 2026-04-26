@@ -3,6 +3,7 @@ import { Play, Pause, SkipForward, Maximize2, Music } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
 import { formatTime } from '../lib/utils'
 import MarqueeText from './MarqueeText.vue'
+import LazyImg from '@/components/LazyImg.vue'
 
 const store = usePlayerStore()
 </script>
@@ -13,7 +14,7 @@ const store = usePlayerStore()
     <div class="flex items-center gap-3 flex-1 min-w-0">
       <div class="w-9 h-9 rounded-md flex-shrink-0 overflow-hidden ring-1 ring-foreground/10 cursor-pointer transition-transform hover:scale-105 active:scale-95"
         @click="store.openTrackInfo(store.currentTrack)">
-        <img
+        <LazyImg
           v-if="store.artworkUrlSm"
           :src="store.artworkUrlSm"
           class="w-full h-full object-cover"

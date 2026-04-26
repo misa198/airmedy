@@ -16,6 +16,7 @@ import {
   Mic2,
   PictureInPicture2,
 } from 'lucide-vue-next'
+import LazyImg from '@/components/LazyImg.vue'
 import { usePlayerStore } from '../stores/player'
 import { RepeatMode } from '../../bindings/airmedy/internal/domain/models'
 import { formatTime } from '../lib/utils'
@@ -77,7 +78,7 @@ async function onSeekEnd() {
       <div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 shadow-lg ring-1 ring-foreground/10 cursor-pointer transition-transform hover:scale-105 active:scale-95"
         @click="store.openTrackInfo(store.currentTrack)"
         @contextmenu.prevent="openArtworkContextMenu">
-        <img v-if="store.artworkUrlSm" :src="store.artworkUrlSm" :alt="trackTitle" class="w-full h-full object-cover" />
+        <LazyImg v-if="store.artworkUrlSm" :src="store.artworkUrlSm" :alt="trackTitle" class="w-full h-full object-cover" />
         <div v-else class="w-full h-full bg-foreground/5 flex items-center justify-center">
           <Music class="w-5 h-5 text-foreground/20" />
         </div>

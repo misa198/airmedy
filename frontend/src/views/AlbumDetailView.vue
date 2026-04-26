@@ -2,6 +2,7 @@
 import { ref, shallowRef, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import LazyImg from '@/components/LazyImg.vue'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { AlbumDTO, TrackDTO, ThemeColors } from '../../bindings/airmedy/internal/domain/models'
 import TrackTable from '@/components/TrackTable.vue'
@@ -89,7 +90,7 @@ const getTotalDuration = (tracks: TrackDTO[]) => {
       >
         <template #artwork>
           <div class="w-48 h-48 rounded-lg shadow-2xl overflow-hidden ring-1 ring-foreground/[0.08] bg-foreground/5 flex-shrink-0">
-            <img v-if="album.artwork_key" :src="buildArtworkUrl(album.artwork_key, 'md')" class="w-full h-full object-cover" />
+            <LazyImg v-if="album.artwork_key" :src="buildArtworkUrl(album.artwork_key, 'md')" class="w-full h-full object-cover" />
             <div v-else class="w-full h-full flex items-center justify-center text-foreground/10">
               <Disc class="w-24 h-24" />
             </div>
