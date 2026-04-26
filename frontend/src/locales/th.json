@@ -158,15 +158,34 @@
     "no_results": "ไม่พบผลลัพธ์",
     "songs": "เพลง",
     "unknown_artist": "ไม่ทราบศิลปิน",
+    "unknown_composer": "ไม่ทราบผู้ประพันธ์",
+    "unknown_genre": "ไม่ทราบแนวเพลง",
     "unknown_title": "ไม่ทราบชื่อเพลง",
     "unknown_album": "ไม่ทราบอัลบั้ม",
     "unknown": "ไม่ทราบ",
     "select_item": "เลือกรายการเพื่อดูรายละเอียด",
     "search_placeholder": "ค้นหาในคลังเพลงของคุณ",
     "search_description": "ค้นหาเพลง อัลบั้ม และศิลปิน",
-    "try_different_search": "ลองใช้คำค้นหาอื่น"
+    "try_different_search": "ลองใช้คำค้นหาอื่น",
+    "play_count": "จำนวนครั้งที่เล่น",
+    "disc_number": "หมายเลขแผ่น",
+    "track_number": "หมายเลขเพลง",
+    "album_artist": "ศิลปินอัลบั้ม",
+    "favorite": "รายการโปรด",
+    "columns": "คอลัมน์",
+    "index": "#",
+    "context_menu": ""
   },
   "context_menu": {
+    "play_next": "เล่นเป็นลำดับถัดไป",
+    "add_to_favorites": "เพิ่มในรายการโปรด",
+    "remove_from_favorites": "เอาออกจากรายการโปรด",
+    "add_to_playlist": "เพิ่มในเพลย์ลิสต์",
+    "no_playlists": "ไม่มีเพลย์ลิสต์",
+    "go_to_album": "ไปยังอัลบั้ม",
+    "go_to_artist": "ไปยังศิลปิน",
+    "edit_metadata": "แก้ไขข้อมูลเมตา",
+    "show_in_explorer": "Show in File Explorer",
     "track_info": "ข้อมูลเพลง",
     "refresh_lyrics": "รีเฟรชเนื้อเพลง"
   },
@@ -190,5 +209,9 @@
     "isrc": "ISRC",
     "play_count": "จำนวนครั้งที่เล่น",
     "lossless": "ไม่สูญเสียคุณภาพ"
+  },
+  "playlist": {
+    "edit_cover": "แก้ไขหน้าปก",
+    "remove_cover": "ลบหน้าปกที่กำหนดเอง"
   }
 }

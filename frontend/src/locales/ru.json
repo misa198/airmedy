@@ -158,15 +158,34 @@
     "no_results": "Результаты не найдены",
     "songs": "песен",
     "unknown_artist": "Неизвестный исполнитель",
+    "unknown_composer": "Неизвестный композитор",
+    "unknown_genre": "Неизвестный жанр",
     "unknown_title": "Без названия",
     "unknown_album": "Неизвестный альбом",
     "unknown": "Неизвестно",
     "select_item": "Выберите элемент, чтобы просмотреть сведения",
     "search_placeholder": "Поиск по медиатеке",
     "search_description": "Найдите треки, альбомы и исполнителей",
-    "try_different_search": "Попробуйте другой поисковый запрос"
+    "try_different_search": "Попробуйте другой поисковый запрос",
+    "play_count": "Прослушивания",
+    "disc_number": "№ диска",
+    "track_number": "№ трека",
+    "album_artist": "Исполнитель альбома",
+    "favorite": "Избранное",
+    "columns": "Столбцы",
+    "index": "#",
+    "context_menu": ""
   },
   "context_menu": {
+    "play_next": "Воспроизвести следующим",
+    "add_to_favorites": "Добавить в избранное",
+    "remove_from_favorites": "Удалить из избранного",
+    "add_to_playlist": "Добавить в плейлист",
+    "no_playlists": "Нет плейлистов",
+    "go_to_album": "Перейти к альбому",
+    "go_to_artist": "Перейти к исполнителю",
+    "edit_metadata": "Редактировать метаданные",
+    "show_in_explorer": "Show in File Explorer",
     "track_info": "Информация о треке",
     "refresh_lyrics": "Обновить текст"
   },
@@ -190,5 +209,9 @@
     "isrc": "ISRC",
     "play_count": "Прослушивания",
     "lossless": "Без потерь"
+  },
+  "playlist": {
+    "edit_cover": "Изменить обложку",
+    "remove_cover": "Удалить свою обложку"
   }
 }

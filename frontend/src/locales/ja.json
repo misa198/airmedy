@@ -158,15 +158,34 @@
     "no_results": "結果が見つかりません",
     "songs": "曲",
     "unknown_artist": "不明なアーティスト",
+    "unknown_composer": "不明な作曲家",
+    "unknown_genre": "不明なジャンル",
     "unknown_title": "不明なタイトル",
     "unknown_album": "不明なアルバム",
     "unknown": "不明",
     "select_item": "項目を選択して詳細を表示",
     "search_placeholder": "ライブラリを検索",
     "search_description": "トラック、アルバム、アーティストを探す",
-    "try_different_search": "別の検索語を試してください"
+    "try_different_search": "別の検索語を試してください",
+    "play_count": "再生回数",
+    "disc_number": "ディスク番号",
+    "track_number": "トラック番号",
+    "album_artist": "アルバムアーティスト",
+    "favorite": "お気に入り",
+    "columns": "列",
+    "index": "#",
+    "context_menu": ""
   },
   "context_menu": {
+    "play_next": "次に再生",
+    "add_to_favorites": "お気に入りに追加",
+    "remove_from_favorites": "お気に入りから削除",
+    "add_to_playlist": "プレイリストに追加",
+    "no_playlists": "プレイリストなし",
+    "go_to_album": "アルバムへ移動",
+    "go_to_artist": "アーティストへ移動",
+    "edit_metadata": "メタデータを編集",
+    "show_in_explorer": "Show in File Explorer",
     "track_info": "トラック情報",
     "refresh_lyrics": "歌詞を更新"
   },
@@ -190,5 +209,9 @@
     "isrc": "ISRC",
     "play_count": "再生回数",
     "lossless": "ロスレス"
+  },
+  "playlist": {
+    "edit_cover": "カバーを編集",
+    "remove_cover": "カスタムカバーを削除"
   }
 }

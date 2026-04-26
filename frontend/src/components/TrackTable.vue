@@ -1,265 +1,230 @@
 <script setup lang="ts">
-import { Clock, Disc, MoreVertical, Music, Play, User } from 'lucide-vue-next'
-import { nextTick, onActivated, onMounted, ref, watch } from 'vue'
+import { Music } from 'lucide-vue-next'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import type { Artist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
-import { formatTime } from '../lib/utils'
+import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import { usePlayerStore } from '../stores/player'
 import TrackContextMenu from './TrackContextMenu.vue'
+import TrackTableFilter from './TrackTableFilter.vue'
+import TrackTableHeader from './TrackTableHeader.vue'
+import TrackTableRow from './TrackTableRow.vue'
+import { COLUMNS, type ColumnKey, useTrackTableSettings } from '@/composables/useTrackTableSettings'
+
+const SIMPLE_COLUMNS: ColumnKey[] = ['index', 'title', 'duration', 'context_menu']
+const HEADER_HEIGHT = 40
+const ROW_HEIGHT = 56
+const BUFFER = 5
 
 const router = useRouter()
 const playerStore = usePlayerStore()
+const settings = useTrackTableSettings()
 
 const props = defineProps<{
   tracks: TrackDTO[]
   isLoading?: boolean
-  showAlbum?: boolean
   showArtwork?: boolean
   scrollToCurrent?: boolean
+  simpleMode?: boolean
+  hideColumns?: ColumnKey[]
+  hideHeader?: boolean
+  variant?: 'default' | 'glass'
 }>()
 
 const emit = defineEmits<{
-  'play-track': [track: TrackDTO, index: number]
+  'play-track': [track: TrackDTO, index: number, queue: TrackDTO[]]
 }>()
 
-const scrollerRef = ref<any>(null)
-const lastScrollTop = ref(0)
-const trackContextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
+// ── Sorting ────────────────────────────────────────────────────────────────
+const sortColumn = ref<ColumnKey | null>(null)
+const sortDir = ref<'asc' | 'desc' | null>(null)
 
-const scrollToCurrentTrack = () => {
-  if (!scrollerRef.value || !playerStore.currentTrack || props.tracks.length === 0) return
-  const index = props.tracks.findIndex(t => t.id === playerStore.currentTrack?.id)
+function cycleSort(key: ColumnKey) {
+  if (props.simpleMode) return
+  if (sortColumn.value !== key) {
+    sortColumn.value = key
+    sortDir.value = 'asc'
+    return
+  }
+  if (sortDir.value === 'asc') {
+    sortDir.value = 'desc'
+    return
+  }
+  sortColumn.value = null
+  sortDir.value = null
+}
+
+const sortedTracks = computed(() => {
+  if (!sortColumn.value || !sortDir.value) return props.tracks
+  const col = COLUMNS.find((c) => c.key === sortColumn.value)
+  if (!col?.sortFn) return props.tracks
+  const fn = col.sortFn
+  return [...props.tracks].sort((a, b) => {
+    const r = fn(a, b)
+    return sortDir.value === 'asc' ? r : -r
+  })
+})
+
+// ── Column layout ──────────────────────────────────────────────────────────
+const orderedVisibleColumns = computed(() => {
+  const hideSet = new Set(props.hideColumns ?? [])
+  const visibleSet = props.simpleMode
+    ? new Set(SIMPLE_COLUMNS)
+    : new Set(settings.visibleColumns.value)
+
+  return settings.columnOrder.value
+    .map((k) => COLUMNS.find((c) => c.key === k)!)
+    .filter(
+      (col) =>
+        col &&
+        visibleSet.has(col.key) &&
+        !hideSet.has(col.key) &&
+        (props.simpleMode ? SIMPLE_COLUMNS.includes(col.key) : true),
+    )
+})
+
+const gridTemplateColumns = computed(() =>
+  orderedVisibleColumns.value.map((c) => props.simpleMode ? c.gridWidth : settings.effectiveGridWidth(c)).join(' '),
+)
+
+const totalMinWidth = computed(() => {
+  const sum = orderedVisibleColumns.value.reduce((acc, c) => {
+    const override = settings.columnWidths.value[c.key]
+    return acc + (props.simpleMode || override === undefined ? c.minWidthPx : override)
+  }, 0)
+  return sum + 'px'
+})
+
+const optionalColumns = computed(() =>
+  COLUMNS.filter((c) => !c.alwaysVisible && !(props.hideColumns ?? []).includes(c.key)),
+)
+
+// ── Virtual scroll ─────────────────────────────────────────────────────────
+const scrollEl = ref<HTMLElement | null>(null)
+const scrollTop = ref(0)
+const containerHeight = ref(0)
+let ro: ResizeObserver | null = null
+
+const totalHeight = computed(
+  () => HEADER_HEIGHT + sortedTracks.value.length * ROW_HEIGHT,
+)
+
+const visibleStart = computed(() =>
+  Math.max(0, Math.floor((scrollTop.value - HEADER_HEIGHT) / ROW_HEIGHT) - BUFFER),
+)
+
+const visibleEnd = computed(() =>
+  Math.min(
+    sortedTracks.value.length,
+    Math.ceil((scrollTop.value - HEADER_HEIGHT + containerHeight.value) / ROW_HEIGHT) + BUFFER,
+  ),
+)
+
+const visibleRows = computed(() =>
+  sortedTracks.value.slice(visibleStart.value, visibleEnd.value).map((track, i) => ({
+    track,
+    index: visibleStart.value + i,
+    top: HEADER_HEIGHT + (visibleStart.value + i) * ROW_HEIGHT,
+  })),
+)
+
+function onScroll(e: Event) {
+  const el = e.target as HTMLElement
+  scrollTop.value = el.scrollTop
+  trackContextMenu.value?.close()
+}
+
+function scrollToCurrentTrack() {
+  if (!scrollEl.value || !playerStore.currentTrack || props.tracks.length === 0) return
+  const index = sortedTracks.value.findIndex((t) => t.id === playerStore.currentTrack?.id)
   if (index !== -1) {
-    scrollerRef.value.scrollToItem(index)
+    const target = HEADER_HEIGHT + index * ROW_HEIGHT - containerHeight.value / 2
+    scrollEl.value.scrollTop = Math.max(0, target)
   }
 }
 
-const handleScroll = (event: Event) => {
-  const target = event.target as HTMLElement
-  if (target) {
-    lastScrollTop.value = target.scrollTop
-  }
-}
-
-// Watch for track changes or current track changes to scroll if needed
-watch([() => props.tracks, () => playerStore.currentTrack], () => {
-  if (props.scrollToCurrent) {
-    nextTick(() => {
-      scrollToCurrentTrack()
-    })
-  }
-}, { deep: false })
+watch(
+  [() => props.tracks, () => playerStore.currentTrack],
+  () => {
+    if (props.scrollToCurrent) nextTick(scrollToCurrentTrack)
+  },
+  { deep: false },
+)
 
 onMounted(() => {
+  if (scrollEl.value) {
+    ro = new ResizeObserver((entries) => {
+      containerHeight.value = entries[0].contentRect.height
+    })
+    ro.observe(scrollEl.value)
+  }
   if (props.scrollToCurrent) {
-    // Small timeout to allow for transitions and layout calculations
-    setTimeout(() => {
-      scrollToCurrentTrack()
-    }, 100)
+    setTimeout(scrollToCurrentTrack, 100)
   }
 })
 
-onActivated(() => {
-  if (scrollerRef.value && lastScrollTop.value > 0) {
-    setTimeout(() => {
-      if (scrollerRef.value && scrollerRef.value.$el) {
-        scrollerRef.value.$el.scrollTop = lastScrollTop.value
-      }
-    }, 0)
-  } else if (props.scrollToCurrent) {
-    setTimeout(() => {
-      scrollToCurrentTrack()
-    }, 100)
-  }
+onBeforeUnmount(() => {
+  ro?.disconnect()
 })
+
+// ── Context menu ───────────────────────────────────────────────────────────
+const trackContextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
 
 function openContextMenu(e: MouseEvent, item: TrackDTO) {
   trackContextMenu.value?.open(e, item)
 }
 
-const navigateToAlbum = (id: string) => {
-  router.push(`/albums/${id}`)
+// ── Navigation ─────────────────────────────────────────────────────────────
+const navigateToAlbum = (id: string) => router.push(`/albums/${id}`)
+const navigateToArtist = (id: string) => { if (id) router.push(`/artists/${id}`) }
+
+function rowBg(index: number, opaque = false) {
+  if (props.variant === 'glass' && opaque) return 'transparent'
+
+  if (index % 2 !== 0) {
+    return opaque ? 'var(--bg-main)' : 'transparent'
+  }
+  return opaque
+    ? 'color-mix(in srgb, var(--bg-main), var(--text-main) 2%)'
+    : 'var(--bg-zebra)'
 }
 
-const navigateToArtist = (id: string) => {
-  if (id) router.push(`/artists/${id}`)
+function handlePlayTrack(track: TrackDTO, index: number) {
+  emit('play-track', track, index, sortedTracks.value)
 }
-
-const isCurrentTrack = (trackId: string) => {
-  return playerStore.currentTrack?.id === trackId
-}
-
 </script>
 
 <template>
-  <div class="h-full flex flex-col overflow-hidden select-none @container">
-    <!-- Table Header -->
-    <div :class="[
-      'grid gap-4 px-6 py-2 border-b border-foreground/[0.06] text-[10px] font-semibold text-foreground/80 uppercase tracking-widest',
-      showAlbum
-        ? 'grid-cols-[minmax(0,1fr)_80px] @[450px]:grid-cols-[40px_minmax(0,1fr)_80px_40px] @[700px]:grid-cols-[40px_minmax(0,1fr)_minmax(0,1fr)_80px_40px] @[1000px]:grid-cols-[40px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_80px_40px]'
-        : 'grid-cols-[minmax(0,1fr)_80px] @[450px]:grid-cols-[40px_minmax(0,1fr)_80px_40px] @[650px]:grid-cols-[40px_minmax(0,1fr)_minmax(0,1fr)_80px_40px]'
-    ]">
-      <div class="text-center hidden @[450px]:block">#</div>
-      <div class="min-w-0">{{ $t('library.title') }}</div>
-      <div class="min-w-0 hidden @[650px]:block">{{ $t('library.artist') }}</div>
-      <div class="min-w-0 hidden @[1000px]:block" v-if="showAlbum">{{ $t('library.album') }}</div>
-      <div class="flex items-center gap-1 justify-center">
-        {{ $t('library.duration') }}
-      </div>
-      <div class="hidden @[450px]:block"></div>
-    </div>
+  <div class="h-full flex flex-col overflow-hidden select-none relative">
+    <TrackTableFilter :simple-mode="simpleMode" :optional-columns="optionalColumns" />
 
-    <!-- Virtualized List -->
-    <div class="flex-1 overflow-hidden">
-      <div v-if="isLoading" class="h-full flex items-center justify-center">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    <div ref="scrollEl" class="flex-1 overflow-auto" @scroll="onScroll">
+      <div v-if="isLoading" class="h-full flex items-center justify-center" :style="{ minWidth: totalMinWidth }">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
 
       <div v-else-if="tracks.length === 0"
-        class="h-full flex flex-col items-center justify-center text-foreground/80 py-10">
+        class="h-full flex flex-col items-center justify-center text-foreground/80 py-10"
+        :style="{ minWidth: totalMinWidth }">
         <Music class="w-12 h-12 mb-4 opacity-20" />
         <p>{{ $t('library.no_tracks') }}</p>
       </div>
 
-      <RecycleScroller v-else ref="scrollerRef" class="h-full" :items="tracks" :item-size="56" key-field="id"
-        v-slot="{ item, index }" @scroll.passive="(e: Event) => { handleScroll(e); trackContextMenu?.close() }">
-        <div :class="[
-          'grid gap-4 px-6 h-[56px] items-center text-sm hover:bg-foreground/[0.04] group transition-colors',
-          index % 2 === 0 ? 'bg-foreground/[0.02]' : 'bg-transparent',
-          showAlbum
-            ? 'grid-cols-[minmax(0,1fr)_80px] @[450px]:grid-cols-[40px_minmax(0,1fr)_80px_40px] @[700px]:grid-cols-[40px_minmax(0,1fr)_minmax(0,1fr)_80px_40px] @[1000px]:grid-cols-[40px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_80px_40px]'
-            : 'grid-cols-[minmax(0,1fr)_80px] @[450px]:grid-cols-[40px_minmax(0,1fr)_80px_40px] @[650px]:grid-cols-[40px_minmax(0,1fr)_minmax(0,1fr)_80px_40px]'
-        ]" @contextmenu="openContextMenu($event, item)" @dblclick="emit('play-track', item, index)">
-          <!-- Index / Playing Indicator / Play Button -->
-          <div class="hidden @[450px]:flex items-center justify-center h-full">
-            <!-- Currently Active Track (Playing or Paused) -->
-            <template v-if="isCurrentTrack(item.id)">
-              <div class="flex items-end gap-[2px] h-3 w-3">
-                <div v-for="i in 3" :key="i"
-                  class="w-full h-full bg-primary origin-bottom transition-transform duration-500 ease-in-out" :class="[
-                    playerStore.isPlaying ? `animate-playing-bar-${i}` : '',
-                  ]" :style="{
-                    transform: !playerStore.isPlaying
-                      ? (i === 1 ? 'scaleY(0.3)' : i === 2 ? 'scaleY(1.0)' : 'scaleY(0.6)')
-                      : undefined
-                  }">
-                </div>
-              </div>
-            </template>
+      <div v-else :style="{
+        minWidth: totalMinWidth,
+        height: totalHeight + 'px',
+        position: 'relative',
+      }">
+        <TrackTableHeader v-if="!hideHeader" :ordered-visible-columns="orderedVisibleColumns" :simple-mode="simpleMode"
+          :sort-column="sortColumn" :sort-dir="sortDir" :grid-template-columns="gridTemplateColumns"
+          :header-height="HEADER_HEIGHT" :variant="variant" @cycle-sort="cycleSort" />
 
-            <!-- Other Tracks -->
-            <template v-else>
-              <div class="text-foreground/80 group-hover:hidden">{{ index + 1 }}</div>
-              <div class="hidden group-hover:block">
-                <button @click="emit('play-track', item, index)"
-                  class="text-primary hover:scale-110 transition-transform">
-                  <Play class="w-4 h-4 fill-current" />
-                </button>
-              </div>
-            </template>
-          </div>
-
-          <div class="font-medium truncate flex items-center gap-3 min-w-0">
-            <div v-if="showArtwork" class="w-8 h-8 bg-foreground/5 rounded flex-shrink-0 overflow-hidden">
-              <img v-if="item.artwork_key" :src="`/artwork/${item.artwork_key}`" class="w-full h-full object-cover" />
-              <div v-else class="w-full h-full flex items-center justify-center text-foreground/30">
-                <Music class="w-4 h-4" />
-              </div>
-            </div>
-            <span class="truncate">{{ item.title || $t('library.unknown_title') }}</span>
-          </div>
-          <div class="text-foreground/80 truncate flex items-center gap-2 pr-4 min-w-0 hidden @[650px]:flex">
-            <User class="w-3 h-3 opacity-50 flex-shrink-0" />
-            <div class="truncate">
-              <template v-if="item.artists && item.artists.length > 0">
-                <span v-for="(artist, i) in (item.artists.filter(a => !!a) as Artist[])" :key="artist.id || i">
-                  <span :class="[artist.id ? 'hover:text-primary cursor-pointer transition-colors' : '']"
-                    @click.stop="artist.id && navigateToArtist(artist.id)">
-                    {{ artist.name }}
-                  </span>
-                  <span v-if="i < item.artists.filter(a => !!a).length - 1" class="mr-1">,</span>
-                </span>
-              </template>
-              <span v-else>{{ item.raw_artist_names || $t('library.unknown_artist') }}</span>
-            </div>
-          </div>
-          <div v-if="showAlbum"
-            class="text-foreground/80 truncate flex items-center gap-2 min-w-0 hidden @[1000px]:flex">
-            <Disc class="w-3 h-3 opacity-50" />
-            <span class="truncate group-hover:text-primary transition-colors cursor-pointer"
-              @click.stop="item.album?.id && navigateToAlbum(item.album.id)">
-              {{ item.album?.title || $t('library.unknown_album') }}
-            </span>
-          </div>
-          <div class="text-center text-foreground/80 text-xs">
-            {{ formatTime(item.duration) }}
-          </div>
-          <div class="flex items-center justify-end opacity-0 group-hover:opacity-100 hidden @[450px]:flex">
-            <button
-              class="p-2 hover:bg-foreground/8 rounded-full text-foreground/30 hover:text-foreground/70 transition-colors"
-              @click.stop="openContextMenu($event, item)">
-              <MoreVertical class="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </RecycleScroller>
+        <TrackTableRow v-for="{ track, index, top } in visibleRows" :key="track.id" :track="track" :index="index"
+          :top="top" :ordered-visible-columns="orderedVisibleColumns" :grid-template-columns="gridTemplateColumns"
+          :show-artwork="showArtwork" :row-bg="rowBg" :variant="variant" @play-track="handlePlayTrack"
+          @contextmenu="openContextMenu" @navigate-album="navigateToAlbum" @navigate-artist="navigateToArtist" />
+      </div>
     </div>
   </div>
 
   <TrackContextMenu ref="trackContextMenu" />
 </template>
-
-<style scoped>
-.vue-recycle-scroller {
-  scrollbar-width: thin;
-}
-
-@keyframes playing-bar-1 {
-
-  0%,
-  100% {
-    transform: scaleY(0.3);
-  }
-
-  50% {
-    transform: scaleY(0.8);
-  }
-}
-
-@keyframes playing-bar-2 {
-
-  0%,
-  100% {
-    transform: scaleY(1.0);
-  }
-
-  50% {
-    transform: scaleY(0.4);
-  }
-}
-
-@keyframes playing-bar-3 {
-
-  0%,
-  100% {
-    transform: scaleY(0.6);
-  }
-
-  50% {
-    transform: scaleY(0.9);
-  }
-}
-
-.animate-playing-bar-1 {
-  animation: playing-bar-1 0.8s ease-in-out infinite;
-}
-
-.animate-playing-bar-2 {
-  animation: playing-bar-2 0.6s ease-in-out infinite;
-}
-
-.animate-playing-bar-3 {
-  animation: playing-bar-3 0.7s ease-in-out infinite;
-}
-</style>

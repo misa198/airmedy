@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { AlbumDTO, TrackDTO, ThemeColors } from '../../bindings/airmedy/internal/domain/models'
@@ -20,6 +20,7 @@ const playerStore = usePlayerStore()
 const { t } = useI18n()
 
 const route = useRoute()
+const router = useRouter()
 const album = ref<AlbumDTO | null>(null)
 const tracks = ref<TrackDTO[]>([])
 const isLoading = ref(true)
@@ -129,8 +130,14 @@ const getTotalDuration = (tracks: TrackDTO[]) => {
 
       <!-- Track List -->
       <div class="px-2 pb-12">
-        <TrackTable :tracks="tracks" :show-artwork="false" :show-album="false"
-          @play-track="(_, index) => playerStore.playTracks(tracks, index)" />
+        <TrackTable
+          :tracks="tracks"
+          :show-artwork="false"
+          :simple-mode="true"
+          @play-track="(_, index, queue) => playerStore.playTracks(queue, index)"
+          @navigate-album="id => router.push(`/albums/${id}`)"
+          @navigate-artist="id => router.push(`/artists/${id}`)"
+        />
       </div>
 
       <!-- Album Footer Metadata -->

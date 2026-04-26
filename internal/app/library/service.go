@@ -6,7 +6,9 @@ import (
 	"io/fs"
 	"log/slog"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -597,31 +599,29 @@ func isSubPath(parent, child string) bool {
 	return !strings.HasPrefix(rel, "..") && rel != ".." && rel != "."
 }
 
-// DeleteTrack removes a track from the library (DB, search index, orphan cleanup).
-func (s *LibraryService) DeleteTrack(ctx context.Context, id string) error {
-	if err := s.searchService.DeleteFromIndex(ctx, id); err != nil {
-		s.logger.Warn("Failed to delete track from search index", "id", id, "error", err)
+// ShowInExplorer opens the native file explorer and selects the file.
+func (s *LibraryService) ShowInExplorer(ctx context.Context, id string) error {
+	track, err := s.trackRepo.GetByID(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed to get track: %w", err)
 	}
-	if err := s.trackRepo.Delete(ctx, id); err != nil {
-		return fmt.Errorf("failed to delete track: %w", err)
+	if track == nil {
+		return fmt.Errorf("track not found: %s", id)
 	}
-	if err := s.albumRepo.DeleteOrphaned(ctx); err != nil {
-		s.logger.Warn("Failed to delete orphaned albums", "error", err)
+
+	path := track.Path
+	var cmd *exec.Cmd
+
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("open", "-R", path)
+	case "windows":
+		cmd = exec.Command("explorer.exe", "/select,", path)
+	default: // linux and others
+		cmd = exec.Command("xdg-open", filepath.Dir(path))
 	}
-	if err := s.artistRepo.DeleteOrphaned(ctx); err != nil {
-		s.logger.Warn("Failed to delete orphaned artists", "error", err)
-	}
-	if err := s.genreRepo.DeleteOrphaned(ctx); err != nil {
-		s.logger.Warn("Failed to delete orphaned genres", "error", err)
-	}
-	if err := s.composerRepo.DeleteOrphaned(ctx); err != nil {
-		s.logger.Warn("Failed to delete orphaned composers", "error", err)
-	}
-	if app := application.Get(); app != nil && app.Event != nil {
-		app.Event.Emit("library:track-deleted", id)
-		app.Event.Emit("library:updated", nil)
-	}
-	return nil
+
+	return cmd.Run()
 }
 
 // ToggleFavorite toggles the favorite state of a track. Returns the new state.

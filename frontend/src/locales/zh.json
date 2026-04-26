@@ -166,7 +166,15 @@
     "select_item": "选择一项以查看详情",
     "search_placeholder": "搜索您的媒体库",
     "search_description": "查找曲目、专辑和艺术家",
-    "try_different_search": "尝试不同的搜索词"
+    "try_different_search": "尝试不同的搜索词",
+    "play_count": "播放次数",
+    "disc_number": "碟号",
+    "track_number": "曲号",
+    "album_artist": "专辑艺术家",
+    "favorite": "收藏",
+    "columns": "列",
+    "index": "#",
+    "context_menu": ""
   },
   "context_menu": {
     "play_next": "下一首播放",
@@ -177,7 +185,7 @@
     "go_to_album": "前往专辑",
     "go_to_artist": "前往艺术家",
     "edit_metadata": "编辑元数据",
-    "remove_from_library": "从媒体库中移除",
+    "show_in_explorer": "Show in File Explorer",
     "track_info": "歌曲信息",
     "refresh_lyrics": "刷新歌词"
   },
@@ -211,5 +219,9 @@
   },
   "genre": {
     "tracks_count": "{count} 首曲目"
+  },
+  "playlist": {
+    "edit_cover": "编辑封面",
+    "remove_cover": "移除自定义封面"
   }
 }

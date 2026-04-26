@@ -18,7 +18,7 @@ const updateFn = vi.fn().mockResolvedValue(undefined)
 vi.mock('../../bindings/airmedy/internal/infra/wails/libraryservice', () => ({
   UpdateTrackMetadata: (...args: unknown[]) => updateFn(...args),
   GetFavoriteTracks: vi.fn().mockResolvedValue([]),
-  DeleteTrack: vi.fn(),
+  ShowInExplorer: vi.fn(),
   ToggleFavorite: vi.fn(),
 }))
 

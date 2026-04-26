@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Play, Shuffle, MoreVertical, Clock, Music, ListMusic, X, Heart } from 'lucide-vue-next'
 import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
@@ -19,6 +19,7 @@ import DetailHero from '@/components/DetailHero.vue'
 import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
 
 const route = useRoute()
+const router = useRouter()
 const { t } = useI18n()
 const playerStore = usePlayerStore()
 const favoritesStore = useFavoritesStore()
@@ -207,12 +208,12 @@ function shufflePlaylist() {
 
             <!-- Hover Overlay -->
             <div v-if="playlist.id !== 'favorites'" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
-              <span class="text-white text-xs font-medium px-2 py-1 bg-black/20 rounded-full backdrop-blur-sm">Edit Cover</span>
+              <span class="text-white text-xs font-medium px-2 py-1 bg-black/20 rounded-full backdrop-blur-sm">{{ $t('playlist.edit_cover') }}</span>
               <button 
                 v-if="playlist.artwork_key"
                 @click="handleRemoveArtwork"
                 class="p-1.5 bg-red-500/80 hover:bg-red-500 text-white rounded-full transition-colors backdrop-blur-sm"
-                title="Remove custom cover"
+                :title="$t('playlist.remove_cover')"
               >
                 <X class="w-4 h-4" />
               </button>
@@ -244,11 +245,12 @@ function shufflePlaylist() {
 
       <!-- Track List -->
       <div class="px-2 pb-12">
-        <TrackTable 
-          :tracks="tracks" 
-          :show-artwork="true" 
-          :show-album="true"
-          @play-track="(_, index) => playerStore.playTracks(tracks, index)" 
+        <TrackTable
+          :tracks="tracks"
+          :show-artwork="true"
+          @play-track="(_, index, queue) => playerStore.playTracks(queue, index)"
+          @navigate-album="id => router.push(`/albums/${id}`)"
+          @navigate-artist="id => router.push(`/artists/${id}`)"
         />
       </div>
     </div>

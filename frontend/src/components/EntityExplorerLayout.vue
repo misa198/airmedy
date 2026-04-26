@@ -101,7 +101,4 @@ const filteredItems = computed(() => {
 </template>
 
 <style scoped>
-.vue-recycle-scroller {
-  scrollbar-width: thin;
-}
 </style>

@@ -158,15 +158,34 @@
     "no_results": "Nenhum resultado encontrado",
     "songs": "músicas",
     "unknown_artist": "Artista Desconhecido",
+    "unknown_composer": "Compositor desconhecido",
+    "unknown_genre": "Gênero desconhecido",
     "unknown_title": "Título Desconhecido",
     "unknown_album": "Álbum Desconhecido",
     "unknown": "Desconhecido",
     "select_item": "Selecione um item para ver detalhes",
     "search_placeholder": "Buscar em sua biblioteca",
     "search_description": "Encontre faixas, álbuns e artistas",
-    "try_different_search": "Tente um termo de busca diferente"
+    "try_different_search": "Tente um termo de busca diferente",
+    "play_count": "Reproduções",
+    "disc_number": "Nº do disco",
+    "track_number": "Nº da faixa",
+    "album_artist": "Artista do álbum",
+    "favorite": "Favorito",
+    "columns": "Colunas",
+    "index": "#",
+    "context_menu": ""
   },
   "context_menu": {
+    "play_next": "Reproduzir a seguir",
+    "add_to_favorites": "Adicionar aos Favoritos",
+    "remove_from_favorites": "Remover dos Favoritos",
+    "add_to_playlist": "Adicionar à playlist",
+    "no_playlists": "Sem playlists",
+    "go_to_album": "Ir para o Álbum",
+    "go_to_artist": "Ir para o Artista",
+    "edit_metadata": "Editar metadados",
+    "show_in_explorer": "Show in File Explorer",
     "track_info": "Informações da faixa",
     "refresh_lyrics": "Atualizar letra"
   },
@@ -190,5 +209,9 @@
     "isrc": "ISRC",
     "play_count": "Reproduções",
     "lossless": "Sem perdas"
+  },
+  "playlist": {
+    "edit_cover": "Editar capa",
+    "remove_cover": "Remover capa personalizada"
   }
 }

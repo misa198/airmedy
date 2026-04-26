@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import TrackTable from '../components/TrackTable.vue'
@@ -8,6 +9,7 @@ import { usePlayerStore } from '../stores/player'
 import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
 
 const playerStore = usePlayerStore()
+const router = useRouter()
 
 const tracks = ref<TrackDTO[]>([])
 const isLoading = ref(true)
@@ -51,9 +53,10 @@ onMounted(loadTracks)
     <TrackTable
       :tracks="filteredTracks"
       :is-loading="isLoading"
-      :show-album="true"
       :show-artwork="true"
-      @play-track="(_, index) => playerStore.playTracks(filteredTracks, index)"
+      @play-track="(_, index, queue) => playerStore.playTracks(queue, index)"
+      @navigate-album="id => router.push(`/albums/${id}`)"
+      @navigate-artist="id => router.push(`/artists/${id}`)"
     />
   </div>
 </template>

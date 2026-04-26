@@ -1,4 +1,4 @@
-import { Heart, ListEnd, ListPlus, Disc, User, Pencil, Trash2, Info, RefreshCw } from 'lucide-vue-next'
+import { Heart, ListEnd, ListPlus, Disc, User, Pencil, FolderOpen, Info, RefreshCw } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
@@ -13,7 +13,6 @@ import * as LyricsService from '../../bindings/airmedy/internal/infra/wails/lyri
 
 export interface TrackContextMenuOptions {
   excludePlayNext?: boolean
-  excludeDelete?: boolean
 }
 
 export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
@@ -26,7 +25,8 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
   function buildMenuItems(track: TrackDTO, options: TrackContextMenuOptions = {}): ContextMenuItem[] {
     const items: ContextMenuItem[] = []
 
-    if (!options.excludePlayNext) {
+    const isCurrentTrack = playerStore.currentTrack?.id === track.id
+    if (!options.excludePlayNext && !isCurrentTrack) {
       items.push({
         label: t('context_menu.play_next'),
         icon: ListEnd,
@@ -111,14 +111,11 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
       action: () => onEditMetadata(track),
     })
 
-    if (!options.excludeDelete) {
-      items.push({
-        label: t('context_menu.remove_from_library'),
-        icon: Trash2,
-        danger: true,
-        action: () => { LibraryService.DeleteTrack(track.id) },
-      })
-    }
+    items.push({
+      label: t('context_menu.show_in_explorer'),
+      icon: FolderOpen,
+      action: () => { LibraryService.ShowInExplorer(track.id) },
+    })
 
     return items
   }

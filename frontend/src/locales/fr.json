@@ -158,15 +158,34 @@
     "no_results": "Aucun résultat trouvé",
     "songs": "chansons",
     "unknown_artist": "Artiste inconnu",
+    "unknown_composer": "Compositeur inconnu",
+    "unknown_genre": "Genre inconnu",
     "unknown_title": "Titre inconnu",
     "unknown_album": "Album inconnu",
     "unknown": "Inconnu",
     "select_item": "Sélectionnez un élément pour voir les détails",
     "search_placeholder": "Rechercher dans votre bibliothèque",
     "search_description": "Trouvez des pistes, des albums et des artistes",
-    "try_different_search": "Essayez un autre terme de recherche"
+    "try_different_search": "Essayez un autre terme de recherche",
+    "play_count": "Lectures",
+    "disc_number": "N° de disque",
+    "track_number": "N° de piste",
+    "album_artist": "Artiste de l'album",
+    "favorite": "Favori",
+    "columns": "Colonnes",
+    "index": "#",
+    "context_menu": ""
   },
   "context_menu": {
+    "play_next": "Lire ensuite",
+    "add_to_favorites": "Ajouter aux favoris",
+    "remove_from_favorites": "Retirer des favoris",
+    "add_to_playlist": "Ajouter à la playlist",
+    "no_playlists": "Aucune playlist",
+    "go_to_album": "Aller à l'album",
+    "go_to_artist": "Aller à l'artiste",
+    "edit_metadata": "Modifier les métadonnées",
+    "show_in_explorer": "Show in File Explorer",
     "track_info": "Informations sur la piste",
     "refresh_lyrics": "Actualiser les paroles"
   },
@@ -190,5 +209,9 @@
     "isrc": "ISRC",
     "play_count": "Lectures",
     "lossless": "Sans perte"
+  },
+  "playlist": {
+    "edit_cover": "Modifier la couverture",
+    "remove_cover": "Supprimer la couverture personnalisée"
   }
 }

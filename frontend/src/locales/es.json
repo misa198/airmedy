@@ -158,13 +158,23 @@
     "no_results": "No se encontraron resultados",
     "songs": "canciones",
     "unknown_artist": "Artista desconocido",
+    "unknown_composer": "Compositor desconocido",
+    "unknown_genre": "Género desconocido",
     "unknown_title": "Título desconocido",
     "unknown_album": "Álbum desconocido",
     "unknown": "Desconocido",
     "select_item": "Selecciona un elemento para ver detalles",
     "search_placeholder": "Buscar en tu biblioteca",
     "search_description": "Busca pistas, álbumes y artistas",
-    "try_different_search": "Prueba con un término de búsqueda diferente"
+    "try_different_search": "Prueba con un término de búsqueda diferente",
+    "play_count": "Reproducciones",
+    "disc_number": "N.º de disco",
+    "track_number": "N.º de pista",
+    "album_artist": "Artista del álbum",
+    "favorite": "Favorito",
+    "columns": "Columnas",
+    "index": "#",
+    "context_menu": ""
   },
   "context_menu": {
     "play_next": "Reproducir a continuación",
@@ -175,7 +185,7 @@
     "go_to_album": "Ir al Álbum",
     "go_to_artist": "Ir al Artista",
     "edit_metadata": "Editar metadatos",
-    "remove_from_library": "Eliminar de la biblioteca",
+    "show_in_explorer": "Show in File Explorer",
     "track_info": "Información de la pista",
     "refresh_lyrics": "Actualizar letra"
   },
@@ -199,5 +209,9 @@
     "isrc": "ISRC",
     "play_count": "Reproducciones",
     "lossless": "Sin pérdida"
+  },
+  "playlist": {
+    "edit_cover": "Editar portada",
+    "remove_cover": "Quitar portada personalizada"
   }
 }

@@ -152,8 +152,8 @@ func (s *LibraryService) ToggleFavorite(trackID string) (bool, error) {
 	return s.libService.ToggleFavorite(context.Background(), trackID)
 }
 
-func (s *LibraryService) DeleteTrack(trackID string) error {
-	return s.libService.DeleteTrack(context.Background(), trackID)
+func (s *LibraryService) ShowInExplorer(trackID string) error {
+	return s.libService.ShowInExplorer(context.Background(), trackID)
 }
 
 func (s *LibraryService) UpdateTrackMetadata(trackID string, update domain.MetadataUpdate) error {

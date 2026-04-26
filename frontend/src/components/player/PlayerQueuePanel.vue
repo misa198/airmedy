@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ListMusic, X } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import TrackTable from '../TrackTable.vue'
 import type { TrackDTO } from '../../../bindings/airmedy/internal/domain/models'
 
@@ -14,6 +15,12 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const router = useRouter()
+
+function navigate(path: string) {
+  router.push(path)
+  emit('close')
+}
 </script>
 
 <template>
@@ -34,9 +41,12 @@ const { t } = useI18n()
 
       <!-- Content Area -->
       <div class="flex-1 overflow-hidden">
-        <TrackTable :tracks="queue" :show-album="false" :show-artwork="true" :scroll-to-current="true"
+        <TrackTable :tracks="queue" :show-artwork="false" :scroll-to-current="true" :simple-mode="true"
+          :hide-header="true" variant="glass"
           class="dark"
-          @play-track="(_, index) => emit('play-track', index)" />
+          @play-track="(_, index) => emit('play-track', index)"
+          @navigate-album="id => navigate(`/albums/${id}`)"
+          @navigate-artist="id => navigate(`/artists/${id}`)" />
       </div>
     </div>
   </div>

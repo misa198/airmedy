@@ -166,7 +166,15 @@
     "select_item": "Select an item to view details",
     "search_placeholder": "Search your library",
     "search_description": "Find tracks, albums, and artists",
-    "try_different_search": "Try a different search term"
+    "try_different_search": "Try a different search term",
+    "play_count": "Plays",
+    "disc_number": "Disc #",
+    "track_number": "Track #",
+    "album_artist": "Album Artist",
+    "favorite": "Favorite",
+    "columns": "Columns",
+    "index": "#",
+    "context_menu": ""
   },
   "context_menu": {
     "play_next": "Play Next",
@@ -177,7 +185,7 @@
     "go_to_album": "Go to Album",
     "go_to_artist": "Go to Artist",
     "edit_metadata": "Edit Metadata",
-    "remove_from_library": "Remove from Library",
+    "show_in_explorer": "Show in File Explorer",
     "track_info": "Track info",
     "refresh_lyrics": "Refresh Lyrics"
   },
@@ -211,5 +219,9 @@
   },
   "genre": {
     "tracks_count": "{count} tracks"
+  },
+  "playlist": {
+    "edit_cover": "Edit Cover",
+    "remove_cover": "Remove custom cover"
   }
 }

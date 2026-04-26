@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { Play, Disc } from 'lucide-vue-next'
 import type { TrackDTO, AlbumDTO } from '../../bindings/airmedy/internal/domain/models'
 import { usePlayerStore } from '../stores/player'
 import TrackTable from './TrackTable.vue'
 
 const playerStore = usePlayerStore()
+const router = useRouter()
 const props = defineProps<{
   tracks: TrackDTO[]
   albums?: AlbumDTO[]
@@ -96,7 +98,13 @@ function tableHeight(trackCount: number): string {
       <!-- Virtualized Track Table -->
       <div class="rounded-xl overflow-hidden ring-1 ring-foreground/[0.06]"
         :style="{ height: tableHeight(group.tracks.length) }">
-        <TrackTable :tracks="group.tracks" @play-track="(_, index) => playerStore.playTracks(group.tracks, index)" />
+        <TrackTable
+          :tracks="group.tracks"
+          :simple-mode="true"
+          @play-track="(_, index, queue) => playerStore.playTracks(queue, index)"
+          @navigate-album="id => router.push(`/albums/${id}`)"
+          @navigate-artist="id => router.push(`/artists/${id}`)"
+        />
       </div>
     </div>
   </div>

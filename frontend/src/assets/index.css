@@ -29,6 +29,10 @@
     --text-inverse: #ffffff;
     --accent-favorite: #ef4444;
 
+    --bg-zebra: rgba(0, 0, 0, 0.02);
+    --scrollbar-thumb: rgba(0, 0, 0, 0.2);
+    --scrollbar-thumb-hover: rgba(0, 0, 0, 0.3);
+
     /* Fallback dynamic variables */
     --dynamic-primary: var(--primary);
     --dynamic-surface: var(--bg-glass);
@@ -45,6 +49,10 @@
     --text-muted: #a1a1aa;
     --text-inverse: #000000;
     --primary-foreground: #ffffff;
+
+    --bg-zebra: rgba(255, 255, 255, 0.02);
+    --scrollbar-thumb: rgba(255, 255, 255, 0.15);
+    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.25);
   }
 
   body {
@@ -62,4 +70,32 @@
 img {
   -webkit-user-drag: none;
   user-select: none;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 10px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+  background-clip: content-box;
+}
+
+/* Firefox support */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
