@@ -81,3 +81,7 @@ func (s *PlayerService) PlayNext(track *domain.TrackDTO) {
 func (s *PlayerService) PlayNextTracks(tracks []*domain.TrackDTO) {
 	s.service.PlayNextTracks(tracks)
 }
+
+func (s *PlayerService) RemoveFromQueue(trackID string) {
+	s.service.RemoveFromQueue(trackID)
+}

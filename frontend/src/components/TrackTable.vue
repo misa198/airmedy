@@ -9,6 +9,7 @@ import TrackTableFilter from './TrackTableFilter.vue'
 import TrackTableHeader from './TrackTableHeader.vue'
 import TrackTableRow from './TrackTableRow.vue'
 import { COLUMNS, type ColumnKey, useTrackTableSettings } from '@/composables/useTrackTableSettings'
+import type { TrackContextMenuOptions } from '@/composables/useTrackContextMenu'
 
 const SIMPLE_COLUMNS: ColumnKey[] = ['index', 'title', 'duration', 'context_menu']
 const HEADER_HEIGHT = 40
@@ -28,10 +29,13 @@ const props = defineProps<{
   hideColumns?: ColumnKey[]
   hideHeader?: boolean
   variant?: 'default' | 'glass'
+  contextMenuOptions?: TrackContextMenuOptions
 }>()
 
 const emit = defineEmits<{
   'play-track': [track: TrackDTO, index: number, queue: TrackDTO[]]
+  'navigate-album': [id: string]
+  'navigate-artist': [id: string]
 }>()
 
 // ── Sorting ────────────────────────────────────────────────────────────────
@@ -104,18 +108,20 @@ const scrollTop = ref(0)
 const containerHeight = ref(0)
 let ro: ResizeObserver | null = null
 
+const effectiveHeaderHeight = computed(() => props.hideHeader ? 0 : HEADER_HEIGHT)
+
 const totalHeight = computed(
-  () => HEADER_HEIGHT + sortedTracks.value.length * ROW_HEIGHT,
+  () => effectiveHeaderHeight.value + sortedTracks.value.length * ROW_HEIGHT,
 )
 
 const visibleStart = computed(() =>
-  Math.max(0, Math.floor((scrollTop.value - HEADER_HEIGHT) / ROW_HEIGHT) - BUFFER),
+  Math.max(0, Math.floor((scrollTop.value - effectiveHeaderHeight.value) / ROW_HEIGHT) - BUFFER),
 )
 
 const visibleEnd = computed(() =>
   Math.min(
     sortedTracks.value.length,
-    Math.ceil((scrollTop.value - HEADER_HEIGHT + containerHeight.value) / ROW_HEIGHT) + BUFFER,
+    Math.ceil((scrollTop.value - effectiveHeaderHeight.value + containerHeight.value) / ROW_HEIGHT) + BUFFER,
   ),
 )
 
@@ -123,7 +129,7 @@ const visibleRows = computed(() =>
   sortedTracks.value.slice(visibleStart.value, visibleEnd.value).map((track, i) => ({
     track,
     index: visibleStart.value + i,
-    top: HEADER_HEIGHT + (visibleStart.value + i) * ROW_HEIGHT,
+    top: effectiveHeaderHeight.value + (visibleStart.value + i) * ROW_HEIGHT,
   })),
 )
 
@@ -137,7 +143,7 @@ function scrollToCurrentTrack() {
   if (!scrollEl.value || !playerStore.currentTrack || props.tracks.length === 0) return
   const index = sortedTracks.value.findIndex((t) => t.id === playerStore.currentTrack?.id)
   if (index !== -1) {
-    const target = HEADER_HEIGHT + index * ROW_HEIGHT - containerHeight.value / 2
+    const target = effectiveHeaderHeight.value + index * ROW_HEIGHT - containerHeight.value / 2
     scrollEl.value.scrollTop = Math.max(0, target)
   }
 }
@@ -170,12 +176,25 @@ onBeforeUnmount(() => {
 const trackContextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
 
 function openContextMenu(e: MouseEvent, item: TrackDTO) {
-  trackContextMenu.value?.open(e, item)
+  trackContextMenu.value?.open(e, item, props.contextMenuOptions)
 }
 
 // ── Navigation ─────────────────────────────────────────────────────────────
-const navigateToAlbum = (id: string) => router.push(`/albums/${id}`)
-const navigateToArtist = (id: string) => { if (id) router.push(`/artists/${id}`) }
+const navigateToAlbum = (id: string) => {
+  if (playerStore.playerMode === 'fullscreen') {
+    playerStore.playerMode = 'sticky'
+  }
+  router.push(`/albums/${id}`)
+  emit('navigate-album', id)
+}
+const navigateToArtist = (id: string) => {
+  if (!id) return
+  if (playerStore.playerMode === 'fullscreen') {
+    playerStore.playerMode = 'sticky'
+  }
+  router.push(`/artists/${id}`)
+  emit('navigate-artist', id)
+}
 
 function rowBg(index: number, opaque = false) {
   if (props.variant === 'glass' && opaque) return 'transparent'
@@ -216,7 +235,7 @@ function handlePlayTrack(track: TrackDTO, index: number) {
       }">
         <TrackTableHeader v-if="!hideHeader" :ordered-visible-columns="orderedVisibleColumns" :simple-mode="simpleMode"
           :sort-column="sortColumn" :sort-dir="sortDir" :grid-template-columns="gridTemplateColumns"
-          :header-height="HEADER_HEIGHT" :variant="variant" @cycle-sort="cycleSort" />
+          :header-height="effectiveHeaderHeight" :variant="variant" @cycle-sort="cycleSort" />
 
         <TrackTableRow v-for="{ track, index, top } in visibleRows" :key="track.id" :track="track" :index="index"
           :top="top" :ordered-visible-columns="orderedVisibleColumns" :grid-template-columns="gridTemplateColumns"

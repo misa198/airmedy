@@ -249,6 +249,27 @@ func (s *PlayerService) PlayNextTracks(tracks []*domain.TrackDTO) {
 	s.emitQueue()
 }
 
+// RemoveFromQueue removes a track from the queue.
+func (s *PlayerService) RemoveFromQueue(trackID string) {
+	s.mu.RLock()
+	ct := s.currentTrack
+	s.mu.RUnlock()
+
+	isCurrent := ct != nil && ct.ID == trackID
+
+	s.queue.RemoveTrack(trackID)
+	s.emitQueue()
+
+	if isCurrent {
+		track := s.queue.GetCurrentTrack()
+		if track != nil {
+			_ = s.loadAndPlay(track)
+		} else {
+			_ = s.Stop()
+		}
+	}
+}
+
 // GetStatus returns the current status of the player.
 func (s *PlayerService) GetStatus() domain.PlayerStatus {
 	s.mu.RLock()

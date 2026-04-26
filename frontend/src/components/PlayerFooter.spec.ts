@@ -5,6 +5,16 @@ import PlayerFooter from './PlayerFooter.vue'
 import { usePlayerStore } from '../stores/player'
 import { PlaybackState, RepeatMode } from '../../bindings/airmedy/internal/domain/models'
 
+vi.mock('vue-i18n', () => ({
+  useI18n: () => ({
+    t: (key: string) => {
+      if (key === 'player.not_playing') return 'Not Playing'
+      if (key === 'player.select_track') return 'Select Track'
+      return key
+    },
+  }),
+}))
+
 vi.mock('@wailsio/runtime', () => ({
   Events: { On: vi.fn(), Off: vi.fn() },
   Create: {
@@ -55,7 +65,14 @@ describe('PlayerFooter', () => {
             },
           }),
         ],
-        stubs: { teleport: true },
+        stubs: { 
+          teleport: true,
+          MarqueeText: {
+            template: '<div><slot />{{ text }}</div>',
+            props: ['text']
+          },
+          TrackContextMenu: true
+        },
       },
     })
   }
@@ -99,9 +116,9 @@ describe('PlayerFooter', () => {
     const wrapper = mountFooter()
     const store = usePlayerStore()
     const buttons = wrapper.findAll('button')
-    // Queue button is second-to-last
-    const queueBtn = buttons[buttons.length - 2]
-    await queueBtn.trigger('click')
+    const queueBtn = buttons.find((b) => b.attributes('title') === 'player.queue')
+    expect(queueBtn).toBeDefined()
+    await queueBtn!.trigger('click')
     expect(store.toggleQueue).toHaveBeenCalledOnce()
   })
 })

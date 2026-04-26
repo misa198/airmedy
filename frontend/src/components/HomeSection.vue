@@ -86,7 +86,7 @@ const prev = () => {
 <template>
   <section ref="sectionRef" v-if="items.length > 0" class="animate-in fade-in slide-in-from-bottom-4 duration-700">
     <div class="flex items-center justify-between mb-6">
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 select-none">
         <div class="p-2 bg-primary/10 rounded-lg">
           <component :is="icon" class="w-5 h-5 text-primary" />
         </div>

@@ -193,6 +193,7 @@
   },
   "context_menu": {
     "play_next": "下一首播放",
+    "remove_from_queue": "从队列中移除",
     "add_to_favorites": "添加到收藏",
     "remove_from_favorites": "从收藏中移除",
     "add_to_playlist": "添加到播放列表",

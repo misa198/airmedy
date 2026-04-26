@@ -29,8 +29,8 @@ const updateMarquee = async () => {
   if (contentWidth > containerWidth + 1) { // +1 for subpixel rounding issues
     isOverflowing.value = true
     scrollDistance.value = contentWidth - containerWidth
-    // Base duration on distance: approx 30px/sec + 4s total pause time
-    duration.value = (scrollDistance.value / 30) + 4
+    // Base duration on distance: approx 20px/sec + 4s total pause time
+    duration.value = (scrollDistance.value / 20) + 4
   } else {
     isOverflowing.value = false
     scrollDistance.value = 0

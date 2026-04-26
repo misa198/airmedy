@@ -4,7 +4,7 @@ import {
   Mic2,
   Minimize2,
 } from 'lucide-vue-next'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { usePlayerStore } from '../stores/player'
 import { useDeviceStore } from '../stores/device'
 import LivingArtworkBackground from './LivingArtworkBackground.vue'
@@ -18,10 +18,26 @@ import PlayerPlaybackControls from './player/PlayerPlaybackControls.vue'
 import PlayerVolumeControl from './player/PlayerVolumeControl.vue'
 import PlayerQueuePanel from './player/PlayerQueuePanel.vue'
 import PlayerLyricsPanel from './player/PlayerLyricsPanel.vue'
+import TrackContextMenu from './TrackContextMenu.vue'
 
 const { t } = useI18n()
 const store = usePlayerStore()
 const deviceStore = useDeviceStore()
+
+const trackContextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
+
+function openContextMenu(e: MouseEvent) {
+  if (!store.currentTrack) return
+  trackContextMenu.value?.open(e, store.currentTrack, { excludeDelete: true, excludePlayNext: true })
+}
+
+function openTrackInfo() {
+  if (!store.currentTrack) return
+  if (store.playerMode === 'fullscreen') {
+    store.playerMode = 'sticky'
+  }
+  store.openTrackInfo(store.currentTrack)
+}
 
 const activeTab = computed({
   get: () => {
@@ -88,10 +104,16 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
             <div class="flex flex-col items-center justify-center gap-6 w-full">
               <!-- Artwork -->
               <PlayerArtwork :artwork-url="store.artworkUrl" :track-title="trackTitle" :is-playing="store.isPlaying"
-                :show-right-column="showRightColumn" />
+                :show-right-column="showRightColumn"
+                class="cursor-pointer"
+                @click="openTrackInfo"
+                @contextmenu.prevent="openContextMenu" />
 
               <!-- Track info -->
-              <PlayerTrackInfo :title="trackTitle" :artist="trackArtist" :album="albumTitle" />
+              <PlayerTrackInfo :title="trackTitle" :artist="trackArtist" :album="albumTitle"
+                class="cursor-pointer"
+                @click="openTrackInfo"
+                @contextmenu.prevent="openContextMenu" />
 
               <!-- Seek bar -->
               <PlayerSeekBar :progress-percent="store.progressPercent" :position="store.position"
@@ -132,5 +154,7 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
         </div>
       </div>
     </div>
+
+    <TrackContextMenu ref="trackContextMenu" />
   </div>
 </template>

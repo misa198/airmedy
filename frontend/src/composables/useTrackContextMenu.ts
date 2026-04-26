@@ -1,4 +1,4 @@
-import { Heart, ListEnd, ListPlus, Disc, User, Pencil, FolderOpen, Info, RefreshCw } from 'lucide-vue-next'
+import { Heart, ListEnd, ListPlus, Disc, User, Pencil, FolderOpen, Info, RefreshCw, ListX } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
@@ -14,6 +14,7 @@ import * as LyricsService from '../../bindings/airmedy/internal/infra/wails/lyri
 export interface TrackContextMenuOptions {
   excludePlayNext?: boolean
   excludeDelete?: boolean
+  showRemoveFromQueue?: boolean
 }
 
 export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
@@ -25,6 +26,21 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
 
   function buildMenuItems(track: TrackDTO, options: TrackContextMenuOptions = {}): ContextMenuItem[] {
     const items: ContextMenuItem[] = []
+
+    const closeFullScreen = () => {
+      if (playerStore.playerMode === 'fullscreen') {
+        playerStore.playerMode = 'sticky'
+      }
+    }
+
+    if (options.showRemoveFromQueue) {
+      items.push({
+        label: t('context_menu.remove_from_queue'),
+        icon: ListX,
+        action: () => { PlayerService.RemoveFromQueue(track.id) },
+      })
+      items.push({ separator: true })
+    }
 
     const isCurrentTrack = playerStore.currentTrack?.id === track.id
     if (!options.excludePlayNext && !isCurrentTrack) {
@@ -38,7 +54,10 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
     items.push({
       label: t('context_menu.track_info'),
       icon: Info,
-      action: () => { playerStore.openTrackInfo(track) },
+      action: () => {
+        closeFullScreen()
+        playerStore.openTrackInfo(track)
+      },
     })
 
     items.push({
@@ -84,7 +103,10 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
       icon: Disc,
       disabled: !track.album?.id,
       action: () => {
-        if (track.album?.id) router.push(`/albums/${track.album.id}`)
+        if (track.album?.id) {
+          closeFullScreen()
+          router.push(`/albums/${track.album.id}`)
+        }
       },
     })
 
@@ -93,7 +115,10 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
       .map(a => ({
         label: a.name,
         icon: User,
-        action: () => router.push(`/artists/${a.id}`),
+        action: () => {
+          closeFullScreen()
+          router.push(`/artists/${a.id}`)
+        },
       }))
 
     items.push({
@@ -109,7 +134,10 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
     items.push({
       label: t('context_menu.edit_metadata'),
       icon: Pencil,
-      action: () => onEditMetadata(track),
+      action: () => {
+        closeFullScreen()
+        onEditMetadata(track)
+      },
     })
 
     items.push({

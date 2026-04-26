@@ -193,6 +193,7 @@
   },
   "context_menu": {
     "play_next": "Phát tiếp theo",
+    "remove_from_queue": "Xóa khỏi hàng chờ",
     "add_to_favorites": "Thêm vào yêu thích",
     "remove_from_favorites": "Xóa khỏi yêu thích",
     "add_to_playlist": "Thêm vào danh sách phát",

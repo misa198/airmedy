@@ -96,7 +96,7 @@ onUnmounted(() => {
 <template>
   <div class="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
     <!-- Sync Header -->
-    <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center justify-between mb-4 select-none">
       <h2 class="text-xl font-bold">{{ t('settings.library.title') }}</h2>
       <button 
         @click="syncLibrary" 

@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
-import { Music, X, ListMusic } from 'lucide-vue-next'
+import { ref, watch } from 'vue'
+import { Music, X, ListMusic, MoreVertical } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
 import { formatTime } from '../lib/utils'
 import { useI18n } from 'vue-i18n'
+import TrackContextMenu from './TrackContextMenu.vue'
+import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 
 const { t } = useI18n()
 const store = usePlayerStore()
 const scroller = ref<any>(null)
+const trackContextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
 
 const scrollToCurrentTrack = () => {
   if (!scroller.value || !store.currentTrack) return
@@ -15,6 +18,10 @@ const scrollToCurrentTrack = () => {
   if (index !== -1) {
     scroller.value.scrollToItem(index)
   }
+}
+
+const onContextMenu = (e: MouseEvent, track: TrackDTO) => {
+  trackContextMenu.value?.open(e, track, { showRemoveFromQueue: true })
 }
 
 watch(() => store.isQueueOpen, (open) => {
@@ -62,9 +69,10 @@ watch(() => store.isQueueOpen, (open) => {
         v-slot="{ item, index }"
       >
         <button
-          class="w-full flex items-center gap-3 px-4 h-16 text-left hover:bg-foreground/[0.04] transition-colors group"
+          class="w-full flex items-center gap-3 px-4 h-16 text-left hover:bg-foreground/[0.04] transition-colors group relative select-none"
           :class="{ 'bg-primary/10 border-l-2 border-l-primary': store.currentTrack?.id === item.id }"
           @click="store.playTracks(store.queue, index)"
+          @contextmenu.prevent="onContextMenu($event, item)"
         >
           <!-- Artwork -->
           <div class="w-10 h-10 rounded-md bg-foreground/5 flex-shrink-0 overflow-hidden">
@@ -92,13 +100,26 @@ watch(() => store.isQueueOpen, (open) => {
             </div>
           </div>
 
-          <!-- Duration + index -->
-          <div class="text-right flex-shrink-0">
-            <div class="text-xs text-muted-foreground mb-1">{{ formatTime(item.duration) }}</div>
-            <div class="text-xs text-muted-foreground/50 mt-0.5">{{ index + 1 }}</div>
+          <!-- Duration + index + Context Menu Overlay -->
+          <div class="relative flex items-center justify-end w-20 h-full flex-shrink-0">
+            <div class="flex flex-col items-end group-hover:opacity-0 transition-opacity">
+              <div class="text-xs text-muted-foreground mb-1">{{ formatTime(item.duration) }}</div>
+              <div class="text-xs text-muted-foreground/50 mt-0.5">{{ index + 1 }}</div>
+            </div>
+            <div
+              class="absolute inset-0 flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <button
+                class="p-2 hover:bg-foreground/8 rounded-full text-foreground/30 hover:text-foreground/70 transition-colors"
+                @click.stop="onContextMenu($event, item)"
+              >
+                <MoreVertical class="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </button>
       </RecycleScroller>
     </div>
   </div>
+  <TrackContextMenu ref="trackContextMenu" />
 </template>

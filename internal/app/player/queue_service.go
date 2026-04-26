@@ -343,6 +343,71 @@ func (s *QueueService) UpdateTrack(track *domain.TrackDTO) {
 	}
 }
 
+// RemoveTrack removes a track from the queue by its ID.
+func (s *QueueService) RemoveTrack(trackID string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Find in original list
+	originalIdx := -1
+	for i, t := range s.originalList {
+		if t.ID == trackID {
+			originalIdx = i
+			break
+		}
+	}
+
+	if originalIdx == -1 {
+		return
+	}
+
+	// Determine if we are removing the current track
+	list := s.activeList()
+	isRemovingCurrent := false
+	if s.currentIndex >= 0 && s.currentIndex < len(list) && list[s.currentIndex].ID == trackID {
+		isRemovingCurrent = true
+	}
+
+	if s.shuffle {
+		// Find in shuffled list
+		shuffledIdx := -1
+		for i, t := range s.shuffledList {
+			if t.ID == trackID {
+				shuffledIdx = i
+				break
+			}
+		}
+
+		if shuffledIdx >= 0 {
+			s.shuffledList = sliceRemove(s.shuffledList, shuffledIdx)
+			if shuffledIdx < s.currentIndex {
+				s.currentIndex--
+			}
+		}
+		s.originalList = sliceRemove(s.originalList, originalIdx)
+	} else {
+		s.originalList = sliceRemove(s.originalList, originalIdx)
+		if originalIdx < s.currentIndex {
+			s.currentIndex--
+		}
+	}
+
+	// If we removed the current track, we might need to adjust the index
+	// so GetCurrentTrack() returns the next logical track.
+	if isRemovingCurrent {
+		newList := s.activeList()
+		if len(newList) == 0 {
+			s.currentIndex = -1
+		} else if s.currentIndex >= len(newList) {
+			if s.repeatMode == domain.RepeatModeAll {
+				s.currentIndex = 0
+			} else {
+				s.currentIndex = len(newList) // Mark as finished
+			}
+		}
+	}
+}
+
 // Internal helpers
 
 func (s *QueueService) activeList() []*domain.TrackDTO {

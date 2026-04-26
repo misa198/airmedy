@@ -23,6 +23,7 @@ import { Slider } from '@/components/ui/slider'
 import * as WindowService from '../../bindings/airmedy/internal/infra/wails/windowservice'
 import { useI18n } from 'vue-i18n'
 import TrackContextMenu from './TrackContextMenu.vue'
+import MarqueeText from './MarqueeText.vue'
 
 const { t } = useI18n()
 const store = usePlayerStore()
@@ -81,9 +82,9 @@ async function onSeekEnd() {
           <Music class="w-5 h-5 text-foreground/20" />
         </div>
       </div>
-      <div class="flex flex-col min-w-0">
-        <span class="font-medium text-sm truncate leading-tight">{{ trackTitle }}</span>
-        <span class="text-xs text-foreground/40 truncate leading-tight mt-0.5">{{ trackArtist }}</span>
+      <div class="flex flex-col min-w-0 flex-1">
+        <MarqueeText :text="trackTitle" content-class="font-medium text-sm leading-tight" />
+        <MarqueeText :text="trackArtist" content-class="text-xs text-foreground/40 leading-tight mt-0.5" />
       </div>
     </div>
 

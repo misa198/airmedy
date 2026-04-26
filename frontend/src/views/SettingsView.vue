@@ -27,7 +27,7 @@ const categories = computed(() => [
 <template>
   <div class="h-full flex flex-col md:flex-row bg-background text-foreground overflow-hidden">
     <!-- Sidebar -->
-    <aside class="w-full md:w-64 border-r border-foreground/[0.06] bg-foreground/[0.02] flex-shrink-0">
+    <aside class="w-full md:w-64 border-r border-foreground/[0.06] bg-foreground/[0.02] flex-shrink-0 select-none">
       <div class="p-6">
         <h1 class="text-2xl font-bold mb-6 px-2">{{ t('settings.title') }}</h1>
         <nav class="space-y-1">
@@ -64,7 +64,7 @@ const categories = computed(() => [
 
         <!-- Equalization -->
         <div v-if="activeCategory === 'equalization'" class="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <h2 class="text-xl font-bold mb-4">{{ t('settings.equalizer.title') }}</h2>
+          <h2 class="text-xl font-bold mb-4 select-none">{{ t('settings.equalizer.title') }}</h2>
           <div class="bg-card rounded-2xl border border-foreground/[0.06] p-6">
             <EQPanel />
           </div>

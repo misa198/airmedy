@@ -26,7 +26,7 @@ const toggleStartAtLogin = async (enabled: boolean) => {
 <template>
   <div class="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
     <section>
-      <div class="flex items-center gap-2 mb-6 text-foreground/40">
+      <div class="flex items-center gap-2 mb-6 text-foreground/40 select-none">
         <AppWindow class="w-4 h-4" />
         <h2 class="text-sm font-bold uppercase tracking-wider">{{ t('settings.general.behavior', 'Behavior') }}</h2>
       </div>
@@ -46,7 +46,7 @@ const toggleStartAtLogin = async (enabled: boolean) => {
     </section>
 
     <section>
-      <div class="flex items-center gap-2 mb-6 text-foreground/40">
+      <div class="flex items-center gap-2 mb-6 text-foreground/40 select-none">
         <Sun class="w-4 h-4" />
         <h2 class="text-sm font-bold uppercase tracking-wider">{{ t('settings.general.appearance') }}</h2>
       </div>

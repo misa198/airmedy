@@ -122,7 +122,7 @@ const navigateToAlbum = (id: string) => {
 
     <div v-else class="space-y-16 pb-12 animate-in fade-in duration-700">
       <!-- Greeting -->
-      <header>
+      <header class="select-none">
         <h1 class="text-4xl font-bold tracking-tight mb-2">{{ randomGreeting }}</h1>
         <p class="text-xl text-foreground/40">{{ welcomePhrase }}</p>
       </header>

@@ -2,6 +2,7 @@
 import { ListMusic, X } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
+import { usePlayerStore } from '../../stores/player'
 import TrackTable from '../TrackTable.vue'
 import type { TrackDTO } from '../../../bindings/airmedy/internal/domain/models'
 
@@ -16,8 +17,12 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const router = useRouter()
+const playerStore = usePlayerStore()
 
 function navigate(path: string) {
+  if (playerStore.playerMode === 'fullscreen') {
+    playerStore.playerMode = 'sticky'
+  }
   router.push(path)
   emit('close')
 }
@@ -43,6 +48,7 @@ function navigate(path: string) {
       <div class="flex-1 overflow-hidden">
         <TrackTable :tracks="queue" :show-artwork="false" :scroll-to-current="true" :simple-mode="true"
           :hide-header="true" variant="glass"
+          :context-menu-options="{ showRemoveFromQueue: true }"
           class="dark"
           @play-track="(_, index) => emit('play-track', index)"
           @navigate-album="id => navigate(`/albums/${id}`)"
