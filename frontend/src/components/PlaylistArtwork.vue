@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { ListMusic, Heart } from 'lucide-vue-next'
 import type { Playlist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
+import { buildArtworkUrl } from '@/lib/utils'
 
 const props = defineProps<{
   playlist: Playlist
@@ -31,13 +32,13 @@ const playlistArtworks = computed(() => {
   <div class="w-full h-full relative overflow-hidden flex-shrink-0 flex items-center justify-center bg-foreground/[0.03]">
     <!-- Custom or Single Fallback -->
     <template v-if="playlistArtworks.length === 1 || (playlistArtworks.length > 1 && playlistArtworks.length < 4)">
-      <img :src="'/artwork/' + playlistArtworks[0]" class="w-full h-full object-cover" />
+      <img :src="buildArtworkUrl(playlistArtworks[0], 'md')" class="w-full h-full object-cover" />
     </template>
     
     <!-- 4-Grid Fallback -->
     <template v-else-if="playlistArtworks.length >= 4">
       <div class="grid grid-cols-2 grid-rows-2 w-full h-full">
-        <img v-for="key in playlistArtworks.slice(0, 4)" :key="key" :src="'/artwork/' + key" class="w-full h-full object-cover" />
+        <img v-for="key in playlistArtworks.slice(0, 4)" :key="key" :src="buildArtworkUrl(key, 'md')" class="w-full h-full object-cover" />
       </div>
     </template>
 

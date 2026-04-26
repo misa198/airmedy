@@ -3,17 +3,14 @@ import { computed } from 'vue'
 import { usePlayerStore } from '@/stores/player'
 import { Music, AudioLines, X } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
-import { formatTime } from '@/lib/utils'
+import { formatTime, buildArtworkUrl } from '@/lib/utils'
 
 const { t } = useI18n()
 const store = usePlayerStore()
 
 const track = computed(() => store.trackInfoTrack)
 
-const artworkUrl = computed(() => {
-  const key = track.value?.artwork_key
-  return key ? `/artwork/${key}` : null
-})
+const artworkUrl = computed(() => buildArtworkUrl(track.value?.artwork_key, 'md'))
 
 const isLossless = computed(() => {
   if (!track.value) return false

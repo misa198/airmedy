@@ -4,6 +4,7 @@ import { Events } from '@wailsio/runtime'
 import * as PlayerService from '../../bindings/airmedy/internal/infra/wails/playerservice'
 import { PlaybackState, PlayerStatus, RepeatMode, ThemeColors } from '../../bindings/airmedy/internal/domain/models'
 import type { Lyric, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
+import { buildArtworkUrl } from '@/lib/utils'
 
 export type PlayerMode = 'sticky' | 'mini' | 'fullscreen'
 
@@ -43,10 +44,9 @@ export const usePlayerStore = defineStore('player', () => {
   const progressPercent = computed(() =>
     duration.value > 0 ? (position.value / duration.value) * 100 : 0,
   )
-  const artworkUrl = computed(() => {
-    const key = currentTrack.value?.artwork_key
-    return key ? `/artwork/${key}` : null
-  })
+  const artworkUrl = computed(() => buildArtworkUrl(currentTrack.value?.artwork_key, 'lg'))
+  const artworkUrlMd = computed(() => buildArtworkUrl(currentTrack.value?.artwork_key, 'md'))
+  const artworkUrlSm = computed(() => buildArtworkUrl(currentTrack.value?.artwork_key, 'sm'))
 
   // Clear lyrics immediately whenever the playing track changes
   watch(currentTrack, (newTrack, oldTrack) => {
@@ -271,6 +271,8 @@ export const usePlayerStore = defineStore('player', () => {
     repeatMode,
     progressPercent,
     artworkUrl,
+    artworkUrlMd,
+    artworkUrlSm,
     // Actions
     init,
     syncState,

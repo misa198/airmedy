@@ -77,7 +77,7 @@ async function onSeekEnd() {
       <div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 shadow-lg ring-1 ring-foreground/10 cursor-pointer transition-transform hover:scale-105 active:scale-95"
         @click="store.openTrackInfo(store.currentTrack)"
         @contextmenu.prevent="openArtworkContextMenu">
-        <img v-if="store.artworkUrl" :src="store.artworkUrl" :alt="trackTitle" class="w-full h-full object-cover" />
+        <img v-if="store.artworkUrlSm" :src="store.artworkUrlSm" :alt="trackTitle" class="w-full h-full object-cover" />
         <div v-else class="w-full h-full bg-foreground/5 flex items-center justify-center">
           <Music class="w-5 h-5 text-foreground/20" />
         </div>

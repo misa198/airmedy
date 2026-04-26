@@ -7,7 +7,7 @@ import type { AlbumDTO, TrackDTO, ThemeColors } from '../../bindings/airmedy/int
 import TrackTable from '@/components/TrackTable.vue'
 import { Disc, User, Play, Clock, Calendar, MoreVertical, Music, Shuffle } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
-import { formatTotalDuration } from '../lib/utils'
+import { formatTotalDuration, buildArtworkUrl } from '../lib/utils'
 import { useContextMenu } from '@/composables/useContextMenu'
 import { useGroupContextMenu } from '@/composables/useGroupContextMenu'
 import { useRestoreScroll } from '@/composables/useRestoreScroll'
@@ -89,7 +89,7 @@ const getTotalDuration = (tracks: TrackDTO[]) => {
       >
         <template #artwork>
           <div class="w-48 h-48 rounded-lg shadow-2xl overflow-hidden ring-1 ring-foreground/[0.08] bg-foreground/5 flex-shrink-0">
-            <img v-if="album.artwork_key" :src="'/artwork/' + album.artwork_key" class="w-full h-full object-cover" />
+            <img v-if="album.artwork_key" :src="buildArtworkUrl(album.artwork_key, 'md')" class="w-full h-full object-cover" />
             <div v-else class="w-full h-full flex items-center justify-center text-foreground/10">
               <Disc class="w-24 h-24" />
             </div>

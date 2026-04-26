@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Disc, Play, User } from 'lucide-vue-next'
 import type { AlbumDTO, Artist } from '../../bindings/airmedy/internal/domain/models'
+import { buildArtworkUrl } from '@/lib/utils'
 
 const props = withDefaults(defineProps<{
   album: AlbumDTO
@@ -24,7 +25,7 @@ const emit = defineEmits<{
     <div class="aspect-square bg-foreground/5 rounded-lg ring-1 ring-foreground/[0.06] overflow-hidden relative mb-3 transition-all">
       <div v-if="album.artwork_key" class="w-full h-full">
         <img
-          :src="`/artwork/${album.artwork_key}`"
+          :src="buildArtworkUrl(album.artwork_key, 'md')"
           :alt="album.title"
           class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Music, Play, User, Disc } from 'lucide-vue-next'
 import type { TrackDTO, Artist } from '../../bindings/airmedy/internal/domain/models'
+import { buildArtworkUrl } from '@/lib/utils'
 
 const props = defineProps<{
   track: TrackDTO
@@ -27,7 +28,7 @@ const artistNames = (artists: (Artist | null)[] | undefined) => {
     <div class="aspect-square bg-foreground/5 rounded-lg ring-1 ring-foreground/[0.06] overflow-hidden relative mb-3 transition-all">
       <div v-if="track.artwork_key || (track.album && track.album.artwork_key)" class="w-full h-full">
         <img
-          :src="`/artwork/${track.artwork_key || track.album?.artwork_key}`"
+          :src="buildArtworkUrl(track.artwork_key || track.album?.artwork_key, 'md')"
           :alt="track.title"
           class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />

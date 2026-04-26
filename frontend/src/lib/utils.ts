@@ -20,6 +20,15 @@ export function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
+export function buildArtworkUrl(
+  key: string | null | undefined,
+  size: 'sm' | 'md' | 'lg' = 'lg',
+): string | undefined {
+  if (!key) return undefined
+  if (size === 'lg') return `/artwork/${key}`
+  return `/artwork/${key}?size=${size}`
+}
+
 export function formatTotalDuration(totalSeconds: number, t: (key: string) => string): string {
   const hours = Math.floor(totalSeconds / 3600)
   const mins = Math.floor((totalSeconds % 3600) / 60)

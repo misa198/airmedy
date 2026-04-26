@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Heart, Music, Play, MoreVertical } from 'lucide-vue-next'
 import type { Artist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
-import { formatTime } from '../lib/utils'
+import { formatTime, buildArtworkUrl } from '../lib/utils'
 import { useFavoritesStore } from '../stores/favorites'
 import { usePlayerStore } from '../stores/player'
 import type { ColumnDef } from '@/composables/useTrackTableSettings'
@@ -85,7 +85,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
         >
           <img
             v-if="track.artwork_key"
-            :src="`/artwork/${track.artwork_key}`"
+            :src="buildArtworkUrl(track.artwork_key, 'sm')"
             class="w-full h-full object-cover"
           />
           <div

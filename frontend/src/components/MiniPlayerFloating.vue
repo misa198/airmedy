@@ -18,7 +18,7 @@ import { useGlassBlur } from '@/composables/useGlassBlur'
 const store = usePlayerStore()
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
-useGlassBlur(canvasRef, computed(() => store.artworkUrl))
+useGlassBlur(canvasRef, computed(() => store.artworkUrl ?? null))
 
 const alwaysOnTop = ref(true)
 const isSeeking = ref(false)
