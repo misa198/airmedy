@@ -103,6 +103,14 @@ func (s *LibraryService) GetAllTracks() ([]*domain.TrackDTO, error) {
 	return s.trackRepo.GetAll(context.Background())
 }
 
+func (s *LibraryService) GetTrackCount() (int, error) {
+	return s.trackRepo.Count(context.Background())
+}
+
+func (s *LibraryService) GetTracksPaginated(offset, limit int) ([]*domain.TrackDTO, error) {
+	return s.trackRepo.GetPaginated(context.Background(), offset, limit)
+}
+
 func (s *LibraryService) GetMostListenedTracks(limit int) ([]*domain.TrackDTO, error) {
 	return s.trackRepo.GetMostListened(context.Background(), limit)
 }

@@ -45,16 +45,16 @@ const welcomePhrase = computed(() => {
 const fetchData = async () => {
   loading.value = true
   try {
-    const allTracks = await LibraryService.GetAllTracks()
-    hasTracks.value = allTracks && allTracks.length > 0
-    
+    const count = await LibraryService.GetTrackCount()
+    hasTracks.value = count > 0
+
     if (hasTracks.value) {
       const [recent, most, least] = await Promise.all([
         LibraryService.GetRecentlyPlayedTracks(28),
         LibraryService.GetMostListenedTracks(28),
         LibraryService.GetLeastListenedTracks(28)
       ])
-      
+
       recentlyPlayed.value = (recent || []).filter((t): t is TrackDTO => t !== null)
       mostListened.value = (most || []).filter((t): t is TrackDTO => t !== null)
       leastListened.value = (least || []).filter((t): t is TrackDTO => t !== null)

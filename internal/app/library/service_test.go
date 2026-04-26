@@ -90,6 +90,8 @@ func (m *mockComposerRepo) GetByNormalizationKey(ctx context.Context, key string
 	return nil, nil
 }
 
+type mockPlaylistRepo struct{ domain.PlaylistRepository }
+
 type mockFolderRepo struct {
 	domain.WatchedFolderRepository
 	folders []*domain.WatchedFolder
@@ -142,6 +144,9 @@ func (m *mockMetadataExtractor) ExtractArtwork(ctx context.Context, path string)
 type mockSearchService struct{ domain.SearchService }
 func (m *mockSearchService) IndexTrack(ctx context.Context, track *domain.TrackDTO) error { return nil }
 func (m *mockSearchService) IndexAlbum(ctx context.Context, album *domain.AlbumDTO) error { return nil }
+func (m *mockSearchService) IndexArtist(ctx context.Context, artist *domain.Artist) error { return nil }
+func (m *mockSearchService) IndexComposer(ctx context.Context, composer *domain.Composer) error { return nil }
+func (m *mockSearchService) IndexPlaylist(ctx context.Context, playlist *domain.Playlist) error { return nil }
 func (m *mockSearchService) Close() error { return nil }
 func (m *mockSearchService) DeleteFromIndex(ctx context.Context, id string) error { return nil }
 
@@ -174,6 +179,7 @@ func TestLibraryService_SyncFolder(t *testing.T) {
 		&mockArtistRepo{},
 		&mockGenreRepo{},
 		&mockComposerRepo{},
+		&mockPlaylistRepo{},
 		&mockFolderRepo{},
 		&mockMetadataExtractor{},
 		&mockMetadataWriter{},
@@ -249,6 +255,7 @@ func TestLibraryService_AddWatchedFolder_CoveringExisting(t *testing.T) {
 		&mockArtistRepo{},
 		&mockGenreRepo{},
 		&mockComposerRepo{},
+		&mockPlaylistRepo{},
 		folderRepo,
 		&mockMetadataExtractor{},
 		&mockMetadataWriter{},
