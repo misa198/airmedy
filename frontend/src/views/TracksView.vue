@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, shallowRef, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
@@ -13,7 +13,7 @@ const PAGE_SIZE = 500
 const playerStore = usePlayerStore()
 const router = useRouter()
 
-const tracks = ref<TrackDTO[]>([])
+const tracks = shallowRef<TrackDTO[]>([])
 const isLoading = ref(true)
 const searchQuery = ref('')
 

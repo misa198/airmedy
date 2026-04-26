@@ -97,15 +97,21 @@ const handleSyncFinished = () => {
   syncComplete.value = true
 }
 
+let offSyncStarted: (() => void) | null = null
+let offSyncProgress: (() => void) | null = null
+let offSyncFinished: (() => void) | null = null
+
 onMounted(() => {
   loadFolders()
-  Events.On('library:sync-started', handleSyncStarted)
-  Events.On('library:sync-progress', handleSyncProgress)
-  Events.On('library:sync-finished', handleSyncFinished)
+  offSyncStarted = Events.On('library:sync-started', handleSyncStarted)
+  offSyncProgress = Events.On('library:sync-progress', handleSyncProgress)
+  offSyncFinished = Events.On('library:sync-finished', handleSyncFinished)
 })
 
 onUnmounted(() => {
-  Events.Off('library:sync-started', 'library:sync-progress', 'library:sync-finished')
+  offSyncStarted?.()
+  offSyncProgress?.()
+  offSyncFinished?.()
 })
 </script>
 

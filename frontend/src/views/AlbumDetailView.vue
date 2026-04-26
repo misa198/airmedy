@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, shallowRef, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
@@ -22,7 +22,7 @@ const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const album = ref<AlbumDTO | null>(null)
-const tracks = ref<TrackDTO[]>([])
+const tracks = shallowRef<TrackDTO[]>([])
 const isLoading = ref(true)
 
 useLibraryUpdates(tracks)

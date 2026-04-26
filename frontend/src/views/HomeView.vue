@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, shallowRef, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { 
   Music, Settings as SettingsIcon,
@@ -17,9 +17,9 @@ const router = useRouter()
 const playerStore = usePlayerStore()
 
 const loading = ref(true)
-const recentlyPlayed = ref<TrackDTO[]>([])
-const mostListened = ref<TrackDTO[]>([])
-const leastListened = ref<TrackDTO[]>([])
+const recentlyPlayed = shallowRef<TrackDTO[]>([])
+const mostListened = shallowRef<TrackDTO[]>([])
+const leastListened = shallowRef<TrackDTO[]>([])
 const hasTracks = ref(false)
 
 const randomGreeting = computed(() => {
