@@ -198,6 +198,25 @@ func (s *PlayerService) SetMuted(muted bool) error {
 	return err
 }
 
+// PlayTrackIDs fetches tracks by ID from the repository and starts playing from startIndex.
+// Preferred over PlayTracks when the caller already has IDs — avoids large IPC serialization.
+func (s *PlayerService) PlayTrackIDs(ctx context.Context, trackIDs []string, startIndex int) error {
+	tracks, err := s.trackRepo.GetByIDs(ctx, trackIDs)
+	if err != nil {
+		return fmt.Errorf("failed to fetch tracks by ids: %w", err)
+	}
+	return s.PlayTracks(tracks, startIndex)
+}
+
+// ShuffleTrackIDs fetches tracks by ID from the repository and shuffles them.
+func (s *PlayerService) ShuffleTrackIDs(ctx context.Context, trackIDs []string) error {
+	tracks, err := s.trackRepo.GetByIDs(ctx, trackIDs)
+	if err != nil {
+		return fmt.Errorf("failed to fetch tracks by ids: %w", err)
+	}
+	return s.ShuffleTracks(tracks)
+}
+
 // PlayTracks sets a new queue and starts playing from the specified index.
 func (s *PlayerService) PlayTracks(tracks []*domain.TrackDTO, startIndex int) error {
 	s.queue.SetQueue(tracks, startIndex)

@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, shallowRef, onMounted, computed } from 'vue'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import { Disc } from 'lucide-vue-next'
 import type { AlbumDTO } from '../../bindings/airmedy/internal/domain/models'
 import AlbumGrid from '../components/AlbumGrid.vue'
 import ViewHeader from '../components/ViewHeader.vue'
 
-const albums = ref<AlbumDTO[]>([])
+const albums = shallowRef<AlbumDTO[]>([])
 const isLoading = ref(true)
 const searchQuery = ref('')
 

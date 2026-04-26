@@ -1,6 +1,8 @@
 package wails
 
 import (
+	"context"
+
 	"airmedy/internal/app/player"
 	"airmedy/internal/domain"
 )
@@ -54,8 +56,16 @@ func (s *PlayerService) PlayTracks(tracks []*domain.TrackDTO, startIndex int) er
 	return s.service.PlayTracks(tracks, startIndex)
 }
 
+func (s *PlayerService) PlayTrackIDs(trackIDs []string, startIndex int) error {
+	return s.service.PlayTrackIDs(context.Background(), trackIDs, startIndex)
+}
+
 func (s *PlayerService) ShuffleTracks(tracks []*domain.TrackDTO) error {
 	return s.service.ShuffleTracks(tracks)
+}
+
+func (s *PlayerService) ShuffleTrackIDs(trackIDs []string) error {
+	return s.service.ShuffleTrackIDs(context.Background(), trackIDs)
 }
 
 func (s *PlayerService) SetShuffle(enabled bool) error {

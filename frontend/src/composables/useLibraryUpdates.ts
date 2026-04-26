@@ -8,7 +8,7 @@ export function useLibraryUpdates(tracks: Ref<TrackDTO[]>) {
     if (!updated?.id) return
     const idx = tracks.value.findIndex(t => t.id === updated.id)
     if (idx !== -1) {
-      tracks.value[idx] = updated
+      tracks.value = tracks.value.map((t, i) => i === idx ? updated : t)
     }
   }
 
@@ -18,12 +18,16 @@ export function useLibraryUpdates(tracks: Ref<TrackDTO[]>) {
     tracks.value = tracks.value.filter(t => t.id !== id)
   }
 
+  let offUpdate: (() => void) | null = null
+  let offDelete: (() => void) | null = null
+
   onMounted(() => {
-    Events.On('library:track-updated', handleUpdate)
-    Events.On('library:track-deleted', handleDelete)
+    offUpdate = Events.On('library:track-updated', handleUpdate)
+    offDelete = Events.On('library:track-deleted', handleDelete)
   })
 
   onUnmounted(() => {
-    Events.Off('library:track-updated', 'library:track-deleted')
+    offUpdate?.()
+    offDelete?.()
   })
 }

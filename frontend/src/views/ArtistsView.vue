@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, shallowRef, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import { User } from 'lucide-vue-next'
@@ -10,7 +10,7 @@ import { usePlayerStore } from '@/stores/player'
 const router = useRouter()
 const route = useRoute()
 const playerStore = usePlayerStore()
-const artists = ref<Artist[]>([])
+const artists = shallowRef<Artist[]>([])
 const isLoading = ref(true)
 
 const loadArtists = async () => {
