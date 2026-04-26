@@ -2,7 +2,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Play, Shuffle, MoreVertical, Clock, Music, ListMusic, X, Heart } from 'lucide-vue-next'
+import { Play, Shuffle, MoreVertical, Clock, Music, X } from 'lucide-vue-next'
 import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { Playlist, TrackDTO, ThemeColors } from '../../bindings/airmedy/internal/domain/models'
@@ -16,6 +16,7 @@ import { useGroupContextMenu } from '@/composables/useGroupContextMenu'
 import { useRestoreScroll } from '@/composables/useRestoreScroll'
 import ContextMenu from '@/components/ContextMenu.vue'
 import DetailHero from '@/components/DetailHero.vue'
+import PlaylistArtwork from '@/components/PlaylistArtwork.vue'
 import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
 
 const route = useRoute()
@@ -119,22 +120,6 @@ const totalDurationFormatted = computed(() => {
   return formatTotalDuration(totalSeconds, t)
 })
 
-const playlistArtworks = computed(() => {
-  if (playlist.value?.artwork_key) {
-    return [playlist.value.artwork_key]
-  }
-
-  const keys = new Set<string>()
-  for (const track of tracks.value) {
-    const key = track.artwork_key || track.album?.artwork_key
-    if (key) {
-      keys.add(key)
-      if (keys.size >= 4) break
-    }
-  }
-  return Array.from(keys)
-})
-
 async function handleSetArtwork() {
   if (!playlist.value || playlist.value.id === 'favorites') return
   try {
@@ -188,36 +173,20 @@ function shufflePlaylist() {
             @click="handleSetArtwork"
             class="w-48 h-48 rounded-lg shadow-2xl overflow-hidden ring-1 ring-foreground/[0.08] bg-foreground/5 flex-shrink-0 cursor-pointer group relative">
             
-            <!-- Custom or Single Fallback -->
-            <template v-if="playlistArtworks.length === 1 || (playlistArtworks.length > 1 && playlistArtworks.length < 4)">
-              <img :src="'/artwork/' + playlistArtworks[0]" class="w-full h-full object-cover" />
-            </template>
-            
-            <!-- 4-Grid Fallback -->
-            <template v-else-if="playlistArtworks.length >= 4">
-              <div class="grid grid-cols-2 grid-rows-2 w-full h-full">
-                <img v-for="key in playlistArtworks.slice(0, 4)" :key="key" :src="'/artwork/' + key" class="w-full h-full object-cover" />
+            <PlaylistArtwork :playlist="playlist" :tracks="tracks">
+              <!-- Hover Overlay -->
+              <div v-if="playlist.id !== 'favorites'" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                <span class="text-white text-xs font-medium px-2 py-1 bg-black/20 rounded-full backdrop-blur-sm">{{ $t('playlist.edit_cover') }}</span>
+                <button 
+                  v-if="playlist.artwork_key"
+                  @click="handleRemoveArtwork"
+                  class="p-1.5 bg-red-500/80 hover:bg-red-500 text-white rounded-full transition-colors backdrop-blur-sm"
+                  :title="$t('playlist.remove_cover')"
+                >
+                  <X class="w-4 h-4" />
+                </button>
               </div>
-            </template>
-
-            <!-- Default Icon -->
-            <div v-else class="w-full h-full flex items-center justify-center text-foreground/10">
-              <Heart v-if="playlist.id === 'favorites'" class="w-24 h-24" />
-              <ListMusic v-else class="w-24 h-24" />
-            </div>
-
-            <!-- Hover Overlay -->
-            <div v-if="playlist.id !== 'favorites'" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
-              <span class="text-white text-xs font-medium px-2 py-1 bg-black/20 rounded-full backdrop-blur-sm">{{ $t('playlist.edit_cover') }}</span>
-              <button 
-                v-if="playlist.artwork_key"
-                @click="handleRemoveArtwork"
-                class="p-1.5 bg-red-500/80 hover:bg-red-500 text-white rounded-full transition-colors backdrop-blur-sm"
-                :title="$t('playlist.remove_cover')"
-              >
-                <X class="w-4 h-4" />
-              </button>
-            </div>
+            </PlaylistArtwork>
           </div>
         </template>
 
@@ -248,6 +217,7 @@ function shufflePlaylist() {
         <TrackTable
           :tracks="tracks"
           :show-artwork="true"
+          :simple-mode="true"
           @play-track="(_, index, queue) => playerStore.playTracks(queue, index)"
           @navigate-album="id => router.push(`/albums/${id}`)"
           @navigate-artist="id => router.push(`/artists/${id}`)"

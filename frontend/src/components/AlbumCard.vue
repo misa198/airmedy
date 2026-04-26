@@ -2,9 +2,12 @@
 import { Disc, Play, User } from 'lucide-vue-next'
 import type { AlbumDTO, Artist } from '../../bindings/airmedy/internal/domain/models'
 
-defineProps<{
+const props = withDefaults(defineProps<{
   album: AlbumDTO
-}>()
+  showPlay?: boolean
+}>(), {
+  showPlay: true
+})
 
 const emit = defineEmits<{
   'click': [id: string]
@@ -30,7 +33,7 @@ const emit = defineEmits<{
         <Disc class="w-1/3 h-1/3" />
       </div>
 
-      <div class="absolute inset-0 bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+      <div v-if="showPlay" class="absolute inset-0 bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
         <button
           @click.stop="emit('play', album.id)"
           class="w-12 h-12 bg-foreground text-background rounded-full shadow-xl flex items-center justify-center transform translate-y-4 group-hover:translate-y-0 transition-all duration-300"

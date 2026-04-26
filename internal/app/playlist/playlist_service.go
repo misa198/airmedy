@@ -17,16 +17,18 @@ import (
 )
 
 type PlaylistService struct {
-	repo         domain.PlaylistRepository
-	artworkCache domain.ArtworkCache
-	logger       *slog.Logger
+	repo          domain.PlaylistRepository
+	artworkCache  domain.ArtworkCache
+	searchService domain.SearchService
+	logger        *slog.Logger
 }
 
-func NewPlaylistService(repo domain.PlaylistRepository, artworkCache domain.ArtworkCache, logger *slog.Logger) *PlaylistService {
+func NewPlaylistService(repo domain.PlaylistRepository, artworkCache domain.ArtworkCache, searchService domain.SearchService, logger *slog.Logger) *PlaylistService {
 	return &PlaylistService{
-		repo:         repo,
-		artworkCache: artworkCache,
-		logger:       logger,
+		repo:          repo,
+		artworkCache:  artworkCache,
+		searchService: searchService,
+		logger:        logger,
 	}
 }
 
@@ -44,6 +46,9 @@ func (s *PlaylistService) Create(ctx context.Context, name, description string) 
 	if err := s.repo.Save(ctx, p); err != nil {
 		return nil, err
 	}
+	if err := s.searchService.IndexPlaylist(ctx, p); err != nil {
+		s.logger.Warn("Failed to index playlist", "name", p.Name, "error", err)
+	}
 	return p, nil
 }
 
@@ -60,11 +65,21 @@ func (s *PlaylistService) Update(ctx context.Context, id, name, description stri
 	}
 	p.Name = name
 	p.Description = description
-	return s.repo.Update(ctx, p)
+	p.UpdatedAt = time.Now()
+	if err := s.repo.Update(ctx, p); err != nil {
+		return err
+	}
+	if err := s.searchService.IndexPlaylist(ctx, p); err != nil {
+		s.logger.Warn("Failed to index playlist", "name", p.Name, "error", err)
+	}
+	return nil
 }
 
 func (s *PlaylistService) Delete(ctx context.Context, id string) error {
-	return s.repo.Delete(ctx, id)
+	if err := s.repo.Delete(ctx, id); err != nil {
+		return err
+	}
+	return s.searchService.DeleteFromIndex(ctx, id)
 }
 
 func (s *PlaylistService) GetAll(ctx context.Context) ([]*domain.Playlist, error) {

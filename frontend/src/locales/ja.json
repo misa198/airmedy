@@ -20,6 +20,7 @@
     "sync": {
       "syncing": "同期中...",
       "sync_library": "ライブラリを同期",
+      "optimize_search": "検索を最適化",
       "syncing_library": "音楽ライブラリを同期中...",
       "sync_complete": "ライブラリの同期が完了しました",
       "sync_started": "ライブラリの同期を開始しました",
@@ -151,6 +152,8 @@
     "artists": "アーティスト",
     "genres": "ジャンル",
     "composers": "作曲家",
+    "playlists": "プレイリスト",
+    "playlist": "プレイリスト",
     "favorites": "お気に入り",
     "recently_added": "最近追加された項目",
     "recently_added_desc": "ライブラリに最近追加されたアルバム。",

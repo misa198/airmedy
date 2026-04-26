@@ -20,6 +20,7 @@
     "sync": {
       "syncing": "同步中...",
       "sync_library": "同步媒体库",
+      "optimize_search": "优化搜索",
       "syncing_library": "正在同步音乐库...",
       "sync_complete": "媒体库同步完成",
       "sync_started": "媒体库同步已开始",
@@ -145,13 +146,14 @@
       "action": "前往设置"
     }
   },
-
   "library": {
     "tracks": "曲目",
     "albums": "专辑",
     "artists": "艺术家",
     "genres": "流派",
     "composers": "作曲家",
+    "playlists": "播放列表",
+    "playlist": "播放列表",
     "favorites": "收藏",
     "recently_added": "最近添加",
     "recently_added_desc": "最近添加到您的媒体库的专辑。",

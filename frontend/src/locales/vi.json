@@ -20,6 +20,7 @@
     "sync": {
       "syncing": "Đang đồng bộ...",
       "sync_library": "Đồng bộ thư viện",
+      "optimize_search": "Tối ưu tìm kiếm",
       "syncing_library": "Đang đồng bộ thư viện nhạc...",
       "sync_complete": "Đồng bộ thư viện hoàn tất",
       "sync_started": "Bắt đầu đồng bộ thư viện",
@@ -145,13 +146,14 @@
       "action": "Đến Cài đặt"
     }
   },
-
   "library": {
     "tracks": "Bài hát",
     "albums": "Album",
     "artists": "Nghệ sĩ",
     "genres": "Thể loại",
     "composers": "Nhà soạn nhạc",
+    "playlists": "Danh sách phát",
+    "playlist": "Danh sách phát",
     "favorites": "Yêu thích",
     "recently_added": "Thêm gần đây",
     "recently_added_desc": "Các album vừa được thêm vào thư viện của bạn.",

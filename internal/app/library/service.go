@@ -27,6 +27,7 @@ type LibraryService struct {
 	artistRepo        domain.ArtistRepository
 	genreRepo         domain.GenreRepository
 	composerRepo      domain.ComposerRepository
+	playlistRepo      domain.PlaylistRepository
 	watchedFolderRepo domain.WatchedFolderRepository
 	metadataExtractor domain.MetadataExtractor
 	metadataWriter    domain.MetadataWriter
@@ -45,6 +46,7 @@ func NewLibraryService(
 	artistRepo domain.ArtistRepository,
 	genreRepo domain.GenreRepository,
 	composerRepo domain.ComposerRepository,
+	playlistRepo domain.PlaylistRepository,
 	watchedFolderRepo domain.WatchedFolderRepository,
 	metadataExtractor domain.MetadataExtractor,
 	metadataWriter domain.MetadataWriter,
@@ -63,6 +65,7 @@ func NewLibraryService(
 		artistRepo:        artistRepo,
 		genreRepo:         genreRepo,
 		composerRepo:      composerRepo,
+		playlistRepo:      playlistRepo,
 		watchedFolderRepo: watchedFolderRepo,
 		metadataExtractor: metadataExtractor,
 		metadataWriter:    metadataWriter,
@@ -477,6 +480,11 @@ func (s *LibraryService) resolveEntities(ctx context.Context, dto *domain.TrackD
 			return err
 		}
 		artistIDs = append(artistIDs, artist.ID)
+
+		// Index artist in search
+		if err := s.searchService.IndexArtist(ctx, artist); err != nil {
+			s.logger.Warn("Failed to index artist", "name", artist.Name, "error", err)
+		}
 	}
 
 	// 2. Resolve Album Artists
@@ -492,6 +500,11 @@ func (s *LibraryService) resolveEntities(ctx context.Context, dto *domain.TrackD
 			return err
 		}
 		albumArtistIDs = append(albumArtistIDs, aa.ID)
+
+		// Index album artist in search
+		if err := s.searchService.IndexArtist(ctx, aa); err != nil {
+			s.logger.Warn("Failed to index album artist", "name", aa.Name, "error", err)
+		}
 	}
 
 	// 3. Resolve Album
@@ -532,6 +545,21 @@ func (s *LibraryService) resolveEntities(ctx context.Context, dto *domain.TrackD
 			return err
 		}
 		dto.Track.AlbumID = dto.Album.ID
+
+		// Index album in search (need full AlbumDTO with artists populated for best indexing)
+		fullAlbum := &domain.AlbumDTO{
+			Album: *dto.Album,
+		}
+		// Populate artists from resolved album artists or track artists
+		if len(albumArtistIDs) > 0 {
+			fullAlbum.Artists = dto.AlbumArtists
+		} else {
+			fullAlbum.Artists = dto.Artists
+		}
+
+		if err := s.searchService.IndexAlbum(ctx, fullAlbum); err != nil {
+			s.logger.Warn("Failed to index album", "title", fullAlbum.Title, "error", err)
+		}
 	}
 
 	// 4. Resolve Genres
@@ -562,6 +590,11 @@ func (s *LibraryService) resolveEntities(ctx context.Context, dto *domain.TrackD
 			return err
 		}
 		composerIDs = append(composerIDs, c.ID)
+
+		// Index composer in search
+		if err := s.searchService.IndexComposer(ctx, c); err != nil {
+			s.logger.Warn("Failed to index composer", "name", c.Name, "error", err)
+		}
 	}
 
 	// 6. Finalize Track
@@ -676,4 +709,85 @@ func (s *LibraryService) GetAlbumColors(ctx context.Context, id string) (*domain
 	}
 
 	return colors, nil
+}
+
+func (s *LibraryService) ReindexAll(ctx context.Context) error {
+	s.logger.Info("Starting full library re-indexing")
+
+	// Calculate total items
+	tracks, _ := s.trackRepo.GetAll(ctx)
+	albums, _ := s.albumRepo.GetAll(ctx)
+	artists, _ := s.artistRepo.GetAll(ctx)
+	composers, _ := s.composerRepo.GetAll(ctx)
+	playlists, _ := s.playlistRepo.GetAll(ctx)
+
+	total := len(tracks) + len(albums) + len(artists) + len(composers) + len(playlists)
+	current := 0
+
+	emitProgress := func(path string) {
+		current++
+		if app := application.Get(); app != nil && app.Event != nil {
+			app.Event.Emit("library:sync-progress", domain.SyncProgress{
+				Current: current,
+				Total:   total,
+				Path:    path,
+			})
+		}
+	}
+
+	if app := application.Get(); app != nil && app.Event != nil {
+		app.Event.Emit("library:sync-started", map[string]interface{}{
+			"path":  "Re-indexing Search",
+			"total": total,
+		})
+	}
+
+	// 1. Re-index tracks
+	for _, t := range tracks {
+		if err := s.searchService.IndexTrack(ctx, t); err != nil {
+			s.logger.Warn("Failed to re-index track", "id", t.ID, "error", err)
+		}
+		emitProgress("Track: " + t.Title)
+	}
+
+	// 2. Re-index albums
+	for _, a := range albums {
+		dto, _ := s.albumRepo.GetByID(ctx, a.ID)
+		if dto != nil {
+			if err := s.searchService.IndexAlbum(ctx, dto); err != nil {
+				s.logger.Warn("Failed to re-index album", "id", a.ID, "error", err)
+			}
+		}
+		emitProgress("Album: " + a.Title)
+	}
+
+	// 3. Re-index artists
+	for _, ar := range artists {
+		if err := s.searchService.IndexArtist(ctx, ar); err != nil {
+			s.logger.Warn("Failed to re-index artist", "id", ar.ID, "error", err)
+		}
+		emitProgress("Artist: " + ar.Name)
+	}
+
+	// 4. Re-index composers
+	for _, c := range composers {
+		if err := s.searchService.IndexComposer(ctx, c); err != nil {
+			s.logger.Warn("Failed to re-index composer", "id", c.ID, "error", err)
+		}
+		emitProgress("Composer: " + c.Name)
+	}
+
+	// 5. Re-index playlists
+	for _, p := range playlists {
+		if err := s.searchService.IndexPlaylist(ctx, p); err != nil {
+			s.logger.Warn("Failed to re-index playlist", "id", p.ID, "error", err)
+		}
+		emitProgress("Playlist: " + p.Name)
+	}
+
+	s.logger.Info("Finished full library re-indexing")
+	if app := application.Get(); app != nil && app.Event != nil {
+		app.Event.Emit("library:sync-finished", "Search Index")
+	}
+	return nil
 }

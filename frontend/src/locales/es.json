@@ -20,6 +20,7 @@
     "sync": {
       "syncing": "Sincronizando...",
       "sync_library": "Sincronizar biblioteca",
+      "optimize_search": "Optimizar búsqueda",
       "syncing_library": "Sincronizando biblioteca de música...",
       "sync_complete": "Sincronización de biblioteca completada",
       "sync_started": "Sincronización de biblioteca iniciada",
@@ -151,6 +152,8 @@
     "artists": "Artistas",
     "genres": "Géneros",
     "composers": "Compositores",
+    "playlists": "Listas de reproducción",
+    "playlist": "Lista de reproducción",
     "favorites": "Favoritos",
     "recently_added": "Añadido recientemente",
     "recently_added_desc": "Álbumes añadidos recientemente a tu biblioteca.",

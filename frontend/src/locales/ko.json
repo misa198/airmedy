@@ -20,6 +20,7 @@
     "sync": {
       "syncing": "동기화 중...",
       "sync_library": "라이브러리 동기화",
+      "optimize_search": "검색 최적화",
       "syncing_library": "음악 라이브러리 동기화 중...",
       "sync_complete": "라이브러리 동기화 완료",
       "sync_started": "라이브러리 동기화 시작됨",
@@ -151,6 +152,8 @@
     "artists": "아티스트",
     "genres": "장르",
     "composers": "작곡가",
+    "playlists": "재생목록",
+    "playlist": "재생목록",
     "favorites": "즐겨찾기",
     "recently_added": "최근 추가된 항목",
     "recently_added_desc": "라이브러리에 최근 추가된 앨범.",

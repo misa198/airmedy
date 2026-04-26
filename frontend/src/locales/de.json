@@ -20,6 +20,7 @@
     "sync": {
       "syncing": "Synchronisierung...",
       "sync_library": "Mediathek synchronisieren",
+      "optimize_search": "Suche optimieren",
       "syncing_library": "Musikmediathek wird synchronisiert...",
       "sync_complete": "Mediathek-Synchronisierung abgeschlossen",
       "sync_started": "Mediathek-Synchronisierung gestartet",
@@ -151,6 +152,8 @@
     "artists": "Künstler",
     "genres": "Genres",
     "composers": "Komponisten",
+    "playlists": "Wiedergabelisten",
+    "playlist": "Wiedergabeliste",
     "favorites": "Favoriten",
     "recently_added": "Zuletzt hinzugefügt",
     "recently_added_desc": "Zuletzt zu deiner Mediathek hinzugefügte Alben.",

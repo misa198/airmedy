@@ -79,6 +79,26 @@ func (s *LibraryService) SyncAll() error {
 	return nil
 }
 
+func (s *LibraryService) ReindexAll() error {
+	return s.libService.ReindexAll(context.Background())
+}
+
+func (s *LibraryService) ImportAll() error {
+	folders, err := s.folderRepo.GetAll(context.Background())
+	if err != nil {
+		return err
+	}
+
+	for _, folder := range folders {
+		go func(path string) {
+			if err := s.libService.SyncFolder(context.Background(), path); err != nil {
+				// error logged in service
+			}
+		}(folder.Path)
+	}
+	return nil
+}
+
 func (s *LibraryService) GetAllTracks() ([]*domain.TrackDTO, error) {
 	return s.trackRepo.GetAll(context.Background())
 }

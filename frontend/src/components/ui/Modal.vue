@@ -15,7 +15,7 @@ const emit = defineEmits<{
       <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center" @click.self="emit('close')">
         <div class="absolute inset-0 bg-background/60 backdrop-blur-sm" @click="emit('close')" />
         <div
-          class="relative z-10 w-72 rounded-xl bg-[#1A1A1A] ring-1 ring-foreground/[0.08] shadow-2xl p-5"
+          class="relative z-10 w-72 rounded-xl bg-glass-elevated backdrop-blur-xl ring-1 ring-border-glass shadow-2xl p-5"
           @keydown.esc="emit('close')">
           <h3 class="text-sm font-semibold text-foreground mb-4">{{ title }}</h3>
           <slot />

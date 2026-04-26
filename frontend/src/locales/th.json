@@ -20,6 +20,7 @@
     "sync": {
       "syncing": "กำลังซิงค์...",
       "sync_library": "ซิงค์คลังเพลง",
+      "optimize_search": "เพิ่มประสิทธิภาพการค้นหา",
       "syncing_library": "กำลังซิงค์คลังเพลง...",
       "sync_complete": "ซิงค์คลังเพลงเสร็จสมบูรณ์",
       "sync_started": "เริ่มซิงค์คลังเพลงแล้ว",
@@ -151,6 +152,8 @@
     "artists": "ศิลปิน",
     "genres": "แนวเพลง",
     "composers": "ผู้ประพันธ์",
+    "playlists": "เพลย์ลิสต์",
+    "playlist": "เพลย์ลิสต์",
     "favorites": "รายการโปรด",
     "recently_added": "เพิ่มล่าสุด",
     "recently_added_desc": "อัลบั้มที่เพิ่งเพิ่มลงในคลังเพลงของคุณ",
