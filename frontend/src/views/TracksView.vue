@@ -3,8 +3,8 @@ import { ref, onMounted, computed } from 'vue'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import TrackTable from '../components/TrackTable.vue'
+import ViewHeader from '../components/ViewHeader.vue'
 import { usePlayerStore } from '../stores/player'
-import { Input } from '@/components/ui/input'
 import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
 
 const playerStore = usePlayerStore()
@@ -30,9 +30,9 @@ const loadTracks = async () => {
 const filteredTracks = computed(() => {
   if (!searchQuery.value) return tracks.value
   const query = searchQuery.value.toLowerCase()
-  return tracks.value.filter(track => 
-    (track.title || '').toLowerCase().includes(query) || 
-    (track.raw_artist_names || '').toLowerCase().includes(query) || 
+  return tracks.value.filter(track =>
+    (track.title || '').toLowerCase().includes(query) ||
+    (track.raw_artist_names || '').toLowerCase().includes(query) ||
     (track.album?.title || '').toLowerCase().includes(query)
   )
 })
@@ -42,25 +42,12 @@ onMounted(loadTracks)
 
 <template>
   <div class="h-full flex flex-col overflow-hidden bg-background">
-    <!-- Header -->
-    <div class="p-6 pb-4 border-b border-foreground/[0.06] select-none">
-      <div class="flex items-center justify-between mb-4">
-        <h1 class="text-3xl font-bold">{{ $t('library.tracks') }}</h1>
-        <div class="text-sm text-foreground/40">{{ filteredTracks.length }} {{ $t('library.tracks').toLowerCase() }}</div>
-      </div>
-      
-      <div class="flex items-center gap-4">
-        <div class="relative flex-1 max-w-sm">
-          <Input
-            v-model="searchQuery"
-            type="text"
-            :placeholder="`${$t('sidebar.search')} ${$t('library.tracks').toLowerCase()}...`"
-          />
-        </div>
-      </div>
-    </div>
+    <ViewHeader
+      v-model="searchQuery"
+      :title="$t('library.tracks')"
+      :search-placeholder="`${$t('sidebar.search')} ${$t('library.tracks').toLowerCase()}...`"
+    />
 
-    <!-- Reusable Track Table -->
     <TrackTable
       :tracks="filteredTracks"
       :is-loading="isLoading"
@@ -70,4 +57,3 @@ onMounted(loadTracks)
     />
   </div>
 </template>
-

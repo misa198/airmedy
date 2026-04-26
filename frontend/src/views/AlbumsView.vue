@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
-import { Disc, Search } from 'lucide-vue-next'
+import { Disc } from 'lucide-vue-next'
 import type { AlbumDTO } from '../../bindings/airmedy/internal/domain/models'
 import AlbumGrid from '../components/AlbumGrid.vue'
-import { Input } from '@/components/ui/input'
+import ViewHeader from '../components/ViewHeader.vue'
 
 const albums = ref<AlbumDTO[]>([])
 const isLoading = ref(true)
@@ -38,28 +38,17 @@ onMounted(loadAlbums)
 
 <template>
   <div class="h-full flex flex-col overflow-hidden bg-background">
-    <div class="p-6 pb-4 border-b border-foreground/[0.06] select-none">
-      <div class="flex items-center justify-between mb-4">
-        <h1 class="text-3xl font-bold">{{ $t('library.albums') }}</h1>
-        <div class="text-sm text-foreground/40">{{ filteredAlbums.length }} {{ $t('library.albums').toLowerCase() }}</div>
-      </div>
-      
-      <div class="relative max-w-sm">
-        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40" />
-        <Input
-          v-model="searchQuery"
-          type="text"
-          :placeholder="`${$t('sidebar.search')} ${$t('library.albums').toLowerCase()}...`"
-          class="pl-10 pr-4"
-        />
-      </div>
-    </div>
+    <ViewHeader
+      v-model="searchQuery"
+      :title="$t('library.albums')"
+      :search-placeholder="`${$t('sidebar.search')} ${$t('library.albums').toLowerCase()}...`"
+    />
 
     <div class="flex-1 overflow-hidden px-6 py-8">
       <div v-if="isLoading" class="h-full flex items-center justify-center">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
-      
+
       <div v-else-if="filteredAlbums.length === 0" class="h-full flex flex-col items-center justify-center text-foreground/40">
         <Disc class="w-12 h-12 mb-4 opacity-20" />
         <p>{{ $t('library.no_albums') }}</p>
