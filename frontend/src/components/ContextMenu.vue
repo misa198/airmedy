@@ -26,6 +26,7 @@ watch(
   [() => props.visible, () => props.x, () => props.y],
   async ([visible, x, y]) => {
     if (visible) {
+      activeSubmenuIndex.value = null
       adjustedX.value = x
       adjustedY.value = y
       
@@ -120,30 +121,33 @@ function handleSubmenuItemClick(item: ContextMenuItem) {
           >
             <component :is="item.icon" v-if="item.icon" class="w-4 h-4 shrink-0 opacity-70" />
             <span class="flex-1">{{ item.label }}</span>
+            <component :is="item.iconRight" v-if="item.iconRight" class="w-4 h-4 shrink-0 opacity-70 ml-auto" />
             <ChevronRight v-if="item.children?.length" class="w-4 h-4 opacity-40 ml-auto" />
-          </div>
-        </template>
-      </div>
+            </div>
+            </template>
+            </div>
 
-      <!-- Submenu panel -->
-      <div
-        v-if="activeSubmenuIndex !== null && items[activeSubmenuIndex]?.children?.length"
-        ref="submenuEl"
-        class="fixed z-[1000] min-w-[180px] max-h-64 overflow-y-auto rounded-2xl bg-glass-elevated backdrop-blur-xl ring-1 ring-border-glass shadow-2xl p-1.5 select-none"
-        :style="{ left: submenuX + 'px', top: submenuY + 'px' }"
-        @mouseleave="activeSubmenuIndex = null"
-      >
-        <div
-          v-for="(child, ci) in items[activeSubmenuIndex]!.children"
-          :key="ci"
-          class="flex items-center gap-3 px-3 py-1.5 text-sm cursor-default transition-all rounded-lg mx-0.5"
-          :class="child.disabled ? 'text-foreground/20' : 'text-foreground/80 hover:text-foreground hover:bg-foreground/15'"
-          @click="handleSubmenuItemClick(child)"
-        >
-          <component :is="child.icon" v-if="child.icon" class="w-4 h-4 shrink-0 opacity-70" />
-          <span>{{ child.label }}</span>
-        </div>
-        <div v-if="!items[activeSubmenuIndex]!.children!.length" class="px-3 py-1.5 text-sm text-foreground/30">
+            <!-- Submenu panel -->
+            <div
+            v-if="activeSubmenuIndex !== null && items[activeSubmenuIndex]?.children?.length"
+            ref="submenuEl"
+            class="fixed z-[1000] min-w-[180px] max-h-64 overflow-y-auto rounded-2xl bg-glass-elevated backdrop-blur-xl ring-1 ring-border-glass shadow-2xl p-1.5 select-none"
+            :style="{ left: submenuX + 'px', top: submenuY + 'px' }"
+            @mouseleave="activeSubmenuIndex = null"
+            >
+            <div
+            v-for="(child, ci) in items[activeSubmenuIndex]!.children"
+            :key="ci"
+            class="flex items-center gap-3 px-3 py-1.5 text-sm cursor-default transition-all rounded-lg mx-0.5"
+            :class="child.disabled ? 'text-foreground/20' : 'text-foreground/80 hover:text-foreground hover:bg-foreground/15'"
+            @click="handleSubmenuItemClick(child)"
+            >
+            <component :is="child.icon" v-if="child.icon" class="w-4 h-4 shrink-0 opacity-70" />
+            <span class="flex-1">{{ child.label }}</span>
+            <component :is="child.iconRight" v-if="child.iconRight" class="w-4 h-4 shrink-0 opacity-70 ml-auto" />
+            </div>
+            <div v-if="!items[activeSubmenuIndex]!.children!.length" class="px-3 py-1.5 text-sm text-foreground/30">
+
           No playlists
         </div>
       </div>

@@ -202,9 +202,10 @@
     "go_to_album": "ไปยังอัลบั้ม",
     "go_to_artist": "ไปยังศิลปิน",
     "edit_metadata": "แก้ไขข้อมูลเมตา",
-    "show_in_explorer": "Show in File Explorer",
+    "show_in_explorer": "แสดงในตัวจัดการไฟล์",
     "track_info": "ข้อมูลเพลง",
-    "refresh_lyrics": "รีเฟรชเนื้อเพลง"
+    "refresh_lyrics": "รีเฟรชเนื้อเพลง",
+    "remove_from_queue": "นำออกจากคิว"
   },
   "track_info": {
     "title": "ข้อมูลเพลง",

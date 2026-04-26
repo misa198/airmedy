@@ -11,7 +11,7 @@ import TrackTableRow from './TrackTableRow.vue'
 import { COLUMNS, type ColumnKey, useTrackTableSettings } from '@/composables/useTrackTableSettings'
 import type { TrackContextMenuOptions } from '@/composables/useTrackContextMenu'
 
-const SIMPLE_COLUMNS: ColumnKey[] = ['index', 'title', 'duration', 'context_menu']
+const SIMPLE_COLUMNS: ColumnKey[] = ['index', 'title', 'artist', 'duration', 'context_menu']
 const HEADER_HEIGHT = 40
 const ROW_HEIGHT = 56
 const BUFFER = 5

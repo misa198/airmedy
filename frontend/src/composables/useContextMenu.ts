@@ -4,6 +4,7 @@ import type { Component } from 'vue'
 export interface ContextMenuItem {
   label?: string
   icon?: Component
+  iconRight?: Component
   action?: () => void
   children?: ContextMenuItem[]
   danger?: boolean

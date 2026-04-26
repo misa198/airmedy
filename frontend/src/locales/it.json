@@ -202,9 +202,10 @@
     "go_to_album": "Vai all'Album",
     "go_to_artist": "Vai all'Artista",
     "edit_metadata": "Modifica Metadati",
-    "show_in_explorer": "Show in File Explorer",
+    "show_in_explorer": "Mostra in Esplora file",
     "track_info": "Informazioni traccia",
-    "refresh_lyrics": "Aggiorna testi"
+    "refresh_lyrics": "Aggiorna testi",
+    "remove_from_queue": "Rimuovi dalla coda"
   },
   "track_info": {
     "title": "Informazioni traccia",

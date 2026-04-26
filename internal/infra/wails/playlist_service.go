@@ -42,12 +42,28 @@ func (s *PlaylistService) GetPlaylistTracks(playlistID string) ([]*domain.TrackD
 	return s.service.GetTracks(context.Background(), playlistID)
 }
 
+func (s *PlaylistService) GetPlaylistsForTrack(trackID string) ([]string, error) {
+	return s.service.GetPlaylistsForTrack(context.Background(), trackID)
+}
+
 func (s *PlaylistService) AddTrackToPlaylist(playlistID, trackID string) error {
-	return s.service.AddTrack(context.Background(), playlistID, trackID)
+	err := s.service.AddTrack(context.Background(), playlistID, trackID)
+	if err == nil {
+		if app := application.Get(); app != nil && app.Event != nil {
+			app.Event.Emit("playlist:tracks-changed", playlistID)
+		}
+	}
+	return err
 }
 
 func (s *PlaylistService) RemoveTrackFromPlaylist(playlistID, trackID string) error {
-	return s.service.RemoveTrack(context.Background(), playlistID, trackID)
+	err := s.service.RemoveTrack(context.Background(), playlistID, trackID)
+	if err == nil {
+		if app := application.Get(); app != nil && app.Event != nil {
+			app.Event.Emit("playlist:tracks-changed", playlistID)
+		}
+	}
+	return err
 }
 
 func (s *PlaylistService) GetPlaylistColors(id string) (*domain.ThemeColors, error) {

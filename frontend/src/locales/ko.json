@@ -202,9 +202,10 @@
     "go_to_album": "앨범으로 이동",
     "go_to_artist": "아티스트로 이동",
     "edit_metadata": "메타데이터 편집",
-    "show_in_explorer": "Show in File Explorer",
+    "show_in_explorer": "파일 탐색기에서 열기",
     "track_info": "트랙 정보",
-    "refresh_lyrics": "가사 새로고침"
+    "refresh_lyrics": "가사 새로고침",
+    "remove_from_queue": "대기열에서 제거"
   },
   "track_info": {
     "title": "트랙 정보",

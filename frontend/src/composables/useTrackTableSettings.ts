@@ -53,16 +53,6 @@ export const COLUMNS: ColumnDef[] = [
     draggable: true,
   },
   {
-    key: 'duration',
-    labelKey: 'library.duration',
-    gridWidth: '96px',
-    minWidthPx: 96,
-    alwaysVisible: false,
-    sortable: true,
-    sortFn: (a, b) => numCmp(a.duration, b.duration),
-    draggable: true,
-  },
-  {
     key: 'artist',
     labelKey: 'library.artist',
     gridWidth: 'minmax(140px,1fr)',
@@ -70,6 +60,16 @@ export const COLUMNS: ColumnDef[] = [
     alwaysVisible: false,
     sortable: true,
     sortFn: (a, b) => strCmp(a.raw_artist_names || '', b.raw_artist_names || ''),
+    draggable: true,
+  },
+  {
+    key: 'duration',
+    labelKey: 'library.duration',
+    gridWidth: '96px',
+    minWidthPx: 96,
+    alwaysVisible: false,
+    sortable: true,
+    sortFn: (a, b) => numCmp(a.duration, b.duration),
     draggable: true,
   },
   {

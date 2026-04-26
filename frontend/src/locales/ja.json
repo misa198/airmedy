@@ -202,9 +202,10 @@
     "go_to_album": "アルバムへ移動",
     "go_to_artist": "アーティストへ移動",
     "edit_metadata": "メタデータを編集",
-    "show_in_explorer": "Show in File Explorer",
+    "show_in_explorer": "ファイルエクスプローラーで表示",
     "track_info": "トラック情報",
-    "refresh_lyrics": "歌詞を更新"
+    "refresh_lyrics": "歌詞を更新",
+    "remove_from_queue": "キューから削除"
   },
   "track_info": {
     "title": "トラック情報",

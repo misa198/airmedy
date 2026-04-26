@@ -202,9 +202,10 @@
     "go_to_album": "Перейти к альбому",
     "go_to_artist": "Перейти к исполнителю",
     "edit_metadata": "Редактировать метаданные",
-    "show_in_explorer": "Show in File Explorer",
+    "show_in_explorer": "Показать в проводнике",
     "track_info": "Информация о треке",
-    "refresh_lyrics": "Обновить текст"
+    "refresh_lyrics": "Обновить текст",
+    "remove_from_queue": "Убрать из очереди"
   },
   "track_info": {
     "title": "Информация о треке",

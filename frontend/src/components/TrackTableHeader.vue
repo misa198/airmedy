@@ -54,6 +54,11 @@ function onDragStart(e: DragEvent, key: ColumnKey) {
     boxSizing: 'border-box',
     pointerEvents: 'none',
     opacity: '1',
+    fontSize: '10px',
+    textTransform: 'uppercase',
+    fontFamily: 'var(--font-sans)',
+    letterSpacing: '1px',
+    fontWeight: '600'
   })
   document.body.appendChild(ghost)
   e.dataTransfer?.setDragImage(ghost, cell.offsetWidth / 2, cell.offsetHeight / 2)
@@ -153,6 +158,7 @@ onBeforeUnmount(() => {
           v-if="!simpleMode"
           class="absolute top-1/2 -translate-y-1/2 -right-2 h-4/5 w-4 z-20 cursor-col-resize flex items-center justify-center group/resize"
           @mousedown.stop.prevent="startResize($event, col)"
+          @click.stop
         >
           <div class="w-px h-full bg-foreground/[0.12] group-hover/resize:bg-primary/60 transition-colors" />
         </div>
@@ -171,7 +177,7 @@ onBeforeUnmount(() => {
         class="relative flex items-center gap-1 px-2 min-w-0 cursor-grab hover:text-foreground/100 transition-colors select-none"
         :class="{
           'text-primary': sortColumn === col.key,
-          'opacity-60 ring-1 ring-primary/40 rounded': dragOver === col.key && dragFrom !== col.key,
+          'opacity-60 ring-1 ring-primary/40 rounded bg-primary/20': dragOver === col.key && dragFrom !== col.key,
           'opacity-40': dragFrom === col.key,
         }"
         :draggable="col.draggable"
@@ -181,7 +187,7 @@ onBeforeUnmount(() => {
         @drop="onDrop($event, col.key)"
         @dragend="onDragEnd"
       >
-        <Heart v-if="col.key === 'favorite'" class="w-3 h-3 flex-shrink-0 pointer-events-none" draggable="false" />
+        <Heart v-if="col.key === 'favorite'" class="w-1 h-3 flex-shrink-0 pointer-events-none" draggable="false" />
         <span v-else class="truncate min-w-0 pointer-events-none" draggable="false">{{ $t(col.labelKey) }}</span>
         <ArrowUp v-if="sortColumn === col.key && sortDir === 'asc'" class="w-3 h-3 flex-shrink-0 pointer-events-none" draggable="false" />
         <ArrowDown v-else-if="sortColumn === col.key && sortDir === 'desc'" class="w-3 h-3 flex-shrink-0 pointer-events-none" draggable="false" />
@@ -191,6 +197,7 @@ onBeforeUnmount(() => {
           v-if="!simpleMode"
           class="absolute top-1/2 -translate-y-1/2 -right-2 h-4/5 w-4 z-20 cursor-col-resize flex items-center justify-center group/resize"
           @mousedown.stop.prevent="startResize($event, col)"
+          @click.stop
         >
           <div class="w-px h-full bg-foreground/[0.12] group-hover/resize:bg-primary/60 transition-colors" />
         </div>
@@ -220,6 +227,7 @@ onBeforeUnmount(() => {
           v-if="!simpleMode"
           class="absolute top-1/2 -translate-y-1/2 -right-2 h-4/5 w-4 z-20 cursor-col-resize flex items-center justify-center group/resize"
           @mousedown.stop.prevent="startResize($event, col)"
+          @click.stop
         >
           <div class="w-px h-full bg-foreground/[0.12] group-hover/resize:bg-primary/60 transition-colors" />
         </div>

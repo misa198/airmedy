@@ -204,7 +204,8 @@
     "edit_metadata": "Edit Metadata",
     "show_in_explorer": "Show in File Explorer",
     "track_info": "Track info",
-    "refresh_lyrics": "Refresh Lyrics"
+    "refresh_lyrics": "Refresh Lyrics",
+    "remove_from_queue": "Remove from Queue"
   },
   "artist": {
     "albums_count": "{count} albums",

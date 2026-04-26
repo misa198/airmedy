@@ -202,9 +202,10 @@
     "go_to_album": "Aller à l'album",
     "go_to_artist": "Aller à l'artiste",
     "edit_metadata": "Modifier les métadonnées",
-    "show_in_explorer": "Show in File Explorer",
+    "show_in_explorer": "Afficher dans l'explorateur de fichiers",
     "track_info": "Informations sur la piste",
-    "refresh_lyrics": "Actualiser les paroles"
+    "refresh_lyrics": "Actualiser les paroles",
+    "remove_from_queue": "Retirer de la file d'attente"
   },
   "track_info": {
     "title": "Informations sur la piste",

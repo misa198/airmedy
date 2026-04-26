@@ -82,7 +82,7 @@ func (r *playlistRepository) Delete(ctx context.Context, id string) error {
 }
 
 func (r *playlistRepository) AddTrack(ctx context.Context, playlistID, trackID string, position int) error {
-	_, err := r.db.ExecContext(ctx, "INSERT INTO playlist_tracks (playlist_id, track_id, position) VALUES (?, ?, ?)", playlistID, trackID, position)
+	_, err := r.db.ExecContext(ctx, "INSERT OR IGNORE INTO playlist_tracks (playlist_id, track_id, position) VALUES (?, ?, ?)", playlistID, trackID, position)
 	if err != nil {
 		return fmt.Errorf("failed to add track to playlist: %w", err)
 	}
@@ -143,4 +143,14 @@ func (r *playlistRepository) GetTracks(ctx context.Context, playlistID string) (
 
 	tr := &trackRepository{db: r.db}
 	return tr.scanTrackRows(rows), nil
+}
+
+func (r *playlistRepository) GetPlaylistsForTrack(ctx context.Context, trackID string) ([]string, error) {
+	var ids []string
+	query := "SELECT playlist_id FROM playlist_tracks WHERE track_id = ?"
+	err := r.db.SelectContext(ctx, &ids, query, trackID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get playlists for track: %w", err)
+	}
+	return ids, nil
 }

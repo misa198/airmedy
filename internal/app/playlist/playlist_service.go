@@ -152,6 +152,10 @@ func (s *PlaylistService) RemoveArtwork(ctx context.Context, id string) error {
 	return s.repo.Update(ctx, p)
 }
 
+func (s *PlaylistService) GetPlaylistsForTrack(ctx context.Context, trackID string) ([]string, error) {
+	return s.repo.GetPlaylistsForTrack(ctx, trackID)
+}
+
 func (s *PlaylistService) GetPlaylistColors(ctx context.Context, id string) (*domain.ThemeColors, error) {
 	p, err := s.repo.GetByID(ctx, id)
 	if err != nil {

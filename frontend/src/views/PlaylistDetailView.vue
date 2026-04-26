@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Play, Shuffle, MoreVertical, Clock, Music, X } from 'lucide-vue-next'
@@ -18,6 +18,7 @@ import ContextMenu from '@/components/ContextMenu.vue'
 import DetailHero from '@/components/DetailHero.vue'
 import PlaylistArtwork from '@/components/PlaylistArtwork.vue'
 import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
+import { Events } from '@wailsio/runtime'
 
 const route = useRoute()
 const router = useRouter()
@@ -113,7 +114,22 @@ watch(() => route.params.id, () => load())
 watch(() => favoritesStore.version, () => {
   if (route.params.id === 'favorites') load(true)
 })
-onMounted(load)
+
+const handlePlaylistChange = (ev: Events.WailsEvent) => {
+  const changedId = ev.data as string
+  if (changedId === route.params.id) {
+    load(true)
+  }
+}
+
+onMounted(() => {
+  load()
+  Events.On('playlist:tracks-changed', handlePlaylistChange)
+})
+
+onUnmounted(() => {
+  Events.Off('playlist:tracks-changed')
+})
 
 const totalDurationFormatted = computed(() => {
   const totalSeconds = tracks.value.reduce((acc, t) => acc + (t.duration || 0), 0)

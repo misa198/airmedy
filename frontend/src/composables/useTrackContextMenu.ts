@@ -1,4 +1,4 @@
-import { Heart, ListEnd, ListPlus, Disc, User, Pencil, FolderOpen, Info, RefreshCw, ListX } from 'lucide-vue-next'
+import { Heart, ListEnd, ListPlus, Disc, User, Pencil, FolderOpen, Info, RefreshCw, ListX, Check } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
@@ -85,15 +85,30 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
       },
     })
 
+    const playlistChildren: ContextMenuItem[] = playlistsStore.playlists.length
+      ? playlistsStore.playlists.map(p => ({
+        label: p.name,
+        action: () => { PlaylistService.AddTrackToPlaylist(p.id, track.id) },
+      }))
+      : [{ label: t('context_menu.no_playlists'), disabled: true }]
+
     items.push({
       label: t('context_menu.add_to_playlist'),
       icon: ListPlus,
-      children: playlistsStore.playlists.length
-        ? playlistsStore.playlists.map(p => ({
-            label: p.name,
-            action: () => { PlaylistService.AddTrackToPlaylist(p.id, track.id) },
-          }))
-        : [{ label: t('context_menu.no_playlists'), disabled: true }],
+      children: playlistChildren,
+    })
+
+    // Async check for playlists that already contain this track
+    PlaylistService.GetPlaylistsForTrack(track.id).then(playlistIds => {
+      if (!playlistIds || !playlistIds.length) return
+
+      playlistChildren.forEach((child, index) => {
+        const p = playlistsStore.playlists[index]
+        if (p && playlistIds.includes(p.id)) {
+          child.iconRight = Check
+          child.action = () => { PlaylistService.RemoveTrackFromPlaylist(p.id, track.id) }
+        }
+      })
     })
 
     items.push({ separator: true })
