@@ -127,9 +127,23 @@
   },
   "home": {
     "title": "Home",
-    "recently_listened": "Recently Listened Placeholder",
-    "most_listened": "Most Listened Placeholder",
-    "suggested": "Suggested Placeholder"
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening",
+      "night": "Good night",
+      "welcome": "Welcome back",
+      "ready": "Ready for some music?",
+      "discover": "Discover something new"
+    },
+    "keep_listening": "Keep Listening",
+    "smart_mix": "Smart Mix",
+    "forgotten": "You seem to have forgotten",
+    "empty": {
+      "title": "Your library is empty",
+      "description": "Add some music folders to start listening.",
+      "action": "Go to Settings"
+    }
   },
   "library": {
     "tracks": "Tracks",

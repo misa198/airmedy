@@ -127,10 +127,25 @@
   },
   "home": {
     "title": "Trang chủ",
-    "recently_listened": "Gần đây đã nghe (Placeholder)",
-    "most_listened": "Nghe nhiều nhất (Placeholder)",
-    "suggested": "Gợi ý (Placeholder)"
+    "greeting": {
+      "morning": "Chào buổi sáng",
+      "afternoon": "Chào buổi chiều",
+      "evening": "Chào buổi tối",
+      "night": "Chúc ngủ ngon",
+      "welcome": "Chào mừng trở lại",
+      "ready": "Sẵn sàng nghe nhạc chưa?",
+      "discover": "Khám phá điều mới mẻ"
+    },
+    "keep_listening": "Tiếp tục nghe",
+    "smart_mix": "Smart Mix",
+    "forgotten": "Có vẻ bạn đã quên",
+    "empty": {
+      "title": "Thư viện trống",
+      "description": "Thêm thư mục nhạc để bắt đầu nghe.",
+      "action": "Đến Cài đặt"
+    }
   },
+
   "library": {
     "tracks": "Bài hát",
     "albums": "Album",

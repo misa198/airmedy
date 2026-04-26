@@ -127,9 +127,23 @@
   },
   "home": {
     "title": "홈",
-    "recently_listened": "최근 청취 항목(예시)",
-    "most_listened": "많이 청취한 항목(예시)",
-    "suggested": "추천 항목(예시)"
+    "greeting": {
+      "morning": "좋은 아침입니다",
+      "afternoon": "좋은 오후입니다",
+      "evening": "좋은 저녁입니다",
+      "night": "안녕히 주무세요",
+      "welcome": "다시 오신 것을 환영합니다",
+      "ready": "음악을 들을 준비가 되셨나요?",
+      "discover": "새로운 것을 발견해 보세요"
+    },
+    "keep_listening": "계속 듣기",
+    "smart_mix": "스마트 믹스",
+    "forgotten": "잊고 계셨던 것 같아요",
+    "empty": {
+      "title": "라이브러리가 비어 있습니다",
+      "description": "음악 폴더를 추가하여 감상을 시작해 보세요.",
+      "action": "설정으로 이동"
+    }
   },
   "library": {
     "tracks": "트랙",

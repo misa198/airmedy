@@ -1,20 +1,204 @@
 <script setup lang="ts">
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { 
+  Music, Settings as SettingsIcon,
+  Sparkles, History, Ghost
+} from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
+import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
+import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
+import { usePlayerStore } from '@/stores/player'
+import TrackCard from '@/components/TrackCard.vue'
+import HomeSection from '@/components/HomeSection.vue'
+
+const { t } = useI18n()
+const router = useRouter()
+const playerStore = usePlayerStore()
+
+const loading = ref(true)
+const recentlyPlayed = ref<TrackDTO[]>([])
+const mostListened = ref<TrackDTO[]>([])
+const leastListened = ref<TrackDTO[]>([])
+const hasTracks = ref(false)
+
+const randomGreeting = computed(() => {
+  const hour = new Date().getHours()
+  if (hour < 12) return t('home.greeting.morning')
+  if (hour < 17) return t('home.greeting.afternoon')
+  if (hour < 21) return t('home.greeting.evening')
+  return t('home.greeting.night')
+})
+
+const welcomePhrase = computed(() => {
+  const phrases = [
+    t('home.greeting.welcome'),
+    t('home.greeting.ready'),
+    t('home.greeting.discover')
+  ]
+  // We use a seed based on the current hour or similar to keep it somewhat stable 
+  // but still "random" per session/hour
+  const seed = new Date().getHours()
+  return phrases[seed % phrases.length]
+})
+
+const fetchData = async () => {
+  loading.value = true
+  try {
+    const allTracks = await LibraryService.GetAllTracks()
+    hasTracks.value = allTracks && allTracks.length > 0
+    
+    if (hasTracks.value) {
+      const [recent, most, least] = await Promise.all([
+        LibraryService.GetRecentlyPlayedTracks(28),
+        LibraryService.GetMostListenedTracks(28),
+        LibraryService.GetLeastListenedTracks(28)
+      ])
+      
+      recentlyPlayed.value = (recent || []).filter((t): t is TrackDTO => t !== null)
+      mostListened.value = (most || []).filter((t): t is TrackDTO => t !== null)
+      leastListened.value = (least || []).filter((t): t is TrackDTO => t !== null)
+    }
+  } catch (err) {
+    console.error('Failed to fetch home data:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchData()
+})
+
+const playTrack = (track: TrackDTO) => {
+  playerStore.playTracks([track], 0)
+}
+
+const playAll = (tracks: TrackDTO[]) => {
+  if (tracks.length > 0) {
+    playerStore.playTracks(tracks, 0)
+  }
+}
+
+const navigateToSettings = () => {
+  router.push('/settings')
+}
+
+const navigateToTrack = (track: TrackDTO) => {
+  if (track.album) {
+    router.push(`/albums/${track.album.id}`)
+  }
+}
+
+const navigateToArtist = (id: string) => {
+  router.push(`/artists/${id}`)
+}
+
+const navigateToAlbum = (id: string) => {
+  router.push(`/albums/${id}`)
+}
 </script>
 
 <template>
-  <div class="p-6">
-    <h1 class="text-3xl font-bold mb-6">{{ $t('home.title') }}</h1>
-    
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div class="bg-card p-4 rounded-lg h-64 flex items-center justify-center ring-1 ring-foreground/[0.06]">
-        <p class="text-foreground/40">{{ $t('home.recently_listened') }}</p>
+  <div class="p-8 h-full overflow-y-auto custom-scrollbar">
+    <div v-if="loading" class="h-full flex items-center justify-center">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+    </div>
+
+    <div v-else-if="!hasTracks" class="h-full flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-700">
+      <div class="w-24 h-24 bg-foreground/5 rounded-3xl flex items-center justify-center mb-6 ring-1 ring-foreground/[0.06]">
+        <Music class="w-12 h-12 text-foreground/20" />
       </div>
-      <div class="bg-card p-4 rounded-lg h-64 flex items-center justify-center ring-1 ring-foreground/[0.06]">
-        <p class="text-foreground/40">{{ $t('home.most_listened') }}</p>
-      </div>
-      <div class="bg-card p-4 rounded-lg h-64 flex items-center justify-center ring-1 ring-foreground/[0.06]">
-        <p class="text-foreground/40">{{ $t('home.suggested') }}</p>
-      </div>
+      <h2 class="text-3xl font-bold mb-3">{{ t('home.empty.title') }}</h2>
+      <p class="text-foreground/40 max-w-md mb-8">{{ t('home.empty.description') }}</p>
+      <button 
+        @click="navigateToSettings"
+        class="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-full font-medium hover:scale-105 transition-transform shadow-lg shadow-primary/20"
+      >
+        <SettingsIcon class="w-4 h-4" />
+        {{ t('home.empty.action') }}
+      </button>
+    </div>
+
+    <div v-else class="space-y-16 pb-12 animate-in fade-in duration-700">
+      <!-- Greeting -->
+      <header>
+        <h1 class="text-4xl font-bold tracking-tight mb-2">{{ randomGreeting }}</h1>
+        <p class="text-xl text-foreground/40">{{ welcomePhrase }}</p>
+      </header>
+
+      <!-- Keep Listening Carousel -->
+      <HomeSection 
+        :title="t('home.keep_listening')" 
+        :icon="History" 
+        :items="recentlyPlayed" 
+        id="carousel-recent" 
+        @play-all="playAll(recentlyPlayed)"
+      >
+        <template #default="{ item: track }">
+          <TrackCard 
+            :track="track" 
+            @play="playTrack"
+            @click="navigateToTrack"
+            @artist-click="navigateToArtist"
+            @album-click="navigateToAlbum"
+          />
+        </template>
+      </HomeSection>
+
+      <!-- Smart Mix -->
+      <HomeSection 
+        :title="t('home.smart_mix')" 
+        :icon="Sparkles" 
+        :items="mostListened" 
+        id="carousel-most" 
+        @play-all="playAll(mostListened)"
+      >
+        <template #default="{ item: track }">
+          <TrackCard 
+            :track="track" 
+            @play="playTrack"
+            @click="navigateToTrack"
+            @artist-click="navigateToArtist"
+            @album-click="navigateToAlbum"
+          />
+        </template>
+      </HomeSection>
+
+      <!-- Forgotten -->
+      <HomeSection 
+        :title="t('home.forgotten')" 
+        :icon="Ghost" 
+        :items="leastListened" 
+        id="carousel-least" 
+        @play-all="playAll(leastListened)"
+      >
+        <template #default="{ item: track }">
+          <TrackCard 
+            :track="track" 
+            @play="playTrack"
+            @click="navigateToTrack"
+            @artist-click="navigateToArtist"
+            @album-click="navigateToAlbum"
+          />
+        </template>
+      </HomeSection>
     </div>
   </div>
 </template>
+
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+}
+</style>

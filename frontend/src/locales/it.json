@@ -127,9 +127,23 @@
   },
   "home": {
     "title": "Home",
-    "recently_listened": "Ascoltati di recente",
-    "most_listened": "I più ascoltati",
-    "suggested": "Suggeriti"
+    "greeting": {
+      "morning": "Buongiorno",
+      "afternoon": "Buon pomeriggio",
+      "evening": "Buonasera",
+      "night": "Buonanotte",
+      "welcome": "Bentornato",
+      "ready": "Pronto per un po' di musica?",
+      "discover": "Scopri qualcosa di nuovo"
+    },
+    "keep_listening": "Continua ad ascoltare",
+    "smart_mix": "Smart Mix",
+    "forgotten": "Sembra che tu abbia dimenticato",
+    "empty": {
+      "title": "La tua libreria è vuota",
+      "description": "Aggiungi cartelle di musica per iniziare ad ascoltare.",
+      "action": "Vai a Impostazioni"
+    }
   },
   "library": {
     "tracks": "Brani",

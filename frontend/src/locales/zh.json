@@ -127,10 +127,25 @@
   },
   "home": {
     "title": "首页",
-    "recently_listened": "最近聆听占位符",
-    "most_listened": "最多聆听占位符",
-    "suggested": "建议占位符"
+    "greeting": {
+      "morning": "早上好",
+      "afternoon": "下午好",
+      "evening": "晚上好",
+      "night": "晚安",
+      "welcome": "欢迎回来",
+      "ready": "准备好听音乐了吗？",
+      "discover": "发现新音乐"
+    },
+    "keep_listening": "继续收听",
+    "smart_mix": "智能推荐",
+    "forgotten": "你可能已经忘记",
+    "empty": {
+      "title": "您的音乐库为空",
+      "description": "添加音乐文件夹以开始收听。",
+      "action": "前往设置"
+    }
   },
+
   "library": {
     "tracks": "曲目",
     "albums": "专辑",

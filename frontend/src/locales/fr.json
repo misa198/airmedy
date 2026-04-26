@@ -127,9 +127,23 @@
   },
   "home": {
     "title": "Accueil",
-    "recently_listened": "Récemment écouté (espace réservé)",
-    "most_listened": "Plus écouté (espace réservé)",
-    "suggested": "Suggéré (espace réservé)"
+    "greeting": {
+      "morning": "Bonjour",
+      "afternoon": "Bon après-midi",
+      "evening": "Bonsoir",
+      "night": "Bonne nuit",
+      "welcome": "Bon retour",
+      "ready": "Prêt pour un peu de musique ?",
+      "discover": "Découvrir de nouvelles choses"
+    },
+    "keep_listening": "Continuer l'écoute",
+    "smart_mix": "Smart Mix",
+    "forgotten": "Vous semblez avoir oublié",
+    "empty": {
+      "title": "Votre bibliothèque est vide",
+      "description": "Ajoutez des dossiers de musique pour commencer à écouter.",
+      "action": "Aller aux Paramètres"
+    }
   },
   "library": {
     "tracks": "Pistes",

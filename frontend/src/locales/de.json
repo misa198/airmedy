@@ -127,9 +127,23 @@
   },
   "home": {
     "title": "Startseite",
-    "recently_listened": "Zuletzt gehört Platzhalter",
-    "most_listened": "Meistgehört Platzhalter",
-    "suggested": "Empfohlen Platzhalter"
+    "greeting": {
+      "morning": "Guten Morgen",
+      "afternoon": "Guten Tag",
+      "evening": "Guten Abend",
+      "night": "Gute Nacht",
+      "welcome": "Willkommen zurück",
+      "ready": "Bereit für Musik?",
+      "discover": "Entdecke etwas Neues"
+    },
+    "keep_listening": "Weiterhören",
+    "smart_mix": "Smart Mix",
+    "forgotten": "Das scheinst du vergessen zu haben",
+    "empty": {
+      "title": "Deine Mediathek ist leer",
+      "description": "Füge Musikordner hinzu, um mit dem Hören zu beginnen.",
+      "action": "Zu den Einstellungen"
+    }
   },
   "library": {
     "tracks": "Titel",

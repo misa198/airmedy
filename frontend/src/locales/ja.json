@@ -127,9 +127,23 @@
   },
   "home": {
     "title": "ホーム",
-    "recently_listened": "最近聴いた項目のプレースホルダー",
-    "most_listened": "よく聴く項目のプレースホルダー",
-    "suggested": "おすすめのプレースホルダー"
+    "greeting": {
+      "morning": "おはようございます",
+      "afternoon": "こんにちは",
+      "evening": "こんばんは",
+      "night": "おやすみなさい",
+      "welcome": "おかえりなさい",
+      "ready": "音楽を聴く準備はいいですか？",
+      "discover": "新しい発見をしましょう"
+    },
+    "keep_listening": "続きを聴く",
+    "smart_mix": "スマートミックス",
+    "forgotten": "忘れていませんか？",
+    "empty": {
+      "title": "ライブラリが空です",
+      "description": "音楽フォルダを追加して再生を開始しましょう。",
+      "action": "設定へ移動"
+    }
   },
   "library": {
     "tracks": "トラック",

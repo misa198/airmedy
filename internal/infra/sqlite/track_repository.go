@@ -327,6 +327,71 @@ func (r *trackRepository) IncrementPlayCount(ctx context.Context, id string) err
 	return nil
 }
 
+func (r *trackRepository) GetMostListened(ctx context.Context, limit int) ([]*domain.TrackDTO, error) {
+	query := fmt.Sprintf(`
+		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year, 
+		       GROUP_CONCAT(art.name, '; ') AS artist_names,
+		       GROUP_CONCAT(art.id, '; ') AS artist_ids
+		FROM tracks t
+		LEFT JOIN albums a ON t.album_id = a.id
+		LEFT JOIN track_artists ta ON t.id = ta.track_id
+		LEFT JOIN artists art ON ta.artist_id = art.id
+		WHERE t.play_count > 0
+		GROUP BY t.id
+		ORDER BY t.play_count DESC
+		LIMIT ?
+	`, trackSelectFields)
+	var rows []trackRow
+	err := r.db.SelectContext(ctx, &rows, query, limit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get most listened tracks: %w", err)
+	}
+	return r.scanTrackRows(rows), nil
+}
+
+func (r *trackRepository) GetLeastListened(ctx context.Context, limit int) ([]*domain.TrackDTO, error) {
+	query := fmt.Sprintf(`
+		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year, 
+		       GROUP_CONCAT(art.name, '; ') AS artist_names,
+		       GROUP_CONCAT(art.id, '; ') AS artist_ids
+		FROM tracks t
+		LEFT JOIN albums a ON t.album_id = a.id
+		LEFT JOIN track_artists ta ON t.id = ta.track_id
+		LEFT JOIN artists art ON ta.artist_id = art.id
+		GROUP BY t.id
+		ORDER BY t.play_count ASC, t.updated_at ASC
+		LIMIT ?
+	`, trackSelectFields)
+	var rows []trackRow
+	err := r.db.SelectContext(ctx, &rows, query, limit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get least listened tracks: %w", err)
+	}
+	return r.scanTrackRows(rows), nil
+}
+
+func (r *trackRepository) GetRecentlyPlayed(ctx context.Context, limit int) ([]*domain.TrackDTO, error) {
+	query := fmt.Sprintf(`
+		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year, 
+		       GROUP_CONCAT(art.name, '; ') AS artist_names,
+		       GROUP_CONCAT(art.id, '; ') AS artist_ids
+		FROM tracks t
+		LEFT JOIN albums a ON t.album_id = a.id
+		LEFT JOIN track_artists ta ON t.id = ta.track_id
+		LEFT JOIN artists art ON ta.artist_id = art.id
+		WHERE t.play_count > 0
+		GROUP BY t.id
+		ORDER BY t.updated_at DESC
+		LIMIT ?
+	`, trackSelectFields)
+	var rows []trackRow
+	err := r.db.SelectContext(ctx, &rows, query, limit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recently played tracks: %w", err)
+	}
+	return r.scanTrackRows(rows), nil
+}
+
 type trackDB struct {
 	domain.Track
 	AlbumID sql.NullString `db:"album_id"`

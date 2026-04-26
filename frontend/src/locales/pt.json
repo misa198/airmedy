@@ -127,9 +127,23 @@
   },
   "home": {
     "title": "Início",
-    "recently_listened": "Espaço reservado para ouvidos recentemente",
-    "most_listened": "Espaço reservado para mais ouvidos",
-    "suggested": "Espaço reservado para sugeridos"
+    "greeting": {
+      "morning": "Bom dia",
+      "afternoon": "Boa tarde",
+      "evening": "Boa noite",
+      "night": "Boa noite",
+      "welcome": "Bem-vindo de volta",
+      "ready": "Pronto para música?",
+      "discover": "Descubra algo novo"
+    },
+    "keep_listening": "Continuar ouvindo",
+    "smart_mix": "Smart Mix",
+    "forgotten": "Parece que você esqueceu",
+    "empty": {
+      "title": "Sua biblioteca está vazia",
+      "description": "Adicione pastas de música para começar a ouvir.",
+      "action": "Ir para Configurações"
+    }
   },
   "library": {
     "tracks": "Faixas",

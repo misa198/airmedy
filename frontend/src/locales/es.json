@@ -127,9 +127,23 @@
   },
   "home": {
     "title": "Inicio",
-    "recently_listened": "Marcador de posición de escuchados recientemente",
-    "most_listened": "Marcador de posición de más escuchados",
-    "suggested": "Marcador de posición de sugeridos"
+    "greeting": {
+      "morning": "Buenos días",
+      "afternoon": "Buenas tardes",
+      "evening": "Buenas noches",
+      "night": "Buenas noches",
+      "welcome": "Bienvenido de nuevo",
+      "ready": "¿Listo para un poco de música?",
+      "discover": "Descubre algo nuevo"
+    },
+    "keep_listening": "Seguir escuchando",
+    "smart_mix": "Smart Mix",
+    "forgotten": "Parece que lo has olvidado",
+    "empty": {
+      "title": "Tu biblioteca está vacía",
+      "description": "Añade carpetas de música para empezar a escuchar.",
+      "action": "Ir a Ajustes"
+    }
   },
   "library": {
     "tracks": "Pistas",

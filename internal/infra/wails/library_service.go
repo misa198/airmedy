@@ -83,6 +83,18 @@ func (s *LibraryService) GetAllTracks() ([]*domain.TrackDTO, error) {
 	return s.trackRepo.GetAll(context.Background())
 }
 
+func (s *LibraryService) GetMostListenedTracks(limit int) ([]*domain.TrackDTO, error) {
+	return s.trackRepo.GetMostListened(context.Background(), limit)
+}
+
+func (s *LibraryService) GetLeastListenedTracks(limit int) ([]*domain.TrackDTO, error) {
+	return s.trackRepo.GetLeastListened(context.Background(), limit)
+}
+
+func (s *LibraryService) GetRecentlyPlayedTracks(limit int) ([]*domain.TrackDTO, error) {
+	return s.trackRepo.GetRecentlyPlayed(context.Background(), limit)
+}
+
 func (s *LibraryService) GetTracksByAlbumID(albumID string) ([]*domain.TrackDTO, error) {
 	return s.trackRepo.GetByAlbumID(context.Background(), albumID)
 }
