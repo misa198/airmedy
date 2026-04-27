@@ -1,0 +1,20 @@
+This software includes third-party components with the following licenses:
+
+--------------------------------------------------------------------------------
+FFmpeg
+https://ffmpeg.org
+--------------------------------------------------------------------------------
+This software uses libraries from the FFmpeg project (libavcodec, libavformat,
+libavutil, libswresample), which are licensed under the GNU Lesser General
+Public License (LGPL) version 2.1 or later.
+
+The FFmpeg source code is available at https://ffmpeg.org/download.html
+
+License text: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+
+--------------------------------------------------------------------------------
+miniaudio
+https://miniaud.io
+--------------------------------------------------------------------------------
+This software uses miniaudio by David Reid, which is dual-licensed as
+Public Domain (Unlicense) and MIT-0. No attribution required.

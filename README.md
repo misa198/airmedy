@@ -1,63 +1,193 @@
-# Welcome to Your New Wails3 Project!
+<div align="center">
 
-Congratulations on generating your Wails3 application! This README will guide you through the next steps to get your project up and running.
+<img src="catalog/airmedy.png" alt="Airmedy" width="96" height="96" />
 
-## Getting Started
+# Airmedy
 
-1. Navigate to your project directory in the terminal.
+**All in one offline music player.**
 
-2. To run your application in development mode, use the following command:
+[![License](https://img.shields.io/github/license/misa198/airmedy?style=flat-square&color=0d1117)](LICENSE)
+[![Go](https://img.shields.io/badge/Go-1.25-00ADD8?style=flat-square&logo=go&logoColor=white)](https://go.dev)
+[![Go](https://img.shields.io/badge/Wails-3-da0b0b?style=flat-square&logo=wails&logoColor=white)](https://wails.io/)
 
-   ```
-   wails3 dev
-   ```
+[![MacoOS](https://shields.io/badge/MacOS--9cf?logo=Apple&style=social)](#)
+[![Windows](https://custom-icon-badges.demolab.com/badge/Windows-0078D6?logo=windows11&logoColor=white)](#)
+[![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black)](#)
 
-   This will start your application and enable hot-reloading for both frontend and backend changes.
+</div>
 
-3. To build your application for production, use:
+---
 
-   ```
-   wails3 build
-   ```
+## Features
 
-   This will create a production-ready executable in the `build` directory.
+- **Your whole library** — add any folder and Airmedy scans it instantly, even with tens of thousands of tracks.
+- **Lyrics that follow along** — synced lyrics scroll line-by-line as the song plays. Plain-text lyrics shown when sync data isn't available.
+- **Fullscreen & miniplayer modes** — go fullscreen for an immersive listening experience, or shrink to a miniplayer that stays out of your way.
+- **Playlists** — create and manage playlists, import and export them, and browse your collection by genre, artist, or album.
+- **10-band equalizer** — tune the sound to your headphones or speakers. Runs natively on macOS hardware for zero battery impact.
+- **AirPlay 2** — stream to any AirPlay speaker or Apple TV directly from Airmedy.
+- **Lock screen & media keys** — control playback from your keyboard, lock screen, or Control Center — just like a first-party app.
+- **Fast search** — find any track, album, or artist in milliseconds.
+- **Plays in the background** — close the window and music keeps going. Quit when you actually mean it.
+- **Tray menu** — control playback from the system tray.
 
-## Exploring Wails3 Features
+## Audio Format Support
 
-Now that you have your project set up, it's time to explore the features that Wails3 offers:
+| Format               |    macOS    | Windows | Linux |
+| -------------------- | :---------: | :-----: | :---: |
+| MP3                  | ✅ (Native) |   ✅    |  ✅   |
+| AAC / M4A            | ✅ (Native) |   ✅    |  ✅   |
+| FLAC                 | ✅ (Native) |   ✅    |  ✅   |
+| WAV / AIFF           | ✅ (Native) |   ✅    |  ✅   |
+| Ogg Vorbis           | ✅ (FFmpeg) |   ✅    |  ✅   |
+| Opus                 | ✅ (FFmpeg) |   ✅    |  ✅   |
+| APE (Monkey's Audio) | ✅ (FFmpeg) |   ✅    |  ✅   |
+| WavPack              | ✅ (FFmpeg) |   ✅    |  ✅   |
+| DSD / DSF / DFF      | ✅ (FFmpeg) |   ✅    |  ✅   |
 
-1. **Check out the examples**: The best way to learn is by example. Visit the `examples` directory in the `v3/examples` directory to see various sample applications.
+---
 
-2. **Run an example**: To run any of the examples, navigate to the example's directory and use:
+On macOS, playback runs through **AVFoundation** — hardware-accelerated, battery-efficient, the same engine Apple uses. On Windows and Linux, **miniaudio** takes over as a lightweight, high-performance backend. When either engine hits an unsupported format, **FFmpeg** steps in silently.
 
-   ```
-   go run .
-   ```
+```
+┌─────────────────────────────────────────────────────────┐
+│                      Airmedy Core                       │
+│                                                         │
+│   ┌─────────────┐       ┌──────────────────────────┐    │
+│   │  macOS Path │       │  Windows / Linux Path    │    │
+│   │             │       │                          │    │
+│   │ AVFoundation│       │      miniaudio           │    │
+│   │  (native)   │       │   (cross-platform)       │    │
+│   └──────┬──────┘       └───────────┬──────────────┘    │
+│          │                          │                   │
+│          └──────────┬───────────────┘                   │
+│                     │                                   │
+│            Format supported natively?                   │
+│                ┌────┴────┐                              │
+│              YES         NO                             │
+│                │          │                             │
+│           Play direct   FFmpeg PCM decoder              │
+│                          (bundled static libs)          │
+└─────────────────────────────────────────────────────────┘
+```
 
-   Note: Some examples may be under development during the alpha phase.
+The FFmpeg libraries are statically compiled and bundled inside `internal/infra/audio/ffmpeg_libs/`. No system FFmpeg installation is ever required.
 
-3. **Explore the documentation**: Visit the [Wails3 documentation](https://v3.wails.io/) for in-depth guides and API references.
+---
 
-4. **Join the community**: Have questions or want to share your progress? Join the [Wails Discord](https://discord.gg/JDdSxwjhGf) or visit the [Wails discussions on GitHub](https://github.com/wailsapp/wails/discussions).
+## Tech Stack
 
-## Project Structure
+| Layer                | Technology                  |
+| -------------------- | --------------------------- |
+| Backend runtime      | Go 1.25, Wails v3           |
+| Dependency injection | uber-go/fx                  |
+| Database             | SQLite via golang-migrate   |
+| Search index         | Bleve                       |
+| File watching        | fsnotify                    |
+| Audio (macOS)        | AVFoundation + FFmpeg (CGo) |
+| Audio (Win/Linux)    | miniaudio + FFmpeg (CGo)    |
+| Metadata             | go-taglib                   |
+| Frontend framework   | Vue 3 (Composition API)     |
+| State management     | Pinia                       |
+| UI components        | ShadCN-vue + Tailwind CSS   |
+| Lyrics               | LRCLIB API                  |
 
-Airmedy follows a clean, modular architecture. For a comprehensive overview of the directory structure and file responsibilities, see [FILES.md](./FILES.md).
+---
 
-- `internal/domain`: Core business logic, models, and interfaces (Hexagonal Core).
-- `internal/infra`: Concrete implementations for database, search, and metadata (Adapters).
-- `internal/app`: Application services and dependency injection.
-- `frontend/`: Vue.js 3 user interface with ShadCN-vue and Pinia.
-- `build/`: Platform-specific configuration and assets.
-- `main.go`: Application entry point.
+## Architecture
 
-## Next Steps
+Airmedy follows a **Hexagonal / Ports & Adapters** pattern:
 
-1. **Development Roadmap:** Refer to [PLAN.md](./PLAN.md) for the current project status and upcoming features.
-2. **Project Mandates:** See [GEMINI.md](./GEMINI.md) for technical standards and development guidelines.
-3. **Technical Architecture:** Review [TECHDOC.md](./TECHDOC.md) for an exhaustive look into DB schemas and metadata logic.
-4. **Design System & Layout:** Check [THEME.md](./THEME.md) for styling and [Wireframe.md](./Wireframe.md) for user flow diagrams.
-5. **Development:** Use `wails3 dev` to start the application with hot-reloading. Read WAILS3.md for best practices and tips on using Wails3 effectively.
-6. **Golang**: Check out [GOLANG.md](./GOLANG.md) for best practices and coding standards.
+```
+cmd/
+└── main.go                  # Entry point
 
-Happy coding with Wails3! If you encounter any issues or have questions, don't hesitate to consult the documentation or reach out to the Wails community.
+internal/
+├── domain/                  # Business logic, interfaces, DTOs
+├── app/                     # Application services (use cases)
+└── infra/
+    ├── audio/               # AVFoundation / miniaudio / FFmpeg adapters
+    ├── db/                  # SQLite migrations and queries
+    ├── search/              # Bleve index adapter
+    └── wails/               # Thin Wails bindings (frontend ↔ app)
+
+frontend/
+├── src/
+│   ├── components/          # Feature components (AlbumCard, TrackTable…)
+│   │   └── ui/              # Stateless UI primitives (Button, Slider…)
+│   ├── views/               # Route-level pages
+│   ├── stores/              # Pinia stores
+│   ├── composables/         # Shared logic
+│   └── locales/             # i18n locale files
+```
+
+Dependencies always point inward — `infra` depends on `app`, `app` depends on `domain`, never the reverse.
+
+---
+
+## Building from Source
+
+### Prerequisites
+
+| Tool         | Version                                                    |
+| ------------ | ---------------------------------------------------------- |
+| Go           | ≥ 1.25                                                     |
+| Node.js      | ≥ 20                                                       |
+| pnpm         | ≥ 9                                                        |
+| Task         | [taskfile.dev](https://taskfile.dev)                       |
+| Wails CLI v3 | `go install github.com/wailsapp/wails/v3/cmd/wails@latest` |
+
+> **No system FFmpeg required.** Pre-built static libraries for `darwin/amd64`, `darwin/arm64`, `windows/amd64`, `linux/amd64`, and `linux/arm64` are bundled in `internal/infra/audio/ffmpeg_libs/`.
+
+### Clone & Run
+
+```bash
+git clone https://github.com/misa198/airmedy.git
+cd airmedy
+
+# Install frontend dependencies
+cd frontend && pnpm install && cd ..
+
+# Run in development mode
+wails3 dev
+
+# Build production binary
+wails3 build
+```
+
+### Verify
+
+```bash
+task verify   # runs all Go unit tests + Vue component tests + linters
+```
+
+---
+
+## Roadmap
+
+- [ ] **Gapless Playback** — zero-gap crossfade between tracks
+- [ ] **Smart Playlists** — rule-based auto-playlists (genre, BPM, play count)
+- [ ] **Last.fm Scrobbling** — passive listening history
+- [ ] **Podcast support** — RSS feed management alongside music library
+- [ ] **Album and artist arts** — online search for missing arts
+
+---
+
+## Contributing
+
+1. Fork the repo and create a feature branch
+2. Follow [Conventional Commits](https://www.conventionalcommits.org/) — enforced by the `commit-msg` hook (`task setup:hooks`)
+3. All new features and bug fixes require accompanying tests
+4. Open a pull request against `master`
+
+---
+
+## License
+
+MIT © [misa198](https://github.com/misa198)
+
+---
+
+<div align="center">
+  <sub>Built with Go + Vue 3 + AVFoundation. No Electron. No bloat.</sub>
+</div>
