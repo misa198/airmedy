@@ -37,7 +37,7 @@ const router = useRouter()
             </h1>
           </slot>
           
-          <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-foreground/40">
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-foreground opacity-60">
             <slot name="metadata" />
           </div>
         </div>

@@ -31,7 +31,7 @@ const emit = defineEmits<{
           class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
       </div>
-      <div v-else class="w-full h-full flex items-center justify-center text-foreground/20 group-hover:scale-105 transition-transform duration-500">
+      <div v-else class="w-full h-full flex items-center justify-center text-foreground opacity-40 group-hover:scale-105 transition-transform duration-500">
         <Disc class="w-1/3 h-1/3" />
       </div>
 
@@ -47,7 +47,7 @@ const emit = defineEmits<{
 
     <div class="space-y-1 px-1">
       <h3 class="font-medium text-sm truncate group-hover:text-foreground transition-colors">{{ album.title || $t('library.unknown_album') }}</h3>
-      <div class="text-xs text-foreground/40 truncate flex items-center gap-1">
+      <div class="text-xs text-foreground opacity-60 truncate flex items-center gap-1">
         <User class="w-3 h-3 flex-shrink-0" />
         <div class="truncate">
           <template v-if="album.artists && album.artists.length > 0">

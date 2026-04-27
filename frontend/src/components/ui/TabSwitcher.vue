@@ -63,7 +63,7 @@ function handleClick(value: string) {
 
     <button v-for="option in props.options" :key="option.value" @click="handleClick(option.value)"
       class="relative z-10 flex items-center justify-center w-8 h-8 rounded-full transition-colors duration-300"
-      :class="props.modelValue === option.value ? 'text-background/50' : 'text-foreground/40 hover:text-foreground/70'"
+      :class="props.modelValue === option.value ? 'text-background/50' : 'text-foreground opacity-60 hover:text-foreground opacity-90'"
       :title="option.label">
       <component :is="option.icon" v-if="option.icon" class="w-4 h-4" />
       <span v-else-if="option.label" class="text-[10px] font-bold uppercase tracking-widest px-1">

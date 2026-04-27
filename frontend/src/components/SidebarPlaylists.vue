@@ -71,12 +71,12 @@ function openPlaylistContextMenu(playlist: Playlist, e: MouseEvent) {
 <template>
   <div class="flex-1 overflow-y-auto px-3 pb-2">
     <div class="sticky top-0 z-10 flex items-center justify-between px-3 py-2 bg-sidebar">
-      <div class="flex items-center gap-2 text-foreground/60">
+      <div class="flex items-center gap-2 text-foreground opacity-80">
         <Library class="w-3.5 h-3.5" />
         <span class="text-xs font-semibold uppercase tracking-widest">{{ t('sidebar.playlists') }}</span>
       </div>
       <button
-        class="w-6 h-6 flex items-center justify-center rounded text-foreground/60 hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
+        class="w-6 h-6 flex items-center justify-center rounded text-foreground opacity-80 hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
         @click.stop="openCreateDialog" :title="t('sidebar.new_playlist')">
         <Plus class="w-3.5 h-3.5" />
       </button>
@@ -100,7 +100,7 @@ function openPlaylistContextMenu(playlist: Playlist, e: MouseEvent) {
       >
         <template #actions>
           <button
-            class="w-6 h-6 flex items-center justify-center rounded text-foreground/0 group-hover:text-foreground/40 hover:!text-foreground hover:bg-foreground/[0.08] transition-colors opacity-0 group-hover:opacity-100"
+            class="w-6 h-6 flex items-center justify-center rounded text-foreground opacity-0 group-hover:text-foreground opacity-60 hover:!text-foreground hover:bg-foreground/[0.08] transition-colors opacity-0 group-hover:opacity-100"
             @click.stop="(e) => openPlaylistContextMenu(playlist, e)">
             <MoreHorizontal class="w-3.5 h-3.5" />
           </button>

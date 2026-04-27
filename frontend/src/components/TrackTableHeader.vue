@@ -141,7 +141,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div
-    class="grid sticky top-0 z-10 border-b border-foreground/[0.06] text-[10px] font-semibold text-foreground/80 uppercase tracking-widest overflow-visible"
+    class="grid sticky top-0 z-10 border-b border-foreground/[0.06] text-[10px] font-semibold text-foreground opacity-80 uppercase tracking-widest overflow-visible"
     :class="variant === 'glass' ? 'bg-transparent' : 'bg-background'"
     :style="{ gridTemplateColumns, height: headerHeight + 'px' }"
   >
@@ -174,7 +174,7 @@ onBeforeUnmount(() => {
       <!-- Sortable column header -->
       <div
         v-else-if="col.sortable && !simpleMode"
-        class="relative flex items-center gap-1 px-2 min-w-0 cursor-grab hover:text-foreground/100 transition-colors select-none"
+        class="relative flex items-center gap-1 px-2 min-w-0 cursor-grab hover:text-foreground opacity-100 transition-colors select-none"
         :class="{
           'text-primary': sortColumn === col.key,
           'opacity-60 ring-1 ring-primary/40 rounded bg-primary/20': dragOver === col.key && dragFrom !== col.key,

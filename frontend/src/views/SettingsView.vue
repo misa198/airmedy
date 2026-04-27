@@ -39,7 +39,7 @@ const categories = computed(() => [
               'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group',
               activeCategory === cat.id 
                 ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20' 
-                : 'text-foreground/60 hover:text-foreground hover:bg-foreground/[0.04]'
+                : 'text-foreground opacity-80 hover:text-foreground hover:bg-foreground/[0.04]'
             ]"
           >
             <component :is="cat.icon" class="w-4 h-4" />

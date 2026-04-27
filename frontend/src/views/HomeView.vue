@@ -107,10 +107,10 @@ const navigateToAlbum = (id: string) => {
 
     <div v-else-if="!hasTracks" class="h-full flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-700">
       <div class="w-24 h-24 bg-foreground/5 rounded-3xl flex items-center justify-center mb-6 ring-1 ring-foreground/[0.06]">
-        <Music class="w-12 h-12 text-foreground/20" />
+        <Music class="w-12 h-12 text-foreground opacity-40" />
       </div>
       <h2 class="text-3xl font-bold mb-3">{{ t('home.empty.title') }}</h2>
-      <p class="text-foreground/40 max-w-md mb-8">{{ t('home.empty.description') }}</p>
+      <p class="text-foreground opacity-60 max-w-md mb-8">{{ t('home.empty.description') }}</p>
       <button 
         @click="navigateToSettings"
         class="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-full font-medium hover:scale-105 transition-transform shadow-lg shadow-primary/20"
@@ -124,7 +124,7 @@ const navigateToAlbum = (id: string) => {
       <!-- Greeting -->
       <header class="select-none">
         <h1 class="text-4xl font-bold tracking-tight mb-2">{{ randomGreeting }}</h1>
-        <p class="text-xl text-foreground/40">{{ welcomePhrase }}</p>
+        <p class="text-xl text-foreground opacity-60">{{ welcomePhrase }}</p>
       </header>
 
       <!-- Keep Listening Carousel -->

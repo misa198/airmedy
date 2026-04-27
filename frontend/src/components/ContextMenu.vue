@@ -111,10 +111,10 @@ function handleSubmenuItemClick(item: ContextMenuItem) {
             class="relative flex items-center gap-3 px-3 py-1.5 text-sm cursor-default transition-all rounded-lg mx-0.5"
             :class="[
               item.disabled
-                ? 'text-foreground/20 cursor-not-allowed'
+                ? 'text-foreground opacity-40 cursor-not-allowed'
                 : item.danger
                   ? 'text-red-400/80 hover:text-red-400 hover:bg-red-500/20'
-                  : 'text-foreground/80 hover:text-foreground hover:bg-foreground/15',
+                  : 'text-foreground opacity-80 hover:text-foreground hover:bg-foreground/15',
             ]"
             @click="handleItemClick(item)"
             @mouseenter="handleMouseEnter(item, index, $event)"
@@ -139,14 +139,14 @@ function handleSubmenuItemClick(item: ContextMenuItem) {
             v-for="(child, ci) in items[activeSubmenuIndex]!.children"
             :key="ci"
             class="flex items-center gap-3 px-3 py-1.5 text-sm cursor-default transition-all rounded-lg mx-0.5"
-            :class="child.disabled ? 'text-foreground/20' : 'text-foreground/80 hover:text-foreground hover:bg-foreground/15'"
+            :class="child.disabled ? 'text-foreground opacity-40' : 'text-foreground opacity-80 hover:text-foreground hover:bg-foreground/15'"
             @click="handleSubmenuItemClick(child)"
             >
             <component :is="child.icon" v-if="child.icon" class="w-4 h-4 shrink-0 opacity-70" />
             <span class="flex-1">{{ child.label }}</span>
             <component :is="child.iconRight" v-if="child.iconRight" class="w-4 h-4 shrink-0 opacity-70 ml-auto" />
             </div>
-            <div v-if="!items[activeSubmenuIndex]!.children!.length" class="px-3 py-1.5 text-sm text-foreground/30">
+            <div v-if="!items[activeSubmenuIndex]!.children!.length" class="px-3 py-1.5 text-sm text-foreground opacity-50">
 
           No playlists
         </div>

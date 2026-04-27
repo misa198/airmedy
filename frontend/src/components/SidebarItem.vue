@@ -17,7 +17,7 @@ defineEmits<{
 <template>
   <div class="relative group">
     <RouterLink :to="to"
-      class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-foreground/60 hover:text-foreground hover:bg-foreground/[0.05]"
+      class="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-foreground opacity-80 hover:text-foreground hover:bg-foreground/[0.05]"
       :class="{ 'pr-8': $slots.actions }"
       active-class="bg-foreground/[0.08] !text-primary font-medium"
       @contextmenu="$emit('contextmenu', $event)"

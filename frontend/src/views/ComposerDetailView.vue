@@ -63,11 +63,11 @@ watch(() => route.params.id, (newId) => {
       <!-- Composer Header -->
       <div class="p-8 border-b border-foreground/[0.06] bg-gradient-to-b from-dynamic-surface to-transparent flex items-end gap-6 flex-shrink-0">
         <div class="w-24 h-24 rounded-2xl bg-foreground/5 flex items-center justify-center ring-1 ring-foreground/[0.08] flex-shrink-0">
-          <UserCircle class="w-12 h-12 text-foreground/50" />
+          <UserCircle class="w-12 h-12 text-foreground opacity-70" />
         </div>
         <div class="flex-1 space-y-2">
           <h1 class="text-4xl font-bold tracking-tight">{{ composer.name || t('library.unknown_composer') }}</h1>
-          <div class="flex items-center gap-4 text-foreground/40">
+          <div class="flex items-center gap-4 text-foreground opacity-60">
             <span class="flex items-center gap-1"><Music class="w-4 h-4" /> {{ t('composer.compositions_count', { count: tracks.length }) }}</span>
           </div>
           <div class="pt-2 flex items-center gap-4">

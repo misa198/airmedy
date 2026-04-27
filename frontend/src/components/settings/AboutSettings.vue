@@ -42,7 +42,7 @@ onMounted(() => {
       <h2 class="text-3xl font-black mb-2">{{ appInfo?.name || 'Airmedy' }}</h2>
       <p class="text-sm font-bold text-primary mb-2">{{ t("settings.about.version") }} {{ appInfo?.version || '1.0.0' }}
       </p>
-      <p class="text-sm text-foreground/40 max-w-sm mx-auto leading-relaxed">
+      <p class="text-sm text-foreground opacity-60 max-w-sm mx-auto leading-relaxed">
         {{ t('settings.about.description') }}
       </p>
     </div>
@@ -52,33 +52,33 @@ onMounted(() => {
         class="flex items-center justify-between p-5 bg-card rounded-2xl border border-foreground/[0.06] hover:bg-foreground/[0.02] transition-all group">
         <div class="flex items-center gap-4">
           <div class="p-2 bg-foreground/[0.04] rounded-xl group-hover:scale-110 transition-transform">
-            <Github class="w-5 h-5 text-foreground/60" />
+            <Github class="w-5 h-5 text-foreground opacity-80" />
           </div>
           <span class="text-sm font-bold">{{ t('settings.about.github') }}</span>
         </div>
-        <ExternalLink class="w-4 h-4 text-foreground/20" />
+        <ExternalLink class="w-4 h-4 text-foreground opacity-40" />
       </button>
 
       <button v-if="appInfo?.license_url" @click="Browser.OpenURL(appInfo.license_url)"
         class="flex items-center justify-between p-5 bg-card rounded-2xl border border-foreground/[0.06] hover:bg-foreground/[0.02] transition-all group">
         <div class="flex items-center gap-4">
           <div class="p-2 bg-foreground/[0.04] rounded-xl group-hover:scale-110 transition-transform">
-            <FileText class="w-5 h-5 text-foreground/60" />
+            <FileText class="w-5 h-5 text-foreground opacity-80" />
           </div>
           <span class="text-sm font-bold">{{ t('settings.about.license') }}</span>
         </div>
-        <ExternalLink class="w-4 h-4 text-foreground/20" />
+        <ExternalLink class="w-4 h-4 text-foreground opacity-40" />
       </button>
 
       <button @click="openAppDataFolder"
         class="md:col-span-2 flex items-center justify-between p-5 bg-card rounded-2xl border border-foreground/[0.06] hover:bg-foreground/[0.02] transition-all group">
         <div class="flex items-center gap-4">
           <div class="p-2 bg-foreground/[0.04] rounded-xl group-hover:scale-110 transition-transform">
-            <Folder class="w-5 h-5 text-foreground/60" />
+            <Folder class="w-5 h-5 text-foreground opacity-80" />
           </div>
           <span class="text-sm font-bold">{{ t('settings.about.open_data_folder') }}</span>
         </div>
-        <ExternalLink class="w-4 h-4 text-foreground/20" />
+        <ExternalLink class="w-4 h-4 text-foreground opacity-40" />
       </button>
     </div>
   </div>

@@ -80,12 +80,12 @@ async function onSeekEnd() {
         @contextmenu.prevent="openArtworkContextMenu">
         <LazyImg v-if="store.artworkUrlSm" :src="store.artworkUrlSm" :alt="trackTitle" class="w-full h-full object-cover" />
         <div v-else class="w-full h-full bg-foreground/5 flex items-center justify-center">
-          <Music class="w-5 h-5 text-foreground/20" />
+          <Music class="w-5 h-5 text-foreground opacity-40" />
         </div>
       </div>
       <div class="flex flex-col min-w-0 flex-1">
         <MarqueeText :text="trackTitle" content-class="font-medium text-sm leading-tight" />
-        <MarqueeText :text="trackArtist" content-class="text-xs text-foreground/40 leading-tight mt-0.5" />
+        <MarqueeText :text="trackArtist" content-class="text-xs text-foreground opacity-60 leading-tight mt-0.5" />
       </div>
     </div>
 
@@ -93,11 +93,11 @@ async function onSeekEnd() {
     <div class="flex-1 flex flex-col items-center gap-2 max-w-[600px]">
       <div class="flex items-center gap-5">
         <button class="transition-opacity"
-          :class="store.shuffle ? 'text-primary opacity-100' : 'text-foreground/40 hover:text-foreground/70'"
+          :class="store.shuffle ? 'text-primary opacity-100' : 'text-foreground opacity-60 hover:text-foreground opacity-90'"
           @click="store.setShuffle(!store.shuffle)" :title="t('player.shuffle')">
           <Shuffle class="w-4 h-4" />
         </button>
-        <button class="text-foreground/70 hover:text-foreground transition-colors" @click="store.previous()" :title="t('player.previous')">
+        <button class="text-foreground opacity-90 hover:text-foreground transition-colors" @click="store.previous()" :title="t('player.previous')">
           <SkipBack class="w-5 h-5 fill-current" />
         </button>
         <button
@@ -106,10 +106,10 @@ async function onSeekEnd() {
           <Pause v-if="store.isPlaying" class="w-4 h-4 fill-current text-primary-foreground" />
           <Play v-else class="w-4 h-4 fill-current text-primary-foreground ml-0.5" />
         </button>
-        <button class="text-foreground/70 hover:text-foreground transition-colors" @click="store.next()" :title="t('player.next')">
+        <button class="text-foreground opacity-90 hover:text-foreground transition-colors" @click="store.next()" :title="t('player.next')">
           <SkipForward class="w-5 h-5 fill-current" />
         </button>
-        <button class="transition-colors" :class="repeatActive ? 'text-primary' : 'text-foreground/40 hover:text-foreground/70'"
+        <button class="transition-colors" :class="repeatActive ? 'text-primary' : 'text-foreground opacity-60 hover:text-foreground opacity-90'"
           @click="store.cycleRepeat()" :title="t('player.repeat')">
           <component :is="repeatIcon" class="w-4 h-4" />
         </button>
@@ -117,13 +117,13 @@ async function onSeekEnd() {
 
       <!-- Seek bar -->
       <div class="w-full flex items-center gap-2">
-        <span class="text-[10px] text-foreground/30 tabular-nums w-8 text-right">
+        <span class="text-[10px] text-foreground opacity-50 tabular-nums w-8 text-right">
           {{ formatTime(displayPosition) }}
         </span>
         <Slider :model-value="isSeeking ? seekValue : store.progressPercent" :min="0" :max="100" :step="0.1"
           class="flex-1" @update:model-value="(v) => (seekValue = v)" @mousedown="onSeekStart" @mouseup="onSeekEnd"
           @touchstart="onSeekStart" @touchend="onSeekEnd" />
-        <span class="text-[10px] text-foreground/30 tabular-nums w-8">
+        <span class="text-[10px] text-foreground opacity-50 tabular-nums w-8">
           {{ formatTime(store.duration) }}
         </span>
       </div>
@@ -132,7 +132,7 @@ async function onSeekEnd() {
     <!-- Volume & Options -->
     <div class="flex items-center justify-end gap-4 w-1/4 min-w-[200px]">
       <div class="flex items-center gap-2 w-28">
-        <button class="text-foreground/40 hover:text-foreground/70 transition-colors flex-shrink-0"
+        <button class="text-foreground opacity-60 hover:text-foreground opacity-90 transition-colors flex-shrink-0"
           @click="store.setMuted(!store.muted)" :title="store.muted ? t('player.unmute') : t('player.mute')">
           <VolumeX v-if="store.muted" class="w-4 h-4" />
           <Volume2 v-else class="w-4 h-4" />
@@ -141,17 +141,17 @@ async function onSeekEnd() {
           @update:model-value="(v) => store.setVolume(v)" />
       </div>
       <button class="transition-colors"
-        :class="store.isLyricsOpen ? 'text-primary' : 'text-foreground/40 hover:text-foreground/70'" @click="store.toggleLyrics()" :title="t('player.lyrics')">
+        :class="store.isLyricsOpen ? 'text-primary' : 'text-foreground opacity-60 hover:text-foreground opacity-90'" @click="store.toggleLyrics()" :title="t('player.lyrics')">
         <Mic2 class="w-4 h-4" />
       </button>
       <button class="transition-colors"
-        :class="store.isQueueOpen ? 'text-primary' : 'text-foreground/40 hover:text-foreground/70'" @click="store.toggleQueue()" :title="t('player.queue')">
+        :class="store.isQueueOpen ? 'text-primary' : 'text-foreground opacity-60 hover:text-foreground opacity-90'" @click="store.toggleQueue()" :title="t('player.queue')">
         <ListMusic class="w-4 h-4" />
       </button>
-      <button class="text-foreground/40 hover:text-foreground/70 transition-colors" @click="WindowService.ToggleMiniPlayer()" :title="t('player.mini_player')">
+      <button class="text-foreground opacity-60 hover:text-foreground opacity-90 transition-colors" @click="WindowService.ToggleMiniPlayer()" :title="t('player.mini_player')">
         <PictureInPicture2 class="w-4 h-4" />
       </button>
-      <button class="text-foreground/40 hover:text-foreground/70 transition-colors" @click="store.playerMode = 'fullscreen'" :title="t('player.fullscreen')">
+      <button class="text-foreground opacity-60 hover:text-foreground opacity-90 transition-colors" @click="store.playerMode = 'fullscreen'" :title="t('player.fullscreen')">
         <Maximize2 class="w-4 h-4" />
       </button>
     </div>

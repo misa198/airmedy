@@ -20,7 +20,7 @@ const store = usePlayerStore()
           class="w-full h-full object-cover"
         />
         <div v-else class="w-full h-full bg-foreground/5 flex items-center justify-center">
-          <Music class="w-4 h-4 text-foreground/20" />
+          <Music class="w-4 h-4 text-foreground opacity-40" />
         </div>
       </div>
       <div class="min-w-0 flex-1">
@@ -30,7 +30,7 @@ const store = usePlayerStore()
         />
         <MarqueeText
           :text="store.currentTrack?.artists?.map((a) => a?.name).filter(Boolean).join(', ') ?? ''"
-          content-class="text-xs text-foreground/40 leading-tight mt-0.5"
+          content-class="text-xs text-foreground opacity-60 leading-tight mt-0.5"
         />
       </div>
     </div>
@@ -44,18 +44,18 @@ const store = usePlayerStore()
         <Pause v-if="store.isPlaying" class="w-3.5 h-3.5 fill-current text-background" />
         <Play v-else class="w-3.5 h-3.5 fill-current text-background ml-0.5" />
       </button>
-      <button class="text-foreground/40 hover:text-foreground/70 transition-colors" @click="store.next()">
+      <button class="text-foreground opacity-60 hover:text-foreground opacity-90 transition-colors" @click="store.next()">
         <SkipForward class="w-4 h-4 fill-current" />
       </button>
     </div>
 
     <!-- Time + expand -->
     <div class="flex items-center gap-2">
-      <span class="text-[10px] text-foreground/30 tabular-nums">
+      <span class="text-[10px] text-foreground opacity-50 tabular-nums">
         {{ formatTime(store.position) }} / {{ formatTime(store.duration) }}
       </span>
       <button
-        class="text-foreground/40 hover:text-foreground/70 transition-colors"
+        class="text-foreground opacity-60 hover:text-foreground opacity-90 transition-colors"
         @click="store.playerMode = 'sticky'"
       >
         <Maximize2 class="w-4 h-4" />

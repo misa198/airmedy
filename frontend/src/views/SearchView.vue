@@ -51,7 +51,7 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists() || hasPlayli
     <!-- Search bar -->
     <div class="px-8 pt-8 pb-4 flex-shrink-0">
       <div class="relative max-w-xl">
-        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/30 pointer-events-none" />
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground opacity-50 pointer-events-none" />
         <Input v-model="inputValue" :placeholder="$t('library.search_placeholder')" class="pl-10 pr-4" autofocus />
       </div>
     </div>
@@ -63,10 +63,10 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists() || hasPlayli
       <div v-if="!inputValue.trim()" class="flex flex-col items-center justify-center h-64 text-center">
         <div
           class="w-20 h-20 bg-foreground/[0.03] rounded-3xl flex items-center justify-center mb-6 ring-1 ring-foreground/[0.05]">
-          <Search class="w-10 h-10 text-foreground/10" />
+          <Search class="w-10 h-10 text-foreground opacity-30" />
         </div>
-        <p class="text-foreground/40 text-xl font-semibold">{{ $t('library.search_placeholder') }}</p>
-        <p class="text-foreground/20 mt-2 max-w-xs">{{ $t('library.search_description') }}</p>
+        <p class="text-foreground opacity-60 text-xl font-semibold">{{ $t('library.search_placeholder') }}</p>
+        <p class="text-foreground opacity-40 mt-2 max-w-xs">{{ $t('library.search_description') }}</p>
       </div>
 
       <!-- Loading skeleton -->
@@ -84,10 +84,10 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists() || hasPlayli
         class="flex flex-col items-center justify-center h-64 text-center">
         <div
           class="w-20 h-20 bg-foreground/[0.03] rounded-3xl flex items-center justify-center mb-6 ring-1 ring-foreground/[0.05]">
-          <Music class="w-10 h-10 text-foreground/10" />
+          <Music class="w-10 h-10 text-foreground opacity-30" />
         </div>
-        <p class="text-foreground/40 text-xl font-semibold">{{ $t('library.no_results') }}</p>
-        <p class="text-foreground/20 mt-2">{{ $t('library.try_different_search') }}</p>
+        <p class="text-foreground opacity-60 text-xl font-semibold">{{ $t('library.no_results') }}</p>
+        <p class="text-foreground opacity-40 mt-2">{{ $t('library.try_different_search') }}</p>
       </div>
 
       <!-- Results -->
@@ -105,14 +105,14 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists() || hasPlayli
                 <LazyImg v-if="track.artwork_key || track.album?.artwork_key"
                   :src="buildArtworkUrl(track.artwork_key || track.album?.artwork_key, 'sm')"
                   class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                <div v-else class="w-full h-full flex items-center justify-center text-foreground/20">
+                <div v-else class="w-full h-full flex items-center justify-center text-foreground opacity-40">
                   <Music class="w-5 h-5" />
                 </div>
               </div>
               <div class="min-w-0">
                 <p class="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">{{
                   track.title }}</p>
-                <p class="text-xs text-foreground/40 truncate">
+                <p class="text-xs text-foreground opacity-60 truncate">
                   {{track.artists?.map((a) => a?.name).join(', ') || track.raw_artist_names}}
                 </p>
               </div>

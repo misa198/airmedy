@@ -91,7 +91,7 @@ const getTotalDuration = (tracks: TrackDTO[]) => {
         <template #artwork>
           <div class="w-48 h-48 rounded-lg shadow-2xl overflow-hidden ring-1 ring-foreground/[0.08] bg-foreground/5 flex-shrink-0">
             <LazyImg v-if="album.artwork_key" :src="buildArtworkUrl(album.artwork_key, 'md')" class="w-full h-full object-cover" />
-            <div v-else class="w-full h-full flex items-center justify-center text-foreground/10">
+            <div v-else class="w-full h-full flex items-center justify-center text-foreground opacity-30">
               <Disc class="w-24 h-24" />
             </div>
           </div>
@@ -143,7 +143,7 @@ const getTotalDuration = (tracks: TrackDTO[]) => {
 
       <!-- Album Footer Metadata -->
       <div v-if="album.copyright"
-        class="px-8 pb-12 text-sm text-foreground/30 border-t border-foreground/[0.06] pt-8 mt-4">
+        class="px-8 pb-12 text-sm text-foreground opacity-50 border-t border-foreground/[0.06] pt-8 mt-4">
         {{ album.copyright }}
       </div>
     </div>

@@ -154,7 +154,7 @@ function openProfileMenu(e: MouseEvent) {
         class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors w-18 h-10 border border-foreground/[0.08]"
         :class="enabled
           ? 'bg-foreground/[0.1] text-foreground hover:bg-foreground/[0.14]'
-          : 'bg-foreground/[0.03] text-foreground/40 hover:bg-foreground/[0.06]'"
+          : 'bg-foreground/[0.03] text-foreground opacity-60 hover:bg-foreground/[0.06]'"
         @click="toggleEnabled">
         <span class="w-1.5 h-1.5 rounded-full" :class="enabled ? 'bg-green-400' : 'bg-foreground/20'" />
         {{ enabled ? t('common.on') : t('common.off') }}
@@ -175,7 +175,7 @@ function openProfileMenu(e: MouseEvent) {
 
       <!-- Profile actions menu -->
       <button
-        class="flex items-center justify-center w-10 h-10 rounded-lg text-sm transition-colors border border-foreground/[0.08] bg-foreground/[0.05] text-foreground/60 hover:bg-foreground/[0.1] hover:text-foreground"
+        class="flex items-center justify-center w-10 h-10 rounded-lg text-sm transition-colors border border-foreground/[0.08] bg-foreground/[0.05] text-foreground opacity-80 hover:bg-foreground/[0.1] hover:text-foreground"
         @click="openProfileMenu">
         <MoreHorizontal class="w-4 h-4" />
       </button>
@@ -185,7 +185,7 @@ function openProfileMenu(e: MouseEvent) {
     <div class="flex items-end justify-between gap-1 h-40 px-1">
       <div v-for="(label, i) in FREQ_LABELS" :key="i" class="flex flex-col items-center flex-1 min-w-0 h-full">
         <!-- Gain value -->
-        <p class="text-[10px] text-foreground/80 mb-1 tabular-nums w-full text-center">
+        <p class="text-[10px] text-foreground opacity-80 mb-1 tabular-nums w-full text-center">
           {{ getBandGain(i) >= 0 ? '+' : '' }}{{ getBandGain(i).toFixed(1) }}
         </p>
         <!-- Vertical slider via CSS rotation wrapper -->
@@ -201,7 +201,7 @@ function openProfileMenu(e: MouseEvent) {
           </div>
         </div>
         <!-- Freq label -->
-        <p class="text-[10px] text-foreground/80 mt-1">{{ label }}</p>
+        <p class="text-[10px] text-foreground opacity-80 mt-1">{{ label }}</p>
       </div>
     </div>
   </div>

@@ -54,7 +54,7 @@ const filteredItems = computed(() => {
       <div class="p-6 pb-4">
         <h1 class="text-2xl font-bold mb-4">{{ title }}</h1>
         <div class="relative">
-          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40" />
+          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground opacity-60" />
           <Input v-model="searchQuery" type="text" :placeholder="searchPlaceholder || `${$t('sidebar.search')}...`"
             class="pl-10 pr-4" />
         </div>
@@ -92,7 +92,7 @@ const filteredItems = computed(() => {
     <div class="flex-1 overflow-hidden bg-background relative">
       <slot v-if="selectedId"></slot>
       <div v-if="!selectedId && !isLoading"
-        class="h-full flex flex-col items-center justify-center text-foreground/40 animate-in fade-in duration-500">
+        class="h-full flex flex-col items-center justify-center text-foreground opacity-60 animate-in fade-in duration-500">
         <component :is="icon" v-if="icon" class="w-16 h-16 mb-4 opacity-10" />
         <p class="text-lg">{{ $t('library.select_item') }}</p>
       </div>

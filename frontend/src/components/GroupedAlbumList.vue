@@ -73,7 +73,7 @@ function tableHeight(trackCount: number): string {
           class="w-32 h-32 md:w-40 md:h-40 rounded-xl shadow-xl overflow-hidden ring-1 ring-foreground/8 bg-foreground/5 flex-shrink-0 group relative">
           <LazyImg v-if="group.album?.artwork_key" :src="buildArtworkUrl(group.album.artwork_key, 'md')"
             class="w-full h-full object-cover" />
-          <div v-else class="w-full h-full flex items-center justify-center text-foreground/10">
+          <div v-else class="w-full h-full flex items-center justify-center text-foreground opacity-30">
             <Disc class="w-16 h-16" />
           </div>
           <div v-if="group.album"
@@ -89,7 +89,7 @@ function tableHeight(trackCount: number): string {
         <div class="flex-1 pb-2">
           <h2 class="text-2xl md:text-3xl font-bold tracking-tight mb-1">{{ group.album?.title || 'Unknown Album' }}
           </h2>
-          <div class="flex items-center gap-3 text-sm text-foreground/40">
+          <div class="flex items-center gap-3 text-sm text-foreground opacity-60">
             <span v-if="group.album?.year" class="font-medium">{{ group.album.year }}</span>
             <span v-if="group.album?.year">•</span>
             <span>{{ group.tracks.length }} tracks</span>

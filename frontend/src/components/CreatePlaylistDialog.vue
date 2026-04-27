@@ -34,12 +34,12 @@ function submit() {
     <Input
       v-model="name"
       :placeholder="t('sidebar.playlist_name')"
-      class="bg-foreground/[0.05] border-foreground/[0.08] text-foreground placeholder:text-foreground/30 focus-visible:ring-foreground/20"
+      class="bg-foreground/[0.05] border-foreground/[0.08] text-foreground placeholder:text-foreground opacity-50 focus-visible:ring-foreground/20"
       autofocus
       @keydown.enter="submit" />
     <div class="flex justify-end gap-2 mt-4">
       <button
-        class="px-3 py-1.5 text-sm text-foreground/50 hover:text-foreground rounded-lg hover:bg-foreground/[0.05] transition-colors"
+        class="px-3 py-1.5 text-sm text-foreground opacity-70 hover:text-foreground rounded-lg hover:bg-foreground/[0.05] transition-colors"
         @click="emit('update:open', false)">{{ t('common.cancel') }}</button>
       <button
         class="px-3 py-1.5 text-sm text-foreground bg-foreground/[0.12] hover:bg-foreground/[0.18] rounded-lg transition-colors font-medium disabled:opacity-40"

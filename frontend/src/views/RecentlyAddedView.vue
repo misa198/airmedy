@@ -33,7 +33,7 @@ onMounted(loadRecentlyAdded)
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
 
-      <div v-else-if="albums.length === 0" class="h-full flex flex-col items-center justify-center text-foreground/40">
+      <div v-else-if="albums.length === 0" class="h-full flex flex-col items-center justify-center text-foreground opacity-60">
         <Disc class="w-12 h-12 mb-4 opacity-20" />
         <p>{{ $t('library.no_albums') }}</p>
       </div>

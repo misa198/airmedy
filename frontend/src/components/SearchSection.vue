@@ -85,7 +85,7 @@ const prev = () => {
     <div class="flex items-center justify-between mb-6">
       <div class="flex items-center gap-3 select-none">
         <div class="p-2 bg-foreground/5 rounded-lg">
-          <component :is="icon" class="w-5 h-5 text-foreground/60" />
+          <component :is="icon" class="w-5 h-5 text-foreground opacity-80" />
         </div>
         <h2 class="text-2xl font-bold tracking-tight">{{ title }}</h2>
       </div>

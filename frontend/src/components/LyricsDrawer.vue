@@ -58,20 +58,20 @@ watch(activeIndex, (newIndex) => {
           :class="viewType === 'plain' ? 'translate-x-full' : 'translate-x-0'" />
         <button
           class="relative max-w-[70px] truncate z-10 px-2.5 py-1 rounded-full transition-colors duration-200 text-center"
-          :class="viewType === 'synced' ? 'text-foreground' : 'text-foreground/40 hover:text-foreground/70'"
+          :class="viewType === 'synced' ? 'text-foreground' : 'text-foreground opacity-60 hover:text-foreground opacity-90'"
           @click="viewType = 'synced'">
           {{ t('player.synced') }}
         </button>
         <button
           class="relative relative max-w-[70px] truncate z-10 px-2.5 py-1 rounded-full transition-colors duration-200 text-center"
-          :class="viewType === 'plain' ? 'text-foreground' : 'text-foreground/40 hover:text-foreground/70'"
+          :class="viewType === 'plain' ? 'text-foreground' : 'text-foreground opacity-60 hover:text-foreground opacity-90'"
           @click="viewType = 'plain'">
           {{ t('player.plain') }}
         </button>
       </div>
 
       <button
-        class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-foreground/40 hover:text-foreground flex-shrink-0"
+        class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-foreground opacity-60 hover:text-foreground flex-shrink-0"
         @click="store.toggleLyrics()">
         <X class="w-4 h-4" />
       </button>
@@ -101,8 +101,8 @@ watch(activeIndex, (newIndex) => {
               index === activeIndex
                 ? 'text-foreground opacity-100'
                 : index < activeIndex
-                  ? 'text-foreground/40 font-bold opacity-60 hover:text-foreground/50'
-                  : 'text-foreground/40 font-bold opacity-40 hover:text-foreground/40',
+                  ? 'text-foreground opacity-60 font-bold opacity-60 hover:text-foreground opacity-70'
+                  : 'text-foreground opacity-60 font-bold opacity-40 hover:text-foreground opacity-60',
             ]" @click="store.seek(line.time)">
             <div class="font-bold">{{ line.text }}</div>
             <div v-if="line.secondary" class="text-[0.9em] opacity-50 mt-0.5">{{ line.secondary }}</div>
@@ -114,8 +114,8 @@ watch(activeIndex, (newIndex) => {
       <div v-else class="h-full overflow-y-auto px-4 py-6 scrollbar-hide">
         <div class="space-y-3.5">
           <div v-for="(line, index) in plainLines" :key="index" class="leading-relaxed select-text">
-            <p class="text-sm text-foreground/70">{{ line.primary }}</p>
-            <p v-if="line.secondary" class="text-xs text-foreground/40 mt-0.5">{{ line.secondary }}</p>
+            <p class="text-sm text-foreground opacity-90">{{ line.primary }}</p>
+            <p v-if="line.secondary" class="text-xs text-foreground opacity-60 mt-0.5">{{ line.secondary }}</p>
           </div>
         </div>
       </div>

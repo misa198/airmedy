@@ -20,14 +20,14 @@ const emit = defineEmits<{
       <div v-if="false" class="w-full h-full">
         <!-- Artists might have images in the future -->
       </div>
-      <div v-else class="w-full h-full flex items-center justify-center text-foreground/20 group-hover:bg-foreground/10 transition-colors">
+      <div v-else class="w-full h-full flex items-center justify-center text-foreground opacity-40 group-hover:bg-foreground/10 transition-colors">
         <User class="w-1/2 h-1/2" />
       </div>
     </div>
 
     <div class="space-y-1 px-1">
       <h3 class="font-medium text-sm truncate group-hover:text-foreground transition-colors">{{ artist.name || $t('library.unknown_artist') }}</h3>
-      <p class="text-xs text-foreground/40">{{ $t('library.artist') }}</p>
+      <p class="text-xs text-foreground opacity-60">{{ $t('library.artist') }}</p>
     </div>
   </div>
 </template>

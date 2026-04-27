@@ -159,7 +159,7 @@ onUnmounted(() => {
           <div class="bg-primary h-full transition-all duration-300 ease-out"
             :style="{ width: `${(syncProgress.current / (syncProgress.total || 1)) * 100}%` }"></div>
         </div>
-        <p class="text-[10px] text-foreground/40 truncate font-medium">
+        <p class="text-[10px] text-foreground opacity-60 truncate font-medium">
           Importing: {{ syncProgress.path }}
         </p>
       </template>
@@ -169,7 +169,7 @@ onUnmounted(() => {
       <div class="flex items-center justify-between mb-6">
         <div>
           <h3 class="text-lg font-bold mb-1">{{ t('settings.folders.title') }}</h3>
-          <p class="text-sm text-foreground/40">{{ t('settings.folders.description') }}</p>
+          <p class="text-sm text-foreground opacity-60">{{ t('settings.folders.description') }}</p>
         </div>
         <button @click="addFolder" :disabled="isSyncing"
           class="flex items-center gap-2 px-4 py-2 bg-foreground/[0.04] text-foreground rounded-xl hover:bg-foreground/[0.08] transition-all text-sm font-bold disabled:opacity-50">
@@ -179,13 +179,13 @@ onUnmounted(() => {
       </div>
 
       <div v-if="isLoading" class="py-12 flex justify-center">
-        <RotateCcw class="w-8 h-8 animate-spin text-foreground/20" />
+        <RotateCcw class="w-8 h-8 animate-spin text-foreground opacity-40" />
       </div>
 
       <div v-else-if="folders.length === 0"
         class="py-12 text-center border-2 border-dashed border-foreground/[0.06] rounded-2xl">
-        <Folder class="w-12 h-12 mx-auto text-foreground/10 mb-4" />
-        <p class="text-foreground/40 text-sm font-medium">{{ t('settings.folders.no_folders') }}</p>
+        <Folder class="w-12 h-12 mx-auto text-foreground opacity-30 mb-4" />
+        <p class="text-foreground opacity-60 text-sm font-medium">{{ t('settings.folders.no_folders') }}</p>
       </div>
 
       <ul v-else class="space-y-2">
@@ -193,12 +193,12 @@ onUnmounted(() => {
           class="flex items-center justify-between p-4 bg-foreground/[0.02] border border-foreground/[0.04] rounded-xl group transition-all hover:bg-foreground/[0.04]">
           <div class="flex items-center gap-4 overflow-hidden">
             <div class="p-2 bg-background rounded-lg shadow-sm">
-              <Folder class="w-4 h-4 text-foreground/40" />
+              <Folder class="w-4 h-4 text-foreground opacity-60" />
             </div>
             <span class="text-sm font-bold truncate" :title="folder.path">{{ folder.path }}</span>
           </div>
           <button @click="removeFolder(folder.id)" :disabled="isSyncing"
-            class="p-2 text-foreground/20 hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all disabled:opacity-50">
+            class="p-2 text-foreground opacity-40 hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all disabled:opacity-50">
             <Trash2 class="w-4 h-4" />
           </button>
         </li>

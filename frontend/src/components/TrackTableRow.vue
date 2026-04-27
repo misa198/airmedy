@@ -65,7 +65,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
           </div>
         </template>
         <template v-else>
-          <div class="text-foreground/80 group-hover:hidden">{{ index + 1 }}</div>
+          <div class="text-foreground opacity-80 group-hover:hidden">{{ index + 1 }}</div>
           <button
             class="hidden group-hover:block text-primary hover:scale-110 transition-transform"
             @click="emit('play-track', track, index)"
@@ -91,7 +91,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
           />
           <div
             v-else
-            class="w-full h-full flex items-center justify-center text-foreground/30"
+            class="w-full h-full flex items-center justify-center text-foreground opacity-50"
           >
             <Music class="w-4 h-4" />
           </div>
@@ -104,7 +104,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
       <!-- Duration cell -->
       <div
         v-else-if="col.key === 'duration'"
-        class="text-center text-foreground/80 text-xs px-2"
+        class="text-center text-foreground opacity-80 text-xs px-2"
       >
         {{ formatTime(track.duration) }}
       </div>
@@ -112,7 +112,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
       <!-- Artist cell -->
       <div
         v-else-if="col.key === 'artist'"
-        class="text-foreground/80 truncate flex items-center min-w-0 px-2"
+        class="text-foreground opacity-80 truncate flex items-center min-w-0 px-2"
       >
         <div class="truncate">
           <template v-if="track.artists && track.artists.length > 0">
@@ -134,7 +134,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
       <!-- Album cell -->
       <div
         v-else-if="col.key === 'album'"
-        class="text-foreground/80 truncate flex items-center min-w-0 px-2"
+        class="text-foreground opacity-80 truncate flex items-center min-w-0 px-2"
       >
         <span
           class="truncate hover:text-primary transition-colors cursor-pointer"
@@ -147,7 +147,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
       <!-- Year cell -->
       <div
         v-else-if="col.key === 'year'"
-        class="text-center text-foreground/80 text-xs px-2"
+        class="text-center text-foreground opacity-80 text-xs px-2"
       >
         {{ track.year || '' }}
       </div>
@@ -155,7 +155,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
       <!-- Genre cell -->
       <div
         v-else-if="col.key === 'genre'"
-        class="text-foreground/80 truncate text-xs px-2"
+        class="text-foreground opacity-80 truncate text-xs px-2"
       >
         {{ track.raw_genre_names || '' }}
       </div>
@@ -169,14 +169,14 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
           class="w-3.5 h-3.5 transition-colors"
           :class="favoritesStore.isFavorite(track)
             ? 'text-primary fill-current'
-            : 'text-foreground/20 group-hover:text-foreground/40'"
+            : 'text-foreground opacity-40 group-hover:text-foreground opacity-60'"
         />
       </div>
 
       <!-- Play count cell -->
       <div
         v-else-if="col.key === 'play_count'"
-        class="text-center text-foreground/80 text-xs px-2"
+        class="text-center text-foreground opacity-80 text-xs px-2"
       >
         {{ track.play_count || 0 }}
       </div>
@@ -184,7 +184,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
       <!-- Disc number cell -->
       <div
         v-else-if="col.key === 'disc_number'"
-        class="text-center text-foreground/80 text-xs px-2"
+        class="text-center text-foreground opacity-80 text-xs px-2"
       >
         {{ track.disc_number || '' }}
       </div>
@@ -192,7 +192,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
       <!-- Track number cell -->
       <div
         v-else-if="col.key === 'track_number'"
-        class="text-center text-foreground/80 text-xs px-2"
+        class="text-center text-foreground opacity-80 text-xs px-2"
       >
         {{ track.track_number || '' }}
       </div>
@@ -200,7 +200,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
       <!-- Album artist cell -->
       <div
         v-else-if="col.key === 'album_artist'"
-        class="text-foreground/80 truncate flex items-center min-w-0 px-2"
+        class="text-foreground opacity-80 truncate flex items-center min-w-0 px-2"
       >
         <div class="truncate">
           <template v-if="track.album_artists && track.album_artists.length > 0">
@@ -226,7 +226,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
         :style="{ background: rowBg(index, true) }"
       >
         <button
-          class="p-2 hover:bg-foreground/8 rounded-full text-foreground/30 hover:text-foreground/70 transition-colors"
+          class="p-2 hover:bg-foreground/8 rounded-full text-foreground opacity-50 hover:text-foreground opacity-90 transition-colors"
           @click.stop="emit('contextmenu', $event, track)"
         >
           <MoreVertical class="w-4 h-4" />

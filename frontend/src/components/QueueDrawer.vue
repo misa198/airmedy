@@ -46,7 +46,7 @@ watch(() => store.isQueueOpen, (open) => {
         <span class="text-xs text-muted-foreground font-normal ml-1">({{ store.queue.length }})</span>
       </div>
       <button
-        class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-foreground/40 hover:text-foreground"
+        class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-foreground opacity-60 hover:text-foreground"
         @click="store.toggleQueue()"
       >
         <X class="w-4 h-4" />
@@ -111,7 +111,7 @@ watch(() => store.isQueueOpen, (open) => {
               class="absolute inset-0 flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <button
-                class="p-2 hover:bg-foreground/8 rounded-full text-foreground/30 hover:text-foreground/70 transition-colors"
+                class="p-2 hover:bg-foreground/8 rounded-full text-foreground opacity-50 hover:text-foreground opacity-90 transition-colors"
                 @click.stop="onContextMenu($event, item)"
               >
                 <MoreVertical class="w-4 h-4" />

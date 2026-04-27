@@ -34,7 +34,7 @@ onBeforeUnmount(() => {
   <template v-if="!simpleMode">
     <button
       ref="filterBtnRef"
-      class="absolute right-0 top-0 z-30 h-[40px] w-[48px] flex items-center justify-center text-foreground/40 hover:text-foreground/80 transition-colors"
+      class="absolute right-0 top-0 z-30 h-[40px] w-[48px] flex items-center justify-center text-foreground opacity-60 hover:text-foreground opacity-80 transition-colors"
       :class="{ 'text-primary! hover:text-primary!': filterOpen }"
       @click="toggleFilter"
     >
@@ -47,7 +47,7 @@ onBeforeUnmount(() => {
       class="absolute right-0 top-[40px] z-30 w-64 bg-background/80 backdrop-blur-xl ring-1 ring-foreground/10 rounded-2xl shadow-2xl p-3"
       @click.stop
     >
-      <p class="text-[10px] font-semibold text-foreground/40 uppercase tracking-widest px-1 mb-2">
+      <p class="text-[10px] font-semibold text-foreground opacity-60 uppercase tracking-widest px-1 mb-2">
         {{ $t('library.columns') }}
       </p>
       <div class="flex flex-col">
@@ -62,7 +62,7 @@ onBeforeUnmount(() => {
             variant="contained"
             @update:checked="settings.toggleColumn(col.key)"
           />
-          <span class="text-sm text-foreground/70">{{ $t(col.labelKey) }}</span>
+          <span class="text-sm text-foreground opacity-90">{{ $t(col.labelKey) }}</span>
         </div>
       </div>
     </div>

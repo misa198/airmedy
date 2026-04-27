@@ -44,7 +44,7 @@ const playlistArtworks = computed(() => {
     </template>
 
     <!-- Default Icon -->
-    <div v-else class="w-full h-full flex items-center justify-center text-foreground/10">
+    <div v-else class="w-full h-full flex items-center justify-center text-foreground opacity-30">
       <Heart v-if="playlist.id === 'favorites'" class="w-1/2 h-1/2" />
       <ListMusic v-else class="w-1/2 h-1/2" />
     </div>
