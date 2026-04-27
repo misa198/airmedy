@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router'
 import { Play, Disc } from 'lucide-vue-next'
 import type { TrackDTO, AlbumDTO } from '../../bindings/airmedy/internal/domain/models'
 import { usePlayerStore } from '../stores/player'
+import { buildArtworkUrl } from '@/lib/utils'
+import LazyImg from '@/components/LazyImg.vue'
 import TrackTable from './TrackTable.vue'
 
 const playerStore = usePlayerStore()
@@ -69,7 +71,7 @@ function tableHeight(trackCount: number): string {
       <div class="flex items-end gap-6 pr-2">
         <div
           class="w-32 h-32 md:w-40 md:h-40 rounded-xl shadow-xl overflow-hidden ring-1 ring-foreground/8 bg-foreground/5 flex-shrink-0 group relative">
-          <img v-if="group.album?.artwork_key" :src="`/artwork/${group.album.artwork_key}`"
+          <LazyImg v-if="group.album?.artwork_key" :src="buildArtworkUrl(group.album.artwork_key, 'md')"
             class="w-full h-full object-cover" />
           <div v-else class="w-full h-full flex items-center justify-center text-foreground/10">
             <Disc class="w-16 h-16" />

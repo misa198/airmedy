@@ -146,12 +146,26 @@ export function useGlassBlur(
     })
   }
 
+  const MAX_TEX_SIZE = 256
+
   function loadArtwork(url: string) {
     const img = new Image()
     img.crossOrigin = 'anonymous'
     img.onload = () => {
       if (!artTex) return
-      artTex.image = img
+      // Downscale large artwork before uploading to VRAM
+      if (img.naturalWidth > MAX_TEX_SIZE || img.naturalHeight > MAX_TEX_SIZE) {
+        const scale = MAX_TEX_SIZE / Math.max(img.naturalWidth, img.naturalHeight)
+        const w = Math.round(img.naturalWidth * scale)
+        const h = Math.round(img.naturalHeight * scale)
+        const offscreen = document.createElement('canvas')
+        offscreen.width = w
+        offscreen.height = h
+        offscreen.getContext('2d')!.drawImage(img, 0, 0, w, h)
+        artTex.image = offscreen
+      } else {
+        artTex.image = img
+      }
       artTex.needsUpdate = true
       render()
     }

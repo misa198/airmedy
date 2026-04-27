@@ -11,6 +11,9 @@ type TrackRepository interface {
 	GetByGenreID(ctx context.Context, genreID string) ([]*TrackDTO, error)
 	GetByComposerID(ctx context.Context, composerID string) ([]*TrackDTO, error)
 	GetAll(ctx context.Context) ([]*TrackDTO, error)
+	GetPaginated(ctx context.Context, offset, limit int) ([]*TrackDTO, error)
+	GetByIDs(ctx context.Context, ids []string) ([]*TrackDTO, error)
+	Count(ctx context.Context) (int, error)
 	GetFavorites(ctx context.Context) ([]*TrackDTO, error)
 	ToggleFavorite(ctx context.Context, id string) (bool, error)
 	IncrementPlayCount(ctx context.Context, id string) error

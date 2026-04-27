@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, shallowRef, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
@@ -8,10 +8,12 @@ import ViewHeader from '../components/ViewHeader.vue'
 import { usePlayerStore } from '../stores/player'
 import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
 
+const PAGE_SIZE = 500
+
 const playerStore = usePlayerStore()
 const router = useRouter()
 
-const tracks = ref<TrackDTO[]>([])
+const tracks = shallowRef<TrackDTO[]>([])
 const isLoading = ref(true)
 const searchQuery = ref('')
 
@@ -20,8 +22,22 @@ useLibraryUpdates(tracks)
 const loadTracks = async () => {
   isLoading.value = true
   try {
-    const result = await LibraryService.GetAllTracks()
-    tracks.value = result.filter((t): t is TrackDTO => t !== null)
+    const total = await LibraryService.GetTrackCount()
+    if (total === 0) return
+
+    // Load first page immediately so the UI is interactive
+    const first = await LibraryService.GetTracksPaginated(0, PAGE_SIZE)
+    tracks.value = first.filter((t): t is TrackDTO => t !== null)
+    isLoading.value = false
+
+    // Load remaining pages in the background
+    let offset = PAGE_SIZE
+    while (offset < total) {
+      const page = await LibraryService.GetTracksPaginated(offset, PAGE_SIZE)
+      const valid = page.filter((t): t is TrackDTO => t !== null)
+      tracks.value = [...tracks.value, ...valid]
+      offset += PAGE_SIZE
+    }
   } catch (err) {
     console.error('Failed to load tracks:', err)
   } finally {

@@ -96,8 +96,9 @@ func (c *fakeArtworkCache) Save(_ context.Context, _ []byte, _ string) (string, 
 	return "", nil
 }
 
-func (c *fakeArtworkCache) GetPath(key string) string { return key }
-func (c *fakeArtworkCache) Exists(_ string) bool      { return false }
+func (c *fakeArtworkCache) GetPath(key string) string                { return key }
+func (c *fakeArtworkCache) GetVariantPath(key, _ string) string      { return key }
+func (c *fakeArtworkCache) Exists(_ string) bool                     { return false }
 func (c *fakeArtworkCache) CleanupOrphaned(_ context.Context, _ map[string]bool) error {
 	return nil
 }

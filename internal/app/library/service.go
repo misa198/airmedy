@@ -325,6 +325,11 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 		".ogg":  true,
 		".opus": true,
 		".aiff": true,
+		".aif":  true,
+		".ape":  true,
+		".wv":   true,
+		".dsf":  true,
+		".dff":  true,
 	}
 
 	// 1. Count files

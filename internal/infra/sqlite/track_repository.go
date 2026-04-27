@@ -259,9 +259,79 @@ func (r *trackRepository) GetByPathPrefix(ctx context.Context, prefix string) ([
 	return r.scanTrackRows(rows), nil
 }
 
+func (r *trackRepository) Count(ctx context.Context) (int, error) {
+	var count int
+	err := r.db.GetContext(ctx, &count, "SELECT COUNT(*) FROM tracks")
+	if err != nil {
+		return 0, fmt.Errorf("failed to count tracks: %w", err)
+	}
+	return count, nil
+}
+
+func (r *trackRepository) GetPaginated(ctx context.Context, offset, limit int) ([]*domain.TrackDTO, error) {
+	query := fmt.Sprintf(`
+		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year,
+		       GROUP_CONCAT(art.name, '; ') AS artist_names,
+		       GROUP_CONCAT(art.id, '; ') AS artist_ids
+		FROM tracks t
+		LEFT JOIN albums a ON t.album_id = a.id
+		LEFT JOIN track_artists ta ON t.id = ta.track_id
+		LEFT JOIN artists art ON ta.artist_id = art.id
+		GROUP BY t.id
+		ORDER BY t.sort_title
+		LIMIT ? OFFSET ?
+	`, trackSelectFields)
+	var rows []trackRow
+	err := r.db.SelectContext(ctx, &rows, query, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get paginated tracks: %w", err)
+	}
+	return r.scanTrackRows(rows), nil
+}
+
+func (r *trackRepository) GetByIDs(ctx context.Context, ids []string) ([]*domain.TrackDTO, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	placeholders := strings.Repeat("?,", len(ids))
+	placeholders = placeholders[:len(placeholders)-1]
+	args := make([]interface{}, len(ids))
+	for i, id := range ids {
+		args[i] = id
+	}
+	q := fmt.Sprintf(`
+		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year,
+		       GROUP_CONCAT(art.name, '; ') AS artist_names,
+		       GROUP_CONCAT(art.id, '; ') AS artist_ids
+		FROM tracks t
+		LEFT JOIN albums a ON t.album_id = a.id
+		LEFT JOIN track_artists ta ON t.id = ta.track_id
+		LEFT JOIN artists art ON ta.artist_id = art.id
+		WHERE t.id IN (%s)
+		GROUP BY t.id
+	`, trackSelectFields, placeholders)
+	var rows []trackRow
+	if err := r.db.SelectContext(ctx, &rows, q, args...); err != nil {
+		return nil, fmt.Errorf("failed to get tracks by ids: %w", err)
+	}
+	// Reorder to match input order (IN clause doesn't preserve order)
+	fetched := r.scanTrackRows(rows)
+	byID := make(map[string]*domain.TrackDTO, len(fetched))
+	for _, t := range fetched {
+		byID[t.ID] = t
+	}
+	ordered := make([]*domain.TrackDTO, 0, len(ids))
+	for _, id := range ids {
+		if t, ok := byID[id]; ok {
+			ordered = append(ordered, t)
+		}
+	}
+	return ordered, nil
+}
+
 func (r *trackRepository) GetAll(ctx context.Context) ([]*domain.TrackDTO, error) {
 	query := fmt.Sprintf(`
-		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year, 
+		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year,
 		       GROUP_CONCAT(art.name, '; ') AS artist_names,
 		       GROUP_CONCAT(art.id, '; ') AS artist_ids
 		FROM tracks t

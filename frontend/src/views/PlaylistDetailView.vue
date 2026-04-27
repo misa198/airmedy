@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
+import { ref, shallowRef, onMounted, computed, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Play, Shuffle, MoreVertical, Clock, Music, X } from 'lucide-vue-next'
@@ -27,7 +27,7 @@ const playerStore = usePlayerStore()
 const favoritesStore = useFavoritesStore()
 
 const playlist = ref<Playlist | null>(null)
-const tracks = ref<TrackDTO[]>([])
+const tracks = shallowRef<TrackDTO[]>([])
 const isLoading = ref(true)
 
 useLibraryUpdates(tracks)
@@ -122,13 +122,15 @@ const handlePlaylistChange = (ev: Events.WailsEvent) => {
   }
 }
 
+let offPlaylistChange: (() => void) | null = null
+
 onMounted(() => {
   load()
-  Events.On('playlist:tracks-changed', handlePlaylistChange)
+  offPlaylistChange = Events.On('playlist:tracks-changed', handlePlaylistChange)
 })
 
 onUnmounted(() => {
-  Events.Off('playlist:tracks-changed')
+  offPlaylistChange?.()
 })
 
 const totalDurationFormatted = computed(() => {

@@ -1,11 +1,11 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, shallowRef } from 'vue'
 import * as SearchService from '../../bindings/airmedy/internal/infra/wails/searchservice'
 import type { SearchResultSet } from '../../bindings/airmedy/internal/infra/wails/models'
 
 export const useSearchStore = defineStore('search', () => {
   const query = ref('')
-  const results = ref<SearchResultSet | null>(null)
+  const results = shallowRef<SearchResultSet | null>(null)
   const loading = ref(false)
 
   let debounceTimer: ReturnType<typeof setTimeout> | null = null

@@ -2,18 +2,16 @@
 import { computed } from 'vue'
 import { usePlayerStore } from '@/stores/player'
 import { Music, AudioLines, X } from 'lucide-vue-next'
+import LazyImg from '@/components/LazyImg.vue'
 import { useI18n } from 'vue-i18n'
-import { formatTime } from '@/lib/utils'
+import { formatTime, buildArtworkUrl } from '@/lib/utils'
 
 const { t } = useI18n()
 const store = usePlayerStore()
 
 const track = computed(() => store.trackInfoTrack)
 
-const artworkUrl = computed(() => {
-  const key = track.value?.artwork_key
-  return key ? `/artwork/${key}` : null
-})
+const artworkUrl = computed(() => buildArtworkUrl(track.value?.artwork_key, 'md'))
 
 const isLossless = computed(() => {
   if (!track.value) return false
@@ -76,7 +74,7 @@ function formatFileSize(bytes: number) {
         <!-- Artwork -->
         <div
           class="w-48 h-48 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-foreground/10 mb-8 transition-transform hover:scale-[1.02] duration-300">
-          <img v-if="artworkUrl" :src="artworkUrl" class="w-full h-full object-cover" />
+          <LazyImg v-if="artworkUrl" :src="artworkUrl" class="w-full h-full object-cover" />
           <div v-else class="w-full h-full bg-foreground/5 flex items-center justify-center">
             <Music class="w-16 h-16 text-foreground/10" />
           </div>

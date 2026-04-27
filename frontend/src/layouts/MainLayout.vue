@@ -81,7 +81,7 @@ onUnmounted(() => {
       <!-- View Content Panel -->
       <main class="flex-1 min-w-0 flex flex-col overflow-hidden">
         <RouterView v-slot="{ Component }">
-          <KeepAlive :max="10">
+          <KeepAlive :max="3">
             <component :is="Component" />
           </KeepAlive>
         </RouterView>

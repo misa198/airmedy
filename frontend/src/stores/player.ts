@@ -1,16 +1,17 @@
 import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
+import { ref, shallowRef, computed, watch } from 'vue'
 import { Events } from '@wailsio/runtime'
 import * as PlayerService from '../../bindings/airmedy/internal/infra/wails/playerservice'
 import { PlaybackState, PlayerStatus, RepeatMode, ThemeColors } from '../../bindings/airmedy/internal/domain/models'
 import type { Lyric, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
+import { buildArtworkUrl } from '@/lib/utils'
 
 export type PlayerMode = 'sticky' | 'mini' | 'fullscreen'
 
 export const usePlayerStore = defineStore('player', () => {
   // State
   const status = ref<PlayerStatus | null>(null)
-  const queue = ref<TrackDTO[]>([])
+  const queue = shallowRef<TrackDTO[]>([])
   const currentTrack = ref<TrackDTO | null>(null)
   const theme = ref<ThemeColors | null>(null)
   const isQueueOpen = ref(false)
@@ -43,10 +44,9 @@ export const usePlayerStore = defineStore('player', () => {
   const progressPercent = computed(() =>
     duration.value > 0 ? (position.value / duration.value) * 100 : 0,
   )
-  const artworkUrl = computed(() => {
-    const key = currentTrack.value?.artwork_key
-    return key ? `/artwork/${key}` : null
-  })
+  const artworkUrl = computed(() => buildArtworkUrl(currentTrack.value?.artwork_key, 'lg'))
+  const artworkUrlMd = computed(() => buildArtworkUrl(currentTrack.value?.artwork_key, 'md'))
+  const artworkUrlSm = computed(() => buildArtworkUrl(currentTrack.value?.artwork_key, 'sm'))
 
   // Clear lyrics immediately whenever the playing track changes
   watch(currentTrack, (newTrack, oldTrack) => {
@@ -119,7 +119,7 @@ export const usePlayerStore = defineStore('player', () => {
       const updated = ev.data as TrackDTO
       if (!updated?.id) return
       const idx = queue.value.findIndex(t => t.id === updated.id)
-      if (idx !== -1) queue.value[idx] = updated
+      if (idx !== -1) queue.value = queue.value.map((t, i) => i === idx ? updated : t)
       if (currentTrack.value?.id === updated.id) currentTrack.value = updated
     })
 
@@ -193,12 +193,12 @@ export const usePlayerStore = defineStore('player', () => {
   async function playTracks(tracks: TrackDTO[], startIndex: number) {
     queue.value = tracks
     currentTrack.value = tracks[startIndex] ?? null
-    await PlayerService.PlayTracks(tracks, startIndex)
+    await PlayerService.PlayTrackIDs(tracks.map(t => t.id), startIndex)
   }
 
   async function shuffleTracks(tracks: TrackDTO[]) {
     if (!tracks.length) return
-    await PlayerService.ShuffleTracks(tracks)
+    await PlayerService.ShuffleTrackIDs(tracks.map(t => t.id))
     // The backend emits player:status and player:queue-updated which will update our local state
   }
 
@@ -271,6 +271,8 @@ export const usePlayerStore = defineStore('player', () => {
     repeatMode,
     progressPercent,
     artworkUrl,
+    artworkUrlMd,
+    artworkUrlSm,
     // Actions
     init,
     syncState,

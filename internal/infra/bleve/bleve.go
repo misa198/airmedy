@@ -43,7 +43,7 @@ func buildIndexMapping() mapping.IndexMapping {
 	// 1. Text field mapping for searchable content
 	textFieldMapping := bleve.NewTextFieldMapping()
 	textFieldMapping.Analyzer = "standard"
-	textFieldMapping.Store = true
+	textFieldMapping.Store = false // id/type (keyword) are enough for result retrieval
 
 	// 2. Keyword field mapping for IDs and Types (exact match only)
 	keywordFieldMapping := bleve.NewTextFieldMapping()

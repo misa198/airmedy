@@ -43,6 +43,16 @@ func NewAssetHandler(assets embed.FS, artworkCache domain.ArtworkCache) http.Han
 				return
 			}
 
+			size := r.URL.Query().Get("size")
+			if size == "sm" || size == "md" {
+				variantPath := artworkCache.GetVariantPath(key, size)
+				if _, err := os.Stat(variantPath); err == nil {
+					http.ServeFile(w, r, variantPath)
+					return
+				}
+				// variant missing (pre-existing track) — fall back to original
+			}
+
 			http.ServeFile(w, r, filePath)
 			return
 		}

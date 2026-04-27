@@ -6,6 +6,7 @@ import {
   Shuffle, Repeat, Repeat1,
   Volume2, VolumeX,
 } from 'lucide-vue-next'
+import LazyImg from '@/components/LazyImg.vue'
 import { Window } from '@wailsio/runtime'
 import { usePlayerStore } from '@/stores/player'
 import { RepeatMode } from '../../bindings/airmedy/internal/domain/models'
@@ -18,7 +19,7 @@ import { useGlassBlur } from '@/composables/useGlassBlur'
 const store = usePlayerStore()
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
-useGlassBlur(canvasRef, computed(() => store.artworkUrl))
+useGlassBlur(canvasRef, computed(() => store.artworkUrl ?? null))
 
 const alwaysOnTop = ref(true)
 const isSeeking = ref(false)
@@ -77,7 +78,7 @@ watch(() => store.theme, (colors) => {
     @mouseenter="isHovered = true" @mouseleave="isHovered = false">
     <!-- Artwork fills entire window -->
     <div class="absolute inset-0 bg-[#0A0A0A]" style="-webkit-app-region: no-drag">
-      <img v-if="store.artworkUrl" :src="store.artworkUrl" :alt="trackTitle" class="w-full h-full object-cover" />
+      <LazyImg v-if="store.artworkUrl" :src="store.artworkUrl" :alt="trackTitle" class="w-full h-full object-cover" />
       <div v-else class="w-full h-full flex items-center justify-center bg-white/5">
         <Music class="w-16 h-16 text-white/20" />
       </div>

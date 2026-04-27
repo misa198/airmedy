@@ -12,6 +12,7 @@ import (
 	"airmedy/internal/app"
 	"airmedy/internal/domain"
 	"airmedy/internal/infra/wails"
+	"runtime/debug"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
@@ -30,6 +31,8 @@ func init() {
 }
 
 func main() {
+	debug.SetGCPercent(50)
+
 	var greetService *wails.GreetService
 	var libraryService *wails.LibraryService
 	var playerService *wails.PlayerService

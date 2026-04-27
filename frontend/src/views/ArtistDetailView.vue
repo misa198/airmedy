@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, shallowRef, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { Artist, AlbumDTO, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
@@ -18,8 +18,8 @@ const route = useRoute()
 const router = useRouter()
 const playerStore = usePlayerStore()
 const artist = ref<Artist | null>(null)
-const albums = ref<AlbumDTO[]>([])
-const tracks = ref<TrackDTO[]>([])
+const albums = shallowRef<AlbumDTO[]>([])
+const tracks = shallowRef<TrackDTO[]>([])
 const isLoading = ref(true)
 
 const contextMenu = useContextMenu()

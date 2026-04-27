@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, shallowRef, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { Composer, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
@@ -17,7 +17,7 @@ const { t } = useI18n()
 const route = useRoute()
 const playerStore = usePlayerStore()
 const composer = ref<Composer | null>(null)
-const tracks = ref<TrackDTO[]>([])
+const tracks = shallowRef<TrackDTO[]>([])
 const isLoading = ref(true)
 
 const contextMenu = useContextMenu()

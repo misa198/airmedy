@@ -35,6 +35,8 @@ type PlayerService struct {
 	tickerCancel context.CancelFunc
 	tickInterval time.Duration
 
+	endedNaturally bool // true when queue ran out; cleared on Play or loadAndPlay
+
 	// emitStatusHook overrides event emission in tests (nil in production).
 	emitStatusHook func()
 
@@ -112,12 +114,22 @@ func (s *PlayerService) AddQueueListener(f func([]*domain.TrackDTO)) {
 // Play starts or resumes playback. If no track is loaded and the queue is empty,
 // loads all library tracks in random order and begins playing.
 func (s *PlayerService) Play() error {
-	s.mu.RLock()
+	s.mu.Lock()
 	ct := s.currentTrack
-	s.mu.RUnlock()
+	ended := s.endedNaturally
+	if ended {
+		s.endedNaturally = false
+	}
+	s.mu.Unlock()
 
 	if ct == nil && len(s.queue.GetQueue()) == 0 {
 		return s.playAll()
+	}
+
+	// Track ended naturally (queue ran out): AVFoundation won't restart a finished
+	// item via Play() alone — reload from the beginning.
+	if ended && ct != nil {
+		return s.loadAndPlay(ct)
 	}
 
 	err := s.player.Play()
@@ -196,6 +208,25 @@ func (s *PlayerService) SetMuted(muted bool) error {
 		s.emitStatus()
 	}
 	return err
+}
+
+// PlayTrackIDs fetches tracks by ID from the repository and starts playing from startIndex.
+// Preferred over PlayTracks when the caller already has IDs — avoids large IPC serialization.
+func (s *PlayerService) PlayTrackIDs(ctx context.Context, trackIDs []string, startIndex int) error {
+	tracks, err := s.trackRepo.GetByIDs(ctx, trackIDs)
+	if err != nil {
+		return fmt.Errorf("failed to fetch tracks by ids: %w", err)
+	}
+	return s.PlayTracks(tracks, startIndex)
+}
+
+// ShuffleTrackIDs fetches tracks by ID from the repository and shuffles them.
+func (s *PlayerService) ShuffleTrackIDs(ctx context.Context, trackIDs []string) error {
+	tracks, err := s.trackRepo.GetByIDs(ctx, trackIDs)
+	if err != nil {
+		return fmt.Errorf("failed to fetch tracks by ids: %w", err)
+	}
+	return s.ShuffleTracks(tracks)
 }
 
 // PlayTracks sets a new queue and starts playing from the specified index.
@@ -515,7 +546,17 @@ func (s *PlayerService) stopPositionTicker() {
 func (s *PlayerService) HandleTrackEnd() {
 	s.stopPositionTicker()
 	s.logger.Debug("track ended, moving to next")
-	if err := s.Next(); err != nil {
+	track := s.queue.Next()
+	if track == nil {
+		s.mu.Lock()
+		s.endedNaturally = true
+		s.mu.Unlock()
+		if err := s.Stop(); err != nil {
+			s.logger.Error("failed to stop after queue end", "error", err)
+		}
+		return
+	}
+	if err := s.loadAndPlay(track); err != nil {
 		s.logger.Error("failed to play next track", "error", err)
 	}
 }
