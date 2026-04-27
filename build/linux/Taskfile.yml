@@ -21,7 +21,8 @@ tasks:
       # 1. Cross-compiling from non-Linux, OR
       # 2. No C compiler is available, OR
       # 3. Target architecture differs from host architecture (cross-arch compilation)
-      - task: '{{if and (eq OS "linux") (eq .HAS_CC "true") (eq .TARGET_ARCH ARCH)}}build:native{{else}}build:docker{{end}}'
+      # 4. UNLESS CC is explicitly set (e.g. in CI for native cross-compile)
+      - task: '{{if or (and (eq OS "linux") (eq .HAS_CC "true") (eq .TARGET_ARCH ARCH)) (env "CC")}}build:native{{else}}build:docker{{end}}'
         vars:
           ARCH: '{{.ARCH}}'
           DEV: '{{.DEV}}'
@@ -59,6 +60,8 @@ tasks:
       GOOS: linux
       CGO_ENABLED: 1
       GOARCH: '{{.ARCH | default ARCH}}'
+      CGO_CFLAGS: "-I{{.USER_WORKING_DIR}}/internal/infra/audio/ffmpeg_libs/include"
+      CGO_LDFLAGS: "-L{{.USER_WORKING_DIR}}/internal/infra/audio/ffmpeg_libs/linux/{{.ARCH | default ARCH}}"
 
   build:docker:
     summary: Builds for Linux using Docker (for non-Linux hosts or when no C compiler available)

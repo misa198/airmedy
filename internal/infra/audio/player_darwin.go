@@ -3,7 +3,7 @@
 package audio
 
 /*
-#cgo CFLAGS: -x objective-c -fobjc-arc
+#cgo CFLAGS: -x objective-c -fobjc-arc -I${SRCDIR}/ffmpeg_libs/include
 #cgo LDFLAGS: -framework Foundation -framework AppKit -framework AVFoundation -framework CoreMedia -framework MediaPlayer
 #include <stdlib.h>
 

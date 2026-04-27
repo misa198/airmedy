@@ -70,9 +70,10 @@ CONFIGURE_FLAGS=(
 LIBS=(libavcodec libavformat libavutil libswresample)
 
 build_arch() {
-    local ARCH="$1"       # x86_64 or aarch64
-    local OUT_ARCH="$2"   # amd64 or arm64 (output dir name)
-    local CC="${3:-gcc}"  # compiler (cross-compiler for arm64)
+    local ARCH="$1"           # x86_64 or aarch64
+    local OUT_ARCH="$2"       # amd64 or arm64 (output dir name)
+    local CC="${3:-gcc}"      # compiler (cross-compiler for arm64)
+    local CROSS_PREFIX="${4:-}" # cross-prefix (e.g. aarch64-linux-gnu-)
     local SRC_DIR="${BUILD_DIR}/src"
     local BUILD_ARCH_DIR="${BUILD_DIR}/build-${ARCH}"
     local INSTALL_DIR="${BUILD_DIR}/install-${ARCH}"
@@ -85,6 +86,10 @@ build_arch() {
     if [[ "${ARCH}" == "x86_64" ]] && ! command -v nasm &>/dev/null; then
         echo "    nasm not found — building without SIMD (install nasm for best performance)"
         EXTRA_FLAGS+=(--disable-x86asm)
+    fi
+
+    if [[ -n "${CROSS_PREFIX}" ]]; then
+        EXTRA_FLAGS+=(--enable-cross-compile --cross-prefix="${CROSS_PREFIX}")
     fi
 
     cd "${BUILD_ARCH_DIR}"
@@ -119,7 +124,7 @@ build_arch "x86_64"  "amd64" "gcc"
 
 # arm64 cross-compile (requires gcc-aarch64-linux-gnu)
 if command -v aarch64-linux-gnu-gcc &>/dev/null; then
-    build_arch "aarch64" "arm64" "aarch64-linux-gnu-gcc"
+    build_arch "aarch64" "arm64" "aarch64-linux-gnu-gcc" "aarch64-linux-gnu-"
 else
     echo "==> Skipping arm64: aarch64-linux-gnu-gcc not found (apt install gcc-aarch64-linux-gnu)"
 fi

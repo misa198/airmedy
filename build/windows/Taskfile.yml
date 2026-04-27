@@ -54,9 +54,9 @@ tasks:
       CGO_ENABLED: '{{.CGO_ENABLED | default "1"}}'
       GOARCH: '{{.ARCH | default ARCH}}'
       PATH: 'C:\msys64\mingw64\bin;{{env "PATH"}}'
-      CC: C:\msys64\mingw64\bin\gcc.exe
-      CGO_CFLAGS: -IC:\msys64\mingw64\include
-      CGO_LDFLAGS: -LC:\msys64\mingw64\lib
+      CC: '{{env "CC" | default "C:\\msys64\\mingw64\\bin\\gcc.exe"}}'
+      CGO_CFLAGS: -IC:\msys64\mingw64\include -I{{.USER_WORKING_DIR}}/internal/infra/audio/ffmpeg_libs/include
+      CGO_LDFLAGS: -LC:\msys64\mingw64\lib -L{{.USER_WORKING_DIR}}/internal/infra/audio/ffmpeg_libs/windows/amd64
 
   build:docker:
     summary: Cross-compiles for Windows using Docker with Zig (for CGO builds on non-Windows)

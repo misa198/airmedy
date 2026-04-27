@@ -76,8 +76,8 @@ build_arch() {
         --arch="${ARCH}" \
         --target-os=darwin \
         --cc="clang -arch ${ARCH}" \
-        --extra-cflags="-arch ${ARCH} -mmacosx-version-min=12.0" \
-        --extra-ldflags="-arch ${ARCH} -mmacosx-version-min=12.0" \
+        --extra-cflags="-arch ${ARCH} -mmacosx-version-min=14.0" \
+        --extra-ldflags="-arch ${ARCH} -mmacosx-version-min=14.0" \
         --prefix="${INSTALL_DIR}"
 
     make -j"$(sysctl -n hw.logicalcpu)"
