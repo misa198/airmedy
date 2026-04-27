@@ -30,21 +30,33 @@ CONFIGURE_FLAGS=(
     --enable-avutil
     --enable-swresample
     # Decoders
+    --enable-decoder=mp3,mp3float
+    --enable-decoder=aac,aac_latm
+    --enable-decoder=alac
+    --enable-decoder=flac
+    --enable-decoder=pcm_s16le,pcm_s24le,pcm_s32le,pcm_f32le # For WAV
+    --enable-decoder=pcm_s16be,pcm_s24be,pcm_s32be          # For AIFF
+    --enable-decoder=pcm_alaw,pcm_mulaw                      # For AIFF/WAV extended
     --enable-decoder=vorbis
     --enable-decoder=opus
     --enable-decoder=ape
     --enable-decoder=wavpack
-    --enable-decoder=dsd_lsbf_planar
-    --enable-decoder=dsd_msbf_planar
-    --enable-decoder=dsd_lsbf
-    --enable-decoder=dsd_msbf
+    --enable-decoder=dsd_lsbf,dsd_msbf,dsd_lsbf_planar,dsd_msbf_planar
     # Demuxers
+    --enable-demuxer=mp3
+    --enable-demuxer=aac
+    --enable-demuxer=mov,m4v             # For M4A (AAC)
+    --enable-demuxer=flac
+    --enable-demuxer=wav
+    --enable-demuxer=aiff
     --enable-demuxer=ogg
     --enable-demuxer=ape
     --enable-demuxer=wv
-    --enable-demuxer=dsf
-    --enable-demuxer=dff
+    --enable-demuxer=dsf,dff
     # Parsers
+    --enable-parser=mpegaudio            # For MP3
+    --enable-parser=aac,aac_latm
+    --enable-parser=flac
     --enable-parser=vorbis
     --enable-parser=opus
     # Protocol

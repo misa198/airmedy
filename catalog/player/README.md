@@ -44,7 +44,8 @@ type AudioPlayer interface {
 
 ### Windows/Linux — miniaudio (`player_miniaudio.go`)
 
-- C library (`miniaudio`) integrated via cgo.
+- C library (`miniaudio`) integrated via cgo as the playback and output engine.
+- **Decoding Backend:** Leverages FFmpeg for **all** audio formats to ensure maximum compatibility and robustness.
 - Functions: `ma_player_create()`, `ma_player_play()`, `ma_player_pause()`, `ma_player_stop()`, `ma_player_seek()`, `ma_player_set_volume()`.
 - Track end detected via `goMiniAudioTrackEnd()` Go callback.
 - EQ not available on this adapter.

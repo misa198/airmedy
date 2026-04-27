@@ -118,9 +118,9 @@ type fakePlayerStateRepo struct {
 	domain.PlayerStateRepository
 }
 
-func (r *fakePlayerStateRepo) SaveState(_ context.Context, _ domain.PlayerStatus) error { return nil }
-func (r *fakePlayerStateRepo) RestoreState(_ context.Context) (domain.PlayerStatus, error) {
-	return domain.PlayerStatus{}, nil
+func (r *fakePlayerStateRepo) Save(_ context.Context, _ *domain.PlayerState) error { return nil }
+func (r *fakePlayerStateRepo) Load(_ context.Context) (*domain.PlayerState, error) {
+	return &domain.PlayerState{Volume: 1.0}, nil
 }
 
 // newTestService builds a PlayerService with fast tick interval for tests.

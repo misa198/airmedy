@@ -126,4 +126,4 @@ All extracted tags are serialized as JSON and stored in `tracks.other_metadata` 
 
 ## Supported Formats
 
-TagLib handles: MP3 (ID3v1/v2), FLAC (Vorbis), M4A/AAC (iTunes atoms), WAV, OGG, Opus, AIFF. For formats TagLib cannot decode (APE, WavPack, DSD), FFmpeg is invoked as a fallback decoder.
+TagLib handles: MP3 (ID3v1/v2), FLAC (Vorbis), M4A/AAC (iTunes atoms), WAV, OGG, Opus, AIFF. For formats TagLib cannot decode (APE, WavPack, DSD), FFmpeg is invoked as a fallback decoder on macOS. On Windows and Linux, FFmpeg is the primary decoder for all formats to ensure consistent and high-performance playback.

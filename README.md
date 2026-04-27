@@ -36,7 +36,7 @@
 | Format               |    macOS    | Windows | Linux |
 | -------------------- | :---------: | :-----: | :---: |
 | MP3                  | ✅ (Native) |   ✅    |  ✅   |
-| AAC / M4A            | ✅ (Native) |   ✅    |  ✅   |
+| AAC / M4A / ALAC     | ✅ (Native) |   ✅    |  ✅   |
 | FLAC                 | ✅ (Native) |   ✅    |  ✅   |
 | WAV / AIFF           | ✅ (Native) |   ✅    |  ✅   |
 | Ogg Vorbis           | ✅ (FFmpeg) |   ✅    |  ✅   |
@@ -47,7 +47,7 @@
 
 ---
 
-On macOS, playback runs through **AVFoundation** — hardware-accelerated, battery-efficient, the same engine Apple uses. On Windows and Linux, **miniaudio** takes over as a lightweight, high-performance backend. When either engine hits an unsupported format, **FFmpeg** steps in silently.
+On macOS, playback runs through **AVFoundation** — hardware-accelerated, battery-efficient, the same engine Apple uses. On Windows and Linux, **miniaudio** provides high-performance audio output, while **FFmpeg** serves as the universal decoding backend for all supported formats, ensuring consistent and robust playback across the entire library.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -56,18 +56,23 @@ On macOS, playback runs through **AVFoundation** — hardware-accelerated, batte
 │   ┌─────────────┐       ┌──────────────────────────┐    │
 │   │  macOS Path │       │  Windows / Linux Path    │    │
 │   │             │       │                          │    │
-│   │ AVFoundation│       │      miniaudio           │    │
-│   │  (native)   │       │   (cross-platform)       │    │
+│   │ AVAudioEngine       │      miniaudio           │    │
+│   │  (output)   │       │   (output engine)        │    │
 │   └──────┬──────┘       └───────────┬──────────────┘    │
+│          │                          │                   │
+│   ┌──────┴──────┐          ┌────────┴────────┐          │
+│   │Format Native?          │  FFmpeg Decoder │          │
+│   │  ┌───┴───┐  │          │ (All Formats)   │          │
+│   │ YES      NO │          └────────┬────────┘          │
+│   │  │       │  │                   │                   │
+│   │AVAudio- FFmpeg                  │                   │
+│   │ File    Stream                  │                   │
+│   └──────┬──────┘                   │                   │
 │          │                          │                   │
 │          └──────────┬───────────────┘                   │
 │                     │                                   │
-│            Format supported natively?                   │
-│                ┌────┴────┐                              │
-│              YES         NO                             │
-│                │          │                             │
-│           Play direct   FFmpeg PCM decoder              │
-│                          (bundled static libs)          │
+│            Consistent Audio Stream                      │
+│                (Float32 PCM)                            │
 └─────────────────────────────────────────────────────────┘
 ```
 

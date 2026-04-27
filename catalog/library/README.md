@@ -47,7 +47,7 @@ AddFolder(path)
                  └─ SearchService.IndexTrack()
 ```
 
-**Supported formats:** `.mp3`, `.flac`, `.m4a`, `.wav`, `.ogg`, `.opus`, `.aiff`, `.aif`, `.ape`, `.wv`, `.dsf`, `.dff`
+**Supported formats:** `.mp3`, `.flac`, `.m4a`, `.alac`, `.wav`, `.ogg`, `.opus`, `.aiff`, `.aif`, `.caf`, `.ape`, `.wv`, `.dsf`, `.dff`
 
 ## Entity Resolution
 

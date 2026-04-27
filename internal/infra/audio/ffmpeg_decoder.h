@@ -31,6 +31,7 @@ typedef struct {
     ma_uint32        target_rate;
     ma_uint32        n_ch;        /* Output channels (max 2) */
     ma_uint64        total_frames;
+    ma_uint64        read_count;  /* Total frames read so far */
     int              is_eof;
     int              flushed;     /* Sent NULL to avcodec_send_packet */
     
@@ -62,21 +63,29 @@ static FFmpegHandle* ffmpeg_open(const char* path, ma_uint32 target_rate) {
     if (!h) return NULL;
     h->target_rate = target_rate;
 
-    if (avformat_open_input(&h->fmt_ctx, path, NULL, NULL) < 0) {
+    AVDictionary* format_opts = NULL;
+    av_dict_set(&format_opts, "probesize", "32000000", 0);      /* 32MB */
+    av_dict_set(&format_opts, "analyzeduration", "10000000", 0); /* 10s */
+
+    if (avformat_open_input(&h->fmt_ctx, path, NULL, &format_opts) < 0) {
+        av_dict_free(&format_opts);
         free(h);
         return NULL;
     }
+    av_dict_free(&format_opts);
 
-    /* Discard non-audio streams before probing for performance and stability */
+    /* 
+     * avformat_find_stream_info can return errors for files with "broken" metadata streams
+     * (like timescale errors in M4A), but the audio stream might be perfectly fine.
+     * We proceed even on error and let av_find_best_stream be the final arbiter.
+     */
+    avformat_find_stream_info(h->fmt_ctx, NULL);
+
+    /* Discard non-audio streams AFTER probing to ensure demuxer has all info it needs */
     for (unsigned int i = 0; i < h->fmt_ctx->nb_streams; i++) {
         if (h->fmt_ctx->streams[i]->codecpar->codec_type != AVMEDIA_TYPE_AUDIO) {
             h->fmt_ctx->streams[i]->discard = AVDISCARD_ALL;
         }
-    }
-
-    if (avformat_find_stream_info(h->fmt_ctx, NULL) < 0) {
-        ffmpeg_close(h);
-        return NULL;
     }
 
     const AVCodec* codec = NULL;
@@ -97,6 +106,7 @@ static FFmpegHandle* ffmpeg_open(const char* path, ma_uint32 target_rate) {
         ffmpeg_close(h);
         return NULL;
     }
+    avcodec_flush_buffers(h->codec_ctx);
 
     ma_uint32 in_ch;
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 37, 100)
@@ -150,6 +160,8 @@ static FFmpegHandle* ffmpeg_open(const char* path, ma_uint32 target_rate) {
     AVStream* st = h->fmt_ctx->streams[h->stream_idx];
     if (st->duration != AV_NOPTS_VALUE) {
         h->total_frames = (ma_uint64)((double)st->duration * st->time_base.num / st->time_base.den * target_rate);
+    } else if (h->fmt_ctx->duration != AV_NOPTS_VALUE) {
+        h->total_frames = (ma_uint64)((double)h->fmt_ctx->duration / AV_TIME_BASE * target_rate);
     }
 
     h->pkt = av_packet_alloc();
@@ -182,7 +194,6 @@ static int ffmpeg_read(FFmpegHandle* h, float* buffer, int frames_requested) {
 
     /* 2. Decode more frames as needed */
     while (frames_filled < frames_requested && !h->is_eof) {
-        // MUST unref the frame before passing it to receive_frame to avoid assertions in some FFmpeg versions
         av_frame_unref(h->frame);
         int ret = avcodec_receive_frame(h->codec_ctx, h->frame);
         
@@ -210,7 +221,6 @@ static int ffmpeg_read(FFmpegHandle* h, float* buffer, int frames_requested) {
                     h->leftover_offset = 0;
                 }
             }
-            // Continue pulling frames from the current packet
             continue;
         } 
         
@@ -221,28 +231,29 @@ static int ffmpeg_read(FFmpegHandle* h, float* buffer, int frames_requested) {
 
         if (ret == AVERROR(EAGAIN)) {
             if (h->flushed) {
-                // Sent flush packet but still EAGAIN? Truly EOF.
                 h->is_eof = 1;
                 break;
             }
             if (av_read_frame(h->fmt_ctx, h->pkt) >= 0) {
                 if (h->pkt->stream_index == h->stream_idx) {
-                    avcodec_send_packet(h->codec_ctx, h->pkt);
+                    int send_ret = avcodec_send_packet(h->codec_ctx, h->pkt);
+                    if (send_ret < 0 && send_ret != AVERROR(EAGAIN)) {
+                        h->is_eof = 1; /* Fatal error */
+                    }
                 }
                 av_packet_unref(h->pkt);
             } else {
-                // EOF on demuxer: send NULL packet to trigger flush
                 avcodec_send_packet(h->codec_ctx, NULL);
                 h->flushed = 1;
             }
             continue;
         }
         
-        // Fatal decoding error
         h->is_eof = 1;
         break;
     }
 
+    h->read_count += frames_filled;
     return frames_filled;
 }
 
@@ -258,6 +269,7 @@ static int ffmpeg_seek(FFmpegHandle* h, double seconds) {
     h->flushed = 0;
     h->leftover_count = 0;
     h->leftover_offset = 0;
+    h->read_count = (ma_uint64)(seconds * h->target_rate);
     return 0;
 }
 

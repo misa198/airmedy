@@ -2,24 +2,20 @@
 #define MINIAUDIO_IMPLEMENTATION
 #include "miniaudio/miniaudio.h"
 #include "miniaudio_wrapper.h"
-#include "ffmpeg_decoder.h"
+#include "ma_ffmpeg_data_source.h"
 #include <stdlib.h>
 #include <windows.h>
 
 struct MaPlayer {
-    ma_engine          engine;
-    ma_sound           sound;
-    ma_audio_buffer_ref audio_buf;      /* PCM buffer ref — used when FFmpeg decoded */
-    float*             pcm_data;        /* malloc'd PCM, freed on unload */
-    ma_uint32          pcm_rate;        /* == engine sample rate when using FFmpeg */
-    ma_uint64          pcm_frames;      /* total PCM frames in pcm_data */
-    ma_uint32          pcm_channels;
-    int                sound_loaded;
-    int                using_buf;       /* 1 when backed by audio_buf instead of file */
-    float              volume;
-    MaEndCallback      end_cb;
-    void*              end_userdata;
-    ma_mutex           mu;
+    ma_engine             engine;
+    ma_sound              sound;
+    ma_ffmpeg_data_source ffmpeg_ds;
+    int                   sound_loaded;
+    int                   using_ffmpeg;
+    float                 volume;
+    MaEndCallback         end_cb;
+    void*                 end_userdata;
+    ma_mutex              mu;
 };
 
 static void internal_end_cb(void* userdata, ma_sound* pSound) {
@@ -33,12 +29,9 @@ static void unload_locked(MaPlayer* p) {
         ma_sound_uninit(&p->sound);
         p->sound_loaded = 0;
     }
-    if (p->using_buf) {
-        ma_audio_buffer_ref_uninit(&p->audio_buf);
-        free(p->pcm_data);
-        p->pcm_data    = NULL;
-        p->pcm_frames  = 0;
-        p->using_buf   = 0;
+    if (p->using_ffmpeg) {
+        ma_ffmpeg_data_source_uninit(&p->ffmpeg_ds);
+        p->using_ffmpeg = 0;
     }
 }
 
@@ -62,60 +55,44 @@ void ma_player_destroy(MaPlayer* p) {
 }
 
 int ma_player_load(MaPlayer* p, const char* path) {
+    ma_result sr;
     if (!p || !path) return -1;
     ma_mutex_lock(&p->mu);
     unload_locked(p);
 
-    /*
-     * MinGW/Zig builds use plain fopen() (ANSI codepage) for ma_fopen.
-     * Use the _w variant with a converted wide path so any Unicode filename works.
+    /* 
+     * Refactor: Always use FFmpeg as the decoding backend for all formats.
+     * This provides consistent behavior and robustness across Windows and Linux,
+     * while miniaudio remains the playback engine and controller.
      */
-    int wLen = MultiByteToWideChar(CP_UTF8, 0, path, -1, NULL, 0);
-    if (wLen == 0) { ma_mutex_unlock(&p->mu); return (int)MA_INVALID_ARGS; }
-    wchar_t* wPath = (wchar_t*)malloc(wLen * sizeof(wchar_t));
-    if (!wPath) { ma_mutex_unlock(&p->mu); return (int)MA_OUT_OF_MEMORY; }
-    MultiByteToWideChar(CP_UTF8, 0, path, -1, wPath, wLen);
-
-    ma_result native = ma_sound_init_from_file_w(
-        &p->engine, wPath, MA_SOUND_FLAG_DECODE, NULL, NULL, &p->sound);
-    free(wPath);
-
-    if (native == MA_SUCCESS) {
-        p->sound_loaded = 1;
-        goto done;
-    }
-
-    /* Native MiniAudio decoders don't support this format — fall back to FFmpeg */
     {
         ma_uint32 engine_rate = ma_engine_get_sample_rate(&p->engine);
-        float*    pcm         = NULL;
-        ma_uint64 frames      = 0;
-        ma_uint32 channels    = 0;
+        if (engine_rate == 0) {
+            engine_rate = 44100; /* Fallback for headless or uninitialized device states */
+        }
 
-        int ffr = ffmpeg_decode_file(path, engine_rate, &pcm, &frames, &channels);
-        if (ffr != 0) { ma_mutex_unlock(&p->mu); return ffr; }
-
-        ma_audio_buffer_ref_init(ma_format_f32, channels, pcm, frames, &p->audio_buf);
-        /* Workaround: ma_audio_buffer_ref_init leaves sampleRate=0 in v0.11; set manually */
-        p->audio_buf.sampleRate = engine_rate;
-
-        p->pcm_data     = pcm;
-        p->pcm_rate     = engine_rate;
-        p->pcm_frames   = frames;
-        p->pcm_channels = channels;
-        p->using_buf    = 1;
-
-        ma_result sr = ma_sound_init_from_data_source(&p->engine, &p->audio_buf, 0, NULL, &p->sound);
+        sr = ma_ffmpeg_data_source_init(path, engine_rate, &p->ffmpeg_ds);
         if (sr != MA_SUCCESS) {
-            ma_audio_buffer_ref_uninit(&p->audio_buf);
-            free(pcm); p->pcm_data = NULL; p->using_buf = 0;
             ma_mutex_unlock(&p->mu);
             return (int)sr;
         }
+        p->using_ffmpeg = 1;
+
+        ma_sound_config config = ma_sound_config_init();
+        config.pDataSource = &p->ffmpeg_ds;
+        config.channelsOut = 2; /* Always request stereo from engine to match downmix if needed */
+
+        sr = ma_sound_init_ex(&p->engine, &config, &p->sound);
+        if (sr != MA_SUCCESS) {
+            ma_ffmpeg_data_source_uninit(&p->ffmpeg_ds);
+            p->using_ffmpeg = 0;
+            ma_mutex_unlock(&p->mu);
+            return (int)sr;
+        }
+
         p->sound_loaded = 1;
     }
 
-done:
     ma_sound_set_volume(&p->sound, p->volume);
     if (p->end_cb) ma_sound_set_end_callback(&p->sound, internal_end_cb, p);
     ma_mutex_unlock(&p->mu);
@@ -136,12 +113,14 @@ int ma_player_play(MaPlayer* p) {
 }
 
 int ma_player_pause(MaPlayer* p) {
-    if (!p || !p->sound_loaded) return -1;
+    if (!p) return -1;
+    if (!p->sound_loaded) return 0;
     return (int)ma_sound_stop(&p->sound);
 }
 
 int ma_player_stop(MaPlayer* p) {
-    if (!p || !p->sound_loaded) return -1;
+    if (!p) return -1;
+    if (!p->sound_loaded) return 0;
     ma_sound_stop(&p->sound);
     ma_sound_seek_to_pcm_frame(&p->sound, 0);
     return 0;
@@ -149,11 +128,11 @@ int ma_player_stop(MaPlayer* p) {
 
 int ma_player_seek(MaPlayer* p, double seconds) {
     if (!p || !p->sound_loaded) return -1;
-    ma_uint64 frame;
-    if (p->using_buf && p->pcm_rate > 0)
-        frame = (ma_uint64)(seconds * (double)p->pcm_rate);
-    else
-        frame = (ma_uint64)(seconds * (double)ma_engine_get_sample_rate(&p->engine));
+    ma_uint32 rate = ma_engine_get_sample_rate(&p->engine);
+    if (p->using_ffmpeg) {
+        rate = p->ffmpeg_ds.ffmpeg->target_rate;
+    }
+    ma_uint64 frame = (ma_uint64)(seconds * (double)rate);
     return (int)ma_sound_seek_to_pcm_frame(&p->sound, frame);
 }
 
@@ -166,20 +145,22 @@ int ma_player_set_volume(MaPlayer* p, float volume) {
 
 double ma_player_get_cursor(MaPlayer* p) {
     if (!p || !p->sound_loaded) return 0.0;
-    if (p->using_buf && p->pcm_rate > 0) {
-        ma_uint64 frames = 0;
-        ma_sound_get_cursor_in_pcm_frames(&p->sound, &frames);
-        return (double)frames / (double)p->pcm_rate;
+    ma_uint64 frames = 0;
+    ma_sound_get_cursor_in_pcm_frames(&p->sound, &frames);
+    
+    ma_uint32 rate = ma_engine_get_sample_rate(&p->engine);
+    if (p->using_ffmpeg) {
+        rate = p->ffmpeg_ds.ffmpeg->target_rate;
     }
-    float v = 0.0f;
-    ma_sound_get_cursor_in_seconds(&p->sound, &v);
-    return (double)v;
+    return (double)frames / (double)rate;
 }
 
 double ma_player_get_length(MaPlayer* p) {
     if (!p || !p->sound_loaded) return 0.0;
-    if (p->using_buf && p->pcm_rate > 0)
-        return (double)p->pcm_frames / (double)p->pcm_rate;
+    ma_uint32 rate = ma_engine_get_sample_rate(&p->engine);
+    if (p->using_ffmpeg) {
+        return (double)p->ffmpeg_ds.ffmpeg->total_frames / (double)p->ffmpeg_ds.ffmpeg->target_rate;
+    }
     float v = 0.0f;
     ma_sound_get_length_in_seconds(&p->sound, &v);
     return (double)v;
