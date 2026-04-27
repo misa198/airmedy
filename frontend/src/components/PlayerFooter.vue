@@ -72,13 +72,14 @@ async function onSeekEnd() {
 
 <template>
   <div
-    class="h-[72px] bg-background/80 backdrop-blur-2xl border-t border-foreground/[0.06] flex items-center justify-between px-6 gap-6">
+    class="h-[72px] bg-background/80 backdrop-blur-2xl border-t border-foreground/[0.06] flex items-center justify-between px-6 gap-6 select-none">
     <!-- Track Info -->
     <div class="flex items-center justify-start gap-3 w-1/4 min-w-[200px]">
-      <div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 shadow-lg ring-1 ring-foreground/10 cursor-pointer transition-transform hover:scale-105 active:scale-95"
-        @click="store.openTrackInfo(store.currentTrack)"
-        @contextmenu.prevent="openArtworkContextMenu">
-        <LazyImg v-if="store.artworkUrlSm" :src="store.artworkUrlSm" :alt="trackTitle" class="w-full h-full object-cover" />
+      <div
+        class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 shadow-lg ring-1 ring-foreground/10 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+        @click="store.openTrackInfo(store.currentTrack)" @contextmenu.prevent="openArtworkContextMenu">
+        <LazyImg v-if="store.artworkUrlSm" :src="store.artworkUrlSm" :alt="trackTitle"
+          class="w-full h-full object-cover" />
         <div v-else class="w-full h-full bg-foreground/5 flex items-center justify-center">
           <Music class="w-5 h-5 text-foreground opacity-40" />
         </div>
@@ -93,11 +94,12 @@ async function onSeekEnd() {
     <div class="flex-1 flex flex-col items-center gap-2 max-w-[600px]">
       <div class="flex items-center gap-5">
         <button class="transition-opacity"
-          :class="store.shuffle ? 'text-primary opacity-100' : 'text-foreground opacity-60 hover:text-foreground opacity-90'"
+          :class="store.shuffle ? 'text-primary opacity-100' : 'text-foreground opacity-60 hover:text-foreground opacity-50'"
           @click="store.setShuffle(!store.shuffle)" :title="t('player.shuffle')">
           <Shuffle class="w-4 h-4" />
         </button>
-        <button class="text-foreground opacity-90 hover:text-foreground transition-colors" @click="store.previous()" :title="t('player.previous')">
+        <button class="text-foreground opacity-50 hover:text-foreground transition-colors" @click="store.previous()"
+          :title="t('player.previous')">
           <SkipBack class="w-5 h-5 fill-current" />
         </button>
         <button
@@ -106,10 +108,12 @@ async function onSeekEnd() {
           <Pause v-if="store.isPlaying" class="w-4 h-4 fill-current text-primary-foreground" />
           <Play v-else class="w-4 h-4 fill-current text-primary-foreground ml-0.5" />
         </button>
-        <button class="text-foreground opacity-90 hover:text-foreground transition-colors" @click="store.next()" :title="t('player.next')">
+        <button class="text-foreground opacity-50 hover:text-foreground transition-colors" @click="store.next()"
+          :title="t('player.next')">
           <SkipForward class="w-5 h-5 fill-current" />
         </button>
-        <button class="transition-colors" :class="repeatActive ? 'text-primary' : 'text-foreground opacity-60 hover:text-foreground opacity-90'"
+        <button class="transition-colors"
+          :class="repeatActive ? 'text-primary' : 'text-foreground opacity-60 hover:text-foreground opacity-50'"
           @click="store.cycleRepeat()" :title="t('player.repeat')">
           <component :is="repeatIcon" class="w-4 h-4" />
         </button>
@@ -132,7 +136,7 @@ async function onSeekEnd() {
     <!-- Volume & Options -->
     <div class="flex items-center justify-end gap-4 w-1/4 min-w-[200px]">
       <div class="flex items-center gap-2 w-28">
-        <button class="text-foreground opacity-60 hover:text-foreground opacity-90 transition-colors flex-shrink-0"
+        <button class="text-foreground opacity-60 hover:text-foreground opacity-50 transition-colors flex-shrink-0"
           @click="store.setMuted(!store.muted)" :title="store.muted ? t('player.unmute') : t('player.mute')">
           <VolumeX v-if="store.muted" class="w-4 h-4" />
           <Volume2 v-else class="w-4 h-4" />
@@ -141,17 +145,21 @@ async function onSeekEnd() {
           @update:model-value="(v) => store.setVolume(v)" />
       </div>
       <button class="transition-colors"
-        :class="store.isLyricsOpen ? 'text-primary' : 'text-foreground opacity-60 hover:text-foreground opacity-90'" @click="store.toggleLyrics()" :title="t('player.lyrics')">
+        :class="store.isLyricsOpen ? 'text-primary' : 'text-foreground opacity-60 hover:text-foreground opacity-50'"
+        @click="store.toggleLyrics()" :title="t('player.lyrics')">
         <Mic2 class="w-4 h-4" />
       </button>
       <button class="transition-colors"
-        :class="store.isQueueOpen ? 'text-primary' : 'text-foreground opacity-60 hover:text-foreground opacity-90'" @click="store.toggleQueue()" :title="t('player.queue')">
+        :class="store.isQueueOpen ? 'text-primary' : 'text-foreground opacity-60 hover:text-foreground opacity-50'"
+        @click="store.toggleQueue()" :title="t('player.queue')">
         <ListMusic class="w-4 h-4" />
       </button>
-      <button class="text-foreground opacity-60 hover:text-foreground opacity-90 transition-colors" @click="WindowService.ToggleMiniPlayer()" :title="t('player.mini_player')">
+      <button class="text-foreground opacity-60 hover:text-foreground opacity-50 transition-colors"
+        @click="WindowService.ToggleMiniPlayer()" :title="t('player.mini_player')">
         <PictureInPicture2 class="w-4 h-4" />
       </button>
-      <button class="text-foreground opacity-60 hover:text-foreground opacity-90 transition-colors" @click="store.playerMode = 'fullscreen'" :title="t('player.fullscreen')">
+      <button class="text-foreground opacity-60 hover:text-foreground opacity-50 transition-colors"
+        @click="store.playerMode = 'fullscreen'" :title="t('player.fullscreen')">
         <Maximize2 class="w-4 h-4" />
       </button>
     </div>

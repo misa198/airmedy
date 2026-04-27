@@ -99,10 +99,10 @@ watch(activeIndex, (newIndex) => {
           <div v-for="(line, index) in syncedLines" :key="index" ref="lineRefs"
             class="transition-all duration-150 cursor-pointer select-none leading-snug py-1 origin-left" :class="[
               index === activeIndex
-                ? 'text-foreground opacity-100'
+                ? 'text-foreground'
                 : index < activeIndex
-                  ? 'text-foreground opacity-60 font-bold opacity-60 hover:text-foreground opacity-70'
-                  : 'text-foreground opacity-60 font-bold opacity-40 hover:text-foreground opacity-60',
+                  ? 'text-foreground/40 font-bold opacity-60 hover:text-foreground/50'
+                  : 'text-foreground/40 font-bold opacity-40 hover:text-foreground/40',
             ]" @click="store.seek(line.time)">
             <div class="font-bold">{{ line.text }}</div>
             <div v-if="line.secondary" class="text-[0.9em] opacity-50 mt-0.5">{{ line.secondary }}</div>
@@ -114,8 +114,8 @@ watch(activeIndex, (newIndex) => {
       <div v-else class="h-full overflow-y-auto px-4 py-6 scrollbar-hide">
         <div class="space-y-3.5">
           <div v-for="(line, index) in plainLines" :key="index" class="leading-relaxed select-text">
-            <p class="text-sm text-foreground opacity-90">{{ line.primary }}</p>
-            <p v-if="line.secondary" class="text-xs text-foreground opacity-60 mt-0.5">{{ line.secondary }}</p>
+            <p class="text-sm text-foreground/80">{{ line.primary }}</p>
+            <p v-if="line.secondary" class="text-xs text-foreground/40 mt-0.5">{{ line.secondary }}</p>
           </div>
         </div>
       </div>
