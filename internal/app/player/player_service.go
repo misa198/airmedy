@@ -176,6 +176,11 @@ func (s *PlayerService) Next() error {
 
 // Previous plays the previous track in the queue.
 func (s *PlayerService) Previous() error {
+	status := s.player.GetStatus()
+	if status.Position > 3 {
+		return s.Seek(0)
+	}
+
 	track := s.queue.Previous()
 	if track == nil {
 		return s.Stop()

@@ -34,7 +34,21 @@ func (s *QueueService) SetQueue(tracks []*domain.TrackDTO, startIndex int) {
 
 	s.originalList = tracks
 	if s.shuffle {
-		s.rebuildShuffle(startIndex, false)
+		var currentID string
+		if startIndex >= 0 && startIndex < len(tracks) {
+			currentID = tracks[startIndex].ID
+		}
+
+		s.rebuildShuffle(-1, false)
+
+		if currentID != "" {
+			for i, t := range s.shuffledList {
+				if t.ID == currentID {
+					s.currentIndex = i
+					break
+				}
+			}
+		}
 	} else {
 		s.currentIndex = startIndex
 	}
@@ -288,19 +302,37 @@ func (s *QueueService) SetShuffle(enabled bool) {
 		return
 	}
 
-	s.shuffle = enabled
-	if s.shuffle {
-		s.rebuildShuffle(s.currentIndex, true)
-	} else {
-		// Restore original index
-		if s.currentIndex >= 0 && s.currentIndex < len(s.shuffledList) {
-			currentTrack := s.shuffledList[s.currentIndex]
-			for i, t := range s.originalList {
-				if t.ID == currentTrack.ID {
+	if enabled {
+		// Enabling shuffle: build shuffled list and find current track's new index
+		var currentID string
+		if s.currentIndex >= 0 && s.currentIndex < len(s.originalList) {
+			currentID = s.originalList[s.currentIndex].ID
+		}
+
+		s.shuffle = true
+		s.rebuildShuffle(-1, false)
+
+		if currentID != "" {
+			for i, t := range s.shuffledList {
+				if t.ID == currentID {
 					s.currentIndex = i
 					break
 				}
 			}
+		}
+	} else {
+		// Disabling shuffle: restore original index
+		if s.currentIndex >= 0 && s.currentIndex < len(s.shuffledList) {
+			currentID := s.shuffledList[s.currentIndex].ID
+			s.shuffle = false
+			for i, t := range s.originalList {
+				if t.ID == currentID {
+					s.currentIndex = i
+					break
+				}
+			}
+		} else {
+			s.shuffle = false
 		}
 	}
 }
@@ -424,32 +456,15 @@ func (s *QueueService) rebuildShuffle(keepIndex int, pickRandom bool) {
 		return
 	}
 
-	// Create a copy of the original list to shuffle
 	shuffled := make([]*domain.TrackDTO, len(s.originalList))
 	copy(shuffled, s.originalList)
 
-	var currentTrack *domain.TrackDTO
-	if pickRandom {
-		idx := s.rng.Intn(len(shuffled))
-		currentTrack = shuffled[idx]
-		shuffled = append(shuffled[:idx], shuffled[idx+1:]...)
-	} else if keepIndex >= 0 && keepIndex < len(s.originalList) {
-		currentTrack = s.originalList[keepIndex]
-		// Remove it from the list to shuffle
-		shuffled = append(shuffled[:keepIndex], shuffled[keepIndex+1:]...)
-	}
-
-	// Fisher-Yates shuffle
 	s.rng.Shuffle(len(shuffled), func(i, j int) {
 		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
 	})
 
-	if currentTrack != nil {
-		// Put the current track at the beginning
-		s.shuffledList = append([]*domain.TrackDTO{currentTrack}, shuffled...)
-		s.currentIndex = 0
-	} else {
-		s.shuffledList = shuffled
+	s.shuffledList = shuffled
+	if s.currentIndex < 0 {
 		s.currentIndex = 0
 	}
 }

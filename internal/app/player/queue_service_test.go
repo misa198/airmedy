@@ -72,9 +72,25 @@ func TestInsertAfterCurrent_ShuffleInsertsAtCurrentPlusOne(t *testing.T) {
 	if len(list) != lenBefore+1 {
 		t.Fatalf("expected length %d, got %d", lenBefore+1, len(list))
 	}
-	// The inserted track must be at index 1 (after current at 0)
-	if list[1].ID != "X" {
-		t.Fatalf("expected X at index 1, got %s", list[1].ID)
+
+	// Find where "A" (the track at original index 0) ended up
+	aIdx := -1
+	for i, tr := range list {
+		if tr.ID == "A" {
+			aIdx = i
+			break
+		}
+	}
+	if aIdx == -1 {
+		t.Fatal("A not found in shuffled list")
+	}
+
+	// The inserted track must be after A
+	if aIdx == len(list)-1 {
+		t.Fatal("A is at end of list, X should have been inserted after it")
+	}
+	if list[aIdx+1].ID != "X" {
+		t.Fatalf("expected X after A (index %d), got %s at index %d", aIdx, list[aIdx+1].ID, aIdx+1)
 	}
 }
 

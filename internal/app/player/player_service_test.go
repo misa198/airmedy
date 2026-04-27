@@ -241,3 +241,43 @@ func (n *fakeNowPlaying) UpdateNowPlaying(_ *domain.TrackDTO, _ float64, _ strin
 	}
 }
 func (n *fakeNowPlaying) ClearNowPlaying() {}
+
+func TestPrevious_Threshold(t *testing.T) {
+	fp := &fakePlayer{status: domain.PlayerStatus{Volume: 1.0}}
+	s, _ := newTestService(t, fp)
+
+	t1 := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 300}}
+	t2 := &domain.TrackDTO{Track: domain.Track{ID: "t2", Duration: 300}}
+	s.queue.SetQueue([]*domain.TrackDTO{t1, t2}, 1) // start at t2
+
+	_ = s.loadAndPlay(t2)
+
+	// Case 1: position <= 3s -> should go to t1
+	fp.mu.Lock()
+	fp.status.Position = 2.0
+	fp.mu.Unlock()
+
+	if err := s.Previous(); err != nil {
+		t.Fatalf("Previous failed: %v", err)
+	}
+
+	if s.GetCurrentTrack().ID != "t1" {
+		t.Errorf("expected track t1, got %s", s.GetCurrentTrack().ID)
+	}
+
+	// Case 2: position > 3s -> should restart t1
+	fp.mu.Lock()
+	fp.status.Position = 5.0
+	fp.mu.Unlock()
+
+	if err := s.Previous(); err != nil {
+		t.Fatalf("Previous failed: %v", err)
+	}
+
+	if s.GetCurrentTrack().ID != "t1" {
+		t.Errorf("expected track t1, got %s", s.GetCurrentTrack().ID)
+	}
+	if fp.GetStatus().Position != 0 {
+		t.Errorf("expected position 0, got %f", fp.GetStatus().Position)
+	}
+}
