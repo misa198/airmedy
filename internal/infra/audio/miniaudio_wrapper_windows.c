@@ -60,6 +60,7 @@ MaPlayer* ma_player_create(void) {
         }
         p->eq_gains[i] = 0.0f;
     }
+    p->eq_enabled = 0;
 
     return p;
 }

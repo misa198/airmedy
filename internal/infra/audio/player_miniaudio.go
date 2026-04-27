@@ -32,7 +32,10 @@ func goMiniAudioTrackEnd(_ unsafe.Pointer) {
 	cb := miniAudioEndCallback
 	miniAudioEndMu.Unlock()
 	if cb != nil {
-		cb()
+		// MUST run in a goroutine. Miniaudio documentation warns not to
+		// uninitialize or change sound state from within the callback thread.
+		// Since HandleTrackEnd calls Load() -> ma_sound_uninit(), it would deadlock.
+		go cb()
 	}
 }
 
