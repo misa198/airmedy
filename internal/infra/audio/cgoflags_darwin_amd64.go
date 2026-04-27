@@ -5,7 +5,7 @@ package audio
 /*
 #cgo CFLAGS: -I${SRCDIR}/ffmpeg_libs/include
 #cgo LDFLAGS: -L${SRCDIR}/ffmpeg_libs/darwin/amd64
-#cgo LDFLAGS: -lavcodec -lavformat -lavutil -lswresample
+#cgo LDFLAGS: -lavformat -lavcodec -lswresample -lavutil
 #cgo LDFLAGS: -lz -lbz2 -liconv -llzma
 #cgo LDFLAGS: -framework CoreFoundation -framework Security
 #cgo LDFLAGS: -framework VideoToolbox -framework AudioToolbox -framework CoreMedia
