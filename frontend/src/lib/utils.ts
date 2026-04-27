@@ -29,6 +29,16 @@ export function buildArtworkUrl(
   return `/artwork/${key}?size=${size}`
 }
 
+export function getTrackDisplayTitle(track: { title?: string; path?: string }): string {
+  if (track.title) return track.title
+  if (track.path) {
+    const parts = track.path.replace(/\\/g, '/').split('/')
+    const filename = parts[parts.length - 1]
+    return filename.replace(/\.[^.]+$/, '') || filename
+  }
+  return ''
+}
+
 export function formatTotalDuration(totalSeconds: number, t: (key: string) => string): string {
   const hours = Math.floor(totalSeconds / 3600)
   const mins = Math.floor((totalSeconds % 3600) / 60)

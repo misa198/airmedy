@@ -19,7 +19,7 @@ import {
 import LazyImg from '@/components/LazyImg.vue'
 import { usePlayerStore } from '../stores/player'
 import { RepeatMode } from '../../bindings/airmedy/internal/domain/models'
-import { formatTime } from '../lib/utils'
+import { formatTime, getTrackDisplayTitle } from '../lib/utils'
 import { Slider } from '@/components/ui/slider'
 import * as WindowService from '../../bindings/airmedy/internal/infra/wails/windowservice'
 import { useI18n } from 'vue-i18n'
@@ -43,7 +43,7 @@ const displayPosition = computed(() =>
   isSeeking.value ? (seekValue.value / 100) * store.duration : store.position,
 )
 
-const trackTitle = computed(() => store.currentTrack?.title ?? t('player.not_playing'))
+const trackTitle = computed(() => store.currentTrack ? (getTrackDisplayTitle(store.currentTrack) || t('player.not_playing')) : t('player.not_playing'))
 const trackArtist = computed(() => {
   const artists = store.currentTrack?.artists
   if (!artists || artists.length === 0) return t('player.select_track')

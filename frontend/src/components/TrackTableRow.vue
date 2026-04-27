@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Heart, Music, Play, MoreVertical } from 'lucide-vue-next'
 import type { Artist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
-import { formatTime, buildArtworkUrl } from '../lib/utils'
+import { formatTime, buildArtworkUrl, getTrackDisplayTitle } from '../lib/utils'
 import LazyImg from '@/components/LazyImg.vue'
 import { useFavoritesStore } from '../stores/favorites'
 import { usePlayerStore } from '../stores/player'
@@ -97,7 +97,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
           </div>
         </div>
         <span class="truncate" :class="{ 'text-primary': isCurrentTrack(track.id) }">
-          {{ track.title || $t('library.unknown_title') }}
+          {{ getTrackDisplayTitle(track) || $t('library.unknown_title') }}
         </span>
       </div>
 

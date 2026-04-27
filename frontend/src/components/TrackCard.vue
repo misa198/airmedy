@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Music, Play, User, Disc } from 'lucide-vue-next'
 import type { TrackDTO, Artist } from '../../bindings/airmedy/internal/domain/models'
-import { buildArtworkUrl } from '@/lib/utils'
+import { buildArtworkUrl, getTrackDisplayTitle } from '@/lib/utils'
 import LazyImg from '@/components/LazyImg.vue'
 
 const props = defineProps<{
@@ -49,7 +49,7 @@ const artistNames = (artists: (Artist | null)[] | undefined) => {
     </div>
 
     <div class="space-y-1 px-1">
-      <h3 class="font-medium text-sm truncate group-hover:text-foreground transition-colors">{{ track.title || $t('library.unknown_title') }}</h3>
+      <h3 class="font-medium text-sm truncate group-hover:text-foreground transition-colors">{{ getTrackDisplayTitle(track) || $t('library.unknown_title') }}</h3>
       <div class="text-xs text-foreground/40 truncate flex flex-col gap-0.5">
         <div class="flex items-center gap-1 truncate">
           <User class="w-3 h-3 flex-shrink-0" />

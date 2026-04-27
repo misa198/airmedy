@@ -10,6 +10,7 @@ import { useDeviceStore } from '../stores/device'
 import LivingArtworkBackground from './LivingArtworkBackground.vue'
 import TabSwitcher from './ui/TabSwitcher.vue'
 import { useI18n } from 'vue-i18n'
+import { getTrackDisplayTitle } from '@/lib/utils'
 
 import PlayerArtwork from './player/PlayerArtwork.vue'
 import PlayerTrackInfo from './player/PlayerTrackInfo.vue'
@@ -61,7 +62,7 @@ const tabOptions = computed(() => [
   { value: 'queue', label: t('player.up_next'), icon: ListMusic },
 ])
 
-const trackTitle = computed(() => store.currentTrack?.title ?? t('player.not_playing'))
+const trackTitle = computed(() => store.currentTrack ? (getTrackDisplayTitle(store.currentTrack) || t('player.not_playing')) : t('player.not_playing'))
 const trackArtist = computed(() =>
   store.currentTrack?.artists?.map((a) => a?.name).filter(Boolean).join(', ') ?? '',
 )

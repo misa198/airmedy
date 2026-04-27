@@ -4,7 +4,7 @@ import { usePlayerStore } from '@/stores/player'
 import { Music, AudioLines, X } from 'lucide-vue-next'
 import LazyImg from '@/components/LazyImg.vue'
 import { useI18n } from 'vue-i18n'
-import { formatTime, buildArtworkUrl } from '@/lib/utils'
+import { formatTime, buildArtworkUrl, getTrackDisplayTitle } from '@/lib/utils'
 
 const { t } = useI18n()
 const store = usePlayerStore()
@@ -82,8 +82,7 @@ function formatFileSize(bytes: number) {
 
         <!-- Basic Info -->
         <div class="text-center mb-8 w-full px-4">
-          <h1 class="text-lg font-bold mb-1 tracking-tight leading-tight">{{ track.title || t('library.unknown_title')
-            }}</h1>
+          <h1 class="text-lg font-bold mb-1 tracking-tight leading-tight">{{ getTrackDisplayTitle(track) || t('library.unknown_title') }}</h1>
           <p class="text-xs text-foreground/50 font-medium mb-3">
             {{ track.raw_artist_names || t('library.unknown_artist') }}
             <span v-if="track.album?.title" class="mx-1 opacity-30">•</span>

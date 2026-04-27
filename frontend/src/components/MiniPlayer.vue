@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Play, Pause, SkipForward, Maximize2, Music } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
-import { formatTime } from '../lib/utils'
+import { formatTime, getTrackDisplayTitle } from '../lib/utils'
 import MarqueeText from './MarqueeText.vue'
 import LazyImg from '@/components/LazyImg.vue'
 
@@ -25,7 +25,7 @@ const store = usePlayerStore()
       </div>
       <div class="min-w-0 flex-1">
         <MarqueeText
-          :text="store.currentTrack?.title ?? 'Not Playing'"
+          :text="store.currentTrack ? (getTrackDisplayTitle(store.currentTrack) || 'Not Playing') : 'Not Playing'"
           content-class="text-sm font-medium leading-tight"
         />
         <MarqueeText

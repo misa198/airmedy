@@ -10,7 +10,7 @@ import LazyImg from '@/components/LazyImg.vue'
 import { Window } from '@wailsio/runtime'
 import { usePlayerStore } from '@/stores/player'
 import { RepeatMode } from '../../bindings/airmedy/internal/domain/models'
-import { formatTime, hexToRgba } from '@/lib/utils'
+import { formatTime, hexToRgba, getTrackDisplayTitle } from '@/lib/utils'
 import { Slider } from '@/components/ui/slider'
 import MarqueeText from '@/components/MarqueeText.vue'
 import * as WindowService from '../../bindings/airmedy/internal/infra/wails/windowservice'
@@ -31,7 +31,7 @@ let volumeHideTimer: ReturnType<typeof setTimeout> | null = null
 const displayPosition = computed(() =>
   isSeeking.value ? (seekValue.value / 100) * store.duration : store.position,
 )
-const trackTitle = computed(() => store.currentTrack?.title ?? 'Not Playing')
+const trackTitle = computed(() => store.currentTrack ? (getTrackDisplayTitle(store.currentTrack) || 'Not Playing') : 'Not Playing')
 const trackArtist = computed(() =>
   store.currentTrack?.artists
     ?.filter((a): a is NonNullable<typeof a> => a !== null)

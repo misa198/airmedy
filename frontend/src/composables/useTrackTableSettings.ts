@@ -1,5 +1,6 @@
 import { ref, watch } from 'vue'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
+import { getTrackDisplayTitle } from '@/lib/utils'
 
 export type ColumnKey =
   | 'index'
@@ -49,7 +50,7 @@ export const COLUMNS: ColumnDef[] = [
     minWidthPx: 180,
     alwaysVisible: true,
     sortable: true,
-    sortFn: (a, b) => strCmp(a.title || '', b.title || ''),
+    sortFn: (a, b) => strCmp(getTrackDisplayTitle(a), getTrackDisplayTitle(b)),
     draggable: true,
   },
   {

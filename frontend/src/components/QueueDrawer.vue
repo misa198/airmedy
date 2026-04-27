@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue'
 import { Music, X, ListMusic, MoreVertical } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
-import { formatTime, buildArtworkUrl } from '../lib/utils'
+import { formatTime, buildArtworkUrl, getTrackDisplayTitle } from '../lib/utils'
 import LazyImg from '@/components/LazyImg.vue'
 import { useI18n } from 'vue-i18n'
 import TrackContextMenu from './TrackContextMenu.vue'
@@ -94,7 +94,7 @@ watch(() => store.isQueueOpen, (open) => {
               class="text-sm font-medium truncate"
               :class="store.currentTrack?.id === item.id ? 'text-primary' : ''"
             >
-              {{ item.title || t('library.unknown_title') }}
+              {{ getTrackDisplayTitle(item) || t('library.unknown_title') }}
             </div>
             <div class="text-xs text-muted-foreground truncate">
               {{ item.artists?.map((a) => a?.name).filter(Boolean).join(', ') || item.raw_artist_names || t('library.unknown_artist') }}
