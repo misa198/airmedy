@@ -1,0 +1,177 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      os:
+        description: 'Target Operating System'
+        required: true
+        default: 'Windows-AMD64'
+        type: choice
+        options:
+          - Windows-AMD64
+          - Linux-AMD64
+          - Linux-ARM64
+          - Darwin-AMD64
+          - Darwin-ARM64
+      version:
+        description: 'Tag version (e.g., 1.0.0)'
+        required: true
+      prerelease:
+        description: 'Create as Pre-release'
+        required: true
+        type: boolean
+        default: true
+
+jobs:
+  build:
+    name: Build ${{ github.event.inputs.os }}
+    runs-on: ${{ (contains(github.event.inputs.os, 'Windows') && 'windows-latest') || (contains(github.event.inputs.os, 'Darwin') && 'macos-latest') || 'ubuntu-latest' }}
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+
+      - name: Install Linux Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev build-essential nsis nasm gcc-aarch64-linux-gnu libc6-dev-arm64-cross pkg-config
+
+      - name: Setup MSYS2
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-nasm
+            make
+            diffutils
+            pkg-config
+
+      - name: Install Darwin Dependencies
+        if: runner.os == 'Darwin'
+        run: brew install nasm
+
+      - name: Cache FFmpeg Binaries
+        id: cache-ffmpeg
+        uses: actions/cache@v4
+        with:
+          path: internal/infra/audio/ffmpeg_libs
+          key: ffmpeg-${{ runner.os }}-${{ hashFiles('scripts/build-ffmpeg-*') }}
+
+      - name: Build FFmpeg (Linux)
+        if: runner.os == 'Linux' && steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        run: bash scripts/build-ffmpeg-linux.sh
+
+      - name: Build FFmpeg (Darwin)
+        if: runner.os == 'Darwin' && steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        run: bash scripts/build-ffmpeg-darwin.sh
+
+      - name: Build FFmpeg (Windows)
+        if: runner.os == 'Windows' && steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        shell: msys2 {0}
+        run: bash scripts/build-ffmpeg-windows.sh
+
+      - name: Install Wails v3
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
+
+      - name: Update Version in Config
+        shell: bash
+        run: |
+          # Update build/config.yml
+          sed 's/version: "[^"]*"/version: "${{ github.event.inputs.version }}"/' build/config.yml > build/config.yml.tmp && mv build/config.yml.tmp build/config.yml
+          # Update build/linux/nfpm/nfpm.yaml
+          if [ -f build/linux/nfpm/nfpm.yaml ]; then
+            sed 's/version: "[^"]*"/version: "${{ github.event.inputs.version }}"/' build/linux/nfpm/nfpm.yaml > build/linux/nfpm/nfpm.yaml.tmp && mv build/linux/nfpm/nfpm.yaml.tmp build/linux/nfpm/nfpm.yaml
+          fi
+
+      - name: Build and Package
+        shell: bash
+        run: |
+          OS_INPUT="${{ github.event.inputs.os }}"
+          case $OS_INPUT in
+            "Windows-AMD64")
+              task windows:package ARCH=amd64
+              ;;
+            "Linux-AMD64")
+              task linux:package ARCH=amd64
+              ;;
+            "Linux-ARM64")
+              # Bypass Docker for cross-compilation by using native aarch64 gcc
+              export CC=aarch64-linux-gnu-gcc
+              export CGO_ENABLED=1
+              task linux:package ARCH=arm64
+              ;;
+            "Darwin-AMD64")
+              task darwin:package ARCH=amd64
+              ;;
+            "Darwin-ARM64")
+              task darwin:package ARCH=arm64
+              ;;
+          esac
+
+      - name: Prepare Artifacts
+        shell: bash
+        run: |
+          mkdir -p dist
+          OS_INPUT="${{ github.event.inputs.os }}"
+          VERSION="${{ github.event.inputs.version }}"
+          case $OS_INPUT in
+            "Windows-AMD64")
+              if [ -f bin/airmedy-amd64-installer.exe ]; then
+                cp bin/airmedy-amd64-installer.exe dist/airmedy-${VERSION}-windows-amd64.exe
+              else
+                cp bin/*installer.exe dist/ || echo "No windows installer found"
+              fi
+              ;;
+            "Linux-AMD64")
+              cp bin/airmedy_${VERSION}_amd64.deb dist/airmedy-${VERSION}-linux-amd64.deb || cp bin/*.deb dist/
+              ;;
+            "Linux-ARM64")
+              cp bin/airmedy_${VERSION}_arm64.deb dist/airmedy-${VERSION}-linux-arm64.deb || cp bin/*.deb dist/
+              ;;
+            "Darwin-AMD64"|"Darwin-ARM64")
+              cd bin
+              zip -r ../dist/airmedy-${VERSION}-darwin-${OS_INPUT#Darwin-}.zip airmedy.app
+              ;;
+          esac
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.event.inputs.version }}
+          name: Release v${{ github.event.inputs.version }}
+          draft: false
+          prerelease: ${{ github.event.inputs.prerelease }}
+          files: |
+            dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
