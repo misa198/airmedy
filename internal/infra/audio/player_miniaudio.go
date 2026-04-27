@@ -152,3 +152,21 @@ func (p *MiniAudioPlayer) OnTrackEnd(callback func()) {
 		nil,
 	)
 }
+
+func (p *MiniAudioPlayer) SetEQBand(index int, frequency, gain, bandwidth float64) error {
+	if rc := C.ma_player_set_eq_band((*C.MaPlayer)(p.ptr), C.int(index), C.float(frequency), C.float(gain), C.float(bandwidth)); rc != 0 {
+		return fmt.Errorf("ma_player_set_eq_band failed: %d", rc)
+	}
+	return nil
+}
+
+func (p *MiniAudioPlayer) SetEQEnabled(enabled bool) error {
+	e := 0
+	if enabled {
+		e = 1
+	}
+	if rc := C.ma_player_set_eq_enabled((*C.MaPlayer)(p.ptr), C.int(e)); rc != 0 {
+		return fmt.Errorf("ma_player_set_eq_enabled failed: %d", rc)
+	}
+	return nil
+}

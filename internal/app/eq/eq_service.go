@@ -44,6 +44,23 @@ func NewEQService(repo domain.EQRepository, player domain.AudioPlayer, logger *s
 }
 
 // SeedDefaults inserts the default presets if the profiles table is empty.
+func (s *EQService) ApplyActiveProfile(ctx context.Context) error {
+	p, err := s.GetActiveProfile(ctx)
+	if err != nil {
+		return err
+	}
+	if p == nil {
+		return nil
+	}
+	if s.player != nil {
+		for _, band := range p.Bands {
+			_ = s.player.SetEQBand(band.Index, band.Frequency, band.Gain, band.Bandwidth)
+		}
+		_ = s.player.SetEQEnabled(p.IsActive)
+	}
+	return nil
+}
+
 func (s *EQService) SeedDefaults(ctx context.Context) error {
 	all, err := s.repo.GetAll(ctx)
 	if err != nil {

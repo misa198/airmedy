@@ -16,7 +16,13 @@ struct MaPlayer {
     MaEndCallback         end_cb;
     void*                 end_userdata;
     ma_mutex              mu;
+
+    ma_peak_node          eq_bands[10];
+    int                   eq_enabled;
+    float                 eq_gains[10];
 };
+
+static float g_eq_frequencies[] = {32.0f, 64.0f, 125.0f, 250.0f, 500.0f, 1000.0f, 2000.0f, 4000.0f, 8000.0f, 16000.0f};
 
 static void internal_end_cb(void* userdata, ma_sound* pSound) {
     (void)pSound;
@@ -41,6 +47,20 @@ MaPlayer* ma_player_create(void) {
     if (ma_engine_init(NULL, &p->engine) != MA_SUCCESS) { free(p); return NULL; }
     ma_mutex_init(&p->mu);
     p->volume = 1.0f;
+
+    /* Initialize EQ bands in a chain: band[0] -> band[1] -> ... -> band[9] -> endpoint */
+    ma_node* last_node = ma_engine_get_endpoint(&p->engine);
+    for (int i = 9; i >= 0; i--) {
+        ma_peak_node_config config = ma_peak_node_config_init(2, ma_engine_get_sample_rate(&p->engine), 0.0, 1.0, g_eq_frequencies[i]);
+        if (ma_peak_node_init(ma_engine_get_node_graph(&p->engine), &config, NULL, &p->eq_bands[i]) != MA_SUCCESS) {
+            /* Non-fatal */
+        } else {
+            ma_node_attach_output_bus(&p->eq_bands[i], 0, last_node, 0);
+            last_node = (ma_node*)&p->eq_bands[i];
+        }
+        p->eq_gains[i] = 0.0f;
+    }
+
     return p;
 }
 
@@ -49,6 +69,9 @@ void ma_player_destroy(MaPlayer* p) {
     ma_mutex_lock(&p->mu);
     unload_locked(p);
     ma_mutex_unlock(&p->mu);
+    for (int i = 0; i < 10; i++) {
+        ma_peak_node_uninit(&p->eq_bands[i], NULL);
+    }
     ma_engine_uninit(&p->engine);
     ma_mutex_uninit(&p->mu);
     free(p);
@@ -78,9 +101,14 @@ int ma_player_load(MaPlayer* p, const char* path) {
         }
         p->using_ffmpeg = 1;
 
-        ma_sound_config config = ma_sound_config_init();
+        ma_sound_config config = ma_sound_config_init_2(&p->engine);
         config.pDataSource = &p->ffmpeg_ds;
         config.channelsOut = 2; /* Always request stereo from engine to match downmix if needed */
+        
+        /* Route to EQ if enabled, otherwise direct to endpoint */
+        if (p->eq_enabled) {
+            config.pInitialAttachment = (ma_node*)&p->eq_bands[0];
+        }
 
         sr = ma_sound_init_ex(&p->engine, &config, &p->sound);
         if (sr != MA_SUCCESS) {
@@ -177,4 +205,37 @@ void ma_player_set_end_callback(MaPlayer* p, MaEndCallback cb, void* userdata) {
     p->end_userdata = userdata;
     if (p->sound_loaded && cb)
         ma_sound_set_end_callback(&p->sound, internal_end_cb, p);
+}
+
+int ma_player_set_eq_band(MaPlayer* p, int index, float frequency, float gain, float bandwidth) {
+    if (!p) return -1;
+    if (index < 0 || index >= 10) return -1;
+    
+    p->eq_gains[index] = gain;
+    
+    ma_peak_config config;
+    config.format = ma_format_f32;
+    config.channels = 2;
+    config.sampleRate = ma_engine_get_sample_rate(&p->engine);
+    config.frequency = frequency;
+    config.q = bandwidth;
+    config.gainDB = gain;
+    
+    ma_peak_node_reinit(&config, &p->eq_bands[index]);
+    return 0;
+}
+
+int ma_player_set_eq_enabled(MaPlayer* p, int enabled) {
+    if (!p) return -1;
+    ma_mutex_lock(&p->mu);
+    p->eq_enabled = enabled;
+    if (p->sound_loaded) {
+        if (enabled) {
+            ma_node_attach_output_bus(&p->sound, 0, &p->eq_bands[0], 0);
+        } else {
+            ma_node_attach_output_bus(&p->sound, 0, ma_engine_get_endpoint(&p->engine), 0);
+        }
+    }
+    ma_mutex_unlock(&p->mu);
+    return 0;
 }

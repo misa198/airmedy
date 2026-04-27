@@ -2,7 +2,7 @@
 
 ## Summary
 
-10-band parametric equalizer with named profiles and built-in presets. EQ is applied at the audio adapter level (macOS only; not available on Windows/Linux miniaudio). Users can create, rename, delete, and switch profiles. Band gains are applied live.
+10-band parametric equalizer with named profiles and built-in presets. EQ is applied at the audio adapter level across all platforms (AVFoundation on macOS, miniaudio on Windows/Linux). Users can create, rename, delete, and switch profiles. Band gains are applied live.
 
 ## Files
 
@@ -72,12 +72,13 @@ type EQController interface {
 }
 ```
 
-Implemented by `player_darwin.go` (AVFoundation). The `PlayerService` checks if the audio adapter implements this interface before calling it. On Windows/Linux (miniaudio), EQ calls are silently ignored.
+Implemented by `player_darwin.go` (AVFoundation) and `player_miniaudio.go` (miniaudio). The `EQService` checks if the audio adapter implements this interface before calling it.
 
 ## EQService Methods
 
 ```go
 SeedDefaults(ctx) error                           // populate presets on first run
+ApplyActiveProfile(ctx) error                     // apply current active profile to player (on startup)
 GetActiveProfile(ctx) (*EQProfile, error)
 GetAllProfiles(ctx) ([]*EQProfile, error)
 ApplyProfile(ctx, id string) error                // set active + apply all bands to player
@@ -120,4 +121,4 @@ Located in Settings → Equalizer tab.
 - Profile dropdown switches active profile (`ApplyProfile()`).
 - Create / Rename / Delete profile buttons with confirmation dialogs.
 - Global enable/disable toggle.
-- Platform note: EQ slider interaction is visible on all platforms but only has audio effect on macOS.
+- Platform note: EQ interaction is live on all platforms.

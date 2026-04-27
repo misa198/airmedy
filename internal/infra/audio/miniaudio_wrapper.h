@@ -32,6 +32,10 @@ double ma_player_get_cursor(MaPlayer* p);
 double ma_player_get_length(MaPlayer* p);
 int    ma_player_is_playing(MaPlayer* p);
 
+/* EQ: index 0-9, frequency in Hz, gain in dB, bandwidth (Q) */
+int ma_player_set_eq_band(MaPlayer* p, int index, float frequency, float gain, float bandwidth);
+int ma_player_set_eq_enabled(MaPlayer* p, int enabled);
+
 /* Track-end callback — fired from MiniAudio device thread, must not block */
 void ma_player_set_end_callback(MaPlayer* p, MaEndCallback cb, void* userdata);
 

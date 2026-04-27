@@ -24,7 +24,7 @@
 - **Lyrics that follow along** — synced lyrics scroll line-by-line as the song plays. Plain-text lyrics shown when sync data isn't available.
 - **Fullscreen & miniplayer modes** — go fullscreen for an immersive listening experience, or shrink to a miniplayer that stays out of your way.
 - **Playlists** — create and manage playlists, import and export them, and browse your collection by genre, artist, or album.
-- **10-band equalizer** — tune the sound to your headphones or speakers. Runs natively on macOS hardware for zero battery impact.
+- **10-band equalizer** — tune the sound to your headphones or speakers. Runs natively on macOS (AVFoundation) and Windows/Linux (miniaudio) for optimal performance.
 - **AirPlay 2** — stream to any AirPlay speaker or Apple TV directly from Airmedy.
 - **Lock screen & media keys** — control playback from your keyboard, lock screen, or Control Center — just like a first-party app.
 - **Fast search** — find any track, album, or artist in milliseconds.

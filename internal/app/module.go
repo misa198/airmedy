@@ -80,6 +80,9 @@ var Module = fx.Module("app",
 				if err := eqSvc.SeedDefaults(ctx); err != nil {
 					slog.Error("Failed to seed EQ defaults", "error", err)
 				}
+				if err := eqSvc.ApplyActiveProfile(ctx); err != nil {
+					slog.Error("Failed to apply active EQ profile", "error", err)
+				}
 				return lib.Start(ctx)
 			},
 			OnStop: func(ctx context.Context) error {
