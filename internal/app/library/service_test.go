@@ -241,6 +241,62 @@ func TestLibraryService_SyncFolder(t *testing.T) {
 	}
 }
 
+func TestLibraryService_SyncFolder_SupportedExtensions(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "airmedy_test_exts")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	extensions := []string{
+		"mp3", "flac", "m4a", "wav", "ogg", "opus",
+		"aiff", "aif", "ape", "wv", "dsf", "dff",
+	}
+	for _, ext := range extensions {
+		path := filepath.Join(tempDir, "track."+ext)
+		if err := os.WriteFile(path, []byte("dummy"), 0644); err != nil {
+			t.Fatalf("Failed to create %s file: %v", ext, err)
+		}
+	}
+
+	// Create a file with an unsupported extension — must be ignored.
+	unsupported := filepath.Join(tempDir, "notes.txt")
+	if err := os.WriteFile(unsupported, []byte("ignored"), 0644); err != nil {
+		t.Fatalf("Failed to create unsupported file: %v", err)
+	}
+
+	trackRepo := &mockTrackRepo{tracks: make(map[string]*domain.Track)}
+	s, err := NewLibraryService(
+		trackRepo,
+		&mockAlbumRepo{},
+		&mockArtistRepo{},
+		&mockGenreRepo{},
+		&mockComposerRepo{},
+		&mockPlaylistRepo{},
+		&mockFolderRepo{},
+		&mockMetadataExtractor{},
+		&mockMetadataWriter{},
+		&mockArtworkCache{},
+		&mockSearchService{},
+		slog.Default(),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create library service: %v", err)
+	}
+	defer s.Stop(context.Background())
+
+	if err := s.SyncFolder(context.Background(), tempDir); err != nil {
+		t.Fatalf("SyncFolder failed: %v", err)
+	}
+
+	if len(trackRepo.tracks) != len(extensions) {
+		t.Errorf("Expected %d tracks (one per extension), got %d", len(extensions), len(trackRepo.tracks))
+	}
+	if _, found := trackRepo.tracks[unsupported]; found {
+		t.Error("Unsupported .txt file was imported — should have been ignored")
+	}
+}
+
 func TestLibraryService_AddWatchedFolder_CoveringExisting(t *testing.T) {
 	trackRepo := &mockTrackRepo{tracks: make(map[string]*domain.Track)}
 	folderRepo := &mockFolderRepo{
