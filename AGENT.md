@@ -1,127 +1,239 @@
 # Airmedy Project Mandates
 
-This document defines the foundational mandates and technical standards for the Airmedy music player project. All AI agent interactions must adhere to these guidelines.
+## Tech Stack
 
-## Technical Stack
+| Layer | Technology |
+|---|---|
+| Desktop framework | Wails v3 (Go + Vue 3) |
+| DI | Uber FX |
+| Frontend state | Pinia 3 |
+| i18n | vue-i18n |
+| UI components | Radix Vue, TailwindCSS v4 |
+| Database | SQLite (sqlx + golang-migrate) |
+| Search | Bleve v2 |
+| File watching | fsnotify |
+| Audio (macOS) | AVFoundation (cgo) |
+| Audio (Win/Linux) | miniaudio (C) |
+| Metadata | TagLib + FFmpeg fallback |
+| Logging | zap + lumberjack |
 
-- **Framework:** Wails v3 (Go backend, Web frontend)
-- **Dependency Injection:** uber-go/fx
-- **Frontend:** Vue.js 3 (Composition API), Pinia (State Management), Vue I18n (Localization)
-- **UI Components:** ShadCN-vue, Tailwind CSS
-- **Database:** SQLite (Relational data & Lyrics storage)
-- **Search:** Bleve (Embedded Go search engine)
-- **File Watching:** fsnotify (Real-time library updates)
+---
 
-## Core Guidelines
+## 1. Performance
 
-### 1. Performance & Scalability
+- Track lists/grids MUST use `vue-virtual-scroller` (56px row height).
+- Heavy tasks (metadata extraction, directory scan, search indexing) MUST run in goroutines with `context.Context` cancellation.
+- SQLite: use transactions for bulk writes; maintain appropriate indexes.
 
-- **Virtualization:** All lists and grids MUST use virtual scrolling (e.g., `vue-virtual-scroller`) to handle libraries with 10,000+ tracks without UI lag.
-- **Concurrency:** Use Go's goroutines for heavy tasks like metadata extraction, directory scanning, and search indexing to keep the UI responsive.
-- **Database Optimization:** Use appropriate indexing in SQLite and Bleve to ensure sub-millisecond query times for common operations.
+---
 
-### 2. UI Design System
+## 2. UI Design System
 
-#### Token Usage
+### Glass-Morphism Rules
 
-The project uses a **custom glass-morphism dark theme**. Only use tokens defined in `frontend/tailwind.config.js`. Never invent ShadCN-standard tokens that are not in the config.
+- Surfaces: `background: var(--bg-glass); backdrop-filter: blur(30px)`.
+- Borders: `1px solid var(--border-glass)`. Never plain `border` without explicit opacity.
+- Row hover: `hover:bg-white/[0.04]`. Never `hover:bg-accent/50`.
+- Button inactive/active: opacity variation (`text-white/40 → text-white/70`), not color switch.
+- Play button: white circle + black icon (`bg-white text-black`).
+- Secondary/metadata text: `text-white/40` or `text-white/30`. Never `text-muted-foreground` on dark translucent backgrounds.
+- Cards: `border-radius: 12px`, hover `scale(1.02)` + border brightness, shadow `0 10px 15px -3px rgba(0,0,0,0.4)`.
+- Icons: **Lucide Vue only**. No Phosphor or others.
+- Progress bars: 4px, expands 6px on hover, white thumb.
+- Transitions: `all 0.3s cubic-bezier(0.4, 0, 0.2, 1)`. Theme color shifts: `1.5s ease-in-out`.
 
-Defined tokens: `background`, `foreground`, `glass`, `glass-elevated`, `border-glass`, `border`, `primary`, `card`, `accent`, `muted`, `sidebar.*`, `dynamic.*`
+### TailwindCSS v4
 
-#### Apple-Style Design Principles
+- Tokens defined via `@theme` directive in global CSS — **not** `tailwind.config.js extend.colors`.
+- CSS custom properties are the primary theming mechanism.
+- New design tokens go under `@theme` only.
 
-- **Borders**: Use `border-white/[0.06]` for separators, `ring-1 ring-white/8` for card outlines. Never use a plain `border` class without an explicit low-opacity color.
-- **Backgrounds**: Player bars and overlays use `bg-background/80 backdrop-blur-2xl`. Cards and surfaces use `bg-card` (`#1A1A1A`).
-- **Row hover states**: `hover:bg-white/[0.04]` — never use `hover:bg-accent/50` on list rows.
-- **Button resting states**: Use opacity variation (`text-white/40 → text-white/70`) rather than color switches for inactive/active toggle states.
-- **Play button (footer/mini)**: White circle with black icon (`bg-white`, icon `text-black`). Play button in full-screen: white circle, larger.
-- **Typography**: Secondary / metadata text uses `text-white/40` or `text-white/30`. Never use `text-muted-foreground` on elements that are overlaid on a dark translucent background — prefer explicit opacity variants.
+### Mandatory CSS Variables
 
-#### ShadCN Component Rules
+| Variable | Dark value | Purpose |
+|---|---|---|
+| `--bg-main` | `#0A0A0A` | Page background |
+| `--bg-glass` | `rgba(25,25,25,0.6)` | Glass surfaces |
+| `--border-glass` | `rgba(255,255,255,0.1)` | Glass borders |
+| `--primary` | `#E11D48` | Primary action |
+| `--dynamic-primary` | extracted vibrant | Per-track, runtime |
+| `--dynamic-surface` | extracted dominant 10–20% opacity | Per-track, runtime |
+| `--dynamic-glow` | extracted vibrant 40% opacity | Per-track, runtime |
 
-- **Sliders / progress bars**: Always use `@/components/ui/slider/Slider.vue`. Never use `<input type="range">` directly in templates.
-- **Text inputs**: Always use `@/components/ui/input/Input.vue`. Never use raw `<input type="text">` in templates.
-- New ShadCN components go in `frontend/src/components/ui/<name>/`.
+### Layout Constraints
 
-#### Package Manager
+- Sidebar: `240px` width, `30px` blur.
+- Player bar: `80px` height, `30px` blur, `1px solid var(--border-glass)` top border, fixed bottom.
 
-Use **pnpm** for all commands (`pnpm build`, `pnpm test`, `pnpm dev`). Never use npm.
+### Typography Scale
 
-### 2.1 Internationalization (i18n)
+- H1 Hero: 32px Bold, tracking -0.02em
+- H2 Section: 20px Semibold
+- Body: 14px Medium
+- Metadata: 12px Regular, 60% opacity
 
-- **Frontend Localization:** Use `vue-i18n`. All user-facing strings MUST be localized via `frontend/src/locales/en.json`.
-- **No Hardcoding:** Never hardcode strings in templates or scripts. Use `$t()` or `t()` from `useI18n()`.
-- **No Inline Fallbacks:** Localized keys must exist in the locale files; do not provide inline fallback strings in the code.
-- **Workflow:** Add keys to `en.json` first, then use them in components.
+### ShadCN Component Rules
 
-### 2.5 Frontend Component Architecture
+- Sliders/progress: `@/components/ui/slider/Slider.vue` — never `<input type="range">`.
+- Text inputs: `@/components/ui/input/Input.vue` — never raw `<input type="text">`.
+- New ShadCN components → `frontend/src/components/ui/<name>/`.
 
-#### Component Classification
+### UI Implementation Checklist
 
-- **UI Primitives (`frontend/src/components/ui/`)**: Low-level, generic, stateless components (buttons, inputs, sliders). They MUST NOT import from `stores/` or `bindings/`. They are strictly for layout, styling, and basic interactivity.
-- **Feature Components (`frontend/src/components/`)**: Domain-aware, application-specific components (e.g., `AlbumCard.vue`, `TrackTable.vue`, `MiniPlayer.vue`). They MAY import from `stores/` and `bindings/` and are designed to be reused across multiple views.
-- **Views/Pages (`frontend/src/views/`)**: Top-level route-level components. They orchestrate feature components and handle page-specific fetching and logic.
+- [ ] Glass blur or subtle border for depth?
+- [ ] `--dynamic-*` colors verified for WCAG contrast?
+- [ ] All interactions smooth — no abrupt state changes?
+- [ ] Icons are Lucide Vue only?
+- [ ] Cards scale 2% on hover with brighter border?
+- [ ] New tokens via `@theme` directive, not config `extend`?
 
-#### Separation and Reusability
+### Package Manager
 
-- **The Rule of Three**: If a UI pattern or piece of logic is used in more than two places, it MUST be extracted into a reusable component or composable.
-- **Composition over Props**: Favor `<slot />` and component composition over adding an excessive number of props to a single component.
-- **Single Responsibility**: Components should do one thing well. If a component's `<template>` or `<script>` grows beyond 300 lines, it should be split into smaller, more focused sub-components.
-- **Logic Extraction**: Shared logic (formatting, fallbacks) should reside in `frontend/src/lib/utils.ts` or in a dedicated composable within `frontend/src/composables/`.
+**pnpm** only. Never npm or yarn.
 
-#### Type Safety & Testing
+---
 
-- **TypeScript**: All components MUST use `<script setup lang="ts">`. Props and Emits MUST be explicitly typed using `defineProps<{ ... }>()` and `defineEmits<{ ... }>()`.
-- **Unit Testing**: Every non-trivial feature component MUST have a corresponding `.spec.ts` file in the same directory using Vitest and `@vue/test-utils`.
-- **Validation**: A component is not complete until it has been tested for accessibility and responsiveness.
+## 2.1 Internationalization
 
-### 3. Architecture & Patterns
+- **12 locales:** `de en es fr it ja ko pt ru th vi zh` — all in `frontend/src/locales/`.
+- Never hardcode strings. Use `$t()` in templates, `t()` from `useI18n()` in scripts.
+- Never write `t('key', 'Fallback')`. Keys must exist in locale files.
+- When adding a key: add to **all 12 files simultaneously** (English value + translated/placeholder in other 11), then use in component.
 
-- **Hexagonal / Ports & Adapters**: The Go backend MUST follow a hexagonal architecture.
-  - Business logic resides in `internal/domain` and `internal/app`.
-  - External integrations (Wails, SQLite, Bleve) reside in `internal/infra`.
-  - Dependencies must always point inwards towards the domain.
-- **Dependency Injection**: Use `uber-go/fx` for all dependency management. Define components as `fx.Module` and use `fx.Provide` for constructors. Avoid global state and manual instantiation.
-- **Logging**: Use `log/slog` for structured logging. Logs are automatically rotated daily and kept for 7 days via `lumberjack`. Inject `*slog.Logger` where needed.
-- **Surgical Backend**: Keep Wails bindings thin in `internal/infra/wails`. They should only translate frontend requests to application service calls.
-- **Reactive State**: Use Pinia for all global UI states (playback queue, current track, user settings). Avoid prop drilling.
-- **Component Design**: Adhere strictly to the **Frontend Component Architecture** (see section 2.5). Prioritize modularity, clear separation of concerns, and testability.
+---
 
-### 4. Git & Commits
+## 2.5 Frontend Component Architecture
 
-- **Convention**: Use Conventional Commits (`type(scope): description`).
-  - Types: `feat`, `fix`, `chore`, `docs`, `style`, `refactor`, `perf`, `test`.
-  - Scopes: `core`, `app`, `infra`, `domain`, `ui`, `meta`.
-- **Hooks**: Ensure git hooks are installed via `task setup:hooks`. The `commit-msg` hook enforces the convention.
+| Type | Location | Rules |
+|---|---|---|
+| UI Primitives | `components/ui/` | No `stores/` or `bindings/` imports. Stateless. |
+| Feature Components | `components/` | May import stores/bindings. Reused across views. |
+| Views/Pages | `views/` | Orchestrates feature components, handles page fetching. |
 
-### 5. Data Integrity & Safety
+- Extract to composable/component when pattern appears in 3+ places.
+- Prefer `<slot />` over excessive props.
+- Split components >300 lines.
+- Shared logic → `lib/utils.ts` or `composables/`.
+- All components: `<script setup lang="ts">`, typed `defineProps<{}>()` and `defineEmits<{}>()`.
+- Every non-trivial feature component needs a `.spec.ts` (Vitest + `@vue/test-utils`).
 
-- **Schema Migrations:** Use a structured migration tool for SQLite. Never perform destructive schema changes without a migration path.
-- **Metadata:** Always treat the user's original music files as read-only unless the user explicitly triggers a "Save Metadata" action.
-- **Error Handling:** Implement robust error handling in Go and propagate meaningful errors to the frontend via Wails.
+---
 
-### 6. Testing & Verification
+## 3. Go Architecture
 
-- **Mandatory Tests:** ALL bug fixes and new features MUST be accompanied by relevant unit tests (Go) or component tests (Vue).
-- **Regression Testing:** Before completing any directive, run all existing tests to ensure no regressions were introduced.
-- **Verification:** A task is only complete when behavioral correctness has been verified through both automated tests and manual verification of the UI/UX.
+### Hexagonal / Ports & Adapters
 
-### 7. macOS Integration
+Dependency direction (strict): `infra → app → domain`
 
-- **Now Playing:** Ensure seamless integration with the macOS "Now Playing" widget and media keys.
-- **AirPlay 2:** Prioritize native AirPlay 2 support for audio output.
-- **Window Management:** Support "close to tray" behavior where music continues playing after the main window is closed.
+- **`internal/domain`** — entities + port interfaces. Zero imports from `app` or `infra`.
+- **`internal/app`** — services/use cases. Zero imports from `infra`.
+- **`internal/infra`** — adapter implementations:
+  - `sqlite/` — repositories (SQLite + sqlx + golang-migrate)
+  - `bleve/` — search (Bleve v2)
+  - `audio/` — `player_darwin.go` (AVFoundation), `player_miniaudio.go` (Win/Linux)
+  - `metadata/` — TagLib + FFmpeg fallback
+  - `artwork/` — disk cache, resize, palette extraction
+  - `logging/` — zap + lumberjack
+  - `wails/` — thin Wails v3 binding wrappers (translation only, no logic)
+- **Entry point:** root `main.go`. No `cmd/` directory.
+
+### Dependency Injection (Uber FX)
+
+- Each package declares providers via `fx.Module`.
+- All wiring in `main.go` via `fx.New(...)`.
+- Never instantiate infra directly in `app` or `domain`.
+
+### Error Handling & Logging
+
+- Errors: `fmt.Errorf("context: %w", err)`.
+- Domain errors defined in `domain`, translated to user messages in `infra/wails`.
+- Logging: `*zap.Logger` (FX-injected). Never `log.Print*` or `fmt.Print*` in production.
+
+### Go Implementation Checklist
+
+- [ ] Business logic in `domain` or `app`, not `infra`?
+- [ ] `infra` implements a defined Port interface?
+- [ ] FX wires everything in `main.go`?
+- [ ] Wails bindings translation-only?
+- [ ] Goroutines accept `context.Context`?
+- [ ] `*zap.Logger` for all logging?
+
+---
+
+## 4. Git & Commits
+
+Conventional Commits: `type(scope): description`
+
+- Types: `feat fix chore docs style refactor perf test`
+- Scopes: `core app infra domain ui meta`
+- Install hooks: `task setup:hooks` (enforces `commit-msg`).
+
+---
+
+## 5. Data Integrity
+
+- Schema changes MUST use golang-migrate. No destructive migrations without a down path.
+- Music files are **read-only** unless user explicitly triggers Save Metadata.
+- Propagate meaningful errors from Go to frontend via Wails.
+
+---
+
+## 6. Testing
+
+- All bug fixes and features MUST have unit tests (Go) or component tests (Vue).
+- Run `task verify` before declaring a task complete.
+- Task is done only when automated tests pass AND UI/UX manually verified.
+
+---
+
+## 7. macOS Integration
+
+- Now Playing widget + media keys must be kept in sync with playback state.
+- "Close to tray" — music continues after main window closes.
+
+---
+
+## 8. Catalog Maintenance
+
+`catalog/` contains living technical documentation. **Read before touch. Update after change.**
+
+### Read Before Touch
+
+| Feature area | Catalog |
+|---|---|
+| Library scan, folder watch, file import | `catalog/library/README.md` |
+| Audio playback, queue, player state | `catalog/player/README.md` |
+| Tag extraction, normalization, metadata write | `catalog/metadata/README.md` |
+| Bleve search index, query | `catalog/search/README.md` |
+| Artwork cache, palette, asset handler | `catalog/artwork/README.md` |
+| EQ profiles, bands, presets | `catalog/equalizer/README.md` |
+| Lyrics fetch, LRC parse, sync display | `catalog/lyrics/README.md` |
+| Playlist CRUD, track order, artwork | `catalog/playlists/README.md` |
+| App settings, theme, language | `catalog/settings/README.md` |
+| SQLite schema, migrations, repositories | `catalog/database/README.md` |
+| Vue components, stores, composables, routing | `catalog/ui/README.md` |
+| Overall architecture, DI, Wails IPC | `catalog/architecture/README.md` |
+
+### Update After Change
+
+Update the relevant catalog entry in the **same task** when any of these change:
+interfaces/structs/methods, DB schema/migrations, Wails-exposed methods/events, algorithms, stores/composables/routes/components, infra adapters/FX modules.
+
+**A task is not complete if the catalog is left stale.**
+
+---
 
 ## Implementation Workflow
 
-1. **Research:** Analyze existing Go/Vue patterns and identify all requirements. **ALWAYS reproduce bugs with a test case first.**
-2. **Execution (The Implementation Loop):**
-   - **Implement:** Apply surgical changes. **New code MUST have accompanying unit or component tests.**
-   - **Verify:** Execute `task verify` (or equivalent) to run all tests and linters.
-   - **Review & Recheck:** Perform a critical self-review of the code and re-verify against the original requirements and project mandates.
-   - **Fix or Continue:** Address any discrepancies, bugs, or missing features identified during review before moving on.
-3. **Validation:** Verify performance with large datasets and OS-level integrations.
+1. **Research** — read relevant catalog entries, find existing patterns, reproduce bugs with a test first.
+2. **Implement** — surgical changes with accompanying tests.
+3. **Verify** — `task verify` (tests + linters).
+4. **Update catalog** — if any catalog entry is now stale.
 
-## Files Reference:
+---
 
-Read agent/FILES.md to know about file structure and agent guidelines.
+## Files Reference
+
+- `agents/INTERACTION.md` — Inquiry vs Directive protocol.
+- `agents/WAILS_V3.md` — Wails v3 alpha-specific patterns.
+- `catalog/` — Living feature documentation (section 8).
