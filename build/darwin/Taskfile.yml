@@ -48,8 +48,8 @@ tasks:
       GOOS: darwin
       CGO_ENABLED: 1
       GOARCH: '{{.ARCH | default ARCH}}'
-      CGO_CFLAGS: "-mmacosx-version-min=14.0 -I{{.USER_WORKING_DIR}}/internal/infra/audio/ffmpeg_libs/include"
-      CGO_LDFLAGS: "-mmacosx-version-min=14.0 -L{{.USER_WORKING_DIR}}/internal/infra/audio/ffmpeg_libs/darwin/{{.ARCH | default ARCH}}"
+      CGO_CFLAGS: "-mmacosx-version-min=14.0"
+      CGO_LDFLAGS: "-mmacosx-version-min=14.0"
       MACOSX_DEPLOYMENT_TARGET: "14.0"
 
   build:docker:

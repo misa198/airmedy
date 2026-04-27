@@ -60,8 +60,6 @@ tasks:
       GOOS: linux
       CGO_ENABLED: 1
       GOARCH: '{{.ARCH | default ARCH}}'
-      CGO_CFLAGS: "-I{{.USER_WORKING_DIR}}/internal/infra/audio/ffmpeg_libs/include"
-      CGO_LDFLAGS: "-L{{.USER_WORKING_DIR}}/internal/infra/audio/ffmpeg_libs/linux/{{.ARCH | default ARCH}}"
 
   build:docker:
     summary: Builds for Linux using Docker (for non-Linux hosts or when no C compiler available)

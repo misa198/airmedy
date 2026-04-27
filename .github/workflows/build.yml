@@ -135,18 +135,24 @@ jobs:
       - name: Build and Package
         shell: bash
         run: |
+          # Set absolute paths for FFmpeg headers and libs to ensure all build steps find them
+          REPO_ROOT=$(pwd)
+          export CGO_CFLAGS="-I${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/include"
+          
           OS_INPUT="${{ github.event.inputs.os }}"
           case $OS_INPUT in
             "Windows-AMD64")
-              # Add MINGW64 bin to path and set CC
-              echo "C:\msys64\mingw64\bin" >> $GITHUB_PATH
-              export CC=gcc
+              export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/windows/amd64"
+              # Use absolute path to MSYS2 gcc to ensure it picks up installed libs
+              export CC=C:/msys64/mingw64/bin/gcc.exe
               task windows:package ARCH=amd64
               ;;
             "Linux-AMD64")
+              export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/linux/amd64"
               task linux:package ARCH=amd64
               ;;
             "Linux-ARM64")
+              export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/linux/arm64"
               # Bypass Docker for cross-compilation by using native aarch64 gcc
               export CC=aarch64-linux-gnu-gcc
               export CGO_ENABLED=1
@@ -155,9 +161,11 @@ jobs:
               task linux:package ARCH=arm64
               ;;
             "Darwin-AMD64")
+              export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/darwin/amd64"
               task darwin:package ARCH=amd64
               ;;
             "Darwin-ARM64")
+              export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/darwin/arm64"
               task darwin:package ARCH=arm64
               ;;
           esac
