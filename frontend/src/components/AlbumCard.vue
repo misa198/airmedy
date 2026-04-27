@@ -15,6 +15,7 @@ const emit = defineEmits<{
   'click': [id: string]
   'play': [id: string]
   'artist-click': [id: string]
+  'contextmenu': [e: MouseEvent, album: AlbumDTO]
 }>()
 </script>
 
@@ -22,6 +23,7 @@ const emit = defineEmits<{
   <div 
     class="group cursor-pointer"
     @click="emit('click', album.id)"
+    @contextmenu.prevent="emit('contextmenu', $event, album)"
   >
     <div class="aspect-square bg-foreground/5 rounded-lg ring-1 ring-foreground/[0.06] overflow-hidden relative mb-3 transition-all">
       <div v-if="album.artwork_key" class="w-full h-full">

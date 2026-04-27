@@ -281,3 +281,89 @@ func TestPrevious_Threshold(t *testing.T) {
 		t.Errorf("expected position 0, got %f", fp.GetStatus().Position)
 	}
 }
+
+func TestPlayerShortcuts(t *testing.T) {
+	fp := &fakePlayer{status: domain.PlayerStatus{Volume: 0.5, Position: 50.0, Duration: 300.0, PlaybackState: domain.PlaybackStatePlaying}}
+	s, _ := newTestService(t, fp)
+
+	t1 := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 300}}
+	s.queue.SetQueue([]*domain.TrackDTO{t1}, 0)
+	s.mu.Lock()
+	s.currentTrack = t1
+	s.mu.Unlock()
+
+	// Test TogglePause
+	_ = s.TogglePause()
+	if fp.GetStatus().PlaybackState != domain.PlaybackStatePaused {
+		t.Errorf("expected paused state, got %v", fp.GetStatus().PlaybackState)
+	}
+	_ = s.TogglePause()
+	if fp.GetStatus().PlaybackState != domain.PlaybackStatePlaying {
+		t.Errorf("expected playing state, got %v", fp.GetStatus().PlaybackState)
+	}
+
+	// Test FastForward
+	_ = s.FastForward()
+	if fp.GetStatus().Position != 60.0 {
+		t.Errorf("expected position 60, got %v", fp.GetStatus().Position)
+	}
+
+	// Test Rewind
+	_ = s.Rewind()
+	if fp.GetStatus().Position != 50.0 {
+		t.Errorf("expected position 50, got %v", fp.GetStatus().Position)
+	}
+
+	// Test IncreaseVolume
+	_ = s.IncreaseVolume()
+	if fp.GetStatus().Volume != 0.55 {
+		t.Errorf("expected volume 0.55, got %v", fp.GetStatus().Volume)
+	}
+
+	// Test DecreaseVolume
+	_ = s.DecreaseVolume()
+	if fp.GetStatus().Volume != 0.5 {
+		t.Errorf("expected volume 0.5, got %v", fp.GetStatus().Volume)
+	}
+
+	// Test ToggleMute
+	if fp.GetStatus().Muted {
+		t.Error("expected initial muted to be false")
+	}
+	_ = s.ToggleMute()
+	if !fp.GetStatus().Muted {
+		t.Error("expected muted to be true after toggle")
+	}
+	_ = s.ToggleMute()
+	if fp.GetStatus().Muted {
+		t.Error("expected muted to be false after second toggle")
+	}
+
+	// Test Unmute on IncreaseVolume
+	_ = s.SetMuted(true)
+	if !fp.GetStatus().Muted {
+		t.Error("expected muted to be true")
+	}
+	_ = s.IncreaseVolume()
+	if fp.GetStatus().Muted {
+		t.Error("expected muted to be false after IncreaseVolume")
+	}
+}
+
+func TestFastForward_NextTrack(t *testing.T) {
+	fp := &fakePlayer{status: domain.PlayerStatus{Volume: 0.5, Position: 295.0, Duration: 300.0, PlaybackState: domain.PlaybackStatePlaying}}
+	s, _ := newTestService(t, fp)
+
+	t1 := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 300}}
+	t2 := &domain.TrackDTO{Track: domain.Track{ID: "t2", Duration: 300}}
+	s.queue.SetQueue([]*domain.TrackDTO{t1, t2}, 0)
+	s.mu.Lock()
+	s.currentTrack = t1
+	s.mu.Unlock()
+
+	// Fast forward near end should trigger Next()
+	_ = s.FastForward()
+	if s.GetCurrentTrack().ID != "t2" {
+		t.Errorf("expected track t2, got %s", s.GetCurrentTrack().ID)
+	}
+}

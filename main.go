@@ -110,10 +110,6 @@ func main() {
 		appMenu.AddRole(application.Quit)
 
 		menu.AddRole(application.FileMenu)
-		menu.AddRole(application.EditMenu)
-		menu.AddRole(application.ViewMenu)
-		menu.AddRole(application.WindowMenu)
-		menu.AddRole(application.HelpMenu)
 	} else {
 		fileMenu := menu.AddSubmenu("File")
 		fileMenu.Add("Settings...").
@@ -123,12 +119,93 @@ func main() {
 			})
 		fileMenu.AddSeparator()
 		fileMenu.AddRole(application.Quit)
-
-		menu.AddRole(application.EditMenu)
-		menu.AddRole(application.ViewMenu)
-		menu.AddRole(application.WindowMenu)
-		menu.AddRole(application.HelpMenu)
 	}
+
+	menu.AddRole(application.EditMenu)
+
+	// Playback menu
+	playbackMenu := menu.AddSubmenu("Playback")
+	var ctrl, opt string
+	if runtime.GOOS == "darwin" {
+		ctrl = "Cmd"
+		opt = "Option"
+	} else {
+		ctrl = "Ctrl"
+		opt = "Alt"
+	}
+
+	playbackMenu.Add("Play/Pause").
+		SetAccelerator("Space").
+		OnClick(func(ctx *application.Context) {
+			_ = playerService.TogglePause()
+		})
+	playbackMenu.AddSeparator()
+	playbackMenu.Add("Next Track").
+		SetAccelerator(ctrl + "+Right").
+		OnClick(func(ctx *application.Context) {
+			_ = playerService.Next()
+		})
+	playbackMenu.Add("Previous Track").
+		SetAccelerator(ctrl + "+Left").
+		OnClick(func(ctx *application.Context) {
+			_ = playerService.Previous()
+		})
+	playbackMenu.AddSeparator()
+	playbackMenu.Add("Fast Forward").
+		SetAccelerator(opt + "+" + ctrl + "+Right").
+		OnClick(func(ctx *application.Context) {
+			_ = playerService.FastForward()
+		})
+	playbackMenu.Add("Rewind").
+		SetAccelerator(opt + "+" + ctrl + "+Left").
+		OnClick(func(ctx *application.Context) {
+			_ = playerService.Rewind()
+		})
+	playbackMenu.AddSeparator()
+	playbackMenu.Add("Increase Volume").
+		SetAccelerator(ctrl + "+Up").
+		OnClick(func(ctx *application.Context) {
+			_ = playerService.IncreaseVolume()
+		})
+	playbackMenu.Add("Decrease Volume").
+		SetAccelerator(ctrl + "+Down").
+		OnClick(func(ctx *application.Context) {
+			_ = playerService.DecreaseVolume()
+		})
+	playbackMenu.Add("Mute").
+		SetAccelerator(opt + "+" + ctrl + "+Down").
+		OnClick(func(ctx *application.Context) {
+			_ = playerService.ToggleMute()
+		})
+	playbackMenu.AddSeparator()
+	playbackMenu.Add("Shuffle").
+		SetAccelerator(ctrl + "+S").
+		OnClick(func(ctx *application.Context) {
+			status := playerService.GetStatus()
+			_ = playerService.SetShuffle(!status.Shuffle)
+		})
+	playbackMenu.Add("Repeat").
+		SetAccelerator(ctrl + "+R").
+		OnClick(func(ctx *application.Context) {
+			wailsApp.Event.Emit("player:cycle-repeat")
+		})
+
+	// View menu
+	viewMenu := menu.AddSubmenu("View")
+	viewMenu.Add("Search").
+		SetAccelerator(ctrl + "+F").
+		OnClick(func(ctx *application.Context) {
+			wailsApp.Event.Emit("open-search")
+		})
+	viewMenu.AddSeparator()
+	viewMenu.AddRole(application.Reload)
+	viewMenu.AddRole(application.ForceReload)
+	viewMenu.AddRole(application.ToggleFullscreen)
+	viewMenu.AddRole(application.OpenDevTools)
+
+	menu.AddRole(application.WindowMenu)
+	menu.AddRole(application.HelpMenu)
+
 	wailsApp.Menu.SetApplicationMenu(menu)
 
 	mainWindow := wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{

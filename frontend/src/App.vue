@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
+import { onMounted, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import MainLayout from './layouts/MainLayout.vue'
 import { hexToRgba } from './lib/utils'
@@ -18,6 +18,50 @@ const deviceStore = useDeviceStore()
 const playlistsStore = usePlaylistsStore()
 const appStore = useAppStore()
 
+const handleKeyDown = (e: KeyboardEvent) => {
+  const target = e.target as HTMLElement
+  if (
+    target.tagName === 'INPUT' ||
+    target.tagName === 'TEXTAREA' ||
+    target.isContentEditable
+  ) {
+    return
+  }
+
+  const isMac = deviceStore.isMac
+  const ctrlKey = isMac ? e.metaKey : e.ctrlKey
+  const altKey = e.altKey
+
+  if (e.code === 'Space') {
+    e.preventDefault()
+    playerStore.togglePlayPause()
+  } else if (ctrlKey && e.key === 'ArrowRight') {
+    e.preventDefault()
+    if (altKey) playerStore.fastForward()
+    else playerStore.next()
+  } else if (ctrlKey && e.key === 'ArrowLeft') {
+    e.preventDefault()
+    if (altKey) playerStore.rewind()
+    else playerStore.previous()
+  } else if (ctrlKey && e.key === 'ArrowUp') {
+    e.preventDefault()
+    playerStore.increaseVolume()
+  } else if (ctrlKey && e.key === 'ArrowDown') {
+    e.preventDefault()
+    if (altKey) playerStore.toggleMute()
+    else playerStore.decreaseVolume()
+  } else if (ctrlKey && e.key.toLowerCase() === 's') {
+    e.preventDefault()
+    playerStore.setShuffle(!playerStore.shuffle)
+  } else if (ctrlKey && e.key.toLowerCase() === 'r') {
+    e.preventDefault()
+    playerStore.cycleRepeat()
+  } else if (ctrlKey && e.key.toLowerCase() === 'f') {
+    e.preventDefault()
+    router.push('/search')
+  }
+}
+
 onMounted(async () => {
   // Load settings
   await appStore.loadSettings()
@@ -33,6 +77,20 @@ onMounted(async () => {
   Events.On('open-settings', () => {
     router.push('/settings')
   })
+
+  Events.On('open-search', () => {
+    router.push('/search')
+  })
+
+  Events.On('player:cycle-repeat', () => {
+    playerStore.cycleRepeat()
+  })
+
+  window.addEventListener('keydown', handleKeyDown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown)
 })
 
 const updateDynamicColors = (colors: any) => {

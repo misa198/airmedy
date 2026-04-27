@@ -63,6 +63,18 @@ onUnmounted(() => {
 
 <template>
   <div class="h-full w-full flex flex-col overflow-hidden bg-background text-foreground">
+    <!-- Window Drag Area (Double click to toggle maximize) -->
+    <div
+      v-if="!deviceStore.isWindowFullscreen && playerStore.playerMode !== 'fullscreen'"
+      class="fixed top-0 left-0 right-0 h-10 z-[60] select-none pointer-events-none"
+    >
+      <div 
+        class="w-full h-full pointer-events-auto"
+        style="-webkit-app-region: drag"
+        @dblclick="deviceStore.toggleMaximize"
+      />
+    </div>
+
     <!-- Main Content Area -->
     <div class="flex-1 min-h-0 flex overflow-hidden">
       <!-- Sidebar Panel -->

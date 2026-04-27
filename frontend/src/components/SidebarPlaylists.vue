@@ -5,15 +5,15 @@ import {
   Music,
   Heart,
   MoreHorizontal,
-  Pencil,
-  Trash2,
 } from 'lucide-vue-next'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePlaylistsStore } from '@/stores/playlists'
 import CreatePlaylistDialog from './CreatePlaylistDialog.vue'
+import ConfirmDialog from './ConfirmDialog.vue'
 import { useI18n } from 'vue-i18n'
 import { useContextMenu } from '@/composables/useContextMenu'
+import { usePlaylistContextMenu } from '@/composables/usePlaylistContextMenu'
 import ContextMenu from './ContextMenu.vue'
 import SidebarItem from './SidebarItem.vue'
 import type { Playlist } from '../../bindings/airmedy/internal/domain/models'
@@ -22,9 +22,12 @@ const { t } = useI18n()
 const router = useRouter()
 const playlistsStore = usePlaylistsStore()
 const contextMenu = useContextMenu()
+const { buildMenuItems: buildPlaylistMenuItems } = usePlaylistContextMenu()
 
 const createDialogOpen = ref(false)
 const renameDialogOpen = ref(false)
+const deleteConfirmOpen = ref(false)
+const playlistToDelete = ref<Playlist | null>(null)
 const renamingId = ref('')
 const renamingName = ref('')
 
@@ -47,24 +50,23 @@ async function handleRename(name: string) {
   if (renamingId.value) await playlistsStore.rename(renamingId.value, name)
 }
 
-async function deletePlaylist(id: string) {
-  await playlistsStore.deletePlaylist(id)
+function openDeleteConfirm(playlist: Playlist) {
+  playlistToDelete.value = playlist
+  deleteConfirmOpen.value = true
+}
+
+async function handleDelete() {
+  if (playlistToDelete.value) {
+    await playlistsStore.deletePlaylist(playlistToDelete.value.id)
+    playlistToDelete.value = null
+  }
 }
 
 function openPlaylistContextMenu(playlist: Playlist, e: MouseEvent) {
-  contextMenu.open(e, [
-    {
-      label: t('sidebar.rename'),
-      icon: Pencil,
-      action: () => openRenameDialog(playlist.id, playlist.name),
-    },
-    {
-      label: t('sidebar.delete'),
-      icon: Trash2,
-      danger: true,
-      action: () => deletePlaylist(playlist.id),
-    },
-  ])
+  contextMenu.open(e, buildPlaylistMenuItems(playlist, {
+    onRename: (p) => openRenameDialog(p.id, p.name),
+    onDelete: (p) => openDeleteConfirm(p),
+  }))
 }
 </script>
 
@@ -113,6 +115,15 @@ function openPlaylistContextMenu(playlist: Playlist, e: MouseEvent) {
   <CreatePlaylistDialog v-model:open="createDialogOpen" @confirm="handleCreate" />
   <CreatePlaylistDialog v-model:open="renameDialogOpen" :initial-name="renamingName" :title="t('sidebar.rename_playlist_title')"
     @confirm="handleRename" />
+
+  <ConfirmDialog
+    v-model:open="deleteConfirmOpen"
+    :title="t('sidebar.delete_playlist_title')"
+    :message="t('sidebar.delete_playlist_message')"
+    :confirm-label="t('sidebar.delete')"
+    danger
+    @confirm="handleDelete"
+  />
 
   <ContextMenu
     :visible="contextMenu.visible.value"

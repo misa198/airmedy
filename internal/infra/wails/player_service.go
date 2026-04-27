@@ -40,6 +40,30 @@ func (s *PlayerService) Previous() error {
 	return s.service.Previous()
 }
 
+func (s *PlayerService) TogglePause() error {
+	return s.service.TogglePause()
+}
+
+func (s *PlayerService) FastForward() error {
+	return s.service.FastForward()
+}
+
+func (s *PlayerService) Rewind() error {
+	return s.service.Rewind()
+}
+
+func (s *PlayerService) IncreaseVolume() error {
+	return s.service.IncreaseVolume()
+}
+
+func (s *PlayerService) DecreaseVolume() error {
+	return s.service.DecreaseVolume()
+}
+
+func (s *PlayerService) ToggleMute() error {
+	return s.service.ToggleMute()
+}
+
 func (s *PlayerService) Seek(position float64) error {
 	return s.service.Seek(position)
 }

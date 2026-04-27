@@ -199,6 +199,7 @@
     "add_to_favorites": "添加到收藏",
     "remove_from_favorites": "从收藏中移除",
     "add_to_playlist": "添加到播放列表",
+    "remove_from_playlist": "从播放列表移除",
     "no_playlists": "暂无播放列表",
     "go_to_album": "前往专辑",
     "go_to_artist": "前往艺术家",

@@ -2,7 +2,7 @@
 import { ref, shallowRef, onMounted, computed, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Play, Shuffle, MoreVertical, Clock, Music, X } from 'lucide-vue-next'
+import { Play, Shuffle, MoreVertical, Clock, Music, X, Search } from 'lucide-vue-next'
 import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { Playlist, TrackDTO, ThemeColors } from '../../bindings/airmedy/internal/domain/models'
@@ -12,12 +12,16 @@ import { useFavoritesStore } from '@/stores/favorites'
 import { formatTotalDuration } from '@/lib/utils'
 import DetailsButton from '@/components/ui/DetailsButton.vue'
 import { useContextMenu } from '@/composables/useContextMenu'
-import { useGroupContextMenu } from '@/composables/useGroupContextMenu'
+import { usePlaylistContextMenu } from '@/composables/usePlaylistContextMenu'
 import { useRestoreScroll } from '@/composables/useRestoreScroll'
 import ContextMenu from '@/components/ContextMenu.vue'
 import DetailHero from '@/components/DetailHero.vue'
 import PlaylistArtwork from '@/components/PlaylistArtwork.vue'
+import CreatePlaylistDialog from '@/components/CreatePlaylistDialog.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import { Input } from '@/components/ui/input'
 import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
+import { usePlaylistsStore } from '@/stores/playlists'
 import { Events } from '@wailsio/runtime'
 
 const route = useRoute()
@@ -25,10 +29,22 @@ const router = useRouter()
 const { t } = useI18n()
 const playerStore = usePlayerStore()
 const favoritesStore = useFavoritesStore()
+const playlistsStore = usePlaylistsStore()
 
 const playlist = ref<Playlist | null>(null)
 const tracks = shallowRef<TrackDTO[]>([])
 const isLoading = ref(true)
+const searchQuery = ref('')
+
+const filteredTracks = computed(() => {
+  if (!searchQuery.value) return tracks.value
+  const q = searchQuery.value.toLowerCase()
+  return tracks.value.filter(t => 
+    (t.title || '').toLowerCase().includes(q) || 
+    (t.raw_artist_names || '').toLowerCase().includes(q) ||
+    (t.album?.title || '').toLowerCase().includes(q)
+  )
+})
 
 useLibraryUpdates(tracks)
 const playlistTheme = ref<ThemeColors | null>(null)
@@ -36,10 +52,42 @@ const playlistTheme = ref<ThemeColors | null>(null)
 const { scrollContainerRef, handleScroll } = useRestoreScroll()
 
 const contextMenu = useContextMenu()
-const { buildMenuItems } = useGroupContextMenu()
+const { buildMenuItems: buildPlaylistMenuItems } = usePlaylistContextMenu()
+
+const renameDialogOpen = ref(false)
+const renamingName = ref('')
+const deleteConfirmOpen = ref(false)
+
+function openRenameDialog() {
+  if (playlist.value) {
+    renamingName.value = playlist.value.name
+    renameDialogOpen.value = true
+  }
+}
+
+async function handleRename(name: string) {
+  if (playlist.value) {
+    await playlistsStore.rename(playlist.value.id, name)
+    playlist.value.name = name
+  }
+}
+
+async function handleDelete() {
+  if (playlist.value) {
+    const id = playlist.value.id
+    await playlistsStore.deletePlaylist(id)
+    router.push('/')
+  }
+}
 
 function openContextMenu(e: MouseEvent) {
-  contextMenu.open(e, buildMenuItems(tracks.value))
+  if (!playlist.value) return
+  contextMenu.open(e, buildPlaylistMenuItems(playlist.value, {
+    includePlayNext: true,
+    includePlaylistMenu: false,
+    onRename: () => openRenameDialog(),
+    onDelete: () => deleteConfirmOpen.value = true,
+  }))
 }
 
 async function load(silent = false) {
@@ -162,15 +210,15 @@ async function handleRemoveArtwork(e: MouseEvent) {
 }
 
 function playPlaylist() {
-  if (tracks.value.length > 0) {
-    playerStore.playTracks(tracks.value, 0)
+  if (filteredTracks.value.length > 0) {
+    playerStore.playTracks(filteredTracks.value, 0)
     playerStore.setShuffle(false)
   }
 }
 
 function shufflePlaylist() {
-  if (tracks.value.length > 0) {
-    playerStore.shuffleTracks(tracks.value)
+  if (filteredTracks.value.length > 0) {
+    playerStore.shuffleTracks(filteredTracks.value)
   }
 }
 </script>
@@ -186,6 +234,17 @@ function shufflePlaylist() {
         :theme="playlistTheme" 
         :title="playlist.name"
       >
+        <template #top-right>
+          <div class="relative max-w-sm w-full">
+            <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground opacity-60" />
+            <Input 
+              v-model="searchQuery"
+              type="text"
+              :placeholder="$t('sidebar.search')"
+              class="pl-10 pr-4"
+            />
+          </div>
+        </template>
         <template #artwork>
           <div 
             @click="handleSetArtwork"
@@ -233,9 +292,10 @@ function shufflePlaylist() {
       <!-- Track List -->
       <div class="px-2 pb-12">
         <TrackTable
-          :tracks="tracks"
+          :tracks="filteredTracks"
           :show-artwork="true"
           :simple-mode="true"
+          :context-menu-options="{ playlistId: playlist.id }"
           @play-track="(_, index, queue) => playerStore.playTracks(queue, index)"
           @navigate-album="id => router.push(`/albums/${id}`)"
           @navigate-artist="id => router.push(`/artists/${id}`)"
@@ -249,6 +309,18 @@ function shufflePlaylist() {
       :y="contextMenu.y.value"
       :items="contextMenu.items.value" 
       @close="contextMenu.close()" 
+    />
+
+    <CreatePlaylistDialog v-model:open="renameDialogOpen" :initial-name="renamingName" :title="t('sidebar.rename_playlist_title')"
+      @confirm="handleRename" />
+
+    <ConfirmDialog
+      v-model:open="deleteConfirmOpen"
+      :title="t('sidebar.delete_playlist_title')"
+      :message="t('sidebar.delete_playlist_message')"
+      :confirm-label="t('sidebar.delete')"
+      danger
+      @confirm="handleDelete"
     />
   </div>
 </template>

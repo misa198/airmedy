@@ -77,8 +77,11 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
 
     <div class="relative z-10 flex flex-col h-full text-white">
       <!-- Top bar -->
-      <div class="flex items-center justify-between px-6 py-4">
-        <div class="w-[120px]">
+      <div class="flex items-center justify-between px-6 py-4" 
+        style="-webkit-app-region: drag"
+        @dblclick="deviceStore.toggleMaximize"
+      >
+        <div class="w-[120px]" style="-webkit-app-region: no-drag">
           <button class="p-2 rounded-full hover:bg-white/8 transition-all text-white/60 hover:text-white"
             :class="{ 'mt-8': (deviceStore.isMac || deviceStore.isWindows) && !deviceStore.isWindowFullscreen }"
             @click="store.playerMode = 'sticky'">
@@ -88,7 +91,7 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
         <span class="text-xs font-semibold text-white/40 uppercase tracking-[0.2em]">
           {{ t('player.now_playing') }}
         </span>
-        <div class="flex items-center gap-2 w-[120px] justify-end">
+        <div class="flex items-center gap-2 w-[120px] justify-end" style="-webkit-app-region: no-drag">
           <TabSwitcher v-model="activeTab" :options="tabOptions" />
         </div>
       </div>

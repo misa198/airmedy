@@ -155,6 +155,26 @@ export const usePlayerStore = defineStore('player', () => {
     await PlayerService.Previous()
   }
 
+  async function fastForward() {
+    await PlayerService.FastForward()
+  }
+
+  async function rewind() {
+    await PlayerService.Rewind()
+  }
+
+  async function increaseVolume() {
+    await PlayerService.IncreaseVolume()
+  }
+
+  async function decreaseVolume() {
+    await PlayerService.DecreaseVolume()
+  }
+
+  async function toggleMute() {
+    await PlayerService.ToggleMute()
+  }
+
   async function seek(pos: number) {
     await PlayerService.Seek(pos)
   }
@@ -281,6 +301,11 @@ export const usePlayerStore = defineStore('player', () => {
     togglePlayPause,
     next,
     previous,
+    fastForward,
+    rewind,
+    increaseVolume,
+    decreaseVolume,
+    toggleMute,
     seek,
     setVolume,
     setMuted,

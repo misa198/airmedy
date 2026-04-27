@@ -17,7 +17,7 @@ const emit = defineEmits<{
         <div
           class="relative z-10 w-72 rounded-xl bg-glass-elevated backdrop-blur-xl ring-1 ring-border-glass shadow-2xl p-5"
           @keydown.esc="emit('close')">
-          <h3 class="text-sm font-semibold text-foreground mb-4">{{ title }}</h3>
+          <h3 class="text-base font-semibold text-foreground mb-4">{{ title }}</h3>
           <slot />
         </div>
       </div>

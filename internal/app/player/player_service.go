@@ -188,6 +188,67 @@ func (s *PlayerService) Previous() error {
 	return s.loadAndPlay(track)
 }
 
+// TogglePause toggles between playing and paused states.
+func (s *PlayerService) TogglePause() error {
+	status := s.player.GetStatus()
+	if status.PlaybackState == domain.PlaybackStatePlaying {
+		return s.Pause()
+	}
+	return s.Play()
+}
+
+// FastForward seeks forward by 10 seconds.
+func (s *PlayerService) FastForward() error {
+	status := s.player.GetStatus()
+	newPos := status.Position + 10
+	if newPos > status.Duration {
+		return s.Next()
+	}
+	return s.Seek(newPos)
+}
+
+// Rewind seeks backward by 10 seconds.
+func (s *PlayerService) Rewind() error {
+	status := s.player.GetStatus()
+	newPos := status.Position - 10
+	if newPos < 0 {
+		newPos = 0
+	}
+	return s.Seek(newPos)
+}
+
+// IncreaseVolume increases the volume by 5%.
+func (s *PlayerService) IncreaseVolume() error {
+	status := s.player.GetStatus()
+	if status.Muted {
+		_ = s.SetMuted(false)
+	}
+	newVol := status.Volume + 0.05
+	if newVol > 1.0 {
+		newVol = 1.0
+	}
+	return s.SetVolume(newVol)
+}
+
+// DecreaseVolume decreases the volume by 5%.
+func (s *PlayerService) DecreaseVolume() error {
+	status := s.player.GetStatus()
+	if status.Muted {
+		_ = s.SetMuted(false)
+	}
+	newVol := status.Volume - 0.05
+	if newVol < 0 {
+		newVol = 0
+	}
+	return s.SetVolume(newVol)
+}
+
+// ToggleMute toggles the mute state.
+func (s *PlayerService) ToggleMute() error {
+	status := s.player.GetStatus()
+	return s.SetMuted(!status.Muted)
+}
+
 // Seek moves playback to the specified position in seconds.
 func (s *PlayerService) Seek(position float64) error {
 	err := s.player.Seek(position)
@@ -199,6 +260,10 @@ func (s *PlayerService) Seek(position float64) error {
 
 // SetVolume sets the playback volume (0.0 to 1.0).
 func (s *PlayerService) SetVolume(volume float64) error {
+	status := s.player.GetStatus()
+	if status.Muted && volume > 0 {
+		_ = s.player.SetMuted(false)
+	}
 	err := s.player.SetVolume(volume)
 	if err == nil {
 		s.emitStatus()

@@ -101,7 +101,9 @@
     "rename": "Rename",
     "delete": "Delete",
     "no_playlists": "No playlists yet",
-    "rename_playlist_title": "Rename Playlist"
+    "rename_playlist_title": "Rename Playlist",
+    "delete_playlist_title": "Delete Playlist",
+    "delete_playlist_message": "Are you sure you want to delete this playlist? This action cannot be undone."
   },
   "player": {
     "not_playing": "Not Playing",
@@ -194,10 +196,13 @@
     "context_menu": ""
   },
   "context_menu": {
+    "play": "Play",
+    "shuffle": "Shuffle",
     "play_next": "Play Next",
     "add_to_favorites": "Add to Favorites",
     "remove_from_favorites": "Remove from Favorites",
     "add_to_playlist": "Add to Playlist",
+    "remove_from_playlist": "Remove from Playlist",
     "no_playlists": "No playlists",
     "go_to_album": "Go to Album",
     "go_to_artist": "Go to Artist",

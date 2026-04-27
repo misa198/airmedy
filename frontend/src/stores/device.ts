@@ -8,14 +8,17 @@ export const useDeviceStore = defineStore('device', () => {
   const isWindows = ref(false)
   const isLinux = ref(false)
   const isWindowFullscreen = ref(false)
+  const isWindowMaximized = ref(false)
 
   async function checkFullscreen() {
     try {
       const isFs = await Window.IsFullscreen()
-      console.log('[DeviceStore] checkFullscreen result:', isFs)
       isWindowFullscreen.value = isFs
+      
+      const isMax = await Window.IsMaximised()
+      isWindowMaximized.value = isMax
     } catch (e) {
-      console.error('Failed to check fullscreen state', e)
+      console.error('Failed to check window state', e)
     }
   }
 
@@ -23,7 +26,6 @@ export const useDeviceStore = defineStore('device', () => {
     console.log('[DeviceStore] Initializing...')
     try {
       const platform = await GetPlatform()
-      console.log('[DeviceStore] Platform:', platform)
       isMac.value = platform === 'darwin'
       isWindows.value = platform === 'windows'
       isLinux.value = platform === 'linux'
@@ -36,12 +38,34 @@ export const useDeviceStore = defineStore('device', () => {
     Events.On(Events.Types.Common.WindowFullscreen, checkFullscreen)
     Events.On(Events.Types.Common.WindowUnFullscreen, checkFullscreen)
     Events.On(Events.Types.Common.WindowDidResize, checkFullscreen)
+    Events.On(Events.Types.Common.WindowMaximise, checkFullscreen)
+    Events.On(Events.Types.Common.WindowUnMaximise, checkFullscreen)
 
     if (isMac.value) {
       Events.On(Events.Types.Mac.WindowDidEnterFullScreen, checkFullscreen)
       Events.On(Events.Types.Mac.WindowDidExitFullScreen, checkFullscreen)
-      Events.On(Events.Types.Mac.WindowWillEnterFullScreen, checkFullscreen)
-      Events.On(Events.Types.Mac.WindowWillExitFullScreen, checkFullscreen)
+    }
+  }
+
+  async function toggleFullscreen() {
+    try {
+      await Window.ToggleFullscreen()
+      await checkFullscreen()
+    } catch (e) {
+      console.error('Failed to toggle fullscreen', e)
+    }
+  }
+
+  async function toggleMaximize() {
+    try {
+      if (await Window.IsMaximised()) {
+        await Window.UnMaximise()
+      } else {
+        await Window.Maximise()
+      }
+      await checkFullscreen()
+    } catch (e) {
+      console.error('Failed to toggle maximize', e)
     }
   }
 
@@ -50,7 +74,10 @@ export const useDeviceStore = defineStore('device', () => {
     isWindows,
     isLinux,
     isWindowFullscreen,
+    isWindowMaximized,
     init,
     checkFullscreen,
+    toggleFullscreen,
+    toggleMaximize,
   }
 })

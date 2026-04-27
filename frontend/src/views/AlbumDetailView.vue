@@ -10,7 +10,7 @@ import { Disc, User, Play, Clock, Calendar, MoreVertical, Music, Shuffle } from 
 import { usePlayerStore } from '../stores/player'
 import { formatTotalDuration, buildArtworkUrl } from '../lib/utils'
 import { useContextMenu } from '@/composables/useContextMenu'
-import { useGroupContextMenu } from '@/composables/useGroupContextMenu'
+import { useAlbumContextMenu } from '@/composables/useAlbumContextMenu'
 import { useRestoreScroll } from '@/composables/useRestoreScroll'
 import ContextMenu from '@/components/ContextMenu.vue'
 import DetailsButton from '@/components/ui/DetailsButton.vue'
@@ -32,10 +32,12 @@ const albumTheme = ref<ThemeColors | null>(null)
 const { scrollContainerRef, handleScroll } = useRestoreScroll()
 
 const contextMenu = useContextMenu()
-const { buildMenuItems } = useGroupContextMenu()
+const { buildMenuItems } = useAlbumContextMenu()
 
 function openContextMenu(e: MouseEvent) {
-  contextMenu.open(e, buildMenuItems(tracks.value))
+  if (album.value) {
+    contextMenu.open(e, buildMenuItems(album.value, tracks.value, { hidePlayShuffle: true }))
+  }
 }
 
 const loadAlbumDetails = async (id: string) => {
@@ -87,6 +89,7 @@ const getTotalDuration = (tracks: TrackDTO[]) => {
       <DetailHero 
         :theme="albumTheme" 
         :title="album.title || $t('library.unknown_album')"
+        @contextmenu.prevent="openContextMenu"
       >
         <template #artwork>
           <div class="w-48 h-48 rounded-lg shadow-2xl overflow-hidden ring-1 ring-foreground/[0.08] bg-foreground/5 flex-shrink-0">

@@ -194,11 +194,14 @@
     "context_menu": ""
   },
   "context_menu": {
+    "play": "Phát",
+    "shuffle": "Trộn bài",
     "play_next": "Phát tiếp theo",
     "remove_from_queue": "Xóa khỏi hàng chờ",
     "add_to_favorites": "Thêm vào yêu thích",
     "remove_from_favorites": "Xóa khỏi yêu thích",
     "add_to_playlist": "Thêm vào danh sách phát",
+    "remove_from_playlist": "Xóa khỏi danh sách phát",
     "no_playlists": "Không có danh sách phát",
     "go_to_album": "Đi tới Album",
     "go_to_artist": "Đi tới Nghệ sĩ",

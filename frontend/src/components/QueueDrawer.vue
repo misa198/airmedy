@@ -104,8 +104,8 @@ watch(() => store.isQueueOpen, (open) => {
           <!-- Duration + index + Context Menu Overlay -->
           <div class="relative flex items-center justify-end w-20 h-full flex-shrink-0">
             <div class="flex flex-col items-end group-hover:opacity-0 transition-opacity">
-              <div class="text-xs text-muted-foreground mb-1">{{ formatTime(item.duration) }}</div>
-              <div class="text-xs text-muted-foreground/50 mt-0.5">{{ index + 1 }}</div>
+              <div class="text-xs text-muted-foreground/50 mb-1">{{ index + 1 }}</div>
+              <div class="text-xs text-muted-foreground mt-0.5">{{ formatTime(item.duration) }}</div>
             </div>
             <div
               class="absolute inset-0 flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity"

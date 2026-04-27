@@ -113,7 +113,7 @@ function handleSubmenuItemClick(item: ContextMenuItem) {
               item.disabled
                 ? 'text-foreground opacity-40 cursor-not-allowed'
                 : item.danger
-                  ? 'text-red-400/80 hover:text-red-400 hover:bg-red-500/20'
+                  ? 'text-red-500 hover:text-red-500 hover:bg-red-500/20'
                   : 'text-foreground opacity-80 hover:text-foreground hover:bg-foreground/15',
             ]"
             @click="handleItemClick(item)"

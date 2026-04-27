@@ -13,6 +13,7 @@ const emit = defineEmits<{
   'play': [track: TrackDTO]
   'artist-click': [id: string]
   'album-click': [id: string]
+  'contextmenu': [e: MouseEvent, track: TrackDTO]
 }>()
 
 const artistNames = (artists: (Artist | null)[] | undefined) => {
@@ -25,6 +26,7 @@ const artistNames = (artists: (Artist | null)[] | undefined) => {
   <div 
     class="group cursor-pointer w-full"
     @click="emit('click', track)"
+    @contextmenu.prevent="emit('contextmenu', $event, track)"
   >
     <div class="aspect-square bg-foreground/5 rounded-lg ring-1 ring-foreground/[0.06] overflow-hidden relative mb-3 transition-all">
       <div v-if="track.artwork_key || (track.album && track.album.artwork_key)" class="w-full h-full">

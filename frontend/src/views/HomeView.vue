@@ -11,6 +11,7 @@ import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import { usePlayerStore } from '@/stores/player'
 import TrackCard from '@/components/TrackCard.vue'
 import HomeSection from '@/components/HomeSection.vue'
+import TrackContextMenu from '@/components/TrackContextMenu.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -21,6 +22,7 @@ const recentlyPlayed = shallowRef<TrackDTO[]>([])
 const mostListened = shallowRef<TrackDTO[]>([])
 const leastListened = shallowRef<TrackDTO[]>([])
 const hasTracks = ref(false)
+const trackContextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
 
 const randomGreeting = computed(() => {
   const hour = new Date().getHours()
@@ -97,6 +99,10 @@ const navigateToArtist = (id: string) => {
 const navigateToAlbum = (id: string) => {
   router.push(`/albums/${id}`)
 }
+
+const onTrackContextMenu = (e: MouseEvent, track: TrackDTO) => {
+  trackContextMenu.value?.open(e, track)
+}
 </script>
 
 <template>
@@ -142,6 +148,7 @@ const navigateToAlbum = (id: string) => {
             @click="navigateToTrack"
             @artist-click="navigateToArtist"
             @album-click="navigateToAlbum"
+            @contextmenu="onTrackContextMenu"
           />
         </template>
       </HomeSection>
@@ -161,6 +168,7 @@ const navigateToAlbum = (id: string) => {
             @click="navigateToTrack"
             @artist-click="navigateToArtist"
             @album-click="navigateToAlbum"
+            @contextmenu="onTrackContextMenu"
           />
         </template>
       </HomeSection>
@@ -180,11 +188,14 @@ const navigateToAlbum = (id: string) => {
             @click="navigateToTrack"
             @artist-click="navigateToArtist"
             @album-click="navigateToAlbum"
+            @contextmenu="onTrackContextMenu"
           />
         </template>
       </HomeSection>
     </div>
   </div>
+
+  <TrackContextMenu ref="trackContextMenu" />
 </template>
 
 <style scoped>

@@ -5,6 +5,9 @@ import type { AlbumDTO, TrackDTO } from '../../bindings/airmedy/internal/domain/
 import VirtualizedGrid from './VirtualizedGrid.vue'
 import AlbumCard from './AlbumCard.vue'
 import { usePlayerStore } from '@/stores/player'
+import { useContextMenu } from '@/composables/useContextMenu'
+import { useAlbumContextMenu } from '@/composables/useAlbumContextMenu'
+import ContextMenu from './ContextMenu.vue'
 
 defineProps<{
   albums: AlbumDTO[]
@@ -13,6 +16,12 @@ defineProps<{
 
 const router = useRouter()
 const playerStore = usePlayerStore()
+const contextMenu = useContextMenu()
+const { buildMenuItems } = useAlbumContextMenu()
+
+const onContextMenu = (e: MouseEvent, album: AlbumDTO) => {
+  contextMenu.open(e, buildMenuItems(album))
+}
 
 const navigateToAlbum = (id: string) => {
   router.push(`/albums/${id}`)
@@ -48,7 +57,16 @@ const playAlbum = async (id: string) => {
         @click="navigateToAlbum"
         @artist-click="navigateToArtist"
         @play="playAlbum"
+        @contextmenu="onContextMenu"
       />
     </template>
   </VirtualizedGrid>
+
+  <ContextMenu
+    :visible="contextMenu.visible.value"
+    :x="contextMenu.x.value"
+    :y="contextMenu.y.value"
+    :items="contextMenu.items.value"
+    @close="contextMenu.close()"
+  />
 </template>
