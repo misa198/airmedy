@@ -96,7 +96,8 @@ func (s *LibraryService) notifyTrackUpdated(track *domain.TrackDTO) {
 func (s *LibraryService) Start(ctx context.Context) error {
 	folders, err := s.watchedFolderRepo.GetAll(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to load watched folders: %w", err)
+		s.logger.Error("failed to load watched folders, starting with empty list", "error", err)
+		folders = nil
 	}
 
 	for _, f := range folders {

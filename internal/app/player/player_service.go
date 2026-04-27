@@ -619,70 +619,73 @@ func (s *PlayerService) saveState(ctx context.Context) {
 func (s *PlayerService) restoreState(ctx context.Context) {
 	state, err := s.stateRepo.Load(ctx)
 	if err != nil {
-		s.logger.Error("failed to load player state", "error", err)
-		return
-	}
-	if state == nil || len(state.QueueTrackIDs) == 0 {
-		return
-	}
-
-	var validTracks []*domain.TrackDTO
-	for _, id := range state.QueueTrackIDs {
-		track, err := s.trackRepo.GetByID(ctx, id)
-		if err != nil || track == nil {
-			continue
-		}
-		if _, err := os.Stat(track.Path); err != nil {
-			continue
-		}
-		validTracks = append(validTracks, track)
-	}
-
-	if len(validTracks) == 0 {
-		return
-	}
-
-	s.queue.SetRepeatMode(state.RepeatMode)
-	if state.Shuffle {
-		s.queue.SetShuffle(true)
-	}
-
-	currentIndex := 0
-	var currentTrack *domain.TrackDTO
-	for i, t := range validTracks {
-		if t.ID == state.CurrentTrackID {
-			currentIndex = i
-			currentTrack = t
-			break
+		s.logger.Error("failed to load player state, using defaults", "error", err)
+		// Fallback to minimal default state
+		state = &domain.PlayerState{
+			Volume: 1.0,
+			Muted:  false,
 		}
 	}
-
-	s.queue.SetQueue(validTracks, currentIndex)
-
-	if currentTrack == nil {
+	if state == nil {
 		return
 	}
 
-	if err := s.player.Load(currentTrack); err != nil {
-		s.logger.Error("failed to load track on restore", "track", currentTrack.Path, "error", err)
-		return
+	if len(state.QueueTrackIDs) > 0 {
+		var validTracks []*domain.TrackDTO
+		for _, id := range state.QueueTrackIDs {
+			track, err := s.trackRepo.GetByID(ctx, id)
+			if err != nil || track == nil {
+				continue
+			}
+			if _, err := os.Stat(track.Path); err != nil {
+				continue
+			}
+			validTracks = append(validTracks, track)
+		}
+
+		if len(validTracks) > 0 {
+			s.queue.SetRepeatMode(state.RepeatMode)
+			if state.Shuffle {
+				s.queue.SetShuffle(true)
+			}
+
+			currentIndex := 0
+			var currentTrack *domain.TrackDTO
+			for i, t := range validTracks {
+				if t.ID == state.CurrentTrackID {
+					currentIndex = i
+					currentTrack = t
+					break
+				}
+			}
+
+			s.queue.SetQueue(validTracks, currentIndex)
+
+			if currentTrack != nil {
+				if err := s.player.Load(currentTrack); err != nil {
+					s.logger.Error("failed to load track on restore", "track", currentTrack.Path, "error", err)
+				} else {
+					if err := s.player.Seek(state.Position); err != nil {
+						s.logger.Warn("failed to seek to saved position on restore", "error", err)
+					}
+					s.mu.Lock()
+					s.currentTrack = currentTrack
+					s.mu.Unlock()
+
+					go s.extractAndEmitPalette(currentTrack)
+					go s.fetchAndEmitLyrics(currentTrack)
+				}
+			}
+		}
 	}
-	if err := s.player.Seek(state.Position); err != nil {
-		s.logger.Warn("failed to seek to saved position on restore", "error", err)
-	}
+
+	// Always attempt to restore these, even if no track is loaded
 	if err := s.player.SetVolume(state.Volume); err != nil {
 		s.logger.Warn("failed to restore volume", "error", err)
 	}
 	if err := s.player.SetMuted(state.Muted); err != nil {
 		s.logger.Warn("failed to restore mute state", "error", err)
 	}
-
-	s.mu.Lock()
-	s.currentTrack = currentTrack
-	s.mu.Unlock()
-
-	go s.extractAndEmitPalette(currentTrack)
-	go s.fetchAndEmitLyrics(currentTrack)
 
 	s.emitStatus()
 }

@@ -31,12 +31,15 @@ static BOOL isAVFoundationNative(NSString *ext) {
 @property (strong, nonatomic) AVAudioMixerNode    *mixerNode;
 // Native AVFoundation path
 @property (strong, nonatomic) AVAudioFile         *audioFile;
-// FFmpeg decode path
-@property (nonatomic) float       *ffmpegPCMBuffer;
+// FFmpeg streaming path
+@property (nonatomic) FFmpegHandle *ffmpegStream;
 @property (nonatomic) ma_uint64    ffmpegFrameCount;
 @property (nonatomic) ma_uint32    ffmpegChannels;
 @property (nonatomic) ma_uint32    ffmpegSampleRate;
 @property (nonatomic) BOOL         usingFFmpegDecoder;
+@property (nonatomic) BOOL         isLoading;
+@property (assign, nonatomic) BOOL         shouldPlayAfterLoad;
+@property (assign, nonatomic) NSUInteger           loadingGeneration;
 // Playback state
 @property (assign, nonatomic) BOOL  isPlaying;
 @property (assign, nonatomic) BOOL  eqEnabled;
@@ -48,6 +51,8 @@ static BOOL isAVFoundationNative(NSString *ext) {
 @property (assign, nonatomic) NSUInteger           scheduleGeneration;
 @end
 
+#define FFMPEG_CHUNK_FRAMES (44100 * 2) // 2 seconds of audio at 44.1kHz
+
 @implementation AirmedyPlayer
 
 - (instancetype)init {
@@ -56,22 +61,27 @@ static BOOL isAVFoundationNative(NSString *ext) {
         _volume = 1.0f;
         _eqEnabled = YES;
         _isPlaying = NO;
+        _isLoading = NO;
+        _shouldPlayAfterLoad = NO;
         _pausePosition = 0.0;
         _scheduledStartFrame = 0;
-        _ffmpegPCMBuffer = NULL;
+        _ffmpegStream = NULL;
         _ffmpegFrameCount = 0;
         _ffmpegChannels = 0;
         _ffmpegSampleRate = 0;
         _usingFFmpegDecoder = NO;
+        _loadingGeneration = 0;
         [self setupEngine];
     }
     return self;
 }
 
 - (void)dealloc {
-    if (_ffmpegPCMBuffer) {
-        free(_ffmpegPCMBuffer);
-        _ffmpegPCMBuffer = NULL;
+    @synchronized(self) {
+        if (_ffmpegStream) {
+            ffmpeg_close(_ffmpegStream);
+            _ffmpegStream = NULL;
+        }
     }
 }
 
@@ -107,18 +117,34 @@ static BOOL isAVFoundationNative(NSString *ext) {
 }
 
 - (void)play {
-    if (!self.audioFile && !self.ffmpegPCMBuffer) return;
-    if (self.isPlaying) return;
-
+    if (self.isLoading) {
+        self.shouldPlayAfterLoad = YES;
+        self.isPlaying = YES;
+        return;
+    }
+    
+    if (!self.audioFile && !self.ffmpegStream) return;
+    
+    // Always ensure engine is running
     if (!self.engine.isRunning) {
         NSError *err = nil;
         [self.engine startAndReturnError:&err];
     }
-    [self.playerNode play];
+    
+    // Only call play on the node if it's not already playing.
+    // Note: We don't return early if self.isPlaying is true because that might be an optimistic state.
+    if (!self.playerNode.isPlaying) {
+        [self.playerNode play];
+    }
     self.isPlaying = YES;
 }
 
 - (void)pause {
+    if (self.isLoading) {
+        self.shouldPlayAfterLoad = NO;
+        self.isPlaying = NO;
+        return;
+    }
     if (!self.isPlaying) return;
     self.pausePosition = [self currentPosition];
     [self.playerNode pause];
@@ -128,28 +154,41 @@ static BOOL isAVFoundationNative(NSString *ext) {
 - (void)stop {
     self.pausePosition = 0.0;
     self.scheduledStartFrame = 0;
+    self.isLoading = NO;
+    self.shouldPlayAfterLoad = NO;
+    self.loadingGeneration++;
     [self.playerNode stop];
     self.isPlaying = NO;
+    @synchronized(self) {
+        if (self.ffmpegStream) {
+            ffmpeg_close(self.ffmpegStream);
+            self.ffmpegStream = NULL;
+        }
+    }
 }
 
 - (void)seek:(double)seconds {
+    if (self.isLoading) return;
+
     if (self.usingFFmpegDecoder) {
-        BOOL wasPlaying = self.isPlaying;
-        self.scheduleGeneration++;
-        [self.playerNode stop];
+        @synchronized(self) {
+            if (self.ffmpegStream) {
+                BOOL wasPlaying = self.isPlaying;
+                self.scheduleGeneration++;
+                [self.playerNode stop];
 
-        AVAudioFramePosition startFrame = (AVAudioFramePosition)(seconds * self.ffmpegSampleRate);
-        if (startFrame < 0) startFrame = 0;
-        AVAudioFramePosition maxFrame = (AVAudioFramePosition)self.ffmpegFrameCount - 1;
-        if (maxFrame < 0) maxFrame = 0;
-        if (startFrame > maxFrame) startFrame = maxFrame;
-
-        self.pausePosition = seconds;
-        [self scheduleFFmpegFrom:startFrame generation:self.scheduleGeneration];
-
-        if (wasPlaying) {
-            [self.playerNode play];
-            self.isPlaying = YES;
+                if (ffmpeg_seek(self.ffmpegStream, seconds) == 0) {
+                    self.pausePosition = seconds;
+                    self.scheduledStartFrame = (AVAudioFramePosition)(seconds * self.ffmpegSampleRate);
+                    [self scheduleNextFFmpegChunkWithGeneration:self.scheduleGeneration];
+                    [self scheduleNextFFmpegChunkWithGeneration:self.scheduleGeneration];
+                    [self scheduleNextFFmpegChunkWithGeneration:self.scheduleGeneration];
+                }
+                if (wasPlaying) {
+                    [self.playerNode play];
+                    self.isPlaying = YES;
+                }
+            }
         }
         return;
     }
@@ -211,50 +250,68 @@ static BOOL isAVFoundationNative(NSString *ext) {
     }
 }
 
-// Schedules decoded FFmpeg PCM (stored in ffmpegPCMBuffer) from the given frame offset.
-- (void)scheduleFFmpegFrom:(AVAudioFramePosition)startFrame generation:(NSUInteger)gen {
-    if (!self.ffmpegPCMBuffer || startFrame >= (AVAudioFramePosition)self.ffmpegFrameCount) return;
-
-    AVAudioFrameCount remaining = (AVAudioFrameCount)(self.ffmpegFrameCount - startFrame);
-
-    AVAudioFormat *fmt = [[AVAudioFormat alloc]
-        initWithCommonFormat:AVAudioPCMFormatFloat32
-                  sampleRate:self.ffmpegSampleRate
-                    channels:self.ffmpegChannels
-                 interleaved:NO];
-
-    AVAudioPCMBuffer *buffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:fmt
-                                                             frameCapacity:remaining];
-    if (!buffer) {
-        NSLog(@"[AirmedyPlayer] Failed to allocate AVAudioPCMBuffer (%u frames)", remaining);
-        return;
-    }
-    buffer.frameLength = remaining;
-
-    // De-interleave: ffmpegPCMBuffer is [ch0,ch1,ch0,ch1,...] -> buffer.floatChannelData[ch][frame]
-    float **dst = buffer.floatChannelData;
-    float  *src = self.ffmpegPCMBuffer + (NSUInteger)startFrame * self.ffmpegChannels;
-    for (AVAudioFrameCount f = 0; f < remaining; f++) {
-        for (ma_uint32 ch = 0; ch < self.ffmpegChannels; ch++) {
-            dst[ch][f] = src[f * self.ffmpegChannels + ch];
-        }
-    }
-
-    self.scheduledStartFrame = startFrame;
-
+// Asynchronously decodes and schedules the next chunk of audio from FFmpeg.
+- (void)scheduleNextFFmpegChunkWithGeneration:(NSUInteger)gen {
     __weak AirmedyPlayer *weakSelf = self;
-    [self.playerNode scheduleBuffer:buffer completionHandler:^{
-        dispatch_async(dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), ^{
-            AirmedyPlayer *s = weakSelf;
-            if (s && s.isPlaying && s.scheduleGeneration == gen) {
-                goHandleTrackEnd();
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        AirmedyPlayer *s = weakSelf;
+        if (!s) return;
+        
+        float *buf = NULL;
+        int read = 0;
+        ma_uint32 channels = 0;
+        ma_uint32 sampleRate = 0;
+
+        @synchronized(s) {
+            if (s.scheduleGeneration != gen || !s.ffmpegStream) return;
+            
+            channels = s.ffmpegChannels;
+            sampleRate = s.ffmpegSampleRate;
+            int framesToRead = FFMPEG_CHUNK_FRAMES;
+            buf = malloc(framesToRead * channels * sizeof(float));
+            read = ffmpeg_read(s.ffmpegStream, buf, framesToRead);
+        }
+        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            AirmedyPlayer *ms = weakSelf;
+            if (!ms || ms.scheduleGeneration != gen) {
+                if (buf) free(buf);
+                return;
             }
+            if (read <= 0) {
+                if (buf) free(buf);
+                if (ms.isPlaying) goHandleTrackEnd();
+                return;
+            }
+            
+            AVAudioFormat *fmt = [[AVAudioFormat alloc]
+                initWithCommonFormat:AVAudioPCMFormatFloat32
+                          sampleRate:sampleRate
+                            channels:channels
+                         interleaved:NO];
+            AVAudioPCMBuffer *buffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:fmt frameCapacity:read];
+            buffer.frameLength = read;
+            
+            float **dst = buffer.floatChannelData;
+            for (int f = 0; f < read; f++) {
+                for (int ch = 0; ch < (int)channels; ch++) {
+                    dst[ch][f] = buf[f * channels + ch];
+                }
+            }
+            free(buf);
+            
+            [ms.playerNode scheduleBuffer:buffer completionHandler:^{
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [weakSelf scheduleNextFFmpegChunkWithGeneration:gen];
+                });
+            }];
         });
-    }];
+    });
 }
 
 - (void)loadNative:(NSString *)path {
     self.usingFFmpegDecoder = NO;
+    self.isLoading = NO;
 
     NSURL *url = [NSURL fileURLWithPath:path];
     NSError *err = nil;
@@ -284,43 +341,66 @@ static BOOL isAVFoundationNative(NSString *ext) {
     self.playerNode.volume = _volume;
 }
 
-- (void)loadFFmpeg:(NSString *)path {
+- (void)loadFFmpeg:(NSString *)path wasPlaying:(BOOL)wasPlaying {
+    @synchronized(self) {
+        if (self.ffmpegStream) {
+            ffmpeg_close(self.ffmpegStream);
+            self.ffmpegStream = NULL;
+        }
+    }
+    
     self.usingFFmpegDecoder = YES;
     self.audioFile = nil;
+    self.isLoading = YES;
+    self.shouldPlayAfterLoad = wasPlaying;
 
-    if (self.ffmpegPCMBuffer) {
-        free(self.ffmpegPCMBuffer);
-        self.ffmpegPCMBuffer = NULL;
-    }
-
-    // Use the engine's output sample rate; fall back to 44100 if unavailable.
+    NSUInteger loadingGen = ++self.loadingGeneration;
     ma_uint32 targetRate = (ma_uint32)[self.engine.outputNode outputFormatForBus:0].sampleRate;
     if (targetRate == 0) targetRate = 44100;
 
-    float    *rawPCM   = NULL;
-    ma_uint64 frames   = 0;
-    ma_uint32 channels = 0;
+    __weak AirmedyPlayer *weakSelf = self;
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        FFmpegHandle *h = ffmpeg_open(path.UTF8String, targetRate);
 
-    int result = ffmpeg_decode_file(path.UTF8String, targetRate, &rawPCM, &frames, &channels);
-    if (result != 0 || !rawPCM) {
-        NSLog(@"[AirmedyPlayer] FFmpeg decode failed for %@ (code %d)", path, result);
-        return;
-    }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            AirmedyPlayer *s = weakSelf;
+            if (!s || s.loadingGeneration != loadingGen) {
+                if (h) ffmpeg_close(h);
+                return;
+            }
 
-    self.ffmpegPCMBuffer  = rawPCM;
-    self.ffmpegFrameCount = frames;
-    self.ffmpegChannels   = channels > 0 ? channels : 2;
-    self.ffmpegSampleRate = targetRate;
+            s.isLoading = NO;
+            if (!h) {
+                NSLog(@"[AirmedyPlayer] FFmpeg open failed for %@", path);
+                return;
+            }
 
-    AVAudioFormat *fmt = [[AVAudioFormat alloc]
-        initWithCommonFormat:AVAudioPCMFormatFloat32
-                  sampleRate:targetRate
-                    channels:self.ffmpegChannels
-                 interleaved:NO];
-    [self reconnectEngineWithFormat:fmt];
+            @synchronized(s) {
+                s.ffmpegStream = h;
+                s.ffmpegFrameCount = h->total_frames;
+                s.ffmpegChannels   = h->n_ch;
+                s.ffmpegSampleRate = targetRate;
+            }
 
-    [self scheduleFFmpegFrom:0 generation:self.scheduleGeneration];
-    self.playerNode.volume = _volume;
+            AVAudioFormat *fmt = [[AVAudioFormat alloc]
+                initWithCommonFormat:AVAudioPCMFormatFloat32
+                        sampleRate:targetRate
+                            channels:h->n_ch
+                        interleaved:NO];
+            [s reconnectEngineWithFormat:fmt];
+
+            s.scheduleGeneration++;
+            s.scheduledStartFrame = 0;
+            [s scheduleNextFFmpegChunkWithGeneration:s.scheduleGeneration];
+            [s scheduleNextFFmpegChunkWithGeneration:s.scheduleGeneration];
+            [s scheduleNextFFmpegChunkWithGeneration:s.scheduleGeneration];
+            
+            s.playerNode.volume = s.volume;
+            if (s.shouldPlayAfterLoad) {
+                [s play];
+            }
+        });
+    });
 }
 
 - (void)load:(NSString *)path {
@@ -333,13 +413,11 @@ static BOOL isAVFoundationNative(NSString *ext) {
 
     if (isAVFoundationNative(path.pathExtension)) {
         [self loadNative:path];
+        if (wasPlaying) {
+            [self play];
+        }
     } else {
-        [self loadFFmpeg:path];
-    }
-
-    if (wasPlaying) {
-        [self.playerNode play];
-        self.isPlaying = YES;
+        [self loadFFmpeg:path wasPlaying:wasPlaying];
     }
 }
 

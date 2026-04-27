@@ -30,8 +30,12 @@ func NewSettingsService(repo domain.SettingsRepository, cfg *config.Config, logg
 func (s *SettingsService) GetSettings(ctx context.Context) (*domain.AppSettings, error) {
 	settings, err := s.repo.Load(ctx)
 	if err != nil {
-		s.logger.Error("failed to load app settings", "error", err)
-		return nil, fmt.Errorf("failed to load app settings: %w", err)
+		s.logger.Error("failed to load app settings, using defaults", "error", err)
+		return &domain.AppSettings{
+			Language:     "en",
+			Theme:        "system",
+			StartAtLogin: false,
+		}, nil
 	}
 	return settings, nil
 }
