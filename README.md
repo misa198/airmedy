@@ -25,7 +25,6 @@
 - **Fullscreen & miniplayer modes** — go fullscreen for an immersive listening experience, or shrink to a miniplayer that stays out of your way.
 - **Playlists** — create and manage playlists, import and export them, and browse your collection by genre, artist, or album.
 - **10-band equalizer** — tune the sound to your headphones or speakers. Runs natively on macOS (AVFoundation) and Windows/Linux (miniaudio) for optimal performance.
-- **AirPlay 2** — stream to any AirPlay speaker or Apple TV directly from Airmedy.
 - **Lock screen & media keys** — control playback from your keyboard, lock screen, or Control Center — just like a first-party app.
 - **Fast search** — find any track, album, or artist in milliseconds.
 - **Plays in the background** — close the window and music keeps going. Quit when you actually mean it.
@@ -175,6 +174,7 @@ task verify   # runs all Go unit tests + Vue component tests + linters
 - [ ] **Last.fm Scrobbling** — passive listening history
 - [ ] **Podcast support** — RSS feed management alongside music library
 - [ ] **Album and artist arts** — online search for missing arts
+- [ ] **AirPlay 2** — stream to any AirPlay speaker or Apple TV directly from Airmedy.
 
 ---
 

@@ -31,7 +31,7 @@ var Module = fx.Module("logging",
 
 			w := io.MultiWriter(os.Stdout, rotator)
 			logger := slog.New(slog.NewTextHandler(w, &slog.HandlerOptions{
-				Level: slog.LevelDebug,
+				Level: defaultLogLevel,
 			}))
 
 			slog.SetDefault(logger)

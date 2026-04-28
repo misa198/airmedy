@@ -85,8 +85,12 @@ Section
     !insertmacro wails.webview2runtime
 
     SetOutPath $INSTDIR
-    
+
     !insertmacro wails.files
+
+    ; Bundle MinGW runtime DLLs required by the app
+    File /nonfatal "..\..\..\bin\libwinpthread-1.dll"
+    File /nonfatal "..\..\..\bin\libgcc_s_seh-1.dll"
 
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
