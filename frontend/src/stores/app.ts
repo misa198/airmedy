@@ -1,11 +1,12 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import * as SettingsService from '../../bindings/airmedy/internal/infra/wails/settingsservice'
 
 export const useAppStore = defineStore('app', () => {
   const theme = ref<'system' | 'light' | 'dark'>('system')
   const language = ref('en')
   const startAtLogin = ref(false)
+  const lastfmUsername = ref('')
 
   const applyTheme = (newTheme: 'system' | 'light' | 'dark') => {
     const root = document.documentElement
@@ -23,6 +24,7 @@ export const useAppStore = defineStore('app', () => {
         if (settings.theme) theme.value = settings.theme as any
         if (settings.language) language.value = settings.language
         startAtLogin.value = !!settings.start_at_login
+        lastfmUsername.value = settings.lastfm_username || ''
         applyTheme(theme.value)
       }
     } catch (err) {
@@ -37,7 +39,8 @@ export const useAppStore = defineStore('app', () => {
       await SettingsService.SaveSettings({ 
         theme: newTheme, 
         language: language.value,
-        start_at_login: startAtLogin.value
+        start_at_login: startAtLogin.value,
+        lastfm_username: lastfmUsername.value
       })
     } catch (err) {
       console.error('Failed to save theme setting:', err)
@@ -50,7 +53,8 @@ export const useAppStore = defineStore('app', () => {
       await SettingsService.SaveSettings({ 
         theme: theme.value, 
         language: newLanguage,
-        start_at_login: startAtLogin.value
+        start_at_login: startAtLogin.value,
+        lastfm_username: lastfmUsername.value
       })
     } catch (err) {
       console.error('Failed to save language setting:', err)
@@ -63,11 +67,16 @@ export const useAppStore = defineStore('app', () => {
       await SettingsService.SaveSettings({ 
         theme: theme.value, 
         language: language.value,
-        start_at_login: enabled
+        start_at_login: enabled,
+        lastfm_username: lastfmUsername.value
       })
     } catch (err) {
       console.error('Failed to save startup setting:', err)
     }
+  }
+
+  const updateLastFmUsername = (username: string) => {
+    lastfmUsername.value = username
   }
 
   // Watch for system theme changes if set to 'system'
@@ -81,9 +90,11 @@ export const useAppStore = defineStore('app', () => {
     theme,
     language,
     startAtLogin,
+    lastfmUsername,
     loadSettings,
     updateTheme,
     updateLanguage,
-    updateStartAtLogin
+    updateStartAtLogin,
+    updateLastFmUsername
   }
 })

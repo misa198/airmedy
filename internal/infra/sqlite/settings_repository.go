@@ -18,14 +18,16 @@ func NewSettingsRepository(db *DB) domain.SettingsRepository {
 
 func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSettings) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO app_settings (id, language, theme, updated_at)
-		 VALUES (1, ?, ?, CURRENT_TIMESTAMP)
+		`INSERT INTO app_settings (id, language, theme, lastfm_username, updated_at)
+		 VALUES (1, ?, ?, ?, CURRENT_TIMESTAMP)
 		 ON CONFLICT(id) DO UPDATE SET
 		   language = excluded.language,
 		   theme = excluded.theme,
+		   lastfm_username = excluded.lastfm_username,
 		   updated_at = excluded.updated_at`,
 		settings.Language,
 		settings.Theme,
+		settings.LastFmUsername,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to save app settings: %w", err)
@@ -35,11 +37,12 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 
 func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, error) {
 	var row struct {
-		Language string `db:"language"`
-		Theme    string `db:"theme"`
+		Language       string         `db:"language"`
+		Theme          string         `db:"theme"`
+		LastFmUsername sql.NullString `db:"lastfm_username"`
 	}
 	err := r.db.GetContext(ctx, &row,
-		`SELECT language, theme FROM app_settings WHERE id = 1`,
+		`SELECT language, theme, lastfm_username FROM app_settings WHERE id = 1`,
 	)
 	if err == sql.ErrNoRows {
 		return &domain.AppSettings{Language: "en", Theme: "system"}, nil
@@ -49,7 +52,8 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 	}
 
 	return &domain.AppSettings{
-		Language: row.Language,
-		Theme:    row.Theme,
+		Language:       row.Language,
+		Theme:          row.Theme,
+		LastFmUsername: row.LastFmUsername.String,
 	}, nil
 }

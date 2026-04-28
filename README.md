@@ -14,6 +14,8 @@
 [![Windows](https://custom-icon-badges.demolab.com/badge/Windows-0078D6?logo=windows11&logoColor=white)](#)
 [![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black)](#)
 
+[![Go](https://img.shields.io/badge/last.fm-da0b0b?style=flat-square&logo=last.fm&logoColor=white)](https://last.fm/)
+
 </div>
 
 ---
@@ -26,6 +28,7 @@
 - **Playlists** — create and manage playlists, import and export them, and browse your collection by genre, artist, or album.
 - **10-band equalizer** — tune the sound to your headphones or speakers. Runs natively on macOS (AVFoundation) and Windows/Linux (miniaudio) for optimal performance.
 - **Lock screen & media keys** — control playback from your keyboard, lock screen, or Control Center — just like a first-party app.
+- **Last.fm scrobbling** — sync your listening history and loved tracks automatically.
 - **Fast search** — find any track, album, or artist in milliseconds.
 - **Plays in the background** — close the window and music keeps going. Quit when you actually mean it.
 - **Tray menu** — control playback from the system tray.
@@ -171,7 +174,6 @@ task verify   # runs all Go unit tests + Vue component tests + linters
 
 - [ ] **Gapless Playback** — zero-gap crossfade between tracks
 - [ ] **Smart Playlists** — rule-based auto-playlists (genre, BPM, play count)
-- [ ] **Last.fm Scrobbling** — passive listening history
 - [ ] **Podcast support** — RSS feed management alongside music library
 - [ ] **Album and artist arts** — online search for missing arts
 - [ ] **AirPlay 2** — stream to any AirPlay speaker or Apple TV directly from Airmedy.

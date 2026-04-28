@@ -36,17 +36,22 @@
       "added_error": "Fehler beim Hinzufügen des Ordners",
       "removed_success": "Ordner erfolgreich entfernt",
       "removed_error": "Fehler beim Entfernen des Ordners",
-      "remove_folder": "Ordner entfernen"
+      "remove_folder": "Ordner entfernen",
+      "remove_folder_confirm": "Sind Sie sicher, dass Sie diesen Ordner aus Ihrer Bibliothek entfernen möchten? Die eigentlichen Dateien werden nicht gelöscht.",
+      "remove_folder_title": "Ordner entfernen",
+      "removing": "Wird entfernt..."
     },
     "categories": {
       "general": "Allgemein",
       "library": "Bibliothek",
       "equalization": "Equalizer",
-      "about": "Über"
+      "about": "Über",
+      "integrations": "Integrationen"
     },
     "general": {
       "behavior": "Verhalten",
-      "appearance": "Erscheinungsbild"
+      "appearance": "Erscheinungsbild",
+      "integrations": "Integrationen"
     },
     "behavior": {
       "start_at_login": "Beim Anmelden starten",
@@ -82,6 +87,14 @@
       "delete_profile": "Profil löschen",
       "rename_profile": "Profil umbenennen",
       "select_profile": "Profil auswählen"
+    },
+    "lastfm": {
+      "connect": "Verbinden",
+      "connected_as": "Verbunden als",
+      "connecting": "Verbinde...",
+      "disconnect": "Trennen",
+      "scrobble_desc": "Übertrage deine Wiedergaben an Last.fm",
+      "title": "Last.fm"
     }
   },
   "sidebar": {
@@ -101,7 +114,9 @@
     "rename": "Umbenennen",
     "delete": "Löschen",
     "no_playlists": "Noch keine Playlists",
-    "rename_playlist_title": "Playlist umbenennen"
+    "rename_playlist_title": "Playlist umbenennen",
+    "delete_playlist_message": "Sind Sie sicher, dass Sie diese Playlist löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "delete_playlist_title": "Playlist löschen"
   },
   "player": {
     "not_playing": "Keine Wiedergabe",
@@ -206,7 +221,9 @@
     "show_in_explorer": "Im Datei-Explorer anzeigen",
     "track_info": "Titelinformationen",
     "refresh_lyrics": "Lyrics aktualisieren",
-    "remove_from_queue": "Aus Warteschlange entfernen"
+    "remove_from_queue": "Aus Warteschlange entfernen",
+    "play": "Abspielen",
+    "shuffle": "Zufällig"
   },
   "track_info": {
     "title": "Titelinformationen",
@@ -232,5 +249,15 @@
   "playlist": {
     "edit_cover": "Cover bearbeiten",
     "remove_cover": "Eigenes Cover entfernen"
+  },
+  "artist": {
+    "albums_count": "{count} Alben",
+    "songs_count": "{count} Songs"
+  },
+  "composer": {
+    "compositions_count": "{count} Kompositionen"
+  },
+  "genre": {
+    "tracks_count": "{count} Titel"
   }
 }

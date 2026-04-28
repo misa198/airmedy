@@ -36,17 +36,22 @@
       "added_error": "添加文件夹失败",
       "removed_success": "文件夹移除成功",
       "removed_error": "移除文件夹失败",
-      "remove_folder": "移除文件夹"
+      "remove_folder": "移除文件夹",
+      "remove_folder_confirm": "您确定要从库中删除此文件夹吗？实际文件不会被删除。",
+      "remove_folder_title": "删除文件夹",
+      "removing": "正在删除..."
     },
     "categories": {
       "general": "通用",
       "library": "媒体库",
       "equalization": "均衡器",
-      "about": "关于"
+      "about": "关于",
+      "integrations": "集成"
     },
     "general": {
       "behavior": "行为",
-      "appearance": "外观"
+      "appearance": "外观",
+      "integrations": "集成"
     },
     "behavior": {
       "start_at_login": "开机启动",
@@ -82,6 +87,14 @@
       "delete_profile": "删除配置文件",
       "rename_profile": "重命名配置文件",
       "select_profile": "选择配置文件"
+    },
+    "lastfm": {
+      "connect": "连接",
+      "connected_as": "已连接为",
+      "connecting": "正在连接...",
+      "disconnect": "断开连接",
+      "scrobble_desc": "将您的播放记录同步到 Last.fm",
+      "title": "Last.fm"
     }
   },
   "sidebar": {
@@ -101,7 +114,9 @@
     "rename": "重命名",
     "delete": "删除",
     "no_playlists": "暂无播放列表",
-    "rename_playlist_title": "重命名播放列表"
+    "rename_playlist_title": "重命名播放列表",
+    "delete_playlist_message": "您确定要删除此播放列表吗？此操作无法撤销。",
+    "delete_playlist_title": "删除播放列表"
   },
   "player": {
     "not_playing": "未在播放",
@@ -206,7 +221,9 @@
     "edit_metadata": "编辑元数据",
     "show_in_explorer": "在文件资源管理器中显示",
     "track_info": "歌曲信息",
-    "refresh_lyrics": "刷新歌词"
+    "refresh_lyrics": "刷新歌词",
+    "play": "播放",
+    "shuffle": "随机播放"
   },
   "track_info": {
     "title": "歌曲信息",

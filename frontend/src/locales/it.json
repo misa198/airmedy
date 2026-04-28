@@ -36,17 +36,22 @@
       "added_error": "Impossibile aggiungere la cartella",
       "removed_success": "Cartella rimossa con successo",
       "removed_error": "Impossibile rimuovere la cartella",
-      "remove_folder": "Rimuovi cartella"
+      "remove_folder": "Rimuovi cartella",
+      "remove_folder_confirm": "Sei sicuro di voler rimuovere questa cartella dalla tua libreria? I file effettivi non verranno eliminati.",
+      "remove_folder_title": "Rimuovi cartella",
+      "removing": "Rimozione in corso..."
     },
     "categories": {
       "general": "Generale",
       "library": "Libreria",
       "equalization": "Equalizzazione",
-      "about": "Informazioni"
+      "about": "Informazioni",
+      "integrations": "Integrazioni"
     },
     "general": {
       "behavior": "Comportamento",
-      "appearance": "Aspetto"
+      "appearance": "Aspetto",
+      "integrations": "Integrazioni"
     },
     "behavior": {
       "start_at_login": "Avvia al login",
@@ -82,6 +87,14 @@
       "delete_profile": "Elimina profilo",
       "rename_profile": "Rinomina profilo",
       "select_profile": "Seleziona profilo"
+    },
+    "lastfm": {
+      "connect": "Connetti",
+      "connected_as": "Connesso come",
+      "connecting": "Connessione...",
+      "disconnect": "Disconnetti",
+      "scrobble_desc": "Invia i tuoi ascolti a Last.fm",
+      "title": "Last.fm"
     }
   },
   "sidebar": {
@@ -101,7 +114,9 @@
     "rename": "Rinomina",
     "delete": "Elimina",
     "no_playlists": "Nessuna playlist",
-    "rename_playlist_title": "Rinomina Playlist"
+    "rename_playlist_title": "Rinomina Playlist",
+    "delete_playlist_message": "Sei sicuro di voler eliminare questa playlist? L'azione non può essere annullata.",
+    "delete_playlist_title": "Elimina playlist"
   },
   "player": {
     "not_playing": "Nessuna riproduzione",
@@ -206,7 +221,9 @@
     "show_in_explorer": "Mostra in Esplora file",
     "track_info": "Informazioni traccia",
     "refresh_lyrics": "Aggiorna testi",
-    "remove_from_queue": "Rimuovi dalla coda"
+    "remove_from_queue": "Rimuovi dalla coda",
+    "play": "Riproduci",
+    "shuffle": "Casuale"
   },
   "track_info": {
     "title": "Informazioni traccia",
@@ -232,5 +249,15 @@
   "playlist": {
     "edit_cover": "Modifica copertina",
     "remove_cover": "Rimuovi copertina personalizzata"
+  },
+  "artist": {
+    "albums_count": "{count} album",
+    "songs_count": "{count} brani"
+  },
+  "composer": {
+    "compositions_count": "{count} composizioni"
+  },
+  "genre": {
+    "tracks_count": "{count} tracce"
   }
 }

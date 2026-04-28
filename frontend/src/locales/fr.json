@@ -36,17 +36,22 @@
       "added_error": "Échec de l'ajout du dossier",
       "removed_success": "Dossier supprimé avec succès",
       "removed_error": "Échec de la suppression du dossier",
-      "remove_folder": "Supprimer le dossier"
+      "remove_folder": "Supprimer le dossier",
+      "remove_folder_confirm": "Êtes-vous sûr de vouloir supprimer ce dossier de votre bibliothèque ? Les fichiers réels ne seront pas supprimés.",
+      "remove_folder_title": "Supprimer le dossier",
+      "removing": "Suppression..."
     },
     "categories": {
       "general": "Général",
       "library": "Bibliothèque",
       "equalization": "Égalisation",
-      "about": "À propos"
+      "about": "À propos",
+      "integrations": "Intégrations"
     },
     "general": {
       "behavior": "Comportement",
-      "appearance": "Apparence"
+      "appearance": "Apparence",
+      "integrations": "Intégrations"
     },
     "behavior": {
       "start_at_login": "Lancer au démarrage",
@@ -82,6 +87,14 @@
       "delete_profile": "Supprimer le profil",
       "rename_profile": "Renommer le profil",
       "select_profile": "Sélectionner un profil"
+    },
+    "lastfm": {
+      "connect": "Connexion",
+      "connected_as": "Connecté en tant que",
+      "connecting": "Connexion en cours...",
+      "disconnect": "Déconnexion",
+      "scrobble_desc": "Scrobblez vos écoutes sur Last.fm",
+      "title": "Last.fm"
     }
   },
   "sidebar": {
@@ -101,7 +114,9 @@
     "rename": "Renommer",
     "delete": "Supprimer",
     "no_playlists": "Aucune playlist pour le moment",
-    "rename_playlist_title": "Renommer la playlist"
+    "rename_playlist_title": "Renommer la playlist",
+    "delete_playlist_message": "Êtes-vous sûr de vouloir supprimer cette liste de lecture ? Cette action est irréversible.",
+    "delete_playlist_title": "Supprimer la liste de lecture"
   },
   "player": {
     "not_playing": "Aucune lecture",
@@ -206,7 +221,9 @@
     "show_in_explorer": "Afficher dans l'explorateur de fichiers",
     "track_info": "Informations sur la piste",
     "refresh_lyrics": "Actualiser les paroles",
-    "remove_from_queue": "Retirer de la file d'attente"
+    "remove_from_queue": "Retirer de la file d'attente",
+    "play": "Lire",
+    "shuffle": "Aléatoire"
   },
   "track_info": {
     "title": "Informations sur la piste",
@@ -232,5 +249,15 @@
   "playlist": {
     "edit_cover": "Modifier la couverture",
     "remove_cover": "Supprimer la couverture personnalisée"
+  },
+  "artist": {
+    "albums_count": "{count} albums",
+    "songs_count": "{count} chansons"
+  },
+  "composer": {
+    "compositions_count": "{count} compositions"
+  },
+  "genre": {
+    "tracks_count": "{count} titres"
   }
 }

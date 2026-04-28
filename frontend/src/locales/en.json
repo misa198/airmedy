@@ -44,12 +44,22 @@
     "categories": {
       "general": "General",
       "library": "Library",
+      "integrations": "Integrations",
       "equalization": "Equalization",
       "about": "About"
     },
     "general": {
       "behavior": "Behavior",
-      "appearance": "Appearance"
+      "appearance": "Appearance",
+      "integrations": "Integrations"
+    },
+    "lastfm": {
+      "title": "Last.fm",
+      "scrobble_desc": "Scrobble your plays to Last.fm",
+      "connected_as": "Connected as",
+      "connect": "Connect",
+      "connecting": "Connecting...",
+      "disconnect": "Disconnect"
     },
     "behavior": {
       "start_at_login": "Start at login",

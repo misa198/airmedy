@@ -1,34 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-    <dict>
-        <key>CFBundlePackageType</key>
-            <string>APPL</string>
-        <key>CFBundleName</key>
-            <string>Airmedy</string>
-        <key>CFBundleExecutable</key>
-            <string>airmedy</string>
-        <key>CFBundleIdentifier</key>
-            <string>me.misa198.airmedy</string>
-        <key>CFBundleVersion</key>
-            <string>1.0.0</string>
-        <key>CFBundleGetInfoString</key>
-            <string>Airmedy</string>
-        <key>CFBundleShortVersionString</key>
-            <string>1.0.0</string>
-        <key>CFBundleIconFile</key>
-            <string>icons</string>
-        <key>CFBundleIconName</key>
-            <string>appicon</string>
-        <key>LSMinimumSystemVersion</key>
-            <string>14.0.0</string>
-        <key>NSHighResolutionCapable</key>
-            <string>true</string>
-        <key>NSHumanReadableCopyright</key>
-            <string>© 2026, misa198</string>
-        <key>NSAppTransportSecurity</key>
-        <dict>
-            <key>NSAllowsLocalNetworking</key>
-            <true/>
-        </dict>
-    </dict>
+	<dict>
+		<key>CFBundleExecutable</key>
+		<string>airmedy</string>
+		<key>CFBundleGetInfoString</key>
+		<string>An offline music player for macOS, Windows and Linux.</string>
+		<key>CFBundleIconFile</key>
+		<string>icons</string>
+		<key>CFBundleIconName</key>
+		<string>appicon</string>
+		<key>CFBundleIdentifier</key>
+		<string>me.misa198.airmedy</string>
+		<key>CFBundleName</key>
+		<string>Airmedy</string>
+		<key>CFBundlePackageType</key>
+		<string>APPL</string>
+		<key>CFBundleShortVersionString</key>
+		<string>1.0.0</string>
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleURLName</key>
+				<string>wails.com.airmedy</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>airmedy</string>
+				</array>
+			</dict>
+		</array>
+		<key>CFBundleVersion</key>
+		<string>1.0.0</string>
+		<key>LSMinimumSystemVersion</key>
+		<string>10.15.0</string>
+		<key>NSAppTransportSecurity</key>
+		<dict>
+			<key>NSAllowsLocalNetworking</key>
+			<true/>
+		</dict>
+		<key>NSHighResolutionCapable</key>
+		<string>true</string>
+		<key>NSHumanReadableCopyright</key>
+		<string>(c) 2026, Thanh Vu</string>
+	</dict>
 </plist>

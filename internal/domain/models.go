@@ -135,7 +135,8 @@ type PlayerState struct {
 
 // AppSettings holds general application settings
 type AppSettings struct {
-	Language     string `json:"language"`
-	Theme        string `json:"theme"` // "system", "light", "dark"
-	StartAtLogin bool   `json:"start_at_login"`
+	Language       string `json:"language"`
+	Theme          string `json:"theme"` // "system", "light", "dark"
+	StartAtLogin   bool   `json:"start_at_login"`
+	LastFmUsername string `json:"lastfm_username"`
 }

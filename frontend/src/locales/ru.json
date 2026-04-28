@@ -36,17 +36,22 @@
       "added_error": "Не удалось добавить папку",
       "removed_success": "Папка успешно удалена",
       "removed_error": "Не удалось удалить папку",
-      "remove_folder": "Удалить папку"
+      "remove_folder": "Удалить папку",
+      "remove_folder_confirm": "Вы уверены, что хотите удалить эту папку из своей библиотеки? Сами файлы не будут удалены.",
+      "remove_folder_title": "Удалить папку",
+      "removing": "Удаление..."
     },
     "categories": {
       "general": "Общие",
       "library": "Медиатека",
       "equalization": "Эквалайзер",
-      "about": "О программе"
+      "about": "О программе",
+      "integrations": "Интеграции"
     },
     "general": {
       "behavior": "Поведение",
-      "appearance": "Внешний вид"
+      "appearance": "Внешний вид",
+      "integrations": "Интеграции"
     },
     "behavior": {
       "start_at_login": "Запускать при входе",
@@ -82,6 +87,14 @@
       "delete_profile": "Удалить профиль",
       "rename_profile": "Переименовать профиль",
       "select_profile": "Выбрать профиль"
+    },
+    "lastfm": {
+      "connect": "Подключить",
+      "connected_as": "Подключено как",
+      "connecting": "Подключение...",
+      "disconnect": "Отключить",
+      "scrobble_desc": "Скробблинг прослушиваний на Last.fm",
+      "title": "Last.fm"
     }
   },
   "sidebar": {
@@ -101,7 +114,9 @@
     "rename": "Переименовать",
     "delete": "Удалить",
     "no_playlists": "Плейлистов пока нет",
-    "rename_playlist_title": "Переименовать плейлист"
+    "rename_playlist_title": "Переименовать плейлист",
+    "delete_playlist_message": "Вы уверены, что хотите удалить этот плейлист? Это действие нельзя отменить.",
+    "delete_playlist_title": "Удалить плейлист"
   },
   "player": {
     "not_playing": "Ничего не воспроизводится",
@@ -206,7 +221,9 @@
     "show_in_explorer": "Показать в проводнике",
     "track_info": "Информация о треке",
     "refresh_lyrics": "Обновить текст",
-    "remove_from_queue": "Убрать из очереди"
+    "remove_from_queue": "Убрать из очереди",
+    "play": "Воспроизвести",
+    "shuffle": "Перемешать"
   },
   "track_info": {
     "title": "Информация о треке",
@@ -232,5 +249,15 @@
   "playlist": {
     "edit_cover": "Изменить обложку",
     "remove_cover": "Удалить свою обложку"
+  },
+  "artist": {
+    "albums_count": "{count} альбомов",
+    "songs_count": "{count} песен"
+  },
+  "composer": {
+    "compositions_count": "{count} произведений"
+  },
+  "genre": {
+    "tracks_count": "{count} треков"
   }
 }

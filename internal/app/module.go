@@ -4,6 +4,7 @@ import (
 	"airmedy/internal/app/appsettings"
 	"airmedy/internal/app/config"
 	"airmedy/internal/app/eq"
+	"airmedy/internal/app/lastfm"
 	"airmedy/internal/app/library"
 	"airmedy/internal/app/lyrics"
 	"airmedy/internal/app/player"
@@ -58,6 +59,7 @@ var Module = fx.Module("app",
 		wails.NewPlaylistService,
 		wails.NewLyricsService,
 		wails.NewEQService,
+		wails.NewLastFmService,
 		wails.NewWindowService,
 		wails.NewSettingsService,
 		func() *wails.GreetService { return &wails.GreetService{} },
@@ -68,14 +70,17 @@ var Module = fx.Module("app",
 	playlist.Module,
 	lyrics.Module,
 	eq.Module,
+	lastfm.Module,
 	appsettings.Module,
-	fx.Invoke(func(lc fx.Lifecycle, db *sqlite.DB, search domain.SearchService, lib *library.LibraryService, playerSvc *player.PlayerService, eqSvc *eq.EQService) {
+	fx.Invoke(func(lc fx.Lifecycle, db *sqlite.DB, search domain.SearchService, lib *library.LibraryService, playerSvc *player.PlayerService, eqSvc *eq.EQService, lastfmSvc *lastfm.LastFmService) {
 		lc.Append(fx.Hook{
 			OnStart: func(ctx context.Context) error {
 				// Wire library to player to sync track metadata changes (e.g. favorites)
 				lib.AddTrackUpdateListener(func(track *domain.TrackDTO) {
 					playerSvc.SyncTrack(track)
+					lastfmSvc.SetLoveStatus(track, track.IsFavorite)
 				})
+
 
 				if err := eqSvc.SeedDefaults(ctx); err != nil {
 					slog.Error("Failed to seed EQ defaults", "error", err)

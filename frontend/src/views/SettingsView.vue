@@ -2,12 +2,13 @@
 import { ref, computed } from 'vue'
 import {
   Folder, Settings,
-  Sliders, Info
+  Sliders, Info, Music
 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import EQPanel from '@/components/EQPanel.vue'
 import GeneralSettings from '@/components/settings/GeneralSettings.vue'
 import LibrarySettings from '@/components/settings/LibrarySettings.vue'
+import IntegrationsSettings from '@/components/settings/IntegrationsSettings.vue'
 import AboutSettings from '@/components/settings/AboutSettings.vue'
 
 const { t } = useI18n()
@@ -18,6 +19,7 @@ const activeCategory = ref('general')
 const categories = computed(() => [
   { id: 'general', name: t('settings.categories.general'), icon: Settings },
   { id: 'library', name: t('settings.categories.library'), icon: Folder },
+  { id: 'integrations', name: t('settings.categories.integrations', 'Integrations'), icon: Music },
   { id: 'equalization', name: t('settings.categories.equalization'), icon: Sliders },
   { id: 'about', name: t('settings.categories.about'), icon: Info },
 ])
@@ -60,6 +62,11 @@ const categories = computed(() => [
         <!-- Library Settings -->
         <LibrarySettings
           v-if="activeCategory === 'library'"
+        />
+
+        <!-- Integrations -->
+        <IntegrationsSettings
+          v-if="activeCategory === 'integrations'"
         />
 
         <!-- Equalization -->

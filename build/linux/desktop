@@ -1,7 +1,7 @@
 [Desktop Entry]
 Version=1.0
 Name=Airmedy
-Comment=A airmedy application
+Comment=An offline music player for macOS, Windows and Linux.
 # The Exec line includes %u to pass the URL to the application
 Exec=/usr/local/bin/airmedy %u
 Terminal=false
@@ -10,4 +10,4 @@ Icon=airmedy
 Categories=Utility;
 StartupWMClass=airmedy
 
- 
+MimeType=x-scheme-handler/airmedy; 

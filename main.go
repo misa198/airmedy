@@ -5,6 +5,7 @@ import (
 	"embed"
 	_ "embed"
 	"log"
+	"net/url"
 	"runtime"
 	"sync"
 	"time"
@@ -42,11 +43,12 @@ func main() {
 	var eqService *wails.EQService
 	var windowService *wails.WindowService
 	var settingsService *wails.SettingsService
+	var lastfmService *wails.LastFmService
 	var artworkCache domain.ArtworkCache
 
 	fxApp := fx.New(
 		app.Module,
-		fx.Populate(&greetService, &libraryService, &playerService, &searchService, &playlistService, &lyricsService, &eqService, &windowService, &settingsService, &artworkCache),
+		fx.Populate(&greetService, &libraryService, &playerService, &searchService, &playlistService, &lyricsService, &eqService, &windowService, &settingsService, &lastfmService, &artworkCache),
 		fx.NopLogger, // Keep logs clean for now
 	)
 
@@ -70,6 +72,11 @@ func main() {
 	wailsApp := application.New(application.Options{
 		Name:        "airmedy",
 		Description: "A modern music player",
+		// Protocols: []application.Protocol{
+		// 	{
+		// 		Scheme: "airmedy",
+		// 	},
+		// },
 		Services: []application.Service{
 			application.NewService(greetService),
 			application.NewService(libraryService),
@@ -78,6 +85,7 @@ func main() {
 			application.NewService(playlistService),
 			application.NewService(lyricsService),
 			application.NewService(eqService),
+			application.NewService(lastfmService),
 			application.NewService(windowService),
 			application.NewService(settingsService),
 		},
@@ -256,6 +264,28 @@ func main() {
 		e.Cancel()
 	})
 	windowService.SetMiniWindow(miniPlayerWindow)
+
+	// Handle deep links (e.g. airmedy://auth?token=...)
+	wailsApp.Event.OnApplicationEvent(events.Common.ApplicationLaunchedWithUrl, func(e *application.ApplicationEvent) {
+		log.Printf("Application opened with URL: %s", e.Context().URL())
+		urlStr := e.Context().URL()
+		if urlStr == "" {
+			return
+		}
+		log.Printf("Application opened with URL: %s", urlStr)
+		if u, err := url.Parse(urlStr); err == nil {
+			if u.Scheme == "airmedy" && u.Host == "auth" {
+				token := u.Query().Get("token")
+				if token != "" {
+					go func() {
+						if err := lastfmService.GetService().CompleteAuth(context.Background(), token); err != nil {
+							log.Printf("Failed to complete Last.fm auth: %v", err)
+						}
+					}()
+				}
+			}
+		}
+	})
 
 	// Cmd+Q fires ApplicationWillTerminate, bypassing WindowClosing on macOS.
 	wailsApp.Event.OnApplicationEvent(events.Mac.ApplicationWillTerminate, func(_ *application.ApplicationEvent) {

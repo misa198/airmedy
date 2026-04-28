@@ -31,6 +31,11 @@ type PlayerService struct {
 	trackRepo     domain.TrackRepository
 	stateRepo     domain.PlayerStateRepository
 
+	trackStartTime time.Time
+	playCounted    map[string]bool // trackID -> bool
+	npReported     map[string]bool // trackID -> bool
+	posConfirmed   map[string]bool // trackID -> bool
+
 	tickerMu     sync.Mutex
 	tickerCancel context.CancelFunc
 	tickInterval time.Duration
@@ -40,8 +45,10 @@ type PlayerService struct {
 	// emitStatusHook overrides event emission in tests (nil in production).
 	emitStatusHook func()
 
-	statusListeners []func(domain.PlayerStatus)
-	queueListeners  []func([]*domain.TrackDTO)
+	statusListeners   []func(domain.PlayerStatus)
+	queueListeners    []func([]*domain.TrackDTO)
+	scrobbleListeners []func(*domain.TrackDTO, time.Time)
+	npListeners       []func(*domain.TrackDTO)
 }
 
 func NewPlayerService(
@@ -63,6 +70,9 @@ func NewPlayerService(
 		trackRepo:     trackRepo,
 		stateRepo:     stateRepo,
 		tickInterval:  500 * time.Millisecond,
+		playCounted:   make(map[string]bool),
+		npReported:    make(map[string]bool),
+		posConfirmed:  make(map[string]bool),
 	}
 	s.player.OnTrackEnd(s.HandleTrackEnd)
 
@@ -109,6 +119,20 @@ func (s *PlayerService) AddQueueListener(f func([]*domain.TrackDTO)) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.queueListeners = append(s.queueListeners, f)
+}
+
+// AddScrobbleListener registers a callback that will be called whenever a track is scrobbled.
+func (s *PlayerService) AddScrobbleListener(f func(*domain.TrackDTO, time.Time)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.scrobbleListeners = append(s.scrobbleListeners, f)
+}
+
+// AddNowPlayingListener registers a callback that will be called when a track is verified as "Now Playing".
+func (s *PlayerService) AddNowPlayingListener(f func(*domain.TrackDTO)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.npListeners = append(s.npListeners, f)
 }
 
 // Play starts or resumes playback. If no track is loaded and the queue is empty,
@@ -253,6 +277,14 @@ func (s *PlayerService) ToggleMute() error {
 func (s *PlayerService) Seek(position float64) error {
 	err := s.player.Seek(position)
 	if err == nil {
+		s.mu.Lock()
+		// Adjust trackStartTime so that time.Since(trackStartTime) reflects the seeked position.
+		// This ensures stale check logic doesn't block scrobbles if user seeks to > 5s immediately.
+		s.trackStartTime = time.Now().Add(-time.Duration(position) * time.Second)
+		if s.currentTrack != nil {
+			s.posConfirmed[s.currentTrack.ID] = true
+		}
+		s.mu.Unlock()
 		s.emitStatus()
 	}
 	return err
@@ -442,14 +474,11 @@ func (s *PlayerService) loadAndPlay(track *domain.TrackDTO) error {
 	s.mu.Lock()
 	s.currentTrack = track
 	s.currentTheme = nil
+	s.trackStartTime = time.Now()
+	delete(s.playCounted, track.ID)
+	delete(s.npReported, track.ID)
+	delete(s.posConfirmed, track.ID)
 	s.mu.Unlock()
-
-	// Increment play count
-	go func(id string) {
-		if err := s.trackRepo.IncrementPlayCount(context.Background(), id); err != nil {
-			s.logger.Warn("failed to increment play count", "track_id", id, "error", err)
-		}
-	}(track.ID)
 
 	s.startPositionTicker()
 	s.emitStatus()
@@ -565,6 +594,100 @@ func (s *PlayerService) emitQueue() {
 	}
 }
 
+func (s *PlayerService) checkThreshold() {
+	s.mu.Lock()
+	track := s.currentTrack
+	if track == nil {
+		s.mu.Unlock()
+		return
+	}
+
+	status := s.player.GetStatus()
+	// Stale status or not yet updated by native player
+	if status.TrackID != track.ID {
+		s.mu.Unlock()
+		return
+	}
+
+	// Impossible position guard: position should not significantly exceed elapsed time since start.
+	// trackStartTime is adjusted on Seek, so this only blocks actual stale jumps from the engine.
+	elapsed := time.Since(s.trackStartTime).Seconds()
+	if !s.playCounted[track.ID] && status.Position > elapsed+5.0 {
+		s.mu.Unlock()
+		return
+	}
+
+	// Confirm position reset (native player is reporting 0 or near-start)
+	if status.Position < 2.0 {
+		s.posConfirmed[track.ID] = true
+	}
+
+	// Restart detection for same track (e.g. Repeat One)
+	if status.Position < 1.0 && s.playCounted[track.ID] {
+		s.playCounted[track.ID] = false
+		s.posConfirmed[track.ID] = true
+		s.trackStartTime = time.Now()
+	}
+
+	if status.PlaybackState != domain.PlaybackStatePlaying || !s.posConfirmed[track.ID] {
+		s.mu.Unlock()
+		return
+	}
+
+	// Threshold 1: Now Playing (3 seconds)
+	if !s.npReported[track.ID] && status.Position >= 3.0 {
+		s.npReported[track.ID] = true
+		listeners := make([]func(*domain.TrackDTO), len(s.npListeners))
+		copy(listeners, s.npListeners)
+		s.mu.Unlock()
+
+		for _, f := range listeners {
+			f(track)
+		}
+
+		s.mu.Lock()
+		// Re-lock to continue with scrobble logic
+	}
+
+	if s.playCounted[track.ID] {
+		s.mu.Unlock()
+		return
+	}
+
+	// Threshold 2: Scrobble (50% or 4 minutes)
+	shouldScrobble := false
+	if track.Duration >= 30 {
+		if status.Position >= float64(track.Duration)/2 || status.Position >= 240 {
+			shouldScrobble = true
+		}
+	}
+
+	if shouldScrobble {
+		s.playCounted[track.ID] = true
+		delete(s.posConfirmed, track.ID)
+		startTime := s.trackStartTime
+		scrobbleListeners := make([]func(*domain.TrackDTO, time.Time), len(s.scrobbleListeners))
+		copy(scrobbleListeners, s.scrobbleListeners)
+		s.mu.Unlock()
+
+		s.logger.Info("track playback threshold reached", "title", track.Title)
+
+		// Increment local play count
+		go func(id string) {
+			if err := s.trackRepo.IncrementPlayCount(context.Background(), id); err != nil {
+				s.logger.Warn("failed to increment play count", "track_id", id, "error", err)
+			}
+		}(track.ID)
+
+		// Notify scrobble listeners (like Last.fm)
+		for _, f := range scrobbleListeners {
+			f(track, startTime)
+		}
+	} else {
+		s.mu.Unlock()
+	}
+}
+
 func (s *PlayerService) startPositionTicker() {
 	s.tickerMu.Lock()
 	defer s.tickerMu.Unlock()
@@ -589,6 +712,7 @@ func (s *PlayerService) startPositionTicker() {
 				s.mu.RUnlock()
 
 				s.emitStatus()
+				s.checkThreshold()
 
 				if s.nowPlaying != nil && track != nil {
 					status := s.player.GetStatus()

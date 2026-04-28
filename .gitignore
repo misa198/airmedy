@@ -36,6 +36,7 @@ pnpm-debug.log
 .env
 *.env.local
 *.env.*.local
+internal/app/config/secrets.go
 
 # Wails specific
 .wails/

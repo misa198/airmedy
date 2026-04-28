@@ -6,10 +6,10 @@
 		"0000": {
 			"ProductVersion": "1.0.0",
 			"CompanyName": "misa198",
-			"FileDescription": "A airmedy application",
-			"LegalCopyright": "© 2026, misa198",
+			"FileDescription": "An offline music player for macOS, Windows and Linux.",
+			"LegalCopyright": "(c) 2026, Thanh Vu",
 			"ProductName": "Airmedy",
-			"Comments": "Airmedy"
+			"Comments": "An offline music player for macOS, Windows and Linux."
 		}
 	}
 }

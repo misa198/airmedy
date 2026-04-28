@@ -9,6 +9,7 @@ Application-level settings: UI theme, display language, launch-at-login. Setting
 | File                                           | Purpose                     |
 | ---------------------------------------------- | --------------------------- |
 | `internal/app/config/config.go`                | Paths and AppSettings model |
+| `internal/app/lastfm/service.go`               | Last.fm scrobbling and auth |
 | `internal/infra/sqlite/settings_repository.go` | SQLite persistence          |
 | `internal/infra/wails/settings_service.go`     | Wails binding               |
 | `frontend/src/stores/app.ts`                   | Frontend settings state     |
@@ -18,13 +19,14 @@ Application-level settings: UI theme, display language, launch-at-login. Setting
 
 ```go
 type AppSettings struct {
-    Language     string  // BCP 47 language tag, e.g., "en", "zh", "ja"
-    Theme        string  // "system", "light", "dark"
-    StartAtLogin bool
+    Language       string  // BCP 47 language tag, e.g., "en", "zh", "ja"
+    Theme          string  // "system", "light", "dark"
+    StartAtLogin   bool
+    LastFmUsername string  // Connected Last.fm account name
 }
 ```
 
-Stored in the `app_settings` table (single-row, id always = 1).
+Stored in the `app_settings` table (single-row, id always = 1). Sensitive session keys are stored in the OS-native secure vault (Keychain, Credential Manager, etc.) via `github.com/zalando/go-keyring`.
 
 ## Config (Data Paths)
 
@@ -71,12 +73,22 @@ interface AppStore {
 
 `SettingsView.vue` uses a tab layout:
 
-| Tab       | Content                                                    |
-| --------- | ---------------------------------------------------------- |
-| General   | Theme selector, Language picker, Start at Login toggle     |
-| Library   | Watched folders list, Add/Remove folder, Sync All, Reindex |
-| Equalizer | EQ profiles and band sliders (see equalizer catalog entry) |
-| About     | App version, GitHub link, License, Open Data Folder button |
+| Tab          | Content                                                    |
+| ------------ | ---------------------------------------------------------- |
+| General      | Theme selector, Language picker, Start at Login toggle     |
+| Library      | Watched folders list, Add/Remove folder, Sync All, Reindex |
+| Integrations | Last.fm account connection and scrobbling status           |
+| Equalizer    | EQ profiles and band sliders (see equalizer catalog entry) |
+| About        | App version, GitHub link, License, Open Data Folder button |
+
+## Last.fm Integration
+
+Authentication is handled via Wails v3 custom protocol (`airmedy://auth`). When a user authorizes the app, Last.fm redirects to this deep link, which is captured by the Go backend to exchange the token for a permanent session key.
+
+- **Scrobbling**: Automatic when a track playback exceeds 50% duration or 4 minutes.
+- **Now Playing**: Updated immediately on track start.
+- **Love Sync**: Favoriting a track in Airmedy automatically "Loves" it on Last.fm.
+- **Secure Storage**: Session keys never touch the database or disk in plain text; they are stored in the OS-native keyring.
 
 ## Theme Application
 
@@ -106,3 +118,4 @@ Settings evolved across multiple migrations:
 | --------- | ---------------------------------------------------------------- |
 | 000005    | Create `app_settings` table with `language`, `id = 1` constraint |
 | 000006    | Add `theme TEXT DEFAULT 'system'` column                         |
+| 000010    | Add `lastfm_username` column for integration UI                  |

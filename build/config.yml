@@ -8,9 +8,9 @@ info:
   companyName: "misa198" # The name of the company
   productName: "Airmedy" # The name of the application
   productIdentifier: "me.misa198.airmedy" # The unique product identifier
-  description: "A lightweight offline music player for macOS, Windows and Linux." # The application description
+  description: "An offline music player for macOS, Windows and Linux." # The application description
   copyright: "(c) 2026, Thanh Vu" # Copyright text
-  comments: "" # Comments
+  comments: "An offline music player for macOS, Windows and Linux." # Comments
   version: "1.0.0" # The application version
   # cfBundleIconName: "appicon" # The macOS icon name in Assets.car icon bundles (optional)
   #                               # Should match the name of your .icon file without the extension
@@ -72,6 +72,10 @@ fileAssociations:
 #    iconName: jpegFileIcon
 #    role: Editor
 #    mimeType: image/jpeg  # (optional)
+
+protocols:
+  - scheme: airmedy
+    description: Callback for authentication
 
 # Other data
 other:

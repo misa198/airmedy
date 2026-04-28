@@ -36,17 +36,22 @@
       "added_error": "Thêm thư mục thất bại",
       "removed_success": "Xóa thư mục thành công",
       "removed_error": "Xóa thư mục thất bại",
-      "remove_folder": "Xóa thư mục"
+      "remove_folder": "Xóa thư mục",
+      "remove_folder_confirm": "Bạn có chắc chắn muốn xóa thư mục này khỏi thư viện không? Các tệp thực tế sẽ không bị xóa.",
+      "remove_folder_title": "Xóa thư mục",
+      "removing": "Đang xóa..."
     },
     "categories": {
       "general": "Chung",
       "library": "Thư viện",
       "equalization": "Bộ cân bằng",
-      "about": "Giới thiệu"
+      "about": "Giới thiệu",
+      "integrations": "Tích hợp"
     },
     "general": {
       "behavior": "Hành vi",
-      "appearance": "Giao diện"
+      "appearance": "Giao diện",
+      "integrations": "Tích hợp"
     },
     "behavior": {
       "start_at_login": "Khởi động cùng hệ thống",
@@ -82,6 +87,14 @@
       "delete_profile": "Xóa hồ sơ",
       "rename_profile": "Đổi tên hồ sơ",
       "select_profile": "Chọn hồ sơ"
+    },
+    "lastfm": {
+      "connect": "Kết nối",
+      "connected_as": "Đã kết nối với tên",
+      "connecting": "Đang kết nối...",
+      "disconnect": "Ngắt kết nối",
+      "scrobble_desc": "Gửi thông tin bài hát đang nghe lên Last.fm",
+      "title": "Last.fm"
     }
   },
   "sidebar": {
@@ -101,7 +114,9 @@
     "rename": "Đổi tên",
     "delete": "Xóa",
     "no_playlists": "Chưa có danh sách phát",
-    "rename_playlist_title": "Đổi tên danh sách phát"
+    "rename_playlist_title": "Đổi tên danh sách phát",
+    "delete_playlist_message": "Bạn có chắc chắn muốn xóa danh sách phát này không? Hành động này không thể hoàn tác.",
+    "delete_playlist_title": "Xóa danh sách phát"
   },
   "player": {
     "not_playing": "Không phát",

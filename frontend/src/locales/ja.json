@@ -36,17 +36,22 @@
       "added_error": "フォルダーの追加に失敗しました",
       "removed_success": "フォルダーを削除しました",
       "removed_error": "フォルダーの削除に失敗しました",
-      "remove_folder": "フォルダーを削除"
+      "remove_folder": "フォルダーを削除",
+      "remove_folder_confirm": "このフォルダーをライブラリから削除してもよろしいですか？実際のファイルは削除されません。",
+      "remove_folder_title": "フォルダーを削除",
+      "removing": "削除中..."
     },
     "categories": {
       "general": "一般",
       "library": "ライブラリ",
       "equalization": "イコライザー",
-      "about": "情報"
+      "about": "情報",
+      "integrations": "連携"
     },
     "general": {
       "behavior": "動作",
-      "appearance": "外観"
+      "appearance": "外観",
+      "integrations": "連携"
     },
     "behavior": {
       "start_at_login": "ログイン時に起動",
@@ -82,6 +87,14 @@
       "delete_profile": "プロファイルを削除",
       "rename_profile": "プロファイルの名前を変更",
       "select_profile": "プロファイルを選択"
+    },
+    "lastfm": {
+      "connect": "接続",
+      "connected_as": "接続済み：",
+      "connecting": "接続中...",
+      "disconnect": "接続解除",
+      "scrobble_desc": "再生履歴を Last.fm に送信する",
+      "title": "Last.fm"
     }
   },
   "sidebar": {
@@ -101,7 +114,9 @@
     "rename": "名前を変更",
     "delete": "削除",
     "no_playlists": "プレイリストはまだありません",
-    "rename_playlist_title": "プレイリスト名の変更"
+    "rename_playlist_title": "プレイリスト名の変更",
+    "delete_playlist_message": "このプレイリストを削除してもよろしいですか？この操作は取り消せません。",
+    "delete_playlist_title": "プレイリストを削除"
   },
   "player": {
     "not_playing": "停止中",
@@ -206,7 +221,9 @@
     "show_in_explorer": "ファイルエクスプローラーで表示",
     "track_info": "トラック情報",
     "refresh_lyrics": "歌詞を更新",
-    "remove_from_queue": "キューから削除"
+    "remove_from_queue": "キューから削除",
+    "play": "再生",
+    "shuffle": "シャッフル"
   },
   "track_info": {
     "title": "トラック情報",
@@ -232,5 +249,15 @@
   "playlist": {
     "edit_cover": "カバーを編集",
     "remove_cover": "カスタムカバーを削除"
+  },
+  "artist": {
+    "albums_count": "{count} アルバム",
+    "songs_count": "{count} 曲"
+  },
+  "composer": {
+    "compositions_count": "{count} 作品"
+  },
+  "genre": {
+    "tracks_count": "{count} トラック"
   }
 }
