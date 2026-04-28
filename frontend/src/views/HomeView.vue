@@ -119,7 +119,7 @@ const onTrackContextMenu = (e: MouseEvent, track: TrackDTO) => {
       <p class="text-foreground opacity-60 max-w-md mb-8">{{ t('home.empty.description') }}</p>
       <button 
         @click="navigateToSettings"
-        class="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-full font-medium hover:scale-105 transition-transform shadow-lg shadow-primary/20"
+        class="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:scale-105 transition-transform shadow-lg shadow-primary/20"
       >
         <SettingsIcon class="w-4 h-4" />
         {{ t('home.empty.action') }}

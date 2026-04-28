@@ -98,8 +98,13 @@ func (r *artistRepository) Upsert(ctx context.Context, artist *domain.Artist) er
 }
 
 func (r *artistRepository) DeleteOrphaned(ctx context.Context) error {
+	// Clean up orphaned junction rows that might exist from before foreign keys were enabled
+	_, _ = r.db.ExecContext(ctx, "DELETE FROM track_artists WHERE track_id NOT IN (SELECT id FROM tracks)")
+	_, _ = r.db.ExecContext(ctx, "DELETE FROM track_album_artists WHERE track_id NOT IN (SELECT id FROM tracks)")
+	_, _ = r.db.ExecContext(ctx, "DELETE FROM album_artists WHERE album_id NOT IN (SELECT id FROM albums)")
+
 	query := `
-		DELETE FROM artists 
+		DELETE FROM artists
 		WHERE id NOT IN (SELECT artist_id FROM track_artists)
 		  AND id NOT IN (SELECT artist_id FROM track_album_artists)
 		  AND id NOT IN (SELECT artist_id FROM album_artists)

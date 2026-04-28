@@ -7,6 +7,7 @@ import TrackTable from '../components/TrackTable.vue'
 import ViewHeader from '../components/ViewHeader.vue'
 import { usePlayerStore } from '../stores/player'
 import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
+import { useLibrarySync } from '@/composables/useLibrarySync'
 
 const PAGE_SIZE = 500
 
@@ -18,6 +19,7 @@ const isLoading = ref(true)
 const searchQuery = ref('')
 
 useLibraryUpdates(tracks)
+useLibrarySync(() => { loadTracks() })
 
 const loadTracks = async () => {
   isLoading.value = true

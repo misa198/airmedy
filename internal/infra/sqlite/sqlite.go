@@ -21,7 +21,8 @@ type DB struct {
 }
 
 func NewDB(dbPath string, logger *slog.Logger) (*DB, error) {
-	db, err := sqlx.Connect("sqlite3", dbPath)
+	connStr := fmt.Sprintf("%s?_fk=1", dbPath)
+	db, err := sqlx.Connect("sqlite3", connStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}

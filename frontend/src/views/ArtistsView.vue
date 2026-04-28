@@ -6,12 +6,15 @@ import { User } from 'lucide-vue-next'
 import type { Artist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import EntityExplorerLayout from '../components/EntityExplorerLayout.vue'
 import { usePlayerStore } from '@/stores/player'
+import { useLibrarySync } from '@/composables/useLibrarySync'
 
 const router = useRouter()
 const route = useRoute()
 const playerStore = usePlayerStore()
 const artists = shallowRef<Artist[]>([])
 const isLoading = ref(true)
+
+useLibrarySync(() => { loadArtists() })
 
 const loadArtists = async () => {
   isLoading.value = true

@@ -6,12 +6,15 @@ import { Tag } from 'lucide-vue-next'
 import type { Genre, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import EntityExplorerLayout from '../components/EntityExplorerLayout.vue'
 import { usePlayerStore } from '@/stores/player'
+import { useLibrarySync } from '@/composables/useLibrarySync'
 
 const router = useRouter()
 const route = useRoute()
 const playerStore = usePlayerStore()
 const genres = shallowRef<Genre[]>([])
 const isLoading = ref(true)
+
+useLibrarySync(() => { loadGenres() })
 
 const loadGenres = async () => {
   isLoading.value = true

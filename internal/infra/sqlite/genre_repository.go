@@ -84,6 +84,9 @@ func (r *genreRepository) Upsert(ctx context.Context, g *domain.Genre) error {
 }
 
 func (r *genreRepository) DeleteOrphaned(ctx context.Context) error {
+	// Clean up orphaned junction rows that might exist from before foreign keys were enabled
+	_, _ = r.db.ExecContext(ctx, "DELETE FROM track_genres WHERE track_id NOT IN (SELECT id FROM tracks)")
+
 	query := `DELETE FROM genres WHERE id NOT IN (SELECT genre_id FROM track_genres)`
 	_, err := r.db.ExecContext(ctx, query)
 	if err != nil {

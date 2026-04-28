@@ -6,12 +6,15 @@ import { UserCircle } from 'lucide-vue-next'
 import type { Composer, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import EntityExplorerLayout from '../components/EntityExplorerLayout.vue'
 import { usePlayerStore } from '@/stores/player'
+import { useLibrarySync } from '@/composables/useLibrarySync'
 
 const router = useRouter()
 const route = useRoute()
 const playerStore = usePlayerStore()
 const composers = shallowRef<Composer[]>([])
 const isLoading = ref(true)
+
+useLibrarySync(() => { loadComposers() })
 
 const loadComposers = async () => {
   isLoading.value = true
