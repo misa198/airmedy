@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as LibraryService from '../../../bindings/airmedy/internal/infra/wails/libraryservice'
 import { RotateCcw, Plus, Trash2, Folder, Loader2, CheckCircle2, DatabaseZap } from 'lucide-vue-next'
 import type { WatchedFolder, SyncProgress } from '../../../bindings/airmedy/internal/domain/models'
 import { Events } from '@wailsio/runtime'
+import ConfirmDialog from '../ConfirmDialog.vue'
 
 const { t } = useI18n()
 
@@ -15,16 +16,18 @@ const syncType = ref<'sync' | 'optimize' | null>(null)
 const isLoading = ref(true)
 const syncProgress = ref<SyncProgress | null>(null)
 const syncComplete = ref(false)
+const folderToDelete = ref<string | null>(null)
+const removingFolderIds = ref<string[]>([])
 
-const loadFolders = async () => {
-  isLoading.value = true
+const loadFolders = async (showLoader = true) => {
+  if (showLoader) isLoading.value = true
   try {
     const result = await LibraryService.GetWatchedFolders()
     folders.value = result.filter((f): f is WatchedFolder => f !== null)
   } catch (err) {
     console.error('Failed to load folders:', err)
   } finally {
-    isLoading.value = false
+    if (showLoader) isLoading.value = false
   }
 }
 
@@ -33,19 +36,26 @@ const addFolder = async () => {
     const path = await LibraryService.SelectFolder()
     if (path) {
       await LibraryService.AddFolder(path)
-      await loadFolders()
+      await loadFolders(false)
     }
   } catch (err) {
     console.error('Failed to add folder:', err)
   }
 }
 
-const removeFolder = async (id: string) => {
+const removeFolder = async () => {
+  if (!folderToDelete.value) return
+  const id = folderToDelete.value
+  folderToDelete.value = null
+  removingFolderIds.value.push(id)
+  
   try {
     await LibraryService.RemoveFolder(id)
-    await loadFolders()
+    await loadFolders(false)
   } catch (err) {
     console.error('Failed to remove folder:', err)
+  } finally {
+    removingFolderIds.value = removingFolderIds.value.filter(fid => fid !== id)
   }
 }
 
@@ -190,19 +200,36 @@ onUnmounted(() => {
 
       <ul v-else class="space-y-2">
         <li v-for="folder in folders" :key="folder.id"
-          class="flex items-center justify-between p-4 bg-foreground/[0.02] border border-foreground/[0.04] rounded-xl group transition-all hover:bg-foreground/[0.04]">
+          class="flex items-center justify-between p-4 bg-foreground/[0.02] border border-foreground/[0.04] rounded-xl group transition-all"
+          :class="removingFolderIds.includes(folder.id) ? 'opacity-50 pointer-events-none' : 'hover:bg-foreground/[0.04]'">
           <div class="flex items-center gap-4 overflow-hidden">
             <div class="p-2 bg-background rounded-lg shadow-sm">
-              <Folder class="w-4 h-4 text-foreground opacity-60" />
+              <Loader2 v-if="removingFolderIds.includes(folder.id)" class="w-4 h-4 text-foreground opacity-60 animate-spin" />
+              <Folder v-else class="w-4 h-4 text-foreground opacity-60" />
             </div>
-            <span class="text-sm font-bold truncate" :title="folder.path">{{ folder.path }}</span>
+            <span class="text-sm font-bold truncate" :title="folder.path">
+              {{ folder.path }}
+              <span v-if="removingFolderIds.includes(folder.id)" class="ml-2 text-xs font-normal opacity-70">
+                ({{ t('settings.folders.removing') }})
+              </span>
+            </span>
           </div>
-          <button @click="removeFolder(folder.id)" :disabled="isSyncing"
-            class="p-2 text-foreground opacity-40 hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all disabled:opacity-50">
+          <button @click="folderToDelete = folder.id" :disabled="isSyncing || removingFolderIds.includes(folder.id)"
+            class="p-2 text-red-500 hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all disabled:opacity-50">
             <Trash2 class="w-4 h-4" />
           </button>
         </li>
       </ul>
     </section>
+
+    <ConfirmDialog
+      :open="!!folderToDelete"
+      @cancel="folderToDelete = null"
+      :title="t('settings.folders.remove_folder_title')"
+      :message="t('settings.folders.remove_folder_confirm')"
+      :confirm-label="t('settings.folders.remove_folder')"
+      danger
+      @confirm="removeFolder"
+    />
   </div>
 </template>

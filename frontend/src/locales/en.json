@@ -36,7 +36,10 @@
       "added_error": "Failed to add folder",
       "removed_success": "Folder removed successfully",
       "removed_error": "Failed to remove folder",
-      "remove_folder": "Remove folder"
+      "remove_folder": "Remove folder",
+      "remove_folder_title": "Remove Folder",
+      "remove_folder_confirm": "Are you sure you want to remove this folder from your library? The actual files will not be deleted.",
+      "removing": "Removing..."
     },
     "categories": {
       "general": "General",
