@@ -95,6 +95,11 @@ jobs:
             diffutils
             pkg-config
 
+      - name: Add MSYS2 to PATH (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: echo "C:/msys64/mingw64/bin" >> $GITHUB_PATH
+
       - name: Install Darwin Dependencies
         if: runner.os == 'Darwin'
         run: brew install nasm
@@ -142,9 +147,8 @@ jobs:
           OS_INPUT="${{ github.event.inputs.os }}"
           case $OS_INPUT in
             "Windows-AMD64")
-              export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/windows/amd64"
-              # Use absolute path to MSYS2 gcc to ensure it picks up installed libs
               export CC=C:/msys64/mingw64/bin/gcc.exe
+              export CGO_LDFLAGS="-LC:/msys64/mingw64/lib -L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/windows/amd64"
               task windows:package ARCH=amd64
               ;;
             "Linux-AMD64")
