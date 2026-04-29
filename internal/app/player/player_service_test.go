@@ -138,6 +138,9 @@ func newTestService(t *testing.T, player domain.AudioPlayer) (*PlayerService, *i
 		trackRepo:    &fakeTrackRepo{},
 		stateRepo:    &fakePlayerStateRepo{},
 		tickInterval: 10 * time.Millisecond,
+		playCounted:  make(map[string]bool),
+		npReported:   make(map[string]bool),
+		posConfirmed: make(map[string]bool),
 	}
 	s.player.OnTrackEnd(s.HandleTrackEnd)
 

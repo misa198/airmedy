@@ -24,17 +24,60 @@ on:
         default: true
 
 jobs:
+  build-ffmpeg-windows:
+    name: Build FFmpeg for Windows
+    if: github.event.inputs.os == 'Windows-AMD64'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Cache FFmpeg (Windows)
+        id: cache-ffmpeg
+        uses: actions/cache@v4
+        with:
+          path: internal/infra/audio/ffmpeg_libs
+          key: ffmpeg-Windows-AMD64-${{ hashFiles('scripts/build-ffmpeg-windows.sh') }}
+
+      - name: Install mingw cross-compiler
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        run: sudo apt-get install -y gcc-mingw-w64-x86-64 nasm
+
+      - name: Build FFmpeg
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        run: bash scripts/build-ffmpeg-windows.sh
+
+      - name: Upload FFmpeg libs
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-windows-amd64
+          path: internal/infra/audio/ffmpeg_libs
+
   build:
     name: Build ${{ github.event.inputs.os }}
+    needs: [build-ffmpeg-windows]
+    if: always() && (needs.build-ffmpeg-windows.result == 'success' || needs.build-ffmpeg-windows.result == 'skipped')
     runs-on: ${{ (contains(github.event.inputs.os, 'Windows') && 'windows-latest') || (contains(github.event.inputs.os, 'Darwin') && 'macos-latest') || 'ubuntu-latest' }}
     permissions:
       contents: write
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Create secrets.go
+        shell: bash
+        run: |
+          cat <<EOF > internal/app/config/secrets.go
+          package config
+
+          var (
+          	LastFmAPIKey    = "${{ secrets.LASTFM_API_KEY }}"
+          	LastFmAPISecret = "${{ secrets.LASTFM_API_SECRET }}"
+          )
+          EOF
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -77,27 +120,19 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev build-essential nsis nasm gcc-aarch64-linux-gnu libc6-dev-arm64-cross pkg-config qemu-user-static binfmt-support
 
-      - name: Setup MSYS2
+      - name: Install Windows Dependencies
+        if: runner.os == 'Windows'
+        run: |
+          choco install nsis -y
+          echo "C:\Program Files (x86)\NSIS" >> $GITHUB_PATH
+
+      - name: Setup MSYS2 (Windows)
         if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
-          update: true
-          path-type: inherit
-          install: >-
-            mingw-w64-x86_64-gcc
-            mingw-w64-x86_64-nasm
-            mingw-w64-x86_64-bzip2
-            mingw-w64-x86_64-xz
-            mingw-w64-x86_64-nsis
-            make
-            diffutils
-            pkg-config
-
-      - name: Add MSYS2 to PATH (Windows)
-        if: runner.os == 'Windows'
-        shell: bash
-        run: echo "C:/msys64/mingw64/bin" >> $GITHUB_PATH
+          install: mingw-w64-x86_64-gcc
+          update: false
 
       - name: Install Darwin Dependencies
         if: runner.os == 'Darwin'
@@ -105,10 +140,18 @@ jobs:
 
       - name: Cache FFmpeg Binaries
         id: cache-ffmpeg
+        if: runner.os != 'Windows'
         uses: actions/cache@v4
         with:
           path: internal/infra/audio/ffmpeg_libs
           key: ffmpeg-${{ runner.os }}-${{ hashFiles('scripts/build-ffmpeg-*') }}
+
+      - name: Download FFmpeg (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/download-artifact@v4
+        with:
+          name: ffmpeg-windows-amd64
+          path: internal/infra/audio/ffmpeg_libs
 
       - name: Build FFmpeg (Linux)
         if: runner.os == 'Linux' && steps.cache-ffmpeg.outputs.cache-hit != 'true'
@@ -117,11 +160,6 @@ jobs:
       - name: Build FFmpeg (Darwin)
         if: runner.os == 'Darwin' && steps.cache-ffmpeg.outputs.cache-hit != 'true'
         run: bash scripts/build-ffmpeg-darwin.sh
-
-      - name: Build FFmpeg (Windows)
-        if: runner.os == 'Windows' && steps.cache-ffmpeg.outputs.cache-hit != 'true'
-        shell: msys2 {0}
-        run: bash scripts/build-ffmpeg-windows.sh
 
       - name: Install Wails v3
         run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-alpha.78
@@ -143,17 +181,15 @@ jobs:
 
       - name: Build and Package (Windows)
         if: runner.os == 'Windows'
-        shell: msys2 {0}
+        shell: bash
         run: |
-          REPO_ROOT=$(cygpath -w "$(pwd)")
-          export CC=$(cygpath -w "$(which gcc)")
+          REPO_ROOT=$(pwd)
+          export CC="gcc"
+          export GOOS=windows
+          export GOARCH=amd64
+          export CGO_ENABLED=1
           export CGO_CFLAGS="-I${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/include"
-          export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/windows/amd64 -lncrypt -lcrypt32 -lbcrypt -lsecur32"
-          # Copy MinGW runtime DLLs before NSIS packaging so they are bundled in the installer
-          mkdir -p bin
-          for dll in libwinpthread-1.dll libgcc_s_seh-1.dll; do
-            [ -f "/mingw64/bin/$dll" ] && cp "/mingw64/bin/$dll" bin/ || true
-          done
+          export CGO_LDFLAGS="-static -static-libgcc -static-libstdc++ -L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/windows/amd64"
           task windows:package ARCH=amd64
 
       - name: Build and Package (non-Windows)

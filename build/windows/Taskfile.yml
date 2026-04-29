@@ -49,13 +49,15 @@ tasks:
         platforms: [linux, darwin]
     vars:
       BUILD_FLAGS: '{{if eq .DEV "true"}}{{if .EXTRA_TAGS}}-tags {{.EXTRA_TAGS}} {{end}}-buildvcs=false -gcflags=all="-l"{{else}}-tags production{{if .EXTRA_TAGS}},{{.EXTRA_TAGS}}{{end}} -trimpath -buildvcs=false -ldflags="-w -s -H windowsgui"{{end}}'
+      ZIG_TARGET: '{{if eq (.ARCH | default ARCH) "amd64"}}x86_64-windows-gnu{{else}}aarch64-windows-gnu{{end}}'
     env:
       GOOS: windows
       CGO_ENABLED: '{{.CGO_ENABLED | default "1"}}'
       GOARCH: '{{.ARCH | default ARCH}}'
-      CC: '{{env "CC" | default "gcc"}}'
-      CGO_CFLAGS: '{{env "CGO_CFLAGS"}} -I/mingw64/include'
-      CGO_LDFLAGS: '{{env "CGO_LDFLAGS"}} -L/mingw64/lib'
+      CC: '{{if .USE_ZIG}}zig cc -target {{.ZIG_TARGET}}{{else}}{{env "CC" | default "gcc"}}{{end}}'
+      CXX: '{{if .USE_ZIG}}zig c++ -target {{.ZIG_TARGET}}{{else}}{{env "CXX" | default "g++"}}{{end}}'
+      CGO_CFLAGS: '{{env "CGO_CFLAGS"}}'
+      CGO_LDFLAGS: '{{env "CGO_LDFLAGS"}} -static -static-libgcc'
 
   build:docker:
     summary: Cross-compiles for Windows using Docker with Zig (for CGO builds on non-Windows)

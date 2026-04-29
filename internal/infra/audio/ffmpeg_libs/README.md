@@ -23,7 +23,7 @@ ffmpeg_libs/
 |----------|--------|-------|
 | macOS | `bash scripts/build-ffmpeg-darwin.sh` | Terminal |
 | Linux | `bash scripts/build-ffmpeg-linux.sh` | bash |
-| Windows | `bash scripts/build-ffmpeg-windows.sh` | MSYS2 MINGW64 |
+| Windows | `bash scripts/build-ffmpeg-windows.sh --zig` | bash / Zig |
 
 ### Prerequisites
 
@@ -31,7 +31,10 @@ ffmpeg_libs/
 
 **Linux:** `gcc make curl`. `nasm` optional (`apt install nasm`). For arm64 cross-compile: `apt install gcc-aarch64-linux-gnu`.
 
-**Windows (MSYS2 MINGW64):**
+**Windows (Recommended):**
+Zig compiler (0.13.0+). No MSYS2 required. Produces statically linked libraries.
+
+**Windows (Legacy MSYS2 MINGW64):**
 ```
 pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-nasm make diffutils curl
 ```

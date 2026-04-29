@@ -6,7 +6,9 @@ import (
 	_ "embed"
 	"log"
 	"net/url"
+	"os"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -24,8 +26,14 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
-//go:embed assets/tray-icon.png
-var trayIcon []byte
+//go:embed assets/mac-tray-icon.png
+var macTrayIcon []byte
+
+//go:embed assets/linux-tray-icon.png
+var linuxTrayIcon []byte
+
+//go:embed assets/windows-tray-icon.png
+var windowsTrayIcon []byte
 
 func init() {
 	application.RegisterEvent[string]("time")
@@ -69,14 +77,46 @@ func main() {
 		})
 	}
 
+	handleURL := func(urlStr string) {
+		if urlStr == "" {
+			return
+		}
+		log.Printf("Processing URL: %s", urlStr)
+		if u, err := url.Parse(urlStr); err == nil {
+			if u.Scheme == "airmedy" && u.Host == "auth" {
+				token := u.Query().Get("token")
+				if token != "" {
+					go func() {
+						if err := lastfmService.GetService().CompleteAuth(context.Background(), token); err != nil {
+							log.Printf("Failed to complete Last.fm auth: %v", err)
+						}
+					}()
+				}
+			}
+		}
+	}
+
+	var mainWindow *application.WebviewWindow
+
 	wailsApp := application.New(application.Options{
 		Name:        "airmedy",
 		Description: "A modern music player",
-		// Protocols: []application.Protocol{
-		// 	{
-		// 		Scheme: "airmedy",
-		// 	},
-		// },
+		SingleInstance: &application.SingleInstanceOptions{
+			UniqueID: "me.misa198.airmedy",
+			OnSecondInstanceLaunch: func(data application.SecondInstanceData) {
+				log.Printf("Second instance launched with args: %v", data.Args)
+				for _, arg := range data.Args {
+					if strings.HasPrefix(arg, "airmedy://") {
+						handleURL(arg)
+						break
+					}
+				}
+				if mainWindow != nil {
+					mainWindow.Show()
+					mainWindow.Focus()
+				}
+			},
+		},
 		Services: []application.Service{
 			application.NewService(greetService),
 			application.NewService(libraryService),
@@ -100,7 +140,7 @@ func main() {
 	// Create application menu
 	menu := application.NewMenu()
 	if runtime.GOOS == "darwin" {
-		appMenu := menu.AddSubmenu("airmedy")
+		appMenu := menu.AddSubmenu("Airmedy")
 		appMenu.AddRole(application.About)
 		appMenu.AddSeparator()
 		appMenu.Add("Settings...").
@@ -216,12 +256,13 @@ func main() {
 
 	wailsApp.Menu.SetApplicationMenu(menu)
 
-	mainWindow := wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:     "Airmedy",
-		Width:     1280,
-		Height:    800,
-		MinWidth:  1060,
-		MinHeight: 768,
+	mainWindow = wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
+		Title:              "Airmedy",
+		Width:              1280,
+		Height:             800,
+		MinWidth:           1060,
+		MinHeight:          768,
+		UseApplicationMenu: true,
 		Mac: application.MacWindow{
 			InvisibleTitleBarHeight: 50,
 			Backdrop:                application.MacBackdropTranslucent,
@@ -236,6 +277,16 @@ func main() {
 		e.Cancel()
 	})
 	windowService.SetMainWindow(mainWindow)
+
+	// Process initial arguments for Linux/Windows
+	if runtime.GOOS != "darwin" {
+		for _, arg := range os.Args {
+			if strings.HasPrefix(arg, "airmedy://") {
+				handleURL(arg)
+				break
+			}
+		}
+	}
 
 	miniPlayerWindow := wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:               "Mini Player",
@@ -267,24 +318,7 @@ func main() {
 
 	// Handle deep links (e.g. airmedy://auth?token=...)
 	wailsApp.Event.OnApplicationEvent(events.Common.ApplicationLaunchedWithUrl, func(e *application.ApplicationEvent) {
-		log.Printf("Application opened with URL: %s", e.Context().URL())
-		urlStr := e.Context().URL()
-		if urlStr == "" {
-			return
-		}
-		log.Printf("Application opened with URL: %s", urlStr)
-		if u, err := url.Parse(urlStr); err == nil {
-			if u.Scheme == "airmedy" && u.Host == "auth" {
-				token := u.Query().Get("token")
-				if token != "" {
-					go func() {
-						if err := lastfmService.GetService().CompleteAuth(context.Background(), token); err != nil {
-							log.Printf("Failed to complete Last.fm auth: %v", err)
-						}
-					}()
-				}
-			}
-		}
+		handleURL(e.Context().URL())
 	})
 
 	// Cmd+Q fires ApplicationWillTerminate, bypassing WindowClosing on macOS.
@@ -293,8 +327,15 @@ func main() {
 	})
 
 	systemTray := wailsApp.SystemTray.New()
-	systemTray.SetTemplateIcon(icons.SystrayMacTemplate)
-	systemTray.SetIcon(trayIcon)
+	switch runtime.GOOS {
+	case "darwin":
+		systemTray.SetTemplateIcon(icons.SystrayMacTemplate)
+		systemTray.SetIcon(macTrayIcon)
+	case "linux":
+		systemTray.SetIcon(linuxTrayIcon)
+	case "windows":
+		systemTray.SetIcon(windowsTrayIcon)
+	}
 	systemTray.SetTooltip("Airmedy")
 
 	trayManager := wails.NewTrayManager(wailsApp, playerService.GetService(), libraryService)
