@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Airmedy - All-in-one offline music player</title>
+    <meta
+      name="description"
+      content="Airmedy is a high-performance, open-source offline music player. Experience glass-morphism and hardware-accelerated audio."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" type="image/png" href="airmedy.png" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="dark">
+    <header class="header">
+      <nav class="nav container">
+        <div class="logo">
+          <img src="airmedy.png" alt="Airmedy Logo" class="logo-img" />
+          <span class="logo-text">Airmedy</span>
+        </div>
+        <ul class="nav-links">
+          <li><a href="#features" data-i18n="nav.features">Features</a></li>
+          <li>
+            <a href="#screenshots" data-i18n="nav.screenshots">Screenshots</a>
+          </li>
+          <li><a href="#faq" data-i18n="nav.faq">FAQ</a></li>
+          <li class="lang-selector-wrapper">
+            <select id="lang-selector" class="lang-selector">
+              <option value="en">English</option>
+              <option value="de">Deutsch</option>
+              <option value="es">Español</option>
+              <option value="fr">Français</option>
+              <option value="it">Italiano</option>
+              <option value="ja">日本語</option>
+              <option value="ko">한국어</option>
+              <option value="pt">Português</option>
+              <option value="ru">Русский</option>
+              <option value="th">ไทย</option>
+              <option value="vi">Tiếng Việt</option>
+              <option value="zh">简体中文</option>
+            </select>
+          </li>
+          <li>
+            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="theme-icon-light"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="theme-icon-dark"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </button>
+          </li>
+          <li>
+            <a href="#download" class="btn btn-primary" data-i18n="nav.download"
+              >Download</a
+            >
+          </li>
+        </ul>
+        <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Toggle mobile menu">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="menu-icon"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="close-icon"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero container">
+        <div class="hero-content">
+          <h1 class="hero-title" data-i18n="hero.title">
+            Your music, <br /><span class="text-primary">refined.</span>
+          </h1>
+          <p class="hero-subtitle" data-i18n="hero.subtitle">
+            All-in-one offline music player. High-performance,
+            battery-efficient, and beautifully designed with glass-morphism.
+          </p>
+          <div class="hero-actions">
+            <a
+              href="#download"
+              class="btn btn-primary btn-lg"
+              data-i18n="hero.cta"
+              >Get Airmedy</a
+            >
+            <a
+              href="https://github.com/misa198/airmedy"
+              class="btn btn-outline btn-lg"
+              data-i18n="hero.github"
+              >View on GitHub</a
+            >
+          </div>
+        </div>
+        <div class="hero-mockup">
+          <div class="mockup-wrapper">
+            <img
+              src="screenshot.png"
+              alt="Airmedy Screenshot"
+              class="app-window-mockup"
+            />
+            <div class="mockup-glare"></div>
+            <div class="mockup-rim-light"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="features" class="features container">
+        <h2 class="section-title" data-i18n="features.title">
+          Everything you need
+        </h2>
+        <div class="features-grid">
+          <div class="feature-card">
+            <h3 data-i18n="features.library.title">Your whole library</h3>
+            <p data-i18n="features.library.desc">
+              Add any folder and Airmedy scans it instantly, even with tens of
+              thousands of tracks.
+            </p>
+          </div>
+          <div class="feature-card">
+            <h3 data-i18n="features.lyrics.title">Lyrics that follow</h3>
+            <p data-i18n="features.lyrics.desc">
+              Synced lyrics scroll line-by-line as the song plays. Immersive
+              listening at its best.
+            </p>
+          </div>
+          <div class="feature-card">
+            <h3 data-i18n="features.eq.title">10-band Equalizer</h3>
+            <p data-i18n="features.eq.desc">
+              Tune the sound to your headphones. Native performance on macOS,
+              Windows, and Linux.
+            </p>
+          </div>
+          <div class="feature-card">
+            <h3 data-i18n="features.search.title">Fast Search</h3>
+            <p data-i18n="features.search.desc">
+              Find any track, album, or artist in milliseconds with our
+              lightning-fast indexing.
+            </p>
+          </div>
+          <div class="feature-card">
+            <h3 data-i18n="features.playlists.title">Playlists</h3>
+            <p data-i18n="features.playlists.desc">
+              Create and manage playlists, import and export them, and browse by
+              genre or artist.
+            </p>
+          </div>
+          <div class="feature-card">
+            <h3 data-i18n="features.media.title">Media Keys & Tray</h3>
+            <p data-i18n="features.media.desc">
+              Control playback via keyboard, lock screen, or the system tray
+              menu.
+            </p>
+          </div>
+          <div class="feature-card">
+            <h3 data-i18n="features.native.title">Native Performance</h3>
+            <p data-i18n="features.native.desc">
+              No Electron. No bloat. Lightweight experience.
+            </p>
+          </div>
+          <div class="feature-card">
+            <h3 data-i18n="features.lastfm.title">Last.fm Scrobbling</h3>
+            <p data-i18n="features.lastfm.desc">
+              Sync your listening history and loved tracks automatically with
+              Last.fm.
+            </p>
+          </div>
+          <div class="feature-card">
+            <h3 data-i18n="features.player.title">Mini & Fullscreen</h3>
+            <p data-i18n="features.player.desc">
+              Switch between a beautiful immersive fullscreen mode and a compact
+              miniplayer that stays out of your way.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="screenshots" class="screenshots container">
+        <h2 class="section-title" data-i18n="screenshots.title">
+          Designed for Focus
+        </h2>
+        <div class="screenshot-showcase">
+          <div class="screenshot-mockup-wrapper">
+            <div class="screenshot-mockup-desc">
+              <h3 data-i18n="screenshots.library.title">Library Explorer</h3>
+              <p data-i18n="screenshots.library.desc">
+                Beautiful glass-morphic interface that highlights your album art
+                and metadata.
+              </p>
+            </div>
+            <div class="screenshot-placeholder glass">
+              <div class="placeholder-content">
+                <div class="placeholder-grid">
+                  <div class="placeholder-item large"></div>
+                  <div class="placeholder-item large"></div>
+                  <div class="placeholder-item large"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="screenshot-mockup-wrapper reverse">
+            <div class="screenshot-mockup-desc">
+              <h3 data-i18n="screenshots.lyrics.title">Synced Lyrics</h3>
+              <p data-i18n="screenshots.lyrics.desc">
+                Immersive fullscreen mode with lyrics that move with the music.
+              </p>
+            </div>
+            <div class="screenshot-placeholder glass">
+              <div class="placeholder-content centered">
+                <div
+                  class="placeholder-line active"
+                  data-i18n="screenshots.lyrics.line1"
+                >
+                  Line of lyrics
+                </div>
+                <div
+                  class="placeholder-line"
+                  data-i18n="screenshots.lyrics.line2"
+                >
+                  Next line of lyrics
+                </div>
+                <div
+                  class="placeholder-line"
+                  data-i18n="screenshots.lyrics.line3"
+                >
+                  Wait for it...
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="faq" class="faq container">
+        <h2 class="section-title" data-i18n="faq.title">
+          Frequently Asked Questions
+        </h2>
+        <div class="faq-list">
+          <div class="faq-item">
+            <button class="faq-question">
+              <span data-i18n="faq.formats.q"
+                >What audio formats are supported?</span
+              >
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p data-i18n="faq.formats.a">
+                Airmedy supports a wide range of formats including MP3, AAC,
+                M4A, FLAC, WAV, Ogg Vorbis, Opus, APE, and even DSD. We use
+                native engines like AVFoundation on macOS and FFmpeg-backed
+                decoding on Windows and Linux.
+              </p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-question">
+              <span data-i18n="faq.free.q">Is Airmedy free?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p data-i18n="faq.free.a">
+                Yes! Airmedy is completely free and open-source under the MIT
+                License. You can find the source code on GitHub.
+              </p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-question">
+              <span data-i18n="faq.gapless.q"
+                >Does it support gapless playback?</span
+              >
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p data-i18n="faq.gapless.a">
+                Gapless playback and smart playlists are currently on our
+                roadmap and will be arriving in future updates.
+              </p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-question">
+              <span data-i18n="faq.ffmpeg.q">Do I need to install FFmpeg?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p data-i18n="faq.ffmpeg.a">
+                No, the FFmpeg libraries are statically compiled and bundled
+                inside Airmedy. You don't need to install anything else.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="download" class="download container">
+        <div class="download-card glass">
+          <h2 data-i18n="download.title">Ready to listen?</h2>
+          <p data-i18n="download.subtitle">
+            Download Airmedy for your platform and start your journey.
+          </p>
+          <div class="download-options">
+            <div class="download-group">
+              <div class="platform-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  width="32"
+                  height="32"
+                  fill="currentColor"
+                >
+                  <path
+                    d="M0 3.449L9.75 2.1V11.7H0V3.449zm0 9.15h9.75v9.6L0 20.551V12.599zm10.65-10.749L24 0v11.7h-13.35V1.85zM10.65 12.6h13.35V24l-13.35-1.85V12.6z"
+                  />
+                </svg>
+              </div>
+              <span class="platform-label" data-i18n="download.windows.label"
+                >Windows</span
+              >
+              <a
+                href="#"
+                class="btn btn-primary"
+                data-i18n="download.windows.btn"
+                >Windows (amd64)</a
+              >
+            </div>
+            <div class="download-group">
+              <div class="platform-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  width="32"
+                  height="32"
+                  fill="currentColor"
+                >
+                  <path
+                    d="M17.057 10.78c.045 3.084 2.687 4.12 2.712 4.135-.023.07-.425 1.458-1.4 2.885-.842 1.23-1.718 2.456-3.1 2.481-1.356.025-1.793-.802-3.344-.802-1.55 0-2.033.777-3.32.827-1.332.05-2.316-1.33-3.162-2.556-1.732-2.508-3.054-7.076-1.272-10.165.884-1.532 2.463-2.503 4.187-2.528 1.306-.025 2.542.878 3.344.878.802 0 2.296-1.103 3.844-.943 1.134.047 2.14.453 2.876 1.127-1.296.78-2.152 2.227-2.165 4.091zm-4.322-7.513c.692-.838 1.158-2.003.95-3.267-1.085.044-2.394.721-3.172 1.628-.698.813-1.31 2.008-1.144 3.242 1.21.094 2.427-.676 3.366-1.603z"
+                  />
+                </svg>
+              </div>
+              <span class="platform-label" data-i18n="download.macos.label"
+                >macOS</span
+              >
+              <div class="dropdown">
+                <button class="btn btn-outline dropdown-trigger">
+                  <span data-i18n="download.macos.btn">Download for macOS</span>
+                  <span class="chevron">▾</span>
+                </button>
+                <div class="dropdown-content">
+                  <div class="dropdown-content-inner glass">
+                    <a href="#" data-i18n="download.macos.silicon"
+                      >Apple Silicon</a
+                    >
+                    <a href="#" data-i18n="download.macos.intel">Intel Chip</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="license-info">
+            <span data-i18n="download.license">Released under the</span>
+            <a href="https://github.com/misa198/airmedy/blob/master/LICENSE"
+              >MIT License</a
+            >.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container footer-content">
+        <p data-i18n="footer.copy">&copy; 2026 misa198</p>
+        <div class="footer-links">
+          <a href="https://github.com/misa198/airmedy" data-i18n="footer.github"
+            >GitHub</a
+          >
+          <a
+            href="https://github.com/misa198/airmedy/issues"
+            data-i18n="footer.issues"
+            >Report an issue</a
+          >
+        </div>
+      </div>
+    </footer>
+
+    <script src="translations.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
