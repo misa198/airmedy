@@ -74,6 +74,27 @@ func (s *PlaylistService) RemovePlaylistArtwork(id string) error {
 	return s.service.RemoveArtwork(context.Background(), id)
 }
 
+func (s *PlaylistService) ExportPlaylistToM3U8(playlistID string) error {
+	app := application.Get()
+	if app == nil {
+		return fmt.Errorf("application not initialized")
+	}
+
+	destPath, err := app.Dialog.SaveFile().
+		SetTitle("Export Playlist").
+		SetFilename(playlistID + ".m3u8").
+		AddFilter("M3U8 Playlist", "*.m3u8").
+		PromptForSingleSelection()
+	if err != nil {
+		return err
+	}
+	if destPath == "" {
+		return nil
+	}
+
+	return s.service.ExportM3U8(context.Background(), playlistID, destPath)
+}
+
 func (s *PlaylistService) SelectAndSetPlaylistArtwork(id string) (string, error) {
 	app := application.Get()
 	if app == nil {

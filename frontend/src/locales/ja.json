@@ -223,7 +223,8 @@
     "refresh_lyrics": "歌詞を更新",
     "remove_from_queue": "キューから削除",
     "play": "再生",
-    "shuffle": "シャッフル"
+    "shuffle": "シャッフル",
+    "export_playlist": "プレイリストをエクスポート"
   },
   "track_info": {
     "title": "トラック情報",

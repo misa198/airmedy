@@ -223,7 +223,8 @@
     "refresh_lyrics": "Atualizar letra",
     "remove_from_queue": "Remover da fila",
     "play": "Reproduzir",
-    "shuffle": "Aleatório"
+    "shuffle": "Aleatório",
+    "export_playlist": "Exportar lista de reprodução"
   },
   "track_info": {
     "title": "Informações da faixa",

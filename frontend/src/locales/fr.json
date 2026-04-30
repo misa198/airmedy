@@ -223,7 +223,8 @@
     "refresh_lyrics": "Actualiser les paroles",
     "remove_from_queue": "Retirer de la file d'attente",
     "play": "Lire",
-    "shuffle": "Aléatoire"
+    "shuffle": "Aléatoire",
+    "export_playlist": "Exporter la liste de lecture"
   },
   "track_info": {
     "title": "Informations sur la piste",

@@ -223,7 +223,8 @@
     "refresh_lyrics": "รีเฟรชเนื้อเพลง",
     "remove_from_queue": "นำออกจากคิว",
     "play": "เล่น",
-    "shuffle": "สุ่ม"
+    "shuffle": "สุ่ม",
+    "export_playlist": "ส่งออกเพลย์ลิสต์"
   },
   "track_info": {
     "title": "ข้อมูลเพลง",

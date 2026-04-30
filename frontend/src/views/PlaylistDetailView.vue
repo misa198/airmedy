@@ -85,6 +85,7 @@ function openContextMenu(e: MouseEvent) {
   contextMenu.open(e, buildPlaylistMenuItems(playlist.value, {
     includePlayNext: true,
     includePlaylistMenu: false,
+    includeExport: true,
     onRename: () => openRenameDialog(),
     onDelete: () => deleteConfirmOpen.value = true,
   }))

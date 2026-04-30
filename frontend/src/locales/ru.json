@@ -223,7 +223,8 @@
     "refresh_lyrics": "Обновить текст",
     "remove_from_queue": "Убрать из очереди",
     "play": "Воспроизвести",
-    "shuffle": "Перемешать"
+    "shuffle": "Перемешать",
+    "export_playlist": "Экспортировать плейлист"
   },
   "track_info": {
     "title": "Информация о треке",

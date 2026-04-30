@@ -223,7 +223,8 @@
     "refresh_lyrics": "가사 새로고침",
     "remove_from_queue": "대기열에서 제거",
     "play": "재생",
-    "shuffle": "셔플"
+    "shuffle": "셔플",
+    "export_playlist": "재생목록 내보내기"
   },
   "track_info": {
     "title": "트랙 정보",
