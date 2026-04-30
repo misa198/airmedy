@@ -116,7 +116,10 @@
     "no_playlists": "Nenhuma playlist ainda",
     "rename_playlist_title": "Renomear Playlist",
     "delete_playlist_message": "Tem certeza de que deseja excluir esta lista de reprodução? Esta ação não pode ser desfeita.",
-    "delete_playlist_title": "Excluir lista de reprodução"
+    "delete_playlist_title": "Excluir lista de reprodução",
+    "import_playlist": "Importar lista de reprodução",
+    "import_playlist_title": "Importar lista de reprodução",
+    "import": "Importar"
   },
   "player": {
     "not_playing": "Não está reproduzindo",

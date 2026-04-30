@@ -116,7 +116,10 @@
     "no_playlists": "ยังไม่มีเพลย์ลิสต์",
     "rename_playlist_title": "เปลี่ยนชื่อเพลย์ลิสต์",
     "delete_playlist_message": "คุณแน่ใจหรือไม่ว่าต้องการลบเพลย์ลิสต์นี้? การดำเนินการนี้ไม่สามารถยกเลิกได้",
-    "delete_playlist_title": "ลบเพลย์ลิสต์"
+    "delete_playlist_title": "ลบเพลย์ลิสต์",
+    "import_playlist": "นำเข้าเพลย์ลิสต์",
+    "import_playlist_title": "นำเข้าเพลย์ลิสต์",
+    "import": "นำเข้า"
   },
   "player": {
     "not_playing": "ไม่ได้เล่นอยู่",

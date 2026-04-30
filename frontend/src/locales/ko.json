@@ -116,7 +116,10 @@
     "no_playlists": "재생 목록이 없습니다",
     "rename_playlist_title": "재생 목록 이름 바꾸기",
     "delete_playlist_message": "이 재생 목록을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.",
-    "delete_playlist_title": "재생 목록 삭제"
+    "delete_playlist_title": "재생 목록 삭제",
+    "import_playlist": "재생목록 가져오기",
+    "import_playlist_title": "재생목록 가져오기",
+    "import": "가져오기"
   },
   "player": {
     "not_playing": "재생 중이 아님",

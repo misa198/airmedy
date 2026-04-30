@@ -116,7 +116,10 @@
     "no_playlists": "Nessuna playlist",
     "rename_playlist_title": "Rinomina Playlist",
     "delete_playlist_message": "Sei sicuro di voler eliminare questa playlist? L'azione non può essere annullata.",
-    "delete_playlist_title": "Elimina playlist"
+    "delete_playlist_title": "Elimina playlist",
+    "import_playlist": "Importa playlist",
+    "import_playlist_title": "Importa playlist",
+    "import": "Importa"
   },
   "player": {
     "not_playing": "Nessuna riproduzione",

@@ -116,7 +116,10 @@
     "no_playlists": "Noch keine Playlists",
     "rename_playlist_title": "Playlist umbenennen",
     "delete_playlist_message": "Sind Sie sicher, dass Sie diese Playlist löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
-    "delete_playlist_title": "Playlist löschen"
+    "delete_playlist_title": "Playlist löschen",
+    "import_playlist": "Playlist importieren",
+    "import_playlist_title": "Playlist importieren",
+    "import": "Importieren"
   },
   "player": {
     "not_playing": "Keine Wiedergabe",

@@ -116,7 +116,10 @@
     "no_playlists": "Плейлистов пока нет",
     "rename_playlist_title": "Переименовать плейлист",
     "delete_playlist_message": "Вы уверены, что хотите удалить этот плейлист? Это действие нельзя отменить.",
-    "delete_playlist_title": "Удалить плейлист"
+    "delete_playlist_title": "Удалить плейлист",
+    "import_playlist": "Импортировать плейлист",
+    "import_playlist_title": "Импортировать плейлист",
+    "import": "Импортировать"
   },
   "player": {
     "not_playing": "Ничего не воспроизводится",
