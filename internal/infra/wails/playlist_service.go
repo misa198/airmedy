@@ -40,11 +40,23 @@ func (s *PlaylistService) CreatePlaylist(name, description string) (*domain.Play
 }
 
 func (s *PlaylistService) UpdatePlaylist(id, name, description string) error {
-	return s.service.Update(context.Background(), id, name, description)
+	err := s.service.Update(context.Background(), id, name, description)
+	if err == nil {
+		if app := application.Get(); app != nil && app.Event != nil {
+			app.Event.Emit("playlist:renamed", id)
+		}
+	}
+	return err
 }
 
 func (s *PlaylistService) DeletePlaylist(id string) error {
-	return s.service.Delete(context.Background(), id)
+	err := s.service.Delete(context.Background(), id)
+	if err == nil {
+		if app := application.Get(); app != nil && app.Event != nil {
+			app.Event.Emit("playlist:deleted", id)
+		}
+	}
+	return err
 }
 
 func (s *PlaylistService) GetAllPlaylists() ([]*domain.Playlist, error) {
@@ -98,7 +110,7 @@ func (s *PlaylistService) ExportPlaylistToM3U8(playlistID string) error {
 	}
 
 	destPath, err := app.Dialog.SaveFile().
-		SetTitle("Export Playlist").
+		SetMessage("Export Playlist").
 		SetFilename(playlistID + ".m3u8").
 		AddFilter("M3U8 Playlist", "*.m3u8").
 		PromptForSingleSelection()

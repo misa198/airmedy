@@ -4,7 +4,7 @@ import (
 	"context"
 	"embed"
 	_ "embed"
-	"log"
+	"log/slog"
 	"net/url"
 	"os"
 	"runtime"
@@ -63,7 +63,8 @@ func main() {
 	startCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	if err := fxApp.Start(startCtx); err != nil {
-		log.Fatal(err)
+		slog.Error("failed to start services", "error", err)
+		os.Exit(1)
 	}
 
 	var stopOnce sync.Once
@@ -72,7 +73,7 @@ func main() {
 			stopCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 			if err := fxApp.Stop(stopCtx); err != nil {
-				log.Printf("error stopping services: %v", err)
+				slog.Error("error stopping services", "error", err)
 			}
 		})
 	}
@@ -81,14 +82,14 @@ func main() {
 		if urlStr == "" {
 			return
 		}
-		log.Printf("Processing URL: %s", urlStr)
+		slog.Debug("processing URL", "url", urlStr)
 		if u, err := url.Parse(urlStr); err == nil {
 			if u.Scheme == "airmedy" && u.Host == "auth" {
 				token := u.Query().Get("token")
 				if token != "" {
 					go func() {
 						if err := lastfmService.GetService().CompleteAuth(context.Background(), token); err != nil {
-							log.Printf("Failed to complete Last.fm auth: %v", err)
+							slog.Error("failed to complete Last.fm auth", "error", err)
 						}
 					}()
 				}
@@ -104,7 +105,7 @@ func main() {
 		SingleInstance: &application.SingleInstanceOptions{
 			UniqueID: "me.misa198.airmedy",
 			OnSecondInstanceLaunch: func(data application.SecondInstanceData) {
-				log.Printf("Second instance launched with args: %v", data.Args)
+				slog.Debug("second instance launched", "args", data.Args)
 				for _, arg := range data.Args {
 					if strings.HasPrefix(arg, "airmedy://") {
 						handleURL(arg)
@@ -349,9 +350,9 @@ func main() {
 		}
 	}()
 
-	err := wailsApp.Run()
-	if err != nil {
-		log.Fatal(err)
+	if err := wailsApp.Run(); err != nil {
+		slog.Error("application error", "error", err)
+		os.Exit(1)
 	}
 
 	stopFX()

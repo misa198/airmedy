@@ -48,7 +48,7 @@ Airmedy is a desktop music player built with **Wails v3** (Go backend + Vue 3 fr
 │  ├── audio/      — AVFoundation (macOS), miniaudio (Win/Linux)  │
 │  ├── metadata/   — TagLib + FFmpeg fallback                     │
 │  ├── artwork/    — Disk cache, resize, palette extraction       |
-│  └── logging/    — zap + lumberjack                             │
+│  └── logging/    — log/slog + lumberjack                        │
 └─────────────────────────────────────────────────────────────────┘
 ```
 

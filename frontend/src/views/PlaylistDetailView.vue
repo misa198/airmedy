@@ -171,15 +171,25 @@ const handlePlaylistChange = (ev: Events.WailsEvent) => {
   }
 }
 
+const handlePlaylistDeleted = (ev: Events.WailsEvent) => {
+  const deletedId = ev.data as string
+  if (deletedId === route.params.id) {
+    router.push('/')
+  }
+}
+
 let offPlaylistChange: (() => void) | null = null
+let offPlaylistDeleted: (() => void) | null = null
 
 onMounted(() => {
   load()
   offPlaylistChange = Events.On('playlist:tracks-changed', handlePlaylistChange)
+  offPlaylistDeleted = Events.On('playlist:deleted', handlePlaylistDeleted)
 })
 
 onUnmounted(() => {
   offPlaylistChange?.()
+  offPlaylistDeleted?.()
 })
 
 const totalDurationFormatted = computed(() => {
