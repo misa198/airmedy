@@ -26,19 +26,25 @@ tasks:
       DEFAULT_OUTPUT: '{{.BIN_DIR}}/{{.APP_NAME}}'
       OUTPUT: '{{ .OUTPUT | default .DEFAULT_OUTPUT }}'
 
+  build:ffmpeg:
+    summary: Builds FFmpeg static libraries for macOS (arm64 + amd64) if not already present
+    status:
+      - test -f {{.ROOT_DIR}}/internal/infra/audio/ffmpeg_libs/include/libavcodec/avcodec.h
+    cmds:
+      - bash {{.ROOT_DIR}}/scripts/build-ffmpeg-darwin.sh
+
   build:native:
     summary: Builds the application natively on macOS
     internal: true
     deps:
+      - task: build:ffmpeg
       - task: common:go:mod:tidy
-      - task: common:build:frontend
-        vars:
-          BUILD_FLAGS:
-            ref: .BUILD_FLAGS
-          DEV:
-            ref: .DEV
       - task: common:generate:icons
     cmds:
+      - task: common:build:frontend
+        vars:
+          BUILD_FLAGS: '{{.BUILD_FLAGS}}'
+          DEV: '{{.DEV}}'
       - go build {{.BUILD_FLAGS}} -o {{.OUTPUT}}
     vars:
       BUILD_FLAGS: '{{if eq .DEV "true"}}{{if .EXTRA_TAGS}}-tags {{.EXTRA_TAGS}} {{end}}-buildvcs=false -gcflags=all="-l"{{else}}-tags production{{if .EXTRA_TAGS}},{{.EXTRA_TAGS}}{{end}} -trimpath -buildvcs=false -ldflags="-w -s"{{end}}'
@@ -48,8 +54,8 @@ tasks:
       GOOS: darwin
       CGO_ENABLED: 1
       GOARCH: '{{.ARCH | default ARCH}}'
-      CGO_CFLAGS: "-mmacosx-version-min=14.0"
-      CGO_LDFLAGS: "-mmacosx-version-min=14.0"
+      CGO_CFLAGS: "-mmacosx-version-min=14.0 -I{{.ROOT_DIR}}/internal/infra/audio/ffmpeg_libs/include"
+      CGO_LDFLAGS: "-mmacosx-version-min=14.0 -L{{.ROOT_DIR}}/internal/infra/audio/ffmpeg_libs/darwin/{{.ARCH | default ARCH}}"
       MACOSX_DEPLOYMENT_TARGET: "14.0"
 
   build:docker:
