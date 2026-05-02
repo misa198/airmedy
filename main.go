@@ -61,6 +61,7 @@ func main() {
 		urlQueueMu    sync.Mutex
 		appReady      bool
 		lastfmService *wails.LastFmService
+		wailsApp      *application.App
 	)
 
 	handleURL := func(urlStr string) {
@@ -100,7 +101,7 @@ func main() {
 						} else {
 							slog.Info("Last.fm auth completed successfully")
 							if wailsApp != nil {
-								wailsApp.Events.Emit("lastfm:connected")
+								wailsApp.Event.Emit("lastfm:connected")
 							}
 						}
 					}()
@@ -144,9 +145,6 @@ func main() {
 			}
 		})
 	}
-
-	// Process any URLs that came in during start
-	processQueue()
 
 	var mainWindow *application.WebviewWindow
 
@@ -368,6 +366,9 @@ func main() {
 		e.Cancel()
 	})
 	windowService.SetMiniWindow(miniPlayerWindow)
+
+	// Process any URLs that came in during start
+	processQueue()
 
 	// Handle deep links (e.g. airmedy://auth?token=...)
 	wailsApp.Event.OnApplicationEvent(events.Common.ApplicationLaunchedWithUrl, func(e *application.ApplicationEvent) {
