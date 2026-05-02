@@ -164,7 +164,13 @@ wails3 build
 ### Verify
 
 ```bash
-task verify   # runs all Go unit tests + Vue component tests + linters
+wails3 task verify   # runs all Go unit tests + Vue component tests + linters
+```
+
+### Run task
+
+```bash
+wails3 task {task_name}
 ```
 
 ---

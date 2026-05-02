@@ -137,6 +137,7 @@ static BOOL isAVFoundationNative(NSString *ext) {
         [self.playerNode play];
     }
     self.isPlaying = YES;
+    [self updatePlaybackRate];
 }
 
 - (void)pause {
@@ -149,6 +150,7 @@ static BOOL isAVFoundationNative(NSString *ext) {
     self.pausePosition = [self currentPosition];
     [self.playerNode pause];
     self.isPlaying = NO;
+    [self updatePlaybackRate];
 }
 
 - (void)stop {
@@ -159,6 +161,7 @@ static BOOL isAVFoundationNative(NSString *ext) {
     self.loadingGeneration++;
     [self.playerNode stop];
     self.isPlaying = NO;
+    // Clear Now Playing is handled by Go side
     @synchronized(self) {
         if (self.ffmpegStream) {
             ffmpeg_close(self.ffmpegStream);
@@ -190,6 +193,7 @@ static BOOL isAVFoundationNative(NSString *ext) {
                 }
             }
         }
+        [self updatePlaybackRate];
         return;
     }
 
@@ -229,6 +233,7 @@ static BOOL isAVFoundationNative(NSString *ext) {
         [self.playerNode play];
         self.isPlaying = YES;
     }
+    [self updatePlaybackRate];
 }
 
 - (void)setVolume:(float)volume {
@@ -488,6 +493,17 @@ static BOOL isAVFoundationNative(NSString *ext) {
         }
         return MPRemoteCommandHandlerStatusSuccess;
     }];
+}
+
+- (void)updatePlaybackRate {
+    MPNowPlayingInfoCenter *center = [MPNowPlayingInfoCenter defaultCenter];
+    NSDictionary *currentInfo = center.nowPlayingInfo;
+    if (!currentInfo) return;
+
+    NSMutableDictionary *info = [currentInfo mutableCopy];
+    info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = @([self currentPosition]);
+    info[MPNowPlayingInfoPropertyPlaybackRate]  = @(self.isPlaying ? 1.0 : 0.0);
+    center.nowPlayingInfo = info;
 }
 
 - (void)updateNowPlayingTitle:(NSString *)title
