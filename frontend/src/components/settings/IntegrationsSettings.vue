@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
-import { Music } from 'lucide-vue-next'
+import { Blocks, Music } from 'lucide-vue-next'
 import * as LastFmService from '../../../bindings/airmedy/internal/infra/wails/lastfmservice'
 import { onMounted, onUnmounted, ref } from 'vue'
 import { Events } from '@wailsio/runtime'
@@ -91,7 +91,7 @@ onMounted(() => {
               </div>
             </div>
             <div v-else class="p-2 bg-[#D31F27]/[0.08] rounded-xl">
-              <Music class="w-5 h-5 text-[#D31F27]" />
+              <Blocks class="w-5 h-5 text-[#D31F27]" />
             </div>
             <div>
               <p class="text-sm font-semibold">Last.fm</p>

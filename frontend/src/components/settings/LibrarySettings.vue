@@ -37,6 +37,7 @@ const addFolder = async () => {
     if (path) {
       await LibraryService.AddFolder(path)
       await loadFolders(false)
+      Events.Emit('library:sync-finished')
     }
   } catch (err) {
     console.error('Failed to add folder:', err)
@@ -52,6 +53,7 @@ const removeFolder = async () => {
   try {
     await LibraryService.RemoveFolder(id)
     await loadFolders(false)
+    Events.Emit('library:sync-finished')
   } catch (err) {
     console.error('Failed to remove folder:', err)
   } finally {

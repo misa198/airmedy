@@ -74,9 +74,10 @@ const routes = [
     component: () => import('../views/PlaylistDetailView.vue')
   },
   {
-    path: '/settings',
+    path: '/settings/:category?',
     name: 'settings',
-    component: () => import('../views/SettingsView.vue')
+    component: () => import('../views/SettingsView.vue'),
+    props: true
   },
   {
     path: '/mini-player',

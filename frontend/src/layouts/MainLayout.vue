@@ -81,7 +81,7 @@ onUnmounted(() => {
       <aside :style="{ width: playerStore.sidebarWidth + 'px' }"
         class="h-full overflow-hidden flex-shrink-0 select-none">
         <Sidebar
-          :class="(deviceStore.isMac || deviceStore.isWindows) && !deviceStore.isWindowFullscreen ? 'pt-10' : 'pt-4'" />
+          :class="deviceStore.isMac && !deviceStore.isWindowFullscreen ? 'pt-10' : 'pt-4'" />
       </aside>
 
       <!-- Resizer Handle -->

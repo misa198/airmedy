@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   Folder, Settings,
-  Sliders, Info, Music
+  Play, Info, Blocks,
+  AudioLines
 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import EQPanel from '@/components/EQPanel.vue'
@@ -12,17 +14,31 @@ import IntegrationsSettings from '@/components/settings/IntegrationsSettings.vue
 import AboutSettings from '@/components/settings/AboutSettings.vue'
 
 const { t } = useI18n()
+const router = useRouter()
+
+const props = defineProps<{
+  category?: string
+}>()
 
 // State
-const activeCategory = ref('general')
+const activeCategory = ref(props.category || 'general')
+
+watch(() => props.category, (newCat) => {
+  activeCategory.value = newCat || 'general'
+})
 
 const categories = computed(() => [
   { id: 'general', name: t('settings.categories.general'), icon: Settings },
   { id: 'library', name: t('settings.categories.library'), icon: Folder },
-  { id: 'integrations', name: t('settings.categories.integrations', 'Integrations'), icon: Music },
-  { id: 'equalization', name: t('settings.categories.equalization'), icon: Sliders },
+  { id: 'integrations', name: t('settings.categories.integrations', 'Integrations'), icon: Blocks },
+  { id: 'playback', name: t('settings.categories.playback'), icon: Play },
   { id: 'about', name: t('settings.categories.about'), icon: Info },
 ])
+
+const setCategory = (id: string) => {
+  activeCategory.value = id
+  router.replace(`/settings/${id}`)
+}
 
 </script>
 
@@ -36,7 +52,7 @@ const categories = computed(() => [
           <button
             v-for="cat in categories"
             :key="cat.id"
-            @click="activeCategory = cat.id"
+            @click="setCategory(cat.id)"
             :class="[
               'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group',
               activeCategory === cat.id 
@@ -69,12 +85,17 @@ const categories = computed(() => [
           v-if="activeCategory === 'integrations'"
         />
 
-        <!-- Equalization -->
-        <div v-if="activeCategory === 'equalization'" class="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <h2 class="text-xl font-bold mb-4 select-none">{{ t('settings.equalizer.title') }}</h2>
-          <div class="bg-card rounded-2xl border border-foreground/[0.06] p-6">
-            <EQPanel />
-          </div>
+        <!-- Playback -->
+        <div v-if="activeCategory === 'playback'" class="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <section>
+            <div class="flex items-center gap-2 mb-6 text-foreground opacity-60 select-none">
+              <AudioLines class="w-4 h-4" />
+              <h2 class="text-sm font-bold uppercase tracking-wider">{{ t('settings.equalizer.title') }}</h2>
+            </div>
+            <div class="bg-card rounded-2xl border border-foreground/[0.06] p-6">
+              <EQPanel />
+            </div>
+          </section>
         </div>
 
         <!-- About -->

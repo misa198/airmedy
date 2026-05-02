@@ -42,6 +42,10 @@ func init() {
 func main() {
 	debug.SetGCPercent(50)
 
+	if err := registerProtocol(); err != nil {
+		slog.Warn("failed to register deep link protocol", "error", err)
+	}
+
 	var greetService *wails.GreetService
 	var libraryService *wails.LibraryService
 	var playerService *wails.PlayerService
@@ -51,8 +55,71 @@ func main() {
 	var eqService *wails.EQService
 	var windowService *wails.WindowService
 	var settingsService *wails.SettingsService
-	var lastfmService *wails.LastFmService
 	var artworkCache domain.ArtworkCache
+	var (
+		urlQueue      []string
+		urlQueueMu    sync.Mutex
+		appReady      bool
+		lastfmService *wails.LastFmService
+	)
+
+	handleURL := func(urlStr string) {
+		urlStr = strings.Trim(urlStr, "\"' ")
+		if urlStr == "" {
+			return
+		}
+
+		// Handle cases where the URL might be passed with a flag or as part of a longer string
+		if !strings.HasPrefix(urlStr, "airmedy://") {
+			// Try to find the protocol link within the string
+			idx := strings.Index(urlStr, "airmedy://")
+			if idx != -1 {
+				urlStr = urlStr[idx:]
+			} else {
+				return
+			}
+		}
+
+		urlQueueMu.Lock()
+		if !appReady || lastfmService == nil {
+			slog.Info("queueing URL for later processing", "url", urlStr)
+			urlQueue = append(urlQueue, urlStr)
+			urlQueueMu.Unlock()
+			return
+		}
+		urlQueueMu.Unlock()
+
+		slog.Info("processing URL", "url", urlStr)
+		if u, err := url.Parse(urlStr); err == nil {
+			if u.Scheme == "airmedy" && u.Host == "auth" {
+				token := u.Query().Get("token")
+				if token != "" {
+					go func() {
+						if err := lastfmService.GetService().CompleteAuth(context.Background(), token); err != nil {
+							slog.Error("failed to complete Last.fm auth", "error", err)
+						} else {
+							slog.Info("Last.fm auth completed successfully")
+							if wailsApp != nil {
+								wailsApp.Events.Emit("lastfm:connected")
+							}
+						}
+					}()
+				}
+			}
+		}
+	}
+
+	processQueue := func() {
+		urlQueueMu.Lock()
+		queue := urlQueue
+		urlQueue = nil
+		appReady = true
+		urlQueueMu.Unlock()
+
+		for _, urlStr := range queue {
+			handleURL(urlStr)
+		}
+	}
 
 	fxApp := fx.New(
 		app.Module,
@@ -78,38 +145,23 @@ func main() {
 		})
 	}
 
-	handleURL := func(urlStr string) {
-		if urlStr == "" {
-			return
-		}
-		slog.Debug("processing URL", "url", urlStr)
-		if u, err := url.Parse(urlStr); err == nil {
-			if u.Scheme == "airmedy" && u.Host == "auth" {
-				token := u.Query().Get("token")
-				if token != "" {
-					go func() {
-						if err := lastfmService.GetService().CompleteAuth(context.Background(), token); err != nil {
-							slog.Error("failed to complete Last.fm auth", "error", err)
-						}
-					}()
-				}
-			}
-		}
-	}
+	// Process any URLs that came in during start
+	processQueue()
 
 	var mainWindow *application.WebviewWindow
 
-	wailsApp := application.New(application.Options{
+	wailsApp = application.New(application.Options{
 		Name:        "airmedy",
 		Description: "A modern music player",
 		SingleInstance: &application.SingleInstanceOptions{
 			UniqueID: "me.misa198.airmedy",
 			OnSecondInstanceLaunch: func(data application.SecondInstanceData) {
-				slog.Debug("second instance launched", "args", data.Args)
+				slog.Info("SingleInstance: second instance detected", "count", len(data.Args))
 				for _, arg := range data.Args {
-					if strings.HasPrefix(arg, "airmedy://") {
-						handleURL(arg)
-						break
+					cleanArg := strings.Trim(arg, "\"' ")
+					if strings.Contains(cleanArg, "airmedy://") {
+						slog.Info("SingleInstance: found deep link in arg", "arg", cleanArg)
+						handleURL(cleanArg)
 					}
 				}
 				if mainWindow != nil {
@@ -263,7 +315,7 @@ func main() {
 		Height:             800,
 		MinWidth:           1060,
 		MinHeight:          768,
-		UseApplicationMenu: true,
+		UseApplicationMenu: runtime.GOOS == "darwin",
 		Mac: application.MacWindow{
 			InvisibleTitleBarHeight: 50,
 			Backdrop:                application.MacBackdropTranslucent,
@@ -278,14 +330,14 @@ func main() {
 		e.Cancel()
 	})
 	windowService.SetMainWindow(mainWindow)
+	mainWindow.Show()
+	mainWindow.Focus()
 
-	// Process initial arguments for Linux/Windows
-	if runtime.GOOS != "darwin" {
-		for _, arg := range os.Args {
-			if strings.HasPrefix(arg, "airmedy://") {
-				handleURL(arg)
-				break
-			}
+	// Process initial arguments
+	for _, arg := range os.Args {
+		cleanArg := strings.Trim(arg, "\"' ")
+		if strings.Contains(cleanArg, "airmedy://") {
+			handleURL(cleanArg)
 		}
 	}
 

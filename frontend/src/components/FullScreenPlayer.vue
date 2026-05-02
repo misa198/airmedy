@@ -83,7 +83,7 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
       >
         <div class="w-[120px]" style="-webkit-app-region: no-drag">
           <button class="p-2 rounded-full hover:bg-white/8 transition-all text-white/60 hover:text-white"
-            :class="{ 'mt-8': (deviceStore.isMac || deviceStore.isWindows) && !deviceStore.isWindowFullscreen }"
+            :class="{ 'mt-8': deviceStore.isMac && !deviceStore.isWindowFullscreen }"
             @click="store.playerMode = 'sticky'">
             <Minimize2 class="w-5 h-5" />
           </button>

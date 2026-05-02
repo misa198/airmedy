@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, shallowRef, onMounted, computed } from 'vue'
+import { ref, shallowRef, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { 
   Music, Settings as SettingsIcon,
@@ -9,6 +9,7 @@ import { useI18n } from 'vue-i18n'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import { usePlayerStore } from '@/stores/player'
+import { Events } from '@wailsio/runtime'
 import TrackCard from '@/components/TrackCard.vue'
 import HomeSection from '@/components/HomeSection.vue'
 import TrackContextMenu from '@/components/TrackContextMenu.vue'
@@ -68,8 +69,17 @@ const fetchData = async () => {
   }
 }
 
+let offSyncFinished: (() => void) | null = null
+
 onMounted(() => {
   fetchData()
+  offSyncFinished = Events.On('library:sync-finished', () => {
+    fetchData()
+  })
+})
+
+onUnmounted(() => {
+  offSyncFinished?.()
 })
 
 const playTrack = (track: TrackDTO) => {
@@ -83,7 +93,7 @@ const playAll = (tracks: TrackDTO[]) => {
 }
 
 const navigateToSettings = () => {
-  router.push('/settings')
+  router.push('/settings/library')
 }
 
 const navigateToTrack = (track: TrackDTO) => {
