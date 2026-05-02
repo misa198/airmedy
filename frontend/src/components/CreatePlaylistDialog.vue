@@ -9,6 +9,7 @@ const props = defineProps<{
   open: boolean
   initialName?: string
   title?: string
+  confirmLabel?: string
 }>()
 
 const emit = defineEmits<{
@@ -44,7 +45,7 @@ function submit() {
       <button
         class="px-3 py-1.5 text-sm bg-primary text-white rounded-lg transition-colors font-medium disabled:opacity-40"
         :disabled="!name.trim()"
-        @click="submit">{{ title === t('sidebar.rename_playlist_title') ? t('sidebar.rename') : t('common.create') }}</button>
+        @click="submit">{{ confirmLabel ?? (title === t('sidebar.rename_playlist_title') ? t('sidebar.rename') : t('common.create')) }}</button>
     </div>
   </Modal>
 </template>

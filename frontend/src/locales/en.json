@@ -116,7 +116,10 @@
     "no_playlists": "No playlists yet",
     "rename_playlist_title": "Rename Playlist",
     "delete_playlist_title": "Delete Playlist",
-    "delete_playlist_message": "Are you sure you want to delete this playlist? This action cannot be undone."
+    "delete_playlist_message": "Are you sure you want to delete this playlist? This action cannot be undone.",
+    "import_playlist": "Import Playlist",
+    "import_playlist_title": "Import Playlist",
+    "import": "Import"
   },
   "player": {
     "not_playing": "Not Playing",
@@ -223,7 +226,8 @@
     "show_in_explorer": "Show in File Explorer",
     "track_info": "Track info",
     "refresh_lyrics": "Refresh Lyrics",
-    "remove_from_queue": "Remove from Queue"
+    "remove_from_queue": "Remove from Queue",
+    "export_playlist": "Export Playlist"
   },
   "artist": {
     "albums_count": "{count} albums",

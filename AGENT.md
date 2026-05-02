@@ -15,7 +15,7 @@
 | Audio (macOS) | AVFoundation (cgo) |
 | Audio (Win/Linux) | miniaudio (C) |
 | Metadata | TagLib + FFmpeg fallback |
-| Logging | zap + lumberjack |
+| Logging | log/slog + lumberjack |
 
 ---
 
@@ -147,7 +147,7 @@ Dependency direction (strict): `infra → app → domain`
 
 - Errors: `fmt.Errorf("context: %w", err)`.
 - Domain errors defined in `domain`, translated to user messages in `infra/wails`.
-- Logging: `*zap.Logger` (FX-injected). Never `log.Print*` or `fmt.Print*` in production.
+- Logging: `*slog.Logger` (FX-injected). Never `log.Print*` or `fmt.Print*` in production. Use `slog.SetDefault` is called at startup so package-level `slog.*` calls are safe after FX starts.
 
 ### Go Implementation Checklist
 
@@ -156,7 +156,7 @@ Dependency direction (strict): `infra → app → domain`
 - [ ] FX wires everything in `main.go`?
 - [ ] Wails bindings translation-only?
 - [ ] Goroutines accept `context.Context`?
-- [ ] `*zap.Logger` for all logging?
+- [ ] `*slog.Logger` for all logging (injected) or `slog.*` package-level calls after FX starts?
 
 ---
 

@@ -6,13 +6,14 @@ User-created playlists with ordered tracks, optional custom artwork, and color e
 
 ## Files
 
-| File                                           | Purpose              |
-| ---------------------------------------------- | -------------------- |
-| `internal/app/playlist/playlist_service.go`    | Business logic       |
-| `internal/infra/sqlite/playlist_repository.go` | SQLite persistence   |
-| `internal/infra/wails/playlist_service.go`     | Wails binding        |
-| `frontend/src/stores/playlists.ts`             | Frontend state       |
-| `frontend/src/views/PlaylistDetailView.vue`    | Playlist detail page |
+| File                                           | Purpose                       |
+| ---------------------------------------------- | ----------------------------- |
+| `internal/app/playlist/playlist_service.go`    | Business logic                |
+| `internal/app/playlist/m3u8.go`               | M3U8 parser (import/export)   |
+| `internal/infra/sqlite/playlist_repository.go` | SQLite persistence            |
+| `internal/infra/wails/playlist_service.go`     | Wails binding                 |
+| `frontend/src/stores/playlists.ts`             | Frontend state                |
+| `frontend/src/views/PlaylistDetailView.vue`    | Playlist detail page          |
 
 ## Playlist Model
 
@@ -41,6 +42,25 @@ RemoveTrack(ctx, playlistID, trackID string) error
 SetArtwork(ctx, playlistID, artworkPath string) error  // copies file to artwork cache
 RemoveArtwork(ctx, playlistID string) error
 GetPlaylistColors(ctx, id string) (*ThemeColors, error)
+ExportM3U8(ctx, playlistID, destPath string) error
+```
+
+## M3U8 Parser (`m3u8.go`)
+
+`ParseM3U8(filePath string) (*M3U8File, error)` reads an extended M3U8 file and
+returns the playlist name and a slice of `M3U8Entry` (Path, Title, Artist, Album,
+Genre, Duration). Unknown directives are ignored. The file must begin with
+`#EXTM3U`.
+
+## LibraryService Methods (import-related)
+
+```go
+IsPathValid(ctx, path string) error
+// Returns nil if path: exists on disk, has a supported extension, is under a watched folder.
+
+EnsureTrack(ctx, path, fallbackTitle, fallbackArtist string) (*TrackDTO, error)
+// Returns existing track from DB, or imports it first if missing.
+// Applies fallback values only to empty tag fields of newly imported tracks.
 ```
 
 ## Wails-Exposed Methods
@@ -59,6 +79,25 @@ RemoveTrackFromPlaylist(playlistID: string, trackID: string): void
 SelectAndSetPlaylistArtwork(id: string): string   // opens file picker, returns key
 RemovePlaylistArtwork(id: string): void
 MovePlaylistTrack(playlistID: string, trackID: string, position: number): void
+ExportPlaylistToM3U8(playlistID: string): void    // opens save dialog, writes UTF-8 M3U8
+SelectAndParseM3U8(): M3U8Preview | null          // opens file picker, returns parsed preview
+ImportM3U8Playlist(filePath: string, name: string): M3U8ImportResult
+```
+
+### Return Types (import/export)
+
+```typescript
+interface M3U8Preview {
+  file_path: string
+  playlist_name: string
+  entry_count: number
+}
+
+interface M3U8ImportResult {
+  playlist_id: string
+  imported_count: number
+  skipped_count: number
+}
 ```
 
 ## Database Schema

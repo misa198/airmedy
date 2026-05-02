@@ -21,6 +21,22 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
+// SupportedAudioExtensions is the set of file extensions the library accepts.
+var SupportedAudioExtensions = map[string]bool{
+	".mp3":  true,
+	".flac": true,
+	".m4a":  true,
+	".wav":  true,
+	".ogg":  true,
+	".opus": true,
+	".aiff": true,
+	".aif":  true,
+	".ape":  true,
+	".wv":   true,
+	".dsf":  true,
+	".dff":  true,
+}
+
 type LibraryService struct {
 	trackRepo         domain.TrackRepository
 	albumRepo         domain.AlbumRepository
@@ -318,20 +334,7 @@ func (s *LibraryService) CleanupOrphanedArtworks(ctx context.Context) error {
 func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 	s.logger.Info("Starting folder sync", "root", root)
 
-	supportedExtensions := map[string]bool{
-		".mp3":  true,
-		".flac": true,
-		".m4a":  true,
-		".wav":  true,
-		".ogg":  true,
-		".opus": true,
-		".aiff": true,
-		".aif":  true,
-		".ape":  true,
-		".wv":   true,
-		".dsf":  true,
-		".dff":  true,
-	}
+	supportedExtensions := SupportedAudioExtensions
 
 	// 1. Count files
 	var total int
@@ -636,6 +639,63 @@ func isSubPath(parent, child string) bool {
 		return false
 	}
 	return !strings.HasPrefix(rel, "..") && rel != ".." && rel != "."
+}
+
+// IsPathValid returns nil if path exists on disk, has a supported extension, and
+// lives under one of the app's watched folders.
+func (s *LibraryService) IsPathValid(ctx context.Context, path string) error {
+	if _, err := os.Stat(path); err != nil {
+		return fmt.Errorf("file not found: %w", err)
+	}
+	ext := strings.ToLower(filepath.Ext(path))
+	if !SupportedAudioExtensions[ext] {
+		return fmt.Errorf("unsupported format: %s", ext)
+	}
+	folders, err := s.watchedFolderRepo.GetAll(ctx)
+	if err != nil {
+		return err
+	}
+	for _, f := range folders {
+		if isSubPath(f.Path, path) {
+			return nil
+		}
+	}
+	return fmt.Errorf("path not under any watched folder")
+}
+
+// EnsureTrack returns the TrackDTO for the given path, importing it from disk
+// if it is not yet in the library. For newly imported tracks, fallbackTitle and
+// fallbackArtist are applied only when the file's own tags are empty.
+func (s *LibraryService) EnsureTrack(ctx context.Context, path, fallbackTitle, fallbackArtist string) (*domain.TrackDTO, error) {
+	track, err := s.trackRepo.GetByPath(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+	if track != nil {
+		return track, nil
+	}
+
+	if err := s.ImportFile(ctx, path); err != nil {
+		return nil, err
+	}
+	track, err = s.trackRepo.GetByPath(ctx, path)
+	if err != nil || track == nil {
+		return nil, fmt.Errorf("track missing after import: %s", path)
+	}
+
+	changed := false
+	if track.Title == "" && fallbackTitle != "" {
+		track.Title = fallbackTitle
+		changed = true
+	}
+	if track.RawArtistNames == "" && fallbackArtist != "" {
+		track.RawArtistNames = fallbackArtist
+		changed = true
+	}
+	if changed {
+		_ = s.trackRepo.Upsert(ctx, &track.Track)
+	}
+	return track, nil
 }
 
 // ShowInExplorer opens the native file explorer and selects the file.

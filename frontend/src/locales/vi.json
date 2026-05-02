@@ -116,7 +116,10 @@
     "no_playlists": "Chưa có danh sách phát",
     "rename_playlist_title": "Đổi tên danh sách phát",
     "delete_playlist_message": "Bạn có chắc chắn muốn xóa danh sách phát này không? Hành động này không thể hoàn tác.",
-    "delete_playlist_title": "Xóa danh sách phát"
+    "delete_playlist_title": "Xóa danh sách phát",
+    "import_playlist": "Nhập danh sách phát",
+    "import_playlist_title": "Nhập danh sách phát",
+    "import": "Nhập"
   },
   "player": {
     "not_playing": "Không phát",
@@ -223,7 +226,8 @@
     "edit_metadata": "Chỉnh sửa siêu dữ liệu",
     "show_in_explorer": "Hiển thị trong trình quản lý tệp",
     "track_info": "Thông tin bài hát",
-    "refresh_lyrics": "Làm mới lời bài hát"
+    "refresh_lyrics": "Làm mới lời bài hát",
+    "export_playlist": "Xuất danh sách phát"
   },
   "track_info": {
     "title": "Thông tin bài hát",

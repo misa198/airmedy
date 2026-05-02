@@ -1,6 +1,7 @@
 package playlist
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -8,6 +9,7 @@ import (
 	"mime"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"airmedy/internal/domain"
@@ -154,6 +156,61 @@ func (s *PlaylistService) RemoveArtwork(ctx context.Context, id string) error {
 
 func (s *PlaylistService) GetPlaylistsForTrack(ctx context.Context, trackID string) ([]string, error) {
 	return s.repo.GetPlaylistsForTrack(ctx, trackID)
+}
+
+func (s *PlaylistService) ExportM3U8(ctx context.Context, playlistID string, destPath string) error {
+	p, err := s.repo.GetByID(ctx, playlistID)
+	if err != nil {
+		return fmt.Errorf("get playlist: %w", err)
+	}
+	if p == nil {
+		return fmt.Errorf("playlist not found: %s", playlistID)
+	}
+
+	tracks, err := s.repo.GetTracks(ctx, playlistID)
+	if err != nil {
+		return fmt.Errorf("get tracks: %w", err)
+	}
+
+	var buf bytes.Buffer
+	buf.WriteString("#EXTM3U\n")
+	buf.WriteString("#EXTENC:UTF-8\n")
+	buf.WriteString(fmt.Sprintf("#PLAYLIST:%s\n", p.Name))
+
+	for _, t := range tracks {
+		if t == nil {
+			continue
+		}
+		artist := t.RawArtistNames
+		title := t.Title
+		album := ""
+		if t.Album != nil {
+			album = t.Album.Title
+		}
+		genre := t.RawGenreNames
+
+		displayName := title
+		if artist != "" {
+			displayName = artist + " - " + title
+		}
+
+		buf.WriteString(fmt.Sprintf("#EXTINF:%d,%s\n", t.Duration, displayName))
+		if album != "" {
+			buf.WriteString(fmt.Sprintf("#EXTALB:%s\n", album))
+		}
+		if artist != "" {
+			buf.WriteString(fmt.Sprintf("#EXTART:%s\n", artist))
+		}
+		if genre != "" {
+			buf.WriteString(fmt.Sprintf("#EXTGENRE:%s\n", strings.SplitN(genre, ";", 2)[0]))
+		}
+		buf.WriteString(t.Path + "\n")
+	}
+
+	if err := os.WriteFile(destPath, buf.Bytes(), 0644); err != nil {
+		return fmt.Errorf("write file: %w", err)
+	}
+	return nil
 }
 
 func (s *PlaylistService) GetPlaylistColors(ctx context.Context, id string) (*domain.ThemeColors, error) {

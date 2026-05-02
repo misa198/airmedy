@@ -116,7 +116,10 @@
     "no_playlists": "プレイリストはまだありません",
     "rename_playlist_title": "プレイリスト名の変更",
     "delete_playlist_message": "このプレイリストを削除してもよろしいですか？この操作は取り消せません。",
-    "delete_playlist_title": "プレイリストを削除"
+    "delete_playlist_title": "プレイリストを削除",
+    "import_playlist": "プレイリストをインポート",
+    "import_playlist_title": "プレイリストをインポート",
+    "import": "インポート"
   },
   "player": {
     "not_playing": "停止中",
@@ -223,7 +226,8 @@
     "refresh_lyrics": "歌詞を更新",
     "remove_from_queue": "キューから削除",
     "play": "再生",
-    "shuffle": "シャッフル"
+    "shuffle": "シャッフル",
+    "export_playlist": "プレイリストをエクスポート"
   },
   "track_info": {
     "title": "トラック情報",

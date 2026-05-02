@@ -116,7 +116,10 @@
     "no_playlists": "Aún no hay listas de reproducción",
     "rename_playlist_title": "Renombrar lista de reproducción",
     "delete_playlist_message": "¿Estás seguro de que quieres eliminar esta lista de reproducción? Esta acción no se puede deshacer.",
-    "delete_playlist_title": "Eliminar lista de reproducción"
+    "delete_playlist_title": "Eliminar lista de reproducción",
+    "import_playlist": "Importar lista de reproducción",
+    "import_playlist_title": "Importar lista de reproducción",
+    "import": "Importar"
   },
   "player": {
     "not_playing": "No se está reproduciendo",
@@ -223,7 +226,8 @@
     "refresh_lyrics": "Actualizar letra",
     "remove_from_queue": "Eliminar de la cola",
     "play": "Reproducir",
-    "shuffle": "Aleatorio"
+    "shuffle": "Aleatorio",
+    "export_playlist": "Exportar lista de reproducción"
   },
   "track_info": {
     "title": "Información de la pista",

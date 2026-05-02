@@ -1,4 +1,4 @@
-import { Music, Pencil, Trash2, ListEnd, ListPlus } from 'lucide-vue-next'
+import { Music, Pencil, Trash2, ListEnd, ListPlus, Download } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
 import type { ContextMenuItem } from './useContextMenu'
@@ -11,6 +11,7 @@ export interface PlaylistContextMenuOptions {
   includePlaylistMenu?: boolean
   onRename?: (playlist: Playlist) => void
   onDelete?: (playlist: Playlist) => void
+  includeExport?: boolean
 }
 
 export function usePlaylistContextMenu() {
@@ -38,6 +39,15 @@ export function usePlaylistContextMenu() {
         label: t('sidebar.rename'),
         icon: Pencil,
         action: () => options.onRename!(playlist),
+      })
+    }
+
+    // Export to M3U8
+    if (options.includeExport !== false && playlist.id !== 'favorites') {
+      items.push({
+        label: t('context_menu.export_playlist'),
+        icon: Download,
+        action: () => PlaylistService.ExportPlaylistToM3U8(playlist.id),
       })
     }
 

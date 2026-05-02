@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
 import type { Playlist } from '../../bindings/airmedy/internal/domain/models'
+import { Events } from '@wailsio/runtime'
 
 export const usePlaylistsStore = defineStore('playlists', () => {
   const playlists = ref<Playlist[]>([])
@@ -18,6 +19,28 @@ export const usePlaylistsStore = defineStore('playlists', () => {
       loading.value = false
     }
   }
+
+  // Handle external events
+  Events.On('playlist:deleted', (ev: Events.WailsEvent) => {
+    const id = ev.data as string
+    playlists.value = playlists.value.filter((p) => p.id !== id)
+  })
+
+  Events.On('playlist:renamed', async (ev: Events.WailsEvent) => {
+    const id = ev.data as string
+    const p = playlists.value.find((x) => x.id === id)
+    if (p) {
+      try {
+        const updated = await PlaylistService.GetPlaylistByID(id)
+        if (updated) {
+          p.name = updated.name
+          p.description = updated.description
+        }
+      } catch (e) {
+        console.error('Failed to update renamed playlist in store', e)
+      }
+    }
+  })
 
   async function create(name: string, description = '') {
     const p = await PlaylistService.CreatePlaylist(name, description)
@@ -39,3 +62,4 @@ export const usePlaylistsStore = defineStore('playlists', () => {
 
   return { playlists, loading, loadAll, create, rename, deletePlaylist }
 })
+

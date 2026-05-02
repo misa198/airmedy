@@ -4,18 +4,35 @@ import (
 	"context"
 	"fmt"
 
+	"airmedy/internal/app/library"
 	"airmedy/internal/app/playlist"
 	"airmedy/internal/domain"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-type PlaylistService struct {
-	service *playlist.PlaylistService
+// M3U8Preview is returned to the frontend so it can populate the import dialog
+// before the user confirms.
+type M3U8Preview struct {
+	FilePath     string `json:"file_path"`
+	PlaylistName string `json:"playlist_name"`
+	EntryCount   int    `json:"entry_count"`
 }
 
-func NewPlaylistService(service *playlist.PlaylistService) *PlaylistService {
-	return &PlaylistService{service: service}
+// M3U8ImportResult reports how many tracks were imported and how many were skipped.
+type M3U8ImportResult struct {
+	PlaylistID    string `json:"playlist_id"`
+	ImportedCount int    `json:"imported_count"`
+	SkippedCount  int    `json:"skipped_count"`
+}
+
+type PlaylistService struct {
+	service        *playlist.PlaylistService
+	libraryService *library.LibraryService
+}
+
+func NewPlaylistService(service *playlist.PlaylistService, libraryService *library.LibraryService) *PlaylistService {
+	return &PlaylistService{service: service, libraryService: libraryService}
 }
 
 func (s *PlaylistService) CreatePlaylist(name, description string) (*domain.Playlist, error) {
@@ -23,11 +40,23 @@ func (s *PlaylistService) CreatePlaylist(name, description string) (*domain.Play
 }
 
 func (s *PlaylistService) UpdatePlaylist(id, name, description string) error {
-	return s.service.Update(context.Background(), id, name, description)
+	err := s.service.Update(context.Background(), id, name, description)
+	if err == nil {
+		if app := application.Get(); app != nil && app.Event != nil {
+			app.Event.Emit("playlist:renamed", id)
+		}
+	}
+	return err
 }
 
 func (s *PlaylistService) DeletePlaylist(id string) error {
-	return s.service.Delete(context.Background(), id)
+	err := s.service.Delete(context.Background(), id)
+	if err == nil {
+		if app := application.Get(); app != nil && app.Event != nil {
+			app.Event.Emit("playlist:deleted", id)
+		}
+	}
+	return err
 }
 
 func (s *PlaylistService) GetAllPlaylists() ([]*domain.Playlist, error) {
@@ -72,6 +101,110 @@ func (s *PlaylistService) GetPlaylistColors(id string) (*domain.ThemeColors, err
 
 func (s *PlaylistService) RemovePlaylistArtwork(id string) error {
 	return s.service.RemoveArtwork(context.Background(), id)
+}
+
+func (s *PlaylistService) ExportPlaylistToM3U8(playlistID string) error {
+	app := application.Get()
+	if app == nil {
+		return fmt.Errorf("application not initialized")
+	}
+
+	destPath, err := app.Dialog.SaveFile().
+		SetMessage("Export Playlist").
+		SetFilename(playlistID + ".m3u8").
+		AddFilter("M3U8 Playlist", "*.m3u8").
+		PromptForSingleSelection()
+	if err != nil {
+		return err
+	}
+	if destPath == "" {
+		return nil
+	}
+
+	return s.service.ExportM3U8(context.Background(), playlistID, destPath)
+}
+
+// SelectAndParseM3U8 opens an OS file-picker filtered to M3U/M3U8 files and
+// parses the selected file. Returns nil without error when the user cancels.
+func (s *PlaylistService) SelectAndParseM3U8() (*M3U8Preview, error) {
+	app := application.Get()
+	if app == nil {
+		return nil, fmt.Errorf("application not initialized")
+	}
+
+	filePath, err := app.Dialog.OpenFile().
+		SetTitle("Import Playlist").
+		AddFilter("M3U8 Playlist", "*.m3u;*.m3u8").
+		PromptForSingleSelection()
+	if err != nil {
+		return nil, err
+	}
+	if filePath == "" {
+		return nil, nil
+	}
+
+	parsed, err := playlist.ParseM3U8(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("parse m3u8: %w", err)
+	}
+
+	return &M3U8Preview{
+		FilePath:     filePath,
+		PlaylistName: parsed.PlaylistName,
+		EntryCount:   len(parsed.Entries),
+	}, nil
+}
+
+// ImportM3U8Playlist creates a new playlist from the given M3U8 file. Each
+// track path is validated (exists, supported format, inside a watched folder);
+// invalid paths are silently skipped. For tracks not yet in the library they
+// are imported first, with M3U8 metadata used as fallback for empty tags.
+func (s *PlaylistService) ImportM3U8Playlist(filePath, name string) (*M3U8ImportResult, error) {
+	ctx := context.Background()
+
+	parsed, err := playlist.ParseM3U8(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("parse m3u8: %w", err)
+	}
+
+	p, err := s.service.Create(ctx, name, "")
+	if err != nil {
+		return nil, fmt.Errorf("create playlist: %w", err)
+	}
+
+	result := &M3U8ImportResult{PlaylistID: p.ID}
+
+	for _, entry := range parsed.Entries {
+		if entry.Path == "" {
+			result.SkippedCount++
+			continue
+		}
+		if err := s.libraryService.IsPathValid(ctx, entry.Path); err != nil {
+			result.SkippedCount++
+			continue
+		}
+		track, err := s.libraryService.EnsureTrack(ctx, entry.Path, entry.Title, entry.Artist)
+		if err != nil {
+			result.SkippedCount++
+			continue
+		}
+		if err := s.service.AddTrack(ctx, p.ID, track.ID); err != nil {
+			result.SkippedCount++
+			continue
+		}
+		result.ImportedCount++
+	}
+
+	if result.ImportedCount == 0 {
+		_ = s.service.Delete(ctx, p.ID)
+		return nil, fmt.Errorf("no valid tracks found in playlist file")
+	}
+
+	if app := application.Get(); app != nil && app.Event != nil {
+		app.Event.Emit("playlist:tracks-changed", p.ID)
+	}
+
+	return result, nil
 }
 
 func (s *PlaylistService) SelectAndSetPlaylistArtwork(id string) (string, error) {

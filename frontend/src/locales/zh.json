@@ -116,7 +116,10 @@
     "no_playlists": "暂无播放列表",
     "rename_playlist_title": "重命名播放列表",
     "delete_playlist_message": "您确定要删除此播放列表吗？此操作无法撤销。",
-    "delete_playlist_title": "删除播放列表"
+    "delete_playlist_title": "删除播放列表",
+    "import_playlist": "导入播放列表",
+    "import_playlist_title": "导入播放列表",
+    "import": "导入"
   },
   "player": {
     "not_playing": "未在播放",
@@ -223,7 +226,8 @@
     "track_info": "歌曲信息",
     "refresh_lyrics": "刷新歌词",
     "play": "播放",
-    "shuffle": "随机播放"
+    "shuffle": "随机播放",
+    "export_playlist": "导出播放列表"
   },
   "track_info": {
     "title": "歌曲信息",
