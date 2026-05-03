@@ -115,10 +115,12 @@ type MetadataUpdate struct {
     BPM         int
     Label       string
     ISRC        string
+    ArtworkData []byte
+    ArtworkMIME string
 }
 ```
 
-After writing, `library/service.go` re-extracts the file and upserts the updated track to DB and search index.
+After writing tags and optional artwork, `library/service.go` re-extracts the file and upserts the updated track to DB and search index.
 
 ## Raw Metadata Storage
 

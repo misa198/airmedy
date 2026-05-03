@@ -161,6 +161,12 @@ h1, h2, h3 {
     border-color: var(--border-hover);
 }
 
+.btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 .btn-group {
     display: flex;
     gap: 12px;

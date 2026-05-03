@@ -22,6 +22,8 @@ type MetadataUpdate struct {
 	BPM         int
 	Label       string
 	ISRC        string
+	ArtworkData []byte
+	ArtworkMIME string
 }
 
 // MetadataWriter writes tag data back to audio files.

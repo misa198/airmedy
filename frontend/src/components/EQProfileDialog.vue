@@ -36,7 +36,8 @@ function submit() {
     <Input
       v-model="name"
       :placeholder="t('settings.equalizer.profile_name_placeholder')"
-      class="bg-foreground/[0.05] border-foreground/[0.08] text-foreground placeholder:text-foreground opacity-40 focus-visible:ring-foreground/20"
+      class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
+
       autofocus
       @keydown.enter="submit" />
     <div class="flex justify-end gap-2 mt-4">

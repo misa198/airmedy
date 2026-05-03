@@ -88,7 +88,11 @@ const translations = {
             subtitle: "Download Airmedy for your platform and start your journey.",
             windows: {
                 label: "Windows",
-                btn: "Windows (amd64)"
+                btn: "Coming soon"
+            },
+            linux: {
+                label: "Linux",
+                btn: "Coming soon"
             },
             macos: {
                 label: "macOS",
@@ -193,7 +197,11 @@ const translations = {
             subtitle: "Lade Airmedy für deine Plattform herunter und beginne deine Reise.",
             windows: {
                 label: "Windows",
-                btn: "Windows (amd64)"
+                btn: "Demnächst"
+            },
+            linux: {
+                label: "Linux",
+                btn: "Demnächst"
             },
             macos: {
                 label: "macOS",
@@ -298,7 +306,11 @@ const translations = {
             subtitle: "Descarga Airmedy para tu plataforma y comienza tu viaje.",
             windows: {
                 label: "Windows",
-                btn: "Windows (amd64)"
+                btn: "Próximamente"
+            },
+            linux: {
+                label: "Linux",
+                btn: "Próximamente"
             },
             macos: {
                 label: "macOS",
@@ -403,7 +415,11 @@ const translations = {
             subtitle: "Téléchargez Airmedy pour votre plateforme et commencez votre voyage.",
             windows: {
                 label: "Windows",
-                btn: "Windows (amd64)"
+                btn: "Bientôt disponible"
+            },
+            linux: {
+                label: "Linux",
+                btn: "Bientôt disponible"
             },
             macos: {
                 label: "macOS",
@@ -508,7 +524,11 @@ const translations = {
             subtitle: "Scarica Airmedy per la tua piattaforma e inizia il tuo viaggio.",
             windows: {
                 label: "Windows",
-                btn: "Windows (amd64)"
+                btn: "In arrivo"
+            },
+            linux: {
+                label: "Linux",
+                btn: "In arrivo"
             },
             macos: {
                 label: "macOS",
@@ -613,7 +633,11 @@ const translations = {
             subtitle: "プラットフォームに合わせてAirmedyをダウンロードし、旅を始めましょう。",
             windows: {
                 label: "Windows",
-                btn: "Windows (amd64)"
+                btn: "近日公開"
+            },
+            linux: {
+                label: "Linux",
+                btn: "近日公開"
             },
             macos: {
                 label: "macOS",
@@ -718,7 +742,11 @@ const translations = {
             subtitle: "사용 중인 플랫폼에 맞는 Airmedy를 다운로드하고 시작하세요.",
             windows: {
                 label: "Windows",
-                btn: "Windows (amd64)"
+                btn: "출시 예정"
+            },
+            linux: {
+                label: "Linux",
+                btn: "출시 예정"
             },
             macos: {
                 label: "macOS",
@@ -823,7 +851,11 @@ const translations = {
             subtitle: "Baixe o Airmedy para sua plataforma e comece sua jornada.",
             windows: {
                 label: "Windows",
-                btn: "Windows (amd64)"
+                btn: "Em breve"
+            },
+            linux: {
+                label: "Linux",
+                btn: "Em breve"
             },
             macos: {
                 label: "macOS",
@@ -928,7 +960,11 @@ const translations = {
             subtitle: "Загрузите Airmedy для своей платформы и начните свое путешествие.",
             windows: {
                 label: "Windows",
-                btn: "Windows (amd64)"
+                btn: "Скоро"
+            },
+            linux: {
+                label: "Linux",
+                btn: "Скоро"
             },
             macos: {
                 label: "macOS",
@@ -1033,7 +1069,11 @@ const translations = {
             subtitle: "ดาวน์โหลด Airmedy สำหรับแพลตฟอร์มของคุณและเริ่มการเดินทางของคุณ",
             windows: {
                 label: "Windows",
-                btn: "Windows (amd64)"
+                btn: "เร็วๆ นี้"
+            },
+            linux: {
+                label: "Linux",
+                btn: "เร็วๆ นี้"
             },
             macos: {
                 label: "macOS",
@@ -1138,7 +1178,11 @@ const translations = {
             subtitle: "Tải xuống Airmedy cho nền tảng của bạn và bắt đầu hành trình.",
             windows: {
                 label: "Windows",
-                btn: "Windows (amd64)"
+                btn: "Sắp ra mắt"
+            },
+            linux: {
+                label: "Linux",
+                btn: "Sắp ra mắt"
             },
             macos: {
                 label: "macOS",
@@ -1243,7 +1287,11 @@ const translations = {
             subtitle: "下载适用于您平台的 Airmedy，开启您的音乐之旅。",
             windows: {
                 label: "Windows",
-                btn: "Windows (amd64)"
+                btn: "敬请期待"
+            },
+            linux: {
+                label: "Linux",
+                btn: "敬请期待"
             },
             macos: {
                 label: "macOS",

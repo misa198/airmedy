@@ -233,5 +233,12 @@ func (e *taglibExtractor) WriteMetadata(_ context.Context, path string, fields d
 	if err := taglib.WriteTags(path, tags, taglib.Clear); err != nil {
 		return fmt.Errorf("failed to write metadata to %s: %w", path, err)
 	}
+
+	if len(fields.ArtworkData) > 0 {
+		if err := taglib.WriteImage(path, fields.ArtworkData); err != nil {
+			return fmt.Errorf("failed to write artwork to %s: %w", path, err)
+		}
+	}
+
 	return nil
 }

@@ -117,8 +117,9 @@ After syncing, `AlbumRepository.DeleteOrphaned()`, `ArtistRepository.DeleteOrpha
 
 ```
 User edits metadata in MetadataEditDialog
+  → Select new cover image (optional, auto-converted to JPEG)
   → LibraryService.UpdateTrackMetadata(id, MetadataUpdate)
-  → MetadataWriter.WriteMetadata(path, fields)   // writes tags to file
+  → MetadataWriter.WriteMetadata(path, fields)   // writes tags and artwork to file
   → Re-import file: ImportFile(path)              // re-extracts and updates DB
   → EmitEvent("library:track-updated", updated)
 ```

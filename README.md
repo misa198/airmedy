@@ -29,6 +29,7 @@
 - **Lock screen & media keys** — control playback from your keyboard, lock screen, or Control Center — just like a first-party app.
 - **Last.fm scrobbling** — sync your listening history and loved tracks automatically.
 - **Fast search** — find any track, album, or artist in milliseconds.
+- **Metadata editor** — update track titles, artists, albums, and other tags. Support for updating album artwork with automatic JPEG conversion.
 - **Plays in the background** — close the window and music keeps going. Quit when you actually mean it.
 - **Tray menu** — control playback from the system tray.
 
