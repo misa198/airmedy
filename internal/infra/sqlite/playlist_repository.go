@@ -121,6 +121,30 @@ func (r *playlistRepository) RemoveTrack(ctx context.Context, playlistID, trackI
 	return tx.Commit()
 }
 
+func (r *playlistRepository) UpdateTracksOrder(ctx context.Context, playlistID string, trackIDs []string) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	// Clear existing tracks for this playlist
+	_, err = tx.ExecContext(ctx, "DELETE FROM playlist_tracks WHERE playlist_id = ?", playlistID)
+	if err != nil {
+		return err
+	}
+
+	// Insert new order
+	for i, trackID := range trackIDs {
+		_, err = tx.ExecContext(ctx, "INSERT INTO playlist_tracks (playlist_id, track_id, position) VALUES (?, ?, ?)", playlistID, trackID, i)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
 func (r *playlistRepository) GetTracks(ctx context.Context, playlistID string) ([]*domain.TrackDTO, error) {
 	query := fmt.Sprintf(`
 		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year, 

@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { Music, X, ListMusic, MoreVertical } from 'lucide-vue-next'
+import { Music, X, ListMusic, MoreVertical, GripVertical } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
 import { formatTime, buildArtworkUrl, getTrackDisplayTitle } from '../lib/utils'
 import LazyImg from '@/components/LazyImg.vue'
 import { useI18n } from 'vue-i18n'
 import TrackContextMenu from './TrackContextMenu.vue'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
+import VirtualList from 'vue-virtual-sortable'
 
 const { t } = useI18n()
 const store = usePlayerStore()
@@ -35,9 +36,7 @@ watch(() => store.isQueueOpen, (open) => {
 </script>
 
 <template>
-  <div
-    class="h-full w-full bg-background flex flex-col"
-  >
+  <div class="h-full w-full bg-background flex flex-col">
     <!-- Header -->
     <div class="flex items-center justify-between px-4 py-3 border-b border-foreground/[0.06]">
       <div class="flex items-center gap-2 font-semibold">
@@ -54,62 +53,69 @@ watch(() => store.isQueueOpen, (open) => {
     </div>
 
     <!-- Queue list -->
-    <div class="flex-1 overflow-y-auto">
+    <div class="flex-1 overflow-hidden">
       <div v-if="store.queue.length === 0" class="h-full flex flex-col items-center justify-center text-muted-foreground gap-3">
         <Music class="w-10 h-10 opacity-20" />
         <p class="text-sm">{{ t('player.queue_empty') }}</p>
       </div>
 
-      <RecycleScroller
-        v-else
+      <VirtualList
+        v-show="store.queue.length > 0"
         ref="scroller"
-        class="h-full"
-        :items="store.queue"
-        :item-size="64"
-        key-field="id"
-        v-slot="{ item, index }"
+        :model-value="store.queue"
+        @update:model-value="store.reorderQueue"
+        data-key="id"
+        :size="64"
+        handle=".dnd-handle"
+        chosen-class="drag-chosen"
+        :ghost-style="{ display: 'none' }"
+        class="h-full overflow-y-auto select-none"
+        @scroll="trackContextMenu?.close()"
       >
-        <button
-          class="w-full flex items-center gap-3 px-4 h-16 text-left hover:bg-foreground/[0.04] transition-colors group relative select-none"
-          :class="{ 'bg-primary/10 border-l-2 border-l-primary': store.currentTrack?.id === item.id }"
-          @click="store.playTracks(store.queue, index)"
-          @contextmenu.prevent="onContextMenu($event, item)"
-        >
-          <!-- Artwork -->
-          <div class="w-10 h-10 rounded-md bg-foreground/5 flex-shrink-0 overflow-hidden">
-            <LazyImg
-              v-if="item.artwork_key"
-              :src="buildArtworkUrl(item.artwork_key, 'sm')"
-              :alt="item.title"
-              class="w-full h-full object-cover"
-            />
-            <div v-else class="w-full h-full flex items-center justify-center text-muted-foreground/30">
-              <Music class="w-4 h-4" />
+        <template v-slot:item="{ record: item, index }">
+          <div
+            class="w-full flex items-center gap-3 px-0 h-16 text-left hover:bg-foreground/[0.04] transition-colors group relative"
+            :class="{ 'bg-primary/10 border-l-2 border-l-primary': store.currentTrack?.id === item.id }"
+            @dblclick="store.playTracks(store.queue, index)"
+            @contextmenu.prevent="onContextMenu($event, item)"
+          >
+            <!-- Drag Handle -->
+            <div class="dnd-handle cursor-grab active:cursor-grabbing text-foreground opacity-20 group-hover:opacity-60 transition-opacity px-2">
+              <GripVertical class="w-4 h-4 pointer-events-none" />
             </div>
-          </div>
 
-          <!-- Track info -->
-          <div class="flex-1 min-w-0">
-            <div
-              class="text-sm font-medium truncate"
-              :class="store.currentTrack?.id === item.id ? 'text-primary' : ''"
-            >
-              {{ getTrackDisplayTitle(item) || t('library.unknown_title') }}
+            <!-- Artwork -->
+            <div class="w-10 h-10 rounded-md bg-foreground/5 flex-shrink-0 overflow-hidden" @click="store.playTracks(store.queue, index)">
+              <LazyImg
+                v-if="item.artwork_key"
+                :src="buildArtworkUrl(item.artwork_key, 'sm')"
+                :alt="item.title"
+                class="w-full h-full object-cover"
+              />
+              <div v-else class="w-full h-full flex items-center justify-center text-muted-foreground/30">
+                <Music class="w-4 h-4" />
+              </div>
             </div>
-            <div class="text-xs text-muted-foreground truncate">
-              {{ item.artists?.map((a) => a?.name).filter(Boolean).join(', ') || item.raw_artist_names || t('library.unknown_artist') }}
-            </div>
-          </div>
 
-          <!-- Duration + index + Context Menu Overlay -->
-          <div class="relative flex items-center justify-end w-20 h-full flex-shrink-0">
-            <div class="flex flex-col items-end group-hover:opacity-0 transition-opacity">
-              <div class="text-xs text-muted-foreground/50 mb-1">{{ index + 1 }}</div>
-              <div class="text-xs text-muted-foreground mt-0.5">{{ formatTime(item.duration) }}</div>
+            <!-- Track info -->
+            <div class="flex-1 min-w-0" @click="store.playTracks(store.queue, index)">
+              <div
+                class="text-sm font-medium truncate"
+                :class="store.currentTrack?.id === item.id ? 'text-primary' : ''"
+              >
+                {{ getTrackDisplayTitle(item) || t('library.unknown_title') }}
+              </div>
+              <div class="text-xs text-muted-foreground truncate">
+                {{ item.artists?.map((a) => a?.name).filter(Boolean).join(', ') || item.raw_artist_names || t('library.unknown_artist') }}
+              </div>
             </div>
-            <div
-              class="absolute inset-0 flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity"
-            >
+
+            <!-- Duration + index + Context Menu -->
+            <div class="flex items-center justify-end w-20 h-full flex-shrink-0 gap-2">
+              <div class="flex flex-col items-end">
+                <div class="text-xs text-muted-foreground/50 mb-1">{{ index + 1 }}</div>
+                <div class="text-xs text-muted-foreground mt-0.5">{{ formatTime(item.duration) }}</div>
+              </div>
               <button
                 class="p-2 hover:bg-foreground/8 rounded-full text-foreground opacity-50 hover:text-foreground opacity-90 transition-colors"
                 @click.stop="onContextMenu($event, item)"
@@ -118,9 +124,19 @@ watch(() => store.isQueueOpen, (open) => {
               </button>
             </div>
           </div>
-        </button>
-      </RecycleScroller>
+        </template>
+      </VirtualList>
     </div>
   </div>
   <TrackContextMenu ref="trackContextMenu" />
 </template>
+
+<style scoped>
+.drag-chosen {
+  background: var(--bg-main) !important;
+  opacity: 0.9;
+  z-index: 50;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+</style>

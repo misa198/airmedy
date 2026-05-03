@@ -232,6 +232,26 @@ function shufflePlaylist() {
     playerStore.shuffleTracks(filteredTracks.value)
   }
 }
+
+async function handleReorder(newTracks: TrackDTO[]) {
+  if (!playlist.value || playlist.value.id === 'favorites') return
+  
+  tracks.value = newTracks
+  const trackIDs = newTracks.map(t => t.id)
+  
+  try {
+    // @ts-ignore - UpdateTracksOrder might not be in the generated bindings yet
+    if (PlaylistService.UpdateTracksOrder) {
+      // @ts-ignore
+      await PlaylistService.UpdateTracksOrder(playlist.value.id, trackIDs)
+    } else {
+      console.warn('PlaylistService.UpdateTracksOrder not found in bindings. Please regenerate bindings.')
+    }
+  } catch (e) {
+    console.error('Failed to update playlist track order', e)
+    load(true) // Revert on failure
+  }
+}
 </script>
 
 <template>
@@ -301,13 +321,15 @@ function shufflePlaylist() {
       </DetailHero>
 
       <!-- Track List -->
-      <div class="px-2 pb-12">
+      <div class="top-0 h-[calc(100vh-390px)]">
         <TrackTable
           :tracks="filteredTracks"
           :show-artwork="true"
           :simple-mode="true"
+          :allow-dnd="playlist.id !== 'favorites'"
           :context-menu-options="{ playlistId: playlist.id }"
           @play-track="(_, index, queue) => playerStore.playTracks(queue, index)"
+          @reorder="handleReorder"
           @navigate-album="id => router.push(`/albums/${id}`)"
           @navigate-artist="id => router.push(`/artists/${id}`)"
         />

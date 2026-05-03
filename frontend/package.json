@@ -25,7 +25,7 @@
     "vue-i18n": "^11.3.2",
     "vue-resizable-panels": "^0.0.1",
     "vue-router": "^4.6.4",
-    "vue-virtual-scroller": "3.0.2"
+    "vue-virtual-sortable": "^3.1.2"
   },
   "devDependencies": {
     "@pinia/testing": "^0.1.6",

@@ -223,6 +223,17 @@ export const usePlayerStore = defineStore('player', () => {
     // The backend emits player:status and player:queue-updated which will update our local state
   }
 
+  async function reorderQueue(tracks: TrackDTO[]) {
+    queue.value = tracks
+    // @ts-ignore - ReorderQueue might not be in the generated bindings yet
+    if (PlayerService.ReorderQueue) {
+      // @ts-ignore
+      await PlayerService.ReorderQueue(tracks)
+    } else {
+      console.warn('PlayerService.ReorderQueue not found in bindings. Please regenerate bindings.')
+    }
+  }
+
 
   function toggleQueue() {
     if (isQueueOpen.value) {
@@ -314,6 +325,7 @@ export const usePlayerStore = defineStore('player', () => {
     setRepeatMode,
     playTracks,
     shuffleTracks,
+    reorderQueue,
     toggleQueue,
     openQueue,
     toggleLyrics,

@@ -437,6 +437,33 @@ func (s *QueueService) RemoveTrack(trackID string) {
 	}
 }
 
+// ReorderQueue sets a new order for the active list and maintains the current track index by ID.
+func (s *QueueService) ReorderQueue(tracks []*domain.TrackDTO) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	list := s.activeList()
+	var currentID string
+	if s.currentIndex >= 0 && s.currentIndex < len(list) {
+		currentID = list[s.currentIndex].ID
+	}
+
+	if s.shuffle {
+		s.shuffledList = tracks
+	} else {
+		s.originalList = tracks
+	}
+
+	if currentID != "" {
+		for i, t := range tracks {
+			if t.ID == currentID {
+				s.currentIndex = i
+				break
+			}
+		}
+	}
+}
+
 // Internal helpers
 
 func (s *QueueService) activeList() []*domain.TrackDTO {

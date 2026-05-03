@@ -95,6 +95,16 @@ func (s *PlaylistService) RemoveTrackFromPlaylist(playlistID, trackID string) er
 	return err
 }
 
+func (s *PlaylistService) UpdateTracksOrder(playlistID string, trackIDs []string) error {
+	err := s.service.UpdateTracksOrder(context.Background(), playlistID, trackIDs)
+	if err == nil {
+		if app := application.Get(); app != nil && app.Event != nil {
+			app.Event.Emit("playlist:tracks-changed", playlistID)
+		}
+	}
+	return err
+}
+
 func (s *PlaylistService) GetPlaylistColors(id string) (*domain.ThemeColors, error) {
 	return s.service.GetPlaylistColors(context.Background(), id)
 }

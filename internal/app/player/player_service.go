@@ -403,6 +403,13 @@ func (s *PlayerService) RemoveFromQueue(trackID string) {
 	}
 }
 
+// ReorderQueue updates the order of tracks in the queue.
+func (s *PlayerService) ReorderQueue(tracks []*domain.TrackDTO) {
+	s.queue.ReorderQueue(tracks)
+	s.emitQueue()
+	s.saveState(context.Background())
+}
+
 // GetStatus returns the current status of the player.
 func (s *PlayerService) GetStatus() domain.PlayerStatus {
 	s.mu.RLock()

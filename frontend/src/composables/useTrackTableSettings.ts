@@ -3,6 +3,7 @@ import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import { getTrackDisplayTitle } from '@/lib/utils'
 
 export type ColumnKey =
+  | 'dnd'
   | 'index'
   | 'title'
   | 'duration'
@@ -33,6 +34,16 @@ const strCmp = (a: string, b: string) => a.localeCompare(b)
 const numCmp = (a: number, b: number) => a - b
 
 export const COLUMNS: ColumnDef[] = [
+  {
+    key: 'dnd',
+    labelKey: '',
+    gridWidth: '32px',
+    minWidthPx: 32,
+    alwaysVisible: false,
+    sortable: false,
+    sticky: 'left',
+    draggable: false,
+  },
   {
     key: 'index',
     labelKey: 'library.index',

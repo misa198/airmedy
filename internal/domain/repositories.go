@@ -84,6 +84,7 @@ type PlaylistRepository interface {
 	Delete(ctx context.Context, id string) error
 	AddTrack(ctx context.Context, playlistID, trackID string, position int) error
 	RemoveTrack(ctx context.Context, playlistID, trackID string) error
+	UpdateTracksOrder(ctx context.Context, playlistID string, trackIDs []string) error
 	GetTracks(ctx context.Context, playlistID string) ([]*TrackDTO, error)
 	GetPlaylistsForTrack(ctx context.Context, trackID string) ([]string, error)
 	CountTracks(ctx context.Context, playlistID string) (int, error)

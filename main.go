@@ -244,7 +244,7 @@ func main() {
 		Title:              "Airmedy",
 		Width:              1280,
 		Height:             800,
-		MinWidth:           1060,
+		MinWidth:           1200,
 		MinHeight:          768,
 		UseApplicationMenu: runtime.GOOS == "darwin",
 		Mac: application.MacWindow{

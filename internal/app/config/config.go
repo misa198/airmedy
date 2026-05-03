@@ -13,7 +13,7 @@ type Config struct {
 }
 
 func NewConfig() (*Config, error) {
-	dataDir := filepath.Join(xdg.DataHome, "airmedy")
+	dataDir := filepath.Join(xdg.DataHome, appDataFolder)
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create data directory: %w", err)
 	}

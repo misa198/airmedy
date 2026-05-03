@@ -107,6 +107,10 @@ func (s *PlaylistService) RemoveTrack(ctx context.Context, playlistID, trackID s
 	return s.repo.RemoveTrack(ctx, playlistID, trackID)
 }
 
+func (s *PlaylistService) UpdateTracksOrder(ctx context.Context, playlistID string, trackIDs []string) error {
+	return s.repo.UpdateTracksOrder(ctx, playlistID, trackIDs)
+}
+
 func (s *PlaylistService) SetArtwork(ctx context.Context, id, imagePath string) (*string, error) {
 	p, err := s.repo.GetByID(ctx, id)
 	if err != nil {

@@ -47,10 +47,11 @@ function navigate(path: string) {
       <!-- Content Area -->
       <div class="flex-1 overflow-hidden">
         <TrackTable :tracks="queue" :show-artwork="false" :scroll-to-current="true" :simple-mode="true"
-          :hide-header="true" variant="glass"
+          :hide-header="true" variant="glass" :allow-dnd="true"
           :context-menu-options="{ showRemoveFromQueue: true }"
           class="dark"
           @play-track="(_, index) => emit('play-track', index)"
+          @reorder="tracks => playerStore.queue = tracks"
           @navigate-album="id => navigate(`/albums/${id}`)"
           @navigate-artist="id => navigate(`/artists/${id}`)" />
       </div>

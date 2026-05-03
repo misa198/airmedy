@@ -47,9 +47,9 @@ importers:
       vue-router:
         specifier: ^4.6.4
         version: 4.6.4(vue@3.5.32(typescript@4.9.5))
-      vue-virtual-scroller:
-        specifier: 3.0.2
-        version: 3.0.2(vue@3.5.32(typescript@4.9.5))
+      vue-virtual-sortable:
+        specifier: ^3.1.2
+        version: 3.1.2
     devDependencies:
       '@pinia/testing':
         specifier: ^0.1.6
@@ -1377,6 +1377,9 @@ packages:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
 
+  sortable-dnd@0.7.1:
+    resolution: {integrity: sha512-4nBeglM4YtutmEAjdUiU2UaC+KkAtipyr8SMEXOxAIOdmq3iRHF1/w1OZhhg9WPBarnSD2G64DDZ6z9rilatkA==}
+
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
     engines: {node: '>=0.10.0'}
@@ -1579,10 +1582,8 @@ packages:
     peerDependencies:
       typescript: '*'
 
-  vue-virtual-scroller@3.0.2:
-    resolution: {integrity: sha512-zneKxsBecfFBpH2NAk8zF0IWBRSYRaXnXK/dPQ/AnXE9xlbRyW6sSO9EUb5L5cSFz2Dpfb2giN30/y+/Xvu5PQ==}
-    peerDependencies:
-      vue: ^3.3.0
+  vue-virtual-sortable@3.1.2:
+    resolution: {integrity: sha512-cUrfQyb2OOj8rrZrCl+pFpMaEZOQQ+zlcdGCzkRqHt7usFmO6S5q4yC4cPqSEOJ9h5C7mwey/j+ks59MnZQ1pA==}
 
   vue@3.5.32:
     resolution: {integrity: sha512-vM4z4Q9tTafVfMAK7IVzmxg34rSzTFMyIe0UUEijUCkn9+23lj0WRfA83dg7eQZIUlgOSGrkViIaCfqSAUXsMw==}
@@ -2849,6 +2850,8 @@ snapshots:
 
   signal-exit@4.1.0: {}
 
+  sortable-dnd@0.7.1: {}
+
   source-map-js@1.2.1: {}
 
   speakingurl@14.0.1: {}
@@ -3031,9 +3034,9 @@ snapshots:
       semver: 7.7.4
       typescript: 4.9.5
 
-  vue-virtual-scroller@3.0.2(vue@3.5.32(typescript@4.9.5)):
+  vue-virtual-sortable@3.1.2:
     dependencies:
-      vue: 3.5.32(typescript@4.9.5)
+      sortable-dnd: 0.7.1
 
   vue@3.5.32(typescript@4.9.5):
     dependencies:
