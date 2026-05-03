@@ -126,21 +126,4 @@ function formatFileSize(bytes: number) {
 </template>
 
 <style scoped>
-@reference "../assets/index.css";
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-foreground/10 rounded-full;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  @apply bg-foreground/20;
-}
 </style>

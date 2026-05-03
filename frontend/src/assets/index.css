@@ -15,6 +15,7 @@
 
 @layer base {
   :root {
+    color-scheme: light;
     --default-contextmenu: hide;
     --bg-main: #f4f4f5;
     --bg-glass: rgba(255, 255, 255, 0.7);
@@ -40,6 +41,7 @@
   }
 
   .dark {
+    color-scheme: dark;
     --bg-main: #0a0a0a;
     --bg-glass: rgba(25, 25, 25, 0.6);
     --bg-glass-elevated: rgba(45, 45, 45, 0.4);
@@ -51,10 +53,11 @@
     --primary-foreground: #ffffff;
 
     --bg-zebra: rgba(255, 255, 255, 0.02);
-    --scrollbar-thumb: rgba(255, 255, 255, 0.15);
-    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.25);
+    --scrollbar-thumb: rgba(255, 255, 255, 0.25);
+    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.35);
   }
 
+  html,
   body {
     @apply bg-background text-foreground font-sans antialiased;
     background-color: var(--bg-main);
@@ -81,7 +84,7 @@ img {
   user-select: none;
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar Global */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -101,6 +104,34 @@ img {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover);
   background-clip: content-box;
+}
+
+/* Scrollbar Utility Classes */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Firefox support */

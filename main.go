@@ -61,6 +61,8 @@ func main() {
 		wailsApp      *application.App
 	)
 
+	slog.Info("Starting Airmedy", "version", domain.Version)
+
 	fxApp := fx.New(
 		app.Module,
 		fx.Populate(&greetService, &libraryService, &playerService, &searchService, &playlistService, &lyricsService, &eqService, &windowService, &settingsService, &lastfmService, &updaterService, &artworkCache),
