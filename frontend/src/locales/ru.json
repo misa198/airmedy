@@ -67,7 +67,15 @@
       "version": "Версия",
       "github": "Репозиторий GitHub",
       "license": "Лицензия",
-      "open_data_folder": "Открыть папку с данными приложения"
+      "open_data_folder": "Открыть папку с данными приложения",
+      "check_updates": "Проверить обновления",
+      "checking": "Проверка...",
+      "new_version_available": "Доступна новая версия: {version}",
+      "update_now": "Обновить сейчас",
+      "updating": "Обновление...",
+      "update_applied": "Обновление применено! Пожалуйста, перезапустите Airmedy.",
+      "update_failed": "Не удалось обновить",
+      "check_failed": "Не удалось проверить наличие обновлений"
     },
     "appearance": {
       "title": "Внешний вид",

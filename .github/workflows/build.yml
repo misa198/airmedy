@@ -238,29 +238,46 @@ jobs:
           VERSION="${{ github.event.inputs.version }}"
           case $OS_INPUT in
             "Windows-AMD64")
+              # Installer
               if [ -f bin/airmedy-amd64-installer.exe ]; then
-                cp bin/airmedy-amd64-installer.exe dist/Airmedy_${VERSION}_windows-amd64.exe
+                cp bin/airmedy-amd64-installer.exe dist/Airmedy_${VERSION}_windows-amd64_installer.exe
               else
-                cp bin/*installer.exe dist/Airmedy_${VERSION}_windows-amd64.exe || echo "No windows installer found"
+                cp bin/*installer.exe dist/Airmedy_${VERSION}_windows-amd64_installer.exe || echo "No windows installer found"
+              fi
+              # Standalone binary for auto-update
+              if [ -f bin/airmedy.exe ]; then
+                if command -v zip >/dev/null 2>&1; then
+                  cd bin && zip ../dist/Airmedy_${VERSION}_windows-amd64.zip airmedy.exe && cd ..
+                else
+                  cd bin && 7z a ../dist/Airmedy_${VERSION}_windows-amd64.zip airmedy.exe && cd ..
+                fi
               fi
               ;;
             "Linux-AMD64")
+              # System packages
               DEB=$(find bin/ -name "*.deb" | head -1)
               RPM=$(find bin/ -name "*.rpm" | head -1)
               PKG=$(find bin/ -name "*.pkg.tar.zst" | head -1)
               if [ -n "$DEB" ]; then cp "$DEB" dist/Airmedy_${VERSION}_linux-amd64.deb; else echo "No .deb found"; fi
               if [ -n "$RPM" ]; then cp "$RPM" dist/Airmedy_${VERSION}_linux-amd64.rpm; else echo "No .rpm found"; fi
               if [ -n "$PKG" ]; then cp "$PKG" dist/Airmedy_${VERSION}_linux-amd64.pkg.tar.zst; else echo "No .pkg.tar.zst found"; fi
-              if [ -z "$DEB" ] && [ -z "$RPM" ] && [ -z "$PKG" ]; then echo "No packages found in bin/" && exit 1; fi
+              # Standalone binary for auto-update
+              if [ -f bin/airmedy ]; then
+                cd bin && tar -czf ../dist/Airmedy_${VERSION}_linux-amd64.tar.gz airmedy && cd ..
+              fi
               ;;
             "Linux-ARM64")
+              # System packages
               DEB=$(find bin/ -name "*.deb" | head -1)
               RPM=$(find bin/ -name "*.rpm" | head -1)
               PKG=$(find bin/ -name "*.pkg.tar.zst" | head -1)
               if [ -n "$DEB" ]; then cp "$DEB" dist/Airmedy_${VERSION}_linux-arm64.deb; else echo "No .deb found"; fi
               if [ -n "$RPM" ]; then cp "$RPM" dist/Airmedy_${VERSION}_linux-arm64.rpm; else echo "No .rpm found"; fi
               if [ -n "$PKG" ]; then cp "$PKG" dist/Airmedy_${VERSION}_linux-arm64.pkg.tar.zst; else echo "No .pkg.tar.zst found"; fi
-              if [ -z "$DEB" ] && [ -z "$RPM" ] && [ -z "$PKG" ]; then echo "No packages found in bin/" && exit 1; fi
+              # Standalone binary for auto-update
+              if [ -f bin/airmedy ]; then
+                cd bin && tar -czf ../dist/Airmedy_${VERSION}_linux-arm64.tar.gz airmedy && cd ..
+              fi
               ;;
             "Darwin-AMD64"|"Darwin-ARM64")
               PLATFORM=$(echo ${OS_INPUT} | tr '[:upper:]' '[:lower:]')

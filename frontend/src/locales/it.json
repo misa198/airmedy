@@ -67,7 +67,15 @@
       "version": "Versione",
       "github": "Repository GitHub",
       "license": "Informazioni Licenza",
-      "open_data_folder": "Apri Cartella Dati Applicazione"
+      "open_data_folder": "Apri Cartella Dati Applicazione",
+      "check_updates": "Check for updates",
+      "checking": "Checking...",
+      "new_version_available": "New version available: {version}",
+      "update_now": "Update Now",
+      "updating": "Updating...",
+      "update_applied": "Update applied! Please restart Airmedy.",
+      "update_failed": "Failed to update",
+      "check_failed": "Failed to check for updates"
     },
     "appearance": {
       "title": "Aspetto",

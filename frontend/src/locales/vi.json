@@ -67,7 +67,15 @@
       "version": "Phiên bản",
       "github": "Kho lưu trữ GitHub",
       "license": "Thông tin bản quyền",
-      "open_data_folder": "Mở thư mục dữ liệu ứng dụng"
+      "open_data_folder": "Mở thư mục dữ liệu ứng dụng",
+      "check_updates": "Kiểm tra cập nhật",
+      "checking": "Đang kiểm tra...",
+      "new_version_available": "Có phiên bản mới: {version}",
+      "update_now": "Cập nhật ngay",
+      "updating": "Đang cập nhật...",
+      "update_applied": "Đã cập nhật! Vui lòng khởi động lại Airmedy.",
+      "update_failed": "Cập nhật thất bại",
+      "check_failed": "Kiểm tra cập nhật thất bại"
     },
     "appearance": {
       "title": "Giao diện",

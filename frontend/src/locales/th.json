@@ -67,7 +67,15 @@
       "version": "เวอร์ชัน",
       "github": "พื้นที่เก็บข้อมูล GitHub",
       "license": "ข้อมูลใบอนุญาต",
-      "open_data_folder": "เปิดโฟลเดอร์ข้อมูลแอปพลิเคชัน"
+      "open_data_folder": "เปิดโฟลเดอร์ข้อมูลแอปพลิเคชัน",
+      "check_updates": "ตรวจสอบการอัปเดต",
+      "checking": "กำลังตรวจสอบ...",
+      "new_version_available": "มีเวอร์ชันใหม่: {version}",
+      "update_now": "อัปเดตทันที",
+      "updating": "กำลังอัปเดต...",
+      "update_applied": "อัปเดตแล้ว! โปรดรีสตาร์ท Airmedy",
+      "update_failed": "การอัปเดตล้มเหลว",
+      "check_failed": "การตรวจสอบการอัปเดตล้มเหลว"
     },
     "appearance": {
       "title": "ลักษณะที่ปรากฏ",

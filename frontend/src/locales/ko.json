@@ -67,7 +67,15 @@
       "version": "버전",
       "github": "GitHub 저장소",
       "license": "라이선스 정보",
-      "open_data_folder": "애플리케이션 데이터 폴더 열기"
+      "open_data_folder": "애플리케이션 데이터 폴더 열기",
+      "check_updates": "Check for updates",
+      "checking": "Checking...",
+      "new_version_available": "New version available: {version}",
+      "update_now": "Update Now",
+      "updating": "Updating...",
+      "update_applied": "Update applied! Please restart Airmedy.",
+      "update_failed": "Failed to update",
+      "check_failed": "Failed to check for updates"
     },
     "appearance": {
       "title": "디자인",

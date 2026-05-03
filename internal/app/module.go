@@ -9,6 +9,7 @@ import (
 	"airmedy/internal/app/lyrics"
 	"airmedy/internal/app/player"
 	"airmedy/internal/app/playlist"
+	"airmedy/internal/app/updater"
 	"airmedy/internal/domain"
 	"airmedy/internal/infra/artwork"
 	"airmedy/internal/infra/bleve"
@@ -62,6 +63,10 @@ var Module = fx.Module("app",
 		wails.NewLastFmService,
 		wails.NewWindowService,
 		wails.NewSettingsService,
+		wails.NewUpdaterService,
+		func(logger *slog.Logger) *updater.Service {
+			return updater.NewService(domain.Version, logger)
+		},
 		func() *wails.GreetService { return &wails.GreetService{} },
 	),
 	sqlite.Module,

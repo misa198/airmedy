@@ -71,7 +71,7 @@ type AppInfo struct {
 func (s *SettingsService) GetAppInfo(ctx context.Context) *AppInfo {
 	return &AppInfo{
 		Name:        "Airmedy",
-		Version:     "1.0.0",
+		Version:     domain.Version,
 		Description: "A lightweight offline music player for macOS, Windows and Linux.",
 		GitHubURL:   "https://github.com/misa198/airmedy",
 		LicenseURL:  "https://github.com/misa198/airmedy/blob/master/LICENSE",

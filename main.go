@@ -54,6 +54,7 @@ func main() {
 	var eqService *wails.EQService
 	var windowService *wails.WindowService
 	var settingsService *wails.SettingsService
+	var updaterService *wails.UpdaterService
 	var artworkCache domain.ArtworkCache
 	var (
 		lastfmService *wails.LastFmService
@@ -62,7 +63,7 @@ func main() {
 
 	fxApp := fx.New(
 		app.Module,
-		fx.Populate(&greetService, &libraryService, &playerService, &searchService, &playlistService, &lyricsService, &eqService, &windowService, &settingsService, &lastfmService, &artworkCache),
+		fx.Populate(&greetService, &libraryService, &playerService, &searchService, &playlistService, &lyricsService, &eqService, &windowService, &settingsService, &lastfmService, &updaterService, &artworkCache),
 		fx.NopLogger, // Keep logs clean for now
 	)
 
@@ -109,6 +110,7 @@ func main() {
 			application.NewService(lastfmService),
 			application.NewService(windowService),
 			application.NewService(settingsService),
+			application.NewService(updaterService),
 		},
 		Assets: application.AssetOptions{
 			Handler: wails.NewAssetHandler(assets, artworkCache),
