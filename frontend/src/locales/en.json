@@ -7,13 +7,22 @@
     "loading": "Loading...",
     "error": "Error",
     "cancel": "Cancel",
+    "close": "Close",
     "save": "Save",
     "saving": "Saving...",
     "create": "Create",
+    "later": "Later",
     "on": "On",
     "off": "Off",
     "hr": "hr",
     "min": "min"
+  },
+  "app": {
+    "update_available": "Update Available",
+    "new_version_available": "New version available: {version}",
+    "update_now": "Update Now",
+    "view_details": "View Details",
+    "updating": "Updating..."
   },
   "settings": {
     "title": "Settings",
@@ -77,6 +86,8 @@
       "license": "License Info",
       "open_data_folder": "Open Application Data Folder",
       "check_updates": "Check for updates",
+      "check_updates_auto": "Auto check for updates",
+      "check_updates_auto_desc": "Automatically check for new versions on startup",
       "checking": "Checking...",
       "new_version_available": "New version available: {version}",
       "update_now": "Update Now",

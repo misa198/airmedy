@@ -1,19 +1,17 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useAppStore } from '@/stores/app'
 import * as SettingsService from '../../../bindings/airmedy/internal/infra/wails/settingsservice'
-import * as UpdaterService from '../../../bindings/airmedy/internal/infra/wails/updaterservice'
 import { Github, FileText, Folder, ExternalLink, RefreshCw, CheckCircle2 } from 'lucide-vue-next'
 import { Browser } from '@wailsio/runtime';
 
 const { t } = useI18n()
+const appStore = useAppStore()
 
 // State
 const appInfo = ref<any>(null)
 const isLoading = ref(true)
-const isCheckingUpdate = ref(false)
-const updateInfo = ref<any>(null)
-const updateApplied = ref(false)
 const updateError = ref<string | null>(null)
 
 const loadData = async () => {
@@ -28,34 +26,22 @@ const loadData = async () => {
 }
 
 const checkUpdate = async () => {
-  if (isCheckingUpdate.value) return
-  isCheckingUpdate.value = true
   updateError.value = null
   try {
-    updateInfo.value = await UpdaterService.CheckForUpdate()
-    if (!updateInfo.value) {
-      // No update found - maybe show a toast or message
-    }
+    await appStore.checkForUpdate()
   } catch (err) {
     console.error('Failed to check for update:', err)
     updateError.value = 'Failed to check for update'
-  } finally {
-    isCheckingUpdate.value = false
   }
 }
 
 const applyUpdate = async () => {
-  if (updateApplied.value) return
-  isCheckingUpdate.value = true
   updateError.value = null
   try {
-    await UpdaterService.DownloadAndApply()
-    updateApplied.value = true
+    await appStore.applyUpdate()
   } catch (err) {
     console.error('Failed to apply update:', err)
     updateError.value = 'Failed to apply update'
-  } finally {
-    isCheckingUpdate.value = false
   }
 }
 
@@ -82,23 +68,30 @@ onMounted(() => {
 
       <!-- Update Section -->
       <div class="mt-4 flex flex-col items-center min-h-[40px]">
-        <button v-if="!updateInfo && !updateApplied" @click="checkUpdate" :disabled="isCheckingUpdate"
+        <button v-if="!appStore.updateInfo && !appStore.updateApplied" @click="checkUpdate" :disabled="appStore.isCheckingUpdate"
           class="flex items-center gap-2 px-4 py-2 bg-foreground/[0.04] hover:bg-foreground/[0.08] rounded-full text-xs font-bold disabled:opacity-50 transition-colors">
           <div class="w-3 h-3 flex items-center justify-center">
-            <RefreshCw class="w-3 h-3" :class="{ 'animate-spin': isCheckingUpdate }" />
+            <RefreshCw class="w-3 h-3" :class="{ 'animate-spin': appStore.isCheckingUpdate }" />
           </div>
-          <span class="inline-block min-w-[100px]">{{ isCheckingUpdate ? t('settings.about.checking') : t('settings.about.check_updates') }}</span>
+          <span class="inline-block min-w-[100px]">{{ appStore.isCheckingUpdate ? t('settings.about.checking') : t('settings.about.check_updates') }}</span>
         </button>
 
-        <div v-if="updateInfo && !updateApplied" class="p-4 bg-primary/10 rounded-2xl border border-primary/20 max-w-sm">
-          <p class="text-xs font-bold text-primary mb-2">{{ t('settings.about.new_version_available', { version: updateInfo.version }) }}</p>
-          <button @click="applyUpdate" :disabled="isCheckingUpdate"
-            class="w-full py-2 bg-primary text-primary-foreground rounded-xl text-xs font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50">
-            {{ isCheckingUpdate ? t('settings.about.updating') : t('settings.about.update_now') }}
-          </button>
+        <div v-if="appStore.updateInfo && !appStore.updateApplied" class="p-4 bg-primary/10 rounded-2xl border border-primary/20 max-w-sm w-full">
+          <p class="text-xs font-bold text-primary mb-3">{{ t('settings.about.new_version_available', { version: appStore.updateInfo.version }) }}</p>
+          <div class="flex flex-col gap-2">
+            <button @click="applyUpdate" :disabled="appStore.isUpdating"
+              class="w-full py-2 bg-primary text-primary-foreground rounded-xl text-xs font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+              <div v-if="appStore.isUpdating" class="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              {{ appStore.isUpdating ? t('settings.about.updating') : t('settings.about.update_now') }}
+            </button>
+            <button @click="appStore.isUpdateDialogOpen = true"
+              class="w-full py-2 bg-foreground/[0.04] hover:bg-foreground/[0.08] rounded-xl text-xs font-bold transition-all">
+              {{ t('app.view_details') }}
+            </button>
+          </div>
         </div>
 
-        <div v-if="updateApplied" class="flex items-center gap-2 text-green-500 py-2">
+        <div v-if="appStore.updateApplied" class="flex items-center gap-2 text-green-500 py-2">
           <CheckCircle2 class="w-4 h-4" />
           <span class="text-xs font-bold">{{ t('settings.about.update_applied') }}</span>
         </div>

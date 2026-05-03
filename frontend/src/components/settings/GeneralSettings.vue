@@ -21,6 +21,14 @@ const toggleStartAtLogin = async (enabled: boolean) => {
     console.error('Failed to save settings:', err)
   }
 }
+
+const toggleAutoCheckUpdate = async (enabled: boolean) => {
+  try {
+    await appStore.updateAutoCheckUpdate(enabled)
+  } catch (err) {
+    console.error('Failed to save settings:', err)
+  }
+}
 </script>
 
 <template>
@@ -40,6 +48,17 @@ const toggleStartAtLogin = async (enabled: boolean) => {
           <Switch 
             :model-value="appStore.startAtLogin"
             @update:model-value="toggleStartAtLogin"
+          />
+        </div>
+
+        <div class="p-5 flex items-center justify-between gap-x-2">
+          <div>
+            <p class="text-sm font-semibold">{{ t('settings.about.check_updates_auto') }}</p>
+            <p class="text-xs text-foreground opacity-60 mt-1">{{ t('settings.about.check_updates_auto_desc') }}</p>
+          </div>
+          <Switch 
+            :model-value="appStore.autoCheckUpdate"
+            @update:model-value="toggleAutoCheckUpdate"
           />
         </div>
       </div>

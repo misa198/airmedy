@@ -7,13 +7,22 @@
     "loading": "Đang tải...",
     "error": "Lỗi",
     "cancel": "Hủy",
+    "close": "Đóng",
     "save": "Lưu",
     "saving": "Đang lưu...",
     "create": "Tạo",
+    "later": "Để sau",
     "on": "Bật",
     "off": "Tắt",
     "hr": "giờ",
     "min": "phút"
+  },
+  "app": {
+    "update_available": "Có bản cập nhật mới",
+    "new_version_available": "Có phiên bản mới: {version}",
+    "update_now": "Cập nhật ngay",
+    "view_details": "Xem chi tiết",
+    "updating": "Đang cập nhật..."
   },
   "settings": {
     "title": "Cài đặt",
@@ -69,6 +78,8 @@
       "license": "Thông tin bản quyền",
       "open_data_folder": "Mở thư mục dữ liệu ứng dụng",
       "check_updates": "Kiểm tra cập nhật",
+      "check_updates_auto": "Tự động kiểm tra cập nhật",
+      "check_updates_auto_desc": "Tự động kiểm tra phiên bản mới khi khởi động",
       "checking": "Đang kiểm tra...",
       "new_version_available": "Có phiên bản mới: {version}",
       "update_now": "Cập nhật ngay",

@@ -32,9 +32,10 @@ func (s *SettingsService) GetSettings(ctx context.Context) (*domain.AppSettings,
 	if err != nil {
 		s.logger.Error("failed to load app settings, using defaults", "error", err)
 		return &domain.AppSettings{
-			Language:     "en",
-			Theme:        "system",
-			StartAtLogin: false,
+			Language:        "en",
+			Theme:           "system",
+			StartAtLogin:    false,
+			AutoCheckUpdate: true,
 		}, nil
 	}
 	return settings, nil

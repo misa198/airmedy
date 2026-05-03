@@ -1,12 +1,21 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import * as SettingsService from '../../bindings/airmedy/internal/infra/wails/settingsservice'
+import * as UpdaterService from '../../bindings/airmedy/internal/infra/wails/updaterservice'
+import { UpdateInfo } from '../../bindings/airmedy/internal/app/updater/models'
 
 export const useAppStore = defineStore('app', () => {
   const theme = ref<'system' | 'light' | 'dark'>('system')
   const language = ref('en')
   const startAtLogin = ref(false)
+  const autoCheckUpdate = ref(true)
   const lastfmUsername = ref('')
+  
+  const updateInfo = ref<UpdateInfo | null>(null)
+  const isCheckingUpdate = ref(false)
+  const isUpdateDialogOpen = ref(false)
+  const isUpdating = ref(false)
+  const updateApplied = ref(false)
 
   const applyTheme = (newTheme: 'system' | 'light' | 'dark') => {
     const root = document.documentElement
@@ -24,11 +33,44 @@ export const useAppStore = defineStore('app', () => {
         if (settings.theme) theme.value = settings.theme as any
         if (settings.language) language.value = settings.language
         startAtLogin.value = !!settings.start_at_login
+        autoCheckUpdate.value = !!settings.auto_check_update
         lastfmUsername.value = settings.lastfm_username || ''
         applyTheme(theme.value)
       }
+      
+      // Check for updates on startup if enabled
+      if (autoCheckUpdate.value) {
+        checkForUpdate()
+      }
     } catch (err) {
       console.error('Failed to load settings:', err)
+    }
+  }
+
+  const checkForUpdate = async () => {
+    if (isCheckingUpdate.value) return
+    isCheckingUpdate.value = true
+    try {
+      const info = await UpdaterService.CheckForUpdate()
+      updateInfo.value = info
+    } catch (err) {
+      console.error('Failed to check for updates:', err)
+    } finally {
+      isCheckingUpdate.value = false
+    }
+  }
+
+  const applyUpdate = async () => {
+    if (isUpdating.value || updateApplied.value) return
+    isUpdating.value = true
+    try {
+      await UpdaterService.DownloadAndApply()
+      updateApplied.value = true
+    } catch (err) {
+      console.error('Failed to apply update:', err)
+      throw err
+    } finally {
+      isUpdating.value = false
     }
   }
 
@@ -40,6 +82,7 @@ export const useAppStore = defineStore('app', () => {
         theme: newTheme, 
         language: language.value,
         start_at_login: startAtLogin.value,
+        auto_check_update: autoCheckUpdate.value,
         lastfm_username: lastfmUsername.value
       })
     } catch (err) {
@@ -54,6 +97,7 @@ export const useAppStore = defineStore('app', () => {
         theme: theme.value, 
         language: newLanguage,
         start_at_login: startAtLogin.value,
+        auto_check_update: autoCheckUpdate.value,
         lastfm_username: lastfmUsername.value
       })
     } catch (err) {
@@ -68,10 +112,26 @@ export const useAppStore = defineStore('app', () => {
         theme: theme.value, 
         language: language.value,
         start_at_login: enabled,
+        auto_check_update: autoCheckUpdate.value,
         lastfm_username: lastfmUsername.value
       })
     } catch (err) {
       console.error('Failed to save startup setting:', err)
+    }
+  }
+
+  const updateAutoCheckUpdate = async (enabled: boolean) => {
+    autoCheckUpdate.value = enabled
+    try {
+      await SettingsService.SaveSettings({ 
+        theme: theme.value, 
+        language: language.value,
+        start_at_login: startAtLogin.value,
+        auto_check_update: enabled,
+        lastfm_username: lastfmUsername.value
+      })
+    } catch (err) {
+      console.error('Failed to save auto update setting:', err)
     }
   }
 
@@ -90,11 +150,20 @@ export const useAppStore = defineStore('app', () => {
     theme,
     language,
     startAtLogin,
+    autoCheckUpdate,
     lastfmUsername,
+    updateInfo,
+    isCheckingUpdate,
+    isUpdateDialogOpen,
+    isUpdating,
+    updateApplied,
     loadSettings,
+    checkForUpdate,
+    applyUpdate,
     updateTheme,
     updateLanguage,
     updateStartAtLogin,
+    updateAutoCheckUpdate,
     updateLastFmUsername
   }
 })

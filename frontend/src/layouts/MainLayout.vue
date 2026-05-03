@@ -5,9 +5,11 @@ import PlayerFooter from '@/components/PlayerFooter.vue'
 import LyricsDrawer from '@/components/LyricsDrawer.vue'
 import QueueDrawer from '@/components/QueueDrawer.vue'
 import TrackInfoDrawer from '@/components/TrackInfoDrawer.vue'
+import UpdateDialog from '@/components/UpdateDialog.vue'
 import Sidebar from '@/components/Sidebar.vue'
 import { usePlayerStore } from '@/stores/player'
 import { useDeviceStore } from '@/stores/device'
+import { useAppStore } from '@/stores/app'
 import { RouterView } from 'vue-router'
 import { ref, computed, onUnmounted } from 'vue'
 
@@ -16,8 +18,10 @@ const SIDEBAR_MAX_WIDTH = 250;
 const OVERLAY_BREAKPOINT = 1240;
 const playerStore = usePlayerStore()
 const deviceStore = useDeviceStore()
+const appStore = useAppStore()
 
 const isResizing = ref(false)
+const showUpdateDialog = ref(false)
 
 const windowWidth = ref(window.innerWidth)
 const handleResize = () => { windowWidth.value = window.innerWidth }
@@ -186,6 +190,11 @@ onUnmounted(() => {
     <Transition name="slide-up">
       <FullScreenPlayer v-show="playerStore.playerMode === 'fullscreen'" />
     </Transition>
+
+    <UpdateDialog 
+      v-model:open="appStore.isUpdateDialogOpen"
+      :update-info="appStore.updateInfo"
+    />
   </div>
 </template>
 
