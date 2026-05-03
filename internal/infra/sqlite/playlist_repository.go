@@ -94,7 +94,7 @@ func (r *playlistRepository) RemoveTrack(ctx context.Context, playlistID, trackI
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	// Get the position of the track being removed
 	var pos int

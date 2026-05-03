@@ -10,13 +10,13 @@ import (
 
 func TestBleveSearchService(t *testing.T) {
 	indexPath := "test.bleve"
-	defer os.RemoveAll(indexPath)
+	defer func() { _ = os.RemoveAll(indexPath) }()
 
 	service, err := NewBleveSearchService(indexPath)
 	if err != nil {
 		t.Fatalf("Failed to create search service: %v", err)
 	}
-	defer service.Close()
+	defer func() { _ = service.Close() }()
 
 	ctx := context.Background()
 	track := &domain.TrackDTO{
@@ -49,6 +49,9 @@ func TestBleveSearchService(t *testing.T) {
 	}
 
 	results, err = service.Search(ctx, "Queen")
+	if err != nil {
+		t.Fatalf("Failed to search: %v", err)
+	}
 	if len(results) == 0 {
 		t.Errorf("Expected results for artist search, got 0")
 	}

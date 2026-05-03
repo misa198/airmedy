@@ -31,7 +31,7 @@ func ParseM3U8(filePath string) (*M3U8File, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open m3u8: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	result := &M3U8File{}
 	var pending M3U8Entry

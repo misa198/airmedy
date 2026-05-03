@@ -230,7 +230,7 @@ func (r *albumRepository) SetArtists(ctx context.Context, albumID string, artist
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	_, err = tx.ExecContext(ctx, "DELETE FROM album_artists WHERE album_id = ?", albumID)
 	if err != nil {

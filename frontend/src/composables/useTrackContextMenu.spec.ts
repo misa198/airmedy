@@ -25,7 +25,9 @@ vi.mock('../../bindings/airmedy/internal/infra/wails/playerservice', () => ({
   GetStatus: vi.fn().mockResolvedValue({}),
   GetQueue: vi.fn().mockResolvedValue([]),
 }))
-vi.mock('../../bindings/airmedy/internal/infra/wails/playlistservice', () => ({}))
+vi.mock('../../bindings/airmedy/internal/infra/wails/playlistservice', () => ({
+  GetPlaylistsForTrack: vi.fn().mockResolvedValue([]),
+}))
 vi.mock('../../bindings/airmedy/internal/infra/wails/libraryservice', () => ({}))
 vi.mock('../../bindings/airmedy/internal/infra/wails/lyricsservice', () => ({}))
 
@@ -36,6 +38,7 @@ vi.mock('@wailsio/runtime', () => ({
     Nullable: (fn: any) => (v: any) => (v == null ? null : fn(v)),
     Array: (fn: any) => (arr: any[]) => (arr ?? []).map(fn),
     Struct: (ctor: any) => (v: any) => (v == null ? null : new ctor(v)),
+    Map: (k: any, v: any) => (val: any) => val,
   },
 }))
 

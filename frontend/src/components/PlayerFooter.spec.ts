@@ -21,6 +21,7 @@ vi.mock('@wailsio/runtime', () => ({
     Nullable: (fn: any) => (v: any) => (v == null ? null : fn(v)),
     Array: (fn: any) => (arr: any[]) => (arr ?? []).map(fn),
     Struct: (ctor: any) => (v: any) => (v == null ? null : new ctor(v)),
+    Map: (k: any, v: any) => (val: any) => val,
   },
   Call: { ByID: vi.fn().mockResolvedValue(null) },
 }))

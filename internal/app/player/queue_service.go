@@ -395,10 +395,7 @@ func (s *QueueService) RemoveTrack(trackID string) {
 
 	// Determine if we are removing the current track
 	list := s.activeList()
-	isRemovingCurrent := false
-	if s.currentIndex >= 0 && s.currentIndex < len(list) && list[s.currentIndex].ID == trackID {
-		isRemovingCurrent = true
-	}
+	isRemovingCurrent := s.currentIndex >= 0 && s.currentIndex < len(list) && list[s.currentIndex].ID == trackID
 
 	if s.shuffle {
 		// Find in shuffled list

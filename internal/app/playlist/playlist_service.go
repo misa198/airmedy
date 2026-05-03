@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log/slog"
 	"mime"
 	"os"
@@ -117,7 +116,7 @@ func (s *PlaylistService) SetArtwork(ctx context.Context, id, imagePath string) 
 		return nil, fmt.Errorf("playlist not found: %s", id)
 	}
 
-	data, err := ioutil.ReadFile(imagePath)
+	data, err := os.ReadFile(imagePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read image: %w", err)
 	}

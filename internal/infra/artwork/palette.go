@@ -22,7 +22,7 @@ func ExtractPalette(imagePath string) (*domain.ThemeColors, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open image: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	src, _, err := image.Decode(f)
 	if err != nil {

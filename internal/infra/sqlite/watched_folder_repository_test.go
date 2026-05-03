@@ -12,13 +12,13 @@ import (
 
 func TestWatchedFolderRepository(t *testing.T) {
 	dbPath := "test_watched_folder.db"
-	defer os.Remove(dbPath)
+	defer func() { _ = os.Remove(dbPath) }()
 
 	db, err := NewDB(dbPath, slog.Default())
 	if err != nil {
 		t.Fatalf("Failed to create test db: %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	ctx := context.Background()
 	repo := NewWatchedFolderRepository(db)

@@ -11,6 +11,8 @@ vi.mock('@wailsio/runtime', () => ({
         WindowFullscreen: 'WindowFullscreen',
         WindowUnFullscreen: 'WindowUnFullscreen',
         WindowDidResize: 'WindowDidResize',
+        WindowMaximise: 'WindowMaximise',
+        WindowUnMaximise: 'WindowUnMaximise',
       },
       Mac: {
         WindowDidEnterFullScreen: 'WindowDidEnterFullScreen',
@@ -22,6 +24,7 @@ vi.mock('@wailsio/runtime', () => ({
   },
   Window: {
     IsFullscreen: vi.fn().mockResolvedValue(false),
+    IsMaximised: vi.fn().mockResolvedValue(false),
   }
 }))
 

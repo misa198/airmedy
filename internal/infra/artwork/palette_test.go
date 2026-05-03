@@ -23,7 +23,7 @@ func writeSolidJPEG(t *testing.T, dir string, c color.RGBA) string {
 	if err != nil {
 		t.Fatalf("create test image: %v", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	if err := jpeg.Encode(f, img, nil); err != nil {
 		t.Fatalf("encode test image: %v", err)
 	}

@@ -516,7 +516,7 @@ func (s *PlayerService) extractAndEmitPalette(track *domain.TrackDTO) {
 
 	app := application.Get()
 	if app != nil && app.Event != nil {
-		defer func() { recover() }()
+		defer func() { _ = recover() }()
 		app.Event.Emit("player:theme", colors)
 	}
 }
@@ -545,7 +545,7 @@ func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
 	if a == nil || a.Event == nil {
 		return
 	}
-	defer func() { recover() }()
+	defer func() { _ = recover() }()
 	if lyric != nil {
 		a.Event.Emit("player:lyrics", lyric)
 	} else {

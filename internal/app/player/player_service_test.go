@@ -103,11 +103,6 @@ func (c *fakeArtworkCache) CleanupOrphaned(_ context.Context, _ map[string]bool)
 	return nil
 }
 
-// fakeLifecycle satisfies fx.Lifecycle for tests by discarding hooks.
-type fakeLifecycle struct{}
-
-func (l *fakeLifecycle) Append(_ interface{ OnStart() }) {}
-
 type fakeTrackRepo struct {
 	domain.TrackRepository
 }

@@ -76,9 +76,9 @@ func buildIndexMapping() mapping.IndexMapping {
 
 func (s *bleveSearchService) IndexTrack(ctx context.Context, track *domain.TrackDTO) error {
 	doc := map[string]interface{}{
-		"id":    track.Track.ID,
+		"id":    track.ID,
 		"type":  "track",
-		"title": domain.FoldUnicode(track.Track.Title),
+		"title": domain.FoldUnicode(track.Title),
 	}
 
 	var artistNames []string
@@ -102,14 +102,14 @@ func (s *bleveSearchService) IndexTrack(ctx context.Context, track *domain.Track
 		doc["genres"] = genreNames
 	}
 
-	return s.index.Index("track:"+track.Track.ID, doc)
+	return s.index.Index("track:"+track.ID, doc)
 }
 
 func (s *bleveSearchService) IndexAlbum(ctx context.Context, album *domain.AlbumDTO) error {
 	doc := map[string]interface{}{
-		"id":    album.Album.ID,
+		"id":    album.ID,
 		"type":  "album",
-		"title": domain.FoldUnicode(album.Album.Title),
+		"title": domain.FoldUnicode(album.Title),
 	}
 
 	var artistNames []string
@@ -121,7 +121,7 @@ func (s *bleveSearchService) IndexAlbum(ctx context.Context, album *domain.Album
 		doc["artist_name"] = artistNames[0]
 	}
 
-	return s.index.Index("album:"+album.Album.ID, doc)
+	return s.index.Index("album:"+album.ID, doc)
 }
 
 func (s *bleveSearchService) IndexArtist(ctx context.Context, artist *domain.Artist) error {

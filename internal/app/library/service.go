@@ -177,8 +177,7 @@ func (s *LibraryService) handleEvent(event fsnotify.Event) {
 			// Small delay to let file be written
 			time.Sleep(500 * time.Millisecond)
 			if err := s.ImportFile(context.Background(), event.Name); err != nil {
-				// It might be a directory or something we don't care about
-				// If it's a directory, s.watchRecursive and SyncFolder
+				s.logger.Debug("Failed to import file from watcher event", "path", event.Name, "error", err)
 			}
 		}()
 	}
@@ -430,8 +429,8 @@ func (s *LibraryService) ImportFile(ctx context.Context, path string) error {
 		return fmt.Errorf("failed to extract metadata from %s: %w", path, err)
 	}
 
-	dto.Track.FileSize = info.Size()
-	dto.Track.Mtime = info.ModTime()
+	dto.FileSize = info.Size()
+	dto.Mtime = info.ModTime()
 
 	// Extract artwork if available
 	artworkData, mimeType, err := s.metadataExtractor.ExtractArtwork(ctx, path)
@@ -442,7 +441,7 @@ func (s *LibraryService) ImportFile(ctx context.Context, path string) error {
 			s.logger.Warn("Failed to save artwork", "path", path, "error", err)
 		} else {
 			s.logger.Debug("Artwork saved", "path", path, "key", key)
-			dto.Track.ArtworkKey = key
+			dto.ArtworkKey = key
 			dto.Album.ArtworkKey = key
 		}
 	} else if err != nil {
@@ -535,9 +534,9 @@ func (s *LibraryService) resolveEntities(ctx context.Context, dto *domain.TrackD
 		}
 
 		// Try to preserve artwork
-		if dto.Track.ArtworkKey == "" && existing != nil {
+		if dto.ArtworkKey == "" && existing != nil {
 			dto.Album.ArtworkKey = existing.ArtworkKey
-			dto.Track.ArtworkKey = existing.ArtworkKey
+			dto.ArtworkKey = existing.ArtworkKey
 		}
 
 		if err := s.albumRepo.Upsert(ctx, dto.Album); err != nil {
@@ -553,7 +552,7 @@ func (s *LibraryService) resolveEntities(ctx context.Context, dto *domain.TrackD
 		if err := s.albumRepo.SetArtists(ctx, dto.Album.ID, finalAlbumArtistIDs); err != nil {
 			return err
 		}
-		dto.Track.AlbumID = dto.Album.ID
+		dto.AlbumID = dto.Album.ID
 
 		// Index album in search (need full AlbumDTO with artists populated for best indexing)
 		fullAlbum := &domain.AlbumDTO{
@@ -607,24 +606,25 @@ func (s *LibraryService) resolveEntities(ctx context.Context, dto *domain.TrackD
 	}
 
 	// 6. Finalize Track
-	dto.Track.ID = s.generateID(dto.Track.Path)
+	dto.ID = s.generateID(dto.Path)
+
 	if err := s.trackRepo.Upsert(ctx, &dto.Track); err != nil {
 		return err
 	}
 
-	// 7. Update Track Relationships
-	if err := s.trackRepo.SetArtists(ctx, dto.Track.ID, artistIDs); err != nil {
+	if err := s.trackRepo.SetArtists(ctx, dto.ID, artistIDs); err != nil {
 		return err
 	}
-	if err := s.trackRepo.SetAlbumArtists(ctx, dto.Track.ID, albumArtistIDs); err != nil {
+	if err := s.trackRepo.SetAlbumArtists(ctx, dto.ID, albumArtistIDs); err != nil {
 		return err
 	}
-	if err := s.trackRepo.SetGenres(ctx, dto.Track.ID, genreIDs); err != nil {
+	if err := s.trackRepo.SetGenres(ctx, dto.ID, genreIDs); err != nil {
 		return err
 	}
-	if err := s.trackRepo.SetComposers(ctx, dto.Track.ID, composerIDs); err != nil {
+	if err := s.trackRepo.SetComposers(ctx, dto.ID, composerIDs); err != nil {
 		return err
 	}
+
 
 	return nil
 }

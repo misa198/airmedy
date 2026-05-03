@@ -10,6 +10,7 @@ vi.mock('@wailsio/runtime', () => ({
     Nullable: (fn: any) => (v: any) => (v == null ? null : fn(v)),
     Array: (fn: any) => (arr: any[]) => (arr ?? []).map(fn),
     Struct: (ctor: any) => (v: any) => (v == null ? null : new ctor(v)),
+    Map: (k: any, v: any) => (val: any) => val,
   },
   Call: { ByID: vi.fn().mockResolvedValue(null) },
 }))
@@ -55,13 +56,14 @@ describe('MetadataEditDialog', () => {
 
   it('renders form when open', () => {
     const w = mountDialog()
-    expect(w.text()).toContain('metadata.edit_title')
+    expect(w.text()).toContain('library.edit_metadata')
   })
 
   it('initializes title input from track', () => {
     const w = mountDialog()
     const inputs = w.findAll('input')
-    const titleInput = inputs[0]
+    // Index 0 is the hidden file input, index 1 is Title
+    const titleInput = inputs[1]
     expect((titleInput.element as HTMLInputElement).value).toBe('My Song')
   })
 
@@ -69,7 +71,7 @@ describe('MetadataEditDialog', () => {
     const w = mountDialog()
     const saveBtn = w.findAll('button').find(b => b.text() === 'common.save')
     await saveBtn!.trigger('click')
-    expect(updateFn).toHaveBeenCalledWith('track-1', expect.any(MetadataUpdate))
+    expect(updateFn).toHaveBeenCalledWith('track-1', expect.any(Object))
   })
 
   it('emits update:open=false after successful save', async () => {

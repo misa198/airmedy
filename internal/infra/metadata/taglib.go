@@ -44,14 +44,14 @@ func (e *taglibExtractor) Extract(ctx context.Context, path string) (*domain.Tra
 
 	// Capture all metadata as JSON for migration/fallback
 	if metadataJSON, err := json.Marshal(tags); err == nil {
-		dto.Track.OtherMetadata = string(metadataJSON)
+		dto.OtherMetadata = string(metadataJSON)
 	}
 
 	// Raw values for display
-	dto.Track.RawArtistNames = allTags(tags, "; ", "ARTIST", "TPE1", "©ART")
-	dto.Track.RawAlbumArtistNames = allTags(tags, "; ", "ALBUMARTIST", "TPE2", "aART")
-	dto.Track.RawGenreNames = allTags(tags, "; ", "GENRE", "TCON", "©gen")
-	dto.Track.RawComposerNames = allTags(tags, "; ", "COMPOSER", "TCOM", "©wrt")
+	dto.RawArtistNames = allTags(tags, "; ", "ARTIST", "TPE1", "©ART")
+	dto.RawAlbumArtistNames = allTags(tags, "; ", "ALBUMARTIST", "TPE2", "aART")
+	dto.RawGenreNames = allTags(tags, "; ", "GENRE", "TCON", "©gen")
+	dto.RawComposerNames = allTags(tags, "; ", "COMPOSER", "TCOM", "©wrt")
 
 	// Split and normalize Artists
 	artistNames := splitMultipleTags(tags, "ARTIST", "TPE1", "©ART")
@@ -92,18 +92,18 @@ func (e *taglibExtractor) Extract(ctx context.Context, path string) (*domain.Tra
 	}
 
 	// Basic tags
-	dto.Track.Title = firstTag(tags, "TITLE")
-	dto.Track.SortTitle = firstTag(tags, "TITLESORT", "TSOT", "sonm")
-	if dto.Track.SortTitle == "" {
-		dto.Track.SortTitle = domain.NormalizeSort(dto.Track.Title)
+	dto.Title = firstTag(tags, "TITLE")
+	dto.SortTitle = firstTag(tags, "TITLESORT", "TSOT", "sonm")
+	if dto.SortTitle == "" {
+		dto.SortTitle = domain.NormalizeSort(dto.Title)
 	}
 
-	dto.Track.Copyright = firstTag(tags, "COPYRIGHT", "TCOP", "cprt", "©cpr")
-	dto.Album.Copyright = dto.Track.Copyright
+	dto.Copyright = firstTag(tags, "COPYRIGHT", "TCOP", "cprt", "©cpr")
+	dto.Album.Copyright = dto.Copyright
 
-	dto.Track.BPM, _ = strconv.Atoi(firstTag(tags, "BPM", "TBPM", "tmpo"))
-	dto.Track.Label = firstTag(tags, "LABEL", "PUBLISHER", "TPUB", "pub ")
-	dto.Track.ISRC = firstTag(tags, "ISRC", "TSRC")
+	dto.BPM, _ = strconv.Atoi(firstTag(tags, "BPM", "TBPM", "tmpo"))
+	dto.Label = firstTag(tags, "LABEL", "PUBLISHER", "TPUB", "pub ")
+	dto.ISRC = firstTag(tags, "ISRC", "TSRC")
 
 	dto.Album.Title = firstTag(tags, "ALBUM")
 	dto.Album.SortTitle = firstTag(tags, "ALBUMSORT", "TSOA", "soal")
@@ -113,17 +113,17 @@ func (e *taglibExtractor) Extract(ctx context.Context, path string) (*domain.Tra
 
 	yearStr := firstTag(tags, "DATE", "YEAR")
 	if len(yearStr) >= 4 {
-		dto.Track.Year, _ = strconv.Atoi(yearStr[:4])
-		dto.Album.Year = dto.Track.Year
+		dto.Year, _ = strconv.Atoi(yearStr[:4])
+		dto.Album.Year = dto.Year
 	}
 
-	dto.Track.TrackNumber, _ = strconv.Atoi(strings.Split(firstTag(tags, "TRACKNUMBER", "TRACK"), "/")[0])
-	dto.Track.DiscNumber, _ = strconv.Atoi(strings.Split(firstTag(tags, "DISCNUMBER", "DISC"), "/")[0])
+	dto.TrackNumber, _ = strconv.Atoi(strings.Split(firstTag(tags, "TRACKNUMBER", "TRACK"), "/")[0])
+	dto.DiscNumber, _ = strconv.Atoi(strings.Split(firstTag(tags, "DISCNUMBER", "DISC"), "/")[0])
 
 	// Audio properties
-	dto.Track.Duration = int(props.Length.Seconds())
-	dto.Track.Bitrate = int(props.Bitrate)
-	dto.Track.SampleRate = int(props.SampleRate)
+	dto.Duration = int(props.Length.Seconds())
+	dto.Bitrate = int(props.Bitrate)
+	dto.SampleRate = int(props.SampleRate)
 
 	totalTracksStr := firstTag(tags, "TRACKTOTAL", "TOTALTRACKS")
 	if totalTracksStr == "" {
@@ -132,7 +132,7 @@ func (e *taglibExtractor) Extract(ctx context.Context, path string) (*domain.Tra
 			totalTracksStr = parts[1]
 		}
 	}
-	dto.Track.TotalTracks, _ = strconv.Atoi(totalTracksStr)
+	dto.TotalTracks, _ = strconv.Atoi(totalTracksStr)
 
 	totalDiscsStr := firstTag(tags, "DISCTOTAL", "TOTALDISCS")
 	if totalDiscsStr == "" {
@@ -141,7 +141,7 @@ func (e *taglibExtractor) Extract(ctx context.Context, path string) (*domain.Tra
 			totalDiscsStr = parts[1]
 		}
 	}
-	dto.Track.TotalDiscs, _ = strconv.Atoi(totalDiscsStr)
+	dto.TotalDiscs, _ = strconv.Atoi(totalDiscsStr)
 
 	return dto, nil
 }

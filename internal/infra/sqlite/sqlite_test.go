@@ -11,13 +11,13 @@ import (
 
 func TestSqliteRepositories(t *testing.T) {
 	dbPath := "test.db"
-	defer os.Remove(dbPath)
+	defer func() { _ = os.Remove(dbPath) }()
 
 	db, err := NewDB(dbPath, slog.Default())
 	if err != nil {
 		t.Fatalf("Failed to create test db: %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	ctx := context.Background()
 	trackRepo := NewTrackRepository(db)

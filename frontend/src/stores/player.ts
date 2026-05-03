@@ -45,9 +45,9 @@ export const usePlayerStore = defineStore('player', () => {
   const progressPercent = computed(() =>
     duration.value > 0 ? (position.value / duration.value) * 100 : 0,
   )
-  const artworkUrl = computed(() => buildArtworkUrl(currentTrack.value?.artwork_key, 'lg'))
-  const artworkUrlMd = computed(() => buildArtworkUrl(currentTrack.value?.artwork_key, 'md'))
-  const artworkUrlSm = computed(() => buildArtworkUrl(currentTrack.value?.artwork_key, 'sm'))
+  const artworkUrl = computed(() => buildArtworkUrl(currentTrack.value?.artwork_key, 'lg') ?? null)
+  const artworkUrlMd = computed(() => buildArtworkUrl(currentTrack.value?.artwork_key, 'md') ?? null)
+  const artworkUrlSm = computed(() => buildArtworkUrl(currentTrack.value?.artwork_key, 'sm') ?? null)
 
   // Clear lyrics immediately whenever the playing track changes
   watch(currentTrack, (newTrack, oldTrack) => {

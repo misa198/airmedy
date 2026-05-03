@@ -134,7 +134,7 @@ func (s *LyricsService) exactGet(ctx context.Context, trackID, title, artist, al
 	if err != nil {
 		return nil, fmt.Errorf("lrclib request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, nil
@@ -175,7 +175,7 @@ func (s *LyricsService) searchAndRank(ctx context.Context, trackID, normTitle, n
 	if err != nil {
 		return nil, fmt.Errorf("lrclib search request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, nil

@@ -9,9 +9,10 @@ vi.mock('@wailsio/runtime', () => ({
     Off: vi.fn(),
   },
   Create: {
-    Nullable: (fn: (v: any) => any) => (v: any) => (v == null ? null : fn(v)),
-    Array: (fn: (v: any) => any) => (arr: any[]) => (arr ?? []).map(fn),
+    Nullable: (fn: any) => (v: any) => (v == null ? null : fn(v)),
+    Array: (fn: any) => (arr: any[]) => (arr ?? []).map(fn),
     Struct: (ctor: any) => (v: any) => (v == null ? null : new ctor(v)),
+    Map: (k: any, v: any) => (val: any) => val,
   },
   Call: {
     ByID: vi.fn().mockResolvedValue(null),

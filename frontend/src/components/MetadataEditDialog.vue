@@ -23,7 +23,7 @@ const saving = ref(false)
 const error = ref('')
 const fileInput = ref<HTMLInputElement | null>(null)
 const selectedImage = ref<string | null>(null)
-const selectedImageData = ref<number[] | null>(null)
+const selectedImageData = ref<string | null>(null)
 
 const form = ref<MetadataUpdate>(new MetadataUpdate())
 
@@ -90,8 +90,12 @@ async function onFileChange(e: Event) {
         const reader2 = new FileReader()
         reader2.onload = (e2) => {
           const arrayBuffer = e2.target?.result as ArrayBuffer
-          const uint8Array = new Uint8Array(arrayBuffer)
-          selectedImageData.value = Array.from(uint8Array)
+          const bytes = new Uint8Array(arrayBuffer)
+          let binary = ''
+          for (let i = 0; i < bytes.byteLength; i++) {
+            binary += String.fromCharCode(bytes[i])
+          }
+          selectedImageData.value = btoa(binary)
           selectedImage.value = URL.createObjectURL(blob)
         }
         reader2.readAsArrayBuffer(blob)

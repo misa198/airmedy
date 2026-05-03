@@ -39,9 +39,9 @@ func (r *trackRepository) GetByID(ctx context.Context, id string) (*domain.Track
 
 func (r *trackRepository) populateRelationships(ctx context.Context, dto *domain.TrackDTO) error {
 	// Album
-	if dto.Track.AlbumID != "" {
+	if dto.AlbumID != "" {
 		var album domain.Album
-		err := r.db.GetContext(ctx, &album, "SELECT * FROM albums WHERE id = ?", dto.Track.AlbumID)
+		err := r.db.GetContext(ctx, &album, "SELECT * FROM albums WHERE id = ?", dto.AlbumID)
 		if err == nil {
 			dto.Album = &album
 		}
@@ -54,7 +54,7 @@ func (r *trackRepository) populateRelationships(ctx context.Context, dto *domain
 		JOIN track_artists ta ON art.id = ta.artist_id
 		WHERE ta.track_id = ?
 		ORDER BY ta.position
-	`, dto.Track.ID)
+	`, dto.ID)
 	if err == nil {
 		dto.Artists = artists
 	}
@@ -66,7 +66,7 @@ func (r *trackRepository) populateRelationships(ctx context.Context, dto *domain
 		JOIN track_album_artists taa ON art.id = taa.artist_id
 		WHERE taa.track_id = ?
 		ORDER BY taa.position
-	`, dto.Track.ID)
+	`, dto.ID)
 	if err == nil {
 		dto.AlbumArtists = albumArtists
 	}
@@ -78,7 +78,7 @@ func (r *trackRepository) populateRelationships(ctx context.Context, dto *domain
 		JOIN track_genres tg ON g.id = tg.genre_id
 		WHERE tg.track_id = ?
 		ORDER BY tg.position
-	`, dto.Track.ID)
+	`, dto.ID)
 	if err == nil {
 		dto.Genres = genres
 	}
@@ -90,7 +90,7 @@ func (r *trackRepository) populateRelationships(ctx context.Context, dto *domain
 		JOIN track_composers tc ON c.id = tc.composer_id
 		WHERE tc.track_id = ?
 		ORDER BY tc.position
-	`, dto.Track.ID)
+	`, dto.ID)
 	if err == nil {
 		dto.Composers = composers
 	}
@@ -217,7 +217,7 @@ func (r *trackRepository) scanTrackRows(rows []trackRow) []*domain.TrackDTO {
 		dtos[i] = &domain.TrackDTO{Track: row.Track}
 		if row.AlbumTitle.Valid {
 			dtos[i].Album = &domain.Album{
-				ID:         row.Track.AlbumID,
+				ID:         row.AlbumID,
 				Title:      row.AlbumTitle.String,
 				ArtworkKey: row.AlbumArtworkKey.String,
 				Year:       int(row.AlbumYear.Int64),
@@ -582,7 +582,7 @@ func (r *trackRepository) setJunction(ctx context.Context, table, idCol, valCol,
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	_, err = tx.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE %s = ?", table, idCol), id)
 	if err != nil {

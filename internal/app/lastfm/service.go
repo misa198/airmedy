@@ -79,7 +79,7 @@ func NewLastFmService(
 
 func (s *LastFmService) Connect(ctx context.Context) error {
 	if s.apiKey == "" || s.apiSecret == "" {
-		return fmt.Errorf("Last.fm API keys not configured")
+		return fmt.Errorf("last.fm API keys not configured")
 	}
 	cbURL := "airmedy://auth"
 	authURL := fmt.Sprintf("https://www.last.fm/api/auth/?api_key=%s&cb=%s",
@@ -159,29 +159,6 @@ func (s *LastFmService) GetStatus() (bool, string, string) {
 
 // Internal API helpers
 
-func (s *LastFmService) getToken() (string, error) {
-	params := map[string]string{
-		"method":  "auth.getToken",
-		"api_key": s.apiKey,
-		"format":  "json",
-	}
-	params["api_sig"] = s.generateSignature(params)
-
-	resp, err := http.Get(apiBase + "?" + s.encodeParams(params))
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	var result struct {
-		Token string `json:"token"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", err
-	}
-	return result.Token, nil
-}
-
 func (s *LastFmService) getSession(token string) (string, string, error) {
 	params := map[string]string{
 		"method":  "auth.getSession",
@@ -195,7 +172,7 @@ func (s *LastFmService) getSession(token string) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var result struct {
 		Session struct {
@@ -229,7 +206,7 @@ func (s *LastFmService) fetchUserAvatar(username string) {
 		s.logger.Warn("failed to fetch lastfm user info", "error", err)
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var result struct {
 		User struct {
@@ -416,7 +393,7 @@ func (s *LastFmService) postParams(params map[string]string) {
 		s.logger.Warn("lastfm post failed", "error", err)
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	s.logger.Debug("lastfm api response", "method", params["method"], "status", resp.Status, "body", string(body))
 }

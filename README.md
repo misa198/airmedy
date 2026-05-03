@@ -155,6 +155,10 @@ cd airmedy
 # Install frontend dependencies
 cd frontend && pnpm install && cd ..
 
+# Build FFmpeg libraries
+chmod +x ./scripts/build-ffmpeg-{os}.sh
+./scripts/build-ffmpeg-{os}.sh
+
 # Run in development mode
 wails3 dev
 
@@ -178,9 +182,7 @@ wails3 task {task_name}
 
 ## Roadmap
 
-- [ ] **Gapless Playback** — zero-gap crossfade between tracks
 - [ ] **Smart Playlists** — rule-based auto-playlists (genre, BPM, play count)
-- [ ] **Podcast support** — RSS feed management alongside music library
 - [ ] **Album and artist arts** — online search for missing arts
 - [ ] **AirPlay 2** — stream to any AirPlay speaker or Apple TV directly from Airmedy.
 

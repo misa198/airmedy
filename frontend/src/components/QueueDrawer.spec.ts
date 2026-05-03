@@ -4,30 +4,25 @@ import { createTestingPinia } from '@pinia/testing'
 import QueueDrawer from './QueueDrawer.vue'
 import { usePlayerStore } from '../stores/player'
 
+vi.mock('vue-i18n', () => ({
+  useI18n: () => ({
+    t: (key: string) => {
+      if (key === 'player.queue') return 'Queue'
+      if (key === 'player.queue_empty') return 'Queue is empty'
+      return key
+    },
+  }),
+}))
+
 vi.mock('@wailsio/runtime', () => ({
   Events: { On: vi.fn(), Off: vi.fn() },
   Create: {
     Nullable: (fn: any) => (v: any) => (v == null ? null : fn(v)),
     Array: (fn: any) => (arr: any[]) => (arr ?? []).map(fn),
     Struct: (ctor: any) => (v: any) => (v == null ? null : new ctor(v)),
+    Map: (k: any, v: any) => (val: any) => val,
   },
   Call: { ByID: vi.fn().mockResolvedValue(null) },
-}))
-
-vi.mock('../../bindings/airmedy/internal/infra/wails/playerservice', () => ({
-  GetStatus: vi.fn().mockResolvedValue(null),
-  GetQueue: vi.fn().mockResolvedValue([]),
-  Play: vi.fn(),
-  Pause: vi.fn(),
-  Stop: vi.fn(),
-  Next: vi.fn(),
-  Previous: vi.fn(),
-  Seek: vi.fn(),
-  SetVolume: vi.fn(),
-  SetMuted: vi.fn(),
-  SetShuffle: vi.fn(),
-  SetRepeatMode: vi.fn(),
-  PlayTracks: vi.fn(),
 }))
 
 describe('QueueDrawer', () => {
@@ -42,7 +37,15 @@ describe('QueueDrawer', () => {
             initialState: { player: { isQueueOpen, queue, currentTrack: null } },
           }),
         ],
-        stubs: { RecycleScroller: { template: '<div><slot v-for="(item, index) in items" :item="item" :index="index" /></div>', props: ['items', 'itemSize', 'keyField'] }, Transition: false },
+        stubs: { 
+          RecycleScroller: { 
+            template: '<div><div v-for="(item, index) in items" :key="item.id"><slot :item="item" :index="index" /></div></div>', 
+            props: ['items', 'itemSize', 'keyField'] 
+          }, 
+          Transition: false,
+          LazyImg: true,
+          TrackContextMenu: true
+        },
       },
     })
   }

@@ -163,7 +163,7 @@ func TestLibraryService_SyncFolder(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create a dummy music file
 	dummyFile := filepath.Join(tempDir, "test.mp3")
@@ -190,7 +190,7 @@ func TestLibraryService_SyncFolder(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create library service: %v", err)
 	}
-	defer s.Stop(context.Background())
+	defer func() { _ = s.Stop(context.Background()) }()
 
 	err = s.SyncFolder(context.Background(), tempDir)
 	if err != nil {
@@ -246,7 +246,7 @@ func TestLibraryService_SyncFolder_SupportedExtensions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	extensions := []string{
 		"mp3", "flac", "m4a", "wav", "ogg", "opus",
@@ -283,7 +283,7 @@ func TestLibraryService_SyncFolder_SupportedExtensions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create library service: %v", err)
 	}
-	defer s.Stop(context.Background())
+	defer func() { _ = s.Stop(context.Background()) }()
 
 	if err := s.SyncFolder(context.Background(), tempDir); err != nil {
 		t.Fatalf("SyncFolder failed: %v", err)
@@ -319,7 +319,7 @@ func TestLibraryService_AddWatchedFolder_CoveringExisting(t *testing.T) {
 		&mockSearchService{},
 		slog.Default(),
 	)
-	defer s.Stop(context.Background())
+	defer func() { _ = s.Stop(context.Background()) }()
 
 	// Add parent folder /Music/A
 	err := s.AddWatchedFolder(context.Background(), "/Music/A")

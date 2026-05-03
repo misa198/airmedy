@@ -8,7 +8,8 @@
     "build:dev": "vue-tsc && vite build --minify false --mode development",
     "build": "vue-tsc && vite build --mode production",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "vue-tsc --noEmit"
   },
   "dependencies": {
     "@radix-icons/vue": "^1.0.0",

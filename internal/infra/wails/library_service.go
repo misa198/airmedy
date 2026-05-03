@@ -71,9 +71,7 @@ func (s *LibraryService) SyncAll() error {
 
 	for _, folder := range folders {
 		go func(path string) {
-			if err := s.libService.SyncFolder(context.Background(), path); err != nil {
-				// Log error? The service already logs it.
-			}
+			_ = s.libService.SyncFolder(context.Background(), path)
 		}(folder.Path)
 	}
 	return nil
@@ -91,9 +89,7 @@ func (s *LibraryService) ImportAll() error {
 
 	for _, folder := range folders {
 		go func(path string) {
-			if err := s.libService.SyncFolder(context.Background(), path); err != nil {
-				// error logged in service
-			}
+			_ = s.libService.SyncFolder(context.Background(), path)
 		}(folder.Path)
 	}
 	return nil
