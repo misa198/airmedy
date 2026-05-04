@@ -403,9 +403,9 @@ func (s *PlayerService) RemoveFromQueue(trackID string) {
 	}
 }
 
-// ReorderQueue updates the order of tracks in the queue.
-func (s *PlayerService) ReorderQueue(tracks []*domain.TrackDTO) {
-	s.queue.ReorderQueue(tracks)
+// ReorderQueue updates the order of tracks in the queue using track IDs.
+func (s *PlayerService) ReorderQueue(trackIDs []string) {
+	s.queue.ReorderQueue(trackIDs)
 	s.emitQueue()
 	s.saveState(context.Background())
 }
@@ -790,10 +790,16 @@ func (s *PlayerService) saveState(ctx context.Context) {
 	ct := s.currentTrack
 	s.mu.RUnlock()
 
-	queue := s.queue.GetQueue()
-	ids := make([]string, len(queue))
-	for i, t := range queue {
-		ids[i] = t.ID
+	activeQueue := s.queue.GetQueue()
+	activeIDs := make([]string, len(activeQueue))
+	for i, t := range activeQueue {
+		activeIDs[i] = t.ID
+	}
+
+	originalQueue := s.queue.GetOriginalQueue()
+	originalIDs := make([]string, len(originalQueue))
+	for i, t := range originalQueue {
+		originalIDs[i] = t.ID
 	}
 
 	status := s.player.GetStatus()
@@ -804,13 +810,14 @@ func (s *PlayerService) saveState(ctx context.Context) {
 	}
 
 	state := &domain.PlayerState{
-		QueueTrackIDs:  ids,
-		CurrentTrackID: currentID,
-		Position:       status.Position,
-		Volume:         status.Volume,
-		Muted:          status.Muted,
-		Shuffle:        s.queue.shuffle,
-		RepeatMode:     s.queue.repeatMode,
+		QueueTrackIDs:    activeIDs,
+		OriginalTrackIDs: originalIDs,
+		CurrentTrackID:   currentID,
+		Position:         status.Position,
+		Volume:           status.Volume,
+		Muted:            status.Muted,
+		Shuffle:          s.queue.shuffle,
+		RepeatMode:       s.queue.repeatMode,
 	}
 	if err := s.stateRepo.Save(ctx, state); err != nil {
 		s.logger.Error("failed to save player state", "error", err)
@@ -831,9 +838,9 @@ func (s *PlayerService) restoreState(ctx context.Context) {
 		return
 	}
 
-	if len(state.QueueTrackIDs) > 0 {
-		var validTracks []*domain.TrackDTO
-		for _, id := range state.QueueTrackIDs {
+	loadTracks := func(ids []string) []*domain.TrackDTO {
+		var tracks []*domain.TrackDTO
+		for _, id := range ids {
 			track, err := s.trackRepo.GetByID(ctx, id)
 			if err != nil || track == nil {
 				continue
@@ -841,41 +848,46 @@ func (s *PlayerService) restoreState(ctx context.Context) {
 			if _, err := os.Stat(track.Path); err != nil {
 				continue
 			}
-			validTracks = append(validTracks, track)
+			tracks = append(tracks, track)
+		}
+		return tracks
+	}
+
+	activeTracks := loadTracks(state.QueueTrackIDs)
+	originalTracks := loadTracks(state.OriginalTrackIDs)
+
+	// If we have active tracks but no original tracks (e.g. state from older version),
+	// treat active as original.
+	if len(originalTracks) == 0 && len(activeTracks) > 0 {
+		originalTracks = activeTracks
+	}
+
+	if len(activeTracks) > 0 {
+		currentIndex := 0
+		var currentTrack *domain.TrackDTO
+		for i, t := range activeTracks {
+			if t.ID == state.CurrentTrackID {
+				currentIndex = i
+				currentTrack = t
+				break
+			}
 		}
 
-		if len(validTracks) > 0 {
-			s.queue.SetRepeatMode(state.RepeatMode)
-			if state.Shuffle {
-				s.queue.SetShuffle(true)
-			}
+		s.queue.Restore(originalTracks, activeTracks, currentIndex, state.Shuffle, state.RepeatMode)
 
-			currentIndex := 0
-			var currentTrack *domain.TrackDTO
-			for i, t := range validTracks {
-				if t.ID == state.CurrentTrackID {
-					currentIndex = i
-					currentTrack = t
-					break
+		if currentTrack != nil {
+			if err := s.player.Load(currentTrack); err != nil {
+				s.logger.Error("failed to load track on restore", "track", currentTrack.Path, "error", err)
+			} else {
+				if err := s.player.Seek(state.Position); err != nil {
+					s.logger.Warn("failed to seek to saved position on restore", "error", err)
 				}
-			}
+				s.mu.Lock()
+				s.currentTrack = currentTrack
+				s.mu.Unlock()
 
-			s.queue.SetQueue(validTracks, currentIndex)
-
-			if currentTrack != nil {
-				if err := s.player.Load(currentTrack); err != nil {
-					s.logger.Error("failed to load track on restore", "track", currentTrack.Path, "error", err)
-				} else {
-					if err := s.player.Seek(state.Position); err != nil {
-						s.logger.Warn("failed to seek to saved position on restore", "error", err)
-					}
-					s.mu.Lock()
-					s.currentTrack = currentTrack
-					s.mu.Unlock()
-
-					go s.extractAndEmitPalette(currentTrack)
-					go s.fetchAndEmitLyrics(currentTrack)
-				}
+				go s.extractAndEmitPalette(currentTrack)
+				go s.fetchAndEmitLyrics(currentTrack)
 			}
 		}
 	}

@@ -45,7 +45,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
       <!-- DnD Handle cell -->
       <div
         v-if="col.key === 'dnd'"
-        class="sticky left-0 z-10 flex items-center justify-center h-full dnd-handle cursor-grab active:cursor-grabbing text-foreground opacity-20 group-hover:opacity-60 hover:text-primary transition-all px-2"
+        class="sticky left-0 z-20 flex items-center justify-center h-full dnd-handle cursor-grab active:cursor-grabbing text-foreground opacity-20 group-hover:opacity-60 hover:text-primary transition-all px-2"
         :style="{ background: rowBg(currentIndex, true) }"
       >
         <GripVertical class="w-4 h-4 pointer-events-none" />

@@ -67,6 +67,8 @@ watch(() => store.isQueueOpen, (open) => {
         data-key="id"
         :size="64"
         handle=".dnd-handle"
+        :force-fallback="true"
+        fallback-class="drag-chosen"
         chosen-class="drag-chosen"
         :ghost-style="{ display: 'none' }"
         class="h-full overflow-y-auto select-none"

@@ -191,7 +191,7 @@ wails3 task {task_name}
 ## Contributing
 
 1. Fork the repo and create a feature branch
-2. Follow [Conventional Commits](https://www.conventionalcommits.org/) — enforced by the `commit-msg` hook (`task setup:hooks`)
+2. Follow [Conventional Commits](https://www.conventionalcommits.org/) — enforced by the `commit-msg` hook (`wails3 task setup:hooks`)
 3. All new features and bug fixes require accompanying tests
 4. Open a pull request against `master`
 

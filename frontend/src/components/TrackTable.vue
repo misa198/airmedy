@@ -21,7 +21,7 @@ const router = useRouter()
 const playerStore = usePlayerStore()
 const settings = useTrackTableSettings()
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   tracks: TrackDTO[]
   isLoading?: boolean
   showArtwork?: boolean
@@ -32,7 +32,9 @@ const props = defineProps<{
   variant?: 'default' | 'glass'
   contextMenuOptions?: TrackContextMenuOptions
   allowDnd?: boolean
-}>()
+}>(), {
+  allowDnd: false
+})
 
 const emit = defineEmits<{
   'play-track': [track: TrackDTO, index: number, queue: TrackDTO[]]
@@ -94,6 +96,7 @@ const orderedVisibleColumns = computed(() => {
     .filter(
       (col) =>
         col &&
+        col.key !== 'dnd' && // Handle dnd separately based on props.allowDnd
         visibleSet.has(col.key) &&
         !hideSet.has(col.key) &&
         (props.simpleMode ? SIMPLE_COLUMNS.includes(col.key) : true),
@@ -101,7 +104,7 @@ const orderedVisibleColumns = computed(() => {
 
   if (props.allowDnd) {
     const dndCol = COLUMNS.find(c => c.key === 'dnd')!
-    return [dndCol, ...cols.filter(c => c.key !== 'dnd')]
+    return [dndCol, ...cols]
   }
 
   return cols
@@ -229,9 +232,10 @@ function handlePlayTrack(track: TrackDTO, index: number) {
       <div v-else class="h-full flex flex-col overflow-hidden">
         <div ref="headerContainerRef" class="overflow-hidden flex-shrink-0">
           <div :style="{ minWidth: totalMinWidth }">
-            <TrackTableHeader v-if="!hideHeader" :ordered-visible-columns="orderedVisibleColumns" :simple-mode="simpleMode"
-              :sort-column="sortColumn" :sort-dir="sortDir" :grid-template-columns="gridTemplateColumns"
-              :header-height="effectiveHeaderHeight" :variant="variant" @cycle-sort="cycleSort" />
+            <TrackTableHeader v-if="!hideHeader" :ordered-visible-columns="orderedVisibleColumns"
+              :simple-mode="simpleMode" :sort-column="sortColumn" :sort-dir="sortDir"
+              :grid-template-columns="gridTemplateColumns" :header-height="effectiveHeaderHeight" :variant="variant"
+              @cycle-sort="cycleSort" />
           </div>
         </div>
 
@@ -241,6 +245,10 @@ function handlePlayTrack(track: TrackDTO, index: number) {
           data-key="id"
           :size="ROW_HEIGHT"
           handle=".dnd-handle"
+          :sortable="allowDnd"
+          :animation="150"
+          :force-fallback="true"
+          fallback-class="drag-chosen"
           chosen-class="drag-chosen"
           :ghost-style="{ display: 'none' }"
           class="flex-1 overflow-auto custom-scrollbar track-table-virtual-list"
@@ -269,11 +277,10 @@ function handlePlayTrack(track: TrackDTO, index: number) {
 }
 
 .drag-chosen {
-  /* background: var(--bg-main) !important; */
-  background: red !important;
+  background: var(--bg-main) !important;
   opacity: 0.9;
   z-index: 200;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
   border-radius: 4px;
 }
 </style>

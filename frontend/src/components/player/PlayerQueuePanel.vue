@@ -51,7 +51,7 @@ function navigate(path: string) {
           :context-menu-options="{ showRemoveFromQueue: true }"
           class="dark"
           @play-track="(_, index) => emit('play-track', index)"
-          @reorder="tracks => playerStore.queue = tracks"
+          @reorder="tracks => playerStore.reorderQueue(tracks)"
           @navigate-album="id => navigate(`/albums/${id}`)"
           @navigate-artist="id => navigate(`/artists/${id}`)" />
       </div>

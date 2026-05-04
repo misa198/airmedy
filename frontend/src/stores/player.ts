@@ -225,13 +225,8 @@ export const usePlayerStore = defineStore('player', () => {
 
   async function reorderQueue(tracks: TrackDTO[]) {
     queue.value = tracks
-    // @ts-ignore - ReorderQueue might not be in the generated bindings yet
-    if (PlayerService.ReorderQueue) {
-      // @ts-ignore
-      await PlayerService.ReorderQueue(tracks)
-    } else {
-      console.warn('PlayerService.ReorderQueue not found in bindings. Please regenerate bindings.')
-    }
+    const ids = tracks.map(t => t.id)
+    await PlayerService.ReorderQueueIDs(ids)
   }
 
 

@@ -121,5 +121,13 @@ func (s *PlayerService) RemoveFromQueue(trackID string) {
 }
 
 func (s *PlayerService) ReorderQueue(tracks []*domain.TrackDTO) {
-	s.service.ReorderQueue(tracks)
+	ids := make([]string, len(tracks))
+	for i, t := range tracks {
+		ids[i] = t.ID
+	}
+	s.service.ReorderQueue(ids)
+}
+
+func (s *PlayerService) ReorderQueueIDs(trackIDs []string) {
+	s.service.ReorderQueue(trackIDs)
 }

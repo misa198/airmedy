@@ -47,6 +47,9 @@ importers:
       vue-router:
         specifier: ^4.6.4
         version: 4.6.4(vue@3.5.32(typescript@4.9.5))
+      vue-virtual-scroller:
+        specifier: 3.0.2
+        version: 3.0.2(vue@3.5.32(typescript@4.9.5))
       vue-virtual-sortable:
         specifier: ^3.1.2
         version: 3.1.2
@@ -1582,6 +1585,11 @@ packages:
     peerDependencies:
       typescript: '*'
 
+  vue-virtual-scroller@3.0.2:
+    resolution: {integrity: sha512-zneKxsBecfFBpH2NAk8zF0IWBRSYRaXnXK/dPQ/AnXE9xlbRyW6sSO9EUb5L5cSFz2Dpfb2giN30/y+/Xvu5PQ==}
+    peerDependencies:
+      vue: ^3.3.0
+
   vue-virtual-sortable@3.1.2:
     resolution: {integrity: sha512-cUrfQyb2OOj8rrZrCl+pFpMaEZOQQ+zlcdGCzkRqHt7usFmO6S5q4yC4cPqSEOJ9h5C7mwey/j+ks59MnZQ1pA==}
 
@@ -3033,6 +3041,10 @@ snapshots:
       '@vue/language-core': 1.8.27(typescript@4.9.5)
       semver: 7.7.4
       typescript: 4.9.5
+
+  vue-virtual-scroller@3.0.2(vue@3.5.32(typescript@4.9.5)):
+    dependencies:
+      vue: 3.5.32(typescript@4.9.5)
 
   vue-virtual-sortable@3.1.2:
     dependencies:

@@ -351,6 +351,25 @@ func (s *QueueService) GetQueue() []*domain.TrackDTO {
 	return s.activeList()
 }
 
+// GetOriginalQueue returns the original (unshuffled) list of tracks.
+func (s *QueueService) GetOriginalQueue() []*domain.TrackDTO {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.originalList
+}
+
+// Restore sets both the original and shuffled lists directly.
+func (s *QueueService) Restore(original, shuffled []*domain.TrackDTO, currentIndex int, shuffle bool, repeatMode domain.RepeatMode) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.originalList = original
+	s.shuffledList = shuffled
+	s.currentIndex = currentIndex
+	s.shuffle = shuffle
+	s.repeatMode = repeatMode
+}
+
 // IsEmpty returns true if the queue has no tracks.
 func (s *QueueService) IsEmpty() bool {
 	s.mu.RLock()
@@ -437,25 +456,35 @@ func (s *QueueService) RemoveTrack(trackID string) {
 	}
 }
 
-// ReorderQueue sets a new order for the active list and maintains the current track index by ID.
-func (s *QueueService) ReorderQueue(tracks []*domain.TrackDTO) {
+// ReorderQueue sets a new order for the active list using track IDs and maintains the current track index.
+func (s *QueueService) ReorderQueue(trackIDs []string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	list := s.activeList()
-	var currentID string
-	if s.currentIndex >= 0 && s.currentIndex < len(list) {
-		currentID = list[s.currentIndex].ID
+	activeList := s.activeList()
+	trackMap := make(map[string]*domain.TrackDTO)
+	for _, t := range activeList {
+		trackMap[t.ID] = t
 	}
 
+	newActiveList := make([]*domain.TrackDTO, 0, len(trackIDs))
+	for _, id := range trackIDs {
+		if t, ok := trackMap[id]; ok {
+			newActiveList = append(newActiveList, t)
+		}
+	}
+
+	// Update the appropriate list
 	if s.shuffle {
-		s.shuffledList = tracks
+		s.shuffledList = newActiveList
 	} else {
-		s.originalList = tracks
+		s.originalList = newActiveList
 	}
 
-	if currentID != "" {
-		for i, t := range tracks {
+	// Maintain current index by finding the ID of the track that was at the old index
+	if s.currentIndex >= 0 && s.currentIndex < len(activeList) {
+		currentID := activeList[s.currentIndex].ID
+		for i, t := range newActiveList {
 			if t.ID == currentID {
 				s.currentIndex = i
 				break
