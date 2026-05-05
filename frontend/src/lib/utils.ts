@@ -45,3 +45,13 @@ export function formatTotalDuration(totalSeconds: number, t: (key: string) => st
   if (hours > 0) return `${hours} ${t('common.hr')} ${mins} ${t('common.min')}`
   return `${mins} ${t('common.min')}`
 }
+
+export function foldUnicode(s: string): string {
+  if (!s) return ''
+  return s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase()
+}

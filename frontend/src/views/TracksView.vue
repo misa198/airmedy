@@ -8,6 +8,7 @@ import ViewHeader from '../components/ViewHeader.vue'
 import { usePlayerStore } from '../stores/player'
 import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
 import { useLibrarySync } from '@/composables/useLibrarySync'
+import { foldUnicode } from '@/lib/utils'
 
 const PAGE_SIZE = 500
 
@@ -49,11 +50,11 @@ const loadTracks = async () => {
 
 const filteredTracks = computed(() => {
   if (!searchQuery.value) return tracks.value
-  const query = searchQuery.value.toLowerCase()
+  const query = foldUnicode(searchQuery.value)
   return tracks.value.filter(track =>
-    (track.title || '').toLowerCase().includes(query) ||
-    (track.raw_artist_names || '').toLowerCase().includes(query) ||
-    (track.album?.title || '').toLowerCase().includes(query)
+    foldUnicode(track.title || '').includes(query) ||
+    foldUnicode(track.raw_artist_names || '').includes(query) ||
+    foldUnicode(track.album?.title || '').includes(query)
   )
 })
 

@@ -6,6 +6,7 @@ import type { AlbumDTO } from '../../bindings/airmedy/internal/domain/models'
 import AlbumGrid from '../components/AlbumGrid.vue'
 import ViewHeader from '../components/ViewHeader.vue'
 import { useLibrarySync } from '@/composables/useLibrarySync'
+import { foldUnicode } from '@/lib/utils'
 
 const albums = shallowRef<AlbumDTO[]>([])
 const isLoading = ref(true)
@@ -29,10 +30,10 @@ const loadAlbums = async () => {
 
 const filteredAlbums = computed(() => {
   if (!searchQuery.value) return albums.value
-  const query = searchQuery.value.toLowerCase()
+  const query = foldUnicode(searchQuery.value)
   return albums.value.filter(album =>
-    album.title.toLowerCase().includes(query) ||
-    (album.artists && album.artists.some(a => a?.name?.toLowerCase().includes(query)))
+    foldUnicode(album.title).includes(query) ||
+    (album.artists && album.artists.some(a => foldUnicode(a?.name || '').includes(query)))
   )
 })
 

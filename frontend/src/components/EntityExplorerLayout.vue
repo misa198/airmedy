@@ -2,6 +2,7 @@
 import { ref, computed, onActivated } from 'vue'
 import { Search, Play } from 'lucide-vue-next'
 import { Input } from '@/components/ui/input'
+import { foldUnicode } from '@/lib/utils'
 
 const props = defineProps<{
   title: string
@@ -40,9 +41,9 @@ onActivated(() => {
 
 const filteredItems = computed(() => {
   if (!searchQuery.value) return props.items
-  const query = searchQuery.value.toLowerCase()
+  const query = foldUnicode(searchQuery.value)
   return props.items.filter(item =>
-    (item.name || '').toLowerCase().includes(query)
+    foldUnicode(item.name || '').includes(query)
   )
 })
 </script>

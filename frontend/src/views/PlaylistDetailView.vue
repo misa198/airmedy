@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input'
 import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
 import { usePlaylistsStore } from '@/stores/playlists'
 import { Events } from '@wailsio/runtime'
+import { foldUnicode } from '@/lib/utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -38,11 +39,11 @@ const searchQuery = ref('')
 
 const filteredTracks = computed(() => {
   if (!searchQuery.value) return tracks.value
-  const q = searchQuery.value.toLowerCase()
+  const q = foldUnicode(searchQuery.value)
   return tracks.value.filter(t => 
-    (t.title || '').toLowerCase().includes(q) || 
-    (t.raw_artist_names || '').toLowerCase().includes(q) ||
-    (t.album?.title || '').toLowerCase().includes(q)
+    foldUnicode(t.title || '').includes(q) || 
+    foldUnicode(t.raw_artist_names || '').includes(q) ||
+    foldUnicode(t.album?.title || '').includes(q)
   )
 })
 
