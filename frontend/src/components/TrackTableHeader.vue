@@ -146,11 +146,21 @@ onBeforeUnmount(() => {
     :style="{ gridTemplateColumns, height: headerHeight + 'px' }"
   >
     <template v-for="col in orderedVisibleColumns" :key="col.key">
+      <!-- DnD header -->
+      <div
+        v-if="col.key === 'dnd'"
+        class="sticky left-0 z-10 flex items-center justify-center relative"
+        :class="variant === 'glass' ? 'bg-transparent' : 'bg-background'"
+      />
+
       <!-- Index header -->
       <div
-        v-if="col.key === 'index'"
-        class="sticky left-0 z-[5] flex items-center justify-center relative"
-        :class="variant === 'glass' ? 'bg-transparent' : 'bg-background'"
+        v-else-if="col.key === 'index'"
+        class="sticky z-10 flex items-center justify-center relative"
+        :class="[
+          variant === 'glass' ? 'bg-transparent' : 'bg-background',
+          orderedVisibleColumns[0].key === 'dnd' ? 'left-[32px]' : 'left-0'
+        ]"
       >
         #
         <!-- Column divider / resize handle -->
@@ -167,7 +177,7 @@ onBeforeUnmount(() => {
       <!-- Context menu header -->
       <div
         v-else-if="col.key === 'context_menu'"
-        class="sticky right-0 z-[5]"
+        class="sticky right-0 z-10"
         :class="variant === 'glass' ? 'bg-transparent' : 'bg-background'"
       />
 

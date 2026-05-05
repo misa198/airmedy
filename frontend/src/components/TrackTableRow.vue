@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Heart, Music, Play, MoreVertical } from 'lucide-vue-next'
+import { Heart, Music, Play, MoreVertical, GripVertical } from 'lucide-vue-next'
 import type { Artist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import { formatTime, buildArtworkUrl, getTrackDisplayTitle } from '../lib/utils'
 import LazyImg from '@/components/LazyImg.vue'
@@ -10,7 +10,7 @@ import type { ColumnDef } from '@/composables/useTrackTableSettings'
 const props = defineProps<{
   track: TrackDTO
   index: number
-  top: number
+  currentIndex: number
   orderedVisibleColumns: ColumnDef[]
   gridTemplateColumns: string
   showArtwork?: boolean
@@ -33,21 +33,30 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
 
 <template>
   <div
-    class="grid absolute left-0 right-0 items-center text-sm hover:bg-foreground/[0.04] group transition-colors h-[56px]"
+    class="absolute inset-x-0 grid items-center text-sm hover:bg-foreground/[0.04] group transition-colors h-[56px]"
     :style="{
-      top: top + 'px',
       gridTemplateColumns,
-      background: rowBg(index),
+      background: rowBg(currentIndex),
     }"
     @contextmenu="emit('contextmenu', $event, track)"
     @dblclick="emit('play-track', track, index)"
   >
-    <template v-for="col in orderedVisibleColumns" :key="col.key">
+    <template v-for="(col, colIdx) in orderedVisibleColumns" :key="col.key">
+      <!-- DnD Handle cell -->
+      <div
+        v-if="col.key === 'dnd'"
+        class="sticky left-0 z-20 flex items-center justify-center h-full dnd-handle cursor-grab active:cursor-grabbing text-foreground opacity-20 group-hover:opacity-60 hover:text-primary transition-all px-2"
+        :style="{ background: rowBg(currentIndex, true) }"
+      >
+        <GripVertical class="w-4 h-4 pointer-events-none" />
+      </div>
+
       <!-- Index cell -->
       <div
-        v-if="col.key === 'index'"
-        class="sticky left-0 z-[5] flex items-center justify-center h-full"
-        :style="{ background: rowBg(index, true) }"
+        v-else-if="col.key === 'index'"
+        class="sticky z-10 flex items-center justify-center h-full pointer-events-none"
+        :class="[orderedVisibleColumns[0].key === 'dnd' ? 'left-[32px]' : 'left-0']"
+        :style="{ background: rowBg(currentIndex, true) }"
       >
         <template v-if="isCurrentTrack(track.id)">
           <div class="flex items-end gap-[2px] h-3 w-3">
@@ -65,9 +74,9 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
           </div>
         </template>
         <template v-else>
-          <div class="text-foreground opacity-80 group-hover:hidden">{{ index + 1 }}</div>
+          <div class="text-foreground opacity-80 group-hover:hidden text-[11px]">{{ index + 1 }}</div>
           <button
-            class="hidden group-hover:block text-primary hover:scale-110 transition-transform"
+            class="hidden group-hover:block text-primary hover:scale-110 transition-transform pointer-events-auto"
             @click="emit('play-track', track, index)"
           >
             <Play class="w-4 h-4 fill-current" />
@@ -222,8 +231,8 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
       <!-- Context menu cell -->
       <div
         v-else-if="col.key === 'context_menu'"
-        class="sticky right-0 z-[5] flex items-center justify-end opacity-0 group-hover:opacity-100 pr-1"
-        :style="{ background: rowBg(index, true) }"
+        class="sticky right-0 z-10 flex items-center justify-end opacity-0 group-hover:opacity-100 pr-1"
+        :style="{ background: rowBg(currentIndex, true) }"
       >
         <button
           class="p-2 hover:bg-foreground/8 rounded-full text-foreground opacity-50 hover:text-foreground opacity-90 transition-colors"

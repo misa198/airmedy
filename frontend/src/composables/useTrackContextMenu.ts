@@ -90,7 +90,7 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
       const playlistChildren: ContextMenuItem[] = playlistsStore.playlists.length
         ? playlistsStore.playlists.map(p => ({
           label: p.name,
-          action: () => { PlaylistService.AddTrackToPlaylist(p.id, track.id) },
+          action: () => { PlaylistService.AddTrackToPlaylist(p.id, track.id, '') },
         }))
         : [{ label: t('context_menu.no_playlists'), disabled: true }]
 
@@ -108,7 +108,7 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
           const p = playlistsStore.playlists[index]
           if (p && playlistIds.includes(p.id)) {
             child.iconRight = Check
-            child.action = () => { PlaylistService.RemoveTrackFromPlaylist(p.id, track.id) }
+            child.action = () => { PlaylistService.RemoveTrackFromPlaylist(p.id, track.id, '') }
           }
         })
       })
@@ -171,7 +171,7 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
         icon: Trash2,
         danger: true,
         action: () => {
-          PlaylistService.RemoveTrackFromPlaylist(options.playlistId!, track.id)
+          PlaylistService.RemoveTrackFromPlaylist(options.playlistId!, track.id, '')
         },
       })
     }

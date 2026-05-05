@@ -81,7 +81,7 @@ func (r *playlistRepository) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *playlistRepository) AddTrack(ctx context.Context, playlistID, trackID string, position int) error {
+func (r *playlistRepository) AddTrack(ctx context.Context, playlistID, trackID string, position string) error {
 	_, err := r.db.ExecContext(ctx, "INSERT OR IGNORE INTO playlist_tracks (playlist_id, track_id, position) VALUES (?, ?, ?)", playlistID, trackID, position)
 	if err != nil {
 		return fmt.Errorf("failed to add track to playlist: %w", err)
@@ -90,35 +90,57 @@ func (r *playlistRepository) AddTrack(ctx context.Context, playlistID, trackID s
 }
 
 func (r *playlistRepository) RemoveTrack(ctx context.Context, playlistID, trackID string) error {
+	_, err := r.db.ExecContext(ctx, "DELETE FROM playlist_tracks WHERE playlist_id = ? AND track_id = ?", playlistID, trackID)
+	if err != nil {
+		return fmt.Errorf("failed to remove track from playlist: %w", err)
+	}
+	return nil
+}
+
+func (r *playlistRepository) UpdateTrackPosition(ctx context.Context, playlistID, trackID, position string) error {
+	_, err := r.db.ExecContext(ctx, "UPDATE playlist_tracks SET position = ? WHERE playlist_id = ? AND track_id = ?", position, playlistID, trackID)
+	if err != nil {
+		return fmt.Errorf("failed to update track position: %w", err)
+	}
+	return nil
+}
+
+func (r *playlistRepository) UpdateTracksPositions(ctx context.Context, playlistID string, updates map[string]string) error {
 	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
 
-	// Get the position of the track being removed
-	var pos int
-	err = tx.GetContext(ctx, &pos, "SELECT position FROM playlist_tracks WHERE playlist_id = ? AND track_id = ?", playlistID, trackID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil // Track not in playlist
+	for trackID, position := range updates {
+		_, err = tx.ExecContext(ctx, "UPDATE playlist_tracks SET position = ? WHERE playlist_id = ? AND track_id = ?", position, playlistID, trackID)
+		if err != nil {
+			return err
 		}
-		return err
-	}
-
-	// Remove the track
-	_, err = tx.ExecContext(ctx, "DELETE FROM playlist_tracks WHERE playlist_id = ? AND track_id = ?", playlistID, trackID)
-	if err != nil {
-		return err
-	}
-
-	// Update positions of tracks after the removed one
-	_, err = tx.ExecContext(ctx, "UPDATE playlist_tracks SET position = position - 1 WHERE playlist_id = ? AND position > ?", playlistID, pos)
-	if err != nil {
-		return err
 	}
 
 	return tx.Commit()
+}
+
+func (r *playlistRepository) GetTrackPosition(ctx context.Context, playlistID, trackID string) (string, error) {
+	var position string
+	err := r.db.GetContext(ctx, &position, "SELECT position FROM playlist_tracks WHERE playlist_id = ? AND track_id = ?", playlistID, trackID)
+	if err != nil {
+		return "", err
+	}
+	return position, nil
+}
+
+func (r *playlistRepository) GetMaxPosition(ctx context.Context, playlistID string) (string, error) {
+	var position string
+	err := r.db.GetContext(ctx, &position, "SELECT MAX(position) FROM playlist_tracks WHERE playlist_id = ?", playlistID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
+		return "", err
+	}
+	return position, nil
 }
 
 func (r *playlistRepository) GetTracks(ctx context.Context, playlistID string) ([]*domain.TrackDTO, error) {
@@ -133,7 +155,7 @@ func (r *playlistRepository) GetTracks(ctx context.Context, playlistID string) (
 		JOIN playlist_tracks pt ON t.id = pt.track_id
 		WHERE pt.playlist_id = ?
 		GROUP BY t.id, pt.position
-		ORDER BY pt.position`, trackSelectFields)
+		ORDER BY pt.position, pt.track_id`, trackSelectFields)
 	
 	var rows []trackRow
 	err := r.db.SelectContext(ctx, &rows, query, playlistID)

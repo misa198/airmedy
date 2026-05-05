@@ -95,7 +95,7 @@ export function useAlbumContextMenu() {
               action: async () => {
                 const tracks = await fetchTracks()
                 for (const track of tracks) {
-                  await PlaylistService.AddTrackToPlaylist(p.id, track.id)
+                  await PlaylistService.AddTrackToPlaylist(p.id, track.id, '')
                 }
               },
             }))

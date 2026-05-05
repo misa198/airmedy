@@ -3,16 +3,16 @@
 #
 # The lines below are called `modelines`. See `:help modeline`
 
-name: "Airmedy"
+name: "airmedy"
 arch: ${GOARCH}
 platform: "linux"
-version: "0.0.3"
+version: "0.0.4"
 section: "default"
 priority: "extra"
 maintainer: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}>
 description: "An offline music player for macOS, Windows and Linux."
 vendor: "misa198"
-homepage: "https://github.com/misa198/airmedy"
+homepage: "https://wails.io"
 license: "MIT"
 release: "1"
 

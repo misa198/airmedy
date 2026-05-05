@@ -34,6 +34,9 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000007 | `playlist_artwork.up.sql`      | `ALTER TABLE playlists ADD COLUMN artwork_key TEXT`                                                                                |
 | 000008 | `extra_track_metadata.up.sql`  | Add `bpm`, `label`, `isrc`, `play_count` to `tracks`                                                                               |
 | 000009 | `eq_profile_is_default.up.sql` | Add `is_default` to `eq_profiles`, set all existing = 1                                                                            |
+| 000010 | `app_settings_lastfm.up.sql`   | `ALTER TABLE app_settings ADD COLUMN lastfm_username TEXT`                                                                         |
+| 000011 | `app_settings_updates.up.sql`  | Add `auto_check_update`, `start_at_login` to `app_settings`                                                                       |
+| 000012 | `playlist_lexorank.up.sql`     | Convert `playlist_tracks.position` from INTEGER to TEXT (LexoRank string), migrate existing data with computed ranks              |
 
 ## Full Schema
 
@@ -138,7 +141,7 @@ track_album_artists  (track_id, artist_id, position) PK(track_id, artist_id)
 track_genres         (track_id, genre_id,  position) PK(track_id, genre_id)
 track_composers      (track_id, composer_id, position) PK(track_id, composer_id)
 album_artists        (album_id, artist_id, position) PK(album_id, artist_id)
-playlist_tracks      (playlist_id, track_id, position) PK(playlist_id, track_id)
+playlist_tracks      (playlist_id, track_id, position TEXT) PK(playlist_id, track_id)
 ```
 
 All junction tables cascade delete when parent entity is deleted.
@@ -162,6 +165,9 @@ app_settings (
     id INTEGER PRIMARY KEY CHECK(id = 1),
     language TEXT DEFAULT 'en',
     theme TEXT DEFAULT 'system',
+    lastfm_username TEXT,
+    auto_check_update BOOLEAN DEFAULT 1,
+    start_at_login BOOLEAN DEFAULT 0,
     updated_at DATETIME
 )
 ```
@@ -226,11 +232,17 @@ idx_composers_normalization_key ON composers(normalization_key)
 
 **`DeleteOrphaned`**: `DELETE FROM albums WHERE id NOT IN (SELECT DISTINCT album_id FROM tracks WHERE album_id IS NOT NULL)`
 
-### PlaylistRepository — Track Ordering
+### PlaylistRepository — Track Ordering (LexoRank)
 
-**`RemoveTrack`**: Transaction — DELETE the row, then `UPDATE playlist_tracks SET position = position - 1 WHERE playlist_id = ? AND position > ?` to close the gap.
+**`AddTrack`**: INSERT with LexoRank position string.
 
-**`GetTracks`**: `JOIN tracks ON ... ORDER BY playlist_tracks.position ASC`
+**`RemoveTrack`**: DELETE the row. No position reindexing needed — LexoRank strings are independent.
+
+**`UpdateTrackPosition`**: UPDATE single track's LexoRank position.
+
+**`UpdateTracksPositions`**: Batch UPDATE positions in a transaction (used for rebalancing).
+
+**`GetTracks`**: `JOIN tracks ON ... ORDER BY pt.position, pt.track_id`
 
 ## ID Generation
 

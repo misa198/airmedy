@@ -75,21 +75,45 @@ func (s *PlaylistService) GetPlaylistsForTrack(trackID string) ([]string, error)
 	return s.service.GetPlaylistsForTrack(context.Background(), trackID)
 }
 
-func (s *PlaylistService) AddTrackToPlaylist(playlistID, trackID string) error {
+type PlaylistTracksChangedEvent struct {
+	PlaylistID string `json:"playlist_id"`
+	SenderID   string `json:"sender_id"`
+}
+
+func (s *PlaylistService) AddTrackToPlaylist(playlistID, trackID, senderID string) error {
 	err := s.service.AddTrack(context.Background(), playlistID, trackID)
 	if err == nil {
 		if app := application.Get(); app != nil && app.Event != nil {
-			app.Event.Emit("playlist:tracks-changed", playlistID)
+			app.Event.Emit("playlist:tracks-changed", &PlaylistTracksChangedEvent{
+				PlaylistID: playlistID,
+				SenderID:   senderID,
+			})
 		}
 	}
 	return err
 }
 
-func (s *PlaylistService) RemoveTrackFromPlaylist(playlistID, trackID string) error {
+func (s *PlaylistService) RemoveTrackFromPlaylist(playlistID, trackID, senderID string) error {
 	err := s.service.RemoveTrack(context.Background(), playlistID, trackID)
 	if err == nil {
 		if app := application.Get(); app != nil && app.Event != nil {
-			app.Event.Emit("playlist:tracks-changed", playlistID)
+			app.Event.Emit("playlist:tracks-changed", &PlaylistTracksChangedEvent{
+				PlaylistID: playlistID,
+				SenderID:   senderID,
+			})
+		}
+	}
+	return err
+}
+
+func (s *PlaylistService) MoveTrack(playlistID, trackID, prevTrackID, nextTrackID, senderID string) error {
+	err := s.service.MoveTrack(context.Background(), playlistID, trackID, prevTrackID, nextTrackID)
+	if err == nil {
+		if app := application.Get(); app != nil && app.Event != nil {
+			app.Event.Emit("playlist:tracks-changed", &PlaylistTracksChangedEvent{
+				PlaylistID: playlistID,
+				SenderID:   senderID,
+			})
 		}
 	}
 	return err
@@ -201,7 +225,10 @@ func (s *PlaylistService) ImportM3U8Playlist(filePath, name string) (*M3U8Import
 	}
 
 	if app := application.Get(); app != nil && app.Event != nil {
-		app.Event.Emit("playlist:tracks-changed", p.ID)
+		app.Event.Emit("playlist:tracks-changed", &PlaylistTracksChangedEvent{
+			PlaylistID: p.ID,
+			SenderID:   "",
+		})
 	}
 
 	return result, nil

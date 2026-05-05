@@ -11,30 +11,16 @@ import { usePlayerStore } from '@/stores/player'
 import { useDeviceStore } from '@/stores/device'
 import { useAppStore } from '@/stores/app'
 import { RouterView } from 'vue-router'
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, onUnmounted } from 'vue'
 
 const SIDEBAR_MIN_WIDTH = 230;
 const SIDEBAR_MAX_WIDTH = 250;
-const OVERLAY_BREAKPOINT = 1240;
 const playerStore = usePlayerStore()
 const deviceStore = useDeviceStore()
 const appStore = useAppStore()
 
 const isResizing = ref(false)
 const showUpdateDialog = ref(false)
-
-const windowWidth = ref(window.innerWidth)
-const handleResize = () => { windowWidth.value = window.innerWidth }
-window.addEventListener('resize', handleResize)
-
-const overlayMode = computed(() => windowWidth.value < OVERLAY_BREAKPOINT)
-const anyDrawerOpen = computed(() =>
-  playerStore.isQueueOpen || playerStore.isLyricsOpen || playerStore.isTrackInfoOpen
-)
-
-const closeAllDrawers = () => {
-  playerStore.closeAllDrawers()
-}
 
 const startResizing = (e: MouseEvent) => {
   e.preventDefault()
@@ -61,7 +47,6 @@ const stopResizing = () => {
 
 onUnmounted(() => {
   stopResizing()
-  window.removeEventListener('resize', handleResize)
 })
 </script>
 
@@ -103,84 +88,36 @@ onUnmounted(() => {
         </RouterView>
       </main>
 
-      <!-- Queue Sidebar (with transition) -->
-      <template v-if="!overlayMode">
-        <div class="h-full bg-background transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 pt-4"
-          :class="[
-            playerStore.isQueueOpen ? 'w-80 border-l border-foreground/[0.06]' : 'w-0 border-l-0 border-transparent',
-          ]">
-          <div class="w-80 h-full">
-            <QueueDrawer />
-          </div>
-        </div>
-      </template>
-
-      <!-- Lyrics Sidebar (with transition) -->
-      <template v-if="!overlayMode">
-        <div class="h-full bg-background transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 pt-4"
-          :class="[
-            playerStore.isLyricsOpen ? 'w-80 border-l border-foreground/[0.06]' : 'w-0 border-l-0 border-transparent',
-          ]">
-          <div class="w-80 h-full">
-            <LyricsDrawer />
-          </div>
-        </div>
-      </template>
-
-      <!-- Track Info Sidebar (with transition) -->
-      <template v-if="!overlayMode">
-        <div class="h-full bg-background transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 pt-4"
-          :class="[
-            playerStore.isTrackInfoOpen ? 'w-80 border-l border-foreground/[0.06]' : 'w-0 border-l-0 border-transparent',
-          ]">
-          <div class="w-80 h-full">
-            <TrackInfoDrawer />
-          </div>
-        </div>
-      </template>
-    </div>
-
-    <!-- Overlay drawers (< 1500px) -->
-    <template v-if="overlayMode">
-      <!-- Backdrop -->
-      <Transition name="fade">
-        <div
-          v-if="anyDrawerOpen"
-          class="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
-          @click="closeAllDrawers"
-        />
-      </Transition>
-
-      <!-- Queue overlay -->
-      <Transition name="slide-right">
-        <div
-          v-if="playerStore.isQueueOpen"
-          class="fixed right-0 top-0 bottom-0 z-50 w-80 bg-background border-l border-foreground/[0.06] pt-4"
-        >
+      <!-- Queue Sidebar -->
+      <div class="h-full bg-background transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 pt-4"
+        :class="[
+          playerStore.isQueueOpen ? 'w-80 border-l border-foreground/[0.06]' : 'w-0 border-l-0 border-transparent',
+        ]">
+        <div class="w-80 h-full">
           <QueueDrawer />
         </div>
-      </Transition>
+      </div>
 
-      <!-- Lyrics overlay -->
-      <Transition name="slide-right">
-        <div
-          v-if="playerStore.isLyricsOpen"
-          class="fixed right-0 top-0 bottom-0 z-50 w-80 bg-background border-l border-foreground/[0.06] pt-4"
-        >
+      <!-- Lyrics Sidebar -->
+      <div class="h-full bg-background transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 pt-4"
+        :class="[
+          playerStore.isLyricsOpen ? 'w-80 border-l border-foreground/[0.06]' : 'w-0 border-l-0 border-transparent',
+        ]">
+        <div class="w-80 h-full">
           <LyricsDrawer />
         </div>
-      </Transition>
+      </div>
 
-      <!-- Track Info overlay -->
-      <Transition name="slide-right">
-        <div
-          v-if="playerStore.isTrackInfoOpen"
-          class="fixed right-0 top-0 bottom-0 z-50 w-80 bg-background border-l border-foreground/[0.06] pt-4"
-        >
+      <!-- Track Info Sidebar -->
+      <div class="h-full bg-background transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 pt-4"
+        :class="[
+          playerStore.isTrackInfoOpen ? 'w-80 border-l border-foreground/[0.06]' : 'w-0 border-l-0 border-transparent',
+        ]">
+        <div class="w-80 h-full">
           <TrackInfoDrawer />
         </div>
-      </Transition>
-    </template>
+      </div>
+    </div>
 
     <!-- Player (mode-dependent) -->
     <MiniPlayer v-if="playerStore.playerMode === 'mini'" />
@@ -214,23 +151,4 @@ onUnmounted(() => {
   transform: translateY(100%);
 }
 
-.slide-right-enter-active,
-.slide-right-leave-active {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.slide-right-enter-from,
-.slide-right-leave-to {
-  transform: translateX(100%);
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
 </style>

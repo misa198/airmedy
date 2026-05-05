@@ -10,3 +10,7 @@ const IsProduction = false
 func GetFrontendURL() string {
 	return "http://localhost:9245"
 }
+
+func GetAppDataFolder() string {
+	return ""
+}

@@ -15,6 +15,7 @@ import (
 	"airmedy/internal/infra/artwork"
 
 	"github.com/google/uuid"
+	"github.com/misa198/lexorank-go"
 )
 
 type PlaylistService struct {
@@ -96,15 +97,120 @@ func (s *PlaylistService) GetTracks(ctx context.Context, playlistID string) ([]*
 }
 
 func (s *PlaylistService) AddTrack(ctx context.Context, playlistID, trackID string) error {
-	count, err := s.repo.CountTracks(ctx, playlistID)
+	maxRankStr, err := s.repo.GetMaxPosition(ctx, playlistID)
 	if err != nil {
 		return err
 	}
-	return s.repo.AddTrack(ctx, playlistID, trackID, count)
+
+	var newRank lexorank.Rank
+	if maxRankStr == "" {
+		newRank = lexorank.Middle()
+	} else {
+		maxRank, err := lexorank.ParseRank(maxRankStr)
+		if err != nil {
+			return err
+		}
+		newRank = maxRank.GenNext()
+	}
+
+	s.logger.Debug("Adding track to playlist with LexoRank",
+		"playlist_id", playlistID,
+		"track_id", trackID,
+		"new_rank", newRank.String(),
+		"prev_max", maxRankStr)
+
+	return s.repo.AddTrack(ctx, playlistID, trackID, newRank.String())
 }
 
 func (s *PlaylistService) RemoveTrack(ctx context.Context, playlistID, trackID string) error {
 	return s.repo.RemoveTrack(ctx, playlistID, trackID)
+}
+
+func (s *PlaylistService) MoveTrack(ctx context.Context, playlistID, trackID, prevTrackID, nextTrackID string) error {
+	var prevRank, nextRank lexorank.Rank
+	var hasPrev, hasNext bool
+	var err error
+
+	if prevTrackID != "" {
+		prevRankStr, err := s.repo.GetTrackPosition(ctx, playlistID, prevTrackID)
+		if err != nil {
+			return err
+		}
+		prevRank, err = lexorank.ParseRank(prevRankStr)
+		if err != nil {
+			return err
+		}
+		hasPrev = true
+	}
+
+	if nextTrackID != "" {
+		nextRankStr, err := s.repo.GetTrackPosition(ctx, playlistID, nextTrackID)
+		if err != nil {
+			return err
+		}
+		nextRank, err = lexorank.ParseRank(nextRankStr)
+		if err != nil {
+			return err
+		}
+		hasNext = true
+	}
+
+	var newRank lexorank.Rank
+	if !hasPrev {
+		// Move to start
+		if !hasNext {
+			newRank = lexorank.Middle()
+		} else {
+			newRank = nextRank.GenPrev()
+		}
+	} else if !hasNext {
+		// Move to end
+		newRank = prevRank.GenNext()
+	} else {
+		// Move between
+		newRank, err = prevRank.Between(nextRank)
+		if err != nil {
+			return err
+		}
+	}
+
+	newRankStr := newRank.String()
+	s.logger.Debug("Moving track in playlist",
+		"playlist_id", playlistID,
+		"track_id", trackID,
+		"prev_track_id", prevTrackID,
+		"next_track_id", nextTrackID,
+		"new_rank", newRankStr)
+
+	if err := s.repo.UpdateTrackPosition(ctx, playlistID, trackID, newRankStr); err != nil {
+		return err
+	}
+
+	// Rebalance if rank string becomes too long
+	if len(newRankStr) > 10 {
+		s.logger.Info("Triggering LexoRank rebalance", "playlist_id", playlistID, "rank_length", len(newRankStr))
+		return s.rebalanceRanks(ctx, playlistID)
+	}
+
+	return nil
+}
+
+func (s *PlaylistService) rebalanceRanks(ctx context.Context, playlistID string) error {
+	tracks, err := s.repo.GetTracks(ctx, playlistID)
+	if err != nil {
+		return err
+	}
+
+	s.logger.Debug("Rebalancing playlist ranks", "playlist_id", playlistID, "track_count", len(tracks))
+
+	updates := make(map[string]string)
+	rank := lexorank.Middle()
+	for _, t := range tracks {
+		updates[t.ID] = rank.String()
+		rank = rank.GenNext()
+	}
+
+	return s.repo.UpdateTracksPositions(ctx, playlistID, updates)
 }
 
 func (s *PlaylistService) SetArtwork(ctx context.Context, id, imagePath string) (*string, error) {

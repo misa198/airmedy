@@ -14,7 +14,7 @@ The frontend is a Vue 3 SPA built with Vite 5, TailwindCSS v4, and Pinia. It use
 | Pinia                | 3.x     | State management                     |
 | Vue Router           | 4.x     | Hash-based routing                   |
 | vue-i18n             | -       | Internationalization (12 locales)    |
-| vue-virtual-scroller | -       | Virtual list for track tables        |
+| vue-virtual-sortable | 3.x     | Virtual list with DnD support        |
 | Radix Vue            | -       | Headless accessible components       |
 | Lucide Vue           | -       | Icon library (thin-stroke)           |
 
@@ -104,27 +104,39 @@ Cards use lower blur with hover scale:
 
 ## Track Table (`TrackTable.vue`)
 
-Virtual-scrolled list of tracks. Row height: 56px, header: 40px.
+Virtualized list of tracks supporting reordering, sorting, and horizontal scrolling with sticky columns.
+
+### Architecture
+
+- **Virtualization**: Uses `vue-virtual-sortable`. Root `VirtualList` handles both vertical virtualization and horizontal scrolling.
+- **Absolute Rows**: `TrackTableRow` uses `absolute inset-x-0` positioning within each virtual item container. This allows rows to span the full width of the scrollable area while maintaining high performance.
+- **Scroll Sync**: Header horizontal scroll is programmatically synced to the `VirtualList` scroll position via the `handleScroll` event.
+- **Sticky Columns**:
+  - `dnd`: Sticky left (`z-10`).
+  - `index`: Sticky left (`z-10`). If `dnd` is active, it offsets by 32px to stay visible next to the handle.
+  - `context_menu`: Sticky right (`z-10`).
+  - Sticky cells use opaque backgrounds to prevent overlapping content from being visible during scroll.
 
 **Columns (configurable):**
 
-| Key            | Label        | Default visible    | Sortable |
-| -------------- | ------------ | ------------------ | -------- |
-| `index`        | #            | Yes                | Yes      |
-| `title`        | Title        | Yes                | Yes      |
-| `duration`     | Duration     | Yes                | Yes      |
-| `artist`       | Artist       | Yes                | Yes      |
-| `album`        | Album        | No                 | Yes      |
-| `year`         | Year         | No                 | Yes      |
-| `genre`        | Genre        | No                 | No       |
-| `favorite`     | ♥            | Yes                | No       |
-| `play_count`   | Plays        | No                 | Yes      |
-| `disc_number`  | Disc         | No                 | Yes      |
-| `track_number` | Track        | No                 | Yes      |
-| `album_artist` | Album Artist | No                 | No       |
-| `context_menu` | ⋮            | Yes (sticky right) | No       |
+| Key            | Label        | Default visible    | Sortable | Sticky |
+| -------------- | ------------ | ------------------ | -------- | ------ |
+| `dnd`          | -            | (Conditional)      | No       | Left   |
+| `index`        | #            | Yes                | Yes      | Left   |
+| `title`        | Title        | Yes                | Yes      | No     |
+| `duration`     | Duration     | Yes                | Yes      | No     |
+| `artist`       | Artist       | Yes                | Yes      | No     |
+| `album`        | Album        | No                 | Yes      | No     |
+| `year`         | Year         | No                 | Yes      | No     |
+| `genre`        | Genre        | No                 | No       | No     |
+| `favorite`     | ♥            | Yes                | No       | No     |
+| `play_count`   | Plays        | No                 | Yes      | No     |
+| `disc_number`  | Disc         | No                 | Yes      | No     |
+| `track_number` | Track        | No                 | Yes      | No     |
+| `album_artist` | Album Artist | No                 | No       | No     |
+| `context_menu` | ⋮            | Yes                | No       | Right  |
 
-Column visibility, order, and widths persisted to `localStorage`:
+Row height: 56px, header height: 40px. Column visibility, order, and widths persisted to `localStorage`:
 
 - `airmedy:track-table-visible`
 - `airmedy:track-table-order`
@@ -196,7 +208,7 @@ track_info.*    — Metadata field names
 
 ## Performance Notes
 
-- `vue-virtual-scroller` renders only visible rows in track lists (56px each).
+- `vue-virtual-sortable` renders only visible rows in track lists (56px each).
 - Views are lazy-loaded (dynamic `import()` in router) — only the home view loads eagerly.
 - Search is debounced 300ms in `stores/search.ts`.
 - Artwork requests use variants (`_sm`, `_md`) sized appropriately for each context.

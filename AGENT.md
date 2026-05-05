@@ -237,3 +237,8 @@ interfaces/structs/methods, DB schema/migrations, Wails-exposed methods/events, 
 - `agents/INTERACTION.md` — Inquiry vs Directive protocol.
 - `agents/WAILS_V3.md` — Wails v3 alpha-specific patterns.
 - `catalog/` — Living feature documentation (section 8).
+
+## Command reference
+
+- `pnpm` for frontend task
+- `wails3` for backend task

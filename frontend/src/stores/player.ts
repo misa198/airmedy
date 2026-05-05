@@ -223,6 +223,12 @@ export const usePlayerStore = defineStore('player', () => {
     // The backend emits player:status and player:queue-updated which will update our local state
   }
 
+  async function reorderQueue(tracks: TrackDTO[]) {
+    queue.value = tracks
+    const ids = tracks.map(t => t.id)
+    await PlayerService.ReorderQueueIDs(ids)
+  }
+
 
   function toggleQueue() {
     if (isQueueOpen.value) {
@@ -314,6 +320,7 @@ export const usePlayerStore = defineStore('player', () => {
     setRepeatMode,
     playTracks,
     shuffleTracks,
+    reorderQueue,
     toggleQueue,
     openQueue,
     toggleLyrics,
