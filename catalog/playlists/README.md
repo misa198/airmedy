@@ -37,13 +37,22 @@ Delete(ctx, id string) error           // also removes from search index
 GetAll(ctx) ([]*Playlist, error)
 GetByID(ctx, id string) (*Playlist, error)
 GetTracks(ctx, playlistID string) ([]*TrackDTO, error)
-AddTrack(ctx, playlistID, trackID string) error
+AddTrack(ctx, playlistID, trackID string) error // Calculates LexoRank position
 RemoveTrack(ctx, playlistID, trackID string) error
+MoveTrack(ctx, playlistID, trackID, prevTrackID, nextTrackID string) error // O(1) LexoRank update
 SetArtwork(ctx, playlistID, artworkPath string) error  // copies file to artwork cache
 RemoveArtwork(ctx, playlistID string) error
 GetPlaylistColors(ctx, id string) (*ThemeColors, error)
 ExportM3U8(ctx, playlistID, destPath string) error
 ```
+
+## Track Ordering (LexoRank)
+
+Playlist track order is maintained using the LexoRank algorithm (via `github.com/misa198/lexorank-go`). This provides:
+
+- **O(1) Reordering:** Moving a track only requires calculating a new rank between its new neighbors (`Between(prev, next)`), without updating other rows.
+- **Automatic Rebalancing:** If a rank string's length exceeds 10 characters (indicating a deep sequence of insertions), the service triggers a synchronous rebalance of all tracks in that playlist to keep rank strings short.
+- **Stable Sorting:** SQLite queries use `ORDER BY position, track_id` to ensure deterministic ordering even in the rare event of a rank collision.
 
 ## M3U8 Parser (`m3u8.go`)
 
@@ -74,15 +83,24 @@ GetPlaylistColors(id: string): ThemeColors
 CreatePlaylist(name: string, description: string): Playlist
 UpdatePlaylist(id: string, name: string, description: string): void
 DeletePlaylist(id: string): void
-AddTrackToPlaylist(playlistID: string, trackID: string): void
-RemoveTrackFromPlaylist(playlistID: string, trackID: string): void
+AddTrackToPlaylist(playlistID: string, trackID: string, senderID: string): void
+RemoveTrackFromPlaylist(playlistID: string, trackID: string, senderID: string): void
 SelectAndSetPlaylistArtwork(id: string): string   // opens file picker, returns key
 RemovePlaylistArtwork(id: string): void
-MovePlaylistTrack(playlistID: string, trackID: string, position: number): void
+MoveTrack(playlistID: string, trackID: string, prevTrackID: string, nextTrackID: string, senderID: string): void
 ExportPlaylistToM3U8(playlistID: string): void    // opens save dialog, writes UTF-8 M3U8
 SelectAndParseM3U8(): M3U8Preview | null          // opens file picker, returns parsed preview
 ImportM3U8Playlist(filePath: string, name: string): M3U8ImportResult
 ```
+
+### Event Echo Guarding (senderID)
+
+To prevent race conditions where a frontend optimistic update is overwritten by a stale "tracks-changed" event from the backend, the service uses a `senderID` (correlation ID) pattern:
+
+1. Frontend generates a `sessionId` on mount.
+2. Frontend passes `sessionId` to `MoveTrack`, `AddTrackToPlaylist`, etc.
+3. Backend includes this `senderID` in the `playlist:tracks-changed` event payload.
+4. Frontend ignores any event where `payload.sender_id === localSessionId`.
 
 ### Return Types (import/export)
 
@@ -115,12 +133,10 @@ CREATE TABLE playlists (
 CREATE TABLE playlist_tracks (
     playlist_id TEXT NOT NULL REFERENCES playlists(id) ON DELETE CASCADE,
     track_id    TEXT NOT NULL REFERENCES tracks(id)    ON DELETE CASCADE,
-    position    INTEGER NOT NULL,
+    position    TEXT NOT NULL, -- LexoRank string
     PRIMARY KEY (playlist_id, track_id)
 );
 ```
-
-Track order is maintained by the `position` column. `RemoveTrack` uses a transaction that deletes the row and shifts positions of subsequent tracks. `MovePlaylistTrack` updates positions in a transaction.
 
 ## Artwork
 

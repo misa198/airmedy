@@ -26,7 +26,7 @@ export function useGroupContextMenu() {
               action: async () => {
                 // Add all tracks to playlist
                 for (const track of tracks) {
-                  await PlaylistService.AddTrackToPlaylist(p.id, track.id)
+                  await PlaylistService.AddTrackToPlaylist(p.id, track.id, '')
                 }
               },
             }))

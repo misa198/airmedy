@@ -164,9 +164,12 @@ watch(() => favoritesStore.version, () => {
   if (route.params.id === 'favorites') load(true)
 })
 
+const sessionId = Math.random().toString(36).substring(2, 15)
+
 const handlePlaylistChange = (ev: Events.WailsEvent) => {
-  const changedId = ev.data as string
-  if (changedId === route.params.id) {
+  const data = ev.data as { playlist_id: string, sender_id: string }
+  if (data.sender_id === sessionId) return
+  if (data.playlist_id === route.params.id) {
     load(true)
   }
 }
@@ -236,16 +239,34 @@ function shufflePlaylist() {
 async function handleReorder(newTracks: TrackDTO[]) {
   if (!playlist.value || playlist.value.id === 'favorites') return
   
+  const oldTracks = [...tracks.value]
+  if (oldTracks.length !== newTracks.length) return
+
+  // A more robust way to find the single moved item in a drag-and-drop:
+  // The moved item is the one that, when removed from both lists, leaves identical lists.
+  const movedItem = newTracks.find(t => {
+    const oldWithout = oldTracks.filter(ot => ot.id !== t.id)
+    const newWithout = newTracks.filter(nt => nt.id !== t.id)
+    return oldWithout.every((ot, idx) => ot.id === newWithout[idx].id)
+  })
+
+  if (!movedItem) return
+
+  const movedTrackId = movedItem.id
+  const newIdx = newTracks.findIndex(t => t.id === movedTrackId)
+  const prevTrackId = newIdx > 0 ? newTracks[newIdx - 1].id : ''
+  const nextTrackId = newIdx < newTracks.length - 1 ? newTracks[newIdx + 1].id : ''
+
+  // Optimistic update
   tracks.value = newTracks
-  const trackIDs = newTracks.map(t => t.id)
-  
+
   try {
-    // @ts-ignore - UpdateTracksOrder might not be in the generated bindings yet
-    if (PlaylistService.UpdateTracksOrder) {
+    // @ts-ignore
+    if (PlaylistService.MoveTrack) {
       // @ts-ignore
-      await PlaylistService.UpdateTracksOrder(playlist.value.id, trackIDs)
+      await PlaylistService.MoveTrack(playlist.value.id, movedTrackId, prevTrackId, nextTrackId, sessionId)
     } else {
-      console.warn('PlaylistService.UpdateTracksOrder not found in bindings. Please regenerate bindings.')
+      console.warn('PlaylistService.MoveTrack not found in bindings. Please regenerate bindings.')
     }
   } catch (e) {
     console.error('Failed to update playlist track order', e)

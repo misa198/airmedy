@@ -78,7 +78,7 @@ export function usePlaylistContextMenu() {
                 action: async () => {
                   const tracks = await PlaylistService.GetPlaylistTracks(playlist.id)
                   for (const track of tracks) {
-                    if (track) await PlaylistService.AddTrackToPlaylist(p.id, track.id)
+                    if (track) await PlaylistService.AddTrackToPlaylist(p.id, track.id, '')
                   }
                 },
               })),
