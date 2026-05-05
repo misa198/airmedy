@@ -164,7 +164,7 @@ jobs:
         run: bash scripts/build-ffmpeg-darwin.sh
 
       - name: Install Wails v3
-        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-alpha.82
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-alpha.84
 
       - name: Install Linux ARM64 Cross-compile Dependencies
         if: runner.os == 'Linux' && github.event.inputs.os == 'Linux-ARM64'
