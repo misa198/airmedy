@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -30,11 +31,32 @@ func (m *mockTrackRepo) GetByPath(ctx context.Context, path string) (*domain.Tra
 }
 
 func (m *mockTrackRepo) GetByPathPrefix(ctx context.Context, prefix string) ([]*domain.TrackDTO, error) {
-	return nil, nil
+	var results []*domain.TrackDTO
+	for path, track := range m.tracks {
+		if strings.HasPrefix(path, prefix) {
+			results = append(results, &domain.TrackDTO{Track: *track})
+		}
+	}
+	return results, nil
 }
 
 func (m *mockTrackRepo) DeleteByPathPrefix(ctx context.Context, prefix string) error {
 	m.deletedPrefix = prefix
+	for path := range m.tracks {
+		if strings.HasPrefix(path, prefix) {
+			delete(m.tracks, path)
+		}
+	}
+	return nil
+}
+
+func (m *mockTrackRepo) Delete(ctx context.Context, id string) error {
+	for path, track := range m.tracks {
+		if track.ID == id {
+			delete(m.tracks, path)
+			return nil
+		}
+	}
 	return nil
 }
 

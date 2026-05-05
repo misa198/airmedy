@@ -187,11 +187,39 @@ func (s *LibraryService) handleEvent(event fsnotify.Event) {
 		// We need the ID. Since we use deterministic IDs based on path:
 		id := s.generateID(event.Name)
 		go func() {
-			if err := s.trackRepo.Delete(context.Background(), id); err != nil {
+			ctx := context.Background()
+			s.logger.Info("File/Folder removed, cleaning up", "path", event.Name)
+
+			// 1. Try to delete the track by ID (if it was a single file)
+			if err := s.trackRepo.Delete(ctx, id); err != nil {
 				s.logger.Warn("Failed to delete track from DB on removal", "id", id, "error", err)
 			}
-			if err := s.searchService.DeleteFromIndex(context.Background(), id); err != nil {
+			if err := s.searchService.DeleteFromIndex(ctx, id); err != nil {
 				s.logger.Warn("Failed to delete track from Index on removal", "id", id, "error", err)
+			}
+
+			// 2. If it was a directory, delete all tracks inside it
+			prefix := event.Name
+			if !strings.HasSuffix(prefix, string(os.PathSeparator)) {
+				prefix += string(os.PathSeparator)
+			}
+
+			tracks, err := s.trackRepo.GetByPathPrefix(ctx, prefix)
+			if err == nil && len(tracks) > 0 {
+				s.logger.Info("Directory removed, deleting tracks inside", "count", len(tracks), "prefix", prefix)
+				for _, t := range tracks {
+					if err := s.trackRepo.Delete(ctx, t.ID); err != nil {
+						s.logger.Warn("Failed to delete track from DB", "id", t.ID, "error", err)
+					}
+					if err := s.searchService.DeleteFromIndex(ctx, t.ID); err != nil {
+						s.logger.Warn("Failed to delete track from Search", "id", t.ID, "error", err)
+					}
+				}
+			}
+
+			// Notify frontend
+			if app := application.Get(); app != nil && app.Event != nil {
+				app.Event.Emit("library:updated", nil)
 			}
 		}()
 	}
@@ -361,6 +389,7 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 
 	// 2. Import files
 	var current int
+	foundPaths := make(map[string]bool)
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			s.logger.Warn("Error walking path", "path", path, "error", err)
@@ -381,6 +410,7 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 			return nil
 		}
 
+		foundPaths[path] = true
 		current++
 		if app := application.Get(); app != nil && app.Event != nil {
 			app.Event.Emit("library:sync-progress", domain.SyncProgress{
@@ -409,6 +439,23 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 
 	if err != nil {
 		return fmt.Errorf("failed to walk directory: %w", err)
+	}
+
+	// 3. Cleanup missing files
+	s.logger.Info("Cleaning up missing files", "root", root)
+	existingTracks, err := s.trackRepo.GetByPathPrefix(ctx, root)
+	if err == nil {
+		for _, t := range existingTracks {
+			if !foundPaths[t.Path] {
+				s.logger.Info("Removing missing track", "path", t.Path)
+				if err := s.trackRepo.Delete(ctx, t.ID); err != nil {
+					s.logger.Warn("Failed to delete missing track from DB", "path", t.Path, "error", err)
+				}
+				if err := s.searchService.DeleteFromIndex(ctx, t.ID); err != nil {
+					s.logger.Warn("Failed to delete missing track from Search", "path", t.Path, "error", err)
+				}
+			}
+		}
 	}
 
 	s.logger.Info("Finished folder sync", "root", root)
