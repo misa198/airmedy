@@ -133,7 +133,7 @@ func (r *playlistRepository) GetTrackPosition(ctx context.Context, playlistID, t
 
 func (r *playlistRepository) GetMaxPosition(ctx context.Context, playlistID string) (string, error) {
 	var position string
-	err := r.db.GetContext(ctx, &position, "SELECT MAX(position) FROM playlist_tracks WHERE playlist_id = ?", playlistID)
+	err := r.db.GetContext(ctx, &position, "SELECT COALESCE(MAX(position), '') FROM playlist_tracks WHERE playlist_id = ?", playlistID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return "", nil
