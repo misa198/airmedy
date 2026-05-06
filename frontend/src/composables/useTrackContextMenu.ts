@@ -179,5 +179,81 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
     return items
   }
 
-  return { buildMenuItems }
+  function buildMultiSelectMenuItems(tracks: TrackDTO[], options: TrackContextMenuOptions = {}): ContextMenuItem[] {
+    const items: ContextMenuItem[] = []
+
+    if (!options.excludePlayNext) {
+      items.push({
+        label: t('context_menu.play_next'),
+        icon: ListEnd,
+        action: () => { PlayerService.PlayNextTracks(tracks) },
+      })
+    }
+
+    items.push({
+      label: t('context_menu.refresh_lyrics'),
+      icon: RefreshCw,
+      action: async () => {
+        for (const track of tracks) {
+          await LyricsService.FetchLyrics(track.id, track)
+        }
+        // If current track is in the selection, update its lyrics in store
+        if (playerStore.currentTrack && tracks.some(t => t.id === playerStore.currentTrack?.id)) {
+          const lyric = await LyricsService.GetLyrics(playerStore.currentTrack.id)
+          playerStore.lyrics = lyric ?? null
+        }
+      },
+    })
+
+    items.push({ separator: true })
+
+    items.push({
+      label: t('context_menu.add_to_favorites'),
+      icon: Heart,
+      action: async () => {
+        for (const track of tracks) {
+          if (!favoritesStore.isFavorite(track)) {
+            await favoritesStore.toggle(track.id)
+          }
+        }
+      },
+    })
+
+    if (!options.playlistId) {
+      const playlistChildren: ContextMenuItem[] = playlistsStore.playlists.length
+        ? playlistsStore.playlists.map(p => ({
+          label: p.name,
+          action: () => {
+            tracks.forEach(track => {
+              PlaylistService.AddTrackToPlaylist(p.id, track.id, '')
+            })
+          },
+        }))
+        : [{ label: t('context_menu.no_playlists'), disabled: true }]
+
+      items.push({
+        label: t('context_menu.add_to_playlist'),
+        icon: ListPlus,
+        children: playlistChildren,
+      })
+    }
+
+    if (options.playlistId && options.playlistId !== 'favorites') {
+      items.push({ separator: true })
+      items.push({
+        label: t('context_menu.remove_from_playlist'),
+        icon: Trash2,
+        danger: true,
+        action: () => {
+          tracks.forEach(track => {
+            PlaylistService.RemoveTrackFromPlaylist(options.playlistId!, track.id, '')
+          })
+        },
+      })
+    }
+
+    return items
+  }
+
+  return { buildMenuItems, buildMultiSelectMenuItems }
 }

@@ -16,6 +16,7 @@ const props = defineProps<{
   showArtwork?: boolean
   rowBg: (index: number, opaque?: boolean) => string
   variant?: 'default' | 'glass'
+  isSelected?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -23,6 +24,7 @@ const emit = defineEmits<{
   'contextmenu': [e: MouseEvent, track: TrackDTO]
   'navigate-album': [id: string]
   'navigate-artist': [id: string]
+  'click': [e: MouseEvent]
 }>()
 
 const playerStore = usePlayerStore()
@@ -33,11 +35,13 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
 
 <template>
   <div
-    class="absolute inset-x-0 grid items-center text-sm hover:bg-foreground/[0.04] group transition-colors h-[56px]"
+    class="absolute inset-x-0 grid items-center text-sm hover:bg-foreground/[0.04] group transition-colors h-[56px] select-none"
+    :class="{ 'bg-primary/10 hover:bg-primary/[0.15]': isSelected }"
     :style="{
       gridTemplateColumns,
-      background: rowBg(currentIndex),
+      background: isSelected ? undefined : rowBg(currentIndex),
     }"
+    @click="emit('click', $event)"
     @contextmenu="emit('contextmenu', $event, track)"
     @dblclick="emit('play-track', track, index)"
   >
@@ -46,7 +50,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
       <div
         v-if="col.key === 'dnd'"
         class="sticky left-0 z-20 flex items-center justify-center h-full dnd-handle cursor-grab active:cursor-grabbing text-foreground opacity-20 group-hover:opacity-60 hover:text-primary transition-all px-2"
-        :style="{ background: rowBg(currentIndex, true) }"
+        :style="{ background: isSelected ? 'transparent' : rowBg(currentIndex, true) }"
       >
         <GripVertical class="w-4 h-4 pointer-events-none" />
       </div>
@@ -56,7 +60,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
         v-else-if="col.key === 'index'"
         class="sticky z-10 flex items-center justify-center h-full pointer-events-none"
         :class="[orderedVisibleColumns[0].key === 'dnd' ? 'left-[32px]' : 'left-0']"
-        :style="{ background: rowBg(currentIndex, true) }"
+        :style="{ background: isSelected ? 'transparent' : rowBg(currentIndex, true) }"
       >
         <template v-if="isCurrentTrack(track.id)">
           <div class="flex items-end gap-[2px] h-3 w-3">
@@ -232,7 +236,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
       <div
         v-else-if="col.key === 'context_menu'"
         class="sticky right-0 z-10 flex items-center justify-end opacity-0 group-hover:opacity-100 pr-1"
-        :style="{ background: rowBg(currentIndex, true) }"
+        :style="{ background: isSelected ? 'transparent' : rowBg(currentIndex, true) }"
       >
         <button
           class="p-2 hover:bg-foreground/8 rounded-full text-foreground opacity-50 hover:text-foreground opacity-90 transition-colors"

@@ -10,7 +10,7 @@ const contextMenu = useContextMenu()
 const editingTrack = ref<TrackDTO | null>(null)
 const metadataOpen = ref(false)
 
-const { buildMenuItems } = useTrackContextMenu((track) => {
+const { buildMenuItems, buildMultiSelectMenuItems } = useTrackContextMenu((track) => {
   editingTrack.value = track
   metadataOpen.value = true
 })
@@ -19,11 +19,15 @@ function open(e: MouseEvent, track: TrackDTO, options?: TrackContextMenuOptions)
   contextMenu.open(e, buildMenuItems(track, options))
 }
 
+function openMulti(e: MouseEvent, tracks: TrackDTO[], options?: TrackContextMenuOptions) {
+  contextMenu.open(e, buildMultiSelectMenuItems(tracks, options))
+}
+
 function close() {
   contextMenu.close()
 }
 
-defineExpose({ open, close })
+defineExpose({ open, openMulti, close })
 </script>
 
 <template>

@@ -134,6 +134,67 @@ let ro: ResizeObserver | null = null
 
 const effectiveHeaderHeight = computed(() => props.hideHeader ? 0 : HEADER_HEIGHT)
 
+// ── Selection ──────────────────────────────────────────────────────────────
+const selectedIds = ref(new Set<string>())
+const lastSelectedIndex = ref<number | null>(null)
+const selectionAnchorIndex = ref<number | null>(null)
+
+function updateRangeSelection(startIndex: number, endIndex: number, additive = false) {
+  const start = Math.min(startIndex, endIndex)
+  const end = Math.max(startIndex, endIndex)
+  const newSelected = new Set(additive ? selectedIds.value : [])
+  for (let i = start; i <= end; i++) {
+    newSelected.add(displayTracks.value[i].id)
+  }
+  selectedIds.value = newSelected
+}
+
+function handleTrackClick(event: MouseEvent, track: TrackDTO, index: number) {
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
+  const cmdOrCtrl = isMac ? event.metaKey : event.ctrlKey
+  const shift = event.shiftKey
+
+  if (shift && selectionAnchorIndex.value !== null) {
+    updateRangeSelection(selectionAnchorIndex.value, index, cmdOrCtrl)
+    lastSelectedIndex.value = index
+  } else if (cmdOrCtrl) {
+    if (selectedIds.value.has(track.id)) {
+      selectedIds.value.delete(track.id)
+    } else {
+      selectedIds.value.add(track.id)
+    }
+    lastSelectedIndex.value = index
+    selectionAnchorIndex.value = index
+  } else {
+    selectedIds.value = new Set([track.id])
+    lastSelectedIndex.value = index
+    selectionAnchorIndex.value = index
+  }
+}
+
+function handleKeyDown(e: KeyboardEvent) {
+  if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+  if (!e.shiftKey || lastSelectedIndex.value === null || selectionAnchorIndex.value === null) return
+
+  if (e.key === 'ArrowUp') {
+    e.preventDefault()
+    const nextIndex = Math.max(0, lastSelectedIndex.value - 1)
+    if (nextIndex !== lastSelectedIndex.value) {
+      lastSelectedIndex.value = nextIndex
+      updateRangeSelection(selectionAnchorIndex.value, nextIndex)
+      scrollerRef.value?.scrollToItem(nextIndex)
+    }
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault()
+    const nextIndex = Math.min(displayTracks.value.length - 1, lastSelectedIndex.value + 1)
+    if (nextIndex !== lastSelectedIndex.value) {
+      lastSelectedIndex.value = nextIndex
+      updateRangeSelection(selectionAnchorIndex.value, nextIndex)
+      scrollerRef.value?.scrollToItem(nextIndex)
+    }
+  }
+}
+
 function handleScroll(e: Event) {
   const target = e.target as HTMLElement
   if (headerContainerRef.value) {
@@ -159,6 +220,7 @@ watch(
 )
 
 onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown)
   if (scrollerRef.value?.$el) {
     ro = new ResizeObserver((entries) => {
       containerHeight.value = entries[0].contentRect.height
@@ -171,6 +233,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeyDown)
   ro?.disconnect()
 })
 
@@ -178,7 +241,17 @@ onBeforeUnmount(() => {
 const trackContextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
 
 function openContextMenu(e: MouseEvent, item: TrackDTO) {
-  trackContextMenu.value?.open(e, item, props.contextMenuOptions)
+  if (selectedIds.value.size > 1 && selectedIds.value.has(item.id)) {
+    const selectedTracks = displayTracks.value.filter(t => selectedIds.value.has(t.id))
+    trackContextMenu.value?.openMulti(e, selectedTracks, props.contextMenuOptions)
+  } else {
+    // If not in selection or only 1 selected, select this one and show normal menu
+    selectedIds.value = new Set([item.id])
+    const index = displayTracks.value.findIndex(t => t.id === item.id)
+    lastSelectedIndex.value = index !== -1 ? index : null
+    selectionAnchorIndex.value = lastSelectedIndex.value
+    trackContextMenu.value?.open(e, item, props.contextMenuOptions)
+  }
 }
 
 // ── Navigation ─────────────────────────────────────────────────────────────
@@ -259,7 +332,8 @@ function handlePlayTrack(track: TrackDTO, index: number) {
             <div :style="{ minWidth: totalMinWidth, height: `${ROW_HEIGHT}px`, position: 'relative' }">
               <TrackTableRow :track="record" :index="index" :current-index="index"
                 :ordered-visible-columns="orderedVisibleColumns" :grid-template-columns="gridTemplateColumns"
-                :show-artwork="showArtwork" :row-bg="rowBg" :variant="variant" @play-track="handlePlayTrack"
+                :show-artwork="showArtwork" :row-bg="rowBg" :variant="variant" :is-selected="selectedIds.has(record.id)"
+                @click="handleTrackClick($event, record, index)" @play-track="handlePlayTrack"
                 @contextmenu="openContextMenu" @navigate-album="navigateToAlbum" @navigate-artist="navigateToArtist" />
             </div>
           </template>
