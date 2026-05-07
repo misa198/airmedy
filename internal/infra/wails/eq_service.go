@@ -46,3 +46,7 @@ func (s *EQService) DeleteProfile(id string) error {
 func (s *EQService) SetEnabled(enabled bool) error {
 	return s.service.SetEnabled(context.Background(), enabled)
 }
+
+func (s *EQService) IsEnabled() (bool, error) {
+	return s.service.IsEnabled(context.Background())
+}

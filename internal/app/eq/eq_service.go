@@ -29,17 +29,18 @@ var defaultPresets = []struct {
 }
 
 type EQService struct {
-	repo   domain.EQRepository
-	player domain.EQController // nil if the audio player doesn't support EQ
-	logger *slog.Logger
+	repo     domain.EQRepository
+	settings domain.SettingsRepository
+	player   domain.EQController // nil if the audio player doesn't support EQ
+	logger   *slog.Logger
 }
 
-func NewEQService(repo domain.EQRepository, player domain.AudioPlayer, logger *slog.Logger) *EQService {
+func NewEQService(repo domain.EQRepository, settings domain.SettingsRepository, player domain.AudioPlayer, logger *slog.Logger) *EQService {
 	var ctrl domain.EQController
 	if c, ok := player.(domain.EQController); ok {
 		ctrl = c
 	}
-	s := &EQService{repo: repo, player: ctrl, logger: logger}
+	s := &EQService{repo: repo, settings: settings, player: ctrl, logger: logger}
 	return s
 }
 
@@ -52,11 +53,17 @@ func (s *EQService) ApplyActiveProfile(ctx context.Context) error {
 	if p == nil {
 		return nil
 	}
+
+	enabled := true
+	if settings, err := s.settings.Load(ctx); err == nil {
+		enabled = settings.EQEnabled
+	}
+
 	if s.player != nil {
 		for _, band := range p.Bands {
 			_ = s.player.SetEQBand(band.Index, band.Frequency, band.Gain, band.Bandwidth)
 		}
-		_ = s.player.SetEQEnabled(p.IsActive)
+		_ = s.player.SetEQEnabled(enabled)
 	}
 	return nil
 }
@@ -107,6 +114,13 @@ func (s *EQService) ApplyProfile(ctx context.Context, id string) error {
 	if err := s.repo.SetActive(ctx, id); err != nil {
 		return err
 	}
+
+	// Also ensure EQ is enabled when a profile is applied
+	if settings, err := s.settings.Load(ctx); err == nil {
+		settings.EQEnabled = true
+		_ = s.settings.Save(ctx, settings)
+	}
+
 	if s.player != nil {
 		for _, band := range p.Bands {
 			if err := s.player.SetEQBand(band.Index, band.Frequency, band.Gain, band.Bandwidth); err != nil {
@@ -168,7 +182,24 @@ func (s *EQService) DeleteProfile(ctx context.Context, id string) error {
 	return s.repo.Delete(ctx, id)
 }
 
+func (s *EQService) IsEnabled(ctx context.Context) (bool, error) {
+	settings, err := s.settings.Load(ctx)
+	if err != nil {
+		return true, nil
+	}
+	return settings.EQEnabled, nil
+}
+
 func (s *EQService) SetEnabled(ctx context.Context, enabled bool) error {
+	settings, err := s.settings.Load(ctx)
+	if err != nil {
+		return err
+	}
+	settings.EQEnabled = enabled
+	if err := s.settings.Save(ctx, settings); err != nil {
+		return err
+	}
+
 	if s.player != nil {
 		return s.player.SetEQEnabled(enabled)
 	}

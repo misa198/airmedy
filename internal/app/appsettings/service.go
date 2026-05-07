@@ -36,6 +36,7 @@ func (s *SettingsService) GetSettings(ctx context.Context) (*domain.AppSettings,
 			Theme:           "system",
 			StartAtLogin:    false,
 			AutoCheckUpdate: true,
+			EQEnabled:       true,
 		}, nil
 	}
 	return settings, nil

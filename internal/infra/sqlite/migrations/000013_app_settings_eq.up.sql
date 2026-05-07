@@ -1,0 +1,1 @@
+ALTER TABLE app_settings ADD COLUMN eq_enabled INTEGER NOT NULL DEFAULT 1;

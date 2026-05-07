@@ -84,4 +84,30 @@ func TestSqliteRepositories(t *testing.T) {
 	if savedAlbumDTO.Copyright != "Album Copyright" {
 		t.Errorf("Expected album copyright 'Album Copyright', got '%s'", savedAlbumDTO.Copyright)
 	}
+
+	// Test SettingsRepository
+	settingsRepo := NewSettingsRepository(db)
+	settings := &domain.AppSettings{
+		Language:  "fr",
+		Theme:     "dark",
+		EQEnabled: false,
+	}
+	err = settingsRepo.Save(ctx, settings)
+	if err != nil {
+		t.Fatalf("Failed to save settings: %v", err)
+	}
+
+	savedSettings, err := settingsRepo.Load(ctx)
+	if err != nil {
+		t.Fatalf("Failed to load settings: %v", err)
+	}
+	if savedSettings.Language != "fr" {
+		t.Errorf("Expected language 'fr', got '%s'", savedSettings.Language)
+	}
+	if savedSettings.Theme != "dark" {
+		t.Errorf("Expected theme 'dark', got '%s'", savedSettings.Theme)
+	}
+	if savedSettings.EQEnabled != false {
+		t.Errorf("Expected EQEnabled false, got %v", savedSettings.EQEnabled)
+	}
 }

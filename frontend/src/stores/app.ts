@@ -10,6 +10,7 @@ export const useAppStore = defineStore('app', () => {
   const startAtLogin = ref(false)
   const autoCheckUpdate = ref(true)
   const lastfmUsername = ref('')
+  const eqEnabled = ref(true)
   
   const updateInfo = ref<UpdateInfo | null>(null)
   const isCheckingUpdate = ref(false)
@@ -35,6 +36,7 @@ export const useAppStore = defineStore('app', () => {
         startAtLogin.value = !!settings.start_at_login
         autoCheckUpdate.value = !!settings.auto_check_update
         lastfmUsername.value = settings.lastfm_username || ''
+        eqEnabled.value = settings.eq_enabled !== false
         applyTheme(theme.value)
       }
       
@@ -83,7 +85,8 @@ export const useAppStore = defineStore('app', () => {
         language: language.value,
         start_at_login: startAtLogin.value,
         auto_check_update: autoCheckUpdate.value,
-        lastfm_username: lastfmUsername.value
+        lastfm_username: lastfmUsername.value,
+        eq_enabled: eqEnabled.value
       })
     } catch (err) {
       console.error('Failed to save theme setting:', err)
@@ -98,7 +101,8 @@ export const useAppStore = defineStore('app', () => {
         language: newLanguage,
         start_at_login: startAtLogin.value,
         auto_check_update: autoCheckUpdate.value,
-        lastfm_username: lastfmUsername.value
+        lastfm_username: lastfmUsername.value,
+        eq_enabled: eqEnabled.value
       })
     } catch (err) {
       console.error('Failed to save language setting:', err)
@@ -113,7 +117,8 @@ export const useAppStore = defineStore('app', () => {
         language: language.value,
         start_at_login: enabled,
         auto_check_update: autoCheckUpdate.value,
-        lastfm_username: lastfmUsername.value
+        lastfm_username: lastfmUsername.value,
+        eq_enabled: eqEnabled.value
       })
     } catch (err) {
       console.error('Failed to save startup setting:', err)
@@ -128,10 +133,27 @@ export const useAppStore = defineStore('app', () => {
         language: language.value,
         start_at_login: startAtLogin.value,
         auto_check_update: enabled,
-        lastfm_username: lastfmUsername.value
+        lastfm_username: lastfmUsername.value,
+        eq_enabled: eqEnabled.value
       })
     } catch (err) {
       console.error('Failed to save auto update setting:', err)
+    }
+  }
+
+  const updateEQEnabled = async (enabled: boolean) => {
+    eqEnabled.value = enabled
+    try {
+      await SettingsService.SaveSettings({
+        theme: theme.value,
+        language: language.value,
+        start_at_login: startAtLogin.value,
+        auto_check_update: autoCheckUpdate.value,
+        lastfm_username: lastfmUsername.value,
+        eq_enabled: enabled
+      })
+    } catch (err) {
+      console.error('Failed to save EQ enabled setting:', err)
     }
   }
 
@@ -152,6 +174,7 @@ export const useAppStore = defineStore('app', () => {
     startAtLogin,
     autoCheckUpdate,
     lastfmUsername,
+    eqEnabled,
     updateInfo,
     isCheckingUpdate,
     isUpdateDialogOpen,
@@ -164,6 +187,7 @@ export const useAppStore = defineStore('app', () => {
     updateLanguage,
     updateStartAtLogin,
     updateAutoCheckUpdate,
+    updateEQEnabled,
     updateLastFmUsername
   }
 })

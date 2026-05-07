@@ -22,6 +22,7 @@ type AppSettings struct {
     Language       string  // BCP 47 language tag, e.g., "en", "zh", "ja"
     Theme          string  // "system", "light", "dark"
     StartAtLogin   bool
+    EqEnabled      bool
     LastFmUsername string  // Connected Last.fm account name
 }
 ```
@@ -57,10 +58,12 @@ interface AppStore {
   theme: "system" | "light" | "dark";
   language: string;
   startAtLogin: boolean;
+  eqEnabled: boolean;
   loadSettings(): Promise<void>;
   updateTheme(theme: string): Promise<void>;
   updateLanguage(lang: string): Promise<void>;
   updateStartAtLogin(enabled: boolean): Promise<void>;
+  updateEqEnabled(enabled: boolean): Promise<void>;
   applyTheme(theme: string): void;
 }
 ```
@@ -119,3 +122,5 @@ Settings evolved across multiple migrations:
 | 000005    | Create `app_settings` table with `language`, `id = 1` constraint |
 | 000006    | Add `theme TEXT DEFAULT 'system'` column                         |
 | 000010    | Add `lastfm_username` column for integration UI                  |
+| 000011    | Add `auto_check_update`, `start_at_login`                        |
+| 000013    | Add `eq_enabled` column for persistent EQ toggle                 |

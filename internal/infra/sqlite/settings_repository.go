@@ -18,20 +18,22 @@ func NewSettingsRepository(db *DB) domain.SettingsRepository {
 
 func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSettings) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO app_settings (id, language, theme, lastfm_username, auto_check_update, start_at_login, updated_at)
-		 VALUES (1, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+		`INSERT INTO app_settings (id, language, theme, lastfm_username, auto_check_update, start_at_login, eq_enabled, updated_at)
+		 VALUES (1, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 		 ON CONFLICT(id) DO UPDATE SET
 		   language = excluded.language,
 		   theme = excluded.theme,
 		   lastfm_username = excluded.lastfm_username,
 		   auto_check_update = excluded.auto_check_update,
 		   start_at_login = excluded.start_at_login,
+		   eq_enabled = excluded.eq_enabled,
 		   updated_at = excluded.updated_at`,
 		settings.Language,
 		settings.Theme,
 		settings.LastFmUsername,
 		settings.AutoCheckUpdate,
 		settings.StartAtLogin,
+		settings.EQEnabled,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to save app settings: %w", err)
@@ -46,9 +48,10 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		LastFmUsername  sql.NullString `db:"lastfm_username"`
 		AutoCheckUpdate bool           `db:"auto_check_update"`
 		StartAtLogin    bool           `db:"start_at_login"`
+		EQEnabled       bool           `db:"eq_enabled"`
 	}
 	err := r.db.GetContext(ctx, &row,
-		`SELECT language, theme, lastfm_username, auto_check_update, start_at_login FROM app_settings WHERE id = 1`,
+		`SELECT language, theme, lastfm_username, auto_check_update, start_at_login, eq_enabled FROM app_settings WHERE id = 1`,
 	)
 	if err == sql.ErrNoRows {
 		return &domain.AppSettings{
@@ -56,6 +59,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 			Theme:           "system",
 			AutoCheckUpdate: true,
 			StartAtLogin:    false,
+			EQEnabled:       true,
 		}, nil
 	}
 	if err != nil {
@@ -68,5 +72,6 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		LastFmUsername:  row.LastFmUsername.String,
 		AutoCheckUpdate: row.AutoCheckUpdate,
 		StartAtLogin:    row.StartAtLogin,
+		EQEnabled:       row.EQEnabled,
 	}, nil
 }

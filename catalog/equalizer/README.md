@@ -2,7 +2,7 @@
 
 ## Summary
 
-10-band parametric equalizer with named profiles and built-in presets. EQ is applied at the audio adapter level across all platforms (AVFoundation on macOS, miniaudio on Windows/Linux). Users can create, rename, delete, and switch profiles. Band gains are applied live.
+10-band parametric equalizer with named profiles and built-in presets. EQ is applied at the audio adapter level across all platforms (AVFoundation on macOS, miniaudio on Windows/Linux). Users can create, rename, delete, and switch profiles. Band gains are applied live. The global enabled state is persisted across app restarts via `AppSettings`.
 
 ## Files
 
@@ -115,10 +115,11 @@ Profile has exactly one active profile at any time. `SetActive()` uses a transac
 
 Located in Settings → Equalizer tab.
 
+- Uses global `app` store for EQ enabled state and profile management.
 - Fetches all profiles on mount.
 - Renders 10 vertical sliders (one per band), range -12 to +12 dB.
 - Moving a slider calls `UpdateBand()` immediately — live effect while playing.
 - Profile dropdown switches active profile (`ApplyProfile()`).
 - Create / Rename / Delete profile buttons with confirmation dialogs.
-- Global enable/disable toggle.
+- Global enable/disable toggle (persisted).
 - Platform note: EQ interaction is live on all platforms.

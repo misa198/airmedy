@@ -141,4 +141,5 @@ type AppSettings struct {
 	StartAtLogin    bool   `json:"start_at_login"`
 	AutoCheckUpdate bool   `json:"auto_check_update"`
 	LastFmUsername  string `json:"lastfm_username"`
+	EQEnabled       bool   `json:"eq_enabled"`
 }

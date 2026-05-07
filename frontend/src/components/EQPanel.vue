@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useAppStore } from '@/stores/app'
 import { Slider } from '@/components/ui/slider'
 import * as EQService from '../../bindings/airmedy/internal/infra/wails/eqservice'
 import type { EQProfile } from '../../bindings/airmedy/internal/domain/models'
@@ -17,9 +18,9 @@ import ContextMenu from './ContextMenu.vue'
 import EQProfileDialog from './EQProfileDialog.vue'
 
 const { t } = useI18n()
+const appStore = useAppStore()
 const profiles = ref<EQProfile[]>([])
 const activeProfile = ref<EQProfile | null>(null)
-const enabled = ref(true)
 
 const showAddModal = ref(false)
 const showRenameModal = ref(false)
@@ -49,6 +50,7 @@ const bands = computed(() => {
 
 async function selectProfile(id: string) {
   await EQService.ApplyProfile(id)
+  await appStore.updateEQEnabled(true)
   const p = profiles.value.find((x) => x.id === id)
   if (p) {
     activeProfile.value = { ...p }
@@ -70,8 +72,7 @@ async function onBandRelease(bandIndex: number) {
 }
 
 async function toggleEnabled() {
-  enabled.value = !enabled.value
-  await EQService.SetEnabled(enabled.value)
+  await appStore.updateEQEnabled(!appStore.eqEnabled)
 }
 
 function getBandGain(index: number): number {
@@ -152,12 +153,12 @@ function openProfileMenu(e: MouseEvent) {
       <!-- Enable/Disable toggle -->
       <button
         class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors w-18 h-10 border border-foreground/[0.08]"
-        :class="enabled
+        :class="appStore.eqEnabled
           ? 'bg-foreground/[0.1] text-foreground hover:bg-foreground/[0.14]'
           : 'bg-foreground/[0.03] text-foreground opacity-60 hover:bg-foreground/[0.06]'"
         @click="toggleEnabled">
-        <span class="w-1.5 h-1.5 rounded-full" :class="enabled ? 'bg-green-400' : 'bg-foreground/20'" />
-        {{ enabled ? t('common.on') : t('common.off') }}
+        <span class="w-1.5 h-1.5 rounded-full" :class="appStore.eqEnabled ? 'bg-green-400' : 'bg-foreground/20'" />
+        {{ appStore.eqEnabled ? t('common.on') : t('common.off') }}
       </button>
 
       <!-- Profile selector -->

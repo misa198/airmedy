@@ -37,6 +37,7 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000010 | `app_settings_lastfm.up.sql`   | `ALTER TABLE app_settings ADD COLUMN lastfm_username TEXT`                                                                         |
 | 000011 | `app_settings_updates.up.sql`  | Add `auto_check_update`, `start_at_login` to `app_settings`                                                                       |
 | 000012 | `playlist_lexorank.up.sql`     | Convert `playlist_tracks.position` from INTEGER to TEXT (LexoRank string), migrate existing data with computed ranks              |
+| 000013 | `app_settings_eq.up.sql`       | `ALTER TABLE app_settings ADD COLUMN eq_enabled BOOLEAN DEFAULT 0`                                                                |
 
 ## Full Schema
 
@@ -168,6 +169,7 @@ app_settings (
     lastfm_username TEXT,
     auto_check_update BOOLEAN DEFAULT 1,
     start_at_login BOOLEAN DEFAULT 0,
+    eq_enabled BOOLEAN DEFAULT 0,
     updated_at DATETIME
 )
 ```
