@@ -7,14 +7,23 @@
     "loading": "加载中...",
     "error": "错误",
     "cancel": "取消",
+    "close": "Close",
     "change": "更改",
     "save": "保存",
     "saving": "保存中...",
     "create": "创建",
+    "later": "Later",
     "on": "开启",
     "off": "关闭",
     "hr": "小时",
     "min": "分钟"
+  },
+  "app": {
+    "update_available": "Update Available",
+    "new_version_available": "New version available: {version}",
+    "update_now": "Update Now",
+    "view_details": "View Details",
+    "updating": "Updating..."
   },
   "settings": {
     "title": "设置",
@@ -38,21 +47,29 @@
       "removed_success": "文件夹移除成功",
       "removed_error": "移除文件夹失败",
       "remove_folder": "移除文件夹",
-      "remove_folder_confirm": "您确定要从库中删除此文件夹吗？实际文件不会被删除。",
       "remove_folder_title": "删除文件夹",
+      "remove_folder_confirm": "您确定要从库中删除此文件夹吗？实际文件不会被删除。",
       "removing": "正在删除..."
     },
     "categories": {
       "general": "通用",
       "library": "媒体库",
+      "integrations": "集成",
       "playback": "播放",
-      "about": "关于",
-      "integrations": "集成"
+      "about": "关于"
     },
     "general": {
       "behavior": "行为",
       "appearance": "外观",
       "integrations": "集成"
+    },
+    "lastfm": {
+      "title": "Last.fm",
+      "scrobble_desc": "将您的播放记录同步到 Last.fm",
+      "connected_as": "已连接为",
+      "connect": "连接",
+      "connecting": "正在连接...",
+      "disconnect": "断开连接"
     },
     "behavior": {
       "start_at_login": "开机启动",
@@ -81,7 +98,6 @@
       "update_ready": "更新已准备好安装",
       "update_failed": "更新失败",
       "check_failed": "检查更新失败"
-
     },
     "appearance": {
       "title": "外观",
@@ -101,14 +117,6 @@
       "delete_profile": "删除配置文件",
       "rename_profile": "重命名配置文件",
       "select_profile": "选择配置文件"
-    },
-    "lastfm": {
-      "connect": "连接",
-      "connected_as": "已连接为",
-      "connecting": "正在连接...",
-      "disconnect": "断开连接",
-      "scrobble_desc": "将您的播放记录同步到 Last.fm",
-      "title": "Last.fm"
     }
   },
   "sidebar": {
@@ -129,8 +137,8 @@
     "delete": "删除",
     "no_playlists": "暂无播放列表",
     "rename_playlist_title": "重命名播放列表",
-    "delete_playlist_message": "您确定要删除此播放列表吗？此操作无法撤销。",
     "delete_playlist_title": "删除播放列表",
+    "delete_playlist_message": "您确定要删除此播放列表吗？此操作无法撤销。",
     "import_playlist": "导入播放列表",
     "import_playlist_title": "导入播放列表",
     "import": "导入"
@@ -226,8 +234,9 @@
     "context_menu": ""
   },
   "context_menu": {
+    "play": "播放",
+    "shuffle": "随机播放",
     "play_next": "下一首播放",
-    "remove_from_queue": "从队列中移除",
     "add_to_favorites": "添加到收藏",
     "remove_from_favorites": "从收藏中移除",
     "add_to_playlist": "添加到播放列表",
@@ -239,9 +248,12 @@
     "show_in_explorer": "在文件资源管理器中显示",
     "track_info": "歌曲信息",
     "refresh_lyrics": "刷新歌词",
-    "play": "播放",
-    "shuffle": "随机播放",
+    "remove_from_queue": "从队列中移除",
     "export_playlist": "导出播放列表"
+  },
+  "artist": {
+    "albums_count": "{count} 张专辑",
+    "songs_count": "{count} 首曲目"
   },
   "track_info": {
     "title": "歌曲信息",
@@ -263,10 +275,6 @@
     "isrc": "ISRC",
     "play_count": "播放次数",
     "lossless": "无损"
-  },
-  "artist": {
-    "albums_count": "{count} 张专辑",
-    "songs_count": "{count} 首曲目"
   },
   "composer": {
     "compositions_count": "{count} 首作品"

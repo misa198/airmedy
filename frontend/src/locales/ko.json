@@ -7,14 +7,23 @@
     "loading": "로딩 중...",
     "error": "오류",
     "cancel": "취소",
+    "close": "Close",
     "change": "변경",
     "save": "저장",
     "saving": "저장 중...",
     "create": "생성",
+    "later": "Later",
     "on": "켜짐",
     "off": "꺼짐",
     "hr": "시간",
     "min": "분"
+  },
+  "app": {
+    "update_available": "Update Available",
+    "new_version_available": "New version available: {version}",
+    "update_now": "Update Now",
+    "view_details": "View Details",
+    "updating": "Updating..."
   },
   "settings": {
     "title": "설정",
@@ -38,21 +47,29 @@
       "removed_success": "폴더 삭제 성공",
       "removed_error": "폴더 삭제 실패",
       "remove_folder": "폴더 삭제",
-      "remove_folder_confirm": "이 폴더를 라이브러리에서 제거하시겠습니까? 실제 파일은 삭제되지 않습니다.",
       "remove_folder_title": "폴더 제거",
+      "remove_folder_confirm": "이 폴더를 라이브러리에서 제거하시겠습니까? 실제 파일은 삭제되지 않습니다.",
       "removing": "제거 중..."
     },
     "categories": {
       "general": "일반",
       "library": "라이브러리",
+      "integrations": "연동",
       "playback": "재생",
-      "about": "정보",
-      "integrations": "연동"
+      "about": "정보"
     },
     "general": {
       "behavior": "동작",
       "appearance": "디자인",
       "integrations": "연동"
+    },
+    "lastfm": {
+      "title": "Last.fm",
+      "scrobble_desc": "재생 기록을 Last.fm으로 전송",
+      "connected_as": "연결됨:",
+      "connect": "연결",
+      "connecting": "연결 중...",
+      "disconnect": "연결 해제"
     },
     "behavior": {
       "start_at_login": "로그인 시 시작",
@@ -100,14 +117,6 @@
       "delete_profile": "프로필 삭제",
       "rename_profile": "프로필 이름 바꾸기",
       "select_profile": "프로필 선택"
-    },
-    "lastfm": {
-      "connect": "연결",
-      "connected_as": "연결됨:",
-      "connecting": "연결 중...",
-      "disconnect": "연결 해제",
-      "scrobble_desc": "재생 기록을 Last.fm으로 전송",
-      "title": "Last.fm"
     }
   },
   "sidebar": {
@@ -128,8 +137,8 @@
     "delete": "삭제",
     "no_playlists": "재생 목록이 없습니다",
     "rename_playlist_title": "재생 목록 이름 바꾸기",
-    "delete_playlist_message": "이 재생 목록을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.",
     "delete_playlist_title": "재생 목록 삭제",
+    "delete_playlist_message": "이 재생 목록을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.",
     "import_playlist": "재생목록 가져오기",
     "import_playlist_title": "재생목록 가져오기",
     "import": "가져오기"
@@ -225,6 +234,8 @@
     "context_menu": ""
   },
   "context_menu": {
+    "play": "재생",
+    "shuffle": "셔플",
     "play_next": "다음에 재생",
     "add_to_favorites": "즐겨찾기에 추가",
     "remove_from_favorites": "즐겨찾기에서 제거",
@@ -238,9 +249,11 @@
     "track_info": "트랙 정보",
     "refresh_lyrics": "가사 새로고침",
     "remove_from_queue": "대기열에서 제거",
-    "play": "재생",
-    "shuffle": "셔플",
     "export_playlist": "재생목록 내보내기"
+  },
+  "artist": {
+    "albums_count": "{count} 앨범",
+    "songs_count": "{count} 곡"
   },
   "track_info": {
     "title": "트랙 정보",
@@ -263,18 +276,14 @@
     "play_count": "재생 횟수",
     "lossless": "무손실"
   },
-  "playlist": {
-    "edit_cover": "커버 편집",
-    "remove_cover": "사용자 지정 커버 삭제"
-  },
-  "artist": {
-    "albums_count": "{count} 앨범",
-    "songs_count": "{count} 곡"
-  },
   "composer": {
     "compositions_count": "{count} 작품"
   },
   "genre": {
     "tracks_count": "{count} 트랙"
+  },
+  "playlist": {
+    "edit_cover": "커버 편집",
+    "remove_cover": "사용자 지정 커버 삭제"
   }
 }

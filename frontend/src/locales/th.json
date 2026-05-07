@@ -7,14 +7,23 @@
     "loading": "กำลังโหลด...",
     "error": "เกิดข้อผิดพลาด",
     "cancel": "ยกเลิก",
+    "close": "Close",
     "change": "เปลี่ยน",
     "save": "บันทึก",
     "saving": "กำลังบันทึก...",
     "create": "สร้าง",
+    "later": "Later",
     "on": "เปิด",
     "off": "ปิด",
     "hr": "ชม.",
     "min": "นาที"
+  },
+  "app": {
+    "update_available": "Update Available",
+    "new_version_available": "New version available: {version}",
+    "update_now": "Update Now",
+    "view_details": "View Details",
+    "updating": "Updating..."
   },
   "settings": {
     "title": "การตั้งค่า",
@@ -38,21 +47,29 @@
       "removed_success": "ลบโฟลเดอร์สำเร็จ",
       "removed_error": "ไม่สามารถลบโฟลเดอร์ได้",
       "remove_folder": "ลบโฟลเดอร์",
-      "remove_folder_confirm": "คุณแน่ใจหรือไม่ว่าต้องการลบโฟลเดอร์นี้ออกจากไลบรารี? ไฟล์จริงจะไม่ถูกลบ",
       "remove_folder_title": "ลบโฟลเดอร์",
+      "remove_folder_confirm": "คุณแน่ใจหรือไม่ว่าต้องการลบโฟลเดอร์นี้ออกจากไลบรารี? ไฟล์จริงจะไม่ถูกลบ",
       "removing": "กำลังลบ..."
     },
     "categories": {
       "general": "ทั่วไป",
       "library": "คลังเพลง",
+      "integrations": "การเชื่อมต่อ",
       "playback": "การเล่น",
-      "about": "เกี่ยวกับ",
-      "integrations": "การเชื่อมต่อ"
+      "about": "เกี่ยวกับ"
     },
     "general": {
       "behavior": "พฤติกรรม",
       "appearance": "ลักษณะที่ปรากฏ",
       "integrations": "การเชื่อมต่อ"
+    },
+    "lastfm": {
+      "title": "Last.fm",
+      "scrobble_desc": "ส่งข้อมูลการเล่นของคุณไปยัง Last.fm",
+      "connected_as": "เชื่อมต่อในชื่อ",
+      "connect": "เชื่อมต่อ",
+      "connecting": "กำลังเชื่อมต่อ...",
+      "disconnect": "ยกเลิกการเชื่อมต่อ"
     },
     "behavior": {
       "start_at_login": "เริ่มเมื่อเข้าสู่ระบบ",
@@ -81,7 +98,6 @@
       "update_ready": "การอัปเดตพร้อมสำหรับการติดตั้ง",
       "update_failed": "การอัปเดตล้มเหลว",
       "check_failed": "ตรวจสอบการอัปเดตล้มเหลว"
-
     },
     "appearance": {
       "title": "ลักษณะที่ปรากฏ",
@@ -101,14 +117,6 @@
       "delete_profile": "ลบโปรไฟล์",
       "rename_profile": "เปลี่ยนชื่อโปรไฟล์",
       "select_profile": "เลือกโปรไฟล์"
-    },
-    "lastfm": {
-      "connect": "เชื่อมต่อ",
-      "connected_as": "เชื่อมต่อในชื่อ",
-      "connecting": "กำลังเชื่อมต่อ...",
-      "disconnect": "ยกเลิกการเชื่อมต่อ",
-      "scrobble_desc": "ส่งข้อมูลการเล่นของคุณไปยัง Last.fm",
-      "title": "Last.fm"
     }
   },
   "sidebar": {
@@ -129,8 +137,8 @@
     "delete": "ลบ",
     "no_playlists": "ยังไม่มีเพลย์ลิสต์",
     "rename_playlist_title": "เปลี่ยนชื่อเพลย์ลิสต์",
-    "delete_playlist_message": "คุณแน่ใจหรือไม่ว่าต้องการลบเพลย์ลิสต์นี้? การดำเนินการนี้ไม่สามารถยกเลิกได้",
     "delete_playlist_title": "ลบเพลย์ลิสต์",
+    "delete_playlist_message": "คุณแน่ใจหรือไม่ว่าต้องการลบเพลย์ลิสต์นี้? การดำเนินการนี้ไม่สามารถยกเลิกได้",
     "import_playlist": "นำเข้าเพลย์ลิสต์",
     "import_playlist_title": "นำเข้าเพลย์ลิสต์",
     "import": "นำเข้า"
@@ -226,6 +234,8 @@
     "context_menu": ""
   },
   "context_menu": {
+    "play": "เล่น",
+    "shuffle": "สุ่ม",
     "play_next": "เล่นเป็นลำดับถัดไป",
     "add_to_favorites": "เพิ่มในรายการโปรด",
     "remove_from_favorites": "เอาออกจากรายการโปรด",
@@ -239,9 +249,11 @@
     "track_info": "ข้อมูลเพลง",
     "refresh_lyrics": "รีเฟรชเนื้อเพลง",
     "remove_from_queue": "นำออกจากคิว",
-    "play": "เล่น",
-    "shuffle": "สุ่ม",
     "export_playlist": "ส่งออกเพลย์ลิสต์"
+  },
+  "artist": {
+    "albums_count": "{count} อัลบั้ม",
+    "songs_count": "{count} เพลง"
   },
   "track_info": {
     "title": "ข้อมูลเพลง",
@@ -264,18 +276,14 @@
     "play_count": "จำนวนครั้งที่เล่น",
     "lossless": "ไม่สูญเสียคุณภาพ"
   },
-  "playlist": {
-    "edit_cover": "แก้ไขหน้าปก",
-    "remove_cover": "ลบหน้าปกที่กำหนดเอง"
-  },
-  "artist": {
-    "albums_count": "{count} อัลบั้ม",
-    "songs_count": "{count} เพลง"
-  },
   "composer": {
     "compositions_count": "{count} ผลงานประพันธ์"
   },
   "genre": {
     "tracks_count": "{count} แทร็ก"
+  },
+  "playlist": {
+    "edit_cover": "แก้ไขหน้าปก",
+    "remove_cover": "ลบหน้าปกที่กำหนดเอง"
   }
 }

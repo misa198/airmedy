@@ -1,4 +1,4 @@
-import { ListEnd, ListPlus, Play, Shuffle, Heart } from 'lucide-vue-next'
+import { ListEnd, ListPlus, Play, Shuffle, Heart, HeartOff } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
 import { usePlayerStore } from '@/stores/player'
@@ -75,7 +75,7 @@ export function useAlbumContextMenu() {
       { separator: true },
       {
         label: isAnyFavorite ? t('context_menu.remove_from_favorites') : t('context_menu.add_to_favorites'),
-        icon: Heart,
+        icon: isAnyFavorite ? HeartOff : Heart,
         action: async () => {
           const tracks = await fetchTracks()
           const targetState = !isAnyFavorite

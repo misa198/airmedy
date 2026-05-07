@@ -7,14 +7,23 @@
     "loading": "Загрузка...",
     "error": "Ошибка",
     "cancel": "Отмена",
+    "close": "Close",
     "change": "Изменить",
     "save": "Сохранить",
     "saving": "Сохранение...",
     "create": "Создать",
+    "later": "Later",
     "on": "Вкл",
     "off": "Выкл",
     "hr": "ч",
     "min": "мин"
+  },
+  "app": {
+    "update_available": "Update Available",
+    "new_version_available": "New version available: {version}",
+    "update_now": "Update Now",
+    "view_details": "View Details",
+    "updating": "Updating..."
   },
   "settings": {
     "title": "Настройки",
@@ -38,21 +47,29 @@
       "removed_success": "Папка успешно удалена",
       "removed_error": "Не удалось удалить папку",
       "remove_folder": "Удалить папку",
-      "remove_folder_confirm": "Вы уверены, что хотите удалить эту папку из своей библиотеки? Сами файлы не будут удалены.",
       "remove_folder_title": "Удалить папку",
+      "remove_folder_confirm": "Вы уверены, что хотите удалить эту папку из своей библиотеки? Сами файлы не будут удалены.",
       "removing": "Удаление..."
     },
     "categories": {
       "general": "Общие",
       "library": "Медиатека",
+      "integrations": "Интеграции",
       "playback": "Воспроизведение",
-      "about": "О программе",
-      "integrations": "Интеграции"
+      "about": "О программе"
     },
     "general": {
       "behavior": "Поведение",
       "appearance": "Внешний вид",
       "integrations": "Интеграции"
+    },
+    "lastfm": {
+      "title": "Last.fm",
+      "scrobble_desc": "Скробблинг прослушиваний на Last.fm",
+      "connected_as": "Подключено как",
+      "connect": "Подключить",
+      "connecting": "Подключение...",
+      "disconnect": "Отключить"
     },
     "behavior": {
       "start_at_login": "Запускать при входе",
@@ -81,7 +98,6 @@
       "update_ready": "Обновление готово к установке",
       "update_failed": "Ошибка обновления",
       "check_failed": "Ошибка проверки обновлений"
-
     },
     "appearance": {
       "title": "Внешний вид",
@@ -101,14 +117,6 @@
       "delete_profile": "Удалить профиль",
       "rename_profile": "Переименовать профиль",
       "select_profile": "Выбрать профиль"
-    },
-    "lastfm": {
-      "connect": "Подключить",
-      "connected_as": "Подключено как",
-      "connecting": "Подключение...",
-      "disconnect": "Отключить",
-      "scrobble_desc": "Скробблинг прослушиваний на Last.fm",
-      "title": "Last.fm"
     }
   },
   "sidebar": {
@@ -129,8 +137,8 @@
     "delete": "Удалить",
     "no_playlists": "Плейлистов пока нет",
     "rename_playlist_title": "Переименовать плейлист",
-    "delete_playlist_message": "Вы уверены, что хотите удалить этот плейлист? Это действие нельзя отменить.",
     "delete_playlist_title": "Удалить плейлист",
+    "delete_playlist_message": "Вы уверены, что хотите удалить этот плейлист? Это действие нельзя отменить.",
     "import_playlist": "Импортировать плейлист",
     "import_playlist_title": "Импортировать плейлист",
     "import": "Импортировать"
@@ -226,6 +234,8 @@
     "context_menu": ""
   },
   "context_menu": {
+    "play": "Воспроизвести",
+    "shuffle": "Перемешать",
     "play_next": "Воспроизвести следующим",
     "add_to_favorites": "Добавить в избранное",
     "remove_from_favorites": "Удалить из избранного",
@@ -239,9 +249,11 @@
     "track_info": "Информация о треке",
     "refresh_lyrics": "Обновить текст",
     "remove_from_queue": "Убрать из очереди",
-    "play": "Воспроизвести",
-    "shuffle": "Перемешать",
     "export_playlist": "Экспортировать плейлист"
+  },
+  "artist": {
+    "albums_count": "{count} альбомов",
+    "songs_count": "{count} песен"
   },
   "track_info": {
     "title": "Информация о треке",
@@ -264,18 +276,14 @@
     "play_count": "Прослушивания",
     "lossless": "Без потерь"
   },
-  "playlist": {
-    "edit_cover": "Изменить обложку",
-    "remove_cover": "Удалить свою обложку"
-  },
-  "artist": {
-    "albums_count": "{count} альбомов",
-    "songs_count": "{count} песен"
-  },
   "composer": {
     "compositions_count": "{count} произведений"
   },
   "genre": {
     "tracks_count": "{count} треков"
+  },
+  "playlist": {
+    "edit_cover": "Изменить обложку",
+    "remove_cover": "Удалить свою обложку"
   }
 }

@@ -34,7 +34,7 @@ export function usePlaylistContextMenu() {
     }
 
     // Rename
-    if (options.onRename) {
+    if (options.onRename && playlist.id !== 'favorites') {
       items.push({
         label: t('sidebar.rename'),
         icon: Pencil,
@@ -52,7 +52,7 @@ export function usePlaylistContextMenu() {
     }
 
     // Delete (Top level if requested)
-    if (options.onDelete && !options.includePlaylistMenu) {
+    if (options.onDelete && !options.includePlaylistMenu && playlist.id !== 'favorites') {
       items.push({
         label: t('sidebar.delete'),
         icon: Trash2,
@@ -83,7 +83,7 @@ export function usePlaylistContextMenu() {
                 },
               })),
           },
-          ...(options.onDelete ? [
+          ...(options.onDelete && playlist.id !== 'favorites' ? [
             {
               label: t('sidebar.delete'),
               icon: Trash2,

@@ -1,4 +1,4 @@
-import { Heart, ListEnd, ListPlus, Disc, User, Pencil, FolderOpen, Info, RefreshCw, ListX, Check, Trash2 } from 'lucide-vue-next'
+import { Heart, HeartOff, ListEnd, ListPlus, Disc, User, Pencil, FolderOpen, Info, RefreshCw, ListX, Check, Trash2 } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
@@ -80,7 +80,7 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
     const isFavorite = favoritesStore.isFavorite(track)
     items.push({
       label: isFavorite ? t('context_menu.remove_from_favorites') : t('context_menu.add_to_favorites'),
-      icon: Heart,
+      icon: isFavorite ? HeartOff : Heart,
       action: async () => {
         await favoritesStore.toggle(track.id)
       },

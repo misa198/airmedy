@@ -7,14 +7,23 @@
     "loading": "Carregando...",
     "error": "Erro",
     "cancel": "Cancelar",
+    "close": "Close",
     "change": "Alterar",
     "save": "Salvar",
     "saving": "Salvando...",
     "create": "Criar",
+    "later": "Later",
     "on": "Ligado",
     "off": "Desligado",
     "hr": "h",
     "min": "min"
+  },
+  "app": {
+    "update_available": "Update Available",
+    "new_version_available": "New version available: {version}",
+    "update_now": "Update Now",
+    "view_details": "View Details",
+    "updating": "Updating..."
   },
   "settings": {
     "title": "Configurações",
@@ -38,21 +47,29 @@
       "removed_success": "Pasta removida com sucesso",
       "removed_error": "Falha ao remover pasta",
       "remove_folder": "Remover pasta",
-      "remove_folder_confirm": "Tem certeza de que deseja remover esta pasta da sua biblioteca? Os arquivos reais não serão excluídos.",
       "remove_folder_title": "Remover pasta",
+      "remove_folder_confirm": "Tem certeza de que deseja remover esta pasta da sua biblioteca? Os arquivos reais não serão excluídos.",
       "removing": "Removendo..."
     },
     "categories": {
       "general": "Geral",
       "library": "Biblioteca",
+      "integrations": "Integrações",
       "playback": "Reprodução",
-      "about": "Sobre",
-      "integrations": "Integrações"
+      "about": "Sobre"
     },
     "general": {
       "behavior": "Comportamento",
       "appearance": "Aparência",
       "integrations": "Integrações"
+    },
+    "lastfm": {
+      "title": "Last.fm",
+      "scrobble_desc": "Envie suas reproduções para o Last.fm",
+      "connected_as": "Conectado como",
+      "connect": "Conectar",
+      "connecting": "Conectando...",
+      "disconnect": "Desconectar"
     },
     "behavior": {
       "start_at_login": "Iniciar no login",
@@ -100,14 +117,6 @@
       "delete_profile": "Excluir perfil",
       "rename_profile": "Renomear perfil",
       "select_profile": "Selecionar perfil"
-    },
-    "lastfm": {
-      "connect": "Conectar",
-      "connected_as": "Conectado como",
-      "connecting": "Conectando...",
-      "disconnect": "Desconectar",
-      "scrobble_desc": "Envie suas reproduções para o Last.fm",
-      "title": "Last.fm"
     }
   },
   "sidebar": {
@@ -128,8 +137,8 @@
     "delete": "Excluir",
     "no_playlists": "Nenhuma playlist ainda",
     "rename_playlist_title": "Renomear Playlist",
-    "delete_playlist_message": "Tem certeza de que deseja excluir esta lista de reprodução? Esta ação não pode ser desfeita.",
     "delete_playlist_title": "Excluir lista de reprodução",
+    "delete_playlist_message": "Tem certeza de que deseja excluir esta lista de reprodução? Esta ação não pode ser desfeita.",
     "import_playlist": "Importar lista de reprodução",
     "import_playlist_title": "Importar lista de reprodução",
     "import": "Importar"
@@ -225,6 +234,8 @@
     "context_menu": ""
   },
   "context_menu": {
+    "play": "Reproduzir",
+    "shuffle": "Aleatório",
     "play_next": "Reproduzir a seguir",
     "add_to_favorites": "Adicionar aos Favoritos",
     "remove_from_favorites": "Remover dos Favoritos",
@@ -238,9 +249,11 @@
     "track_info": "Informações da faixa",
     "refresh_lyrics": "Atualizar letra",
     "remove_from_queue": "Remover da fila",
-    "play": "Reproduzir",
-    "shuffle": "Aleatório",
     "export_playlist": "Exportar lista de reprodução"
+  },
+  "artist": {
+    "albums_count": "{count} álbuns",
+    "songs_count": "{count} músicas"
   },
   "track_info": {
     "title": "Informações da faixa",
@@ -263,18 +276,14 @@
     "play_count": "Reproduções",
     "lossless": "Sem perdas"
   },
-  "playlist": {
-    "edit_cover": "Editar capa",
-    "remove_cover": "Remover capa personalizada"
-  },
-  "artist": {
-    "albums_count": "{count} álbuns",
-    "songs_count": "{count} músicas"
-  },
   "composer": {
     "compositions_count": "{count} composições"
   },
   "genre": {
     "tracks_count": "{count} faixas"
+  },
+  "playlist": {
+    "edit_cover": "Editar capa",
+    "remove_cover": "Remover capa personalizada"
   }
 }

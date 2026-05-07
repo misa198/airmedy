@@ -227,7 +227,7 @@ interfaces/structs/methods, DB schema/migrations, Wails-exposed methods/events, 
 
 1. **Research** — read relevant catalog entries, find existing patterns, reproduce bugs with a test first.
 2. **Implement** — surgical changes with accompanying tests.
-3. **Verify** — `task verify` (tests + linters).
+3. **Verify** — `wails3 task verify` (tests + linters).
 4. **Update catalog** — if any catalog entry is now stale.
 
 ---

@@ -7,14 +7,23 @@
     "loading": "Cargando...",
     "error": "Error",
     "cancel": "Cancelar",
+    "close": "Close",
     "change": "Cambiar",
     "save": "Guardar",
     "saving": "Guardando...",
     "create": "Crear",
+    "later": "Later",
     "on": "Activado",
     "off": "Desactivado",
     "hr": "h",
     "min": "min"
+  },
+  "app": {
+    "update_available": "Update Available",
+    "new_version_available": "New version available: {version}",
+    "update_now": "Update Now",
+    "view_details": "View Details",
+    "updating": "Updating..."
   },
   "settings": {
     "title": "Ajustes",
@@ -38,21 +47,29 @@
       "removed_success": "Carpeta eliminada con éxito",
       "removed_error": "Error al eliminar la carpeta",
       "remove_folder": "Eliminar carpeta",
-      "remove_folder_confirm": "¿Estás seguro de que quieres eliminar esta carpeta de tu biblioteca? Los archivos reales no se borrarán.",
       "remove_folder_title": "Eliminar carpeta",
+      "remove_folder_confirm": "¿Estás seguro de que quieres eliminar esta carpeta de tu biblioteca? Los archivos reales no se borrarán.",
       "removing": "Eliminando..."
     },
     "categories": {
       "general": "General",
       "library": "Biblioteca",
+      "integrations": "Integraciones",
       "playback": "Reproducción",
-      "about": "Acerca de",
-      "integrations": "Integraciones"
+      "about": "Acerca de"
     },
     "general": {
       "behavior": "Comportamiento",
       "appearance": "Apariencia",
       "integrations": "Integraciones"
+    },
+    "lastfm": {
+      "title": "Last.fm",
+      "scrobble_desc": "Envía tus reproducciones a Last.fm",
+      "connected_as": "Conectado como",
+      "connect": "Conectar",
+      "connecting": "Conectando...",
+      "disconnect": "Desconectar"
     },
     "behavior": {
       "start_at_login": "Iniciar al iniciar sesión",
@@ -100,14 +117,6 @@
       "delete_profile": "Eliminar perfil",
       "rename_profile": "Renombrar perfil",
       "select_profile": "Seleccionar perfil"
-    },
-    "lastfm": {
-      "connect": "Conectar",
-      "connected_as": "Conectado como",
-      "connecting": "Conectando...",
-      "disconnect": "Desconectar",
-      "scrobble_desc": "Envía tus reproducciones a Last.fm",
-      "title": "Last.fm"
     }
   },
   "sidebar": {
@@ -128,8 +137,8 @@
     "delete": "Eliminar",
     "no_playlists": "Aún no hay listas de reproducción",
     "rename_playlist_title": "Renombrar lista de reproducción",
-    "delete_playlist_message": "¿Estás seguro de que quieres eliminar esta lista de reproducción? Esta acción no se puede deshacer.",
     "delete_playlist_title": "Eliminar lista de reproducción",
+    "delete_playlist_message": "¿Estás seguro de que quieres eliminar esta lista de reproducción? Esta acción no se puede deshacer.",
     "import_playlist": "Importar lista de reproducción",
     "import_playlist_title": "Importar lista de reproducción",
     "import": "Importar"
@@ -225,6 +234,8 @@
     "context_menu": ""
   },
   "context_menu": {
+    "play": "Reproducir",
+    "shuffle": "Aleatorio",
     "play_next": "Reproducir a continuación",
     "add_to_favorites": "Añadir a Favoritos",
     "remove_from_favorites": "Eliminar de Favoritos",
@@ -238,9 +249,11 @@
     "track_info": "Información de la pista",
     "refresh_lyrics": "Actualizar letra",
     "remove_from_queue": "Eliminar de la cola",
-    "play": "Reproducir",
-    "shuffle": "Aleatorio",
     "export_playlist": "Exportar lista de reproducción"
+  },
+  "artist": {
+    "albums_count": "{count} álbumes",
+    "songs_count": "{count} canciones"
   },
   "track_info": {
     "title": "Información de la pista",
@@ -263,18 +276,14 @@
     "play_count": "Reproducciones",
     "lossless": "Sin pérdida"
   },
-  "playlist": {
-    "edit_cover": "Editar portada",
-    "remove_cover": "Quitar portada personalizada"
-  },
-  "artist": {
-    "albums_count": "{count} álbumes",
-    "songs_count": "{count} canciones"
-  },
   "composer": {
     "compositions_count": "{count} composiciones"
   },
   "genre": {
     "tracks_count": "{count} pistas"
+  },
+  "playlist": {
+    "edit_cover": "Editar portada",
+    "remove_cover": "Quitar portada personalizada"
   }
 }

@@ -7,14 +7,23 @@
     "loading": "Caricamento...",
     "error": "Errore",
     "cancel": "Annulla",
+    "close": "Close",
     "change": "Modifica",
     "save": "Salva",
     "saving": "Salvataggio...",
     "create": "Crea",
+    "later": "Later",
     "on": "Attivo",
     "off": "Disattivo",
     "hr": "h",
     "min": "min"
+  },
+  "app": {
+    "update_available": "Update Available",
+    "new_version_available": "New version available: {version}",
+    "update_now": "Update Now",
+    "view_details": "View Details",
+    "updating": "Updating..."
   },
   "settings": {
     "title": "Impostazioni",
@@ -38,21 +47,29 @@
       "removed_success": "Cartella rimossa con successo",
       "removed_error": "Impossibile rimuovere la cartella",
       "remove_folder": "Rimuovi cartella",
-      "remove_folder_confirm": "Sei sicuro di voler rimuovere questa cartella dalla tua libreria? I file effettivi non verranno eliminati.",
       "remove_folder_title": "Rimuovi cartella",
+      "remove_folder_confirm": "Sei sicuro di voler rimuovere questa cartella dalla tua libreria? I file effettivi non verranno eliminati.",
       "removing": "Rimozione in corso..."
     },
     "categories": {
       "general": "Generale",
       "library": "Libreria",
+      "integrations": "Integrazioni",
       "playback": "Riproduzione",
-      "about": "Informazioni",
-      "integrations": "Integrazioni"
+      "about": "Informazioni"
     },
     "general": {
       "behavior": "Comportamento",
       "appearance": "Aspetto",
       "integrations": "Integrazioni"
+    },
+    "lastfm": {
+      "title": "Last.fm",
+      "scrobble_desc": "Invia i tuoi ascolti a Last.fm",
+      "connected_as": "Connesso come",
+      "connect": "Connetti",
+      "connecting": "Connessione...",
+      "disconnect": "Disconnetti"
     },
     "behavior": {
       "start_at_login": "Avvia al login",
@@ -100,14 +117,6 @@
       "delete_profile": "Elimina profilo",
       "rename_profile": "Rinomina profilo",
       "select_profile": "Seleziona profilo"
-    },
-    "lastfm": {
-      "connect": "Connetti",
-      "connected_as": "Connesso come",
-      "connecting": "Connessione...",
-      "disconnect": "Disconnetti",
-      "scrobble_desc": "Invia i tuoi ascolti a Last.fm",
-      "title": "Last.fm"
     }
   },
   "sidebar": {
@@ -128,8 +137,8 @@
     "delete": "Elimina",
     "no_playlists": "Nessuna playlist",
     "rename_playlist_title": "Rinomina Playlist",
-    "delete_playlist_message": "Sei sicuro di voler eliminare questa playlist? L'azione non può essere annullata.",
     "delete_playlist_title": "Elimina playlist",
+    "delete_playlist_message": "Sei sicuro di voler eliminare questa playlist? L'azione non può essere annullata.",
     "import_playlist": "Importa playlist",
     "import_playlist_title": "Importa playlist",
     "import": "Importa"
@@ -225,6 +234,8 @@
     "context_menu": ""
   },
   "context_menu": {
+    "play": "Riproduci",
+    "shuffle": "Casuale",
     "play_next": "Riproduci dopo",
     "add_to_favorites": "Aggiungi ai Preferiti",
     "remove_from_favorites": "Rimuovi dai Preferiti",
@@ -238,9 +249,11 @@
     "track_info": "Informazioni traccia",
     "refresh_lyrics": "Aggiorna testi",
     "remove_from_queue": "Rimuovi dalla coda",
-    "play": "Riproduci",
-    "shuffle": "Casuale",
     "export_playlist": "Esporta playlist"
+  },
+  "artist": {
+    "albums_count": "{count} album",
+    "songs_count": "{count} brani"
   },
   "track_info": {
     "title": "Informazioni traccia",
@@ -263,18 +276,14 @@
     "play_count": "Riproduzioni",
     "lossless": "Lossless"
   },
-  "playlist": {
-    "edit_cover": "Modifica copertina",
-    "remove_cover": "Rimuovi copertina personalizzata"
-  },
-  "artist": {
-    "albums_count": "{count} album",
-    "songs_count": "{count} brani"
-  },
   "composer": {
     "compositions_count": "{count} composizioni"
   },
   "genre": {
     "tracks_count": "{count} tracce"
+  },
+  "playlist": {
+    "edit_cover": "Modifica copertina",
+    "remove_cover": "Rimuovi copertina personalizzata"
   }
 }

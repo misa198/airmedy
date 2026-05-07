@@ -7,14 +7,23 @@
     "loading": "Lädt...",
     "error": "Fehler",
     "cancel": "Abbrechen",
+    "close": "Close",
     "change": "Ändern",
     "save": "Speichern",
     "saving": "Wird gespeichert...",
     "create": "Erstellen",
+    "later": "Later",
     "on": "An",
     "off": "Aus",
     "hr": "Std.",
     "min": "Min."
+  },
+  "app": {
+    "update_available": "Update Available",
+    "new_version_available": "New version available: {version}",
+    "update_now": "Update Now",
+    "view_details": "View Details",
+    "updating": "Updating..."
   },
   "settings": {
     "title": "Einstellungen",
@@ -38,21 +47,29 @@
       "removed_success": "Ordner erfolgreich entfernt",
       "removed_error": "Fehler beim Entfernen des Ordners",
       "remove_folder": "Ordner entfernen",
-      "remove_folder_confirm": "Sind Sie sicher, dass Sie diesen Ordner aus Ihrer Bibliothek entfernen möchten? Die eigentlichen Dateien werden nicht gelöscht.",
       "remove_folder_title": "Ordner entfernen",
+      "remove_folder_confirm": "Sind Sie sicher, dass Sie diesen Ordner aus Ihrer Bibliothek entfernen möchten? Die eigentlichen Dateien werden nicht gelöscht.",
       "removing": "Wird entfernt..."
     },
     "categories": {
       "general": "Allgemein",
       "library": "Bibliothek",
+      "integrations": "Integrationen",
       "playback": "Wiedergabe",
-      "about": "Über",
-      "integrations": "Integrationen"
+      "about": "Über"
     },
     "general": {
       "behavior": "Verhalten",
       "appearance": "Erscheinungsbild",
       "integrations": "Integrationen"
+    },
+    "lastfm": {
+      "title": "Last.fm",
+      "scrobble_desc": "Übertrage deine Wiedergaben an Last.fm",
+      "connected_as": "Verbunden als",
+      "connect": "Verbinden",
+      "connecting": "Verbinde...",
+      "disconnect": "Trennen"
     },
     "behavior": {
       "start_at_login": "Beim Anmelden starten",
@@ -100,14 +117,6 @@
       "delete_profile": "Profil löschen",
       "rename_profile": "Profil umbenennen",
       "select_profile": "Profil auswählen"
-    },
-    "lastfm": {
-      "connect": "Verbinden",
-      "connected_as": "Verbunden als",
-      "connecting": "Verbinde...",
-      "disconnect": "Trennen",
-      "scrobble_desc": "Übertrage deine Wiedergaben an Last.fm",
-      "title": "Last.fm"
     }
   },
   "sidebar": {
@@ -128,8 +137,8 @@
     "delete": "Löschen",
     "no_playlists": "Noch keine Playlists",
     "rename_playlist_title": "Playlist umbenennen",
-    "delete_playlist_message": "Sind Sie sicher, dass Sie diese Playlist löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
     "delete_playlist_title": "Playlist löschen",
+    "delete_playlist_message": "Sind Sie sicher, dass Sie diese Playlist löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
     "import_playlist": "Playlist importieren",
     "import_playlist_title": "Playlist importieren",
     "import": "Importieren"
@@ -225,6 +234,8 @@
     "context_menu": ""
   },
   "context_menu": {
+    "play": "Abspielen",
+    "shuffle": "Zufällig",
     "play_next": "Als Nächstes spielen",
     "add_to_favorites": "Zu Favoriten hinzufügen",
     "remove_from_favorites": "Aus Favoriten entfernen",
@@ -238,9 +249,11 @@
     "track_info": "Titelinformationen",
     "refresh_lyrics": "Lyrics aktualisieren",
     "remove_from_queue": "Aus Warteschlange entfernen",
-    "play": "Abspielen",
-    "shuffle": "Zufällig",
     "export_playlist": "Playlist exportieren"
+  },
+  "artist": {
+    "albums_count": "{count} Alben",
+    "songs_count": "{count} Songs"
   },
   "track_info": {
     "title": "Titelinformationen",
@@ -263,18 +276,14 @@
     "play_count": "Wiedergaben",
     "lossless": "Verlustfrei"
   },
-  "playlist": {
-    "edit_cover": "Cover bearbeiten",
-    "remove_cover": "Eigenes Cover entfernen"
-  },
-  "artist": {
-    "albums_count": "{count} Alben",
-    "songs_count": "{count} Songs"
-  },
   "composer": {
     "compositions_count": "{count} Kompositionen"
   },
   "genre": {
     "tracks_count": "{count} Titel"
+  },
+  "playlist": {
+    "edit_cover": "Cover bearbeiten",
+    "remove_cover": "Eigenes Cover entfernen"
   }
 }
