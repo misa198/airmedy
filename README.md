@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="catalog/airmedy.png" alt="Airmedy" width="96" height="96" />
+<img src="docs/airmedy.png" alt="Airmedy" width="96" height="96" />
 
 # Airmedy
 
@@ -10,11 +10,22 @@
 [![Go](https://img.shields.io/badge/Go-1.25-00ADD8?style=flat-square&logo=go&logoColor=white)](https://go.dev)
 [![Wails](https://img.shields.io/badge/Wails-3-da0b0b?style=flat-square&logo=wails&logoColor=white)](https://wails.io/)
 [![Last.fm](https://img.shields.io/badge/last.fm-da0b0b?style=flat-square&logo=last.fm&logoColor=white)](https://last.fm/)
+[![CI](https://img.shields.io/badge/CI-pass-00ADD8?style=flat-square&logo=githubactions)](https://github.com/misa198/airmedy/actions)
 
 [![MacoOS](https://shields.io/badge/MacOS--9cf?logo=Apple&style=social)](https://airdemy.netlify.app)
 [![Windows](https://custom-icon-badges.demolab.com/badge/Windows-0078D6?logo=windows11&logoColor=white)](https://airdemy.netlify.app)
-<!-- [![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black)](#) -->
+[![Linux](https://custom-icon-badges.demolab.com/badge/Linux-FCC624?logo=linux&logoColor=black)](https://airdemy.netlify.app)
 
+[![Website](https://custom-icon-badges.demolab.com/badge/Website-0078D6?logo=website&logoColor=white)](https://airdemy.netlify.app)
+[![Latest Release](https://img.shields.io/github/v/release/misa198/airmedy?display_name=release&style=flat-square&label=Latest%20Release&color=26a69a)](https://github.com/misa198/airmedy/releases/latest)
+
+</div>
+
+---
+
+<div align="center">
+<img src="docs/tracks.png" alt="tracks" width="824" />
+<img src="docs/fullscreen-player.png" alt="fullscreen-player" width="824" />
 </div>
 
 ---
