@@ -37,8 +37,11 @@ onMounted(async () => {
       EQService.GetAllProfiles(),
       EQService.GetActiveProfile(),
     ])
-    profiles.value = all.filter(Boolean) as EQProfile[]
-    activeProfile.value = active
+    const filtered = all.filter(Boolean) as EQProfile[]
+    profiles.value = filtered
+    if (active) {
+      activeProfile.value = filtered.find((p) => p.id === active.id) || active
+    }
   } catch (e) {
     console.error('Failed to load EQ profiles', e)
   }
@@ -51,10 +54,10 @@ const bands = computed(() => {
 async function selectProfile(id: string) {
   await EQService.ApplyProfile(id)
   await appStore.updateEQEnabled(true)
+  profiles.value = profiles.value.map((x) => ({ ...x, is_active: x.id === id }))
   const p = profiles.value.find((x) => x.id === id)
   if (p) {
-    activeProfile.value = { ...p }
-    profiles.value = profiles.value.map((x) => ({ ...x, is_active: x.id === id }))
+    activeProfile.value = p
   }
 }
 
@@ -102,7 +105,10 @@ async function renameProfile(name: string) {
   profiles.value = profiles.value.map((p) =>
     p.id === activeProfile.value!.id ? { ...p, name } : p
   )
-  activeProfile.value = { ...activeProfile.value, name }
+  const updated = profiles.value.find(p => p.id === activeProfile.value!.id)
+  if (updated) {
+    activeProfile.value = updated
+  }
 }
 
 async function deleteProfile() {
