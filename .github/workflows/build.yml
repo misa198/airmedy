@@ -164,7 +164,7 @@ jobs:
         run: bash scripts/build-ffmpeg-darwin.sh
 
       - name: Install Wails v3
-        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-alpha.84
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-alpha.85
 
       - name: Install Linux ARM64 Cross-compile Dependencies
         if: runner.os == 'Linux' && github.event.inputs.os == 'Linux-ARM64'
@@ -287,11 +287,34 @@ jobs:
               ;;
           esac
 
+      - name: Generate Changelog
+        id: changelog
+        shell: bash
+        run: |
+          PREV_TAG=$(git tag --sort=-version:refname | grep -v "^v${{ github.event.inputs.version }}$" | head -1)
+          if [ -n "$PREV_TAG" ]; then
+            CHANGELOG=$(git log "${PREV_TAG}..HEAD" --pretty=format:"- %s (%h)" --no-merges)
+            RANGE="Changes since ${PREV_TAG}"
+          else
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
+            RANGE="All commits"
+          fi
+          {
+            echo "body<<EOF"
+            echo "## What's Changed"
+            echo ""
+            echo "${RANGE}:"
+            echo ""
+            echo "${CHANGELOG}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.event.inputs.version }}
           name: Release v${{ github.event.inputs.version }}
+          body: ${{ steps.changelog.outputs.body }}
           draft: false
           prerelease: ${{ github.event.inputs.prerelease }}
           files: |

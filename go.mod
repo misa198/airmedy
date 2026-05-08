@@ -16,7 +16,7 @@ require (
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/rhysd/go-github-selfupdate v1.2.3
-	github.com/wailsapp/wails/v3 v3.0.0-alpha.84
+	github.com/wailsapp/wails/v3 v3.0.0-alpha.85
 	github.com/zalando/go-keyring v0.2.8
 	go.senan.xyz/taglib v0.11.1
 	go.uber.org/fx v1.24.0
