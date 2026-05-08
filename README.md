@@ -12,11 +12,11 @@
 [![Last.fm](https://img.shields.io/badge/last.fm-da0b0b?style=flat-square&logo=last.fm&logoColor=white)](https://last.fm/)
 [![CI](https://img.shields.io/badge/CI-pass-00ADD8?style=flat-square&logo=githubactions)](https://github.com/misa198/airmedy/actions)
 
-[![MacoOS](https://shields.io/badge/MacOS--9cf?logo=Apple&style=social)](https://airdemy.netlify.app)
-[![Windows](https://custom-icon-badges.demolab.com/badge/Windows-0078D6?logo=windows11&logoColor=white)](https://airdemy.netlify.app)
-[![Linux](https://custom-icon-badges.demolab.com/badge/Linux-FCC624?logo=linux&logoColor=black)](https://airdemy.netlify.app)
+[![MacoOS](https://shields.io/badge/MacOS--9cf?logo=Apple&style=social)](https://airmedy.netlify.app)
+[![Windows](https://custom-icon-badges.demolab.com/badge/Windows-0078D6?logo=windows11&logoColor=white)](https://airmedy.netlify.app)
+[![Linux](https://custom-icon-badges.demolab.com/badge/Linux-FCC624?logo=linux&logoColor=black)](https://airmedy.netlify.app)
 
-[![Website](https://custom-icon-badges.demolab.com/badge/Website-0078D6?logo=website&logoColor=white)](https://airdemy.netlify.app)
+[![Website](https://custom-icon-badges.demolab.com/badge/Website-0078D6?logo=website&logoColor=white)](https://airmedy.netlify.app)
 [![Latest Release](https://img.shields.io/github/v/release/misa198/airmedy?display_name=release&style=flat-square&label=Latest%20Release&color=26a69a)](https://github.com/misa198/airmedy/releases/latest)
 
 </div>
