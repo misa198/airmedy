@@ -83,8 +83,22 @@ func (s *Service) DownloadAndApply(ctx context.Context) error {
 		return fmt.Errorf("failed to apply update: %w", err)
 	}
 
-	s.logger.Info("update applied successfully, please restart the application")
+	newVersion := latest.Version.String()
+	if err := postUpdate(exe, newVersion); err != nil {
+		s.logger.Warn("post-update steps failed (restart to complete update)", "error", err)
+	}
+
+	s.logger.Info("update applied successfully, restart the application to use the new version")
 	return nil
+}
+
+func (s *Service) GetRestartInfo() (bundlePath string, exe string, err error) {
+	exe, err = os.Executable()
+	if err != nil {
+		return "", "", fmt.Errorf("failed to get executable path: %w", err)
+	}
+	bundlePath = getBundlePath(exe)
+	return bundlePath, exe, nil
 }
 
 func (s *Service) GetCurrentVersion() string {

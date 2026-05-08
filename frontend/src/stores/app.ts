@@ -76,6 +76,10 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
+  const restartApp = async () => {
+    await UpdaterService.RestartApp()
+  }
+
   const updateTheme = async (newTheme: 'system' | 'light' | 'dark') => {
     theme.value = newTheme
     applyTheme(newTheme)
@@ -183,6 +187,7 @@ export const useAppStore = defineStore('app', () => {
     loadSettings,
     checkForUpdate,
     applyUpdate,
+    restartApp,
     updateTheme,
     updateLanguage,
     updateStartAtLogin,

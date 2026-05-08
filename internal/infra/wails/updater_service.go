@@ -1,8 +1,12 @@
 package wails
 
 import (
-	"context"
 	"airmedy/internal/app/updater"
+	"context"
+	"os"
+	"os/exec"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 type UpdaterService struct {
@@ -23,4 +27,26 @@ func (s *UpdaterService) DownloadAndApply(ctx context.Context) error {
 
 func (s *UpdaterService) GetCurrentVersion() string {
 	return s.svc.GetCurrentVersion()
+}
+
+// RestartApp relaunches the application and exits the current process.
+func (s *UpdaterService) RestartApp() {
+	bundlePath, exe, err := s.svc.GetRestartInfo()
+
+	var cmd *exec.Cmd
+	if err == nil && bundlePath != "" {
+		cmd = exec.Command("open", bundlePath)
+	} else if err == nil {
+		cmd = exec.Command(exe)
+	}
+
+	if cmd != nil {
+		_ = cmd.Start()
+	}
+
+	if app := application.Get(); app != nil {
+		app.Quit()
+	} else {
+		os.Exit(0)
+	}
 }

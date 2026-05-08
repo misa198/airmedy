@@ -23,7 +23,8 @@
     "new_version_available": "New version available: {version}",
     "update_now": "Update Now",
     "view_details": "View Details",
-    "updating": "Updating..."
+    "updating": "Updating...",
+    "restart_now": "Restart Now"
   },
   "settings": {
     "title": "Settings",

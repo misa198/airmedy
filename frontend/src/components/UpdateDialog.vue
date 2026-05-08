@@ -24,6 +24,10 @@ async function handleUpdate() {
   }
 }
 
+function handleRestart() {
+  appStore.restartApp()
+}
+
 function close() {
   if (appStore.isUpdating) return
   emit('update:open', false)
@@ -58,7 +62,7 @@ function close() {
           </div>
 
           <div class="flex justify-end gap-3 pt-2">
-            <button 
+            <button
               v-if="!appStore.updateApplied"
               @click="close"
               class="px-4 py-2 text-sm font-medium rounded-lg hover:bg-foreground/5 transition-colors disabled:opacity-50"
@@ -66,14 +70,29 @@ function close() {
             >
               {{ t('common.later') }}
             </button>
-            <button 
-              @click="appStore.updateApplied ? close() : handleUpdate()"
+            <button
+              v-if="!appStore.updateApplied"
+              @click="handleUpdate()"
               class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
               :disabled="appStore.isUpdating"
             >
               <div v-if="appStore.isUpdating" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              {{ appStore.updateApplied ? t('common.close') : (appStore.isUpdating ? t('app.updating') : t('app.update_now')) }}
+              {{ appStore.isUpdating ? t('app.updating') : t('app.update_now') }}
             </button>
+            <template v-if="appStore.updateApplied">
+              <button
+                @click="close"
+                class="px-4 py-2 text-sm font-medium rounded-lg hover:bg-foreground/5 transition-colors"
+              >
+                {{ t('common.later') }}
+              </button>
+              <button
+                @click="handleRestart()"
+                class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors flex items-center gap-2"
+              >
+                {{ t('app.restart_now') }}
+              </button>
+            </template>
           </div>
         </div>
       </div>
