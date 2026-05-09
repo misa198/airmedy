@@ -30,6 +30,7 @@ type PlayerService struct {
 	currentTheme  *domain.ThemeColors
 	trackRepo     domain.TrackRepository
 	stateRepo     domain.PlayerStateRepository
+	settingsRepo  domain.SettingsRepository
 
 	trackStartTime time.Time
 	playCounted    map[string]bool // trackID -> bool
@@ -59,6 +60,7 @@ func NewPlayerService(
 	lyricsService *lyrics.LyricsService,
 	trackRepo domain.TrackRepository,
 	stateRepo domain.PlayerStateRepository,
+	settingsRepo domain.SettingsRepository,
 	lc fx.Lifecycle,
 ) *PlayerService {
 	s := &PlayerService{
@@ -69,6 +71,7 @@ func NewPlayerService(
 		lyricsService: lyricsService,
 		trackRepo:     trackRepo,
 		stateRepo:     stateRepo,
+		settingsRepo:  settingsRepo,
 		tickInterval:  500 * time.Millisecond,
 		playCounted:   make(map[string]bool),
 		npReported:    make(map[string]bool),
@@ -537,14 +540,15 @@ func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
 	}
 	ctx := context.Background()
 
-	// Check the database first.
-	lyric, err := s.lyricsService.GetLyrics(ctx, track.ID)
+	settings, err := s.settingsRepo.Load(ctx)
 	if err != nil {
-		s.logger.Warn("failed to get lyrics from db", "track_id", track.ID, "error", err)
+		settings = &domain.AppSettings{LrclibMode: "off"}
 	}
 
-	// If not cached, try the external API.
-	if lyric == nil {
+	lyric := s.lyricsService.ResolveLyrics(ctx, track.ID, settings.LrclibMode)
+
+	// If resolution returned nil and mode allows lrclib fetching, try lrclib.
+	if lyric == nil && settings.LrclibMode != "off" {
 		lyric, err = s.lyricsService.FetchFromExternal(ctx, track)
 		if err != nil {
 			s.logger.Warn("failed to fetch lyrics from external", "track_id", track.ID, "error", err)

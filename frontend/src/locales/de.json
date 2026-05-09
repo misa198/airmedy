@@ -118,6 +118,14 @@
       "delete_profile": "Profil löschen",
       "rename_profile": "Profil umbenennen",
       "select_profile": "Profil auswählen"
+    },
+    "lyrics": {
+      "title": "Songtexte",
+      "lrclib_mode": "LRCLIB.NET",
+      "lrclib_mode_desc": "Steuern, wann Songtexte von LRCLIB.NET abgerufen werden",
+      "lrclib_off": "Aus (nur Metadaten)",
+      "lrclib_prefer_metadata": "Metadaten bevorzugen",
+      "lrclib_prefer_lrclib": "lrclib bevorzugen"
     }
   },
   "sidebar": {

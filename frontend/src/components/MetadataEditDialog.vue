@@ -4,9 +4,12 @@ import { Input } from '@/components/ui/input'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import { MetadataUpdate } from '../../bindings/airmedy/internal/domain/models'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
+import * as LyricsService from '../../bindings/airmedy/internal/infra/wails/lyricsservice'
 import { useI18n } from 'vue-i18n'
 import { buildArtworkUrl } from '@/lib/utils'
 import LazyImg from './LazyImg.vue'
+import TabSwitcher from '@/components/ui/TabSwitcher.vue'
+import { ListMusic, Mic2 } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const props = defineProps<{
@@ -25,6 +28,12 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const selectedImage = ref<string | null>(null)
 const selectedImageData = ref<string | null>(null)
 
+const activeTab = ref('info')
+const tabOptions = computed(() => [
+  { value: 'info', label: t('library.track_info'), icon: ListMusic },
+  { value: 'lyrics', label: t('library.lyrics'), icon: Mic2 },
+])
+
 const form = ref<MetadataUpdate>(new MetadataUpdate())
 
 const currentArtworkUrl = computed(() => {
@@ -35,8 +44,9 @@ const currentArtworkUrl = computed(() => {
 
 watch(
   () => props.open,
-  (val) => {
+  async (val) => {
     if (val && props.track) {
+      activeTab.value = 'info'
       const t = props.track
       form.value = new MetadataUpdate({
         Title: t.title ?? '',
@@ -52,11 +62,21 @@ watch(
         BPM: t.bpm ?? 0,
         Label: t.label ?? '',
         ISRC: t.isrc ?? '',
+        Lyrics: '',
       })
       if (selectedImage.value) URL.revokeObjectURL(selectedImage.value)
       selectedImage.value = null
       selectedImageData.value = null
       error.value = ''
+
+      try {
+        const lyric = await LyricsService.GetLyrics(props.track.id)
+        if (lyric && lyric.meta_content) {
+          form.value.Lyrics = lyric.meta_content
+        }
+      } catch (e) {
+        console.error('Failed to fetch lyrics:', e)
+      }
     }
   },
   { immediate: true },
@@ -147,156 +167,170 @@ function cancel() {
       >
         <div class="absolute inset-0 bg-background/60 backdrop-blur-sm" @click="cancel" />
         <div
-          class="relative z-10 w-[480px] max-h-[85vh] overflow-y-auto rounded-xl bg-glass-elevated backdrop-blur-xl ring-1 ring-border-glass shadow-2xl p-5"
+          class="relative z-10 w-[480px] max-h-[90vh] overflow-y-auto rounded-xl bg-glass-elevated backdrop-blur-xl ring-1 ring-border-glass shadow-2xl p-5"
           @keydown.esc="cancel"
         >
-          <h3 class="text-sm font-semibold text-foreground mb-4">{{ t('library.edit_metadata') }}</h3>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-foreground">{{ t('library.edit_metadata') }}</h3>
+            <TabSwitcher v-model="activeTab" :options="tabOptions" />
+          </div>
 
-          <div class="flex gap-5 mb-5">
-            <div class="relative group cursor-pointer w-32 h-32 flex-shrink-0" @click="triggerFileSelect">
-              <div class="w-full h-full rounded-lg overflow-hidden bg-foreground/[0.05] ring-1 ring-border-glass">
-                <LazyImg v-if="currentArtworkUrl" :src="currentArtworkUrl" class="w-full h-full object-cover" />
-                <div v-else class="w-full h-full flex items-center justify-center opacity-20">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+          <div v-show="activeTab === 'info'">
+            <div class="flex gap-5 mb-5">
+              <div class="relative group cursor-pointer w-32 h-32 flex-shrink-0" @click="triggerFileSelect">
+                <div class="w-full h-full rounded-lg overflow-hidden bg-foreground/[0.05] ring-1 ring-border-glass">
+                  <LazyImg v-if="currentArtworkUrl" :src="currentArtworkUrl" class="w-full h-full object-cover" />
+                  <div v-else class="w-full h-full flex items-center justify-center opacity-20">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                  </div>
+                </div>
+                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
+                  <span class="text-[10px] font-medium text-white uppercase tracking-wider">{{ t('common.change') }}</span>
+                </div>
+                <input
+                  ref="fileInput"
+                  type="file"
+                  class="hidden"
+                  accept="image/png,image/jpeg,image/jpg"
+                  @change="onFileChange"
+                />
+              </div>
+
+              <div class="flex-grow space-y-3">
+                <div>
+                  <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('library.title') }}</label>
+                  <Input
+                    v-model="form.Title"
+                    :placeholder="t('library.title')"
+                    class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('library.artist') }}</label>
+                  <Input
+                    v-model="form.Artist"
+                    :placeholder="t('library.artist')"
+                    class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
+                  />
                 </div>
               </div>
-              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
-                <span class="text-[10px] font-medium text-white uppercase tracking-wider">{{ t('common.change') }}</span>
-              </div>
-              <input
-                ref="fileInput"
-                type="file"
-                class="hidden"
-                accept="image/png,image/jpeg,image/jpg"
-                @change="onFileChange"
-              />
             </div>
 
-            <div class="flex-grow space-y-3">
+            <div class="space-y-3">
               <div>
-                <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('library.title') }}</label>
+                <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('library.album') }}</label>
                 <Input
-                  v-model="form.Title"
-                  :placeholder="t('library.title')"
+                  v-model="form.AlbumTitle"
+                  :placeholder="t('library.album')"
                   class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
                 />
               </div>
-              <div>
-                <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('library.artist') }}</label>
-                <Input
-                  v-model="form.Artist"
-                  :placeholder="t('library.artist')"
-                  class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
-                />
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('library.genre') }}</label>
+                  <Input
+                    v-model="form.Genre"
+                    :placeholder="t('library.genre')"
+                    class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('library.composer') }}</label>
+                  <Input
+                    v-model="form.Composer"
+                    :placeholder="t('library.composer')"
+                    class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
+                  />
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('track_info.label') }}</label>
+                  <Input
+                    v-model="form.Label"
+                    :placeholder="t('track_info.label')"
+                    class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('track_info.isrc') }}</label>
+                  <Input
+                    v-model="form.ISRC"
+                    :placeholder="t('track_info.isrc')"
+                    class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
+                  />
+                </div>
+              </div>
+              <div class="grid grid-cols-3 gap-3">
+                <div>
+                  <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('library.year') }}</label>
+                  <Input
+                    :model-value="form.Year.toString()"
+                    :placeholder="t('library.year')"
+                    class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
+                    @update:model-value="setInt('Year', $event as string)"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('library.track') }}</label>
+                  <Input
+                    :model-value="form.TrackNumber.toString()"
+                    placeholder="0"
+                    class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
+                    @update:model-value="setInt('TrackNumber', $event as string)"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('track_info.bpm') }}</label>
+                  <Input
+                    :model-value="form.BPM.toString()"
+                    placeholder="0"
+                    class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
+                    @update:model-value="setInt('BPM', $event as string)"
+                  />
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('library.total') }}</label>
+                  <Input
+                    :model-value="form.TotalTracks.toString()"
+                    placeholder="0"
+                    class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
+                    @update:model-value="setInt('TotalTracks', $event as string)"
+                  />
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('library.disc') }}</label>
+                  <Input
+                    :model-value="form.DiscNumber.toString()"
+                    placeholder="0"
+                    class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
+                    @update:model-value="setInt('DiscNumber', $event as string)"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('library.total_discs') }}</label>
+                  <Input
+                    :model-value="form.TotalDiscs.toString()"
+                    placeholder="0"
+                    class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
+                    @update:model-value="setInt('TotalDiscs', $event as string)"
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="space-y-3">
-            <div>
-              <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('library.album') }}</label>
-              <Input
-                v-model="form.AlbumTitle"
-                :placeholder="t('library.album')"
-                class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
-              />
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('library.genre') }}</label>
-                <Input
-                  v-model="form.Genre"
-                  :placeholder="t('library.genre')"
-                  class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
-                />
-              </div>
-              <div>
-                <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('library.composer') }}</label>
-                <Input
-                  v-model="form.Composer"
-                  :placeholder="t('library.composer')"
-                  class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
-                />
-              </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('track_info.label') }}</label>
-                <Input
-                  v-model="form.Label"
-                  :placeholder="t('track_info.label')"
-                  class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
-                />
-              </div>
-              <div>
-                <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('track_info.isrc') }}</label>
-                <Input
-                  v-model="form.ISRC"
-                  :placeholder="t('track_info.isrc')"
-                  class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
-                />
-              </div>
-            </div>
-            <div class="grid grid-cols-3 gap-3">
-              <div>
-                <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('library.year') }}</label>
-                <Input
-                  :model-value="form.Year.toString()"
-                  :placeholder="t('library.year')"
-                  class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
-                  @update:model-value="setInt('Year', $event as string)"
-                />
-              </div>
-              <div>
-                <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('library.track') }}</label>
-                <Input
-                  :model-value="form.TrackNumber.toString()"
-                  placeholder="0"
-                  class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
-                  @update:model-value="setInt('TrackNumber', $event as string)"
-                />
-              </div>
-              <div>
-                <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('track_info.bpm') }}</label>
-                <Input
-                  :model-value="form.BPM.toString()"
-                  placeholder="0"
-                  class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
-                  @update:model-value="setInt('BPM', $event as string)"
-                />
-              </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('library.total') }}</label>
-                <Input
-                  :model-value="form.TotalTracks.toString()"
-                  placeholder="0"
-                  class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
-                  @update:model-value="setInt('TotalTracks', $event as string)"
-                />
-              </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('library.disc') }}</label>
-                <Input
-                  :model-value="form.DiscNumber.toString()"
-                  placeholder="0"
-                  class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
-                  @update:model-value="setInt('DiscNumber', $event as string)"
-                />
-              </div>
-              <div>
-                <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('library.total_discs') }}</label>
-                <Input
-                  :model-value="form.TotalDiscs.toString()"
-                  placeholder="0"
-                  class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
-                  @update:model-value="setInt('TotalDiscs', $event as string)"
-                />
-              </div>
-            </div>
+          <div v-show="activeTab === 'lyrics'" class="space-y-3 h-[400px] flex flex-col">
+            <label class="block text-xs text-foreground/80 font-medium">{{ t('library.lyrics') }}</label>
+            <textarea
+              v-model="form.Lyrics"
+              :placeholder="t('library.lyrics_placeholder')"
+              class="flex-grow w-full bg-foreground/[0.07] border border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20 rounded-lg p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+            ></textarea>
           </div>
 
           <p v-if="error" class="mt-3 text-xs text-red-400">{{ error }}</p>

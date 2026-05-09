@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"airmedy/internal/domain"
+	"airmedy/internal/app/lyrics"
 	"airmedy/internal/infra/artwork"
 
 	"github.com/fsnotify/fsnotify"
@@ -49,6 +50,7 @@ type LibraryService struct {
 	metadataWriter    domain.MetadataWriter
 	artworkCache      domain.ArtworkCache
 	searchService     domain.SearchService
+	lyricsService     *lyrics.LyricsService
 	logger            *slog.Logger
 	watcher           *fsnotify.Watcher
 
@@ -68,6 +70,7 @@ func NewLibraryService(
 	metadataWriter domain.MetadataWriter,
 	artworkCache domain.ArtworkCache,
 	searchService domain.SearchService,
+	lyricsService *lyrics.LyricsService,
 	logger *slog.Logger,
 ) (*LibraryService, error) {
 	watcher, err := fsnotify.NewWatcher()
@@ -87,6 +90,7 @@ func NewLibraryService(
 		metadataWriter:    metadataWriter,
 		artworkCache:      artworkCache,
 		searchService:     searchService,
+		lyricsService:     lyricsService,
 		logger:            logger.With("module", "library"),
 		watcher:           watcher,
 	}, nil
@@ -495,6 +499,19 @@ func (s *LibraryService) ImportFile(ctx context.Context, path string) error {
 		s.logger.Debug("Error extracting artwork", "path", path, "error", err)
 	} else {
 		s.logger.Debug("No artwork found in file", "path", path)
+	}
+
+	// Extract lyrics from metadata
+	if s.lyricsService != nil {
+		if metaLyrics, isSynced, err := s.metadataExtractor.ExtractLyrics(ctx, path); err == nil && metaLyrics != "" {
+			source := "meta-plain"
+			if isSynced {
+				source = "meta-synced"
+			}
+			if err := s.lyricsService.SaveMetaLyrics(ctx, dto.Track.ID, metaLyrics, source); err != nil {
+				s.logger.Warn("Failed to save metadata lyrics", "path", path, "error", err)
+			}
+		}
 	}
 
 	// Resolve related entities

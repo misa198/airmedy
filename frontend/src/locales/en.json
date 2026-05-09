@@ -118,6 +118,14 @@
       "delete_profile": "Delete Profile",
       "rename_profile": "Rename Profile",
       "select_profile": "Select Profile"
+    },
+    "lyrics": {
+      "title": "Lyrics",
+      "lrclib_mode": "LRCLIB.NET",
+      "lrclib_mode_desc": "Control when to fetch lyrics from LRCLIB.NET",
+      "lrclib_off": "Off (metadata only)",
+      "lrclib_prefer_metadata": "Prefer metadata",
+      "lrclib_prefer_lrclib": "Prefer lrclib"
     }
   },
   "sidebar": {
@@ -210,6 +218,9 @@
     "disc": "Disc",
     "total_discs": "Total Discs",
     "edit_metadata": "Edit Metadata",
+    "track_info": "Track Info",
+    "lyrics": "Lyrics",
+    "lyrics_placeholder": "Paste lyrics here...",
     "save_metadata_error": "Failed to save metadata. Check file permissions.",
     "no_tracks": "No tracks found",
     "no_albums": "No albums found",

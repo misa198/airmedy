@@ -162,6 +162,9 @@ func (m *mockMetadataExtractor) Extract(ctx context.Context, path string) (*doma
 func (m *mockMetadataExtractor) ExtractArtwork(ctx context.Context, path string) ([]byte, string, error) {
 	return nil, "", nil
 }
+func (m *mockMetadataExtractor) ExtractLyrics(ctx context.Context, path string) (string, bool, error) {
+	return "", false, nil
+}
 
 type mockSearchService struct{ domain.SearchService }
 func (m *mockSearchService) IndexTrack(ctx context.Context, track *domain.TrackDTO) error { return nil }
@@ -207,6 +210,7 @@ func TestLibraryService_SyncFolder(t *testing.T) {
 		&mockMetadataWriter{},
 		&mockArtworkCache{},
 		&mockSearchService{},
+		nil,
 		slog.Default(),
 	)
 	if err != nil {
@@ -300,6 +304,7 @@ func TestLibraryService_SyncFolder_SupportedExtensions(t *testing.T) {
 		&mockMetadataWriter{},
 		&mockArtworkCache{},
 		&mockSearchService{},
+		nil,
 		slog.Default(),
 	)
 	if err != nil {
@@ -339,6 +344,7 @@ func TestLibraryService_AddWatchedFolder_CoveringExisting(t *testing.T) {
 		&mockMetadataWriter{},
 		&mockArtworkCache{},
 		&mockSearchService{},
+		nil,
 		slog.Default(),
 	)
 	defer func() { _ = s.Stop(context.Background()) }()

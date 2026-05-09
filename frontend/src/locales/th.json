@@ -118,6 +118,14 @@
       "delete_profile": "ลบโปรไฟล์",
       "rename_profile": "เปลี่ยนชื่อโปรไฟล์",
       "select_profile": "เลือกโปรไฟล์"
+    },
+    "lyrics": {
+      "title": "เนื้อเพลง",
+      "lrclib_mode": "LRCLIB.NET",
+      "lrclib_mode_desc": "ควบคุมการดึงเนื้อเพลงจาก LRCLIB.NET",
+      "lrclib_off": "ปิด (เฉพาะข้อมูลเมตา)",
+      "lrclib_prefer_metadata": "ใช้ข้อมูลเมตาก่อน",
+      "lrclib_prefer_lrclib": "ใช้ lrclib ก่อน"
     }
   },
   "sidebar": {

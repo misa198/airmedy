@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -12,6 +13,8 @@ import (
 
 	"go.senan.xyz/taglib"
 )
+
+var lrcPattern = regexp.MustCompile(`\[\d+:\d+\.\d+\]`)
 
 func NewTagLibWriter() domain.MetadataWriter {
 	return &taglibExtractor{}
@@ -192,6 +195,18 @@ func (e *taglibExtractor) ExtractArtwork(ctx context.Context, path string) ([]by
 	return data, mimeType, nil
 }
 
+func (e *taglibExtractor) ExtractLyrics(_ context.Context, path string) (string, bool, error) {
+	tags, err := taglib.ReadTags(path)
+	if err != nil {
+		return "", false, fmt.Errorf("failed to read tags: %w", err)
+	}
+	content := firstTag(tags, "LYRICS")
+	if content == "" {
+		return "", false, nil
+	}
+	return content, lrcPattern.MatchString(content), nil
+}
+
 func firstTag(tags map[string][]string, keys ...string) string {
 	for _, key := range keys {
 		if vals, ok := tags[key]; ok && len(vals) > 0 && vals[0] != "" {
@@ -229,6 +244,7 @@ func (e *taglibExtractor) WriteMetadata(_ context.Context, path string, fields d
 		"BPM":         {strconv.Itoa(fields.BPM)},
 		"LABEL":       {fields.Label},
 		"ISRC":        {fields.ISRC},
+		"LYRICS":      {fields.Lyrics},
 	}
 	if err := taglib.WriteTags(path, tags, taglib.Clear); err != nil {
 		return fmt.Errorf("failed to write metadata to %s: %w", path, err)

@@ -11,6 +11,7 @@ export const useAppStore = defineStore('app', () => {
   const autoCheckUpdate = ref(true)
   const lastfmUsername = ref('')
   const eqEnabled = ref(true)
+  const lrclibMode = ref<'off' | 'prefer_metadata' | 'prefer_lrclib'>('prefer_metadata')
   
   const updateInfo = ref<UpdateInfo | null>(null)
   const isCheckingUpdate = ref(false)
@@ -37,6 +38,7 @@ export const useAppStore = defineStore('app', () => {
         autoCheckUpdate.value = !!settings.auto_check_update
         lastfmUsername.value = settings.lastfm_username || ''
         eqEnabled.value = settings.eq_enabled !== false
+        if (settings.lrclib_mode) lrclibMode.value = settings.lrclib_mode as any
         applyTheme(theme.value)
       }
       
@@ -84,13 +86,14 @@ export const useAppStore = defineStore('app', () => {
     theme.value = newTheme
     applyTheme(newTheme)
     try {
-      await SettingsService.SaveSettings({ 
-        theme: newTheme, 
+      await SettingsService.SaveSettings({
+        theme: newTheme,
         language: language.value,
         start_at_login: startAtLogin.value,
         auto_check_update: autoCheckUpdate.value,
         lastfm_username: lastfmUsername.value,
-        eq_enabled: eqEnabled.value
+        eq_enabled: eqEnabled.value,
+        lrclib_mode: lrclibMode.value,
       })
     } catch (err) {
       console.error('Failed to save theme setting:', err)
@@ -100,13 +103,14 @@ export const useAppStore = defineStore('app', () => {
   const updateLanguage = async (newLanguage: string) => {
     language.value = newLanguage
     try {
-      await SettingsService.SaveSettings({ 
-        theme: theme.value, 
+      await SettingsService.SaveSettings({
+        theme: theme.value,
         language: newLanguage,
         start_at_login: startAtLogin.value,
         auto_check_update: autoCheckUpdate.value,
         lastfm_username: lastfmUsername.value,
-        eq_enabled: eqEnabled.value
+        eq_enabled: eqEnabled.value,
+        lrclib_mode: lrclibMode.value,
       })
     } catch (err) {
       console.error('Failed to save language setting:', err)
@@ -116,13 +120,14 @@ export const useAppStore = defineStore('app', () => {
   const updateStartAtLogin = async (enabled: boolean) => {
     startAtLogin.value = enabled
     try {
-      await SettingsService.SaveSettings({ 
-        theme: theme.value, 
+      await SettingsService.SaveSettings({
+        theme: theme.value,
         language: language.value,
         start_at_login: enabled,
         auto_check_update: autoCheckUpdate.value,
         lastfm_username: lastfmUsername.value,
-        eq_enabled: eqEnabled.value
+        eq_enabled: eqEnabled.value,
+        lrclib_mode: lrclibMode.value,
       })
     } catch (err) {
       console.error('Failed to save startup setting:', err)
@@ -132,13 +137,14 @@ export const useAppStore = defineStore('app', () => {
   const updateAutoCheckUpdate = async (enabled: boolean) => {
     autoCheckUpdate.value = enabled
     try {
-      await SettingsService.SaveSettings({ 
-        theme: theme.value, 
+      await SettingsService.SaveSettings({
+        theme: theme.value,
         language: language.value,
         start_at_login: startAtLogin.value,
         auto_check_update: enabled,
         lastfm_username: lastfmUsername.value,
-        eq_enabled: eqEnabled.value
+        eq_enabled: eqEnabled.value,
+        lrclib_mode: lrclibMode.value,
       })
     } catch (err) {
       console.error('Failed to save auto update setting:', err)
@@ -154,7 +160,8 @@ export const useAppStore = defineStore('app', () => {
         start_at_login: startAtLogin.value,
         auto_check_update: autoCheckUpdate.value,
         lastfm_username: lastfmUsername.value,
-        eq_enabled: enabled
+        eq_enabled: enabled,
+        lrclib_mode: lrclibMode.value,
       })
     } catch (err) {
       console.error('Failed to save EQ enabled setting:', err)
@@ -163,6 +170,23 @@ export const useAppStore = defineStore('app', () => {
 
   const updateLastFmUsername = (username: string) => {
     lastfmUsername.value = username
+  }
+
+  const updateLrclibMode = async (mode: 'off' | 'prefer_metadata' | 'prefer_lrclib') => {
+    lrclibMode.value = mode
+    try {
+      await SettingsService.SaveSettings({
+        theme: theme.value,
+        language: language.value,
+        start_at_login: startAtLogin.value,
+        auto_check_update: autoCheckUpdate.value,
+        lastfm_username: lastfmUsername.value,
+        eq_enabled: eqEnabled.value,
+        lrclib_mode: mode,
+      })
+    } catch (err) {
+      console.error('Failed to save lrclib mode setting:', err)
+    }
   }
 
   // Watch for system theme changes if set to 'system'
@@ -183,6 +207,7 @@ export const useAppStore = defineStore('app', () => {
     autoCheckUpdate,
     lastfmUsername,
     eqEnabled,
+    lrclibMode,
     updateInfo,
     isCheckingUpdate,
     isUpdateDialogOpen,
@@ -198,6 +223,7 @@ export const useAppStore = defineStore('app', () => {
     updateAutoCheckUpdate,
     updateEQEnabled,
     updateLastFmUsername,
+    updateLrclibMode,
     dispose,
   }
 })

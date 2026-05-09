@@ -118,6 +118,14 @@
       "delete_profile": "Supprimer le profil",
       "rename_profile": "Renommer le profil",
       "select_profile": "Sélectionner un profil"
+    },
+    "lyrics": {
+      "title": "Paroles",
+      "lrclib_mode": "LRCLIB.NET",
+      "lrclib_mode_desc": "Contrôler quand récupérer les paroles depuis LRCLIB.NET",
+      "lrclib_off": "Désactivé (métadonnées uniquement)",
+      "lrclib_prefer_metadata": "Privilégier les métadonnées",
+      "lrclib_prefer_lrclib": "Privilégier lrclib"
     }
   },
   "sidebar": {

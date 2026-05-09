@@ -101,11 +101,13 @@ type Playlist struct {
 
 // Lyric represents a music lyric
 type Lyric struct {
-	TrackID   string    `json:"track_id" db:"track_id"`
-	Content   string    `json:"content" db:"content"`
-	Source    string    `json:"source" db:"source"`
-	CreatedAt time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
+	TrackID     string    `json:"track_id" db:"track_id"`
+	Content     string    `json:"content" db:"content"`
+	Source      string    `json:"source" db:"source"`
+	MetaContent string    `json:"meta_content" db:"meta_content"`
+	MetaSource  string    `json:"meta_source" db:"meta_source"`
+	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
 // SyncProgress represents the current progress of a library sync
@@ -142,4 +144,5 @@ type AppSettings struct {
 	AutoCheckUpdate bool   `json:"auto_check_update"`
 	LastFmUsername  string `json:"lastfm_username"`
 	EQEnabled       bool   `json:"eq_enabled"`
+	LrclibMode      string `json:"lrclib_mode"` // "off", "prefer_metadata", "prefer_lrclib"
 }
