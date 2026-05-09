@@ -28,7 +28,6 @@ export const useDeviceStore = defineStore('device', () => {
   async function init() {
     if (_initialized) return
     _initialized = true
-    console.log('[DeviceStore] Initializing...')
     try {
       const platform = await GetPlatform()
       isMac.value = platform === 'darwin'

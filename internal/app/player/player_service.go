@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"math/rand"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -30,6 +31,7 @@ type PlayerService struct {
 	currentTheme  *domain.ThemeColors
 	trackRepo     domain.TrackRepository
 	stateRepo     domain.PlayerStateRepository
+	settingsRepo  domain.SettingsRepository
 
 	trackStartTime time.Time
 	playCounted    map[string]bool // trackID -> bool
@@ -59,6 +61,7 @@ func NewPlayerService(
 	lyricsService *lyrics.LyricsService,
 	trackRepo domain.TrackRepository,
 	stateRepo domain.PlayerStateRepository,
+	settingsRepo domain.SettingsRepository,
 	lc fx.Lifecycle,
 ) *PlayerService {
 	s := &PlayerService{
@@ -69,6 +72,7 @@ func NewPlayerService(
 		lyricsService: lyricsService,
 		trackRepo:     trackRepo,
 		stateRepo:     stateRepo,
+		settingsRepo:  settingsRepo,
 		tickInterval:  500 * time.Millisecond,
 		playCounted:   make(map[string]bool),
 		npReported:    make(map[string]bool),
@@ -537,30 +541,62 @@ func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
 	}
 	ctx := context.Background()
 
-	// Check the database first.
-	lyric, err := s.lyricsService.GetLyrics(ctx, track.ID)
+	settings, err := s.settingsRepo.Load(ctx)
 	if err != nil {
-		s.logger.Warn("failed to get lyrics from db", "track_id", track.ID, "error", err)
+		settings = &domain.AppSettings{LrclibMode: "off"}
 	}
 
-	// If not cached, try the external API.
-	if lyric == nil {
-		lyric, err = s.lyricsService.FetchFromExternal(ctx, track)
+	// 1. Try to get best available lyrics according to settings.
+	lyric := s.lyricsService.ResolveLyrics(ctx, track.ID, settings.LrclibMode)
+	if lyric != nil {
+		s.emitLyrics(track.ID, lyric)
+	}
+
+	// 2. If we are in an LRCLIB mode, and we don't have external lyrics yet, try to fetch.
+	hasExternal := lyric != nil && strings.HasPrefix(lyric.Source, "lrclib-")
+	if !hasExternal && settings.LrclibMode != "off" {
+		// If we only have metadata (or nothing), and the mode is "prefer_lrclib" or "prefer_metadata",
+		// we should still try to fetch better/synced lyrics from external.
+		
+		// Fetch from external.
+		fetched, err := s.lyricsService.FetchFromExternal(ctx, track)
 		if err != nil {
 			s.logger.Warn("failed to fetch lyrics from external", "track_id", track.ID, "error", err)
+			// On failure, if we haven't emitted anything yet (lyric == nil), fallback to metadata.
+			if lyric == nil {
+				lyric = s.lyricsService.ResolveLyrics(ctx, track.ID, "off")
+				s.emitLyrics(track.ID, lyric)
+			}
+		} else if fetched != nil {
+			s.emitLyrics(track.ID, fetched)
+			return
+		} else if lyric == nil {
+			// No external lyrics found, and no metadata lyrics were found earlier.
+			s.emitLyrics(track.ID, nil)
 		}
+	} else if lyric == nil {
+		// Mode is "off" and no metadata lyrics found.
+		s.emitLyrics(track.ID, nil)
+	}
+}
+
+func (s *PlayerService) emitLyrics(trackID string, lyric *domain.Lyric) {
+	s.mu.RLock()
+	currentID := ""
+	if s.currentTrack != nil {
+		currentID = s.currentTrack.ID
+	}
+	s.mu.RUnlock()
+
+	if currentID != trackID {
+		return
 	}
 
 	a := application.Get()
 	if a == nil || a.Event == nil {
 		return
 	}
-	defer func() { _ = recover() }()
-	if lyric != nil {
-		a.Event.Emit("player:lyrics", lyric)
-	} else {
-		a.Event.Emit("player:lyrics", nil)
-	}
+	a.Event.Emit("player:lyrics", lyric)
 }
 
 func (s *PlayerService) emitStatus() {

@@ -18,7 +18,7 @@ The metadata feature handles reading audio file tags (ID3, Vorbis, MP4/iTunes, e
 type MetadataExtractor interface {
     Extract(ctx context.Context, path string) (*TrackDTO, error)
     ExtractArtwork(ctx context.Context, path string) ([]byte, string, error)
-    // returns: imageData, mimeType, error
+    ExtractLyrics(ctx context.Context, path string) (content string, isSynced bool, err error)
 }
 ```
 
@@ -37,12 +37,13 @@ TagLib exposes a flat tag map. The extractor tries multiple keys (ID3v2, Vorbis 
 | Genre        | `GENRE`, `TCON`               |
 | Composer     | `COMPOSER`, `TCOM`            |
 | Year         | `DATE`, `YEAR`, `TDRC`        |
-| Track Number | `TRACKNUMBER`, `TRKN`         |
-| Disc Number  | `DISCNUMBER`, `TPOS`          |
-| BPM          | `BPM`, `TBPM`                 |
-| Label        | `LABEL`, `ORGANIZATION`       |
+| Track Number | `TRACKNUMBER`, `TRACK`, `TRKN`|
+| Disc Number  | `DISCNUMBER`, `DISC`, `TPOS`  |
+| BPM          | `BPM`, `TBPM`, `tmpo`         |
+| Label        | `LABEL`, `PUBLISHER`, `TPUB`  |
 | ISRC         | `ISRC`, `TSRC`                |
-| Copyright    | `COPYRIGHT`, `TCOP`           |
+| Copyright    | `COPYRIGHT`, `TCOP`, `cprt`   |
+| Lyrics       | `LYRICS`                      |
 
 Values like `"3/12"` (track/total) are parsed to extract both the number and total.
 
@@ -78,15 +79,15 @@ NFKD decomposition to separate base characters from diacritics, then strips non-
 
 ### `SplitArtists(raw string) []string`
 
-Splits a raw multi-artist string into individual names.
+Splits a raw multi-artist string into individual names using a robust regular expression.
 
-**Hard delimiters** (always split): `;`, `|`
+**Hard delimiters** (always split): `,`, `;`, `|`, `/`, `\`
 
-**Soft delimiters** (split if not inside parentheses or quotes):
+**Keywords** (split if appearing as full words, optionally followed by a dot, or as ampersands):
 
-- `,`
-- `&` (with spaces)
-- `ft.`, `feat.`, `featuring`, `with` (case-insensitive)
+- `ft`, `feat`, `featuring`, `with`, `vs`, `&`, `and` (case-insensitive)
+
+Whitespace around delimiters and keywords is ignored.
 
 Example: `"Artist A, Artist B feat. Artist C"` → `["Artist A", "Artist B", "Artist C"]`
 
@@ -115,6 +116,7 @@ type MetadataUpdate struct {
     BPM         int
     Label       string
     ISRC        string
+    Lyrics      string
     ArtworkData []byte
     ArtworkMIME string
 }

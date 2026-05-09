@@ -17,17 +17,29 @@ Fetches and displays synchronized (LRC) or plain-text lyrics for the current tra
 
 ```go
 type Lyric struct {
-    TrackID   string
-    Content   string    // LRC format or plain text
-    Source    string    // e.g., "lrclib-synced", "lrclib-plain"
-    CreatedAt time.Time
-    UpdatedAt time.Time
+    TrackID     string
+    Content     string    // LRC format or plain text from lrclib
+    Source      string    // e.g., "lrclib-synced", "lrclib-plain"
+    MetaContent string    // Lyrics extracted from file metadata
+    MetaSource  string    // e.g., "metadata-synced", "metadata-plain"
+    CreatedAt   time.Time
+    UpdatedAt   time.Time
 }
 ```
 
-## Fetch Strategy
+## Resolution Strategy
 
-Called on track load. Returns cached result if available, otherwise:
+The `LyricsService.ResolveLyrics` method determines which lyrics to display based on the `lrclib_mode` setting:
+
+| Mode | Behavior |
+| --- | --- |
+| `off` | Only use `MetaContent`. Never fetch from lrclib. |
+| `prefer_metadata` | (Default) Use `MetaContent` if available, otherwise use `Content` (lrclib). |
+| `prefer_lrclib` | Use `Content` (lrclib) if available, otherwise use `MetaContent`. |
+
+If resolution returns no results and the mode is not `off`, `PlayerService` triggers an external fetch from `lrclib.net`.
+
+## Fetch Strategy (lrclib.net)
 
 ### 1. Exact Fetch
 
@@ -77,7 +89,7 @@ type LyricRepository interface {
 }
 ```
 
-Lyrics are stored in the `lyrics` table with `track_id` as primary key (one lyric per track).
+Lyrics are stored in the `lyrics` table. It maintains both `content`/`source` (from external providers like lrclib) and `meta_content`/`meta_source` (from file metadata).
 
 ## Wails-Exposed Methods
 
@@ -85,6 +97,7 @@ Lyrics are stored in the `lyrics` table with `track_id` as primary key (one lyri
 GetLyrics(trackID: string): Lyric | null
 FetchLyrics(trackID: string, track: TrackDTO): Lyric | null
 SaveLyrics(trackID: string, content: string, source: string): void
+SaveMetaLyrics(trackID: string, content: string, source: string): void
 DeleteLyrics(trackID: string): void
 ```
 
@@ -147,3 +160,5 @@ Parsed into `{ text: "English text", secondary: "中文翻译" }`.
 **Fullscreen player:** Lyrics panel shown as the right column or via tab in the fullscreen overlay.
 
 **Refresh button:** In the track context menu (`context_menu.refresh_lyrics`), calls `FetchLyrics()` to force re-fetch even if cached.
+
+**Manual Edit:** Users can manually edit lyrics in the `MetadataEditDialog`. These edits are written to the file's `LYRICS` tag and stored as `meta_content` in the database.

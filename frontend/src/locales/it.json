@@ -118,6 +118,14 @@
       "delete_profile": "Elimina profilo",
       "rename_profile": "Rinomina profilo",
       "select_profile": "Seleziona profilo"
+    },
+    "integrations": {
+      "title": "Integrazioni",
+      "lrclib_mode": "LRCLIB.NET",
+      "lrclib_mode_desc": "Controlla quando recuperare i testi da LRCLIB.NET",
+      "lrclib_off": "Disattivo (solo metadati)",
+      "lrclib_prefer_metadata": "Preferisci metadati",
+      "lrclib_prefer_lrclib": "Preferisci lrclib"
     }
   },
   "sidebar": {

@@ -53,7 +53,7 @@ func NewLyricsService(repo domain.LyricRepository, logger *slog.Logger) *LyricsS
 	return &LyricsService{
 		repo:   repo,
 		logger: logger,
-		client: &http.Client{Timeout: 10 * time.Second},
+		client: &http.Client{Timeout: 30 * time.Second},
 	}
 }
 
@@ -62,6 +62,12 @@ func (s *LyricsService) GetLyrics(ctx context.Context, trackID string) (*domain.
 }
 
 func (s *LyricsService) SaveLyrics(ctx context.Context, trackID, content, source string) error {
+	existing, _ := s.repo.GetByTrackID(ctx, trackID)
+	if existing != nil {
+		existing.Content = content
+		existing.Source = source
+		return s.repo.Upsert(ctx, existing)
+	}
 	return s.repo.Upsert(ctx, &domain.Lyric{
 		TrackID: trackID,
 		Content: content,
@@ -71,6 +77,59 @@ func (s *LyricsService) SaveLyrics(ctx context.Context, trackID, content, source
 
 func (s *LyricsService) DeleteLyrics(ctx context.Context, trackID string) error {
 	return s.repo.Delete(ctx, trackID)
+}
+
+// SaveMetaLyrics saves lyrics extracted from file metadata.
+// Preserves any existing lrclib content/source fields.
+func (s *LyricsService) SaveMetaLyrics(ctx context.Context, trackID, content, source string) error {
+	existing, _ := s.repo.GetByTrackID(ctx, trackID)
+	if existing != nil {
+		existing.MetaContent = content
+		existing.MetaSource = source
+		return s.repo.Upsert(ctx, existing)
+	}
+	return s.repo.Upsert(ctx, &domain.Lyric{
+		TrackID:     trackID,
+		MetaContent: content,
+		MetaSource:  source,
+	})
+}
+
+// ResolveLyrics returns the appropriate lyric based on lrclib_mode.
+// Returns nil if the caller should fetch from lrclib.
+func (s *LyricsService) ResolveLyrics(ctx context.Context, trackID, lrclibMode string) *domain.Lyric {
+	lyric, _ := s.repo.GetByTrackID(ctx, trackID)
+
+	switch lrclibMode {
+	case "off":
+		if lyric != nil && lyric.MetaContent != "" {
+			return &domain.Lyric{
+				TrackID: trackID,
+				Content: lyric.MetaContent,
+				Source:  lyric.MetaSource,
+			}
+		}
+		return nil
+
+	case "prefer_lrclib":
+		if lyric != nil && lyric.Content != "" {
+			return lyric
+		}
+		return nil
+
+	default: // "prefer_metadata"
+		if lyric != nil && lyric.MetaContent != "" {
+			return &domain.Lyric{
+				TrackID: trackID,
+				Content: lyric.MetaContent,
+				Source:  lyric.MetaSource,
+			}
+		}
+		if lyric != nil && lyric.Content != "" {
+			return lyric
+		}
+		return nil
+	}
 }
 
 // FetchFromExternal tries lrclib.net for the given track and saves the result.
@@ -217,7 +276,16 @@ func (s *LyricsService) searchAndRank(ctx context.Context, trackID, normTitle, n
 }
 
 func (s *LyricsService) saveLyric(ctx context.Context, trackID, content, source string) (*domain.Lyric, error) {
-	lyric := &domain.Lyric{TrackID: trackID, Content: content, Source: source}
+	existing, _ := s.repo.GetByTrackID(ctx, trackID)
+	var lyric *domain.Lyric
+	if existing != nil {
+		existing.Content = content
+		existing.Source = source
+		lyric = existing
+	} else {
+		lyric = &domain.Lyric{TrackID: trackID, Content: content, Source: source}
+	}
+
 	if err := s.repo.Upsert(ctx, lyric); err != nil {
 		s.logger.Warn("failed to save fetched lyrics", "track_id", trackID, "error", err)
 	}

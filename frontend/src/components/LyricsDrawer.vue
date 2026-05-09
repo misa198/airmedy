@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { Mic2, X } from 'lucide-vue-next'
+import { AlignLeft, Mic2, Timer, X } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
 import { useI18n } from 'vue-i18n'
 import { useLyrics } from '../composables/useLyrics'
@@ -57,16 +57,16 @@ watch(activeIndex, (newIndex) => {
           class="absolute inset-y-0.5 w-1/2 rounded-full bg-foreground/10 transition-transform duration-200 ease-in-out"
           :class="viewType === 'plain' ? 'translate-x-full' : 'translate-x-0'" />
         <button
-          class="relative max-w-[70px] truncate z-10 px-2.5 py-1 rounded-full transition-colors duration-200 text-center"
-          :class="viewType === 'synced' ? 'text-foreground' : 'text-foreground opacity-60 hover:text-foreground opacity-90'"
+          class="relative z-10 p-1.5 rounded-full transition-colors duration-200 flex items-center justify-center"
+          :class="viewType === 'synced' ? 'text-foreground' : 'text-foreground opacity-60 hover:opacity-90'"
           @click="viewType = 'synced'">
-          {{ t('player.synced') }}
+          <Timer class="w-3.5 h-3.5" />
         </button>
         <button
-          class="relative relative max-w-[70px] truncate z-10 px-2.5 py-1 rounded-full transition-colors duration-200 text-center"
-          :class="viewType === 'plain' ? 'text-foreground' : 'text-foreground opacity-60 hover:text-foreground opacity-90'"
+          class="relative z-10 p-1.5 rounded-full transition-colors duration-200 flex items-center justify-center"
+          :class="viewType === 'plain' ? 'text-foreground' : 'text-foreground opacity-60 hover:opacity-90'"
           @click="viewType = 'plain'">
-          {{ t('player.plain') }}
+          <AlignLeft class="w-3.5 h-3.5" />
         </button>
       </div>
 

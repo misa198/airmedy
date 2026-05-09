@@ -43,5 +43,8 @@ const playlistSelectFields = `
 `
 
 const lyricSelectFields = `
-	track_id, content, COALESCE(source, '') AS source, created_at, updated_at
+	track_id, content, COALESCE(source, '') AS source,
+	COALESCE(meta_content, '') AS meta_content,
+	COALESCE(meta_source, '') AS meta_source,
+	created_at, updated_at
 `

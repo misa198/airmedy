@@ -118,6 +118,14 @@
       "delete_profile": "Excluir perfil",
       "rename_profile": "Renomear perfil",
       "select_profile": "Selecionar perfil"
+    },
+    "integrations": {
+      "title": "Integrações",
+      "lrclib_mode": "LRCLIB.NET",
+      "lrclib_mode_desc": "Controlar quando buscar letras do LRCLIB.NET",
+      "lrclib_off": "Desligado (apenas metadados)",
+      "lrclib_prefer_metadata": "Preferir metadados",
+      "lrclib_prefer_lrclib": "Preferir lrclib"
     }
   },
   "sidebar": {

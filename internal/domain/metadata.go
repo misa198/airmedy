@@ -5,6 +5,7 @@ import "context"
 type MetadataExtractor interface {
 	Extract(ctx context.Context, path string) (*TrackDTO, error)
 	ExtractArtwork(ctx context.Context, path string) ([]byte, string, error) // Returns data, mime type
+	ExtractLyrics(ctx context.Context, path string) (content string, isSynced bool, err error)
 }
 
 // MetadataUpdate holds user-editable fields for writing tags back to an audio file.
@@ -22,6 +23,7 @@ type MetadataUpdate struct {
 	BPM         int
 	Label       string
 	ISRC        string
+	Lyrics      string
 	ArtworkData []byte
 	ArtworkMIME string
 }

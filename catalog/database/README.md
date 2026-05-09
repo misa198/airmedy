@@ -38,6 +38,7 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000011 | `app_settings_updates.up.sql`  | Add `auto_check_update`, `start_at_login` to `app_settings`                                                                       |
 | 000012 | `playlist_lexorank.up.sql`     | Convert `playlist_tracks.position` from INTEGER to TEXT (LexoRank string), migrate existing data with computed ranks              |
 | 000013 | `app_settings_eq.up.sql`       | `ALTER TABLE app_settings ADD COLUMN eq_enabled BOOLEAN DEFAULT 0`                                                                |
+| 000014 | `meta_lyrics.up.sql`           | Add `meta_content` and `meta_source` to `lyrics` table; add `lrclib_mode` to `app_settings`; backfill lyrics from `other_metadata` |
 
 ## Full Schema
 
@@ -49,6 +50,7 @@ artists (
     name TEXT NOT NULL,
     sort_name TEXT NOT NULL,
     normalization_key TEXT,
+    artwork_key TEXT,
     created_at DATETIME,
     updated_at DATETIME
 )
@@ -123,6 +125,8 @@ lyrics (
     track_id TEXT PRIMARY KEY REFERENCES tracks(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
     source TEXT,
+    meta_content TEXT NOT NULL DEFAULT '',
+    meta_source TEXT NOT NULL DEFAULT '',
     created_at DATETIME,
     updated_at DATETIME
 )
@@ -170,6 +174,7 @@ app_settings (
     auto_check_update BOOLEAN DEFAULT 1,
     start_at_login BOOLEAN DEFAULT 0,
     eq_enabled BOOLEAN DEFAULT 0,
+    lrclib_mode TEXT DEFAULT 'prefer_metadata',
     updated_at DATETIME
 )
 ```
@@ -227,10 +232,11 @@ idx_composers_normalization_key ON composers(normalization_key)
 
 ### AlbumRepository — Key Queries
 
-**`GetByArtistID`**: UNION of two queries:
+**`GetByArtistID`**: UNION of three conditions:
 
 1. Albums where artist is in `album_artists`
 2. Albums where artist is in `track_artists` of any track in the album
+3. Albums where artist is in `track_album_artists` of any track in the album
 
 **`DeleteOrphaned`**: `DELETE FROM albums WHERE id NOT IN (SELECT DISTINCT album_id FROM tracks WHERE album_id IS NOT NULL)`
 
@@ -252,6 +258,13 @@ All entity IDs are deterministic UUID v4-style strings derived from MD5 hash of 
 
 - Track: MD5(file path)
 - Artist: MD5(normalization_key)
+- Album: MD5(normalization_key + primary_artist_normalization_key)
+- Genre/Composer: MD5(normalization_key)
+- Playlist: random UUID v4
+
+This ensures the same file always gets the same track ID, and the same artist name always maps to the same artist entity, enabling safe upserts without collision.
+upserts without collision.
+_key)
 - Album: MD5(normalization_key + primary_artist_normalization_key)
 - Genre/Composer: MD5(normalization_key)
 - Playlist: random UUID v4

@@ -118,6 +118,14 @@
       "delete_profile": "プロファイルを削除",
       "rename_profile": "プロファイルの名前を変更",
       "select_profile": "プロファイルを選択"
+    },
+    "integrations": {
+      "title": "連携",
+      "lrclib_mode": "LRCLIB.NET",
+      "lrclib_mode_desc": "LRCLIB.NET から歌詞を取得するタイミングを制御",
+      "lrclib_off": "オフ（メタデータのみ）",
+      "lrclib_prefer_metadata": "メタデータを優先",
+      "lrclib_prefer_lrclib": "lrclibを優先"
     }
   },
   "sidebar": {

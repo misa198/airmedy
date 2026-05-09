@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"airmedy/internal/domain"
+	"airmedy/internal/app/lyrics"
 	"airmedy/internal/infra/artwork"
 
 	"github.com/fsnotify/fsnotify"
@@ -45,15 +46,27 @@ type LibraryService struct {
 	composerRepo      domain.ComposerRepository
 	playlistRepo      domain.PlaylistRepository
 	watchedFolderRepo domain.WatchedFolderRepository
+	settingsRepo      domain.SettingsRepository
 	metadataExtractor domain.MetadataExtractor
 	metadataWriter    domain.MetadataWriter
 	artworkCache      domain.ArtworkCache
 	searchService     domain.SearchService
+	lyricsService     *lyrics.LyricsService
 	logger            *slog.Logger
 	watcher           *fsnotify.Watcher
 
-	trackUpdateListeners []func(*domain.TrackDTO)
-	mu                   sync.RWMutex
+	trackUpdateListeners      []func(*domain.TrackDTO)
+	artistArtworkQueue        chan artistArtworkJob
+	pendingArtistArtwork      map[string]struct{}
+	pendingArtistArtworkMu    sync.Mutex
+	ctx                       context.Context
+	cancel                    context.CancelFunc
+	mu                        sync.RWMutex
+}
+
+type artistArtworkJob struct {
+	ArtistID string
+	EventID  string
 }
 
 func NewLibraryService(
@@ -64,10 +77,12 @@ func NewLibraryService(
 	composerRepo domain.ComposerRepository,
 	playlistRepo domain.PlaylistRepository,
 	watchedFolderRepo domain.WatchedFolderRepository,
+	settingsRepo domain.SettingsRepository,
 	metadataExtractor domain.MetadataExtractor,
 	metadataWriter domain.MetadataWriter,
 	artworkCache domain.ArtworkCache,
 	searchService domain.SearchService,
+	lyricsService *lyrics.LyricsService,
 	logger *slog.Logger,
 ) (*LibraryService, error) {
 	watcher, err := fsnotify.NewWatcher()
@@ -75,20 +90,28 @@ func NewLibraryService(
 		return nil, fmt.Errorf("failed to create watcher: %w", err)
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	return &LibraryService{
-		trackRepo:         trackRepo,
-		albumRepo:         albumRepo,
-		artistRepo:        artistRepo,
-		genreRepo:         genreRepo,
-		composerRepo:      composerRepo,
-		playlistRepo:      playlistRepo,
-		watchedFolderRepo: watchedFolderRepo,
-		metadataExtractor: metadataExtractor,
-		metadataWriter:    metadataWriter,
-		artworkCache:      artworkCache,
-		searchService:     searchService,
-		logger:            logger.With("module", "library"),
-		watcher:           watcher,
+		trackRepo:            trackRepo,
+		albumRepo:            albumRepo,
+		artistRepo:           artistRepo,
+		genreRepo:            genreRepo,
+		composerRepo:         composerRepo,
+		playlistRepo:         playlistRepo,
+		watchedFolderRepo:    watchedFolderRepo,
+		settingsRepo:         settingsRepo,
+		metadataExtractor:    metadataExtractor,
+		metadataWriter:       metadataWriter,
+		artworkCache:         artworkCache,
+		searchService:        searchService,
+		lyricsService:        lyricsService,
+		logger:               logger.With("module", "library"),
+		watcher:              watcher,
+		artistArtworkQueue:   make(chan artistArtworkJob, 100),
+		pendingArtistArtwork: make(map[string]struct{}),
+		ctx:                  ctx,
+		cancel:               cancel,
 	}, nil
 }
 
@@ -123,10 +146,12 @@ func (s *LibraryService) Start(ctx context.Context) error {
 	}
 
 	go s.watchLoop()
+	go s.StartArtistArtworkWorker(s.ctx)
 	return nil
 }
 
 func (s *LibraryService) Stop(ctx context.Context) error {
+	s.cancel()
 	return s.watcher.Close()
 }
 
@@ -502,9 +527,17 @@ func (s *LibraryService) ImportFile(ctx context.Context, path string) error {
 		return fmt.Errorf("failed to resolve entities for %s: %w", path, err)
 	}
 
-	// Upsert to DB
-	if err := s.trackRepo.Upsert(ctx, &dto.Track); err != nil {
-		return fmt.Errorf("failed to upsert track %s: %w", path, err)
+	// Extract lyrics from metadata
+	if s.lyricsService != nil {
+		if metaLyrics, isSynced, err := s.metadataExtractor.ExtractLyrics(ctx, path); err == nil && metaLyrics != "" {
+			source := "meta-plain"
+			if isSynced {
+				source = "meta-synced"
+			}
+			if err := s.lyricsService.SaveMetaLyrics(ctx, dto.ID, metaLyrics, source); err != nil {
+				s.logger.Warn("Failed to save metadata lyrics", "path", path, "error", err)
+			}
+		}
 	}
 
 	// Index in Search

@@ -73,11 +73,13 @@ const filteredItems = computed(() => {
             selectedId === item.id ? 'bg-foreground/[0.08] text-foreground font-medium' : 'hover:bg-foreground/[0.04]'
           ]">
             <div :class="[
-              'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ring-1 transition-colors',
+              'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ring-1 transition-colors overflow-hidden',
               selectedId === item.id ? 'bg-foreground/10 ring-foreground/[0.12]' : 'bg-foreground/5 ring-foreground/[0.06] group-hover:ring-foreground/[0.12]'
             ]">
-              <component :is="icon" v-if="icon" class="w-4 h-4" />
-              <span v-else class="text-xs font-bold">{{ item.name.charAt(0).toUpperCase() }}</span>
+              <slot name="item-icon" :item="item">
+                <component :is="icon" v-if="icon" class="w-4 h-4" />
+                <span v-else class="text-xs font-bold">{{ item.name.charAt(0).toUpperCase() }}</span>
+              </slot>
             </div>
             <div class="flex-1 truncate font-medium">{{ item.name || $t('library.unknown') }}</div>
             <button @click.stop="emit('play', item)"

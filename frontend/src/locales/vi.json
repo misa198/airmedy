@@ -90,7 +90,6 @@
       "update_ready": "Bản cập nhật đã sẵn sàng để cài đặt",
       "update_failed": "Cập nhật thất bại",
       "check_failed": "Kiểm tra cập nhật thất bại"
-
     },
     "appearance": {
       "title": "Giao diện",
@@ -118,6 +117,16 @@
       "disconnect": "Ngắt kết nối",
       "scrobble_desc": "Gửi thông tin bài hát đang nghe lên Last.fm",
       "title": "Last.fm"
+    },
+    "integrations": {
+      "title": "Tích hợp",
+      "online_artist_artwork": "Ảnh nghệ sĩ trực tuyến",
+      "online_artist_artwork_desc": "Tự động tải ảnh nghệ sĩ từ Deezer",
+      "lrclib_mode": "LRCLIB.NET",
+      "lrclib_mode_desc": "Kiểm soát khi nào tải lời từ LRCLIB.NET",
+      "lrclib_off": "Tắt (chỉ metadata)",
+      "lrclib_prefer_metadata": "Ưu tiên metadata",
+      "lrclib_prefer_lrclib": "Ưu tiên lrclib"
     }
   },
   "sidebar": {
@@ -210,6 +219,9 @@
     "disc": "Đĩa",
     "total_discs": "Tổng số đĩa",
     "edit_metadata": "Chỉnh sửa siêu dữ liệu",
+    "track_info": "Thông tin bài hát",
+    "lyrics": "Lời bài hát",
+    "lyrics_placeholder": "Dán lời bài hát vào đây...",
     "save_metadata_error": "Không thể lưu siêu dữ liệu. Kiểm tra quyền truy cập tệp.",
     "no_tracks": "Không tìm thấy bài hát nào",
     "no_albums": "Không tìm thấy album nào",

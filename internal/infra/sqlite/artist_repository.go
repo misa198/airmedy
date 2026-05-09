@@ -59,9 +59,9 @@ func (r *artistRepository) Save(ctx context.Context, artist *domain.Artist) erro
 
 	query := `
 		INSERT INTO artists (
-			id, name, sort_name, normalization_key, created_at, updated_at
+			id, name, sort_name, normalization_key, artwork_key, created_at, updated_at
 		) VALUES (
-			:id, :name, :sort_name, :normalization_key, :created_at, :updated_at
+			:id, :name, :sort_name, :normalization_key, :artwork_key, :created_at, :updated_at
 		)`
 
 	_, err := r.db.NamedExecContext(ctx, query, artist)
@@ -80,13 +80,17 @@ func (r *artistRepository) Upsert(ctx context.Context, artist *domain.Artist) er
 
 	query := `
 		INSERT INTO artists (
-			id, name, sort_name, normalization_key, created_at, updated_at
+			id, name, sort_name, normalization_key, artwork_key, created_at, updated_at
 		) VALUES (
-			:id, :name, :sort_name, :normalization_key, :created_at, :updated_at
+			:id, :name, :sort_name, :normalization_key, :artwork_key, :created_at, :updated_at
 		) ON CONFLICT(id) DO UPDATE SET
 			name = excluded.name,
 			sort_name = excluded.sort_name,
 			normalization_key = excluded.normalization_key,
+			artwork_key = CASE 
+				WHEN excluded.artwork_key IS NOT NULL THEN excluded.artwork_key 
+				ELSE artists.artwork_key 
+			END,
 			updated_at = excluded.updated_at
 	`
 

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { Artist, AlbumDTO, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import GroupedAlbumList from '../components/GroupedAlbumList.vue'
+import ArtistCard from '@/components/ArtistCard.vue'
 import { User, Shuffle, Disc, Music, Play, MoreVertical } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
 import { useI18n } from 'vue-i18n'
@@ -69,9 +70,7 @@ watch(() => route.params.id, (newId) => {
         class="p-8 md:p-12 flex flex-col md:flex-row gap-8 items-center bg-gradient-to-b from-dynamic-surface to-transparent border-b border-foreground/[0.06]">
         <div
           class="w-32 h-32 xl:w-42 xl:h-42 rounded-full shadow-2xl overflow-hidden ring-2 ring-foreground/[0.08] bg-foreground/5 flex-shrink-0">
-          <div class="w-full h-full flex items-center justify-center text-foreground opacity-30">
-            <User class="w-16 h-16 lg:w-24 lg:h-24" />
-          </div>
+          <ArtistCard :artist="artist" variant="avatar" />
         </div>
 
         <div class="flex-1 text-center md:text-left space-y-4 @container min-w-0">
