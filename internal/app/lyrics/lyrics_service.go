@@ -53,7 +53,7 @@ func NewLyricsService(repo domain.LyricRepository, logger *slog.Logger) *LyricsS
 	return &LyricsService{
 		repo:   repo,
 		logger: logger,
-		client: &http.Client{Timeout: 10 * time.Second},
+		client: &http.Client{Timeout: 30 * time.Second},
 	}
 }
 
@@ -62,6 +62,12 @@ func (s *LyricsService) GetLyrics(ctx context.Context, trackID string) (*domain.
 }
 
 func (s *LyricsService) SaveLyrics(ctx context.Context, trackID, content, source string) error {
+	existing, _ := s.repo.GetByTrackID(ctx, trackID)
+	if existing != nil {
+		existing.Content = content
+		existing.Source = source
+		return s.repo.Upsert(ctx, existing)
+	}
 	return s.repo.Upsert(ctx, &domain.Lyric{
 		TrackID: trackID,
 		Content: content,
@@ -270,7 +276,16 @@ func (s *LyricsService) searchAndRank(ctx context.Context, trackID, normTitle, n
 }
 
 func (s *LyricsService) saveLyric(ctx context.Context, trackID, content, source string) (*domain.Lyric, error) {
-	lyric := &domain.Lyric{TrackID: trackID, Content: content, Source: source}
+	existing, _ := s.repo.GetByTrackID(ctx, trackID)
+	var lyric *domain.Lyric
+	if existing != nil {
+		existing.Content = content
+		existing.Source = source
+		lyric = existing
+	} else {
+		lyric = &domain.Lyric{TrackID: trackID, Content: content, Source: source}
+	}
+
 	if err := s.repo.Upsert(ctx, lyric); err != nil {
 		s.logger.Warn("failed to save fetched lyrics", "track_id", trackID, "error", err)
 	}

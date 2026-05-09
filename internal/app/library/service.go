@@ -501,6 +501,11 @@ func (s *LibraryService) ImportFile(ctx context.Context, path string) error {
 		s.logger.Debug("No artwork found in file", "path", path)
 	}
 
+	// Resolve related entities
+	if err := s.resolveEntities(ctx, dto); err != nil {
+		return fmt.Errorf("failed to resolve entities for %s: %w", path, err)
+	}
+
 	// Extract lyrics from metadata
 	if s.lyricsService != nil {
 		if metaLyrics, isSynced, err := s.metadataExtractor.ExtractLyrics(ctx, path); err == nil && metaLyrics != "" {
@@ -508,20 +513,10 @@ func (s *LibraryService) ImportFile(ctx context.Context, path string) error {
 			if isSynced {
 				source = "meta-synced"
 			}
-			if err := s.lyricsService.SaveMetaLyrics(ctx, dto.Track.ID, metaLyrics, source); err != nil {
+			if err := s.lyricsService.SaveMetaLyrics(ctx, dto.ID, metaLyrics, source); err != nil {
 				s.logger.Warn("Failed to save metadata lyrics", "path", path, "error", err)
 			}
 		}
-	}
-
-	// Resolve related entities
-	if err := s.resolveEntities(ctx, dto); err != nil {
-		return fmt.Errorf("failed to resolve entities for %s: %w", path, err)
-	}
-
-	// Upsert to DB
-	if err := s.trackRepo.Upsert(ctx, &dto.Track); err != nil {
-		return fmt.Errorf("failed to upsert track %s: %w", path, err)
 	}
 
 	// Index in Search
