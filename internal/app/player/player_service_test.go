@@ -238,7 +238,8 @@ func (n *fakeNowPlaying) UpdateNowPlaying(_ *domain.TrackDTO, _ float64, _ strin
 		n.updateFn()
 	}
 }
-func (n *fakeNowPlaying) ClearNowPlaying() {}
+func (n *fakeNowPlaying) UpdateNowPlayingPosition(_ float64) {}
+func (n *fakeNowPlaying) ClearNowPlaying()                   {}
 
 func TestPrevious_Threshold(t *testing.T) {
 	fp := &fakePlayer{status: domain.PlayerStatus{Volume: 1.0}}

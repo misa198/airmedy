@@ -44,6 +44,7 @@ type NowPlayingController interface {
 	SetupRemoteCommands()
 	SetRemoteCallbacks(play, pause, next, previous func())
 	UpdateNowPlaying(track *TrackDTO, position float64, artworkPath string)
+	UpdateNowPlayingPosition(position float64)
 	ClearNowPlaying()
 }
 

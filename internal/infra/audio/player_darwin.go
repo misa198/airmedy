@@ -8,6 +8,7 @@ package audio
 #include <stdlib.h>
 
 void* InitPlayer();
+void DestroyPlayer(void* player);
 void PlayPlayer(void* player);
 void PausePlayer(void* player);
 void StopPlayer(void* player);
@@ -20,6 +21,7 @@ void SetupRemoteCommandCenter(void* player);
 void UpdateNowPlayingInfo(void* player, const char* title, const char* artist,
     const char* album, double duration, double position, const char* artworkPath);
 void ClearNowPlayingInfo(void* player);
+void UpdateNowPlayingPosition(void* player, double position);
 void SetEQBand(void* player, int index, double freq, double gain, double bandwidth);
 void SetEQEnabled(void* player, int enabled);
 */
@@ -239,4 +241,13 @@ func (p *DarwinPlayer) UpdateNowPlaying(track *domain.TrackDTO, position float64
 
 func (p *DarwinPlayer) ClearNowPlaying() {
 	C.ClearNowPlayingInfo(p.playerPointer)
+}
+
+func (p *DarwinPlayer) Close() {
+	C.DestroyPlayer(p.playerPointer)
+	p.playerPointer = nil
+}
+
+func (p *DarwinPlayer) UpdateNowPlayingPosition(position float64) {
+	C.UpdateNowPlayingPosition(p.playerPointer, C.double(position))
 }
