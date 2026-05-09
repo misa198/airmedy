@@ -119,8 +119,8 @@
       "rename_profile": "Renommer le profil",
       "select_profile": "Sélectionner un profil"
     },
-    "lyrics": {
-      "title": "Paroles",
+    "integrations": {
+      "title": "Intégrations",
       "lrclib_mode": "LRCLIB.NET",
       "lrclib_mode_desc": "Contrôler quand récupérer les paroles depuis LRCLIB.NET",
       "lrclib_off": "Désactivé (métadonnées uniquement)",

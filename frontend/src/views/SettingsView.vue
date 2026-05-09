@@ -11,7 +11,6 @@ import EQPanel from '@/components/EQPanel.vue'
 import GeneralSettings from '@/components/settings/GeneralSettings.vue'
 import LibrarySettings from '@/components/settings/LibrarySettings.vue'
 import IntegrationsSettings from '@/components/settings/IntegrationsSettings.vue'
-import PlaybackSettings from '@/components/settings/PlaybackSettings.vue'
 import AboutSettings from '@/components/settings/AboutSettings.vue'
 
 const { t } = useI18n()
@@ -97,7 +96,6 @@ const setCategory = (id: string) => {
               <EQPanel />
             </div>
           </section>
-          <PlaybackSettings />
         </div>
 
         <!-- About -->

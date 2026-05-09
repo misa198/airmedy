@@ -12,6 +12,7 @@ export const useAppStore = defineStore('app', () => {
   const lastfmUsername = ref('')
   const eqEnabled = ref(true)
   const lrclibMode = ref<'off' | 'prefer_metadata' | 'prefer_lrclib'>('prefer_metadata')
+  const useOnlineArtistArtwork = ref(true)
   
   const updateInfo = ref<UpdateInfo | null>(null)
   const isCheckingUpdate = ref(false)
@@ -39,6 +40,7 @@ export const useAppStore = defineStore('app', () => {
         lastfmUsername.value = settings.lastfm_username || ''
         eqEnabled.value = settings.eq_enabled !== false
         if (settings.lrclib_mode) lrclibMode.value = settings.lrclib_mode as any
+        useOnlineArtistArtwork.value = settings.use_online_artist_artwork !== false
         applyTheme(theme.value)
       }
       
@@ -94,6 +96,7 @@ export const useAppStore = defineStore('app', () => {
         lastfm_username: lastfmUsername.value,
         eq_enabled: eqEnabled.value,
         lrclib_mode: lrclibMode.value,
+        use_online_artist_artwork: useOnlineArtistArtwork.value,
       })
     } catch (err) {
       console.error('Failed to save theme setting:', err)
@@ -111,6 +114,7 @@ export const useAppStore = defineStore('app', () => {
         lastfm_username: lastfmUsername.value,
         eq_enabled: eqEnabled.value,
         lrclib_mode: lrclibMode.value,
+        use_online_artist_artwork: useOnlineArtistArtwork.value,
       })
     } catch (err) {
       console.error('Failed to save language setting:', err)
@@ -128,6 +132,7 @@ export const useAppStore = defineStore('app', () => {
         lastfm_username: lastfmUsername.value,
         eq_enabled: eqEnabled.value,
         lrclib_mode: lrclibMode.value,
+        use_online_artist_artwork: useOnlineArtistArtwork.value,
       })
     } catch (err) {
       console.error('Failed to save startup setting:', err)
@@ -145,6 +150,7 @@ export const useAppStore = defineStore('app', () => {
         lastfm_username: lastfmUsername.value,
         eq_enabled: eqEnabled.value,
         lrclib_mode: lrclibMode.value,
+        use_online_artist_artwork: useOnlineArtistArtwork.value,
       })
     } catch (err) {
       console.error('Failed to save auto update setting:', err)
@@ -162,6 +168,7 @@ export const useAppStore = defineStore('app', () => {
         lastfm_username: lastfmUsername.value,
         eq_enabled: enabled,
         lrclib_mode: lrclibMode.value,
+        use_online_artist_artwork: useOnlineArtistArtwork.value,
       })
     } catch (err) {
       console.error('Failed to save EQ enabled setting:', err)
@@ -183,9 +190,28 @@ export const useAppStore = defineStore('app', () => {
         lastfm_username: lastfmUsername.value,
         eq_enabled: eqEnabled.value,
         lrclib_mode: mode,
+        use_online_artist_artwork: useOnlineArtistArtwork.value,
       })
     } catch (err) {
       console.error('Failed to save lrclib mode setting:', err)
+    }
+  }
+
+  const updateUseOnlineArtistArtwork = async (enabled: boolean) => {
+    useOnlineArtistArtwork.value = enabled
+    try {
+      await SettingsService.SaveSettings({
+        theme: theme.value,
+        language: language.value,
+        start_at_login: startAtLogin.value,
+        auto_check_update: autoCheckUpdate.value,
+        lastfm_username: lastfmUsername.value,
+        eq_enabled: eqEnabled.value,
+        lrclib_mode: lrclibMode.value,
+        use_online_artist_artwork: enabled,
+      })
+    } catch (err) {
+      console.error('Failed to save online artist artwork setting:', err)
     }
   }
 
@@ -208,6 +234,7 @@ export const useAppStore = defineStore('app', () => {
     lastfmUsername,
     eqEnabled,
     lrclibMode,
+    useOnlineArtistArtwork,
     updateInfo,
     isCheckingUpdate,
     isUpdateDialogOpen,
@@ -224,6 +251,7 @@ export const useAppStore = defineStore('app', () => {
     updateEQEnabled,
     updateLastFmUsername,
     updateLrclibMode,
+    updateUseOnlineArtistArtwork,
     dispose,
   }
 })

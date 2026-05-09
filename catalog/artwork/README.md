@@ -116,3 +116,21 @@ artworkUrlMd = `wails://artwork/${artworkKey}?v=md`;
 ```
 
 Fallback: if `artworkKey` is empty, a placeholder image is shown.
+
+## Artist Artwork (Online)
+
+Artist artwork is fetched dynamically from the Deezer API when enabled in settings (`UseOnlineArtistArtwork`).
+
+### Fetching Flow
+
+1. The frontend calls `LibraryService.GetArtistArtwork(artistID, eventID)`.
+2. If the artist already has an `artwork_key` in the database, the cached URL is returned immediately.
+3. If not cached, the request is placed on an asynchronous queue (`artistArtworkQueue`).
+4. A background worker (`StartArtistArtworkWorker`) picks up the job:
+   - Verifies the `UseOnlineArtistArtwork` setting is enabled.
+   - Searches the Deezer API (`https://api.deezer.com/search/artist?q={name}`).
+   - Downloads the `picture_medium` image.
+   - Saves it to the standard `ArtworkCache` (which generates the standard variants).
+   - Updates the `artists` table with the new `artwork_key`.
+   - Emits a Wails event using the provided `eventID` with the new artwork URL.
+5. The frontend component (`ArtistCard.vue`) listens for this event to dynamically display the fetched image.

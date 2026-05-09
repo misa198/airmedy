@@ -199,3 +199,22 @@ func (s *LibraryService) UpdateTrackMetadata(trackID string, update domain.Metad
 func (s *LibraryService) GetAlbumColors(id string) (*domain.ThemeColors, error) {
 	return s.libService.GetAlbumColors(context.Background(), id)
 }
+
+func (s *LibraryService) GetArtistArtwork(artistID, eventID string) (*string, error) {
+	artist, err := s.artistRepo.GetByID(context.Background(), artistID)
+	if err != nil {
+		return nil, err
+	}
+	if artist == nil {
+		return nil, fmt.Errorf("artist not found")
+	}
+
+	if artist.ArtworkKey != nil && *artist.ArtworkKey != "" {
+		url := fmt.Sprintf("/artwork/%s", *artist.ArtworkKey)
+		return &url, nil
+	}
+
+	// Not cached, enqueue
+	s.libService.EnqueueArtistArtwork(artistID, eventID)
+	return nil, nil
+}

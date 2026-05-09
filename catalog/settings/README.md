@@ -126,3 +126,5 @@ Settings evolved across multiple migrations:
 | 000011    | Add `auto_check_update`, `start_at_login`                        |
 | 000013    | Add `eq_enabled` column for persistent EQ toggle                 |
 | 000014    | Add `lrclib_mode` setting; metadata lyrics columns in `lyrics` table |
+| 000015    | Add `artwork_key` column to `artists` table                      |
+| 000016    | Add `use_online_artist_artwork` setting column                   |

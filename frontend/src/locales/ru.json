@@ -119,8 +119,8 @@
       "rename_profile": "Переименовать профиль",
       "select_profile": "Выбрать профиль"
     },
-    "lyrics": {
-      "title": "Тексты песен",
+    "integrations": {
+      "title": "Интеграции",
       "lrclib_mode": "LRCLIB.NET",
       "lrclib_mode_desc": "Управление загрузкой текстов с LRCLIB.NET",
       "lrclib_off": "Выкл. (только метаданные)",

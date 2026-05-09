@@ -119,8 +119,8 @@
       "rename_profile": "Renombrar perfil",
       "select_profile": "Seleccionar perfil"
     },
-    "lyrics": {
-      "title": "Letras",
+    "integrations": {
+      "title": "Integraciones",
       "lrclib_mode": "LRCLIB.NET",
       "lrclib_mode_desc": "Controlar cuándo obtener letras de LRCLIB.NET",
       "lrclib_off": "Desactivado (solo metadatos)",

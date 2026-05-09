@@ -119,8 +119,8 @@
       "rename_profile": "프로필 이름 바꾸기",
       "select_profile": "프로필 선택"
     },
-    "lyrics": {
-      "title": "가사",
+    "integrations": {
+      "title": "연동",
       "lrclib_mode": "LRCLIB.NET",
       "lrclib_mode_desc": "LRCLIB.NET에서 가사를 가져올 시기 제어",
       "lrclib_off": "끄기 (메타데이터만)",

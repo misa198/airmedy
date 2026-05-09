@@ -71,6 +71,7 @@ type Artist struct {
 	Name             string    `json:"name" db:"name"`
 	SortName         string    `json:"sort_name" db:"sort_name"`
 	NormalizationKey string    `json:"normalization_key" db:"normalization_key"`
+	ArtworkKey       *string   `json:"artwork_key" db:"artwork_key"`
 	CreatedAt        time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at" db:"updated_at"`
 }
@@ -138,11 +139,12 @@ type PlayerState struct {
 
 // AppSettings holds general application settings
 type AppSettings struct {
-	Language        string `json:"language"`
-	Theme           string `json:"theme"` // "system", "light", "dark"
-	StartAtLogin    bool   `json:"start_at_login"`
-	AutoCheckUpdate bool   `json:"auto_check_update"`
-	LastFmUsername  string `json:"lastfm_username"`
-	EQEnabled       bool   `json:"eq_enabled"`
-	LrclibMode      string `json:"lrclib_mode"` // "off", "prefer_metadata", "prefer_lrclib"
+	Language                 string `json:"language"`
+	Theme                    string `json:"theme"` // "system", "light", "dark"
+	StartAtLogin             bool   `json:"start_at_login"`
+	AutoCheckUpdate          bool   `json:"auto_check_update"`
+	LastFmUsername           string `json:"lastfm_username"`
+	EQEnabled                bool   `json:"eq_enabled"`
+	LrclibMode               string `json:"lrclib_mode"` // "off", "prefer_metadata", "prefer_lrclib"
+	UseOnlineArtistArtwork   bool   `json:"use_online_artist_artwork"`
 }

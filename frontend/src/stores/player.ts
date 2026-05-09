@@ -79,7 +79,6 @@ export const usePlayerStore = defineStore('player', () => {
   async function init() {
     if (_initialized) return
     _initialized = true
-    console.log('[PlayerStore] Initializing...')
     await syncState()
 
     _offFns = [

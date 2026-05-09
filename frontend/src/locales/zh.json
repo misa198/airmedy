@@ -119,8 +119,8 @@
       "rename_profile": "重命名配置文件",
       "select_profile": "选择配置文件"
     },
-    "lyrics": {
-      "title": "歌词",
+    "integrations": {
+      "title": "集成",
       "lrclib_mode": "LRCLIB.NET",
       "lrclib_mode_desc": "控制何时从 LRCLIB.NET 获取歌词",
       "lrclib_off": "关闭（仅元数据）",

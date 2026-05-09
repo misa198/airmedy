@@ -72,6 +72,16 @@
       "connecting": "Connecting...",
       "disconnect": "Disconnect"
     },
+    "integrations": {
+      "title": "Integrations",
+      "online_artist_artwork": "Online Artist Artwork",
+      "online_artist_artwork_desc": "Automatically fetch artist artwork from Deezer",
+      "lrclib_mode": "LRCLIB.NET",
+      "lrclib_mode_desc": "Control when to fetch lyrics from LRCLIB.NET",
+      "lrclib_off": "Off (metadata only)",
+      "lrclib_prefer_metadata": "Prefer metadata",
+      "lrclib_prefer_lrclib": "Prefer lrclib"
+    },
     "behavior": {
       "start_at_login": "Start at login",
       "start_at_login_desc": "Automatically launch Airmedy when you sign in",
@@ -118,14 +128,6 @@
       "delete_profile": "Delete Profile",
       "rename_profile": "Rename Profile",
       "select_profile": "Select Profile"
-    },
-    "lyrics": {
-      "title": "Lyrics",
-      "lrclib_mode": "LRCLIB.NET",
-      "lrclib_mode_desc": "Control when to fetch lyrics from LRCLIB.NET",
-      "lrclib_off": "Off (metadata only)",
-      "lrclib_prefer_metadata": "Prefer metadata",
-      "lrclib_prefer_lrclib": "Prefer lrclib"
     }
   },
   "sidebar": {

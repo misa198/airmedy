@@ -33,7 +33,7 @@
 ## Features
 
 - **Your whole library** — add any folder and Airmedy scans it instantly, even with tens of thousands of tracks.
-- **Lyrics that follow along** — synced lyrics scroll line-by-line as the song plays. Plain-text lyrics shown when sync data isn't available.
+- **Lyrics that follow along** — synced lyrics scroll line-by-line as the song plays. Plain-text lyrics shown when sync data isn't available. Supports both embedded lyrics and online lyrics from LRCLIB.
 - **Fullscreen & miniplayer modes** — go fullscreen for an immersive listening experience, or shrink to a miniplayer that stays out of your way.
 - **Playlists** — create and manage playlists, import and export them, and browse your collection by genre, artist, or album.
 - **10-band equalizer** — tune the sound to your headphones or speakers. Runs natively on macOS (AVFoundation) and Windows/Linux (miniaudio) for optimal performance.
@@ -43,6 +43,8 @@
 - **Metadata editor** — update track titles, artists, albums, and other tags. Support for updating album artwork with automatic JPEG conversion.
 - **Plays in the background** — close the window and music keeps going. Quit when you actually mean it.
 - **Tray menu** — control playback from the system tray.
+- **Dark mode** — a sleek, dark interface that looks great and saves battery on OLED screens.
+- **Online Artist Arts** — fetch and display artist arts from Deezer.
 
 ## Audio Format Support
 
@@ -194,7 +196,6 @@ wails3 task {task_name}
 ## Roadmap
 
 - [ ] **Smart Playlists** — rule-based auto-playlists (genre, BPM, play count)
-- [ ] **Album and artist arts** — online search for missing arts
 - [ ] **AirPlay 2** — stream to any AirPlay speaker or Apple TV directly from Airmedy.
 
 ---

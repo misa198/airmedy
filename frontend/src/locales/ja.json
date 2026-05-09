@@ -119,8 +119,8 @@
       "rename_profile": "プロファイルの名前を変更",
       "select_profile": "プロファイルを選択"
     },
-    "lyrics": {
-      "title": "歌詞",
+    "integrations": {
+      "title": "連携",
       "lrclib_mode": "LRCLIB.NET",
       "lrclib_mode_desc": "LRCLIB.NET から歌詞を取得するタイミングを制御",
       "lrclib_off": "オフ（メタデータのみ）",

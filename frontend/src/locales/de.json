@@ -119,8 +119,8 @@
       "rename_profile": "Profil umbenennen",
       "select_profile": "Profil auswählen"
     },
-    "lyrics": {
-      "title": "Songtexte",
+    "integrations": {
+      "title": "Integrationen",
       "lrclib_mode": "LRCLIB.NET",
       "lrclib_mode_desc": "Steuern, wann Songtexte von LRCLIB.NET abgerufen werden",
       "lrclib_off": "Aus (nur Metadaten)",

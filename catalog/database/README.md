@@ -50,6 +50,7 @@ artists (
     name TEXT NOT NULL,
     sort_name TEXT NOT NULL,
     normalization_key TEXT,
+    artwork_key TEXT,
     created_at DATETIME,
     updated_at DATETIME
 )
@@ -256,6 +257,13 @@ All entity IDs are deterministic UUID v4-style strings derived from MD5 hash of 
 
 - Track: MD5(file path)
 - Artist: MD5(normalization_key)
+- Album: MD5(normalization_key + primary_artist_normalization_key)
+- Genre/Composer: MD5(normalization_key)
+- Playlist: random UUID v4
+
+This ensures the same file always gets the same track ID, and the same artist name always maps to the same artist entity, enabling safe upserts without collision.
+upserts without collision.
+_key)
 - Album: MD5(normalization_key + primary_artist_normalization_key)
 - Genre/Composer: MD5(normalization_key)
 - Playlist: random UUID v4

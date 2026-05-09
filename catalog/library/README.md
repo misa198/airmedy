@@ -68,6 +68,7 @@ GetFoldersToSync(): WatchedFolder[]
 SyncAll(): void                          // re-scan all watched folders
 ReindexAll(): void                       // rebuild Bleve index from DB
 GetAlbumColors(id: string): ThemeColors
+GetArtistArtwork(artistID: string, eventID: string): string | null
 ToggleFavorite(trackID: string): boolean
 UpdateTrackMetadata(trackID: string, update: MetadataUpdate): void
 ShowInExplorer(trackID: string): void

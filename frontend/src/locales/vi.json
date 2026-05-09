@@ -118,8 +118,10 @@
       "scrobble_desc": "Gửi thông tin bài hát đang nghe lên Last.fm",
       "title": "Last.fm"
     },
-    "lyrics": {
-      "title": "Lời bài hát",
+    "integrations": {
+      "title": "Tích hợp",
+      "online_artist_artwork": "Ảnh nghệ sĩ trực tuyến",
+      "online_artist_artwork_desc": "Tự động tải ảnh nghệ sĩ từ Deezer",
       "lrclib_mode": "LRCLIB.NET",
       "lrclib_mode_desc": "Kiểm soát khi nào tải lời từ LRCLIB.NET",
       "lrclib_off": "Tắt (chỉ metadata)",

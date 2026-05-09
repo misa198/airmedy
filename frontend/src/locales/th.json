@@ -119,8 +119,8 @@
       "rename_profile": "เปลี่ยนชื่อโปรไฟล์",
       "select_profile": "เลือกโปรไฟล์"
     },
-    "lyrics": {
-      "title": "เนื้อเพลง",
+    "integrations": {
+      "title": "การเชื่อมต่อ",
       "lrclib_mode": "LRCLIB.NET",
       "lrclib_mode_desc": "ควบคุมการดึงเนื้อเพลงจาก LRCLIB.NET",
       "lrclib_off": "ปิด (เฉพาะข้อมูลเมตา)",
