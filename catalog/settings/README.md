@@ -24,6 +24,7 @@ type AppSettings struct {
     StartAtLogin   bool
     EqEnabled      bool
     LastFmUsername string  // Connected Last.fm account name
+    LrclibMode     string  // "off", "prefer_metadata", "prefer_lrclib"
 }
 ```
 
@@ -124,3 +125,4 @@ Settings evolved across multiple migrations:
 | 000010    | Add `lastfm_username` column for integration UI                  |
 | 000011    | Add `auto_check_update`, `start_at_login`                        |
 | 000013    | Add `eq_enabled` column for persistent EQ toggle                 |
+| 000014    | Add `lrclib_mode` setting; metadata lyrics columns in `lyrics` table |
