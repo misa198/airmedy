@@ -157,11 +157,13 @@ func (r *trackRepository) GetByArtistID(ctx context.Context, artistID string) ([
 		LEFT JOIN track_artists ta ON t.id = ta.track_id
 		LEFT JOIN artists art ON ta.artist_id = art.id
 		WHERE t.id IN (SELECT track_id FROM track_artists WHERE artist_id = ?)
+		   OR t.id IN (SELECT track_id FROM track_album_artists WHERE artist_id = ?)
+		   OR t.album_id IN (SELECT album_id FROM album_artists WHERE artist_id = ?)
 		GROUP BY t.id
 		ORDER BY t.year DESC, a.title, t.disc_number, t.track_number, t.sort_title
 	`, trackSelectFields)
 	var rows []trackRow
-	err := r.db.SelectContext(ctx, &rows, query, artistID)
+	err := r.db.SelectContext(ctx, &rows, query, artistID, artistID, artistID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tracks by artist id: %w", err)
 	}

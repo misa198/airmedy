@@ -79,38 +79,16 @@ func SplitArtists(s string) []string {
 		return nil
 	}
 
-	// Hard delimiters: , ; |
-	// Keywords: ft., feat., featuring, with, vs., &, and
-	
-	// We use a multi-stage split approach.
-	// First, replace all delimiters/keywords with a unique marker.
-	
-	delimiters := []string{",", ";", "|"}
-	keywords := []string{" ft. ", " feat. ", " featuring ", " with ", " vs. ", " & ", " and "}
+	// This regex matches:
+	// 1. Hard delimiters: , ; | / \ (one or more)
+	// 2. Keywords: ft, feat, featuring, with, vs, &, and (case-insensitive)
+	// All with optional surrounding whitespace.
 
-	res := s
-	marker := "___ARTIST_SEP___"
+	// Note: We use \b at the start and (?:\.|\b) at the end to handle optional dots
+	// and ensure we don't split names like "Andrey" or "Brand".
+	re := regexp.MustCompile(`(?i)\s*(?:[,;|/\\]+|\b(?:ft|feat|featuring|with|vs|and)(?:\.|\b)|&)\s*`)
 
-	for _, d := range delimiters {
-		res = strings.ReplaceAll(res, d, marker)
-	}
-
-	// For keywords, we need case-insensitive replacement
-	for _, k := range keywords {
-		re := regexp.MustCompile(`(?i)` + regexp.QuoteMeta(k))
-		res = re.ReplaceAllString(res, marker)
-	}
-	
-	// Also handle keywords at the end of words like "Artist feat.Artist" (no spaces)
-	// But usually they have spaces. Let's be careful.
-	// feat. without space after it
-	extraKeywords := []string{"ft.", "feat."}
-	for _, k := range extraKeywords {
-		re := regexp.MustCompile(`(?i)\s+` + regexp.QuoteMeta(k))
-		res = re.ReplaceAllString(res, marker)
-	}
-
-	parts := strings.Split(res, marker)
+	parts := re.Split(s, -1)
 	var final []string
 	seen := make(map[string]bool)
 

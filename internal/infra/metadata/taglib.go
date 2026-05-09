@@ -52,7 +52,7 @@ func (e *taglibExtractor) Extract(ctx context.Context, path string) (*domain.Tra
 
 	// Raw values for display
 	dto.RawArtistNames = allTags(tags, "; ", "ARTIST", "TPE1", "©ART")
-	dto.RawAlbumArtistNames = allTags(tags, "; ", "ALBUMARTIST", "TPE2", "aART")
+	dto.RawAlbumArtistNames = allTags(tags, "; ", "ALBUMARTIST", "ALBUM ARTIST", "TPE2", "aART", "BAND")
 	dto.RawGenreNames = allTags(tags, "; ", "GENRE", "TCON", "©gen")
 	dto.RawComposerNames = allTags(tags, "; ", "COMPOSER", "TCOM", "©wrt")
 
@@ -67,7 +67,7 @@ func (e *taglibExtractor) Extract(ctx context.Context, path string) (*domain.Tra
 	}
 
 	// Split and normalize Album Artists
-	albumArtistNames := splitMultipleTags(tags, "ALBUMARTIST", "TPE2", "aART")
+	albumArtistNames := splitMultipleTags(tags, "ALBUMARTIST", "ALBUM ARTIST", "TPE2", "aART", "BAND")
 	for _, name := range albumArtistNames {
 		dto.AlbumArtists = append(dto.AlbumArtists, &domain.Artist{
 			Name:             name,

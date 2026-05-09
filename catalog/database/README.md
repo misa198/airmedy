@@ -232,10 +232,11 @@ idx_composers_normalization_key ON composers(normalization_key)
 
 ### AlbumRepository — Key Queries
 
-**`GetByArtistID`**: UNION of two queries:
+**`GetByArtistID`**: UNION of three conditions:
 
 1. Albums where artist is in `album_artists`
 2. Albums where artist is in `track_artists` of any track in the album
+3. Albums where artist is in `track_album_artists` of any track in the album
 
 **`DeleteOrphaned`**: `DELETE FROM albums WHERE id NOT IN (SELECT DISTINCT album_id FROM tracks WHERE album_id IS NOT NULL)`
 

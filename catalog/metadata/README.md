@@ -79,15 +79,15 @@ NFKD decomposition to separate base characters from diacritics, then strips non-
 
 ### `SplitArtists(raw string) []string`
 
-Splits a raw multi-artist string into individual names.
+Splits a raw multi-artist string into individual names using a robust regular expression.
 
-**Hard delimiters** (always split): `;`, `|`
+**Hard delimiters** (always split): `,`, `;`, `|`, `/`, `\`
 
-**Soft delimiters** (split if not inside parentheses or quotes):
+**Keywords** (split if appearing as full words, optionally followed by a dot, or as ampersands):
 
-- `,`
-- `&` (with spaces)
-- `ft.`, `feat.`, `featuring`, `with` (case-insensitive)
+- `ft`, `feat`, `featuring`, `with`, `vs`, `&`, `and` (case-insensitive)
+
+Whitespace around delimiters and keywords is ignored.
 
 Example: `"Artist A, Artist B feat. Artist C"` → `["Artist A", "Artist B", "Artist C"]`
 

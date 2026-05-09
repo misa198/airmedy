@@ -85,11 +85,12 @@ func (r *albumRepository) GetByArtistID(ctx context.Context, artistID string) ([
 		LEFT JOIN artists t_art ON ta.artist_id = t_art.id
 		WHERE a.id IN (SELECT album_id FROM album_artists WHERE artist_id = ?)
 		   OR a.id IN (SELECT DISTINCT album_id FROM tracks t JOIN track_artists ta ON t.id = ta.track_id WHERE ta.artist_id = ?)
+		   OR a.id IN (SELECT DISTINCT album_id FROM tracks t JOIN track_album_artists taa ON t.id = taa.track_id WHERE taa.artist_id = ?)
 		GROUP BY a.id
 		ORDER BY a.year DESC, a.sort_title
 	`, albumSelectFields)
 	var rows []albumRow
-	err := r.db.SelectContext(ctx, &rows, query, artistID, artistID)
+	err := r.db.SelectContext(ctx, &rows, query, artistID, artistID, artistID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get albums by artist id: %w", err)
 	}

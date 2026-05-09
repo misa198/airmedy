@@ -143,6 +143,14 @@ func (m *mockFolderRepo) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+type mockSettingsRepo struct {
+	domain.SettingsRepository
+}
+
+func (m *mockSettingsRepo) Load(ctx context.Context) (*domain.AppSettings, error) {
+	return &domain.AppSettings{UseOnlineArtistArtwork: false}, nil
+}
+
 type mockMetadataExtractor struct {
 	domain.MetadataExtractor
 	callCount int
@@ -206,6 +214,7 @@ func TestLibraryService_SyncFolder(t *testing.T) {
 		&mockComposerRepo{},
 		&mockPlaylistRepo{},
 		&mockFolderRepo{},
+		&mockSettingsRepo{},
 		&mockMetadataExtractor{},
 		&mockMetadataWriter{},
 		&mockArtworkCache{},
@@ -300,6 +309,7 @@ func TestLibraryService_SyncFolder_SupportedExtensions(t *testing.T) {
 		&mockComposerRepo{},
 		&mockPlaylistRepo{},
 		&mockFolderRepo{},
+		&mockSettingsRepo{},
 		&mockMetadataExtractor{},
 		&mockMetadataWriter{},
 		&mockArtworkCache{},
@@ -340,6 +350,7 @@ func TestLibraryService_AddWatchedFolder_CoveringExisting(t *testing.T) {
 		&mockComposerRepo{},
 		&mockPlaylistRepo{},
 		folderRepo,
+		&mockSettingsRepo{},
 		&mockMetadataExtractor{},
 		&mockMetadataWriter{},
 		&mockArtworkCache{},

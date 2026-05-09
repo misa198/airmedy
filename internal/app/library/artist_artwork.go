@@ -96,7 +96,7 @@ func (s *LibraryService) fetchArtistArtworkFromDeezer(ctx context.Context, name 
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("deezer api returned status %d", resp.StatusCode)
@@ -123,7 +123,7 @@ func (s *LibraryService) fetchArtistArtworkFromDeezer(ctx context.Context, name 
 	if err != nil {
 		return "", err
 	}
-	defer imgResp.Body.Close()
+	defer func() { _ = imgResp.Body.Close() }()
 
 	if imgResp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("failed to download image, status %d", imgResp.StatusCode)

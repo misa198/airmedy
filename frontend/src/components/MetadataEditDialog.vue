@@ -172,7 +172,7 @@ function cancel() {
         >
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-sm font-semibold text-foreground">{{ t('library.edit_metadata') }}</h3>
-            <TabSwitcher v-model="activeTab" :options="tabOptions" />
+            <TabSwitcher v-model="activeTab" :options="tabOptions" mandatory />
           </div>
 
           <div v-show="activeTab === 'info'">

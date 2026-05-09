@@ -60,6 +60,13 @@ func TestSplitArtists(t *testing.T) {
 		{"Artist A vs. Artist B", []string{"Artist A", "Artist B"}},
 		{"Artist A and Artist B", []string{"Artist A", "Artist B"}},
 		{"Artist A; Artist B | Artist C", []string{"Artist A", "Artist B", "Artist C"}},
+		{"tlinh & Low G", []string{"tlinh", "Low G"}},
+		{"tlinh&Low G", []string{"tlinh", "Low G"}},
+		{"tlinh &Low G", []string{"tlinh", "Low G"}},
+		{"tlinh& Low G", []string{"tlinh", "Low G"}},
+		{"Artist A/Artist B\\Artist C", []string{"Artist A", "Artist B", "Artist C"}},
+		{"Brand New", []string{"Brand New"}},
+		{"Earth, Wind & Fire", []string{"Earth", "Wind", "Fire"}},
 	}
 
 	for _, tc := range tests {

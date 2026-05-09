@@ -10,6 +10,7 @@ export interface TabOption {
 const props = defineProps<{
   options: TabOption[]
   modelValue: string | null
+  mandatory?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -46,7 +47,9 @@ const sliderStyle = computed(() => {
 
 function handleClick(value: string) {
   if (props.modelValue === value) {
-    emit('update:modelValue', null)
+    if (!props.mandatory) {
+      emit('update:modelValue', null)
+    }
   } else {
     emit('update:modelValue', value)
   }
