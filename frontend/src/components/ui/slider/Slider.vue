@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
 import { cn } from '@/lib/utils'
 
 const props = defineProps<{
@@ -59,7 +59,7 @@ const handleStart = (e: MouseEvent | TouchEvent) => {
 
 const handleEnd = (e: MouseEvent | TouchEvent) => {
   isInteracting.value = false
-  
+
   gracePeriodActive.value = true
   if (graceTimeout) clearTimeout(graceTimeout)
   graceTimeout = setTimeout(() => {
@@ -70,6 +70,10 @@ const handleEnd = (e: MouseEvent | TouchEvent) => {
   if (e instanceof MouseEvent) emit('mouseup', e)
   else emit('touchend', e)
 }
+
+onUnmounted(() => {
+  if (graceTimeout) clearTimeout(graceTimeout)
+})
 </script>
 
 <template>
@@ -77,8 +81,8 @@ const handleEnd = (e: MouseEvent | TouchEvent) => {
     <!-- Visual track -->
     <div class="absolute w-full h-1 rounded-full bg-foreground/15">
       <div
-        class="h-full rounded-full bg-foreground"
-        :style="{ width: fillPct + '%' }"
+        class="h-full w-full rounded-full bg-foreground"
+        :style="{ transform: `scaleX(${fillPct / 100})`, transformOrigin: 'left center' }"
       />
     </div>
     

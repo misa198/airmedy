@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 import { Music, X, ListMusic, MoreVertical, GripVertical } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
 import { formatTime, buildArtworkUrl, getTrackDisplayTitle } from '../lib/utils'
@@ -26,13 +26,20 @@ const onContextMenu = (e: MouseEvent, track: TrackDTO) => {
   trackContextMenu.value?.open(e, track, { showRemoveFromQueue: true })
 }
 
+let _scrollTimer: ReturnType<typeof setTimeout> | null = null
+
 watch(() => store.isQueueOpen, (open) => {
   if (open) {
-    setTimeout(() => {
+    _scrollTimer = setTimeout(() => {
       scrollToCurrentTrack()
+      _scrollTimer = null
     }, 100)
   }
 }, { immediate: true })
+
+onUnmounted(() => {
+  if (_scrollTimer) clearTimeout(_scrollTimer)
+})
 </script>
 
 <template>

@@ -100,6 +100,9 @@ func NewPlayerService(
 		OnStop: func(ctx context.Context) error {
 			s.stopPositionTicker()
 			s.saveState(ctx)
+			if closer, ok := s.player.(interface{ Close() }); ok {
+				closer.Close()
+			}
 			return nil
 		},
 	})
@@ -723,11 +726,7 @@ func (s *PlayerService) startPositionTicker() {
 
 				if s.nowPlaying != nil && track != nil {
 					status := s.player.GetStatus()
-					artworkPath := ""
-					if track.ArtworkKey != "" {
-						artworkPath = s.artworkCache.GetPath(track.ArtworkKey)
-					}
-					s.nowPlaying.UpdateNowPlaying(track, status.Position, artworkPath)
+					s.nowPlaying.UpdateNowPlayingPosition(status.Position)
 				}
 			}
 		}

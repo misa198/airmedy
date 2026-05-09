@@ -21,12 +21,12 @@ export const usePlaylistsStore = defineStore('playlists', () => {
   }
 
   // Handle external events
-  Events.On('playlist:deleted', (ev: Events.WailsEvent) => {
+  const _offDeleted = Events.On('playlist:deleted', (ev: Events.WailsEvent) => {
     const id = ev.data as string
     playlists.value = playlists.value.filter((p) => p.id !== id)
   })
 
-  Events.On('playlist:renamed', async (ev: Events.WailsEvent) => {
+  const _offRenamed = Events.On('playlist:renamed', async (ev: Events.WailsEvent) => {
     const id = ev.data as string
     const p = playlists.value.find((x) => x.id === id)
     if (p) {
@@ -41,6 +41,11 @@ export const usePlaylistsStore = defineStore('playlists', () => {
       }
     }
   })
+
+  function dispose() {
+    _offDeleted()
+    _offRenamed()
+  }
 
   async function create(name: string, description = '') {
     const p = await PlaylistService.CreatePlaylist(name, description)
@@ -60,6 +65,6 @@ export const usePlaylistsStore = defineStore('playlists', () => {
     playlists.value = playlists.value.filter((p) => p.id !== id)
   }
 
-  return { playlists, loading, loadAll, create, rename, deletePlaylist }
+  return { playlists, loading, loadAll, create, rename, deletePlaylist, dispose }
 })
 

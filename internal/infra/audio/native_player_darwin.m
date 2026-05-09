@@ -49,6 +49,8 @@ static BOOL isAVFoundationNative(NSString *ext) {
 @property (assign, nonatomic) NSTimeInterval       pausePosition;
 // Generation counter: incremented on each load/seek to invalidate stale completion handlers
 @property (assign, nonatomic) NSUInteger           scheduleGeneration;
+// Tracks which generation already fired goHandleTrackEnd to prevent duplicate callbacks
+@property (assign, nonatomic) NSUInteger           trackEndFiredGeneration;
 @end
 
 #define FFMPEG_CHUNK_FRAMES (44100 * 2) // 2 seconds of audio at 44.1kHz
@@ -71,6 +73,7 @@ static BOOL isAVFoundationNative(NSString *ext) {
         _ffmpegSampleRate = 0;
         _usingFFmpegDecoder = NO;
         _loadingGeneration = 0;
+        _trackEndFiredGeneration = NSUIntegerMax;
         [self setupEngine];
     }
     return self;
@@ -285,7 +288,10 @@ static BOOL isAVFoundationNative(NSString *ext) {
             }
             if (read <= 0) {
                 if (buf) free(buf);
-                if (ms.isPlaying) goHandleTrackEnd();
+                if (ms.isPlaying && ms.trackEndFiredGeneration != gen) {
+                    ms.trackEndFiredGeneration = gen;
+                    goHandleTrackEnd();
+                }
                 return;
             }
             
@@ -485,8 +491,10 @@ static BOOL isAVFoundationNative(NSString *ext) {
         return MPRemoteCommandHandlerStatusSuccess;
     }];
 
+    __weak AirmedyPlayer *weakSelf = self;
     [center.togglePlayPauseCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent *event) {
-        if (self.isPlaying) {
+        AirmedyPlayer *s = weakSelf;
+        if (s && s.isPlaying) {
             goHandleRemotePause();
         } else {
             goHandleRemotePlay();
@@ -536,6 +544,15 @@ static BOOL isAVFoundationNative(NSString *ext) {
     [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = nil;
 }
 
+- (void)updateNowPlayingPosition:(double)position {
+    NSDictionary *cur = [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo;
+    if (!cur) return;
+    NSMutableDictionary *info = [cur mutableCopy];
+    info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = @(position);
+    info[MPNowPlayingInfoPropertyPlaybackRate] = @(self.isPlaying ? 1.0 : 0.0);
+    [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = info;
+}
+
 @end
 
 // ============================================================
@@ -545,6 +562,10 @@ static BOOL isAVFoundationNative(NSString *ext) {
 void* InitPlayer() {
     AirmedyPlayer *player = [[AirmedyPlayer alloc] init];
     return (__bridge_retained void *)player;
+}
+
+void DestroyPlayer(void *playerPtr) {
+    if (playerPtr) CFRelease(playerPtr);
 }
 
 void PlayPlayer(void *playerPtr) {
@@ -598,6 +619,10 @@ void UpdateNowPlayingInfo(void *playerPtr,
 
 void ClearNowPlayingInfo(void *playerPtr) {
     [(__bridge AirmedyPlayer *)playerPtr clearNowPlaying];
+}
+
+void UpdateNowPlayingPosition(void *playerPtr, double position) {
+    [(__bridge AirmedyPlayer *)playerPtr updateNowPlayingPosition:position];
 }
 
 void SetEQBand(void *playerPtr, int index, double freq, double gain, double bandwidth) {

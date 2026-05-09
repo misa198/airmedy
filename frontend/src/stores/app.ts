@@ -166,11 +166,15 @@ export const useAppStore = defineStore('app', () => {
   }
 
   // Watch for system theme changes if set to 'system'
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-    if (theme.value === 'system') {
-      applyTheme('system')
-    }
-  })
+  const _darkMQ = window.matchMedia('(prefers-color-scheme: dark)')
+  const _onDarkMQChange = () => {
+    if (theme.value === 'system') applyTheme('system')
+  }
+  _darkMQ.addEventListener('change', _onDarkMQChange)
+
+  function dispose() {
+    _darkMQ.removeEventListener('change', _onDarkMQChange)
+  }
 
   return {
     theme,
@@ -193,6 +197,7 @@ export const useAppStore = defineStore('app', () => {
     updateStartAtLogin,
     updateAutoCheckUpdate,
     updateEQEnabled,
-    updateLastFmUsername
+    updateLastFmUsername,
+    dispose,
   }
 })

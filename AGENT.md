@@ -119,6 +119,64 @@
 
 ---
 
+## 2.6 Frontend Memory Management
+
+### Wails Events (`Events.On`)
+
+- `Events.On()` returns `() => void` — **always store the off-function**.
+- Pinia stores with `init()`: collect all off-fns in an array, expose `dispose()`, and guard `init()` against double-call with an `_initialized` flag.
+- Pinia stores without `init()` (top-level `Events.On`): store off-fn as a `const`, expose `dispose()`.
+
+```ts
+// store pattern
+let _offFns: (() => void)[] = []
+let _initialized = false
+
+function init() {
+  if (_initialized) return
+  _initialized = true
+  _offFns = [
+    Events.On('some:event', handler),
+  ]
+}
+
+function dispose() {
+  _offFns.forEach(off => off())
+  _offFns = []
+  _initialized = false
+}
+```
+
+### Component Cleanup (`onUnmounted`)
+
+Every component that registers any of the following **must** clean it up in `onUnmounted`:
+
+| Resource | Cleanup |
+|---|---|
+| `Events.On()` | call the returned off-fn |
+| `setInterval` / `setTimeout` | `clearInterval` / `clearTimeout` |
+| `requestAnimationFrame` loop | `cancelAnimationFrame(rafId)` |
+| `ResizeObserver` / `IntersectionObserver` / `MutationObserver` | `.disconnect()` |
+| `addEventListener` on `window` / `document` / `MediaQueryList` | `removeEventListener` with the **same function reference** (store it) |
+| WebGL / Canvas context | `loseContext()` via `WEBGL_lose_context` extension |
+| `URL.createObjectURL` | `URL.revokeObjectURL` |
+
+### MediaQueryList in Stores
+
+Store the listener reference so it can be removed:
+
+```ts
+const _mq = window.matchMedia('(prefers-color-scheme: dark)')
+const _handler = () => { /* ... */ }
+_mq.addEventListener('change', _handler)
+
+function dispose() {
+  _mq.removeEventListener('change', _handler)
+}
+```
+
+---
+
 ## 3. Go Architecture
 
 ### Hexagonal / Ports & Adapters

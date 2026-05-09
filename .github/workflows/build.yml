@@ -57,7 +57,7 @@ jobs:
     name: Build ${{ github.event.inputs.os }}
     needs: [build-ffmpeg-windows]
     if: always() && (needs.build-ffmpeg-windows.result == 'success' || needs.build-ffmpeg-windows.result == 'skipped')
-    runs-on: ${{ (contains(github.event.inputs.os, 'Windows') && 'windows-latest') || (contains(github.event.inputs.os, 'Darwin') && 'macos-latest') || 'ubuntu-latest' }}
+    runs-on: ${{ (contains(github.event.inputs.os, 'Windows') && 'windows-latest') || (contains(github.event.inputs.os, 'Darwin') && 'macos-26') || 'ubuntu-latest' }}
     permissions:
       contents: write
 
