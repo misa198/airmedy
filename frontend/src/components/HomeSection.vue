@@ -146,7 +146,7 @@ const prev = () => {
 .slide-next-leave-active,
 .slide-prev-enter-active,
 .slide-prev-leave-active {
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .slide-next-enter-from {

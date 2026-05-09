@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onUnmounted } from 'vue'
 import { Input } from '@/components/ui/input'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import { MetadataUpdate } from '../../bindings/airmedy/internal/domain/models'
@@ -53,6 +53,7 @@ watch(
         Label: t.label ?? '',
         ISRC: t.isrc ?? '',
       })
+      if (selectedImage.value) URL.revokeObjectURL(selectedImage.value)
       selectedImage.value = null
       selectedImageData.value = null
       error.value = ''
@@ -60,6 +61,10 @@ watch(
   },
   { immediate: true },
 )
+
+onUnmounted(() => {
+  if (selectedImage.value) URL.revokeObjectURL(selectedImage.value)
+})
 
 function setInt(key: keyof MetadataUpdate, val: string) {
   ;(form.value as Record<string, unknown>)[key] = parseInt(val) || 0
@@ -96,6 +101,7 @@ async function onFileChange(e: Event) {
             binary += String.fromCharCode(bytes[i])
           }
           selectedImageData.value = btoa(binary)
+          if (selectedImage.value) URL.revokeObjectURL(selectedImage.value)
           selectedImage.value = URL.createObjectURL(blob)
         }
         reader2.readAsArrayBuffer(blob)

@@ -73,63 +73,76 @@ export const usePlayerStore = defineStore('player', () => {
     }
   }
 
+  let _offFns: (() => void)[] = []
+  let _initialized = false
+
   async function init() {
+    if (_initialized) return
+    _initialized = true
     console.log('[PlayerStore] Initializing...')
     await syncState()
 
-    Events.On('player:status', (ev: Events.WailsEvent) => {
-      const s = ev.data as PlayerStatus
-      status.value = s
-      if (s.theme) theme.value = s.theme
-      if (s?.track_id) {
-        const found = queue.value.find((t) => t.id === s.track_id)
-        if (found) currentTrack.value = found
-      } else if (s?.playback_state === PlaybackState.PlaybackStateStopped) {
-        // Keep the current track even when stopped so the UI can show it as the last active track
-        // unless we explicitly want to clear it. For now, we keep it.
-      }
-    })
-
-    Events.On('player:theme', (ev: Events.WailsEvent) => {
-      theme.value = ev.data as ThemeColors
-    })
-
-    Events.On('player:lyrics', (ev: Events.WailsEvent) => {
-      const lyric = (ev.data as Lyric) ?? null
-      // Discard stale lyrics from a previous track (race condition on fast skipping)
-      if (lyric && lyric.track_id !== currentTrack.value?.id) return
-      // Discard a stale null if we already have correct lyrics for the current track
-      if (!lyric && lyrics.value?.track_id === currentTrack.value?.id) return
-      lyrics.value = lyric
-      lyricsLoading.value = false
-    })
-
-    Events.On('player:queue-updated', (ev: Events.WailsEvent) => {
-      const q = ev.data as TrackDTO[]
-      if (Array.isArray(q)) {
-        queue.value = q.filter(Boolean) as TrackDTO[]
-        // Re-sync currentTrack in case player:status arrived before queue-updated
-        if (status.value?.track_id) {
-          const found = queue.value.find((t) => t.id === status.value!.track_id)
+    _offFns = [
+      Events.On('player:status', (ev: Events.WailsEvent) => {
+        const s = ev.data as PlayerStatus
+        status.value = s
+        if (s.theme) theme.value = s.theme
+        if (s?.track_id) {
+          const found = queue.value.find((t) => t.id === s.track_id)
           if (found) currentTrack.value = found
+        } else if (s?.playback_state === PlaybackState.PlaybackStateStopped) {
+          // Keep the current track even when stopped so the UI can show it as the last active track
+          // unless we explicitly want to clear it. For now, we keep it.
         }
-      }
-    })
+      }),
 
-    Events.On('library:track-updated', (ev: Events.WailsEvent) => {
-      const updated = ev.data as TrackDTO
-      if (!updated?.id) return
-      const idx = queue.value.findIndex(t => t.id === updated.id)
-      if (idx !== -1) queue.value = queue.value.map((t, i) => i === idx ? updated : t)
-      if (currentTrack.value?.id === updated.id) currentTrack.value = updated
-    })
+      Events.On('player:theme', (ev: Events.WailsEvent) => {
+        theme.value = ev.data as ThemeColors
+      }),
 
-    Events.On('library:track-deleted', (ev: Events.WailsEvent) => {
-      const id = ev.data as string
-      if (!id) return
-      queue.value = queue.value.filter(t => t.id !== id)
-      if (currentTrack.value?.id === id) currentTrack.value = null
-    })
+      Events.On('player:lyrics', (ev: Events.WailsEvent) => {
+        const lyric = (ev.data as Lyric) ?? null
+        // Discard stale lyrics from a previous track (race condition on fast skipping)
+        if (lyric && lyric.track_id !== currentTrack.value?.id) return
+        // Discard a stale null if we already have correct lyrics for the current track
+        if (!lyric && lyrics.value?.track_id === currentTrack.value?.id) return
+        lyrics.value = lyric
+        lyricsLoading.value = false
+      }),
+
+      Events.On('player:queue-updated', (ev: Events.WailsEvent) => {
+        const q = ev.data as TrackDTO[]
+        if (Array.isArray(q)) {
+          queue.value = q.filter(Boolean) as TrackDTO[]
+          // Re-sync currentTrack in case player:status arrived before queue-updated
+          if (status.value?.track_id) {
+            const found = queue.value.find((t) => t.id === status.value!.track_id)
+            if (found) currentTrack.value = found
+          }
+        }
+      }),
+
+      Events.On('library:track-updated', (ev: Events.WailsEvent) => {
+        const updated = ev.data as TrackDTO
+        if (!updated?.id) return
+        const idx = queue.value.findIndex(t => t.id === updated.id)
+        if (idx !== -1) queue.value = queue.value.map((t, i) => i === idx ? updated : t)
+        if (currentTrack.value?.id === updated.id) currentTrack.value = updated
+      }),
+
+      Events.On('library:track-deleted', (ev: Events.WailsEvent) => {
+        const id = ev.data as string
+        if (!id) return
+        queue.value = queue.value.filter(t => t.id !== id)
+        if (currentTrack.value?.id === id) currentTrack.value = null
+      }),
+    ]
+  }
+
+  function dispose() {
+    _offFns.forEach(off => off())
+    _offFns = []
+    _initialized = false
   }
 
   async function play() {
@@ -302,6 +315,7 @@ export const usePlayerStore = defineStore('player', () => {
     artworkUrlSm,
     // Actions
     init,
+    dispose,
     syncState,
     play,
     pause,

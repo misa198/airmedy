@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import {
   SkipBack, SkipForward, Play, Pause,
   Pin, PinOff, X, Music,
@@ -63,6 +63,10 @@ function onVolumeEnter() {
 function onVolumeLeave() {
   volumeHideTimer = setTimeout(() => { showVolume.value = false }, 300)
 }
+
+onUnmounted(() => {
+  if (volumeHideTimer) clearTimeout(volumeHideTimer)
+})
 
 watch(() => store.theme, (colors) => {
   if (!colors) return

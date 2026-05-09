@@ -22,7 +22,12 @@ export const useDeviceStore = defineStore('device', () => {
     }
   }
 
+  let _offFns: (() => void)[] = []
+  let _initialized = false
+
   async function init() {
+    if (_initialized) return
+    _initialized = true
     console.log('[DeviceStore] Initializing...')
     try {
       const platform = await GetPlatform()
@@ -34,17 +39,23 @@ export const useDeviceStore = defineStore('device', () => {
       console.error('Failed to init device store', e)
     }
 
-    // Window events
-    Events.On(Events.Types.Common.WindowFullscreen, checkFullscreen)
-    Events.On(Events.Types.Common.WindowUnFullscreen, checkFullscreen)
-    Events.On(Events.Types.Common.WindowDidResize, checkFullscreen)
-    Events.On(Events.Types.Common.WindowMaximise, checkFullscreen)
-    Events.On(Events.Types.Common.WindowUnMaximise, checkFullscreen)
+    _offFns = [
+      Events.On(Events.Types.Common.WindowFullscreen, checkFullscreen),
+      Events.On(Events.Types.Common.WindowUnFullscreen, checkFullscreen),
+      Events.On(Events.Types.Common.WindowDidResize, checkFullscreen),
+      Events.On(Events.Types.Common.WindowMaximise, checkFullscreen),
+      Events.On(Events.Types.Common.WindowUnMaximise, checkFullscreen),
+      ...(isMac.value ? [
+        Events.On(Events.Types.Mac.WindowDidEnterFullScreen, checkFullscreen),
+        Events.On(Events.Types.Mac.WindowDidExitFullScreen, checkFullscreen),
+      ] : []),
+    ]
+  }
 
-    if (isMac.value) {
-      Events.On(Events.Types.Mac.WindowDidEnterFullScreen, checkFullscreen)
-      Events.On(Events.Types.Mac.WindowDidExitFullScreen, checkFullscreen)
-    }
+  function dispose() {
+    _offFns.forEach(off => off())
+    _offFns = []
+    _initialized = false
   }
 
   async function toggleFullscreen() {
@@ -76,6 +87,7 @@ export const useDeviceStore = defineStore('device', () => {
     isWindowFullscreen,
     isWindowMaximized,
     init,
+    dispose,
     checkFullscreen,
     toggleFullscreen,
     toggleMaximize,
