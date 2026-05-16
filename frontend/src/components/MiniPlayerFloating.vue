@@ -83,7 +83,7 @@ watch(() => store.theme, (colors) => {
     @dblclick="async () => { (await Window.IsMaximised()) ? Window.UnMaximise() : Window.Maximise() }">
     <!-- Artwork fills entire window -->
     <div class="absolute inset-0 bg-[#0A0A0A]" style="-webkit-app-region: no-drag">
-      <LazyImg v-if="store.artworkUrlMd" :src="store.artworkUrlMd" :alt="trackTitle" class="w-full h-full object-cover" />
+      <LazyImg v-if="store.artworkUrl" :src="store.artworkUrl" :alt="trackTitle" class="w-full h-full object-cover" />
       <div v-else class="w-full h-full flex items-center justify-center bg-white/5">
         <Music class="w-16 h-16 text-white/20" />
       </div>

@@ -10,7 +10,7 @@ import TrackTableHeader from './TrackTableHeader.vue'
 import TrackTableRow from './TrackTableRow.vue'
 import { COLUMNS, type ColumnKey, useTrackTableSettings } from '@/composables/useTrackTableSettings'
 import type { TrackContextMenuOptions } from '@/composables/useTrackContextMenu'
-import VirtualList from '@/components/ui/virtual-sortable'
+import VirtualList from 'vue-virtual-sortable'
 
 const SIMPLE_COLUMNS: ColumnKey[] = ['dnd', 'index', 'title', 'artist', 'duration', 'context_menu']
 const HEADER_HEIGHT = 40

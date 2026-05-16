@@ -7,7 +7,7 @@ import LazyImg from '@/components/LazyImg.vue'
 import { useI18n } from 'vue-i18n'
 import TrackContextMenu from './TrackContextMenu.vue'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
-import VirtualList from '@/components/ui/virtual-sortable'
+import VirtualList from 'vue-virtual-sortable'
 
 const { t } = useI18n()
 const store = usePlayerStore()
