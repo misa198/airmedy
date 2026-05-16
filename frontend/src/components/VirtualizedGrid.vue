@@ -1,8 +1,8 @@
-<script setup lang="ts" generic="T extends { id: string }">
+<script setup lang="ts">
 import { ref, onMounted, onUnmounted, onActivated, computed } from 'vue'
 
 const props = defineProps<{
-  items: T[]
+  items: { id: string }[]
   itemHeight?: number
   gap?: number
   minColumnWidth?: number
@@ -64,7 +64,7 @@ onUnmounted(() => {
 })
 
 const rows = computed(() => {
-  const result: { id: string; items: T[] }[] = []
+  const result: { id: string; items: { id: string }[] }[] = []
   for (let i = 0; i < props.items.length; i += columns.value) {
     const chunk = props.items.slice(i, i + columns.value)
     result.push({

@@ -88,6 +88,7 @@ export function useGlassBlur(
   let vMesh: any = null
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let artTex: any = null
+  let pendingImg: HTMLImageElement | null = null
 
   function render() {
     if (!renderer || !hMesh || !vMesh || !rt || !artTex?.image) return
@@ -149,11 +150,25 @@ export function useGlassBlur(
   const MAX_TEX_SIZE = 256
 
   function loadArtwork(url: string) {
+    if (pendingImg) {
+      console.debug('[useGlassBlur] cancelling in-flight load, url was:', pendingImg.src.slice(0, 60))
+      pendingImg.onload = null
+      pendingImg.onerror = null
+      pendingImg.src = ''
+      pendingImg = null
+    }
+
+    console.debug('[useGlassBlur] loadArtwork start:', url.slice(0, 60))
     const img = new Image()
+    pendingImg = img
     img.crossOrigin = 'anonymous'
     img.onload = () => {
-      if (!artTex) return
-      // Downscale large artwork before uploading to VRAM
+      pendingImg = null
+      console.debug(`[useGlassBlur] img loaded ${img.naturalWidth}x${img.naturalHeight}`)
+      if (!artTex) {
+        console.warn('[useGlassBlur] artTex null on load — composable already unmounted')
+        return
+      }
       if (img.naturalWidth > MAX_TEX_SIZE || img.naturalHeight > MAX_TEX_SIZE) {
         const scale = MAX_TEX_SIZE / Math.max(img.naturalWidth, img.naturalHeight)
         const w = Math.round(img.naturalWidth * scale)
@@ -162,12 +177,21 @@ export function useGlassBlur(
         offscreen.width = w
         offscreen.height = h
         offscreen.getContext('2d')!.drawImage(img, 0, 0, w, h)
+        console.debug(`[useGlassBlur] downscaled to ${w}x${h}, releasing full-res buffer`)
+        img.onerror = null
+        img.src = ''
         artTex.image = offscreen
       } else {
+        console.debug('[useGlassBlur] small image, uploading directly')
         artTex.image = img
       }
       artTex.needsUpdate = true
       render()
+      console.debug('[useGlassBlur] render done')
+    }
+    img.onerror = () => {
+      pendingImg = null
+      console.error('[useGlassBlur] failed to load artwork:', url.slice(0, 60))
     }
     img.src = url
   }
@@ -175,18 +199,38 @@ export function useGlassBlur(
   onMounted(() => {
     const canvas = canvasRef.value
     if (!canvas) return
+    console.debug('[useGlassBlur] mounted, init WebGL')
     init(canvas)
     if (imageUrl.value) loadArtwork(imageUrl.value)
   })
 
   watch(imageUrl, (url) => {
     if (!url) return
-    if (!renderer && canvasRef.value) init(canvasRef.value)
+    console.debug('[useGlassBlur] imageUrl changed, reloading artwork')
+    if (!renderer && canvasRef.value) {
+      console.debug('[useGlassBlur] renderer lost, re-init')
+      init(canvasRef.value)
+    }
     loadArtwork(url)
   })
 
   onUnmounted(() => {
+    console.debug('[useGlassBlur] unmounting, cleaning up')
+    if (pendingImg) {
+      pendingImg.onload = null
+      pendingImg.onerror = null
+      pendingImg.src = ''
+      pendingImg = null
+    }
+    if (artTex) {
+      artTex.image = null
+      artTex = null
+    }
     renderer?.gl.getExtension('WEBGL_lose_context')?.loseContext()
     renderer = null
+    rt = null
+    hMesh = null
+    vMesh = null
+    console.debug('[useGlassBlur] cleanup done')
   })
 }

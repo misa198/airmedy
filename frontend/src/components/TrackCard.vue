@@ -74,7 +74,7 @@ const artistNames = (artists: (Artist | null)[] | undefined) => {
           <Disc class="w-3 h-3 flex-shrink-0" />
           <span 
             class="truncate hover:text-primary cursor-pointer transition-colors"
-            @click.stop="emit('album-click', track.album.id)"
+            @click.stop="emit('album-click', track.album!.id)"
           >
             {{ track.album.title }}
           </span>

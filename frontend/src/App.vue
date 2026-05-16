@@ -74,23 +74,34 @@ onMounted(async () => {
   playlistsStore.loadAll()
 
   // Handle global events
-  Events.On('open-settings', () => {
+  offSettings = Events.On('open-settings', () => {
     router.push('/settings')
   })
 
-  Events.On('open-search', () => {
+  offSearch = Events.On('open-search', () => {
     router.push('/search')
   })
 
-  Events.On('player:cycle-repeat', () => {
+  offCycleRepeat = Events.On('player:cycle-repeat', () => {
     playerStore.cycleRepeat()
   })
 
   window.addEventListener('keydown', handleKeyDown)
 })
 
+let offSettings: (() => void) | null = null
+let offSearch: (() => void) | null = null
+let offCycleRepeat: (() => void) | null = null
+
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown)
+  offSettings?.()
+  offSearch?.()
+  offCycleRepeat?.()
+  playerStore.dispose()
+  deviceStore.dispose()
+  playlistsStore.dispose()
+  appStore.dispose()
 })
 
 const updateDynamicColors = (colors: any) => {

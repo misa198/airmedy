@@ -11,10 +11,10 @@ export type PlayerMode = 'sticky' | 'mini' | 'fullscreen'
 
 export const usePlayerStore = defineStore('player', () => {
   // State
-  const status = ref<PlayerStatus | null>(null)
+  const status = shallowRef<PlayerStatus | null>(null)
   const queue = shallowRef<TrackDTO[]>([])
-  const currentTrack = ref<TrackDTO | null>(null)
-  const theme = ref<ThemeColors | null>(null)
+  const currentTrack = shallowRef<TrackDTO | null>(null)
+  const theme = shallowRef<ThemeColors | null>(null)
   const isQueueOpen = ref(false)
   const isLyricsOpen = ref(false)
   const isTrackInfoOpen = ref(false)

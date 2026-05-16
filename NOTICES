@@ -18,3 +18,9 @@ https://miniaud.io
 --------------------------------------------------------------------------------
 This software uses miniaudio by David Reid, which is dual-licensed as
 Public Domain (Unlicense) and MIT-0. No attribution required.
+
+--------------------------------------------------------------------------------
+vue3-virtual-sortable
+https://github.com/mfuu/vue3-virtual-sortable
+--------------------------------------------------------------------------------
+This software uses vue3-virtual-sortable by mfuu, which is licensed as MIT.

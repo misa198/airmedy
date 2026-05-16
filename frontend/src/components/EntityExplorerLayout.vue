@@ -1,4 +1,4 @@
-<script setup lang="ts" generic="T extends { id: string; name: string }">
+<script setup lang="ts">
 import { ref, computed, onActivated } from 'vue'
 import { Search, Play } from 'lucide-vue-next'
 import { Input } from '@/components/ui/input'
@@ -6,7 +6,7 @@ import { foldUnicode } from '@/lib/utils'
 
 const props = defineProps<{
   title: string
-  items: T[]
+  items: { id: string; name: string }[]
   isLoading?: boolean
   selectedId?: string
   searchPlaceholder?: string
@@ -15,7 +15,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'select': [id: string]
-  'play': [item: T]
+  'play': [item: { id: string; name: string }]
 }>()
 
 const searchQuery = ref('')
