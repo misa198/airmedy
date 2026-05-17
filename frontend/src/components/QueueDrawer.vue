@@ -55,12 +55,14 @@ onUnmounted(() => {
         <button
           class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-foreground opacity-60 hover:text-foreground"
           @click="scrollToCurrentTrack()"
+          :title="t('player.scroll_to_current')"
         >
           <Goal class="w-4 h-4" />
         </button>
         <button
           class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-foreground opacity-60 hover:text-foreground"
           @click="store.toggleQueue()"
+          :title="t('common.close')"
         >
           <X class="w-4 h-4" />
         </button>

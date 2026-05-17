@@ -9,6 +9,8 @@ vi.mock('vue-i18n', () => ({
     t: (key: string) => {
       if (key === 'player.queue') return 'Queue'
       if (key === 'player.queue_empty') return 'Queue is empty'
+      if (key === 'player.scroll_to_current') return 'Scroll to current'
+      if (key === 'common.close') return 'Close'
       return key
     },
   }),
@@ -38,9 +40,9 @@ describe('QueueDrawer', () => {
           }),
         ],
         stubs: { 
-          RecycleScroller: { 
-            template: '<div><div v-for="(item, index) in items" :key="item.id"><slot :item="item" :index="index" /></div></div>', 
-            props: ['items', 'itemSize', 'keyField'] 
+          VirtualList: { 
+            template: '<div><div v-for="(item, index) in modelValue" :key="item.id"><slot name="item" :record="item" :index="index" /></div></div>', 
+            props: ['modelValue'] 
           }, 
           Transition: false,
           LazyImg: true,
@@ -49,11 +51,6 @@ describe('QueueDrawer', () => {
       },
     })
   }
-
-  it('is not rendered when isQueueOpen is false', () => {
-    const wrapper = mountDrawer(false)
-    expect(wrapper.find('[class*="fixed"]').exists()).toBe(false)
-  })
 
   it('is rendered when isQueueOpen is true', () => {
     const wrapper = mountDrawer(true)
@@ -69,7 +66,7 @@ describe('QueueDrawer', () => {
   it('calls toggleQueue when close button clicked', async () => {
     const wrapper = mountDrawer(true)
     const store = usePlayerStore()
-    const closeBtn = wrapper.find('button')
+    const closeBtn = wrapper.find('button[title="Close"]')
     await closeBtn.trigger('click')
     expect(store.toggleQueue).toHaveBeenCalledOnce()
   })

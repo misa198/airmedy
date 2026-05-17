@@ -175,6 +175,7 @@
     "queue": "Queue",
     "mini_player": "Mini Player",
     "fullscreen": "Fullscreen",
+    "scroll_to_current": "Scroll to current track",
     "now_playing": "Now Playing",
     "up_next": "Up Next",
     "queue_empty": "Queue is empty",

@@ -81,8 +81,8 @@ onUnmounted(() => {
     <!-- Visual track -->
     <div class="absolute w-full h-1 rounded-full bg-foreground/15">
       <div
-        class="h-full w-full rounded-full bg-foreground"
-        :style="{ transform: `scaleX(${fillPct / 100})`, transformOrigin: 'left center' }"
+        class="h-full rounded-full bg-foreground"
+        :style="{ width: `${fillPct}%` }"
       />
     </div>
     
