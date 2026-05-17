@@ -233,7 +233,7 @@ func (s *LastFmService) fetchUserAvatar(username string) {
 		s.avatarURL = avatarURL
 		s.mu.Unlock()
 
-		s.logger.Info("fetched lastfm user avatar", "url", avatarURL)
+		s.logger.Debug("fetched lastfm user avatar", "url", avatarURL)
 		app := application.Get()
 		if app != nil && app.Event != nil {
 			app.Event.Emit("lastfm:avatar", avatarURL)
@@ -415,7 +415,7 @@ func (s *LastFmService) handleScrobble(track *domain.TrackDTO, startTime time.Ti
 	}
 
 	go s.scrobble(track, startTime.Unix())
-	s.logger.Info("lastfm scrobble submitted", "title", track.Title)
+	s.logger.Debug("lastfm scrobble submitted", "title", track.Title)
 }
 
 func (s *LastFmService) handleNowPlaying(track *domain.TrackDTO) {
@@ -427,5 +427,5 @@ func (s *LastFmService) handleNowPlaying(track *domain.TrackDTO) {
 	}
 
 	go s.updateNowPlaying(track)
-	s.logger.Info("lastfm now playing updated", "title", track.Title)
+	s.logger.Debug("lastfm now playing updated", "title", track.Title)
 }

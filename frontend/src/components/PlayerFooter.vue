@@ -72,7 +72,7 @@ async function onSeekEnd() {
 
 <template>
   <div
-    class="h-[72px] bg-background/80 backdrop-blur-2xl border-t border-foreground/[0.06] flex items-center justify-between px-6 gap-6 select-none">
+    class="h-[72px] backdrop-blur-2xl border-t border-foreground/[0.06] flex items-center justify-between px-6 gap-6 select-none">
     <!-- Track Info -->
     <div class="flex items-center justify-start gap-3 w-1/4 min-w-[200px]">
       <div
