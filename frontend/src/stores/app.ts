@@ -11,7 +11,9 @@ export const useAppStore = defineStore('app', () => {
   const autoCheckUpdate = ref(true)
   const lastfmUsername = ref('')
   const eqEnabled = ref(true)
-  const lrclibMode = ref<'off' | 'prefer_metadata' | 'prefer_lrclib'>('prefer_metadata')
+  const enableLrclib = ref(true)
+  const enableKugou = ref(true)
+  const preferMetadataLyrics = ref(true)
   const useOnlineArtistArtwork = ref(true)
   
   const updateInfo = ref<UpdateInfo | null>(null)
@@ -39,7 +41,9 @@ export const useAppStore = defineStore('app', () => {
         autoCheckUpdate.value = !!settings.auto_check_update
         lastfmUsername.value = settings.lastfm_username || ''
         eqEnabled.value = settings.eq_enabled !== false
-        if (settings.lrclib_mode) lrclibMode.value = settings.lrclib_mode as any
+        enableLrclib.value = settings.enable_lrclib !== false
+        enableKugou.value = settings.enable_kugou !== false
+        preferMetadataLyrics.value = settings.prefer_metadata_lyrics !== false
         useOnlineArtistArtwork.value = settings.use_online_artist_artwork !== false
         applyTheme(theme.value)
       }
@@ -95,7 +99,9 @@ export const useAppStore = defineStore('app', () => {
         auto_check_update: autoCheckUpdate.value,
         lastfm_username: lastfmUsername.value,
         eq_enabled: eqEnabled.value,
-        lrclib_mode: lrclibMode.value,
+        enable_lrclib: enableLrclib.value,
+        enable_kugou: enableKugou.value,
+        prefer_metadata_lyrics: preferMetadataLyrics.value,
         use_online_artist_artwork: useOnlineArtistArtwork.value,
       })
     } catch (err) {
@@ -113,7 +119,9 @@ export const useAppStore = defineStore('app', () => {
         auto_check_update: autoCheckUpdate.value,
         lastfm_username: lastfmUsername.value,
         eq_enabled: eqEnabled.value,
-        lrclib_mode: lrclibMode.value,
+        enable_lrclib: enableLrclib.value,
+        enable_kugou: enableKugou.value,
+        prefer_metadata_lyrics: preferMetadataLyrics.value,
         use_online_artist_artwork: useOnlineArtistArtwork.value,
       })
     } catch (err) {
@@ -131,7 +139,9 @@ export const useAppStore = defineStore('app', () => {
         auto_check_update: autoCheckUpdate.value,
         lastfm_username: lastfmUsername.value,
         eq_enabled: eqEnabled.value,
-        lrclib_mode: lrclibMode.value,
+        enable_lrclib: enableLrclib.value,
+        enable_kugou: enableKugou.value,
+        prefer_metadata_lyrics: preferMetadataLyrics.value,
         use_online_artist_artwork: useOnlineArtistArtwork.value,
       })
     } catch (err) {
@@ -149,7 +159,9 @@ export const useAppStore = defineStore('app', () => {
         auto_check_update: enabled,
         lastfm_username: lastfmUsername.value,
         eq_enabled: eqEnabled.value,
-        lrclib_mode: lrclibMode.value,
+        enable_lrclib: enableLrclib.value,
+        enable_kugou: enableKugou.value,
+        prefer_metadata_lyrics: preferMetadataLyrics.value,
         use_online_artist_artwork: useOnlineArtistArtwork.value,
       })
     } catch (err) {
@@ -167,7 +179,9 @@ export const useAppStore = defineStore('app', () => {
         auto_check_update: autoCheckUpdate.value,
         lastfm_username: lastfmUsername.value,
         eq_enabled: enabled,
-        lrclib_mode: lrclibMode.value,
+        enable_lrclib: enableLrclib.value,
+        enable_kugou: enableKugou.value,
+        prefer_metadata_lyrics: preferMetadataLyrics.value,
         use_online_artist_artwork: useOnlineArtistArtwork.value,
       })
     } catch (err) {
@@ -179,8 +193,8 @@ export const useAppStore = defineStore('app', () => {
     lastfmUsername.value = username
   }
 
-  const updateLrclibMode = async (mode: 'off' | 'prefer_metadata' | 'prefer_lrclib') => {
-    lrclibMode.value = mode
+  const updateEnableLrclib = async (enabled: boolean) => {
+    enableLrclib.value = enabled
     try {
       await SettingsService.SaveSettings({
         theme: theme.value,
@@ -189,11 +203,53 @@ export const useAppStore = defineStore('app', () => {
         auto_check_update: autoCheckUpdate.value,
         lastfm_username: lastfmUsername.value,
         eq_enabled: eqEnabled.value,
-        lrclib_mode: mode,
+        enable_lrclib: enabled,
+        enable_kugou: enableKugou.value,
+        prefer_metadata_lyrics: preferMetadataLyrics.value,
         use_online_artist_artwork: useOnlineArtistArtwork.value,
       })
     } catch (err) {
-      console.error('Failed to save lrclib mode setting:', err)
+      console.error('Failed to save enable_lrclib setting:', err)
+    }
+  }
+
+  const updateEnableKugou = async (enabled: boolean) => {
+    enableKugou.value = enabled
+    try {
+      await SettingsService.SaveSettings({
+        theme: theme.value,
+        language: language.value,
+        start_at_login: startAtLogin.value,
+        auto_check_update: autoCheckUpdate.value,
+        lastfm_username: lastfmUsername.value,
+        eq_enabled: eqEnabled.value,
+        enable_lrclib: enableLrclib.value,
+        enable_kugou: enabled,
+        prefer_metadata_lyrics: preferMetadataLyrics.value,
+        use_online_artist_artwork: useOnlineArtistArtwork.value,
+      })
+    } catch (err) {
+      console.error('Failed to save enable_kugou setting:', err)
+    }
+  }
+
+  const updatePreferMetadataLyrics = async (enabled: boolean) => {
+    preferMetadataLyrics.value = enabled
+    try {
+      await SettingsService.SaveSettings({
+        theme: theme.value,
+        language: language.value,
+        start_at_login: startAtLogin.value,
+        auto_check_update: autoCheckUpdate.value,
+        lastfm_username: lastfmUsername.value,
+        eq_enabled: eqEnabled.value,
+        enable_lrclib: enableLrclib.value,
+        enable_kugou: enableKugou.value,
+        prefer_metadata_lyrics: enabled,
+        use_online_artist_artwork: useOnlineArtistArtwork.value,
+      })
+    } catch (err) {
+      console.error('Failed to save prefer_metadata_lyrics setting:', err)
     }
   }
 
@@ -207,7 +263,9 @@ export const useAppStore = defineStore('app', () => {
         auto_check_update: autoCheckUpdate.value,
         lastfm_username: lastfmUsername.value,
         eq_enabled: eqEnabled.value,
-        lrclib_mode: lrclibMode.value,
+        enable_lrclib: enableLrclib.value,
+        enable_kugou: enableKugou.value,
+        prefer_metadata_lyrics: preferMetadataLyrics.value,
         use_online_artist_artwork: enabled,
       })
     } catch (err) {
@@ -233,7 +291,9 @@ export const useAppStore = defineStore('app', () => {
     autoCheckUpdate,
     lastfmUsername,
     eqEnabled,
-    lrclibMode,
+    enableLrclib,
+    enableKugou,
+    preferMetadataLyrics,
     useOnlineArtistArtwork,
     updateInfo,
     isCheckingUpdate,
@@ -250,7 +310,9 @@ export const useAppStore = defineStore('app', () => {
     updateAutoCheckUpdate,
     updateEQEnabled,
     updateLastFmUsername,
-    updateLrclibMode,
+    updateEnableLrclib,
+    updateEnableKugou,
+    updatePreferMetadataLyrics,
     updateUseOnlineArtistArtwork,
     dispose,
   }

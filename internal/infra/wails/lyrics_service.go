@@ -27,7 +27,8 @@ func (s *LyricsService) DeleteLyrics(trackID string) error {
 	return s.service.DeleteLyrics(context.Background(), trackID)
 }
 
-// FetchLyrics fetches lyrics from lrclib.net for the given track and returns the result.
+// FetchLyrics fetches lyrics from all enabled providers for the given track.
+// Enabled state is read from settings; both providers are queried when both are enabled.
 func (s *LyricsService) FetchLyrics(trackID string, track *domain.TrackDTO) (*domain.Lyric, error) {
-	return s.service.FetchFromExternal(context.Background(), track)
+	return s.service.FetchFromProviders(context.Background(), track, true, true)
 }

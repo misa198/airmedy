@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted } from 'vue'
-import { Music, X, ListMusic, MoreVertical, GripVertical } from 'lucide-vue-next'
+import { Music, X, ListMusic, MoreVertical, GripVertical, Goal } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
 import { formatTime, buildArtworkUrl, getTrackDisplayTitle } from '../lib/utils'
 import LazyImg from '@/components/LazyImg.vue'
@@ -18,7 +18,7 @@ const scrollToCurrentTrack = () => {
   if (!scroller.value || !store.currentTrack) return
   const index = store.queue.findIndex(t => t.id === store.currentTrack?.id)
   if (index !== -1) {
-    scroller.value.scrollToItem(index)
+    scroller.value.scrollToIndex(index)
   }
 }
 
@@ -51,12 +51,22 @@ onUnmounted(() => {
         <span>{{ t('player.queue') }}</span>
         <span class="text-xs text-muted-foreground font-normal ml-1">({{ store.queue.length }})</span>
       </div>
-      <button
-        class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-foreground opacity-60 hover:text-foreground"
-        @click="store.toggleQueue()"
-      >
-        <X class="w-4 h-4" />
-      </button>
+      <div class="flex items-center gap-1">
+        <button
+          class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-foreground opacity-60 hover:text-foreground"
+          @click="scrollToCurrentTrack()"
+          :title="t('player.scroll_to_current')"
+        >
+          <Goal class="w-4 h-4" />
+        </button>
+        <button
+          class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-foreground opacity-60 hover:text-foreground"
+          @click="store.toggleQueue()"
+          :title="t('common.close')"
+        >
+          <X class="w-4 h-4" />
+        </button>
+      </div>
     </div>
 
     <!-- Queue list -->
@@ -85,7 +95,7 @@ onUnmounted(() => {
           <div
             class="w-full flex items-center gap-3 px-0 h-16 text-left hover:bg-foreground/[0.04] transition-colors group relative"
             :class="{ 'bg-primary/10 border-l-2 border-l-primary': store.currentTrack?.id === item.id }"
-            @dblclick="store.playTracks(store.queue, index)"
+            @dblclick="store.playQueueIndex(index)"
             @contextmenu.prevent="onContextMenu($event, item)"
           >
             <!-- Drag Handle -->
@@ -94,7 +104,7 @@ onUnmounted(() => {
             </div>
 
             <!-- Artwork -->
-            <div class="w-10 h-10 rounded-md bg-foreground/5 flex-shrink-0 overflow-hidden" @click="store.playTracks(store.queue, index)">
+            <div class="w-10 h-10 rounded-md bg-foreground/5 flex-shrink-0 overflow-hidden" @click="store.playQueueIndex(index)">
               <LazyImg
                 v-if="item.artwork_key"
                 :src="buildArtworkUrl(item.artwork_key, 'sm')"
@@ -107,7 +117,7 @@ onUnmounted(() => {
             </div>
 
             <!-- Track info -->
-            <div class="flex-1 min-w-0" @click="store.playTracks(store.queue, index)">
+            <div class="flex-1 min-w-0" @click="store.playQueueIndex(index)">
               <div
                 class="text-sm font-medium truncate"
                 :class="store.currentTrack?.id === item.id ? 'text-primary' : ''"

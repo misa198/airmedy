@@ -78,6 +78,16 @@ func (s *QueueService) ShuffleTracks(tracks []*domain.TrackDTO) {
 	s.currentIndex = 0
 }
 
+// SetCurrentIndex moves the active queue pointer to the given index without modifying the queue.
+func (s *QueueService) SetCurrentIndex(index int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	list := s.activeList()
+	if index >= 0 && index < len(list) {
+		s.currentIndex = index
+	}
+}
+
 // GetCurrentTrack returns the track currently at the head of the queue.
 func (s *QueueService) GetCurrentTrack() *domain.TrackDTO {
 	s.mu.RLock()

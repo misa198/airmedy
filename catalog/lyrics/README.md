@@ -2,16 +2,20 @@
 
 ## Summary
 
-Fetches and displays synchronized (LRC) or plain-text lyrics for the current track. Lyrics are sourced from **lrclib.net** and cached in SQLite. The frontend parses LRC timestamps and auto-scrolls to the current line.
+Fetches and displays synchronized (LRC) or plain-text lyrics for the current track. Lyrics are sourced from **lrclib.net** and **KuGou Music** and cached in SQLite. The frontend parses LRC timestamps and auto-scrolls to the current line.
 
 ## Files
 
-| File                                        | Purpose                       |
-| ------------------------------------------- | ----------------------------- |
-| `internal/app/lyrics/lyrics_service.go`     | Fetch, rank, store            |
-| `internal/infra/sqlite/lyric_repository.go` | SQLite persistence            |
-| `internal/infra/wails/lyrics_service.go`    | Wails binding                 |
-| `frontend/src/composables/useLyrics.ts`     | LRC parser, synced/plain view |
+| File                                        | Purpose                              |
+| ------------------------------------------- | ------------------------------------ |
+| `internal/domain/repositories.go`           | `LyricsProvider` port interface      |
+| `internal/app/lyrics/lyrics_service.go`     | Use-case orchestration, CRUD, racing |
+| `internal/infra/lyrics/lrclib.go`           | lrclib.net HTTP adapter              |
+| `internal/infra/lyrics/kugou.go`            | KuGou Music HTTP adapter             |
+| `internal/infra/lyrics/module.go`           | FX wiring for provider group         |
+| `internal/infra/sqlite/lyric_repository.go` | SQLite persistence                   |
+| `internal/infra/wails/lyrics_service.go`    | Wails binding                        |
+| `frontend/src/composables/useLyrics.ts`     | LRC parser, synced/plain view        |
 
 ## Lyric Model
 
@@ -39,7 +43,7 @@ The `LyricsService.ResolveLyrics` method determines which lyrics to display base
 
 If resolution returns no results and the mode is not `off`, `PlayerService` triggers an external fetch from `lrclib.net`.
 
-## Fetch Strategy (lrclib.net)
+## Fetch Strategy
 
 ### 1. Exact Fetch
 
@@ -78,7 +82,7 @@ Before sending to lrclib, the title is normalized:
 
 Synced lyrics (with timestamps) are preferred over plain text. If only plain is available, `source` is set to `"lrclib-plain"`.
 
-## LyricRepository
+## Ports
 
 ```go
 type LyricRepository interface {
@@ -87,9 +91,25 @@ type LyricRepository interface {
     Upsert(ctx, lyric *Lyric) error
     Delete(ctx, trackID string) error
 }
+
+type LyricsProvider interface {
+    Fetch(ctx context.Context, track *TrackDTO) (*Lyric, error)
+    Name() string
+}
 ```
 
-Lyrics are stored in the `lyrics` table. It maintains both `content`/`source` (from external providers like lrclib) and `meta_content`/`meta_source` (from file metadata).
+Lyrics are stored in the `lyrics` table. It maintains both `content`/`source` (from external providers) and `meta_content`/`meta_source` (from file metadata).
+
+## Provider Adapters
+
+Providers live in `internal/infra/lyrics/` and implement `domain.LyricsProvider`. They return `*domain.Lyric` with content populated but **not persisted** — `LyricsService` calls `saveLyric` after receiving a result.
+
+| Provider | Name() | Endpoint |
+|----------|--------|---------|
+| `LrclibProvider` | `"lrclib"` | `https://lrclib.net/api/` |
+| `KugouProvider` | `"kugou"` | `http://krcs.kugou.com/search` + `https://lyrics.kugou.com/download` |
+
+Providers are wired via FX value group `lyrics_providers`. `LyricsService` receives `[]domain.LyricsProvider` and filters by name based on enabled flags.
 
 ## Wails-Exposed Methods
 

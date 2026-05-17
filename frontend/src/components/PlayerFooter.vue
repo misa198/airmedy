@@ -10,7 +10,7 @@ import {
   Shuffle,
   Volume2,
   VolumeX,
-  Maximize2,
+  Maximize,
   Music,
   ListMusic,
   Mic2,
@@ -72,7 +72,7 @@ async function onSeekEnd() {
 
 <template>
   <div
-    class="h-[72px] bg-background/80 backdrop-blur-2xl border-t border-foreground/[0.06] flex items-center justify-between px-6 gap-6 select-none">
+    class="h-[72px] bg-background border-t border-foreground/[0.06] flex items-center justify-between px-6 gap-6 select-none">
     <!-- Track Info -->
     <div class="flex items-center justify-start gap-3 w-1/4 min-w-[200px]">
       <div
@@ -160,7 +160,7 @@ async function onSeekEnd() {
       </button>
       <button class="text-foreground opacity-60 hover:text-foreground opacity-50 transition-colors"
         @click="store.playerMode = 'fullscreen'" :title="t('player.fullscreen')">
-        <Maximize2 class="w-4 h-4" />
+        <Maximize class="w-4 h-4" />
       </button>
     </div>
   </div>

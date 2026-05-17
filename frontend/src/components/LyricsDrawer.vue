@@ -50,8 +50,9 @@ watch(activeIndex, (newIndex) => {
         <div class="max-w-[100px] truncate">{{ t('player.lyrics') }}</div>
       </div>
 
-      <!-- View type toggle (only when synced lyrics are available) -->
-      <div v-if="isSynced" class="relative grid grid-cols-2 bg-foreground/[0.06] rounded-full p-0.5 text-xs">
+      <div class="flex gap-x-1 items-center">
+        <!-- View type toggle (only when synced lyrics are available) -->
+        <div v-if="isSynced" class="relative grid grid-cols-2 bg-foreground/[0.06] rounded-full p-0.5 text-xs">
         <!-- Sliding pill -->
         <div
           class="absolute inset-y-0.5 w-1/2 rounded-full bg-foreground/10 transition-transform duration-200 ease-in-out"
@@ -75,6 +76,7 @@ watch(activeIndex, (newIndex) => {
         @click="store.toggleLyrics()">
         <X class="w-4 h-4" />
       </button>
+      </div>
     </div>
 
     <!-- Body -->

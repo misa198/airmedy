@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, shallowRef, computed, watch } from 'vue'
 import { Events } from '@wailsio/runtime'
 import * as PlayerService from '../../bindings/airmedy/internal/infra/wails/playerservice'
+import * as LyricsService from '../../bindings/airmedy/internal/infra/wails/lyricsservice'
 import { PlaybackState, PlayerStatus, RepeatMode, ThemeColors } from '../../bindings/airmedy/internal/domain/models'
 import type { Lyric, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import { buildArtworkUrl } from '@/lib/utils'
@@ -136,6 +137,20 @@ export const usePlayerStore = defineStore('player', () => {
         if (currentTrack.value?.id === id) currentTrack.value = null
       }),
     ]
+
+    // Pull lyrics for current track in case player:lyrics event fired before listener registration
+    if (currentTrack.value) {
+      const trackId = currentTrack.value.id
+      try {
+        const lyric = await LyricsService.GetLyrics(trackId)
+        if (lyric && currentTrack.value?.id === trackId) {
+          lyrics.value = lyric
+          lyricsLoading.value = false
+        }
+      } catch (e) {
+        logger.error('Failed to pull initial lyrics', e)
+      }
+    }
   }
 
   function dispose() {
@@ -227,6 +242,11 @@ export const usePlayerStore = defineStore('player', () => {
     queue.value = tracks
     currentTrack.value = tracks[startIndex] ?? null
     await PlayerService.PlayTrackIDs(tracks.map(t => t.id), startIndex)
+  }
+
+  async function playQueueIndex(index: number) {
+    currentTrack.value = queue.value[index] ?? null
+    await PlayerService.PlayQueueIndex(index)
   }
 
   async function shuffleTracks(tracks: TrackDTO[]) {
@@ -332,6 +352,7 @@ export const usePlayerStore = defineStore('player', () => {
     setShuffle,
     setRepeatMode,
     playTracks,
+    playQueueIndex,
     shuffleTracks,
     reorderQueue,
     toggleQueue,

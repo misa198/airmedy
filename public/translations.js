@@ -279,8 +279,8 @@ const translations = {
                 title: "Letras sincronizadas",
                 desc: "Modo de pantalla completa inmersivo con letras que se mueven con la música."
             },
-            mini: { title: "Compact Player", desc: "A tiny, versatile mini-player that stays on top and out of your way." },
-            artist: { title: "Artist Insights", desc: "Deep dive into your favorite artists with discography and bios." }
+            mini: { title: "Reproductor Compacto", desc: "Un mini reproductor diminuto y versátil que se mantiene en primer plano y no estorba." },
+            artist: { title: "Información del Artista", desc: "Sumérgete en tus artistas favoritos con discografía y biografías." }
         },
         faq: {
             title: "Preguntas frecuentes",
@@ -297,8 +297,8 @@ const translations = {
                 a: "No, las bibliotecas FFmpeg están compiladas estáticamente e integradas en Airmedy. No necesitas instalar nada más."
             },
             privacy: {
-                q: "How is my data handled?",
-                a: "Airmedy is built with privacy in mind. Your Last.fm session keys are stored securely in your system's native keychain (macOS Keychain, Windows Credential Manager, or Secret Service API on Linux). We never see your password, and no data ever leaves your machine except to scrobble tracks to Last.fm."
+                q: "¿Cómo se manejan mis datos?",
+                a: "Airmedy está construido pensando en la privacidad. Tus claves de sesión de Last.fm se almacenan de forma segura en el llavero nativo de tu sistema (macOS Keychain, Windows Credential Manager o Secret Service API en Linux). Nunca vemos tu contraseña y ningún dato sale de tu máquina, excepto para hacer scrobbling de las pistas a Last.fm."
             }
         },
         download: {
@@ -388,8 +388,8 @@ const translations = {
                 title: "Paroles synchronisées",
                 desc: "Mode plein écran immersif avec des paroles qui bougent avec la musique."
             },
-            mini: { title: "Compact Player", desc: "A tiny, versatile mini-player that stays on top and out of your way." },
-            artist: { title: "Artist Insights", desc: "Deep dive into your favorite artists with discography and bios." }
+            mini: { title: "Lecteur Compact", desc: "Un mini-lecteur minuscule et polyvalent qui reste au premier plan sans vous gêner." },
+            artist: { title: "Aperçu de l'Artiste", desc: "Plongez dans vos artistes préférés avec leur discographie et leurs biographies." }
         },
         faq: {
             title: "Foire aux questions",
@@ -406,8 +406,8 @@ const translations = {
                 a: "No, les bibliothèques FFmpeg sont compilées statiquement et intégrées à Airmedy. Vous n'avez rien d'autre à installer."
             },
             privacy: {
-                q: "How is my data handled?",
-                a: "Airmedy is built with privacy in mind. Your Last.fm session keys are stored securely in your system's native keychain (macOS Keychain, Windows Credential Manager, or Secret Service API on Linux). We never see your password, and no data ever leaves your machine except to scrobble tracks to Last.fm."
+                q: "Comment mes données sont-elles traitées ?",
+                a: "Airmedy est conçu avec le respect de la vie privée à l'esprit. Vos clés de session Last.fm sont stockées en toute sécurité dans le trousseau natif de votre système (macOS Keychain, Windows Credential Manager ou Secret Service API sur Linux). Nous ne voyons jamais votre mot de passe et aucune donnée ne quitte votre machine, sauf pour scrobbler des pistes sur Last.fm."
             }
         },
         download: {
@@ -497,8 +497,8 @@ const translations = {
                 title: "Testi sincronizzati",
                 desc: "Modalità a schermo intero immersiva con testi che si muovono con la musica."
             },
-            mini: { title: "Compact Player", desc: "A tiny, versatile mini-player that stays on top and out of your way." },
-            artist: { title: "Artist Insights", desc: "Deep dive into your favorite artists with discography and bios." }
+            mini: { title: "Lettore Compatto", desc: "Un mini lettore minuscolo e versatile che rimane in primo piano senza intralciare." },
+            artist: { title: "Approfondimenti sull'Artista", desc: "Immergiti nei tuoi artisti preferiti con discografia e biografie." }
         },
         faq: {
             title: "Domande frequenti",
@@ -515,8 +515,8 @@ const translations = {
                 a: "No, le librerie FFmpeg sono compilate staticamente e incluse in Airmedy. Non è necessario installare altro."
             },
             privacy: {
-                q: "How is my data handled?",
-                a: "Airmedy is built with privacy in mind. Your Last.fm session keys are stored securely in your system's native keychain (macOS Keychain, Windows Credential Manager, or Secret Service API on Linux). We never see your password, and no data ever leaves your machine except to scrobble tracks to Last.fm."
+                q: "Come vengono gestiti i miei dati?",
+                a: "Airmedy è costruito pensando alla privacy. Le tue chiavi di sessione di Last.fm sono archiviate in modo sicuro nel portachiavi nativo del tuo sistema (macOS Keychain, Windows Credential Manager o Secret Service API su Linux). Non vediamo mai la tua password e nessun dato lascia mai la tua macchina se non per fare scrobbling delle tracce su Last.fm."
             }
         },
         download: {
@@ -606,8 +606,8 @@ const translations = {
                 title: "同期された歌詞",
                 desc: "音楽に合わせて歌詞が動く没入型のフルスクリーンモード。"
             },
-            mini: { title: "Compact Player", desc: "A tiny, versatile mini-player that stays on top and out of your way." },
-            artist: { title: "Artist Insights", desc: "Deep dive into your favorite artists with discography and bios." }
+            mini: { title: "コンパクトプレイヤー", desc: "邪魔にならずに常に手前に表示される、小型で多機能なミニプレイヤー。" },
+            artist: { title: "アーティストインサイト", desc: "ディスコグラフィーやバイオグラフィーで、お気に入りのアーティストを深く掘り下げます。" }
         },
         faq: {
             title: "よくある質問",
@@ -624,8 +624,8 @@ const translations = {
                 a: "いいえ、FFmpegライブラリは静的にコンパイルされ、Airmedyに同梱されています。他に何もインストールする必要はありません。"
             },
             privacy: {
-                q: "How is my data handled?",
-                a: "Airmedy is built with privacy in mind. Your Last.fm session keys are stored securely in your system's native keychain (macOS Keychain, Windows Credential Manager, or Secret Service API on Linux). We never see your password, and no data ever leaves your machine except to scrobble tracks to Last.fm."
+                q: "データはどのように扱われますか？",
+                a: "Airmedyはプライバシーを念頭に置いて構築されています。Last.fmのセッションキーは、システムのネイティブキーチェーン（macOS Keychain、Windows Credential Manager、またはLinuxのSecret Service API）に安全に保存されます。私たちがあなたのパスワードを見ることは決してなく、トラックをLast.fmにスクロブルする以外にデータがあなたのマシンを離れることはありません。"
             }
         },
         download: {
@@ -715,8 +715,8 @@ const translations = {
                 title: "동기화된 가사",
                 desc: "음악과 함께 움직이는 가사가 있는 몰입형 전체 화면 모드."
             },
-            mini: { title: "Compact Player", desc: "A tiny, versatile mini-player that stays on top and out of your way." },
-            artist: { title: "Artist Insights", desc: "Deep dive into your favorite artists with discography and bios." }
+            mini: { title: "컴팩트 플레이어", desc: "항상 위로 유지되면서 방해가 되지 않는 작고 다재다능한 미니 플레이어." },
+            artist: { title: "아티스트 인사이트", desc: "디스코그래피와 약력으로 좋아하는 아티스트에 대해 깊이 알아보세요." }
         },
         faq: {
             title: "자주 묻는 질문",
@@ -733,8 +733,8 @@ const translations = {
                 a: "아니요, FFmpeg 라이브러리는 정적으로 컴파일되어 Airmedy에 포함되어 있습니다. 다른 것을 설치할 필요가 없습니다."
             },
             privacy: {
-                q: "How is my data handled?",
-                a: "Airmedy is built with privacy in mind. Your Last.fm session keys are stored securely in your system's native keychain (macOS Keychain, Windows Credential Manager, or Secret Service API on Linux). We never see your password, and no data ever leaves your machine except to scrobble tracks to Last.fm."
+                q: "내 데이터는 어떻게 처리되나요?",
+                a: "Airmedy는 개인정보 보호를 염두에 두고 제작되었습니다. Last.fm 세션 키는 시스템의 네이티브 키체인(macOS 키체인, Windows 자격 증명 관리자 또는 Linux의 Secret Service API)에 안전하게 저장됩니다. 저희는 귀하의 비밀번호를 절대 볼 수 없으며, 트랙을 Last.fm으로 스크로블링하는 것 외에는 어떠한 데이터도 귀하의 기기를 벗어나지 않습니다."
             }
         },
         download: {
@@ -824,8 +824,8 @@ const translations = {
                 title: "Letras Sincronizadas",
                 desc: "Modo de tela cheia imersivo with letras que se movem com a música."
             },
-            mini: { title: "Compact Player", desc: "A tiny, versatile mini-player that stays on top and out of your way." },
-            artist: { title: "Artist Insights", desc: "Deep dive into your favorite artists with discography and bios." }
+            mini: { title: "Reprodutor Compacto", desc: "Um mini reprodutor minúsculo e versátil que fica em primeiro plano sem atrapalhar." },
+            artist: { title: "Visão do Artista", desc: "Mergulhe fundo em seus artistas favoritos com discografia e biografias." }
         },
         faq: {
             title: "Perguntas Frequentes",
@@ -842,8 +842,8 @@ const translations = {
                 a: "Não, as bibliotecas FFmpeg são compiladas estaticamente e incluídas no Airmedy. Você não precisa instalar mais nada."
             },
             privacy: {
-                q: "How is my data handled?",
-                a: "Airmedy is built with privacy in mind. Your Last.fm session keys are stored securely in your system's native keychain (macOS Keychain, Windows Credential Manager, or Secret Service API on Linux). We never see your password, and no data ever leaves your machine except to scrobble tracks to Last.fm."
+                q: "Como meus dados são tratados?",
+                a: "O Airmedy é construído com a privacidade em mente. Suas chaves de sessão do Last.fm são armazenadas com segurança nas chaves nativas do seu sistema (macOS Keychain, Windows Credential Manager ou Secret Service API no Linux). Nunca vemos sua senha, e nenhum dado sai da sua máquina, exceto para fazer scrobble de faixas para o Last.fm."
             }
         },
         download: {
@@ -933,8 +933,8 @@ const translations = {
                 title: "Синхронизированные тексты",
                 desc: "Иммерсивный полноэкранный режим с текстами, движущимися вместе с музыкой."
             },
-            mini: { title: "Compact Player", desc: "A tiny, versatile mini-player that stays on top and out of your way." },
-            artist: { title: "Artist Insights", desc: "Deep dive into your favorite artists with discography and bios." }
+            mini: { title: "Компактный плеер", desc: "Крошечный универсальный мини-плеер, который остается поверх всех окон и не мешает." },
+            artist: { title: "Информация об артисте", desc: "Погрузитесь в творчество любимых артистов с дискографией и биографиями." }
         },
         faq: {
             title: "Часто задаваемые вопросы",
@@ -951,8 +951,8 @@ const translations = {
                 a: "Нет, библиотеки FFmpeg статически скомпилированы и включены в состав Airmedy. Вам не нужно ничего устанавливать дополнительно."
             },
             privacy: {
-                q: "How is my data handled?",
-                a: "Airmedy is built with privacy in mind. Your Last.fm session keys are stored securely in your system's native keychain (macOS Keychain, Windows Credential Manager, or Secret Service API on Linux). We never see your password, and no data ever leaves your machine except to scrobble tracks to Last.fm."
+                q: "Как обрабатываются мои данные?",
+                a: "Airmedy создан с учетом требований конфиденциальности. Ваши сеансовые ключи Last.fm надежно хранятся в нативной системе ключей (macOS Keychain, диспетчере учетных данных Windows или Secret Service API в Linux). Мы никогда не видим ваш пароль, и никакие данные не покидают ваш компьютер, за исключением скробблинга треков на Last.fm."
             }
         },
         download: {
@@ -1042,8 +1042,8 @@ const translations = {
                 title: "เนื้อเพลงที่ซิงค์",
                 desc: "โหมดเต็มจอที่ดื่มด่ำพร้อมเนื้อเพลงที่เคลื่อนไหวไปตามเสียงเพลง"
             },
-            mini: { title: "Compact Player", desc: "A tiny, versatile mini-player that stays on top and out of your way." },
-            artist: { title: "Artist Insights", desc: "Deep dive into your favorite artists with discography and bios." }
+            mini: { title: "เครื่องเล่นขนาดกะทัดรัด", desc: "มินิเพลเยอร์ขนาดเล็กอเนกประสงค์ที่อยู่บนสุดและไม่รบกวนคุณ" },
+            artist: { title: "ข้อมูลเชิงลึกของศิลปิน", desc: "เจาะลึกศิลปินที่คุณชื่นชอบด้วยผลงานเพลงและประวัติ" }
         },
         faq: {
             title: "คำถามที่พบบ่อย",
@@ -1060,8 +1060,8 @@ const translations = {
                 a: "ไม่จำเป็น ไลบรารี FFmpeg ถูกคอมไพล์แบบสแตติกและรวมไว้ใน Airmedy แล้ว คุณไม่จำเป็นต้องติดตั้งอะไรเพิ่มเติม"
             },
             privacy: {
-                q: "How is my data handled?",
-                a: "Airmedy is built with privacy in mind. Your Last.fm session keys are stored securely in your system's native keychain (macOS Keychain, Windows Credential Manager, or Secret Service API on Linux). We never see your password, and no data ever leaves your machine except to scrobble tracks to Last.fm."
+                q: "ข้อมูลของฉันได้รับการจัดการอย่างไร?",
+                a: "Airmedy สร้างขึ้นโดยคำนึงถึงความเป็นส่วนตัว คีย์เซสชัน Last.fm ของคุณจะถูกจัดเก็บอย่างปลอดภัยในพวงกุญแจดั้งเดิมของระบบ (macOS Keychain, Windows Credential Manager หรือ Secret Service API บน Linux) เราไม่เคยเห็นรหัสผ่านของคุณ และไม่มีข้อมูลใดออกจากเครื่องของคุณยกเว้นเพื่อสคร็อบเบิลเพลงไปยัง Last.fm"
             }
         },
         download: {
@@ -1151,8 +1151,8 @@ const translations = {
                 title: "Lời bài hát đồng bộ",
                 desc: "Chế độ toàn màn hình đắm chìm với lời bài hát chuyển động theo nhạc."
             },
-            mini: { title: "Compact Player", desc: "A tiny, versatile mini-player that stays on top and out of your way." },
-            artist: { title: "Artist Insights", desc: "Deep dive into your favorite artists with discography and bios." }
+            mini: { title: "Trình phát nhỏ gọn", desc: "Một trình phát mini đa năng, nhỏ bé luôn ở trên cùng và không cản trở bạn." },
+            artist: { title: "Thông tin nghệ sĩ", desc: "Tìm hiểu sâu về các nghệ sĩ yêu thích của bạn với danh sách đĩa nhạc và tiểu sử." }
         },
         faq: {
             title: "Câu hỏi thường gặp",
@@ -1169,8 +1169,8 @@ const translations = {
                 a: "Không, các thư viện FFmpeg được biên dịch tĩnh và đi kèm bên trong Airmedy. Bạn không cần cài đặt thêm bất cứ thứ gì."
             },
             privacy: {
-                q: "How is my data handled?",
-                a: "Airmedy is built with privacy in mind. Your Last.fm session keys are stored securely in your system's native keychain (macOS Keychain, Windows Credential Manager, or Secret Service API on Linux). We never see your password, and no data ever leaves your machine except to scrobble tracks to Last.fm."
+                q: "Dữ liệu của tôi được xử lý như thế nào?",
+                a: "Airmedy được xây dựng với ưu tiên về quyền riêng tư. Khóa phiên Last.fm của bạn được lưu trữ an toàn trong chuỗi khóa gốc của hệ thống (macOS Keychain, Windows Credential Manager hoặc Secret Service API trên Linux). Chúng tôi không bao giờ thấy mật khẩu của bạn và không có dữ liệu nào rời khỏi máy của bạn ngoại trừ việc scrobble các bài hát lên Last.fm."
             }
         },
         download: {
@@ -1260,8 +1260,8 @@ const translations = {
                 title: "同步歌词",
                 desc: "沉浸式全屏模式，歌词随音乐律动。"
             },
-            mini: { title: "Compact Player", desc: "A tiny, versatile mini-player that stays on top and out of your way." },
-            artist: { title: "Artist Insights", desc: "Deep dive into your favorite artists with discography and bios." }
+            mini: { title: "紧凑型播放器", desc: "小巧多功能的迷你播放器，置于顶层且不碍事。" },
+            artist: { title: "艺术家洞察", desc: "通过作品集和传记深入了解您最喜爱的艺术家。" }
         },
         faq: {
             title: "常见问题",
@@ -1278,8 +1278,8 @@ const translations = {
                 a: "不需要，FFmpeg 库已静态编译并打包在 Airmedy 中。您无需安装任何其他软件。"
             },
             privacy: {
-                q: "How is my data handled?",
-                a: "Airmedy is built with privacy in mind. Your Last.fm session keys are stored securely in your system's native keychain (macOS Keychain, Windows Credential Manager, or Secret Service API on Linux). We never see your password, and no data ever leaves your machine except to scrobble tracks to Last.fm."
+                q: "我的数据如何处理？",
+                a: "Airmedy 的构建考虑到了隐私。您的 Last.fm 会话密钥安全地存储在您系统的原生钥匙串中（macOS 的钥匙串，Windows 的凭据管理器，或 Linux 的 Secret Service API）。我们永远不会看到您的密码，除了向 Last.fm 记录（scrobble）曲目外，没有数据会离开您的机器。"
             }
         },
         download: {

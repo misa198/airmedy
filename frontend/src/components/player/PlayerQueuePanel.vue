@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ListMusic, X } from 'lucide-vue-next'
+import { ListMusic, X, Goal } from 'lucide-vue-next'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { usePlayerStore } from '../../stores/player'
@@ -18,6 +19,7 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const router = useRouter()
 const playerStore = usePlayerStore()
+const trackTable = ref<InstanceType<typeof TrackTable> | null>(null)
 
 function navigate(path: string) {
   if (playerStore.playerMode === 'fullscreen') {
@@ -38,15 +40,21 @@ function navigate(path: string) {
           <ListMusic class="w-4 h-4" />
           <span class="text-sm font-semibold uppercase tracking-wider">{{ t('player.up_next') }}</span>
         </div>
-        <button @click="emit('close')"
-          class="text-white/40 hover:text-white transition-colors p-1 hover:bg-white/5 rounded-full">
-          <X class="w-4 h-4" />
-        </button>
+        <div class="flex items-center gap-1">
+          <button @click="trackTable?.scrollToCurrentTrack()"
+            class="text-white/40 hover:text-white transition-colors p-1 hover:bg-white/5 rounded-full">
+            <Goal class="w-4 h-4" />
+          </button>
+          <button @click="emit('close')"
+            class="text-white/40 hover:text-white transition-colors p-1 hover:bg-white/5 rounded-full">
+            <X class="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       <!-- Content Area -->
       <div class="flex-1 overflow-hidden">
-        <TrackTable :tracks="queue" :show-artwork="false" :scroll-to-current="true" :simple-mode="true"
+        <TrackTable ref="trackTable" :tracks="queue" :show-artwork="false" :scroll-to-current="true" :simple-mode="true"
           :hide-header="true" variant="glass" :allow-dnd="true"
           :context-menu-options="{ showRemoveFromQueue: true }"
           class="dark"

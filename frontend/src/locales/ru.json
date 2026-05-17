@@ -7,23 +7,23 @@
     "loading": "Загрузка...",
     "error": "Ошибка",
     "cancel": "Отмена",
-    "close": "Close",
+    "close": "Закрыть",
     "change": "Изменить",
     "save": "Сохранить",
     "saving": "Сохранение...",
     "create": "Создать",
-    "later": "Later",
+    "later": "Позже",
     "on": "Вкл",
     "off": "Выкл",
     "hr": "ч",
     "min": "мин"
   },
   "app": {
-    "update_available": "Update Available",
-    "new_version_available": "New version available: {version}",
-    "update_now": "Update Now",
-    "view_details": "View Details",
-    "updating": "Updating...",
+    "update_available": "Доступно обновление",
+    "new_version_available": "Доступна новая версия: {version}",
+    "update_now": "Обновить сейчас",
+    "view_details": "Подробнее",
+    "updating": "Обновление...",
     "restart_now": "Перезапустить сейчас"
   },
   "settings": {
@@ -35,7 +35,9 @@
       "syncing_library": "Синхронизация музыкальной библиотеки...",
       "sync_complete": "Синхронизация медиатеки завершена",
       "sync_started": "Синхронизация медиатеки запущена",
-      "sync_failed": "Не удалось запустить синхронизацию"
+      "sync_failed": "Не удалось запустить синхронизацию",
+      "removing_folder": "Удаление папки...",
+      "optimizing_search": "Оптимизация поиска..."
     },
     "folders": {
       "title": "Музыкальная библиотека",
@@ -71,6 +73,20 @@
       "connect": "Подключить",
       "connecting": "Подключение...",
       "disconnect": "Отключить"
+    },
+    "integrations": {
+      "title": "Интеграции",
+      "online_artist_artwork": "Обложки исполнителей онлайн",
+      "online_artist_artwork_desc": "Автоматически загружать обложки исполнителей с Deezer",
+      "enable_lrclib": "Тексты LRCLIB.NET",
+      "enable_lrclib_desc": "Загружать тексты с LRCLIB.NET",
+      "enable_kugou": "Тексты KuGou",
+      "enable_kugou_desc": "Загружать тексты с KuGou Music",
+      "prefer_metadata_lyrics": "Предпочитать встроенные тексты",
+      "prefer_metadata_lyrics_desc": "Использовать встроенные тексты, если они доступны",
+      "scrobbling": "Скробблинг",
+      "artwork": "Обложки",
+      "lyrics": "Тексты"
     },
     "behavior": {
       "start_at_login": "Запускать при входе",
@@ -118,14 +134,6 @@
       "delete_profile": "Удалить профиль",
       "rename_profile": "Переименовать профиль",
       "select_profile": "Выбрать профиль"
-    },
-    "integrations": {
-      "title": "Интеграции",
-      "lrclib_mode": "LRCLIB.NET",
-      "lrclib_mode_desc": "Управление загрузкой текстов с LRCLIB.NET",
-      "lrclib_off": "Выкл. (только метаданные)",
-      "lrclib_prefer_metadata": "Предпочитать метаданные",
-      "lrclib_prefer_lrclib": "Предпочитать lrclib"
     }
   },
   "sidebar": {
@@ -218,6 +226,9 @@
     "disc": "Диск",
     "total_discs": "Всего дисков",
     "edit_metadata": "Редактировать метаданные",
+    "track_info": "Информация о треке",
+    "lyrics": "Текст песни",
+    "lyrics_placeholder": "Вставьте текст песни здесь...",
     "save_metadata_error": "Не удалось сохранить метаданные. Проверьте права доступа к файлу.",
     "no_tracks": "Треки не найдены",
     "no_albums": "Альбомы не найдены",

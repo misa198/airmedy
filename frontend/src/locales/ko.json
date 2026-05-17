@@ -7,23 +7,23 @@
     "loading": "로딩 중...",
     "error": "오류",
     "cancel": "취소",
-    "close": "Close",
+    "close": "닫기",
     "change": "변경",
     "save": "저장",
     "saving": "저장 중...",
     "create": "생성",
-    "later": "Later",
+    "later": "나중에",
     "on": "켜짐",
     "off": "꺼짐",
     "hr": "시간",
     "min": "분"
   },
   "app": {
-    "update_available": "Update Available",
-    "new_version_available": "New version available: {version}",
-    "update_now": "Update Now",
-    "view_details": "View Details",
-    "updating": "Updating...",
+    "update_available": "업데이트 가능",
+    "new_version_available": "새 버전을 사용할 수 있습니다: {version}",
+    "update_now": "지금 업데이트",
+    "view_details": "세부 정보 보기",
+    "updating": "업데이트 중...",
     "restart_now": "지금 재시작"
   },
   "settings": {
@@ -35,7 +35,9 @@
       "syncing_library": "음악 라이브러리 동기화 중...",
       "sync_complete": "라이브러리 동기화 완료",
       "sync_started": "라이브러리 동기화 시작됨",
-      "sync_failed": "동기화 시작 실패"
+      "sync_failed": "동기화 시작 실패",
+      "removing_folder": "폴더 삭제 중...",
+      "optimizing_search": "검색 최적화 중..."
     },
     "folders": {
       "title": "음악 라이브러리",
@@ -71,6 +73,20 @@
       "connect": "연결",
       "connecting": "연결 중...",
       "disconnect": "연결 해제"
+    },
+    "integrations": {
+      "title": "연동",
+      "online_artist_artwork": "온라인 아티스트 아트워크",
+      "online_artist_artwork_desc": "Deezer에서 자동으로 아티스트 아트워크 가져오기",
+      "enable_lrclib": "LRCLIB.NET 가사",
+      "enable_lrclib_desc": "LRCLIB.NET에서 가사 가져오기",
+      "enable_kugou": "KuGou 가사",
+      "enable_kugou_desc": "KuGou Music에서 가사 가져오기",
+      "prefer_metadata_lyrics": "메타데이터 가사 우선",
+      "prefer_metadata_lyrics_desc": "사용 가능한 경우 포함된 가사 사용",
+      "scrobbling": "Scrobbling",
+      "artwork": "아트워크",
+      "lyrics": "가사"
     },
     "behavior": {
       "start_at_login": "로그인 시 시작",
@@ -118,14 +134,6 @@
       "delete_profile": "프로필 삭제",
       "rename_profile": "프로필 이름 바꾸기",
       "select_profile": "프로필 선택"
-    },
-    "integrations": {
-      "title": "연동",
-      "lrclib_mode": "LRCLIB.NET",
-      "lrclib_mode_desc": "LRCLIB.NET에서 가사를 가져올 시기 제어",
-      "lrclib_off": "끄기 (메타데이터만)",
-      "lrclib_prefer_metadata": "메타데이터 우선",
-      "lrclib_prefer_lrclib": "lrclib 우선"
     }
   },
   "sidebar": {
@@ -218,6 +226,9 @@
     "disc": "디스크",
     "total_discs": "총 디스크 수",
     "edit_metadata": "메타데이터 편집",
+    "track_info": "트랙 정보",
+    "lyrics": "가사",
+    "lyrics_placeholder": "여기에 가사를 붙여넣으세요...",
     "save_metadata_error": "메타데이터 저장 실패. 파일 권한을 확인하세요.",
     "no_tracks": "트랙을 찾을 수 없습니다",
     "no_albums": "앨범을 찾을 수 없습니다",

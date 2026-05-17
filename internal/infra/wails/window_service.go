@@ -1,11 +1,17 @@
 package wails
 
-import "github.com/wailsapp/wails/v3/pkg/application"
+import (
+	"runtime"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
+)
 
 // WindowService manages secondary windows (mini player).
 type WindowService struct {
-	mainWindow *application.WebviewWindow
-	miniWindow *application.WebviewWindow
+	mainWindow        *application.WebviewWindow
+	miniWindow        *application.WebviewWindow
+	pendingMiniPlayer bool
 }
 
 func NewWindowService() *WindowService {
@@ -14,6 +20,14 @@ func NewWindowService() *WindowService {
 
 func (s *WindowService) SetMainWindow(w *application.WebviewWindow) {
 	s.mainWindow = w
+	// On macOS, fullscreen exit is animated. Wait for the animation to finish
+	// before opening the mini player to avoid hiding the window mid-transition.
+	w.RegisterHook(events.Common.WindowUnFullscreen, func(_ *application.WindowEvent) {
+		if s.pendingMiniPlayer {
+			s.pendingMiniPlayer = false
+			s.OpenMiniPlayer()
+		}
+	})
 }
 
 func (s *WindowService) SetMiniWindow(w *application.WebviewWindow) {
@@ -50,6 +64,11 @@ func (s *WindowService) ToggleMiniPlayer() {
 		s.CloseMiniPlayer()
 	} else {
 		if s.mainWindow.IsFullscreen() {
+			if runtime.GOOS == "darwin" {
+				s.pendingMiniPlayer = true
+				s.mainWindow.UnFullscreen()
+				return
+			}
 			s.mainWindow.UnFullscreen()
 		}
 		s.OpenMiniPlayer()

@@ -7,23 +7,23 @@
     "loading": "Carregando...",
     "error": "Erro",
     "cancel": "Cancelar",
-    "close": "Close",
+    "close": "Fechar",
     "change": "Alterar",
     "save": "Salvar",
     "saving": "Salvando...",
     "create": "Criar",
-    "later": "Later",
+    "later": "Mais tarde",
     "on": "Ligado",
     "off": "Desligado",
     "hr": "h",
     "min": "min"
   },
   "app": {
-    "update_available": "Update Available",
-    "new_version_available": "New version available: {version}",
-    "update_now": "Update Now",
-    "view_details": "View Details",
-    "updating": "Updating...",
+    "update_available": "Atualização disponível",
+    "new_version_available": "Nova versão disponível: {version}",
+    "update_now": "Atualizar agora",
+    "view_details": "Ver detalhes",
+    "updating": "Atualizando...",
     "restart_now": "Reiniciar agora"
   },
   "settings": {
@@ -35,7 +35,9 @@
       "syncing_library": "Sincronizando biblioteca de música...",
       "sync_complete": "Sincronização da biblioteca concluída",
       "sync_started": "Sincronização da biblioteca iniciada",
-      "sync_failed": "Falha ao iniciar a sincronização"
+      "sync_failed": "Falha ao iniciar a sincronização",
+      "removing_folder": "Removendo pasta...",
+      "optimizing_search": "Otimizando pesquisa..."
     },
     "folders": {
       "title": "Biblioteca de Música",
@@ -71,6 +73,20 @@
       "connect": "Conectar",
       "connecting": "Conectando...",
       "disconnect": "Desconectar"
+    },
+    "integrations": {
+      "title": "Integrações",
+      "online_artist_artwork": "Capas de artistas online",
+      "online_artist_artwork_desc": "Buscar automaticamente capas de artistas do Deezer",
+      "enable_lrclib": "Letras do LRCLIB.NET",
+      "enable_lrclib_desc": "Buscar letras do LRCLIB.NET",
+      "enable_kugou": "Letras do KuGou",
+      "enable_kugou_desc": "Buscar letras do KuGou Music",
+      "prefer_metadata_lyrics": "Preferir letras de metadatos",
+      "prefer_metadata_lyrics_desc": "Usar letras incorporadas quando disponíveis",
+      "scrobbling": "Scrobbling",
+      "artwork": "Capas",
+      "lyrics": "Letras"
     },
     "behavior": {
       "start_at_login": "Iniciar no login",
@@ -118,14 +134,6 @@
       "delete_profile": "Excluir perfil",
       "rename_profile": "Renomear perfil",
       "select_profile": "Selecionar perfil"
-    },
-    "integrations": {
-      "title": "Integrações",
-      "lrclib_mode": "LRCLIB.NET",
-      "lrclib_mode_desc": "Controlar quando buscar letras do LRCLIB.NET",
-      "lrclib_off": "Desligado (apenas metadados)",
-      "lrclib_prefer_metadata": "Preferir metadados",
-      "lrclib_prefer_lrclib": "Preferir lrclib"
     }
   },
   "sidebar": {
@@ -218,6 +226,9 @@
     "disc": "Disco",
     "total_discs": "Total de discos",
     "edit_metadata": "Editar Metadados",
+    "track_info": "Informações da faixa",
+    "lyrics": "Letras",
+    "lyrics_placeholder": "Cole as letras aqui...",
     "save_metadata_error": "Falha ao salvar metadados. Verifique as permissões do arquivo.",
     "no_tracks": "Nenhuma faixa encontrada",
     "no_albums": "Nenhum álbum encontrado",

@@ -145,6 +145,8 @@ type AppSettings struct {
 	AutoCheckUpdate          bool   `json:"auto_check_update"`
 	LastFmUsername           string `json:"lastfm_username"`
 	EQEnabled                bool   `json:"eq_enabled"`
-	LrclibMode               string `json:"lrclib_mode"` // "off", "prefer_metadata", "prefer_lrclib"
+	EnableLrclib             bool   `json:"enable_lrclib"`
+	EnableKugou              bool   `json:"enable_kugou"`
+	PreferMetadataLyrics     bool   `json:"prefer_metadata_lyrics"`
 	UseOnlineArtistArtwork   bool   `json:"use_online_artist_artwork"`
 }

@@ -89,7 +89,7 @@ onUnmounted(() => {
       </main>
 
       <!-- Queue Sidebar -->
-      <div class="h-full bg-background transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 pt-4"
+      <div class="h-full bg-background transition-[width] duration-300 ease-in-out overflow-hidden flex-shrink-0 pt-4"
         :class="[
           playerStore.isQueueOpen ? 'w-80 border-l border-foreground/[0.06]' : 'w-0 border-l-0 border-transparent',
         ]">
@@ -99,7 +99,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Lyrics Sidebar -->
-      <div class="h-full bg-background transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 pt-4"
+      <div class="h-full bg-background transition-[width] duration-300 ease-in-out overflow-hidden flex-shrink-0 pt-4"
         :class="[
           playerStore.isLyricsOpen ? 'w-80 border-l border-foreground/[0.06]' : 'w-0 border-l-0 border-transparent',
         ]">
@@ -109,7 +109,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Track Info Sidebar -->
-      <div class="h-full bg-background transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 pt-4"
+      <div class="h-full bg-background transition-[width] duration-300 ease-in-out overflow-hidden flex-shrink-0 pt-4"
         :class="[
           playerStore.isTrackInfoOpen ? 'w-80 border-l border-foreground/[0.06]' : 'w-0 border-l-0 border-transparent',
         ]">
