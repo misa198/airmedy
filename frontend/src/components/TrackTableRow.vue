@@ -3,6 +3,7 @@ import { Heart, Music, Play, MoreVertical, GripVertical } from 'lucide-vue-next'
 import type { Artist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import { formatTime, buildArtworkUrl, getTrackDisplayTitle } from '../lib/utils'
 import LazyImg from '@/components/LazyImg.vue'
+import PlayingBar from '@/components/PlayingBar.vue'
 import { useFavoritesStore } from '../stores/favorites'
 import { usePlayerStore } from '../stores/player'
 import type { ColumnDef } from '@/composables/useTrackTableSettings'
@@ -63,19 +64,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
         :style="{ background: isSelected ? 'transparent' : rowBg(currentIndex, true) }"
       >
         <template v-if="isCurrentTrack(track.id)">
-          <div class="flex items-end gap-[2px] h-3 w-3">
-            <div
-              v-for="i in 3"
-              :key="i"
-              class="w-full h-full bg-primary origin-bottom transition-transform duration-500 ease-in-out"
-              :class="playerStore.isPlaying ? `animate-playing-bar-${i}` : ''"
-              :style="{
-                transform: !playerStore.isPlaying
-                  ? (i === 1 ? 'scaleY(0.3)' : i === 2 ? 'scaleY(1.0)' : 'scaleY(0.6)')
-                  : undefined,
-              }"
-            />
-          </div>
+          <PlayingBar :is-playing="playerStore.isPlaying" />
         </template>
         <template v-else>
           <div class="text-foreground opacity-80 group-hover:hidden text-[11px]">{{ index + 1 }}</div>
@@ -249,21 +238,3 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
   </div>
 </template>
 
-<style scoped>
-@keyframes playing-bar-1 {
-  0%, 100% { transform: scaleY(0.3); }
-  50% { transform: scaleY(0.8); }
-}
-@keyframes playing-bar-2 {
-  0%, 100% { transform: scaleY(1.0); }
-  50% { transform: scaleY(0.4); }
-}
-@keyframes playing-bar-3 {
-  0%, 100% { transform: scaleY(0.6); }
-  50% { transform: scaleY(0.9); }
-}
-
-.animate-playing-bar-1 { animation: playing-bar-1 0.8s ease-in-out infinite; }
-.animate-playing-bar-2 { animation: playing-bar-2 0.6s ease-in-out infinite; }
-.animate-playing-bar-3 { animation: playing-bar-3 0.7s ease-in-out infinite; }
-</style>
