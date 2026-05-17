@@ -7,23 +7,23 @@
     "loading": "กำลังโหลด...",
     "error": "เกิดข้อผิดพลาด",
     "cancel": "ยกเลิก",
-    "close": "Close",
+    "close": "ปิด",
     "change": "เปลี่ยน",
     "save": "บันทึก",
     "saving": "กำลังบันทึก...",
     "create": "สร้าง",
-    "later": "Later",
+    "later": "ภายหลัง",
     "on": "เปิด",
     "off": "ปิด",
     "hr": "ชม.",
     "min": "นาที"
   },
   "app": {
-    "update_available": "Update Available",
-    "new_version_available": "New version available: {version}",
-    "update_now": "Update Now",
-    "view_details": "View Details",
-    "updating": "Updating...",
+    "update_available": "มีการอัปเดต",
+    "new_version_available": "มีเวอร์ชันใหม่: {version}",
+    "update_now": "อัปเดตทันที",
+    "view_details": "ดูรายละเอียด",
+    "updating": "กำลังอัปเดต...",
     "restart_now": "รีสตาร์ทเดี๋ยวนี้"
   },
   "settings": {
@@ -35,7 +35,9 @@
       "syncing_library": "กำลังซิงค์คลังเพลง...",
       "sync_complete": "ซิงค์คลังเพลงเสร็จสมบูรณ์",
       "sync_started": "เริ่มซิงค์คลังเพลงแล้ว",
-      "sync_failed": "ไม่สามารถเริ่มการซิงค์ได้"
+      "sync_failed": "ไม่สามารถเริ่มการซิงค์ได้",
+      "removing_folder": "กำลังลบโฟลเดอร์...",
+      "optimizing_search": "กำลังเพิ่มประสิทธิภาพการค้นหา..."
     },
     "folders": {
       "title": "คลังเพลง",
@@ -71,6 +73,20 @@
       "connect": "เชื่อมต่อ",
       "connecting": "กำลังเชื่อมต่อ...",
       "disconnect": "ยกเลิกการเชื่อมต่อ"
+    },
+    "integrations": {
+      "title": "การเชื่อมต่อ",
+      "online_artist_artwork": "รูปภาพศิลปินออนไลน์",
+      "online_artist_artwork_desc": "ดึงรูปภาพศิลปินจาก Deezer โดยอัตโนมัติ",
+      "enable_lrclib": "เนื้อเพลงจาก LRCLIB.NET",
+      "enable_lrclib_desc": "ดึงเนื้อเพลงจาก LRCLIB.NET",
+      "enable_kugou": "เนื้อเพลงจาก KuGou",
+      "enable_kugou_desc": "ดึงเนื้อเพลงจาก KuGou Music",
+      "prefer_metadata_lyrics": "ใช้เนื้อเพลงจากข้อมูลเมตาก่อน",
+      "prefer_metadata_lyrics_desc": "ใช้เนื้อเพลงที่ฝังไว้เมื่อมี",
+      "scrobbling": "การสคร็อบเบิล",
+      "artwork": "รูปภาพ",
+      "lyrics": "เนื้อเพลง"
     },
     "behavior": {
       "start_at_login": "เริ่มเมื่อเข้าสู่ระบบ",
@@ -118,20 +134,6 @@
       "delete_profile": "ลบโปรไฟล์",
       "rename_profile": "เปลี่ยนชื่อโปรไฟล์",
       "select_profile": "เลือกโปรไฟล์"
-    },
-    "integrations": {
-      "title": "การเชื่อมต่อ",
-      "online_artist_artwork": "รูปภาพศิลปินออนไลน์",
-      "online_artist_artwork_desc": "ดึงรูปภาพศิลปินจาก Deezer โดยอัตโนมัติ",
-      "enable_lrclib": "เนื้อเพลงจาก LRCLIB.NET",
-      "enable_lrclib_desc": "ดึงเนื้อเพลงจาก LRCLIB.NET",
-      "enable_kugou": "เนื้อเพลงจาก KuGou",
-      "enable_kugou_desc": "ดึงเนื้อเพลงจาก KuGou Music",
-      "prefer_metadata_lyrics": "ใช้เนื้อเพลงจากข้อมูลเมตาก่อน",
-      "prefer_metadata_lyrics_desc": "ใช้เนื้อเพลงที่ฝังไว้เมื่อมี",
-      "scrobbling": "การสคร็อบเบิล",
-      "artwork": "รูปภาพ",
-      "lyrics": "เนื้อเพลง"
     }
   },
   "sidebar": {
@@ -224,6 +226,9 @@
     "disc": "แผ่น",
     "total_discs": "จำนวนแผ่นทั้งหมด",
     "edit_metadata": "แก้ไขข้อมูลเมตา",
+    "track_info": "ข้อมูลเพลง",
+    "lyrics": "เนื้อเพลง",
+    "lyrics_placeholder": "วางเนื้อเพลงที่นี่...",
     "save_metadata_error": "ไม่สามารถบันทึกข้อมูลเมตาได้ โปรดตรวจสอบสิทธิ์การเข้าถึงไฟล์",
     "no_tracks": "ไม่พบเพลง",
     "no_albums": "ไม่พบอัลบั้ม",

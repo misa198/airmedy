@@ -1,3 +1,5 @@
+// Kugou lyrics provider. Ported from the original Python implementation by
+// github.com/1053278842 (https://github.com/1053278842/kugou_lyric_api).
 package lyrics
 
 import (

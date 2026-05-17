@@ -7,23 +7,23 @@
     "loading": "読み込み中...",
     "error": "エラー",
     "cancel": "キャンセル",
-    "close": "Close",
+    "close": "閉じる",
     "change": "変更",
     "save": "保存",
     "saving": "保存中...",
     "create": "作成",
-    "later": "Later",
+    "later": "後で",
     "on": "オン",
     "off": "オフ",
     "hr": "時間",
     "min": "分"
   },
   "app": {
-    "update_available": "Update Available",
-    "new_version_available": "New version available: {version}",
-    "update_now": "Update Now",
-    "view_details": "View Details",
-    "updating": "Updating...",
+    "update_available": "アップデートが利用可能です",
+    "new_version_available": "新しいバージョンが利用可能です: {version}",
+    "update_now": "今すぐアップデート",
+    "view_details": "詳細を表示",
+    "updating": "アップデート中...",
     "restart_now": "今すぐ再起動"
   },
   "settings": {
@@ -35,7 +35,9 @@
       "syncing_library": "音楽ライブラリを同期中...",
       "sync_complete": "ライブラリの同期が完了しました",
       "sync_started": "ライブラリの同期を開始しました",
-      "sync_failed": "同期の開始に失敗しました"
+      "sync_failed": "同期の開始に失敗しました",
+      "removing_folder": "フォルダーを削除中...",
+      "optimizing_search": "検索を最適化中..."
     },
     "folders": {
       "title": "音楽ライブラリ",
@@ -71,6 +73,20 @@
       "connect": "接続",
       "connecting": "接続中...",
       "disconnect": "接続解除"
+    },
+    "integrations": {
+      "title": "連携",
+      "online_artist_artwork": "オンラインのアーティスト画像",
+      "online_artist_artwork_desc": "Deezer からアーティスト画像を自動的に取得",
+      "enable_lrclib": "LRCLIB.NET の歌詞",
+      "enable_lrclib_desc": "LRCLIB.NET から歌詞を取得",
+      "enable_kugou": "KuGou の歌詞",
+      "enable_kugou_desc": "KuGou Music から歌詞を取得",
+      "prefer_metadata_lyrics": "メタデータの歌詞を優先",
+      "prefer_metadata_lyrics_desc": "利用可能な場合は埋め込まれた歌詞を使用する",
+      "scrobbling": "Scrobbling",
+      "artwork": "画像",
+      "lyrics": "歌詞"
     },
     "behavior": {
       "start_at_login": "ログイン時に起動",
@@ -118,20 +134,6 @@
       "delete_profile": "プロファイルを削除",
       "rename_profile": "プロファイルの名前を変更",
       "select_profile": "プロファイルを選択"
-    },
-    "integrations": {
-      "title": "連携",
-      "online_artist_artwork": "オンラインのアーティスト画像",
-      "online_artist_artwork_desc": "Deezer からアーティスト画像を自動的に取得",
-      "enable_lrclib": "LRCLIB.NET の歌詞",
-      "enable_lrclib_desc": "LRCLIB.NET から歌詞を取得",
-      "enable_kugou": "KuGou の歌詞",
-      "enable_kugou_desc": "KuGou Music から歌詞を取得",
-      "prefer_metadata_lyrics": "メタデータの歌詞を優先",
-      "prefer_metadata_lyrics_desc": "利用可能な場合は埋め込まれた歌詞を使用する",
-      "scrobbling": "Scrobbling",
-      "artwork": "画像",
-      "lyrics": "歌詞"
     }
   },
   "sidebar": {
@@ -224,6 +226,9 @@
     "disc": "ディスク",
     "total_discs": "合計ディスク数",
     "edit_metadata": "メタデータを編集",
+    "track_info": "トラック情報",
+    "lyrics": "歌詞",
+    "lyrics_placeholder": "ここに歌詞を貼り付けてください...",
     "save_metadata_error": "メタデータの保存に失敗しました。ファイルの権限を確認してください。",
     "no_tracks": "トラックが見つかりません",
     "no_albums": "アルバムが見つかりません",

@@ -7,23 +7,23 @@
     "loading": "加载中...",
     "error": "错误",
     "cancel": "取消",
-    "close": "Close",
+    "close": "关闭",
     "change": "更改",
     "save": "保存",
     "saving": "保存中...",
     "create": "创建",
-    "later": "Later",
+    "later": "稍后",
     "on": "开启",
     "off": "关闭",
     "hr": "小时",
     "min": "分钟"
   },
   "app": {
-    "update_available": "Update Available",
-    "new_version_available": "New version available: {version}",
-    "update_now": "Update Now",
-    "view_details": "View Details",
-    "updating": "Updating...",
+    "update_available": "有可用更新",
+    "new_version_available": "新版本可用：{version}",
+    "update_now": "立即更新",
+    "view_details": "查看详情",
+    "updating": "正在更新...",
     "restart_now": "立即重启"
   },
   "settings": {
@@ -35,7 +35,9 @@
       "syncing_library": "正在同步音乐库...",
       "sync_complete": "媒体库同步完成",
       "sync_started": "媒体库同步已开始",
-      "sync_failed": "同步启动失败"
+      "sync_failed": "同步启动失败",
+      "removing_folder": "正在移除文件夹...",
+      "optimizing_search": "正在优化搜索..."
     },
     "folders": {
       "title": "音乐库",
@@ -71,6 +73,20 @@
       "connect": "连接",
       "connecting": "正在连接...",
       "disconnect": "断开连接"
+    },
+    "integrations": {
+      "title": "集成",
+      "online_artist_artwork": "在线艺术家封面",
+      "online_artist_artwork_desc": "自动从 Deezer 获取艺术家封面",
+      "enable_lrclib": "LRCLIB.NET 歌词",
+      "enable_lrclib_desc": "从 LRCLIB.NET 获取歌词",
+      "enable_kugou": "酷狗歌词",
+      "enable_kugou_desc": "从酷狗音乐获取歌词",
+      "prefer_metadata_lyrics": "优先使用元数据歌词",
+      "prefer_metadata_lyrics_desc": "可用时使用嵌入的歌词",
+      "scrobbling": "Scrobbling",
+      "artwork": "封面",
+      "lyrics": "歌词"
     },
     "behavior": {
       "start_at_login": "开机启动",
@@ -118,20 +134,6 @@
       "delete_profile": "删除配置文件",
       "rename_profile": "重命名配置文件",
       "select_profile": "选择配置文件"
-    },
-    "integrations": {
-      "title": "集成",
-      "online_artist_artwork": "在线艺术家封面",
-      "online_artist_artwork_desc": "自动从 Deezer 获取艺术家封面",
-      "enable_lrclib": "LRCLIB.NET 歌词",
-      "enable_lrclib_desc": "从 LRCLIB.NET 获取歌词",
-      "enable_kugou": "酷狗歌词",
-      "enable_kugou_desc": "从酷狗音乐获取歌词",
-      "prefer_metadata_lyrics": "优先使用元数据歌词",
-      "prefer_metadata_lyrics_desc": "可用时使用嵌入的歌词",
-      "scrobbling": "Scrobbling",
-      "artwork": "封面",
-      "lyrics": "歌词"
     }
   },
   "sidebar": {
@@ -224,6 +226,9 @@
     "disc": "光盘",
     "total_discs": "总光盘数",
     "edit_metadata": "编辑元数据",
+    "track_info": "歌曲信息",
+    "lyrics": "歌词",
+    "lyrics_placeholder": "在此粘贴歌词...",
     "save_metadata_error": "保存元数据失败。请检查文件权限。",
     "no_tracks": "未找到曲目",
     "no_albums": "未找到专辑",

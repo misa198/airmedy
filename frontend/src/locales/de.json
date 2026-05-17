@@ -7,23 +7,23 @@
     "loading": "Lädt...",
     "error": "Fehler",
     "cancel": "Abbrechen",
-    "close": "Close",
+    "close": "Schließen",
     "change": "Ändern",
     "save": "Speichern",
     "saving": "Wird gespeichert...",
     "create": "Erstellen",
-    "later": "Later",
+    "later": "Später",
     "on": "An",
     "off": "Aus",
     "hr": "Std.",
     "min": "Min."
   },
   "app": {
-    "update_available": "Update Available",
-    "new_version_available": "New version available: {version}",
-    "update_now": "Update Now",
-    "view_details": "View Details",
-    "updating": "Updating...",
+    "update_available": "Update verfügbar",
+    "new_version_available": "Neue Version verfügbar: {version}",
+    "update_now": "Jetzt aktualisieren",
+    "view_details": "Details anzeigen",
+    "updating": "Wird aktualisiert...",
     "restart_now": "Jetzt neu starten"
   },
   "settings": {
@@ -35,7 +35,9 @@
       "syncing_library": "Musikmediathek wird synchronisiert...",
       "sync_complete": "Mediathek-Synchronisierung abgeschlossen",
       "sync_started": "Mediathek-Synchronisierung gestartet",
-      "sync_failed": "Synchronisierung konnte nicht gestartet werden"
+      "sync_failed": "Synchronisierung konnte nicht gestartet werden",
+      "removing_folder": "Ordner wird entfernt...",
+      "optimizing_search": "Suche wird optimiert..."
     },
     "folders": {
       "title": "Musikbibliothek",
@@ -71,6 +73,20 @@
       "connect": "Verbinden",
       "connecting": "Verbinde...",
       "disconnect": "Trennen"
+    },
+    "integrations": {
+      "title": "Integrationen",
+      "online_artist_artwork": "Online-Künstlerbilder",
+      "online_artist_artwork_desc": "Künstlerbilder automatisch von Deezer abrufen",
+      "enable_lrclib": "LRCLIB.NET Songtexte",
+      "enable_lrclib_desc": "Songtexte von LRCLIB.NET abrufen",
+      "enable_kugou": "KuGou Songtexte",
+      "enable_kugou_desc": "Songtexte von KuGou Music abrufen",
+      "prefer_metadata_lyrics": "Metadaten-Songtexte bevorzugen",
+      "prefer_metadata_lyrics_desc": "Eingebettete Songtexte verwenden, falls verfügbar",
+      "scrobbling": "Scrobbling",
+      "artwork": "Bilder",
+      "lyrics": "Songtexte"
     },
     "behavior": {
       "start_at_login": "Beim Anmelden starten",
@@ -118,20 +134,6 @@
       "delete_profile": "Profil löschen",
       "rename_profile": "Profil umbenennen",
       "select_profile": "Profil auswählen"
-    },
-    "integrations": {
-      "title": "Integrationen",
-      "online_artist_artwork": "Online-Künstlerbilder",
-      "online_artist_artwork_desc": "Künstlerbilder automatisch von Deezer abrufen",
-      "enable_lrclib": "LRCLIB.NET Songtexte",
-      "enable_lrclib_desc": "Songtexte von LRCLIB.NET abrufen",
-      "enable_kugou": "KuGou Songtexte",
-      "enable_kugou_desc": "Songtexte von KuGou Music abrufen",
-      "prefer_metadata_lyrics": "Metadaten-Songtexte bevorzugen",
-      "prefer_metadata_lyrics_desc": "Eingebettete Songtexte verwenden, falls verfügbar",
-      "scrobbling": "Scrobbling",
-      "artwork": "Bilder",
-      "lyrics": "Songtexte"
     }
   },
   "sidebar": {
@@ -224,6 +226,9 @@
     "disc": "CD",
     "total_discs": "CDs gesamt",
     "edit_metadata": "Metadaten bearbeiten",
+    "track_info": "Titelinformationen",
+    "lyrics": "Songtext",
+    "lyrics_placeholder": "Songtext hier einfügen...",
     "save_metadata_error": "Fehler beim Speichern der Metadaten. Überprüfe die Dateiberechtigungen.",
     "no_tracks": "Keine Titel gefunden",
     "no_albums": "Keine Alben gefunden",

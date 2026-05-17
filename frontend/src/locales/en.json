@@ -35,7 +35,9 @@
       "syncing_library": "Syncing Music Library...",
       "sync_complete": "Library sync complete",
       "sync_started": "Library sync started",
-      "sync_failed": "Sync failed to start"
+      "sync_failed": "Sync failed to start",
+      "removing_folder": "Removing folder...",
+      "optimizing_search": "Optimizing Search..."
     },
     "folders": {
       "title": "Music Library",

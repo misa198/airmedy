@@ -7,23 +7,23 @@
     "loading": "Cargando...",
     "error": "Error",
     "cancel": "Cancelar",
-    "close": "Close",
+    "close": "Cerrar",
     "change": "Cambiar",
     "save": "Guardar",
     "saving": "Guardando...",
     "create": "Crear",
-    "later": "Later",
+    "later": "Más tarde",
     "on": "Activado",
     "off": "Desactivado",
     "hr": "h",
     "min": "min"
   },
   "app": {
-    "update_available": "Update Available",
-    "new_version_available": "New version available: {version}",
-    "update_now": "Update Now",
-    "view_details": "View Details",
-    "updating": "Updating...",
+    "update_available": "Actualización disponible",
+    "new_version_available": "Nueva versión disponible: {version}",
+    "update_now": "Actualizar ahora",
+    "view_details": "Ver detalles",
+    "updating": "Actualizando...",
     "restart_now": "Reiniciar ahora"
   },
   "settings": {
@@ -35,7 +35,9 @@
       "syncing_library": "Sincronizando biblioteca de música...",
       "sync_complete": "Sincronización de biblioteca completada",
       "sync_started": "Sincronización de biblioteca iniciada",
-      "sync_failed": "Error al iniciar la sincronización"
+      "sync_failed": "Error al iniciar la sincronización",
+      "removing_folder": "Eliminando carpeta...",
+      "optimizing_search": "Optimizando búsqueda..."
     },
     "folders": {
       "title": "Biblioteca de música",
@@ -71,6 +73,20 @@
       "connect": "Conectar",
       "connecting": "Conectando...",
       "disconnect": "Desconectar"
+    },
+    "integrations": {
+      "title": "Integraciones",
+      "online_artist_artwork": "Carátulas de artistas en línea",
+      "online_artist_artwork_desc": "Obtener automáticamente carátulas de artistas de Deezer",
+      "enable_lrclib": "Letras de LRCLIB.NET",
+      "enable_lrclib_desc": "Obtener letras de LRCLIB.NET",
+      "enable_kugou": "Letras de KuGou",
+      "enable_kugou_desc": "Obtener letras de KuGou Music",
+      "prefer_metadata_lyrics": "Preferir letras de metadatos",
+      "prefer_metadata_lyrics_desc": "Usar letras incrustadas cuando estén disponibles",
+      "scrobbling": "Scrobbling",
+      "artwork": "Carátulas",
+      "lyrics": "Letras"
     },
     "behavior": {
       "start_at_login": "Iniciar al iniciar sesión",
@@ -118,20 +134,6 @@
       "delete_profile": "Eliminar perfil",
       "rename_profile": "Renombrar perfil",
       "select_profile": "Seleccionar perfil"
-    },
-    "integrations": {
-      "title": "Integraciones",
-      "online_artist_artwork": "Carátulas de artistas en línea",
-      "online_artist_artwork_desc": "Obtener automáticamente carátulas de artistas de Deezer",
-      "enable_lrclib": "Letras de LRCLIB.NET",
-      "enable_lrclib_desc": "Obtener letras de LRCLIB.NET",
-      "enable_kugou": "Letras de KuGou",
-      "enable_kugou_desc": "Obtener letras de KuGou Music",
-      "prefer_metadata_lyrics": "Preferir letras de metadatos",
-      "prefer_metadata_lyrics_desc": "Usar letras incrustadas cuando estén disponibles",
-      "scrobbling": "Scrobbling",
-      "artwork": "Carátulas",
-      "lyrics": "Letras"
     }
   },
   "sidebar": {
@@ -224,6 +226,9 @@
     "disc": "Disco",
     "total_discs": "Total de discos",
     "edit_metadata": "Editar metadatos",
+    "track_info": "Información de la pista",
+    "lyrics": "Letras",
+    "lyrics_placeholder": "Pega las letras aquí...",
     "save_metadata_error": "Error al guardar metadatos. Comprueba los permisos del archivo.",
     "no_tracks": "No se encontraron pistas",
     "no_albums": "No se encontraron álbumes",

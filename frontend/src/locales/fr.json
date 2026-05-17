@@ -7,23 +7,23 @@
     "loading": "Chargement...",
     "error": "Erreur",
     "cancel": "Annuler",
-    "close": "Close",
+    "close": "Fermer",
     "change": "Modifier",
     "save": "Enregistrer",
     "saving": "Enregistrement...",
     "create": "Créer",
-    "later": "Later",
+    "later": "Plus tard",
     "on": "Activé",
     "off": "Désactivé",
     "hr": "h",
     "min": "min"
   },
   "app": {
-    "update_available": "Update Available",
-    "new_version_available": "New version available: {version}",
-    "update_now": "Update Now",
-    "view_details": "View Details",
-    "updating": "Updating...",
+    "update_available": "Mise à jour disponible",
+    "new_version_available": "Nouvelle version disponible : {version}",
+    "update_now": "Mettre à jour maintenant",
+    "view_details": "Voir les détails",
+    "updating": "Mise à jour...",
     "restart_now": "Redémarrer maintenant"
   },
   "settings": {
@@ -35,7 +35,9 @@
       "syncing_library": "Synchronisation de la bibliothèque musicale...",
       "sync_complete": "Synchronisation de la bibliothèque terminée",
       "sync_started": "Synchronisation de la bibliothèque démarrée",
-      "sync_failed": "Échec du démarrage de la synchronisation"
+      "sync_failed": "Échec du démarrage de la synchronisation",
+      "removing_folder": "Suppression du dossier...",
+      "optimizing_search": "Optimisation de la recherche..."
     },
     "folders": {
       "title": "Bibliothèque musicale",
@@ -71,6 +73,20 @@
       "connect": "Connexion",
       "connecting": "Connexion en cours...",
       "disconnect": "Déconnexion"
+    },
+    "integrations": {
+      "title": "Intégrations",
+      "online_artist_artwork": "Photos d'artistes en ligne",
+      "online_artist_artwork_desc": "Récupérer automatiquement les photos d'artistes depuis Deezer",
+      "enable_lrclib": "Paroles LRCLIB.NET",
+      "enable_lrclib_desc": "Récupérer les paroles depuis LRCLIB.NET",
+      "enable_kugou": "Paroles KuGou",
+      "enable_kugou_desc": "Récupérer les paroles depuis KuGou Music",
+      "prefer_metadata_lyrics": "Privilégier les paroles des métadonnées",
+      "prefer_metadata_lyrics_desc": "Utiliser les paroles intégrées lorsqu'elles sont disponibles",
+      "scrobbling": "Scrobbling",
+      "artwork": "Illustrations",
+      "lyrics": "Paroles"
     },
     "behavior": {
       "start_at_login": "Lancer au démarrage",
@@ -118,20 +134,6 @@
       "delete_profile": "Supprimer le profil",
       "rename_profile": "Renommer le profil",
       "select_profile": "Sélectionner un profil"
-    },
-    "integrations": {
-      "title": "Intégrations",
-      "online_artist_artwork": "Photos d'artistes en ligne",
-      "online_artist_artwork_desc": "Récupérer automatiquement les photos d'artistes depuis Deezer",
-      "enable_lrclib": "Paroles LRCLIB.NET",
-      "enable_lrclib_desc": "Récupérer les paroles depuis LRCLIB.NET",
-      "enable_kugou": "Paroles KuGou",
-      "enable_kugou_desc": "Récupérer les paroles depuis KuGou Music",
-      "prefer_metadata_lyrics": "Privilégier les paroles des métadonnées",
-      "prefer_metadata_lyrics_desc": "Utiliser les paroles intégrées lorsqu'elles sont disponibles",
-      "scrobbling": "Scrobbling",
-      "artwork": "Illustrations",
-      "lyrics": "Paroles"
     }
   },
   "sidebar": {
@@ -224,6 +226,9 @@
     "disc": "Disque",
     "total_discs": "Total de disques",
     "edit_metadata": "Modifier les métadonnées",
+    "track_info": "Informations sur la piste",
+    "lyrics": "Paroles",
+    "lyrics_placeholder": "Collez les paroles ici...",
     "save_metadata_error": "Échec de l'enregistrement des métadonnées. Vérifiez les permissions du fichier.",
     "no_tracks": "Aucune piste trouvée",
     "no_albums": "Aucun album trouvé",

@@ -23,7 +23,8 @@
     "new_version_available": "Có phiên bản mới: {version}",
     "update_now": "Cập nhật ngay",
     "view_details": "Xem chi tiết",
-    "updating": "Đang cập nhật..."
+    "updating": "Đang cập nhật...",
+    "restart_now": "Khởi động lại ngay"
   },
   "settings": {
     "title": "Cài đặt",
@@ -34,7 +35,9 @@
       "syncing_library": "Đang đồng bộ thư viện nhạc...",
       "sync_complete": "Đồng bộ thư viện hoàn tất",
       "sync_started": "Bắt đầu đồng bộ thư viện",
-      "sync_failed": "Không thể bắt đầu đồng bộ"
+      "sync_failed": "Không thể bắt đầu đồng bộ",
+      "removing_folder": "Đang xóa thư mục...",
+      "optimizing_search": "Đang tối ưu tìm kiếm..."
     },
     "folders": {
       "title": "Thư viện nhạc",
@@ -47,21 +50,43 @@
       "removed_success": "Xóa thư mục thành công",
       "removed_error": "Xóa thư mục thất bại",
       "remove_folder": "Xóa thư mục",
-      "remove_folder_confirm": "Bạn có chắc chắn muốn xóa thư mục này khỏi thư viện không? Các tệp thực tế sẽ không bị xóa.",
       "remove_folder_title": "Xóa thư mục",
+      "remove_folder_confirm": "Bạn có chắc chắn muốn xóa thư mục này khỏi thư viện không? Các tệp thực tế sẽ không bị xóa.",
       "removing": "Đang xóa..."
     },
     "categories": {
       "general": "Chung",
       "library": "Thư viện",
+      "integrations": "Tích hợp",
       "playback": "Phát lại",
-      "about": "Giới thiệu",
-      "integrations": "Tích hợp"
+      "about": "Giới thiệu"
     },
     "general": {
       "behavior": "Hành vi",
       "appearance": "Giao diện",
       "integrations": "Tích hợp"
+    },
+    "lastfm": {
+      "title": "Last.fm",
+      "scrobble_desc": "Gửi thông tin bài hát đang nghe lên Last.fm",
+      "connected_as": "Đã kết nối với tên",
+      "connect": "Kết nối",
+      "connecting": "Đang kết nối...",
+      "disconnect": "Ngắt kết nối"
+    },
+    "integrations": {
+      "title": "Tích hợp",
+      "online_artist_artwork": "Ảnh nghệ sĩ trực tuyến",
+      "online_artist_artwork_desc": "Tự động tải ảnh nghệ sĩ từ Deezer",
+      "enable_lrclib": "Lời bài hát LRCLIB.NET",
+      "enable_lrclib_desc": "Tải lời bài hát từ LRCLIB.NET",
+      "enable_kugou": "Lời bài hát KuGou",
+      "enable_kugou_desc": "Tải lời bài hát từ KuGou Music",
+      "prefer_metadata_lyrics": "Ưu tiên lời bài hát trong tệp",
+      "prefer_metadata_lyrics_desc": "Sử dụng lời bài hát được nhúng nếu có",
+      "scrobbling": "Scrobbling",
+      "artwork": "Ảnh bìa",
+      "lyrics": "Lời bài hát"
     },
     "behavior": {
       "start_at_login": "Khởi động cùng hệ thống",
@@ -109,28 +134,6 @@
       "delete_profile": "Xóa hồ sơ",
       "rename_profile": "Đổi tên hồ sơ",
       "select_profile": "Chọn hồ sơ"
-    },
-    "lastfm": {
-      "title": "Last.fm",
-      "scrobble_desc": "Gửi thông tin bài hát đang nghe lên Last.fm",
-      "connected_as": "Đã kết nối với tên",
-      "connect": "Kết nối",
-      "connecting": "Đang kết nối...",
-      "disconnect": "Ngắt kết nối"
-    },
-    "integrations": {
-      "title": "Tích hợp",
-      "online_artist_artwork": "Ảnh nghệ sĩ trực tuyến",
-      "online_artist_artwork_desc": "Tự động tải ảnh nghệ sĩ từ Deezer",
-      "enable_lrclib": "Lời bài hát LRCLIB.NET",
-      "enable_lrclib_desc": "Tải lời bài hát từ LRCLIB.NET",
-      "enable_kugou": "Lời bài hát KuGou",
-      "enable_kugou_desc": "Tải lời bài hát từ KuGou Music",
-      "prefer_metadata_lyrics": "Ưu tiên lời bài hát trong tệp",
-      "prefer_metadata_lyrics_desc": "Sử dụng lời bài hát được nhúng nếu có",
-      "scrobbling": "Scrobbling",
-      "artwork": "Ảnh bìa",
-      "lyrics": "Lời bài hát"
     }
   },
   "sidebar": {
@@ -151,8 +154,8 @@
     "delete": "Xóa",
     "no_playlists": "Chưa có danh sách phát",
     "rename_playlist_title": "Đổi tên danh sách phát",
-    "delete_playlist_message": "Bạn có chắc chắn muốn xóa danh sách phát này không? Hành động này không thể hoàn tác.",
     "delete_playlist_title": "Xóa danh sách phát",
+    "delete_playlist_message": "Bạn có chắc chắn muốn xóa danh sách phát này không? Hành động này không thể hoàn tác.",
     "import_playlist": "Nhập danh sách phát",
     "import_playlist_title": "Nhập danh sách phát",
     "import": "Nhập"
@@ -254,7 +257,6 @@
     "play": "Phát",
     "shuffle": "Trộn bài",
     "play_next": "Phát tiếp theo",
-    "remove_from_queue": "Xóa khỏi hàng chờ",
     "add_to_favorites": "Thêm vào yêu thích",
     "remove_from_favorites": "Xóa khỏi yêu thích",
     "add_to_playlist": "Thêm vào danh sách phát",
@@ -266,7 +268,12 @@
     "show_in_explorer": "Hiển thị trong trình quản lý tệp",
     "track_info": "Thông tin bài hát",
     "refresh_lyrics": "Làm mới lời bài hát",
+    "remove_from_queue": "Xóa khỏi hàng chờ",
     "export_playlist": "Xuất danh sách phát"
+  },
+  "artist": {
+    "albums_count": "{count} album",
+    "songs_count": "{count} bài hát"
   },
   "track_info": {
     "title": "Thông tin bài hát",
@@ -288,10 +295,6 @@
     "isrc": "ISRC",
     "play_count": "Số lần phát",
     "lossless": "Lossless"
-  },
-  "artist": {
-    "albums_count": "{count} album",
-    "songs_count": "{count} bài hát"
   },
   "composer": {
     "compositions_count": "{count} tác phẩm"

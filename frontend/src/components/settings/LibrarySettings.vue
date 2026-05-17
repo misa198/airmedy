@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as LibraryService from '../../../bindings/airmedy/internal/infra/wails/libraryservice'
-import { RotateCcw, Plus, Trash2, Folder, Loader2, CheckCircle2, DatabaseZap } from 'lucide-vue-next'
+import { RotateCcw, Plus, Trash2, Folder, Loader2, DatabaseZap } from 'lucide-vue-next'
 import type { WatchedFolder, SyncProgress } from '../../../bindings/airmedy/internal/domain/models'
 import { Events } from '@wailsio/runtime'
 import ConfirmDialog from '../ConfirmDialog.vue'
+import SyncProgressDialog from './SyncProgressDialog.vue'
 
 const { t } = useI18n()
 
@@ -37,7 +38,6 @@ const addFolder = async () => {
     if (path) {
       await LibraryService.AddFolder(path)
       await loadFolders(false)
-      Events.Emit('library:sync-finished')
     }
   } catch (err) {
     console.error('Failed to add folder:', err)
@@ -53,7 +53,6 @@ const removeFolder = async () => {
   try {
     await LibraryService.RemoveFolder(id)
     await loadFolders(false)
-    Events.Emit('library:sync-finished')
   } catch (err) {
     console.error('Failed to remove folder:', err)
   } finally {
@@ -109,6 +108,18 @@ const handleSyncFinished = () => {
   syncComplete.value = true
 }
 
+const showSyncDialog = computed(
+  () => isSyncing.value || removingFolderIds.value.length > 0 || syncComplete.value
+)
+
+watch(syncComplete, (val) => {
+  if (val) setTimeout(() => {
+    syncProgress.value = null
+    syncComplete.value = false
+    syncType.value = null
+  }, 1500)
+})
+
 let offSyncStarted: (() => void) | null = null
 let offSyncProgress: (() => void) | null = null
 let offSyncFinished: (() => void) | null = null
@@ -133,48 +144,18 @@ onUnmounted(() => {
     <div class="flex items-center justify-between mb-4 select-none">
       <h2 class="text-xl font-bold">{{ t('settings.library.title') }}</h2>
       <div class="flex gap-3">
-        <button @click="optimizeSearch" :disabled="isSyncing"
+        <button @click="optimizeSearch" :disabled="isSyncing || removingFolderIds.length > 0 || folders.length === 0"
           class="flex items-center gap-2 px-4 py-2 bg-foreground/[0.04] text-foreground rounded-xl hover:bg-foreground/[0.08] transition-all disabled:opacity-50 text-sm font-bold">
           <DatabaseZap v-if="!isSyncing" class="w-4 h-4" />
           <RotateCcw v-else class="w-4 h-4" :class="{ 'animate-spin': isSyncing }" />
           {{ isSyncing ? t('settings.sync.syncing') : t('settings.sync.optimize_search') }}
         </button>
-        <button @click="syncLibrary" :disabled="isSyncing"
+        <button @click="syncLibrary" :disabled="isSyncing || removingFolderIds.length > 0 || folders.length === 0"
           class="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-all disabled:opacity-50 text-sm font-bold shadow-lg shadow-primary/20">
           <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': isSyncing }" />
           {{ isSyncing ? t('settings.sync.syncing') : t('settings.sync.sync_library') }}
         </button>
       </div>
-    </div>
-
-    <!-- Sync Progress -->
-    <div v-if="syncProgress" class="p-6 bg-primary/5 rounded-2xl border border-primary/10 mb-8">
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-3">
-          <CheckCircle2 v-if="syncComplete" class="w-5 h-5 text-primary" />
-          <Loader2 v-else class="w-5 h-5 animate-spin text-primary" />
-          <h3 class="font-bold">
-            {{ syncComplete ? t('settings.sync.sync_complete') : t('settings.sync.syncing_library') }}
-          </h3>
-        </div>
-        <span class="text-xs font-bold bg-primary/10 text-primary px-2 py-1 rounded-lg">
-          <template v-if="syncType === 'optimize'">
-            {{ Math.round((syncProgress.current / (syncProgress.total || 1)) * 100) }}%
-          </template>
-          <template v-else>
-            {{ syncProgress.current }} / {{ syncProgress.total }}
-          </template>
-        </span>
-      </div>
-      <template v-if="isSyncing">
-        <div class="w-full bg-foreground/[0.06] rounded-full h-2 mb-3 overflow-hidden">
-          <div class="bg-primary h-full transition-all duration-300 ease-out"
-            :style="{ width: `${(syncProgress.current / (syncProgress.total || 1)) * 100}%` }"></div>
-        </div>
-        <p class="text-[10px] text-foreground opacity-60 truncate font-medium">
-          Importing: {{ syncProgress.path }}
-        </p>
-      </template>
     </div>
 
     <section class="bg-card rounded-2xl border border-foreground/[0.06] p-6">
@@ -232,6 +213,13 @@ onUnmounted(() => {
       :confirm-label="t('settings.folders.remove_folder')"
       danger
       @confirm="removeFolder"
+    />
+
+    <SyncProgressDialog
+      :open="showSyncDialog"
+      :type="removingFolderIds.length > 0 ? 'deleting' : (syncType || 'sync')"
+      :progress="syncProgress"
+      :complete="syncComplete"
     />
   </div>
 </template>
