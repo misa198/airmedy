@@ -207,7 +207,7 @@ function scrollToCurrentTrack() {
   if (!scrollerRef.value || !playerStore.currentTrack || props.tracks.length === 0) return
   const index = displayTracks.value.findIndex((t) => t.id === playerStore.currentTrack?.id)
   if (index !== -1) {
-    scrollerRef.value.scrollToItem(index)
+    scrollerRef.value.scrollToIndex(index)
   }
 }
 
@@ -285,6 +285,8 @@ function rowBg(index: number, opaque = false) {
 function handlePlayTrack(track: TrackDTO, index: number) {
   emit('play-track', track, index, displayTracks.value)
 }
+
+defineExpose({ scrollToCurrentTrack })
 </script>
 
 <template>

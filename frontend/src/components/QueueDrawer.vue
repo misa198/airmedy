@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted } from 'vue'
-import { Music, X, ListMusic, MoreVertical, GripVertical } from 'lucide-vue-next'
+import { Music, X, ListMusic, MoreVertical, GripVertical, Goal } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
 import { formatTime, buildArtworkUrl, getTrackDisplayTitle } from '../lib/utils'
 import LazyImg from '@/components/LazyImg.vue'
@@ -18,7 +18,7 @@ const scrollToCurrentTrack = () => {
   if (!scroller.value || !store.currentTrack) return
   const index = store.queue.findIndex(t => t.id === store.currentTrack?.id)
   if (index !== -1) {
-    scroller.value.scrollToItem(index)
+    scroller.value.scrollToIndex(index)
   }
 }
 
@@ -51,12 +51,20 @@ onUnmounted(() => {
         <span>{{ t('player.queue') }}</span>
         <span class="text-xs text-muted-foreground font-normal ml-1">({{ store.queue.length }})</span>
       </div>
-      <button
-        class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-foreground opacity-60 hover:text-foreground"
-        @click="store.toggleQueue()"
-      >
-        <X class="w-4 h-4" />
-      </button>
+      <div class="flex items-center gap-1">
+        <button
+          class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-foreground opacity-60 hover:text-foreground"
+          @click="scrollToCurrentTrack()"
+        >
+          <Goal class="w-4 h-4" />
+        </button>
+        <button
+          class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-foreground opacity-60 hover:text-foreground"
+          @click="store.toggleQueue()"
+        >
+          <X class="w-4 h-4" />
+        </button>
+      </div>
     </div>
 
     <!-- Queue list -->

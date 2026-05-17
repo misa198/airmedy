@@ -10,7 +10,7 @@ import {
   Shuffle,
   Volume2,
   VolumeX,
-  Maximize2,
+  Maximize,
   Music,
   ListMusic,
   Mic2,
@@ -160,7 +160,7 @@ async function onSeekEnd() {
       </button>
       <button class="text-foreground opacity-60 hover:text-foreground opacity-50 transition-colors"
         @click="store.playerMode = 'fullscreen'" :title="t('player.fullscreen')">
-        <Maximize2 class="w-4 h-4" />
+        <Maximize class="w-4 h-4" />
       </button>
     </div>
   </div>

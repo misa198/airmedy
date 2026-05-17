@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Play, Pause, SkipForward, Maximize2, Music } from 'lucide-vue-next'
+import { Play, Pause, SkipForward, Maximize, Music } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
 import { formatTime, getTrackDisplayTitle } from '../lib/utils'
 import MarqueeText from './MarqueeText.vue'
@@ -58,7 +58,7 @@ const store = usePlayerStore()
         class="text-foreground opacity-60 hover:text-foreground opacity-90 transition-colors"
         @click="store.playerMode = 'sticky'"
       >
-        <Maximize2 class="w-4 h-4" />
+        <Maximize class="w-4 h-4" />
       </button>
     </div>
   </div>
