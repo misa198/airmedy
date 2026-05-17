@@ -121,11 +121,17 @@
     },
     "integrations": {
       "title": "集成",
-      "lrclib_mode": "LRCLIB.NET",
-      "lrclib_mode_desc": "控制何时从 LRCLIB.NET 获取歌词",
-      "lrclib_off": "关闭（仅元数据）",
-      "lrclib_prefer_metadata": "优先使用元数据",
-      "lrclib_prefer_lrclib": "优先使用 lrclib"
+      "online_artist_artwork": "在线艺术家封面",
+      "online_artist_artwork_desc": "自动从 Deezer 获取艺术家封面",
+      "enable_lrclib": "LRCLIB.NET 歌词",
+      "enable_lrclib_desc": "从 LRCLIB.NET 获取歌词",
+      "enable_kugou": "酷狗歌词",
+      "enable_kugou_desc": "从酷狗音乐获取歌词",
+      "prefer_metadata_lyrics": "优先使用元数据歌词",
+      "prefer_metadata_lyrics_desc": "可用时使用嵌入的歌词",
+      "scrobbling": "Scrobbling",
+      "artwork": "封面",
+      "lyrics": "歌词"
     }
   },
   "sidebar": {

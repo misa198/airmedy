@@ -1,18 +1,11 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
-import { Blocks, Music } from 'lucide-vue-next'
+import { Blocks, Music, ImagePlay, FileMusic, MicVocal } from 'lucide-vue-next'
 import * as LastFmService from '../../../bindings/airmedy/internal/infra/wails/lastfmservice'
 import { onMounted, onUnmounted, ref } from 'vue'
 import { Events } from '@wailsio/runtime'
 import { Switch } from '@/components/ui/switch'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -85,8 +78,8 @@ onMounted(() => {
   <div class="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
     <section>
       <div class="flex items-center gap-2 mb-6 text-foreground opacity-60 select-none">
-        <Blocks class="w-4 h-4" />
-        <h2 class="text-sm font-bold uppercase tracking-wider">{{ t('settings.integrations.title', 'Integrations') }}
+        <FileMusic class="w-4 h-4" />
+        <h2 class="text-sm font-bold uppercase tracking-wider">{{ t('settings.integrations.scrobbling', 'Scrobbling') }}
         </h2>
       </div>
 
@@ -128,6 +121,17 @@ onMounted(() => {
             </button>
           </div>
         </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="flex items-center gap-2 mb-6 text-foreground opacity-60 select-none">
+        <ImagePlay class="w-4 h-4" />
+        <h2 class="text-sm font-bold uppercase tracking-wider">{{ t('settings.integrations.artwork', 'Artwork') }}
+        </h2>
+      </div>
+
+      <div class="bg-card rounded-2xl border border-foreground/[0.06] divide-y divide-foreground/[0.06]">
         <div class="p-5 flex items-center justify-between gap-x-2">
           <div>
             <p class="text-sm font-semibold">{{ t('settings.integrations.online_artist_artwork') }}</p>
@@ -138,27 +142,46 @@ onMounted(() => {
           <Switch :model-value="appStore.useOnlineArtistArtwork"
             @update:model-value="appStore.updateUseOnlineArtistArtwork" />
         </div>
+      </div>
+    </section>
 
+    <section>
+      <div class="flex items-center gap-2 mb-6 text-foreground opacity-60 select-none">
+        <MicVocal class="w-4 h-4" />
+        <h2 class="text-sm font-bold uppercase tracking-wider">{{ t('settings.integrations.lyrics', 'Lyrics') }}
+        </h2>
+      </div>
+
+      <div class="bg-card rounded-2xl border border-foreground/[0.06] divide-y divide-foreground/[0.06]">
         <div class="p-5 flex items-center justify-between gap-x-2">
           <div>
-            <p class="text-sm font-semibold">{{ t('settings.integrations.lrclib_mode', 'LRCLIB.NET') }}</p>
+            <p class="text-sm font-semibold">{{ t('settings.integrations.enable_lrclib', 'LRCLIB.NET Lyrics') }}</p>
             <p class="text-xs text-foreground opacity-60 mt-1">
-              {{ t('settings.integrations.lrclib_mode_desc', 'Control when to fetch lyrics from LRCLIB.NET') }}
+              {{ t('settings.integrations.enable_lrclib_desc', 'Fetch lyrics from LRCLIB.NET') }}
             </p>
           </div>
-          <Select :model-value="appStore.lrclibMode" @update:model-value="val => appStore.updateLrclibMode(val as any)">
-            <SelectTrigger class="w-[180px] bg-foreground/[0.04] border-0 h-9 text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="off">{{ t('settings.integrations.lrclib_off', 'Off (metadata only)') }}</SelectItem>
-              <SelectItem value="prefer_metadata">
-                {{ t('settings.integrations.lrclib_prefer_metadata', 'Prefermetadata') }}
-              </SelectItem>
-              <SelectItem value="prefer_lrclib">{{ t('settings.integrations.lrclib_prefer_lrclib', 'Prefer lrclib') }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <Switch :model-value="appStore.enableLrclib" @update:model-value="appStore.updateEnableLrclib" />
+        </div>
+        <div class="p-5 flex items-center justify-between gap-x-2">
+          <div>
+            <p class="text-sm font-semibold">{{ t('settings.integrations.enable_kugou', 'KuGou Lyrics') }}</p>
+            <p class="text-xs text-foreground opacity-60 mt-1">
+              {{ t('settings.integrations.enable_kugou_desc', 'Fetch lyrics from KuGou Music') }}
+            </p>
+          </div>
+          <Switch :model-value="appStore.enableKugou" @update:model-value="appStore.updateEnableKugou" />
+        </div>
+        <div class="p-5 flex items-center justify-between gap-x-2">
+          <div>
+            <p class="text-sm font-semibold">
+              {{ t('settings.integrations.prefer_metadata_lyrics', 'Prefer MetadataLyrics') }}
+            </p>
+            <p class="text-xs text-foreground opacity-60 mt-1">
+              {{ t('settings.integrations.prefer_metadata_lyrics_desc', 'Use embedded lyrics when available') }}
+            </p>
+          </div>
+          <Switch :model-value="appStore.preferMetadataLyrics"
+            @update:model-value="appStore.updatePreferMetadataLyrics" />
         </div>
       </div>
     </section>

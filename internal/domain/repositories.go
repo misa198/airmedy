@@ -100,6 +100,11 @@ type LyricRepository interface {
 	Delete(ctx context.Context, trackID string) error
 }
 
+type LyricsProvider interface {
+	Fetch(ctx context.Context, track *TrackDTO) (*Lyric, error)
+	Name() string
+}
+
 type EQRepository interface {
 	GetActive(ctx context.Context) (*EQProfile, error)
 	GetAll(ctx context.Context) ([]*EQProfile, error)

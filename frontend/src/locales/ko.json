@@ -121,11 +121,17 @@
     },
     "integrations": {
       "title": "연동",
-      "lrclib_mode": "LRCLIB.NET",
-      "lrclib_mode_desc": "LRCLIB.NET에서 가사를 가져올 시기 제어",
-      "lrclib_off": "끄기 (메타데이터만)",
-      "lrclib_prefer_metadata": "메타데이터 우선",
-      "lrclib_prefer_lrclib": "lrclib 우선"
+      "online_artist_artwork": "온라인 아티스트 아트워크",
+      "online_artist_artwork_desc": "Deezer에서 자동으로 아티스트 아트워크 가져오기",
+      "enable_lrclib": "LRCLIB.NET 가사",
+      "enable_lrclib_desc": "LRCLIB.NET에서 가사 가져오기",
+      "enable_kugou": "KuGou 가사",
+      "enable_kugou_desc": "KuGou Music에서 가사 가져오기",
+      "prefer_metadata_lyrics": "메타데이터 가사 우선",
+      "prefer_metadata_lyrics_desc": "사용 가능한 경우 포함된 가사 사용",
+      "scrobbling": "Scrobbling",
+      "artwork": "아트워크",
+      "lyrics": "가사"
     }
   },
   "sidebar": {

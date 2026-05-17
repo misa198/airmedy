@@ -33,7 +33,7 @@
 ## Features
 
 - **Your whole library** — add any folder and Airmedy scans it instantly, even with tens of thousands of tracks.
-- **Lyrics that follow along** — synced lyrics scroll line-by-line as the song plays. Plain-text lyrics shown when sync data isn't available. Supports both embedded lyrics and online lyrics from LRCLIB.
+- **Lyrics that follow along** — synced lyrics scroll line-by-line as the song plays. Plain-text lyrics shown when sync data isn't available. Supports both embedded lyrics and online lyrics from LRCLIB and Kugou.
 - **Fullscreen & miniplayer modes** — go fullscreen for an immersive listening experience, or shrink to a miniplayer that stays out of your way.
 - **Playlists** — create and manage playlists, import and export them, and browse your collection by genre, artist, or album.
 - **10-band equalizer** — tune the sound to your headphones or speakers. Runs natively on macOS (AVFoundation) and Windows/Linux (miniaudio) for optimal performance.

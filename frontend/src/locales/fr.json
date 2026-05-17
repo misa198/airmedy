@@ -121,11 +121,17 @@
     },
     "integrations": {
       "title": "Intégrations",
-      "lrclib_mode": "LRCLIB.NET",
-      "lrclib_mode_desc": "Contrôler quand récupérer les paroles depuis LRCLIB.NET",
-      "lrclib_off": "Désactivé (métadonnées uniquement)",
-      "lrclib_prefer_metadata": "Privilégier les métadonnées",
-      "lrclib_prefer_lrclib": "Privilégier lrclib"
+      "online_artist_artwork": "Photos d'artistes en ligne",
+      "online_artist_artwork_desc": "Récupérer automatiquement les photos d'artistes depuis Deezer",
+      "enable_lrclib": "Paroles LRCLIB.NET",
+      "enable_lrclib_desc": "Récupérer les paroles depuis LRCLIB.NET",
+      "enable_kugou": "Paroles KuGou",
+      "enable_kugou_desc": "Récupérer les paroles depuis KuGou Music",
+      "prefer_metadata_lyrics": "Privilégier les paroles des métadonnées",
+      "prefer_metadata_lyrics_desc": "Utiliser les paroles intégrées lorsqu'elles sont disponibles",
+      "scrobbling": "Scrobbling",
+      "artwork": "Illustrations",
+      "lyrics": "Paroles"
     }
   },
   "sidebar": {

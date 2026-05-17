@@ -121,11 +121,17 @@
     },
     "integrations": {
       "title": "Integrazioni",
-      "lrclib_mode": "LRCLIB.NET",
-      "lrclib_mode_desc": "Controlla quando recuperare i testi da LRCLIB.NET",
-      "lrclib_off": "Disattivo (solo metadati)",
-      "lrclib_prefer_metadata": "Preferisci metadati",
-      "lrclib_prefer_lrclib": "Preferisci lrclib"
+      "online_artist_artwork": "Immagini artisti online",
+      "online_artist_artwork_desc": "Recupera automaticamente le immagini degli artisti da Deezer",
+      "enable_lrclib": "Testi LRCLIB.NET",
+      "enable_lrclib_desc": "Recupera i testi da LRCLIB.NET",
+      "enable_kugou": "Testi KuGou",
+      "enable_kugou_desc": "Recupera i testi da KuGou Music",
+      "prefer_metadata_lyrics": "Preferisci testi dei metadati",
+      "prefer_metadata_lyrics_desc": "Usa i testi incorporati quando disponibili",
+      "scrobbling": "Scrobbling",
+      "artwork": "Immagini",
+      "lyrics": "Testi"
     }
   },
   "sidebar": {

@@ -13,6 +13,7 @@ import (
 	"airmedy/internal/domain"
 	"airmedy/internal/infra/artwork"
 	"airmedy/internal/infra/bleve"
+	lyricsinfra "airmedy/internal/infra/lyrics"
 	"airmedy/internal/infra/logging"
 	"airmedy/internal/infra/metadata"
 	"airmedy/internal/infra/sqlite"
@@ -71,6 +72,7 @@ var Module = fx.Module("app",
 	),
 	sqlite.Module,
 	logging.Module,
+	lyricsinfra.Module,
 	player.Module,
 	playlist.Module,
 	lyrics.Module,

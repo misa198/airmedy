@@ -121,11 +121,17 @@
     },
     "integrations": {
       "title": "連携",
-      "lrclib_mode": "LRCLIB.NET",
-      "lrclib_mode_desc": "LRCLIB.NET から歌詞を取得するタイミングを制御",
-      "lrclib_off": "オフ（メタデータのみ）",
-      "lrclib_prefer_metadata": "メタデータを優先",
-      "lrclib_prefer_lrclib": "lrclibを優先"
+      "online_artist_artwork": "オンラインのアーティスト画像",
+      "online_artist_artwork_desc": "Deezer からアーティスト画像を自動的に取得",
+      "enable_lrclib": "LRCLIB.NET の歌詞",
+      "enable_lrclib_desc": "LRCLIB.NET から歌詞を取得",
+      "enable_kugou": "KuGou の歌詞",
+      "enable_kugou_desc": "KuGou Music から歌詞を取得",
+      "prefer_metadata_lyrics": "メタデータの歌詞を優先",
+      "prefer_metadata_lyrics_desc": "利用可能な場合は埋め込まれた歌詞を使用する",
+      "scrobbling": "Scrobbling",
+      "artwork": "画像",
+      "lyrics": "歌詞"
     }
   },
   "sidebar": {

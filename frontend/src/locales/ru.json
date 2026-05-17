@@ -121,11 +121,17 @@
     },
     "integrations": {
       "title": "Интеграции",
-      "lrclib_mode": "LRCLIB.NET",
-      "lrclib_mode_desc": "Управление загрузкой текстов с LRCLIB.NET",
-      "lrclib_off": "Выкл. (только метаданные)",
-      "lrclib_prefer_metadata": "Предпочитать метаданные",
-      "lrclib_prefer_lrclib": "Предпочитать lrclib"
+      "online_artist_artwork": "Обложки исполнителей онлайн",
+      "online_artist_artwork_desc": "Автоматически загружать обложки исполнителей с Deezer",
+      "enable_lrclib": "Тексты LRCLIB.NET",
+      "enable_lrclib_desc": "Загружать тексты с LRCLIB.NET",
+      "enable_kugou": "Тексты KuGou",
+      "enable_kugou_desc": "Загружать тексты с KuGou Music",
+      "prefer_metadata_lyrics": "Предпочитать встроенные тексты",
+      "prefer_metadata_lyrics_desc": "Использовать встроенные тексты, если они доступны",
+      "scrobbling": "Скробблинг",
+      "artwork": "Обложки",
+      "lyrics": "Тексты"
     }
   },
   "sidebar": {

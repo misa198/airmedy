@@ -121,11 +121,17 @@
     },
     "integrations": {
       "title": "Integrationen",
-      "lrclib_mode": "LRCLIB.NET",
-      "lrclib_mode_desc": "Steuern, wann Songtexte von LRCLIB.NET abgerufen werden",
-      "lrclib_off": "Aus (nur Metadaten)",
-      "lrclib_prefer_metadata": "Metadaten bevorzugen",
-      "lrclib_prefer_lrclib": "lrclib bevorzugen"
+      "online_artist_artwork": "Online-Künstlerbilder",
+      "online_artist_artwork_desc": "Künstlerbilder automatisch von Deezer abrufen",
+      "enable_lrclib": "LRCLIB.NET Songtexte",
+      "enable_lrclib_desc": "Songtexte von LRCLIB.NET abrufen",
+      "enable_kugou": "KuGou Songtexte",
+      "enable_kugou_desc": "Songtexte von KuGou Music abrufen",
+      "prefer_metadata_lyrics": "Metadaten-Songtexte bevorzugen",
+      "prefer_metadata_lyrics_desc": "Eingebettete Songtexte verwenden, falls verfügbar",
+      "scrobbling": "Scrobbling",
+      "artwork": "Bilder",
+      "lyrics": "Songtexte"
     }
   },
   "sidebar": {

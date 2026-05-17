@@ -76,11 +76,15 @@
       "title": "Integrations",
       "online_artist_artwork": "Online Artist Artwork",
       "online_artist_artwork_desc": "Automatically fetch artist artwork from Deezer",
-      "lrclib_mode": "LRCLIB.NET",
-      "lrclib_mode_desc": "Control when to fetch lyrics from LRCLIB.NET",
-      "lrclib_off": "Off (metadata only)",
-      "lrclib_prefer_metadata": "Prefer metadata",
-      "lrclib_prefer_lrclib": "Prefer lrclib"
+      "enable_lrclib": "LRCLIB.NET Lyrics",
+      "enable_lrclib_desc": "Fetch lyrics from LRCLIB.NET",
+      "enable_kugou": "KuGou Lyrics",
+      "enable_kugou_desc": "Fetch lyrics from KuGou Music",
+      "prefer_metadata_lyrics": "Prefer Metadata Lyrics",
+      "prefer_metadata_lyrics_desc": "Use embedded lyrics when available",
+      "scrobbling": "Scrobbling",
+      "artwork": "Artwork",
+      "lyrics": "Lyrics"
     },
     "behavior": {
       "start_at_login": "Start at login",

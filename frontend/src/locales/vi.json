@@ -111,22 +111,26 @@
       "select_profile": "Chọn hồ sơ"
     },
     "lastfm": {
-      "connect": "Kết nối",
-      "connected_as": "Đã kết nối với tên",
-      "connecting": "Đang kết nối...",
-      "disconnect": "Ngắt kết nối",
+      "title": "Last.fm",
       "scrobble_desc": "Gửi thông tin bài hát đang nghe lên Last.fm",
-      "title": "Last.fm"
+      "connected_as": "Đã kết nối với tên",
+      "connect": "Kết nối",
+      "connecting": "Đang kết nối...",
+      "disconnect": "Ngắt kết nối"
     },
     "integrations": {
       "title": "Tích hợp",
       "online_artist_artwork": "Ảnh nghệ sĩ trực tuyến",
       "online_artist_artwork_desc": "Tự động tải ảnh nghệ sĩ từ Deezer",
-      "lrclib_mode": "LRCLIB.NET",
-      "lrclib_mode_desc": "Kiểm soát khi nào tải lời từ LRCLIB.NET",
-      "lrclib_off": "Tắt (chỉ metadata)",
-      "lrclib_prefer_metadata": "Ưu tiên metadata",
-      "lrclib_prefer_lrclib": "Ưu tiên lrclib"
+      "enable_lrclib": "Lời bài hát LRCLIB.NET",
+      "enable_lrclib_desc": "Tải lời bài hát từ LRCLIB.NET",
+      "enable_kugou": "Lời bài hát KuGou",
+      "enable_kugou_desc": "Tải lời bài hát từ KuGou Music",
+      "prefer_metadata_lyrics": "Ưu tiên lời bài hát trong tệp",
+      "prefer_metadata_lyrics_desc": "Sử dụng lời bài hát được nhúng nếu có",
+      "scrobbling": "Scrobbling",
+      "artwork": "Ảnh bìa",
+      "lyrics": "Lời bài hát"
     }
   },
   "sidebar": {

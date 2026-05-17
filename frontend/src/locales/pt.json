@@ -121,11 +121,17 @@
     },
     "integrations": {
       "title": "Integrações",
-      "lrclib_mode": "LRCLIB.NET",
-      "lrclib_mode_desc": "Controlar quando buscar letras do LRCLIB.NET",
-      "lrclib_off": "Desligado (apenas metadados)",
-      "lrclib_prefer_metadata": "Preferir metadados",
-      "lrclib_prefer_lrclib": "Preferir lrclib"
+      "online_artist_artwork": "Capas de artistas online",
+      "online_artist_artwork_desc": "Buscar automaticamente capas de artistas do Deezer",
+      "enable_lrclib": "Letras do LRCLIB.NET",
+      "enable_lrclib_desc": "Buscar letras do LRCLIB.NET",
+      "enable_kugou": "Letras do KuGou",
+      "enable_kugou_desc": "Buscar letras do KuGou Music",
+      "prefer_metadata_lyrics": "Preferir letras de metadatos",
+      "prefer_metadata_lyrics_desc": "Usar letras incorporadas quando disponíveis",
+      "scrobbling": "Scrobbling",
+      "artwork": "Capas",
+      "lyrics": "Letras"
     }
   },
   "sidebar": {

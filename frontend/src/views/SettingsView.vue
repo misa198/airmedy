@@ -45,7 +45,7 @@ const setCategory = (id: string) => {
 <template>
   <div class="h-full flex flex-col md:flex-row bg-background text-foreground overflow-hidden">
     <!-- Sidebar -->
-    <aside class="w-full md:w-64 border-r border-foreground/[0.06] bg-foreground/[0.02] flex-shrink-0 select-none">
+    <aside class="w-full md:w-56 border-r border-foreground/[0.06] bg-foreground/[0.02] flex-shrink-0 select-none">
       <div class="p-6">
         <h1 class="text-2xl font-bold mb-6 px-2">{{ t('settings.title') }}</h1>
         <nav class="space-y-1">

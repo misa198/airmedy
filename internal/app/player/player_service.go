@@ -543,40 +543,38 @@ func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
 
 	settings, err := s.settingsRepo.Load(ctx)
 	if err != nil {
-		settings = &domain.AppSettings{LrclibMode: "off"}
+		settings = &domain.AppSettings{}
 	}
 
 	// 1. Try to get best available lyrics according to settings.
-	lyric := s.lyricsService.ResolveLyrics(ctx, track.ID, settings.LrclibMode)
+	lyric := s.lyricsService.ResolveLyrics(ctx, track.ID, settings.PreferMetadataLyrics)
 	if lyric != nil {
 		s.emitLyrics(track.ID, lyric)
 	}
 
-	// 2. If we are in an LRCLIB mode, and we don't have external lyrics yet, try to fetch.
-	hasExternal := lyric != nil && strings.HasPrefix(lyric.Source, "lrclib-")
-	if !hasExternal && settings.LrclibMode != "off" {
-		// If we only have metadata (or nothing), and the mode is "prefer_lrclib" or "prefer_metadata",
-		// we should still try to fetch better/synced lyrics from external.
-		
-		// Fetch from external.
-		fetched, err := s.lyricsService.FetchFromExternal(ctx, track)
+	// 2. If any provider is enabled and we don't have external lyrics yet, fetch from providers.
+	hasExternal := lyric != nil && !strings.HasPrefix(lyric.Source, "meta-")
+	anyProviderEnabled := settings.EnableLrclib || settings.EnableKugou
+	if !hasExternal && anyProviderEnabled {
+		fetched, err := s.lyricsService.FetchFromProviders(ctx, track, settings.EnableLrclib, settings.EnableKugou)
 		if err != nil {
-			s.logger.Warn("failed to fetch lyrics from external", "track_id", track.ID, "error", err)
-			// On failure, if we haven't emitted anything yet (lyric == nil), fallback to metadata.
+			s.logger.Warn("failed to fetch lyrics from providers", "track_id", track.ID, "error", err)
 			if lyric == nil {
-				lyric = s.lyricsService.ResolveLyrics(ctx, track.ID, "off")
+				lyric = s.lyricsService.ResolveLyrics(ctx, track.ID, true)
 				s.emitLyrics(track.ID, lyric)
 			}
 		} else if fetched != nil {
 			s.emitLyrics(track.ID, fetched)
 			return
 		} else if lyric == nil {
-			// No external lyrics found, and no metadata lyrics were found earlier.
-			s.emitLyrics(track.ID, nil)
+			// No provider results — fall back to metadata if available.
+			lyric = s.lyricsService.ResolveLyrics(ctx, track.ID, true)
+			s.emitLyrics(track.ID, lyric)
 		}
 	} else if lyric == nil {
-		// Mode is "off" and no metadata lyrics found.
-		s.emitLyrics(track.ID, nil)
+		// Providers disabled — fall back to metadata if available.
+		lyric = s.lyricsService.ResolveLyrics(ctx, track.ID, true)
+		s.emitLyrics(track.ID, lyric)
 	}
 }
 

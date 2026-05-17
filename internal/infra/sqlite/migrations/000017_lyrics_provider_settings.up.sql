@@ -1,0 +1,3 @@
+ALTER TABLE app_settings ADD COLUMN enable_lrclib BOOLEAN NOT NULL DEFAULT 1;
+ALTER TABLE app_settings ADD COLUMN enable_kugou BOOLEAN NOT NULL DEFAULT 1;
+ALTER TABLE app_settings ADD COLUMN prefer_metadata_lyrics BOOLEAN NOT NULL DEFAULT 1;
