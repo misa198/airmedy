@@ -93,7 +93,7 @@ onUnmounted(() => {
           <div
             class="w-full flex items-center gap-3 px-0 h-16 text-left hover:bg-foreground/[0.04] transition-colors group relative"
             :class="{ 'bg-primary/10 border-l-2 border-l-primary': store.currentTrack?.id === item.id }"
-            @dblclick="store.playTracks(store.queue, index)"
+            @dblclick="store.playQueueIndex(index)"
             @contextmenu.prevent="onContextMenu($event, item)"
           >
             <!-- Drag Handle -->
@@ -102,7 +102,7 @@ onUnmounted(() => {
             </div>
 
             <!-- Artwork -->
-            <div class="w-10 h-10 rounded-md bg-foreground/5 flex-shrink-0 overflow-hidden" @click="store.playTracks(store.queue, index)">
+            <div class="w-10 h-10 rounded-md bg-foreground/5 flex-shrink-0 overflow-hidden" @click="store.playQueueIndex(index)">
               <LazyImg
                 v-if="item.artwork_key"
                 :src="buildArtworkUrl(item.artwork_key, 'sm')"
@@ -115,7 +115,7 @@ onUnmounted(() => {
             </div>
 
             <!-- Track info -->
-            <div class="flex-1 min-w-0" @click="store.playTracks(store.queue, index)">
+            <div class="flex-1 min-w-0" @click="store.playQueueIndex(index)">
               <div
                 class="text-sm font-medium truncate"
                 :class="store.currentTrack?.id === item.id ? 'text-primary' : ''"

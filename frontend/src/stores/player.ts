@@ -244,6 +244,11 @@ export const usePlayerStore = defineStore('player', () => {
     await PlayerService.PlayTrackIDs(tracks.map(t => t.id), startIndex)
   }
 
+  async function playQueueIndex(index: number) {
+    currentTrack.value = queue.value[index] ?? null
+    await PlayerService.PlayQueueIndex(index)
+  }
+
   async function shuffleTracks(tracks: TrackDTO[]) {
     if (!tracks.length) return
     await PlayerService.ShuffleTrackIDs(tracks.map(t => t.id))
@@ -347,6 +352,7 @@ export const usePlayerStore = defineStore('player', () => {
     setShuffle,
     setRepeatMode,
     playTracks,
+    playQueueIndex,
     shuffleTracks,
     reorderQueue,
     toggleQueue,

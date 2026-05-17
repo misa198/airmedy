@@ -410,6 +410,17 @@ func (s *PlayerService) RemoveFromQueue(trackID string) {
 	}
 }
 
+// PlayQueueIndex plays the track at the given index in the active queue
+// without replacing or re-shuffling the queue.
+func (s *PlayerService) PlayQueueIndex(index int) error {
+	s.queue.SetCurrentIndex(index)
+	track := s.queue.GetCurrentTrack()
+	if track == nil {
+		return fmt.Errorf("no track at queue index %d", index)
+	}
+	return s.loadAndPlay(track)
+}
+
 // ReorderQueue updates the order of tracks in the queue using track IDs.
 func (s *PlayerService) ReorderQueue(trackIDs []string) {
 	s.queue.ReorderQueue(trackIDs)

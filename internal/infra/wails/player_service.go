@@ -120,6 +120,10 @@ func (s *PlayerService) RemoveFromQueue(trackID string) {
 	s.service.RemoveFromQueue(trackID)
 }
 
+func (s *PlayerService) PlayQueueIndex(index int) error {
+	return s.service.PlayQueueIndex(index)
+}
+
 func (s *PlayerService) ReorderQueue(tracks []*domain.TrackDTO) {
 	ids := make([]string, len(tracks))
 	for i, t := range tracks {
