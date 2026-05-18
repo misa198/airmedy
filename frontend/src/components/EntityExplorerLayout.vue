@@ -57,7 +57,7 @@ const filteredItems = computed(() => {
         <div class="relative">
           <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground opacity-60" />
           <Input v-model="searchQuery" type="text" :placeholder="searchPlaceholder || `${$t('sidebar.search')}...`"
-            class="pl-10 pr-4" />
+            class="pl-10 pr-4" clearable />
         </div>
       </div>
 
