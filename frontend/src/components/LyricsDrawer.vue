@@ -97,17 +97,17 @@ watch(activeIndex, (newIndex) => {
       <!-- Synced view -->
       <div v-else-if="effectiveViewType === 'synced'" ref="scrollContainer"
         class="h-full overflow-y-auto px-4 py-10 scrollbar-hide">
-        <div class="space-y-4">
+        <div class="space-y-6">
           <div v-for="(line, index) in syncedLines" :key="index" ref="lineRefs"
             class="transition-all duration-150 cursor-pointer select-none leading-snug py-1 origin-left" :class="[
               index === activeIndex
                 ? 'text-foreground'
                 : index < activeIndex
-                  ? 'text-foreground/40 font-bold opacity-60 hover:text-foreground/50'
-                  : 'text-foreground/40 font-bold opacity-40 hover:text-foreground/40',
+                  ? 'text-foreground/40 opacity-60 hover:text-foreground/50'
+                  : 'text-foreground/40 opacity-40 hover:text-foreground/40',
             ]" @click="store.seek(line.time)">
-            <div class="font-bold">{{ line.text }}</div>
-            <div v-if="line.secondary" class="text-[0.9em] opacity-50 mt-0.5">{{ line.secondary }}</div>
+            <div class="font-bold text-[21pt]">{{ line.text }}</div>
+            <div v-if="line.secondary" class="text-[15pt] opacity-50 mt-0.5">{{ line.secondary }}</div>
           </div>
         </div>
       </div>

@@ -28,13 +28,28 @@ const FALLBACK = {
   base: [0.03, 0.02, 0.06] as Vec3,
 }
 
+const MAX_LUMINANCE = 0.85
+
+function luminance(c: Vec3): number {
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+}
+
+function clampLuminance(c: Vec3, maxL: number): Vec3 {
+  const l = luminance(c)
+  if (l <= maxL) return c
+  const scale = maxL / l
+  return [c[0] * scale, c[1] * scale, c[2] * scale]
+}
+
 function colorsFromTheme(theme: ThemeColors | null) {
   if (!theme) return { ...FALLBACK }
-  const c2 = hexToVec3(theme.dominant)
+  const c1 = clampLuminance(hexToVec3(theme.vibrant), MAX_LUMINANCE)
+  const c2 = clampLuminance(hexToVec3(theme.dominant), MAX_LUMINANCE)
+  const c3 = clampLuminance(hexToVec3(theme.muted), MAX_LUMINANCE)
   return {
-    c1: hexToVec3(theme.vibrant),
+    c1,
     c2,
-    c3: hexToVec3(theme.muted),
+    c3,
     base: [c2[0] * 0.2, c2[1] * 0.2, c2[2] * 0.2] as Vec3,
   }
 }
