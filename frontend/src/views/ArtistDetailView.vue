@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, shallowRef, onMounted, watch } from 'vue'
+import { ref, shallowRef, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { Artist, AlbumDTO, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
@@ -12,6 +12,7 @@ import { useContextMenu } from '@/composables/useContextMenu'
 import { useGroupContextMenu } from '@/composables/useGroupContextMenu'
 import ContextMenu from '../components/ContextMenu.vue'
 import DetailsButton from '@/components/ui/DetailsButton.vue'
+import { sortTracksGrouped } from '@/lib/trackSort'
 
 const { t } = useI18n()
 
@@ -25,6 +26,7 @@ const isLoading = ref(true)
 
 const contextMenu = useContextMenu()
 const { buildMenuItems } = useGroupContextMenu()
+const sortedTracks = computed(() => sortTracksGrouped(tracks.value, albums.value))
 
 function openContextMenu(e: MouseEvent) {
   contextMenu.open(e, buildMenuItems(tracks.value))
@@ -92,7 +94,7 @@ watch(() => route.params.id, (newId) => {
 
           <div class="flex items-center justify-center md:justify-start gap-4 flex-wrap">
             <DetailsButton :icon="Play" :label="t('common.play')"
-              @click="playerStore.playTracks(tracks, 0); playerStore.setShuffle(false)" />
+              @click="playerStore.playTracks(sortedTracks, 0)" />
             <div class="flex gap-2">
               <DetailsButton :icon="Shuffle" variant="outline" @click="playerStore.shuffleTracks(tracks)" />
               <DetailsButton :icon="MoreVertical" variant="outline" @click="openContextMenu" />

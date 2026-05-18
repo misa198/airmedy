@@ -33,15 +33,16 @@ type Lyric struct {
 
 ## Resolution Strategy
 
-The `LyricsService.ResolveLyrics` method determines which lyrics to display based on the `lrclib_mode` setting:
+`LyricsService.ResolveLyrics(ctx, trackID, preferMetadata bool)` determines which lyrics to display based on three boolean settings stored in the DB:
 
-| Mode | Behavior |
+| Setting | Effect |
 | --- | --- |
-| `off` | Only use `MetaContent`. Never fetch from lrclib. |
-| `prefer_metadata` | (Default) Use `MetaContent` if available, otherwise use `Content` (lrclib). |
-| `prefer_lrclib` | Use `Content` (lrclib) if available, otherwise use `MetaContent`. |
+| `prefer_metadata_lyrics=true` | (Default) Use `MetaContent` if available, otherwise fall back to `Content` (external provider). |
+| `prefer_metadata_lyrics=false` | Use `Content` (external provider) if available, otherwise fall back to `MetaContent`. |
+| `enable_lrclib=false` | lrclib.net provider disabled; not queried on fetch. |
+| `enable_kugou=false` | KuGou provider disabled; not queried on fetch. |
 
-If resolution returns no results and the mode is not `off`, `PlayerService` triggers an external fetch from `lrclib.net`.
+If both `enable_lrclib` and `enable_kugou` are false, no external fetch is attempted. If resolution returns no cached result and at least one provider is enabled, `PlayerService` triggers an external fetch.
 
 ## Fetch Strategy
 
@@ -117,11 +118,10 @@ Providers are wired via FX value group `lyrics_providers`. `LyricsService` recei
 GetLyrics(trackID: string): Lyric | null
 FetchLyrics(trackID: string, track: TrackDTO): Lyric | null
 SaveLyrics(trackID: string, content: string, source: string): void
-SaveMetaLyrics(trackID: string, content: string, source: string): void
 DeleteLyrics(trackID: string): void
 ```
 
-`FetchLyrics` always hits the network; `GetLyrics` returns the cached DB entry.
+`GetLyrics` returns the cached DB entry. `FetchLyrics` always hits the network and currently queries both providers regardless of `enable_lrclib`/`enable_kugou` settings (known limitation — manual refresh bypasses provider toggles).
 
 ## Event Delivery
 
@@ -173,7 +173,7 @@ Parsed into `{ text: "English text", secondary: "中文翻译" }`.
 
 ## Frontend Display
 
-**`PlayerLyrics.vue`** in the lyrics drawer renders lines with active-line highlighting. Auto-scrolls to keep the current line centered as the track position advances.
+**`LyricsDrawer.vue`** renders lines with active-line highlighting. Auto-scrolls to keep the current line centered as the track position advances.
 
 **View toggle:** If synced lyrics are available, user can switch between synced (auto-scrolling with highlights) and plain (full text) views.
 
