@@ -20,7 +20,7 @@ Application-level settings: UI theme, display language, launch-at-login. Setting
 ```go
 type AppSettings struct {
     Language               string  // BCP 47 language tag, e.g., "en", "zh", "ja"
-    Theme                  string  // "system", "light", "dark"
+    Theme                  string  // "system", "light", "dark", "black"
     StartAtLogin           bool
     AutoCheckUpdate        bool
     LastFmUsername         string  // Connected Last.fm account name
@@ -61,7 +61,7 @@ OpenAppDataFolder(): void  // opens $XDG_DATA_HOME/airmedy in Finder/Explorer
 ```typescript
 interface AppStore {
   // Settings state
-  theme: "system" | "light" | "dark";
+  theme: "system" | "light" | "dark" | "black";
   language: string;
   startAtLogin: boolean;
   autoCheckUpdate: boolean;
@@ -99,7 +99,7 @@ interface AppStore {
 
 Each `update*()` method calls `SettingsService.SaveSettings()` with the full settings object (all 10 fields at once, not partial).
 
-`applyTheme()` adds/removes the `dark` CSS class on `document.documentElement`. When theme is `system`, it respects `prefers-color-scheme` media query.
+`applyTheme()` manages CSS classes on `document.documentElement`. `dark` theme adds `.dark`; `black` theme adds both `.dark` and `.black` (pure black bg override for OLED screens); `light` removes both. When theme is `system`, it respects `prefers-color-scheme` media query (resolves to dark, not black).
 
 `updateLanguage()` sets `i18n.locale.value` immediately for instant locale switch without reload.
 

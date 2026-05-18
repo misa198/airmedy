@@ -92,6 +92,7 @@ func NewPlayerService(
 			func() { go func() { _ = s.Pause() }() },
 			func() { go func() { _ = s.Next() }() },
 			func() { go func() { _ = s.Previous() }() },
+			func(pos float64) { go func() { _ = s.Seek(pos) }() },
 		)
 		npc.SetupRemoteCommands()
 	}
@@ -405,6 +406,9 @@ func (s *PlayerService) RemoveFromQueue(trackID string) {
 		if track != nil {
 			_ = s.loadAndPlay(track)
 		} else {
+			s.mu.Lock()
+			s.currentTrack = nil
+			s.mu.Unlock()
 			_ = s.Stop()
 		}
 	}

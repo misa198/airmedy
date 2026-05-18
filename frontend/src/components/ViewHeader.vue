@@ -21,6 +21,7 @@ const searchQuery = defineModel<string>({ default: '' })
           type="text"
           :placeholder="searchPlaceholder"
           class="pl-10 pr-4"
+          clearable
         />
       </div>
     </div>

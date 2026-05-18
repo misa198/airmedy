@@ -52,7 +52,7 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists() || hasPlayli
     <div class="px-8 pt-8 pb-4 flex-shrink-0">
       <div class="relative max-w-xl">
         <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground opacity-50 pointer-events-none" />
-        <Input v-model="inputValue" :placeholder="$t('library.search_placeholder')" class="pl-10 pr-4" autofocus />
+        <Input v-model="inputValue" :placeholder="$t('library.search_placeholder')" class="pl-10 pr-4" autofocus clearable />
       </div>
     </div>
 

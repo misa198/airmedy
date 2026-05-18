@@ -50,15 +50,18 @@
 
 ### Mandatory CSS Variables
 
-| Variable | Dark value | Purpose |
-|---|---|---|
-| `--bg-main` | `#0A0A0A` | Page background |
-| `--bg-glass` | `rgba(25,25,25,0.6)` | Glass surfaces |
-| `--border-glass` | `rgba(255,255,255,0.1)` | Glass borders |
-| `--primary` | `#E11D48` | Primary action |
-| `--dynamic-primary` | extracted vibrant | Per-track, runtime |
-| `--dynamic-surface` | extracted dominant 10–20% opacity | Per-track, runtime |
-| `--dynamic-glow` | extracted vibrant 40% opacity | Per-track, runtime |
+| Variable | Dark value | Black (OLED) value | Purpose |
+|---|---|---|---|
+| `--bg-main` | `#18181B` | `#0A0A0A` | Page background |
+| `--bg-glass` | `rgba(35,35,38,0.6)` | `rgba(25,25,25,0.6)` | Glass surfaces |
+| `--bg-glass-elevated` | `rgba(55,55,60,0.4)` | `rgba(45,45,45,0.4)` | Elevated glass |
+| `--border-glass` | `rgba(255,255,255,0.1)` | same | Glass borders |
+| `--primary` | `#E11D48` | same | Primary action |
+| `--dynamic-primary` | extracted vibrant | same | Per-track, runtime |
+| `--dynamic-surface` | extracted dominant 10–20% opacity | same | Per-track, runtime |
+| `--dynamic-glow` | extracted vibrant 40% opacity | same | Per-track, runtime |
+
+Themes: `system`, `light`, `dark` (gray), `black` (pure black for OLED). `black` applies `.dark` + `.black` CSS classes; `.black` only overrides bg vars.
 
 ### Layout Constraints
 

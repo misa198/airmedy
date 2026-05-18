@@ -42,9 +42,9 @@
 
   .dark {
     color-scheme: dark;
-    --bg-main: #0a0a0a;
-    --bg-glass: rgba(25, 25, 25, 0.6);
-    --bg-glass-elevated: rgba(45, 45, 45, 0.4);
+    --bg-main: #18181b;
+    --bg-glass: rgba(35, 35, 38, 0.6);
+    --bg-glass-elevated: rgba(55, 55, 60, 0.4);
     --border-glass: rgba(255, 255, 255, 0.1);
 
     --text-main: #ffffff;
@@ -55,6 +55,12 @@
     --bg-zebra: rgba(255, 255, 255, 0.02);
     --scrollbar-thumb: rgba(255, 255, 255, 0.25);
     --scrollbar-thumb-hover: rgba(255, 255, 255, 0.35);
+  }
+
+  .black {
+    --bg-main: #0a0a0a;
+    --bg-glass: rgba(25, 25, 25, 0.6);
+    --bg-glass-elevated: rgba(45, 45, 45, 0.4);
   }
 
   html,

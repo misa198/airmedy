@@ -123,6 +123,7 @@
       "system": "Системная",
       "light": "Светлая",
       "dark": "Темная",
+      "black": "Black",
       "language": "Язык",
       "select_language": "Выберите язык приложения"
     },

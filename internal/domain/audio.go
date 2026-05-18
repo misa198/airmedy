@@ -42,7 +42,7 @@ type ThemeColors struct {
 // that support OS-level Now Playing info and media key remote commands.
 type NowPlayingController interface {
 	SetupRemoteCommands()
-	SetRemoteCallbacks(play, pause, next, previous func())
+	SetRemoteCallbacks(play, pause, next, previous func(), seek func(float64))
 	UpdateNowPlaying(track *TrackDTO, position float64, artworkPath string)
 	UpdateNowPlayingPosition(position float64)
 	ClearNowPlaying()
