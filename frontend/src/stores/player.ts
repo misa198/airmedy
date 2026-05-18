@@ -114,8 +114,10 @@ export const usePlayerStore = defineStore('player', () => {
         const q = ev.data as TrackDTO[]
         if (Array.isArray(q)) {
           queue.value = q.filter(Boolean) as TrackDTO[]
-          // Re-sync currentTrack in case player:status arrived before queue-updated
-          if (status.value?.track_id) {
+          if (queue.value.length === 0) {
+            currentTrack.value = null
+          } else if (status.value?.track_id) {
+            // Re-sync currentTrack in case player:status arrived before queue-updated
             const found = queue.value.find((t) => t.id === status.value!.track_id)
             if (found) currentTrack.value = found
           }

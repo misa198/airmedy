@@ -405,6 +405,9 @@ func (s *PlayerService) RemoveFromQueue(trackID string) {
 		if track != nil {
 			_ = s.loadAndPlay(track)
 		} else {
+			s.mu.Lock()
+			s.currentTrack = nil
+			s.mu.Unlock()
 			_ = s.Stop()
 		}
 	}
