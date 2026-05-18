@@ -50,14 +50,24 @@ TailwindCSS v4 uses a **CSS-first** `@theme` directive approach. All design toke
 
 ```css
 /* Dark theme (.dark class) */
---bg-main: #0a0a0a --bg-glass: rgba(25, 25, 25, 0.6)
-  --bg-glass-elevated: rgba(45, 45, 45, 0.4)
-  --border-glass: rgba(255, 255, 255, 0.1) --text-main: #ffffff
-  --text-muted: #a1a1aa --primary: #e11d48 --accent-favorite: #ef4444
-  /* Light theme (default) */ --bg-main: #f4f4f5
-  --bg-glass: rgba(255, 255, 255, 0.7)
-  --bg-glass-elevated: rgba(255, 255, 255, 0.9)
-  --border-glass: rgba(0, 0, 0, 0.1) --text-main: #0a0a0a --text-muted: #52525b;
+--bg-main: #18181b
+--bg-glass: rgba(35, 35, 38, 0.6)
+--bg-glass-elevated: rgba(55, 55, 60, 0.4)
+--border-glass: rgba(255, 255, 255, 0.1)
+--text-main: #ffffff --text-muted: #a1a1aa
+--primary: #e11d48 --accent-favorite: #ef4444
+
+/* Black theme (.dark.black classes — OLED override) */
+--bg-main: #0a0a0a
+--bg-glass: rgba(25, 25, 25, 0.6)
+--bg-glass-elevated: rgba(45, 45, 45, 0.4)
+
+/* Light theme (default) */
+--bg-main: #f4f4f5
+--bg-glass: rgba(255, 255, 255, 0.7)
+--bg-glass-elevated: rgba(255, 255, 255, 0.9)
+--border-glass: rgba(0, 0, 0, 0.1)
+--text-main: #0a0a0a --text-muted: #52525b;
 ```
 
 ### Dynamic Variables (Artwork-Derived)

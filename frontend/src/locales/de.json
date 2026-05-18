@@ -123,6 +123,7 @@
       "system": "System",
       "light": "Hell",
       "dark": "Dunkel",
+      "black": "Black",
       "language": "Sprache",
       "select_language": "Anwendungssprache auswählen"
     },

@@ -5,7 +5,7 @@ import * as UpdaterService from '../../bindings/airmedy/internal/infra/wails/upd
 import { UpdateInfo } from '../../bindings/airmedy/internal/app/updater/models'
 
 export const useAppStore = defineStore('app', () => {
-  const theme = ref<'system' | 'light' | 'dark'>('system')
+  const theme = ref<'system' | 'light' | 'dark' | 'black'>('system')
   const language = ref('en')
   const startAtLogin = ref(false)
   const autoCheckUpdate = ref(true)
@@ -22,12 +22,18 @@ export const useAppStore = defineStore('app', () => {
   const isUpdating = ref(false)
   const updateApplied = ref(false)
 
-  const applyTheme = (newTheme: 'system' | 'light' | 'dark') => {
+  const applyTheme = (newTheme: 'system' | 'light' | 'dark' | 'black') => {
     const root = document.documentElement
-    if (newTheme === 'dark' || (newTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    const systemDark = newTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches
+    if (newTheme === 'dark' || newTheme === 'black' || systemDark) {
       root.classList.add('dark')
     } else {
       root.classList.remove('dark')
+    }
+    if (newTheme === 'black') {
+      root.classList.add('black')
+    } else {
+      root.classList.remove('black')
     }
   }
 
@@ -88,7 +94,7 @@ export const useAppStore = defineStore('app', () => {
     await UpdaterService.RestartApp()
   }
 
-  const updateTheme = async (newTheme: 'system' | 'light' | 'dark') => {
+  const updateTheme = async (newTheme: 'system' | 'light' | 'dark' | 'black') => {
     theme.value = newTheme
     applyTheme(newTheme)
     try {

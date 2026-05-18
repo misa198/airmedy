@@ -123,6 +123,7 @@
       "system": "Sistema",
       "light": "Claro",
       "dark": "Oscuro",
+      "black": "Black",
       "language": "Idioma",
       "select_language": "Seleccionar idioma de la aplicación"
     },

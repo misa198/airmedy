@@ -43,7 +43,7 @@
 - **Metadata editor** — update track titles, artists, albums, and other tags. Support for updating album artwork with automatic JPEG conversion.
 - **Plays in the background** — close the window and music keeps going. Quit when you actually mean it.
 - **Tray menu** — control playback from the system tray.
-- **Dark mode** — a sleek, dark interface that looks great and saves battery on OLED screens.
+- **Themes** — light, dark (gray), and black (pure black for OLED screens) themes.
 - **Online Artist Arts** — fetch and display artist arts from Deezer.
 
 ## Audio Format Support

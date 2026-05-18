@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
-import { AppWindow, Sun, Moon, Monitor, Languages } from 'lucide-vue-next'
+import { AppWindow, Sun, Moon, Monitor, Languages, Circle } from 'lucide-vue-next'
 import { Switch } from '@/components/ui/switch'
 import {
   Select,
@@ -76,6 +76,7 @@ const toggleAutoCheckUpdate = async (enabled: boolean) => {
             <div class="p-2 bg-foreground/[0.04] rounded-xl">
               <Sun v-if="appStore.theme === 'light'" class="w-5 h-5 text-foreground opacity-80" />
               <Moon v-else-if="appStore.theme === 'dark'" class="w-5 h-5 text-foreground opacity-80" />
+              <Circle v-else-if="appStore.theme === 'black'" class="w-5 h-5 text-foreground opacity-80" />
               <Monitor v-else class="w-5 h-5 text-foreground opacity-80" />
             </div>
             <div>
@@ -94,6 +95,7 @@ const toggleAutoCheckUpdate = async (enabled: boolean) => {
               <SelectItem value="system">{{ t('settings.appearance.system') }}</SelectItem>
               <SelectItem value="light">{{ t('settings.appearance.light') }}</SelectItem>
               <SelectItem value="dark">{{ t('settings.appearance.dark') }}</SelectItem>
+              <SelectItem value="black">{{ t('settings.appearance.black') }}</SelectItem>
             </SelectContent>
           </Select>
         </div>
