@@ -8,16 +8,17 @@ import (
 )
 
 func postUpdate(exe string, newVersion string) error {
-	contentsDir := filepath.Dir(exe)
-	if filepath.Base(contentsDir) != "MacOS" {
+	macosDir := filepath.Dir(exe)
+	if filepath.Base(macosDir) != "MacOS" {
 		return nil
 	}
+	contentsDir := filepath.Dir(macosDir)
 	bundlePath := filepath.Dir(contentsDir)
 	if !strings.HasSuffix(bundlePath, ".app") {
 		return nil
 	}
 
-	infoPlistPath := filepath.Join(bundlePath, "Contents", "Info.plist")
+	infoPlistPath := filepath.Join(contentsDir, "Info.plist")
 
 	if err := exec.Command("plutil", "-replace", "CFBundleShortVersionString", "-string", newVersion, infoPlistPath).Run(); err != nil {
 		return fmt.Errorf("failed to update CFBundleShortVersionString: %w", err)
@@ -34,10 +35,11 @@ func postUpdate(exe string, newVersion string) error {
 }
 
 func getBundlePath(exe string) string {
-	contentsDir := filepath.Dir(exe)
-	if filepath.Base(contentsDir) != "MacOS" {
+	macosDir := filepath.Dir(exe)
+	if filepath.Base(macosDir) != "MacOS" {
 		return ""
 	}
+	contentsDir := filepath.Dir(macosDir)
 	bundlePath := filepath.Dir(contentsDir)
 	if !strings.HasSuffix(bundlePath, ".app") {
 		return ""
