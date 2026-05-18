@@ -92,6 +92,7 @@ func NewPlayerService(
 			func() { go func() { _ = s.Pause() }() },
 			func() { go func() { _ = s.Next() }() },
 			func() { go func() { _ = s.Previous() }() },
+			func(pos float64) { go func() { _ = s.Seek(pos) }() },
 		)
 		npc.SetupRemoteCommands()
 	}

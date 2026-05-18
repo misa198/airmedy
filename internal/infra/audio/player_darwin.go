@@ -42,6 +42,7 @@ var (
 	onRemotePauseCallback    func()
 	onRemoteNextCallback     func()
 	onRemotePreviousCallback func()
+	onRemoteSeekCallback     func(float64)
 	remoteCallbackMu         sync.Mutex
 )
 
@@ -87,6 +88,15 @@ func goHandleRemotePrevious() {
 	defer remoteCallbackMu.Unlock()
 	if onRemotePreviousCallback != nil {
 		onRemotePreviousCallback()
+	}
+}
+
+//export goHandleRemoteSeek
+func goHandleRemoteSeek(position C.double) {
+	remoteCallbackMu.Lock()
+	defer remoteCallbackMu.Unlock()
+	if onRemoteSeekCallback != nil {
+		onRemoteSeekCallback(float64(position))
 	}
 }
 
@@ -198,13 +208,14 @@ func (p *DarwinPlayer) SetupRemoteCommands() {
 	C.SetupRemoteCommandCenter(p.playerPointer)
 }
 
-func (p *DarwinPlayer) SetRemoteCallbacks(play, pause, next, previous func()) {
+func (p *DarwinPlayer) SetRemoteCallbacks(play, pause, next, previous func(), seek func(float64)) {
 	remoteCallbackMu.Lock()
 	defer remoteCallbackMu.Unlock()
 	onRemotePlayCallback = play
 	onRemotePauseCallback = pause
 	onRemoteNextCallback = next
 	onRemotePreviousCallback = previous
+	onRemoteSeekCallback = seek
 }
 
 func (p *DarwinPlayer) UpdateNowPlaying(track *domain.TrackDTO, position float64, artworkPath string) {

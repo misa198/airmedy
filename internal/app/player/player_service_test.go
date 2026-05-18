@@ -232,7 +232,7 @@ type fakeNowPlaying struct {
 }
 
 func (n *fakeNowPlaying) SetupRemoteCommands()                                             {}
-func (n *fakeNowPlaying) SetRemoteCallbacks(_, _, _, _ func())                            {}
+func (n *fakeNowPlaying) SetRemoteCallbacks(_, _, _, _ func(), _ func(float64))           {}
 func (n *fakeNowPlaying) UpdateNowPlaying(_ *domain.TrackDTO, _ float64, _ string) {
 	if n.updateFn != nil {
 		n.updateFn()

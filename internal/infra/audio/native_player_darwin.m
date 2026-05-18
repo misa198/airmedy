@@ -11,6 +11,7 @@ extern void goHandleRemotePlay();
 extern void goHandleRemotePause();
 extern void goHandleRemoteNext();
 extern void goHandleRemotePrevious();
+extern void goHandleRemoteSeek(double position);
 
 // Returns YES for formats AVFoundation can decode natively.
 static BOOL isAVFoundationNative(NSString *ext) {
@@ -214,6 +215,12 @@ static BOOL isAVFoundationNative(NSString *ext) {
     if (startFrame >= totalFrames) startFrame = totalFrames > 0 ? totalFrames - 1 : 0;
 
     AVAudioFrameCount remainingFrames = (AVAudioFrameCount)(totalFrames - startFrame);
+    if (remainingFrames == 0) {
+        dispatch_async(dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), ^{
+            goHandleTrackEnd();
+        });
+        return;
+    }
     self.scheduledStartFrame = startFrame;
     self.pausePosition       = seconds;
     NSUInteger generation = self.scheduleGeneration;
@@ -501,6 +508,12 @@ static BOOL isAVFoundationNative(NSString *ext) {
         }
         return MPRemoteCommandHandlerStatusSuccess;
     }];
+
+    [center.changePlaybackPositionCommand addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent *event) {
+        MPChangePlaybackPositionCommandEvent *posEvent = (MPChangePlaybackPositionCommandEvent *)event;
+        goHandleRemoteSeek(posEvent.positionTime);
+        return MPRemoteCommandHandlerStatusSuccess;
+    }];
 }
 
 - (void)updatePlaybackRate {
@@ -524,9 +537,10 @@ static BOOL isAVFoundationNative(NSString *ext) {
     info[MPMediaItemPropertyTitle]              = title ?: @"";
     info[MPMediaItemPropertyArtist]             = artist ?: @"";
     info[MPMediaItemPropertyAlbumTitle]         = album ?: @"";
-    info[MPMediaItemPropertyPlaybackDuration]   = @(duration);
-    info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = @(position);
-    info[MPNowPlayingInfoPropertyPlaybackRate]  = @(self.isPlaying ? 1.0 : 0.0);
+    info[MPMediaItemPropertyPlaybackDuration]            = @(duration);
+    info[MPNowPlayingInfoPropertyElapsedPlaybackTime]    = @(position);
+    info[MPNowPlayingInfoPropertyDefaultPlaybackRate]    = @(1.0);
+    info[MPNowPlayingInfoPropertyPlaybackRate]           = @(self.isPlaying ? 1.0 : 0.0);
 
     if (artworkPath && artworkPath.length > 0) {
         NSImage *image = [[NSImage alloc] initWithContentsOfFile:artworkPath];
