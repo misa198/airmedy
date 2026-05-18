@@ -127,6 +127,8 @@ type QueueService struct {
 
 Fisher-Yates shuffle. When entering shuffle mode with a playing track, that track is pinned at index 0 and the rest are shuffled around it.
 
+**Shuffle state invariant:** `SetQueue` (called by `PlayTracks`/`PlayTrackIDs`) always resets shuffle to false. `ShuffleTracks`/`ShuffleTrackIDs` always sets shuffle to true. UI components must not call `SetShuffle(false)` after `playTracks` — the invariant is enforced at the queue layer.
+
 ### Insert After Current
 
 `PlayNext(track)` / `PlayNextTracks(tracks)` inserts after the current index in both `originalList` and `shuffledList`.

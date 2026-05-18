@@ -28,30 +28,15 @@ func NewQueueService() *QueueService {
 }
 
 // SetQueue replaces the entire queue and sets the current track index.
+// Shuffle is always reset to false — use ShuffleTracks to start with shuffle enabled.
 func (s *QueueService) SetQueue(tracks []*domain.TrackDTO, startIndex int) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	s.shuffle = false
+	s.shuffledList = nil
 	s.originalList = tracks
-	if s.shuffle {
-		var currentID string
-		if startIndex >= 0 && startIndex < len(tracks) {
-			currentID = tracks[startIndex].ID
-		}
-
-		s.rebuildShuffle(-1, false)
-
-		if currentID != "" {
-			for i, t := range s.shuffledList {
-				if t.ID == currentID {
-					s.currentIndex = i
-					break
-				}
-			}
-		}
-	} else {
-		s.currentIndex = startIndex
-	}
+	s.currentIndex = startIndex
 }
 
 // ShuffleTracks replaces the queue, enables shuffle, and shuffles all tracks.

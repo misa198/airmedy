@@ -227,7 +227,6 @@ async function handleRemoveArtwork(e: MouseEvent) {
 function playPlaylist() {
   if (filteredTracks.value.length > 0) {
     playerStore.playTracks(filteredTracks.value, 0)
-    playerStore.setShuffle(false)
   }
 }
 

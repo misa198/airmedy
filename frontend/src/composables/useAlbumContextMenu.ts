@@ -43,7 +43,6 @@ export function useAlbumContextMenu() {
             const tracks = await fetchTracks()
             if (tracks.length > 0) {
               playerStore.playTracks(tracks, 0)
-              playerStore.setShuffle(false)
             }
           },
         },

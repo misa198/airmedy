@@ -124,7 +124,7 @@ const getTotalDuration = (tracks: TrackDTO[]) => {
 
         <template #actions>
           <DetailsButton :icon="Play" :label="$t('common.play')"
-            @click="playerStore.playTracks(tracks, 0); playerStore.setShuffle(false)" />
+            @click="playerStore.playTracks(tracks, 0)" />
           <div class="flex gap-2">
             <DetailsButton :icon="Shuffle" variant="outline" @click="playerStore.shuffleTracks(tracks)" />
             <DetailsButton :icon="MoreVertical" variant="outline" @click="openContextMenu" />
