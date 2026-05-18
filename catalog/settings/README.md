@@ -19,12 +19,16 @@ Application-level settings: UI theme, display language, launch-at-login. Setting
 
 ```go
 type AppSettings struct {
-    Language       string  // BCP 47 language tag, e.g., "en", "zh", "ja"
-    Theme          string  // "system", "light", "dark"
-    StartAtLogin   bool
-    EqEnabled      bool
-    LastFmUsername string  // Connected Last.fm account name
-    LrclibMode     string  // "off", "prefer_metadata", "prefer_lrclib"
+    Language               string  // BCP 47 language tag, e.g., "en", "zh", "ja"
+    Theme                  string  // "system", "light", "dark"
+    StartAtLogin           bool
+    AutoCheckUpdate        bool
+    LastFmUsername         string  // Connected Last.fm account name
+    EQEnabled              bool
+    EnableLrclib           bool    // enable LRClib lyrics provider
+    EnableKugou            bool    // enable Kugou lyrics provider
+    PreferMetadataLyrics   bool    // prefer embedded lyrics over fetched
+    UseOnlineArtistArtwork bool    // fetch artist artwork from Deezer
 }
 ```
 
@@ -56,18 +60,44 @@ OpenAppDataFolder(): void  // opens $XDG_DATA_HOME/airmedy in Finder/Explorer
 
 ```typescript
 interface AppStore {
+  // Settings state
   theme: "system" | "light" | "dark";
   language: string;
   startAtLogin: boolean;
+  autoCheckUpdate: boolean;
+  lastfmUsername: string;
   eqEnabled: boolean;
+  enableLrclib: boolean;
+  enableKugou: boolean;
+  preferMetadataLyrics: boolean;
+  useOnlineArtistArtwork: boolean;
+  // Update state
+  updateInfo: UpdateInfo | null;
+  isCheckingUpdate: boolean;
+  isUpdateDialogOpen: boolean;
+  isUpdating: boolean;
+  updateApplied: boolean;
+  // Methods
   loadSettings(): Promise<void>;
+  applyTheme(theme: string): void;
   updateTheme(theme: string): Promise<void>;
   updateLanguage(lang: string): Promise<void>;
   updateStartAtLogin(enabled: boolean): Promise<void>;
-  updateEqEnabled(enabled: boolean): Promise<void>;
-  applyTheme(theme: string): void;
+  updateAutoCheckUpdate(enabled: boolean): Promise<void>;
+  updateEQEnabled(enabled: boolean): Promise<void>;
+  updateLastFmUsername(username: string): void;
+  updateEnableLrclib(enabled: boolean): Promise<void>;
+  updateEnableKugou(enabled: boolean): Promise<void>;
+  updatePreferMetadataLyrics(enabled: boolean): Promise<void>;
+  updateUseOnlineArtistArtwork(enabled: boolean): Promise<void>;
+  checkForUpdate(): Promise<void>;
+  applyUpdate(): Promise<void>;
+  restartApp(): Promise<void>;
+  dispose(): void;
 }
 ```
+
+Each `update*()` method calls `SettingsService.SaveSettings()` with the full settings object (all 10 fields at once, not partial).
 
 `applyTheme()` adds/removes the `dark` CSS class on `document.documentElement`. When theme is `system`, it respects `prefers-color-scheme` media query.
 
@@ -77,13 +107,13 @@ interface AppStore {
 
 `SettingsView.vue` uses a tab layout:
 
-| Tab          | Content                                                    |
-| ------------ | ---------------------------------------------------------- |
-| General      | Theme selector, Language picker, Start at Login toggle     |
-| Library      | Watched folders list, Add/Remove folder, Sync All, Reindex |
-| Integrations | Last.fm account connection and scrobbling status           |
-| Equalizer    | EQ profiles and band sliders (see equalizer catalog entry) |
-| About        | App version, GitHub link, License, Open Data Folder button |
+| Tab          | Content                                                                    |
+| ------------ | -------------------------------------------------------------------------- |
+| General      | Theme selector, Language picker, Start at Login, Auto-check updates toggle |
+| Library      | Watched folders list, Add/Remove folder, Sync All, Reindex                 |
+| Integrations | Last.fm account + lyrics providers (LRClib, Kugou, metadata preference)   |
+| Playback     | EQ profiles and band sliders (see equalizer catalog entry)                 |
+| About        | App version, GitHub link, License, Open Data Folder button                 |
 
 ## Last.fm Integration
 
@@ -128,3 +158,4 @@ Settings evolved across multiple migrations:
 | 000014    | Add `lrclib_mode` setting; metadata lyrics columns in `lyrics` table |
 | 000015    | Add `artwork_key` column to `artists` table                      |
 | 000016    | Add `use_online_artist_artwork` setting column                   |
+| 000017    | Add `enable_lrclib`, `enable_kugou`, `prefer_metadata_lyrics`; all `BOOLEAN NOT NULL DEFAULT 1` |

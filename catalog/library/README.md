@@ -47,7 +47,9 @@ AddFolder(path)
                  └─ SearchService.IndexTrack()
 ```
 
-**Supported formats:** `.mp3`, `.flac`, `.m4a`, `.alac`, `.wav`, `.ogg`, `.opus`, `.aiff`, `.aif`, `.caf`, `.ape`, `.wv`, `.dsf`, `.dff`
+**Supported formats:** `.mp3`, `.flac`, `.m4a`, `.wav`, `.ogg`, `.opus`, `.aiff`, `.aif`, `.ape`, `.wv`, `.dsf`, `.dff`
+
+> ALAC (Apple Lossless) uses the `.m4a` container — it is covered by `.m4a`, not a separate extension.
 
 ## Entity Resolution
 
@@ -62,34 +64,45 @@ To avoid duplicates, entities are identified by **normalization key** (lowercase
 ## Wails-Exposed Methods
 
 ```typescript
+// Folder management
+SelectFolder(): string                   // opens OS folder picker dialog
 AddFolder(path: string): void
-RemoveFolder(id: string): void          // optionally keeps tracks
-GetFoldersToSync(): WatchedFolder[]
+RemoveFolder(id: string): void           // optionally keeps tracks
+GetWatchedFolders(): WatchedFolder[]
 SyncAll(): void                          // re-scan all watched folders
+ImportAll(): void                        // alias for SyncAll
 ReindexAll(): void                       // rebuild Bleve index from DB
+GetSyncStatus(): SyncProgress | null     // stub; used for frontend type generation
+// Metadata & artwork
 GetAlbumColors(id: string): ThemeColors
 GetArtistArtwork(artistID: string, eventID: string): string | null
 ToggleFavorite(trackID: string): boolean
 UpdateTrackMetadata(trackID: string, update: MetadataUpdate): void
 ShowInExplorer(trackID: string): void
-// Read methods:
+// Track queries
 GetAllTracks(): TrackDTO[]
 GetTracksPaginated(offset, limit): TrackDTO[]
 GetTrackCount(): number
-GetAllAlbums(): AlbumDTO[]
-GetAlbumByID(id): AlbumDTO
-GetAllArtists(): Artist[]
-GetArtistByID(id): Artist
-GetAlbumsByArtistID(artistID): AlbumDTO[]
-GetAllGenres(): Genre[]
-GetGenreByID(id): Genre
-GetAllComposers(): Composer[]
-GetComposerByID(id): Composer
-GetTracksByComposerID(composerID): TrackDTO[]
+GetTracksByAlbumID(albumID: string): TrackDTO[]
+GetTracksByArtistID(artistID: string): TrackDTO[]
+GetTracksByGenreID(genreID: string): TrackDTO[]
+GetTracksByComposerID(composerID: string): TrackDTO[]
 GetFavoriteTracks(): TrackDTO[]
-GetRecentlyPlayedTracks(limit): TrackDTO[]
-GetMostListenedTracks(limit): TrackDTO[]
-GetLeastListenedTracks(limit): TrackDTO[]
+GetRecentlyPlayedTracks(limit: number): TrackDTO[]
+GetMostListenedTracks(limit: number): TrackDTO[]
+GetLeastListenedTracks(limit: number): TrackDTO[]
+// Album queries
+GetAllAlbums(): AlbumDTO[]
+GetAlbumByID(id: string): AlbumDTO
+GetAlbumsByArtistID(artistID: string): AlbumDTO[]
+GetRecentlyAddedAlbums(limit: number): AlbumDTO[]
+// Artist / genre / composer queries
+GetAllArtists(): Artist[]
+GetArtistByID(id: string): Artist
+GetAllGenres(): Genre[]
+GetGenreByID(id: string): Genre
+GetAllComposers(): Composer[]
+GetComposerByID(id: string): Composer
 ```
 
 ## Events Emitted

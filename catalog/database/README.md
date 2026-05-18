@@ -38,7 +38,10 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000011 | `app_settings_updates.up.sql`  | Add `auto_check_update`, `start_at_login` to `app_settings`                                                                       |
 | 000012 | `playlist_lexorank.up.sql`     | Convert `playlist_tracks.position` from INTEGER to TEXT (LexoRank string), migrate existing data with computed ranks              |
 | 000013 | `app_settings_eq.up.sql`       | `ALTER TABLE app_settings ADD COLUMN eq_enabled BOOLEAN DEFAULT 0`                                                                |
-| 000014 | `meta_lyrics.up.sql`           | Add `meta_content` and `meta_source` to `lyrics` table; add `lrclib_mode` to `app_settings`; backfill lyrics from `other_metadata` |
+| 000014 | `meta_lyrics.up.sql`                 | Add `meta_content` and `meta_source` to `lyrics` table; add `lrclib_mode` to `app_settings`; backfill lyrics from `other_metadata` |
+| 000015 | `artist_artwork.up.sql`              | `ALTER TABLE artists ADD COLUMN artwork_key TEXT`                                                                                    |
+| 000016 | `app_settings_artist_artwork.up.sql` | `ALTER TABLE app_settings ADD COLUMN use_online_artist_artwork BOOLEAN NOT NULL DEFAULT 1`                                          |
+| 000017 | `lyrics_provider_settings.up.sql`    | Add `enable_lrclib`, `enable_kugou`, `prefer_metadata_lyrics` (all `BOOLEAN NOT NULL DEFAULT 1`) to `app_settings`                 |
 
 ## Full Schema
 
@@ -175,6 +178,10 @@ app_settings (
     start_at_login BOOLEAN DEFAULT 0,
     eq_enabled BOOLEAN DEFAULT 0,
     lrclib_mode TEXT DEFAULT 'prefer_metadata',
+    use_online_artist_artwork BOOLEAN NOT NULL DEFAULT 1,
+    enable_lrclib BOOLEAN NOT NULL DEFAULT 1,
+    enable_kugou BOOLEAN NOT NULL DEFAULT 1,
+    prefer_metadata_lyrics BOOLEAN NOT NULL DEFAULT 1,
     updated_at DATETIME
 )
 ```
@@ -258,13 +265,6 @@ All entity IDs are deterministic UUID v4-style strings derived from MD5 hash of 
 
 - Track: MD5(file path)
 - Artist: MD5(normalization_key)
-- Album: MD5(normalization_key + primary_artist_normalization_key)
-- Genre/Composer: MD5(normalization_key)
-- Playlist: random UUID v4
-
-This ensures the same file always gets the same track ID, and the same artist name always maps to the same artist entity, enabling safe upserts without collision.
-upserts without collision.
-_key)
 - Album: MD5(normalization_key + primary_artist_normalization_key)
 - Genre/Composer: MD5(normalization_key)
 - Playlist: random UUID v4

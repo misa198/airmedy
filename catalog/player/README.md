@@ -125,13 +125,24 @@ type QueueService struct {
 
 ### Shuffle
 
-Fisher-Yates shuffle. When entering shuffle mode with a playing track, that track is pinned at index 0 and the rest are shuffled around it.
+Fisher-Yates shuffle. When entering shuffle mode with a playing track, the current track retains focus (its new shuffled index is tracked) but is not pinned at any fixed position.
 
 **Shuffle state invariant:** `SetQueue` (called by `PlayTracks`/`PlayTrackIDs`) always resets shuffle to false. `ShuffleTracks`/`ShuffleTrackIDs` always sets shuffle to true. UI components must not call `SetShuffle(false)` after `playTracks` — the invariant is enforced at the queue layer.
 
 ### Insert After Current
 
 `PlayNext(track)` / `PlayNextTracks(tracks)` inserts after the current index in both `originalList` and `shuffledList`.
+
+### Other QueueService Methods
+
+| Method | Description |
+| --- | --- |
+| `SetCurrentIndex(index)` | Moves the queue pointer without modifying queue contents |
+| `PeekNext() / PeekPrevious()` | Read-only lookahead — returns next/previous track without advancing the index |
+| `ReorderQueue(trackIDs []string)` | Reorders the active list by ID slice; maintains current track index |
+| `GetOriginalQueue()` | Returns the unshuffled `originalList` |
+| `Restore(original, shuffled, currentIndex, shuffle, repeatMode)` | Bulk-sets all queue state; used on app startup to restore persisted queue |
+| `UpdateTrack(track)` | Updates `IsFavorite` in-place for matching entries in both lists |
 
 ## State Persistence
 
