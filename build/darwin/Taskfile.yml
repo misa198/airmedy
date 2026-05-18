@@ -26,18 +26,18 @@ tasks:
       DEFAULT_OUTPUT: '{{.BIN_DIR}}/{{.APP_NAME}}'
       OUTPUT: '{{ .OUTPUT | default .DEFAULT_OUTPUT }}'
 
-  build:ffmpeg:
-    summary: Builds FFmpeg static libraries for macOS (arm64 + amd64) if not already present
+  build:sfbaudioengine:
+    summary: Builds SFBAudioEngine.xcframework for macOS (arm64 + x86_64) if not already present
     status:
-      - test -f {{.ROOT_DIR}}/internal/infra/audio/ffmpeg_libs/include/libavcodec/avcodec.h
+      - test -d {{.ROOT_DIR}}/internal/infra/audio/sfb_libs/SFBAudioEngine.xcframework
     cmds:
-      - bash {{.ROOT_DIR}}/scripts/build-ffmpeg-darwin.sh
+      - bash {{.ROOT_DIR}}/scripts/build-sfbaudioengine-darwin.sh
 
   build:native:
     summary: Builds the application natively on macOS
     internal: true
     deps:
-      - task: build:ffmpeg
+      - task: build:sfbaudioengine
       - task: common:go:mod:tidy
       - task: common:generate:icons
     cmds:
@@ -54,8 +54,8 @@ tasks:
       GOOS: darwin
       CGO_ENABLED: 1
       GOARCH: '{{.ARCH | default ARCH}}'
-      CGO_CFLAGS: "-mmacosx-version-min=14.0 -I{{.ROOT_DIR}}/internal/infra/audio/ffmpeg_libs/include"
-      CGO_LDFLAGS: "-mmacosx-version-min=14.0 -L{{.ROOT_DIR}}/internal/infra/audio/ffmpeg_libs/darwin/{{.ARCH | default ARCH}}"
+      CGO_CFLAGS: "-mmacosx-version-min=14.0"
+      CGO_LDFLAGS: "-mmacosx-version-min=14.0 -Wl,-rpath,@executable_path/../Frameworks"
       MACOSX_DEPLOYMENT_TARGET: "14.0"
 
   build:docker:
@@ -128,11 +128,25 @@ tasks:
       - rm -f "{{.BIN_DIR}}/{{.APP_NAME}}-amd64" "{{.BIN_DIR}}/{{.APP_NAME}}-arm64"
 
   package:
-    summary: Packages the application into a `.app` bundle
+    summary: Packages the application into an architecture-specific `.app` bundle
     deps:
       - task: build
     cmds:
       - task: create:app:bundle
+
+  package:release:
+    summary: Builds release `.app` bundles for both arm64 and amd64 (recommended distribution)
+    cmds:
+      - task: package
+        vars:
+          ARCH: arm64
+          OUTPUT: "{{.BIN_DIR}}/{{.APP_NAME}}-arm64"
+      - mv "{{.BIN_DIR}}/{{.APP_NAME}}.app" "{{.BIN_DIR}}/{{.APP_NAME}}-arm64.app"
+      - task: package
+        vars:
+          ARCH: amd64
+          OUTPUT: "{{.BIN_DIR}}/{{.APP_NAME}}-amd64"
+      - mv "{{.BIN_DIR}}/{{.APP_NAME}}.app" "{{.BIN_DIR}}/{{.APP_NAME}}-amd64.app"
 
   package:universal:
     summary: Packages darwin universal binary (arm64 + amd64)
@@ -145,8 +159,10 @@ tasks:
   create:app:bundle:
     summary: Creates an `.app` bundle
     cmds:
+      - rm -rf "{{.BIN_DIR}}/{{.APP_NAME}}.app"
       - mkdir -p "{{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/MacOS"
       - mkdir -p "{{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/Resources"
+      - mkdir -p "{{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/Frameworks"
       - cp build/darwin/icons.icns "{{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/Resources"
       - |
         if [ -f build/darwin/Assets.car ]; then
@@ -154,7 +170,47 @@ tasks:
         fi
       - cp "{{.BIN_DIR}}/{{.APP_NAME}}" "{{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/MacOS"
       - cp build/darwin/Info.plist "{{.BIN_DIR}}/{{.APP_NAME}}.app/Contents"
+      - |
+        ARCH="{{.ARCH | default ARCH}}"
+        LIBS_DIR="{{.ROOT_DIR}}/internal/infra/audio/sfb_libs"
+        # Copy all frameworks from their XCFrameworks
+        for xcf in "${LIBS_DIR}"/*.xcframework; do
+          [ -e "${xcf}" ] || continue
+          # Find the correct slice for the target arch
+          if [ "${ARCH}" = "arm64" ]; then
+            SLICE=$(ls "${xcf}" | grep "macos" | grep "arm64" | head -1)
+            if [ -z "${SLICE}" ]; then SLICE=$(ls "${xcf}" | grep "macos" | head -1); fi
+            if [ -z "${SLICE}" ]; then SLICE=$(ls "${xcf}" | grep "arm64" | grep -v "x86" | head -1); fi
+          else
+            SLICE=$(ls "${xcf}" | grep "macos" | grep "x86_64" | head -1)
+            if [ -z "${SLICE}" ]; then SLICE=$(ls "${xcf}" | grep "macos" | head -1); fi
+            if [ -z "${SLICE}" ]; then SLICE=$(ls "${xcf}" | grep "x86_64" | head -1); fi
+          fi
+          # Fallback if no specific slice found
+          if [ -z "${SLICE}" ]; then SLICE=$(ls "${xcf}" | grep -v "Info.plist" | head -1); fi
+
+          # Find the .framework within the slice
+          FW=$(ls "${xcf}/${SLICE}" | grep ".framework" | head -1)
+          cp -R "${xcf}/${SLICE}/${FW}" "{{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/Frameworks/"
+        done
+      - task: report:size
       - task: '{{if eq OS "darwin"}}codesign:adhoc{{else}}codesign:skip{{end}}'
+
+  report:size:
+    summary: Prints app/framework size breakdown
+    internal: true
+    cmds:
+      - |
+        APP="{{.BIN_DIR}}/{{.APP_NAME}}.app"
+        FW_DIR="${APP}/Contents/Frameworks"
+        echo "==> Size report for ${APP}"
+        [ -d "${APP}" ] && du -sh "${APP}" || true
+        [ -d "${FW_DIR}" ] && du -sh "${FW_DIR}" || true
+        if [ -d "${FW_DIR}" ]; then
+          find "${FW_DIR}" -maxdepth 1 -name "*.framework" -type d | while read -r fw; do
+            du -sh "${fw}"
+          done | sort -h
+        fi
 
   codesign:adhoc:
     summary: Ad-hoc signs the app bundle (macOS only)
@@ -170,8 +226,10 @@ tasks:
 
   run:
     cmds:
+      - rm -rf "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app"
       - mkdir -p "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app/Contents/MacOS"
       - mkdir -p "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app/Contents/Resources"
+      - mkdir -p "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app/Contents/Frameworks"
       - cp build/darwin/icons.icns "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app/Contents/Resources"
       - |
         if [ -f build/darwin/Assets.car ]; then
@@ -179,6 +237,21 @@ tasks:
         fi
       - cp "{{.BIN_DIR}}/{{.APP_NAME}}" "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app/Contents/MacOS"
       - cp "build/darwin/Info.dev.plist" "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app/Contents/Info.plist"
+      - |
+        LIBS_DIR="{{.ROOT_DIR}}/internal/infra/audio/sfb_libs"
+        # Copy all frameworks from their XCFrameworks
+        for xcf in "${LIBS_DIR}"/*.xcframework; do
+          [ -e "${xcf}" ] || continue
+          # Find the correct slice for the target arch (prefer arm64 for dev on M-series)
+          SLICE=$(ls "${xcf}" | grep "macos" | grep "arm64" | head -1)
+          if [ -z "${SLICE}" ]; then SLICE=$(ls "${xcf}" | grep "macos" | head -1); fi
+          if [ -z "${SLICE}" ]; then SLICE=$(ls "${xcf}" | grep "arm64" | grep -v "x86" | head -1); fi
+          if [ -z "${SLICE}" ]; then SLICE=$(ls "${xcf}" | grep -v "Info.plist" | head -1); fi
+
+          # Find the .framework within the slice
+          FW=$(ls "${xcf}/${SLICE}" | grep ".framework" | head -1)
+          cp -R "${xcf}/${SLICE}/${FW}" "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app/Contents/Frameworks/"
+        done
       - codesign --force --deep --sign - "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app"
       - '{{.BIN_DIR}}/{{.APP_NAME}}.dev.app/Contents/MacOS/{{.APP_NAME}}'
 

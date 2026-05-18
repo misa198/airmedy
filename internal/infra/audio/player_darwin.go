@@ -3,7 +3,7 @@
 package audio
 
 /*
-#cgo CFLAGS: -x objective-c -fobjc-arc -I${SRCDIR}/ffmpeg_libs/include
+#cgo CFLAGS: -x objective-c -fobjc-arc -fmodules
 #cgo LDFLAGS: -framework Foundation -framework AppKit -framework AVFoundation -framework CoreMedia -framework MediaPlayer
 #include <stdlib.h>
 
@@ -100,7 +100,7 @@ func goHandleRemoteSeek(position C.double) {
 	}
 }
 
-// DarwinPlayer implements domain.AudioPlayer and domain.NowPlayingController using AVFoundation on macOS.
+// DarwinPlayer implements domain.AudioPlayer and domain.NowPlayingController using SFBAudioEngine on macOS.
 type DarwinPlayer struct {
 	logger        *slog.Logger
 	playerPointer unsafe.Pointer

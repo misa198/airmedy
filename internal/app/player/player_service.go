@@ -158,7 +158,7 @@ func (s *PlayerService) Play() error {
 		return s.playAll()
 	}
 
-	// Track ended naturally (queue ran out): AVFoundation won't restart a finished
+	// Track ended naturally (queue ran out): SFBAudioEngine won't restart a finished
 	// item via Play() alone — reload from the beginning.
 	if ended && ct != nil {
 		return s.loadAndPlay(ct)

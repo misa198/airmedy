@@ -10,7 +10,8 @@ The player feature handles audio playback, queue management, shuffle/repeat mode
 | ------------------------------------------ | ---------------------------------------- |
 | `internal/app/player/player_service.go`    | Orchestration: load, play, state, events |
 | `internal/app/player/queue_service.go`     | Queue data structure and navigation      |
-| `internal/infra/audio/player_darwin.go`    | macOS AVFoundation player (cgo)          |
+| `internal/infra/audio/player_darwin.go`    | macOS SFBAudioEngine player (cgo)        |
+| `internal/infra/audio/native_player_darwin.m` | Obj-C SFBAudioEngine implementation   |
 | `internal/infra/audio/player_miniaudio.go` | Windows/Linux miniaudio player           |
 | `internal/infra/wails/player_service.go`   | Wails binding wrapper                    |
 
@@ -33,13 +34,17 @@ type AudioPlayer interface {
 
 ## Platform Adapters
 
-### macOS — AVFoundation (`player_darwin.go`)
+### macOS — SFBAudioEngine (`player_darwin.go`)
 
-- Implemented via **cgo** calling Objective-C bridging code.
-- Framework deps: `AVFoundation`, `CoreMedia`, `MediaPlayer`, `AppKit`.
+- Implemented via **cgo** calling Objective-C bridging code (`native_player_darwin.m`).
+- Audio engine: **SFBAudioEngine** (v0.12.1) — replaces AVAudioEngine + FFmpeg.
+- Framework deps: `SFBAudioEngine`, `AVFoundation`, `CoreMedia`, `MediaPlayer`, `AppKit`, `CoreFoundation`, `Security`, `AudioToolbox`, `opus`, `sndfile`, `lame`, `FLAC`, `tta-cpp`, `vorbis`, `wavpack`, `mpg123`, `mpc`, `ogg`.
+- SFBAudioEngine and its dependencies are dynamic xcframeworks built/downloaded by `task build:sfbaudioengine` and stored at `internal/infra/audio/sfb_libs/` (not committed; add to `.gitignore`). At runtime, the frameworks are embedded in `Contents/Frameworks/`.
+- **Format support:** All formats natively — MP3, FLAC, AAC, WAV, AIFF, Opus, Vorbis, WavPack, APE, DSD, and more. No FFmpeg required on darwin.
+- **EQ:** `AVAudioUnitEQ` (10-band parametric, ISO frequencies) injected into SFBAudioEngine's graph via `modifyProcessingGraph:` on init and reconnected on format changes via the `reconfigureProcessingGraph:withFormat:` delegate. Returns the EQ node so SFBAudioEngine connects `sourceNode → EQ → mainMixerNode`.
+- **Track end:** `SFBAudioPlayerDelegate audioPlayer:renderingComplete:` fires when last sample is rendered (not when decoding finishes).
 - Provides `NowPlayingController` for OS-level media info (lock screen, menu bar).
-- Supports `EQController` interface for 10-band equalization.
-- Remote command callbacks: Play, Pause, Next, Previous (media keys + AirPods).
+- Remote command callbacks: Play, Pause, Next, Previous, Seek (media keys + AirPods).
 - `UpdateNowPlaying(track, position, artworkPath)` — populates the macOS Now Playing widget.
 
 ### Windows/Linux — miniaudio (`player_miniaudio.go`)
