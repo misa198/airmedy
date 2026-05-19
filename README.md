@@ -161,13 +161,6 @@ Dependencies always point inward — `infra` depends on `app`, `app` depends on 
 git clone https://github.com/misa198/airmedy.git
 cd airmedy
 
-# Install frontend dependencies
-cd frontend && pnpm install && cd ..
-
-# Build FFmpeg libraries
-chmod +x ./scripts/build-ffmpeg-{os}.sh
-./scripts/build-ffmpeg-{os}.sh
-
 # Run in development mode
 wails3 dev
 

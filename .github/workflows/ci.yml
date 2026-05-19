@@ -79,6 +79,17 @@ jobs:
         if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
         run: bash scripts/build-ffmpeg-linux.sh
 
+      - name: Cache Miniaudio (Linux)
+        id: cache-miniaudio
+        uses: actions/cache@v4
+        with:
+          path: internal/infra/audio/miniaudio
+          key: miniaudio-linux-${{ hashFiles('scripts/fetch-miniaudio.sh') }}
+
+      - name: Fetch miniaudio (Linux)
+        if: steps.cache-miniaudio.outputs.cache-hit != 'true'
+        run: bash scripts/fetch-miniaudio.sh
+
       - name: Frontend Install
         working-directory: frontend
         run: pnpm install
