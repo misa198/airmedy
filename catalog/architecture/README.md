@@ -45,7 +45,7 @@ Airmedy is a desktop music player built with **Wails v3** (Go backend + Vue 3 fr
 │  internal/infra  (Infrastructure Adapters)                      │
 │  ├── sqlite/     — SQLite repositories (sqlx + golang-migrate)  │
 │  ├── bleve/      — Full-text search (Bleve v2)                  │
-│  ├── audio/      — AVFoundation (macOS), miniaudio (Win/Linux)  │
+│  ├── audio/      — SFBAudioEngine (macOS), miniaudio (Win/Linux)│
 │  ├── metadata/   — TagLib + FFmpeg fallback                     │
 │  ├── artwork/    — Disk cache, resize, palette extraction       |
 │  └── logging/    — log/slog + lumberjack                        │
@@ -173,8 +173,8 @@ Album artwork is served via a custom Wails asset handler (`infra/wails/assets.go
 
 | Feature             | macOS                      | Windows/Linux         |
 | ------------------- | -------------------------- | --------------------- |
-| Audio backend       | AVFoundation (cgo)         | miniaudio (C library) |
-| EQ support          | AVFoundation EQ bands      | Not available         |
+| Audio backend       | SFBAudioEngine (cgo)       | miniaudio (C library) |
+| EQ support          | AVAudioEngine EQ bands     | Not available         |
 | Now Playing / MPRIS | macOS NowPlayingController | Not implemented       |
 | App menu            | Full macOS menu bar        | File menu only        |
 | Translucent window  | NSVisualEffectView         | Not applicable        |

@@ -68,7 +68,7 @@ const translations = {
             title: "Frequently Asked Questions",
             formats: {
                 q: "What audio formats are supported?",
-                a: "Airmedy supports a wide range of formats including MP3, AAC, M4A, FLAC, WAV, Ogg Vorbis, Opus, APE, and even DSD. We use native engines like AVFoundation on macOS and FFmpeg-backed decoding on Windows and Linux."
+                a: "Airmedy supports a wide range of formats including MP3, AAC, M4A, FLAC, WAV, Ogg Vorbis, Opus, APE, and even DSD. We use native engines like SFBAudioEngine on macOS and FFmpeg-backed decoding on Windows and Linux."
             },
             free: {
                 q: "Is Airmedy free?",

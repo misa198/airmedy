@@ -2,7 +2,7 @@
 
 ## Summary
 
-10-band parametric equalizer with named profiles and built-in presets. EQ is applied at the audio adapter level across all platforms (AVFoundation on macOS, miniaudio on Windows/Linux). Users can create, rename, delete, and switch profiles. Band gains are applied live. The global enabled state is persisted across app restarts via `AppSettings`.
+10-band parametric equalizer with named profiles and built-in presets. EQ is applied at the audio adapter level across all platforms (SFBAudioEngine on macOS, miniaudio on Windows/Linux). Users can create, rename, delete, and switch profiles. Band gains are applied live. The global enabled state is persisted across app restarts via `AppSettings`.
 
 ## Files
 
@@ -72,7 +72,7 @@ type EQController interface {
 }
 ```
 
-Implemented by `player_darwin.go` (AVFoundation) and `player_miniaudio.go` (miniaudio). The `EQService` checks if the audio adapter implements this interface before calling it.
+Implemented by `player_darwin.go` (SFBAudioEngine) and `player_miniaudio.go` (miniaudio). The `EQService` checks if the audio adapter implements this interface before calling it.
 
 ## EQService Methods
 

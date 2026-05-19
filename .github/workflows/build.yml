@@ -142,11 +142,27 @@ jobs:
 
       - name: Cache FFmpeg Binaries
         id: cache-ffmpeg
-        if: runner.os != 'Windows'
+        if: runner.os == 'Linux'
         uses: actions/cache@v4
         with:
           path: internal/infra/audio/ffmpeg_libs
-          key: ffmpeg-${{ runner.os }}-${{ hashFiles('scripts/build-ffmpeg-*') }}
+          key: ffmpeg-${{ runner.os }}-${{ hashFiles('scripts/build-ffmpeg-linux.sh') }}
+
+      - name: Cache SFB Audio Engine (Darwin)
+        id: cache-sfb
+        if: runner.os == 'Darwin'
+        uses: actions/cache@v4
+        with:
+          path: internal/infra/audio/sfb_libs
+          key: sfb-${{ runner.os }}-${{ hashFiles('scripts/build-sfbaudioengine-darwin.sh') }}
+
+      - name: Cache Miniaudio (Windows and Linux)
+        id: cache-miniaudio
+        if: runner.os == 'Windows' || runner.os == 'Linux'
+        uses: actions/cache@v4
+        with:
+          path: internal/infra/audio/miniaudio
+          key: miniaudio-${{ runner.os }}-${{ hashFiles('scripts/fetch-miniaudio.sh') }}
 
       - name: Download FFmpeg (Windows)
         if: runner.os == 'Windows'
@@ -159,9 +175,14 @@ jobs:
         if: runner.os == 'Linux' && steps.cache-ffmpeg.outputs.cache-hit != 'true'
         run: bash scripts/build-ffmpeg-linux.sh
 
-      - name: Build FFmpeg (Darwin)
-        if: runner.os == 'Darwin' && steps.cache-ffmpeg.outputs.cache-hit != 'true'
-        run: bash scripts/build-ffmpeg-darwin.sh
+      - name: Build SFB Audio Engine (Darwin)
+        if: runner.os == 'Darwin' && steps.cache-sfb.outputs.cache-hit != 'true'
+        run: bash scripts/build-sfbaudioengine-darwin.sh
+
+      - name: Fetch miniaudio (Windows and Linux)
+        if: (runner.os == 'Windows' || runner.os == 'Linux') && steps.cache-miniaudio.outputs.cache-hit != 'true'
+        shell: bash
+        run: bash scripts/fetch-miniaudio.sh
 
       - name: Install Wails v3
         run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-alpha.92
@@ -218,11 +239,9 @@ jobs:
               task linux:package ARCH=arm64
               ;;
             "Darwin-AMD64")
-              export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/darwin/amd64"
               task darwin:package ARCH=amd64
               ;;
             "Darwin-ARM64")
-              export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/darwin/arm64"
               task darwin:package ARCH=arm64
               ;;
           esac

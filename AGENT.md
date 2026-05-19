@@ -12,7 +12,7 @@
 | Database | SQLite (sqlx + golang-migrate) |
 | Search | Bleve v2 |
 | File watching | fsnotify |
-| Audio (macOS) | AVFoundation (cgo) |
+| Audio (macOS) | SFBAudioEngine (cgo) |
 | Audio (Win/Linux) | miniaudio (C) |
 | Metadata | TagLib + FFmpeg fallback |
 | Logging | log/slog + lumberjack |
@@ -55,7 +55,7 @@
 | `--bg-main` | `#18181B` | `#0A0A0A` | Page background |
 | `--bg-glass` | `rgba(35,35,38,0.6)` | `rgba(25,25,25,0.6)` | Glass surfaces |
 | `--bg-glass-elevated` | `rgba(55,55,60,0.4)` | `rgba(45,45,45,0.4)` | Elevated glass |
-| `--border-glass` | `rgba(255,255,255,0.1)` | same | Glass borders |
+| --border-glass | `rgba(255,255,255,0.1)` | same | Glass borders |
 | `--primary` | `#E11D48` | same | Primary action |
 | `--dynamic-primary` | extracted vibrant | same | Per-track, runtime |
 | `--dynamic-surface` | extracted dominant 10–20% opacity | same | Per-track, runtime |
@@ -191,7 +191,7 @@ Dependency direction (strict): `infra → app → domain`
 - **`internal/infra`** — adapter implementations:
   - `sqlite/` — repositories (SQLite + sqlx + golang-migrate)
   - `bleve/` — search (Bleve v2)
-  - `audio/` — `player_darwin.go` (AVFoundation), `player_miniaudio.go` (Win/Linux)
+  - `audio/` — `player_darwin.go` (SFBAudioEngine), `player_miniaudio.go` (Win/Linux)
   - `metadata/` — TagLib + FFmpeg fallback
   - `artwork/` — disk cache, resize, palette extraction
   - `logging/` — zap + lumberjack

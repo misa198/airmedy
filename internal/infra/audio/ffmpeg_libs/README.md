@@ -1,15 +1,14 @@
 # FFmpeg Static Libraries
 
-Pre-built minimal FFmpeg static libraries. Required for non-native audio formats (OGG, OPUS, APE, WavPack, DSD).
+Pre-built minimal FFmpeg static libraries. Used by the **Windows and Linux** audio adapters (miniaudio) for non-native audio formats.
+
+> **macOS:** FFmpeg is no longer used on darwin. The macOS adapter uses SFBAudioEngine which natively decodes all required formats. See `sfb_libs/` and `scripts/build-sfbaudioengine-darwin.sh`.
 
 ## Directory Structure
 
 ```
 ffmpeg_libs/
-  include/              Headers (shared across all platforms)
-  darwin/
-    arm64/              macOS Apple Silicon
-    amd64/              macOS Intel
+  include/              Headers (shared across Linux/Windows)
   linux/
     amd64/              Linux x86_64
     arm64/              Linux ARM64
@@ -21,13 +20,10 @@ ffmpeg_libs/
 
 | Platform | Script | Shell |
 |----------|--------|-------|
-| macOS | `bash scripts/build-ffmpeg-darwin.sh` | Terminal |
 | Linux | `bash scripts/build-ffmpeg-linux.sh` | bash |
 | Windows | `bash scripts/build-ffmpeg-windows.sh --zig` | bash / Zig |
 
 ### Prerequisites
-
-**macOS:** Xcode CLI tools. `nasm` optional (`brew install nasm` for SIMD).
 
 **Linux:** `gcc make curl`. `nasm` optional (`apt install nasm`). For arm64 cross-compile: `apt install gcc-aarch64-linux-gnu`.
 

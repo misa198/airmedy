@@ -18,3 +18,15 @@ https://miniaud.io
 --------------------------------------------------------------------------------
 This software uses miniaudio by David Reid, which is dual-licensed as
 Public Domain (Unlicense) and MIT-0. No attribution required.
+
+--------------------------------------------------------------------------------
+SFBAudioEngine
+https://github.com/sbooth/SFBAudioEngine
+--------------------------------------------------------------------------------
+This software uses SFBAudioEngine by Stephen F. Booth, which is licensed under
+the MIT License.
+
+SFBAudioEngine includes several third-party libraries (including libogg,
+libvorbis, libopus, and libFLAC) which are subject to their own licenses.
+The SFBAudioEngine frameworks are dynamically linked to comply with
+dependency license requirements.
