@@ -70,3 +70,6 @@ go.work
 airmedy
 # SFBAudioEngine pre-built framework (built locally by task build:sfbaudioengine)
 internal/infra/audio/sfb_libs/
+
+# Miniaudio
+internal/infra/audio/miniaudio/
