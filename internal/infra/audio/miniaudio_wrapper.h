@@ -39,6 +39,13 @@ int ma_player_set_eq_enabled(MaPlayer* p, int enabled);
 /* Track-end callback — fired from MiniAudio device thread, must not block */
 void ma_player_set_end_callback(MaPlayer* p, MaEndCallback cb, void* userdata);
 
+/* Gapless: pre-load next track while current plays */
+int  ma_player_preload_next(MaPlayer* p, const char* path);
+/* Gapless: promote pre-loaded track to active and start it (call from goroutine, not audio thread) */
+int  ma_player_start_preloaded(MaPlayer* p);
+/* Gapless: discard pre-loaded track without playing */
+void ma_player_clear_preloaded(MaPlayer* p);
+
 #ifdef __cplusplus
 }
 #endif

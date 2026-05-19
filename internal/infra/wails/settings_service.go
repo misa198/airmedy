@@ -4,15 +4,17 @@ import (
 	"context"
 
 	"airmedy/internal/app/appsettings"
+	"airmedy/internal/app/player"
 	"airmedy/internal/domain"
 )
 
 type SettingsService struct {
-	svc *appsettings.SettingsService
+	svc          *appsettings.SettingsService
+	playerService *player.PlayerService
 }
 
-func NewSettingsService(svc *appsettings.SettingsService) *SettingsService {
-	return &SettingsService{svc: svc}
+func NewSettingsService(svc *appsettings.SettingsService, playerService *player.PlayerService) *SettingsService {
+	return &SettingsService{svc: svc, playerService: playerService}
 }
 
 func (s *SettingsService) GetSettings(ctx context.Context) (*domain.AppSettings, error) {

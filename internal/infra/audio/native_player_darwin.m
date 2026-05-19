@@ -86,11 +86,15 @@ extern void goHandleRemoteSeek(double position);
 }
 
 // Fires when last sample is rendered — the true end of playback.
+// If a next track was pre-queued (gapless), SFBAudioEngine is already playing it,
+// so isPlaying stays YES. Only mark stopped if the engine actually stopped.
 - (void)audioPlayer:(SFBAudioPlayer *)audioPlayer
    renderingComplete:(id<SFBPCMDecoding>)decoder
 {
-    self.isPlaying = NO;
-    self.pausePosition = 0.0;
+    if (!audioPlayer.isPlaying) {
+        self.isPlaying = NO;
+        self.pausePosition = 0.0;
+    }
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), ^{
         goHandleTrackEnd();
     });
@@ -152,6 +156,15 @@ extern void goHandleRemoteSeek(double position);
 
     if (wasPlaying) {
         [self play];
+    }
+}
+
+- (void)enqueueNext:(NSString *)path {
+    NSURL *url = [NSURL fileURLWithPath:path];
+    NSError *err = nil;
+    [self.sfbPlayer enqueueURL:url forImmediatePlayback:NO error:&err];
+    if (err) {
+        NSLog(@"[AirmedyPlayer] Failed to enqueue next %@: %@", path, err);
     }
 }
 
@@ -358,4 +371,9 @@ void SetEQBand(void *playerPtr, int index, double freq, double gain, double band
 
 void SetEQEnabled(void *playerPtr, int enabled) {
     [(__bridge AirmedyPlayer *)playerPtr setEQEnabled:(BOOL)enabled];
+}
+
+void EnqueueNextPlayer(void *playerPtr, const char *path) {
+    NSString *p = [NSString stringWithUTF8String:path];
+    [(__bridge AirmedyPlayer *)playerPtr enqueueNext:p];
 }

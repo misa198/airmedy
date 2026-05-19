@@ -174,7 +174,7 @@ Album artwork is served via a custom Wails asset handler (`infra/wails/assets.go
 | Feature             | macOS                      | Windows/Linux         |
 | ------------------- | -------------------------- | --------------------- |
 | Audio backend       | SFBAudioEngine (cgo)       | miniaudio (C library) |
-| EQ support          | AVAudioEngine EQ bands     | Not available         |
+| EQ support          | AVAudioEngine EQ bands     | 10-band miniaudio chain|
 | Now Playing / MPRIS | macOS NowPlayingController | Not implemented       |
 | App menu            | Full macOS menu bar        | File menu only        |
 | Translucent window  | NSVisualEffectView         | Not applicable        |

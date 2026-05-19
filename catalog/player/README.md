@@ -32,6 +32,25 @@ type AudioPlayer interface {
 }
 ```
 
+## GaplessPlayer Interface (Optional)
+
+Implemented by audio adapters that support gapless or near-gapless transitions. Detected via type assertion in `PlayerService`.
+
+```go
+type GaplessPlayer interface {
+    // Pre-load / pre-queue the next track while the current one plays.
+    EnqueueNext(track *TrackDTO) error
+    // Promote the pre-loaded track to active. For auto-transition players (SFBAudioEngine)
+    // this updates Go-side status tracking only. For miniaudio this calls ma_player_start_preloaded.
+    StartPreloaded(track *TrackDTO) error
+    // Returns true when the engine transitions automatically (SFBAudioEngine).
+    // HandleTrackEnd must NOT call Load/Play when this returns true.
+    AutoTransitions() bool
+}
+```
+
+Both `DarwinPlayer` (macOS) and `MiniAudioPlayer` (Win/Linux) implement `GaplessPlayer`.
+
 ## Platform Adapters
 
 ### macOS — SFBAudioEngine (`player_darwin.go`)
@@ -42,7 +61,8 @@ type AudioPlayer interface {
 - SFBAudioEngine and its dependencies are dynamic xcframeworks built/downloaded by `task build:sfbaudioengine` and stored at `internal/infra/audio/sfb_libs/` (not committed; add to `.gitignore`). At runtime, the frameworks are embedded in `Contents/Frameworks/`.
 - **Format support:** All formats natively — MP3, FLAC, AAC, WAV, AIFF, Opus, Vorbis, WavPack, APE, DSD, and more. No FFmpeg required on darwin.
 - **EQ:** `AVAudioUnitEQ` (10-band parametric, ISO frequencies) injected into SFBAudioEngine's graph via `modifyProcessingGraph:` on init and reconnected on format changes via the `reconfigureProcessingGraph:withFormat:` delegate. Returns the EQ node so SFBAudioEngine connects `sourceNode → EQ → mainMixerNode`.
-- **Track end:** `SFBAudioPlayerDelegate audioPlayer:renderingComplete:` fires when last sample is rendered (not when decoding finishes).
+- **Track end:** `SFBAudioPlayerDelegate audioPlayer:renderingComplete:` fires when last sample is rendered (not when decoding finishes). When a next track was pre-queued gaplessly, SFBAudioEngine is still playing; `renderingComplete:` fires for each track in the queue, allowing the Go layer to advance state without stopping audio.
+- **Gapless:** `EnqueueNext` calls `[sfbPlayer enqueueURL:url forImmediatePlayback:NO]`. SFBAudioEngine transitions seamlessly if sample rate and channel count match. `AutoTransitions()` returns `true`.
 - Provides `NowPlayingController` for OS-level media info (lock screen, menu bar).
 - Remote command callbacks: Play, Pause, Next, Previous, Seek (media keys + AirPods).
 - `UpdateNowPlaying(track, position, artworkPath)` — populates the macOS Now Playing widget.
@@ -53,7 +73,8 @@ type AudioPlayer interface {
 - **Decoding Backend:** Leverages FFmpeg for **all** audio formats to ensure maximum compatibility and robustness.
 - Functions: `ma_player_create()`, `ma_player_play()`, `ma_player_pause()`, `ma_player_stop()`, `ma_player_seek()`, `ma_player_set_volume()`.
 - Track end detected via `goMiniAudioTrackEnd()` Go callback.
-- EQ not available on this adapter.
+- **EQ:** Implemented via a chain of 10 `ma_peak_node` filters. Enabled state routes audio through the chain before output. Support for live band updates.
+- **Gapless (near-gapless):** Uses a ping-pong slot design (`slot_a`/`slot_b`). `ma_player_preload_next` initializes the next track into the idle slot. On `HandleTrackEnd`, Go calls `ma_player_start_preloaded` which uninits the current slot and starts the pre-loaded slot — gap is only goroutine scheduling latency (~1–5 ms). `AutoTransitions()` returns `false`.
 
 ## PlayerService (Application Layer)
 
@@ -67,6 +88,7 @@ type AudioPlayer interface {
 - Syncs artwork theme colors on track load.
 - Fetches/delivers lyrics on track load.
 - Handles track-end → advance queue → load next.
+- **Gapless playback (always on):** `loadAndPlay` pre-enqueues the next track via `GaplessPlayer.EnqueueNext`. On `HandleTrackEnd`, the service calls `GaplessPlayer.StartPreloaded` (for miniaudio) or just updates status (SFBAudioEngine auto-transitions), then calls `transitionToTrack` to update currentTrack, Now Playing, palette, and lyrics without interrupting audio.
 
 ### Key Methods
 

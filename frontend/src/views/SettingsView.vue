@@ -4,13 +4,12 @@ import { useRouter } from 'vue-router'
 import {
   Folder, Settings,
   Play, Info, Blocks,
-  AudioLines
 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
-import EQPanel from '@/components/EQPanel.vue'
 import GeneralSettings from '@/components/settings/GeneralSettings.vue'
 import LibrarySettings from '@/components/settings/LibrarySettings.vue'
 import IntegrationsSettings from '@/components/settings/IntegrationsSettings.vue'
+import PlaybackSettings from '@/components/settings/PlaybackSettings.vue'
 import AboutSettings from '@/components/settings/AboutSettings.vue'
 
 const { t } = useI18n()
@@ -86,17 +85,7 @@ const setCategory = (id: string) => {
         />
 
         <!-- Playback -->
-        <div v-if="activeCategory === 'playback'" class="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <section>
-            <div class="flex items-center gap-2 mb-6 text-foreground opacity-60 select-none">
-              <AudioLines class="w-4 h-4" />
-              <h2 class="text-sm font-bold uppercase tracking-wider">{{ t('settings.equalizer.title') }}</h2>
-            </div>
-            <div class="bg-card rounded-2xl border border-foreground/[0.06] p-6">
-              <EQPanel />
-            </div>
-          </section>
-        </div>
+        <PlaybackSettings v-if="activeCategory === 'playback'" />
 
         <!-- About -->
         <AboutSettings 
