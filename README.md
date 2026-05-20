@@ -36,7 +36,7 @@
 - **Lyrics that follow along** — synced lyrics scroll line-by-line as the song plays. Plain-text lyrics shown when sync data isn't available. Supports both embedded lyrics and online lyrics from LRCLIB and Kugou.
 - **Fullscreen & miniplayer modes** — go fullscreen for an immersive listening experience, or shrink to a miniplayer that stays out of your way.
 - **Playlists** — create and manage playlists, import and export them, and browse your collection by genre, artist, or album.
-- **Gapless playback** — tracks transition without any silence or interruption. On macOS, SFBAudioEngine handles it at the engine level; on Windows/Linux, miniaudio pre-loads the next track into a second slot with ~1–5 ms gap.
+- **Gapless playback** — tracks transition without any silence or interruption.
 - **10-band equalizer** — tune the sound to your headphones or speakers. Runs natively on macOS (SFBAudioEngine) and Windows/Linux (miniaudio) for optimal performance.
 - **Lock screen & media keys** — control playback from your keyboard, lock screen, or Control Center — just like a first-party app.
 - **Last.fm scrobbling** — sync your listening history and loved tracks automatically.

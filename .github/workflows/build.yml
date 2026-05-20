@@ -312,12 +312,17 @@ jobs:
         run: |
           PREV_TAG=$(git tag --sort=-version:refname | grep -v "^v${{ github.event.inputs.version }}$" | head -1)
           if [ -n "$PREV_TAG" ]; then
-            CHANGELOG=$(git log "${PREV_TAG}..HEAD" --pretty=format:"- %s (%h)" --no-merges)
+            CHANGELOG=$(git log "${PREV_TAG}..HEAD" --pretty=format:"- %s (%h)" --no-merges | grep -E "^- (feat|fix)" || true)
             RANGE="Changes since ${PREV_TAG}"
           else
-            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges | grep -E "^- (feat|fix)" || true)
             RANGE="All commits"
           fi
+
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="No major changes (features or fixes) in this release."
+          fi
+
           {
             echo "body<<EOF"
             echo "## What's Changed"
