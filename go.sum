@@ -91,8 +91,8 @@ github.com/go-git/go-billy/v5 v5.9.0 h1:jItGXszUDRtR/AlferWPTMN4j38BQ88XnXKbilmm
 github.com/go-git/go-billy/v5 v5.9.0/go.mod h1:jCnQMLj9eUgGU7+ludSTYoZL/GGmii14RxKFj7ROgHw=
 github.com/go-git/go-git-fixtures/v4 v4.3.2-0.20231010084843-55a94097c399 h1:eMje31YglSBqCdIqdhKBW8lokaMrL3uTkpGYlE2OOT4=
 github.com/go-git/go-git-fixtures/v4 v4.3.2-0.20231010084843-55a94097c399/go.mod h1:1OCfN199q1Jm3HZlxleg+Dw/mwps2Wbk9frAWm+4FII=
-github.com/go-git/go-git/v5 v5.19.0 h1:+WkVUQZSy/F1Gb13udrMKjIM2PrzsNfDKFSfo5tkMtc=
-github.com/go-git/go-git/v5 v5.19.0/go.mod h1:Pb1v0c7/g8aGQJwx9Us09W85yGoyvSwuhEGMH7zjDKQ=
+github.com/go-git/go-git/v5 v5.19.1 h1:nX27AnaU43/K5bKktKwgBmR9lawoYVe1Ckg0rgzzN00=
+github.com/go-git/go-git/v5 v5.19.1/go.mod h1:Pb1v0c7/g8aGQJwx9Us09W85yGoyvSwuhEGMH7zjDKQ=
 github.com/go-json-experiment/json v0.0.0-20251027170946-4849db3c2f7e h1:Lf/gRkoycfOBPa42vU2bbgPurFong6zXeFtPoxholzU=
 github.com/go-json-experiment/json v0.0.0-20251027170946-4849db3c2f7e/go.mod h1:uNVvRXArCGbZ508SxYYTC5v1JWoz2voff5pm25jU1Ok=
 github.com/go-ole/go-ole v1.3.0 h1:Dt6ye7+vXGIKZ7Xtk4s6/xVdGDQynvom7xCFEdWr6uE=
@@ -209,8 +209,8 @@ github.com/tetratelabs/wazero v1.10.1/go.mod h1:DRm5twOQ5Gr1AoEdSi0CLjDQF1J9ZAuy
 github.com/ulikunitz/xz v0.5.9/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
 github.com/ulikunitz/xz v0.5.15 h1:9DNdB5s+SgV3bQ2ApL10xRc35ck0DuIX/isZvIk+ubY=
 github.com/ulikunitz/xz v0.5.15/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
-github.com/wailsapp/wails/v3 v3.0.0-alpha.92 h1:LYVe5RcGDB/x1QTWE0JbonXZc7+BmCtjb3+mHa1riao=
-github.com/wailsapp/wails/v3 v3.0.0-alpha.92/go.mod h1:4cKvtUppwqYC9tVtvgHWzEmXfUnuLEV3q8d0Jh6xkQQ=
+github.com/wailsapp/wails/v3 v3.0.0-alpha.95 h1:Rve8djRSldn6381q2l8gw8XEnzPX/4So6VsRM6bc7Vs=
+github.com/wailsapp/wails/v3 v3.0.0-alpha.95/go.mod h1:3euiK0wb6vnXvxiHysRYYbukCa060bLSsfrvN7sZg4k=
 github.com/wailsapp/wails/webview2 v1.0.24 h1:uULnjCSaRfMlU84mS3kjLgPsRosEOIusVK1nFOHZHzs=
 github.com/wailsapp/wails/webview2 v1.0.24/go.mod h1:sdf+s0nAdxlzVWf9SCxC15XaxnQPJeY+uU1Ucn3jHQM=
 github.com/xanzy/ssh-agent v0.3.3 h1:+/15pJfg/RsTxqYcX6fHqOXZwwMP+2VyYWJeWM2qQFM=

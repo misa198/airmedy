@@ -65,6 +65,21 @@ type EQProfile struct {
 	Bands     []EQBand `json:"bands"`
 }
 
+// GaplessPlayer is an optional interface for audio players that support gapless
+// or near-gapless pre-loading of the next track.
+type GaplessPlayer interface {
+	// EnqueueNext pre-loads or pre-queues the next track while the current one plays.
+	EnqueueNext(track *TrackDTO) error
+	// StartPreloaded promotes the pre-loaded track to the active decoder and begins
+	// playback. For auto-transition players (SFBAudioEngine) this is a no-op for audio
+	// but must still update internal status fields to reflect the new track.
+	StartPreloaded(track *TrackDTO) error
+	// AutoTransitions returns true when the engine transitions to the queued track
+	// on its own (e.g. SFBAudioEngine). The app layer must NOT call Load/Play on
+	// HandleTrackEnd when this returns true.
+	AutoTransitions() bool
+}
+
 // EQController is an optional interface implemented by audio players that support EQ
 type EQController interface {
 	SetEQBand(index int, frequency, gain, bandwidth float64) error

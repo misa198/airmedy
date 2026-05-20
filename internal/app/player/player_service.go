@@ -42,7 +42,8 @@ type PlayerService struct {
 	tickerCancel context.CancelFunc
 	tickInterval time.Duration
 
-	endedNaturally bool // true when queue ran out; cleared on Play or loadAndPlay
+	endedNaturally bool             // true when queue ran out; cleared on Play or loadAndPlay
+	nextPreQueued  *domain.TrackDTO // track pre-enqueued for gapless transition
 
 	// emitStatusHook overrides event emission in tests (nil in production).
 	emitStatusHook func()
@@ -491,6 +492,12 @@ func (s *PlayerService) SyncTrack(track *domain.TrackDTO) {
 func (s *PlayerService) loadAndPlay(track *domain.TrackDTO) error {
 	s.stopPositionTicker()
 
+	// Clear any stale pre-queue — hard load supersedes gapless pre-loading.
+	s.mu.Lock()
+	s.nextPreQueued = nil
+	s.mu.Unlock()
+	const gapless = true
+
 	if err := s.player.Load(track); err != nil {
 		s.logger.Error("failed to load track", "track", track.Path, "error", err)
 		return err
@@ -525,7 +532,51 @@ func (s *PlayerService) loadAndPlay(track *domain.TrackDTO) error {
 
 	s.saveState(context.Background())
 
+	// Pre-enqueue the next track for gapless transitions.
+	if gapless {
+		if next := s.queue.PeekNext(); next != nil {
+			if gp, ok := s.player.(domain.GaplessPlayer); ok {
+				if err := gp.EnqueueNext(next); err != nil {
+					s.logger.Warn("failed to pre-enqueue next track", "error", err)
+				} else {
+					s.mu.Lock()
+					s.nextPreQueued = next
+					s.mu.Unlock()
+				}
+			}
+		}
+	}
+
 	return nil
+}
+
+// transitionToTrack updates app state when the audio engine has already transitioned
+// to track (gapless path). Does NOT call player.Load/Play.
+func (s *PlayerService) transitionToTrack(track *domain.TrackDTO) {
+	s.mu.Lock()
+	s.currentTrack = track
+	s.currentTheme = nil
+	s.trackStartTime = time.Now()
+	delete(s.playCounted, track.ID)
+	delete(s.npReported, track.ID)
+	delete(s.posConfirmed, track.ID)
+	s.mu.Unlock()
+
+	s.startPositionTicker()
+	s.emitStatus()
+
+	if s.nowPlaying != nil {
+		artworkPath := ""
+		if track.ArtworkKey != "" {
+			artworkPath = s.artworkCache.GetPath(track.ArtworkKey)
+		}
+		s.nowPlaying.UpdateNowPlaying(track, 0, artworkPath)
+	}
+
+	go s.extractAndEmitPalette(track)
+	go s.fetchAndEmitLyrics(track)
+
+	s.saveState(context.Background())
 }
 
 func (s *PlayerService) extractAndEmitPalette(track *domain.TrackDTO) {
@@ -795,6 +846,54 @@ func (s *PlayerService) stopPositionTicker() {
 func (s *PlayerService) HandleTrackEnd() {
 	s.stopPositionTicker()
 	s.logger.Debug("track ended, moving to next")
+
+	s.mu.Lock()
+	preQueued := s.nextPreQueued
+	s.nextPreQueued = nil
+	s.mu.Unlock()
+
+	if preQueued != nil {
+		// Advance queue index to match the pre-queued track.
+		if next := s.queue.Next(); next == nil {
+			// Queue exhausted — shouldn't happen if we peeked correctly, but handle it.
+			s.mu.Lock()
+			s.endedNaturally = true
+			s.mu.Unlock()
+			if err := s.Stop(); err != nil {
+				s.logger.Error("failed to stop after queue end (gapless)", "error", err)
+			}
+			return
+		}
+
+		// For non-auto-transition players (miniaudio), start the pre-loaded sound now.
+		if gp, ok := s.player.(domain.GaplessPlayer); ok {
+			if err := gp.StartPreloaded(preQueued); err != nil {
+				s.logger.Error("gapless start failed, falling back to hard load", "error", err)
+				if err2 := s.loadAndPlay(preQueued); err2 != nil {
+					s.logger.Error("fallback loadAndPlay failed", "error", err2)
+				}
+				return
+			}
+		}
+
+		s.transitionToTrack(preQueued)
+
+		// Pre-enqueue the next-next track.
+		if nextNext := s.queue.PeekNext(); nextNext != nil {
+			if gp, ok := s.player.(domain.GaplessPlayer); ok {
+				if err := gp.EnqueueNext(nextNext); err != nil {
+					s.logger.Warn("failed to pre-enqueue next track", "error", err)
+				} else {
+					s.mu.Lock()
+					s.nextPreQueued = nextNext
+					s.mu.Unlock()
+				}
+			}
+		}
+		return
+	}
+
+	// Standard path.
 	track := s.queue.Next()
 	if track == nil {
 		s.mu.Lock()

@@ -15,7 +15,7 @@ export const useAppStore = defineStore('app', () => {
   const enableKugou = ref(true)
   const preferMetadataLyrics = ref(true)
   const useOnlineArtistArtwork = ref(true)
-  
+
   const updateInfo = ref<UpdateInfo | null>(null)
   const isCheckingUpdate = ref(false)
   const isUpdateDialogOpen = ref(false)
@@ -53,7 +53,7 @@ export const useAppStore = defineStore('app', () => {
         useOnlineArtistArtwork.value = settings.use_online_artist_artwork !== false
         applyTheme(theme.value)
       }
-      
+
       // Check for updates on startup if enabled
       if (autoCheckUpdate.value) {
         checkForUpdate()

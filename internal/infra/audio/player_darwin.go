@@ -24,6 +24,7 @@ void ClearNowPlayingInfo(void* player);
 void UpdateNowPlayingPosition(void* player, double position);
 void SetEQBand(void* player, int index, double freq, double gain, double bandwidth);
 void SetEQEnabled(void* player, int enabled);
+void EnqueueNextPlayer(void* player, const char* path);
 */
 import "C"
 import (
@@ -200,6 +201,27 @@ func (p *DarwinPlayer) SetEQEnabled(enabled bool) error {
 	}
 	C.SetEQEnabled(p.playerPointer, C.int(val))
 	return nil
+}
+
+// --- GaplessPlayer ---
+
+func (p *DarwinPlayer) EnqueueNext(track *domain.TrackDTO) error {
+	cPath := C.CString(track.Path)
+	defer C.free(unsafe.Pointer(cPath))
+	C.EnqueueNextPlayer(p.playerPointer, cPath)
+	return nil
+}
+
+func (p *DarwinPlayer) StartPreloaded(track *domain.TrackDTO) error {
+	// SFBAudioEngine auto-transitioned; update Go-side status tracking.
+	p.status.TrackID = track.ID
+	p.status.Duration = float64(track.Duration)
+	p.status.Position = 0
+	return nil
+}
+
+func (p *DarwinPlayer) AutoTransitions() bool {
+	return true
 }
 
 // --- NowPlayingController ---

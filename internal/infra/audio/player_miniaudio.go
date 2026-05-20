@@ -173,3 +173,29 @@ func (p *MiniAudioPlayer) SetEQEnabled(enabled bool) error {
 	}
 	return nil
 }
+
+// --- GaplessPlayer ---
+
+func (p *MiniAudioPlayer) EnqueueNext(track *domain.TrackDTO) error {
+	cPath := C.CString(track.Path)
+	defer C.free(unsafe.Pointer(cPath))
+	if rc := C.ma_player_preload_next((*C.MaPlayer)(p.ptr), cPath); rc != 0 {
+		return fmt.Errorf("ma_player_preload_next failed: %d (path: %s)", rc, track.Path)
+	}
+	return nil
+}
+
+func (p *MiniAudioPlayer) StartPreloaded(track *domain.TrackDTO) error {
+	if rc := C.ma_player_start_preloaded((*C.MaPlayer)(p.ptr)); rc != 0 {
+		return fmt.Errorf("ma_player_start_preloaded failed: %d", rc)
+	}
+	p.status.TrackID = track.ID
+	p.status.Duration = float64(C.ma_player_get_length((*C.MaPlayer)(p.ptr)))
+	p.status.Position = 0
+	p.status.PlaybackState = domain.PlaybackStatePlaying
+	return nil
+}
+
+func (p *MiniAudioPlayer) AutoTransitions() bool {
+	return false
+}

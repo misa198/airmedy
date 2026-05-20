@@ -45,4 +45,4 @@ docker run --rm \
     -w /app \
     --entrypoint bash \
     "golangci/golangci-lint:${LINT_VERSION}" \
-    -c "apt-get update && apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev && golangci-lint run -v"
+    -c "apt-get update && apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libgtk-4-dev libwebkitgtk-6.0-dev && golangci-lint run -v"

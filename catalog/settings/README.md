@@ -19,16 +19,16 @@ Application-level settings: UI theme, display language, launch-at-login. Setting
 
 ```go
 type AppSettings struct {
-    Language               string  // BCP 47 language tag, e.g., "en", "zh", "ja"
-    Theme                  string  // "system", "light", "dark", "black"
+    Language               string              // BCP 47 language tag, e.g., "en", "zh", "ja"
+    Theme                  string              // "system", "light", "dark", "black"
     StartAtLogin           bool
     AutoCheckUpdate        bool
-    LastFmUsername         string  // Connected Last.fm account name
+    LastFmUsername         string              // Connected Last.fm account name
     EQEnabled              bool
-    EnableLrclib           bool    // enable LRClib lyrics provider
-    EnableKugou            bool    // enable Kugou lyrics provider
-    PreferMetadataLyrics   bool    // prefer embedded lyrics over fetched
-    UseOnlineArtistArtwork bool    // fetch artist artwork from Deezer
+    EnableLrclib           bool                // enable LRClib lyrics provider
+    EnableKugou            bool                // enable Kugou lyrics provider
+    PreferMetadataLyrics   bool                // prefer embedded lyrics over fetched
+    UseOnlineArtistArtwork bool                // fetch artist artwork from Deezer
 }
 ```
 
@@ -112,7 +112,7 @@ Each `update*()` method calls `SettingsService.SaveSettings()` with the full set
 | General      | Theme selector, Language picker, Start at Login, Auto-check updates toggle |
 | Library      | Watched folders list, Add/Remove folder, Sync All, Reindex                 |
 | Integrations | Last.fm account + lyrics providers (LRClib, Kugou, metadata preference)   |
-| Playback     | EQ profiles and band sliders (see equalizer catalog entry)                 |
+| Playback     | EQ profiles and band sliders (`PlaybackSettings.vue`) |
 | About        | App version, GitHub link, License, Open Data Folder button                 |
 
 ## Last.fm Integration
