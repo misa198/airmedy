@@ -78,6 +78,9 @@ type GaplessPlayer interface {
 	// on its own (e.g. SFBAudioEngine). The app layer must NOT call Load/Play on
 	// HandleTrackEnd when this returns true.
 	AutoTransitions() bool
+	// ClearEnqueued discards the pending pre-queued track from the engine without
+	// affecting the currently playing track.
+	ClearEnqueued()
 }
 
 // EQController is an optional interface implemented by audio players that support EQ

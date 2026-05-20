@@ -375,6 +375,27 @@ func (s *PlayerService) SetShuffle(enabled bool) error {
 // SetRepeatMode sets the repeat mode.
 func (s *PlayerService) SetRepeatMode(mode domain.RepeatMode) error {
 	s.queue.SetRepeatMode(mode)
+
+	// Re-sync the gapless pre-queue with the new repeat mode so that stale
+	// pre-queued tracks don't cause the wrong track to play on the next track-end.
+	s.mu.Lock()
+	hadPreQueued := s.nextPreQueued != nil
+	s.nextPreQueued = nil
+	s.mu.Unlock()
+
+	if hadPreQueued {
+		if gp, ok := s.player.(domain.GaplessPlayer); ok {
+			gp.ClearEnqueued()
+			if next := s.queue.PeekNext(); next != nil {
+				if err := gp.EnqueueNext(next); err == nil {
+					s.mu.Lock()
+					s.nextPreQueued = next
+					s.mu.Unlock()
+				}
+			}
+		}
+	}
+
 	s.emitStatus()
 	return nil
 }
@@ -438,8 +459,8 @@ func (s *PlayerService) GetStatus() domain.PlayerStatus {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	status := s.player.GetStatus()
-	status.RepeatMode = s.queue.repeatMode
-	status.Shuffle = s.queue.shuffle
+	status.RepeatMode = s.queue.GetRepeatMode()
+	status.Shuffle = s.queue.GetShuffle()
 	status.Theme = s.currentTheme
 	return status
 }
@@ -963,8 +984,8 @@ func (s *PlayerService) saveState(ctx context.Context) {
 		Position:         status.Position,
 		Volume:           status.Volume,
 		Muted:            status.Muted,
-		Shuffle:          s.queue.shuffle,
-		RepeatMode:       s.queue.repeatMode,
+		Shuffle:          s.queue.GetShuffle(),
+		RepeatMode:       s.queue.GetRepeatMode(),
 	}
 	if err := s.stateRepo.Save(ctx, state); err != nil {
 		s.logger.Error("failed to save player state", "error", err)

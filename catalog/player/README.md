@@ -46,6 +46,10 @@ type GaplessPlayer interface {
     // Returns true when the engine transitions automatically (SFBAudioEngine).
     // HandleTrackEnd must NOT call Load/Play when this returns true.
     AutoTransitions() bool
+    // ClearEnqueued discards the pending pre-queued track from the engine without
+    // affecting the currently playing track. Called by SetRepeatMode to re-sync
+    // the pre-queue when the repeat mode changes during playback.
+    ClearEnqueued()
 }
 ```
 

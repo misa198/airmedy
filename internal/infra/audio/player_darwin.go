@@ -25,6 +25,7 @@ void UpdateNowPlayingPosition(void* player, double position);
 void SetEQBand(void* player, int index, double freq, double gain, double bandwidth);
 void SetEQEnabled(void* player, int enabled);
 void EnqueueNextPlayer(void* player, const char* path);
+void ClearEnqueuedPlayer(void* player);
 */
 import "C"
 import (
@@ -222,6 +223,10 @@ func (p *DarwinPlayer) StartPreloaded(track *domain.TrackDTO) error {
 
 func (p *DarwinPlayer) AutoTransitions() bool {
 	return true
+}
+
+func (p *DarwinPlayer) ClearEnqueued() {
+	C.ClearEnqueuedPlayer(p.playerPointer)
 }
 
 // --- NowPlayingController ---

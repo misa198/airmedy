@@ -339,6 +339,20 @@ func (s *QueueService) SetRepeatMode(mode domain.RepeatMode) {
 	s.repeatMode = mode
 }
 
+// GetRepeatMode returns the current repeat mode.
+func (s *QueueService) GetRepeatMode() domain.RepeatMode {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.repeatMode
+}
+
+// GetShuffle returns the current shuffle state.
+func (s *QueueService) GetShuffle() bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.shuffle
+}
+
 // GetQueue returns the current active list of tracks.
 func (s *QueueService) GetQueue() []*domain.TrackDTO {
 	s.mu.RLock()
