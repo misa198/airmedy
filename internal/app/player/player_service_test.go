@@ -349,6 +349,163 @@ func TestPlayerShortcuts(t *testing.T) {
 	}
 }
 
+// fakeGaplessPlayer wraps fakePlayer and implements GaplessPlayer for repeat-mode tests.
+type fakeGaplessPlayer struct {
+	fakePlayer
+	mu            sync.Mutex
+	enqueuedTrack *domain.TrackDTO
+	clearCount    int
+}
+
+func (p *fakeGaplessPlayer) EnqueueNext(track *domain.TrackDTO) error {
+	p.mu.Lock()
+	p.enqueuedTrack = track
+	p.mu.Unlock()
+	return nil
+}
+
+func (p *fakeGaplessPlayer) StartPreloaded(track *domain.TrackDTO) error {
+	p.fakePlayer.mu.Lock()
+	p.status.TrackID = track.ID
+	p.fakePlayer.mu.Unlock()
+	return nil
+}
+
+func (p *fakeGaplessPlayer) AutoTransitions() bool { return false }
+
+func (p *fakeGaplessPlayer) ClearEnqueued() {
+	p.mu.Lock()
+	p.enqueuedTrack = nil
+	p.clearCount++
+	p.mu.Unlock()
+}
+
+func TestSetRepeatMode_ClearsAndRequeuesGaplessTrack(t *testing.T) {
+	fp := &fakeGaplessPlayer{fakePlayer: fakePlayer{status: domain.PlayerStatus{Volume: 1.0}}}
+	s, _ := newTestService(t, fp)
+
+	t1 := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 300}}
+	t2 := &domain.TrackDTO{Track: domain.Track{ID: "t2", Duration: 300}}
+	s.queue.SetQueue([]*domain.TrackDTO{t1, t2}, 0)
+	_ = s.SetRepeatMode(domain.RepeatModeOne)
+
+	// Simulate track loaded: nextPreQueued = t1 (RepeatOne peeks current)
+	s.mu.Lock()
+	s.nextPreQueued = t1
+	s.mu.Unlock()
+	_ = fp.EnqueueNext(t1)
+
+	// User switches off repeat — should clear engine queue and re-enqueue t2
+	_ = s.SetRepeatMode(domain.RepeatModeOff)
+
+	fp.mu.Lock()
+	cleared := fp.clearCount
+	enqueued := fp.enqueuedTrack
+	fp.mu.Unlock()
+
+	if cleared != 1 {
+		t.Errorf("expected ClearEnqueued called once, got %d", cleared)
+	}
+	if enqueued == nil || enqueued.ID != "t2" {
+		got := "<nil>"
+		if enqueued != nil {
+			got = enqueued.ID
+		}
+		t.Errorf("expected nextPreQueued = t2, got %s", got)
+	}
+
+	s.mu.RLock()
+	nq := s.nextPreQueued
+	s.mu.RUnlock()
+	if nq == nil || nq.ID != "t2" {
+		got := "<nil>"
+		if nq != nil {
+			got = nq.ID
+		}
+		t.Errorf("expected service.nextPreQueued = t2, got %s", got)
+	}
+}
+
+func TestSetRepeatMode_RepeatOneRequeuesCurrentTrack(t *testing.T) {
+	fp := &fakeGaplessPlayer{fakePlayer: fakePlayer{status: domain.PlayerStatus{Volume: 1.0}}}
+	s, _ := newTestService(t, fp)
+
+	t1 := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 300}}
+	t2 := &domain.TrackDTO{Track: domain.Track{ID: "t2", Duration: 300}}
+	s.queue.SetQueue([]*domain.TrackDTO{t1, t2}, 0)
+
+	// Simulate RepeatOff pre-queue: t2 was enqueued
+	s.mu.Lock()
+	s.nextPreQueued = t2
+	s.mu.Unlock()
+	_ = fp.EnqueueNext(t2)
+
+	// Switch to RepeatOne — should clear t2 and re-enqueue t1 (current)
+	_ = s.SetRepeatMode(domain.RepeatModeOne)
+
+	fp.mu.Lock()
+	enqueued := fp.enqueuedTrack
+	fp.mu.Unlock()
+
+	if enqueued == nil || enqueued.ID != "t1" {
+		got := "<nil>"
+		if enqueued != nil {
+			got = enqueued.ID
+		}
+		t.Errorf("expected nextPreQueued = t1, got %s", got)
+	}
+}
+
+func TestHandleTrackEnd_RepeatOneRepeatsCurrentTrack(t *testing.T) {
+	fp := &fakeGaplessPlayer{fakePlayer: fakePlayer{status: domain.PlayerStatus{Volume: 1.0}}}
+	s, _ := newTestService(t, fp)
+
+	t1 := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 300}}
+	t2 := &domain.TrackDTO{Track: domain.Track{ID: "t2", Duration: 300}}
+	s.queue.SetQueue([]*domain.TrackDTO{t1, t2}, 0)
+	_ = s.SetRepeatMode(domain.RepeatModeOne)
+
+	s.mu.Lock()
+	s.currentTrack = t1
+	s.nextPreQueued = t1 // RepeatOne pre-queued current track
+	s.mu.Unlock()
+
+	s.HandleTrackEnd()
+
+	if ct := s.GetCurrentTrack(); ct == nil || ct.ID != "t1" {
+		got := "<nil>"
+		if ct != nil {
+			got = ct.ID
+		}
+		t.Errorf("expected current track t1 after RepeatOne end, got %s", got)
+	}
+}
+
+func TestHandleTrackEnd_RepeatOffAdvancesToNext(t *testing.T) {
+	fp := &fakeGaplessPlayer{fakePlayer: fakePlayer{status: domain.PlayerStatus{Volume: 1.0}}}
+	s, _ := newTestService(t, fp)
+
+	t1 := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 300}}
+	t2 := &domain.TrackDTO{Track: domain.Track{ID: "t2", Duration: 300}}
+	s.queue.SetQueue([]*domain.TrackDTO{t1, t2}, 0)
+	_ = s.SetRepeatMode(domain.RepeatModeOff)
+
+	s.mu.Lock()
+	s.currentTrack = t1
+	s.nextPreQueued = t2
+	s.mu.Unlock()
+
+	s.HandleTrackEnd()
+
+	if ct := s.GetCurrentTrack(); ct == nil || ct.ID != "t2" {
+		got := "<nil>"
+		if ct != nil {
+			got = ct.ID
+		}
+		t.Errorf("expected current track t2 after RepeatOff end, got %s", got)
+	}
+}
+
 func TestFastForward_NextTrack(t *testing.T) {
 	fp := &fakePlayer{status: domain.PlayerStatus{Volume: 0.5, Position: 295.0, Duration: 300.0, PlaybackState: domain.PlaybackStatePlaying}}
 	s, _ := newTestService(t, fp)

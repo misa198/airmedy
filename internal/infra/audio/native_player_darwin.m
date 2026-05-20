@@ -168,6 +168,10 @@ extern void goHandleRemoteSeek(double position);
     }
 }
 
+- (void)clearEnqueued {
+    [self.sfbPlayer clearQueue];
+}
+
 - (void)seek:(double)seconds {
     if ([self.sfbPlayer seekToTime:seconds]) {
         self.pausePosition = seconds;
@@ -376,4 +380,8 @@ void SetEQEnabled(void *playerPtr, int enabled) {
 void EnqueueNextPlayer(void *playerPtr, const char *path) {
     NSString *p = [NSString stringWithUTF8String:path];
     [(__bridge AirmedyPlayer *)playerPtr enqueueNext:p];
+}
+
+void ClearEnqueuedPlayer(void *playerPtr) {
+    [(__bridge AirmedyPlayer *)playerPtr clearEnqueued];
 }

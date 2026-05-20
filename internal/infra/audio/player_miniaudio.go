@@ -199,3 +199,7 @@ func (p *MiniAudioPlayer) StartPreloaded(track *domain.TrackDTO) error {
 func (p *MiniAudioPlayer) AutoTransitions() bool {
 	return false
 }
+
+func (p *MiniAudioPlayer) ClearEnqueued() {
+	C.ma_player_clear_preloaded((*C.MaPlayer)(p.ptr))
+}
