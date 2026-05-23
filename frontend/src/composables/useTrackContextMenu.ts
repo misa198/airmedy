@@ -34,7 +34,9 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
       }
     }
 
-    if (options.showRemoveFromQueue) {
+    const isCurrentTrack = playerStore.currentTrack?.id === track.id
+
+    if (options.showRemoveFromQueue && !isCurrentTrack) {
       items.push({
         label: t('context_menu.remove_from_queue'),
         icon: ListX,
@@ -43,7 +45,6 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
       items.push({ separator: true })
     }
 
-    const isCurrentTrack = playerStore.currentTrack?.id === track.id
     if (!options.excludePlayNext && !isCurrentTrack) {
       items.push({
         label: t('context_menu.play_next'),

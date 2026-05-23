@@ -78,7 +78,7 @@ watch(() => route.params.id, (newId) => {
         <div class="flex-1 text-center md:text-left space-y-4 @container min-w-0">
           <div class="space-y-1">
             <h1
-              class="text-3xl @sm:text-4xl @md:text-5xl @lg:text-7xl font-bold tracking-tight line-clamp-2 hyphens-auto">
+              class="text-3xl @sm:text-4xl @md:text-5xl @lg:text-7xl font-bold tracking-tight line-clamp-2 hyphens-auto leading-snug text-foreground">
               {{
                 artist.name || t('library.unknown_artist') }}</h1>
             <div

@@ -33,7 +33,7 @@ const router = useRouter()
       <div class="flex-1 space-y-4 @container min-w-0">
         <div class="space-y-2">
           <slot name="title">
-            <h1 v-if="title" class="text-2xl @sm:text-3xl @md:text-4xl @lg:text-5xl font-bold tracking-tight line-clamp-2">
+            <h1 v-if="title" class="text-2xl @sm:text-3xl @md:text-4xl @lg:text-5xl font-bold tracking-tight line-clamp-2 leading-snug text-foreground">
               {{ title }}
             </h1>
           </slot>

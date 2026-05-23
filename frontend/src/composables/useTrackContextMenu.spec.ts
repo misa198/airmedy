@@ -91,4 +91,32 @@ describe('useTrackContextMenu', () => {
     
     expect(playNextItem).toBeUndefined()
   })
+
+  it('excludes "Remove from Queue" if track is currently playing', () => {
+    const track: TrackDTO = { id: 'track-1', title: 'Track 1' } as any
+    const playerStore = usePlayerStore()
+    playerStore.currentTrack = track
+
+    const { buildMenuItems } = useTrackContextMenu(vi.fn())
+    
+    const items = buildMenuItems(track, { showRemoveFromQueue: true })
+    const removeItem = items.find(item => item.label === 'context_menu.remove_from_queue')
+    
+    expect(removeItem).toBeUndefined()
+  })
+
+  it('includes "Remove from Queue" if track is not currently playing', () => {
+    const track: TrackDTO = { id: 'track-1', title: 'Track 1' } as any
+    const otherTrack: TrackDTO = { id: 'track-2', title: 'Track 2' } as any
+    const playerStore = usePlayerStore()
+    playerStore.currentTrack = otherTrack
+
+    const { buildMenuItems } = useTrackContextMenu(vi.fn())
+    
+    const items = buildMenuItems(track, { showRemoveFromQueue: true })
+    const removeItem = items.find(item => item.label === 'context_menu.remove_from_queue')
+    
+    expect(removeItem).toBeDefined()
+    expect(removeItem?.label).toBe('context_menu.remove_from_queue')
+  })
 })
