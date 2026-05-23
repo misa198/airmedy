@@ -127,9 +127,9 @@ watch(() => store.theme, (colors) => {
     <!-- OGL glass panel: WebGL blur, no backdrop-filter, no flicker -->
     <canvas
       ref="canvasRef"
-      class="absolute bottom-0 left-0 pointer-events-none transition-opacity duration-200"
+      class="absolute bottom-0 left-0 pointer-events-none transition-opacity duration-200 blur-xl"
       :class="isHovered ? 'opacity-100' : 'opacity-0'"
-      style="height: 220px;width: 500px;"
+      style="height: 250px;width: 500px;"
     />
 
     <!-- Content overlay (hover-triggered) -->

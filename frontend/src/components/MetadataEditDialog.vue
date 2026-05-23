@@ -9,6 +9,7 @@ import { useI18n } from 'vue-i18n'
 import { buildArtworkUrl } from '@/lib/utils'
 import LazyImg from './LazyImg.vue'
 import TabSwitcher from '@/components/ui/TabSwitcher.vue'
+import Modal from '@/components/ui/Modal.vue'
 import { ListMusic, Mic2 } from 'lucide-vue-next'
 
 const { t } = useI18n()
@@ -158,24 +159,15 @@ function cancel() {
 </script>
 
 <template>
-  <Teleport to="body">
-    <Transition name="fade">
-      <div
-        v-if="open"
-        class="fixed inset-0 z-50 flex items-center justify-center"
-        @click.self="cancel"
-      >
-        <div class="absolute inset-0 bg-background/60 backdrop-blur-sm" @click="cancel" />
-        <div
-          class="relative z-10 w-[480px] max-h-[90vh] overflow-y-auto rounded-xl bg-glass-elevated backdrop-blur-xl ring-1 ring-border-glass shadow-2xl p-5"
-          @keydown.esc="cancel"
-        >
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold text-foreground">{{ t('library.edit_metadata') }}</h3>
-            <TabSwitcher v-model="activeTab" :options="tabOptions" mandatory />
-          </div>
+  <Modal :open="open" :title="t('library.edit_metadata')" width-class="w-[480px]" @close="cancel">
+    <template #default>
+      <div class="flex items-center justify-between mb-4 -mt-10">
+        <div />
+        <TabSwitcher v-model="activeTab" :options="tabOptions" mandatory />
+      </div>
 
-          <div v-show="activeTab === 'info'">
+      <div class="max-h-[70vh] overflow-y-auto custom-scrollbar -mx-1 px-1">
+        <div v-show="activeTab === 'info'">
             <div class="flex gap-5 mb-5">
               <div class="relative group cursor-pointer w-32 h-32 flex-shrink-0" @click="triggerFileSelect">
                 <div class="w-full h-full rounded-lg overflow-hidden bg-foreground/[0.05] ring-1 ring-border-glass">
@@ -333,26 +325,24 @@ function cancel() {
             ></textarea>
           </div>
 
-          <p v-if="error" class="mt-3 text-xs text-red-400">{{ error }}</p>
-
-          <div class="flex justify-end gap-2 mt-5">
-            <button
-              class="px-3 py-1.5 text-sm text-foreground opacity-70 hover:text-foreground rounded-lg hover:bg-foreground/[0.05] transition-colors"
-              @click="cancel"
-            >{{ t('common.cancel') }}</button>
-            <button
-              class="px-3 py-1.5 text-sm text-primary-foreground bg-primary hover:bg-primary/90 rounded-lg transition-colors font-medium disabled:opacity-40"
-              :disabled="saving"
-              @click="save"
-            >{{ saving ? t('common.saving') : t('common.save') }}</button>
-          </div>
-        </div>
       </div>
-    </Transition>
-  </Teleport>
+
+      <p v-if="error" class="mt-3 text-xs text-red-400">{{ error }}</p>
+
+      <div class="flex justify-end gap-2 mt-5">
+        <button
+          class="px-3 py-1.5 text-sm text-foreground opacity-70 hover:text-foreground rounded-lg hover:bg-foreground/[0.05] transition-colors"
+          @click="cancel"
+        >{{ t('common.cancel') }}</button>
+        <button
+          class="px-3 py-1.5 text-sm text-primary-foreground bg-primary hover:bg-primary/90 rounded-lg transition-colors font-medium disabled:opacity-40"
+          :disabled="saving"
+          @click="save"
+        >{{ saving ? t('common.saving') : t('common.save') }}</button>
+      </div>
+    </template>
+  </Modal>
 </template>
 
 <style scoped>
-.fade-enter-active, .fade-leave-active { transition: opacity 0.15s; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

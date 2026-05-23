@@ -19,7 +19,7 @@ const router = useRouter()
     
     <!-- Top Navigation -->
     <div class="pt-4 px-4 md:pt-5 md:px-8 flex items-center justify-between">
-      <button @click="router.back()" class="p-2 hover:bg-foreground/[0.06] rounded-full transition-colors">
+      <button @click="router.back()" class="p-2 relative z-[99] hover:bg-foreground/[0.06] rounded-full transition-colors">
         <ArrowLeft class="w-6 h-6" />
       </button>
       <slot name="top-right" />
@@ -33,7 +33,7 @@ const router = useRouter()
       <div class="flex-1 space-y-4 @container min-w-0">
         <div class="space-y-2">
           <slot name="title">
-            <h1 v-if="title" class="text-2xl @sm:text-3xl @md:text-4xl @lg:text-5xl font-bold tracking-tight line-clamp-2">
+            <h1 v-if="title" class="text-2xl @sm:text-3xl @md:text-4xl @lg:text-5xl font-bold tracking-tight line-clamp-2 leading-snug text-foreground">
               {{ title }}
             </h1>
           </slot>

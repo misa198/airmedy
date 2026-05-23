@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, watch, onUnmounted } from 'vue'
+import { onMounted, watch, onUnmounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import MainLayout from './layouts/MainLayout.vue'
 import { hexToRgba } from './lib/utils'
@@ -9,6 +9,7 @@ import { usePlaylistsStore } from './stores/playlists'
 import { useAppStore } from './stores/app'
 import { useI18n } from 'vue-i18n'
 import { Events } from '@wailsio/runtime'
+import * as WindowService from '../bindings/airmedy/internal/infra/wails/windowservice'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,6 +18,14 @@ const playerStore = usePlayerStore()
 const deviceStore = useDeviceStore()
 const playlistsStore = usePlaylistsStore()
 const appStore = useAppStore()
+
+const isRouterReady = ref(false)
+const isMiniPlayer = computed(() => {
+  return route.name === 'mini-player' || 
+         route.path === '/mini-player' || 
+         window.location.hash.includes('mini-player') ||
+         window.location.search.includes('mode=mini')
+})
 
 const handleKeyDown = (e: KeyboardEvent) => {
   const target = e.target as HTMLElement
@@ -63,24 +72,46 @@ const handleKeyDown = (e: KeyboardEvent) => {
 }
 
 onMounted(async () => {
+  // Wait for router to be ready to ensure route.name is populated
+  await router.isReady()
+
+  // If we are in mini-player window but not on the right route, force it
+  if (isMiniPlayer.value && route.name !== 'mini-player') {
+    await router.replace('/mini-player')
+  }
+
+  isRouterReady.value = true
+
   // Load settings
   await appStore.loadSettings()
   locale.value = appStore.language
 
-  if (route.name === 'mini-player') return
+  // Handle global events
+  offSettings = Events.On('open-settings', () => {
+    if (isMiniPlayer.value) {
+      WindowService.CloseMiniPlayer()
+    } else {
+      if (playerStore.playerMode !== 'sticky') {
+        playerStore.playerMode = 'sticky'
+      }
+      router.push('/settings')
+    }
+  })
+
+  offSearch = Events.On('open-search', () => {
+    if (isMiniPlayer.value) {
+      WindowService.CloseMiniPlayer()
+    } else {
+      router.push('/search')
+    }
+  })
+
+  if (isMiniPlayer.value) return
+
   playerStore.init()
   deviceStore.init()
   deviceStore.checkFullscreen()
   playlistsStore.loadAll()
-
-  // Handle global events
-  offSettings = Events.On('open-settings', () => {
-    router.push('/settings')
-  })
-
-  offSearch = Events.On('open-search', () => {
-    router.push('/search')
-  })
 
   offCycleRepeat = Events.On('player:cycle-repeat', () => {
     playerStore.cycleRepeat()
@@ -142,8 +173,11 @@ watch(() => playerStore.playerMode, (newMode) => {
 </script>
 
 <template>
-  <RouterView v-if="route.name === 'mini-player'" />
-  <MainLayout v-else />
+  <div v-if="!isRouterReady" class="h-full w-full bg-background" />
+  <template v-else>
+    <RouterView v-if="isMiniPlayer" />
+    <MainLayout v-else />
+  </template>
 </template>
 
 <style>

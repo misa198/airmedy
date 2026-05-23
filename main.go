@@ -284,7 +284,7 @@ func main() {
 			TitleBar:                application.MacTitleBarHiddenInset,
 		},
 		BackgroundColour: application.NewRGB(27, 38, 54),
-		URL:              "/#/mini-player",
+		URL:              "/?mode=mini#/mini-player",
 	})
 	miniPlayerWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
 		windowService.CloseMiniPlayer()
