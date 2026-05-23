@@ -9,6 +9,7 @@ import { usePlaylistsStore } from './stores/playlists'
 import { useAppStore } from './stores/app'
 import { useI18n } from 'vue-i18n'
 import { Events } from '@wailsio/runtime'
+import * as WindowService from '../bindings/airmedy/internal/infra/wails/windowservice'
 
 const route = useRoute()
 const router = useRouter()
@@ -85,21 +86,32 @@ onMounted(async () => {
   await appStore.loadSettings()
   locale.value = appStore.language
 
+  // Handle global events
+  offSettings = Events.On('open-settings', () => {
+    if (isMiniPlayer.value) {
+      WindowService.CloseMiniPlayer()
+    } else {
+      if (playerStore.playerMode !== 'sticky') {
+        playerStore.playerMode = 'sticky'
+      }
+      router.push('/settings')
+    }
+  })
+
+  offSearch = Events.On('open-search', () => {
+    if (isMiniPlayer.value) {
+      WindowService.CloseMiniPlayer()
+    } else {
+      router.push('/search')
+    }
+  })
+
   if (isMiniPlayer.value) return
 
   playerStore.init()
   deviceStore.init()
   deviceStore.checkFullscreen()
   playlistsStore.loadAll()
-
-  // Handle global events
-  offSettings = Events.On('open-settings', () => {
-    router.push('/settings')
-  })
-
-  offSearch = Events.On('open-search', () => {
-    router.push('/search')
-  })
 
   offCycleRepeat = Events.On('player:cycle-repeat', () => {
     playerStore.cycleRepeat()
