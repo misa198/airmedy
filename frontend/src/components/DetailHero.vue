@@ -19,7 +19,7 @@ const router = useRouter()
     
     <!-- Top Navigation -->
     <div class="pt-4 px-4 md:pt-5 md:px-8 flex items-center justify-between">
-      <button @click="router.back()" class="p-2 hover:bg-foreground/[0.06] rounded-full transition-colors">
+      <button @click="router.back()" class="p-2 relative z-[99] hover:bg-foreground/[0.06] rounded-full transition-colors">
         <ArrowLeft class="w-6 h-6" />
       </button>
       <slot name="top-right" />

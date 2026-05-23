@@ -126,9 +126,6 @@ async function load(silent = false) {
     ])
     playlist.value = p
     tracks.value = t.filter((t): t is TrackDTO => t !== null)
-
-    // Load theme
-    await loadTheme()
   } catch (e) {
     console.error('Failed to load playlist', e)
   } finally {
@@ -148,9 +145,9 @@ async function loadTheme() {
     
     // 2. Fallback to first track's album theme if no custom artwork
     if (!colors && tracks.value.length > 0) {
-      const firstTrack = tracks.value[0]
-      if (firstTrack.album_id) {
-        colors = await LibraryService.GetAlbumColors(firstTrack.album_id)
+      const trackWithAlbum = tracks.value.find(t => t.album_id)
+      if (trackWithAlbum?.album_id) {
+        colors = await LibraryService.GetAlbumColors(trackWithAlbum.album_id)
       }
     }
     
@@ -160,6 +157,7 @@ async function loadTheme() {
   }
 }
 
+watch(tracks, () => loadTheme())
 watch(() => route.params.id, () => load())
 watch(() => favoritesStore.version, () => {
   if (route.params.id === 'favorites') load(true)
