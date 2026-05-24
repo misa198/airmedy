@@ -36,7 +36,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
 
 <template>
   <div
-    class="absolute inset-x-0 grid items-center text-sm hover:bg-foreground/[0.04] group transition-colors h-[56px] select-none"
+    class="absolute inset-x-0 grid items-center text-sm hover:bg-foreground/[0.04] group transition-colors h-full select-none"
     :class="{ 'bg-primary/10 hover:bg-primary/[0.15]': isSelected }"
     :style="{
       gridTemplateColumns,

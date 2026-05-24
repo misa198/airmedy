@@ -146,11 +146,12 @@ Virtualized list of tracks supporting reordering, sorting, and horizontal scroll
 | `album_artist` | Album Artist | No                 | No       | No     |
 | `context_menu` | ⋮            | Yes                | No       | Right  |
 
-Row height: 56px, header height: 40px. Column visibility, order, and widths persisted to `localStorage`:
+Row height: 56px (default) or 36px (compact mode), header height: 40px. Column visibility, order, and widths persisted to `localStorage`:
 
 - `airmedy:track-table-visible`
 - `airmedy:track-table-order`
 - `airmedy:track-table-widths`
+- `airmedy:track-table-collapsed`
 
 ## Context Menu System
 
@@ -238,7 +239,7 @@ track_info.*    — Metadata field names
 
 ## Performance Notes
 
-- `vue-virtual-sortable` renders only visible rows in track lists (56px each).
+- `vue-virtual-sortable` renders only visible rows in track lists (56px or 36px each).
 - Views are lazy-loaded (dynamic `import()` in router) — only the home view loads eagerly.
 - Search is debounced 300ms in `stores/search.ts`.
 - Artwork requests use variants (`_sm`, `_md`) sized appropriately for each context.

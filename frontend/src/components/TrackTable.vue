@@ -14,7 +14,7 @@ import VirtualList from 'vue-virtual-sortable'
 
 const SIMPLE_COLUMNS: ColumnKey[] = ['dnd', 'index', 'title', 'artist', 'duration', 'context_menu']
 const HEADER_HEIGHT = 40
-const ROW_HEIGHT = 56
+const rowHeight = computed(() => settings.collapsedMode.value ? 36 : 56)
 const BUFFER = 5
 
 const router = useRouter()
@@ -318,7 +318,7 @@ defineExpose({ scrollToCurrentTrack })
           ref="scrollerRef"
           v-model="displayTracks"
           data-key="id"
-          :size="ROW_HEIGHT"
+          :size="rowHeight"
           handle=".dnd-handle"
           :sortable="allowDnd"
           :animation="150"
@@ -326,15 +326,15 @@ defineExpose({ scrollToCurrentTrack })
           fallback-class="drag-chosen"
           chosen-class="drag-chosen"
           :ghost-style="{ display: 'none' }"
-          class="flex-1 overflow-auto custom-scrollbar track-table-virtual-list"
+          class="flex-1 overflow-auto custom-scrollbar track-table-virtual-list transform-gpu"
           :wrap-style="{ minWidth: totalMinWidth }"
           @scroll="handleScroll"
         >
           <template v-slot:item="{ record, index }">
-            <div :style="{ minWidth: totalMinWidth, height: `${ROW_HEIGHT}px`, position: 'relative' }">
+            <div :style="{ minWidth: totalMinWidth, height: `${rowHeight}px`, position: 'relative' }">
               <TrackTableRow :track="record" :index="index" :current-index="index"
                 :ordered-visible-columns="orderedVisibleColumns" :grid-template-columns="gridTemplateColumns"
-                :show-artwork="showArtwork" :row-bg="rowBg" :variant="variant" :is-selected="selectedIds.has(record.id)"
+                :show-artwork="showArtwork && !settings.collapsedMode.value" :row-bg="rowBg" :variant="variant" :is-selected="selectedIds.has(record.id)"
                 @click="handleTrackClick($event, record, index)" @play-track="handlePlayTrack"
                 @contextmenu="openContextMenu" @navigate-album="navigateToAlbum" @navigate-artist="navigateToArtist" />
             </div>

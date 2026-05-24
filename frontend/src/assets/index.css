@@ -85,6 +85,24 @@
   }
 }
 
+/* Fix WebKit rendering issues with semi-transparent backgrounds, blurs, and opacity */
+[class*="bg-"][class*="/"],
+[class*="bg-"][class*="\\["],
+[class*="backdrop-blur"],
+[class*="opacity-"]:not(.opacity-100),
+.custom-scrollbar {
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+}
+
+/* Ensure backdrop-blur elements have their own stacking context */
+[class*="backdrop-blur"] {
+  isolation: isolate;
+}
+
 img {
   -webkit-user-drag: none;
   user-select: none;

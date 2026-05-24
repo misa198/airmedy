@@ -253,6 +253,7 @@
     "favorite": "รายการโปรด",
     "columns": "คอลัมน์",
     "index": "#",
+    "compact_mode": "โหมดกะทัดรัด",
     "context_menu": ""
   },
   "context_menu": {
