@@ -16,7 +16,7 @@ const emit = defineEmits<{
       <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center transform-gpu will-change-[opacity]" @click.self="emit('close')">
         <div class="backdrop absolute inset-0 bg-background/60 backdrop-blur-sm transform-gpu" @click="emit('close')" />
         <div
-          class="modal-content relative z-10 rounded-3xl bg-glass-elevated backdrop-blur-xl ring-1 ring-border-glass shadow-2xl p-5"
+          class="modal-content relative z-10 rounded-3xl bg-glass-elevated backdrop-blur-xl ring-1 ring-border-glass shadow-2xl p-5 transform-gpu isolate"
           :class="widthClass || 'w-72'"
           @keydown.esc="emit('close')">
           <h3 v-if="title" class="text-base font-semibold text-foreground mb-4">{{ title }}</h3>
