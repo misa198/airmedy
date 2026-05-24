@@ -326,7 +326,7 @@ defineExpose({ scrollToCurrentTrack })
           fallback-class="drag-chosen"
           chosen-class="drag-chosen"
           :ghost-style="{ display: 'none' }"
-          class="flex-1 overflow-auto custom-scrollbar track-table-virtual-list"
+          class="flex-1 overflow-auto custom-scrollbar track-table-virtual-list transform-gpu"
           :wrap-style="{ minWidth: totalMinWidth }"
           @scroll="handleScroll"
         >

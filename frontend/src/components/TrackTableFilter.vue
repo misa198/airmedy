@@ -12,21 +12,37 @@ const props = defineProps<{
 const settings = useTrackTableSettings()
 const filterOpen = ref(false)
 const filterBtnRef = ref<HTMLElement | null>(null)
+const panelX = ref(0)
+const panelY = ref(0)
+
+async function updatePosition() {
+  if (!filterBtnRef.value) return
+  const rect = filterBtnRef.value.getBoundingClientRect()
+  // Align right edge of panel with right edge of button, with a small offset from the scrollbar
+  panelX.value = rect.right - 256 // 256 is the w-64 width
+  panelY.value = rect.bottom
+}
 
 function toggleFilter(e: MouseEvent) {
   e.stopPropagation()
   filterOpen.value = !filterOpen.value
   if (filterOpen.value) {
+    updatePosition()
     nextTick(() => document.addEventListener('click', closeFilter, { once: true }))
+    window.addEventListener('resize', updatePosition)
+  } else {
+    window.removeEventListener('resize', updatePosition)
   }
 }
 
 function closeFilter() {
   filterOpen.value = false
+  window.removeEventListener('resize', updatePosition)
 }
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', closeFilter)
+  window.removeEventListener('resize', updatePosition)
 })
 </script>
 
@@ -42,29 +58,32 @@ onBeforeUnmount(() => {
     </button>
 
     <!-- Filter panel -->
-    <div
-      v-show="filterOpen"
-      class="absolute right-0 top-[40px] z-30 w-64 bg-background/80 backdrop-blur-xl ring-1 ring-foreground/10 rounded-2xl shadow-2xl p-3"
-      @click.stop
-    >
-      <p class="text-[10px] font-semibold text-foreground opacity-60 uppercase tracking-widest px-1 mb-2">
-        {{ $t('library.columns') }}
-      </p>
-      <div class="flex flex-col">
-        <div
-          v-for="col in optionalColumns"
-          :key="col.key"
-          class="flex items-center gap-2.5 px-1.5 py-1.5 rounded-lg hover:bg-foreground/[0.06] cursor-pointer transition-colors"
-          @click="settings.toggleColumn(col.key)"
-        >
-          <Checkbox
-            :checked="settings.visibleColumns.value.includes(col.key)"
-            variant="contained"
-            @update:checked="settings.toggleColumn(col.key)"
-          />
-          <span class="text-sm text-foreground opacity-90">{{ $t(col.labelKey) }}</span>
+    <Teleport to="body">
+      <div
+        v-if="filterOpen"
+        class="fixed z-[999] w-64 bg-background/95 backdrop-blur-xl ring-1 ring-foreground/10 rounded-2xl shadow-2xl p-3 transform-gpu isolate"
+        :style="{ left: panelX + 'px', top: panelY + 'px' }"
+        @click.stop
+      >
+        <p class="text-[10px] font-semibold text-foreground opacity-60 uppercase tracking-widest px-1 mb-2">
+          {{ $t('library.columns') }}
+        </p>
+        <div class="flex flex-col">
+          <div
+            v-for="col in optionalColumns"
+            :key="col.key"
+            class="flex items-center gap-2.5 px-1.5 py-1.5 rounded-lg hover:bg-foreground/[0.06] cursor-pointer transition-colors"
+            @click="settings.toggleColumn(col.key)"
+          >
+            <Checkbox
+              :checked="settings.visibleColumns.value.includes(col.key)"
+              variant="contained"
+              @update:checked="settings.toggleColumn(col.key)"
+            />
+            <span class="text-sm text-foreground opacity-90">{{ $t(col.labelKey) }}</span>
+          </div>
         </div>
       </div>
-    </div>
+    </Teleport>
   </template>
 </template>
