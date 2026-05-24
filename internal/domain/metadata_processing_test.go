@@ -64,7 +64,10 @@ func TestSplitArtists(t *testing.T) {
 		{"tlinh&Low G", []string{"tlinh", "Low G"}},
 		{"tlinh &Low G", []string{"tlinh", "Low G"}},
 		{"tlinh& Low G", []string{"tlinh", "Low G"}},
-		{"Artist A/Artist B\\Artist C", []string{"Artist A", "Artist B", "Artist C"}},
+		{"Artist A / Artist B", []string{"Artist A", "Artist B"}},
+		{"Artist A/Artist B\\Artist C", []string{"Artist A/Artist B", "Artist C"}},
+		{"W/N", []string{"W/N"}},
+		{"AC/DC", []string{"AC/DC"}},
 		{"Brand New", []string{"Brand New"}},
 		{"Earth, Wind & Fire", []string{"Earth", "Wind", "Fire"}},
 	}

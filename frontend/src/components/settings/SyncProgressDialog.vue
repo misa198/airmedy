@@ -29,7 +29,7 @@ const progressPercent = () => {
 <template>
   <Modal :open="open" :title="title()" width-class="w-100" @close="() => {}">
     <template #default>
-      <div class="flex flex-col items-center gap-4 text-center">
+      <div class="flex flex-col items-center gap-4">
         <CheckCircle2 v-if="complete" class="w-10 h-10 text-primary" />
         <Loader2 v-else class="w-10 h-10 animate-spin text-primary" />
         

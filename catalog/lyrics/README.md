@@ -181,4 +181,6 @@ Parsed into `{ text: "English text", secondary: "中文翻译" }`.
 
 **Refresh button:** In the track context menu (`context_menu.refresh_lyrics`), calls `FetchLyrics()` to force re-fetch even if cached.
 
+**Manual Search:** In the track context menu (`context_menu.find_lyrics`), opens `FindLyricsDialog.vue`. This allows users to manually search for lyrics by title and artist. It provides a list of candidates from both LRCLIB and KuGou, scored using the same "Search and Rank" logic as the automatic fetch. Users can preview and save the selected lyrics.
+
 **Manual Edit:** Users can manually edit lyrics in the `MetadataEditDialog`. These edits are written to the file's `LYRICS` tag and stored as `meta_content` in the database.

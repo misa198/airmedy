@@ -41,7 +41,7 @@
     },
     "folders": {
       "title": "Musikbibliothek",
-      "description": "Verwalte die Ordner, in denen Airmedy nach Musik sucht.",
+      "description": "Verwalte the Ordner, in denen Airmedy nach Musik sucht.",
       "add_folder": "Ordner hinzufügen",
       "no_folders": "Noch keine Musikordner hinzugefügt.",
       "add_first": "Füge deinen ersten Ordner hinzu",
@@ -176,6 +176,7 @@
     "queue": "Warteschlange",
     "mini_player": "Mini-Player",
     "fullscreen": "Vollbild",
+    "scroll_to_current": "Zum aktuellen Titel scrollen",
     "now_playing": "Aktuelle Wiedergabe",
     "up_next": "Als Nächstes",
     "queue_empty": "Warteschlange ist leer",
@@ -269,8 +270,24 @@
     "show_in_explorer": "Im Datei-Explorer anzeigen",
     "track_info": "Titelinformationen",
     "refresh_lyrics": "Lyrics aktualisieren",
+    "find_lyrics": "Songtexte finden",
     "remove_from_queue": "Aus Warteschlange entfernen",
     "export_playlist": "Playlist exportieren"
+  },
+  "find_lyrics": {
+    "title": "Songtexte finden",
+    "search": "Suchen",
+    "searching": "Suche...",
+    "no_results": "Keine Songtexte gefunden",
+    "save": "Songtexte speichern",
+    "provider": "Anbieter",
+    "track": "Titel",
+    "artist": "Künstler",
+    "lyrics_preview": "Vorschau der Songtexte",
+    "select_to_preview": "Wählen Sie ein Ergebnis aus, um die Songtexte anzuzeigen",
+    "search_params": "Suchparameter",
+    "track_title": "Titelname",
+    "track_artist": "Künstlername"
   },
   "artist": {
     "albums_count": "{count} Alben",

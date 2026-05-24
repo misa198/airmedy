@@ -40,6 +40,44 @@ func (s *LyricsService) DeleteLyrics(ctx context.Context, trackID string) error 
 	return s.repo.Delete(ctx, trackID)
 }
 
+func (s *LyricsService) SearchLyrics(ctx context.Context, title, artist string, duration int, enableLrclib, enableKugou bool) ([]*domain.LyricsSearchResult, error) {
+	var active []domain.LyricsProvider
+	for _, p := range s.providers {
+		if (p.Name() == "lrclib" && enableLrclib) || (p.Name() == "kugou" && enableKugou) {
+			active = append(active, p)
+		}
+	}
+
+	if len(active) == 0 {
+		return nil, nil
+	}
+
+	type providerRes struct {
+		results []*domain.LyricsSearchResult
+		err     error
+	}
+	ch := make(chan providerRes, len(active))
+
+	for _, p := range active {
+		go func(p domain.LyricsProvider) {
+			res, err := p.Search(ctx, title, artist, duration)
+			ch <- providerRes{res, err}
+		}(p)
+	}
+
+	var allResults []*domain.LyricsSearchResult
+	for range len(active) {
+		res := <-ch
+		if res.err != nil {
+			s.logger.Warn("lyrics provider search failed", "error", res.err)
+			continue
+		}
+		allResults = append(allResults, res.results...)
+	}
+
+	return allResults, nil
+}
+
 // SaveMetaLyrics saves lyrics extracted from file metadata.
 // Preserves any existing provider content/source fields.
 func (s *LyricsService) SaveMetaLyrics(ctx context.Context, trackID, content, source string) error {

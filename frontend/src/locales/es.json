@@ -176,6 +176,7 @@
     "queue": "Cola",
     "mini_player": "Mini reproductor",
     "fullscreen": "Pantalla completa",
+    "scroll_to_current": "Desplazarse a la pista actual",
     "now_playing": "Reproduciendo ahora",
     "up_next": "A continuación",
     "queue_empty": "La cola está vacía",
@@ -269,8 +270,24 @@
     "show_in_explorer": "Mostrar en el explorador de archivos",
     "track_info": "Información de la pista",
     "refresh_lyrics": "Actualizar letra",
+    "find_lyrics": "Buscar letra",
     "remove_from_queue": "Eliminar de la cola",
     "export_playlist": "Exportar lista de reproducción"
+  },
+  "find_lyrics": {
+    "title": "Buscar letra",
+    "search": "Buscar",
+    "searching": "Buscando...",
+    "no_results": "No se encontraron letras",
+    "save": "Guardar letra",
+    "provider": "Proveedor",
+    "track": "Pista",
+    "artist": "Artista",
+    "lyrics_preview": "Vista previa de la letra",
+    "select_to_preview": "Seleccione un resultado para ver la vista previa de la letra",
+    "search_params": "Parámetros de búsqueda",
+    "track_title": "Título de la pista",
+    "track_artist": "Nombre del artista"
   },
   "artist": {
     "albums_count": "{count} álbumes",

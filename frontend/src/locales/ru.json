@@ -176,6 +176,7 @@
     "queue": "Очередь",
     "mini_player": "Мини-плеер",
     "fullscreen": "Полноэкранный режим",
+    "scroll_to_current": "Прокрутить к текущему треку",
     "now_playing": "Сейчас играет",
     "up_next": "Далее",
     "queue_empty": "Очередь пуста",
@@ -269,8 +270,24 @@
     "show_in_explorer": "Показать в проводнике",
     "track_info": "Информация о треке",
     "refresh_lyrics": "Обновить текст",
+    "find_lyrics": "Найти текст",
     "remove_from_queue": "Убрать из очереди",
     "export_playlist": "Экспортировать плейлист"
+  },
+  "find_lyrics": {
+    "title": "Найти текст",
+    "search": "Искать",
+    "searching": "Поиск...",
+    "no_results": "Текст не найден",
+    "save": "Сохранить текст",
+    "provider": "Источник",
+    "track": "Трек",
+    "artist": "Исполнитель",
+    "lyrics_preview": "Предпросмотр текста",
+    "select_to_preview": "Выберите результат для предпросмотра текста",
+    "search_params": "Параметры поиска",
+    "track_title": "Название трека",
+    "track_artist": "Имя исполнителя"
   },
   "artist": {
     "albums_count": "{count} альбомов",

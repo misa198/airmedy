@@ -176,6 +176,7 @@
     "queue": "Coda",
     "mini_player": "Mini Player",
     "fullscreen": "Schermo intero",
+    "scroll_to_current": "Scorri al brano attuale",
     "now_playing": "In riproduzione",
     "up_next": "Prossimo",
     "queue_empty": "La coda è vuota",
@@ -269,8 +270,24 @@
     "show_in_explorer": "Mostra in Esplora file",
     "track_info": "Informazioni traccia",
     "refresh_lyrics": "Aggiorna testi",
+    "find_lyrics": "Trova testi",
     "remove_from_queue": "Rimuovi dalla coda",
     "export_playlist": "Esporta playlist"
+  },
+  "find_lyrics": {
+    "title": "Trova testi",
+    "search": "Cerca",
+    "searching": "Ricerca in corso...",
+    "no_results": "Nessun testo trovato",
+    "save": "Salva testi",
+    "provider": "Provider",
+    "track": "Brano",
+    "artist": "Artista",
+    "lyrics_preview": "Anteprima testi",
+    "select_to_preview": "Seleziona un risultato per l'anteprima dei testi",
+    "search_params": "Parametri di ricerca",
+    "track_title": "Titolo brano",
+    "track_artist": "Nome artista"
   },
   "artist": {
     "albums_count": "{count} album",

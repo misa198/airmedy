@@ -270,8 +270,24 @@
     "show_in_explorer": "Show in File Explorer",
     "track_info": "Track info",
     "refresh_lyrics": "Refresh Lyrics",
+    "find_lyrics": "Find Lyrics",
     "remove_from_queue": "Remove from Queue",
     "export_playlist": "Export Playlist"
+  },
+  "find_lyrics": {
+    "title": "Find Lyrics",
+    "search": "Search",
+    "searching": "Searching...",
+    "no_results": "No lyrics found",
+    "save": "Save Lyrics",
+    "provider": "Provider",
+    "track": "Track",
+    "artist": "Artist",
+    "lyrics_preview": "Lyrics Preview",
+    "select_to_preview": "Select a result to preview lyrics",
+    "search_params": "Search Parameters",
+    "track_title": "Track Title",
+    "track_artist": "Artist Name"
   },
   "artist": {
     "albums_count": "{count} albums",

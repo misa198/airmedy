@@ -163,6 +163,7 @@ Row height: 56px, header height: 40px. Column visibility, order, and widths pers
 | Play Next           | `PlayerService.PlayNext(track)`              |
 | Track Info          | Open track info drawer                       |
 | Refresh Lyrics      | `LyricsService.FetchLyrics()`                |
+| Find Lyrics         | Open `FindLyricsDialog.vue`                  |
 | Add/Remove Favorite | `LibraryService.ToggleFavorite()`            |
 | Add to Playlist     | Submenu with playlist list                   |
 | Go to Album         | Router navigate to `/albums/:id`             |
@@ -172,7 +173,26 @@ Row height: 56px, header height: 40px. Column visibility, order, and widths pers
 
 `ContextMenu.vue` is rendered via `<Teleport to="body">`. Handles viewport edge detection and keyboard navigation.
 
-## Composables
+## Modal & Dialog System
+
+Common dialogs are consolidated under the **`Modal.vue`** primitive. It provides synchronized transitions, standard backdrop behavior, and consistent header styling.
+
+| Dialog                | Purpose                                      |
+| --------------------- | -------------------------------------------- |
+| `FindLyricsDialog`    | Manual lyrics search and selection           |
+| `SyncProgressDialog`  | Library sync status and progress             |
+| `MetadataEditDialog`  | Manual tag and artwork editing               |
+| `ConfirmDialog`       | Generic confirmation for destructive actions |
+
+## Interactive Polish
+
+- **Auto-scroll to Active**: `TrackTable.vue` and `QueueDrawer.vue` automatically scroll to the currently playing track when opened or when the track changes. Uses a 100ms delay to ensure layout stability.
+- **Path Morphing**: Play/Pause buttons in `PlayerFooter`, `PlayerPlaybackControls`, and `MiniPlayer` use SVG path morphing for Apple Music-style fluid transitions.
+- **Tactile Feedback**: Interactive buttons use a `scale-95` active state for a "pressed" feel.
+- **Glass-Morphism**: Surfaces use `var(--bg-glass)` with `backdrop-filter: blur(30px)`.
+
+## Track Table (`TrackTable.vue`)
+
 
 | Composable              | Purpose                                                 |
 | ----------------------- | ------------------------------------------------------- |

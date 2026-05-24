@@ -105,7 +105,7 @@ Each `update*()` method calls `SettingsService.SaveSettings()` with the full set
 
 ## Settings View Structure
 
-`SettingsView.vue` uses a tab layout:
+`SettingsView.vue` uses a tab layout. When navigation to the settings view occurs, the application automatically closes the fullscreen player overlay and the mini player window to provide a focused configuration environment.
 
 | Tab          | Content                                                                    |
 | ------------ | -------------------------------------------------------------------------- |

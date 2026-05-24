@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"math"
 	"net/http"
 	"net/url"
@@ -33,17 +34,77 @@ type lrclibCandidate struct {
 
 type LrclibProvider struct {
 	client *http.Client
+	logger *slog.Logger
 }
 
-func NewLrclibProvider() *LrclibProvider {
+func NewLrclibProvider(logger *slog.Logger) *LrclibProvider {
 	return &LrclibProvider{
 		client: &http.Client{Timeout: 30 * time.Second},
+		logger: logger,
 	}
 }
 
 func (p *LrclibProvider) Name() string { return "lrclib" }
 
+func (p *LrclibProvider) Search(ctx context.Context, title, artist string, duration int) ([]*domain.LyricsSearchResult, error) {
+	p.logger.Debug("lrclib: searching lyrics", "title", title, "artist", artist, "duration", duration)
+	params := url.Values{}
+	params.Set("track_name", title)
+	params.Set("artist_name", artist)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://lrclib.net/api/search?"+params.Encode(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build lrclib search request: %w", err)
+	}
+	req.Header.Set("User-Agent", "Airmedy/1.0")
+
+	resp, err := p.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("lrclib search request failed: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode == http.StatusNotFound {
+		p.logger.Debug("lrclib: search results not found")
+		return nil, nil
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("lrclib search returned status %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read lrclib search response: %w", err)
+	}
+
+	var candidates []lrclibCandidate
+	if err := json.Unmarshal(body, &candidates); err != nil {
+		return nil, fmt.Errorf("failed to parse lrclib search response: %w", err)
+	}
+
+	p.logger.Debug("lrclib: search found candidates", "count", len(candidates))
+
+	var results []*domain.LyricsSearchResult
+	for _, c := range candidates {
+		content, source := pickContent(c.SyncedLyrics, c.PlainLyrics)
+		if content == "" {
+			continue
+		}
+		results = append(results, &domain.LyricsSearchResult{
+			Provider:   "lrclib",
+			TrackName:  c.TrackName,
+			ArtistName: c.ArtistName,
+			Duration:   int(c.Duration),
+			Content:    content,
+			Source:     source,
+		})
+	}
+
+	return results, nil
+}
+
 func (p *LrclibProvider) Fetch(ctx context.Context, track *domain.TrackDTO) (*domain.Lyric, error) {
+	p.logger.Debug("lrclib: fetching lyrics", "track_id", track.ID, "title", track.Title)
 	artistRaw := track.RawArtistNames
 	if len(track.Artists) > 0 && track.Artists[0] != nil {
 		artistRaw = track.Artists[0].Name
@@ -62,6 +123,7 @@ func (p *LrclibProvider) Fetch(ctx context.Context, track *domain.TrackDTO) (*do
 		return nil, err
 	}
 	if lyric != nil {
+		p.logger.Debug("lrclib: fetch found exact match (with album)")
 		return lyric, nil
 	}
 
@@ -71,14 +133,17 @@ func (p *LrclibProvider) Fetch(ctx context.Context, track *domain.TrackDTO) (*do
 			return nil, err
 		}
 		if lyric != nil {
+			p.logger.Debug("lrclib: fetch found exact match (without album)")
 			return lyric, nil
 		}
 	}
 
+	p.logger.Debug("lrclib: no exact match, performing search and rank")
 	return p.searchAndRank(ctx, track.ID, normTitle, normArtist, track.Duration)
 }
 
 func (p *LrclibProvider) exactGet(ctx context.Context, trackID, title, artist, album string, duration int) (*domain.Lyric, error) {
+	p.logger.Debug("lrclib: exact get", "title", title, "artist", artist, "album", album, "duration", duration)
 	params := url.Values{}
 	params.Set("track_name", title)
 	params.Set("artist_name", artist)
@@ -126,6 +191,7 @@ func (p *LrclibProvider) exactGet(ctx context.Context, trackID, title, artist, a
 }
 
 func (p *LrclibProvider) searchAndRank(ctx context.Context, trackID, normTitle, normArtist string, duration int) (*domain.Lyric, error) {
+	p.logger.Debug("lrclib: search and rank", "title", normTitle, "artist", normArtist, "duration", duration)
 	params := url.Values{}
 	params.Set("track_name", normTitle)
 	params.Set("artist_name", normArtist)
@@ -159,6 +225,8 @@ func (p *LrclibProvider) searchAndRank(ctx context.Context, trackID, normTitle, 
 		return nil, fmt.Errorf("failed to parse lrclib search response: %w", err)
 	}
 
+	p.logger.Debug("lrclib: search and rank found candidates", "count", len(candidates))
+
 	best := -1
 	bestScore := -1.0
 	for i, c := range candidates {
@@ -170,10 +238,12 @@ func (p *LrclibProvider) searchAndRank(ctx context.Context, trackID, normTitle, 
 	}
 
 	if best < 0 {
+		p.logger.Debug("lrclib: no suitable candidate found in search and rank")
 		return nil, nil
 	}
 
 	c := candidates[best]
+	p.logger.Debug("lrclib: best candidate found", "track", c.TrackName, "artist", c.ArtistName, "score", bestScore)
 	content, source := pickContent(c.SyncedLyrics, c.PlainLyrics)
 	if content == "" {
 		return nil, nil

@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"math/rand"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -640,7 +639,8 @@ func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
 	}
 
 	// 2. If any provider is enabled and we don't have external lyrics yet, fetch from providers.
-	hasExternal := lyric != nil && !strings.HasPrefix(lyric.Source, "meta-")
+	dbLyric, _ := s.lyricsService.GetLyrics(ctx, track.ID)
+	hasExternal := dbLyric != nil && dbLyric.Content != ""
 	anyProviderEnabled := settings.EnableLrclib || settings.EnableKugou
 	if !hasExternal && anyProviderEnabled {
 		fetched, err := s.lyricsService.FetchFromProviders(ctx, track, settings.EnableLrclib, settings.EnableKugou)

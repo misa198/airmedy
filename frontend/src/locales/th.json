@@ -123,7 +123,7 @@
       "system": "ระบบ",
       "light": "สว่าง",
       "dark": "มืด",
-      "black": "Black",
+      "black": "ดำสนิท",
       "language": "ภาษา",
       "select_language": "เลือกภาษาของแอปพลิเคชัน"
     },
@@ -176,6 +176,7 @@
     "queue": "คิว",
     "mini_player": "มินิเพลเยอร์",
     "fullscreen": "เต็มหน้าจอ",
+    "scroll_to_current": "เลื่อนไปยังเพลงปัจจุบัน",
     "now_playing": "กำลังเล่น",
     "up_next": "ถัดไปในคิว",
     "queue_empty": "คิวว่าง",
@@ -269,8 +270,24 @@
     "show_in_explorer": "แสดงในตัวจัดการไฟล์",
     "track_info": "ข้อมูลเพลง",
     "refresh_lyrics": "รีเฟรชเนื้อเพลง",
+    "find_lyrics": "ค้นหาเนื้อเพลง",
     "remove_from_queue": "นำออกจากคิว",
     "export_playlist": "ส่งออกเพลย์ลิสต์"
+  },
+  "find_lyrics": {
+    "title": "ค้นหาเนื้อเพลง",
+    "search": "ค้นหา",
+    "searching": "กำลังค้นหา...",
+    "no_results": "ไม่พบเนื้อเพลง",
+    "save": "บันทึกเนื้อเพลง",
+    "provider": "แหล่งที่มา",
+    "track": "ชื่อเพลง",
+    "artist": "ศิลปิน",
+    "lyrics_preview": "ตัวอย่างเนื้อเพลง",
+    "select_to_preview": "เลือกผลลัพธ์เพื่อแสดงตัวอย่างเนื้อเพลง",
+    "search_params": "พารามิเตอร์การค้นหา",
+    "track_title": "ชื่อเพลง",
+    "track_artist": "ชื่อศิลปิน"
   },
   "artist": {
     "albums_count": "{count} อัลบั้ม",
