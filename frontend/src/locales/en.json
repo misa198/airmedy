@@ -91,6 +91,12 @@
     "behavior": {
       "start_at_login": "Start at login",
       "start_at_login_desc": "Automatically launch Airmedy when you sign in",
+      "show_tray_icon": "Show Tray Icon",
+      "show_tray_icon_desc": "Show Airmedy icon in system tray/menu bar",
+      "restart_required": "Restart Required",
+      "restart_required_desc": "A restart is required to apply changes. Restart now?",
+      "restart_now": "Restart Now",
+      "restart_later": "Later",
       "updated": "Startup setting updated",
       "error": "Failed to update startup setting"
     },

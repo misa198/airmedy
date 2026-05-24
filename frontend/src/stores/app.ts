@@ -9,6 +9,7 @@ export const useAppStore = defineStore('app', () => {
   const theme = ref<'system' | 'light' | 'dark' | 'black'>('system')
   const language = ref('en')
   const startAtLogin = ref(false)
+  const showTrayIcon = ref(true)
   const autoCheckUpdate = ref(true)
   const lastfmUsername = ref('')
   const eqEnabled = ref(true)
@@ -45,6 +46,7 @@ export const useAppStore = defineStore('app', () => {
         if (settings.theme) theme.value = settings.theme as any
         if (settings.language) language.value = settings.language
         startAtLogin.value = !!settings.start_at_login
+        showTrayIcon.value = settings.show_tray_icon !== false
         autoCheckUpdate.value = !!settings.auto_check_update
         lastfmUsername.value = settings.lastfm_username || ''
         eqEnabled.value = settings.eq_enabled !== false
@@ -101,6 +103,7 @@ export const useAppStore = defineStore('app', () => {
         theme: theme.value,
         language: language.value,
         start_at_login: startAtLogin.value,
+        show_tray_icon: showTrayIcon.value,
         auto_check_update: autoCheckUpdate.value,
         lastfm_username: lastfmUsername.value,
         eq_enabled: eqEnabled.value,
@@ -129,6 +132,11 @@ export const useAppStore = defineStore('app', () => {
 
   const updateStartAtLogin = async (enabled: boolean) => {
     startAtLogin.value = enabled
+    await saveSettings()
+  }
+
+  const updateShowTrayIcon = async (enabled: boolean) => {
+    showTrayIcon.value = enabled
     await saveSettings()
   }
 
@@ -181,6 +189,7 @@ export const useAppStore = defineStore('app', () => {
     theme,
     language,
     startAtLogin,
+    showTrayIcon,
     autoCheckUpdate,
     lastfmUsername,
     eqEnabled,
@@ -200,6 +209,7 @@ export const useAppStore = defineStore('app', () => {
     updateTheme,
     updateLanguage,
     updateStartAtLogin,
+    updateShowTrayIcon,
     updateAutoCheckUpdate,
     updateEQEnabled,
     updateLastFmUsername,

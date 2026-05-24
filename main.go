@@ -214,20 +214,24 @@ func main() {
 		stopFX()
 	})
 
-	systemTray := wailsApp.SystemTray.New()
-	switch runtime.GOOS {
-	case "darwin":
-		systemTray.SetTemplateIcon(icons.SystrayMacTemplate)
-		systemTray.SetIcon(macTrayIcon)
-	case "linux":
-		systemTray.SetIcon(linuxTrayIcon)
-	case "windows":
-		systemTray.SetIcon(windowsTrayIcon)
-	}
-	systemTray.SetTooltip("Airmedy")
+	var trayManager *wails.TrayManager
+	settings, err := settingsService.GetSettings(context.Background())
+	if err == nil && settings.ShowTrayIcon {
+		systemTray := wailsApp.SystemTray.New()
+		switch runtime.GOOS {
+		case "darwin":
+			systemTray.SetTemplateIcon(icons.SystrayMacTemplate)
+			systemTray.SetIcon(macTrayIcon)
+		case "linux":
+			systemTray.SetIcon(linuxTrayIcon)
+		case "windows":
+			systemTray.SetIcon(windowsTrayIcon)
+		}
+		systemTray.SetTooltip("Airmedy")
 
-	trayManager := wails.NewTrayManager(wailsApp, playerService.GetService(), libraryService, i18nService)
-	trayManager.Setup(systemTray, mainWindow)
+		trayManager = wails.NewTrayManager(wailsApp, playerService.GetService(), libraryService, i18nService)
+		trayManager.Setup(systemTray, mainWindow)
+	}
 
 	// Listen for language changes
 	wailsApp.Event.On("language:changed", func(event *application.CustomEvent) {
@@ -236,7 +240,9 @@ func main() {
 			application.InvokeSync(func() {
 				newMenu := buildAppMenu(wailsApp, i18nService, playerService)
 				wailsApp.Menu.SetApplicationMenu(newMenu)
-				trayManager.UpdateLanguage()
+				if trayManager != nil {
+					trayManager.UpdateLanguage()
+				}
 			})
 		}
 	})
