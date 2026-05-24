@@ -85,6 +85,11 @@ export const usePlayerStore = defineStore('player', () => {
     _offFns = [
       Events.On('player:status', (ev: Events.WailsEvent) => {
         const s = ev.data as PlayerStatus
+        // SFBAudioEngine enqueueURL is async; currentTime can briefly return the
+        // old track's position after a hard load. New track always starts at 0.
+        if (s.track_id && s.track_id !== status.value?.track_id) {
+          s.position = 0
+        }
         status.value = s
         if (s.theme) theme.value = s.theme
         if (s?.track_id) {
