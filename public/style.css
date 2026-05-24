@@ -430,22 +430,33 @@ body.light .theme-icon-dark { display: block; }
 
 .screenshot-mockup-wrapper {
     display: grid;
-    grid-template-columns: 1fr 1.5fr;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: "desc mockup";
     align-items: center;
     gap: 80px;
 }
 
 .screenshot-mockup-wrapper.reverse {
-    grid-template-columns: 1.5fr 1fr;
+    grid-template-areas: "mockup desc";
+}
+
+.screenshot-mockup-desc {
+    grid-area: desc;
+    max-width: 440px;
+    justify-self: end;
 }
 
 .screenshot-mockup-wrapper.reverse .screenshot-mockup-desc {
-    grid-column: 2;
+    justify-self: start;
+}
+
+.mockup-wrapper {
+    grid-area: mockup;
+    justify-self: start;
 }
 
 .screenshot-mockup-wrapper.reverse .mockup-wrapper {
-    grid-column: 1;
-    grid-row: 1;
+    justify-self: end;
 }
 
 .screenshot-mockup-wrapper .mockup-wrapper {
@@ -550,7 +561,7 @@ body.light .theme-icon-dark { display: block; }
 .download-options {
     display: flex;
     justify-content: center;
-    gap: 60px;
+    gap: 40px;
     margin-bottom: 40px;
     flex-wrap: wrap;
 }
@@ -560,6 +571,11 @@ body.light .theme-icon-dark { display: block; }
     flex-direction: column;
     gap: 16px;
     align-items: center;
+    min-width: 220px;
+}
+
+.download-group .btn {
+    min-width: 200px;
 }
 
 /* Dropdown */
@@ -571,6 +587,7 @@ body.light .theme-icon-dark { display: block; }
 .dropdown-trigger {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
 }
 
@@ -629,9 +646,20 @@ body.light .theme-icon-dark { display: block; }
 }
 
 .platform-icon {
-    margin-bottom: 12px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
     color: var(--text-muted);
     transition: var(--transition);
+}
+
+.platform-icon svg {
+    max-height: 40px;
+    max-width: 40px;
+    width: auto;
+    height: auto;
 }
 
 .download-group:hover .platform-icon {
@@ -709,25 +737,26 @@ body.light .theme-icon-dark { display: block; }
 .screenshot-mockup-wrapper, 
 .screenshot-mockup-wrapper.reverse {
     grid-template-columns: 1fr;
+    grid-template-areas: "desc" "mockup";
     text-align: center;
     gap: 40px;
 }
 
-.screenshot-mockup-wrapper.reverse .screenshot-mockup-desc {
-    grid-column: 1;
+.screenshot-mockup-desc {
+    text-align: center;
+    justify-self: center;
+    max-width: none;
 }
 
 .screenshot-mockup-wrapper .mockup-wrapper,
 .screenshot-mockup-wrapper.reverse .mockup-wrapper {
-    grid-row: 2; /* Image after text on mobile */
     transform: none !important;
+    justify-self: center;
 }
 
 .download-card {
     padding: 40px 24px;
 }
-        margin-bottom: 40px;
-    }
 }
 
 @media (max-width: 640px) {
