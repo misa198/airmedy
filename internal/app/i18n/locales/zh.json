@@ -1,0 +1,38 @@
+{
+  "menu": {
+    "airmedy": "Airmedy",
+    "settings": "设置...",
+    "quit": "退出",
+    "file": "文件",
+    "edit": "编辑",
+    "playback": "播放",
+    "play_pause": "播放/暂停",
+    "next_track": "下一首",
+    "previous_track": "上一首",
+    "fast_forward": "快进",
+    "rewind": "快退",
+    "increase_volume": "调高音量",
+    "decrease_volume": "调低音量",
+    "mute": "静音",
+    "shuffle": "随机播放",
+    "repeat": "循环播放",
+    "view": "视图",
+    "search": "搜索"
+  },
+  "tray": {
+    "no_track": "未在播放",
+    "next_none": "下一首: 无",
+    "next": "下一首: %s",
+    "play": "播放",
+    "pause": "暂停",
+    "next_track": "下一首",
+    "previous_track": "上一首",
+    "repeat": "循环",
+    "repeat_all": "全部循环",
+    "repeat_one": "单曲循环",
+    "shuffle": "随机",
+    "favorite": "收藏",
+    "show_airmedy": "显示 Airmedy",
+    "quit": "退出"
+  }
+}

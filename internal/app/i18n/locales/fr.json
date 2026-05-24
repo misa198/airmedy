@@ -1,0 +1,38 @@
+{
+  "menu": {
+    "airmedy": "Airmedy",
+    "settings": "Réglages...",
+    "quit": "Quitter",
+    "file": "Fichier",
+    "edit": "Édition",
+    "playback": "Lecture",
+    "play_pause": "Lecture/Pause",
+    "next_track": "Morceau suivant",
+    "previous_track": "Morceau précédent",
+    "fast_forward": "Avance rapide",
+    "rewind": "Retour rapide",
+    "increase_volume": "Augmenter le volume",
+    "decrease_volume": "Diminuer le volume",
+    "mute": "Muet",
+    "shuffle": "Aléatoire",
+    "repeat": "Répéter",
+    "view": "Présentation",
+    "search": "Recherche"
+  },
+  "tray": {
+    "no_track": "Aucun morceau en lecture",
+    "next_none": "Suivant : Aucun",
+    "next": "Suivant : %s",
+    "play": "Lecture",
+    "pause": "Pause",
+    "next_track": "Morceau suivant",
+    "previous_track": "Morceau précédent",
+    "repeat": "Répéter",
+    "repeat_all": "Tout répéter",
+    "repeat_one": "Répéter un",
+    "shuffle": "Aléatoire",
+    "favorite": "Favori",
+    "show_airmedy": "Afficher Airmedy",
+    "quit": "Quitter"
+  }
+}

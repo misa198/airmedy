@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"airmedy/internal/app"
+	"airmedy/internal/app/i18n"
 	"airmedy/internal/domain"
 	"airmedy/internal/infra/wails"
 	"runtime/debug"
@@ -35,6 +36,7 @@ var windowsTrayIcon []byte
 
 func init() {
 	application.RegisterEvent[string]("time")
+	application.RegisterEvent[string]("language:changed")
 }
 
 func main() {
@@ -52,6 +54,7 @@ func main() {
 	var lyricsService *wails.LyricsService
 	var eqService *wails.EQService
 	var windowService *wails.WindowService
+	var i18nService *i18n.Service
 	var settingsService *wails.SettingsService
 	var updaterService *wails.UpdaterService
 	var artworkCache domain.ArtworkCache
@@ -64,7 +67,7 @@ func main() {
 
 	fxApp := fx.New(
 		app.Module,
-		fx.Populate(&greetService, &libraryService, &playerService, &searchService, &playlistService, &lyricsService, &eqService, &windowService, &settingsService, &lastfmService, &updaterService, &artworkCache),
+		fx.Populate(&greetService, &libraryService, &playerService, &searchService, &playlistService, &lyricsService, &eqService, &windowService, &i18nService, &settingsService, &lastfmService, &updaterService, &artworkCache),
 		fx.NopLogger, // Keep logs clean for now
 	)
 
@@ -121,123 +124,12 @@ func main() {
 		},
 	})
 
+	// Initialize i18n
+	settings, _ := settingsService.GetSettings(context.Background())
+	i18nService.SetLocale(settings.Language)
+
 	// Create application menu
-	menu := application.NewMenu()
-	if runtime.GOOS == "darwin" {
-		appMenu := menu.AddSubmenu("Airmedy")
-		appMenu.AddRole(application.About)
-		appMenu.AddSeparator()
-		appMenu.Add("Settings...").
-			SetAccelerator("Cmd+,").
-			OnClick(func(ctx *application.Context) {
-				wailsApp.Event.Emit("open-settings")
-			})
-		appMenu.AddSeparator()
-		appMenu.AddRole(application.ServicesMenu)
-		appMenu.AddSeparator()
-		appMenu.AddRole(application.Hide)
-		appMenu.AddRole(application.HideOthers)
-		appMenu.AddRole(application.ShowAll)
-		appMenu.AddSeparator()
-		appMenu.AddRole(application.Quit)
-
-		menu.AddRole(application.FileMenu)
-	} else {
-		fileMenu := menu.AddSubmenu("File")
-		fileMenu.Add("Settings...").
-			SetAccelerator("Ctrl+,").
-			OnClick(func(ctx *application.Context) {
-				wailsApp.Event.Emit("open-settings")
-			})
-		fileMenu.AddSeparator()
-		fileMenu.AddRole(application.Quit)
-	}
-
-	menu.AddRole(application.EditMenu)
-
-	// Playback menu
-	playbackMenu := menu.AddSubmenu("Playback")
-	var ctrl, opt string
-	if runtime.GOOS == "darwin" {
-		ctrl = "Cmd"
-		opt = "Option"
-	} else {
-		ctrl = "Ctrl"
-		opt = "Alt"
-	}
-
-	playbackMenu.Add("Play/Pause").
-		SetAccelerator("Space").
-		OnClick(func(ctx *application.Context) {
-			_ = playerService.TogglePause()
-		})
-	playbackMenu.AddSeparator()
-	playbackMenu.Add("Next Track").
-		SetAccelerator(ctrl + "+Right").
-		OnClick(func(ctx *application.Context) {
-			_ = playerService.Next()
-		})
-	playbackMenu.Add("Previous Track").
-		SetAccelerator(ctrl + "+Left").
-		OnClick(func(ctx *application.Context) {
-			_ = playerService.Previous()
-		})
-	playbackMenu.AddSeparator()
-	playbackMenu.Add("Fast Forward").
-		SetAccelerator(opt + "+" + ctrl + "+Right").
-		OnClick(func(ctx *application.Context) {
-			_ = playerService.FastForward()
-		})
-	playbackMenu.Add("Rewind").
-		SetAccelerator(opt + "+" + ctrl + "+Left").
-		OnClick(func(ctx *application.Context) {
-			_ = playerService.Rewind()
-		})
-	playbackMenu.AddSeparator()
-	playbackMenu.Add("Increase Volume").
-		SetAccelerator(ctrl + "+Up").
-		OnClick(func(ctx *application.Context) {
-			_ = playerService.IncreaseVolume()
-		})
-	playbackMenu.Add("Decrease Volume").
-		SetAccelerator(ctrl + "+Down").
-		OnClick(func(ctx *application.Context) {
-			_ = playerService.DecreaseVolume()
-		})
-	playbackMenu.Add("Mute").
-		SetAccelerator(opt + "+" + ctrl + "+Down").
-		OnClick(func(ctx *application.Context) {
-			_ = playerService.ToggleMute()
-		})
-	playbackMenu.AddSeparator()
-	playbackMenu.Add("Shuffle").
-		SetAccelerator(ctrl + "+S").
-		OnClick(func(ctx *application.Context) {
-			status := playerService.GetStatus()
-			_ = playerService.SetShuffle(!status.Shuffle)
-		})
-	playbackMenu.Add("Repeat").
-		SetAccelerator(ctrl + "+R").
-		OnClick(func(ctx *application.Context) {
-			wailsApp.Event.Emit("player:cycle-repeat")
-		})
-
-	// View menu
-	viewMenu := menu.AddSubmenu("View")
-	viewMenu.Add("Search").
-		SetAccelerator(ctrl + "+F").
-		OnClick(func(ctx *application.Context) {
-			wailsApp.Event.Emit("open-search")
-		})
-	viewMenu.AddSeparator()
-	viewMenu.AddRole(application.Reload)
-	viewMenu.AddRole(application.ForceReload)
-	viewMenu.AddRole(application.ToggleFullscreen)
-	viewMenu.AddRole(application.OpenDevTools)
-
-	menu.AddRole(application.WindowMenu)
-	menu.AddRole(application.HelpMenu)
-
+	menu := buildAppMenu(wailsApp, i18nService, playerService)
 	wailsApp.Menu.SetApplicationMenu(menu)
 
 	mainWindow = wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
@@ -334,8 +226,20 @@ func main() {
 	}
 	systemTray.SetTooltip("Airmedy")
 
-	trayManager := wails.NewTrayManager(wailsApp, playerService.GetService(), libraryService)
+	trayManager := wails.NewTrayManager(wailsApp, playerService.GetService(), libraryService, i18nService)
 	trayManager.Setup(systemTray, mainWindow)
+
+	// Listen for language changes
+	wailsApp.Event.On("language:changed", func(event *application.CustomEvent) {
+		if lang, ok := event.Data.(string); ok {
+			i18nService.SetLocale(lang)
+			application.InvokeSync(func() {
+				newMenu := buildAppMenu(wailsApp, i18nService, playerService)
+				wailsApp.Menu.SetApplicationMenu(newMenu)
+				trayManager.UpdateLanguage()
+			})
+		}
+	})
 
 	go func() {
 		for {
@@ -351,4 +255,124 @@ func main() {
 	}
 
 	stopFX()
+}
+
+func buildAppMenu(wailsApp *application.App, i18nService *i18n.Service, playerService *wails.PlayerService) *application.Menu {
+	menu := application.NewMenu()
+	if runtime.GOOS == "darwin" {
+		appMenu := menu.AddSubmenu(i18nService.T("menu.airmedy"))
+		appMenu.AddRole(application.About)
+		appMenu.AddSeparator()
+		appMenu.Add(i18nService.T("menu.settings")).
+			SetAccelerator("Cmd+,").
+			OnClick(func(ctx *application.Context) {
+				wailsApp.Event.Emit("open-settings")
+			})
+		appMenu.AddSeparator()
+		appMenu.AddRole(application.ServicesMenu)
+		appMenu.AddSeparator()
+		appMenu.AddRole(application.Hide)
+		appMenu.AddRole(application.HideOthers)
+		appMenu.AddRole(application.ShowAll)
+		appMenu.AddSeparator()
+		appMenu.AddRole(application.Quit)
+
+		menu.AddRole(application.FileMenu)
+	} else {
+		fileMenu := menu.AddSubmenu(i18nService.T("menu.file"))
+		fileMenu.Add(i18nService.T("menu.settings")).
+			SetAccelerator("Ctrl+,").
+			OnClick(func(ctx *application.Context) {
+				wailsApp.Event.Emit("open-settings")
+			})
+		fileMenu.AddSeparator()
+		fileMenu.AddRole(application.Quit)
+	}
+
+	menu.AddRole(application.EditMenu)
+
+	// Playback menu
+	playbackMenu := menu.AddSubmenu(i18nService.T("menu.playback"))
+	var ctrl, opt string
+	if runtime.GOOS == "darwin" {
+		ctrl = "Cmd"
+		opt = "Option"
+	} else {
+		ctrl = "Ctrl"
+		opt = "Alt"
+	}
+
+	playbackMenu.Add(i18nService.T("menu.play_pause")).
+		SetAccelerator("Space").
+		OnClick(func(ctx *application.Context) {
+			_ = playerService.TogglePause()
+		})
+	playbackMenu.AddSeparator()
+	playbackMenu.Add(i18nService.T("menu.next_track")).
+		SetAccelerator(ctrl + "+Right").
+		OnClick(func(ctx *application.Context) {
+			_ = playerService.Next()
+		})
+	playbackMenu.Add(i18nService.T("menu.previous_track")).
+		SetAccelerator(ctrl + "+Left").
+		OnClick(func(ctx *application.Context) {
+			_ = playerService.Previous()
+		})
+	playbackMenu.AddSeparator()
+	playbackMenu.Add(i18nService.T("menu.fast_forward")).
+		SetAccelerator(opt + "+" + ctrl + "+Right").
+		OnClick(func(ctx *application.Context) {
+			_ = playerService.FastForward()
+		})
+	playbackMenu.Add(i18nService.T("menu.rewind")).
+		SetAccelerator(opt + "+" + ctrl + "+Left").
+		OnClick(func(ctx *application.Context) {
+			_ = playerService.Rewind()
+		})
+	playbackMenu.AddSeparator()
+	playbackMenu.Add(i18nService.T("menu.increase_volume")).
+		SetAccelerator(ctrl + "+Up").
+		OnClick(func(ctx *application.Context) {
+			_ = playerService.IncreaseVolume()
+		})
+	playbackMenu.Add(i18nService.T("menu.decrease_volume")).
+		SetAccelerator(ctrl + "+Down").
+		OnClick(func(ctx *application.Context) {
+			_ = playerService.DecreaseVolume()
+		})
+	playbackMenu.Add(i18nService.T("menu.mute")).
+		SetAccelerator(opt + "+" + ctrl + "+Down").
+		OnClick(func(ctx *application.Context) {
+			_ = playerService.ToggleMute()
+		})
+	playbackMenu.AddSeparator()
+	playbackMenu.Add(i18nService.T("menu.shuffle")).
+		SetAccelerator(ctrl + "+S").
+		OnClick(func(ctx *application.Context) {
+			status := playerService.GetStatus()
+			_ = playerService.SetShuffle(!status.Shuffle)
+		})
+	playbackMenu.Add(i18nService.T("menu.repeat")).
+		SetAccelerator(ctrl + "+R").
+		OnClick(func(ctx *application.Context) {
+			wailsApp.Event.Emit("player:cycle-repeat")
+		})
+
+	// View menu
+	viewMenu := menu.AddSubmenu(i18nService.T("menu.view"))
+	viewMenu.Add(i18nService.T("menu.search")).
+		SetAccelerator(ctrl + "+F").
+		OnClick(func(ctx *application.Context) {
+			wailsApp.Event.Emit("open-search")
+		})
+	viewMenu.AddSeparator()
+	viewMenu.AddRole(application.Reload)
+	viewMenu.AddRole(application.ForceReload)
+	viewMenu.AddRole(application.ToggleFullscreen)
+	viewMenu.AddRole(application.OpenDevTools)
+
+	menu.AddRole(application.WindowMenu)
+	menu.AddRole(application.HelpMenu)
+
+	return menu
 }

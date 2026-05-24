@@ -1,0 +1,38 @@
+{
+  "menu": {
+    "airmedy": "Airmedy",
+    "settings": "설정...",
+    "quit": "종료",
+    "file": "파일",
+    "edit": "편집",
+    "playback": "재생",
+    "play_pause": "재생/일시정지",
+    "next_track": "다음 트랙",
+    "previous_track": "이전 트랙",
+    "fast_forward": "빨리 감기",
+    "rewind": "되감기",
+    "increase_volume": "음량 높이기",
+    "decrease_volume": "음량 낮추기",
+    "mute": "음소거",
+    "shuffle": "셔플",
+    "repeat": "반복",
+    "view": "보기",
+    "search": "검색"
+  },
+  "tray": {
+    "no_track": "재생 중인 트랙 없음",
+    "next_none": "다음: 없음",
+    "next": "다음: %s",
+    "play": "재생",
+    "pause": "일시정지",
+    "next_track": "다음 트랙",
+    "previous_track": "이전 트랙",
+    "repeat": "반복",
+    "repeat_all": "전체 반복",
+    "repeat_one": "한 곡 반복",
+    "shuffle": "셔플",
+    "favorite": "즐겨찾기",
+    "show_airmedy": "Airmedy 보이기",
+    "quit": "종료"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "menu": {
+    "airmedy": "Airmedy",
+    "settings": "การตั้งค่า...",
+    "quit": "ออกจากโปรแกรม",
+    "file": "ไฟล์",
+    "edit": "แก้ไข",
+    "playback": "การเล่น",
+    "play_pause": "เล่น/หยุดชั่วคราว",
+    "next_track": "เพลงถัดไป",
+    "previous_track": "เพลงก่อนหน้า",
+    "fast_forward": "กรอไปข้างหน้า",
+    "rewind": "กรอกลับ",
+    "increase_volume": "เพิ่มระดับเสียง",
+    "decrease_volume": "ลดระดับเสียง",
+    "mute": "ปิดเสียง",
+    "shuffle": "สุ่ม",
+    "repeat": "ทำซ้ำ",
+    "view": "มุมมอง",
+    "search": "ค้นหา"
+  },
+  "tray": {
+    "no_track": "ไม่มีเพลงที่กำลังเล่น",
+    "next_none": "ถัดไป: ไม่มี",
+    "next": "ถัดไป: %s",
+    "play": "เล่น",
+    "pause": "หยุดชั่วคราว",
+    "next_track": "เพลงถัดไป",
+    "previous_track": "เพลงก่อนหน้า",
+    "repeat": "ทำซ้ำ",
+    "repeat_all": "ทำซ้ำทั้งหมด",
+    "repeat_one": "ทำซ้ำเพลงเดียว",
+    "shuffle": "สุ่ม",
+    "favorite": "รายการโปรด",
+    "show_airmedy": "แสดง Airmedy",
+    "quit": "ออกจากโปรแกรม"
+  }
+}

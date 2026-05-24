@@ -1,0 +1,38 @@
+{
+  "menu": {
+    "airmedy": "Airmedy",
+    "settings": "設定...",
+    "quit": "終了",
+    "file": "ファイル",
+    "edit": "編集",
+    "playback": "再生",
+    "play_pause": "再生/一時停止",
+    "next_track": "次の曲",
+    "previous_track": "前の曲",
+    "fast_forward": "早送り",
+    "rewind": "巻き戻し",
+    "increase_volume": "音量を上げる",
+    "decrease_volume": "音量を下げる",
+    "mute": "消音",
+    "shuffle": "シャッフル",
+    "repeat": "リピート",
+    "view": "表示",
+    "search": "検索"
+  },
+  "tray": {
+    "no_track": "再生していません",
+    "next_none": "次: なし",
+    "next": "次: %s",
+    "play": "再生",
+    "pause": "一時停止",
+    "next_track": "次の曲",
+    "previous_track": "前の曲",
+    "repeat": "リピート",
+    "repeat_all": "すべてリピート",
+    "repeat_one": "1曲リピート",
+    "shuffle": "シャッフル",
+    "favorite": "お気に入り",
+    "show_airmedy": "Airmedyを表示",
+    "quit": "終了"
+  }
+}
