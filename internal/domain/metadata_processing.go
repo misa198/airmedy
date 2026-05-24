@@ -86,7 +86,7 @@ func SplitArtists(s string) []string {
 
 	// Note: We use \b at the start and (?:\.|\b) at the end to handle optional dots
 	// and ensure we don't split names like "Andrey" or "Brand".
-	re := regexp.MustCompile(`(?i)\s*(?:[,;|/\\]+|\b(?:ft|feat|featuring|with|vs|and)(?:\.|\b)|&)\s*`)
+	re := regexp.MustCompile(`(?i)\s*(?:[,;|\\]+|(?:\s+/\s+)+|\b(?:ft|feat|featuring|with|vs|and)(?:\.|\b)|&)\s*`)
 
 	parts := re.Split(s, -1)
 	var final []string

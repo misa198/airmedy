@@ -102,6 +102,7 @@ type LyricRepository interface {
 
 type LyricsProvider interface {
 	Fetch(ctx context.Context, track *TrackDTO) (*Lyric, error)
+	Search(ctx context.Context, title, artist string, duration int) ([]*LyricsSearchResult, error)
 	Name() string
 }
 

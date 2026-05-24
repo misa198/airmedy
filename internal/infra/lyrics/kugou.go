@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"math"
 	"net/http"
 	"net/url"
@@ -38,17 +39,69 @@ type kugouDownloadResponse struct {
 
 type KugouProvider struct {
 	client *http.Client
+	logger *slog.Logger
 }
 
-func NewKugouProvider() *KugouProvider {
+func NewKugouProvider(logger *slog.Logger) *KugouProvider {
 	return &KugouProvider{
 		client: &http.Client{Timeout: 30 * time.Second},
+		logger: logger,
 	}
 }
 
 func (p *KugouProvider) Name() string { return "kugou" }
 
+func (p *KugouProvider) Search(ctx context.Context, title, artist string, duration int) ([]*domain.LyricsSearchResult, error) {
+	p.logger.Debug("kugou: searching lyrics", "title", title, "artist", artist, "duration", duration)
+	keyword := artist + " - " + title
+	durationMs := duration * 1000
+	candidates, err := p.kugouSearch(ctx, keyword, durationMs)
+	if err != nil {
+		return nil, err
+	}
+
+	p.logger.Debug("kugou: search found candidates", "count", len(candidates))
+
+	var results []*domain.LyricsSearchResult
+	// Only fetch content for top 5 candidates to avoid excessive requests
+	maxResults := 5
+	if len(candidates) < maxResults {
+		maxResults = len(candidates)
+	}
+
+	for i := range maxResults {
+		c := &candidates[i]
+		content, err := p.kugouDownload(ctx, c.ID, c.AccessKey)
+		if err != nil {
+			p.logger.Debug("kugou: failed to download candidate", "id", c.ID, "error", err)
+			continue
+		}
+		if content == "" {
+			continue
+		}
+
+		source := "kugou-plain"
+		if kugouIsSynced(content) {
+			source = "kugou-synced"
+		}
+
+		results = append(results, &domain.LyricsSearchResult{
+			Provider:   "kugou",
+			ID:         c.ID,
+			TrackName:  title,  // Kugou search results don't return track name/artist name for each candidate
+			ArtistName: artist, // using the search terms as placeholders
+			Duration:   c.Duration / 1000,
+			Content:    content,
+			Source:     source,
+		})
+	}
+
+	p.logger.Debug("kugou: search processed results", "count", len(results))
+	return results, nil
+}
+
 func (p *KugouProvider) Fetch(ctx context.Context, track *domain.TrackDTO) (*domain.Lyric, error) {
+	p.logger.Debug("kugou: fetching lyrics", "track_id", track.ID, "title", track.Title)
 	artistRaw := track.RawArtistNames
 	if len(track.Artists) > 0 && track.Artists[0] != nil {
 		artistRaw = track.Artists[0].Name
@@ -61,14 +114,17 @@ func (p *KugouProvider) Fetch(ctx context.Context, track *domain.TrackDTO) (*dom
 
 	for attempt := range 3 {
 		keyword := artist + " - " + title
+		p.logger.Debug("kugou: fetch attempt", "attempt", attempt, "keyword", keyword)
 		candidates, err := p.kugouSearch(ctx, keyword, durationMs)
 		if err != nil {
 			return nil, err
 		}
 
 		if len(candidates) > 0 {
+			p.logger.Debug("kugou: fetch found candidates", "count", len(candidates))
 			best := p.selectBestCandidate(candidates, track.Duration)
 			if best != nil {
+				p.logger.Debug("kugou: best candidate selected", "id", best.ID, "score", best.Score)
 				content, err := p.kugouDownload(ctx, best.ID, best.AccessKey)
 				if err != nil {
 					return nil, err
@@ -91,10 +147,12 @@ func (p *KugouProvider) Fetch(ctx context.Context, track *domain.TrackDTO) (*dom
 			title, artist = artist, title
 		}
 	}
+	p.logger.Debug("kugou: fetch failed to find suitable lyrics")
 	return nil, nil
 }
 
 func (p *KugouProvider) kugouSearch(ctx context.Context, keyword string, durationMs int) ([]kugouCandidate, error) {
+	p.logger.Debug("kugou: performing search", "keyword", keyword, "duration_ms", durationMs)
 	params := url.Values{}
 	params.Set("ver", "1")
 	params.Set("man", "yes")
@@ -118,6 +176,7 @@ func (p *KugouProvider) kugouSearch(ctx context.Context, keyword string, duratio
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
+		p.logger.Debug("kugou: search returned non-OK status", "status", resp.StatusCode)
 		return nil, nil
 	}
 
@@ -134,6 +193,7 @@ func (p *KugouProvider) kugouSearch(ctx context.Context, keyword string, duratio
 }
 
 func (p *KugouProvider) selectBestCandidate(candidates []kugouCandidate, trackDurationSec int) *kugouCandidate {
+	p.logger.Debug("kugou: selecting best candidate", "count", len(candidates), "target_duration", trackDurationSec)
 	var best *kugouCandidate
 	bestDurDiff := math.MaxInt32
 	bestScore := math.MinInt32
@@ -158,6 +218,7 @@ func (p *KugouProvider) selectBestCandidate(candidates []kugouCandidate, trackDu
 }
 
 func (p *KugouProvider) kugouDownload(ctx context.Context, id, accesskey string) (string, error) {
+	p.logger.Debug("kugou: downloading lyrics", "id", id)
 	params := url.Values{}
 	params.Set("ver", "1")
 	params.Set("client", "pc")
@@ -178,6 +239,7 @@ func (p *KugouProvider) kugouDownload(ctx context.Context, id, accesskey string)
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
+		p.logger.Debug("kugou: download returned non-OK status", "status", resp.StatusCode)
 		return "", nil
 	}
 

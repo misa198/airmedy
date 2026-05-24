@@ -1,7 +1,7 @@
 <script setup lang="ts">
 defineProps<{
   open: boolean
-  title: string
+  title?: string
   widthClass?: string
 }>()
 
@@ -13,13 +13,13 @@ const emit = defineEmits<{
 <template>
   <Teleport to="body">
     <Transition name="modal-fade">
-      <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center" @click.self="emit('close')">
-        <div class="backdrop absolute inset-0 bg-background/60 backdrop-blur-sm" @click="emit('close')" />
+      <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center transform-gpu will-change-[opacity]" @click.self="emit('close')">
+        <div class="backdrop absolute inset-0 bg-background/60 backdrop-blur-sm transform-gpu" @click="emit('close')" />
         <div
-          class="modal-content relative z-10 rounded-xl bg-glass-elevated backdrop-blur-xl ring-1 ring-border-glass shadow-2xl p-5"
+          class="modal-content relative z-10 rounded-3xl bg-glass-elevated backdrop-blur-xl ring-1 ring-border-glass shadow-2xl p-5"
           :class="widthClass || 'w-72'"
           @keydown.esc="emit('close')">
-          <h3 class="text-base font-semibold text-foreground mb-4">{{ title }}</h3>
+          <h3 v-if="title" class="text-base font-semibold text-foreground mb-4">{{ title }}</h3>
           <slot />
         </div>
       </div>

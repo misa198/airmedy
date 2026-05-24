@@ -176,6 +176,7 @@
     "queue": "キュー",
     "mini_player": "ミニプレーヤー",
     "fullscreen": "全画面表示",
+    "scroll_to_current": "現在のトラックへスクロール",
     "now_playing": "再生中",
     "up_next": "次に再生",
     "queue_empty": "キューは空です",
@@ -269,8 +270,24 @@
     "show_in_explorer": "ファイルエクスプローラーで表示",
     "track_info": "トラック情報",
     "refresh_lyrics": "歌詞を更新",
+    "find_lyrics": "歌詞を検索",
     "remove_from_queue": "キューから削除",
     "export_playlist": "プレイリストをエクスポート"
+  },
+  "find_lyrics": {
+    "title": "歌詞を検索",
+    "search": "検索",
+    "searching": "検索中...",
+    "no_results": "歌詞が見つかりませんでした",
+    "save": "歌詞を保存",
+    "provider": "プロバイダー",
+    "track": "トラック",
+    "artist": "アーティスト",
+    "lyrics_preview": "歌詞のプレビュー",
+    "select_to_preview": "結果を選択して歌詞をプレビュー",
+    "search_params": "検索パラメータ",
+    "track_title": "トラック名",
+    "track_artist": "アーティスト名"
   },
   "artist": {
     "albums_count": "{count} アルバム",

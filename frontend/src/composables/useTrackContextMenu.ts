@@ -1,9 +1,10 @@
-import { Heart, HeartOff, ListEnd, ListPlus, Disc, User, Pencil, FolderOpen, Info, RefreshCw, ListX, Check, Trash2 } from 'lucide-vue-next'
+import { Heart, HeartOff, ListEnd, ListPlus, Disc, User, Pencil, FolderOpen, Info, RefreshCw, ListX, Check, Trash2, Search } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
 import { useFavoritesStore } from '@/stores/favorites'
 import { usePlayerStore } from '@/stores/player'
+import { useFindLyricsDialog } from './useFindLyricsDialog'
 import type { ContextMenuItem } from './useContextMenu'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import * as PlayerService from '../../bindings/airmedy/internal/infra/wails/playerservice'
@@ -24,6 +25,7 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
   const favoritesStore = useFavoritesStore()
   const playerStore = usePlayerStore()
   const router = useRouter()
+  const findLyricsDialog = useFindLyricsDialog()
 
   function buildMenuItems(track: TrackDTO, options: TrackContextMenuOptions = {}): ContextMenuItem[] {
     const items: ContextMenuItem[] = []
@@ -73,6 +75,21 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
           playerStore.lyrics = lyric ?? null
           playerStore.lyricsLoading = false
         }
+      },
+    })
+
+    items.push({
+      label: t('context_menu.find_lyrics'),
+      icon: Search,
+      action: () => {
+        if (playerStore.playerMode === 'fullscreen') {
+          closeFullScreen()
+          setTimeout(() => {
+            findLyricsDialog.open(track)    
+          }, 300)
+        } else {
+          findLyricsDialog.open(track)
+        }        
       },
     })
 

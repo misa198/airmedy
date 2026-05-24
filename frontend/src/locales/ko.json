@@ -176,6 +176,7 @@
     "queue": "대기열",
     "mini_player": "미니 플레이어",
     "fullscreen": "전체 화면",
+    "scroll_to_current": "현재 트랙으로 스크롤",
     "now_playing": "현재 재생 중",
     "up_next": "다음 재생",
     "queue_empty": "대기열이 비어 있습니다",
@@ -269,8 +270,24 @@
     "show_in_explorer": "파일 탐색기에서 열기",
     "track_info": "트랙 정보",
     "refresh_lyrics": "가사 새로고침",
+    "find_lyrics": "가사 찾기",
     "remove_from_queue": "대기열에서 제거",
     "export_playlist": "재생목록 내보내기"
+  },
+  "find_lyrics": {
+    "title": "가사 찾기",
+    "search": "검색",
+    "searching": "검색 중...",
+    "no_results": "가사를 찾을 수 없습니다",
+    "save": "가사 저장",
+    "provider": "공급자",
+    "track": "트랙",
+    "artist": "아티스트",
+    "lyrics_preview": "가사 미리보기",
+    "select_to_preview": "가사를 미리 보려면 결과를 선택하세요",
+    "search_params": "검색 매개변수",
+    "track_title": "트랙 제목",
+    "track_artist": "아티스트 이름"
   },
   "artist": {
     "albums_count": "{count} 앨범",

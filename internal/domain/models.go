@@ -111,6 +111,18 @@ type Lyric struct {
 	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
+// LyricsSearchResult represents a single search result from a lyrics provider
+type LyricsSearchResult struct {
+	Provider   string `json:"provider"`
+	ID         string `json:"id"`
+	TrackName  string `json:"track_name"`
+	ArtistName string `json:"artist_name"`
+	AlbumName  string `json:"album_name"`
+	Duration   int    `json:"duration"`
+	Content    string `json:"content"`
+	Source     string `json:"source"`
+}
+
 // SyncProgress represents the current progress of a library sync
 type SyncProgress struct {
 	Current int    `json:"current"`

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"sync"
 
 	"airmedy/internal/app/config"
 	"airmedy/internal/domain"
@@ -17,6 +18,9 @@ type SettingsService struct {
 	repo   domain.SettingsRepository
 	cfg    *config.Config
 	logger *slog.Logger
+
+	cache *domain.AppSettings
+	mu    sync.RWMutex
 }
 
 func NewSettingsService(repo domain.SettingsRepository, cfg *config.Config, logger *slog.Logger) *SettingsService {
@@ -28,26 +32,48 @@ func NewSettingsService(repo domain.SettingsRepository, cfg *config.Config, logg
 }
 
 func (s *SettingsService) GetSettings(ctx context.Context) (*domain.AppSettings, error) {
+	s.mu.RLock()
+	if s.cache != nil {
+		defer s.mu.RUnlock()
+		return s.cache, nil
+	}
+	s.mu.RUnlock()
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Double check after acquiring lock
+	if s.cache != nil {
+		return s.cache, nil
+	}
+
 	settings, err := s.repo.Load(ctx)
 	if err != nil {
 		s.logger.Error("failed to load app settings, using defaults", "error", err)
-		return &domain.AppSettings{
+		s.cache = &domain.AppSettings{
 			Language:        "en",
 			Theme:           "system",
 			StartAtLogin:    false,
 			AutoCheckUpdate: true,
 			EQEnabled:       true,
-		}, nil
+		}
+		return s.cache, nil
 	}
+	s.cache = settings
 	return settings, nil
 }
 
 func (s *SettingsService) SaveSettings(ctx context.Context, settings *domain.AppSettings) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	err := s.repo.Save(ctx, settings)
 	if err != nil {
 		s.logger.Error("failed to save app settings", "error", err)
 		return fmt.Errorf("failed to save app settings: %w", err)
 	}
+
+	s.cache = settings
 
 	// Update autostart
 	if err := s.updateAutostart(settings.StartAtLogin); err != nil {

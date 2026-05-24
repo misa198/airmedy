@@ -1,6 +1,8 @@
 package lyrics
 
 import (
+	"log/slog"
+
 	"airmedy/internal/domain"
 
 	"go.uber.org/fx"
@@ -9,11 +11,11 @@ import (
 var Module = fx.Module("lyrics-providers",
 	fx.Provide(
 		fx.Annotate(
-			func() domain.LyricsProvider { return NewLrclibProvider() },
+			func(logger *slog.Logger) domain.LyricsProvider { return NewLrclibProvider(logger) },
 			fx.ResultTags(`group:"lyrics_providers"`),
 		),
 		fx.Annotate(
-			func() domain.LyricsProvider { return NewKugouProvider() },
+			func(logger *slog.Logger) domain.LyricsProvider { return NewKugouProvider(logger) },
 			fx.ResultTags(`group:"lyrics_providers"`),
 		),
 	),

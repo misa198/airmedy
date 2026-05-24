@@ -2,6 +2,7 @@
 import { onMounted, watch, onUnmounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import MainLayout from './layouts/MainLayout.vue'
+import FindLyricsDialog from './components/FindLyricsDialog.vue'
 import { hexToRgba } from './lib/utils'
 import { usePlayerStore } from './stores/player'
 import { useDeviceStore } from './stores/device'
@@ -178,6 +179,7 @@ watch(() => playerStore.playerMode, (newMode) => {
     <RouterView v-if="isMiniPlayer" />
     <MainLayout v-else />
   </template>
+  <FindLyricsDialog />
 </template>
 
 <style>

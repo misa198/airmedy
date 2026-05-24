@@ -91,6 +91,7 @@ Both `DarwinPlayer` (macOS) and `MiniAudioPlayer` (Win/Linux) implement `Gapless
 - Increments play counts via `TrackRepository.IncrementPlayCount()`.
 - Syncs artwork theme colors on track load.
 - Fetches/delivers lyrics on track load.
+- Resets playback position to 0 on track change to ensure clean UI transitions.
 - Handles track-end → advance queue → load next.
 - **Gapless playback (always on):** `loadAndPlay` pre-enqueues the next track via `GaplessPlayer.EnqueueNext`. On `HandleTrackEnd`, the service calls `GaplessPlayer.StartPreloaded` (for miniaudio) or just updates status (SFBAudioEngine auto-transitions), then calls `transitionToTrack` to update currentTrack, Now Playing, palette, and lyrics without interrupting audio.
 
