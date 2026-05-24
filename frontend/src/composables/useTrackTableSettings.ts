@@ -191,6 +191,7 @@ const DEFAULT_VISIBLE: ColumnKey[] = [
 const STORAGE_VISIBLE = 'airmedy:track-table-visible'
 const STORAGE_ORDER = 'airmedy:track-table-order'
 const STORAGE_WIDTHS = 'airmedy:track-table-widths'
+const STORAGE_COLLAPSED = 'airmedy:track-table-collapsed'
 
 function loadJson<T>(key: string, fallback: T): T {
   try {
@@ -210,6 +211,7 @@ const columnOrder = ref<ColumnKey[]>(
   })(),
 )
 const columnWidths = ref<Partial<Record<ColumnKey, number>>>(loadJson(STORAGE_WIDTHS, {}))
+const collapsedMode = ref<boolean>(loadJson(STORAGE_COLLAPSED, false))
 
 watch(
   visibleColumns,
@@ -224,6 +226,11 @@ watch(
 watch(
   columnWidths,
   (v) => localStorage.setItem(STORAGE_WIDTHS, JSON.stringify(v)),
+  { deep: true },
+)
+watch(
+  collapsedMode,
+  (v) => localStorage.setItem(STORAGE_COLLAPSED, JSON.stringify(v)),
   { deep: true },
 )
 
@@ -263,5 +270,9 @@ export function useTrackTableSettings() {
     return override !== undefined ? `${override}px` : col.gridWidth
   }
 
-  return { visibleColumns, columnOrder, columnWidths, toggleColumn, reorderColumns, setColumnWidth, freezeWidths, effectiveGridWidth, COLUMN_MAP }
+  function toggleCollapsedMode() {
+    collapsedMode.value = !collapsedMode.value
+  }
+
+  return { visibleColumns, columnOrder, columnWidths, collapsedMode, toggleColumn, reorderColumns, setColumnWidth, freezeWidths, effectiveGridWidth, toggleCollapsedMode, COLUMN_MAP }
 }

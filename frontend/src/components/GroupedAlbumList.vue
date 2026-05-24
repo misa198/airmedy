@@ -10,18 +10,19 @@ import TrackTable from './TrackTable.vue'
 import ContextMenu from './ContextMenu.vue'
 import { useContextMenu } from '@/composables/useContextMenu'
 import { useAlbumContextMenu } from '@/composables/useAlbumContextMenu'
+import { useTrackTableSettings } from '@/composables/useTrackTableSettings'
 
 const playerStore = usePlayerStore()
 const router = useRouter()
 const contextMenu = useContextMenu()
 const { buildMenuItems } = useAlbumContextMenu()
+const settings = useTrackTableSettings()
 
 const props = defineProps<{
   tracks: TrackDTO[]
   albums?: AlbumDTO[]
 }>()
 
-const TRACK_ROW_HEIGHT = 56
 const TABLE_HEADER_HEIGHT = 41
 
 function onContextMenu(e: MouseEvent, album: AlbumDTO, tracks: TrackDTO[]) {
@@ -70,7 +71,8 @@ const groupedAlbums = computed(() => {
 })
 
 function tableHeight(trackCount: number): string {
-  return `${trackCount * TRACK_ROW_HEIGHT + TABLE_HEADER_HEIGHT}px`
+  const rowHeight = settings.collapsedMode.value ? 36 : 56
+  return `${trackCount * rowHeight + TABLE_HEADER_HEIGHT}px`
 }
 </script>
 

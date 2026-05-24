@@ -253,6 +253,7 @@
     "favorite": "Избранное",
     "columns": "Столбцы",
     "index": "#",
+    "compact_mode": "Компактный режим",
     "context_menu": ""
   },
   "context_menu": {

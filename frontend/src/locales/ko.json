@@ -253,6 +253,7 @@
     "favorite": "즐겨찾기",
     "columns": "열",
     "index": "#",
+    "compact_mode": "컴팩트 모드",
     "context_menu": ""
   },
   "context_menu": {

@@ -21,7 +21,7 @@
 
 ## 1. Performance
 
-- Track lists/grids MUST use `vue-virtual-scroller` (56px row height).
+- Track lists/grids MUST use `vue-virtual-scroller` (56px row height, or 36px in compact/collapsed mode).
 - Heavy tasks (metadata extraction, directory scan, search indexing) MUST run in goroutines with `context.Context` cancellation.
 - SQLite: use transactions for bulk writes; maintain appropriate indexes.
 
