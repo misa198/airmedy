@@ -38,10 +38,15 @@ watch(
       const vh = window.innerHeight
       
       if (x + rect.width > vw) {
-        adjustedX.value = x - rect.width
+        adjustedX.value = Math.max(0, Math.min(x - rect.width, vw - rect.width))
+      } else {
+        adjustedX.value = Math.max(0, Math.min(x, vw - rect.width))
       }
+      
       if (y + rect.height > vh) {
-        adjustedY.value = y - rect.height
+        adjustedY.value = Math.max(0, Math.min(y - rect.height, vh - rect.height))
+      } else {
+        adjustedY.value = Math.max(0, Math.min(y, vh - rect.height))
       }
     }
   },
@@ -71,11 +76,16 @@ async function handleMouseEnter(item: ContextMenuItem, index: number, e: MouseEv
 
     // Check right edge
     if (rect.right + submenuRect.width > vw) {
-      submenuX.value = rect.left - submenuRect.width
+      submenuX.value = Math.max(0, rect.left - submenuRect.width)
+    } else {
+      submenuX.value = Math.min(rect.right, vw - submenuRect.width)
     }
+
     // Check bottom edge
     if (rect.top + submenuRect.height > vh) {
-      submenuY.value = vh - submenuRect.height - 8
+      submenuY.value = Math.max(0, vh - submenuRect.height - 8)
+    } else {
+      submenuY.value = Math.max(0, Math.min(rect.top, vh - submenuRect.height - 8))
     }
   } else {
     activeSubmenuIndex.value = null
