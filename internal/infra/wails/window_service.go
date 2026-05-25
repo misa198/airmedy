@@ -11,6 +11,7 @@ import (
 type WindowService struct {
 	mainWindow        *application.WebviewWindow
 	miniWindow        *application.WebviewWindow
+	miniWindowFactory func() *application.WebviewWindow
 	pendingMiniPlayer bool
 }
 
@@ -30,13 +31,16 @@ func (s *WindowService) SetMainWindow(w *application.WebviewWindow) {
 	})
 }
 
-func (s *WindowService) SetMiniWindow(w *application.WebviewWindow) {
-	s.miniWindow = w
+func (s *WindowService) SetMiniWindowFactory(f func() *application.WebviewWindow) {
+	s.miniWindowFactory = f
 }
 
 func (s *WindowService) OpenMiniPlayer() {
 	if s.miniWindow == nil {
-		return
+		if s.miniWindowFactory == nil {
+			return
+		}
+		s.miniWindow = s.miniWindowFactory()
 	}
 	if s.mainWindow != nil {
 		s.mainWindow.Hide()
@@ -45,11 +49,25 @@ func (s *WindowService) OpenMiniPlayer() {
 	s.miniWindow.Focus()
 }
 
+// CloseMiniPlayer is called from the frontend or ToggleMiniPlayer.
+// It shows the main window and triggers native close so Wails destroys the webview.
 func (s *WindowService) CloseMiniPlayer() {
-	if s.miniWindow == nil {
+	w := s.miniWindow
+	if w == nil {
 		return
 	}
-	s.miniWindow.Hide()
+	s.miniWindow = nil
+	if s.mainWindow != nil {
+		s.mainWindow.Show()
+		s.mainWindow.Focus()
+	}
+	w.Close()
+}
+
+// OnMiniPlayerClosed is called from the WindowClosing hook only.
+// The window is already in the process of being destroyed; just clean up references.
+func (s *WindowService) OnMiniPlayerClosed() {
+	s.miniWindow = nil
 	if s.mainWindow != nil {
 		s.mainWindow.Show()
 		s.mainWindow.Focus()
@@ -57,20 +75,17 @@ func (s *WindowService) CloseMiniPlayer() {
 }
 
 func (s *WindowService) ToggleMiniPlayer() {
-	if s.miniWindow == nil {
+	if s.miniWindow != nil && s.miniWindow.IsVisible() {
+		s.CloseMiniPlayer()
 		return
 	}
-	if s.miniWindow.IsVisible() {
-		s.CloseMiniPlayer()
-	} else {
-		if s.mainWindow.IsFullscreen() {
-			if runtime.GOOS == "darwin" {
-				s.pendingMiniPlayer = true
-				s.mainWindow.UnFullscreen()
-				return
-			}
+	if s.mainWindow != nil && s.mainWindow.IsFullscreen() {
+		if runtime.GOOS == "darwin" {
+			s.pendingMiniPlayer = true
 			s.mainWindow.UnFullscreen()
+			return
 		}
-		s.OpenMiniPlayer()
+		s.mainWindow.UnFullscreen()
 	}
+	s.OpenMiniPlayer()
 }

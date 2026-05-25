@@ -156,33 +156,36 @@ func main() {
 	mainWindow.Show()
 	mainWindow.Focus()
 
-	miniPlayerWindow := wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:               "Mini Player",
-		Width:               300,
-		Height:              300,
-		MinWidth:            280,
-		MinHeight:           280,
-		MaxWidth:            500,
-		MaxHeight:           500,
-		Hidden:              true,
-		AlwaysOnTop:         true,
-		DisableResize:       false,
-		MinimiseButtonState: application.ButtonHidden,
-		MaximiseButtonState: application.ButtonHidden,
-		CloseButtonState:    application.ButtonHidden,
-		Mac: application.MacWindow{
-			InvisibleTitleBarHeight: 28,
-			Backdrop:                application.MacBackdropTranslucent,
-			TitleBar:                application.MacTitleBarHiddenInset,
-		},
-		BackgroundColour: application.NewRGB(27, 38, 54),
-		URL:              "/?mode=mini#/mini-player",
+	windowService.SetMiniWindowFactory(func() *application.WebviewWindow {
+		w := wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
+			Title:               "Mini Player",
+			Width:               300,
+			Height:              300,
+			MinWidth:            280,
+			MinHeight:           280,
+			MaxWidth:            500,
+			MaxHeight:           500,
+			Hidden:              true,
+			AlwaysOnTop:         false,
+			DisableResize:       false,
+			MinimiseButtonState: application.ButtonHidden,
+			MaximiseButtonState: application.ButtonHidden,
+			CloseButtonState:    application.ButtonHidden,
+			Mac: application.MacWindow{
+				InvisibleTitleBarHeight: 28,
+				Backdrop:                application.MacBackdropTranslucent,
+				TitleBar:                application.MacTitleBarHiddenInset,
+				CollectionBehavior:      application.MacWindowCollectionBehaviorTransient,
+			},
+			BackgroundColour: application.NewRGB(27, 38, 54),
+			URL:              "/?mode=mini#/mini-player",
+		})
+		w.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
+			windowService.OnMiniPlayerClosed()
+			// No e.Cancel() — Wails destroys the window, freeing its memory
+		})
+		return w
 	})
-	miniPlayerWindow.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
-		windowService.CloseMiniPlayer()
-		e.Cancel()
-	})
-	windowService.SetMiniWindow(miniPlayerWindow)
 
 	// Handle deep links (e.g. airmedy://auth?token=...)
 	wailsApp.Event.OnApplicationEvent(events.Common.ApplicationLaunchedWithUrl, func(e *application.ApplicationEvent) {

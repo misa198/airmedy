@@ -21,7 +21,7 @@ const store = usePlayerStore()
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 useGlassBlur(canvasRef, computed(() => store.artworkUrlMd ?? null))
 
-const alwaysOnTop = ref(true)
+const alwaysOnTop = ref(false)
 const isSeeking = ref(false)
 const seekValue = ref(0)
 const isHovered = ref(false)
