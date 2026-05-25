@@ -157,33 +157,18 @@ func (s *Service) DownloadAndApply(ctx context.Context, progress ProgressFunc) e
 		return fmt.Errorf("read temp file: %w", err)
 	}
 
-	exeName := "airmedy"
-	if runtime.GOOS == "windows" {
-		exeName = "airmedy.exe"
-	}
-
-	binary, err := extractBinary(archiveData, pending.assetURL, exeName)
-	if err != nil {
-		return fmt.Errorf("extract binary: %w", err)
-	}
-
-	exe, err := os.Executable()
-	if err != nil {
-		return fmt.Errorf("get executable path: %w", err)
-	}
-
-	s.logger.Info("applying update", "target", exe, "version", pending.info.Version)
-	if err := update.Apply(bytes.NewReader(binary), update.Options{TargetPath: exe}); err != nil {
+	s.logger.Info("applying update", "version", pending.info.Version)
+	if err := s.applyUpdate(ctx, archiveData, pending.assetURL); err != nil {
 		return fmt.Errorf("apply update: %w", err)
-	}
-
-	if err := postUpdate(exe, pending.info.Version); err != nil {
-		s.logger.Warn("post-update steps failed (update still applied)", "error", err)
 	}
 
 	s.pending = nil
 	s.logger.Info("update applied, restart to use new version", "version", pending.info.Version)
 	return nil
+}
+
+func (s *Service) applyUpdate(ctx context.Context, archiveData []byte, assetURL string) error {
+	return applyUpdate(s.logger, archiveData, assetURL)
 }
 
 func (s *Service) GetRestartInfo() (bundlePath string, exe string, err error) {
@@ -333,21 +318,21 @@ func downloadWithProgress(ctx context.Context, url string, dst io.Writer, progre
 
 // --- Archive extraction ---
 
-// extractBinary extracts the named executable from a .zip or .tar.gz archive,
+// ExtractBinary extracts the named executable from a .zip or .tar.gz archive,
 // matching by the base filename only (not directory path).
-func extractBinary(data []byte, archiveURL, exeName string) ([]byte, error) {
+func ExtractBinary(data []byte, archiveURL, exeName string) ([]byte, error) {
 	switch {
 	case strings.HasSuffix(archiveURL, ".zip"):
-		return extractFromZip(data, exeName)
+		return ExtractFromZip(data, exeName)
 	case strings.HasSuffix(archiveURL, ".tar.gz"), strings.HasSuffix(archiveURL, ".tgz"):
-		return extractFromTarGz(data, exeName)
+		return ExtractFromTarGz(data, exeName)
 	default:
 		// Raw binary
 		return data, nil
 	}
 }
 
-func extractFromZip(data []byte, exeName string) ([]byte, error) {
+func ExtractFromZip(data []byte, exeName string) ([]byte, error) {
 	r, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
 		return nil, err
@@ -368,7 +353,7 @@ func extractFromZip(data []byte, exeName string) ([]byte, error) {
 	return nil, fmt.Errorf("binary %q not found in zip", exeName)
 }
 
-func extractFromTarGz(data []byte, exeName string) ([]byte, error) {
+func ExtractFromTarGz(data []byte, exeName string) ([]byte, error) {
 	gz, err := gzip.NewReader(bytes.NewReader(data))
 	if err != nil {
 		return nil, err
