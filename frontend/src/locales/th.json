@@ -108,6 +108,7 @@
       "check_updates_auto_desc": "ตรวจสอบเวอร์ชันใหม่โดยอัตโนมัติเมื่อเริ่มต้นระบบ",
       "checking": "กำลังตรวจสอบ...",
       "up_to_date": "Airmedy เป็นเวอร์ชันล่าสุดแล้ว",
+      "check_update_failed": "ตรวจสอบอัปเดตไม่สำเร็จ",
       "new_version_available": "มีเวอร์ชันใหม่: {version}",
       "update_now": "อัปเดตทันที",
       "updating": "กำลังอัปเดต...",

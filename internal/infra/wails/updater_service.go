@@ -4,7 +4,6 @@ import (
 	"airmedy/internal/app/updater"
 	"context"
 	"os"
-	"os/exec"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -44,18 +43,13 @@ func (s *UpdaterService) GetCurrentVersion() string {
 }
 
 // RestartApp relaunches the application and exits the current process.
+// On Darwin, codesigning is deferred to a background shell that waits for
+// this process to exit before signing and reopening the bundle.
 func (s *UpdaterService) RestartApp() {
 	bundlePath, exe, err := s.svc.GetRestartInfo()
 
-	var cmd *exec.Cmd
-	if err == nil && bundlePath != "" {
-		cmd = exec.Command("open", bundlePath)
-	} else if err == nil {
-		cmd = exec.Command(exe)
-	}
-
-	if cmd != nil {
-		_ = cmd.Start()
+	if err == nil {
+		s.svc.PrepareRestart(bundlePath, exe)
 	}
 
 	if app := application.Get(); app != nil {

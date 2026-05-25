@@ -24,6 +24,7 @@ export const useAppStore = defineStore('app', () => {
   const isUpdating = ref(false)
   const updateApplied = ref(false)
   const updateProgress = ref(0)
+  const updateChecked = ref(false)
 
   const applyTheme = (newTheme: 'system' | 'light' | 'dark' | 'black') => {
     const root = document.documentElement
@@ -73,8 +74,12 @@ export const useAppStore = defineStore('app', () => {
     try {
       const info = await UpdaterService.CheckForUpdate()
       updateInfo.value = info
+      updateChecked.value = true
+      if (info) {
+        isUpdateDialogOpen.value = true
+      }
     } catch (err) {
-      console.error('Failed to check for updates:', err)
+      throw err
     } finally {
       isCheckingUpdate.value = false
     }
@@ -212,6 +217,7 @@ export const useAppStore = defineStore('app', () => {
     isUpdating,
     updateApplied,
     updateProgress,
+    updateChecked,
     loadSettings,
     checkForUpdate,
     applyUpdate,

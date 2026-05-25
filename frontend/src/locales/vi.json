@@ -114,6 +114,7 @@
       "check_updates_auto_desc": "Tự động kiểm tra các phiên bản mới khi khởi động",
       "checking": "Đang kiểm tra...",
       "up_to_date": "Airmedy đã là bản mới nhất",
+      "check_update_failed": "Không thể kiểm tra cập nhật",
       "new_version_available": "Có phiên bản mới: {version}",
       "update_now": "Cập nhật ngay",
       "updating": "Đang cập nhật...",

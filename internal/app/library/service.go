@@ -2,7 +2,6 @@ package library
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/fs"
 	"log/slog"
@@ -12,7 +11,6 @@ import (
 	"runtime"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"airmedy/internal/domain"
@@ -143,11 +141,7 @@ func (s *LibraryService) Start(ctx context.Context) error {
 
 	for _, f := range folders {
 		if err := s.watchRecursive(f.Path); err != nil {
-			if runtime.GOOS == "darwin" && errors.Is(err, syscall.EPERM) {
-				s.logger.Error("macOS Permission Denied: Cannot access music folder. This often happens after an update. Please grant 'Full Disk Access' to Airmedy in System Settings > Privacy & Security.", "path", f.Path)
-			} else {
-				s.logger.Warn("Failed to watch folder", "path", f.Path, "error", err)
-			}
+			s.logger.Warn("Failed to watch folder", "path", f.Path, "error", err)
 		}
 	}
 

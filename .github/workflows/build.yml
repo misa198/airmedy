@@ -140,32 +140,6 @@ jobs:
         if: runner.os == 'Darwin'
         run: brew install nasm
 
-      - name: Import macOS Certificate
-        if: runner.os == 'Darwin'
-        env:
-          CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE }}
-          CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-        run: |
-          echo "$CERTIFICATE_BASE64" | base64 --decode > certificate.p12
-          security create-keychain -p "" build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p "" build.keychain
-          security import certificate.p12 -k build.keychain -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "" build.keychain
-          rm certificate.p12
-
-      - name: Store Notarization Credentials
-        if: runner.os == 'Darwin'
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
-        run: |
-          xcrun notarytool store-credentials "notarize-profile" \
-            --apple-id "$APPLE_ID" \
-            --team-id "$APPLE_TEAM_ID" \
-            --password "$APPLE_APP_PASSWORD"
-
       - name: Cache FFmpeg Binaries
         id: cache-ffmpeg
         if: runner.os == 'Linux'
@@ -179,8 +153,12 @@ jobs:
         if: runner.os == 'Darwin'
         uses: actions/cache@v4
         with:
-          path: internal/infra/audio/sfb_libs
+          path: |
+            internal/infra/audio/sfb_libs
+            internal/infra/audio/sfb_build
           key: sfb-${{ runner.os }}-${{ hashFiles('scripts/build-sfbaudioengine-darwin.sh') }}
+          restore-keys: |
+            sfb-${{ runner.os }}-
 
       - name: Cache Miniaudio (Windows and Linux)
         id: cache-miniaudio
@@ -202,7 +180,7 @@ jobs:
         run: bash scripts/build-ffmpeg-linux.sh
 
       - name: Build SFB Audio Engine (Darwin)
-        if: runner.os == 'Darwin' && steps.cache-sfb.outputs.cache-hit != 'true'
+        if: runner.os == 'Darwin' && !hashFiles('internal/infra/audio/sfb_libs/SFBAudioEngine.xcframework/Info.plist')
         run: bash scripts/build-sfbaudioengine-darwin.sh
 
       - name: Fetch miniaudio (Windows and Linux)
@@ -265,14 +243,10 @@ jobs:
               task linux:package ARCH=arm64
               ;;
             "Darwin-AMD64")
-              task darwin:sign:notarize ARCH=amd64 \
-                SIGN_IDENTITY="${{ secrets.MACOS_SIGN_IDENTITY }}" \
-                KEYCHAIN_PROFILE="notarize-profile"
+              task darwin:package ARCH=amd64
               ;;
             "Darwin-ARM64")
-              task darwin:sign:notarize ARCH=arm64 \
-                SIGN_IDENTITY="${{ secrets.MACOS_SIGN_IDENTITY }}" \
-                KEYCHAIN_PROFILE="notarize-profile"
+              task darwin:package ARCH=arm64
               ;;
           esac
 
@@ -350,7 +324,7 @@ jobs:
         id: changelog
         shell: bash
         run: |
-          PREV_TAG=$(git tag --sort=-version:refname | grep -v "^v${{ github.event.inputs.version }}$" | head -1)
+          PREV_TAG=$(git tag --sort=-version:refname | grep -v "^v${{ github.event.inputs.version }}$" | head -1 || true)
           if [ -n "$PREV_TAG" ]; then
             CHANGELOG=$(git log "${PREV_TAG}..HEAD" --pretty=format:"- %s (%h)" --no-merges | grep -E "^- (feat|fix)" || true)
             RANGE="Changes since ${PREV_TAG}"

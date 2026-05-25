@@ -29,12 +29,8 @@ void ClearEnqueuedPlayer(void* player);
 */
 import "C"
 import (
-	"errors"
-	"fmt"
 	"log/slog"
-	"os"
 	"sync"
-	"syscall"
 	"unsafe"
 
 	"airmedy/internal/domain"
@@ -165,14 +161,6 @@ func (p *DarwinPlayer) SetMuted(muted bool) error {
 }
 
 func (p *DarwinPlayer) Load(track *domain.TrackDTO) error {
-	// Pre-check readability to provide a better error message if TCC permissions are lost.
-	if _, err := os.Stat(track.Path); err != nil {
-		if errors.Is(err, os.ErrPermission) || errors.Is(err, syscall.EPERM) {
-			return fmt.Errorf("macOS Permission Denied: Cannot read file. Please grant 'Full Disk Access' to Airmedy in System Settings > Privacy & Security.")
-		}
-		return fmt.Errorf("failed to access file: %w", err)
-	}
-
 	cUrl := C.CString(track.Path)
 	defer C.free(unsafe.Pointer(cUrl))
 	C.LoadPlayer(p.playerPointer, cUrl)

@@ -31,7 +31,7 @@ const checkUpdate = async () => {
     await appStore.checkForUpdate()
   } catch (err) {
     console.error('Failed to check for update:', err)
-    updateError.value = 'Failed to check for update'
+    updateError.value = t('settings.about.check_update_failed')
   }
 }
 
@@ -75,6 +75,11 @@ onMounted(() => {
           </div>
           <span class="inline-block min-w-[100px]">{{ appStore.isCheckingUpdate ? t('settings.about.checking') : t('settings.about.check_updates') }}</span>
         </button>
+
+        <div v-if="!appStore.updateInfo && !appStore.updateApplied && appStore.updateChecked && !appStore.isCheckingUpdate" class="flex items-center gap-2 text-foreground/50 py-1">
+          <CheckCircle2 class="w-4 h-4" />
+          <span class="text-xs font-bold">{{ t('settings.about.up_to_date') }}</span>
+        </div>
 
         <div v-if="appStore.updateInfo && !appStore.updateApplied" class="p-4 bg-primary/10 rounded-2xl border border-primary/20 max-w-sm w-full">
           <p class="text-xs font-bold text-primary mb-3">{{ t('settings.about.new_version_available', { version: appStore.updateInfo.version }) }}</p>

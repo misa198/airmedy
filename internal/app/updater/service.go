@@ -14,18 +14,17 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"airmedy/internal/app/config"
 
 	"github.com/blang/semver"
 	update "github.com/inconshreveable/go-update"
 )
 
-const (
-	repoOwner = "misa198"
-	repoName  = "airmedy"
-)
 
 type UpdateInfo struct {
 	Version      string `json:"version"`
@@ -40,6 +39,7 @@ type Service struct {
 	currentVersion string
 	logger         *slog.Logger
 	pending        *pendingRelease
+	stagingPath    string // path to staged .app/.exe waiting to replace current on restart
 }
 
 type pendingRelease struct {
@@ -75,6 +75,7 @@ func (s *Service) CheckForUpdate(ctx context.Context) (*UpdateInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fetch latest release: %w", err)
 	}
+	s.logger.Info("latest release fetched", "tag", rel.TagName)
 
 	tagVersion := strings.TrimPrefix(rel.TagName, "v")
 	latest, err := semver.Parse(tagVersion)
@@ -89,13 +90,16 @@ func (s *Service) CheckForUpdate(ctx context.Context) (*UpdateInfo, error) {
 	}
 
 	if !latest.GT(current) {
+		s.logger.Info("already up to date", "current", s.currentVersion, "latest", tagVersion)
 		return nil, nil
 	}
+	s.logger.Info("update available", "current", s.currentVersion, "latest", tagVersion)
 
 	asset := findPlatformAsset(rel.Assets)
 	if asset == nil {
 		return nil, fmt.Errorf("no release asset found for %s/%s", runtime.GOOS, runtime.GOARCH)
 	}
+	s.logger.Info("release asset found", "asset", asset.Name)
 
 	checksum, err := fetchChecksumForAsset(ctx, rel.Assets, asset.Name)
 	if err != nil {
@@ -157,18 +161,25 @@ func (s *Service) DownloadAndApply(ctx context.Context, progress ProgressFunc) e
 		return fmt.Errorf("read temp file: %w", err)
 	}
 
-	s.logger.Info("applying update", "version", pending.info.Version)
-	if err := s.applyUpdate(ctx, archiveData, pending.assetURL); err != nil {
+	exe, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("get executable path: %w", err)
+	}
+
+	s.logger.Info("applying update", "target", exe, "version", pending.info.Version)
+	stagingPath, err := s.applyUpdate(archiveData, pending.assetURL, exe)
+	if err != nil {
 		return fmt.Errorf("apply update: %w", err)
+	}
+	s.stagingPath = stagingPath
+
+	if err := postUpdate(exe, pending.info.Version); err != nil {
+		s.logger.Warn("post-update steps failed (update still applied)", "error", err)
 	}
 
 	s.pending = nil
 	s.logger.Info("update applied, restart to use new version", "version", pending.info.Version)
 	return nil
-}
-
-func (s *Service) applyUpdate(ctx context.Context, archiveData []byte, assetURL string) error {
-	return applyUpdate(s.logger, archiveData, assetURL)
 }
 
 func (s *Service) GetRestartInfo() (bundlePath string, exe string, err error) {
@@ -180,10 +191,43 @@ func (s *Service) GetRestartInfo() (bundlePath string, exe string, err error) {
 	return bundlePath, exe, nil
 }
 
+// PrepareRestart schedules the app relaunch. On Darwin the bundle is
+// replaced with the staged update, codesigned, and reopened after exit.
+// On other platforms the staged binary is already in place; just relaunch.
+func (s *Service) PrepareRestart(bundlePath, exe string) {
+	pid := os.Getpid()
+	if bundlePath != "" {
+		restartWithCodesign(bundlePath, s.stagingPath, pid)
+		return
+	}
+	// Non-bundle fallback: launch exe directly.
+	if exe != "" {
+		cmd := exec.Command(exe)
+		_ = cmd.Start()
+	}
+}
+
+// applyBinaryUpdate extracts the platform binary from the archive and
+// replaces the current executable in-place using go-update.
+func applyBinaryUpdate(archiveData []byte, assetURL, exe string) error {
+	exeName := "airmedy"
+	if runtime.GOOS == "windows" {
+		exeName = "airmedy.exe"
+	}
+	binary, err := extractBinary(archiveData, assetURL, exeName)
+	if err != nil {
+		return fmt.Errorf("extract binary: %w", err)
+	}
+	if err := update.Apply(bytes.NewReader(binary), update.Options{TargetPath: exe}); err != nil {
+		return fmt.Errorf("apply binary: %w", err)
+	}
+	return nil
+}
+
 // --- GitHub API ---
 
 func fetchLatestRelease(ctx context.Context) (*ghRelease, error) {
-	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", repoOwner, repoName)
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", config.RepoOwner, config.RepoName)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
@@ -318,21 +362,21 @@ func downloadWithProgress(ctx context.Context, url string, dst io.Writer, progre
 
 // --- Archive extraction ---
 
-// ExtractBinary extracts the named executable from a .zip or .tar.gz archive,
+// extractBinary extracts the named executable from a .zip or .tar.gz archive,
 // matching by the base filename only (not directory path).
-func ExtractBinary(data []byte, archiveURL, exeName string) ([]byte, error) {
+func extractBinary(data []byte, archiveURL, exeName string) ([]byte, error) {
 	switch {
 	case strings.HasSuffix(archiveURL, ".zip"):
-		return ExtractFromZip(data, exeName)
+		return extractFromZip(data, exeName)
 	case strings.HasSuffix(archiveURL, ".tar.gz"), strings.HasSuffix(archiveURL, ".tgz"):
-		return ExtractFromTarGz(data, exeName)
+		return extractFromTarGz(data, exeName)
 	default:
 		// Raw binary
 		return data, nil
 	}
 }
 
-func ExtractFromZip(data []byte, exeName string) ([]byte, error) {
+func extractFromZip(data []byte, exeName string) ([]byte, error) {
 	r, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
 		return nil, err
@@ -353,7 +397,7 @@ func ExtractFromZip(data []byte, exeName string) ([]byte, error) {
 	return nil, fmt.Errorf("binary %q not found in zip", exeName)
 }
 
-func ExtractFromTarGz(data []byte, exeName string) ([]byte, error) {
+func extractFromTarGz(data []byte, exeName string) ([]byte, error) {
 	gz, err := gzip.NewReader(bytes.NewReader(data))
 	if err != nil {
 		return nil, err

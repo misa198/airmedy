@@ -5,131 +5,136 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-
-	update "github.com/inconshreveable/go-update"
 )
 
-func applyUpdate(logger *slog.Logger, archiveData []byte, assetURL string) error {
-	exe, err := os.Executable()
-	if err != nil {
-		return fmt.Errorf("get executable path: %w", err)
+// postUpdate updates Info.plist version strings after the binary is swapped in.
+// Codesigning is deferred to restartWithCodesign so it runs after the process exits.
+func postUpdate(exe, newVersion string) error {
+	macosDir := filepath.Dir(exe)
+	if filepath.Base(macosDir) != "MacOS" {
+		return nil
+	}
+	contentsDir := filepath.Dir(macosDir)
+	bundlePath := filepath.Dir(contentsDir)
+	if !strings.HasSuffix(bundlePath, ".app") {
+		return nil
 	}
 
-	bundlePath := getBundlePath(exe)
-	if bundlePath == "" {
-		logger.Info("not running from a bundle, falling back to binary update")
-		binary, err := ExtractBinary(archiveData, assetURL, "airmedy")
-		if err != nil {
-			return fmt.Errorf("extract binary: %w", err)
-		}
-		return update.Apply(bytes.NewReader(binary), update.Options{TargetPath: exe})
+	plist := filepath.Join(contentsDir, "Info.plist")
+	if err := exec.Command("plutil", "-replace", "CFBundleShortVersionString",
+		"-string", newVersion, plist).Run(); err != nil {
+		return fmt.Errorf("update CFBundleShortVersionString: %w", err)
+	}
+	if err := exec.Command("plutil", "-replace", "CFBundleVersion",
+		"-string", newVersion, plist).Run(); err != nil {
+		return fmt.Errorf("update CFBundleVersion: %w", err)
 	}
 
-	logger.Info("performing bundle-level update", "bundle", bundlePath)
-
-	// 1. Create a temporary directory for extraction
-	tmpDir, err := os.MkdirTemp("", "airmedy-bundle-update-*")
-	if err != nil {
-		return fmt.Errorf("create temp dir: %w", err)
-	}
-	defer os.RemoveAll(tmpDir)
-
-	// 2. Extract the whole zip (assuming it contains the .app bundle)
-	if err := extractZipToDir(archiveData, tmpDir); err != nil {
-		return fmt.Errorf("extract zip to dir: %w", err)
-	}
-
-	// 3. Find the .app bundle in the extracted files
-	entries, err := os.ReadDir(tmpDir)
-	if err != nil {
-		return fmt.Errorf("read temp dir: %w", err)
-	}
-	var newBundlePath string
-	for _, entry := range entries {
-		if strings.HasSuffix(entry.Name(), ".app") {
-			newBundlePath = filepath.Join(tmpDir, entry.Name())
-			break
-		}
-	}
-
-	if newBundlePath == "" {
-		return fmt.Errorf("could not find .app bundle in downloaded archive")
-	}
-
-	// 4. Atomic-ish swap: move current bundle to .old, move new bundle to original path
-	oldBundlePath := bundlePath + ".old"
-	_ = os.RemoveAll(oldBundlePath) // Cleanup previous failed attempts
-
-	if err := os.Rename(bundlePath, oldBundlePath); err != nil {
-		return fmt.Errorf("move current bundle to .old: %w", err)
-	}
-
-	if err := os.Rename(newBundlePath, bundlePath); err != nil {
-		// Try to rollback
-		_ = os.Rename(oldBundlePath, bundlePath)
-		return fmt.Errorf("move new bundle to target: %w", err)
-	}
-
-	// We'll leave the .old bundle for the OS to cleanup or we can try a best-effort delete
-	// But since we are likely running from it, it might be busy.
-	logger.Info("bundle swap successful", "old", oldBundlePath)
 	return nil
 }
 
-func extractZipToDir(data []byte, targetDir string) error {
+// applyUpdate extracts the full .app bundle from the zip archive to a staging
+// path next to the current bundle. Returns the staging path.
+func (s *Service) applyUpdate(archiveData []byte, assetURL, exe string) (stagingPath string, err error) {
+	bundlePath := getBundlePath(exe)
+	if bundlePath == "" {
+		// Not inside a .app — fall back to binary-only update.
+		return "", applyBinaryUpdate(archiveData, assetURL, exe)
+	}
+	stagingPath = bundlePath + ".update"
+	if err := extractAppBundle(archiveData, stagingPath); err != nil {
+		return "", fmt.Errorf("extract app bundle: %w", err)
+	}
+	s.logger.Info("staged full app bundle", "staging", stagingPath)
+	return stagingPath, nil
+}
+
+// extractAppBundle extracts the first *.app directory from a zip archive to destPath.
+func extractAppBundle(data []byte, destPath string) error {
 	r, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
 		return err
 	}
 
+	tmp, err := os.MkdirTemp("", "airmedy-bundle-*")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(tmp)
+
 	for _, f := range r.File {
-		fpath := filepath.Join(targetDir, f.Name)
-
-		if !strings.HasPrefix(fpath, filepath.Clean(targetDir)+string(os.PathSeparator)) {
-			return fmt.Errorf("illegal file path: %s", fpath)
+		target := filepath.Join(tmp, f.Name)
+		if !strings.HasPrefix(filepath.Clean(target), filepath.Clean(tmp)) {
+			return fmt.Errorf("zip path traversal: %s", f.Name)
 		}
-
 		if f.FileInfo().IsDir() {
-			_ = os.MkdirAll(fpath, os.ModePerm)
+			if err := os.MkdirAll(target, f.Mode()); err != nil {
+				return err
+			}
 			continue
 		}
-
-		if err := os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
+		if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
 			return err
 		}
-
-		outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
-		if err != nil {
-			return err
-		}
-
 		rc, err := f.Open()
 		if err != nil {
-			outFile.Close()
 			return err
 		}
-
-		_, err = io.Copy(outFile, rc)
-		outFile.Close()
+		out, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, f.Mode())
+		if err != nil {
+			rc.Close()
+			return err
+		}
+		_, err = io.Copy(out, rc)
 		rc.Close()
-
+		out.Close()
 		if err != nil {
 			return err
 		}
 	}
-	return nil
+
+	// Find the .app directory in the extracted temp dir.
+	entries, err := os.ReadDir(tmp)
+	if err != nil {
+		return err
+	}
+	var appDir string
+	for _, e := range entries {
+		if e.IsDir() && strings.HasSuffix(e.Name(), ".app") {
+			appDir = filepath.Join(tmp, e.Name())
+			break
+		}
+	}
+	if appDir == "" {
+		return fmt.Errorf("no .app bundle found in archive")
+	}
+
+	os.RemoveAll(destPath)
+	return os.Rename(appDir, destPath)
 }
 
-// postUpdate is called after the binary is swapped.
-// On macOS, we MUST NOT modify Info.plist because it breaks the app signature,
-// which causes the OS to revoke TCC permissions (Documents, etc.).
-func postUpdate(exe, newVersion string) error {
-	return nil
+// restartWithCodesign launches a background shell that waits for the current
+// process to exit, replaces the bundle with the staged update (if any),
+// ad-hoc signs it, removes quarantine, and reopens the app.
+func restartWithCodesign(bundlePath, stagingPath string, pid int) {
+	replaceCmd := ""
+	if stagingPath != "" {
+		replaceCmd = fmt.Sprintf("rm -rf %q && mv %q %q", bundlePath, stagingPath, bundlePath)
+	}
+	script := fmt.Sprintf(
+		`while kill -0 %d 2>/dev/null; do sleep 0.1; done
+%s
+codesign --force --deep --sign - %q
+xattr -d com.apple.quarantine %q 2>/dev/null || true
+open %q`,
+		pid, replaceCmd, bundlePath, bundlePath, bundlePath,
+	)
+	cmd := exec.Command("sh", "-c", script)
+	_ = cmd.Start()
 }
 
 // getBundlePath returns the .app bundle path containing exe, or "" if not inside a bundle.

@@ -108,6 +108,7 @@
       "check_updates_auto_desc": "Buscar nuevas versiones automáticamente al iniciar",
       "checking": "Buscando...",
       "up_to_date": "Airmedy está actualizado",
+      "check_update_failed": "Error al buscar actualizaciones",
       "new_version_available": "Nueva versión disponible: {version}",
       "update_now": "Actualizar ahora",
       "updating": "Actualizando...",
