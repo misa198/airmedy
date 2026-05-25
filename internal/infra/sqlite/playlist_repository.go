@@ -4,7 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
+
+	lexorank "github.com/misa198/lexorank-go"
 
 	"airmedy/internal/domain"
 )
@@ -87,6 +90,47 @@ func (r *playlistRepository) AddTrack(ctx context.Context, playlistID, trackID s
 		return fmt.Errorf("failed to add track to playlist: %w", err)
 	}
 	return nil
+}
+
+func (r *playlistRepository) AddTracks(ctx context.Context, playlistID string, trackIDs []string) error {
+	if len(trackIDs) == 0 {
+		return nil
+	}
+
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	var maxRankStr string
+	_ = tx.GetContext(ctx, &maxRankStr, "SELECT COALESCE(MAX(position), '') FROM playlist_tracks WHERE playlist_id = ?", playlistID)
+
+	var currentRank lexorank.Rank
+	if maxRankStr == "" {
+		currentRank = lexorank.Middle()
+	} else {
+		maxRank, err := lexorank.ParseRank(maxRankStr)
+		if err != nil {
+			return fmt.Errorf("failed to parse max rank: %w", err)
+		}
+		currentRank = maxRank.GenNext()
+	}
+
+	placeholders := make([]string, len(trackIDs))
+	args := make([]any, 0, len(trackIDs)*3)
+	for i, trackID := range trackIDs {
+		placeholders[i] = "(?, ?, ?)"
+		args = append(args, playlistID, trackID, currentRank.String())
+		currentRank = currentRank.GenNext()
+	}
+
+	query := "INSERT OR IGNORE INTO playlist_tracks (playlist_id, track_id, position) VALUES " + strings.Join(placeholders, ", ")
+	if _, err = tx.ExecContext(ctx, query, args...); err != nil {
+		return fmt.Errorf("failed to add tracks to playlist: %w", err)
+	}
+
+	return tx.Commit()
 }
 
 func (r *playlistRepository) RemoveTrack(ctx context.Context, playlistID, trackID string) error {

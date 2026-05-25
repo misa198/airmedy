@@ -1,0 +1,1 @@
+ALTER TABLE app_settings ADD COLUMN show_tray_icon BOOLEAN NOT NULL DEFAULT 1;

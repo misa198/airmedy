@@ -28,7 +28,7 @@ Airmedy is a desktop music player built with **Wails v3** (Go backend + Vue 3 fr
                             │
 ┌───────────────────────────▼─────────────────────────────────────┐
 │  internal/app  (Application Services)                           │
-│  library/, player/, playlist/, eq/, lyrics/, config/            │
+│  library/, player/, playlist/, eq/, lyrics/, config/, i18n/     │
 │  — orchestrates domain entities and ports                       │
 │  — framework-agnostic business logic                            │
 └───────────────────────────┬─────────────────────────────────────┘
@@ -81,6 +81,7 @@ fxApp := fx.New(
         &lyricsService,
         &eqService,
         &windowService,
+        &i18nService,
         &settingsService,
         &artworkCache,
     ),
@@ -122,6 +123,8 @@ Frontend calls Go methods via auto-generated TypeScript bindings in `frontend/sr
 ### IPC: Backend → Frontend (Events)
 
 Go emits events via `application.EmitEvent(name, data)`. Frontend subscribes via Wails runtime event listener.
+
+**App events:** `language:changed`
 
 **Player events:** `player:status`, `player:queue-updated`, `player:theme`, `player:lyrics`
 

@@ -1,0 +1,38 @@
+{
+  "menu": {
+    "airmedy": "Airmedy",
+    "settings": "Einstellungen...",
+    "quit": "Beenden",
+    "file": "Datei",
+    "edit": "Bearbeiten",
+    "playback": "Wiedergabe",
+    "play_pause": "Wiedergabe/Pause",
+    "next_track": "Nächster Titel",
+    "previous_track": "Vorheriger Titel",
+    "fast_forward": "Schneller Vorlauf",
+    "rewind": "Rücklauf",
+    "increase_volume": "Lautstärke erhöhen",
+    "decrease_volume": "Lautstärke verringern",
+    "mute": "Stummschalten",
+    "shuffle": "Zufallswiedergabe",
+    "repeat": "Wiederholen",
+    "view": "Ansicht",
+    "search": "Suchen"
+  },
+  "tray": {
+    "no_track": "Kein Titel wird abgespielt",
+    "next_none": "Nächster: Keiner",
+    "next": "Nächster: %s",
+    "play": "Wiedergabe",
+    "pause": "Pause",
+    "next_track": "Nächster Titel",
+    "previous_track": "Vorheriger Titel",
+    "repeat": "Wiederholen",
+    "repeat_all": "Alle wiederholen",
+    "repeat_one": "Einen wiederholen",
+    "shuffle": "Zufallswiedergabe",
+    "favorite": "Favorit",
+    "show_airmedy": "Airmedy anzeigen",
+    "quit": "Beenden"
+  }
+}

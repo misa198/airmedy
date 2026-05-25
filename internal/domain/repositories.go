@@ -83,6 +83,7 @@ type PlaylistRepository interface {
 	Update(ctx context.Context, playlist *Playlist) error
 	Delete(ctx context.Context, id string) error
 	AddTrack(ctx context.Context, playlistID, trackID string, position string) error
+	AddTracks(ctx context.Context, playlistID string, trackIDs []string) error
 	RemoveTrack(ctx context.Context, playlistID, trackID string) error
 	UpdateTrackPosition(ctx context.Context, playlistID, trackID, position string) error
 	UpdateTracksPositions(ctx context.Context, playlistID string, updates map[string]string) error

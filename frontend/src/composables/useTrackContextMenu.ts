@@ -242,9 +242,7 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
         ? playlistsStore.playlists.map(p => ({
           label: p.name,
           action: () => {
-            tracks.forEach(track => {
-              PlaylistService.AddTrackToPlaylist(p.id, track.id, '')
-            })
+            PlaylistService.AddTracksToPlaylist(p.id, tracks.map(t => t.id), '')
           },
         }))
         : [{ label: t('context_menu.no_playlists'), disabled: true }]

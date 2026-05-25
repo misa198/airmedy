@@ -18,14 +18,15 @@ func NewSettingsRepository(db *DB) domain.SettingsRepository {
 
 func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSettings) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO app_settings (id, language, theme, lastfm_username, auto_check_update, start_at_login, eq_enabled, use_online_artist_artwork, enable_lrclib, enable_kugou, prefer_metadata_lyrics, updated_at)
-		 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+		`INSERT INTO app_settings (id, language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, enable_lrclib, enable_kugou, prefer_metadata_lyrics, updated_at)
+		 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 		 ON CONFLICT(id) DO UPDATE SET
 		   language = excluded.language,
 		   theme = excluded.theme,
 		   lastfm_username = excluded.lastfm_username,
 		   auto_check_update = excluded.auto_check_update,
 		   start_at_login = excluded.start_at_login,
+		   show_tray_icon = excluded.show_tray_icon,
 		   eq_enabled = excluded.eq_enabled,
 		   use_online_artist_artwork = excluded.use_online_artist_artwork,
 		   enable_lrclib = excluded.enable_lrclib,
@@ -37,6 +38,7 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		settings.LastFmUsername,
 		settings.AutoCheckUpdate,
 		settings.StartAtLogin,
+		settings.ShowTrayIcon,
 		settings.EQEnabled,
 		settings.UseOnlineArtistArtwork,
 		settings.EnableLrclib,
@@ -56,6 +58,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		LastFmUsername         sql.NullString `db:"lastfm_username"`
 		AutoCheckUpdate        bool           `db:"auto_check_update"`
 		StartAtLogin           bool           `db:"start_at_login"`
+		ShowTrayIcon           bool           `db:"show_tray_icon"`
 		EQEnabled              bool           `db:"eq_enabled"`
 		UseOnlineArtistArtwork bool           `db:"use_online_artist_artwork"`
 		EnableLrclib           bool           `db:"enable_lrclib"`
@@ -63,7 +66,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		PreferMetadataLyrics   bool           `db:"prefer_metadata_lyrics"`
 	}
 	err := r.db.GetContext(ctx, &row,
-		`SELECT language, theme, lastfm_username, auto_check_update, start_at_login, eq_enabled, use_online_artist_artwork, enable_lrclib, enable_kugou, prefer_metadata_lyrics FROM app_settings WHERE id = 1`,
+		`SELECT language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, enable_lrclib, enable_kugou, prefer_metadata_lyrics FROM app_settings WHERE id = 1`,
 	)
 	if err == sql.ErrNoRows {
 		return &domain.AppSettings{
@@ -71,6 +74,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 			Theme:                  "system",
 			AutoCheckUpdate:        true,
 			StartAtLogin:           false,
+			ShowTrayIcon:           true,
 			EQEnabled:              true,
 			EnableLrclib:           true,
 			EnableKugou:            true,
@@ -88,6 +92,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		LastFmUsername:         row.LastFmUsername.String,
 		AutoCheckUpdate:        row.AutoCheckUpdate,
 		StartAtLogin:           row.StartAtLogin,
+		ShowTrayIcon:           row.ShowTrayIcon,
 		EQEnabled:              row.EQEnabled,
 		EnableLrclib:           row.EnableLrclib,
 		EnableKugou:            row.EnableKugou,

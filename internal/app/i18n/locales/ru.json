@@ -1,0 +1,38 @@
+{
+  "menu": {
+    "airmedy": "Airmedy",
+    "settings": "Настройки...",
+    "quit": "Выйти",
+    "file": "Файл",
+    "edit": "Правка",
+    "playback": "Воспроизведение",
+    "play_pause": "Воспроизведение/Пауза",
+    "next_track": "Следующий трек",
+    "previous_track": "Предыдущий трек",
+    "fast_forward": "Вперед",
+    "rewind": "Назад",
+    "increase_volume": "Увеличить громкость",
+    "decrease_volume": "Уменьшить громкость",
+    "mute": "Выключить звук",
+    "shuffle": "Перемешать",
+    "repeat": "Повтор",
+    "view": "Вид",
+    "search": "Поиск"
+  },
+  "tray": {
+    "no_track": "Ничего не воспроизводится",
+    "next_none": "Далее: нет",
+    "next": "Далее: %s",
+    "play": "Воспроизвести",
+    "pause": "Пауза",
+    "next_track": "Следующий трек",
+    "previous_track": "Предыдущий трек",
+    "repeat": "Повтор",
+    "repeat_all": "Повторять все",
+    "repeat_one": "Повторять один",
+    "shuffle": "Перемешать",
+    "favorite": "Избранное",
+    "show_airmedy": "Показать Airmedy",
+    "quit": "Выйти"
+  }
+}

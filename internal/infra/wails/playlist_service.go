@@ -93,6 +93,19 @@ func (s *PlaylistService) AddTrackToPlaylist(playlistID, trackID, senderID strin
 	return err
 }
 
+func (s *PlaylistService) AddTracksToPlaylist(playlistID string, trackIDs []string, senderID string) error {
+	err := s.service.AddTracks(context.Background(), playlistID, trackIDs)
+	if err == nil {
+		if app := application.Get(); app != nil && app.Event != nil {
+			app.Event.Emit("playlist:tracks-changed", &PlaylistTracksChangedEvent{
+				PlaylistID: playlistID,
+				SenderID:   senderID,
+			})
+		}
+	}
+	return err
+}
+
 func (s *PlaylistService) RemoveTrackFromPlaylist(playlistID, trackID, senderID string) error {
 	err := s.service.RemoveTrack(context.Background(), playlistID, trackID)
 	if err == nil {
@@ -198,6 +211,7 @@ func (s *PlaylistService) ImportM3U8Playlist(filePath, name string) (*M3U8Import
 
 	result := &M3U8ImportResult{PlaylistID: p.ID}
 
+	var trackIDs []string
 	for _, entry := range parsed.Entries {
 		if entry.Path == "" {
 			result.SkippedCount++
@@ -212,12 +226,14 @@ func (s *PlaylistService) ImportM3U8Playlist(filePath, name string) (*M3U8Import
 			result.SkippedCount++
 			continue
 		}
-		if err := s.service.AddTrack(ctx, p.ID, track.ID); err != nil {
-			result.SkippedCount++
-			continue
-		}
-		result.ImportedCount++
+		trackIDs = append(trackIDs, track.ID)
 	}
+
+	if err := s.service.AddTracks(ctx, p.ID, trackIDs); err != nil {
+		_ = s.service.Delete(ctx, p.ID)
+		return nil, fmt.Errorf("add tracks: %w", err)
+	}
+	result.ImportedCount = len(trackIDs)
 
 	if result.ImportedCount == 0 {
 		_ = s.service.Delete(ctx, p.ID)

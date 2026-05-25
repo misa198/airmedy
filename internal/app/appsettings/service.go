@@ -54,6 +54,7 @@ func (s *SettingsService) GetSettings(ctx context.Context) (*domain.AppSettings,
 			Language:        "en",
 			Theme:           "system",
 			StartAtLogin:    false,
+			ShowTrayIcon:    true,
 			AutoCheckUpdate: true,
 			EQEnabled:       true,
 		}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"airmedy/internal/app/i18n"
 	"airmedy/internal/app/player"
 	"airmedy/internal/domain"
 
@@ -14,7 +15,10 @@ type TrayManager struct {
 	app            *application.App
 	playerService  *player.PlayerService
 	libraryService *LibraryService
+	i18nService    *i18n.Service
 
+	tray             *application.SystemTray
+	mainWindow       *application.WebviewWindow
 	currentTrackItem *application.MenuItem
 	nextTrackItem    *application.MenuItem
 	playPauseItem    *application.MenuItem
@@ -23,28 +27,33 @@ type TrayManager struct {
 	repeatItem       *application.MenuItem
 	shuffleItem      *application.MenuItem
 	favoriteItem     *application.MenuItem
+	showAirmedyItem  *application.MenuItem
+	quitItem         *application.MenuItem
 }
 
-func NewTrayManager(app *application.App, playerService *player.PlayerService, libraryService *LibraryService) *TrayManager {
+func NewTrayManager(app *application.App, playerService *player.PlayerService, libraryService *LibraryService, i18nService *i18n.Service) *TrayManager {
 	return &TrayManager{
 		app:            app,
 		playerService:  playerService,
 		libraryService: libraryService,
+		i18nService:    i18nService,
 	}
 }
 
 func (m *TrayManager) Setup(tray *application.SystemTray, mainWindow *application.WebviewWindow) {
+	m.tray = tray
+	m.mainWindow = mainWindow
 	menu := application.NewMenu()
 
-	m.currentTrackItem = menu.Add("No track playing")
+	m.currentTrackItem = menu.Add(m.i18nService.T("tray.no_track"))
 	m.currentTrackItem.SetEnabled(false)
 
-	m.nextTrackItem = menu.Add("Next: None")
+	m.nextTrackItem = menu.Add(m.i18nService.T("tray.next_none"))
 	m.nextTrackItem.SetEnabled(false)
 
 	menu.AddSeparator()
 
-	m.playPauseItem = menu.Add("Play").OnClick(func(ctx *application.Context) {
+	m.playPauseItem = menu.Add(m.i18nService.T("tray.play")).OnClick(func(ctx *application.Context) {
 		status := m.playerService.GetStatus()
 		if status.PlaybackState == domain.PlaybackStatePlaying {
 			_ = m.playerService.Pause()
@@ -61,11 +70,11 @@ func (m *TrayManager) Setup(tray *application.SystemTray, mainWindow *applicatio
 		}
 	})
 
-	m.nextActionItem = menu.Add("Next Track").OnClick(func(ctx *application.Context) {
+	m.nextActionItem = menu.Add(m.i18nService.T("tray.next_track")).OnClick(func(ctx *application.Context) {
 		_ = m.playerService.Next()
 	})
 
-	m.prevActionItem = menu.Add("Previous Track").OnClick(func(ctx *application.Context) {
+	m.prevActionItem = menu.Add(m.i18nService.T("tray.previous_track")).OnClick(func(ctx *application.Context) {
 		_ = m.playerService.Previous()
 	})
 
@@ -73,7 +82,7 @@ func (m *TrayManager) Setup(tray *application.SystemTray, mainWindow *applicatio
 
 	status := m.playerService.GetStatus()
 
-	m.repeatItem = menu.AddCheckbox("Repeat", status.RepeatMode != domain.RepeatModeOff).OnClick(func(ctx *application.Context) {
+	m.repeatItem = menu.AddCheckbox(m.i18nService.T("tray.repeat"), status.RepeatMode != domain.RepeatModeOff).OnClick(func(ctx *application.Context) {
 		status := m.playerService.GetStatus()
 		nextMode := domain.RepeatModeOff
 		switch status.RepeatMode {
@@ -87,14 +96,14 @@ func (m *TrayManager) Setup(tray *application.SystemTray, mainWindow *applicatio
 		_ = m.playerService.SetRepeatMode(nextMode)
 	})
 
-	m.shuffleItem = menu.AddCheckbox("Shuffle", status.Shuffle).OnClick(func(ctx *application.Context) {
+	m.shuffleItem = menu.AddCheckbox(m.i18nService.T("tray.shuffle"), status.Shuffle).OnClick(func(ctx *application.Context) {
 		status := m.playerService.GetStatus()
 		_ = m.playerService.SetShuffle(!status.Shuffle)
 	})
 
 	menu.AddSeparator()
 
-	m.favoriteItem = menu.AddCheckbox("Favorite", false).OnClick(func(ctx *application.Context) {
+	m.favoriteItem = menu.AddCheckbox(m.i18nService.T("tray.favorite"), false).OnClick(func(ctx *application.Context) {
 		track := m.playerService.GetCurrentTrack()
 		if track != nil {
 			_, _ = m.libraryService.ToggleFavorite(track.ID)
@@ -103,12 +112,12 @@ func (m *TrayManager) Setup(tray *application.SystemTray, mainWindow *applicatio
 
 	menu.AddSeparator()
 
-	menu.Add("Show Airmedy").OnClick(func(ctx *application.Context) {
+	m.showAirmedyItem = menu.Add(m.i18nService.T("tray.show_airmedy")).OnClick(func(ctx *application.Context) {
 		mainWindow.Show()
 		mainWindow.Focus()
 	})
 
-	menu.Add("Quit").OnClick(func(ctx *application.Context) {
+	m.quitItem = menu.Add(m.i18nService.T("tray.quit")).OnClick(func(ctx *application.Context) {
 		m.app.Quit()
 	})
 
@@ -119,37 +128,59 @@ func (m *TrayManager) Setup(tray *application.SystemTray, mainWindow *applicatio
 	m.playerService.AddQueueListener(m.onQueueChange)
 }
 
+func (m *TrayManager) UpdateLanguage() {
+	// Assumes caller is on main thread or handles synchronization (e.g. main.go event listener)
+	status := m.playerService.GetStatus()
+	m.updateStatus(status)
+
+	// Items not updated by updateStatus
+	m.nextActionItem.SetLabel(m.i18nService.T("tray.next_track"))
+	m.prevActionItem.SetLabel(m.i18nService.T("tray.previous_track"))
+	m.favoriteItem.SetLabel(m.i18nService.T("tray.favorite"))
+	m.showAirmedyItem.SetLabel(m.i18nService.T("tray.show_airmedy"))
+	m.quitItem.SetLabel(m.i18nService.T("tray.quit"))
+}
+
 func (m *TrayManager) onStatusChange(status domain.PlayerStatus) {
+	application.InvokeSync(func() {
+		m.updateStatus(status)
+	})
+}
+
+func (m *TrayManager) updateStatus(status domain.PlayerStatus) {
 	// Update Play/Pause label
 	if status.PlaybackState == domain.PlaybackStatePlaying {
-		m.playPauseItem.SetLabel("Pause")
+		m.playPauseItem.SetLabel(m.i18nService.T("tray.pause"))
 	} else {
-		m.playPauseItem.SetLabel("Play")
+		m.playPauseItem.SetLabel(m.i18nService.T("tray.play"))
 	}
 
 	// Update Repeat label and check state
-	repeatLabel := "Repeat"
+	repeatLabel := m.i18nService.T("tray.repeat")
 	switch status.RepeatMode {
 	case domain.RepeatModeAll:
-		repeatLabel = "Repeat (All)"
+		repeatLabel = m.i18nService.T("tray.repeat_all")
 	case domain.RepeatModeOne:
-		repeatLabel = "Repeat (One)"
+		repeatLabel = m.i18nService.T("tray.repeat_one")
 	}
 	m.repeatItem.SetLabel(repeatLabel)
 	m.repeatItem.SetChecked(status.RepeatMode != domain.RepeatModeOff)
 
 	// Update Shuffle check state
+	m.shuffleItem.SetLabel(m.i18nService.T("tray.shuffle"))
 	m.shuffleItem.SetChecked(status.Shuffle)
 
 	// Update current track title and next track title
-	m.updateTrackLabels()
+	m.updateTrackLabelsInternal()
 }
 
 func (m *TrayManager) onQueueChange(queue []*domain.TrackDTO) {
-	m.updateTrackLabels()
+	application.InvokeSync(func() {
+		m.updateTrackLabelsInternal()
+	})
 }
 
-func (m *TrayManager) updateTrackLabels() {
+func (m *TrayManager) updateTrackLabelsInternal() {
 	track := m.playerService.GetCurrentTrack()
 	if track != nil {
 		artistNames := []string{}
@@ -168,7 +199,7 @@ func (m *TrayManager) updateTrackLabels() {
 		m.shuffleItem.SetEnabled(true)
 		m.favoriteItem.SetEnabled(true)
 	} else {
-		m.currentTrackItem.SetLabel("No track playing")
+		m.currentTrackItem.SetLabel(m.i18nService.T("tray.no_track"))
 		m.favoriteItem.SetChecked(false)
 
 		m.playPauseItem.SetEnabled(true)
@@ -179,10 +210,10 @@ func (m *TrayManager) updateTrackLabels() {
 
 	nextTrack := m.playerService.PeekNextTrack()
 	if nextTrack != nil {
-		m.nextTrackItem.SetLabel(fmt.Sprintf("Next: %s", nextTrack.Title))
+		m.nextTrackItem.SetLabel(m.i18nService.T("tray.next", nextTrack.Title))
 		m.nextActionItem.SetEnabled(true)
 	} else {
-		m.nextTrackItem.SetLabel("Next: None")
+		m.nextTrackItem.SetLabel(m.i18nService.T("tray.next_none"))
 		m.nextActionItem.SetEnabled(false)
 	}
 

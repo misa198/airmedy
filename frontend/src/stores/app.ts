@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { Events } from '@wailsio/runtime'
 import * as SettingsService from '../../bindings/airmedy/internal/infra/wails/settingsservice'
 import * as UpdaterService from '../../bindings/airmedy/internal/infra/wails/updaterservice'
 import { UpdateInfo } from '../../bindings/airmedy/internal/app/updater/models'
@@ -8,6 +9,7 @@ export const useAppStore = defineStore('app', () => {
   const theme = ref<'system' | 'light' | 'dark' | 'black'>('system')
   const language = ref('en')
   const startAtLogin = ref(false)
+  const showTrayIcon = ref(true)
   const autoCheckUpdate = ref(true)
   const lastfmUsername = ref('')
   const eqEnabled = ref(true)
@@ -44,6 +46,7 @@ export const useAppStore = defineStore('app', () => {
         if (settings.theme) theme.value = settings.theme as any
         if (settings.language) language.value = settings.language
         startAtLogin.value = !!settings.start_at_login
+        showTrayIcon.value = settings.show_tray_icon !== false
         autoCheckUpdate.value = !!settings.auto_check_update
         lastfmUsername.value = settings.lastfm_username || ''
         eqEnabled.value = settings.eq_enabled !== false
@@ -94,14 +97,13 @@ export const useAppStore = defineStore('app', () => {
     await UpdaterService.RestartApp()
   }
 
-  const updateTheme = async (newTheme: 'system' | 'light' | 'dark' | 'black') => {
-    theme.value = newTheme
-    applyTheme(newTheme)
+  const saveSettings = async () => {
     try {
       await SettingsService.SaveSettings({
-        theme: newTheme,
+        theme: theme.value,
         language: language.value,
         start_at_login: startAtLogin.value,
+        show_tray_icon: showTrayIcon.value,
         auto_check_update: autoCheckUpdate.value,
         lastfm_username: lastfmUsername.value,
         eq_enabled: eqEnabled.value,
@@ -111,88 +113,41 @@ export const useAppStore = defineStore('app', () => {
         use_online_artist_artwork: useOnlineArtistArtwork.value,
       })
     } catch (err) {
-      console.error('Failed to save theme setting:', err)
+      console.error('Failed to save settings:', err)
+      throw err
     }
+  }
+
+  const updateTheme = async (newTheme: 'system' | 'light' | 'dark' | 'black') => {
+    theme.value = newTheme
+    applyTheme(newTheme)
+    await saveSettings()
   }
 
   const updateLanguage = async (newLanguage: string) => {
     language.value = newLanguage
-    try {
-      await SettingsService.SaveSettings({
-        theme: theme.value,
-        language: newLanguage,
-        start_at_login: startAtLogin.value,
-        auto_check_update: autoCheckUpdate.value,
-        lastfm_username: lastfmUsername.value,
-        eq_enabled: eqEnabled.value,
-        enable_lrclib: enableLrclib.value,
-        enable_kugou: enableKugou.value,
-        prefer_metadata_lyrics: preferMetadataLyrics.value,
-        use_online_artist_artwork: useOnlineArtistArtwork.value,
-      })
-    } catch (err) {
-      console.error('Failed to save language setting:', err)
-    }
+    await saveSettings()
+    Events.Emit('language:changed', newLanguage)
   }
 
   const updateStartAtLogin = async (enabled: boolean) => {
     startAtLogin.value = enabled
-    try {
-      await SettingsService.SaveSettings({
-        theme: theme.value,
-        language: language.value,
-        start_at_login: enabled,
-        auto_check_update: autoCheckUpdate.value,
-        lastfm_username: lastfmUsername.value,
-        eq_enabled: eqEnabled.value,
-        enable_lrclib: enableLrclib.value,
-        enable_kugou: enableKugou.value,
-        prefer_metadata_lyrics: preferMetadataLyrics.value,
-        use_online_artist_artwork: useOnlineArtistArtwork.value,
-      })
-    } catch (err) {
-      console.error('Failed to save startup setting:', err)
-    }
+    await saveSettings()
+  }
+
+  const updateShowTrayIcon = async (enabled: boolean) => {
+    showTrayIcon.value = enabled
+    await saveSettings()
   }
 
   const updateAutoCheckUpdate = async (enabled: boolean) => {
     autoCheckUpdate.value = enabled
-    try {
-      await SettingsService.SaveSettings({
-        theme: theme.value,
-        language: language.value,
-        start_at_login: startAtLogin.value,
-        auto_check_update: enabled,
-        lastfm_username: lastfmUsername.value,
-        eq_enabled: eqEnabled.value,
-        enable_lrclib: enableLrclib.value,
-        enable_kugou: enableKugou.value,
-        prefer_metadata_lyrics: preferMetadataLyrics.value,
-        use_online_artist_artwork: useOnlineArtistArtwork.value,
-      })
-    } catch (err) {
-      console.error('Failed to save auto update setting:', err)
-    }
+    await saveSettings()
   }
 
   const updateEQEnabled = async (enabled: boolean) => {
     eqEnabled.value = enabled
-    try {
-      await SettingsService.SaveSettings({
-        theme: theme.value,
-        language: language.value,
-        start_at_login: startAtLogin.value,
-        auto_check_update: autoCheckUpdate.value,
-        lastfm_username: lastfmUsername.value,
-        eq_enabled: enabled,
-        enable_lrclib: enableLrclib.value,
-        enable_kugou: enableKugou.value,
-        prefer_metadata_lyrics: preferMetadataLyrics.value,
-        use_online_artist_artwork: useOnlineArtistArtwork.value,
-      })
-    } catch (err) {
-      console.error('Failed to save EQ enabled setting:', err)
-    }
+    await saveSettings()
   }
 
   const updateLastFmUsername = (username: string) => {
@@ -201,82 +156,22 @@ export const useAppStore = defineStore('app', () => {
 
   const updateEnableLrclib = async (enabled: boolean) => {
     enableLrclib.value = enabled
-    try {
-      await SettingsService.SaveSettings({
-        theme: theme.value,
-        language: language.value,
-        start_at_login: startAtLogin.value,
-        auto_check_update: autoCheckUpdate.value,
-        lastfm_username: lastfmUsername.value,
-        eq_enabled: eqEnabled.value,
-        enable_lrclib: enabled,
-        enable_kugou: enableKugou.value,
-        prefer_metadata_lyrics: preferMetadataLyrics.value,
-        use_online_artist_artwork: useOnlineArtistArtwork.value,
-      })
-    } catch (err) {
-      console.error('Failed to save enable_lrclib setting:', err)
-    }
+    await saveSettings()
   }
 
   const updateEnableKugou = async (enabled: boolean) => {
     enableKugou.value = enabled
-    try {
-      await SettingsService.SaveSettings({
-        theme: theme.value,
-        language: language.value,
-        start_at_login: startAtLogin.value,
-        auto_check_update: autoCheckUpdate.value,
-        lastfm_username: lastfmUsername.value,
-        eq_enabled: eqEnabled.value,
-        enable_lrclib: enableLrclib.value,
-        enable_kugou: enabled,
-        prefer_metadata_lyrics: preferMetadataLyrics.value,
-        use_online_artist_artwork: useOnlineArtistArtwork.value,
-      })
-    } catch (err) {
-      console.error('Failed to save enable_kugou setting:', err)
-    }
+    await saveSettings()
   }
 
   const updatePreferMetadataLyrics = async (enabled: boolean) => {
     preferMetadataLyrics.value = enabled
-    try {
-      await SettingsService.SaveSettings({
-        theme: theme.value,
-        language: language.value,
-        start_at_login: startAtLogin.value,
-        auto_check_update: autoCheckUpdate.value,
-        lastfm_username: lastfmUsername.value,
-        eq_enabled: eqEnabled.value,
-        enable_lrclib: enableLrclib.value,
-        enable_kugou: enableKugou.value,
-        prefer_metadata_lyrics: enabled,
-        use_online_artist_artwork: useOnlineArtistArtwork.value,
-      })
-    } catch (err) {
-      console.error('Failed to save prefer_metadata_lyrics setting:', err)
-    }
+    await saveSettings()
   }
 
   const updateUseOnlineArtistArtwork = async (enabled: boolean) => {
     useOnlineArtistArtwork.value = enabled
-    try {
-      await SettingsService.SaveSettings({
-        theme: theme.value,
-        language: language.value,
-        start_at_login: startAtLogin.value,
-        auto_check_update: autoCheckUpdate.value,
-        lastfm_username: lastfmUsername.value,
-        eq_enabled: eqEnabled.value,
-        enable_lrclib: enableLrclib.value,
-        enable_kugou: enableKugou.value,
-        prefer_metadata_lyrics: preferMetadataLyrics.value,
-        use_online_artist_artwork: enabled,
-      })
-    } catch (err) {
-      console.error('Failed to save online artist artwork setting:', err)
-    }
+    await saveSettings()
   }
 
   // Watch for system theme changes if set to 'system'
@@ -294,6 +189,7 @@ export const useAppStore = defineStore('app', () => {
     theme,
     language,
     startAtLogin,
+    showTrayIcon,
     autoCheckUpdate,
     lastfmUsername,
     eqEnabled,
@@ -313,6 +209,7 @@ export const useAppStore = defineStore('app', () => {
     updateTheme,
     updateLanguage,
     updateStartAtLogin,
+    updateShowTrayIcon,
     updateAutoCheckUpdate,
     updateEQEnabled,
     updateLastFmUsername,

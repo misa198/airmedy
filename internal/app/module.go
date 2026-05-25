@@ -4,6 +4,7 @@ import (
 	"airmedy/internal/app/appsettings"
 	"airmedy/internal/app/config"
 	"airmedy/internal/app/eq"
+	"airmedy/internal/app/i18n"
 	"airmedy/internal/app/lastfm"
 	"airmedy/internal/app/library"
 	"airmedy/internal/app/lyrics"
@@ -27,6 +28,7 @@ import (
 var Module = fx.Module("app",
 	fx.Provide(
 		config.NewConfig,
+		i18n.NewService,
 		func(lc fx.Lifecycle, c *config.Config, logger *slog.Logger) (*sqlite.DB, error) {
 			db, err := sqlite.NewDB(c.DBPath(), logger)
 			if err != nil {

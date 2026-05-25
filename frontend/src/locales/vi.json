@@ -91,6 +91,12 @@
     "behavior": {
       "start_at_login": "Khởi động cùng hệ thống",
       "start_at_login_desc": "Tự động chạy Airmedy khi bạn đăng nhập",
+      "show_tray_icon": "Hiện biểu tượng khay hệ thống",
+      "show_tray_icon_desc": "Hiện biểu tượng Airmedy ở khay hệ thống/thanh menu",
+      "restart_required": "Yêu cầu khởi động lại",
+      "restart_required_desc": "Cần khởi động lại ứng dụng để áp dụng các thay đổi. Khởi động lại ngay?",
+      "restart_now": "Khởi động lại ngay",
+      "restart_later": "Để sau",
       "updated": "Đã cập nhật cài đặt khởi động",
       "error": "Cập nhật cài đặt khởi động thất bại"
     },

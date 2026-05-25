@@ -42,6 +42,10 @@ Hash history mode (`createWebHashHistory`). All views lazy-loaded except HomeVie
 
 The `/mini-player` route bypasses the MainLayout wrapper and renders directly.
 
+### Mini Player Window Lifecycle
+
+The mini player window is **destroyed on close and recreated on open** (not just hidden). `WindowService` holds a factory function (`SetMiniWindowFactory`) that creates a fresh `WebviewWindow` each time. Closing the window does not call `e.Cancel()` on the `WindowClosing` hook, so Wails destroys the native window and frees its memory. Reopening calls the factory to create a new window. This resets all Vue/Pinia state in that webview.
+
 ## CSS Variables & Theming
 
 TailwindCSS v4 uses a **CSS-first** `@theme` directive approach. All design tokens are CSS custom properties.
@@ -218,24 +222,11 @@ Used in the mini player for the artwork background.
 
 ## Internationalization
 
-12 locale JSON files in `frontend/src/locales/`. Key structure:
-
-```
-common.*        — Basic labels
-settings.*      — Settings tabs and options
-sidebar.*       — Navigation
-player.*        — Playback controls, lyrics, queue
-home.*          — Greetings, section titles
-library.*       — Track/album metadata labels, table columns
-context_menu.*  — Context menu item labels
-artist.*        — "{count} albums", "{count} songs"
-composer.*      — "{count} compositions"
-genre.*         — "{count} tracks"
-playlist.*      — Playlist cover UI
-track_info.*    — Metadata field names
-```
-
-`i18n.locale` is set dynamically from `appStore.language`. No page reload needed.
+- **Frontend**: 12 locale JSON files in `frontend/src/locales/` managed via `vue-i18n`. `i18n.locale` is set dynamically from `appStore.language`. No page reload needed.
+- **Backend**: Native application and system tray menus are localized via a dedicated Go `i18n.Service` in `internal/app/i18n`. 
+  - Backend locales are stored in `internal/app/i18n/locales/` and embedded via `go:embed`.
+  - When the frontend language changes, it emits a `language:changed` Wails event.
+  - The backend listens for this event and dynamically rebuilds/updates the native menus on the main thread.
 
 ## Performance Notes
 

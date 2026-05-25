@@ -1,0 +1,38 @@
+{
+  "menu": {
+    "airmedy": "Airmedy",
+    "settings": "Cài đặt...",
+    "quit": "Thoát",
+    "file": "Tệp",
+    "edit": "Chỉnh sửa",
+    "playback": "Phát lại",
+    "play_pause": "Phát/Tạm dừng",
+    "next_track": "Bài tiếp theo",
+    "previous_track": "Bài trước đó",
+    "fast_forward": "Tua nhanh",
+    "rewind": "Tua lại",
+    "increase_volume": "Tăng âm lượng",
+    "decrease_volume": "Giảm âm lượng",
+    "mute": "Tắt tiếng",
+    "shuffle": "Phát ngẫu nhiên",
+    "repeat": "Lặp lại",
+    "view": "Xem",
+    "search": "Tìm kiếm"
+  },
+  "tray": {
+    "no_track": "Không có bài hát đang phát",
+    "next_none": "Tiếp theo: Không có",
+    "next": "Tiếp theo: %s",
+    "play": "Phát",
+    "pause": "Tạm dừng",
+    "next_track": "Bài tiếp theo",
+    "previous_track": "Bài trước đó",
+    "repeat": "Lặp lại",
+    "repeat_all": "Lặp lại (Tất cả)",
+    "repeat_one": "Lặp lại (Một)",
+    "shuffle": "Phát ngẫu nhiên",
+    "favorite": "Yêu thích",
+    "show_airmedy": "Hiện Airmedy",
+    "quit": "Thoát"
+  }
+}
