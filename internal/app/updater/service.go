@@ -137,8 +137,8 @@ func (s *Service) DownloadAndApply(ctx context.Context, progress ProgressFunc) e
 	if err != nil {
 		return fmt.Errorf("create temp file: %w", err)
 	}
-	defer os.Remove(tmpFile.Name())
-	defer tmpFile.Close()
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
+	defer func() { _ = tmpFile.Close() }()
 
 	hasher := sha256.New()
 	if err := downloadWithProgress(ctx, pending.assetURL, io.MultiWriter(tmpFile, hasher), progress); err != nil {
@@ -239,7 +239,7 @@ func fetchLatestRelease(ctx context.Context) (*ghRelease, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("github api status %d", resp.StatusCode)
@@ -272,7 +272,7 @@ func fetchChecksumForAsset(ctx context.Context, assets []ghAsset, assetName stri
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -333,7 +333,7 @@ func downloadWithProgress(ctx context.Context, url string, dst io.Writer, progre
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	total := resp.ContentLength
 	var downloaded int64
@@ -390,7 +390,7 @@ func extractFromZip(data []byte, exeName string) ([]byte, error) {
 			if err != nil {
 				return nil, err
 			}
-			defer rc.Close()
+			defer func() { _ = rc.Close() }()
 			return io.ReadAll(rc)
 		}
 	}
@@ -402,7 +402,7 @@ func extractFromTarGz(data []byte, exeName string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer gz.Close()
+	defer func() { _ = gz.Close() }()
 
 	tr := tar.NewReader(gz)
 	for {
