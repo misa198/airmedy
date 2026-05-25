@@ -122,6 +122,10 @@ func (s *PlaylistService) AddTrack(ctx context.Context, playlistID, trackID stri
 	return s.repo.AddTrack(ctx, playlistID, trackID, newRank.String())
 }
 
+func (s *PlaylistService) AddTracks(ctx context.Context, playlistID string, trackIDs []string) error {
+	return s.repo.AddTracks(ctx, playlistID, trackIDs)
+}
+
 func (s *PlaylistService) RemoveTrack(ctx context.Context, playlistID, trackID string) error {
 	return s.repo.RemoveTrack(ctx, playlistID, trackID)
 }

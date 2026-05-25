@@ -37,7 +37,8 @@ Delete(ctx, id string) error           // also removes from search index
 GetAll(ctx) ([]*Playlist, error)
 GetByID(ctx, id string) (*Playlist, error)
 GetTracks(ctx, playlistID string) ([]*TrackDTO, error)
-AddTrack(ctx, playlistID, trackID string) error // Calculates LexoRank position
+AddTrack(ctx, playlistID, trackID string) error  // Calculates LexoRank position
+AddTracks(ctx, playlistID string, trackIDs []string) error // Batch add; single transaction, no position duplicates
 RemoveTrack(ctx, playlistID, trackID string) error
 MoveTrack(ctx, playlistID, trackID, prevTrackID, nextTrackID string) error // O(1) LexoRank update
 SetArtwork(ctx, playlistID, artworkPath string) error  // copies file to artwork cache
@@ -84,6 +85,7 @@ CreatePlaylist(name: string, description: string): Playlist
 UpdatePlaylist(id: string, name: string, description: string): void
 DeletePlaylist(id: string): void
 AddTrackToPlaylist(playlistID: string, trackID: string, senderID: string): void
+AddTracksToPlaylist(playlistID: string, trackIDs: string[], senderID: string): void  // batch; single transaction
 RemoveTrackFromPlaylist(playlistID: string, trackID: string, senderID: string): void
 SelectAndSetPlaylistArtwork(id: string): string   // opens file picker, returns key
 RemovePlaylistArtwork(id: string): void
@@ -185,4 +187,6 @@ Playlists appear in the sidebar below the main navigation items, ordered by crea
 
 ## Track Context Menu Integration
 
-The `Add to Playlist` context menu item fetches `GetPlaylistsForTrack(trackID)` to show a checkmark next to playlists that already contain the track. Clicking a playlist name calls `AddTrackToPlaylist` or `RemoveTrackFromPlaylist` depending on current membership.
+The `Add to Playlist` context menu item fetches `GetPlaylistsForTrack(trackID)` to show a checkmark next to playlists that already contain the track. Clicking a playlist name calls `AddTracksToPlaylist` (batch, for multi-track selection) or `RemoveTrackFromPlaylist` depending on current membership.
+
+`AddTracksToPlaylist` uses a single DB transaction to assign sequential LexoRank positions, preventing the race condition that occurred when multiple `AddTrackToPlaylist` calls fired concurrently and all read the same max position.
