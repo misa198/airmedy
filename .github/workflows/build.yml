@@ -140,6 +140,32 @@ jobs:
         if: runner.os == 'Darwin'
         run: brew install nasm
 
+      - name: Import macOS Certificate
+        if: runner.os == 'Darwin'
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE }}
+          CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+        run: |
+          echo "$CERTIFICATE_BASE64" | base64 --decode > certificate.p12
+          security create-keychain -p "" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
+          security import certificate.p12 -k build.keychain -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "" build.keychain
+          rm certificate.p12
+
+      - name: Store Notarization Credentials
+        if: runner.os == 'Darwin'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: |
+          xcrun notarytool store-credentials "notarize-profile" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_PASSWORD"
+
       - name: Cache FFmpeg Binaries
         id: cache-ffmpeg
         if: runner.os == 'Linux'
@@ -239,10 +265,14 @@ jobs:
               task linux:package ARCH=arm64
               ;;
             "Darwin-AMD64")
-              task darwin:package ARCH=amd64
+              task darwin:sign:notarize ARCH=amd64 \
+                SIGN_IDENTITY="${{ secrets.MACOS_SIGN_IDENTITY }}" \
+                KEYCHAIN_PROFILE="notarize-profile"
               ;;
             "Darwin-ARM64")
-              task darwin:package ARCH=arm64
+              task darwin:sign:notarize ARCH=arm64 \
+                SIGN_IDENTITY="${{ secrets.MACOS_SIGN_IDENTITY }}" \
+                KEYCHAIN_PROFILE="notarize-profile"
               ;;
           esac
 
@@ -305,6 +335,16 @@ jobs:
               zip -r ../dist/Airmedy_${VERSION}_${PLATFORM}.zip airmedy.app
               ;;
           esac
+
+      - name: Generate SHA256SUMS
+        shell: bash
+        run: |
+          cd dist
+          if command -v sha256sum >/dev/null 2>&1; then
+            sha256sum * > SHA256SUMS
+          else
+            shasum -a 256 * | awk '{print $1, $2}' > SHA256SUMS
+          fi
 
       - name: Generate Changelog
         id: changelog

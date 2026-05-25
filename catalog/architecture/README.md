@@ -128,9 +128,15 @@ Go emits events via `application.EmitEvent(name, data)`. Frontend subscribes via
 
 **Player events:** `player:status`, `player:queue-updated`, `player:theme`, `player:lyrics`
 
+**App events:** `language:changed`
+
+**Player events:** `player:status`, `player:queue-updated`, `player:theme`, `player:lyrics`
+
 **Library events:** `library:sync-started`, `library:sync-progress`, `library:sync-finished`, `library:track-updated`, `library:updated`
 
 **Playlist events:** `playlist:tracks-changed`
+
+**Updater events:** `updater:progress` — payload `{ downloaded: number, total: number, percentage: number }`
 
 ## Data Flow: Playback Example
 

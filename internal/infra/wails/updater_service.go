@@ -22,7 +22,21 @@ func (s *UpdaterService) CheckForUpdate(ctx context.Context) (*updater.UpdateInf
 }
 
 func (s *UpdaterService) DownloadAndApply(ctx context.Context) error {
-	return s.svc.DownloadAndApply(ctx)
+	return s.svc.DownloadAndApply(ctx, func(downloaded, total int64) {
+		app := application.Get()
+		if app == nil {
+			return
+		}
+		var pct float64
+		if total > 0 {
+			pct = float64(downloaded) / float64(total) * 100
+		}
+		app.Event.Emit("updater:progress", map[string]any{
+			"downloaded": downloaded,
+			"total":      total,
+			"percentage": pct,
+		})
+	})
 }
 
 func (s *UpdaterService) GetCurrentVersion() string {

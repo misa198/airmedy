@@ -23,6 +23,7 @@ export const useAppStore = defineStore('app', () => {
   const isUpdateDialogOpen = ref(false)
   const isUpdating = ref(false)
   const updateApplied = ref(false)
+  const updateProgress = ref(0)
 
   const applyTheme = (newTheme: 'system' | 'light' | 'dark' | 'black') => {
     const root = document.documentElement
@@ -181,8 +182,16 @@ export const useAppStore = defineStore('app', () => {
   }
   _darkMQ.addEventListener('change', _onDarkMQChange)
 
+  const _offUpdaterProgress = Events.On('updater:progress', (e: any) => {
+    const data = e?.data ?? e
+    if (data?.total > 0) {
+      updateProgress.value = Math.round((data.downloaded / data.total) * 100)
+    }
+  })
+
   function dispose() {
     _darkMQ.removeEventListener('change', _onDarkMQChange)
+    _offUpdaterProgress()
   }
 
   return {
@@ -202,6 +211,7 @@ export const useAppStore = defineStore('app', () => {
     isUpdateDialogOpen,
     isUpdating,
     updateApplied,
+    updateProgress,
     loadSettings,
     checkForUpdate,
     applyUpdate,
