@@ -76,7 +76,7 @@ onMounted(() => {
           <span class="inline-block min-w-[100px]">{{ appStore.isCheckingUpdate ? t('settings.about.checking') : t('settings.about.check_updates') }}</span>
         </button>
 
-        <div v-if="!appStore.updateInfo && !appStore.updateApplied && appStore.updateChecked && !appStore.isCheckingUpdate" class="flex items-center gap-2 text-foreground/50 py-1">
+        <div v-if="!appStore.updateInfo && !appStore.updateApplied && appStore.updateChecked && !appStore.isCheckingUpdate" class="flex items-center gap-2 text-foreground/50 pb-1 pt-4">
           <CheckCircle2 class="w-4 h-4" />
           <span class="text-xs font-bold">{{ t('settings.about.up_to_date') }}</span>
         </div>

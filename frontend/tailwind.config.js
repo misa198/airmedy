@@ -14,6 +14,7 @@ export default {
         foreground: 'var(--text-main)',
         glass: 'var(--bg-glass)',
         'glass-elevated': 'var(--bg-glass-elevated)',
+        'glass-modal': 'var(--bg-glass-modal)',
         'border-glass': 'var(--border-glass)',
         border: 'var(--border-glass)',
         primary: {
