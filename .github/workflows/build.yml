@@ -153,8 +153,12 @@ jobs:
         if: runner.os == 'Darwin'
         uses: actions/cache@v4
         with:
-          path: internal/infra/audio/sfb_libs
+          path: |
+            internal/infra/audio/sfb_libs
+            internal/infra/audio/sfb_build
           key: sfb-${{ runner.os }}-${{ hashFiles('scripts/build-sfbaudioengine-darwin.sh') }}
+          restore-keys: |
+            sfb-${{ runner.os }}-
 
       - name: Cache Miniaudio (Windows and Linux)
         id: cache-miniaudio
@@ -176,7 +180,7 @@ jobs:
         run: bash scripts/build-ffmpeg-linux.sh
 
       - name: Build SFB Audio Engine (Darwin)
-        if: runner.os == 'Darwin' && steps.cache-sfb.outputs.cache-hit != 'true'
+        if: runner.os == 'Darwin' && !hashFiles('internal/infra/audio/sfb_libs/SFBAudioEngine.xcframework/Info.plist')
         run: bash scripts/build-sfbaudioengine-darwin.sh
 
       - name: Fetch miniaudio (Windows and Linux)
@@ -306,11 +310,21 @@ jobs:
               ;;
           esac
 
+      - name: Generate SHA256SUMS
+        shell: bash
+        run: |
+          cd dist
+          if command -v sha256sum >/dev/null 2>&1; then
+            sha256sum * > SHA256SUMS
+          else
+            shasum -a 256 * | awk '{print $1, $2}' > SHA256SUMS
+          fi
+
       - name: Generate Changelog
         id: changelog
         shell: bash
         run: |
-          PREV_TAG=$(git tag --sort=-version:refname | grep -v "^v${{ github.event.inputs.version }}$" | head -1)
+          PREV_TAG=$(git tag --sort=-version:refname | grep -v "^v${{ github.event.inputs.version }}$" | head -1 || true)
           if [ -n "$PREV_TAG" ]; then
             CHANGELOG=$(git log "${PREV_TAG}..HEAD" --pretty=format:"- %s (%h)" --no-merges | grep -E "^- (feat|fix)" || true)
             RANGE="Changes since ${PREV_TAG}"

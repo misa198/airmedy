@@ -23,6 +23,8 @@ export const useAppStore = defineStore('app', () => {
   const isUpdateDialogOpen = ref(false)
   const isUpdating = ref(false)
   const updateApplied = ref(false)
+  const updateProgress = ref(0)
+  const updateChecked = ref(false)
 
   const applyTheme = (newTheme: 'system' | 'light' | 'dark' | 'black') => {
     const root = document.documentElement
@@ -72,8 +74,12 @@ export const useAppStore = defineStore('app', () => {
     try {
       const info = await UpdaterService.CheckForUpdate()
       updateInfo.value = info
+      updateChecked.value = true
+      if (info) {
+        isUpdateDialogOpen.value = true
+      }
     } catch (err) {
-      console.error('Failed to check for updates:', err)
+      throw err
     } finally {
       isCheckingUpdate.value = false
     }
@@ -181,8 +187,16 @@ export const useAppStore = defineStore('app', () => {
   }
   _darkMQ.addEventListener('change', _onDarkMQChange)
 
+  const _offUpdaterProgress = Events.On('updater:progress', (e: any) => {
+    const data = e?.data ?? e
+    if (data?.total > 0) {
+      updateProgress.value = Math.round((data.downloaded / data.total) * 100)
+    }
+  })
+
   function dispose() {
     _darkMQ.removeEventListener('change', _onDarkMQChange)
+    _offUpdaterProgress()
   }
 
   return {
@@ -202,6 +216,8 @@ export const useAppStore = defineStore('app', () => {
     isUpdateDialogOpen,
     isUpdating,
     updateApplied,
+    updateProgress,
+    updateChecked,
     loadSettings,
     checkForUpdate,
     applyUpdate,

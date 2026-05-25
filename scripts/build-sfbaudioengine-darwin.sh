@@ -3,9 +3,10 @@ set -euo pipefail
 
 VERSION="0.12.1"
 REPO_URL="https://github.com/sbooth/SFBAudioEngine"
-TMP_SRC="/tmp/sfb-src-${VERSION}"
-TMP_FW="/tmp/sfb-fw-${VERSION}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+BUILD_DIR="${SCRIPT_DIR}/../internal/infra/audio/sfb_build"
+TMP_SRC="${BUILD_DIR}/sfb-src-${VERSION}"
+TMP_FW="${BUILD_DIR}/sfb-fw-${VERSION}"
 OUT_DIR="${SCRIPT_DIR}/../internal/infra/audio/sfb_libs"
 
 # Binary xcframeworks that remain after stripping. Only these get linked and copied.

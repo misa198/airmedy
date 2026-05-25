@@ -9,6 +9,7 @@ Application-level settings: UI theme, display language, launch-at-login. Setting
 | File                                           | Purpose                     |
 | ---------------------------------------------- | --------------------------- |
 | `internal/app/config/config.go`                | Paths and AppSettings model |
+| `internal/app/config/meta.go`                  | App constants: Version, RepoOwner, RepoName, AppName, AppDesc, GitHubURL, LicenseURL |
 | `internal/app/lastfm/service.go`               | Last.fm scrobbling and auth |
 | `internal/infra/sqlite/settings_repository.go` | SQLite persistence          |
 | `internal/infra/wails/settings_service.go`     | Wails binding               |
@@ -77,6 +78,8 @@ interface AppStore {
   isUpdateDialogOpen: boolean;
   isUpdating: boolean;
   updateApplied: boolean;
+  updateChecked: boolean; // true after first CheckForUpdate completes
+  updateProgress: number; // 0-100, driven by updater:progress event
   // Methods
   loadSettings(): Promise<void>;
   applyTheme(theme: string): void;
@@ -102,6 +105,19 @@ Each `update*()` method calls `SettingsService.SaveSettings()` with the full set
 `applyTheme()` manages CSS classes on `document.documentElement`. `dark` theme adds `.dark`; `black` theme adds both `.dark` and `.black` (pure black bg override for OLED screens); `light` removes both. When theme is `system`, it respects `prefers-color-scheme` media query (resolves to dark, not black).
 
 `updateLanguage()` sets `i18n.locale.value` immediately for instant locale switch without reload.
+
+## Auto-Update Implementation
+
+`internal/app/updater/Service` uses the GitHub Releases API directly (`api.github.com/repos/misa198/airmedy/releases/latest`) — no third-party updater library. Flow:
+
+1. `CheckForUpdate()` → fetches latest release JSON, selects platform asset by OS/arch + extension (`.zip` for macOS/Windows, `.tar.gz` for Linux), optionally fetches `SHA256SUMS` for verification. Caches the pending release.
+2. `DownloadAndApply(ctx, progress)` → downloads asset with streaming progress callback, verifies SHA256 if available, extracts named binary from archive, applies atomically via `github.com/inconshreveable/go-update`, then runs platform-specific `postUpdate`.
+3. `infra/wails/UpdaterService.DownloadAndApply()` wraps the above and emits `updater:progress` events (`{ downloaded, total, percentage }`) to the frontend event bus during download.
+4. `RestartApp()` calls `Service.PrepareRestart()`. On macOS: spawns a background shell (`sh -c`) that polls `kill -0 <pid>` until the process exits, then replaces the current `.app` bundle with the staged update bundle, ad-hoc codesigns it (`codesign --force --deep --sign -`), removes quarantine (`xattr -d com.apple.quarantine`), and reopens via `open`. On other platforms: re-execs the binary directly.
+
+macOS `applyUpdate`: instead of patching the running binary in-place, it extracts the full `.app` bundle from the zip archive to a staging path (`<bundle>.app.update`), then defers the bundle swap to the post-exit shell. `postUpdate` only updates `Info.plist` version fields (`CFBundleShortVersionString`, `CFBundleVersion`) — ad-hoc codesigning is done by the restart shell after process exit.
+
+Version constant moved from `internal/domain/version.go` (deleted) to `internal/app/config/meta.go` as `config.Version`.
 
 ## Settings View Structure
 

@@ -23,12 +23,14 @@ Airmedy is a desktop music player built with **Wails v3** (Go backend + Vue 3 fr
 ┌───────────────────────────▼─────────────────────────────────────┐
 │  infra/wails  (Adapter Layer — thin wrappers)                   │
 │  PlayerService, LibraryService, SearchService, PlaylistService, │
-│  LyricsService, EQService, SettingsService, WindowService       │
+│  LyricsService, EQService, SettingsService, UpdaterService,     │
+│  WindowService                                                  │
 └───────────────────────────┬─────────────────────────────────────┘
                             │
 ┌───────────────────────────▼─────────────────────────────────────┐
 │  internal/app  (Application Services)                           │
-│  library/, player/, playlist/, eq/, lyrics/, config/, i18n/     │
+│  library/, player/, playlist/, eq/, lyrics/, config/, i18n/,   │
+│  updater/                                                       │
 │  — orchestrates domain entities and ports                       │
 │  — framework-agnostic business logic                            │
 └───────────────────────────┬─────────────────────────────────────┘
@@ -131,6 +133,8 @@ Go emits events via `application.EmitEvent(name, data)`. Frontend subscribes via
 **Library events:** `library:sync-started`, `library:sync-progress`, `library:sync-finished`, `library:track-updated`, `library:updated`
 
 **Playlist events:** `playlist:tracks-changed`
+
+**Updater events:** `updater:progress` — payload `{ downloaded: number, total: number, percentage: number }`
 
 ## Data Flow: Playback Example
 

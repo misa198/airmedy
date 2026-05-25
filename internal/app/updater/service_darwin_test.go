@@ -49,7 +49,7 @@ func TestGetBundlePath_NonBundle(t *testing.T) {
 func TestPostUpdate_UpdatesPlist(t *testing.T) {
 	bundlePath, exePath := makeAppBundle(t)
 
-	infoPlistPath := filepath.Join(bundlePath, "Contents", "Info.plist")
+	plist := filepath.Join(bundlePath, "Contents", "Info.plist")
 	plistContent := `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -60,19 +60,15 @@ func TestPostUpdate_UpdatesPlist(t *testing.T) {
 	<string>0.0.1</string>
 </dict>
 </plist>`
-	if err := os.WriteFile(infoPlistPath, []byte(plistContent), 0o644); err != nil {
+	if err := os.WriteFile(plist, []byte(plistContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
 	if err := postUpdate(exePath, "0.0.2"); err != nil {
-		// codesign may fail in environments without a signing identity — that's acceptable
-		if !strings.Contains(err.Error(), "codesign") {
-			t.Fatalf("postUpdate failed: %v", err)
-		}
-		t.Logf("codesign step failed (expected in unsigned env): %v", err)
+		t.Fatalf("postUpdate failed: %v", err)
 	}
 
-	data, err := os.ReadFile(infoPlistPath)
+	data, err := os.ReadFile(plist)
 	if err != nil {
 		t.Fatal(err)
 	}

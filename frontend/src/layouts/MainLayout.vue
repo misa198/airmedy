@@ -20,7 +20,6 @@ const deviceStore = useDeviceStore()
 const appStore = useAppStore()
 
 const isResizing = ref(false)
-const showUpdateDialog = ref(false)
 
 const startResizing = (e: MouseEvent) => {
   e.preventDefault()

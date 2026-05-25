@@ -108,6 +108,7 @@
       "check_updates_auto_desc": "시작 시 자동으로 새 버전을 확인합니다",
       "checking": "확인 중...",
       "up_to_date": "Airmedy가 최신 버전입니다",
+      "check_update_failed": "업데이트 확인에 실패했습니다",
       "new_version_available": "새 버전을 사용할 수 있습니다: {version}",
       "update_now": "지금 업데이트",
       "updating": "업데이트 중...",

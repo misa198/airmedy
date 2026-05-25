@@ -108,6 +108,7 @@
       "check_updates_auto_desc": "Автоматически проверять наличие новых версий при запуске",
       "checking": "Проверка...",
       "up_to_date": "Установлена последняя версия Airmedy",
+      "check_update_failed": "Не удалось проверить обновления",
       "new_version_available": "Доступна новая версия: {version}",
       "update_now": "Обновить сейчас",
       "updating": "Обновление...",

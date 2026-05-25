@@ -1,21 +1,19 @@
 <script setup lang="ts">
 import {
-  Home,
   Clock,
-  Users,
   Disc,
-  Music,
+  Home,
   ListMusic,
+  Music,
   PenTool,
-  Search,
-  Settings,
+  Users
 } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import SidebarItem from './SidebarItem.vue'
+import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import { usePlayerStore } from '../stores/player'
-import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
+import SidebarItem from './SidebarItem.vue'
 
 const { t } = useI18n()
 const playerStore = usePlayerStore()
@@ -47,13 +45,7 @@ const handleItemDblClick = async (item: any) => {
 
 <template>
   <nav class="px-3 py-2 space-y-0.5">
-    <SidebarItem
-      v-for="item in navItems"
-      :key="item.name"
-      :to="item.to"
-      :icon="item.icon"
-      :label="item.name"
-      @dblclick="handleItemDblClick(item)"
-    />
+    <SidebarItem v-for="item in navItems" :key="item.name" :to="item.to" :icon="item.icon" :label="item.name"
+      @dblclick="handleItemDblClick(item)" />
   </nav>
 </template>

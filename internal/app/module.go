@@ -68,7 +68,7 @@ var Module = fx.Module("app",
 		wails.NewSettingsService,
 		wails.NewUpdaterService,
 		func(logger *slog.Logger) *updater.Service {
-			return updater.NewService(domain.Version, logger)
+			return updater.NewService(config.Version, logger)
 		},
 		func() *wails.GreetService { return &wails.GreetService{} },
 	),

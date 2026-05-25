@@ -108,6 +108,7 @@
       "check_updates_auto_desc": "起動時に新しいバージョンを自動的に確認する",
       "checking": "確認中...",
       "up_to_date": "Airmedyは最新の状態です",
+      "check_update_failed": "アップデートの確認に失敗しました",
       "new_version_available": "新しいバージョンが利用可能です: {version}",
       "update_now": "今すぐアップデート",
       "updating": "アップデート中...",

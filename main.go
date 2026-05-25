@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"airmedy/internal/app"
+	"airmedy/internal/app/config"
 	"airmedy/internal/app/i18n"
 	"airmedy/internal/domain"
 	"airmedy/internal/infra/wails"
@@ -63,7 +64,7 @@ func main() {
 		wailsApp      *application.App
 	)
 
-	slog.Info("Starting Airmedy", "version", domain.Version)
+	slog.Info("Starting Airmedy", "version", config.Version)
 
 	fxApp := fx.New(
 		app.Module,
