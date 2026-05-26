@@ -1,4 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Load config and populate download links
+    fetch('config.json')
+        .then(r => r.json())
+        .then(config => {
+            const v = config.downloadVersion;
+            document.querySelectorAll('[data-download]').forEach(el => {
+                const arch = el.getAttribute('data-download');
+                el.href = `https://github.com/misa198/airmedy/releases/download/v${v}/Airmedy_${v}_${arch}.zip`;
+            });
+        })
+        .catch(() => {});
+
     // i18n Logic
     const langSelector = document.getElementById('lang-selector');
     

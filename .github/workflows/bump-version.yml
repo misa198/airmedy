@@ -1,0 +1,50 @@
+name: Bump Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'New app version (e.g., 0.0.13)'
+        required: true
+      download_version:
+        description: 'Download version for website (e.g., 0.0.12) — leave empty to skip'
+        required: false
+
+jobs:
+  bump:
+    name: Bump version to ${{ github.event.inputs.version }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Bump app version
+        run: bash scripts/bump-version.sh ${{ github.event.inputs.version }}
+
+      - name: Bump download version
+        if: ${{ github.event.inputs.download_version != '' }}
+        run: bash scripts/bump-download-version.sh ${{ github.event.inputs.download_version }}
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add \
+            build/config.yml \
+            build/darwin/Info.dev.plist \
+            build/darwin/Info.plist \
+            build/linux/nfpm/nfpm.yaml \
+            build/windows/info.json \
+            build/windows/nsis/wails_tools.nsh \
+            build/windows/wails.exe.manifest \
+            frontend/package.json \
+            internal/app/config/meta.go \
+            public/config.json
+          COMMIT_MSG="chore: bump version to ${{ github.event.inputs.version }}"
+          if [[ -n "${{ github.event.inputs.download_version }}" ]]; then
+            COMMIT_MSG="${COMMIT_MSG}, download to ${{ github.event.inputs.download_version }}"
+          fi
+          git commit -m "$COMMIT_MSG" || echo "Nothing to commit"
+          git push origin master

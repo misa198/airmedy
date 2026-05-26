@@ -92,6 +92,16 @@ tasks:
     cmds:
       - pnpm lint
 
+  bump-version:
+    summary: "Bumps the application version across all platform build files. Usage: task bump-version VERSION=0.0.13"
+    cmds:
+      - bash scripts/bump-version.sh {{.VERSION}}
+
+  bump-download-version:
+    summary: "Bumps the download version in public/config.json. Usage: task bump-download-version VERSION=0.0.12"
+    cmds:
+      - bash scripts/bump-download-version.sh {{.VERSION}}
+
   verify:
     summary: Runs all tests and linters to verify the project state
     cmds:
