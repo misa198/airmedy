@@ -128,6 +128,11 @@
       "language": "语言",
       "select_language": "选择应用程序语言"
     },
+    "playback": {
+      "general": "常规",
+      "prevent_sleep": "播放时阻止休眠",
+      "prevent_sleep_desc": "播放音乐时保持计算机唤醒状态"
+    },
     "equalizer": {
       "title": "均衡器",
       "new_profile": "新建配置文件",

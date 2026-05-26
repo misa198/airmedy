@@ -128,6 +128,11 @@
       "language": "언어",
       "select_language": "애플리케이션 언어 선택"
     },
+    "playback": {
+      "general": "일반",
+      "prevent_sleep": "재생 중 절전 모드 방지",
+      "prevent_sleep_desc": "음악 재생 중 컴퓨터가 절전 모드로 전환되지 않도록 합니다"
+    },
     "equalizer": {
       "title": "이퀄라이저",
       "new_profile": "새 프로필",

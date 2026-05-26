@@ -134,6 +134,11 @@
       "language": "Language",
       "select_language": "Select application language"
     },
+    "playback": {
+      "general": "General",
+      "prevent_sleep": "Prevent sleep while playing",
+      "prevent_sleep_desc": "Keep your computer awake while music is playing"
+    },
     "equalizer": {
       "title": "Equalizer",
       "new_profile": "New Profile",

@@ -17,6 +17,7 @@ import (
 	lyricsinfra "airmedy/internal/infra/lyrics"
 	"airmedy/internal/infra/logging"
 	"airmedy/internal/infra/metadata"
+	"airmedy/internal/infra/power"
 	"airmedy/internal/infra/sqlite"
 	"airmedy/internal/infra/wails"
 	"context"
@@ -76,6 +77,7 @@ var Module = fx.Module("app",
 	logging.Module,
 	lyricsinfra.Module,
 	player.Module,
+	power.Module,
 	playlist.Module,
 	lyrics.Module,
 	eq.Module,

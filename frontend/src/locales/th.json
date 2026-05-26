@@ -128,6 +128,11 @@
       "language": "ภาษา",
       "select_language": "เลือกภาษาของแอปพลิเคชัน"
     },
+    "playback": {
+      "general": "ทั่วไป",
+      "prevent_sleep": "ป้องกันการสลีปขณะเล่นเพลง",
+      "prevent_sleep_desc": "ป้องกันไม่ให้คอมพิวเตอร์สลีปขณะเล่นเพลง"
+    },
     "equalizer": {
       "title": "อีควอไลเซอร์",
       "new_profile": "โปรไฟล์ใหม่",

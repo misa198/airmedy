@@ -162,4 +162,5 @@ type AppSettings struct {
 	EnableKugou              bool   `json:"enable_kugou"`
 	PreferMetadataLyrics     bool   `json:"prefer_metadata_lyrics"`
 	UseOnlineArtistArtwork   bool   `json:"use_online_artist_artwork"`
+	PreventSleepWhilePlaying bool   `json:"prevent_sleep_while_playing"`
 }

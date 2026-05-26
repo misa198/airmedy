@@ -44,6 +44,8 @@ type PlayerService struct {
 	endedNaturally bool             // true when queue ran out; cleared on Play or loadAndPlay
 	nextPreQueued  *domain.TrackDTO // track pre-enqueued for gapless transition
 
+	sleepInhibitor domain.SleepInhibitor
+
 	// emitStatusHook overrides event emission in tests (nil in production).
 	emitStatusHook func()
 
@@ -62,21 +64,23 @@ func NewPlayerService(
 	trackRepo domain.TrackRepository,
 	stateRepo domain.PlayerStateRepository,
 	settingsRepo domain.SettingsRepository,
+	sleepInhibitor domain.SleepInhibitor,
 	lc fx.Lifecycle,
 ) *PlayerService {
 	s := &PlayerService{
-		player:        player,
-		queue:         queue,
-		logger:        logger,
-		artworkCache:  artworkCache,
-		lyricsService: lyricsService,
-		trackRepo:     trackRepo,
-		stateRepo:     stateRepo,
-		settingsRepo:  settingsRepo,
-		tickInterval:  500 * time.Millisecond,
-		playCounted:   make(map[string]bool),
-		npReported:    make(map[string]bool),
-		posConfirmed:  make(map[string]bool),
+		player:         player,
+		queue:          queue,
+		logger:         logger,
+		artworkCache:   artworkCache,
+		lyricsService:  lyricsService,
+		trackRepo:      trackRepo,
+		stateRepo:      stateRepo,
+		settingsRepo:   settingsRepo,
+		sleepInhibitor: sleepInhibitor,
+		tickInterval:   500 * time.Millisecond,
+		playCounted:    make(map[string]bool),
+		npReported:     make(map[string]bool),
+		posConfirmed:   make(map[string]bool),
 	}
 	s.player.OnTrackEnd(s.HandleTrackEnd)
 
@@ -819,7 +823,34 @@ func (s *PlayerService) checkThreshold() {
 	}
 }
 
+func (s *PlayerService) inhibitSleep() {
+	settings, err := s.settingsRepo.Load(context.Background())
+	if err != nil {
+		s.logger.Debug("sleep inhibitor: failed to load settings", "error", err)
+		return
+	}
+	if !settings.PreventSleepWhilePlaying {
+		s.logger.Debug("sleep inhibitor: disabled by setting, skipping")
+		return
+	}
+	if err := s.sleepInhibitor.Inhibit(); err != nil {
+		s.logger.Debug("sleep inhibitor: inhibit failed", "error", err)
+		return
+	}
+	s.logger.Debug("sleep inhibitor: acquired")
+}
+
+func (s *PlayerService) releaseSleep() {
+	if err := s.sleepInhibitor.Release(); err != nil {
+		s.logger.Debug("sleep inhibitor: release failed", "error", err)
+		return
+	}
+	s.logger.Debug("sleep inhibitor: released")
+}
+
 func (s *PlayerService) startPositionTicker() {
+	s.inhibitSleep()
+
 	s.tickerMu.Lock()
 	defer s.tickerMu.Unlock()
 
@@ -855,6 +886,8 @@ func (s *PlayerService) startPositionTicker() {
 }
 
 func (s *PlayerService) stopPositionTicker() {
+	s.releaseSleep()
+
 	s.tickerMu.Lock()
 	defer s.tickerMu.Unlock()
 	if s.tickerCancel != nil {

@@ -89,6 +89,12 @@ type EQController interface {
 	SetEQEnabled(enabled bool) error
 }
 
+// SleepInhibitor prevents the OS from sleeping while music is playing.
+type SleepInhibitor interface {
+	Inhibit() error
+	Release() error
+}
+
 // AudioPlayer is the interface for platform-native audio playback engines
 type AudioPlayer interface {
 	// Control operations

@@ -128,6 +128,11 @@
       "language": "Langue",
       "select_language": "Sélectionner la langue de l'application"
     },
+    "playback": {
+      "general": "Général",
+      "prevent_sleep": "Empêcher la mise en veille pendant la lecture",
+      "prevent_sleep_desc": "Maintenir l'ordinateur actif pendant la lecture de musique"
+    },
     "equalizer": {
       "title": "Égaliseur",
       "new_profile": "Nouveau profil",

@@ -30,6 +30,7 @@ type AppSettings struct {
     EnableKugou            bool                // enable Kugou lyrics provider
     PreferMetadataLyrics   bool                // prefer embedded lyrics over fetched
     UseOnlineArtistArtwork bool                // fetch artist artwork from Deezer
+    PreventSleepWhilePlaying bool             // prevent OS sleep during playback
 }
 ```
 
@@ -72,6 +73,7 @@ interface AppStore {
   enableKugou: boolean;
   preferMetadataLyrics: boolean;
   useOnlineArtistArtwork: boolean;
+  preventSleepWhilePlaying: boolean;
   // Update state
   updateInfo: UpdateInfo | null;
   isCheckingUpdate: boolean;
@@ -93,6 +95,7 @@ interface AppStore {
   updateEnableKugou(enabled: boolean): Promise<void>;
   updatePreferMetadataLyrics(enabled: boolean): Promise<void>;
   updateUseOnlineArtistArtwork(enabled: boolean): Promise<void>;
+  updatePreventSleepWhilePlaying(enabled: boolean): Promise<void>;
   checkForUpdate(): Promise<void>;
   applyUpdate(): Promise<void>;
   restartApp(): Promise<void>;
@@ -100,7 +103,7 @@ interface AppStore {
 }
 ```
 
-Each `update*()` method calls `SettingsService.SaveSettings()` with the full settings object (all 10 fields at once, not partial).
+Each `update*()` method calls `SettingsService.SaveSettings()` with the full settings object (all fields at once, not partial).
 
 `applyTheme()` manages CSS classes on `document.documentElement`. `dark` theme adds `.dark`; `black` theme adds both `.dark` and `.black` (pure black bg override for OLED screens); `light` removes both. When theme is `system`, it respects `prefers-color-scheme` media query (resolves to dark, not black).
 
@@ -128,7 +131,7 @@ Version constant moved from `internal/domain/version.go` (deleted) to `internal/
 | General      | Theme selector, Language picker, Start at Login, Auto-check updates toggle |
 | Library      | Watched folders list, Add/Remove folder, Sync All, Reindex                 |
 | Integrations | Last.fm account + lyrics providers (LRClib, Kugou, metadata preference)   |
-| Playback     | EQ profiles and band sliders (`PlaybackSettings.vue`) |
+| Playback     | EQ profiles and band sliders, prevent-sleep toggle (`PlaybackSettings.vue`) |
 | About        | App version, GitHub link, License, Open Data Folder button                 |
 
 ## Last.fm Integration
@@ -175,3 +178,4 @@ Settings evolved across multiple migrations:
 | 000015    | Add `artwork_key` column to `artists` table                      |
 | 000016    | Add `use_online_artist_artwork` setting column                   |
 | 000017    | Add `enable_lrclib`, `enable_kugou`, `prefer_metadata_lyrics`; all `BOOLEAN NOT NULL DEFAULT 1` |
+| 000019    | Add `prevent_sleep_while_playing BOOLEAN NOT NULL DEFAULT 0`     |

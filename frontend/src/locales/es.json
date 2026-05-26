@@ -128,6 +128,11 @@
       "language": "Idioma",
       "select_language": "Seleccionar idioma de la aplicación"
     },
+    "playback": {
+      "general": "General",
+      "prevent_sleep": "Evitar suspensión al reproducir",
+      "prevent_sleep_desc": "Mantener el equipo activo mientras se reproduce música"
+    },
     "equalizer": {
       "title": "Ecualizador",
       "new_profile": "Nuevo perfil",

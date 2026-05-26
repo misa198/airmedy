@@ -128,6 +128,11 @@
       "language": "Sprache",
       "select_language": "Anwendungssprache auswählen"
     },
+    "playback": {
+      "general": "Allgemein",
+      "prevent_sleep": "Ruhezustand beim Abspielen verhindern",
+      "prevent_sleep_desc": "Computer wach halten, während Musik abgespielt wird"
+    },
     "equalizer": {
       "title": "Equalizer",
       "new_profile": "Neues Profil",

@@ -134,6 +134,11 @@
       "language": "Ngôn ngữ",
       "select_language": "Chọn ngôn ngữ ứng dụng"
     },
+    "playback": {
+      "general": "Chung",
+      "prevent_sleep": "Ngăn máy ngủ khi đang phát nhạc",
+      "prevent_sleep_desc": "Giữ máy tính thức khi đang phát nhạc"
+    },
     "equalizer": {
       "title": "Bộ cân bằng âm",
       "new_profile": "Hồ sơ mới",

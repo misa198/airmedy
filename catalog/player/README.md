@@ -14,6 +14,10 @@ The player feature handles audio playback, queue management, shuffle/repeat mode
 | `internal/infra/audio/native_player_darwin.m` | Obj-C SFBAudioEngine implementation   |
 | `internal/infra/audio/player_miniaudio.go` | Windows/Linux miniaudio player           |
 | `internal/infra/wails/player_service.go`   | Wails binding wrapper                    |
+| `internal/infra/power/inhibitor_darwin.go` | macOS IOPMAssertion sleep inhibitor (cgo) |
+| `internal/infra/power/inhibitor_windows.go` | Windows SetThreadExecutionState sleep inhibitor |
+| `internal/infra/power/inhibitor_linux.go`  | Linux no-op sleep inhibitor              |
+| `internal/infra/power/module.go`           | FX module for `SleepInhibitor` binding   |
 
 ## AudioPlayer Interface
 
@@ -55,6 +59,23 @@ type GaplessPlayer interface {
 
 Both `DarwinPlayer` (macOS) and `MiniAudioPlayer` (Win/Linux) implement `GaplessPlayer`.
 
+## SleepInhibitor Interface
+
+Prevents the OS from sleeping while music plays. Defined in `internal/domain/audio.go`, implemented in `internal/infra/power/`.
+
+```go
+type SleepInhibitor interface {
+    Inhibit() error  // acquire OS sleep prevention
+    Release() error  // release it
+}
+```
+
+| Platform | Implementation | Mechanism |
+| -------- | -------------- | --------- |
+| macOS    | `inhibitor_darwin.go` | `IOPMAssertion` (cgo) |
+| Windows  | `inhibitor_windows.go` | `SetThreadExecutionState(ES_CONTINUOUS \| ES_SYSTEM_REQUIRED)` |
+| Linux    | `inhibitor_linux.go` | no-op (returns nil) |
+
 ## Platform Adapters
 
 ### macOS — SFBAudioEngine (`player_darwin.go`)
@@ -87,6 +108,7 @@ Both `DarwinPlayer` (macOS) and `MiniAudioPlayer` (Win/Linux) implement `Gapless
 - Loads tracks into the audio adapter.
 - Manages playback state transitions.
 - Runs a **500ms ticker** that emits `player:status` events while playing.
+- Acquires OS sleep inhibition (`domain.SleepInhibitor`) when ticker starts (playback begins); releases on ticker stop (pause/stop). Controlled by `PreventSleepWhilePlaying` setting.
 - Persists and restores state via `PlayerStateRepository`.
 - Increments play counts via `TrackRepository.IncrementPlayCount()`.
 - Syncs artwork theme colors on track load.
