@@ -59,7 +59,8 @@
       "library": "媒体库",
       "integrations": "集成",
       "playback": "播放",
-      "about": "关于"
+      "about": "关于",
+      "remote": "远程"
     },
     "general": {
       "behavior": "行为",
@@ -132,6 +133,24 @@
       "general": "常规",
       "prevent_sleep": "播放时阻止休眠",
       "prevent_sleep_desc": "播放音乐时保持计算机唤醒状态"
+    },
+    "remote": {
+      "title": "远程控制",
+      "enable": "启用远程服务器",
+      "enable_desc": "允许您网络中的其他设备控制播放",
+      "access_urls": "访问地址",
+      "include_pin": "包含 PIN",
+      "copy": "复制",
+      "copied": "已复制！",
+      "scan_to_connect": "扫描连接",
+      "pin_embedded": "已嵌入 PIN — 立即打开远程控制",
+      "pin_required": "扫描后需要输入 PIN",
+      "access_pin": "访问 PIN",
+      "access_pin_desc": "连接需要 4 位数字码",
+      "show": "显示",
+      "hide": "隐藏",
+      "regenerate": "重新生成",
+      "regenerating": "生成中…"
     },
     "equalizer": {
       "title": "均衡器",

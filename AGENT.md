@@ -274,6 +274,7 @@ Conventional Commits: `type(scope): description`
 | SQLite schema, migrations, repositories | `catalog/database/README.md` |
 | Vue components, stores, composables, routing | `catalog/ui/README.md` |
 | Overall architecture, DI, Wails IPC | `catalog/architecture/README.md` |
+| Remote control server, WS protocol, auth, remote SPA | `catalog/remote/README.md` |
 
 ### Update After Change
 

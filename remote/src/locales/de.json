@@ -1,0 +1,31 @@
+{
+  "app": {
+    "connecting": "Verbinde…",
+    "reconnecting": "Verbindung verloren. Verbinde erneut…",
+    "player": "Player",
+    "queue": "Warteschlange"
+  },
+  "auth": {
+    "enter_pin": "Gib die 4-stellige PIN aus der App ein",
+    "incorrect_pin": "Falsche PIN. Nochmals versuchen.",
+    "clear_all": "Alles löschen"
+  },
+  "player": {
+    "up_next": "Als Nächstes",
+    "scroll_to_current": "Zum aktuellen Titel scrollen",
+    "queue_empty": "Warteschlange ist leer",
+    "not_playing": "Keine Wiedergabe",
+    "shuffle": "Zufällig",
+    "previous": "Vorheriger",
+    "play": "Abspielen",
+    "pause": "Pause",
+    "next": "Nächster",
+    "repeat": "Wiederholen",
+    "mute": "Stumm",
+    "unmute": "Ton an"
+  },
+  "library": {
+    "tracks_count": "{count} Titel",
+    "unknown_artist": "Unbekannter Künstler"
+  }
+}

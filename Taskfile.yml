@@ -64,6 +64,11 @@ tasks:
     cmds:
       - task: common:run:docker
 
+  build:remote:
+    summary: Builds the remote web app into remote/dist/
+    cmds:
+      - task: common:build:remote
+
   test:go:
     summary: Runs all Go unit tests
     cmds:
@@ -92,6 +97,12 @@ tasks:
     cmds:
       - pnpm lint
 
+  lint:remote:
+    summary: Lints remote web app code
+    dir: remote
+    cmds:
+      - pnpm lint
+
   bump-version:
     summary: "Bumps the application version across all platform build files. Usage: task bump-version VERSION=0.0.13"
     cmds:
@@ -109,3 +120,4 @@ tasks:
       - task: lint:go
       - task: test:ui
       - task: lint:ui
+      - task: lint:remote

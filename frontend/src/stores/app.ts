@@ -18,6 +18,9 @@ export const useAppStore = defineStore('app', () => {
   const preferMetadataLyrics = ref(true)
   const useOnlineArtistArtwork = ref(true)
   const preventSleepWhilePlaying = ref(false)
+  const remoteServerEnabled = ref(false)
+  const remoteServerPort = ref(0)
+  const remoteServerPassword = ref('')
 
   const updateInfo = ref<UpdateInfo | null>(null)
   const isCheckingUpdate = ref(false)
@@ -58,6 +61,9 @@ export const useAppStore = defineStore('app', () => {
         preferMetadataLyrics.value = settings.prefer_metadata_lyrics !== false
         useOnlineArtistArtwork.value = settings.use_online_artist_artwork !== false
         preventSleepWhilePlaying.value = !!settings.prevent_sleep_while_playing
+        remoteServerEnabled.value = !!settings.remote_server_enabled
+        remoteServerPort.value = settings.remote_server_port ?? 0
+        remoteServerPassword.value = settings.remote_server_password ?? ''
         applyTheme(theme.value)
       }
 
@@ -120,6 +126,9 @@ export const useAppStore = defineStore('app', () => {
         prefer_metadata_lyrics: preferMetadataLyrics.value,
         use_online_artist_artwork: useOnlineArtistArtwork.value,
         prevent_sleep_while_playing: preventSleepWhilePlaying.value,
+        remote_server_enabled: remoteServerEnabled.value,
+        remote_server_port: remoteServerPort.value,
+        remote_server_password: remoteServerPassword.value,
       })
     } catch (err) {
       console.error('Failed to save settings:', err)
@@ -188,6 +197,10 @@ export const useAppStore = defineStore('app', () => {
     await saveSettings()
   }
 
+  const updateRemoteServerPassword = (password: string) => {
+    remoteServerPassword.value = password
+  }
+
   // Watch for system theme changes if set to 'system'
   const _darkMQ = window.matchMedia('(prefers-color-scheme: dark)')
   const _onDarkMQChange = () => {
@@ -243,6 +256,10 @@ export const useAppStore = defineStore('app', () => {
     updatePreferMetadataLyrics,
     updateUseOnlineArtistArtwork,
     updatePreventSleepWhilePlaying,
+    remoteServerEnabled,
+    remoteServerPort,
+    remoteServerPassword,
+    updateRemoteServerPassword,
     dispose,
   }
 })

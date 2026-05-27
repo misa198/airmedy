@@ -41,6 +41,10 @@ tasks:
       - task: common:go:mod:tidy
       - task: common:generate:icons
     cmds:
+      - task: common:build:remote
+        vars:
+          BUILD_FLAGS: '{{.BUILD_FLAGS}}'
+          DEV: '{{.DEV}}'
       - task: common:build:frontend
         vars:
           BUILD_FLAGS: '{{.BUILD_FLAGS}}'
@@ -62,6 +66,7 @@ tasks:
     summary: Cross-compiles for macOS using Docker (for Linux/Windows hosts)
     internal: true
     deps:
+      - task: common:build:remote
       - task: common:build:frontend
       - task: common:generate:icons
     preconditions:

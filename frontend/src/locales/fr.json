@@ -59,7 +59,8 @@
       "library": "Bibliothèque",
       "integrations": "Intégrations",
       "playback": "Lecture",
-      "about": "À propos"
+      "about": "À propos",
+      "remote": "Télécommande"
     },
     "general": {
       "behavior": "Comportement",
@@ -132,6 +133,24 @@
       "general": "Général",
       "prevent_sleep": "Empêcher la mise en veille pendant la lecture",
       "prevent_sleep_desc": "Maintenir l'ordinateur actif pendant la lecture de musique"
+    },
+    "remote": {
+      "title": "Télécommande",
+      "enable": "Activer le serveur distant",
+      "enable_desc": "Permettre à d'autres appareils du réseau de contrôler la lecture",
+      "access_urls": "URLs d'accès",
+      "include_pin": "Inclure le PIN",
+      "copy": "Copier",
+      "copied": "Copié !",
+      "scan_to_connect": "Scanner pour se connecter",
+      "pin_embedded": "PIN intégré — ouvre la télécommande instantanément",
+      "pin_required": "PIN requis après le scan",
+      "access_pin": "PIN d'accès",
+      "access_pin_desc": "Code à 4 chiffres requis pour se connecter",
+      "show": "Afficher",
+      "hide": "Masquer",
+      "regenerate": "Régénérer",
+      "regenerating": "Génération…"
     },
     "equalizer": {
       "title": "Égaliseur",

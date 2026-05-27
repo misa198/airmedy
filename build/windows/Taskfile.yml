@@ -33,12 +33,14 @@ tasks:
     internal: true
     deps:
       - task: common:go:mod:tidy
+      - task: common:build:remote
+        vars:
+          BUILD_FLAGS: '{{.BUILD_FLAGS}}'
+          DEV: '{{.DEV}}'
       - task: common:build:frontend
         vars:
-          BUILD_FLAGS:
-            ref: .BUILD_FLAGS
-          DEV:
-            ref: .DEV
+          BUILD_FLAGS: '{{.BUILD_FLAGS}}'
+          DEV: '{{.DEV}}'
       - task: common:generate:icons
     cmds:
       - task: generate:syso
@@ -63,6 +65,7 @@ tasks:
     summary: Cross-compiles for Windows using Docker with Zig (for CGO builds on non-Windows)
     internal: true
     deps:
+      - task: common:build:remote
       - task: common:build:frontend
       - task: common:generate:icons
     preconditions:

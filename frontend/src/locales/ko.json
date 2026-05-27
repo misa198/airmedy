@@ -59,7 +59,8 @@
       "library": "라이브러리",
       "integrations": "연동",
       "playback": "재생",
-      "about": "정보"
+      "about": "정보",
+      "remote": "원격"
     },
     "general": {
       "behavior": "동작",
@@ -132,6 +133,24 @@
       "general": "일반",
       "prevent_sleep": "재생 중 절전 모드 방지",
       "prevent_sleep_desc": "음악 재생 중 컴퓨터가 절전 모드로 전환되지 않도록 합니다"
+    },
+    "remote": {
+      "title": "원격 제어",
+      "enable": "원격 서버 활성화",
+      "enable_desc": "네트워크의 다른 기기가 재생을 제어할 수 있도록 허용",
+      "access_urls": "접속 URL",
+      "include_pin": "PIN 포함",
+      "copy": "복사",
+      "copied": "복사됨!",
+      "scan_to_connect": "스캔하여 연결",
+      "pin_embedded": "PIN 포함 — 즉시 리모컨 열기",
+      "pin_required": "스캔 후 PIN 필요",
+      "access_pin": "접속 PIN",
+      "access_pin_desc": "연결에 4자리 코드 필요",
+      "show": "표시",
+      "hide": "숨기기",
+      "regenerate": "재생성",
+      "regenerating": "생성 중…"
     },
     "equalizer": {
       "title": "이퀄라이저",

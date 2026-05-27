@@ -163,4 +163,7 @@ type AppSettings struct {
 	PreferMetadataLyrics     bool   `json:"prefer_metadata_lyrics"`
 	UseOnlineArtistArtwork   bool   `json:"use_online_artist_artwork"`
 	PreventSleepWhilePlaying bool   `json:"prevent_sleep_while_playing"`
+	RemoteServerEnabled      bool   `json:"remote_server_enabled"`
+	RemoteServerPort         int    `json:"remote_server_port"`
+	RemoteServerPassword     string `json:"remote_server_password"`
 }

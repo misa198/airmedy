@@ -59,7 +59,8 @@
       "library": "Bibliothek",
       "integrations": "Integrationen",
       "playback": "Wiedergabe",
-      "about": "Über"
+      "about": "Über",
+      "remote": "Fernbedienung"
     },
     "general": {
       "behavior": "Verhalten",
@@ -132,6 +133,24 @@
       "general": "Allgemein",
       "prevent_sleep": "Ruhezustand beim Abspielen verhindern",
       "prevent_sleep_desc": "Computer wach halten, während Musik abgespielt wird"
+    },
+    "remote": {
+      "title": "Fernbedienung",
+      "enable": "Remoteserver aktivieren",
+      "enable_desc": "Anderen Geräten im Netzwerk erlauben, die Wiedergabe zu steuern",
+      "access_urls": "Zugriffs-URLs",
+      "include_pin": "PIN einschließen",
+      "copy": "Kopieren",
+      "copied": "Kopiert!",
+      "scan_to_connect": "Zum Verbinden scannen",
+      "pin_embedded": "PIN eingebettet — öffnet Fernbedienung sofort",
+      "pin_required": "PIN nach dem Scannen erforderlich",
+      "access_pin": "Zugriffs-PIN",
+      "access_pin_desc": "4-stelliger Code zum Verbinden erforderlich",
+      "show": "Anzeigen",
+      "hide": "Verbergen",
+      "regenerate": "Neu generieren",
+      "regenerating": "Wird generiert…"
     },
     "equalizer": {
       "title": "Equalizer",

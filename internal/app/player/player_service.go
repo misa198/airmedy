@@ -53,6 +53,7 @@ type PlayerService struct {
 	queueListeners    []func([]*domain.TrackDTO)
 	scrobbleListeners []func(*domain.TrackDTO, time.Time)
 	npListeners       []func(*domain.TrackDTO)
+	lyricsListeners   []func(*domain.Lyric)
 }
 
 func NewPlayerService(
@@ -145,6 +146,13 @@ func (s *PlayerService) AddNowPlayingListener(f func(*domain.TrackDTO)) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.npListeners = append(s.npListeners, f)
+}
+
+// AddLyricsListener registers a callback that will be called whenever lyrics are resolved for the current track.
+func (s *PlayerService) AddLyricsListener(f func(*domain.Lyric)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.lyricsListeners = append(s.lyricsListeners, f)
 }
 
 // Play starts or resumes playback. If no track is loaded and the queue is empty,
@@ -372,6 +380,7 @@ func (s *PlayerService) ShuffleTracks(tracks []*domain.TrackDTO) error {
 func (s *PlayerService) SetShuffle(enabled bool) error {
 	s.queue.SetShuffle(enabled)
 	s.emitStatus()
+	s.emitQueue()
 	return nil
 }
 
@@ -675,10 +684,16 @@ func (s *PlayerService) emitLyrics(trackID string, lyric *domain.Lyric) {
 	if s.currentTrack != nil {
 		currentID = s.currentTrack.ID
 	}
+	listeners := make([]func(*domain.Lyric), len(s.lyricsListeners))
+	copy(listeners, s.lyricsListeners)
 	s.mu.RUnlock()
 
 	if currentID != trackID {
 		return
+	}
+
+	for _, f := range listeners {
+		f(lyric)
 	}
 
 	a := application.Get()

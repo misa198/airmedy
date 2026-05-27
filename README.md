@@ -24,8 +24,8 @@
 ---
 
 <div align="center">
+<img src="docs/remote.png" alt="remote" width="824" />
 <img src="docs/tracks.png" alt="tracks" width="824" />
-<img src="docs/fullscreen-player.png" alt="fullscreen-player" width="824" />
 </div>
 
 ---
@@ -46,6 +46,7 @@
 - **Tray menu** — control playback from the system tray.
 - **Themes** — light, dark (gray), and black (pure black for OLED screens) themes.
 - **Online Artist Arts** — fetch and display artist arts from Deezer.
+- **Remote control** — control playback from any browser on the same network. Enable the remote server in settings, open the displayed URL on your phone or tablet, and enter the PIN to start controlling playback, managing the queue, and viewing lyrics remotely.
 
 ## Audio Format Support
 

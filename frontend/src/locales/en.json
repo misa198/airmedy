@@ -59,6 +59,7 @@
       "library": "Library",
       "integrations": "Integrations",
       "playback": "Playback",
+      "remote": "Remote",
       "about": "About"
     },
     "general": {
@@ -138,6 +139,24 @@
       "general": "General",
       "prevent_sleep": "Prevent sleep while playing",
       "prevent_sleep_desc": "Keep your computer awake while music is playing"
+    },
+    "remote": {
+      "title": "Remote Control",
+      "enable": "Enable Remote Server",
+      "enable_desc": "Allow other devices on your network to control playback",
+      "access_urls": "Access URLs",
+      "include_pin": "Include PIN",
+      "copy": "Copy",
+      "copied": "Copied!",
+      "scan_to_connect": "Scan to Connect",
+      "pin_embedded": "PIN embedded — opens remote instantly",
+      "pin_required": "PIN required after scanning",
+      "access_pin": "Access PIN",
+      "access_pin_desc": "4-digit code required to connect",
+      "show": "Show",
+      "hide": "Hide",
+      "regenerate": "Regenerate",
+      "regenerating": "Generating…"
     },
     "equalizer": {
       "title": "Equalizer",

@@ -21,6 +21,35 @@ tasks:
     cmds:
       - pnpm install
 
+  install:remote:deps:
+    summary: Install remote web app dependencies
+    dir: "{{.ROOT_DIR}}/remote"
+    sources:
+      - package.json
+      - pnpm-lock.yaml
+    generates:
+      - node_modules
+    preconditions:
+      - sh: pnpm --version
+        msg: "Looks like pnpm isn't installed. Install it with: npm install -g pnpm"
+    cmds:
+      - pnpm install
+
+  build:remote:
+    summary: Builds the remote web app into remote/dist/
+    dir: "{{.ROOT_DIR}}/remote"
+    sources:
+      - "src/**/*"
+      - "index.html"
+      - "package.json"
+      - "vite.config.ts"
+    generates:
+      - dist/**/*
+    deps:
+      - task: install:remote:deps
+    cmds:
+      - pnpm run build
+
   build:frontend:
     label: build:frontend (DEV={{.DEV}})
     summary: Build the frontend project
@@ -96,6 +125,10 @@ tasks:
       Server mode runs as a pure HTTP server without native GUI dependencies.
       Usage: task build:server
     deps:
+      - task: build:remote
+        vars:
+          BUILD_FLAGS:
+            ref: .BUILD_FLAGS
       - task: build:frontend
         vars:
           BUILD_FLAGS:

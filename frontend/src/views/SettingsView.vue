@@ -3,7 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Folder, Settings,
-  Play, Info, Blocks,
+  Play, Info, Blocks, Wifi,
 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import GeneralSettings from '@/components/settings/GeneralSettings.vue'
@@ -11,6 +11,7 @@ import LibrarySettings from '@/components/settings/LibrarySettings.vue'
 import IntegrationsSettings from '@/components/settings/IntegrationsSettings.vue'
 import PlaybackSettings from '@/components/settings/PlaybackSettings.vue'
 import AboutSettings from '@/components/settings/AboutSettings.vue'
+import RemoteServerSettings from '@/components/settings/RemoteServerSettings.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -31,6 +32,7 @@ const categories = computed(() => [
   { id: 'library', name: t('settings.categories.library'), icon: Folder },
   { id: 'integrations', name: t('settings.categories.integrations', 'Integrations'), icon: Blocks },
   { id: 'playback', name: t('settings.categories.playback'), icon: Play },
+  { id: 'remote', name: t('settings.categories.remote', 'Remote'), icon: Wifi },
   { id: 'about', name: t('settings.categories.about'), icon: Info },
 ])
 
@@ -86,6 +88,9 @@ const setCategory = (id: string) => {
 
         <!-- Playback -->
         <PlaybackSettings v-if="activeCategory === 'playback'" />
+
+        <!-- Remote Server -->
+        <RemoteServerSettings v-if="activeCategory === 'remote'" />
 
         <!-- About -->
         <AboutSettings 

@@ -59,7 +59,8 @@
       "library": "Biblioteca",
       "integrations": "Integrações",
       "playback": "Reprodução",
-      "about": "Sobre"
+      "about": "Sobre",
+      "remote": "Remoto"
     },
     "general": {
       "behavior": "Comportamento",
@@ -132,6 +133,24 @@
       "general": "Geral",
       "prevent_sleep": "Evitar suspensão durante a reprodução",
       "prevent_sleep_desc": "Manter o computador ativo enquanto a música está sendo reproduzida"
+    },
+    "remote": {
+      "title": "Controlo Remoto",
+      "enable": "Ativar servidor remoto",
+      "enable_desc": "Permitir que outros dispositivos na rede controlem a reprodução",
+      "access_urls": "URLs de acesso",
+      "include_pin": "Incluir PIN",
+      "copy": "Copiar",
+      "copied": "Copiado!",
+      "scan_to_connect": "Escanear para conectar",
+      "pin_embedded": "PIN incluído — abre o controlo remoto instantaneamente",
+      "pin_required": "PIN necessário após escanear",
+      "access_pin": "PIN de acesso",
+      "access_pin_desc": "Código de 4 dígitos necessário para conectar",
+      "show": "Mostrar",
+      "hide": "Ocultar",
+      "regenerate": "Regenerar",
+      "regenerating": "A gerar…"
     },
     "equalizer": {
       "title": "Equalizador",

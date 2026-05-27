@@ -94,6 +94,10 @@ jobs:
         working-directory: frontend
         run: pnpm install
 
+      - name: Remote Install
+        working-directory: remote
+        run: pnpm install
+
       - name: Generate Bindings
         run: wails3 task common:generate:bindings
 
@@ -109,6 +113,9 @@ jobs:
 
       - name: Frontend Lint
         run: wails3 task lint:ui
+
+      - name: Remote Lint
+        run: wails3 task lint:remote
 
       - name: Frontend Test
         run: wails3 task test:ui
