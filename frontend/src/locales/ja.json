@@ -59,7 +59,8 @@
       "library": "ライブラリ",
       "integrations": "連携",
       "playback": "再生",
-      "about": "情報"
+      "about": "情報",
+      "remote": "リモコン"
     },
     "general": {
       "behavior": "動作",
@@ -127,6 +128,32 @@
       "black": "Black",
       "language": "言語",
       "select_language": "アプリの言語を選択"
+    },
+    "playback": {
+      "general": "一般",
+      "prevent_sleep": "再生中のスリープを防止",
+      "prevent_sleep_desc": "音楽再生中はコンピュータをスリープさせません"
+    },
+    "remote": {
+      "title": "リモコン",
+      "enable": "リモートサーバーを有効化",
+      "enable_desc": "ネットワーク上の他のデバイスから再生を操作できます",
+      "access_urls": "アクセスURL",
+      "include_pin": "PINを含める",
+      "copy": "コピー",
+      "copied": "コピー済み！",
+      "scan_to_connect": "スキャンして接続",
+      "pin_embedded": "PIN埋め込み済み — すぐにリモコンを開きます",
+      "pin_required": "スキャン後にPINが必要",
+      "access_pin": "アクセスPIN",
+      "access_pin_desc": "接続に4桁のコードが必要です",
+      "show": "表示",
+      "hide": "非表示",
+      "regenerate": "再生成",
+      "regenerating": "生成中…",
+      "firewall_macos": "macOSが着信接続を許可するよう求める場合があります。「許可」をクリックしてリモートアクセスを有効にしてください。",
+      "firewall_windows": "Windowsファイアウォールが着信接続を許可するよう求める場合があります。「アクセスを許可する」をクリックしてリモートコントロールを有効にしてください。",
+      "firewall_linux": "ファイアウォールが有効な場合、ポート{port}を手動で開放してください: ufw allow {port}/tcp"
     },
     "equalizer": {
       "title": "イコライザー",

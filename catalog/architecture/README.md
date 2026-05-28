@@ -166,6 +166,19 @@ Album artwork is served via a custom Wails asset handler (`infra/wails/assets.go
 
 ## Frontend Architecture
 
+### Monorepo Structure
+
+The frontend lives inside a **pnpm + Turbo monorepo** rooted at the repo root. Shared code is split into workspace packages:
+
+| Package             | Path            | Purpose                                      |
+| ------------------- | --------------- | -------------------------------------------- |
+| `@airmedy/frontend` | `frontend/`     | Main desktop Vue 3 app (this app)            |
+| `@airmedy/ui`       | `packages/ui/`  | Shared UI primitives (Radix Vue + Tailwind)  |
+| `@airmedy/utils`    | `packages/utils/` | Shared utilities (`cn`, logger, test-utils)|
+| _(remote)_          | `remote/`       | Browser-based remote control web app         |
+
+`frontend/vite.config.ts` resolves `@airmedy/ui` and `@airmedy/utils` directly to their `src/` directories (no build step in dev). See `catalog/frontend-monorepo/` for full details.
+
 **State:** Pinia stores (`stores/`) — single source of truth.
 
 **Routing:** Vue Router with hash history, lazy-loaded views, nested routes for Artists/Genres/Composers.

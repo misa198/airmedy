@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Heart, Music, Play, MoreVertical, GripVertical } from 'lucide-vue-next'
 import type { Artist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
-import { formatTime, buildArtworkUrl, getTrackDisplayTitle } from '../lib/utils'
+import { formatTime, buildArtworkUrl, getTrackDisplayTitle } from '@airmedy/utils'
 import LazyImg from '@/components/LazyImg.vue'
-import PlayingBar from '@/components/PlayingBar.vue'
+import { PlayingBar } from '@airmedy/ui'
 import { useFavoritesStore } from '../stores/favorites'
 import { usePlayerStore } from '../stores/player'
 import type { ColumnDef } from '@/composables/useTrackTableSettings'

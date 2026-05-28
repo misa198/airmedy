@@ -1,0 +1,31 @@
+{
+  "app": {
+    "connecting": "Connecting…",
+    "reconnecting": "Connection lost. Reconnecting…",
+    "player": "Player",
+    "queue": "Queue"
+  },
+  "auth": {
+    "enter_pin": "Enter the 4-digit PIN from the app",
+    "incorrect_pin": "Incorrect PIN. Try again.",
+    "clear_all": "Clear All"
+  },
+  "player": {
+    "up_next": "Up Next",
+    "scroll_to_current": "Scroll to current track",
+    "queue_empty": "Queue is empty",
+    "not_playing": "Not Playing",
+    "shuffle": "Shuffle",
+    "previous": "Previous",
+    "play": "Play",
+    "pause": "Pause",
+    "next": "Next",
+    "repeat": "Repeat",
+    "mute": "Mute",
+    "unmute": "Unmute"
+  },
+  "library": {
+    "tracks_count": "{count} tracks",
+    "unknown_artist": "Unknown Artist"
+  }
+}

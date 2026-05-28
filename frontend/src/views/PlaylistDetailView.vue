@@ -9,8 +9,8 @@ import type { Playlist, TrackDTO, ThemeColors } from '../../bindings/airmedy/int
 import TrackTable from '@/components/TrackTable.vue'
 import { usePlayerStore } from '@/stores/player'
 import { useFavoritesStore } from '@/stores/favorites'
-import { formatTotalDuration } from '@/lib/utils'
-import DetailsButton from '@/components/ui/DetailsButton.vue'
+import { formatTotalDuration, foldUnicode } from '@airmedy/utils'
+import { DetailsButton } from '@airmedy/ui'
 import { useContextMenu } from '@/composables/useContextMenu'
 import { usePlaylistContextMenu } from '@/composables/usePlaylistContextMenu'
 import { useRestoreScroll } from '@/composables/useRestoreScroll'
@@ -19,11 +19,10 @@ import DetailHero from '@/components/DetailHero.vue'
 import PlaylistArtwork from '@/components/PlaylistArtwork.vue'
 import CreatePlaylistDialog from '@/components/CreatePlaylistDialog.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
-import { Input } from '@/components/ui/input'
+import { Input } from '@airmedy/ui'
 import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
 import { usePlaylistsStore } from '@/stores/playlists'
 import { Events } from '@wailsio/runtime'
-import { foldUnicode } from '@/lib/utils'
 
 const route = useRoute()
 const router = useRouter()

@@ -2,7 +2,7 @@
 import { ref, watch, onUnmounted } from 'vue'
 import { Music, X, ListMusic, MoreVertical, GripVertical, Goal } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
-import { formatTime, buildArtworkUrl, getTrackDisplayTitle } from '../lib/utils'
+import { formatTime, buildArtworkUrl, getTrackDisplayTitle } from '@airmedy/utils'
 import LazyImg from '@/components/LazyImg.vue'
 import { useI18n } from 'vue-i18n'
 import TrackContextMenu from './TrackContextMenu.vue'

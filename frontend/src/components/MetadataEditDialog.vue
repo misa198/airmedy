@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { ref, watch, computed, onUnmounted } from 'vue'
-import { Input } from '@/components/ui/input'
+import { Input } from '@airmedy/ui'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import { MetadataUpdate } from '../../bindings/airmedy/internal/domain/models'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import * as LyricsService from '../../bindings/airmedy/internal/infra/wails/lyricsservice'
 import { useI18n } from 'vue-i18n'
-import { buildArtworkUrl } from '@/lib/utils'
+import { buildArtworkUrl } from '@airmedy/utils'
 import LazyImg from './LazyImg.vue'
-import TabSwitcher from '@/components/ui/TabSwitcher.vue'
-import Modal from '@/components/ui/Modal.vue'
+import { TabSwitcher } from '@airmedy/ui'
+import { Modal } from '@airmedy/ui'
 import { ListMusic, Mic2 } from 'lucide-vue-next'
 
 const { t } = useI18n()

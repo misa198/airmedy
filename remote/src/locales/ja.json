@@ -1,0 +1,31 @@
+{
+  "app": {
+    "connecting": "接続中…",
+    "reconnecting": "接続が切れました。再接続中…",
+    "player": "プレイヤー",
+    "queue": "キュー"
+  },
+  "auth": {
+    "enter_pin": "アプリの4桁のPINを入力してください",
+    "incorrect_pin": "PINが正しくありません。もう一度お試しください。",
+    "clear_all": "すべてクリア"
+  },
+  "player": {
+    "up_next": "次に再生",
+    "scroll_to_current": "現在のトラックへスクロール",
+    "queue_empty": "キューは空です",
+    "not_playing": "停止中",
+    "shuffle": "シャッフル",
+    "previous": "前へ",
+    "play": "再生",
+    "pause": "一時停止",
+    "next": "次へ",
+    "repeat": "リピート",
+    "mute": "ミュート",
+    "unmute": "ミュート解除"
+  },
+  "library": {
+    "tracks_count": "{count} トラック",
+    "unknown_artist": "不明なアーティスト"
+  }
+}

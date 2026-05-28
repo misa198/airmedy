@@ -11,6 +11,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@airmedy/ui': path.resolve(__dirname, '../packages/ui/src'),
+      '@airmedy/utils': path.resolve(__dirname, '../packages/utils/src'),
     },
   },
 })

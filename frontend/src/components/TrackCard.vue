@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Music, Play, User, Disc } from 'lucide-vue-next'
 import type { TrackDTO, Artist } from '../../bindings/airmedy/internal/domain/models'
-import { buildArtworkUrl, getTrackDisplayTitle } from '@/lib/utils'
+import { buildArtworkUrl, getTrackDisplayTitle } from '@airmedy/utils'
 import LazyImg from '@/components/LazyImg.vue'
 
 const props = defineProps<{

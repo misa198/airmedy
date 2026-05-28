@@ -6,8 +6,10 @@ require (
 	github.com/adrg/xdg v0.5.3
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/blevesearch/bleve/v2 v2.5.7
+	github.com/coder/websocket v1.8.14
 	github.com/emersion/go-autostart v0.0.0-20250403115856-34830d6457d2
 	github.com/fsnotify/fsnotify v1.9.0
+	github.com/godbus/dbus/v5 v5.2.2
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/google/uuid v1.6.0
 	github.com/inconshreveable/go-update v0.0.0-20160112193335-8152e7eb6ccf
@@ -49,7 +51,6 @@ require (
 	github.com/blevesearch/zapx/v15 v15.4.2 // indirect
 	github.com/blevesearch/zapx/v16 v16.2.8 // indirect
 	github.com/cloudflare/circl v1.6.3 // indirect
-	github.com/coder/websocket v1.8.14 // indirect
 	github.com/cyphar/filepath-securejoin v0.6.1 // indirect
 	github.com/danieljoos/wincred v1.2.3 // indirect
 	github.com/ebitengine/purego v0.9.1 // indirect
@@ -58,7 +59,6 @@ require (
 	github.com/go-git/go-billy/v5 v5.9.0 // indirect
 	github.com/go-git/go-git/v5 v5.19.1 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
-	github.com/godbus/dbus/v5 v5.2.2 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect

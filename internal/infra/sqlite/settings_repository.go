@@ -18,8 +18,8 @@ func NewSettingsRepository(db *DB) domain.SettingsRepository {
 
 func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSettings) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO app_settings (id, language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, enable_lrclib, enable_kugou, prefer_metadata_lyrics, updated_at)
-		 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+		`INSERT INTO app_settings (id, language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, enable_lrclib, enable_kugou, prefer_metadata_lyrics, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, updated_at)
+		 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 		 ON CONFLICT(id) DO UPDATE SET
 		   language = excluded.language,
 		   theme = excluded.theme,
@@ -32,6 +32,10 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		   enable_lrclib = excluded.enable_lrclib,
 		   enable_kugou = excluded.enable_kugou,
 		   prefer_metadata_lyrics = excluded.prefer_metadata_lyrics,
+		   prevent_sleep_while_playing = excluded.prevent_sleep_while_playing,
+		   remote_server_enabled = excluded.remote_server_enabled,
+		   remote_server_port = excluded.remote_server_port,
+		   remote_server_password = excluded.remote_server_password,
 		   updated_at = excluded.updated_at`,
 		settings.Language,
 		settings.Theme,
@@ -44,6 +48,10 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		settings.EnableLrclib,
 		settings.EnableKugou,
 		settings.PreferMetadataLyrics,
+		settings.PreventSleepWhilePlaying,
+		settings.RemoteServerEnabled,
+		settings.RemoteServerPort,
+		settings.RemoteServerPassword,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to save app settings: %w", err)
@@ -53,33 +61,38 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 
 func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, error) {
 	var row struct {
-		Language               string         `db:"language"`
-		Theme                  string         `db:"theme"`
-		LastFmUsername         sql.NullString `db:"lastfm_username"`
-		AutoCheckUpdate        bool           `db:"auto_check_update"`
-		StartAtLogin           bool           `db:"start_at_login"`
-		ShowTrayIcon           bool           `db:"show_tray_icon"`
-		EQEnabled              bool           `db:"eq_enabled"`
-		UseOnlineArtistArtwork bool           `db:"use_online_artist_artwork"`
-		EnableLrclib           bool           `db:"enable_lrclib"`
-		EnableKugou            bool           `db:"enable_kugou"`
-		PreferMetadataLyrics   bool           `db:"prefer_metadata_lyrics"`
+		Language                 string         `db:"language"`
+		Theme                    string         `db:"theme"`
+		LastFmUsername           sql.NullString `db:"lastfm_username"`
+		AutoCheckUpdate          bool           `db:"auto_check_update"`
+		StartAtLogin             bool           `db:"start_at_login"`
+		ShowTrayIcon             bool           `db:"show_tray_icon"`
+		EQEnabled                bool           `db:"eq_enabled"`
+		UseOnlineArtistArtwork   bool           `db:"use_online_artist_artwork"`
+		EnableLrclib             bool           `db:"enable_lrclib"`
+		EnableKugou              bool           `db:"enable_kugou"`
+		PreferMetadataLyrics     bool           `db:"prefer_metadata_lyrics"`
+		PreventSleepWhilePlaying bool           `db:"prevent_sleep_while_playing"`
+		RemoteServerEnabled      bool           `db:"remote_server_enabled"`
+		RemoteServerPort         int            `db:"remote_server_port"`
+		RemoteServerPassword     string         `db:"remote_server_password"`
 	}
 	err := r.db.GetContext(ctx, &row,
-		`SELECT language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, enable_lrclib, enable_kugou, prefer_metadata_lyrics FROM app_settings WHERE id = 1`,
+		`SELECT language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, enable_lrclib, enable_kugou, prefer_metadata_lyrics, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password FROM app_settings WHERE id = 1`,
 	)
 	if err == sql.ErrNoRows {
 		return &domain.AppSettings{
-			Language:               "en",
-			Theme:                  "system",
-			AutoCheckUpdate:        true,
-			StartAtLogin:           false,
-			ShowTrayIcon:           true,
-			EQEnabled:              true,
-			EnableLrclib:           true,
-			EnableKugou:            true,
-			PreferMetadataLyrics:   true,
-			UseOnlineArtistArtwork: true,
+			Language:                 "en",
+			Theme:                    "system",
+			AutoCheckUpdate:          true,
+			StartAtLogin:             false,
+			ShowTrayIcon:             true,
+			EQEnabled:                true,
+			EnableLrclib:             true,
+			EnableKugou:              true,
+			PreferMetadataLyrics:     true,
+			UseOnlineArtistArtwork:   true,
+			PreventSleepWhilePlaying: false,
 		}, nil
 	}
 	if err != nil {
@@ -87,16 +100,20 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 	}
 
 	return &domain.AppSettings{
-		Language:               row.Language,
-		Theme:                  row.Theme,
-		LastFmUsername:         row.LastFmUsername.String,
-		AutoCheckUpdate:        row.AutoCheckUpdate,
-		StartAtLogin:           row.StartAtLogin,
-		ShowTrayIcon:           row.ShowTrayIcon,
-		EQEnabled:              row.EQEnabled,
-		EnableLrclib:           row.EnableLrclib,
-		EnableKugou:            row.EnableKugou,
-		PreferMetadataLyrics:   row.PreferMetadataLyrics,
-		UseOnlineArtistArtwork: row.UseOnlineArtistArtwork,
+		Language:                 row.Language,
+		Theme:                    row.Theme,
+		LastFmUsername:           row.LastFmUsername.String,
+		AutoCheckUpdate:          row.AutoCheckUpdate,
+		StartAtLogin:             row.StartAtLogin,
+		ShowTrayIcon:             row.ShowTrayIcon,
+		EQEnabled:                row.EQEnabled,
+		EnableLrclib:             row.EnableLrclib,
+		EnableKugou:              row.EnableKugou,
+		PreferMetadataLyrics:     row.PreferMetadataLyrics,
+		UseOnlineArtistArtwork:   row.UseOnlineArtistArtwork,
+		PreventSleepWhilePlaying: row.PreventSleepWhilePlaying,
+		RemoteServerEnabled:      row.RemoteServerEnabled,
+		RemoteServerPort:         row.RemoteServerPort,
+		RemoteServerPassword:     row.RemoteServerPassword,
 	}, nil
 }

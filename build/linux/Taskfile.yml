@@ -42,6 +42,12 @@ tasks:
     internal: true
     deps:
       - task: common:go:mod:tidy
+      - task: common:build:remote
+        vars:
+          BUILD_FLAGS:
+            ref: .BUILD_FLAGS
+          DEV:
+            ref: .DEV
       - task: common:build:frontend
         vars:
           BUILD_FLAGS:
@@ -65,6 +71,7 @@ tasks:
     summary: Builds for Linux using Docker (for non-Linux hosts or when no C compiler available)
     internal: true
     deps:
+      - task: common:build:remote
       - task: common:build:frontend
       - task: common:generate:icons
       - task: generate:dotdesktop

@@ -64,14 +64,18 @@ tasks:
     cmds:
       - task: common:run:docker
 
+  build:remote:
+    summary: Builds the remote web app into remote/dist/
+    cmds:
+      - task: common:build:remote
+
   test:go:
     summary: Runs all Go unit tests
     cmds:
       - go test ./...
 
   test:ui:
-    summary: Runs all frontend tests
-    dir: frontend
+    summary: Runs all JS/TS tests across the monorepo via Turbo
     cmds:
       - pnpm test
 
@@ -86,9 +90,20 @@ tasks:
     cmds:
       - golangci-lint run
 
+  lint:js:
+    summary: Lints all JS/TS packages in the monorepo (frontend, remote, packages/ui, packages/utils) via Turbo
+    cmds:
+      - pnpm lint
+
   lint:ui:
     summary: Lints frontend code
     dir: frontend
+    cmds:
+      - pnpm lint
+
+  lint:remote:
+    summary: Lints remote web app code
+    dir: remote
     cmds:
       - pnpm lint
 
@@ -108,4 +123,4 @@ tasks:
       - task: test:go
       - task: lint:go
       - task: test:ui
-      - task: lint:ui
+      - task: lint:js

@@ -7,19 +7,40 @@ tasks:
     cmds:
       - go mod tidy
 
-  install:frontend:deps:
-    summary: Install frontend dependencies
-    dir: frontend
+  install:deps:
+    summary: Install all workspace dependencies from monorepo root
+    dir: "{{.ROOT_DIR}}"
     sources:
-      - package.json
       - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - package.json
+      - frontend/package.json
+      - remote/package.json
+      - packages/*/package.json
     generates:
       - node_modules
+      - frontend/node_modules
+      - remote/node_modules
     preconditions:
       - sh: pnpm --version
         msg: "Looks like pnpm isn't installed. Install it with: npm install -g pnpm"
     cmds:
       - pnpm install
+
+  build:remote:
+    summary: Builds the remote web app into remote/dist/
+    dir: "{{.ROOT_DIR}}/remote"
+    sources:
+      - "src/**/*"
+      - "index.html"
+      - "package.json"
+      - "vite.config.ts"
+    generates:
+      - dist/**/*
+    deps:
+      - task: install:deps
+    cmds:
+      - pnpm run build
 
   build:frontend:
     label: build:frontend (DEV={{.DEV}})
@@ -31,7 +52,7 @@ tasks:
     generates:
       - dist/**/*
     deps:
-      - task: install:frontend:deps
+      - task: install:deps
       - task: generate:bindings
         vars:
           BUILD_FLAGS:
@@ -79,7 +100,7 @@ tasks:
     summary: Runs the frontend in development mode
     dir: frontend
     deps:
-      - task: install:frontend:deps
+      - task: install:deps
     cmds:
       - pnpm run dev --port {{.VITE_PORT}} --strictPort
 
@@ -96,6 +117,10 @@ tasks:
       Server mode runs as a pure HTTP server without native GUI dependencies.
       Usage: task build:server
     deps:
+      - task: build:remote
+        vars:
+          BUILD_FLAGS:
+            ref: .BUILD_FLAGS
       - task: build:frontend
         vars:
           BUILD_FLAGS:

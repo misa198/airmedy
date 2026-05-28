@@ -10,6 +10,7 @@ import (
 	"airmedy/internal/app/lyrics"
 	"airmedy/internal/app/player"
 	"airmedy/internal/app/playlist"
+	"airmedy/internal/app/remoteserver"
 	"airmedy/internal/app/updater"
 	"airmedy/internal/domain"
 	"airmedy/internal/infra/artwork"
@@ -17,6 +18,7 @@ import (
 	lyricsinfra "airmedy/internal/infra/lyrics"
 	"airmedy/internal/infra/logging"
 	"airmedy/internal/infra/metadata"
+	"airmedy/internal/infra/power"
 	"airmedy/internal/infra/sqlite"
 	"airmedy/internal/infra/wails"
 	"context"
@@ -66,6 +68,7 @@ var Module = fx.Module("app",
 		wails.NewLastFmService,
 		wails.NewWindowService,
 		wails.NewSettingsService,
+		wails.NewRemoteServerService,
 		wails.NewUpdaterService,
 		func(logger *slog.Logger) *updater.Service {
 			return updater.NewService(config.Version, logger)
@@ -76,11 +79,13 @@ var Module = fx.Module("app",
 	logging.Module,
 	lyricsinfra.Module,
 	player.Module,
+	power.Module,
 	playlist.Module,
 	lyrics.Module,
 	eq.Module,
 	lastfm.Module,
 	appsettings.Module,
+	remoteserver.Module,
 	fx.Invoke(func(lc fx.Lifecycle, db *sqlite.DB, search domain.SearchService, lib *library.LibraryService, playerSvc *player.PlayerService, eqSvc *eq.EQService, lastfmSvc *lastfm.LastFmService) {
 		lc.Append(fx.Hook{
 			OnStart: func(ctx context.Context) error {

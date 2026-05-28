@@ -28,6 +28,10 @@ bin/
 *.test
 *.out
 
+# Remote web app build output (rebuilt by task build:remote)
+remote/dist/
+remote/node_modules/
+
 # Dependencies
 node_modules/
 vendor/
@@ -75,3 +79,5 @@ internal/infra/audio/sfb_build/
 
 # Miniaudio
 internal/infra/audio/miniaudio/
+
+.turbo/

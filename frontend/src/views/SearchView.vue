@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Disc, Music, Search, User, Library, PenTool } from 'lucide-vue-next'
 import LazyImg from '@/components/LazyImg.vue'
-import { Input } from '@/components/ui/input'
+import { Input } from '@airmedy/ui'
 import AlbumCard from '@/components/AlbumCard.vue'
 import ArtistCard from '@/components/ArtistCard.vue'
 import PlaylistCard from '@/components/PlaylistCard.vue'
@@ -11,7 +11,7 @@ import ComposerCard from '@/components/ComposerCard.vue'
 import SearchSection from '@/components/SearchSection.vue'
 import { useSearchStore } from '@/stores/search'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
-import { buildArtworkUrl } from '@/lib/utils'
+import { buildArtworkUrl } from '@airmedy/utils'
 
 const router = useRouter()
 const store = useSearchStore()

@@ -1,0 +1,31 @@
+{
+  "app": {
+    "connecting": "Đang kết nối…",
+    "reconnecting": "Mất kết nối. Đang kết nối lại…",
+    "player": "Trình phát",
+    "queue": "Hàng chờ"
+  },
+  "auth": {
+    "enter_pin": "Nhập mã PIN 4 chữ số từ ứng dụng",
+    "incorrect_pin": "Mã PIN không đúng. Vui lòng thử lại.",
+    "clear_all": "Xóa tất cả"
+  },
+  "player": {
+    "up_next": "Tiếp theo",
+    "scroll_to_current": "Cuộn đến bài hát hiện tại",
+    "queue_empty": "Hàng chờ trống",
+    "not_playing": "Không phát",
+    "shuffle": "Trộn bài",
+    "previous": "Trước đó",
+    "play": "Phát",
+    "pause": "Tạm dừng",
+    "next": "Tiếp theo",
+    "repeat": "Lặp lại",
+    "mute": "Tắt tiếng",
+    "unmute": "Bật tiếng"
+  },
+  "library": {
+    "tracks_count": "{count} bài hát",
+    "unknown_artist": "Nghệ sĩ không xác định"
+  }
+}

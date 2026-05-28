@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onActivated } from 'vue'
 import { Search, Play } from 'lucide-vue-next'
-import { Input } from '@/components/ui/input'
-import { foldUnicode } from '@/lib/utils'
+import { Input } from '@airmedy/ui'
+import { foldUnicode } from '@airmedy/utils'
 
 const props = defineProps<{
   title: string

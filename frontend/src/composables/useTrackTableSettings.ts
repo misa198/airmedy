@@ -1,6 +1,6 @@
 import { ref, watch } from 'vue'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
-import { getTrackDisplayTitle } from '@/lib/utils'
+import { getTrackDisplayTitle } from '@airmedy/utils'
 
 export type ColumnKey =
   | 'dnd'

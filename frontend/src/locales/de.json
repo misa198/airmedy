@@ -59,7 +59,8 @@
       "library": "Bibliothek",
       "integrations": "Integrationen",
       "playback": "Wiedergabe",
-      "about": "Über"
+      "about": "Über",
+      "remote": "Fernbedienung"
     },
     "general": {
       "behavior": "Verhalten",
@@ -127,6 +128,32 @@
       "black": "Black",
       "language": "Sprache",
       "select_language": "Anwendungssprache auswählen"
+    },
+    "playback": {
+      "general": "Allgemein",
+      "prevent_sleep": "Ruhezustand beim Abspielen verhindern",
+      "prevent_sleep_desc": "Computer wach halten, während Musik abgespielt wird"
+    },
+    "remote": {
+      "title": "Fernbedienung",
+      "enable": "Remoteserver aktivieren",
+      "enable_desc": "Anderen Geräten im Netzwerk erlauben, die Wiedergabe zu steuern",
+      "access_urls": "Zugriffs-URLs",
+      "include_pin": "PIN einschließen",
+      "copy": "Kopieren",
+      "copied": "Kopiert!",
+      "scan_to_connect": "Zum Verbinden scannen",
+      "pin_embedded": "PIN eingebettet — öffnet Fernbedienung sofort",
+      "pin_required": "PIN nach dem Scannen erforderlich",
+      "access_pin": "Zugriffs-PIN",
+      "access_pin_desc": "4-stelliger Code zum Verbinden erforderlich",
+      "show": "Anzeigen",
+      "hide": "Verbergen",
+      "regenerate": "Neu generieren",
+      "regenerating": "Wird generiert…",
+      "firewall_macos": "macOS fordert Sie möglicherweise auf, eingehende Verbindungen zu erlauben. Klicken Sie auf \"Erlauben\", um den Fernzugriff zu aktivieren.",
+      "firewall_windows": "Die Windows-Firewall fordert Sie möglicherweise auf, eingehende Verbindungen zu erlauben. Klicken Sie auf \"Zugriff erlauben\", um die Fernsteuerung zu aktivieren.",
+      "firewall_linux": "Wenn eine Firewall aktiv ist, öffnen Sie Port {port} manuell: ufw allow {port}/tcp"
     },
     "equalizer": {
       "title": "Equalizer",

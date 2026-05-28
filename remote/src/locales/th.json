@@ -1,0 +1,31 @@
+{
+  "app": {
+    "connecting": "กำลังเชื่อมต่อ…",
+    "reconnecting": "ขาดการเชื่อมต่อ กำลังเชื่อมต่อใหม่…",
+    "player": "เพลเยอร์",
+    "queue": "คิว"
+  },
+  "auth": {
+    "enter_pin": "ป้อนรหัส PIN 4 หลักจากแอป",
+    "incorrect_pin": "PIN ไม่ถูกต้อง ลองอีกครั้ง",
+    "clear_all": "ล้างทั้งหมด"
+  },
+  "player": {
+    "up_next": "ถัดไปในคิว",
+    "scroll_to_current": "เลื่อนไปยังเพลงปัจจุบัน",
+    "queue_empty": "คิวว่าง",
+    "not_playing": "ไม่ได้เล่นอยู่",
+    "shuffle": "สุ่ม",
+    "previous": "ก่อนหน้า",
+    "play": "เล่น",
+    "pause": "หยุดชั่วคราว",
+    "next": "ถัดไป",
+    "repeat": "เล่นซ้ำ",
+    "mute": "ปิดเสียง",
+    "unmute": "เปิดเสียง"
+  },
+  "library": {
+    "tracks_count": "{count} แทร็ก",
+    "unknown_artist": "ไม่ทราบศิลปิน"
+  }
+}

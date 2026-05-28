@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { AppWindow, Sun, Moon, Monitor, Languages, Circle } from 'lucide-vue-next'
-import { Switch } from '@/components/ui/switch'
+import { Switch } from '@airmedy/ui'
 import RestartModal from '../RestartModal.vue'
 import {
   Select,
@@ -11,7 +11,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@airmedy/ui'
 
 const { t } = useI18n()
 const appStore = useAppStore()

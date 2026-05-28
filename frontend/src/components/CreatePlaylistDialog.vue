@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { Input } from '@/components/ui/input'
-import Modal from '@/components/ui/Modal.vue'
+import { Input } from '@airmedy/ui'
+import { Modal } from '@airmedy/ui'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()

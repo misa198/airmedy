@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Modal from './ui/Modal.vue'
+import { Modal } from '@airmedy/ui'
 import { useI18n } from 'vue-i18n'
 
 defineProps<{

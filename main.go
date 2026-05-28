@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"embed"
+	"io/fs"
 	"log/slog"
 	"net/url"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"airmedy/internal/app"
 	"airmedy/internal/app/config"
 	"airmedy/internal/app/i18n"
+	"airmedy/internal/app/remoteserver"
 	"airmedy/internal/domain"
 	"airmedy/internal/infra/wails"
 	"runtime/debug"
@@ -25,6 +27,9 @@ import (
 
 //go:embed all:frontend/dist
 var assets embed.FS
+
+//go:embed remote/dist
+var remoteAssets embed.FS
 
 //go:embed assets/mac-tray-icon.png
 var macTrayIcon []byte
@@ -59,6 +64,7 @@ func main() {
 	var settingsService *wails.SettingsService
 	var updaterService *wails.UpdaterService
 	var artworkCache domain.ArtworkCache
+	var remoteServerService *wails.RemoteServerService
 	var (
 		lastfmService *wails.LastFmService
 		wailsApp      *application.App
@@ -66,9 +72,12 @@ func main() {
 
 	slog.Info("Starting Airmedy", "version", config.Version)
 
+	remoteFS, _ := fs.Sub(remoteAssets, "remote/dist")
+
 	fxApp := fx.New(
 		app.Module,
-		fx.Populate(&greetService, &libraryService, &playerService, &searchService, &playlistService, &lyricsService, &eqService, &windowService, &i18nService, &settingsService, &lastfmService, &updaterService, &artworkCache),
+		fx.Provide(func() remoteserver.RemoteFS { return remoteserver.RemoteFS{FS: remoteFS} }),
+		fx.Populate(&greetService, &libraryService, &playerService, &searchService, &playlistService, &lyricsService, &eqService, &windowService, &i18nService, &settingsService, &lastfmService, &updaterService, &artworkCache, &remoteServerService),
 		fx.NopLogger, // Keep logs clean for now
 	)
 
@@ -116,6 +125,7 @@ func main() {
 			application.NewService(windowService),
 			application.NewService(settingsService),
 			application.NewService(updaterService),
+			application.NewService(remoteServerService),
 		},
 		Assets: application.AssetOptions{
 			Handler: wails.NewAssetHandler(assets, artworkCache),

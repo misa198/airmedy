@@ -1,0 +1,31 @@
+{
+  "app": {
+    "connecting": "Conectando…",
+    "reconnecting": "Conexión perdida. Reconectando…",
+    "player": "Reproductor",
+    "queue": "Cola"
+  },
+  "auth": {
+    "enter_pin": "Introduce el PIN de 4 dígitos de la app",
+    "incorrect_pin": "PIN incorrecto. Inténtalo de nuevo.",
+    "clear_all": "Borrar todo"
+  },
+  "player": {
+    "up_next": "A continuación",
+    "scroll_to_current": "Desplazarse a la pista actual",
+    "queue_empty": "La cola está vacía",
+    "not_playing": "No se está reproduciendo",
+    "shuffle": "Aleatorio",
+    "previous": "Anterior",
+    "play": "Reproducir",
+    "pause": "Pausa",
+    "next": "Siguiente",
+    "repeat": "Repetir",
+    "mute": "Silenciar",
+    "unmute": "Activar sonido"
+  },
+  "library": {
+    "tracks_count": "{count} pistas",
+    "unknown_artist": "Artista desconocido"
+  }
+}

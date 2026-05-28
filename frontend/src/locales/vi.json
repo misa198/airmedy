@@ -59,7 +59,8 @@
       "library": "Thư viện",
       "integrations": "Tích hợp",
       "playback": "Phát lại",
-      "about": "Giới thiệu"
+      "about": "Giới thiệu",
+      "remote": "Điều khiển"
     },
     "general": {
       "behavior": "Hành vi",
@@ -133,6 +134,32 @@
       "black": "Đen",
       "language": "Ngôn ngữ",
       "select_language": "Chọn ngôn ngữ ứng dụng"
+    },
+    "playback": {
+      "general": "Chung",
+      "prevent_sleep": "Ngăn máy ngủ khi đang phát nhạc",
+      "prevent_sleep_desc": "Giữ máy tính thức khi đang phát nhạc"
+    },
+    "remote": {
+      "title": "Điều Khiển Từ Xa",
+      "enable": "Bật máy chủ điều khiển từ xa",
+      "enable_desc": "Cho phép thiết bị khác trong mạng điều khiển phát nhạc",
+      "access_urls": "URL truy cập",
+      "include_pin": "Bao gồm PIN",
+      "copy": "Sao chép",
+      "copied": "Đã sao chép!",
+      "scan_to_connect": "Quét để kết nối",
+      "pin_embedded": "PIN nhúng sẵn — mở điều khiển ngay lập tức",
+      "pin_required": "Cần PIN sau khi quét",
+      "access_pin": "PIN truy cập",
+      "access_pin_desc": "Cần mã 4 chữ số để kết nối",
+      "show": "Hiển thị",
+      "hide": "Ẩn",
+      "regenerate": "Tạo lại",
+      "regenerating": "Đang tạo…",
+      "firewall_macos": "macOS có thể yêu cầu bạn cho phép kết nối đến. Nhấp \"Cho phép\" để bật quyền truy cập từ xa.",
+      "firewall_windows": "Tường lửa Windows có thể yêu cầu bạn cho phép kết nối đến. Nhấp \"Cho phép truy cập\" để bật điều khiển từ xa.",
+      "firewall_linux": "Nếu bạn có tường lửa được bật, hãy mở cổng {port} thủ công: ufw allow {port}/tcp"
     },
     "equalizer": {
       "title": "Bộ cân bằng âm",

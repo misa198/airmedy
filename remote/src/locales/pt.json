@@ -1,0 +1,31 @@
+{
+  "app": {
+    "connecting": "Conectando…",
+    "reconnecting": "Conexão perdida. Reconectando…",
+    "player": "Reprodutor",
+    "queue": "Fila"
+  },
+  "auth": {
+    "enter_pin": "Digite o PIN de 4 dígitos do app",
+    "incorrect_pin": "PIN incorreto. Tente novamente.",
+    "clear_all": "Limpar tudo"
+  },
+  "player": {
+    "up_next": "Próxima da fila",
+    "scroll_to_current": "Rolar para a faixa atual",
+    "queue_empty": "A fila está vazia",
+    "not_playing": "Não está reproduzindo",
+    "shuffle": "Aleatório",
+    "previous": "Anterior",
+    "play": "Reproduzir",
+    "pause": "Pausa",
+    "next": "Próxima",
+    "repeat": "Repetir",
+    "mute": "Mudo",
+    "unmute": "Ativar som"
+  },
+  "library": {
+    "tracks_count": "{count} faixas",
+    "unknown_artist": "Artista Desconhecido"
+  }
+}

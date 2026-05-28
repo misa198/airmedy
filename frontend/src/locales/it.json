@@ -59,7 +59,8 @@
       "library": "Libreria",
       "integrations": "Integrazioni",
       "playback": "Riproduzione",
-      "about": "Informazioni"
+      "about": "Informazioni",
+      "remote": "Telecomando"
     },
     "general": {
       "behavior": "Comportamento",
@@ -127,6 +128,32 @@
       "black": "Black",
       "language": "Lingua",
       "select_language": "Seleziona la lingua dell'applicazione"
+    },
+    "playback": {
+      "general": "Generale",
+      "prevent_sleep": "Impedisci la sospensione durante la riproduzione",
+      "prevent_sleep_desc": "Mantieni il computer attivo mentre la musica è in riproduzione"
+    },
+    "remote": {
+      "title": "Controllo Remoto",
+      "enable": "Abilita server remoto",
+      "enable_desc": "Consenti ad altri dispositivi sulla rete di controllare la riproduzione",
+      "access_urls": "URL di accesso",
+      "include_pin": "Includi PIN",
+      "copy": "Copia",
+      "copied": "Copiato!",
+      "scan_to_connect": "Scansiona per connetterti",
+      "pin_embedded": "PIN incluso — apre il telecomando istantaneamente",
+      "pin_required": "PIN richiesto dopo la scansione",
+      "access_pin": "PIN di accesso",
+      "access_pin_desc": "Codice a 4 cifre richiesto per connettersi",
+      "show": "Mostra",
+      "hide": "Nascondi",
+      "regenerate": "Rigenera",
+      "regenerating": "Generazione…",
+      "firewall_macos": "macOS potrebbe chiederti di consentire le connessioni in entrata. Fai clic su \"Consenti\" per abilitare l'accesso remoto.",
+      "firewall_windows": "Windows Firewall potrebbe chiederti di consentire le connessioni in entrata. Fai clic su \"Consenti accesso\" per abilitare il controllo remoto.",
+      "firewall_linux": "Se hai un firewall abilitato, apri la porta {port} manualmente: ufw allow {port}/tcp"
     },
     "equalizer": {
       "title": "Equalizzatore",

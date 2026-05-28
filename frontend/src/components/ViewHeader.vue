@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Search } from 'lucide-vue-next'
-import { Input } from '@/components/ui/input'
+import { Input } from '@airmedy/ui'
 
 const props = defineProps<{
   title: string

@@ -59,6 +59,7 @@
       "library": "Library",
       "integrations": "Integrations",
       "playback": "Playback",
+      "remote": "Remote",
       "about": "About"
     },
     "general": {
@@ -133,6 +134,32 @@
       "black": "Black",
       "language": "Language",
       "select_language": "Select application language"
+    },
+    "playback": {
+      "general": "General",
+      "prevent_sleep": "Prevent sleep while playing",
+      "prevent_sleep_desc": "Keep your computer awake while music is playing"
+    },
+    "remote": {
+      "title": "Remote Control",
+      "enable": "Enable Remote Server",
+      "enable_desc": "Allow other devices on your network to control playback",
+      "access_urls": "Access URLs",
+      "include_pin": "Include PIN",
+      "copy": "Copy",
+      "copied": "Copied!",
+      "scan_to_connect": "Scan to Connect",
+      "pin_embedded": "PIN embedded — opens remote instantly",
+      "pin_required": "PIN required after scanning",
+      "access_pin": "Access PIN",
+      "access_pin_desc": "4-digit code required to connect",
+      "show": "Show",
+      "hide": "Hide",
+      "regenerate": "Regenerate",
+      "regenerating": "Generating…",
+      "firewall_macos": "macOS may prompt you to allow incoming connections. Click \"Allow\" to enable remote access.",
+      "firewall_windows": "Windows Firewall may prompt you to allow incoming connections. Click \"Allow access\" to enable remote control.",
+      "firewall_linux": "If you have a firewall enabled, open port {port} manually: ufw allow {port}/tcp"
     },
     "equalizer": {
       "title": "Equalizer",

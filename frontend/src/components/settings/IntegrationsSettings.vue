@@ -5,7 +5,7 @@ import { Blocks, Music, ImagePlay, FileMusic, MicVocal } from 'lucide-vue-next'
 import * as LastFmService from '../../../bindings/airmedy/internal/infra/wails/lastfmservice'
 import { onMounted, onUnmounted, ref } from 'vue'
 import { Events } from '@wailsio/runtime'
-import { Switch } from '@/components/ui/switch'
+import { Switch } from '@airmedy/ui'
 
 const { t } = useI18n()
 const appStore = useAppStore()

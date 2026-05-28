@@ -1,0 +1,94 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    --bg-main: #18181b;
+    --bg-glass: rgba(35, 35, 38, 0.6);
+    --bg-glass-elevated: rgba(55, 55, 60, 0.4);
+    --bg-glass-modal: rgba(55, 55, 60, 0.9);
+    --border-glass: rgba(255, 255, 255, 0.1);
+
+    --primary: #e11d48;
+    --primary-gradient: linear-gradient(135deg, #e11d48 0%, #fb7185 100%);
+    --primary-foreground: #ffffff;
+    --text-main: #ffffff;
+    --text-muted: #a1a1aa;
+    
+    --bg-zebra: rgba(255, 255, 255, 0.02);
+    --scrollbar-thumb: rgba(255, 255, 255, 0.25);
+    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.35);
+
+    /* Fallback dynamic variables */
+    --dynamic-primary: var(--primary);
+    --dynamic-surface: var(--bg-glass);
+    --dynamic-glow: transparent;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased min-h-dvh;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+  }
+}
+
+/* Custom Scrollbar Global */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 10px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+  background-clip: content-box;
+}
+
+/* Scrollbar Utility Classes */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Firefox support */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}

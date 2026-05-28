@@ -2,7 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import { Loader2, CheckCircle2 } from 'lucide-vue-next'
 import type { SyncProgress } from '../../../bindings/airmedy/internal/domain/models'
-import Modal from '@/components/ui/Modal.vue'
+import { Modal } from '@airmedy/ui'
 
 const props = defineProps<{
   open: boolean
