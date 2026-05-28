@@ -7,12 +7,11 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    passWithNoTests: true,
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@airmedy/ui': path.resolve(__dirname, '../packages/ui/src'),
-      '@airmedy/utils': path.resolve(__dirname, '../packages/utils/src'),
+      '@airmedy/utils': path.resolve(__dirname, '../utils/src'),
     },
   },
 })

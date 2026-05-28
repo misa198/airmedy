@@ -1,2 +1,1 @@
-
-[2m$ vue-tsc --noEmit[22m
+$ vue-tsc --noEmit

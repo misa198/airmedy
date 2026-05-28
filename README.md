@@ -44,6 +44,7 @@
 - **Metadata editor** — update track titles, artists, albums, and other tags. Support for updating album artwork with automatic JPEG conversion.
 - **Plays in the background** — close the window and music keeps going. Quit when you actually mean it.
 - **Tray menu** — control playback from the system tray.
+- **Prevent sleep** — optionally keep your system awake while music is playing.
 - **Themes** — light, dark (gray), and black (pure black for OLED screens) themes.
 - **Online Artist Arts** — fetch and display artist arts from Deezer.
 - **Remote control** — control playback from any browser on the same network. Enable the remote server in settings, open the displayed URL on your phone or tablet, and enter the PIN to start controlling playback, managing the queue, and viewing lyrics remotely.
@@ -95,20 +96,23 @@ The FFmpeg libraries are statically compiled and bundled inside `internal/infra/
 
 ## Tech Stack
 
-| Layer                | Technology                |
-| -------------------- | ------------------------- |
-| Backend runtime      | Go 1.25, Wails v3         |
-| Dependency injection | uber-go/fx                |
-| Database             | SQLite via golang-migrate |
-| Search index         | Bleve                     |
-| File watching        | fsnotify                  |
-| Audio (macOS)        | SFBAudioEngine + CGo      |
-| Audio (Win/Linux)    | miniaudio + FFmpeg (CGo)  |
-| Metadata             | go-taglib                 |
-| Frontend framework   | Vue 3 (Composition API)   |
-| State management     | Pinia                     |
-| UI components        | ShadCN-vue + Tailwind CSS |
-| Lyrics               | LRCLIB API                |
+| Layer                | Technology                        |
+| -------------------- | --------------------------------- |
+| Backend runtime      | Go 1.25, Wails v3                 |
+| Dependency injection | uber-go/fx                        |
+| Database             | SQLite via golang-migrate         |
+| Search index         | Bleve                             |
+| File watching        | fsnotify                          |
+| Audio (macOS)        | SFBAudioEngine + CGo              |
+| Audio (Win/Linux)    | miniaudio + FFmpeg (CGo)          |
+| Metadata             | go-taglib                         |
+| Frontend framework   | Vue 3 (Composition API)           |
+| State management     | Pinia 3                           |
+| UI components        | Radix Vue + Tailwind CSS v4       |
+| Monorepo             | pnpm workspaces + Turbo           |
+| UI package           | @airmedy/ui (packages/ui)         |
+| Utils package        | @airmedy/utils (packages/utils)   |
+| Lyrics               | LRCLIB API                        |
 
 ---
 
@@ -117,8 +121,7 @@ The FFmpeg libraries are statically compiled and bundled inside `internal/infra/
 Airmedy follows a **Hexagonal / Ports & Adapters** pattern:
 
 ```
-cmd/
-└── main.go                  # Entry point
+main.go                      # Entry point
 
 internal/
 ├── domain/                  # Business logic, interfaces, DTOs
@@ -129,14 +132,23 @@ internal/
     ├── search/              # Bleve index adapter
     └── wails/               # Thin Wails bindings (frontend ↔ app)
 
-frontend/
+frontend/                    # Main desktop UI (Vue 3)
 ├── src/
 │   ├── components/          # Feature components (AlbumCard, TrackTable…)
-│   │   └── ui/              # Stateless UI primitives (Button, Slider…)
 │   ├── views/               # Route-level pages
 │   ├── stores/              # Pinia stores
 │   ├── composables/         # Shared logic
 │   └── locales/             # i18n locale files
+
+packages/
+├── ui/                      # @airmedy/ui — stateless UI primitives (Slider, Input…)
+└── utils/                   # @airmedy/utils — shared utilities (logger, utils)
+
+remote/                      # Browser-based remote control SPA (Vue 3)
+└── src/
+    ├── components/          # Remote UI components
+    ├── stores/              # Pinia stores (player state over WS)
+    └── locales/             # i18n locale files
 ```
 
 Dependencies always point inward — `infra` depends on `app`, `app` depends on `domain`, never the reverse.

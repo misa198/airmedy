@@ -2,4 +2,4 @@
 
 package config
 
-const appDataFolder = "airmedy"
+const appDataFolder = "airmedy-dev"

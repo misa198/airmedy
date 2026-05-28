@@ -933,6 +933,9 @@ func (s *PlayerService) checkThreshold() {
 }
 
 func (s *PlayerService) inhibitSleep() {
+	if s.sleepInhibitor == nil || s.settingsRepo == nil {
+		return
+	}
 	settings, err := s.settingsRepo.Load(context.Background())
 	if err != nil {
 		s.logger.Debug("sleep inhibitor: failed to load settings", "error", err)
@@ -950,6 +953,9 @@ func (s *PlayerService) inhibitSleep() {
 }
 
 func (s *PlayerService) releaseSleep() {
+	if s.sleepInhibitor == nil {
+		return
+	}
 	if err := s.sleepInhibitor.Release(); err != nil {
 		s.logger.Debug("sleep inhibitor: release failed", "error", err)
 		return

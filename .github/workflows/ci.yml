@@ -34,9 +34,7 @@ jobs:
           node-version: '24'
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
+        uses: pnpm/action-setup@v4
 
       - name: Install Task
         uses: arduino/setup-task@v2
@@ -90,12 +88,7 @@ jobs:
         if: steps.cache-miniaudio.outputs.cache-hit != 'true'
         run: bash scripts/fetch-miniaudio.sh
 
-      - name: Frontend Install
-        working-directory: frontend
-        run: pnpm install
-
-      - name: Remote Install
-        working-directory: remote
+      - name: Install JS Dependencies
         run: pnpm install
 
       - name: Generate Bindings
