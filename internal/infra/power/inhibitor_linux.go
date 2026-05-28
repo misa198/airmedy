@@ -31,7 +31,7 @@ func (i *linuxInhibitor) Inhibit() error {
 	if err != nil {
 		return fmt.Errorf("dbus connect: %w", err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	obj := conn.Object("org.freedesktop.login1", "/org/freedesktop/login1")
 	var fd dbus.UnixFD

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import MetadataEditDialog from './MetadataEditDialog.vue'
 import { MetadataUpdate, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
-import { createTestI18n, setupTestPinia } from '../lib/test-utils'
+import { createTestI18n, setupTestPinia } from '@airmedy/utils'
 
 vi.mock('@wailsio/runtime', () => ({
   Events: { On: vi.fn(), Off: vi.fn() },

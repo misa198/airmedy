@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, nextTick, onBeforeUnmount } from 'vue'
 import { SlidersHorizontal } from 'lucide-vue-next'
-import Checkbox from '@/components/ui/checkbox/Checkbox.vue'
+import { Checkbox } from '@airmedy/ui'
 import { type ColumnDef, useTrackTableSettings } from '@/composables/useTrackTableSettings'
 
 const props = defineProps<{

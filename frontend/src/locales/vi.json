@@ -156,7 +156,10 @@
       "show": "Hiển thị",
       "hide": "Ẩn",
       "regenerate": "Tạo lại",
-      "regenerating": "Đang tạo…"
+      "regenerating": "Đang tạo…",
+      "firewall_macos": "macOS có thể yêu cầu bạn cho phép kết nối đến. Nhấp \"Cho phép\" để bật quyền truy cập từ xa.",
+      "firewall_windows": "Tường lửa Windows có thể yêu cầu bạn cho phép kết nối đến. Nhấp \"Cho phép truy cập\" để bật điều khiển từ xa.",
+      "firewall_linux": "Nếu bạn có tường lửa được bật, hãy mở cổng {port} thủ công: ufw allow {port}/tcp"
     },
     "equalizer": {
       "title": "Bộ cân bằng âm",

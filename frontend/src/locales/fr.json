@@ -150,7 +150,10 @@
       "show": "Afficher",
       "hide": "Masquer",
       "regenerate": "Régénérer",
-      "regenerating": "Génération…"
+      "regenerating": "Génération…",
+      "firewall_macos": "macOS peut vous demander d'autoriser les connexions entrantes. Cliquez sur \"Autoriser\" pour activer l'accès à distance.",
+      "firewall_windows": "Le pare-feu Windows peut vous demander d'autoriser les connexions entrantes. Cliquez sur \"Autoriser l'accès\" pour activer le contrôle à distance.",
+      "firewall_linux": "Si un pare-feu est activé, ouvrez le port {port} manuellement : ufw allow {port}/tcp"
     },
     "equalizer": {
       "title": "Égaliseur",

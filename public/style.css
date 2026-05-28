@@ -336,9 +336,6 @@ body.light .theme-icon-dark { display: block; }
     transition: transform 0.1s ease-out, box-shadow 0.3s ease;
     border-radius: 12px;
     overflow: hidden;
-    border: 1px solid var(--border-glass);
-    box-shadow: 0 40px 100px -20px var(--shadow-main);
-    background: var(--mockup-bg);
 }
 
 .app-window-mockup {

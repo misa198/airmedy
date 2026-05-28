@@ -6,7 +6,7 @@ import type { AlbumDTO } from '../../bindings/airmedy/internal/domain/models'
 import AlbumGrid from '../components/AlbumGrid.vue'
 import ViewHeader from '../components/ViewHeader.vue'
 import { useLibrarySync } from '@/composables/useLibrarySync'
-import { foldUnicode } from '@/lib/utils'
+import { foldUnicode } from '@airmedy/utils'
 
 const albums = shallowRef<AlbumDTO[]>([])
 const isLoading = ref(true)

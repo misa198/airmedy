@@ -12,7 +12,7 @@ import {
   VolumeX,
 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
-import { Slider } from '@/components/ui/slider'
+import { Slider } from '@airmedy/ui'
 import { send } from '../ws'
 import { usePlayerStore } from '../stores/player'
 
@@ -63,7 +63,7 @@ function onVolumeUpdate(v: number) {
       <button
         @click="toggleShuffle"
         class="p-2 transition-colors"
-        :class="shuffle ? 'text-white' : 'text-white/30 hover:text-white/80'"
+        :class="shuffle ? 'text-white' : 'text-white/30 hover:text-white hover:opacity-80'"
         :title="t('player.shuffle')"
       >
         <Shuffle class="w-5 h-5" />
@@ -72,7 +72,7 @@ function onVolumeUpdate(v: number) {
       <!-- Previous -->
       <button
         @click="prev"
-        class="p-2 text-white/80 hover:text-white transition-colors"
+        class="p-2 text-white opacity-80 hover:text-white transition-colors"
         :title="t('player.previous')"
       >
         <SkipBack class="w-7 h-7 fill-current" />
@@ -91,7 +91,7 @@ function onVolumeUpdate(v: number) {
       <!-- Next -->
       <button
         @click="next"
-        class="p-2 text-white/80 hover:text-white transition-colors"
+        class="p-2 text-white opacity-80 hover:text-white transition-colors"
         :title="t('player.next')"
       >
         <SkipForward class="w-7 h-7 fill-current" />
@@ -101,7 +101,7 @@ function onVolumeUpdate(v: number) {
       <button
         @click="cycleRepeat"
         class="p-2 transition-colors relative"
-        :class="repeat !== 'off' ? 'text-white' : 'text-white/30 hover:text-white/80'"
+        :class="repeat !== 'off' ? 'text-white' : 'text-white/30 hover:text-white opacity-80'"
         :title="t('player.repeat')"
       >
         <Repeat1 v-if="repeat === 'one'" class="w-5 h-5" />

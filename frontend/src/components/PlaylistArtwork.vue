@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { ListMusic, Heart } from 'lucide-vue-next'
 import type { Playlist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
-import { buildArtworkUrl } from '@/lib/utils'
+import { buildArtworkUrl } from '@airmedy/utils'
 import LazyImg from '@/components/LazyImg.vue'
 
 const props = defineProps<{

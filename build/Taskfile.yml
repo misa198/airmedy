@@ -7,28 +7,20 @@ tasks:
     cmds:
       - go mod tidy
 
-  install:frontend:deps:
-    summary: Install frontend dependencies
-    dir: frontend
+  install:deps:
+    summary: Install all workspace dependencies from monorepo root
+    dir: "{{.ROOT_DIR}}"
     sources:
-      - package.json
       - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - package.json
+      - frontend/package.json
+      - remote/package.json
+      - packages/*/package.json
     generates:
       - node_modules
-    preconditions:
-      - sh: pnpm --version
-        msg: "Looks like pnpm isn't installed. Install it with: npm install -g pnpm"
-    cmds:
-      - pnpm install
-
-  install:remote:deps:
-    summary: Install remote web app dependencies
-    dir: "{{.ROOT_DIR}}/remote"
-    sources:
-      - package.json
-      - pnpm-lock.yaml
-    generates:
-      - node_modules
+      - frontend/node_modules
+      - remote/node_modules
     preconditions:
       - sh: pnpm --version
         msg: "Looks like pnpm isn't installed. Install it with: npm install -g pnpm"
@@ -46,7 +38,7 @@ tasks:
     generates:
       - dist/**/*
     deps:
-      - task: install:remote:deps
+      - task: install:deps
     cmds:
       - pnpm run build
 
@@ -60,7 +52,7 @@ tasks:
     generates:
       - dist/**/*
     deps:
-      - task: install:frontend:deps
+      - task: install:deps
       - task: generate:bindings
         vars:
           BUILD_FLAGS:
@@ -108,7 +100,7 @@ tasks:
     summary: Runs the frontend in development mode
     dir: frontend
     deps:
-      - task: install:frontend:deps
+      - task: install:deps
     cmds:
       - pnpm run dev --port {{.VITE_PORT}} --strictPort
 

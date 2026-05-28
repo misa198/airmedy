@@ -49,6 +49,10 @@ const translations = {
             player: {
                 title: "Mini & Fullscreen",
                 desc: "Switch between a beautiful immersive fullscreen mode and a compact miniplayer that stays out of your way."
+            },
+            remote: {
+                title: "Remote Control",
+                desc: "Control playback from any device on your network via a beautiful web interface."
             }
         },
         screenshots: {
@@ -62,7 +66,8 @@ const translations = {
                 desc: "Immersive fullscreen mode with lyrics that move with the music."
             },
             mini: { title: "Compact Player", desc: "A tiny, versatile mini-player that stays on top and out of your way." },
-            artist: { title: "Artist Insights", desc: "Deep dive into your favorite artists with discography and bios." }
+            artist: { title: "Artist Insights", desc: "Deep dive into your favorite artists with discography and bios." },
+            remote: { title: "Remote Control", desc: "Control your music from any phone or browser on your local network." }
         },
         faq: {
             title: "Frequently Asked Questions",
@@ -158,6 +163,10 @@ const translations = {
             player: {
                 title: "Mini & Vollbild",
                 desc: "Wechsle zwischen einem wunderschönen, immersiven Vollbildmodus und einem kompakten Miniplayer."
+            },
+            remote: {
+                title: "Remote-Steuerung",
+                desc: "Steuere die Wiedergabe von jedem Gerät in deinem Netzwerk über eine schöne Weboberfläche."
             }
         },
         screenshots: {
@@ -171,7 +180,8 @@ const translations = {
                 desc: "Immersiver Vollbildmodus mit Texten, die sich mit der Musik bewegen."
             },
             mini: { title: "Kompakter Player", desc: "Ein winziger, vielseitiger Mini-Player, der im Vordergrund und aus dem Weg bleibt." },
-            artist: { title: "Künstler-Einblicke", desc: "Tauche tief in deine Lieblingskünstler mit Diskografie und Biografien ein." }
+            artist: { title: "Künstler-Einblicke", desc: "Tauche tief in deine Lieblingskünstler mit Diskografie und Biografien ein." },
+            remote: { title: "Remote-Steuerung", desc: "Steuere deine Musik von jedem Telefon oder Browser in deinem lokalen Netzwerk." }
         },
         faq: {
             title: "Häufig gestellte Fragen",
@@ -267,6 +277,10 @@ const translations = {
             player: {
                 title: "Mini y Pantalla completa",
                 desc: "Cambia entre un hermoso modo de pantalla completa inmersivo y un mini reproductor compacto."
+            },
+            remote: {
+                title: "Control remoto",
+                desc: "Controla la reproducción desde cualquier dispositivo en tu red a través de una interfaz web."
             }
         },
         screenshots: {
@@ -280,7 +294,8 @@ const translations = {
                 desc: "Modo de pantalla completa inmersivo con letras que se mueven con la música."
             },
             mini: { title: "Reproductor Compacto", desc: "Un mini reproductor diminuto y versátil que se mantiene en primer plano y no estorba." },
-            artist: { title: "Información del Artista", desc: "Sumérgete en tus artistas favoritos con discografía y biografías." }
+            artist: { title: "Información del Artista", desc: "Sumérgete en tus artistas favoritos con discografía y biografías." },
+            remote: { title: "Control remoto", desc: "Controla tu música desde cualquier teléfono o navegador en tu red local." }
         },
         faq: {
             title: "Preguntas frecuentes",
@@ -376,6 +391,10 @@ const translations = {
             player: {
                 title: "Mini & Plein écran",
                 desc: "Basculez entre un magnifique mode plein écran immersif et un mini-lecteur compact."
+            },
+            remote: {
+                title: "Télécommande",
+                desc: "Contrôlez la lecture depuis n'importe quel appareil sur votre réseau via une belle interface web."
             }
         },
         screenshots: {
@@ -389,7 +408,8 @@ const translations = {
                 desc: "Mode plein écran immersif avec des paroles qui bougent avec la musique."
             },
             mini: { title: "Lecteur Compact", desc: "Un mini-lecteur minuscule et polyvalent qui reste au premier plan sans vous gêner." },
-            artist: { title: "Aperçu de l'Artiste", desc: "Plongez dans vos artistes préférés avec leur discographie et leurs biographies." }
+            artist: { title: "Aperçu de l'Artiste", desc: "Plongez dans vos artistes préférés avec leur discographie et leurs biographies." },
+            remote: { title: "Télécommande", desc: "Contrôlez votre musique depuis n'importe quel téléphone ou navigateur sur votre réseau local." }
         },
         faq: {
             title: "Foire aux questions",
@@ -485,6 +505,10 @@ const translations = {
             player: {
                 title: "Mini e Schermo intero",
                 desc: "Passa da una splendida modalità a schermo intero immersiva a un mini lettore compatto."
+            },
+            remote: {
+                title: "Controllo remoto",
+                desc: "Controlla la riproduzione da qualsiasi dispositivo sulla tua rete tramite una bella interfaccia web."
             }
         },
         screenshots: {
@@ -498,7 +522,8 @@ const translations = {
                 desc: "Modalità a schermo intero immersiva con testi che si muovono con la musica."
             },
             mini: { title: "Lettore Compatto", desc: "Un mini lettore minuscolo e versatile che rimane in primo piano senza intralciare." },
-            artist: { title: "Approfondimenti sull'Artista", desc: "Immergiti nei tuoi artisti preferiti con discografia e biografie." }
+            artist: { title: "Approfondimenti sull'Artista", desc: "Immergiti nei tuoi artisti preferiti con discografia e biografie." },
+            remote: { title: "Controllo remoto", desc: "Controlla la tua musica da qualsiasi telefono o browser sulla tua rete locale." }
         },
         faq: {
             title: "Domande frequenti",
@@ -594,6 +619,10 @@ const translations = {
             player: {
                 title: "ミニ＆フルスクリーン",
                 desc: "美しい没入型のフルスクリーンモードと、邪魔にならないコンパクトなミニプレイヤーを切り替えられます。"
+            },
+            remote: {
+                title: "リモートコントロール",
+                desc: "ネットワーク上のどのデバイスからでも美しいウェブインターフェースで再生を操作できます。"
             }
         },
         screenshots: {
@@ -607,7 +636,8 @@ const translations = {
                 desc: "音楽に合わせて歌詞が動く没入型のフルスクリーンモード。"
             },
             mini: { title: "コンパクトプレイヤー", desc: "邪魔にならずに常に手前に表示される、小型で多機能なミニプレイヤー。" },
-            artist: { title: "アーティストインサイト", desc: "ディスコグラフィーやバイオグラフィーで、お気に入りのアーティストを深く掘り下げます。" }
+            artist: { title: "アーティストインサイト", desc: "ディスコグラフィーやバイオグラフィーで、お気に入りのアーティストを深く掘り下げます。" },
+            remote: { title: "リモートコントロール", desc: "ローカルネットワーク上の任意のスマートフォンやブラウザから音楽をコントロール。" }
         },
         faq: {
             title: "よくある質問",
@@ -703,6 +733,10 @@ const translations = {
             player: {
                 title: "미니 및 전체 화면",
                 desc: "아름다운 몰입형 전체 화면 모드와邪魔되지 않는 컴팩트한 미니 플레이어를 전환하세요."
+            },
+            remote: {
+                title: "원격 제어",
+                desc: "아름다운 웹 인터페이스를 통해 네트워크의 모든 기기에서 재생을 제어하세요."
             }
         },
         screenshots: {
@@ -716,7 +750,8 @@ const translations = {
                 desc: "음악과 함께 움직이는 가사가 있는 몰입형 전체 화면 모드."
             },
             mini: { title: "컴팩트 플레이어", desc: "항상 위로 유지되면서 방해가 되지 않는 작고 다재다능한 미니 플레이어." },
-            artist: { title: "아티스트 인사이트", desc: "디스코그래피와 약력으로 좋아하는 아티스트에 대해 깊이 알아보세요." }
+            artist: { title: "아티스트 인사이트", desc: "디스코그래피와 약력으로 좋아하는 아티스트에 대해 깊이 알아보세요." },
+            remote: { title: "원격 제어", desc: "로컬 네트워크의 모든 스마트폰이나 브라우저에서 음악을 제어하세요." }
         },
         faq: {
             title: "자주 묻는 질문",
@@ -812,6 +847,10 @@ const translations = {
             player: {
                 title: "Mini e Tela Cheia",
                 desc: "Alterne entre um belo modo de tela cheia imersivo e um mini reprodutor compacto."
+            },
+            remote: {
+                title: "Controlo remoto",
+                desc: "Controle a reprodução a partir de qualquer dispositivo na sua rede através de uma bela interface web."
             }
         },
         screenshots: {
@@ -825,7 +864,8 @@ const translations = {
                 desc: "Modo de tela cheia imersivo with letras que se movem com a música."
             },
             mini: { title: "Reprodutor Compacto", desc: "Um mini reprodutor minúsculo e versátil que fica em primeiro plano sem atrapalhar." },
-            artist: { title: "Visão do Artista", desc: "Mergulhe fundo em seus artistas favoritos com discografia e biografias." }
+            artist: { title: "Visão do Artista", desc: "Mergulhe fundo em seus artistas favoritos com discografia e biografias." },
+            remote: { title: "Controlo remoto", desc: "Controle a sua música a partir de qualquer telemóvel ou browser na sua rede local." }
         },
         faq: {
             title: "Perguntas Frequentes",
@@ -921,6 +961,10 @@ const translations = {
             player: {
                 title: "Мини и Полноэкранный",
                 desc: "Переключайтесь между красивым иммерсивным полноэкранным режимом и компактным мини-плеером."
+            },
+            remote: {
+                title: "Дистанционное управление",
+                desc: "Управляйте воспроизведением с любого устройства в сети через красивый веб-интерфейс."
             }
         },
         screenshots: {
@@ -934,7 +978,8 @@ const translations = {
                 desc: "Иммерсивный полноэкранный режим с текстами, движущимися вместе с музыкой."
             },
             mini: { title: "Компактный плеер", desc: "Крошечный универсальный мини-плеер, который остается поверх всех окон и не мешает." },
-            artist: { title: "Информация об артисте", desc: "Погрузитесь в творчество любимых артистов с дискографией и биографиями." }
+            artist: { title: "Информация об артисте", desc: "Погрузитесь в творчество любимых артистов с дискографией и биографиями." },
+            remote: { title: "Дистанционное управление", desc: "Управляйте музыкой с любого телефона или браузера в локальной сети." }
         },
         faq: {
             title: "Часто задаваемые вопросы",
@@ -1030,6 +1075,10 @@ const translations = {
             player: {
                 title: "มินิเพลเยอร์และเต็มจอ",
                 desc: "สลับระหว่างโหมดเต็มจอที่สวยงามดื่มด่ำ และมินิเพลเยอร์ขนาดกะทัดรัดที่ไม่รบกวนการทำงาน"
+            },
+            remote: {
+                title: "รีโมทคอนโทรล",
+                desc: "ควบคุมการเล่นจากอุปกรณ์ใดก็ได้บนเครือข่ายผ่านอินเทอร์เฟซเว็บที่สวยงาม"
             }
         },
         screenshots: {
@@ -1043,7 +1092,8 @@ const translations = {
                 desc: "โหมดเต็มจอที่ดื่มด่ำพร้อมเนื้อเพลงที่เคลื่อนไหวไปตามเสียงเพลง"
             },
             mini: { title: "เครื่องเล่นขนาดกะทัดรัด", desc: "มินิเพลเยอร์ขนาดเล็กอเนกประสงค์ที่อยู่บนสุดและไม่รบกวนคุณ" },
-            artist: { title: "ข้อมูลเชิงลึกของศิลปิน", desc: "เจาะลึกศิลปินที่คุณชื่นชอบด้วยผลงานเพลงและประวัติ" }
+            artist: { title: "ข้อมูลเชิงลึกของศิลปิน", desc: "เจาะลึกศิลปินที่คุณชื่นชอบด้วยผลงานเพลงและประวัติ" },
+            remote: { title: "รีโมทคอนโทรล", desc: "ควบคุมเพลงจากโทรศัพท์หรือเบราว์เซอร์ใดก็ได้บนเครือข่ายท้องถิ่น" }
         },
         faq: {
             title: "คำถามที่พบบ่อย",
@@ -1139,6 +1189,10 @@ const translations = {
             player: {
                 title: "Mini & Toàn màn hình",
                 desc: "Chuyển đổi giữa chế độ toàn màn hình đẹp mắt và trình phát mini nhỏ gọn không gây gián đoạn."
+            },
+            remote: {
+                title: "Điều khiển từ xa",
+                desc: "Điều khiển phát nhạc từ bất kỳ thiết bị nào trên mạng qua giao diện web đẹp mắt."
             }
         },
         screenshots: {
@@ -1152,7 +1206,8 @@ const translations = {
                 desc: "Chế độ toàn màn hình đắm chìm với lời bài hát chuyển động theo nhạc."
             },
             mini: { title: "Trình phát nhỏ gọn", desc: "Một trình phát mini đa năng, nhỏ bé luôn ở trên cùng và không cản trở bạn." },
-            artist: { title: "Thông tin nghệ sĩ", desc: "Tìm hiểu sâu về các nghệ sĩ yêu thích của bạn với danh sách đĩa nhạc và tiểu sử." }
+            artist: { title: "Thông tin nghệ sĩ", desc: "Tìm hiểu sâu về các nghệ sĩ yêu thích của bạn với danh sách đĩa nhạc và tiểu sử." },
+            remote: { title: "Điều khiển từ xa", desc: "Điều khiển âm nhạc từ bất kỳ điện thoại hoặc trình duyệt nào trên mạng nội bộ." }
         },
         faq: {
             title: "Câu hỏi thường gặp",
@@ -1248,6 +1303,10 @@ const translations = {
             player: {
                 title: "迷你与全屏",
                 desc: "在精美的沉浸式全屏模式和不占空间的迷你播放器之间自由切换。"
+            },
+            remote: {
+                title: "远程控制",
+                desc: "通过精美的网页界面从网络上的任何设备控制播放。"
             }
         },
         screenshots: {
@@ -1261,7 +1320,8 @@ const translations = {
                 desc: "沉浸式全屏模式，歌词随音乐律动。"
             },
             mini: { title: "紧凑型播放器", desc: "小巧多功能的迷你播放器，置于顶层且不碍事。" },
-            artist: { title: "艺术家洞察", desc: "通过作品集和传记深入了解您最喜爱的艺术家。" }
+            artist: { title: "艺术家洞察", desc: "通过作品集和传记深入了解您最喜爱的艺术家。" },
+            remote: { title: "远程控制", desc: "从本地网络上的任何手机或浏览器控制音乐。" }
         },
         faq: {
             title: "常见问题",

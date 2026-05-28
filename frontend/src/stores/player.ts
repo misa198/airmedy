@@ -5,8 +5,7 @@ import * as PlayerService from '../../bindings/airmedy/internal/infra/wails/play
 import * as LyricsService from '../../bindings/airmedy/internal/infra/wails/lyricsservice'
 import { PlaybackState, PlayerStatus, RepeatMode, ThemeColors } from '../../bindings/airmedy/internal/domain/models'
 import type { Lyric, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
-import { buildArtworkUrl } from '@/lib/utils'
-import { logger } from '@/lib/logger'
+import { buildArtworkUrl, logger } from '@airmedy/utils'
 
 export type PlayerMode = 'sticky' | 'mini' | 'fullscreen'
 

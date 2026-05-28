@@ -19,12 +19,12 @@ import {
 import LazyImg from '@/components/LazyImg.vue'
 import { usePlayerStore } from '../stores/player'
 import { RepeatMode } from '../../bindings/airmedy/internal/domain/models'
-import { formatTime, getTrackDisplayTitle } from '../lib/utils'
-import { Slider } from '@/components/ui/slider'
+import { formatTime, getTrackDisplayTitle } from '@airmedy/utils'
+import { Slider } from '@airmedy/ui'
 import * as WindowService from '../../bindings/airmedy/internal/infra/wails/windowservice'
 import { useI18n } from 'vue-i18n'
 import TrackContextMenu from './TrackContextMenu.vue'
-import MarqueeText from './MarqueeText.vue'
+import { MarqueeText } from '@airmedy/ui'
 
 const { t } = useI18n()
 const store = usePlayerStore()

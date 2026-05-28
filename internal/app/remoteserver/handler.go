@@ -69,9 +69,11 @@ func (h *Handler) handleSettings(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
+	if err := json.NewEncoder(w).Encode(map[string]string{
 		"language": settings.Language,
-	})
+	}); err != nil {
+		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+	}
 }
 
 func (h *Handler) handleArtwork(w http.ResponseWriter, r *http.Request) {
@@ -120,7 +122,7 @@ func (h *Handler) handleWS(w http.ResponseWriter, r *http.Request) {
 
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
-	defer conn.Close(websocket.StatusNormalClosure, "")
+	defer func() { _ = conn.Close(websocket.StatusNormalClosure, "") }()
 
 	client := &Client{
 		send: make(chan []byte, 256),
@@ -196,8 +198,9 @@ func (h *Handler) handleWS(w http.ResponseWriter, r *http.Request) {
 		Type:  TypeAuthOk,
 		Token: token,
 		State: AuthOkState{
-			Status: h.playerSvc.GetStatus(),
-			Queue:  h.playerSvc.GetQueue(),
+			TrackMetadata: h.playerSvc.GetTrackMetadata(),
+			PlayerState:   h.playerSvc.GetRemotePlayerState(),
+			Queue:         h.playerSvc.GetQueue(),
 		},
 	}
 	authOkData, _ := json.Marshal(authOk)

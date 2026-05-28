@@ -96,15 +96,19 @@ type AuthOk struct {
     State AuthOkState `json:"state"`
 }
 type AuthOkState struct {
-    Status domain.PlayerStatus `json:"status"`
-    Queue  []*domain.TrackDTO  `json:"queue"`
+    TrackMetadata domain.PlayerTrackMetadata `json:"track_metadata"`
+    PlayerState   domain.RemotePlayerState   `json:"player_state"`
+    Queue         []*domain.TrackDTO         `json:"queue"`
 }
 
 // auth_failed
 type AuthFailed struct { Type string; Reason string }
 
-// status — player state change
-type StatusMessage struct { Type string; Data domain.PlayerStatus }
+// track_metadata — sent on track switch and after theme (palette) extraction
+type TrackMetadataMessage struct { Type string; Data domain.PlayerTrackMetadata }
+
+// player_state — sent on explicit user interactions (play/pause/seek/volume/etc.)
+type PlayerStateMessage struct { Type string; Data domain.RemotePlayerState }
 
 // queue — queue updated
 type QueueMessage struct { Type string; Data []*domain.TrackDTO }
@@ -116,21 +120,32 @@ type LyricsMessage struct { Type string; Data *domain.Lyric }
 type ErrorMessage struct { Type string; Message string }
 ```
 
-#### `PlayerStatus`
+#### `PlayerTrackMetadata` (low-frequency, track switches only)
 
 ```typescript
-interface PlayerStatus {
+interface PlayerTrackMetadata {
   track_id: string
-  playback_state: 'playing' | 'paused' | 'stopped'
-  position: number        // seconds
   duration: number        // seconds
+  theme: ThemeColors | null
+}
+```
+
+#### `RemotePlayerState` (event-driven, on explicit user interactions)
+
+```typescript
+interface RemotePlayerState {
+  playback_state: 'playing' | 'paused' | 'stopped'
+  position: number        // seconds — baseline; client interpolates locally
   volume: number          // 0.0–1.0
   muted: boolean
   repeat_mode: 'off' | 'one' | 'all'
   shuffle: boolean
-  theme: ThemeColors | null
 }
+```
 
+#### `ThemeColors`
+
+```typescript
 interface ThemeColors {
   vibrant: string   // hex
   muted: string     // hex
@@ -184,11 +199,14 @@ player.PlayerService — Play/Pause/Seek/etc.
 
 ## State Broadcast
 
-`service.go` registers three listeners on `PlayerService` at server start. Each listener marshals a message and calls `hub.BroadcastMessage`, which fan-outs to all authenticated clients.
+`service.go` registers four listeners on `PlayerService` at server start. Each listener marshals a message and calls `hub.BroadcastMessage`, which fan-outs to all authenticated clients.
 
 ```go
-playerSvc.AddStatusListener(func(status PlayerStatus) {
-    hub.BroadcastMessage(StatusMessage{Type: TypeStatus, Data: status})
+playerSvc.AddTrackMetadataListener(func(meta PlayerTrackMetadata) {
+    hub.BroadcastMessage(TrackMetadataMessage{Type: TypeTrackMetadata, Data: meta})
+})
+playerSvc.AddRemoteStateListener(func(state RemotePlayerState) {
+    hub.BroadcastMessage(PlayerStateMessage{Type: TypePlayerState, Data: state})
 })
 playerSvc.AddQueueListener(func(queue []*TrackDTO) {
     hub.BroadcastMessage(QueueMessage{Type: TypeQueue, Data: queue})
@@ -198,27 +216,37 @@ playerSvc.AddLyricsListener(func(lyric *Lyric) {
 })
 ```
 
+**Position updates:** The backend no longer broadcasts position on a 500 ms ticker. On `player_state` receipt, the frontend stores `position` as a baseline with a `Date.now()` timestamp and increments `localPosition` via `setInterval(250ms)`. The timer stops when `playback_state` is not `"playing"`.
+
 `Hub` maintains a `map[*Client]bool` under a mutex. Each `Client` has a buffered `send chan []byte` (size 256). The write pump goroutine (in `handleWS`) drains the channel.
 
 ## Frontend Store (`stores/player.ts`)
 
 ```typescript
 // State
-authState:   'idle' | 'required' | 'authenticated' | 'failed'
-connected:   boolean
-connecting:  boolean
+authState:    'idle' | 'required' | 'authenticated' | 'failed'
+connected:    boolean
+connecting:   boolean
 reconnecting: boolean
-status:      PlayerStatus | null
-queue:       TrackDTO[]
-lyrics:      Lyric | null
+queue:        TrackDTO[]
+lyrics:       Lyric | null
+
+// Internal (not exported)
+trackMetadata: PlayerTrackMetadata | null
+remoteState:   RemotePlayerState | null
+localPosition: number  // interpolated by 250ms setInterval while playing
 
 // Computed
-currentTrack  // TrackDTO matching status.track_id, or null
+status       // PlayerStatus | null — unified shape merging trackMetadata + remoteState + localPosition
+currentTrack // TrackDTO matching trackMetadata.track_id, or null
 artworkUrl(key, size?)  // → /artwork/{key}?size={size}  (default size: "md")
 
 // Mutators
 setAuthState / setConnected / setConnecting / setReconnecting
-applyStatus / applyQueue / applyLyrics
+applyTrackMetadata / applyRemoteState / applyQueue / applyLyrics
+
+// Lifecycle
+dispose()  // stops progress timer; call on app unmount
 ```
 
 ## WebSocket Reconnection

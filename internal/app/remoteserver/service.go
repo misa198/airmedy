@@ -56,11 +56,17 @@ func NewService(
 }
 
 func (s *Service) registerPlayerListeners() {
-	s.playerSvc.AddStatusListener(func(status domain.PlayerStatus) {
+	s.playerSvc.AddTrackMetadataListener(func(meta domain.PlayerTrackMetadata) {
 		if !s.listenerActive.Load() {
 			return
 		}
-		s.hub.BroadcastMessage(StatusMessage{Type: TypeStatus, Data: status})
+		s.hub.BroadcastMessage(TrackMetadataMessage{Type: TypeTrackMetadata, Data: meta})
+	})
+	s.playerSvc.AddRemoteStateListener(func(state domain.RemotePlayerState) {
+		if !s.listenerActive.Load() {
+			return
+		}
+		s.hub.BroadcastMessage(PlayerStateMessage{Type: TypePlayerState, Data: state})
 	})
 	s.playerSvc.AddQueueListener(func(queue []*domain.TrackDTO) {
 		if !s.listenerActive.Load() {
@@ -176,7 +182,7 @@ func (s *Service) GetPort() int {
 		return 0
 	}
 	port := 0
-	fmt.Sscanf(portStr, "%d", &port)
+	_, _ = fmt.Sscanf(portStr, "%d", &port)
 	return port
 }
 

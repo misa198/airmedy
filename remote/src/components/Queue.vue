@@ -4,8 +4,8 @@ import { Music, ListMusic, Goal } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { send } from '../ws'
 import { usePlayerStore } from '../stores/player'
-import { getTrackDisplayTitle } from '@/lib/utils'
-import PlayingBar from './PlayingBar.vue'
+import { getTrackDisplayTitle } from '@airmedy/utils'
+import { PlayingBar } from '@airmedy/ui'
 
 const { t } = useI18n()
 const store = usePlayerStore()

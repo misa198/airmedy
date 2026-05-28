@@ -105,17 +105,18 @@ jobs:
         working-directory: frontend
         run: pnpm build
 
+      - name: Build Remote
+        working-directory: remote
+        run: pnpm build
+
       - name: Go Lint
         run: wails3 task lint:go
 
       - name: Go Test
         run: wails3 task test:go
 
-      - name: Frontend Lint
-        run: wails3 task lint:ui
-
-      - name: Remote Lint
-        run: wails3 task lint:remote
+      - name: JS Lint
+        run: wails3 task lint:js
 
       - name: Frontend Test
         run: wails3 task test:ui

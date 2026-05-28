@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
-import { Slider } from '@/components/ui/slider'
+import { Slider } from '@airmedy/ui'
 import * as EQService from '../../bindings/airmedy/internal/infra/wails/eqservice'
 import type { EQProfile } from '../../bindings/airmedy/internal/domain/models'
 import {
@@ -11,7 +11,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@airmedy/ui'
 import { MoreHorizontal, Plus, Pencil, Trash2 } from 'lucide-vue-next'
 import { useContextMenu } from '@/composables/useContextMenu'
 import ContextMenu from './ContextMenu.vue'

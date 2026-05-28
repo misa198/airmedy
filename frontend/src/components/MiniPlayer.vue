@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Play, Pause, SkipForward, Maximize, Music } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
-import { formatTime, getTrackDisplayTitle } from '../lib/utils'
-import MarqueeText from './MarqueeText.vue'
+import { formatTime, getTrackDisplayTitle } from '@airmedy/utils'
+import { MarqueeText } from '@airmedy/ui'
 import LazyImg from '@/components/LazyImg.vue'
 
 const store = usePlayerStore()

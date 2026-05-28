@@ -18,13 +18,14 @@ const (
 	TypeRemoveFromQueue = "remove_from_queue"
 	TypeReorderQueue    = "reorder_queue"
 
-	TypeAuthRequired = "auth_required"
-	TypeAuthOk       = "auth_ok"
-	TypeAuthFailed   = "auth_failed"
-	TypeStatus       = "status"
-	TypeQueue        = "queue"
-	TypeLyrics       = "lyrics"
-	TypeError        = "error"
+	TypeAuthRequired  = "auth_required"
+	TypeAuthOk        = "auth_ok"
+	TypeAuthFailed    = "auth_failed"
+	TypeTrackMetadata = "track_metadata"
+	TypePlayerState   = "player_state"
+	TypeQueue         = "queue"
+	TypeLyrics        = "lyrics"
+	TypeError         = "error"
 )
 
 // InboundMessage is a message from remote client to server.
@@ -47,8 +48,9 @@ type AuthRequired struct {
 }
 
 type AuthOkState struct {
-	Status domain.PlayerStatus `json:"status"`
-	Queue  []*domain.TrackDTO  `json:"queue"`
+	TrackMetadata domain.PlayerTrackMetadata `json:"track_metadata"`
+	PlayerState   domain.RemotePlayerState   `json:"player_state"`
+	Queue         []*domain.TrackDTO         `json:"queue"`
 }
 
 type AuthOk struct {
@@ -62,9 +64,14 @@ type AuthFailed struct {
 	Reason string `json:"reason"`
 }
 
-type StatusMessage struct {
-	Type string              `json:"type"`
-	Data domain.PlayerStatus `json:"data"`
+type TrackMetadataMessage struct {
+	Type string                    `json:"type"`
+	Data domain.PlayerTrackMetadata `json:"data"`
+}
+
+type PlayerStateMessage struct {
+	Type string                  `json:"type"`
+	Data domain.RemotePlayerState `json:"data"`
 }
 
 type QueueMessage struct {

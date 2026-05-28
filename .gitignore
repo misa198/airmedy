@@ -79,3 +79,5 @@ internal/infra/audio/sfb_build/
 
 # Miniaudio
 internal/infra/audio/miniaudio/
+
+.turbo/

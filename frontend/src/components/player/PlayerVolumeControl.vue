@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Volume2, VolumeX } from 'lucide-vue-next'
-import { Slider } from '@/components/ui/slider'
+import { Slider } from '@airmedy/ui'
 import { useI18n } from 'vue-i18n'
 
 defineProps<{

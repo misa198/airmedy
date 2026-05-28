@@ -2,13 +2,30 @@ import { usePlayerStore } from './stores/player'
 
 export type InboundMessage =
   | { type: 'auth_required' }
-  | { type: 'auth_ok'; token: string; state: { status: PlayerStatus; queue: TrackDTO[] } }
+  | { type: 'auth_ok'; token: string; state: { track_metadata: PlayerTrackMetadata; player_state: RemotePlayerState; queue: TrackDTO[] } }
   | { type: 'auth_failed'; reason: string }
-  | { type: 'status'; data: PlayerStatus }
+  | { type: 'track_metadata'; data: PlayerTrackMetadata }
+  | { type: 'player_state'; data: RemotePlayerState }
   | { type: 'queue'; data: TrackDTO[] }
   | { type: 'lyrics'; data: Lyric | null }
   | { type: 'error'; message: string }
 
+export interface PlayerTrackMetadata {
+  track_id: string
+  duration: number
+  theme: ThemeColors | null
+}
+
+export interface RemotePlayerState {
+  playback_state: 'playing' | 'paused' | 'stopped'
+  position: number
+  volume: number
+  muted: boolean
+  repeat_mode: 'off' | 'one' | 'all'
+  shuffle: boolean
+}
+
+// Unified shape used by Vue components via the store's status computed.
 export interface PlayerStatus {
   track_id: string
   playback_state: 'playing' | 'paused' | 'stopped'
@@ -172,7 +189,8 @@ function handleMessage(msg: InboundMessage): void {
       store.setAuthState('authenticated')
       store.setConnecting(false)
       store.setReconnecting(false)
-      store.applyStatus(msg.state.status)
+      store.applyTrackMetadata(msg.state.track_metadata)
+      store.applyRemoteState(msg.state.player_state)
       store.applyQueue(msg.state.queue)
       break
 
@@ -184,8 +202,12 @@ function handleMessage(msg: InboundMessage): void {
       store.setReconnecting(false)
       break
 
-    case 'status':
-      store.applyStatus(msg.data)
+    case 'track_metadata':
+      store.applyTrackMetadata(msg.data)
+      break
+
+    case 'player_state':
+      store.applyRemoteState(msg.data)
       break
 
     case 'queue':

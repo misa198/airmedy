@@ -150,7 +150,10 @@
       "show": "표시",
       "hide": "숨기기",
       "regenerate": "재생성",
-      "regenerating": "생성 중…"
+      "regenerating": "생성 중…",
+      "firewall_macos": "macOS에서 수신 연결을 허용하라는 메시지가 표시될 수 있습니다. \"허용\"을 클릭하여 원격 접속을 활성화하세요.",
+      "firewall_windows": "Windows 방화벽에서 수신 연결을 허용하라는 메시지가 표시될 수 있습니다. \"액세스 허용\"을 클릭하여 원격 제어를 활성화하세요.",
+      "firewall_linux": "방화벽이 활성화된 경우 포트 {port}를 수동으로 열어주세요: ufw allow {port}/tcp"
     },
     "equalizer": {
       "title": "이퀄라이저",

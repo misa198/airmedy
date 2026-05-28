@@ -156,7 +156,10 @@
       "show": "Show",
       "hide": "Hide",
       "regenerate": "Regenerate",
-      "regenerating": "Generating…"
+      "regenerating": "Generating…",
+      "firewall_macos": "macOS may prompt you to allow incoming connections. Click \"Allow\" to enable remote access.",
+      "firewall_windows": "Windows Firewall may prompt you to allow incoming connections. Click \"Allow access\" to enable remote control.",
+      "firewall_linux": "If you have a firewall enabled, open port {port} manually: ufw allow {port}/tcp"
     },
     "equalizer": {
       "title": "Equalizer",

@@ -14,10 +14,14 @@
     "lib": ["ESNext", "DOM"],
     "skipLibCheck": true,
     "noEmit": true,
+    "types": ["vite/client"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@airmedy/ui": ["../packages/ui/src/index.ts"],
+      "@airmedy/ui/*": ["../packages/ui/src/*"],
+      "@airmedy/utils/*": ["../packages/utils/src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"]
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "../packages/*/src/**/*.ts", "../packages/*/src/**/*.vue"]
 }

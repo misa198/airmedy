@@ -2,7 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import { AudioLines, Moon } from 'lucide-vue-next'
 import EQPanel from '@/components/EQPanel.vue'
-import { Switch } from '@/components/ui/switch'
+import { Switch } from '@airmedy/ui'
 import { useAppStore } from '@/stores/app'
 
 const { t } = useI18n()

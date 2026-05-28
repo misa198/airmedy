@@ -4,7 +4,7 @@ import { usePlayerStore } from '@/stores/player'
 import { Music, AudioLines, X } from 'lucide-vue-next'
 import LazyImg from '@/components/LazyImg.vue'
 import { useI18n } from 'vue-i18n'
-import { formatTime, buildArtworkUrl, getTrackDisplayTitle } from '@/lib/utils'
+import { formatTime, buildArtworkUrl, getTrackDisplayTitle } from '@airmedy/utils'
 
 const { t } = useI18n()
 const store = usePlayerStore()

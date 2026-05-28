@@ -5,10 +5,11 @@
 | Layer | Technology |
 |---|---|
 | Desktop framework | Wails v3 (Go + Vue 3) |
+| Monorepo | pnpm workspaces + Turbo |
 | DI | Uber FX |
 | Frontend state | Pinia 3 |
 | i18n | vue-i18n |
-| UI components | Radix Vue, TailwindCSS v4 |
+| UI components | Radix Vue, TailwindCSS v4 (`@airmedy/ui`) |
 | Database | SQLite (sqlx + golang-migrate) |
 | Search | Bleve v2 |
 | File watching | fsnotify |
@@ -75,11 +76,12 @@ Themes: `system`, `light`, `dark` (gray), `black` (pure black for OLED). `black`
 - Body: 14px Medium
 - Metadata: 12px Regular, 60% opacity
 
-### ShadCN Component Rules
+### UI Primitive Rules
 
-- Sliders/progress: `@/components/ui/slider/Slider.vue` — never `<input type="range">`.
-- Text inputs: `@/components/ui/input/Input.vue` — never raw `<input type="text">`.
-- New ShadCN components → `frontend/src/components/ui/<name>/`.
+- Sliders/progress: `import { Slider } from '@airmedy/ui'` — never `<input type="range">`.
+- Text inputs: `import { Input } from '@airmedy/ui'` — never raw `<input type="text">`.
+- New shared primitives (no app-domain knowledge) → `packages/ui/src/`, export from `packages/ui/src/index.ts`.
+- App-specific components (use stores/bindings/router) → `frontend/src/components/`.
 
 ### UI Implementation Checklist
 
@@ -109,9 +111,9 @@ Themes: `system`, `light`, `dark` (gray), `black` (pure black for OLED). `black`
 
 | Type | Location | Rules |
 |---|---|---|
-| UI Primitives | `components/ui/` | No `stores/` or `bindings/` imports. Stateless. |
-| Feature Components | `components/` | May import stores/bindings. Reused across views. |
-| Views/Pages | `views/` | Orchestrates feature components, handles page fetching. |
+| UI Primitives | `packages/ui/src/` (`@airmedy/ui`) | No `stores/`, `bindings/`, or `router` imports. Stateless. Shared across workspaces. |
+| Feature Components | `frontend/src/components/` | May import stores/bindings. Reused across views. |
+| Views/Pages | `frontend/src/views/` | Orchestrates feature components, handles page fetching. |
 
 - Extract to composable/component when pattern appears in 3+ places.
 - Prefer `<slot />` over excessive props.
@@ -273,6 +275,7 @@ Conventional Commits: `type(scope): description`
 | App settings, theme, language | `catalog/settings/README.md` |
 | SQLite schema, migrations, repositories | `catalog/database/README.md` |
 | Vue components, stores, composables, routing | `catalog/ui/README.md` |
+| pnpm monorepo, @airmedy/ui, @airmedy/utils | `catalog/frontend-monorepo/README.md` |
 | Overall architecture, DI, Wails IPC | `catalog/architecture/README.md` |
 | Remote control server, WS protocol, auth, remote SPA | `catalog/remote/README.md` |
 

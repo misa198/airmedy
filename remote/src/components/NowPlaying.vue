@@ -2,11 +2,11 @@
 import { computed, ref } from 'vue'
 import { Music } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
-import { Slider } from '@/components/ui/slider'
+import { Slider } from '@airmedy/ui'
 import { usePlayerStore } from '../stores/player'
-import { formatTime, getTrackDisplayTitle } from '@/lib/utils'
+import { formatTime, getTrackDisplayTitle } from '@airmedy/utils'
 import { send } from '../ws'
-import MarqueeText from './MarqueeText.vue'
+import { MarqueeText } from '@airmedy/ui'
 
 defineProps<{
   showQueue?: boolean

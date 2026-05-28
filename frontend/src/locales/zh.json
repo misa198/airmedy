@@ -150,7 +150,10 @@
       "show": "显示",
       "hide": "隐藏",
       "regenerate": "重新生成",
-      "regenerating": "生成中…"
+      "regenerating": "生成中…",
+      "firewall_macos": "macOS 可能会提示您允许传入连接。点击\"允许\"以启用远程访问。",
+      "firewall_windows": "Windows 防火墙可能会提示您允许传入连接。点击\"允许访问\"以启用远程控制。",
+      "firewall_linux": "如果您启用了防火墙，请手动开放端口 {port}：ufw allow {port}/tcp"
     },
     "equalizer": {
       "title": "均衡器",

@@ -150,7 +150,10 @@
       "show": "Anzeigen",
       "hide": "Verbergen",
       "regenerate": "Neu generieren",
-      "regenerating": "Wird generiert…"
+      "regenerating": "Wird generiert…",
+      "firewall_macos": "macOS fordert Sie möglicherweise auf, eingehende Verbindungen zu erlauben. Klicken Sie auf \"Erlauben\", um den Fernzugriff zu aktivieren.",
+      "firewall_windows": "Die Windows-Firewall fordert Sie möglicherweise auf, eingehende Verbindungen zu erlauben. Klicken Sie auf \"Zugriff erlauben\", um die Fernsteuerung zu aktivieren.",
+      "firewall_linux": "Wenn eine Firewall aktiv ist, öffnen Sie Port {port} manuell: ufw allow {port}/tcp"
     },
     "equalizer": {
       "title": "Equalizer",

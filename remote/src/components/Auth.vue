@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Lock } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { send } from '../ws'
@@ -10,6 +10,24 @@ const store = usePlayerStore()
 const digits = ref<string[]>(['', '', '', ''])
 const inputs = ref<HTMLInputElement[]>([])
 const error = computed(() => store.authState === 'failed')
+const keyboardOffset = ref(0)
+
+function onViewportResize() {
+  const vv = window.visualViewport
+  if (!vv) return
+  const hidden = window.innerHeight - vv.height - vv.offsetTop
+  keyboardOffset.value = hidden > 0 ? hidden : 0
+}
+
+onMounted(() => {
+  window.visualViewport?.addEventListener('resize', onViewportResize)
+  window.visualViewport?.addEventListener('scroll', onViewportResize)
+})
+
+onUnmounted(() => {
+  window.visualViewport?.removeEventListener('resize', onViewportResize)
+  window.visualViewport?.removeEventListener('scroll', onViewportResize)
+})
 
 function onInput(index: number, e: Event) {
   const val = (e.target as HTMLInputElement).value.replace(/\D/g, '').slice(-1)
@@ -44,7 +62,10 @@ function reset() {
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center min-h-dvh gap-10 px-6 bg-background">
+  <div
+    class="flex flex-col items-center justify-center min-h-dvh gap-10 px-6 bg-background transition-[padding] duration-200"
+    :style="{ paddingBottom: keyboardOffset + 'px' }"
+  >
     <div class="flex flex-col items-center gap-4">
       <div class="w-20 h-20 rounded-2xl overflow-hidden mb-2 shadow-xl ring-1 ring-white/10">
         <img src="/airmedy-md.png" class="w-full h-full object-cover" />

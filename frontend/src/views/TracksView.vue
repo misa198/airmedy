@@ -8,7 +8,7 @@ import ViewHeader from '../components/ViewHeader.vue'
 import { usePlayerStore } from '../stores/player'
 import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
 import { useLibrarySync } from '@/composables/useLibrarySync'
-import { foldUnicode } from '@/lib/utils'
+import { foldUnicode } from '@airmedy/utils'
 
 const PAGE_SIZE = 500
 

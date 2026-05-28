@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import MarqueeText from '../MarqueeText.vue'
+import { MarqueeText } from '@airmedy/ui'
 
 defineProps<{
   title: string

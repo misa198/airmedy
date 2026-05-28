@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Slider } from '@/components/ui/slider'
-import { formatTime } from '../../lib/utils'
+import { Slider } from '@airmedy/ui'
+import { formatTime } from '@airmedy/utils'
 
 const props = defineProps<{
   progressPercent: number

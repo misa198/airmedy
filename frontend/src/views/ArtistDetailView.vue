@@ -11,7 +11,7 @@ import { useI18n } from 'vue-i18n'
 import { useContextMenu } from '@/composables/useContextMenu'
 import { useGroupContextMenu } from '@/composables/useGroupContextMenu'
 import ContextMenu from '../components/ContextMenu.vue'
-import DetailsButton from '@/components/ui/DetailsButton.vue'
+import { DetailsButton } from '@airmedy/ui'
 import { sortTracksGrouped } from '@/lib/trackSort'
 
 const { t } = useI18n()

@@ -18,6 +18,25 @@ const (
 	RepeatModeAll RepeatMode = "all"
 )
 
+// PlayerTrackMetadata contains static metadata that only changes on track switch.
+// Broadcast to remote clients on track changes and theme extraction.
+type PlayerTrackMetadata struct {
+	TrackID  string       `json:"track_id"`
+	Duration float64      `json:"duration"`
+	Theme    *ThemeColors `json:"theme"`
+}
+
+// RemotePlayerState contains dynamic playback state for remote clients.
+// Broadcast on explicit user interactions (play, pause, seek, volume, etc.).
+type RemotePlayerState struct {
+	PlaybackState PlaybackState `json:"playback_state"`
+	Position      float64       `json:"position"`
+	Volume        float64       `json:"volume"`
+	Muted         bool          `json:"muted"`
+	RepeatMode    RepeatMode    `json:"repeat_mode"`
+	Shuffle       bool          `json:"shuffle"`
+}
+
 // PlayerStatus represents the full state of the playback engine for the UI
 type PlayerStatus struct {
 	TrackID       string        `json:"track_id"`

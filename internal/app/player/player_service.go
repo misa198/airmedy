@@ -49,11 +49,13 @@ type PlayerService struct {
 	// emitStatusHook overrides event emission in tests (nil in production).
 	emitStatusHook func()
 
-	statusListeners   []func(domain.PlayerStatus)
-	queueListeners    []func([]*domain.TrackDTO)
-	scrobbleListeners []func(*domain.TrackDTO, time.Time)
-	npListeners       []func(*domain.TrackDTO)
-	lyricsListeners   []func(*domain.Lyric)
+	statusListeners        []func(domain.PlayerStatus)
+	trackMetadataListeners []func(domain.PlayerTrackMetadata)
+	remoteStateListeners   []func(domain.RemotePlayerState)
+	queueListeners        []func([]*domain.TrackDTO)
+	scrobbleListeners     []func(*domain.TrackDTO, time.Time)
+	npListeners           []func(*domain.TrackDTO)
+	lyricsListeners       []func(*domain.Lyric)
 }
 
 func NewPlayerService(
@@ -155,6 +157,46 @@ func (s *PlayerService) AddLyricsListener(f func(*domain.Lyric)) {
 	s.lyricsListeners = append(s.lyricsListeners, f)
 }
 
+// AddTrackMetadataListener registers a callback invoked on track switches and theme updates.
+func (s *PlayerService) AddTrackMetadataListener(f func(domain.PlayerTrackMetadata)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.trackMetadataListeners = append(s.trackMetadataListeners, f)
+}
+
+// AddRemoteStateListener registers a callback invoked on explicit playback state changes.
+func (s *PlayerService) AddRemoteStateListener(f func(domain.RemotePlayerState)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.remoteStateListeners = append(s.remoteStateListeners, f)
+}
+
+// GetTrackMetadata returns current track metadata for remote clients.
+func (s *PlayerService) GetTrackMetadata() domain.PlayerTrackMetadata {
+	s.mu.RLock()
+	theme := s.currentTheme
+	s.mu.RUnlock()
+	status := s.player.GetStatus()
+	return domain.PlayerTrackMetadata{
+		TrackID:  status.TrackID,
+		Duration: status.Duration,
+		Theme:    theme,
+	}
+}
+
+// GetRemotePlayerState returns current dynamic state for remote clients.
+func (s *PlayerService) GetRemotePlayerState() domain.RemotePlayerState {
+	status := s.player.GetStatus()
+	return domain.RemotePlayerState{
+		PlaybackState: status.PlaybackState,
+		Position:      status.Position,
+		Volume:        status.Volume,
+		Muted:         status.Muted,
+		RepeatMode:    s.queue.GetRepeatMode(),
+		Shuffle:       s.queue.GetShuffle(),
+	}
+}
+
 // Play starts or resumes playback. If no track is loaded and the queue is empty,
 // loads all library tracks in random order and begins playing.
 func (s *PlayerService) Play() error {
@@ -180,6 +222,7 @@ func (s *PlayerService) Play() error {
 	if err == nil {
 		s.startPositionTicker()
 		s.emitStatus()
+		s.emitRemoteState()
 	}
 	return err
 }
@@ -190,6 +233,7 @@ func (s *PlayerService) Pause() error {
 	if err == nil {
 		s.stopPositionTicker()
 		s.emitStatus()
+		s.emitRemoteState()
 		s.saveState(context.Background())
 	}
 	return err
@@ -204,6 +248,7 @@ func (s *PlayerService) Stop() error {
 			s.nowPlaying.ClearNowPlaying()
 		}
 		s.emitStatus()
+		s.emitRemoteState()
 		s.saveState(context.Background())
 	}
 	return err
@@ -306,6 +351,7 @@ func (s *PlayerService) Seek(position float64) error {
 		}
 		s.mu.Unlock()
 		s.emitStatus()
+		s.emitRemoteState()
 	}
 	return err
 }
@@ -319,6 +365,7 @@ func (s *PlayerService) SetVolume(volume float64) error {
 	err := s.player.SetVolume(volume)
 	if err == nil {
 		s.emitStatus()
+		s.emitRemoteState()
 	}
 	return err
 }
@@ -328,6 +375,7 @@ func (s *PlayerService) SetMuted(muted bool) error {
 	err := s.player.SetMuted(muted)
 	if err == nil {
 		s.emitStatus()
+		s.emitRemoteState()
 	}
 	return err
 }
@@ -380,6 +428,7 @@ func (s *PlayerService) ShuffleTracks(tracks []*domain.TrackDTO) error {
 func (s *PlayerService) SetShuffle(enabled bool) error {
 	s.queue.SetShuffle(enabled)
 	s.emitStatus()
+	s.emitRemoteState()
 	s.emitQueue()
 	return nil
 }
@@ -409,6 +458,7 @@ func (s *PlayerService) SetRepeatMode(mode domain.RepeatMode) error {
 	}
 
 	s.emitStatus()
+	s.emitRemoteState()
 	return nil
 }
 
@@ -551,6 +601,8 @@ func (s *PlayerService) loadAndPlay(track *domain.TrackDTO) error {
 
 	s.startPositionTicker()
 	s.emitStatus()
+	s.emitTrackMetadata()
+	s.emitRemoteState()
 
 	if s.nowPlaying != nil {
 		artworkPath := ""
@@ -597,6 +649,8 @@ func (s *PlayerService) transitionToTrack(track *domain.TrackDTO) {
 
 	s.startPositionTicker()
 	s.emitStatus()
+	s.emitTrackMetadata()
+	s.emitRemoteState()
 
 	if s.nowPlaying != nil {
 		artworkPath := ""
@@ -626,6 +680,8 @@ func (s *PlayerService) extractAndEmitPalette(track *domain.TrackDTO) {
 	s.mu.Lock()
 	s.currentTheme = colors
 	s.mu.Unlock()
+
+	s.emitTrackMetadata()
 
 	app := application.Get()
 	if app != nil && app.Event != nil {
@@ -724,6 +780,44 @@ func (s *PlayerService) emitStatus() {
 		return
 	}
 	app.Event.Emit("player:status", status)
+}
+
+func (s *PlayerService) emitTrackMetadata() {
+	s.mu.RLock()
+	theme := s.currentTheme
+	listeners := make([]func(domain.PlayerTrackMetadata), len(s.trackMetadataListeners))
+	copy(listeners, s.trackMetadataListeners)
+	s.mu.RUnlock()
+
+	status := s.player.GetStatus()
+	meta := domain.PlayerTrackMetadata{
+		TrackID:  status.TrackID,
+		Duration: status.Duration,
+		Theme:    theme,
+	}
+	for _, f := range listeners {
+		f(meta)
+	}
+}
+
+func (s *PlayerService) emitRemoteState() {
+	status := s.player.GetStatus()
+	s.mu.RLock()
+	listeners := make([]func(domain.RemotePlayerState), len(s.remoteStateListeners))
+	copy(listeners, s.remoteStateListeners)
+	s.mu.RUnlock()
+
+	state := domain.RemotePlayerState{
+		PlaybackState: status.PlaybackState,
+		Position:      status.Position,
+		Volume:        status.Volume,
+		Muted:         status.Muted,
+		RepeatMode:    s.queue.GetRepeatMode(),
+		Shuffle:       s.queue.GetShuffle(),
+	}
+	for _, f := range listeners {
+		f(state)
+	}
 }
 
 func (s *PlayerService) emitQueue() {

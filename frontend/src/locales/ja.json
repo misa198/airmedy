@@ -150,7 +150,10 @@
       "show": "表示",
       "hide": "非表示",
       "regenerate": "再生成",
-      "regenerating": "生成中…"
+      "regenerating": "生成中…",
+      "firewall_macos": "macOSが着信接続を許可するよう求める場合があります。「許可」をクリックしてリモートアクセスを有効にしてください。",
+      "firewall_windows": "Windowsファイアウォールが着信接続を許可するよう求める場合があります。「アクセスを許可する」をクリックしてリモートコントロールを有効にしてください。",
+      "firewall_linux": "ファイアウォールが有効な場合、ポート{port}を手動で開放してください: ufw allow {port}/tcp"
     },
     "equalizer": {
       "title": "イコライザー",

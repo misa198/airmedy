@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { Input } from '@/components/ui/input'
-import { Switch } from '@/components/ui/switch'
+import { Input } from '@airmedy/ui'
+import { Switch } from '@airmedy/ui'
 import { useAppStore } from '@/stores/app'
-import { Copy, Dices, Save, Wifi } from 'lucide-vue-next'
+import { useDeviceStore } from '@/stores/device'
+import { Copy, Dices, Save, Wifi, Info } from 'lucide-vue-next'
 import QRCodeStyling from 'qr-code-styling'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -10,6 +11,7 @@ import * as RemoteServerService from '../../../bindings/airmedy/internal/infra/w
 
 const { t } = useI18n()
 const appStore = useAppStore()
+const deviceStore = useDeviceStore()
 
 interface ServerStatus {
   enabled: boolean
@@ -118,7 +120,11 @@ const urls = computed(() => {
 const qrUrl = computed(() => urls.value[0] ?? '')
 
 watch([qrUrl, qrContainer], ([url, container]) => {
-  if (!url || !container) return
+  if (!container) {
+    qrInstance = null
+    return
+  }
+  if (!url) return
   console.debug('[RemoteSettings] QR URL changed:', url)
   if (!qrInstance) {
     qrInstance = new QRCodeStyling({
@@ -159,6 +165,14 @@ onMounted(loadStatus)
             <p class="text-xs text-foreground opacity-60 mt-1">{{ t('settings.remote.enable_desc') }}</p>
           </div>
           <Switch :model-value="status?.enabled ?? false" :disabled="toggling" @update:model-value="toggleEnabled" />
+        </div>
+
+        <!-- Firewall info -->
+        <div class="px-5 py-3 flex items-start gap-2 text-xs text-foreground opacity-60">
+          <Info class="w-3 h-3 mt-0.5 shrink-0" />
+          <span v-if="deviceStore.isMac">{{ t('settings.remote.firewall_macos') }}</span>
+          <span v-else-if="deviceStore.isWindows">{{ t('settings.remote.firewall_windows') }}</span>
+          <span v-else-if="deviceStore.isLinux">{{ t('settings.remote.firewall_linux', { port: status?.port ?? '…' }) }}</span>
         </div>
 
         <!-- Server URLs (when running) -->

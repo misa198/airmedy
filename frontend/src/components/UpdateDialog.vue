@@ -3,7 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { UpdateInfo } from '../../bindings/airmedy/internal/app/updater/models'
 import { useAppStore } from '@/stores/app'
 import { Sparkles } from 'lucide-vue-next'
-import Modal from '@/components/ui/Modal.vue'
+import { Modal } from '@airmedy/ui'
 
 const { t } = useI18n()
 const appStore = useAppStore()

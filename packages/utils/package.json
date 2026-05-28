@@ -1,0 +1,22 @@
+{
+  "name": "@airmedy/utils",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "scripts": {
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "clsx": "2.1.1",
+    "tailwind-merge": "3.6.0"
+  },
+  "peerDependencies": {
+    "pinia": "*",
+    "vue-i18n": "*"
+  }
+}

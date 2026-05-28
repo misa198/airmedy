@@ -150,7 +150,10 @@
       "show": "Mostrar",
       "hide": "Ocultar",
       "regenerate": "Regenerar",
-      "regenerating": "A gerar…"
+      "regenerating": "A gerar…",
+      "firewall_macos": "O macOS pode solicitar que você permita conexões de entrada. Clique em \"Permitir\" para habilitar o acesso remoto.",
+      "firewall_windows": "O Firewall do Windows pode solicitar que você permita conexões de entrada. Clique em \"Permitir acesso\" para habilitar o controle remoto.",
+      "firewall_linux": "Se você tiver um firewall ativado, abra a porta {port} manualmente: ufw allow {port}/tcp"
     },
     "equalizer": {
       "title": "Equalizador",
