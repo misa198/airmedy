@@ -12,16 +12,16 @@
     "lint": "vue-tsc --noEmit"
   },
   "dependencies": {
+    "@airmedy/ui": "workspace:*",
+    "@airmedy/utils": "workspace:*",
     "@radix-icons/vue": "1.0.0",
-    "@types/qrcode": "^1.5.6",
-    "@wailsio/runtime": "latest",
+    "@wailsio/runtime": "3.0.0-alpha.79",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "lucide-vue-next": "1.0.0",
     "ogl": "1.0.11",
     "pinia": "3.0.4",
-    "qr-code-styling": "^1.9.2",
-    "qrcode": "^1.5.4",
+    "qr-code-styling": "1.9.2",
     "radix-vue": "1.9.17",
     "tailwind-merge": "3.6.0",
     "vue": "3.5.34",
@@ -29,9 +29,7 @@
     "vue-resizable-panels": "0.0.1",
     "vue-router": "5.0.7",
     "vue-virtual-scroller": "3.0.3",
-    "vue-virtual-sortable": "3.1.2",
-    "@airmedy/ui": "workspace:*",
-    "@airmedy/utils": "workspace:*"
+    "vue-virtual-sortable": "3.1.2"
   },
   "devDependencies": {
     "@pinia/testing": "0.1.6",
