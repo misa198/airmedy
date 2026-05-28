@@ -9,7 +9,7 @@
     "lint": "turbo lint"
   },
   "devDependencies": {
-    "turbo": "latest"
+    "turbo": "2.9.16"
   },
   "pnpm": {
     "onlyBuiltDependencies": ["esbuild"]
