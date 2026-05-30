@@ -93,7 +93,13 @@
       "start_at_login": "เริ่มเมื่อเข้าสู่ระบบ",
       "start_at_login_desc": "เปิด Airmedy โดยอัตโนมัติเมื่อคุณลงชื่อเข้าใช้",
       "updated": "อัปเดตการตั้งค่าการเริ่มระบบแล้ว",
-      "error": "ไม่สามารถอัปเดตการตั้งค่าการเริ่มระบบได้"
+      "error": "ไม่สามารถอัปเดตการตั้งค่าการเริ่มระบบได้",
+      "show_tray_icon": "แสดงไอคอนในถาดระบบ",
+      "show_tray_icon_desc": "แสดงไอคอน Airmedy ในถาดระบบ/แถบเมนู",
+      "restart_required": "ต้องรีสตาร์ต",
+      "restart_required_desc": "ต้องรีสตาร์ตเพื่อใช้การเปลี่ยนแปลง รีสตาร์ตตอนนี้หรือไม่?",
+      "restart_now": "รีสตาร์ตตอนนี้",
+      "restart_later": "ภายหลัง"
     },
     "library": {
       "title": "การจัดการคลังเพลง"
@@ -104,6 +110,11 @@
       "github": "พื้นที่เก็บข้อมูล GitHub",
       "license": "ข้อมูลใบอนุญาต",
       "open_data_folder": "เปิดโฟลเดอร์ข้อมูลแอปพลิเคชัน",
+      "support_title": "สนับสนุนการพัฒนา",
+      "support_description": "หาก Airmedy มีประโยชน์กับคุณ คุณสามารถสนับสนุนการพัฒนาต่อเนื่องได้",
+      "sponsor_kofi": "Ko-fi",
+      "sponsor_bmac": "Buy Me a Coffee",
+      "sponsor_github": "GitHub Sponsors",
       "check_updates": "ตรวจสอบการอัปเดต",
       "check_updates_auto": "ตรวจสอบการอัปเดตอัตโนมัติ",
       "check_updates_auto_desc": "ตรวจสอบเวอร์ชันใหม่โดยอัตโนมัติเมื่อเริ่มต้นระบบ",
@@ -116,7 +127,9 @@
       "update_applied": "ใช้การอัปเดตแล้ว! โปรดรีสตาร์ท Airmedy",
       "update_ready": "การอัปเดตพร้อมสำหรับการติดตั้ง",
       "update_failed": "การอัปเดตล้มเหลว",
-      "check_failed": "ตรวจสอบการอัปเดตล้มเหลว"
+      "check_failed": "ตรวจสอบการอัปเดตล้มเหลว",
+      "resources_title": "แอปและทรัพยากร",
+      "sponsor_patreon": "Patreon"
     },
     "appearance": {
       "title": "ลักษณะที่ปรากฏ",

@@ -93,7 +93,13 @@
       "start_at_login": "Avvia al login",
       "start_at_login_desc": "Avvia automaticamente Airmedy all'accesso",
       "updated": "Impostazione di avvio aggiornata",
-      "error": "Impossibile aggiornare l'impostazione di avvio"
+      "error": "Impossibile aggiornare l'impostazione di avvio",
+      "show_tray_icon": "Mostra icona nella barra di sistema",
+      "show_tray_icon_desc": "Mostra l’icona di Airmedy nella barra di sistema/barra menu",
+      "restart_required": "Riavvio richiesto",
+      "restart_required_desc": "È necessario riavviare per applicare le modifiche. Riavvia ora?",
+      "restart_now": "Riavvia ora",
+      "restart_later": "Più tardi"
     },
     "library": {
       "title": "Gestione Libreria"
@@ -104,6 +110,11 @@
       "github": "Repository GitHub",
       "license": "Informazioni Licenza",
       "open_data_folder": "Apri Cartella Dati Applicazione",
+      "support_title": "Supporta lo sviluppo",
+      "support_description": "Se Airmedy ti è utile, puoi supportarne lo sviluppo continuo.",
+      "sponsor_kofi": "Ko-fi",
+      "sponsor_bmac": "Buy Me a Coffee",
+      "sponsor_github": "Sponsorizzazioni GitHub",
       "check_updates": "Controlla aggiornamenti",
       "check_updates_auto": "Controlla aggiornamenti automaticamente",
       "check_updates_auto_desc": "Controlla automaticamente nuove versioni all'avvio",
@@ -116,7 +127,9 @@
       "update_applied": "Aggiornamento applicato! Riavvia Airmedy.",
       "update_ready": "Aggiornamento pronto per l'installazione",
       "update_failed": "Aggiornamento fallito",
-      "check_failed": "Controllo aggiornamenti fallito"
+      "check_failed": "Controllo aggiornamenti fallito",
+      "resources_title": "Applicazione e risorse",
+      "sponsor_patreon": "Patreon"
     },
     "appearance": {
       "title": "Aspetto",
@@ -125,7 +138,7 @@
       "system": "Sistema",
       "light": "Chiaro",
       "dark": "Scuro",
-      "black": "Black",
+      "black": "Nero",
       "language": "Lingua",
       "select_language": "Seleziona la lingua dell'applicazione"
     },

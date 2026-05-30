@@ -93,7 +93,13 @@
       "start_at_login": "开机启动",
       "start_at_login_desc": "登录时自动启动 Airmedy",
       "updated": "启动设置已更新",
-      "error": "更新启动设置失败"
+      "error": "更新启动设置失败",
+      "show_tray_icon": "显示托盘图标",
+      "show_tray_icon_desc": "在系统托盘/菜单栏显示 Airmedy 图标",
+      "restart_required": "需要重启",
+      "restart_required_desc": "应用更改需要重启。现在重启吗？",
+      "restart_now": "立即重启",
+      "restart_later": "稍后"
     },
     "library": {
       "title": "媒体库管理"
@@ -104,6 +110,11 @@
       "github": "GitHub 仓库",
       "license": "许可证信息",
       "open_data_folder": "打开应用数据文件夹",
+      "support_title": "支持开发",
+      "support_description": "如果 Airmedy 对你有帮助，你可以支持持续开发。",
+      "sponsor_kofi": "Ko-fi",
+      "sponsor_bmac": "Buy Me a Coffee",
+      "sponsor_github": "GitHub 赞助",
       "check_updates": "检查更新",
       "check_updates_auto": "自动检查更新",
       "check_updates_auto_desc": "启动时自动检查新版本",
@@ -116,7 +127,9 @@
       "update_applied": "更新已应用！请重启 Airmedy。",
       "update_ready": "更新已准备好安装",
       "update_failed": "更新失败",
-      "check_failed": "检查更新失败"
+      "check_failed": "检查更新失败",
+      "resources_title": "应用与资源",
+      "sponsor_patreon": "Patreon"
     },
     "appearance": {
       "title": "外观",
