@@ -93,7 +93,13 @@
       "start_at_login": "로그인 시 시작",
       "start_at_login_desc": "로그인할 때 Airmedy를 자동으로 실행합니다",
       "updated": "시작 설정이 업데이트되었습니다",
-      "error": "시작 설정을 업데이트하지 못했습니다"
+      "error": "시작 설정을 업데이트하지 못했습니다",
+      "show_tray_icon": "트레이 아이콘 표시",
+      "show_tray_icon_desc": "시스템 트레이/메뉴 바에 Airmedy 아이콘 표시",
+      "restart_required": "재시작 필요",
+      "restart_required_desc": "변경 사항을 적용하려면 재시작이 필요합니다. 지금 재시작할까요?",
+      "restart_now": "지금 재시작",
+      "restart_later": "나중에"
     },
     "library": {
       "title": "라이브러리 관리"
@@ -104,6 +110,11 @@
       "github": "GitHub 저장소",
       "license": "라이선스 정보",
       "open_data_folder": "애플리케이션 데이터 폴더 열기",
+      "support_title": "개발 지원",
+      "support_description": "Airmedy가 도움이 된다면 지속적인 개발을 후원할 수 있습니다.",
+      "sponsor_kofi": "Ko-fi",
+      "sponsor_bmac": "Buy Me a Coffee",
+      "sponsor_github": "GitHub 스폰서",
       "check_updates": "업데이트 확인",
       "check_updates_auto": "자동 업데이트 확인",
       "check_updates_auto_desc": "시작 시 자동으로 새 버전을 확인합니다",
@@ -116,7 +127,9 @@
       "update_applied": "업데이트가 적용되었습니다! Airmedy를 재시작해 주세요.",
       "update_ready": "업데이트 설치 준비 완료",
       "update_failed": "업데이트 실패",
-      "check_failed": "업데이트 확인 실패"
+      "check_failed": "업데이트 확인 실패",
+      "resources_title": "앱 및 리소스",
+      "sponsor_patreon": "Patreon"
     },
     "appearance": {
       "title": "디자인",
@@ -125,7 +138,7 @@
       "system": "시스템",
       "light": "라이트",
       "dark": "다크",
-      "black": "Black",
+      "black": "블랙",
       "language": "언어",
       "select_language": "애플리케이션 언어 선택"
     },

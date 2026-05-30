@@ -93,7 +93,13 @@
       "start_at_login": "Iniciar no login",
       "start_at_login_desc": "Iniciar o Airmedy automaticamente ao entrar",
       "updated": "Configuração de inicialização atualizada",
-      "error": "Falha ao atualizar a configuração de inicialização"
+      "error": "Falha ao atualizar a configuração de inicialização",
+      "show_tray_icon": "Mostrar ícone na bandeja",
+      "show_tray_icon_desc": "Mostrar ícone do Airmedy na bandeja do sistema/barra de menu",
+      "restart_required": "Reinicialização necessária",
+      "restart_required_desc": "É necessário reiniciar para aplicar as alterações. Reiniciar agora?",
+      "restart_now": "Reiniciar agora",
+      "restart_later": "Mais tarde"
     },
     "library": {
       "title": "Gerenciamento de Biblioteca"
@@ -104,6 +110,11 @@
       "github": "Repositório GitHub",
       "license": "Informações da licença",
       "open_data_folder": "Abrir pasta de datos do aplicativo",
+      "support_title": "Apoiar o desenvolvimento",
+      "support_description": "Se o Airmedy ajuda você, você pode apoiar o desenvolvimento contínuo.",
+      "sponsor_kofi": "Ko-fi",
+      "sponsor_bmac": "Buy Me a Coffee",
+      "sponsor_github": "Patrocínios do GitHub",
       "check_updates": "Verificar atualizações",
       "check_updates_auto": "Verificar atualizações automaticamente",
       "check_updates_auto_desc": "Verificar automaticamente por novas versões ao iniciar",
@@ -116,7 +127,9 @@
       "update_applied": "Atualização aplicada! Por favor, reinicie o Airmedy.",
       "update_ready": "Atualização pronta para instalar",
       "update_failed": "Falha ao atualizar",
-      "check_failed": "Falha ao verificar atualizações"
+      "check_failed": "Falha ao verificar atualizações",
+      "resources_title": "Aplicativo e recursos",
+      "sponsor_patreon": "Patreon"
     },
     "appearance": {
       "title": "Aparência",
@@ -125,7 +138,7 @@
       "system": "Sistema",
       "light": "Claro",
       "dark": "Escuro",
-      "black": "Black",
+      "black": "Preto",
       "language": "Idioma",
       "select_language": "Selecionar idioma do aplicativo"
     },

@@ -93,7 +93,13 @@
       "start_at_login": "Запускать при входе",
       "start_at_login_desc": "Автоматически запускать Airmedy при входе в систему",
       "updated": "Настройка автозапуска обновлена",
-      "error": "Не удалось обновить настройку автозапуска"
+      "error": "Не удалось обновить настройку автозапуска",
+      "show_tray_icon": "Показывать значок в трее",
+      "show_tray_icon_desc": "Показывать значок Airmedy в системном трее/строке меню",
+      "restart_required": "Требуется перезапуск",
+      "restart_required_desc": "Для применения изменений требуется перезапуск. Перезапустить сейчас?",
+      "restart_now": "Перезапустить сейчас",
+      "restart_later": "Позже"
     },
     "library": {
       "title": "Управление медиатекой"
@@ -104,6 +110,11 @@
       "github": "Репозиторий GitHub",
       "license": "Лицензия",
       "open_data_folder": "Открыть папку с данными приложения",
+      "support_title": "Поддержать разработку",
+      "support_description": "Если Airmedy вам помогает, вы можете поддержать дальнейшую разработку.",
+      "sponsor_kofi": "Ko-fi",
+      "sponsor_bmac": "Buy Me a Coffee",
+      "sponsor_github": "Спонсорство GitHub",
       "check_updates": "Проверить обновления",
       "check_updates_auto": "Автоматическая проверка обновлений",
       "check_updates_auto_desc": "Автоматически проверять наличие новых версий при запуске",
@@ -116,7 +127,9 @@
       "update_applied": "Обновление применено! Пожалуйста, перезапустите Airmedy.",
       "update_ready": "Обновление готово к установке",
       "update_failed": "Ошибка обновления",
-      "check_failed": "Ошибка проверки обновлений"
+      "check_failed": "Ошибка проверки обновлений",
+      "resources_title": "Приложение и ресурсы",
+      "sponsor_patreon": "Patreon"
     },
     "appearance": {
       "title": "Внешний вид",
@@ -125,7 +138,7 @@
       "system": "Системная",
       "light": "Светлая",
       "dark": "Темная",
-      "black": "Black",
+      "black": "Чёрный",
       "language": "Язык",
       "select_language": "Выберите язык приложения"
     },

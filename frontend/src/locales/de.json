@@ -93,7 +93,13 @@
       "start_at_login": "Beim Anmelden starten",
       "start_at_login_desc": "Startet Airmedy automatisch beim Anmelden",
       "updated": "Autostart-Einstellung aktualisiert",
-      "error": "Fehler beim Aktualisieren der Autostart-Einstellung"
+      "error": "Fehler beim Aktualisieren der Autostart-Einstellung",
+      "show_tray_icon": "Tray-Symbol anzeigen",
+      "show_tray_icon_desc": "Airmedy-Symbol im System-Tray/in der Menüleiste anzeigen",
+      "restart_required": "Neustart erforderlich",
+      "restart_required_desc": "Zum Anwenden der Änderungen ist ein Neustart erforderlich. Jetzt neu starten?",
+      "restart_now": "Jetzt neu starten",
+      "restart_later": "Später"
     },
     "library": {
       "title": "Bibliotheksverwaltung"
@@ -104,6 +110,11 @@
       "github": "GitHub-Repository",
       "license": "Lizenzinformationen",
       "open_data_folder": "Anwendungsdatenordner öffnen",
+      "support_title": "Entwicklung unterstützen",
+      "support_description": "Wenn Airmedy dir hilft, kannst du die weitere Entwicklung unterstützen.",
+      "sponsor_kofi": "Ko-fi",
+      "sponsor_bmac": "Buy Me a Coffee",
+      "sponsor_github": "GitHub-Sponsoren",
       "check_updates": "Nach Updates suchen",
       "check_updates_auto": "Automatisch nach Updates suchen",
       "check_updates_auto_desc": "Beim Start automatisch nach neuen Versionen suchen",
@@ -116,7 +127,9 @@
       "update_applied": "Update angewendet! Bitte starten Sie Airmedy neu.",
       "update_ready": "Update bereit zur Installation",
       "update_failed": "Update fehlgeschlagen",
-      "check_failed": "Suche nach Updates fehlgeschlagen"
+      "check_failed": "Suche nach Updates fehlgeschlagen",
+      "resources_title": "App und Ressourcen",
+      "sponsor_patreon": "Patreon"
     },
     "appearance": {
       "title": "Erscheinungsbild",
@@ -125,7 +138,7 @@
       "system": "System",
       "light": "Hell",
       "dark": "Dunkel",
-      "black": "Black",
+      "black": "Schwarz",
       "language": "Sprache",
       "select_language": "Anwendungssprache auswählen"
     },

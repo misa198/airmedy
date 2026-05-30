@@ -93,7 +93,13 @@
       "start_at_login": "ログイン時に起動",
       "start_at_login_desc": "サインイン時に Airmedy を自動的に起動します",
       "updated": "起動設定が更新されました",
-      "error": "起動設定の更新に失敗しました"
+      "error": "起動設定の更新に失敗しました",
+      "show_tray_icon": "トレイアイコンを表示",
+      "show_tray_icon_desc": "システムトレイ/メニューバーにAirmedyアイコンを表示",
+      "restart_required": "再起動が必要です",
+      "restart_required_desc": "変更を適用するには再起動が必要です。今すぐ再起動しますか？",
+      "restart_now": "今すぐ再起動",
+      "restart_later": "後で"
     },
     "library": {
       "title": "ライブラリ管理"
@@ -104,6 +110,11 @@
       "github": "GitHub リポジトリ",
       "license": "ライセンス情報",
       "open_data_folder": "アプリケーションデータフォルダを開く",
+      "support_title": "開発を支援",
+      "support_description": "Airmedyが役に立っている場合は、継続的な開発を支援できます。",
+      "sponsor_kofi": "Ko-fi",
+      "sponsor_bmac": "Buy Me a Coffee",
+      "sponsor_github": "GitHub スポンサー",
       "check_updates": "アップデートを確認",
       "check_updates_auto": "アップデートを自動確認",
       "check_updates_auto_desc": "起動時に新しいバージョンを自動的に確認する",
@@ -116,7 +127,9 @@
       "update_applied": "アップデートが適用されました！Airmedyを再起動してください。",
       "update_ready": "アップデートのインストール準備が完了しました",
       "update_failed": "アップデートに失敗しました",
-      "check_failed": "アップデートの確認に失敗しました"
+      "check_failed": "アップデートの確認に失敗しました",
+      "resources_title": "アプリとリソース",
+      "sponsor_patreon": "Patreon"
     },
     "appearance": {
       "title": "外観",
@@ -125,7 +138,7 @@
       "system": "システム",
       "light": "ライト",
       "dark": "ダーク",
-      "black": "Black",
+      "black": "ブラック",
       "language": "言語",
       "select_language": "アプリの言語を選択"
     },

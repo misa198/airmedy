@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import * as SettingsService from '../../../bindings/airmedy/internal/infra/wails/settingsservice'
-import { Github, FileText, Folder, ExternalLink, RefreshCw, CheckCircle2 } from 'lucide-vue-next'
+import { RefreshCw, CheckCircle2, ChevronRight } from 'lucide-vue-next'
 import { Browser } from '@wailsio/runtime';
 
 const { t } = useI18n()
@@ -13,6 +13,32 @@ const appStore = useAppStore()
 const appInfo = ref<any>(null)
 const isLoading = ref(true)
 const updateError = ref<string | null>(null)
+const sponsorLinks = [
+  {
+    key: 'settings.about.sponsor_github',
+    url: 'https://github.com/sponsors/misa198',
+    logo: '/github-sponsor.png',
+    logoAlt: 'GitHub Sponsors',
+  },
+  {
+    key: 'settings.about.sponsor_kofi',
+    url: 'https://ko-fi.com/misa198',
+    logo: '/ko-fi.png',
+    logoAlt: 'Ko-fi',
+  },
+  {
+    key: 'settings.about.sponsor_bmac',
+    url: 'https://buymeacoffee.com/misa1982',
+    logo: '/buy-me-a-coffee.png',
+    logoAlt: 'Buy Me a Coffee',
+  },
+  {
+    key: 'settings.about.sponsor_patreon',
+    url: 'https://www.patreon.com/c/misa198',
+    logo: '/patreon.png',
+    logoAlt: 'Patreon',
+  },
+]
 
 const loadData = async () => {
   isLoading.value = true
@@ -104,44 +130,56 @@ onMounted(() => {
         <p v-if="updateError" class="text-xs text-red-500 mt-2 font-bold">{{ updateError }}</p>
       </div>
 
-      <p class="text-sm text-foreground opacity-60 max-w-sm mx-auto leading-relaxed mt-4">
-        {{ t('settings.about.description') }}
-      </p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <button v-if="appInfo?.github_url" @click="Browser.OpenURL(appInfo.github_url)"
-        class="flex items-center justify-between p-5 bg-card rounded-2xl border border-foreground/[0.06] hover:bg-foreground/[0.02] transition-all group">
-        <div class="flex items-center gap-4">
-          <div class="p-2 bg-foreground/[0.04] rounded-xl group-hover:scale-110 transition-transform">
-            <Github class="w-5 h-5 text-foreground opacity-80" />
-          </div>
-          <span class="text-sm font-bold">{{ t('settings.about.github') }}</span>
-        </div>
-        <ExternalLink class="w-4 h-4 text-foreground opacity-40" />
-      </button>
+    <section class="space-y-3">
+      <h3 class="text-sm font-bold">{{ t('settings.about.support_title') }}</h3>
 
-      <button v-if="appInfo?.license_url" @click="Browser.OpenURL(appInfo.license_url)"
-        class="flex items-center justify-between p-5 bg-card rounded-2xl border border-foreground/[0.06] hover:bg-foreground/[0.02] transition-all group">
-        <div class="flex items-center gap-4">
-          <div class="p-2 bg-foreground/[0.04] rounded-xl group-hover:scale-110 transition-transform">
-            <FileText class="w-5 h-5 text-foreground opacity-80" />
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+        <button
+          v-for="sponsor in sponsorLinks"
+          :key="sponsor.url"
+          @click="Browser.OpenURL(sponsor.url)"
+          class="flex items-center justify-center gap-2 px-3 py-2 bg-card rounded-lg border border-foreground/[0.08] hover:bg-foreground/[0.02] transition-all"
+        >
+          <div class="flex items-center justify-center gap-2 min-w-0">
+            <img v-if="sponsor.logo" :src="sponsor.logo" :alt="sponsor.logoAlt" class="h-5 w-auto object-contain" />
+            <span class="text-xs font-semibold truncate">{{ t(sponsor.key) }}</span>
           </div>
-          <span class="text-sm font-bold">{{ t('settings.about.license') }}</span>
-        </div>
-        <ExternalLink class="w-4 h-4 text-foreground opacity-40" />
-      </button>
+        </button>
+      </div>
+    </section>
 
-      <button @click="openAppDataFolder"
-        class="md:col-span-2 flex items-center justify-between p-5 bg-card rounded-2xl border border-foreground/[0.06] hover:bg-foreground/[0.02] transition-all group">
-        <div class="flex items-center gap-4">
-          <div class="p-2 bg-foreground/[0.04] rounded-xl group-hover:scale-110 transition-transform">
-            <Folder class="w-5 h-5 text-foreground opacity-80" />
-          </div>
-          <span class="text-sm font-bold">{{ t('settings.about.open_data_folder') }}</span>
-        </div>
-        <ExternalLink class="w-4 h-4 text-foreground opacity-40" />
-      </button>
-    </div>
+    <section class="space-y-3">
+      <h3 class="text-sm font-bold">{{ t('settings.about.resources_title', 'Ứng dụng & Nguồn lực') }}</h3>
+
+      <div class="rounded-2xl border border-foreground/[0.08] bg-card overflow-hidden">
+        <button
+          v-if="appInfo?.github_url"
+          @click="Browser.OpenURL(appInfo.github_url)"
+          class="w-full flex items-center justify-between px-5 py-4 hover:bg-foreground/[0.02] transition-colors text-left"
+        >
+          <span class="text-sm font-medium">{{ t('settings.about.github') }}</span>
+          <ChevronRight class="w-4 h-4 text-foreground opacity-50" />
+        </button>
+
+        <button
+          v-if="appInfo?.license_url"
+          @click="Browser.OpenURL(appInfo.license_url)"
+          class="w-full flex items-center justify-between px-5 py-4 border-t border-foreground/[0.08] hover:bg-foreground/[0.02] transition-colors text-left"
+        >
+          <span class="text-sm font-medium">{{ t('settings.about.license') }}</span>
+          <ChevronRight class="w-4 h-4 text-foreground opacity-50" />
+        </button>
+
+        <button
+          @click="openAppDataFolder"
+          class="w-full flex items-center justify-between px-5 py-4 border-t border-foreground/[0.08] hover:bg-foreground/[0.02] transition-colors text-left"
+        >
+          <span class="text-sm font-medium">{{ t('settings.about.open_data_folder') }}</span>
+          <ChevronRight class="w-4 h-4 text-foreground opacity-50" />
+        </button>
+      </div>
+    </section>
   </div>
 </template>

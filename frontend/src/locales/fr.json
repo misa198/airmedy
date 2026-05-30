@@ -93,7 +93,13 @@
       "start_at_login": "Lancer au démarrage",
       "start_at_login_desc": "Lancer automatiquement Airmedy à la connexion",
       "updated": "Paramètre de démarrage mis à jour",
-      "error": "Échec de la mise à jour du paramètre de démarrage"
+      "error": "Échec de la mise à jour du paramètre de démarrage",
+      "show_tray_icon": "Afficher l’icône dans la barre système",
+      "show_tray_icon_desc": "Afficher l’icône Airmedy dans la barre système/barre de menus",
+      "restart_required": "Redémarrage requis",
+      "restart_required_desc": "Un redémarrage est nécessaire pour appliquer les changements. Redémarrer maintenant ?",
+      "restart_now": "Redémarrer maintenant",
+      "restart_later": "Plus tard"
     },
     "library": {
       "title": "Gestion de la bibliothèque"
@@ -104,6 +110,11 @@
       "github": "Dépôt GitHub",
       "license": "Informations sur la licence",
       "open_data_folder": "Ouvrir le dossier des données de l'application",
+      "support_title": "Soutenir le développement",
+      "support_description": "Si Airmedy vous aide, vous pouvez soutenir son développement continu.",
+      "sponsor_kofi": "Ko-fi",
+      "sponsor_bmac": "Buy Me a Coffee",
+      "sponsor_github": "Sponsoring GitHub",
       "check_updates": "Rechercher des mises à jour",
       "check_updates_auto": "Recherche automatique des mises à jour",
       "check_updates_auto_desc": "Rechercher automatiquement les nouvelles versions au démarrage",
@@ -116,7 +127,9 @@
       "update_applied": "Mise à jour appliquée ! Veuillez redémarrer Airmedy.",
       "update_ready": "Mise à jour prête à être installée",
       "update_failed": "Échec de la mise à jour",
-      "check_failed": "Échec de la recherche de mises à jour"
+      "check_failed": "Échec de la recherche de mises à jour",
+      "resources_title": "Application et ressources",
+      "sponsor_patreon": "Patreon"
     },
     "appearance": {
       "title": "Apparence",
@@ -125,7 +138,7 @@
       "system": "Système",
       "light": "Clair",
       "dark": "Sombre",
-      "black": "Black",
+      "black": "Noir",
       "language": "Langue",
       "select_language": "Sélectionner la langue de l'application"
     },

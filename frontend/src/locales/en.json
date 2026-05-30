@@ -110,6 +110,11 @@
       "github": "GitHub Repository",
       "license": "License Info",
       "open_data_folder": "Open Application Data Folder",
+      "support_title": "Support Development",
+      "support_description": "If Airmedy helps you, you can support ongoing development.",
+      "sponsor_kofi": "Ko-fi",
+      "sponsor_bmac": "Buy Me a Coffee",
+      "sponsor_github": "GitHub Sponsors",
       "check_updates": "Check for updates",
       "check_updates_auto": "Auto check for updates",
       "check_updates_auto_desc": "Automatically check for new versions on startup",
@@ -122,7 +127,9 @@
       "update_applied": "Update applied! Please restart Airmedy.",
       "update_ready": "Update ready to install",
       "update_failed": "Failed to update",
-      "check_failed": "Failed to check for updates"
+      "check_failed": "Failed to check for updates",
+      "resources_title": "Application & Resources",
+      "sponsor_patreon": "Patreon"
     },
     "appearance": {
       "title": "Appearance",
