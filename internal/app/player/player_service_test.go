@@ -147,7 +147,12 @@ func newTestService(t *testing.T, player domain.AudioPlayer) (*PlayerService, *i
 
 func TestPositionTicker_StartsOnPlay(t *testing.T) {
 	fp := &fakePlayer{status: domain.PlayerStatus{Volume: 1.0}}
-	s, emitCount := newTestService(t, fp)
+	s, _ := newTestService(t, fp)
+
+	var tickCount int64
+	s.nowPlaying = &fakeNowPlaying{
+		updatePositionFn: func(_ float64) { atomic.AddInt64(&tickCount, 1) },
+	}
 
 	track := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 120}}
 	s.queue.SetQueue([]*domain.TrackDTO{track}, 0)
@@ -157,15 +162,20 @@ func TestPositionTicker_StartsOnPlay(t *testing.T) {
 	}
 
 	time.Sleep(60 * time.Millisecond)
-	n := atomic.LoadInt64(emitCount)
+	n := atomic.LoadInt64(&tickCount)
 	if n < 2 {
-		t.Errorf("expected ≥2 ticker emits, got %d", n)
+		t.Errorf("expected ≥2 ticker ticks, got %d", n)
 	}
 }
 
 func TestPositionTicker_StopsOnPause(t *testing.T) {
 	fp := &fakePlayer{status: domain.PlayerStatus{Volume: 1.0}}
-	s, emitCount := newTestService(t, fp)
+	s, _ := newTestService(t, fp)
+
+	var tickCount int64
+	s.nowPlaying = &fakeNowPlaying{
+		updatePositionFn: func(_ float64) { atomic.AddInt64(&tickCount, 1) },
+	}
 
 	track := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 120}}
 	s.queue.SetQueue([]*domain.TrackDTO{track}, 0)
@@ -174,12 +184,12 @@ func TestPositionTicker_StopsOnPause(t *testing.T) {
 	time.Sleep(40 * time.Millisecond)
 
 	_ = s.Pause()
-	before := atomic.LoadInt64(emitCount)
+	before := atomic.LoadInt64(&tickCount)
 
 	time.Sleep(40 * time.Millisecond)
-	after := atomic.LoadInt64(emitCount)
+	after := atomic.LoadInt64(&tickCount)
 
-	// After pause the ticker should have stopped — allow at most 1 extra emit
+	// After pause the ticker should have stopped — allow at most 1 extra tick if it was already in flight
 	if after-before > 1 {
 		t.Errorf("ticker kept firing after pause: before=%d after=%d", before, after)
 	}
@@ -187,7 +197,12 @@ func TestPositionTicker_StopsOnPause(t *testing.T) {
 
 func TestPositionTicker_StopsOnStop(t *testing.T) {
 	fp := &fakePlayer{status: domain.PlayerStatus{Volume: 1.0}}
-	s, emitCount := newTestService(t, fp)
+	s, _ := newTestService(t, fp)
+
+	var tickCount int64
+	s.nowPlaying = &fakeNowPlaying{
+		updatePositionFn: func(_ float64) { atomic.AddInt64(&tickCount, 1) },
+	}
 
 	track := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 120}}
 	s.queue.SetQueue([]*domain.TrackDTO{track}, 0)
@@ -196,10 +211,10 @@ func TestPositionTicker_StopsOnStop(t *testing.T) {
 	time.Sleep(40 * time.Millisecond)
 
 	_ = s.Stop()
-	before := atomic.LoadInt64(emitCount)
+	before := atomic.LoadInt64(&tickCount)
 
 	time.Sleep(40 * time.Millisecond)
-	after := atomic.LoadInt64(emitCount)
+	after := atomic.LoadInt64(&tickCount)
 
 	if after-before > 1 {
 		t.Errorf("ticker kept firing after stop: before=%d after=%d", before, after)
@@ -228,18 +243,23 @@ func TestNowPlayingController_CalledOnLoadAndPlay(t *testing.T) {
 
 // fakeNowPlaying satisfies domain.NowPlayingController.
 type fakeNowPlaying struct {
-	updateFn func()
+	updateFn         func()
+	updatePositionFn func(float64)
 }
 
-func (n *fakeNowPlaying) SetupRemoteCommands()                                             {}
-func (n *fakeNowPlaying) SetRemoteCallbacks(_, _, _, _ func(), _ func(float64))           {}
+func (n *fakeNowPlaying) SetupRemoteCommands()                                   {}
+func (n *fakeNowPlaying) SetRemoteCallbacks(_, _, _, _ func(), _ func(float64)) {}
 func (n *fakeNowPlaying) UpdateNowPlaying(_ *domain.TrackDTO, _ float64, _ string) {
 	if n.updateFn != nil {
 		n.updateFn()
 	}
 }
-func (n *fakeNowPlaying) UpdateNowPlayingPosition(_ float64) {}
-func (n *fakeNowPlaying) ClearNowPlaying()                   {}
+func (n *fakeNowPlaying) UpdateNowPlayingPosition(pos float64) {
+	if n.updatePositionFn != nil {
+		n.updatePositionFn(pos)
+	}
+}
+func (n *fakeNowPlaying) ClearNowPlaying() {}
 
 func TestPrevious_Threshold(t *testing.T) {
 	fp := &fakePlayer{status: domain.PlayerStatus{Volume: 1.0}}

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
+import { nextTick } from 'vue'
 import { PlaybackState, RepeatMode } from '../../bindings/airmedy/internal/domain/models'
 
 // Mock Wails runtime — must be before any import that uses it
@@ -69,7 +70,7 @@ describe('usePlayerStore', () => {
     expect(store.isStopped).toBe(false)
   })
 
-  it('computes progressPercent correctly', () => {
+  it('computes progressPercent correctly', async () => {
     const store = usePlayerStore()
     store.status = {
       track_id: 't1',
@@ -81,6 +82,7 @@ describe('usePlayerStore', () => {
       repeat_mode: RepeatMode.RepeatModeOff,
       shuffle: false,
     } as any
+    await nextTick()
     expect(store.progressPercent).toBeCloseTo(25)
   })
 

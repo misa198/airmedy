@@ -68,14 +68,19 @@ export const usePlayerStore = defineStore('player', () => {
     }
   })
 
+  // Keep interpolation state in sync with status
+  watch(status, (newStatus) => {
+    if (newStatus) {
+      syncInterpolation(newStatus.position ?? 0)
+    }
+  })
+
   // Actions
   async function syncState() {
     try {
       const s = await PlayerService.GetStatus()
       status.value = s
       theme.value = s.theme
-      // Sync interpolation state
-      syncInterpolation(s.position ?? 0)
 
       const q = await PlayerService.GetQueue()
       queue.value = (q.filter(Boolean) as TrackDTO[])
@@ -118,9 +123,6 @@ export const usePlayerStore = defineStore('player', () => {
         }
         status.value = s
         if (s.theme) theme.value = s.theme
-
-        // Sync interpolation state
-        syncInterpolation(s.position ?? 0)
 
         if (s?.track_id) {
           const found = queue.value.find((t) => t.id === s.track_id)
