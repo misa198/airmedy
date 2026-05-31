@@ -45,7 +45,7 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  const loadSettings = async () => {
+  const loadSettings = async (skipUpdateCheck = false) => {
     try {
       const settings = await SettingsService.GetSettings()
       if (settings) {
@@ -68,7 +68,7 @@ export const useAppStore = defineStore('app', () => {
       }
 
       // Check for updates on startup if enabled
-      if (autoCheckUpdate.value) {
+      if (autoCheckUpdate.value && !skipUpdateCheck) {
         checkForUpdate()
       }
     } catch (err) {

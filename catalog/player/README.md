@@ -107,7 +107,10 @@ type SleepInhibitor interface {
 
 - Loads tracks into the audio adapter.
 - Manages playback state transitions.
-- Runs a **500ms ticker** that emits `player:status` events while playing.
+- Runs a **500ms ticker** for internal logic:
+  - Increments play counts and scrobbling thresholds via `checkThreshold()`.
+  - Updates OS-level Now Playing position via `UpdateNowPlayingPosition()`.
+  - **Note:** This ticker no longer emits `player:status` every 500ms; status is only emitted on meaningful state changes (Play, Pause, Seek, Stop, Track End) to reduce IPC overhead.
 - Acquires OS sleep inhibition (`domain.SleepInhibitor`) when ticker starts (playback begins); releases on ticker stop (pause/stop). Controlled by `PreventSleepWhilePlaying` setting.
 - Persists and restores state via `PlayerStateRepository`.
 - Increments play counts via `TrackRepository.IncrementPlayCount()`.
@@ -220,7 +223,7 @@ On app startup, `Load()` restores queue, seeks to saved position, but does not a
 
 | Event                  | When                                                   |
 | ---------------------- | ------------------------------------------------------ |
-| `player:status`        | Every 500ms during playback, and on any state change   |
+| `player:status`        | On any state change (Play, Pause, Seek, Stop, Track Change) |
 | `player:queue-updated` | Queue modified (insert, remove, reorder, new playlist) |
 | `player:theme`         | New track loaded — artwork color palette               |
 | `player:lyrics`        | New track loaded — lyrics object (may be null)         |
@@ -228,6 +231,12 @@ On app startup, `Load()` restores queue, seeks to saved position, but does not a
 ## Frontend Store (`stores/player.ts`)
 
 **State:** `status`, `queue`, `currentTrack`, `theme`, `lyrics`, `playerMode` (`sticky | mini | fullscreen`), drawer visibility flags.
+
+**Playback Interpolation:**
+To ensure smooth 60fps progress updates and reduce IPC overhead, the store uses a **Sync-and-Drift** mechanism:
+- **Sync:** Listens for `player:status` from the backend to get the authoritative position (`lastSyncPosition`) and records the arrival time (`lastSyncTime` via `performance.now()`).
+- **Drift (Interpolation):** Runs a `requestAnimationFrame` loop that calculates the current position as: `lastSyncPosition + (performance.now() - lastSyncTime) / 1000`.
+- The `position` computed property returns this interpolated value, providing silky smooth progress bar movement without constant backend ticking.
 
 **Computed:** `isPlaying`, `isPaused`, `progressPercent`, `artworkUrl`, `artworkUrlMd`, `artworkUrlSm`.
 

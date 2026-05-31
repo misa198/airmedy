@@ -84,7 +84,7 @@ onMounted(async () => {
   isRouterReady.value = true
 
   // Load settings
-  await appStore.loadSettings()
+  await appStore.loadSettings(isMiniPlayer.value)
   locale.value = appStore.language
 
   // Handle global events

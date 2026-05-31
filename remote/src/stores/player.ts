@@ -19,21 +19,16 @@ export const usePlayerStore = defineStore('player', () => {
   const localPosition = ref(0)
   let _positionBaseline = 0
   let _positionTimestamp = 0
-  let _progressTimer: ReturnType<typeof setInterval> | null = null
+  let _rafId: number | null = null
 
-  function _startProgressTimer() {
-    _stopProgressTimer()
-    _progressTimer = setInterval(() => {
-      const elapsed = (Date.now() - _positionTimestamp) / 1000
-      localPosition.value = _positionBaseline + elapsed
-    }, 250)
-  }
-
-  function _stopProgressTimer() {
-    if (_progressTimer) {
-      clearInterval(_progressTimer)
-      _progressTimer = null
+  function updateInterpolatedPosition() {
+    if (remoteState.value?.playback_state === 'playing') {
+      const elapsed = (performance.now() - _positionTimestamp) / 1000
+      localPosition.value = Math.min(_positionBaseline + elapsed, trackMetadata.value?.duration ?? 0)
+    } else {
+      localPosition.value = _positionBaseline
     }
+    _rafId = requestAnimationFrame(updateInterpolatedPosition)
   }
 
   // Unified status computed — backward compat with all Vue components
@@ -72,12 +67,11 @@ export const usePlayerStore = defineStore('player', () => {
   function applyRemoteState(state: RemotePlayerState) {
     remoteState.value = state
     _positionBaseline = state.position
-    _positionTimestamp = Date.now()
+    _positionTimestamp = performance.now()
     localPosition.value = state.position
-    if (state.playback_state === 'playing') {
-      _startProgressTimer()
-    } else {
-      _stopProgressTimer()
+    
+    if (_rafId === null) {
+      _rafId = requestAnimationFrame(updateInterpolatedPosition)
     }
   }
 
@@ -85,7 +79,10 @@ export const usePlayerStore = defineStore('player', () => {
   function applyLyrics(l: Lyric | null) { lyrics.value = l }
 
   function dispose() {
-    _stopProgressTimer()
+    if (_rafId !== null) {
+      cancelAnimationFrame(_rafId)
+      _rafId = null
+    }
   }
 
   return {
