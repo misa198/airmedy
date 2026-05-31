@@ -24,6 +24,17 @@ export const usePlayerStore = defineStore('player', () => {
   const lyrics = ref<Lyric | null>(null)
   const lyricsLoading = ref(false)
 
+  // Interpolation state
+  const localInterpolatedPosition = ref(0)
+  let lastSyncTime = performance.now()
+  let lastSyncPosition = 0
+
+  function syncInterpolation(pos: number) {
+    lastSyncPosition = pos
+    lastSyncTime = performance.now()
+    localInterpolatedPosition.value = lastSyncPosition
+  }
+
   // Computed
   const isPlaying = computed(
     () => status.value?.playback_state === PlaybackState.PlaybackStatePlaying,
@@ -36,7 +47,7 @@ export const usePlayerStore = defineStore('player', () => {
       !status.value ||
       status.value.playback_state === PlaybackState.PlaybackStateStopped,
   )
-  const position = computed(() => status.value?.position ?? 0)
+  const position = computed(() => localInterpolatedPosition.value)
   const duration = computed(() => status.value?.duration ?? 0)
   const volume = computed(() => status.value?.volume ?? 1)
   const muted = computed(() => status.value?.muted ?? false)
@@ -63,6 +74,9 @@ export const usePlayerStore = defineStore('player', () => {
       const s = await PlayerService.GetStatus()
       status.value = s
       theme.value = s.theme
+      // Sync interpolation state
+      syncInterpolation(s.position ?? 0)
+
       const q = await PlayerService.GetQueue()
       queue.value = (q.filter(Boolean) as TrackDTO[])
       if (s.track_id) {
@@ -75,11 +89,24 @@ export const usePlayerStore = defineStore('player', () => {
 
   let _offFns: (() => void)[] = []
   let _initialized = false
+  let _rafId: number | null = null
+
+  function updateInterpolatedPosition() {
+    if (isPlaying.value) {
+      const now = performance.now()
+      const elapsed = (now - lastSyncTime) / 1000
+      localInterpolatedPosition.value = Math.min(lastSyncPosition + elapsed, duration.value)
+    } else {
+      localInterpolatedPosition.value = lastSyncPosition
+    }
+    _rafId = requestAnimationFrame(updateInterpolatedPosition)
+  }
 
   async function init() {
     if (_initialized) return
     _initialized = true
     await syncState()
+    _rafId = requestAnimationFrame(updateInterpolatedPosition)
 
     _offFns = [
       Events.On('player:status', (ev: Events.WailsEvent) => {
@@ -91,6 +118,10 @@ export const usePlayerStore = defineStore('player', () => {
         }
         status.value = s
         if (s.theme) theme.value = s.theme
+
+        // Sync interpolation state
+        syncInterpolation(s.position ?? 0)
+
         if (s?.track_id) {
           const found = queue.value.find((t) => t.id === s.track_id)
           if (found) currentTrack.value = found
@@ -162,6 +193,10 @@ export const usePlayerStore = defineStore('player', () => {
   function dispose() {
     _offFns.forEach(off => off())
     _offFns = []
+    if (_rafId !== null) {
+      cancelAnimationFrame(_rafId)
+      _rafId = null
+    }
     _initialized = false
   }
 

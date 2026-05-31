@@ -838,15 +838,14 @@ func (s *PlayerService) emitQueue() {
 	}
 }
 
-func (s *PlayerService) checkThreshold() {
+func (s *PlayerService) checkThreshold(track *domain.TrackDTO, status domain.PlayerStatus) {
 	s.mu.Lock()
-	track := s.currentTrack
-	if track == nil {
+	// Ensure we're still on the same track after potential lock wait
+	if s.currentTrack == nil || s.currentTrack.ID != track.ID {
 		s.mu.Unlock()
 		return
 	}
 
-	status := s.player.GetStatus()
 	// Stale status or not yet updated by native player
 	if status.TrackID != track.ID {
 		s.mu.Unlock()
@@ -988,11 +987,14 @@ func (s *PlayerService) startPositionTicker() {
 				track := s.currentTrack
 				s.mu.RUnlock()
 
-				s.emitStatus()
-				s.checkThreshold()
+				if track == nil {
+					continue
+				}
 
-				if s.nowPlaying != nil && track != nil {
-					status := s.player.GetStatus()
+				status := s.player.GetStatus()
+				s.checkThreshold(track, status)
+
+				if s.nowPlaying != nil {
 					s.nowPlaying.UpdateNowPlayingPosition(status.Position)
 				}
 			}
