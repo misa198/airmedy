@@ -27,6 +27,16 @@ const appStore = useAppStore()
             @update:model-value="appStore.updatePreventSleepWhilePlaying"
           />
         </div>
+        <div class="p-5 flex items-center justify-between gap-x-2">
+          <div>
+            <p class="text-sm font-semibold">{{ t('settings.playback.show_player_indicator') }}</p>
+            <p class="text-xs text-foreground opacity-60 mt-1">{{ t('settings.playback.show_player_indicator_desc') }}</p>
+          </div>
+          <Switch
+            :model-value="appStore.showPlayerIndicator"
+            @update:model-value="appStore.updateShowPlayerIndicator"
+          />
+        </div>
       </div>
     </section>
 

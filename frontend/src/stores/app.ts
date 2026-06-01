@@ -18,6 +18,7 @@ export const useAppStore = defineStore('app', () => {
   const preferMetadataLyrics = ref(true)
   const useOnlineArtistArtwork = ref(true)
   const preventSleepWhilePlaying = ref(false)
+  const showPlayerIndicator = ref(true)
   const remoteServerEnabled = ref(false)
   const remoteServerPort = ref(0)
   const remoteServerPassword = ref('')
@@ -61,6 +62,7 @@ export const useAppStore = defineStore('app', () => {
         preferMetadataLyrics.value = settings.prefer_metadata_lyrics !== false
         useOnlineArtistArtwork.value = settings.use_online_artist_artwork !== false
         preventSleepWhilePlaying.value = !!settings.prevent_sleep_while_playing
+        showPlayerIndicator.value = settings.show_player_indicator !== false
         remoteServerEnabled.value = !!settings.remote_server_enabled
         remoteServerPort.value = settings.remote_server_port ?? 0
         remoteServerPassword.value = settings.remote_server_password ?? ''
@@ -126,6 +128,7 @@ export const useAppStore = defineStore('app', () => {
         prefer_metadata_lyrics: preferMetadataLyrics.value,
         use_online_artist_artwork: useOnlineArtistArtwork.value,
         prevent_sleep_while_playing: preventSleepWhilePlaying.value,
+        show_player_indicator: showPlayerIndicator.value,
         remote_server_enabled: remoteServerEnabled.value,
         remote_server_port: remoteServerPort.value,
         remote_server_password: remoteServerPassword.value,
@@ -197,16 +200,21 @@ export const useAppStore = defineStore('app', () => {
     await saveSettings()
   }
 
+  const updateShowPlayerIndicator = async (enabled: boolean) => {
+    showPlayerIndicator.value = enabled
+    await saveSettings()
+  }
+
   const updateRemoteServerPassword = (password: string) => {
     remoteServerPassword.value = password
   }
 
   // Watch for system theme changes if set to 'system'
-  const _darkMQ = window.matchMedia('(prefers-color-scheme: dark)')
+  const _darkMQ = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-color-scheme: dark)') : null
   const _onDarkMQChange = () => {
     if (theme.value === 'system') applyTheme('system')
   }
-  _darkMQ.addEventListener('change', _onDarkMQChange)
+  _darkMQ?.addEventListener('change', _onDarkMQChange)
 
   const _offUpdaterProgress = Events.On('updater:progress', (e: any) => {
     const data = e?.data ?? e
@@ -216,7 +224,7 @@ export const useAppStore = defineStore('app', () => {
   })
 
   function dispose() {
-    _darkMQ.removeEventListener('change', _onDarkMQChange)
+    _darkMQ?.removeEventListener('change', _onDarkMQChange)
     _offUpdaterProgress()
   }
 
@@ -233,6 +241,7 @@ export const useAppStore = defineStore('app', () => {
     preferMetadataLyrics,
     useOnlineArtistArtwork,
     preventSleepWhilePlaying,
+    showPlayerIndicator,
     updateInfo,
     isCheckingUpdate,
     isUpdateDialogOpen,
@@ -256,6 +265,7 @@ export const useAppStore = defineStore('app', () => {
     updatePreferMetadataLyrics,
     updateUseOnlineArtistArtwork,
     updatePreventSleepWhilePlaying,
+    updateShowPlayerIndicator,
     remoteServerEnabled,
     remoteServerPort,
     remoteServerPassword,

@@ -11,11 +11,13 @@ import {
 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { RepeatMode } from '../../../bindings/airmedy/internal/domain/models'
+import PlayerControlButton from './PlayerControlButton.vue'
 
 const props = defineProps<{
   isPlaying: boolean
   shuffle: boolean
   repeatMode: RepeatMode
+  showIndicator: boolean
 }>()
 
 const emit = defineEmits<{
@@ -40,10 +42,17 @@ const repeatActive = computed(
 
 <template>
   <div class="flex items-center gap-7">
-    <button :class="shuffle ? 'text-white/80' : 'text-white/30 hover:text-white/80'"
-      class="transition-colors" @click="emit('toggleShuffle')" :title="t('player.shuffle')">
+    <PlayerControlButton
+      :class="shuffle ? 'text-white/80' : 'text-white/30 hover:text-white/80'"
+      class="transition-colors"
+      :active="shuffle"
+      :show-indicator="showIndicator"
+      dot-class="bg-white"
+      @click="emit('toggleShuffle')"
+      :title="t('player.shuffle')"
+    >
       <Shuffle class="w-5 h-5" />
-    </button>
+    </PlayerControlButton>
     <button class="text-white/80 hover:text-white transition-colors" @click="emit('previous')" :title="t('player.previous')">
       <SkipBack class="w-7 h-7 fill-current" />
     </button>
@@ -56,9 +65,16 @@ const repeatActive = computed(
     <button class="text-white/80 hover:text-white transition-colors" @click="emit('next')" :title="t('player.next')">
       <SkipForward class="w-7 h-7 fill-current" />
     </button>
-    <button :class="repeatActive ? 'text-white/80' : 'text-white/30 hover:text-white/80'"
-      class="transition-colors" @click="emit('cycleRepeat')" :title="t('player.repeat')">
+    <PlayerControlButton
+      :class="repeatActive ? 'text-white/80' : 'text-white/30 hover:text-white/80'"
+      class="transition-colors"
+      :active="repeatActive"
+      :show-indicator="showIndicator"
+      dot-class="bg-white"
+      @click="emit('cycleRepeat')"
+      :title="t('player.repeat')"
+    >
       <component :is="repeatIcon" class="w-5 h-5" />
-    </button>
+    </PlayerControlButton>
   </div>
 </template>
