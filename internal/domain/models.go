@@ -166,4 +166,5 @@ type AppSettings struct {
 	RemoteServerEnabled      bool   `json:"remote_server_enabled"`
 	RemoteServerPort         int    `json:"remote_server_port"`
 	RemoteServerPassword     string `json:"remote_server_password"`
+	ShowPlayerIndicator      bool   `json:"show_player_indicator"`
 }

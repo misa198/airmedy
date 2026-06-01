@@ -145,7 +145,9 @@
     "playback": {
       "general": "Generale",
       "prevent_sleep": "Impedisci la sospensione durante la riproduzione",
-      "prevent_sleep_desc": "Mantieni il computer attivo mentre la musica è in riproduzione"
+      "prevent_sleep_desc": "Mantieni il computer attivo mentre la musica è in riproduzione",
+      "show_player_indicator": "Mostra indicatore attivo",
+      "show_player_indicator_desc": "Mostra un punto sotto i pulsanti shuffle e ripetizione quando sono attivi"
     },
     "remote": {
       "title": "Controllo Remoto",

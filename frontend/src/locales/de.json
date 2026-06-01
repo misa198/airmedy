@@ -145,7 +145,9 @@
     "playback": {
       "general": "Allgemein",
       "prevent_sleep": "Ruhezustand beim Abspielen verhindern",
-      "prevent_sleep_desc": "Computer wach halten, während Musik abgespielt wird"
+      "prevent_sleep_desc": "Computer wach halten, während Musik abgespielt wird",
+      "show_player_indicator": "Aktiv-Indikator anzeigen",
+      "show_player_indicator_desc": "Einen Punkt unter den Shuffle- und Wiederholungs-Schaltflächen anzeigen, wenn sie aktiv sind"
     },
     "remote": {
       "title": "Fernbedienung",

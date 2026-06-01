@@ -15,8 +15,11 @@ import { Slider } from '@airmedy/ui'
 import { MarqueeText } from '@airmedy/ui'
 import * as WindowService from '../../bindings/airmedy/internal/infra/wails/windowservice'
 import { useGlassBlur } from '@/composables/useGlassBlur'
+import PlayerControlButton from './player/PlayerControlButton.vue'
+import { useAppStore } from '@/stores/app'
 
 const store = usePlayerStore()
+const appStore = useAppStore()
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 useGlassBlur(canvasRef, computed(() => store.artworkUrlMd ?? null))
@@ -153,10 +156,16 @@ watch(() => store.theme, (colors) => {
 
       <!-- Controls: shuffle, prev, play/pause, next, loop -->
       <div class="flex items-center justify-center gap-4 mt-2 mb-1">
-        <button class="transition-colors" :class="store.shuffle ? 'text-white/80' : 'text-white/20 hover:text-white/70'"
-          @click="store.setShuffle(!store.shuffle)">
+        <PlayerControlButton
+          class="transition-colors"
+          :class="store.shuffle ? 'text-white/80' : 'text-white/20 hover:text-white/70'"
+          :active="store.shuffle"
+          :show-indicator="appStore.showPlayerIndicator"
+          dot-class="bg-white"
+          @click="store.setShuffle(!store.shuffle)"
+        >
           <Shuffle class="w-3.5 h-3.5" />
-        </button>
+        </PlayerControlButton>
         <button class="text-white/80 hover:text-white/90 transition-colors" @click="store.previous()">
           <SkipBack class="w-4 h-4 fill-current" />
         </button>
@@ -169,10 +178,16 @@ watch(() => store.theme, (colors) => {
         <button class="text-white/80 hover:text-white/90 transition-colors" @click="store.next()">
           <SkipForward class="w-4 h-4 fill-current" />
         </button>
-        <button class="transition-colors" :class="repeatActive ? 'text-white/80' : 'text-white/20 hover:text-white/70'"
-          @click="store.cycleRepeat()">
+        <PlayerControlButton
+          class="transition-colors"
+          :class="repeatActive ? 'text-white/80' : 'text-white/20 hover:text-white/70'"
+          :active="repeatActive"
+          :show-indicator="appStore.showPlayerIndicator"
+          dot-class="bg-white"
+          @click="store.cycleRepeat()"
+        >
           <component :is="repeatIcon" class="w-3.5 h-3.5" />
-        </button>
+        </PlayerControlButton>
       </div>
     </div>
   </div>

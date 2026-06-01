@@ -20,10 +20,12 @@ import PlayerVolumeControl from './player/PlayerVolumeControl.vue'
 import PlayerQueuePanel from './player/PlayerQueuePanel.vue'
 import PlayerLyricsPanel from './player/PlayerLyricsPanel.vue'
 import TrackContextMenu from './TrackContextMenu.vue'
+import { useAppStore } from '../stores/app'
 
 const { t } = useI18n()
 const store = usePlayerStore()
 const deviceStore = useDeviceStore()
+const appStore = useAppStore()
 
 const trackContextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
 
@@ -125,7 +127,8 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
 
               <!-- Controls -->
               <PlayerPlaybackControls :is-playing="store.isPlaying" :shuffle="store.shuffle"
-                :repeat-mode="store.repeatMode" @toggle-play="store.togglePlayPause()" @next="store.next()"
+                :repeat-mode="store.repeatMode" :show-indicator="appStore.showPlayerIndicator"
+                @toggle-play="store.togglePlayPause()" @next="store.next()"
                 @previous="store.previous()" @toggle-shuffle="store.setShuffle(!store.shuffle)"
                 @cycle-repeat="store.cycleRepeat()" />
 

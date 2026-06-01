@@ -25,9 +25,12 @@ import * as WindowService from '../../bindings/airmedy/internal/infra/wails/wind
 import { useI18n } from 'vue-i18n'
 import TrackContextMenu from './TrackContextMenu.vue'
 import { MarqueeText } from '@airmedy/ui'
+import PlayerControlButton from './player/PlayerControlButton.vue'
+import { useAppStore } from '../stores/app'
 
 const { t } = useI18n()
 const store = usePlayerStore()
+const appStore = useAppStore()
 
 const trackContextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
 
@@ -93,11 +96,16 @@ async function onSeekEnd() {
     <!-- Playback Controls -->
     <div class="flex-1 flex flex-col items-center gap-2 max-w-[600px]">
       <div class="flex items-center gap-5">
-        <button class="transition-opacity"
+        <PlayerControlButton
+          class="transition-opacity"
           :class="store.shuffle ? 'text-primary opacity-100' : 'text-foreground opacity-60 hover:text-foreground opacity-50'"
-          @click="store.setShuffle(!store.shuffle)" :title="t('player.shuffle')">
+          :active="store.shuffle"
+          :show-indicator="appStore.showPlayerIndicator"
+          @click="store.setShuffle(!store.shuffle)"
+          :title="t('player.shuffle')"
+        >
           <Shuffle class="w-4 h-4" />
-        </button>
+        </PlayerControlButton>
         <button class="text-foreground opacity-50 hover:text-foreground transition-colors" @click="store.previous()"
           :title="t('player.previous')">
           <SkipBack class="w-5 h-5 fill-current" />
@@ -112,11 +120,16 @@ async function onSeekEnd() {
           :title="t('player.next')">
           <SkipForward class="w-5 h-5 fill-current" />
         </button>
-        <button class="transition-colors"
+        <PlayerControlButton
+          class="transition-colors"
           :class="repeatActive ? 'text-primary' : 'text-foreground opacity-60 hover:text-foreground opacity-50'"
-          @click="store.cycleRepeat()" :title="t('player.repeat')">
+          :active="repeatActive"
+          :show-indicator="appStore.showPlayerIndicator"
+          @click="store.cycleRepeat()"
+          :title="t('player.repeat')"
+        >
           <component :is="repeatIcon" class="w-4 h-4" />
-        </button>
+        </PlayerControlButton>
       </div>
 
       <!-- Seek bar -->
