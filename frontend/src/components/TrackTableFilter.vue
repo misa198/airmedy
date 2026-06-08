@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, nextTick, onBeforeUnmount } from 'vue'
-import { SlidersHorizontal } from 'lucide-vue-next'
-import { Checkbox } from '@airmedy/ui'
+import type { ComponentPublicInstance } from 'vue'
+import { ListFilter } from 'lucide-vue-next'
+import { Checkbox, IconButton } from '@airmedy/ui'
 import { type ColumnDef, useTrackTableSettings } from '@/composables/useTrackTableSettings'
 
 const props = defineProps<{
@@ -11,13 +12,13 @@ const props = defineProps<{
 
 const settings = useTrackTableSettings()
 const filterOpen = ref(false)
-const filterBtnRef = ref<HTMLElement | null>(null)
+const filterBtnRef = ref<ComponentPublicInstance | null>(null)
 const panelX = ref(0)
 const panelY = ref(0)
 
 async function updatePosition() {
   if (!filterBtnRef.value) return
-  const rect = filterBtnRef.value.getBoundingClientRect()
+  const rect = (filterBtnRef.value.$el as HTMLElement).getBoundingClientRect()
   // Align right edge of panel with right edge of button, with a small offset from the scrollbar
   panelX.value = rect.right - 256 // 256 is the w-64 width
   panelY.value = rect.bottom
@@ -48,14 +49,14 @@ onBeforeUnmount(() => {
 
 <template>
   <template v-if="!simpleMode">
-    <button
+    <IconButton
       ref="filterBtnRef"
-      class="absolute right-0 top-0 z-30 h-[40px] w-[48px] flex items-center justify-center text-foreground opacity-60 hover:text-foreground opacity-80 transition-colors"
-      :class="{ 'text-primary! hover:text-primary!': filterOpen }"
+      variant="outlined"
+      :active="filterOpen"
       @click="toggleFilter"
     >
-      <SlidersHorizontal class="w-3.5 h-3.5" />
-    </button>
+      <ListFilter class="w-3.5 h-3.5" />
+    </IconButton>
 
     <!-- Filter panel -->
     <Teleport to="body">

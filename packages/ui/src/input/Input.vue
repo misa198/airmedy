@@ -22,9 +22,9 @@ const emit = defineEmits<{
       :value="modelValue"
       @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
       :class="cn(
-        'w-full rounded-md border border-border bg-accent/50 px-3 py-2 text-sm text-foreground',
+        'w-full rounded-full border border-border bg-accent/50 px-3 py-2 text-sm text-foreground',
         'placeholder:text-muted-foreground',
-        'focus:outline-none focus:ring-2 focus:ring-primary/20',
+        'focus:outline-none focus:ring-2 focus:ring-primary/40',
         'disabled:cursor-not-allowed disabled:opacity-50',
         'transition-all duration-200 ease-in-out',
         clearable && modelValue ? 'pr-7!' : '',
