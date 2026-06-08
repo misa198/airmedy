@@ -297,6 +297,11 @@
     "columns": "คอลัมน์",
     "index": "#",
     "compact_mode": "โหมดกะทัดรัด",
+    "layout": "เลย์เอาต์",
+    "grid_view": "ตาราง",
+    "list_view": "รายการ",
+    "sort_by": "เรียงตาม",
+    "no_sort": "ไม่มี",
     "context_menu": ""
   },
   "context_menu": {

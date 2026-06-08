@@ -110,7 +110,6 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
             <div class="flex flex-col items-center justify-center gap-6 w-full">
               <!-- Artwork -->
               <PlayerArtwork :artwork-url="store.artworkUrl" :track-title="trackTitle" :is-playing="store.isPlaying"
-                :show-right-column="showRightColumn"
                 class="cursor-pointer"
                 @click="openTrackInfo"
                 @contextmenu.prevent="openContextMenu" />

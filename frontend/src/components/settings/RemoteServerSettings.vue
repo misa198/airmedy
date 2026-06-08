@@ -198,7 +198,7 @@ onMounted(loadStatus)
               <p class="text-sm font-semibold">{{ t('settings.remote.scan_to_connect') }}</p>
               <p class="text-xs text-foreground opacity-60 mt-1">{{ t('settings.remote.pin_required') }}</p>
             </div>
-            <div ref="qrContainer" class="rounded-lg overflow-hidden" />
+            <div ref="qrContainer" class="rounded-2xl overflow-hidden" />
           </div>
 
           <!-- PIN -->

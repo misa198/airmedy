@@ -282,7 +282,7 @@ function cancel() {
                   />
                 </div>
               </div>
-              <div class="grid grid-cols-2 gap-3">
+              <div class="grid grid-cols-3 gap-3">
                 <div>
                   <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('library.total') }}</label>
                   <Input
@@ -292,8 +292,6 @@ function cancel() {
                     @update:model-value="setInt('TotalTracks', $event as string)"
                   />
                 </div>
-              </div>
-              <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('library.disc') }}</label>
                   <Input
