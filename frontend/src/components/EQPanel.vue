@@ -158,7 +158,7 @@ function openProfileMenu(e: MouseEvent) {
     <div class="flex items-center gap-2">
       <!-- Enable/Disable toggle -->
       <button
-        class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors w-18 h-10 border border-foreground/[0.08]"
+        class="flex items-center gap-2 px-3 py-1.5 rounded-3xl text-sm transition-colors w-18 h-10 border border-foreground/[0.08]"
         :class="appStore.eqEnabled
           ? 'bg-foreground/[0.1] text-foreground hover:bg-foreground/[0.14]'
           : 'bg-foreground/[0.03] text-foreground opacity-60 hover:bg-foreground/[0.06]'"
@@ -170,7 +170,7 @@ function openProfileMenu(e: MouseEvent) {
       <!-- Profile selector -->
       <Select v-if="profiles.length > 0" :model-value="activeProfile?.id" @update:model-value="selectProfile">
         <SelectTrigger
-          class="flex-1 bg-foreground/[0.05] border border-foreground/[0.08] text-sm text-foreground rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-foreground/20">
+          class="flex-1 bg-foreground/[0.05] border border-foreground/[0.08] text-sm text-foreground rounded-2xl px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-foreground/20">
           <SelectValue :placeholder="t('settings.equalizer.select_profile')" />
         </SelectTrigger>
         <SelectContent>
@@ -182,7 +182,7 @@ function openProfileMenu(e: MouseEvent) {
 
       <!-- Profile actions menu -->
       <button
-        class="flex items-center justify-center w-10 h-10 rounded-lg text-sm transition-colors border border-foreground/[0.08] bg-foreground/[0.05] text-foreground opacity-80 hover:bg-foreground/[0.1] hover:text-foreground"
+        class="flex items-center justify-center w-10 h-10 rounded-full text-sm transition-colors border border-foreground/[0.08] bg-foreground/[0.05] text-foreground opacity-80 hover:bg-foreground/[0.1] hover:text-foreground"
         @click="openProfileMenu">
         <MoreHorizontal class="w-4 h-4" />
       </button>

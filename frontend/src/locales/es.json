@@ -297,6 +297,11 @@
     "columns": "Columnas",
     "index": "#",
     "compact_mode": "Modo compacto",
+    "layout": "Disposición",
+    "grid_view": "Cuadrícula",
+    "list_view": "Lista",
+    "sort_by": "Ordenar por",
+    "no_sort": "Ninguno",
     "context_menu": ""
   },
   "context_menu": {

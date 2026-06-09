@@ -297,6 +297,11 @@
     "columns": "列",
     "index": "#",
     "compact_mode": "コンパクトモード",
+    "layout": "レイアウト",
+    "grid_view": "グリッド",
+    "list_view": "リスト",
+    "sort_by": "並び替え",
+    "no_sort": "なし",
     "context_menu": ""
   },
   "context_menu": {

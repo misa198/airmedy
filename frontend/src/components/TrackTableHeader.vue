@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onBeforeUnmount } from 'vue'
-import { ArrowDown, ArrowUp, ArrowUpDown, Heart } from 'lucide-vue-next'
+import { Heart } from 'lucide-vue-next'
 import { type ColumnDef, type ColumnKey, useTrackTableSettings } from '@/composables/useTrackTableSettings'
+import SortableHeaderCell from './SortableHeaderCell.vue'
 
 const props = defineProps<{
   orderedVisibleColumns: ColumnDef[]
@@ -182,15 +183,16 @@ onBeforeUnmount(() => {
       />
 
       <!-- Sortable column header -->
-      <div
+      <SortableHeaderCell
         v-else-if="col.sortable && !simpleMode"
-        class="relative flex items-center gap-1 px-2 min-w-0 cursor-grab hover:text-foreground opacity-100 transition-colors select-none"
+        :active="sortColumn === col.key"
+        :dir="sortDir ?? 'asc'"
+        :draggable="col.draggable"
+        class="cursor-grab"
         :class="{
-          'text-primary': sortColumn === col.key,
           'opacity-60 ring-1 ring-primary/40 rounded bg-primary/20': dragOver === col.key && dragFrom !== col.key,
           'opacity-40': dragFrom === col.key,
         }"
-        :draggable="col.draggable"
         @click="handleHeaderClick(col.key)"
         @dragstart="onDragStart($event, col.key)"
         @dragover="onDragOver($event, col.key)"
@@ -199,9 +201,6 @@ onBeforeUnmount(() => {
       >
         <Heart v-if="col.key === 'favorite'" class="w-1 h-3 flex-shrink-0 pointer-events-none" draggable="false" />
         <span v-else class="truncate min-w-0 pointer-events-none" draggable="false">{{ $t(col.labelKey) }}</span>
-        <ArrowUp v-if="sortColumn === col.key && sortDir === 'asc'" class="w-3 h-3 flex-shrink-0 pointer-events-none" draggable="false" />
-        <ArrowDown v-else-if="sortColumn === col.key && sortDir === 'desc'" class="w-3 h-3 flex-shrink-0 pointer-events-none" draggable="false" />
-        <ArrowUpDown v-else class="w-3 h-3 flex-shrink-0 opacity-40 pointer-events-none" draggable="false" />
         <!-- Column divider / resize handle -->
         <div
           v-if="!simpleMode"
@@ -211,7 +210,7 @@ onBeforeUnmount(() => {
         >
           <div class="w-px h-full bg-foreground/[0.12] group-hover/resize:bg-primary/60 transition-colors" />
         </div>
-      </div>
+      </SortableHeaderCell>
 
       <!-- Non-sortable column header -->
       <div

@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { Music } from 'lucide-vue-next'
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, toRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import { usePlayerStore } from '../stores/player'
 import TrackContextMenu from './TrackContextMenu.vue'
-import TrackTableFilter from './TrackTableFilter.vue'
 import TrackTableHeader from './TrackTableHeader.vue'
 import TrackTableRow from './TrackTableRow.vue'
 import { COLUMNS, type ColumnKey, useTrackTableSettings } from '@/composables/useTrackTableSettings'
+import { useRowBackground } from '@/composables/useRowBackground'
 import type { TrackContextMenuOptions } from '@/composables/useTrackContextMenu'
 import VirtualList from 'vue-virtual-sortable'
 
@@ -271,28 +271,17 @@ const navigateToArtist = (id: string) => {
   emit('navigate-artist', id)
 }
 
-function rowBg(index: number, opaque = false) {
-  if (props.variant === 'glass' && opaque) return 'transparent'
-
-  if (index % 2 !== 0) {
-    return opaque ? 'var(--bg-main)' : 'transparent'
-  }
-  return opaque
-    ? 'color-mix(in srgb, var(--bg-main), var(--text-main) 2%)'
-    : 'var(--bg-zebra)'
-}
+const { rowBg } = useRowBackground(toRef(props, 'variant'))
 
 function handlePlayTrack(track: TrackDTO, index: number) {
   emit('play-track', track, index, displayTracks.value)
 }
 
-defineExpose({ scrollToCurrentTrack })
+defineExpose({ scrollToCurrentTrack, optionalColumns })
 </script>
 
 <template>
-  <div class="h-full flex flex-col overflow-hidden relative">
-    <TrackTableFilter :simple-mode="simpleMode" :optional-columns="optionalColumns" />
-
+  <div class="h-full flex flex-col overflow-hidden">
     <div class="flex-1 overflow-hidden">
       <div v-if="isLoading" class="h-full flex items-center justify-center">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />

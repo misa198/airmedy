@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import TrackTable from '../components/TrackTable.vue'
+import TrackTableFilter from '../components/TrackTableFilter.vue'
 import ViewHeader from '../components/ViewHeader.vue'
 import { usePlayerStore } from '../stores/player'
 import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
@@ -15,6 +16,7 @@ const PAGE_SIZE = 500
 const playerStore = usePlayerStore()
 const router = useRouter()
 
+const trackTableRef = ref<InstanceType<typeof TrackTable>>()
 const tracks = shallowRef<TrackDTO[]>([])
 const isLoading = ref(true)
 const searchQuery = ref('')
@@ -67,9 +69,14 @@ onMounted(loadTracks)
       v-model="searchQuery"
       :title="$t('library.tracks')"
       :search-placeholder="`${$t('sidebar.search')} ${$t('library.tracks').toLowerCase()}...`"
-    />
+    >
+      <template #actions>
+        <TrackTableFilter :optional-columns="trackTableRef?.optionalColumns ?? []" />
+      </template>
+    </ViewHeader>
 
     <TrackTable
+      ref="trackTableRef"
       :tracks="filteredTracks"
       :is-loading="isLoading"
       :show-artwork="true"

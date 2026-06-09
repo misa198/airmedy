@@ -1,3 +1,4 @@
+export { default as IconButton } from './IconButton.vue'
 export { default as PlayingBar } from './PlayingBar.vue'
 export { default as MarqueeText } from './MarqueeText.vue'
 export { default as Modal } from './Modal.vue'

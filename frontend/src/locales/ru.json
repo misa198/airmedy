@@ -297,6 +297,11 @@
     "columns": "Столбцы",
     "index": "#",
     "compact_mode": "Компактный режим",
+    "layout": "Вид",
+    "grid_view": "Сетка",
+    "list_view": "Список",
+    "sort_by": "Сортировать по",
+    "no_sort": "Нет",
     "context_menu": ""
   },
   "context_menu": {
