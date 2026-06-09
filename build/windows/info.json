@@ -1,10 +1,10 @@
 {
 	"fixed": {
-		"file_version": "0.0.13"
+		"file_version": "0.0.14"
 	},
 	"info": {
 		"0000": {
-			"ProductVersion": "0.0.13",
+			"ProductVersion": "0.0.14",
 			"CompanyName": "misa198",
 			"FileDescription": "An offline music player for macOS, Windows and Linux.",
 			"LegalCopyright": "(c) 2026, Thanh Vu",
