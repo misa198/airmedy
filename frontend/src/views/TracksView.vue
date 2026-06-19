@@ -71,7 +71,9 @@ onMounted(loadTracks)
       :search-placeholder="`${$t('sidebar.search')} ${$t('library.tracks').toLowerCase()}...`"
     >
       <template #actions>
-        <TrackTableFilter :optional-columns="trackTableRef?.optionalColumns ?? []" />
+        <div class="relative z-[99]">
+          <TrackTableFilter :optional-columns="trackTableRef?.optionalColumns ?? []" />
+        </div>
       </template>
     </ViewHeader>
 

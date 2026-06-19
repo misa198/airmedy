@@ -36,7 +36,7 @@ const trackContextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
 
 function openArtworkContextMenu(e: MouseEvent) {
   if (!store.currentTrack) return
-  trackContextMenu.value?.open(e, store.currentTrack, { excludeDelete: true, excludePlayNext: true })
+  trackContextMenu.value?.open(e, store.currentTrack, { excludePlayNext: true })
 }
 
 const isSeeking = ref(false)

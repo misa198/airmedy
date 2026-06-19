@@ -145,6 +145,9 @@ func (s *LibraryService) Start(ctx context.Context) error {
 		}
 	}
 
+	// Clear any albums/artists/genres/composers stranded by a previous session.
+	s.cleanupOrphanedEntities(ctx)
+
 	go s.watchLoop()
 	go s.StartArtistArtworkWorker(s.ctx)
 	return nil
@@ -208,19 +211,23 @@ func (s *LibraryService) handleEvent(event fsnotify.Event) {
 	}
 
 	if event.Has(fsnotify.Remove) || event.Has(fsnotify.Rename) {
-		// Delete from DB and Search
-		// We need the ID. Since we use deterministic IDs based on path:
-		id := s.generateID(event.Name)
 		go func() {
 			ctx := context.Background()
 			s.logger.Info("File/Folder removed, cleaning up", "path", event.Name)
 
-			// 1. Try to delete the track by ID (if it was a single file)
-			if err := s.trackRepo.Delete(ctx, id); err != nil {
-				s.logger.Warn("Failed to delete track from DB on removal", "id", id, "error", err)
-			}
-			if err := s.searchService.DeleteFromIndex(ctx, id); err != nil {
-				s.logger.Warn("Failed to delete track from Index on removal", "id", id, "error", err)
+			var deletedIDs []string
+
+			// 1. Resolve the track by its exact path so we delete the real row
+			//    (deterministic ID can diverge if the stored path was normalized).
+			if t, err := s.trackRepo.GetByPath(ctx, event.Name); err == nil && t != nil {
+				if err := s.trackRepo.Delete(ctx, t.ID); err != nil {
+					s.logger.Warn("Failed to delete track from DB on removal", "id", t.ID, "error", err)
+				} else {
+					deletedIDs = append(deletedIDs, t.ID)
+				}
+				if err := s.searchService.DeleteFromIndex(ctx, t.ID); err != nil {
+					s.logger.Warn("Failed to delete track from Index on removal", "id", t.ID, "error", err)
+				}
 			}
 
 			// 2. If it was a directory, delete all tracks inside it
@@ -235,18 +242,47 @@ func (s *LibraryService) handleEvent(event fsnotify.Event) {
 				for _, t := range tracks {
 					if err := s.trackRepo.Delete(ctx, t.ID); err != nil {
 						s.logger.Warn("Failed to delete track from DB", "id", t.ID, "error", err)
+						continue
 					}
+					deletedIDs = append(deletedIDs, t.ID)
 					if err := s.searchService.DeleteFromIndex(ctx, t.ID); err != nil {
 						s.logger.Warn("Failed to delete track from Search", "id", t.ID, "error", err)
 					}
 				}
 			}
 
-			// Notify frontend
+			if len(deletedIDs) == 0 {
+				return
+			}
+
+			s.cleanupOrphanedEntities(ctx)
+
+			// Notify frontend: per-track for in-place views + generic for full reloads
 			if app := application.Get(); app != nil && app.Event != nil {
+				for _, id := range deletedIDs {
+					app.Event.Emit("library:track-deleted", id)
+				}
 				app.Event.Emit("library:updated", nil)
 			}
 		}()
+	}
+}
+
+// cleanupOrphanedEntities removes albums, artists, composers and genres that no
+// longer reference any track. Errors are logged, not returned, since this is a
+// best-effort cleanup invoked after deletions.
+func (s *LibraryService) cleanupOrphanedEntities(ctx context.Context) {
+	if err := s.albumRepo.DeleteOrphaned(ctx); err != nil {
+		s.logger.Warn("Failed to delete orphaned albums", "error", err)
+	}
+	if err := s.artistRepo.DeleteOrphaned(ctx); err != nil {
+		s.logger.Warn("Failed to delete orphaned artists", "error", err)
+	}
+	if err := s.composerRepo.DeleteOrphaned(ctx); err != nil {
+		s.logger.Warn("Failed to delete orphaned composers", "error", err)
+	}
+	if err := s.genreRepo.DeleteOrphaned(ctx); err != nil {
+		s.logger.Warn("Failed to delete orphaned genres", "error", err)
 	}
 }
 
@@ -337,18 +373,7 @@ func (s *LibraryService) RemoveWatchedFolder(ctx context.Context, id string, kee
 		}
 
 		// 4. Cleanup orphaned entities
-		if err := s.albumRepo.DeleteOrphaned(ctx); err != nil {
-			s.logger.Warn("Failed to delete orphaned albums", "error", err)
-		}
-		if err := s.artistRepo.DeleteOrphaned(ctx); err != nil {
-			s.logger.Warn("Failed to delete orphaned artists", "error", err)
-		}
-		if err := s.composerRepo.DeleteOrphaned(ctx); err != nil {
-			s.logger.Warn("Failed to delete orphaned composers", "error", err)
-		}
-		if err := s.genreRepo.DeleteOrphaned(ctx); err != nil {
-			s.logger.Warn("Failed to delete orphaned genres", "error", err)
-		}
+		s.cleanupOrphanedEntities(ctx)
 
 		// 5. Cleanup orphaned artworks
 		if err := s.CleanupOrphanedArtworks(ctx); err != nil {
@@ -435,7 +460,7 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 			return nil
 		}
 
-		foundPaths[path] = true
+		foundPaths[filepath.Clean(path)] = true
 		current++
 		if app := application.Get(); app != nil && app.Event != nil {
 			app.Event.Emit("library:sync-progress", domain.SyncProgress{
@@ -468,23 +493,34 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 
 	// 3. Cleanup missing files
 	s.logger.Info("Cleaning up missing files", "root", root)
+	var deletedIDs []string
 	existingTracks, err := s.trackRepo.GetByPathPrefix(ctx, root)
 	if err == nil {
 		for _, t := range existingTracks {
-			if !foundPaths[t.Path] {
-				s.logger.Info("Removing missing track", "path", t.Path)
-				if err := s.trackRepo.Delete(ctx, t.ID); err != nil {
-					s.logger.Warn("Failed to delete missing track from DB", "path", t.Path, "error", err)
-				}
-				if err := s.searchService.DeleteFromIndex(ctx, t.ID); err != nil {
-					s.logger.Warn("Failed to delete missing track from Search", "path", t.Path, "error", err)
-				}
+			if foundPaths[filepath.Clean(t.Path)] {
+				continue
+			}
+			s.logger.Info("Removing missing track", "path", t.Path)
+			if err := s.trackRepo.Delete(ctx, t.ID); err != nil {
+				s.logger.Warn("Failed to delete missing track from DB", "path", t.Path, "error", err)
+				continue
+			}
+			deletedIDs = append(deletedIDs, t.ID)
+			if err := s.searchService.DeleteFromIndex(ctx, t.ID); err != nil {
+				s.logger.Warn("Failed to delete missing track from Search", "path", t.Path, "error", err)
 			}
 		}
 	}
 
+	// Always clear orphans: a track removed here (or by an earlier run/path) can
+	// leave an album/artist/genre/composer with no tracks.
+	s.cleanupOrphanedEntities(ctx)
+
 	s.logger.Info("Finished folder sync", "root", root)
 	if app := application.Get(); app != nil && app.Event != nil {
+		for _, id := range deletedIDs {
+			app.Event.Emit("library:track-deleted", id)
+		}
 		app.Event.Emit("library:sync-finished", root)
 	}
 	return nil

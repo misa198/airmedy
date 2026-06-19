@@ -14,7 +14,6 @@ import * as LyricsService from '../../bindings/airmedy/internal/infra/wails/lyri
 
 export interface TrackContextMenuOptions {
   excludePlayNext?: boolean
-  excludeDelete?: boolean
   showRemoveFromQueue?: boolean
   playlistId?: string
 }
