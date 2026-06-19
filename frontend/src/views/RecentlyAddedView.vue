@@ -5,6 +5,7 @@ import { Disc } from 'lucide-vue-next'
 import type { AlbumDTO } from '../../bindings/airmedy/internal/domain/models'
 import AlbumGrid from '../components/AlbumGrid.vue'
 import ViewHeader from '../components/ViewHeader.vue'
+import { useLibrarySync } from '../composables/useLibrarySync'
 
 const albums = shallowRef<AlbumDTO[]>([])
 const isLoading = ref(true)
@@ -22,6 +23,7 @@ const loadRecentlyAdded = async () => {
 }
 
 onMounted(loadRecentlyAdded)
+useLibrarySync(loadRecentlyAdded)
 </script>
 
 <template>
