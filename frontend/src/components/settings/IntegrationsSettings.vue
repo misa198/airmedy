@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
+import { useDeviceStore } from '@/stores/device'
 import { Blocks, Music, ImagePlay, FileMusic, MicVocal } from 'lucide-vue-next'
 import * as LastFmService from '../../../bindings/airmedy/internal/infra/wails/lastfmservice'
 import { onMounted, onUnmounted, ref } from 'vue'
@@ -9,6 +10,7 @@ import { Switch } from '@airmedy/ui'
 
 const { t } = useI18n()
 const appStore = useAppStore()
+const deviceStore = useDeviceStore()
 
 const lastfmStatus = ref({ connected: false, username: '', avatar_url: '' })
 const lastfmAvatar = ref('')
@@ -108,11 +110,15 @@ onMounted(() => {
           </div>
 
           <div class="flex items-center gap-2">
-            <button v-if="!lastfmStatus.connected"
+            <button v-if="!lastfmStatus.connected && deviceStore.isMac"
               class="h-9 px-4 rounded-xl font-semibold border border-foreground/[0.08] hover:bg-foreground/[0.04] text-sm transition-colors disabled:opacity-50"
               :disabled="isConnecting" @click="connectLastFm">
               {{ isConnecting ? t('settings.lastfm.connecting') : t('settings.lastfm.connect') }}
             </button>
+
+            <p v-else-if="!lastfmStatus.connected" class="text-xs text-foreground opacity-60 text-right max-w-[12rem]">
+              {{ t('settings.lastfm.unavailable_os') }}
+            </p>
 
             <button v-else
               class="h-9 px-4 rounded-xl font-semibold border border-foreground/[0.08] hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 text-sm transition-colors"

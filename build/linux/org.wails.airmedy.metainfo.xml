@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AppStream MetaInfo. App centers (GNOME Software, KDE Discover, etc.) read this
+  file - NOT the .desktop or nfpm metadata - to show the publisher, license,
+  "last updated" date, content rating and project links. Keep <id> identical to
+  the .desktop basename (org.wails.airmedy) and bump <releases> on every release
+  (handled by scripts/bump-version.sh).
+-->
+<component type="desktop-application">
+  <id>org.wails.airmedy</id>
+  <launchable type="desktop-id">org.wails.airmedy.desktop</launchable>
+
+  <name>Airmedy</name>
+  <summary>All-in-one offline music player</summary>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+
+  <developer id="io.github.misa198">
+    <name>misa198</name>
+  </developer>
+  <!-- Legacy fallback for older AppStream parsers. -->
+  <developer_name>misa198</developer_name>
+
+  <description>
+    <p>
+      Airmedy is an all-in-one offline music player for macOS, Windows and
+      Linux. It scans your local library, extracts metadata and artwork, and
+      plays your collection with fast search and a clean, modern interface.
+    </p>
+  </description>
+
+  <categories>
+    <category>AudioVideo</category>
+    <category>Audio</category>
+    <category>Player</category>
+  </categories>
+
+  <url type="homepage">https://airmedy.netlify.app</url>
+  <url type="bugtracker">https://github.com/misa198/airmedy/issues</url>
+  <url type="vcs-browser">https://github.com/misa198/airmedy</url>
+
+  <!-- No questionable content; declares the app as suitable for all ages and
+       clears the "unknown" rating shown by app centers. -->
+  <content_rating type="oars-1.1" />
+
+  <releases>
+    <release version="0.0.14" date="2026-06-20" />
+  </releases>
+</component>

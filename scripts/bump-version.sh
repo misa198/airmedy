@@ -63,6 +63,13 @@ sedi "s/^version: \"${OLD_VERSION}\"/version: \"${NEW_VERSION}\"/" \
     "${REPO_ROOT}/build/linux/nfpm/nfpm.yaml"
 echo "  updated build/linux/nfpm/nfpm.yaml"
 
+# build/linux/org.wails.airmedy.metainfo.xml (AppStream release entry: version +
+# today's date so app centers show an accurate "last updated").
+TODAY=$(date +%F)
+sedi "s|<release version=\"[^\"]*\" date=\"[^\"]*\" />|<release version=\"${NEW_VERSION}\" date=\"${TODAY}\" />|" \
+    "${REPO_ROOT}/build/linux/org.wails.airmedy.metainfo.xml"
+echo "  updated build/linux/org.wails.airmedy.metainfo.xml"
+
 # build/windows/info.json
 sedi "s/\"${OLD_VERSION}\"/\"${NEW_VERSION}\"/g" \
     "${REPO_ROOT}/build/windows/info.json"
