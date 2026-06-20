@@ -1,36 +1,62 @@
-name: Build and Release
+name: Release
 
 on:
   workflow_dispatch:
     inputs:
-      os:
-        description: 'Target Operating System'
-        required: true
-        default: 'Windows-AMD64'
-        type: choice
-        options:
-          - Windows-AMD64
-          - Linux-AMD64
-          - Linux-ARM64
-          - Darwin-AMD64
-          - Darwin-ARM64
       version:
-        description: 'Tag version (e.g., 1.0.0)'
+        description: 'New version (e.g., 0.0.15)'
         required: true
       prerelease:
         description: 'Create as Pre-release'
         required: true
         type: boolean
-        default: true
+        default: false
 
 jobs:
+  bump:
+    name: Bump version to ${{ github.event.inputs.version }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Bump app version
+        run: bash scripts/bump-version.sh ${{ github.event.inputs.version }}
+
+      - name: Bump download version
+        run: bash scripts/bump-download-version.sh ${{ github.event.inputs.version }}
+
+      - name: Commit and tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add \
+            build/config.yml \
+            build/darwin/Info.dev.plist \
+            build/darwin/Info.plist \
+            build/linux/nfpm/nfpm.yaml \
+            build/windows/info.json \
+            build/windows/nsis/wails_tools.nsh \
+            build/windows/wails.exe.manifest \
+            frontend/package.json \
+            internal/app/config/meta.go \
+            public/config.json
+          git commit -m "chore: bump version to ${{ github.event.inputs.version }}" || echo "Nothing to commit"
+          git push origin HEAD
+          git tag -a "v${{ github.event.inputs.version }}" -m "Release v${{ github.event.inputs.version }}"
+          git push origin "v${{ github.event.inputs.version }}"
+
   build-ffmpeg-windows:
     name: Build FFmpeg for Windows
-    if: github.event.inputs.os == 'Windows-AMD64'
+    needs: bump
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: v${{ github.event.inputs.version }}
 
       - name: Cache FFmpeg (Windows)
         id: cache-ffmpeg
@@ -54,17 +80,24 @@ jobs:
           path: internal/infra/audio/ffmpeg_libs
 
   build:
-    name: Build ${{ github.event.inputs.os }}
-    needs: [build-ffmpeg-windows]
-    if: always() && (needs.build-ffmpeg-windows.result == 'success' || needs.build-ffmpeg-windows.result == 'skipped')
-    runs-on: ${{ (contains(github.event.inputs.os, 'Windows') && 'windows-latest') || (contains(github.event.inputs.os, 'Darwin') && 'macos-26') || 'ubuntu-latest' }}
-    permissions:
-      contents: write
+    name: Build ${{ matrix.os }}
+    needs: [bump, build-ffmpeg-windows]
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - Windows-AMD64
+          - Linux-AMD64
+          - Linux-ARM64
+          - Darwin-AMD64
+          - Darwin-ARM64
+    runs-on: ${{ (contains(matrix.os, 'Windows') && 'windows-latest') || (contains(matrix.os, 'Darwin') && 'macos-26') || 'ubuntu-latest' }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          ref: v${{ github.event.inputs.version }}
           fetch-depth: 0
 
       - name: Create secrets.go
@@ -104,7 +137,7 @@ jobs:
       - name: Install Linux Dependencies
         if: runner.os == 'Linux'
         run: |
-          if [[ "${{ github.event.inputs.os }}" == "Linux-ARM64" ]]; then
+          if [[ "${{ matrix.os }}" == "Linux-ARM64" ]]; then
             sudo dpkg --add-architecture arm64
             # Update existing sources to be amd64 only to avoid 404s on mirrors that don't have arm64
             if [ -f /etc/apt/sources.list ]; then
@@ -192,19 +225,9 @@ jobs:
         run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-alpha2.104
 
       - name: Install Linux ARM64 Cross-compile Dependencies
-        if: runner.os == 'Linux' && github.event.inputs.os == 'Linux-ARM64'
+        if: runner.os == 'Linux' && matrix.os == 'Linux-ARM64'
         run: |
           sudo apt-get install -y -o Dpkg::Options::="--force-overwrite" --no-install-recommends libgtk-3-dev:arm64 libwebkit2gtk-4.1-dev:arm64 libgtk-4-dev:arm64 libwebkitgtk-6.0-dev:arm64
-
-      - name: Update Version in Config
-        shell: bash
-        run: |
-          # Update build/config.yml
-          sed 's/version: "[^"]*"/version: "${{ github.event.inputs.version }}"/' build/config.yml > build/config.yml.tmp && mv build/config.yml.tmp build/config.yml
-          # Update build/linux/nfpm/nfpm.yaml
-          if [ -f build/linux/nfpm/nfpm.yaml ]; then
-            sed 's/version: "[^"]*"/version: "${{ github.event.inputs.version }}"/' build/linux/nfpm/nfpm.yaml > build/linux/nfpm/nfpm.yaml.tmp && mv build/linux/nfpm/nfpm.yaml.tmp build/linux/nfpm/nfpm.yaml
-          fi
 
       - name: Build and Package (Windows)
         if: runner.os == 'Windows'
@@ -226,7 +249,7 @@ jobs:
           REPO_ROOT=$(pwd)
           export CGO_CFLAGS="-I${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/include"
 
-          OS_INPUT="${{ github.event.inputs.os }}"
+          OS_INPUT="${{ matrix.os }}"
           case $OS_INPUT in
             "Linux-AMD64")
               export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/linux/amd64"
@@ -258,7 +281,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist
-          OS_INPUT="${{ github.event.inputs.os }}"
+          OS_INPUT="${{ matrix.os }}"
           VERSION="${{ github.event.inputs.version }}"
           case $OS_INPUT in
             "Windows-AMD64")
@@ -310,15 +333,46 @@ jobs:
               ;;
           esac
 
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.os }}
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    name: Publish Release
+    needs: [build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ github.event.inputs.version }}
+          fetch-depth: 0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: dist-*
+          path: dist
+          merge-multiple: true
+
       - name: Generate SHA256SUMS
         shell: bash
         run: |
           cd dist
+          # Write to a temp file outside the glob, then move in, so SHA256SUMS
+          # never hashes itself.
+          TMP="$(mktemp)"
           if command -v sha256sum >/dev/null 2>&1; then
-            sha256sum * > SHA256SUMS
+            sha256sum * > "$TMP"
           else
-            shasum -a 256 * | awk '{print $1, $2}' > SHA256SUMS
+            shasum -a 256 * | awk '{print $1, $2}' > "$TMP"
           fi
+          mv "$TMP" SHA256SUMS
 
       - name: Generate Changelog
         id: changelog

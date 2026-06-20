@@ -4,9 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(r => r.json())
         .then(config => {
             const v = config.downloadVersion;
-            document.querySelectorAll('[data-download]').forEach(el => {
-                const arch = el.getAttribute('data-download');
-                el.href = `https://github.com/misa198/airmedy/releases/download/v${v}/Airmedy_${v}_${arch}.zip`;
+            document.querySelectorAll('[data-file]').forEach(el => {
+                const file = el.getAttribute('data-file');
+                el.href = `https://github.com/misa198/airmedy/releases/download/v${v}/Airmedy_${v}_${file}`;
             });
         })
         .catch(() => {});
