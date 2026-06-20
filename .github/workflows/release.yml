@@ -364,11 +364,15 @@ jobs:
         shell: bash
         run: |
           cd dist
+          # Write to a temp file outside the glob, then move in, so SHA256SUMS
+          # never hashes itself.
+          TMP="$(mktemp)"
           if command -v sha256sum >/dev/null 2>&1; then
-            sha256sum * > SHA256SUMS
+            sha256sum * > "$TMP"
           else
-            shasum -a 256 * | awk '{print $1, $2}' > SHA256SUMS
+            shasum -a 256 * | awk '{print $1, $2}' > "$TMP"
           fi
+          mv "$TMP" SHA256SUMS
 
       - name: Generate Changelog
         id: changelog
