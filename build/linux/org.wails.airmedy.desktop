@@ -1,11 +1,13 @@
 [Desktop Entry]
+StartupWMClass=airmedy
 Type=Application
 Name=Airmedy
+Comment=All-in-one offline music player
 Exec=airmedy %u
 Icon=airmedy
-Categories=AudioVideo;Player;
+Categories=AudioVideo;Audio;Player;
 Terminal=false
-Keywords=wails
+Keywords=music;player;audio;offline;
 Version=1.0
 StartupNotify=false
 MimeType=x-scheme-handler/airmedy;

@@ -135,7 +135,7 @@ tasks:
       APP_NAME: '{{.APP_NAME}}'
       APP_BINARY: '../../../bin/{{.APP_NAME}}'
       ICON: '{{.APP_NAME}}.png'
-      DESKTOP_FILE: '../{{.APP_NAME}}.desktop'
+      DESKTOP_FILE: '../org.wails.{{.APP_NAME}}.desktop'
       OUTPUT_DIR: '../../../bin'
 
   create:deb:
@@ -188,14 +188,21 @@ tasks:
     dir: build
     cmds:
       - mkdir -p {{.ROOT_DIR}}/build/linux/appimage
-      - wails3 generate .desktop -name "Airmedy" -exec "{{.EXEC}} %u" -icon "{{.ICON}}" -mimetype "x-scheme-handler/airmedy;" -outputfile "{{.ROOT_DIR}}/build/linux/{{.APP_NAME}}.desktop" -categories "{{.CATEGORIES}}"
-      - 'sed -i "s/Name=airmedy/Name=Airmedy/" "{{.ROOT_DIR}}/build/linux/{{.APP_NAME}}.desktop"'
+      # The .desktop basename MUST equal the runtime app_id (Wails sets it to
+      # org.wails.<name> = org.wails.airmedy) so the desktop environment links the
+      # window to this entry and shows the correct dock/taskbar icon.
+      - wails3 generate .desktop -name "Airmedy" -exec "{{.EXEC}} %u" -icon "{{.ICON}}" -mimetype "x-scheme-handler/airmedy;" -outputfile "{{.OUTPUTFILE}}" -categories "{{.CATEGORIES}}"
+      - 'sed -i "s/Name=airmedy/Name=Airmedy/" "{{.OUTPUTFILE}}"'
+      # wails3 generate .desktop has no StartupWMClass flag; inject it for the X11
+      # fallback (WM_CLASS "airmedy", set via Linux.ProgramName in main.go).
+      - 'grep -q "^StartupWMClass=" "{{.OUTPUTFILE}}" || sed -i "/^\[Desktop Entry\]/a StartupWMClass={{.APP_NAME}}" "{{.OUTPUTFILE}}"'
     vars:
       APP_NAME: '{{.APP_NAME}}'
+      DESKTOP_ID: 'org.wails.{{.APP_NAME}}'
       EXEC: '{{.APP_NAME}}'
       ICON: '{{.APP_NAME}}'
       CATEGORIES: 'AudioVideo;Player;'
-      OUTPUTFILE: '{{.ROOT_DIR}}/build/linux/{{.APP_NAME}}.desktop'
+      OUTPUTFILE: '{{.ROOT_DIR}}/build/linux/{{.DESKTOP_ID}}.desktop'
 
   run:
     cmds:

@@ -73,7 +73,8 @@
       "connected_as": "Đã kết nối với tên",
       "connect": "Kết nối",
       "connecting": "Đang kết nối...",
-      "disconnect": "Ngắt kết nối"
+      "disconnect": "Ngắt kết nối",
+      "unavailable_os": "Tính năng này tạm thời không khả dụng trên hệ điều hành này"
     },
     "integrations": {
       "title": "Tích hợp",

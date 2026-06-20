@@ -133,6 +133,13 @@ func main() {
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: false,
 		},
+		Linux: application.LinuxOptions{
+			// X11 fallback: sets g_set_prgname so the window's WM_CLASS is "airmedy",
+			// matching StartupWMClass in org.wails.airmedy.desktop. On Wayland/modern
+			// GNOME the dock icon is matched via the GApplication app_id
+			// ("org.wails.airmedy"), which is why the .desktop file is named to match.
+			ProgramName: "airmedy",
+		},
 	})
 
 	// Initialize i18n

@@ -73,7 +73,8 @@
       "connected_as": "Connesso come",
       "connect": "Connetti",
       "connecting": "Connessione...",
-      "disconnect": "Disconnetti"
+      "disconnect": "Disconnetti",
+      "unavailable_os": "Questa funzionalità è temporaneamente non disponibile su questo sistema operativo"
     },
     "integrations": {
       "title": "Integrazioni",

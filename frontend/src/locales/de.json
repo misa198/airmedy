@@ -73,7 +73,8 @@
       "connected_as": "Verbunden als",
       "connect": "Verbinden",
       "connecting": "Verbinde...",
-      "disconnect": "Trennen"
+      "disconnect": "Trennen",
+      "unavailable_os": "Diese Funktion ist auf diesem Betriebssystem vorübergehend nicht verfügbar"
     },
     "integrations": {
       "title": "Integrationen",

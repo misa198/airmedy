@@ -73,7 +73,8 @@
       "connected_as": "Conectado como",
       "connect": "Conectar",
       "connecting": "Conectando...",
-      "disconnect": "Desconectar"
+      "disconnect": "Desconectar",
+      "unavailable_os": "Este recurso está temporariamente indisponível neste sistema operacional"
     },
     "integrations": {
       "title": "Integrações",

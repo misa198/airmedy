@@ -73,7 +73,8 @@
       "connected_as": "Connected as",
       "connect": "Connect",
       "connecting": "Connecting...",
-      "disconnect": "Disconnect"
+      "disconnect": "Disconnect",
+      "unavailable_os": "This feature is temporarily unavailable on this OS"
     },
     "integrations": {
       "title": "Integrations",
