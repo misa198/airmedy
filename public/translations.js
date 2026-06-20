@@ -93,11 +93,17 @@ const translations = {
             subtitle: "Download Airmedy for your platform and start your journey.",
             windows: {
                 label: "Windows",
-                btn: "Coming soon"
+                btn: "Download for Windows"
             },
             linux: {
                 label: "Linux",
-                btn: "Coming soon"
+                btn: "Download for Linux",
+                debAmd64: "Debian / Ubuntu (x64)",
+                debArm64: "Debian / Ubuntu (ARM64)",
+                rpmAmd64: "Fedora / RHEL (x64)",
+                rpmArm64: "Fedora / RHEL (ARM64)",
+                archAmd64: "Arch (x64)",
+                archArm64: "Arch (ARM64)"
             },
             macos: {
                 label: "macOS",
@@ -207,11 +213,17 @@ const translations = {
             subtitle: "Lade Airmedy für deine Plattform herunter und beginne deine Reise.",
             windows: {
                 label: "Windows",
-                btn: "Demnächst"
+                btn: "Für Windows herunterladen"
             },
             linux: {
                 label: "Linux",
-                btn: "Demnächst"
+                btn: "Für Linux herunterladen",
+                debAmd64: "Debian / Ubuntu (x64)",
+                debArm64: "Debian / Ubuntu (ARM64)",
+                rpmAmd64: "Fedora / RHEL (x64)",
+                rpmArm64: "Fedora / RHEL (ARM64)",
+                archAmd64: "Arch (x64)",
+                archArm64: "Arch (ARM64)"
             },
             macos: {
                 label: "macOS",
@@ -321,11 +333,17 @@ const translations = {
             subtitle: "Descarga Airmedy para tu plataforma y comienza tu viaje.",
             windows: {
                 label: "Windows",
-                btn: "Próximamente"
+                btn: "Descargar para Windows"
             },
             linux: {
                 label: "Linux",
-                btn: "Próximamente"
+                btn: "Descargar para Linux",
+                debAmd64: "Debian / Ubuntu (x64)",
+                debArm64: "Debian / Ubuntu (ARM64)",
+                rpmAmd64: "Fedora / RHEL (x64)",
+                rpmArm64: "Fedora / RHEL (ARM64)",
+                archAmd64: "Arch (x64)",
+                archArm64: "Arch (ARM64)"
             },
             macos: {
                 label: "macOS",
@@ -435,11 +453,17 @@ const translations = {
             subtitle: "Téléchargez Airmedy pour votre plateforme et commencez votre voyage.",
             windows: {
                 label: "Windows",
-                btn: "Bientôt disponible"
+                btn: "Télécharger pour Windows"
             },
             linux: {
                 label: "Linux",
-                btn: "Bientôt disponible"
+                btn: "Télécharger pour Linux",
+                debAmd64: "Debian / Ubuntu (x64)",
+                debArm64: "Debian / Ubuntu (ARM64)",
+                rpmAmd64: "Fedora / RHEL (x64)",
+                rpmArm64: "Fedora / RHEL (ARM64)",
+                archAmd64: "Arch (x64)",
+                archArm64: "Arch (ARM64)"
             },
             macos: {
                 label: "macOS",
@@ -549,11 +573,17 @@ const translations = {
             subtitle: "Scarica Airmedy per la tua piattaforma e inizia il tuo viaggio.",
             windows: {
                 label: "Windows",
-                btn: "In arrivo"
+                btn: "Scarica per Windows"
             },
             linux: {
                 label: "Linux",
-                btn: "In arrivo"
+                btn: "Scarica per Linux",
+                debAmd64: "Debian / Ubuntu (x64)",
+                debArm64: "Debian / Ubuntu (ARM64)",
+                rpmAmd64: "Fedora / RHEL (x64)",
+                rpmArm64: "Fedora / RHEL (ARM64)",
+                archAmd64: "Arch (x64)",
+                archArm64: "Arch (ARM64)"
             },
             macos: {
                 label: "macOS",
@@ -663,11 +693,17 @@ const translations = {
             subtitle: "プラットフォームに合わせてAirmedyをダウンロードし、旅を始めましょう。",
             windows: {
                 label: "Windows",
-                btn: "近日公開"
+                btn: "Windows版をダウンロード"
             },
             linux: {
                 label: "Linux",
-                btn: "近日公開"
+                btn: "Linux版をダウンロード",
+                debAmd64: "Debian / Ubuntu (x64)",
+                debArm64: "Debian / Ubuntu (ARM64)",
+                rpmAmd64: "Fedora / RHEL (x64)",
+                rpmArm64: "Fedora / RHEL (ARM64)",
+                archAmd64: "Arch (x64)",
+                archArm64: "Arch (ARM64)"
             },
             macos: {
                 label: "macOS",
@@ -777,11 +813,17 @@ const translations = {
             subtitle: "사용 중인 플랫폼에 맞는 Airmedy를 다운로드하고 시작하세요.",
             windows: {
                 label: "Windows",
-                btn: "출시 예정"
+                btn: "Windows용 다운로드"
             },
             linux: {
                 label: "Linux",
-                btn: "출시 예정"
+                btn: "Linux용 다운로드",
+                debAmd64: "Debian / Ubuntu (x64)",
+                debArm64: "Debian / Ubuntu (ARM64)",
+                rpmAmd64: "Fedora / RHEL (x64)",
+                rpmArm64: "Fedora / RHEL (ARM64)",
+                archAmd64: "Arch (x64)",
+                archArm64: "Arch (ARM64)"
             },
             macos: {
                 label: "macOS",
@@ -891,11 +933,17 @@ const translations = {
             subtitle: "Baixe o Airmedy para sua plataforma e comece sua jornada.",
             windows: {
                 label: "Windows",
-                btn: "Em breve"
+                btn: "Baixar para Windows"
             },
             linux: {
                 label: "Linux",
-                btn: "Em breve"
+                btn: "Baixar para Linux",
+                debAmd64: "Debian / Ubuntu (x64)",
+                debArm64: "Debian / Ubuntu (ARM64)",
+                rpmAmd64: "Fedora / RHEL (x64)",
+                rpmArm64: "Fedora / RHEL (ARM64)",
+                archAmd64: "Arch (x64)",
+                archArm64: "Arch (ARM64)"
             },
             macos: {
                 label: "macOS",
@@ -1005,11 +1053,17 @@ const translations = {
             subtitle: "Загрузите Airmedy для своей платформы и начните свое путешествие.",
             windows: {
                 label: "Windows",
-                btn: "Скоро"
+                btn: "Скачать для Windows"
             },
             linux: {
                 label: "Linux",
-                btn: "Скоро"
+                btn: "Скачать для Linux",
+                debAmd64: "Debian / Ubuntu (x64)",
+                debArm64: "Debian / Ubuntu (ARM64)",
+                rpmAmd64: "Fedora / RHEL (x64)",
+                rpmArm64: "Fedora / RHEL (ARM64)",
+                archAmd64: "Arch (x64)",
+                archArm64: "Arch (ARM64)"
             },
             macos: {
                 label: "macOS",
@@ -1119,11 +1173,17 @@ const translations = {
             subtitle: "ดาวน์โหลด Airmedy สำหรับแพลตฟอร์มของคุณและเริ่มการเดินทางของคุณ",
             windows: {
                 label: "Windows",
-                btn: "เร็วๆ นี้"
+                btn: "ดาวน์โหลดสำหรับ Windows"
             },
             linux: {
                 label: "Linux",
-                btn: "เร็วๆ นี้"
+                btn: "ดาวน์โหลดสำหรับ Linux",
+                debAmd64: "Debian / Ubuntu (x64)",
+                debArm64: "Debian / Ubuntu (ARM64)",
+                rpmAmd64: "Fedora / RHEL (x64)",
+                rpmArm64: "Fedora / RHEL (ARM64)",
+                archAmd64: "Arch (x64)",
+                archArm64: "Arch (ARM64)"
             },
             macos: {
                 label: "macOS",
@@ -1233,11 +1293,17 @@ const translations = {
             subtitle: "Tải xuống Airmedy cho nền tảng của bạn và bắt đầu hành trình.",
             windows: {
                 label: "Windows",
-                btn: "Sắp ra mắt"
+                btn: "Tải xuống cho Windows"
             },
             linux: {
                 label: "Linux",
-                btn: "Sắp ra mắt"
+                btn: "Tải xuống cho Linux",
+                debAmd64: "Debian / Ubuntu (x64)",
+                debArm64: "Debian / Ubuntu (ARM64)",
+                rpmAmd64: "Fedora / RHEL (x64)",
+                rpmArm64: "Fedora / RHEL (ARM64)",
+                archAmd64: "Arch (x64)",
+                archArm64: "Arch (ARM64)"
             },
             macos: {
                 label: "macOS",
@@ -1347,11 +1413,17 @@ const translations = {
             subtitle: "下载适用于您平台的 Airmedy，开启您的音乐之旅。",
             windows: {
                 label: "Windows",
-                btn: "敬请期待"
+                btn: "下载 Windows 版"
             },
             linux: {
                 label: "Linux",
-                btn: "敬请期待"
+                btn: "下载 Linux 版",
+                debAmd64: "Debian / Ubuntu (x64)",
+                debArm64: "Debian / Ubuntu (ARM64)",
+                rpmAmd64: "Fedora / RHEL (x64)",
+                rpmArm64: "Fedora / RHEL (ARM64)",
+                archAmd64: "Arch (x64)",
+                archArm64: "Arch (ARM64)"
             },
             macos: {
                 label: "macOS",

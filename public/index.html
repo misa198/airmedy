@@ -423,12 +423,13 @@
               <span class="platform-label" data-i18n="download.windows.label"
                 >Windows</span
               >
-              <button
-                class="btn btn-outline disabled"
+              <a
+                href="#"
+                class="btn btn-outline"
+                data-file="windows-amd64.zip"
                 data-i18n="download.windows.btn"
+                >Download for Windows</a
               >
-                Coming soon
-              </button>
             </div>
             <div class="download-group">
               <div class="platform-icon">
@@ -447,12 +448,52 @@
               <span class="platform-label" data-i18n="download.linux.label"
                 >Linux</span
               >
-              <button
-                class="btn btn-outline disabled"
-                data-i18n="download.linux.btn"
-              >
-                Coming soon
-              </button>
+              <div class="dropdown">
+                <button class="btn btn-outline dropdown-trigger">
+                  <span data-i18n="download.linux.btn">Download for Linux</span>
+                  <span class="chevron">▾</span>
+                </button>
+                <div class="dropdown-content">
+                  <div class="dropdown-content-inner glass">
+                    <a
+                      href="#"
+                      data-file="linux-amd64.deb"
+                      data-i18n="download.linux.debAmd64"
+                      >Debian / Ubuntu (x64)</a
+                    >
+                    <a
+                      href="#"
+                      data-file="linux-arm64.deb"
+                      data-i18n="download.linux.debArm64"
+                      >Debian / Ubuntu (ARM64)</a
+                    >
+                    <a
+                      href="#"
+                      data-file="linux-amd64.rpm"
+                      data-i18n="download.linux.rpmAmd64"
+                      >Fedora / RHEL (x64)</a
+                    >
+                    <a
+                      href="#"
+                      data-file="linux-arm64.rpm"
+                      data-i18n="download.linux.rpmArm64"
+                      >Fedora / RHEL (ARM64)</a
+                    >
+                    <a
+                      href="#"
+                      data-file="linux-amd64.pkg.tar.zst"
+                      data-i18n="download.linux.archAmd64"
+                      >Arch (x64)</a
+                    >
+                    <a
+                      href="#"
+                      data-file="linux-arm64.pkg.tar.zst"
+                      data-i18n="download.linux.archArm64"
+                      >Arch (ARM64)</a
+                    >
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="download-group">
               <div class="platform-icon">
@@ -480,13 +521,13 @@
                   <div class="dropdown-content-inner glass">
                     <a
                       href="#"
-                      data-download="darwin-arm64"
+                      data-file="darwin-arm64.zip"
                       data-i18n="download.macos.silicon"
                       >Apple Silicon</a
                     >
                     <a
                       href="#"
-                      data-download="darwin-amd64"
+                      data-file="darwin-amd64.zip"
                       data-i18n="download.macos.intel"
                       >Intel Chip</a
                     >
