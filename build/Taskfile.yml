@@ -9,6 +9,11 @@ tasks:
 
   install:deps:
     summary: Install all workspace dependencies from monorepo root
+    # Multiple build tasks (build:remote, build:frontend, generate:bindings)
+    # depend on this and run in parallel. Without `run: once` Task spawns
+    # concurrent `pnpm install` processes that race on node_modules and fail
+    # on Windows with ERR_PNPM_EBUSY (file locked during rename).
+    run: once
     dir: "{{.ROOT_DIR}}"
     sources:
       - pnpm-lock.yaml
