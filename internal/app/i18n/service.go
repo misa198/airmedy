@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"path/filepath"
+	"path"
 	"strings"
 	"sync"
 )
@@ -48,7 +48,7 @@ func (s *Service) loadLocales() error {
 		}
 
 		lang := strings.TrimSuffix(entry.Name(), ".json")
-		data, err := localesFS.ReadFile(filepath.Join("locales", entry.Name()))
+		data, err := localesFS.ReadFile(path.Join("locales", entry.Name()))
 		if err != nil {
 			s.logger.Error("failed to read locale file", "file", entry.Name(), "error", err)
 			continue
