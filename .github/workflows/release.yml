@@ -285,11 +285,21 @@ jobs:
           VERSION="${{ github.event.inputs.version }}"
           case $OS_INPUT in
             "Windows-AMD64")
-              # Installer
+              # Installer (zipped)
+              INSTALLER=""
               if [ -f bin/airmedy-amd64-installer.exe ]; then
-                cp bin/airmedy-amd64-installer.exe dist/Airmedy_${VERSION}_windows-amd64_installer.exe
+                INSTALLER="bin/airmedy-amd64-installer.exe"
               else
-                cp bin/*installer.exe dist/Airmedy_${VERSION}_windows-amd64_installer.exe || echo "No windows installer found"
+                INSTALLER=$(find bin/ -name "*installer.exe" | head -1)
+              fi
+              if [ -n "$INSTALLER" ]; then
+                if command -v zip >/dev/null 2>&1; then
+                  zip -j dist/Airmedy_${VERSION}_windows-amd64_installer.zip "$INSTALLER"
+                else
+                  7z a dist/Airmedy_${VERSION}_windows-amd64_installer.zip "$INSTALLER"
+                fi
+              else
+                echo "No windows installer found"
               fi
               # Standalone binary for auto-update
               if [ -f bin/airmedy.exe ]; then
@@ -393,6 +403,9 @@ jobs:
 
           {
             echo "body<<EOF"
+            echo "> [!WARNING]"
+            echo "> **Beta Release** — This is a pre-release build and may be unstable. Use at your own risk."
+            echo ""
             echo "## What's Changed"
             echo ""
             echo "${RANGE}:"
