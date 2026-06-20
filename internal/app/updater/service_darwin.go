@@ -9,6 +9,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	update "github.com/inconshreveable/go-update"
 )
 
 // postUpdate updates Info.plist version strings after the binary is swapped in.
@@ -51,6 +53,19 @@ func (s *Service) applyUpdate(archiveData []byte, assetURL, exe string) (staging
 	}
 	s.logger.Info("staged full app bundle", "staging", stagingPath)
 	return stagingPath, nil
+}
+
+// applyBinaryUpdate extracts the binary from the archive and replaces the
+// current executable in-place using go-update (non-bundle fallback).
+func applyBinaryUpdate(archiveData []byte, assetURL, exe string) error {
+	binary, err := extractBinary(archiveData, assetURL, "airmedy")
+	if err != nil {
+		return fmt.Errorf("extract binary: %w", err)
+	}
+	if err := update.Apply(bytes.NewReader(binary), update.Options{TargetPath: exe}); err != nil {
+		return fmt.Errorf("apply binary: %w", err)
+	}
+	return nil
 }
 
 // extractAppBundle extracts the first *.app directory from a zip archive to destPath.
@@ -115,6 +130,18 @@ func extractAppBundle(data []byte, destPath string) error {
 
 	os.RemoveAll(destPath)
 	return os.Rename(appDir, destPath)
+}
+
+// relaunch replaces the bundle with the staged update and reopens the app.
+func (s *Service) relaunch(bundlePath, exe string, pid int) {
+	if bundlePath != "" {
+		restartWithCodesign(bundlePath, s.stagingPath, pid)
+		return
+	}
+	// Non-bundle fallback: launch exe directly.
+	if exe != "" {
+		_ = exec.Command(exe).Start()
+	}
 }
 
 // restartWithCodesign launches a background shell that waits for the current
