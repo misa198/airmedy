@@ -14,7 +14,6 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -22,7 +21,6 @@ import (
 	"airmedy/internal/app/config"
 
 	"github.com/blang/semver"
-	update "github.com/inconshreveable/go-update"
 )
 
 
@@ -195,33 +193,7 @@ func (s *Service) GetRestartInfo() (bundlePath string, exe string, err error) {
 // replaced with the staged update, codesigned, and reopened after exit.
 // On other platforms the staged binary is already in place; just relaunch.
 func (s *Service) PrepareRestart(bundlePath, exe string) {
-	pid := os.Getpid()
-	if bundlePath != "" {
-		restartWithCodesign(bundlePath, s.stagingPath, pid)
-		return
-	}
-	// Non-bundle fallback: launch exe directly.
-	if exe != "" {
-		cmd := exec.Command(exe)
-		_ = cmd.Start()
-	}
-}
-
-// applyBinaryUpdate extracts the platform binary from the archive and
-// replaces the current executable in-place using go-update.
-func applyBinaryUpdate(archiveData []byte, assetURL, exe string) error {
-	exeName := "airmedy"
-	if runtime.GOOS == "windows" {
-		exeName = "airmedy.exe"
-	}
-	binary, err := extractBinary(archiveData, assetURL, exeName)
-	if err != nil {
-		return fmt.Errorf("extract binary: %w", err)
-	}
-	if err := update.Apply(bytes.NewReader(binary), update.Options{TargetPath: exe}); err != nil {
-		return fmt.Errorf("apply binary: %w", err)
-	}
-	return nil
+	s.relaunch(bundlePath, exe, os.Getpid())
 }
 
 // --- GitHub API ---
@@ -308,15 +280,34 @@ func findPlatformAsset(assets []ghAsset) *ghAsset {
 		wantExt = ".zip"
 	}
 
-	for i := range assets {
-		name := strings.ToLower(assets[i].Name)
+	matches := func(name string) bool {
 		if !strings.Contains(name, goos) || !strings.HasSuffix(name, wantExt) {
-			continue
+			return false
 		}
 		for _, alias := range aliases {
 			if strings.Contains(name, alias) {
+				return true
+			}
+		}
+		return false
+	}
+
+	// On Windows the app installs under Program Files (admin), so an in-place
+	// binary swap is not permitted for a normal-user process. Prefer the NSIS
+	// installer asset, which elevates via UAC and replaces all files.
+	if goos == "windows" {
+		for i := range assets {
+			name := strings.ToLower(assets[i].Name)
+			if matches(name) && strings.Contains(name, "installer") {
 				return &assets[i]
 			}
+		}
+	}
+
+	for i := range assets {
+		name := strings.ToLower(assets[i].Name)
+		if matches(name) {
+			return &assets[i]
 		}
 	}
 	return nil
