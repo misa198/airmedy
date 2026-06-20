@@ -130,12 +130,18 @@ tasks:
     cmds:
       - cp "{{.APP_BINARY}}" "{{.APP_NAME}}"
       - cp ../../appicon.png "{{.APP_NAME}}.png"
-      - wails3 generate appimage -binary "{{.APP_NAME}}" -icon {{.ICON}} -desktopfile {{.DESKTOP_FILE}} -outputdir {{.OUTPUT_DIR}} -builddir {{.ROOT_DIR}}/build/linux/appimage/build
+      # `wails3 generate appimage` injects its own StartupWMClass into the AppDir
+      # copy. The source .desktop (shared with deb/rpm) already has one, so feed
+      # the generator a stripped copy to avoid a duplicate key that appimagetool
+      # rejects ("multiple keys named StartupWMClass").
+      - grep -v "^StartupWMClass=" {{.DESKTOP_FILE}} > {{.APPIMAGE_DESKTOP}}
+      - wails3 generate appimage -binary "{{.APP_NAME}}" -icon {{.ICON}} -desktopfile {{.APPIMAGE_DESKTOP}} -outputdir {{.OUTPUT_DIR}} -builddir {{.ROOT_DIR}}/build/linux/appimage/build
     vars:
       APP_NAME: '{{.APP_NAME}}'
       APP_BINARY: '../../../bin/{{.APP_NAME}}'
       ICON: '{{.APP_NAME}}.png'
       DESKTOP_FILE: '../org.wails.{{.APP_NAME}}.desktop'
+      APPIMAGE_DESKTOP: 'org.wails.{{.APP_NAME}}.appimage.desktop'
       OUTPUT_DIR: '../../../bin'
 
   create:deb:
