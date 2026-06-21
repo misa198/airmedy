@@ -43,6 +43,7 @@ type MiniAudioPlayer struct {
 	logger *slog.Logger
 	ptr    unsafe.Pointer // *MaPlayer
 	status domain.PlayerStatus
+	np     nowPlayingBackend // OS media integration (MPRIS on Linux, SMTC on Windows); may be nil
 }
 
 func NewPlayer(logger *slog.Logger) domain.AudioPlayer {
@@ -57,6 +58,14 @@ func NewPlayer(logger *slog.Logger) domain.AudioPlayer {
 			PlaybackState: domain.PlaybackStateStopped,
 			Volume:        1.0,
 		},
+		np: newNowPlayingBackend(logger),
+	}
+}
+
+// Close releases native and OS-integration resources.
+func (p *MiniAudioPlayer) Close() {
+	if p.np != nil {
+		p.np.close()
 	}
 }
 
@@ -65,6 +74,9 @@ func (p *MiniAudioPlayer) Play() error {
 		return fmt.Errorf("ma_player_play failed: %d", rc)
 	}
 	p.status.PlaybackState = domain.PlaybackStatePlaying
+	if p.np != nil {
+		p.np.setPlaybackState(domain.PlaybackStatePlaying)
+	}
 	return nil
 }
 
@@ -73,6 +85,9 @@ func (p *MiniAudioPlayer) Pause() error {
 		return fmt.Errorf("ma_player_pause failed: %d", rc)
 	}
 	p.status.PlaybackState = domain.PlaybackStatePaused
+	if p.np != nil {
+		p.np.setPlaybackState(domain.PlaybackStatePaused)
+	}
 	return nil
 }
 
@@ -82,6 +97,9 @@ func (p *MiniAudioPlayer) Stop() error {
 	}
 	p.status.PlaybackState = domain.PlaybackStateStopped
 	p.status.Position = 0
+	if p.np != nil {
+		p.np.setPlaybackState(domain.PlaybackStateStopped)
+	}
 	return nil
 }
 

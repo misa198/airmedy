@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"math/rand"
 	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -604,13 +606,7 @@ func (s *PlayerService) loadAndPlay(track *domain.TrackDTO) error {
 	s.emitTrackMetadata()
 	s.emitRemoteState()
 
-	if s.nowPlaying != nil {
-		artworkPath := ""
-		if track.ArtworkKey != "" {
-			artworkPath = s.artworkCache.GetPath(track.ArtworkKey)
-		}
-		s.nowPlaying.UpdateNowPlaying(track, 0, artworkPath)
-	}
+	s.pushNowPlaying(track, 0)
 
 	go s.extractAndEmitPalette(track)
 	go s.fetchAndEmitLyrics(track)
@@ -635,6 +631,29 @@ func (s *PlayerService) loadAndPlay(track *domain.TrackDTO) error {
 	return nil
 }
 
+// pushNowPlaying sends the current track to the OS Now Playing panel, falling
+// back to the file name when the track has no title tag (mirroring the UI).
+func (s *PlayerService) pushNowPlaying(track *domain.TrackDTO, position float64) {
+	if s.nowPlaying == nil {
+		return
+	}
+	artworkPath := ""
+	if track.ArtworkKey != "" {
+		artworkPath = s.artworkCache.GetPath(track.ArtworkKey)
+	}
+	npTrack := *track
+	if npTrack.Title == "" {
+		npTrack.Title = fallbackTitle(track.Path)
+	}
+	s.nowPlaying.UpdateNowPlaying(&npTrack, position, artworkPath)
+}
+
+// fallbackTitle derives a display title from a file path: base name without extension.
+func fallbackTitle(path string) string {
+	base := filepath.Base(path)
+	return strings.TrimSuffix(base, filepath.Ext(base))
+}
+
 // transitionToTrack updates app state when the audio engine has already transitioned
 // to track (gapless path). Does NOT call player.Load/Play.
 func (s *PlayerService) transitionToTrack(track *domain.TrackDTO) {
@@ -652,13 +671,7 @@ func (s *PlayerService) transitionToTrack(track *domain.TrackDTO) {
 	s.emitTrackMetadata()
 	s.emitRemoteState()
 
-	if s.nowPlaying != nil {
-		artworkPath := ""
-		if track.ArtworkKey != "" {
-			artworkPath = s.artworkCache.GetPath(track.ArtworkKey)
-		}
-		s.nowPlaying.UpdateNowPlaying(track, 0, artworkPath)
-	}
+	s.pushNowPlaying(track, 0)
 
 	go s.extractAndEmitPalette(track)
 	go s.fetchAndEmitLyrics(track)
@@ -1203,6 +1216,8 @@ func (s *PlayerService) restoreState(ctx context.Context) {
 				s.mu.Lock()
 				s.currentTrack = currentTrack
 				s.mu.Unlock()
+
+				s.pushNowPlaying(currentTrack, state.Position)
 
 				go s.extractAndEmitPalette(currentTrack)
 				go s.fetchAndEmitLyrics(currentTrack)
