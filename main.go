@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"airmedy/internal/app/config"
 	"airmedy/internal/app/i18n"
 	"airmedy/internal/app/remoteserver"
+	"airmedy/internal/app/singleinstance"
 	"airmedy/internal/domain"
 	"airmedy/internal/infra/wails"
 	"runtime/debug"
@@ -45,8 +47,26 @@ func init() {
 	application.RegisterEvent[string]("language:changed")
 }
 
+const singleInstanceID = "me.misa198.airmedy"
+
 func main() {
 	debug.SetGCPercent(50)
+
+	// Single-instance guard must run before any exclusive resource is acquired
+	// (the bleve index lock, the remote-server port). A second process forwards
+	// its args — including the deep-link URL on Windows/Linux — and exits, rather
+	// than booting a full instance that would deadlock on those resources.
+	siInstance, err := singleinstance.Acquire(singleinstance.PortForID(singleInstanceID), os.Args)
+	if err != nil {
+		if err == singleinstance.ErrAlreadyRunning {
+			slog.Info("another instance is running; forwarded args and exiting")
+			return
+		}
+		slog.Warn("single instance guard unavailable, continuing", "error", err)
+	}
+	if siInstance != nil {
+		defer func() { _ = siInstance.Close() }()
+	}
 
 	if err := registerProtocol(); err != nil {
 		slog.Warn("failed to register deep link protocol", "error", err)
@@ -104,15 +124,6 @@ func main() {
 	wailsApp = application.New(application.Options{
 		Name:        "airmedy",
 		Description: "A modern music player",
-		SingleInstance: &application.SingleInstanceOptions{
-			UniqueID: "me.misa198.airmedy",
-			OnSecondInstanceLaunch: func(data application.SecondInstanceData) {
-				if mainWindow != nil {
-					mainWindow.Show()
-					mainWindow.Focus()
-				}
-			},
-		},
 		Services: []application.Service{
 			application.NewService(greetService),
 			application.NewService(libraryService),
@@ -205,30 +216,54 @@ func main() {
 		return w
 	})
 
-	// Handle deep links (e.g. airmedy://auth?token=...)
-	wailsApp.Event.OnApplicationEvent(events.Common.ApplicationLaunchedWithUrl, func(e *application.ApplicationEvent) {
-		urlStr := e.Context().URL()
+	// Handle deep links (e.g. airmedy://auth?token=...). Shared by the macOS
+	// Apple-Event path and the Windows/Linux second-instance relay.
+	handleDeepLink := func(urlStr string) {
 		if urlStr == "" {
 			return
 		}
-		if u, err := url.Parse(urlStr); err == nil {
-			if u.Scheme == "airmedy" && u.Host == "auth" {
-				token := u.Query().Get("token")
-				if token != "" {
-					go func() {
-						if err := lastfmService.GetService().CompleteAuth(context.Background(), token); err != nil {
-							slog.Error("failed to complete Last.fm auth", "error", err)
-						} else {
-							slog.Info("Last.fm auth completed successfully")
-							if wailsApp != nil {
-								wailsApp.Event.Emit("lastfm:connected")
-							}
+		u, err := url.Parse(urlStr)
+		if err != nil {
+			return
+		}
+		if u.Scheme == "airmedy" && u.Host == "auth" {
+			token := u.Query().Get("token")
+			if token != "" {
+				go func() {
+					if err := lastfmService.GetService().CompleteAuth(context.Background(), token); err != nil {
+						slog.Error("failed to complete Last.fm auth", "error", err)
+					} else {
+						slog.Info("Last.fm auth completed successfully")
+						if wailsApp != nil {
+							wailsApp.Event.Emit("lastfm:connected")
 						}
-					}()
-				}
+					}
+				}()
 			}
 		}
+	}
+
+	// macOS: URL-scheme launches arrive as an Apple Event on the running instance.
+	wailsApp.Event.OnApplicationEvent(events.Common.ApplicationLaunchedWithUrl, func(e *application.ApplicationEvent) {
+		handleDeepLink(e.Context().URL())
 	})
+
+	// Windows/Linux: a second process relays its args (incl. the deep-link URL).
+	if siInstance != nil {
+		go func() {
+			for args := range siInstance.Messages() {
+				if mainWindow != nil {
+					mainWindow.Show()
+					mainWindow.Focus()
+				}
+				for _, a := range args {
+					if strings.HasPrefix(a, "airmedy://") {
+						handleDeepLink(a)
+					}
+				}
+			}
+		}()
+	}
 
 	// Cmd+Q fires ApplicationWillTerminate, bypassing WindowClosing on macOS.
 	wailsApp.Event.OnApplicationEvent(events.Mac.ApplicationWillTerminate, func(_ *application.ApplicationEvent) {
@@ -236,7 +271,7 @@ func main() {
 	})
 
 	var trayManager *wails.TrayManager
-	settings, err := settingsService.GetSettings(context.Background())
+	settings, err = settingsService.GetSettings(context.Background())
 	if err == nil && settings.ShowTrayIcon {
 		systemTray := wailsApp.SystemTray.New()
 		switch runtime.GOOS {

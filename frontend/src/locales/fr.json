@@ -73,8 +73,7 @@
       "connected_as": "Connecté en tant que",
       "connect": "Connexion",
       "connecting": "Connexion en cours...",
-      "disconnect": "Déconnexion",
-      "unavailable_os": "Cette fonctionnalité est temporairement indisponible sur ce système d'exploitation"
+      "disconnect": "Déconnexion"
     },
     "integrations": {
       "title": "Intégrations",
