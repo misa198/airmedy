@@ -54,10 +54,10 @@ type PlayerService struct {
 	statusListeners        []func(domain.PlayerStatus)
 	trackMetadataListeners []func(domain.PlayerTrackMetadata)
 	remoteStateListeners   []func(domain.RemotePlayerState)
-	queueListeners        []func([]*domain.TrackDTO)
-	scrobbleListeners     []func(*domain.TrackDTO, time.Time)
-	npListeners           []func(*domain.TrackDTO)
-	lyricsListeners       []func(*domain.Lyric)
+	queueListeners         []func([]*domain.TrackDTO)
+	scrobbleListeners      []func(*domain.TrackDTO, time.Time)
+	npListeners            []func(*domain.TrackDTO)
+	lyricsListeners        []func(*domain.Lyric)
 }
 
 func NewPlayerService(
@@ -223,6 +223,12 @@ func (s *PlayerService) Play() error {
 	err := s.player.Play()
 	if err == nil {
 		s.startPositionTicker()
+		// Ensure the OS Now Playing card is populated before flipping the glyph.
+		// After an app restart the track is restored (loaded) but never pushed to
+		// the OS controls, so a plain resume would otherwise toggle play state on a
+		// card that was never created and nothing would show.
+		s.pushNowPlaying(ct, s.player.GetStatus().Position)
+		s.setNowPlayingPlaybackState(true)
 		s.emitStatus()
 		s.emitRemoteState()
 	}
@@ -234,11 +240,21 @@ func (s *PlayerService) Pause() error {
 	err := s.player.Pause()
 	if err == nil {
 		s.stopPositionTicker()
+		s.setNowPlayingPlaybackState(false)
 		s.emitStatus()
 		s.emitRemoteState()
 		s.saveState(context.Background())
 	}
 	return err
+}
+
+// setNowPlayingPlaybackState pushes the play/pause glyph to the OS Now Playing
+// controls on platforms that require it explicitly (Windows SMTC). No-op on
+// platforms whose player does not implement domain.NowPlayingPlaybackState (macOS).
+func (s *PlayerService) setNowPlayingPlaybackState(playing bool) {
+	if sps, ok := s.nowPlaying.(domain.NowPlayingPlaybackState); ok {
+		sps.SetNowPlayingPlaybackState(playing)
+	}
 }
 
 // Stop stops playback.

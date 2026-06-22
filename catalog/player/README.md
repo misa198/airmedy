@@ -2,7 +2,7 @@
 
 ## Summary
 
-The player feature handles audio playback, queue management, shuffle/repeat modes, state persistence across app restarts, and OS-level media integration (macOS Now Playing). It is split between an application-layer service and platform-specific audio adapters.
+The player feature handles audio playback, queue management, shuffle/repeat modes, state persistence across app restarts, and OS-level media integration (macOS Now Playing, Windows System Media Transport Controls). It is split between an application-layer service and platform-specific audio adapters.
 
 ## Files
 
@@ -13,6 +13,9 @@ The player feature handles audio playback, queue management, shuffle/repeat mode
 | `internal/infra/audio/player_darwin.go`    | macOS SFBAudioEngine player (cgo)        |
 | `internal/infra/audio/native_player_darwin.m` | Obj-C SFBAudioEngine implementation   |
 | `internal/infra/audio/player_miniaudio.go` | Windows/Linux miniaudio player           |
+| `internal/infra/audio/player_nowplaying_windows.go` | Windows SMTC Now Playing controller (cgo) |
+| `internal/infra/audio/smtc_windows.cpp`    | WinRT SMTC implementation (C-ABI, mingw)  |
+| `internal/infra/audio/smtc_windows.h`      | C-ABI bridge for the SMTC backend         |
 | `internal/infra/wails/player_service.go`   | Wails binding wrapper                    |
 | `internal/infra/power/inhibitor_darwin.go` | macOS IOPMAssertion sleep inhibitor (cgo) |
 | `internal/infra/power/inhibitor_windows.go` | Windows SetThreadExecutionState sleep inhibitor |
@@ -59,6 +62,41 @@ type GaplessPlayer interface {
 
 Both `DarwinPlayer` (macOS) and `MiniAudioPlayer` (Win/Linux) implement `GaplessPlayer`.
 
+## NowPlayingController Interface (Optional)
+
+Implemented by audio adapters that provide OS-level Now Playing info and media-key
+remote commands. Detected via type assertion in `PlayerService` (constructor); when present,
+the service wires remote callbacks and calls the update methods on track load, the 500ms
+ticker, and stop.
+
+```go
+type NowPlayingController interface {
+    SetupRemoteCommands()
+    SetRemoteCallbacks(play, pause, next, previous func(), seek func(float64))
+    UpdateNowPlaying(track *TrackDTO, position float64, artworkPath string)
+    UpdateNowPlayingPosition(position float64)
+    ClearNowPlaying()
+}
+```
+
+Implemented by `DarwinPlayer` (macOS, `MPNowPlayingInfoCenter`) and, on Windows, by
+`MiniAudioPlayer` via SMTC. Not implemented on Linux (so `nowPlaying` stays nil there).
+
+### NowPlayingPlaybackState Interface (Optional companion)
+
+Some platforms must be told the play/pause state explicitly because it is not implied by the
+other calls. `PlayerService.Play()`/`Pause()` invoke this (guarded by a type assertion) so the
+OS shows the correct play/pause glyph.
+
+```go
+type NowPlayingPlaybackState interface {
+    SetNowPlayingPlaybackState(playing bool)
+}
+```
+
+Implemented on Windows only. macOS derives the glyph from its own engine's `isPlaying` and does
+not implement it.
+
 ## SleepInhibitor Interface
 
 Prevents the OS from sleeping while music plays. Defined in `internal/domain/audio.go`, implemented in `internal/infra/power/`.
@@ -100,6 +138,30 @@ type SleepInhibitor interface {
 - Track end detected via `goMiniAudioTrackEnd()` Go callback.
 - **EQ:** Implemented via a chain of 10 `ma_peak_node` filters. Enabled state routes audio through the chain before output. Support for live band updates.
 - **Gapless (near-gapless):** Uses a ping-pong slot design (`slot_a`/`slot_b`). `ma_player_preload_next` initializes the next track into the idle slot. On `HandleTrackEnd`, Go calls `ma_player_start_preloaded` which uninits the current slot and starts the pre-loaded slot — gap is only goroutine scheduling latency (~1–5 ms). `AutoTransitions()` returns `false`.
+
+### Windows — System Media Transport Controls (Now Playing)
+
+`*MiniAudioPlayer` implements `NowPlayingController` + `NowPlayingPlaybackState` on Windows
+(`player_nowplaying_windows.go`, `//go:build windows`) by bridging via cgo to `smtc_windows.cpp`.
+
+- **Toolchain:** built with mingw-w64 GCC (not MSVC), so SMTC is reached through the WinRT
+  **C-ABI** projection headers (`ABI::Windows::Media::*` vtable COM), compiled as C++. Extra
+  link libs (`-lruntimeobject -lshlwapi -lshell32`) live in `cgoflags_smtc_windows.go`.
+- **Threading:** a dedicated **STA thread** owns a hidden **top-level** window (0×0, never shown;
+  _not_ a message-only `HWND_MESSAGE` window, which `GetForWindow` accepts but the shell never
+  registers a media session for), obtains SMTC via
+  `ISystemMediaTransportControlsInterop::GetForWindow`, registers the `ButtonPressed`
+  and `PlaybackPositionChangeRequested` handlers, and runs a message pump. Public `Smtc*`
+  functions marshal work onto that thread via `PostMessage` (heap payloads), so all COM calls
+  stay on the owning apartment. Self-contained — does not use the Wails window HWND.
+- **Identity:** calls `SetCurrentProcessExplicitAppUserModelID("me.misa198.airmedy")` so the OS
+  attributes the media session to Airmedy.
+- **Mapping:** metadata + album-art thumbnail (file:// URI) via `DisplayUpdater`; play/pause
+  glyph via `PlaybackStatus` (driven by `SetNowPlayingPlaybackState`); seek scrubber via
+  `ISystemMediaTransportControls2::UpdateTimelineProperties`; media-button/seek events forwarded
+  to `PlayerService` through the `goWinNowPlaying*` cgo exports.
+- **Teardown:** `MiniAudioPlayer.Close()` (called by `PlayerService` OnStop) posts quit, drains
+  queued payloads, releases interfaces, and joins the thread. Idempotent.
 
 ## PlayerService (Application Layer)
 

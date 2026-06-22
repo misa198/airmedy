@@ -65,11 +65,7 @@ func main() {
 		slog.Warn("single instance guard unavailable, continuing", "error", err)
 	}
 	if siInstance != nil {
-<<<<<<< HEAD
 		defer func() { _ = siInstance.Close() }()
-=======
-		defer siInstance.Close()
->>>>>>> 1c51aa1 (fix: single instance linux windows)
 	}
 
 	if err := registerProtocol(); err != nil {

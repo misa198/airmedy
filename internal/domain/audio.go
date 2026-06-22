@@ -67,6 +67,14 @@ type NowPlayingController interface {
 	ClearNowPlaying()
 }
 
+// NowPlayingPlaybackState is an optional companion to NowPlayingController for
+// platforms where the play/pause state must be pushed explicitly (e.g. Windows
+// SMTC). macOS derives this from its own audio engine and does not implement it.
+type NowPlayingPlaybackState interface {
+	// SetNowPlayingPlaybackState updates the OS Now Playing playing/paused glyph.
+	SetNowPlayingPlaybackState(playing bool)
+}
+
 // EQBand represents a single frequency band in the equalizer
 type EQBand struct {
 	Index     int     `json:"index" db:"band_index"`
