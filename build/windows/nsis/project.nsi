@@ -88,9 +88,9 @@ Section
 
     !insertmacro wails.files
 
-    ; Bundle MinGW runtime DLLs required by the app
-    File /nonfatal "..\..\..\bin\libwinpthread-1.dll"
-    File /nonfatal "..\..\..\bin\libgcc_s_seh-1.dll"
+    ; NOTE: The MinGW C++/pthread runtime (libstdc++-6.dll, libgcc_s_seh-1.dll,
+    ; libwinpthread-1.dll) is statically linked into airmedy.exe (see
+    ; internal/infra/audio/cgoflags_windows_amd64.go), so no runtime DLLs are bundled here.
 
     ; The app sets an explicit AppUserModelID ("me.misa198.airmedy") at runtime via
     ; SetCurrentProcessExplicitAppUserModelID so the Windows System Media Transport
