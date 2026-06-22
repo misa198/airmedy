@@ -284,7 +284,7 @@ func (s *PlaylistService) ExportM3U8(ctx context.Context, playlistID string, des
 	var buf bytes.Buffer
 	buf.WriteString("#EXTM3U\n")
 	buf.WriteString("#EXTENC:UTF-8\n")
-	buf.WriteString(fmt.Sprintf("#PLAYLIST:%s\n", p.Name))
+	fmt.Fprintf(&buf, "#PLAYLIST:%s\n", p.Name)
 
 	for _, t := range tracks {
 		if t == nil {
@@ -303,15 +303,15 @@ func (s *PlaylistService) ExportM3U8(ctx context.Context, playlistID string, des
 			displayName = artist + " - " + title
 		}
 
-		buf.WriteString(fmt.Sprintf("#EXTINF:%d,%s\n", t.Duration, displayName))
+		fmt.Fprintf(&buf, "#EXTINF:%d,%s\n", t.Duration, displayName)
 		if album != "" {
-			buf.WriteString(fmt.Sprintf("#EXTALB:%s\n", album))
+			fmt.Fprintf(&buf, "#EXTALB:%s\n", album)
 		}
 		if artist != "" {
-			buf.WriteString(fmt.Sprintf("#EXTART:%s\n", artist))
+			fmt.Fprintf(&buf, "#EXTART:%s\n", artist)
 		}
 		if genre != "" {
-			buf.WriteString(fmt.Sprintf("#EXTGENRE:%s\n", strings.SplitN(genre, ";", 2)[0]))
+			fmt.Fprintf(&buf, "#EXTGENRE:%s\n", strings.SplitN(genre, ";", 2)[0])
 		}
 		buf.WriteString(t.Path + "\n")
 	}

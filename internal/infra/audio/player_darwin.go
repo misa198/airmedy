@@ -172,7 +172,7 @@ func (p *DarwinPlayer) Load(track *domain.TrackDTO) error {
 }
 
 func (p *DarwinPlayer) Unload() error {
-	p.Stop()
+	_ = p.Stop()
 	p.status.TrackID = ""
 	return nil
 }

@@ -79,7 +79,7 @@ func extractAppBundle(data []byte, destPath string) error {
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(tmp)
+	defer func() { _ = os.RemoveAll(tmp) }()
 
 	for _, f := range r.File {
 		target := filepath.Join(tmp, f.Name)
@@ -101,12 +101,12 @@ func extractAppBundle(data []byte, destPath string) error {
 		}
 		out, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, f.Mode())
 		if err != nil {
-			rc.Close()
+			_ = rc.Close()
 			return err
 		}
 		_, err = io.Copy(out, rc)
-		rc.Close()
-		out.Close()
+		_ = rc.Close()
+		_ = out.Close()
 		if err != nil {
 			return err
 		}
@@ -128,7 +128,7 @@ func extractAppBundle(data []byte, destPath string) error {
 		return fmt.Errorf("no .app bundle found in archive")
 	}
 
-	os.RemoveAll(destPath)
+	_ = os.RemoveAll(destPath)
 	return os.Rename(appDir, destPath)
 }
 

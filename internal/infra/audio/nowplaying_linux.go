@@ -296,6 +296,10 @@ func (m *mprisPlayer) Previous() *dbus.Error {
 }
 
 // Seek moves by a relative offset in microseconds (may be negative).
+// MPRIS exports this method by name over D-Bus, so the signature is fixed and
+// cannot match io.Seeker; silence govet's stdmethods check.
+//
+//nolint:govet // MPRIS D-Bus method, signature dictated by the spec
 func (m *mprisPlayer) Seek(offsetUs int64) *dbus.Error {
 	m.b.mu.Lock()
 	target := float64(m.b.positionUs+offsetUs) / 1e6
