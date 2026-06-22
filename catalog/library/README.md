@@ -89,6 +89,7 @@ GetTracksByGenreID(genreID: string): TrackDTO[]
 GetTracksByComposerID(composerID: string): TrackDTO[]
 GetFavoriteTracks(): TrackDTO[]
 GetRecentlyPlayedTracks(limit: number): TrackDTO[]
+GetRecentlyAddedTracks(limit: number): TrackDTO[]
 GetMostListenedTracks(limit: number): TrackDTO[]
 GetLeastListenedTracks(limit: number): TrackDTO[]
 // Album queries

@@ -233,6 +233,8 @@ idx_composers_normalization_key ON composers(normalization_key)
 
 **`GetRecentlyPlayed`**: `ORDER BY updated_at DESC LIMIT ?` (updated when play count increments)
 
+**`GetRecentlyAdded`**: `ORDER BY created_at DESC LIMIT ?` (track import time)
+
 **`Upsert`**: `INSERT OR REPLACE INTO tracks ...` using sqlx named parameters.
 
 **Junction `Set*` methods**: Wrapped in a transaction — DELETE existing junction rows, then INSERT new ones with positional ordering.

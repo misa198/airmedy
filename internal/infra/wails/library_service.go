@@ -119,6 +119,10 @@ func (s *LibraryService) GetRecentlyPlayedTracks(limit int) ([]*domain.TrackDTO,
 	return s.trackRepo.GetRecentlyPlayed(context.Background(), limit)
 }
 
+func (s *LibraryService) GetRecentlyAddedTracks(limit int) ([]*domain.TrackDTO, error) {
+	return s.trackRepo.GetRecentlyAdded(context.Background(), limit)
+}
+
 func (s *LibraryService) GetTracksByAlbumID(albumID string) ([]*domain.TrackDTO, error) {
 	return s.trackRepo.GetByAlbumID(context.Background(), albumID)
 }
