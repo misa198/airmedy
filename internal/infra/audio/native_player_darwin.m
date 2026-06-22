@@ -272,15 +272,21 @@ extern void goHandleRemoteSeek(double position);
     info[MPNowPlayingInfoPropertyDefaultPlaybackRate]    = @(1.0);
     info[MPNowPlayingInfoPropertyPlaybackRate]           = @(self.isPlaying ? 1.0 : 0.0);
 
+    NSImage *image = nil;
     if (artworkPath.length > 0) {
-        NSImage *image = [[NSImage alloc] initWithContentsOfFile:artworkPath];
-        if (image) {
-            MPMediaItemArtwork *artwork = [[MPMediaItemArtwork alloc]
-                initWithBoundsSize:image.size
-                    requestHandler:^NSImage *(CGSize size) { return image; }];
-            info[MPMediaItemPropertyArtwork] = artwork;
-        }
+        image = [[NSImage alloc] initWithContentsOfFile:artworkPath];
     }
+    if (!image) {
+        // No artwork for this track. Control Center keeps the previous track's
+        // artwork when the key is simply omitted, so overwrite it with a blank
+        // 1x1 transparent image to force a clear.
+        image = [[NSImage alloc] initWithSize:NSMakeSize(1, 1)];
+    }
+    MPMediaItemArtwork *artwork = [[MPMediaItemArtwork alloc]
+        initWithBoundsSize:image.size
+            requestHandler:^NSImage *(CGSize size) { return image; }];
+    info[MPMediaItemPropertyArtwork] = artwork;
+
     [MPNowPlayingInfoCenter defaultCenter].nowPlayingInfo = info;
 }
 

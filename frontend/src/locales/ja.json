@@ -73,8 +73,7 @@
       "connected_as": "接続済み：",
       "connect": "接続",
       "connecting": "接続中...",
-      "disconnect": "接続解除",
-      "unavailable_os": "この機能は現在このOSでは利用できません"
+      "disconnect": "接続解除"
     },
     "integrations": {
       "title": "連携",

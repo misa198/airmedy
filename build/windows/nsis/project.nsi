@@ -92,6 +92,11 @@ Section
     File /nonfatal "..\..\..\bin\libwinpthread-1.dll"
     File /nonfatal "..\..\..\bin\libgcc_s_seh-1.dll"
 
+    ; The app sets an explicit AppUserModelID ("me.misa198.airmedy") at runtime via
+    ; SetCurrentProcessExplicitAppUserModelID so the Windows System Media Transport
+    ; Controls (Now Playing) session is attributed to Airmedy. For taskbar pinning to
+    ; map to the same identity, these shortcuts can carry a matching
+    ; System.AppUserModel.ID via the WinShell/ShortcutProperties NSIS plugin.
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
 
