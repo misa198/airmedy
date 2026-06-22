@@ -20,6 +20,7 @@ type TrackRepository interface {
 	GetMostListened(ctx context.Context, limit int) ([]*TrackDTO, error)
 	GetLeastListened(ctx context.Context, limit int) ([]*TrackDTO, error)
 	GetRecentlyPlayed(ctx context.Context, limit int) ([]*TrackDTO, error)
+	GetRecentlyAdded(ctx context.Context, limit int) ([]*TrackDTO, error)
 	Save(ctx context.Context, track *Track) error
 	Delete(ctx context.Context, id string) error
 	DeleteByPathPrefix(ctx context.Context, prefix string) error

@@ -25,7 +25,7 @@ Hash history mode (`createWebHashHistory`). All views lazy-loaded except HomeVie
 | Route             | View                 | Notes                                          |
 | ----------------- | -------------------- | ---------------------------------------------- |
 | `/`               | HomeView             | Recently played, most/least listened carousels |
-| `/recently-added` | RecentlyAddedView    | Sorted by import date                          |
+| `/recently-added` | RecentlyAddedView    | TrackCard grid, tracks sorted by import date   |
 | `/albums`         | AlbumsView           | Album grid                                     |
 | `/albums/:id`     | AlbumDetailView      | Hero + track table                             |
 | `/artists`        | ArtistsView          | Artist grid                                    |
