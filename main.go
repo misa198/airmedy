@@ -197,6 +197,7 @@ func main() {
 			Hidden:              true,
 			AlwaysOnTop:         false,
 			DisableResize:       false,
+			Frameless:           runtime.GOOS == "windows",
 			MinimiseButtonState: application.ButtonHidden,
 			MaximiseButtonState: application.ButtonHidden,
 			CloseButtonState:    application.ButtonHidden,
