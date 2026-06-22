@@ -239,7 +239,9 @@ jobs:
           export GOARCH=amd64
           export CGO_ENABLED=1
           export CGO_CFLAGS="-I${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/include"
-          export CGO_LDFLAGS="-static -static-libgcc -static-libstdc++ -L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/windows/amd64"
+          # MinGW C++/pthread runtime is statically linked via cgoflags_windows_amd64.go
+          # (-Wl,-Bstatic -lstdc++ -lpthread), so no -static-libstdc++ env flag is needed here.
+          export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/windows/amd64"
           task windows:package ARCH=amd64
 
       - name: Build and Package (non-Windows)

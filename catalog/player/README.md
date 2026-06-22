@@ -147,6 +147,13 @@ type SleepInhibitor interface {
 - **Toolchain:** built with mingw-w64 GCC (not MSVC), so SMTC is reached through the WinRT
   **C-ABI** projection headers (`ABI::Windows::Media::*` vtable COM), compiled as C++. Extra
   link libs (`-lruntimeobject -lshlwapi -lshell32`) live in `cgoflags_smtc_windows.go`.
+- **Static C++ runtime:** because this WinRT code is C++, the binary would otherwise depend on
+  `libstdc++-6.dll` / `libgcc_s_seh-1.dll` / `libwinpthread-1.dll` (absent on a clean Windows
+  machine → "libstdc++-6.dll was not found" at launch). `cgoflags_windows_amd64.go` appends
+  `-Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic -static-libgcc` to link these statically while
+  keeping system libs dynamic. `-static-libstdc++` alone does **not** work: Go links via g++ and
+  the earlier `-Wl,-Bdynamic` (for `-lmfplat` etc.) leaves the linker in dynamic mode for the
+  implicit `-lstdc++`. The NSIS installer therefore bundles no runtime DLLs.
 - **Threading:** a dedicated **STA thread** owns a hidden **top-level** window (0×0, never shown;
   _not_ a message-only `HWND_MESSAGE` window, which `GetForWindow` accepts but the shell never
   registers a media session for), obtains SMTC via
