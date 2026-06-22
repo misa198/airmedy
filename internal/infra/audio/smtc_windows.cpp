@@ -20,6 +20,16 @@
 #undef NTDDI_VERSION
 #define NTDDI_VERSION 0x0A000000
 
+// mingw-w64 header bug: <windows.foundation.h> defines IReference<boolean> and
+// IReference<BYTE> as separate specializations, but WinRT `boolean` and Win32
+// `BYTE` are both `unsigned char`, so the two collide ("redefinition of struct
+// ABI::Windows::Foundation::IReference<unsigned char>"). We use neither, so
+// pre-define the boolean interface guard to suppress that duplicate definition.
+// Must precede <windows.h>, which transitively pulls in <windows.foundation.h>.
+#ifndef ____FIReference_1_boolean_INTERFACE_DEFINED__
+#define ____FIReference_1_boolean_INTERFACE_DEFINED__
+#endif
+
 #include <windows.h>
 #include <roapi.h>
 #include <winstring.h>
