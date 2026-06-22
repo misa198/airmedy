@@ -276,6 +276,12 @@ func (s *PlayerService) Stop() error {
 func (s *PlayerService) Next() error {
 	track := s.queue.Next()
 	if track == nil {
+		// Queue exhausted (repeat off). Mark ended so a subsequent Play() reloads
+		// the current track instead of issuing a plain Play() on a stopped engine,
+		// which SFBAudioEngine won't restart. Mirrors HandleTrackEnd.
+		s.mu.Lock()
+		s.endedNaturally = true
+		s.mu.Unlock()
 		return s.Stop()
 	}
 	return s.loadAndPlay(track)
