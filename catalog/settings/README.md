@@ -153,6 +153,8 @@ At app startup (`App.vue` onMounted):
 
 Dynamic artwork colors (`--dynamic-primary`, etc.) are layered on top of the theme and also re-applied when the theme changes (to recompute RGBA opacity variants).
 
+`applyTheme()` also calls `WindowService.SetTitleBarTheme(resolvedTheme)` after updating CSS classes. This updates the native Windows title bar colour (via `DwmSetWindowAttribute` — caption colour attribute 35, text colour 36) to match `--bg-main` for the current theme. On macOS the title bar is already hidden; on Linux this is a no-op (no Wails API available). The initial title bar colour is also set at window creation in `main.go` via `Windows.CustomTheme` / `Windows.Theme` (read from persisted settings).
+
 ## Language Support
 
 12 locales available: `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `pt`, `ru`, `th`, `vi`, `zh`.

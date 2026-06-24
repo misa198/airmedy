@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { Events } from '@wailsio/runtime'
 import * as SettingsService from '../../bindings/airmedy/internal/infra/wails/settingsservice'
 import * as UpdaterService from '../../bindings/airmedy/internal/infra/wails/updaterservice'
+import * as WindowService from '../../bindings/airmedy/internal/infra/wails/windowservice'
 import { UpdateInfo } from '../../bindings/airmedy/internal/app/updater/models'
 
 export const useAppStore = defineStore('app', () => {
@@ -44,6 +45,10 @@ export const useAppStore = defineStore('app', () => {
     } else {
       root.classList.remove('black')
     }
+    // Resolve 'system' to the actual dark/light value before sending to Go so
+    // the backend doesn't need to re-detect the OS preference.
+    const resolved = newTheme === 'system' ? (systemDark ? 'dark' : 'light') : newTheme
+    WindowService.SetTitleBarTheme(resolved).catch(() => {})
   }
 
   const loadSettings = async (skipUpdateCheck = false) => {

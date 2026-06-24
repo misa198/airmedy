@@ -74,6 +74,27 @@ func (s *WindowService) OnMiniPlayerClosed() {
 	}
 }
 
+// SetTitleBarTheme updates the native title bar colour to match the given app
+// theme. Effective on Windows only; no-op on other platforms.
+func (s *WindowService) SetTitleBarTheme(theme string) {
+	if s.mainWindow == nil {
+		return
+	}
+	setTitleBarThemeImpl(s.mainWindow, theme)
+	s.mainWindow.SetBackgroundColour(bgColorForTheme(theme))
+}
+
+func bgColorForTheme(theme string) application.RGBA {
+	switch theme {
+	case "light":
+		return application.NewRGB(244, 244, 245)
+	case "black":
+		return application.NewRGB(10, 10, 10)
+	default: // "dark", "system"
+		return application.NewRGB(24, 24, 27)
+	}
+}
+
 func (s *WindowService) ToggleMiniPlayer() {
 	if s.miniWindow != nil && s.miniWindow.IsVisible() {
 		s.CloseMiniPlayer()

@@ -173,7 +173,11 @@ func main() {
 			Backdrop:                application.MacBackdropTranslucent,
 			TitleBar:                application.MacTitleBarHiddenInset,
 		},
-		BackgroundColour: application.NewRGB(27, 38, 54),
+		Windows: application.WindowsWindow{
+			Theme:       winTheme(settings.Theme),
+			CustomTheme: winCustomTheme(settings.Theme),
+		},
+		BackgroundColour: bgRGBA(settings.Theme),
 		URL:              "/",
 	})
 
@@ -182,6 +186,7 @@ func main() {
 		e.Cancel()
 	})
 	windowService.SetMainWindow(mainWindow)
+	windowService.SetTitleBarTheme(settings.Theme)
 	mainWindow.Show()
 	mainWindow.Focus()
 
@@ -207,7 +212,11 @@ func main() {
 				TitleBar:                application.MacTitleBarHiddenInset,
 				CollectionBehavior:      application.MacWindowCollectionBehaviorTransient,
 			},
-			BackgroundColour: application.NewRGB(27, 38, 54),
+			Windows: application.WindowsWindow{
+				Theme:       winTheme(settings.Theme),
+				CustomTheme: winCustomTheme(settings.Theme),
+			},
+			BackgroundColour: bgRGBA(settings.Theme),
 			URL:              "/?mode=mini#/mini-player",
 		})
 		w.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
@@ -318,6 +327,65 @@ func main() {
 	}
 
 	stopFX()
+}
+
+// bgRGBA returns the BackgroundColour matching the app theme's --bg-main value.
+func bgRGBA(appTheme string) application.RGBA {
+	switch appTheme {
+	case "light":
+		return application.NewRGB(244, 244, 245) // #f4f4f5
+	case "black":
+		return application.NewRGB(10, 10, 10) // #0a0a0a
+	default: // "dark", "system"
+		return application.NewRGB(24, 24, 27) // #18181b
+	}
+}
+
+// winTheme returns the Wails Windows Theme constant for the given app theme.
+func winTheme(appTheme string) application.Theme {
+	switch appTheme {
+	case "dark", "black":
+		return application.Dark
+	case "light":
+		return application.Light
+	default: // "system"
+		return application.SystemDefault
+	}
+}
+
+// winCustomTheme builds a ThemeSettings whose title bar colours match --bg-main.
+// Colors are uint32 in 0x00BBGGRR format (DWM / Wails convention).
+func winCustomTheme(appTheme string) application.ThemeSettings {
+	ptr := func(v uint32) *uint32 { return &v }
+
+	// dark / black palette
+	darkBar := ptr(0x001B1818)  // #18181b
+	darkText := ptr(0x00FFFFFF) // white
+	if appTheme == "black" {
+		darkBar = ptr(0x000A0A0A) // #0a0a0a
+	}
+	darkTheme := &application.WindowTheme{
+		TitleBarColour:  darkBar,
+		TitleTextColour: darkText,
+		BorderColour:    darkBar,
+	}
+
+	// light palette
+	lightBar := ptr(0x00F5F4F4)    // #f4f4f5
+	lightText := ptr(0x000A0A0A)   // near-black
+	lightBorder := ptr(0x00E5E4E4) // subtle border, slightly darker than bg
+	lightTheme := &application.WindowTheme{
+		TitleBarColour:  lightBar,
+		TitleTextColour: lightText,
+		BorderColour:    lightBorder,
+	}
+
+	return application.ThemeSettings{
+		DarkModeActive:   darkTheme,
+		DarkModeInactive: darkTheme,
+		LightModeActive:  lightTheme,
+		LightModeInactive: lightTheme,
+	}
 }
 
 func buildAppMenu(wailsApp *application.App, i18nService *i18n.Service, playerService *wails.PlayerService) *application.Menu {
