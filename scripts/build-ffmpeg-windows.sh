@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build minimal FFmpeg static libraries for Windows (amd64 + arm64) using gcc-mingw-w64.
-# Runs on Linux. Requires: gcc-mingw-w64-x86-64 [and gcc-mingw-w64-aarch64 for arm64]
+# Runs on Linux. Requires: gcc-mingw-w64-x86-64 [and llvm-mingw for arm64]
 # Output: internal/infra/audio/ffmpeg_libs/windows/{amd64,arm64}/*.a
 #         internal/infra/audio/ffmpeg_libs/include/  (shared headers)
 #
@@ -151,7 +151,7 @@ case "$TARGET" in
         if command -v aarch64-w64-mingw32-gcc &>/dev/null; then
             build_arch "arm64" "aarch64-w64-mingw32-" "aarch64"
         else
-            echo "==> Skipping arm64: aarch64-w64-mingw32-gcc not found (apt install gcc-mingw-w64-aarch64)"
+            echo "==> Skipping arm64: aarch64-w64-mingw32-gcc not found (install llvm-mingw toolchain)"
         fi
         ;;
     *)

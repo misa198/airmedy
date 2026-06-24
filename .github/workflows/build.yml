@@ -33,7 +33,13 @@ jobs:
         if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-mingw-w64-x86-64 gcc-mingw-w64-aarch64 nasm
+          sudo apt-get install -y gcc-mingw-w64-x86-64 nasm
+          # Windows ARM64 has no apt mingw package; llvm-mingw provides
+          # aarch64-w64-mingw32-* (clang-based) cross-compilers.
+          LLVM_MINGW=llvm-mingw-20260616-ucrt-ubuntu-22.04-x86_64
+          curl -L "https://github.com/mstorsjo/llvm-mingw/releases/download/20260616/${LLVM_MINGW}.tar.xz" -o /tmp/llvm-mingw.tar.xz
+          sudo tar -xf /tmp/llvm-mingw.tar.xz -C /opt
+          echo "/opt/${LLVM_MINGW}/bin" >> "$GITHUB_PATH"
 
       - name: Build FFmpeg (Windows AMD64 + ARM64)
         if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
