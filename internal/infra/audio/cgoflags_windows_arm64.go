@@ -4,6 +4,9 @@ package audio
 
 /*
 #cgo CFLAGS: -I${SRCDIR}/ffmpeg_libs/include
+// cgo re-declares the exported Go callbacks with __declspec(dllexport); clang
+// (llvm-mingw) warns on the added attribute. Harmless — silence the noise.
+#cgo CFLAGS: -Wno-dll-attribute-on-redeclaration
 #cgo LDFLAGS: -L${SRCDIR}/ffmpeg_libs/windows/arm64
 // ld.lld (the llvm-mingw linker) scans archives in a single left-to-right pass,
 // so the circular references between libav* are wrapped in --start-group/--end-group
