@@ -5,7 +5,10 @@ package audio
 /*
 #cgo CFLAGS: -I${SRCDIR}/ffmpeg_libs/include
 #cgo LDFLAGS: -L${SRCDIR}/ffmpeg_libs/windows/arm64
-#cgo LDFLAGS: -Wl,-Bstatic -lavformat -lavcodec -lswresample -lavutil -Wl,-Bdynamic -lmfplat -lmf -lmfuuid -lstrmiids -lws2_32 -lsecur32 -lbcrypt -lole32 -loleaut32 -luuid -lwinmm -lversion
+// ld.lld (the llvm-mingw linker) scans archives in a single left-to-right pass,
+// so the circular references between libav* are wrapped in --start-group/--end-group
+// to let the linker re-scan until all members are pulled (GNU ld is more lenient).
+#cgo LDFLAGS: -Wl,-Bstatic -Wl,--start-group -lavformat -lavcodec -lswresample -lavutil -Wl,--end-group -Wl,-Bdynamic -lmfplat -lmf -lmfuuid -lstrmiids -lws2_32 -lsecur32 -lbcrypt -lole32 -loleaut32 -luuid -lwinmm -lversion
 // Windows/arm64 is built with the llvm-mingw toolchain (x86_64-hosted clang
 // cross-compiler), whose C++ runtime is libc++ + libunwind, not libstdc++/libgcc.
 // Statically link that runtime so the binary does not depend on libc++/libunwind/
