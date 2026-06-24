@@ -160,6 +160,20 @@ func (s *LyricsService) ResolveLyrics(ctx context.Context, trackID, audioPath st
 	return resolved
 }
 
+// HasLocalLyrics reports whether a local-tier lyric exists for the track: a
+// sibling lyric file next to audioPath, or an embedded metadata tag in the DB.
+func (s *LyricsService) HasLocalLyrics(ctx context.Context, trackID, audioPath string) bool {
+	if s.localReader != nil {
+		if _, _, found := s.localReader.Read(audioPath); found {
+			return true
+		}
+	}
+	if lyric, _ := s.repo.GetByTrackID(ctx, trackID); lyric != nil && lyric.MetaContent != "" {
+		return true
+	}
+	return false
+}
+
 // FetchFromProviders fetches lyrics from enabled providers concurrently.
 // When both are enabled, the first non-nil result wins and the other request is cancelled.
 func (s *LyricsService) FetchFromProviders(ctx context.Context, track *domain.TrackDTO, enableLrclib, enableKugou bool) (*domain.Lyric, error) {
