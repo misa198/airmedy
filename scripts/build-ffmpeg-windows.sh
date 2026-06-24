@@ -92,6 +92,14 @@ build_arch() {
     echo "==> Building FFmpeg ${FFMPEG_VERSION} for Windows ${OUT_DIR}..."
     mkdir -p "${INSTALL_DIR}"
 
+    # Extract a fresh source tree per arch. Building several arches in one tree
+    # leaves stale objects from the previous arch in the static libs (e.g. an
+    # amd64 bprint.o inside the arm64 libavutil.a), which the linker rejects as
+    # the wrong machine type and reports as undefined symbols.
+    rm -rf "${SRC_DIR}"
+    mkdir -p "${SRC_DIR}"
+    tar -xzf "${BUILD_DIR}/ffmpeg.tar.gz" -C "${SRC_DIR}" --strip-components=1
+
     # Fall back to LLVM tools when cross-prefixed binutils are not installed
     # (e.g. MSYS2 where gcc and binutils are separate packages)
     local EXTRA_TOOL_FLAGS=()
@@ -122,7 +130,6 @@ build_arch() {
         echo "    copied ${LIB}.a -> ffmpeg_libs/windows/${OUT_DIR}/"
     done
 
-    # Restore src dir for potential next arch build
     cd "${REPO_ROOT}"
 }
 
@@ -132,11 +139,6 @@ if [[ ! -f "${BUILD_DIR}/ffmpeg.tar.gz" ]]; then
     echo "==> Downloading FFmpeg ${FFMPEG_VERSION}..."
     curl -L "${FFMPEG_URL}" -o "${BUILD_DIR}/ffmpeg.tar.gz"
 fi
-echo "==> Extracting..."
-rm -rf "${BUILD_DIR}/src"
-mkdir -p "${BUILD_DIR}/src"
-tar -xzf "${BUILD_DIR}/ffmpeg.tar.gz" -C "${BUILD_DIR}/src" --strip-components=1
-
 TARGET="${1:-all}"
 
 case "$TARGET" in
