@@ -262,8 +262,12 @@ jobs:
           if [[ "${{ matrix.os }}" == "Windows-ARM64" ]]; then
             export GOOS=windows
             export GOARCH=arm64
-            # x86_64-hosted llvm-mingw cross-compiler for aarch64 Windows
+            # x86_64-hosted llvm-mingw cross-compiler for aarch64 Windows.
+            # CXX must be the arm64-targeted wrapper too: Go links the C++ cgo
+            # objects with g++, and the unprefixed g++ defaults to the x64 host
+            # target (=> "machine type arm64 conflicts with x64").
             export CC=aarch64-w64-mingw32-clang
+            export CXX=aarch64-w64-mingw32-g++
             export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/windows/arm64"
             task windows:package ARCH=arm64
           else
