@@ -178,13 +178,17 @@ jobs:
           install: mingw-w64-x86_64-gcc
           update: false
 
-      - name: Setup MSYS2 (Windows ARM64)
+      - name: Setup llvm-mingw (Windows ARM64)
         if: matrix.os == 'Windows-ARM64'
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: CLANGARM64
-          install: mingw-w64-clang-aarch64-gcc
-          update: false
+        shell: pwsh
+        run: |
+          # CLANGARM64 toolchain ships arm64-hosted binaries that can't run on
+          # the x86_64 runner. llvm-mingw is x86_64-hosted and cross-targets
+          # aarch64-w64-mingw32, matching the ARM64 FFmpeg libs.
+          $url = "https://github.com/mstorsjo/llvm-mingw/releases/download/20260616/llvm-mingw-20260616-ucrt-x86_64.zip"
+          Invoke-WebRequest -Uri $url -OutFile "$env:RUNNER_TEMP\llvm-mingw.zip"
+          Expand-Archive -Path "$env:RUNNER_TEMP\llvm-mingw.zip" -DestinationPath "C:\"
+          Add-Content -Path $env:GITHUB_PATH -Value "C:\llvm-mingw-20260616-ucrt-x86_64\bin"
 
       - name: Install Darwin Dependencies
         if: runner.os == 'Darwin'
@@ -251,7 +255,6 @@ jobs:
         shell: bash
         run: |
           REPO_ROOT=$(pwd)
-          export CC="gcc"
           export CGO_ENABLED=1
           export CGO_CFLAGS="-I${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/include"
           # MinGW C++/pthread runtime is statically linked via cgoflags_windows_*.go
@@ -259,11 +262,14 @@ jobs:
           if [[ "${{ matrix.os }}" == "Windows-ARM64" ]]; then
             export GOOS=windows
             export GOARCH=arm64
+            # x86_64-hosted llvm-mingw cross-compiler for aarch64 Windows
+            export CC=aarch64-w64-mingw32-clang
             export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/windows/arm64"
             task windows:package ARCH=arm64
           else
             export GOOS=windows
             export GOARCH=amd64
+            export CC=gcc
             export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/windows/amd64"
             task windows:package ARCH=amd64
           fi
