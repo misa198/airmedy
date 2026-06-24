@@ -271,6 +271,8 @@
     "disc": "Disc",
     "total_discs": "Total Discs",
     "edit_metadata": "Edit Metadata",
+    "download_artwork": "Download artwork",
+    "download_artwork_failed": "Failed to download artwork",
     "track_info": "Track Info",
     "lyrics": "Lyrics",
     "lyrics_placeholder": "Paste lyrics here...",

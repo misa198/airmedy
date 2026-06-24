@@ -13,6 +13,7 @@ internal/infra/audio/ffmpeg_libs/darwin/amd64/
 internal/infra/audio/ffmpeg_libs/linux/amd64/
 internal/infra/audio/ffmpeg_libs/linux/arm64/
 internal/infra/audio/ffmpeg_libs/windows/amd64/
+internal/infra/audio/ffmpeg_libs/windows/arm64/
 internal/infra/audio/ffmpeg_libs/include/
 
 # Binary / Build Outputs

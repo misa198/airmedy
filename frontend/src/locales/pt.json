@@ -271,6 +271,8 @@
     "disc": "Disco",
     "total_discs": "Total de discos",
     "edit_metadata": "Editar Metadados",
+    "download_artwork": "Baixar capa",
+    "download_artwork_failed": "Falha ao baixar a capa",
     "track_info": "Informações da faixa",
     "lyrics": "Letras",
     "lyrics_placeholder": "Cole as letras aqui...",

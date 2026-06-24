@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
-# Build minimal FFmpeg static libraries for Windows (amd64) using gcc-mingw-w64.
-# Runs on Linux. Requires: gcc-mingw-w64-x86-64
-# Output: internal/infra/audio/ffmpeg_libs/windows/amd64/*.a
+# Build minimal FFmpeg static libraries for Windows (amd64 + arm64) using gcc-mingw-w64.
+# Runs on Linux. Requires: gcc-mingw-w64-x86-64 [and gcc-mingw-w64-aarch64 for arm64]
+# Output: internal/infra/audio/ffmpeg_libs/windows/{amd64,arm64}/*.a
 #         internal/infra/audio/ffmpeg_libs/include/  (shared headers)
 #
-# Usage: bash scripts/build-ffmpeg-windows.sh
+# Usage:
+#   bash scripts/build-ffmpeg-windows.sh          # build both amd64 and arm64
+#   bash scripts/build-ffmpeg-windows.sh amd64    # amd64 only
+#   bash scripts/build-ffmpeg-windows.sh arm64    # arm64 only
 
 set -euo pipefail
 
@@ -14,7 +17,6 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 OUT_BASE="${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/windows"
 BUILD_DIR="/tmp/ffmpeg-build-airmedy-windows"
-CROSS_PREFIX="x86_64-w64-mingw32-"
 
 CONFIGURE_FLAGS=(
     --disable-everything
@@ -66,58 +68,111 @@ CONFIGURE_FLAGS=(
     --disable-iconv
     --disable-schannel
     --disable-securetransport
-    # Cross-compile target
-    --target-os=mingw32
-    --arch=x86_64
-    --enable-cross-compile
-    --cross-prefix="${CROSS_PREFIX}"
-    --enable-w32threads
-    --disable-pthreads
     # Static-only for Wails embedding
     --extra-cflags="-D_WIN32_WINNT=0x0601 -DWINVER=0x0601"
     --extra-ldflags="-static -static-libgcc -static-libstdc++"
     --pkg-config-flags="--static"
+    # Common cross-compile target
+    --target-os=mingw32
+    --enable-cross-compile
+    --enable-w32threads
+    --disable-pthreads
 )
 
 LIBS=(libavcodec libavformat libavutil libswresample)
 
-SRC_DIR="${BUILD_DIR}/src"
-INSTALL_DIR="${BUILD_DIR}/install-amd64"
+build_arch() {
+    local OUT_DIR="$1"       # amd64 or arm64
+    local CROSS_PREFIX="$2"  # e.g. x86_64-w64-mingw32- or aarch64-w64-mingw32-
+    local FFMPEG_ARCH="$3"   # e.g. x86_64 or aarch64
 
-mkdir -p "${INSTALL_DIR}"
+    local SRC_DIR="${BUILD_DIR}/src"
+    local INSTALL_DIR="${BUILD_DIR}/install-${OUT_DIR}"
 
+    echo "==> Building FFmpeg ${FFMPEG_VERSION} for Windows ${OUT_DIR}..."
+    mkdir -p "${INSTALL_DIR}"
+
+    # Fall back to LLVM tools when cross-prefixed binutils are not installed
+    # (e.g. MSYS2 where gcc and binutils are separate packages)
+    local EXTRA_TOOL_FLAGS=()
+    if ! command -v "${CROSS_PREFIX}nm" &>/dev/null; then
+        echo "    ${CROSS_PREFIX}nm not found — using llvm-nm/llvm-ar/llvm-ranlib/llvm-strip"
+        EXTRA_TOOL_FLAGS+=(
+            --nm=llvm-nm
+            --ar=llvm-ar
+            --ranlib=llvm-ranlib
+            --strip=llvm-strip
+        )
+    fi
+
+    cd "${SRC_DIR}"
+    ./configure \
+        "${CONFIGURE_FLAGS[@]}" \
+        ${EXTRA_TOOL_FLAGS[@]+"${EXTRA_TOOL_FLAGS[@]}"} \
+        --arch="${FFMPEG_ARCH}" \
+        --cross-prefix="${CROSS_PREFIX}" \
+        --prefix="${INSTALL_DIR}"
+
+    make -j"$(nproc 2>/dev/null || echo 4)"
+    make install
+
+    mkdir -p "${OUT_BASE}/${OUT_DIR}"
+    for LIB in "${LIBS[@]}"; do
+        cp "${INSTALL_DIR}/lib/${LIB}.a" "${OUT_BASE}/${OUT_DIR}/${LIB}.a"
+        echo "    copied ${LIB}.a -> ffmpeg_libs/windows/${OUT_DIR}/"
+    done
+
+    # Restore src dir for potential next arch build
+    cd "${REPO_ROOT}"
+}
+
+# Download and extract source once
+mkdir -p "${BUILD_DIR}"
 if [[ ! -f "${BUILD_DIR}/ffmpeg.tar.gz" ]]; then
     echo "==> Downloading FFmpeg ${FFMPEG_VERSION}..."
     curl -L "${FFMPEG_URL}" -o "${BUILD_DIR}/ffmpeg.tar.gz"
 fi
 echo "==> Extracting..."
-rm -rf "${SRC_DIR}"
-mkdir -p "${SRC_DIR}"
-tar -xzf "${BUILD_DIR}/ffmpeg.tar.gz" -C "${SRC_DIR}" --strip-components=1
+rm -rf "${BUILD_DIR}/src"
+mkdir -p "${BUILD_DIR}/src"
+tar -xzf "${BUILD_DIR}/ffmpeg.tar.gz" -C "${BUILD_DIR}/src" --strip-components=1
 
-echo "==> Configuring FFmpeg for Windows amd64..."
-cd "${SRC_DIR}"
-./configure \
-    "${CONFIGURE_FLAGS[@]}" \
-    --prefix="${INSTALL_DIR}"
+TARGET="${1:-all}"
 
-echo "==> Building..."
-make -j"$(nproc 2>/dev/null || echo 4)"
-make install
+case "$TARGET" in
+    amd64)
+        build_arch "amd64" "x86_64-w64-mingw32-" "x86_64"
+        ;;
+    arm64)
+        build_arch "arm64" "aarch64-w64-mingw32-" "aarch64"
+        ;;
+    all)
+        build_arch "amd64" "x86_64-w64-mingw32-" "x86_64"
+        if command -v aarch64-w64-mingw32-gcc &>/dev/null; then
+            build_arch "arm64" "aarch64-w64-mingw32-" "aarch64"
+        else
+            echo "==> Skipping arm64: aarch64-w64-mingw32-gcc not found (apt install gcc-mingw-w64-aarch64)"
+        fi
+        ;;
+    *)
+        echo "Usage: $0 [amd64|arm64|all]" >&2
+        exit 1
+        ;;
+esac
 
-mkdir -p "${OUT_BASE}/amd64"
-for LIB in "${LIBS[@]}"; do
-    cp "${INSTALL_DIR}/lib/${LIB}.a" "${OUT_BASE}/amd64/${LIB}.a"
-    echo "    copied ${LIB}.a -> ffmpeg_libs/windows/amd64/"
-done
-
-# Copy headers if not already present (shared with other platforms)
+# Copy headers if not already present (shared across architectures).
+# Use whichever arch was built — both installs have identical headers.
 INCLUDE_OUT="${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/include"
 if [[ ! -d "${INCLUDE_OUT}" ]]; then
     echo "==> Copying FFmpeg headers..."
-    cp -R "${INSTALL_DIR}/include" "${INCLUDE_OUT}"
+    for _arch in amd64 arm64; do
+        if [[ -d "${BUILD_DIR}/install-${_arch}/include" ]]; then
+            cp -R "${BUILD_DIR}/install-${_arch}/include" "${INCLUDE_OUT}"
+            break
+        fi
+    done
 fi
 
 echo ""
 echo "==> Done."
-du -sh "${OUT_BASE}/amd64"
+du -sh "${OUT_BASE}"/* 2>/dev/null || true

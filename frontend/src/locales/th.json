@@ -271,6 +271,8 @@
     "disc": "แผ่น",
     "total_discs": "จำนวนแผ่นทั้งหมด",
     "edit_metadata": "แก้ไขข้อมูลเมตา",
+    "download_artwork": "ดาวน์โหลดปกอัลบั้ม",
+    "download_artwork_failed": "ดาวน์โหลดปกไม่สำเร็จ",
     "track_info": "ข้อมูลเพลง",
     "lyrics": "เนื้อเพลง",
     "lyrics_placeholder": "วางเนื้อเพลงที่นี่...",

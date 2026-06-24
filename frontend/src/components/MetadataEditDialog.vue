@@ -10,7 +10,7 @@ import { buildArtworkUrl } from '@airmedy/utils'
 import LazyImg from './LazyImg.vue'
 import { TabSwitcher } from '@airmedy/ui'
 import { Modal } from '@airmedy/ui'
-import { ListMusic, Mic2 } from 'lucide-vue-next'
+import { ListMusic, Mic2, Download } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const props = defineProps<{
@@ -42,6 +42,38 @@ const currentArtworkUrl = computed(() => {
   const key = props.track?.artwork_key || props.track?.album?.artwork_key
   return buildArtworkUrl(key, 'md')
 })
+
+// existing saved artwork only (not a locally-picked new image)
+const artworkKey = computed(
+  () => props.track?.artwork_key || props.track?.album?.artwork_key || '',
+)
+
+const artworkFilename = computed(() => {
+  const tk = props.track
+  const artist = (tk?.raw_artist_names
+    || tk?.artists?.filter((a): a is NonNullable<typeof a> => a != null).map(a => a.name).join(', ')
+    || '').trim()
+  const album = (tk?.album?.title || '').trim()
+  if (artist && album) return `${artist} - ${album}`
+  if (artist) return artist
+  if (album) return album
+  if (tk?.title?.trim()) return tk.title.trim()
+  if (tk?.path) {
+    const base = tk.path.split(/[\\/]/).pop() || ''
+    const noExt = base.replace(/\.[^.]+$/, '')
+    if (noExt) return noExt
+  }
+  return 'artwork'
+})
+
+async function downloadArtwork() {
+  if (!artworkKey.value) return
+  try {
+    await LibraryService.DownloadArtwork(artworkKey.value, artworkFilename.value)
+  } catch (e) {
+    error.value = t('library.download_artwork_failed')
+  }
+}
 
 watch(
   () => props.open,
@@ -179,6 +211,15 @@ function cancel() {
                 <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
                   <span class="text-[10px] font-medium text-white uppercase tracking-wider">{{ t('common.change') }}</span>
                 </div>
+                <button
+                  v-if="artworkKey && !selectedImage"
+                  type="button"
+                  :title="t('library.download_artwork')"
+                  class="absolute bottom-1.5 right-1.5 z-10 p-1.5 rounded-md bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"
+                  @click.stop="downloadArtwork"
+                >
+                  <Download class="w-3.5 h-3.5" />
+                </button>
                 <input
                   ref="fileInput"
                   type="file"

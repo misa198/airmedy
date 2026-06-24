@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+
 defineProps<{
   open: boolean
   title?: string
@@ -8,13 +10,30 @@ defineProps<{
 const emit = defineEmits<{
   close: []
 }>()
+
+// Only close when the press STARTED on the backdrop. Prevents closing when a
+// text selection drag inside an input ends on the backdrop (mouseup outside).
+const pressedOnBackdrop = ref(false)
+
+function onPointerDown(e: PointerEvent) {
+  pressedOnBackdrop.value = e.target === e.currentTarget
+}
+
+function onBackdropPointerDown() {
+  pressedOnBackdrop.value = true
+}
+
+function onClickClose() {
+  if (pressedOnBackdrop.value) emit('close')
+  pressedOnBackdrop.value = false
+}
 </script>
 
 <template>
   <Teleport to="body">
     <Transition name="modal-fade">
-      <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center transform-gpu will-change-[opacity]" @click.self="emit('close')">
-        <div class="backdrop absolute inset-0 bg-background/60 backdrop-blur-sm transform-gpu" @click="emit('close')" />
+      <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center transform-gpu will-change-[opacity]" @pointerdown.self="onPointerDown" @click.self="onClickClose">
+        <div class="backdrop absolute inset-0 bg-background/60 backdrop-blur-sm transform-gpu" @pointerdown="onBackdropPointerDown" @click="onClickClose" />
         <div
           class="modal-content relative z-10 rounded-3xl bg-glass-modal backdrop-blur-xl ring-1 ring-border-glass shadow-2xl p-5 transform-gpu isolate"
           :class="widthClass || 'w-72'"

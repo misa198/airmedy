@@ -21,6 +21,20 @@ const appStore = useAppStore()
 
 const isResizing = ref(false)
 
+const TITLEBAR_HEIGHT = 40 // matches drag overlay h-10
+
+// Double-click the empty titlebar strip toggles maximize. Overlay is
+// pointer-events-none, so listen on the root and guard: only top strip, and
+// not when the target is an interactive element (button/input/etc).
+const onTitlebarDblClick = (e: MouseEvent) => {
+  if (deviceStore.isWindowFullscreen) return
+  if (playerStore.playerMode === 'fullscreen' || playerStore.playerMode === 'mini') return
+  if (e.clientY > TITLEBAR_HEIGHT) return
+  const target = e.target as HTMLElement | null
+  if (target?.closest('button, a, input, select, textarea, [role="button"], [contenteditable="true"]')) return
+  deviceStore.toggleMaximize()
+}
+
 const startResizing = (e: MouseEvent) => {
   e.preventDefault()
   isResizing.value = true
@@ -50,18 +64,20 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="h-full w-full flex flex-col overflow-hidden bg-background text-foreground">
+  <div class="h-full w-full flex flex-col overflow-hidden bg-background text-foreground" @dblclick="onTitlebarDblClick">
     <!-- Window Drag Area (Double click to toggle maximize) -->
+    <!--
+      pointer-events-none: overlay must NOT block clicks on buttons sitting in
+      the top 40px (view header actions, sidebar). Window dragging still works:
+      -webkit-app-region (macOS) / --wails-draggable (Windows) are resolved from
+      layout, independent of pointer-events. Double-click-to-zoom is handled by
+      the OS over the drag region.
+    -->
     <div
-      v-if="!deviceStore.isWindowFullscreen && playerStore.playerMode !== 'fullscreen'"
+      v-if="!deviceStore.isWindowFullscreen && playerStore.playerMode !== 'fullscreen' && playerStore.playerMode !== 'mini'"
       class="fixed top-0 left-0 right-0 h-10 z-[60] select-none pointer-events-none"
-    >
-      <div 
-        class="w-full h-full pointer-events-auto"
-        style="-webkit-app-region: drag"
-        @dblclick="deviceStore.toggleMaximize"
-      />
-    </div>
+      style="-webkit-app-region: drag; --wails-draggable: drag"
+    />
 
     <!-- Main Content Area -->
     <div class="flex-1 min-h-0 flex overflow-hidden">

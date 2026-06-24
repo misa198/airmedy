@@ -51,43 +51,36 @@
 
 ## Audio Format Support
 
-| Format               | macOS | Windows | Linux |
-| -------------------- | :---: | :-----: | :---: |
-| MP3                  |  ✅   |   ✅    |  ✅   |
-| AAC / M4A / ALAC     |  ✅   |   ✅    |  ✅   |
-| FLAC                 |  ✅   |   ✅    |  ✅   |
-| WAV / AIFF           |  ✅   |   ✅    |  ✅   |
-| Ogg Vorbis           |  ✅   |   ✅    |  ✅   |
-| Opus                 |  ✅   |   ✅    |  ✅   |
-| APE (Monkey's Audio) |  ✅   |   ✅    |  ✅   |
-| WavPack              |  ✅   |   ✅    |  ✅   |
-| DSD / DSF / DFF      |  ✅   |   ✅    |  ✅   |
+Every format plays on **macOS · Windows · Linux**.
+
+| Format               | Extensions          |
+| -------------------- | ------------------- |
+| MP3                  | `.mp3`              |
+| AAC / ALAC           | `.m4a` `.aac` `.mp4`|
+| FLAC                 | `.flac`             |
+| WAV / AIFF           | `.wav` `.aiff`      |
+| Ogg Vorbis           | `.ogg`              |
+| Opus                 | `.opus`             |
+| APE (Monkey's Audio) | `.ape`              |
+| WavPack              | `.wv`               |
+| DSD                  | `.dsf` `.dff`       |
 
 ---
 
 On macOS, playback runs through **SFBAudioEngine** — a powerful, high-performance audio engine that provides native support for almost every format without needing FFmpeg. On Windows and Linux, **miniaudio** provides high-performance audio output, while **FFmpeg** serves as the universal decoding backend for all supported formats, ensuring consistent and robust playback across the entire library.
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                      Airmedy Core                       │
-│                                                         │
-│   ┌─────────────────┐       ┌──────────────────────┐    │
-│   │    macOS Path   │       │ Windows / Linux Path │    │
-│   │                 │       │                      │    │
-│   │  SFBAudioEngine │       │      miniaudio       │    │
-│   │  (All Formats)  │       │   (output engine)    │    │
-│   └────────┬────────┘       └───────────┬──────────┘    │
-│            │                            │               │
-│            │                 ┌──────────┴──────────┐    │
-│            │                 │    FFmpeg Decoder   │    │
-│            │                 │    (All Formats)    │    │
-│            │                 └──────────┬──────────┘    │
-│            │                            │               │
-│            └──────────────┬─────────────┘               │
-│                           │                             │
-│                Consistent Audio Stream                  │
-│                    (Float32 PCM)                        │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Core["Airmedy Core"]
+        subgraph macOS["macOS Path"]
+            SFB["SFBAudioEngine<br/>(All Formats)"]
+        end
+        subgraph WinLinux["Windows / Linux Path"]
+            FF["FFmpeg Decoder<br/>(All Formats)"] --> MA["miniaudio<br/>(output engine)"]
+        end
+        SFB --> Stream
+        MA --> Stream["Consistent Audio Stream<br/>(Float32 PCM)"]
+    end
 ```
 
 The FFmpeg libraries are statically compiled and bundled inside `internal/infra/audio/ffmpeg_libs/`. No system FFmpeg installation is ever required.
@@ -167,7 +160,9 @@ Dependencies always point inward — `infra` depends on `app`, `app` depends on 
 | Task         | [taskfile.dev](https://taskfile.dev)                       |
 | Wails CLI v3 | `go install github.com/wailsapp/wails/v3/cmd/wails@latest` |
 
-> **No system FFmpeg required.** Pre-built static libraries for `darwin/amd64`, `darwin/arm64`, `windows/amd64`, `linux/amd64`, and `linux/arm64` are bundled in `internal/infra/audio/ffmpeg_libs/`.
+> **No system FFmpeg required.** FFmpeg is the decode backend on Windows/Linux only — macOS uses SFBAudioEngine and ships no FFmpeg. Pre-built static libraries for `windows/amd64`, `windows/arm64`, `linux/amd64`, and `linux/arm64` are bundled in `internal/infra/audio/ffmpeg_libs/`.
+>
+> To rebuild them: `scripts/build-ffmpeg-linux.sh` and `scripts/build-ffmpeg-windows.sh` (the latter cross-compiles `amd64` + `arm64` from Linux via `gcc-mingw-w64`). `scripts/build-ffmpeg-windows-msys2.sh` builds Windows `amd64` natively inside an MSYS2 MINGW64 shell. All produce minimal static `.a` libs (FFmpeg 8.1, decoders only).
 
 ### Clone & Run
 

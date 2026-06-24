@@ -271,6 +271,8 @@
     "disc": "ディスク",
     "total_discs": "合計ディスク数",
     "edit_metadata": "メタデータを編集",
+    "download_artwork": "アートワークをダウンロード",
+    "download_artwork_failed": "アートワークのダウンロードに失敗しました",
     "track_info": "トラック情報",
     "lyrics": "歌詞",
     "lyrics_placeholder": "ここに歌詞を貼り付けてください...",

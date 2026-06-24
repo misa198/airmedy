@@ -271,6 +271,8 @@
     "disc": "光盘",
     "total_discs": "总光盘数",
     "edit_metadata": "编辑元数据",
+    "download_artwork": "下载封面",
+    "download_artwork_failed": "下载封面失败",
     "track_info": "歌曲信息",
     "lyrics": "歌词",
     "lyrics_placeholder": "在此粘贴歌词...",

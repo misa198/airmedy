@@ -33,18 +33,18 @@ File system events are debounced (500ms) before processing:
 
 ## Import Pipeline
 
-```
-AddFolder(path)
-  └─ SyncFolder(root)
-       └─ Walk all files recursively
-            └─ For each supported file: ImportFile(path)
-                 ├─ MetadataExtractor.Extract() → TrackDTO
-                 ├─ MetadataExtractor.ExtractArtwork() → []byte
-                 ├─ ArtworkCache.Save() → artworkKey
-                 ├─ Resolve entities (Album, Artists, Genres, Composers)
-                 ├─ TrackRepository.Upsert()
-                 ├─ Set M2M relationships (SetArtists, SetGenres, etc.)
-                 └─ SearchService.IndexTrack()
+```mermaid
+flowchart TB
+    A["AddFolder(path)"] --> B["SyncFolder(root)"]
+    B --> C["Walk all files recursively"]
+    C --> D["For each supported file:<br/>ImportFile(path)"]
+    D --> E["MetadataExtractor.Extract() → TrackDTO"]
+    D --> F["MetadataExtractor.ExtractArtwork() → []byte"]
+    D --> G["ArtworkCache.Save() → artworkKey"]
+    D --> H["Resolve entities (Album, Artists, Genres, Composers)"]
+    D --> I["TrackRepository.Upsert()"]
+    D --> J["Set M2M relationships (SetArtists, SetGenres, …)"]
+    D --> K["SearchService.IndexTrack()"]
 ```
 
 **Supported formats:** `.mp3`, `.flac`, `.m4a`, `.wav`, `.ogg`, `.opus`, `.aiff`, `.aif`, `.ape`, `.wv`, `.dsf`, `.dff`
@@ -130,13 +130,13 @@ After syncing, `AlbumRepository.DeleteOrphaned()`, `ArtistRepository.DeleteOrpha
 
 ## Metadata Update Flow
 
-```
-User edits metadata in MetadataEditDialog
-  → Select new cover image (optional, auto-converted to JPEG)
-  → LibraryService.UpdateTrackMetadata(id, MetadataUpdate)
-  → MetadataWriter.WriteMetadata(path, fields)   // writes tags and artwork to file
-  → Re-import file: ImportFile(path)              // re-extracts and updates DB
-  → EmitEvent("library:track-updated", updated)
+```mermaid
+flowchart TB
+    A["User edits metadata in MetadataEditDialog"] --> B["Select new cover image<br/>(optional, auto-converted to JPEG)"]
+    B --> C["LibraryService.UpdateTrackMetadata(id, MetadataUpdate)"]
+    C --> D["MetadataWriter.WriteMetadata(path, fields)<br/><i>writes tags + artwork to file</i>"]
+    D --> E["Re-import file: ImportFile(path)<br/><i>re-extracts and updates DB</i>"]
+    E --> F["EmitEvent(library:track-updated, updated)"]
 ```
 
 ## Play Count & Recently Played
