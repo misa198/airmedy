@@ -1,0 +1,364 @@
+name: Build
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-ffmpeg-windows:
+    name: Build FFmpeg for Windows
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Cache FFmpeg (Windows)
+        id: cache-ffmpeg
+        uses: actions/cache@v4
+        with:
+          path: internal/infra/audio/ffmpeg_libs
+          key: ffmpeg-Windows-${{ hashFiles('scripts/build-ffmpeg-windows.sh') }}
+
+      - name: Install mingw cross-compilers
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        run: sudo apt-get install -y gcc-mingw-w64-x86-64 gcc-mingw-w64-aarch64 nasm
+
+      - name: Build FFmpeg (Windows AMD64 + ARM64)
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        run: bash scripts/build-ffmpeg-windows.sh
+
+      - name: Upload FFmpeg libs
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-windows
+          path: internal/infra/audio/ffmpeg_libs
+
+  build:
+    name: Build ${{ matrix.os }}
+    needs: [build-ffmpeg-windows]
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - Windows-AMD64
+          - Windows-ARM64
+          - Linux-AMD64
+          - Linux-ARM64
+          - Darwin-AMD64
+          - Darwin-ARM64
+    runs-on: ${{ (contains(matrix.os, 'Windows') && 'windows-latest') || (contains(matrix.os, 'Darwin') && 'macos-26') || 'ubuntu-latest' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: echo "version=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Create secrets.go
+        shell: bash
+        run: |
+          cat <<EOF > internal/app/config/secrets.go
+          package config
+
+          var (
+          	LastFmAPIKey    = "${{ secrets.LASTFM_API_KEY }}"
+          	LastFmAPISecret = "${{ secrets.LASTFM_API_SECRET }}"
+          )
+          EOF
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Linux Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          if [[ "${{ matrix.os }}" == "Linux-ARM64" ]]; then
+            sudo dpkg --add-architecture arm64
+            # Update existing sources to be amd64 only to avoid 404s on mirrors that don't have arm64
+            if [ -f /etc/apt/sources.list ]; then
+              sudo sed -i 's/^deb http/deb [arch=amd64] http/g' /etc/apt/sources.list
+            fi
+            if ls /etc/apt/sources.list.d/*.sources 1> /dev/null 2>&1; then
+              sudo sed -i 's/Types: deb/Types: deb\nArchitectures: amd64/g' /etc/apt/sources.list.d/*.sources
+            fi
+            # Add Ubuntu Ports for arm64
+            echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports $(lsb_release -cs) main restricted universe multiverse" | sudo tee /etc/apt/sources.list.d/arm64.list
+            echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports $(lsb_release -cs)-updates main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.list
+            echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports $(lsb_release -cs)-security main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.list
+          fi
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libgtk-4-dev libwebkitgtk-6.0-dev build-essential nsis nasm gcc-aarch64-linux-gnu libc6-dev-arm64-cross pkg-config qemu-user-static binfmt-support
+
+      - name: Install Windows Dependencies
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install nsis -y
+          Add-Content -Path $env:GITHUB_PATH -Value "C:\Program Files (x86)\NSIS"
+
+      - name: Setup MSYS2 (Windows AMD64)
+        if: matrix.os == 'Windows-AMD64'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: mingw-w64-x86_64-gcc
+          update: false
+
+      - name: Setup MSYS2 (Windows ARM64)
+        if: matrix.os == 'Windows-ARM64'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: CLANGARM64
+          install: mingw-w64-clang-aarch64-gcc
+          update: false
+
+      - name: Install Darwin Dependencies
+        if: runner.os == 'Darwin'
+        run: brew install nasm
+
+      - name: Cache FFmpeg Binaries
+        id: cache-ffmpeg
+        if: runner.os == 'Linux'
+        uses: actions/cache@v4
+        with:
+          path: internal/infra/audio/ffmpeg_libs
+          key: ffmpeg-${{ runner.os }}-${{ hashFiles('scripts/build-ffmpeg-linux.sh') }}
+
+      - name: Cache SFB Audio Engine (Darwin)
+        id: cache-sfb
+        if: runner.os == 'Darwin'
+        uses: actions/cache@v4
+        with:
+          path: |
+            internal/infra/audio/sfb_libs
+            internal/infra/audio/sfb_build
+          key: sfb-${{ runner.os }}-${{ hashFiles('scripts/build-sfbaudioengine-darwin.sh') }}
+          restore-keys: |
+            sfb-${{ runner.os }}-
+
+      - name: Cache Miniaudio (Windows and Linux)
+        id: cache-miniaudio
+        if: runner.os == 'Windows' || runner.os == 'Linux'
+        uses: actions/cache@v4
+        with:
+          path: internal/infra/audio/miniaudio
+          key: miniaudio-${{ runner.os }}-${{ hashFiles('scripts/fetch-miniaudio.sh') }}
+
+      - name: Download FFmpeg (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/download-artifact@v4
+        with:
+          name: ffmpeg-windows
+          path: internal/infra/audio/ffmpeg_libs
+
+      - name: Build FFmpeg (Linux)
+        if: runner.os == 'Linux' && steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        run: bash scripts/build-ffmpeg-linux.sh
+
+      - name: Build SFB Audio Engine (Darwin)
+        if: runner.os == 'Darwin' && !hashFiles('internal/infra/audio/sfb_libs/SFBAudioEngine.xcframework/Info.plist')
+        run: bash scripts/build-sfbaudioengine-darwin.sh
+
+      - name: Fetch miniaudio (Windows and Linux)
+        if: (runner.os == 'Windows' || runner.os == 'Linux') && steps.cache-miniaudio.outputs.cache-hit != 'true'
+        shell: bash
+        run: bash scripts/fetch-miniaudio.sh
+
+      - name: Install Wails v3
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-alpha2.105
+
+      - name: Install Linux ARM64 Cross-compile Dependencies
+        if: runner.os == 'Linux' && matrix.os == 'Linux-ARM64'
+        run: |
+          sudo apt-get install -y -o Dpkg::Options::="--force-overwrite" --no-install-recommends libgtk-3-dev:arm64 libwebkit2gtk-4.1-dev:arm64 libgtk-4-dev:arm64 libwebkitgtk-6.0-dev:arm64
+
+      - name: Build and Package (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          REPO_ROOT=$(pwd)
+          export CC="gcc"
+          export CGO_ENABLED=1
+          export CGO_CFLAGS="-I${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/include"
+          # MinGW C++/pthread runtime is statically linked via cgoflags_windows_*.go
+          # (-Wl,-Bstatic -lstdc++ -lpthread), so no -static-libstdc++ env flag is needed here.
+          if [[ "${{ matrix.os }}" == "Windows-ARM64" ]]; then
+            export GOOS=windows
+            export GOARCH=arm64
+            export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/windows/arm64"
+            task windows:package ARCH=arm64
+          else
+            export GOOS=windows
+            export GOARCH=amd64
+            export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/windows/amd64"
+            task windows:package ARCH=amd64
+          fi
+
+      - name: Build and Package (non-Windows)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          REPO_ROOT=$(pwd)
+          export CGO_CFLAGS="-I${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/include"
+
+          OS_INPUT="${{ matrix.os }}"
+          case $OS_INPUT in
+            "Linux-AMD64")
+              export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/linux/amd64"
+              task linux:package ARCH=amd64
+              ;;
+            "Linux-ARM64")
+              export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/linux/arm64"
+              export CC=aarch64-linux-gnu-gcc
+              export CGO_ENABLED=1
+              export GOARCH=arm64
+              export GOOS=linux
+              export PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
+              export PKG_CONFIG_ALLOW_CROSS=1
+              task linux:package ARCH=arm64
+              ;;
+            "Darwin-AMD64")
+              task darwin:package ARCH=amd64
+              ;;
+            "Darwin-ARM64")
+              task darwin:package ARCH=arm64
+              ;;
+          esac
+
+      - name: List bin directory
+        shell: bash
+        run: ls -la bin/ 2>/dev/null || echo "bin/ is empty or does not exist"
+
+      - name: Prepare Artifacts
+        shell: bash
+        run: |
+          mkdir -p dist
+          OS_INPUT="${{ matrix.os }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          case $OS_INPUT in
+            "Windows-AMD64")
+              # Installer (zipped)
+              INSTALLER=""
+              if [ -f bin/airmedy-amd64-installer.exe ]; then
+                INSTALLER="bin/airmedy-amd64-installer.exe"
+              else
+                INSTALLER=$(find bin/ -name "*installer.exe" | head -1)
+              fi
+              if [ -n "$INSTALLER" ]; then
+                if command -v zip >/dev/null 2>&1; then
+                  zip -j dist/Airmedy_${VERSION}_windows-amd64_installer.zip "$INSTALLER"
+                else
+                  7z a dist/Airmedy_${VERSION}_windows-amd64_installer.zip "$INSTALLER"
+                fi
+              else
+                echo "No windows installer found"
+              fi
+              # Standalone binary for auto-update
+              if [ -f bin/airmedy.exe ]; then
+                if command -v zip >/dev/null 2>&1; then
+                  cd bin && zip ../dist/Airmedy_${VERSION}_windows-amd64.zip airmedy.exe && cd ..
+                else
+                  cd bin && 7z a ../dist/Airmedy_${VERSION}_windows-amd64.zip airmedy.exe && cd ..
+                fi
+              fi
+              ;;
+            "Windows-ARM64")
+              # Installer (zipped)
+              INSTALLER=""
+              if [ -f bin/airmedy-arm64-installer.exe ]; then
+                INSTALLER="bin/airmedy-arm64-installer.exe"
+              else
+                INSTALLER=$(find bin/ -name "*installer.exe" | head -1)
+              fi
+              if [ -n "$INSTALLER" ]; then
+                if command -v zip >/dev/null 2>&1; then
+                  zip -j dist/Airmedy_${VERSION}_windows-arm64_installer.zip "$INSTALLER"
+                else
+                  7z a dist/Airmedy_${VERSION}_windows-arm64_installer.zip "$INSTALLER"
+                fi
+              else
+                echo "No windows arm64 installer found"
+              fi
+              # Standalone binary for auto-update
+              if [ -f bin/airmedy.exe ]; then
+                if command -v zip >/dev/null 2>&1; then
+                  cd bin && zip ../dist/Airmedy_${VERSION}_windows-arm64.zip airmedy.exe && cd ..
+                else
+                  cd bin && 7z a ../dist/Airmedy_${VERSION}_windows-arm64.zip airmedy.exe && cd ..
+                fi
+              fi
+              ;;
+            "Linux-AMD64")
+              # System packages
+              DEB=$(find bin/ -name "*.deb" | head -1)
+              RPM=$(find bin/ -name "*.rpm" | head -1)
+              PKG=$(find bin/ -name "*.pkg.tar.zst" | head -1)
+              if [ -n "$DEB" ]; then cp "$DEB" dist/Airmedy_${VERSION}_linux-amd64.deb; else echo "No .deb found"; fi
+              if [ -n "$RPM" ]; then cp "$RPM" dist/Airmedy_${VERSION}_linux-amd64.rpm; else echo "No .rpm found"; fi
+              if [ -n "$PKG" ]; then cp "$PKG" dist/Airmedy_${VERSION}_linux-amd64.pkg.tar.zst; else echo "No .pkg.tar.zst found"; fi
+              # Standalone binary for auto-update
+              if [ -f bin/airmedy ]; then
+                cd bin && tar -czf ../dist/Airmedy_${VERSION}_linux-amd64.tar.gz airmedy && cd ..
+              fi
+              ;;
+            "Linux-ARM64")
+              # System packages
+              DEB=$(find bin/ -name "*.deb" | head -1)
+              RPM=$(find bin/ -name "*.rpm" | head -1)
+              PKG=$(find bin/ -name "*.pkg.tar.zst" | head -1)
+              if [ -n "$DEB" ]; then cp "$DEB" dist/Airmedy_${VERSION}_linux-arm64.deb; else echo "No .deb found"; fi
+              if [ -n "$RPM" ]; then cp "$RPM" dist/Airmedy_${VERSION}_linux-arm64.rpm; else echo "No .rpm found"; fi
+              if [ -n "$PKG" ]; then cp "$PKG" dist/Airmedy_${VERSION}_linux-arm64.pkg.tar.zst; else echo "No .pkg.tar.zst found"; fi
+              # Standalone binary for auto-update
+              if [ -f bin/airmedy ]; then
+                cd bin && tar -czf ../dist/Airmedy_${VERSION}_linux-arm64.tar.gz airmedy && cd ..
+              fi
+              ;;
+            "Darwin-AMD64"|"Darwin-ARM64")
+              PLATFORM=$(echo ${OS_INPUT} | tr '[:upper:]' '[:lower:]')
+              cd bin
+              zip -r ../dist/Airmedy_${VERSION}_${PLATFORM}.zip airmedy.app
+              ;;
+          esac
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.os }}
+          path: dist/*
+          if-no-files-found: error
