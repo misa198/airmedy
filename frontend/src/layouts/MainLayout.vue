@@ -21,6 +21,20 @@ const appStore = useAppStore()
 
 const isResizing = ref(false)
 
+const TITLEBAR_HEIGHT = 40 // matches drag overlay h-10
+
+// Double-click the empty titlebar strip toggles maximize. Overlay is
+// pointer-events-none, so listen on the root and guard: only top strip, and
+// not when the target is an interactive element (button/input/etc).
+const onTitlebarDblClick = (e: MouseEvent) => {
+  if (deviceStore.isWindowFullscreen) return
+  if (playerStore.playerMode === 'fullscreen' || playerStore.playerMode === 'mini') return
+  if (e.clientY > TITLEBAR_HEIGHT) return
+  const target = e.target as HTMLElement | null
+  if (target?.closest('button, a, input, select, textarea, [role="button"], [contenteditable="true"]')) return
+  deviceStore.toggleMaximize()
+}
+
 const startResizing = (e: MouseEvent) => {
   e.preventDefault()
   isResizing.value = true
@@ -50,7 +64,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="h-full w-full flex flex-col overflow-hidden bg-background text-foreground">
+  <div class="h-full w-full flex flex-col overflow-hidden bg-background text-foreground" @dblclick="onTitlebarDblClick">
     <!-- Window Drag Area (Double click to toggle maximize) -->
     <!--
       pointer-events-none: overlay must NOT block clicks on buttons sitting in

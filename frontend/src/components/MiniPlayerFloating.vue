@@ -83,8 +83,7 @@ watch(() => store.theme, (colors) => {
 
 <template>
   <div class="relative w-full h-full overflow-hidden select-none dark" style="-webkit-app-region: drag"
-    @mouseenter="isHovered = true" @mouseleave="isHovered = false"
-    @dblclick="async () => { (await Window.IsMaximised()) ? Window.UnMaximise() : Window.Maximise() }">
+    @mouseenter="isHovered = true" @mouseleave="isHovered = false">
     <!-- Artwork fills entire window -->
     <div class="absolute inset-0 bg-[#0A0A0A]" style="-webkit-app-region: no-drag">
       <LazyImg v-if="store.artworkUrl" :src="store.artworkUrl" :alt="trackTitle" class="w-full h-full object-cover" />
