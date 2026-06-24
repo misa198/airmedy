@@ -83,8 +83,8 @@
       "enable_lrclib_desc": "从 LRCLIB.NET 获取歌词",
       "enable_kugou": "酷狗歌词",
       "enable_kugou_desc": "从酷狗音乐获取歌词",
-      "prefer_metadata_lyrics": "优先使用元数据歌词",
-      "prefer_metadata_lyrics_desc": "可用时使用嵌入的歌词",
+      "prefer_local_lyrics": "优先使用本地歌词",
+      "prefer_local_lyrics_desc": "可用时使用本地歌词文件（.lrc/.txt）或嵌入歌词",
       "scrobbling": "Scrobbling",
       "artwork": "封面",
       "lyrics": "歌词"

@@ -33,7 +33,7 @@
 ## Features
 
 - **Your whole library** — add any folder and Airmedy scans it instantly, even with tens of thousands of tracks.
-- **Lyrics that follow along** — synced lyrics scroll line-by-line as the song plays. Plain-text lyrics shown when sync data isn't available. Supports both embedded lyrics and online lyrics from LRCLIB and Kugou.
+- **Lyrics that follow along** — synced lyrics scroll line-by-line as the song plays. Plain-text lyrics shown when sync data isn't available. Sources, in priority order: local lyric files next to the track (`.lrc`, then `.txt`), embedded lyrics, then online lyrics from LRCLIB and Kugou.
 - **Fullscreen & miniplayer modes** — go fullscreen for an immersive listening experience, or shrink to a miniplayer that stays out of your way.
 - **Playlists** — create and manage playlists, import and export them, and browse your collection by genre, artist, or album.
 - **Gapless playback** — tracks transition without any silence or interruption.
@@ -105,7 +105,7 @@ The FFmpeg libraries are statically compiled and bundled inside `internal/infra/
 | Monorepo             | pnpm workspaces + Turbo           |
 | UI package           | @airmedy/ui (packages/ui)         |
 | Utils package        | @airmedy/utils (packages/utils)   |
-| Lyrics               | LRCLIB API                        |
+| Lyrics               | Local `.lrc`/`.txt`, embedded tags, LRCLIB + Kugou |
 
 ---
 

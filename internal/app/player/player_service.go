@@ -737,7 +737,7 @@ func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
 	}
 
 	// 1. Try to get best available lyrics according to settings.
-	lyric := s.lyricsService.ResolveLyrics(ctx, track.ID, settings.PreferMetadataLyrics)
+	lyric := s.lyricsService.ResolveLyrics(ctx, track.ID, track.Path, settings.PreferLocalLyrics)
 	if lyric != nil {
 		s.emitLyrics(track.ID, lyric)
 	}
@@ -751,7 +751,7 @@ func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
 		if err != nil {
 			s.logger.Warn("failed to fetch lyrics from providers", "track_id", track.ID, "error", err)
 			if lyric == nil {
-				lyric = s.lyricsService.ResolveLyrics(ctx, track.ID, true)
+				lyric = s.lyricsService.ResolveLyrics(ctx, track.ID, track.Path, true)
 				s.emitLyrics(track.ID, lyric)
 			}
 		} else if fetched != nil {
@@ -759,12 +759,12 @@ func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
 			return
 		} else if lyric == nil {
 			// No provider results — fall back to metadata if available.
-			lyric = s.lyricsService.ResolveLyrics(ctx, track.ID, true)
+			lyric = s.lyricsService.ResolveLyrics(ctx, track.ID, track.Path, true)
 			s.emitLyrics(track.ID, lyric)
 		}
 	} else if lyric == nil {
 		// Providers disabled — fall back to metadata if available.
-		lyric = s.lyricsService.ResolveLyrics(ctx, track.ID, true)
+		lyric = s.lyricsService.ResolveLyrics(ctx, track.ID, track.Path, true)
 		s.emitLyrics(track.ID, lyric)
 	}
 }

@@ -1,0 +1,111 @@
+package lyrics
+
+import (
+	"context"
+	"io"
+	"log/slog"
+	"testing"
+
+	"airmedy/internal/domain"
+)
+
+type stubRepo struct {
+	lyric *domain.Lyric
+}
+
+func (s *stubRepo) GetByTrackID(_ context.Context, _ string) (*domain.Lyric, error) {
+	return s.lyric, nil
+}
+func (s *stubRepo) Save(_ context.Context, _ *domain.Lyric) error   { return nil }
+func (s *stubRepo) Upsert(_ context.Context, l *domain.Lyric) error { s.lyric = l; return nil }
+func (s *stubRepo) Delete(_ context.Context, _ string) error        { return nil }
+
+type stubLocal struct {
+	content string
+	source  string
+}
+
+func (s stubLocal) Read(string) (string, string, bool) {
+	if s.content == "" {
+		return "", "", false
+	}
+	return s.content, s.source, true
+}
+
+func newService(lyric *domain.Lyric, local domain.LocalLyricsReader) *LyricsService {
+	return NewLyricsService(&stubRepo{lyric: lyric}, slog.New(slog.NewTextHandler(io.Discard, nil)), nil, local)
+}
+
+func TestResolveLyrics(t *testing.T) {
+	ctx := context.Background()
+
+	cases := []struct {
+		name        string
+		dbLyric     *domain.Lyric
+		local       domain.LocalLyricsReader
+		preferLocal bool
+		wantSource  string // "" => expect nil
+	}{
+		{
+			name:        "local file beats tag and provider (preferLocal)",
+			dbLyric:     &domain.Lyric{MetaContent: "tag", MetaSource: "meta-plain", Content: "prov", Source: "lrclib-synced"},
+			local:       stubLocal{content: "[00:01.00]file", source: "local-lrc"},
+			preferLocal: true,
+			wantSource:  "local-lrc",
+		},
+		{
+			name:        "tag used when no local file (preferLocal)",
+			dbLyric:     &domain.Lyric{MetaContent: "tag", MetaSource: "meta-plain", Content: "prov", Source: "lrclib-synced"},
+			local:       stubLocal{},
+			preferLocal: true,
+			wantSource:  "meta-plain",
+		},
+		{
+			name:        "provider wins when preferLocal false",
+			dbLyric:     &domain.Lyric{MetaContent: "tag", MetaSource: "meta-plain", Content: "prov", Source: "lrclib-synced"},
+			local:       stubLocal{content: "file", source: "local-txt"},
+			preferLocal: false,
+			wantSource:  "lrclib-synced",
+		},
+		{
+			name:        "fall back to local when provider empty and preferLocal false",
+			dbLyric:     &domain.Lyric{MetaContent: "tag", MetaSource: "meta-plain"},
+			local:       stubLocal{content: "file", source: "local-txt"},
+			preferLocal: false,
+			wantSource:  "local-txt",
+		},
+		{
+			name:        "nil when nothing available",
+			dbLyric:     nil,
+			local:       stubLocal{},
+			preferLocal: true,
+			wantSource:  "",
+		},
+		{
+			name:        "local file with no db row (preferLocal)",
+			dbLyric:     nil,
+			local:       stubLocal{content: "file", source: "local-lrc"},
+			preferLocal: true,
+			wantSource:  "local-lrc",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			svc := newService(tc.dbLyric, tc.local)
+			got := svc.ResolveLyrics(ctx, "track1", "/music/Song.mp3", tc.preferLocal)
+			if tc.wantSource == "" {
+				if got != nil {
+					t.Fatalf("expected nil, got %+v", got)
+				}
+				return
+			}
+			if got == nil {
+				t.Fatalf("expected source %q, got nil", tc.wantSource)
+			}
+			if got.Source != tc.wantSource {
+				t.Fatalf("expected source %q, got %q", tc.wantSource, got.Source)
+			}
+		})
+	}
+}

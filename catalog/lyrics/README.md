@@ -2,17 +2,18 @@
 
 ## Summary
 
-Fetches and displays synchronized (LRC) or plain-text lyrics for the current track. Lyrics are sourced from **lrclib.net** and **KuGou Music** and cached in SQLite. The frontend parses LRC timestamps and auto-scrolls to the current line.
+Fetches and displays synchronized (LRC) or plain-text lyrics for the current track. Lyrics are sourced from **sibling local files** (`.lrc` / `.txt` next to the audio file, read live at play time), embedded **file metadata** (`LYRICS` tag, read at scan time), and the external providers **lrclib.net** and **KuGou Music** (cached in SQLite). The frontend parses LRC timestamps and auto-scrolls to the current line.
 
 ## Files
 
 | File                                        | Purpose                              |
 | ------------------------------------------- | ------------------------------------ |
-| `internal/domain/repositories.go`           | `LyricsProvider` port interface      |
-| `internal/app/lyrics/lyrics_service.go`     | Use-case orchestration, CRUD, racing |
+| `internal/domain/repositories.go`           | `LyricsProvider` + `LocalLyricsReader` port interfaces |
+| `internal/app/lyrics/lyrics_service.go`     | Use-case orchestration, CRUD, racing, resolution |
+| `internal/infra/lyrics/local.go`            | Sibling `.lrc`/`.txt` file reader    |
 | `internal/infra/lyrics/lrclib.go`           | lrclib.net HTTP adapter              |
 | `internal/infra/lyrics/kugou.go`            | KuGou Music HTTP adapter             |
-| `internal/infra/lyrics/module.go`           | FX wiring for provider group         |
+| `internal/infra/lyrics/module.go`           | FX wiring for provider group + local reader |
 | `internal/infra/sqlite/lyric_repository.go` | SQLite persistence                   |
 | `internal/infra/wails/lyrics_service.go`    | Wails binding                        |
 | `frontend/src/composables/useLyrics.ts`     | LRC parser, synced/plain view        |
@@ -33,16 +34,37 @@ type Lyric struct {
 
 ## Resolution Strategy
 
-`LyricsService.ResolveLyrics(ctx, trackID, preferMetadata bool)` determines which lyrics to display based on three boolean settings stored in the DB:
+`LyricsService.ResolveLyrics(ctx, trackID, audioPath, preferLocal bool)` picks the best lyric.
+
+The **local tier** is built first: a sibling lyric file next to `audioPath` (read live by
+`LocalLyricsReader`, `.lrc` preferred over `.txt`) if present, otherwise the embedded metadata tag
+(`MetaContent`, cached in DB at scan time). So within the local tier: **local file beats tag**.
+
+`preferLocal` then decides local tier vs external provider content:
 
 | Setting | Effect |
 | --- | --- |
-| `prefer_metadata_lyrics=true` | (Default) Use `MetaContent` if available, otherwise fall back to `Content` (external provider). |
-| `prefer_metadata_lyrics=false` | Use `Content` (external provider) if available, otherwise fall back to `MetaContent`. |
+| `prefer_local_lyrics=true` | (Default) Use the local tier if available, otherwise fall back to `Content` (external provider). |
+| `prefer_local_lyrics=false` | Use `Content` (external provider) if available, otherwise fall back to the local tier. |
 | `enable_lrclib=false` | lrclib.net provider disabled; not queried on fetch. |
 | `enable_kugou=false` | KuGou provider disabled; not queried on fetch. |
 
+**Full priority (default `prefer_local_lyrics=true`):**
+`Local .lrc` → `Local .txt` → `Metadata tag` → `LRClib / KuGou`.
+
+The setting was renamed from `prefer_metadata_lyrics` (migration `000022_prefer_local_lyrics`,
+`RENAME COLUMN` preserves the existing value).
+
 If both `enable_lrclib` and `enable_kugou` are false, no external fetch is attempted. If resolution returns no cached result and at least one provider is enabled, `PlayerService` triggers an external fetch.
+
+### Local Lyric Files
+
+- Filename must match the audio file's basename exactly, differing only in extension
+  (`/music/Song.mp3` → `/music/Song.lrc` or `/music/Song.txt`).
+- Read **live at play time** in `PlayerService.fetchAndEmitLyrics` — not cached and not watched, so
+  newly added/edited files are picked up on the next play. No rescan needed.
+- Sources: `local-lrc`, `local-txt`. Frontend keys synced/plain off the content (timestamps), so
+  `.lrc` renders synced and `.txt` renders plain automatically.
 
 ## Fetch Strategy
 
@@ -96,6 +118,12 @@ type LyricRepository interface {
 type LyricsProvider interface {
     Fetch(ctx context.Context, track *TrackDTO) (*Lyric, error)
     Name() string
+}
+
+// LocalLyricsReader reads a sibling lyric file next to the audio file
+// (<base>.lrc preferred, then <base>.txt). found=false if neither exists.
+type LocalLyricsReader interface {
+    Read(audioPath string) (content, source string, found bool)
 }
 ```
 

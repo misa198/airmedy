@@ -16,7 +16,7 @@ export const useAppStore = defineStore('app', () => {
   const eqEnabled = ref(true)
   const enableLrclib = ref(true)
   const enableKugou = ref(true)
-  const preferMetadataLyrics = ref(true)
+  const preferLocalLyrics = ref(true)
   const useOnlineArtistArtwork = ref(true)
   const preventSleepWhilePlaying = ref(false)
   const showPlayerIndicator = ref(true)
@@ -64,7 +64,7 @@ export const useAppStore = defineStore('app', () => {
         eqEnabled.value = settings.eq_enabled !== false
         enableLrclib.value = settings.enable_lrclib !== false
         enableKugou.value = settings.enable_kugou !== false
-        preferMetadataLyrics.value = settings.prefer_metadata_lyrics !== false
+        preferLocalLyrics.value = settings.prefer_local_lyrics !== false
         useOnlineArtistArtwork.value = settings.use_online_artist_artwork !== false
         preventSleepWhilePlaying.value = !!settings.prevent_sleep_while_playing
         showPlayerIndicator.value = settings.show_player_indicator !== false
@@ -130,7 +130,7 @@ export const useAppStore = defineStore('app', () => {
         eq_enabled: eqEnabled.value,
         enable_lrclib: enableLrclib.value,
         enable_kugou: enableKugou.value,
-        prefer_metadata_lyrics: preferMetadataLyrics.value,
+        prefer_local_lyrics: preferLocalLyrics.value,
         use_online_artist_artwork: useOnlineArtistArtwork.value,
         prevent_sleep_while_playing: preventSleepWhilePlaying.value,
         show_player_indicator: showPlayerIndicator.value,
@@ -190,8 +190,8 @@ export const useAppStore = defineStore('app', () => {
     await saveSettings()
   }
 
-  const updatePreferMetadataLyrics = async (enabled: boolean) => {
-    preferMetadataLyrics.value = enabled
+  const updatePreferLocalLyrics = async (enabled: boolean) => {
+    preferLocalLyrics.value = enabled
     await saveSettings()
   }
 
@@ -243,7 +243,7 @@ export const useAppStore = defineStore('app', () => {
     eqEnabled,
     enableLrclib,
     enableKugou,
-    preferMetadataLyrics,
+    preferLocalLyrics,
     useOnlineArtistArtwork,
     preventSleepWhilePlaying,
     showPlayerIndicator,
@@ -267,7 +267,7 @@ export const useAppStore = defineStore('app', () => {
     updateLastFmUsername,
     updateEnableLrclib,
     updateEnableKugou,
-    updatePreferMetadataLyrics,
+    updatePreferLocalLyrics,
     updateUseOnlineArtistArtwork,
     updatePreventSleepWhilePlaying,
     updateShowPlayerIndicator,

@@ -83,8 +83,8 @@
       "enable_lrclib_desc": "LRCLIB.NET から歌詞を取得",
       "enable_kugou": "KuGou の歌詞",
       "enable_kugou_desc": "KuGou Music から歌詞を取得",
-      "prefer_metadata_lyrics": "メタデータの歌詞を優先",
-      "prefer_metadata_lyrics_desc": "利用可能な場合は埋め込まれた歌詞を使用する",
+      "prefer_local_lyrics": "ローカル歌詞を優先",
+      "prefer_local_lyrics_desc": "利用可能な場合はローカル歌詞ファイル（.lrc/.txt）または埋め込み歌詞を使用",
       "scrobbling": "Scrobbling",
       "artwork": "画像",
       "lyrics": "歌詞"
