@@ -52,16 +52,18 @@ onUnmounted(() => {
 <template>
   <div class="h-full w-full flex flex-col overflow-hidden bg-background text-foreground">
     <!-- Window Drag Area (Double click to toggle maximize) -->
+    <!--
+      pointer-events-none: overlay must NOT block clicks on buttons sitting in
+      the top 40px (view header actions, sidebar). Window dragging still works:
+      -webkit-app-region (macOS) / --wails-draggable (Windows) are resolved from
+      layout, independent of pointer-events. Double-click-to-zoom is handled by
+      the OS over the drag region.
+    -->
     <div
-      v-if="!deviceStore.isWindowFullscreen && playerStore.playerMode !== 'fullscreen'"
+      v-if="!deviceStore.isWindowFullscreen && playerStore.playerMode !== 'fullscreen' && playerStore.playerMode !== 'mini'"
       class="fixed top-0 left-0 right-0 h-10 z-[60] select-none pointer-events-none"
-    >
-      <div 
-        class="w-full h-full pointer-events-auto"
-        style="-webkit-app-region: drag"
-        @dblclick="deviceStore.toggleMaximize"
-      />
-    </div>
+      style="-webkit-app-region: drag; --wails-draggable: drag"
+    />
 
     <!-- Main Content Area -->
     <div class="flex-1 min-h-0 flex overflow-hidden">
