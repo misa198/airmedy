@@ -6,52 +6,35 @@ Airmedy is a desktop music player built with **Wails v3** (Go backend + Vue 3 fr
 
 ## Layer Diagram
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Frontend (Vue 3 + TypeScript)                                  │
-│  ┌─────────────┐  ┌──────────────┐  ┌────────────┐              │
-│  │   Views     │  │  Components  │  │   Stores   │              │
-│  │  (routes)   │  │  (UI blocks) │  │  (Pinia)   │              │
-│  └─────────────┘  └──────────────┘  └────────────┘              │
-│           │               │               │                     │
-│           └───────────────┴───────────────┘                     │
-│                           │                                     │
-│                 Wails Bindings (auto-generated TS)              │
-│                 Wails Events (Go → frontend push)               │
-└───────────────────────────┬─────────────────────────────────────┘
-                            │  IPC (function calls + events)
-┌───────────────────────────▼─────────────────────────────────────┐
-│  infra/wails  (Adapter Layer — thin wrappers)                   │
-│  PlayerService, LibraryService, SearchService, PlaylistService, │
-│  LyricsService, EQService, SettingsService, UpdaterService,     │
-│  WindowService                                                  │
-└───────────────────────────┬─────────────────────────────────────┘
-                            │
-┌───────────────────────────▼─────────────────────────────────────┐
-│  internal/app  (Application Services)                           │
-│  library/, player/, playlist/, eq/, lyrics/, config/, i18n/,   │
-│  updater/                                                       │
-│  — orchestrates domain entities and ports                       │
-│  — framework-agnostic business logic                            │
-└───────────────────────────┬─────────────────────────────────────┘
-                            │
-┌───────────────────────────▼─────────────────────────────────────┐
-│  internal/domain  (Core)                                        │
-│  models.go, repositories.go, audio.go, metadata.go,             │
-│  search.go, artwork.go                                          │
-│  — entities, value objects, port interfaces                     │
-│  — zero external imports                                        │
-└───────────────────────────┬─────────────────────────────────────┘
-                            │  implements
-┌───────────────────────────▼─────────────────────────────────────┐
-│  internal/infra  (Infrastructure Adapters)                      │
-│  ├── sqlite/     — SQLite repositories (sqlx + golang-migrate)  │
-│  ├── bleve/      — Full-text search (Bleve v2)                  │
-│  ├── audio/      — SFBAudioEngine (macOS), miniaudio (Win/Linux)│
-│  ├── metadata/   — TagLib + FFmpeg fallback                     │
-│  ├── artwork/    — Disk cache, resize, palette extraction       |
-│  └── logging/    — log/slog + lumberjack                        │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph FE["Frontend (Vue 3 + TypeScript)"]
+        direction LR
+        Views["Views<br/>(routes)"]
+        Comps["Components<br/>(UI blocks)"]
+        Stores["Stores<br/>(Pinia)"]
+    end
+    FE -.->|"Wails Bindings (auto-gen TS)<br/>Wails Events (Go → frontend push)"| WAILS
+
+    subgraph WAILS["infra/wails — Adapter Layer (thin wrappers)"]
+        Adapters["PlayerService · LibraryService · SearchService · PlaylistService<br/>LyricsService · EQService · SettingsService · UpdaterService · WindowService"]
+    end
+
+    subgraph APP["internal/app — Application Services"]
+        AppSvc["library/ · player/ · playlist/ · eq/ · lyrics/ · config/ · i18n/ · updater/<br/><i>orchestrates domain entities + ports; framework-agnostic</i>"]
+    end
+
+    subgraph DOMAIN["internal/domain — Core"]
+        Dom["models · repositories · audio · metadata · search · artwork<br/><i>entities, value objects, port interfaces; zero external imports</i>"]
+    end
+
+    subgraph INFRA["internal/infra — Infrastructure Adapters"]
+        Inf["sqlite/ (sqlx + golang-migrate) · bleve/ (Bleve v2)<br/>audio/ (SFBAudioEngine macOS, miniaudio Win/Linux)<br/>metadata/ (TagLib + FFmpeg) · artwork/ (cache, resize, palette) · logging/"]
+    end
+
+    WAILS -->|"IPC: calls + events"| APP
+    APP --> DOMAIN
+    INFRA -->|implements| DOMAIN
 ```
 
 ## Dependency Rule
@@ -118,6 +101,20 @@ wailsApp := application.New(application.Options{
 
 **Mini player window:** 300×300px (min 280×280, max 500×500), always-on-top, hidden by default.
 
+### Single Instance & Deep Links
+
+`internal/app/singleinstance` enforces one running instance and relays later launches. It runs in
+`main.go` **before** any exclusive resource is acquired (the bleve index lock, the remote-server
+port) so a second launch never deadlocks on them.
+
+- `Acquire` tries to become the primary by listening on a loopback TCP port derived from an
+  fnv hash of an app key. If the port is already owned by a primary (verified via a magic
+  handshake, `AIRMEDY_SI_V1`), it forwards this process's `os.Args` and returns
+  `ErrAlreadyRunning` — the caller exits.
+- On Windows/Linux the deep-link URL arrives in `os.Args`, so relaying the args hands the URL to
+  the primary; the primary reads forwarded launches from `Instance.Messages()` and reacts
+  (focus window / handle the URL).
+
 ### IPC: Frontend → Backend
 
 Frontend calls Go methods via auto-generated TypeScript bindings in `frontend/src/bindings/`. Generated by `wails3 generate bindings` — never edit manually.
@@ -138,17 +135,26 @@ Go emits events via `application.EmitEvent(name, data)`. Frontend subscribes via
 
 ## Data Flow: Playback Example
 
-```
-User clicks Play
-  → TrackTable emits play-track
-  → playerStore.playTracks(tracks, index)
-  → PlayerService.PlayTracks() [Wails binding]
-  → app/player/player_service.go: PlayTracks()
-    → queue_service.go: SetQueue()
-    → audio player: Load(track), Play()
-    → 500ms ticker → EmitEvent("player:status", status)
-  → frontend receives player:status event
-  → playerStore updates status, UI re-renders
+```mermaid
+sequenceDiagram
+    actor User
+    participant TT as TrackTable
+    participant PS as playerStore (Pinia)
+    participant WB as PlayerService (Wails binding)
+    participant App as app/player/player_service.go
+    participant Q as queue_service.go
+    participant AP as audio player
+
+    User->>TT: clicks Play
+    TT->>PS: emits play-track
+    PS->>WB: playTracks(tracks, index)
+    WB->>App: PlayTracks()
+    App->>Q: SetQueue()
+    App->>AP: Load(track), Play()
+    loop every 500ms
+        AP-->>PS: EmitEvent("player:status", status)
+    end
+    PS->>PS: update status, UI re-renders
 ```
 
 ## Asset Serving
@@ -195,6 +201,8 @@ The frontend lives inside a **pnpm + Turbo monorepo** rooted at the repo root. S
 | ------------------- | -------------------------- | --------------------- |
 | Audio backend       | SFBAudioEngine (cgo)       | miniaudio (C library) |
 | EQ support          | AVAudioEngine EQ bands     | 10-band miniaudio chain|
-| Now Playing / MPRIS | macOS NowPlayingController | Not implemented       |
+| OS Now Playing      | `MPNowPlayingInfoCenter`   | Windows SMTC / Linux MPRIS (D-Bus) |
 | App menu            | Full macOS menu bar        | File menu only        |
 | Translucent window  | NSVisualEffectView         | Not applicable        |
+| Title bar colour    | Hidden (translucent)       | Windows: `DwmSetWindowAttribute` (Linux n/a) |
+| Single instance     | Wails default              | Loopback-socket guard + arg/deep-link relay (`singleinstance/`) |

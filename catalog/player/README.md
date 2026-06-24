@@ -2,7 +2,7 @@
 
 ## Summary
 
-The player feature handles audio playback, queue management, shuffle/repeat modes, state persistence across app restarts, and OS-level media integration (macOS Now Playing, Windows System Media Transport Controls). It is split between an application-layer service and platform-specific audio adapters.
+The player feature handles audio playback, queue management, shuffle/repeat modes, state persistence across app restarts, and OS-level media integration (macOS Now Playing, Windows System Media Transport Controls, Linux MPRIS). It is split between an application-layer service and platform-specific audio adapters.
 
 ## Files
 
@@ -13,7 +13,10 @@ The player feature handles audio playback, queue management, shuffle/repeat mode
 | `internal/infra/audio/player_darwin.go`    | macOS SFBAudioEngine player (cgo)        |
 | `internal/infra/audio/native_player_darwin.m` | Obj-C SFBAudioEngine implementation   |
 | `internal/infra/audio/player_miniaudio.go` | Windows/Linux miniaudio player           |
-| `internal/infra/audio/player_nowplaying_windows.go` | Windows SMTC Now Playing controller (cgo) |
+| `internal/infra/audio/nowplaying.go`       | `nowPlayingBackend` interface + `MiniAudioPlayer` delegation (`//go:build windows \|\| linux`) |
+| `internal/infra/audio/nowplaying_windows.go` | Windows backend factory → `smtcBackend` |
+| `internal/infra/audio/nowplaying_linux.go` | Linux MPRIS (D-Bus) backend (`mprisBackend`) |
+| `internal/infra/audio/player_nowplaying_windows.go` | Windows `smtcBackend`: cgo bridge to SMTC |
 | `internal/infra/audio/smtc_windows.cpp`    | WinRT SMTC implementation (C-ABI, mingw)  |
 | `internal/infra/audio/smtc_windows.h`      | C-ABI bridge for the SMTC backend         |
 | `internal/infra/wails/player_service.go`   | Wails binding wrapper                    |
@@ -79,23 +82,23 @@ type NowPlayingController interface {
 }
 ```
 
-Implemented by `DarwinPlayer` (macOS, `MPNowPlayingInfoCenter`) and, on Windows, by
-`MiniAudioPlayer` via SMTC. Not implemented on Linux (so `nowPlaying` stays nil there).
+Implemented by `DarwinPlayer` (macOS, `MPNowPlayingInfoCenter`) directly, and by
+`MiniAudioPlayer` (Windows + Linux). On Win/Linux `MiniAudioPlayer` does not talk to the OS
+itself — it delegates to a `nowPlayingBackend` (`nowplaying.go`) selected per platform:
+`smtcBackend` (SMTC) on Windows, `mprisBackend` (MPRIS/D-Bus) on Linux. The factory
+`newNowPlayingBackend` may return nil when the OS integration is unavailable (e.g. no D-Bus
+session bus), in which case every delegated call is a no-op.
 
-### NowPlayingPlaybackState Interface (Optional companion)
+### Playback state (play/pause glyph)
 
-Some platforms must be told the play/pause state explicitly because it is not implied by the
-other calls. `PlayerService.Play()`/`Pause()` invoke this (guarded by a type assertion) so the
-OS shows the correct play/pause glyph.
+The `domain.NowPlayingPlaybackState` interface (`SetNowPlayingPlaybackState(playing bool)`) and
+`PlayerService.setNowPlayingPlaybackState` still exist but currently have **no implementer** — the
+type assertion always fails, so the service hook is a no-op on every platform. Play/pause state
+is instead pushed where the engine state actually flips:
 
-```go
-type NowPlayingPlaybackState interface {
-    SetNowPlayingPlaybackState(playing bool)
-}
-```
-
-Implemented on Windows only. macOS derives the glyph from its own engine's `isPlaying` and does
-not implement it.
+- **Win/Linux:** `MiniAudioPlayer.Play/Pause/Stop` call `np.setPlaybackState(domain.PlaybackState)`
+  on the backend, which drives the OS glyph (SMTC `PlaybackStatus` / MPRIS `PlaybackStatus`).
+- **macOS:** `DarwinPlayer` derives the glyph from its own engine's `isPlaying`.
 
 ## SleepInhibitor Interface
 
@@ -141,8 +144,8 @@ type SleepInhibitor interface {
 
 ### Windows — System Media Transport Controls (Now Playing)
 
-`*MiniAudioPlayer` implements `NowPlayingController` + `NowPlayingPlaybackState` on Windows
-(`player_nowplaying_windows.go`, `//go:build windows`) by bridging via cgo to `smtc_windows.cpp`.
+On Windows the `nowPlayingBackend` is `smtcBackend` (`player_nowplaying_windows.go`,
+`//go:build windows`), which bridges via cgo to `smtc_windows.cpp`.
 
 - **Toolchain:** built with mingw-w64 GCC (not MSVC), so SMTC is reached through the WinRT
   **C-ABI** projection headers (`ABI::Windows::Media::*` vtable COM), compiled as C++. Extra
@@ -164,11 +167,27 @@ type SleepInhibitor interface {
 - **Identity:** calls `SetCurrentProcessExplicitAppUserModelID("me.misa198.airmedy")` so the OS
   attributes the media session to Airmedy.
 - **Mapping:** metadata + album-art thumbnail (file:// URI) via `DisplayUpdater`; play/pause
-  glyph via `PlaybackStatus` (driven by `SetNowPlayingPlaybackState`); seek scrubber via
+  glyph via `PlaybackStatus` (driven by the backend's `setPlaybackState`, called from
+  `MiniAudioPlayer.Play/Pause/Stop`); seek scrubber via
   `ISystemMediaTransportControls2::UpdateTimelineProperties`; media-button/seek events forwarded
   to `PlayerService` through the `goWinNowPlaying*` cgo exports.
 - **Teardown:** `MiniAudioPlayer.Close()` (called by `PlayerService` OnStop) posts quit, drains
   queued payloads, releases interfaces, and joins the thread. Idempotent.
+
+### Linux — MPRIS (Now Playing)
+
+On Linux the `nowPlayingBackend` is `mprisBackend` (`nowplaying_linux.go`, `//go:build linux`),
+pure Go over D-Bus (`github.com/godbus/dbus/v5`). No cgo.
+
+- **Bus:** connects to the session bus and exports `org.mpris.MediaPlayer2.airmedy` at
+  `/org/mpris/MediaPlayer2`, implementing the `org.mpris.MediaPlayer2` (root) and
+  `org.mpris.MediaPlayer2.Player` interfaces so GNOME/KDE shells, media keys and `playerctl` can
+  see and control playback. `newNowPlayingBackend` returns nil if the session bus is unavailable.
+- **Mapping:** track metadata → `Metadata` property (`xesam:*` + `mpris:artUrl` file:// URI);
+  play/pause → `PlaybackStatus` (driven by `setPlaybackState`); position via `mpris:length` +
+  `Position`. Remote Play/Pause/Next/Previous/Seek method calls are forwarded to `PlayerService`
+  via the registered callbacks; property changes are emitted as D-Bus `PropertiesChanged` signals.
+- **Teardown:** `close()` releases the bus name and connection.
 
 ## PlayerService (Application Layer)
 

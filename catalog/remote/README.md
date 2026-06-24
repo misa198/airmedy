@@ -255,11 +255,11 @@ dispose()  // stops progress timer; call on app unmount
 
 ## Build & Embed
 
-```
-pnpm build   (in remote/)
-  → remote/dist/
-  → embedded as RemoteFS (fs.FS) via go:embed
-  → handler.go serves assets from embedded FS
+```mermaid
+flowchart LR
+    A["pnpm build<br/>(in remote/)"] --> B["remote/dist/"]
+    B --> C["embedded as RemoteFS (fs.FS)<br/>via go:embed"]
+    C --> D["handler.go serves assets<br/>from embedded FS"]
 ```
 
 Port is selected from the dynamic range 49152–65535, cached in `AppSettings.RemoteServerPort`. If the cached port is unavailable, a new random port is chosen and persisted.

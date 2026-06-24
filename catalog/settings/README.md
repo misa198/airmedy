@@ -114,11 +114,15 @@ Each `update*()` method calls `SettingsService.SaveSettings()` with the full set
 `internal/app/updater/Service` uses the GitHub Releases API directly (`api.github.com/repos/misa198/airmedy/releases/latest`) — no third-party updater library. Flow:
 
 1. `CheckForUpdate()` → fetches latest release JSON, selects platform asset by OS/arch + extension (`.zip` for macOS/Windows, `.tar.gz` for Linux), optionally fetches `SHA256SUMS` for verification. Caches the pending release.
-2. `DownloadAndApply(ctx, progress)` → downloads asset with streaming progress callback, verifies SHA256 if available, extracts named binary from archive, applies atomically via `github.com/inconshreveable/go-update`, then runs platform-specific `postUpdate`.
+2. `DownloadAndApply(ctx, progress)` → downloads asset with streaming progress callback, verifies SHA256 if available, then calls the per-platform `applyUpdate` (build-tagged: `service_darwin.go` / `service_windows.go` / `service_other.go`). `applyUpdate` returns a **staging path** that is stashed on the service for the relaunch step (no in-place patch of the running binary on any platform).
 3. `infra/wails/UpdaterService.DownloadAndApply()` wraps the above and emits `updater:progress` events (`{ downloaded, total, percentage }`) to the frontend event bus during download.
-4. `RestartApp()` calls `Service.PrepareRestart()`. On macOS: spawns a background shell (`sh -c`) that polls `kill -0 <pid>` until the process exits, then replaces the current `.app` bundle with the staged update bundle, ad-hoc codesigns it (`codesign --force --deep --sign -`), removes quarantine (`xattr -d com.apple.quarantine`), and reopens via `open`. On other platforms: re-execs the binary directly.
+4. `RestartApp()` → `Service.PrepareRestart()` → per-platform `relaunch(bundlePath, exe, pid)`, which waits for the current process to exit before swapping/installing, then relaunches.
 
-macOS `applyUpdate`: instead of patching the running binary in-place, it extracts the full `.app` bundle from the zip archive to a staging path (`<bundle>.app.update`), then defers the bundle swap to the post-exit shell. `postUpdate` only updates `Info.plist` version fields (`CFBundleShortVersionString`, `CFBundleVersion`) — ad-hoc codesigning is done by the restart shell after process exit.
+Per-platform `applyUpdate` + `relaunch`:
+
+- **macOS** (`service_darwin.go`): extracts the full `.app` bundle from the zip to a staging path (`<bundle>.app.update`); `postUpdate` updates `Info.plist` version fields. `relaunch` spawns a background `sh -c` that polls `kill -0 <pid>` until exit, swaps the bundle, ad-hoc codesigns (`codesign --force --deep --sign -`), removes quarantine (`xattr -d com.apple.quarantine`), and reopens via `open`.
+- **Windows** (`service_windows.go`): the app installs under Program Files (admin), so a normal-user process cannot swap the running `.exe`. `applyUpdate` extracts the NSIS **installer** `.exe` from the release zip to a temp staging path; `relaunch` waits for exit then runs the installer **silently and elevated (UAC)** and relaunches the app.
+- **Linux** (`service_other.go`, `!darwin && !windows`): `applyUpdate` extracts the `airmedy` binary. `relaunch` replaces the binary in place when the install dir is writable (user-local tar.gz install); for root-owned installs (e.g. `/usr/local/bin`) it installs the staged binary elevated via `pkexec sh -c 'cp -f … && chmod 755 …'`.
 
 Version constant moved from `internal/domain/version.go` (deleted) to `internal/app/config/meta.go` as `config.Version`.
 
