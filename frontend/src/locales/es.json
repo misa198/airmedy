@@ -271,6 +271,8 @@
     "disc": "Disco",
     "total_discs": "Total de discos",
     "edit_metadata": "Editar metadatos",
+    "download_artwork": "Descargar carátula",
+    "download_artwork_failed": "No se pudo descargar la carátula",
     "track_info": "Información de la pista",
     "lyrics": "Letras",
     "lyrics_placeholder": "Pega las letras aquí...",

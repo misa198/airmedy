@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+
 defineProps<{
   open: boolean
   title?: string
   widthClass?: string
 }>()
-
-import { ref } from 'vue'
 
 const emit = defineEmits<{
   close: []

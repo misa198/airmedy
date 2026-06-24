@@ -271,6 +271,8 @@
     "disc": "Диск",
     "total_discs": "Всего дисков",
     "edit_metadata": "Редактировать метаданные",
+    "download_artwork": "Скачать обложку",
+    "download_artwork_failed": "Не удалось скачать обложку",
     "track_info": "Информация о треке",
     "lyrics": "Текст песни",
     "lyrics_placeholder": "Вставьте текст песни здесь...",

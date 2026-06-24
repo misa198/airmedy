@@ -271,6 +271,8 @@
     "disc": "Disque",
     "total_discs": "Total de disques",
     "edit_metadata": "Modifier les métadonnées",
+    "download_artwork": "Télécharger la pochette",
+    "download_artwork_failed": "Échec du téléchargement de la pochette",
     "track_info": "Informations sur la piste",
     "lyrics": "Paroles",
     "lyrics_placeholder": "Collez les paroles ici...",

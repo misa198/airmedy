@@ -3,6 +3,9 @@ package wails
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"airmedy/internal/app/library"
 	"airmedy/internal/domain"
@@ -17,6 +20,7 @@ type LibraryService struct {
 	artistRepo   domain.ArtistRepository
 	genreRepo    domain.GenreRepository
 	composerRepo domain.ComposerRepository
+	artworkCache domain.ArtworkCache
 }
 
 func NewLibraryService(
@@ -27,6 +31,7 @@ func NewLibraryService(
 	artistRepo domain.ArtistRepository,
 	genreRepo domain.GenreRepository,
 	composerRepo domain.ComposerRepository,
+	artworkCache domain.ArtworkCache,
 ) *LibraryService {
 	return &LibraryService{
 		libService:   libService,
@@ -36,7 +41,57 @@ func NewLibraryService(
 		artistRepo:   artistRepo,
 		genreRepo:    genreRepo,
 		composerRepo: composerRepo,
+		artworkCache: artworkCache,
 	}
+}
+
+// DownloadArtwork prompts for a destination and writes the ORIGINAL (full-size)
+// artwork bytes to disk. defaultName is the suggested filename WITHOUT extension.
+func (s *LibraryService) DownloadArtwork(artworkKey, defaultName string) error {
+	if artworkKey == "" {
+		return fmt.Errorf("no artwork")
+	}
+	app := application.Get()
+	if app == nil {
+		return fmt.Errorf("application not initialized")
+	}
+
+	srcPath := s.artworkCache.GetPath(artworkKey)
+	data, err := os.ReadFile(srcPath)
+	if err != nil {
+		return fmt.Errorf("failed to read artwork: %w", err)
+	}
+
+	ext := filepath.Ext(artworkKey) // ".jpg" / ".png"
+	if ext == "" {
+		ext = ".jpg"
+	}
+	name := sanitizeFilename(defaultName)
+	if name == "" {
+		name = "artwork"
+	}
+
+	dest, err := app.Dialog.SaveFile().
+		SetMessage("Save Artwork").
+		SetFilename(name + ext).
+		AddFilter("Image", "*"+ext).
+		PromptForSingleSelection()
+	if err != nil {
+		return err
+	}
+	if dest == "" {
+		return nil // cancelled
+	}
+	return os.WriteFile(dest, data, 0644)
+}
+
+// sanitizeFilename strips characters illegal in filenames across platforms.
+func sanitizeFilename(name string) string {
+	replacer := strings.NewReplacer(
+		"/", "", "\\", "", ":", "", "*", "", "?", "", "\"", "",
+		"<", "", ">", "", "|", "",
+	)
+	return strings.Trim(replacer.Replace(name), " .")
 }
 
 func (s *LibraryService) SelectFolder() (string, error) {

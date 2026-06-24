@@ -271,6 +271,8 @@
     "disc": "Disco",
     "total_discs": "Dischi totali",
     "edit_metadata": "Modifica Metadati",
+    "download_artwork": "Scarica copertina",
+    "download_artwork_failed": "Impossibile scaricare la copertina",
     "track_info": "Informazioni traccia",
     "lyrics": "Testi",
     "lyrics_placeholder": "Incolla i testi qui...",

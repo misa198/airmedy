@@ -271,6 +271,8 @@
     "disc": "Đĩa",
     "total_discs": "Tổng số đĩa",
     "edit_metadata": "Chỉnh sửa siêu dữ liệu",
+    "download_artwork": "Tải ảnh bìa",
+    "download_artwork_failed": "Không thể tải ảnh bìa",
     "track_info": "Thông tin bài hát",
     "lyrics": "Lời bài hát",
     "lyrics_placeholder": "Dán lời bài hát vào đây...",

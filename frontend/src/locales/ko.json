@@ -271,6 +271,8 @@
     "disc": "디스크",
     "total_discs": "총 디스크 수",
     "edit_metadata": "메타데이터 편집",
+    "download_artwork": "아트워크 다운로드",
+    "download_artwork_failed": "아트워크 다운로드 실패",
     "track_info": "트랙 정보",
     "lyrics": "가사",
     "lyrics_placeholder": "여기에 가사를 붙여넣으세요...",

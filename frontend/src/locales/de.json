@@ -271,6 +271,8 @@
     "disc": "CD",
     "total_discs": "CDs gesamt",
     "edit_metadata": "Metadaten bearbeiten",
+    "download_artwork": "Cover herunterladen",
+    "download_artwork_failed": "Cover konnte nicht heruntergeladen werden",
     "track_info": "Titelinformationen",
     "lyrics": "Songtext",
     "lyrics_placeholder": "Songtext hier einfügen...",
