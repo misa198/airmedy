@@ -30,7 +30,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: internal/infra/audio/ffmpeg_libs
-          key: ffmpeg-Windows-${{ hashFiles('scripts/build-ffmpeg-windows.sh') }}
+          key: ffmpeg-Windows-v2-${{ hashFiles('scripts/build-ffmpeg-windows.sh') }}
 
       - name: Install mingw cross-compilers
         if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
