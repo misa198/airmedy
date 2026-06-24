@@ -11,7 +11,7 @@ defineProps<{
 
 <template>
   <div
-    class="rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.6)] overflow-hidden flex-shrink-0 ring-1 ring-white/8 transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] w-64 h-64 md:w-80 md:h-80"
+    class="rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.6)] overflow-hidden flex-shrink-0 ring-1 ring-white/8 transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] aspect-square h-[clamp(8rem,34vh,20rem)] w-auto"
     :class="[
       isPlaying ? 'scale-100' : 'scale-[0.80]'
     ]">

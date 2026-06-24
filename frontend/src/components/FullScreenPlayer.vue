@@ -107,7 +107,7 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
           <div
             class="flex flex-col items-center justify-center transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
             :class="!showRightColumn ? 'w-full max-w-lg' : 'w-1/2 max-w-md'">
-            <div class="flex flex-col items-center justify-center gap-6 w-full">
+            <div class="flex flex-col items-center justify-center gap-[clamp(0.75rem,2.5vh,1.5rem)] w-full min-h-0">
               <!-- Artwork -->
               <PlayerArtwork :artwork-url="store.artworkUrl" :track-title="trackTitle" :is-playing="store.isPlaying"
                 class="cursor-pointer"
