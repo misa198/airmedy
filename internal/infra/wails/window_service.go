@@ -74,6 +74,21 @@ func (s *WindowService) OnMiniPlayerClosed() {
 	}
 }
 
+// ShowCurrent brings the currently active window to front. If the mini player
+// is open, it is shown; otherwise the main window is shown. Used by the tray
+// "Show Airmedy" action to avoid revealing both windows at once.
+func (s *WindowService) ShowCurrent() {
+	if s.miniWindow != nil {
+		s.miniWindow.Show()
+		s.miniWindow.Focus()
+		return
+	}
+	if s.mainWindow != nil {
+		s.mainWindow.Show()
+		s.mainWindow.Focus()
+	}
+}
+
 // SetTitleBarTheme updates the native title bar colour to match the given app
 // theme. Effective on Windows only; no-op on other platforms.
 func (s *WindowService) SetTitleBarTheme(theme string) {

@@ -295,7 +295,7 @@ func main() {
 		}
 		systemTray.SetTooltip("Airmedy")
 
-		trayManager = wails.NewTrayManager(wailsApp, playerService.GetService(), libraryService, i18nService)
+		trayManager = wails.NewTrayManager(wailsApp, playerService.GetService(), libraryService, i18nService, windowService)
 		trayManager.Setup(systemTray, mainWindow)
 	}
 

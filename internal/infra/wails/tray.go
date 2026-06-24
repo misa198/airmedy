@@ -16,6 +16,7 @@ type TrayManager struct {
 	playerService  *player.PlayerService
 	libraryService *LibraryService
 	i18nService    *i18n.Service
+	windowService  *WindowService
 
 	tray             *application.SystemTray
 	mainWindow       *application.WebviewWindow
@@ -31,12 +32,13 @@ type TrayManager struct {
 	quitItem         *application.MenuItem
 }
 
-func NewTrayManager(app *application.App, playerService *player.PlayerService, libraryService *LibraryService, i18nService *i18n.Service) *TrayManager {
+func NewTrayManager(app *application.App, playerService *player.PlayerService, libraryService *LibraryService, i18nService *i18n.Service, windowService *WindowService) *TrayManager {
 	return &TrayManager{
 		app:            app,
 		playerService:  playerService,
 		libraryService: libraryService,
 		i18nService:    i18nService,
+		windowService:  windowService,
 	}
 }
 
@@ -113,8 +115,7 @@ func (m *TrayManager) Setup(tray *application.SystemTray, mainWindow *applicatio
 	menu.AddSeparator()
 
 	m.showAirmedyItem = menu.Add(m.i18nService.T("tray.show_airmedy")).OnClick(func(ctx *application.Context) {
-		mainWindow.Show()
-		mainWindow.Focus()
+		m.windowService.ShowCurrent()
 	})
 
 	m.quitItem = menu.Add(m.i18nService.T("tray.quit")).OnClick(func(ctx *application.Context) {
