@@ -140,7 +140,7 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
           <!-- Right Column Spacer (animates layout) -->
           <div
             class="h-full transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] relative flex items-center justify-center"
-            :class="!showRightColumn ? 'w-0' : 'w-1/2 max-w-xl'">
+            :class="!showRightColumn ? 'w-0' : 'w-1/2 max-w-2xl'">
 
             <!-- Right Column Content (Queue or Lyrics) -->
             <Transition enter-active-class="transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"

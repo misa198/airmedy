@@ -19,7 +19,7 @@ const { t } = useI18n()
 
 <template>
   <div
-    class="absolute left-0 h-[85%] my-auto bg-black/30 backdrop-blur-3xl rounded-3xl border border-white/10 flex flex-col overflow-hidden shadow-2xl w-[50cqw] max-w-xl">
+    class="absolute left-0 top-[2%] bottom-[8%] bg-black/30 backdrop-blur-3xl rounded-3xl border border-white/10 flex flex-col overflow-hidden shadow-2xl w-[50cqw] max-w-2xl">
     <div class="flex-1 flex flex-col h-full">
       <!-- Lyrics Header -->
       <div class="flex items-center justify-between px-6 py-4 border-b border-white/5">
