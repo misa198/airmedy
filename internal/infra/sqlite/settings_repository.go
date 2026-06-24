@@ -18,7 +18,7 @@ func NewSettingsRepository(db *DB) domain.SettingsRepository {
 
 func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSettings) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO app_settings (id, language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, enable_lrclib, enable_kugou, prefer_metadata_lyrics, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator, updated_at)
+		`INSERT INTO app_settings (id, language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, enable_lrclib, enable_kugou, prefer_local_lyrics, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator, updated_at)
 		 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 		 ON CONFLICT(id) DO UPDATE SET
 		   language = excluded.language,
@@ -31,7 +31,7 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		   use_online_artist_artwork = excluded.use_online_artist_artwork,
 		   enable_lrclib = excluded.enable_lrclib,
 		   enable_kugou = excluded.enable_kugou,
-		   prefer_metadata_lyrics = excluded.prefer_metadata_lyrics,
+		   prefer_local_lyrics = excluded.prefer_local_lyrics,
 		   prevent_sleep_while_playing = excluded.prevent_sleep_while_playing,
 		   remote_server_enabled = excluded.remote_server_enabled,
 		   remote_server_port = excluded.remote_server_port,
@@ -48,7 +48,7 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		settings.UseOnlineArtistArtwork,
 		settings.EnableLrclib,
 		settings.EnableKugou,
-		settings.PreferMetadataLyrics,
+		settings.PreferLocalLyrics,
 		settings.PreventSleepWhilePlaying,
 		settings.RemoteServerEnabled,
 		settings.RemoteServerPort,
@@ -73,7 +73,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		UseOnlineArtistArtwork   bool           `db:"use_online_artist_artwork"`
 		EnableLrclib             bool           `db:"enable_lrclib"`
 		EnableKugou              bool           `db:"enable_kugou"`
-		PreferMetadataLyrics     bool           `db:"prefer_metadata_lyrics"`
+		PreferLocalLyrics        bool           `db:"prefer_local_lyrics"`
 		PreventSleepWhilePlaying bool           `db:"prevent_sleep_while_playing"`
 		RemoteServerEnabled      bool           `db:"remote_server_enabled"`
 		RemoteServerPort         int            `db:"remote_server_port"`
@@ -81,7 +81,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		ShowPlayerIndicator      bool           `db:"show_player_indicator"`
 	}
 	err := r.db.GetContext(ctx, &row,
-		`SELECT language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, enable_lrclib, enable_kugou, prefer_metadata_lyrics, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator FROM app_settings WHERE id = 1`,
+		`SELECT language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, enable_lrclib, enable_kugou, prefer_local_lyrics, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator FROM app_settings WHERE id = 1`,
 	)
 	if err == sql.ErrNoRows {
 		return &domain.AppSettings{
@@ -93,7 +93,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 			EQEnabled:                true,
 			EnableLrclib:             true,
 			EnableKugou:              true,
-			PreferMetadataLyrics:     true,
+			PreferLocalLyrics:        true,
 			UseOnlineArtistArtwork:   true,
 			PreventSleepWhilePlaying: false,
 			ShowPlayerIndicator:      true,
@@ -113,7 +113,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		EQEnabled:                row.EQEnabled,
 		EnableLrclib:             row.EnableLrclib,
 		EnableKugou:              row.EnableKugou,
-		PreferMetadataLyrics:     row.PreferMetadataLyrics,
+		PreferLocalLyrics:        row.PreferLocalLyrics,
 		UseOnlineArtistArtwork:   row.UseOnlineArtistArtwork,
 		PreventSleepWhilePlaying: row.PreventSleepWhilePlaying,
 		RemoteServerEnabled:      row.RemoteServerEnabled,

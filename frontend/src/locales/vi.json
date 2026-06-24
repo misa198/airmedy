@@ -83,8 +83,8 @@
       "enable_lrclib_desc": "Tải lời bài hát từ LRCLIB.NET",
       "enable_kugou": "Lời bài hát KuGou",
       "enable_kugou_desc": "Tải lời bài hát từ KuGou Music",
-      "prefer_metadata_lyrics": "Ưu tiên lời bài hát trong tệp",
-      "prefer_metadata_lyrics_desc": "Sử dụng lời bài hát được nhúng nếu có",
+      "prefer_local_lyrics": "Ưu tiên lời bài hát cục bộ",
+      "prefer_local_lyrics_desc": "Dùng tệp lời (.lrc/.txt) hoặc lời nhúng khi có",
       "scrobbling": "Scrobbling",
       "artwork": "Ảnh bìa",
       "lyrics": "Lời bài hát"

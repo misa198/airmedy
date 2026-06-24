@@ -83,8 +83,8 @@
       "enable_lrclib_desc": "Recupera i testi da LRCLIB.NET",
       "enable_kugou": "Testi KuGou",
       "enable_kugou_desc": "Recupera i testi da KuGou Music",
-      "prefer_metadata_lyrics": "Preferisci testi dei metadati",
-      "prefer_metadata_lyrics_desc": "Usa i testi incorporati quando disponibili",
+      "prefer_local_lyrics": "Preferisci testi locali",
+      "prefer_local_lyrics_desc": "Usa file di testo (.lrc/.txt) o testi incorporati quando disponibili",
       "scrobbling": "Scrobbling",
       "artwork": "Immagini",
       "lyrics": "Testi"

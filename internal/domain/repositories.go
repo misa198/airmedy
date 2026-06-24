@@ -108,6 +108,13 @@ type LyricsProvider interface {
 	Name() string
 }
 
+// LocalLyricsReader reads a sibling lyric file located next to the audio file.
+// The lyric file must share the audio file's basename, differing only in extension.
+// It tries "<base>.lrc" first, then "<base>.txt". found is false if neither exists.
+type LocalLyricsReader interface {
+	Read(audioPath string) (content, source string, found bool)
+}
+
 type EQRepository interface {
 	GetActive(ctx context.Context) (*EQProfile, error)
 	GetAll(ctx context.Context) ([]*EQProfile, error)

@@ -174,14 +174,14 @@ onMounted(() => {
         <div class="p-5 flex items-center justify-between gap-x-2">
           <div>
             <p class="text-sm font-semibold">
-              {{ t('settings.integrations.prefer_metadata_lyrics', 'Prefer MetadataLyrics') }}
+              {{ t('settings.integrations.prefer_local_lyrics', 'Prefer Local Lyrics') }}
             </p>
             <p class="text-xs text-foreground opacity-60 mt-1">
-              {{ t('settings.integrations.prefer_metadata_lyrics_desc', 'Use embedded lyrics when available') }}
+              {{ t('settings.integrations.prefer_local_lyrics_desc', 'Use local lyric files or embedded lyrics when available') }}
             </p>
           </div>
-          <Switch :model-value="appStore.preferMetadataLyrics"
-            @update:model-value="appStore.updatePreferMetadataLyrics" />
+          <Switch :model-value="appStore.preferLocalLyrics"
+            @update:model-value="appStore.updatePreferLocalLyrics" />
         </div>
       </div>
     </section>

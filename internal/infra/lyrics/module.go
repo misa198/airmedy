@@ -18,5 +18,6 @@ var Module = fx.Module("lyrics-providers",
 			func(logger *slog.Logger) domain.LyricsProvider { return NewKugouProvider(logger) },
 			fx.ResultTags(`group:"lyrics_providers"`),
 		),
+		NewLocalLyricsReader,
 	),
 )

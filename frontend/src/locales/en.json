@@ -83,8 +83,8 @@
       "enable_lrclib_desc": "Fetch lyrics from LRCLIB.NET",
       "enable_kugou": "KuGou Lyrics",
       "enable_kugou_desc": "Fetch lyrics from KuGou Music",
-      "prefer_metadata_lyrics": "Prefer Metadata Lyrics",
-      "prefer_metadata_lyrics_desc": "Use embedded lyrics when available",
+      "prefer_local_lyrics": "Prefer Local Lyrics",
+      "prefer_local_lyrics_desc": "Use local lyric files (.lrc/.txt) or embedded lyrics when available",
       "scrobbling": "Scrobbling",
       "artwork": "Artwork",
       "lyrics": "Lyrics"

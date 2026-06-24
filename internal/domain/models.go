@@ -160,7 +160,7 @@ type AppSettings struct {
 	EQEnabled                bool   `json:"eq_enabled"`
 	EnableLrclib             bool   `json:"enable_lrclib"`
 	EnableKugou              bool   `json:"enable_kugou"`
-	PreferMetadataLyrics     bool   `json:"prefer_metadata_lyrics"`
+	PreferLocalLyrics        bool   `json:"prefer_local_lyrics"`
 	UseOnlineArtistArtwork   bool   `json:"use_online_artist_artwork"`
 	PreventSleepWhilePlaying bool   `json:"prevent_sleep_while_playing"`
 	RemoteServerEnabled      bool   `json:"remote_server_enabled"`

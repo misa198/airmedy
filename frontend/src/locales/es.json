@@ -83,8 +83,8 @@
       "enable_lrclib_desc": "Obtener letras de LRCLIB.NET",
       "enable_kugou": "Letras de KuGou",
       "enable_kugou_desc": "Obtener letras de KuGou Music",
-      "prefer_metadata_lyrics": "Preferir letras de metadatos",
-      "prefer_metadata_lyrics_desc": "Usar letras incrustadas cuando estén disponibles",
+      "prefer_local_lyrics": "Preferir letras locales",
+      "prefer_local_lyrics_desc": "Usar archivos de letras (.lrc/.txt) o letras incrustadas cuando estén disponibles",
       "scrobbling": "Scrobbling",
       "artwork": "Carátulas",
       "lyrics": "Letras"

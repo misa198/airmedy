@@ -83,8 +83,8 @@
       "enable_lrclib_desc": "ดึงเนื้อเพลงจาก LRCLIB.NET",
       "enable_kugou": "เนื้อเพลงจาก KuGou",
       "enable_kugou_desc": "ดึงเนื้อเพลงจาก KuGou Music",
-      "prefer_metadata_lyrics": "ใช้เนื้อเพลงจากข้อมูลเมตาก่อน",
-      "prefer_metadata_lyrics_desc": "ใช้เนื้อเพลงที่ฝังไว้เมื่อมี",
+      "prefer_local_lyrics": "ใช้เนื้อเพลงในเครื่องก่อน",
+      "prefer_local_lyrics_desc": "ใช้ไฟล์เนื้อเพลง (.lrc/.txt) หรือเนื้อเพลงที่ฝังไว้เมื่อมี",
       "scrobbling": "การสคร็อบเบิล",
       "artwork": "รูปภาพ",
       "lyrics": "เนื้อเพลง"

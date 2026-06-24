@@ -83,8 +83,8 @@
       "enable_lrclib_desc": "Récupérer les paroles depuis LRCLIB.NET",
       "enable_kugou": "Paroles KuGou",
       "enable_kugou_desc": "Récupérer les paroles depuis KuGou Music",
-      "prefer_metadata_lyrics": "Privilégier les paroles des métadonnées",
-      "prefer_metadata_lyrics_desc": "Utiliser les paroles intégrées lorsqu'elles sont disponibles",
+      "prefer_local_lyrics": "Privilégier les paroles locales",
+      "prefer_local_lyrics_desc": "Utiliser les fichiers de paroles (.lrc/.txt) ou les paroles intégrées lorsqu'ils sont disponibles",
       "scrobbling": "Scrobbling",
       "artwork": "Illustrations",
       "lyrics": "Paroles"
