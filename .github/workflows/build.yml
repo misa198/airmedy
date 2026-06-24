@@ -31,7 +31,9 @@ jobs:
 
       - name: Install mingw cross-compilers
         if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
-        run: sudo apt-get install -y gcc-mingw-w64-x86-64 gcc-mingw-w64-aarch64 nasm
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64-x86-64 gcc-mingw-w64-aarch64 nasm
 
       - name: Build FFmpeg (Windows AMD64 + ARM64)
         if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
