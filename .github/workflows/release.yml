@@ -63,20 +63,20 @@ jobs:
         uses: actions/cache@v4
         with:
           path: internal/infra/audio/ffmpeg_libs
-          key: ffmpeg-Windows-AMD64-${{ hashFiles('scripts/build-ffmpeg-windows.sh') }}
+          key: ffmpeg-Windows-${{ hashFiles('scripts/build-ffmpeg-windows.sh') }}
 
-      - name: Install mingw cross-compiler
+      - name: Install mingw cross-compilers
         if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
-        run: sudo apt-get install -y gcc-mingw-w64-x86-64 nasm
+        run: sudo apt-get install -y gcc-mingw-w64-x86-64 gcc-mingw-w64-aarch64 nasm
 
-      - name: Build FFmpeg
+      - name: Build FFmpeg (Windows AMD64 + ARM64)
         if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
         run: bash scripts/build-ffmpeg-windows.sh
 
       - name: Upload FFmpeg libs
         uses: actions/upload-artifact@v4
         with:
-          name: ffmpeg-windows-amd64
+          name: ffmpeg-windows
           path: internal/infra/audio/ffmpeg_libs
 
   build:
@@ -87,6 +87,7 @@ jobs:
       matrix:
         os:
           - Windows-AMD64
+          - Windows-ARM64
           - Linux-AMD64
           - Linux-ARM64
           - Darwin-AMD64
@@ -161,12 +162,20 @@ jobs:
           choco install nsis -y
           Add-Content -Path $env:GITHUB_PATH -Value "C:\Program Files (x86)\NSIS"
 
-      - name: Setup MSYS2 (Windows)
-        if: runner.os == 'Windows'
+      - name: Setup MSYS2 (Windows AMD64)
+        if: matrix.os == 'Windows-AMD64'
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
           install: mingw-w64-x86_64-gcc
+          update: false
+
+      - name: Setup MSYS2 (Windows ARM64)
+        if: matrix.os == 'Windows-ARM64'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: CLANGARM64
+          install: mingw-w64-clang-aarch64-gcc
           update: false
 
       - name: Install Darwin Dependencies
@@ -205,7 +214,7 @@ jobs:
         if: runner.os == 'Windows'
         uses: actions/download-artifact@v4
         with:
-          name: ffmpeg-windows-amd64
+          name: ffmpeg-windows
           path: internal/infra/audio/ffmpeg_libs
 
       - name: Build FFmpeg (Linux)
@@ -235,14 +244,21 @@ jobs:
         run: |
           REPO_ROOT=$(pwd)
           export CC="gcc"
-          export GOOS=windows
-          export GOARCH=amd64
           export CGO_ENABLED=1
           export CGO_CFLAGS="-I${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/include"
-          # MinGW C++/pthread runtime is statically linked via cgoflags_windows_amd64.go
+          # MinGW C++/pthread runtime is statically linked via cgoflags_windows_*.go
           # (-Wl,-Bstatic -lstdc++ -lpthread), so no -static-libstdc++ env flag is needed here.
-          export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/windows/amd64"
-          task windows:package ARCH=amd64
+          if [[ "${{ matrix.os }}" == "Windows-ARM64" ]]; then
+            export GOOS=windows
+            export GOARCH=arm64
+            export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/windows/arm64"
+            task windows:package ARCH=arm64
+          else
+            export GOOS=windows
+            export GOARCH=amd64
+            export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/windows/amd64"
+            task windows:package ARCH=amd64
+          fi
 
       - name: Build and Package (non-Windows)
         if: runner.os != 'Windows'
@@ -309,6 +325,32 @@ jobs:
                   cd bin && zip ../dist/Airmedy_${VERSION}_windows-amd64.zip airmedy.exe && cd ..
                 else
                   cd bin && 7z a ../dist/Airmedy_${VERSION}_windows-amd64.zip airmedy.exe && cd ..
+                fi
+              fi
+              ;;
+            "Windows-ARM64")
+              # Installer (zipped)
+              INSTALLER=""
+              if [ -f bin/airmedy-arm64-installer.exe ]; then
+                INSTALLER="bin/airmedy-arm64-installer.exe"
+              else
+                INSTALLER=$(find bin/ -name "*installer.exe" | head -1)
+              fi
+              if [ -n "$INSTALLER" ]; then
+                if command -v zip >/dev/null 2>&1; then
+                  zip -j dist/Airmedy_${VERSION}_windows-arm64_installer.zip "$INSTALLER"
+                else
+                  7z a dist/Airmedy_${VERSION}_windows-arm64_installer.zip "$INSTALLER"
+                fi
+              else
+                echo "No windows arm64 installer found"
+              fi
+              # Standalone binary for auto-update
+              if [ -f bin/airmedy.exe ]; then
+                if command -v zip >/dev/null 2>&1; then
+                  cd bin && zip ../dist/Airmedy_${VERSION}_windows-arm64.zip airmedy.exe && cd ..
+                else
+                  cd bin && 7z a ../dist/Airmedy_${VERSION}_windows-arm64.zip airmedy.exe && cd ..
                 fi
               fi
               ;;
