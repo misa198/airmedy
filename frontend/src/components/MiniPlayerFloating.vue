@@ -17,13 +17,14 @@ import * as WindowService from '../../bindings/airmedy/internal/infra/wails/wind
 import { useGlassBlur } from '@/composables/useGlassBlur'
 import PlayerControlButton from './player/PlayerControlButton.vue'
 import { useAppStore } from '@/stores/app'
+import { useDeviceStore } from '@/stores/device'
 
 const store = usePlayerStore()
 const appStore = useAppStore()
+const deviceStore = useDeviceStore()
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 useGlassBlur(canvasRef, computed(() => store.artworkUrlMd ?? null))
-
 const alwaysOnTop = ref(false)
 const isSeeking = ref(false)
 const seekValue = ref(0)
@@ -91,6 +92,9 @@ watch(() => store.theme, (colors) => {
         <Music class="w-16 h-16 text-white/20" />
       </div>
     </div>
+
+    <!-- Windows-only drag handle: Wails v3 uses --wails-draggable (not -webkit-app-region) -->
+    <div v-if="deviceStore.isWindows" class="absolute top-0 left-0 right-0 h-10 z-20" style="--wails-draggable: drag" />
 
     <!-- Options pill: always visible, top-right -->
     <div class="absolute top-2 right-2 z-30" style="-webkit-app-region: no-drag">
