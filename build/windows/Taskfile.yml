@@ -154,6 +154,15 @@ tasks:
       PUBLISHER: '{{.PUBLISHER | default ""}}'
       USE_MSIX_TOOL: '{{.USE_MSIX_TOOL | default "false"}}'
 
+  setup:ffmpeg:
+    summary: Builds FFmpeg static libs for Windows AMD64 locally (requires MSYS2 MINGW64 with gcc + nasm)
+    desc: |
+      Builds internal/infra/audio/ffmpeg_libs/windows/amd64/*.a from source.
+      Run this once before your first local package/build if the amd64 libs are missing.
+      Prerequisite (MSYS2 MINGW64 shell): pacman -S mingw-w64-x86_64-gcc nasm make
+    cmds:
+      - bash {{.ROOT_DIR}}/scripts/build-ffmpeg-windows-msys2.sh
+
   install:msix:tools:
     summary: Installs tools required for MSIX packaging
     cmds:

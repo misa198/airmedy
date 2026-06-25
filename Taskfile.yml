@@ -32,6 +32,11 @@ tasks:
     cmds:
       - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
 
+  setup:ffmpeg:windows:
+    summary: Builds FFmpeg static libs for Windows AMD64 locally (MSYS2 MINGW64 only)
+    cmds:
+      - task: windows:setup:ffmpeg
+
   setup:hooks:
     summary: Installs git hooks
     cmds:
