@@ -46,7 +46,7 @@
 - **Tray menu** — control playback from the system tray.
 - **Prevent sleep** — optionally keep your system awake while music is playing.
 - **Themes** — light, dark (gray), and black (pure black for OLED screens) themes.
-- **Online Artist Arts** — fetch and display artist arts from Deezer.
+- **Artist images** — uses local `artist.jpg`/`.jpeg`/`.png` files from your music folders (in the artist folder or beside the songs), or set your own custom image per artist. Toggle "Online Artist Artwork" to use Deezer images instead; turn it off to use your local files.
 - **Remote control** — control playback from any browser on the same network. Enable the remote server in settings, open the displayed URL on your phone or tablet, and enter the PIN to start controlling playback, managing the queue, and viewing lyrics remotely.
 
 ## Audio Format Support

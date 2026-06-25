@@ -59,9 +59,9 @@ func (r *artistRepository) Save(ctx context.Context, artist *domain.Artist) erro
 
 	query := `
 		INSERT INTO artists (
-			id, name, sort_name, normalization_key, artwork_key, created_at, updated_at
+			id, name, sort_name, normalization_key, created_at, updated_at
 		) VALUES (
-			:id, :name, :sort_name, :normalization_key, :artwork_key, :created_at, :updated_at
+			:id, :name, :sort_name, :normalization_key, :created_at, :updated_at
 		)`
 
 	_, err := r.db.NamedExecContext(ctx, query, artist)
@@ -78,25 +78,75 @@ func (r *artistRepository) Upsert(ctx context.Context, artist *domain.Artist) er
 	}
 	artist.UpdatedAt = now
 
+	// Artwork columns are intentionally not touched here — they are managed
+	// separately via SetArtworkSource so a metadata re-import never clobbers them.
 	query := `
 		INSERT INTO artists (
-			id, name, sort_name, normalization_key, artwork_key, created_at, updated_at
+			id, name, sort_name, normalization_key, created_at, updated_at
 		) VALUES (
-			:id, :name, :sort_name, :normalization_key, :artwork_key, :created_at, :updated_at
+			:id, :name, :sort_name, :normalization_key, :created_at, :updated_at
 		) ON CONFLICT(id) DO UPDATE SET
 			name = excluded.name,
 			sort_name = excluded.sort_name,
 			normalization_key = excluded.normalization_key,
-			artwork_key = CASE 
-				WHEN excluded.artwork_key IS NOT NULL THEN excluded.artwork_key 
-				ELSE artists.artwork_key 
-			END,
 			updated_at = excluded.updated_at
 	`
 
 	_, err := r.db.NamedExecContext(ctx, query, artist)
 	if err != nil {
 		return fmt.Errorf("failed to upsert artist: %w", err)
+	}
+	return nil
+}
+
+// artworkColumnForSource maps an artwork source to its DB column.
+func artworkColumnForSource(source string) string {
+	switch source {
+	case domain.ArtworkSourceManual:
+		return "artwork_key_manual"
+	case domain.ArtworkSourceLocalFile:
+		return "artwork_key_local"
+	case domain.ArtworkSourceOnline:
+		return "artwork_key_online"
+	default:
+		return ""
+	}
+}
+
+func (r *artistRepository) SetArtworkSource(ctx context.Context, id string, source string, key *string) error {
+	col := artworkColumnForSource(source)
+	if col == "" {
+		return fmt.Errorf("unknown artwork source: %q", source)
+	}
+	query := fmt.Sprintf("UPDATE artists SET %s = ?, updated_at = ? WHERE id = ?", col)
+	if _, err := r.db.ExecContext(ctx, query, key, time.Now(), id); err != nil {
+		return fmt.Errorf("failed to set artist artwork (%s): %w", source, err)
+	}
+	return nil
+}
+
+func (r *artistRepository) GetAllArtworkKeys(ctx context.Context) ([]string, error) {
+	var keys []string
+	err := r.db.SelectContext(ctx, &keys, `
+		SELECT artwork_key_manual FROM artists WHERE artwork_key_manual IS NOT NULL AND artwork_key_manual != ''
+		UNION
+		SELECT artwork_key_local FROM artists WHERE artwork_key_local IS NOT NULL AND artwork_key_local != ''
+		UNION
+		SELECT artwork_key_online FROM artists WHERE artwork_key_online IS NOT NULL AND artwork_key_online != ''
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all artist artwork keys: %w", err)
+	}
+	return keys, nil
+}
+
+func (r *artistRepository) SetArtwork(ctx context.Context, id string, key *string, source string) error {
+	_, err := r.db.ExecContext(ctx,
+		"UPDATE artists SET artwork_key = ?, artwork_source = ?, updated_at = ? WHERE id = ?",
+		key, source, time.Now(), id,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to set artist artwork: %w", err)
 	}
 	return nil
 }

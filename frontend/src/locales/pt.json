@@ -78,7 +78,7 @@
     "integrations": {
       "title": "Integrações",
       "online_artist_artwork": "Capas de artistas online",
-      "online_artist_artwork_desc": "Buscar automaticamente capas de artistas do Deezer",
+      "online_artist_artwork_desc": "Ligado: imagens de artistas do Deezer; desligado: arquivos locais artist.jpg/png",
       "enable_lrclib": "Letras do LRCLIB.NET",
       "enable_lrclib_desc": "Buscar letras do LRCLIB.NET",
       "enable_kugou": "Letras do KuGou",
@@ -342,7 +342,10 @@
   },
   "artist": {
     "albums_count": "{count} álbuns",
-    "songs_count": "{count} músicas"
+    "songs_count": "{count} músicas",
+    "edit_image": "Editar imagem do artista",
+    "set_custom_image": "Definir imagem personalizada",
+    "remove_custom_image": "Remover imagem personalizada"
   },
   "track_info": {
     "title": "Informações da faixa",

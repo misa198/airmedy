@@ -78,7 +78,7 @@
     "integrations": {
       "title": "Tích hợp",
       "online_artist_artwork": "Ảnh nghệ sĩ trực tuyến",
-      "online_artist_artwork_desc": "Tự động tải ảnh nghệ sĩ từ Deezer",
+      "online_artist_artwork_desc": "Khi bật, dùng ảnh nghệ sĩ từ Deezer; khi tắt, dùng tệp artist.jpg/png cục bộ",
       "enable_lrclib": "Lời bài hát LRCLIB.NET",
       "enable_lrclib_desc": "Tải lời bài hát từ LRCLIB.NET",
       "enable_kugou": "Lời bài hát KuGou",
@@ -342,7 +342,10 @@
   },
   "artist": {
     "albums_count": "{count} album",
-    "songs_count": "{count} bài hát"
+    "songs_count": "{count} bài hát",
+    "edit_image": "Chỉnh sửa ảnh nghệ sĩ",
+    "set_custom_image": "Đặt ảnh tùy chỉnh",
+    "remove_custom_image": "Xóa ảnh tùy chỉnh"
   },
   "track_info": {
     "title": "Thông tin bài hát",

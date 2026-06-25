@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { User } from 'lucide-vue-next'
 import type { Artist } from '../../bindings/airmedy/internal/domain/models'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
@@ -16,66 +16,82 @@ const emit = defineEmits<{
 }>()
 
 const appStore = useAppStore()
+
+// All stored artwork keys are kept; which one shows is resolved client-side so
+// flipping the "prefer local" setting swaps instantly without any round-trip.
+const keys = reactive({
+  manual: props.artist.artwork_key_manual as string | null,
+  local: props.artist.artwork_key_local as string | null,
+  online: props.artist.artwork_key_online as string | null,
+})
+
+const resolvedKey = computed(() => {
+  if (keys.manual) return keys.manual
+  // Single toggle: online on → prefer Deezer image; off → prefer local.
+  return appStore.useOnlineArtistArtwork
+    ? (keys.online || keys.local)
+    : (keys.local || keys.online)
+})
+
 const imageUrl = ref<string | null>(null)
-let offArtwork: (() => void) | null = null
+let offGlobal: (() => void) | null = null
 
-const loadArtwork = async () => {
-  if (!appStore.useOnlineArtistArtwork || imageUrl.value) return
+// Keep imageUrl in sync with the resolved key (instant on preference/key change).
+watch(resolvedKey, (key) => {
+  imageUrl.value = key ? `/artwork/${key}` : null
+}, { immediate: true })
 
-  const eventId = `artist-artwork:${props.artist.id}`
-  try {
-    const url = await LibraryService.GetArtistArtwork(props.artist.id, eventId)
-    if (url) {
-      imageUrl.value = url
-    } else {
-      // Wait for event
-      if (!offArtwork) {
-        offArtwork = Events.On(eventId, (ev) => {
-          imageUrl.value = ev.data as string
-          if (offArtwork) {
-            offArtwork()
-            offArtwork = null
-          }
-        })
-      }
-    }
-  } catch (err) {
-    console.error(`[ArtistCard] Failed to get artist artwork for ${props.artist.name}:`, err)
-  }
+const seedKeys = () => {
+  keys.manual = props.artist.artwork_key_manual as string | null
+  keys.local = props.artist.artwork_key_local as string | null
+  keys.online = props.artist.artwork_key_online as string | null
+}
+
+// Fetch the Deezer image when online is enabled and none is cached yet (even if a
+// local image exists, so it's ready and shown per the toggle).
+const maybeFetchOnline = () => {
+  if (!appStore.useOnlineArtistArtwork || keys.online) return
+  LibraryService.GetArtistArtwork(props.artist.id, `artist-artwork:${props.artist.id}`)
+    .catch((err) => console.error(`[ArtistCard] artwork fetch failed for ${props.artist.name}:`, err))
+}
+
+// Backend emits this whenever a single source's key changes (empty = cleared).
+const subscribeGlobal = () => {
+  if (offGlobal) return
+  offGlobal = Events.On('artist-artwork-updated', (ev) => {
+    const data = ev.data as { artist_id?: string; source?: string; key?: string } | undefined
+    if (!data || data.artist_id !== props.artist.id) return
+    const value = data.key ? data.key : null
+    if (data.source === 'manual') keys.manual = value
+    else if (data.source === 'local_file') keys.local = value
+    else if (data.source === 'online') keys.online = value
+  })
 }
 
 watch(() => props.artist.id, () => {
-  if (offArtwork) {
-    offArtwork()
-    offArtwork = null
-  }
-  imageUrl.value = null
-  loadArtwork()
+  seedKeys()
+  maybeFetchOnline()
 })
 
 watch(() => appStore.useOnlineArtistArtwork, (enabled) => {
-  if (enabled) {
-    loadArtwork()
-  } else {
-    imageUrl.value = null
-  }
+  // Re-attempt a fetch when online is re-enabled and nothing is shown.
+  if (enabled) maybeFetchOnline()
 })
 
 onMounted(() => {
-  loadArtwork()
+  subscribeGlobal()
+  maybeFetchOnline()
 })
 
 onUnmounted(() => {
-  if (offArtwork) {
-    offArtwork()
-  }
+  if (offGlobal) offGlobal()
 })
 </script>
 
 <template>
   <!-- Avatar only variant -->
   <div v-if="variant === 'avatar'" class="w-full h-full flex items-center justify-center">
-    <div v-if="imageUrl && appStore.useOnlineArtistArtwork" class="w-full h-full">
+    <div v-if="imageUrl" class="w-full h-full">
       <img 
         :src="imageUrl" 
         class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
@@ -94,9 +110,9 @@ onUnmounted(() => {
     @click="emit('click', artist.id)"
   >
     <div class="aspect-square bg-foreground/5 rounded-full ring-1 ring-foreground/[0.06] overflow-hidden relative mb-3 transition-all flex items-center justify-center">
-      <div v-if="imageUrl && appStore.useOnlineArtistArtwork" class="w-full h-full">
-        <img 
-          :src="imageUrl" 
+      <div v-if="imageUrl" class="w-full h-full">
+        <img
+          :src="imageUrl"
           class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           @error="imageUrl = null"
         />

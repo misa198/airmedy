@@ -78,7 +78,7 @@
     "integrations": {
       "title": "Интеграции",
       "online_artist_artwork": "Обложки исполнителей онлайн",
-      "online_artist_artwork_desc": "Автоматически загружать обложки исполнителей с Deezer",
+      "online_artist_artwork_desc": "Вкл.: изображения исполнителей с Deezer; выкл.: локальные файлы artist.jpg/png",
       "enable_lrclib": "Тексты LRCLIB.NET",
       "enable_lrclib_desc": "Загружать тексты с LRCLIB.NET",
       "enable_kugou": "Тексты KuGou",
@@ -342,7 +342,10 @@
   },
   "artist": {
     "albums_count": "{count} альбомов",
-    "songs_count": "{count} песен"
+    "songs_count": "{count} песен",
+    "edit_image": "Изменить изображение исполнителя",
+    "set_custom_image": "Задать своё изображение",
+    "remove_custom_image": "Удалить своё изображение"
   },
   "track_info": {
     "title": "Информация о треке",

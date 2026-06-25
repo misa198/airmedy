@@ -117,20 +117,96 @@ artworkUrlMd = `wails://artwork/${artworkKey}?v=md`;
 
 Fallback: if `artworkKey` is empty, a placeholder image is shown.
 
-## Artist Artwork (Online)
+## Artist Artwork
 
-Artist artwork is fetched dynamically from the Deezer API when enabled in settings (`UseOnlineArtistArtwork`).
+Artist artwork has three independent sources, **each stored separately** on the
+artist row. Every source's cache key is kept; which one is shown is decided at
+read time, so toggling the preference switches the displayed image instantly with
+no re-fetch or re-scan.
 
-### Fetching Flow
+| Source     | Column               | Set by                                  |
+| ---------- | -------------------- | --------------------------------------- |
+| Manual     | `artwork_key_manual` | User picks an image in ArtistDetailView |
+| Local file | `artwork_key_local`  | Scanned `artist.jpg/jpeg/png` from disk |
+| Online     | `artwork_key_online` | Background Deezer fetch                 |
 
-1. The frontend calls `LibraryService.GetArtistArtwork(artistID, eventID)`.
-2. If the artist already has an `artwork_key` in the database, the cached URL is returned immediately.
-3. If not cached, the request is placed on an asynchronous queue (`artistArtworkQueue`).
-4. A background worker (`StartArtistArtworkWorker`) picks up the job:
-   - Verifies the `UseOnlineArtistArtwork` setting is enabled.
-   - Searches the Deezer API (`https://api.deezer.com/search/artist?q={name}`).
-   - Downloads the `picture_medium` image.
-   - Saves it to the standard `ArtworkCache` (which generates the standard variants).
-   - Updates the `artists` table with the new `artwork_key`.
-   - Emits a Wails event using the provided `eventID` with the new artwork URL.
-5. The frontend component (`ArtistCard.vue`) listens for this event to dynamically display the fetched image.
+**Read-time resolution** (`domain.Artist.ResolveArtworkKey(preferLocal)`):
+`manual` always wins; otherwise a single setting, **`use_online_artist_artwork`**,
+picks the local/online order — on → Deezer first, off → local first
+(`preferLocal = !use_online_artist_artwork`). Turning online off still shows an
+already-downloaded Deezer image if no local one exists (it stops new fetches and
+deletes nothing); the displayed image switches instantly because resolution is
+client-side.
+
+Files (in `internal/app/library/`):
+
+| File                   | Purpose                                                       |
+| ---------------------- | ------------------------------------------------------------- |
+| `artist_local_image.go`| Local image scan, per-source writes, version-gated rescan     |
+| `artist_artwork.go`    | Deezer fetch + background worker                              |
+
+### Write path
+
+Writes go through `LibraryService.writeArtistArtworkSource(artistID, source, load)`
+— per-artist locked (keyed `sync.Map` of mutexes), lazily loads + caches the
+bytes, skips if that source's key is unchanged, then calls
+`ArtistRepository.SetArtworkSource(id, source, key)` (writes one source column;
+nil clears just that source). No cross-source precedence at write time.
+
+On every change it emits a global `artist-artwork-updated` Wails event
+`{ artist_id, source, key }` (empty `key` = cleared). `ArtistCard.vue` keeps a
+reactive copy of the three keys, updates the changed slot, and recomputes the
+displayed image — so live changes and preference toggles both reflect instantly.
+
+### Local file scan
+
+- `findArtistImageFile(dir)` looks for `artist.jpg`, then `artist.jpeg`, then
+  `artist.png` (priority order).
+- A full sync resolves images in one batch (`applyLocalArtistImagesForDirs`):
+  the walk collects every directory holding an `artist.*`, each image is cached
+  once, and `artistIDsForImageDir` maps it to artists **two ways** (unioned):
+  - **by folder name** — `GetByNormalizationKey(NormalizationKey(base(dir)))`, so
+    an artist folder that contains only `artist.jpg` (tracks live elsewhere, e.g.
+    in the music root) still matches;
+  - **by contained tracks** — artists of tracks in the dir or its subfolders.
+  No per-track stat/read storm. Single-file imports (watcher add) fall back to the
+  per-track `resolveTrackArtistImages` (gated by the `syncing` flag).
+- The `fsnotify` watcher reacts to `artist.*` create/write (set local) and
+  remove/rename (clear the `local_file` source only; manual/online remain).
+- `ScanArtistImages` is a heavier per-artist sweep used only by the version-gated
+  rescan (below).
+
+### Version-gated rescan
+
+`maybeRescanArtistImages` runs once on startup when `last_scan_version` is empty
+or older than `config.Version` (semver compare), so existing libraries pick up
+artist images already on disk after upgrading. Stores the current version after.
+
+### Online (Deezer) fetch
+
+1. `LibraryService.GetArtistArtwork(artistID, eventID)` resolves the display key;
+   if non-empty, returns its URL.
+2. If nothing is showable **and** `UseOnlineArtistArtwork` is on **and** no online
+   key exists yet, the request is queued (`artistArtworkQueue`).
+3. The background worker (`StartArtistArtworkWorker`) skips if an online key
+   already exists, otherwise searches Deezer
+   (`https://api.deezer.com/search/artist?q={name}`), downloads `picture_medium`,
+   and stores it via `writeArtistArtworkSource` with source `online`.
+
+### Custom image & cache cleanup
+
+- `SelectAndSetArtistArtwork` / `RemoveArtistArtwork` set / clear the `manual`
+  source (ArtistDetailView avatar menu).
+- `ArtistRepository.GetAllArtworkKeys` returns keys across all three columns;
+  `CleanupOrphanedArtworks` unions them with track keys so artist images survive
+  while the artist exists and **all** of an artist's cached images are deleted once
+  it is orphaned. It runs after a full sync and on folder removal — not per watcher
+  delete event (that would rescan the whole cache dir and thrash on bulk deletes).
+
+### Custom image (in-app)
+
+- `LibraryService.SelectAndSetArtistArtwork(artistID)` opens a file picker and
+  sets the chosen image with source `manual` (locked).
+- `LibraryService.RemoveArtistArtwork(artistID)` clears it, allowing automatic
+  sources to repopulate.
+- Surfaced in `ArtistDetailView.vue` via the avatar hover/right-click menu.

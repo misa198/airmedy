@@ -78,7 +78,7 @@
     "integrations": {
       "title": "連携",
       "online_artist_artwork": "オンラインのアーティスト画像",
-      "online_artist_artwork_desc": "Deezer からアーティスト画像を自動的に取得",
+      "online_artist_artwork_desc": "オン: Deezer のアーティスト画像を使用、オフ: ローカルの artist.jpg/png を使用",
       "enable_lrclib": "LRCLIB.NET の歌詞",
       "enable_lrclib_desc": "LRCLIB.NET から歌詞を取得",
       "enable_kugou": "KuGou の歌詞",
@@ -342,7 +342,10 @@
   },
   "artist": {
     "albums_count": "{count} アルバム",
-    "songs_count": "{count} 曲"
+    "songs_count": "{count} 曲",
+    "edit_image": "アーティスト画像を編集",
+    "set_custom_image": "カスタム画像を設定",
+    "remove_custom_image": "カスタム画像を削除"
   },
   "track_info": {
     "title": "トラック情報",

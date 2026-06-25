@@ -1,0 +1,1 @@
+ALTER TABLE artists ADD COLUMN artwork_source TEXT NOT NULL DEFAULT '';

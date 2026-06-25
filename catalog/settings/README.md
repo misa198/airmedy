@@ -29,7 +29,8 @@ type AppSettings struct {
     EnableLrclib           bool                // enable LRClib lyrics provider
     EnableKugou            bool                // enable Kugou lyrics provider
     PreferMetadataLyrics   bool                // prefer embedded lyrics over fetched
-    UseOnlineArtistArtwork bool                // fetch artist artwork from Deezer
+    UseOnlineArtistArtwork bool                // on: prefer Deezer image; off: prefer local artist.jpg/png
+    LastScanVersion        string              // app version of last artist-image rescan
     PreventSleepWhilePlaying bool             // prevent OS sleep during playback
 }
 ```
@@ -185,3 +186,7 @@ Settings evolved across multiple migrations:
 | 000016    | Add `use_online_artist_artwork` setting column                   |
 | 000017    | Add `enable_lrclib`, `enable_kugou`, `prefer_metadata_lyrics`; all `BOOLEAN NOT NULL DEFAULT 1` |
 | 000019    | Add `prevent_sleep_while_playing BOOLEAN NOT NULL DEFAULT 0`     |
+| 000023    | Add `artwork_source` column to `artists` table                   |
+| 000024    | Add `prefer_local_artist_artwork`, `last_scan_version` settings  |
+| 000026    | Drop `prefer_local_artist_artwork` (derived from online toggle)   |
+| 000025    | Split artist artwork into per-source key columns                 |

@@ -73,7 +73,7 @@ func (s *LibraryService) DownloadArtwork(artworkKey, defaultName string) error {
 
 	dest, err := app.Dialog.SaveFile().
 		SetMessage("Save Artwork").
-		SetFilename(name + ext).
+		SetFilename(name+ext).
 		AddFilter("Image", "*"+ext).
 		PromptForSingleSelection()
 	if err != nil {
@@ -211,11 +211,37 @@ func (s *LibraryService) GetAlbumsByArtistID(artistID string) ([]*domain.AlbumDT
 }
 
 func (s *LibraryService) GetAllArtists() ([]*domain.Artist, error) {
-	return s.artistRepo.GetAll(context.Background())
+	ctx := context.Background()
+	artists, err := s.artistRepo.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	preferLocal := s.preferLocalArtistArtwork(ctx)
+	for _, a := range artists {
+		a.ArtworkKey = a.ResolveArtworkKey(preferLocal)
+	}
+	return artists, nil
 }
 
 func (s *LibraryService) GetArtistByID(id string) (*domain.Artist, error) {
-	return s.artistRepo.GetByID(context.Background(), id)
+	ctx := context.Background()
+	artist, err := s.artistRepo.GetByID(ctx, id)
+	if err != nil || artist == nil {
+		return artist, err
+	}
+	artist.ArtworkKey = artist.ResolveArtworkKey(s.preferLocalArtistArtwork(ctx))
+	return artist, nil
+}
+
+// preferLocalArtistArtwork reports whether local images should be preferred over
+// the Deezer image. There is a single user toggle, "Online Artist Artwork":
+// when off (or settings unreadable) local images win.
+func (s *LibraryService) preferLocalArtistArtwork(ctx context.Context) bool {
+	settings, err := s.libService.GetSettings(ctx)
+	if err != nil || settings == nil {
+		return true
+	}
+	return !settings.UseOnlineArtistArtwork
 }
 
 func (s *LibraryService) GetAllGenres() ([]*domain.Genre, error) {
@@ -260,7 +286,8 @@ func (s *LibraryService) GetAlbumColors(id string) (*domain.ThemeColors, error) 
 }
 
 func (s *LibraryService) GetArtistArtwork(artistID, eventID string) (*string, error) {
-	artist, err := s.artistRepo.GetByID(context.Background(), artistID)
+	ctx := context.Background()
+	artist, err := s.artistRepo.GetByID(ctx, artistID)
 	if err != nil {
 		return nil, err
 	}
@@ -268,12 +295,47 @@ func (s *LibraryService) GetArtistArtwork(artistID, eventID string) (*string, er
 		return nil, fmt.Errorf("artist not found")
 	}
 
-	if artist.ArtworkKey != nil && *artist.ArtworkKey != "" {
-		url := fmt.Sprintf("/artwork/%s", *artist.ArtworkKey)
-		return &url, nil
+	settings, _ := s.libService.GetSettings(ctx)
+	useOnline := settings != nil && settings.UseOnlineArtistArtwork
+	preferLocal := !useOnline
+
+	// When online is enabled and no Deezer image is cached yet, fetch it (even if a
+	// local image exists, so it's ready and shown per preference).
+	if useOnline && artist.ArtworkKeyOnline == nil {
+		s.libService.EnqueueArtistArtwork(artistID, eventID)
 	}
 
-	// Not cached, enqueue
-	s.libService.EnqueueArtistArtwork(artistID, eventID)
+	if key := artist.ResolveArtworkKey(preferLocal); key != "" {
+		url := fmt.Sprintf("/artwork/%s", key)
+		return &url, nil
+	}
 	return nil, nil
+}
+
+// SelectAndSetArtistArtwork prompts the user to pick an image file and sets it
+// as the artist's custom (manual) artwork. Returns the new artwork URL, or ""
+// if the dialog was cancelled.
+func (s *LibraryService) SelectAndSetArtistArtwork(artistID string) (string, error) {
+	app := application.Get()
+	if app == nil {
+		return "", fmt.Errorf("application not initialized")
+	}
+
+	result, err := app.Dialog.OpenFile().
+		SetTitle("Select Artist Image").
+		AddFilter("Images", "*.jpg;*.jpeg;*.png").
+		PromptForSingleSelection()
+	if err != nil {
+		return "", err
+	}
+	if result == "" {
+		return "", nil
+	}
+
+	return s.libService.SetArtistArtworkFromFile(context.Background(), artistID, result)
+}
+
+// RemoveArtistArtwork clears the artist's custom artwork.
+func (s *LibraryService) RemoveArtistArtwork(artistID string) error {
+	return s.libService.RemoveArtistArtwork(context.Background(), artistID)
 }

@@ -78,7 +78,7 @@
     "integrations": {
       "title": "การเชื่อมต่อ",
       "online_artist_artwork": "รูปภาพศิลปินออนไลน์",
-      "online_artist_artwork_desc": "ดึงรูปภาพศิลปินจาก Deezer โดยอัตโนมัติ",
+      "online_artist_artwork_desc": "เปิด: ใช้รูปภาพศิลปินจาก Deezer; ปิด: ใช้ไฟล์ artist.jpg/png ในเครื่อง",
       "enable_lrclib": "เนื้อเพลงจาก LRCLIB.NET",
       "enable_lrclib_desc": "ดึงเนื้อเพลงจาก LRCLIB.NET",
       "enable_kugou": "เนื้อเพลงจาก KuGou",
@@ -342,7 +342,10 @@
   },
   "artist": {
     "albums_count": "{count} อัลบั้ม",
-    "songs_count": "{count} เพลง"
+    "songs_count": "{count} เพลง",
+    "edit_image": "แก้ไขรูปภาพศิลปิน",
+    "set_custom_image": "ตั้งรูปภาพที่กำหนดเอง",
+    "remove_custom_image": "ลบรูปภาพที่กำหนดเอง"
   },
   "track_info": {
     "title": "ข้อมูลเพลง",

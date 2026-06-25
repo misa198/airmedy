@@ -11,10 +11,11 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
-	"airmedy/internal/domain"
 	"airmedy/internal/app/lyrics"
+	"airmedy/internal/domain"
 	"airmedy/internal/infra/artwork"
 
 	"github.com/fsnotify/fsnotify"
@@ -55,13 +56,17 @@ type LibraryService struct {
 	logger            *slog.Logger
 	watcher           *fsnotify.Watcher
 
-	trackUpdateListeners      []func(*domain.TrackDTO)
-	artistArtworkQueue        chan artistArtworkJob
-	pendingArtistArtwork      map[string]struct{}
-	pendingArtistArtworkMu    sync.Mutex
-	ctx                       context.Context
-	cancel                    context.CancelFunc
-	mu                        sync.RWMutex
+	trackUpdateListeners   []func(*domain.TrackDTO)
+	artistArtworkQueue     chan artistArtworkJob
+	pendingArtistArtwork   map[string]struct{}
+	pendingArtistArtworkMu sync.Mutex
+	artistArtworkLocks     sync.Map     // artistID -> *sync.Mutex; serializes artwork writes
+	syncing                atomic.Int32 // >0 while a bulk SyncFolder runs (gates per-track work)
+	artworkCleanupMu       sync.Mutex
+	artworkCleanupTimer    *time.Timer // debounces orphan-artwork cleanup after watcher deletes
+	ctx                    context.Context
+	cancel                 context.CancelFunc
+	mu                     sync.RWMutex
 }
 
 type artistArtworkJob struct {
@@ -150,12 +155,19 @@ func (s *LibraryService) Start(ctx context.Context) error {
 
 	go s.watchLoop()
 	go s.StartArtistArtworkWorker(s.ctx)
+	go s.maybeRescanArtistImages(s.ctx)
 	return nil
 }
 
 func (s *LibraryService) Stop(ctx context.Context) error {
 	s.cancel()
 	return s.watcher.Close()
+}
+
+// GetSettings exposes the persisted app settings (used by the Wails layer to
+// resolve artist artwork display preferences).
+func (s *LibraryService) GetSettings(ctx context.Context) (*domain.AppSettings, error) {
+	return s.settingsRepo.Load(ctx)
 }
 
 func (s *LibraryService) watchRecursive(root string) error {
@@ -192,6 +204,13 @@ func (s *LibraryService) watchLoop() {
 func (s *LibraryService) handleEvent(event fsnotify.Event) {
 	s.logger.Debug("Received watcher event", "event", event)
 
+	// Artist image files (artist.jpg/png) are handled separately from audio
+	// tracks — they update artist artwork rather than the track table.
+	if isArtistImageFile(filepath.Base(event.Name)) {
+		go s.handleArtistImageEvent(event)
+		return
+	}
+
 	if event.Has(fsnotify.Create) || event.Has(fsnotify.Write) {
 		// If it's a directory, watch it and sync it
 		// We need to check if it's a directory
@@ -199,7 +218,7 @@ func (s *LibraryService) handleEvent(event fsnotify.Event) {
 		// Use os.Stat or similar.
 		// Wait, ImportFile/SyncFolder handles it.
 		// But for Write, we want to debounce.
-		
+
 		// For simplicity, just import
 		go func() {
 			// Small delay to let file be written
@@ -256,6 +275,10 @@ func (s *LibraryService) handleEvent(event fsnotify.Event) {
 			}
 
 			s.cleanupOrphanedEntities(ctx)
+			// Artwork cache cleanup scans the whole cache dir, so it isn't run
+			// inline per event (would thrash on bulk deletes). Debounce it: bulk
+			// deletes coalesce into a single cleanup a few seconds later.
+			s.scheduleArtworkCleanup()
 
 			// Notify frontend: per-track for in-place views + generic for full reloads
 			if app := application.Get(); app != nil && app.Event != nil {
@@ -265,6 +288,51 @@ func (s *LibraryService) handleEvent(event fsnotify.Event) {
 				app.Event.Emit("library:updated", nil)
 			}
 		}()
+	}
+}
+
+// handleArtistImageEvent reacts to a local artist image file being created,
+// modified or removed while the app is running.
+func (s *LibraryService) handleArtistImageEvent(event fsnotify.Event) {
+	ctx := context.Background()
+	dir := filepath.Dir(event.Name)
+
+	if event.Has(fsnotify.Create) || event.Has(fsnotify.Write) {
+		// Give the file a moment to finish being written.
+		time.Sleep(500 * time.Millisecond)
+		if _, err := os.Stat(event.Name); err != nil {
+			return
+		}
+		for _, id := range s.artistIDsForImageDir(ctx, dir) {
+			if _, err := s.setLocalArtistImage(ctx, id, event.Name); err != nil {
+				s.logger.Warn("Failed to apply changed artist image", "artistID", id, "error", err)
+			}
+		}
+		return
+	}
+
+	if event.Has(fsnotify.Remove) || event.Has(fsnotify.Rename) {
+		settings, err := s.settingsRepo.Load(ctx)
+		if err != nil {
+			s.logger.Warn("Failed to load settings for artist image removal", "error", err)
+			return
+		}
+		for _, id := range s.artistIDsForImageDir(ctx, dir) {
+			artist, err := s.artistRepo.GetByID(ctx, id)
+			if err != nil || artist == nil || artist.ArtworkKeyLocal == nil {
+				continue
+			}
+			// Clear only the local source; manual/online remain and the display
+			// re-resolves automatically.
+			if err := s.clearArtistArtworkSource(ctx, id, domain.ArtworkSourceLocalFile); err != nil {
+				s.logger.Warn("Failed to clear local artist artwork after image removal", "artistID", id, "error", err)
+				continue
+			}
+			// If nothing else is available and online is enabled, fetch from Deezer.
+			if settings.UseOnlineArtistArtwork && artist.ArtworkKeyManual == nil && artist.ArtworkKeyOnline == nil {
+				s.EnqueueArtistArtwork(id, fmt.Sprintf("artist-artwork:%s", id))
+			}
+		}
 	}
 }
 
@@ -394,6 +462,21 @@ func (s *LibraryService) RemoveWatchedFolder(ctx context.Context, id string, kee
 	return nil
 }
 
+// scheduleArtworkCleanup debounces orphan-artwork cleanup: each call resets a
+// short timer so a burst of watcher deletes triggers a single cache sweep.
+func (s *LibraryService) scheduleArtworkCleanup() {
+	s.artworkCleanupMu.Lock()
+	defer s.artworkCleanupMu.Unlock()
+	if s.artworkCleanupTimer != nil {
+		s.artworkCleanupTimer.Stop()
+	}
+	s.artworkCleanupTimer = time.AfterFunc(5*time.Second, func() {
+		if err := s.CleanupOrphanedArtworks(s.ctx); err != nil {
+			s.logger.Warn("Failed to cleanup orphaned artworks (debounced)", "error", err)
+		}
+	})
+}
+
 func (s *LibraryService) CleanupOrphanedArtworks(ctx context.Context) error {
 	keys, err := s.trackRepo.GetAllArtworkKeys(ctx)
 	if err != nil {
@@ -405,11 +488,26 @@ func (s *LibraryService) CleanupOrphanedArtworks(ctx context.Context) error {
 		activeKeys[k] = true
 	}
 
+	// Include artist artwork (all sources) so it isn't deleted while the artist
+	// exists — and so all of an artist's images are removed once it's orphaned.
+	artistKeys, err := s.artistRepo.GetAllArtworkKeys(ctx)
+	if err != nil {
+		return err
+	}
+	for _, k := range artistKeys {
+		activeKeys[k] = true
+	}
+
 	return s.artworkCache.CleanupOrphaned(ctx, activeKeys)
 }
 
 func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 	s.logger.Info("Starting folder sync", "root", root)
+
+	// Mark a bulk sync in progress so per-file ImportFile skips its own artist
+	// image lookup — the batch pass below handles it far more cheaply.
+	s.syncing.Add(1)
+	defer s.syncing.Add(-1)
 
 	supportedExtensions := SupportedAudioExtensions
 
@@ -440,6 +538,7 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 	// 2. Import files
 	var current int
 	foundPaths := make(map[string]bool)
+	imageDirs := make(map[string]bool) // directories containing an artist.{jpg,jpeg,png}
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			s.logger.Warn("Error walking path", "path", path, "error", err)
@@ -452,6 +551,11 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 		}
 
 		if d.IsDir() {
+			return nil
+		}
+
+		if isArtistImageFile(filename) {
+			imageDirs[filepath.Dir(path)] = true
 			return nil
 		}
 
@@ -491,6 +595,9 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 		return fmt.Errorf("failed to walk directory: %w", err)
 	}
 
+	// 2b. Apply local artist images in one batch (per image directory).
+	s.applyLocalArtistImagesForDirs(ctx, imageDirs)
+
 	// 3. Cleanup missing files
 	s.logger.Info("Cleaning up missing files", "root", root)
 	var deletedIDs []string
@@ -515,6 +622,9 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 	// Always clear orphans: a track removed here (or by an earlier run/path) can
 	// leave an album/artist/genre/composer with no tracks.
 	s.cleanupOrphanedEntities(ctx)
+	if err := s.CleanupOrphanedArtworks(ctx); err != nil {
+		s.logger.Warn("Failed to cleanup orphaned artworks", "error", err)
+	}
 
 	s.logger.Info("Finished folder sync", "root", root)
 	if app := application.Get(); app != nil && app.Event != nil {
@@ -561,6 +671,21 @@ func (s *LibraryService) ImportFile(ctx context.Context, path string) error {
 	// Resolve related entities
 	if err := s.resolveEntities(ctx, dto); err != nil {
 		return fmt.Errorf("failed to resolve entities for %s: %w", path, err)
+	}
+
+	// Pick up a local artist image (artist.jpg/png) sitting next to the track or
+	// in the parent (artist) folder, for the track's artists and album artists.
+	// During a bulk sync this is skipped — SyncFolder's batch pass handles it
+	// once per directory instead of once per track.
+	if s.syncing.Load() == 0 {
+		var artistIDs []string
+		for _, a := range dto.Artists {
+			artistIDs = append(artistIDs, a.ID)
+		}
+		for _, a := range dto.AlbumArtists {
+			artistIDs = append(artistIDs, a.ID)
+		}
+		s.resolveTrackArtistImages(ctx, path, artistIDs)
 	}
 
 	// Extract lyrics from metadata
@@ -740,7 +865,6 @@ func (s *LibraryService) resolveEntities(ctx context.Context, dto *domain.TrackD
 	if err := s.trackRepo.SetComposers(ctx, dto.ID, composerIDs); err != nil {
 		return err
 	}
-
 
 	return nil
 }

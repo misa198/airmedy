@@ -65,15 +65,67 @@ type AlbumDTO struct {
 	Artists []*Artist `json:"artists,omitempty"`
 }
 
+// Artist artwork sources. Each is stored independently; the one shown is chosen
+// at read time by ResolveArtworkKey (manual outranks the local/online pair).
+const (
+	ArtworkSourceOnline    = "online"     // fetched automatically from Deezer
+	ArtworkSourceLocalFile = "local_file" // scanned artist.jpg/png from disk
+	ArtworkSourceManual    = "manual"     // set explicitly by the user
+)
+
 // Artist represents a music artist
 type Artist struct {
-	ID               string    `json:"id" db:"id"`
-	Name             string    `json:"name" db:"name"`
-	SortName         string    `json:"sort_name" db:"sort_name"`
-	NormalizationKey string    `json:"normalization_key" db:"normalization_key"`
-	ArtworkKey       *string   `json:"artwork_key" db:"artwork_key"`
-	CreatedAt        time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt        time.Time `json:"updated_at" db:"updated_at"`
+	ID               string  `json:"id" db:"id"`
+	Name             string  `json:"name" db:"name"`
+	SortName         string  `json:"sort_name" db:"sort_name"`
+	NormalizationKey string  `json:"normalization_key" db:"normalization_key"`
+	ArtworkKeyManual *string `json:"artwork_key_manual" db:"artwork_key_manual"`
+	ArtworkKeyLocal  *string `json:"artwork_key_local" db:"artwork_key_local"`
+	ArtworkKeyOnline *string `json:"artwork_key_online" db:"artwork_key_online"`
+	// ArtworkKey is the resolved key to display, computed at read time (not stored).
+	ArtworkKey string    `json:"artwork_key" db:"-"`
+	CreatedAt  time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at" db:"updated_at"`
+}
+
+// ResolveArtworkKey picks which stored artwork to show. Manual always wins; the
+// local/online order follows the user's preference. An existing online image is
+// shown regardless of whether online fetching is currently enabled.
+func (a *Artist) ResolveArtworkKey(preferLocal bool) string {
+	if a.ArtworkKeyManual != nil && *a.ArtworkKeyManual != "" {
+		return *a.ArtworkKeyManual
+	}
+	local, online := "", ""
+	if a.ArtworkKeyLocal != nil {
+		local = *a.ArtworkKeyLocal
+	}
+	if a.ArtworkKeyOnline != nil {
+		online = *a.ArtworkKeyOnline
+	}
+	if preferLocal {
+		if local != "" {
+			return local
+		}
+		return online
+	}
+	if online != "" {
+		return online
+	}
+	return local
+}
+
+// ArtworkKeyForSource returns the stored key for a given source ("" if unset).
+func (a *Artist) ArtworkKeyForSource(source string) *string {
+	switch source {
+	case ArtworkSourceManual:
+		return a.ArtworkKeyManual
+	case ArtworkSourceLocalFile:
+		return a.ArtworkKeyLocal
+	case ArtworkSourceOnline:
+		return a.ArtworkKeyOnline
+	default:
+		return nil
+	}
 }
 
 // Genre represents a music genre
@@ -139,14 +191,14 @@ type WatchedFolder struct {
 
 // PlayerState holds the playback state to persist across app restarts
 type PlayerState struct {
-	QueueTrackIDs         []string   `json:"queue_track_ids"`
-	OriginalTrackIDs      []string   `json:"original_track_ids"`
-	CurrentTrackID        string     `json:"current_track_id"`
-	Position              float64    `json:"position"`
-	Volume                float64    `json:"volume"`
-	Muted                 bool       `json:"muted"`
-	Shuffle               bool       `json:"shuffle"`
-	RepeatMode            RepeatMode `json:"repeat_mode"`
+	QueueTrackIDs    []string   `json:"queue_track_ids"`
+	OriginalTrackIDs []string   `json:"original_track_ids"`
+	CurrentTrackID   string     `json:"current_track_id"`
+	Position         float64    `json:"position"`
+	Volume           float64    `json:"volume"`
+	Muted            bool       `json:"muted"`
+	Shuffle          bool       `json:"shuffle"`
+	RepeatMode       RepeatMode `json:"repeat_mode"`
 }
 
 // AppSettings holds general application settings
@@ -162,6 +214,7 @@ type AppSettings struct {
 	EnableKugou              bool   `json:"enable_kugou"`
 	PreferLocalLyrics        bool   `json:"prefer_local_lyrics"`
 	UseOnlineArtistArtwork   bool   `json:"use_online_artist_artwork"`
+	LastScanVersion          string `json:"last_scan_version"`
 	PreventSleepWhilePlaying bool   `json:"prevent_sleep_while_playing"`
 	RemoteServerEnabled      bool   `json:"remote_server_enabled"`
 	RemoteServerPort         int    `json:"remote_server_port"`

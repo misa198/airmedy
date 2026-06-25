@@ -78,7 +78,7 @@
     "integrations": {
       "title": "Integrations",
       "online_artist_artwork": "Online Artist Artwork",
-      "online_artist_artwork_desc": "Automatically fetch artist artwork from Deezer",
+      "online_artist_artwork_desc": "When on, use artist images from Deezer; when off, use local artist.jpg/png files",
       "enable_lrclib": "LRCLIB.NET Lyrics",
       "enable_lrclib_desc": "Fetch lyrics from LRCLIB.NET",
       "enable_kugou": "KuGou Lyrics",
@@ -342,7 +342,10 @@
   },
   "artist": {
     "albums_count": "{count} albums",
-    "songs_count": "{count} songs"
+    "songs_count": "{count} songs",
+    "edit_image": "Edit artist image",
+    "set_custom_image": "Set custom image",
+    "remove_custom_image": "Remove custom image"
   },
   "track_info": {
     "title": "Track Info",
