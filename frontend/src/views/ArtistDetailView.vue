@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { ref, shallowRef, computed, onMounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
-import type { Artist, AlbumDTO, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
-import GroupedAlbumList from '../components/GroupedAlbumList.vue'
 import ArtistCard from '@/components/ArtistCard.vue'
-import { User, Shuffle, Disc, Music, Play, MoreVertical } from 'lucide-vue-next'
-import { usePlayerStore } from '../stores/player'
-import { useI18n } from 'vue-i18n'
 import { useContextMenu } from '@/composables/useContextMenu'
 import { useGroupContextMenu } from '@/composables/useGroupContextMenu'
-import ContextMenu from '../components/ContextMenu.vue'
-import { DetailsButton } from '@airmedy/ui'
 import { sortTracksGrouped } from '@/lib/trackSort'
+import { DetailsButton } from '@airmedy/ui'
+import { Disc, ImagePlus, MoreVertical, Music, Play, Shuffle, Trash2 } from 'lucide-vue-next'
+import { computed, onMounted, ref, shallowRef, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
+import type { AlbumDTO, Artist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
+import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
+import ContextMenu from '../components/ContextMenu.vue'
+import GroupedAlbumList from '../components/GroupedAlbumList.vue'
+import { usePlayerStore } from '../stores/player'
 
 const { t } = useI18n()
 
@@ -50,6 +50,48 @@ const loadArtistDetails = async (id: string) => {
   }
 }
 
+const refreshArtist = async (id: string) => {
+  try {
+    artist.value = await LibraryService.GetArtistByID(id)
+  } catch (err) {
+    console.error('Failed to refresh artist:', err)
+  }
+}
+
+async function handleSetArtistImage() {
+  if (!artist.value) return
+  try {
+    const url = await LibraryService.SelectAndSetArtistArtwork(artist.value.id)
+    if (url) refreshArtist(artist.value.id)
+  } catch (err) {
+    console.error('Failed to set artist image:', err)
+  }
+}
+
+async function handleRemoveArtistImage() {
+  if (!artist.value) return
+  try {
+    await LibraryService.RemoveArtistArtwork(artist.value.id)
+    refreshArtist(artist.value.id)
+  } catch (err) {
+    console.error('Failed to remove artist image:', err)
+  }
+}
+
+function openArtworkMenu(e: MouseEvent) {
+  if (!artist.value) return
+  contextMenu.open(e, [
+    { label: t('artist.set_custom_image'), icon: ImagePlus, action: handleSetArtistImage },
+    {
+      label: t('artist.remove_custom_image'),
+      icon: Trash2,
+      danger: true,
+      disabled: !artist.value.artwork_key_manual,
+      action: handleRemoveArtistImage,
+    },
+  ])
+}
+
 onMounted(() => {
   const id = route.params.id as string
   if (id) loadArtistDetails(id)
@@ -71,8 +113,15 @@ watch(() => route.params.id, (newId) => {
       <div
         class="p-8 md:p-12 flex flex-col md:flex-row gap-8 items-center bg-gradient-to-b from-dynamic-surface to-transparent border-b border-foreground/[0.06]">
         <div
-          class="w-32 h-32 xl:w-42 xl:h-42 rounded-full shadow-2xl overflow-hidden ring-2 ring-foreground/[0.08] bg-foreground/5 flex-shrink-0">
+          class="group relative w-32 h-32 xl:w-42 xl:h-42 rounded-full shadow-2xl overflow-hidden ring-2 ring-foreground/[0.08] bg-foreground/5 flex-shrink-0"
+          @contextmenu="openArtworkMenu">
           <ArtistCard :artist="artist" variant="avatar" />
+          <button type="button"
+            class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+            :title="t('artist.edit_image')" @click.stop="openArtworkMenu">
+            <span
+              class="text-white text-xs font-medium px-2 py-1 bg-black/20 rounded-full backdrop-blur-sm">{{ t('artist.edit_image') }}</span>
+          </button>
         </div>
 
         <div class="flex-1 text-center md:text-left space-y-4 @container min-w-0">

@@ -18,8 +18,8 @@ func NewSettingsRepository(db *DB) domain.SettingsRepository {
 
 func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSettings) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO app_settings (id, language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, enable_lrclib, enable_kugou, prefer_local_lyrics, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator, updated_at)
-		 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+		`INSERT INTO app_settings (id, language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator, updated_at)
+		 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 		 ON CONFLICT(id) DO UPDATE SET
 		   language = excluded.language,
 		   theme = excluded.theme,
@@ -29,6 +29,7 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		   show_tray_icon = excluded.show_tray_icon,
 		   eq_enabled = excluded.eq_enabled,
 		   use_online_artist_artwork = excluded.use_online_artist_artwork,
+		   last_scan_version = excluded.last_scan_version,
 		   enable_lrclib = excluded.enable_lrclib,
 		   enable_kugou = excluded.enable_kugou,
 		   prefer_local_lyrics = excluded.prefer_local_lyrics,
@@ -46,6 +47,7 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		settings.ShowTrayIcon,
 		settings.EQEnabled,
 		settings.UseOnlineArtistArtwork,
+		settings.LastScanVersion,
 		settings.EnableLrclib,
 		settings.EnableKugou,
 		settings.PreferLocalLyrics,
@@ -71,6 +73,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		ShowTrayIcon             bool           `db:"show_tray_icon"`
 		EQEnabled                bool           `db:"eq_enabled"`
 		UseOnlineArtistArtwork   bool           `db:"use_online_artist_artwork"`
+		LastScanVersion          string         `db:"last_scan_version"`
 		EnableLrclib             bool           `db:"enable_lrclib"`
 		EnableKugou              bool           `db:"enable_kugou"`
 		PreferLocalLyrics        bool           `db:"prefer_local_lyrics"`
@@ -81,7 +84,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		ShowPlayerIndicator      bool           `db:"show_player_indicator"`
 	}
 	err := r.db.GetContext(ctx, &row,
-		`SELECT language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, enable_lrclib, enable_kugou, prefer_local_lyrics, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator FROM app_settings WHERE id = 1`,
+		`SELECT language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator FROM app_settings WHERE id = 1`,
 	)
 	if err == sql.ErrNoRows {
 		return &domain.AppSettings{
@@ -115,6 +118,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		EnableKugou:              row.EnableKugou,
 		PreferLocalLyrics:        row.PreferLocalLyrics,
 		UseOnlineArtistArtwork:   row.UseOnlineArtistArtwork,
+		LastScanVersion:          row.LastScanVersion,
 		PreventSleepWhilePlaying: row.PreventSleepWhilePlaying,
 		RemoteServerEnabled:      row.RemoteServerEnabled,
 		RemoteServerPort:         row.RemoteServerPort,

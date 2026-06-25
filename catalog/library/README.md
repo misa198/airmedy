@@ -30,6 +30,9 @@ File system events are debounced (500ms) before processing:
 
 - `Create` / `Write` → import file
 - `Remove` / `Rename` → delete track from DB and search index
+- `artist.jpg/jpeg/png` events are routed to artist-artwork handling instead of
+  the track pipeline (apply on create/write, clear on remove). See the
+  [Artwork catalog](../artwork/README.md#artist-artwork).
 
 ## Import Pipeline
 
@@ -76,6 +79,8 @@ GetSyncStatus(): SyncProgress | null     // stub; used for frontend type generat
 // Metadata & artwork
 GetAlbumColors(id: string): ThemeColors
 GetArtistArtwork(artistID: string, eventID: string): string | null
+SelectAndSetArtistArtwork(artistID: string): string   // pick file → manual artwork
+RemoveArtistArtwork(artistID: string): void           // clear custom artwork
 ToggleFavorite(trackID: string): boolean
 UpdateTrackMetadata(trackID: string, update: MetadataUpdate): void
 ShowInExplorer(trackID: string): void
@@ -115,6 +120,7 @@ GetComposerByID(id: string): Composer
 | `library:sync-finished` | `{}`                       | Scan complete            |
 | `library:track-updated` | `TrackDTO`                 | Metadata written to file |
 | `library:updated`       | `{}`                       | General library change   |
+| `artist-artwork-updated`| `{ artist_id, source, key }` | One artwork source's key changed (empty `key` = cleared) |
 
 ## Frontend Integration
 

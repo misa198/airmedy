@@ -78,7 +78,7 @@
     "integrations": {
       "title": "Intégrations",
       "online_artist_artwork": "Photos d'artistes en ligne",
-      "online_artist_artwork_desc": "Récupérer automatiquement les photos d'artistes depuis Deezer",
+      "online_artist_artwork_desc": "Activé : images d'artistes depuis Deezer ; désactivé : fichiers locaux artist.jpg/png",
       "enable_lrclib": "Paroles LRCLIB.NET",
       "enable_lrclib_desc": "Récupérer les paroles depuis LRCLIB.NET",
       "enable_kugou": "Paroles KuGou",
@@ -342,7 +342,10 @@
   },
   "artist": {
     "albums_count": "{count} albums",
-    "songs_count": "{count} chansons"
+    "songs_count": "{count} chansons",
+    "edit_image": "Modifier l'image de l'artiste",
+    "set_custom_image": "Définir une image personnalisée",
+    "remove_custom_image": "Supprimer l'image personnalisée"
   },
   "track_info": {
     "title": "Informations sur la piste",

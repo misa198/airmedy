@@ -18,6 +18,10 @@ export const useAppStore = defineStore('app', () => {
   const enableKugou = ref(true)
   const preferLocalLyrics = ref(true)
   const useOnlineArtistArtwork = ref(true)
+  // Round-tripped only (set by the backend's version-gated rescan); never edited
+  // in the UI, but must be preserved across saves so saving settings doesn't
+  // wipe it and re-trigger a rescan.
+  const lastScanVersion = ref('')
   const preventSleepWhilePlaying = ref(false)
   const showPlayerIndicator = ref(true)
   const remoteServerEnabled = ref(false)
@@ -66,6 +70,7 @@ export const useAppStore = defineStore('app', () => {
         enableKugou.value = settings.enable_kugou !== false
         preferLocalLyrics.value = settings.prefer_local_lyrics !== false
         useOnlineArtistArtwork.value = settings.use_online_artist_artwork !== false
+        lastScanVersion.value = settings.last_scan_version || ''
         preventSleepWhilePlaying.value = !!settings.prevent_sleep_while_playing
         showPlayerIndicator.value = settings.show_player_indicator !== false
         remoteServerEnabled.value = !!settings.remote_server_enabled
@@ -132,6 +137,7 @@ export const useAppStore = defineStore('app', () => {
         enable_kugou: enableKugou.value,
         prefer_local_lyrics: preferLocalLyrics.value,
         use_online_artist_artwork: useOnlineArtistArtwork.value,
+        last_scan_version: lastScanVersion.value,
         prevent_sleep_while_playing: preventSleepWhilePlaying.value,
         show_player_indicator: showPlayerIndicator.value,
         remote_server_enabled: remoteServerEnabled.value,

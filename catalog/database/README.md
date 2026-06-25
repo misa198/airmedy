@@ -42,6 +42,10 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000015 | `artist_artwork.up.sql`              | `ALTER TABLE artists ADD COLUMN artwork_key TEXT`                                                                                    |
 | 000016 | `app_settings_artist_artwork.up.sql` | `ALTER TABLE app_settings ADD COLUMN use_online_artist_artwork BOOLEAN NOT NULL DEFAULT 1`                                          |
 | 000017 | `lyrics_provider_settings.up.sql`    | Add `enable_lrclib`, `enable_kugou`, `prefer_metadata_lyrics` (all `BOOLEAN NOT NULL DEFAULT 1`) to `app_settings`                 |
+| 000023 | `artist_artwork_source.up.sql`       | `ALTER TABLE artists ADD COLUMN artwork_source TEXT NOT NULL DEFAULT ''` — tracks artwork origin (`online`/`local_file`/`manual`)   |
+| 000024 | `app_settings_artist_artwork.up.sql` | Add `prefer_local_artist_artwork BOOLEAN NOT NULL DEFAULT 1` and `last_scan_version TEXT NOT NULL DEFAULT ''` to `app_settings`     |
+| 000026 | `drop_prefer_local_artist_artwork.up.sql` | Drop `prefer_local_artist_artwork` — replaced by deriving from `use_online_artist_artwork` |
+| 000025 | `artist_artwork_multi_source.up.sql` | Replace `artwork_key`/`artwork_source` with per-source `artwork_key_manual`/`_local`/`_online` (backfilled), then drop the old two |
 
 ## Full Schema
 
@@ -53,7 +57,9 @@ artists (
     name TEXT NOT NULL,
     sort_name TEXT NOT NULL,
     normalization_key TEXT,
-    artwork_key TEXT,
+    artwork_key_manual TEXT,  -- user-set image (highest priority)
+    artwork_key_local TEXT,   -- scanned artist.jpg/png
+    artwork_key_online TEXT,  -- Deezer fetch
     created_at DATETIME,
     updated_at DATETIME
 )
@@ -179,6 +185,7 @@ app_settings (
     eq_enabled BOOLEAN DEFAULT 0,
     lrclib_mode TEXT DEFAULT 'prefer_metadata',
     use_online_artist_artwork BOOLEAN NOT NULL DEFAULT 1,
+    last_scan_version TEXT NOT NULL DEFAULT '',
     enable_lrclib BOOLEAN NOT NULL DEFAULT 1,
     enable_kugou BOOLEAN NOT NULL DEFAULT 1,
     prefer_metadata_lyrics BOOLEAN NOT NULL DEFAULT 1,

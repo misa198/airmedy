@@ -54,6 +54,12 @@ type ArtistRepository interface {
 	GetAll(ctx context.Context) ([]*Artist, error)
 	Save(ctx context.Context, artist *Artist) error
 	Upsert(ctx context.Context, artist *Artist) error
+	// SetArtworkSource sets the cache key for a single artwork source. A nil key
+	// clears that source only; other sources are left untouched.
+	SetArtworkSource(ctx context.Context, id string, source string, key *string) error
+	// GetAllArtworkKeys returns every non-empty artwork key across all sources,
+	// used to keep live artist images out of the orphan-cleanup set.
+	GetAllArtworkKeys(ctx context.Context) ([]string, error)
 	DeleteOrphaned(ctx context.Context) error
 }
 

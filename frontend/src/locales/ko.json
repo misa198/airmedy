@@ -78,7 +78,7 @@
     "integrations": {
       "title": "연동",
       "online_artist_artwork": "온라인 아티스트 아트워크",
-      "online_artist_artwork_desc": "Deezer에서 자동으로 아티스트 아트워크 가져오기",
+      "online_artist_artwork_desc": "켜짐: Deezer 아티스트 이미지 사용, 꺼짐: 로컬 artist.jpg/png 사용",
       "enable_lrclib": "LRCLIB.NET 가사",
       "enable_lrclib_desc": "LRCLIB.NET에서 가사 가져오기",
       "enable_kugou": "KuGou 가사",
@@ -342,7 +342,10 @@
   },
   "artist": {
     "albums_count": "{count} 앨범",
-    "songs_count": "{count} 곡"
+    "songs_count": "{count} 곡",
+    "edit_image": "아티스트 이미지 편집",
+    "set_custom_image": "사용자 지정 이미지 설정",
+    "remove_custom_image": "사용자 지정 이미지 제거"
   },
   "track_info": {
     "title": "트랙 정보",

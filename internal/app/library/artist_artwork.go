@@ -9,6 +9,8 @@ import (
 	"net/url"
 	"time"
 
+	"airmedy/internal/domain"
+
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
@@ -51,97 +53,98 @@ func (s *LibraryService) processArtistArtworkJob(ctx context.Context, job artist
 		return
 	}
 
-	// 2. Get artist name
+	// 2. Get artist
 	artist, err := s.artistRepo.GetByID(ctx, job.ArtistID)
 	if err != nil || artist == nil {
 		s.logger.Warn("Artist not found for artwork job", "artistID", job.ArtistID, "error", err)
 		return
 	}
 
+	// 3. Already have an online image — don't refetch (it's kept even when the
+	//    online toggle is later turned off).
+	if artist.ArtworkKeyOnline != nil && *artist.ArtworkKeyOnline != "" {
+		return
+	}
+
 	s.logger.Info("Fetching artwork for artist from Deezer", "artist", artist.Name)
 
-	// 3. Search Deezer
-	artworkKey, err := s.fetchArtistArtworkFromDeezer(ctx, artist.Name)
+	// 4. Fetch + store the online source. Other sources are untouched.
+	artworkURL, _, err := s.writeArtistArtworkSource(ctx, artist.ID, domain.ArtworkSourceOnline,
+		func() ([]byte, string, error) {
+			return s.fetchArtistArtworkFromDeezer(ctx, artist.Name)
+		})
 	if err != nil {
 		s.logger.Warn("Failed to fetch artist artwork from Deezer", "artist", artist.Name, "artistID", artist.ID, "error", err)
 		return
 	}
-
-	// 4. Update Database
-	artist.ArtworkKey = &artworkKey
-	if err := s.artistRepo.Upsert(ctx, artist); err != nil {
-		s.logger.Error("Failed to update artist artwork key in DB", "artist", artist.Name, "error", err)
+	if artworkURL == "" {
 		return
 	}
 
-	// 5. Emit Event
-	artworkURL := fmt.Sprintf("/artwork/%s", artworkKey)
+	// 6. Emit the per-request event the waiting frontend card is listening for.
 	s.logger.Info("Emitting artist artwork event", "artist", artist.Name, "eventID", job.EventID, "url", artworkURL)
 	if app := application.Get(); app != nil && app.Event != nil {
 		app.Event.Emit(job.EventID, artworkURL)
 	}
 }
 
-func (s *LibraryService) fetchArtistArtworkFromDeezer(ctx context.Context, name string) (string, error) {
+// fetchArtistArtworkFromDeezer searches Deezer for the artist and downloads the
+// best picture, returning the raw image bytes and mime type. Caching/storage is
+// handled by the caller via writeArtistArtwork.
+func (s *LibraryService) fetchArtistArtworkFromDeezer(ctx context.Context, name string) ([]byte, string, error) {
 	searchURL := fmt.Sprintf("https://api.deezer.com/search/artist?q=%s", url.QueryEscape(name))
 	s.logger.Info("Deezer search request", "url", searchURL)
-	
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, searchURL, nil)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("deezer api returned status %d", resp.StatusCode)
+		return nil, "", fmt.Errorf("deezer api returned status %d", resp.StatusCode)
 	}
 
 	var searchResult deezerSearchResponse
 	if err := json.NewDecoder(resp.Body).Decode(&searchResult); err != nil {
-		return "", err
+		return nil, "", err
 	}
 
 	if len(searchResult.Data) == 0 {
-		return "", fmt.Errorf("artist not found on deezer")
+		return nil, "", fmt.Errorf("artist not found on deezer")
 	}
 
 	imageURL := searchResult.Data[0].PictureMedium
 	s.logger.Info("Deezer found artist artwork", "name", name, "imageURL", imageURL)
 	if imageURL == "" {
-		return "", fmt.Errorf("no picture found for artist on deezer")
+		return nil, "", fmt.Errorf("no picture found for artist on deezer")
 	}
 
 	// Download image
 	s.logger.Info("Downloading artist artwork", "url", imageURL)
 	imgResp, err := client.Get(imageURL)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
 	defer func() { _ = imgResp.Body.Close() }()
 
 	if imgResp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to download image, status %d", imgResp.StatusCode)
+		return nil, "", fmt.Errorf("failed to download image, status %d", imgResp.StatusCode)
 	}
 
 	data, err := io.ReadAll(imgResp.Body)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
 
 	mimeType := imgResp.Header.Get("Content-Type")
-	key, err := s.artworkCache.Save(ctx, data, mimeType)
-	if err != nil {
-		return "", err
-	}
-
-	s.logger.Info("Saved artist artwork to cache", "name", name, "key", key)
-	return key, nil
+	return data, mimeType, nil
 }
 
 func (s *LibraryService) EnqueueArtistArtwork(artistID, eventID string) {

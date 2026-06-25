@@ -95,6 +95,9 @@ func (m *mockArtistRepo) GetByNormalizationKey(ctx context.Context, key string) 
 	return nil, nil
 }
 func (m *mockArtistRepo) GetAll(ctx context.Context) ([]*domain.Artist, error) { return nil, nil }
+func (m *mockArtistRepo) GetAllArtworkKeys(ctx context.Context) ([]string, error) {
+	return nil, nil
+}
 
 type mockGenreRepo struct{ domain.GenreRepository }
 
