@@ -7,6 +7,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as LastFmService from '../../../bindings/airmedy/internal/infra/wails/lastfmservice'
 import * as LibraryService from '../../../bindings/airmedy/internal/infra/wails/libraryservice'
+import SettingExpandableRow from './SettingExpandableRow.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -238,64 +239,58 @@ onMounted(() => {
           <Switch :model-value="appStore.preferLocalLyrics"
             @update:model-value="appStore.updatePreferLocalLyrics" />
         </div>
-        <div class="p-5 flex items-center justify-between gap-x-2">
-          <div>
-            <p class="text-sm font-semibold">
-              {{ t('settings.integrations.lyrics_subfolder', 'Lyrics Subfolder Next to Track') }}
-            </p>
-            <p class="text-xs text-foreground opacity-60 mt-1">
-              {{ t('settings.integrations.lyrics_subfolder_desc', 'Also look up .lrc/.txt files in a subfolder next to each track') }}
-            </p>
-          </div>
-          <Switch :model-value="appStore.lyricsSubfolderEnabled" @update:model-value="toggleSubfolder" />
-        </div>
-        <div v-if="appStore.lyricsSubfolderEnabled" class="p-5 space-y-3">
-          <div class="flex items-center gap-3">
-            <div class="p-2 bg-background rounded-lg shadow-sm shrink-0">
-              <FolderTree class="w-4 h-4 text-foreground opacity-60" />
-            </div>
-            <Input type="text" class="flex-1" :model-value="subfolderInput"
-              :placeholder="t('settings.integrations.lyrics_subfolder_name', 'Folder name (e.g. lyrics)')"
-              @update:model-value="onSubfolderInput" @keyup.enter="saveSubfolder" />
-            <button @click="saveSubfolder" :disabled="!subfolderChanged"
-              class="shrink-0 px-4 py-2 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-all text-sm font-bold disabled:opacity-50">
-              {{ t('common.save', 'Save') }}
-            </button>
-          </div>
-          <p v-if="subfolderError" class="text-xs text-red-500 pl-11">{{ subfolderError }}</p>
-          <template v-else>
-            <p class="text-xs text-foreground opacity-50 pl-11 truncate">{{ subfolderExample }}</p>
-            <p class="text-xs text-foreground opacity-40 pl-11">
-              {{ t('settings.integrations.lyrics_subfolder_case', 'Folder name is matched ignoring upper/lowercase.') }}
-            </p>
+        <SettingExpandableRow :title="t('settings.integrations.lyrics_subfolder', 'Lyrics Subfolder Next to Track')"
+          :description="t('settings.integrations.lyrics_subfolder_desc', 'Also look up .lrc/.txt files in a subfolder next to each track')"
+          :expanded="appStore.lyricsSubfolderEnabled">
+          <template #control>
+            <Switch :model-value="appStore.lyricsSubfolderEnabled" @update:model-value="toggleSubfolder" />
           </template>
-        </div>
-        <div class="p-5 flex items-center justify-between gap-x-2">
-          <div>
-            <p class="text-sm font-semibold">
-              {{ t('settings.integrations.lyrics_folder', 'Dedicated Lyrics Folder') }}
-            </p>
-            <p class="text-xs text-foreground opacity-60 mt-1">
-              {{ t('settings.integrations.lyrics_folder_desc', 'Also look up .lrc/.txt files (matched by track name) in a chosen folder') }}
-            </p>
-          </div>
-          <Switch :model-value="appStore.lyricsFolderEnabled"
-            @update:model-value="appStore.updateLyricsFolderEnabled" />
-        </div>
-        <div v-if="appStore.lyricsFolderEnabled" class="p-5 flex items-center justify-between gap-x-4">
-          <div class="flex items-center gap-3 overflow-hidden">
-            <div class="p-2 bg-background rounded-lg shadow-sm shrink-0">
-              <Folder class="w-4 h-4 text-foreground opacity-60" />
+          <template #expanded>
+            <div class="flex items-center gap-3">
+              <div class="p-2 bg-background rounded-lg shadow-sm shrink-0">
+                <FolderTree class="w-4 h-4 text-foreground opacity-60" />
+              </div>
+              <Input type="text" class="flex-1" :model-value="subfolderInput"
+                :placeholder="t('settings.integrations.lyrics_subfolder_name', 'Folder name (e.g. lyrics)')"
+                @update:model-value="onSubfolderInput" @keyup.enter="saveSubfolder" />
+              <button @click="saveSubfolder" :disabled="!subfolderChanged"
+                class="shrink-0 px-4 py-2 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-all text-sm font-bold disabled:opacity-50">
+                {{ t('common.save', 'Save') }}
+              </button>
             </div>
-            <span class="text-sm font-medium truncate" :title="appStore.lyricsFolderPath">
-              {{ appStore.lyricsFolderPath || t('settings.integrations.lyrics_folder_none', 'No folder selected') }}
-            </span>
-          </div>
-          <button @click="chooseLyricsFolder"
-            class="shrink-0 px-4 py-2 bg-foreground/[0.04] text-foreground rounded-xl hover:bg-foreground/[0.08] transition-all text-sm font-bold">
-            {{ t('settings.integrations.lyrics_folder_choose', 'Choose Folder') }}
-          </button>
-        </div>
+            <p v-if="subfolderError" class="text-xs text-red-500 mt-3">{{ subfolderError }}</p>
+            <template v-else>
+              <p class="text-xs text-foreground opacity-50 mt-3 truncate">{{ subfolderExample }}</p>
+              <p class="text-xs text-foreground opacity-40 mt-1">
+                {{ t('settings.integrations.lyrics_subfolder_case', 'Folder name is matched ignoring upper/lowercase.') }}
+              </p>
+            </template>
+          </template>
+        </SettingExpandableRow>
+        <SettingExpandableRow :title="t('settings.integrations.lyrics_folder', 'Dedicated Lyrics Folder')"
+          :description="t('settings.integrations.lyrics_folder_desc', 'Also look up .lrc/.txt files (matched by track name) in a chosen folder')"
+          :expanded="appStore.lyricsFolderEnabled">
+          <template #control>
+            <Switch :model-value="appStore.lyricsFolderEnabled"
+              @update:model-value="appStore.updateLyricsFolderEnabled" />
+          </template>
+          <template #expanded>
+            <div class="flex items-center justify-between gap-x-4">
+              <div class="flex items-center gap-3 overflow-hidden">
+                <div class="p-2 bg-background rounded-lg shadow-sm shrink-0">
+                  <Folder class="w-4 h-4 text-foreground opacity-60" />
+                </div>
+                <span class="text-sm font-medium truncate" :title="appStore.lyricsFolderPath">
+                  {{ appStore.lyricsFolderPath || t('settings.integrations.lyrics_folder_none', 'No folder selected') }}
+                </span>
+              </div>
+              <button @click="chooseLyricsFolder"
+                class="shrink-0 px-4 py-2 bg-foreground/[0.04] text-foreground rounded-xl hover:bg-foreground/[0.08] transition-all text-sm font-bold">
+                {{ t('settings.integrations.lyrics_folder_choose', 'Choose Folder') }}
+              </button>
+            </div>
+          </template>
+        </SettingExpandableRow>
       </div>
     </section>
   </div>
