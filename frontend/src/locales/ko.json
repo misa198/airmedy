@@ -85,6 +85,10 @@
       "enable_kugou_desc": "KuGou Music에서 가사 가져오기",
       "prefer_local_lyrics": "로컬 가사 우선",
       "prefer_local_lyrics_desc": "사용 가능한 경우 로컬 가사 파일(.lrc/.txt) 또는 포함된 가사 사용",
+      "lyrics_folder": "전용 가사 폴더",
+      "lyrics_folder_desc": "선택한 폴더에서도 .lrc/.txt 파일(트랙 이름으로 일치)을 조회",
+      "lyrics_folder_none": "폴더가 선택되지 않음",
+      "lyrics_folder_choose": "폴더 선택",
       "scrobbling": "Scrobbling",
       "artwork": "아트워크",
       "lyrics": "가사"

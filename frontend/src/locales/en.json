@@ -85,6 +85,10 @@
       "enable_kugou_desc": "Fetch lyrics from KuGou Music",
       "prefer_local_lyrics": "Prefer Local Lyrics",
       "prefer_local_lyrics_desc": "Use local lyric files (.lrc/.txt) or embedded lyrics when available",
+      "lyrics_folder": "Dedicated Lyrics Folder",
+      "lyrics_folder_desc": "Also look up .lrc/.txt files (matched by track name) in a chosen folder",
+      "lyrics_folder_none": "No folder selected",
+      "lyrics_folder_choose": "Choose Folder",
       "scrobbling": "Scrobbling",
       "artwork": "Artwork",
       "lyrics": "Lyrics"

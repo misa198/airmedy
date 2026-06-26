@@ -81,6 +81,39 @@ func TestLocalReader_Read(t *testing.T) {
 		}
 	})
 
+	t.Run("extra dir match by basename", func(t *testing.T) {
+		dir := t.TempDir()
+		extra := t.TempDir()
+		audio := filepath.Join(dir, "Song.mp3")
+		writeFile(t, filepath.Join(extra, "Song.lrc"), "[00:01.00]from extra")
+		content, source, found := r.Read(audio, extra)
+		if !found || source != "local-lrc" || content != "[00:01.00]from extra" {
+			t.Fatalf("got (%q,%q,%v)", content, source, found)
+		}
+	})
+
+	t.Run("sibling beats extra dir", func(t *testing.T) {
+		dir := t.TempDir()
+		extra := t.TempDir()
+		audio := filepath.Join(dir, "Song.mp3")
+		writeFile(t, filepath.Join(dir, "Song.lrc"), "[00:01.00]sibling")
+		writeFile(t, filepath.Join(extra, "Song.lrc"), "[00:01.00]extra")
+		content, _, found := r.Read(audio, extra)
+		if !found || content != "[00:01.00]sibling" {
+			t.Fatalf("expected sibling to win, got %q (%v)", content, found)
+		}
+	})
+
+	t.Run("empty extra dir ignored", func(t *testing.T) {
+		dir := t.TempDir()
+		audio := filepath.Join(dir, "Song.mp3")
+		writeFile(t, filepath.Join(dir, "Song.lrc"), "[00:01.00]sibling")
+		content, _, found := r.Read(audio, "")
+		if !found || content != "[00:01.00]sibling" {
+			t.Fatalf("got %q (%v)", content, found)
+		}
+	})
+
 	t.Run("strips BOM", func(t *testing.T) {
 		dir := t.TempDir()
 		audio := filepath.Join(dir, "Song.mp3")

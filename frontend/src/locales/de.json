@@ -85,6 +85,10 @@
       "enable_kugou_desc": "Songtexte von KuGou Music abrufen",
       "prefer_local_lyrics": "Lokale Songtexte bevorzugen",
       "prefer_local_lyrics_desc": "Lokale Songtextdateien (.lrc/.txt) oder eingebettete Songtexte verwenden, falls verfügbar",
+      "lyrics_folder": "Dedizierter Songtext-Ordner",
+      "lyrics_folder_desc": "Auch .lrc/.txt-Dateien (nach Titelname zugeordnet) in einem gewählten Ordner suchen",
+      "lyrics_folder_none": "Kein Ordner ausgewählt",
+      "lyrics_folder_choose": "Ordner auswählen",
       "scrobbling": "Scrobbling",
       "artwork": "Bilder",
       "lyrics": "Songtexte"

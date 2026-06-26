@@ -85,6 +85,10 @@
       "enable_kugou_desc": "ดึงเนื้อเพลงจาก KuGou Music",
       "prefer_local_lyrics": "ใช้เนื้อเพลงในเครื่องก่อน",
       "prefer_local_lyrics_desc": "ใช้ไฟล์เนื้อเพลง (.lrc/.txt) หรือเนื้อเพลงที่ฝังไว้เมื่อมี",
+      "lyrics_folder": "โฟลเดอร์เนื้อเพลงเฉพาะ",
+      "lyrics_folder_desc": "ค้นหาไฟล์ .lrc/.txt (จับคู่ตามชื่อเพลง) ในโฟลเดอร์ที่เลือกด้วย",
+      "lyrics_folder_none": "ยังไม่ได้เลือกโฟลเดอร์",
+      "lyrics_folder_choose": "เลือกโฟลเดอร์",
       "scrobbling": "การสคร็อบเบิล",
       "artwork": "รูปภาพ",
       "lyrics": "เนื้อเพลง"

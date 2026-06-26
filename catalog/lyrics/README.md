@@ -2,7 +2,7 @@
 
 ## Summary
 
-Fetches and displays synchronized (LRC) or plain-text lyrics for the current track. Lyrics are sourced from **sibling local files** (`.lrc` / `.txt` next to the audio file, read live at play time), embedded **file metadata** (`LYRICS` tag, read at scan time), and the external providers **lrclib.net** and **KuGou Music** (cached in SQLite). The frontend parses LRC timestamps and auto-scrolls to the current line.
+Fetches and displays synchronized (LRC) or plain-text lyrics for the current track. Lyrics are sourced from **sibling local files** (`.lrc` / `.txt` next to the audio file, read live at play time), an optional **dedicated lyrics folder** (a single user-chosen folder searched by track basename, gated by `lyrics_folder_enabled`), embedded **file metadata** (`LYRICS` tag, read at scan time), and the external providers **lrclib.net** and **KuGou Music** (cached in SQLite). The frontend parses LRC timestamps and auto-scrolls to the current line.
 
 ## Files
 
@@ -34,11 +34,17 @@ type Lyric struct {
 
 ## Resolution Strategy
 
-`LyricsService.ResolveLyrics(ctx, trackID, audioPath, preferLocal bool)` picks the best lyric.
+`LyricsService.ResolveLyrics(ctx, trackID, audioPath, preferLocal bool, extraLyricsDir string)` picks the best lyric.
 
-The **local tier** is built first: a sibling lyric file next to `audioPath` (read live by
-`LocalLyricsReader`, `.lrc` preferred over `.txt`) if present, otherwise the embedded metadata tag
-(`MetaContent`, cached in DB at scan time). So within the local tier: **local file beats tag**.
+The **local tier** is built first: a local lyric file (read live by `LocalLyricsReader`, `.lrc`
+preferred over `.txt`) — checked in the **sibling dir** of `audioPath` first, then in `extraLyricsDir`
+(the dedicated lyrics folder, when set) — if present, otherwise the embedded metadata tag
+(`MetaContent`, cached in DB at scan time). So within the local tier: **sibling file beats dedicated-folder
+file beats tag**.
+
+`extraLyricsDir` is supplied by `PlayerService.fetchAndEmitLyrics`: it equals `lyrics_folder_path`
+when `lyrics_folder_enabled` is true, otherwise `""` (disabled → sibling-only behavior).
+`HasLocalLyrics(ctx, trackID, audioPath, extraLyricsDir)` takes the same extra dir.
 
 `preferLocal` then decides local tier vs external provider content:
 
@@ -46,11 +52,13 @@ The **local tier** is built first: a sibling lyric file next to `audioPath` (rea
 | --- | --- |
 | `prefer_local_lyrics=true` | (Default) Use the local tier if available, otherwise fall back to `Content` (external provider). |
 | `prefer_local_lyrics=false` | Use `Content` (external provider) if available, otherwise fall back to the local tier. |
+| `lyrics_folder_enabled=true` | Also search `lyrics_folder_path` (flat, by basename) for `.lrc`/`.txt`, after the sibling dir. Default off. |
 | `enable_lrclib=false` | lrclib.net provider disabled; not queried on fetch. |
 | `enable_kugou=false` | KuGou provider disabled; not queried on fetch. |
 
 **Full priority (default `prefer_local_lyrics=true`):**
-`Local .lrc` → `Local .txt` → `Metadata tag` → `LRClib / KuGou`.
+`Sibling .lrc` → `Sibling .txt` → `Folder .lrc` → `Folder .txt` (when `lyrics_folder_enabled`) →
+`Metadata tag` → `LRClib / KuGou`.
 
 The setting was renamed from `prefer_metadata_lyrics` (migration `000022_prefer_local_lyrics`,
 `RENAME COLUMN` preserves the existing value).
@@ -61,8 +69,13 @@ If both `enable_lrclib` and `enable_kugou` are false, no external fetch is attem
 
 - Filename must match the audio file's basename exactly, differing only in extension
   (`/music/Song.mp3` → `/music/Song.lrc` or `/music/Song.txt`).
+- Searched in the audio file's **sibling dir** first, then the **dedicated lyrics folder**
+  (`extraLyricsDir`) if enabled. Both use the same basename match; the dedicated folder is a flat
+  lookup (no recursion). Sibling dir always wins. An empty extra dir, or one equal to the sibling dir,
+  is skipped (`internal/infra/lyrics/local.go`).
 - Read **live at play time** in `PlayerService.fetchAndEmitLyrics` — not cached and not watched, so
   newly added/edited files are picked up on the next play. No rescan needed.
+- Paths joined with `filepath.Join` → cross-platform (Unix `/`, Windows `\`).
 - Sources: `local-lrc`, `local-txt`. Frontend keys synced/plain off the content (timestamps), so
   `.lrc` renders synced and `.txt` renders plain automatically.
 
@@ -120,10 +133,12 @@ type LyricsProvider interface {
     Name() string
 }
 
-// LocalLyricsReader reads a sibling lyric file next to the audio file
-// (<base>.lrc preferred, then <base>.txt). found=false if neither exists.
+// LocalLyricsReader reads a local lyric file by the audio file's basename
+// (<base>.lrc preferred, then <base>.txt). The sibling dir is checked first,
+// then each extraDir in order (skipping empty / sibling-equal dirs).
+// found=false if none exist.
 type LocalLyricsReader interface {
-    Read(audioPath string) (content, source string, found bool)
+    Read(audioPath string, extraDirs ...string) (content, source string, found bool)
 }
 ```
 

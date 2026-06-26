@@ -85,6 +85,10 @@
       "enable_kugou_desc": "Récupérer les paroles depuis KuGou Music",
       "prefer_local_lyrics": "Privilégier les paroles locales",
       "prefer_local_lyrics_desc": "Utiliser les fichiers de paroles (.lrc/.txt) ou les paroles intégrées lorsqu'ils sont disponibles",
+      "lyrics_folder": "Dossier de paroles dédié",
+      "lyrics_folder_desc": "Rechercher aussi les fichiers .lrc/.txt (associés par nom de piste) dans un dossier choisi",
+      "lyrics_folder_none": "Aucun dossier sélectionné",
+      "lyrics_folder_choose": "Choisir un dossier",
       "scrobbling": "Scrobbling",
       "artwork": "Illustrations",
       "lyrics": "Paroles"

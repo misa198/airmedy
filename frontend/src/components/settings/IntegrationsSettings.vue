@@ -2,13 +2,23 @@
 import { useAppStore } from '@/stores/app'
 import { Switch } from '@airmedy/ui'
 import { Events } from '@wailsio/runtime'
-import { Blocks, FileMusic, ImagePlay, MicVocal, Music } from 'lucide-vue-next'
+import { Blocks, FileMusic, Folder, ImagePlay, MicVocal, Music } from 'lucide-vue-next'
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as LastFmService from '../../../bindings/airmedy/internal/infra/wails/lastfmservice'
+import * as LibraryService from '../../../bindings/airmedy/internal/infra/wails/libraryservice'
 
 const { t } = useI18n()
 const appStore = useAppStore()
+
+const chooseLyricsFolder = async () => {
+  try {
+    const path = await LibraryService.SelectFolder()
+    if (path) await appStore.updateLyricsFolderPath(path)
+  } catch (err) {
+    console.error('Failed to select lyrics folder:', err)
+  }
+}
 
 const lastfmStatus = ref({ connected: false, username: '', avatar_url: '' })
 const lastfmAvatar = ref('')
@@ -182,6 +192,32 @@ onMounted(() => {
           </div>
           <Switch :model-value="appStore.preferLocalLyrics"
             @update:model-value="appStore.updatePreferLocalLyrics" />
+        </div>
+        <div class="p-5 flex items-center justify-between gap-x-2">
+          <div>
+            <p class="text-sm font-semibold">
+              {{ t('settings.integrations.lyrics_folder', 'Dedicated Lyrics Folder') }}
+            </p>
+            <p class="text-xs text-foreground opacity-60 mt-1">
+              {{ t('settings.integrations.lyrics_folder_desc', 'Also look up .lrc/.txt files (matched by track name) in a chosen folder') }}
+            </p>
+          </div>
+          <Switch :model-value="appStore.lyricsFolderEnabled"
+            @update:model-value="appStore.updateLyricsFolderEnabled" />
+        </div>
+        <div v-if="appStore.lyricsFolderEnabled" class="p-5 flex items-center justify-between gap-x-4">
+          <div class="flex items-center gap-3 overflow-hidden">
+            <div class="p-2 bg-background rounded-lg shadow-sm shrink-0">
+              <Folder class="w-4 h-4 text-foreground opacity-60" />
+            </div>
+            <span class="text-sm font-medium truncate" :title="appStore.lyricsFolderPath">
+              {{ appStore.lyricsFolderPath || t('settings.integrations.lyrics_folder_none', 'No folder selected') }}
+            </span>
+          </div>
+          <button @click="chooseLyricsFolder"
+            class="shrink-0 px-4 py-2 bg-foreground/[0.04] text-foreground rounded-xl hover:bg-foreground/[0.08] transition-all text-sm font-bold">
+            {{ t('settings.integrations.lyrics_folder_choose', 'Choose Folder') }}
+          </button>
         </div>
       </div>
     </section>

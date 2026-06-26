@@ -85,6 +85,10 @@
       "enable_kugou_desc": "KuGou Music から歌詞を取得",
       "prefer_local_lyrics": "ローカル歌詞を優先",
       "prefer_local_lyrics_desc": "利用可能な場合はローカル歌詞ファイル（.lrc/.txt）または埋め込み歌詞を使用",
+      "lyrics_folder": "専用歌詞フォルダー",
+      "lyrics_folder_desc": "選択したフォルダー内の .lrc/.txt ファイル（曲名で一致）も検索",
+      "lyrics_folder_none": "フォルダーが選択されていません",
+      "lyrics_folder_choose": "フォルダーを選択",
       "scrobbling": "Scrobbling",
       "artwork": "画像",
       "lyrics": "歌詞"

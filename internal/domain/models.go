@@ -213,6 +213,8 @@ type AppSettings struct {
 	EnableLrclib             bool   `json:"enable_lrclib"`
 	EnableKugou              bool   `json:"enable_kugou"`
 	PreferLocalLyrics        bool   `json:"prefer_local_lyrics"`
+	LyricsFolderEnabled      bool   `json:"lyrics_folder_enabled"`
+	LyricsFolderPath         string `json:"lyrics_folder_path"`
 	UseOnlineArtistArtwork   bool   `json:"use_online_artist_artwork"`
 	LastScanVersion          string `json:"last_scan_version"`
 	PreventSleepWhilePlaying bool   `json:"prevent_sleep_while_playing"`

@@ -738,15 +738,20 @@ func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
 
 	preferLocal := settings.PreferLocalLyrics
 
+	extraDir := ""
+	if settings.LyricsFolderEnabled {
+		extraDir = settings.LyricsFolderPath
+	}
+
 	// 1. Emit the best currently-available lyric for the chosen preference.
-	lyric := s.lyricsService.ResolveLyrics(ctx, track.ID, track.Path, preferLocal)
+	lyric := s.lyricsService.ResolveLyrics(ctx, track.ID, track.Path, preferLocal, extraDir)
 	if lyric != nil {
 		s.emitLyrics(track.ID, lyric)
 	}
 
 	// 2. When local lyrics are preferred and present, they win outright. Don't
 	//    fetch providers, so nothing overrides the displayed local lyric.
-	if preferLocal && s.lyricsService.HasLocalLyrics(ctx, track.ID, track.Path) {
+	if preferLocal && s.lyricsService.HasLocalLyrics(ctx, track.ID, track.Path, extraDir) {
 		return
 	}
 
@@ -762,7 +767,7 @@ func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
 
 	// 4. Re-resolve so the final emit honors the preference now that provider
 	//    content may be cached. This is the single source of priority truth.
-	resolved := s.lyricsService.ResolveLyrics(ctx, track.ID, track.Path, preferLocal)
+	resolved := s.lyricsService.ResolveLyrics(ctx, track.ID, track.Path, preferLocal, extraDir)
 	if resolved != nil {
 		s.emitLyrics(track.ID, resolved)
 	}

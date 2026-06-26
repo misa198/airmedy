@@ -85,6 +85,10 @@
       "enable_kugou_desc": "Recupera i testi da KuGou Music",
       "prefer_local_lyrics": "Preferisci testi locali",
       "prefer_local_lyrics_desc": "Usa file di testo (.lrc/.txt) o testi incorporati quando disponibili",
+      "lyrics_folder": "Cartella testi dedicata",
+      "lyrics_folder_desc": "Cerca anche file .lrc/.txt (abbinati per nome traccia) in una cartella scelta",
+      "lyrics_folder_none": "Nessuna cartella selezionata",
+      "lyrics_folder_choose": "Scegli cartella",
       "scrobbling": "Scrobbling",
       "artwork": "Immagini",
       "lyrics": "Testi"

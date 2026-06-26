@@ -85,6 +85,10 @@
       "enable_kugou_desc": "Obtener letras de KuGou Music",
       "prefer_local_lyrics": "Preferir letras locales",
       "prefer_local_lyrics_desc": "Usar archivos de letras (.lrc/.txt) o letras incrustadas cuando estén disponibles",
+      "lyrics_folder": "Carpeta de letras dedicada",
+      "lyrics_folder_desc": "Buscar también archivos .lrc/.txt (coincidentes por nombre de pista) en una carpeta elegida",
+      "lyrics_folder_none": "Ninguna carpeta seleccionada",
+      "lyrics_folder_choose": "Elegir carpeta",
       "scrobbling": "Scrobbling",
       "artwork": "Carátulas",
       "lyrics": "Letras"
