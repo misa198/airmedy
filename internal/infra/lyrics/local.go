@@ -27,7 +27,7 @@ var localCandidates = []struct {
 	{".txt", "local-txt"},
 }
 
-func (r *localReader) Read(audioPath string) (string, string, bool) {
+func (r *localReader) Read(audioPath string, extraDirs ...string) (string, string, bool) {
 	if audioPath == "" {
 		return "", "", false
 	}
@@ -35,17 +35,28 @@ func (r *localReader) Read(audioPath string) (string, string, bool) {
 	dir := filepath.Dir(audioPath)
 	base := strings.TrimSuffix(filepath.Base(audioPath), filepath.Ext(audioPath))
 
-	for _, c := range localCandidates {
-		path := filepath.Join(dir, base+c.ext)
-		data, err := os.ReadFile(path)
-		if err != nil {
+	// Sibling dir first (highest priority), then any extra dirs in order.
+	dirs := []string{dir}
+	for _, ed := range extraDirs {
+		if ed == "" || ed == dir {
 			continue
 		}
-		content := strings.TrimSpace(strings.TrimPrefix(string(data), "\ufeff"))
-		if content == "" {
-			continue
+		dirs = append(dirs, ed)
+	}
+
+	for _, d := range dirs {
+		for _, c := range localCandidates {
+			path := filepath.Join(d, base+c.ext)
+			data, err := os.ReadFile(path)
+			if err != nil {
+				continue
+			}
+			content := strings.TrimSpace(strings.TrimPrefix(string(data), "\ufeff"))
+			if content == "" {
+				continue
+			}
+			return content, c.source, true
 		}
-		return content, c.source, true
 	}
 
 	return "", "", false

@@ -103,13 +103,13 @@ func (s *LyricsService) SaveMetaLyrics(ctx context.Context, trackID, content, so
 // content; when false, provider content wins.
 //
 // Returns nil if nothing is available (caller may fetch from providers).
-func (s *LyricsService) ResolveLyrics(ctx context.Context, trackID, audioPath string, preferLocal bool) *domain.Lyric {
+func (s *LyricsService) ResolveLyrics(ctx context.Context, trackID, audioPath string, preferLocal bool, extraDirs ...string) *domain.Lyric {
 	lyric, _ := s.repo.GetByTrackID(ctx, trackID)
 
 	// Build the local tier: sibling file beats embedded metadata tag.
 	var localContent, localSource string
 	if s.localReader != nil {
-		if content, source, found := s.localReader.Read(audioPath); found {
+		if content, source, found := s.localReader.Read(audioPath, extraDirs...); found {
 			localContent, localSource = content, source
 			s.logger.Debug("local lyric file found", "track_id", trackID, "path", audioPath, "source", source)
 		} else {
@@ -162,9 +162,9 @@ func (s *LyricsService) ResolveLyrics(ctx context.Context, trackID, audioPath st
 
 // HasLocalLyrics reports whether a local-tier lyric exists for the track: a
 // sibling lyric file next to audioPath, or an embedded metadata tag in the DB.
-func (s *LyricsService) HasLocalLyrics(ctx context.Context, trackID, audioPath string) bool {
+func (s *LyricsService) HasLocalLyrics(ctx context.Context, trackID, audioPath string, extraDirs ...string) bool {
 	if s.localReader != nil {
-		if _, _, found := s.localReader.Read(audioPath); found {
+		if _, _, found := s.localReader.Read(audioPath, extraDirs...); found {
 			return true
 		}
 	}

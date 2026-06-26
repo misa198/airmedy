@@ -25,7 +25,7 @@ type stubLocal struct {
 	source  string
 }
 
-func (s stubLocal) Read(string) (string, string, bool) {
+func (s stubLocal) Read(string, ...string) (string, string, bool) {
 	if s.content == "" {
 		return "", "", false
 	}
@@ -93,7 +93,7 @@ func TestResolveLyrics(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			svc := newService(tc.dbLyric, tc.local)
-			got := svc.ResolveLyrics(ctx, "track1", "/music/Song.mp3", tc.preferLocal)
+			got := svc.ResolveLyrics(ctx, "track1", "/music/Song.mp3", tc.preferLocal, "")
 			if tc.wantSource == "" {
 				if got != nil {
 					t.Fatalf("expected nil, got %+v", got)

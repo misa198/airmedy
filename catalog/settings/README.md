@@ -28,7 +28,11 @@ type AppSettings struct {
     EQEnabled              bool
     EnableLrclib           bool                // enable LRClib lyrics provider
     EnableKugou            bool                // enable Kugou lyrics provider
-    PreferMetadataLyrics   bool                // prefer embedded lyrics over fetched
+    PreferLocalLyrics      bool                // prefer local/embedded lyrics over fetched
+    LyricsFolderEnabled    bool                // also search a dedicated lyrics folder
+    LyricsFolderPath       string              // chosen dedicated lyrics folder (flat, basename match)
+    LyricsSubfolderEnabled bool                // also search a subfolder next to each track
+    LyricsSubfolderName    string              // subfolder name (single safe path segment)
     UseOnlineArtistArtwork bool                // on: prefer Deezer image; off: prefer local artist.jpg/png
     LastScanVersion        string              // app version of last artist-image rescan
     PreventSleepWhilePlaying bool             // prevent OS sleep during playback
@@ -72,7 +76,11 @@ interface AppStore {
   eqEnabled: boolean;
   enableLrclib: boolean;
   enableKugou: boolean;
-  preferMetadataLyrics: boolean;
+  preferLocalLyrics: boolean;
+  lyricsFolderEnabled: boolean;
+  lyricsFolderPath: string;
+  lyricsSubfolderEnabled: boolean;
+  lyricsSubfolderName: string;
   useOnlineArtistArtwork: boolean;
   preventSleepWhilePlaying: boolean;
   // Update state
@@ -94,7 +102,11 @@ interface AppStore {
   updateLastFmUsername(username: string): void;
   updateEnableLrclib(enabled: boolean): Promise<void>;
   updateEnableKugou(enabled: boolean): Promise<void>;
-  updatePreferMetadataLyrics(enabled: boolean): Promise<void>;
+  updatePreferLocalLyrics(enabled: boolean): Promise<void>;
+  updateLyricsFolderEnabled(enabled: boolean): Promise<void>;
+  updateLyricsFolderPath(path: string): Promise<void>;
+  updateLyricsSubfolderEnabled(enabled: boolean): Promise<void>;
+  updateLyricsSubfolderName(name: string): Promise<void>;
   updateUseOnlineArtistArtwork(enabled: boolean): Promise<void>;
   updatePreventSleepWhilePlaying(enabled: boolean): Promise<void>;
   checkForUpdate(): Promise<void>;
@@ -135,7 +147,7 @@ Version constant moved from `internal/domain/version.go` (deleted) to `internal/
 | ------------ | -------------------------------------------------------------------------- |
 | General      | Theme selector, Language picker, Start at Login, Auto-check updates toggle |
 | Library      | Watched folders list, Add/Remove folder, Sync All, Reindex                 |
-| Integrations | Last.fm account + lyrics providers (LRClib, Kugou, metadata preference)   |
+| Integrations | Last.fm account + lyrics providers (LRClib, Kugou), prefer-local toggle, lyrics-subfolder toggle + validated name input (matched case-insensitively, with a hint), and dedicated lyrics folder toggle + picker (reuses `LibraryService.SelectFolder`). Toggles with conditional sub-settings use `SettingExpandableRow.vue` (header + `#control` slot + animated, inset `#expanded` slot) so the sub-setting reads as nested under its toggle. |
 | Playback     | EQ profiles and band sliders, prevent-sleep toggle (`PlaybackSettings.vue`) |
 | About        | App version, GitHub link, License, Open Data Folder button                 |
 
@@ -190,3 +202,4 @@ Settings evolved across multiple migrations:
 | 000024    | Add `prefer_local_artist_artwork`, `last_scan_version` settings  |
 | 000026    | Drop `prefer_local_artist_artwork` (derived from online toggle)   |
 | 000025    | Split artist artwork into per-source key columns                 |
+| 000027    | Add `lyrics_folder_enabled`, `lyrics_folder_path`, `lyrics_subfolder_enabled`, `lyrics_subfolder_name` (folder + subfolder lyrics lookup) |

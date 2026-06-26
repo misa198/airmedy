@@ -117,8 +117,11 @@ type LyricsProvider interface {
 // LocalLyricsReader reads a sibling lyric file located next to the audio file.
 // The lyric file must share the audio file's basename, differing only in extension.
 // It tries "<base>.lrc" first, then "<base>.txt". found is false if neither exists.
+// extraDirs are additional flat directories searched (in order) after the
+// sibling dir, matched by the audio file's basename. The sibling dir keeps
+// priority over extraDirs.
 type LocalLyricsReader interface {
-	Read(audioPath string) (content, source string, found bool)
+	Read(audioPath string, extraDirs ...string) (content, source string, found bool)
 }
 
 type EQRepository interface {
