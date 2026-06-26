@@ -162,17 +162,28 @@ displayed image — so live changes and preference toggles both reflect instantl
 
 - `findArtistImageFile(dir)` looks for `artist.jpg`, then `artist.jpeg`, then
   `artist.png` (priority order).
-- A full sync resolves images in one batch (`applyLocalArtistImagesForDirs`):
-  the walk collects every directory holding an `artist.*`, each image is cached
-  once, and `artistIDsForImageDir` maps it to artists **two ways** (unioned):
-  - **by folder name** — `GetByNormalizationKey(NormalizationKey(base(dir)))`, so
-    an artist folder that contains only `artist.jpg` (tracks live elsewhere, e.g.
-    in the music root) still matches;
-  - **by contained tracks** — artists of tracks in the dir or its subfolders.
-  No per-track stat/read storm. Single-file imports (watcher add) fall back to the
-  per-track `resolveTrackArtistImages` (gated by the `syncing` flag).
-- The `fsnotify` watcher reacts to `artist.*` create/write (set local) and
-  remove/rename (clear the `local_file` source only; manual/online remain).
+- An `artist.*` image maps to a directory's **album artist(s)** only — guest /
+  track artists are ignored, since the folder represents the album artist's
+  discography. `artistIDsForImageDir` resolves them in priority order:
+  - **by contained tracks** (authoritative) — distinct album artists of tracks in
+    the dir or its subfolders, via `TrackRepository.AlbumArtistIDsByPathPrefix`
+    (a single `SELECT DISTINCT … JOIN track_album_artists` — *not* the track DTO,
+    whose `AlbumArtists` is not populated by `GetByPathPrefix`);
+  - **by folder name** (fallback, only when the dir has no album artists, e.g. an
+    artist folder holding only `artist.jpg`, or tracks with no `ALBUMARTIST` tag)
+    — `GetByNormalizationKey(NormalizationKey(base(dir)))`.
+- **Ambiguity guard:** if one `artist.*` resolves to **>1 album artist** (e.g. a
+  various-artists / compilation folder), it is **not mapped to anyone** — a single
+  image can't represent multiple artists. Existing DB mappings are left untouched
+  (the guard only blocks new writes).
+- A full sync resolves images in one batch (`applyLocalArtistImagesForDirs`): the
+  walk collects every directory holding an `artist.*`, each image is cached once,
+  no per-track stat/read storm. Single-file imports (watcher add) fall back to the
+  per-track `resolveTrackArtistImages` (gated by the `syncing` flag), which applies
+  to the track's **album artists** and skips when there is more than one.
+- The `fsnotify` watcher reacts to `artist.*` create/write (set local, skipped
+  when ambiguous) and remove/rename (clear the `local_file` source only;
+  manual/online remain).
 - `ScanArtistImages` is a heavier per-artist sweep used only by the version-gated
   rescan (below).
 

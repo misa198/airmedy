@@ -84,6 +84,7 @@ watch(
       form.value = new MetadataUpdate({
         Title: t.title ?? '',
         Artist: t.raw_artist_names ?? t.artists?.filter((a): a is NonNullable<typeof a> => a != null).map(a => a.name).join('; ') ?? '',
+        AlbumArtist: t.raw_album_artist_names ?? t.album_artists?.filter((a): a is NonNullable<typeof a> => a != null).map(a => a.name).join('; ') ?? '',
         AlbumTitle: t.album?.title ?? '',
         Genre: t.raw_genre_names ?? t.genres?.filter((g): g is NonNullable<typeof g> => g != null).map(g => g.name).join('; ') ?? '',
         Composer: t.raw_composer_names ?? t.composers?.filter((c): c is NonNullable<typeof c> => c != null).map(c => c.name).join('; ') ?? '',
@@ -255,6 +256,14 @@ function cancel() {
                 <Input
                   v-model="form.AlbumTitle"
                   :placeholder="t('library.album')"
+                  class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
+                />
+              </div>
+              <div>
+                <label class="block text-xs text-foreground/80 mb-1 font-medium">{{ t('library.album_artist') }}</label>
+                <Input
+                  v-model="form.AlbumArtist"
+                  :placeholder="t('library.album_artist')"
                   class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
                 />
               </div>

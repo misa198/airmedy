@@ -133,7 +133,10 @@ func (s *LibraryService) SyncAll() error {
 }
 
 func (s *LibraryService) ReindexAll() error {
-	return s.libService.ReindexAll(context.Background())
+	go func() {
+		_ = s.libService.ReindexAll(context.Background())
+	}()
+	return nil
 }
 
 func (s *LibraryService) ImportAll() error {

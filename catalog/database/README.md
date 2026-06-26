@@ -242,6 +242,8 @@ idx_composers_normalization_key ON composers(normalization_key)
 
 **`GetByArtistID`**: Joins through `track_artists` junction table.
 
+**`AlbumArtistIDsByPathPrefix`**: `SELECT DISTINCT taa.artist_id FROM tracks t JOIN track_album_artists taa … WHERE t.path LIKE ? || '%'` — distinct album-artist IDs of tracks under a folder. Used by local artist-image mapping (`artist.jpg`); avoids loading full track DTOs (whose `AlbumArtists` `GetByPathPrefix` doesn't populate).
+
 **`GetMostListened`**: `ORDER BY play_count DESC LIMIT ?`
 
 **`GetRecentlyPlayed`**: `ORDER BY updated_at DESC LIMIT ?` (updated when play count increments)

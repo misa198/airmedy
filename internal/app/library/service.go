@@ -303,7 +303,14 @@ func (s *LibraryService) handleArtistImageEvent(event fsnotify.Event) {
 		if _, err := os.Stat(event.Name); err != nil {
 			return
 		}
-		for _, id := range s.artistIDsForImageDir(ctx, dir) {
+		ids := s.artistIDsForImageDir(ctx, dir)
+		// Ambiguous: one artist.jpg mapping to several artists isn't
+		// artist-specific — skip it.
+		if len(ids) > 1 {
+			s.logger.Info("Skipping ambiguous artist image change (maps to multiple artists)", "dir", dir, "artists", len(ids))
+			return
+		}
+		for _, id := range ids {
 			if _, err := s.setLocalArtistImage(ctx, id, event.Name); err != nil {
 				s.logger.Warn("Failed to apply changed artist image", "artistID", id, "error", err)
 			}
@@ -674,14 +681,12 @@ func (s *LibraryService) ImportFile(ctx context.Context, path string) error {
 	}
 
 	// Pick up a local artist image (artist.jpg/png) sitting next to the track or
-	// in the parent (artist) folder, for the track's artists and album artists.
+	// in the parent (artist) folder, for the track's album artists — the folder
+	// belongs to the album artist's discography, not to guest/track artists.
 	// During a bulk sync this is skipped — SyncFolder's batch pass handles it
 	// once per directory instead of once per track.
 	if s.syncing.Load() == 0 {
 		var artistIDs []string
-		for _, a := range dto.Artists {
-			artistIDs = append(artistIDs, a.ID)
-		}
 		for _, a := range dto.AlbumArtists {
 			artistIDs = append(artistIDs, a.ID)
 		}
@@ -1048,52 +1053,32 @@ func (s *LibraryService) ReindexAll(ctx context.Context) error {
 		})
 	}
 
-	// 1. Re-index tracks
-	for _, t := range tracks {
-		if err := s.searchService.IndexTrack(ctx, t); err != nil {
-			s.logger.Warn("Failed to re-index track", "id", t.ID, "error", err)
-		}
-		emitProgress("Track: " + t.Title)
-	}
-
-	// 2. Re-index albums
+	// Resolve full album DTOs (the GetAll result lacks the relations the
+	// index needs).
+	albumDTOs := make([]*domain.AlbumDTO, 0, len(albums))
 	for _, a := range albums {
-		dto, _ := s.albumRepo.GetByID(ctx, a.ID)
-		if dto != nil {
-			if err := s.searchService.IndexAlbum(ctx, dto); err != nil {
-				s.logger.Warn("Failed to re-index album", "id", a.ID, "error", err)
-			}
+		if dto, _ := s.albumRepo.GetByID(ctx, a.ID); dto != nil {
+			albumDTOs = append(albumDTOs, dto)
 		}
-		emitProgress("Album: " + a.Title)
 	}
 
-	// 3. Re-index artists
-	for _, ar := range artists {
-		if err := s.searchService.IndexArtist(ctx, ar); err != nil {
-			s.logger.Warn("Failed to re-index artist", "id", ar.ID, "error", err)
-		}
-		emitProgress("Artist: " + ar.Name)
-	}
-
-	// 4. Re-index composers
-	for _, c := range composers {
-		if err := s.searchService.IndexComposer(ctx, c); err != nil {
-			s.logger.Warn("Failed to re-index composer", "id", c.ID, "error", err)
-		}
-		emitProgress("Composer: " + c.Name)
-	}
-
-	// 5. Re-index playlists
-	for _, p := range playlists {
-		if err := s.searchService.IndexPlaylist(ctx, p); err != nil {
-			s.logger.Warn("Failed to re-index playlist", "id", p.ID, "error", err)
-		}
-		emitProgress("Playlist: " + p.Name)
+	// Batch the writes: one fsync per chunk instead of one per document.
+	// Per-document commits make a full reindex appear to hang on Windows
+	// (slow NTFS fsync) for large libraries.
+	err := s.searchService.BatchReindex(ctx, &domain.ReindexData{
+		Tracks:    tracks,
+		Albums:    albumDTOs,
+		Artists:   artists,
+		Composers: composers,
+		Playlists: playlists,
+	}, emitProgress)
+	if err != nil {
+		s.logger.Warn("Re-indexing did not complete", "error", err)
 	}
 
 	s.logger.Info("Finished full library re-indexing")
 	if app := application.Get(); app != nil && app.Event != nil {
 		app.Event.Emit("library:sync-finished", "Search Index")
 	}
-	return nil
+	return err
 }

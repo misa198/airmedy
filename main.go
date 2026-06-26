@@ -18,6 +18,7 @@ import (
 	"airmedy/internal/app/remoteserver"
 	"airmedy/internal/app/singleinstance"
 	"airmedy/internal/domain"
+	"airmedy/internal/infra/logging"
 	"airmedy/internal/infra/wails"
 	"runtime/debug"
 
@@ -51,6 +52,21 @@ const singleInstanceID = "me.misa198.airmedy"
 
 func main() {
 	debug.SetGCPercent(50)
+
+	// Build the file logger before anything else (and before the fx graph) so
+	// bootstrap logs and any startup failure are written to disk. On Windows GUI
+	// builds there is no stderr, so the default slog logger is a black hole; if
+	// an fx provider fails (e.g. an arch-specific CGO lib on Windows/arm64) we
+	// would otherwise os.Exit(1) with no log file and no visible error.
+	bootCfg, err := config.NewConfig()
+	if err != nil {
+		os.Exit(1)
+	}
+	logRotator, logger, err := logging.NewFileLogger(bootCfg)
+	if err != nil {
+		os.Exit(1)
+	}
+	defer func() { _ = logRotator.Close() }()
 
 	// Single-instance guard must run before any exclusive resource is acquired
 	// (the bleve index lock, the remote-server port). A second process forwards
@@ -96,6 +112,9 @@ func main() {
 
 	fxApp := fx.New(
 		app.Module,
+		// Supply the logger built before fx so the logging module wires rotation
+		// onto the same instance instead of constructing its own.
+		fx.Supply(logRotator, logger),
 		fx.Provide(func() remoteserver.RemoteFS { return remoteserver.RemoteFS{FS: remoteFS} }),
 		fx.Populate(&greetService, &libraryService, &playerService, &searchService, &playlistService, &lyricsService, &eqService, &windowService, &i18nService, &settingsService, &lastfmService, &updaterService, &artworkCache, &remoteServerService),
 		fx.NopLogger, // Keep logs clean for now

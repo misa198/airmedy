@@ -23,7 +23,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: master
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
 
       - name: Cache FFmpeg (Windows)
         id: cache-ffmpeg
@@ -73,7 +73,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: master
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
           fetch-depth: 0
 
       - name: Resolve version

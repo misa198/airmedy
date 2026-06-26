@@ -261,6 +261,20 @@ func (r *trackRepository) GetByPathPrefix(ctx context.Context, prefix string) ([
 	return r.scanTrackRows(rows), nil
 }
 
+func (r *trackRepository) AlbumArtistIDsByPathPrefix(ctx context.Context, prefix string) ([]string, error) {
+	var ids []string
+	err := r.db.SelectContext(ctx, &ids, `
+		SELECT DISTINCT taa.artist_id
+		FROM tracks t
+		JOIN track_album_artists taa ON t.id = taa.track_id
+		WHERE t.path LIKE ? || '%'
+	`, prefix)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get album artist ids by path prefix: %w", err)
+	}
+	return ids, nil
+}
+
 func (r *trackRepository) Count(ctx context.Context) (int, error) {
 	var count int
 	err := r.db.GetContext(ctx, &count, "SELECT COUNT(*) FROM tracks")
