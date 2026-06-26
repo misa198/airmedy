@@ -89,6 +89,12 @@
       "lyrics_folder_desc": "Также искать файлы .lrc/.txt (по имени трека) в выбранной папке",
       "lyrics_folder_none": "Папка не выбрана",
       "lyrics_folder_choose": "Выбрать папку",
+      "lyrics_subfolder": "Подпапка текстов рядом с треком",
+      "lyrics_subfolder_desc": "Также искать файлы .lrc/.txt в подпапке рядом с каждым треком",
+      "lyrics_subfolder_name": "Имя папки (напр. lyrics)",
+      "lyrics_subfolder_example": "Пример: …/Album/{name}/Song.lrc",
+      "lyrics_subfolder_invalid": "Введите имя одной папки (без слешей и «..»)",
+      "lyrics_subfolder_case": "Имя папки сопоставляется без учёта регистра.",
       "scrobbling": "Скробблинг",
       "artwork": "Обложки",
       "lyrics": "Тексты"

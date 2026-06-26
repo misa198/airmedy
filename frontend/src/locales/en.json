@@ -89,6 +89,12 @@
       "lyrics_folder_desc": "Also look up .lrc/.txt files (matched by track name) in a chosen folder",
       "lyrics_folder_none": "No folder selected",
       "lyrics_folder_choose": "Choose Folder",
+      "lyrics_subfolder": "Lyrics Subfolder Next to Track",
+      "lyrics_subfolder_desc": "Also look up .lrc/.txt files in a subfolder next to each track",
+      "lyrics_subfolder_name": "Folder name (e.g. lyrics)",
+      "lyrics_subfolder_example": "Example: …/Album/{name}/Song.lrc",
+      "lyrics_subfolder_invalid": "Enter a single folder name (no slashes or \"..\")",
+      "lyrics_subfolder_case": "Folder name is matched ignoring upper/lowercase.",
       "scrobbling": "Scrobbling",
       "artwork": "Artwork",
       "lyrics": "Lyrics"

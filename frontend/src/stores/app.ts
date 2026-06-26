@@ -19,6 +19,8 @@ export const useAppStore = defineStore('app', () => {
   const preferLocalLyrics = ref(true)
   const lyricsFolderEnabled = ref(false)
   const lyricsFolderPath = ref('')
+  const lyricsSubfolderEnabled = ref(false)
+  const lyricsSubfolderName = ref('')
   const useOnlineArtistArtwork = ref(true)
   // Round-tripped only (set by the backend's version-gated rescan); never edited
   // in the UI, but must be preserved across saves so saving settings doesn't
@@ -73,6 +75,8 @@ export const useAppStore = defineStore('app', () => {
         preferLocalLyrics.value = settings.prefer_local_lyrics !== false
         lyricsFolderEnabled.value = !!settings.lyrics_folder_enabled
         lyricsFolderPath.value = settings.lyrics_folder_path || ''
+        lyricsSubfolderEnabled.value = !!settings.lyrics_subfolder_enabled
+        lyricsSubfolderName.value = settings.lyrics_subfolder_name || ''
         useOnlineArtistArtwork.value = settings.use_online_artist_artwork !== false
         lastScanVersion.value = settings.last_scan_version || ''
         preventSleepWhilePlaying.value = !!settings.prevent_sleep_while_playing
@@ -142,6 +146,8 @@ export const useAppStore = defineStore('app', () => {
         prefer_local_lyrics: preferLocalLyrics.value,
         lyrics_folder_enabled: lyricsFolderEnabled.value,
         lyrics_folder_path: lyricsFolderPath.value,
+        lyrics_subfolder_enabled: lyricsSubfolderEnabled.value,
+        lyrics_subfolder_name: lyricsSubfolderName.value,
         use_online_artist_artwork: useOnlineArtistArtwork.value,
         last_scan_version: lastScanVersion.value,
         prevent_sleep_while_playing: preventSleepWhilePlaying.value,
@@ -217,6 +223,16 @@ export const useAppStore = defineStore('app', () => {
     await saveSettings()
   }
 
+  const updateLyricsSubfolderEnabled = async (enabled: boolean) => {
+    lyricsSubfolderEnabled.value = enabled
+    await saveSettings()
+  }
+
+  const updateLyricsSubfolderName = async (name: string) => {
+    lyricsSubfolderName.value = name
+    await saveSettings()
+  }
+
   const updateUseOnlineArtistArtwork = async (enabled: boolean) => {
     useOnlineArtistArtwork.value = enabled
     await saveSettings()
@@ -268,6 +284,8 @@ export const useAppStore = defineStore('app', () => {
     preferLocalLyrics,
     lyricsFolderEnabled,
     lyricsFolderPath,
+    lyricsSubfolderEnabled,
+    lyricsSubfolderName,
     useOnlineArtistArtwork,
     preventSleepWhilePlaying,
     showPlayerIndicator,
@@ -294,6 +312,8 @@ export const useAppStore = defineStore('app', () => {
     updatePreferLocalLyrics,
     updateLyricsFolderEnabled,
     updateLyricsFolderPath,
+    updateLyricsSubfolderEnabled,
+    updateLyricsSubfolderName,
     updateUseOnlineArtistArtwork,
     updatePreventSleepWhilePlaying,
     updateShowPlayerIndicator,

@@ -46,7 +46,7 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000024 | `app_settings_artist_artwork.up.sql` | Add `prefer_local_artist_artwork BOOLEAN NOT NULL DEFAULT 1` and `last_scan_version TEXT NOT NULL DEFAULT ''` to `app_settings`     |
 | 000026 | `drop_prefer_local_artist_artwork.up.sql` | Drop `prefer_local_artist_artwork` — replaced by deriving from `use_online_artist_artwork` |
 | 000025 | `artist_artwork_multi_source.up.sql` | Replace `artwork_key`/`artwork_source` with per-source `artwork_key_manual`/`_local`/`_online` (backfilled), then drop the old two |
-| 000027 | `lyrics_folder.up.sql`               | Add `lyrics_folder_enabled BOOLEAN NOT NULL DEFAULT FALSE` and `lyrics_folder_path TEXT NOT NULL DEFAULT ''` to `app_settings` |
+| 000027 | `lyrics_folder.up.sql`               | Add `lyrics_folder_enabled`, `lyrics_folder_path`, `lyrics_subfolder_enabled`, `lyrics_subfolder_name` to `app_settings` (dedicated folder + per-track subfolder lyrics lookup) |
 
 ## Full Schema
 
@@ -192,6 +192,8 @@ app_settings (
     prefer_local_lyrics BOOLEAN NOT NULL DEFAULT 1, -- renamed from prefer_metadata_lyrics (000022)
     lyrics_folder_enabled BOOLEAN NOT NULL DEFAULT 0,
     lyrics_folder_path TEXT NOT NULL DEFAULT '',
+    lyrics_subfolder_enabled BOOLEAN NOT NULL DEFAULT 0,
+    lyrics_subfolder_name TEXT NOT NULL DEFAULT '',
     updated_at DATETIME
     -- (also: prevent_sleep_while_playing, remote_server_*, show_player_indicator)
 )

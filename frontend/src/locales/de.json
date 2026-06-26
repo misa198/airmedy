@@ -89,6 +89,12 @@
       "lyrics_folder_desc": "Auch .lrc/.txt-Dateien (nach Titelname zugeordnet) in einem gewählten Ordner suchen",
       "lyrics_folder_none": "Kein Ordner ausgewählt",
       "lyrics_folder_choose": "Ordner auswählen",
+      "lyrics_subfolder": "Songtext-Unterordner neben dem Titel",
+      "lyrics_subfolder_desc": "Auch .lrc/.txt-Dateien in einem Unterordner neben jedem Titel suchen",
+      "lyrics_subfolder_name": "Ordnername (z. B. lyrics)",
+      "lyrics_subfolder_example": "Beispiel: …/Album/{name}/Song.lrc",
+      "lyrics_subfolder_invalid": "Einen einzelnen Ordnernamen eingeben (keine Schrägstriche oder \"..\")",
+      "lyrics_subfolder_case": "Der Ordnername wird ohne Berücksichtigung der Groß-/Kleinschreibung abgeglichen.",
       "scrobbling": "Scrobbling",
       "artwork": "Bilder",
       "lyrics": "Songtexte"

@@ -725,6 +725,41 @@ func (s *PlayerService) extractAndEmitPalette(track *domain.TrackDTO) {
 	}
 }
 
+// validLyricsSubfolderName reports whether name is a safe single path segment for
+// a lyrics subfolder next to a track. Rejects empty, path separators, and any
+// traversal so the joined path can't escape the track's directory.
+func validLyricsSubfolderName(name string) bool {
+	name = strings.TrimSpace(name)
+	if name == "" || name == "." || name == ".." {
+		return false
+	}
+	if strings.ContainsAny(name, `/\`) || strings.Contains(name, "..") {
+		return false
+	}
+	return true
+}
+
+// resolveLyricsSubdir returns the path of the lyrics subfolder named `name` inside
+// `parent`, matching case-insensitively. macOS/Windows filesystems are already
+// case-insensitive; this makes Linux (case-sensitive) behave the same, so the name
+// the user typed matches regardless of case. Falls back to the exact join if no
+// directory matches (path may not exist yet).
+func resolveLyricsSubdir(parent, name string) string {
+	exact := filepath.Join(parent, name)
+	if fi, err := os.Stat(exact); err == nil && fi.IsDir() {
+		return exact
+	}
+	entries, err := os.ReadDir(parent)
+	if err == nil {
+		for _, e := range entries {
+			if e.IsDir() && strings.EqualFold(e.Name(), name) {
+				return filepath.Join(parent, e.Name())
+			}
+		}
+	}
+	return exact
+}
+
 func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
 	if s.lyricsService == nil {
 		return
@@ -738,20 +773,25 @@ func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
 
 	preferLocal := settings.PreferLocalLyrics
 
-	extraDir := ""
-	if settings.LyricsFolderEnabled {
-		extraDir = settings.LyricsFolderPath
+	// Extra lyric dirs in priority order (sibling dir is always checked first by
+	// the reader): subfolder next to the track, then the global lyrics folder.
+	var extraDirs []string
+	if settings.LyricsSubfolderEnabled && validLyricsSubfolderName(settings.LyricsSubfolderName) {
+		extraDirs = append(extraDirs, resolveLyricsSubdir(filepath.Dir(track.Path), settings.LyricsSubfolderName))
+	}
+	if settings.LyricsFolderEnabled && settings.LyricsFolderPath != "" {
+		extraDirs = append(extraDirs, settings.LyricsFolderPath)
 	}
 
 	// 1. Emit the best currently-available lyric for the chosen preference.
-	lyric := s.lyricsService.ResolveLyrics(ctx, track.ID, track.Path, preferLocal, extraDir)
+	lyric := s.lyricsService.ResolveLyrics(ctx, track.ID, track.Path, preferLocal, extraDirs...)
 	if lyric != nil {
 		s.emitLyrics(track.ID, lyric)
 	}
 
 	// 2. When local lyrics are preferred and present, they win outright. Don't
 	//    fetch providers, so nothing overrides the displayed local lyric.
-	if preferLocal && s.lyricsService.HasLocalLyrics(ctx, track.ID, track.Path, extraDir) {
+	if preferLocal && s.lyricsService.HasLocalLyrics(ctx, track.ID, track.Path, extraDirs...) {
 		return
 	}
 
@@ -767,7 +807,7 @@ func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
 
 	// 4. Re-resolve so the final emit honors the preference now that provider
 	//    content may be cached. This is the single source of priority truth.
-	resolved := s.lyricsService.ResolveLyrics(ctx, track.ID, track.Path, preferLocal, extraDir)
+	resolved := s.lyricsService.ResolveLyrics(ctx, track.ID, track.Path, preferLocal, extraDirs...)
 	if resolved != nil {
 		s.emitLyrics(track.ID, resolved)
 	}

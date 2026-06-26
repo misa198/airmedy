@@ -89,6 +89,12 @@
       "lyrics_folder_desc": "選択したフォルダー内の .lrc/.txt ファイル（曲名で一致）も検索",
       "lyrics_folder_none": "フォルダーが選択されていません",
       "lyrics_folder_choose": "フォルダーを選択",
+      "lyrics_subfolder": "トラック隣の歌詞サブフォルダー",
+      "lyrics_subfolder_desc": "各トラックの隣にあるサブフォルダー内の .lrc/.txt ファイルも検索",
+      "lyrics_subfolder_name": "フォルダー名（例: lyrics）",
+      "lyrics_subfolder_example": "例: …/Album/{name}/Song.lrc",
+      "lyrics_subfolder_invalid": "単一のフォルダー名を入力してください（スラッシュや「..」は不可）",
+      "lyrics_subfolder_case": "フォルダー名は大文字・小文字を区別せずに照合されます。",
       "scrobbling": "Scrobbling",
       "artwork": "画像",
       "lyrics": "歌詞"

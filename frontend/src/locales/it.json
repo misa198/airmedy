@@ -89,6 +89,12 @@
       "lyrics_folder_desc": "Cerca anche file .lrc/.txt (abbinati per nome traccia) in una cartella scelta",
       "lyrics_folder_none": "Nessuna cartella selezionata",
       "lyrics_folder_choose": "Scegli cartella",
+      "lyrics_subfolder": "Sottocartella testi vicino alla traccia",
+      "lyrics_subfolder_desc": "Cerca anche file .lrc/.txt in una sottocartella vicino a ogni traccia",
+      "lyrics_subfolder_name": "Nome cartella (es. lyrics)",
+      "lyrics_subfolder_example": "Esempio: …/Album/{name}/Song.lrc",
+      "lyrics_subfolder_invalid": "Inserisci il nome di una singola cartella (senza barre o \"..\")",
+      "lyrics_subfolder_case": "Il nome della cartella viene confrontato ignorando maiuscole/minuscole.",
       "scrobbling": "Scrobbling",
       "artwork": "Immagini",
       "lyrics": "Testi"

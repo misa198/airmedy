@@ -104,6 +104,40 @@ func TestLocalReader_Read(t *testing.T) {
 		}
 	})
 
+	t.Run("priority sibling over subfolder over global", func(t *testing.T) {
+		dir := t.TempDir()
+		sub := filepath.Join(dir, "lyrics")
+		global := t.TempDir()
+		if err := os.MkdirAll(sub, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		audio := filepath.Join(dir, "Song.mp3")
+		writeFile(t, filepath.Join(dir, "Song.lrc"), "[00:01.00]sibling")
+		writeFile(t, filepath.Join(sub, "Song.lrc"), "[00:01.00]sub")
+		writeFile(t, filepath.Join(global, "Song.lrc"), "[00:01.00]global")
+		// extraDirs order: subfolder, then global
+		content, _, found := r.Read(audio, sub, global)
+		if !found || content != "[00:01.00]sibling" {
+			t.Fatalf("expected sibling, got %q (%v)", content, found)
+		}
+	})
+
+	t.Run("subfolder beats global, no sibling", func(t *testing.T) {
+		dir := t.TempDir()
+		sub := filepath.Join(dir, "lyrics")
+		global := t.TempDir()
+		if err := os.MkdirAll(sub, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		audio := filepath.Join(dir, "Song.mp3")
+		writeFile(t, filepath.Join(sub, "Song.lrc"), "[00:01.00]sub")
+		writeFile(t, filepath.Join(global, "Song.lrc"), "[00:01.00]global")
+		content, _, found := r.Read(audio, sub, global)
+		if !found || content != "[00:01.00]sub" {
+			t.Fatalf("expected sub, got %q (%v)", content, found)
+		}
+	})
+
 	t.Run("empty extra dir ignored", func(t *testing.T) {
 		dir := t.TempDir()
 		audio := filepath.Join(dir, "Song.mp3")
