@@ -9,6 +9,7 @@ import (
 
 	"airmedy/internal/app/library"
 	"airmedy/internal/domain"
+	"airmedy/internal/infra/artwork"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
@@ -286,6 +287,25 @@ func (s *LibraryService) UpdateTrackMetadata(trackID string, update domain.Metad
 
 func (s *LibraryService) GetAlbumColors(id string) (*domain.ThemeColors, error) {
 	return s.libService.GetAlbumColors(context.Background(), id)
+}
+
+// GetArtistColors returns the theme colors for an artist's resolved artwork.
+func (s *LibraryService) GetArtistColors(id string) (*domain.ThemeColors, error) {
+	ctx := context.Background()
+	artist, err := s.artistRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if artist == nil {
+		return nil, fmt.Errorf("artist not found: %s", id)
+	}
+
+	key := artist.ResolveArtworkKey(s.preferLocalArtistArtwork(ctx))
+	if key == "" {
+		return nil, nil
+	}
+
+	return artwork.ExtractPalette(s.artworkCache.GetPath(key))
 }
 
 func (s *LibraryService) GetArtistArtwork(artistID, eventID string) (*string, error) {
