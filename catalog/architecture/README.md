@@ -148,18 +148,27 @@ sequenceDiagram
     participant App as app/player/player_service.go
     participant Q as queue_service.go
     participant AP as audio player
+    participant EV as Wails Event bus
 
     User->>TT: clicks Play
     TT->>PS: emits play-track
     PS->>WB: playTracks(tracks, index)
     WB->>App: PlayTracks()
     App->>Q: SetQueue()
+    App->>App: loadAndPlay(track)
     App->>AP: Load(track), Play()
-    loop every 500ms
-        AP-->>PS: EmitEvent("player:status", status)
-    end
-    PS->>PS: update status, UI re-renders
+    App->>EV: Emit("player:status", status)
+    EV-->>PS: player:status event
+    PS->>PS: sync state, rAF interpolates position
+
+    Note over App,AP: 500ms ticker polls AP.GetStatus() — no status emit on tick
+    Note over App,EV: player:status re-emitted on next state change (pause/seek/track-end)
 ```
+
+The audio player never emits events. The App-layer `PlayerService` emits
+`player:status` via `application.EmitEvent` (`player_service.go`) only on discrete
+state changes; the frontend interpolates the playback position locally with
+`requestAnimationFrame` rather than from a 500ms server push.
 
 ## Asset Serving
 
@@ -221,6 +230,7 @@ The frontend lives inside a **pnpm + Turbo monorepo** rooted at the repo root. S
 | Audio backend       | SFBAudioEngine (cgo)       | miniaudio (C library) |
 | EQ support          | AVAudioEngine EQ bands     | 10-band miniaudio chain|
 | OS Now Playing      | `MPNowPlayingInfoCenter`   | Windows SMTC / Linux MPRIS (D-Bus) |
+| Taskbar controls    | Not applicable             | Windows: thumbnail toolbar (`ITaskbarList3`, `infra/wails/thumbbar_*`) |
 | App menu            | Full macOS menu bar        | File menu only        |
 | Translucent window  | NSVisualEffectView         | Not applicable        |
 | Title bar colour    | Hidden (translucent)       | Windows: `DwmSetWindowAttribute` (Linux n/a) |

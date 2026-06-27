@@ -209,6 +209,9 @@ func main() {
 	mainWindow.Show()
 	mainWindow.Focus()
 
+	thumbBarMgr := wails.NewThumbBarManager(playerService.GetService())
+	thumbBarMgr.Setup(mainWindow)
+
 	windowService.SetMiniWindowFactory(func() *application.WebviewWindow {
 		w := wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
 			Title:               "Mini Player",
@@ -345,6 +348,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	thumbBarMgr.Stop()
 	stopFX()
 }
 
