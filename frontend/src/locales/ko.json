@@ -359,8 +359,10 @@
   },
   "track_info": {
     "title": "트랙 정보",
+    "artist": "아티스트",
     "details": "상세 정보",
     "album": "앨범",
+    "album_artist": "앨범 아티스트",
     "genre": "장르",
     "year": "연도",
     "composer": "작곡가",

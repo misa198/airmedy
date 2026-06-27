@@ -359,8 +359,10 @@
   },
   "track_info": {
     "title": "トラック情報",
+    "artist": "アーティスト",
     "details": "詳細",
     "album": "アルバム",
+    "album_artist": "アルバムアーティスト",
     "genre": "ジャンル",
     "year": "年",
     "composer": "作曲家",

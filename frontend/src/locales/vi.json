@@ -359,8 +359,10 @@
   },
   "track_info": {
     "title": "Thông tin bài hát",
+    "artist": "Nghệ sĩ",
     "details": "Chi tiết",
     "album": "Album",
+    "album_artist": "Nghệ sĩ Album",
     "genre": "Thể loại",
     "year": "Năm",
     "composer": "Nhà soạn nhạc",
