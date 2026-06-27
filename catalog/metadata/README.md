@@ -105,6 +105,7 @@ type MetadataWriter interface {
 type MetadataUpdate struct {
     Title       string
     Artist      string
+    AlbumArtist string
     AlbumTitle  string
     Genre       string
     Composer    string

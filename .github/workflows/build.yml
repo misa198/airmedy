@@ -23,7 +23,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: master
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
 
       - name: Cache FFmpeg (Windows)
         id: cache-ffmpeg
@@ -73,7 +73,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: master
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
           fetch-depth: 0
 
       - name: Resolve version
@@ -215,7 +215,7 @@ jobs:
         run: bash scripts/fetch-miniaudio.sh
 
       - name: Install Wails v3
-        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-alpha2.105
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-alpha2.106
 
       - name: Install Linux ARM64 Cross-compile Dependencies
         if: runner.os == 'Linux' && matrix.os == 'Linux-ARM64'

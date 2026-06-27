@@ -359,8 +359,10 @@
   },
   "track_info": {
     "title": "歌曲信息",
+    "artist": "艺术家",
     "details": "详情",
     "album": "专辑",
+    "album_artist": "专辑艺术家",
     "genre": "流派",
     "year": "年份",
     "composer": "作曲家",

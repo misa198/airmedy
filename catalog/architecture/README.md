@@ -17,11 +17,11 @@ flowchart TB
     FE -.->|"Wails Bindings (auto-gen TS)<br/>Wails Events (Go → frontend push)"| WAILS
 
     subgraph WAILS["infra/wails — Adapter Layer (thin wrappers)"]
-        Adapters["PlayerService · LibraryService · SearchService · PlaylistService<br/>LyricsService · EQService · SettingsService · UpdaterService · WindowService"]
+        Adapters["PlayerService · LibraryService · SearchService · PlaylistService<br/>LyricsService · EQService · SettingsService · UpdaterService · WindowService<br/>LastfmService · RemoteServerService · GreetService"]
     end
 
     subgraph APP["internal/app — Application Services"]
-        AppSvc["library/ · player/ · playlist/ · eq/ · lyrics/ · config/ · i18n/ · updater/<br/><i>orchestrates domain entities + ports; framework-agnostic</i>"]
+        AppSvc["library/ · player/ · playlist/ · eq/ · lyrics/ · config/ · i18n/ · updater/<br/>lastfm/ · remoteserver/ · appsettings/ · singleinstance/<br/><i>orchestrates domain entities + ports; framework-agnostic</i>"]
     end
 
     subgraph DOMAIN["internal/domain — Core"]
@@ -59,6 +59,7 @@ fxApp := fx.New(
     app.Module,           // all application services
     // infra modules included transitively
     fx.Populate(
+        &greetService,
         &libraryService,
         &playerService,
         &searchService,
@@ -68,7 +69,10 @@ fxApp := fx.New(
         &windowService,
         &i18nService,
         &settingsService,
+        &lastfmService,
+        &updaterService,
         &artworkCache,
+        &remoteServerService,
     ),
     fx.NopLogger,
 )
@@ -160,6 +164,21 @@ sequenceDiagram
 ## Asset Serving
 
 Album artwork is served via a custom Wails asset handler (`infra/wails/assets.go`). The frontend requests artwork at a URL like `wails://artwork/{key}` or via relative path. The handler maps the key to a cached file path via `ArtworkCache.GetPath()` or `GetVariantPath()`.
+
+## Remote Control Server
+
+`internal/app/remoteserver` runs an opt-in LAN HTTP/WebSocket server so a phone or
+another browser can control playback remotely. The Vue web client lives in `remote/`
+(see monorepo table below).
+
+- **Transport:** plain `net/http` server. `/ws` upgrades to a WebSocket (via
+  `github.com/coder/websocket`); other paths serve REST-ish endpoints (`handleSettings`,
+  `handleArtwork`).
+- **Hub (`hub.go`):** tracks authenticated WebSocket clients and fans out state
+  broadcasts to all of them.
+- **Sessions (`session.go`):** per-client auth/state.
+- The Wails adapter `RemoteServerService` (`infra/wails/remote_server_service.go`)
+  exposes start/stop + status to the frontend.
 
 ## Storage Locations (XDG-compliant)
 

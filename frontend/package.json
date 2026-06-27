@@ -15,7 +15,7 @@
     "@airmedy/ui": "workspace:*",
     "@airmedy/utils": "workspace:*",
     "@radix-icons/vue": "1.0.0",
-    "@wailsio/runtime": "3.0.0-alpha.79",
+    "@wailsio/runtime": "3.0.0-alpha.94",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "dompurify": "3.4.11",

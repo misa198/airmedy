@@ -359,8 +359,10 @@
   },
   "track_info": {
     "title": "Información de la pista",
+    "artist": "Artista",
     "details": "Detalles",
     "album": "Álbum",
+    "album_artist": "Artista del álbum",
     "genre": "Género",
     "year": "Año",
     "composer": "Compositor",

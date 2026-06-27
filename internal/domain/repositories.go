@@ -6,6 +6,10 @@ type TrackRepository interface {
 	GetByID(ctx context.Context, id string) (*TrackDTO, error)
 	GetByPath(ctx context.Context, path string) (*TrackDTO, error)
 	GetByPathPrefix(ctx context.Context, prefix string) ([]*TrackDTO, error)
+	// AlbumArtistIDsByPathPrefix returns the distinct album-artist IDs of tracks
+	// whose path starts with prefix. Used to map a local artist image to the
+	// folder's album artist(s) without loading full track DTOs.
+	AlbumArtistIDsByPathPrefix(ctx context.Context, prefix string) ([]string, error)
 	GetByAlbumID(ctx context.Context, albumID string) ([]*TrackDTO, error)
 	GetByArtistID(ctx context.Context, artistID string) ([]*TrackDTO, error)
 	GetByGenreID(ctx context.Context, genreID string) ([]*TrackDTO, error)

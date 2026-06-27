@@ -74,7 +74,9 @@ func buildIndexMapping() mapping.IndexMapping {
 	return indexMapping
 }
 
-func (s *bleveSearchService) IndexTrack(ctx context.Context, track *domain.TrackDTO) error {
+// --- Document builders (shared by single-doc Index* and BatchReindex) ---
+
+func trackDoc(track *domain.TrackDTO) (string, map[string]interface{}) {
 	doc := map[string]interface{}{
 		"id":    track.ID,
 		"type":  "track",
@@ -102,10 +104,10 @@ func (s *bleveSearchService) IndexTrack(ctx context.Context, track *domain.Track
 		doc["genres"] = genreNames
 	}
 
-	return s.index.Index("track:"+track.ID, doc)
+	return "track:" + track.ID, doc
 }
 
-func (s *bleveSearchService) IndexAlbum(ctx context.Context, album *domain.AlbumDTO) error {
+func albumDoc(album *domain.AlbumDTO) (string, map[string]interface{}) {
 	doc := map[string]interface{}{
 		"id":    album.ID,
 		"type":  "album",
@@ -121,36 +123,129 @@ func (s *bleveSearchService) IndexAlbum(ctx context.Context, album *domain.Album
 		doc["artist_name"] = artistNames[0]
 	}
 
-	return s.index.Index("album:"+album.ID, doc)
+	return "album:" + album.ID, doc
 }
 
-func (s *bleveSearchService) IndexArtist(ctx context.Context, artist *domain.Artist) error {
-	doc := map[string]interface{}{
+func artistDoc(artist *domain.Artist) (string, map[string]interface{}) {
+	return "artist:" + artist.ID, map[string]interface{}{
 		"id":    artist.ID,
 		"type":  "artist",
 		"title": domain.FoldUnicode(artist.Name),
 		"name":  domain.FoldUnicode(artist.Name),
 	}
-	return s.index.Index("artist:"+artist.ID, doc)
 }
 
-func (s *bleveSearchService) IndexPlaylist(ctx context.Context, playlist *domain.Playlist) error {
-	doc := map[string]interface{}{
+func playlistDoc(playlist *domain.Playlist) (string, map[string]interface{}) {
+	return "playlist:" + playlist.ID, map[string]interface{}{
 		"id":          playlist.ID,
 		"type":        "playlist",
 		"title":       domain.FoldUnicode(playlist.Name),
 		"description": domain.FoldUnicode(playlist.Description),
 	}
-	return s.index.Index("playlist:"+playlist.ID, doc)
 }
 
-func (s *bleveSearchService) IndexComposer(ctx context.Context, composer *domain.Composer) error {
-	doc := map[string]interface{}{
+func composerDoc(composer *domain.Composer) (string, map[string]interface{}) {
+	return "composer:" + composer.ID, map[string]interface{}{
 		"id":    composer.ID,
 		"type":  "composer",
 		"title": domain.FoldUnicode(composer.Name),
 	}
-	return s.index.Index("composer:"+composer.ID, doc)
+}
+
+func (s *bleveSearchService) IndexTrack(ctx context.Context, track *domain.TrackDTO) error {
+	return s.index.Index(trackDoc(track))
+}
+
+func (s *bleveSearchService) IndexAlbum(ctx context.Context, album *domain.AlbumDTO) error {
+	return s.index.Index(albumDoc(album))
+}
+
+func (s *bleveSearchService) IndexArtist(ctx context.Context, artist *domain.Artist) error {
+	return s.index.Index(artistDoc(artist))
+}
+
+func (s *bleveSearchService) IndexPlaylist(ctx context.Context, playlist *domain.Playlist) error {
+	return s.index.Index(playlistDoc(playlist))
+}
+
+func (s *bleveSearchService) IndexComposer(ctx context.Context, composer *domain.Composer) error {
+	return s.index.Index(composerDoc(composer))
+}
+
+// batchCommitSize bounds how many documents accumulate before a single
+// fsync-ing commit. Keeps memory bounded and gives steady progress while
+// avoiding the per-document fsync that makes full reindex hang on Windows.
+const batchCommitSize = 500
+
+func (s *bleveSearchService) BatchReindex(ctx context.Context, data *domain.ReindexData, onProgress func(path string)) error {
+	if data == nil {
+		return nil
+	}
+
+	batch := s.index.NewBatch()
+	pending := 0
+
+	flush := func() error {
+		if pending == 0 {
+			return nil
+		}
+		if err := s.index.Batch(batch); err != nil {
+			return fmt.Errorf("failed to commit reindex batch: %w", err)
+		}
+		batch = s.index.NewBatch()
+		pending = 0
+		return nil
+	}
+
+	add := func(id string, doc map[string]interface{}, label string) error {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if err := batch.Index(id, doc); err != nil {
+			return fmt.Errorf("failed to add %q to reindex batch: %w", id, err)
+		}
+		pending++
+		if onProgress != nil {
+			onProgress(label)
+		}
+		if pending >= batchCommitSize {
+			return flush()
+		}
+		return nil
+	}
+
+	for _, t := range data.Tracks {
+		id, doc := trackDoc(t)
+		if err := add(id, doc, "Track: "+t.Title); err != nil {
+			return err
+		}
+	}
+	for _, a := range data.Albums {
+		id, doc := albumDoc(a)
+		if err := add(id, doc, "Album: "+a.Title); err != nil {
+			return err
+		}
+	}
+	for _, ar := range data.Artists {
+		id, doc := artistDoc(ar)
+		if err := add(id, doc, "Artist: "+ar.Name); err != nil {
+			return err
+		}
+	}
+	for _, c := range data.Composers {
+		id, doc := composerDoc(c)
+		if err := add(id, doc, "Composer: "+c.Name); err != nil {
+			return err
+		}
+	}
+	for _, p := range data.Playlists {
+		id, doc := playlistDoc(p)
+		if err := add(id, doc, "Playlist: "+p.Name); err != nil {
+			return err
+		}
+	}
+
+	return flush()
 }
 
 func (s *bleveSearchService) Search(ctx context.Context, queryStr string) ([]domain.SearchResult, error) {

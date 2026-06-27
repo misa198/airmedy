@@ -140,14 +140,31 @@ extern void goHandleRemoteSeek(double position);
     self.pausePosition = 0.0;
 }
 
+// Build a PCM decoder for a file. SFBAudioPlayer's processing graph only
+// accepts SFBPCMDecoding decoders, so DSD files (.dsf/.dff) — whose native
+// decoder conforms to SFBDSDDecoding — must be wrapped in SFBDSDPCMDecoder
+// (DSD->PCM conversion, compatible with any DAC). Non-DSD types fall through
+// to nil so callers enqueue the URL and let the player auto-detect.
+- (id<SFBPCMDecoding>)pcmDecoderForPath:(NSString *)path error:(NSError **)error {
+    NSString *ext = path.pathExtension.lowercaseString;
+    if (![[SFBDSDDecoder supportedPathExtensions] containsObject:ext]) {
+        return nil;
+    }
+    return [[SFBDSDPCMDecoder alloc] initWithURL:[NSURL fileURLWithPath:path] error:error];
+}
+
 - (void)load:(NSString *)path {
     BOOL wasPlaying = self.isPlaying;
     self.isPlaying = NO;
     self.pausePosition = 0.0;
 
-    NSURL *url = [NSURL fileURLWithPath:path];
     NSError *err = nil;
-    [self.sfbPlayer enqueueURL:url forImmediatePlayback:YES error:&err];
+    id<SFBPCMDecoding> dsd = [self pcmDecoderForPath:path error:&err];
+    if (dsd) {
+        [self.sfbPlayer enqueueDecoder:dsd forImmediatePlayback:YES error:&err];
+    } else if (!err) {
+        [self.sfbPlayer enqueueURL:[NSURL fileURLWithPath:path] forImmediatePlayback:YES error:&err];
+    }
     if (err) {
         NSLog(@"[AirmedyPlayer] Failed to load %@: %@", path, err);
         return;
@@ -160,9 +177,13 @@ extern void goHandleRemoteSeek(double position);
 }
 
 - (void)enqueueNext:(NSString *)path {
-    NSURL *url = [NSURL fileURLWithPath:path];
     NSError *err = nil;
-    [self.sfbPlayer enqueueURL:url forImmediatePlayback:NO error:&err];
+    id<SFBPCMDecoding> dsd = [self pcmDecoderForPath:path error:&err];
+    if (dsd) {
+        [self.sfbPlayer enqueueDecoder:dsd forImmediatePlayback:NO error:&err];
+    } else if (!err) {
+        [self.sfbPlayer enqueueURL:[NSURL fileURLWithPath:path] forImmediatePlayback:NO error:&err];
+    }
     if (err) {
         NSLog(@"[AirmedyPlayer] Failed to enqueue next %@: %@", path, err);
     }

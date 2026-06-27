@@ -359,8 +359,10 @@
   },
   "track_info": {
     "title": "Titelinformationen",
+    "artist": "Interpret",
     "details": "Details",
     "album": "Album",
+    "album_artist": "Album-Interpret",
     "genre": "Genre",
     "year": "Jahr",
     "composer": "Komponist",

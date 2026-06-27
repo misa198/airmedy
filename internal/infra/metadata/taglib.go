@@ -235,6 +235,7 @@ func (e *taglibExtractor) WriteMetadata(_ context.Context, path string, fields d
 	tags := map[string][]string{
 		"TITLE":       {fields.Title},
 		"ARTIST":      {fields.Artist},
+		"ALBUMARTIST": {fields.AlbumArtist},
 		"ALBUM":       {fields.AlbumTitle},
 		"DATE":        {strconv.Itoa(fields.Year)},
 		"TRACKNUMBER": {fmt.Sprintf("%d/%d", fields.TrackNumber, fields.TotalTracks)},

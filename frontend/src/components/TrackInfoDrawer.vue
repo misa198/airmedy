@@ -22,23 +22,23 @@ const isLossless = computed(() => {
 const details = computed(() => {
   if (!track.value) return []
   return [
-    { label: t('track_info.album'), value: track.value.album?.title || '-', isHyphenAuto: true },
-    { label: t('track_info.genre'), value: track.value.raw_genre_names || '-', isHyphenAuto: true },
-    { label: t('track_info.year'), value: track.value.year || '-', isHyphenAuto: true },
-    { label: t('track_info.composer'), value: track.value.raw_composer_names || '-', isHyphenAuto: true },
-    { label: t('track_info.format'), value: track.value.format?.toUpperCase() || '-', isHyphenAuto: true },
-    { label: t('track_info.bitrate'), value: track.value.bitrate ? `${Math.round(track.value.bitrate)} kbps` : '-', isHyphenAuto: true },
-    { label: t('track_info.sample_rate'), value: track.value.sample_rate ? `${track.value.sample_rate / 1000} kHz` : '-', isHyphenAuto: true },
-    { label: t('track_info.duration'), value: formatTime(track.value.duration), isHyphenAuto: true },
-    { label: t('track_info.bpm'), value: track.value.bpm || '-', isHyphenAuto: true },
-    { label: t('track_info.disc'), value: track.value.total_discs > 1 ? `${track.value.disc_number} / ${track.value.total_discs}` : track.value.disc_number || '-', isHyphenAuto: true },
-    { label: t('track_info.track'), value: track.value.total_tracks > 0 ? `${track.value.track_number} / ${track.value.total_tracks}` : track.value.track_number || '-', isHyphenAuto: true },
-    { label: t('track_info.play_count'), value: track.value.play_count || '0', isHyphenAuto: true },
-    { label: t('track_info.label'), value: track.value.label || '-', isHyphenAuto: true },
-    { label: t('track_info.isrc'), value: track.value.isrc || '-', isHyphenAuto: true },
-    { label: t('track_info.file_size'), value: formatFileSize(track.value.file_size), isHyphenAuto: true },
-    { label: t('track_info.file_path'), value: track.value.path || '-', isHyphenAuto: false },
-  ]
+    { label: t('track_info.artist'), value: track.value.raw_artist_names || '', isHyphenAuto: true },
+    { label: t('track_info.genre'), value: track.value.raw_genre_names || '', isHyphenAuto: true },
+    { label: t('track_info.year'), value: track.value.year || '', isHyphenAuto: true },
+    { label: t('track_info.composer'), value: track.value.raw_composer_names || '', isHyphenAuto: true },
+    { label: t('track_info.format'), value: track.value.format?.toUpperCase() || '', isHyphenAuto: true },
+    { label: t('track_info.bitrate'), value: track.value.bitrate ? `${Math.round(track.value.bitrate)} kbps` : '', isHyphenAuto: true },
+    { label: t('track_info.sample_rate'), value: track.value.sample_rate ? `${track.value.sample_rate / 1000} kHz` : '', isHyphenAuto: true },
+    { label: t('track_info.duration'), value: track.value.duration ? formatTime(track.value.duration) : '', isHyphenAuto: true },
+    { label: t('track_info.bpm'), value: track.value.bpm || '', isHyphenAuto: true },
+    { label: t('track_info.disc'), value: track.value.total_discs > 1 ? `${track.value.disc_number} / ${track.value.total_discs}` : track.value.disc_number || '', isHyphenAuto: true },
+    { label: t('track_info.track'), value: track.value.total_tracks > 0 ? `${track.value.track_number} / ${track.value.total_tracks}` : track.value.track_number || '', isHyphenAuto: true },
+    { label: t('track_info.play_count'), value: track.value.play_count || '', isHyphenAuto: true },
+    { label: t('track_info.label'), value: track.value.label || '', isHyphenAuto: true },
+    { label: t('track_info.isrc'), value: track.value.isrc || '', isHyphenAuto: true },
+    { label: t('track_info.file_size'), value: track.value.file_size ? formatFileSize(track.value.file_size) : '', isHyphenAuto: true },
+    { label: t('track_info.file_path'), value: track.value.path || '', isHyphenAuto: false },
+  ].filter(d => d.value !== '' && d.value != null)
 })
 
 function formatFileSize(bytes: number) {
@@ -84,7 +84,7 @@ function formatFileSize(bytes: number) {
         <div class="text-center mb-8 w-full px-4">
           <h1 class="text-lg font-bold mb-1 tracking-tight leading-tight">{{ getTrackDisplayTitle(track) || t('library.unknown_title') }}</h1>
           <p class="text-xs text-foreground opacity-70 font-medium mb-3">
-            {{ track.raw_artist_names || t('library.unknown_artist') }}
+            {{ track.raw_album_artist_names || t('library.unknown_artist') }}
             <span v-if="track.album?.title" class="mx-1 opacity-30">•</span>
             {{ track.album?.title }}
           </p>

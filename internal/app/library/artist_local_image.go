@@ -51,64 +51,44 @@ func isArtistImageFile(name string) bool {
 	return slices.Contains(artistImageBaseNames, strings.ToLower(name))
 }
 
-// artistIDsInDir returns the distinct artist IDs of tracks located in dir or any
-// of its subdirectories. Used to map an artist image file to the artists it
-// belongs to.
-func (s *LibraryService) artistIDsInDir(ctx context.Context, dir string) []string {
+// albumArtistIDsInDir returns the distinct album-artist IDs of tracks located in
+// dir or any of its subdirectories. An artist.jpg belongs to the folder's album
+// artist (its discography), so guest/track artists are ignored on purpose.
+func (s *LibraryService) albumArtistIDsInDir(ctx context.Context, dir string) []string {
 	prefix := dir
 	if !strings.HasSuffix(prefix, string(os.PathSeparator)) {
 		prefix += string(os.PathSeparator)
 	}
-	tracks, err := s.trackRepo.GetByPathPrefix(ctx, prefix)
+	ids, err := s.trackRepo.AlbumArtistIDsByPathPrefix(ctx, prefix)
 	if err != nil {
-		s.logger.Warn("Failed to list tracks for artist image dir", "dir", dir, "error", err)
+		s.logger.Warn("Failed to list album artists for artist image dir", "dir", dir, "error", err)
 		return nil
-	}
-	seen := make(map[string]struct{})
-	var ids []string
-	for _, t := range tracks {
-		for _, a := range t.Artists {
-			if _, ok := seen[a.ID]; ok {
-				continue
-			}
-			seen[a.ID] = struct{}{}
-			ids = append(ids, a.ID)
-		}
 	}
 	return ids
 }
 
-// artistIDsForImageDir maps an artist-image directory to the artists it belongs
-// to, two ways (unioned):
-//  1. by folder name — the directory is named after an artist (e.g. "Maroon 5/"),
-//     even if it holds no tracks of its own;
-//  2. by contained tracks — tracks living in the directory or its subfolders.
+// artistIDsForImageDir maps an artist-image directory to the album artists it
+// belongs to. The album artists of contained tracks are authoritative; the
+// folder name is only consulted as a fallback when the directory has no album
+// artists of its own (e.g. an artist folder holding only the image, or tracks
+// with no ALBUMARTIST tag). This keeps a role-agnostic folder-name match from
+// pulling in unrelated (e.g. guest) artists and causing false ambiguity.
 //
 // Only artists that actually exist in the library are returned.
 func (s *LibraryService) artistIDsForImageDir(ctx context.Context, dir string) []string {
-	seen := make(map[string]struct{})
-	var ids []string
-	add := func(id string) {
-		if _, ok := seen[id]; ok {
-			return
-		}
-		seen[id] = struct{}{}
-		ids = append(ids, id)
+	// 1. Album artists of tracks within the directory (authoritative).
+	if ids := s.albumArtistIDsInDir(ctx, dir); len(ids) > 0 {
+		return ids
 	}
 
-	// 1. Folder name == artist name.
+	// 2. Fallback: folder name == artist name.
 	key := domain.NormalizationKey(filepath.Base(dir))
 	if key != "" {
 		if artist, err := s.artistRepo.GetByNormalizationKey(ctx, key); err == nil && artist != nil {
-			add(artist.ID)
+			return []string{artist.ID}
 		}
 	}
-
-	// 2. Artists of tracks within the directory.
-	for _, id := range s.artistIDsInDir(ctx, dir) {
-		add(id)
-	}
-	return ids
+	return nil
 }
 
 // artistImageForTrack looks for an artist image next to the track (image-with-
@@ -192,6 +172,12 @@ func (s *LibraryService) applyLocalArtistImagesForDirs(ctx context.Context, imag
 
 		artistIDs := s.artistIDsForImageDir(ctx, dir)
 		if len(artistIDs) == 0 {
+			continue
+		}
+		// Ambiguous: one artist.jpg mapping to several artists (e.g. a
+		// various-artists or parent folder) isn't artist-specific — skip it.
+		if len(artistIDs) > 1 {
+			s.logger.Info("Skipping ambiguous artist image (maps to multiple artists)", "image", imagePath, "artists", len(artistIDs))
 			continue
 		}
 
@@ -279,10 +265,15 @@ func (s *LibraryService) emitArtistArtworkUpdated(artistID, source, key string) 
 }
 
 // resolveTrackArtistImages looks for a local artist image around the given track
-// path and applies it to the track's artists. Called during import so newly-added
-// tracks pick up sibling/parent artist images.
+// path and applies it to the track's album artists. Called during import so
+// newly-added tracks pick up sibling/parent artist images.
 func (s *LibraryService) resolveTrackArtistImages(ctx context.Context, trackPath string, artistIDs []string) {
 	if len(artistIDs) == 0 {
+		return
+	}
+	// Ambiguous: a nearby artist.jpg shared by several album artists (e.g. a
+	// compilation) isn't artist-specific — skip it.
+	if len(artistIDs) > 1 {
 		return
 	}
 	imagePath := artistImageForTrack(trackPath)
