@@ -10,11 +10,13 @@ import PlaylistCard from '@/components/PlaylistCard.vue'
 import ComposerCard from '@/components/ComposerCard.vue'
 import SearchSection from '@/components/SearchSection.vue'
 import { useSearchStore } from '@/stores/search'
+import { usePlayerStore } from '@/stores/player'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import { buildArtworkUrl } from '@airmedy/utils'
 
 const router = useRouter()
 const store = useSearchStore()
+const playerStore = usePlayerStore()
 
 const inputValue = ref(store.query)
 
@@ -22,8 +24,15 @@ watch(inputValue, (val) => {
   store.search(val)
 })
 
-function navigateToAlbum(id: string) {
+function navigateToAlbum(id?: string) {
+  if (!id) return
   router.push(`/albums/${id}`)
+}
+
+function playSearchTrack(track: TrackDTO) {
+  const list = (store.results?.tracks?.filter(Boolean) ?? []) as TrackDTO[]
+  const idx = list.findIndex(t => t.id === track.id)
+  playerStore.playTracks(list, idx === -1 ? 0 : idx)
 }
 
 function navigateToArtist(id: string) {
@@ -99,7 +108,7 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists() || hasPlayli
           <template #default="{ item: track }">
             <div
               class="flex items-center gap-3 p-2 rounded-xl hover:bg-foreground/[0.04] cursor-pointer group transition-all"
-              @click="navigateToAlbum(track.album?.id)">
+              @click="playSearchTrack(track)">
               <div
                 class="w-12 h-12 flex-shrink-0 rounded-lg bg-foreground/[0.06] overflow-hidden ring-1 ring-foreground/[0.06]">
                 <LazyImg v-if="track.artwork_key || track.album?.artwork_key"

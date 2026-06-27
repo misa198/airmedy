@@ -64,6 +64,8 @@ type LibraryService struct {
 	syncing                atomic.Int32 // >0 while a bulk SyncFolder runs (gates per-track work)
 	artworkCleanupMu       sync.Mutex
 	artworkCleanupTimer    *time.Timer // debounces orphan-artwork cleanup after watcher deletes
+	selfWrites             map[string]time.Time // path -> expiry; suppresses watcher events for app's own writes
+	selfWritesMu           sync.Mutex
 	ctx                    context.Context
 	cancel                 context.CancelFunc
 	mu                     sync.RWMutex
@@ -115,6 +117,7 @@ func NewLibraryService(
 		watcher:              watcher,
 		artistArtworkQueue:   make(chan artistArtworkJob, 100),
 		pendingArtistArtwork: make(map[string]struct{}),
+		selfWrites:           make(map[string]time.Time),
 		ctx:                  ctx,
 		cancel:               cancel,
 	}, nil
@@ -135,6 +138,37 @@ func (s *LibraryService) notifyTrackUpdated(track *domain.TrackDTO) {
 	for _, l := range listeners {
 		l(track)
 	}
+}
+
+// selfWriteWindow is how long watcher events for a path are suppressed after the
+// app writes that file itself (e.g. metadata edits). Covers the taglib write plus
+// the watcher's debounce delay.
+const selfWriteWindow = 5 * time.Second
+
+// markSelfWrite records that the app is about to write path, so the file watcher
+// ignores the resulting Write/Remove/Rename events instead of treating them as an
+// external change (which would redundantly re-import, or worse, delete the row).
+func (s *LibraryService) markSelfWrite(path string) {
+	s.selfWritesMu.Lock()
+	s.selfWrites[filepath.Clean(path)] = time.Now().Add(selfWriteWindow)
+	s.selfWritesMu.Unlock()
+}
+
+// isSelfWrite reports whether path was recently written by the app. Expired
+// entries are pruned lazily on lookup.
+func (s *LibraryService) isSelfWrite(path string) bool {
+	key := filepath.Clean(path)
+	s.selfWritesMu.Lock()
+	defer s.selfWritesMu.Unlock()
+	exp, ok := s.selfWrites[key]
+	if !ok {
+		return false
+	}
+	if time.Now().After(exp) {
+		delete(s.selfWrites, key)
+		return false
+	}
+	return true
 }
 
 func (s *LibraryService) Start(ctx context.Context) error {
@@ -211,6 +245,14 @@ func (s *LibraryService) handleEvent(event fsnotify.Event) {
 		return
 	}
 
+	// Skip events the app caused itself (e.g. metadata edits): UpdateMetadata
+	// already re-imports the file, and a temp+rename write would otherwise be
+	// misread as a deletion.
+	if s.isSelfWrite(event.Name) {
+		s.logger.Debug("Ignoring self-initiated write", "path", event.Name)
+		return
+	}
+
 	if event.Has(fsnotify.Create) || event.Has(fsnotify.Write) {
 		// If it's a directory, watch it and sync it
 		// We need to check if it's a directory
@@ -232,6 +274,21 @@ func (s *LibraryService) handleEvent(event fsnotify.Event) {
 	if event.Has(fsnotify.Remove) || event.Has(fsnotify.Rename) {
 		go func() {
 			ctx := context.Background()
+
+			// Atomic-save editors (and some taglib writes) replace a file via
+			// temp-file + rename, which surfaces as Remove/Rename on the original
+			// path even though the file still exists. Give it a moment, then
+			// verify the file is really gone before deleting its row; if it's
+			// still there, treat the event as a modification and re-import.
+			time.Sleep(500 * time.Millisecond)
+			if _, err := os.Stat(event.Name); err == nil {
+				s.logger.Debug("Path still exists after remove/rename, re-importing instead of deleting", "path", event.Name)
+				if err := s.ImportFile(ctx, event.Name); err != nil {
+					s.logger.Debug("Failed to re-import file after remove/rename", "path", event.Name, "error", err)
+				}
+				return
+			}
+
 			s.logger.Info("File/Folder removed, cleaning up", "path", event.Name)
 
 			var deletedIDs []string
@@ -993,6 +1050,11 @@ func (s *LibraryService) UpdateMetadata(ctx context.Context, id string, fields d
 	if track == nil {
 		return fmt.Errorf("track not found: %s", id)
 	}
+	// Suppress watcher events for this path: we're about to write the file
+	// ourselves, then re-import explicitly below. Without this the watcher's
+	// Write event redundantly re-imports, and a temp+rename write surfaces as
+	// Remove/Rename and deletes the track from the DB.
+	s.markSelfWrite(track.Path)
 	if err := s.metadataWriter.WriteMetadata(ctx, track.Path, fields); err != nil {
 		return fmt.Errorf("failed to write metadata: %w", err)
 	}
