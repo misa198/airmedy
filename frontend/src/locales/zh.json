@@ -181,7 +181,13 @@
       "regenerating": "生成中…",
       "firewall_macos": "macOS 可能会提示您允许传入连接。点击\"允许\"以启用远程访问。",
       "firewall_windows": "Windows 防火墙可能会提示您允许传入连接。点击\"允许访问\"以启用远程控制。",
-      "firewall_linux": "如果您启用了防火墙，请手动开放端口 {port}：ufw allow {port}/tcp"
+      "firewall_linux": "如果您启用了防火墙，请手动开放端口 {port}：ufw allow {port}/tcp",
+      "interface_ethernet": "以太网 (本地)",
+      "interface_wifi": "Wi-Fi (本地)",
+      "interface_vpn": "VPN 连接",
+      "interface_link_local": "本地链路网络 (Link-Local)",
+      "interface_virtual": "虚拟网络",
+      "interface_virtual_vm": "虚拟机网络"
     },
     "equalizer": {
       "title": "均衡器",

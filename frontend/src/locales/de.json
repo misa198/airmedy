@@ -181,7 +181,13 @@
       "regenerating": "Wird generiert…",
       "firewall_macos": "macOS fordert Sie möglicherweise auf, eingehende Verbindungen zu erlauben. Klicken Sie auf \"Erlauben\", um den Fernzugriff zu aktivieren.",
       "firewall_windows": "Die Windows-Firewall fordert Sie möglicherweise auf, eingehende Verbindungen zu erlauben. Klicken Sie auf \"Zugriff erlauben\", um die Fernsteuerung zu aktivieren.",
-      "firewall_linux": "Wenn eine Firewall aktiv ist, öffnen Sie Port {port} manuell: ufw allow {port}/tcp"
+      "firewall_linux": "Wenn eine Firewall aktiv ist, öffnen Sie Port {port} manuell: ufw allow {port}/tcp",
+      "interface_ethernet": "Ethernet-Netzwerk (Lokal)",
+      "interface_wifi": "WLAN-Netzwerk (Lokal)",
+      "interface_vpn": "VPN-Verbindung",
+      "interface_link_local": "Link-Local-Netzwerk",
+      "interface_virtual": "Virtuelles Netzwerk",
+      "interface_virtual_vm": "Virtuelles Maschinennetzwerk"
     },
     "equalizer": {
       "title": "Equalizer",

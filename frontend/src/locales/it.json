@@ -181,7 +181,13 @@
       "regenerating": "Generazione…",
       "firewall_macos": "macOS potrebbe chiederti di consentire le connessioni in entrata. Fai clic su \"Consenti\" per abilitare l'accesso remoto.",
       "firewall_windows": "Windows Firewall potrebbe chiederti di consentire le connessioni in entrata. Fai clic su \"Consenti accesso\" per abilitare il controllo remoto.",
-      "firewall_linux": "Se hai un firewall abilitato, apri la porta {port} manualmente: ufw allow {port}/tcp"
+      "firewall_linux": "Se hai un firewall abilitato, apri la porta {port} manualmente: ufw allow {port}/tcp",
+      "interface_ethernet": "Rete Ethernet (Locale)",
+      "interface_wifi": "Rete Wi-Fi (Locale)",
+      "interface_vpn": "Connessione VPN",
+      "interface_link_local": "Rete Link-Local",
+      "interface_virtual": "Rete virtuale",
+      "interface_virtual_vm": "Rete macchina virtuale"
     },
     "equalizer": {
       "title": "Equalizzatore",

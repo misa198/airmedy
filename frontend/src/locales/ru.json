@@ -181,7 +181,13 @@
       "regenerating": "Генерация…",
       "firewall_macos": "macOS может запросить разрешение на входящие подключения. Нажмите «Разрешить», чтобы включить удалённый доступ.",
       "firewall_windows": "Брандмауэр Windows может запросить разрешение на входящие подключения. Нажмите «Разрешить доступ», чтобы включить дистанционное управление.",
-      "firewall_linux": "Если брандмауэр включён, откройте порт {port} вручную: ufw allow {port}/tcp"
+      "firewall_linux": "Если брандмауэр включён, откройте порт {port} вручную: ufw allow {port}/tcp",
+      "interface_ethernet": "Сеть Ethernet (Локальная)",
+      "interface_wifi": "Сеть Wi-Fi (Локальная)",
+      "interface_vpn": "VPN-соединение",
+      "interface_link_local": "Сеть Link-Local",
+      "interface_virtual": "Виртуальная сеть",
+      "interface_virtual_vm": "Сеть виртуальной машины"
     },
     "equalizer": {
       "title": "Эквалайзер",

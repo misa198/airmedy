@@ -4,7 +4,7 @@ import { Switch } from '@airmedy/ui'
 import { useAppStore } from '@/stores/app'
 import { useDeviceStore } from '@/stores/device'
 import { Radio } from '@airmedy/ui'
-import { Copy, Dices, Save, Wifi, Info } from 'lucide-vue-next'
+import { Copy, Dices, Save, Wifi, Info, EthernetPort, GlobeLock, Waypoints, Cable, Layers2 } from 'lucide-vue-next'
 import QRCodeStyling from 'qr-code-styling'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -33,6 +33,7 @@ const status = ref<ServerStatus | null>(null)
 const regenerating = ref(false)
 const toggling = ref(false)
 const copiedUrl = ref('')
+let copyTimeoutId: any = null
 const selectedUrl = ref('')
 const pinInput = ref('')
 const pinSaving = ref(false)
@@ -114,9 +115,15 @@ async function savePin() {
 }
 
 function copyUrl(url: string) {
+  if (copyTimeoutId) {
+    clearTimeout(copyTimeoutId)
+  }
   navigator.clipboard.writeText(url).then(() => {
     copiedUrl.value = url
-    setTimeout(() => { copiedUrl.value = '' }, 2000)
+    copyTimeoutId = setTimeout(() => {
+      copiedUrl.value = ''
+      copyTimeoutId = null
+    }, 3000)
   })
 }
 
@@ -132,7 +139,10 @@ const urls = computed(() => {
 
 watch(urls, (list) => {
   if (list.length && !list.find(a => a.url === selectedUrl.value)) {
-    selectedUrl.value = list[0].url
+    const best = list.find(a => (a.kind === 'ethernet' || a.kind === 'wifi') && (a.url.includes('192.168.') || a.url.includes('10.') || a.url.includes('172.')))
+      || list.find(a => a.kind === 'ethernet' || a.kind === 'wifi')
+      || list[0]
+    selectedUrl.value = best.url
   }
 }, { immediate: true })
 
@@ -167,6 +177,42 @@ watch([qrUrl, qrContainer], ([url, container]) => {
 
 const pinChanged = computed(() => pinInput.value !== (status.value?.password ?? ''))
 
+function getInterfaceIcon(kind: string, iface: string) {
+  const k = kind.toLowerCase()
+  if (k === 'wifi') return Wifi
+  if (k === 'ethernet') return EthernetPort
+  if (k === 'vpn') return GlobeLock
+  if (k === 'link_local' || k === 'link-local') return Cable
+  if (k === 'virtual') {
+    const name = iface.toLowerCase()
+    if (name.includes('vbox') || name.includes('vmnet') || name.includes('vnic') || name.includes('hyper-v') || name.includes('vnet') || name.includes('virtual')) {
+      return Layers2
+    }
+    return Waypoints
+  }
+  return Wifi // Fallback
+}
+
+function getInterfaceLabel(kind: string, iface: string) {
+  const k = kind.toLowerCase()
+  if (k === 'wifi') return t('settings.remote.interface_wifi')
+  if (k === 'ethernet') return t('settings.remote.interface_ethernet')
+  if (k === 'vpn') return t('settings.remote.interface_vpn')
+  if (k === 'link_local' || k === 'link-local') return t('settings.remote.interface_link_local')
+  if (k === 'virtual') {
+    const name = iface.toLowerCase()
+    if (name.includes('vbox') || name.includes('vmnet') || name.includes('vnic') || name.includes('hyper-v') || name.includes('vnet') || name.includes('virtual')) {
+      return t('settings.remote.interface_virtual_vm')
+    }
+    return t('settings.remote.interface_virtual')
+  }
+  return kind
+}
+
+function getInterfaceTooltip(kind: string, iface: string) {
+  return `${getInterfaceLabel(kind, iface)} (${iface})`
+}
+
 onMounted(loadStatus)
 </script>
 
@@ -200,19 +246,32 @@ onMounted(loadStatus)
           <div class="p-5">
             <p class="text-sm font-semibold mb-3">{{ t('settings.remote.access_urls') }}</p>
             <div class="space-y-2">
-              <label v-for="item in urls" :key="item.url"
-                class="flex items-center justify-between gap-2 bg-foreground/[0.02] border rounded-lg px-3 h-[32px] cursor-pointer transition-colors"
-                :class="selectedUrl === item.url ? 'border-foreground/20' : 'border-foreground/[0.04]'">
-                <div class="flex items-center gap-2 min-w-0">
-                  <Radio :value="item.url" :model-value="selectedUrl" @update:model-value="selectedUrl = String($event)" />
-                  <code class="text-xs text-foreground opacity-80 truncate">{{ item.url }}</code>
+              <div v-for="item in urls" :key="item.url"
+                class="flex flex-col gap-2 bg-foreground/[0.02] border rounded-xl p-3 cursor-pointer transition-all duration-200"
+                :class="selectedUrl === item.url ? 'border-foreground/20 bg-foreground/[0.03]' : 'border-foreground/[0.04]'"
+                @click="selectedUrl = item.url">
+                <!-- Tầng trên (Label) -->
+                <div class="flex items-center gap-1.5 text-xs text-foreground opacity-60 font-medium select-none" :title="getInterfaceTooltip(item.kind, item.iface)">
+                  <component
+                    :is="getInterfaceIcon(item.kind, item.iface)"
+                    class="w-3.5 h-3.5 shrink-0"
+                  />
+                  <span>{{ getInterfaceLabel(item.kind, item.iface) }}</span>
                 </div>
-                <button @click.prevent="copyUrl(item.url)"
-                  class="text-xs text-foreground opacity-50 hover:opacity-100 transition-opacity shrink-0">
-                  <span v-if="copiedUrl === item.url">{{ t('settings.remote.copied') }}</span>
-                  <Copy v-else class="w-4 h-4" />
-                </button>
-              </label>
+
+                <!-- Tầng dưới -->
+                <div class="flex items-center justify-between gap-2 min-w-0">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <Radio :value="item.url" :model-value="selectedUrl" @update:model-value="selectedUrl = String($event)" />
+                    <code class="text-xs text-foreground opacity-80 truncate font-mono select-all">{{ item.url }}</code>
+                  </div>
+                  <button @click.prevent.stop="copyUrl(item.url)"
+                    class="text-xs text-foreground opacity-50 transition-opacity shrink-0 p-1 hover:bg-foreground/[0.04] rounded">
+                    <span v-if="copiedUrl === item.url" class="text-xs font-semibold">{{ t('settings.remote.copied') }}</span>
+                    <Copy v-else class="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 

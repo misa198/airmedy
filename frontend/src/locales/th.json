@@ -181,7 +181,13 @@
       "regenerating": "กำลังสร้าง…",
       "firewall_macos": "macOS อาจแจ้งให้คุณอนุญาตการเชื่อมต่อขาเข้า คลิก \"อนุญาต\" เพื่อเปิดใช้การเข้าถึงระยะไกล",
       "firewall_windows": "ไฟร์วอลล์ Windows อาจแจ้งให้คุณอนุญาตการเชื่อมต่อขาเข้า คลิก \"อนุญาตการเข้าถึง\" เพื่อเปิดใช้การควบคุมระยะไกล",
-      "firewall_linux": "หากคุณเปิดใช้ไฟร์วอลล์ ให้เปิดพอร์ต {port} ด้วยตนเอง: ufw allow {port}/tcp"
+      "firewall_linux": "หากคุณเปิดใช้ไฟร์วอลล์ ให้เปิดพอร์ต {port} ด้วยตนเอง: ufw allow {port}/tcp",
+      "interface_ethernet": "เครือข่าย Ethernet (ท้องถิ่น)",
+      "interface_wifi": "เครือข่าย Wi-Fi (ท้องถิ่น)",
+      "interface_vpn": "การเชื่อมต่อ VPN",
+      "interface_link_local": "เครือข่าย Link-Local",
+      "interface_virtual": "เครือข่ายเสมือน",
+      "interface_virtual_vm": "เครือข่ายเครื่องเสมือน"
     },
     "equalizer": {
       "title": "อีควอไลเซอร์",
