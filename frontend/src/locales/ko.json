@@ -172,6 +172,7 @@
       "scan_to_connect": "스캔하여 연결",
       "pin_embedded": "PIN 포함 — 즉시 리모컨 열기",
       "pin_required": "스캔 후 PIN 필요",
+      "qr_select_hint": "위에서 주소를 선택하여 QR 코드를 변경하세요",
       "access_pin": "접속 PIN",
       "access_pin_desc": "연결에 4자리 코드 필요",
       "show": "표시",

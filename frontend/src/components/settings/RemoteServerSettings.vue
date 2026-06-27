@@ -3,6 +3,7 @@ import { Input } from '@airmedy/ui'
 import { Switch } from '@airmedy/ui'
 import { useAppStore } from '@/stores/app'
 import { useDeviceStore } from '@/stores/device'
+import { Radio } from '@airmedy/ui'
 import { Copy, Dices, Save, Wifi, Info } from 'lucide-vue-next'
 import QRCodeStyling from 'qr-code-styling'
 import { computed, onMounted, ref, watch } from 'vue'
@@ -13,12 +14,18 @@ const { t } = useI18n()
 const appStore = useAppStore()
 const deviceStore = useDeviceStore()
 
+interface LocalAddress {
+  ip: string
+  iface: string
+  kind: string
+}
+
 interface ServerStatus {
   enabled: boolean
   running: boolean
   port: number
   password: string
-  local_ips: string[]
+  addresses: LocalAddress[]
 }
 
 const status = ref<ServerStatus | null>(null)
@@ -26,6 +33,7 @@ const status = ref<ServerStatus | null>(null)
 const regenerating = ref(false)
 const toggling = ref(false)
 const copiedUrl = ref('')
+const selectedUrl = ref('')
 const pinInput = ref('')
 const pinSaving = ref(false)
 const pinError = ref('')
@@ -113,11 +121,23 @@ function copyUrl(url: string) {
 }
 
 const urls = computed(() => {
-  if (!status.value?.running || !status.value.port || !status.value.local_ips) return []
-  return status.value.local_ips.map(ip => `http://${ip}:${status.value!.port}`)
+  if (!status.value?.running || !status.value.port || !status.value.addresses) return []
+  const port = status.value.port
+  return status.value.addresses.map(a => ({
+    url: `http://${a.ip}:${port}`,
+    iface: a.iface,
+    kind: a.kind,
+  }))
 })
 
-const qrUrl = computed(() => urls.value[0] ?? '')
+watch(urls, (list) => {
+  if (list.length && !list.find(a => a.url === selectedUrl.value)) {
+    selectedUrl.value = list[0].url
+  }
+}, { immediate: true })
+
+const selectedEntry = computed(() => urls.value.find(a => a.url === selectedUrl.value) ?? urls.value[0])
+const qrUrl = computed(() => selectedEntry.value?.url ?? '')
 
 watch([qrUrl, qrContainer], ([url, container]) => {
   if (!container) {
@@ -180,15 +200,19 @@ onMounted(loadStatus)
           <div class="p-5">
             <p class="text-sm font-semibold mb-3">{{ t('settings.remote.access_urls') }}</p>
             <div class="space-y-2">
-              <div v-for="url in urls" :key="url"
-                class="flex items-center justify-between gap-2 bg-foreground/[0.02] border border-foreground/[0.04] rounded-lg px-3 h-[32px]">
-                <code class="text-xs text-foreground opacity-80 truncate">{{ url }}</code>
-                <button @click="copyUrl(url)"
+              <label v-for="item in urls" :key="item.url"
+                class="flex items-center justify-between gap-2 bg-foreground/[0.02] border rounded-lg px-3 h-[32px] cursor-pointer transition-colors"
+                :class="selectedUrl === item.url ? 'border-foreground/20' : 'border-foreground/[0.04]'">
+                <div class="flex items-center gap-2 min-w-0">
+                  <Radio :value="item.url" :model-value="selectedUrl" @update:model-value="selectedUrl = String($event)" />
+                  <code class="text-xs text-foreground opacity-80 truncate">{{ item.url }}</code>
+                </div>
+                <button @click.prevent="copyUrl(item.url)"
                   class="text-xs text-foreground opacity-50 hover:opacity-100 transition-opacity shrink-0">
-                  <span v-if="copiedUrl === url">{{ t('settings.remote.copied') }}</span>
+                  <span v-if="copiedUrl === item.url">{{ t('settings.remote.copied') }}</span>
                   <Copy v-else class="w-4 h-4" />
                 </button>
-              </div>
+              </label>
             </div>
           </div>
 
@@ -196,7 +220,7 @@ onMounted(loadStatus)
           <div v-if="qrUrl" class="p-5 flex flex-col items-center gap-2">
             <div class="w-full mb-2">
               <p class="text-sm font-semibold">{{ t('settings.remote.scan_to_connect') }}</p>
-              <p class="text-xs text-foreground opacity-60 mt-1">{{ t('settings.remote.pin_required') }}</p>
+              <p class="text-xs text-foreground opacity-60 mt-1">{{ t('settings.remote.qr_select_hint') }}</p>
             </div>
             <div ref="qrContainer" class="rounded-2xl overflow-hidden" />
           </div>

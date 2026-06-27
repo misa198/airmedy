@@ -172,6 +172,7 @@
       "scan_to_connect": "Escanear para conectar",
       "pin_embedded": "PIN incluido — abre el control remoto al instante",
       "pin_required": "PIN requerido después de escanear",
+      "qr_select_hint": "Selecciona una dirección arriba para cambiar el código QR",
       "access_pin": "PIN de acceso",
       "access_pin_desc": "Código de 4 dígitos requerido para conectar",
       "show": "Mostrar",

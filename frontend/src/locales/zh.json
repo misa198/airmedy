@@ -172,6 +172,7 @@
       "scan_to_connect": "扫描连接",
       "pin_embedded": "已嵌入 PIN — 立即打开远程控制",
       "pin_required": "扫描后需要输入 PIN",
+      "qr_select_hint": "选择上方地址以更改二维码",
       "access_pin": "访问 PIN",
       "access_pin_desc": "连接需要 4 位数字码",
       "show": "显示",

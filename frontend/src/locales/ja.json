@@ -172,6 +172,7 @@
       "scan_to_connect": "スキャンして接続",
       "pin_embedded": "PIN埋め込み済み — すぐにリモコンを開きます",
       "pin_required": "スキャン後にPINが必要",
+      "qr_select_hint": "上のアドレスを選択してQRコードを変更",
       "access_pin": "アクセスPIN",
       "access_pin_desc": "接続に4桁のコードが必要です",
       "show": "表示",

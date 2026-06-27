@@ -172,6 +172,7 @@
       "scan_to_connect": "Quét để kết nối",
       "pin_embedded": "PIN nhúng sẵn — mở điều khiển ngay lập tức",
       "pin_required": "Cần PIN sau khi quét",
+      "qr_select_hint": "Chọn địa chỉ ở trên để thay đổi mã QR",
       "access_pin": "PIN truy cập",
       "access_pin_desc": "Cần mã 4 chữ số để kết nối",
       "show": "Hiển thị",

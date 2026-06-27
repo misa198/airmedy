@@ -172,6 +172,7 @@
       "scan_to_connect": "สแกนเพื่อเชื่อมต่อ",
       "pin_embedded": "ฝัง PIN แล้ว — เปิดรีโมทได้ทันที",
       "pin_required": "ต้องใส่ PIN หลังสแกน",
+      "qr_select_hint": "เลือกที่อยู่ด้านบนเพื่อเปลี่ยน QR code",
       "access_pin": "PIN เข้าถึง",
       "access_pin_desc": "ต้องใช้รหัส 4 หลักในการเชื่อมต่อ",
       "show": "แสดง",

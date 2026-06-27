@@ -172,6 +172,7 @@
       "scan_to_connect": "Zum Verbinden scannen",
       "pin_embedded": "PIN eingebettet — öffnet Fernbedienung sofort",
       "pin_required": "PIN nach dem Scannen erforderlich",
+      "qr_select_hint": "Adresse oben auswählen, um den QR-Code zu ändern",
       "access_pin": "Zugriffs-PIN",
       "access_pin_desc": "4-stelliger Code zum Verbinden erforderlich",
       "show": "Anzeigen",

@@ -172,6 +172,7 @@
       "scan_to_connect": "Scansiona per connetterti",
       "pin_embedded": "PIN incluso — apre il telecomando istantaneamente",
       "pin_required": "PIN richiesto dopo la scansione",
+      "qr_select_hint": "Seleziona un indirizzo sopra per cambiare il QR code",
       "access_pin": "PIN di accesso",
       "access_pin_desc": "Codice a 4 cifre richiesto per connettersi",
       "show": "Mostra",

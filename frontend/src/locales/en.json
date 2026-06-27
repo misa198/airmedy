@@ -172,6 +172,7 @@
       "scan_to_connect": "Scan to Connect",
       "pin_embedded": "PIN embedded — opens remote instantly",
       "pin_required": "PIN required after scanning",
+      "qr_select_hint": "Select an address above to change the QR code",
       "access_pin": "Access PIN",
       "access_pin_desc": "4-digit code required to connect",
       "show": "Show",
