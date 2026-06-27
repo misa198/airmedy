@@ -79,6 +79,8 @@
       "title": "連携",
       "online_artist_artwork": "オンラインのアーティスト画像",
       "online_artist_artwork_desc": "オン: Deezer のアーティスト画像を使用、オフ: ローカルの artist.jpg/png を使用",
+      "prefer_local_artist_artwork": "ローカルのアーティスト画像を優先",
+      "prefer_local_artist_artwork_desc": "オンライン取得の代わりに、ローカルの artist.jpg/png があればそれを使用",
       "enable_lrclib": "LRCLIB.NET の歌詞",
       "enable_lrclib_desc": "LRCLIB.NET から歌詞を取得",
       "enable_kugou": "KuGou の歌詞",

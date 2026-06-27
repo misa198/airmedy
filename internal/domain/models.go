@@ -88,30 +88,39 @@ type Artist struct {
 	UpdatedAt  time.Time `json:"updated_at" db:"updated_at"`
 }
 
-// ResolveArtworkKey picks which stored artwork to show. Manual always wins; the
-// local/online order follows the user's preference. An existing online image is
-// shown regardless of whether online fetching is currently enabled.
-func (a *Artist) ResolveArtworkKey(preferLocal bool) string {
+// ResolveArtworkKey picks which stored artwork to show. Manual always wins. The
+// online (Deezer) image is shown only when useOnline is true and not suppressed by
+// preferLocal: when preferLocal is set, an existing local image takes precedence
+// over online. When online is disabled it is never shown, even if already cached.
+func (a *Artist) ResolveArtworkKey(useOnline, preferLocal bool) string {
 	if a.ArtworkKeyManual != nil && *a.ArtworkKeyManual != "" {
 		return *a.ArtworkKeyManual
 	}
-	local, online := "", ""
+	local := ""
 	if a.ArtworkKeyLocal != nil {
 		local = *a.ArtworkKeyLocal
 	}
-	if a.ArtworkKeyOnline != nil {
-		online = *a.ArtworkKeyOnline
-	}
-	if preferLocal {
-		if local != "" {
-			return local
-		}
-		return online
-	}
-	if online != "" {
-		return online
+	if useOnline && (!preferLocal || local == "") &&
+		a.ArtworkKeyOnline != nil && *a.ArtworkKeyOnline != "" {
+		return *a.ArtworkKeyOnline
 	}
 	return local
+}
+
+// ShouldFetchOnline reports whether an online (Deezer) image is wanted but not yet
+// cached: i.e. online is enabled, no manual image exists, the local image does not
+// suppress online (per preferLocal), and no online image is stored yet.
+func (a *Artist) ShouldFetchOnline(useOnline, preferLocal bool) bool {
+	if !useOnline {
+		return false
+	}
+	if a.ArtworkKeyManual != nil && *a.ArtworkKeyManual != "" {
+		return false
+	}
+	if preferLocal && a.ArtworkKeyLocal != nil && *a.ArtworkKeyLocal != "" {
+		return false
+	}
+	return a.ArtworkKeyOnline == nil || *a.ArtworkKeyOnline == ""
 }
 
 // ArtworkKeyForSource returns the stored key for a given source ("" if unset).
@@ -218,6 +227,7 @@ type AppSettings struct {
 	LyricsSubfolderEnabled   bool   `json:"lyrics_subfolder_enabled"`
 	LyricsSubfolderName      string `json:"lyrics_subfolder_name"`
 	UseOnlineArtistArtwork   bool   `json:"use_online_artist_artwork"`
+	PreferLocalArtistArtwork bool   `json:"prefer_local_artist_artwork"`
 	LastScanVersion          string `json:"last_scan_version"`
 	PreventSleepWhilePlaying bool   `json:"prevent_sleep_while_playing"`
 	RemoteServerEnabled      bool   `json:"remote_server_enabled"`

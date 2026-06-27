@@ -33,7 +33,8 @@ type AppSettings struct {
     LyricsFolderPath       string              // chosen dedicated lyrics folder (flat, basename match)
     LyricsSubfolderEnabled bool                // also search a subfolder next to each track
     LyricsSubfolderName    string              // subfolder name (single safe path segment)
-    UseOnlineArtistArtwork bool                // on: prefer Deezer image; off: prefer local artist.jpg/png
+    UseOnlineArtistArtwork bool                // gate: off → Deezer image never shown (even if cached)
+    PreferLocalArtistArtwork bool              // nested (online on only): local/manual image suppresses online
     LastScanVersion        string              // app version of last artist-image rescan
     PreventSleepWhilePlaying bool             // prevent OS sleep during playback
 }
@@ -108,6 +109,7 @@ interface AppStore {
   updateLyricsSubfolderEnabled(enabled: boolean): Promise<void>;
   updateLyricsSubfolderName(name: string): Promise<void>;
   updateUseOnlineArtistArtwork(enabled: boolean): Promise<void>;
+  updatePreferLocalArtistArtwork(enabled: boolean): Promise<void>;
   updatePreventSleepWhilePlaying(enabled: boolean): Promise<void>;
   checkForUpdate(): Promise<void>;
   applyUpdate(): Promise<void>;
@@ -203,3 +205,4 @@ Settings evolved across multiple migrations:
 | 000026    | Drop `prefer_local_artist_artwork` (derived from online toggle)   |
 | 000025    | Split artist artwork into per-source key columns                 |
 | 000027    | Add `lyrics_folder_enabled`, `lyrics_folder_path`, `lyrics_subfolder_enabled`, `lyrics_subfolder_name` (folder + subfolder lyrics lookup) |
+| 000028    | Re-add `prefer_local_artist_artwork BOOLEAN NOT NULL DEFAULT 1` (nested sub-toggle under online artwork) |

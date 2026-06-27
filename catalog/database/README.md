@@ -47,6 +47,7 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000026 | `drop_prefer_local_artist_artwork.up.sql` | Drop `prefer_local_artist_artwork` — replaced by deriving from `use_online_artist_artwork` |
 | 000025 | `artist_artwork_multi_source.up.sql` | Replace `artwork_key`/`artwork_source` with per-source `artwork_key_manual`/`_local`/`_online` (backfilled), then drop the old two |
 | 000027 | `lyrics_folder.up.sql`               | Add `lyrics_folder_enabled`, `lyrics_folder_path`, `lyrics_subfolder_enabled`, `lyrics_subfolder_name` to `app_settings` (dedicated folder + per-track subfolder lyrics lookup) |
+| 000028 | `prefer_local_artist_artwork.up.sql` | Re-add `prefer_local_artist_artwork BOOLEAN NOT NULL DEFAULT 1` — nested sub-toggle: when online artwork is on, a local/manual image suppresses the Deezer one |
 
 ## Full Schema
 
@@ -186,6 +187,7 @@ app_settings (
     eq_enabled BOOLEAN DEFAULT 0,
     lrclib_mode TEXT DEFAULT 'prefer_metadata',
     use_online_artist_artwork BOOLEAN NOT NULL DEFAULT 1,
+    prefer_local_artist_artwork BOOLEAN NOT NULL DEFAULT 1, -- re-added (000028)
     last_scan_version TEXT NOT NULL DEFAULT '',
     enable_lrclib BOOLEAN NOT NULL DEFAULT 1,
     enable_kugou BOOLEAN NOT NULL DEFAULT 1,

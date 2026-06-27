@@ -392,8 +392,10 @@ func (s *LibraryService) handleArtistImageEvent(event fsnotify.Event) {
 				s.logger.Warn("Failed to clear local artist artwork after image removal", "artistID", id, "error", err)
 				continue
 			}
-			// If nothing else is available and online is enabled, fetch from Deezer.
-			if settings.UseOnlineArtistArtwork && artist.ArtworkKeyManual == nil && artist.ArtworkKeyOnline == nil {
+			// Reflect the just-cleared local source, then fetch from Deezer only if the
+			// online image would now actually be shown.
+			artist.ArtworkKeyLocal = nil
+			if artist.ShouldFetchOnline(settings.UseOnlineArtistArtwork, settings.PreferLocalArtistArtwork) {
 				s.EnqueueArtistArtwork(id, fmt.Sprintf("artist-artwork:%s", id))
 			}
 		}

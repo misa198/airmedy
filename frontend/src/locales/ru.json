@@ -79,6 +79,8 @@
       "title": "Интеграции",
       "online_artist_artwork": "Обложки исполнителей онлайн",
       "online_artist_artwork_desc": "Вкл.: изображения исполнителей с Deezer; выкл.: локальные файлы artist.jpg/png",
+      "prefer_local_artist_artwork": "Предпочитать локальные обложки исполнителей",
+      "prefer_local_artist_artwork_desc": "Использовать локальные файлы artist.jpg/png при наличии вместо загрузки из сети",
       "enable_lrclib": "Тексты LRCLIB.NET",
       "enable_lrclib_desc": "Загружать тексты с LRCLIB.NET",
       "enable_kugou": "Тексты KuGou",

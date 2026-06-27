@@ -79,6 +79,8 @@
       "title": "Tích hợp",
       "online_artist_artwork": "Ảnh nghệ sĩ trực tuyến",
       "online_artist_artwork_desc": "Khi bật, dùng ảnh nghệ sĩ từ Deezer; khi tắt, dùng tệp artist.jpg/png cục bộ",
+      "prefer_local_artist_artwork": "Ưu tiên ảnh nghệ sĩ cục bộ",
+      "prefer_local_artist_artwork_desc": "Dùng tệp artist.jpg/png cục bộ khi có thay vì tải trực tuyến",
       "enable_lrclib": "Lời bài hát LRCLIB.NET",
       "enable_lrclib_desc": "Tải lời bài hát từ LRCLIB.NET",
       "enable_kugou": "Lời bài hát KuGou",
