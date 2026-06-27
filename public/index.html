@@ -423,13 +423,28 @@
               <span class="platform-label" data-i18n="download.windows.label"
                 >Windows</span
               >
-              <a
-                href="#"
-                class="btn btn-outline"
-                data-file="windows-amd64_installer.zip"
-                data-i18n="download.windows.btn"
-                >Download for Windows</a
-              >
+              <div class="dropdown">
+                <button class="btn btn-outline dropdown-trigger">
+                  <span data-i18n="download.windows.btn">Download for Windows</span>
+                  <span class="chevron">▾</span>
+                </button>
+                <div class="dropdown-content">
+                  <div class="dropdown-content-inner glass">
+                    <a
+                      href="#"
+                      data-file="windows-amd64_installer.zip"
+                      data-i18n="download.windows.x64"
+                      >Windows (x64)</a
+                    >
+                    <a
+                      href="#"
+                      data-file="windows-arm64_installer.zip"
+                      data-i18n="download.windows.arm64"
+                      >Windows (ARM64)</a
+                    >
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="download-group">
               <div class="platform-icon">
