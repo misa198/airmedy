@@ -50,7 +50,7 @@ Variants are used by the frontend: `sm` for mini player and track rows, `md` for
 
 ## Palette Extraction (`palette.go`)
 
-Called via `LibraryService.GetAlbumColors(albumID)` — fetches colors from cached artwork.
+Called via `LibraryService.GetAlbumColors(albumID)` or `LibraryService.GetArtistColors(artistID)` — fetches colors from cached artwork. The artist variant resolves the artist's displayed artwork key (`Artist.ResolveArtworkKey(preferLocal)`) before extraction.
 
 ### Algorithm
 
@@ -157,6 +157,9 @@ On every change it emits a global `artist-artwork-updated` Wails event
 `{ artist_id, source, key }` (empty `key` = cleared). `ArtistCard.vue` keeps a
 reactive copy of the three keys, updates the changed slot, and recomputes the
 displayed image — so live changes and preference toggles both reflect instantly.
+`ArtistDetailView.vue` also listens for this event and re-runs
+`GetArtistColors` so the hero tint follows async artwork changes (e.g. a Deezer
+fetch completing).
 
 ### Local file scan
 

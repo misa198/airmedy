@@ -78,6 +78,7 @@ ReindexAll(): void                       // rebuild Bleve index from DB
 GetSyncStatus(): SyncProgress | null     // stub; used for frontend type generation
 // Metadata & artwork
 GetAlbumColors(id: string): ThemeColors
+GetArtistColors(id: string): ThemeColors | null   // palette of artist's resolved artwork
 GetArtistArtwork(artistID: string, eventID: string): string | null
 SelectAndSetArtistArtwork(artistID: string): string   // pick file → manual artwork
 RemoveArtistArtwork(artistID: string): void           // clear custom artwork

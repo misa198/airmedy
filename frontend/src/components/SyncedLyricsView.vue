@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import type { LyricLine } from '../composables/useLyrics'
 
 const props = defineProps<{
@@ -21,15 +21,29 @@ const activeIndex = computed(() => {
 const scrollContainer = ref<HTMLElement | null>(null)
 const lineRefs = ref<HTMLElement[]>([])
 
-watch(activeIndex, (newIndex) => {
-  if (newIndex === -1 || !lineRefs.value[newIndex] || !scrollContainer.value) return
+// Reset stale refs when the track's lines change so indexes stay aligned.
+watch(() => props.lines, () => {
+  lineRefs.value = []
+})
+
+function scrollToActive(index: number) {
+  if (index === -1) return
   const container = scrollContainer.value
-  const el = lineRefs.value[newIndex]
+  const el = lineRefs.value[index]
+  // Container may be hidden (clientHeight 0) or refs not laid out yet.
+  if (!container || !el || container.clientHeight === 0) return
   container.scrollTo({
     top: el.offsetTop - container.clientHeight / 2 + el.clientHeight / 2,
     behavior: 'smooth',
   })
-})
+}
+
+// flush:'post' → DOM patched + layout settled before measuring offsets.
+// immediate + nextTick handles first paint and the lyrics-just-loaded race
+// where the active line exists before its ref is populated.
+watch(activeIndex, (newIndex) => {
+  nextTick(() => scrollToActive(newIndex))
+}, { flush: 'post', immediate: true })
 </script>
 
 <template>
