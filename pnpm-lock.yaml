@@ -24,8 +24,8 @@ importers:
         specifier: 1.0.0
         version: 1.0.0(vue@3.5.34(typescript@4.9.3))
       '@wailsio/runtime':
-        specifier: 3.0.0-alpha.79
-        version: 3.0.0-alpha.79
+        specifier: 3.0.0-alpha.94
+        version: 3.0.0-alpha.94
       class-variance-authority:
         specifier: 0.7.1
         version: 0.7.1
@@ -979,8 +979,8 @@ packages:
   '@vueuse/shared@10.11.1':
     resolution: {integrity: sha512-LHpC8711VFZlDaYUXEBbFBCQ7GS3dVU9mjOhhMhXP6txTV4EhYQg/KGnQuvt/sPAtoUKq7VVUnL6mVtFoL42sA==}
 
-  '@wailsio/runtime@3.0.0-alpha.79':
-    resolution: {integrity: sha512-NITzxKmJsMEruc39L166lbPJVECxzcbdqpHVqOOF7Cu/7Zqk/e3B/gNpkUjhNyo5rVb3V1wpS8oEgLUmpu1cwA==}
+  '@wailsio/runtime@3.0.0-alpha.94':
+    resolution: {integrity: sha512-jtOtyWLDLop9NfU373sA43NjyGntxDFUIHY6kzmArz5HGn66Ok3vl9N2nIyVs7cArvADxk/mBBZ9wXOX7R0NFA==}
 
   abbrev@2.0.0:
     resolution: {integrity: sha512-6/mh1E2u2YgEsCHdY0Yx5oW+61gZU+1vXaoiHHrpKeuRNNgFvS+/jrwHiQhB5apAf5oB7UB7E19ol2R2LKH8hQ==}
@@ -2780,7 +2780,7 @@ snapshots:
       - '@vue/composition-api'
       - vue
 
-  '@wailsio/runtime@3.0.0-alpha.79': {}
+  '@wailsio/runtime@3.0.0-alpha.94': {}
 
   abbrev@2.0.0: {}
 

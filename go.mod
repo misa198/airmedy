@@ -18,7 +18,7 @@ require (
 	github.com/misa198/lexorank-go v1.0.2
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
-	github.com/wailsapp/wails/v3 v3.0.0-alpha2.105
+	github.com/wailsapp/wails/v3 v3.0.0-alpha2.106
 	github.com/zalando/go-keyring v0.2.8
 	go.senan.xyz/taglib v0.11.1
 	go.uber.org/fx v1.24.0
@@ -47,7 +47,6 @@ require (
 	github.com/blevesearch/zapx/v15 v15.4.2 // indirect
 	github.com/blevesearch/zapx/v16 v16.2.8 // indirect
 	github.com/danieljoos/wincred v1.2.3 // indirect
-	github.com/ebitengine/purego v0.9.1 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/jchv/go-winloader v0.0.0-20250406163304-c1995be93bd1 // indirect
@@ -56,7 +55,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/tetratelabs/wazero v1.10.1 // indirect
-	github.com/wailsapp/wails/webview2 v1.0.24 // indirect
+	github.com/wailsapp/wails/webview2 v1.0.27 // indirect
 	go.etcd.io/bbolt v1.4.0 // indirect
 	go.uber.org/dig v1.19.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
