@@ -100,6 +100,11 @@ root.style.setProperty("--dynamic-glow", hexToRgba(vibrant, 0.4));
 
 Transition: `1.5s ease-in-out` for smooth color shifts between tracks.
 
+Detail views override `--dynamic-surface` locally on their own hero element so
+the tint reflects the viewed entity, not the playing track: `DetailHero.vue`
+(albums/playlists, via a `theme` prop) and `ArtistDetailView.vue` (artist, via
+`GetArtistColors`). Each falls back to `var(--bg-glass)` when no colors.
+
 ## Glass-Morphism Implementation
 
 ```css
