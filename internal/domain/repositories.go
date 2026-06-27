@@ -46,7 +46,8 @@ type AlbumRepository interface {
 	GetAll(ctx context.Context) ([]*AlbumDTO, error)
 	Save(ctx context.Context, album *Album) error
 	Upsert(ctx context.Context, album *Album) error
-	DeleteOrphaned(ctx context.Context) error
+	// DeleteOrphaned removes albums with no tracks and returns their IDs.
+	DeleteOrphaned(ctx context.Context) ([]string, error)
 
 	// Many-to-Many relationships
 	SetArtists(ctx context.Context, albumID string, artistIDs []string) error
@@ -64,7 +65,8 @@ type ArtistRepository interface {
 	// GetAllArtworkKeys returns every non-empty artwork key across all sources,
 	// used to keep live artist images out of the orphan-cleanup set.
 	GetAllArtworkKeys(ctx context.Context) ([]string, error)
-	DeleteOrphaned(ctx context.Context) error
+	// DeleteOrphaned removes artists referenced by no track/album and returns their IDs.
+	DeleteOrphaned(ctx context.Context) ([]string, error)
 }
 
 type GenreRepository interface {
@@ -74,7 +76,8 @@ type GenreRepository interface {
 	GetAll(ctx context.Context) ([]*Genre, error)
 	Save(ctx context.Context, genre *Genre) error
 	Upsert(ctx context.Context, genre *Genre) error
-	DeleteOrphaned(ctx context.Context) error
+	// DeleteOrphaned removes genres referenced by no track and returns their IDs.
+	DeleteOrphaned(ctx context.Context) ([]string, error)
 }
 
 type ComposerRepository interface {
@@ -84,7 +87,8 @@ type ComposerRepository interface {
 	GetAll(ctx context.Context) ([]*Composer, error)
 	Save(ctx context.Context, composer *Composer) error
 	Upsert(ctx context.Context, composer *Composer) error
-	DeleteOrphaned(ctx context.Context) error
+	// DeleteOrphaned removes composers referenced by no track and returns their IDs.
+	DeleteOrphaned(ctx context.Context) ([]string, error)
 }
 
 type PlaylistRepository interface {

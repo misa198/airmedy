@@ -18,15 +18,15 @@ const trackContextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
 const tracks = shallowRef<TrackDTO[]>([])
 const isLoading = ref(true)
 
-const loadRecentlyAdded = async () => {
-  isLoading.value = true
+const loadRecentlyAdded = async (silent = false) => {
+  if (!silent) isLoading.value = true
   try {
     const result = await LibraryService.GetRecentlyAddedTracks(50)
     tracks.value = result.filter((t): t is TrackDTO => t !== null)
   } catch (err) {
     console.error('Failed to load recently added tracks:', err)
   } finally {
-    isLoading.value = false
+    if (!silent) isLoading.value = false
   }
 }
 
@@ -51,8 +51,9 @@ const onTrackContextMenu = (e: MouseEvent, track: TrackDTO) => {
   trackContextMenu.value?.open(e, track)
 }
 
-onMounted(loadRecentlyAdded)
-useLibrarySync(loadRecentlyAdded)
+onMounted(() => loadRecentlyAdded())
+// Event-driven reloads are silent so background refreshes don't flash the spinner.
+useLibrarySync(() => loadRecentlyAdded(true))
 </script>
 
 <template>

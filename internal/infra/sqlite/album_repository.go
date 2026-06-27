@@ -248,11 +248,14 @@ func (r *albumRepository) SetArtists(ctx context.Context, albumID string, artist
 	return tx.Commit()
 }
 
-func (r *albumRepository) DeleteOrphaned(ctx context.Context) error {
-	query := `DELETE FROM albums WHERE id NOT IN (SELECT DISTINCT album_id FROM tracks WHERE album_id IS NOT NULL)`
-	_, err := r.db.ExecContext(ctx, query)
-	if err != nil {
-		return fmt.Errorf("failed to delete orphaned albums: %w", err)
+func (r *albumRepository) DeleteOrphaned(ctx context.Context) ([]string, error) {
+	const cond = `id NOT IN (SELECT DISTINCT album_id FROM tracks WHERE album_id IS NOT NULL)`
+	var ids []string
+	if err := r.db.SelectContext(ctx, &ids, `SELECT id FROM albums WHERE `+cond); err != nil {
+		return nil, fmt.Errorf("failed to select orphaned albums: %w", err)
 	}
-	return nil
+	if _, err := r.db.ExecContext(ctx, `DELETE FROM albums WHERE `+cond); err != nil {
+		return nil, fmt.Errorf("failed to delete orphaned albums: %w", err)
+	}
+	return ids, nil
 }

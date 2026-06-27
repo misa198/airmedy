@@ -14,10 +14,12 @@ const playerStore = usePlayerStore()
 const composers = shallowRef<Composer[]>([])
 const isLoading = ref(true)
 
-useLibrarySync(() => { loadComposers() })
+// Event-driven reloads are silent: keep the current list visible, swap in new
+// data when it arrives, so background refreshes don't flash the spinner.
+useLibrarySync(() => { loadComposers(true) })
 
-const loadComposers = async () => {
-  isLoading.value = true
+const loadComposers = async (silent = false) => {
+  if (!silent) isLoading.value = true
   try {
     const result = await LibraryService.GetAllComposers()
     composers.value = result
@@ -26,7 +28,7 @@ const loadComposers = async () => {
   } catch (err) {
     console.error('Failed to load composers:', err)
   } finally {
-    isLoading.value = false
+    if (!silent) isLoading.value = false
   }
 }
 

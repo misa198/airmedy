@@ -151,21 +151,21 @@ func (r *artistRepository) SetArtwork(ctx context.Context, id string, key *strin
 	return nil
 }
 
-func (r *artistRepository) DeleteOrphaned(ctx context.Context) error {
+func (r *artistRepository) DeleteOrphaned(ctx context.Context) ([]string, error) {
 	// Clean up orphaned junction rows that might exist from before foreign keys were enabled
 	_, _ = r.db.ExecContext(ctx, "DELETE FROM track_artists WHERE track_id NOT IN (SELECT id FROM tracks)")
 	_, _ = r.db.ExecContext(ctx, "DELETE FROM track_album_artists WHERE track_id NOT IN (SELECT id FROM tracks)")
 	_, _ = r.db.ExecContext(ctx, "DELETE FROM album_artists WHERE album_id NOT IN (SELECT id FROM albums)")
 
-	query := `
-		DELETE FROM artists
-		WHERE id NOT IN (SELECT artist_id FROM track_artists)
+	const cond = `id NOT IN (SELECT artist_id FROM track_artists)
 		  AND id NOT IN (SELECT artist_id FROM track_album_artists)
-		  AND id NOT IN (SELECT artist_id FROM album_artists)
-	`
-	_, err := r.db.ExecContext(ctx, query)
-	if err != nil {
-		return fmt.Errorf("failed to delete orphaned artists: %w", err)
+		  AND id NOT IN (SELECT artist_id FROM album_artists)`
+	var ids []string
+	if err := r.db.SelectContext(ctx, &ids, `SELECT id FROM artists WHERE `+cond); err != nil {
+		return nil, fmt.Errorf("failed to select orphaned artists: %w", err)
 	}
-	return nil
+	if _, err := r.db.ExecContext(ctx, `DELETE FROM artists WHERE `+cond); err != nil {
+		return nil, fmt.Errorf("failed to delete orphaned artists: %w", err)
+	}
+	return ids, nil
 }

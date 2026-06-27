@@ -22,18 +22,23 @@ const isLoading = ref(true)
 const searchQuery = ref('')
 
 useLibraryUpdates(tracks)
-useLibrarySync(() => { loadTracks() })
+// Event-driven reloads are silent: keep the current list visible, swap in new
+// data when it arrives, so background refreshes don't flash the spinner.
+useLibrarySync(() => { loadTracks(true) })
 
-const loadTracks = async () => {
-  isLoading.value = true
+const loadTracks = async (silent = false) => {
+  if (!silent) isLoading.value = true
   try {
     const total = await LibraryService.GetTrackCount()
-    if (total === 0) return
+    if (total === 0) {
+      tracks.value = []
+      return
+    }
 
     // Load first page immediately so the UI is interactive
     const first = await LibraryService.GetTracksPaginated(0, PAGE_SIZE)
     tracks.value = first.filter((t): t is TrackDTO => t !== null)
-    isLoading.value = false
+    if (!silent) isLoading.value = false
 
     // Load remaining pages in the background
     let offset = PAGE_SIZE
@@ -46,7 +51,7 @@ const loadTracks = async () => {
   } catch (err) {
     console.error('Failed to load tracks:', err)
   } finally {
-    isLoading.value = false
+    if (!silent) isLoading.value = false
   }
 }
 

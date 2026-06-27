@@ -12,6 +12,7 @@ import { useGroupContextMenu } from '@/composables/useGroupContextMenu'
 import ContextMenu from '../components/ContextMenu.vue'
 import { DetailsButton } from '@airmedy/ui'
 import { sortTracksGrouped } from '@/lib/trackSort'
+import { useLibrarySync } from '@/composables/useLibrarySync'
 
 const { t } = useI18n()
 
@@ -29,8 +30,8 @@ function openContextMenu(e: MouseEvent) {
   contextMenu.open(e, buildMenuItems(tracks.value))
 }
 
-const loadGenreDetails = async (id: string) => {
-  isLoading.value = true
+const loadGenreDetails = async (id: string, silent = false) => {
+  if (!silent) isLoading.value = true
   try {
     const [genreData, tracksData] = await Promise.all([
       LibraryService.GetGenreByID(id),
@@ -41,9 +42,15 @@ const loadGenreDetails = async (id: string) => {
   } catch (err) {
     console.error('Failed to load genre details:', err)
   } finally {
-    isLoading.value = false
+    if (!silent) isLoading.value = false
   }
 }
+
+// Track edits can move tracks in or out of this genre; refresh silently.
+useLibrarySync(() => {
+  const id = route.params.id as string
+  if (id) loadGenreDetails(id, true)
+})
 
 onMounted(() => {
   const id = route.params.id as string

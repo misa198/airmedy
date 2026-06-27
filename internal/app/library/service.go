@@ -403,17 +403,38 @@ func (s *LibraryService) handleArtistImageEvent(event fsnotify.Event) {
 // cleanupOrphanedEntities removes albums, artists, composers and genres that no
 // longer reference any track. Errors are logged, not returned, since this is a
 // best-effort cleanup invoked after deletions.
+// cleanupOrphanedEntities removes albums/artists/composers/genres that no longer
+// have any tracks, keeping the DB and the search index in sync. Genres aren't
+// indexed, so only their rows are dropped.
 func (s *LibraryService) cleanupOrphanedEntities(ctx context.Context) {
-	if err := s.albumRepo.DeleteOrphaned(ctx); err != nil {
+	if ids, err := s.albumRepo.DeleteOrphaned(ctx); err != nil {
 		s.logger.Warn("Failed to delete orphaned albums", "error", err)
+	} else {
+		for _, id := range ids {
+			if err := s.searchService.DeleteAlbumFromIndex(ctx, id); err != nil {
+				s.logger.Warn("Failed to delete orphaned album from index", "id", id, "error", err)
+			}
+		}
 	}
-	if err := s.artistRepo.DeleteOrphaned(ctx); err != nil {
+	if ids, err := s.artistRepo.DeleteOrphaned(ctx); err != nil {
 		s.logger.Warn("Failed to delete orphaned artists", "error", err)
+	} else {
+		for _, id := range ids {
+			if err := s.searchService.DeleteArtistFromIndex(ctx, id); err != nil {
+				s.logger.Warn("Failed to delete orphaned artist from index", "id", id, "error", err)
+			}
+		}
 	}
-	if err := s.composerRepo.DeleteOrphaned(ctx); err != nil {
+	if ids, err := s.composerRepo.DeleteOrphaned(ctx); err != nil {
 		s.logger.Warn("Failed to delete orphaned composers", "error", err)
+	} else {
+		for _, id := range ids {
+			if err := s.searchService.DeleteComposerFromIndex(ctx, id); err != nil {
+				s.logger.Warn("Failed to delete orphaned composer from index", "id", id, "error", err)
+			}
+		}
 	}
-	if err := s.genreRepo.DeleteOrphaned(ctx); err != nil {
+	if _, err := s.genreRepo.DeleteOrphaned(ctx); err != nil {
 		s.logger.Warn("Failed to delete orphaned genres", "error", err)
 	}
 }
@@ -1055,10 +1076,22 @@ func (s *LibraryService) UpdateMetadata(ctx context.Context, id string, fields d
 	// Write event redundantly re-imports, and a temp+rename write surfaces as
 	// Remove/Rename and deletes the track from the DB.
 	s.markSelfWrite(track.Path)
+
 	if err := s.metadataWriter.WriteMetadata(ctx, track.Path, fields); err != nil {
 		return fmt.Errorf("failed to write metadata: %w", err)
 	}
-	return s.ImportFile(ctx, track.Path)
+	if err := s.ImportFile(ctx, track.Path); err != nil {
+		return err
+	}
+
+	// A metadata edit can move the track to a different album/artist/genre, leaving
+	// the originals with zero tracks. Prune those orphans (DB + search index) so
+	// they don't linger, then tell the frontend to reload list views.
+	s.cleanupOrphanedEntities(ctx)
+	if app := application.Get(); app != nil && app.Event != nil {
+		app.Event.Emit("library:updated", nil)
+	}
+	return nil
 }
 
 // GetAlbumColors returns the theme colors for an album's artwork.

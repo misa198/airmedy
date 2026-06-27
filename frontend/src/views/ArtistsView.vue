@@ -14,10 +14,12 @@ const playerStore = usePlayerStore()
 const artists = shallowRef<Artist[]>([])
 const isLoading = ref(true)
 
-useLibrarySync(() => { loadArtists() })
+// Event-driven reloads are silent: keep the current list visible, swap in new
+// data when it arrives, so background refreshes don't flash the spinner.
+useLibrarySync(() => { loadArtists(true) })
 
-const loadArtists = async () => {
-  isLoading.value = true
+const loadArtists = async (silent = false) => {
+  if (!silent) isLoading.value = true
   try {
     const result = await LibraryService.GetAllArtists()
     artists.value = result
@@ -26,7 +28,7 @@ const loadArtists = async () => {
   } catch (err) {
     console.error('Failed to load artists:', err)
   } finally {
-    isLoading.value = false
+    if (!silent) isLoading.value = false
   }
 }
 

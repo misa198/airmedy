@@ -26,7 +26,10 @@ const album = ref<AlbumDTO | null>(null)
 const tracks = shallowRef<TrackDTO[]>([])
 const isLoading = ref(true)
 
-useLibraryUpdates(tracks)
+// Drop a track from this view if an edit moved it to a different album.
+useLibraryUpdates(tracks, {
+  belongs: t => t.album?.id === route.params.id,
+})
 const albumTheme = ref<ThemeColors | null>(null)
 
 const { scrollContainerRef, handleScroll } = useRestoreScroll()

@@ -325,6 +325,18 @@ func (s *bleveSearchService) DeleteFromIndex(ctx context.Context, id string) err
 	return s.index.Delete("track:" + id)
 }
 
+func (s *bleveSearchService) DeleteAlbumFromIndex(ctx context.Context, albumID string) error {
+	return s.index.Delete("album:" + albumID)
+}
+
+func (s *bleveSearchService) DeleteArtistFromIndex(ctx context.Context, artistID string) error {
+	return s.index.Delete("artist:" + artistID)
+}
+
+func (s *bleveSearchService) DeleteComposerFromIndex(ctx context.Context, composerID string) error {
+	return s.index.Delete("composer:" + composerID)
+}
+
 func (s *bleveSearchService) Close() error {
 	return s.index.Close()
 }

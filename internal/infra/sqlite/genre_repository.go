@@ -83,14 +83,17 @@ func (r *genreRepository) Upsert(ctx context.Context, g *domain.Genre) error {
 	return nil
 }
 
-func (r *genreRepository) DeleteOrphaned(ctx context.Context) error {
+func (r *genreRepository) DeleteOrphaned(ctx context.Context) ([]string, error) {
 	// Clean up orphaned junction rows that might exist from before foreign keys were enabled
 	_, _ = r.db.ExecContext(ctx, "DELETE FROM track_genres WHERE track_id NOT IN (SELECT id FROM tracks)")
 
-	query := `DELETE FROM genres WHERE id NOT IN (SELECT genre_id FROM track_genres)`
-	_, err := r.db.ExecContext(ctx, query)
-	if err != nil {
-		return fmt.Errorf("failed to delete orphaned genres: %w", err)
+	const cond = `id NOT IN (SELECT genre_id FROM track_genres)`
+	var ids []string
+	if err := r.db.SelectContext(ctx, &ids, `SELECT id FROM genres WHERE `+cond); err != nil {
+		return nil, fmt.Errorf("failed to select orphaned genres: %w", err)
 	}
-	return nil
+	if _, err := r.db.ExecContext(ctx, `DELETE FROM genres WHERE `+cond); err != nil {
+		return nil, fmt.Errorf("failed to delete orphaned genres: %w", err)
+	}
+	return ids, nil
 }
