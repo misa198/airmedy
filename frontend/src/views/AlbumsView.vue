@@ -35,10 +35,12 @@ watch(sortDir, (v) => localStorage.setItem('airmedy:albums-sort-dir', v))
 const router = useRouter()
 const playerStore = usePlayerStore()
 
-useLibrarySync(() => { loadAlbums() })
+// Event-driven reloads are silent: keep the current grid visible and swap in the
+// new data when it arrives, so background refreshes don't flash the spinner.
+useLibrarySync(() => { loadAlbums(true) })
 
-const loadAlbums = async () => {
-  isLoading.value = true
+const loadAlbums = async (silent = false) => {
+  if (!silent) isLoading.value = true
   try {
     const result = await LibraryService.GetAllAlbums()
     albums.value = result.filter((a): a is AlbumDTO => a !== null).sort((a, b) =>
@@ -47,7 +49,7 @@ const loadAlbums = async () => {
   } catch (err) {
     console.error('Failed to load albums:', err)
   } finally {
-    isLoading.value = false
+    if (!silent) isLoading.value = false
   }
 }
 

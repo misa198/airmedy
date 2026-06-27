@@ -14,10 +14,12 @@ const playerStore = usePlayerStore()
 const genres = shallowRef<Genre[]>([])
 const isLoading = ref(true)
 
-useLibrarySync(() => { loadGenres() })
+// Event-driven reloads are silent: keep the current list visible, swap in new
+// data when it arrives, so background refreshes don't flash the spinner.
+useLibrarySync(() => { loadGenres(true) })
 
-const loadGenres = async () => {
-  isLoading.value = true
+const loadGenres = async (silent = false) => {
+  if (!silent) isLoading.value = true
   try {
     const result = await LibraryService.GetAllGenres()
     genres.value = result
@@ -26,7 +28,7 @@ const loadGenres = async () => {
   } catch (err) {
     console.error('Failed to load genres:', err)
   } finally {
-    isLoading.value = false
+    if (!silent) isLoading.value = false
   }
 }
 

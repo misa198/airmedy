@@ -15,6 +15,7 @@ import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/lib
 import ContextMenu from '../components/ContextMenu.vue'
 import GroupedAlbumList from '../components/GroupedAlbumList.vue'
 import { usePlayerStore } from '../stores/player'
+import { useLibrarySync } from '@/composables/useLibrarySync'
 
 const { t } = useI18n()
 
@@ -44,9 +45,13 @@ const loadTheme = async (id: string) => {
   }
 }
 
-const loadArtistDetails = async (id: string) => {
-  isLoading.value = true
-  loadTheme(id)
+// silent: event-driven reload that keeps the current view visible (no spinner /
+// theme flash) and swaps data in when it arrives.
+const loadArtistDetails = async (id: string, silent = false) => {
+  if (!silent) {
+    isLoading.value = true
+    loadTheme(id)
+  }
   try {
     const [artistData, albumsData, tracksData] = await Promise.all([
       LibraryService.GetArtistByID(id),
@@ -59,9 +64,15 @@ const loadArtistDetails = async (id: string) => {
   } catch (err) {
     console.error('Failed to load artist details:', err)
   } finally {
-    isLoading.value = false
+    if (!silent) isLoading.value = false
   }
 }
+
+// Track edits can move tracks/albums in or out of this artist; refresh silently.
+useLibrarySync(() => {
+  const id = route.params.id as string
+  if (id) loadArtistDetails(id, true)
+})
 
 const refreshArtist = async (id: string) => {
   try {

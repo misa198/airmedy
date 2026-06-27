@@ -29,5 +29,12 @@ type SearchService interface {
 	BatchReindex(ctx context.Context, data *ReindexData, onProgress func(path string)) error
 	Search(ctx context.Context, query string) ([]SearchResult, error)
 	DeleteFromIndex(ctx context.Context, id string) error
+	// DeleteAlbumFromIndex removes an album document (keyed by the "album:" prefix)
+	// from the search index.
+	DeleteAlbumFromIndex(ctx context.Context, albumID string) error
+	// DeleteArtistFromIndex removes an artist document (keyed by the "artist:" prefix).
+	DeleteArtistFromIndex(ctx context.Context, artistID string) error
+	// DeleteComposerFromIndex removes a composer document (keyed by the "composer:" prefix).
+	DeleteComposerFromIndex(ctx context.Context, composerID string) error
 	Close() error
 }

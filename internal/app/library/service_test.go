@@ -78,7 +78,7 @@ func (m *mockTrackRepo) SetComposers(ctx context.Context, trackID string, compos
 
 type mockAlbumRepo struct{ domain.AlbumRepository }
 func (m *mockAlbumRepo) Upsert(ctx context.Context, album *domain.Album) error { return nil }
-func (m *mockAlbumRepo) DeleteOrphaned(ctx context.Context) error { return nil }
+func (m *mockAlbumRepo) DeleteOrphaned(ctx context.Context) ([]string, error) { return nil, nil }
 func (m *mockAlbumRepo) GetByID(ctx context.Context, id string) (*domain.AlbumDTO, error) { return nil, nil }
 func (m *mockAlbumRepo) GetByNormalizationKey(ctx context.Context, key string) (*domain.Album, error) {
 	return nil, nil
@@ -90,7 +90,7 @@ func (m *mockAlbumRepo) SetArtists(ctx context.Context, albumID string, artistID
 type mockArtistRepo struct{ domain.ArtistRepository }
 
 func (m *mockArtistRepo) Upsert(ctx context.Context, artist *domain.Artist) error { return nil }
-func (m *mockArtistRepo) DeleteOrphaned(ctx context.Context) error { return nil }
+func (m *mockArtistRepo) DeleteOrphaned(ctx context.Context) ([]string, error) { return nil, nil }
 func (m *mockArtistRepo) GetByNormalizationKey(ctx context.Context, key string) (*domain.Artist, error) {
 	return nil, nil
 }
@@ -102,7 +102,7 @@ func (m *mockArtistRepo) GetAllArtworkKeys(ctx context.Context) ([]string, error
 type mockGenreRepo struct{ domain.GenreRepository }
 
 func (m *mockGenreRepo) Upsert(ctx context.Context, genre *domain.Genre) error { return nil }
-func (m *mockGenreRepo) DeleteOrphaned(ctx context.Context) error { return nil }
+func (m *mockGenreRepo) DeleteOrphaned(ctx context.Context) ([]string, error) { return nil, nil }
 func (m *mockGenreRepo) GetByNormalizationKey(ctx context.Context, key string) (*domain.Genre, error) {
 	return nil, nil
 }
@@ -110,7 +110,7 @@ func (m *mockGenreRepo) GetByNormalizationKey(ctx context.Context, key string) (
 type mockComposerRepo struct{ domain.ComposerRepository }
 
 func (m *mockComposerRepo) Upsert(ctx context.Context, composer *domain.Composer) error { return nil }
-func (m *mockComposerRepo) DeleteOrphaned(ctx context.Context) error { return nil }
+func (m *mockComposerRepo) DeleteOrphaned(ctx context.Context) ([]string, error) { return nil, nil }
 func (m *mockComposerRepo) GetByNormalizationKey(ctx context.Context, key string) (*domain.Composer, error) {
 	return nil, nil
 }
@@ -185,6 +185,9 @@ func (m *mockSearchService) IndexComposer(ctx context.Context, composer *domain.
 func (m *mockSearchService) IndexPlaylist(ctx context.Context, playlist *domain.Playlist) error { return nil }
 func (m *mockSearchService) Close() error { return nil }
 func (m *mockSearchService) DeleteFromIndex(ctx context.Context, id string) error { return nil }
+func (m *mockSearchService) DeleteAlbumFromIndex(ctx context.Context, albumID string) error { return nil }
+func (m *mockSearchService) DeleteArtistFromIndex(ctx context.Context, artistID string) error { return nil }
+func (m *mockSearchService) DeleteComposerFromIndex(ctx context.Context, composerID string) error { return nil }
 
 type mockArtworkCache struct{ domain.ArtworkCache }
 func (m *mockArtworkCache) Save(ctx context.Context, data []byte, mimeType string) (string, error) { return "", nil }
