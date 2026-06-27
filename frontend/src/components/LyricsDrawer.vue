@@ -44,7 +44,7 @@ watch(activeIndex, (newIndex) => {
 <template>
   <div class="h-full w-full bg-background flex flex-col">
     <!-- Header -->
-    <div class="flex items-center justify-between px-4 py-3 border-b border-foreground/[0.06] gap-2">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-foreground/[0.06] gap-2 h-[63px]">
       <div class="flex items-center gap-2 font-semibold flex-shrink-0">
         <Mic2 class="w-4 h-4 text-primary" />
         <div class="max-w-[100px] truncate">{{ t('player.lyrics') }}</div>
