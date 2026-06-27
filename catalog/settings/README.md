@@ -151,6 +151,7 @@ Version constant moved from `internal/domain/version.go` (deleted) to `internal/
 | Library      | Watched folders list, Add/Remove folder, Sync All, Reindex                 |
 | Integrations | Last.fm account + lyrics providers (LRClib, Kugou), prefer-local toggle, lyrics-subfolder toggle + validated name input (matched case-insensitively, with a hint), and dedicated lyrics folder toggle + picker (reuses `LibraryService.SelectFolder`). Toggles with conditional sub-settings use `SettingExpandableRow.vue` (header + `#control` slot + animated, inset `#expanded` slot) so the sub-setting reads as nested under its toggle. |
 | Playback     | EQ profiles and band sliders, prevent-sleep toggle (`PlaybackSettings.vue`) |
+| Remote       | Control remote server (enable/disable), change or regenerate access PIN, show QR code, and choose between reachable IP addresses grouped by network interface (`RemoteServerSettings.vue`) |
 | About        | App version, GitHub link, License, Open Data Folder button                 |
 
 ## Last.fm Integration
