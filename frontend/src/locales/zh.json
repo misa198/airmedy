@@ -172,6 +172,7 @@
       "scan_to_connect": "扫描连接",
       "pin_embedded": "已嵌入 PIN — 立即打开远程控制",
       "pin_required": "扫描后需要输入 PIN",
+      "qr_select_hint": "选择上方地址以更改二维码",
       "access_pin": "访问 PIN",
       "access_pin_desc": "连接需要 4 位数字码",
       "show": "显示",
@@ -180,7 +181,13 @@
       "regenerating": "生成中…",
       "firewall_macos": "macOS 可能会提示您允许传入连接。点击\"允许\"以启用远程访问。",
       "firewall_windows": "Windows 防火墙可能会提示您允许传入连接。点击\"允许访问\"以启用远程控制。",
-      "firewall_linux": "如果您启用了防火墙，请手动开放端口 {port}：ufw allow {port}/tcp"
+      "firewall_linux": "如果您启用了防火墙，请手动开放端口 {port}：ufw allow {port}/tcp",
+      "interface_ethernet": "以太网 (本地)",
+      "interface_wifi": "Wi-Fi (本地)",
+      "interface_vpn": "VPN 连接",
+      "interface_link_local": "本地链路网络 (Link-Local)",
+      "interface_virtual": "虚拟网络",
+      "interface_virtual_vm": "虚拟机网络"
     },
     "equalizer": {
       "title": "均衡器",

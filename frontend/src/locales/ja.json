@@ -172,6 +172,7 @@
       "scan_to_connect": "スキャンして接続",
       "pin_embedded": "PIN埋め込み済み — すぐにリモコンを開きます",
       "pin_required": "スキャン後にPINが必要",
+      "qr_select_hint": "上のアドレスを選択してQRコードを変更",
       "access_pin": "アクセスPIN",
       "access_pin_desc": "接続に4桁のコードが必要です",
       "show": "表示",
@@ -180,7 +181,13 @@
       "regenerating": "生成中…",
       "firewall_macos": "macOSが着信接続を許可するよう求める場合があります。「許可」をクリックしてリモートアクセスを有効にしてください。",
       "firewall_windows": "Windowsファイアウォールが着信接続を許可するよう求める場合があります。「アクセスを許可する」をクリックしてリモートコントロールを有効にしてください。",
-      "firewall_linux": "ファイアウォールが有効な場合、ポート{port}を手動で開放してください: ufw allow {port}/tcp"
+      "firewall_linux": "ファイアウォールが有効な場合、ポート{port}を手動で開放してください: ufw allow {port}/tcp",
+      "interface_ethernet": "イーサネット（ローカル）",
+      "interface_wifi": "Wi-Fi（ローカル）",
+      "interface_vpn": "VPN接続",
+      "interface_link_local": "リンクローカル",
+      "interface_virtual": "仮想ネットワーク",
+      "interface_virtual_vm": "仮想マシンネットワーク"
     },
     "equalizer": {
       "title": "イコライザー",

@@ -172,6 +172,7 @@
       "scan_to_connect": "Scansiona per connetterti",
       "pin_embedded": "PIN incluso — apre il telecomando istantaneamente",
       "pin_required": "PIN richiesto dopo la scansione",
+      "qr_select_hint": "Seleziona un indirizzo sopra per cambiare il QR code",
       "access_pin": "PIN di accesso",
       "access_pin_desc": "Codice a 4 cifre richiesto per connettersi",
       "show": "Mostra",
@@ -180,7 +181,13 @@
       "regenerating": "Generazione…",
       "firewall_macos": "macOS potrebbe chiederti di consentire le connessioni in entrata. Fai clic su \"Consenti\" per abilitare l'accesso remoto.",
       "firewall_windows": "Windows Firewall potrebbe chiederti di consentire le connessioni in entrata. Fai clic su \"Consenti accesso\" per abilitare il controllo remoto.",
-      "firewall_linux": "Se hai un firewall abilitato, apri la porta {port} manualmente: ufw allow {port}/tcp"
+      "firewall_linux": "Se hai un firewall abilitato, apri la porta {port} manualmente: ufw allow {port}/tcp",
+      "interface_ethernet": "Rete Ethernet (Locale)",
+      "interface_wifi": "Rete Wi-Fi (Locale)",
+      "interface_vpn": "Connessione VPN",
+      "interface_link_local": "Rete Link-Local",
+      "interface_virtual": "Rete virtuale",
+      "interface_virtual_vm": "Rete macchina virtuale"
     },
     "equalizer": {
       "title": "Equalizzatore",

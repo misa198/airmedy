@@ -172,6 +172,7 @@
       "scan_to_connect": "Escanear para conectar",
       "pin_embedded": "PIN incluido — abre el control remoto al instante",
       "pin_required": "PIN requerido después de escanear",
+      "qr_select_hint": "Selecciona una dirección arriba para cambiar el código QR",
       "access_pin": "PIN de acceso",
       "access_pin_desc": "Código de 4 dígitos requerido para conectar",
       "show": "Mostrar",
@@ -180,7 +181,13 @@
       "regenerating": "Generando…",
       "firewall_macos": "macOS puede pedirle que permita conexiones entrantes. Haga clic en \"Permitir\" para habilitar el acceso remoto.",
       "firewall_windows": "El Firewall de Windows puede pedirle que permita conexiones entrantes. Haga clic en \"Permitir acceso\" para habilitar el control remoto.",
-      "firewall_linux": "Si tiene un firewall habilitado, abra el puerto {port} manualmente: ufw allow {port}/tcp"
+      "firewall_linux": "Si tiene un firewall habilitado, abra el puerto {port} manualmente: ufw allow {port}/tcp",
+      "interface_ethernet": "Red Ethernet (Local)",
+      "interface_wifi": "Red Wi-Fi (Local)",
+      "interface_vpn": "Conexión VPN",
+      "interface_link_local": "Red Link-Local",
+      "interface_virtual": "Red virtual",
+      "interface_virtual_vm": "Red de máquina virtual"
     },
     "equalizer": {
       "title": "Ecualizador",

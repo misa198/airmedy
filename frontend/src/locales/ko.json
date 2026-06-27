@@ -172,6 +172,7 @@
       "scan_to_connect": "스캔하여 연결",
       "pin_embedded": "PIN 포함 — 즉시 리모컨 열기",
       "pin_required": "스캔 후 PIN 필요",
+      "qr_select_hint": "위에서 주소를 선택하여 QR 코드를 변경하세요",
       "access_pin": "접속 PIN",
       "access_pin_desc": "연결에 4자리 코드 필요",
       "show": "표시",
@@ -180,7 +181,13 @@
       "regenerating": "생성 중…",
       "firewall_macos": "macOS에서 수신 연결을 허용하라는 메시지가 표시될 수 있습니다. \"허용\"을 클릭하여 원격 접속을 활성화하세요.",
       "firewall_windows": "Windows 방화벽에서 수신 연결을 허용하라는 메시지가 표시될 수 있습니다. \"액세스 허용\"을 클릭하여 원격 제어를 활성화하세요.",
-      "firewall_linux": "방화벽이 활성화된 경우 포트 {port}를 수동으로 열어주세요: ufw allow {port}/tcp"
+      "firewall_linux": "방화벽이 활성화된 경우 포트 {port}를 수동으로 열어주세요: ufw allow {port}/tcp",
+      "interface_ethernet": "이더넷 네트워크 (로컬)",
+      "interface_wifi": "Wi-Fi 네트워크 (로컬)",
+      "interface_vpn": "VPN 연결",
+      "interface_link_local": "링크 로컬 네트워크",
+      "interface_virtual": "가상 네트워크",
+      "interface_virtual_vm": "가상 머신 네트워크"
     },
     "equalizer": {
       "title": "이퀄라이저",

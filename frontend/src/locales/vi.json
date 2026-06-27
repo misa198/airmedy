@@ -172,6 +172,7 @@
       "scan_to_connect": "Quét để kết nối",
       "pin_embedded": "PIN nhúng sẵn — mở điều khiển ngay lập tức",
       "pin_required": "Cần PIN sau khi quét",
+      "qr_select_hint": "Chọn địa chỉ ở trên để thay đổi mã QR",
       "access_pin": "PIN truy cập",
       "access_pin_desc": "Cần mã 4 chữ số để kết nối",
       "show": "Hiển thị",
@@ -180,7 +181,13 @@
       "regenerating": "Đang tạo…",
       "firewall_macos": "macOS có thể yêu cầu bạn cho phép kết nối đến. Nhấp \"Cho phép\" để bật quyền truy cập từ xa.",
       "firewall_windows": "Tường lửa Windows có thể yêu cầu bạn cho phép kết nối đến. Nhấp \"Cho phép truy cập\" để bật điều khiển từ xa.",
-      "firewall_linux": "Nếu bạn có tường lửa được bật, hãy mở cổng {port} thủ công: ufw allow {port}/tcp"
+      "firewall_linux": "Nếu bạn có tường lửa được bật, hãy mở cổng {port} thủ công: ufw allow {port}/tcp",
+      "interface_ethernet": "Mạng Ethernet (Cục bộ)",
+      "interface_wifi": "Mạng Wi-Fi (Cục bộ)",
+      "interface_vpn": "Mạng VPN",
+      "interface_link_local": "Mạng nội bộ (Link-Local)",
+      "interface_virtual": "Mạng ảo (Virtual)",
+      "interface_virtual_vm": "Mạng ảo (VM)"
     },
     "equalizer": {
       "title": "Bộ cân bằng âm",
