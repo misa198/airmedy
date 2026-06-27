@@ -2,7 +2,7 @@
 
 ## Summary
 
-The player feature handles audio playback, queue management, shuffle/repeat modes, state persistence across app restarts, and OS-level media integration (macOS Now Playing, Windows System Media Transport Controls, Linux MPRIS). It is split between an application-layer service and platform-specific audio adapters.
+The player feature handles audio playback, queue management, shuffle/repeat modes, state persistence across app restarts, and OS-level media integration (macOS Now Playing, Windows System Media Transport Controls + taskbar thumbnail toolbar, Linux MPRIS). It is split between an application-layer service and platform-specific audio adapters.
 
 ## Files
 
@@ -20,6 +20,10 @@ The player feature handles audio playback, queue management, shuffle/repeat mode
 | `internal/infra/audio/smtc_windows.cpp`    | WinRT SMTC implementation (C-ABI, mingw)  |
 | `internal/infra/audio/smtc_windows.h`      | C-ABI bridge for the SMTC backend         |
 | `internal/infra/wails/player_service.go`   | Wails binding wrapper                    |
+| `internal/infra/wails/thumbbar_manager_windows.go` | `ThumbBarManager`: wires taskbar thumbnail buttons → player (`//go:build windows`) |
+| `internal/infra/wails/thumbbar_manager_other.go` | No-op `ThumbBarManager` stub (non-Windows) |
+| `internal/infra/wails/thumbbar_windows.cpp` | `ITaskbarList3` thumbnail-toolbar impl (GDI icons, subclass WndProc) |
+| `internal/infra/wails/thumbbar_windows.h`  | C-ABI bridge for the thumbnail toolbar    |
 | `internal/infra/power/inhibitor_darwin.go` | macOS IOPMAssertion sleep inhibitor (cgo) |
 | `internal/infra/power/inhibitor_windows.go` | Windows SetThreadExecutionState sleep inhibitor |
 | `internal/infra/power/inhibitor_linux.go`  | Linux no-op sleep inhibitor              |
@@ -173,6 +177,30 @@ On Windows the `nowPlayingBackend` is `smtcBackend` (`player_nowplaying_windows.
   to `PlayerService` through the `goWinNowPlaying*` cgo exports.
 - **Teardown:** `MiniAudioPlayer.Close()` (called by `PlayerService` OnStop) posts quit, drains
   queued payloads, releases interfaces, and joins the thread. Idempotent.
+
+### Windows — Taskbar Thumbnail Toolbar (`internal/infra/wails/`)
+
+Separate from SMTC: adds **Prev / Play-Pause / Next** buttons to the taskbar
+thumbnail popup (hover preview) via `ITaskbarList3::ThumbBarAddButtons`. Lives in the
+**wails adapter layer** (not `infra/audio`), wired in `main.go`.
+
+- **Files:** `thumbbar_windows.cpp` / `.h` (C++ COM impl), `thumbbar_manager_windows.go`
+  (`ThumbBarManager`, `//go:build windows`), `thumbbar_manager_other.go` (no-op stub for
+  non-Windows), `cgoflags_thumbbar_windows*.go` (link libs).
+- **Init timing:** `Setup()` registers a `WindowFocus` hook (`once.Do`). The hook fires on a
+  goroutine, so actual init is dispatched via `application.InvokeAsync` onto the Win32 **message
+  thread** — the only thread valid for `SetWindowSubclass` and COM. Uses the Wails main-window
+  HWND (`mainWindow.NativeWindow()`), unlike SMTC which owns its own hidden window.
+- **COM:** `CoInitializeEx(APARTMENTTHREADED)` then `CoCreateInstance(CLSID_TaskbarList)` →
+  `ITaskbarList3`. `SetWindowSubclass` intercepts `WM_COMMAND` (`THBN_CLICKED`) for button clicks
+  and `WM_TASKBARBUTTONCREATED` to re-add buttons after an Explorer restart.
+- **Icons:** white 16×16 top-down 32bpp DIBs on transparent background (Prev/Play/Pause/Next),
+  drawn with GDI `Polygon`/`Rectangle`.
+- **Wiring:** buttons → `PlayerService.Previous` / `TogglePause` / `Next` (each in a goroutine to
+  avoid blocking the message thread). A status listener calls `ThumbBarSetPlaying` to swap the
+  play/pause icon. Clicks routed back to Go through `goThumbBar*` cgo exports.
+- **Teardown:** `Stop()` (called before `stopFX()` in `main.go`) → `ThumbBarStop` removes the
+  subclass and releases COM resources.
 
 ### Linux — MPRIS (Now Playing)
 
