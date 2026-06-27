@@ -44,6 +44,50 @@ The remote control feature exposes a LAN HTTP + WebSocket server that lets any b
 | `GET` | `/artwork/{key}` | Serve cached artwork; `?size=sm\|md` for variants |
 | `GET` | `/*` | Serve built SPA; SPA fallback to `index.html` |
 
+## Wails-Exposed Methods
+
+### `RemoteServerService` (`internal/infra/wails/remote_server_service.go`)
+
+| Method | Return Type | Purpose |
+| ------ | ----------- | ------- |
+| `GetStatus()` | `RemoteServerStatus` | Returns the current remote server configuration, status, and sorted network interface addresses |
+| `SetEnabled(enabled: boolean)` | `void` | Enables or disables the remote server |
+| `RegeneratePassword()` | `string` | Generates a new random 4-digit PIN |
+| `SetPassword(password: string)` | `void` | Sets the access PIN to the specified string |
+
+#### `RemoteServerStatus`
+
+```typescript
+interface RemoteServerStatus {
+  enabled: boolean
+  running: boolean
+  port: number
+  password: string
+  addresses: LocalAddress[]
+}
+```
+
+#### `LocalAddress`
+
+```typescript
+interface LocalAddress {
+  ip: string
+  iface: string
+  kind: 'wifi' | 'ethernet' | 'vpn' | 'virtual' | 'link_local'
+}
+```
+
+##### Address Sorting & Selection
+
+Local IPv4 addresses returned in `addresses` are sorted using a stable sort to prioritize the most likely reachable network interfaces. The hierarchy (most preferred to least preferred) is:
+1. `ethernet`: Wired LAN
+2. `wifi`: Wireless LAN
+3. `vpn`: Virtual Private Network / Tunnel interfaces
+4. `virtual`: VM bridges & Container interfaces (e.g. Docker, Hyper-V)
+5. `link_local`: Auto-configured link-local IPs (e.g. `169.254.x.x`)
+
+The frontend settings component automatically selects the first available address in this sorted order as the primary access URL for generating the QR code.
+
 ## WebSocket Protocol
 
 All messages are JSON objects with a `type` field.
