@@ -79,6 +79,8 @@
       "title": "集成",
       "online_artist_artwork": "在线艺术家封面",
       "online_artist_artwork_desc": "开启：使用 Deezer 艺术家图片；关闭：使用本地 artist.jpg/png 文件",
+      "prefer_local_artist_artwork": "优先使用本地艺术家封面",
+      "prefer_local_artist_artwork_desc": "有本地 artist.jpg/png 文件时优先使用，而不是在线获取",
       "enable_lrclib": "LRCLIB.NET 歌词",
       "enable_lrclib_desc": "从 LRCLIB.NET 获取歌词",
       "enable_kugou": "酷狗歌词",

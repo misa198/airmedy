@@ -79,6 +79,8 @@
       "title": "Intégrations",
       "online_artist_artwork": "Photos d'artistes en ligne",
       "online_artist_artwork_desc": "Activé : images d'artistes depuis Deezer ; désactivé : fichiers locaux artist.jpg/png",
+      "prefer_local_artist_artwork": "Privilégier les photos d'artistes locales",
+      "prefer_local_artist_artwork_desc": "Utiliser les fichiers locaux artist.jpg/png s'ils existent au lieu de les récupérer en ligne",
       "enable_lrclib": "Paroles LRCLIB.NET",
       "enable_lrclib_desc": "Récupérer les paroles depuis LRCLIB.NET",
       "enable_kugou": "Paroles KuGou",

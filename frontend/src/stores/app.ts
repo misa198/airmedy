@@ -22,6 +22,7 @@ export const useAppStore = defineStore('app', () => {
   const lyricsSubfolderEnabled = ref(false)
   const lyricsSubfolderName = ref('')
   const useOnlineArtistArtwork = ref(true)
+  const preferLocalArtistArtwork = ref(true)
   // Round-tripped only (set by the backend's version-gated rescan); never edited
   // in the UI, but must be preserved across saves so saving settings doesn't
   // wipe it and re-trigger a rescan.
@@ -78,6 +79,7 @@ export const useAppStore = defineStore('app', () => {
         lyricsSubfolderEnabled.value = !!settings.lyrics_subfolder_enabled
         lyricsSubfolderName.value = settings.lyrics_subfolder_name || ''
         useOnlineArtistArtwork.value = settings.use_online_artist_artwork !== false
+        preferLocalArtistArtwork.value = settings.prefer_local_artist_artwork !== false
         lastScanVersion.value = settings.last_scan_version || ''
         preventSleepWhilePlaying.value = !!settings.prevent_sleep_while_playing
         showPlayerIndicator.value = settings.show_player_indicator !== false
@@ -149,6 +151,7 @@ export const useAppStore = defineStore('app', () => {
         lyrics_subfolder_enabled: lyricsSubfolderEnabled.value,
         lyrics_subfolder_name: lyricsSubfolderName.value,
         use_online_artist_artwork: useOnlineArtistArtwork.value,
+        prefer_local_artist_artwork: preferLocalArtistArtwork.value,
         last_scan_version: lastScanVersion.value,
         prevent_sleep_while_playing: preventSleepWhilePlaying.value,
         show_player_indicator: showPlayerIndicator.value,
@@ -238,6 +241,11 @@ export const useAppStore = defineStore('app', () => {
     await saveSettings()
   }
 
+  const updatePreferLocalArtistArtwork = async (enabled: boolean) => {
+    preferLocalArtistArtwork.value = enabled
+    await saveSettings()
+  }
+
   const updatePreventSleepWhilePlaying = async (enabled: boolean) => {
     preventSleepWhilePlaying.value = enabled
     await saveSettings()
@@ -287,6 +295,7 @@ export const useAppStore = defineStore('app', () => {
     lyricsSubfolderEnabled,
     lyricsSubfolderName,
     useOnlineArtistArtwork,
+    preferLocalArtistArtwork,
     preventSleepWhilePlaying,
     showPlayerIndicator,
     updateInfo,
@@ -315,6 +324,7 @@ export const useAppStore = defineStore('app', () => {
     updateLyricsSubfolderEnabled,
     updateLyricsSubfolderName,
     updateUseOnlineArtistArtwork,
+    updatePreferLocalArtistArtwork,
     updatePreventSleepWhilePlaying,
     updateShowPlayerIndicator,
     remoteServerEnabled,

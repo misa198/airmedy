@@ -79,6 +79,8 @@
       "title": "Integrações",
       "online_artist_artwork": "Capas de artistas online",
       "online_artist_artwork_desc": "Ligado: imagens de artistas do Deezer; desligado: arquivos locais artist.jpg/png",
+      "prefer_local_artist_artwork": "Preferir capas de artistas locais",
+      "prefer_local_artist_artwork_desc": "Usar arquivos locais artist.jpg/png quando disponíveis em vez de buscar online",
       "enable_lrclib": "Letras do LRCLIB.NET",
       "enable_lrclib_desc": "Buscar letras do LRCLIB.NET",
       "enable_kugou": "Letras do KuGou",

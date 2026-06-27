@@ -42,14 +42,10 @@ func (s *LibraryService) processArtistArtworkJob(ctx context.Context, job artist
 		s.pendingArtistArtworkMu.Unlock()
 	}()
 
-	// 1. Check if online artwork is enabled
+	// 1. Load settings
 	settings, err := s.settingsRepo.Load(ctx)
 	if err != nil {
 		s.logger.Error("Failed to load settings in artwork worker", "error", err)
-		return
-	}
-	if !settings.UseOnlineArtistArtwork {
-		s.logger.Info("Online artist artwork disabled in settings, skipping job", "artistID", job.ArtistID)
 		return
 	}
 
@@ -60,9 +56,10 @@ func (s *LibraryService) processArtistArtworkJob(ctx context.Context, job artist
 		return
 	}
 
-	// 3. Already have an online image — don't refetch (it's kept even when the
-	//    online toggle is later turned off).
-	if artist.ArtworkKeyOnline != nil && *artist.ArtworkKeyOnline != "" {
+	// 3. Fetch only if the online image is wanted and not already cached (online
+	//    enabled, no manual, and not suppressed by a local image under prefer-local).
+	if !artist.ShouldFetchOnline(settings.UseOnlineArtistArtwork, settings.PreferLocalArtistArtwork) {
+		s.logger.Info("Online artist artwork not needed, skipping job", "artistID", job.ArtistID)
 		return
 	}
 

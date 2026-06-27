@@ -25,12 +25,15 @@ const keys = reactive({
   online: props.artist.artwork_key_online as string | null,
 })
 
+// Online may be shown only when enabled and not suppressed by prefer-local (a
+// local image then wins). Online off → never fall back to it, even if cached.
+const canShowOnline = computed(() =>
+  appStore.useOnlineArtistArtwork && !(appStore.preferLocalArtistArtwork && keys.local)
+)
+
 const resolvedKey = computed(() => {
   if (keys.manual) return keys.manual
-  // Single toggle: online on → prefer Deezer image; off → prefer local.
-  return appStore.useOnlineArtistArtwork
-    ? (keys.online || keys.local)
-    : (keys.local || keys.online)
+  return canShowOnline.value ? (keys.online || keys.local) : keys.local
 })
 
 const imageUrl = ref<string | null>(null)
@@ -47,10 +50,10 @@ const seedKeys = () => {
   keys.online = props.artist.artwork_key_online as string | null
 }
 
-// Fetch the Deezer image when online is enabled and none is cached yet (even if a
-// local image exists, so it's ready and shown per the toggle).
+// Fetch the Deezer image only when it would actually be shown (online enabled, no
+// manual, and not suppressed by a local image under prefer-local) and none cached.
 const maybeFetchOnline = () => {
-  if (!appStore.useOnlineArtistArtwork || keys.online) return
+  if (!canShowOnline.value || keys.manual || keys.online) return
   LibraryService.GetArtistArtwork(props.artist.id, `artist-artwork:${props.artist.id}`)
     .catch((err) => console.error(`[ArtistCard] artwork fetch failed for ${props.artist.name}:`, err))
 }
@@ -73,9 +76,9 @@ watch(() => props.artist.id, () => {
   maybeFetchOnline()
 })
 
-watch(() => appStore.useOnlineArtistArtwork, (enabled) => {
-  // Re-attempt a fetch when online is re-enabled and nothing is shown.
-  if (enabled) maybeFetchOnline()
+watch(() => [appStore.useOnlineArtistArtwork, appStore.preferLocalArtistArtwork], () => {
+  // Re-attempt a fetch when the toggles change such that online is now wanted.
+  maybeFetchOnline()
 })
 
 onMounted(() => {

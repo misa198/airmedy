@@ -220,9 +220,9 @@ func (s *LibraryService) GetAllArtists() ([]*domain.Artist, error) {
 	if err != nil {
 		return nil, err
 	}
-	preferLocal := s.preferLocalArtistArtwork(ctx)
+	useOnline, preferLocal := s.artistArtworkPrefs(ctx)
 	for _, a := range artists {
-		a.ArtworkKey = a.ResolveArtworkKey(preferLocal)
+		a.ArtworkKey = a.ResolveArtworkKey(useOnline, preferLocal)
 	}
 	return artists, nil
 }
@@ -233,19 +233,21 @@ func (s *LibraryService) GetArtistByID(id string) (*domain.Artist, error) {
 	if err != nil || artist == nil {
 		return artist, err
 	}
-	artist.ArtworkKey = artist.ResolveArtworkKey(s.preferLocalArtistArtwork(ctx))
+	useOnline, preferLocal := s.artistArtworkPrefs(ctx)
+	artist.ArtworkKey = artist.ResolveArtworkKey(useOnline, preferLocal)
 	return artist, nil
 }
 
-// preferLocalArtistArtwork reports whether local images should be preferred over
-// the Deezer image. There is a single user toggle, "Online Artist Artwork":
-// when off (or settings unreadable) local images win.
-func (s *LibraryService) preferLocalArtistArtwork(ctx context.Context) bool {
+// artistArtworkPrefs returns the two user toggles governing artist artwork:
+// "Online Artist Artwork" (whether the Deezer image may be shown) and "Prefer
+// Local Artist Artwork" (whether a local image suppresses online). When settings
+// are unreadable, online is treated as off and local preferred.
+func (s *LibraryService) artistArtworkPrefs(ctx context.Context) (useOnline, preferLocal bool) {
 	settings, err := s.libService.GetSettings(ctx)
 	if err != nil || settings == nil {
-		return true
+		return false, true
 	}
-	return !settings.UseOnlineArtistArtwork
+	return settings.UseOnlineArtistArtwork, settings.PreferLocalArtistArtwork
 }
 
 func (s *LibraryService) GetAllGenres() ([]*domain.Genre, error) {
@@ -300,7 +302,8 @@ func (s *LibraryService) GetArtistColors(id string) (*domain.ThemeColors, error)
 		return nil, fmt.Errorf("artist not found: %s", id)
 	}
 
-	key := artist.ResolveArtworkKey(s.preferLocalArtistArtwork(ctx))
+	useOnline, preferLocal := s.artistArtworkPrefs(ctx)
+	key := artist.ResolveArtworkKey(useOnline, preferLocal)
 	if key == "" {
 		return nil, nil
 	}
@@ -318,17 +321,15 @@ func (s *LibraryService) GetArtistArtwork(artistID, eventID string) (*string, er
 		return nil, fmt.Errorf("artist not found")
 	}
 
-	settings, _ := s.libService.GetSettings(ctx)
-	useOnline := settings != nil && settings.UseOnlineArtistArtwork
-	preferLocal := !useOnline
+	useOnline, preferLocal := s.artistArtworkPrefs(ctx)
 
-	// When online is enabled and no Deezer image is cached yet, fetch it (even if a
-	// local image exists, so it's ready and shown per preference).
-	if useOnline && artist.ArtworkKeyOnline == nil {
+	// Fetch the Deezer image only when it would actually be shown (online enabled,
+	// no manual, and not suppressed by a local image under prefer-local).
+	if artist.ShouldFetchOnline(useOnline, preferLocal) {
 		s.libService.EnqueueArtistArtwork(artistID, eventID)
 	}
 
-	if key := artist.ResolveArtworkKey(preferLocal); key != "" {
+	if key := artist.ResolveArtworkKey(useOnline, preferLocal); key != "" {
 		url := fmt.Sprintf("/artwork/%s", key)
 		return &url, nil
 	}

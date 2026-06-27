@@ -79,6 +79,8 @@
       "title": "Integraciones",
       "online_artist_artwork": "Carátulas de artistas en línea",
       "online_artist_artwork_desc": "Activado: imágenes de artistas de Deezer; desactivado: archivos locales artist.jpg/png",
+      "prefer_local_artist_artwork": "Preferir carátulas de artistas locales",
+      "prefer_local_artist_artwork_desc": "Usar archivos locales artist.jpg/png cuando estén disponibles en lugar de buscar en línea",
       "enable_lrclib": "Letras de LRCLIB.NET",
       "enable_lrclib_desc": "Obtener letras de LRCLIB.NET",
       "enable_kugou": "Letras de KuGou",

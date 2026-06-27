@@ -79,6 +79,8 @@
       "title": "Integrations",
       "online_artist_artwork": "Online Artist Artwork",
       "online_artist_artwork_desc": "When on, use artist images from Deezer; when off, use local artist.jpg/png files",
+      "prefer_local_artist_artwork": "Prefer Local Artist Artwork",
+      "prefer_local_artist_artwork_desc": "Use local artist.jpg/png files when available instead of fetching online",
       "enable_lrclib": "LRCLIB.NET Lyrics",
       "enable_lrclib_desc": "Fetch lyrics from LRCLIB.NET",
       "enable_kugou": "KuGou Lyrics",

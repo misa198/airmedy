@@ -79,6 +79,8 @@
       "title": "연동",
       "online_artist_artwork": "온라인 아티스트 아트워크",
       "online_artist_artwork_desc": "켜짐: Deezer 아티스트 이미지 사용, 꺼짐: 로컬 artist.jpg/png 사용",
+      "prefer_local_artist_artwork": "로컬 아티스트 아트워크 우선",
+      "prefer_local_artist_artwork_desc": "온라인에서 가져오는 대신 사용 가능한 로컬 artist.jpg/png 파일 사용",
       "enable_lrclib": "LRCLIB.NET 가사",
       "enable_lrclib_desc": "LRCLIB.NET에서 가사 가져오기",
       "enable_kugou": "KuGou 가사",

@@ -50,7 +50,7 @@ Variants are used by the frontend: `sm` for mini player and track rows, `md` for
 
 ## Palette Extraction (`palette.go`)
 
-Called via `LibraryService.GetAlbumColors(albumID)` or `LibraryService.GetArtistColors(artistID)` — fetches colors from cached artwork. The artist variant resolves the artist's displayed artwork key (`Artist.ResolveArtworkKey(preferLocal)`) before extraction.
+Called via `LibraryService.GetAlbumColors(albumID)` or `LibraryService.GetArtistColors(artistID)` — fetches colors from cached artwork. The artist variant resolves the artist's displayed artwork key (`Artist.ResolveArtworkKey(useOnline, preferLocal)`) before extraction.
 
 ### Algorithm
 
@@ -130,13 +130,31 @@ no re-fetch or re-scan.
 | Local file | `artwork_key_local`  | Scanned `artist.jpg/jpeg/png` from disk |
 | Online     | `artwork_key_online` | Background Deezer fetch                 |
 
-**Read-time resolution** (`domain.Artist.ResolveArtworkKey(preferLocal)`):
-`manual` always wins; otherwise a single setting, **`use_online_artist_artwork`**,
-picks the local/online order — on → Deezer first, off → local first
-(`preferLocal = !use_online_artist_artwork`). Turning online off still shows an
-already-downloaded Deezer image if no local one exists (it stops new fetches and
-deletes nothing); the displayed image switches instantly because resolution is
-client-side.
+**Read-time resolution** (`domain.Artist.ResolveArtworkKey(useOnline, preferLocal)`)
+is governed by two settings — **`use_online_artist_artwork`** (gates whether the
+Deezer image may ever be shown) and **`prefer_local_artist_artwork`** (a nested
+sub-toggle, only relevant/shown when online is on). `manual` always wins; then:
+
+| `use_online` | `prefer_local` | Order (after manual)             |
+| ------------ | -------------- | -------------------------------- |
+| off          | —              | local only (online **never**)    |
+| on           | on             | local → online                   |
+| on           | off            | online → local                   |
+
+Turning online **off** never shows the Deezer image, even one already
+downloaded (nothing is deleted — it is just not resolved, so re-enabling shows it
+again instantly). With online on + prefer-local on, an existing manual/local image
+suppresses online entirely (it is neither fetched nor shown). Resolution is
+client-side, so toggling either switch swaps the displayed image instantly with no
+re-fetch. The Wails layer reads both flags via
+`LibraryService.artistArtworkPrefs(ctx) (useOnline, preferLocal)` (defaults
+`false, true` when settings are unreadable).
+
+Whether an online fetch is even worthwhile is centralized in
+`domain.Artist.ShouldFetchOnline(useOnline, preferLocal)` — true only when online
+is on, no manual image exists, no local image suppresses it (under prefer-local),
+and no online key is cached yet. All enqueue/worker sites use it so a Deezer image
+that would never be displayed is never fetched.
 
 Files (in `internal/app/library/`):
 
@@ -198,14 +216,17 @@ artist images already on disk after upgrading. Stores the current version after.
 
 ### Online (Deezer) fetch
 
-1. `LibraryService.GetArtistArtwork(artistID, eventID)` resolves the display key;
-   if non-empty, returns its URL.
-2. If nothing is showable **and** `UseOnlineArtistArtwork` is on **and** no online
-   key exists yet, the request is queued (`artistArtworkQueue`).
-3. The background worker (`StartArtistArtworkWorker`) skips if an online key
-   already exists, otherwise searches Deezer
-   (`https://api.deezer.com/search/artist?q={name}`), downloads `picture_medium`,
-   and stores it via `writeArtistArtworkSource` with source `online`.
+1. `LibraryService.GetArtistArtwork(artistID, eventID)` resolves the display key
+   (via both toggles); if non-empty, returns its URL.
+2. If `Artist.ShouldFetchOnline(useOnline, preferLocal)` (online on, no manual,
+   not suppressed by a local image under prefer-local, no online key yet) the
+   request is queued (`artistArtworkQueue`).
+3. The background worker (`StartArtistArtworkWorker`) re-checks `ShouldFetchOnline`
+   against current settings + artist state and bails if no longer needed; otherwise
+   searches Deezer (`https://api.deezer.com/search/artist?q={name}`), downloads
+   `picture_medium`, and stores it via `writeArtistArtworkSource` with source
+   `online`. The folder-removal path (`service.go`) likewise clears the local source
+   then enqueues only when `ShouldFetchOnline` holds.
 
 ### Custom image & cache cleanup
 

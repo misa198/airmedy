@@ -198,6 +198,18 @@ onMounted(() => {
           <Switch :model-value="appStore.useOnlineArtistArtwork"
             @update:model-value="appStore.updateUseOnlineArtistArtwork" />
         </div>
+        <div v-if="appStore.useOnlineArtistArtwork" class="p-5 flex items-center justify-between gap-x-2">
+          <div>
+            <p class="text-sm font-semibold">
+              {{ t('settings.integrations.prefer_local_artist_artwork', 'Prefer Local Artist Artwork') }}
+            </p>
+            <p class="text-xs text-foreground opacity-60 mt-1">
+              {{ t('settings.integrations.prefer_local_artist_artwork_desc', 'Use local artist.jpg/png files when available instead of fetching online') }}
+            </p>
+          </div>
+          <Switch :model-value="appStore.preferLocalArtistArtwork"
+            @update:model-value="appStore.updatePreferLocalArtistArtwork" />
+        </div>
       </div>
     </section>
 

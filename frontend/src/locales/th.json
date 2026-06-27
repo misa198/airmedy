@@ -79,6 +79,8 @@
       "title": "การเชื่อมต่อ",
       "online_artist_artwork": "รูปภาพศิลปินออนไลน์",
       "online_artist_artwork_desc": "เปิด: ใช้รูปภาพศิลปินจาก Deezer; ปิด: ใช้ไฟล์ artist.jpg/png ในเครื่อง",
+      "prefer_local_artist_artwork": "ใช้รูปภาพศิลปินในเครื่องก่อน",
+      "prefer_local_artist_artwork_desc": "ใช้ไฟล์ artist.jpg/png ในเครื่องเมื่อมี แทนการดึงจากออนไลน์",
       "enable_lrclib": "เนื้อเพลงจาก LRCLIB.NET",
       "enable_lrclib_desc": "ดึงเนื้อเพลงจาก LRCLIB.NET",
       "enable_kugou": "เนื้อเพลงจาก KuGou",
