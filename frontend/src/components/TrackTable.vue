@@ -134,6 +134,11 @@ let ro: ResizeObserver | null = null
 
 const effectiveHeaderHeight = computed(() => props.hideHeader ? 0 : HEADER_HEIGHT)
 
+const keeps = computed(() => {
+  if (containerHeight.value === 0) return 60
+  return Math.ceil(containerHeight.value / rowHeight.value) + BUFFER * 2
+})
+
 // ── Selection ──────────────────────────────────────────────────────────────
 const selectedIds = ref(new Set<string>())
 const lastSelectedIndex = ref<number | null>(null)
@@ -305,9 +310,11 @@ defineExpose({ scrollToCurrentTrack, optionalColumns })
 
         <VirtualList
           ref="scrollerRef"
+          :key="rowHeight"
           v-model="displayTracks"
           data-key="id"
           :size="rowHeight"
+          :keeps="keeps"
           handle=".dnd-handle"
           :sortable="allowDnd"
           :animation="150"
