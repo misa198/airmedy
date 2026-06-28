@@ -8,6 +8,7 @@ const props = defineProps<{
   max?: number
   step?: number
   class?: string
+  scrollable?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -71,13 +72,21 @@ const handleEnd = (e: MouseEvent | TouchEvent) => {
   else emit('touchend', e)
 }
 
+const handleWheel = (e: WheelEvent) => {
+  const sign = e.deltaY > 0 ? -1 : 1
+  const next = Math.min(resolvedMax.value, Math.max(resolvedMin.value, localValue.value + sign * (props.step ?? 0.01)))
+  localValue.value = next
+  emit('update:modelValue', next)
+}
+
 onUnmounted(() => {
   if (graceTimeout) clearTimeout(graceTimeout)
 })
 </script>
 
 <template>
-  <div :class="cn('relative h-4 flex items-center group/slider cursor-pointer select-none', props.class)">
+  <div :class="cn('relative h-4 flex items-center group/slider cursor-pointer select-none', props.class)"
+    v-on="props.scrollable ? { wheel: handleWheel } : {}">
     <!-- Visual track -->
     <div class="absolute w-full h-1 rounded-full bg-foreground/15">
       <div

@@ -23,7 +23,7 @@ const { t } = useI18n()
       <VolumeX v-if="muted" class="w-4 h-4" />
       <Volume2 v-else class="w-4 h-4" />
     </button>
-    <Slider :model-value="muted ? 0 : volume" :min="0" :max="1" :step="0.01" class="flex-1"
+    <Slider :model-value="muted ? 0 : volume" :min="0" :max="1" :step="0.01" :scrollable="true" class="flex-1"
       @update:model-value="(v) => emit('update:volume', v)" />
   </div>
 </template>

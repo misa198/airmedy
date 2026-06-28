@@ -107,7 +107,7 @@ watch(() => store.theme, (colors) => {
         <div v-if="showVolume && isHovered"
           class="absolute top-full right-0 mt-2 px-2.5 py-2 rounded-xl bg-black/20 backdrop-blur-md border border-white/5"
           @mouseenter="onVolumeEnter" @mouseleave="onVolumeLeave">
-          <Slider :model-value="store.muted ? 0 : store.volume * 100" :min="0" :max="100" :step="1" class="w-20"
+          <Slider :model-value="store.muted ? 0 : store.volume * 100" :min="0" :max="100" :step="1" :scrollable="true" class="w-20"
             @update:model-value="(v) => store.setVolume(v / 100)" />
         </div>
       </Transition>
