@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import {
   SkipBack, SkipForward, Play, Pause,
   Pin, PinOff, X, Music,
@@ -7,7 +7,6 @@ import {
   Volume2, VolumeX,
 } from 'lucide-vue-next'
 import LazyImg from '@/components/LazyImg.vue'
-import { Window } from '@wailsio/runtime'
 import { usePlayerStore } from '@/stores/player'
 import { RepeatMode } from '../../bindings/airmedy/internal/domain/models'
 import { formatTime, hexToRgba, getTrackDisplayTitle } from '@airmedy/utils'
@@ -51,8 +50,14 @@ const repeatIcon = computed(() =>
 
 async function toggleAlwaysOnTop() {
   alwaysOnTop.value = !alwaysOnTop.value
-  await Window.SetAlwaysOnTop(alwaysOnTop.value)
+  await WindowService.SetMiniAlwaysOnTop(alwaysOnTop.value)
 }
+
+onMounted(async () => {
+  // Reflect the restored pin state (Go already re-applied it to the native window).
+  const state = await WindowService.GetMiniState()
+  alwaysOnTop.value = state.always_on_top
+})
 
 function onSeekStart() { isSeeking.value = true }
 async function onSeekEnd() {

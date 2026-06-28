@@ -387,4 +387,13 @@ GetQueue(): TrackDTO[]
 
 ## Mini Player Window
 
-Separate Wails window (300×300, always-on-top). Route: `/mini-player`. Uses `useGlassBlur()` composable for WebGL Gaussian blur of artwork as background. Has always-on-top toggle and volume slider with auto-fade timer.
+Separate Wails window (default 300×300, min 280×180, max 500×500). Route: `/mini-player`. Uses `useGlassBlur()` composable for WebGL Gaussian blur of artwork as background. Has always-on-top toggle and volume slider with auto-fade timer.
+
+### Geometry & Pin Persistence
+
+`WindowService` persists the mini player's position, size, and pin (always-on-top) state to the single-row `mini_player_state` table (`MiniPlayerStateRepository`), so they survive close/reopen and app restarts. The window is recreated on each open (see `catalog/ui`), so restore happens in the factory:
+
+- **Restore** — `WindowService.ApplyMiniState(w)` runs in the mini window factory before show. If `has_position` is set, it applies the saved bounds (clamped, see below) and re-applies `always_on_top`.
+- **Capture** — `WindowDidMove`/`WindowDidResize` hooks call `WindowService.SaveMiniGeometry()`, which reads `w.Bounds()` and persists it debounced (~400ms) to coalesce drag/resize streams. `WindowClosing` flushes a final save.
+- **Pin** — frontend calls `WindowService.SetMiniAlwaysOnTop(b)` (not `Window.SetAlwaysOnTop` directly) so the toggle is persisted immediately. On mount the component reads `WindowService.GetMiniState()` to render the correct pin icon.
+- **Screen-aware clamp** — `clampToScreen` clamps width/height into `[280..500]`×`[140..500]`, then positions the window and reads its screen's `WorkArea` (via `w.GetScreen()`); the pure helper `clampRectToWorkArea` shrinks/moves the rect fully inside the work area. This keeps the window reachable after a layout change (lower resolution, disconnected monitor, different screen).

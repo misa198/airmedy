@@ -103,7 +103,7 @@ wailsApp := application.New(application.Options{
 
 **Main window:** 1280×800px (min 1060×768), macOS translucent titlebar hidden (InvisibleTitleBarHeight=50, Backdrop=Translucent, TitleBar=HiddenInset).
 
-**Mini player window:** 300×300px (min 280×280, max 500×500), always-on-top, hidden by default.
+**Mini player window:** default 300×300px (min 280×140, max 500×500), hidden by default. Position, size, and pin (always-on-top) persist to the `mini_player_state` table and restore on open via `WindowService.ApplyMiniState`, clamped to the current screen's work area.
 
 ### Single Instance & Deep Links
 

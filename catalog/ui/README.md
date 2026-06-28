@@ -46,6 +46,8 @@ The `/mini-player` route bypasses the MainLayout wrapper and renders directly.
 
 The mini player window is **destroyed on close and recreated on open** (not just hidden). `WindowService` holds a factory function (`SetMiniWindowFactory`) that creates a fresh `WebviewWindow` each time. Closing the window does not call `e.Cancel()` on the `WindowClosing` hook, so Wails destroys the native window and frees its memory. Reopening calls the factory to create a new window. This resets all Vue/Pinia state in that webview.
 
+Because state is reset on every open, window **position, size, and pin (always-on-top)** are persisted natively (not in Vue) to the `mini_player_state` table and restored by `WindowService.ApplyMiniState(w)` in the factory — clamped to the current screen's work area so the window never restores off-screen. See `catalog/player` → *Geometry & Pin Persistence*.
+
 The tray **"Show Airmedy"** action calls `WindowService.ShowCurrent()`, which reveals only the currently active window — the mini player if it is open, otherwise the main window — instead of forcing both visible at once.
 
 ## CSS Variables & Theming
