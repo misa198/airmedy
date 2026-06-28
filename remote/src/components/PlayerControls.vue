@@ -124,6 +124,7 @@ function onVolumeUpdate(v: number) {
         :min="0"
         :max="1"
         :step="0.01"
+        :scrollable="true"
         class="flex-1"
         @update:model-value="onVolumeUpdate"
       />

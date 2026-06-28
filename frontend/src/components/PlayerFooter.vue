@@ -154,7 +154,7 @@ async function onSeekEnd() {
           <VolumeX v-if="store.muted" class="w-4 h-4" />
           <Volume2 v-else class="w-4 h-4" />
         </button>
-        <Slider :model-value="store.muted ? 0 : store.volume" :min="0" :max="1" :step="0.01" class="flex-1"
+        <Slider :model-value="store.muted ? 0 : store.volume" :min="0" :max="1" :step="0.01" :scrollable="true" class="flex-1"
           @update:model-value="(v) => store.setVolume(v)" />
       </div>
       <button class="transition-colors"

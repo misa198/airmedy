@@ -198,6 +198,14 @@ Common dialogs are consolidated under the **`Modal.vue`** primitive. It provides
 | `MetadataEditDialog`  | Manual tag and artwork editing               |
 | `ConfirmDialog`       | Generic confirmation for destructive actions |
 
+## UI Primitives (`@airmedy/ui`)
+
+### Slider (`packages/ui/src/slider/Slider.vue`)
+
+Props: `modelValue`, `min`, `max`, `step`, `class`, `scrollable`.
+
+`scrollable` (default `false`) — enables mouse wheel to increment/decrement by one `step`. Use only on volume sliders; seek bar and other sliders must leave it unset to avoid hijacking page scroll. Currently enabled on: `PlayerVolumeControl.vue`, `PlayerFooter.vue` (volume only), `MiniPlayerFloating.vue` (volume popup), `remote/PlayerControls.vue`.
+
 ## Interactive Polish
 
 - **Auto-scroll to Active**: `TrackTable.vue` and `QueueDrawer.vue` automatically scroll to the currently playing track when opened or when the track changes. Uses a 100ms delay to ensure layout stability.
