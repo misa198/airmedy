@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"runtime"
 	"sync"
 
 	"airmedy/internal/app/config"
@@ -60,6 +61,9 @@ func (s *SettingsService) GetSettings(ctx context.Context) (*domain.AppSettings,
 		}
 		return s.cache, nil
 	}
+	if runtime.GOOS == "windows" || runtime.GOOS == "linux" {
+		settings.ShowTrayIcon = true
+	}
 	s.cache = settings
 	return settings, nil
 }
@@ -67,6 +71,10 @@ func (s *SettingsService) GetSettings(ctx context.Context) (*domain.AppSettings,
 func (s *SettingsService) SaveSettings(ctx context.Context, settings *domain.AppSettings) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	if runtime.GOOS == "windows" || runtime.GOOS == "linux" {
+		settings.ShowTrayIcon = true
+	}
 
 	err := s.repo.Save(ctx, settings)
 	if err != nil {

@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
+import { useDeviceStore } from '@/stores/device'
 import { AppWindow, Sun, Moon, Monitor, Languages, Circle } from 'lucide-vue-next'
 import { Switch } from '@airmedy/ui'
 import RestartModal from '../RestartModal.vue'
@@ -15,6 +16,7 @@ import {
 
 const { t } = useI18n()
 const appStore = useAppStore()
+const deviceStore = useDeviceStore()
 const showRestartDialog = ref(false)
 
 const toggleStartAtLogin = async (enabled: boolean) => {
@@ -63,12 +65,12 @@ const toggleAutoCheckUpdate = async (enabled: boolean) => {
           />
         </div>
 
-        <div class="p-5 flex items-center justify-between gap-x-2">
+        <div v-if="!deviceStore.isWindows && !deviceStore.isLinux" class="p-5 flex items-center justify-between gap-x-2">
           <div>
             <p class="text-sm font-semibold">{{ t('settings.behavior.show_tray_icon', 'Show Tray Icon') }}</p>
             <p class="text-xs text-foreground opacity-60 mt-1">{{ t('settings.behavior.show_tray_icon_desc', 'Show Airmedy icon in system tray/menu bar') }}</p>
           </div>
-          <Switch 
+          <Switch
             :model-value="appStore.showTrayIcon"
             @update:model-value="toggleShowTrayIcon"
           />
