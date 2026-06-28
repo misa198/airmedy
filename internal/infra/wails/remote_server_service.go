@@ -83,6 +83,7 @@ func getLocalAddresses() []LocalAddress {
 	if err != nil {
 		return out
 	}
+	hints := buildIfaceKindMap()
 	for _, iface := range ifaces {
 		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
 			continue
@@ -103,7 +104,7 @@ func getLocalAddresses() []LocalAddress {
 			out = append(out, LocalAddress{
 				IP:    ip.String(),
 				Iface: iface.Name,
-				Kind:  classifyInterface(iface, ip),
+				Kind:  classifyInterface(iface, ip, hints),
 			})
 		}
 	}
@@ -114,9 +115,9 @@ func getLocalAddresses() []LocalAddress {
 }
 
 // classifyInterface maps a network interface + IPv4 address to a coarse kind
-// usable for picking an icon/label in the UI. Detection is name- and
-// flag-based, best-effort and cross-platform (macOS / Linux / Windows).
-func classifyInterface(iface net.Interface, ip net.IP) string {
+// usable for picking an icon/label in the UI. hints (from buildIfaceKindMap)
+// takes priority; name- and flag-based heuristics are the fallback.
+func classifyInterface(iface net.Interface, ip net.IP, hints map[string]string) string {
 	if ip4 := ip.To4(); ip4 != nil && ip4[0] == 169 && ip4[1] == 254 {
 		return "link_local"
 	}
@@ -135,9 +136,13 @@ func classifyInterface(iface net.Interface, ip net.IP) string {
 		return "virtual"
 	}
 
-	// Wi-Fi. Reliable on Linux (wl*) and Windows ("Wi-Fi"); on macOS the radio
-	// is conventionally en0.
-	if hasAnyPrefix(name, "wl", "wlan", "wlp", "wifi", "wi-fi") || name == "en0" {
+	// Platform-supplied hint (e.g. from networksetup on macOS) wins over name guessing.
+	if kind, ok := hints[iface.Name]; ok {
+		return kind
+	}
+
+	// Wi-Fi. Reliable on Linux (wl*) and Windows ("Wi-Fi").
+	if hasAnyPrefix(name, "wl", "wlan", "wlp", "wifi", "wi-fi") {
 		return "wifi"
 	}
 
