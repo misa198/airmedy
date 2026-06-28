@@ -1,7 +1,7 @@
 {
   "name": "airmedy",
   "private": true,
-  "packageManager": "pnpm@11.0.9",
+  "packageManager": "pnpm@11.9.0",
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
@@ -10,8 +10,5 @@
   },
   "devDependencies": {
     "turbo": "2.9.16"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"]
   }
 }
