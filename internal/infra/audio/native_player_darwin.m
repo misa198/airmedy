@@ -117,6 +117,16 @@ extern void goHandleRemoteSeek(double position);
 // --- Playback ---
 
 - (void)play {
+    // Resume from the paused position. playReturningError: restarts the
+    // AVAudioEngine and can reset the decoder to frame 0, so a paused track
+    // must be resumed via -resume (per SFBAudioPlayer semantics).
+    if (self.sfbPlayer.playbackState == SFBAudioPlayerPlaybackStatePaused) {
+        [self.sfbPlayer resume];
+        self.isPlaying = YES;
+        [self updatePlaybackRate];
+        return;
+    }
+
     NSError *err = nil;
     [self.sfbPlayer playReturningError:&err];
     if (err) {
