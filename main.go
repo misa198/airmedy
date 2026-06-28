@@ -218,7 +218,7 @@ func main() {
 			Width:               300,
 			Height:              300,
 			MinWidth:            280,
-			MinHeight:           280,
+			MinHeight:           180,
 			MaxWidth:            500,
 			MaxHeight:           500,
 			Hidden:              true,
@@ -241,7 +241,17 @@ func main() {
 			BackgroundColour: bgRGBA(settings.Theme),
 			URL:              "/?mode=mini#/mini-player",
 		})
+		// Restore saved geometry + pin mode, clamped to the current screen layout.
+		windowService.ApplyMiniState(w)
+		// Persist geometry as the user moves/resizes the window (debounced).
+		w.RegisterHook(events.Common.WindowDidMove, func(_ *application.WindowEvent) {
+			windowService.SaveMiniGeometry()
+		})
+		w.RegisterHook(events.Common.WindowDidResize, func(_ *application.WindowEvent) {
+			windowService.SaveMiniGeometry()
+		})
 		w.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
+			windowService.SaveMiniGeometry()
 			windowService.OnMiniPlayerClosed()
 			// No e.Cancel() — Wails destroys the window, freeing its memory
 		})

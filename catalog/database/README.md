@@ -48,6 +48,7 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000025 | `artist_artwork_multi_source.up.sql` | Replace `artwork_key`/`artwork_source` with per-source `artwork_key_manual`/`_local`/`_online` (backfilled), then drop the old two |
 | 000027 | `lyrics_folder.up.sql`               | Add `lyrics_folder_enabled`, `lyrics_folder_path`, `lyrics_subfolder_enabled`, `lyrics_subfolder_name` to `app_settings` (dedicated folder + per-track subfolder lyrics lookup) |
 | 000028 | `prefer_local_artist_artwork.up.sql` | Re-add `prefer_local_artist_artwork BOOLEAN NOT NULL DEFAULT 1` — nested sub-toggle: when online artwork is on, a local/manual image suppresses the Deezer one |
+| 000029 | `mini_player_state.up.sql`           | Add `mini_player_state` table (single-row, CHECK id = 1) — persists mini player window geometry (`x`, `y`, `width`, `height`), `always_on_top`, and `has_position` |
 
 ## Full Schema
 
@@ -198,6 +199,17 @@ app_settings (
     lyrics_subfolder_name TEXT NOT NULL DEFAULT '',
     updated_at DATETIME
     -- (also: prevent_sleep_while_playing, remote_server_*, show_player_indicator)
+)
+
+mini_player_state (
+    id INTEGER PRIMARY KEY CHECK(id = 1),
+    x INTEGER DEFAULT 0,
+    y INTEGER DEFAULT 0,
+    width INTEGER DEFAULT 300,
+    height INTEGER DEFAULT 300,
+    always_on_top INTEGER DEFAULT 0,
+    has_position INTEGER DEFAULT 0,  -- 0 until first move/resize; geometry ignored while 0
+    updated_at DATETIME
 )
 ```
 

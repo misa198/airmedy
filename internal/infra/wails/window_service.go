@@ -1,11 +1,26 @@
 package wails
 
 import (
+	"context"
 	"runtime"
+	"sync"
+	"time"
+
+	"airmedy/internal/domain"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 )
+
+// Mini player size constraints (kept in sync with the window factory options).
+const (
+	miniMinWidth  = 280
+	miniMinHeight = 180
+	miniMaxSize   = 500
+)
+
+// miniSaveDebounce coalesces the stream of move/resize events into one DB write.
+const miniSaveDebounce = 400 * time.Millisecond
 
 // WindowService manages secondary windows (mini player).
 type WindowService struct {
@@ -13,10 +28,15 @@ type WindowService struct {
 	miniWindow        *application.WebviewWindow
 	miniWindowFactory func() *application.WebviewWindow
 	pendingMiniPlayer bool
+
+	miniRepo    domain.MiniPlayerStateRepository
+	miniState   *domain.MiniPlayerState
+	miniMu      sync.Mutex
+	miniSaveTmr *time.Timer
 }
 
-func NewWindowService() *WindowService {
-	return &WindowService{}
+func NewWindowService(miniRepo domain.MiniPlayerStateRepository) *WindowService {
+	return &WindowService{miniRepo: miniRepo}
 }
 
 func (s *WindowService) SetMainWindow(w *application.WebviewWindow) {
@@ -108,6 +128,138 @@ func bgColorForTheme(theme string) application.RGBA {
 	default: // "dark", "system"
 		return application.NewRGB(24, 24, 27)
 	}
+}
+
+// loadMiniState lazily loads and caches the persisted mini player state.
+func (s *WindowService) loadMiniState() *domain.MiniPlayerState {
+	if s.miniState != nil {
+		return s.miniState
+	}
+	if s.miniRepo == nil {
+		s.miniState = &domain.MiniPlayerState{}
+		return s.miniState
+	}
+	state, err := s.miniRepo.Load(context.Background())
+	if err != nil || state == nil {
+		state = &domain.MiniPlayerState{}
+	}
+	s.miniState = state
+	return s.miniState
+}
+
+// ApplyMiniState restores the saved geometry and pin mode onto a freshly created
+// mini window. Called from the window factory before the window is shown.
+func (s *WindowService) ApplyMiniState(w *application.WebviewWindow) {
+	state := s.loadMiniState()
+	if state.HasPosition {
+		rect := s.clampToScreen(w, application.Rect{
+			X:      state.X,
+			Y:      state.Y,
+			Width:  state.Width,
+			Height: state.Height,
+		})
+		w.SetBounds(rect)
+	}
+	w.SetAlwaysOnTop(state.AlwaysOnTop)
+}
+
+// clampToScreen ensures the rectangle has a valid size and lies fully within the
+// work area of the screen it lands on. This keeps the window reachable after a
+// screen layout change (lower resolution, disconnected monitor, etc.).
+func (s *WindowService) clampToScreen(w *application.WebviewWindow, rect application.Rect) application.Rect {
+	rect.Width = clampInt(rect.Width, miniMinWidth, miniMaxSize)
+	rect.Height = clampInt(rect.Height, miniMinHeight, miniMaxSize)
+
+	// Position the window first so GetScreen resolves the nearest screen.
+	w.SetBounds(rect)
+	screen, err := w.GetScreen()
+	if err != nil || screen == nil {
+		return rect
+	}
+	return clampRectToWorkArea(rect, screen.WorkArea)
+}
+
+// clampRectToWorkArea shrinks rect to fit within the work area if needed, then
+// moves it so it lies fully inside the work area. Pure function for testability.
+func clampRectToWorkArea(rect, wa application.Rect) application.Rect {
+	if rect.Width > wa.Width {
+		rect.Width = wa.Width
+	}
+	if rect.Height > wa.Height {
+		rect.Height = wa.Height
+	}
+	rect.X = clampInt(rect.X, wa.X, wa.X+wa.Width-rect.Width)
+	rect.Y = clampInt(rect.Y, wa.Y, wa.Y+wa.Height-rect.Height)
+	return rect
+}
+
+// SaveMiniGeometry captures the current mini window bounds and persists them
+// (debounced). Called from WindowDidMove / WindowDidResize hooks.
+func (s *WindowService) SaveMiniGeometry() {
+	w := s.miniWindow
+	if w == nil {
+		return
+	}
+	b := w.Bounds()
+	state := s.loadMiniState()
+
+	s.miniMu.Lock()
+	state.X = b.X
+	state.Y = b.Y
+	state.Width = b.Width
+	state.Height = b.Height
+	state.HasPosition = true
+	if s.miniSaveTmr != nil {
+		s.miniSaveTmr.Stop()
+	}
+	s.miniSaveTmr = time.AfterFunc(miniSaveDebounce, s.persistMiniState)
+	s.miniMu.Unlock()
+}
+
+// persistMiniState writes the cached state to the repository.
+func (s *WindowService) persistMiniState() {
+	if s.miniRepo == nil || s.miniState == nil {
+		return
+	}
+	s.miniMu.Lock()
+	snapshot := *s.miniState
+	s.miniMu.Unlock()
+	_ = s.miniRepo.Save(context.Background(), &snapshot)
+}
+
+// SetMiniAlwaysOnTop toggles always-on-top for the mini window and persists it.
+// Called from the frontend pin button.
+func (s *WindowService) SetMiniAlwaysOnTop(b bool) {
+	if s.miniWindow != nil {
+		s.miniWindow.SetAlwaysOnTop(b)
+	}
+	state := s.loadMiniState()
+	s.miniMu.Lock()
+	state.AlwaysOnTop = b
+	s.miniMu.Unlock()
+	s.persistMiniState()
+}
+
+// MiniState is the subset of mini player state the frontend needs on open.
+type MiniState struct {
+	AlwaysOnTop bool `json:"always_on_top"`
+}
+
+// GetMiniState returns the persisted mini player state for the frontend so the
+// pin icon reflects the restored always-on-top setting.
+func (s *WindowService) GetMiniState() MiniState {
+	state := s.loadMiniState()
+	return MiniState{AlwaysOnTop: state.AlwaysOnTop}
+}
+
+func clampInt(v, lo, hi int) int {
+	if v < lo {
+		return lo
+	}
+	if v > hi {
+		return hi
+	}
+	return v
 }
 
 func (s *WindowService) ToggleMiniPlayer() {

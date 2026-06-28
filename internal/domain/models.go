@@ -210,6 +210,19 @@ type PlayerState struct {
 	RepeatMode       RepeatMode `json:"repeat_mode"`
 }
 
+// MiniPlayerState holds the mini player window geometry and pin mode to persist
+// across app restarts. HasPosition is false until the window has been moved/resized
+// at least once, in which case the saved X/Y/Width/Height should be ignored in favour
+// of the default size and OS-chosen position.
+type MiniPlayerState struct {
+	X           int  `json:"x"`
+	Y           int  `json:"y"`
+	Width       int  `json:"width"`
+	Height      int  `json:"height"`
+	AlwaysOnTop bool `json:"always_on_top"`
+	HasPosition bool `json:"has_position"`
+}
+
 // AppSettings holds general application settings
 type AppSettings struct {
 	Language                 string `json:"language"`

@@ -157,3 +157,8 @@ type SettingsRepository interface {
 	Save(ctx context.Context, settings *AppSettings) error
 	Load(ctx context.Context) (*AppSettings, error)
 }
+
+type MiniPlayerStateRepository interface {
+	Save(ctx context.Context, state *MiniPlayerState) error
+	Load(ctx context.Context) (*MiniPlayerState, error)
+}
