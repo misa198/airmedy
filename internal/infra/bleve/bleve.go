@@ -11,10 +11,15 @@ import (
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/mapping"
 	"github.com/blevesearch/bleve/v2/search/query"
+
+	_ "github.com/blevesearch/bleve/v2/analysis/analyzer/custom"
+	"github.com/blevesearch/bleve/v2/analysis/token/lowercase"
+	_ "github.com/blevesearch/bleve/v2/analysis/tokenizer/unicode"
 )
 
 type bleveSearchService struct {
-	index bleve.Index
+	indexPath string
+	index     bleve.Index
 }
 
 func NewBleveSearchService(indexPath string) (domain.SearchService, error) {
@@ -34,15 +39,27 @@ func NewBleveSearchService(indexPath string) (domain.SearchService, error) {
 		}
 	}
 
-	return &bleveSearchService{index: index}, nil
+	return &bleveSearchService{indexPath: indexPath, index: index}, nil
 }
 
 func buildIndexMapping() mapping.IndexMapping {
 	indexMapping := bleve.NewIndexMapping()
 
+	// Register a custom analyzer that uses the unicode tokenizer and lowercase filter,
+	// but does NOT remove English stop words (like "more", "than", "you", "the").
+	err := indexMapping.AddCustomAnalyzer("no_stop_words", map[string]interface{}{
+		"type":          "custom",
+		"tokenizer":     "unicode",
+		"token_filters": []string{lowercase.Name},
+	})
+	if err != nil {
+		// Fallback to standard analyzer if custom registration fails
+		panic(fmt.Sprintf("failed to register custom analyzer: %v", err))
+	}
+
 	// 1. Text field mapping for searchable content
 	textFieldMapping := bleve.NewTextFieldMapping()
-	textFieldMapping.Analyzer = "standard"
+	textFieldMapping.Analyzer = "no_stop_words"
 	textFieldMapping.Store = false // id/type (keyword) are enough for result retrieval
 
 	// 2. Keyword field mapping for IDs and Types (exact match only)
@@ -335,6 +352,28 @@ func (s *bleveSearchService) DeleteArtistFromIndex(ctx context.Context, artistID
 
 func (s *bleveSearchService) DeleteComposerFromIndex(ctx context.Context, composerID string) error {
 	return s.index.Delete("composer:" + composerID)
+}
+
+func (s *bleveSearchService) DocCount(ctx context.Context) (uint64, error) {
+	return s.index.DocCount()
+}
+
+func (s *bleveSearchService) Reset(ctx context.Context) error {
+	if err := s.index.Close(); err != nil {
+		return fmt.Errorf("failed to close search index for reset: %w", err)
+	}
+
+	if err := os.RemoveAll(s.indexPath); err != nil {
+		return fmt.Errorf("failed to delete search index files: %w", err)
+	}
+
+	indexMapping := buildIndexMapping()
+	index, err := bleve.New(s.indexPath, indexMapping)
+	if err != nil {
+		return fmt.Errorf("failed to recreate search index: %w", err)
+	}
+	s.index = index
+	return nil
 }
 
 func (s *bleveSearchService) Close() error {

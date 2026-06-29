@@ -36,5 +36,7 @@ type SearchService interface {
 	DeleteArtistFromIndex(ctx context.Context, artistID string) error
 	// DeleteComposerFromIndex removes a composer document (keyed by the "composer:" prefix).
 	DeleteComposerFromIndex(ctx context.Context, composerID string) error
+	DocCount(ctx context.Context) (uint64, error)
+	Reset(ctx context.Context) error
 	Close() error
 }

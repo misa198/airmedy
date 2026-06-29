@@ -193,6 +193,7 @@ func (m *mockSearchService) DeleteFromIndex(ctx context.Context, id string) erro
 func (m *mockSearchService) DeleteAlbumFromIndex(ctx context.Context, albumID string) error { return nil }
 func (m *mockSearchService) DeleteArtistFromIndex(ctx context.Context, artistID string) error { return nil }
 func (m *mockSearchService) DeleteComposerFromIndex(ctx context.Context, composerID string) error { return nil }
+func (m *mockSearchService) DocCount(ctx context.Context) (uint64, error) { return 0, nil }
 
 type mockArtworkCache struct{ domain.ArtworkCache }
 func (m *mockArtworkCache) Save(ctx context.Context, data []byte, mimeType string) (string, error) { return "", nil }

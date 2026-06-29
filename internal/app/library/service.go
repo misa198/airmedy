@@ -194,6 +194,23 @@ func (s *LibraryService) Start(ctx context.Context) error {
 	go s.watchLoop()
 	go s.StartArtistArtworkWorker(s.ctx)
 	go s.maybeRescanArtistImages(s.ctx)
+
+	// If the search index is completely empty but the library has tracks,
+	// automatically trigger a full re-indexing of the search index in the background.
+	go func() {
+		time.Sleep(2 * time.Second)
+		trackCount, err := s.trackRepo.Count(s.ctx)
+		if err == nil && trackCount > 0 {
+			docCount, err := s.searchService.DocCount(s.ctx)
+			if err == nil && docCount == 0 {
+				s.logger.Info("Search index is empty but database has tracks. Rebuilding search index...")
+				if err := s.ReindexAll(s.ctx); err != nil {
+					s.logger.Warn("Failed to rebuild search index on startup", "error", err)
+				}
+			}
+		}
+	}()
+
 	return nil
 }
 
@@ -1452,6 +1469,12 @@ func (s *LibraryService) GetAlbumColors(ctx context.Context, id string) (*domain
 
 func (s *LibraryService) ReindexAll(ctx context.Context) error {
 	s.logger.Info("Starting full library re-indexing")
+
+	// Reset search index to apply the new mapping/analyzer
+	if err := s.searchService.Reset(ctx); err != nil {
+		s.logger.Error("Failed to reset search index", "error", err)
+		return fmt.Errorf("failed to reset search index: %w", err)
+	}
 
 	// Calculate total items
 	tracks, _ := s.trackRepo.GetAll(ctx)
