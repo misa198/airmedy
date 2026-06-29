@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -21,6 +22,10 @@ type mockTrackRepo struct {
 func (m *mockTrackRepo) Upsert(ctx context.Context, track *domain.Track) error {
 	m.tracks[track.Path] = track
 	return nil
+}
+
+func (m *mockTrackRepo) Count(ctx context.Context) (int, error) {
+	return len(m.tracks), nil
 }
 
 func (m *mockTrackRepo) GetByPath(ctx context.Context, path string) (*domain.TrackDTO, error) {
@@ -156,11 +161,11 @@ func (m *mockSettingsRepo) Load(ctx context.Context) (*domain.AppSettings, error
 
 type mockMetadataExtractor struct {
 	domain.MetadataExtractor
-	callCount int
+	callCount atomic.Int32
 }
 
 func (m *mockMetadataExtractor) Extract(ctx context.Context, path string) (*domain.TrackDTO, error) {
-	m.callCount++
+	m.callCount.Add(1)
 	return &domain.TrackDTO{
 		Track: domain.Track{
 			Path:  path,
@@ -256,7 +261,7 @@ func TestLibraryService_SyncFolder(t *testing.T) {
 
 	// Verify optimization: Sync again, Extract should NOT be called
 	extractor := s.metadataExtractor.(*mockMetadataExtractor)
-	initialCalls := extractor.callCount
+	initialCalls := extractor.callCount.Load()
 	if initialCalls != 1 {
 		t.Errorf("Expected 1 call to Extract, got %d", initialCalls)
 	}
@@ -266,8 +271,8 @@ func TestLibraryService_SyncFolder(t *testing.T) {
 		t.Fatalf("Second SyncFolder failed: %v", err)
 	}
 
-	if extractor.callCount != initialCalls {
-		t.Errorf("Optimization failed: Extract was called during second sync. Initial: %d, Current: %d", initialCalls, extractor.callCount)
+	if extractor.callCount.Load() != initialCalls {
+		t.Errorf("Optimization failed: Extract was called during second sync. Initial: %d, Current: %d", initialCalls, extractor.callCount.Load())
 	}
 
 	// Verify that modification triggers a re-import
@@ -282,8 +287,8 @@ func TestLibraryService_SyncFolder(t *testing.T) {
 		t.Fatalf("Third SyncFolder failed: %v", err)
 	}
 
-	if extractor.callCount != initialCalls+1 {
-		t.Errorf("Extract should have been called after file modification. Expected %d, got %d", initialCalls+1, extractor.callCount)
+	if extractor.callCount.Load() != initialCalls+1 {
+		t.Errorf("Extract should have been called after file modification. Expected %d, got %d", initialCalls+1, extractor.callCount.Load())
 	}
 }
 
