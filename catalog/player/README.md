@@ -175,6 +175,13 @@ On Windows the `nowPlayingBackend` is `smtcBackend` (`player_nowplaying_windows.
   `MiniAudioPlayer.Play/Pause/Stop`); seek scrubber via
   `ISystemMediaTransportControls2::UpdateTimelineProperties`; media-button/seek events forwarded
   to `PlayerService` through the `goWinNowPlaying*` cgo exports.
+- **"Now Playing" click → open app:** The SMTC hidden window (`g_hwnd`) handles `WM_ACTIVATE`
+  — fired when Windows activates it after the user clicks the media flyout card. The handler calls
+  `goWinNowPlayingActivate()` which invokes a stored Go callback set from `main.go` via
+  `PlayerService.SetNowPlayingActivateCallback`. The callback calls
+  `WindowService.ShowCurrent()`, which focuses the mini player if open, otherwise the main window.
+  `WS_EX_NOACTIVATE` was removed from `g_hwnd` so that programmatic `SetForegroundWindow` from
+  the shell correctly delivers `WM_ACTIVATE`.
 - **Teardown:** `MiniAudioPlayer.Close()` (called by `PlayerService` OnStop) posts quit, drains
   queued payloads, releases interfaces, and joins the thread. Idempotent.
 

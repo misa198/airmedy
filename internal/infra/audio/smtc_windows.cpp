@@ -34,6 +34,8 @@
 #include <roapi.h>
 #include <winstring.h>
 #include <shobjidl.h>
+#include <shlobj.h>
+#include <propsys.h>
 #include <windows.foundation.h>
 #include <windows.media.h>
 #include <windows.storage.streams.h>
@@ -395,6 +397,17 @@ void DoClear() {
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	switch (msg) {
+		case WM_ACTIVATE: {
+			// Windows activates g_hwnd when the user clicks "Now Playing" in the
+			// SMTC media flyout (SetForegroundWindow on the media-session window).
+			// Delegate to Go so it can show the correct window (main or mini player).
+			if (wParam != WA_INACTIVE) {
+				SmtcDbg("WM_ACTIVATE: delegating to Go");
+				goWinNowPlayingActivate();
+				return 0;
+			}
+			break;
+		}
 		case WM_SMTC_UPDATE: {
 			UpdatePayload* p = reinterpret_cast<UpdatePayload*>(lParam);
 			if (p != nullptr) {
@@ -429,6 +442,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		default:
 			return DefWindowProcW(hwnd, msg, wParam, lParam);
 	}
+	return DefWindowProcW(hwnd, msg, wParam, lParam);
 }
 
 bool SetupControls() {
@@ -523,11 +537,89 @@ void DrainQueue() {
 	}
 }
 
-// Register a friendly DisplayName for our AppUserModelID. Without this, the
-// shell can't resolve the AUMID of an unpackaged desktop app, so the Now Playing
-// card shows "Unknown app". Writing HKCU\Software\Classes\AppUserModelId\<AUMID>
-// with a DisplayName value is the documented route for unpackaged apps and needs
-// no elevation (HKCU is per-user writable).
+// Create a Start Menu shortcut whose System.AppUserModel.ID matches our process
+// AUMID. THIS is what makes the Windows Now Playing / media flyout show "Airmedy"
+// instead of "Unknown app": for an unpackaged desktop app the shell resolves the
+// media-session source name (and icon) by finding a Start Menu .lnk whose AUMID
+// equals the one set via SetCurrentProcessExplicitAppUserModelID. With no such
+// shortcut the shell has no name to show. The HKCU DisplayName key below only
+// drives toast notifications, not the media flyout.
+//
+// PKEY_AppUserModel_ID is defined inline to avoid depending on the propkey.h
+// symbol (mingw only declares it extern): fmtid {9F4C2855-9F79-4B39-A8D0-
+// E1D42DE1D5F3}, pid 5.
+void CreateStartMenuShortcut() {
+	const PROPERTYKEY kPkeyAppUserModelId = {
+	    {0x9F4C2855, 0x9F79, 0x4B39,
+	     {0xA8, 0xD0, 0xE1, 0xD4, 0x2D, 0xE1, 0xD5, 0xF3}},
+	    5};
+
+	// %APPDATA%\Microsoft\Windows\Start Menu\Programs (CSIDL_PROGRAMS).
+	wchar_t programs[MAX_PATH];
+	if (FAILED(SHGetFolderPathW(nullptr, CSIDL_PROGRAMS, nullptr,
+	                            SHGFP_TYPE_CURRENT, programs))) {
+		SmtcDbg("SHGetFolderPath(Programs) failed");
+		return;
+	}
+	std::wstring linkPath = programs;
+	linkPath += L"\\";
+	linkPath += kAppDisplayName;  // shortcut file name becomes the displayed name
+	linkPath += L".lnk";
+
+	// Don't rewrite on every launch once it exists.
+	if (GetFileAttributesW(linkPath.c_str()) != INVALID_FILE_ATTRIBUTES) {
+		SmtcDbg("shortcut already present");
+		return;
+	}
+
+	wchar_t exePath[MAX_PATH];
+	if (GetModuleFileNameW(nullptr, exePath, MAX_PATH) == 0) {
+		SmtcDbg("GetModuleFileName failed");
+		return;
+	}
+
+	IShellLinkW* link = nullptr;
+	HRESULT hr = CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER,
+	                              IID_IShellLinkW, reinterpret_cast<void**>(&link));
+	if (FAILED(hr) || link == nullptr) {
+		SmtcDbg("CoCreateInstance(ShellLink) failed 0x%08X", (unsigned)hr);
+		return;
+	}
+	link->SetPath(exePath);
+
+	IPropertyStore* props = nullptr;
+	if (SUCCEEDED(link->QueryInterface(IID_IPropertyStore,
+	                                   reinterpret_cast<void**>(&props))) &&
+	    props != nullptr) {
+		PROPVARIANT pv;
+		PropVariantInit(&pv);
+		const size_t bytes = (wcslen(kAppUserModelID) + 1) * sizeof(wchar_t);
+		pv.pwszVal = static_cast<LPWSTR>(CoTaskMemAlloc(bytes));
+		if (pv.pwszVal != nullptr) {
+			memcpy(pv.pwszVal, kAppUserModelID, bytes);
+			pv.vt = VT_LPWSTR;
+			props->SetValue(kPkeyAppUserModelId, pv);
+			props->Commit();
+		}
+		PropVariantClear(&pv);
+		props->Release();
+	}
+
+	IPersistFile* file = nullptr;
+	if (SUCCEEDED(link->QueryInterface(IID_IPersistFile,
+	                                   reinterpret_cast<void**>(&file))) &&
+	    file != nullptr) {
+		hr = file->Save(linkPath.c_str(), TRUE);
+		SmtcDbg("shortcut save hr=0x%08X path=%ls", (unsigned)hr, linkPath.c_str());
+		file->Release();
+	}
+	link->Release();
+}
+
+// Register a friendly DisplayName for our AppUserModelID. Drives toast
+// notifications for the unpackaged app; the media flyout name comes from the
+// Start Menu shortcut above. Writing HKCU\Software\Classes\AppUserModelId\<AUMID>
+// needs no elevation (HKCU is per-user writable).
 void RegisterAppDisplayName() {
 	std::wstring key = L"Software\\Classes\\AppUserModelId\\";
 	key += kAppUserModelID;
@@ -560,6 +652,7 @@ DWORD WINAPI SmtcThread(LPVOID /*param*/) {
 		SmtcDbg("RoInitialize OK (hr=0x%08X)", (unsigned)hrInit);
 	}
 
+	CreateStartMenuShortcut();
 	RegisterAppDisplayName();
 	SetCurrentProcessExplicitAppUserModelID(kAppUserModelID);
 
@@ -576,7 +669,11 @@ DWORD WINAPI SmtcThread(LPVOID /*param*/) {
 	// registers a media session, so the Now Playing card silently never appears.
 	// The window is created hidden (no WS_VISIBLE, never ShowWindow'd) and 0x0, so
 	// it stays off-screen while still being a valid top-level window for SMTC.
-	g_hwnd = CreateWindowExW(WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW, kWindowClass,
+	// WS_EX_TOOLWINDOW excludes it from taskbar/alt-tab. WS_EX_NOACTIVATE is
+	// intentionally omitted: we need WM_ACTIVATE to be delivered when Windows
+	// activates this window on "Now Playing" card click (WS_EX_NOACTIVATE would
+	// suppress it for programmatic SetForegroundWindow calls on some builds).
+	g_hwnd = CreateWindowExW(WS_EX_TOOLWINDOW, kWindowClass,
 	                         L"Airmedy SMTC", WS_POPUP, 0, 0, 0, 0,
 	                         nullptr, nullptr, wc.hInstance, nullptr);
 	if (g_hwnd == nullptr) {

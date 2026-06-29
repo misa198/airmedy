@@ -41,6 +41,11 @@ extern void goWinNowPlayingNext(void);
 extern void goWinNowPlayingPrevious(void);
 extern void goWinNowPlayingSeek(double position);
 
+/* Invoked from the STA thread when Windows activates the SMTC window (e.g.,
+ * user clicks "Now Playing" in the media flyout). Go decides which app window
+ * to bring to front (main or mini player). */
+extern void goWinNowPlayingActivate(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -211,6 +211,8 @@ func (b *mprisBackend) close() {
 	}
 }
 
+func (b *mprisBackend) setActivateCallback(_ func()) {}
+
 func (b *mprisBackend) dispatch(get func() func()) {
 	b.mu.Lock()
 	f := get()
