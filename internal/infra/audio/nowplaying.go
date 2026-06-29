@@ -16,6 +16,11 @@ type nowPlayingBackend interface {
 	setPlaybackState(state domain.PlaybackState)
 	clearNowPlaying()
 	close()
+	// setActivateCallback registers a function to call when the OS requests
+	// app activation via the media session (e.g. "Now Playing" card click on
+	// Windows). The callback should bring the appropriate window to front.
+	// No-op on platforms that don't use it.
+	setActivateCallback(cb func())
 }
 
 // MiniAudioPlayer satisfies domain.NowPlayingController by delegating to the
@@ -49,5 +54,11 @@ func (p *MiniAudioPlayer) UpdateNowPlayingPosition(position float64) {
 func (p *MiniAudioPlayer) ClearNowPlaying() {
 	if p.np != nil {
 		p.np.clearNowPlaying()
+	}
+}
+
+func (p *MiniAudioPlayer) SetActivateCallback(cb func()) {
+	if p.np != nil {
+		p.np.setActivateCallback(cb)
 	}
 }

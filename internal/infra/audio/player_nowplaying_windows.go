@@ -182,6 +182,27 @@ func (b *smtcBackend) clearNowPlaying() {
 	C.SmtcClear()
 }
 
+// winNPActivate is called (in a goroutine) when Windows activates the SMTC
+// window — i.e., the user clicked "Now Playing" in the media flyout.
+var winNPActivate func()
+
+//export goWinNowPlayingActivate
+func goWinNowPlayingActivate() {
+	slog.Debug("smtc: app activate requested")
+	winNPMu.Lock()
+	cb := winNPActivate
+	winNPMu.Unlock()
+	if cb != nil {
+		go cb()
+	}
+}
+
+func (b *smtcBackend) setActivateCallback(cb func()) {
+	winNPMu.Lock()
+	winNPActivate = cb
+	winNPMu.Unlock()
+}
+
 // close stops the SMTC backend. Safe to call when SMTC never started.
 func (b *smtcBackend) close() {
 	b.logger.Debug("smtc: stopping")

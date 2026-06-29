@@ -212,6 +212,15 @@ func main() {
 	thumbBarMgr := wails.NewThumbBarManager(playerService.GetService())
 	thumbBarMgr.Setup(mainWindow)
 
+	// Wire the SMTC "Now Playing" card click to show the correct window.
+	// windowService.ShowCurrent() focuses the mini player if open, otherwise
+	// the main window — matching the tray "Show Airmedy" behaviour.
+	playerService.GetService().SetNowPlayingActivateCallback(func() {
+		application.InvokeAsync(func() {
+			windowService.ShowCurrent()
+		})
+	})
+
 	windowService.SetMiniWindowFactory(func() *application.WebviewWindow {
 		w := wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
 			Title:               "Mini Player",

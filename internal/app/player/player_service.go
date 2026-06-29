@@ -257,6 +257,19 @@ func (s *PlayerService) setNowPlayingPlaybackState(playing bool) {
 	}
 }
 
+// SetNowPlayingActivateCallback registers a callback that is invoked when the
+// OS media session requests app activation (e.g. the user clicks "Now Playing"
+// in the Windows SMTC flyout). The callback should bring the appropriate window
+// to front. No-op on platforms whose backend does not support it.
+func (s *PlayerService) SetNowPlayingActivateCallback(cb func()) {
+	type activatable interface{ SetActivateCallback(func()) }
+	if s.nowPlaying != nil {
+		if a, ok := s.nowPlaying.(activatable); ok {
+			a.SetActivateCallback(cb)
+		}
+	}
+}
+
 // Stop stops playback.
 func (s *PlayerService) Stop() error {
 	err := s.player.Stop()
