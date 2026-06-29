@@ -49,18 +49,20 @@ func TestNormalizationKey(t *testing.T) {
 }
 
 func TestSplitNames(t *testing.T) {
-	def := DefaultDelimiters() // [";", "\\", ","]
-	onlyHard := []string{";", "\\"}
+	def := DefaultDelimiters() // [";", "\\\\", ","]
+	onlyHard := []string{";", "\\\\"}
 	tests := []struct {
 		input      string
 		delimiters []string
 		expected   []string
 	}{
-		// Default delimiters: split on ; \ and , (comma is in the default set).
+		// Default delimiters: split on ; \\ and , (comma is in the default set).
 		{"Artist A; Artist B", def, []string{"Artist A", "Artist B"}},
-		{"Artist A\\Artist B", def, []string{"Artist A", "Artist B"}},
-		{"Artist A; Artist B\\Artist C", def, []string{"Artist A", "Artist B", "Artist C"}},
+		{"Artist A\\\\Artist B", def, []string{"Artist A", "Artist B"}},
+		{"Artist A; Artist B\\\\Artist C", def, []string{"Artist A", "Artist B", "Artist C"}},
 		{"Artist A, Artist B", def, []string{"Artist A", "Artist B"}},
+		// Single backslash should not be split by default anymore.
+		{"Artist A\\Artist B", def, []string{"Artist A\\Artist B"}},
 		// Without comma configured it stays one name.
 		{"Artist A, Artist B", onlyHard, []string{"Artist A, Artist B"}},
 		// Keywords / other punctuation never split.

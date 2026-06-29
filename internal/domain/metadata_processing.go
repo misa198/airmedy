@@ -75,7 +75,7 @@ func FoldUnicode(s string) string {
 // DefaultDelimiters returns the built-in delimiter set used when the user has
 // not customized splitting for a field.
 func DefaultDelimiters() []string {
-	return []string{";", "\\", ","}
+	return []string{";", "\\\\", ","}
 }
 
 // RawTagSeparator joins multiple same-named tag frames (e.g. two ARTIST tags)

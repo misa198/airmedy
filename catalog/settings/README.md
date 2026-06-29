@@ -223,3 +223,4 @@ Settings evolved across multiple migrations:
 | 000028    | Re-add `prefer_local_artist_artwork BOOLEAN NOT NULL DEFAULT 1` (nested sub-toggle under online artwork) |
 | 000030    | Add `artist_delimiters`, `album_artist_delimiters`, `genre_delimiters`, `composer_delimiters` (TEXT JSON arrays, default `'[";","\\",","]'`) |
 | 000032    | Add `,` to the default delimiter set for rows still on the previous default `'[";","\\"]'` |
+| 000033    | Update default delimiters: change single backslash `\` to double backslash `\\` (JSON `'[";","\\\\",","]'`) for rows still on the previous default |

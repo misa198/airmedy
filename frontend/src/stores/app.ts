@@ -34,7 +34,7 @@ export const useAppStore = defineStore('app', () => {
   const remoteServerPassword = ref('')
 
   // User-configurable delimiters for splitting multi-value tags.
-  const DEFAULT_DELIMITERS = [';', '\\', ',']
+  const DEFAULT_DELIMITERS = [';', '\\\\', ',']
   const artistDelimiters = ref<string[]>([...DEFAULT_DELIMITERS])
   const albumArtistDelimiters = ref<string[]>([...DEFAULT_DELIMITERS])
   const genreDelimiters = ref<string[]>([...DEFAULT_DELIMITERS])

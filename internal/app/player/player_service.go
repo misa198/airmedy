@@ -773,34 +773,74 @@ func resolveLyricsSubdir(parent, name string) string {
 	return exact
 }
 
-func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
-	if s.lyricsService == nil {
-		return
-	}
-	ctx := context.Background()
-
+// lyricsResolveParams builds the preference + extra lyric dirs used by both the
+// emit-on-track-change path and the pull-based GetCurrentLyrics. Extra dirs are
+// in priority order (sibling dir is always checked first by the reader):
+// subfolder next to the track, then the global lyrics folder.
+func (s *PlayerService) lyricsResolveParams(ctx context.Context, track *domain.TrackDTO) (preferLocal bool, extraDirs []string) {
 	settings, err := s.settingsRepo.Load(ctx)
 	if err != nil {
 		settings = &domain.AppSettings{}
 	}
-
-	preferLocal := settings.PreferLocalLyrics
-
-	// Extra lyric dirs in priority order (sibling dir is always checked first by
-	// the reader): subfolder next to the track, then the global lyrics folder.
-	var extraDirs []string
+	preferLocal = settings.PreferLocalLyrics
 	if settings.LyricsSubfolderEnabled && validLyricsSubfolderName(settings.LyricsSubfolderName) {
 		extraDirs = append(extraDirs, resolveLyricsSubdir(filepath.Dir(track.Path), settings.LyricsSubfolderName))
 	}
 	if settings.LyricsFolderEnabled && settings.LyricsFolderPath != "" {
 		extraDirs = append(extraDirs, settings.LyricsFolderPath)
 	}
+	return preferLocal, extraDirs
+}
+
+// GetCurrentLyrics resolves the best available lyric for the currently loaded
+// track (sibling file, embedded metadata tag, or cached provider content),
+// honoring the user's local-vs-provider preference. Used by the frontend on
+// startup to recover lyrics for a restored track, since the restore-time
+// player:lyrics emit happens before the frontend's listener is registered.
+func (s *PlayerService) GetCurrentLyrics() *domain.Lyric {
+	if s.lyricsService == nil {
+		return nil
+	}
+	s.mu.RLock()
+	track := s.currentTrack
+	s.mu.RUnlock()
+	if track == nil {
+		return nil
+	}
+	ctx := context.Background()
+	preferLocal, extraDirs := s.lyricsResolveParams(ctx, track)
+	return s.lyricsService.ResolveLyrics(ctx, track.ID, track.Path, preferLocal, extraDirs...)
+}
+
+func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
+	if s.lyricsService == nil {
+		return
+	}
+	ctx := context.Background()
+
+	preferLocal, extraDirs := s.lyricsResolveParams(ctx, track)
+
+	settings, err := s.settingsRepo.Load(ctx)
+	if err != nil {
+		settings = &domain.AppSettings{}
+	}
 
 	// 1. Emit the best currently-available lyric for the chosen preference.
 	//    hasLocal comes from the SAME read, so the step-2 guard can't disagree
 	//    with what was just emitted due to a transient second-read failure.
 	lyric, hasLocal := s.lyricsService.ResolveWithLocal(ctx, track.ID, track.Path, preferLocal, extraDirs...)
-	if lyric != nil {
+
+	// Check if we will fetch online lyrics.
+	dbLyric, _ := s.lyricsService.GetLyrics(ctx, track.ID)
+	hasExternal := dbLyric != nil && dbLyric.Content != ""
+	anyProviderEnabled := settings.EnableLrclib || settings.EnableKugou
+	willFetch := (!preferLocal || !hasLocal) && !hasExternal && anyProviderEnabled
+
+	// Only emit immediately if we are not going to fetch, or if the lyric
+	// we have is already the preferred type (e.g. we prefer local, or we have cached external).
+	// If we will fetch and prefer online lyrics, we hold off emitting the local fallback
+	// lyric to avoid a visual flash on the UI.
+	if lyric != nil && (!willFetch || preferLocal) {
 		s.emitLyrics(track.ID, lyric)
 	}
 
@@ -811,10 +851,7 @@ func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
 	}
 
 	// 3. Fetch from providers when enabled and not already cached.
-	dbLyric, _ := s.lyricsService.GetLyrics(ctx, track.ID)
-	hasExternal := dbLyric != nil && dbLyric.Content != ""
-	anyProviderEnabled := settings.EnableLrclib || settings.EnableKugou
-	if !hasExternal && anyProviderEnabled {
+	if willFetch {
 		if _, err := s.lyricsService.FetchFromProviders(ctx, track, settings.EnableLrclib, settings.EnableKugou); err != nil {
 			s.logger.Warn("failed to fetch lyrics from providers", "track_id", track.ID, "error", err)
 		}
@@ -823,9 +860,7 @@ func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
 	// 4. Re-resolve so the final emit honors the preference now that provider
 	//    content may be cached. This is the single source of priority truth.
 	resolved := s.lyricsService.ResolveLyrics(ctx, track.ID, track.Path, preferLocal, extraDirs...)
-	if resolved != nil {
-		s.emitLyrics(track.ID, resolved)
-	}
+	s.emitLyrics(track.ID, resolved)
 }
 
 func (s *PlayerService) emitLyrics(trackID string, lyric *domain.Lyric) {

@@ -21,8 +21,14 @@ type SearchService interface {
     IndexArtist(ctx context.Context, artist *Artist) error
     IndexPlaylist(ctx context.Context, playlist *Playlist) error
     IndexComposer(ctx context.Context, composer *Composer) error
+    BatchReindex(ctx context.Context, data *ReindexData, onProgress func(path string)) error
     Search(ctx context.Context, query string) ([]SearchResult, error)
     DeleteFromIndex(ctx context.Context, id string) error
+    DeleteAlbumFromIndex(ctx context.Context, albumID string) error
+    DeleteArtistFromIndex(ctx context.Context, artistID string) error
+    DeleteComposerFromIndex(ctx context.Context, composerID string) error
+    DocCount(ctx context.Context) (uint64, error)
+    Reset(ctx context.Context) error
     Close() error
 }
 ```
@@ -46,7 +52,7 @@ type SearchService interface {
 **Field types:**
 
 - `id`, `type` — keyword (exact match, stored, not analyzed)
-- All other fields — text (analyzed with standard tokenizer, not stored)
+- All other fields — text (analyzed with custom "no_stop_words" analyzer using unicode tokenizer and lowercase filter, preserving English and Vietnamese stop words like "more", "than", "you", "the", "a", etc.; not stored)
 
 All text values are normalized via `domain.FoldUnicode()` before indexing.
 
@@ -91,13 +97,14 @@ interface SearchResultSet {
 
 ## Index Lifecycle
 
-| Operation           | When                                        |
-| ------------------- | ------------------------------------------- |
-| `IndexTrack()`      | After every file import                     |
-| `IndexAlbum()`      | After album upsert                          |
-| `IndexPlaylist()`   | On create/update                            |
-| `DeleteFromIndex()` | On track/playlist delete                    |
-| `ReindexAll()`      | Full rebuild (user-triggered from Settings) |
+| Operation           | When                                                                                                                    |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `IndexTrack()`      | After every file import                                                                                                 |
+| `IndexAlbum()`      | After album upsert                                                                                                      |
+| `IndexPlaylist()`   | On create/update                                                                                                        |
+| `DeleteFromIndex()` | On track/playlist delete                                                                                                |
+| `Reset()`           | Called at the start of a full reindex to delete the old index files on disk and recreate it with the correct mapping    |
+| `ReindexAll()`      | Re-indexes all data (called on settings resync, user-triggered optimize search, or auto-triggered on startup if index is empty) |
 
 ## Frontend Integration
 

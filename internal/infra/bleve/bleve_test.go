@@ -19,7 +19,7 @@ func TestBleveSearchService(t *testing.T) {
 	defer func() { _ = service.Close() }()
 
 	ctx := context.Background()
-	track := &domain.TrackDTO{
+	track1 := &domain.TrackDTO{
 		Track: domain.Track{
 			ID:    "track-1",
 			Title: "Bohemian Rhapsody",
@@ -31,10 +31,26 @@ func TestBleveSearchService(t *testing.T) {
 			Title: "A Night at the Opera",
 		},
 	}
+	track2 := &domain.TrackDTO{
+		Track: domain.Track{
+			ID:    "track-2",
+			Title: "More Than You Know",
+		},
+		Artists: []*domain.Artist{
+			{Name: "Axwell /\\ Ingrosso"},
+		},
+		Album: &domain.Album{
+			Title: "More Than You Know",
+		},
+	}
 
-	err = service.IndexTrack(ctx, track)
+	err = service.IndexTrack(ctx, track1)
 	if err != nil {
-		t.Fatalf("Failed to index track: %v", err)
+		t.Fatalf("Failed to index track 1: %v", err)
+	}
+	err = service.IndexTrack(ctx, track2)
+	if err != nil {
+		t.Fatalf("Failed to index track 2: %v", err)
 	}
 
 	results, err := service.Search(ctx, "Bohemian")
@@ -54,5 +70,13 @@ func TestBleveSearchService(t *testing.T) {
 	}
 	if len(results) == 0 {
 		t.Errorf("Expected results for artist search, got 0")
+	}
+
+	results, err = service.Search(ctx, "more than")
+	if err != nil {
+		t.Fatalf("Failed to search: %v", err)
+	}
+	if len(results) == 0 {
+		t.Errorf("Expected result when searching for 'more than', got 0")
 	}
 }

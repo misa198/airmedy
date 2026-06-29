@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Search, X, Loader2, Music, User, Globe } from 'lucide-vue-next'
+import { Search, X, Loader2, Music, User, Globe, Clock } from 'lucide-vue-next'
 import { Modal } from '@airmedy/ui'
 import { Input } from '@airmedy/ui'
 import { useFindLyricsDialog } from '@/composables/useFindLyricsDialog'
 import { usePlayerStore } from '@/stores/player'
+import { formatTime } from '@airmedy/utils'
 import * as LyricsService from '../../bindings/airmedy/internal/infra/wails/lyricsservice'
 import type { LyricsSearchResult } from '../../bindings/airmedy/internal/domain/models'
 
@@ -18,6 +19,11 @@ const searchArtist = ref('')
 const isSearching = ref(false)
 const results = ref<LyricsSearchResult[]>([])
 const selectedIndex = ref(-1)
+
+const formattedDuration = computed(() => {
+  if (!targetTrack.value?.duration) return '0:00'
+  return formatTime(targetTrack.value.duration)
+})
 
 watch(isVisible, (val) => {
   if (val && targetTrack.value) {
@@ -72,7 +78,7 @@ async function save() {
 <template>
   <Modal
     :open="isVisible"
-    width-class="max-w-4xl w-full h-[80vh] !p-0 flex flex-col overflow-hidden"
+    width-class="max-w-4xl w-full h-[82vh] !p-0 flex flex-col overflow-hidden"
     @close="close"
   >
     <!-- Header -->
@@ -113,6 +119,18 @@ async function save() {
                 class="pl-10" 
                 clearable
                 @keyup.enter="search" 
+              />
+            </div>
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-medium text-muted-foreground uppercase">{{ t('track_info.duration') }}</label>
+            <div class="relative">
+              <Clock class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10 pointer-events-none" />
+              <Input 
+                :model-value="formattedDuration" 
+                type="text" 
+                class="pl-10" 
+                disabled
               />
             </div>
           </div>
