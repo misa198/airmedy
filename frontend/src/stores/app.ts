@@ -33,6 +33,13 @@ export const useAppStore = defineStore('app', () => {
   const remoteServerPort = ref(0)
   const remoteServerPassword = ref('')
 
+  // User-configurable delimiters for splitting multi-value tags.
+  const DEFAULT_DELIMITERS = [';', '\\', ',']
+  const artistDelimiters = ref<string[]>([...DEFAULT_DELIMITERS])
+  const albumArtistDelimiters = ref<string[]>([...DEFAULT_DELIMITERS])
+  const genreDelimiters = ref<string[]>([...DEFAULT_DELIMITERS])
+  const composerDelimiters = ref<string[]>([...DEFAULT_DELIMITERS])
+
   const updateInfo = ref<UpdateInfo | null>(null)
   const isCheckingUpdate = ref(false)
   const isUpdateDialogOpen = ref(false)
@@ -86,6 +93,12 @@ export const useAppStore = defineStore('app', () => {
         remoteServerEnabled.value = !!settings.remote_server_enabled
         remoteServerPort.value = settings.remote_server_port ?? 0
         remoteServerPassword.value = settings.remote_server_password ?? ''
+        // Preserve an intentional empty array (splitting disabled); only fall
+        // back to defaults when the field is missing entirely.
+        artistDelimiters.value = Array.isArray(settings.artist_delimiters) ? [...settings.artist_delimiters] : [...DEFAULT_DELIMITERS]
+        albumArtistDelimiters.value = Array.isArray(settings.album_artist_delimiters) ? [...settings.album_artist_delimiters] : [...DEFAULT_DELIMITERS]
+        genreDelimiters.value = Array.isArray(settings.genre_delimiters) ? [...settings.genre_delimiters] : [...DEFAULT_DELIMITERS]
+        composerDelimiters.value = Array.isArray(settings.composer_delimiters) ? [...settings.composer_delimiters] : [...DEFAULT_DELIMITERS]
         applyTheme(theme.value)
       }
 
@@ -158,6 +171,10 @@ export const useAppStore = defineStore('app', () => {
         remote_server_enabled: remoteServerEnabled.value,
         remote_server_port: remoteServerPort.value,
         remote_server_password: remoteServerPassword.value,
+        artist_delimiters: [...artistDelimiters.value],
+        album_artist_delimiters: [...albumArtistDelimiters.value],
+        genre_delimiters: [...genreDelimiters.value],
+        composer_delimiters: [...composerDelimiters.value],
       })
     } catch (err) {
       console.error('Failed to save settings:', err)
@@ -260,6 +277,20 @@ export const useAppStore = defineStore('app', () => {
     remoteServerPassword.value = password
   }
 
+  const updateDelimiters = async (
+    field: 'artist' | 'albumArtist' | 'genre' | 'composer',
+    value: string[],
+  ) => {
+    const target = {
+      artist: artistDelimiters,
+      albumArtist: albumArtistDelimiters,
+      genre: genreDelimiters,
+      composer: composerDelimiters,
+    }[field]
+    target.value = [...value]
+    await saveSettings()
+  }
+
   // Watch for system theme changes if set to 'system'
   const _darkMQ = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-color-scheme: dark)') : null
   const _onDarkMQChange = () => {
@@ -331,6 +362,11 @@ export const useAppStore = defineStore('app', () => {
     remoteServerPort,
     remoteServerPassword,
     updateRemoteServerPassword,
+    artistDelimiters,
+    albumArtistDelimiters,
+    genreDelimiters,
+    composerDelimiters,
+    updateDelimiters,
     dispose,
   }
 })

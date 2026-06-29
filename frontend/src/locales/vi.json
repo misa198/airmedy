@@ -114,7 +114,9 @@
       "error": "Cập nhật cài đặt khởi động thất bại"
     },
     "library": {
-      "title": "Quản lý thư viện"
+      "title": "Quản lý thư viện",
+      "delimiters_title": "Ký tự phân tách thẻ",
+      "delimiters_description": "Tùy chỉnh cách tách thẻ nhiều giá trị cho nghệ sĩ, nghệ sĩ album, thể loại và nhà soạn nhạc. Đồng bộ lại thư viện để áp dụng thay đổi."
     },
     "about": {
       "description": "Trình phát nhạc đa nền tảng hiện đại, tập trung vào hiệu suất và sự tinh tế.",
@@ -197,6 +199,19 @@
       "delete_profile": "Xóa hồ sơ",
       "rename_profile": "Đổi tên hồ sơ",
       "select_profile": "Chọn hồ sơ"
+    },
+    "delimiters": {
+      "artists": "Nghệ sĩ",
+      "album_artists": "Nghệ sĩ album",
+      "genres": "Thể loại",
+      "composers": "Nhà soạn nhạc",
+      "add": "Thêm ký tự phân tách",
+      "remove": "Xóa",
+      "add_placeholder": "Thêm...",
+      "resync_hint": "Ký tự phân tách đã thay đổi. Nhấn \"Đồng bộ thư viện\" để áp dụng cho các bản nhạc (chỉ mục tìm kiếm tự cập nhật).",
+      "error_empty": "Ký tự phân tách không được để trống",
+      "error_duplicate": "Ký tự phân tách đã tồn tại",
+      "error_too_long": "Tối đa {max} ký tự"
     }
   },
   "sidebar": {

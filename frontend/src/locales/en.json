@@ -114,7 +114,9 @@
       "error": "Failed to update startup setting"
     },
     "library": {
-      "title": "Library Management"
+      "title": "Library Management",
+      "delimiters_title": "Tag Delimiters",
+      "delimiters_description": "Customize how multi-value artist, album artist, genre and composer tags are split. Resync the library to apply changes."
     },
     "about": {
       "description": "A modern, cross-platform music player focused on performance and elegance.",
@@ -197,6 +199,19 @@
       "delete_profile": "Delete Profile",
       "rename_profile": "Rename Profile",
       "select_profile": "Select Profile"
+    },
+    "delimiters": {
+      "artists": "Artists",
+      "album_artists": "Album Artists",
+      "genres": "Genres",
+      "composers": "Composers",
+      "add": "Add delimiter",
+      "remove": "Remove",
+      "add_placeholder": "Add...",
+      "resync_hint": "Delimiters changed. Press \"Sync Library\" to re-apply them to your tracks (search index updates automatically).",
+      "error_empty": "Delimiter cannot be empty",
+      "error_duplicate": "Delimiter already added",
+      "error_too_long": "Max {max} characters"
     }
   },
   "sidebar": {

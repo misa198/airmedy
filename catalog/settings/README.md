@@ -37,8 +37,17 @@ type AppSettings struct {
     PreferLocalArtistArtwork bool              // nested (online on only): local/manual image suppresses online
     LastScanVersion        string              // app version of last artist-image rescan
     PreventSleepWhilePlaying bool             // prevent OS sleep during playback
+    ArtistDelimiters       []string            // multi-value split delimiters (default [";","\\",","]; empty = no split)
+    AlbumArtistDelimiters  []string
+    GenreDelimiters        []string
+    ComposerDelimiters     []string
 }
 ```
+
+The four `*Delimiters` lists are stored as JSON TEXT columns. `domain.ValidateDelimiters` runs
+in `SettingsService.SaveSettings` before persisting (empty list allowed; rejects empty/dup/>5-char
+entries). See [metadata](../metadata/README.md) for `SplitNames` and [library](../library/README.md)
+for the delimiter-aware re-sync that applies changes to existing tracks.
 
 Stored in the `app_settings` table (single-row, id always = 1). Sensitive session keys are stored in the OS-native secure vault (Keychain, Credential Manager, etc.) via `github.com/zalando/go-keyring`.
 
@@ -84,6 +93,10 @@ interface AppStore {
   lyricsSubfolderName: string;
   useOnlineArtistArtwork: boolean;
   preventSleepWhilePlaying: boolean;
+  artistDelimiters: string[];
+  albumArtistDelimiters: string[];
+  genreDelimiters: string[];
+  composerDelimiters: string[];
   // Update state
   updateInfo: UpdateInfo | null;
   isCheckingUpdate: boolean;
@@ -111,6 +124,7 @@ interface AppStore {
   updateUseOnlineArtistArtwork(enabled: boolean): Promise<void>;
   updatePreferLocalArtistArtwork(enabled: boolean): Promise<void>;
   updatePreventSleepWhilePlaying(enabled: boolean): Promise<void>;
+  updateDelimiters(field: "artist" | "albumArtist" | "genre" | "composer", value: string[]): Promise<void>;
   checkForUpdate(): Promise<void>;
   applyUpdate(): Promise<void>;
   restartApp(): Promise<void>;
@@ -148,7 +162,7 @@ Version constant moved from `internal/domain/version.go` (deleted) to `internal/
 | Tab          | Content                                                                    |
 | ------------ | -------------------------------------------------------------------------- |
 | General      | Theme selector, Language picker, Start at Login, Auto-check updates toggle |
-| Library      | Watched folders list, Add/Remove folder, Sync All, Reindex                 |
+| Library      | Watched folders list, Add/Remove folder, Sync All, Reindex; **Tag Delimiters** section — 4 chip inputs (`DelimiterInput.vue`) for artist/album-artist/genre/composer split delimiters with inline validation, plus a persistent "Sync Library to apply" hint (`DelimitersPendingResync`) shown while pending |
 | Integrations | Last.fm account + lyrics providers (LRClib, Kugou), prefer-local toggle, lyrics-subfolder toggle + validated name input (matched case-insensitively, with a hint), and dedicated lyrics folder toggle + picker (reuses `LibraryService.SelectFolder`). Toggles with conditional sub-settings use `SettingExpandableRow.vue` (header + `#control` slot + animated, inset `#expanded` slot) so the sub-setting reads as nested under its toggle. |
 | Playback     | EQ profiles and band sliders, prevent-sleep toggle (`PlaybackSettings.vue`) |
 | Remote       | Control remote server (enable/disable), change or regenerate access PIN, show QR code, and choose between reachable IP addresses grouped by network interface (`RemoteServerSettings.vue`) |
@@ -207,3 +221,5 @@ Settings evolved across multiple migrations:
 | 000025    | Split artist artwork into per-source key columns                 |
 | 000027    | Add `lyrics_folder_enabled`, `lyrics_folder_path`, `lyrics_subfolder_enabled`, `lyrics_subfolder_name` (folder + subfolder lyrics lookup) |
 | 000028    | Re-add `prefer_local_artist_artwork BOOLEAN NOT NULL DEFAULT 1` (nested sub-toggle under online artwork) |
+| 000030    | Add `artist_delimiters`, `album_artist_delimiters`, `genre_delimiters`, `composer_delimiters` (TEXT JSON arrays, default `'[";","\\",","]'`) |
+| 000032    | Add `,` to the default delimiter set for rows still on the previous default `'[";","\\"]'` |

@@ -114,7 +114,9 @@
       "restart_later": "Più tardi"
     },
     "library": {
-      "title": "Gestione Libreria"
+      "title": "Gestione Libreria",
+      "delimiters_title": "Delimitatori dei tag",
+      "delimiters_description": "Personalizza come vengono suddivisi i tag multivalore per artista, artista dell'album, genere e compositore. Risincronizza la libreria per applicare le modifiche."
     },
     "about": {
       "description": "Un lettore musicale moderno e multipiattaforma focalizzato su prestazioni ed eleganza.",
@@ -197,6 +199,19 @@
       "delete_profile": "Elimina profilo",
       "rename_profile": "Rinomina profilo",
       "select_profile": "Seleziona profilo"
+    },
+    "delimiters": {
+      "artists": "Artisti",
+      "album_artists": "Artisti dell'album",
+      "genres": "Generi",
+      "composers": "Compositori",
+      "add": "Aggiungi delimitatore",
+      "remove": "Rimuovi",
+      "add_placeholder": "Aggiungi...",
+      "resync_hint": "Delimitatori modificati. Premi \"Sincronizza libreria\" per applicarli ai tuoi brani (l'indice di ricerca si aggiorna automaticamente).",
+      "error_empty": "Il delimitatore non può essere vuoto",
+      "error_duplicate": "Delimitatore già aggiunto",
+      "error_too_long": "Massimo {max} caratteri"
     }
   },
   "sidebar": {

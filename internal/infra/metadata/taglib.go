@@ -50,49 +50,13 @@ func (e *taglibExtractor) Extract(ctx context.Context, path string) (*domain.Tra
 		dto.OtherMetadata = string(metadataJSON)
 	}
 
-	// Raw values for display
-	dto.RawArtistNames = allTags(tags, "; ", "ARTIST", "TPE1", "©ART")
-	dto.RawAlbumArtistNames = allTags(tags, "; ", "ALBUMARTIST", "ALBUM ARTIST", "TPE2", "aART", "BAND")
-	dto.RawGenreNames = allTags(tags, "; ", "GENRE", "TCON", "©gen")
-	dto.RawComposerNames = allTags(tags, "; ", "COMPOSER", "TCOM", "©wrt")
-
-	// Split and normalize Artists
-	artistNames := splitMultipleTags(tags, "ARTIST", "TPE1", "©ART")
-	for _, name := range artistNames {
-		dto.Artists = append(dto.Artists, &domain.Artist{
-			Name:             name,
-			SortName:         domain.NormalizeSort(name),
-			NormalizationKey: domain.NormalizationKey(name),
-		})
-	}
-
-	// Split and normalize Album Artists
-	albumArtistNames := splitMultipleTags(tags, "ALBUMARTIST", "ALBUM ARTIST", "TPE2", "aART", "BAND")
-	for _, name := range albumArtistNames {
-		dto.AlbumArtists = append(dto.AlbumArtists, &domain.Artist{
-			Name:             name,
-			SortName:         domain.NormalizeSort(name),
-			NormalizationKey: domain.NormalizationKey(name),
-		})
-	}
-
-	// Split and normalize Genres
-	genreNames := splitMultipleTags(tags, "GENRE")
-	for _, name := range genreNames {
-		dto.Genres = append(dto.Genres, &domain.Genre{
-			Name:             name,
-			NormalizationKey: domain.NormalizationKey(name),
-		})
-	}
-
-	// Split and normalize Composers
-	composerNames := splitMultipleTags(tags, "COMPOSER")
-	for _, name := range composerNames {
-		dto.Composers = append(dto.Composers, &domain.Composer{
-			Name:             name,
-			NormalizationKey: domain.NormalizationKey(name),
-		})
-	}
+	// Raw values for display. Splitting into individual artist/genre/composer
+	// entities happens in the library layer (LibraryService.buildEntitiesFromRaw)
+	// using the user-configured delimiters, so import and resync share one path.
+	dto.RawArtistNames = allTags(tags, domain.RawTagSeparator, "ARTIST", "TPE1", "©ART")
+	dto.RawAlbumArtistNames = allTags(tags, domain.RawTagSeparator, "ALBUMARTIST", "ALBUM ARTIST", "TPE2", "aART", "BAND")
+	dto.RawGenreNames = allTags(tags, domain.RawTagSeparator, "GENRE", "TCON", "©gen")
+	dto.RawComposerNames = allTags(tags, domain.RawTagSeparator, "COMPOSER", "TCOM", "©wrt")
 
 	// Basic tags
 	dto.Title = firstTag(tags, "TITLE")
@@ -147,29 +111,6 @@ func (e *taglibExtractor) Extract(ctx context.Context, path string) (*domain.Tra
 	dto.TotalDiscs, _ = strconv.Atoi(totalDiscsStr)
 
 	return dto, nil
-}
-
-func splitMultipleTags(tags map[string][]string, keys ...string) []string {
-	var all []string
-	seen := make(map[string]bool)
-
-	for _, key := range keys {
-		for _, val := range tags[key] {
-			if val == "" {
-				continue
-			}
-			// Split each value further using our splitting logic
-			parts := domain.SplitArtists(val)
-			for _, p := range parts {
-				lower := strings.ToLower(p)
-				if !seen[lower] {
-					all = append(all, p)
-					seen[lower] = true
-				}
-			}
-		}
-	}
-	return all
 }
 
 func (e *taglibExtractor) ExtractArtwork(ctx context.Context, path string) ([]byte, string, error) {

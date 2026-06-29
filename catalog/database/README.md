@@ -49,6 +49,9 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000027 | `lyrics_folder.up.sql`               | Add `lyrics_folder_enabled`, `lyrics_folder_path`, `lyrics_subfolder_enabled`, `lyrics_subfolder_name` to `app_settings` (dedicated folder + per-track subfolder lyrics lookup) |
 | 000028 | `prefer_local_artist_artwork.up.sql` | Re-add `prefer_local_artist_artwork BOOLEAN NOT NULL DEFAULT 1` — nested sub-toggle: when online artwork is on, a local/manual image suppresses the Deezer one |
 | 000029 | `mini_player_state.up.sql`           | Add `mini_player_state` table (single-row, CHECK id = 1) — persists mini player window geometry (`x`, `y`, `width`, `height`), `always_on_top`, and `has_position` |
+| 000030 | `tag_delimiters.up.sql`              | Add `artist_delimiters`, `album_artist_delimiters`, `genre_delimiters`, `composer_delimiters` to `app_settings` (TEXT, JSON arrays, default `'[";","\\",","]'`) — user-configurable multi-value tag splitting |
+| 000031 | `library_sync_state.up.sql`          | Add `library_sync_state` table (single-row, CHECK id = 1) with `delimiters_signature TEXT` — records the delimiter config the library data currently reflects, so a sync knows whether to re-split |
+| 000032 | `add_comma_default_delimiter.up.sql` | Add `,` to the default delimiter set: `UPDATE app_settings SET <col> = '[";","\\",","]' WHERE <col> = '[";","\\"]'` (only rows still on the previous default; user-customized lists untouched) |
 
 ## Full Schema
 
@@ -197,8 +200,18 @@ app_settings (
     lyrics_folder_path TEXT NOT NULL DEFAULT '',
     lyrics_subfolder_enabled BOOLEAN NOT NULL DEFAULT 0,
     lyrics_subfolder_name TEXT NOT NULL DEFAULT '',
+    artist_delimiters TEXT NOT NULL DEFAULT '[";","\\",","]',        -- JSON array; empty [] = no splitting
+    album_artist_delimiters TEXT NOT NULL DEFAULT '[";","\\",","]',  -- JSON array
+    genre_delimiters TEXT NOT NULL DEFAULT '[";","\\",","]',         -- JSON array
+    composer_delimiters TEXT NOT NULL DEFAULT '[";","\\",","]',      -- JSON array
     updated_at DATETIME
     -- (also: prevent_sleep_while_playing, remote_server_*, show_player_indicator)
+)
+
+library_sync_state (
+    id INTEGER PRIMARY KEY CHECK(id = 1),
+    delimiters_signature TEXT NOT NULL DEFAULT '',  -- JSON of the 4 applied delimiter lists; compared on sync to decide re-split
+    updated_at DATETIME
 )
 
 mini_player_state (

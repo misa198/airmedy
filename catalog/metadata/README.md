@@ -10,7 +10,7 @@ The metadata feature handles reading audio file tags (ID3, Vorbis, MP4/iTunes, e
 | ---------------------------------------- | --------------------------------------------- |
 | `internal/infra/metadata/taglib.go`      | TagLib integration — extract and write        |
 | `internal/domain/metadata.go`            | MetadataExtractor / MetadataWriter interfaces |
-| `internal/domain/metadata_processing.go` | String normalization and artist splitting     |
+| `internal/domain/metadata_processing.go` | String normalization, delimiter-based name splitting (`SplitNames`, `DefaultDelimiters`, `ValidateDelimiters`, `RawTagSeparator`) |
 
 ## MetadataExtractor Interface
 
@@ -77,19 +77,35 @@ Used for `sort_title` / `sort_name` — produces a user-friendly sort key:
 
 NFKD decomposition to separate base characters from diacritics, then strips non-spacing marks. Special case: `đ` → `d` (Vietnamese).
 
-### `SplitArtists(raw string) []string`
+### `SplitNames(s string, delimiters []string) []string`
 
-Splits a raw multi-artist string into individual names using a robust regular expression.
+Splits a concatenated value into individual names using **user-configurable delimiters**
+(no hardcoded keyword/regex logic). Each delimiter is a literal separator substring; results
+are trimmed, empties dropped, deduplicated case-insensitively. An empty `delimiters` slice
+returns the whole trimmed string as one name (splitting disabled).
 
-**Hard delimiters** (always split): `,`, `;`, `|`, `/`, `\`
+- `DefaultDelimiters() []string` → `[";", "\\", ","]` (the built-in default).
+- `ValidateDelimiters(list []string) error` — empty list allowed (means "do not split");
+  rejects empty/whitespace-only entries, duplicates, and entries longer than 5 chars.
 
-**Keywords** (split if appearing as full words, optionally followed by a dot, or as ampersands):
+Example (default): `"Artist A; Artist B, Artist C"` → `["Artist A", "Artist B", "Artist C"]`.
+`"Earth, Wind & Fire"` with only `[";", "\\"]` → `["Earth, Wind & Fire"]` (comma not configured).
 
-- `ft`, `feat`, `featuring`, `with`, `vs`, `&`, `and` (case-insensitive)
+### Where splitting happens (single source of truth)
 
-Whitespace around delimiters and keywords is ignored.
+The extractor (`taglib.go`) does **not** split — it only fills the `Raw*Names` display fields
+(`allTags(... domain.RawTagSeparator ...)`, joining multiple same-named frames with `"; "`).
+The actual entity split runs in `LibraryService.buildEntitiesFromRaw` (`library/service.go`),
+using the per-field delimiters from `AppSettings`. This unifies import and re-sync (both read
+the stored `Raw*Names`).
 
-Example: `"Artist A, Artist B feat. Artist C"` → `["Artist A", "Artist B", "Artist C"]`
+**Multi-frame guarantee:** `buildEntitiesFromRaw` always prepends `domain.RawTagSeparator`
+(`"; "`) to the user delimiters, so two separate `ARTIST` frames always yield two artists
+regardless of the user's delimiter config. The user delimiters only further split *within* a
+frame.
+
+Per-field delimiter settings: `ArtistDelimiters`, `AlbumArtistDelimiters`, `GenreDelimiters`,
+`ComposerDelimiters` (see `catalog/settings` and `catalog/library` for the re-sync flow).
 
 ## MetadataWriter Interface
 

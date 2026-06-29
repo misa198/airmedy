@@ -1,14 +1,36 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import * as LibraryService from '../../../bindings/airmedy/internal/infra/wails/libraryservice'
-import { RotateCcw, Plus, Trash2, Folder, Loader2, DatabaseZap } from 'lucide-vue-next'
+import { RotateCcw, Plus, Trash2, Folder, Loader2, DatabaseZap, Info } from 'lucide-vue-next'
 import type { WatchedFolder, SyncProgress } from '../../../bindings/airmedy/internal/domain/models'
 import { Events } from '@wailsio/runtime'
 import ConfirmDialog from '../ConfirmDialog.vue'
 import SyncProgressDialog from './SyncProgressDialog.vue'
+import DelimiterInput from './DelimiterInput.vue'
+import { useAppStore } from '../../stores/app'
 
 const { t } = useI18n()
+
+const appStore = useAppStore()
+const { artistDelimiters, albumArtistDelimiters, genreDelimiters, composerDelimiters } = storeToRefs(appStore)
+
+// Becomes true once the user edits any delimiter; cleared after a library sync
+// (which re-applies the splitting) completes.
+const delimitersDirty = ref(false)
+
+const onDelimitersChange = async (
+  field: 'artist' | 'albumArtist' | 'genre' | 'composer',
+  value: string[],
+) => {
+  try {
+    await appStore.updateDelimiters(field, value)
+    await refreshDelimitersPending()
+  } catch (err) {
+    console.error('Failed to save delimiters:', err)
+  }
+}
 
 // State
 const folders = ref<WatchedFolder[]>([])
@@ -103,9 +125,22 @@ const handleSyncProgress = (ev: Events.WailsEvent) => {
   syncProgress.value = progress
 }
 
+const refreshDelimitersPending = async () => {
+  try {
+    delimitersDirty.value = await LibraryService.DelimitersPendingResync()
+  } catch (err) {
+    console.error('Failed to check delimiter sync state:', err)
+  }
+}
+
 const handleSyncFinished = () => {
   isSyncing.value = false
   syncComplete.value = true
+  // Re-query the backend so the banner reflects the actual applied state. Always
+  // (not gated on syncType): a Sync Library run emits several sync-finished
+  // events — folder sync, re-split, then re-index — and only the last one lands
+  // after the delimiter signature is persisted.
+  refreshDelimitersPending()
 }
 
 const showSyncDialog = computed(
@@ -126,6 +161,7 @@ let offSyncFinished: (() => void) | null = null
 
 onMounted(() => {
   loadFolders()
+  refreshDelimitersPending()
   offSyncStarted = Events.On('library:sync-started', handleSyncStarted)
   offSyncProgress = Events.On('library:sync-progress', handleSyncProgress)
   offSyncFinished = Events.On('library:sync-finished', handleSyncFinished)
@@ -203,6 +239,32 @@ onUnmounted(() => {
           </button>
         </li>
       </ul>
+    </section>
+
+    <section class="bg-card rounded-2xl border border-foreground/[0.06] p-6">
+      <div class="mb-6">
+        <h3 class="text-lg font-bold mb-1">{{ t('settings.library.delimiters_title') }}</h3>
+        <p class="text-sm text-foreground opacity-60">{{ t('settings.library.delimiters_description') }}</p>
+      </div>
+
+      <div v-if="delimitersDirty"
+        class="flex items-start gap-3 mb-6 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+        <Info class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+        <p class="text-xs text-amber-600 dark:text-amber-400 font-medium leading-relaxed">
+          {{ t('settings.delimiters.resync_hint') }}
+        </p>
+      </div>
+
+      <div class="grid gap-5 grid-cols-1">
+        <DelimiterInput :label="t('settings.delimiters.artists')" :model-value="artistDelimiters"
+          :disabled="isSyncing" @update:model-value="(v) => onDelimitersChange('artist', v)" />
+        <DelimiterInput :label="t('settings.delimiters.album_artists')" :model-value="albumArtistDelimiters"
+          :disabled="isSyncing" @update:model-value="(v) => onDelimitersChange('albumArtist', v)" />
+        <DelimiterInput :label="t('settings.delimiters.genres')" :model-value="genreDelimiters"
+          :disabled="isSyncing" @update:model-value="(v) => onDelimitersChange('genre', v)" />
+        <DelimiterInput :label="t('settings.delimiters.composers')" :model-value="composerDelimiters"
+          :disabled="isSyncing" @update:model-value="(v) => onDelimitersChange('composer', v)" />
+      </div>
     </section>
 
     <ConfirmDialog

@@ -48,40 +48,68 @@ func TestNormalizationKey(t *testing.T) {
 	}
 }
 
-func TestSplitArtists(t *testing.T) {
+func TestSplitNames(t *testing.T) {
+	def := DefaultDelimiters() // [";", "\\", ","]
+	onlyHard := []string{";", "\\"}
 	tests := []struct {
-		input    string
-		expected []string
+		input      string
+		delimiters []string
+		expected   []string
 	}{
-		{"Artist A, Artist B", []string{"Artist A", "Artist B"}},
-		{"Artist A feat. Artist B", []string{"Artist A", "Artist B"}},
-		{"Artist A & Artist B | Artist C", []string{"Artist A", "Artist B", "Artist C"}},
-		{"Artist A featuring Artist B with Artist C", []string{"Artist A", "Artist B", "Artist C"}},
-		{"Artist A vs. Artist B", []string{"Artist A", "Artist B"}},
-		{"Artist A and Artist B", []string{"Artist A", "Artist B"}},
-		{"Artist A; Artist B | Artist C", []string{"Artist A", "Artist B", "Artist C"}},
-		{"tlinh & Low G", []string{"tlinh", "Low G"}},
-		{"tlinh&Low G", []string{"tlinh", "Low G"}},
-		{"tlinh &Low G", []string{"tlinh", "Low G"}},
-		{"tlinh& Low G", []string{"tlinh", "Low G"}},
-		{"Artist A / Artist B", []string{"Artist A", "Artist B"}},
-		{"Artist A/Artist B\\Artist C", []string{"Artist A/Artist B", "Artist C"}},
-		{"W/N", []string{"W/N"}},
-		{"AC/DC", []string{"AC/DC"}},
-		{"Brand New", []string{"Brand New"}},
-		{"Earth, Wind & Fire", []string{"Earth", "Wind", "Fire"}},
+		// Default delimiters: split on ; \ and , (comma is in the default set).
+		{"Artist A; Artist B", def, []string{"Artist A", "Artist B"}},
+		{"Artist A\\Artist B", def, []string{"Artist A", "Artist B"}},
+		{"Artist A; Artist B\\Artist C", def, []string{"Artist A", "Artist B", "Artist C"}},
+		{"Artist A, Artist B", def, []string{"Artist A", "Artist B"}},
+		// Without comma configured it stays one name.
+		{"Artist A, Artist B", onlyHard, []string{"Artist A, Artist B"}},
+		// Keywords / other punctuation never split.
+		{"Artist A feat. Artist B", def, []string{"Artist A feat. Artist B"}},
+		{"Artist A & Artist B", def, []string{"Artist A & Artist B"}},
+		{"AC/DC", def, []string{"AC/DC"}},
+		{"Rhythm and Blues", def, []string{"Rhythm and Blues"}},
+		// Trim + dedup (case-insensitive).
+		{"Artist A ;  artist a ", def, []string{"Artist A"}},
+		{" ; Artist B ; ", def, []string{"Artist B"}},
+		// Custom delimiters.
+		{"Artist A, Artist B", []string{","}, []string{"Artist A", "Artist B"}},
+		{"A|B/C", []string{"|", "/"}, []string{"A", "B", "C"}},
+		// Empty / whitespace input.
+		{"", def, nil},
+		{"   ", def, nil},
 	}
 
 	for _, tc := range tests {
-		got := SplitArtists(tc.input)
+		got := SplitNames(tc.input, tc.delimiters)
 		if len(got) != len(tc.expected) {
-			t.Errorf("SplitArtists(%q) returned %d artists, expected %d", tc.input, len(got), len(tc.expected))
+			t.Errorf("SplitNames(%q, %v) = %v, expected %v", tc.input, tc.delimiters, got, tc.expected)
 			continue
 		}
 		for i := range got {
 			if got[i] != tc.expected[i] {
-				t.Errorf("SplitArtists(%q)[%d] = %q, expected %q", tc.input, i, got[i], tc.expected[i])
+				t.Errorf("SplitNames(%q)[%d] = %q, expected %q", tc.input, i, got[i], tc.expected[i])
 			}
+		}
+	}
+}
+
+func TestValidateDelimiters(t *testing.T) {
+	valid := [][]string{{}, {";"}, {";", "\\"}, {",", "/", "|"}}
+	for _, v := range valid {
+		if err := ValidateDelimiters(v); err != nil {
+			t.Errorf("ValidateDelimiters(%v) = %v, expected nil", v, err)
+		}
+	}
+
+	invalid := [][]string{
+		{""},             // empty entry
+		{"  "},           // whitespace-only
+		{";", ";"},       // duplicate
+		{"toolongdelim"}, // exceeds max length
+	}
+	for _, v := range invalid {
+		if err := ValidateDelimiters(v); err == nil {
+			t.Errorf("ValidateDelimiters(%v) = nil, expected error", v)
 		}
 	}
 }

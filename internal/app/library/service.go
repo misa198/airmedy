@@ -2,6 +2,7 @@ package library
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"log/slog"
@@ -48,6 +49,7 @@ type LibraryService struct {
 	playlistRepo      domain.PlaylistRepository
 	watchedFolderRepo domain.WatchedFolderRepository
 	settingsRepo      domain.SettingsRepository
+	syncStateRepo     domain.LibrarySyncStateRepository
 	metadataExtractor domain.MetadataExtractor
 	metadataWriter    domain.MetadataWriter
 	artworkCache      domain.ArtworkCache
@@ -85,6 +87,7 @@ func NewLibraryService(
 	playlistRepo domain.PlaylistRepository,
 	watchedFolderRepo domain.WatchedFolderRepository,
 	settingsRepo domain.SettingsRepository,
+	syncStateRepo domain.LibrarySyncStateRepository,
 	metadataExtractor domain.MetadataExtractor,
 	metadataWriter domain.MetadataWriter,
 	artworkCache domain.ArtworkCache,
@@ -108,6 +111,7 @@ func NewLibraryService(
 		playlistRepo:         playlistRepo,
 		watchedFolderRepo:    watchedFolderRepo,
 		settingsRepo:         settingsRepo,
+		syncStateRepo:        syncStateRepo,
 		metadataExtractor:    metadataExtractor,
 		metadataWriter:       metadataWriter,
 		artworkCache:         artworkCache,
@@ -737,6 +741,14 @@ func (s *LibraryService) ImportFile(ctx context.Context, path string) error {
 	dto.FileSize = info.Size()
 	dto.Mtime = info.ModTime()
 
+	// Split raw tag values into individual entities using the user-configured
+	// delimiters (single source of truth, shared with resync).
+	settings, err := s.settingsRepo.Load(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to load settings for %s: %w", path, err)
+	}
+	s.buildEntitiesFromRaw(dto, settings)
+
 	// Extract artwork if available
 	artworkData, mimeType, err := s.metadataExtractor.ExtractArtwork(ctx, path)
 	if err == nil && artworkData != nil {
@@ -951,6 +963,177 @@ func (s *LibraryService) resolveEntities(ctx context.Context, dto *domain.TrackD
 		return err
 	}
 
+	return nil
+}
+
+// buildEntitiesFromRaw populates the split Artist/AlbumArtist/Genre/Composer
+// entities on a TrackDTO from its Raw*Names fields using the configured
+// per-field delimiters. Shared by ImportFile and ResplitLibrary so import and
+// resync produce identical results.
+//
+// The multi-frame separator (domain.RawTagSeparator) is always applied first, so
+// genuine multi-value tags (e.g. two ARTIST frames) always become separate
+// entities regardless of the user's delimiters. Within a frame, an empty
+// delimiter list means "do not split".
+func (s *LibraryService) buildEntitiesFromRaw(dto *domain.TrackDTO, settings *domain.AppSettings) {
+	dto.Artists = nil
+	dto.AlbumArtists = nil
+	dto.Genres = nil
+	dto.Composers = nil
+
+	withFrameSep := func(delimiters []string) []string {
+		return append([]string{domain.RawTagSeparator}, delimiters...)
+	}
+
+	for _, name := range domain.SplitNames(dto.RawArtistNames, withFrameSep(settings.ArtistDelimiters)) {
+		dto.Artists = append(dto.Artists, &domain.Artist{
+			Name:             name,
+			SortName:         domain.NormalizeSort(name),
+			NormalizationKey: domain.NormalizationKey(name),
+		})
+	}
+	for _, name := range domain.SplitNames(dto.RawAlbumArtistNames, withFrameSep(settings.AlbumArtistDelimiters)) {
+		dto.AlbumArtists = append(dto.AlbumArtists, &domain.Artist{
+			Name:             name,
+			SortName:         domain.NormalizeSort(name),
+			NormalizationKey: domain.NormalizationKey(name),
+		})
+	}
+	for _, name := range domain.SplitNames(dto.RawGenreNames, withFrameSep(settings.GenreDelimiters)) {
+		dto.Genres = append(dto.Genres, &domain.Genre{
+			Name:             name,
+			NormalizationKey: domain.NormalizationKey(name),
+		})
+	}
+	for _, name := range domain.SplitNames(dto.RawComposerNames, withFrameSep(settings.ComposerDelimiters)) {
+		dto.Composers = append(dto.Composers, &domain.Composer{
+			Name:             name,
+			NormalizationKey: domain.NormalizationKey(name),
+		})
+	}
+}
+
+// ResplitLibrary re-splits every track's stored raw tag values using the current
+// delimiter settings, rebuilds the artist/album-artist/genre/composer entities
+// and their junctions, then clears any entities left orphaned by the change. It
+// reads only the DB (no file I/O) and reuses the existing sync progress events
+// so the frontend progress dialog works unchanged.
+func (s *LibraryService) ResplitLibrary(ctx context.Context) error {
+	s.logger.Info("Starting library re-split")
+
+	settings, err := s.settingsRepo.Load(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to load settings: %w", err)
+	}
+
+	tracks, err := s.trackRepo.GetAll(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to load tracks: %w", err)
+	}
+
+	total := len(tracks)
+	if app := application.Get(); app != nil && app.Event != nil {
+		app.Event.Emit("library:sync-started", map[string]interface{}{
+			"path":  "",
+			"total": total,
+		})
+	}
+
+	for i, dto := range tracks {
+		s.buildEntitiesFromRaw(dto, settings)
+		if err := s.resolveEntities(ctx, dto); err != nil {
+			s.logger.Error("Failed to re-split track", "path", dto.Path, "error", err)
+		}
+		if app := application.Get(); app != nil && app.Event != nil {
+			app.Event.Emit("library:sync-progress", domain.SyncProgress{
+				Current: i + 1,
+				Total:   total,
+				Path:    dto.Path,
+			})
+		}
+	}
+
+	// Drop artists/genres/composers/albums no longer referenced after re-splitting.
+	s.cleanupOrphanedEntities(ctx)
+	if err := s.CleanupOrphanedArtworks(ctx); err != nil {
+		s.logger.Warn("Failed to cleanup orphaned artworks", "error", err)
+	}
+
+	s.logger.Info("Finished library re-split")
+	if app := application.Get(); app != nil && app.Event != nil {
+		app.Event.Emit("library:sync-finished", "")
+	}
+	return nil
+}
+
+// delimitersSignature is a stable encoding of the four delimiter lists. It is
+// compared against the last-applied signature to decide whether a sync needs to
+// re-split the library.
+func delimitersSignature(s *domain.AppSettings) string {
+	b, _ := json.Marshal([][]string{
+		s.ArtistDelimiters,
+		s.AlbumArtistDelimiters,
+		s.GenreDelimiters,
+		s.ComposerDelimiters,
+	})
+	return string(b)
+}
+
+// DelimitersPendingResync reports whether the current delimiter settings differ
+// from the ones the library data was last split with — i.e. whether the next
+// Sync Library will re-split. Survives restarts (signature is persisted).
+func (s *LibraryService) DelimitersPendingResync(ctx context.Context) (bool, error) {
+	settings, err := s.settingsRepo.Load(ctx)
+	if err != nil {
+		return false, err
+	}
+	stored, err := s.syncStateRepo.GetDelimitersSignature(ctx)
+	if err != nil {
+		return false, err
+	}
+	return delimitersSignature(settings) != stored, nil
+}
+
+// SyncLibrary runs a normal folder sync (new/changed/removed files) and, only
+// when the delimiter settings have changed since they were last applied,
+// additionally re-splits the whole library and rebuilds the search index. The
+// applied-delimiters signature is persisted so the decision survives restarts.
+func (s *LibraryService) SyncLibrary(ctx context.Context) error {
+	folders, err := s.watchedFolderRepo.GetAll(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to load watched folders: %w", err)
+	}
+	for _, folder := range folders {
+		_ = s.SyncFolder(ctx, folder.Path)
+	}
+
+	settings, err := s.settingsRepo.Load(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to load settings: %w", err)
+	}
+	sig := delimitersSignature(settings)
+	stored, err := s.syncStateRepo.GetDelimitersSignature(ctx)
+	if err != nil {
+		s.logger.Warn("Failed to load delimiters signature", "error", err)
+		stored = ""
+	}
+	if sig == stored {
+		return nil
+	}
+
+	s.logger.Info("Delimiters changed since last sync; re-splitting library")
+	if err := s.ResplitLibrary(ctx); err != nil {
+		return err
+	}
+	// Persist the signature before the search reindex so the final
+	// library:sync-finished event (emitted from ReindexAll) already reflects the
+	// applied state — otherwise the UI's post-sync recheck still sees a mismatch.
+	if err := s.syncStateRepo.SetDelimitersSignature(ctx, sig); err != nil {
+		s.logger.Warn("Failed to persist delimiters signature", "error", err)
+	}
+	if err := s.ReindexAll(ctx); err != nil {
+		s.logger.Warn("Re-index after re-split failed", "error", err)
+	}
 	return nil
 }
 

@@ -196,6 +196,10 @@ func (m *mockArtworkCache) CleanupOrphaned(ctx context.Context, activeKeys map[s
 type mockMetadataWriter struct{}
 func (m *mockMetadataWriter) WriteMetadata(_ context.Context, _ string, _ domain.MetadataUpdate) error { return nil }
 
+type mockSyncStateRepo struct{ sig string }
+func (m *mockSyncStateRepo) GetDelimitersSignature(_ context.Context) (string, error) { return m.sig, nil }
+func (m *mockSyncStateRepo) SetDelimitersSignature(_ context.Context, sig string) error { m.sig = sig; return nil }
+
 func TestLibraryService_SyncFolder(t *testing.T) {
 	// Create a temporary directory for testing sync
 	tempDir, err := os.MkdirTemp("", "airmedy_test_sync")
@@ -221,6 +225,7 @@ func TestLibraryService_SyncFolder(t *testing.T) {
 		&mockPlaylistRepo{},
 		&mockFolderRepo{},
 		&mockSettingsRepo{},
+		&mockSyncStateRepo{},
 		&mockMetadataExtractor{},
 		&mockMetadataWriter{},
 		&mockArtworkCache{},
@@ -316,6 +321,7 @@ func TestLibraryService_SyncFolder_SupportedExtensions(t *testing.T) {
 		&mockPlaylistRepo{},
 		&mockFolderRepo{},
 		&mockSettingsRepo{},
+		&mockSyncStateRepo{},
 		&mockMetadataExtractor{},
 		&mockMetadataWriter{},
 		&mockArtworkCache{},
@@ -357,6 +363,7 @@ func TestLibraryService_AddWatchedFolder_CoveringExisting(t *testing.T) {
 		&mockPlaylistRepo{},
 		folderRepo,
 		&mockSettingsRepo{},
+		&mockSyncStateRepo{},
 		&mockMetadataExtractor{},
 		&mockMetadataWriter{},
 		&mockArtworkCache{},

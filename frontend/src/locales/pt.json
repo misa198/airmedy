@@ -114,7 +114,9 @@
       "restart_later": "Mais tarde"
     },
     "library": {
-      "title": "Gerenciamento de Biblioteca"
+      "title": "Gerenciamento de Biblioteca",
+      "delimiters_title": "Delimitadores de tags",
+      "delimiters_description": "Personalize como as tags de vários valores para artista, artista do álbum, gênero e compositor são divididas. Ressincronize a biblioteca para aplicar as alterações."
     },
     "about": {
       "description": "Um player de música moderno e multiplataforma focado em desempenho e elegância.",
@@ -197,6 +199,19 @@
       "delete_profile": "Excluir perfil",
       "rename_profile": "Renomear perfil",
       "select_profile": "Selecionar perfil"
+    },
+    "delimiters": {
+      "artists": "Artistas",
+      "album_artists": "Artistas do álbum",
+      "genres": "Gêneros",
+      "composers": "Compositores",
+      "add": "Adicionar delimitador",
+      "remove": "Remover",
+      "add_placeholder": "Adicionar...",
+      "resync_hint": "Delimitadores alterados. Pressione \"Sincronizar biblioteca\" para aplicá-los às suas faixas (o índice de pesquisa é atualizado automaticamente).",
+      "error_empty": "O delimitador não pode estar vazio",
+      "error_duplicate": "Delimitador já adicionado",
+      "error_too_long": "Máximo de {max} caracteres"
     }
   },
   "sidebar": {

@@ -114,7 +114,9 @@
       "restart_later": "Más tarde"
     },
     "library": {
-      "title": "Gestión de la biblioteca"
+      "title": "Gestión de la biblioteca",
+      "delimiters_title": "Separadores de etiquetas",
+      "delimiters_description": "Personaliza cómo se dividen las etiquetas de varios valores para artista, artista del álbum, género y compositor. Vuelve a sincronizar la biblioteca para aplicar los cambios."
     },
     "about": {
       "description": "Un reproductor de música moderno y multiplataforma centrado en el rendimiento y la elegancia.",
@@ -197,6 +199,19 @@
       "delete_profile": "Eliminar perfil",
       "rename_profile": "Renombrar perfil",
       "select_profile": "Seleccionar perfil"
+    },
+    "delimiters": {
+      "artists": "Artistas",
+      "album_artists": "Artistas del álbum",
+      "genres": "Géneros",
+      "composers": "Compositores",
+      "add": "Añadir separador",
+      "remove": "Eliminar",
+      "add_placeholder": "Añadir...",
+      "resync_hint": "Separadores cambiados. Pulsa «Sincronizar biblioteca» para aplicarlos a tus pistas (el índice de búsqueda se actualiza automáticamente).",
+      "error_empty": "El separador no puede estar vacío",
+      "error_duplicate": "El separador ya está añadido",
+      "error_too_long": "Máximo {max} caracteres"
     }
   },
   "sidebar": {

@@ -114,7 +114,9 @@
       "restart_later": "後で"
     },
     "library": {
-      "title": "ライブラリ管理"
+      "title": "ライブラリ管理",
+      "delimiters_title": "タグの区切り文字",
+      "delimiters_description": "アーティスト、アルバムアーティスト、ジャンル、作曲者の複数値タグの分割方法をカスタマイズします。変更を適用するにはライブラリを再同期してください。"
     },
     "about": {
       "description": "パフォーマンスとエレガンスに焦点を当てた、モダンなクロスプラットフォームの音楽プレーヤー。",
@@ -197,6 +199,19 @@
       "delete_profile": "プロファイルを削除",
       "rename_profile": "プロファイルの名前を変更",
       "select_profile": "プロファイルを選択"
+    },
+    "delimiters": {
+      "artists": "アーティスト",
+      "album_artists": "アルバムアーティスト",
+      "genres": "ジャンル",
+      "composers": "作曲者",
+      "add": "区切り文字を追加",
+      "remove": "削除",
+      "add_placeholder": "追加...",
+      "resync_hint": "区切り文字が変更されました。「ライブラリを同期」を押してトラックに適用してください（検索インデックスは自動更新されます）。",
+      "error_empty": "区切り文字を空にはできません",
+      "error_duplicate": "区切り文字はすでに追加されています",
+      "error_too_long": "最大{max}文字"
     }
   },
   "sidebar": {
