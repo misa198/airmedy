@@ -90,6 +90,7 @@ constexpr UINT WM_SMTC_QUIT = WM_APP + 5;
 
 constexpr wchar_t kWindowClass[] = L"AirmedySmtcWindow";
 constexpr wchar_t kAppUserModelID[] = L"me.misa198.airmedy";
+constexpr wchar_t kAppDisplayName[] = L"Airmedy";
 
 // 100-nanosecond ticks per second (WinRT TimeSpan unit).
 constexpr double kTicksPerSecond = 10000000.0;
@@ -522,6 +523,32 @@ void DrainQueue() {
 	}
 }
 
+// Register a friendly DisplayName for our AppUserModelID. Without this, the
+// shell can't resolve the AUMID of an unpackaged desktop app, so the Now Playing
+// card shows "Unknown app". Writing HKCU\Software\Classes\AppUserModelId\<AUMID>
+// with a DisplayName value is the documented route for unpackaged apps and needs
+// no elevation (HKCU is per-user writable).
+void RegisterAppDisplayName() {
+	std::wstring key = L"Software\\Classes\\AppUserModelId\\";
+	key += kAppUserModelID;
+	HKEY hKey = nullptr;
+	LONG rc = RegCreateKeyExW(HKEY_CURRENT_USER, key.c_str(), 0, nullptr,
+	                          REG_OPTION_NON_VOLATILE, KEY_SET_VALUE, nullptr,
+	                          &hKey, nullptr);
+	if (rc != ERROR_SUCCESS) {
+		SmtcDbg("RegCreateKeyEx(AppUserModelId) failed: %ld", rc);
+		return;
+	}
+	const auto bytes =
+	    static_cast<DWORD>((wcslen(kAppDisplayName) + 1) * sizeof(wchar_t));
+	rc = RegSetValueExW(hKey, L"DisplayName", 0, REG_SZ,
+	                    reinterpret_cast<const BYTE*>(kAppDisplayName), bytes);
+	if (rc != ERROR_SUCCESS) {
+		SmtcDbg("RegSetValueEx(DisplayName) failed: %ld", rc);
+	}
+	RegCloseKey(hKey);
+}
+
 DWORD WINAPI SmtcThread(LPVOID /*param*/) {
 	SmtcDbg("STA thread started");
 
@@ -533,6 +560,7 @@ DWORD WINAPI SmtcThread(LPVOID /*param*/) {
 		SmtcDbg("RoInitialize OK (hr=0x%08X)", (unsigned)hrInit);
 	}
 
+	RegisterAppDisplayName();
 	SetCurrentProcessExplicitAppUserModelID(kAppUserModelID);
 
 	WNDCLASSEXW wc{};
