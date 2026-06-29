@@ -162,3 +162,11 @@ type MiniPlayerStateRepository interface {
 	Save(ctx context.Context, state *MiniPlayerState) error
 	Load(ctx context.Context) (*MiniPlayerState, error)
 }
+
+// LibrarySyncStateRepository persists a signature of the delimiter config that
+// the library's split data currently reflects, so a sync can tell whether the
+// delimiters changed since they were last applied.
+type LibrarySyncStateRepository interface {
+	GetDelimitersSignature(ctx context.Context) (string, error)
+	SetDelimitersSignature(ctx context.Context, sig string) error
+}

@@ -114,7 +114,9 @@
       "restart_later": "Plus tard"
     },
     "library": {
-      "title": "Gestion de la bibliothèque"
+      "title": "Gestion de la bibliothèque",
+      "delimiters_title": "Séparateurs de balises",
+      "delimiters_description": "Personnalisez la façon dont les balises à valeurs multiples pour l'artiste, l'artiste de l'album, le genre et le compositeur sont séparées. Resynchronisez la bibliothèque pour appliquer les modifications."
     },
     "about": {
       "description": "Un lecteur de musique moderne et multiplateforme axé sur la performance et l'élégance.",
@@ -197,6 +199,19 @@
       "delete_profile": "Supprimer le profil",
       "rename_profile": "Renommer le profil",
       "select_profile": "Sélectionner un profil"
+    },
+    "delimiters": {
+      "artists": "Artistes",
+      "album_artists": "Artistes de l'album",
+      "genres": "Genres",
+      "composers": "Compositeurs",
+      "add": "Ajouter un séparateur",
+      "remove": "Supprimer",
+      "add_placeholder": "Ajouter...",
+      "resync_hint": "Séparateurs modifiés. Cliquez sur « Synchroniser la bibliothèque » pour les appliquer à vos pistes (l'index de recherche se met à jour automatiquement).",
+      "error_empty": "Le séparateur ne peut pas être vide",
+      "error_duplicate": "Séparateur déjà ajouté",
+      "error_too_long": "Maximum {max} caractères"
     }
   },
   "sidebar": {

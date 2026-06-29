@@ -72,26 +72,68 @@ func FoldUnicode(s string) string {
 	return res
 }
 
-// SplitArtists breaks down concatenated artist names into individual artists.
-// It uses hard delimiters and keywords, prioritizing hard delimiters.
-func SplitArtists(s string) []string {
-	if s == "" {
+// DefaultDelimiters returns the built-in delimiter set used when the user has
+// not customized splitting for a field.
+func DefaultDelimiters() []string {
+	return []string{";", "\\", ","}
+}
+
+// RawTagSeparator joins multiple same-named tag frames (e.g. two ARTIST tags)
+// into a single Raw*Names string. It is always treated as a value boundary when
+// re-splitting, independent of the user's delimiters, so genuine multi-value
+// tags always yield separate entities.
+const RawTagSeparator = "; "
+
+const maxDelimiterLen = 5
+
+// ValidateDelimiters checks a user-provided delimiter list. An empty list is
+// allowed and means "do not split" (the whole tag value is one entity). Rules:
+//   - each entry non-empty / not whitespace-only after trimming
+//   - each entry no longer than maxDelimiterLen
+//   - no duplicates (post-trim, case-sensitive)
+func ValidateDelimiters(list []string) error {
+	seen := make(map[string]bool, len(list))
+	for _, d := range list {
+		t := strings.TrimSpace(d)
+		if t == "" {
+			return fmt.Errorf("delimiter cannot be empty")
+		}
+		if len([]rune(t)) > maxDelimiterLen {
+			return fmt.Errorf("delimiter %q is too long (max %d characters)", t, maxDelimiterLen)
+		}
+		if seen[t] {
+			return fmt.Errorf("duplicate delimiter %q", t)
+		}
+		seen[t] = true
+	}
+	return nil
+}
+
+// SplitNames breaks a concatenated value into individual names using the given
+// delimiters. Each delimiter is treated as a literal separator substring.
+// Results are trimmed, empties dropped, and deduplicated case-insensitively.
+// With no usable delimiters the whole (trimmed) string is returned as one name.
+func SplitNames(s string, delimiters []string) []string {
+	if strings.TrimSpace(s) == "" {
 		return nil
 	}
 
-	// This regex matches:
-	// 1. Hard delimiters: , ; | / \ (one or more)
-	// 2. Keywords: ft, feat, featuring, with, vs, &, and (case-insensitive)
-	// All with optional surrounding whitespace.
+	// Collect non-empty literal delimiters.
+	parts := []string{s}
+	for _, d := range delimiters {
+		d = strings.TrimSpace(d)
+		if d == "" {
+			continue
+		}
+		var next []string
+		for _, p := range parts {
+			next = append(next, strings.Split(p, d)...)
+		}
+		parts = next
+	}
 
-	// Note: We use \b at the start and (?:\.|\b) at the end to handle optional dots
-	// and ensure we don't split names like "Andrey" or "Brand".
-	re := regexp.MustCompile(`(?i)\s*(?:[,;|\\]+|(?:\s+/\s+)+|\b(?:ft|feat|featuring|with|vs|and)(?:\.|\b)|&)\s*`)
-
-	parts := re.Split(s, -1)
 	var final []string
 	seen := make(map[string]bool)
-
 	for _, p := range parts {
 		p = strings.TrimSpace(p)
 		if p != "" && !seen[strings.ToLower(p)] {

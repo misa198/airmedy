@@ -247,4 +247,11 @@ type AppSettings struct {
 	RemoteServerPort         int    `json:"remote_server_port"`
 	RemoteServerPassword     string `json:"remote_server_password"`
 	ShowPlayerIndicator      bool   `json:"show_player_indicator"`
+
+	// User-configurable delimiters for splitting multi-value tags into
+	// individual entities. Each defaults to DefaultDelimiters() ([";", "\\"]).
+	ArtistDelimiters      []string `json:"artist_delimiters"`
+	AlbumArtistDelimiters []string `json:"album_artist_delimiters"`
+	GenreDelimiters       []string `json:"genre_delimiters"`
+	ComposerDelimiters    []string `json:"composer_delimiters"`
 }

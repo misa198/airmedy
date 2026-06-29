@@ -114,7 +114,9 @@
       "restart_later": "Später"
     },
     "library": {
-      "title": "Bibliotheksverwaltung"
+      "title": "Bibliotheksverwaltung",
+      "delimiters_title": "Tag-Trennzeichen",
+      "delimiters_description": "Lege fest, wie mehrwertige Tags für Künstler, Album-Künstler, Genre und Komponist getrennt werden. Synchronisiere die Bibliothek neu, um Änderungen anzuwenden."
     },
     "about": {
       "description": "Ein moderner, plattformübergreifender Musikplayer, der auf Leistung und Eleganz setzt.",
@@ -197,6 +199,19 @@
       "delete_profile": "Profil löschen",
       "rename_profile": "Profil umbenennen",
       "select_profile": "Profil auswählen"
+    },
+    "delimiters": {
+      "artists": "Künstler",
+      "album_artists": "Album-Künstler",
+      "genres": "Genres",
+      "composers": "Komponisten",
+      "add": "Trennzeichen hinzufügen",
+      "remove": "Entfernen",
+      "add_placeholder": "Hinzufügen...",
+      "resync_hint": "Trennzeichen geändert. Klicke auf „Bibliothek synchronisieren“, um sie auf deine Titel anzuwenden (Suchindex wird automatisch aktualisiert).",
+      "error_empty": "Trennzeichen darf nicht leer sein",
+      "error_duplicate": "Trennzeichen bereits hinzugefügt",
+      "error_too_long": "Maximal {max} Zeichen"
     }
   },
   "sidebar": {

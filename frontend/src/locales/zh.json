@@ -114,7 +114,9 @@
       "restart_later": "稍后"
     },
     "library": {
-      "title": "媒体库管理"
+      "title": "媒体库管理",
+      "delimiters_title": "标签分隔符",
+      "delimiters_description": "自定义艺术家、专辑艺术家、流派和作曲家的多值标签的拆分方式。重新同步音乐库以应用更改。"
     },
     "about": {
       "description": "一款专注于性能和优雅的现代跨平台音乐播放器。",
@@ -197,6 +199,19 @@
       "delete_profile": "删除配置文件",
       "rename_profile": "重命名配置文件",
       "select_profile": "选择配置文件"
+    },
+    "delimiters": {
+      "artists": "艺术家",
+      "album_artists": "专辑艺术家",
+      "genres": "流派",
+      "composers": "作曲家",
+      "add": "添加分隔符",
+      "remove": "移除",
+      "add_placeholder": "添加...",
+      "resync_hint": "分隔符已更改。点击\"同步音乐库\"以应用到曲目（搜索索引会自动更新）。",
+      "error_empty": "分隔符不能为空",
+      "error_duplicate": "分隔符已添加",
+      "error_too_long": "最多 {max} 个字符"
     }
   },
   "sidebar": {

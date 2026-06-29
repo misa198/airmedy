@@ -114,7 +114,9 @@
       "restart_later": "나중에"
     },
     "library": {
-      "title": "라이브러리 관리"
+      "title": "라이브러리 관리",
+      "delimiters_title": "태그 구분자",
+      "delimiters_description": "아티스트, 앨범 아티스트, 장르, 작곡가의 다중 값 태그를 분할하는 방법을 사용자 지정합니다. 변경 사항을 적용하려면 라이브러리를 다시 동기화하세요."
     },
     "about": {
       "description": "성능과 우아함에 집중한 현대적인 크로스 플랫폼 음악 플레이어입니다.",
@@ -197,6 +199,19 @@
       "delete_profile": "프로필 삭제",
       "rename_profile": "프로필 이름 바꾸기",
       "select_profile": "프로필 선택"
+    },
+    "delimiters": {
+      "artists": "아티스트",
+      "album_artists": "앨범 아티스트",
+      "genres": "장르",
+      "composers": "작곡가",
+      "add": "구분자 추가",
+      "remove": "제거",
+      "add_placeholder": "추가...",
+      "resync_hint": "구분자가 변경되었습니다. \"라이브러리 동기화\"를 눌러 트랙에 적용하세요(검색 색인은 자동으로 업데이트됩니다).",
+      "error_empty": "구분자는 비워 둘 수 없습니다",
+      "error_duplicate": "이미 추가된 구분자입니다",
+      "error_too_long": "최대 {max}자"
     }
   },
   "sidebar": {

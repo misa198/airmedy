@@ -52,12 +52,16 @@ func (s *SettingsService) GetSettings(ctx context.Context) (*domain.AppSettings,
 	if err != nil {
 		s.logger.Error("failed to load app settings, using defaults", "error", err)
 		s.cache = &domain.AppSettings{
-			Language:        "en",
-			Theme:           "system",
-			StartAtLogin:    false,
-			ShowTrayIcon:    true,
-			AutoCheckUpdate: true,
-			EQEnabled:       true,
+			Language:              "en",
+			Theme:                 "system",
+			StartAtLogin:          false,
+			ShowTrayIcon:          true,
+			AutoCheckUpdate:       true,
+			EQEnabled:             true,
+			ArtistDelimiters:      domain.DefaultDelimiters(),
+			AlbumArtistDelimiters: domain.DefaultDelimiters(),
+			GenreDelimiters:       domain.DefaultDelimiters(),
+			ComposerDelimiters:    domain.DefaultDelimiters(),
 		}
 		return s.cache, nil
 	}
@@ -74,6 +78,18 @@ func (s *SettingsService) SaveSettings(ctx context.Context, settings *domain.App
 
 	if runtime.GOOS == "windows" || runtime.GOOS == "linux" {
 		settings.ShowTrayIcon = true
+	}
+
+	// Validate user-configured delimiters before persisting.
+	for label, list := range map[string][]string{
+		"artist":       settings.ArtistDelimiters,
+		"album artist": settings.AlbumArtistDelimiters,
+		"genre":        settings.GenreDelimiters,
+		"composer":     settings.ComposerDelimiters,
+	} {
+		if err := domain.ValidateDelimiters(list); err != nil {
+			return fmt.Errorf("invalid %s delimiters: %w", label, err)
+		}
 	}
 
 	err := s.repo.Save(ctx, settings)

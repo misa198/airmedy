@@ -120,17 +120,17 @@ func (s *LibraryService) RemoveFolder(id string) error {
 }
 
 func (s *LibraryService) SyncAll() error {
-	folders, err := s.folderRepo.GetAll(context.Background())
-	if err != nil {
-		return err
-	}
-
-	for _, folder := range folders {
-		go func(path string) {
-			_ = s.libService.SyncFolder(context.Background(), path)
-		}(folder.Path)
-	}
+	go func() {
+		_ = s.libService.SyncLibrary(context.Background())
+	}()
 	return nil
+}
+
+// DelimitersPendingResync reports whether the delimiter settings changed since
+// they were last applied, so the UI can show a "sync needed" hint that survives
+// app restarts.
+func (s *LibraryService) DelimitersPendingResync() (bool, error) {
+	return s.libService.DelimitersPendingResync(context.Background())
 }
 
 func (s *LibraryService) ReindexAll() error {

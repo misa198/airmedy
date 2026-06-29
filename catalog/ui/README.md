@@ -198,6 +198,14 @@ Common dialogs are consolidated under the **`Modal.vue`** primitive. It provides
 | `MetadataEditDialog`  | Manual tag and artwork editing               |
 | `ConfirmDialog`       | Generic confirmation for destructive actions |
 
+## Chip Input (`components/settings/DelimiterInput.vue`)
+
+Reusable tag/chip editor for the Library tab's tag-delimiter settings. Renders each delimiter as
+a removable chip plus an add input. `v-model` is `string[]`; emits `update:modelValue`. Enforces
+inline validation (trim, reject empty/duplicate, max 5 chars), allows removing the last chip
+(empty list = splitting disabled), and supports Backspace-on-empty to delete the last chip. A
+`color` prop (`neutral` default | `primary` | `success` | `warning` | `danger`) themes the chips.
+
 ## UI Primitives (`@airmedy/ui`)
 
 ### Slider (`packages/ui/src/slider/Slider.vue`)

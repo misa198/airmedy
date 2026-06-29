@@ -2,6 +2,7 @@ package library
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"log/slog"
@@ -48,6 +49,7 @@ type LibraryService struct {
 	playlistRepo      domain.PlaylistRepository
 	watchedFolderRepo domain.WatchedFolderRepository
 	settingsRepo      domain.SettingsRepository
+	syncStateRepo     domain.LibrarySyncStateRepository
 	metadataExtractor domain.MetadataExtractor
 	metadataWriter    domain.MetadataWriter
 	artworkCache      domain.ArtworkCache
@@ -85,6 +87,7 @@ func NewLibraryService(
 	playlistRepo domain.PlaylistRepository,
 	watchedFolderRepo domain.WatchedFolderRepository,
 	settingsRepo domain.SettingsRepository,
+	syncStateRepo domain.LibrarySyncStateRepository,
 	metadataExtractor domain.MetadataExtractor,
 	metadataWriter domain.MetadataWriter,
 	artworkCache domain.ArtworkCache,
@@ -108,6 +111,7 @@ func NewLibraryService(
 		playlistRepo:         playlistRepo,
 		watchedFolderRepo:    watchedFolderRepo,
 		settingsRepo:         settingsRepo,
+		syncStateRepo:        syncStateRepo,
 		metadataExtractor:    metadataExtractor,
 		metadataWriter:       metadataWriter,
 		artworkCache:         artworkCache,
@@ -596,6 +600,11 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 	s.syncing.Add(1)
 	defer s.syncing.Add(-1)
 
+	// Was the library empty before this sync? Combined with a missing signature
+	// below, this distinguishes a fresh install (baseline it silently) from an
+	// upgrade with pre-existing tracks (leave unset so the user is told to resync).
+	priorCount, _ := s.trackRepo.Count(ctx)
+
 	supportedExtensions := SupportedAudioExtensions
 
 	// 1. Count files
@@ -622,11 +631,35 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 		})
 	}
 
-	// 2. Import files
-	var current int
+	// 2. Import files.
+	//
+	// Parse files in parallel (CPU/disk bound) but funnel every DB write through a
+	// single consumer goroutine, so SQLite never sees concurrent writers. The
+	// unchanged-file skip check is done against an in-memory map preloaded once
+	// (instead of a per-file DB read), keeping the parse workers DB-free.
+	type fileStamp struct {
+		size  int64
+		mtime int64
+	}
+	knownStamps := make(map[string]fileStamp)
+	if existing, err := s.trackRepo.GetByPathPrefix(ctx, root); err == nil {
+		for _, t := range existing {
+			knownStamps[filepath.Clean(t.Path)] = fileStamp{size: t.FileSize, mtime: t.Mtime.Unix()}
+		}
+	} else {
+		s.logger.Warn("Failed to preload existing tracks for sync", "root", root, "error", err)
+	}
+
+	// Load delimiter settings once; shared (read-only) by all parse workers.
+	settings, err := s.settingsRepo.Load(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to load settings: %w", err)
+	}
+
 	foundPaths := make(map[string]bool)
 	imageDirs := make(map[string]bool) // directories containing an artist.{jpg,jpeg,png}
-	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+	var toImport []string
+	walkErr := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			s.logger.Warn("Error walking path", "path", path, "error", err)
 			return nil
@@ -651,35 +684,87 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 			return nil
 		}
 
-		foundPaths[filepath.Clean(path)] = true
+		clean := filepath.Clean(path)
+		foundPaths[clean] = true
+
+		// Optimization: skip files unchanged since last sync (in-memory check).
+		if info, err := d.Info(); err == nil {
+			if st, ok := knownStamps[clean]; ok && st.size == info.Size() && st.mtime == info.ModTime().Unix() {
+				return nil
+			}
+		}
+
+		toImport = append(toImport, path)
+		return nil
+	})
+	if walkErr != nil {
+		return fmt.Errorf("failed to walk directory: %w", walkErr)
+	}
+
+	// Parallel parse → single-writer persist.
+	workers := min(runtime.NumCPU(), 8)
+	if workers < 1 {
+		workers = 1
+	}
+	paths := make(chan string)
+	jobs := make(chan *importJob)
+
+	var wg sync.WaitGroup
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for path := range paths {
+				if ctx.Err() != nil {
+					return
+				}
+				job, err := s.parseFile(ctx, path, settings)
+				if err != nil {
+					s.logger.Error("Failed to parse file", "path", path, "error", err)
+					continue
+				}
+				select {
+				case jobs <- job:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}()
+	}
+
+	// Feed paths to the pool, then close once drained.
+	go func() {
+		defer close(paths)
+		for _, path := range toImport {
+			select {
+			case paths <- path:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	// Close jobs once all workers are done.
+	go func() {
+		wg.Wait()
+		close(jobs)
+	}()
+
+	// Single consumer: serialize all DB writes and emit progress. Start the counter
+	// past the files skipped as unchanged so the bar still advances to Total.
+	current := total - len(toImport)
+	for job := range jobs {
 		current++
 		if app := application.Get(); app != nil && app.Event != nil {
 			app.Event.Emit("library:sync-progress", domain.SyncProgress{
 				Current: current,
 				Total:   total,
-				Path:    path,
+				Path:    job.path,
 			})
 		}
-
-		// Optimization: Check if file has changed
-		info, err := d.Info()
-		if err == nil {
-			existing, err := s.trackRepo.GetByPath(ctx, path)
-			if err == nil && existing != nil {
-				if existing.FileSize == info.Size() && existing.Mtime.Unix() == info.ModTime().Unix() {
-					return nil // Skip
-				}
-			}
+		if err := s.persistImported(ctx, job); err != nil {
+			s.logger.Error("Failed to import file", "path", job.path, "error", err)
 		}
-
-		if err := s.ImportFile(ctx, path); err != nil {
-			s.logger.Error("Failed to import file", "path", path, "error", err)
-		}
-		return nil
-	})
-
-	if err != nil {
-		return fmt.Errorf("failed to walk directory: %w", err)
 	}
 
 	// 2b. Apply local artist images in one batch (per image directory).
@@ -713,6 +798,18 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 		s.logger.Warn("Failed to cleanup orphaned artworks", "error", err)
 	}
 
+	// Baseline the delimiters signature on a fresh install's first sync, so a
+	// just-populated library is not flagged as "pending resync". Only when there
+	// was no prior data and no prior signature — an upgrade (priorCount > 0) keeps
+	// the empty signature so the user is prompted to resync against new delimiters.
+	if priorCount == 0 {
+		if stored, err := s.syncStateRepo.GetDelimitersSignature(ctx); err == nil && stored == "" {
+			if err := s.syncStateRepo.SetDelimitersSignature(ctx, delimitersSignature(settings)); err != nil {
+				s.logger.Warn("Failed to baseline delimiters signature", "error", err)
+			}
+		}
+	}
+
 	s.logger.Info("Finished folder sync", "root", root)
 	if app := application.Get(); app != nil && app.Event != nil {
 		for _, id := range deletedIDs {
@@ -723,21 +820,55 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 	return nil
 }
 
+// importJob carries everything parseFile gathers from disk for a single track so
+// persistImported can write it to the DB without touching the filesystem. This
+// split lets SyncFolder parse files in parallel (CPU/disk bound) while serializing
+// all DB writes through a single goroutine.
+type importJob struct {
+	path       string
+	dto        *domain.TrackDTO
+	metaLyrics string
+	lyricsSrc  string // "meta-plain" | "meta-synced" | "" (none)
+}
+
+// ImportFile imports (or re-imports) a single track. Used by the file watcher and
+// any single-file path. It runs the parse phase then the DB-write phase inline.
 func (s *LibraryService) ImportFile(ctx context.Context, path string) error {
+	settings, err := s.settingsRepo.Load(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to load settings for %s: %w", path, err)
+	}
+	job, err := s.parseFile(ctx, path, settings)
+	if err != nil {
+		return err
+	}
+	return s.persistImported(ctx, job)
+}
+
+// parseFile reads a track from disk and produces an importJob. It performs only
+// file I/O and pure CPU work (metadata decode, delimiter split, artwork save) and
+// MUST NOT touch the database, so it is safe to call concurrently from a worker
+// pool. settings is passed in (loaded once by the caller) instead of re-loaded.
+func (s *LibraryService) parseFile(ctx context.Context, path string, settings *domain.AppSettings) (*importJob, error) {
 	info, err := os.Stat(path)
 	if err != nil {
-		return fmt.Errorf("failed to stat file %s: %w", path, err)
+		return nil, fmt.Errorf("failed to stat file %s: %w", path, err)
 	}
 
 	dto, err := s.metadataExtractor.Extract(ctx, path)
 	if err != nil {
-		return fmt.Errorf("failed to extract metadata from %s: %w", path, err)
+		return nil, fmt.Errorf("failed to extract metadata from %s: %w", path, err)
 	}
 
 	dto.FileSize = info.Size()
 	dto.Mtime = info.ModTime()
 
-	// Extract artwork if available
+	// Split raw tag values into individual entities using the user-configured
+	// delimiters (single source of truth, shared with resync).
+	s.buildEntitiesFromRaw(dto, settings)
+
+	// Extract artwork if available. artworkCache.Save is content-hash keyed and
+	// stateless, so concurrent calls are safe.
 	artworkData, mimeType, err := s.metadataExtractor.ExtractArtwork(ctx, path)
 	if err == nil && artworkData != nil {
 		s.logger.Debug("Artwork extracted", "path", path, "size", len(artworkData), "mime", mimeType)
@@ -754,6 +885,30 @@ func (s *LibraryService) ImportFile(ctx context.Context, path string) error {
 	} else {
 		s.logger.Debug("No artwork found in file", "path", path)
 	}
+
+	job := &importJob{path: path, dto: dto}
+
+	// Extract lyrics from metadata (file read only; the DB write happens later in
+	// persistImported once the track ID is resolved).
+	if s.lyricsService != nil {
+		if metaLyrics, isSynced, err := s.metadataExtractor.ExtractLyrics(ctx, path); err == nil && metaLyrics != "" {
+			job.metaLyrics = metaLyrics
+			job.lyricsSrc = "meta-plain"
+			if isSynced {
+				job.lyricsSrc = "meta-synced"
+			}
+		}
+	}
+
+	return job, nil
+}
+
+// persistImported writes a parsed importJob to the database and search index, and
+// notifies listeners. It performs all DB writes for an import and MUST be called
+// from a single goroutine during bulk sync to avoid concurrent SQLite writes.
+func (s *LibraryService) persistImported(ctx context.Context, job *importJob) error {
+	dto := job.dto
+	path := job.path
 
 	// Resolve related entities
 	if err := s.resolveEntities(ctx, dto); err != nil {
@@ -773,16 +928,10 @@ func (s *LibraryService) ImportFile(ctx context.Context, path string) error {
 		s.resolveTrackArtistImages(ctx, path, artistIDs)
 	}
 
-	// Extract lyrics from metadata
-	if s.lyricsService != nil {
-		if metaLyrics, isSynced, err := s.metadataExtractor.ExtractLyrics(ctx, path); err == nil && metaLyrics != "" {
-			source := "meta-plain"
-			if isSynced {
-				source = "meta-synced"
-			}
-			if err := s.lyricsService.SaveMetaLyrics(ctx, dto.ID, metaLyrics, source); err != nil {
-				s.logger.Warn("Failed to save metadata lyrics", "path", path, "error", err)
-			}
+	// Save metadata lyrics (track ID is now resolved).
+	if s.lyricsService != nil && job.lyricsSrc != "" {
+		if err := s.lyricsService.SaveMetaLyrics(ctx, dto.ID, job.metaLyrics, job.lyricsSrc); err != nil {
+			s.logger.Warn("Failed to save metadata lyrics", "path", path, "error", err)
 		}
 	}
 
@@ -951,6 +1100,188 @@ func (s *LibraryService) resolveEntities(ctx context.Context, dto *domain.TrackD
 		return err
 	}
 
+	return nil
+}
+
+// buildEntitiesFromRaw populates the split Artist/AlbumArtist/Genre/Composer
+// entities on a TrackDTO from its Raw*Names fields using the configured
+// per-field delimiters. Shared by ImportFile and ResplitLibrary so import and
+// resync produce identical results.
+//
+// The multi-frame separator (domain.RawTagSeparator) is always applied first, so
+// genuine multi-value tags (e.g. two ARTIST frames) always become separate
+// entities regardless of the user's delimiters. Within a frame, an empty
+// delimiter list means "do not split".
+func (s *LibraryService) buildEntitiesFromRaw(dto *domain.TrackDTO, settings *domain.AppSettings) {
+	dto.Artists = nil
+	dto.AlbumArtists = nil
+	dto.Genres = nil
+	dto.Composers = nil
+
+	withFrameSep := func(delimiters []string) []string {
+		return append([]string{domain.RawTagSeparator}, delimiters...)
+	}
+
+	for _, name := range domain.SplitNames(dto.RawArtistNames, withFrameSep(settings.ArtistDelimiters)) {
+		dto.Artists = append(dto.Artists, &domain.Artist{
+			Name:             name,
+			SortName:         domain.NormalizeSort(name),
+			NormalizationKey: domain.NormalizationKey(name),
+		})
+	}
+	for _, name := range domain.SplitNames(dto.RawAlbumArtistNames, withFrameSep(settings.AlbumArtistDelimiters)) {
+		dto.AlbumArtists = append(dto.AlbumArtists, &domain.Artist{
+			Name:             name,
+			SortName:         domain.NormalizeSort(name),
+			NormalizationKey: domain.NormalizationKey(name),
+		})
+	}
+	for _, name := range domain.SplitNames(dto.RawGenreNames, withFrameSep(settings.GenreDelimiters)) {
+		dto.Genres = append(dto.Genres, &domain.Genre{
+			Name:             name,
+			NormalizationKey: domain.NormalizationKey(name),
+		})
+	}
+	for _, name := range domain.SplitNames(dto.RawComposerNames, withFrameSep(settings.ComposerDelimiters)) {
+		dto.Composers = append(dto.Composers, &domain.Composer{
+			Name:             name,
+			NormalizationKey: domain.NormalizationKey(name),
+		})
+	}
+}
+
+// ResplitLibrary re-splits every track's stored raw tag values using the current
+// delimiter settings, rebuilds the artist/album-artist/genre/composer entities
+// and their junctions, then clears any entities left orphaned by the change. It
+// reads only the DB (no file I/O) and reuses the existing sync progress events
+// so the frontend progress dialog works unchanged.
+func (s *LibraryService) ResplitLibrary(ctx context.Context) error {
+	s.logger.Info("Starting library re-split")
+
+	settings, err := s.settingsRepo.Load(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to load settings: %w", err)
+	}
+
+	tracks, err := s.trackRepo.GetAll(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to load tracks: %w", err)
+	}
+
+	total := len(tracks)
+	if app := application.Get(); app != nil && app.Event != nil {
+		app.Event.Emit("library:sync-started", map[string]interface{}{
+			"path":  "",
+			"total": total,
+		})
+	}
+
+	for i, dto := range tracks {
+		s.buildEntitiesFromRaw(dto, settings)
+		if err := s.resolveEntities(ctx, dto); err != nil {
+			s.logger.Error("Failed to re-split track", "path", dto.Path, "error", err)
+		}
+		if app := application.Get(); app != nil && app.Event != nil {
+			app.Event.Emit("library:sync-progress", domain.SyncProgress{
+				Current: i + 1,
+				Total:   total,
+				Path:    dto.Path,
+			})
+		}
+	}
+
+	// Drop artists/genres/composers/albums no longer referenced after re-splitting.
+	s.cleanupOrphanedEntities(ctx)
+	if err := s.CleanupOrphanedArtworks(ctx); err != nil {
+		s.logger.Warn("Failed to cleanup orphaned artworks", "error", err)
+	}
+
+	s.logger.Info("Finished library re-split")
+	if app := application.Get(); app != nil && app.Event != nil {
+		app.Event.Emit("library:sync-finished", "")
+	}
+	return nil
+}
+
+// delimitersSignature is a stable encoding of the four delimiter lists. It is
+// compared against the last-applied signature to decide whether a sync needs to
+// re-split the library.
+func delimitersSignature(s *domain.AppSettings) string {
+	b, _ := json.Marshal([][]string{
+		s.ArtistDelimiters,
+		s.AlbumArtistDelimiters,
+		s.GenreDelimiters,
+		s.ComposerDelimiters,
+	})
+	return string(b)
+}
+
+// DelimitersPendingResync reports whether the current delimiter settings differ
+// from the ones the library data was last split with — i.e. whether the next
+// Sync Library will re-split. Survives restarts (signature is persisted).
+func (s *LibraryService) DelimitersPendingResync(ctx context.Context) (bool, error) {
+	settings, err := s.settingsRepo.Load(ctx)
+	if err != nil {
+		return false, err
+	}
+	stored, err := s.syncStateRepo.GetDelimitersSignature(ctx)
+	if err != nil {
+		return false, err
+	}
+	// No baseline yet (empty signature). This happens both on a fresh install
+	// and when an existing user upgrades from a version without delimiter
+	// signatures. Only the latter — a non-empty library — needs to be told a
+	// re-sync will re-split. A truly empty library has nothing to re-split.
+	if stored == "" {
+		count, err := s.trackRepo.Count(ctx)
+		if err != nil {
+			return false, err
+		}
+		return count > 0, nil
+	}
+	return delimitersSignature(settings) != stored, nil
+}
+
+// SyncLibrary runs a normal folder sync (new/changed/removed files) and, only
+// when the delimiter settings have changed since they were last applied,
+// additionally re-splits the whole library and rebuilds the search index. The
+// applied-delimiters signature is persisted so the decision survives restarts.
+func (s *LibraryService) SyncLibrary(ctx context.Context) error {
+	folders, err := s.watchedFolderRepo.GetAll(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to load watched folders: %w", err)
+	}
+	for _, folder := range folders {
+		_ = s.SyncFolder(ctx, folder.Path)
+	}
+
+	settings, err := s.settingsRepo.Load(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to load settings: %w", err)
+	}
+	sig := delimitersSignature(settings)
+	stored, err := s.syncStateRepo.GetDelimitersSignature(ctx)
+	if err != nil {
+		s.logger.Warn("Failed to load delimiters signature", "error", err)
+		stored = ""
+	}
+	if sig == stored {
+		return nil
+	}
+
+	s.logger.Info("Delimiters changed since last sync; re-splitting library")
+	if err := s.ResplitLibrary(ctx); err != nil {
+		return err
+	}
+	// Persist the signature before the search reindex so the final
+	// library:sync-finished event (emitted from ReindexAll) already reflects the
+	// applied state — otherwise the UI's post-sync recheck still sees a mismatch.
+	if err := s.syncStateRepo.SetDelimitersSignature(ctx, sig); err != nil {
+		s.logger.Warn("Failed to persist delimiters signature", "error", err)
+	}
+	if err := s.ReindexAll(ctx); err != nil {
+		s.logger.Warn("Re-index after re-split failed", "error", err)
+	}
 	return nil
 }
 

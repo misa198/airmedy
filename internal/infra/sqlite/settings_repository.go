@@ -3,10 +3,42 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 
 	"airmedy/internal/domain"
 )
+
+// marshalDelimiters encodes a delimiter list as JSON for TEXT storage. An empty
+// list is preserved (encoded as "[]") since the user may intentionally disable
+// splitting for a field.
+func marshalDelimiters(list []string) string {
+	if list == nil {
+		list = []string{}
+	}
+	b, err := json.Marshal(list)
+	if err != nil {
+		b, _ = json.Marshal(domain.DefaultDelimiters())
+	}
+	return string(b)
+}
+
+// unmarshalDelimiters decodes a stored delimiter list. A genuinely absent value
+// (NULL column / empty string) falls back to the defaults; a valid but empty
+// JSON array ("[]") is preserved as an intentional "do not split" choice.
+func unmarshalDelimiters(s string) []string {
+	if s == "" {
+		return domain.DefaultDelimiters()
+	}
+	var list []string
+	if err := json.Unmarshal([]byte(s), &list); err != nil {
+		return domain.DefaultDelimiters()
+	}
+	if list == nil {
+		list = []string{}
+	}
+	return list
+}
 
 type settingsRepository struct {
 	db *DB
@@ -18,8 +50,8 @@ func NewSettingsRepository(db *DB) domain.SettingsRepository {
 
 func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSettings) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO app_settings (id, language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator, updated_at)
-		 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+		`INSERT INTO app_settings (id, language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, updated_at)
+		 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 		 ON CONFLICT(id) DO UPDATE SET
 		   language = excluded.language,
 		   theme = excluded.theme,
@@ -43,6 +75,10 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		   remote_server_port = excluded.remote_server_port,
 		   remote_server_password = excluded.remote_server_password,
 		   show_player_indicator = excluded.show_player_indicator,
+		   artist_delimiters = excluded.artist_delimiters,
+		   album_artist_delimiters = excluded.album_artist_delimiters,
+		   genre_delimiters = excluded.genre_delimiters,
+		   composer_delimiters = excluded.composer_delimiters,
 		   updated_at = excluded.updated_at`,
 		settings.Language,
 		settings.Theme,
@@ -66,6 +102,10 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		settings.RemoteServerPort,
 		settings.RemoteServerPassword,
 		settings.ShowPlayerIndicator,
+		marshalDelimiters(settings.ArtistDelimiters),
+		marshalDelimiters(settings.AlbumArtistDelimiters),
+		marshalDelimiters(settings.GenreDelimiters),
+		marshalDelimiters(settings.ComposerDelimiters),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to save app settings: %w", err)
@@ -97,9 +137,13 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		RemoteServerPort         int            `db:"remote_server_port"`
 		RemoteServerPassword     string         `db:"remote_server_password"`
 		ShowPlayerIndicator      bool           `db:"show_player_indicator"`
+		ArtistDelimiters         sql.NullString `db:"artist_delimiters"`
+		AlbumArtistDelimiters    sql.NullString `db:"album_artist_delimiters"`
+		GenreDelimiters          sql.NullString `db:"genre_delimiters"`
+		ComposerDelimiters       sql.NullString `db:"composer_delimiters"`
 	}
 	err := r.db.GetContext(ctx, &row,
-		`SELECT language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator FROM app_settings WHERE id = 1`,
+		`SELECT language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters FROM app_settings WHERE id = 1`,
 	)
 	if err == sql.ErrNoRows {
 		return &domain.AppSettings{
@@ -116,6 +160,10 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 			PreferLocalArtistArtwork: true,
 			PreventSleepWhilePlaying: false,
 			ShowPlayerIndicator:      true,
+			ArtistDelimiters:         domain.DefaultDelimiters(),
+			AlbumArtistDelimiters:    domain.DefaultDelimiters(),
+			GenreDelimiters:          domain.DefaultDelimiters(),
+			ComposerDelimiters:       domain.DefaultDelimiters(),
 		}, nil
 	}
 	if err != nil {
@@ -145,5 +193,9 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		RemoteServerPort:         row.RemoteServerPort,
 		RemoteServerPassword:     row.RemoteServerPassword,
 		ShowPlayerIndicator:      row.ShowPlayerIndicator,
+		ArtistDelimiters:         unmarshalDelimiters(row.ArtistDelimiters.String),
+		AlbumArtistDelimiters:    unmarshalDelimiters(row.AlbumArtistDelimiters.String),
+		GenreDelimiters:          unmarshalDelimiters(row.GenreDelimiters.String),
+		ComposerDelimiters:       unmarshalDelimiters(row.ComposerDelimiters.String),
 	}, nil
 }

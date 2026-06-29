@@ -62,7 +62,26 @@ To avoid duplicates, entities are identified by **normalization key** (lowercase
 
 **Album deduplication:** `NormalizationKey(title + primaryArtist)` → lookup → upsert. Album artwork is set from the first track that provides it.
 
-**Multi-artist splitting:** Raw artist strings like `"Artist A, Artist B feat. Artist C"` are split via `domain.SplitArtists()` into individual artist entities with positional ordering.
+**Multi-artist splitting:** Done in `buildEntitiesFromRaw(dto, settings)` (not in the extractor), reading the stored `Raw*Names` and splitting with the per-field user delimiters via `domain.SplitNames`. The multi-frame separator `domain.RawTagSeparator` (`"; "`) is always applied so genuinely separate tag frames stay separate. Default delimiters: `[";", "\\", ","]`. See [metadata catalog](../metadata/README.md).
+
+## Delimiter-Aware Sync (`SyncLibrary`)
+
+`SyncAll()` (Wails) runs `LibraryService.SyncLibrary(ctx)`:
+
+1. Sync every watched folder (`SyncFolder`) — imports new/changed files, drops missing ones.
+2. Compare a signature of the current delimiter settings (`delimitersSignature`, a JSON encoding
+   of the 4 ordered lists) against the last-applied signature stored in `library_sync_state`.
+3. **If changed:** `ResplitLibrary(ctx)` re-splits every track from its stored `Raw*Names` with
+   the new delimiters and rebuilds entities/junctions (reuses `resolveEntities`, then
+   `cleanupOrphanedEntities` + `CleanupOrphanedArtworks`), then `ReindexAll(ctx)` rebuilds the
+   search index. The new signature is persisted **before** `ReindexAll` so the final
+   `library:sync-finished` event reflects the applied state.
+4. **If unchanged:** nothing extra (no re-split, no re-index).
+
+The signature lives in DB, so "delimiters changed but not yet synced" survives an app restart.
+`DelimitersPendingResync()` (Wails) returns `currentSignature != stored` — the UI uses it to
+show a persistent "Sync Library to apply" hint and to clear it after sync (re-queried on every
+`library:sync-finished`).
 
 ## Wails-Exposed Methods
 
@@ -72,9 +91,10 @@ SelectFolder(): string                   // opens OS folder picker dialog
 AddFolder(path: string): void
 RemoveFolder(id: string): void           // optionally keeps tracks
 GetWatchedFolders(): WatchedFolder[]
-SyncAll(): void                          // re-scan all watched folders
+SyncAll(): void                          // SyncLibrary: re-scan folders + re-split if delimiters changed
 ImportAll(): void                        // alias for SyncAll
 ReindexAll(): void                       // rebuild Bleve index from DB
+DelimitersPendingResync(): boolean       // current delimiter sig != last-applied sig
 GetSyncStatus(): SyncProgress | null     // stub; used for frontend type generation
 // Metadata & artwork
 GetAlbumColors(id: string): ThemeColors
