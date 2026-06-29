@@ -52,6 +52,7 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000030 | `tag_delimiters.up.sql`              | Add `artist_delimiters`, `album_artist_delimiters`, `genre_delimiters`, `composer_delimiters` to `app_settings` (TEXT, JSON arrays, default `'[";","\\",","]'`) — user-configurable multi-value tag splitting |
 | 000031 | `library_sync_state.up.sql`          | Add `library_sync_state` table (single-row, CHECK id = 1) with `delimiters_signature TEXT` — records the delimiter config the library data currently reflects, so a sync knows whether to re-split |
 | 000032 | `add_comma_default_delimiter.up.sql` | Add `,` to the default delimiter set: `UPDATE app_settings SET <col> = '[";","\\",","]' WHERE <col> = '[";","\\"]'` (only rows still on the previous default; user-customized lists untouched) |
+| 000033 | `update_default_delimiters.up.sql`   | Update default delimiters: change single backslash `\` to double backslash `\\` (JSON `'[";","\\\\",","]'`) for rows still on the previous default |
 
 ## Full Schema
 
@@ -200,10 +201,10 @@ app_settings (
     lyrics_folder_path TEXT NOT NULL DEFAULT '',
     lyrics_subfolder_enabled BOOLEAN NOT NULL DEFAULT 0,
     lyrics_subfolder_name TEXT NOT NULL DEFAULT '',
-    artist_delimiters TEXT NOT NULL DEFAULT '[";","\\",","]',        -- JSON array; empty [] = no splitting
-    album_artist_delimiters TEXT NOT NULL DEFAULT '[";","\\",","]',  -- JSON array
-    genre_delimiters TEXT NOT NULL DEFAULT '[";","\\",","]',         -- JSON array
-    composer_delimiters TEXT NOT NULL DEFAULT '[";","\\",","]',      -- JSON array
+    artist_delimiters TEXT NOT NULL DEFAULT '[";","\\\\",","]',        -- JSON array; empty [] = no splitting
+    album_artist_delimiters TEXT NOT NULL DEFAULT '[";","\\\\",","]',  -- JSON array
+    genre_delimiters TEXT NOT NULL DEFAULT '[";","\\\\",","]',         -- JSON array
+    composer_delimiters TEXT NOT NULL DEFAULT '[";","\\\\",","]',      -- JSON array
     updated_at DATETIME
     -- (also: prevent_sleep_while_playing, remote_server_*, show_player_indicator)
 )

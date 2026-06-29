@@ -2,7 +2,6 @@ import { defineStore } from 'pinia'
 import { ref, shallowRef, computed, watch } from 'vue'
 import { Events } from '@wailsio/runtime'
 import * as PlayerService from '../../bindings/airmedy/internal/infra/wails/playerservice'
-import * as LyricsService from '../../bindings/airmedy/internal/infra/wails/lyricsservice'
 import { PlaybackState, PlayerStatus, RepeatMode, ThemeColors } from '../../bindings/airmedy/internal/domain/models'
 import type { Lyric, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import { buildArtworkUrl, logger } from '@airmedy/utils'
@@ -177,11 +176,13 @@ export const usePlayerStore = defineStore('player', () => {
       }),
     ]
 
-    // Pull lyrics for current track in case player:lyrics event fired before listener registration
+    // Pull lyrics for current track in case player:lyrics event fired before listener registration.
+    // Use the player's resolver (not raw GetLyrics) so a restored track recovers lyrics that live
+    // only in a sibling file or embedded metadata tag, not just cached provider content.
     if (currentTrack.value) {
       const trackId = currentTrack.value.id
       try {
-        const lyric = await LyricsService.GetLyrics(trackId)
+        const lyric = await PlayerService.GetCurrentLyrics()
         if (lyric && currentTrack.value?.id === trackId) {
           lyrics.value = lyric
           lyricsLoading.value = false

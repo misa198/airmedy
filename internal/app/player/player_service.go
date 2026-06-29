@@ -773,27 +773,56 @@ func resolveLyricsSubdir(parent, name string) string {
 	return exact
 }
 
+// lyricsResolveParams builds the preference + extra lyric dirs used by both the
+// emit-on-track-change path and the pull-based GetCurrentLyrics. Extra dirs are
+// in priority order (sibling dir is always checked first by the reader):
+// subfolder next to the track, then the global lyrics folder.
+func (s *PlayerService) lyricsResolveParams(ctx context.Context, track *domain.TrackDTO) (preferLocal bool, extraDirs []string) {
+	settings, err := s.settingsRepo.Load(ctx)
+	if err != nil {
+		settings = &domain.AppSettings{}
+	}
+	preferLocal = settings.PreferLocalLyrics
+	if settings.LyricsSubfolderEnabled && validLyricsSubfolderName(settings.LyricsSubfolderName) {
+		extraDirs = append(extraDirs, resolveLyricsSubdir(filepath.Dir(track.Path), settings.LyricsSubfolderName))
+	}
+	if settings.LyricsFolderEnabled && settings.LyricsFolderPath != "" {
+		extraDirs = append(extraDirs, settings.LyricsFolderPath)
+	}
+	return preferLocal, extraDirs
+}
+
+// GetCurrentLyrics resolves the best available lyric for the currently loaded
+// track (sibling file, embedded metadata tag, or cached provider content),
+// honoring the user's local-vs-provider preference. Used by the frontend on
+// startup to recover lyrics for a restored track, since the restore-time
+// player:lyrics emit happens before the frontend's listener is registered.
+func (s *PlayerService) GetCurrentLyrics() *domain.Lyric {
+	if s.lyricsService == nil {
+		return nil
+	}
+	s.mu.RLock()
+	track := s.currentTrack
+	s.mu.RUnlock()
+	if track == nil {
+		return nil
+	}
+	ctx := context.Background()
+	preferLocal, extraDirs := s.lyricsResolveParams(ctx, track)
+	return s.lyricsService.ResolveLyrics(ctx, track.ID, track.Path, preferLocal, extraDirs...)
+}
+
 func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
 	if s.lyricsService == nil {
 		return
 	}
 	ctx := context.Background()
 
+	preferLocal, extraDirs := s.lyricsResolveParams(ctx, track)
+
 	settings, err := s.settingsRepo.Load(ctx)
 	if err != nil {
 		settings = &domain.AppSettings{}
-	}
-
-	preferLocal := settings.PreferLocalLyrics
-
-	// Extra lyric dirs in priority order (sibling dir is always checked first by
-	// the reader): subfolder next to the track, then the global lyrics folder.
-	var extraDirs []string
-	if settings.LyricsSubfolderEnabled && validLyricsSubfolderName(settings.LyricsSubfolderName) {
-		extraDirs = append(extraDirs, resolveLyricsSubdir(filepath.Dir(track.Path), settings.LyricsSubfolderName))
-	}
-	if settings.LyricsFolderEnabled && settings.LyricsFolderPath != "" {
-		extraDirs = append(extraDirs, settings.LyricsFolderPath)
 	}
 
 	// 1. Emit the best currently-available lyric for the chosen preference.
