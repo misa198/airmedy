@@ -784,14 +784,16 @@ func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
 	}
 
 	// 1. Emit the best currently-available lyric for the chosen preference.
-	lyric := s.lyricsService.ResolveLyrics(ctx, track.ID, track.Path, preferLocal, extraDirs...)
+	//    hasLocal comes from the SAME read, so the step-2 guard can't disagree
+	//    with what was just emitted due to a transient second-read failure.
+	lyric, hasLocal := s.lyricsService.ResolveWithLocal(ctx, track.ID, track.Path, preferLocal, extraDirs...)
 	if lyric != nil {
 		s.emitLyrics(track.ID, lyric)
 	}
 
 	// 2. When local lyrics are preferred and present, they win outright. Don't
 	//    fetch providers, so nothing overrides the displayed local lyric.
-	if preferLocal && s.lyricsService.HasLocalLyrics(ctx, track.ID, track.Path, extraDirs...) {
+	if preferLocal && hasLocal {
 		return
 	}
 
