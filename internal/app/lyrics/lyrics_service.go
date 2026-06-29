@@ -104,6 +104,19 @@ func (s *LyricsService) SaveMetaLyrics(ctx context.Context, trackID, content, so
 //
 // Returns nil if nothing is available (caller may fetch from providers).
 func (s *LyricsService) ResolveLyrics(ctx context.Context, trackID, audioPath string, preferLocal bool, extraDirs ...string) *domain.Lyric {
+	resolved, _ := s.ResolveWithLocal(ctx, trackID, audioPath, preferLocal, extraDirs...)
+	return resolved
+}
+
+// ResolveWithLocal resolves the best lyric (see ResolveLyrics) and additionally
+// reports whether a local-tier lyric is present, derived from the SAME read.
+//
+// Callers that need both the display lyric and the "skip provider fetch"
+// decision must use this instead of pairing ResolveLyrics with a separate
+// HasLocalLyrics call: two independent reads double the chance that a transient
+// DB error (e.g. SQLITE_BUSY during a concurrent sync) makes the presence check
+// silently return false, wrongly triggering an online fetch.
+func (s *LyricsService) ResolveWithLocal(ctx context.Context, trackID, audioPath string, preferLocal bool, extraDirs ...string) (resolved *domain.Lyric, hasLocal bool) {
 	lyric, _ := s.repo.GetByTrackID(ctx, trackID)
 
 	// Build the local tier: sibling file beats embedded metadata tag.
@@ -139,7 +152,7 @@ func (s *LyricsService) ResolveLyrics(ctx context.Context, trackID, audioPath st
 		return &domain.Lyric{TrackID: trackID, Content: providerContent, Source: providerSource}
 	}
 
-	resolved := func() *domain.Lyric {
+	resolved = func() *domain.Lyric {
 		if preferLocal {
 			if l := local(); l != nil {
 				return l
@@ -152,12 +165,14 @@ func (s *LyricsService) ResolveLyrics(ctx context.Context, trackID, audioPath st
 		return local()
 	}()
 
+	hasLocal = localContent != ""
+
 	if resolved != nil {
 		s.logger.Debug("resolved lyrics", "track_id", trackID, "prefer_local", preferLocal, "source", resolved.Source)
 	} else {
 		s.logger.Debug("no lyrics resolved", "track_id", trackID, "prefer_local", preferLocal)
 	}
-	return resolved
+	return resolved, hasLocal
 }
 
 // HasLocalLyrics reports whether a local-tier lyric exists for the track: a
