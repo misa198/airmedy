@@ -183,8 +183,8 @@ export const usePlayerStore = defineStore('player', () => {
       const trackId = currentTrack.value.id
       try {
         const lyric = await PlayerService.GetCurrentLyrics()
-        if (lyric && currentTrack.value?.id === trackId) {
-          lyrics.value = lyric
+        if (currentTrack.value?.id === trackId) {
+          lyrics.value = lyric ?? null
           lyricsLoading.value = false
         }
       } catch (e) {

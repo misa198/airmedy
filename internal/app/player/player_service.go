@@ -829,7 +829,18 @@ func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
 	//    hasLocal comes from the SAME read, so the step-2 guard can't disagree
 	//    with what was just emitted due to a transient second-read failure.
 	lyric, hasLocal := s.lyricsService.ResolveWithLocal(ctx, track.ID, track.Path, preferLocal, extraDirs...)
-	if lyric != nil {
+
+	// Check if we will fetch online lyrics.
+	dbLyric, _ := s.lyricsService.GetLyrics(ctx, track.ID)
+	hasExternal := dbLyric != nil && dbLyric.Content != ""
+	anyProviderEnabled := settings.EnableLrclib || settings.EnableKugou
+	willFetch := (!preferLocal || !hasLocal) && !hasExternal && anyProviderEnabled
+
+	// Only emit immediately if we are not going to fetch, or if the lyric
+	// we have is already the preferred type (e.g. we prefer local, or we have cached external).
+	// If we will fetch and prefer online lyrics, we hold off emitting the local fallback
+	// lyric to avoid a visual flash on the UI.
+	if lyric != nil && (!willFetch || preferLocal) {
 		s.emitLyrics(track.ID, lyric)
 	}
 
@@ -840,10 +851,7 @@ func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
 	}
 
 	// 3. Fetch from providers when enabled and not already cached.
-	dbLyric, _ := s.lyricsService.GetLyrics(ctx, track.ID)
-	hasExternal := dbLyric != nil && dbLyric.Content != ""
-	anyProviderEnabled := settings.EnableLrclib || settings.EnableKugou
-	if !hasExternal && anyProviderEnabled {
+	if willFetch {
 		if _, err := s.lyricsService.FetchFromProviders(ctx, track, settings.EnableLrclib, settings.EnableKugou); err != nil {
 			s.logger.Warn("failed to fetch lyrics from providers", "track_id", track.ID, "error", err)
 		}
@@ -852,9 +860,7 @@ func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
 	// 4. Re-resolve so the final emit honors the preference now that provider
 	//    content may be cached. This is the single source of priority truth.
 	resolved := s.lyricsService.ResolveLyrics(ctx, track.ID, track.Path, preferLocal, extraDirs...)
-	if resolved != nil {
-		s.emitLyrics(track.ID, resolved)
-	}
+	s.emitLyrics(track.ID, resolved)
 }
 
 func (s *PlayerService) emitLyrics(trackID string, lyric *domain.Lyric) {
