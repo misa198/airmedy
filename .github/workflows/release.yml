@@ -90,6 +90,35 @@ jobs:
           name: ffmpeg-windows
           path: internal/infra/audio/ffmpeg_libs
 
+  build-sfb-darwin:
+    name: Build SFBAudioEngine for Darwin
+    needs: bump
+    runs-on: macos-26
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ github.event.inputs.version }}
+
+      - name: Cache SFB Audio Engine (Darwin)
+        id: cache-sfb
+        uses: actions/cache@v4
+        with:
+          path: |
+            internal/infra/audio/sfb_libs
+            internal/infra/audio/sfb_build
+          key: sfb-Darwin-v1-${{ hashFiles('scripts/build-sfbaudioengine-darwin.sh') }}
+
+      - name: Build SFB Audio Engine (Darwin)
+        if: steps.cache-sfb.outputs.cache-hit != 'true'
+        run: bash scripts/build-sfbaudioengine-darwin.sh
+
+      - name: Upload SFB Audio Engine libs
+        uses: actions/upload-artifact@v4
+        with:
+          name: sfb-darwin
+          path: internal/infra/audio/sfb_libs
+
   build-ffmpeg-darwin:
     name: Build FFmpeg for Darwin
     needs: bump
@@ -216,7 +245,7 @@ jobs:
 
   build:
     name: Build ${{ matrix.os }}
-    needs: [bump, build-ffmpeg-windows, build-ffmpeg-darwin, build-aubio-darwin, build-ffmpeg-linux, build-aubio-linux]
+    needs: [bump, build-ffmpeg-windows, build-sfb-darwin, build-ffmpeg-darwin, build-aubio-darwin, build-ffmpeg-linux, build-aubio-linux]
     strategy:
       fail-fast: false
       matrix:
@@ -317,18 +346,6 @@ jobs:
           Expand-Archive -Path "$env:RUNNER_TEMP\llvm-mingw.zip" -DestinationPath "C:\"
           Add-Content -Path $env:GITHUB_PATH -Value "C:\llvm-mingw-20260616-ucrt-x86_64\bin"
 
-      - name: Cache SFB Audio Engine (Darwin)
-        id: cache-sfb
-        if: runner.os == 'Darwin'
-        uses: actions/cache@v4
-        with:
-          path: |
-            internal/infra/audio/sfb_libs
-            internal/infra/audio/sfb_build
-          key: sfb-${{ runner.os }}-${{ hashFiles('scripts/build-sfbaudioengine-darwin.sh') }}
-          restore-keys: |
-            sfb-${{ runner.os }}-
-
       - name: Cache Miniaudio (Windows and Linux)
         id: cache-miniaudio
         if: runner.os == 'Windows' || runner.os == 'Linux'
@@ -358,6 +375,13 @@ jobs:
           name: aubio-darwin
           path: internal/infra/audio/aubio_libs
 
+      - name: Download SFB Audio Engine (Darwin)
+        if: runner.os == 'Darwin'
+        uses: actions/download-artifact@v4
+        with:
+          name: sfb-darwin
+          path: internal/infra/audio/sfb_libs
+
       - name: Download FFmpeg (Linux)
         if: runner.os == 'Linux'
         uses: actions/download-artifact@v4
@@ -371,10 +395,6 @@ jobs:
         with:
           name: aubio-linux
           path: internal/infra/audio/aubio_libs
-
-      - name: Build SFB Audio Engine (Darwin)
-        if: runner.os == 'Darwin' && !hashFiles('internal/infra/audio/sfb_libs/SFBAudioEngine.xcframework/Info.plist')
-        run: bash scripts/build-sfbaudioengine-darwin.sh
 
       - name: Fetch miniaudio (Windows and Linux)
         if: (runner.os == 'Windows' || runner.os == 'Linux') && steps.cache-miniaudio.outputs.cache-hit != 'true'
