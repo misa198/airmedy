@@ -2,6 +2,7 @@ package analysis
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"sync"
 	"testing"
@@ -48,6 +49,17 @@ func (m *mockAnalysisRepo) ListPending(ctx context.Context, currentVersion, limi
 	return nil, nil
 }
 
+func (m *mockAnalysisRepo) GetFeatures(ctx context.Context, trackID string) (*domain.TrackFeatures, error) {
+	return nil, nil
+}
+
+func (m *mockAnalysisRepo) MarkFailed(ctx context.Context, trackID string, currentVersion int) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.versions[trackID] = currentVersion
+	return nil
+}
+
 func (m *mockAnalysisRepo) callCount() int {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -64,8 +76,10 @@ func (m *mockAnalysisRepo) callOrder() []string {
 
 // mockAnalyzer blocks on a gate before returning, letting tests serialize
 // otherwise-concurrent worker activity for deterministic ordering assertions.
+// fail, if non-nil, makes Analyze return an error for that one path.
 type mockAnalyzer struct {
 	gate chan struct{} // if non-nil, Analyze waits for a send before proceeding
+	fail string        // if set, Analyze(ctx, fail) returns an error instead of features
 }
 
 func (a *mockAnalyzer) Analyze(ctx context.Context, path string) (*domain.TrackFeatures, error) {
@@ -75,6 +89,9 @@ func (a *mockAnalyzer) Analyze(ctx context.Context, path string) (*domain.TrackF
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		}
+	}
+	if a.fail != "" && path == a.fail {
+		return nil, fmt.Errorf("simulated decode failure")
 	}
 	return &domain.TrackFeatures{}, nil
 }
@@ -104,6 +121,8 @@ func newTestService(repo *mockAnalysisRepo, analyzer domain.LoudnessAnalyzer, tr
 	s.runCtx = ctx
 	s.runCancel = cancel
 	s.enabled = true
+	s.workersTotal = 1
+	s.activeLimit = 1
 	return s
 }
 
@@ -171,7 +190,7 @@ func TestPriorityPromotesAheadOfNormalQueue(t *testing.T) {
 
 	// Block the worker on the first track so subsequent enqueues land while idle.
 	svc.mu.Lock()
-	svc.throttled = true
+	svc.activeLimit = 0
 	svc.mu.Unlock()
 
 	svc.Enqueue("a", false)
@@ -194,7 +213,7 @@ func TestBoostPriorityPromotesQueuedTrack(t *testing.T) {
 	svc := newTestService(repo, &mockAnalyzer{}, tracksOf("a", "b"))
 
 	svc.mu.Lock()
-	svc.throttled = true
+	svc.activeLimit = 0
 	svc.mu.Unlock()
 
 	svc.Enqueue("a", false)
@@ -209,7 +228,11 @@ func TestBoostPriorityPromotesQueuedTrack(t *testing.T) {
 	}
 }
 
-func TestSetThrottledBlocksNewWork(t *testing.T) {
+func TestSetThrottledBlocksNewWorkOnWeakMachines(t *testing.T) {
+	old := numCPU
+	numCPU = func() int { return 2 }
+	defer func() { numCPU = old }()
+
 	repo := newMockAnalysisRepo()
 	svc := newTestService(repo, &mockAnalyzer{}, tracksOf("trk-1"))
 
@@ -227,6 +250,29 @@ func TestSetThrottledBlocksNewWork(t *testing.T) {
 
 	svc.SetThrottled(false)
 	waitFor(t, time.Second, func() bool { return repo.callCount() == 1 })
+
+	_ = svc.Stop(context.Background())
+}
+
+func TestSetThrottledKeepsReducedConcurrencyOnStrongMachines(t *testing.T) {
+	old := numCPU
+	numCPU = func() int { return 10 }
+	defer func() { numCPU = old }()
+
+	repo := newMockAnalysisRepo()
+	svc := newTestService(repo, &mockAnalyzer{}, tracksOf("trk-1", "trk-2"))
+	svc.workersTotal = 4
+	svc.activeLimit = 4
+
+	svc.wg.Add(2)
+	go svc.worker(svc.runCtx)
+	go svc.worker(svc.runCtx)
+
+	svc.SetThrottled(true) // throttledLimit(4) with numCPU()=10 -> max(4/2,1) = 2
+	svc.Enqueue("trk-1", false)
+	svc.Enqueue("trk-2", false)
+
+	waitFor(t, time.Second, func() bool { return repo.callCount() == 2 })
 
 	_ = svc.Stop(context.Background())
 }
@@ -320,5 +366,58 @@ func TestStopWaitsForWorkersAndLeavesNoLeak(t *testing.T) {
 	case <-done:
 	case <-time.After(time.Second):
 		t.Fatal("Stop did not return promptly")
+	}
+}
+
+func TestAnalyzeOneMarksFailedTrackToUnblockCompletion(t *testing.T) {
+	// Regression: a track whose Analyze() call errors permanently (corrupt
+	// file, unsupported codec) must not stay "pending" forever, or the pool
+	// can never report completion even after every analyzable track is done.
+	repo := newMockAnalysisRepo()
+	tracks := tracksOf("bad-track")
+	svc := newTestService(repo, &mockAnalyzer{fail: tracks["bad-track"].Path}, tracks)
+
+	svc.analyzeOne(context.Background(), "bad-track")
+
+	repo.mu.Lock()
+	version, marked := repo.versions["bad-track"]
+	repo.mu.Unlock()
+	if !marked || version != analyzerVersion {
+		t.Fatalf("expected bad-track marked with analyzed_version=%d, got marked=%v version=%d", analyzerVersion, marked, version)
+	}
+	if repo.callCount() != 0 {
+		t.Fatalf("expected no UpsertFeatures call for a failed track, got %d", repo.callCount())
+	}
+	svc.progMu.Lock()
+	done := svc.done
+	svc.progMu.Unlock()
+	if done != 0 {
+		t.Fatalf("expected done to stay 0 for a failed track, got %d", done)
+	}
+}
+
+func TestResolveProgress_DoneOncePendingIsZero(t *testing.T) {
+	// Regression: after the last track finishes, done > 0 while the pool keeps
+	// running (not stopped). Checking total==0 (pending+done) would never fire
+	// since done alone keeps it nonzero — must check pending==0 instead, so
+	// state reaches "done" naturally instead of reverting to "analyzing" the
+	// next time something (e.g. a play/pause toggle) calls emitProgress.
+	total, state := resolveProgress(0, 12, domain.AnalysisStateAnalyzing)
+	if total != 12 || state != domain.AnalysisStateDone {
+		t.Fatalf("expected total=12 state=done, got total=%d state=%s", total, state)
+	}
+}
+
+func TestResolveProgress_StillPendingKeepsCallerState(t *testing.T) {
+	total, state := resolveProgress(3, 12, domain.AnalysisStatePaused)
+	if total != 15 || state != domain.AnalysisStatePaused {
+		t.Fatalf("expected total=15 state=paused, got total=%d state=%s", total, state)
+	}
+}
+
+func TestResolveProgress_CountFailureKeepsCallerStateAndDropsPending(t *testing.T) {
+	total, state := resolveProgress(-1, 12, domain.AnalysisStateAnalyzing)
+	if total != 12 || state != domain.AnalysisStateAnalyzing {
+		t.Fatalf("expected total=12 state=analyzing, got total=%d state=%s", total, state)
 	}
 }

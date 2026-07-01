@@ -66,6 +66,16 @@ func (r *analysisRepository) UpsertFeatures(ctx context.Context, f *domain.Track
 	return tx.Commit()
 }
 
+func (r *analysisRepository) MarkFailed(ctx context.Context, trackID string, currentVersion int) error {
+	if _, err := r.db.ExecContext(ctx,
+		`UPDATE tracks SET analyzed_version = ? WHERE id = ?`,
+		currentVersion, trackID,
+	); err != nil {
+		return fmt.Errorf("failed to bump analyzed_version for failed track: %w", err)
+	}
+	return nil
+}
+
 func (r *analysisRepository) GetFeatures(ctx context.Context, trackID string) (*domain.TrackFeatures, error) {
 	var row struct {
 		TrackID          string       `db:"track_id"`

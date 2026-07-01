@@ -177,7 +177,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 			ShowPlayerIndicator:      true,
 			LibraryAnalysisEnabled:   false,
 			NormalizationEnabled:     false,
-			NormalizationMode:        "off",
+			NormalizationMode:        "track",
 			NormalizationTargetLUFS:  domain.DefaultTargetLUFS,
 			NormalizationPreventClip: true,
 			ArtistDelimiters:         domain.DefaultDelimiters(),

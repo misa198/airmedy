@@ -126,7 +126,7 @@ onUnmounted(() => {
             @update:model-value="appStore.updateLibraryAnalysisEnabled"
           />
         </div>
-        <div v-if="appStore.libraryAnalysisEnabled && analysisState === 'analyzing'" class="px-5 py-3 text-xs text-foreground opacity-60">
+        <div v-if="appStore.libraryAnalysisEnabled && analysisState !== 'done'" class="px-5 py-3 text-xs text-foreground opacity-60">
           {{ t('settings.normalization.analyzing', { done: analysisDone, total: analysisTotal, percent: analysisPercent }) }}
         </div>
       </div>

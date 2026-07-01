@@ -50,7 +50,14 @@ func (s *NormalizationService) SetEnabled(ctx context.Context, enabled bool) err
 		return fmt.Errorf("library analysis must be enabled before normalization")
 	}
 	settings.NormalizationEnabled = enabled
-	s.logger.Debug("normalization: enabled changed", "enabled", enabled)
+	// The mode selector only ever offers "track"/"album" — "off" is just the
+	// unset-default persisted value, never a user choice. Without this, a
+	// first-time enable leaves mode="off" and gain stays 0 until the user
+	// separately (and redundantly) picks a mode.
+	if enabled && settings.NormalizationMode == "off" {
+		settings.NormalizationMode = "track"
+	}
+	s.logger.Debug("normalization: enabled changed", "enabled", enabled, "mode", settings.NormalizationMode)
 	return s.settings.Save(ctx, settings)
 }
 

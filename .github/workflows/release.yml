@@ -113,12 +113,6 @@ jobs:
         if: steps.cache-sfb.outputs.cache-hit != 'true'
         run: bash scripts/build-sfbaudioengine-darwin.sh
 
-      - name: Upload SFB Audio Engine libs
-        uses: actions/upload-artifact@v4
-        with:
-          name: sfb-darwin
-          path: internal/infra/audio/sfb_libs
-
   build-ffmpeg-darwin:
     name: Build FFmpeg for Darwin
     needs: bump
@@ -375,12 +369,14 @@ jobs:
           name: aubio-darwin
           path: internal/infra/audio/aubio_libs
 
-      - name: Download SFB Audio Engine (Darwin)
+      - name: Restore SFB Audio Engine (Darwin)
         if: runner.os == 'macOS'
-        uses: actions/download-artifact@v4
+        uses: actions/cache/restore@v4
         with:
-          name: sfb-darwin
-          path: internal/infra/audio/sfb_libs
+          path: |
+            internal/infra/audio/sfb_libs
+            internal/infra/audio/sfb_build
+          key: sfb-Darwin-v1-${{ hashFiles('scripts/build-sfbaudioengine-darwin.sh') }}
 
       - name: Download FFmpeg (Linux)
         if: runner.os == 'Linux'

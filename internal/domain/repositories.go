@@ -172,6 +172,15 @@ type AnalysisRepository interface {
 	// ListPending returns up to limit track IDs with analyzed_version <
 	// currentVersion, oldest-added first (stable backfill order).
 	ListPending(ctx context.Context, currentVersion, limit int) ([]string, error)
+	// MarkFailed bumps tracks.analyzed_version to currentVersion without
+	// writing a track_features row, for a track whose analysis pass errored
+	// (corrupt file, unsupported codec, etc). Without this, a single
+	// permanently-failing track would count as pending forever — CountPending
+	// never reaches 0, and analysis:progress never reports "done". No
+	// features row means GetFeatures still returns nil for it, so
+	// Normalization correctly treats it as unanalyzed (gain 0) rather than
+	// inventing fake loudness data.
+	MarkFailed(ctx context.Context, trackID string, currentVersion int) error
 }
 
 type MiniPlayerStateRepository interface {

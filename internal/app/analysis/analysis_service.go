@@ -33,16 +33,18 @@ type AnalysisService struct {
 
 	wg sync.WaitGroup
 
-	mu          sync.Mutex
-	cond        *sync.Cond
-	boostQueue  []string
-	normalQueue []string
-	queued      map[string]bool // dedup: track ID currently somewhere in the queue
-	inFlight    map[string]bool // dedup: track ID currently being analyzed by a worker
-	throttled   bool            // true while playback is active -> workers idle
-	enabled     bool            // true while the worker pool is running
-	runCtx      context.Context
-	runCancel   context.CancelFunc
+	mu           sync.Mutex
+	cond         *sync.Cond
+	boostQueue   []string
+	normalQueue  []string
+	queued       map[string]bool // dedup: track ID currently somewhere in the queue
+	inFlight     map[string]bool // dedup: track ID currently being analyzed by a worker
+	active       int             // number of workers currently analyzing (< activeLimit)
+	activeLimit  int             // concurrency cap; lowered (not zeroed) while playback is active
+	workersTotal int             // total worker goroutines spawned by startPool
+	enabled      bool            // true while the worker pool is running
+	runCtx       context.Context
+	runCancel    context.CancelFunc
 
 	progMu sync.Mutex
 	done   int
@@ -127,9 +129,11 @@ func (s *AnalysisService) startPool() {
 	s.runCtx = runCtx
 	s.runCancel = cancel
 	s.enabled = true
+	workers := max(runtime.NumCPU()/2, 1)
+	s.workersTotal = workers
+	s.activeLimit = workers
 	s.mu.Unlock()
 
-	workers := max(runtime.NumCPU()/2, 1)
 	for range workers {
 		s.wg.Add(1)
 		go s.worker(runCtx)
@@ -239,32 +243,49 @@ func (s *AnalysisService) promoteToFrontLocked(trackID string) {
 	// Already in boostQueue or about to be picked up; nothing to do.
 }
 
-// SetThrottled pauses/resumes new work dequeue while playback is active, to
-// protect the audio thread from CPU contention. In-flight analysis finishes;
-// no new track starts while throttled.
+// numCPU is a var (not a direct runtime.NumCPU() call) so tests can stub it
+// to exercise both the low-core and high-core throttling paths.
+var numCPU = runtime.NumCPU
+
+// throttledLimit returns the worker concurrency cap to apply while playback
+// is active. Machines with more than 4 cores have enough headroom to keep a
+// reduced pool running alongside playback without audio contention; weaker
+// machines fall back to a full pause (the original protective behavior).
+func throttledLimit(total int) int {
+	if numCPU() <= 4 {
+		return 0
+	}
+	return max(total/2, 1)
+}
+
+// SetThrottled lowers (or restores) the worker concurrency cap while playback
+// is active, to protect the audio thread from CPU contention. In-flight
+// analysis finishes regardless; only the cap on newly started work changes.
 func (s *AnalysisService) SetThrottled(throttled bool) {
 	s.mu.Lock()
-	s.throttled = throttled
-	s.mu.Unlock()
-	if !throttled {
-		s.mu.Lock()
-		s.cond.Broadcast()
-		s.mu.Unlock()
-	}
-	state := domain.AnalysisStateAnalyzing
+	limit := s.workersTotal
 	if throttled {
+		limit = throttledLimit(s.workersTotal)
+	}
+	s.activeLimit = limit
+	s.mu.Unlock()
+	s.cond.Broadcast()
+
+	state := domain.AnalysisStateAnalyzing
+	if throttled && limit == 0 {
 		state = domain.AnalysisStatePaused
 	}
 	s.emitProgress(state)
 }
 
 // worker pulls boost-queue first, then normal-queue, blocking on s.cond when
-// both are empty or while throttled. Exits when ctx is cancelled.
+// both are empty or the active-worker count is already at the concurrency
+// cap. Exits when ctx is cancelled.
 func (s *AnalysisService) worker(ctx context.Context) {
 	defer s.wg.Done()
 	for {
 		s.mu.Lock()
-		for (s.throttled || (len(s.boostQueue) == 0 && len(s.normalQueue) == 0)) && ctx.Err() == nil {
+		for (s.active >= s.activeLimit || (len(s.boostQueue) == 0 && len(s.normalQueue) == 0)) && ctx.Err() == nil {
 			s.cond.Wait()
 		}
 		if ctx.Err() != nil {
@@ -280,12 +301,15 @@ func (s *AnalysisService) worker(ctx context.Context) {
 		}
 		delete(s.queued, trackID)
 		s.inFlight[trackID] = true
+		s.active++
 		s.mu.Unlock()
 
 		s.analyzeOne(ctx, trackID)
 
 		s.mu.Lock()
 		delete(s.inFlight, trackID)
+		s.active--
+		s.cond.Broadcast()
 		s.mu.Unlock()
 	}
 }
@@ -312,7 +336,17 @@ func (s *AnalysisService) analyzeOne(ctx context.Context, trackID string) {
 		if ctx.Err() != nil {
 			return // shutting down
 		}
-		s.logger.Warn("analysis failed", "track_id", trackID, "path", track.Path, "error", err)
+		s.logger.Warn("analysis failed, marking track as done to unblock completion", "track_id", trackID, "path", track.Path, "error", err)
+		// Corrupt file, unsupported codec, etc — this track will never
+		// succeed on retry. Without bumping analyzed_version here it stays
+		// "pending" forever: CountPending never reaches 0, so the pool can
+		// never naturally report "done". No features row is written, so
+		// GetFeatures still returns nil and Normalization safely no-ops for it.
+		if err := s.analysisRepo.MarkFailed(ctx, trackID, analyzerVersion); err != nil {
+			s.logger.Error("failed to mark track analysis as failed", "track_id", trackID, "error", err)
+			return
+		}
+		s.emitProgress(domain.AnalysisStateAnalyzing)
 		return
 	}
 	feat.TrackID = trackID
@@ -338,15 +372,11 @@ func (s *AnalysisService) emitProgress(state string) {
 	// Always a fresh background context: this may be called after the pool's
 	// own context was just cancelled (stopPool), where reusing it would make
 	// CountPending fail immediately.
-	total, err := s.analysisRepo.CountPending(context.Background(), analyzerVersion)
+	pending, err := s.analysisRepo.CountPending(context.Background(), analyzerVersion)
 	if err != nil {
-		total = done
-	} else {
-		total += done
+		pending = -1 // count unknown; resolveProgress keeps the caller's state as-is
 	}
-	if total == 0 {
-		state = domain.AnalysisStateDone
-	}
+	total, state := resolveProgress(pending, done, state)
 
 	if app := application.Get(); app != nil && app.Event != nil {
 		app.Event.Emit("analysis:progress", domain.AnalysisProgress{
@@ -355,4 +385,24 @@ func (s *AnalysisService) emitProgress(state string) {
 			State: state,
 		})
 	}
+}
+
+// resolveProgress derives the (total, state) pair reported to the frontend.
+// pending is the count of not-yet-analyzed tracks, or -1 if CountPending
+// failed (total then falls back to just done, and state is left as the
+// caller passed it — completion can't be confirmed without a pending count).
+// Completion (state=done) is driven by pending==0, not total==0: total
+// includes done, so it's only ever 0 before the very first track finishes —
+// checking it instead of pending would mean state never naturally reaches
+// "done" once analysis has processed at least one track.
+func resolveProgress(pending, done int, state string) (total int, resolvedState string) {
+	if pending < 0 {
+		return done, state
+	}
+	total = pending + done
+	resolvedState = state
+	if pending == 0 {
+		resolvedState = domain.AnalysisStateDone
+	}
+	return total, resolvedState
 }

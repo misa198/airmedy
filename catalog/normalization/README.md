@@ -26,9 +26,18 @@ adapter, the same way EQ is (see `catalog/equalizer/README.md`).
 | Field | Type | Default | Meaning |
 | ----- | ---- | ------- | ------- |
 | `NormalizationEnabled` | bool | `false` | Master on/off. Cannot be set `true` while `AppSettings.LibraryAnalysisEnabled` is `false` — enforced in `NormalizationService.SetEnabled`, not just the UI. See `catalog/analysis/README.md`. |
-| `NormalizationMode` | string | `"track"` | `off` \| `track` \| `album` |
+| `NormalizationMode` | string | `"track"` | `off` \| `track` \| `album`. The mode `Select` in the UI only ever offers `track`/`album` — `"off"` is purely an unset-default, never a user choice. Both default paths must agree: the migration column default (`ALTER TABLE ... DEFAULT 'track'`, `migrations/000034_track_features.up.sql`) and the Go fallback in `SettingsRepository.Load` for a brand-new `app_settings` row (`sql.ErrNoRows` branch, `internal/infra/sqlite/settings_repository.go`) — the latter used to hardcode `"off"`, diverging from the migration and silently persisting `"off"` on first save for new installs. `SetEnabled(true)` also auto-promotes a lingering `"off"` to `"track"` (see below) as a safety net for installs that already persisted `"off"` before this fix. |
 | `NormalizationTargetLUFS` | float64 | `-14.0` (`domain.DefaultTargetLUFS`) | Target integrated loudness |
 | `NormalizationPreventClip` | bool | `true` | Clamp gain so `gain + TruePeak <= 0` dBFS |
+
+## Enable Lifecycle (`NormalizationService.SetEnabled`)
+
+`SetEnabled(true)` also defaults `NormalizationMode` from `"off"` to `"track"` if it's
+still at the DB default. Without this, enabling normalization for the first time
+(right after analysis finishes) applies gain `0` — indistinguishable from "not
+analyzed yet" — until the user separately picks Track/Album mode, which was a real
+reported bug (`enabled changed enabled=true` → `gain_db=0`, only fixed once `mode
+changed` fired). An already-explicit mode (`track` or `album`) is left untouched.
 
 ## Gain Formula (`NormalizationService.ComputeGain`)
 

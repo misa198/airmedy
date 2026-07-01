@@ -189,7 +189,7 @@ function openProfileMenu(e: MouseEvent) {
     </div>
 
     <!-- 10-band vertical sliders -->
-    <div class="flex items-end justify-between gap-1 h-40 px-1">
+    <div class="flex items-end justify-between gap-1 h-56 px-1">
       <div v-for="(label, i) in FREQ_LABELS" :key="i" class="flex flex-col items-center flex-1 min-w-0 h-full">
         <!-- Gain value -->
         <p class="text-[10px] text-foreground opacity-80 mb-1 tabular-nums w-full text-center">
@@ -197,9 +197,9 @@ function openProfileMenu(e: MouseEvent) {
         </p>
         <!-- Vertical slider via CSS rotation wrapper -->
         <div class="flex-1 flex items-center justify-center w-full">
-          <div class="relative" style="width: 24px; height: 80px;">
+          <div class="relative" style="width: 24px; height: 140px;">
             <div class="absolute inset-0 flex items-center justify-center"
-              style="transform: rotate(-90deg); transform-origin: center; width: 80px; height: 24px; top: 50%; left: 50%; margin-top: -12px; margin-left: -40px;">
+              style="transform: rotate(-90deg); transform-origin: center; width: 140px; height: 24px; top: 50%; left: 50%; margin-top: -12px; margin-left: -70px;">
               <Slider :model-value="getBandGain(i)" :min="-12" :max="12" :step="0.5" class="w-full"
                 @update:model-value="(val: number) => onBandInput(i, val)"
                 @mouseup="() => onBandRelease(i)"

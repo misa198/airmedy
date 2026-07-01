@@ -155,7 +155,7 @@ func TestNormalizationSettingsRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to load default settings: %v", err)
 	}
-	if def.NormalizationEnabled != false || def.NormalizationMode != "off" ||
+	if def.NormalizationEnabled != false || def.NormalizationMode != "track" ||
 		def.NormalizationTargetLUFS != domain.DefaultTargetLUFS || def.NormalizationPreventClip != true {
 		t.Errorf("Unexpected normalization defaults: %+v", def)
 	}

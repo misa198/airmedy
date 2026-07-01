@@ -20,7 +20,7 @@ Normalization, since Normalization has no other source of loudness data.
 | `internal/app/analysis/module.go` | FX module |
 | `internal/infra/wails/analysis_service.go` | Wails binding (`SetLibraryAnalysisEnabled`) |
 | `internal/infra/audio/analyzer.go` + `ffmpeg_analyzer.h` | cgo adapter implementing `domain.LoudnessAnalyzer` |
-| `internal/infra/sqlite/analysis_repository.go` | `track_features` CRUD, pending-count/list |
+| `internal/infra/sqlite/analysis_repository.go` | `track_features` CRUD, pending-count/list, `MarkFailed` |
 | `internal/domain/audio.go` | `LoudnessAnalyzer` interface |
 | `internal/domain/models.go` | `TrackFeatures`, `AppSettings.LibraryAnalysisEnabled`, `AnalysisProgress` |
 | `internal/infra/sqlite/settings_repository.go` | Persistence for `library_analysis_enabled` |
@@ -57,9 +57,47 @@ Normalization, since Normalization has no other source of loudness data.
 ## Queue / Worker Mechanics
 
 Two queues (`boostQueue`, `normalQueue`) guarded by one `sync.Mutex` + `sync.Cond`.
-Workers drain `boostQueue` first. `SetThrottled(true)` (driven by
-`PlayerService.AddStatusListener` — playback active) pauses dequeue without
-cancelling in-flight work, protecting the audio thread from CPU contention.
+Workers drain `boostQueue` first. Concurrency is governed by an `active`/`activeLimit`
+counter (not a bool): `startPool()` sets `workersTotal = activeLimit = max(NumCPU()/2, 1)`.
+`SetThrottled(true)` (driven by `PlayerService.AddStatusListener` — playback active)
+lowers `activeLimit` via `throttledLimit(workersTotal)` instead of stopping dequeue
+outright:
+- `numCPU() <= 4` (weak machines): `activeLimit = 0` — full pause, the original
+  protective behavior, in-flight work still finishes.
+- `numCPU() > 4`: `activeLimit = max(workersTotal/2, 1)` — a reduced pool keeps
+  analyzing in the background alongside playback; only fully paused if a track
+  finishes and no slot is free.
+
+`numCPU` is a package var aliasing `runtime.NumCPU`, overridable in tests.
+`emitProgress` reports `state = paused` only when the resulting `activeLimit == 0`;
+otherwise it stays `analyzing` even while throttled, since work is still progressing.
+
+`emitProgress` delegates the `(total, state)` computation to the pure `resolveProgress(pending, done, state)`.
+`state` only resolves to `done` when `pending == 0` — **not** when `total == 0` (a prior
+bug): `total = pending + done`, and `done` stays nonzero forever once any track has
+finished, so a `total == 0` check could never fire again after the pool's first
+completed track. That bug meant the pool never naturally reported `done` once fully
+caught up (short of the explicit `stopPool()` call) — the next `emitProgress` call
+from any source (e.g. `SetThrottled` on the next play/pause) re-asserted `analyzing`,
+which combined with the frontend's `analysisState !== 'done'` bar condition made the
+finished-analysis progress line reappear on pressing Play after it had correctly
+disappeared. `pending < 0` is the sentinel for "CountPending failed" — `total` falls
+back to `done` alone and `state` is left as the caller passed it, since completion
+can't be confirmed without a real pending count.
+
+Fixing `pending == 0` to be reachable surfaced a second, previously-invisible gap: a
+track whose `Analyze()` call errors permanently (corrupt file, unsupported codec)
+was never marked in any way — `tracks.analyzed_version` only gets bumped inside
+`UpsertFeatures`, which the failure path never reaches. That track counts as
+pending forever, so `pending` can never reach 0 and the UI would get stuck at e.g.
+"Analyzing 12/13 (92%)" permanently. Fixed via `AnalysisRepository.MarkFailed(ctx,
+trackID, currentVersion)` — bumps `analyzed_version` alone, no `track_features`
+row, so `GetFeatures` still returns nil for it (Normalization safely treats it as
+unanalyzed, gain 0) while `CountPending`/`ListPending` correctly stop counting it as
+pending. `analyzeOne` calls this from the `Analyze()` error branch (not the
+`ctx.Err() != nil` shutdown branch, and not `s.done++` — a failed track is neither
+pending nor counted in `done`, so `total` undercounts by the failed-track count and
+100% is reached once every *attemptable* track is resolved).
 Dedup via `queued`/`inFlight` maps: re-enqueuing an in-flight track is a no-op;
 re-enqueuing a queued track with `priority=true` promotes it to `boostQueue`.
 
@@ -108,7 +146,9 @@ gain must be cleared immediately.
 Settings → Playback tab, "Library Analysis" section directly above "Volume
 Normalization" (`frontend/src/components/settings/PlaybackSettings.vue`): a single
 enable switch with description text, plus the "Analyzing N/M (x%)" progress line
-(only shown while `libraryAnalysisEnabled` and `analysisState === 'analyzing'`).
+(shown while `libraryAnalysisEnabled` and `analysisState !== 'done'`, i.e. for both
+`analyzing` and `paused` — kept visible across play/pause on capable machines instead
+of flickering out every throttle change).
 State lives in `frontend/src/stores/app.ts` (`libraryAnalysisEnabled`); the
 `updateLibraryAnalysisEnabled` action calls `AnalysisService.SetLibraryAnalysisEnabled`
 and optimistically clears local `normalizationEnabled` when disabling, mirroring the

@@ -108,6 +108,38 @@ func TestSetEnabled_DisablingAlwaysAllowed(t *testing.T) {
 	}
 }
 
+func TestSetEnabled_DefaultsModeToTrackWhenFirstEnabled(t *testing.T) {
+	settings := &domain.AppSettings{LibraryAnalysisEnabled: true, NormalizationMode: "off"}
+	s, _ := newTestService(settings, nil, nil)
+
+	if err := s.SetEnabled(context.Background(), true); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	got, err := s.GetSettings(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got.NormalizationMode != "track" {
+		t.Fatalf("expected mode defaulted to track, got %q", got.NormalizationMode)
+	}
+}
+
+func TestSetEnabled_LeavesExplicitModeUntouched(t *testing.T) {
+	settings := &domain.AppSettings{LibraryAnalysisEnabled: true, NormalizationMode: "album"}
+	s, _ := newTestService(settings, nil, nil)
+
+	if err := s.SetEnabled(context.Background(), true); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	got, err := s.GetSettings(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got.NormalizationMode != "album" {
+		t.Fatalf("expected mode to stay album, got %q", got.NormalizationMode)
+	}
+}
+
 func TestComputeGain_TrackMode(t *testing.T) {
 	features := map[string]*domain.TrackFeatures{
 		"t1": {TrackID: "t1", LoudnessLUFS: -18.0, TruePeak: -1.0},
