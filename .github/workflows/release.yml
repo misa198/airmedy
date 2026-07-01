@@ -362,21 +362,21 @@ jobs:
           path: internal/infra/audio/ffmpeg_libs
 
       - name: Download FFmpeg (Darwin)
-        if: runner.os == 'Darwin'
+        if: runner.os == 'macOS'
         uses: actions/download-artifact@v4
         with:
           name: ffmpeg-darwin
           path: internal/infra/audio/ffmpeg_libs
 
       - name: Download aubio (Darwin)
-        if: runner.os == 'Darwin'
+        if: runner.os == 'macOS'
         uses: actions/download-artifact@v4
         with:
           name: aubio-darwin
           path: internal/infra/audio/aubio_libs
 
       - name: Download SFB Audio Engine (Darwin)
-        if: runner.os == 'Darwin'
+        if: runner.os == 'macOS'
         uses: actions/download-artifact@v4
         with:
           name: sfb-darwin
