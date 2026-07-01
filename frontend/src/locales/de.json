@@ -200,6 +200,31 @@
       "rename_profile": "Profil umbenennen",
       "select_profile": "Profil auswählen"
     },
+    "library_analysis": {
+      "title": "Bibliotheksanalyse",
+      "enable": "Bibliotheksanalyse aktivieren",
+      "enable_desc": "Analysiert deine Bibliothek im Hintergrund, um Lautstärke und Klangmerkmale jedes Titels zu ermitteln. Erforderlich, bevor die Lautstärkenormalisierung genutzt werden kann.",
+      "requires_enable": "Aktiviere oben die Bibliotheksanalyse, um die Lautstärkenormalisierung zu nutzen"
+    },
+    "normalization": {
+      "title": "Lautstärkenormalisierung",
+      "enable": "Lautstärkenormalisierung aktivieren",
+      "enable_desc": "Passt die Wiedergabelautstärke an einen Ziel-Lautheitswert an",
+      "mode": "Modus",
+      "mode_track_desc": "Pro Titel: gleicht jeden Song an.",
+      "mode_album_desc": "Pro Album: behält die relative Lautstärke zwischen Titeln desselben Albums bei.",
+      "track_mode": "Pro Titel",
+      "album_mode": "Pro Album",
+      "target_lufs": "Ziel-Lautheit (LUFS)",
+      "prevent_clip": "Clipping verhindern",
+      "prevent_clip_desc": "Verringert die Verstärkung, wenn es sonst zu Clipping käme",
+      "analyzing": "Analysiere {done}/{total} ({percent}%)",
+      "readiness": "{percent}% der Bibliothek analysiert",
+      "mark_quiet": "Leise",
+      "mark_balanced": "Ausgewogen (Empfohlen)",
+      "mark_loud": "Laut",
+      "mark_very_loud": "Sehr laut"
+    },
     "delimiters": {
       "artists": "Künstler",
       "album_artists": "Album-Künstler",

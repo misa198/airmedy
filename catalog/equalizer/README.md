@@ -74,6 +74,12 @@ type EQController interface {
 
 Implemented by `player_darwin.go` (SFBAudioEngine) and `player_miniaudio.go` (miniaudio). The `EQService` checks if the audio adapter implements this interface before calling it.
 
+**macOS note:** `SetEQEnabled` bypasses each of the 10 `AVAudioUnitEQFilterParameters`
+bands individually, not the shared `AVAudioUnitEQ` unit's own `bypass` property.
+The same persistent EQ node also carries [Volume Normalization](../normalization/README.md)'s
+`globalGain`, and a unit-level bypass silences the *whole* Audio Unit — `globalGain`
+included. Per-band bypass keeps EQ toggling and normalization gain independent.
+
 ## EQService Methods
 
 ```go

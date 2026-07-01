@@ -24,6 +24,7 @@ void ClearNowPlayingInfo(void* player);
 void UpdateNowPlayingPosition(void* player, double position);
 void SetEQBand(void* player, int index, double freq, double gain, double bandwidth);
 void SetEQEnabled(void* player, int enabled);
+void SetPreampGainPlayer(void* player, double db);
 void EnqueueNextPlayer(void* player, const char* path);
 void ClearEnqueuedPlayer(void* player);
 */
@@ -201,6 +202,13 @@ func (p *DarwinPlayer) SetEQEnabled(enabled bool) error {
 		val = 1
 	}
 	C.SetEQEnabled(p.playerPointer, C.int(val))
+	return nil
+}
+
+// --- NormalizationController ---
+
+func (p *DarwinPlayer) SetPreampGain(db float64) error {
+	C.SetPreampGainPlayer(p.playerPointer, C.double(db))
 	return nil
 }
 

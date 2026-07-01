@@ -37,6 +37,11 @@ type AppSettings struct {
     PreferLocalArtistArtwork bool              // nested (online on only): local/manual image suppresses online
     LastScanVersion        string              // app version of last artist-image rescan
     PreventSleepWhilePlaying bool             // prevent OS sleep during playback
+    LibraryAnalysisEnabled  bool               // opt-in: gates the analysis worker pool entirely (default off)
+    NormalizationEnabled    bool               // volume normalization on/off; cannot be true while LibraryAnalysisEnabled is false
+    NormalizationMode       string             // "off", "track", "album"
+    NormalizationTargetLUFS float64            // target loudness, default -14 (domain.DefaultTargetLUFS)
+    NormalizationPreventClip bool              // clamp gain so gain+truePeak ≤ 0 dBFS
     ArtistDelimiters       []string            // multi-value split delimiters (default [";","\\",","]; empty = no split)
     AlbumArtistDelimiters  []string
     GenreDelimiters        []string
@@ -224,3 +229,4 @@ Settings evolved across multiple migrations:
 | 000030    | Add `artist_delimiters`, `album_artist_delimiters`, `genre_delimiters`, `composer_delimiters` (TEXT JSON arrays, default `'[";","\\",","]'`) |
 | 000032    | Add `,` to the default delimiter set for rows still on the previous default `'[";","\\"]'` |
 | 000033    | Update default delimiters: change single backslash `\` to double backslash `\\` (JSON `'[";","\\\\",","]'`) for rows still on the previous default |
+| 000034    | Add `normalization_enabled` (0), `normalization_mode` ('off'), `normalization_target_lufs` (-14), `normalization_prevent_clip` (1), `library_analysis_enabled` (0) — volume normalization + library analysis opt-in settings (also adds `track_features` table + `tracks.analyzed_version`) |

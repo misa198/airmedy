@@ -4,6 +4,10 @@
 # Output: internal/infra/audio/ffmpeg_libs/windows/{amd64,arm64}/*.a
 #         internal/infra/audio/ffmpeg_libs/include/  (shared headers)
 #
+# The libs are linked into the audio package via cgo for two uses:
+#   - miniaudio player decode (libavcodec/format/util/swresample)
+#   - in-process audio analysis (libavfilter: ebur128,aspectralstats,astats)
+#
 # Usage:
 #   bash scripts/build-ffmpeg-windows.sh          # build both amd64 and arm64
 #   bash scripts/build-ffmpeg-windows.sh amd64    # amd64 only
@@ -23,12 +27,17 @@ CONFIGURE_FLAGS=(
     --disable-doc
     --disable-programs
     --disable-debug
+    --disable-network
+    --disable-autodetect
     --enable-static
     --disable-shared
     --enable-avcodec
     --enable-avformat
     --enable-avutil
     --enable-swresample
+    # avfilter: audio-analysis filter graph (in-process via cgo)
+    --enable-avfilter
+    --enable-filter=ebur128,aspectralstats,astats,aresample,aformat,anull,abuffer,abuffersink
     # Decoders
     --enable-decoder=mp3,mp3float
     --enable-decoder=aac,aac_latm
@@ -79,7 +88,7 @@ CONFIGURE_FLAGS=(
     --disable-pthreads
 )
 
-LIBS=(libavcodec libavformat libavutil libswresample)
+LIBS=(libavcodec libavformat libavutil libswresample libavfilter)
 
 build_arch() {
     local OUT_DIR="$1"       # amd64 or arm64
@@ -129,6 +138,18 @@ build_arch() {
         cp "${INSTALL_DIR}/lib/${LIB}.a" "${OUT_BASE}/${OUT_DIR}/${LIB}.a"
         echo "    copied ${LIB}.a -> ffmpeg_libs/windows/${OUT_DIR}/"
     done
+
+    # Confirm the analysis filters were compiled into libavfilter.a.
+    echo "==> Verifying analysis filters in libavfilter.a (${OUT_DIR})..."
+    local NM="${CROSS_PREFIX}nm"
+    command -v "${NM}" &>/dev/null || NM="llvm-nm"
+    command -v "${NM}" &>/dev/null || NM="nm"
+    local SYMS
+    SYMS="$("${NM}" "${OUT_BASE}/${OUT_DIR}/libavfilter.a" 2>/dev/null || true)"
+    for F in ebur128 aspectralstats astats; do
+        grep -q "ff_af_${F}" <<<"${SYMS}" || { echo "    ERROR: filter '${F}' missing from libavfilter.a"; exit 1; }
+    done
+    echo "    OK: ebur128 + aspectralstats + astats present in libavfilter.a"
 
     cd "${REPO_ROOT}"
 }

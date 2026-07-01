@@ -231,8 +231,21 @@ extern void goHandleRemoteSeek(double position);
 }
 
 - (void)setEQEnabled:(BOOL)enabled {
-    self.eqEnabled        = enabled;
-    self.equalizer.bypass = !enabled;
+    self.eqEnabled = enabled;
+    // Bypass each band individually rather than the whole AVAudioUnitEQ unit:
+    // unit-level bypass also silences globalGain, which would break normalization
+    // (setPreampGainDB) whenever the user's EQ is toggled off.
+    for (AVAudioUnitEQFilterParameters *b in self.equalizer.bands) {
+        b.bypass = !enabled;
+    }
+}
+
+// --- Normalization ---
+
+// globalGain is applied by AVAudioUnitEQ after all bands, on the same
+// persistent node used for EQ — independent of per-band bypass/eqEnabled.
+- (void)setPreampGainDB:(double)db {
+    self.equalizer.globalGain = (float)db;
 }
 
 // --- Now Playing ---
@@ -412,6 +425,10 @@ void SetEQBand(void *playerPtr, int index, double freq, double gain, double band
 
 void SetEQEnabled(void *playerPtr, int enabled) {
     [(__bridge AirmedyPlayer *)playerPtr setEQEnabled:(BOOL)enabled];
+}
+
+void SetPreampGainPlayer(void *playerPtr, double db) {
+    [(__bridge AirmedyPlayer *)playerPtr setPreampGainDB:db];
 }
 
 void EnqueueNextPlayer(void *playerPtr, const char *path) {

@@ -33,11 +33,31 @@ tasks:
     cmds:
       - bash {{.ROOT_DIR}}/scripts/build-sfbaudioengine-darwin.sh
 
+  build:ffmpeg:
+    summary: Builds FFmpeg static libs (incl. libavfilter) for the target arch if not already present
+    status:
+      - test -f {{.ROOT_DIR}}/internal/infra/audio/ffmpeg_libs/darwin/{{.ARCH | default ARCH}}/libavfilter.a
+    cmds:
+      - bash {{.ROOT_DIR}}/scripts/build-ffmpeg-darwin.sh {{.ARCH | default ARCH}}
+
+  build:aubio:
+    summary: Builds the aubio static lib (tempo/BPM detection) for the target arch if not already present
+    status:
+      - test -f {{.ROOT_DIR}}/internal/infra/audio/aubio_libs/darwin/{{.ARCH | default ARCH}}/libaubio.a
+    cmds:
+      - bash {{.ROOT_DIR}}/scripts/build-aubio-darwin.sh {{.ARCH | default ARCH}}
+
   build:native:
     summary: Builds the application natively on macOS
     internal: true
     deps:
       - task: build:sfbaudioengine
+      - task: build:ffmpeg
+        vars:
+          ARCH: '{{.ARCH}}'
+      - task: build:aubio
+        vars:
+          ARCH: '{{.ARCH}}'
       - task: common:go:mod:tidy
       - task: common:generate:icons
     cmds:

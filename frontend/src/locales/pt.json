@@ -200,6 +200,31 @@
       "rename_profile": "Renomear perfil",
       "select_profile": "Selecionar perfil"
     },
+    "library_analysis": {
+      "title": "Análise da biblioteca",
+      "enable": "Ativar análise da biblioteca",
+      "enable_desc": "Analisa sua biblioteca em segundo plano para medir o volume e as características de áudio de cada faixa. Necessário antes de poder usar a normalização de volume.",
+      "requires_enable": "Ative a análise da biblioteca acima para usar a normalização de volume"
+    },
+    "normalization": {
+      "title": "Normalização de volume",
+      "enable": "Ativar normalização de volume",
+      "enable_desc": "Ajusta o volume de reprodução para um nível de sonoridade alvo",
+      "mode": "Modo",
+      "mode_track_desc": "Por faixa: nivela cada música.",
+      "mode_album_desc": "Por álbum: mantém a sonoridade relativa entre faixas do mesmo álbum.",
+      "track_mode": "Por faixa",
+      "album_mode": "Por álbum",
+      "target_lufs": "Sonoridade alvo (LUFS)",
+      "prevent_clip": "Evitar clipping",
+      "prevent_clip_desc": "Reduz o ganho caso isso evite o clipping do áudio",
+      "analyzing": "Analisando {done}/{total} ({percent}%)",
+      "readiness": "{percent}% da biblioteca analisada",
+      "mark_quiet": "Suave",
+      "mark_balanced": "Equilibrado (Recomendado)",
+      "mark_loud": "Alto",
+      "mark_very_loud": "Muito alto"
+    },
     "delimiters": {
       "artists": "Artistas",
       "album_artists": "Artistas do álbum",

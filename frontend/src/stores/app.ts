@@ -4,7 +4,12 @@ import { Events } from '@wailsio/runtime'
 import * as SettingsService from '../../bindings/airmedy/internal/infra/wails/settingsservice'
 import * as UpdaterService from '../../bindings/airmedy/internal/infra/wails/updaterservice'
 import * as WindowService from '../../bindings/airmedy/internal/infra/wails/windowservice'
+import * as NormalizationService from '../../bindings/airmedy/internal/infra/wails/normalizationservice'
+import * as AnalysisService from '../../bindings/airmedy/internal/infra/wails/analysisservice'
 import { UpdateInfo } from '../../bindings/airmedy/internal/app/updater/models'
+
+export const NORMALIZATION_TARGET_LUFS_MIN = -24
+export const NORMALIZATION_TARGET_LUFS_MAX = -6
 
 export const useAppStore = defineStore('app', () => {
   const theme = ref<'system' | 'light' | 'dark' | 'black'>('system')
@@ -28,6 +33,11 @@ export const useAppStore = defineStore('app', () => {
   // wipe it and re-trigger a rescan.
   const lastScanVersion = ref('')
   const preventSleepWhilePlaying = ref(false)
+  const libraryAnalysisEnabled = ref(false)
+  const normalizationEnabled = ref(false)
+  const normalizationMode = ref<'off' | 'track' | 'album'>('track')
+  const normalizationTargetLufs = ref(-14)
+  const normalizationPreventClip = ref(true)
   const showPlayerIndicator = ref(true)
   const remoteServerEnabled = ref(false)
   const remoteServerPort = ref(0)
@@ -90,6 +100,16 @@ export const useAppStore = defineStore('app', () => {
         lastScanVersion.value = settings.last_scan_version || ''
         preventSleepWhilePlaying.value = !!settings.prevent_sleep_while_playing
         showPlayerIndicator.value = settings.show_player_indicator !== false
+        libraryAnalysisEnabled.value = !!settings.library_analysis_enabled
+        normalizationEnabled.value = !!settings.normalization_enabled
+        // DB default is 'track'; the mode select only offers Track/Album (never 'off').
+        normalizationMode.value = (
+          settings.normalization_mode && settings.normalization_mode !== 'off'
+            ? settings.normalization_mode
+            : 'track'
+        ) as 'track' | 'album'
+        normalizationTargetLufs.value = settings.normalization_target_lufs || -14
+        normalizationPreventClip.value = settings.normalization_prevent_clip !== false
         remoteServerEnabled.value = !!settings.remote_server_enabled
         remoteServerPort.value = settings.remote_server_port ?? 0
         remoteServerPassword.value = settings.remote_server_password ?? ''
@@ -168,6 +188,11 @@ export const useAppStore = defineStore('app', () => {
         last_scan_version: lastScanVersion.value,
         prevent_sleep_while_playing: preventSleepWhilePlaying.value,
         show_player_indicator: showPlayerIndicator.value,
+        library_analysis_enabled: libraryAnalysisEnabled.value,
+        normalization_enabled: normalizationEnabled.value,
+        normalization_mode: normalizationMode.value,
+        normalization_target_lufs: normalizationTargetLufs.value,
+        normalization_prevent_clip: normalizationPreventClip.value,
         remote_server_enabled: remoteServerEnabled.value,
         remote_server_port: remoteServerPort.value,
         remote_server_password: remoteServerPassword.value,
@@ -273,6 +298,45 @@ export const useAppStore = defineStore('app', () => {
     await saveSettings()
   }
 
+  const updateLibraryAnalysisEnabled = async (enabled: boolean) => {
+    libraryAnalysisEnabled.value = enabled
+    // Mirrors the backend cross-toggle (AnalysisService.SetEnabled forces
+    // NormalizationEnabled off when disabling): keep the local switch in
+    // sync immediately instead of waiting on a refetch.
+    if (!enabled) normalizationEnabled.value = false
+    console.debug('[analysis] libraryAnalysisEnabled ->', enabled)
+    await AnalysisService.SetLibraryAnalysisEnabled(enabled)
+  }
+
+  const updateNormalizationEnabled = async (enabled: boolean) => {
+    normalizationEnabled.value = enabled
+    console.debug('[normalization] enabled ->', enabled)
+    await NormalizationService.SetEnabled(enabled)
+  }
+
+  const updateNormalizationMode = async (mode: 'off' | 'track' | 'album') => {
+    normalizationMode.value = mode
+    console.debug('[normalization] mode ->', mode)
+    await NormalizationService.SetMode(mode)
+  }
+
+  const updateNormalizationTargetLufs = async (targetLufs: number) => {
+    if (!Number.isFinite(targetLufs)) return
+    const clamped = Math.min(
+      NORMALIZATION_TARGET_LUFS_MAX,
+      Math.max(NORMALIZATION_TARGET_LUFS_MIN, targetLufs)
+    )
+    normalizationTargetLufs.value = clamped
+    console.debug('[normalization] targetLufs ->', clamped, targetLufs !== clamped ? `(clamped from ${targetLufs})` : '')
+    await NormalizationService.SetTarget(clamped)
+  }
+
+  const updateNormalizationPreventClip = async (enabled: boolean) => {
+    normalizationPreventClip.value = enabled
+    console.debug('[normalization] preventClip ->', enabled)
+    await NormalizationService.SetPreventClip(enabled)
+  }
+
   const updateRemoteServerPassword = (password: string) => {
     remoteServerPassword.value = password
   }
@@ -329,6 +393,11 @@ export const useAppStore = defineStore('app', () => {
     preferLocalArtistArtwork,
     preventSleepWhilePlaying,
     showPlayerIndicator,
+    libraryAnalysisEnabled,
+    normalizationEnabled,
+    normalizationMode,
+    normalizationTargetLufs,
+    normalizationPreventClip,
     updateInfo,
     isCheckingUpdate,
     isUpdateDialogOpen,
@@ -358,6 +427,11 @@ export const useAppStore = defineStore('app', () => {
     updatePreferLocalArtistArtwork,
     updatePreventSleepWhilePlaying,
     updateShowPlayerIndicator,
+    updateLibraryAnalysisEnabled,
+    updateNormalizationEnabled,
+    updateNormalizationMode,
+    updateNormalizationTargetLufs,
+    updateNormalizationPreventClip,
     remoteServerEnabled,
     remoteServerPort,
     remoteServerPassword,

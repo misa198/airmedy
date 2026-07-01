@@ -50,8 +50,8 @@ func NewSettingsRepository(db *DB) domain.SettingsRepository {
 
 func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSettings) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO app_settings (id, language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, updated_at)
-		 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+		`INSERT INTO app_settings (id, language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator, library_analysis_enabled, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, updated_at)
+		 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 		 ON CONFLICT(id) DO UPDATE SET
 		   language = excluded.language,
 		   theme = excluded.theme,
@@ -75,6 +75,11 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		   remote_server_port = excluded.remote_server_port,
 		   remote_server_password = excluded.remote_server_password,
 		   show_player_indicator = excluded.show_player_indicator,
+		   library_analysis_enabled = excluded.library_analysis_enabled,
+		   normalization_enabled = excluded.normalization_enabled,
+		   normalization_mode = excluded.normalization_mode,
+		   normalization_target_lufs = excluded.normalization_target_lufs,
+		   normalization_prevent_clip = excluded.normalization_prevent_clip,
 		   artist_delimiters = excluded.artist_delimiters,
 		   album_artist_delimiters = excluded.album_artist_delimiters,
 		   genre_delimiters = excluded.genre_delimiters,
@@ -102,6 +107,11 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		settings.RemoteServerPort,
 		settings.RemoteServerPassword,
 		settings.ShowPlayerIndicator,
+		settings.LibraryAnalysisEnabled,
+		settings.NormalizationEnabled,
+		settings.NormalizationMode,
+		settings.NormalizationTargetLUFS,
+		settings.NormalizationPreventClip,
 		marshalDelimiters(settings.ArtistDelimiters),
 		marshalDelimiters(settings.AlbumArtistDelimiters),
 		marshalDelimiters(settings.GenreDelimiters),
@@ -137,13 +147,18 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		RemoteServerPort         int            `db:"remote_server_port"`
 		RemoteServerPassword     string         `db:"remote_server_password"`
 		ShowPlayerIndicator      bool           `db:"show_player_indicator"`
+		LibraryAnalysisEnabled   bool           `db:"library_analysis_enabled"`
+		NormalizationEnabled     bool           `db:"normalization_enabled"`
+		NormalizationMode        string         `db:"normalization_mode"`
+		NormalizationTargetLUFS  float64        `db:"normalization_target_lufs"`
+		NormalizationPreventClip bool           `db:"normalization_prevent_clip"`
 		ArtistDelimiters         sql.NullString `db:"artist_delimiters"`
 		AlbumArtistDelimiters    sql.NullString `db:"album_artist_delimiters"`
 		GenreDelimiters          sql.NullString `db:"genre_delimiters"`
 		ComposerDelimiters       sql.NullString `db:"composer_delimiters"`
 	}
 	err := r.db.GetContext(ctx, &row,
-		`SELECT language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters FROM app_settings WHERE id = 1`,
+		`SELECT language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator, library_analysis_enabled, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters FROM app_settings WHERE id = 1`,
 	)
 	if err == sql.ErrNoRows {
 		return &domain.AppSettings{
@@ -160,6 +175,11 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 			PreferLocalArtistArtwork: true,
 			PreventSleepWhilePlaying: false,
 			ShowPlayerIndicator:      true,
+			LibraryAnalysisEnabled:   false,
+			NormalizationEnabled:     false,
+			NormalizationMode:        "off",
+			NormalizationTargetLUFS:  domain.DefaultTargetLUFS,
+			NormalizationPreventClip: true,
 			ArtistDelimiters:         domain.DefaultDelimiters(),
 			AlbumArtistDelimiters:    domain.DefaultDelimiters(),
 			GenreDelimiters:          domain.DefaultDelimiters(),
@@ -193,6 +213,11 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		RemoteServerPort:         row.RemoteServerPort,
 		RemoteServerPassword:     row.RemoteServerPassword,
 		ShowPlayerIndicator:      row.ShowPlayerIndicator,
+		LibraryAnalysisEnabled:   row.LibraryAnalysisEnabled,
+		NormalizationEnabled:     row.NormalizationEnabled,
+		NormalizationMode:        row.NormalizationMode,
+		NormalizationTargetLUFS:  row.NormalizationTargetLUFS,
+		NormalizationPreventClip: row.NormalizationPreventClip,
 		ArtistDelimiters:         unmarshalDelimiters(row.ArtistDelimiters.String),
 		AlbumArtistDelimiters:    unmarshalDelimiters(row.AlbumArtistDelimiters.String),
 		GenreDelimiters:          unmarshalDelimiters(row.GenreDelimiters.String),

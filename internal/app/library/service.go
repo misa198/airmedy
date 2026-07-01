@@ -59,6 +59,7 @@ type LibraryService struct {
 	watcher           *fsnotify.Watcher
 
 	trackUpdateListeners   []func(*domain.TrackDTO)
+	analysisListeners      []func(string)
 	artistArtworkQueue     chan artistArtworkJob
 	pendingArtistArtwork   map[string]struct{}
 	pendingArtistArtworkMu sync.Mutex
@@ -141,6 +142,28 @@ func (s *LibraryService) notifyTrackUpdated(track *domain.TrackDTO) {
 
 	for _, l := range listeners {
 		l(track)
+	}
+}
+
+// AddAnalysisListener registers a callback fired with the track ID whenever a
+// track is freshly imported (covers both SyncFolder and single-file
+// ImportFile). Deliberately separate from trackUpdateListeners, which also
+// fires on ToggleFavorite/metadata edits — those must not trigger
+// re-analysis since DSP features don't change.
+func (s *LibraryService) AddAnalysisListener(l func(string)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.analysisListeners = append(s.analysisListeners, l)
+}
+
+func (s *LibraryService) notifyAnalysisPending(trackID string) {
+	s.mu.RLock()
+	listeners := make([]func(string), len(s.analysisListeners))
+	copy(listeners, s.analysisListeners)
+	s.mu.RUnlock()
+
+	for _, l := range listeners {
+		l(trackID)
 	}
 }
 
@@ -962,6 +985,7 @@ func (s *LibraryService) persistImported(ctx context.Context, job *importJob) er
 	if app := application.Get(); app != nil && app.Event != nil {
 		app.Event.Emit("library:track-updated", dto)
 	}
+	s.notifyAnalysisPending(dto.ID)
 
 	return nil
 }

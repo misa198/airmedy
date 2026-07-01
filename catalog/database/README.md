@@ -53,6 +53,7 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000031 | `library_sync_state.up.sql`          | Add `library_sync_state` table (single-row, CHECK id = 1) with `delimiters_signature TEXT` — records the delimiter config the library data currently reflects, so a sync knows whether to re-split |
 | 000032 | `add_comma_default_delimiter.up.sql` | Add `,` to the default delimiter set: `UPDATE app_settings SET <col> = '[";","\\",","]' WHERE <col> = '[";","\\"]'` (only rows still on the previous default; user-customized lists untouched) |
 | 000033 | `update_default_delimiters.up.sql`   | Update default delimiters: change single backslash `\` to double backslash `\\` (JSON `'[";","\\\\",","]'`) for rows still on the previous default |
+| 000034 | `track_features.up.sql`              | Add `track_features` table (one-time DSP analysis: loudness/dynamics/spectral + reserved-null mood cols); add `tracks.analyzed_version INTEGER NOT NULL DEFAULT 0` (0 = pending) + `idx_tracks_analyzed_version`; add `normalization_enabled`, `normalization_mode` ('off'), `normalization_target_lufs` (-14), `normalization_prevent_clip` (1) to `app_settings` |
 
 ## Full Schema
 
@@ -123,9 +124,20 @@ tracks (
     isrc TEXT,
     play_count INTEGER DEFAULT 0,
     is_favorite INTEGER DEFAULT 0,
+    analyzed_version INTEGER NOT NULL DEFAULT 0,  -- 0 = pending DSP analysis (000034)
     mtime DATETIME,
     created_at DATETIME,
     updated_at DATETIME
+)
+
+track_features (   -- one-time DSP analysis (000034); 0 rows until analyzer runs
+    track_id TEXT PRIMARY KEY REFERENCES tracks(id) ON DELETE CASCADE,
+    analyzer_version INTEGER NOT NULL DEFAULT 0,
+    analyzed_at DATETIME,
+    loudness_lufs REAL, loudness_range REAL, true_peak REAL, rms REAL, crest REAL,        -- ebur128 + astats
+    spectral_centroid REAL, spectral_rolloff REAL, spectral_flatness REAL,
+    spectral_flux REAL, zcr REAL,                                                          -- aspectralstats
+    tempo REAL, musical_key TEXT, mode TEXT, valence REAL, energy REAL, danceability REAL  -- reserved
 )
 
 playlists (
@@ -205,6 +217,10 @@ app_settings (
     album_artist_delimiters TEXT NOT NULL DEFAULT '[";","\\\\",","]',  -- JSON array
     genre_delimiters TEXT NOT NULL DEFAULT '[";","\\\\",","]',         -- JSON array
     composer_delimiters TEXT NOT NULL DEFAULT '[";","\\\\",","]',      -- JSON array
+    normalization_enabled INTEGER NOT NULL DEFAULT 0,                  -- volume normalization (000034)
+    normalization_mode TEXT NOT NULL DEFAULT 'off',                    -- off | track | album
+    normalization_target_lufs REAL NOT NULL DEFAULT -14,
+    normalization_prevent_clip INTEGER NOT NULL DEFAULT 1,
     updated_at DATETIME
     -- (also: prevent_sleep_while_playing, remote_server_*, show_player_indicator)
 )

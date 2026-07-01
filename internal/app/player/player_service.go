@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"airmedy/internal/app/lyrics"
+	"airmedy/internal/app/normalization"
 	"airmedy/internal/domain"
 	"airmedy/internal/infra/artwork"
 
@@ -33,6 +34,7 @@ type PlayerService struct {
 	trackRepo     domain.TrackRepository
 	stateRepo     domain.PlayerStateRepository
 	settingsRepo  domain.SettingsRepository
+	normSvc       *normalization.NormalizationService
 
 	trackStartTime time.Time
 	playCounted    map[string]bool // trackID -> bool
@@ -50,6 +52,8 @@ type PlayerService struct {
 
 	// emitStatusHook overrides event emission in tests (nil in production).
 	emitStatusHook func()
+
+	trackLoadListeners []func(*domain.TrackDTO)
 
 	statusListeners        []func(domain.PlayerStatus)
 	trackMetadataListeners []func(domain.PlayerTrackMetadata)
@@ -70,6 +74,7 @@ func NewPlayerService(
 	stateRepo domain.PlayerStateRepository,
 	settingsRepo domain.SettingsRepository,
 	sleepInhibitor domain.SleepInhibitor,
+	normSvc *normalization.NormalizationService,
 	lc fx.Lifecycle,
 ) *PlayerService {
 	s := &PlayerService{
@@ -82,6 +87,7 @@ func NewPlayerService(
 		stateRepo:      stateRepo,
 		settingsRepo:   settingsRepo,
 		sleepInhibitor: sleepInhibitor,
+		normSvc:        normSvc,
 		tickInterval:   500 * time.Millisecond,
 		playCounted:    make(map[string]bool),
 		npReported:     make(map[string]bool),
@@ -129,6 +135,13 @@ func (s *PlayerService) AddStatusListener(f func(domain.PlayerStatus)) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.statusListeners = append(s.statusListeners, f)
+}
+
+// AddTrackLoadListener registers a callback fired whenever a track is loaded into the player.
+func (s *PlayerService) AddTrackLoadListener(f func(*domain.TrackDTO)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.trackLoadListeners = append(s.trackLoadListeners, f)
 }
 
 // AddQueueListener registers a callback that will be called whenever the queue changes.
@@ -607,6 +620,19 @@ func (s *PlayerService) SyncTrack(track *domain.TrackDTO) {
 	s.queue.UpdateTrack(track)
 }
 
+// ReapplyNormalization recomputes and pushes the pre-amp gain for the
+// currently loaded track. Called after normalization settings change so
+// toggling enabled/mode/target takes effect immediately during playback.
+func (s *PlayerService) ReapplyNormalization() {
+	s.mu.RLock()
+	track := s.currentTrack
+	s.mu.RUnlock()
+	if track == nil || s.normSvc == nil {
+		return
+	}
+	s.normSvc.ApplyToPlayer(context.Background(), track, s.queue.PeekNext())
+}
+
 // Internal helpers
 
 func (s *PlayerService) loadAndPlay(track *domain.TrackDTO) error {
@@ -622,6 +648,18 @@ func (s *PlayerService) loadAndPlay(track *domain.TrackDTO) error {
 		s.logger.Error("failed to load track", "track", track.Path, "error", err)
 		return err
 	}
+
+	if s.normSvc != nil {
+		s.normSvc.ApplyToPlayer(context.Background(), track, s.queue.PeekNext())
+	}
+
+	s.mu.RLock()
+	loadListeners := append([]func(*domain.TrackDTO){}, s.trackLoadListeners...)
+	s.mu.RUnlock()
+	for _, f := range loadListeners {
+		f(track)
+	}
+
 	if err := s.player.Play(); err != nil {
 		s.logger.Error("failed to play track", "track", track.Path, "error", err)
 		return err
@@ -700,6 +738,10 @@ func (s *PlayerService) transitionToTrack(track *domain.TrackDTO) {
 	delete(s.npReported, track.ID)
 	delete(s.posConfirmed, track.ID)
 	s.mu.Unlock()
+
+	if s.normSvc != nil {
+		s.normSvc.ApplyToPlayer(context.Background(), track, s.queue.PeekNext())
+	}
 
 	s.startPositionTicker()
 	s.emitStatus()
@@ -1332,6 +1374,10 @@ func (s *PlayerService) restoreState(ctx context.Context) {
 				s.mu.Lock()
 				s.currentTrack = currentTrack
 				s.mu.Unlock()
+
+				if s.normSvc != nil {
+					s.normSvc.ApplyToPlayer(ctx, currentTrack, s.queue.PeekNext())
+				}
 
 				s.pushNowPlaying(currentTrack, state.Position)
 

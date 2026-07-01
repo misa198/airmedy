@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <windows.h>
 #include <string.h>
+#include <math.h>
 
 /*
  * Ping-pong slot design: two sound/ffmpeg-ds slot pairs (slot_a, slot_b).
@@ -264,6 +265,17 @@ int ma_player_set_eq_enabled(MaPlayer* p, int enabled) {
         }
     }
     ma_mutex_unlock(&p->mu);
+    return 0;
+}
+
+/* The EQ-enabled and EQ-bypassed paths both converge at the engine endpoint,
+ * which is otherwise untouched (user volume goes through per-sound
+ * ma_sound_set_volume, never the endpoint) — so its output-bus volume is a
+ * natural, topology-free pre-amp stage for normalization. */
+int ma_player_set_preamp_gain(MaPlayer* p, float gainDB) {
+    if (!p) return -1;
+    float linear = powf(10.0f, gainDB / 20.0f);
+    ma_node_set_output_bus_volume(ma_engine_get_endpoint(&p->engine), 0, linear);
     return 0;
 }
 

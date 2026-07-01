@@ -90,9 +90,133 @@ jobs:
           name: ffmpeg-windows
           path: internal/infra/audio/ffmpeg_libs
 
+  build-ffmpeg-darwin:
+    name: Build FFmpeg for Darwin
+    needs: bump
+    runs-on: macos-26
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ github.event.inputs.version }}
+
+      - name: Cache FFmpeg (Darwin)
+        id: cache-ffmpeg
+        uses: actions/cache@v4
+        with:
+          path: internal/infra/audio/ffmpeg_libs
+          key: ffmpeg-Darwin-v1-${{ hashFiles('scripts/build-ffmpeg-darwin.sh') }}
+
+      - name: Install nasm
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        run: brew install nasm
+
+      - name: Build FFmpeg (Darwin ARM64 + AMD64)
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        run: bash scripts/build-ffmpeg-darwin.sh all
+
+      - name: Upload FFmpeg libs
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-darwin
+          path: internal/infra/audio/ffmpeg_libs
+
+  build-aubio-darwin:
+    name: Build aubio for Darwin
+    needs: bump
+    runs-on: macos-26
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ github.event.inputs.version }}
+
+      - name: Cache aubio (Darwin)
+        id: cache-aubio
+        uses: actions/cache@v4
+        with:
+          path: internal/infra/audio/aubio_libs
+          key: aubio-Darwin-v1-${{ hashFiles('scripts/build-aubio-darwin.sh') }}
+
+      - name: Build aubio (Darwin ARM64 + AMD64)
+        if: steps.cache-aubio.outputs.cache-hit != 'true'
+        run: bash scripts/build-aubio-darwin.sh all
+
+      - name: Upload aubio libs
+        uses: actions/upload-artifact@v4
+        with:
+          name: aubio-darwin
+          path: internal/infra/audio/aubio_libs
+
+  build-ffmpeg-linux:
+    name: Build FFmpeg for Linux
+    needs: bump
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ github.event.inputs.version }}
+
+      - name: Cache FFmpeg (Linux)
+        id: cache-ffmpeg
+        uses: actions/cache@v4
+        with:
+          path: internal/infra/audio/ffmpeg_libs
+          key: ffmpeg-Linux-${{ hashFiles('scripts/build-ffmpeg-linux.sh') }}
+
+      - name: Install Linux cross-compile dependencies
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential nasm gcc-aarch64-linux-gnu libc6-dev-arm64-cross pkg-config
+
+      - name: Build FFmpeg (Linux AMD64 + ARM64)
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        run: bash scripts/build-ffmpeg-linux.sh
+
+      - name: Upload FFmpeg libs
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-linux
+          path: internal/infra/audio/ffmpeg_libs
+
+  build-aubio-linux:
+    name: Build aubio for Linux
+    needs: bump
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ github.event.inputs.version }}
+
+      - name: Cache aubio (Linux)
+        id: cache-aubio
+        uses: actions/cache@v4
+        with:
+          path: internal/infra/audio/aubio_libs
+          key: aubio-Linux-${{ hashFiles('scripts/build-aubio-linux.sh') }}
+
+      - name: Install Linux cross-compile dependencies
+        if: steps.cache-aubio.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential gcc-aarch64-linux-gnu libc6-dev-arm64-cross pkg-config
+
+      - name: Build aubio (Linux AMD64 + ARM64)
+        if: steps.cache-aubio.outputs.cache-hit != 'true'
+        run: bash scripts/build-aubio-linux.sh
+
+      - name: Upload aubio libs
+        uses: actions/upload-artifact@v4
+        with:
+          name: aubio-linux
+          path: internal/infra/audio/aubio_libs
+
   build:
     name: Build ${{ matrix.os }}
-    needs: [bump, build-ffmpeg-windows]
+    needs: [bump, build-ffmpeg-windows, build-ffmpeg-darwin, build-aubio-darwin, build-ffmpeg-linux, build-aubio-linux]
     strategy:
       fail-fast: false
       matrix:
@@ -193,18 +317,6 @@ jobs:
           Expand-Archive -Path "$env:RUNNER_TEMP\llvm-mingw.zip" -DestinationPath "C:\"
           Add-Content -Path $env:GITHUB_PATH -Value "C:\llvm-mingw-20260616-ucrt-x86_64\bin"
 
-      - name: Install Darwin Dependencies
-        if: runner.os == 'Darwin'
-        run: brew install nasm
-
-      - name: Cache FFmpeg Binaries
-        id: cache-ffmpeg
-        if: runner.os == 'Linux'
-        uses: actions/cache@v4
-        with:
-          path: internal/infra/audio/ffmpeg_libs
-          key: ffmpeg-${{ runner.os }}-${{ hashFiles('scripts/build-ffmpeg-linux.sh') }}
-
       - name: Cache SFB Audio Engine (Darwin)
         id: cache-sfb
         if: runner.os == 'Darwin'
@@ -232,9 +344,33 @@ jobs:
           name: ffmpeg-windows
           path: internal/infra/audio/ffmpeg_libs
 
-      - name: Build FFmpeg (Linux)
-        if: runner.os == 'Linux' && steps.cache-ffmpeg.outputs.cache-hit != 'true'
-        run: bash scripts/build-ffmpeg-linux.sh
+      - name: Download FFmpeg (Darwin)
+        if: runner.os == 'Darwin'
+        uses: actions/download-artifact@v4
+        with:
+          name: ffmpeg-darwin
+          path: internal/infra/audio/ffmpeg_libs
+
+      - name: Download aubio (Darwin)
+        if: runner.os == 'Darwin'
+        uses: actions/download-artifact@v4
+        with:
+          name: aubio-darwin
+          path: internal/infra/audio/aubio_libs
+
+      - name: Download FFmpeg (Linux)
+        if: runner.os == 'Linux'
+        uses: actions/download-artifact@v4
+        with:
+          name: ffmpeg-linux
+          path: internal/infra/audio/ffmpeg_libs
+
+      - name: Download aubio (Linux)
+        if: runner.os == 'Linux'
+        uses: actions/download-artifact@v4
+        with:
+          name: aubio-linux
+          path: internal/infra/audio/aubio_libs
 
       - name: Build SFB Audio Engine (Darwin)
         if: runner.os == 'Darwin' && !hashFiles('internal/infra/audio/sfb_libs/SFBAudioEngine.xcframework/Info.plist')
@@ -246,7 +382,7 @@ jobs:
         run: bash scripts/fetch-miniaudio.sh
 
       - name: Install Wails v3
-        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-alpha2.106
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-alpha2.111
 
       - name: Install Linux ARM64 Cross-compile Dependencies
         if: runner.os == 'Linux' && matrix.os == 'Linux-ARM64'

@@ -200,6 +200,31 @@
       "rename_profile": "重命名配置文件",
       "select_profile": "选择配置文件"
     },
+    "library_analysis": {
+      "title": "媒体库分析",
+      "enable": "启用媒体库分析",
+      "enable_desc": "在后台扫描媒体库，测量每首曲目的响度和音频特征。使用音量均衡前必须先启用。",
+      "requires_enable": "请先在上方启用媒体库分析以使用音量均衡"
+    },
+    "normalization": {
+      "title": "音量标准化",
+      "enable": "启用音量标准化",
+      "enable_desc": "将播放音量调整到目标响度水平",
+      "mode": "模式",
+      "mode_track_desc": "按曲目：每首歌音量统一。",
+      "mode_album_desc": "按专辑：保留同一专辑内各曲目之间的相对响度。",
+      "track_mode": "按曲目",
+      "album_mode": "按专辑",
+      "target_lufs": "目标响度 (LUFS)",
+      "prevent_clip": "防止削波",
+      "prevent_clip_desc": "如果会导致削波则降低增益",
+      "analyzing": "正在分析 {done}/{total} ({percent}%)",
+      "readiness": "已分析 {percent}% 的曲库",
+      "mark_quiet": "安静",
+      "mark_balanced": "平衡（推荐）",
+      "mark_loud": "响亮",
+      "mark_very_loud": "非常响亮"
+    },
     "delimiters": {
       "artists": "艺术家",
       "album_artists": "专辑艺术家",

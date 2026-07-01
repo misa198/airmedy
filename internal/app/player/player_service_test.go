@@ -8,14 +8,16 @@ import (
 	"testing"
 	"time"
 
+	"airmedy/internal/app/normalization"
 	"airmedy/internal/domain"
 )
 
 // fakePlayer is a test double for domain.AudioPlayer.
 type fakePlayer struct {
-	mu     sync.Mutex
-	status domain.PlayerStatus
-	onEnd  func()
+	mu             sync.Mutex
+	status         domain.PlayerStatus
+	onEnd          func()
+	lastPreampGain float64
 }
 
 func (p *fakePlayer) Play() error {
@@ -87,6 +89,15 @@ func (p *fakePlayer) OnTrackEnd(cb func()) {
 	p.mu.Lock()
 	p.onEnd = cb
 	p.mu.Unlock()
+}
+
+// SetPreampGain satisfies domain.NormalizationController so loadAndPlay's
+// normalization push can be exercised in tests.
+func (p *fakePlayer) SetPreampGain(db float64) error {
+	p.mu.Lock()
+	p.lastPreampGain = db
+	p.mu.Unlock()
+	return nil
 }
 
 // fakeArtworkCache is a no-op artwork cache for tests.
@@ -541,5 +552,81 @@ func TestFastForward_NextTrack(t *testing.T) {
 	_ = s.FastForward()
 	if s.GetCurrentTrack().ID != "t2" {
 		t.Errorf("expected track t2, got %s", s.GetCurrentTrack().ID)
+	}
+}
+
+// fakeNormSettingsRepo and fakeNormAnalysisRepo back a real
+// normalization.NormalizationService for testing loadAndPlay's gain push.
+type fakeNormSettingsRepo struct {
+	settings *domain.AppSettings
+}
+
+func (r *fakeNormSettingsRepo) Load(_ context.Context) (*domain.AppSettings, error) {
+	s := *r.settings
+	return &s, nil
+}
+func (r *fakeNormSettingsRepo) Save(_ context.Context, settings *domain.AppSettings) error {
+	r.settings = settings
+	return nil
+}
+
+type fakeNormAnalysisRepo struct {
+	domain.AnalysisRepository
+	features map[string]*domain.TrackFeatures
+}
+
+func (r *fakeNormAnalysisRepo) GetFeatures(_ context.Context, trackID string) (*domain.TrackFeatures, error) {
+	return r.features[trackID], nil
+}
+
+func TestLoadAndPlay_AppliesNormalizationGain(t *testing.T) {
+	fp := &fakePlayer{status: domain.PlayerStatus{Volume: 1.0}}
+	s, _ := newTestService(t, fp)
+
+	s.normSvc = normalization.NewNormalizationService(
+		&fakeNormSettingsRepo{settings: &domain.AppSettings{
+			NormalizationEnabled:    true,
+			NormalizationMode:       "track",
+			NormalizationTargetLUFS: -14.0,
+		}},
+		&fakeNormAnalysisRepo{features: map[string]*domain.TrackFeatures{
+			"t1": {TrackID: "t1", LoudnessLUFS: -18.0},
+		}},
+		&fakeTrackRepo{},
+		fp,
+		slog.Default(),
+	)
+
+	track := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 60}}
+	s.queue.SetQueue([]*domain.TrackDTO{track}, 0)
+
+	if err := s.loadAndPlay(track); err != nil {
+		t.Fatalf("loadAndPlay: %v", err)
+	}
+
+	fp.mu.Lock()
+	gotGain := fp.lastPreampGain
+	fp.mu.Unlock()
+	if want := -14.0 - (-18.0); gotGain != want {
+		t.Errorf("preamp gain = %v, want %v", gotGain, want)
+	}
+}
+
+func TestLoadAndPlay_FiresTrackLoadListener(t *testing.T) {
+	fp := &fakePlayer{status: domain.PlayerStatus{Volume: 1.0}}
+	s, _ := newTestService(t, fp)
+
+	var gotID string
+	s.AddTrackLoadListener(func(track *domain.TrackDTO) { gotID = track.ID })
+
+	track := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 60}}
+	s.queue.SetQueue([]*domain.TrackDTO{track}, 0)
+
+	if err := s.loadAndPlay(track); err != nil {
+		t.Fatalf("loadAndPlay: %v", err)
+	}
+
+	if gotID != "t1" {
+		t.Errorf("expected track-load listener to fire with t1, got %q", gotID)
 	}
 }

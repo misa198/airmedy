@@ -191,6 +191,20 @@ type SyncProgress struct {
 	Path    string `json:"path"`
 }
 
+// AnalysisProgress represents the current progress of the background audio
+// analysis pipeline (loudness/dynamics/spectral feature extraction).
+type AnalysisProgress struct {
+	Done  int    `json:"done"`
+	Total int    `json:"total"`
+	State string `json:"state"` // "analyzing" | "paused" | "done"
+}
+
+const (
+	AnalysisStateAnalyzing = "analyzing"
+	AnalysisStatePaused    = "paused"
+	AnalysisStateDone      = "done"
+)
+
 // WatchedFolder represents a directory being watched for music files
 type WatchedFolder struct {
 	ID        string    `json:"id" db:"id"`
@@ -223,6 +237,34 @@ type MiniPlayerState struct {
 	HasPosition bool `json:"has_position"`
 }
 
+// DefaultTargetLUFS is the default loudness normalization target.
+const DefaultTargetLUFS = -14.0
+
+// TrackFeatures holds one-time DSP analysis results for a track (loudness, dynamics,
+// spectral shape).
+type TrackFeatures struct {
+	TrackID          string    `json:"track_id" db:"track_id"`
+	AnalyzerVersion  int       `json:"analyzer_version" db:"analyzer_version"`
+	AnalyzedAt       time.Time `json:"analyzed_at" db:"analyzed_at"`
+	LoudnessLUFS     float64   `json:"loudness_lufs" db:"loudness_lufs"`
+	LoudnessRange    float64   `json:"loudness_range" db:"loudness_range"`
+	TruePeak         float64   `json:"true_peak" db:"true_peak"`
+	RMS              float64   `json:"rms" db:"rms"`
+	Crest            float64   `json:"crest" db:"crest"`
+	SpectralCentroid float64   `json:"spectral_centroid" db:"spectral_centroid"`
+	SpectralRolloff  float64   `json:"spectral_rolloff" db:"spectral_rolloff"`
+	SpectralFlatness float64   `json:"spectral_flatness" db:"spectral_flatness"`
+	SpectralFlux     float64   `json:"spectral_flux" db:"spectral_flux"`
+	ZCR              float64   `json:"zcr" db:"zcr"`
+
+	Tempo        float64 `json:"tempo" db:"tempo"`
+	MusicalKey   string  `json:"musical_key" db:"musical_key"`
+	Mode         string  `json:"mode" db:"mode"`
+	Valence      float64 `json:"valence" db:"valence"`
+	Energy       float64 `json:"energy" db:"energy"`
+	Danceability float64 `json:"danceability" db:"danceability"`
+}
+
 // AppSettings holds general application settings
 type AppSettings struct {
 	Language                 string `json:"language"`
@@ -247,6 +289,18 @@ type AppSettings struct {
 	RemoteServerPort         int    `json:"remote_server_port"`
 	RemoteServerPassword     string `json:"remote_server_password"`
 	ShowPlayerIndicator      bool   `json:"show_player_indicator"`
+
+	// Library analysis pipeline (feeds Normalization). Opt-in: off disables the
+	// background worker pool entirely (no backfill/enqueue/boost). Normalization
+	// cannot be enabled while this is off.
+	LibraryAnalysisEnabled bool `json:"library_analysis_enabled"`
+
+	// Volume normalization (analysis pipeline feeds these). Mode is "off", "track", or
+	// "album"; target defaults to DefaultTargetLUFS (-14).
+	NormalizationEnabled     bool    `json:"normalization_enabled"`
+	NormalizationMode        string  `json:"normalization_mode"`
+	NormalizationTargetLUFS  float64 `json:"normalization_target_lufs"`
+	NormalizationPreventClip bool    `json:"normalization_prevent_clip"`
 
 	// User-configurable delimiters for splitting multi-value tags into
 	// individual entities. Each defaults to DefaultDelimiters() ([";", "\\"]).

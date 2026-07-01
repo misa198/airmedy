@@ -36,6 +36,10 @@ int    ma_player_is_playing(MaPlayer* p);
 int ma_player_set_eq_band(MaPlayer* p, int index, float frequency, float gain, float bandwidth);
 int ma_player_set_eq_enabled(MaPlayer* p, int enabled);
 
+/* Volume normalization pre-amp gain (dB), applied at the engine endpoint —
+ * separate from per-sound user volume (ma_player_set_volume). */
+int ma_player_set_preamp_gain(MaPlayer* p, float gainDB);
+
 /* Track-end callback — fired from MiniAudio device thread, must not block */
 void ma_player_set_end_callback(MaPlayer* p, MaEndCallback cb, void* userdata);
 

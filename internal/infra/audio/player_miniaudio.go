@@ -192,6 +192,15 @@ func (p *MiniAudioPlayer) SetEQEnabled(enabled bool) error {
 	return nil
 }
 
+// --- NormalizationController ---
+
+func (p *MiniAudioPlayer) SetPreampGain(db float64) error {
+	if rc := C.ma_player_set_preamp_gain((*C.MaPlayer)(p.ptr), C.float(db)); rc != 0 {
+		return fmt.Errorf("ma_player_set_preamp_gain failed: %d", rc)
+	}
+	return nil
+}
+
 // --- GaplessPlayer ---
 
 func (p *MiniAudioPlayer) EnqueueNext(track *domain.TrackDTO) error {

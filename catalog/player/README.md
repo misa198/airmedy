@@ -20,6 +20,8 @@ The player feature handles audio playback, queue management, shuffle/repeat mode
 | `internal/infra/audio/smtc_windows.cpp`    | WinRT SMTC implementation (C-ABI, mingw)  |
 | `internal/infra/audio/smtc_windows.h`      | C-ABI bridge for the SMTC backend         |
 | `internal/infra/wails/player_service.go`   | Wails binding wrapper                    |
+| `internal/app/normalization/service.go`    | Volume normalization: per-track pre-amp gain compute + push (see `catalog/normalization/README.md`) |
+| `internal/infra/wails/normalization_service.go` | Wails binding wrapper for normalization settings |
 | `internal/infra/wails/thumbbar_manager_windows.go` | `ThumbBarManager`: wires taskbar thumbnail buttons → player (`//go:build windows`) |
 | `internal/infra/wails/thumbbar_manager_other.go` | No-op `ThumbBarManager` stub (non-Windows) |
 | `internal/infra/wails/thumbbar_windows.cpp` | `ITaskbarList3` thumbnail-toolbar impl (GDI icons, subclass WndProc) |
@@ -104,6 +106,30 @@ is instead pushed where the engine state actually flips:
   on the backend, which drives the OS glyph (SMTC `PlaybackStatus` / MPRIS `PlaybackStatus`).
 - **macOS:** `DarwinPlayer` derives the glyph from its own engine's `isPlaying`.
 
+## NormalizationController Interface (Optional)
+
+Implemented by audio adapters that support a pre-amp gain stage independent of
+user volume, used by Volume Normalization (`internal/app/normalization`). Detected
+via type assertion in `NormalizationService`, same pattern as `EQController`.
+
+```go
+type NormalizationController interface {
+    SetPreampGain(db float64) error
+}
+```
+
+| Platform | Mechanism |
+| -------- | --------- |
+| macOS    | `AVAudioUnitEQ.globalGain` (dB) on the same persistent EQ node, applied after all bands. `SetEQEnabled` bypasses each **band** individually rather than the whole unit, so this stays independent of EQ on/off — a whole-unit `bypass` would silence `globalGain` too. |
+| Windows/Linux | `ma_node_set_output_bus_volume()` on the engine endpoint (linear, converted from dB), which both the EQ-enabled and EQ-bypassed paths already converge on — no topology change needed, and it never overlaps with per-sound `ma_sound_set_volume` (user volume) |
+
+`ApplyToPlayer(ctx, track, next *domain.TrackDTO)` is called from every place
+`PlayerService` changes the current track — `loadAndPlay` (right after
+`player.Load()` and before `player.Play()`, so gain is set before audio starts),
+`transitionToTrack` (gapless auto-advance), and `restoreState` (app boot) — always
+passing `s.queue.PeekNext()` as `next` for the album-mode look-ahead. See
+`catalog/normalization/README.md`.
+
 ## SleepInhibitor Interface
 
 Prevents the OS from sleeping while music plays. Defined in `internal/domain/audio.go`, implemented in `internal/infra/power/`.
@@ -131,6 +157,7 @@ type SleepInhibitor interface {
 - SFBAudioEngine and its dependencies are dynamic xcframeworks built/downloaded by `task build:sfbaudioengine` and stored at `internal/infra/audio/sfb_libs/` (not committed; add to `.gitignore`). At runtime, the frameworks are embedded in `Contents/Frameworks/`.
 - **Format support:** All formats natively — MP3, FLAC, AAC, WAV, AIFF, Opus, Vorbis, WavPack, APE, DSD, and more. No FFmpeg required on darwin.
 - **EQ:** `AVAudioUnitEQ` (10-band parametric, ISO frequencies) injected into SFBAudioEngine's graph via `modifyProcessingGraph:` on init and reconnected on format changes via the `reconfigureProcessingGraph:withFormat:` delegate. Returns the EQ node so SFBAudioEngine connects `sourceNode → EQ → mainMixerNode`.
+- **Normalization:** `SetPreampGain` sets `equalizer.globalGain` (dB) on the same persistent `AVAudioUnitEQ` node — applied after all bands. `setEQEnabled` bypasses each band individually (not `equalizer.bypass` on the whole unit), keeping `globalGain` unaffected by EQ on/off.
 - **Track end:** `SFBAudioPlayerDelegate audioPlayer:renderingComplete:` fires when last sample is rendered (not when decoding finishes). When a next track was pre-queued gaplessly, SFBAudioEngine is still playing; `renderingComplete:` fires for each track in the queue, allowing the Go layer to advance state without stopping audio.
 - **Gapless:** `EnqueueNext` calls `[sfbPlayer enqueueURL:url forImmediatePlayback:NO]`. SFBAudioEngine transitions seamlessly if sample rate and channel count match. `AutoTransitions()` returns `true`.
 - Provides `NowPlayingController` for OS-level media info (lock screen, menu bar).
@@ -144,6 +171,7 @@ type SleepInhibitor interface {
 - Functions: `ma_player_create()`, `ma_player_play()`, `ma_player_pause()`, `ma_player_stop()`, `ma_player_seek()`, `ma_player_set_volume()`.
 - Track end detected via `goMiniAudioTrackEnd()` Go callback.
 - **EQ:** Implemented via a chain of 10 `ma_peak_node` filters. Enabled state routes audio through the chain before output. Support for live band updates.
+- **Normalization:** `ma_player_set_preamp_gain` sets `ma_node_set_output_bus_volume()` on the engine endpoint (`ma_engine_get_endpoint`) — the point both the EQ-enabled and EQ-bypassed sound-routing paths already converge on, so no extra node or rewiring is needed. Separate from `ma_player_set_volume` (per-sound user volume).
 - **Gapless (near-gapless):** Uses a ping-pong slot design (`slot_a`/`slot_b`). `ma_player_preload_next` initializes the next track into the idle slot. On `HandleTrackEnd`, Go calls `ma_player_start_preloaded` which uninits the current slot and starts the pre-loaded slot — gap is only goroutine scheduling latency (~1–5 ms). `AutoTransitions()` returns `false`.
 
 ### Windows — System Media Transport Controls (Now Playing)
@@ -242,6 +270,8 @@ pure Go over D-Bus (`github.com/godbus/dbus/v5`). No cgo.
 - Resets playback position to 0 on track change to ensure clean UI transitions.
 - Handles track-end → advance queue → load next.
 - **Gapless playback (always on):** `loadAndPlay` pre-enqueues the next track via `GaplessPlayer.EnqueueNext`. On `HandleTrackEnd`, the service calls `GaplessPlayer.StartPreloaded` (for miniaudio) or just updates status (SFBAudioEngine auto-transitions), then calls `transitionToTrack` to update currentTrack, Now Playing, palette, and lyrics without interrupting audio.
+- **Volume normalization:** `loadAndPlay`, `transitionToTrack`, and `restoreState` all call `NormalizationService.ApplyToPlayer(ctx, track, s.queue.PeekNext())` to push the pre-amp gain whenever the current track changes (hard load, gapless auto-advance, and app-boot restore respectively) — `next` drives the album-mode look-ahead (see `catalog/normalization/README.md`). `ReapplyNormalization()` re-runs this for the current track when normalization settings change mid-playback (called by the Wails binding).
+- **Track-load listeners:** `AddTrackLoadListener` registers callbacks fired in `loadAndPlay` right after load (same point as the normalization push). Wired centrally in `internal/app/module.go` to boost-enqueue the loaded track in the analysis pipeline (`AnalysisService.Enqueue(trackID, true)`)
 
 ### Key Methods
 

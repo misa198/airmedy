@@ -111,3 +111,80 @@ func TestSqliteRepositories(t *testing.T) {
 		t.Errorf("Expected EQEnabled false, got %v", savedSettings.EQEnabled)
 	}
 }
+
+func TestTrackFeaturesMigration(t *testing.T) {
+	dbPath := "test_features.db"
+	defer func() { _ = os.Remove(dbPath) }()
+
+	db, err := NewDB(dbPath, slog.Default())
+	if err != nil {
+		t.Fatalf("Failed to create test db: %v", err)
+	}
+	defer func() { _ = db.Close() }()
+
+	// track_features table exists with reserved mood columns.
+	var count int
+	if err := db.Get(&count, `SELECT COUNT(*) FROM pragma_table_info('track_features') WHERE name IN ('loudness_lufs','spectral_centroid','tempo','valence')`); err != nil {
+		t.Fatalf("track_features table not created: %v", err)
+	}
+	if count != 4 {
+		t.Errorf("Expected 4 known track_features columns, got %d", count)
+	}
+
+	// tracks.analyzed_version pending marker exists.
+	if err := db.Get(&count, `SELECT COUNT(*) FROM pragma_table_info('tracks') WHERE name = 'analyzed_version'`); err != nil || count != 1 {
+		t.Errorf("tracks.analyzed_version missing (count=%d, err=%v)", count, err)
+	}
+}
+
+func TestNormalizationSettingsRoundTrip(t *testing.T) {
+	dbPath := "test_norm.db"
+	defer func() { _ = os.Remove(dbPath) }()
+
+	db, err := NewDB(dbPath, slog.Default())
+	if err != nil {
+		t.Fatalf("Failed to create test db: %v", err)
+	}
+	defer func() { _ = db.Close() }()
+
+	ctx := context.Background()
+	repo := NewSettingsRepository(db)
+
+	// Empty table => normalization defaults.
+	def, err := repo.Load(ctx)
+	if err != nil {
+		t.Fatalf("Failed to load default settings: %v", err)
+	}
+	if def.NormalizationEnabled != false || def.NormalizationMode != "off" ||
+		def.NormalizationTargetLUFS != domain.DefaultTargetLUFS || def.NormalizationPreventClip != true {
+		t.Errorf("Unexpected normalization defaults: %+v", def)
+	}
+	if def.LibraryAnalysisEnabled != false {
+		t.Errorf("Expected LibraryAnalysisEnabled default false, got %+v", def)
+	}
+
+	// Non-default values round-trip.
+	in := &domain.AppSettings{
+		Language:                 "en",
+		Theme:                    "dark",
+		LibraryAnalysisEnabled:   true,
+		NormalizationEnabled:     true,
+		NormalizationMode:        "album",
+		NormalizationTargetLUFS:  -18,
+		NormalizationPreventClip: false,
+	}
+	if err := repo.Save(ctx, in); err != nil {
+		t.Fatalf("Failed to save settings: %v", err)
+	}
+	out, err := repo.Load(ctx)
+	if err != nil {
+		t.Fatalf("Failed to load settings: %v", err)
+	}
+	if out.NormalizationEnabled != true || out.NormalizationMode != "album" ||
+		out.NormalizationTargetLUFS != -18 || out.NormalizationPreventClip != false {
+		t.Errorf("Normalization round-trip mismatch: %+v", out)
+	}
+	if out.LibraryAnalysisEnabled != true {
+		t.Errorf("LibraryAnalysisEnabled round-trip mismatch: %+v", out)
+	}
+}

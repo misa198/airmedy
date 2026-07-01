@@ -1,6 +1,7 @@
 package app
 
 import (
+	"airmedy/internal/app/analysis"
 	"airmedy/internal/app/appsettings"
 	"airmedy/internal/app/config"
 	"airmedy/internal/app/eq"
@@ -8,12 +9,14 @@ import (
 	"airmedy/internal/app/lastfm"
 	"airmedy/internal/app/library"
 	"airmedy/internal/app/lyrics"
+	"airmedy/internal/app/normalization"
 	"airmedy/internal/app/player"
 	"airmedy/internal/app/playlist"
 	"airmedy/internal/app/remoteserver"
 	"airmedy/internal/app/updater"
 	"airmedy/internal/domain"
 	"airmedy/internal/infra/artwork"
+	"airmedy/internal/infra/audio"
 	"airmedy/internal/infra/bleve"
 	lyricsinfra "airmedy/internal/infra/lyrics"
 	"airmedy/internal/infra/logging"
@@ -58,6 +61,7 @@ var Module = fx.Module("app",
 		func(c *config.Config) (domain.ArtworkCache, error) { return artwork.NewDiskArtworkCache(c.ArtworkCachePath()) },
 		func() domain.MetadataExtractor { return metadata.NewTagLibExtractor() },
 		func() domain.MetadataWriter { return metadata.NewTagLibWriter() },
+		func() domain.LoudnessAnalyzer { return audio.NewLoudnessAnalyzer() },
 		library.NewLibraryService,
 		wails.NewLibraryService,
 		wails.NewPlayerService,
@@ -65,6 +69,8 @@ var Module = fx.Module("app",
 		wails.NewPlaylistService,
 		wails.NewLyricsService,
 		wails.NewEQService,
+		wails.NewNormalizationService,
+		wails.NewAnalysisService,
 		wails.NewLastFmService,
 		wails.NewWindowService,
 		wails.NewSettingsService,
@@ -83,10 +89,12 @@ var Module = fx.Module("app",
 	playlist.Module,
 	lyrics.Module,
 	eq.Module,
+	normalization.Module,
 	lastfm.Module,
 	appsettings.Module,
 	remoteserver.Module,
-	fx.Invoke(func(lc fx.Lifecycle, db *sqlite.DB, search domain.SearchService, lib *library.LibraryService, playerSvc *player.PlayerService, eqSvc *eq.EQService, lastfmSvc *lastfm.LastFmService) {
+	analysis.Module,
+	fx.Invoke(func(lc fx.Lifecycle, db *sqlite.DB, search domain.SearchService, lib *library.LibraryService, playerSvc *player.PlayerService, eqSvc *eq.EQService, lastfmSvc *lastfm.LastFmService, analysisSvc *analysis.AnalysisService) {
 		lc.Append(fx.Hook{
 			OnStart: func(ctx context.Context) error {
 				// Wire library to player to sync track metadata changes (e.g. favorites)
@@ -95,6 +103,19 @@ var Module = fx.Module("app",
 					lastfmSvc.SetLoveStatus(track, track.IsFavorite)
 				})
 
+				// Wire import -> analysis enqueue (low priority) and playback state ->
+				// analysis throttle, both centrally here so neither package imports
+				// the other (avoids a library<->analysis or player<->analysis cycle;
+				// mirrors the track-update wiring above).
+				lib.AddAnalysisListener(func(trackID string) {
+					analysisSvc.Enqueue(trackID, false)
+				})
+				playerSvc.AddStatusListener(func(status domain.PlayerStatus) {
+					analysisSvc.SetThrottled(status.PlaybackState == domain.PlaybackStatePlaying)
+				})
+				playerSvc.AddTrackLoadListener(func(track *domain.TrackDTO) {
+					analysisSvc.Enqueue(track.ID, true) // on-play priority boost
+				})
 
 				if err := eqSvc.SeedDefaults(ctx); err != nil {
 					slog.Error("Failed to seed EQ defaults", "error", err)
@@ -102,9 +123,15 @@ var Module = fx.Module("app",
 				if err := eqSvc.ApplyActiveProfile(ctx); err != nil {
 					slog.Error("Failed to apply active EQ profile", "error", err)
 				}
+				if err := analysisSvc.Start(ctx); err != nil {
+					slog.Error("Failed to start analysis service", "error", err)
+				}
 				return lib.Start(ctx)
 			},
 			OnStop: func(ctx context.Context) error {
+				if err := analysisSvc.Stop(ctx); err != nil {
+					slog.Error("Failed to stop analysis service", "error", err)
+				}
 				if err := lib.Stop(ctx); err != nil {
 					slog.Error("Failed to stop library service", "error", err)
 				}
