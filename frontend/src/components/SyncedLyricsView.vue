@@ -53,7 +53,7 @@ watch(activeIndex, (newIndex) => {
         v-for="(line, index) in lines"
         :key="index"
         ref="lineRefs"
-        class="text-2xl md:text-4xl font-extrabold transition-all duration-100 cursor-pointer select-none origin-left py-2"
+        class="text-2xl md:text-4xl font-bold transition-all duration-100 cursor-pointer select-none origin-left py-2"
         :class="[
           index === activeIndex
             ? 'text-white scale-105 blur-none opacity-100'

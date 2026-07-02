@@ -200,6 +200,31 @@
       "rename_profile": "Rename Profile",
       "select_profile": "Select Profile"
     },
+    "library_analysis": {
+      "title": "Library Analysis",
+      "enable": "Enable Library Analysis",
+      "enable_desc": "Scan your library in the background to measure each track's loudness and audio characteristics. Required before Volume Normalization can be used.",
+      "requires_enable": "Enable Library Analysis above to use Volume Normalization"
+    },
+    "normalization": {
+      "title": "Volume Normalization",
+      "enable": "Enable Volume Normalization",
+      "enable_desc": "Adjust playback volume to a target loudness level",
+      "mode": "Mode",
+      "mode_track_desc": "Track: levels each song the same.",
+      "mode_album_desc": "Album: keeps relative loudness between tracks on the same album.",
+      "track_mode": "Per Track",
+      "album_mode": "Per Album",
+      "target_lufs": "Target Loudness (LUFS)",
+      "prevent_clip": "Prevent Clipping",
+      "prevent_clip_desc": "Reduce gain if it would clip the audio",
+      "analyzing": "Analyzing {done}/{total} ({percent}%)",
+      "readiness": "{percent}% of library analyzed",
+      "mark_quiet": "Quiet",
+      "mark_balanced": "Balanced (Recommended)",
+      "mark_loud": "Loud",
+      "mark_very_loud": "Very Loud"
+    },
     "delimiters": {
       "artists": "Artists",
       "album_artists": "Album Artists",

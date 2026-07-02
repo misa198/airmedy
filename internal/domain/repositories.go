@@ -158,6 +158,31 @@ type SettingsRepository interface {
 	Load(ctx context.Context) (*AppSettings, error)
 }
 
+// AnalysisRepository persists the one-time audio analysis features and tracks
+// which library entries still need analysis (tracks.analyzed_version).
+type AnalysisRepository interface {
+	// UpsertFeatures writes the features for a track and, in the same
+	// transaction, bumps tracks.analyzed_version to f.AnalyzerVersion so the
+	// track no longer counts as pending. Idempotent.
+	UpsertFeatures(ctx context.Context, f *TrackFeatures) error
+	// GetFeatures returns the stored features for a track, or (nil, nil) if none.
+	GetFeatures(ctx context.Context, trackID string) (*TrackFeatures, error)
+	// CountPending returns how many tracks have analyzed_version < currentVersion.
+	CountPending(ctx context.Context, currentVersion int) (int, error)
+	// ListPending returns up to limit track IDs with analyzed_version <
+	// currentVersion, oldest-added first (stable backfill order).
+	ListPending(ctx context.Context, currentVersion, limit int) ([]string, error)
+	// MarkFailed bumps tracks.analyzed_version to currentVersion without
+	// writing a track_features row, for a track whose analysis pass errored
+	// (corrupt file, unsupported codec, etc). Without this, a single
+	// permanently-failing track would count as pending forever — CountPending
+	// never reaches 0, and analysis:progress never reports "done". No
+	// features row means GetFeatures still returns nil for it, so
+	// Normalization correctly treats it as unanalyzed (gain 0) rather than
+	// inventing fake loudness data.
+	MarkFailed(ctx context.Context, trackID string, currentVersion int) error
+}
+
 type MiniPlayerStateRepository interface {
 	Save(ctx context.Context, state *MiniPlayerState) error
 	Load(ctx context.Context) (*MiniPlayerState, error)

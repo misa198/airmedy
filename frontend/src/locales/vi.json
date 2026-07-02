@@ -200,6 +200,31 @@
       "rename_profile": "Đổi tên hồ sơ",
       "select_profile": "Chọn hồ sơ"
     },
+    "library_analysis": {
+      "title": "Phân tích thư viện",
+      "enable": "Bật phân tích thư viện",
+      "enable_desc": "Quét thư viện của bạn trong nền để đo độ to và đặc trưng âm thanh của từng bài hát. Cần bật trước khi có thể dùng Chuẩn hóa âm lượng.",
+      "requires_enable": "Bật Phân tích thư viện ở trên để dùng Chuẩn hóa âm lượng"
+    },
+    "normalization": {
+      "title": "Chuẩn hóa âm lượng",
+      "enable": "Bật chuẩn hóa âm lượng",
+      "enable_desc": "Điều chỉnh âm lượng phát theo mức độ to mục tiêu",
+      "mode": "Chế độ",
+      "mode_track_desc": "Theo bài hát: cân bằng âm lượng từng bài.",
+      "mode_album_desc": "Theo album: giữ độ to tương đối giữa các bài trong cùng album.",
+      "track_mode": "Theo bài hát",
+      "album_mode": "Theo album",
+      "target_lufs": "Độ to mục tiêu (LUFS)",
+      "prevent_clip": "Chống vỡ tiếng",
+      "prevent_clip_desc": "Tự động giảm âm lượng tăng thêm nếu có nguy cơ làm vỡ tiếng",
+      "analyzing": "Đang phân tích {done}/{total} ({percent}%)",
+      "readiness": "Đã phân tích {percent}% thư viện",
+      "mark_quiet": "Nhỏ",
+      "mark_balanced": "Cân bằng (Khuyến nghị)",
+      "mark_loud": "To",
+      "mark_very_loud": "Rất to"
+    },
     "delimiters": {
       "artists": "Nghệ sĩ",
       "album_artists": "Nghệ sĩ album",

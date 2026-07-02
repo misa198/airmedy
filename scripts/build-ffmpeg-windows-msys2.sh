@@ -4,7 +4,11 @@
 # Requires: pacman -S mingw-w64-x86_64-gcc nasm make
 #
 # Output: internal/infra/audio/ffmpeg_libs/windows/amd64/*.a
-#         internal/infra/audio/ffmpeg_libs/include/  (headers, shared across arches)
+#         internal/infra/audio/ffmpeg_libs/include/  (shared headers)
+#
+# The libs are linked into the audio package via cgo for two uses:
+#   - miniaudio player decode (libavcodec/format/util/swresample)
+#   - in-process audio analysis (libavfilter: ebur128,aspectralstats,astats)
 #
 # Usage (from repo root in MSYS2 MINGW64 shell):
 #   bash scripts/build-ffmpeg-windows-msys2.sh
@@ -24,12 +28,17 @@ CONFIGURE_FLAGS=(
     --disable-doc
     --disable-programs
     --disable-debug
+    --disable-network
+    --disable-autodetect
     --enable-static
     --disable-shared
     --enable-avcodec
     --enable-avformat
     --enable-avutil
     --enable-swresample
+    # avfilter: audio-analysis filter graph (in-process via cgo)
+    --enable-avfilter
+    --enable-filter=ebur128,aspectralstats,astats,aresample,aformat,anull,abuffer,abuffersink
     # Decoders
     --enable-decoder=mp3,mp3float
     --enable-decoder=aac,aac_latm
@@ -80,7 +89,7 @@ CONFIGURE_FLAGS=(
     --disable-pthreads
 )
 
-LIBS=(libavcodec libavformat libavutil libswresample)
+LIBS=(libavcodec libavformat libavutil libswresample libavfilter)
 
 # Preflight checks
 for cmd in gcc nasm make curl; do
@@ -119,6 +128,14 @@ for LIB in "${LIBS[@]}"; do
     cp "${INSTALL_DIR}/lib/${LIB}.a" "${OUT_DIR}/${LIB}.a"
     echo "    copied ${LIB}.a -> ffmpeg_libs/windows/amd64/"
 done
+
+# Confirm the analysis filters were compiled into libavfilter.a.
+echo "==> Verifying analysis filters in libavfilter.a..."
+SYMS="$(nm "${OUT_DIR}/libavfilter.a" 2>/dev/null || true)"
+for F in ebur128 aspectralstats astats; do
+    grep -q "ff_af_${F}" <<<"${SYMS}" || { echo "    ERROR: filter '${F}' missing from libavfilter.a"; exit 1; }
+done
+echo "    OK: ebur128 + aspectralstats + astats present in libavfilter.a"
 
 # Copy headers (shared across arches)
 if [[ ! -d "${INCLUDE_OUT}" ]]; then

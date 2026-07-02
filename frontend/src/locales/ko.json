@@ -200,6 +200,31 @@
       "rename_profile": "프로필 이름 바꾸기",
       "select_profile": "프로필 선택"
     },
+    "library_analysis": {
+      "title": "라이브러리 분석",
+      "enable": "라이브러리 분석 활성화",
+      "enable_desc": "백그라운드에서 라이브러리를 분석하여 각 트랙의 음량과 오디오 특성을 측정합니다. 음량 정규화를 사용하려면 먼저 활성화해야 합니다.",
+      "requires_enable": "음량 정규화를 사용하려면 위에서 라이브러리 분석을 활성화하세요"
+    },
+    "normalization": {
+      "title": "음량 정규화",
+      "enable": "음량 정규화 사용",
+      "enable_desc": "재생 음량을 목표 음량 수준으로 조정합니다",
+      "mode": "모드",
+      "mode_track_desc": "트랙별: 각 곡을 동일한 음량으로.",
+      "mode_album_desc": "앨범별: 같은 앨범 내 트랙 간 상대적 음량을 유지합니다.",
+      "track_mode": "트랙별",
+      "album_mode": "앨범별",
+      "target_lufs": "목표 음량 (LUFS)",
+      "prevent_clip": "클리핑 방지",
+      "prevent_clip_desc": "클리핑이 발생할 경우 게인을 낮춥니다",
+      "analyzing": "분석 중 {done}/{total} ({percent}%)",
+      "readiness": "라이브러리의 {percent}%가 분석됨",
+      "mark_quiet": "조용함",
+      "mark_balanced": "균형 (권장)",
+      "mark_loud": "큼",
+      "mark_very_loud": "매우 큼"
+    },
     "delimiters": {
       "artists": "아티스트",
       "album_artists": "앨범 아티스트",

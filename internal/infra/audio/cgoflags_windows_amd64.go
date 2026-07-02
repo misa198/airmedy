@@ -3,9 +3,9 @@
 package audio
 
 /*
-#cgo CFLAGS: -I${SRCDIR}/ffmpeg_libs/include
-#cgo LDFLAGS: -L${SRCDIR}/ffmpeg_libs/windows/amd64
-#cgo LDFLAGS: -Wl,-Bstatic -lavformat -lavcodec -lswresample -lavutil -Wl,-Bdynamic -lmfplat -lmf -lmfuuid -lstrmiids -lws2_32 -lsecur32 -lbcrypt -lole32 -loleaut32 -luuid -lwinmm -lversion
+#cgo CFLAGS: -I${SRCDIR}/ffmpeg_libs/include -I${SRCDIR}/aubio_libs/include
+#cgo LDFLAGS: -L${SRCDIR}/ffmpeg_libs/windows/amd64 -L${SRCDIR}/aubio_libs/windows/amd64
+#cgo LDFLAGS: -Wl,-Bstatic -lavfilter -lavformat -lavcodec -lswresample -lavutil -laubio -Wl,-Bdynamic -lmfplat -lmf -lmfuuid -lstrmiids -lws2_32 -lsecur32 -lbcrypt -lole32 -loleaut32 -luuid -lwinmm -lversion
 // Statically link the MinGW C++/pthread runtime so the binary does not depend on
 // libstdc++-6.dll / libgcc_s_seh-1.dll / libwinpthread-1.dll at runtime (these are
 // not present on a clean Windows machine). The system libs above are intentionally

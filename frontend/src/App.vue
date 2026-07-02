@@ -195,7 +195,12 @@ body,
 }
 
 #app {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 
+  -apple-system, BlinkMacSystemFont, "Segoe UI", 
+  "PingFang SC", "Microsoft YaHei", 
+  "Hiragino Kaku Gothic Pro", "Meiryo", 
+  "Apple SD Gothic Neo", "Malgun Gothic", 
+  sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

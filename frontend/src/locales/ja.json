@@ -200,6 +200,31 @@
       "rename_profile": "プロファイルの名前を変更",
       "select_profile": "プロファイルを選択"
     },
+    "library_analysis": {
+      "title": "ライブラリ分析",
+      "enable": "ライブラリ分析を有効にする",
+      "enable_desc": "バックグラウンドでライブラリを分析し、各トラックのラウドネスと音声特性を測定します。音量正規化を使用する前に必要です。",
+      "requires_enable": "音量正規化を使うには、上のライブラリ分析を有効にしてください"
+    },
+    "normalization": {
+      "title": "音量正規化",
+      "enable": "音量正規化を有効にする",
+      "enable_desc": "再生音量を目標ラウドネスレベルに調整します",
+      "mode": "モード",
+      "mode_track_desc": "トラックごと: 各曲を同じ音量に。",
+      "mode_album_desc": "アルバムごと: 同じアルバム内の曲間の相対的な音量差を維持します。",
+      "track_mode": "トラックごと",
+      "album_mode": "アルバムごと",
+      "target_lufs": "目標ラウドネス (LUFS)",
+      "prevent_clip": "クリッピング防止",
+      "prevent_clip_desc": "クリッピングが発生する場合はゲインを下げます",
+      "analyzing": "分析中 {done}/{total} ({percent}%)",
+      "readiness": "ライブラリの{percent}%を分析済み",
+      "mark_quiet": "静か",
+      "mark_balanced": "バランス（推奨）",
+      "mark_loud": "大きい",
+      "mark_very_loud": "非常に大きい"
+    },
     "delimiters": {
       "artists": "アーティスト",
       "album_artists": "アルバムアーティスト",

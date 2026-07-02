@@ -95,7 +95,7 @@ async function save() {
     <div class="flex-1 flex overflow-hidden">
       <!-- Left: Search & List -->
       <div class="w-1/2 flex flex-col border-r border-border/50">
-        <div class="p-4 space-y-4 border-b border-border/50">
+        <div class="p-4 space-y-2 border-b border-border/50">
           <div class="space-y-2">
             <label class="text-xs font-medium text-muted-foreground uppercase">{{ t('find_lyrics.track_title') }}</label>
             <div class="relative">

@@ -51,7 +51,7 @@ jobs:
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libgtk-4-dev libwebkitgtk-6.0-dev build-essential pkg-config nasm
 
       - name: Install Wails v3
-        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-alpha2.106
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-alpha2.111
 
       - name: Install golangci-lint
         run: |
@@ -74,7 +74,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: internal/infra/audio/ffmpeg_libs
-          key: ffmpeg-linux-${{ hashFiles('scripts/build-ffmpeg-linux.sh') }}
+          key: ffmpeg-linux-v2-${{ hashFiles('scripts/build-ffmpeg-linux.sh') }}
 
       - name: Build FFmpeg (Linux)
         if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
@@ -90,6 +90,17 @@ jobs:
       - name: Fetch miniaudio (Linux)
         if: steps.cache-miniaudio.outputs.cache-hit != 'true'
         run: bash scripts/fetch-miniaudio.sh
+
+      - name: Cache aubio (Linux)
+        id: cache-aubio
+        uses: actions/cache@v4
+        with:
+          path: internal/infra/audio/aubio_libs
+          key: aubio-linux-${{ hashFiles('scripts/build-aubio-linux.sh') }}
+
+      - name: Build aubio (Linux)
+        if: steps.cache-aubio.outputs.cache-hit != 'true'
+        run: bash scripts/build-aubio-linux.sh amd64
 
       - name: Install JS Dependencies
         run: pnpm install

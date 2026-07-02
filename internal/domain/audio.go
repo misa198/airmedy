@@ -1,5 +1,7 @@
 package domain
 
+import "context"
+
 // PlaybackState represents the current state of the audio player
 type PlaybackState string
 
@@ -114,6 +116,18 @@ type GaplessPlayer interface {
 type EQController interface {
 	SetEQBand(index int, frequency, gain, bandwidth float64) error
 	SetEQEnabled(enabled bool) error
+}
+
+// NormalizationController is an optional interface implemented by audio players that can
+// apply a pre-amp gain (dB) ahead of user volume, used for volume normalization.
+type NormalizationController interface {
+	SetPreampGain(db float64) error
+}
+
+// LoudnessAnalyzer runs one-time DSP analysis on an audio file, returning loudness,
+// dynamics, and spectral features. Implemented by the in-process ffmpeg adapter.
+type LoudnessAnalyzer interface {
+	Analyze(ctx context.Context, path string) (*TrackFeatures, error)
 }
 
 // SleepInhibitor prevents the OS from sleeping while music is playing.

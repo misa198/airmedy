@@ -48,6 +48,7 @@
 - **Themes** — light, dark (gray), and black (pure black for OLED screens) themes.
 - **Artist images** — uses local `artist.jpg`/`.jpeg`/`.png` files from your music folders (in the artist folder or beside the songs), or set your own custom image per artist. Toggle "Online Artist Artwork" to use Deezer images instead; turn it off to use your local files.
 - **Remote control** — control playback from any browser on the same network. Enable the remote server in settings, open the displayed URL on your phone or tablet, and enter the PIN to start controlling playback, managing the queue, and viewing lyrics remotely.
+- **Volume normalization** — consistent loudness across your library, no more reaching for the volume knob between tracks. Analyzes your library with FFmpeg (LUFS loudness + true peak), then applies per-track pre-amp gain at playback. Track mode normalizes each song individually; album mode keeps an album's natural dynamics by applying one gain across all its tracks. Target loudness is configurable (default -14 LUFS), with an optional prevent-clipping guard.
 
 ## Audio Format Support
 

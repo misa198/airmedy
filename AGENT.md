@@ -270,6 +270,8 @@ Conventional Commits: `type(scope): description`
 | Bleve search index, query | `catalog/search/README.md` |
 | Artwork cache, palette, asset handler | `catalog/artwork/README.md` |
 | EQ profiles, bands, presets | `catalog/equalizer/README.md` |
+| Background audio analysis (loudness/spectral/tempo pipeline) | `catalog/analysis/README.md` |
+| Volume normalization (preamp gain, target LUFS) | `catalog/normalization/README.md` |
 | Lyrics fetch, LRC parse, sync display | `catalog/lyrics/README.md` |
 | Playlist CRUD, track order, artwork | `catalog/playlists/README.md` |
 | App settings, theme, language | `catalog/settings/README.md` |

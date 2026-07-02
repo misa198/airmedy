@@ -396,14 +396,15 @@ func TestLibraryService_AddWatchedFolder_CoveringExisting(t *testing.T) {
 	}
 
 	// Verify new parent folder was added
+	wantPath := filepath.Clean("/Music/A")
 	found := false
 	for _, f := range folderRepo.folders {
-		if f.Path == "/Music/A" {
+		if f.Path == wantPath {
 			found = true
 			break
 		}
 	}
 	if !found {
-		t.Error("Parent folder /Music/A not found in repo after AddWatchedFolder")
+		t.Errorf("Parent folder %s not found in repo after AddWatchedFolder", wantPath)
 	}
 }

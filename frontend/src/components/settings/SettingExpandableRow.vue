@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import SettingRow from './SettingRow.vue'
+
 defineProps<{
   title: string
   description?: string
@@ -8,13 +10,9 @@ defineProps<{
 
 <template>
   <div>
-    <div class="p-5 flex items-center justify-between gap-x-2">
-      <div>
-        <p class="text-sm font-semibold">{{ title }}</p>
-        <p v-if="description" class="text-xs text-foreground opacity-60 mt-1">{{ description }}</p>
-      </div>
+    <SettingRow :title="title" :description="description">
       <slot name="control" />
-    </div>
+    </SettingRow>
     <Transition name="expand">
       <div v-if="expanded" class="expand-wrap">
         <div
