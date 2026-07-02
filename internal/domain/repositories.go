@@ -181,6 +181,11 @@ type AnalysisRepository interface {
 	// Normalization correctly treats it as unanalyzed (gain 0) rather than
 	// inventing fake loudness data.
 	MarkFailed(ctx context.Context, trackID string, currentVersion int) error
+	// IsAnalyzed reports whether tracks.analyzed_version >= currentVersion for
+	// the given track. True for both successfully analyzed and permanently
+	// failed tracks (MarkFailed also bumps analyzed_version), so callers can
+	// skip re-running the analyzer on a track that already failed once.
+	IsAnalyzed(ctx context.Context, trackID string, currentVersion int) (bool, error)
 }
 
 type MiniPlayerStateRepository interface {

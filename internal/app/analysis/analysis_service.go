@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"runtime"
 	"sync"
+	"time"
 
 	"airmedy/internal/domain"
 
@@ -15,6 +16,19 @@ import (
 // result; tracks with tracks.analyzed_version < this are pending. Must be
 // kept in sync with audio.AnalyzerVersion (internal/infra/audio/analyzer.go).
 const analyzerVersion = 1
+
+// analyzeTimeout bounds a single track's decode/analysis pass. The cgo
+// analyzer only polls its cancel flag once per outer decode iteration, so a
+// stalled read (network mount, truncated/corrupt stream) can otherwise wedge
+// a worker — and therefore stopPool's wg.Wait() — forever.
+const analyzeTimeout = 3 * time.Minute
+
+// stopPoolWaitTimeout bounds how long stopPool waits for in-flight workers
+// before giving up and returning anyway, so a single wedged analysis (see
+// analyzeTimeout) can't hang app shutdown or a disable/re-enable toggle
+// indefinitely. The abandoned worker goroutine keeps running in the
+// background and will exit on its own once analyzeTimeout elapses.
+const stopPoolWaitTimeout = analyzeTimeout + 30*time.Second
 
 // AnalysisService runs the background audio-analysis pipeline: a resumable,
 // priority-aware worker pool that turns pending tracks into stored
@@ -168,7 +182,16 @@ func (s *AnalysisService) stopPool() {
 	s.cond.Broadcast()
 	s.mu.Unlock()
 
-	s.wg.Wait()
+	waitDone := make(chan struct{})
+	go func() {
+		s.wg.Wait()
+		close(waitDone)
+	}()
+	select {
+	case <-waitDone:
+	case <-time.After(stopPoolWaitTimeout):
+		s.logger.Warn("analysis: stopPool gave up waiting for in-flight workers, abandoning them", "timeout", stopPoolWaitTimeout)
+	}
 
 	s.mu.Lock()
 	s.boostQueue = nil
@@ -362,13 +385,17 @@ func (s *AnalysisService) analyzeOne(ctx context.Context, trackID string) {
 
 	// The on-play boost hook enqueues every track it loads, whether or not it's
 	// already analyzed (Enqueue only dedups in-flight/queued, not analyzed
-	// state). Skip the expensive ffmpeg pass if a prior analyzeOne already
-	// wrote up-to-date features for this track.
-	if existing, err := s.analysisRepo.GetFeatures(ctx, trackID); err == nil && existing != nil && existing.AnalyzerVersion >= analyzerVersion {
+	// state). Skip the expensive ffmpeg pass if this track already has an
+	// up-to-date analyzed_version — checking that (rather than GetFeatures)
+	// also covers tracks MarkFailed as permanently unanalyzable, which have no
+	// features row and would otherwise be re-run on every play.
+	if done, err := s.analysisRepo.IsAnalyzed(ctx, trackID, analyzerVersion); err == nil && done {
 		return
 	}
 
-	feat, err := s.analyzer.Analyze(ctx, track.Path)
+	analyzeCtx, cancel := context.WithTimeout(ctx, analyzeTimeout)
+	defer cancel()
+	feat, err := s.analyzer.Analyze(analyzeCtx, track.Path)
 	if err != nil {
 		if ctx.Err() != nil {
 			return // shutting down
