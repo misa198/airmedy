@@ -391,17 +391,17 @@ func (s *LibraryService) handleEvent(event fsnotify.Event) {
 			tracks, err := s.trackRepo.GetByPathPrefix(ctx, prefix)
 			if err == nil && len(tracks) > 0 {
 				s.logger.Info("Directory removed, deleting tracks inside", "count", len(tracks), "prefix", prefix)
-				var dirDeletedIDs []string
-				for _, t := range tracks {
-					if err := s.trackRepo.Delete(ctx, t.ID); err != nil {
-						s.logger.Warn("Failed to delete track from DB", "id", t.ID, "error", err)
-						continue
-					}
-					dirDeletedIDs = append(dirDeletedIDs, t.ID)
+				dirDeletedIDs := make([]string, len(tracks))
+				for i, t := range tracks {
+					dirDeletedIDs[i] = t.ID
 				}
-				deletedIDs = append(deletedIDs, dirDeletedIDs...)
-				// Batched: one (or a few) commits instead of one fsync-ing
-				// commit per track — same fix as RemoveWatchedFolder.
+				// Batched: one statement instead of one fsync-ing commit per
+				// track — same fix as RemoveWatchedFolder.
+				if err := s.trackRepo.DeleteByPathPrefix(ctx, prefix); err != nil {
+					s.logger.Warn("Failed to delete tracks from DB", "count", len(dirDeletedIDs), "error", err)
+				} else {
+					deletedIDs = append(deletedIDs, dirDeletedIDs...)
+				}
 				if err := s.searchService.DeleteTracksFromIndex(ctx, dirDeletedIDs); err != nil {
 					s.logger.Warn("Failed to delete tracks from search index", "count", len(dirDeletedIDs), "error", err)
 				}
@@ -902,20 +902,26 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 	var deletedIDs []string
 	existingTracks, err := s.trackRepo.GetByPathPrefix(ctx, root)
 	if err == nil {
-		for _, t := range existingTracks {
-			if foundPaths[filepath.Clean(t.Path)] {
-				continue
+		// Batched: all deletes share one transaction/fsync instead of one
+		// commit per track — same fix as RemoveWatchedFolder. A resync of a
+		// folder with many moved/deleted files was hitting this the same way.
+		txErr := s.txManager.RunInTx(ctx, func(ctx context.Context) error {
+			for _, t := range existingTracks {
+				if foundPaths[filepath.Clean(t.Path)] {
+					continue
+				}
+				s.logger.Info("Removing missing track", "path", t.Path)
+				if err := s.trackRepo.Delete(ctx, t.ID); err != nil {
+					s.logger.Warn("Failed to delete missing track from DB", "path", t.Path, "error", err)
+					continue
+				}
+				deletedIDs = append(deletedIDs, t.ID)
 			}
-			s.logger.Info("Removing missing track", "path", t.Path)
-			if err := s.trackRepo.Delete(ctx, t.ID); err != nil {
-				s.logger.Warn("Failed to delete missing track from DB", "path", t.Path, "error", err)
-				continue
-			}
-			deletedIDs = append(deletedIDs, t.ID)
+			return nil
+		})
+		if txErr != nil {
+			s.logger.Warn("Failed to delete missing tracks from DB", "error", txErr)
 		}
-		// Batched: one (or a few) commits instead of one fsync-ing commit per
-		// track — same fix as RemoveWatchedFolder. A resync of a folder with
-		// many moved/deleted files was hitting this the same way.
 		if err := s.searchService.DeleteTracksFromIndex(ctx, deletedIDs); err != nil {
 			s.logger.Warn("Failed to delete missing tracks from search index", "count", len(deletedIDs), "error", err)
 		}
@@ -1346,7 +1352,9 @@ func (s *LibraryService) ResplitLibrary(ctx context.Context) error {
 
 	for i, dto := range tracks {
 		s.buildEntitiesFromRaw(dto, settings)
-		if err := s.resolveEntities(ctx, dto); err != nil {
+		if err := s.txManager.RunInTx(ctx, func(ctx context.Context) error {
+			return s.resolveEntities(ctx, dto)
+		}); err != nil {
 			s.logger.Error("Failed to re-split track", "path", dto.Path, "error", err)
 		}
 		if app := application.Get(); app != nil && app.Event != nil {

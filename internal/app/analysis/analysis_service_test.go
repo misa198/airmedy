@@ -53,6 +53,12 @@ func (m *mockAnalysisRepo) GetFeatures(ctx context.Context, trackID string) (*do
 	return nil, nil
 }
 
+func (m *mockAnalysisRepo) IsAnalyzed(ctx context.Context, trackID string, currentVersion int) (bool, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.versions[trackID] >= currentVersion, nil
+}
+
 func (m *mockAnalysisRepo) MarkFailed(ctx context.Context, trackID string, currentVersion int) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

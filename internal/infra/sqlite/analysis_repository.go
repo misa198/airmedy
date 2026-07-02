@@ -152,6 +152,20 @@ func (r *analysisRepository) GetFeatures(ctx context.Context, trackID string) (*
 	}, nil
 }
 
+func (r *analysisRepository) IsAnalyzed(ctx context.Context, trackID string, currentVersion int) (bool, error) {
+	var version int
+	err := r.db.Ext(ctx).GetContext(ctx, &version,
+		`SELECT analyzed_version FROM tracks WHERE id = ?`, trackID,
+	)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("failed to get track analyzed_version: %w", err)
+	}
+	return version >= currentVersion, nil
+}
+
 func (r *analysisRepository) CountPending(ctx context.Context, currentVersion int) (int, error) {
 	var n int
 	if err := r.db.Ext(ctx).GetContext(ctx, &n,
