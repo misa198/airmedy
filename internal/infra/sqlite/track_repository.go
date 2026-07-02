@@ -21,7 +21,7 @@ func NewTrackRepository(db *DB) domain.TrackRepository {
 func (r *trackRepository) GetByID(ctx context.Context, id string) (*domain.TrackDTO, error) {
 	query := fmt.Sprintf(`SELECT %s FROM tracks t WHERE t.id = ?`, trackSelectFields)
 	var track domain.Track
-	err := r.db.GetContext(ctx, &track, query, id)
+	err := r.db.Ext(ctx).GetContext(ctx, &track, query, id)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -41,7 +41,7 @@ func (r *trackRepository) populateRelationships(ctx context.Context, dto *domain
 	// Album
 	if dto.AlbumID != "" {
 		var album domain.Album
-		err := r.db.GetContext(ctx, &album, "SELECT * FROM albums WHERE id = ?", dto.AlbumID)
+		err := r.db.Ext(ctx).GetContext(ctx, &album, "SELECT * FROM albums WHERE id = ?", dto.AlbumID)
 		if err == nil {
 			dto.Album = &album
 		}
@@ -49,7 +49,7 @@ func (r *trackRepository) populateRelationships(ctx context.Context, dto *domain
 
 	// Artists
 	var artists []*domain.Artist
-	err := r.db.SelectContext(ctx, &artists, `
+	err := r.db.Ext(ctx).SelectContext(ctx, &artists, `
 		SELECT art.* FROM artists art
 		JOIN track_artists ta ON art.id = ta.artist_id
 		WHERE ta.track_id = ?
@@ -61,7 +61,7 @@ func (r *trackRepository) populateRelationships(ctx context.Context, dto *domain
 
 	// Album Artists
 	var albumArtists []*domain.Artist
-	err = r.db.SelectContext(ctx, &albumArtists, `
+	err = r.db.Ext(ctx).SelectContext(ctx, &albumArtists, `
 		SELECT art.* FROM artists art
 		JOIN track_album_artists taa ON art.id = taa.artist_id
 		WHERE taa.track_id = ?
@@ -73,7 +73,7 @@ func (r *trackRepository) populateRelationships(ctx context.Context, dto *domain
 
 	// Genres
 	var genres []*domain.Genre
-	err = r.db.SelectContext(ctx, &genres, `
+	err = r.db.Ext(ctx).SelectContext(ctx, &genres, `
 		SELECT g.* FROM genres g
 		JOIN track_genres tg ON g.id = tg.genre_id
 		WHERE tg.track_id = ?
@@ -85,7 +85,7 @@ func (r *trackRepository) populateRelationships(ctx context.Context, dto *domain
 
 	// Composers
 	var composers []*domain.Composer
-	err = r.db.SelectContext(ctx, &composers, `
+	err = r.db.Ext(ctx).SelectContext(ctx, &composers, `
 		SELECT c.* FROM composers c
 		JOIN track_composers tc ON c.id = tc.composer_id
 		WHERE tc.track_id = ?
@@ -101,7 +101,7 @@ func (r *trackRepository) populateRelationships(ctx context.Context, dto *domain
 func (r *trackRepository) GetByPath(ctx context.Context, path string) (*domain.TrackDTO, error) {
 	query := fmt.Sprintf(`SELECT %s FROM tracks t WHERE t.path = ?`, trackSelectFields)
 	var track domain.Track
-	err := r.db.GetContext(ctx, &track, query, path)
+	err := r.db.Ext(ctx).GetContext(ctx, &track, query, path)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -140,7 +140,7 @@ func (r *trackRepository) GetByAlbumID(ctx context.Context, albumID string) ([]*
 		ORDER BY t.disc_number, t.track_number, t.sort_title
 	`, trackSelectFields)
 	var rows []trackRow
-	err := r.db.SelectContext(ctx, &rows, query, albumID)
+	err := r.db.Ext(ctx).SelectContext(ctx, &rows, query, albumID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tracks by album id: %w", err)
 	}
@@ -163,7 +163,7 @@ func (r *trackRepository) GetByArtistID(ctx context.Context, artistID string) ([
 		ORDER BY t.year DESC, a.title, t.disc_number, t.track_number, t.sort_title
 	`, trackSelectFields)
 	var rows []trackRow
-	err := r.db.SelectContext(ctx, &rows, query, artistID, artistID, artistID)
+	err := r.db.Ext(ctx).SelectContext(ctx, &rows, query, artistID, artistID, artistID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tracks by artist id: %w", err)
 	}
@@ -184,7 +184,7 @@ func (r *trackRepository) GetByGenreID(ctx context.Context, genreID string) ([]*
 		ORDER BY t.year DESC, a.title, t.disc_number, t.track_number, t.sort_title
 		`, trackSelectFields)
 		var rows []trackRow
-		err := r.db.SelectContext(ctx, &rows, query, genreID)
+		err := r.db.Ext(ctx).SelectContext(ctx, &rows, query, genreID)
 		if err != nil {
 		return nil, fmt.Errorf("failed to get tracks by genre id: %w", err)
 		}
@@ -206,7 +206,7 @@ func (r *trackRepository) GetByGenreID(ctx context.Context, genreID string) ([]*
 		`, trackSelectFields)
 
 	var rows []trackRow
-	err := r.db.SelectContext(ctx, &rows, query, composerID)
+	err := r.db.Ext(ctx).SelectContext(ctx, &rows, query, composerID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tracks by composer id: %w", err)
 	}
@@ -254,7 +254,7 @@ func (r *trackRepository) GetByPathPrefix(ctx context.Context, prefix string) ([
 		ORDER BY t.sort_title
 	`, trackSelectFields)
 	var rows []trackRow
-	err := r.db.SelectContext(ctx, &rows, query, prefix)
+	err := r.db.Ext(ctx).SelectContext(ctx, &rows, query, prefix)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tracks by path prefix: %w", err)
 	}
@@ -263,7 +263,7 @@ func (r *trackRepository) GetByPathPrefix(ctx context.Context, prefix string) ([
 
 func (r *trackRepository) AlbumArtistIDsByPathPrefix(ctx context.Context, prefix string) ([]string, error) {
 	var ids []string
-	err := r.db.SelectContext(ctx, &ids, `
+	err := r.db.Ext(ctx).SelectContext(ctx, &ids, `
 		SELECT DISTINCT taa.artist_id
 		FROM tracks t
 		JOIN track_album_artists taa ON t.id = taa.track_id
@@ -277,7 +277,7 @@ func (r *trackRepository) AlbumArtistIDsByPathPrefix(ctx context.Context, prefix
 
 func (r *trackRepository) Count(ctx context.Context) (int, error) {
 	var count int
-	err := r.db.GetContext(ctx, &count, "SELECT COUNT(*) FROM tracks")
+	err := r.db.Ext(ctx).GetContext(ctx, &count, "SELECT COUNT(*) FROM tracks")
 	if err != nil {
 		return 0, fmt.Errorf("failed to count tracks: %w", err)
 	}
@@ -298,7 +298,7 @@ func (r *trackRepository) GetPaginated(ctx context.Context, offset, limit int) (
 		LIMIT ? OFFSET ?
 	`, trackSelectFields)
 	var rows []trackRow
-	err := r.db.SelectContext(ctx, &rows, query, limit, offset)
+	err := r.db.Ext(ctx).SelectContext(ctx, &rows, query, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get paginated tracks: %w", err)
 	}
@@ -327,7 +327,7 @@ func (r *trackRepository) GetByIDs(ctx context.Context, ids []string) ([]*domain
 		GROUP BY t.id
 	`, trackSelectFields, placeholders)
 	var rows []trackRow
-	if err := r.db.SelectContext(ctx, &rows, q, args...); err != nil {
+	if err := r.db.Ext(ctx).SelectContext(ctx, &rows, q, args...); err != nil {
 		return nil, fmt.Errorf("failed to get tracks by ids: %w", err)
 	}
 	// Reorder to match input order (IN clause doesn't preserve order)
@@ -358,7 +358,7 @@ func (r *trackRepository) GetAll(ctx context.Context) ([]*domain.TrackDTO, error
 		ORDER BY t.sort_title
 	`, trackSelectFields)
 	var rows []trackRow
-	err := r.db.SelectContext(ctx, &rows, query)
+	err := r.db.Ext(ctx).SelectContext(ctx, &rows, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all tracks: %w", err)
 	}
@@ -379,7 +379,7 @@ func (r *trackRepository) GetFavorites(ctx context.Context) ([]*domain.TrackDTO,
 		ORDER BY t.sort_title
 	`, trackSelectFields)
 	var rows []trackRow
-	err := r.db.SelectContext(ctx, &rows, query)
+	err := r.db.Ext(ctx).SelectContext(ctx, &rows, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get favorite tracks: %w", err)
 	}
@@ -387,7 +387,7 @@ func (r *trackRepository) GetFavorites(ctx context.Context) ([]*domain.TrackDTO,
 }
 
 func (r *trackRepository) ToggleFavorite(ctx context.Context, id string) (bool, error) {
-	_, err := r.db.ExecContext(ctx,
+	_, err := r.db.Ext(ctx).ExecContext(ctx,
 		"UPDATE tracks SET is_favorite = NOT is_favorite, updated_at = ? WHERE id = ?",
 		time.Now(), id,
 	)
@@ -395,7 +395,7 @@ func (r *trackRepository) ToggleFavorite(ctx context.Context, id string) (bool, 
 		return false, fmt.Errorf("failed to toggle favorite: %w", err)
 	}
 	var val bool
-	err = r.db.GetContext(ctx, &val, "SELECT is_favorite FROM tracks WHERE id = ?", id)
+	err = r.db.Ext(ctx).GetContext(ctx, &val, "SELECT is_favorite FROM tracks WHERE id = ?", id)
 	if err != nil {
 		return false, fmt.Errorf("failed to read favorite state: %w", err)
 	}
@@ -403,7 +403,7 @@ func (r *trackRepository) ToggleFavorite(ctx context.Context, id string) (bool, 
 }
 
 func (r *trackRepository) IncrementPlayCount(ctx context.Context, id string) error {
-	_, err := r.db.ExecContext(ctx,
+	_, err := r.db.Ext(ctx).ExecContext(ctx,
 		"UPDATE tracks SET play_count = play_count + 1, updated_at = ? WHERE id = ?",
 		time.Now(), id,
 	)
@@ -428,7 +428,7 @@ func (r *trackRepository) GetMostListened(ctx context.Context, limit int) ([]*do
 		LIMIT ?
 	`, trackSelectFields)
 	var rows []trackRow
-	err := r.db.SelectContext(ctx, &rows, query, limit)
+	err := r.db.Ext(ctx).SelectContext(ctx, &rows, query, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get most listened tracks: %w", err)
 	}
@@ -449,7 +449,7 @@ func (r *trackRepository) GetLeastListened(ctx context.Context, limit int) ([]*d
 		LIMIT ?
 	`, trackSelectFields)
 	var rows []trackRow
-	err := r.db.SelectContext(ctx, &rows, query, limit)
+	err := r.db.Ext(ctx).SelectContext(ctx, &rows, query, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get least listened tracks: %w", err)
 	}
@@ -471,7 +471,7 @@ func (r *trackRepository) GetRecentlyPlayed(ctx context.Context, limit int) ([]*
 		LIMIT ?
 	`, trackSelectFields)
 	var rows []trackRow
-	err := r.db.SelectContext(ctx, &rows, query, limit)
+	err := r.db.Ext(ctx).SelectContext(ctx, &rows, query, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recently played tracks: %w", err)
 	}
@@ -492,7 +492,7 @@ func (r *trackRepository) GetRecentlyAdded(ctx context.Context, limit int) ([]*d
 		LIMIT ?
 	`, trackSelectFields)
 	var rows []trackRow
-	err := r.db.SelectContext(ctx, &rows, query, limit)
+	err := r.db.Ext(ctx).SelectContext(ctx, &rows, query, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recently added tracks: %w", err)
 	}
@@ -531,7 +531,7 @@ func (r *trackRepository) Save(ctx context.Context, track *domain.Track) error {
 			:copyright, :bpm, :label, :isrc, :play_count, :other_metadata, :file_size, :is_favorite, :mtime, :created_at, :updated_at
 		)`
 
-	_, err := r.db.NamedExecContext(ctx, query, dbTrack)
+	_, err := r.db.Ext(ctx).NamedExecContext(ctx, query, dbTrack)
 	if err != nil {
 		return fmt.Errorf("failed to save track: %w", err)
 	}
@@ -591,7 +591,7 @@ func (r *trackRepository) Upsert(ctx context.Context, track *domain.Track) error
 			updated_at = excluded.updated_at
 	`
 
-	_, err := r.db.NamedExecContext(ctx, query, dbTrack)
+	_, err := r.db.Ext(ctx).NamedExecContext(ctx, query, dbTrack)
 	if err != nil {
 		return fmt.Errorf("failed to upsert track: %w", err)
 	}
@@ -615,25 +615,23 @@ func (r *trackRepository) SetComposers(ctx context.Context, trackID string, comp
 }
 
 func (r *trackRepository) setJunction(ctx context.Context, table, idCol, valCol, id string, vals []string) error {
-	tx, err := r.db.BeginTxx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = tx.Rollback() }()
+	return r.db.RunTx(ctx, func(ctx context.Context) error {
+		ex := r.db.Ext(ctx)
 
-	_, err = tx.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE %s = ?", table, idCol), id)
-	if err != nil {
-		return err
-	}
-
-	for i, val := range vals {
-		_, err = tx.ExecContext(ctx, fmt.Sprintf("INSERT INTO %s (%s, %s, position) VALUES (?, ?, ?)", table, idCol, valCol), id, val, i)
+		_, err := ex.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s WHERE %s = ?", table, idCol), id)
 		if err != nil {
 			return err
 		}
-	}
 
-	return tx.Commit()
+		for i, val := range vals {
+			_, err = ex.ExecContext(ctx, fmt.Sprintf("INSERT INTO %s (%s, %s, position) VALUES (?, ?, ?)", table, idCol, valCol), id, val, i)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }
 
 func toNullString(s string) sql.NullString {
@@ -644,7 +642,7 @@ func toNullString(s string) sql.NullString {
 }
 
 func (r *trackRepository) Delete(ctx context.Context, id string) error {
-	_, err := r.db.ExecContext(ctx, "DELETE FROM tracks WHERE id = ?", id)
+	_, err := r.db.Ext(ctx).ExecContext(ctx, "DELETE FROM tracks WHERE id = ?", id)
 	if err != nil {
 		return fmt.Errorf("failed to delete track: %w", err)
 	}
@@ -652,7 +650,7 @@ func (r *trackRepository) Delete(ctx context.Context, id string) error {
 }
 
 func (r *trackRepository) DeleteByPathPrefix(ctx context.Context, prefix string) error {
-	_, err := r.db.ExecContext(ctx, "DELETE FROM tracks WHERE path LIKE ? || '%'", prefix)
+	_, err := r.db.Ext(ctx).ExecContext(ctx, "DELETE FROM tracks WHERE path LIKE ? || '%'", prefix)
 	if err != nil {
 		return fmt.Errorf("failed to delete tracks by path prefix: %w", err)
 	}
@@ -667,7 +665,7 @@ func (r *trackRepository) GetAllArtworkKeys(ctx context.Context) ([]string, erro
 		SELECT DISTINCT artwork_key FROM albums WHERE artwork_key IS NOT NULL AND artwork_key != ''
 	`
 	var keys []string
-	err := r.db.SelectContext(ctx, &keys, query)
+	err := r.db.Ext(ctx).SelectContext(ctx, &keys, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all artwork keys: %w", err)
 	}

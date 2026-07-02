@@ -13,6 +13,12 @@ import (
 	"airmedy/internal/domain"
 )
 
+type mockTxManager struct{}
+
+func (m *mockTxManager) RunInTx(ctx context.Context, fn func(context.Context) error) error {
+	return fn(ctx)
+}
+
 type mockTrackRepo struct {
 	domain.TrackRepository
 	tracks map[string]*domain.Track
@@ -190,10 +196,14 @@ func (m *mockSearchService) IndexComposer(ctx context.Context, composer *domain.
 func (m *mockSearchService) IndexPlaylist(ctx context.Context, playlist *domain.Playlist) error { return nil }
 func (m *mockSearchService) Close() error { return nil }
 func (m *mockSearchService) DeleteFromIndex(ctx context.Context, id string) error { return nil }
+func (m *mockSearchService) DeleteTracksFromIndex(ctx context.Context, ids []string) error { return nil }
+func (m *mockSearchService) BatchDeleteFromIndex(ctx context.Context, docIDs []string) error { return nil }
 func (m *mockSearchService) DeleteAlbumFromIndex(ctx context.Context, albumID string) error { return nil }
 func (m *mockSearchService) DeleteArtistFromIndex(ctx context.Context, artistID string) error { return nil }
 func (m *mockSearchService) DeleteComposerFromIndex(ctx context.Context, composerID string) error { return nil }
 func (m *mockSearchService) DocCount(ctx context.Context) (uint64, error) { return 0, nil }
+func (m *mockSearchService) BeginSyncBatch()                              {}
+func (m *mockSearchService) EndSyncBatch() error                          { return nil }
 
 type mockArtworkCache struct{ domain.ArtworkCache }
 func (m *mockArtworkCache) Save(ctx context.Context, data []byte, mimeType string) (string, error) { return "", nil }
@@ -236,6 +246,7 @@ func TestLibraryService_SyncFolder(t *testing.T) {
 		&mockMetadataWriter{},
 		&mockArtworkCache{},
 		&mockSearchService{},
+		&mockTxManager{},
 		nil,
 		slog.Default(),
 	)
@@ -332,6 +343,7 @@ func TestLibraryService_SyncFolder_SupportedExtensions(t *testing.T) {
 		&mockMetadataWriter{},
 		&mockArtworkCache{},
 		&mockSearchService{},
+		&mockTxManager{},
 		nil,
 		slog.Default(),
 	)
@@ -374,6 +386,7 @@ func TestLibraryService_AddWatchedFolder_CoveringExisting(t *testing.T) {
 		&mockMetadataWriter{},
 		&mockArtworkCache{},
 		&mockSearchService{},
+		&mockTxManager{},
 		nil,
 		slog.Default(),
 	)
@@ -406,5 +419,64 @@ func TestLibraryService_AddWatchedFolder_CoveringExisting(t *testing.T) {
 	}
 	if !found {
 		t.Errorf("Parent folder %s not found in repo after AddWatchedFolder", wantPath)
+	}
+}
+
+// TestLibraryService_RemoveWatchedFolder_NotifiesTrackDeletedListeners covers
+// the fix for tracks/folders getting deleted while the background analysis
+// pool still has them queued: RemoveWatchedFolder must tell listeners
+// (wired to AnalysisService.Dequeue in production) which track IDs are gone
+// before it starts deleting, so a running analysis pass drops them instead
+// of continuing to race the deletion for the same DB writer.
+func TestLibraryService_RemoveWatchedFolder_NotifiesTrackDeletedListeners(t *testing.T) {
+	trackRepo := &mockTrackRepo{tracks: map[string]*domain.Track{
+		"/Music/A/one.mp3": {ID: "track-1", Path: "/Music/A/one.mp3"},
+		"/Music/A/two.mp3": {ID: "track-2", Path: "/Music/A/two.mp3"},
+	}}
+	folderRepo := &mockFolderRepo{
+		folders: []*domain.WatchedFolder{{ID: "folder-id", Path: "/Music/A"}},
+	}
+
+	s, err := NewLibraryService(
+		trackRepo,
+		&mockAlbumRepo{},
+		&mockArtistRepo{},
+		&mockGenreRepo{},
+		&mockComposerRepo{},
+		&mockPlaylistRepo{},
+		folderRepo,
+		&mockSettingsRepo{},
+		&mockSyncStateRepo{},
+		&mockMetadataExtractor{},
+		&mockMetadataWriter{},
+		&mockArtworkCache{},
+		&mockSearchService{},
+		&mockTxManager{},
+		nil,
+		slog.Default(),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create library service: %v", err)
+	}
+	defer func() { _ = s.Stop(context.Background()) }()
+
+	var notified []string
+	s.AddTrackDeletedListener(func(ids []string) {
+		notified = append(notified, ids...)
+	})
+
+	if err := s.RemoveWatchedFolder(context.Background(), "folder-id", false); err != nil {
+		t.Fatalf("RemoveWatchedFolder failed: %v", err)
+	}
+
+	if len(notified) != 2 {
+		t.Fatalf("expected 2 deleted track IDs notified, got %v", notified)
+	}
+	seen := map[string]bool{}
+	for _, id := range notified {
+		seen[id] = true
+	}
+	if !seen["track-1"] || !seen["track-2"] {
+		t.Fatalf("expected track-1 and track-2 notified, got %v", notified)
 	}
 }

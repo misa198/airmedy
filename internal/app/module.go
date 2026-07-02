@@ -110,6 +110,9 @@ var Module = fx.Module("app",
 				lib.AddAnalysisListener(func(trackID string) {
 					analysisSvc.Enqueue(trackID, false)
 				})
+				lib.AddTrackDeletedListener(func(trackIDs []string) {
+					analysisSvc.Dequeue(trackIDs)
+				})
 				playerSvc.AddStatusListener(func(status domain.PlayerStatus) {
 					analysisSvc.SetThrottled(status.PlaybackState == domain.PlaybackStatePlaying)
 				})

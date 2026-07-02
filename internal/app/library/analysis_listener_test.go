@@ -57,6 +57,7 @@ func TestLibraryService_AnalysisListener_FiresOnImportNotOnFavoriteToggle(t *tes
 		&mockMetadataWriter{},
 		&mockArtworkCache{},
 		&mockSearchService{},
+		&mockTxManager{},
 		nil,
 		slog.Default(),
 	)

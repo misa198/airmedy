@@ -18,56 +18,54 @@ func NewAnalysisRepository(db *DB) domain.AnalysisRepository {
 }
 
 func (r *analysisRepository) UpsertFeatures(ctx context.Context, f *domain.TrackFeatures) error {
-	tx, err := r.db.BeginTxx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("failed to begin tx: %w", err)
-	}
-	defer func() { _ = tx.Rollback() }()
+	return r.db.RunTx(ctx, func(ctx context.Context) error {
+		ex := r.db.Ext(ctx)
 
-	// Phase-2 columns (loudness/dynamics/spectral) plus tempo (BPM, via aubio).
-	// The remaining reserved Phase-6 mood columns are left untouched on conflict.
-	_, err = tx.ExecContext(ctx,
-		`INSERT INTO track_features (
-		   track_id, analyzer_version, analyzed_at,
-		   loudness_lufs, loudness_range, true_peak, rms, crest,
-		   spectral_centroid, spectral_rolloff, spectral_flatness, spectral_flux, zcr,
-		   tempo)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-		 ON CONFLICT(track_id) DO UPDATE SET
-		   analyzer_version = excluded.analyzer_version,
-		   analyzed_at = excluded.analyzed_at,
-		   loudness_lufs = excluded.loudness_lufs,
-		   loudness_range = excluded.loudness_range,
-		   true_peak = excluded.true_peak,
-		   rms = excluded.rms,
-		   crest = excluded.crest,
-		   spectral_centroid = excluded.spectral_centroid,
-		   spectral_rolloff = excluded.spectral_rolloff,
-		   spectral_flatness = excluded.spectral_flatness,
-		   spectral_flux = excluded.spectral_flux,
-		   zcr = excluded.zcr,
-		   tempo = excluded.tempo`,
-		f.TrackID, f.AnalyzerVersion, f.AnalyzedAt,
-		f.LoudnessLUFS, f.LoudnessRange, f.TruePeak, f.RMS, f.Crest,
-		f.SpectralCentroid, f.SpectralRolloff, f.SpectralFlatness, f.SpectralFlux, f.ZCR,
-		f.Tempo,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to upsert track features: %w", err)
-	}
+		// Phase-2 columns (loudness/dynamics/spectral) plus tempo (BPM, via aubio).
+		// The remaining reserved Phase-6 mood columns are left untouched on conflict.
+		_, err := ex.ExecContext(ctx,
+			`INSERT INTO track_features (
+			   track_id, analyzer_version, analyzed_at,
+			   loudness_lufs, loudness_range, true_peak, rms, crest,
+			   spectral_centroid, spectral_rolloff, spectral_flatness, spectral_flux, zcr,
+			   tempo)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			 ON CONFLICT(track_id) DO UPDATE SET
+			   analyzer_version = excluded.analyzer_version,
+			   analyzed_at = excluded.analyzed_at,
+			   loudness_lufs = excluded.loudness_lufs,
+			   loudness_range = excluded.loudness_range,
+			   true_peak = excluded.true_peak,
+			   rms = excluded.rms,
+			   crest = excluded.crest,
+			   spectral_centroid = excluded.spectral_centroid,
+			   spectral_rolloff = excluded.spectral_rolloff,
+			   spectral_flatness = excluded.spectral_flatness,
+			   spectral_flux = excluded.spectral_flux,
+			   zcr = excluded.zcr,
+			   tempo = excluded.tempo`,
+			f.TrackID, f.AnalyzerVersion, f.AnalyzedAt,
+			f.LoudnessLUFS, f.LoudnessRange, f.TruePeak, f.RMS, f.Crest,
+			f.SpectralCentroid, f.SpectralRolloff, f.SpectralFlatness, f.SpectralFlux, f.ZCR,
+			f.Tempo,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to upsert track features: %w", err)
+		}
 
-	if _, err = tx.ExecContext(ctx,
-		`UPDATE tracks SET analyzed_version = ? WHERE id = ?`,
-		f.AnalyzerVersion, f.TrackID,
-	); err != nil {
-		return fmt.Errorf("failed to bump analyzed_version: %w", err)
-	}
+		if _, err = ex.ExecContext(ctx,
+			`UPDATE tracks SET analyzed_version = ? WHERE id = ?`,
+			f.AnalyzerVersion, f.TrackID,
+		); err != nil {
+			return fmt.Errorf("failed to bump analyzed_version: %w", err)
+		}
 
-	return tx.Commit()
+		return nil
+	})
 }
 
 func (r *analysisRepository) MarkFailed(ctx context.Context, trackID string, currentVersion int) error {
-	if _, err := r.db.ExecContext(ctx,
+	if _, err := r.db.Ext(ctx).ExecContext(ctx,
 		`UPDATE tracks SET analyzed_version = ? WHERE id = ?`,
 		currentVersion, trackID,
 	); err != nil {
@@ -98,7 +96,7 @@ func (r *analysisRepository) GetFeatures(ctx context.Context, trackID string) (*
 		Energy           float64      `db:"energy"`
 		Danceability     float64      `db:"danceability"`
 	}
-	err := r.db.GetContext(ctx, &row,
+	err := r.db.Ext(ctx).GetContext(ctx, &row,
 		`SELECT
 		   track_id, analyzer_version, analyzed_at,
 		   COALESCE(loudness_lufs, 0) AS loudness_lufs,
@@ -156,7 +154,7 @@ func (r *analysisRepository) GetFeatures(ctx context.Context, trackID string) (*
 
 func (r *analysisRepository) CountPending(ctx context.Context, currentVersion int) (int, error) {
 	var n int
-	if err := r.db.GetContext(ctx, &n,
+	if err := r.db.Ext(ctx).GetContext(ctx, &n,
 		`SELECT COUNT(*) FROM tracks WHERE analyzed_version < ?`, currentVersion,
 	); err != nil {
 		return 0, fmt.Errorf("failed to count pending analysis: %w", err)
@@ -166,7 +164,7 @@ func (r *analysisRepository) CountPending(ctx context.Context, currentVersion in
 
 func (r *analysisRepository) ListPending(ctx context.Context, currentVersion, limit int) ([]string, error) {
 	var ids []string
-	if err := r.db.SelectContext(ctx, &ids,
+	if err := r.db.Ext(ctx).SelectContext(ctx, &ids,
 		`SELECT id FROM tracks WHERE analyzed_version < ? ORDER BY rowid ASC LIMIT ?`,
 		currentVersion, limit,
 	); err != nil {

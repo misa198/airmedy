@@ -21,7 +21,7 @@ func NewAlbumRepository(db *DB) domain.AlbumRepository {
 func (r *albumRepository) GetByID(ctx context.Context, id string) (*domain.AlbumDTO, error) {
 	query := fmt.Sprintf(`SELECT %s FROM albums a WHERE a.id = ?`, albumSelectFields)
 	var album domain.Album
-	err := r.db.GetContext(ctx, &album, query, id)
+	err := r.db.Ext(ctx).GetContext(ctx, &album, query, id)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -39,7 +39,7 @@ func (r *albumRepository) GetByID(ctx context.Context, id string) (*domain.Album
 		WHERE aa.album_id = ?
 		ORDER BY aa.position
 	`
-	err = r.db.SelectContext(ctx, &artists, artistQuery, id)
+	err = r.db.Ext(ctx).SelectContext(ctx, &artists, artistQuery, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get album artists: %w", err)
 	}
@@ -50,7 +50,7 @@ func (r *albumRepository) GetByID(ctx context.Context, id string) (*domain.Album
 
 func (r *albumRepository) GetByNormalizationKey(ctx context.Context, key string) (*domain.Album, error) {
 	var album domain.Album
-	err := r.db.GetContext(ctx, &album, "SELECT * FROM albums WHERE normalization_key = ?", key)
+	err := r.db.Ext(ctx).GetContext(ctx, &album, "SELECT * FROM albums WHERE normalization_key = ?", key)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -90,7 +90,7 @@ func (r *albumRepository) GetByArtistID(ctx context.Context, artistID string) ([
 		ORDER BY a.year DESC, a.sort_title
 	`, albumSelectFields)
 	var rows []albumRow
-	err := r.db.SelectContext(ctx, &rows, query, artistID, artistID, artistID)
+	err := r.db.Ext(ctx).SelectContext(ctx, &rows, query, artistID, artistID, artistID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get albums by artist id: %w", err)
 	}
@@ -119,7 +119,7 @@ func (r *albumRepository) GetRecentlyAdded(ctx context.Context, limit int) ([]*d
 		LIMIT ?
 	`, albumSelectFields)
 	var rows []albumRow
-	err := r.db.SelectContext(ctx, &rows, query, limit)
+	err := r.db.Ext(ctx).SelectContext(ctx, &rows, query, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recently added albums: %w", err)
 	}
@@ -169,7 +169,7 @@ func (r *albumRepository) GetAll(ctx context.Context) ([]*domain.AlbumDTO, error
 		ORDER BY a.sort_title
 	`, albumSelectFields)
 	var rows []albumRow
-	err := r.db.SelectContext(ctx, &rows, query)
+	err := r.db.Ext(ctx).SelectContext(ctx, &rows, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all albums: %w", err)
 	}
@@ -190,7 +190,7 @@ func (r *albumRepository) Save(ctx context.Context, album *domain.Album) error {
 			:id, :title, :sort_title, :normalization_key, :year, :copyright, :artwork_key, :created_at, :updated_at
 		)`
 
-	_, err := r.db.NamedExecContext(ctx, query, album)
+	_, err := r.db.Ext(ctx).NamedExecContext(ctx, query, album)
 	if err != nil {
 		return fmt.Errorf("failed to save album: %w", err)
 	}
@@ -219,7 +219,7 @@ func (r *albumRepository) Upsert(ctx context.Context, album *domain.Album) error
 			updated_at = excluded.updated_at
 	`
 
-	_, err := r.db.NamedExecContext(ctx, query, album)
+	_, err := r.db.Ext(ctx).NamedExecContext(ctx, query, album)
 	if err != nil {
 		return fmt.Errorf("failed to upsert album: %w", err)
 	}
@@ -227,34 +227,32 @@ func (r *albumRepository) Upsert(ctx context.Context, album *domain.Album) error
 }
 
 func (r *albumRepository) SetArtists(ctx context.Context, albumID string, artistIDs []string) error {
-	tx, err := r.db.BeginTxx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = tx.Rollback() }()
+	return r.db.RunTx(ctx, func(ctx context.Context) error {
+		ex := r.db.Ext(ctx)
 
-	_, err = tx.ExecContext(ctx, "DELETE FROM album_artists WHERE album_id = ?", albumID)
-	if err != nil {
-		return err
-	}
-
-	for i, artistID := range artistIDs {
-		_, err = tx.ExecContext(ctx, "INSERT INTO album_artists (album_id, artist_id, position) VALUES (?, ?, ?)", albumID, artistID, i)
+		_, err := ex.ExecContext(ctx, "DELETE FROM album_artists WHERE album_id = ?", albumID)
 		if err != nil {
 			return err
 		}
-	}
 
-	return tx.Commit()
+		for i, artistID := range artistIDs {
+			_, err = ex.ExecContext(ctx, "INSERT INTO album_artists (album_id, artist_id, position) VALUES (?, ?, ?)", albumID, artistID, i)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }
 
 func (r *albumRepository) DeleteOrphaned(ctx context.Context) ([]string, error) {
 	const cond = `id NOT IN (SELECT DISTINCT album_id FROM tracks WHERE album_id IS NOT NULL)`
 	var ids []string
-	if err := r.db.SelectContext(ctx, &ids, `SELECT id FROM albums WHERE `+cond); err != nil {
+	if err := r.db.Ext(ctx).SelectContext(ctx, &ids, `SELECT id FROM albums WHERE `+cond); err != nil {
 		return nil, fmt.Errorf("failed to select orphaned albums: %w", err)
 	}
-	if _, err := r.db.ExecContext(ctx, `DELETE FROM albums WHERE `+cond); err != nil {
+	if _, err := r.db.Ext(ctx).ExecContext(ctx, `DELETE FROM albums WHERE `+cond); err != nil {
 		return nil, fmt.Errorf("failed to delete orphaned albums: %w", err)
 	}
 	return ids, nil

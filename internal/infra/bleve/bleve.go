@@ -20,6 +20,13 @@ import (
 type bleveSearchService struct {
 	indexPath string
 	index     bleve.Index
+
+	// syncBatch, when non-nil, accumulates documents from IndexTrack/Album/
+	// Artist/Composer instead of committing each one individually. Only
+	// touched from LibraryService's single sync-consumer goroutine (see
+	// BeginSyncBatch/EndSyncBatch), so no locking is needed.
+	syncBatch        *bleve.Batch
+	syncBatchPending int
 }
 
 func NewBleveSearchService(indexPath string) (domain.SearchService, error) {
@@ -170,15 +177,18 @@ func composerDoc(composer *domain.Composer) (string, map[string]interface{}) {
 }
 
 func (s *bleveSearchService) IndexTrack(ctx context.Context, track *domain.TrackDTO) error {
-	return s.index.Index(trackDoc(track))
+	id, doc := trackDoc(track)
+	return s.indexOrBatch(id, doc)
 }
 
 func (s *bleveSearchService) IndexAlbum(ctx context.Context, album *domain.AlbumDTO) error {
-	return s.index.Index(albumDoc(album))
+	id, doc := albumDoc(album)
+	return s.indexOrBatch(id, doc)
 }
 
 func (s *bleveSearchService) IndexArtist(ctx context.Context, artist *domain.Artist) error {
-	return s.index.Index(artistDoc(artist))
+	id, doc := artistDoc(artist)
+	return s.indexOrBatch(id, doc)
 }
 
 func (s *bleveSearchService) IndexPlaylist(ctx context.Context, playlist *domain.Playlist) error {
@@ -186,7 +196,54 @@ func (s *bleveSearchService) IndexPlaylist(ctx context.Context, playlist *domain
 }
 
 func (s *bleveSearchService) IndexComposer(ctx context.Context, composer *domain.Composer) error {
-	return s.index.Index(composerDoc(composer))
+	id, doc := composerDoc(composer)
+	return s.indexOrBatch(id, doc)
+}
+
+// indexOrBatch appends to the active sync batch if one is open (see
+// BeginSyncBatch), auto-flushing at batchCommitSize; otherwise it commits
+// the document immediately, same as before.
+func (s *bleveSearchService) indexOrBatch(id string, doc map[string]interface{}) error {
+	if s.syncBatch == nil {
+		return s.index.Index(id, doc)
+	}
+	if err := s.syncBatch.Index(id, doc); err != nil {
+		return fmt.Errorf("failed to add %q to sync batch: %w", id, err)
+	}
+	s.syncBatchPending++
+	if s.syncBatchPending >= batchCommitSize {
+		return s.flushSyncBatch()
+	}
+	return nil
+}
+
+func (s *bleveSearchService) flushSyncBatch() error {
+	if s.syncBatchPending == 0 {
+		return nil
+	}
+	if err := s.index.Batch(s.syncBatch); err != nil {
+		return fmt.Errorf("failed to commit sync batch: %w", err)
+	}
+	s.syncBatch = s.index.NewBatch()
+	s.syncBatchPending = 0
+	return nil
+}
+
+// BeginSyncBatch switches IndexTrack/IndexAlbum/IndexArtist/IndexComposer
+// into batch-accumulating mode for the duration of a bulk SyncFolder run.
+func (s *bleveSearchService) BeginSyncBatch() {
+	s.syncBatch = s.index.NewBatch()
+	s.syncBatchPending = 0
+}
+
+// EndSyncBatch flushes any remaining batched documents and returns to
+// per-document indexing. Must be called (e.g. via defer) after
+// BeginSyncBatch, on every return path including errors/cancellation.
+func (s *bleveSearchService) EndSyncBatch() error {
+	err := s.flushSyncBatch()
+	s.syncBatch = nil
+	s.syncBatchPending = 0
+	return err
 }
 
 // batchCommitSize bounds how many documents accumulate before a single
@@ -340,6 +397,77 @@ func (s *bleveSearchService) Search(ctx context.Context, queryStr string) ([]dom
 func (s *bleveSearchService) DeleteFromIndex(ctx context.Context, id string) error {
 	_ = s.index.Delete(id)
 	return s.index.Delete("track:" + id)
+}
+
+// DeleteTracksFromIndex removes many track documents in batched commits
+// instead of one fsync-ing commit per document — looping DeleteFromIndex for
+// a large folder is the same "hang on Windows" cost BatchReindex/
+// BeginSyncBatch already avoid for imports (batchCommitSize), so bulk
+// removal gets the same treatment.
+func (s *bleveSearchService) DeleteTracksFromIndex(ctx context.Context, ids []string) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	batch := s.index.NewBatch()
+	pending := 0
+	flush := func() error {
+		if pending == 0 {
+			return nil
+		}
+		if err := s.index.Batch(batch); err != nil {
+			return fmt.Errorf("failed to commit delete batch: %w", err)
+		}
+		batch = s.index.NewBatch()
+		pending = 0
+		return nil
+	}
+
+	for _, id := range ids {
+		batch.Delete(id)
+		batch.Delete("track:" + id)
+		pending++
+		if pending >= batchCommitSize {
+			if err := flush(); err != nil {
+				return err
+			}
+		}
+	}
+	return flush()
+}
+
+// BatchDeleteFromIndex removes arbitrary already-prefixed doc IDs in batched
+// commits — same fsync-per-doc cost as DeleteTracksFromIndex avoids, but for
+// callers (orphan cleanup) that delete a mix of album/artist/composer docs.
+func (s *bleveSearchService) BatchDeleteFromIndex(ctx context.Context, docIDs []string) error {
+	if len(docIDs) == 0 {
+		return nil
+	}
+
+	batch := s.index.NewBatch()
+	pending := 0
+	flush := func() error {
+		if pending == 0 {
+			return nil
+		}
+		if err := s.index.Batch(batch); err != nil {
+			return fmt.Errorf("failed to commit delete batch: %w", err)
+		}
+		batch = s.index.NewBatch()
+		pending = 0
+		return nil
+	}
+
+	for _, id := range docIDs {
+		batch.Delete(id)
+		pending++
+		if pending >= batchCommitSize {
+			if err := flush(); err != nil {
+				return err
+			}
+		}
+	}
+	return flush()
 }
 
 func (s *bleveSearchService) DeleteAlbumFromIndex(ctx context.Context, albumID string) error {

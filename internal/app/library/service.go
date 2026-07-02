@@ -54,17 +54,20 @@ type LibraryService struct {
 	metadataWriter    domain.MetadataWriter
 	artworkCache      domain.ArtworkCache
 	searchService     domain.SearchService
+	txManager         domain.TxManager
 	lyricsService     *lyrics.LyricsService
 	logger            *slog.Logger
 	watcher           *fsnotify.Watcher
 
 	trackUpdateListeners   []func(*domain.TrackDTO)
 	analysisListeners      []func(string)
+	trackDeletedListeners  []func([]string)
 	artistArtworkQueue     chan artistArtworkJob
 	pendingArtistArtwork   map[string]struct{}
 	pendingArtistArtworkMu sync.Mutex
 	artistArtworkLocks     sync.Map     // artistID -> *sync.Mutex; serializes artwork writes
 	syncing                atomic.Int32 // >0 while a bulk SyncFolder runs (gates per-track work)
+	syncEntityCache        *syncEntityCache // non-nil only during a SyncFolder run; caches resolved entity IDs
 	artworkCleanupMu       sync.Mutex
 	artworkCleanupTimer    *time.Timer // debounces orphan-artwork cleanup after watcher deletes
 	selfWrites             map[string]time.Time // path -> expiry; suppresses watcher events for app's own writes
@@ -93,6 +96,7 @@ func NewLibraryService(
 	metadataWriter domain.MetadataWriter,
 	artworkCache domain.ArtworkCache,
 	searchService domain.SearchService,
+	txManager domain.TxManager,
 	lyricsService *lyrics.LyricsService,
 	logger *slog.Logger,
 ) (*LibraryService, error) {
@@ -117,6 +121,7 @@ func NewLibraryService(
 		metadataWriter:       metadataWriter,
 		artworkCache:         artworkCache,
 		searchService:        searchService,
+		txManager:            txManager,
 		lyricsService:        lyricsService,
 		logger:               logger.With("module", "library"),
 		watcher:              watcher,
@@ -164,6 +169,33 @@ func (s *LibraryService) notifyAnalysisPending(trackID string) {
 
 	for _, l := range listeners {
 		l(trackID)
+	}
+}
+
+// AddTrackDeletedListener registers a callback fired with the IDs of tracks
+// that were just removed (single-file delete, directory delete, or
+// RemoveWatchedFolder). Lets the analysis pool drop them from its queue
+// immediately instead of wastefully analyzing/writing features for tracks
+// that no longer exist — otherwise a deletion racing a large in-flight
+// analysis backlog (e.g. right after a big import) keeps competing with the
+// delete for the same DB writer for no reason.
+func (s *LibraryService) AddTrackDeletedListener(l func([]string)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.trackDeletedListeners = append(s.trackDeletedListeners, l)
+}
+
+func (s *LibraryService) notifyTracksDeleted(ids []string) {
+	if len(ids) == 0 {
+		return
+	}
+	s.mu.RLock()
+	listeners := make([]func([]string), len(s.trackDeletedListeners))
+	copy(listeners, s.trackDeletedListeners)
+	s.mu.RUnlock()
+
+	for _, l := range listeners {
+		l(ids)
 	}
 }
 
@@ -359,15 +391,19 @@ func (s *LibraryService) handleEvent(event fsnotify.Event) {
 			tracks, err := s.trackRepo.GetByPathPrefix(ctx, prefix)
 			if err == nil && len(tracks) > 0 {
 				s.logger.Info("Directory removed, deleting tracks inside", "count", len(tracks), "prefix", prefix)
+				var dirDeletedIDs []string
 				for _, t := range tracks {
 					if err := s.trackRepo.Delete(ctx, t.ID); err != nil {
 						s.logger.Warn("Failed to delete track from DB", "id", t.ID, "error", err)
 						continue
 					}
-					deletedIDs = append(deletedIDs, t.ID)
-					if err := s.searchService.DeleteFromIndex(ctx, t.ID); err != nil {
-						s.logger.Warn("Failed to delete track from Search", "id", t.ID, "error", err)
-					}
+					dirDeletedIDs = append(dirDeletedIDs, t.ID)
+				}
+				deletedIDs = append(deletedIDs, dirDeletedIDs...)
+				// Batched: one (or a few) commits instead of one fsync-ing
+				// commit per track — same fix as RemoveWatchedFolder.
+				if err := s.searchService.DeleteTracksFromIndex(ctx, dirDeletedIDs); err != nil {
+					s.logger.Warn("Failed to delete tracks from search index", "count", len(dirDeletedIDs), "error", err)
 				}
 			}
 
@@ -375,6 +411,7 @@ func (s *LibraryService) handleEvent(event fsnotify.Event) {
 				return
 			}
 
+			s.notifyTracksDeleted(deletedIDs)
 			s.cleanupOrphanedEntities(ctx)
 			// Artwork cache cleanup scans the whole cache dir, so it isn't run
 			// inline per event (would thrash on bulk deletes). Debounce it: bulk
@@ -453,35 +490,39 @@ func (s *LibraryService) handleArtistImageEvent(event fsnotify.Event) {
 // have any tracks, keeping the DB and the search index in sync. Genres aren't
 // indexed, so only their rows are dropped.
 func (s *LibraryService) cleanupOrphanedEntities(ctx context.Context) {
+	// Collect every orphaned doc ID across all three indexed entity types and
+	// remove them in one batched commit instead of one fsync-ing
+	// DeleteXFromIndex call per entity — a bulk removal (e.g. a folder with
+	// many distinct albums/artists) can orphan hundreds of rows at once.
+	var docIDs []string
+
 	if ids, err := s.albumRepo.DeleteOrphaned(ctx); err != nil {
 		s.logger.Warn("Failed to delete orphaned albums", "error", err)
 	} else {
 		for _, id := range ids {
-			if err := s.searchService.DeleteAlbumFromIndex(ctx, id); err != nil {
-				s.logger.Warn("Failed to delete orphaned album from index", "id", id, "error", err)
-			}
+			docIDs = append(docIDs, "album:"+id)
 		}
 	}
 	if ids, err := s.artistRepo.DeleteOrphaned(ctx); err != nil {
 		s.logger.Warn("Failed to delete orphaned artists", "error", err)
 	} else {
 		for _, id := range ids {
-			if err := s.searchService.DeleteArtistFromIndex(ctx, id); err != nil {
-				s.logger.Warn("Failed to delete orphaned artist from index", "id", id, "error", err)
-			}
+			docIDs = append(docIDs, "artist:"+id)
 		}
 	}
 	if ids, err := s.composerRepo.DeleteOrphaned(ctx); err != nil {
 		s.logger.Warn("Failed to delete orphaned composers", "error", err)
 	} else {
 		for _, id := range ids {
-			if err := s.searchService.DeleteComposerFromIndex(ctx, id); err != nil {
-				s.logger.Warn("Failed to delete orphaned composer from index", "id", id, "error", err)
-			}
+			docIDs = append(docIDs, "composer:"+id)
 		}
 	}
 	if _, err := s.genreRepo.DeleteOrphaned(ctx); err != nil {
 		s.logger.Warn("Failed to delete orphaned genres", "error", err)
+	}
+
+	if err := s.searchService.BatchDeleteFromIndex(ctx, docIDs); err != nil {
+		s.logger.Warn("Failed to delete orphaned entities from index", "count", len(docIDs), "error", err)
 	}
 }
 
@@ -548,47 +589,78 @@ func (s *LibraryService) RemoveWatchedFolder(ctx context.Context, id string, kee
 		return nil
 	}
 
+	start := time.Now()
 	s.logger.Info("Removing watched folder", "path", folder.Path, "keepTracks", keepTracks)
 
 	// 1. Unwatch
+	step := time.Now()
 	if err := s.watcher.Remove(folder.Path); err != nil {
 		s.logger.Warn("Failed to remove folder from watcher", "path", folder.Path, "error", err)
 	}
+	s.logger.Debug("RemoveWatchedFolder: unwatch done", "path", folder.Path, "took", time.Since(step))
 
 	if !keepTracks {
-		// 2. Get tracks for this folder to remove from search index
+		// 2. Get tracks for this folder to remove from search index. Notify
+		//    analysis listeners first so a running analysis pool drops these
+		//    IDs from its queue right away instead of continuing to burn CPU
+		//    and DB writes racing the deletion below (worst when this runs
+		//    right after a big import, while the pool is still backfilling).
+		step = time.Now()
 		tracks, err := s.trackRepo.GetByPathPrefix(ctx, folder.Path)
+		s.logger.Debug("RemoveWatchedFolder: GetByPathPrefix done", "path", folder.Path, "count", len(tracks), "took", time.Since(step), "error", err)
 		if err == nil {
-			for _, track := range tracks {
-				if err := s.searchService.DeleteFromIndex(ctx, track.ID); err != nil {
-					s.logger.Warn("Failed to delete track from search index", "id", track.ID, "error", err)
-				}
+			ids := make([]string, len(tracks))
+			for i, track := range tracks {
+				ids[i] = track.ID
 			}
+
+			step = time.Now()
+			s.notifyTracksDeleted(ids)
+			s.logger.Debug("RemoveWatchedFolder: notifyTracksDeleted done", "count", len(ids), "took", time.Since(step))
+
+			// Batched: one (or a few, at batchCommitSize) commits instead of
+			// two fsync-ing commits per track — the per-track loop this
+			// replaced is what made removing a large folder slow.
+			step = time.Now()
+			if err := s.searchService.DeleteTracksFromIndex(ctx, ids); err != nil {
+				s.logger.Warn("Failed to delete tracks from search index", "count", len(ids), "error", err)
+			}
+			s.logger.Debug("RemoveWatchedFolder: DeleteTracksFromIndex done", "count", len(ids), "took", time.Since(step))
 		}
 
 		// 3. Delete tracks from DB
+		step = time.Now()
 		if err := s.trackRepo.DeleteByPathPrefix(ctx, folder.Path); err != nil {
 			return fmt.Errorf("failed to delete tracks from DB: %w", err)
 		}
+		s.logger.Debug("RemoveWatchedFolder: DeleteByPathPrefix done", "path", folder.Path, "took", time.Since(step))
 
 		// 4. Cleanup orphaned entities
+		step = time.Now()
 		s.cleanupOrphanedEntities(ctx)
+		s.logger.Debug("RemoveWatchedFolder: cleanupOrphanedEntities done", "took", time.Since(step))
 
 		// 5. Cleanup orphaned artworks
+		step = time.Now()
 		if err := s.CleanupOrphanedArtworks(ctx); err != nil {
 			s.logger.Warn("Failed to cleanup orphaned artworks", "error", err)
 		}
+		s.logger.Debug("RemoveWatchedFolder: CleanupOrphanedArtworks done", "took", time.Since(step))
 	}
 
 	// 6. Delete watched folder record
+	step = time.Now()
 	if err := s.watchedFolderRepo.Delete(ctx, id); err != nil {
 		return fmt.Errorf("failed to delete watched folder record: %w", err)
 	}
+	s.logger.Debug("RemoveWatchedFolder: folder record deleted", "took", time.Since(step))
 
 	// 7. Notify frontend
 	if app := application.Get(); app != nil && app.Event != nil {
 		app.Event.Emit("library:updated", nil)
 	}
+
+	s.logger.Info("Removed watched folder", "path", folder.Path, "totalTook", time.Since(start))
 
 	return nil
 }
@@ -639,6 +711,21 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 	// image lookup — the batch pass below handles it far more cheaply.
 	s.syncing.Add(1)
 	defer s.syncing.Add(-1)
+
+	// Cache resolved artist/album/genre/composer IDs for the duration of this
+	// run so repeated entities (e.g. one artist across 200 tracks) don't hit
+	// GetByNormalizationKey again. Only the consumer loop below touches it, so
+	// no locking is needed. nil outside a sync run (see resolveEntities).
+	s.syncEntityCache = newSyncEntityCache()
+	defer func() { s.syncEntityCache = nil }()
+
+	// Batch search-index writes instead of committing one fsync per document.
+	s.searchService.BeginSyncBatch()
+	defer func() {
+		if err := s.searchService.EndSyncBatch(); err != nil {
+			s.logger.Warn("Failed to flush search index sync batch", "error", err)
+		}
+	}()
 
 	// Was the library empty before this sync? Combined with a missing signature
 	// below, this distinguishes a fresh install (baseline it silently) from an
@@ -825,11 +912,18 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 				continue
 			}
 			deletedIDs = append(deletedIDs, t.ID)
-			if err := s.searchService.DeleteFromIndex(ctx, t.ID); err != nil {
-				s.logger.Warn("Failed to delete missing track from Search", "path", t.Path, "error", err)
-			}
+		}
+		// Batched: one (or a few) commits instead of one fsync-ing commit per
+		// track — same fix as RemoveWatchedFolder. A resync of a folder with
+		// many moved/deleted files was hitting this the same way.
+		if err := s.searchService.DeleteTracksFromIndex(ctx, deletedIDs); err != nil {
+			s.logger.Warn("Failed to delete missing tracks from search index", "count", len(deletedIDs), "error", err)
 		}
 	}
+
+	// Tell the analysis pool to drop these before it wastes cycles/DB writes
+	// analyzing tracks that no longer exist.
+	s.notifyTracksDeleted(deletedIDs)
 
 	// Always clear orphans: a track removed here (or by an earlier run/path) can
 	// leave an album/artist/genre/composer with no tracks.
@@ -950,8 +1044,12 @@ func (s *LibraryService) persistImported(ctx context.Context, job *importJob) er
 	dto := job.dto
 	path := job.path
 
-	// Resolve related entities
-	if err := s.resolveEntities(ctx, dto); err != nil {
+	// Resolve related entities. All of resolveEntities' DB writes for this
+	// file land in a single SQLite transaction/fsync instead of one per
+	// statement — the dominant cost for large folder scans.
+	if err := s.txManager.RunInTx(ctx, func(ctx context.Context) error {
+		return s.resolveEntities(ctx, dto)
+	}); err != nil {
 		return fmt.Errorf("failed to resolve entities for %s: %w", path, err)
 	}
 
@@ -994,8 +1092,9 @@ func (s *LibraryService) resolveEntities(ctx context.Context, dto *domain.TrackD
 	// 1. Resolve Artists
 	var artistIDs []string
 	for _, artist := range dto.Artists {
-		existing, _ := s.artistRepo.GetByNormalizationKey(ctx, artist.NormalizationKey)
-		if existing != nil {
+		if id, ok := s.syncEntityCache.get(entityArtist, artist.NormalizationKey); ok {
+			artist.ID = id
+		} else if existing, _ := s.artistRepo.GetByNormalizationKey(ctx, artist.NormalizationKey); existing != nil {
 			artist.ID = existing.ID
 		} else {
 			artist.ID = s.generateID(artist.NormalizationKey)
@@ -1003,6 +1102,7 @@ func (s *LibraryService) resolveEntities(ctx context.Context, dto *domain.TrackD
 		if err := s.artistRepo.Upsert(ctx, artist); err != nil {
 			return err
 		}
+		s.syncEntityCache.set(entityArtist, artist.NormalizationKey, artist.ID)
 		artistIDs = append(artistIDs, artist.ID)
 
 		// Index artist in search
@@ -1014,8 +1114,9 @@ func (s *LibraryService) resolveEntities(ctx context.Context, dto *domain.TrackD
 	// 2. Resolve Album Artists
 	var albumArtistIDs []string
 	for _, aa := range dto.AlbumArtists {
-		existing, _ := s.artistRepo.GetByNormalizationKey(ctx, aa.NormalizationKey)
-		if existing != nil {
+		if id, ok := s.syncEntityCache.get(entityArtist, aa.NormalizationKey); ok {
+			aa.ID = id
+		} else if existing, _ := s.artistRepo.GetByNormalizationKey(ctx, aa.NormalizationKey); existing != nil {
 			aa.ID = existing.ID
 		} else {
 			aa.ID = s.generateID(aa.NormalizationKey)
@@ -1023,6 +1124,7 @@ func (s *LibraryService) resolveEntities(ctx context.Context, dto *domain.TrackD
 		if err := s.artistRepo.Upsert(ctx, aa); err != nil {
 			return err
 		}
+		s.syncEntityCache.set(entityArtist, aa.NormalizationKey, aa.ID)
 		albumArtistIDs = append(albumArtistIDs, aa.ID)
 
 		// Index album artist in search
@@ -1042,9 +1144,13 @@ func (s *LibraryService) resolveEntities(ctx context.Context, dto *domain.TrackD
 		}
 
 		dto.Album.NormalizationKey = domain.NormalizationKey(dto.Album.Title) + "|" + primaryArtistID
+		// Always read (rather than trusting the cache) since we need the
+		// existing row's artwork key to preserve it below, not just the ID.
 		existing, _ := s.albumRepo.GetByNormalizationKey(ctx, dto.Album.NormalizationKey)
 		if existing != nil {
 			dto.Album.ID = existing.ID
+		} else if id, ok := s.syncEntityCache.get(entityAlbum, dto.Album.NormalizationKey); ok {
+			dto.Album.ID = id
 		} else {
 			dto.Album.ID = s.generateID(dto.Album.NormalizationKey)
 		}
@@ -1058,6 +1164,7 @@ func (s *LibraryService) resolveEntities(ctx context.Context, dto *domain.TrackD
 		if err := s.albumRepo.Upsert(ctx, dto.Album); err != nil {
 			return err
 		}
+		s.syncEntityCache.set(entityAlbum, dto.Album.NormalizationKey, dto.Album.ID)
 
 		// Use album artists if available, otherwise fall back to track artists
 		finalAlbumArtistIDs := albumArtistIDs
@@ -1089,8 +1196,9 @@ func (s *LibraryService) resolveEntities(ctx context.Context, dto *domain.TrackD
 	// 4. Resolve Genres
 	var genreIDs []string
 	for _, g := range dto.Genres {
-		existing, _ := s.genreRepo.GetByNormalizationKey(ctx, g.NormalizationKey)
-		if existing != nil {
+		if id, ok := s.syncEntityCache.get(entityGenre, g.NormalizationKey); ok {
+			g.ID = id
+		} else if existing, _ := s.genreRepo.GetByNormalizationKey(ctx, g.NormalizationKey); existing != nil {
 			g.ID = existing.ID
 		} else {
 			g.ID = s.generateID(g.NormalizationKey)
@@ -1098,14 +1206,16 @@ func (s *LibraryService) resolveEntities(ctx context.Context, dto *domain.TrackD
 		if err := s.genreRepo.Upsert(ctx, g); err != nil {
 			return err
 		}
+		s.syncEntityCache.set(entityGenre, g.NormalizationKey, g.ID)
 		genreIDs = append(genreIDs, g.ID)
 	}
 
 	// 5. Resolve Composers
 	var composerIDs []string
 	for _, c := range dto.Composers {
-		existing, _ := s.composerRepo.GetByNormalizationKey(ctx, c.NormalizationKey)
-		if existing != nil {
+		if id, ok := s.syncEntityCache.get(entityComposer, c.NormalizationKey); ok {
+			c.ID = id
+		} else if existing, _ := s.composerRepo.GetByNormalizationKey(ctx, c.NormalizationKey); existing != nil {
 			c.ID = existing.ID
 		} else {
 			c.ID = s.generateID(c.NormalizationKey)
@@ -1113,6 +1223,7 @@ func (s *LibraryService) resolveEntities(ctx context.Context, dto *domain.TrackD
 		if err := s.composerRepo.Upsert(ctx, c); err != nil {
 			return err
 		}
+		s.syncEntityCache.set(entityComposer, c.NormalizationKey, c.ID)
 		composerIDs = append(composerIDs, c.ID)
 
 		// Index composer in search
@@ -1208,6 +1319,22 @@ func (s *LibraryService) ResplitLibrary(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to load tracks: %w", err)
 	}
+
+	// Same two optimizations SyncFolder uses, missing here previously: an
+	// in-run entity cache (otherwise every artist/album/genre/composer on
+	// every track re-hits GetByNormalizationKey) and batched search-index
+	// commits (otherwise every IndexArtist/IndexAlbum/IndexComposer call
+	// below is its own fsync-ing Bleve commit) — resplitting a large library
+	// touches both once per track and was correspondingly slow without them.
+	s.syncEntityCache = newSyncEntityCache()
+	defer func() { s.syncEntityCache = nil }()
+
+	s.searchService.BeginSyncBatch()
+	defer func() {
+		if err := s.searchService.EndSyncBatch(); err != nil {
+			s.logger.Warn("Failed to flush search index sync batch", "error", err)
+		}
+	}()
 
 	total := len(tracks)
 	if app := application.Get(); app != nil && app.Event != nil {
