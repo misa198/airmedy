@@ -800,19 +800,25 @@ func validLyricsSubfolderName(name string) bool {
 // the user typed matches regardless of case. Falls back to the exact join if no
 // directory matches (path may not exist yet).
 func resolveLyricsSubdir(parent, name string) string {
-	exact := filepath.Join(parent, name)
-	if fi, err := os.Stat(exact); err == nil && fi.IsDir() {
-		return exact
-	}
 	entries, err := os.ReadDir(parent)
 	if err == nil {
+		var caseInsensitiveMatch string
 		for _, e := range entries {
-			if e.IsDir() && strings.EqualFold(e.Name(), name) {
+			if !e.IsDir() {
+				continue
+			}
+			if e.Name() == name {
 				return filepath.Join(parent, e.Name())
 			}
+			if caseInsensitiveMatch == "" && strings.EqualFold(e.Name(), name) {
+				caseInsensitiveMatch = e.Name()
+			}
+		}
+		if caseInsensitiveMatch != "" {
+			return filepath.Join(parent, caseInsensitiveMatch)
 		}
 	}
-	return exact
+	return filepath.Join(parent, name)
 }
 
 // lyricsResolveParams builds the preference + extra lyric dirs used by both the

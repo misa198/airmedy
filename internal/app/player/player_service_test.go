@@ -585,6 +585,7 @@ func TestLoadAndPlay_AppliesNormalizationGain(t *testing.T) {
 
 	s.normSvc = normalization.NewNormalizationService(
 		&fakeNormSettingsRepo{settings: &domain.AppSettings{
+			LibraryAnalysisEnabled:  true,
 			NormalizationEnabled:    true,
 			NormalizationMode:       "track",
 			NormalizationTargetLUFS: -14.0,
