@@ -22,5 +22,6 @@ var Module = fx.Module("sqlite",
 		func(db *DB) domain.AnalysisRepository { return NewAnalysisRepository(db) },
 		func(db *DB) domain.MiniPlayerStateRepository { return NewMiniPlayerStateRepository(db) },
 		func(db *DB) domain.LibrarySyncStateRepository { return NewLibrarySyncStateRepository(db) },
+		func(db *DB) domain.TxManager { return NewTxManager(db) },
 	),
 )

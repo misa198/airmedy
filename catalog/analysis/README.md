@@ -101,6 +101,16 @@ pending nor counted in `done`, so `total` undercounts by the failed-track count 
 Dedup via `queued`/`inFlight` maps: re-enqueuing an in-flight track is a no-op;
 re-enqueuing a queued track with `priority=true` promotes it to `boostQueue`.
 
+`Dequeue(trackIDs []string)` drops IDs from both `boostQueue` and `normalQueue`
+(and the `queued` dedup map) without touching `inFlight` — an in-flight track's
+`Analyze()` call is left to finish rather than cancelled mid-decode. Wired to
+library track deletion (see Central Wiring below) so a folder/track removal
+that races a running analysis pass — most visibly right after a large import,
+while the pool is still backfilling hundreds of tracks — doesn't keep
+analyzing (and writing `UpsertFeatures` for) tracks that are being deleted out
+from under it, which otherwise piles unnecessary DB writes onto the same
+SQLite writer the deletion itself needs.
+
 ## Central Wiring (`internal/app/module.go`)
 
 To avoid a `library↔analysis` or `player↔analysis` import cycle, all cross-package
@@ -108,6 +118,7 @@ listeners are wired in one `fx.Invoke` block:
 
 ```go
 lib.AddAnalysisListener(func(trackID string) { analysisSvc.Enqueue(trackID, false) })
+lib.AddTrackDeletedListener(func(trackIDs []string) { analysisSvc.Dequeue(trackIDs) })
 playerSvc.AddStatusListener(func(status domain.PlayerStatus) {
     analysisSvc.SetThrottled(status.PlaybackState == domain.PlaybackStatePlaying)
 })
@@ -115,6 +126,13 @@ playerSvc.AddTrackLoadListener(func(track *domain.TrackDTO) {
     analysisSvc.Enqueue(track.ID, true) // on-play priority boost
 })
 ```
+
+`AddTrackDeletedListener` (on `LibraryService`) fires with the IDs of tracks
+just removed — from `RemoveWatchedFolder` (before the search-index/DB delete
+loop, so the pool stops competing for the DB write as early as possible) and
+from the fsnotify Remove/Rename handler's single-file and directory-removal
+branches (after `deletedIDs` is finalized, alongside the existing
+`library:track-deleted` event emission).
 
 The on-play boost fires on **every** track load, whether or not that track was
 analyzed already — `Enqueue`'s dedup only tracks in-flight/queued state, not

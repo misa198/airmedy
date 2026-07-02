@@ -232,6 +232,43 @@ func (s *AnalysisService) BoostPriority(trackID string) {
 	s.Enqueue(trackID, true)
 }
 
+// Dequeue drops the given track IDs from the boost/normal queues so a
+// deleted track isn't wastefully analyzed. In-flight tracks (a worker
+// already decoding them) are left alone — cancelling mid-decode isn't worth
+// the complexity, and analyzeOne/UpsertFeatures already no-op safely once
+// the track row is gone (FK-constrained write fails harmlessly, logged).
+// No-op while the pool is disabled.
+func (s *AnalysisService) Dequeue(trackIDs []string) {
+	if len(trackIDs) == 0 {
+		return
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if !s.enabled {
+		return
+	}
+
+	remove := make(map[string]bool, len(trackIDs))
+	for _, id := range trackIDs {
+		remove[id] = true
+		delete(s.queued, id)
+	}
+
+	filter := func(queue []string) []string {
+		kept := queue[:0]
+		for _, id := range queue {
+			if !remove[id] {
+				kept = append(kept, id)
+			}
+		}
+		return kept
+	}
+	s.boostQueue = filter(s.boostQueue)
+	s.normalQueue = filter(s.normalQueue)
+}
+
 func (s *AnalysisService) promoteToFrontLocked(trackID string) {
 	for i, id := range s.normalQueue {
 		if id == trackID {

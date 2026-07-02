@@ -32,6 +32,18 @@ func NewDB(dbPath string, logger *slog.Logger) (*DB, error) {
 		return nil, fmt.Errorf("failed to enable foreign keys: %w", err)
 	}
 
+	// WAL + synchronous=NORMAL drastically cuts fsync cost for bulk writes
+	// (e.g. library folder scans) while remaining crash-safe.
+	if _, err := db.Exec("PRAGMA journal_mode = WAL;"); err != nil {
+		return nil, fmt.Errorf("failed to enable WAL journal mode: %w", err)
+	}
+	if _, err := db.Exec("PRAGMA synchronous = NORMAL;"); err != nil {
+		return nil, fmt.Errorf("failed to set synchronous mode: %w", err)
+	}
+	if _, err := db.Exec("PRAGMA busy_timeout = 5000;"); err != nil {
+		return nil, fmt.Errorf("failed to set busy timeout: %w", err)
+	}
+
 	if err := runMigrations(db, logger); err != nil {
 		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}

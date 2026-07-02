@@ -208,6 +208,51 @@ func TestPriorityPromotesAheadOfNormalQueue(t *testing.T) {
 	}
 }
 
+func TestDequeueDropsQueuedTracksButLeavesInFlightAlone(t *testing.T) {
+	repo := newMockAnalysisRepo()
+	gate := make(chan struct{})
+	svc := newTestService(repo, &mockAnalyzer{gate: gate}, tracksOf("a", "b", "c"))
+
+	svc.wg.Add(1)
+	go svc.worker(svc.runCtx)
+
+	// "a" is picked up by the single worker and blocks on the gate (in-flight);
+	// "b" and "c" pile up behind it in the queues.
+	svc.Enqueue("a", false)
+	waitFor(t, time.Second, func() bool {
+		svc.mu.Lock()
+		defer svc.mu.Unlock()
+		return svc.inFlight["a"]
+	})
+	svc.Enqueue("b", false)
+	svc.Enqueue("c", true)
+
+	// Simulate a delete racing the pool: drop all three (as the real caller
+	// would, since it doesn't distinguish in-flight from queued).
+	svc.Dequeue([]string{"a", "b", "c"})
+
+	svc.mu.Lock()
+	_, aStillInFlight := svc.inFlight["a"]
+	queueLen := len(svc.normalQueue) + len(svc.boostQueue)
+	bQueued, cQueued := svc.queued["b"], svc.queued["c"]
+	svc.mu.Unlock()
+
+	if !aStillInFlight {
+		t.Fatalf("expected in-flight track to be left alone by Dequeue")
+	}
+	if queueLen != 0 || bQueued || cQueued {
+		t.Fatalf("expected b and c dropped from queues, got queueLen=%d bQueued=%v cQueued=%v", queueLen, bQueued, cQueued)
+	}
+
+	close(gate)
+	waitFor(t, time.Second, func() bool { return repo.callCount() == 1 })
+
+	_ = svc.Stop(context.Background())
+	if got := repo.callCount(); got != 1 {
+		t.Fatalf("expected only the in-flight track to have been analyzed, got %d calls", got)
+	}
+}
+
 func TestBoostPriorityPromotesQueuedTrack(t *testing.T) {
 	repo := newMockAnalysisRepo()
 	svc := newTestService(repo, &mockAnalyzer{}, tracksOf("a", "b"))
