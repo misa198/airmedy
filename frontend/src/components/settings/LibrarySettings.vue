@@ -3,12 +3,13 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import * as LibraryService from '../../../bindings/airmedy/internal/infra/wails/libraryservice'
-import { RotateCcw, Plus, Trash2, Folder, Loader2, DatabaseZap, Info } from 'lucide-vue-next'
+import { RotateCcw, Plus, Trash2, Folder, Loader2, DatabaseZap, Info, Tags } from 'lucide-vue-next'
 import type { WatchedFolder, SyncProgress } from '../../../bindings/airmedy/internal/domain/models'
 import { Events } from '@wailsio/runtime'
 import ConfirmDialog from '../ConfirmDialog.vue'
 import SyncProgressDialog from './SyncProgressDialog.vue'
 import DelimiterInput from './DelimiterInput.vue'
+import SettingSection from './SettingSection.vue'
 import { useAppStore } from '../../stores/app'
 
 const { t } = useI18n()
@@ -175,33 +176,28 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-    <!-- Sync Header -->
-    <div class="flex items-center justify-between mb-4 select-none">
-      <h2 class="text-xl font-bold">{{ t('settings.library.title') }}</h2>
-      <div class="flex gap-3">
-        <button @click="optimizeSearch" :disabled="isSyncing || removingFolderIds.length > 0 || folders.length === 0"
-          class="flex items-center gap-2 px-4 py-2 bg-foreground/[0.04] text-foreground rounded-xl hover:bg-foreground/[0.08] transition-all disabled:opacity-50 text-sm font-bold">
-          <DatabaseZap v-if="!isSyncing" class="w-4 h-4" />
-          <RotateCcw v-else class="w-4 h-4" :class="{ 'animate-spin': isSyncing }" />
-          {{ isSyncing ? t('settings.sync.syncing') : t('settings.sync.optimize_search') }}
-        </button>
-        <button @click="syncLibrary" :disabled="isSyncing || removingFolderIds.length > 0 || folders.length === 0"
-          class="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-all disabled:opacity-50 text-sm font-bold shadow-lg shadow-primary/20">
-          <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': isSyncing }" />
-          {{ isSyncing ? t('settings.sync.syncing') : t('settings.sync.sync_library') }}
-        </button>
-      </div>
-    </div>
-
-    <section class="bg-card rounded-2xl border border-foreground/[0.06] p-6">
-      <div class="flex items-center justify-between mb-6">
-        <div>
-          <h3 class="text-lg font-bold mb-1">{{ t('settings.folders.title') }}</h3>
-          <p class="text-sm text-foreground opacity-60">{{ t('settings.folders.description') }}</p>
+  <div class="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
+    <SettingSection :icon="Folder" :label="t('settings.folders.title')" variant="panel">
+      <template #header-extra>
+        <div class="flex gap-3">
+          <button @click="optimizeSearch" :disabled="isSyncing || removingFolderIds.length > 0 || folders.length === 0"
+            class="flex items-center gap-2 px-4 py-2 bg-foreground/[0.04] text-foreground rounded-xl hover:bg-foreground/[0.08] transition-all disabled:opacity-50 text-sm font-bold">
+            <DatabaseZap v-if="!isSyncing" class="w-4 h-4" />
+            <RotateCcw v-else class="w-4 h-4" :class="{ 'animate-spin': isSyncing }" />
+            {{ isSyncing ? t('settings.sync.syncing') : t('settings.sync.optimize_search') }}
+          </button>
+          <button @click="syncLibrary" :disabled="isSyncing || removingFolderIds.length > 0 || folders.length === 0"
+            class="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-all disabled:opacity-50 text-sm font-bold shadow-lg shadow-primary/20">
+            <RotateCcw class="w-4 h-4" :class="{ 'animate-spin': isSyncing }" />
+            {{ isSyncing ? t('settings.sync.syncing') : t('settings.sync.sync_library') }}
+          </button>
         </div>
+      </template>
+
+      <div class="flex items-center justify-between mb-6">
+        <p class="text-sm text-foreground opacity-60">{{ t('settings.folders.description') }}</p>
         <button @click="addFolder" :disabled="isSyncing"
-          class="flex items-center gap-2 px-4 py-2 bg-foreground/[0.04] text-foreground rounded-xl hover:bg-foreground/[0.08] transition-all text-sm font-bold disabled:opacity-50">
+          class="flex items-center gap-2 px-4 py-2 bg-foreground/[0.04] text-foreground rounded-xl hover:bg-foreground/[0.08] transition-all text-sm font-bold disabled:opacity-50 shrink-0">
           <Plus class="w-4 h-4" />
           {{ t('settings.folders.add_folder') }}
         </button>
@@ -239,13 +235,10 @@ onUnmounted(() => {
           </button>
         </li>
       </ul>
-    </section>
+    </SettingSection>
 
-    <section class="bg-card rounded-2xl border border-foreground/[0.06] p-6">
-      <div class="mb-6">
-        <h3 class="text-lg font-bold mb-1">{{ t('settings.library.delimiters_title') }}</h3>
-        <p class="text-sm text-foreground opacity-60">{{ t('settings.library.delimiters_description') }}</p>
-      </div>
+    <SettingSection :icon="Tags" :label="t('settings.library.delimiters_title')" variant="panel">
+      <p class="text-sm text-foreground opacity-60 mb-6">{{ t('settings.library.delimiters_description') }}</p>
 
       <div v-if="delimitersDirty"
         class="flex items-start gap-3 mb-6 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
@@ -265,7 +258,7 @@ onUnmounted(() => {
         <DelimiterInput :label="t('settings.delimiters.composers')" :model-value="composerDelimiters"
           :disabled="isSyncing" @update:model-value="(v) => onDelimitersChange('composer', v)" />
       </div>
-    </section>
+    </SettingSection>
 
     <ConfirmDialog
       :open="!!folderToDelete"

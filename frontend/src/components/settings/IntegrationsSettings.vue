@@ -8,6 +8,8 @@ import { useI18n } from 'vue-i18n'
 import * as LastFmService from '../../../bindings/airmedy/internal/infra/wails/lastfmservice'
 import * as LibraryService from '../../../bindings/airmedy/internal/infra/wails/libraryservice'
 import SettingExpandableRow from './SettingExpandableRow.vue'
+import SettingSection from './SettingSection.vue'
+import SettingRow from './SettingRow.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -132,126 +134,83 @@ onMounted(() => {
 
 <template>
   <div class="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
-    <section>
-      <div class="flex items-center gap-2 mb-6 text-foreground opacity-60 select-none">
-        <FileMusic class="w-4 h-4" />
-        <h2 class="text-sm font-bold uppercase tracking-wider">{{ t('settings.integrations.scrobbling', 'Scrobbling') }}
-        </h2>
-      </div>
-
-      <div class="bg-card rounded-2xl border border-foreground/[0.06] divide-y divide-foreground/[0.06]">
-        <div class="p-5 flex items-center justify-between gap-x-2">
-          <div class="flex items-center gap-4">
-            <div v-if="lastfmAvatar && lastfmStatus.connected" class="relative">
-              <img :src="lastfmAvatar" class="w-10 h-10 rounded-xl object-cover border border-foreground/[0.06]" />
-              <div class="absolute -bottom-1 -right-1 p-0.5 bg-[#D31F27] rounded-md">
-                <Music class="w-2.5 h-2.5 text-white" />
-              </div>
-            </div>
-            <div v-else class="p-2 bg-[#D31F27]/[0.08] rounded-xl">
-              <Blocks class="w-5 h-5 text-[#D31F27]" />
-            </div>
-            <div>
-              <p class="text-sm font-semibold">Last.fm</p>
-              <p v-if="lastfmStatus.connected" class="text-xs text-foreground opacity-60 mt-1">
-                {{ t('settings.lastfm.connected_as') }} <span class="font-bold opacity-100 text-foreground">{{
-                  lastfmStatus.username }}</span>
-              </p>
-              <p v-else class="text-xs text-foreground opacity-60 mt-1">
-                {{ t('settings.lastfm.scrobble_desc') }}
-              </p>
+    <SettingSection :icon="FileMusic" :label="t('settings.integrations.scrobbling', 'Scrobbling')">
+      <SettingRow>
+        <template #leading>
+          <div v-if="lastfmAvatar && lastfmStatus.connected" class="relative">
+            <img :src="lastfmAvatar" class="w-10 h-10 rounded-xl object-cover border border-foreground/[0.06]" />
+            <div class="absolute -bottom-1 -right-1 p-0.5 bg-[#D31F27] rounded-md">
+              <Music class="w-2.5 h-2.5 text-white" />
             </div>
           </div>
-
-          <div class="flex items-center gap-2">
-            <button v-if="!lastfmStatus.connected"
-              class="h-9 px-4 rounded-xl font-semibold border border-foreground/[0.08] hover:bg-foreground/[0.04] text-sm transition-colors disabled:opacity-50"
-              :disabled="isConnecting" @click="connectLastFm">
-              {{ isConnecting ? t('settings.lastfm.connecting') : t('settings.lastfm.connect') }}
-            </button>
-
-            <button v-else
-              class="h-9 px-4 rounded-xl font-semibold border border-foreground/[0.08] hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 text-sm transition-colors"
-              @click="disconnectLastFm">
-              {{ t('settings.lastfm.disconnect') }}
-            </button>
+          <div v-else class="p-2 bg-[#D31F27]/[0.08] rounded-xl">
+            <Blocks class="w-5 h-5 text-[#D31F27]" />
           </div>
-        </div>
-      </div>
-    </section>
+        </template>
+        <template #title>Last.fm</template>
+        <template #description>
+          <template v-if="lastfmStatus.connected">
+            {{ t('settings.lastfm.connected_as') }} <span class="font-bold opacity-100 text-foreground">{{
+              lastfmStatus.username }}</span>
+          </template>
+          <template v-else>{{ t('settings.lastfm.scrobble_desc') }}</template>
+        </template>
 
-    <section>
-      <div class="flex items-center gap-2 mb-6 text-foreground opacity-60 select-none">
-        <ImagePlay class="w-4 h-4" />
-        <h2 class="text-sm font-bold uppercase tracking-wider">{{ t('settings.integrations.artwork', 'Artwork') }}
-        </h2>
-      </div>
+        <div class="flex items-center gap-2">
+          <button v-if="!lastfmStatus.connected"
+            class="h-9 px-4 rounded-xl font-semibold border border-foreground/[0.08] hover:bg-foreground/[0.04] text-sm transition-colors disabled:opacity-50"
+            :disabled="isConnecting" @click="connectLastFm">
+            {{ isConnecting ? t('settings.lastfm.connecting') : t('settings.lastfm.connect') }}
+          </button>
 
-      <div class="bg-card rounded-2xl border border-foreground/[0.06] divide-y divide-foreground/[0.06]">
-        <div class="p-5 flex items-center justify-between gap-x-2">
-          <div>
-            <p class="text-sm font-semibold">{{ t('settings.integrations.online_artist_artwork') }}</p>
-            <p class="text-xs text-foreground opacity-60 mt-1">
-              {{ t('settings.integrations.online_artist_artwork_desc') }}
-            </p>
-          </div>
-          <Switch :model-value="appStore.useOnlineArtistArtwork"
-            @update:model-value="appStore.updateUseOnlineArtistArtwork" />
+          <button v-else
+            class="h-9 px-4 rounded-xl font-semibold border border-foreground/[0.08] hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 text-sm transition-colors"
+            @click="disconnectLastFm">
+            {{ t('settings.lastfm.disconnect') }}
+          </button>
         </div>
-        <div v-if="appStore.useOnlineArtistArtwork" class="p-5 flex items-center justify-between gap-x-2">
-          <div>
-            <p class="text-sm font-semibold">
-              {{ t('settings.integrations.prefer_local_artist_artwork', 'Prefer Local Artist Artwork') }}
-            </p>
-            <p class="text-xs text-foreground opacity-60 mt-1">
-              {{ t('settings.integrations.prefer_local_artist_artwork_desc', 'Use local artist.jpg/png files when available instead of fetching online') }}
-            </p>
-          </div>
-          <Switch :model-value="appStore.preferLocalArtistArtwork"
-            @update:model-value="appStore.updatePreferLocalArtistArtwork" />
-        </div>
-      </div>
-    </section>
+      </SettingRow>
+    </SettingSection>
 
-    <section>
-      <div class="flex items-center gap-2 mb-6 text-foreground opacity-60 select-none">
-        <MicVocal class="w-4 h-4" />
-        <h2 class="text-sm font-bold uppercase tracking-wider">{{ t('settings.integrations.lyrics', 'Lyrics') }}
-        </h2>
-      </div>
+    <SettingSection :icon="ImagePlay" :label="t('settings.integrations.artwork', 'Artwork')">
+      <SettingRow
+        :title="t('settings.integrations.online_artist_artwork')"
+        :description="t('settings.integrations.online_artist_artwork_desc')"
+      >
+        <Switch :model-value="appStore.useOnlineArtistArtwork"
+          @update:model-value="appStore.updateUseOnlineArtistArtwork" />
+      </SettingRow>
+      <SettingRow
+        v-if="appStore.useOnlineArtistArtwork"
+        :title="t('settings.integrations.prefer_local_artist_artwork', 'Prefer Local Artist Artwork')"
+        :description="t('settings.integrations.prefer_local_artist_artwork_desc', 'Use local artist.jpg/png files when available instead of fetching online')"
+      >
+        <Switch :model-value="appStore.preferLocalArtistArtwork"
+          @update:model-value="appStore.updatePreferLocalArtistArtwork" />
+      </SettingRow>
+    </SettingSection>
 
-      <div class="bg-card rounded-2xl border border-foreground/[0.06] divide-y divide-foreground/[0.06]">
-        <div class="p-5 flex items-center justify-between gap-x-2">
-          <div>
-            <p class="text-sm font-semibold">{{ t('settings.integrations.enable_lrclib', 'LRCLIB.NET Lyrics') }}</p>
-            <p class="text-xs text-foreground opacity-60 mt-1">
-              {{ t('settings.integrations.enable_lrclib_desc', 'Fetch lyrics from LRCLIB.NET') }}
-            </p>
-          </div>
-          <Switch :model-value="appStore.enableLrclib" @update:model-value="appStore.updateEnableLrclib" />
-        </div>
-        <div class="p-5 flex items-center justify-between gap-x-2">
-          <div>
-            <p class="text-sm font-semibold">{{ t('settings.integrations.enable_kugou', 'KuGou Lyrics') }}</p>
-            <p class="text-xs text-foreground opacity-60 mt-1">
-              {{ t('settings.integrations.enable_kugou_desc', 'Fetch lyrics from KuGou Music') }}
-            </p>
-          </div>
-          <Switch :model-value="appStore.enableKugou" @update:model-value="appStore.updateEnableKugou" />
-        </div>
-        <div class="p-5 flex items-center justify-between gap-x-2">
-          <div>
-            <p class="text-sm font-semibold">
-              {{ t('settings.integrations.prefer_local_lyrics', 'Prefer Local Lyrics') }}
-            </p>
-            <p class="text-xs text-foreground opacity-60 mt-1">
-              {{ t('settings.integrations.prefer_local_lyrics_desc', 'Use local lyric files or embedded lyrics when available') }}
-            </p>
-          </div>
-          <Switch :model-value="appStore.preferLocalLyrics"
-            @update:model-value="appStore.updatePreferLocalLyrics" />
-        </div>
-        <SettingExpandableRow :title="t('settings.integrations.lyrics_subfolder', 'Lyrics Subfolder Next to Track')"
+    <SettingSection :icon="MicVocal" :label="t('settings.integrations.lyrics', 'Lyrics')">
+      <SettingRow
+        :title="t('settings.integrations.enable_lrclib', 'LRCLIB.NET Lyrics')"
+        :description="t('settings.integrations.enable_lrclib_desc', 'Fetch lyrics from LRCLIB.NET')"
+      >
+        <Switch :model-value="appStore.enableLrclib" @update:model-value="appStore.updateEnableLrclib" />
+      </SettingRow>
+      <SettingRow
+        :title="t('settings.integrations.enable_kugou', 'KuGou Lyrics')"
+        :description="t('settings.integrations.enable_kugou_desc', 'Fetch lyrics from KuGou Music')"
+      >
+        <Switch :model-value="appStore.enableKugou" @update:model-value="appStore.updateEnableKugou" />
+      </SettingRow>
+      <SettingRow
+        :title="t('settings.integrations.prefer_local_lyrics', 'Prefer Local Lyrics')"
+        :description="t('settings.integrations.prefer_local_lyrics_desc', 'Use local lyric files or embedded lyrics when available')"
+      >
+        <Switch :model-value="appStore.preferLocalLyrics"
+          @update:model-value="appStore.updatePreferLocalLyrics" />
+      </SettingRow>
+      <SettingExpandableRow :title="t('settings.integrations.lyrics_subfolder', 'Lyrics Subfolder Next to Track')"
           :description="t('settings.integrations.lyrics_subfolder_desc', 'Also look up .lrc/.txt files in a subfolder next to each track')"
           :expanded="appStore.lyricsSubfolderEnabled">
           <template #control>
@@ -303,7 +262,6 @@ onMounted(() => {
             </div>
           </template>
         </SettingExpandableRow>
-      </div>
-    </section>
+    </SettingSection>
   </div>
 </template>

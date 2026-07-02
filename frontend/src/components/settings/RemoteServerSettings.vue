@@ -9,6 +9,8 @@ import QRCodeStyling from 'qr-code-styling'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as RemoteServerService from '../../../bindings/airmedy/internal/infra/wails/remoteserverservice'
+import SettingSection from './SettingSection.vue'
+import SettingRow from './SettingRow.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -218,20 +220,11 @@ onMounted(loadStatus)
 
 <template>
   <div class="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
-    <section>
-      <div class="flex items-center gap-2 mb-6 text-foreground opacity-60 select-none">
-        <Wifi class="w-4 h-4" />
-        <h2 class="text-sm font-bold uppercase tracking-wider">{{ t('settings.remote.title') }}</h2>
-      </div>
-      <div class="bg-card rounded-2xl border border-foreground/[0.06] divide-y divide-foreground/[0.06]">
+    <SettingSection :icon="Wifi" :label="t('settings.remote.title')">
         <!-- Toggle -->
-        <div class="p-5 flex items-center justify-between gap-x-2">
-          <div>
-            <p class="text-sm font-semibold">{{ t('settings.remote.enable') }}</p>
-            <p class="text-xs text-foreground opacity-60 mt-1">{{ t('settings.remote.enable_desc') }}</p>
-          </div>
+        <SettingRow :title="t('settings.remote.enable')" :description="t('settings.remote.enable_desc')">
           <Switch :model-value="status?.enabled ?? false" :disabled="toggling" @update:model-value="toggleEnabled" />
-        </div>
+        </SettingRow>
 
         <!-- Firewall info -->
         <div class="px-5 py-3 flex items-start gap-2 text-xs text-foreground opacity-60">
@@ -309,7 +302,6 @@ onMounted(loadStatus)
             <p v-if="pinError" class="text-xs text-red-500 mt-2">{{ pinError }}</p>
           </div>
         </template>
-      </div>
-    </section>
+    </SettingSection>
   </div>
 </template>
