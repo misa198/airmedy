@@ -370,6 +370,8 @@
     "play": "Phát",
     "shuffle": "Trộn bài",
     "play_next": "Phát tiếp theo",
+    "add_to_queue": "Thêm vào hàng đợi",
+    "already_in_queue": "Đã có trong hàng đợi",
     "add_to_favorites": "Thêm vào yêu thích",
     "remove_from_favorites": "Xóa khỏi yêu thích",
     "add_to_playlist": "Thêm vào danh sách phát",

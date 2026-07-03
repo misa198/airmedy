@@ -10,6 +10,7 @@ export interface ContextMenuItem {
   danger?: boolean
   disabled?: boolean
   separator?: boolean
+  tooltip?: string
 }
 
 export function useContextMenu() {

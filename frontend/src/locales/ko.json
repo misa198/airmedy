@@ -370,6 +370,8 @@
     "play": "재생",
     "shuffle": "셔플",
     "play_next": "다음에 재생",
+    "add_to_queue": "대기열에 추가",
+    "already_in_queue": "이미 대기열에 있음",
     "add_to_favorites": "즐겨찾기에 추가",
     "remove_from_favorites": "즐겨찾기에서 제거",
     "add_to_playlist": "재생 목록에 추가",

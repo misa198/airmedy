@@ -31,7 +31,7 @@ const trackContextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
 
 function openContextMenu(e: MouseEvent) {
   if (!store.currentTrack) return
-  trackContextMenu.value?.open(e, store.currentTrack, { excludePlayNext: true })
+  trackContextMenu.value?.open(e, store.currentTrack, { excludePlayNext: true, excludeAddToQueue: true })
 }
 
 function openTrackInfo() {

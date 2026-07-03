@@ -56,6 +56,8 @@ export const usePlayerStore = defineStore('player', () => {
   const progressPercent = computed(() =>
     duration.value > 0 ? (position.value / duration.value) * 100 : 0,
   )
+  // Set of track ids in the queue — recomputed only when the queue changes, O(1) membership checks
+  const queueIds = computed(() => new Set(queue.value.map(t => t.id)))
   const artworkUrl = computed(() => buildArtworkUrl(currentTrack.value?.artwork_key, 'lg') ?? null)
   const artworkUrlMd = computed(() => buildArtworkUrl(currentTrack.value?.artwork_key, 'md') ?? null)
   const artworkUrlSm = computed(() => buildArtworkUrl(currentTrack.value?.artwork_key, 'sm') ?? null)
@@ -385,6 +387,7 @@ export const usePlayerStore = defineStore('player', () => {
     shuffle,
     repeatMode,
     progressPercent,
+    queueIds,
     artworkUrl,
     artworkUrlMd,
     artworkUrlSm,
