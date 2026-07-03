@@ -111,6 +111,9 @@ var Module = fx.Module("app",
 				lib.AddAnalysisListener(func(trackID string) {
 					analysisSvc.Enqueue(trackID, false)
 				})
+				lib.AddSyncFinishedListener(func() {
+					analysisSvc.TriggerPercentileRecompute()
+				})
 				lib.AddTrackDeletedListener(func(trackIDs []string) {
 					analysisSvc.Dequeue(trackIDs)
 					analysisSvc.NotifyTracksDeleted(trackIDs)

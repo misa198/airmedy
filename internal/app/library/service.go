@@ -62,6 +62,7 @@ type LibraryService struct {
 	trackUpdateListeners   []func(*domain.TrackDTO)
 	analysisListeners      []func(string)
 	trackDeletedListeners  []func([]string)
+	syncFinishedListeners  []func()
 	artistArtworkQueue     chan artistArtworkJob
 	pendingArtistArtwork   map[string]struct{}
 	pendingArtistArtworkMu sync.Mutex
@@ -196,6 +197,28 @@ func (s *LibraryService) notifyTracksDeleted(ids []string) {
 
 	for _, l := range listeners {
 		l(ids)
+	}
+}
+
+// AddSyncFinishedListener registers a callback fired once a SyncFolder run
+// completes. Lets the analysis pipeline trigger a percentile recompute right
+// after a bulk import instead of waiting on its batch-size/debounce
+// triggers, which can leave a small library's mood scores unpopulated for a
+// while after a fresh scan.
+func (s *LibraryService) AddSyncFinishedListener(l func()) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.syncFinishedListeners = append(s.syncFinishedListeners, l)
+}
+
+func (s *LibraryService) notifySyncFinished() {
+	s.mu.RLock()
+	listeners := make([]func(), len(s.syncFinishedListeners))
+	copy(listeners, s.syncFinishedListeners)
+	s.mu.RUnlock()
+
+	for _, l := range listeners {
+		l()
 	}
 }
 
@@ -957,6 +980,7 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 		}
 		app.Event.Emit("library:sync-finished", root)
 	}
+	s.notifySyncFinished()
 	return nil
 }
 

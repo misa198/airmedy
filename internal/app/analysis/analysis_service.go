@@ -588,6 +588,14 @@ func (s *AnalysisService) fireDebouncedRecompute() {
 	s.recomputePercentilesAndBump(context.Background())
 }
 
+// TriggerPercentileRecompute kicks off an out-of-band corpus percentile
+// recompute (and mood backfill), fire-and-forget. Meant to be wired to
+// library-side signals like "sync finished" so a fresh import's mood scores
+// don't sit unpopulated until the batch-size/debounce triggers catch up.
+func (s *AnalysisService) TriggerPercentileRecompute() {
+	go s.recomputePercentilesAndBump(context.Background())
+}
+
 // recomputePercentilesAndBump recomputes corpus percentiles, hot-swaps the
 // in-memory cache, and — if the corpus is non-empty — bumps
 // app_settings.mood_derivation_version so every track's mood_derived_version
