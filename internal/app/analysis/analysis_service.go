@@ -146,6 +146,11 @@ func (s *AnalysisService) loadPercentileCache(ctx context.Context) {
 		s.logger.Warn("mood: failed to load percentile cache", "error", err)
 		return
 	}
+	if len(rows) == 0 {
+		return // no corpus yet: leave the cache cold (nil) so mood derivation
+		// is skipped rather than run against an empty (degenerate) percentile
+		// set, which would persist a neutral 0.5 for every feature.
+	}
 	pctl := make(mood.PercentileSet, len(rows))
 	for name, row := range rows {
 		pctl[name] = mood.Percentile{P1: row.P1, P5: row.P5, P50: row.P50, P95: row.P95, P99: row.P99}
@@ -531,7 +536,7 @@ func (s *AnalysisService) driveMoodDerivation(ctx context.Context, trackID strin
 	pctl := s.moodPctl
 	s.moodMu.RUnlock()
 
-	if pctl != nil {
+	if len(pctl) > 0 {
 		if feat, err := s.analysisRepo.GetFeatures(ctx, trackID); err == nil && feat != nil {
 			energy, dance := mood.Derive(feat, pctl)
 			if err := s.analysisRepo.UpsertMoodFeatures(ctx, trackID, energy, dance, moodVersion); err != nil {
@@ -637,8 +642,8 @@ func (s *AnalysisService) backfillMood(ctx context.Context, currentMoodVersion i
 		s.moodMu.RLock()
 		pctl := s.moodPctl
 		s.moodMu.RUnlock()
-		if pctl == nil {
-			return // cache unexpectedly cleared; next recompute cycle will retry
+		if len(pctl) == 0 {
+			return // cache unexpectedly empty/cleared; next recompute cycle will retry
 		}
 		for _, id := range ids {
 			feat, err := s.analysisRepo.GetFeatures(ctx, id)
