@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AudioLines, Wrench, Gauge, Volume2 } from 'lucide-vue-next'
 import { Events } from '@wailsio/runtime'
+import { GetProgress } from '../../../bindings/airmedy/internal/infra/wails/analysisservice'
 import EQPanel from '@/components/EQPanel.vue'
 import { Switch, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, Slider } from '@airmedy/ui'
 import { useAppStore, NORMALIZATION_TARGET_LUFS_MIN, NORMALIZATION_TARGET_LUFS_MAX } from '@/stores/app'
@@ -57,15 +58,15 @@ const readinessPercent = computed(() =>
   libraryTotal.value > 0 ? Math.round((libraryDone.value / libraryTotal.value) * 100) : 100
 )
 
-const handleAnalysisProgress = (ev: Events.WailsEvent) => {
-  const data = ev.data as {
-    done: number
-    total: number
-    state: 'analyzing' | 'paused' | 'done'
-    libraryDone: number
-    libraryTotal: number
-  }
-  console.debug('[analysis:progress]', data)
+type AnalysisProgressData = {
+  done: number
+  total: number
+  state: 'analyzing' | 'paused' | 'done'
+  libraryDone: number
+  libraryTotal: number
+}
+
+const applyAnalysisProgress = (data: AnalysisProgressData) => {
   analysisDone.value = data.done
   analysisTotal.value = data.total
   analysisState.value = data.state
@@ -73,10 +74,33 @@ const handleAnalysisProgress = (ev: Events.WailsEvent) => {
   libraryTotal.value = data.libraryTotal
 }
 
+// Set once a live event has landed, so the initial GetProgress fetch (below)
+// knows to discard its own result if it resolves after a fresher event
+// already updated the refs — otherwise a slow IPC round-trip could overwrite
+// newer data with a stale snapshot.
+let receivedLiveEvent = false
+
+const handleAnalysisProgress = (ev: Events.WailsEvent) => {
+  const data = ev.data as AnalysisProgressData
+  console.debug('[analysis:progress]', data)
+  receivedLiveEvent = true
+  applyAnalysisProgress(data)
+}
+
 let offAnalysisProgress: (() => void) | null = null
 
 onMounted(() => {
+  // Subscribe first so no event landing between the fetch and its resolution
+  // is missed, then fetch the current snapshot immediately — otherwise the
+  // UI starts from the zero-valued refs above (100% readiness, no
+  // in-progress banner) until the next event happens to fire, which could be
+  // long after a sync already left the library partially analyzed.
   offAnalysisProgress = Events.On('analysis:progress', handleAnalysisProgress)
+  GetProgress()
+    .then((data) => {
+      if (!receivedLiveEvent) applyAnalysisProgress(data as unknown as AnalysisProgressData)
+    })
+    .catch((error) => console.error('[analysis:progress] initial fetch failed', error))
 })
 
 onUnmounted(() => {

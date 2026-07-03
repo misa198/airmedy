@@ -666,7 +666,32 @@ func (s *AnalysisService) backfillMood(ctx context.Context, currentMoodVersion i
 	}
 }
 
+// GetProgress returns a fresh snapshot of analysis progress, for the
+// frontend to fetch once on mount rather than starting from a zero-valued
+// state and waiting on the next "analysis:progress" event (which, before the
+// first fetch, made the progress bar flash 100% while a sync was still
+// under way).
+func (s *AnalysisService) GetProgress() domain.AnalysisProgress {
+	s.mu.Lock()
+	limit := s.activeLimit
+	enabled := s.enabled
+	s.mu.Unlock()
+
+	state := domain.AnalysisStateAnalyzing
+	if !enabled || limit == 0 {
+		state = domain.AnalysisStatePaused
+	}
+	return s.currentProgress(state)
+}
+
 func (s *AnalysisService) emitProgress(state string) {
+	progress := s.currentProgress(state)
+	if app := application.Get(); app != nil && app.Event != nil {
+		app.Event.Emit("analysis:progress", progress)
+	}
+}
+
+func (s *AnalysisService) currentProgress(state string) domain.AnalysisProgress {
 	s.progMu.Lock()
 	done := s.done
 	s.progMu.Unlock()
@@ -688,14 +713,12 @@ func (s *AnalysisService) emitProgress(state string) {
 		}
 	}
 
-	if app := application.Get(); app != nil && app.Event != nil {
-		app.Event.Emit("analysis:progress", domain.AnalysisProgress{
-			Done:         done,
-			Total:        total,
-			State:        state,
-			LibraryDone:  libraryDone,
-			LibraryTotal: libraryTotal,
-		})
+	return domain.AnalysisProgress{
+		Done:         done,
+		Total:        total,
+		State:        state,
+		LibraryDone:  libraryDone,
+		LibraryTotal: libraryTotal,
 	}
 }
 
