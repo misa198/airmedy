@@ -5,6 +5,7 @@ import * as PlayerService from '../../bindings/airmedy/internal/infra/wails/play
 import { PlaybackState, PlayerStatus, RepeatMode, ThemeColors } from '../../bindings/airmedy/internal/domain/models'
 import type { Lyric, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import { buildArtworkUrl, logger } from '@airmedy/utils'
+import { useMoodRadioStore } from './moodRadio'
 
 export type PlayerMode = 'sticky' | 'mini' | 'fullscreen'
 
@@ -282,7 +283,17 @@ export const usePlayerStore = defineStore('player', () => {
     }
   }
 
-  async function playTracks(tracks: TrackDTO[], startIndex: number) {
+  // `fromRadio` is set by the Mood Radio store when it seeds its own queue,
+  // so we don't tear down the radio it's in the middle of starting. Any other
+  // caller (album/track/playlist play) is normal playback and must end an
+  // active radio, otherwise the queue-drawer radio icon lingers.
+  function stopMoodRadio() {
+    const radio = useMoodRadioStore()
+    if (radio.active) radio.stop()
+  }
+
+  async function playTracks(tracks: TrackDTO[], startIndex: number, fromRadio = false) {
+    if (!fromRadio) stopMoodRadio()
     queue.value = tracks
     currentTrack.value = tracks[startIndex] ?? null
     await PlayerService.PlayTrackIDs(tracks.map(t => t.id), startIndex)
@@ -295,6 +306,7 @@ export const usePlayerStore = defineStore('player', () => {
 
   async function shuffleTracks(tracks: TrackDTO[]) {
     if (!tracks.length) return
+    stopMoodRadio()
     await PlayerService.ShuffleTrackIDs(tracks.map(t => t.id))
     // The backend emits player:status and player:queue-updated which will update our local state
   }
