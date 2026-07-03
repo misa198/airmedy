@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
 import { Disc, Music, Search, User, Library, PenTool } from 'lucide-vue-next'
 import LazyImg from '@/components/LazyImg.vue'
@@ -19,9 +19,18 @@ const store = useSearchStore()
 const playerStore = usePlayerStore()
 
 const inputValue = ref(store.query)
+const searchInput = ref<InstanceType<typeof Input>>()
 
 watch(inputValue, (val) => {
   store.search(val)
+})
+
+onMounted(() => {
+  searchInput.value?.focus()
+})
+
+onActivated(() => {
+  searchInput.value?.focus()
 })
 
 function navigateToAlbum(id?: string) {
@@ -61,7 +70,7 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists() || hasPlayli
     <div class="px-8 pt-8 pb-4 flex-shrink-0">
       <div class="relative max-w-xl">
         <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground opacity-50 pointer-events-none" />
-        <Input v-model="inputValue" :placeholder="$t('library.search_placeholder')" class="pl-10 pr-4" autofocus clearable />
+        <Input ref="searchInput" v-model="inputValue" :placeholder="$t('library.search_placeholder')" class="pl-10 pr-4" clearable />
       </div>
     </div>
 
