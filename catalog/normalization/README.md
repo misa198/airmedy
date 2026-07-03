@@ -41,6 +41,26 @@ changed` fired). An already-explicit mode (`track` or `album`) is left untouched
 
 ## Gain Formula (`NormalizationService.ComputeGain`)
 
+```mermaid
+flowchart TB
+    A["ComputeGain(track, next)"] --> B{"Analysis on AND<br/>Normalization on AND<br/>Mode ≠ off?"}
+    B -->|no| Z["gain = 0"]
+    B -->|yes| C{"Track analyzed?<br/>(has features)"}
+    C -->|no| Z
+    C -->|yes| D{"Mode?"}
+    D -->|track| E["gain = target − track LUFS"]
+    D -->|album| F{"sameAlbumChain<br/>(track, next)?"}
+    F -->|no| E
+    F -->|yes| G["gain = target − album avg LUFS"]
+    E --> H{"PreventClip?"}
+    G --> H
+    H -->|yes| I["clamp: gain = min(gain, −TruePeak)"]
+    H -->|no| J["final gain"]
+    I --> J
+    Z --> J
+    J --> K["SetPreampGain(gain) on player"]
+```
+
 1. If `!LibraryAnalysisEnabled || !Enabled || Mode == "off"` → gain `0`. The
    `LibraryAnalysisEnabled` check is the actual enforcement point — it must be
    re-checked here, not just in `SetEnabled`'s validation, so a DB row that

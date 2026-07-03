@@ -24,7 +24,24 @@ const (
 	similarityWeightTempo        = 1.0
 )
 
-func (r *trackQueryRepository) FindSimilar(ctx context.Context, seedTrackID string, limit int, decayFactor float64) ([]*domain.TrackDTO, error) {
+func (r *trackQueryRepository) FindSimilar(ctx context.Context, seedTrackID string, limit int) ([]*domain.TrackDTO, error) {
+	// If the seed track itself has no analyzed feature row, every correlated
+	// subquery below yields NULL, so all distances are NULL and ORDER BY
+	// degenerates to an arbitrary order — returning tracks unrelated to the
+	// seed. Guard against it: no seed features means no meaningful similarity.
+	var seedFeatures int
+	if err := r.db.Ext(ctx).GetContext(ctx, &seedFeatures,
+		`SELECT COUNT(*) FROM track_features
+		 WHERE track_id = ?
+		   AND energy IS NOT NULL
+		   AND danceability IS NOT NULL
+		   AND tempo IS NOT NULL`, seedTrackID); err != nil {
+		return nil, fmt.Errorf("failed to check seed track features: %w", err)
+	}
+	if seedFeatures == 0 {
+		return nil, nil
+	}
+
 	// Distance is computed purely in SQL against the seed's own feature row
 	// (correlated subqueries), so we never round-trip seed values through
 	// Go. Tempo is on a very different numeric scale (BPM, ~40-220) than

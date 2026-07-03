@@ -86,6 +86,11 @@ type AnalysisService struct {
 
 	progMu sync.Mutex
 	done   int
+	// libraryTotal caches CountAll (a full-table COUNT) so it isn't re-queried
+	// on every per-track emitProgress during a bulk scan; refreshed at most
+	// once per libraryTotalTTL. -1 = not yet populated. Guarded by progMu.
+	libraryTotal   int
+	libraryTotalAt time.Time
 
 	// moodMu guards the mood-derivation state below, kept separate from mu
 	// (the queue lock) so it never contends with the hot worker-pool path.
@@ -93,6 +98,15 @@ type AnalysisService struct {
 	moodPctl          mood.PercentileSet // nil until first successful load/recompute (cold start)
 	moodChangeCounter int                // combined add+delete count since last percentile recompute
 	moodDebounceTimer *time.Timer        // reset on every add/delete event; fires recompute after a quiet period
+
+	// recomputeMu serializes recomputePercentilesAndBump so concurrent triggers
+	// (batch-size, debounce, sync-finished) can't interleave their version
+	// read-modify-write or run overlapping backfills. recomputePending coalesces:
+	// a trigger arriving while a recompute is in flight sets the flag so exactly
+	// one more run happens afterward, against the latest corpus data.
+	recomputeMu      sync.Mutex
+	recomputePendMu  sync.Mutex
+	recomputePending bool
 }
 
 func NewAnalysisService(
@@ -110,6 +124,7 @@ func NewAnalysisService(
 		logger:       logger.With("module", "analysis"),
 		queued:       make(map[string]bool),
 		inFlight:     make(map[string]bool),
+		libraryTotal: -1,
 	}
 	s.cond = sync.NewCond(&s.mu)
 	return s
@@ -536,7 +551,10 @@ func (s *AnalysisService) driveMoodDerivation(ctx context.Context, trackID strin
 	pctl := s.moodPctl
 	s.moodMu.RUnlock()
 
-	if len(pctl) > 0 {
+	// nil pctl means true cold start (no cache loaded yet) — skip. A non-nil
+	// but empty/partial set is still a valid warm cache: Normalize/Derive
+	// safely fall back to neutral 0.5 for any missing feature, so derive.
+	if pctl != nil {
 		if feat, err := s.analysisRepo.GetFeatures(ctx, trackID); err == nil && feat != nil {
 			energy, dance := mood.Derive(feat, pctl)
 			if err := s.analysisRepo.UpsertMoodFeatures(ctx, trackID, energy, dance, moodVersion); err != nil {
@@ -603,6 +621,34 @@ func (s *AnalysisService) TriggerPercentileRecompute() {
 // backfillMood (correctness over cost: the formulas are cheap arithmetic
 // over already-decoded raw features).
 func (s *AnalysisService) recomputePercentilesAndBump(ctx context.Context) {
+	// Serialize: if a recompute is already running, record that another was
+	// requested (so it re-runs once against the fresher data) and return
+	// instead of racing the version bump / backfill.
+	if !s.recomputeMu.TryLock() {
+		s.recomputePendMu.Lock()
+		s.recomputePending = true
+		s.recomputePendMu.Unlock()
+		return
+	}
+	defer s.recomputeMu.Unlock()
+
+	for {
+		s.recomputePendMu.Lock()
+		s.recomputePending = false
+		s.recomputePendMu.Unlock()
+
+		s.runRecomputeOnce(ctx)
+
+		s.recomputePendMu.Lock()
+		again := s.recomputePending
+		s.recomputePendMu.Unlock()
+		if !again {
+			return
+		}
+	}
+}
+
+func (s *AnalysisService) runRecomputeOnce(ctx context.Context) {
 	pctl, sampleCount, err := mood.RecomputeCorpusPercentiles(ctx, s.analysisRepo)
 	if err != nil {
 		s.logger.Warn("mood: percentile recompute failed", "error", err)
@@ -653,6 +699,7 @@ func (s *AnalysisService) backfillMood(ctx context.Context, currentMoodVersion i
 		if len(pctl) == 0 {
 			return // cache unexpectedly empty/cleared; next recompute cycle will retry
 		}
+		progressed := 0
 		for _, id := range ids {
 			feat, err := s.analysisRepo.GetFeatures(ctx, id)
 			if err != nil || feat == nil {
@@ -661,7 +708,18 @@ func (s *AnalysisService) backfillMood(ctx context.Context, currentMoodVersion i
 			energy, dance := mood.Derive(feat, pctl)
 			if err := s.analysisRepo.UpsertMoodFeatures(ctx, id, energy, dance, currentMoodVersion); err != nil {
 				s.logger.Warn("mood: failed to persist derived mood features during backfill", "track_id", id, "error", err)
+				continue
 			}
+			progressed++
+		}
+		// UpsertMoodFeatures is what advances a track past ListMoodPending (it
+		// bumps mood_derived_version). If a whole batch made zero progress, the
+		// same pending IDs would be returned every iteration — a persistently
+		// failing track (missing features, DB error) would spin this loop
+		// forever. Bail instead; the next recompute cycle retries.
+		if progressed == 0 {
+			s.logger.Warn("mood: backfill made no progress, aborting to avoid spin", "pending", len(ids))
+			return
 		}
 	}
 }
@@ -705,12 +763,12 @@ func (s *AnalysisService) currentProgress(state string) domain.AnalysisProgress 
 	}
 	total, state := resolveProgress(pending, done, state)
 
-	libraryTotal, libraryDone := 0, 0
-	if allTracks, err := s.analysisRepo.CountAll(context.Background()); err == nil {
-		libraryTotal = allTracks
-		if pending >= 0 {
-			libraryDone = allTracks - pending
-		}
+	libraryTotal, libraryDone := s.libraryTotalCached(), 0
+	if libraryTotal >= 0 && pending >= 0 {
+		libraryDone = libraryTotal - pending
+	}
+	if libraryTotal < 0 {
+		libraryTotal = 0
 	}
 
 	return domain.AnalysisProgress{
@@ -720,6 +778,36 @@ func (s *AnalysisService) currentProgress(state string) domain.AnalysisProgress 
 		LibraryDone:  libraryDone,
 		LibraryTotal: libraryTotal,
 	}
+}
+
+// libraryTotalTTL bounds how stale the cached CountAll may be. emitProgress
+// fires per analyzed track, so caching keeps a bulk scan from issuing a
+// full-table COUNT(*) per row; a progress bar tolerates a few seconds of lag
+// in the library total.
+const libraryTotalTTL = 3 * time.Second
+
+// libraryTotalCached returns the total track count, re-querying CountAll only
+// when the cache is empty or older than libraryTotalTTL. Returns -1 if the
+// count has never been obtained (query failed and no prior value).
+func (s *AnalysisService) libraryTotalCached() int {
+	s.progMu.Lock()
+	cached, at := s.libraryTotal, s.libraryTotalAt
+	s.progMu.Unlock()
+
+	if cached >= 0 && time.Since(at) < libraryTotalTTL {
+		return cached
+	}
+
+	allTracks, err := s.analysisRepo.CountAll(context.Background())
+	if err != nil {
+		return cached // keep last known value (may be -1 if never populated)
+	}
+
+	s.progMu.Lock()
+	s.libraryTotal = allTracks
+	s.libraryTotalAt = time.Now()
+	s.progMu.Unlock()
+	return allTracks
 }
 
 // resolveProgress derives the (total, state) pair reported to the frontend.

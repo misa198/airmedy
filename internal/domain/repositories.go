@@ -225,9 +225,8 @@ type TrackQueryRepository interface {
 	// FindSimilar returns up to limit tracks most similar to seedTrackID by
 	// weighted-euclidean distance over analyzed mood/tempo features,
 	// nearest first, excluding the seed track itself and any unanalyzed
-	// track. decayFactor is reserved for future ranking-decay tuning and is
-	// currently unused.
-	FindSimilar(ctx context.Context, seedTrackID string, limit int, decayFactor float64) ([]*TrackDTO, error)
+	// track. Returns no tracks if the seed itself is unanalyzed.
+	FindSimilar(ctx context.Context, seedTrackID string, limit int) ([]*TrackDTO, error)
 }
 
 type MiniPlayerStateRepository interface {

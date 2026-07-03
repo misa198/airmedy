@@ -42,6 +42,11 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000015 | `artist_artwork.up.sql`              | `ALTER TABLE artists ADD COLUMN artwork_key TEXT`                                                                                    |
 | 000016 | `app_settings_artist_artwork.up.sql` | `ALTER TABLE app_settings ADD COLUMN use_online_artist_artwork BOOLEAN NOT NULL DEFAULT 1`                                          |
 | 000017 | `lyrics_provider_settings.up.sql`    | Add `enable_lrclib`, `enable_kugou`, `prefer_metadata_lyrics` (all `BOOLEAN NOT NULL DEFAULT 1`) to `app_settings`                 |
+| 000018 | `app_settings_tray.up.sql`           | `ALTER TABLE app_settings ADD COLUMN show_tray_icon BOOLEAN NOT NULL DEFAULT 1`                                                    |
+| 000019 | `app_settings_prevent_sleep.up.sql`  | `ALTER TABLE app_settings ADD COLUMN prevent_sleep_while_playing BOOLEAN NOT NULL DEFAULT 0`                                       |
+| 000020 | `remote_server.up.sql`               | Add `remote_server_enabled` (0), `remote_server_port` (0), `remote_server_password` (`''`) to `app_settings`                       |
+| 000021 | `show_player_indicator.up.sql`       | `ALTER TABLE app_settings ADD COLUMN show_player_indicator BOOLEAN NOT NULL DEFAULT FALSE` (down is a no-op — column kept)         |
+| 000022 | `prefer_local_lyrics.up.sql`         | `ALTER TABLE app_settings RENAME COLUMN prefer_metadata_lyrics TO prefer_local_lyrics` (value preserved)                           |
 | 000023 | `artist_artwork_source.up.sql`       | `ALTER TABLE artists ADD COLUMN artwork_source TEXT NOT NULL DEFAULT ''` — tracks artwork origin (`online`/`local_file`/`manual`)   |
 | 000024 | `app_settings_artist_artwork.up.sql` | Add `prefer_local_artist_artwork BOOLEAN NOT NULL DEFAULT 1` and `last_scan_version TEXT NOT NULL DEFAULT ''` to `app_settings`     |
 | 000026 | `drop_prefer_local_artist_artwork.up.sql` | Drop `prefer_local_artist_artwork` — replaced by deriving from `use_online_artist_artwork` |
@@ -54,6 +59,10 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000032 | `add_comma_default_delimiter.up.sql` | Add `,` to the default delimiter set: `UPDATE app_settings SET <col> = '[";","\\",","]' WHERE <col> = '[";","\\"]'` (only rows still on the previous default; user-customized lists untouched) |
 | 000033 | `update_default_delimiters.up.sql`   | Update default delimiters: change single backslash `\` to double backslash `\\` (JSON `'[";","\\\\",","]'`) for rows still on the previous default |
 | 000034 | `track_features.up.sql`              | Add `track_features` table (one-time DSP analysis: loudness/dynamics/spectral + reserved-null mood cols); add `tracks.analyzed_version INTEGER NOT NULL DEFAULT 0` (0 = pending) + `idx_tracks_analyzed_version`; add `normalization_enabled`, `normalization_mode` ('off'), `normalization_target_lufs` (-14), `normalization_prevent_clip` (1) to `app_settings` |
+| 000035 | `junction_reverse_indexes.up.sql`    | Add reverse-lookup indexes on junction tables (`idx_track_artists_artist_id`, `idx_track_album_artists_artist_id`, `idx_track_genres_genre_id`, `idx_track_composers_composer_id`, `idx_album_artists_artist_id`) — speeds orphan-cleanup anti-joins and `GetBy{Artist,Genre,Composer}ID` |
+| 000036 | `onset_variance.up.sql`              | `ALTER TABLE track_features ADD COLUMN onset_variance REAL` (danceability input; down keeps column — SQLite `DROP COLUMN` unsafe across versions) |
+| 000037 | `corpus_feature_stats.up.sql`        | Add `feature_percentiles` table (per-feature `p1/p5/p50/p95/p99` + `sample_count`/`computed_at`, corpus normalization stats for mood derivation); add `app_settings.mood_derivation_version INTEGER NOT NULL DEFAULT 0` |
+| 000038 | `track_mood_version.up.sql`          | `ALTER TABLE tracks ADD COLUMN mood_derived_version INTEGER NOT NULL DEFAULT 0` + `idx_tracks_mood_derived_version` — marks a track's mood stale vs `app_settings.mood_derivation_version` for re-derivation |
 
 ## Full Schema
 
@@ -125,6 +134,7 @@ tracks (
     play_count INTEGER DEFAULT 0,
     is_favorite INTEGER DEFAULT 0,
     analyzed_version INTEGER NOT NULL DEFAULT 0,  -- 0 = pending DSP analysis (000034)
+    mood_derived_version INTEGER NOT NULL DEFAULT 0,  -- stale vs app_settings.mood_derivation_version → re-derive (000038)
     mtime DATETIME,
     created_at DATETIME,
     updated_at DATETIME
@@ -137,7 +147,17 @@ track_features (   -- one-time DSP analysis (000034); 0 rows until analyzer runs
     loudness_lufs REAL, loudness_range REAL, true_peak REAL, rms REAL, crest REAL,        -- ebur128 + astats
     spectral_centroid REAL, spectral_rolloff REAL, spectral_flatness REAL,
     spectral_flux REAL, zcr REAL,                                                          -- aspectralstats
-    tempo REAL, musical_key TEXT, mode TEXT, valence REAL, energy REAL, danceability REAL  -- reserved
+    onset_variance REAL,                                                                   -- aubio onset spread; danceability input (000036)
+    tempo REAL, musical_key TEXT, mode TEXT,                                               -- aubio tempo + keyfinder key/mode
+    energy REAL, danceability REAL,                                                        -- derived from raw features vs feature_percentiles
+    valence REAL                                                                           -- reserved (pending Essentia ML)
+)
+
+feature_percentiles (   -- corpus-wide normalization stats, one row per raw feature (000037)
+    feature_name TEXT PRIMARY KEY,                        -- rms | spectral_centroid | spectral_flux | tempo | crest | onset_variance | loudness_range
+    p1 REAL NOT NULL, p5 REAL NOT NULL, p50 REAL NOT NULL, p95 REAL NOT NULL, p99 REAL NOT NULL,
+    sample_count INTEGER NOT NULL,
+    computed_at DATETIME NOT NULL
 )
 
 playlists (
@@ -221,8 +241,9 @@ app_settings (
     normalization_mode TEXT NOT NULL DEFAULT 'off',                    -- off | track | album
     normalization_target_lufs REAL NOT NULL DEFAULT -14,
     normalization_prevent_clip INTEGER NOT NULL DEFAULT 1,
+    mood_derivation_version INTEGER NOT NULL DEFAULT 0,               -- bumped on corpus percentile recompute → stales every track's mood (000037)
     updated_at DATETIME
-    -- (also: prevent_sleep_while_playing, remote_server_*, show_player_indicator)
+    -- (also: show_tray_icon, prevent_sleep_while_playing, remote_server_*, show_player_indicator)
 )
 
 library_sync_state (
@@ -270,10 +291,19 @@ eq_bands (
 idx_tracks_album_id             ON tracks(album_id)
 idx_tracks_sort_title           ON tracks(sort_title)
 idx_tracks_is_favorite          ON tracks(is_favorite)
+idx_tracks_analyzed_version     ON tracks(analyzed_version)        -- pending-DSP scan (000034)
+idx_tracks_mood_derived_version ON tracks(mood_derived_version)    -- stale-mood scan (000038)
 idx_artists_normalization_key   ON artists(normalization_key)
 idx_albums_normalization_key    ON albums(normalization_key)
 idx_genres_normalization_key    ON genres(normalization_key)
 idx_composers_normalization_key ON composers(normalization_key)
+
+-- Junction reverse-lookup indexes (000035): second-column scans / orphan-cleanup anti-joins
+idx_track_artists_artist_id        ON track_artists(artist_id)
+idx_track_album_artists_artist_id  ON track_album_artists(artist_id)
+idx_track_genres_genre_id          ON track_genres(genre_id)
+idx_track_composers_composer_id    ON track_composers(composer_id)
+idx_album_artists_artist_id        ON album_artists(artist_id)
 ```
 
 ## Repository Patterns

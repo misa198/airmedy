@@ -34,6 +34,16 @@ type Lyric struct {
 
 ## Resolution Strategy
 
+Resolution priority (default `prefer_local_lyrics=true`) — first hit wins:
+
+```mermaid
+flowchart LR
+    A["Sibling .lrc"] --> B["Sibling .txt"] --> C["Subfolder<br/>(if enabled)"] --> D["Dedicated folder<br/>(if enabled)"] --> E["Metadata tag"] --> F["External<br/>(lrclib / KuGou)"]
+```
+
+`prefer_local_lyrics=false` flips it: external cached content is tried before the
+local tier. The local tier (A→E above) is always evaluated as one unit.
+
 `LyricsService.ResolveLyrics(ctx, trackID, audioPath, preferLocal bool, extraLyricsDir string)` picks the best lyric.
 
 The **local tier** is built first: a local lyric file (read live by `LocalLyricsReader`, `.lrc`
@@ -91,6 +101,20 @@ If both `enable_lrclib` and `enable_kugou` are false, no external fetch is attem
   `.lrc` renders synced and `.txt` renders plain automatically.
 
 ## Fetch Strategy
+
+External fetch is a fallback chain — each step tries the next only on miss:
+
+```mermaid
+flowchart TB
+    A["External fetch (provider enabled)"] --> B["1. lrclib exact<br/>title + artist + album + duration"]
+    B -->|hit| Z[("Cache in lyrics table<br/>+ return")]
+    B -->|404| C["2. Retry without album"]
+    C -->|hit| Z
+    C -->|404| D["3. Search & rank<br/>titleSim ≥ 0.7, dur diff ≤ 5s"]
+    D --> Z
+```
+
+Synced (LRC-timestamped) results are preferred over plain text at every step.
 
 ### 1. Exact Fetch
 

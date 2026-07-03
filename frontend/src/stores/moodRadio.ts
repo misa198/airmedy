@@ -17,14 +17,22 @@ export const useMoodRadioStore = defineStore('moodRadio', () => {
   async function start(seedTrack: TrackDTO) {
     seedTrackId.value = seedTrack.id
     active.value = true
-    // SeedMoodRadio/FindSimilar excludes the seed track from its results
-    // (it's always excluded as a candidate for itself), so it has to be
-    // prepended here — otherwise the track the user picked never plays,
-    // a similar track plays first instead.
-    const similar = await fetchSimilar(seedTrack.id)
-    const tracks = [seedTrack, ...similar.filter(t => t.id !== seedTrack.id)]
-    const playerStore = usePlayerStore()
-    await playerStore.playTracks(tracks, 0)
+    try {
+      // SeedMoodRadio/FindSimilar excludes the seed track from its results
+      // (it's always excluded as a candidate for itself), so it has to be
+      // prepended here — otherwise the track the user picked never plays,
+      // a similar track plays first instead.
+      const similar = await fetchSimilar(seedTrack.id)
+      const tracks = [seedTrack, ...similar.filter(t => t.id !== seedTrack.id)]
+      const playerStore = usePlayerStore()
+      await playerStore.playTracks(tracks, 0)
+    } catch (e) {
+      // Seeding failed (e.g. seed track not yet analyzed, backend error) —
+      // reset instead of leaving the radio "on" over a queue that never
+      // populated, which would keep refillIfNeeded firing against nothing.
+      console.error('Mood Radio start failed', e)
+      stop()
+    }
   }
 
   function stop() {

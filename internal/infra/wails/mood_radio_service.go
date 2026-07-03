@@ -6,12 +6,6 @@ import (
 	"airmedy/internal/domain"
 )
 
-// moodRadioSeedDecay is the decayFactor passed to FindSimilar for mood
-// radio seeding. Reserved/unused by the repo today (see
-// TrackQueryRepository docs); kept as a named default so callers don't need
-// to know that.
-const moodRadioSeedDecay = 1.0
-
 // MoodRadioService is the Wails binding for Mood Radio's "give me more like
 // this" queue seeding, backed directly by TrackQueryRepository — thin
 // enough that it doesn't warrant its own app-layer service.
@@ -24,5 +18,5 @@ func NewMoodRadioService(trackQueryRepo domain.TrackQueryRepository) *MoodRadioS
 }
 
 func (s *MoodRadioService) SeedMoodRadio(seedTrackID string, limit int) ([]*domain.TrackDTO, error) {
-	return s.trackQueryRepo.FindSimilar(context.Background(), seedTrackID, limit, moodRadioSeedDecay)
+	return s.trackQueryRepo.FindSimilar(context.Background(), seedTrackID, limit)
 }
