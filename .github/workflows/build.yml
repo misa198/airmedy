@@ -14,6 +14,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# actions/cache save needs a writable token scope. On the pull_request:closed
+# trigger the default GITHUB_TOKEN is read-only, so cache reservation fails with
+# "cache write denied: token has no writable scopes" — grant actions: write.
+permissions:
+  contents: read
+  actions: write
+
 jobs:
   build-ffmpeg-windows:
     name: Build FFmpeg for Windows
@@ -103,6 +110,48 @@ jobs:
           name: aubio-windows
           path: internal/infra/audio/aubio_libs
 
+  build-keyfinder-windows:
+    name: Build keyfinder + FFTW3 for Windows
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
+
+      - name: Cache keyfinder + FFTW3 (Windows)
+        id: cache-keyfinder
+        uses: actions/cache@v4
+        with:
+          path: |
+            internal/infra/audio/keyfinder_libs
+            internal/infra/audio/fftw3_libs
+          key: keyfinder-Windows-v1-${{ hashFiles('scripts/build-keyfinder-windows.sh', 'scripts/build-fftw3-windows.sh') }}
+
+      - name: Install mingw cross-compilers + cmake
+        if: steps.cache-keyfinder.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64-x86-64 cmake
+          sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
+          LLVM_MINGW=llvm-mingw-20260616-ucrt-ubuntu-22.04-x86_64
+          curl -L "https://github.com/mstorsjo/llvm-mingw/releases/download/20260616/${LLVM_MINGW}.tar.xz" -o /tmp/llvm-mingw.tar.xz
+          sudo tar -xf /tmp/llvm-mingw.tar.xz -C /opt
+          echo "/opt/${LLVM_MINGW}/bin" >> "$GITHUB_PATH"
+
+      - name: Build keyfinder + FFTW3 (Windows AMD64 + ARM64)
+        if: steps.cache-keyfinder.outputs.cache-hit != 'true'
+        run: bash scripts/build-keyfinder-windows.sh
+
+      - name: Upload keyfinder + FFTW3 libs
+        uses: actions/upload-artifact@v4
+        with:
+          name: keyfinder-windows
+          path: |
+            internal/infra/audio/keyfinder_libs
+            internal/infra/audio/fftw3_libs
+
   build-sfb-darwin:
     name: Build SFBAudioEngine for Darwin
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
@@ -184,6 +233,41 @@ jobs:
           name: aubio-darwin
           path: internal/infra/audio/aubio_libs
 
+  build-keyfinder-darwin:
+    name: Build keyfinder + FFTW3 for Darwin
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: macos-26
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
+
+      - name: Cache keyfinder + FFTW3 (Darwin)
+        id: cache-keyfinder
+        uses: actions/cache@v4
+        with:
+          path: |
+            internal/infra/audio/keyfinder_libs
+            internal/infra/audio/fftw3_libs
+          key: keyfinder-Darwin-v1-${{ hashFiles('scripts/build-keyfinder-darwin.sh', 'scripts/build-fftw3-darwin.sh') }}
+
+      - name: Install cmake
+        if: steps.cache-keyfinder.outputs.cache-hit != 'true'
+        run: brew list cmake >/dev/null 2>&1 || brew install cmake
+
+      - name: Build keyfinder + FFTW3 (Darwin ARM64 + AMD64)
+        if: steps.cache-keyfinder.outputs.cache-hit != 'true'
+        run: bash scripts/build-keyfinder-darwin.sh all
+
+      - name: Upload keyfinder + FFTW3 libs
+        uses: actions/upload-artifact@v4
+        with:
+          name: keyfinder-darwin
+          path: |
+            internal/infra/audio/keyfinder_libs
+            internal/infra/audio/fftw3_libs
+
   build-ffmpeg-linux:
     name: Build FFmpeg for Linux
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
@@ -250,9 +334,46 @@ jobs:
           name: aubio-linux
           path: internal/infra/audio/aubio_libs
 
+  build-keyfinder-linux:
+    name: Build keyfinder + FFTW3 for Linux
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
+
+      - name: Cache keyfinder + FFTW3 (Linux)
+        id: cache-keyfinder
+        uses: actions/cache@v4
+        with:
+          path: |
+            internal/infra/audio/keyfinder_libs
+            internal/infra/audio/fftw3_libs
+          key: keyfinder-Linux-v1-${{ hashFiles('scripts/build-keyfinder-linux.sh', 'scripts/build-fftw3-linux.sh') }}
+
+      - name: Install Linux cross-compile dependencies
+        if: steps.cache-keyfinder.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross pkg-config cmake
+
+      - name: Build keyfinder + FFTW3 (Linux AMD64 + ARM64)
+        if: steps.cache-keyfinder.outputs.cache-hit != 'true'
+        run: bash scripts/build-keyfinder-linux.sh
+
+      - name: Upload keyfinder + FFTW3 libs
+        uses: actions/upload-artifact@v4
+        with:
+          name: keyfinder-linux
+          path: |
+            internal/infra/audio/keyfinder_libs
+            internal/infra/audio/fftw3_libs
+
   build:
     name: Build ${{ matrix.os }}
-    needs: [build-ffmpeg-windows, build-aubio-windows, build-sfb-darwin, build-ffmpeg-darwin, build-aubio-darwin, build-ffmpeg-linux, build-aubio-linux]
+    needs: [build-ffmpeg-windows, build-aubio-windows, build-keyfinder-windows, build-sfb-darwin, build-ffmpeg-darwin, build-aubio-darwin, build-keyfinder-darwin, build-ffmpeg-linux, build-aubio-linux, build-keyfinder-linux]
     strategy:
       fail-fast: false
       matrix:
@@ -380,6 +501,13 @@ jobs:
           name: aubio-windows
           path: internal/infra/audio/aubio_libs
 
+      - name: Download keyfinder + FFTW3 (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/download-artifact@v4
+        with:
+          name: keyfinder-windows
+          path: internal/infra/audio
+
       - name: Download FFmpeg (Darwin)
         if: runner.os == 'macOS'
         uses: actions/download-artifact@v4
@@ -393,6 +521,13 @@ jobs:
         with:
           name: aubio-darwin
           path: internal/infra/audio/aubio_libs
+
+      - name: Download keyfinder + FFTW3 (Darwin)
+        if: runner.os == 'macOS'
+        uses: actions/download-artifact@v4
+        with:
+          name: keyfinder-darwin
+          path: internal/infra/audio
 
       - name: Restore SFB Audio Engine (Darwin)
         if: runner.os == 'macOS'
@@ -416,6 +551,13 @@ jobs:
         with:
           name: aubio-linux
           path: internal/infra/audio/aubio_libs
+
+      - name: Download keyfinder + FFTW3 (Linux)
+        if: runner.os == 'Linux'
+        uses: actions/download-artifact@v4
+        with:
+          name: keyfinder-linux
+          path: internal/infra/audio
 
       - name: Fetch miniaudio (Windows and Linux)
         if: (runner.os == 'Windows' || runner.os == 'Linux') && steps.cache-miniaudio.outputs.cache-hit != 'true'
