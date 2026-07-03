@@ -120,14 +120,20 @@ jobs:
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
 
-      - name: Cache keyfinder + FFTW3 (Windows)
+      # restore + save (not the combined cache action): build.yml has
+      # cancel-in-progress: true, and the combined action's save runs as a
+      # post-job step that still fires on a mid-build cancellation, persisting
+      # a partial (corrupt) lib set under an immutable cache key forever. Save
+      # explicitly right after the build completes so a cancellation just
+      # skips the save (cache miss next time) instead of poisoning the cache.
+      - name: Restore keyfinder + FFTW3 (Windows)
         id: cache-keyfinder
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             internal/infra/audio/keyfinder_libs
             internal/infra/audio/fftw3_libs
-          key: keyfinder-Windows-v1-${{ hashFiles('scripts/build-keyfinder-windows.sh', 'scripts/build-fftw3-windows.sh') }}
+          key: keyfinder-Windows-v2-${{ hashFiles('scripts/build-keyfinder-windows.sh', 'scripts/build-fftw3-windows.sh') }}
 
       - name: Install mingw cross-compilers + cmake
         if: steps.cache-keyfinder.outputs.cache-hit != 'true'
@@ -147,6 +153,15 @@ jobs:
       - name: Build keyfinder + FFTW3 (Windows AMD64 + ARM64)
         if: steps.cache-keyfinder.outputs.cache-hit != 'true'
         run: bash scripts/build-keyfinder-windows.sh
+
+      - name: Save keyfinder + FFTW3 (Windows)
+        if: steps.cache-keyfinder.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            internal/infra/audio/keyfinder_libs
+            internal/infra/audio/fftw3_libs
+          key: keyfinder-Windows-v2-${{ hashFiles('scripts/build-keyfinder-windows.sh', 'scripts/build-fftw3-windows.sh') }}
 
       - name: Upload keyfinder + FFTW3 libs
         uses: actions/upload-artifact@v4
@@ -247,14 +262,14 @@ jobs:
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
 
-      - name: Cache keyfinder + FFTW3 (Darwin)
+      - name: Restore keyfinder + FFTW3 (Darwin)
         id: cache-keyfinder
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             internal/infra/audio/keyfinder_libs
             internal/infra/audio/fftw3_libs
-          key: keyfinder-Darwin-v1-${{ hashFiles('scripts/build-keyfinder-darwin.sh', 'scripts/build-fftw3-darwin.sh') }}
+          key: keyfinder-Darwin-v2-${{ hashFiles('scripts/build-keyfinder-darwin.sh', 'scripts/build-fftw3-darwin.sh') }}
 
       - name: Install cmake
         if: steps.cache-keyfinder.outputs.cache-hit != 'true'
@@ -263,6 +278,15 @@ jobs:
       - name: Build keyfinder + FFTW3 (Darwin ARM64 + AMD64)
         if: steps.cache-keyfinder.outputs.cache-hit != 'true'
         run: bash scripts/build-keyfinder-darwin.sh all
+
+      - name: Save keyfinder + FFTW3 (Darwin)
+        if: steps.cache-keyfinder.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            internal/infra/audio/keyfinder_libs
+            internal/infra/audio/fftw3_libs
+          key: keyfinder-Darwin-v2-${{ hashFiles('scripts/build-keyfinder-darwin.sh', 'scripts/build-fftw3-darwin.sh') }}
 
       - name: Upload keyfinder + FFTW3 libs
         uses: actions/upload-artifact@v4
@@ -348,14 +372,14 @@ jobs:
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
 
-      - name: Cache keyfinder + FFTW3 (Linux)
+      - name: Restore keyfinder + FFTW3 (Linux)
         id: cache-keyfinder
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             internal/infra/audio/keyfinder_libs
             internal/infra/audio/fftw3_libs
-          key: keyfinder-Linux-v1-${{ hashFiles('scripts/build-keyfinder-linux.sh', 'scripts/build-fftw3-linux.sh') }}
+          key: keyfinder-Linux-v2-${{ hashFiles('scripts/build-keyfinder-linux.sh', 'scripts/build-fftw3-linux.sh') }}
 
       - name: Install Linux cross-compile dependencies
         if: steps.cache-keyfinder.outputs.cache-hit != 'true'
@@ -366,6 +390,15 @@ jobs:
       - name: Build keyfinder + FFTW3 (Linux AMD64 + ARM64)
         if: steps.cache-keyfinder.outputs.cache-hit != 'true'
         run: bash scripts/build-keyfinder-linux.sh
+
+      - name: Save keyfinder + FFTW3 (Linux)
+        if: steps.cache-keyfinder.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            internal/infra/audio/keyfinder_libs
+            internal/infra/audio/fftw3_libs
+          key: keyfinder-Linux-v2-${{ hashFiles('scripts/build-keyfinder-linux.sh', 'scripts/build-fftw3-linux.sh') }}
 
       - name: Upload keyfinder + FFTW3 libs
         uses: actions/upload-artifact@v4
