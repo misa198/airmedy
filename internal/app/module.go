@@ -76,6 +76,7 @@ var Module = fx.Module("app",
 		wails.NewSettingsService,
 		wails.NewRemoteServerService,
 		wails.NewUpdaterService,
+		wails.NewMoodRadioService,
 		func(logger *slog.Logger) *updater.Service {
 			return updater.NewService(config.Version, logger)
 		},
@@ -112,6 +113,7 @@ var Module = fx.Module("app",
 				})
 				lib.AddTrackDeletedListener(func(trackIDs []string) {
 					analysisSvc.Dequeue(trackIDs)
+					analysisSvc.NotifyTracksDeleted(trackIDs)
 				})
 				playerSvc.AddStatusListener(func(status domain.PlayerStatus) {
 					analysisSvc.SetThrottled(status.PlaybackState == domain.PlaybackStatePlaying)

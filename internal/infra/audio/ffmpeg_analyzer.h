@@ -31,6 +31,8 @@
 
 #include <aubio/aubio.h>
 
+#include "keyfinder_bridge.h"
+
 /* aubio tempo runs on a fixed mono rate so BPM math is rate-independent. */
 #define FFA_TEMPO_RATE 44100
 #define FFA_TEMPO_BUF  1024
@@ -49,6 +51,9 @@ typedef struct {
     double spectral_flux;     /* aspectralstats flux, mean                     */
     double zcr;               /* astats overall zero-crossings rate            */
     double tempo;             /* estimated tempo (BPM) via aubio, 0 if unknown */
+    double onset_variance;    /* inter-onset-interval variance via aubio_onset */
+    int    pitch_class;       /* musical key root, 0-11 (C=0); -1 if undetermined */
+    int    mode;              /* 0=major, 1=minor; -1 if undetermined            */
 } FFAnalysisResult;
 
 enum {
@@ -69,14 +74,23 @@ static int ffa_get_meta(AVFrame *f, const char *key, double *val) {
 }
 
 /*
- * ffa_feed_tempo resamples one decoded frame to mono float @ FFA_TEMPO_RATE and
- * pushes the samples into aubio_tempo in hop-sized chunks, accumulating a BPM
- * estimate on each detected beat. No-op if tempo detection is disabled (any
- * pointer NULL). Non-fatal: on resample failure it simply skips the frame.
+ * ffa_feed_tempo_onset resamples one decoded frame to mono float @ FFA_TEMPO_RATE
+ * and pushes the samples into aubio_tempo + aubio_onset + the libkeyfinder bridge
+ * in hop-sized chunks (all three consume the same resampled buffer — no extra
+ * decode/resample pass), accumulating a BPM estimate on each detected beat, an
+ * inter-onset-interval variance via Welford's running-variance algorithm on each
+ * detected onset, and a running chromagram for key detection. No-op if tempo
+ * detection is disabled (tempo-related pointers NULL); onset and key detection
+ * are each independently optional (may be NULL while tempo still runs).
+ * Non-fatal: on resample failure it simply skips the frame.
  */
-static void ffa_feed_tempo(AVFrame *frame, SwrContext *swr, float **swr_out, int *swr_cap,
+static void ffa_feed_tempo_onset(AVFrame *frame, SwrContext *swr, float **swr_out, int *swr_cap,
                            aubio_tempo_t *tempo, fvec_t *in, fvec_t *out, float *buf, int *fill,
-                           double *bpm_sum, long *bpm_count) {
+                           double *bpm_sum, long *bpm_count,
+                           aubio_onset_t *onset, fvec_t *onset_out,
+                           long *onset_total_samples, long *onset_last_pos,
+                           long *onset_count, double *onset_mean, double *onset_M2,
+                           KeyFinderCtx *keyfinder) {
     if (!swr || !tempo || !in || !out || !buf) return;
 
     int max_out = swr_get_out_samples(swr, frame->nb_samples) + 256;
@@ -99,6 +113,27 @@ static void ffa_feed_tempo(AVFrame *frame, SwrContext *swr, float **swr_out, int
                 double b = (double)aubio_tempo_get_bpm(tempo);
                 if (b > 0) { *bpm_sum += b; (*bpm_count)++; }
             }
+            if (onset && onset_out) {
+                aubio_onset_do(onset, in, onset_out);
+                /* aubio's peak-picker reports a spurious onset during warm-up
+                 * (HFC has no prior history yet) — ignore hits before the
+                 * analysis window has filled once. */
+                if (onset_out->data[0] != 0 && *onset_total_samples >= FFA_TEMPO_BUF) {
+                    long pos = *onset_total_samples;
+                    if (*onset_last_pos >= 0) {
+                        double interval = (double)(pos - *onset_last_pos);
+                        (*onset_count)++;
+                        double delta = interval - *onset_mean;
+                        *onset_mean += delta / (double)(*onset_count);
+                        *onset_M2 += delta * (interval - *onset_mean);
+                    }
+                    *onset_last_pos = pos;
+                }
+                *onset_total_samples += FFA_TEMPO_HOP;
+            }
+            if (keyfinder) {
+                keyfinder_feed(keyfinder, buf, FFA_TEMPO_HOP);
+            }
             *fill = 0;
         }
     }
@@ -112,6 +147,8 @@ static void ffa_feed_tempo(AVFrame *frame, SwrContext *swr, float **swr_out, int
 static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int *cancel) {
     if (!path || !out) return FFA_ERR_OPEN;
     memset(out, 0, sizeof(*out));
+    out->pitch_class = -1; /* 0 is a valid pitch class (C); -1 = undetermined */
+    out->mode = -1;
 
     AVFormatContext *fmt_ctx = NULL;
     AVCodecContext  *codec_ctx = NULL;
@@ -133,6 +170,21 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
     int           swr_out_cap = 0;
     double        bpm_sum = 0;       /* mean of per-beat BPM estimates */
     long          bpm_count = 0;
+
+    /* onset detection (rhythm regularity) via aubio, sharing tempo's resampled
+     * buffer/hop cadence. Welford's running-variance algorithm avoids storing
+     * every onset timestamp for long tracks. */
+    aubio_onset_t *onset = NULL;
+    fvec_t        *onset_out = NULL;
+    long           onset_total_samples = 0;
+    long           onset_last_pos = -1;    /* -1 = no onset seen yet */
+    long           onset_count = 0;        /* number of intervals seen */
+    double         onset_mean = 0;
+    double         onset_M2 = 0;           /* sum of squared deviations from mean */
+
+    /* musical key/mode via libkeyfinder, sharing tempo's resampled mono buffer.
+     * Non-fatal: leave out->pitch_class = out->mode = -1 (undetermined). */
+    KeyFinderCtx *keyfinder = NULL;
 
     /* spectral accumulators (mean over frames) + peak running maxima */
     double sp_centroid = 0, sp_rolloff = 0, sp_flatness = 0, sp_flux = 0;
@@ -280,6 +332,24 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
                 tempo = NULL; tempo_in = NULL; tempo_out = NULL; tempo_buf = NULL; tempo_swr = NULL;
             }
         }
+
+        /* ---- onset detection: reuses tempo's swr + hop buffer, independent of
+         * tempo's own success/failure. Non-fatal: leave out->onset_variance = 0. */
+        if (tempo_swr) {
+            onset = new_aubio_onset("hfc", FFA_TEMPO_BUF, FFA_TEMPO_HOP, FFA_TEMPO_RATE);
+            onset_out = new_fvec(1);
+            if (!onset || !onset_out) {
+                if (onset) del_aubio_onset(onset);
+                if (onset_out) del_fvec(onset_out);
+                onset = NULL; onset_out = NULL;
+            }
+        }
+
+        /* ---- key detection: reuses tempo's swr + hop buffer, independent of
+         * tempo/onset's own success/failure. */
+        if (tempo_swr) {
+            keyfinder = keyfinder_new(FFA_TEMPO_RATE);
+        }
     }
 
     pkt = av_packet_alloc();
@@ -302,9 +372,13 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
                     av_frame_unref(frame);
                     rc = FFA_ERR_PROCESS; goto done;
                 }
-                ffa_feed_tempo(frame, tempo_swr, &swr_out, &swr_out_cap,
+                ffa_feed_tempo_onset(frame, tempo_swr, &swr_out, &swr_out_cap,
                                tempo, tempo_in, tempo_out, tempo_buf, &tempo_fill,
-                               &bpm_sum, &bpm_count);
+                               &bpm_sum, &bpm_count,
+                               onset, onset_out,
+                               &onset_total_samples, &onset_last_pos,
+                               &onset_count, &onset_mean, &onset_M2,
+                               keyfinder);
                 av_frame_unref(frame);
             } else if (ret == AVERROR(EAGAIN)) {
                 if (flushed) {
@@ -388,10 +462,22 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
         }
         /* Mean of the per-beat BPM estimates; 0 when no stable beat was found. */
         out->tempo = (bpm_count > 0) ? (bpm_sum / (double)bpm_count) : 0;
+        /* Sample variance of inter-onset intervals; 0 when too few onsets to measure. */
+        out->onset_variance = (onset_count > 1) ? (onset_M2 / (double)(onset_count - 1)) : 0;
+        if (keyfinder) {
+            int pc = -1, mode = -1;
+            if (keyfinder_result(keyfinder, &pc, &mode) == 0) {
+                out->pitch_class = pc;
+                out->mode = mode;
+            }
+        }
         rc = FFA_OK;
     }
 
 done:
+    if (keyfinder) keyfinder_free(keyfinder);
+    if (onset) del_aubio_onset(onset);
+    if (onset_out) del_fvec(onset_out);
     if (tempo) del_aubio_tempo(tempo);
     if (tempo_in) del_fvec(tempo_in);
     if (tempo_out) del_fvec(tempo_out);

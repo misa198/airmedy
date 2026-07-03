@@ -5,8 +5,9 @@
 Background pipeline that decodes each track once, runs an ffmpeg `libavfilter`
 graph (`ebur128,aspectralstats,astats`) plus aubio tempo detection in-process via
 cgo, and stores the result (loudness, dynamics, spectral features, tempo) in
-`track_features`. This is the sole data source for [Volume Normalization](../normalization/README.md);
-mood-derived smart-mix is reserved-but-unbuilt on the same rows.
+`track_features`. This is the sole data source for [Volume Normalization](../normalization/README.md).
+`energy`/`danceability` are now derived from these raw features (rule-based, no ML) and consumed by
+[Smart Playlists](../smart-playlists/README.md); `valence` remains reserved-but-unbuilt pending Essentia ML work.
 
 The pipeline is **opt-in** (`AppSettings.LibraryAnalysisEnabled`, default `false`):
 the worker pool exists only while enabled. Disabling it also force-disables

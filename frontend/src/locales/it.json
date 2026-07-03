@@ -203,7 +203,7 @@
     "library_analysis": {
       "title": "Analisi della libreria",
       "enable": "Attiva analisi della libreria",
-      "enable_desc": "Analizza la tua libreria in background per misurare il volume e le caratteristiche audio di ogni brano. Necessario prima di poter usare la normalizzazione del volume.",
+      "enable_desc": "Analizza la tua libreria musicale in background per misurare il volume e le caratteristiche audio di ogni brano.\nNecessario prima di poter usare la normalizzazione del volume e la Radio dell'umore.\nQuesto processo può richiedere del tempo, in base alle prestazioni del tuo computer.",
       "requires_enable": "Attiva l'analisi della libreria sopra per usare la normalizzazione del volume"
     },
     "normalization": {
@@ -272,6 +272,7 @@
     "pause": "Pausa",
     "next": "Successivo",
     "repeat": "Ripeti",
+    "mood_radio_active": "Radio dell'umore attiva",
     "mute": "Muta",
     "unmute": "Attiva audio",
     "lyrics": "Testi",
@@ -382,7 +383,8 @@
     "refresh_lyrics": "Aggiorna testi",
     "find_lyrics": "Trova testi",
     "remove_from_queue": "Rimuovi dalla coda",
-    "export_playlist": "Esporta playlist"
+    "export_playlist": "Esporta playlist",
+    "start_mood_radio": "Avvia Radio Mood"
   },
   "find_lyrics": {
     "title": "Trova testi",

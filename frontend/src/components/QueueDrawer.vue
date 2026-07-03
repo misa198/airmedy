@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted } from 'vue'
-import { Music, X, ListMusic, MoreVertical, GripVertical, Goal } from 'lucide-vue-next'
+import { Music, X, ListMusic, MoreVertical, GripVertical, Goal, Radio } from 'lucide-vue-next'
 import { usePlayerStore } from '../stores/player'
+import { useMoodRadioStore } from '../stores/moodRadio'
 import { formatTime, buildArtworkUrl, getTrackDisplayTitle } from '@airmedy/utils'
 import LazyImg from '@/components/LazyImg.vue'
 import { useI18n } from 'vue-i18n'
@@ -11,6 +12,7 @@ import VirtualList from 'vue-virtual-sortable'
 
 const { t } = useI18n()
 const store = usePlayerStore()
+const moodRadioStore = useMoodRadioStore()
 const scroller = ref<any>(null)
 const trackContextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
 
@@ -49,7 +51,8 @@ onUnmounted(() => {
       <div class="flex items-center gap-2 font-semibold">
         <ListMusic class="w-4 h-4 text-primary" />
         <span>{{ t('player.queue') }}</span>
-        <span class="text-xs text-muted-foreground font-normal ml-1">({{ store.queue.length }})</span>
+        <Radio v-if="moodRadioStore.active" class="w-3.5 h-3.5 text-primary ml-1" :title="t('player.mood_radio_active')" />
+        <span v-else class="text-xs text-muted-foreground font-normal ml-1">({{ store.queue.length }})</span>
       </div>
       <div class="flex items-center gap-1">
         <button

@@ -203,7 +203,7 @@
     "library_analysis": {
       "title": "Phân tích thư viện",
       "enable": "Bật phân tích thư viện",
-      "enable_desc": "Quét thư viện của bạn trong nền để đo độ to và đặc trưng âm thanh của từng bài hát. Cần bật trước khi có thể dùng Chuẩn hóa âm lượng.",
+      "enable_desc": "Quét thư viện nhạc của bạn ở chế độ nền để đo độ lớn và đặc điểm âm thanh của từng bản nhạc.\nBắt buộc trước khi có thể sử dụng tính năng Chuẩn hóa âm lượng và Chế độ âm thanh radio.\nQuá trình này có thể mất một khoảng thời gian, phụ thuộc vào cấu hình máy của bạn.",
       "requires_enable": "Bật Phân tích thư viện ở trên để dùng Chuẩn hóa âm lượng"
     },
     "normalization": {
@@ -272,6 +272,7 @@
     "pause": "Tạm dừng",
     "next": "Tiếp theo",
     "repeat": "Lặp lại",
+    "mood_radio_active": "Radio tâm trạng đang phát",
     "mute": "Tắt tiếng",
     "unmute": "Bật tiếng",
     "lyrics": "Lời bài hát",
@@ -382,7 +383,8 @@
     "refresh_lyrics": "Tải lại lời bài hát",
     "find_lyrics": "Tìm lời bài hát",
     "remove_from_queue": "Xóa khỏi hàng đợi",
-    "export_playlist": "Xuất danh sách phát"
+    "export_playlist": "Xuất danh sách phát",
+    "start_mood_radio": "Bắt đầu Radio Tâm trạng"
   },
   "find_lyrics": {
     "title": "Tìm lời bài hát",

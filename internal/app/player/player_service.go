@@ -524,6 +524,12 @@ func (s *PlayerService) PlayNextTracks(tracks []*domain.TrackDTO) {
 	s.emitQueue()
 }
 
+// AppendTracks adds tracks to the end of the queue in a single mutation.
+func (s *PlayerService) AppendTracks(tracks []*domain.TrackDTO) {
+	s.queue.AppendTracks(tracks)
+	s.emitQueue()
+}
+
 // RemoveFromQueue removes a track from the queue.
 func (s *PlayerService) RemoveFromQueue(trackID string) {
 	s.mu.RLock()

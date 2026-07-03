@@ -197,6 +197,15 @@ type AnalysisProgress struct {
 	Done  int    `json:"done"`
 	Total int    `json:"total"`
 	State string `json:"state"` // "analyzing" | "paused" | "done"
+
+	// LibraryDone/LibraryTotal report library-wide analysis readiness (how
+	// much of the whole library has ever been analyzed), independent of
+	// Done/Total which track only the tracks pending in the current
+	// analysis session. Without this split, adding tracks to an
+	// already-analyzed library reset the reported percentage to the new
+	// session's 0% instead of the library's true readiness.
+	LibraryDone  int `json:"libraryDone"`
+	LibraryTotal int `json:"libraryTotal"`
 }
 
 const (
@@ -257,12 +266,27 @@ type TrackFeatures struct {
 	SpectralFlux     float64   `json:"spectral_flux" db:"spectral_flux"`
 	ZCR              float64   `json:"zcr" db:"zcr"`
 
-	Tempo        float64 `json:"tempo" db:"tempo"`
-	MusicalKey   string  `json:"musical_key" db:"musical_key"`
-	Mode         string  `json:"mode" db:"mode"`
-	Valence      float64 `json:"valence" db:"valence"`
-	Energy       float64 `json:"energy" db:"energy"`
-	Danceability float64 `json:"danceability" db:"danceability"`
+	Tempo         float64 `json:"tempo" db:"tempo"`
+	OnsetVariance float64 `json:"onset_variance" db:"onset_variance"`
+	MusicalKey    string  `json:"musical_key" db:"musical_key"`
+	Mode          string  `json:"mode" db:"mode"`
+	Valence       float64 `json:"valence" db:"valence"`
+	Energy        float64 `json:"energy" db:"energy"`
+	Danceability  float64 `json:"danceability" db:"danceability"`
+}
+
+// FeaturePercentileRow is one row of the cached corpus percentile table
+// (feature_percentiles), used by the mood-derivation stage to normalize raw
+// DSP features against the analyzed library's distribution.
+type FeaturePercentileRow struct {
+	FeatureName string    `json:"feature_name" db:"feature_name"`
+	P1          float64   `json:"p1" db:"p1"`
+	P5          float64   `json:"p5" db:"p5"`
+	P50         float64   `json:"p50" db:"p50"`
+	P95         float64   `json:"p95" db:"p95"`
+	P99         float64   `json:"p99" db:"p99"`
+	SampleCount int       `json:"sample_count" db:"sample_count"`
+	ComputedAt  time.Time `json:"computed_at" db:"computed_at"`
 }
 
 // AppSettings holds general application settings
@@ -308,4 +332,10 @@ type AppSettings struct {
 	AlbumArtistDelimiters []string `json:"album_artist_delimiters"`
 	GenreDelimiters       []string `json:"genre_delimiters"`
 	ComposerDelimiters    []string `json:"composer_delimiters"`
+
+	// MoodDerivationVersion is bumped whenever feature_percentiles is
+	// recomputed, which makes every track's tracks.mood_derived_version
+	// stale (< this value) and therefore re-picked-up for re-derivation.
+	// Not user-facing.
+	MoodDerivationVersion int `json:"mood_derivation_version"`
 }

@@ -169,6 +169,10 @@ type AnalysisRepository interface {
 	GetFeatures(ctx context.Context, trackID string) (*TrackFeatures, error)
 	// CountPending returns how many tracks have analyzed_version < currentVersion.
 	CountPending(ctx context.Context, currentVersion int) (int, error)
+	// CountAll returns the total number of tracks in the library, used to
+	// compute library-wide analysis readiness (independent of the current
+	// analysis session's own done/total counters).
+	CountAll(ctx context.Context) (int, error)
 	// ListPending returns up to limit track IDs with analyzed_version <
 	// currentVersion, oldest-added first (stable backfill order).
 	ListPending(ctx context.Context, currentVersion, limit int) ([]string, error)
@@ -186,6 +190,44 @@ type AnalysisRepository interface {
 	// failed tracks (MarkFailed also bumps analyzed_version), so callers can
 	// skip re-running the analyzer on a track that already failed once.
 	IsAnalyzed(ctx context.Context, trackID string, currentVersion int) (bool, error)
+
+	// UpsertMoodFeatures writes the derived energy/danceability for a track
+	// and, in the same transaction, bumps tracks.mood_derived_version to
+	// moodVersion. Touches only the energy/danceability columns of
+	// track_features (leaves the raw analyzer columns and valence
+	// untouched). Requires an existing track_features row for trackID (raw
+	// analysis must have run first).
+	UpsertMoodFeatures(ctx context.Context, trackID string, energy, danceability float64, moodVersion int) error
+	// GetFeaturePercentiles returns the full cached corpus percentile table
+	// (one row per feature name), or an empty map if none computed yet.
+	GetFeaturePercentiles(ctx context.Context) (map[string]FeaturePercentileRow, error)
+	// UpsertFeaturePercentiles replaces the stored percentile rows for the
+	// given features, one upsert per row by feature_name.
+	UpsertFeaturePercentiles(ctx context.Context, rows []FeaturePercentileRow) error
+	// ListRawFeatureValues returns, for every corpus-percentile feature, the
+	// full column of raw values across all analyzed tracks, keyed by
+	// feature name. Percentiles are computed in Go rather than via SQL
+	// window functions (SQLite's percentile support is inconsistent across
+	// builds).
+	ListRawFeatureValues(ctx context.Context) (map[string][]float64, error)
+	// ListMoodPending returns up to limit track IDs where raw features
+	// already exist (track_features row present) and
+	// tracks.mood_derived_version < currentMoodVersion, oldest-added first.
+	ListMoodPending(ctx context.Context, currentMoodVersion, limit int) ([]string, error)
+}
+
+// TrackQueryRepository answers similarity lookups over analyzed track
+// features. Currently just backs Mood Radio's "give me more like this"
+// queue refill — kept as its own narrow interface (rather than growing
+// TrackRepository) so it stays easy to extend later without touching the
+// stable CRUD/listing port.
+type TrackQueryRepository interface {
+	// FindSimilar returns up to limit tracks most similar to seedTrackID by
+	// weighted-euclidean distance over analyzed mood/tempo features,
+	// nearest first, excluding the seed track itself and any unanalyzed
+	// track. decayFactor is reserved for future ranking-decay tuning and is
+	// currently unused.
+	FindSimilar(ctx context.Context, seedTrackID string, limit int, decayFactor float64) ([]*TrackDTO, error)
 }
 
 type MiniPlayerStateRepository interface {

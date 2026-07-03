@@ -122,6 +122,10 @@ func (s *PlayerService) PlayNextTracks(tracks []*domain.TrackDTO) {
 	s.service.PlayNextTracks(tracks)
 }
 
+func (s *PlayerService) AppendTracks(tracks []*domain.TrackDTO) {
+	s.service.AppendTracks(tracks)
+}
+
 func (s *PlayerService) RemoveFromQueue(trackID string) {
 	s.service.RemoveFromQueue(trackID)
 }

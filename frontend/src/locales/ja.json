@@ -203,7 +203,7 @@
     "library_analysis": {
       "title": "ライブラリ分析",
       "enable": "ライブラリ分析を有効にする",
-      "enable_desc": "バックグラウンドでライブラリを分析し、各トラックのラウドネスと音声特性を測定します。音量正規化を使用する前に必要です。",
+      "enable_desc": "バックグラウンドで音楽ライブラリをスキャンし、各トラックのラウドネスと音声特性を測定します。\n音量正規化とムードラジオを使用する前に必須です。\nこの処理にはお使いの端末の性能によって時間がかかる場合があります。",
       "requires_enable": "音量正規化を使うには、上のライブラリ分析を有効にしてください"
     },
     "normalization": {
@@ -272,6 +272,7 @@
     "pause": "一時停止",
     "next": "次へ",
     "repeat": "リピート",
+    "mood_radio_active": "ムードラジオ再生中",
     "mute": "ミュート",
     "unmute": "ミュート解除",
     "lyrics": "歌詞",
@@ -382,7 +383,8 @@
     "refresh_lyrics": "歌詞を更新",
     "find_lyrics": "歌詞を検索",
     "remove_from_queue": "キューから削除",
-    "export_playlist": "プレイリストをエクスポート"
+    "export_playlist": "プレイリストをエクスポート",
+    "start_mood_radio": "ムードラジオを開始"
   },
   "find_lyrics": {
     "title": "歌詞を検索",

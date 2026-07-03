@@ -203,7 +203,7 @@
     "library_analysis": {
       "title": "Library Analysis",
       "enable": "Enable Library Analysis",
-      "enable_desc": "Scan your library in the background to measure each track's loudness and audio characteristics. Required before Volume Normalization can be used.",
+      "enable_desc": "Scans your music library in the background to measure each track's loudness and audio characteristics.\nRequired before Volume Normalization and Mood Radio can be used.\nThis process can take a while, depending on your machine's specs.",
       "requires_enable": "Enable Library Analysis above to use Volume Normalization"
     },
     "normalization": {
@@ -272,6 +272,7 @@
     "pause": "Pause",
     "next": "Next",
     "repeat": "Repeat",
+    "mood_radio_active": "Mood Radio active",
     "mute": "Mute",
     "unmute": "Unmute",
     "lyrics": "Lyrics",
@@ -382,7 +383,8 @@
     "refresh_lyrics": "Refresh Lyrics",
     "find_lyrics": "Find Lyrics",
     "remove_from_queue": "Remove from Queue",
-    "export_playlist": "Export Playlist"
+    "export_playlist": "Export Playlist",
+    "start_mood_radio": "Start Mood Radio"
   },
   "find_lyrics": {
     "title": "Find Lyrics",

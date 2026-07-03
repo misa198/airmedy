@@ -42,17 +42,35 @@ const lufsMarkPct = (value: number) =>
 const analysisDone = ref(0)
 const analysisTotal = ref(0)
 const analysisState = ref<'analyzing' | 'paused' | 'done'>('done')
+const libraryDone = ref(0)
+const libraryTotal = ref(0)
 
+// Session progress: how far the current analysis run has gotten through the
+// tracks it found pending when it started.
 const analysisPercent = computed(() =>
   analysisTotal.value > 0 ? Math.round((analysisDone.value / analysisTotal.value) * 100) : 100
 )
+// Library readiness: how much of the whole library has ever been analyzed.
+// Distinct from analysisPercent — adding new tracks drops this but resets
+// analysisPercent's own session to 0%, so the two must not share one number.
+const readinessPercent = computed(() =>
+  libraryTotal.value > 0 ? Math.round((libraryDone.value / libraryTotal.value) * 100) : 100
+)
 
 const handleAnalysisProgress = (ev: Events.WailsEvent) => {
-  const data = ev.data as { done: number; total: number; state: 'analyzing' | 'paused' | 'done' }
+  const data = ev.data as {
+    done: number
+    total: number
+    state: 'analyzing' | 'paused' | 'done'
+    libraryDone: number
+    libraryTotal: number
+  }
   console.debug('[analysis:progress]', data)
   analysisDone.value = data.done
   analysisTotal.value = data.total
   analysisState.value = data.state
+  libraryDone.value = data.libraryDone
+  libraryTotal.value = data.libraryTotal
 }
 
 let offAnalysisProgress: (() => void) | null = null
@@ -90,7 +108,7 @@ onUnmounted(() => {
     <SettingSection :icon="Gauge" :label="t('settings.library_analysis.title')">
       <template #header-extra>
         <p v-if="appStore.libraryAnalysisEnabled" class="text-xs text-foreground opacity-50">
-          {{ t('settings.normalization.readiness', { percent: analysisPercent }) }}
+          {{ t('settings.normalization.readiness', { percent: readinessPercent }) }}
         </p>
       </template>
       <SettingRow :title="t('settings.library_analysis.enable')" :description="t('settings.library_analysis.enable_desc')">
