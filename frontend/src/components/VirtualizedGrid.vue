@@ -13,7 +13,7 @@ const props = defineProps<{
 }>()
 
 const paddingX = computed(() => props.paddingX ?? 24)
-const paddingY = computed(() => props.paddingY ?? 32)
+const paddingY = computed(() => props.paddingY ?? 24)
 
 const containerRef = ref<HTMLElement | null>(null)
 const scrollerRef = ref<any>(null)
@@ -25,7 +25,7 @@ const itemHeight = computed(() => props.itemHeight || 280)
 const gap = computed(() => props.gap || 24)
 const minWidth = computed(() => props.minColumnWidth || 160)
 
-const updateColumns = () => {
+const updateColumns = (anchor = false) => {
   if (!containerRef.value) return
 
   // Anchor to the top-most visible item so a width change (which alters both
@@ -34,18 +34,21 @@ const updateColumns = () => {
   const oldItemSize = totalItemHeight.value
   const oldColumns = columns.value
   const scrollTop = el ? el.scrollTop : 0
-  const firstRow = oldItemSize > 0 ? Math.max(0, Math.round((scrollTop - paddingY.value) / oldItemSize)) : 0
+  // Only anchor when actually scrolled into the rows; while inside the top
+  // padding zone keep the scroll position as-is so the top whitespace shows.
+  const shouldAnchor = anchor && el != null && oldItemSize > 0 && scrollTop > paddingY.value
+  const firstRow = shouldAnchor ? Math.floor((scrollTop - paddingY.value) / oldItemSize) : 0
   const firstItemIndex = firstRow * oldColumns
 
   containerWidth.value = containerRef.value.clientWidth
   const calculatedCols = Math.max(1, Math.floor((containerWidth.value + gap.value) / (minWidth.value + gap.value)))
   columns.value = calculatedCols
 
-  if (el) {
+  if (shouldAnchor) {
     nextTick(() => {
       const newRow = Math.floor(firstItemIndex / columns.value)
-      el.scrollTop = paddingY.value + newRow * totalItemHeight.value
-      lastScrollTop.value = el.scrollTop
+      el!.scrollTop = paddingY.value + newRow * totalItemHeight.value
+      lastScrollTop.value = el!.scrollTop
     })
   }
 }
@@ -63,7 +66,7 @@ onMounted(() => {
   updateColumns()
   if (containerRef.value) {
     resizeObserver = new ResizeObserver(() => {
-      updateColumns()
+      updateColumns(true)
     })
     resizeObserver.observe(containerRef.value)
   }
