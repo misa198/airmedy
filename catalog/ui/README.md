@@ -231,19 +231,18 @@ Props: `modelValue`, `min`, `max`, `step`, `class`, `scrollable`.
 | `useGroupContextMenu`   | Multi-track selection menu (Play Next, Add to Playlist) |
 | `useTrackTableSettings` | Column config with localStorage persistence             |
 | `useLyrics`             | LRC parser for synced/plain view                        |
-| `useGlassBlur`          | WebGL 2-pass Gaussian blur for mini player background   |
 | `useKeyboardShortcut`   | Global key binding registration                         |
 | `useRestoreScroll`      | Scroll position restore on keep-alive activation        |
 | `useLibraryUpdates`     | Reactive array sync on library:track-updated events     |
 
-## WebGL Blur (`useGlassBlur.ts`)
+## Mini Player Glass Panel
 
-Used in the mini player for the artwork background.
+The mini player controls sit over a CSS glassmorphism panel (`.glass-panel` in `MiniPlayerFloating.vue`), not a rendered artwork copy:
 
-1. Load image into WebGL texture (max 256px to limit VRAM).
-2. **Pass 1:** Horizontal Gaussian blur via fragment shader.
-3. **Pass 2:** Vertical Gaussian blur + brightness adjustment + gradient alpha fade (transparent at top, opaque at bottom).
-4. Render to canvas element behind the controls.
+- Full-width layer anchored to the bottom, 300px tall.
+- `backdrop-filter: blur(24px)` blurs the artwork directly behind it; a `linear-gradient` dark tint sits on top.
+- `mask-image` (bottom→top) fades the blur out: full strength for the bottom 25%, gone by the top.
+- GPU-compositing hints (`transform: translateZ(0)`, `will-change`, `backface-visibility: hidden`, `isolation: isolate`) force a dedicated layer to avoid `backdrop-filter` repaint flicker on macOS.
 
 ## Internationalization
 
@@ -261,4 +260,4 @@ Used in the mini player for the artwork background.
 - Artwork requests use variants (`_sm`, `_md`) sized appropriately for each context.
 - `shallowRef` used for large reactive arrays (queue, tracks, albums).
 - Column widths cached in localStorage to avoid recalculation.
-- WebGL blur texture capped at 256px to limit GPU memory.
+- Mini player glass panel uses `backdrop-filter` on a GPU-composited layer (no rendered artwork copy).

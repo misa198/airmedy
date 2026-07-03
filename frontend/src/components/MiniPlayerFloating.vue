@@ -13,7 +13,6 @@ import { formatTime, hexToRgba, getTrackDisplayTitle } from '@airmedy/utils'
 import { Slider } from '@airmedy/ui'
 import { MarqueeText } from '@airmedy/ui'
 import * as WindowService from '../../bindings/airmedy/internal/infra/wails/windowservice'
-import { useGlassBlur } from '@/composables/useGlassBlur'
 import PlayerControlButton from './player/PlayerControlButton.vue'
 import { useAppStore } from '@/stores/app'
 import { useDeviceStore } from '@/stores/device'
@@ -22,8 +21,6 @@ const store = usePlayerStore()
 const appStore = useAppStore()
 const deviceStore = useDeviceStore()
 
-const canvasRef = ref<HTMLCanvasElement | null>(null)
-useGlassBlur(canvasRef, computed(() => store.artworkUrlMd ?? null))
 const alwaysOnTop = ref(false)
 const isSeeking = ref(false)
 const seekValue = ref(0)
@@ -135,12 +132,10 @@ watch(() => store.theme, (colors) => {
       </div>
     </div>
 
-    <!-- OGL glass panel: WebGL blur, no backdrop-filter, no flicker -->
-    <canvas
-      ref="canvasRef"
-      class="absolute bottom-0 left-0 pointer-events-none transition-opacity duration-200 blur-xl"
+    <!-- Glassmorphism panel: backdrop blur fading bottom → top -->
+    <div
+      class="glass-panel absolute bottom-0 left-0 right-0 pointer-events-none transition-opacity duration-200"
       :class="isHovered ? 'opacity-100' : 'opacity-0'"
-      style="height: 250px;width: 500px;"
     />
 
     <!-- Content overlay (hover-triggered) -->
@@ -148,7 +143,7 @@ watch(() => store.theme, (colors) => {
       :class="isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
       style="-webkit-app-region: no-drag">
       <MarqueeText :text="trackTitle" content-class="text font-semibold leading-tight text-white" />
-      <MarqueeText :text="trackArtist" content-class="text-xs text-white/50 leading-tight mt-0.5" />
+      <MarqueeText :text="trackArtist" content-class="text-xs text-white/90 leading-tight mt-0.5" />
 
       <!-- Seek bar -->
       <div class="flex items-center gap-1.5 mt-2">
@@ -210,5 +205,21 @@ watch(() => store.theme, (colors) => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* Glassmorphism: blurs artwork behind, strongest at bottom, fades to nothing at top */
+.glass-panel {
+  height: 260px;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  background: linear-gradient(to top, rgba(10, 10, 10, 0.6), rgba(10, 10, 10, 0) 80%);
+  -webkit-mask-image: linear-gradient(to top, #000 0%, #000 25%, transparent 100%);
+  mask-image: linear-gradient(to top, #000 0%, #000 25%, transparent 100%);
+  /* Force GPU compositing layer — kills backdrop-filter repaint flicker on macOS */
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  isolation: isolate;
 }
 </style>
