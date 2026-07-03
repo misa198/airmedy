@@ -111,7 +111,7 @@ onMounted(loadAlbums)
       </template>
     </ViewHeader>
 
-    <div class="flex-1 overflow-hidden" :class="viewMode === 'grid' ? 'px-6 py-8' : ''">
+    <div class="flex-1 overflow-hidden" :class="viewMode === 'list' ? 'px-6 py-8' : ''">
       <div v-if="isLoading" class="h-full flex items-center justify-center">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
