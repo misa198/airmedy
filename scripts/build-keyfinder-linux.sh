@@ -19,7 +19,7 @@
 set -euo pipefail
 
 KEYFINDER_VERSION="2.2.8"
-KEYFINDER_URL="https://github.com/mixxxdj/libkeyfinder/archive/refs/tags/v${KEYFINDER_VERSION}.tar.gz"
+KEYFINDER_URL="https://github.com/mixxxdj/libkeyfinder/archive/refs/tags/${KEYFINDER_VERSION}.tar.gz"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT_BASE="${REPO_ROOT}/internal/infra/audio/keyfinder_libs/linux"
 INCLUDE_OUT="${REPO_ROOT}/internal/infra/audio/keyfinder_libs/include"
@@ -107,7 +107,7 @@ esac
 mkdir -p "${BUILD_DIR}/src"
 if [[ ! -f "${BUILD_DIR}/keyfinder.tar.gz" ]]; then
     echo "==> Downloading libkeyfinder ${KEYFINDER_VERSION}..."
-    curl -L "${KEYFINDER_URL}" -o "${BUILD_DIR}/keyfinder.tar.gz"
+    curl -fL "${KEYFINDER_URL}" -o "${BUILD_DIR}/keyfinder.tar.gz"
 fi
 echo "==> Extracting..."
 rm -rf "${BUILD_DIR}/src"

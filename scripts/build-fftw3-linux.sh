@@ -85,7 +85,7 @@ esac
 mkdir -p "${BUILD_DIR}/src"
 if [[ ! -f "${BUILD_DIR}/fftw3.tar.gz" ]]; then
     echo "==> Downloading FFTW3 ${FFTW_VERSION}..."
-    curl -L "${FFTW_URL}" -o "${BUILD_DIR}/fftw3.tar.gz"
+    curl -fL "${FFTW_URL}" -o "${BUILD_DIR}/fftw3.tar.gz"
 fi
 echo "==> Extracting..."
 rm -rf "${BUILD_DIR}/src"
