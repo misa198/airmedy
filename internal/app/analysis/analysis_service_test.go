@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"airmedy/internal/app/analysis/mood"
 	"airmedy/internal/domain"
 )
 
@@ -23,8 +24,10 @@ func (m *mockTrackRepo) GetByID(ctx context.Context, id string) (*domain.TrackDT
 type mockAnalysisRepo struct {
 	domain.AnalysisRepository
 	mu       sync.Mutex
-	versions map[string]int
-	calls    []string // order of UpsertFeatures calls (analyzer-call order proxy)
+	versions  map[string]int
+	calls     []string // order of UpsertFeatures calls (analyzer-call order proxy)
+	moodCalls []string // order of UpsertMoodFeatures calls
+	features  map[string]*domain.TrackFeatures
 }
 
 func newMockAnalysisRepo() *mockAnalysisRepo {
@@ -49,8 +52,19 @@ func (m *mockAnalysisRepo) ListPending(ctx context.Context, currentVersion, limi
 	return nil, nil
 }
 
+func (m *mockAnalysisRepo) CountAll(ctx context.Context) (int, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return len(m.versions), nil
+}
+
 func (m *mockAnalysisRepo) GetFeatures(ctx context.Context, trackID string) (*domain.TrackFeatures, error) {
-	return nil, nil
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.features == nil {
+		return nil, nil
+	}
+	return m.features[trackID], nil
 }
 
 func (m *mockAnalysisRepo) IsAnalyzed(ctx context.Context, trackID string, currentVersion int) (bool, error) {
@@ -66,10 +80,39 @@ func (m *mockAnalysisRepo) MarkFailed(ctx context.Context, trackID string, curre
 	return nil
 }
 
+func (m *mockAnalysisRepo) UpsertMoodFeatures(ctx context.Context, trackID string, energy, danceability float64, moodVersion int) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.moodCalls = append(m.moodCalls, trackID)
+	return nil
+}
+
+func (m *mockAnalysisRepo) GetFeaturePercentiles(ctx context.Context) (map[string]domain.FeaturePercentileRow, error) {
+	return nil, nil
+}
+
+func (m *mockAnalysisRepo) UpsertFeaturePercentiles(ctx context.Context, rows []domain.FeaturePercentileRow) error {
+	return nil
+}
+
+func (m *mockAnalysisRepo) ListRawFeatureValues(ctx context.Context) (map[string][]float64, error) {
+	return nil, nil
+}
+
+func (m *mockAnalysisRepo) ListMoodPending(ctx context.Context, currentMoodVersion, limit int) ([]string, error) {
+	return nil, nil
+}
+
 func (m *mockAnalysisRepo) callCount() int {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return len(m.calls)
+}
+
+func (m *mockAnalysisRepo) moodCallCount() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return len(m.moodCalls)
 }
 
 func (m *mockAnalysisRepo) callOrder() []string {
@@ -470,5 +513,99 @@ func TestResolveProgress_CountFailureKeepsCallerStateAndDropsPending(t *testing.
 	total, state := resolveProgress(-1, 12, domain.AnalysisStateAnalyzing)
 	if total != 12 || state != domain.AnalysisStateAnalyzing {
 		t.Fatalf("expected total=12 state=analyzing, got total=%d state=%s", total, state)
+	}
+}
+
+func TestDriveMoodDerivation_FiresWhenCacheWarm(t *testing.T) {
+	repo := newMockAnalysisRepo()
+	repo.features = map[string]*domain.TrackFeatures{
+		"t1": {TrackID: "t1", RMS: 0.5, Tempo: 120},
+	}
+	svc := newTestService(repo, nil, tracksOf("t1"))
+	svc.moodPctl = mood.PercentileSet{} // non-nil: "warm" cache
+
+	svc.driveMoodDerivation(context.Background(), "t1")
+
+	if got := repo.moodCallCount(); got != 1 {
+		t.Fatalf("expected 1 UpsertMoodFeatures call, got %d", got)
+	}
+}
+
+func TestDriveMoodDerivation_SkipsWhenCacheCold(t *testing.T) {
+	repo := newMockAnalysisRepo()
+	repo.features = map[string]*domain.TrackFeatures{
+		"t1": {TrackID: "t1", RMS: 0.5, Tempo: 120},
+	}
+	svc := newTestService(repo, nil, tracksOf("t1"))
+	// svc.moodPctl left nil: cold start.
+
+	svc.driveMoodDerivation(context.Background(), "t1")
+
+	if got := repo.moodCallCount(); got != 0 {
+		t.Fatalf("expected mood derivation to be skipped while cache is cold, got %d calls", got)
+	}
+}
+
+func TestDriveMoodDerivation_TriggersRecomputeAtThreshold(t *testing.T) {
+	repo := newMockAnalysisRepo()
+	repo.features = map[string]*domain.TrackFeatures{"t1": {TrackID: "t1"}}
+	svc := newTestService(repo, nil, tracksOf("t1"))
+	svc.moodPctl = mood.PercentileSet{}
+
+	for range percentileRecomputeBatchSize - 1 {
+		svc.driveMoodDerivation(context.Background(), "t1")
+	}
+	svc.moodMu.RLock()
+	counter := svc.moodChangeCounter
+	svc.moodMu.RUnlock()
+	if counter != percentileRecomputeBatchSize-1 {
+		t.Fatalf("counter = %d, want %d before threshold", counter, percentileRecomputeBatchSize-1)
+	}
+
+	svc.driveMoodDerivation(context.Background(), "t1") // hits the threshold, spawns recompute in background
+
+	waitFor(t, time.Second, func() bool {
+		svc.moodMu.RLock()
+		defer svc.moodMu.RUnlock()
+		return svc.moodChangeCounter == 0
+	})
+}
+
+func TestNotifyMoodChange_ArmsDebounceTimerUnderThreshold(t *testing.T) {
+	repo := newMockAnalysisRepo()
+	repo.features = map[string]*domain.TrackFeatures{"t1": {TrackID: "t1"}}
+	svc := newTestService(repo, nil, tracksOf("t1"))
+	svc.moodPctl = mood.PercentileSet{}
+
+	svc.notifyMoodChange(1)
+
+	svc.moodMu.Lock()
+	counter := svc.moodChangeCounter
+	timerArmed := svc.moodDebounceTimer != nil
+	svc.moodMu.Unlock()
+	if counter != 1 {
+		t.Fatalf("counter = %d, want 1", counter)
+	}
+	if !timerArmed {
+		t.Fatal("expected debounce timer to be armed under threshold")
+	}
+}
+
+func TestFireDebouncedRecompute_FiresAfterQuietPeriod(t *testing.T) {
+	repo := newMockAnalysisRepo()
+	repo.features = map[string]*domain.TrackFeatures{"t1": {TrackID: "t1"}}
+	svc := newTestService(repo, nil, tracksOf("t1"))
+	svc.moodPctl = mood.PercentileSet{}
+
+	svc.notifyMoodChange(1)
+	svc.notifyMoodChange(2) // well under percentileRecomputeBatchSize
+
+	svc.fireDebouncedRecompute() // simulate the debounce timer elapsing
+
+	svc.moodMu.Lock()
+	counter := svc.moodChangeCounter
+	svc.moodMu.Unlock()
+	if counter != 0 {
+		t.Fatalf("counter = %d, want 0 after debounced recompute fires", counter)
 	}
 }

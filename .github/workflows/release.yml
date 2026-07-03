@@ -15,6 +15,13 @@ on:
         type: boolean
         default: false
 
+# Default token scope for cache jobs. actions: write lets actions/cache save
+# (otherwise "cache write denied: token has no writable scopes"). The bump and
+# release jobs override this with their own job-level contents: write.
+permissions:
+  contents: read
+  actions: write
+
 jobs:
   bump:
     name: Bump version to ${{ github.event.inputs.version }}
@@ -171,6 +178,56 @@ jobs:
           name: aubio-darwin
           path: internal/infra/audio/aubio_libs
 
+  build-keyfinder-darwin:
+    name: Build keyfinder + FFTW3 for Darwin
+    needs: bump
+    runs-on: macos-26
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ github.event.inputs.version }}
+
+      # restore + save (not the combined cache action): the combined action's
+      # save runs as a post-job step that still fires on a mid-build
+      # cancellation, persisting a partial (corrupt) lib set under an
+      # immutable cache key forever. Save explicitly right after the build
+      # completes so a cancellation just skips the save (cache miss next
+      # time) instead of poisoning the cache.
+      - name: Restore keyfinder + FFTW3 (Darwin)
+        id: cache-keyfinder
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            internal/infra/audio/keyfinder_libs
+            internal/infra/audio/fftw3_libs
+          key: keyfinder-Darwin-v2-${{ hashFiles('scripts/build-keyfinder-darwin.sh', 'scripts/build-fftw3-darwin.sh') }}
+
+      - name: Install cmake
+        if: steps.cache-keyfinder.outputs.cache-hit != 'true'
+        run: brew list cmake >/dev/null 2>&1 || brew install cmake
+
+      - name: Build keyfinder + FFTW3 (Darwin ARM64 + AMD64)
+        if: steps.cache-keyfinder.outputs.cache-hit != 'true'
+        run: bash scripts/build-keyfinder-darwin.sh all
+
+      - name: Save keyfinder + FFTW3 (Darwin)
+        if: steps.cache-keyfinder.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            internal/infra/audio/keyfinder_libs
+            internal/infra/audio/fftw3_libs
+          key: keyfinder-Darwin-v2-${{ hashFiles('scripts/build-keyfinder-darwin.sh', 'scripts/build-fftw3-darwin.sh') }}
+
+      - name: Upload keyfinder + FFTW3 libs
+        uses: actions/upload-artifact@v4
+        with:
+          name: keyfinder-darwin
+          path: |
+            internal/infra/audio/keyfinder_libs
+            internal/infra/audio/fftw3_libs
+
   build-ffmpeg-linux:
     name: Build FFmpeg for Linux
     needs: bump
@@ -237,9 +294,55 @@ jobs:
           name: aubio-linux
           path: internal/infra/audio/aubio_libs
 
+  build-keyfinder-linux:
+    name: Build keyfinder + FFTW3 for Linux
+    needs: bump
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ github.event.inputs.version }}
+
+      - name: Restore keyfinder + FFTW3 (Linux)
+        id: cache-keyfinder
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            internal/infra/audio/keyfinder_libs
+            internal/infra/audio/fftw3_libs
+          key: keyfinder-Linux-v2-${{ hashFiles('scripts/build-keyfinder-linux.sh', 'scripts/build-fftw3-linux.sh') }}
+
+      - name: Install Linux cross-compile dependencies
+        if: steps.cache-keyfinder.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross pkg-config cmake
+
+      - name: Build keyfinder + FFTW3 (Linux AMD64 + ARM64)
+        if: steps.cache-keyfinder.outputs.cache-hit != 'true'
+        run: bash scripts/build-keyfinder-linux.sh
+
+      - name: Save keyfinder + FFTW3 (Linux)
+        if: steps.cache-keyfinder.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            internal/infra/audio/keyfinder_libs
+            internal/infra/audio/fftw3_libs
+          key: keyfinder-Linux-v2-${{ hashFiles('scripts/build-keyfinder-linux.sh', 'scripts/build-fftw3-linux.sh') }}
+
+      - name: Upload keyfinder + FFTW3 libs
+        uses: actions/upload-artifact@v4
+        with:
+          name: keyfinder-linux
+          path: |
+            internal/infra/audio/keyfinder_libs
+            internal/infra/audio/fftw3_libs
+
   build:
     name: Build ${{ matrix.os }}
-    needs: [bump, build-ffmpeg-windows, build-sfb-darwin, build-ffmpeg-darwin, build-aubio-darwin, build-ffmpeg-linux, build-aubio-linux]
+    needs: [bump, build-ffmpeg-windows, build-sfb-darwin, build-ffmpeg-darwin, build-aubio-darwin, build-keyfinder-darwin, build-ffmpeg-linux, build-aubio-linux, build-keyfinder-linux]
     strategy:
       fail-fast: false
       matrix:
@@ -311,7 +414,7 @@ jobs:
             echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports $(lsb_release -cs)-security main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.list
           fi
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libgtk-4-dev libwebkitgtk-6.0-dev build-essential nsis nasm gcc-aarch64-linux-gnu libc6-dev-arm64-cross pkg-config qemu-user-static binfmt-support
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libgtk-4-dev libwebkitgtk-6.0-dev build-essential nsis nasm gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross pkg-config qemu-user-static binfmt-support
 
       - name: Install Windows Dependencies
         if: runner.os == 'Windows'
@@ -369,6 +472,13 @@ jobs:
           name: aubio-darwin
           path: internal/infra/audio/aubio_libs
 
+      - name: Download keyfinder + FFTW3 (Darwin)
+        if: runner.os == 'macOS'
+        uses: actions/download-artifact@v4
+        with:
+          name: keyfinder-darwin
+          path: internal/infra/audio
+
       - name: Restore SFB Audio Engine (Darwin)
         if: runner.os == 'macOS'
         uses: actions/cache/restore@v4
@@ -392,13 +502,20 @@ jobs:
           name: aubio-linux
           path: internal/infra/audio/aubio_libs
 
+      - name: Download keyfinder + FFTW3 (Linux)
+        if: runner.os == 'Linux'
+        uses: actions/download-artifact@v4
+        with:
+          name: keyfinder-linux
+          path: internal/infra/audio
+
       - name: Fetch miniaudio (Windows and Linux)
         if: (runner.os == 'Windows' || runner.os == 'Linux') && steps.cache-miniaudio.outputs.cache-hit != 'true'
         shell: bash
         run: bash scripts/fetch-miniaudio.sh
 
       - name: Install Wails v3
-        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-alpha2.111
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-alpha2.112
 
       - name: Install Linux ARM64 Cross-compile Dependencies
         if: runner.os == 'Linux' && matrix.os == 'Linux-ARM64'
@@ -449,6 +566,11 @@ jobs:
             "Linux-ARM64")
               export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/linux/arm64"
               export CC=aarch64-linux-gnu-gcc
+              # keyfinder_bridge.cpp is a C++ cgo file, so Go's link step also
+              # invokes $CXX; without the cross g++ it falls back to host g++,
+              # which feeds AArch64 objects to the host ld ("Relocations in
+              # generic ELF (EM: 183)").
+              export CXX=aarch64-linux-gnu-g++
               export CGO_ENABLED=1
               export GOARCH=arm64
               export GOOS=linux

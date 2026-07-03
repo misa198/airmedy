@@ -7,6 +7,7 @@ import { hexToRgba } from '@airmedy/utils'
 import { usePlayerStore } from './stores/player'
 import { useDeviceStore } from './stores/device'
 import { usePlaylistsStore } from './stores/playlists'
+import { useMoodRadioStore } from './stores/moodRadio'
 import { useAppStore } from './stores/app'
 import { useI18n } from 'vue-i18n'
 import { Events } from '@wailsio/runtime'
@@ -18,6 +19,7 @@ const { locale } = useI18n()
 const playerStore = usePlayerStore()
 const deviceStore = useDeviceStore()
 const playlistsStore = usePlaylistsStore()
+const moodRadioStore = useMoodRadioStore()
 const appStore = useAppStore()
 
 const isRouterReady = ref(false)
@@ -113,6 +115,7 @@ onMounted(async () => {
   deviceStore.init()
   deviceStore.checkFullscreen()
   playlistsStore.loadAll()
+  moodRadioStore.init()
 
   offCycleRepeat = Events.On('player:cycle-repeat', () => {
     playerStore.cycleRepeat()
@@ -133,6 +136,7 @@ onUnmounted(() => {
   playerStore.dispose()
   deviceStore.dispose()
   playlistsStore.dispose()
+  moodRadioStore.dispose()
   appStore.dispose()
 })
 

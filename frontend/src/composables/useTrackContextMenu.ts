@@ -1,9 +1,11 @@
-import { Heart, HeartOff, ListEnd, ListPlus, Disc, User, Pencil, FolderOpen, Info, RefreshCw, ListX, Check, Trash2, Search } from 'lucide-vue-next'
+import { Heart, HeartOff, ListEnd, ListPlus, Disc, User, Pencil, FolderOpen, Info, RefreshCw, ListX, Check, Trash2, Search, Radio } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
 import { useFavoritesStore } from '@/stores/favorites'
 import { usePlayerStore } from '@/stores/player'
+import { useAppStore } from '@/stores/app'
+import { useMoodRadioStore } from '@/stores/moodRadio'
 import { useFindLyricsDialog } from './useFindLyricsDialog'
 import type { ContextMenuItem } from './useContextMenu'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
@@ -23,6 +25,8 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
   const playlistsStore = usePlaylistsStore()
   const favoritesStore = useFavoritesStore()
   const playerStore = usePlayerStore()
+  const appStore = useAppStore()
+  const moodRadioStore = useMoodRadioStore()
   const router = useRouter()
   const findLyricsDialog = useFindLyricsDialog()
 
@@ -91,6 +95,16 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
         }        
       },
     })
+
+    if (appStore.libraryAnalysisEnabled) {
+      items.push({
+        label: t('context_menu.start_mood_radio'),
+        icon: Radio,
+        action: () => {
+          moodRadioStore.start(track)
+        },
+      })
+    }
 
     items.push({ separator: true })
 

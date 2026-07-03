@@ -254,6 +254,24 @@ pure Go over D-Bus (`github.com/godbus/dbus/v5`). No cgo.
 
 ## PlayerService (Application Layer)
 
+Playback + gapless transition lifecycle:
+
+```mermaid
+flowchart TB
+    A["loadAndPlay(track)"] --> B["player.Load()"]
+    B --> C["ApplyNormalization + lyrics + palette<br/>+ track-load listeners"]
+    C --> D["player.Play()"]
+    D --> E["EnqueueNext(PeekNext)<br/>gapless preload"]
+    E --> F["500ms ticker:<br/>play count, scrobble threshold,<br/>NowPlaying position"]
+    F --> G{"Track end"}
+    G --> H{"AutoTransitions?"}
+    H -->|macOS SFB| I["engine already advanced<br/>→ update status only"]
+    H -->|miniaudio| J["StartPreloaded()"]
+    I --> K["transitionToTrack:<br/>currentTrack, NowPlaying,<br/>normalization, lyrics, palette"]
+    J --> K
+    K --> E
+```
+
 ### Responsibilities
 
 - Loads tracks into the audio adapter.

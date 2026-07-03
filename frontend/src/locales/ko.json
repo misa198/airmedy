@@ -203,7 +203,7 @@
     "library_analysis": {
       "title": "라이브러리 분석",
       "enable": "라이브러리 분석 활성화",
-      "enable_desc": "백그라운드에서 라이브러리를 분석하여 각 트랙의 음량과 오디오 특성을 측정합니다. 음량 정규화를 사용하려면 먼저 활성화해야 합니다.",
+      "enable_desc": "백그라운드에서 음악 라이브러리를 스캔하여 각 트랙의 음량과 오디오 특성을 측정합니다.\n음량 정규화와 무드 라디오를 사용하려면 반드시 필요합니다.\n이 과정은 사용 중인 기기 사양에 따라 시간이 걸릴 수 있습니다.",
       "requires_enable": "음량 정규화를 사용하려면 위에서 라이브러리 분석을 활성화하세요"
     },
     "normalization": {
@@ -272,6 +272,7 @@
     "pause": "일시 중지",
     "next": "다음",
     "repeat": "반복",
+    "mood_radio_active": "무드 라디오 재생 중",
     "mute": "음소거",
     "unmute": "음소거 해제",
     "lyrics": "가사",
@@ -382,7 +383,8 @@
     "refresh_lyrics": "가사 새로고침",
     "find_lyrics": "가사 찾기",
     "remove_from_queue": "대기열에서 제거",
-    "export_playlist": "재생목록 내보내기"
+    "export_playlist": "재생목록 내보내기",
+    "start_mood_radio": "무드 라디오 시작"
   },
   "find_lyrics": {
     "title": "가사 찾기",

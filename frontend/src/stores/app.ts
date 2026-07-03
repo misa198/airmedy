@@ -32,6 +32,10 @@ export const useAppStore = defineStore('app', () => {
   // in the UI, but must be preserved across saves so saving settings doesn't
   // wipe it and re-trigger a rescan.
   const lastScanVersion = ref('')
+  // Round-tripped only (bumped by the mood-derivation percentile refresh job);
+  // never edited in the UI, but must be preserved across saves so saving
+  // settings doesn't wipe it and re-trigger mood re-derivation for all tracks.
+  const moodDerivationVersion = ref(0)
   const preventSleepWhilePlaying = ref(false)
   const libraryAnalysisEnabled = ref(false)
   const normalizationEnabled = ref(false)
@@ -98,6 +102,7 @@ export const useAppStore = defineStore('app', () => {
         useOnlineArtistArtwork.value = settings.use_online_artist_artwork !== false
         preferLocalArtistArtwork.value = settings.prefer_local_artist_artwork !== false
         lastScanVersion.value = settings.last_scan_version || ''
+        moodDerivationVersion.value = settings.mood_derivation_version ?? 0
         preventSleepWhilePlaying.value = !!settings.prevent_sleep_while_playing
         showPlayerIndicator.value = settings.show_player_indicator !== false
         libraryAnalysisEnabled.value = !!settings.library_analysis_enabled
@@ -186,6 +191,7 @@ export const useAppStore = defineStore('app', () => {
         use_online_artist_artwork: useOnlineArtistArtwork.value,
         prefer_local_artist_artwork: preferLocalArtistArtwork.value,
         last_scan_version: lastScanVersion.value,
+        mood_derivation_version: moodDerivationVersion.value,
         prevent_sleep_while_playing: preventSleepWhilePlaying.value,
         show_player_indicator: showPlayerIndicator.value,
         library_analysis_enabled: libraryAnalysisEnabled.value,

@@ -6,7 +6,7 @@
 
 **All in one offline music player.**
 
-[![License](https://img.shields.io/github/license/misa198/airmedy?style=flat-square&color=0d1117)](LICENSE)
+[![License](https://img.shields.io/badge/license-GPL--3.0-0d1117?style=flat-square)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.25-00ADD8?style=flat-square&logo=go&logoColor=white)](https://go.dev)
 [![Wails](https://img.shields.io/badge/Wails-3-da0b0b?style=flat-square&logo=wails&logoColor=white)](https://wails.io/)
 [![Last.fm](https://img.shields.io/badge/last.fm-da0b0b?style=flat-square&logo=last.fm&logoColor=white)](https://last.fm/)
@@ -49,6 +49,7 @@
 - **Artist images** — uses local `artist.jpg`/`.jpeg`/`.png` files from your music folders (in the artist folder or beside the songs), or set your own custom image per artist. Toggle "Online Artist Artwork" to use Deezer images instead; turn it off to use your local files.
 - **Remote control** — control playback from any browser on the same network. Enable the remote server in settings, open the displayed URL on your phone or tablet, and enter the PIN to start controlling playback, managing the queue, and viewing lyrics remotely.
 - **Volume normalization** — consistent loudness across your library, no more reaching for the volume knob between tracks. Analyzes your library with FFmpeg (LUFS loudness + true peak), then applies per-track pre-amp gain at playback. Track mode normalizes each song individually; album mode keeps an album's natural dynamics by applying one gain across all its tracks. Target loudness is configurable (default -14 LUFS), with an optional prevent-clipping guard.
+- **Mood Radio** — start an auto-refilling radio queue from any track. Finds similar tracks across your whole library by comparing energy, danceability, and tempo derived from per-track audio analysis.
 
 ## Audio Format Support
 
@@ -210,6 +211,6 @@ wails3 task {task_name}
 
 ## License
 
-MIT © [misa198](https://github.com/misa198)
+GPL-3.0 © [misa198](https://github.com/misa198). Third-party licenses in [NOTICES](NOTICES).
 
 ---

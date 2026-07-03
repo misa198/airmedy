@@ -103,6 +103,7 @@ func main() {
 	var updaterService *wails.UpdaterService
 	var artworkCache domain.ArtworkCache
 	var remoteServerService *wails.RemoteServerService
+	var moodRadioService *wails.MoodRadioService
 	var (
 		lastfmService *wails.LastFmService
 		wailsApp      *application.App
@@ -118,7 +119,7 @@ func main() {
 		// onto the same instance instead of constructing its own.
 		fx.Supply(logRotator, logger),
 		fx.Provide(func() remoteserver.RemoteFS { return remoteserver.RemoteFS{FS: remoteFS} }),
-		fx.Populate(&greetService, &libraryService, &playerService, &searchService, &playlistService, &lyricsService, &eqService, &normalizationService, &analysisService, &windowService, &i18nService, &settingsService, &lastfmService, &updaterService, &artworkCache, &remoteServerService),
+		fx.Populate(&greetService, &libraryService, &playerService, &searchService, &playlistService, &lyricsService, &eqService, &normalizationService, &analysisService, &windowService, &i18nService, &settingsService, &lastfmService, &updaterService, &artworkCache, &remoteServerService, &moodRadioService),
 		fx.NopLogger, // Keep logs clean for now
 	)
 
@@ -160,6 +161,7 @@ func main() {
 			application.NewService(settingsService),
 			application.NewService(updaterService),
 			application.NewService(remoteServerService),
+			application.NewService(moodRadioService),
 		},
 		Assets: application.AssetOptions{
 			Handler: wails.NewAssetHandler(assets, artworkCache),

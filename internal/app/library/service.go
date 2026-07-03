@@ -59,22 +59,24 @@ type LibraryService struct {
 	logger            *slog.Logger
 	watcher           *fsnotify.Watcher
 
-	trackUpdateListeners   []func(*domain.TrackDTO)
-	analysisListeners      []func(string)
-	trackDeletedListeners  []func([]string)
-	artistArtworkQueue     chan artistArtworkJob
-	pendingArtistArtwork   map[string]struct{}
-	pendingArtistArtworkMu sync.Mutex
-	artistArtworkLocks     sync.Map     // artistID -> *sync.Mutex; serializes artwork writes
-	syncing                atomic.Int32 // >0 while a bulk SyncFolder runs (gates per-track work)
-	syncEntityCache        *syncEntityCache // non-nil only during a SyncFolder run; caches resolved entity IDs
-	artworkCleanupMu       sync.Mutex
-	artworkCleanupTimer    *time.Timer // debounces orphan-artwork cleanup after watcher deletes
-	selfWrites             map[string]time.Time // path -> expiry; suppresses watcher events for app's own writes
-	selfWritesMu           sync.Mutex
-	ctx                    context.Context
-	cancel                 context.CancelFunc
-	mu                     sync.RWMutex
+	trackUpdateListeners    []func(*domain.TrackDTO)
+	favoriteChangeListeners []func(*domain.TrackDTO)
+	analysisListeners       []func(string)
+	trackDeletedListeners   []func([]string)
+	syncFinishedListeners   []func()
+	artistArtworkQueue      chan artistArtworkJob
+	pendingArtistArtwork    map[string]struct{}
+	pendingArtistArtworkMu  sync.Mutex
+	artistArtworkLocks      sync.Map         // artistID -> *sync.Mutex; serializes artwork writes
+	syncing                 atomic.Int32     // >0 while a bulk SyncFolder runs (gates per-track work)
+	syncEntityCache         *syncEntityCache // non-nil only during a SyncFolder run; caches resolved entity IDs
+	artworkCleanupMu        sync.Mutex
+	artworkCleanupTimer     *time.Timer          // debounces orphan-artwork cleanup after watcher deletes
+	selfWrites              map[string]time.Time // path -> expiry; suppresses watcher events for app's own writes
+	selfWritesMu            sync.Mutex
+	ctx                     context.Context
+	cancel                  context.CancelFunc
+	mu                      sync.RWMutex
 }
 
 type artistArtworkJob struct {
@@ -150,6 +152,28 @@ func (s *LibraryService) notifyTrackUpdated(track *domain.TrackDTO) {
 	}
 }
 
+// AddFavoriteChangeListener registers a callback fired only when a track's
+// favorite state actually changes (ToggleFavorite). Deliberately separate from
+// trackUpdateListeners, which also fires on import and metadata edits — those
+// must not sync a favorite state to Last.fm (a fresh import would otherwise
+// fire a track.unlove for every non-favorite track).
+func (s *LibraryService) AddFavoriteChangeListener(l func(*domain.TrackDTO)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.favoriteChangeListeners = append(s.favoriteChangeListeners, l)
+}
+
+func (s *LibraryService) notifyFavoriteChanged(track *domain.TrackDTO) {
+	s.mu.RLock()
+	listeners := make([]func(*domain.TrackDTO), len(s.favoriteChangeListeners))
+	copy(listeners, s.favoriteChangeListeners)
+	s.mu.RUnlock()
+
+	for _, l := range listeners {
+		l(track)
+	}
+}
+
 // AddAnalysisListener registers a callback fired with the track ID whenever a
 // track is freshly imported (covers both SyncFolder and single-file
 // ImportFile). Deliberately separate from trackUpdateListeners, which also
@@ -196,6 +220,28 @@ func (s *LibraryService) notifyTracksDeleted(ids []string) {
 
 	for _, l := range listeners {
 		l(ids)
+	}
+}
+
+// AddSyncFinishedListener registers a callback fired once a SyncFolder run
+// completes. Lets the analysis pipeline trigger a percentile recompute right
+// after a bulk import instead of waiting on its batch-size/debounce
+// triggers, which can leave a small library's mood scores unpopulated for a
+// while after a fresh scan.
+func (s *LibraryService) AddSyncFinishedListener(l func()) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.syncFinishedListeners = append(s.syncFinishedListeners, l)
+}
+
+func (s *LibraryService) notifySyncFinished() {
+	s.mu.RLock()
+	listeners := make([]func(), len(s.syncFinishedListeners))
+	copy(listeners, s.syncFinishedListeners)
+	s.mu.RUnlock()
+
+	for _, l := range listeners {
+		l()
 	}
 }
 
@@ -957,6 +1003,7 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 		}
 		app.Event.Emit("library:sync-finished", root)
 	}
+	s.notifySyncFinished()
 	return nil
 }
 
@@ -1564,6 +1611,7 @@ func (s *LibraryService) ToggleFavorite(ctx context.Context, id string) (bool, e
 	dto, err := s.trackRepo.GetByID(ctx, id)
 	if err == nil && dto != nil {
 		s.notifyTrackUpdated(dto)
+		s.notifyFavoriteChanged(dto)
 		if app := application.Get(); app != nil && app.Event != nil {
 			app.Event.Emit("library:track-updated", dto)
 		}

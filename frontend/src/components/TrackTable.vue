@@ -216,9 +216,15 @@ function scrollToCurrentTrack() {
   }
 }
 
+let suppressNextScroll = false
+
 watch(
   [() => props.tracks, () => playerStore.currentTrack],
   () => {
+    if (suppressNextScroll) {
+      suppressNextScroll = false
+      return
+    }
     if (props.scrollToCurrent) nextTick(scrollToCurrentTrack)
   },
   { deep: false },
@@ -279,6 +285,10 @@ const navigateToArtist = (id: string) => {
 const { rowBg } = useRowBackground(toRef(props, 'variant'))
 
 function handlePlayTrack(track: TrackDTO, index: number) {
+  // The user already sees/clicked this row — the currentTrack watch below
+  // must not yank the view back to it (or anywhere) as a result of this
+  // click. Auto-advance (next/previous) is the only case that should scroll.
+  suppressNextScroll = true
   emit('play-track', track, index, displayTracks.value)
 }
 

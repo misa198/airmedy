@@ -12,6 +12,22 @@ The metadata feature handles reading audio file tags (ID3, Vorbis, MP4/iTunes, e
 | `internal/domain/metadata.go`            | MetadataExtractor / MetadataWriter interfaces |
 | `internal/domain/metadata_processing.go` | String normalization, delimiter-based name splitting (`SplitNames`, `DefaultDelimiters`, `ValidateDelimiters`, `RawTagSeparator`) |
 
+## Data Flow
+
+```mermaid
+flowchart TB
+    F["Audio file"] --> E["MetadataExtractor.Extract()<br/>TagLib — FFmpeg fallback for<br/>APE / WavPack / DSD (macOS)"]
+    E --> R["TrackDTO with Raw*Names<br/>(multi-frame joined by '; ')"]
+    R --> S["LibraryService.buildEntitiesFromRaw<br/>split by user delimiters"]
+    S --> ENT["Entities: Artists, AlbumArtists,<br/>Genres, Composers"]
+
+    U["User edits (MetadataEditDialog)"] --> W["MetadataWriter.WriteMetadata()<br/>write tags + artwork to file"]
+    W --> RE["Re-extract file → upsert<br/>DB + search index"]
+```
+
+Extraction never splits names — it only fills `Raw*Names`; the entity split runs
+once in `buildEntitiesFromRaw`, so import and re-sync share one code path.
+
 ## MetadataExtractor Interface
 
 ```go

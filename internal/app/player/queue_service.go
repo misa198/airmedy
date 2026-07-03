@@ -261,6 +261,21 @@ func (s *QueueService) insertAfterCurrentLocked(track *domain.TrackDTO) {
 	}
 }
 
+// AppendTracks adds tracks to the end of the queue without disturbing the
+// current position — unlike InsertListAfterCurrent, this is a single
+// mutation with no follow-up reorder needed, so callers that just want to
+// grow the tail (e.g. mood radio refill) don't cause a double queue-updated
+// event and the visible reshuffle that comes with it.
+func (s *QueueService) AppendTracks(tracks []*domain.TrackDTO) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.originalList = append(s.originalList, tracks...)
+	if s.shuffle {
+		s.shuffledList = append(s.shuffledList, tracks...)
+	}
+}
+
 // InsertListAfterCurrent inserts a list of tracks immediately after the current position.
 func (s *QueueService) InsertListAfterCurrent(tracks []*domain.TrackDTO) {
 	s.mu.Lock()

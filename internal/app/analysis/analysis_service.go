@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"airmedy/internal/app/analysis/mood"
 	"airmedy/internal/domain"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -15,7 +16,30 @@ import (
 // analyzerVersion is the algorithm/schema version stamped on every analysis
 // result; tracks with tracks.analyzed_version < this are pending. Must be
 // kept in sync with audio.AnalyzerVersion (internal/infra/audio/analyzer.go).
-const analyzerVersion = 1
+const analyzerVersion = 3
+
+// moodVersion is the algorithm version for the derived mood formulas
+// (energy/danceability). Bump on formula/weight changes only — independent
+// of analyzerVersion (raw DSP) and app_settings.mood_derivation_version
+// (corpus-percentile staleness, bumped at runtime on recompute).
+const moodVersion = 1
+
+// percentileRecomputeBatchSize triggers a corpus percentile recompute once
+// this many tracks have been added (successfully analyzed) or removed,
+// combined, since the last recompute.
+const percentileRecomputeBatchSize = 100
+
+// percentileRecomputeDebounce triggers a corpus percentile recompute after
+// this long without any further add/delete activity, even if
+// percentileRecomputeBatchSize hasn't been reached — bounds staleness for
+// small batches instead of waiting indefinitely for the count to fill up.
+const percentileRecomputeDebounce = 30 * time.Second
+
+// percentileStalenessThreshold triggers a corpus percentile recompute at
+// AnalysisService startup if the cached stats are older than this (the app
+// is an offline desktop app, not always running, so this replaces a
+// nightly-cron-style scheduler that could otherwise silently never fire).
+const percentileStalenessThreshold = 24 * time.Hour
 
 // analyzeTimeout bounds a single track's decode/analysis pass. The cgo
 // analyzer only polls its cancel flag once per outer decode iteration, so a
@@ -62,6 +86,27 @@ type AnalysisService struct {
 
 	progMu sync.Mutex
 	done   int
+	// libraryTotal caches CountAll (a full-table COUNT) so it isn't re-queried
+	// on every per-track emitProgress during a bulk scan; refreshed at most
+	// once per libraryTotalTTL. -1 = not yet populated. Guarded by progMu.
+	libraryTotal   int
+	libraryTotalAt time.Time
+
+	// moodMu guards the mood-derivation state below, kept separate from mu
+	// (the queue lock) so it never contends with the hot worker-pool path.
+	moodMu            sync.RWMutex
+	moodPctl          mood.PercentileSet // nil until first successful load/recompute (cold start)
+	moodChangeCounter int                // combined add+delete count since last percentile recompute
+	moodDebounceTimer *time.Timer        // reset on every add/delete event; fires recompute after a quiet period
+
+	// recomputeMu serializes recomputePercentilesAndBump so concurrent triggers
+	// (batch-size, debounce, sync-finished) can't interleave their version
+	// read-modify-write or run overlapping backfills. recomputePending coalesces:
+	// a trigger arriving while a recompute is in flight sets the flag so exactly
+	// one more run happens afterward, against the latest corpus data.
+	recomputeMu      sync.Mutex
+	recomputePendMu  sync.Mutex
+	recomputePending bool
 }
 
 func NewAnalysisService(
@@ -79,6 +124,7 @@ func NewAnalysisService(
 		logger:       logger.With("module", "analysis"),
 		queued:       make(map[string]bool),
 		inFlight:     make(map[string]bool),
+		libraryTotal: -1,
 	}
 	s.cond = sync.NewCond(&s.mu)
 	return s
@@ -93,10 +139,60 @@ func (s *AnalysisService) Start(ctx context.Context) error {
 		s.logger.Warn("failed to load settings, analysis pool stays off", "error", err)
 		return nil
 	}
+
+	// Warm the mood-derivation percentile cache and check staleness
+	// unconditionally: this matters even if the raw-analysis pool isn't
+	// running this session, so a restart against an already-analyzed
+	// library still keeps corpus stats fresh.
+	s.loadPercentileCache(ctx)
+	s.maybeRecomputeOnStartup(ctx)
+
 	if settings.LibraryAnalysisEnabled {
 		s.startPool()
 	}
 	return nil
+}
+
+// loadPercentileCache populates s.moodPctl from feature_percentiles.
+// Best-effort: leaves the cache as-is (nil on cold start) on error, logged.
+func (s *AnalysisService) loadPercentileCache(ctx context.Context) {
+	rows, err := s.analysisRepo.GetFeaturePercentiles(ctx)
+	if err != nil {
+		s.logger.Warn("mood: failed to load percentile cache", "error", err)
+		return
+	}
+	if len(rows) == 0 {
+		return // no corpus yet: leave the cache cold (nil) so mood derivation
+		// is skipped rather than run against an empty (degenerate) percentile
+		// set, which would persist a neutral 0.5 for every feature.
+	}
+	pctl := make(mood.PercentileSet, len(rows))
+	for name, row := range rows {
+		pctl[name] = mood.Percentile{P1: row.P1, P5: row.P5, P50: row.P50, P95: row.P95, P99: row.P99}
+	}
+	s.moodMu.Lock()
+	s.moodPctl = pctl
+	s.moodMu.Unlock()
+}
+
+// maybeRecomputeOnStartup triggers a corpus percentile recompute if the
+// cached stats are stale (older than percentileStalenessThreshold) or don't
+// exist yet at all (e.g. a fresh install pointed at an already-analyzed DB).
+func (s *AnalysisService) maybeRecomputeOnStartup(ctx context.Context) {
+	rows, err := s.analysisRepo.GetFeaturePercentiles(ctx)
+	if err != nil {
+		return
+	}
+	stale := len(rows) == 0
+	for _, row := range rows {
+		if time.Since(row.ComputedAt) > percentileStalenessThreshold {
+			stale = true
+			break
+		}
+	}
+	if stale {
+		go s.recomputePercentilesAndBump(context.Background())
+	}
 }
 
 // Stop shuts the worker pool down (no-op if already off) and waits for any
@@ -292,6 +388,19 @@ func (s *AnalysisService) Dequeue(trackIDs []string) {
 	s.normalQueue = filter(s.normalQueue)
 }
 
+// NotifyTracksDeleted bumps the delete counter that drives corpus percentile
+// recompute (see percentileRecomputeEveryDeletes): deleted tracks shrink the
+// corpus track_features draws from, so without this the cached percentiles
+// silently drift stale until the next analysis-driven recompute or app
+// restart. No-op for an empty slice.
+func (s *AnalysisService) NotifyTracksDeleted(trackIDs []string) {
+	if len(trackIDs) == 0 {
+		return
+	}
+
+	s.notifyMoodChange(len(trackIDs))
+}
+
 func (s *AnalysisService) promoteToFrontLocked(trackID string) {
 	for i, id := range s.normalQueue {
 		if id == trackID {
@@ -426,9 +535,221 @@ func (s *AnalysisService) analyzeOne(ctx context.Context, trackID string) {
 	s.progMu.Unlock()
 
 	s.emitProgress(domain.AnalysisStateAnalyzing)
+
+	s.driveMoodDerivation(ctx, trackID)
+}
+
+// driveMoodDerivation attempts mood derivation for a track immediately after
+// its raw features were written, using whatever percentile cache is
+// currently loaded. If the cache is cold (true cold start: no corpus yet),
+// this is a no-op — the first recomputePercentilesAndBump run will backfill
+// it via backfillMood once a corpus exists. Also bumps the periodic-recompute
+// counter, firing a recompute every percentileRecomputeEvery successful
+// raw analyses.
+func (s *AnalysisService) driveMoodDerivation(ctx context.Context, trackID string) {
+	s.moodMu.RLock()
+	pctl := s.moodPctl
+	s.moodMu.RUnlock()
+
+	// nil pctl means true cold start (no cache loaded yet) — skip. A non-nil
+	// but empty/partial set is still a valid warm cache: Normalize/Derive
+	// safely fall back to neutral 0.5 for any missing feature, so derive.
+	if pctl != nil {
+		if feat, err := s.analysisRepo.GetFeatures(ctx, trackID); err == nil && feat != nil {
+			energy, dance := mood.Derive(feat, pctl)
+			if err := s.analysisRepo.UpsertMoodFeatures(ctx, trackID, energy, dance, moodVersion); err != nil {
+				s.logger.Warn("mood: failed to persist derived mood features", "track_id", trackID, "error", err)
+			}
+		}
+	}
+
+	s.notifyMoodChange(1)
+}
+
+// notifyMoodChange bumps the combined add/delete counter by n and drives the
+// batch-or-debounce percentile recompute trigger: fires immediately once the
+// counter reaches percentileRecomputeBatchSize, otherwise (re)starts a
+// percentileRecomputeDebounce timer so a quiet period after a smaller batch
+// still eventually recomputes instead of waiting indefinitely for the count
+// to fill up.
+func (s *AnalysisService) notifyMoodChange(n int) {
+	s.moodMu.Lock()
+	s.moodChangeCounter += n
+	if s.moodChangeCounter >= percentileRecomputeBatchSize {
+		s.moodChangeCounter = 0
+		if s.moodDebounceTimer != nil {
+			s.moodDebounceTimer.Stop()
+		}
+		s.moodMu.Unlock()
+		go s.recomputePercentilesAndBump(context.Background())
+		return
+	}
+	if s.moodDebounceTimer != nil {
+		s.moodDebounceTimer.Stop()
+	}
+	s.moodDebounceTimer = time.AfterFunc(percentileRecomputeDebounce, s.fireDebouncedRecompute)
+	s.moodMu.Unlock()
+}
+
+// fireDebouncedRecompute runs on the debounce timer's own goroutine once
+// percentileRecomputeDebounce has elapsed with no further add/delete events.
+// Guards against firing a second recompute if the batch-size branch above
+// already reset the counter (Timer.Stop can race with an in-flight fire).
+func (s *AnalysisService) fireDebouncedRecompute() {
+	s.moodMu.Lock()
+	if s.moodChangeCounter == 0 {
+		s.moodMu.Unlock()
+		return
+	}
+	s.moodChangeCounter = 0
+	s.moodMu.Unlock()
+	s.recomputePercentilesAndBump(context.Background())
+}
+
+// TriggerPercentileRecompute kicks off an out-of-band corpus percentile
+// recompute (and mood backfill), fire-and-forget. Meant to be wired to
+// library-side signals like "sync finished" so a fresh import's mood scores
+// don't sit unpopulated until the batch-size/debounce triggers catch up.
+func (s *AnalysisService) TriggerPercentileRecompute() {
+	go s.recomputePercentilesAndBump(context.Background())
+}
+
+// recomputePercentilesAndBump recomputes corpus percentiles, hot-swaps the
+// in-memory cache, and — if the corpus is non-empty — bumps
+// app_settings.mood_derivation_version so every track's mood_derived_version
+// becomes stale and gets re-derived against the fresh percentiles via
+// backfillMood (correctness over cost: the formulas are cheap arithmetic
+// over already-decoded raw features).
+func (s *AnalysisService) recomputePercentilesAndBump(ctx context.Context) {
+	// Serialize: if a recompute is already running, record that another was
+	// requested (so it re-runs once against the fresher data) and return
+	// instead of racing the version bump / backfill.
+	if !s.recomputeMu.TryLock() {
+		s.recomputePendMu.Lock()
+		s.recomputePending = true
+		s.recomputePendMu.Unlock()
+		return
+	}
+	defer s.recomputeMu.Unlock()
+
+	for {
+		s.recomputePendMu.Lock()
+		s.recomputePending = false
+		s.recomputePendMu.Unlock()
+
+		s.runRecomputeOnce(ctx)
+
+		s.recomputePendMu.Lock()
+		again := s.recomputePending
+		s.recomputePendMu.Unlock()
+		if !again {
+			return
+		}
+	}
+}
+
+func (s *AnalysisService) runRecomputeOnce(ctx context.Context) {
+	pctl, sampleCount, err := mood.RecomputeCorpusPercentiles(ctx, s.analysisRepo)
+	if err != nil {
+		s.logger.Warn("mood: percentile recompute failed", "error", err)
+		return
+	}
+	if sampleCount == 0 {
+		return // empty corpus; nothing to cache or bump yet
+	}
+
+	s.moodMu.Lock()
+	s.moodPctl = pctl
+	s.moodMu.Unlock()
+
+	settings, err := s.settingsRepo.Load(ctx)
+	if err != nil {
+		s.logger.Warn("mood: failed to load settings for version bump", "error", err)
+		return
+	}
+	settings.MoodDerivationVersion++
+	if err := s.settingsRepo.Save(ctx, settings); err != nil {
+		s.logger.Warn("mood: failed to persist mood_derivation_version bump", "error", err)
+		return
+	}
+
+	s.backfillMood(context.Background(), settings.MoodDerivationVersion)
+}
+
+// backfillMood re-derives mood for every track whose mood_derived_version is
+// behind currentMoodVersion, in batches, until none remain. Deliberately not
+// routed through the boost/normal-queue worker pool: that pool's
+// concurrency/throttle knobs are tuned for the expensive ffmpeg decode pass,
+// while mood re-derivation is cheap in-memory arithmetic over already-decoded
+// features plus one UPDATE per track, so a plain sequential loop suffices.
+func (s *AnalysisService) backfillMood(ctx context.Context, currentMoodVersion int) {
+	const batchSize = 500
+	for {
+		ids, err := s.analysisRepo.ListMoodPending(ctx, currentMoodVersion, batchSize)
+		if err != nil {
+			s.logger.Warn("mood: failed to list pending mood derivation", "error", err)
+			return
+		}
+		if len(ids) == 0 {
+			return
+		}
+		s.moodMu.RLock()
+		pctl := s.moodPctl
+		s.moodMu.RUnlock()
+		if len(pctl) == 0 {
+			return // cache unexpectedly empty/cleared; next recompute cycle will retry
+		}
+		progressed := 0
+		for _, id := range ids {
+			feat, err := s.analysisRepo.GetFeatures(ctx, id)
+			if err != nil || feat == nil {
+				continue
+			}
+			energy, dance := mood.Derive(feat, pctl)
+			if err := s.analysisRepo.UpsertMoodFeatures(ctx, id, energy, dance, currentMoodVersion); err != nil {
+				s.logger.Warn("mood: failed to persist derived mood features during backfill", "track_id", id, "error", err)
+				continue
+			}
+			progressed++
+		}
+		// UpsertMoodFeatures is what advances a track past ListMoodPending (it
+		// bumps mood_derived_version). If a whole batch made zero progress, the
+		// same pending IDs would be returned every iteration — a persistently
+		// failing track (missing features, DB error) would spin this loop
+		// forever. Bail instead; the next recompute cycle retries.
+		if progressed == 0 {
+			s.logger.Warn("mood: backfill made no progress, aborting to avoid spin", "pending", len(ids))
+			return
+		}
+	}
+}
+
+// GetProgress returns a fresh snapshot of analysis progress, for the
+// frontend to fetch once on mount rather than starting from a zero-valued
+// state and waiting on the next "analysis:progress" event (which, before the
+// first fetch, made the progress bar flash 100% while a sync was still
+// under way).
+func (s *AnalysisService) GetProgress() domain.AnalysisProgress {
+	s.mu.Lock()
+	limit := s.activeLimit
+	enabled := s.enabled
+	s.mu.Unlock()
+
+	state := domain.AnalysisStateAnalyzing
+	if !enabled || limit == 0 {
+		state = domain.AnalysisStatePaused
+	}
+	return s.currentProgress(state)
 }
 
 func (s *AnalysisService) emitProgress(state string) {
+	progress := s.currentProgress(state)
+	if app := application.Get(); app != nil && app.Event != nil {
+		app.Event.Emit("analysis:progress", progress)
+	}
+}
+
+func (s *AnalysisService) currentProgress(state string) domain.AnalysisProgress {
 	s.progMu.Lock()
 	done := s.done
 	s.progMu.Unlock()
@@ -442,13 +763,51 @@ func (s *AnalysisService) emitProgress(state string) {
 	}
 	total, state := resolveProgress(pending, done, state)
 
-	if app := application.Get(); app != nil && app.Event != nil {
-		app.Event.Emit("analysis:progress", domain.AnalysisProgress{
-			Done:  done,
-			Total: total,
-			State: state,
-		})
+	libraryTotal, libraryDone := s.libraryTotalCached(), 0
+	if libraryTotal >= 0 && pending >= 0 {
+		libraryDone = libraryTotal - pending
 	}
+	if libraryTotal < 0 {
+		libraryTotal = 0
+	}
+
+	return domain.AnalysisProgress{
+		Done:         done,
+		Total:        total,
+		State:        state,
+		LibraryDone:  libraryDone,
+		LibraryTotal: libraryTotal,
+	}
+}
+
+// libraryTotalTTL bounds how stale the cached CountAll may be. emitProgress
+// fires per analyzed track, so caching keeps a bulk scan from issuing a
+// full-table COUNT(*) per row; a progress bar tolerates a few seconds of lag
+// in the library total.
+const libraryTotalTTL = 3 * time.Second
+
+// libraryTotalCached returns the total track count, re-querying CountAll only
+// when the cache is empty or older than libraryTotalTTL. Returns -1 if the
+// count has never been obtained (query failed and no prior value).
+func (s *AnalysisService) libraryTotalCached() int {
+	s.progMu.Lock()
+	cached, at := s.libraryTotal, s.libraryTotalAt
+	s.progMu.Unlock()
+
+	if cached >= 0 && time.Since(at) < libraryTotalTTL {
+		return cached
+	}
+
+	allTracks, err := s.analysisRepo.CountAll(context.Background())
+	if err != nil {
+		return cached // keep last known value (may be -1 if never populated)
+	}
+
+	s.progMu.Lock()
+	s.libraryTotal = allTracks
+	s.libraryTotalAt = time.Now()
+	s.progMu.Unlock()
+	return allTracks
 }
 
 // resolveProgress derives the (total, state) pair reported to the frontend.

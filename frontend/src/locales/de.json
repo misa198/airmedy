@@ -203,7 +203,7 @@
     "library_analysis": {
       "title": "Bibliotheksanalyse",
       "enable": "Bibliotheksanalyse aktivieren",
-      "enable_desc": "Analysiert deine Bibliothek im Hintergrund, um Lautstärke und Klangmerkmale jedes Titels zu ermitteln. Erforderlich, bevor die Lautstärkenormalisierung genutzt werden kann.",
+      "enable_desc": "Durchsucht deine Musikbibliothek im Hintergrund, um Lautstärke und Klangmerkmale jedes Titels zu ermitteln.\nErforderlich, bevor Lautstärkenormalisierung und Mood Radio genutzt werden können.\nDieser Vorgang kann je nach Leistung deines Geräts eine Weile dauern.",
       "requires_enable": "Aktiviere oben die Bibliotheksanalyse, um die Lautstärkenormalisierung zu nutzen"
     },
     "normalization": {
@@ -272,6 +272,7 @@
     "pause": "Pause",
     "next": "Nächster",
     "repeat": "Wiederholen",
+    "mood_radio_active": "Mood Radio aktiv",
     "mute": "Stumm",
     "unmute": "Ton an",
     "lyrics": "Songtext",
@@ -382,7 +383,8 @@
     "refresh_lyrics": "Lyrics aktualisieren",
     "find_lyrics": "Songtexte finden",
     "remove_from_queue": "Aus Warteschlange entfernen",
-    "export_playlist": "Playlist exportieren"
+    "export_playlist": "Playlist exportieren",
+    "start_mood_radio": "Mood-Radio starten"
   },
   "find_lyrics": {
     "title": "Songtexte finden",

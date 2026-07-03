@@ -50,8 +50,8 @@ func NewSettingsRepository(db *DB) domain.SettingsRepository {
 
 func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSettings) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO app_settings (id, language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator, library_analysis_enabled, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, updated_at)
-		 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+		`INSERT INTO app_settings (id, language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator, library_analysis_enabled, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, mood_derivation_version, updated_at)
+		 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 		 ON CONFLICT(id) DO UPDATE SET
 		   language = excluded.language,
 		   theme = excluded.theme,
@@ -84,6 +84,7 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		   album_artist_delimiters = excluded.album_artist_delimiters,
 		   genre_delimiters = excluded.genre_delimiters,
 		   composer_delimiters = excluded.composer_delimiters,
+		   mood_derivation_version = excluded.mood_derivation_version,
 		   updated_at = excluded.updated_at`,
 		settings.Language,
 		settings.Theme,
@@ -116,6 +117,7 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		marshalDelimiters(settings.AlbumArtistDelimiters),
 		marshalDelimiters(settings.GenreDelimiters),
 		marshalDelimiters(settings.ComposerDelimiters),
+		settings.MoodDerivationVersion,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to save app settings: %w", err)
@@ -156,9 +158,10 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		AlbumArtistDelimiters    sql.NullString `db:"album_artist_delimiters"`
 		GenreDelimiters          sql.NullString `db:"genre_delimiters"`
 		ComposerDelimiters       sql.NullString `db:"composer_delimiters"`
+		MoodDerivationVersion    int            `db:"mood_derivation_version"`
 	}
 	err := r.db.GetContext(ctx, &row,
-		`SELECT language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator, library_analysis_enabled, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters FROM app_settings WHERE id = 1`,
+		`SELECT language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator, library_analysis_enabled, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, mood_derivation_version FROM app_settings WHERE id = 1`,
 	)
 	if err == sql.ErrNoRows {
 		return &domain.AppSettings{
@@ -222,5 +225,6 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		AlbumArtistDelimiters:    unmarshalDelimiters(row.AlbumArtistDelimiters.String),
 		GenreDelimiters:          unmarshalDelimiters(row.GenreDelimiters.String),
 		ComposerDelimiters:       unmarshalDelimiters(row.ComposerDelimiters.String),
+		MoodDerivationVersion:    row.MoodDerivationVersion,
 	}, nil
 }

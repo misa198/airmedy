@@ -47,6 +47,24 @@ tasks:
     cmds:
       - bash {{.ROOT_DIR}}/scripts/build-aubio-darwin.sh {{.ARCH | default ARCH}}
 
+  build:fftw3:
+    summary: Builds the FFTW3 static lib (libkeyfinder's FFT backend) for the target arch if not already present
+    status:
+      - test -f {{.ROOT_DIR}}/internal/infra/audio/fftw3_libs/darwin/{{.ARCH | default ARCH}}/libfftw3.a
+    cmds:
+      - bash {{.ROOT_DIR}}/scripts/build-fftw3-darwin.sh {{.ARCH | default ARCH}}
+
+  build:keyfinder:
+    summary: Builds the libkeyfinder static lib (musical key/mode detection) for the target arch if not already present
+    status:
+      - test -f {{.ROOT_DIR}}/internal/infra/audio/keyfinder_libs/darwin/{{.ARCH | default ARCH}}/libkeyfinder.a
+    deps:
+      - task: build:fftw3
+        vars:
+          ARCH: '{{.ARCH}}'
+    cmds:
+      - bash {{.ROOT_DIR}}/scripts/build-keyfinder-darwin.sh {{.ARCH | default ARCH}}
+
   build:native:
     summary: Builds the application natively on macOS
     internal: true
@@ -56,6 +74,9 @@ tasks:
         vars:
           ARCH: '{{.ARCH}}'
       - task: build:aubio
+        vars:
+          ARCH: '{{.ARCH}}'
+      - task: build:keyfinder
         vars:
           ARCH: '{{.ARCH}}'
       - task: common:go:mod:tidy

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { cn } from '@airmedy/utils'
 import { X } from 'lucide-vue-next'
 
@@ -13,11 +14,18 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string | number): void
 }>()
+
+const inputRef = ref<HTMLInputElement>()
+
+defineExpose({
+  focus: () => inputRef.value?.focus(),
+})
 </script>
 
 <template>
   <div class="relative">
     <input
+      ref="inputRef"
       v-bind="$attrs"
       :value="modelValue"
       @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"

@@ -5,6 +5,7 @@ import (
 
 	"airmedy/internal/app/analysis"
 	"airmedy/internal/app/player"
+	"airmedy/internal/domain"
 )
 
 type AnalysisService struct {
@@ -26,4 +27,10 @@ func (s *AnalysisService) SetLibraryAnalysisEnabled(enabled bool) error {
 	}
 	s.player.ReapplyNormalization()
 	return nil
+}
+
+// GetProgress returns a snapshot of analysis progress, for the frontend to
+// fetch once on mount before subscribing to "analysis:progress" events.
+func (s *AnalysisService) GetProgress() domain.AnalysisProgress {
+	return s.service.GetProgress()
 }

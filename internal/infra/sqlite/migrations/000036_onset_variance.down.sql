@@ -1,0 +1,1 @@
+-- onset_variance column intentionally not dropped (SQLite DROP COLUMN unsafe across versions)

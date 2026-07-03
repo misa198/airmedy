@@ -18,8 +18,8 @@ import (
 	"airmedy/internal/infra/artwork"
 	"airmedy/internal/infra/audio"
 	"airmedy/internal/infra/bleve"
-	lyricsinfra "airmedy/internal/infra/lyrics"
 	"airmedy/internal/infra/logging"
+	lyricsinfra "airmedy/internal/infra/lyrics"
 	"airmedy/internal/infra/metadata"
 	"airmedy/internal/infra/power"
 	"airmedy/internal/infra/sqlite"
@@ -58,7 +58,9 @@ var Module = fx.Module("app",
 			})
 			return search, nil
 		},
-		func(c *config.Config) (domain.ArtworkCache, error) { return artwork.NewDiskArtworkCache(c.ArtworkCachePath()) },
+		func(c *config.Config) (domain.ArtworkCache, error) {
+			return artwork.NewDiskArtworkCache(c.ArtworkCachePath())
+		},
 		func() domain.MetadataExtractor { return metadata.NewTagLibExtractor() },
 		func() domain.MetadataWriter { return metadata.NewTagLibWriter() },
 		func() domain.LoudnessAnalyzer { return audio.NewLoudnessAnalyzer() },
@@ -76,6 +78,7 @@ var Module = fx.Module("app",
 		wails.NewSettingsService,
 		wails.NewRemoteServerService,
 		wails.NewUpdaterService,
+		wails.NewMoodRadioService,
 		func(logger *slog.Logger) *updater.Service {
 			return updater.NewService(config.Version, logger)
 		},
@@ -100,6 +103,13 @@ var Module = fx.Module("app",
 				// Wire library to player to sync track metadata changes (e.g. favorites)
 				lib.AddTrackUpdateListener(func(track *domain.TrackDTO) {
 					playerSvc.SyncTrack(track)
+				})
+
+				// Last.fm love/unlove only on a genuine favorite toggle — not on
+				// every track update. AddTrackUpdateListener also fires on import
+				// and metadata edits, which would spam track.unlove for every
+				// freshly imported non-favorite track.
+				lib.AddFavoriteChangeListener(func(track *domain.TrackDTO) {
 					lastfmSvc.SetLoveStatus(track, track.IsFavorite)
 				})
 
@@ -110,8 +120,12 @@ var Module = fx.Module("app",
 				lib.AddAnalysisListener(func(trackID string) {
 					analysisSvc.Enqueue(trackID, false)
 				})
+				lib.AddSyncFinishedListener(func() {
+					analysisSvc.TriggerPercentileRecompute()
+				})
 				lib.AddTrackDeletedListener(func(trackIDs []string) {
 					analysisSvc.Dequeue(trackIDs)
+					analysisSvc.NotifyTracksDeleted(trackIDs)
 				})
 				playerSvc.AddStatusListener(func(status domain.PlayerStatus) {
 					analysisSvc.SetThrottled(status.PlaybackState == domain.PlaybackStatePlaying)

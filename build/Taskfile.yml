@@ -85,7 +85,7 @@ tasks:
     generates:
       - frontend/bindings/**/*
     env:
-      CGO_CFLAGS: "-I{{.ROOT_DIR}}/internal/infra/audio/ffmpeg_libs/include"
+      CGO_CFLAGS: "-I{{.ROOT_DIR}}/internal/infra/audio/ffmpeg_libs/include -I{{.ROOT_DIR}}/internal/infra/audio/keyfinder_libs/include"
     cmds:
       - wails3 generate bindings -f '{{.BUILD_FLAGS}}' -clean=true -ts
 

@@ -30,3 +30,29 @@ SFBAudioEngine includes several third-party libraries (including libogg,
 libvorbis, libopus, and libFLAC) which are subject to their own licenses.
 The SFBAudioEngine frameworks are dynamically linked to comply with
 dependency license requirements.
+
+--------------------------------------------------------------------------------
+libkeyfinder
+https://github.com/mixxxdj/libkeyfinder
+--------------------------------------------------------------------------------
+This software uses libkeyfinder, which is licensed under the GNU Lesser General
+Public License (LGPL) version 3.0.
+
+The libkeyfinder source code is available at https://github.com/mixxxdj/libkeyfinder
+
+License text: https://www.gnu.org/licenses/lgpl-3.0.html
+
+--------------------------------------------------------------------------------
+FFTW3
+https://www.fftw.org
+--------------------------------------------------------------------------------
+This software uses the FFTW3 library (libkeyfinder's FFT backend), which is
+licensed under the GNU General Public License (GPL) version 2 or later — NOT
+LGPL. Static linking of GPL code into this project's binary GPL-encumbers
+that binary; this is an accepted, deliberate scope decision for the musical
+key/mode detection feature, not an oversight. Confirm scope/compliance with
+the project owner before distributing a build that includes this library.
+
+The FFTW3 source code is available at https://www.fftw.org/download.html
+
+License text: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html

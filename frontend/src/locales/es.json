@@ -203,7 +203,7 @@
     "library_analysis": {
       "title": "Análisis de la biblioteca",
       "enable": "Activar análisis de la biblioteca",
-      "enable_desc": "Analiza tu biblioteca en segundo plano para medir la sonoridad y las características de audio de cada pista. Necesario antes de poder usar la normalización de volumen.",
+      "enable_desc": "Escanea tu biblioteca musical en segundo plano para medir la sonoridad y las características de audio de cada pista.\nNecesario antes de poder usar la normalización de volumen y la Radio de estados de ánimo.\nEste proceso puede tardar un tiempo, según las prestaciones de tu equipo.",
       "requires_enable": "Activa el análisis de la biblioteca arriba para usar la normalización de volumen"
     },
     "normalization": {
@@ -272,6 +272,7 @@
     "pause": "Pausa",
     "next": "Siguiente",
     "repeat": "Repetir",
+    "mood_radio_active": "Radio de estados de ánimo activa",
     "mute": "Silenciar",
     "unmute": "Activar sonido",
     "lyrics": "Letras",
@@ -382,7 +383,8 @@
     "refresh_lyrics": "Actualizar letra",
     "find_lyrics": "Buscar letra",
     "remove_from_queue": "Eliminar de la cola",
-    "export_playlist": "Exportar lista de reproducción"
+    "export_playlist": "Exportar lista de reproducción",
+    "start_mood_radio": "Iniciar Radio de Ánimo"
   },
   "find_lyrics": {
     "title": "Buscar letra",

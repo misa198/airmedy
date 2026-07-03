@@ -11,6 +11,7 @@ import (
 	"context"
 	"encoding/binary"
 	"math"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"testing"
@@ -170,6 +171,190 @@ func TestAnalyzeTempo(t *testing.T) {
 	if !ok {
 		t.Errorf("tempo %.2f not within tolerance of %.0f (or its half/double)", feat.Tempo, bpm)
 	}
+}
+
+// writeJitteredClickWAV is like writeClickWAV but randomizes each beat's period
+// by +/-jitterFrac, producing an irregular rhythm aubio_onset can distinguish
+// from the fixed-interval case.
+//
+// Click duration is tuned empirically: aubio's "hfc" onset peak-picker misses
+// most beats of a short/sharp click train (e.g. the ~20ms clicks writeClickWAV
+// uses for tempo detection) — verified via a standalone aubio-only repro
+// independent of this codebase's ffmpeg/cgo wiring. A ~40ms decaying noise
+// burst (clickLen below) gets picked up reliably across many seeds.
+func writeJitteredClickWAV(t *testing.T, bpm float64, jitterFrac float64, seconds float64, sampleRate int) string {
+	t.Helper()
+	const channels = 2
+	nSamples := int(float64(sampleRate) * seconds)
+	dataLen := nSamples * channels * 2
+
+	path := filepath.Join(t.TempDir(), "click_jitter.wav")
+	f, err := os.Create(path)
+	if err != nil {
+		t.Fatalf("create wav: %v", err)
+	}
+	defer func() { _ = f.Close() }()
+
+	w := func(v any) {
+		if err := binary.Write(f, binary.LittleEndian, v); err != nil {
+			t.Fatalf("write wav: %v", err)
+		}
+	}
+	f.WriteString("RIFF")
+	w(uint32(36 + dataLen))
+	f.WriteString("WAVE")
+	f.WriteString("fmt ")
+	w(uint32(16))
+	w(uint16(1))
+	w(uint16(channels))
+	w(uint32(sampleRate))
+	w(uint32(sampleRate * channels * 2))
+	w(uint16(channels * 2))
+	w(uint16(16))
+	f.WriteString("data")
+	w(uint32(dataLen))
+
+	rng := rand.New(rand.NewSource(42))
+	basePeriod := float64(sampleRate) * 60.0 / bpm
+	clickLen := sampleRate * 40 / 1000 // 40 ms click
+
+	nextBeat := 0
+	beatPos := 0
+	ampFactor := 1.0
+	for i := 0; i < nSamples; i++ {
+		var s int16
+		if i == nextBeat {
+			beatPos = i
+			period := basePeriod * (1 + jitterFrac*(2*rng.Float64()-1))
+			nextBeat = i + int(period)
+			// Vary click amplitude slightly beat-to-beat (real transients never
+			// repeat at identical energy): aubio's onset peak-picker adapts its
+			// threshold to recent onset-detection-function values, and a train
+			// of perfectly identical peaks can make it "habituate" and stop
+			// firing for a stretch — an artifact of a too-clean synthetic
+			// signal, not something real audio (or our variance math) hits.
+			ampFactor = 0.7 + 0.3*rng.Float64()
+		}
+		pos := i - beatPos
+		if pos >= 0 && pos < clickLen {
+			// Broadband noise burst, not a narrowband tone: a pure-tone click's
+			// energy is phase-sensitive to where it lands relative to hop
+			// boundaries, which can cause aubio's onset peak-picker to miss
+			// beats intermittently. Noise gives a clean spectral-flux impulse
+			// regardless of hop alignment.
+			env := math.Exp(-float64(pos) / float64(clickLen/4))
+			s = int16(env * ampFactor * (rng.Float64()*2 - 1) * 32000)
+		}
+		w(s)
+		w(s)
+	}
+	return path
+}
+
+func TestAnalyzeOnsetVariance(t *testing.T) {
+	const bpm = 120.0
+	regularPath := writeJitteredClickWAV(t, bpm, 0, 12.0, 44100)
+	jitteredPath := writeJitteredClickWAV(t, bpm, 0.3, 12.0, 44100)
+
+	regular, err := NewLoudnessAnalyzer().Analyze(context.Background(), regularPath)
+	if err != nil {
+		t.Fatalf("Analyze(regular): %v", err)
+	}
+	jittered, err := NewLoudnessAnalyzer().Analyze(context.Background(), jitteredPath)
+	if err != nil {
+		t.Fatalf("Analyze(jittered): %v", err)
+	}
+
+	t.Logf("onset variance: regular=%.1f jittered=%.1f", regular.OnsetVariance, jittered.OnsetVariance)
+
+	if math.IsNaN(regular.OnsetVariance) || regular.OnsetVariance < 0 {
+		t.Errorf("regular OnsetVariance out of range: %v", regular.OnsetVariance)
+	}
+	if math.IsNaN(jittered.OnsetVariance) || jittered.OnsetVariance < 0 {
+		t.Errorf("jittered OnsetVariance out of range: %v", jittered.OnsetVariance)
+	}
+	if jittered.OnsetVariance <= regular.OnsetVariance {
+		t.Errorf("expected jittered onset variance (%.1f) > regular onset variance (%.1f)",
+			jittered.OnsetVariance, regular.OnsetVariance)
+	}
+}
+
+// writeChordWAV writes a stereo 16-bit PCM WAV summing sine tones at the given
+// frequencies (a musical chord) — a signal libkeyfinder's chromagram can lock
+// a tonal center onto.
+func writeChordWAV(t *testing.T, freqs []float64, seconds float64, sampleRate int) string {
+	t.Helper()
+	const channels = 2
+	nSamples := int(float64(sampleRate) * seconds)
+	dataLen := nSamples * channels * 2
+
+	path := filepath.Join(t.TempDir(), "chord.wav")
+	f, err := os.Create(path)
+	if err != nil {
+		t.Fatalf("create wav: %v", err)
+	}
+	defer func() { _ = f.Close() }()
+
+	w := func(v any) {
+		if err := binary.Write(f, binary.LittleEndian, v); err != nil {
+			t.Fatalf("write wav: %v", err)
+		}
+	}
+	f.WriteString("RIFF")
+	w(uint32(36 + dataLen))
+	f.WriteString("WAVE")
+	f.WriteString("fmt ")
+	w(uint32(16))
+	w(uint16(1))
+	w(uint16(channels))
+	w(uint32(sampleRate))
+	w(uint32(sampleRate * channels * 2))
+	w(uint16(channels * 2))
+	w(uint16(16))
+	f.WriteString("data")
+	w(uint32(dataLen))
+
+	amp := 0.9 / float64(len(freqs))
+	for i := 0; i < nSamples; i++ {
+		var v float64
+		for _, freq := range freqs {
+			v += amp * math.Sin(2*math.Pi*freq*float64(i)/float64(sampleRate))
+		}
+		s := int16(v * math.MaxInt16)
+		w(s)
+		w(s)
+	}
+	return path
+}
+
+func TestAnalyzeMusicalKey(t *testing.T) {
+	// C major triad: C4, E4, G4.
+	cMajorPath := writeChordWAV(t, []float64{261.63, 329.63, 392.00}, 8.0, 44100)
+	// A minor triad: A3, C4, E4 — relative minor of C major, so pitch class
+	// alone doesn't distinguish it from the case above; mode should.
+	aMinorPath := writeChordWAV(t, []float64{220.00, 261.63, 329.63}, 8.0, 44100)
+
+	cMajor, err := NewLoudnessAnalyzer().Analyze(context.Background(), cMajorPath)
+	if err != nil {
+		t.Fatalf("Analyze(C major): %v", err)
+	}
+	aMinor, err := NewLoudnessAnalyzer().Analyze(context.Background(), aMinorPath)
+	if err != nil {
+		t.Fatalf("Analyze(A minor): %v", err)
+	}
+
+	t.Logf("C major triad -> key=%q mode=%q", cMajor.MusicalKey, cMajor.Mode)
+	t.Logf("A minor triad -> key=%q mode=%q", aMinor.MusicalKey, aMinor.Mode)
+
+	if cMajor.MusicalKey == "" || cMajor.Mode == "" {
+		t.Errorf("expected a detected key/mode for the C major triad, got key=%q mode=%q", cMajor.MusicalKey, cMajor.Mode)
+	}
+	if aMinor.MusicalKey == "" || aMinor.Mode == "" {
+		t.Errorf("expected a detected key/mode for the A minor triad, got key=%q mode=%q", aMinor.MusicalKey, aMinor.Mode)
+	}
+	// Key detection on isolated synthetic chords is inherently ambiguous
+	// (relative major/minor share the same pitch classes) — we only assert
+	// that a definite mode was classified for each, not which one.
 }
 
 func TestAnalyzeCancelled(t *testing.T) {
