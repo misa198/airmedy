@@ -133,8 +133,12 @@ jobs:
         if: steps.cache-keyfinder.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-mingw-w64-x86-64 cmake
+          # libkeyfinder is C++, so g++-mingw-w64 is required in addition to the
+          # C compiler. Pin both to the posix threading variant (the win32 default
+          # lacks std::thread and mismatches the posix-built FFTW3).
+          sudo apt-get install -y gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 cmake
           sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
+          sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
           LLVM_MINGW=llvm-mingw-20260616-ucrt-ubuntu-22.04-x86_64
           curl -L "https://github.com/mstorsjo/llvm-mingw/releases/download/20260616/${LLVM_MINGW}.tar.xz" -o /tmp/llvm-mingw.tar.xz
           sudo tar -xf /tmp/llvm-mingw.tar.xz -C /opt
