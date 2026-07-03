@@ -96,8 +96,11 @@ build_arch() {
     local FFTW3_LIB="${FFTW3_BASE}/${ARCH}/libfftw3.a"
     if [[ ! -f "${FFTW3_LIB}" ]]; then
         echo "==> FFTW3 static lib missing for ${ARCH}, building it first..."
-        bash "$(dirname "$0")/build-fftw3-windows.sh" "${ARCH}"
+        bash "${REPO_ROOT}/scripts/build-fftw3-windows.sh" "${ARCH}"
     fi
+    # libkeyfinder.a only needs FFTW3's *headers* to compile, so a missing
+    # FFTW3 static lib does NOT fail this build — assert it exists.
+    [[ -f "${FFTW3_LIB}" ]] || { echo "    ERROR: ${FFTW3_LIB} not produced" >&2; exit 1; }
 
     echo "==> Building libkeyfinder ${KEYFINDER_VERSION} for Windows ${ARCH}..."
     rm -rf "${WORK_DIR}"

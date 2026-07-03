@@ -34,8 +34,12 @@ build_arch() {
     local FFTW3_LIB="${FFTW3_BASE}/${OUT_ARCH}/libfftw3.a"
     if [[ ! -f "${FFTW3_LIB}" ]]; then
         echo "==> FFTW3 static lib missing for ${OUT_ARCH}, building it first..."
-        bash "$(dirname "$0")/build-fftw3-linux.sh" "${OUT_ARCH}"
+        bash "${REPO_ROOT}/scripts/build-fftw3-linux.sh" "${OUT_ARCH}"
     fi
+    # libkeyfinder.a only needs FFTW3's *headers* to compile, so a missing
+    # FFTW3 static lib does NOT fail this build — it would silently ship a
+    # keyfinder lib with no linkable FFTW3 for that arch. Assert it exists.
+    [[ -f "${FFTW3_LIB}" ]] || { echo "    ERROR: ${FFTW3_LIB} not produced" >&2; exit 1; }
 
     local SRC_DIR="${BUILD_DIR}/src"
     local WORK_DIR="${BUILD_DIR}/work-${OUT_ARCH}"
