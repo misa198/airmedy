@@ -3,11 +3,15 @@
 ## Summary
 
 Background pipeline that decodes each track once, runs an ffmpeg `libavfilter`
-graph (`ebur128,aspectralstats,astats`) plus aubio tempo detection in-process via
-cgo, and stores the result (loudness, dynamics, spectral features, tempo) in
-`track_features`. This is the sole data source for [Volume Normalization](../normalization/README.md).
-`energy`/`danceability` are now derived from these raw features (rule-based, no ML) and consumed by
-[Smart Playlists](../smart-playlists/README.md); `valence` remains reserved-but-unbuilt pending Essentia ML work.
+graph (`ebur128,aspectralstats,astats`) plus aubio tempo detection and a
+Keyfinder (libkeyfinder) musical-key/mode pass in-process via cgo, and stores
+the result (loudness, dynamics, spectral features, tempo, onset variance,
+musical key) in `track_features`. This is the sole data source for
+[Volume Normalization](../normalization/README.md).
+`energy`/`danceability` are derived from these raw features (rule-based, no ML,
+normalized against corpus-wide percentiles — see Mood Derivation below) and
+consumed by [Smart Playlists](../smart-playlists/README.md) and Mood Radio;
+`valence` remains reserved-but-unbuilt pending Essentia ML work.
 
 The pipeline is **opt-in** (`AppSettings.LibraryAnalysisEnabled`, default `false`):
 the worker pool exists only while enabled. Disabling it also force-disables
@@ -17,15 +21,22 @@ Normalization, since Normalization has no other source of loudness data.
 
 | File | Purpose |
 | ---- | ------- |
-| `internal/app/analysis/analysis_service.go` | Worker pool, queue, enable/disable lifecycle |
+| `internal/app/analysis/analysis_service.go` | Worker pool, queue, enable/disable lifecycle, mood-derivation trigger |
 | `internal/app/analysis/module.go` | FX module |
+| `internal/app/analysis/mood/` | Mood formulas, percentile normalization, corpus percentile recompute |
 | `internal/infra/wails/analysis_service.go` | Wails binding (`SetLibraryAnalysisEnabled`) |
-| `internal/infra/audio/analyzer.go` + `ffmpeg_analyzer.h` | cgo adapter implementing `domain.LoudnessAnalyzer` |
-| `internal/infra/sqlite/analysis_repository.go` | `track_features` CRUD, pending-count/list, `MarkFailed` |
+| `internal/infra/wails/mood_radio_service.go` | Wails binding (`SeedMoodRadio`) |
+| `internal/infra/audio/analyzer.go` + `ffmpeg_analyzer.h` | cgo adapter implementing `domain.LoudnessAnalyzer`; also maps Keyfinder's pitch-class/mode output to `MusicalKey`/`Mode` |
+| `internal/infra/audio/keyfinder_bridge.cpp` + `.h` | cgo↔libkeyfinder bridge for musical key/mode detection |
+| `internal/infra/sqlite/analysis_repository.go` | `track_features` CRUD, pending-count/list, `MarkFailed`, percentile table CRUD, mood-pending list |
+| `internal/infra/sqlite/track_query_repository.go` | `FindSimilar` — weighted-euclidean nearest-neighbor query over energy/danceability/tempo, backs Mood Radio |
 | `internal/domain/audio.go` | `LoudnessAnalyzer` interface |
-| `internal/domain/models.go` | `TrackFeatures`, `AppSettings.LibraryAnalysisEnabled`, `AnalysisProgress` |
-| `internal/infra/sqlite/settings_repository.go` | Persistence for `library_analysis_enabled` |
-| `internal/app/module.go` | Central wiring: import → enqueue, playback → throttle, on-play → boost |
+| `internal/domain/models.go` | `TrackFeatures`, `FeaturePercentileRow`, `AppSettings.LibraryAnalysisEnabled`/`MoodDerivationVersion`, `AnalysisProgress` |
+| `internal/domain/repositories.go` | `AnalysisRepository` (percentile/mood methods), `TrackQueryRepository` |
+| `internal/infra/sqlite/settings_repository.go` | Persistence for `library_analysis_enabled`, `mood_derivation_version` |
+| `internal/app/module.go` | Central wiring: import → enqueue, playback → throttle, on-play → boost, delete → mood-change notify |
+| `frontend/src/stores/moodRadio.ts` | Mood Radio queue-seeding/auto-refill store |
+| `scripts/build-keyfinder-*.sh`, `scripts/build-fftw3-*.sh` | Native build scripts for the libkeyfinder + FFTW3 cgo dependency (per-OS cross-build) |
 
 ## Settings (`AppSettings`)
 
@@ -112,6 +123,85 @@ analyzing (and writing `UpsertFeatures` for) tracks that are being deleted out
 from under it, which otherwise piles unnecessary DB writes onto the same
 SQLite writer the deletion itself needs.
 
+## Mood Derivation (`internal/app/analysis/mood/`)
+
+`energy`/`danceability` are computed from raw `track_features` columns
+(`rms`, `spectral_centroid`, `spectral_flux`, `tempo`, `crest`,
+`onset_variance`, `loudness_range`) via locked formulas in `formulas.go`
+(`DeriveEnergy`, `DeriveDanceability`) — weighted sums of each feature run
+through `Normalize` (`mood.go`): hard-clamp to `[P1,P99]`, then a sigmoid
+(`k=2.5`) of the value's distance from the corpus median in half-`(P95-P5)`
+units. Danceability's tempo term instead uses `tempoScore`, a fixed
+triangular function on raw BPM (0 at ≤60/≥180bpm, peaks at 1 at ~115bpm) —
+not percentile-normalized, since tempo has a musically meaningful absolute
+scale rather than a corpus-relative one.
+
+`Normalize` needs a `PercentileSet` (`map[featureName]Percentile{P1,P5,P50,P95,P99}`)
+computed across the whole analyzed library — a single track's raw features are
+meaningless without a corpus to compare against. That set is:
+
+- **Computed** by `RecomputeCorpusPercentiles` (`percentiles.go`): pulls every
+  analyzed track's raw values via `AnalysisRepository.ListRawFeatureValues`,
+  sorts and linearly interpolates p1/p5/p50/p95/p99 per feature (numpy's
+  "linear" method), and persists via `UpsertFeaturePercentiles` into
+  `feature_percentiles` (one row per feature, with `sample_count`/`computed_at`).
+- **Cached** in-memory on `AnalysisService.moodPctl` (`loadPercentileCache`
+  loads it at startup); hot-swapped by `recomputePercentilesAndBump` whenever
+  recomputed, so in-flight derivations pick up the fresh table without
+  blocking on a DB read per track.
+- **Triggered** to recompute via three independent paths:
+  1. **Startup staleness** (`maybeRecomputeOnStartup`): if the cached rows are
+     older than `percentileStalenessThreshold` (24h) or don't exist yet,
+     recompute once at `Start(ctx)`. This is the app's stand-in for a
+     nightly-cron scheduler, since it's an offline desktop app that isn't
+     always running.
+  2. **Batch threshold**: `notifyMoodChange(n)` (called with `n=1` from
+     `driveMoodDerivation` after each successful raw analysis, and
+     `n=len(trackIDs)` from `NotifyTracksDeleted`) adds to a single combined
+     `moodChangeCounter`; once it reaches `percentileRecomputeBatchSize`
+     (100), a recompute fires immediately and the counter resets.
+  3. **Debounce timeout**: every call to `notifyMoodChange` also (re)arms a
+     `time.AfterFunc(percentileRecomputeDebounce, ...)` (30s). If no further
+     add/delete event arrives before it fires, `fireDebouncedRecompute`
+     recomputes with whatever's accumulated so far — bounds staleness for
+     small batches instead of waiting indefinitely for the count to fill up.
+     Adds and deletes share one counter/timer (previously two separate
+     fixed-count thresholds, 200 for adds / 50 for deletes); the debounce
+     timeout is what now bounds staleness, not a lower count.
+
+After any recompute that yields a non-empty corpus, `settings.MoodDerivationVersion`
+is bumped and every track's `tracks.mood_derived_version` becomes stale
+relative to it. `backfillMood` then re-derives mood in batches
+(`ListMoodPending` → `Derive` → `UpsertMoodFeatures`) for every stale track —
+run as a plain sequential loop, not through the boost/normal worker pool,
+since re-deriving from already-decoded features is cheap in-memory
+arithmetic plus one `UPDATE`, unlike the expensive ffmpeg decode pass the
+pool's concurrency/throttle knobs are tuned for.
+
+`driveMoodDerivation` runs immediately after each track's raw analysis
+succeeds: if `moodPctl` is already warm, it derives and persists that
+track's mood right away (via `UpsertMoodFeatures`); if the cache is cold
+(true cold start, no corpus yet), it's a no-op until the first recompute
+backfills it.
+
+## Mood Radio (`frontend/src/stores/moodRadio.ts`, `MoodRadioService`)
+
+"Give me more like this" queue seeding/auto-refill, gated on
+`AppSettings.LibraryAnalysisEnabled` (energy/danceability/tempo are its only
+inputs). `MoodRadioService.SeedMoodRadio(seedTrackID, limit)` calls
+`TrackQueryRepository.FindSimilar`, which ranks analyzed tracks by weighted-
+euclidean distance over `energy`/`danceability`/`tempo` (tempo scaled `/200`
+to bring its BPM range in line with the 0-1 normalized features), computed
+entirely in SQL via correlated subqueries against the seed's own feature row,
+excluding unanalyzed tracks and the seed itself.
+
+The frontend store starts Mood Radio by seeding + prepending the seed track
+(`FindSimilar` always excludes it), then auto-refills the queue as it drains
+below `REFILL_THRESHOLD` (3) remaining tracks, appending `SEED_BATCH_SIZE` (15)
+more similar tracks at a time and deduping against what's already queued.
+Turning off Library Analysis mid-session stops the radio immediately (watched
+reactively), since its only data source just went away.
+
 ## Central Wiring (`internal/app/module.go`)
 
 To avoid a `library↔analysis` or `player↔analysis` import cycle, all cross-package
@@ -119,7 +209,10 @@ listeners are wired in one `fx.Invoke` block:
 
 ```go
 lib.AddAnalysisListener(func(trackID string) { analysisSvc.Enqueue(trackID, false) })
-lib.AddTrackDeletedListener(func(trackIDs []string) { analysisSvc.Dequeue(trackIDs) })
+lib.AddTrackDeletedListener(func(trackIDs []string) {
+    analysisSvc.Dequeue(trackIDs)
+    analysisSvc.NotifyTracksDeleted(trackIDs) // feeds the mood percentile batch/debounce trigger
+})
 playerSvc.AddStatusListener(func(status domain.PlayerStatus) {
     analysisSvc.SetThrottled(status.PlaybackState == domain.PlaybackStatePlaying)
 })

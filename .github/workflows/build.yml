@@ -454,7 +454,7 @@ jobs:
             echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports $(lsb_release -cs)-security main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.list
           fi
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libgtk-4-dev libwebkitgtk-6.0-dev build-essential nsis gcc-aarch64-linux-gnu libc6-dev-arm64-cross pkg-config qemu-user-static binfmt-support
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libgtk-4-dev libwebkitgtk-6.0-dev build-essential nsis gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross pkg-config qemu-user-static binfmt-support
 
       - name: Install Windows Dependencies
         if: runner.os == 'Windows'
@@ -620,6 +620,11 @@ jobs:
             "Linux-ARM64")
               export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/linux/arm64"
               export CC=aarch64-linux-gnu-gcc
+              # keyfinder_bridge.cpp is a C++ cgo file, so Go's link step also
+              # invokes $CXX; without the cross g++ it falls back to host g++,
+              # which feeds AArch64 objects to the host ld ("Relocations in
+              # generic ELF (EM: 183)").
+              export CXX=aarch64-linux-gnu-g++
               export CGO_ENABLED=1
               export GOARCH=arm64
               export GOOS=linux
