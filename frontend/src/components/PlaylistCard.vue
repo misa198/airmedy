@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ListMusic } from 'lucide-vue-next'
 import PlaylistArtwork from '@/components/PlaylistArtwork.vue'
 import type { Playlist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 

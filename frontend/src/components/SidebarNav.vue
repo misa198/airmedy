@@ -7,7 +7,7 @@ import {
   Music,
   PenTool,
   Users
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'

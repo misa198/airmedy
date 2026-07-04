@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { 
   Music, Settings as SettingsIcon,
   Sparkles, History, Ghost
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'

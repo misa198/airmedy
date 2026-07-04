@@ -1,4 +1,4 @@
-import { ListEnd, ListPlus } from 'lucide-vue-next'
+import { ListEnd, ListPlus } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
 import type { ContextMenuItem } from './useContextMenu'

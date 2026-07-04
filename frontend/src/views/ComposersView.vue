@@ -2,7 +2,7 @@
 import { ref, shallowRef, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
-import { UserCircle } from 'lucide-vue-next'
+import { UserCircle } from '@lucide/vue'
 import type { Composer, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import EntityExplorerLayout from '../components/EntityExplorerLayout.vue'
 import { usePlayerStore } from '@/stores/player'

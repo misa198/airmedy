@@ -370,6 +370,8 @@
     "play": "เล่น",
     "shuffle": "สุ่ม",
     "play_next": "เล่นเป็นลำดับถัดไป",
+    "add_to_queue": "เพิ่มในคิว",
+    "already_in_queue": "อยู่ในคิวแล้ว",
     "add_to_favorites": "เพิ่มในรายการโปรด",
     "remove_from_favorites": "เอาออกจากรายการโปรด",
     "add_to_playlist": "เพิ่มในเพลย์ลิสต์",

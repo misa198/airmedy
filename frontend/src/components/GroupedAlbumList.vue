@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { Play, Disc } from 'lucide-vue-next'
+import { Play, Disc } from '@lucide/vue'
 import type { TrackDTO, AlbumDTO } from '../../bindings/airmedy/internal/domain/models'
 import { usePlayerStore } from '../stores/player'
 import { buildArtworkUrl } from '@airmedy/utils'

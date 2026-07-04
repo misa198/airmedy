@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { Search, Settings, Sparkles } from 'lucide-vue-next'
+import { Search, Settings, Sparkles } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import SidebarNav from './SidebarNav.vue'
 import SidebarPlaylists from './SidebarPlaylists.vue'

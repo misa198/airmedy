@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Music } from 'lucide-vue-next'
+import { Music } from '@lucide/vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, toRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'

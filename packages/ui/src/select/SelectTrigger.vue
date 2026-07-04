@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { SelectIcon, SelectTrigger, type SelectTriggerProps, useForwardProps } from 'radix-vue'
-import { ChevronDown } from 'lucide-vue-next'
+import { ChevronDown } from '@lucide/vue'
 import { cn } from '@airmedy/utils'
 
 const props = defineProps<SelectTriggerProps & { class?: any }>()

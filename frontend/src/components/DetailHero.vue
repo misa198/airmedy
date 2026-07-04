@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { ArrowLeft } from 'lucide-vue-next'
+import { ArrowLeft } from '@lucide/vue'
 import { hexToRgba } from '@airmedy/utils'
 import type { ThemeColors } from '../../bindings/airmedy/internal/domain/models'
 

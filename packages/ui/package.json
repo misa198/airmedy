@@ -19,8 +19,8 @@
   },
   "dependencies": {
     "@airmedy/utils": "workspace:*",
+    "@lucide/vue": "1.23.0",
     "radix-vue": "1.9.17",
-    "lucide-vue-next": "1.0.0",
     "vue-resizable-panels": "0.0.1"
   },
   "peerDependencies": {

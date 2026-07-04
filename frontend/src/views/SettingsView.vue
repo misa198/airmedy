@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import {
   Folder, Settings,
   Play, Info, Blocks, Wifi,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import GeneralSettings from '@/components/settings/GeneralSettings.vue'
 import LibrarySettings from '@/components/settings/LibrarySettings.vue'

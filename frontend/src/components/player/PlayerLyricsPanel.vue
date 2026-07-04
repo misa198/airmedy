@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Mic2, X } from 'lucide-vue-next'
+import { Mic2, X } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import LyricsView from '../PlayerLyrics.vue'
 

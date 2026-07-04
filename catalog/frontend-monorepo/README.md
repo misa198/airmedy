@@ -85,7 +85,7 @@ All exports are re-exported from `packages/ui/src/index.ts`.
 | Package                | Purpose                           |
 | ---------------------- | --------------------------------- |
 | `radix-vue`            | Accessible headless primitives    |
-| `lucide-vue-next`      | Icon set                          |
+| `@lucide/vue`      | Icon set                          |
 | `vue-resizable-panels` | Resizable panel layout            |
 | `@airmedy/utils`       | `cn` utility for class merging    |
 

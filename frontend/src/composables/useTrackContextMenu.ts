@@ -1,4 +1,4 @@
-import { Heart, HeartOff, ListEnd, ListPlus, Disc, User, Pencil, FolderOpen, Info, RefreshCw, ListX, Check, Trash2, Search, Radio } from 'lucide-vue-next'
+import { Heart, HeartOff, ListStart, ListEnd, ListPlus, Disc, User, Pencil, FolderOpen, Info, RefreshCw, ListX, Check, Trash2, Search, Radio } from '@lucide/vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
@@ -17,6 +17,7 @@ import * as LyricsService from '../../bindings/airmedy/internal/infra/wails/lyri
 export interface TrackContextMenuOptions {
   excludePlayNext?: boolean
   showRemoveFromQueue?: boolean
+  excludeAddToQueue?: boolean
   playlistId?: string
 }
 
@@ -53,8 +54,18 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
     if (!options.excludePlayNext && !isCurrentTrack) {
       items.push({
         label: t('context_menu.play_next'),
-        icon: ListEnd,
+        icon: ListStart,
         action: () => { PlayerService.PlayNext(track) },
+      })
+    }
+    if (!options.excludeAddToQueue && !isCurrentTrack) {
+      const alreadyQueued = playerStore.queueIds.has(track.id)
+      items.push({
+        label: t('context_menu.add_to_queue'),
+        icon: ListEnd,
+        disabled: alreadyQueued,
+        tooltip: alreadyQueued ? t('context_menu.already_in_queue') : undefined,
+        action: () => { PlayerService.AppendTracks([track]) },
       })
     }
 
@@ -216,8 +227,21 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
     if (!options.excludePlayNext) {
       items.push({
         label: t('context_menu.play_next'),
-        icon: ListEnd,
+        icon: ListStart,
         action: () => { PlayerService.PlayNextTracks(tracks) },
+      })
+    }
+
+    if (!options.excludeAddToQueue) {
+      const queueIds = playerStore.queueIds
+      const toAdd = tracks.filter(t => !queueIds.has(t.id))
+      const allQueued = toAdd.length === 0
+      items.push({
+        label: t('context_menu.add_to_queue'),
+        icon: ListEnd,
+        disabled: allQueued,
+        tooltip: allQueued ? t('context_menu.already_in_queue') : undefined,
+        action: () => { PlayerService.AppendTracks(toAdd) },
       })
     }
 

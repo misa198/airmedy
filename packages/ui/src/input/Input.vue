@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { cn } from '@airmedy/utils'
-import { X } from 'lucide-vue-next'
+import { X } from '@lucide/vue'
 
 defineOptions({ inheritAttrs: false })
 

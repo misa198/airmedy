@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ListMusic, Heart } from 'lucide-vue-next'
+import { ListMusic, Heart } from '@lucide/vue'
 import type { Playlist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import { buildArtworkUrl } from '@airmedy/utils'
 import LazyImg from '@/components/LazyImg.vue'

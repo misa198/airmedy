@@ -15,7 +15,7 @@ import {
   ListMusic,
   Mic2,
   PictureInPicture2,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import LazyImg from '@/components/LazyImg.vue'
 import { usePlayerStore } from '../stores/player'
 import { RepeatMode } from '../../bindings/airmedy/internal/domain/models'
@@ -36,7 +36,7 @@ const trackContextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
 
 function openArtworkContextMenu(e: MouseEvent) {
   if (!store.currentTrack) return
-  trackContextMenu.value?.open(e, store.currentTrack, { excludePlayNext: true })
+  trackContextMenu.value?.open(e, store.currentTrack, { excludePlayNext: true, excludeAddToQueue: true })
 }
 
 const isSeeking = ref(false)

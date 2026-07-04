@@ -2,7 +2,7 @@
 import { ref, shallowRef, onMounted, computed, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Play, Shuffle, MoreVertical, Clock, Music, X, Search } from 'lucide-vue-next'
+import { Play, Shuffle, MoreVertical, Clock, Music, X, Search } from '@lucide/vue'
 import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { Playlist, TrackDTO, ThemeColors } from '../../bindings/airmedy/internal/domain/models'

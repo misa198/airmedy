@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { Lock } from 'lucide-vue-next'
+import { Lock } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { send } from '../ws'
 import { usePlayerStore } from '../stores/player'

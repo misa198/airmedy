@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { AudioLines, Wrench, Gauge, Volume2 } from 'lucide-vue-next'
+import { AudioLines, Wrench, Gauge, Volume2 } from '@lucide/vue'
 import { Events } from '@wailsio/runtime'
 import { GetProgress } from '../../../bindings/airmedy/internal/infra/wails/analysisservice'
 import EQPanel from '@/components/EQPanel.vue'

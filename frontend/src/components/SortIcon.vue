@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-vue-next'
+import { ArrowUp, ArrowDown, ArrowUpDown } from '@lucide/vue'
 
 defineProps<{
   active: boolean

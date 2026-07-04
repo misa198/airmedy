@@ -370,6 +370,8 @@
     "play": "Abspielen",
     "shuffle": "Zufällig",
     "play_next": "Als Nächstes spielen",
+    "add_to_queue": "Zur Warteschlange hinzufügen",
+    "already_in_queue": "Bereits in der Warteschlange",
     "add_to_favorites": "Zu Favoriten hinzufügen",
     "remove_from_favorites": "Aus Favoriten entfernen",
     "add_to_playlist": "Zur Playlist hinzufügen",

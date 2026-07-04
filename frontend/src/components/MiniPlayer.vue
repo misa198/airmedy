@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Play, Pause, SkipForward, Maximize, Music } from 'lucide-vue-next'
+import { Play, Pause, SkipForward, Maximize, Music } from '@lucide/vue'
 import { usePlayerStore } from '../stores/player'
 import { formatTime, getTrackDisplayTitle } from '@airmedy/utils'
 import { MarqueeText } from '@airmedy/ui'

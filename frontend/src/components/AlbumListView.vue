@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { Disc, Play, MoreVertical } from 'lucide-vue-next'
+import { Disc, Play, MoreVertical } from '@lucide/vue'
 import type { AlbumDTO, Artist } from '../../bindings/airmedy/internal/domain/models'
 import { buildArtworkUrl } from '@airmedy/utils'
 import LazyImg from '@/components/LazyImg.vue'

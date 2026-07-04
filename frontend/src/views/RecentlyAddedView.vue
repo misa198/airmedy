@@ -2,7 +2,7 @@
 import { ref, shallowRef, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
-import { Disc } from 'lucide-vue-next'
+import { Disc } from '@lucide/vue'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import VirtualizedGrid from '../components/VirtualizedGrid.vue'
 import TrackCard from '../components/TrackCard.vue'
@@ -60,7 +60,7 @@ useLibrarySync(() => loadRecentlyAdded(true))
   <div class="h-full flex flex-col overflow-hidden bg-background">
     <ViewHeader :title="$t('library.recently_added')" />
 
-    <div class="flex-1 overflow-hidden px-6 py-8">
+    <div class="flex-1 overflow-hidden">
       <div v-if="isLoading" class="h-full flex items-center justify-center">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>

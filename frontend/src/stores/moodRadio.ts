@@ -25,7 +25,7 @@ export const useMoodRadioStore = defineStore('moodRadio', () => {
       const similar = await fetchSimilar(seedTrack.id)
       const tracks = [seedTrack, ...similar.filter(t => t.id !== seedTrack.id)]
       const playerStore = usePlayerStore()
-      await playerStore.playTracks(tracks, 0)
+      await playerStore.playTracks(tracks, 0, true)
     } catch (e) {
       // Seeding failed (e.g. seed track not yet analyzed, backend error) —
       // reset instead of leaving the radio "on" over a queue that never

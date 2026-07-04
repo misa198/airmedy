@@ -3,7 +3,7 @@ import {
   ListMusic,
   Mic2,
   Minimize2,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { computed, ref } from 'vue'
 import { usePlayerStore } from '../stores/player'
 import { useDeviceStore } from '../stores/device'
@@ -31,7 +31,7 @@ const trackContextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
 
 function openContextMenu(e: MouseEvent) {
   if (!store.currentTrack) return
-  trackContextMenu.value?.open(e, store.currentTrack, { excludePlayNext: true })
+  trackContextMenu.value?.open(e, store.currentTrack, { excludePlayNext: true, excludeAddToQueue: true })
 }
 
 function openTrackInfo() {

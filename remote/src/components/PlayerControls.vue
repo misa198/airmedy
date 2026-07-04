@@ -10,7 +10,7 @@ import {
   Shuffle,
   Volume2,
   VolumeX,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { Slider } from '@airmedy/ui'
 import { send } from '../ws'

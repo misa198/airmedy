@@ -1,4 +1,4 @@
-import { ListEnd, ListPlus, Play, Shuffle, Heart, HeartOff } from 'lucide-vue-next'
+import { ListEnd, ListPlus, Play, Shuffle, Heart, HeartOff } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
 import { usePlayerStore } from '@/stores/player'

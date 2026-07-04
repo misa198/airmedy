@@ -370,6 +370,8 @@
     "play": "Reproduzir",
     "shuffle": "Aleatório",
     "play_next": "Reproduzir a seguir",
+    "add_to_queue": "Adicionar à fila",
+    "already_in_queue": "Já está na fila",
     "add_to_favorites": "Adicionar aos Favoritos",
     "remove_from_favorites": "Remover dos Favoritos",
     "add_to_playlist": "Adicionar à playlist",

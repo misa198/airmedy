@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
-import { ChevronRight } from 'lucide-vue-next'
+import { ChevronRight } from '@lucide/vue'
 import type { ContextMenuItem } from '@/composables/useContextMenu'
 
 const props = defineProps<{
@@ -126,6 +126,7 @@ function handleSubmenuItemClick(item: ContextMenuItem) {
                   ? 'text-red-500 hover:text-red-500 hover:bg-red-500/20'
                   : 'text-foreground opacity-80 hover:text-foreground hover:bg-foreground/15',
             ]"
+            :title="item.tooltip"
             @click="handleItemClick(item)"
             @mouseenter="handleMouseEnter(item, index, $event)"
           >

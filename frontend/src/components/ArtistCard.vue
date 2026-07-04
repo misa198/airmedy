@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
-import { User } from 'lucide-vue-next'
+import { User } from '@lucide/vue'
 import type { Artist } from '../../bindings/airmedy/internal/domain/models'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import { Events } from '@wailsio/runtime'

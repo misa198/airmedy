@@ -442,7 +442,7 @@ GetQueue(): TrackDTO[]
 
 ## Mini Player Window
 
-Separate Wails window (default 300×300, min 280×180, max 500×500). Route: `/mini-player`. Uses `useGlassBlur()` composable for WebGL Gaussian blur of artwork as background. Has always-on-top toggle and volume slider with auto-fade timer.
+Separate Wails window (default 300×300, min 280×180, max 500×500). Route: `/mini-player`. Artwork fills the window; hover-revealed controls sit over a CSS glassmorphism panel (`backdrop-filter` blur, bottom→top mask fade — see `catalog/ui`). Has always-on-top toggle and volume slider with auto-fade timer.
 
 ### Geometry & Pin Persistence
 

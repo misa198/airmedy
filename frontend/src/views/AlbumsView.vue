@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, shallowRef, onMounted, computed, watch } from 'vue'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
-import { Disc } from 'lucide-vue-next'
+import { Disc } from '@lucide/vue'
 import type { AlbumDTO, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import AlbumGrid from '../components/AlbumGrid.vue'
 import AlbumListView from '../components/AlbumListView.vue'
@@ -111,7 +111,7 @@ onMounted(loadAlbums)
       </template>
     </ViewHeader>
 
-    <div class="flex-1 overflow-hidden" :class="viewMode === 'grid' ? 'px-6 py-8' : ''">
+    <div class="flex-1 overflow-hidden" :class="viewMode === 'list' ? 'px-6 py-8' : ''">
       <div v-if="isLoading" class="h-full flex items-center justify-center">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>

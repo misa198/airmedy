@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { AlignLeft, Mic2, Timer, X } from 'lucide-vue-next'
+import { AlignLeft, Mic2, Timer, X } from '@lucide/vue'
 import { usePlayerStore } from '../stores/player'
 import { useI18n } from 'vue-i18n'
 import { useLyrics } from '../composables/useLyrics'

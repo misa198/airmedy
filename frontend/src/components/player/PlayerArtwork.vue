@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Music } from 'lucide-vue-next'
+import { Music } from '@lucide/vue'
 import LazyImg from '@/components/LazyImg.vue'
 
 defineProps<{

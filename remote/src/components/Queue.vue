@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Music, ListMusic, Goal } from 'lucide-vue-next'
+import { Music, ListMusic, Goal } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { send } from '../ws'
 import { usePlayerStore } from '../stores/player'

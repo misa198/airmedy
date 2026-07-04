@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { LayoutGrid, List, ArrowUp, ArrowDown, ListFilter } from 'lucide-vue-next'
+import { LayoutGrid, List, ArrowUp, ArrowDown, ListFilter } from '@lucide/vue'
 import { IconButton } from '@airmedy/ui'
 import FilterDropdown from './FilterDropdown.vue'
 
@@ -74,13 +74,10 @@ function selectSortCol(col: NonNullable<SortCol>) {
           :class="{ 'bg-foreground/[0.08]': sortColumn === col }"
           @click="selectSortCol(col)"
         >
-          <ArrowUp v-if="sortColumn === col && sortDir === 'asc'" class="w-4 h-4 text-primary" />
-          <ArrowDown v-else-if="sortColumn === col && sortDir === 'desc'" class="w-4 h-4 text-primary" />
+          <ArrowUp v-if="sortColumn === col && sortDir === 'asc'" class="w-4 h-4 text-foreground/70" />
+          <ArrowDown v-else-if="sortColumn === col && sortDir === 'desc'" class="w-4 h-4 text-foreground/70" />
           <span v-else class="w-4 h-4 inline-block" />
-          <span
-            class="text-sm text-foreground opacity-90"
-            :class="{ 'text-primary opacity-100': sortColumn === col }"
-          >
+          <span class="text-sm text-foreground opacity-90">
             {{ $t(`library.${col}`) }}
           </span>
           <div v-if="sortColumn === col" class="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
