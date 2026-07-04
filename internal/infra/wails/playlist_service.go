@@ -75,6 +75,16 @@ func (s *PlaylistService) GetPlaylistsForTrack(trackID string) ([]string, error)
 	return s.service.GetPlaylistsForTrack(context.Background(), trackID)
 }
 
+func (s *PlaylistService) TogglePlaylistPinned(id string) (bool, error) {
+	pinned, err := s.service.TogglePinned(context.Background(), id)
+	if err == nil {
+		if app := application.Get(); app != nil && app.Event != nil {
+			app.Event.Emit("playlist:pinned-changed", id)
+		}
+	}
+	return pinned, err
+}
+
 type PlaylistTracksChangedEvent struct {
 	PlaylistID string `json:"playlist_id"`
 	SenderID   string `json:"sender_id"`
@@ -196,6 +206,7 @@ func (s *PlaylistService) SelectAndParseM3U8() (*M3U8Preview, error) {
 // track path is validated (exists, supported format, inside a watched folder);
 // invalid paths are silently skipped. For tracks not yet in the library they
 // are imported first, with M3U8 metadata used as fallback for empty tags.
+// If no entries resolve to valid tracks, the playlist is still created empty.
 func (s *PlaylistService) ImportM3U8Playlist(filePath, name string) (*M3U8ImportResult, error) {
 	ctx := context.Background()
 
@@ -234,11 +245,6 @@ func (s *PlaylistService) ImportM3U8Playlist(filePath, name string) (*M3U8Import
 		return nil, fmt.Errorf("add tracks: %w", err)
 	}
 	result.ImportedCount = len(trackIDs)
-
-	if result.ImportedCount == 0 {
-		_ = s.service.Delete(ctx, p.ID)
-		return nil, fmt.Errorf("no valid tracks found in playlist file")
-	}
 
 	if app := application.Get(); app != nil && app.Event != nil {
 		app.Event.Emit("playlist:tracks-changed", &PlaylistTracksChangedEvent{

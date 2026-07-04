@@ -26,7 +26,7 @@ const props = defineProps<{
 const TABLE_HEADER_HEIGHT = 41
 
 function onContextMenu(e: MouseEvent, album: AlbumDTO, tracks: TrackDTO[]) {
-  contextMenu.open(e, buildMenuItems(album, tracks, { hidePlayShuffle: true }))
+  contextMenu.open(e, buildMenuItems(album, tracks, { hidePlayShuffle: false }))
 }
 
 const groupedAlbums = computed(() => {
@@ -118,6 +118,7 @@ function tableHeight(trackCount: number): string {
         <TrackTable
           :tracks="group.tracks"
           :simple-mode="true"
+          :virtual-scroll="false"
           @play-track="(_, index, queue) => playerStore.playTracks(queue, index)"
           @navigate-album="id => router.push(`/albums/${id}`)"
           @navigate-artist="id => router.push(`/artists/${id}`)"

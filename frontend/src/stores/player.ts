@@ -149,6 +149,18 @@ export const usePlayerStore = defineStore('player', () => {
         lyricsLoading.value = false
       }),
 
+      Events.On('player:queue-reordered', (ev: Events.WailsEvent) => {
+        // Pure reorder (shuffle/unshuffle): only ids are sent, remap the
+        // already-loaded tracks instead of waiting on a full queue payload.
+        const ids = ev.data as string[]
+        if (!Array.isArray(ids)) return
+        const byId = new Map(queue.value.map(t => [t.id, t]))
+        const reordered = ids.map(id => byId.get(id)).filter((t): t is TrackDTO => !!t)
+        if (reordered.length === ids.length) {
+          queue.value = reordered
+        }
+      }),
+
       Events.On('player:queue-updated', (ev: Events.WailsEvent) => {
         const q = ev.data as TrackDTO[]
         if (Array.isArray(q)) {

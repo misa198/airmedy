@@ -35,12 +35,13 @@ defineExpose({
         'focus:outline-none focus:ring-2 focus:ring-primary/40',
         'disabled:cursor-not-allowed disabled:opacity-50',
         'transition-all duration-200 ease-in-out',
-        clearable && modelValue ? 'pr-7!' : '',
+        clearable ? 'pr-7!' : '',
         props.class
       )"
     />
     <button
-      v-if="clearable && modelValue"
+      v-if="clearable"
+      v-show="modelValue"
       type="button"
       @click="emit('update:modelValue', '')"
       class="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"

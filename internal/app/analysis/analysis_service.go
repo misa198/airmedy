@@ -611,7 +611,14 @@ func (s *AnalysisService) fireDebouncedRecompute() {
 // library-side signals like "sync finished" so a fresh import's mood scores
 // don't sit unpopulated until the batch-size/debounce triggers catch up.
 func (s *AnalysisService) TriggerPercentileRecompute() {
-	go s.recomputePercentilesAndBump(context.Background())
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				s.logger.Error("mood: percentile recompute panicked", "panic", r)
+			}
+		}()
+		s.recomputePercentilesAndBump(context.Background())
+	}()
 }
 
 // recomputePercentilesAndBump recomputes corpus percentiles, hot-swaps the

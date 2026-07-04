@@ -86,8 +86,9 @@ type LibraryService struct {
 	pendingArtistArtwork    map[string]struct{}
 	pendingArtistArtworkMu  sync.Mutex
 	artistArtworkLocks      sync.Map         // artistID -> *sync.Mutex; serializes artwork writes
+	bulkSyncMu              sync.Mutex       // serializes SyncFolder/ResplitLibrary/ReindexAll: all three read/write the shared syncEntityCache and search index sync-batch below, which are not safe for concurrent use
 	syncing                 atomic.Int32     // >0 while a bulk SyncFolder runs (gates per-track work)
-	syncEntityCache         *syncEntityCache // non-nil only during a SyncFolder run; caches resolved entity IDs
+	syncEntityCache         *syncEntityCache // non-nil only during a SyncFolder/ResplitLibrary run; caches resolved entity IDs
 	syncReschedule          chan struct{}    // signals the periodic-sync scheduler to re-read the interval setting
 	ctx                     context.Context
 	cancel                  context.CancelFunc
@@ -250,7 +251,14 @@ func (s *LibraryService) notifySyncFinished() {
 	s.mu.RUnlock()
 
 	for _, l := range listeners {
-		l()
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					s.logger.Error("sync-finished listener panicked", "panic", r)
+				}
+			}()
+			l()
+		}()
 	}
 }
 
@@ -569,7 +577,18 @@ func (s *LibraryService) CleanupOrphanedArtworks(ctx context.Context) error {
 	return s.artworkCache.CleanupOrphaned(ctx, activeKeys)
 }
 
+// SyncFolder syncs a single folder. See the bulkSyncMu comment on
+// syncFolderLocked: this locks for the duration of one standalone call. Do not
+// call this from inside SyncLibrary/ResplitLibrary/ReindexAll — they already
+// hold the lock for their whole run and calling this would self-deadlock; call
+// syncFolderLocked directly instead.
 func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
+	s.bulkSyncMu.Lock()
+	defer s.bulkSyncMu.Unlock()
+	return s.syncFolderLocked(ctx, root)
+}
+
+func (s *LibraryService) syncFolderLocked(ctx context.Context, root string) error {
 	s.logger.Info("Starting folder sync", "root", root)
 
 	// Mark a bulk sync in progress so per-file ImportFile skips its own artist
@@ -1190,7 +1209,16 @@ func (s *LibraryService) buildEntitiesFromRaw(dto *domain.TrackDTO, settings *do
 // and their junctions, then clears any entities left orphaned by the change. It
 // reads only the DB (no file I/O) and reuses the existing sync progress events
 // so the frontend progress dialog works unchanged.
+// ResplitLibrary re-splits the whole library standalone. See syncFolderLocked's
+// lock comment: do not call this from inside SyncLibrary, which already holds
+// the lock — call resplitLibraryLocked directly instead.
 func (s *LibraryService) ResplitLibrary(ctx context.Context) error {
+	s.bulkSyncMu.Lock()
+	defer s.bulkSyncMu.Unlock()
+	return s.resplitLibraryLocked(ctx)
+}
+
+func (s *LibraryService) resplitLibraryLocked(ctx context.Context) error {
 	s.logger.Info("Starting library re-split")
 
 	settings, err := s.settingsRepo.Load(ctx)
@@ -1308,12 +1336,20 @@ func (s *LibraryService) DelimitersPendingResync(ctx context.Context) (bool, err
 // additionally re-splits the whole library and rebuilds the search index. The
 // applied-delimiters signature is persisted so the decision survives restarts.
 func (s *LibraryService) SyncLibrary(ctx context.Context) error {
+	// Hold the lock for this whole run (folder loop + resplit + reindex), not just
+	// per sub-step — otherwise a second SyncLibrary/SyncFolder call queued on the
+	// same mutex can slip in during the gap between two sub-steps and interleave
+	// with this one (e.g. its ResplitLibrary running between our ResplitLibrary
+	// and our ReindexAll), redoing the same work instead of being skipped/merged.
+	s.bulkSyncMu.Lock()
+	defer s.bulkSyncMu.Unlock()
+
 	folders, err := s.watchedFolderRepo.GetAll(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load watched folders: %w", err)
 	}
 	for _, folder := range folders {
-		_ = s.SyncFolder(ctx, folder.Path)
+		_ = s.syncFolderLocked(ctx, folder.Path)
 	}
 
 	if schemaVersion, err := s.syncStateRepo.GetMetadataSchemaVersion(ctx); err != nil {
@@ -1339,7 +1375,7 @@ func (s *LibraryService) SyncLibrary(ctx context.Context) error {
 	}
 
 	s.logger.Info("Delimiters changed since last sync; re-splitting library")
-	if err := s.ResplitLibrary(ctx); err != nil {
+	if err := s.resplitLibraryLocked(ctx); err != nil {
 		return err
 	}
 	// Persist the signature before the search reindex so the final
@@ -1348,7 +1384,7 @@ func (s *LibraryService) SyncLibrary(ctx context.Context) error {
 	if err := s.syncStateRepo.SetDelimitersSignature(ctx, sig); err != nil {
 		s.logger.Warn("Failed to persist delimiters signature", "error", err)
 	}
-	if err := s.ReindexAll(ctx); err != nil {
+	if err := s.reindexAllLocked(ctx); err != nil {
 		s.logger.Warn("Re-index after re-split failed", "error", err)
 	}
 	return nil
@@ -1514,7 +1550,16 @@ func (s *LibraryService) GetAlbumColors(ctx context.Context, id string) (*domain
 	return colors, nil
 }
 
+// ReindexAll rebuilds the search index standalone. See syncFolderLocked's lock
+// comment: do not call this from inside SyncLibrary, which already holds the
+// lock — call reindexAllLocked directly instead.
 func (s *LibraryService) ReindexAll(ctx context.Context) error {
+	s.bulkSyncMu.Lock()
+	defer s.bulkSyncMu.Unlock()
+	return s.reindexAllLocked(ctx)
+}
+
+func (s *LibraryService) reindexAllLocked(ctx context.Context) error {
 	s.logger.Info("Starting full library re-indexing")
 
 	// Reset search index to apply the new mapping/analyzer

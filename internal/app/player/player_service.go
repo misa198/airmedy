@@ -479,7 +479,7 @@ func (s *PlayerService) SetShuffle(enabled bool) error {
 	s.queue.SetShuffle(enabled)
 	s.emitStatus()
 	s.emitRemoteState()
-	s.emitQueue()
+	s.emitQueueOrder()
 	return nil
 }
 
@@ -1018,6 +1018,35 @@ func (s *PlayerService) emitQueue() {
 	app := application.Get()
 	if app != nil && app.Event != nil {
 		app.Event.Emit("player:queue-updated", queue)
+	}
+}
+
+// emitQueueOrder notifies queue listeners and the frontend of a pure reorder
+// (shuffle/unshuffle) where the track set is unchanged. In-process listeners
+// (tray, remote server) still get the full queue since that costs nothing
+// extra — only the Wails webview event, which must be JSON-serialized across
+// the IPC boundary, is slimmed down to ids so the UI can remap its
+// already-loaded TrackDTOs instead of re-transferring the full queue.
+func (s *PlayerService) emitQueueOrder() {
+	queue := s.queue.GetQueue()
+
+	s.mu.RLock()
+	listeners := make([]func([]*domain.TrackDTO), len(s.queueListeners))
+	copy(listeners, s.queueListeners)
+	s.mu.RUnlock()
+
+	for _, f := range listeners {
+		f(queue)
+	}
+
+	ids := make([]string, len(queue))
+	for i, t := range queue {
+		ids[i] = t.ID
+	}
+
+	app := application.Get()
+	if app != nil && app.Event != nil {
+		app.Event.Emit("player:queue-reordered", ids)
 	}
 }
 

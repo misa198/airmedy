@@ -70,6 +70,65 @@ func TestPlaylistRepository_AddTracks_NoPositionDuplicates(t *testing.T) {
 	}
 }
 
+func TestPlaylistRepository_TogglePinned(t *testing.T) {
+	dbPath := "test_playlist_pinned.db"
+	defer func() { _ = os.Remove(dbPath) }()
+
+	db, err := NewDB(dbPath, slog.Default())
+	if err != nil {
+		t.Fatalf("failed to create test db: %v", err)
+	}
+	defer func() { _ = db.Close() }()
+
+	ctx := context.Background()
+	playlistRepo := NewPlaylistRepository(db)
+
+	playlist := &domain.Playlist{ID: "pl-pin", Name: "Pin Test"}
+	if err := playlistRepo.Save(ctx, playlist); err != nil {
+		t.Fatalf("failed to save playlist: %v", err)
+	}
+
+	got, err := playlistRepo.GetByID(ctx, "pl-pin")
+	if err != nil {
+		t.Fatalf("GetByID failed: %v", err)
+	}
+	if got.PinnedAt != nil {
+		t.Fatalf("expected playlist to start unpinned")
+	}
+
+	pinned, err := playlistRepo.TogglePinned(ctx, "pl-pin")
+	if err != nil {
+		t.Fatalf("TogglePinned failed: %v", err)
+	}
+	if !pinned {
+		t.Fatalf("expected pinned=true after first toggle")
+	}
+
+	got, err = playlistRepo.GetByID(ctx, "pl-pin")
+	if err != nil {
+		t.Fatalf("GetByID failed: %v", err)
+	}
+	if got.PinnedAt == nil {
+		t.Fatalf("expected PinnedAt to be set after pinning")
+	}
+
+	pinned, err = playlistRepo.TogglePinned(ctx, "pl-pin")
+	if err != nil {
+		t.Fatalf("TogglePinned failed: %v", err)
+	}
+	if pinned {
+		t.Fatalf("expected pinned=false after second toggle")
+	}
+
+	got, err = playlistRepo.GetByID(ctx, "pl-pin")
+	if err != nil {
+		t.Fatalf("GetByID failed: %v", err)
+	}
+	if got.PinnedAt != nil {
+		t.Fatalf("expected PinnedAt to be nil after unpinning")
+	}
+}
+
 func TestPlaylistRepository_AddTracks_AppendsAfterExisting(t *testing.T) {
 	dbPath := "test_playlist_append.db"
 	defer func() { _ = os.Remove(dbPath) }()

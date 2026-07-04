@@ -107,6 +107,7 @@ type PlaylistRepository interface {
 	GetTrackPosition(ctx context.Context, playlistID, trackID string) (string, error)
 	GetMaxPosition(ctx context.Context, playlistID string) (string, error)
 	CountTracks(ctx context.Context, playlistID string) (int, error)
+	TogglePinned(ctx context.Context, id string) (bool, error)
 }
 
 type LyricRepository interface {
