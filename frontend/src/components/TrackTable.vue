@@ -32,8 +32,10 @@ const props = withDefaults(defineProps<{
   variant?: 'default' | 'glass'
   contextMenuOptions?: TrackContextMenuOptions
   allowDnd?: boolean
+  virtualScroll?: boolean
 }>(), {
-  allowDnd: false
+  allowDnd: false,
+  virtualScroll: true
 })
 
 const emit = defineEmits<{
@@ -129,8 +131,14 @@ const optionalColumns = computed(() =>
 // ── Virtual scroll ─────────────────────────────────────────────────────────
 const scrollerRef = ref<any>(null)
 const headerContainerRef = ref<HTMLElement | null>(null)
+const plainListRef = ref<HTMLElement | null>(null)
+const rowRefs = ref<(HTMLElement | null)[]>([])
 const containerHeight = ref(0)
 let ro: ResizeObserver | null = null
+
+function setRowRef(el: any, index: number) {
+  rowRefs.value[index] = el
+}
 
 const effectiveHeaderHeight = computed(() => props.hideHeader ? 0 : HEADER_HEIGHT)
 
@@ -187,7 +195,7 @@ function handleKeyDown(e: KeyboardEvent) {
     if (nextIndex !== lastSelectedIndex.value) {
       lastSelectedIndex.value = nextIndex
       updateRangeSelection(selectionAnchorIndex.value, nextIndex)
-      scrollerRef.value?.scrollToItem(nextIndex)
+      scrollToRowIndex(nextIndex)
     }
   } else if (e.key === 'ArrowDown') {
     e.preventDefault()
@@ -195,8 +203,16 @@ function handleKeyDown(e: KeyboardEvent) {
     if (nextIndex !== lastSelectedIndex.value) {
       lastSelectedIndex.value = nextIndex
       updateRangeSelection(selectionAnchorIndex.value, nextIndex)
-      scrollerRef.value?.scrollToItem(nextIndex)
+      scrollToRowIndex(nextIndex)
     }
+  }
+}
+
+function scrollToRowIndex(index: number) {
+  if (props.virtualScroll) {
+    scrollerRef.value?.scrollToItem(index)
+  } else {
+    rowRefs.value[index]?.scrollIntoView({ block: 'nearest' })
   }
 }
 
@@ -209,10 +225,13 @@ function handleScroll(e: Event) {
 }
 
 function scrollToCurrentTrack() {
-  if (!scrollerRef.value || !playerStore.currentTrack || props.tracks.length === 0) return
+  if (!playerStore.currentTrack || props.tracks.length === 0) return
   const index = displayTracks.value.findIndex((t) => t.id === playerStore.currentTrack?.id)
-  if (index !== -1) {
-    scrollerRef.value.scrollToIndex(index)
+  if (index === -1) return
+  if (props.virtualScroll) {
+    scrollerRef.value?.scrollToIndex(index)
+  } else {
+    rowRefs.value[index]?.scrollIntoView({ block: 'nearest' })
   }
 }
 
@@ -232,7 +251,7 @@ watch(
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown)
-  if (scrollerRef.value?.$el) {
+  if (props.virtualScroll && scrollerRef.value?.$el) {
     ro = new ResizeObserver((entries) => {
       containerHeight.value = entries[0].contentRect.height
     })
@@ -319,6 +338,7 @@ defineExpose({ scrollToCurrentTrack, optionalColumns })
         </div>
 
         <VirtualList
+          v-if="virtualScroll"
           ref="scrollerRef"
           :key="rowHeight"
           v-model="displayTracks"
@@ -346,6 +366,27 @@ defineExpose({ scrollToCurrentTrack, optionalColumns })
             </div>
           </template>
         </VirtualList>
+
+        <div
+          v-else
+          ref="plainListRef"
+          class="flex-1 overflow-auto custom-scrollbar"
+          :style="{ minWidth: totalMinWidth }"
+          @scroll="handleScroll"
+        >
+          <div
+            v-for="(record, index) in displayTracks"
+            :key="record.id"
+            :ref="(el) => setRowRef(el, index)"
+            :style="{ minWidth: totalMinWidth, height: `${rowHeight}px`, position: 'relative' }"
+          >
+            <TrackTableRow :track="record" :index="index" :current-index="index"
+              :ordered-visible-columns="orderedVisibleColumns" :grid-template-columns="gridTemplateColumns"
+              :show-artwork="showArtwork && !settings.collapsedMode.value" :row-bg="rowBg" :variant="variant" :is-selected="selectedIds.has(record.id)"
+              @click="handleTrackClick($event, record, index)" @play-track="handlePlayTrack"
+              @contextmenu="openContextMenu" @navigate-album="navigateToAlbum" @navigate-artist="navigateToArtist" />
+          </div>
+        </div>
       </div>
     </div>
   </div>

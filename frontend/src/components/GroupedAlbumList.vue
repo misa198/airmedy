@@ -118,6 +118,7 @@ function tableHeight(trackCount: number): string {
         <TrackTable
           :tracks="group.tracks"
           :simple-mode="true"
+          :virtual-scroll="false"
           @play-track="(_, index, queue) => playerStore.playTracks(queue, index)"
           @navigate-album="id => router.push(`/albums/${id}`)"
           @navigate-artist="id => router.push(`/artists/${id}`)"

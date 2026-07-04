@@ -13,9 +13,8 @@ import { formatTotalDuration, foldUnicode } from '@airmedy/utils'
 import { DetailsButton } from '@airmedy/ui'
 import { useContextMenu } from '@/composables/useContextMenu'
 import { usePlaylistContextMenu } from '@/composables/usePlaylistContextMenu'
-import { useRestoreScroll } from '@/composables/useRestoreScroll'
 import ContextMenu from '@/components/ContextMenu.vue'
-import DetailHero from '@/components/DetailHero.vue'
+import DetailPageLayout from '@/components/DetailPageLayout.vue'
 import PlaylistArtwork from '@/components/PlaylistArtwork.vue'
 import CreatePlaylistDialog from '@/components/CreatePlaylistDialog.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
@@ -48,8 +47,6 @@ const filteredTracks = computed(() => {
 
 useLibraryUpdates(tracks)
 const playlistTheme = ref<ThemeColors | null>(null)
-
-const { scrollContainerRef, handleScroll } = useRestoreScroll()
 
 const contextMenu = useContextMenu()
 const { buildMenuItems: buildPlaylistMenuItems } = usePlaylistContextMenu()
@@ -273,105 +270,101 @@ async function handleReorder(newTracks: TrackDTO[]) {
 </script>
 
 <template>
-  <div class="h-full flex flex-col bg-background overflow-hidden">
-    <div v-if="isLoading" class="flex-1 flex items-center justify-center">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-    </div>
-
-    <div v-else-if="playlist" ref="scrollContainerRef" class="flex-1 overflow-y-auto" @scroll.passive="handleScroll">
-      <DetailHero 
-        :theme="playlistTheme" 
-        :title="playlist.name"
-      >
-        <template #top-right>
-          <div class="relative max-w-sm w-full">
-            <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground opacity-60" />
-            <Input 
-              v-model="searchQuery"
-              type="text"
-              :placeholder="$t('sidebar.search')"
-              class="pl-10 pr-4"
-            />
-          </div>
-        </template>
-        <template #artwork>
-          <div 
-            @click="handleSetArtwork"
-            class="w-48 h-48 rounded-lg shadow-2xl overflow-hidden ring-1 ring-foreground/[0.08] bg-foreground/5 flex-shrink-0 cursor-pointer group relative">
-            
-            <PlaylistArtwork :playlist="playlist" :tracks="tracks">
-              <!-- Hover Overlay -->
-              <div v-if="playlist.id !== 'favorites'" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
-                <span class="text-white text-xs font-medium px-2 py-1 bg-black/20 rounded-full backdrop-blur-sm">{{ $t('playlist.edit_cover') }}</span>
-                <button 
-                  v-if="playlist.artwork_key"
-                  @click="handleRemoveArtwork"
-                  class="p-1.5 bg-red-500/80 hover:bg-red-500 text-white rounded-full transition-colors backdrop-blur-sm"
-                  :title="$t('playlist.remove_cover')"
-                >
-                  <X class="w-4 h-4" />
-                </button>
-              </div>
-            </PlaylistArtwork>
-          </div>
-        </template>
-
-        <template #metadata>
-          <div class="flex gap-2 text-sm items-end flex-wrap">
-            <div class="flex items-center gap-2">
-              <Music class="w-4 h-4" />
-              <span>{{ tracks.length }} {{ $t('library.songs') }}</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <Clock class="w-4 h-4" />
-              <span>{{ totalDurationFormatted }}</span>
-            </div>
-          </div>
-        </template>
-
-        <template #actions>
-          <DetailsButton :icon="Play" :label="$t('common.play')" @click="playPlaylist" />
-          <div class="flex gap-2">
-            <DetailsButton :icon="Shuffle" variant="outline" @click="shufflePlaylist" />
-            <DetailsButton :icon="MoreVertical" variant="outline" @click="openContextMenu" />
-          </div>
-        </template>
-      </DetailHero>
-
-      <!-- Track List -->
-      <div class="top-0 h-[calc(100vh-390px)]">
-        <TrackTable
-          :tracks="filteredTracks"
-          :show-artwork="true"
-          :simple-mode="true"
-          :allow-dnd="playlist.id !== 'favorites'"
-          :context-menu-options="{ playlistId: playlist.id }"
-          @play-track="(_, index, queue) => playerStore.playTracks(queue, index)"
-          @reorder="handleReorder"
-          @navigate-album="id => router.push(`/albums/${id}`)"
-          @navigate-artist="id => router.push(`/artists/${id}`)"
+  <DetailPageLayout
+    v-if="playlist"
+    :loading="isLoading"
+    :theme="playlistTheme"
+    :title="playlist.name"
+  >
+    <template #top-right>
+      <div class="relative max-w-sm w-full">
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground opacity-60" />
+        <Input
+          v-model="searchQuery"
+          type="text"
+          :placeholder="$t('sidebar.search')"
+          class="pl-10 pr-4"
         />
       </div>
-    </div>
+    </template>
+    <template #artwork>
+      <div
+        @click="handleSetArtwork"
+        class="w-48 h-48 rounded-lg shadow-2xl overflow-hidden ring-1 ring-foreground/[0.08] bg-foreground/5 flex-shrink-0 cursor-pointer group relative">
 
-    <ContextMenu 
-      :visible="contextMenu.visible.value" 
-      :x="contextMenu.x.value" 
-      :y="contextMenu.y.value"
-      :items="contextMenu.items.value" 
-      @close="contextMenu.close()" 
-    />
+        <PlaylistArtwork :playlist="playlist" :tracks="tracks">
+          <!-- Hover Overlay -->
+          <div v-if="playlist.id !== 'favorites'" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+            <span class="text-white text-xs font-medium px-2 py-1 bg-black/20 rounded-full backdrop-blur-sm">{{ $t('playlist.edit_cover') }}</span>
+            <button
+              v-if="playlist.artwork_key"
+              @click="handleRemoveArtwork"
+              class="p-1.5 bg-red-500/80 hover:bg-red-500 text-white rounded-full transition-colors backdrop-blur-sm"
+              :title="$t('playlist.remove_cover')"
+            >
+              <X class="w-4 h-4" />
+            </button>
+          </div>
+        </PlaylistArtwork>
+      </div>
+    </template>
 
-    <CreatePlaylistDialog v-model:open="renameDialogOpen" :initial-name="renamingName" :title="t('sidebar.rename_playlist_title')"
-      @confirm="handleRename" />
+    <template #metadata>
+      <div class="flex gap-2 text-sm items-end flex-wrap">
+        <div class="flex items-center gap-2">
+          <Music class="w-4 h-4" />
+          <span>{{ tracks.length }} {{ $t('library.songs') }}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <Clock class="w-4 h-4" />
+          <span>{{ totalDurationFormatted }}</span>
+        </div>
+      </div>
+    </template>
 
-    <ConfirmDialog
-      v-model:open="deleteConfirmOpen"
-      :title="t('sidebar.delete_playlist_title')"
-      :message="t('sidebar.delete_playlist_message')"
-      :confirm-label="t('sidebar.delete')"
-      danger
-      @confirm="handleDelete"
-    />
+    <template #actions>
+      <DetailsButton :icon="Play" :label="$t('common.play')" @click="playPlaylist" />
+      <div class="flex gap-2">
+        <DetailsButton :icon="Shuffle" variant="outline" @click="shufflePlaylist" />
+        <DetailsButton :icon="MoreVertical" variant="outline" @click="openContextMenu" />
+      </div>
+    </template>
+
+    <template #body>
+      <TrackTable
+        :tracks="filteredTracks"
+        :show-artwork="true"
+        :simple-mode="true"
+        :allow-dnd="playlist.id !== 'favorites'"
+        :context-menu-options="{ playlistId: playlist.id }"
+        @play-track="(_, index, queue) => playerStore.playTracks(queue, index)"
+        @reorder="handleReorder"
+        @navigate-album="id => router.push(`/albums/${id}`)"
+        @navigate-artist="id => router.push(`/artists/${id}`)"
+      />
+    </template>
+  </DetailPageLayout>
+  <div v-else-if="isLoading" class="h-full flex items-center justify-center">
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
   </div>
+
+  <ContextMenu
+    :visible="contextMenu.visible.value"
+    :x="contextMenu.x.value"
+    :y="contextMenu.y.value"
+    :items="contextMenu.items.value"
+    @close="contextMenu.close()"
+  />
+
+  <CreatePlaylistDialog v-model:open="renameDialogOpen" :initial-name="renamingName" :title="t('sidebar.rename_playlist_title')"
+    @confirm="handleRename" />
+
+  <ConfirmDialog
+    v-model:open="deleteConfirmOpen"
+    :title="t('sidebar.delete_playlist_title')"
+    :message="t('sidebar.delete_playlist_message')"
+    :confirm-label="t('sidebar.delete')"
+    danger
+    @confirm="handleDelete"
+  />
 </template>
