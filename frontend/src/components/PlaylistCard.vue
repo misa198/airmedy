@@ -9,13 +9,15 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'click': [id: string]
+  'contextmenu': [e: MouseEvent, playlist: Playlist]
 }>()
 </script>
 
 <template>
-  <div 
+  <div
     class="group cursor-pointer"
     @click="emit('click', playlist.id)"
+    @contextmenu.prevent="emit('contextmenu', $event, playlist)"
   >
     <div class="aspect-square bg-foreground/5 rounded-lg ring-1 ring-foreground/[0.06] overflow-hidden relative mb-3 transition-all flex items-center justify-center">
       <PlaylistArtwork 

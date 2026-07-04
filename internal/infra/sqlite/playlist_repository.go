@@ -216,6 +216,23 @@ func (r *playlistRepository) GetTracks(ctx context.Context, playlistID string) (
 	return tr.scanTrackRows(rows), nil
 }
 
+func (r *playlistRepository) TogglePinned(ctx context.Context, id string) (bool, error) {
+	now := time.Now()
+	_, err := r.db.Ext(ctx).ExecContext(ctx,
+		"UPDATE playlists SET pinned_at = CASE WHEN pinned_at IS NULL THEN ? ELSE NULL END, updated_at = ? WHERE id = ?",
+		now, now, id,
+	)
+	if err != nil {
+		return false, fmt.Errorf("failed to toggle playlist pinned: %w", err)
+	}
+	var pinnedAt sql.NullTime
+	err = r.db.Ext(ctx).GetContext(ctx, &pinnedAt, "SELECT pinned_at FROM playlists WHERE id = ?", id)
+	if err != nil {
+		return false, fmt.Errorf("failed to read pinned state: %w", err)
+	}
+	return pinnedAt.Valid, nil
+}
+
 func (r *playlistRepository) GetPlaylistsForTrack(ctx context.Context, trackID string) ([]string, error) {
 	var ids []string
 	query := "SELECT playlist_id FROM playlist_tracks WHERE track_id = ?"

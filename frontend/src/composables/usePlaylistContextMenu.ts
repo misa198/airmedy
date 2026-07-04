@@ -1,10 +1,12 @@
-import { Music, Pencil, Trash2, ListStart, ListPlus, Download } from '@lucide/vue'
+import { Music, Pencil, Trash2, ListStart, ListPlus, Download, Pin, PinOff, Play, Shuffle } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
+import { usePlayerStore } from '@/stores/player'
 import type { ContextMenuItem } from './useContextMenu'
 import type { Playlist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import * as PlayerService from '../../bindings/airmedy/internal/infra/wails/playerservice'
 import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
+import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 
 export interface PlaylistContextMenuOptions {
   includePlayNext?: boolean
@@ -17,9 +19,37 @@ export interface PlaylistContextMenuOptions {
 export function usePlaylistContextMenu() {
   const { t } = useI18n()
   const playlistsStore = usePlaylistsStore()
+  const playerStore = usePlayerStore()
+
+  async function getTracks(playlist: Playlist): Promise<TrackDTO[]> {
+    const tracks = playlist.id === 'favorites'
+      ? await LibraryService.GetFavoriteTracks()
+      : await PlaylistService.GetPlaylistTracks(playlist.id)
+    return tracks.filter((t): t is TrackDTO => t !== null)
+  }
 
   function buildMenuItems(playlist: Playlist, options: PlaylistContextMenuOptions = {}): ContextMenuItem[] {
     const items: ContextMenuItem[] = []
+
+    // Play
+    items.push({
+      label: t('context_menu.play'),
+      icon: Play,
+      action: async () => {
+        const tracks = await getTracks(playlist)
+        playerStore.playTracks(tracks, 0)
+      },
+    })
+
+    // Shuffle
+    items.push({
+      label: t('context_menu.shuffle'),
+      icon: Shuffle,
+      action: async () => {
+        const tracks = await getTracks(playlist)
+        playerStore.shuffleTracks(tracks)
+      },
+    })
 
     // Play Next
     if (options.includePlayNext) {
@@ -27,8 +57,8 @@ export function usePlaylistContextMenu() {
         label: t('context_menu.play_next'),
         icon: ListStart,
         action: async () => {
-          const tracks = await PlaylistService.GetPlaylistTracks(playlist.id)
-          PlayerService.PlayNextTracks(tracks.filter((t): t is TrackDTO => t !== null))
+          const tracks = await getTracks(playlist)
+          PlayerService.PlayNextTracks(tracks)
         },
       })
     }
@@ -39,6 +69,16 @@ export function usePlaylistContextMenu() {
         label: t('sidebar.rename'),
         icon: Pencil,
         action: () => options.onRename!(playlist),
+      })
+    }
+
+    // Pin/Unpin to sidebar
+    {
+      const pinned = playlistsStore.isPinned(playlist)
+      items.push({
+        label: pinned ? t('context_menu.unpin_from_sidebar') : t('context_menu.pin_to_sidebar'),
+        icon: pinned ? PinOff : Pin,
+        action: () => playlistsStore.togglePinned(playlist.id),
       })
     }
 

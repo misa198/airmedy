@@ -155,12 +155,13 @@ type Composer struct {
 
 // Playlist represents a music playlist
 type Playlist struct {
-	ID          string    `json:"id" db:"id"`
-	Name        string    `json:"name" db:"name"`
-	Description string    `json:"description" db:"description"`
-	ArtworkKey  *string   `json:"artwork_key" db:"artwork_key"`
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
+	ID          string     `json:"id" db:"id"`
+	Name        string     `json:"name" db:"name"`
+	Description string     `json:"description" db:"description"`
+	ArtworkKey  *string    `json:"artwork_key" db:"artwork_key"`
+	PinnedAt    *time.Time `json:"pinned_at" db:"pinned_at"`
+	CreatedAt   time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at" db:"updated_at"`
 }
 
 // Lyric represents a music lyric

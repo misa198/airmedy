@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import {
   Library,
+  LayoutGrid,
   Plus,
-  Upload,
   Music,
   Heart,
   MoreHorizontal,
@@ -18,7 +18,6 @@ import { usePlaylistContextMenu } from '@/composables/usePlaylistContextMenu'
 import ContextMenu from './ContextMenu.vue'
 import SidebarItem from './SidebarItem.vue'
 import type { Playlist } from '../../bindings/airmedy/internal/domain/models'
-import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -33,43 +32,8 @@ const playlistToDelete = ref<Playlist | null>(null)
 const renamingId = ref('')
 const renamingName = ref('')
 
-const importDialogOpen = ref(false)
-const importFilePath = ref('')
-const importPlaylistName = ref('')
-const isImporting = ref(false)
-
 function openCreateDialog() {
   createDialogOpen.value = true
-}
-
-async function handleImportClick() {
-  try {
-    const preview = await PlaylistService.SelectAndParseM3U8()
-    if (!preview) return
-    importFilePath.value = preview.file_path
-    importPlaylistName.value = preview.playlist_name
-    importDialogOpen.value = true
-  } catch (e) {
-    console.error('Failed to parse M3U8 file', e)
-  }
-}
-
-async function handleImportConfirm(name: string) {
-  if (!importFilePath.value || isImporting.value) return
-  isImporting.value = true
-  try {
-    const result = await PlaylistService.ImportM3U8Playlist(importFilePath.value, name)
-    if (result) {
-      await playlistsStore.loadAll()
-      router.push(`/playlists/${result.playlist_id}`)
-    }
-  } catch (e) {
-    console.error('Failed to import playlist', e)
-  } finally {
-    isImporting.value = false
-    importFilePath.value = ''
-    importPlaylistName.value = ''
-  }
 }
 
 async function handleCreate(name: string) {
@@ -105,6 +69,18 @@ function openPlaylistContextMenu(playlist: Playlist, e: MouseEvent) {
     onDelete: (p) => openDeleteConfirm(p),
   }))
 }
+
+const favoritesPlaylist: Playlist = {
+  id: 'favorites',
+  name: '',
+  description: '',
+  artwork_key: null,
+  pinned_at: null,
+} as Playlist
+
+function openFavoritesContextMenu(e: MouseEvent) {
+  contextMenu.open(e, buildPlaylistMenuItems(favoritesPlaylist, {}))
+}
 </script>
 
 <template>
@@ -117,11 +93,6 @@ function openPlaylistContextMenu(playlist: Playlist, e: MouseEvent) {
       <div class="flex items-center gap-1">
         <button
           class="w-6 h-6 flex items-center justify-center rounded text-foreground opacity-80 hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
-          @click.stop="handleImportClick" :title="t('sidebar.import_playlist')">
-          <Upload class="w-3.5 h-3.5" />
-        </button>
-        <button
-          class="w-6 h-6 flex items-center justify-center rounded text-foreground opacity-80 hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
           @click.stop="openCreateDialog" :title="t('sidebar.new_playlist')">
           <Plus class="w-3.5 h-3.5" />
         </button>
@@ -131,13 +102,29 @@ function openPlaylistContextMenu(playlist: Playlist, e: MouseEvent) {
     <!-- Playlist list -->
     <div class="space-y-0.5">
       <SidebarItem
-        to="/playlists/favorites"
-        :icon="Heart"
-        :label="t('sidebar.favorites')"
+        to="/playlists"
+        :icon="LayoutGrid"
+        :label="t('sidebar.all_playlists')"
       />
 
       <SidebarItem
-        v-for="playlist in playlistsStore.playlists"
+        v-if="playlistsStore.favoritesPinned"
+        to="/playlists/favorites"
+        :icon="Heart"
+        :label="t('sidebar.favorites')"
+        @contextmenu="openFavoritesContextMenu"
+      >
+        <template #actions>
+          <button
+            class="w-6 h-6 flex items-center justify-center rounded text-foreground opacity-0 group-hover:text-foreground opacity-60 hover:!text-foreground hover:bg-foreground/[0.08] transition-colors opacity-0 group-hover:opacity-100"
+            @click.stop="openFavoritesContextMenu">
+            <MoreHorizontal class="w-3.5 h-3.5" />
+          </button>
+        </template>
+      </SidebarItem>
+
+      <SidebarItem
+        v-for="playlist in playlistsStore.pinnedPlaylists"
         :key="playlist.id"
         :to="`/playlists/${playlist.id}`"
         :icon="Music"
@@ -159,12 +146,6 @@ function openPlaylistContextMenu(playlist: Playlist, e: MouseEvent) {
   <CreatePlaylistDialog v-model:open="createDialogOpen" @confirm="handleCreate" />
   <CreatePlaylistDialog v-model:open="renameDialogOpen" :initial-name="renamingName" :title="t('sidebar.rename_playlist_title')"
     @confirm="handleRename" />
-  <CreatePlaylistDialog
-    v-model:open="importDialogOpen"
-    :initial-name="importPlaylistName"
-    :title="t('sidebar.import_playlist_title')"
-    :confirm-label="t('sidebar.import')"
-    @confirm="handleImportConfirm" />
 
   <ConfirmDialog
     v-model:open="deleteConfirmOpen"

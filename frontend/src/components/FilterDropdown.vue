@@ -51,6 +51,8 @@ onBeforeUnmount(() => {
   document.removeEventListener('mousedown', onMouseDown, { capture: true })
   window.removeEventListener('resize', updatePosition)
 })
+
+defineExpose({ close })
 </script>
 
 <template>

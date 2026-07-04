@@ -99,7 +99,7 @@ const getTotalDuration = (tracks: TrackDTO[]) => {
     @hero-contextmenu="openContextMenu"
   >
     <template #top-right>
-      <div class="relative max-w-sm w-full">
+      <div class="relative w-64">
         <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground opacity-60" />
         <Input
           v-model="searchQuery"

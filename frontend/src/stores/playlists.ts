@@ -1,12 +1,15 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
 import type { Playlist } from '../../bindings/airmedy/internal/domain/models'
 import { Events } from '@wailsio/runtime'
 
+const FAVORITES_PINNED_KEY = 'airmedy:favorites-pinned'
+
 export const usePlaylistsStore = defineStore('playlists', () => {
   const playlists = ref<Playlist[]>([])
   const loading = ref(false)
+  const favoritesPinned = ref(localStorage.getItem(FAVORITES_PINNED_KEY) !== 'false')
 
   async function loadAll() {
     loading.value = true
@@ -42,9 +45,23 @@ export const usePlaylistsStore = defineStore('playlists', () => {
     }
   })
 
+  const _offPinned = Events.On('playlist:pinned-changed', async (ev: Events.WailsEvent) => {
+    const id = ev.data as string
+    const p = playlists.value.find((x) => x.id === id)
+    if (p) {
+      try {
+        const updated = await PlaylistService.GetPlaylistByID(id)
+        if (updated) p.pinned_at = updated.pinned_at
+      } catch (e) {
+        console.error('Failed to update pinned playlist in store', e)
+      }
+    }
+  })
+
   function dispose() {
     _offDeleted()
     _offRenamed()
+    _offPinned()
   }
 
   async function create(name: string, description = '') {
@@ -65,6 +82,41 @@ export const usePlaylistsStore = defineStore('playlists', () => {
     playlists.value = playlists.value.filter((p) => p.id !== id)
   }
 
-  return { playlists, loading, loadAll, create, rename, deletePlaylist, dispose }
+  function isPinned(playlist: Playlist): boolean {
+    if (playlist.id === 'favorites') return favoritesPinned.value
+    return !!playlist.pinned_at
+  }
+
+  async function togglePinned(id: string) {
+    if (id === 'favorites') {
+      favoritesPinned.value = !favoritesPinned.value
+      localStorage.setItem(FAVORITES_PINNED_KEY, String(favoritesPinned.value))
+      return favoritesPinned.value
+    }
+    const newState = await PlaylistService.TogglePlaylistPinned(id)
+    const p = playlists.value.find((x) => x.id === id)
+    if (p) p.pinned_at = newState ? new Date().toISOString() : null
+    return newState
+  }
+
+  const pinnedPlaylists = computed(() =>
+    playlists.value
+      .filter((p) => p.pinned_at)
+      .sort((a, b) => (a.pinned_at! < b.pinned_at! ? -1 : 1))
+  )
+
+  return {
+    playlists,
+    loading,
+    favoritesPinned,
+    loadAll,
+    create,
+    rename,
+    deletePlaylist,
+    isPinned,
+    togglePinned,
+    pinnedPlaylists,
+    dispose,
+  }
 })
 

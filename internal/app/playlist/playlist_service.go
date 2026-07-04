@@ -267,6 +267,10 @@ func (s *PlaylistService) GetPlaylistsForTrack(ctx context.Context, trackID stri
 	return s.repo.GetPlaylistsForTrack(ctx, trackID)
 }
 
+func (s *PlaylistService) TogglePinned(ctx context.Context, id string) (bool, error) {
+	return s.repo.TogglePinned(ctx, id)
+}
+
 func (s *PlaylistService) ExportM3U8(ctx context.Context, playlistID string, destPath string) error {
 	p, err := s.repo.GetByID(ctx, playlistID)
 	if err != nil {
