@@ -11,7 +11,7 @@ import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
 import { useLibrarySync } from '@/composables/useLibrarySync'
 import { foldUnicode } from '@airmedy/utils'
 
-const PAGE_SIZE = 500
+const PAGE_SIZE = 4000
 
 const playerStore = usePlayerStore()
 const router = useRouter()

@@ -3,8 +3,8 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	lexorank "github.com/misa198/lexorank-go"
@@ -114,16 +114,28 @@ func (r *playlistRepository) AddTracks(ctx context.Context, playlistID string, t
 			currentRank = maxRank.GenNext()
 		}
 
-		placeholders := make([]string, len(trackIDs))
-		args := make([]any, 0, len(trackIDs)*3)
+		// Pack rows as a single JSON array + json_each instead of one placeholder
+		// triple per track: SQLite caps bound variables per statement (default 999),
+		// which a large bulk-add (e.g. "add all" on a big library) blows past.
+		type trackRow struct {
+			TrackID  string `json:"track_id"`
+			Position string `json:"position"`
+		}
+		rows := make([]trackRow, len(trackIDs))
 		for i, trackID := range trackIDs {
-			placeholders[i] = "(?, ?, ?)"
-			args = append(args, playlistID, trackID, currentRank.String())
+			rows[i] = trackRow{TrackID: trackID, Position: currentRank.String()}
 			currentRank = currentRank.GenNext()
 		}
+		rowsJSON, err := json.Marshal(rows)
+		if err != nil {
+			return fmt.Errorf("failed to marshal track rows: %w", err)
+		}
 
-		query := "INSERT OR IGNORE INTO playlist_tracks (playlist_id, track_id, position) VALUES " + strings.Join(placeholders, ", ")
-		if _, err := ex.ExecContext(ctx, query, args...); err != nil {
+		query := `
+			INSERT OR IGNORE INTO playlist_tracks (playlist_id, track_id, position)
+			SELECT ?, value ->> 'track_id', value ->> 'position' FROM json_each(?)
+		`
+		if _, err := ex.ExecContext(ctx, query, playlistID, string(rowsJSON)); err != nil {
 			return fmt.Errorf("failed to add tracks to playlist: %w", err)
 		}
 
