@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@airmedy/ui'
-import { MoreHorizontal, Plus, Pencil, Trash2 } from 'lucide-vue-next'
+import { MoreHorizontal, Plus, Pencil, Trash2 } from '@lucide/vue'
 import { useContextMenu } from '@/composables/useContextMenu'
 import ContextMenu from './ContextMenu.vue'
 import EQProfileDialog from './EQProfileDialog.vue'

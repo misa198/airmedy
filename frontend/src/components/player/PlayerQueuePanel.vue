@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ListMusic, X, Goal } from 'lucide-vue-next'
+import { ListMusic, X, Goal } from '@lucide/vue'
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'

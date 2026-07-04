@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Search, X, Loader2, Music, User, Globe, Clock } from 'lucide-vue-next'
+import { Search, X, Loader2, Music, User, Globe, Clock } from '@lucide/vue'
 import { Modal } from '@airmedy/ui'
 import { Input } from '@airmedy/ui'
 import { useFindLyricsDialog } from '@/composables/useFindLyricsDialog'

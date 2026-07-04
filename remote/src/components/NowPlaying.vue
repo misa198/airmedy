@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Music } from 'lucide-vue-next'
+import { Music } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { Slider } from '@airmedy/ui'
 import { usePlayerStore } from '../stores/player'

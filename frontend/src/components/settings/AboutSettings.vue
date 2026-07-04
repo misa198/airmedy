@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import * as SettingsService from '../../../bindings/airmedy/internal/infra/wails/settingsservice'
-import { RefreshCw, CheckCircle2, ChevronRight } from 'lucide-vue-next'
+import { RefreshCw, CheckCircle2, ChevronRight } from '@lucide/vue'
 import { Browser } from '@wailsio/runtime';
 
 const { t } = useI18n()

@@ -2,7 +2,7 @@
 import { type HTMLAttributes, computed } from 'vue'
 import { PanelResizeHandle, type PanelResizeHandleProps } from 'vue-resizable-panels'
 import { useForwardPropsEmits } from 'radix-vue'
-import { GripVertical } from 'lucide-vue-next'
+import { GripVertical } from '@lucide/vue'
 import { cn } from '@airmedy/utils'
 
 interface ResizableHandleProps extends PanelResizeHandleProps {

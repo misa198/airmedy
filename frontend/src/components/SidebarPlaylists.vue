@@ -6,7 +6,7 @@ import {
   Music,
   Heart,
   MoreHorizontal,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePlaylistsStore } from '@/stores/playlists'

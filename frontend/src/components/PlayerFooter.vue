@@ -15,7 +15,7 @@ import {
   ListMusic,
   Mic2,
   PictureInPicture2,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import LazyImg from '@/components/LazyImg.vue'
 import { usePlayerStore } from '../stores/player'
 import { RepeatMode } from '../../bindings/airmedy/internal/domain/models'

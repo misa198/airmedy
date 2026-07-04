@@ -2,7 +2,7 @@
 import { ref, shallowRef, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
-import { Disc } from 'lucide-vue-next'
+import { Disc } from '@lucide/vue'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import VirtualizedGrid from '../components/VirtualizedGrid.vue'
 import TrackCard from '../components/TrackCard.vue'

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, shallowRef, onMounted, computed, watch } from 'vue'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
-import { Disc } from 'lucide-vue-next'
+import { Disc } from '@lucide/vue'
 import type { AlbumDTO, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import AlbumGrid from '../components/AlbumGrid.vue'
 import AlbumListView from '../components/AlbumListView.vue'

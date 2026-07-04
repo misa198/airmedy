@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted } from 'vue'
-import { Music, X, ListMusic, MoreVertical, GripVertical, Goal, Radio } from 'lucide-vue-next'
+import { Music, X, ListMusic, MoreVertical, GripVertical, Goal, Radio } from '@lucide/vue'
 import { usePlayerStore } from '../stores/player'
 import { useMoodRadioStore } from '../stores/moodRadio'
 import { formatTime, buildArtworkUrl, getTrackDisplayTitle } from '@airmedy/utils'

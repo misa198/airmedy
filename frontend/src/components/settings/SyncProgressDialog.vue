@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { Loader2, CheckCircle2 } from 'lucide-vue-next'
+import { Loader2, CheckCircle2 } from '@lucide/vue'
 import type { SyncProgress } from '../../../bindings/airmedy/internal/domain/models'
 import { Modal } from '@airmedy/ui'
 

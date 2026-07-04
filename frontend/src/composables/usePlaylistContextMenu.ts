@@ -1,4 +1,4 @@
-import { Music, Pencil, Trash2, ListEnd, ListPlus, Download } from 'lucide-vue-next'
+import { Music, Pencil, Trash2, ListEnd, ListPlus, Download } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
 import type { ContextMenuItem } from './useContextMenu'

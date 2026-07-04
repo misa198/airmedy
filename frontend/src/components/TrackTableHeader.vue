@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onBeforeUnmount } from 'vue'
-import { Heart } from 'lucide-vue-next'
+import { Heart } from '@lucide/vue'
 import { type ColumnDef, type ColumnKey, useTrackTableSettings } from '@/composables/useTrackTableSettings'
 import SortableHeaderCell from './SortableHeaderCell.vue'
 

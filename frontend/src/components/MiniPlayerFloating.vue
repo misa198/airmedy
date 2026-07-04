@@ -5,7 +5,7 @@ import {
   Pin, PinOff, X, Music,
   Shuffle, Repeat, Repeat1,
   Volume2, VolumeX,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import LazyImg from '@/components/LazyImg.vue'
 import { usePlayerStore } from '@/stores/player'
 import { RepeatMode } from '../../bindings/airmedy/internal/domain/models'

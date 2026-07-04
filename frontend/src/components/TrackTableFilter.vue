@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ListFilter } from 'lucide-vue-next'
+import { ListFilter } from '@lucide/vue'
 import { Checkbox, IconButton } from '@airmedy/ui'
 import { type ColumnDef, useTrackTableSettings } from '@/composables/useTrackTableSettings'
 import FilterDropdown from './FilterDropdown.vue'

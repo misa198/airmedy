@@ -8,7 +8,7 @@ import {
   Shuffle,
   SkipBack,
   SkipForward,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { RepeatMode } from '../../../bindings/airmedy/internal/domain/models'
 import PlayerControlButton from './PlayerControlButton.vue'

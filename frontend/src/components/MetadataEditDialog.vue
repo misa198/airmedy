@@ -10,7 +10,7 @@ import { buildArtworkUrl } from '@airmedy/utils'
 import LazyImg from './LazyImg.vue'
 import { TabSwitcher } from '@airmedy/ui'
 import { Modal } from '@airmedy/ui'
-import { ListMusic, Mic2, Download } from 'lucide-vue-next'
+import { ListMusic, Mic2, Download } from '@lucide/vue'
 
 const { t } = useI18n()
 const props = defineProps<{

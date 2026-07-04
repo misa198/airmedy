@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PenTool } from 'lucide-vue-next'
+import { PenTool } from '@lucide/vue'
 import type { Composer } from '../../bindings/airmedy/internal/domain/models'
 
 defineProps<{

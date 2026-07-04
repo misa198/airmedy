@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
-import { Disc, Music, Search, User, Library, PenTool } from 'lucide-vue-next'
+import { Disc, Music, Search, User, Library, PenTool } from '@lucide/vue'
 import LazyImg from '@/components/LazyImg.vue'
 import { Input } from '@airmedy/ui'
 import AlbumCard from '@/components/AlbumCard.vue'

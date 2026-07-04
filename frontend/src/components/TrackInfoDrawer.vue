@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { usePlayerStore } from '@/stores/player'
-import { Music, AudioLines, X } from 'lucide-vue-next'
+import { Music, AudioLines, X } from '@lucide/vue'
 import LazyImg from '@/components/LazyImg.vue'
 import { useI18n } from 'vue-i18n'
 import { formatTime, buildArtworkUrl, getTrackDisplayTitle } from '@airmedy/utils'

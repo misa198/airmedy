@@ -1,12 +1,12 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends { id: string; name: string }">
 import { ref, computed, onActivated } from 'vue'
-import { Search, Play } from 'lucide-vue-next'
+import { Search, Play } from '@lucide/vue'
 import { Input } from '@airmedy/ui'
 import { foldUnicode } from '@airmedy/utils'
 
 const props = defineProps<{
   title: string
-  items: { id: string; name: string }[]
+  items: T[]
   isLoading?: boolean
   selectedId?: string
   searchPlaceholder?: string
@@ -15,7 +15,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'select': [id: string]
-  'play': [item: { id: string; name: string }]
+  'play': [item: T]
 }>()
 
 const searchQuery = ref('')

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { LucideProps } from 'lucide-vue-next';
+import { LucideProps } from '@lucide/vue';
 import { FunctionalComponent, PropType, toRef } from 'vue';
 
 const props = defineProps({

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { X, Plus } from 'lucide-vue-next'
+import { X, Plus } from '@lucide/vue'
 
 const { t } = useI18n()
 

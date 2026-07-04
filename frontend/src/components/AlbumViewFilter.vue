@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { LayoutGrid, List, ArrowUp, ArrowDown, ListFilter } from 'lucide-vue-next'
+import { LayoutGrid, List, ArrowUp, ArrowDown, ListFilter } from '@lucide/vue'
 import { IconButton } from '@airmedy/ui'
 import FilterDropdown from './FilterDropdown.vue'
 
