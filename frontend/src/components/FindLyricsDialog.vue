@@ -109,29 +109,31 @@ async function save() {
               />
             </div>
           </div>
-          <div class="space-y-2">
-            <label class="text-xs font-medium text-muted-foreground uppercase">{{ t('find_lyrics.track_artist') }}</label>
-            <div class="relative">
-              <User class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10 pointer-events-none" />
-              <Input 
-                v-model="searchArtist" 
-                type="text" 
-                class="pl-10" 
-                clearable
-                @keyup.enter="search" 
-              />
+          <div class="flex space-x-2 w-full space-y-2">
+            <div class="space-y-2 flex-1">
+              <label class="text-xs font-medium text-muted-foreground uppercase">{{ t('find_lyrics.track_artist') }}</label>
+              <div class="relative">
+                <User class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10 pointer-events-none" />
+                <Input 
+                  v-model="searchArtist" 
+                  type="text" 
+                  class="pl-10" 
+                  clearable
+                  @keyup.enter="search" 
+                />
+              </div>
             </div>
-          </div>
-          <div class="space-y-2">
-            <label class="text-xs font-medium text-muted-foreground uppercase">{{ t('track_info.duration') }}</label>
-            <div class="relative">
-              <Clock class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10 pointer-events-none" />
-              <Input 
-                :model-value="formattedDuration" 
-                type="text" 
-                class="pl-10" 
-                disabled
-              />
+            <div class="space-y-2 w-[110px]">
+              <label class="text-xs font-medium text-muted-foreground uppercase">{{ t('track_info.duration') }}</label>
+              <div class="relative">
+                <Clock class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10 pointer-events-none" />
+                <Input 
+                  :model-value="formattedDuration" 
+                  type="text" 
+                  class="pl-10" 
+                  disabled
+                />
+              </div>
             </div>
           </div>
           <button class="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50" :disabled="isSearching" @click="search">
