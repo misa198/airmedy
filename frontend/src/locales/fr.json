@@ -37,7 +37,16 @@
       "sync_started": "Synchronisation de la bibliothèque démarrée",
       "sync_failed": "Échec du démarrage de la synchronisation",
       "removing_folder": "Suppression du dossier...",
-      "optimizing_search": "Optimisation de la recherche..."
+      "optimizing_search": "Optimisation de la recherche...",
+      "interval_title": "Intervalle d'analyse",
+      "interval_desc": "Fréquence à laquelle les dossiers surveillés sont réanalysés pour les fichiers ajoutés, modifiés ou supprimés.",
+      "interval_15m": "Toutes les 15 minutes",
+      "interval_30m": "Toutes les 30 minutes",
+      "interval_1h": "Toutes les heures",
+      "interval_launch": "Au démarrage",
+      "interval_manual": "Manuel uniquement",
+      "interval_row_title": "Fréquence",
+      "interval_15s": "Toutes les 15 secondes (dev)"
     },
     "folders": {
       "title": "Bibliothèque musicale",

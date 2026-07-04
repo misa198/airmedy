@@ -37,7 +37,16 @@
       "sync_started": "Mediathek-Synchronisierung gestartet",
       "sync_failed": "Synchronisierung konnte nicht gestartet werden",
       "removing_folder": "Ordner wird entfernt...",
-      "optimizing_search": "Suche wird optimiert..."
+      "optimizing_search": "Suche wird optimiert...",
+      "interval_title": "Scan-Intervall",
+      "interval_desc": "Wie oft überwachte Ordner auf hinzugefügte, geänderte oder entfernte Dateien geprüft werden.",
+      "interval_15m": "Alle 15 Minuten",
+      "interval_30m": "Alle 30 Minuten",
+      "interval_1h": "Jede Stunde",
+      "interval_launch": "Beim App-Start",
+      "interval_manual": "Nur manuell",
+      "interval_row_title": "Häufigkeit",
+      "interval_15s": "Alle 15 Sekunden (Dev)"
     },
     "folders": {
       "title": "Musikbibliothek",

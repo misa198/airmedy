@@ -37,7 +37,16 @@
       "sync_started": "ライブラリの同期を開始しました",
       "sync_failed": "同期の開始に失敗しました",
       "removing_folder": "フォルダーを削除中...",
-      "optimizing_search": "検索を最適化中..."
+      "optimizing_search": "検索を最適化中...",
+      "interval_title": "再スキャン間隔",
+      "interval_desc": "監視フォルダーを再スキャンして、追加・変更・削除されたファイルを検出する頻度。",
+      "interval_15m": "15分ごと",
+      "interval_30m": "30分ごと",
+      "interval_1h": "1時間ごと",
+      "interval_launch": "アプリ起動時",
+      "interval_manual": "手動のみ",
+      "interval_row_title": "頻度",
+      "interval_15s": "15秒ごと（開発）"
     },
     "folders": {
       "title": "音楽ライブラリ",

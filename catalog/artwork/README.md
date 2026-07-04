@@ -199,12 +199,13 @@ fetch completing).
   (the guard only blocks new writes).
 - A full sync resolves images in one batch (`applyLocalArtistImagesForDirs`): the
   walk collects every directory holding an `artist.*`, each image is cached once,
-  no per-track stat/read storm. Single-file imports (watcher add) fall back to the
-  per-track `resolveTrackArtistImages` (gated by the `syncing` flag), which applies
-  to the track's **album artists** and skips when there is more than one.
-- The `fsnotify` watcher reacts to `artist.*` create/write (set local, skipped
-  when ambiguous) and remove/rename (clear the `local_file` source only;
-  manual/online remain).
+  no per-track stat/read storm. Single-file imports outside a bulk sync fall back
+  to the per-track `resolveTrackArtistImages` (gated by the `syncing` flag), which
+  applies to the track's **album artists** and skips when there is more than one.
+- `artist.*` changes are picked up by the periodic sync scan (no real-time file
+  watcher — see [Library catalog](../library/README.md#periodic-sync-scheduler)):
+  create/write sets the local source (skipped when ambiguous); a file missing on a
+  later scan clears the `local_file` source only (manual/online remain).
 - `ScanArtistImages` is a heavier per-artist sweep used only by the version-gated
   rescan (below).
 

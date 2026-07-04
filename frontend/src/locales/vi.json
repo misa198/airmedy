@@ -37,7 +37,16 @@
       "sync_started": "Bắt đầu đồng bộ thư viện",
       "sync_failed": "Không thể bắt đầu đồng bộ",
       "removing_folder": "Đang xóa thư mục...",
-      "optimizing_search": "Đang tối ưu tìm kiếm..."
+      "optimizing_search": "Đang tối ưu tìm kiếm...",
+      "interval_title": "Chu kỳ quét lại",
+      "interval_desc": "Tần suất quét lại thư mục để phát hiện tệp thêm, thay đổi hoặc bị xóa.",
+      "interval_15m": "Mỗi 15 phút",
+      "interval_30m": "Mỗi 30 phút",
+      "interval_1h": "Mỗi giờ",
+      "interval_launch": "Khi mở ứng dụng",
+      "interval_manual": "Chỉ thủ công",
+      "interval_row_title": "Tần suất",
+      "interval_15s": "Mỗi 15 giây (dev)"
     },
     "folders": {
       "title": "Thư viện nhạc",

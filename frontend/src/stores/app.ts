@@ -7,6 +7,7 @@ import * as WindowService from '../../bindings/airmedy/internal/infra/wails/wind
 import * as NormalizationService from '../../bindings/airmedy/internal/infra/wails/normalizationservice'
 import * as AnalysisService from '../../bindings/airmedy/internal/infra/wails/analysisservice'
 import { UpdateInfo } from '../../bindings/airmedy/internal/app/updater/models'
+import { DEFAULT_SYNC_INTERVAL, isSyncInterval, type SyncInterval } from '@/lib/librarySync'
 
 export const NORMALIZATION_TARGET_LUFS_MIN = -24
 export const NORMALIZATION_TARGET_LUFS_MAX = -6
@@ -43,6 +44,7 @@ export const useAppStore = defineStore('app', () => {
   const normalizationTargetLufs = ref(-14)
   const normalizationPreventClip = ref(true)
   const showPlayerIndicator = ref(true)
+  const librarySyncInterval = ref<SyncInterval>(DEFAULT_SYNC_INTERVAL)
   const remoteServerEnabled = ref(false)
   const remoteServerPort = ref(0)
   const remoteServerPassword = ref('')
@@ -105,6 +107,9 @@ export const useAppStore = defineStore('app', () => {
         moodDerivationVersion.value = settings.mood_derivation_version ?? 0
         preventSleepWhilePlaying.value = !!settings.prevent_sleep_while_playing
         showPlayerIndicator.value = settings.show_player_indicator !== false
+        if (isSyncInterval(settings.library_sync_interval)) {
+          librarySyncInterval.value = settings.library_sync_interval
+        }
         libraryAnalysisEnabled.value = !!settings.library_analysis_enabled
         normalizationEnabled.value = !!settings.normalization_enabled
         // DB default is 'track'; the mode select only offers Track/Album (never 'off').
@@ -194,6 +199,7 @@ export const useAppStore = defineStore('app', () => {
         mood_derivation_version: moodDerivationVersion.value,
         prevent_sleep_while_playing: preventSleepWhilePlaying.value,
         show_player_indicator: showPlayerIndicator.value,
+        library_sync_interval: librarySyncInterval.value,
         library_analysis_enabled: libraryAnalysisEnabled.value,
         normalization_enabled: normalizationEnabled.value,
         normalization_mode: normalizationMode.value,
@@ -304,6 +310,11 @@ export const useAppStore = defineStore('app', () => {
     await saveSettings()
   }
 
+  const updateLibrarySyncInterval = async (interval: SyncInterval) => {
+    librarySyncInterval.value = interval
+    await saveSettings()
+  }
+
   const updateLibraryAnalysisEnabled = async (enabled: boolean) => {
     libraryAnalysisEnabled.value = enabled
     // Mirrors the backend cross-toggle (AnalysisService.SetEnabled forces
@@ -399,6 +410,7 @@ export const useAppStore = defineStore('app', () => {
     preferLocalArtistArtwork,
     preventSleepWhilePlaying,
     showPlayerIndicator,
+    librarySyncInterval,
     libraryAnalysisEnabled,
     normalizationEnabled,
     normalizationMode,
@@ -433,6 +445,7 @@ export const useAppStore = defineStore('app', () => {
     updatePreferLocalArtistArtwork,
     updatePreventSleepWhilePlaying,
     updateShowPlayerIndicator,
+    updateLibrarySyncInterval,
     updateLibraryAnalysisEnabled,
     updateNormalizationEnabled,
     updateNormalizationMode,

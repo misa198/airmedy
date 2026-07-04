@@ -251,6 +251,40 @@ type MiniPlayerState struct {
 // DefaultTargetLUFS is the default loudness normalization target.
 const DefaultTargetLUFS = -14.0
 
+// Library sync interval options. The library is rescanned on a timer (no
+// real-time file watcher — that would need one OS file handle per watched file
+// on macOS/kqueue and exhaust the fd limit on large libraries). Stored in
+// AppSettings.LibrarySyncInterval.
+const (
+	SyncInterval15s    = "15s" // dev-only testing option; not offered in the production UI
+	SyncInterval15m    = "15m"
+	SyncInterval30m    = "30m"
+	SyncInterval1h     = "1h"
+	SyncIntervalLaunch = "launch" // scan once at app launch only
+	SyncIntervalManual = "manual" // never auto-scan; user triggers Sync Library
+)
+
+// DefaultSyncInterval is the library sync interval applied when none is set.
+const DefaultSyncInterval = SyncInterval1h
+
+// SyncIntervalDuration returns the timer period for a LibrarySyncInterval value
+// and whether it repeats. "launch"/"manual" (and any unknown value) return
+// (0, false): no repeating timer.
+func SyncIntervalDuration(interval string) (time.Duration, bool) {
+	switch interval {
+	case SyncInterval15s:
+		return 15 * time.Second, true
+	case SyncInterval15m:
+		return 15 * time.Minute, true
+	case SyncInterval30m:
+		return 30 * time.Minute, true
+	case SyncInterval1h:
+		return time.Hour, true
+	default:
+		return 0, false
+	}
+}
+
 // TrackFeatures holds one-time DSP analysis results for a track (loudness, dynamics,
 // spectral shape).
 type TrackFeatures struct {
@@ -315,6 +349,11 @@ type AppSettings struct {
 	RemoteServerPort         int    `json:"remote_server_port"`
 	RemoteServerPassword     string `json:"remote_server_password"`
 	ShowPlayerIndicator      bool   `json:"show_player_indicator"`
+
+	// LibrarySyncInterval controls how often watched folders are rescanned for
+	// added/changed/removed files. One of the SyncInterval* constants; empty
+	// falls back to DefaultSyncInterval.
+	LibrarySyncInterval string `json:"library_sync_interval"`
 
 	// Library analysis pipeline (feeds Normalization). Opt-in: off disables the
 	// background worker pool entirely (no backfill/enqueue/boost). Normalization

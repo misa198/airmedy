@@ -97,7 +97,7 @@ var Module = fx.Module("app",
 	appsettings.Module,
 	remoteserver.Module,
 	analysis.Module,
-	fx.Invoke(func(lc fx.Lifecycle, db *sqlite.DB, search domain.SearchService, lib *library.LibraryService, playerSvc *player.PlayerService, eqSvc *eq.EQService, lastfmSvc *lastfm.LastFmService, analysisSvc *analysis.AnalysisService) {
+	fx.Invoke(func(lc fx.Lifecycle, db *sqlite.DB, search domain.SearchService, lib *library.LibraryService, playerSvc *player.PlayerService, eqSvc *eq.EQService, lastfmSvc *lastfm.LastFmService, analysisSvc *analysis.AnalysisService, settingsSvc *appsettings.SettingsService) {
 		lc.Append(fx.Hook{
 			OnStart: func(ctx context.Context) error {
 				// Wire library to player to sync track metadata changes (e.g. favorites)
@@ -132,6 +132,17 @@ var Module = fx.Module("app",
 				})
 				playerSvc.AddTrackLoadListener(func(track *domain.TrackDTO) {
 					analysisSvc.Enqueue(track.ID, true) // on-play priority boost
+				})
+
+				// Reschedule the library's periodic sync when the interval
+				// setting changes (ignore saves that don't touch it, so an
+				// unrelated settings edit doesn't force an immediate rescan).
+				lastSyncInterval := lib.CurrentSyncInterval()
+				settingsSvc.AddChangeListener(func(settings *domain.AppSettings) {
+					if settings.LibrarySyncInterval != lastSyncInterval {
+						lastSyncInterval = settings.LibrarySyncInterval
+						lib.RescheduleSync()
+					}
 				})
 
 				if err := eqSvc.SeedDefaults(ctx); err != nil {

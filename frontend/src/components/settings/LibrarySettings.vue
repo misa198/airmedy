@@ -3,19 +3,28 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import * as LibraryService from '../../../bindings/airmedy/internal/infra/wails/libraryservice'
-import { RotateCcw, Plus, Trash2, Folder, Loader2, DatabaseZap, Info, Tags } from '@lucide/vue'
+import { RotateCcw, Plus, Trash2, Folder, Loader2, DatabaseZap, Info, Tags, RefreshCw } from '@lucide/vue'
 import type { WatchedFolder, SyncProgress } from '../../../bindings/airmedy/internal/domain/models'
 import { Events } from '@wailsio/runtime'
 import ConfirmDialog from '../ConfirmDialog.vue'
 import SyncProgressDialog from './SyncProgressDialog.vue'
 import DelimiterInput from './DelimiterInput.vue'
 import SettingSection from './SettingSection.vue'
+import SettingRow from './SettingRow.vue'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@airmedy/ui'
+import { VISIBLE_SYNC_INTERVALS, type SyncInterval } from '@/lib/librarySync'
 import { useAppStore } from '../../stores/app'
 
 const { t } = useI18n()
 
 const appStore = useAppStore()
-const { artistDelimiters, albumArtistDelimiters, genreDelimiters, composerDelimiters } = storeToRefs(appStore)
+const { artistDelimiters, albumArtistDelimiters, genreDelimiters, composerDelimiters, librarySyncInterval } = storeToRefs(appStore)
 
 // Becomes true once the user edits any delimiter; cleared after a library sync
 // (which re-applies the splitting) completes.
@@ -235,6 +244,24 @@ onUnmounted(() => {
           </button>
         </li>
       </ul>
+    </SettingSection>
+
+    <SettingSection :icon="RefreshCw" :label="t('settings.sync.interval_title')">
+      <SettingRow :title="t('settings.sync.interval_row_title')" :description="t('settings.sync.interval_desc')">
+        <Select
+          :model-value="librarySyncInterval"
+          @update:model-value="val => appStore.updateLibrarySyncInterval(val as SyncInterval)"
+        >
+          <SelectTrigger class="w-[160px] bg-foreground/[0.04] border-0 h-9 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="interval in VISIBLE_SYNC_INTERVALS" :key="interval" :value="interval">
+              {{ t(`settings.sync.interval_${interval}`) }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </SettingRow>
     </SettingSection>
 
     <SettingSection :icon="Tags" :label="t('settings.library.delimiters_title')" variant="panel">

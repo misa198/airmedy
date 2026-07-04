@@ -1,0 +1,13 @@
+{
+  "name": "music-test-generator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Generate large amounts of realistic MP3 test files with full ID3 tags, artwork and lyrics",
+  "main": "generate-mp3.js",
+  "scripts": {
+    "generate": "node generate-mp3.js"
+  },
+  "dependencies": {
+    "node-id3": "^0.2.6"
+  }
+}

@@ -4,7 +4,7 @@ import {
   Mic2,
   Minimize2,
 } from '@lucide/vue'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { usePlayerStore } from '../stores/player'
 import { useDeviceStore } from '../stores/device'
 import LivingArtworkBackground from './LivingArtworkBackground.vue'
@@ -28,6 +28,14 @@ const deviceStore = useDeviceStore()
 const appStore = useAppStore()
 
 const trackContextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
+
+// Queue panel holds a 50k-track virtual list; keep it mounted after first
+// open (v-show toggle) instead of remounting on every open/close. Lyrics
+// panel stays fully lazy (v-if) — cheap to mount, and should reload on open.
+const hasOpenedQueue = ref(false)
+watch(() => store.isQueueOpen, (open) => {
+  if (open) hasOpenedQueue.value = true
+})
 
 function openContextMenu(e: MouseEvent) {
   if (!store.currentTrack) return
@@ -143,16 +151,21 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
             :class="!showRightColumn ? 'w-0' : 'w-1/2 max-w-2xl'">
 
             <!-- Right Column Content (Queue or Lyrics) -->
+            <!-- Two separate Transitions (each with exactly one child) so the queue panel can stay
+                 mounted after first open (v-show toggle) while lyrics keeps mounting fresh on open. -->
             <Transition enter-active-class="transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
               enter-from-class="opacity-0 translate-x-24" enter-to-class="opacity-100 translate-x-0"
               leave-active-class="transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
               leave-from-class="opacity-100 translate-x-0" leave-to-class="opacity-0 translate-x-24">
-              <!-- Right Column: Queue -->
-              <PlayerQueuePanel v-if="store.isQueueOpen" key="queue" :queue="store.queue"
+              <PlayerQueuePanel v-if="hasOpenedQueue" v-show="store.isQueueOpen" key="queue" :queue="store.queue"
                 @close="store.closeAllDrawers()" @play-track="(index) => store.playTracks(store.queue, index)" />
+            </Transition>
 
-              <!-- Right Column: Lyrics -->
-              <PlayerLyricsPanel v-else-if="store.isLyricsOpen" key="lyrics" :lyrics="store.lyrics?.content"
+            <Transition enter-active-class="transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
+              enter-from-class="opacity-0 translate-x-24" enter-to-class="opacity-100 translate-x-0"
+              leave-active-class="transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
+              leave-from-class="opacity-100 translate-x-0" leave-to-class="opacity-0 translate-x-24">
+              <PlayerLyricsPanel v-if="store.isLyricsOpen" key="lyrics" :lyrics="store.lyrics?.content"
                 :loading="store.lyricsLoading" :position="store.position" @close="store.closeAllDrawers()"
                 @seek="(time) => store.seek(time)" />
             </Transition>

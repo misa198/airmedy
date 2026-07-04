@@ -19,6 +19,7 @@ import (
 	"airmedy/internal/app/singleinstance"
 	"airmedy/internal/domain"
 	"airmedy/internal/infra/logging"
+	"airmedy/internal/infra/sysinfo"
 	"airmedy/internal/infra/wails"
 	"runtime/debug"
 
@@ -67,6 +68,8 @@ func main() {
 		os.Exit(1)
 	}
 	defer func() { _ = logRotator.Close() }()
+
+	sysinfo.RaiseFileDescriptorLimit(logger)
 
 	// Single-instance guard must run before any exclusive resource is acquired
 	// (the bleve index lock, the remote-server port). A second process forwards
