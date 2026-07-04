@@ -431,7 +431,12 @@
     "label": "ค่ายเพลง",
     "isrc": "ISRC",
     "play_count": "จำนวนครั้งที่เล่น",
-    "lossless": "ไม่สูญเสียคุณภาพ"
+    "lossless": "ไม่สูญเสียคุณภาพ",
+    "lossy": "สูญเสียคุณภาพ",
+    "hi_res": "ไฮ-เรส",
+    "dsd": "DSD",
+    "bit_depth": "ความลึกบิต",
+    "codec": "โคเดก"
   },
   "composer": {
     "compositions_count": "{count} ผลงานประพันธ์"

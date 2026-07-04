@@ -1,0 +1,1 @@
+-- tracks.bit_depth / tracks.codec columns intentionally not dropped

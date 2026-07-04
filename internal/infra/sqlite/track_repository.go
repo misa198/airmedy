@@ -520,13 +520,13 @@ func (r *trackRepository) Save(ctx context.Context, track *domain.Track) error {
 		INSERT INTO tracks (
 			id, path, title, sort_title,
 			album_id, year, track_number, total_tracks, disc_number, total_discs,
-			duration, bitrate, sample_rate, format, artwork_key,
+			duration, bitrate, sample_rate, format, bit_depth, codec, artwork_key,
 			raw_artist_names, raw_album_artist_names, raw_genre_names, raw_composer_names,
 			copyright, bpm, label, isrc, play_count, other_metadata, file_size, is_favorite, mtime, created_at, updated_at
 		) VALUES (
 			:id, :path, :title, :sort_title,
 			:album_id, :year, :track_number, :total_tracks, :disc_number, :total_discs,
-			:duration, :bitrate, :sample_rate, :format, :artwork_key,
+			:duration, :bitrate, :sample_rate, :format, :bit_depth, :codec, :artwork_key,
 			:raw_artist_names, :raw_album_artist_names, :raw_genre_names, :raw_composer_names,
 			:copyright, :bpm, :label, :isrc, :play_count, :other_metadata, :file_size, :is_favorite, :mtime, :created_at, :updated_at
 		)`
@@ -554,13 +554,13 @@ func (r *trackRepository) Upsert(ctx context.Context, track *domain.Track) error
 		INSERT INTO tracks (
 			id, path, title, sort_title,
 			album_id, year, track_number, total_tracks, disc_number, total_discs,
-			duration, bitrate, sample_rate, format, artwork_key,
+			duration, bitrate, sample_rate, format, bit_depth, codec, artwork_key,
 			raw_artist_names, raw_album_artist_names, raw_genre_names, raw_composer_names,
 			copyright, bpm, label, isrc, play_count, other_metadata, file_size, is_favorite, mtime, created_at, updated_at
 		) VALUES (
 			:id, :path, :title, :sort_title,
 			:album_id, :year, :track_number, :total_tracks, :disc_number, :total_discs,
-			:duration, :bitrate, :sample_rate, :format, :artwork_key,
+			:duration, :bitrate, :sample_rate, :format, :bit_depth, :codec, :artwork_key,
 			:raw_artist_names, :raw_album_artist_names, :raw_genre_names, :raw_composer_names,
 			:copyright, :bpm, :label, :isrc, :play_count, :other_metadata, :file_size, :is_favorite, :mtime, :created_at, :updated_at
 		) ON CONFLICT(path) DO UPDATE SET
@@ -576,6 +576,8 @@ func (r *trackRepository) Upsert(ctx context.Context, track *domain.Track) error
 			bitrate = excluded.bitrate,
 			sample_rate = excluded.sample_rate,
 			format = excluded.format,
+			bit_depth = excluded.bit_depth,
+			codec = excluded.codec,
 			artwork_key = excluded.artwork_key,
 			raw_artist_names = excluded.raw_artist_names,
 			raw_album_artist_names = excluded.raw_album_artist_names,

@@ -18,6 +18,8 @@ type Track struct {
 	Bitrate             int       `json:"bitrate" db:"bitrate"`
 	SampleRate          int       `json:"sample_rate" db:"sample_rate"`
 	Format              string    `json:"format" db:"format"`
+	BitDepth            int       `json:"bit_depth" db:"bit_depth"`
+	Codec               string    `json:"codec" db:"codec"`
 	ArtworkKey          string    `json:"artwork_key" db:"artwork_key"`
 	RawArtistNames      string    `json:"raw_artist_names" db:"raw_artist_names"`
 	RawAlbumArtistNames string    `json:"raw_album_artist_names" db:"raw_album_artist_names"`

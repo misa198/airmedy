@@ -44,3 +44,32 @@ func (r *librarySyncStateRepository) SetDelimitersSignature(ctx context.Context,
 	}
 	return nil
 }
+
+func (r *librarySyncStateRepository) GetMetadataSchemaVersion(ctx context.Context) (int, error) {
+	var version int
+	err := r.db.GetContext(ctx, &version,
+		`SELECT metadata_schema_version FROM library_sync_state WHERE id = 1`,
+	)
+	if err == sql.ErrNoRows {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, fmt.Errorf("failed to load metadata schema version: %w", err)
+	}
+	return version, nil
+}
+
+func (r *librarySyncStateRepository) SetMetadataSchemaVersion(ctx context.Context, version int) error {
+	_, err := r.db.ExecContext(ctx,
+		`INSERT INTO library_sync_state (id, metadata_schema_version, updated_at)
+		 VALUES (1, ?, CURRENT_TIMESTAMP)
+		 ON CONFLICT(id) DO UPDATE SET
+		   metadata_schema_version = excluded.metadata_schema_version,
+		   updated_at = excluded.updated_at`,
+		version,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to save metadata schema version: %w", err)
+	}
+	return nil
+}

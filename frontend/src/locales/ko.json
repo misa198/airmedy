@@ -431,7 +431,12 @@
     "label": "레이블",
     "isrc": "ISRC",
     "play_count": "재생 횟수",
-    "lossless": "무손실"
+    "lossless": "무손실",
+    "lossy": "손실",
+    "hi_res": "하이레조",
+    "dsd": "DSD",
+    "bit_depth": "비트 심도",
+    "codec": "코덱"
   },
   "composer": {
     "compositions_count": "{count} 작품"

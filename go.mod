@@ -15,12 +15,12 @@ require (
 	github.com/inconshreveable/go-update v0.0.0-20160112193335-8152e7eb6ccf
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/mattn/go-sqlite3 v1.14.42
+	github.com/misa198/go-taglib v1.0.0
 	github.com/misa198/lexorank-go v1.0.2
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/wailsapp/wails/v3 v3.0.0-alpha2.112
 	github.com/zalando/go-keyring v0.2.8
-	go.senan.xyz/taglib v0.11.1
 	go.uber.org/fx v1.24.0
 	golang.org/x/sys v0.43.0
 	golang.org/x/text v0.37.0
@@ -54,7 +54,7 @@ require (
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
-	github.com/tetratelabs/wazero v1.10.1 // indirect
+	github.com/tetratelabs/wazero v1.11.1-0.20260428013916-2bbd517b7633 // indirect
 	github.com/wailsapp/wails/webview2 v1.0.27 // indirect
 	go.etcd.io/bbolt v1.4.0 // indirect
 	go.uber.org/dig v1.19.0 // indirect

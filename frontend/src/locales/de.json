@@ -431,7 +431,12 @@
     "label": "Label",
     "isrc": "ISRC",
     "play_count": "Wiedergaben",
-    "lossless": "Verlustfrei"
+    "lossless": "Verlustfrei",
+    "lossy": "Verlustbehaftet",
+    "hi_res": "Hi-Res",
+    "dsd": "DSD",
+    "bit_depth": "Bittiefe",
+    "codec": "Codec"
   },
   "composer": {
     "compositions_count": "{count} Kompositionen"

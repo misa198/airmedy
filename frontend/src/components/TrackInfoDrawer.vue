@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { usePlayerStore } from '@/stores/player'
-import { Music, AudioLines, X } from '@lucide/vue'
+import { Music, AudioLines, Zap, Crown, X } from '@lucide/vue'
 import LazyImg from '@/components/LazyImg.vue'
 import { useI18n } from 'vue-i18n'
 import { formatTime, buildArtworkUrl, getTrackDisplayTitle } from '@airmedy/utils'
+import { determineAudioQuality } from '@/lib/audioQuality'
 
 const { t } = useI18n()
 const store = usePlayerStore()
@@ -13,10 +14,21 @@ const track = computed(() => store.trackInfoTrack)
 
 const artworkUrl = computed(() => buildArtworkUrl(track.value?.artwork_key, 'md'))
 
-const isLossless = computed(() => {
-  if (!track.value) return false
-  const fmt = track.value.format.toLowerCase()
-  return ['flac', 'alac', 'wav', 'aiff', 'dsf', 'dff', 'ape'].includes(fmt) || track.value.bitrate >= 1411 || track.value.sample_rate >= 96000
+const audioQuality = computed(() => (track.value ? determineAudioQuality(track.value) : 'UNKNOWN'))
+
+const qualityBadge = computed(() => {
+  switch (audioQuality.value) {
+    case 'LOSSY':
+      return { icon: Music, label: t('track_info.lossy'), class: 'bg-foreground/8 text-foreground/50 border-foreground/15' }
+    case 'HI-RES':
+      return { icon: Zap, label: t('track_info.hi_res'), class: 'bg-amber-500/10 text-amber-500 border-amber-500/30' }
+    case 'DSD':
+      return { icon: Crown, label: t('track_info.dsd'), class: 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-400/30' }
+    case 'LOSSLESS':
+      return { icon: AudioLines, label: t('track_info.lossless'), class: 'bg-primary/10 text-primary border-primary/20' }
+    default:
+      return null
+  }
 })
 
 const details = computed(() => {
@@ -26,16 +38,18 @@ const details = computed(() => {
     { label: t('track_info.genre'), value: track.value.raw_genre_names || '', isHyphenAuto: true },
     { label: t('track_info.year'), value: track.value.year || '', isHyphenAuto: true },
     { label: t('track_info.composer'), value: track.value.raw_composer_names || '', isHyphenAuto: true },
-    { label: t('track_info.format'), value: track.value.format?.toUpperCase() || '', isHyphenAuto: true },
-    { label: t('track_info.bitrate'), value: track.value.bitrate ? `${Math.round(track.value.bitrate)} kbps` : '', isHyphenAuto: true },
-    { label: t('track_info.sample_rate'), value: track.value.sample_rate ? `${track.value.sample_rate / 1000} kHz` : '', isHyphenAuto: true },
-    { label: t('track_info.duration'), value: track.value.duration ? formatTime(track.value.duration) : '', isHyphenAuto: true },
-    { label: t('track_info.bpm'), value: track.value.bpm || '', isHyphenAuto: true },
     { label: t('track_info.disc'), value: track.value.total_discs > 1 ? `${track.value.disc_number} / ${track.value.total_discs}` : track.value.disc_number || '', isHyphenAuto: true },
     { label: t('track_info.track'), value: track.value.total_tracks > 0 ? `${track.value.track_number} / ${track.value.total_tracks}` : track.value.track_number || '', isHyphenAuto: true },
     { label: t('track_info.play_count'), value: track.value.play_count || '', isHyphenAuto: true },
     { label: t('track_info.label'), value: track.value.label || '', isHyphenAuto: true },
     { label: t('track_info.isrc'), value: track.value.isrc || '', isHyphenAuto: true },
+    { label: t('track_info.duration'), value: track.value.duration ? formatTime(track.value.duration) : '', isHyphenAuto: true },
+    { label: t('track_info.format'), value: track.value.format?.toUpperCase() || '', isHyphenAuto: true },
+    { label: t('track_info.bitrate'), value: track.value.bitrate ? `${Math.round(track.value.bitrate)} kbps` : '', isHyphenAuto: true },
+    { label: t('track_info.sample_rate'), value: track.value.sample_rate ? `${track.value.sample_rate / 1000} kHz` : '', isHyphenAuto: true },
+    { label: t('track_info.bit_depth'), value: track.value.bit_depth ? `${track.value.bit_depth}-bit` : '', isHyphenAuto: true },
+    { label: t('track_info.codec'), value: track.value.codec?.toUpperCase() || '', isHyphenAuto: true },
+    { label: t('track_info.bpm'), value: track.value.bpm || '', isHyphenAuto: true },
     { label: t('track_info.file_size'), value: track.value.file_size ? formatFileSize(track.value.file_size) : '', isHyphenAuto: true },
     { label: t('track_info.file_path'), value: track.value.path || '', isHyphenAuto: false },
   ].filter(d => d.value !== '' && d.value != null)
@@ -89,11 +103,12 @@ function formatFileSize(bytes: number) {
             {{ track.album?.title }}
           </p>
 
-          <!-- Lossless Badge -->
-          <div v-if="isLossless"
-            class="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary rounded-full border border-primary/20 select-none">
-            <AudioLines class="w-3 h-3" />
-            <span class="text-[9px] font-bold uppercase tracking-wider">{{ t('track_info.lossless') }}</span>
+          <!-- Quality Badge -->
+          <div v-if="qualityBadge"
+            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border select-none"
+            :class="qualityBadge.class">
+            <component :is="qualityBadge.icon" class="w-3 h-3" />
+            <span class="text-[9px] font-bold uppercase tracking-wider">{{ qualityBadge.label }}</span>
           </div>
         </div>
 

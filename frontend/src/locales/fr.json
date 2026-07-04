@@ -431,7 +431,12 @@
     "label": "Label",
     "isrc": "ISRC",
     "play_count": "Lectures",
-    "lossless": "Sans perte"
+    "lossless": "Sans perte",
+    "lossy": "Avec perte",
+    "hi_res": "Hi-Res",
+    "dsd": "DSD",
+    "bit_depth": "Profondeur de bits",
+    "codec": "Codec"
   },
   "composer": {
     "compositions_count": "{count} compositions"

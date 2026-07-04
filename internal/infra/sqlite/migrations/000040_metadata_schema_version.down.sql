@@ -1,0 +1,1 @@
+-- library_sync_state.metadata_schema_version column intentionally not dropped
