@@ -240,4 +240,6 @@ type MiniPlayerStateRepository interface {
 type LibrarySyncStateRepository interface {
 	GetDelimitersSignature(ctx context.Context) (string, error)
 	SetDelimitersSignature(ctx context.Context, sig string) error
+	GetMetadataSchemaVersion(ctx context.Context) (int, error)
+	SetMetadataSchemaVersion(ctx context.Context, version int) error
 }

@@ -11,7 +11,7 @@ import (
 
 	"airmedy/internal/domain"
 
-	"go.senan.xyz/taglib"
+	taglib "github.com/misa198/go-taglib"
 )
 
 var lrcPattern = regexp.MustCompile(`\[\d+:\d+\.\d+\]`)
@@ -89,8 +89,10 @@ func (e *taglibExtractor) Extract(ctx context.Context, path string) (*domain.Tra
 
 	// Audio properties
 	dto.Duration = int(props.Length.Seconds())
-	dto.Bitrate = int(props.Bitrate)
+	dto.Bitrate = int(props.BitRate)
 	dto.SampleRate = int(props.SampleRate)
+	dto.BitDepth = int(props.BitDepth)
+	dto.Codec = props.InnerCodec
 
 	totalTracksStr := firstTag(tags, "TRACKTOTAL", "TOTALTRACKS")
 	if totalTracksStr == "" {

@@ -431,7 +431,12 @@
     "label": "Gravadora",
     "isrc": "ISRC",
     "play_count": "Reproduções",
-    "lossless": "Sem perdas"
+    "lossless": "Sem perdas",
+    "lossy": "Com perdas",
+    "hi_res": "Hi-Res",
+    "dsd": "DSD",
+    "bit_depth": "Profundidade de bits",
+    "codec": "Codec"
   },
   "composer": {
     "compositions_count": "{count} composições"

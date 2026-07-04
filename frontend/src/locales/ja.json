@@ -431,7 +431,12 @@
     "label": "レーベル",
     "isrc": "ISRC",
     "play_count": "再生回数",
-    "lossless": "ロスレス"
+    "lossless": "ロスレス",
+    "lossy": "非可逆",
+    "hi_res": "ハイレゾ",
+    "dsd": "DSD",
+    "bit_depth": "ビット深度",
+    "codec": "コーデック"
   },
   "composer": {
     "compositions_count": "{count} 作品"

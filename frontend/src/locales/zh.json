@@ -431,7 +431,12 @@
     "label": "唱片公司",
     "isrc": "ISRC",
     "play_count": "播放次数",
-    "lossless": "无损"
+    "lossless": "无损",
+    "lossy": "有损",
+    "hi_res": "高解析度",
+    "dsd": "DSD",
+    "bit_depth": "位深度",
+    "codec": "编码格式"
   },
   "composer": {
     "compositions_count": "{count} 首作品"

@@ -431,7 +431,12 @@
     "label": "Label",
     "isrc": "ISRC",
     "play_count": "Play Count",
-    "lossless": "Lossless"
+    "lossless": "Lossless",
+    "lossy": "Lossy",
+    "hi_res": "Hi-Res",
+    "dsd": "DSD",
+    "bit_depth": "Bit Depth",
+    "codec": "Codec"
   },
   "composer": {
     "compositions_count": "{count} compositions"

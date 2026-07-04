@@ -212,9 +212,18 @@ func (m *mockArtworkCache) CleanupOrphaned(ctx context.Context, activeKeys map[s
 type mockMetadataWriter struct{}
 func (m *mockMetadataWriter) WriteMetadata(_ context.Context, _ string, _ domain.MetadataUpdate) error { return nil }
 
-type mockSyncStateRepo struct{ sig string }
+type mockSyncStateRepo struct {
+	sig     string
+	version int
+}
+
 func (m *mockSyncStateRepo) GetDelimitersSignature(_ context.Context) (string, error) { return m.sig, nil }
 func (m *mockSyncStateRepo) SetDelimitersSignature(_ context.Context, sig string) error { m.sig = sig; return nil }
+func (m *mockSyncStateRepo) GetMetadataSchemaVersion(_ context.Context) (int, error)    { return m.version, nil }
+func (m *mockSyncStateRepo) SetMetadataSchemaVersion(_ context.Context, version int) error {
+	m.version = version
+	return nil
+}
 
 func TestLibraryService_SyncFolder(t *testing.T) {
 	// Create a temporary directory for testing sync
@@ -241,7 +250,7 @@ func TestLibraryService_SyncFolder(t *testing.T) {
 		&mockPlaylistRepo{},
 		&mockFolderRepo{},
 		&mockSettingsRepo{},
-		&mockSyncStateRepo{},
+		&mockSyncStateRepo{version: currentMetadataSchemaVersion},
 		&mockMetadataExtractor{},
 		&mockMetadataWriter{},
 		&mockArtworkCache{},
@@ -338,7 +347,7 @@ func TestLibraryService_SyncFolder_SupportedExtensions(t *testing.T) {
 		&mockPlaylistRepo{},
 		&mockFolderRepo{},
 		&mockSettingsRepo{},
-		&mockSyncStateRepo{},
+		&mockSyncStateRepo{version: currentMetadataSchemaVersion},
 		&mockMetadataExtractor{},
 		&mockMetadataWriter{},
 		&mockArtworkCache{},
@@ -381,7 +390,7 @@ func TestLibraryService_AddWatchedFolder_CoveringExisting(t *testing.T) {
 		&mockPlaylistRepo{},
 		folderRepo,
 		&mockSettingsRepo{},
-		&mockSyncStateRepo{},
+		&mockSyncStateRepo{version: currentMetadataSchemaVersion},
 		&mockMetadataExtractor{},
 		&mockMetadataWriter{},
 		&mockArtworkCache{},
@@ -446,7 +455,7 @@ func TestLibraryService_RemoveWatchedFolder_NotifiesTrackDeletedListeners(t *tes
 		&mockPlaylistRepo{},
 		folderRepo,
 		&mockSettingsRepo{},
-		&mockSyncStateRepo{},
+		&mockSyncStateRepo{version: currentMetadataSchemaVersion},
 		&mockMetadataExtractor{},
 		&mockMetadataWriter{},
 		&mockArtworkCache{},

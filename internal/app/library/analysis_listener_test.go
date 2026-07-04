@@ -52,7 +52,7 @@ func TestLibraryService_AnalysisListener_FiresOnImportNotOnFavoriteToggle(t *tes
 		&mockPlaylistRepo{},
 		&mockFolderRepo{},
 		&mockSettingsRepo{},
-		&mockSyncStateRepo{},
+		&mockSyncStateRepo{version: currentMetadataSchemaVersion},
 		&mockMetadataExtractor{},
 		&mockMetadataWriter{},
 		&mockArtworkCache{},

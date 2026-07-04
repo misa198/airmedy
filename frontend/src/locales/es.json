@@ -431,7 +431,12 @@
     "label": "Sello",
     "isrc": "ISRC",
     "play_count": "Reproducciones",
-    "lossless": "Sin pérdida"
+    "lossless": "Sin pérdida",
+    "lossy": "Con pérdida",
+    "hi_res": "Hi-Res",
+    "dsd": "DSD",
+    "bit_depth": "Profundidad de bits",
+    "codec": "Códec"
   },
   "composer": {
     "compositions_count": "{count} composiciones"

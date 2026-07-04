@@ -815,12 +815,20 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 		mtime int64
 	}
 	knownStamps := make(map[string]fileStamp)
-	if existing, err := s.trackRepo.GetByPathPrefix(ctx, root); err == nil {
-		for _, t := range existing {
-			knownStamps[filepath.Clean(t.Path)] = fileStamp{size: t.FileSize, mtime: t.Mtime.Unix()}
+	schemaVersion, err := s.syncStateRepo.GetMetadataSchemaVersion(ctx)
+	if err != nil {
+		s.logger.Warn("Failed to load metadata schema version", "error", err)
+	}
+	if schemaVersion >= currentMetadataSchemaVersion {
+		if existing, err := s.trackRepo.GetByPathPrefix(ctx, root); err == nil {
+			for _, t := range existing {
+				knownStamps[filepath.Clean(t.Path)] = fileStamp{size: t.FileSize, mtime: t.Mtime.Unix()}
+			}
+		} else {
+			s.logger.Warn("Failed to preload existing tracks for sync", "root", root, "error", err)
 		}
 	} else {
-		s.logger.Warn("Failed to preload existing tracks for sync", "root", root, "error", err)
+		s.logger.Info("Metadata schema version changed; re-parsing all existing tracks", "root", root)
 	}
 
 	// Load delimiter settings once; shared (read-only) by all parse workers.
@@ -1426,6 +1434,13 @@ func (s *LibraryService) ResplitLibrary(ctx context.Context) error {
 	return nil
 }
 
+// currentMetadataSchemaVersion identifies the shape of metadata extracted by
+// taglibExtractor. Bump it whenever a new field is added that needs
+// already-imported (unchanged-on-disk) files to be re-parsed on the next sync
+// — SyncFolder ignores its unchanged-file skip when the stored version is
+// older than this, forcing every file to go through Extract again once.
+const currentMetadataSchemaVersion = 1
+
 // delimitersSignature is a stable encoding of the four delimiter lists. It is
 // compared against the last-applied signature to decide whether a sync needs to
 // re-split the library.
@@ -1476,6 +1491,14 @@ func (s *LibraryService) SyncLibrary(ctx context.Context) error {
 	}
 	for _, folder := range folders {
 		_ = s.SyncFolder(ctx, folder.Path)
+	}
+
+	if schemaVersion, err := s.syncStateRepo.GetMetadataSchemaVersion(ctx); err != nil {
+		s.logger.Warn("Failed to load metadata schema version", "error", err)
+	} else if schemaVersion < currentMetadataSchemaVersion {
+		if err := s.syncStateRepo.SetMetadataSchemaVersion(ctx, currentMetadataSchemaVersion); err != nil {
+			s.logger.Warn("Failed to persist metadata schema version", "error", err)
+		}
 	}
 
 	settings, err := s.settingsRepo.Load(ctx)

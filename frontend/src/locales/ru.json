@@ -431,7 +431,12 @@
     "label": "Лейбл",
     "isrc": "ISRC",
     "play_count": "Прослушивания",
-    "lossless": "Без потерь"
+    "lossless": "Без потерь",
+    "lossy": "С потерями",
+    "hi_res": "Хай-рез",
+    "dsd": "DSD",
+    "bit_depth": "Битовая глубина",
+    "codec": "Кодек"
   },
   "composer": {
     "compositions_count": "{count} произведений"
