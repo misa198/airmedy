@@ -83,6 +83,21 @@ The signature lives in DB, so "delimiters changed but not yet synced" survives a
 show a persistent "Sync Library to apply" hint and to clear it after sync (re-queried on every
 `library:sync-finished`).
 
+## Unchanged-File Skip & Forced Metadata Re-parse
+
+`SyncFolder` preloads existing tracks' `(size, mtime)` under the walked root into an in-memory
+map and skips re-extracting any file whose stamp still matches — this keeps repeat syncs of a
+large, mostly-unchanged library fast.
+
+That optimization is bypassed once, library-wide, whenever `currentMetadataSchemaVersion`
+(`library/service.go`) is ahead of `library_sync_state.metadata_schema_version`: every file gets
+re-parsed regardless of its stamp, so newly-added `TrackDTO` fields (e.g. `bit_depth`/`codec`,
+added in migration 000039) get backfilled onto already-imported rows without a full reimport.
+`SyncLibrary` persists the bumped version only after every watched folder has been synced, so a
+library with multiple folders doesn't have one folder's completion silently skip the backfill for
+the next. Bump `currentMetadataSchemaVersion` whenever the extractor (`taglib.go`) gains a field
+that existing unchanged files need re-read to populate.
+
 ## Wails-Exposed Methods
 
 ```typescript
