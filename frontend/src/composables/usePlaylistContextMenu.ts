@@ -1,4 +1,4 @@
-import { Music, Pencil, Trash2, ListEnd, ListPlus, Download } from '@lucide/vue'
+import { Music, Pencil, Trash2, ListStart, ListPlus, Download } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
 import type { ContextMenuItem } from './useContextMenu'
@@ -25,7 +25,7 @@ export function usePlaylistContextMenu() {
     if (options.includePlayNext) {
       items.push({
         label: t('context_menu.play_next'),
-        icon: ListEnd,
+        icon: ListStart,
         action: async () => {
           const tracks = await PlaylistService.GetPlaylistTracks(playlist.id)
           PlayerService.PlayNextTracks(tracks.filter((t): t is TrackDTO => t !== null))

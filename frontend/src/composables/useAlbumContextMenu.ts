@@ -1,4 +1,4 @@
-import { ListEnd, ListPlus, Play, Shuffle, Heart, HeartOff } from '@lucide/vue'
+import { ListStart, ListPlus, Play, Shuffle, Heart, HeartOff } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
 import { usePlayerStore } from '@/stores/player'
@@ -61,7 +61,7 @@ export function useAlbumContextMenu() {
 
     items.push({
       label: t('context_menu.play_next'),
-      icon: ListEnd,
+      icon: ListStart,
       action: async () => {
         const tracks = await fetchTracks()
         if (tracks.length > 0) {

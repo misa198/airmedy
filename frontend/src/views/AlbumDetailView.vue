@@ -46,7 +46,7 @@ const { buildMenuItems } = useAlbumContextMenu()
 
 function openContextMenu(e: MouseEvent) {
   if (album.value) {
-    contextMenu.open(e, buildMenuItems(album.value, tracks.value, { hidePlayShuffle: true }))
+    contextMenu.open(e, buildMenuItems(album.value, tracks.value, { hidePlayShuffle: false }))
   }
 }
 
