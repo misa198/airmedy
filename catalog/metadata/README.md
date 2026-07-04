@@ -38,7 +38,7 @@ type MetadataExtractor interface {
 }
 ```
 
-**Library:** `go.senan.xyz/taglib` — Go bindings to the TagLib C++ library.
+**Library:** `github.com/misa198/go-taglib` — fork of `go.senan.xyz/taglib` (Go bindings to the TagLib C++ library), extended to expose `BitDepth` (bits per sample) and `InnerCodec` (codec inside a container format, e.g. m4a `aac`/`alac`), which upstream doesn't surface. Feeds `Track.BitDepth`/`Track.Codec`, used by the frontend to classify Lossy/Lossless/Hi-Res/DSD (see `catalog/library` for the audio-quality tiering and the re-sync backfill mechanism).
 
 ## Tag Mapping Strategy
 

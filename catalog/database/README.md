@@ -63,6 +63,8 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000036 | `onset_variance.up.sql`              | `ALTER TABLE track_features ADD COLUMN onset_variance REAL` (danceability input; down keeps column — SQLite `DROP COLUMN` unsafe across versions) |
 | 000037 | `corpus_feature_stats.up.sql`        | Add `feature_percentiles` table (per-feature `p1/p5/p50/p95/p99` + `sample_count`/`computed_at`, corpus normalization stats for mood derivation); add `app_settings.mood_derivation_version INTEGER NOT NULL DEFAULT 0` |
 | 000038 | `track_mood_version.up.sql`          | `ALTER TABLE tracks ADD COLUMN mood_derived_version INTEGER NOT NULL DEFAULT 0` + `idx_tracks_mood_derived_version` — marks a track's mood stale vs `app_settings.mood_derivation_version` for re-derivation |
+| 000039 | `track_bitdepth_codec.up.sql`        | `ALTER TABLE tracks ADD COLUMN bit_depth INTEGER NOT NULL DEFAULT 0`, `ADD COLUMN codec TEXT NOT NULL DEFAULT ''` — bits-per-sample and inner codec (e.g. m4a `aac`/`alac`) from the `go-taglib` fork, used to classify Lossy/Lossless/Hi-Res/DSD |
+| 000040 | `metadata_schema_version.up.sql`     | `ALTER TABLE library_sync_state ADD COLUMN metadata_schema_version INTEGER NOT NULL DEFAULT 0` — tracks which extractor field-set a library's data reflects, so a sync can force one full re-parse when it's behind (see `catalog/library`) |
 
 ## Full Schema
 
@@ -120,6 +122,8 @@ tracks (
     bitrate INTEGER,
     sample_rate INTEGER,
     format TEXT,
+    bit_depth INTEGER NOT NULL DEFAULT 0,  -- 0 = unknown/legacy row, not yet re-synced (000039)
+    codec TEXT NOT NULL DEFAULT '',        -- inner codec for container formats, e.g. m4a aac/alac (000039)
     artwork_key TEXT,
     raw_artist_names TEXT,
     raw_album_artist_names TEXT,
@@ -249,6 +253,7 @@ app_settings (
 library_sync_state (
     id INTEGER PRIMARY KEY CHECK(id = 1),
     delimiters_signature TEXT NOT NULL DEFAULT '',  -- JSON of the 4 applied delimiter lists; compared on sync to decide re-split
+    metadata_schema_version INTEGER NOT NULL DEFAULT 0,  -- current extractor field-set version; behind → next SyncFolder force-reparses all files once (000040)
     updated_at DATETIME
 )
 
