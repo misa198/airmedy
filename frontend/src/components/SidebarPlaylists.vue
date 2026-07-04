@@ -65,6 +65,7 @@ async function handleDelete() {
 
 function openPlaylistContextMenu(playlist: Playlist, e: MouseEvent) {
   contextMenu.open(e, buildPlaylistMenuItems(playlist, {
+    includePlaylistMenu: true,
     onRename: (p) => openRenameDialog(p.id, p.name),
     onDelete: (p) => openDeleteConfirm(p),
   }))
@@ -79,7 +80,7 @@ const favoritesPlaylist: Playlist = {
 } as Playlist
 
 function openFavoritesContextMenu(e: MouseEvent) {
-  contextMenu.open(e, buildPlaylistMenuItems(favoritesPlaylist, {}))
+  contextMenu.open(e, buildPlaylistMenuItems(favoritesPlaylist))
 }
 </script>
 

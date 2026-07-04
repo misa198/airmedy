@@ -2,14 +2,19 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "strict": true,
+    "ignoreDeprecations": "6.0",
     "noImplicitAny": false,
     "esModuleInterop": true,
     "lib": ["ESNext", "DOM"],
     "skipLibCheck": true,
     "noEmit": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "types": ["vite/client"],
+    "paths": {
+      "vue-resizable-panels": ["./node_modules/vue-resizable-panels/dist/types/index.d.ts"]
+    }
   },
   "include": ["src/**/*.ts"]
 }

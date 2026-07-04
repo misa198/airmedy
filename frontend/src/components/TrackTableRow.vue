@@ -37,7 +37,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
 <template>
   <div
     class="absolute inset-x-0 grid items-center text-sm hover:bg-foreground/[0.04] group transition-colors h-full select-none"
-    :class="{ 'bg-primary/10 hover:bg-primary/[0.15]': isSelected }"
+    :class="{ 'bg-primary-100 hover:bg-primary-200': isSelected }"
     :style="{
       gridTemplateColumns,
       background: isSelected ? undefined : rowBg(currentIndex),
@@ -59,9 +59,9 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
       <!-- Index cell -->
       <div
         v-else-if="col.key === 'index'"
-        class="sticky z-10 flex items-center justify-center h-full pointer-events-none"
-        :class="[orderedVisibleColumns[0].key === 'dnd' ? 'left-[32px]' : 'left-0']"
-        :style="{ background: isSelected ? 'transparent' : rowBg(currentIndex, true) }"
+        class="sticky z-10 flex items-center justify-center h-full pointer-events-none transition-colors"
+        :class="[orderedVisibleColumns[0].key === 'dnd' ? 'left-[32px]' : 'left-0', { 'bg-primary-100 group-hover:bg-primary-200': isSelected }]"
+        :style="{ background: isSelected ? undefined : rowBg(currentIndex, true) }"
       >
         <template v-if="isCurrentTrack(track.id)">
           <PlayingBar :is-playing="playerStore.isPlaying" />

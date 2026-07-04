@@ -80,7 +80,6 @@ async function handleDelete() {
 function openContextMenu(e: MouseEvent) {
   if (!playlist.value) return
   contextMenu.open(e, buildPlaylistMenuItems(playlist.value, {
-    includePlayNext: true,
     includePlaylistMenu: false,
     includeExport: true,
     onRename: () => openRenameDialog(),

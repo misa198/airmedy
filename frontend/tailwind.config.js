@@ -21,6 +21,8 @@ export default {
         primary: {
           DEFAULT: 'var(--primary)',
           foreground: 'var(--primary-foreground)',
+          100: 'var(--primary-100)',
+          200: 'var(--primary-200)',
         },
         card: {
           DEFAULT: 'var(--bg-glass-elevated)',

@@ -24,7 +24,6 @@ const { buildMenuItems } = usePlaylistContextMenu()
 
 const onContextMenu = (e: MouseEvent, playlist: Playlist) => {
   contextMenu.open(e, buildMenuItems(playlist, {
-    includePlayNext: true,
     onRename: (p) => emit('rename', p),
     onDelete: (p) => emit('delete', p),
   }))

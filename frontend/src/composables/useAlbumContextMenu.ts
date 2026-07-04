@@ -1,4 +1,4 @@
-import { ListStart, ListPlus, Play, Shuffle, Heart, HeartOff } from '@lucide/vue'
+import { ListStart, ListEnd, ListPlus, Play, Shuffle, Heart, HeartOff } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
 import { usePlayerStore } from '@/stores/player'
@@ -31,6 +31,7 @@ export function useAlbumContextMenu() {
     // Check if any track is favorite to decide label
     const allTracksLoaded = providedTracks && providedTracks.length > 0
     const isAnyFavorite = allTracksLoaded ? providedTracks!.some(t => favoritesStore.isFavorite(t)) : false
+    const allQueued = allTracksLoaded ? providedTracks!.every(t => playerStore.queueIds.has(t.id)) : false
 
     const items: ContextMenuItem[] = []
 
@@ -66,6 +67,20 @@ export function useAlbumContextMenu() {
         const tracks = await fetchTracks()
         if (tracks.length > 0) {
           PlayerService.PlayNextTracks(tracks)
+        }
+      },
+    })
+
+    items.push({
+      label: t('context_menu.add_to_queue'),
+      icon: ListEnd,
+      disabled: allQueued,
+      tooltip: allQueued ? t('context_menu.already_in_queue') : undefined,
+      action: async () => {
+        const tracks = await fetchTracks()
+        const toAdd = tracks.filter(t => !playerStore.queueIds.has(t.id))
+        if (toAdd.length > 0) {
+          PlayerService.AppendTracks(toAdd)
         }
       },
     })

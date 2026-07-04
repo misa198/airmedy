@@ -1,4 +1,4 @@
-import { Music, Pencil, Trash2, ListStart, ListPlus, Download, Pin, PinOff, Play, Shuffle } from '@lucide/vue'
+import { Music, Pencil, Trash2, ListStart, ListEnd, ListPlus, Download, Pin, PinOff, Play, Shuffle } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
 import { usePlayerStore } from '@/stores/player'
@@ -9,7 +9,6 @@ import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/pl
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 
 export interface PlaylistContextMenuOptions {
-  includePlayNext?: boolean
   includePlaylistMenu?: boolean
   onRename?: (playlist: Playlist) => void
   onDelete?: (playlist: Playlist) => void
@@ -52,14 +51,35 @@ export function usePlaylistContextMenu() {
     })
 
     // Play Next
-    if (options.includePlayNext) {
+    items.push({
+      label: t('context_menu.play_next'),
+      icon: ListStart,
+      action: async () => {
+        const tracks = await getTracks(playlist)
+        PlayerService.PlayNextTracks(tracks)
+      },
+    })
+
+    // Add to Queue
+    items.push({
+      label: t('context_menu.add_to_queue'),
+      icon: ListEnd,
+      action: async () => {
+        const tracks = await getTracks(playlist)
+        const toAdd = tracks.filter(t => !playerStore.queueIds.has(t.id))
+        if (toAdd.length > 0) {
+          PlayerService.AppendTracks(toAdd)
+        }
+      },
+    })
+
+    // Pin/Unpin to sidebar
+    {
+      const pinned = playlistsStore.isPinned(playlist)
       items.push({
-        label: t('context_menu.play_next'),
-        icon: ListStart,
-        action: async () => {
-          const tracks = await getTracks(playlist)
-          PlayerService.PlayNextTracks(tracks)
-        },
+        label: pinned ? t('context_menu.unpin_from_sidebar') : t('context_menu.pin_to_sidebar'),
+        icon: pinned ? PinOff : Pin,
+        action: () => playlistsStore.togglePinned(playlist.id),
       })
     }
 
@@ -69,16 +89,6 @@ export function usePlaylistContextMenu() {
         label: t('sidebar.rename'),
         icon: Pencil,
         action: () => options.onRename!(playlist),
-      })
-    }
-
-    // Pin/Unpin to sidebar
-    {
-      const pinned = playlistsStore.isPinned(playlist)
-      items.push({
-        label: pinned ? t('context_menu.unpin_from_sidebar') : t('context_menu.pin_to_sidebar'),
-        icon: pinned ? PinOff : Pin,
-        action: () => playlistsStore.togglePinned(playlist.id),
       })
     }
 
