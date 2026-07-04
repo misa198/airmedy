@@ -8,7 +8,6 @@ require (
 	github.com/blevesearch/bleve/v2 v2.5.7
 	github.com/coder/websocket v1.8.14
 	github.com/emersion/go-autostart v0.0.0-20250403115856-34830d6457d2
-	github.com/fsnotify/fsnotify v1.9.0
 	github.com/godbus/dbus/v5 v5.2.2
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/google/uuid v1.6.0

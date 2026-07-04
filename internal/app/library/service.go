@@ -19,10 +19,29 @@ import (
 	"airmedy/internal/domain"
 	"airmedy/internal/infra/artwork"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/google/uuid"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
+
+// backgroundSyncKey marks a context as belonging to an automatic (periodic)
+// sync. Such syncs suppress the sync-progress UI events (started/progress/
+// finished) so the progress dialog only appears for user-initiated syncs; the
+// data-refresh events (library:updated, track-updated/deleted) still fire so the
+// UI silently reflects newly discovered changes.
+type ctxKey int
+
+const backgroundSyncKey ctxKey = iota
+
+// withBackgroundSync returns a context flagged as an automatic background sync.
+func withBackgroundSync(ctx context.Context) context.Context {
+	return context.WithValue(ctx, backgroundSyncKey, true)
+}
+
+// isBackgroundSync reports whether ctx belongs to an automatic background sync.
+func isBackgroundSync(ctx context.Context) bool {
+	v, _ := ctx.Value(backgroundSyncKey).(bool)
+	return v
+}
 
 // SupportedAudioExtensions is the set of file extensions the library accepts.
 var SupportedAudioExtensions = map[string]bool{
@@ -57,7 +76,6 @@ type LibraryService struct {
 	txManager         domain.TxManager
 	lyricsService     *lyrics.LyricsService
 	logger            *slog.Logger
-	watcher           *fsnotify.Watcher
 
 	trackUpdateListeners    []func(*domain.TrackDTO)
 	favoriteChangeListeners []func(*domain.TrackDTO)
@@ -70,10 +88,7 @@ type LibraryService struct {
 	artistArtworkLocks      sync.Map         // artistID -> *sync.Mutex; serializes artwork writes
 	syncing                 atomic.Int32     // >0 while a bulk SyncFolder runs (gates per-track work)
 	syncEntityCache         *syncEntityCache // non-nil only during a SyncFolder run; caches resolved entity IDs
-	artworkCleanupMu        sync.Mutex
-	artworkCleanupTimer     *time.Timer          // debounces orphan-artwork cleanup after watcher deletes
-	selfWrites              map[string]time.Time // path -> expiry; suppresses watcher events for app's own writes
-	selfWritesMu            sync.Mutex
+	syncReschedule          chan struct{}    // signals the periodic-sync scheduler to re-read the interval setting
 	ctx                     context.Context
 	cancel                  context.CancelFunc
 	mu                      sync.RWMutex
@@ -102,11 +117,6 @@ func NewLibraryService(
 	lyricsService *lyrics.LyricsService,
 	logger *slog.Logger,
 ) (*LibraryService, error) {
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create watcher: %w", err)
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &LibraryService{
@@ -126,10 +136,9 @@ func NewLibraryService(
 		txManager:            txManager,
 		lyricsService:        lyricsService,
 		logger:               logger.With("module", "library"),
-		watcher:              watcher,
 		artistArtworkQueue:   make(chan artistArtworkJob, 100),
 		pendingArtistArtwork: make(map[string]struct{}),
-		selfWrites:           make(map[string]time.Time),
+		syncReschedule:       make(chan struct{}, 1),
 		ctx:                  ctx,
 		cancel:               cancel,
 	}, nil
@@ -245,54 +254,15 @@ func (s *LibraryService) notifySyncFinished() {
 	}
 }
 
-// selfWriteWindow is how long watcher events for a path are suppressed after the
-// app writes that file itself (e.g. metadata edits). Covers the taglib write plus
-// the watcher's debounce delay.
-const selfWriteWindow = 5 * time.Second
-
-// markSelfWrite records that the app is about to write path, so the file watcher
-// ignores the resulting Write/Remove/Rename events instead of treating them as an
-// external change (which would redundantly re-import, or worse, delete the row).
-func (s *LibraryService) markSelfWrite(path string) {
-	s.selfWritesMu.Lock()
-	s.selfWrites[filepath.Clean(path)] = time.Now().Add(selfWriteWindow)
-	s.selfWritesMu.Unlock()
-}
-
-// isSelfWrite reports whether path was recently written by the app. Expired
-// entries are pruned lazily on lookup.
-func (s *LibraryService) isSelfWrite(path string) bool {
-	key := filepath.Clean(path)
-	s.selfWritesMu.Lock()
-	defer s.selfWritesMu.Unlock()
-	exp, ok := s.selfWrites[key]
-	if !ok {
-		return false
-	}
-	if time.Now().After(exp) {
-		delete(s.selfWrites, key)
-		return false
-	}
-	return true
-}
-
 func (s *LibraryService) Start(ctx context.Context) error {
-	folders, err := s.watchedFolderRepo.GetAll(ctx)
-	if err != nil {
-		s.logger.Error("failed to load watched folders, starting with empty list", "error", err)
-		folders = nil
-	}
-
-	for _, f := range folders {
-		if err := s.watchRecursive(f.Path); err != nil {
-			s.logger.Warn("Failed to watch folder", "path", f.Path, "error", err)
-		}
-	}
-
 	// Clear any albums/artists/genres/composers stranded by a previous session.
 	s.cleanupOrphanedEntities(ctx)
 
-	go s.watchLoop()
+	// Rescan watched folders on a timer instead of a real-time file watcher.
+	// A kqueue-based watcher (macOS) needs one open fd per watched file, which
+	// exhausts the process fd limit on large libraries; periodic SyncFolder
+	// reconciles added/changed/removed files just as well, only less promptly.
+	go s.runSyncScheduler(s.ctx)
 	go s.StartArtistArtworkWorker(s.ctx)
 	go s.maybeRescanArtistImages(s.ctx)
 
@@ -317,7 +287,7 @@ func (s *LibraryService) Start(ctx context.Context) error {
 
 func (s *LibraryService) Stop(ctx context.Context) error {
 	s.cancel()
-	return s.watcher.Close()
+	return nil
 }
 
 // GetSettings exposes the persisted app settings (used by the Wails layer to
@@ -326,205 +296,78 @@ func (s *LibraryService) GetSettings(ctx context.Context) (*domain.AppSettings, 
 	return s.settingsRepo.Load(ctx)
 }
 
-func (s *LibraryService) watchRecursive(root string) error {
-	return filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			if err := s.watcher.Add(path); err != nil {
-				return fmt.Errorf("failed to add %s to watcher: %w", path, err)
-			}
-		}
-		return nil
-	})
+// CurrentSyncInterval reads the configured library sync interval, falling back
+// to the default if settings can't be loaded.
+func (s *LibraryService) CurrentSyncInterval() string {
+	settings, err := s.settingsRepo.Load(s.ctx)
+	if err != nil || settings.LibrarySyncInterval == "" {
+		return domain.DefaultSyncInterval
+	}
+	return settings.LibrarySyncInterval
 }
 
-func (s *LibraryService) watchLoop() {
+// RescheduleSync tells the periodic-sync scheduler to re-read the interval
+// setting immediately (e.g. after the user changes it). Non-blocking: a pending
+// signal is coalesced.
+func (s *LibraryService) RescheduleSync() {
+	select {
+	case s.syncReschedule <- struct{}{}:
+	default:
+	}
+}
+
+// runSyncScheduler periodically rescans all watched folders so external file
+// changes are picked up without a real-time file watcher. It replaces the
+// fsnotify watcher, which on macOS (kqueue) holds one fd per watched file and
+// exhausts the process fd limit on large libraries.
+//
+// Behavior by interval setting:
+//   - "manual": never auto-scans (user triggers Sync Library).
+//   - "launch": scans once at startup only.
+//   - "15m"/"30m"/"1h": scans once at startup, then repeats every interval.
+//
+// A RescheduleSync signal makes the loop re-read the setting right away.
+func (s *LibraryService) runSyncScheduler(ctx context.Context) {
+	// Give startup (search reindex, analysis backfill) a moment before the
+	// first scan so it doesn't contend with boot work.
+	select {
+	case <-ctx.Done():
+		return
+	case <-time.After(5 * time.Second):
+	}
+
 	for {
+		interval := s.CurrentSyncInterval()
+
+		if interval != domain.SyncIntervalManual {
+			// Background sync: suppress the progress dialog (see isBackgroundSync).
+			if err := s.SyncLibrary(withBackgroundSync(ctx)); err != nil && ctx.Err() == nil {
+				s.logger.Warn("periodic library sync failed", "error", err)
+			}
+		}
+
+		period, repeats := domain.SyncIntervalDuration(interval)
+
+		var timer *time.Timer
+		var timerC <-chan time.Time
+		if repeats {
+			timer = time.NewTimer(period)
+			timerC = timer.C
+		}
+
 		select {
-		case event, ok := <-s.watcher.Events:
-			if !ok {
-				return
+		case <-ctx.Done():
+			if timer != nil {
+				timer.Stop()
 			}
-			s.handleEvent(event)
-		case err, ok := <-s.watcher.Errors:
-			if !ok {
-				return
-			}
-			s.logger.Error("Watcher error", "error", err)
-		}
-	}
-}
-
-func (s *LibraryService) handleEvent(event fsnotify.Event) {
-	s.logger.Debug("Received watcher event", "event", event)
-
-	// Artist image files (artist.jpg/png) are handled separately from audio
-	// tracks — they update artist artwork rather than the track table.
-	if isArtistImageFile(filepath.Base(event.Name)) {
-		go s.handleArtistImageEvent(event)
-		return
-	}
-
-	// Skip events the app caused itself (e.g. metadata edits): UpdateMetadata
-	// already re-imports the file, and a temp+rename write would otherwise be
-	// misread as a deletion.
-	if s.isSelfWrite(event.Name) {
-		s.logger.Debug("Ignoring self-initiated write", "path", event.Name)
-		return
-	}
-
-	if event.Has(fsnotify.Create) || event.Has(fsnotify.Write) {
-		// If it's a directory, watch it and sync it
-		// We need to check if it's a directory
-		// But in Alpha fsnotify we might not know from event.
-		// Use os.Stat or similar.
-		// Wait, ImportFile/SyncFolder handles it.
-		// But for Write, we want to debounce.
-
-		// For simplicity, just import
-		go func() {
-			// Small delay to let file be written
-			time.Sleep(500 * time.Millisecond)
-			if err := s.ImportFile(context.Background(), event.Name); err != nil {
-				s.logger.Debug("Failed to import file from watcher event", "path", event.Name, "error", err)
-			}
-		}()
-	}
-
-	if event.Has(fsnotify.Remove) || event.Has(fsnotify.Rename) {
-		go func() {
-			ctx := context.Background()
-
-			// Atomic-save editors (and some taglib writes) replace a file via
-			// temp-file + rename, which surfaces as Remove/Rename on the original
-			// path even though the file still exists. Give it a moment, then
-			// verify the file is really gone before deleting its row; if it's
-			// still there, treat the event as a modification and re-import.
-			time.Sleep(500 * time.Millisecond)
-			if _, err := os.Stat(event.Name); err == nil {
-				s.logger.Debug("Path still exists after remove/rename, re-importing instead of deleting", "path", event.Name)
-				if err := s.ImportFile(ctx, event.Name); err != nil {
-					s.logger.Debug("Failed to re-import file after remove/rename", "path", event.Name, "error", err)
-				}
-				return
-			}
-
-			s.logger.Info("File/Folder removed, cleaning up", "path", event.Name)
-
-			var deletedIDs []string
-
-			// 1. Resolve the track by its exact path so we delete the real row
-			//    (deterministic ID can diverge if the stored path was normalized).
-			if t, err := s.trackRepo.GetByPath(ctx, event.Name); err == nil && t != nil {
-				if err := s.trackRepo.Delete(ctx, t.ID); err != nil {
-					s.logger.Warn("Failed to delete track from DB on removal", "id", t.ID, "error", err)
-				} else {
-					deletedIDs = append(deletedIDs, t.ID)
-				}
-				if err := s.searchService.DeleteFromIndex(ctx, t.ID); err != nil {
-					s.logger.Warn("Failed to delete track from Index on removal", "id", t.ID, "error", err)
-				}
-			}
-
-			// 2. If it was a directory, delete all tracks inside it
-			prefix := event.Name
-			if !strings.HasSuffix(prefix, string(os.PathSeparator)) {
-				prefix += string(os.PathSeparator)
-			}
-
-			tracks, err := s.trackRepo.GetByPathPrefix(ctx, prefix)
-			if err == nil && len(tracks) > 0 {
-				s.logger.Info("Directory removed, deleting tracks inside", "count", len(tracks), "prefix", prefix)
-				dirDeletedIDs := make([]string, len(tracks))
-				for i, t := range tracks {
-					dirDeletedIDs[i] = t.ID
-				}
-				// Batched: one statement instead of one fsync-ing commit per
-				// track — same fix as RemoveWatchedFolder.
-				if err := s.trackRepo.DeleteByPathPrefix(ctx, prefix); err != nil {
-					s.logger.Warn("Failed to delete tracks from DB", "count", len(dirDeletedIDs), "error", err)
-				} else {
-					deletedIDs = append(deletedIDs, dirDeletedIDs...)
-				}
-				if err := s.searchService.DeleteTracksFromIndex(ctx, dirDeletedIDs); err != nil {
-					s.logger.Warn("Failed to delete tracks from search index", "count", len(dirDeletedIDs), "error", err)
-				}
-			}
-
-			if len(deletedIDs) == 0 {
-				return
-			}
-
-			s.notifyTracksDeleted(deletedIDs)
-			s.cleanupOrphanedEntities(ctx)
-			// Artwork cache cleanup scans the whole cache dir, so it isn't run
-			// inline per event (would thrash on bulk deletes). Debounce it: bulk
-			// deletes coalesce into a single cleanup a few seconds later.
-			s.scheduleArtworkCleanup()
-
-			// Notify frontend: per-track for in-place views + generic for full reloads
-			if app := application.Get(); app != nil && app.Event != nil {
-				for _, id := range deletedIDs {
-					app.Event.Emit("library:track-deleted", id)
-				}
-				app.Event.Emit("library:updated", nil)
-			}
-		}()
-	}
-}
-
-// handleArtistImageEvent reacts to a local artist image file being created,
-// modified or removed while the app is running.
-func (s *LibraryService) handleArtistImageEvent(event fsnotify.Event) {
-	ctx := context.Background()
-	dir := filepath.Dir(event.Name)
-
-	if event.Has(fsnotify.Create) || event.Has(fsnotify.Write) {
-		// Give the file a moment to finish being written.
-		time.Sleep(500 * time.Millisecond)
-		if _, err := os.Stat(event.Name); err != nil {
 			return
-		}
-		ids := s.artistIDsForImageDir(ctx, dir)
-		// Ambiguous: one artist.jpg mapping to several artists isn't
-		// artist-specific — skip it.
-		if len(ids) > 1 {
-			s.logger.Info("Skipping ambiguous artist image change (maps to multiple artists)", "dir", dir, "artists", len(ids))
-			return
-		}
-		for _, id := range ids {
-			if _, err := s.setLocalArtistImage(ctx, id, event.Name); err != nil {
-				s.logger.Warn("Failed to apply changed artist image", "artistID", id, "error", err)
+		case <-s.syncReschedule:
+			// Setting changed: stop the current timer and loop to re-read it.
+			if timer != nil {
+				timer.Stop()
 			}
-		}
-		return
-	}
-
-	if event.Has(fsnotify.Remove) || event.Has(fsnotify.Rename) {
-		settings, err := s.settingsRepo.Load(ctx)
-		if err != nil {
-			s.logger.Warn("Failed to load settings for artist image removal", "error", err)
-			return
-		}
-		for _, id := range s.artistIDsForImageDir(ctx, dir) {
-			artist, err := s.artistRepo.GetByID(ctx, id)
-			if err != nil || artist == nil || artist.ArtworkKeyLocal == nil {
-				continue
-			}
-			// Clear only the local source; manual/online remain and the display
-			// re-resolves automatically.
-			if err := s.clearArtistArtworkSource(ctx, id, domain.ArtworkSourceLocalFile); err != nil {
-				s.logger.Warn("Failed to clear local artist artwork after image removal", "artistID", id, "error", err)
-				continue
-			}
-			// Reflect the just-cleared local source, then fetch from Deezer only if the
-			// online image would now actually be shown.
-			artist.ArtworkKeyLocal = nil
-			if artist.ShouldFetchOnline(settings.UseOnlineArtistArtwork, settings.PreferLocalArtistArtwork) {
-				s.EnqueueArtistArtwork(id, fmt.Sprintf("artist-artwork:%s", id))
-			}
+		case <-timerC:
+			// Interval elapsed: loop back to scan again.
 		}
 	}
 }
@@ -611,12 +454,8 @@ func (s *LibraryService) AddWatchedFolder(ctx context.Context, path string) erro
 		return fmt.Errorf("failed to save watched folder: %w", err)
 	}
 
-	// Watch the new folder recursively
-	if err := s.watchRecursive(path); err != nil {
-		s.logger.Warn("Failed to watch new folder", "path", path, "error", err)
-	}
-
-	// Trigger initial sync in a goroutine
+	// Trigger initial sync in a goroutine. Subsequent changes are picked up by
+	// the periodic sync scheduler (see runSyncScheduler).
 	go func() {
 		if err := s.SyncFolder(context.Background(), path); err != nil {
 			s.logger.Error("Failed to sync folder", "path", path, "error", err)
@@ -638,12 +477,7 @@ func (s *LibraryService) RemoveWatchedFolder(ctx context.Context, id string, kee
 	start := time.Now()
 	s.logger.Info("Removing watched folder", "path", folder.Path, "keepTracks", keepTracks)
 
-	// 1. Unwatch
-	step := time.Now()
-	if err := s.watcher.Remove(folder.Path); err != nil {
-		s.logger.Warn("Failed to remove folder from watcher", "path", folder.Path, "error", err)
-	}
-	s.logger.Debug("RemoveWatchedFolder: unwatch done", "path", folder.Path, "took", time.Since(step))
+	var step time.Time
 
 	if !keepTracks {
 		// 2. Get tracks for this folder to remove from search index. Notify
@@ -709,21 +543,6 @@ func (s *LibraryService) RemoveWatchedFolder(ctx context.Context, id string, kee
 	s.logger.Info("Removed watched folder", "path", folder.Path, "totalTook", time.Since(start))
 
 	return nil
-}
-
-// scheduleArtworkCleanup debounces orphan-artwork cleanup: each call resets a
-// short timer so a burst of watcher deletes triggers a single cache sweep.
-func (s *LibraryService) scheduleArtworkCleanup() {
-	s.artworkCleanupMu.Lock()
-	defer s.artworkCleanupMu.Unlock()
-	if s.artworkCleanupTimer != nil {
-		s.artworkCleanupTimer.Stop()
-	}
-	s.artworkCleanupTimer = time.AfterFunc(5*time.Second, func() {
-		if err := s.CleanupOrphanedArtworks(s.ctx); err != nil {
-			s.logger.Warn("Failed to cleanup orphaned artworks (debounced)", "error", err)
-		}
-	})
 }
 
 func (s *LibraryService) CleanupOrphanedArtworks(ctx context.Context) error {
@@ -797,7 +616,7 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 		return nil
 	})
 
-	if app := application.Get(); app != nil && app.Event != nil {
+	if app := application.Get(); app != nil && app.Event != nil && !isBackgroundSync(ctx) {
 		app.Event.Emit("library:sync-started", map[string]interface{}{
 			"path":  root,
 			"total": total,
@@ -934,9 +753,10 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 	// Single consumer: serialize all DB writes and emit progress. Start the counter
 	// past the files skipped as unchanged so the bar still advances to Total.
 	current := total - len(toImport)
+	emitProgress := !isBackgroundSync(ctx) // background syncs run without the dialog
 	for job := range jobs {
 		current++
-		if app := application.Get(); app != nil && app.Event != nil {
+		if app := application.Get(); emitProgress && app != nil && app.Event != nil {
 			app.Event.Emit("library:sync-progress", domain.SyncProgress{
 				Current: current,
 				Total:   total,
@@ -1009,7 +829,9 @@ func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
 		for _, id := range deletedIDs {
 			app.Event.Emit("library:track-deleted", id)
 		}
-		app.Event.Emit("library:sync-finished", root)
+		if !isBackgroundSync(ctx) {
+			app.Event.Emit("library:sync-finished", root)
+		}
 	}
 	s.notifySyncFinished()
 	return nil
@@ -1398,7 +1220,8 @@ func (s *LibraryService) ResplitLibrary(ctx context.Context) error {
 	}()
 
 	total := len(tracks)
-	if app := application.Get(); app != nil && app.Event != nil {
+	emitProgress := !isBackgroundSync(ctx) // background syncs run without the dialog
+	if app := application.Get(); emitProgress && app != nil && app.Event != nil {
 		app.Event.Emit("library:sync-started", map[string]interface{}{
 			"path":  "",
 			"total": total,
@@ -1412,7 +1235,7 @@ func (s *LibraryService) ResplitLibrary(ctx context.Context) error {
 		}); err != nil {
 			s.logger.Error("Failed to re-split track", "path", dto.Path, "error", err)
 		}
-		if app := application.Get(); app != nil && app.Event != nil {
+		if app := application.Get(); emitProgress && app != nil && app.Event != nil {
 			app.Event.Emit("library:sync-progress", domain.SyncProgress{
 				Current: i + 1,
 				Total:   total,
@@ -1428,7 +1251,7 @@ func (s *LibraryService) ResplitLibrary(ctx context.Context) error {
 	}
 
 	s.logger.Info("Finished library re-split")
-	if app := application.Get(); app != nil && app.Event != nil {
+	if app := application.Get(); emitProgress && app != nil && app.Event != nil {
 		app.Event.Emit("library:sync-finished", "")
 	}
 	return nil
@@ -1651,12 +1474,6 @@ func (s *LibraryService) UpdateMetadata(ctx context.Context, id string, fields d
 	if track == nil {
 		return fmt.Errorf("track not found: %s", id)
 	}
-	// Suppress watcher events for this path: we're about to write the file
-	// ourselves, then re-import explicitly below. Without this the watcher's
-	// Write event redundantly re-imports, and a temp+rename write surfaces as
-	// Remove/Rename and deletes the track from the DB.
-	s.markSelfWrite(track.Path)
-
 	if err := s.metadataWriter.WriteMetadata(ctx, track.Path, fields); err != nil {
 		return fmt.Errorf("failed to write metadata: %w", err)
 	}
@@ -1716,9 +1533,10 @@ func (s *LibraryService) ReindexAll(ctx context.Context) error {
 	total := len(tracks) + len(albums) + len(artists) + len(composers) + len(playlists)
 	current := 0
 
+	showDialog := !isBackgroundSync(ctx) // background syncs run without the dialog
 	emitProgress := func(path string) {
 		current++
-		if app := application.Get(); app != nil && app.Event != nil {
+		if app := application.Get(); showDialog && app != nil && app.Event != nil {
 			app.Event.Emit("library:sync-progress", domain.SyncProgress{
 				Current: current,
 				Total:   total,
@@ -1727,7 +1545,7 @@ func (s *LibraryService) ReindexAll(ctx context.Context) error {
 		}
 	}
 
-	if app := application.Get(); app != nil && app.Event != nil {
+	if app := application.Get(); showDialog && app != nil && app.Event != nil {
 		app.Event.Emit("library:sync-started", map[string]interface{}{
 			"path":  "Re-indexing Search",
 			"total": total,
@@ -1758,7 +1576,7 @@ func (s *LibraryService) ReindexAll(ctx context.Context) error {
 	}
 
 	s.logger.Info("Finished full library re-indexing")
-	if app := application.Get(); app != nil && app.Event != nil {
+	if app := application.Get(); showDialog && app != nil && app.Event != nil {
 		app.Event.Emit("library:sync-finished", "Search Index")
 	}
 	return err

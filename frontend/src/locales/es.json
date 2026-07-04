@@ -37,7 +37,16 @@
       "sync_started": "Sincronización de biblioteca iniciada",
       "sync_failed": "Error al iniciar la sincronización",
       "removing_folder": "Eliminando carpeta...",
-      "optimizing_search": "Optimizando búsqueda..."
+      "optimizing_search": "Optimizando búsqueda...",
+      "interval_title": "Intervalo de reescaneo",
+      "interval_desc": "Con qué frecuencia se reescanean las carpetas para detectar archivos añadidos, cambiados o eliminados.",
+      "interval_15m": "Cada 15 minutos",
+      "interval_30m": "Cada 30 minutos",
+      "interval_1h": "Cada hora",
+      "interval_launch": "Al iniciar la app",
+      "interval_manual": "Solo manual",
+      "interval_row_title": "Frecuencia",
+      "interval_15s": "Cada 15 segundos (dev)"
     },
     "folders": {
       "title": "Biblioteca de música",

@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -309,11 +310,12 @@ func (r *trackRepository) GetByIDs(ctx context.Context, ids []string) ([]*domain
 	if len(ids) == 0 {
 		return nil, nil
 	}
-	placeholders := strings.Repeat("?,", len(ids))
-	placeholders = placeholders[:len(placeholders)-1]
-	args := make([]interface{}, len(ids))
-	for i, id := range ids {
-		args[i] = id
+	// Pass ids as a single JSON array + json_each instead of one placeholder per id:
+	// SQLite caps bound variables per statement (default 999), which a 50k-track
+	// library blows past; this also avoids one query per chunk of ids.
+	idsJSON, err := json.Marshal(ids)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal track ids: %w", err)
 	}
 	q := fmt.Sprintf(`
 		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year,
@@ -323,11 +325,11 @@ func (r *trackRepository) GetByIDs(ctx context.Context, ids []string) ([]*domain
 		LEFT JOIN albums a ON t.album_id = a.id
 		LEFT JOIN track_artists ta ON t.id = ta.track_id
 		LEFT JOIN artists art ON ta.artist_id = art.id
-		WHERE t.id IN (%s)
+		WHERE t.id IN (SELECT value FROM json_each(?))
 		GROUP BY t.id
-	`, trackSelectFields, placeholders)
+	`, trackSelectFields)
 	var rows []trackRow
-	if err := r.db.Ext(ctx).SelectContext(ctx, &rows, q, args...); err != nil {
+	if err := r.db.Ext(ctx).SelectContext(ctx, &rows, q, string(idsJSON)); err != nil {
 		return nil, fmt.Errorf("failed to get tracks by ids: %w", err)
 	}
 	// Reorder to match input order (IN clause doesn't preserve order)

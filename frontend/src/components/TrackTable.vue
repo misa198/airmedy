@@ -45,7 +45,7 @@ const emit = defineEmits<{
 
 const internalTracks = ref<TrackDTO[]>([])
 watch(() => props.tracks, (newTracks) => {
-  internalTracks.value = [...newTracks]
+  internalTracks.value = newTracks
 }, { immediate: true })
 
 // ── Sorting ────────────────────────────────────────────────────────────────

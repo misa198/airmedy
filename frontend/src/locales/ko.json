@@ -37,7 +37,16 @@
       "sync_started": "라이브러리 동기화 시작됨",
       "sync_failed": "동기화 시작 실패",
       "removing_folder": "폴더 삭제 중...",
-      "optimizing_search": "검색 최적화 중..."
+      "optimizing_search": "검색 최적화 중...",
+      "interval_title": "재검색 간격",
+      "interval_desc": "감시 폴더에서 추가·변경·삭제된 파일을 다시 검색하는 주기입니다.",
+      "interval_15m": "15분마다",
+      "interval_30m": "30분마다",
+      "interval_1h": "1시간마다",
+      "interval_launch": "앱 실행 시",
+      "interval_manual": "수동만",
+      "interval_row_title": "빈도",
+      "interval_15s": "15초마다 (개발)"
     },
     "folders": {
       "title": "음악 라이브러리",

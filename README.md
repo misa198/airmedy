@@ -32,7 +32,7 @@
 
 ## Features
 
-- **Your whole library** — add any folder and Airmedy scans it instantly, even with tens of thousands of tracks.
+- **Your whole library** — add any folder and Airmedy scans it, even with tens of thousands of tracks. Rescans on a configurable interval (default hourly) to pick up changes made outside the app.
 - **Lyrics that follow along** — synced lyrics scroll line-by-line as the song plays. Plain-text lyrics shown when sync data isn't available. Sources, in priority order: local lyric files next to the track (`.lrc`, then `.txt`), embedded lyrics, then online lyrics from LRCLIB and Kugou.
 - **Fullscreen & miniplayer modes** — go fullscreen for an immersive listening experience, or shrink to a miniplayer that stays out of your way.
 - **Playlists** — create and manage playlists, import and export them, and browse your collection by genre, artist, or album.
@@ -97,7 +97,6 @@ The FFmpeg libraries are statically compiled and bundled inside `internal/infra/
 | Dependency injection | uber-go/fx                        |
 | Database             | SQLite via golang-migrate         |
 | Search index         | Bleve                             |
-| File watching        | fsnotify                          |
 | Audio (macOS)        | SFBAudioEngine + CGo              |
 | Audio (Win/Linux)    | miniaudio + FFmpeg (CGo)          |
 | Metadata             | go-taglib                         |

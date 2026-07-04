@@ -22,6 +22,28 @@ type SettingsService struct {
 
 	cache *domain.AppSettings
 	mu    sync.RWMutex
+
+	changeListeners []func(*domain.AppSettings)
+	listenersMu     sync.RWMutex
+}
+
+// AddChangeListener registers a callback invoked (synchronously) after settings
+// are successfully saved, with the newly-persisted settings. Used to react to
+// changes without the settings package importing the reacting one.
+func (s *SettingsService) AddChangeListener(l func(*domain.AppSettings)) {
+	s.listenersMu.Lock()
+	defer s.listenersMu.Unlock()
+	s.changeListeners = append(s.changeListeners, l)
+}
+
+func (s *SettingsService) notifyChange(settings *domain.AppSettings) {
+	s.listenersMu.RLock()
+	listeners := make([]func(*domain.AppSettings), len(s.changeListeners))
+	copy(listeners, s.changeListeners)
+	s.listenersMu.RUnlock()
+	for _, l := range listeners {
+		l(settings)
+	}
 }
 
 func NewSettingsService(repo domain.SettingsRepository, cfg *config.Config, logger *slog.Logger) *SettingsService {
@@ -104,6 +126,8 @@ func (s *SettingsService) SaveSettings(ctx context.Context, settings *domain.App
 	if err := s.updateAutostart(settings.StartAtLogin); err != nil {
 		s.logger.Warn("failed to update autostart setting", "error", err)
 	}
+
+	s.notifyChange(settings)
 
 	return nil
 }

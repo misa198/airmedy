@@ -37,7 +37,16 @@
       "sync_started": "Sincronizzazione libreria avviata",
       "sync_failed": "Avvio sincronizzazione fallito",
       "removing_folder": "Rimozione cartella in corso...",
-      "optimizing_search": "Ottimizzazione ricerca..."
+      "optimizing_search": "Ottimizzazione ricerca...",
+      "interval_title": "Intervallo di scansione",
+      "interval_desc": "Con quale frequenza le cartelle vengono riscansionate per file aggiunti, modificati o rimossi.",
+      "interval_15m": "Ogni 15 minuti",
+      "interval_30m": "Ogni 30 minuti",
+      "interval_1h": "Ogni ora",
+      "interval_launch": "All'avvio dell'app",
+      "interval_manual": "Solo manuale",
+      "interval_row_title": "Frequenza",
+      "interval_15s": "Ogni 15 secondi (dev)"
     },
     "folders": {
       "title": "Libreria Musicale",

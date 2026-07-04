@@ -37,7 +37,16 @@
       "sync_started": "媒体库同步已开始",
       "sync_failed": "同步启动失败",
       "removing_folder": "正在移除文件夹...",
-      "optimizing_search": "正在优化搜索..."
+      "optimizing_search": "正在优化搜索...",
+      "interval_title": "重新扫描间隔",
+      "interval_desc": "重新扫描监视文件夹以检测新增、更改或删除文件的频率。",
+      "interval_15m": "每 15 分钟",
+      "interval_30m": "每 30 分钟",
+      "interval_1h": "每小时",
+      "interval_launch": "应用启动时",
+      "interval_manual": "仅手动",
+      "interval_row_title": "频率",
+      "interval_15s": "每 15 秒（开发）"
     },
     "folders": {
       "title": "音乐库",

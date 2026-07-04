@@ -309,6 +309,8 @@ export const usePlayerStore = defineStore('player', () => {
   async function shuffleTracks(tracks: TrackDTO[]) {
     if (!tracks.length) return
     stopMoodRadio()
+    // Send IDs only — Wails caps a single IPC call body at 64MB, and a full
+    // 50k-track library serialized as TrackDTOs blows past that.
     await PlayerService.ShuffleTrackIDs(tracks.map(t => t.id))
     // The backend emits player:status and player:queue-updated which will update our local state
   }

@@ -37,7 +37,16 @@
       "sync_started": "Library sync started",
       "sync_failed": "Sync failed to start",
       "removing_folder": "Removing folder...",
-      "optimizing_search": "Optimizing Search..."
+      "optimizing_search": "Optimizing Search...",
+      "interval_title": "Rescan interval",
+      "interval_desc": "How often watched folders are rescanned for added, changed or removed files.",
+      "interval_15m": "Every 15 minutes",
+      "interval_30m": "Every 30 minutes",
+      "interval_1h": "Every hour",
+      "interval_launch": "On app launch",
+      "interval_manual": "Manual only",
+      "interval_row_title": "Frequency",
+      "interval_15s": "Every 15 seconds (dev)"
     },
     "folders": {
       "title": "Music Library",

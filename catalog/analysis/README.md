@@ -291,9 +291,10 @@ playerSvc.AddTrackLoadListener(func(track *domain.TrackDTO) {
 `AddTrackDeletedListener` (on `LibraryService`) fires with the IDs of tracks
 just removed — from `RemoveWatchedFolder` (before the search-index/DB delete
 loop, so the pool stops competing for the DB write as early as possible) and
-from the fsnotify Remove/Rename handler's single-file and directory-removal
-branches (after `deletedIDs` is finalized, alongside the existing
-`library:track-deleted` event emission).
+from `SyncFolder`'s missing-file cleanup step (after `deletedIDs` is finalized,
+alongside the existing `library:track-deleted` event emission). Files removed
+from disk are detected on the next periodic sync scan, not instantly — see
+[Library catalog](../library/README.md#periodic-sync-scheduler).
 
 The on-play boost fires on **every** track load, whether or not the track is
 already analyzed — `Enqueue`'s dedup tracks only in-flight/queued state, not

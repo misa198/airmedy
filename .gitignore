@@ -45,6 +45,8 @@ internal/infra/audio/fftw3_libs/include/
 
 # Binary / Build Outputs
 build/bin/
+build/Assets.car
+build/darwin/Assets.car
 frontend/dist/
 frontend/bindings/
 bin/
@@ -59,6 +61,11 @@ bin/
 # Remote web app build output (rebuilt by task build:remote)
 remote/dist/
 remote/node_modules/
+
+# Generated test data (rebuilt by tools/gen-test-data/generate-mp3.js)
+tools/gen-test-data/output/
+tools/gen-test-data/node_modules/
+test-output/
 
 # Dependencies
 node_modules/
