@@ -15,6 +15,10 @@ import ContextMenu from '@/components/ContextMenu.vue'
 import { DetailsButton, Input } from '@airmedy/ui'
 import DetailPageLayout from '@/components/DetailPageLayout.vue'
 import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
+import { useTrackTableSettings } from '@/composables/useTrackTableSettings'
+
+const TABLE_HEADER_HEIGHT = 41
+const settings = useTrackTableSettings()
 
 const playerStore = usePlayerStore()
 const { t } = useI18n()
@@ -33,6 +37,11 @@ const filteredTracks = computed(() => {
     foldUnicode(t.title || '').includes(q) ||
     foldUnicode(t.raw_artist_names || '').includes(q)
   )
+})
+
+const tableHeight = computed(() => {
+  const rowHeight = settings.collapsedMode.value ? 36 : 56
+  return `${filteredTracks.value.length * rowHeight + TABLE_HEADER_HEIGHT}px`
 })
 
 // Drop a track from this view if an edit moved it to a different album.
@@ -96,6 +105,7 @@ const getTotalDuration = (tracks: TrackDTO[]) => {
     :theme="albumTheme"
     :title="album.title || $t('library.unknown_album')"
     body-class="px-2"
+    :body-fill-height="false"
     @hero-contextmenu="openContextMenu"
   >
     <template #top-right>
@@ -106,6 +116,7 @@ const getTotalDuration = (tracks: TrackDTO[]) => {
           type="text"
           :placeholder="$t('sidebar.search')"
           class="pl-10 pr-4"
+          clearable
         />
       </div>
     </template>
@@ -151,14 +162,17 @@ const getTotalDuration = (tracks: TrackDTO[]) => {
     </template>
 
     <template #body>
-      <TrackTable
-        :tracks="filteredTracks"
-        :show-artwork="false"
-        :simple-mode="true"
-        @play-track="(_, index, queue) => playerStore.playTracks(queue, index)"
-        @navigate-album="id => router.push(`/albums/${id}`)"
-        @navigate-artist="id => router.push(`/artists/${id}`)"
-      />
+      <div :style="{ height: tableHeight }">
+        <TrackTable
+          :tracks="filteredTracks"
+          :show-artwork="false"
+          :simple-mode="true"
+          :virtual-scroll="false"
+          @play-track="(_, index, queue) => playerStore.playTracks(queue, index)"
+          @navigate-album="id => router.push(`/albums/${id}`)"
+          @navigate-artist="id => router.push(`/artists/${id}`)"
+        />
+      </div>
     </template>
 
     <template #footer>

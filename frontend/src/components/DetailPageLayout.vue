@@ -9,10 +9,12 @@ withDefaults(defineProps<{
   title?: string
   heroOffset?: number
   bodyClass?: string
+  bodyFillHeight?: boolean
 }>(), {
   loading: false,
   heroOffset: 390,
   bodyClass: '',
+  bodyFillHeight: true,
 })
 
 defineEmits<{
@@ -49,7 +51,7 @@ defineExpose({ scrollContainerRef })
         </template>
       </DetailHero>
 
-      <div class="top-0" :class="bodyClass" :style="{ height: `calc(100vh - ${heroOffset}px)` }">
+      <div class="top-0" :class="bodyClass" :style="bodyFillHeight ? { height: `calc(100vh - ${heroOffset}px)` } : {}">
         <slot name="body" />
       </div>
 

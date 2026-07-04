@@ -284,6 +284,7 @@ async function handleReorder(newTracks: TrackDTO[]) {
           type="text"
           :placeholder="$t('sidebar.search')"
           class="pl-10 pr-4"
+          clearable
         />
       </div>
     </template>
