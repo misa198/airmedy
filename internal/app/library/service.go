@@ -477,7 +477,7 @@ func (s *LibraryService) RemoveWatchedFolder(ctx context.Context, id string, kee
 	start := time.Now()
 	s.logger.Info("Removing watched folder", "path", folder.Path, "keepTracks", keepTracks)
 
-	step := time.Now()
+	var step time.Time
 
 	if !keepTracks {
 		// 2. Get tracks for this folder to remove from search index. Notify
