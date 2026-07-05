@@ -152,9 +152,8 @@ track_features (   -- one-time DSP analysis (000034); 0 rows until analyzer runs
     spectral_centroid REAL, spectral_rolloff REAL, spectral_flatness REAL,
     spectral_flux REAL, zcr REAL,                                                          -- aspectralstats
     onset_variance REAL,                                                                   -- aubio onset spread; danceability input (000036)
-    tempo REAL, musical_key TEXT, mode TEXT,                                               -- aubio tempo + keyfinder key/mode
-    energy REAL, danceability REAL,                                                        -- derived from raw features vs feature_percentiles
-    valence REAL                                                                           -- reserved (pending Essentia ML)
+    tempo REAL,                                                                             -- aubio tempo
+    energy REAL, danceability REAL                                                         -- derived from raw features vs feature_percentiles (000044: dropped musical_key/mode/valence)
 )
 
 feature_percentiles (   -- corpus-wide normalization stats, one row per raw feature (000037)

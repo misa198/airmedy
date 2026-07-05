@@ -207,9 +207,9 @@ type AnalysisRepository interface {
 	// UpsertMoodFeatures writes the derived energy/danceability for a track
 	// and, in the same transaction, bumps tracks.mood_derived_version to
 	// moodVersion. Touches only the energy/danceability columns of
-	// track_features (leaves the raw analyzer columns and valence
-	// untouched). Requires an existing track_features row for trackID (raw
-	// analysis must have run first).
+	// track_features (leaves the raw analyzer columns untouched). Requires
+	// an existing track_features row for trackID (raw analysis must have
+	// run first).
 	UpsertMoodFeatures(ctx context.Context, trackID string, energy, danceability float64, moodVersion int) error
 	// GetFeaturePercentiles returns the full cached corpus percentile table
 	// (one row per feature name), or an empty map if none computed yet.

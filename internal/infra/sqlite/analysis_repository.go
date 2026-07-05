@@ -21,17 +21,17 @@ func (r *analysisRepository) UpsertFeatures(ctx context.Context, f *domain.Track
 	return r.db.RunTx(ctx, func(ctx context.Context) error {
 		ex := r.db.Ext(ctx)
 
-		// Phase-2 columns (loudness/dynamics/spectral) plus tempo (BPM, via aubio),
-		// onset_variance, and musical_key/mode (via libkeyfinder). The remaining
-		// reserved mood columns (valence/energy/danceability) are left untouched
-		// on conflict — written separately by the mood-derivation stage.
+		// Phase-2 columns (loudness/dynamics/spectral) plus tempo (BPM, via aubio)
+		// and onset_variance. The remaining reserved mood columns
+		// (energy/danceability) are left untouched on conflict — written
+		// separately by the mood-derivation stage.
 		_, err := ex.ExecContext(ctx,
 			`INSERT INTO track_features (
 			   track_id, analyzer_version, analyzed_at,
 			   loudness_lufs, loudness_range, true_peak, rms, crest,
 			   spectral_centroid, spectral_rolloff, spectral_flatness, spectral_flux, zcr,
-			   tempo, onset_variance, musical_key, mode)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			   tempo, onset_variance)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			 ON CONFLICT(track_id) DO UPDATE SET
 			   analyzer_version = excluded.analyzer_version,
 			   analyzed_at = excluded.analyzed_at,
@@ -46,13 +46,11 @@ func (r *analysisRepository) UpsertFeatures(ctx context.Context, f *domain.Track
 			   spectral_flux = excluded.spectral_flux,
 			   zcr = excluded.zcr,
 			   tempo = excluded.tempo,
-			   onset_variance = excluded.onset_variance,
-			   musical_key = excluded.musical_key,
-			   mode = excluded.mode`,
+			   onset_variance = excluded.onset_variance`,
 			f.TrackID, f.AnalyzerVersion, f.AnalyzedAt,
 			f.LoudnessLUFS, f.LoudnessRange, f.TruePeak, f.RMS, f.Crest,
 			f.SpectralCentroid, f.SpectralRolloff, f.SpectralFlatness, f.SpectralFlux, f.ZCR,
-			f.Tempo, f.OnsetVariance, f.MusicalKey, f.Mode,
+			f.Tempo, f.OnsetVariance,
 		)
 		if err != nil {
 			return fmt.Errorf("failed to upsert track features: %w", err)
@@ -96,9 +94,6 @@ func (r *analysisRepository) GetFeatures(ctx context.Context, trackID string) (*
 		ZCR              float64      `db:"zcr"`
 		Tempo            float64      `db:"tempo"`
 		OnsetVariance    float64      `db:"onset_variance"`
-		MusicalKey       string       `db:"musical_key"`
-		Mode             string       `db:"mode"`
-		Valence          float64      `db:"valence"`
 		Energy           float64      `db:"energy"`
 		Danceability     float64      `db:"danceability"`
 	}
@@ -117,9 +112,6 @@ func (r *analysisRepository) GetFeatures(ctx context.Context, trackID string) (*
 		   COALESCE(zcr, 0) AS zcr,
 		   COALESCE(tempo, 0) AS tempo,
 		   COALESCE(onset_variance, 0) AS onset_variance,
-		   COALESCE(musical_key, '') AS musical_key,
-		   COALESCE(mode, '') AS mode,
-		   COALESCE(valence, 0) AS valence,
 		   COALESCE(energy, 0) AS energy,
 		   COALESCE(danceability, 0) AS danceability
 		 FROM track_features WHERE track_id = ?`,
@@ -152,9 +144,6 @@ func (r *analysisRepository) GetFeatures(ctx context.Context, trackID string) (*
 		ZCR:              row.ZCR,
 		Tempo:            row.Tempo,
 		OnsetVariance:    row.OnsetVariance,
-		MusicalKey:       row.MusicalKey,
-		Mode:             row.Mode,
-		Valence:          row.Valence,
 		Energy:           row.Energy,
 		Danceability:     row.Danceability,
 	}, nil

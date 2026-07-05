@@ -135,28 +135,6 @@ jobs:
           path: internal/infra/audio/aubio_libs
           key: aubio-linux-${{ hashFiles('scripts/build-aubio-linux.sh') }}
 
-      - name: Restore keyfinder + FFTW3 (Linux)
-        id: cache-keyfinder
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            internal/infra/audio/keyfinder_libs
-            internal/infra/audio/fftw3_libs
-          key: keyfinder-linux-${{ hashFiles('scripts/build-keyfinder-linux.sh', 'scripts/build-fftw3-linux.sh') }}
-
-      - name: Build keyfinder + FFTW3 (Linux)
-        if: steps.cache-keyfinder.outputs.cache-hit != 'true'
-        run: bash scripts/build-keyfinder-linux.sh amd64
-
-      - name: Save keyfinder + FFTW3 (Linux)
-        if: steps.cache-keyfinder.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            internal/infra/audio/keyfinder_libs
-            internal/infra/audio/fftw3_libs
-          key: keyfinder-linux-${{ hashFiles('scripts/build-keyfinder-linux.sh', 'scripts/build-fftw3-linux.sh') }}
-
       - name: Install JS Dependencies
         run: pnpm install
 

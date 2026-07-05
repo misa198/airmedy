@@ -181,7 +181,7 @@ type SmartRule struct {
 // what lets the frontend rule builder combine multiple AND/OR blocks (e.g.
 // "(genre is Rock AND year > 1990) OR (genre is Jazz AND bpm < 100)").
 type SmartRuleGroup struct {
-	Match  string           `json:"match"` // "all" | "any"
+	Match string `json:"match"` // "all" | "any"
 	// No omitempty on Rules/Groups: the frontend rule builder always expects
 	// both keys present (even as `[]`) so it can safely index into them
 	// without a null check on every node.
@@ -193,8 +193,8 @@ type SmartRuleGroup struct {
 // according to By after the rule tree's WHERE clause narrows the candidates.
 // Ignored (unlimited) when Enabled is false.
 type SmartPlaylistLimit struct {
-	Enabled bool   `json:"enabled"`
-	Count   int    `json:"count"`
+	Enabled bool `json:"enabled"`
+	Count   int  `json:"count"`
 	// By is one of "random", "album", "artist", "genre", "title",
 	// "most_played" — see playlist.OrderBySQL for the allowlisted SQL each
 	// maps to.
@@ -357,9 +357,6 @@ type TrackFeatures struct {
 
 	Tempo         float64 `json:"tempo" db:"tempo"`
 	OnsetVariance float64 `json:"onset_variance" db:"onset_variance"`
-	MusicalKey    string  `json:"musical_key" db:"musical_key"`
-	Mode          string  `json:"mode" db:"mode"`
-	Valence       float64 `json:"valence" db:"valence"`
 	Energy        float64 `json:"energy" db:"energy"`
 	Danceability  float64 `json:"danceability" db:"danceability"`
 }

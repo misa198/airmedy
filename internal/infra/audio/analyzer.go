@@ -18,10 +18,7 @@ import (
 // AnalyzerVersion is the schema/algorithm version stamped on every analysis
 // result. Bump it whenever the extracted features change so the backfill in the
 // AnalysisService can re-analyze tracks with analyzed_version < this.
-const AnalyzerVersion = 3
-
-// noteNames maps a chromatic pitch class (0=C) to its standard-notation name.
-var noteNames = [12]string{"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"}
+const AnalyzerVersion = 4
 
 // ffmpegAnalyzer implements domain.LoudnessAnalyzer using an in-process
 // libavfilter graph (ebur128 + aspectralstats + astats). Each Analyze call
@@ -67,16 +64,6 @@ func (a *ffmpegAnalyzer) Analyze(ctx context.Context, path string) (*domain.Trac
 		return nil, fmt.Errorf("analyze %s: %w", path, analyzeError(rc))
 	}
 
-	var musicalKey, mode string
-	if pc := int(res.pitch_class); pc >= 0 && pc < 12 {
-		if int(res.mode) == 1 {
-			mode = "minor"
-		} else {
-			mode = "major"
-		}
-		musicalKey = noteNames[pc] + " " + mode
-	}
-
 	return &domain.TrackFeatures{
 		AnalyzerVersion:  AnalyzerVersion,
 		AnalyzedAt:       time.Now().UTC(),
@@ -92,8 +79,6 @@ func (a *ffmpegAnalyzer) Analyze(ctx context.Context, path string) (*domain.Trac
 		ZCR:              float64(res.zcr),
 		Tempo:            float64(res.tempo), // BPM via aubio; 0 when no stable beat
 		OnsetVariance:    float64(res.onset_variance),
-		MusicalKey:       musicalKey,
-		Mode:             mode,
 	}, nil
 }
 

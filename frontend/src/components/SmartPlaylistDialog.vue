@@ -118,7 +118,7 @@ function submit() {
         {{ t('playlists.smart.mood_requires_analysis') }}
       </div>
 
-      <!-- Reserved for the future mood quadrant picker (valence x energy pad).
+      <!-- Reserved for the future mood quadrant picker (energy x danceability pad).
            Not implemented yet: mood-derived track features are still pending
            analysis, see catalog/playlists docs. -->
       <div v-else class="py-10 text-center text-sm text-foreground/40">

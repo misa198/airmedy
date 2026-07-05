@@ -225,12 +225,11 @@ rule, since the resulting `whereSQL` is spliced into a raw query string in
 `UpdateSmartRules` call `BuildWhereClause` to validate before persisting, so
 a malformed rule tree fails at write time rather than at every read.
 
-Mood-based fields (`track_features.valence/energy/danceability/tempo`) are
+Mood-based fields (`track_features.energy/danceability/tempo`) are
 intentionally not in the allowlist yet — that data is reserved-null pending
 the audio analysis pipeline (see `catalog/audio_analysis` if present). The
 frontend reserves a "Mood" tab in the rule builder dialog for a future
-valence×energy quadrant picker; it is UI scaffolding only, not backed by rules
-yet.
+mood quadrant picker; it is UI scaffolding only, not backed by rules yet.
 
 ## Track Ordering (LexoRank)
 

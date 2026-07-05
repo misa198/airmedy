@@ -31,8 +31,6 @@
 
 #include <aubio/aubio.h>
 
-#include "keyfinder_bridge.h"
-
 /* aubio tempo runs on a fixed mono rate so BPM math is rate-independent. */
 #define FFA_TEMPO_RATE 44100
 #define FFA_TEMPO_BUF  1024
@@ -52,8 +50,6 @@ typedef struct {
     double zcr;               /* astats overall zero-crossings rate            */
     double tempo;             /* estimated tempo (BPM) via aubio, 0 if unknown */
     double onset_variance;    /* inter-onset-interval variance via aubio_onset */
-    int    pitch_class;       /* musical key root, 0-11 (C=0); -1 if undetermined */
-    int    mode;              /* 0=major, 1=minor; -1 if undetermined            */
 } FFAnalysisResult;
 
 enum {
@@ -75,13 +71,12 @@ static int ffa_get_meta(AVFrame *f, const char *key, double *val) {
 
 /*
  * ffa_feed_tempo_onset resamples one decoded frame to mono float @ FFA_TEMPO_RATE
- * and pushes the samples into aubio_tempo + aubio_onset + the libkeyfinder bridge
- * in hop-sized chunks (all three consume the same resampled buffer — no extra
- * decode/resample pass), accumulating a BPM estimate on each detected beat, an
- * inter-onset-interval variance via Welford's running-variance algorithm on each
- * detected onset, and a running chromagram for key detection. No-op if tempo
- * detection is disabled (tempo-related pointers NULL); onset and key detection
- * are each independently optional (may be NULL while tempo still runs).
+ * and pushes the samples into aubio_tempo + aubio_onset in hop-sized chunks
+ * (both consume the same resampled buffer — no extra decode/resample pass),
+ * accumulating a BPM estimate on each detected beat and an inter-onset-interval
+ * variance via Welford's running-variance algorithm on each detected onset.
+ * No-op if tempo detection is disabled (tempo-related pointers NULL); onset
+ * detection is independently optional (may be NULL while tempo still runs).
  * Non-fatal: on resample failure it simply skips the frame.
  */
 static void ffa_feed_tempo_onset(AVFrame *frame, SwrContext *swr, float **swr_out, int *swr_cap,
@@ -89,8 +84,7 @@ static void ffa_feed_tempo_onset(AVFrame *frame, SwrContext *swr, float **swr_ou
                            double *bpm_sum, long *bpm_count,
                            aubio_onset_t *onset, fvec_t *onset_out,
                            long *onset_total_samples, long *onset_last_pos,
-                           long *onset_count, double *onset_mean, double *onset_M2,
-                           KeyFinderCtx *keyfinder) {
+                           long *onset_count, double *onset_mean, double *onset_M2) {
     if (!swr || !tempo || !in || !out || !buf) return;
 
     int max_out = swr_get_out_samples(swr, frame->nb_samples) + 256;
@@ -131,9 +125,6 @@ static void ffa_feed_tempo_onset(AVFrame *frame, SwrContext *swr, float **swr_ou
                 }
                 *onset_total_samples += FFA_TEMPO_HOP;
             }
-            if (keyfinder) {
-                keyfinder_feed(keyfinder, buf, FFA_TEMPO_HOP);
-            }
             *fill = 0;
         }
     }
@@ -147,8 +138,6 @@ static void ffa_feed_tempo_onset(AVFrame *frame, SwrContext *swr, float **swr_ou
 static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int *cancel) {
     if (!path || !out) return FFA_ERR_OPEN;
     memset(out, 0, sizeof(*out));
-    out->pitch_class = -1; /* 0 is a valid pitch class (C); -1 = undetermined */
-    out->mode = -1;
 
     AVFormatContext *fmt_ctx = NULL;
     AVCodecContext  *codec_ctx = NULL;
@@ -181,10 +170,6 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
     long           onset_count = 0;        /* number of intervals seen */
     double         onset_mean = 0;
     double         onset_M2 = 0;           /* sum of squared deviations from mean */
-
-    /* musical key/mode via libkeyfinder, sharing tempo's resampled mono buffer.
-     * Non-fatal: leave out->pitch_class = out->mode = -1 (undetermined). */
-    KeyFinderCtx *keyfinder = NULL;
 
     /* spectral accumulators (mean over frames) + peak running maxima */
     double sp_centroid = 0, sp_rolloff = 0, sp_flatness = 0, sp_flux = 0;
@@ -344,12 +329,6 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
                 onset = NULL; onset_out = NULL;
             }
         }
-
-        /* ---- key detection: reuses tempo's swr + hop buffer, independent of
-         * tempo/onset's own success/failure. */
-        if (tempo_swr) {
-            keyfinder = keyfinder_new(FFA_TEMPO_RATE);
-        }
     }
 
     pkt = av_packet_alloc();
@@ -377,8 +356,7 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
                                &bpm_sum, &bpm_count,
                                onset, onset_out,
                                &onset_total_samples, &onset_last_pos,
-                               &onset_count, &onset_mean, &onset_M2,
-                               keyfinder);
+                               &onset_count, &onset_mean, &onset_M2);
                 av_frame_unref(frame);
             } else if (ret == AVERROR(EAGAIN)) {
                 if (flushed) {
@@ -464,18 +442,10 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
         out->tempo = (bpm_count > 0) ? (bpm_sum / (double)bpm_count) : 0;
         /* Sample variance of inter-onset intervals; 0 when too few onsets to measure. */
         out->onset_variance = (onset_count > 1) ? (onset_M2 / (double)(onset_count - 1)) : 0;
-        if (keyfinder) {
-            int pc = -1, mode = -1;
-            if (keyfinder_result(keyfinder, &pc, &mode) == 0) {
-                out->pitch_class = pc;
-                out->mode = mode;
-            }
-        }
         rc = FFA_OK;
     }
 
 done:
-    if (keyfinder) keyfinder_free(keyfinder);
     if (onset) del_aubio_onset(onset);
     if (onset_out) del_fvec(onset_out);
     if (tempo) del_aubio_tempo(tempo);

@@ -3,15 +3,13 @@
 ## Summary
 
 Background pipeline that decodes each track once, runs an ffmpeg `libavfilter`
-graph (`ebur128,aspectralstats,astats`) plus aubio tempo detection and a
-Keyfinder (libkeyfinder) musical-key/mode pass in-process via cgo, and stores
-the result (loudness, dynamics, spectral features, tempo, onset variance,
-musical key) in `track_features`. This is the sole data source for
+graph (`ebur128,aspectralstats,astats`) plus aubio tempo detection in-process
+via cgo, and stores the result (loudness, dynamics, spectral features, tempo,
+onset variance) in `track_features`. This is the sole data source for
 [Volume Normalization](../normalization/README.md).
 `energy`/`danceability` are derived from these raw features (rule-based, no ML,
 normalized against corpus-wide percentiles — see Mood Derivation below) and
-consumed by Mood Radio (see below);
-`valence` remains reserved-but-unbuilt pending Essentia ML work.
+consumed by Mood Radio (see below).
 
 The pipeline is **opt-in** (`AppSettings.LibraryAnalysisEnabled`, default `false`):
 the worker pool exists only while enabled. Disabling it also force-disables
@@ -22,8 +20,8 @@ Normalization, since Normalization has no other source of loudness data.
 ```mermaid
 flowchart TB
     IMP["Track imported / played"] --> ENQ["Analysis queue<br/>(boost + normal)"]
-    ENQ --> POOL["Worker pool<br/>decode once → ffmpeg + aubio + keyfinder"]
-    POOL --> RAW[("track_features<br/><i>raw: loudness, spectral,<br/>tempo, key</i>")]
+    ENQ --> POOL["Worker pool<br/>decode once → ffmpeg + aubio"]
+    POOL --> RAW[("track_features<br/><i>raw: loudness, spectral, tempo</i>")]
 
     RAW --> NORM["Volume Normalization<br/>(preamp gain)"]
 
@@ -51,8 +49,7 @@ corpus-wide percentile distribution). Mood then backs **Mood Radio** similarity.
 | `internal/app/analysis/mood/` | Mood formulas, percentile normalization, corpus percentile recompute |
 | `internal/infra/wails/analysis_service.go` | Wails binding (`SetLibraryAnalysisEnabled`) |
 | `internal/infra/wails/mood_radio_service.go` | Wails binding (`SeedMoodRadio`) |
-| `internal/infra/audio/analyzer.go` + `ffmpeg_analyzer.h` | cgo adapter implementing `domain.LoudnessAnalyzer`; also maps Keyfinder's pitch-class/mode output to `MusicalKey`/`Mode` |
-| `internal/infra/audio/keyfinder_bridge.cpp` + `.h` | cgo↔libkeyfinder bridge for musical key/mode detection |
+| `internal/infra/audio/analyzer.go` + `ffmpeg_analyzer.h` | cgo adapter implementing `domain.LoudnessAnalyzer` |
 | `internal/infra/sqlite/analysis_repository.go` | `track_features` CRUD, pending-count/list, `MarkFailed`, percentile table CRUD, mood-pending list |
 | `internal/infra/sqlite/track_query_repository.go` | `FindSimilar` — weighted-euclidean nearest-neighbor query over energy/danceability/tempo, backs Mood Radio |
 | `internal/domain/audio.go` | `LoudnessAnalyzer` interface |
@@ -61,7 +58,6 @@ corpus-wide percentile distribution). Mood then backs **Mood Radio** similarity.
 | `internal/infra/sqlite/settings_repository.go` | Persistence for `library_analysis_enabled`, `mood_derivation_version` |
 | `internal/app/module.go` | Central wiring: import → enqueue, playback → throttle, on-play → boost, delete → mood-change notify |
 | `frontend/src/stores/moodRadio.ts` | Mood Radio queue-seeding/auto-refill store |
-| `scripts/build-keyfinder-*.sh`, `scripts/build-fftw3-*.sh` | Native build scripts for the libkeyfinder + FFTW3 cgo dependency (per-OS cross-build) |
 
 ## Settings (`AppSettings`)
 
