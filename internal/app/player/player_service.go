@@ -227,9 +227,20 @@ func (s *PlayerService) Play() error {
 		return s.playAll()
 	}
 
+	// No track loaded but the queue has tracks (e.g. added via "Add to queue"
+	// without ever pressing play): start playback from the queue instead of
+	// silently resuming a player with nothing loaded.
+	if ct == nil {
+		s.queue.SetShuffle(false)
+		if track := s.queue.GetCurrentTrack(); track != nil {
+			return s.loadAndPlay(track)
+		}
+		return s.PlayQueueIndex(0)
+	}
+
 	// Track ended naturally (queue ran out): SFBAudioEngine won't restart a finished
 	// item via Play() alone — reload from the beginning.
-	if ended && ct != nil {
+	if ended {
 		return s.loadAndPlay(ct)
 	}
 
