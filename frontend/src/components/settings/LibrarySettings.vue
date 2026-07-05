@@ -49,6 +49,9 @@ const syncType = ref<'sync' | 'optimize' | null>(null)
 const isLoading = ref(true)
 const syncProgress = ref<SyncProgress | null>(null)
 const syncComplete = ref(false)
+// True while an automatic background sync is running: the button still shows
+// busy, but the overlay stays hidden (see showSyncDialog below).
+const backgroundSyncActive = ref(false)
 const folderToDelete = ref<string | null>(null)
 const removingFolderIds = ref<string[]>([])
 
@@ -121,6 +124,11 @@ const optimizeSearch = async () => {
 const handleSyncStarted = (ev: Events.WailsEvent) => {
   const data = ev.data as any
   isSyncing.value = true
+  if (data.background) {
+    backgroundSyncActive.value = true
+    return
+  }
+  backgroundSyncActive.value = false
   syncComplete.value = false
   syncProgress.value = {
     current: 0,
@@ -132,6 +140,7 @@ const handleSyncStarted = (ev: Events.WailsEvent) => {
 const handleSyncProgress = (ev: Events.WailsEvent) => {
   const progress = ev.data as SyncProgress
   isSyncing.value = true
+  backgroundSyncActive.value = false
   syncProgress.value = progress
 }
 
@@ -143,9 +152,13 @@ const refreshDelimitersPending = async () => {
   }
 }
 
-const handleSyncFinished = () => {
+const handleSyncFinished = (ev: Events.WailsEvent) => {
+  const data = ev.data as any
   isSyncing.value = false
-  syncComplete.value = true
+  if (!data?.background) {
+    syncComplete.value = true
+  }
+  backgroundSyncActive.value = false
   // Re-query the backend so the banner reflects the actual applied state. Always
   // (not gated on syncType): a Sync Library run emits several sync-finished
   // events — folder sync, re-split, then re-index — and only the last one lands
@@ -153,8 +166,13 @@ const handleSyncFinished = () => {
   refreshDelimitersPending()
 }
 
+// Background syncs keep the button spinning (isSyncing) but never show the
+// overlay — only a foreground (user-triggered) sync does.
 const showSyncDialog = computed(
-  () => isSyncing.value || removingFolderIds.value.length > 0 || syncComplete.value
+  () =>
+    (isSyncing.value && !backgroundSyncActive.value) ||
+    removingFolderIds.value.length > 0 ||
+    syncComplete.value
 )
 
 watch(syncComplete, (val) => {
