@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@airmedy/ui'
-import { MoreHorizontal, Plus, Pencil, Trash2 } from '@lucide/vue'
+import { MoreHorizontal, Plus, Pencil, Trash2, Power } from '@lucide/vue'
 import { useContextMenu } from '@/composables/useContextMenu'
 import ContextMenu from './ContextMenu.vue'
 import EQProfileDialog from './EQProfileDialog.vue'
@@ -157,14 +157,11 @@ function openProfileMenu(e: MouseEvent) {
     <!-- Header row: enable toggle + profile selector + menu -->
     <div class="flex items-center gap-2">
       <!-- Enable/Disable toggle -->
-      <button
-        class="flex items-center gap-2 px-3 py-1.5 rounded-3xl text-sm transition-colors w-18 h-10 border border-foreground/[0.08]"
-        :class="appStore.eqEnabled
-          ? 'bg-foreground/[0.1] text-foreground hover:bg-foreground/[0.14]'
-          : 'bg-foreground/[0.03] text-foreground opacity-60 hover:bg-foreground/[0.06]'"
+       <button
+        class="flex items-center justify-center w-10 h-10 rounded-full text-sm transition-colors border border-foreground/[0.08] bg-foreground/[0.05] text-foreground opacity-80 hover:bg-foreground/[0.1]"
+        :class="appStore.eqEnabled ? 'text-green-600' : 'text-foreground'"
         @click="toggleEnabled">
-        <span class="w-1.5 h-1.5 rounded-full" :class="appStore.eqEnabled ? 'bg-green-400' : 'bg-foreground/20'" />
-        {{ appStore.eqEnabled ? t('common.on') : t('common.off') }}
+        <Power class="w-4 h-4" />
       </button>
 
       <!-- Profile selector -->

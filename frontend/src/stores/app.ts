@@ -6,6 +6,7 @@ import * as UpdaterService from '../../bindings/airmedy/internal/infra/wails/upd
 import * as WindowService from '../../bindings/airmedy/internal/infra/wails/windowservice'
 import * as NormalizationService from '../../bindings/airmedy/internal/infra/wails/normalizationservice'
 import * as AnalysisService from '../../bindings/airmedy/internal/infra/wails/analysisservice'
+import * as EQService from '../../bindings/airmedy/internal/infra/wails/eqservice'
 import { UpdateInfo } from '../../bindings/airmedy/internal/app/updater/models'
 import { DEFAULT_SYNC_INTERVAL, isSyncInterval, type SyncInterval } from '@/lib/librarySync'
 
@@ -248,6 +249,7 @@ export const useAppStore = defineStore('app', () => {
 
   const updateEQEnabled = async (enabled: boolean) => {
     eqEnabled.value = enabled
+    await EQService.SetEnabled(enabled)
     await saveSettings()
   }
 
