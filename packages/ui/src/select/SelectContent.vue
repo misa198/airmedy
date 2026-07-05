@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import {
   SelectContent,
-  type SelectContentEmits,
   type SelectContentProps,
   SelectPortal,
   SelectViewport,
@@ -15,7 +14,13 @@ const props = withDefaults(
     position: 'popper',
   },
 )
-const emits = defineEmits<SelectContentEmits>()
+// pointerDownOutside typed as Event (not PointerDownOutsideEvent) since that
+// type isn't exported from radix-vue's package root, which breaks dts generation.
+const emits = defineEmits<{
+  closeAutoFocus: [event: Event]
+  escapeKeyDown: [event: KeyboardEvent]
+  pointerDownOutside: [event: Event]
+}>()
 
 const forwarded = useForwardPropsEmits(props, emits)
 </script>
