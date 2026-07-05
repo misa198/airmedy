@@ -5,6 +5,7 @@ defineProps<{
   open: boolean
   title?: string
   widthClass?: string
+  bare?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -38,7 +39,8 @@ function onClickClose() {
           class="modal-content relative z-10 rounded-3xl bg-glass-modal backdrop-blur-3xl ring-1 ring-border-glass shadow-2xl transform-gpu isolate max-h-[85vh] overflow-hidden"
           :class="widthClass || 'w-72'"
           @keydown.esc="emit('close')">
-          <div class="flex flex-col max-h-[85vh]">
+          <slot v-if="bare" />
+          <div v-else class="flex flex-col max-h-[85vh]">
             <div class="min-h-0 flex-1 overflow-y-auto p-5">
               <h3 v-if="title" class="text-base font-semibold text-foreground mb-4">{{ title }}</h3>
               <slot />

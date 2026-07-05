@@ -47,7 +47,7 @@ onUnmounted(() => {
 <template>
   <div class="h-full w-full bg-background flex flex-col">
     <!-- Header -->
-    <div class="flex items-center justify-between px-4 py-3 border-b border-foreground/[0.06] h-[63px]">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-foreground/[0.06] select-none">
       <div class="flex items-center gap-2 font-semibold">
         <ListMusic class="w-4 h-4 text-primary" />
         <span>{{ t('player.queue') }}</span>

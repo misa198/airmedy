@@ -77,7 +77,12 @@ onMounted(loadTracks)
     >
       <template #actions>
         <div class="relative z-[99]">
-          <TrackTableFilter :optional-columns="trackTableRef?.optionalColumns ?? []" />
+          <TrackTableFilter
+            :optional-columns="trackTableRef?.optionalColumns ?? []"
+            :sort-column="trackTableRef?.sortColumn ?? null"
+            :sort-dir="trackTableRef?.sortDir ?? null"
+            @select-sort="key => trackTableRef?.cycleSort(key)"
+          />
         </div>
       </template>
     </ViewHeader>

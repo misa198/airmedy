@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { LayoutGrid, List, ArrowUp, ArrowDown, ListFilter } from '@lucide/vue'
-import { IconButton } from '@airmedy/ui'
+import { Checkbox, IconButton } from '@airmedy/ui'
 import FilterDropdown from './FilterDropdown.vue'
+import FilterSubmenu from './FilterSubmenu.vue'
+import { ALBUM_COLUMNS, useAlbumListSettings } from '@/composables/useAlbumListSettings'
+import { useHoverSubmenuGroup } from '@/composables/useHoverSubmenuGroup'
 
-type SortCol = 'title' | 'artist' | 'year' | null
+type SortCol = 'title' | 'artist' | 'year' | 'dateAdded' | null
 type SortDir = 'asc' | 'desc'
 
 const props = defineProps<{
@@ -26,6 +29,9 @@ function selectSortCol(col: NonNullable<SortCol>) {
     emit('update:sortDir', 'asc')
   }
 }
+
+const { visibleColumns, toggleColumn } = useAlbumListSettings()
+const submenuGroup = useHoverSubmenuGroup()
 </script>
 
 <template>
@@ -63,12 +69,9 @@ function selectSortCol(col: NonNullable<SortCol>) {
 
     <!-- Sort -->
     <div class="mt-2 pt-2 border-t border-foreground/10">
-      <p class="text-[10px] font-semibold text-foreground opacity-60 uppercase tracking-widest px-1 mb-2">
-        {{ $t('library.sort_by') }}
-      </p>
-      <div class="flex flex-col gap-0.5">
+      <FilterSubmenu :label="$t('library.sort_by')" :group="submenuGroup">
         <div
-          v-for="col in (['title', 'artist', 'year'] as const)"
+          v-for="col in (['title', 'artist', 'year', 'dateAdded'] as const)"
           :key="col"
           class="flex items-center gap-2.5 px-1.5 py-1.5 rounded-lg hover:bg-foreground/[0.06] cursor-pointer transition-colors"
           :class="{ 'bg-foreground/[0.08]': sortColumn === col }"
@@ -78,11 +81,30 @@ function selectSortCol(col: NonNullable<SortCol>) {
           <ArrowDown v-else-if="sortColumn === col && sortDir === 'desc'" class="w-4 h-4 text-foreground/70" />
           <span v-else class="w-4 h-4 inline-block" />
           <span class="text-sm text-foreground opacity-90">
-            {{ $t(`library.${col}`) }}
+            {{ col === 'dateAdded' ? $t('library.date_added') : $t(`library.${col}`) }}
           </span>
           <div v-if="sortColumn === col" class="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
         </div>
-      </div>
+      </FilterSubmenu>
+    </div>
+
+    <!-- Columns (list view only) -->
+    <div class="mt-2 pt-2 border-t border-foreground/10">
+      <FilterSubmenu :label="$t('library.columns')" :group="submenuGroup" :disabled="viewMode === 'grid'">
+        <div
+          v-for="col in ALBUM_COLUMNS"
+          :key="col.key"
+          class="flex items-center gap-2.5 px-1.5 py-1.5 rounded-lg hover:bg-foreground/[0.06] cursor-pointer transition-colors"
+          @click="toggleColumn(col.key)"
+        >
+          <Checkbox
+            :checked="visibleColumns.includes(col.key)"
+            variant="contained"
+            @update:checked="toggleColumn(col.key)"
+          />
+          <span class="text-sm text-foreground opacity-90">{{ $t(col.labelKey) }}</span>
+        </div>
+      </FilterSubmenu>
     </div>
   </FilterDropdown>
 </template>

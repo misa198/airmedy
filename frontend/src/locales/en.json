@@ -377,6 +377,7 @@
     "layout": "Layout",
     "grid_view": "Grid",
     "list_view": "List",
+    "date_added": "Date Added",
     "sort_by": "Sort By",
     "no_sort": "None",
     "context_menu": ""

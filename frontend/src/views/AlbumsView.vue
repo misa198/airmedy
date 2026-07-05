@@ -12,7 +12,7 @@ import { foldUnicode } from '@airmedy/utils'
 import { useRouter } from 'vue-router'
 import { usePlayerStore } from '@/stores/player'
 
-type SortCol = 'title' | 'artist' | 'year' | null
+type SortCol = 'title' | 'artist' | 'year' | 'dateAdded' | null
 type SortDir = 'asc' | 'desc'
 
 const albums = shallowRef<AlbumDTO[]>([])
@@ -71,6 +71,10 @@ const processedAlbums = computed(() => {
     result = [...result].sort((a, b) => {
       if (col === 'year') {
         const diff = (a.year ?? 0) - (b.year ?? 0)
+        return dir === 'asc' ? diff : -diff
+      }
+      if (col === 'dateAdded') {
+        const diff = new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         return dir === 'asc' ? diff : -diff
       }
       const aVal = col === 'title' ? (a.title || '') : (a.artists?.[0]?.name || '')

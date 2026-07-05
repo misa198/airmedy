@@ -375,6 +375,7 @@
     "layout": "레이아웃",
     "grid_view": "그리드",
     "list_view": "목록",
+    "date_added": "추가된 날짜",
     "sort_by": "정렬 기준",
     "no_sort": "없음",
     "context_menu": "",

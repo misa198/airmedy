@@ -16,6 +16,7 @@ export type ColumnKey =
   | 'disc_number'
   | 'track_number'
   | 'album_artist'
+  | 'date_added'
   | 'context_menu'
 
 export interface ColumnDef {
@@ -160,6 +161,16 @@ export const COLUMNS: ColumnDef[] = [
     alwaysVisible: false,
     sortable: true,
     sortFn: (a, b) => strCmp(a.raw_album_artist_names || '', b.raw_album_artist_names || ''),
+    draggable: true,
+  },
+  {
+    key: 'date_added',
+    labelKey: 'library.date_added',
+    gridWidth: 'minmax(100px,120px)',
+    minWidthPx: 100,
+    alwaysVisible: false,
+    sortable: true,
+    sortFn: (a, b) => numCmp(new Date(a.created_at).getTime(), new Date(b.created_at).getTime()),
     draggable: true,
   },
   {

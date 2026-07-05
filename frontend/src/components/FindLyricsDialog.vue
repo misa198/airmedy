@@ -78,7 +78,8 @@ async function save() {
 <template>
   <Modal
     :open="isVisible"
-    width-class="max-w-4xl w-full h-[82vh] !p-0 flex flex-col overflow-hidden"
+    bare
+    width-class="max-w-4xl w-full h-[82vh] flex flex-col overflow-hidden"
     @close="close"
   >
     <!-- Header -->

@@ -375,6 +375,7 @@
     "layout": "Layout",
     "grid_view": "Raster",
     "list_view": "Liste",
+    "date_added": "Hinzugefügt am",
     "sort_by": "Sortieren nach",
     "no_sort": "Keine",
     "context_menu": "",
