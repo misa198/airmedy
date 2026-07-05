@@ -34,6 +34,10 @@ const translations = {
                 title: "Playlists",
                 desc: "Create and manage playlists, import and export them, and browse by genre or artist."
             },
+            mood: {
+                title: "Mood Radio & Smart Playlists",
+                desc: "Airmedy analyzes every track's energy and danceability, then lets you build mood-based or rule-based smart playlists automatically."
+            },
             media: {
                 title: "Media Keys & Tray",
                 desc: "Control playback via keyboard, lock screen, or the system tray menu."
@@ -77,7 +81,7 @@ const translations = {
             },
             free: {
                 q: "Is Airmedy free?",
-                a: "Yes! Airmedy is completely free and open-source under the MIT License. You can find the source code on GitHub."
+                a: "Yes! Airmedy is completely free and open-source under the GPL-3.0 License. You can find the source code on GitHub."
             },
             ffmpeg: {
                 q: "Do I need to install FFmpeg?",
@@ -156,6 +160,10 @@ const translations = {
                 title: "Playlists",
                 desc: "Erstelle und verwalte Playlists, importiere und exportiere sie und durchsuche sie nach Genre oder Künstler."
             },
+            mood: {
+                title: "Mood Radio & Smarte Playlists",
+                desc: "Airmedy analysiert Energie und Tanzbarkeit jedes Titels und erstellt daraus automatisch stimmungsbasierte oder regelbasierte smarte Playlists."
+            },
             media: {
                 title: "Medientasten & Tray",
                 desc: "Steuere die Wiedergabe über die Tastatur, den Sperrbildschirm oder das System-Tray-Menü."
@@ -199,7 +207,7 @@ const translations = {
             },
             free: {
                 q: "Ist Airmedy kostenlos?",
-                a: "Ja! Airmedy ist völlig kostenlos und quelloffen unter der MIT-Lizenz. Den Quellcode findest du auf GitHub."
+                a: "Ja! Airmedy ist völlig kostenlos und quelloffen unter der GPL-3.0-Lizenz. Den Quellcode findest du auf GitHub."
             },
             ffmpeg: {
                 q: "Muss ich FFmpeg installieren?",
@@ -278,6 +286,10 @@ const translations = {
                 title: "Listas de reproducción",
                 desc: "Crea y gestiona listas de reproducción, impórtalas y expórtalas, y navega por género o artista."
             },
+            mood: {
+                title: "Mood Radio y listas inteligentes",
+                desc: "Airmedy analiza la energía y bailabilidad de cada canción y te permite crear automáticamente listas inteligentes basadas en el estado de ánimo o en reglas."
+            },
             media: {
                 title: "Teclas de medios y bandeja",
                 desc: "Controla la reproducción mediante el teclado, la pantalla de bloqueo o el menú de la bandeja del sistema."
@@ -321,7 +333,7 @@ const translations = {
             },
             free: {
                 q: "¿Es Airmedy gratuito?",
-                a: "¡Sí! Airmedy es completamente gratuito y de código abierto bajo la Licencia MIT. Puedes encontrar el código fuente en GitHub."
+                a: "¡Sí! Airmedy es completamente gratuito y de código abierto bajo la Licencia GPL-3.0. Puedes encontrar el código fuente en GitHub."
             },
             ffmpeg: {
                 q: "¿Necesito instalar FFmpeg?",
@@ -400,6 +412,10 @@ const translations = {
                 title: "Playlists",
                 desc: "Créez et gérez des playlists, importez-les et exportez-les, et parcourez par genre ou par artiste."
             },
+            mood: {
+                title: "Mood Radio & Playlists intelligentes",
+                desc: "Airmedy analyse l'énergie et la dansabilité de chaque titre et permet de créer automatiquement des playlists intelligentes basées sur l'humeur ou des règles."
+            },
             media: {
                 title: "Touches média & plateau",
                 desc: "Contrôlez la lecture via le clavier, l'écran de verrouillage ou le menu du plateau système."
@@ -443,7 +459,7 @@ const translations = {
             },
             free: {
                 q: "Airmedy est-il gratuit ?",
-                a: "Oui ! Airmedy est complètement gratuit et open-source sous licence MIT. Vous pouvez trouver le code source sur GitHub."
+                a: "Oui ! Airmedy est complètement gratuit et open-source sous licence GPL-3.0. Vous pouvez trouver le code source sur GitHub."
             },
             ffmpeg: {
                 q: "Dois-je installer FFmpeg ?",
@@ -522,6 +538,10 @@ const translations = {
                 title: "Playlist",
                 desc: "Crea e gestisci playlist, importale ed esportale, e naviga per genere o artista."
             },
+            mood: {
+                title: "Mood Radio e playlist intelligenti",
+                desc: "Airmedy analizza l'energia e la ballabilità di ogni brano, permettendoti di creare automaticamente playlist intelligenti basate sull'umore o su regole personalizzate."
+            },
             media: {
                 title: "Tasti multimediali e tray",
                 desc: "Controlla la riproduzione tramite tastiera, schermata di blocco o menu della tray di sistema."
@@ -565,7 +585,7 @@ const translations = {
             },
             free: {
                 q: "Airmedy è gratuito?",
-                a: "Sì! Airmedy è completamente gratuito e open source sotto licenza MIT. Puoi trovare il codice sorgente su GitHub."
+                a: "Sì! Airmedy è completamente gratuito e open source sotto licenza GPL-3.0. Puoi trovare il codice sorgente su GitHub."
             },
             ffmpeg: {
                 q: "Devo installare FFmpeg?",
@@ -644,6 +664,10 @@ const translations = {
                 title: "プレイリスト",
                 desc: "プレイリストの作成と管理、インポートとエクスポート、ジャンルやアーティスト別の閲覧が可能です。"
             },
+            mood: {
+                title: "Mood Radio & スマートプレイリスト",
+                desc: "Airmedyは各トラックのエネルギーとダンサビリティを解析し、ムードベースまたはルールベースのスマートプレイリストを自動生成します。"
+            },
             media: {
                 title: "メディアキーとトレイ",
                 desc: "キーボード、ロック画面、またはシステムトレイメニューから再生を制御できます。"
@@ -687,7 +711,7 @@ const translations = {
             },
             free: {
                 q: "Airmedyは無料ですか？",
-                a: "はい！Airmedyは完全に無料で、MITライセンスの下でオープンソースとして公開されています。ソースコードはGitHubで確認できます。"
+                a: "はい！Airmedyは完全に無料で、GPL-3.0ライセンスの下でオープンソースとして公開されています。ソースコードはGitHubで確認できます。"
             },
             ffmpeg: {
                 q: "FFmpegをインストールする必要がありますか？",
@@ -766,6 +790,10 @@ const translations = {
                 title: "플레이리스트",
                 desc: "플레이리스트를 생성 및 관리하고, 가져오기/내보내기 및 장르/아티스트별 탐색이 가능합니다."
             },
+            mood: {
+                title: "무드 라디오 & 스마트 플레이리스트",
+                desc: "Airmedy가 각 트랙의 에너지와 댄서빌리티를 분석해 무드 기반 또는 규칙 기반 스마트 플레이리스트를 자동으로 만들어 줍니다."
+            },
             media: {
                 title: "미디어 키 및 트레이",
                 desc: "키보드, 잠금 화면 또는 시스템 트레이 메뉴에서 재생을 제어하세요."
@@ -809,7 +837,7 @@ const translations = {
             },
             free: {
                 q: "Airmedy는 무료인가요?",
-                a: "네! Airmedy는 MIT 라이선스 하에 완전 무료이며 오픈 소스입니다. 소스 코드는 GitHub에서 찾을 수 있습니다."
+                a: "네! Airmedy는 GPL-3.0 라이선스 하에 완전 무료이며 오픈 소스입니다. 소스 코드는 GitHub에서 찾을 수 있습니다."
             },
             ffmpeg: {
                 q: "FFmpeg를 설치해야 하나요?",
@@ -888,6 +916,10 @@ const translations = {
                 title: "Playlists",
                 desc: "Crie e gerencie playlists, importe e exporte-as, e navegue por gênero ou artista."
             },
+            mood: {
+                title: "Mood Radio e playlists inteligentes",
+                desc: "O Airmedy analisa a energia e a dançabilidade de cada faixa e permite criar automaticamente playlists inteligentes baseadas em humor ou em regras."
+            },
             media: {
                 title: "Teclas de Mídia e Tray",
                 desc: "Controle a reprodução pelo teclado, tela de bloqueio ou menu da bandeja do sistema."
@@ -931,7 +963,7 @@ const translations = {
             },
             free: {
                 q: "O Airmedy é gratuito?",
-                a: "Sim! O Airmedy é totalmente gratuito e de código aberto sob a Licença MIT. Você pode encontrar o código-fonte no GitHub."
+                a: "Sim! O Airmedy é totalmente gratuito e de código aberto sob a Licença GPL-3.0. Você pode encontrar o código-fonte no GitHub."
             },
             ffmpeg: {
                 q: "Preciso instalar o FFmpeg?",
@@ -1010,6 +1042,10 @@ const translations = {
                 title: "Плейлисты",
                 desc: "Создавайте и управляйте плейлистами, импортируйте и экспортируйте их, просматривайте по жанрам или исполнителям."
             },
+            mood: {
+                title: "Mood Radio и умные плейлисты",
+                desc: "Airmedy анализирует энергичность и танцевальность каждого трека и позволяет автоматически создавать умные плейлисты на основе настроения или собственных правил."
+            },
             media: {
                 title: "Медиаклавиши и трей",
                 desc: "Управляйте воспроизведением с помощью клавиатуры, экрана блокировки или меню в системном трее."
@@ -1053,7 +1089,7 @@ const translations = {
             },
             free: {
                 q: "Airmedy бесплатен?",
-                a: "Да! Airmedy полностью бесплатен и имеет открытый исходный код под лицензией MIT. Исходный код можно найти на GitHub."
+                a: "Да! Airmedy полностью бесплатен и имеет открытый исходный код под лицензией GPL-3.0. Исходный код можно найти на GitHub."
             },
             ffmpeg: {
                 q: "Нужно ли устанавливать FFmpeg?",
@@ -1132,6 +1168,10 @@ const translations = {
                 title: "เพลย์ลิสต์",
                 desc: "สร้างและจัดการเพลย์ลิสต์ นำเข้าและส่งออก และเลือกดูตามประเภทเพลงหรือศิลปิน"
             },
+            mood: {
+                title: "Mood Radio และเพลย์ลิสต์อัจฉริยะ",
+                desc: "Airmedy วิเคราะห์พลังงานและความเหมาะกับการเต้นของทุกเพลง แล้วสร้างเพลย์ลิสต์อัจฉริยะตามอารมณ์หรือกฎที่กำหนดให้อัตโนมัติ"
+            },
             media: {
                 title: "ปุ่มสื่อและถาดระบบ",
                 desc: "ควบคุมการเล่นผ่านคีย์บอร์ด หน้าจอล็อก หรือเมนูถาดระบบ"
@@ -1175,7 +1215,7 @@ const translations = {
             },
             free: {
                 q: "Airmedy ฟรีหรือไม่?",
-                a: "ใช่! Airmedy ฟรีทั้งหมดและเป็นโอเพนซอร์ซภายใต้ใบอนุญาต MIT คุณสามารถดูซอร์สโค้ดได้บน GitHub"
+                a: "ใช่! Airmedy ฟรีทั้งหมดและเป็นโอเพนซอร์ซภายใต้ใบอนุญาต GPL-3.0 คุณสามารถดูซอร์สโค้ดได้บน GitHub"
             },
             ffmpeg: {
                 q: "ฉันจำเป็นต้องติดตั้ง FFmpeg หรือไม่?",
@@ -1254,6 +1294,10 @@ const translations = {
                 title: "Danh sách phát",
                 desc: "Tạo và quản lý danh sách phát, nhập và xuất, và duyệt theo thể loại hoặc nghệ sĩ."
             },
+            mood: {
+                title: "Mood Radio & Playlist thông minh",
+                desc: "Airmedy phân tích năng lượng và độ sôi động của từng bài hát, tự động tạo playlist thông minh theo tâm trạng hoặc theo luật lọc tuỳ chỉnh."
+            },
             media: {
                 title: "Phím media & Khay hệ thống",
                 desc: "Điều khiển phát nhạc qua bàn phím, màn hình khóa hoặc menu khay hệ thống."
@@ -1297,7 +1341,7 @@ const translations = {
             },
             free: {
                 q: "Airmedy có miễn phí không?",
-                a: "Có! Airmedy hoàn toàn miễn phí và mã nguồn mở theo Giấy phép MIT. Bạn có thể tìm thấy mã nguồn trên GitHub."
+                a: "Có! Airmedy hoàn toàn miễn phí và mã nguồn mở theo Giấy phép GPL-3.0. Bạn có thể tìm thấy mã nguồn trên GitHub."
             },
             ffmpeg: {
                 q: "Tôi có cần cài đặt FFmpeg không?",
@@ -1376,6 +1420,10 @@ const translations = {
                 title: "播放列表",
                 desc: "创建和管理播放列表，支持导入和导出，并可按流派或艺术家浏览。"
             },
+            mood: {
+                title: "情绪电台与智能播放列表",
+                desc: "Airmedy 分析每首歌曲的能量值和舞曲度，自动生成基于情绪或自定义规则的智能播放列表。"
+            },
             media: {
                 title: "媒体键与托盘",
                 desc: "通过键盘、锁定屏幕或系统托盘菜单控制播放。"
@@ -1419,7 +1467,7 @@ const translations = {
             },
             free: {
                 q: "Airmedy 免费吗？",
-                a: "是的！Airmedy 完全免费，并根据 MIT 许可证开源。您可以在 GitHub 上找到源代码。"
+                a: "是的！Airmedy 完全免费，并根据 GPL-3.0 许可证开源。您可以在 GitHub 上找到源代码。"
             },
             ffmpeg: {
                 q: "我需要安装 FFmpeg 吗？",
