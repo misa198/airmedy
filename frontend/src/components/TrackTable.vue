@@ -311,7 +311,7 @@ function handlePlayTrack(track: TrackDTO, index: number) {
   emit('play-track', track, index, displayTracks.value)
 }
 
-defineExpose({ scrollToCurrentTrack, optionalColumns })
+defineExpose({ scrollToCurrentTrack, optionalColumns, sortColumn, sortDir, cycleSort })
 </script>
 
 <template>

@@ -221,6 +221,14 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
         </div>
       </div>
 
+      <!-- Date added cell -->
+      <div
+        v-else-if="col.key === 'date_added'"
+        class="text-foreground opacity-80 truncate text-xs px-2"
+      >
+        {{ track.created_at ? new Date(track.created_at).toLocaleDateString() : '' }}
+      </div>
+
       <!-- Context menu cell -->
       <div
         v-else-if="col.key === 'context_menu'"

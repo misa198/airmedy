@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Disc, Play, MoreVertical } from '@lucide/vue'
 import type { AlbumDTO, Artist } from '../../bindings/airmedy/internal/domain/models'
 import { buildArtworkUrl } from '@airmedy/utils'
@@ -8,13 +8,27 @@ import { useRowBackground } from '@/composables/useRowBackground'
 import { useContextMenu } from '@/composables/useContextMenu'
 import SortableHeaderCell from './SortableHeaderCell.vue'
 import { useAlbumContextMenu } from '@/composables/useAlbumContextMenu'
+import { useAlbumListSettings } from '@/composables/useAlbumListSettings'
 import ContextMenu from './ContextMenu.vue'
 import VirtualList from 'vue-virtual-sortable'
 
-const GRID = '40px 1fr 1fr 80px 40px'
 const ROW_HEIGHT = 56
 
-type SortCol = 'title' | 'artist' | 'year'
+const { visibleColumns } = useAlbumListSettings()
+const showArtist = computed(() => visibleColumns.value.includes('artist'))
+const showYear = computed(() => visibleColumns.value.includes('year'))
+const showDateAdded = computed(() => visibleColumns.value.includes('dateAdded'))
+
+const GRID = computed(() => [
+  '40px',
+  '1fr',
+  showArtist.value ? '1fr' : null,
+  showYear.value ? '80px' : null,
+  showDateAdded.value ? '110px' : null,
+  '40px',
+].filter(Boolean).join(' '))
+
+type SortCol = 'title' | 'artist' | 'year' | 'dateAdded'
 type SortDir = 'asc' | 'desc'
 
 const props = defineProps<{
@@ -81,14 +95,20 @@ const { rowBg } = useRowBackground()
                 <div class="w-px h-full bg-foreground/[0.12]" />
               </div>
             </SortableHeaderCell>
-            <SortableHeaderCell :active="sortColumn === 'artist'" :dir="sortDir" @click="cycleSort('artist')">
+            <SortableHeaderCell v-if="showArtist" :active="sortColumn === 'artist'" :dir="sortDir" @click="cycleSort('artist')">
               <span class="truncate min-w-0 pointer-events-none">{{ $t('library.artist') }}</span>
               <div class="absolute top-1/2 -translate-y-1/2 -right-2 h-4/5 w-4 z-20 flex items-center justify-center pointer-events-none">
                 <div class="w-px h-full bg-foreground/[0.12]" />
               </div>
             </SortableHeaderCell>
-            <SortableHeaderCell :active="sortColumn === 'year'" :dir="sortDir" @click="cycleSort('year')">
+            <SortableHeaderCell v-if="showYear" :active="sortColumn === 'year'" :dir="sortDir" @click="cycleSort('year')">
               <span class="truncate min-w-0 pointer-events-none">{{ $t('library.year') }}</span>
+              <div class="absolute top-1/2 -translate-y-1/2 -right-2 h-4/5 w-4 z-20 flex items-center justify-center pointer-events-none">
+                <div class="w-px h-full bg-foreground/[0.12]" />
+              </div>
+            </SortableHeaderCell>
+            <SortableHeaderCell v-if="showDateAdded" :active="sortColumn === 'dateAdded'" :dir="sortDir" @click="cycleSort('dateAdded')">
+              <span class="truncate min-w-0 pointer-events-none">{{ $t('library.date_added') }}</span>
               <div class="absolute top-1/2 -translate-y-1/2 -right-2 h-4/5 w-4 z-20 flex items-center justify-center pointer-events-none">
                 <div class="w-px h-full bg-foreground/[0.12]" />
               </div>
@@ -145,7 +165,7 @@ const { rowBg } = useRowBackground()
                 </div>
 
                 <!-- Artist -->
-                <div class="px-2 text-foreground opacity-80 truncate flex items-center min-w-0">
+                <div v-if="showArtist" class="px-2 text-foreground opacity-80 truncate flex items-center min-w-0">
                   <div class="truncate">
                     <template v-if="album.artists && album.artists.length > 0">
                       <span v-for="(artist, i) in (album.artists.filter(a => !!a) as Artist[])" :key="artist.id || i">
@@ -161,8 +181,13 @@ const { rowBg } = useRowBackground()
                 </div>
 
                 <!-- Year -->
-                <div class="text-center text-foreground opacity-80 text-xs px-2">
+                <div v-if="showYear" class="text-center text-foreground opacity-80 text-xs px-2">
                   {{ album.year || '' }}
+                </div>
+
+                <!-- Date added -->
+                <div v-if="showDateAdded" class="text-foreground opacity-80 text-xs px-2 truncate">
+                  {{ album.created_at ? new Date(album.created_at).toLocaleDateString() : '' }}
                 </div>
 
                 <!-- Context menu -->

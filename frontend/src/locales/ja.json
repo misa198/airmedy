@@ -375,6 +375,7 @@
     "layout": "レイアウト",
     "grid_view": "グリッド",
     "list_view": "リスト",
+    "date_added": "追加日",
     "sort_by": "並び替え",
     "no_sort": "なし",
     "context_menu": "",

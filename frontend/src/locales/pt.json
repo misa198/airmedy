@@ -375,6 +375,7 @@
     "layout": "Layout",
     "grid_view": "Grade",
     "list_view": "Lista",
+    "date_added": "Data de adição",
     "sort_by": "Ordenar por",
     "no_sort": "Nenhum",
     "context_menu": "",

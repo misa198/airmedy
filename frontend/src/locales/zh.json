@@ -375,6 +375,7 @@
     "layout": "布局",
     "grid_view": "网格",
     "list_view": "列表",
+    "date_added": "添加日期",
     "sort_by": "排序方式",
     "no_sort": "无",
     "context_menu": "",
