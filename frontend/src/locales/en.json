@@ -16,7 +16,10 @@
     "on": "On",
     "off": "Off",
     "hr": "hr",
-    "min": "min"
+    "min": "min",
+    "delete": "Delete",
+    "yes": "Yes",
+    "no": "No"
   },
   "app": {
     "update_available": "Update Available",
@@ -212,7 +215,7 @@
     "library_analysis": {
       "title": "Library Analysis",
       "enable": "Enable Library Analysis",
-      "enable_desc": "Scans your music library in the background to measure each track's loudness and audio characteristics.\nRequired before Volume Normalization and Mood Radio can be used.\nThis process can take a while, depending on your machine's specs.",
+      "enable_desc": "Scans your music library in the background to measure each track's loudness and audio characteristics.\nRequired before Volume Normalization, Mood Radio, and Smart Playlists can be used.\nThis process can take a while, depending on your machine's specs.",
       "requires_enable": "Enable Library Analysis above to use Volume Normalization"
     },
     "normalization": {
@@ -326,6 +329,7 @@
     "composers": "Composers",
     "playlists": "Playlists",
     "playlist": "Playlist",
+    "smart_playlist": "Smart Playlist",
     "favorites": "Favorites",
     "recently_added": "Recently Added",
     "recently_added_desc": "Albums recently added to your library.",
@@ -399,7 +403,8 @@
     "find_lyrics": "Find Lyrics",
     "remove_from_queue": "Remove from Queue",
     "export_playlist": "Export Playlist",
-    "start_mood_radio": "Start Mood Radio"
+    "start_mood_radio": "Start Mood Radio",
+    "edit_rules": "Edit Rules"
   },
   "find_lyrics": {
     "title": "Find Lyrics",
@@ -460,5 +465,66 @@
   "playlist": {
     "edit_cover": "Edit Cover",
     "remove_cover": "Remove custom cover"
+  },
+  "playlists": {
+    "smart": {
+      "new_smart_playlist": "New Smart Playlist",
+      "edit_smart_playlist": "Edit Smart Playlist",
+      "tab_filters": "Filters",
+      "tab_mood": "Mood",
+      "mood_requires_analysis": "Enable library analysis in Settings to filter by mood.",
+      "mood_energy_axis": "Energy",
+      "mood_danceability_axis": "Danceability",
+      "mood_legend_few": "Few",
+      "mood_legend_many": "Many",
+      "mood_coverage_caption": "{analyzed} / {total} tracks analyzed",
+      "mood_invalid_box": "Drag a non-empty region to select a mood range.",
+      "mood_quadrant_party": "Party",
+      "mood_quadrant_intense": "Intense",
+      "mood_quadrant_groove": "Groove",
+      "mood_quadrant_chill": "Chill",
+      "match_label": "Match",
+      "match_groups_label": "Combine groups",
+      "match_all": "ALL",
+      "match_any": "ANY",
+      "add_rule": "Add rule",
+      "add_group": "Add group",
+      "remove_group": "Remove group",
+      "no_rules": "No rules yet. Add one to start filtering tracks.",
+      "no_rules_error": "Add at least one rule to create a smart playlist.",
+      "rule_count": "{count}/{max} rules",
+      "rule_invalid": "Enter a valid value for this rule.",
+      "range_and": "and",
+      "field_genre": "Genre",
+      "field_artist": "Artist",
+      "field_year": "Year",
+      "field_bpm": "BPM",
+      "field_play_count": "Play Count",
+      "field_duration": "Duration",
+      "field_bitrate": "Bitrate",
+      "field_is_favorite": "Favorite",
+      "field_added_at": "Added",
+      "field_energy": "Energy",
+      "field_danceability": "Danceability",
+      "op_is": "is",
+      "op_is_not": "is not",
+      "op_contains": "contains",
+      "op_gt": "greater than",
+      "op_lt": "less than",
+      "op_gte": "at least",
+      "op_lte": "at most",
+      "op_between": "between",
+      "op_in_last_days": "in last (days)",
+      "limit_label": "Limit to",
+      "limit_selected_by": "items, selected by",
+      "limit_by_random": "Random",
+      "limit_by_album": "Album",
+      "limit_by_artist": "Artist",
+      "limit_by_genre": "Genre",
+      "limit_by_title": "Title",
+      "limit_by_most_played": "Most played",
+      "live_updating_label": "Live updating",
+      "live_updating_hint": "Keep matching tracks up to date automatically. Turn off to freeze the current matches."
+    }
   }
 }

@@ -71,6 +71,36 @@ func (s *PlaylistService) GetPlaylistTracks(playlistID string) ([]*domain.TrackD
 	return s.service.GetTracks(context.Background(), playlistID)
 }
 
+// GetPlaylistTracksPreview returns at most limit tracks, for callers that
+// only need a handful (e.g. an artwork mosaic) rather than the full list.
+func (s *PlaylistService) GetPlaylistTracksPreview(playlistID string, limit int) ([]*domain.TrackDTO, error) {
+	return s.service.GetTracksPreview(context.Background(), playlistID, limit)
+}
+
+func (s *PlaylistService) CreateSmartPlaylist(name, description string, config domain.SmartPlaylistConfig) (*domain.Playlist, error) {
+	return s.service.CreateSmart(context.Background(), name, description, config)
+}
+
+// PlaylistRulesChangedEvent mirrors PlaylistTracksChangedEvent's senderID
+// echo-guard pattern so the frontend can ignore its own rule edits.
+type PlaylistRulesChangedEvent struct {
+	PlaylistID string `json:"playlist_id"`
+	SenderID   string `json:"sender_id"`
+}
+
+func (s *PlaylistService) UpdateSmartPlaylistRules(id string, config domain.SmartPlaylistConfig, senderID string) error {
+	err := s.service.UpdateSmartRules(context.Background(), id, config)
+	if err == nil {
+		if app := application.Get(); app != nil && app.Event != nil {
+			app.Event.Emit("playlist:rules-changed", &PlaylistRulesChangedEvent{
+				PlaylistID: id,
+				SenderID:   senderID,
+			})
+		}
+	}
+	return err
+}
+
 func (s *PlaylistService) GetPlaylistsForTrack(trackID string) ([]string, error) {
 	return s.service.GetPlaylistsForTrack(context.Background(), trackID)
 }
@@ -88,6 +118,11 @@ func (s *PlaylistService) TogglePlaylistPinned(id string) (bool, error) {
 type PlaylistTracksChangedEvent struct {
 	PlaylistID string `json:"playlist_id"`
 	SenderID   string `json:"sender_id"`
+}
+
+type PlaylistArtworkChangedEvent struct {
+	PlaylistID string  `json:"playlist_id"`
+	ArtworkKey *string `json:"artwork_key"`
 }
 
 func (s *PlaylistService) AddTrackToPlaylist(playlistID, trackID, senderID string) error {
@@ -147,7 +182,16 @@ func (s *PlaylistService) GetPlaylistColors(id string) (*domain.ThemeColors, err
 }
 
 func (s *PlaylistService) RemovePlaylistArtwork(id string) error {
-	return s.service.RemoveArtwork(context.Background(), id)
+	if err := s.service.RemoveArtwork(context.Background(), id); err != nil {
+		return err
+	}
+	if app := application.Get(); app != nil && app.Event != nil {
+		app.Event.Emit("playlist:artwork-changed", &PlaylistArtworkChangedEvent{
+			PlaylistID: id,
+			ArtworkKey: nil,
+		})
+	}
+	return nil
 }
 
 func (s *PlaylistService) ExportPlaylistToM3U8(playlistID string) error {
@@ -280,6 +324,12 @@ func (s *PlaylistService) SelectAndSetPlaylistArtwork(id string) (string, error)
 	}
 	if key == nil {
 		return "", nil
+	}
+	if app.Event != nil {
+		app.Event.Emit("playlist:artwork-changed", &PlaylistArtworkChangedEvent{
+			PlaylistID: id,
+			ArtworkKey: key,
+		})
 	}
 	return *key, nil
 }

@@ -574,6 +574,17 @@ func (s *LibraryService) CleanupOrphanedArtworks(ctx context.Context) error {
 		activeKeys[k] = true
 	}
 
+	// Include playlist covers so custom playlist artwork isn't swept as
+	// orphaned — playlists aren't tracks/albums/artists so their keys would
+	// otherwise never appear in activeKeys.
+	playlistKeys, err := s.playlistRepo.GetAllArtworkKeys(ctx)
+	if err != nil {
+		return err
+	}
+	for _, k := range playlistKeys {
+		activeKeys[k] = true
+	}
+
 	return s.artworkCache.CleanupOrphaned(ctx, activeKeys)
 }
 

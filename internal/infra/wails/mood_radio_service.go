@@ -20,3 +20,9 @@ func NewMoodRadioService(trackQueryRepo domain.TrackQueryRepository) *MoodRadioS
 func (s *MoodRadioService) SeedMoodRadio(seedTrackID string, limit int) ([]*domain.TrackDTO, error) {
 	return s.trackQueryRepo.FindSimilar(context.Background(), seedTrackID, limit)
 }
+
+// GetMoodDensityGrid buckets analyzed tracks into a gridSize x gridSize
+// energy/danceability grid for the Mood Playlist heatmap.
+func (s *MoodRadioService) GetMoodDensityGrid(gridSize int) (*domain.MoodDensityGrid, error) {
+	return s.trackQueryRepo.MoodDensityGrid(context.Background(), gridSize)
+}

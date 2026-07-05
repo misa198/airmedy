@@ -16,6 +16,7 @@ defineProps<{
 const emit = defineEmits<{
   'rename': [playlist: Playlist]
   'delete': [playlist: Playlist]
+  'edit-smart-rules': [playlist: Playlist]
 }>()
 
 const router = useRouter()
@@ -25,6 +26,7 @@ const { buildMenuItems } = usePlaylistContextMenu()
 const onContextMenu = (e: MouseEvent, playlist: Playlist) => {
   contextMenu.open(e, buildMenuItems(playlist, {
     onRename: (p) => emit('rename', p),
+    onEditSmartRules: (p) => emit('edit-smart-rules', p),
     onDelete: (p) => emit('delete', p),
   }))
 }

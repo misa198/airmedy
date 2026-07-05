@@ -48,7 +48,9 @@ func (r *playlistRepository) Save(ctx context.Context, p *domain.Playlist) error
 	p.CreatedAt = now
 	p.UpdatedAt = now
 
-	_, err := r.db.Ext(ctx).NamedExecContext(ctx, "INSERT INTO playlists (id, name, description, artwork_key, created_at, updated_at) VALUES (:id, :name, :description, :artwork_key, :created_at, :updated_at)", p)
+	_, err := r.db.Ext(ctx).NamedExecContext(ctx, `
+		INSERT INTO playlists (id, name, description, artwork_key, is_smart, rules, created_at, updated_at)
+		VALUES (:id, :name, :description, :artwork_key, :is_smart, :rules, :created_at, :updated_at)`, p)
 	if err != nil {
 		return fmt.Errorf("failed to save playlist: %w", err)
 	}
@@ -63,6 +65,26 @@ func (r *playlistRepository) Update(ctx context.Context, p *domain.Playlist) err
 	)
 	if err != nil {
 		return fmt.Errorf("failed to update playlist: %w", err)
+	}
+	return nil
+}
+
+func (r *playlistRepository) GetAllArtworkKeys(ctx context.Context) ([]string, error) {
+	var keys []string
+	query := "SELECT artwork_key FROM playlists WHERE artwork_key IS NOT NULL AND artwork_key != ''"
+	if err := r.db.Ext(ctx).SelectContext(ctx, &keys, query); err != nil {
+		return nil, fmt.Errorf("failed to get all playlist artwork keys: %w", err)
+	}
+	return keys, nil
+}
+
+func (r *playlistRepository) UpdateRules(ctx context.Context, id string, rules *string) error {
+	_, err := r.db.Ext(ctx).ExecContext(ctx,
+		"UPDATE playlists SET rules = ?, updated_at = ? WHERE id = ?",
+		rules, time.Now(), id,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update playlist rules: %w", err)
 	}
 	return nil
 }
@@ -151,6 +173,14 @@ func (r *playlistRepository) RemoveTrack(ctx context.Context, playlistID, trackI
 	return nil
 }
 
+func (r *playlistRepository) ClearTracks(ctx context.Context, playlistID string) error {
+	_, err := r.db.Ext(ctx).ExecContext(ctx, "DELETE FROM playlist_tracks WHERE playlist_id = ?", playlistID)
+	if err != nil {
+		return fmt.Errorf("failed to clear playlist tracks: %w", err)
+	}
+	return nil
+}
+
 func (r *playlistRepository) UpdateTrackPosition(ctx context.Context, playlistID, trackID, position string) error {
 	_, err := r.db.Ext(ctx).ExecContext(ctx, "UPDATE playlist_tracks SET position = ? WHERE playlist_id = ? AND track_id = ?", position, playlistID, trackID)
 	if err != nil {
@@ -210,6 +240,35 @@ func (r *playlistRepository) GetTracks(ctx context.Context, playlistID string) (
 	err := r.db.Ext(ctx).SelectContext(ctx, &rows, query, playlistID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get playlist tracks: %w", err)
+	}
+
+	tr := &trackRepository{db: r.db}
+	return tr.scanTrackRows(rows), nil
+}
+
+// GetTracksPreview is GetTracks capped with a SQL LIMIT — for callers that
+// only need the first few tracks (e.g. a 4-track artwork mosaic), so the
+// join/group-by/serialize cost scales with the requested preview size, not
+// the playlist's full membership.
+func (r *playlistRepository) GetTracksPreview(ctx context.Context, playlistID string, limit int) ([]*domain.TrackDTO, error) {
+	query := fmt.Sprintf(`
+		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year,
+		       GROUP_CONCAT(art.name, '; ') AS artist_names,
+		       GROUP_CONCAT(art.id, '; ') AS artist_ids
+		FROM tracks t
+		LEFT JOIN albums a ON t.album_id = a.id
+		LEFT JOIN track_artists ta ON t.id = ta.track_id
+		LEFT JOIN artists art ON ta.artist_id = art.id
+		JOIN playlist_tracks pt ON t.id = pt.track_id
+		WHERE pt.playlist_id = ?
+		GROUP BY t.id, pt.position
+		ORDER BY pt.position, pt.track_id
+		LIMIT ?`, trackSelectFields)
+
+	var rows []trackRow
+	err := r.db.Ext(ctx).SelectContext(ctx, &rows, query, playlistID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get playlist tracks preview: %w", err)
 	}
 
 	tr := &trackRepository{db: r.db}

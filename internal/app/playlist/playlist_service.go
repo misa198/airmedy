@@ -3,6 +3,7 @@ package playlist
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"mime"
@@ -20,14 +21,16 @@ import (
 
 type PlaylistService struct {
 	repo          domain.PlaylistRepository
+	trackRepo     domain.TrackRepository
 	artworkCache  domain.ArtworkCache
 	searchService domain.SearchService
 	logger        *slog.Logger
 }
 
-func NewPlaylistService(repo domain.PlaylistRepository, artworkCache domain.ArtworkCache, searchService domain.SearchService, logger *slog.Logger) *PlaylistService {
+func NewPlaylistService(repo domain.PlaylistRepository, trackRepo domain.TrackRepository, artworkCache domain.ArtworkCache, searchService domain.SearchService, logger *slog.Logger) *PlaylistService {
 	return &PlaylistService{
 		repo:          repo,
+		trackRepo:     trackRepo,
 		artworkCache:  artworkCache,
 		searchService: searchService,
 		logger:        logger,
@@ -52,6 +55,27 @@ func (s *PlaylistService) Create(ctx context.Context, name, description string) 
 		s.logger.Warn("Failed to index playlist", "name", p.Name, "error", err)
 	}
 	return p, nil
+}
+
+// FavoritesPlaylistID is the fixed ID of the system-backed "Favorites" playlist row.
+// Its track list stays virtual (derived from Track.IsFavorite), but the row itself
+// lets Favorites use the normal artwork set/remove flow.
+const FavoritesPlaylistID = "favorites"
+
+func (s *PlaylistService) EnsureFavoritesPlaylist(ctx context.Context) error {
+	existing, err := s.repo.GetByID(ctx, FavoritesPlaylistID)
+	if err != nil {
+		return err
+	}
+	if existing != nil {
+		return nil
+	}
+	p := &domain.Playlist{
+		ID:          FavoritesPlaylistID,
+		Name:        "Favorites",
+		Description: "",
+	}
+	return s.repo.Save(ctx, p)
 }
 
 func (s *PlaylistService) Update(ctx context.Context, id, name, description string) error {
@@ -93,10 +117,221 @@ func (s *PlaylistService) GetByID(ctx context.Context, id string) (*domain.Playl
 }
 
 func (s *PlaylistService) GetTracks(ctx context.Context, playlistID string) ([]*domain.TrackDTO, error) {
+	p, err := s.repo.GetByID(ctx, playlistID)
+	if err != nil {
+		return nil, err
+	}
+	if p == nil {
+		return nil, fmt.Errorf("playlist not found: %s", playlistID)
+	}
+	if p.IsSmart {
+		return s.evaluateSmartTracks(ctx, p)
+	}
 	return s.repo.GetTracks(ctx, playlistID)
 }
 
+// GetTracksPreview returns at most limit tracks — for callers that only need
+// a handful (e.g. a 4-track artwork mosaic), so a live-updating smart
+// playlist with a broad or unlimited match (mood playlists default to no
+// cap) doesn't run/serialize its full result just to discard most of it.
+func (s *PlaylistService) GetTracksPreview(ctx context.Context, playlistID string, limit int) ([]*domain.TrackDTO, error) {
+	p, err := s.repo.GetByID(ctx, playlistID)
+	if err != nil {
+		return nil, err
+	}
+	if p == nil {
+		return nil, fmt.Errorf("playlist not found: %s", playlistID)
+	}
+	if !p.IsSmart {
+		return s.repo.GetTracksPreview(ctx, playlistID, limit)
+	}
+	var config domain.SmartPlaylistConfig
+	if p.Rules != nil && *p.Rules != "" {
+		if err := json.Unmarshal([]byte(*p.Rules), &config); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal playlist rules: %w", err)
+		}
+	}
+	if !config.LiveUpdating {
+		return s.repo.GetTracksPreview(ctx, playlistID, limit)
+	}
+	return s.matchSmartConfigCapped(ctx, config, limit)
+}
+
+// CreateSmart creates a smart playlist backed by a rule set instead of a
+// fixed track list — membership is computed at read time by GetTracks
+// (or, when config.LiveUpdating is false, frozen at save time — see
+// applySmartConfig).
+func (s *PlaylistService) CreateSmart(ctx context.Context, name, description string, config domain.SmartPlaylistConfig) (*domain.Playlist, error) {
+	if name == "" {
+		return nil, fmt.Errorf("playlist name cannot be empty")
+	}
+	rulesJSON, err := marshalRules(config)
+	if err != nil {
+		return nil, err
+	}
+	p := &domain.Playlist{
+		ID:          uuid.New().String(),
+		Name:        name,
+		Description: description,
+		IsSmart:     true,
+		Rules:       rulesJSON,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+	if err := s.repo.Save(ctx, p); err != nil {
+		return nil, err
+	}
+	if err := s.applySmartConfig(ctx, p.ID, config); err != nil {
+		return nil, err
+	}
+	s.logger.Debug("Created smart playlist",
+		"playlist_id", p.ID, "name", p.Name,
+		"rule_count", countRules(config.Root), "live_updating", config.LiveUpdating,
+		"limit_enabled", config.Limit.Enabled, "limit_count", config.Limit.Count, "limit_by", config.Limit.By)
+	if err := s.searchService.IndexPlaylist(ctx, p); err != nil {
+		s.logger.Warn("Failed to index playlist", "name", p.Name, "error", err)
+	}
+	return p, nil
+}
+
+// UpdateSmartRules replaces a smart playlist's rule set.
+func (s *PlaylistService) UpdateSmartRules(ctx context.Context, id string, config domain.SmartPlaylistConfig) error {
+	p, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if p == nil {
+		return fmt.Errorf("playlist not found: %s", id)
+	}
+	if !p.IsSmart {
+		return fmt.Errorf("playlist is not a smart playlist: %s", id)
+	}
+	rulesJSON, err := marshalRules(config)
+	if err != nil {
+		return err
+	}
+	if err := s.repo.UpdateRules(ctx, id, rulesJSON); err != nil {
+		return err
+	}
+	s.logger.Debug("Updated smart playlist rules",
+		"playlist_id", id,
+		"rule_count", countRules(config.Root), "live_updating", config.LiveUpdating,
+		"limit_enabled", config.Limit.Enabled, "limit_count", config.Limit.Count, "limit_by", config.Limit.By)
+	return s.applySmartConfig(ctx, id, config)
+}
+
+// maxSmartPlaylistRules mirrors the frontend's MAX_RULES cap (see
+// smartPlaylistFields.ts) — enforced here too since the frontend limit is
+// UX only, not a security boundary.
+const maxSmartPlaylistRules = 16
+
+func marshalRules(config domain.SmartPlaylistConfig) (*string, error) {
+	// Validate against the field/operator allowlist before persisting, so a
+	// bad rule tree fails at create/update time rather than at every read.
+	if _, _, err := BuildWhereClause(config.Root); err != nil {
+		return nil, fmt.Errorf("invalid rule: %w", err)
+	}
+	ruleCount := countRules(config.Root)
+	if ruleCount == 0 {
+		return nil, fmt.Errorf("at least one rule is required")
+	}
+	if ruleCount > maxSmartPlaylistRules {
+		return nil, fmt.Errorf("too many rules: %d (max %d)", ruleCount, maxSmartPlaylistRules)
+	}
+	if config.Limit.Enabled {
+		if config.Limit.Count <= 0 {
+			return nil, fmt.Errorf("limit count must be positive when enabled")
+		}
+		if _, err := OrderBySQL(config.Limit.By); err != nil {
+			return nil, fmt.Errorf("invalid limit: %w", err)
+		}
+	}
+	data, err := json.Marshal(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal rules: %w", err)
+	}
+	s := string(data)
+	return &s, nil
+}
+
+// applySmartConfig materializes a snapshot into playlist_tracks when
+// LiveUpdating is off, so evaluateSmartTracks can serve a frozen membership
+// without re-running the rule tree. Any previous snapshot is cleared first —
+// when LiveUpdating is on there is nothing to serve from playlist_tracks, so
+// clearing it (and not re-populating) is correct there too.
+func (s *PlaylistService) applySmartConfig(ctx context.Context, playlistID string, config domain.SmartPlaylistConfig) error {
+	if err := s.repo.ClearTracks(ctx, playlistID); err != nil {
+		return fmt.Errorf("failed to clear smart playlist snapshot: %w", err)
+	}
+	if config.LiveUpdating {
+		s.logger.Debug("Smart playlist is live-updating, skipping snapshot materialization", "playlist_id", playlistID)
+		return nil
+	}
+	tracks, err := s.matchSmartConfig(ctx, config)
+	if err != nil {
+		return fmt.Errorf("failed to compute smart playlist snapshot: %w", err)
+	}
+	ids := make([]string, len(tracks))
+	for i, t := range tracks {
+		ids[i] = t.ID
+	}
+	s.logger.Debug("Materialized smart playlist snapshot", "playlist_id", playlistID, "track_count", len(ids))
+	return s.repo.AddTracks(ctx, playlistID, ids)
+}
+
+func (s *PlaylistService) matchSmartConfig(ctx context.Context, config domain.SmartPlaylistConfig) ([]*domain.TrackDTO, error) {
+	return s.matchSmartConfigCapped(ctx, config, 0)
+}
+
+// matchSmartConfigCapped is matchSmartConfig with an additional hard ceiling
+// on the SQL LIMIT — maxLimit <= 0 means "no extra ceiling, use the config's
+// own limit as-is" (matchSmartConfig's behavior). GetTracksPreview uses a
+// small maxLimit (e.g. 4, for an artwork mosaic) so a broad or unlimited
+// smart playlist doesn't materialize/serialize its entire match just to
+// throw away all but a handful of rows.
+func (s *PlaylistService) matchSmartConfigCapped(ctx context.Context, config domain.SmartPlaylistConfig, maxLimit int) ([]*domain.TrackDTO, error) {
+	whereSQL, args, err := BuildWhereClause(config.Root)
+	if err != nil {
+		return nil, fmt.Errorf("failed to evaluate playlist rules: %w", err)
+	}
+	limit := 0
+	orderBy := ""
+	if config.Limit.Enabled {
+		limit = config.Limit.Count
+		orderBy, err = OrderBySQL(config.Limit.By)
+		if err != nil {
+			return nil, fmt.Errorf("failed to evaluate playlist limit: %w", err)
+		}
+	}
+	if maxLimit > 0 && (limit <= 0 || limit > maxLimit) {
+		limit = maxLimit
+	}
+	return s.trackRepo.GetByRules(ctx, whereSQL, args, limit, orderBy)
+}
+
+func (s *PlaylistService) evaluateSmartTracks(ctx context.Context, p *domain.Playlist) ([]*domain.TrackDTO, error) {
+	var config domain.SmartPlaylistConfig
+	if p.Rules != nil && *p.Rules != "" {
+		if err := json.Unmarshal([]byte(*p.Rules), &config); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal playlist rules: %w", err)
+		}
+	}
+	if !config.LiveUpdating {
+		s.logger.Debug("Evaluating smart playlist from frozen snapshot", "playlist_id", p.ID)
+		return s.repo.GetTracks(ctx, p.ID)
+	}
+	tracks, err := s.matchSmartConfig(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+	s.logger.Debug("Evaluated smart playlist rules live", "playlist_id", p.ID, "track_count", len(tracks))
+	return tracks, nil
+}
+
 func (s *PlaylistService) AddTrack(ctx context.Context, playlistID, trackID string) error {
+	if err := s.guardNotSmart(ctx, playlistID); err != nil {
+		return err
+	}
 	maxRankStr, err := s.repo.GetMaxPosition(ctx, playlistID)
 	if err != nil {
 		return err
@@ -123,14 +358,40 @@ func (s *PlaylistService) AddTrack(ctx context.Context, playlistID, trackID stri
 }
 
 func (s *PlaylistService) AddTracks(ctx context.Context, playlistID string, trackIDs []string) error {
+	if err := s.guardNotSmart(ctx, playlistID); err != nil {
+		return err
+	}
 	return s.repo.AddTracks(ctx, playlistID, trackIDs)
 }
 
 func (s *PlaylistService) RemoveTrack(ctx context.Context, playlistID, trackID string) error {
+	if err := s.guardNotSmart(ctx, playlistID); err != nil {
+		return err
+	}
 	return s.repo.RemoveTrack(ctx, playlistID, trackID)
 }
 
+// guardNotSmart rejects manual track mutation on a smart playlist — its
+// membership is computed from rules (see GetTracks/evaluateSmartTracks), so
+// there is no track ordering or membership to hand-edit.
+func (s *PlaylistService) guardNotSmart(ctx context.Context, playlistID string) error {
+	p, err := s.repo.GetByID(ctx, playlistID)
+	if err != nil {
+		return err
+	}
+	if p == nil {
+		return fmt.Errorf("playlist not found: %s", playlistID)
+	}
+	if p.IsSmart {
+		return fmt.Errorf("cannot manually edit tracks of a smart playlist: %s", playlistID)
+	}
+	return nil
+}
+
 func (s *PlaylistService) MoveTrack(ctx context.Context, playlistID, trackID, prevTrackID, nextTrackID string) error {
+	if err := s.guardNotSmart(ctx, playlistID); err != nil {
+		return err
+	}
 	var prevRank, nextRank lexorank.Rank
 	var hasPrev, hasNext bool
 	var err error

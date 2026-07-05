@@ -16,7 +16,10 @@
     "on": "オン",
     "off": "オフ",
     "hr": "時間",
-    "min": "分"
+    "min": "分",
+    "delete": "削除",
+    "yes": "はい",
+    "no": "いいえ"
   },
   "app": {
     "update_available": "アップデートが利用可能です",
@@ -270,7 +273,8 @@
     "delete_playlist_message": "このプレイリストを削除してもよろしいですか？この操作は取り消せません。",
     "import_playlist": "プレイリストをインポート",
     "import_playlist_title": "プレイリストをインポート",
-    "import": "インポート"
+    "import": "インポート",
+    "all_playlists": "すべてのプレイリスト"
   },
   "player": {
     "not_playing": "停止中",
@@ -373,7 +377,9 @@
     "list_view": "リスト",
     "sort_by": "並び替え",
     "no_sort": "なし",
-    "context_menu": ""
+    "context_menu": "",
+    "smart_playlist": "スマートプレイリスト",
+    "no_playlists": "プレイリストが見つかりません"
   },
   "context_menu": {
     "play": "再生",
@@ -395,7 +401,10 @@
     "find_lyrics": "歌詞を検索",
     "remove_from_queue": "キューから削除",
     "export_playlist": "プレイリストをエクスポート",
-    "start_mood_radio": "ムードラジオを開始"
+    "start_mood_radio": "ムードラジオを開始",
+    "pin_to_sidebar": "サイドバーにピン留め",
+    "unpin_from_sidebar": "サイドバーのピン留めを解除",
+    "edit_rules": "ルールを編集"
   },
   "find_lyrics": {
     "title": "歌詞を検索",
@@ -456,5 +465,66 @@
   "playlist": {
     "edit_cover": "カバーを編集",
     "remove_cover": "カスタムカバーを削除"
+  },
+  "playlists": {
+    "smart": {
+      "new_smart_playlist": "新規スマートプレイリスト",
+      "edit_smart_playlist": "スマートプレイリストを編集",
+      "tab_filters": "フィルター",
+      "tab_mood": "ムード",
+      "mood_requires_analysis": "ムードで絞り込むには設定でライブラリ分析を有効にしてください。",
+      "mood_energy_axis": "エネルギー",
+      "mood_danceability_axis": "ダンス性",
+      "mood_legend_few": "少ない",
+      "mood_legend_many": "多い",
+      "mood_coverage_caption": "{analyzed} / {total} 曲を分析済み",
+      "mood_invalid_box": "ドラッグして空でない範囲を選択し、ムードの範囲を指定してください。",
+      "mood_quadrant_party": "パーティー",
+      "mood_quadrant_intense": "インテンス",
+      "mood_quadrant_groove": "グルーヴ",
+      "mood_quadrant_chill": "チル",
+      "match_label": "一致条件",
+      "match_groups_label": "グループを組み合わせる",
+      "match_all": "すべて",
+      "match_any": "いずれか",
+      "add_rule": "ルールを追加",
+      "add_group": "グループを追加",
+      "remove_group": "グループを削除",
+      "no_rules": "まだルールがありません。追加して曲を絞り込みましょう。",
+      "no_rules_error": "スマートプレイリストを作成するには少なくとも1つのルールを追加してください。",
+      "rule_count": "{count}/{max} 件のルール",
+      "rule_invalid": "このルールに有効な値を入力してください。",
+      "range_and": "から",
+      "field_genre": "ジャンル",
+      "field_artist": "アーティスト",
+      "field_year": "年",
+      "field_bpm": "BPM",
+      "field_play_count": "再生回数",
+      "field_duration": "長さ",
+      "field_bitrate": "ビットレート",
+      "field_is_favorite": "お気に入り",
+      "field_added_at": "追加日",
+      "field_energy": "エネルギー",
+      "field_danceability": "ダンス性",
+      "op_is": "が次と一致",
+      "op_is_not": "が次と一致しない",
+      "op_contains": "を含む",
+      "op_gt": "より大きい",
+      "op_lt": "より小さい",
+      "op_gte": "以上",
+      "op_lte": "以下",
+      "op_between": "の範囲",
+      "op_in_last_days": "過去(日数)以内",
+      "limit_label": "件数を制限",
+      "limit_selected_by": "件、選択方法",
+      "limit_by_random": "ランダム",
+      "limit_by_album": "アルバム",
+      "limit_by_artist": "アーティスト",
+      "limit_by_genre": "ジャンル",
+      "limit_by_title": "タイトル",
+      "limit_by_most_played": "再生回数の多い順",
+      "live_updating_label": "ライブ更新",
+      "live_updating_hint": "一致する曲を自動的に最新に保ちます。オフにすると現在の結果を固定します。"
+    }
   }
 }

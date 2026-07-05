@@ -4,19 +4,22 @@ import {
   LayoutGrid,
   Plus,
   Music,
+  Sparkles,
   Heart,
   MoreHorizontal,
 } from '@lucide/vue'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePlaylistsStore } from '@/stores/playlists'
 import CreatePlaylistDialog from './CreatePlaylistDialog.vue'
+import SmartPlaylistDialog from './SmartPlaylistDialog.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
 import { useI18n } from 'vue-i18n'
 import { useContextMenu } from '@/composables/useContextMenu'
 import { usePlaylistContextMenu } from '@/composables/usePlaylistContextMenu'
 import ContextMenu from './ContextMenu.vue'
 import SidebarItem from './SidebarItem.vue'
+import { emptyConfig, type SmartPlaylistConfig } from '@/lib/smartPlaylistFields'
 import type { Playlist } from '../../bindings/airmedy/internal/domain/models'
 
 const { t } = useI18n()
@@ -31,6 +34,19 @@ const deleteConfirmOpen = ref(false)
 const playlistToDelete = ref<Playlist | null>(null)
 const renamingId = ref('')
 const renamingName = ref('')
+
+const smartEditDialogOpen = ref(false)
+const smartEditPlaylist = ref<Playlist | null>(null)
+const sessionId = Math.random().toString(36).substring(2, 15)
+
+const smartEditConfig = computed<SmartPlaylistConfig>(() => {
+  if (!smartEditPlaylist.value?.rules) return emptyConfig()
+  try {
+    return JSON.parse(smartEditPlaylist.value.rules)
+  } catch {
+    return emptyConfig()
+  }
+})
 
 function openCreateDialog() {
   createDialogOpen.value = true
@@ -63,10 +79,24 @@ async function handleDelete() {
   }
 }
 
+function openSmartEditDialog(playlist: Playlist) {
+  smartEditPlaylist.value = playlist
+  smartEditDialogOpen.value = true
+}
+
+async function handleSmartEdit(payload: { name: string; description: string; config: SmartPlaylistConfig }) {
+  const p = smartEditPlaylist.value
+  if (!p) return
+  if (payload.name !== p.name) await playlistsStore.rename(p.id, payload.name)
+  await playlistsStore.updateSmartRules(p.id, payload.config, sessionId)
+}
+
 function openPlaylistContextMenu(playlist: Playlist, e: MouseEvent) {
   contextMenu.open(e, buildPlaylistMenuItems(playlist, {
-    includePlaylistMenu: true,
+    includePlaylistMenu: false,
+    includeExport: true,
     onRename: (p) => openRenameDialog(p.id, p.name),
+    onEditSmartRules: (p) => openSmartEditDialog(p),
     onDelete: (p) => openDeleteConfirm(p),
   }))
 }
@@ -128,7 +158,7 @@ function openFavoritesContextMenu(e: MouseEvent) {
         v-for="playlist in playlistsStore.pinnedPlaylists"
         :key="playlist.id"
         :to="`/playlists/${playlist.id}`"
-        :icon="Music"
+        :icon="playlist.is_smart ? Sparkles : Music"
         :label="playlist.name"
         @contextmenu="openPlaylistContextMenu(playlist, $event)"
       >
@@ -147,6 +177,16 @@ function openFavoritesContextMenu(e: MouseEvent) {
   <CreatePlaylistDialog v-model:open="createDialogOpen" @confirm="handleCreate" />
   <CreatePlaylistDialog v-model:open="renameDialogOpen" :initial-name="renamingName" :title="t('sidebar.rename_playlist_title')"
     @confirm="handleRename" />
+
+  <SmartPlaylistDialog
+    v-model:open="smartEditDialogOpen"
+    :initial-name="smartEditPlaylist?.name ?? ''"
+    :initial-description="smartEditPlaylist?.description ?? ''"
+    :initial-config="smartEditConfig"
+    :title="t('playlists.smart.edit_smart_playlist')"
+    :confirm-label="t('common.save')"
+    @confirm="handleSmartEdit"
+  />
 
   <ConfirmDialog
     v-model:open="deleteConfirmOpen"

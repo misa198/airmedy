@@ -16,7 +16,10 @@
     "on": "Attivo",
     "off": "Disattivo",
     "hr": "h",
-    "min": "min"
+    "min": "min",
+    "delete": "Elimina",
+    "yes": "Sì",
+    "no": "No"
   },
   "app": {
     "update_available": "Aggiornamento disponibile",
@@ -270,7 +273,8 @@
     "delete_playlist_message": "Sei sicuro di voler eliminare questa playlist? L'azione non può essere annullata.",
     "import_playlist": "Importa playlist",
     "import_playlist_title": "Importa playlist",
-    "import": "Importa"
+    "import": "Importa",
+    "all_playlists": "Tutte le playlist"
   },
   "player": {
     "not_playing": "Nessuna riproduzione",
@@ -373,7 +377,9 @@
     "list_view": "Lista",
     "sort_by": "Ordina per",
     "no_sort": "Nessuno",
-    "context_menu": ""
+    "context_menu": "",
+    "smart_playlist": "Playlist intelligente",
+    "no_playlists": "Nessuna playlist trovata"
   },
   "context_menu": {
     "play": "Riproduci",
@@ -395,7 +401,10 @@
     "find_lyrics": "Trova testi",
     "remove_from_queue": "Rimuovi dalla coda",
     "export_playlist": "Esporta playlist",
-    "start_mood_radio": "Avvia Radio Mood"
+    "start_mood_radio": "Avvia Radio Mood",
+    "pin_to_sidebar": "Blocca nella barra laterale",
+    "unpin_from_sidebar": "Sblocca dalla barra laterale",
+    "edit_rules": "Modifica regole"
   },
   "find_lyrics": {
     "title": "Trova testi",
@@ -456,5 +465,66 @@
   "playlist": {
     "edit_cover": "Modifica copertina",
     "remove_cover": "Rimuovi copertina personalizzata"
+  },
+  "playlists": {
+    "smart": {
+      "new_smart_playlist": "Nuova playlist intelligente",
+      "edit_smart_playlist": "Modifica playlist intelligente",
+      "tab_filters": "Filtri",
+      "tab_mood": "Atmosfera",
+      "mood_requires_analysis": "Attiva l'analisi della libreria nelle Impostazioni per filtrare per atmosfera.",
+      "mood_energy_axis": "Energia",
+      "mood_danceability_axis": "Ballabilità",
+      "mood_legend_few": "Poche",
+      "mood_legend_many": "Molte",
+      "mood_coverage_caption": "{analyzed} / {total} brani analizzati",
+      "mood_invalid_box": "Trascina una regione non vuota per selezionare un intervallo di atmosfera.",
+      "mood_quadrant_party": "Festa",
+      "mood_quadrant_intense": "Intenso",
+      "mood_quadrant_groove": "Groove",
+      "mood_quadrant_chill": "Rilassato",
+      "match_label": "Corrispondenza",
+      "match_groups_label": "Combina gruppi",
+      "match_all": "TUTTE",
+      "match_any": "QUALSIASI",
+      "add_rule": "Aggiungi regola",
+      "add_group": "Aggiungi gruppo",
+      "remove_group": "Rimuovi gruppo",
+      "no_rules": "Ancora nessuna regola. Aggiungine una per iniziare a filtrare i brani.",
+      "no_rules_error": "Aggiungi almeno una regola per creare una playlist intelligente.",
+      "rule_count": "{count}/{max} regole",
+      "rule_invalid": "Inserisci un valore valido per questa regola.",
+      "range_and": "e",
+      "field_genre": "Genere",
+      "field_artist": "Artista",
+      "field_year": "Anno",
+      "field_bpm": "BPM",
+      "field_play_count": "Riproduzioni",
+      "field_duration": "Durata",
+      "field_bitrate": "Bitrate",
+      "field_is_favorite": "Preferito",
+      "field_added_at": "Aggiunto",
+      "field_energy": "Energia",
+      "field_danceability": "Ballabilità",
+      "op_is": "è",
+      "op_is_not": "non è",
+      "op_contains": "contiene",
+      "op_gt": "maggiore di",
+      "op_lt": "minore di",
+      "op_gte": "almeno",
+      "op_lte": "al massimo",
+      "op_between": "tra",
+      "op_in_last_days": "negli ultimi (giorni)",
+      "limit_label": "Limita a",
+      "limit_selected_by": "elementi, selezionati per",
+      "limit_by_random": "Casuale",
+      "limit_by_album": "Album",
+      "limit_by_artist": "Artista",
+      "limit_by_genre": "Genere",
+      "limit_by_title": "Titolo",
+      "limit_by_most_played": "Più riprodotti",
+      "live_updating_label": "Aggiornamento live",
+      "live_updating_hint": "Mantieni automaticamente aggiornati i brani corrispondenti. Disattiva per bloccare i risultati attuali."
+    }
   }
 }

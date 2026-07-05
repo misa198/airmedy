@@ -80,7 +80,7 @@ watch(() => route.params.id, (newId) => {
             <span class="flex items-center gap-1"><Music class="w-4 h-4" /> {{ t('genre.tracks_count', { count: tracks.length }) }}</span>
           </div>
           <div class="pt-2 flex items-center gap-4">
-            <DetailsButton :icon="Play" :label="t('common.play')" @click="playerStore.playTracks(sortedTracks, 0)" />
+            <DetailsButton :icon="Play" :label="t('common.play')" :filled-icon="true" @click="playerStore.playTracks(sortedTracks, 0)" />
             <div class="flex gap-2">
               <DetailsButton :icon="Shuffle" variant="outline" @click="playerStore.shuffleTracks(tracks)" />
               <DetailsButton :icon="MoreVertical" variant="outline" @click="openContextMenu" />

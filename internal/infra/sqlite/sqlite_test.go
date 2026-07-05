@@ -122,9 +122,9 @@ func TestTrackFeaturesMigration(t *testing.T) {
 	}
 	defer func() { _ = db.Close() }()
 
-	// track_features table exists with reserved mood columns.
+	// track_features table exists with expected analyzer columns.
 	var count int
-	if err := db.Get(&count, `SELECT COUNT(*) FROM pragma_table_info('track_features') WHERE name IN ('loudness_lufs','spectral_centroid','tempo','valence')`); err != nil {
+	if err := db.Get(&count, `SELECT COUNT(*) FROM pragma_table_info('track_features') WHERE name IN ('loudness_lufs','spectral_centroid','tempo','onset_variance')`); err != nil {
 		t.Fatalf("track_features table not created: %v", err)
 	}
 	if count != 4 {

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
-import type { Playlist } from '../../bindings/airmedy/internal/domain/models'
+import type { Playlist, SmartPlaylistConfig } from '../../bindings/airmedy/internal/domain/models'
 import { Events } from '@wailsio/runtime'
 
 const FAVORITES_PINNED_KEY = 'airmedy:favorites-pinned'
@@ -15,7 +15,11 @@ export const usePlaylistsStore = defineStore('playlists', () => {
     loading.value = true
     try {
       const result = await PlaylistService.GetAllPlaylists()
-      playlists.value = result.filter(Boolean) as Playlist[]
+      // Favorites has a real DB row (for artwork), but every other consumer
+      // of this list (add-to-playlist menus, pinned list, playlists grid)
+      // expects normal user playlists — keep it out and let call sites that
+      // need it (PlaylistDetailView, PlaylistsView artwork) fetch it directly.
+      playlists.value = (result.filter(Boolean) as Playlist[]).filter((p) => p.id !== 'favorites')
     } catch (e) {
       console.error('Failed to load playlists', e)
     } finally {
@@ -58,16 +62,53 @@ export const usePlaylistsStore = defineStore('playlists', () => {
     }
   })
 
+  const _offArtworkChanged = Events.On('playlist:artwork-changed', (ev: Events.WailsEvent) => {
+    const payload = ev.data as { playlist_id: string; artwork_key: string | null }
+    const p = playlists.value.find((x) => x.id === payload.playlist_id)
+    if (p) p.artwork_key = payload.artwork_key
+  })
+
+  const _offRulesChanged = Events.On('playlist:rules-changed', async (ev: Events.WailsEvent) => {
+    const payload = ev.data as { playlist_id: string; sender_id: string }
+    const p = playlists.value.find((x) => x.id === payload.playlist_id)
+    if (p) {
+      try {
+        const updated = await PlaylistService.GetPlaylistByID(payload.playlist_id)
+        if (updated) {
+          p.rules = updated.rules
+        }
+      } catch (e) {
+        console.error('Failed to update smart playlist rules in store', e)
+      }
+    }
+  })
+
   function dispose() {
     _offDeleted()
     _offRenamed()
     _offPinned()
+    _offArtworkChanged()
+    _offRulesChanged()
   }
 
   async function create(name: string, description = '') {
     const p = await PlaylistService.CreatePlaylist(name, description)
     if (p) playlists.value.push(p)
     return p
+  }
+
+  async function createSmart(name: string, description: string, config: SmartPlaylistConfig) {
+    const p = await PlaylistService.CreateSmartPlaylist(name, description, config)
+    if (p) playlists.value.push(p)
+    return p
+  }
+
+  async function updateSmartRules(id: string, config: SmartPlaylistConfig, senderID: string) {
+    await PlaylistService.UpdateSmartPlaylistRules(id, config, senderID)
+    const p = playlists.value.find((x) => x.id === id)
+    if (p) {
+      p.rules = JSON.stringify(config)
+    }
   }
 
   async function rename(id: string, name: string) {
@@ -111,6 +152,8 @@ export const usePlaylistsStore = defineStore('playlists', () => {
     favoritesPinned,
     loadAll,
     create,
+    createSmart,
+    updateSmartRules,
     rename,
     deletePlaylist,
     isPinned,

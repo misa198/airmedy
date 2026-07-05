@@ -25,6 +25,14 @@ type TrackRepository interface {
 	GetLeastListened(ctx context.Context, limit int) ([]*TrackDTO, error)
 	GetRecentlyPlayed(ctx context.Context, limit int) ([]*TrackDTO, error)
 	GetRecentlyAdded(ctx context.Context, limit int) ([]*TrackDTO, error)
+	// GetByRules evaluates a smart-playlist rule set. whereSQL/args come from
+	// playlist.BuildWhereClause and orderBySQL from playlist.OrderBySQL — both
+	// already allowlisted; this method trusts the caller and interpolates them
+	// directly into the query. limit <= 0 means unlimited (orderBySQL is still
+	// applied for deterministic ordering). track_features is joined so rules
+	// can reference mood fields (tf.energy/tf.danceability); tracks without a
+	// mood-derived value are excluded naturally (NULL comparison), not specially.
+	GetByRules(ctx context.Context, whereSQL string, args []any, limit int, orderBySQL string) ([]*TrackDTO, error)
 	Save(ctx context.Context, track *Track) error
 	Delete(ctx context.Context, id string) error
 	DeleteByPathPrefix(ctx context.Context, prefix string) error
@@ -96,13 +104,25 @@ type PlaylistRepository interface {
 	GetAll(ctx context.Context) ([]*Playlist, error)
 	Save(ctx context.Context, playlist *Playlist) error
 	Update(ctx context.Context, playlist *Playlist) error
+	UpdateRules(ctx context.Context, id string, rules *string) error
 	Delete(ctx context.Context, id string) error
 	AddTrack(ctx context.Context, playlistID, trackID string, position string) error
 	AddTracks(ctx context.Context, playlistID string, trackIDs []string) error
 	RemoveTrack(ctx context.Context, playlistID, trackID string) error
+	// ClearTracks removes every playlist_tracks row for playlistID. Used to
+	// wipe a smart playlist's frozen ("live updating" off) snapshot before
+	// re-materializing it, or before dropping it entirely when live updating
+	// is turned back on.
+	ClearTracks(ctx context.Context, playlistID string) error
 	UpdateTrackPosition(ctx context.Context, playlistID, trackID, position string) error
 	UpdateTracksPositions(ctx context.Context, playlistID string, updates map[string]string) error
 	GetTracks(ctx context.Context, playlistID string) ([]*TrackDTO, error)
+	// GetTracksPreview is GetTracks capped with a SQL LIMIT, for callers that
+	// only need the first few tracks (e.g. an artwork mosaic).
+	GetTracksPreview(ctx context.Context, playlistID string, limit int) ([]*TrackDTO, error)
+	// GetAllArtworkKeys returns every non-empty playlist artwork_key, used to
+	// keep custom playlist covers out of the orphan-cleanup set.
+	GetAllArtworkKeys(ctx context.Context) ([]string, error)
 	GetPlaylistsForTrack(ctx context.Context, trackID string) ([]string, error)
 	GetTrackPosition(ctx context.Context, playlistID, trackID string) (string, error)
 	GetMaxPosition(ctx context.Context, playlistID string) (string, error)
@@ -195,9 +215,9 @@ type AnalysisRepository interface {
 	// UpsertMoodFeatures writes the derived energy/danceability for a track
 	// and, in the same transaction, bumps tracks.mood_derived_version to
 	// moodVersion. Touches only the energy/danceability columns of
-	// track_features (leaves the raw analyzer columns and valence
-	// untouched). Requires an existing track_features row for trackID (raw
-	// analysis must have run first).
+	// track_features (leaves the raw analyzer columns untouched). Requires
+	// an existing track_features row for trackID (raw analysis must have
+	// run first).
 	UpsertMoodFeatures(ctx context.Context, trackID string, energy, danceability float64, moodVersion int) error
 	// GetFeaturePercentiles returns the full cached corpus percentile table
 	// (one row per feature name), or an empty map if none computed yet.
@@ -228,6 +248,10 @@ type TrackQueryRepository interface {
 	// nearest first, excluding the seed track itself and any unanalyzed
 	// track. Returns no tracks if the seed itself is unanalyzed.
 	FindSimilar(ctx context.Context, seedTrackID string, limit int) ([]*TrackDTO, error)
+	// MoodDensityGrid buckets all tracks with a non-null energy and
+	// danceability into a gridSize x gridSize grid for the Mood Playlist
+	// heatmap. See MoodDensityGrid for the bucket layout.
+	MoodDensityGrid(ctx context.Context, gridSize int) (*MoodDensityGrid, error)
 }
 
 type MiniPlayerStateRepository interface {

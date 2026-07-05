@@ -50,6 +50,7 @@
 - **Remote control** — control playback from any browser on the same network. Enable the remote server in settings, open the displayed URL on your phone or tablet, and enter the PIN to start controlling playback, managing the queue, and viewing lyrics remotely.
 - **Volume normalization** — consistent loudness across your library, no more reaching for the volume knob between tracks. Analyzes your library with FFmpeg (LUFS loudness + true peak), then applies per-track pre-amp gain at playback. Track mode normalizes each song individually; album mode keeps an album's natural dynamics by applying one gain across all its tracks. Target loudness is configurable (default -14 LUFS), with an optional prevent-clipping guard.
 - **Mood Radio** — start an auto-refilling radio queue from any track. Finds similar tracks across your whole library by comparing energy, danceability, and tempo derived from per-track audio analysis.
+- **Smart Playlists** — auto-updating playlists built from rules (genre, artist, year, play count, rating, and more) or from a mood picker that filters your library by energy × danceability.
 
 ## Audio Format Support
 
@@ -194,7 +195,6 @@ wails3 task {task_name}
 
 ## Roadmap
 
-- [ ] **Smart Playlists** — rule-based auto-playlists (genre, BPM, play count)
 - [ ] **AirPlay 2** — stream to any AirPlay speaker or Apple TV directly from Airmedy.
 
 ---

@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { Library, Plus, ListPlus, Upload } from '@lucide/vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { Events } from '@wailsio/runtime'
+import { useFavoritesStore } from '@/stores/favorites'
+import { Library, Plus, ListPlus, Sparkles, Upload } from '@lucide/vue'
 import { IconButton } from '@airmedy/ui'
 import { useRouter } from 'vue-router'
 import PlaylistGrid from '../components/PlaylistGrid.vue'
 import ViewHeader from '../components/ViewHeader.vue'
 import CreatePlaylistDialog from '../components/CreatePlaylistDialog.vue'
+import SmartPlaylistDialog from '../components/SmartPlaylistDialog.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import FilterDropdown from '../components/FilterDropdown.vue'
+import { emptyConfig, type SmartPlaylistConfig } from '@/lib/smartPlaylistFields'
 import { usePlaylistsStore } from '@/stores/playlists'
 import type { Playlist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
@@ -18,6 +22,7 @@ import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
 const router = useRouter()
 const playlistsStore = usePlaylistsStore()
+const favoritesStore = useFavoritesStore()
 const isLoading = ref(true)
 const searchQuery = ref('')
 const tracksByPlaylist = ref<Record<string, TrackDTO[]>>({})
@@ -30,17 +35,33 @@ const deleteConfirmOpen = ref(false)
 const playlistToDelete = ref<Playlist | null>(null)
 
 const createDialogOpen = ref(false)
+const createSmartDialogOpen = ref(false)
 const importDialogOpen = ref(false)
 const importFilePath = ref('')
 const importPlaylistName = ref('')
 const isImporting = ref(false)
 const newPlaylistDropdown = ref<InstanceType<typeof FilterDropdown> | null>(null)
 
+const smartEditDialogOpen = ref(false)
+const smartEditPlaylist = ref<Playlist | null>(null)
+const sessionId = Math.random().toString(36).substring(2, 15)
+
+const smartEditConfig = computed<SmartPlaylistConfig>(() => {
+  if (!smartEditPlaylist.value?.rules) return emptyConfig()
+  try {
+    return JSON.parse(smartEditPlaylist.value.rules)
+  } catch {
+    return emptyConfig()
+  }
+})
+
+const favoritesArtworkKey = ref<string | null>(null)
+
 const favoritesPlaylist = computed<Playlist>(() => ({
   id: 'favorites',
   name: t('sidebar.favorites'),
   description: '',
-  artwork_key: null,
+  artwork_key: favoritesArtworkKey.value,
   pinned_at: null,
 } as Playlist))
 
@@ -92,6 +113,31 @@ async function handleCreate(name: string) {
   }
 }
 
+function openCreateSmartDialog() {
+  newPlaylistDropdown.value?.close()
+  createSmartDialogOpen.value = true
+}
+
+async function handleCreateSmart(payload: { name: string; description: string; config: SmartPlaylistConfig }) {
+  const p = await playlistsStore.createSmart(payload.name, payload.description, payload.config)
+  if (p) {
+    router.push(`/playlists/${p.id}`)
+    loadArtworkTracks()
+  }
+}
+
+function openSmartEditDialog(playlist: Playlist) {
+  smartEditPlaylist.value = playlist
+  smartEditDialogOpen.value = true
+}
+
+async function handleSmartEdit(payload: { name: string; description: string; config: SmartPlaylistConfig }) {
+  const p = smartEditPlaylist.value
+  if (!p) return
+  if (payload.name !== p.name) await playlistsStore.rename(p.id, payload.name)
+  await playlistsStore.updateSmartRules(p.id, payload.config, sessionId)
+}
+
 async function handleImportClick() {
   newPlaylistDropdown.value?.close()
   try {
@@ -139,7 +185,11 @@ async function loadArtworkTracks() {
       .filter((p) => !p.artwork_key)
       .map(async (p) => {
         try {
-          const tracks = await PlaylistService.GetPlaylistTracks(p.id)
+          // Only the first 4 are ever rendered (mosaic thumbnail,
+          // PlaylistArtwork.vue), so fetch just those — fetching a smart
+          // playlist's full (possibly uncapped) match here would run/
+          // serialize its entire result just to throw most of it away.
+          const tracks = await PlaylistService.GetPlaylistTracksPreview(p.id, 4)
           map[p.id] = tracks.filter((t): t is TrackDTO => t !== null)
         } catch {
           map[p.id] = []
@@ -150,11 +200,59 @@ async function loadArtworkTracks() {
   tracksByPlaylist.value = map
 }
 
+const offArtworkChanged = Events.On('playlist:artwork-changed', (ev: Events.WailsEvent) => {
+  const payload = ev.data as { playlist_id: string; artwork_key: string | null }
+  if (payload.playlist_id === 'favorites') favoritesArtworkKey.value = payload.artwork_key
+})
+
+// Keep the track-mosaic fallback (playlists with no custom cover) fresh too —
+// patch just the affected entry instead of re-running loadArtworkTracks for
+// every playlist.
+const offTracksChanged = Events.On('playlist:tracks-changed', async (ev: Events.WailsEvent) => {
+  const payload = ev.data as { playlist_id: string; sender_id: string }
+  if (payload.playlist_id === 'favorites') return // favorites mosaic handled by the version watcher below
+  const p = playlistsStore.playlists.find((x) => x.id === payload.playlist_id)
+  if (p && p.artwork_key) return // has a custom cover, mosaic irrelevant
+  try {
+    const tracks = await PlaylistService.GetPlaylistTracksPreview(payload.playlist_id, 4)
+    tracksByPlaylist.value = {
+      ...tracksByPlaylist.value,
+      [payload.playlist_id]: tracks.filter((t): t is TrackDTO => t !== null),
+    }
+  } catch (e) {
+    console.error('Failed to refresh playlist mosaic tracks', e)
+  }
+})
+
+watch(() => favoritesStore.version, async () => {
+  try {
+    const favTracks = await LibraryService.GetFavoriteTracks()
+    tracksByPlaylist.value = {
+      ...tracksByPlaylist.value,
+      favorites: favTracks.filter((t): t is TrackDTO => t !== null),
+    }
+  } catch (e) {
+    console.error('Failed to refresh favorites mosaic tracks', e)
+  }
+})
+
+onUnmounted(() => {
+  offArtworkChanged()
+  offTracksChanged()
+})
+
 onMounted(async () => {
   isLoading.value = true
   await playlistsStore.loadAll()
   isLoading.value = false
   loadArtworkTracks()
+
+  try {
+    const favorites = await PlaylistService.GetPlaylistByID('favorites')
+    favoritesArtworkKey.value = favorites?.artwork_key ?? null
+  } catch (e) {
+    console.error('Failed to load favorites artwork', e)
+  }
 })
 </script>
 
@@ -177,6 +275,13 @@ onMounted(async () => {
             >
               <ListPlus class="w-4 h-4 text-foreground/70" />
               <span class="text-sm text-foreground opacity-90">{{ t('sidebar.new_playlist') }}</span>
+            </div>
+            <div
+              class="flex items-center gap-2.5 px-1.5 py-1.5 rounded-lg hover:bg-foreground/[0.06] cursor-pointer transition-colors"
+              @click="openCreateSmartDialog"
+            >
+              <Sparkles class="w-4 h-4 text-foreground/70" />
+              <span class="text-sm text-foreground opacity-90">{{ t('playlists.smart.new_smart_playlist') }}</span>
             </div>
             <div
               class="flex items-center gap-2.5 px-1.5 py-1.5 rounded-lg hover:bg-foreground/[0.06] cursor-pointer transition-colors"
@@ -203,7 +308,7 @@ onMounted(async () => {
       </template>
 
       <PlaylistGrid v-else :playlists="processedPlaylists" :tracks-by-playlist="tracksByPlaylist" :gap="45"
-        @rename="openRenameDialog" @delete="openDeleteConfirm" />
+        @rename="openRenameDialog" @delete="openDeleteConfirm" @edit-smart-rules="openSmartEditDialog" />
     </div>
   </div>
 
@@ -211,6 +316,16 @@ onMounted(async () => {
     :title="t('sidebar.rename_playlist_title')" @confirm="handleRename" />
 
   <CreatePlaylistDialog v-model:open="createDialogOpen" @confirm="handleCreate" />
+  <SmartPlaylistDialog v-model:open="createSmartDialogOpen" @confirm="handleCreateSmart" />
+  <SmartPlaylistDialog
+    v-model:open="smartEditDialogOpen"
+    :initial-name="smartEditPlaylist?.name ?? ''"
+    :initial-description="smartEditPlaylist?.description ?? ''"
+    :initial-config="smartEditConfig"
+    :title="t('playlists.smart.edit_smart_playlist')"
+    :confirm-label="t('common.save')"
+    @confirm="handleSmartEdit"
+  />
   <CreatePlaylistDialog
     v-model:open="importDialogOpen"
     :initial-name="importPlaylistName"

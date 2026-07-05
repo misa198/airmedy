@@ -16,7 +16,10 @@
     "on": "Bật",
     "off": "Tắt",
     "hr": "giờ",
-    "min": "phút"
+    "min": "phút",
+    "delete": "Xóa",
+    "yes": "Có",
+    "no": "Không"
   },
   "app": {
     "update_available": "Có bản cập nhật mới",
@@ -270,7 +273,8 @@
     "delete_playlist_message": "Bạn có chắc chắn muốn xóa danh sách phát này không? Hành động này không thể hoàn tác.",
     "import_playlist": "Nhập danh sách phát",
     "import_playlist_title": "Nhập danh sách phát",
-    "import": "Nhập"
+    "import": "Nhập",
+    "all_playlists": "Tất cả danh sách phát"
   },
   "player": {
     "not_playing": "Không phát",
@@ -373,7 +377,9 @@
     "list_view": "Danh sách",
     "sort_by": "Sắp xếp theo",
     "no_sort": "Không",
-    "context_menu": ""
+    "context_menu": "",
+    "smart_playlist": "Danh sách phát thông minh",
+    "no_playlists": "Không tìm thấy danh sách phát"
   },
   "context_menu": {
     "play": "Phát",
@@ -395,7 +401,10 @@
     "find_lyrics": "Tìm lời bài hát",
     "remove_from_queue": "Xóa khỏi hàng đợi",
     "export_playlist": "Xuất danh sách phát",
-    "start_mood_radio": "Bắt đầu Radio Tâm trạng"
+    "start_mood_radio": "Bắt đầu Radio Tâm trạng",
+    "pin_to_sidebar": "Ghim vào thanh bên",
+    "unpin_from_sidebar": "Bỏ ghim khỏi thanh bên",
+    "edit_rules": "Chỉnh sửa quy tắc"
   },
   "find_lyrics": {
     "title": "Tìm lời bài hát",
@@ -456,5 +465,66 @@
   "playlist": {
     "edit_cover": "Chỉnh sửa ảnh bìa",
     "remove_cover": "Xóa ảnh bìa tùy chỉnh"
+  },
+  "playlists": {
+    "smart": {
+      "new_smart_playlist": "Danh sách phát thông minh mới",
+      "edit_smart_playlist": "Chỉnh sửa danh sách phát thông minh",
+      "tab_filters": "Bộ lọc",
+      "tab_mood": "Tâm trạng",
+      "mood_requires_analysis": "Bật phân tích thư viện trong Cài đặt để lọc theo tâm trạng.",
+      "mood_energy_axis": "Năng lượng",
+      "mood_danceability_axis": "Độ sôi động",
+      "mood_legend_few": "Ít",
+      "mood_legend_many": "Nhiều",
+      "mood_coverage_caption": "{analyzed} / {total} bài đã phân tích",
+      "mood_invalid_box": "Kéo chọn một vùng không rỗng để chọn khoảng tâm trạng.",
+      "mood_quadrant_party": "Tiệc tùng",
+      "mood_quadrant_intense": "Mạnh mẽ",
+      "mood_quadrant_groove": "Groove",
+      "mood_quadrant_chill": "Thư giãn",
+      "match_label": "Khớp",
+      "match_groups_label": "Kết hợp các nhóm",
+      "match_all": "TẤT CẢ",
+      "match_any": "BẤT KỲ",
+      "add_rule": "Thêm quy tắc",
+      "add_group": "Thêm nhóm",
+      "remove_group": "Xóa nhóm",
+      "no_rules": "Chưa có quy tắc nào. Thêm một quy tắc để bắt đầu lọc bài hát.",
+      "no_rules_error": "Thêm ít nhất một quy tắc để tạo danh sách phát thông minh.",
+      "rule_count": "{count}/{max} quy tắc",
+      "rule_invalid": "Nhập giá trị hợp lệ cho quy tắc này.",
+      "range_and": "và",
+      "field_genre": "Thể loại",
+      "field_artist": "Nghệ sĩ",
+      "field_year": "Năm",
+      "field_bpm": "BPM",
+      "field_play_count": "Số lần phát",
+      "field_duration": "Thời lượng",
+      "field_bitrate": "Bitrate",
+      "field_is_favorite": "Yêu thích",
+      "field_added_at": "Ngày thêm",
+      "field_energy": "Năng lượng",
+      "field_danceability": "Độ sôi động",
+      "op_is": "là",
+      "op_is_not": "không phải là",
+      "op_contains": "chứa",
+      "op_gt": "lớn hơn",
+      "op_lt": "nhỏ hơn",
+      "op_gte": "ít nhất",
+      "op_lte": "nhiều nhất",
+      "op_between": "trong khoảng",
+      "op_in_last_days": "trong (ngày) gần đây",
+      "limit_label": "Giới hạn ở",
+      "limit_selected_by": "mục, chọn theo",
+      "limit_by_random": "Ngẫu nhiên",
+      "limit_by_album": "Album",
+      "limit_by_artist": "Nghệ sĩ",
+      "limit_by_genre": "Thể loại",
+      "limit_by_title": "Tên bài hát",
+      "limit_by_most_played": "Phát nhiều nhất",
+      "live_updating_label": "Cập nhật trực tiếp",
+      "live_updating_hint": "Tự động cập nhật các bài hát khớp. Tắt để giữ nguyên kết quả hiện tại."
+    }
   }
 }

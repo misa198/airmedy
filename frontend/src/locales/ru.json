@@ -16,7 +16,10 @@
     "on": "Вкл",
     "off": "Выкл",
     "hr": "ч",
-    "min": "мин"
+    "min": "мин",
+    "delete": "Удалить",
+    "yes": "Да",
+    "no": "Нет"
   },
   "app": {
     "update_available": "Доступно обновление",
@@ -270,7 +273,8 @@
     "delete_playlist_message": "Вы уверены, что хотите удалить этот плейлист? Это действие нельзя отменить.",
     "import_playlist": "Импортировать плейлист",
     "import_playlist_title": "Импортировать плейлист",
-    "import": "Импортировать"
+    "import": "Импортировать",
+    "all_playlists": "Все плейлисты"
   },
   "player": {
     "not_playing": "Ничего не воспроизводится",
@@ -373,7 +377,9 @@
     "list_view": "Список",
     "sort_by": "Сортировать по",
     "no_sort": "Нет",
-    "context_menu": ""
+    "context_menu": "",
+    "smart_playlist": "Умный плейлист",
+    "no_playlists": "Плейлисты не найдены"
   },
   "context_menu": {
     "play": "Воспроизвести",
@@ -395,7 +401,10 @@
     "find_lyrics": "Найти текст",
     "remove_from_queue": "Убрать из очереди",
     "export_playlist": "Экспортировать плейлист",
-    "start_mood_radio": "Запустить Mood Radio"
+    "start_mood_radio": "Запустить Mood Radio",
+    "pin_to_sidebar": "Закрепить в боковой панели",
+    "unpin_from_sidebar": "Открепить от боковой панели",
+    "edit_rules": "Изменить правила"
   },
   "find_lyrics": {
     "title": "Найти текст",
@@ -456,5 +465,66 @@
   "playlist": {
     "edit_cover": "Изменить обложку",
     "remove_cover": "Удалить свою обложку"
+  },
+  "playlists": {
+    "smart": {
+      "new_smart_playlist": "Новый умный плейлист",
+      "edit_smart_playlist": "Изменить умный плейлист",
+      "tab_filters": "Фильтры",
+      "tab_mood": "Настроение",
+      "mood_requires_analysis": "Включите анализ библиотеки в Настройках, чтобы фильтровать по настроению.",
+      "mood_energy_axis": "Энергия",
+      "mood_danceability_axis": "Танцевальность",
+      "mood_legend_few": "Мало",
+      "mood_legend_many": "Много",
+      "mood_coverage_caption": "{analyzed} / {total} треков проанализировано",
+      "mood_invalid_box": "Выделите непустую область, чтобы выбрать диапазон настроения.",
+      "mood_quadrant_party": "Вечеринка",
+      "mood_quadrant_intense": "Интенсив",
+      "mood_quadrant_groove": "Грув",
+      "mood_quadrant_chill": "Спокойствие",
+      "match_label": "Соответствие",
+      "match_groups_label": "Объединить группы",
+      "match_all": "ВСЕМ",
+      "match_any": "ЛЮБОМУ",
+      "add_rule": "Добавить правило",
+      "add_group": "Добавить группу",
+      "remove_group": "Удалить группу",
+      "no_rules": "Правил пока нет. Добавьте одно, чтобы начать фильтрацию треков.",
+      "no_rules_error": "Добавьте хотя бы одно правило, чтобы создать умный плейлист.",
+      "rule_count": "{count}/{max} правил",
+      "rule_invalid": "Введите допустимое значение для этого правила.",
+      "range_and": "и",
+      "field_genre": "Жанр",
+      "field_artist": "Исполнитель",
+      "field_year": "Год",
+      "field_bpm": "BPM",
+      "field_play_count": "Прослушивания",
+      "field_duration": "Длительность",
+      "field_bitrate": "Битрейт",
+      "field_is_favorite": "Избранное",
+      "field_added_at": "Добавлено",
+      "field_energy": "Энергия",
+      "field_danceability": "Танцевальность",
+      "op_is": "равно",
+      "op_is_not": "не равно",
+      "op_contains": "содержит",
+      "op_gt": "больше чем",
+      "op_lt": "меньше чем",
+      "op_gte": "не менее",
+      "op_lte": "не более",
+      "op_between": "между",
+      "op_in_last_days": "за последние (дней)",
+      "limit_label": "Ограничить до",
+      "limit_selected_by": "элементов, выбранных по",
+      "limit_by_random": "Случайно",
+      "limit_by_album": "Альбом",
+      "limit_by_artist": "Исполнитель",
+      "limit_by_genre": "Жанр",
+      "limit_by_title": "Название",
+      "limit_by_most_played": "Самые прослушиваемые",
+      "live_updating_label": "Live-обновление",
+      "live_updating_hint": "Автоматически поддерживать актуальность подходящих треков. Отключите, чтобы зафиксировать текущие результаты."
+    }
   }
 }

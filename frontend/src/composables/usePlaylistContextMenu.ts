@@ -1,4 +1,4 @@
-import { Music, Pencil, Trash2, ListStart, ListEnd, ListPlus, Download, Pin, PinOff, Play, Shuffle } from '@lucide/vue'
+import { Music, Pencil, Trash2, ListStart, ListEnd, ListPlus, Download, Pin, PinOff, Play, Shuffle, Sparkles } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
 import { usePlayerStore } from '@/stores/player'
@@ -12,6 +12,7 @@ export interface PlaylistContextMenuOptions {
   includePlaylistMenu?: boolean
   onRename?: (playlist: Playlist) => void
   onDelete?: (playlist: Playlist) => void
+  onEditSmartRules?: (playlist: Playlist) => void
   includeExport?: boolean
 }
 
@@ -89,6 +90,15 @@ export function usePlaylistContextMenu() {
         label: t('sidebar.rename'),
         icon: Pencil,
         action: () => options.onRename!(playlist),
+      })
+    }
+
+    // Edit rules (smart playlists only)
+    if (options.onEditSmartRules && playlist.is_smart) {
+      items.push({
+        label: t('context_menu.edit_rules'),
+        icon: Sparkles,
+        action: () => options.onEditSmartRules!(playlist),
       })
     }
 

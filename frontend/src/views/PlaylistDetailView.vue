@@ -2,7 +2,7 @@
 import { ref, shallowRef, onMounted, computed, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Play, Shuffle, MoreVertical, Clock, Music, X, Search } from '@lucide/vue'
+import { Play, Shuffle, MoreVertical, Clock, Music, X, Search, Sparkles } from '@lucide/vue'
 import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { Playlist, TrackDTO, ThemeColors } from '../../bindings/airmedy/internal/domain/models'
@@ -17,7 +17,9 @@ import ContextMenu from '@/components/ContextMenu.vue'
 import DetailPageLayout from '@/components/DetailPageLayout.vue'
 import PlaylistArtwork from '@/components/PlaylistArtwork.vue'
 import CreatePlaylistDialog from '@/components/CreatePlaylistDialog.vue'
+import SmartPlaylistDialog from '@/components/SmartPlaylistDialog.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import { emptyConfig, type SmartPlaylistConfig } from '@/lib/smartPlaylistFields'
 import { Input } from '@airmedy/ui'
 import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
 import { usePlaylistsStore } from '@/stores/playlists'
@@ -53,13 +55,13 @@ const { buildMenuItems: buildPlaylistMenuItems } = usePlaylistContextMenu()
 
 const renameDialogOpen = ref(false)
 const renamingName = ref('')
+const smartEditDialogOpen = ref(false)
 const deleteConfirmOpen = ref(false)
 
 function openRenameDialog() {
-  if (playlist.value) {
-    renamingName.value = playlist.value.name
-    renameDialogOpen.value = true
-  }
+  if (!playlist.value) return
+  renamingName.value = playlist.value.name
+  renameDialogOpen.value = true
 }
 
 async function handleRename(name: string) {
@@ -67,6 +69,26 @@ async function handleRename(name: string) {
     await playlistsStore.rename(playlist.value.id, name)
     playlist.value.name = name
   }
+}
+
+const smartEditConfig = computed<SmartPlaylistConfig>(() => {
+  if (!playlist.value?.rules) return emptyConfig()
+  try {
+    return JSON.parse(playlist.value.rules)
+  } catch {
+    return emptyConfig()
+  }
+})
+
+async function handleSmartEdit(payload: { name: string; description: string; config: SmartPlaylistConfig }) {
+  if (!playlist.value) return
+  const id = playlist.value.id
+  if (payload.name !== playlist.value.name) {
+    await playlistsStore.rename(id, payload.name)
+    playlist.value.name = payload.name
+  }
+  await playlistsStore.updateSmartRules(id, payload.config, sessionId)
+  load(true)
 }
 
 async function handleDelete() {
@@ -83,6 +105,7 @@ function openContextMenu(e: MouseEvent) {
     includePlaylistMenu: false,
     includeExport: true,
     onRename: () => openRenameDialog(),
+    onEditSmartRules: () => smartEditDialogOpen.value = true,
     onDelete: () => deleteConfirmOpen.value = true,
   }))
 }
@@ -93,17 +116,18 @@ async function load(silent = false) {
 
   if (!silent) isLoading.value = true
 
-  // Handle favorites virtual playlist
+  // Favorites has a real playlist row (for artwork/theme) but its track list
+  // stays virtual, derived from Track.IsFavorite rather than playlist_tracks.
   if (id === 'favorites') {
-    playlist.value = {
-      id: 'favorites',
-      name: t('sidebar.favorites'),
-      description: '',
-      artwork_key: null,
-    } as Playlist
-
     try {
-      const result = await LibraryService.GetFavoriteTracks()
+      const [p, result] = await Promise.all([
+        PlaylistService.GetPlaylistByID(id),
+        LibraryService.GetFavoriteTracks(),
+      ])
+      playlist.value = p ?? ({ id: 'favorites', name: t('sidebar.favorites'), description: '', artwork_key: null } as Playlist)
+      if (playlist.value.name === 'Favorites') {
+        playlist.value = { ...playlist.value, name: t('sidebar.favorites') }
+      }
       tracks.value = result.filter((t): t is TrackDTO => t !== null)
       await loadTheme()
     } catch (e) {
@@ -133,10 +157,7 @@ async function loadTheme() {
   
   try {
     // 1. Try playlist custom theme
-    let colors: ThemeColors | null = null
-    if (playlist.value.id !== 'favorites') {
-      colors = await PlaylistService.GetPlaylistColors(playlist.value.id)
-    }
+    let colors: ThemeColors | null = await PlaylistService.GetPlaylistColors(playlist.value.id)
     
     // 2. Fallback to first track's album theme if no custom artwork
     if (!colors && tracks.value.length > 0) {
@@ -195,7 +216,7 @@ const totalDurationFormatted = computed(() => {
 })
 
 async function handleSetArtwork() {
-  if (!playlist.value || playlist.value.id === 'favorites') return
+  if (!playlist.value) return
   try {
     const key = await PlaylistService.SelectAndSetPlaylistArtwork(playlist.value.id)
     if (key) {
@@ -208,7 +229,7 @@ async function handleSetArtwork() {
 
 async function handleRemoveArtwork(e: MouseEvent) {
   e.stopPropagation()
-  if (!playlist.value || playlist.value.id === 'favorites') return
+  if (!playlist.value) return
   try {
     await PlaylistService.RemovePlaylistArtwork(playlist.value.id)
     load(true) // Silent reload
@@ -294,7 +315,7 @@ async function handleReorder(newTracks: TrackDTO[]) {
 
         <PlaylistArtwork :playlist="playlist" :tracks="tracks">
           <!-- Hover Overlay -->
-          <div v-if="playlist.id !== 'favorites'" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+          <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
             <span class="text-white text-xs font-medium px-2 py-1 bg-black/20 rounded-full backdrop-blur-sm">{{ $t('playlist.edit_cover') }}</span>
             <button
               v-if="playlist.artwork_key"
@@ -323,9 +344,16 @@ async function handleReorder(newTracks: TrackDTO[]) {
     </template>
 
     <template #actions>
-      <DetailsButton :icon="Play" :label="$t('common.play')" @click="playPlaylist" />
+      <DetailsButton :icon="Play" :label="$t('common.play')" :filled-icon="true" @click="playPlaylist" />
       <div class="flex gap-2">
         <DetailsButton :icon="Shuffle" variant="outline" @click="shufflePlaylist" />
+        <DetailsButton
+          v-if="playlist.is_smart"
+          :icon="Sparkles"
+          variant="outline"
+          :title="t('context_menu.edit_rules')"
+          @click="smartEditDialogOpen = true"
+        />
         <DetailsButton :icon="MoreVertical" variant="outline" @click="openContextMenu" />
       </div>
     </template>
@@ -335,7 +363,7 @@ async function handleReorder(newTracks: TrackDTO[]) {
         :tracks="filteredTracks"
         :show-artwork="true"
         :simple-mode="true"
-        :allow-dnd="playlist.id !== 'favorites'"
+        :allow-dnd="playlist.id !== 'favorites' && !playlist.is_smart"
         :context-menu-options="{ playlistId: playlist.id }"
         @play-track="(_, index, queue) => playerStore.playTracks(queue, index)"
         @reorder="handleReorder"
@@ -358,6 +386,17 @@ async function handleReorder(newTracks: TrackDTO[]) {
 
   <CreatePlaylistDialog v-model:open="renameDialogOpen" :initial-name="renamingName" :title="t('sidebar.rename_playlist_title')"
     @confirm="handleRename" />
+
+  <SmartPlaylistDialog
+    v-if="playlist"
+    v-model:open="smartEditDialogOpen"
+    :initial-name="playlist.name"
+    :initial-description="playlist.description"
+    :initial-config="smartEditConfig"
+    :title="t('playlists.smart.edit_smart_playlist')"
+    :confirm-label="t('common.save')"
+    @confirm="handleSmartEdit"
+  />
 
   <ConfirmDialog
     v-model:open="deleteConfirmOpen"
