@@ -31,7 +31,7 @@ function submit() {
 </script>
 
 <template>
-  <Modal :open="open" :title="title ?? t('sidebar.new_playlist')" @close="emit('update:open', false)">
+  <Modal :open="open" :title="title ?? t('sidebar.new_playlist')" width-class="w-[30rem]" @close="emit('update:open', false)">
     <Input
       v-model="name"
       :placeholder="t('sidebar.playlist_name')"
@@ -39,14 +39,17 @@ function submit() {
 
       autofocus
       @keydown.enter="submit" />
-    <div class="flex justify-end gap-2 mt-4">
-      <button
-        class="px-3 py-1.5 text-sm text-foreground opacity-70 hover:text-foreground rounded-lg hover:bg-foreground/[0.05] transition-colors"
-        @click="emit('update:open', false)">{{ t('common.cancel') }}</button>
-      <button
-        class="px-3 py-1.5 text-sm bg-primary text-white rounded-lg transition-colors font-medium disabled:opacity-40"
-        :disabled="!name.trim()"
-        @click="submit">{{ confirmLabel ?? (title === t('sidebar.rename_playlist_title') ? t('sidebar.rename') : t('common.create')) }}</button>
-    </div>
+
+    <template #footer>
+      <div class="flex justify-end gap-2">
+        <button
+          class="px-3 py-1.5 text-sm text-foreground opacity-70 hover:text-foreground rounded-lg hover:bg-foreground/[0.05] transition-colors"
+          @click="emit('update:open', false)">{{ t('common.cancel') }}</button>
+        <button
+          class="px-3 py-1.5 text-sm bg-primary text-white rounded-lg transition-colors font-medium disabled:opacity-40"
+          :disabled="!name.trim()"
+          @click="submit">{{ confirmLabel ?? (title === t('sidebar.rename_playlist_title') ? t('sidebar.rename') : t('common.create')) }}</button>
+      </div>
+    </template>
   </Modal>
 </template>

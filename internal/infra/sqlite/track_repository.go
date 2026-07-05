@@ -501,6 +501,39 @@ func (r *trackRepository) GetRecentlyAdded(ctx context.Context, limit int) ([]*d
 	return r.scanTrackRows(rows), nil
 }
 
+// GetByRules evaluates a smart playlist. whereSQL/args are produced by
+// playlist.BuildWhereClause and orderBySQL by playlist.OrderBySQL, both of
+// which allowlist every field/operator/order value before they reach this
+// query — whereSQL and orderBySQL are trusted, not raw user input.
+func (r *trackRepository) GetByRules(ctx context.Context, whereSQL string, args []any, limit int, orderBySQL string) ([]*domain.TrackDTO, error) {
+	if orderBySQL == "" {
+		orderBySQL = "t.sort_title"
+	}
+	query := fmt.Sprintf(`
+		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year,
+		       GROUP_CONCAT(art.name, '; ') AS artist_names,
+		       GROUP_CONCAT(art.id, '; ') AS artist_ids
+		FROM tracks t
+		LEFT JOIN albums a ON t.album_id = a.id
+		LEFT JOIN track_artists ta ON t.id = ta.track_id
+		LEFT JOIN artists art ON ta.artist_id = art.id
+		WHERE %s
+		GROUP BY t.id
+		ORDER BY %s
+	`, trackSelectFields, whereSQL, orderBySQL)
+	queryArgs := args
+	if limit > 0 {
+		query += " LIMIT ?"
+		queryArgs = append(append([]any{}, args...), limit)
+	}
+	var rows []trackRow
+	err := r.db.Ext(ctx).SelectContext(ctx, &rows, query, queryArgs...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tracks by rules: %w", err)
+	}
+	return r.scanTrackRows(rows), nil
+}
+
 type trackDB struct {
 	domain.Track
 	AlbumID sql.NullString `db:"album_id"`

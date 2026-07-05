@@ -32,18 +32,19 @@ function handleConfirm() {
 
 <template>
   <Modal :open="open" :title="title" @close="handleCancel">
-    <div class="space-y-4">
-      <p class="text-sm text-foreground/70 leading-relaxed">
-        {{ message }}
-      </p>
-      <div class="flex gap-2 justify-end pt-2">
-        <button 
+    <p class="text-sm text-foreground/70 leading-relaxed">
+      {{ message }}
+    </p>
+
+    <template #footer>
+      <div class="flex gap-2 justify-end">
+        <button
           @click="handleCancel"
           class="px-3 py-1.5 text-sm font-medium rounded-lg hover:bg-foreground/5 transition-colors"
         >
           {{ cancelLabel ?? t('common.cancel') }}
         </button>
-        <button 
+        <button
           @click="handleConfirm"
           :class="[
             'px-3 py-1.5 text-sm font-medium rounded-lg transition-colors',
@@ -53,6 +54,6 @@ function handleConfirm() {
           {{ confirmLabel ?? t('common.confirm') }}
         </button>
       </div>
-    </div>
+    </template>
   </Modal>
 </template>

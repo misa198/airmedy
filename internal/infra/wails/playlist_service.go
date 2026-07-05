@@ -71,6 +71,30 @@ func (s *PlaylistService) GetPlaylistTracks(playlistID string) ([]*domain.TrackD
 	return s.service.GetTracks(context.Background(), playlistID)
 }
 
+func (s *PlaylistService) CreateSmartPlaylist(name, description string, config domain.SmartPlaylistConfig) (*domain.Playlist, error) {
+	return s.service.CreateSmart(context.Background(), name, description, config)
+}
+
+// PlaylistRulesChangedEvent mirrors PlaylistTracksChangedEvent's senderID
+// echo-guard pattern so the frontend can ignore its own rule edits.
+type PlaylistRulesChangedEvent struct {
+	PlaylistID string `json:"playlist_id"`
+	SenderID   string `json:"sender_id"`
+}
+
+func (s *PlaylistService) UpdateSmartPlaylistRules(id string, config domain.SmartPlaylistConfig, senderID string) error {
+	err := s.service.UpdateSmartRules(context.Background(), id, config)
+	if err == nil {
+		if app := application.Get(); app != nil && app.Event != nil {
+			app.Event.Emit("playlist:rules-changed", &PlaylistRulesChangedEvent{
+				PlaylistID: id,
+				SenderID:   senderID,
+			})
+		}
+	}
+	return err
+}
+
 func (s *PlaylistService) GetPlaylistsForTrack(trackID string) ([]string, error) {
 	return s.service.GetPlaylistsForTrack(context.Background(), trackID)
 }

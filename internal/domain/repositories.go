@@ -25,6 +25,12 @@ type TrackRepository interface {
 	GetLeastListened(ctx context.Context, limit int) ([]*TrackDTO, error)
 	GetRecentlyPlayed(ctx context.Context, limit int) ([]*TrackDTO, error)
 	GetRecentlyAdded(ctx context.Context, limit int) ([]*TrackDTO, error)
+	// GetByRules evaluates a smart-playlist rule set. whereSQL/args come from
+	// playlist.BuildWhereClause and orderBySQL from playlist.OrderBySQL — both
+	// already allowlisted; this method trusts the caller and interpolates them
+	// directly into the query. limit <= 0 means unlimited (orderBySQL is still
+	// applied for deterministic ordering).
+	GetByRules(ctx context.Context, whereSQL string, args []any, limit int, orderBySQL string) ([]*TrackDTO, error)
 	Save(ctx context.Context, track *Track) error
 	Delete(ctx context.Context, id string) error
 	DeleteByPathPrefix(ctx context.Context, prefix string) error
@@ -96,10 +102,16 @@ type PlaylistRepository interface {
 	GetAll(ctx context.Context) ([]*Playlist, error)
 	Save(ctx context.Context, playlist *Playlist) error
 	Update(ctx context.Context, playlist *Playlist) error
+	UpdateRules(ctx context.Context, id string, rules *string) error
 	Delete(ctx context.Context, id string) error
 	AddTrack(ctx context.Context, playlistID, trackID string, position string) error
 	AddTracks(ctx context.Context, playlistID string, trackIDs []string) error
 	RemoveTrack(ctx context.Context, playlistID, trackID string) error
+	// ClearTracks removes every playlist_tracks row for playlistID. Used to
+	// wipe a smart playlist's frozen ("live updating" off) snapshot before
+	// re-materializing it, or before dropping it entirely when live updating
+	// is turned back on.
+	ClearTracks(ctx context.Context, playlistID string) error
 	UpdateTrackPosition(ctx context.Context, playlistID, trackID, position string) error
 	UpdateTracksPositions(ctx context.Context, playlistID string, updates map[string]string) error
 	GetTracks(ctx context.Context, playlistID string) ([]*TrackDTO, error)

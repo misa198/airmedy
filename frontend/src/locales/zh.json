@@ -16,7 +16,10 @@
     "on": "开启",
     "off": "关闭",
     "hr": "小时",
-    "min": "分钟"
+    "min": "分钟",
+    "delete": "删除",
+    "yes": "是",
+    "no": "否"
   },
   "app": {
     "update_available": "有可用更新",
@@ -270,7 +273,8 @@
     "delete_playlist_message": "您确定要删除此播放列表吗？此操作无法撤销。",
     "import_playlist": "导入播放列表",
     "import_playlist_title": "导入播放列表",
-    "import": "导入"
+    "import": "导入",
+    "all_playlists": "所有播放列表"
   },
   "player": {
     "not_playing": "未在播放",
@@ -373,7 +377,9 @@
     "list_view": "列表",
     "sort_by": "排序方式",
     "no_sort": "无",
-    "context_menu": ""
+    "context_menu": "",
+    "smart_playlist": "智能播放列表",
+    "no_playlists": "未找到播放列表"
   },
   "context_menu": {
     "play": "播放",
@@ -395,7 +401,10 @@
     "find_lyrics": "查找歌词",
     "remove_from_queue": "从队列中移除",
     "export_playlist": "导出播放列表",
-    "start_mood_radio": "开始心情电台"
+    "start_mood_radio": "开始心情电台",
+    "pin_to_sidebar": "固定到侧边栏",
+    "unpin_from_sidebar": "取消固定",
+    "edit_rules": "编辑规则"
   },
   "find_lyrics": {
     "title": "查找歌词",
@@ -456,5 +465,55 @@
   "playlist": {
     "edit_cover": "编辑封面",
     "remove_cover": "移除自定义封面"
+  },
+  "playlists": {
+    "smart": {
+      "new_smart_playlist": "新建智能播放列表",
+      "edit_smart_playlist": "编辑智能播放列表",
+      "tab_filters": "筛选条件",
+      "tab_mood": "心情",
+      "mood_coming_soon": "心情选择器即将推出",
+      "mood_requires_analysis": "在设置中启用音乐库分析以按心情筛选。",
+      "match_label": "匹配",
+      "match_groups_label": "组合分组",
+      "match_all": "全部",
+      "match_any": "任意",
+      "add_rule": "添加规则",
+      "add_group": "添加分组",
+      "remove_group": "删除分组",
+      "no_rules": "暂无规则。添加一条规则开始筛选曲目。",
+      "no_rules_error": "请至少添加一条规则以创建智能播放列表。",
+      "rule_count": "{count}/{max} 条规则",
+      "rule_invalid": "请为此规则输入有效值。",
+      "range_and": "到",
+      "field_genre": "流派",
+      "field_artist": "艺人",
+      "field_year": "年份",
+      "field_bpm": "BPM",
+      "field_play_count": "播放次数",
+      "field_duration": "时长",
+      "field_bitrate": "比特率",
+      "field_is_favorite": "收藏",
+      "field_added_at": "添加时间",
+      "op_is": "是",
+      "op_is_not": "不是",
+      "op_contains": "包含",
+      "op_gt": "大于",
+      "op_lt": "小于",
+      "op_gte": "至少",
+      "op_lte": "至多",
+      "op_between": "介于",
+      "op_in_last_days": "最近(天)内",
+      "limit_label": "限制为",
+      "limit_selected_by": "首，选取方式",
+      "limit_by_random": "随机",
+      "limit_by_album": "专辑",
+      "limit_by_artist": "艺人",
+      "limit_by_genre": "流派",
+      "limit_by_title": "标题",
+      "limit_by_most_played": "播放最多",
+      "live_updating_label": "实时更新",
+      "live_updating_hint": "自动保持匹配曲目为最新。关闭后将冻结当前匹配结果。"
+    }
   }
 }

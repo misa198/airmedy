@@ -16,7 +16,10 @@
     "on": "เปิด",
     "off": "ปิด",
     "hr": "ชม.",
-    "min": "นาที"
+    "min": "นาที",
+    "delete": "ลบ",
+    "yes": "ใช่",
+    "no": "ไม่ใช่"
   },
   "app": {
     "update_available": "มีการอัปเดต",
@@ -270,7 +273,8 @@
     "delete_playlist_message": "คุณแน่ใจหรือไม่ว่าต้องการลบเพลย์ลิสต์นี้? การดำเนินการนี้ไม่สามารถยกเลิกได้",
     "import_playlist": "นำเข้าเพลย์ลิสต์",
     "import_playlist_title": "นำเข้าเพลย์ลิสต์",
-    "import": "นำเข้า"
+    "import": "นำเข้า",
+    "all_playlists": "เพลย์ลิสต์ทั้งหมด"
   },
   "player": {
     "not_playing": "ไม่ได้เล่นอยู่",
@@ -373,7 +377,9 @@
     "list_view": "รายการ",
     "sort_by": "เรียงตาม",
     "no_sort": "ไม่มี",
-    "context_menu": ""
+    "context_menu": "",
+    "smart_playlist": "เพลย์ลิสต์อัจฉริยะ",
+    "no_playlists": "ไม่พบเพลย์ลิสต์"
   },
   "context_menu": {
     "play": "เล่น",
@@ -395,7 +401,10 @@
     "find_lyrics": "ค้นหาเนื้อเพลง",
     "remove_from_queue": "นำออกจากคิว",
     "export_playlist": "ส่งออกเพลย์ลิสต์",
-    "start_mood_radio": "เริ่มมู้ดเรดิโอ"
+    "start_mood_radio": "เริ่มมู้ดเรดิโอ",
+    "pin_to_sidebar": "ปักหมุดไปที่แถบด้านข้าง",
+    "unpin_from_sidebar": "เลิกปักหมุดจากแถบด้านข้าง",
+    "edit_rules": "แก้ไขกฎ"
   },
   "find_lyrics": {
     "title": "ค้นหาเนื้อเพลง",
@@ -456,5 +465,55 @@
   "playlist": {
     "edit_cover": "แก้ไขหน้าปก",
     "remove_cover": "ลบหน้าปกที่กำหนดเอง"
+  },
+  "playlists": {
+    "smart": {
+      "new_smart_playlist": "เพลย์ลิสต์อัจฉริยะใหม่",
+      "edit_smart_playlist": "แก้ไขเพลย์ลิสต์อัจฉริยะ",
+      "tab_filters": "ตัวกรอง",
+      "tab_mood": "อารมณ์เพลง",
+      "mood_coming_soon": "ตัวเลือกอารมณ์เพลงเร็วๆ นี้",
+      "mood_requires_analysis": "เปิดใช้งานการวิเคราะห์คลังเพลงในการตั้งค่าเพื่อกรองตามอารมณ์เพลง",
+      "match_label": "การจับคู่",
+      "match_groups_label": "รวมกลุ่ม",
+      "match_all": "ทั้งหมด",
+      "match_any": "อย่างใดอย่างหนึ่ง",
+      "add_rule": "เพิ่มกฎ",
+      "add_group": "เพิ่มกลุ่ม",
+      "remove_group": "ลบกลุ่ม",
+      "no_rules": "ยังไม่มีกฎ เพิ่มกฎเพื่อเริ่มกรองเพลง",
+      "no_rules_error": "เพิ่มอย่างน้อยหนึ่งกฎเพื่อสร้างเพลย์ลิสต์อัจฉริยะ",
+      "rule_count": "{count}/{max} กฎ",
+      "rule_invalid": "กรอกค่าที่ถูกต้องสำหรับกฎนี้",
+      "range_and": "และ",
+      "field_genre": "แนวเพลง",
+      "field_artist": "ศิลปิน",
+      "field_year": "ปี",
+      "field_bpm": "BPM",
+      "field_play_count": "จำนวนการเล่น",
+      "field_duration": "ระยะเวลา",
+      "field_bitrate": "บิตเรต",
+      "field_is_favorite": "รายการโปรด",
+      "field_added_at": "เพิ่มเมื่อ",
+      "op_is": "คือ",
+      "op_is_not": "ไม่ใช่",
+      "op_contains": "มีคำว่า",
+      "op_gt": "มากกว่า",
+      "op_lt": "น้อยกว่า",
+      "op_gte": "อย่างน้อย",
+      "op_lte": "อย่างมาก",
+      "op_between": "ระหว่าง",
+      "op_in_last_days": "ใน (วัน) ที่ผ่านมา",
+      "limit_label": "จำกัดที่",
+      "limit_selected_by": "รายการ เลือกโดย",
+      "limit_by_random": "สุ่ม",
+      "limit_by_album": "อัลบั้ม",
+      "limit_by_artist": "ศิลปิน",
+      "limit_by_genre": "แนวเพลง",
+      "limit_by_title": "ชื่อเพลง",
+      "limit_by_most_played": "เล่นมากที่สุด",
+      "live_updating_label": "อัปเดตแบบสด",
+      "live_updating_hint": "ให้เพลงที่ตรงกันอัปเดตโดยอัตโนมัติ ปิดเพื่อล็อกผลลัพธ์ปัจจุบัน"
+    }
   }
 }

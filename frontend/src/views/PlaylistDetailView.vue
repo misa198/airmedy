@@ -2,7 +2,7 @@
 import { ref, shallowRef, onMounted, computed, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Play, Shuffle, MoreVertical, Clock, Music, X, Search } from '@lucide/vue'
+import { Play, Shuffle, MoreVertical, Clock, Music, X, Search, Sparkles } from '@lucide/vue'
 import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { Playlist, TrackDTO, ThemeColors } from '../../bindings/airmedy/internal/domain/models'
@@ -17,7 +17,9 @@ import ContextMenu from '@/components/ContextMenu.vue'
 import DetailPageLayout from '@/components/DetailPageLayout.vue'
 import PlaylistArtwork from '@/components/PlaylistArtwork.vue'
 import CreatePlaylistDialog from '@/components/CreatePlaylistDialog.vue'
+import SmartPlaylistDialog from '@/components/SmartPlaylistDialog.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import { emptyConfig, type SmartPlaylistConfig } from '@/lib/smartPlaylistFields'
 import { Input } from '@airmedy/ui'
 import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
 import { usePlaylistsStore } from '@/stores/playlists'
@@ -53,13 +55,13 @@ const { buildMenuItems: buildPlaylistMenuItems } = usePlaylistContextMenu()
 
 const renameDialogOpen = ref(false)
 const renamingName = ref('')
+const smartEditDialogOpen = ref(false)
 const deleteConfirmOpen = ref(false)
 
 function openRenameDialog() {
-  if (playlist.value) {
-    renamingName.value = playlist.value.name
-    renameDialogOpen.value = true
-  }
+  if (!playlist.value) return
+  renamingName.value = playlist.value.name
+  renameDialogOpen.value = true
 }
 
 async function handleRename(name: string) {
@@ -67,6 +69,26 @@ async function handleRename(name: string) {
     await playlistsStore.rename(playlist.value.id, name)
     playlist.value.name = name
   }
+}
+
+const smartEditConfig = computed<SmartPlaylistConfig>(() => {
+  if (!playlist.value?.rules) return emptyConfig()
+  try {
+    return JSON.parse(playlist.value.rules)
+  } catch {
+    return emptyConfig()
+  }
+})
+
+async function handleSmartEdit(payload: { name: string; description: string; config: SmartPlaylistConfig }) {
+  if (!playlist.value) return
+  const id = playlist.value.id
+  if (payload.name !== playlist.value.name) {
+    await playlistsStore.rename(id, payload.name)
+    playlist.value.name = payload.name
+  }
+  await playlistsStore.updateSmartRules(id, payload.config, sessionId)
+  load(true)
 }
 
 async function handleDelete() {
@@ -83,6 +105,7 @@ function openContextMenu(e: MouseEvent) {
     includePlaylistMenu: false,
     includeExport: true,
     onRename: () => openRenameDialog(),
+    onEditSmartRules: () => smartEditDialogOpen.value = true,
     onDelete: () => deleteConfirmOpen.value = true,
   }))
 }
@@ -323,9 +346,16 @@ async function handleReorder(newTracks: TrackDTO[]) {
     </template>
 
     <template #actions>
-      <DetailsButton :icon="Play" :label="$t('common.play')" @click="playPlaylist" />
+      <DetailsButton :icon="Play" :label="$t('common.play')" :filled-icon="true" @click="playPlaylist" />
       <div class="flex gap-2">
         <DetailsButton :icon="Shuffle" variant="outline" @click="shufflePlaylist" />
+        <DetailsButton
+          v-if="playlist.is_smart"
+          :icon="Sparkles"
+          variant="outline"
+          :title="t('context_menu.edit_rules')"
+          @click="smartEditDialogOpen = true"
+        />
         <DetailsButton :icon="MoreVertical" variant="outline" @click="openContextMenu" />
       </div>
     </template>
@@ -335,7 +365,7 @@ async function handleReorder(newTracks: TrackDTO[]) {
         :tracks="filteredTracks"
         :show-artwork="true"
         :simple-mode="true"
-        :allow-dnd="playlist.id !== 'favorites'"
+        :allow-dnd="playlist.id !== 'favorites' && !playlist.is_smart"
         :context-menu-options="{ playlistId: playlist.id }"
         @play-track="(_, index, queue) => playerStore.playTracks(queue, index)"
         @reorder="handleReorder"
@@ -358,6 +388,17 @@ async function handleReorder(newTracks: TrackDTO[]) {
 
   <CreatePlaylistDialog v-model:open="renameDialogOpen" :initial-name="renamingName" :title="t('sidebar.rename_playlist_title')"
     @confirm="handleRename" />
+
+  <SmartPlaylistDialog
+    v-if="playlist"
+    v-model:open="smartEditDialogOpen"
+    :initial-name="playlist.name"
+    :initial-description="playlist.description"
+    :initial-config="smartEditConfig"
+    :title="t('playlists.smart.edit_smart_playlist')"
+    :confirm-label="t('common.save')"
+    @confirm="handleSmartEdit"
+  />
 
   <ConfirmDialog
     v-model:open="deleteConfirmOpen"

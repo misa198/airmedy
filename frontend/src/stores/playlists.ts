@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
-import type { Playlist } from '../../bindings/airmedy/internal/domain/models'
+import type { Playlist, SmartPlaylistConfig } from '../../bindings/airmedy/internal/domain/models'
 import { Events } from '@wailsio/runtime'
 
 const FAVORITES_PINNED_KEY = 'airmedy:favorites-pinned'
@@ -58,16 +58,46 @@ export const usePlaylistsStore = defineStore('playlists', () => {
     }
   })
 
+  const _offRulesChanged = Events.On('playlist:rules-changed', async (ev: Events.WailsEvent) => {
+    const payload = ev.data as { playlist_id: string; sender_id: string }
+    const p = playlists.value.find((x) => x.id === payload.playlist_id)
+    if (p) {
+      try {
+        const updated = await PlaylistService.GetPlaylistByID(payload.playlist_id)
+        if (updated) {
+          p.rules = updated.rules
+        }
+      } catch (e) {
+        console.error('Failed to update smart playlist rules in store', e)
+      }
+    }
+  })
+
   function dispose() {
     _offDeleted()
     _offRenamed()
     _offPinned()
+    _offRulesChanged()
   }
 
   async function create(name: string, description = '') {
     const p = await PlaylistService.CreatePlaylist(name, description)
     if (p) playlists.value.push(p)
     return p
+  }
+
+  async function createSmart(name: string, description: string, config: SmartPlaylistConfig) {
+    const p = await PlaylistService.CreateSmartPlaylist(name, description, config)
+    if (p) playlists.value.push(p)
+    return p
+  }
+
+  async function updateSmartRules(id: string, config: SmartPlaylistConfig, senderID: string) {
+    await PlaylistService.UpdateSmartPlaylistRules(id, config, senderID)
+    const p = playlists.value.find((x) => x.id === id)
+    if (p) {
+      p.rules = JSON.stringify(config)
+    }
   }
 
   async function rename(id: string, name: string) {
@@ -111,6 +141,8 @@ export const usePlaylistsStore = defineStore('playlists', () => {
     favoritesPinned,
     loadAll,
     create,
+    createSmart,
+    updateSmartRules,
     rename,
     deletePlaylist,
     isPinned,

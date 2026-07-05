@@ -376,8 +376,10 @@ function cancel() {
       </div>
 
       <p v-if="error" class="mt-3 text-xs text-red-400">{{ error }}</p>
+    </template>
 
-      <div class="flex justify-end gap-2 mt-5">
+    <template #footer>
+      <div class="flex justify-end gap-2">
         <button
           class="px-3 py-1.5 text-sm text-foreground opacity-70 hover:text-foreground rounded-lg hover:bg-foreground/[0.05] transition-colors"
           @click="cancel"

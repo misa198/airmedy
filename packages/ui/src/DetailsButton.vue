@@ -11,6 +11,11 @@ const props = defineProps({
         type: Object as PropType<FunctionalComponent<LucideProps, {}, any, {}>>,
         required: true
     },
+    filledIcon: {
+        type: Boolean,
+        default: false,
+        required: false
+    },
     variant: {
         type: String as PropType<'contained' | 'outline'>,
         default: 'contained',
@@ -27,7 +32,7 @@ const Icon = toRef(props, 'icon')
         'w-10': !label,
         'px-4 gap-x-2': label
     }">
-        <Icon class="w-5 h-5 fill-current" />
+        <Icon class="w-5 h-5" :class="filledIcon ? 'fill-current' : ''" />
         <span class="text-sm @lg:text-medium font-bold">{{ label }}</span>
     </button>
 </template>

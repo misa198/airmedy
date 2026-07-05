@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { Library, Plus, ListPlus, Upload } from '@lucide/vue'
+import { Library, Plus, ListPlus, Sparkles, Upload } from '@lucide/vue'
 import { IconButton } from '@airmedy/ui'
 import { useRouter } from 'vue-router'
 import PlaylistGrid from '../components/PlaylistGrid.vue'
 import ViewHeader from '../components/ViewHeader.vue'
 import CreatePlaylistDialog from '../components/CreatePlaylistDialog.vue'
+import SmartPlaylistDialog from '../components/SmartPlaylistDialog.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import FilterDropdown from '../components/FilterDropdown.vue'
+import { emptyConfig, type SmartPlaylistConfig } from '@/lib/smartPlaylistFields'
 import { usePlaylistsStore } from '@/stores/playlists'
 import type { Playlist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
@@ -30,11 +32,25 @@ const deleteConfirmOpen = ref(false)
 const playlistToDelete = ref<Playlist | null>(null)
 
 const createDialogOpen = ref(false)
+const createSmartDialogOpen = ref(false)
 const importDialogOpen = ref(false)
 const importFilePath = ref('')
 const importPlaylistName = ref('')
 const isImporting = ref(false)
 const newPlaylistDropdown = ref<InstanceType<typeof FilterDropdown> | null>(null)
+
+const smartEditDialogOpen = ref(false)
+const smartEditPlaylist = ref<Playlist | null>(null)
+const sessionId = Math.random().toString(36).substring(2, 15)
+
+const smartEditConfig = computed<SmartPlaylistConfig>(() => {
+  if (!smartEditPlaylist.value?.rules) return emptyConfig()
+  try {
+    return JSON.parse(smartEditPlaylist.value.rules)
+  } catch {
+    return emptyConfig()
+  }
+})
 
 const favoritesPlaylist = computed<Playlist>(() => ({
   id: 'favorites',
@@ -90,6 +106,31 @@ async function handleCreate(name: string) {
     router.push(`/playlists/${p.id}`)
     loadArtworkTracks()
   }
+}
+
+function openCreateSmartDialog() {
+  newPlaylistDropdown.value?.close()
+  createSmartDialogOpen.value = true
+}
+
+async function handleCreateSmart(payload: { name: string; description: string; config: SmartPlaylistConfig }) {
+  const p = await playlistsStore.createSmart(payload.name, payload.description, payload.config)
+  if (p) {
+    router.push(`/playlists/${p.id}`)
+    loadArtworkTracks()
+  }
+}
+
+function openSmartEditDialog(playlist: Playlist) {
+  smartEditPlaylist.value = playlist
+  smartEditDialogOpen.value = true
+}
+
+async function handleSmartEdit(payload: { name: string; description: string; config: SmartPlaylistConfig }) {
+  const p = smartEditPlaylist.value
+  if (!p) return
+  if (payload.name !== p.name) await playlistsStore.rename(p.id, payload.name)
+  await playlistsStore.updateSmartRules(p.id, payload.config, sessionId)
 }
 
 async function handleImportClick() {
@@ -180,6 +221,13 @@ onMounted(async () => {
             </div>
             <div
               class="flex items-center gap-2.5 px-1.5 py-1.5 rounded-lg hover:bg-foreground/[0.06] cursor-pointer transition-colors"
+              @click="openCreateSmartDialog"
+            >
+              <Sparkles class="w-4 h-4 text-foreground/70" />
+              <span class="text-sm text-foreground opacity-90">{{ t('playlists.smart.new_smart_playlist') }}</span>
+            </div>
+            <div
+              class="flex items-center gap-2.5 px-1.5 py-1.5 rounded-lg hover:bg-foreground/[0.06] cursor-pointer transition-colors"
               @click="handleImportClick"
             >
               <Upload class="w-4 h-4 text-foreground/70" />
@@ -203,7 +251,7 @@ onMounted(async () => {
       </template>
 
       <PlaylistGrid v-else :playlists="processedPlaylists" :tracks-by-playlist="tracksByPlaylist" :gap="45"
-        @rename="openRenameDialog" @delete="openDeleteConfirm" />
+        @rename="openRenameDialog" @delete="openDeleteConfirm" @edit-smart-rules="openSmartEditDialog" />
     </div>
   </div>
 
@@ -211,6 +259,16 @@ onMounted(async () => {
     :title="t('sidebar.rename_playlist_title')" @confirm="handleRename" />
 
   <CreatePlaylistDialog v-model:open="createDialogOpen" @confirm="handleCreate" />
+  <SmartPlaylistDialog v-model:open="createSmartDialogOpen" @confirm="handleCreateSmart" />
+  <SmartPlaylistDialog
+    v-model:open="smartEditDialogOpen"
+    :initial-name="smartEditPlaylist?.name ?? ''"
+    :initial-description="smartEditPlaylist?.description ?? ''"
+    :initial-config="smartEditConfig"
+    :title="t('playlists.smart.edit_smart_playlist')"
+    :confirm-label="t('common.save')"
+    @confirm="handleSmartEdit"
+  />
   <CreatePlaylistDialog
     v-model:open="importDialogOpen"
     :initial-name="importPlaylistName"

@@ -48,7 +48,9 @@ func (r *playlistRepository) Save(ctx context.Context, p *domain.Playlist) error
 	p.CreatedAt = now
 	p.UpdatedAt = now
 
-	_, err := r.db.Ext(ctx).NamedExecContext(ctx, "INSERT INTO playlists (id, name, description, artwork_key, created_at, updated_at) VALUES (:id, :name, :description, :artwork_key, :created_at, :updated_at)", p)
+	_, err := r.db.Ext(ctx).NamedExecContext(ctx, `
+		INSERT INTO playlists (id, name, description, artwork_key, is_smart, rules, created_at, updated_at)
+		VALUES (:id, :name, :description, :artwork_key, :is_smart, :rules, :created_at, :updated_at)`, p)
 	if err != nil {
 		return fmt.Errorf("failed to save playlist: %w", err)
 	}
@@ -63,6 +65,17 @@ func (r *playlistRepository) Update(ctx context.Context, p *domain.Playlist) err
 	)
 	if err != nil {
 		return fmt.Errorf("failed to update playlist: %w", err)
+	}
+	return nil
+}
+
+func (r *playlistRepository) UpdateRules(ctx context.Context, id string, rules *string) error {
+	_, err := r.db.Ext(ctx).ExecContext(ctx,
+		"UPDATE playlists SET rules = ?, updated_at = ? WHERE id = ?",
+		rules, time.Now(), id,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update playlist rules: %w", err)
 	}
 	return nil
 }
@@ -147,6 +160,14 @@ func (r *playlistRepository) RemoveTrack(ctx context.Context, playlistID, trackI
 	_, err := r.db.Ext(ctx).ExecContext(ctx, "DELETE FROM playlist_tracks WHERE playlist_id = ? AND track_id = ?", playlistID, trackID)
 	if err != nil {
 		return fmt.Errorf("failed to remove track from playlist: %w", err)
+	}
+	return nil
+}
+
+func (r *playlistRepository) ClearTracks(ctx context.Context, playlistID string) error {
+	_, err := r.db.Ext(ctx).ExecContext(ctx, "DELETE FROM playlist_tracks WHERE playlist_id = ?", playlistID)
+	if err != nil {
+		return fmt.Errorf("failed to clear playlist tracks: %w", err)
 	}
 	return nil
 }

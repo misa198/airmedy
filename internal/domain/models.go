@@ -160,8 +160,60 @@ type Playlist struct {
 	Description string     `json:"description" db:"description"`
 	ArtworkKey  *string    `json:"artwork_key" db:"artwork_key"`
 	PinnedAt    *time.Time `json:"pinned_at" db:"pinned_at"`
+	IsSmart     bool       `json:"is_smart" db:"is_smart"`
+	Rules       *string    `json:"rules" db:"rules"` // raw JSON SmartRuleGroup, nil for normal playlists
 	CreatedAt   time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt   time.Time  `json:"updated_at" db:"updated_at"`
+}
+
+// SmartRule is one filter condition in a smart playlist's rule set.
+type SmartRule struct {
+	Field string `json:"field"`
+	Op    string `json:"op"`
+	Value any    `json:"value"`
+}
+
+// SmartRuleGroup is one node of a smart playlist's rule tree. Its own Rules
+// are combined with each other, and with every child Group's overall result,
+// using Match ("all" = AND, "any" = OR) — the same rule used to combine the
+// two kinds of children with each other, so a group's clause is just
+// (rule1 <op> rule2 <op> ... <op> group1 <op> group2 ...). Nesting Groups is
+// what lets the frontend rule builder combine multiple AND/OR blocks (e.g.
+// "(genre is Rock AND year > 1990) OR (genre is Jazz AND bpm < 100)").
+type SmartRuleGroup struct {
+	Match  string           `json:"match"` // "all" | "any"
+	// No omitempty on Rules/Groups: the frontend rule builder always expects
+	// both keys present (even as `[]`) so it can safely index into them
+	// without a null check on every node.
+	Rules  []SmartRule      `json:"rules"`
+	Groups []SmartRuleGroup `json:"groups"`
+}
+
+// SmartPlaylistLimit caps a smart playlist's match to Count tracks, picked
+// according to By after the rule tree's WHERE clause narrows the candidates.
+// Ignored (unlimited) when Enabled is false.
+type SmartPlaylistLimit struct {
+	Enabled bool   `json:"enabled"`
+	Count   int    `json:"count"`
+	// By is one of "random", "album", "artist", "genre", "title",
+	// "most_played" — see playlist.OrderBySQL for the allowlisted SQL each
+	// maps to.
+	By string `json:"by"`
+}
+
+// SmartPlaylistConfig is the full shape persisted in Playlist.Rules: the rule
+// tree plus the optional track-count cap and the live-updating toggle.
+type SmartPlaylistConfig struct {
+	Root SmartRuleGroup `json:"root"`
+	// Limit optionally caps and orders the match (see SmartPlaylistLimit).
+	Limit SmartPlaylistLimit `json:"limit"`
+	// LiveUpdating: true (default) recomputes the match against Root/Limit on
+	// every read. false freezes the playlist's membership at whatever it was
+	// the last time the rules were saved — evaluateSmartTracks then serves
+	// from the ordinary playlist_tracks join table (materialized on save)
+	// instead of re-running the rule tree, mirroring iTunes' "Live updating"
+	// smart-playlist checkbox.
+	LiveUpdating bool `json:"live_updating"`
 }
 
 // Lyric represents a music lyric

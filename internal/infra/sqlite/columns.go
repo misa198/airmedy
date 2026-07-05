@@ -41,7 +41,8 @@ const albumSelectFields = `
 `
 
 const playlistSelectFields = `
-	id, name, COALESCE(description, '') AS description, artwork_key, pinned_at, created_at, updated_at
+	id, name, COALESCE(description, '') AS description, artwork_key, pinned_at,
+	is_smart, rules, created_at, updated_at
 `
 
 const lyricSelectFields = `

@@ -35,11 +35,18 @@ function onClickClose() {
       <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center transform-gpu will-change-[opacity]" @pointerdown.self="onPointerDown" @click.self="onClickClose">
         <div class="backdrop absolute inset-0 bg-background/60 backdrop-blur-sm transform-gpu" @pointerdown="onBackdropPointerDown" @click="onClickClose" />
         <div
-          class="modal-content relative z-10 rounded-3xl bg-glass-modal backdrop-blur-xl ring-1 ring-border-glass shadow-2xl p-5 transform-gpu isolate"
+          class="modal-content relative z-10 rounded-3xl bg-glass-modal backdrop-blur-3xl ring-1 ring-border-glass shadow-2xl transform-gpu isolate max-h-[85vh] overflow-hidden"
           :class="widthClass || 'w-72'"
           @keydown.esc="emit('close')">
-          <h3 v-if="title" class="text-base font-semibold text-foreground mb-4">{{ title }}</h3>
-          <slot />
+          <div class="flex flex-col max-h-[85vh]">
+            <div class="min-h-0 flex-1 overflow-y-auto p-5">
+              <h3 v-if="title" class="text-base font-semibold text-foreground mb-4">{{ title }}</h3>
+              <slot />
+            </div>
+            <div v-if="$slots.footer" class="shrink-0 px-5 pb-5 border-t border-foreground/10 pt-4">
+              <slot name="footer" />
+            </div>
+          </div>
         </div>
       </div>
     </Transition>

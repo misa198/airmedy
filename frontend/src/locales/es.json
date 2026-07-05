@@ -16,7 +16,10 @@
     "on": "Activado",
     "off": "Desactivado",
     "hr": "h",
-    "min": "min"
+    "min": "min",
+    "delete": "Eliminar",
+    "yes": "Sí",
+    "no": "No"
   },
   "app": {
     "update_available": "Actualización disponible",
@@ -270,7 +273,8 @@
     "delete_playlist_message": "¿Estás seguro de que quieres eliminar esta lista de reproducción? Esta acción no se puede deshacer.",
     "import_playlist": "Importar lista de reproducción",
     "import_playlist_title": "Importar lista de reproducción",
-    "import": "Importar"
+    "import": "Importar",
+    "all_playlists": "Todas las listas"
   },
   "player": {
     "not_playing": "No se está reproduciendo",
@@ -373,7 +377,9 @@
     "list_view": "Lista",
     "sort_by": "Ordenar por",
     "no_sort": "Ninguno",
-    "context_menu": ""
+    "context_menu": "",
+    "smart_playlist": "Lista inteligente",
+    "no_playlists": "No se encontraron listas de reproducción"
   },
   "context_menu": {
     "play": "Reproducir",
@@ -395,7 +401,10 @@
     "find_lyrics": "Buscar letra",
     "remove_from_queue": "Eliminar de la cola",
     "export_playlist": "Exportar lista de reproducción",
-    "start_mood_radio": "Iniciar Radio de Ánimo"
+    "start_mood_radio": "Iniciar Radio de Ánimo",
+    "pin_to_sidebar": "Anclar a la barra lateral",
+    "unpin_from_sidebar": "Desanclar de la barra lateral",
+    "edit_rules": "Editar reglas"
   },
   "find_lyrics": {
     "title": "Buscar letra",
@@ -456,5 +465,55 @@
   "playlist": {
     "edit_cover": "Editar portada",
     "remove_cover": "Quitar portada personalizada"
+  },
+  "playlists": {
+    "smart": {
+      "new_smart_playlist": "Nueva lista inteligente",
+      "edit_smart_playlist": "Editar lista inteligente",
+      "tab_filters": "Filtros",
+      "tab_mood": "Ambiente",
+      "mood_coming_soon": "Selector de ambiente próximamente",
+      "mood_requires_analysis": "Activa el análisis de la biblioteca en Ajustes para filtrar por ambiente.",
+      "match_label": "Coincidencia",
+      "match_groups_label": "Combinar grupos",
+      "match_all": "TODAS",
+      "match_any": "CUALQUIERA",
+      "add_rule": "Añadir regla",
+      "add_group": "Añadir grupo",
+      "remove_group": "Quitar grupo",
+      "no_rules": "Aún no hay reglas. Añade una para empezar a filtrar pistas.",
+      "no_rules_error": "Añade al menos una regla para crear una lista inteligente.",
+      "rule_count": "{count}/{max} reglas",
+      "rule_invalid": "Introduce un valor válido para esta regla.",
+      "range_and": "y",
+      "field_genre": "Género",
+      "field_artist": "Artista",
+      "field_year": "Año",
+      "field_bpm": "BPM",
+      "field_play_count": "Reproducciones",
+      "field_duration": "Duración",
+      "field_bitrate": "Tasa de bits",
+      "field_is_favorite": "Favorito",
+      "field_added_at": "Añadido",
+      "op_is": "es",
+      "op_is_not": "no es",
+      "op_contains": "contiene",
+      "op_gt": "mayor que",
+      "op_lt": "menor que",
+      "op_gte": "al menos",
+      "op_lte": "como máximo",
+      "op_between": "entre",
+      "op_in_last_days": "en los últimos (días)",
+      "limit_label": "Limitar a",
+      "limit_selected_by": "elementos, seleccionados por",
+      "limit_by_random": "Aleatorio",
+      "limit_by_album": "Álbum",
+      "limit_by_artist": "Artista",
+      "limit_by_genre": "Género",
+      "limit_by_title": "Título",
+      "limit_by_most_played": "Más reproducidas",
+      "live_updating_label": "Actualización en vivo",
+      "live_updating_hint": "Mantén las pistas coincidentes actualizadas automáticamente. Desactiva para congelar las coincidencias actuales."
+    }
   }
 }

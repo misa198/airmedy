@@ -16,7 +16,10 @@
     "on": "Ligado",
     "off": "Desligado",
     "hr": "h",
-    "min": "min"
+    "min": "min",
+    "delete": "Excluir",
+    "yes": "Sim",
+    "no": "Não"
   },
   "app": {
     "update_available": "Atualização disponível",
@@ -270,7 +273,8 @@
     "delete_playlist_message": "Tem certeza de que deseja excluir esta lista de reprodução? Esta ação não pode ser desfeita.",
     "import_playlist": "Importar lista de reprodução",
     "import_playlist_title": "Importar lista de reprodução",
-    "import": "Importar"
+    "import": "Importar",
+    "all_playlists": "Todas as playlists"
   },
   "player": {
     "not_playing": "Não está reproduzindo",
@@ -373,7 +377,9 @@
     "list_view": "Lista",
     "sort_by": "Ordenar por",
     "no_sort": "Nenhum",
-    "context_menu": ""
+    "context_menu": "",
+    "smart_playlist": "Playlist inteligente",
+    "no_playlists": "Nenhuma playlist encontrada"
   },
   "context_menu": {
     "play": "Reproduzir",
@@ -395,7 +401,10 @@
     "find_lyrics": "Procurar letras",
     "remove_from_queue": "Remover da fila",
     "export_playlist": "Exportar lista de reprodução",
-    "start_mood_radio": "Iniciar Rádio de Humor"
+    "start_mood_radio": "Iniciar Rádio de Humor",
+    "pin_to_sidebar": "Fixar na barra lateral",
+    "unpin_from_sidebar": "Desafixar da barra lateral",
+    "edit_rules": "Editar regras"
   },
   "find_lyrics": {
     "title": "Procurar letras",
@@ -456,5 +465,55 @@
   "playlist": {
     "edit_cover": "Editar capa",
     "remove_cover": "Remover capa personalizada"
+  },
+  "playlists": {
+    "smart": {
+      "new_smart_playlist": "Nova playlist inteligente",
+      "edit_smart_playlist": "Editar playlist inteligente",
+      "tab_filters": "Filtros",
+      "tab_mood": "Clima",
+      "mood_coming_soon": "Seletor de clima em breve",
+      "mood_requires_analysis": "Ative a análise da biblioteca nas Configurações para filtrar por clima.",
+      "match_label": "Correspondência",
+      "match_groups_label": "Combinar grupos",
+      "match_all": "TODAS",
+      "match_any": "QUALQUER",
+      "add_rule": "Adicionar regra",
+      "add_group": "Adicionar grupo",
+      "remove_group": "Remover grupo",
+      "no_rules": "Ainda não há regras. Adicione uma para começar a filtrar faixas.",
+      "no_rules_error": "Adicione pelo menos uma regra para criar uma playlist inteligente.",
+      "rule_count": "{count}/{max} regras",
+      "rule_invalid": "Insira um valor válido para esta regra.",
+      "range_and": "e",
+      "field_genre": "Gênero",
+      "field_artist": "Artista",
+      "field_year": "Ano",
+      "field_bpm": "BPM",
+      "field_play_count": "Reproduções",
+      "field_duration": "Duração",
+      "field_bitrate": "Taxa de bits",
+      "field_is_favorite": "Favorito",
+      "field_added_at": "Adicionado",
+      "op_is": "é",
+      "op_is_not": "não é",
+      "op_contains": "contém",
+      "op_gt": "maior que",
+      "op_lt": "menor que",
+      "op_gte": "pelo menos",
+      "op_lte": "no máximo",
+      "op_between": "entre",
+      "op_in_last_days": "nos últimos (dias)",
+      "limit_label": "Limitar a",
+      "limit_selected_by": "itens, selecionados por",
+      "limit_by_random": "Aleatório",
+      "limit_by_album": "Álbum",
+      "limit_by_artist": "Artista",
+      "limit_by_genre": "Gênero",
+      "limit_by_title": "Título",
+      "limit_by_most_played": "Mais reproduzidas",
+      "live_updating_label": "Atualização ao vivo",
+      "live_updating_hint": "Manter as faixas correspondentes atualizadas automaticamente. Desative para congelar os resultados atuais."
+    }
   }
 }

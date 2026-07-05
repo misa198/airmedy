@@ -32,7 +32,7 @@ function submit() {
 </script>
 
 <template>
-  <Modal :open="open" :title="title" @close="emit('update:open', false)">
+  <Modal :open="open" :title="title" width-class="w-[30rem]" @close="emit('update:open', false)">
     <Input
       v-model="name"
       :placeholder="t('settings.equalizer.profile_name_placeholder')"
@@ -40,14 +40,17 @@ function submit() {
 
       autofocus
       @keydown.enter="submit" />
-    <div class="flex justify-end gap-2 mt-4">
-      <button
-        class="px-3 py-1.5 text-sm text-foreground opacity-70 hover:text-foreground rounded-lg hover:bg-foreground/[0.05] transition-colors"
-        @click="emit('update:open', false)">{{ t('common.cancel') }}</button>
-      <button
-        class="px-3 py-1.5 text-sm text-foreground bg-foreground/[0.12] hover:bg-foreground/[0.18] rounded-lg transition-colors font-medium disabled:opacity-40"
-        :disabled="!name.trim()"
-        @click="submit">{{ confirmLabel }}</button>
-    </div>
+
+    <template #footer>
+      <div class="flex justify-end gap-2">
+        <button
+          class="px-3 py-1.5 text-sm text-foreground opacity-70 hover:text-foreground rounded-lg hover:bg-foreground/[0.05] transition-colors"
+          @click="emit('update:open', false)">{{ t('common.cancel') }}</button>
+        <button
+          class="px-3 py-1.5 text-sm text-foreground bg-foreground/[0.12] hover:bg-foreground/[0.18] rounded-lg transition-colors font-medium disabled:opacity-40"
+          :disabled="!name.trim()"
+          @click="submit">{{ confirmLabel }}</button>
+      </div>
+    </template>
   </Modal>
 </template>

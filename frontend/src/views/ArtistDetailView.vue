@@ -182,7 +182,7 @@ watch(() => route.params.id, (newId) => {
           </div>
 
           <div class="flex items-center justify-center md:justify-start gap-4 flex-wrap">
-            <DetailsButton :icon="Play" :label="t('common.play')"
+            <DetailsButton :icon="Play" :label="t('common.play')" :filled-icon="true"
               @click="playerStore.playTracks(sortedTracks, 0)" />
             <div class="flex gap-2">
               <DetailsButton :icon="Shuffle" variant="outline" @click="playerStore.shuffleTracks(tracks)" />

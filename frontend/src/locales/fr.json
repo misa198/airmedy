@@ -16,7 +16,10 @@
     "on": "Activé",
     "off": "Désactivé",
     "hr": "h",
-    "min": "min"
+    "min": "min",
+    "delete": "Supprimer",
+    "yes": "Oui",
+    "no": "Non"
   },
   "app": {
     "update_available": "Mise à jour disponible",
@@ -270,7 +273,8 @@
     "delete_playlist_message": "Êtes-vous sûr de vouloir supprimer cette liste de lecture ? Cette action est irréversible.",
     "import_playlist": "Importer une liste de lecture",
     "import_playlist_title": "Importer une liste de lecture",
-    "import": "Importer"
+    "import": "Importer",
+    "all_playlists": "Toutes les playlists"
   },
   "player": {
     "not_playing": "Aucune lecture",
@@ -373,7 +377,9 @@
     "list_view": "Liste",
     "sort_by": "Trier par",
     "no_sort": "Aucun",
-    "context_menu": ""
+    "context_menu": "",
+    "smart_playlist": "Playlist intelligente",
+    "no_playlists": "Aucune playlist trouvée"
   },
   "context_menu": {
     "play": "Lire",
@@ -395,7 +401,10 @@
     "find_lyrics": "Rechercher les paroles",
     "remove_from_queue": "Retirer de la file d'attente",
     "export_playlist": "Exporter la liste de lecture",
-    "start_mood_radio": "Démarrer la Radio d'Ambiance"
+    "start_mood_radio": "Démarrer la Radio d'Ambiance",
+    "pin_to_sidebar": "Épingler à la barre latérale",
+    "unpin_from_sidebar": "Détacher de la barre latérale",
+    "edit_rules": "Modifier les règles"
   },
   "find_lyrics": {
     "title": "Rechercher les paroles",
@@ -456,5 +465,55 @@
   "playlist": {
     "edit_cover": "Modifier la couverture",
     "remove_cover": "Supprimer la couverture personnalisée"
+  },
+  "playlists": {
+    "smart": {
+      "new_smart_playlist": "Nouvelle playlist intelligente",
+      "edit_smart_playlist": "Modifier la playlist intelligente",
+      "tab_filters": "Filtres",
+      "tab_mood": "Ambiance",
+      "mood_coming_soon": "Sélecteur d'ambiance bientôt disponible",
+      "mood_requires_analysis": "Activez l'analyse de la bibliothèque dans les Paramètres pour filtrer par ambiance.",
+      "match_label": "Correspondance",
+      "match_groups_label": "Combiner les groupes",
+      "match_all": "TOUS",
+      "match_any": "N'IMPORTE LEQUEL",
+      "add_rule": "Ajouter une règle",
+      "add_group": "Ajouter un groupe",
+      "remove_group": "Supprimer le groupe",
+      "no_rules": "Aucune règle pour le moment. Ajoutez-en une pour filtrer les titres.",
+      "no_rules_error": "Ajoutez au moins une règle pour créer une playlist intelligente.",
+      "rule_count": "{count}/{max} règles",
+      "rule_invalid": "Saisissez une valeur valide pour cette règle.",
+      "range_and": "et",
+      "field_genre": "Genre",
+      "field_artist": "Artiste",
+      "field_year": "Année",
+      "field_bpm": "BPM",
+      "field_play_count": "Lectures",
+      "field_duration": "Durée",
+      "field_bitrate": "Débit binaire",
+      "field_is_favorite": "Favori",
+      "field_added_at": "Ajouté",
+      "op_is": "est",
+      "op_is_not": "n'est pas",
+      "op_contains": "contient",
+      "op_gt": "supérieur à",
+      "op_lt": "inférieur à",
+      "op_gte": "au moins",
+      "op_lte": "au plus",
+      "op_between": "entre",
+      "op_in_last_days": "dans les (jours) derniers",
+      "limit_label": "Limiter à",
+      "limit_selected_by": "éléments, sélectionnés par",
+      "limit_by_random": "Aléatoire",
+      "limit_by_album": "Album",
+      "limit_by_artist": "Artiste",
+      "limit_by_genre": "Genre",
+      "limit_by_title": "Titre",
+      "limit_by_most_played": "Les plus écoutés",
+      "live_updating_label": "Mise à jour en direct",
+      "live_updating_hint": "Garder les titres correspondants à jour automatiquement. Désactivez pour figer les résultats actuels."
+    }
   }
 }

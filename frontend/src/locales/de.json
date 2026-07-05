@@ -16,7 +16,10 @@
     "on": "An",
     "off": "Aus",
     "hr": "Std.",
-    "min": "Min."
+    "min": "Min.",
+    "delete": "Löschen",
+    "yes": "Ja",
+    "no": "Nein"
   },
   "app": {
     "update_available": "Update verfügbar",
@@ -270,7 +273,8 @@
     "delete_playlist_message": "Sind Sie sicher, dass Sie diese Playlist löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
     "import_playlist": "Playlist importieren",
     "import_playlist_title": "Playlist importieren",
-    "import": "Importieren"
+    "import": "Importieren",
+    "all_playlists": "Alle Playlists"
   },
   "player": {
     "not_playing": "Keine Wiedergabe",
@@ -373,7 +377,9 @@
     "list_view": "Liste",
     "sort_by": "Sortieren nach",
     "no_sort": "Keine",
-    "context_menu": ""
+    "context_menu": "",
+    "smart_playlist": "Intelligente Playlist",
+    "no_playlists": "Keine Playlists gefunden"
   },
   "context_menu": {
     "play": "Abspielen",
@@ -395,7 +401,10 @@
     "find_lyrics": "Songtexte finden",
     "remove_from_queue": "Aus Warteschlange entfernen",
     "export_playlist": "Playlist exportieren",
-    "start_mood_radio": "Mood-Radio starten"
+    "start_mood_radio": "Mood-Radio starten",
+    "pin_to_sidebar": "An Seitenleiste anheften",
+    "unpin_from_sidebar": "Von Seitenleiste lösen",
+    "edit_rules": "Regeln bearbeiten"
   },
   "find_lyrics": {
     "title": "Songtexte finden",
@@ -456,5 +465,55 @@
   "playlist": {
     "edit_cover": "Cover bearbeiten",
     "remove_cover": "Eigenes Cover entfernen"
+  },
+  "playlists": {
+    "smart": {
+      "new_smart_playlist": "Neue intelligente Playlist",
+      "edit_smart_playlist": "Intelligente Playlist bearbeiten",
+      "tab_filters": "Filter",
+      "tab_mood": "Stimmung",
+      "mood_coming_soon": "Stimmungsauswahl folgt in Kürze",
+      "mood_requires_analysis": "Aktiviere die Bibliotheksanalyse in den Einstellungen, um nach Stimmung zu filtern.",
+      "match_label": "Übereinstimmung",
+      "match_groups_label": "Gruppen kombinieren",
+      "match_all": "ALLE",
+      "match_any": "BELIEBIGE",
+      "add_rule": "Regel hinzufügen",
+      "add_group": "Gruppe hinzufügen",
+      "remove_group": "Gruppe entfernen",
+      "no_rules": "Noch keine Regeln. Füge eine hinzu, um Titel zu filtern.",
+      "no_rules_error": "Füge mindestens eine Regel hinzu, um eine intelligente Playlist zu erstellen.",
+      "rule_count": "{count}/{max} Regeln",
+      "rule_invalid": "Gib einen gültigen Wert für diese Regel ein.",
+      "range_and": "und",
+      "field_genre": "Genre",
+      "field_artist": "Interpret",
+      "field_year": "Jahr",
+      "field_bpm": "BPM",
+      "field_play_count": "Wiedergaben",
+      "field_duration": "Dauer",
+      "field_bitrate": "Bitrate",
+      "field_is_favorite": "Favorit",
+      "field_added_at": "Hinzugefügt",
+      "op_is": "ist",
+      "op_is_not": "ist nicht",
+      "op_contains": "enthält",
+      "op_gt": "größer als",
+      "op_lt": "kleiner als",
+      "op_gte": "mindestens",
+      "op_lte": "höchstens",
+      "op_between": "zwischen",
+      "op_in_last_days": "in den letzten (Tagen)",
+      "limit_label": "Begrenzen auf",
+      "limit_selected_by": "Titel, ausgewählt nach",
+      "limit_by_random": "Zufällig",
+      "limit_by_album": "Album",
+      "limit_by_artist": "Interpret",
+      "limit_by_genre": "Genre",
+      "limit_by_title": "Titel",
+      "limit_by_most_played": "Meistgespielt",
+      "live_updating_label": "Live-Aktualisierung",
+      "live_updating_hint": "Passende Titel automatisch aktuell halten. Deaktivieren, um die aktuellen Treffer einzufrieren."
+    }
   }
 }

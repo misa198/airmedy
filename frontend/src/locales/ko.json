@@ -16,7 +16,10 @@
     "on": "켜짐",
     "off": "꺼짐",
     "hr": "시간",
-    "min": "분"
+    "min": "분",
+    "delete": "삭제",
+    "yes": "예",
+    "no": "아니요"
   },
   "app": {
     "update_available": "업데이트 가능",
@@ -270,7 +273,8 @@
     "delete_playlist_message": "이 재생 목록을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.",
     "import_playlist": "재생목록 가져오기",
     "import_playlist_title": "재생목록 가져오기",
-    "import": "가져오기"
+    "import": "가져오기",
+    "all_playlists": "모든 플레이리스트"
   },
   "player": {
     "not_playing": "재생 중이 아님",
@@ -373,7 +377,9 @@
     "list_view": "목록",
     "sort_by": "정렬 기준",
     "no_sort": "없음",
-    "context_menu": ""
+    "context_menu": "",
+    "smart_playlist": "스마트 플레이리스트",
+    "no_playlists": "플레이리스트를 찾을 수 없습니다"
   },
   "context_menu": {
     "play": "재생",
@@ -395,7 +401,10 @@
     "find_lyrics": "가사 찾기",
     "remove_from_queue": "대기열에서 제거",
     "export_playlist": "재생목록 내보내기",
-    "start_mood_radio": "무드 라디오 시작"
+    "start_mood_radio": "무드 라디오 시작",
+    "pin_to_sidebar": "사이드바에 고정",
+    "unpin_from_sidebar": "사이드바 고정 해제",
+    "edit_rules": "규칙 편집"
   },
   "find_lyrics": {
     "title": "가사 찾기",
@@ -456,5 +465,55 @@
   "playlist": {
     "edit_cover": "커버 편집",
     "remove_cover": "사용자 지정 커버 삭제"
+  },
+  "playlists": {
+    "smart": {
+      "new_smart_playlist": "새 스마트 플레이리스트",
+      "edit_smart_playlist": "스마트 플레이리스트 편집",
+      "tab_filters": "필터",
+      "tab_mood": "분위기",
+      "mood_coming_soon": "분위기 선택 기능은 곧 제공됩니다",
+      "mood_requires_analysis": "분위기로 필터링하려면 설정에서 라이브러리 분석을 활성화하세요.",
+      "match_label": "일치 조건",
+      "match_groups_label": "그룹 결합",
+      "match_all": "모두",
+      "match_any": "하나 이상",
+      "add_rule": "규칙 추가",
+      "add_group": "그룹 추가",
+      "remove_group": "그룹 제거",
+      "no_rules": "아직 규칙이 없습니다. 트랙 필터링을 시작하려면 규칙을 추가하세요.",
+      "no_rules_error": "스마트 플레이리스트를 만들려면 규칙을 하나 이상 추가하세요.",
+      "rule_count": "규칙 {count}/{max}개",
+      "rule_invalid": "이 규칙에 유효한 값을 입력하세요.",
+      "range_and": "및",
+      "field_genre": "장르",
+      "field_artist": "아티스트",
+      "field_year": "연도",
+      "field_bpm": "BPM",
+      "field_play_count": "재생 횟수",
+      "field_duration": "재생 시간",
+      "field_bitrate": "비트레이트",
+      "field_is_favorite": "즐겨찾기",
+      "field_added_at": "추가됨",
+      "op_is": "다음과 같음",
+      "op_is_not": "다음과 같지 않음",
+      "op_contains": "포함",
+      "op_gt": "초과",
+      "op_lt": "미만",
+      "op_gte": "이상",
+      "op_lte": "이하",
+      "op_between": "범위",
+      "op_in_last_days": "최근 (일) 이내",
+      "limit_label": "제한",
+      "limit_selected_by": "개, 선택 기준",
+      "limit_by_random": "무작위",
+      "limit_by_album": "앨범",
+      "limit_by_artist": "아티스트",
+      "limit_by_genre": "장르",
+      "limit_by_title": "제목",
+      "limit_by_most_played": "가장 많이 재생됨",
+      "live_updating_label": "실시간 업데이트",
+      "live_updating_hint": "일치하는 트랙을 자동으로 최신 상태로 유지합니다. 끄면 현재 결과를 고정합니다."
+    }
   }
 }
