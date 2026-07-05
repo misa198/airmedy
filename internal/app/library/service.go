@@ -87,6 +87,7 @@ type LibraryService struct {
 	pendingArtistArtworkMu  sync.Mutex
 	artistArtworkLocks      sync.Map         // artistID -> *sync.Mutex; serializes artwork writes
 	bulkSyncMu              sync.Mutex       // serializes SyncFolder/ResplitLibrary/ReindexAll: all three read/write the shared syncEntityCache and search index sync-batch below, which are not safe for concurrent use
+	syncRunning             atomic.Bool      // true while a top-level SyncFolder/SyncLibrary call is running; gates re-entrant calls so a queued caller skips instead of redoing the same work
 	syncing                 atomic.Int32     // >0 while a bulk SyncFolder runs (gates per-track work)
 	syncEntityCache         *syncEntityCache // non-nil only during a SyncFolder/ResplitLibrary run; caches resolved entity IDs
 	syncReschedule          chan struct{}    // signals the periodic-sync scheduler to re-read the interval setting
@@ -594,6 +595,12 @@ func (s *LibraryService) CleanupOrphanedArtworks(ctx context.Context) error {
 // hold the lock for their whole run and calling this would self-deadlock; call
 // syncFolderLocked directly instead.
 func (s *LibraryService) SyncFolder(ctx context.Context, root string) error {
+	if !s.syncRunning.CompareAndSwap(false, true) {
+		s.logger.Info("sync already in progress, skipping", "root", root)
+		return nil
+	}
+	defer s.syncRunning.Store(false)
+
 	s.bulkSyncMu.Lock()
 	defer s.bulkSyncMu.Unlock()
 	return s.syncFolderLocked(ctx, root)
@@ -646,10 +653,14 @@ func (s *LibraryService) syncFolderLocked(ctx context.Context, root string) erro
 		return nil
 	})
 
-	if app := application.Get(); app != nil && app.Event != nil && !isBackgroundSync(ctx) {
+	// Always emit sync-started (even for background syncs) so the UI can show the
+	// button as busy; only the progress/dialog emits below stay gated on
+	// isBackgroundSync so the overlay itself does not appear for background runs.
+	if app := application.Get(); app != nil && app.Event != nil {
 		app.Event.Emit("library:sync-started", map[string]interface{}{
-			"path":  root,
-			"total": total,
+			"path":       root,
+			"total":      total,
+			"background": isBackgroundSync(ctx),
 		})
 	}
 
@@ -859,9 +870,10 @@ func (s *LibraryService) syncFolderLocked(ctx context.Context, root string) erro
 		for _, id := range deletedIDs {
 			app.Event.Emit("library:track-deleted", id)
 		}
-		if !isBackgroundSync(ctx) {
-			app.Event.Emit("library:sync-finished", root)
-		}
+		app.Event.Emit("library:sync-finished", map[string]interface{}{
+			"path":       root,
+			"background": isBackgroundSync(ctx),
+		})
 	}
 	s.notifySyncFinished()
 	return nil
@@ -1224,6 +1236,12 @@ func (s *LibraryService) buildEntitiesFromRaw(dto *domain.TrackDTO, settings *do
 // lock comment: do not call this from inside SyncLibrary, which already holds
 // the lock — call resplitLibraryLocked directly instead.
 func (s *LibraryService) ResplitLibrary(ctx context.Context) error {
+	if !s.syncRunning.CompareAndSwap(false, true) {
+		s.logger.Info("sync already in progress, skipping resplit")
+		return nil
+	}
+	defer s.syncRunning.Store(false)
+
 	s.bulkSyncMu.Lock()
 	defer s.bulkSyncMu.Unlock()
 	return s.resplitLibraryLocked(ctx)
@@ -1260,10 +1278,11 @@ func (s *LibraryService) resplitLibraryLocked(ctx context.Context) error {
 
 	total := len(tracks)
 	emitProgress := !isBackgroundSync(ctx) // background syncs run without the dialog
-	if app := application.Get(); emitProgress && app != nil && app.Event != nil {
+	if app := application.Get(); app != nil && app.Event != nil {
 		app.Event.Emit("library:sync-started", map[string]interface{}{
-			"path":  "",
-			"total": total,
+			"path":       "",
+			"total":      total,
+			"background": isBackgroundSync(ctx),
 		})
 	}
 
@@ -1290,8 +1309,11 @@ func (s *LibraryService) resplitLibraryLocked(ctx context.Context) error {
 	}
 
 	s.logger.Info("Finished library re-split")
-	if app := application.Get(); emitProgress && app != nil && app.Event != nil {
-		app.Event.Emit("library:sync-finished", "")
+	if app := application.Get(); app != nil && app.Event != nil {
+		app.Event.Emit("library:sync-finished", map[string]interface{}{
+			"path":       "",
+			"background": isBackgroundSync(ctx),
+		})
 	}
 	return nil
 }
@@ -1347,6 +1369,15 @@ func (s *LibraryService) DelimitersPendingResync(ctx context.Context) (bool, err
 // additionally re-splits the whole library and rebuilds the search index. The
 // applied-delimiters signature is persisted so the decision survives restarts.
 func (s *LibraryService) SyncLibrary(ctx context.Context) error {
+	// Skip instead of queuing behind an in-flight run: a queued caller would
+	// otherwise redo the same full folder scan right after this one finishes
+	// (e.g. a manual "Sync Library" click landing during the startup auto-scan).
+	if !s.syncRunning.CompareAndSwap(false, true) {
+		s.logger.Info("sync already in progress, skipping")
+		return nil
+	}
+	defer s.syncRunning.Store(false)
+
 	// Hold the lock for this whole run (folder loop + resplit + reindex), not just
 	// per sub-step — otherwise a second SyncLibrary/SyncFolder call queued on the
 	// same mutex can slip in during the gap between two sub-steps and interleave
@@ -1565,6 +1596,12 @@ func (s *LibraryService) GetAlbumColors(ctx context.Context, id string) (*domain
 // comment: do not call this from inside SyncLibrary, which already holds the
 // lock — call reindexAllLocked directly instead.
 func (s *LibraryService) ReindexAll(ctx context.Context) error {
+	if !s.syncRunning.CompareAndSwap(false, true) {
+		s.logger.Info("sync already in progress, skipping reindex")
+		return nil
+	}
+	defer s.syncRunning.Store(false)
+
 	s.bulkSyncMu.Lock()
 	defer s.bulkSyncMu.Unlock()
 	return s.reindexAllLocked(ctx)
@@ -1601,10 +1638,11 @@ func (s *LibraryService) reindexAllLocked(ctx context.Context) error {
 		}
 	}
 
-	if app := application.Get(); showDialog && app != nil && app.Event != nil {
+	if app := application.Get(); app != nil && app.Event != nil {
 		app.Event.Emit("library:sync-started", map[string]interface{}{
-			"path":  "Re-indexing Search",
-			"total": total,
+			"path":       "Re-indexing Search",
+			"total":      total,
+			"background": isBackgroundSync(ctx),
 		})
 	}
 
@@ -1632,8 +1670,11 @@ func (s *LibraryService) reindexAllLocked(ctx context.Context) error {
 	}
 
 	s.logger.Info("Finished full library re-indexing")
-	if app := application.Get(); showDialog && app != nil && app.Event != nil {
-		app.Event.Emit("library:sync-finished", "Search Index")
+	if app := application.Get(); app != nil && app.Event != nil {
+		app.Event.Emit("library:sync-finished", map[string]interface{}{
+			"path":       "Search Index",
+			"background": isBackgroundSync(ctx),
+		})
 	}
 	return err
 }
