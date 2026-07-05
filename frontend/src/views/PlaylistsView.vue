@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { Events } from '@wailsio/runtime'
+import { useFavoritesStore } from '@/stores/favorites'
 import { Library, Plus, ListPlus, Sparkles, Upload } from '@lucide/vue'
 import { IconButton } from '@airmedy/ui'
 import { useRouter } from 'vue-router'
@@ -20,6 +22,7 @@ import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
 const router = useRouter()
 const playlistsStore = usePlaylistsStore()
+const favoritesStore = useFavoritesStore()
 const isLoading = ref(true)
 const searchQuery = ref('')
 const tracksByPlaylist = ref<Record<string, TrackDTO[]>>({})
@@ -196,6 +199,47 @@ async function loadArtworkTracks() {
 
   tracksByPlaylist.value = map
 }
+
+const offArtworkChanged = Events.On('playlist:artwork-changed', (ev: Events.WailsEvent) => {
+  const payload = ev.data as { playlist_id: string; artwork_key: string | null }
+  if (payload.playlist_id === 'favorites') favoritesArtworkKey.value = payload.artwork_key
+})
+
+// Keep the track-mosaic fallback (playlists with no custom cover) fresh too —
+// patch just the affected entry instead of re-running loadArtworkTracks for
+// every playlist.
+const offTracksChanged = Events.On('playlist:tracks-changed', async (ev: Events.WailsEvent) => {
+  const payload = ev.data as { playlist_id: string; sender_id: string }
+  if (payload.playlist_id === 'favorites') return // favorites mosaic handled by the version watcher below
+  const p = playlistsStore.playlists.find((x) => x.id === payload.playlist_id)
+  if (p && p.artwork_key) return // has a custom cover, mosaic irrelevant
+  try {
+    const tracks = await PlaylistService.GetPlaylistTracksPreview(payload.playlist_id, 4)
+    tracksByPlaylist.value = {
+      ...tracksByPlaylist.value,
+      [payload.playlist_id]: tracks.filter((t): t is TrackDTO => t !== null),
+    }
+  } catch (e) {
+    console.error('Failed to refresh playlist mosaic tracks', e)
+  }
+})
+
+watch(() => favoritesStore.version, async () => {
+  try {
+    const favTracks = await LibraryService.GetFavoriteTracks()
+    tracksByPlaylist.value = {
+      ...tracksByPlaylist.value,
+      favorites: favTracks.filter((t): t is TrackDTO => t !== null),
+    }
+  } catch (e) {
+    console.error('Failed to refresh favorites mosaic tracks', e)
+  }
+})
+
+onUnmounted(() => {
+  offArtworkChanged()
+  offTracksChanged()
+})
 
 onMounted(async () => {
   isLoading.value = true

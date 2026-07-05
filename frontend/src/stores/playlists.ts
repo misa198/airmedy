@@ -62,6 +62,12 @@ export const usePlaylistsStore = defineStore('playlists', () => {
     }
   })
 
+  const _offArtworkChanged = Events.On('playlist:artwork-changed', (ev: Events.WailsEvent) => {
+    const payload = ev.data as { playlist_id: string; artwork_key: string | null }
+    const p = playlists.value.find((x) => x.id === payload.playlist_id)
+    if (p) p.artwork_key = payload.artwork_key
+  })
+
   const _offRulesChanged = Events.On('playlist:rules-changed', async (ev: Events.WailsEvent) => {
     const payload = ev.data as { playlist_id: string; sender_id: string }
     const p = playlists.value.find((x) => x.id === payload.playlist_id)
@@ -81,6 +87,7 @@ export const usePlaylistsStore = defineStore('playlists', () => {
     _offDeleted()
     _offRenamed()
     _offPinned()
+    _offArtworkChanged()
     _offRulesChanged()
   }
 

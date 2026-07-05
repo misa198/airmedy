@@ -69,6 +69,15 @@ func (r *playlistRepository) Update(ctx context.Context, p *domain.Playlist) err
 	return nil
 }
 
+func (r *playlistRepository) GetAllArtworkKeys(ctx context.Context) ([]string, error) {
+	var keys []string
+	query := "SELECT artwork_key FROM playlists WHERE artwork_key IS NOT NULL AND artwork_key != ''"
+	if err := r.db.Ext(ctx).SelectContext(ctx, &keys, query); err != nil {
+		return nil, fmt.Errorf("failed to get all playlist artwork keys: %w", err)
+	}
+	return keys, nil
+}
+
 func (r *playlistRepository) UpdateRules(ctx context.Context, id string, rules *string) error {
 	_, err := r.db.Ext(ctx).ExecContext(ctx,
 		"UPDATE playlists SET rules = ?, updated_at = ? WHERE id = ?",

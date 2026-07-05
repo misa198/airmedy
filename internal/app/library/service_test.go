@@ -128,6 +128,8 @@ func (m *mockComposerRepo) GetByNormalizationKey(ctx context.Context, key string
 
 type mockPlaylistRepo struct{ domain.PlaylistRepository }
 
+func (m *mockPlaylistRepo) GetAllArtworkKeys(ctx context.Context) ([]string, error) { return nil, nil }
+
 type mockFolderRepo struct {
 	domain.WatchedFolderRepository
 	folders []*domain.WatchedFolder

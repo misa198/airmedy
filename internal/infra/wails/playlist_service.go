@@ -120,6 +120,11 @@ type PlaylistTracksChangedEvent struct {
 	SenderID   string `json:"sender_id"`
 }
 
+type PlaylistArtworkChangedEvent struct {
+	PlaylistID string  `json:"playlist_id"`
+	ArtworkKey *string `json:"artwork_key"`
+}
+
 func (s *PlaylistService) AddTrackToPlaylist(playlistID, trackID, senderID string) error {
 	err := s.service.AddTrack(context.Background(), playlistID, trackID)
 	if err == nil {
@@ -177,7 +182,16 @@ func (s *PlaylistService) GetPlaylistColors(id string) (*domain.ThemeColors, err
 }
 
 func (s *PlaylistService) RemovePlaylistArtwork(id string) error {
-	return s.service.RemoveArtwork(context.Background(), id)
+	if err := s.service.RemoveArtwork(context.Background(), id); err != nil {
+		return err
+	}
+	if app := application.Get(); app != nil && app.Event != nil {
+		app.Event.Emit("playlist:artwork-changed", &PlaylistArtworkChangedEvent{
+			PlaylistID: id,
+			ArtworkKey: nil,
+		})
+	}
+	return nil
 }
 
 func (s *PlaylistService) ExportPlaylistToM3U8(playlistID string) error {
@@ -310,6 +324,12 @@ func (s *PlaylistService) SelectAndSetPlaylistArtwork(id string) (string, error)
 	}
 	if key == nil {
 		return "", nil
+	}
+	if app.Event != nil {
+		app.Event.Emit("playlist:artwork-changed", &PlaylistArtworkChangedEvent{
+			PlaylistID: id,
+			ArtworkKey: key,
+		})
 	}
 	return *key, nil
 }

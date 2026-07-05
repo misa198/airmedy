@@ -120,6 +120,9 @@ type PlaylistRepository interface {
 	// GetTracksPreview is GetTracks capped with a SQL LIMIT, for callers that
 	// only need the first few tracks (e.g. an artwork mosaic).
 	GetTracksPreview(ctx context.Context, playlistID string, limit int) ([]*TrackDTO, error)
+	// GetAllArtworkKeys returns every non-empty playlist artwork_key, used to
+	// keep custom playlist covers out of the orphan-cleanup set.
+	GetAllArtworkKeys(ctx context.Context) ([]string, error)
 	GetPlaylistsForTrack(ctx context.Context, trackID string) ([]string, error)
 	GetTrackPosition(ctx context.Context, playlistID, trackID string) (string, error)
 	GetMaxPosition(ctx context.Context, playlistID string) (string, error)
