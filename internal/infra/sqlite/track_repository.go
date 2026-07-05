@@ -505,6 +505,12 @@ func (r *trackRepository) GetRecentlyAdded(ctx context.Context, limit int) ([]*d
 // playlist.BuildWhereClause and orderBySQL by playlist.OrderBySQL, both of
 // which allowlist every field/operator/order value before they reach this
 // query — whereSQL and orderBySQL are trusted, not raw user input.
+//
+// track_features is joined (aliased tf) so rules can reference mood fields
+// like tf.energy/tf.danceability; it's a 1:1 join on the track's PK so it
+// never duplicates rows. A rule comparing against a NULL tf.energy/
+// tf.danceability (track not yet mood-analyzed) naturally evaluates to
+// unknown and is excluded by the WHERE clause — no explicit NULL guard needed.
 func (r *trackRepository) GetByRules(ctx context.Context, whereSQL string, args []any, limit int, orderBySQL string) ([]*domain.TrackDTO, error) {
 	if orderBySQL == "" {
 		orderBySQL = "t.sort_title"
@@ -517,6 +523,7 @@ func (r *trackRepository) GetByRules(ctx context.Context, whereSQL string, args 
 		LEFT JOIN albums a ON t.album_id = a.id
 		LEFT JOIN track_artists ta ON t.id = ta.track_id
 		LEFT JOIN artists art ON ta.artist_id = art.id
+		LEFT JOIN track_features tf ON tf.track_id = t.id
 		WHERE %s
 		GROUP BY t.id
 		ORDER BY %s

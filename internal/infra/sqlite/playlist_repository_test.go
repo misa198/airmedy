@@ -70,6 +70,47 @@ func TestPlaylistRepository_AddTracks_NoPositionDuplicates(t *testing.T) {
 	}
 }
 
+func TestPlaylistRepository_GetTracksPreview(t *testing.T) {
+	dbPath := "test_playlist_preview.db"
+	defer func() { _ = os.Remove(dbPath) }()
+
+	db, err := NewDB(dbPath, slog.Default())
+	if err != nil {
+		t.Fatalf("failed to create test db: %v", err)
+	}
+	defer func() { _ = db.Close() }()
+
+	ctx := context.Background()
+	trackRepo := NewTrackRepository(db)
+	playlistRepo := NewPlaylistRepository(db)
+
+	trackIDs := []string{"track-1", "track-2", "track-3", "track-4", "track-5"}
+	for _, id := range trackIDs {
+		if err := trackRepo.Save(ctx, &domain.Track{ID: id, Path: "/music/" + id + ".mp3", Title: id, SortTitle: id, Format: "mp3"}); err != nil {
+			t.Fatalf("failed to save track %s: %v", id, err)
+		}
+	}
+
+	playlist := &domain.Playlist{ID: "pl-preview", Name: "Preview Test"}
+	if err := playlistRepo.Save(ctx, playlist); err != nil {
+		t.Fatalf("failed to save playlist: %v", err)
+	}
+	if err := playlistRepo.AddTracks(ctx, "pl-preview", trackIDs); err != nil {
+		t.Fatalf("AddTracks failed: %v", err)
+	}
+
+	got, err := playlistRepo.GetTracksPreview(ctx, "pl-preview", 2)
+	if err != nil {
+		t.Fatalf("GetTracksPreview: %v", err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("expected 2 tracks (capped), got %d: %+v", len(got), got)
+	}
+	if got[0].ID != "track-1" || got[1].ID != "track-2" {
+		t.Fatalf("expected first 2 tracks in position order, got %+v", got)
+	}
+}
+
 func TestPlaylistRepository_TogglePinned(t *testing.T) {
 	dbPath := "test_playlist_pinned.db"
 	defer func() { _ = os.Remove(dbPath) }()

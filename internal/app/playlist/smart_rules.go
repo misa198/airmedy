@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"airmedy/internal/domain"
 )
@@ -74,6 +75,14 @@ var smartPlaylistFields = map[string]fieldSpec{
 	},
 	"bitrate": {
 		kind: fieldKindColumn, valueType: valueTypeNumber, column: "t.bitrate",
+		ops: map[string]bool{"gt": true, "lt": true, "gte": true, "lte": true, "between": true},
+	},
+	"energy": {
+		kind: fieldKindColumn, valueType: valueTypeNumber, column: "tf.energy",
+		ops: map[string]bool{"gt": true, "lt": true, "gte": true, "lte": true, "between": true},
+	},
+	"danceability": {
+		kind: fieldKindColumn, valueType: valueTypeNumber, column: "tf.danceability",
 		ops: map[string]bool{"gt": true, "lt": true, "gte": true, "lte": true, "between": true},
 	},
 	"is_favorite": {
@@ -263,12 +272,18 @@ func relationIDCol(spec fieldSpec) string {
 	return "artist_id"
 }
 
+// buildAddedAtFragment compares t.created_at directly against a cutoff
+// computed here in Go, rather than wrapping the column in julianday(...) —
+// a function applied to the column makes the predicate non-sargable
+// (SQLite can't use idx_tracks_created_at to satisfy it, forcing a full
+// table scan on every read of a live-updating smart playlist).
 func buildAddedAtFragment(rule domain.SmartRule) (string, []any, error) {
 	days, err := toFloat(rule.Value)
 	if err != nil {
 		return "", nil, err
 	}
-	return "(julianday('now') - julianday(t.created_at)) <= ?", []any{days}, nil
+	cutoff := time.Now().Add(-time.Duration(days * 24 * float64(time.Hour)))
+	return "t.created_at >= ?", []any{cutoff}, nil
 }
 
 func buildNumberFragment(column, op string, value any) (string, []any, error) {

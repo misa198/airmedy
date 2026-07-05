@@ -361,6 +361,17 @@ type TrackFeatures struct {
 	Danceability  float64 `json:"danceability" db:"danceability"`
 }
 
+// MoodDensityGrid buckets analyzed tracks (non-null energy and danceability)
+// into a GridSize x GridSize grid over the [0,1]x[0,1] energy/danceability
+// space, for rendering the Mood Playlist heatmap. Counts[x][y] is the track
+// count in the bucket at danceability index x, energy index y.
+type MoodDensityGrid struct {
+	GridSize      int     `json:"grid_size"`
+	Counts        [][]int `json:"counts"`
+	AnalyzedCount int     `json:"analyzed_count"`
+	TotalCount    int     `json:"total_count"`
+}
+
 // FeaturePercentileRow is one row of the cached corpus percentile table
 // (feature_percentiles), used by the mood-derivation stage to normalize raw
 // DSP features against the analyzed library's distribution.

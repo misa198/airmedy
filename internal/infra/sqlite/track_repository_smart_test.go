@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"testing"
+	"time"
 
 	"airmedy/internal/app/playlist"
 	"airmedy/internal/domain"
@@ -124,5 +125,58 @@ func TestTrackRepository_GetByRules(t *testing.T) {
 	}
 	if len(got) != 1 || got[0].ID != "t3" {
 		t.Fatalf("expected only t3 (sorts first by title), got %+v", got)
+	}
+
+	// mood: t1 gets high energy/danceability, t2 gets low, t3 is left
+	// unanalyzed (no track_features row at all) to confirm it's excluded.
+	if _, err := db.ExecContext(ctx, `
+		INSERT INTO track_features (track_id, energy, danceability) VALUES
+			('t1', 0.9, 0.8),
+			('t2', 0.1, 0.2)
+	`); err != nil {
+		t.Fatalf("failed to seed track_features: %v", err)
+	}
+	where, args, err = playlist.BuildWhereClause(domain.SmartRuleGroup{
+		Match: "all",
+		Rules: []domain.SmartRule{
+			{Field: "energy", Op: "between", Value: []any{0.6, 1.0}},
+			{Field: "danceability", Op: "between", Value: []any{0.6, 1.0}},
+		},
+	})
+	if err != nil {
+		t.Fatalf("build where: %v", err)
+	}
+	got, err = trackRepo.GetByRules(ctx, where, args, 0, "")
+	if err != nil {
+		t.Fatalf("GetByRules: %v", err)
+	}
+	if len(got) != 1 || got[0].ID != "t1" {
+		t.Fatalf("expected only t1 (high energy/danceability), got %+v", got)
+	}
+
+	// added_at: t1/t2/t3 all just saved (now), t4 backdated 60 days — the
+	// sargable rewrite (t.created_at >= ?) must exclude it for a 30-day window.
+	old := &domain.Track{ID: "t4", Path: "/m/t4.mp3", Title: "Old Track", SortTitle: "old track", Format: "mp3", CreatedAt: time.Now().Add(-60 * 24 * time.Hour)}
+	if err := trackRepo.Save(ctx, old); err != nil {
+		t.Fatalf("failed to save backdated track: %v", err)
+	}
+	where, args, err = playlist.BuildWhereClause(domain.SmartRuleGroup{
+		Match: "all",
+		Rules: []domain.SmartRule{{Field: "added_at", Op: "in_last_days", Value: 30.0}},
+	})
+	if err != nil {
+		t.Fatalf("build where: %v", err)
+	}
+	got, err = trackRepo.GetByRules(ctx, where, args, 0, "")
+	if err != nil {
+		t.Fatalf("GetByRules: %v", err)
+	}
+	for _, tr := range got {
+		if tr.ID == "t4" {
+			t.Fatalf("expected backdated track t4 excluded from in_last_days=30, got %+v", got)
+		}
+	}
+	if len(got) != 3 {
+		t.Fatalf("expected t1,t2,t3 (recently added) and not t4, got %d: %+v", len(got), got)
 	}
 }

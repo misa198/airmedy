@@ -71,6 +71,12 @@ func (s *PlaylistService) GetPlaylistTracks(playlistID string) ([]*domain.TrackD
 	return s.service.GetTracks(context.Background(), playlistID)
 }
 
+// GetPlaylistTracksPreview returns at most limit tracks, for callers that
+// only need a handful (e.g. an artwork mosaic) rather than the full list.
+func (s *PlaylistService) GetPlaylistTracksPreview(playlistID string, limit int) ([]*domain.TrackDTO, error) {
+	return s.service.GetTracksPreview(context.Background(), playlistID, limit)
+}
+
 func (s *PlaylistService) CreateSmartPlaylist(name, description string, config domain.SmartPlaylistConfig) (*domain.Playlist, error) {
 	return s.service.CreateSmart(context.Background(), name, description, config)
 }

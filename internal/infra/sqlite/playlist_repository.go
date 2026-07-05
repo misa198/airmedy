@@ -237,6 +237,35 @@ func (r *playlistRepository) GetTracks(ctx context.Context, playlistID string) (
 	return tr.scanTrackRows(rows), nil
 }
 
+// GetTracksPreview is GetTracks capped with a SQL LIMIT — for callers that
+// only need the first few tracks (e.g. a 4-track artwork mosaic), so the
+// join/group-by/serialize cost scales with the requested preview size, not
+// the playlist's full membership.
+func (r *playlistRepository) GetTracksPreview(ctx context.Context, playlistID string, limit int) ([]*domain.TrackDTO, error) {
+	query := fmt.Sprintf(`
+		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year,
+		       GROUP_CONCAT(art.name, '; ') AS artist_names,
+		       GROUP_CONCAT(art.id, '; ') AS artist_ids
+		FROM tracks t
+		LEFT JOIN albums a ON t.album_id = a.id
+		LEFT JOIN track_artists ta ON t.id = ta.track_id
+		LEFT JOIN artists art ON ta.artist_id = art.id
+		JOIN playlist_tracks pt ON t.id = pt.track_id
+		WHERE pt.playlist_id = ?
+		GROUP BY t.id, pt.position
+		ORDER BY pt.position, pt.track_id
+		LIMIT ?`, trackSelectFields)
+
+	var rows []trackRow
+	err := r.db.Ext(ctx).SelectContext(ctx, &rows, query, playlistID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get playlist tracks preview: %w", err)
+	}
+
+	tr := &trackRepository{db: r.db}
+	return tr.scanTrackRows(rows), nil
+}
+
 func (r *playlistRepository) TogglePinned(ctx context.Context, id string) (bool, error) {
 	now := time.Now()
 	_, err := r.db.Ext(ctx).ExecContext(ctx,

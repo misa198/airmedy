@@ -3,15 +3,20 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Checkbox, Input, Modal, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@airmedy/ui'
 import RuleBuilder from './RuleBuilder.vue'
+import MoodHeatmap from './MoodHeatmap.vue'
 import { useAppStore } from '../stores/app'
 import {
   countRules,
   emptyConfig,
+  emptyGroup,
   isGroupValid,
   normalizeConfigForEditor,
   SMART_LIMIT_BY_OPTIONS,
   type SmartPlaylistConfig,
 } from '../lib/smartPlaylistFields'
+import { boxFromMoodConfig, defaultMoodBox, isMoodBoxValid, moodConfigFromBox, type MoodBox } from '../lib/moodPlaylistFields'
+import { GetMoodDensityGrid } from '../../bindings/airmedy/internal/infra/wails/moodradioservice'
+import type { MoodDensityGrid } from '../../bindings/airmedy/internal/domain/models'
 
 const appStore = useAppStore()
 
@@ -31,20 +36,70 @@ const emit = defineEmits<{
   confirm: [payload: { name: string; description: string; config: SmartPlaylistConfig }]
 }>()
 
-const activeTab = ref<'filters' | 'mood'>('filters')
+// A stored config's rules feed whichever tab actually produced them, never
+// both: energy/danceability rules aren't in SMART_PLAYLIST_FIELDS (Mood tab
+// builds them directly, bypassing that picker), so handing a mood-shaped
+// config's rules to the Filters tab's RuleBuilder would show rows for
+// fields it can't resolve. Limit/live-updating are shared UI regardless of
+// tab, though, so those always carry over from the stored config as-is —
+// only the rule tree itself is swapped for an empty one when routing to Mood.
+function configForTabs(initialConfig: SmartPlaylistConfig | undefined) {
+  const moodBox = boxFromMoodConfig(initialConfig)
+  if (moodBox && initialConfig) {
+    return { tab: 'mood' as const, config: { ...initialConfig, root: emptyGroup() }, moodBox }
+  }
+  return {
+    tab: 'filters' as const,
+    config: initialConfig ? normalizeConfigForEditor(initialConfig) : emptyConfig(),
+    moodBox: defaultMoodBox(),
+  }
+}
+
+const initialRoute = configForTabs(props.initialConfig)
+const activeTab = ref<'filters' | 'mood'>(initialRoute.tab)
 const name = ref(props.initialName ?? '')
 const description = ref(props.initialDescription ?? '')
-const config = ref<SmartPlaylistConfig>(props.initialConfig ? normalizeConfigForEditor(props.initialConfig) : emptyConfig())
+const config = ref<SmartPlaylistConfig>(initialRoute.config)
 
 const showErrors = ref(false)
 
+const moodBox = ref<MoodBox>(initialRoute.moodBox)
+const moodGrid = ref<MoodDensityGrid | null>(null)
+const moodGridLoading = ref(false)
+let moodGridFetched = false
+
+// Called both right after opening (if landing directly on the mood tab) and
+// on every later switch to it. `watch(activeTab, ...)` alone isn't enough:
+// it only fires on a value *change*, so reopening straight onto 'mood' when
+// the dialog was already left on 'mood' (this component stays mounted
+// across opens, per usePlaylistContextMenu's pattern) sets the same value
+// and never fires — the heatmap would then silently keep stale/no data.
+async function ensureMoodGridLoaded() {
+  if (moodGridFetched || !appStore.libraryAnalysisEnabled) return
+  moodGridFetched = true
+  moodGridLoading.value = true
+  try {
+    moodGrid.value = await GetMoodDensityGrid(32)
+  } finally {
+    moodGridLoading.value = false
+  }
+}
+
 watch(() => props.open, (val) => {
   if (!val) return
-  activeTab.value = 'filters'
+  const route = configForTabs(props.initialConfig)
+  activeTab.value = route.tab
   name.value = props.initialName ?? ''
   description.value = props.initialDescription ?? ''
-  config.value = props.initialConfig ? normalizeConfigForEditor(props.initialConfig) : emptyConfig()
+  config.value = route.config
+  moodBox.value = route.moodBox
+  moodGridFetched = false
   showErrors.value = false
+  if (route.tab === 'mood') ensureMoodGridLoaded()
+})
+
+watch(activeTab, (tab) => {
+  if (tab === 'mood') ensureMoodGridLoaded()
 })
 
 function toggleLimitEnabled(enabled: boolean) {
@@ -67,7 +122,11 @@ function toggleLiveUpdating(live: boolean) {
 const ruleCount = computed(() => countRules(config.value.root))
 const hasRules = computed(() => ruleCount.value > 0)
 const rulesValid = computed(() => isGroupValid(config.value.root))
-const canSubmit = computed(() => name.value.trim().length > 0 && hasRules.value && rulesValid.value)
+const canSubmit = computed(() => {
+  if (!name.value.trim()) return false
+  if (activeTab.value === 'mood') return isMoodBoxValid(moodBox.value)
+  return hasRules.value && rulesValid.value
+})
 
 function submit() {
   if (!canSubmit.value) {
@@ -77,7 +136,9 @@ function submit() {
   emit('confirm', {
     name: name.value.trim(),
     description: description.value,
-    config: config.value,
+    config: activeTab.value === 'mood'
+      ? moodConfigFromBox(moodBox.value, config.value.limit, config.value.live_updating)
+      : config.value,
   })
   emit('update:open', false)
 }
@@ -118,12 +179,11 @@ function submit() {
         {{ t('playlists.smart.mood_requires_analysis') }}
       </div>
 
-      <!-- Reserved for the future mood quadrant picker (energy x danceability pad).
-           Not implemented yet: mood-derived track features are still pending
-           analysis, see catalog/playlists docs. -->
-      <div v-else class="py-10 text-center text-sm text-foreground/40">
-        {{ t('playlists.smart.mood_coming_soon') }}
+      <div v-else-if="moodGridLoading" class="py-10 text-center text-sm text-foreground/40">
+        {{ t('common.loading') }}
       </div>
+
+      <MoodHeatmap v-else v-model="moodBox" :grid="moodGrid" />
 
       <div class="border-t border-foreground/10 pt-3 space-y-3">
         <label class="flex items-center gap-2 text-sm text-foreground/80 cursor-pointer" @click="toggleLimitEnabled(!config.limit.enabled)">

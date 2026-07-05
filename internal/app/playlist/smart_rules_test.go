@@ -3,6 +3,7 @@ package playlist
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"airmedy/internal/domain"
 )
@@ -60,6 +61,29 @@ func TestBuildWhereClause_BitrateField(t *testing.T) {
 	}
 }
 
+func TestBuildWhereClause_EnergyDanceabilityFields(t *testing.T) {
+	group := domain.SmartRuleGroup{
+		Match: "all",
+		Rules: []domain.SmartRule{
+			{Field: "energy", Op: "between", Value: []any{0.6, 1.0}},
+			{Field: "danceability", Op: "gte", Value: 0.5},
+		},
+	}
+	where, args, err := BuildWhereClause(group)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(where, "tf.energy BETWEEN ? AND ?") {
+		t.Errorf("expected energy between clause, got %q", where)
+	}
+	if !strings.Contains(where, "tf.danceability >= ?") {
+		t.Errorf("expected danceability clause, got %q", where)
+	}
+	if len(args) != 3 {
+		t.Fatalf("expected 3 args, got %d: %v", len(args), args)
+	}
+}
+
 func TestBuildWhereClause_MatchAny(t *testing.T) {
 	group := domain.SmartRuleGroup{
 		Match: "any",
@@ -99,15 +123,28 @@ func TestBuildWhereClause_AddedAt(t *testing.T) {
 		Match: "all",
 		Rules: []domain.SmartRule{{Field: "added_at", Op: "in_last_days", Value: 30.0}},
 	}
+	before := time.Now()
 	where, args, err := BuildWhereClause(group)
+	after := time.Now()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !strings.Contains(where, "julianday('now') - julianday(t.created_at)") {
-		t.Errorf("expected julianday clause, got %q", where)
+	// Sargable form: plain column compare, no function wrapping t.created_at,
+	// so idx_tracks_created_at can actually satisfy it.
+	if !strings.Contains(where, "t.created_at >= ?") {
+		t.Errorf("expected sargable created_at clause, got %q", where)
 	}
-	if len(args) != 1 || args[0] != 30.0 {
-		t.Fatalf("expected [30] args, got %v", args)
+	if len(args) != 1 {
+		t.Fatalf("expected 1 arg, got %v", args)
+	}
+	cutoff, ok := args[0].(time.Time)
+	if !ok {
+		t.Fatalf("expected time.Time arg, got %T", args[0])
+	}
+	wantMin := before.Add(-30 * 24 * time.Hour)
+	wantMax := after.Add(-30 * 24 * time.Hour)
+	if cutoff.Before(wantMin) || cutoff.After(wantMax) {
+		t.Fatalf("cutoff %v not within expected range [%v, %v]", cutoff, wantMin, wantMax)
 	}
 }
 

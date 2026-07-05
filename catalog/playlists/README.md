@@ -15,9 +15,13 @@ User-created playlists with ordered tracks, optional custom artwork, and color e
 | `internal/infra/wails/playlist_service.go`     | Wails binding                 |
 | `frontend/src/stores/playlists.ts`             | Frontend state                |
 | `frontend/src/lib/smartPlaylistFields.ts`      | Frontend field allowlist, types, validation, `MAX_RULES` |
+| `frontend/src/lib/moodPlaylistFields.ts`       | Mood-tab `MoodBox` ↔ `SmartPlaylistConfig` conversion |
+| `frontend/src/composables/useQuadrantBrush.ts` | d3-brush-backed drag/resize box over the mood heatmap |
 | `frontend/src/components/RuleBuilder.vue`      | Root of the rule editor (group list + limit/live-updating) |
 | `frontend/src/components/RuleGroupBox.vue`     | One rule group (its own ALL/ANY + rule rows) |
-| `frontend/src/components/SmartPlaylistDialog.vue` | Create/edit dialog (name, rules, limit, live updating) |
+| `frontend/src/components/MoodHeatmap.vue`      | Energy x danceability density heatmap + region picker (Mood tab) |
+| `frontend/src/components/SmartPlaylistDialog.vue` | Create/edit dialog (name, Filters/Mood tabs, limit, live updating) |
+| `internal/infra/wails/mood_radio_service.go`   | Wails binding for `MoodDensityGrid` (also backs Mood Radio) |
 | `frontend/src/composables/usePlaylistContextMenu.ts` | Shared playlist context menu (Rename, Edit Rules, Delete, ...) |
 | `frontend/src/views/PlaylistDetailView.vue`    | Playlist detail page          |
 
@@ -82,6 +86,7 @@ Delete(ctx, id string) error           // also removes from search index
 GetAll(ctx) ([]*Playlist, error)
 GetByID(ctx, id string) (*Playlist, error)
 GetTracks(ctx, playlistID string) ([]*TrackDTO, error)
+GetTracksPreview(ctx, playlistID string, limit int) ([]*TrackDTO, error) // Capped variant — see below
 AddTrack(ctx, playlistID, trackID string) error  // Calculates LexoRank position
 AddTracks(ctx, playlistID string, trackIDs []string) error // Batch add; single transaction, no position duplicates
 RemoveTrack(ctx, playlistID, trackID string) error
@@ -101,6 +106,19 @@ join table. `AddTrack`, `AddTracks`, `RemoveTrack`, and `MoveTrack` reject
 calls against a smart playlist (`guardNotSmart`) regardless of live-updating
 state — its membership is always computed/materialized by the service, never
 hand-edited.
+
+`GetTracksPreview` is `GetTracks` with a hard SQL `LIMIT` — for callers that
+only need the first few tracks (e.g. `PlaylistsView.vue`'s 4-track artwork
+mosaic, `PlaylistArtwork.vue`), not the whole playlist. Same `IsSmart`
+branch, but for a live-updating smart playlist it calls
+`matchSmartConfigCapped(ctx, config, limit)` instead of `matchSmartConfig`:
+identical query, except the requested `limit` further caps whatever the
+playlist's own `SmartPlaylistLimit` would have produced (`min` of the two,
+treating "unset" as unlimited) — so a broad or uncapped match (mood
+playlists default `Limit.Enabled = false`) still only runs/serializes
+`limit` rows, not its full result set. For a normal or frozen (non-live)
+smart playlist it's `repo.GetTracksPreview`, a `LIMIT`-capped variant of the
+`playlist_tracks` join query.
 
 ## Smart Playlists
 
@@ -214,7 +232,15 @@ recompute.
 | `duration`    | `tracks.duration`                   | number  | `gt`, `lt`, `gte`, `lte`, `between`   |
 | `bitrate`     | `tracks.bitrate`                    | number  | `gt`, `lt`, `gte`, `lte`, `between`   |
 | `is_favorite` | `tracks.is_favorite`                | bool    | `is`                                   |
-| `added_at`    | `tracks.created_at` (days-ago diff) | number  | `in_last_days`                        |
+| `added_at`    | `tracks.created_at`                 | number  | `in_last_days`                        |
+| `energy`      | `track_features.energy` (aliased `tf`) | number | `gt`, `lt`, `gte`, `lte`, `between`  |
+| `danceability`| `track_features.danceability` (aliased `tf`) | number | `gt`, `lt`, `gte`, `lte`, `between` |
+
+`energy`/`danceability` are intentionally absent from the frontend's mirrored
+allowlist (`SMART_PLAYLIST_FIELDS` in `smartPlaylistFields.ts`) — they're
+present here only so `GetByRules` can evaluate the rules the Mood tab builds
+directly (see "Mood Playlists" below), not so the generic Filters-tab
+`RuleRow` picker can offer them as a field choice.
 
 `BuildWhereClause(group SmartRuleGroup) (whereSQL string, args []any, err error)`
 recursively translates a rule tree into a bound `WHERE` clause. Field and
@@ -225,11 +251,74 @@ rule, since the resulting `whereSQL` is spliced into a raw query string in
 `UpdateSmartRules` call `BuildWhereClause` to validate before persisting, so
 a malformed rule tree fails at write time rather than at every read.
 
-Mood-based fields (`track_features.energy/danceability/tempo`) are
-intentionally not in the allowlist yet — that data is reserved-null pending
-the audio analysis pipeline (see `catalog/audio_analysis` if present). The
-frontend reserves a "Mood" tab in the rule builder dialog for a future
-mood quadrant picker; it is UI scaffolding only, not backed by rules yet.
+`added_at`/`in_last_days` compiles to `t.created_at >= ?` with the cutoff
+timestamp computed in Go (`time.Now().Add(-days)`), not a SQL-side
+`julianday('now') - julianday(t.created_at) <= ?` — wrapping the column in a
+function would make the predicate non-sargable, unable to use
+`idx_tracks_created_at` (migration 000045) and forcing a full table scan on
+every read of a live-updating playlist using this field.
+
+### Indexes (migration `000045_smart_rules_indexes`)
+
+Single-column B-tree indexes on `tracks.year`, `tracks.bpm`,
+`tracks.duration`, `tracks.bitrate`, `tracks.play_count`,
+`tracks.created_at`, `track_features.energy`, `track_features.danceability`
+— the numeric fields in the allowlist above that a `gt`/`lt`/`between` rule
+can filter on. These matter most for `LiveUpdating: true` playlists (mood
+playlists default to it), since the rule tree re-executes on every read
+(playlist open, artwork load, Play/Shuffle/Add to Queue) rather than being
+cached. A composite 2D index isn't used for the energy×danceability pair
+despite queries filtering both at once — at this app's library scale a
+plain scan is already fast, and a proper 2D range structure would mean an
+R-tree virtual table (more moving parts: a shadow table plus triggers to
+keep it in sync) that isn't justified without a measured need for it.
+
+`energy`/`danceability` are populated by the mood-derivation stage of the
+audio analysis pipeline (see `catalog/analysis`), sigmoid-normalized to a
+fixed `[0,1]` range per track. `GetByRules` (`track_repository.go`) joins
+`track_features` as `tf` (1:1 on `track_id`, so it never duplicates rows) so
+these fields resolve; a track with no mood-derived value yet (`tf.energy`/
+`tf.danceability` NULL) is excluded from any rule referencing them by
+ordinary SQL NULL semantics — no explicit `IS NOT NULL` guard needed.
+`valence`, `musical_key`, and `mode` were dropped from `track_features`
+entirely (migration `000044_drop_unused_track_features`) as too
+complex/categorical for this feature and are not fields here.
+
+### Mood Playlists
+
+The "Mood" tab in `SmartPlaylistDialog.vue` builds a smart playlist from a 2D
+region instead of the row-by-row rule builder: `MoodHeatmap.vue` renders a
+density heatmap of analyzed tracks over energy (Y) × danceability (X),
+fetched via `MoodRadioService.GetMoodDensityGrid(gridSize)` (bucket counts
+computed in SQL by `TrackQueryRepository.MoodDensityGrid`, zero-count
+buckets rendered as transparent rather than the color ramp's lightest step,
+so "no data" never reads as "low value"). The user drags a box
+(`useQuadrantBrush.ts`, wrapping `d3-brush`) or drags the dual-range sliders
+next to the heatmap; either produces a `MoodBox` (`energyMin/Max`,
+`danceMin/Max`), converted by `moodPlaylistFields.ts`'s `moodConfigFromBox`
+into a two-rule root group:
+
+```json
+{
+  "root": { "match": "all", "groups": [], "rules": [
+    {"field": "energy", "op": "between", "value": [0.6, 1.0]},
+    {"field": "danceability", "op": "between", "value": [0.5, 0.9]}
+  ]},
+  "limit": { "enabled": false, "count": 25, "by": "random" },
+  "live_updating": true
+}
+```
+
+`boxFromMoodConfig` is the inverse, used to re-populate the heatmap's
+selection when reopening a mood playlist for editing; it returns `null` (and
+the tab falls back to a default centered box) if the stored config isn't
+exactly this two-rule shape — e.g. if the playlist was subsequently hand-edited
+via the Filters tab into something else. Mood playlists are otherwise
+ordinary smart playlists: same `is_smart`/`rules` storage, same
+`CreateSmart`/`UpdateSmartRules` calls, same `LiveUpdating` semantics (mood
+playlists default it to `true`). They are not combined with Filters-tab rules
+in the same config — the two tabs produce independent configs, not one
+merged rule tree.
 
 ## Track Ordering (LexoRank)
 
@@ -263,6 +352,7 @@ EnsureTrack(ctx, path, fallbackTitle, fallbackArtist string) (*TrackDTO, error)
 GetAllPlaylists(): Playlist[]
 GetPlaylistByID(id: string): Playlist
 GetPlaylistTracks(playlistID: string): TrackDTO[]
+GetPlaylistTracksPreview(playlistID: string, limit: number): TrackDTO[]  // capped, for mosaic thumbnails
 GetPlaylistsForTrack(trackID: string): string[]   // returns playlist IDs
 GetPlaylistColors(id: string): ThemeColors
 CreatePlaylist(name: string, description: string): Playlist
@@ -279,6 +369,16 @@ SelectAndParseM3U8(): M3U8Preview | null          // opens file picker, returns 
 ImportM3U8Playlist(filePath: string, name: string): M3U8ImportResult
 CreateSmartPlaylist(name: string, description: string, config: SmartPlaylistConfig): Playlist
 UpdateSmartPlaylistRules(id: string, config: SmartPlaylistConfig, senderID: string): void
+GetMoodDensityGrid(gridSize: number): MoodDensityGrid   // exposed on MoodRadioService, not PlaylistService
+```
+
+```typescript
+interface MoodDensityGrid {
+  grid_size: number
+  counts: number[][]     // counts[danceabilityBucket][energyBucket]
+  analyzed_count: number // tracks with non-null energy AND danceability
+  total_count: number    // all tracks in the library
+}
 ```
 
 ### Event Echo Guarding (senderID)
@@ -386,12 +486,14 @@ groups" ALL/ANY selector between them, and an "Add group" button with a
 live `x/16` rule counter. `RuleGroupBox.vue` is one group — its own ALL/ANY
 selector, `RuleRow` list, "Add rule" button (disabled once the playlist-wide
 `MAX_RULES` cap is hit), and a remove-group button. `SmartPlaylistDialog.vue`
-(name/description, Filters/Mood tabs, the root `RuleBuilder`, and the Limit/
-Live-updating checkboxes described above) sits on top. The Mood tab shows a
-"enable library analysis" hint when analysis is off, otherwise a "coming
-soon" placeholder — mood-derived fields are reserved-null pending the audio
-analysis pipeline, not gated behind analysis being on for the rest of the
-dialog (the "New Smart Playlist" entry point itself is always visible).
+(name/description, Filters/Mood tabs, the root `RuleBuilder` or `MoodHeatmap`
+depending on the active tab, and the Limit/Live-updating checkboxes described
+above) sits on top. The Mood tab shows an "enable library analysis" hint when
+analysis is off (`appStore.libraryAnalysisEnabled`) instead of the heatmap —
+this gate is scoped to the Mood tab only, not the rest of the dialog (the
+"New Smart Playlist" entry point and Filters tab are always usable). The
+density grid is fetched once per dialog open, the first time the Mood tab is
+selected, and cached for the dialog's lifetime.
 
 Field-level validation only shows once a rule has been edited (tracked by
 object identity in a `WeakSet`, so it survives reordering) or once the user

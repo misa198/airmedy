@@ -19,6 +19,8 @@
     "@wailsio/runtime": "3.0.0-alpha.94",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
+    "d3-brush": "3.0.0",
+    "d3-selection": "3.0.0",
     "dompurify": "3.4.11",
     "marked": "18.0.5",
     "ogl": "1.0.11",
@@ -36,6 +38,8 @@
   "devDependencies": {
     "@pinia/testing": "0.1.6",
     "@tailwindcss/postcss": "4.2.4",
+    "@types/d3-brush": "3.0.6",
+    "@types/d3-selection": "3.0.11",
     "@types/node": "25.6.0",
     "@vitejs/plugin-vue": "6.0.7",
     "@vue/test-utils": "2.4.6",

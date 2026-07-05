@@ -91,6 +91,54 @@ func (r *trackQueryRepository) FindSimilar(ctx context.Context, seedTrackID stri
 	return reorderByIDs(hydrated, ids), nil
 }
 
+// MoodDensityGrid buckets every track with a non-null energy and danceability
+// into a gridSize x gridSize grid over the fixed [0,1]x[0,1] space those
+// features live in (sigmoid-normalized by mood.Normalize, so no need to query
+// min/max from data). Bucketing happens in SQL; a value of exactly 1.0 is
+// clamped into the last bucket (gridSize-1) rather than overflowing.
+func (r *trackQueryRepository) MoodDensityGrid(ctx context.Context, gridSize int) (*domain.MoodDensityGrid, error) {
+	type bucketRow struct {
+		X int `db:"x_bucket"`
+		Y int `db:"y_bucket"`
+		N int `db:"n"`
+	}
+	var rows []bucketRow
+	err := r.db.Ext(ctx).SelectContext(ctx, &rows, `
+		SELECT
+			MIN(CAST(danceability * ? AS INTEGER), ? - 1) AS x_bucket,
+			MIN(CAST(energy       * ? AS INTEGER), ? - 1) AS y_bucket,
+			COUNT(*) AS n
+		FROM track_features
+		WHERE energy IS NOT NULL AND danceability IS NOT NULL
+		GROUP BY x_bucket, y_bucket
+	`, gridSize, gridSize, gridSize, gridSize)
+	if err != nil {
+		return nil, fmt.Errorf("failed to bucket mood density grid: %w", err)
+	}
+
+	counts := make([][]int, gridSize)
+	for x := range counts {
+		counts[x] = make([]int, gridSize)
+	}
+	analyzedCount := 0
+	for _, row := range rows {
+		counts[row.X][row.Y] = row.N
+		analyzedCount += row.N
+	}
+
+	var totalCount int
+	if err := r.db.Ext(ctx).GetContext(ctx, &totalCount, `SELECT COUNT(*) FROM tracks`); err != nil {
+		return nil, fmt.Errorf("failed to count tracks: %w", err)
+	}
+
+	return &domain.MoodDensityGrid{
+		GridSize:      gridSize,
+		Counts:        counts,
+		AnalyzedCount: analyzedCount,
+		TotalCount:    totalCount,
+	}, nil
+}
+
 // reorderByIDs re-orders hydrated (as returned by TrackRepository.GetByIDs)
 // to match ids' order. Tracks in ids that GetByIDs didn't return (e.g.
 // deleted between the two queries) are silently dropped.

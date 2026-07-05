@@ -109,6 +109,11 @@ export const SMART_PLAYLIST_FIELDS: SmartRuleFieldSpec[] = [
   { id: 'bitrate', labelKey: 'playlists.smart.field_bitrate', type: 'number', operators: ['gt', 'lt', 'gte', 'lte', 'between'] },
   { id: 'is_favorite', labelKey: 'playlists.smart.field_is_favorite', type: 'boolean', operators: ['is'] },
   { id: 'added_at', labelKey: 'playlists.smart.field_added_at', type: 'number', operators: ['in_last_days'] },
+  // energy/danceability are intentionally not exposed here — they're only
+  // ever built by the Mood tab's quadrant picker (moodPlaylistFields.ts),
+  // which writes rules for them directly without going through this
+  // generic field picker. They remain in the backend allowlist
+  // (smart_rules.go) since GetByRules still needs to evaluate them.
 ]
 
 export const SMART_RULE_OPERATOR_LABEL_KEYS: Record<string, string> = {

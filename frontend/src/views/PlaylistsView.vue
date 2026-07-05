@@ -180,7 +180,11 @@ async function loadArtworkTracks() {
       .filter((p) => !p.artwork_key)
       .map(async (p) => {
         try {
-          const tracks = await PlaylistService.GetPlaylistTracks(p.id)
+          // Only the first 4 are ever rendered (mosaic thumbnail,
+          // PlaylistArtwork.vue), so fetch just those — fetching a smart
+          // playlist's full (possibly uncapped) match here would run/
+          // serialize its entire result just to throw most of it away.
+          const tracks = await PlaylistService.GetPlaylistTracksPreview(p.id, 4)
           map[p.id] = tracks.filter((t): t is TrackDTO => t !== null)
         } catch {
           map[p.id] = []

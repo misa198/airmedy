@@ -29,7 +29,9 @@ type TrackRepository interface {
 	// playlist.BuildWhereClause and orderBySQL from playlist.OrderBySQL — both
 	// already allowlisted; this method trusts the caller and interpolates them
 	// directly into the query. limit <= 0 means unlimited (orderBySQL is still
-	// applied for deterministic ordering).
+	// applied for deterministic ordering). track_features is joined so rules
+	// can reference mood fields (tf.energy/tf.danceability); tracks without a
+	// mood-derived value are excluded naturally (NULL comparison), not specially.
 	GetByRules(ctx context.Context, whereSQL string, args []any, limit int, orderBySQL string) ([]*TrackDTO, error)
 	Save(ctx context.Context, track *Track) error
 	Delete(ctx context.Context, id string) error
@@ -115,6 +117,9 @@ type PlaylistRepository interface {
 	UpdateTrackPosition(ctx context.Context, playlistID, trackID, position string) error
 	UpdateTracksPositions(ctx context.Context, playlistID string, updates map[string]string) error
 	GetTracks(ctx context.Context, playlistID string) ([]*TrackDTO, error)
+	// GetTracksPreview is GetTracks capped with a SQL LIMIT, for callers that
+	// only need the first few tracks (e.g. an artwork mosaic).
+	GetTracksPreview(ctx context.Context, playlistID string, limit int) ([]*TrackDTO, error)
 	GetPlaylistsForTrack(ctx context.Context, trackID string) ([]string, error)
 	GetTrackPosition(ctx context.Context, playlistID, trackID string) (string, error)
 	GetMaxPosition(ctx context.Context, playlistID string) (string, error)
@@ -240,6 +245,10 @@ type TrackQueryRepository interface {
 	// nearest first, excluding the seed track itself and any unanalyzed
 	// track. Returns no tracks if the seed itself is unanalyzed.
 	FindSimilar(ctx context.Context, seedTrackID string, limit int) ([]*TrackDTO, error)
+	// MoodDensityGrid buckets all tracks with a non-null energy and
+	// danceability into a gridSize x gridSize grid for the Mood Playlist
+	// heatmap. See MoodDensityGrid for the bucket layout.
+	MoodDensityGrid(ctx context.Context, gridSize int) (*MoodDensityGrid, error)
 }
 
 type MiniPlayerStateRepository interface {

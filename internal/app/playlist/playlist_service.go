@@ -109,6 +109,33 @@ func (s *PlaylistService) GetTracks(ctx context.Context, playlistID string) ([]*
 	return s.repo.GetTracks(ctx, playlistID)
 }
 
+// GetTracksPreview returns at most limit tracks — for callers that only need
+// a handful (e.g. a 4-track artwork mosaic), so a live-updating smart
+// playlist with a broad or unlimited match (mood playlists default to no
+// cap) doesn't run/serialize its full result just to discard most of it.
+func (s *PlaylistService) GetTracksPreview(ctx context.Context, playlistID string, limit int) ([]*domain.TrackDTO, error) {
+	p, err := s.repo.GetByID(ctx, playlistID)
+	if err != nil {
+		return nil, err
+	}
+	if p == nil {
+		return nil, fmt.Errorf("playlist not found: %s", playlistID)
+	}
+	if !p.IsSmart {
+		return s.repo.GetTracksPreview(ctx, playlistID, limit)
+	}
+	var config domain.SmartPlaylistConfig
+	if p.Rules != nil && *p.Rules != "" {
+		if err := json.Unmarshal([]byte(*p.Rules), &config); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal playlist rules: %w", err)
+		}
+	}
+	if !config.LiveUpdating {
+		return s.repo.GetTracksPreview(ctx, playlistID, limit)
+	}
+	return s.matchSmartConfigCapped(ctx, config, limit)
+}
+
 // CreateSmart creates a smart playlist backed by a rule set instead of a
 // fixed track list — membership is computed at read time by GetTracks
 // (or, when config.LiveUpdating is false, frozen at save time — see
@@ -232,6 +259,16 @@ func (s *PlaylistService) applySmartConfig(ctx context.Context, playlistID strin
 }
 
 func (s *PlaylistService) matchSmartConfig(ctx context.Context, config domain.SmartPlaylistConfig) ([]*domain.TrackDTO, error) {
+	return s.matchSmartConfigCapped(ctx, config, 0)
+}
+
+// matchSmartConfigCapped is matchSmartConfig with an additional hard ceiling
+// on the SQL LIMIT — maxLimit <= 0 means "no extra ceiling, use the config's
+// own limit as-is" (matchSmartConfig's behavior). GetTracksPreview uses a
+// small maxLimit (e.g. 4, for an artwork mosaic) so a broad or unlimited
+// smart playlist doesn't materialize/serialize its entire match just to
+// throw away all but a handful of rows.
+func (s *PlaylistService) matchSmartConfigCapped(ctx context.Context, config domain.SmartPlaylistConfig, maxLimit int) ([]*domain.TrackDTO, error) {
 	whereSQL, args, err := BuildWhereClause(config.Root)
 	if err != nil {
 		return nil, fmt.Errorf("failed to evaluate playlist rules: %w", err)
@@ -244,6 +281,9 @@ func (s *PlaylistService) matchSmartConfig(ctx context.Context, config domain.Sm
 		if err != nil {
 			return nil, fmt.Errorf("failed to evaluate playlist limit: %w", err)
 		}
+	}
+	if maxLimit > 0 && (limit <= 0 || limit > maxLimit) {
+		limit = maxLimit
 	}
 	return s.trackRepo.GetByRules(ctx, whereSQL, args, limit, orderBy)
 }
