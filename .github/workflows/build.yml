@@ -37,7 +37,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: internal/infra/audio/ffmpeg_libs
-          key: ffmpeg-Windows-v2-${{ hashFiles('scripts/build-ffmpeg-windows.sh') }}
+          key: ffmpeg-Windows-v3-${{ hashFiles('scripts/build-ffmpeg-windows.sh') }}
 
       - name: Install mingw cross-compilers
         if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
@@ -80,7 +80,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: internal/infra/audio/aubio_libs
-          key: aubio-Windows-v1-${{ hashFiles('scripts/build-aubio-windows.sh') }}
+          key: aubio-Windows-v2-${{ hashFiles('scripts/build-aubio-windows.sh') }}
 
       - name: Install mingw cross-compilers
         if: steps.cache-aubio.outputs.cache-hit != 'true'
@@ -148,7 +148,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: internal/infra/audio/ffmpeg_libs
-          key: ffmpeg-Darwin-v1-${{ hashFiles('scripts/build-ffmpeg-darwin.sh') }}
+          key: ffmpeg-Darwin-v2-${{ hashFiles('scripts/build-ffmpeg-darwin.sh') }}
 
       - name: Install nasm
         if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
@@ -179,7 +179,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: internal/infra/audio/aubio_libs
-          key: aubio-Darwin-v1-${{ hashFiles('scripts/build-aubio-darwin.sh') }}
+          key: aubio-Darwin-v2-${{ hashFiles('scripts/build-aubio-darwin.sh') }}
 
       - name: Build aubio (Darwin ARM64 + AMD64)
         if: steps.cache-aubio.outputs.cache-hit != 'true'
@@ -206,7 +206,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: internal/infra/audio/ffmpeg_libs
-          key: ffmpeg-Linux-${{ hashFiles('scripts/build-ffmpeg-linux.sh') }}
+          key: ffmpeg-Linux-v2-${{ hashFiles('scripts/build-ffmpeg-linux.sh') }}
 
       - name: Install Linux cross-compile dependencies
         if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
@@ -239,7 +239,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: internal/infra/audio/aubio_libs
-          key: aubio-Linux-${{ hashFiles('scripts/build-aubio-linux.sh') }}
+          key: aubio-Linux-v2-${{ hashFiles('scripts/build-aubio-linux.sh') }}
 
       - name: Install Linux cross-compile dependencies
         if: steps.cache-aubio.outputs.cache-hit != 'true'

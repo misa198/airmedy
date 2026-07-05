@@ -93,7 +93,8 @@ async function handleSmartEdit(payload: { name: string; description: string; con
 
 function openPlaylistContextMenu(playlist: Playlist, e: MouseEvent) {
   contextMenu.open(e, buildPlaylistMenuItems(playlist, {
-    includePlaylistMenu: true,
+    includePlaylistMenu: false,
+    includeExport: true,
     onRename: (p) => openRenameDialog(p.id, p.name),
     onEditSmartRules: (p) => openSmartEditDialog(p),
     onDelete: (p) => openDeleteConfirm(p),

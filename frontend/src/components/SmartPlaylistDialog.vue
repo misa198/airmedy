@@ -124,7 +124,7 @@ const hasRules = computed(() => ruleCount.value > 0)
 const rulesValid = computed(() => isGroupValid(config.value.root))
 const canSubmit = computed(() => {
   if (!name.value.trim()) return false
-  if (activeTab.value === 'mood') return isMoodBoxValid(moodBox.value)
+  if (activeTab.value === 'mood') return appStore.libraryAnalysisEnabled && isMoodBoxValid(moodBox.value)
   return hasRules.value && rulesValid.value
 })
 
@@ -228,7 +228,7 @@ function submit() {
           @click="emit('update:open', false)">{{ t('common.cancel') }}</button>
         <button
           class="px-3 py-1.5 text-sm bg-primary text-white rounded-lg transition-colors font-medium"
-          :class="!name.trim() && 'opacity-40 pointer-events-none'"
+          :class="!canSubmit && 'opacity-40 pointer-events-none'"
           @click="submit">{{ confirmLabel ?? t('common.create') }}</button>
       </div>
     </template>

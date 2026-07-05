@@ -86,7 +86,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: internal/infra/audio/ffmpeg_libs
-          key: ffmpeg-linux-v2-${{ hashFiles('scripts/build-ffmpeg-linux.sh') }}
+          key: ffmpeg-linux-v3-${{ hashFiles('scripts/build-ffmpeg-linux.sh') }}
 
       - name: Build FFmpeg (Linux)
         if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
@@ -97,7 +97,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: internal/infra/audio/ffmpeg_libs
-          key: ffmpeg-linux-v2-${{ hashFiles('scripts/build-ffmpeg-linux.sh') }}
+          key: ffmpeg-linux-v3-${{ hashFiles('scripts/build-ffmpeg-linux.sh') }}
 
       - name: Restore Miniaudio (Linux)
         id: cache-miniaudio
@@ -122,7 +122,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: internal/infra/audio/aubio_libs
-          key: aubio-linux-${{ hashFiles('scripts/build-aubio-linux.sh') }}
+          key: aubio-linux-v2-${{ hashFiles('scripts/build-aubio-linux.sh') }}
 
       - name: Build aubio (Linux)
         if: steps.cache-aubio.outputs.cache-hit != 'true'
@@ -133,7 +133,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: internal/infra/audio/aubio_libs
-          key: aubio-linux-${{ hashFiles('scripts/build-aubio-linux.sh') }}
+          key: aubio-linux-v2-${{ hashFiles('scripts/build-aubio-linux.sh') }}
 
       - name: Install JS Dependencies
         run: pnpm install
