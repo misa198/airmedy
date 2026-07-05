@@ -32,6 +32,8 @@
 #include <aubio/aubio.h>
 #include <pthread.h>
 
+#include "ffmpeg_shared_mu.h"
+
 /* aubio tempo runs on a fixed mono rate so BPM math is rate-independent. */
 #define FFA_TEMPO_RATE 44100
 #define FFA_TEMPO_BUF  1024
@@ -57,8 +59,12 @@ static pthread_mutex_t ffa_aubio_mu = PTHREAD_MUTEX_INITIALIZER;
  * has corrupted the heap (SIGABRT via malloc). The actual decode/filter loop
  * below is safely reentrant per AVFormatContext/AVCodecContext, so only the
  * open+probe phase is serialized here.
+ *
+ * This must also be serialized against ffmpeg_decoder.h's playback opens
+ * (analysis and playback run concurrently), so the lock lives in
+ * ffmpeg_shared_mu.h/.c with external linkage rather than as a `static`
+ * mutex local to this translation unit.
  */
-static pthread_mutex_t ffa_probe_mu = PTHREAD_MUTEX_INITIALIZER;
 
 /* Numeric features, all as doubles for a simple cgo bridge. */
 typedef struct {
@@ -174,7 +180,7 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
     AVFrame         *frame = NULL, *filt = NULL;
     int rc = FFA_ERR_PROCESS;
     int stream_idx = -1;
-    int probe_locked = 0; /* guards ffa_probe_mu; see comment at its declaration */
+    int probe_locked = 0; /* guards ffmpeg_probe_mu; see comment at its declaration */
 
     /* tempo (BPM) detection via aubio, fed mono float PCM resampled by swr */
     SwrContext   *tempo_swr = NULL;
@@ -206,7 +212,7 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
     double peak_db = 0;    /* astats sample peak (dBFS), running max, fallback   */
     int    have_peak_db = 0;
 
-    pthread_mutex_lock(&ffa_probe_mu);
+    pthread_mutex_lock(&ffmpeg_probe_mu);
     probe_locked = 1;
 
     AVDictionary *format_opts = NULL;
@@ -237,7 +243,7 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
     if (avcodec_open2(codec_ctx, codec, NULL) < 0) { rc = FFA_ERR_DECODER; goto done; }
     avcodec_flush_buffers(codec_ctx);
 
-    pthread_mutex_unlock(&ffa_probe_mu);
+    pthread_mutex_unlock(&ffmpeg_probe_mu);
     probe_locked = 0;
 
     if (codec_ctx->sample_rate == 0) { rc = FFA_ERR_DECODER; goto done; }
@@ -484,7 +490,7 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
     }
 
 done:
-    if (probe_locked) pthread_mutex_unlock(&ffa_probe_mu);
+    if (probe_locked) pthread_mutex_unlock(&ffmpeg_probe_mu);
     pthread_mutex_lock(&ffa_aubio_mu);
     if (onset) del_aubio_onset(onset);
     if (onset_out) del_fvec(onset_out);
