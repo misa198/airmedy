@@ -97,7 +97,7 @@ var Module = fx.Module("app",
 	appsettings.Module,
 	remoteserver.Module,
 	analysis.Module,
-	fx.Invoke(func(lc fx.Lifecycle, db *sqlite.DB, search domain.SearchService, lib *library.LibraryService, playerSvc *player.PlayerService, eqSvc *eq.EQService, lastfmSvc *lastfm.LastFmService, analysisSvc *analysis.AnalysisService, settingsSvc *appsettings.SettingsService) {
+	fx.Invoke(func(lc fx.Lifecycle, db *sqlite.DB, search domain.SearchService, lib *library.LibraryService, playerSvc *player.PlayerService, eqSvc *eq.EQService, lastfmSvc *lastfm.LastFmService, analysisSvc *analysis.AnalysisService, settingsSvc *appsettings.SettingsService, playlistSvc *playlist.PlaylistService) {
 		lc.Append(fx.Hook{
 			OnStart: func(ctx context.Context) error {
 				// Wire library to player to sync track metadata changes (e.g. favorites)
@@ -145,6 +145,9 @@ var Module = fx.Module("app",
 					}
 				})
 
+				if err := playlistSvc.EnsureFavoritesPlaylist(ctx); err != nil {
+					slog.Error("Failed to ensure favorites playlist", "error", err)
+				}
 				if err := eqSvc.SeedDefaults(ctx); err != nil {
 					slog.Error("Failed to seed EQ defaults", "error", err)
 				}

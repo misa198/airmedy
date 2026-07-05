@@ -52,11 +52,13 @@ const smartEditConfig = computed<SmartPlaylistConfig>(() => {
   }
 })
 
+const favoritesArtworkKey = ref<string | null>(null)
+
 const favoritesPlaylist = computed<Playlist>(() => ({
   id: 'favorites',
   name: t('sidebar.favorites'),
   description: '',
-  artwork_key: null,
+  artwork_key: favoritesArtworkKey.value,
   pinned_at: null,
 } as Playlist))
 
@@ -200,6 +202,13 @@ onMounted(async () => {
   await playlistsStore.loadAll()
   isLoading.value = false
   loadArtworkTracks()
+
+  try {
+    const favorites = await PlaylistService.GetPlaylistByID('favorites')
+    favoritesArtworkKey.value = favorites?.artwork_key ?? null
+  } catch (e) {
+    console.error('Failed to load favorites artwork', e)
+  }
 })
 </script>
 

@@ -15,7 +15,11 @@ export const usePlaylistsStore = defineStore('playlists', () => {
     loading.value = true
     try {
       const result = await PlaylistService.GetAllPlaylists()
-      playlists.value = result.filter(Boolean) as Playlist[]
+      // Favorites has a real DB row (for artwork), but every other consumer
+      // of this list (add-to-playlist menus, pinned list, playlists grid)
+      // expects normal user playlists — keep it out and let call sites that
+      // need it (PlaylistDetailView, PlaylistsView artwork) fetch it directly.
+      playlists.value = (result.filter(Boolean) as Playlist[]).filter((p) => p.id !== 'favorites')
     } catch (e) {
       console.error('Failed to load playlists', e)
     } finally {

@@ -57,6 +57,27 @@ func (s *PlaylistService) Create(ctx context.Context, name, description string) 
 	return p, nil
 }
 
+// FavoritesPlaylistID is the fixed ID of the system-backed "Favorites" playlist row.
+// Its track list stays virtual (derived from Track.IsFavorite), but the row itself
+// lets Favorites use the normal artwork set/remove flow.
+const FavoritesPlaylistID = "favorites"
+
+func (s *PlaylistService) EnsureFavoritesPlaylist(ctx context.Context) error {
+	existing, err := s.repo.GetByID(ctx, FavoritesPlaylistID)
+	if err != nil {
+		return err
+	}
+	if existing != nil {
+		return nil
+	}
+	p := &domain.Playlist{
+		ID:          FavoritesPlaylistID,
+		Name:        "Favorites",
+		Description: "",
+	}
+	return s.repo.Save(ctx, p)
+}
+
 func (s *PlaylistService) Update(ctx context.Context, id, name, description string) error {
 	if name == "" {
 		return fmt.Errorf("playlist name cannot be empty")
