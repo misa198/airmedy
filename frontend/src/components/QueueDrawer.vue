@@ -98,16 +98,17 @@ onUnmounted(() => {
           <div
             class="w-full flex items-center gap-3 px-0 h-16 text-left hover:bg-foreground/[0.04] transition-colors group relative"
             :class="{ 'bg-primary/10 border-l-2 border-l-primary': store.currentTrack?.id === item.id }"
+            @click="store.playQueueIndex(index)"
             @dblclick="store.playQueueIndex(index)"
             @contextmenu.prevent="onContextMenu($event, item)"
           >
             <!-- Drag Handle -->
-            <div class="dnd-handle cursor-grab active:cursor-grabbing text-foreground opacity-20 group-hover:opacity-60 transition-opacity px-2">
+            <div class="dnd-handle cursor-grab active:cursor-grabbing text-foreground opacity-20 group-hover:opacity-60 transition-opacity px-2" @click.stop>
               <GripVertical class="w-4 h-4 pointer-events-none" />
             </div>
 
             <!-- Artwork -->
-            <div class="w-10 h-10 rounded-md bg-foreground/5 flex-shrink-0 overflow-hidden" @click="store.playQueueIndex(index)">
+            <div class="w-10 h-10 rounded-md bg-foreground/5 flex-shrink-0 overflow-hidden">
               <LazyImg
                 v-if="item.artwork_key"
                 :src="buildArtworkUrl(item.artwork_key, 'sm')"
@@ -120,7 +121,7 @@ onUnmounted(() => {
             </div>
 
             <!-- Track info -->
-            <div class="flex-1 min-w-0" @click="store.playQueueIndex(index)">
+            <div class="flex-1 min-w-0">
               <div
                 class="text-sm font-medium truncate"
                 :class="store.currentTrack?.id === item.id ? 'text-primary' : ''"
