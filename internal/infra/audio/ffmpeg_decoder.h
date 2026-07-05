@@ -18,6 +18,8 @@
 #include <libavutil/channel_layout.h>
 #include <libswresample/swresample.h>
 
+#include "ffmpeg_shared_mu.h"
+
 typedef unsigned int           ma_uint32;
 typedef unsigned long long     ma_uint64;
 
@@ -63,18 +65,28 @@ static FFmpegHandle* ffmpeg_open(const char* path, ma_uint32 target_rate) {
     if (!h) return NULL;
     h->target_rate = target_rate;
 
+    /*
+     * avformat_open_input .. avcodec_open2 shares ffmpeg_probe_mu with
+     * ffmpeg_analyzer.h: probing an embedded MJPEG cover-art stream can
+     * trigger a decoder's one-time lazy static-table init, which corrupts
+     * the heap if playback opens a file at the same moment an analysis
+     * worker is probing another one. See ffmpeg_shared_mu.h.
+     */
+    pthread_mutex_lock(&ffmpeg_probe_mu);
+
     AVDictionary* format_opts = NULL;
     av_dict_set(&format_opts, "probesize", "32000000", 0);      /* 32MB */
     av_dict_set(&format_opts, "analyzeduration", "10000000", 0); /* 10s */
 
     if (avformat_open_input(&h->fmt_ctx, path, NULL, &format_opts) < 0) {
         av_dict_free(&format_opts);
+        pthread_mutex_unlock(&ffmpeg_probe_mu);
         free(h);
         return NULL;
     }
     av_dict_free(&format_opts);
 
-    /* 
+    /*
      * avformat_find_stream_info can return errors for files with "broken" metadata streams
      * (like timescale errors in M4A), but the audio stream might be perfectly fine.
      * We proceed even on error and let av_find_best_stream be the final arbiter.
@@ -91,22 +103,27 @@ static FFmpegHandle* ffmpeg_open(const char* path, ma_uint32 target_rate) {
     const AVCodec* codec = NULL;
     h->stream_idx = av_find_best_stream(h->fmt_ctx, AVMEDIA_TYPE_AUDIO, -1, -1, &codec, 0);
     if (h->stream_idx < 0 || !codec) {
+        pthread_mutex_unlock(&ffmpeg_probe_mu);
         ffmpeg_close(h);
         return NULL;
     }
 
     h->codec_ctx = avcodec_alloc_context3(codec);
     if (!h->codec_ctx) {
+        pthread_mutex_unlock(&ffmpeg_probe_mu);
         ffmpeg_close(h);
         return NULL;
     }
 
     avcodec_parameters_to_context(h->codec_ctx, h->fmt_ctx->streams[h->stream_idx]->codecpar);
     if (avcodec_open2(h->codec_ctx, codec, NULL) < 0) {
+        pthread_mutex_unlock(&ffmpeg_probe_mu);
         ffmpeg_close(h);
         return NULL;
     }
     avcodec_flush_buffers(h->codec_ctx);
+
+    pthread_mutex_unlock(&ffmpeg_probe_mu);
 
     ma_uint32 in_ch;
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 37, 100)
