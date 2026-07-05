@@ -75,9 +75,9 @@ watch(() => route.params.id, (newId) => {
           <Tag class="w-12 h-12 text-foreground opacity-70" />
         </div>
         <div class="flex-1 space-y-2">
-          <h1 class="text-4xl font-bold tracking-tight">{{ genre.name || t('library.unknown_genre') }}</h1>
+          <h1 class="text-3xl font-bold tracking-tight line-clamp-2">{{ genre.name || t('library.unknown_genre') }}</h1>
           <div class="flex items-center gap-4 text-foreground opacity-60">
-            <span class="flex items-center gap-1"><Music class="w-4 h-4" /> {{ t('genre.tracks_count', { count: tracks.length }) }}</span>
+            <span class="flex items-center gap-1 text-sm"><Music class="w-4 h-4" /> {{ t('genre.tracks_count', { count: tracks.length }) }}</span>
           </div>
           <div class="pt-2 flex items-center gap-4">
             <DetailsButton :icon="Play" :label="t('common.play')" :filled-icon="true" @click="playerStore.playTracks(sortedTracks, 0)" />
