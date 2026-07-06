@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch, nextTick } from 'vue'
 import { ChevronRight } from '@lucide/vue'
 import type { useHoverSubmenuGroup } from '@/composables/useHoverSubmenuGroup'
 
@@ -13,6 +13,24 @@ const props = withDefaults(defineProps<{
 const key = Symbol()
 const open = computed(() => props.group.activeKey.value === key)
 
+const triggerRef = ref<HTMLElement | null>(null)
+const panelX = ref(0)
+const panelY = ref(0)
+
+function updatePosition() {
+  if (!triggerRef.value) return
+  const rect = triggerRef.value.getBoundingClientRect()
+  panelX.value = rect.right
+  panelY.value = rect.top
+}
+
+watch(open, (isOpen) => {
+  if (isOpen) {
+    updatePosition()
+    nextTick(updatePosition)
+  }
+})
+
 function onEnter() {
   if (!props.disabled) props.group.enter(key)
 }
@@ -24,6 +42,7 @@ function onLeave() {
 
 <template>
   <div
+    ref="triggerRef"
     class="relative"
     @mouseenter="onEnter"
     @mouseleave="onLeave"
@@ -39,12 +58,16 @@ function onLeave() {
     <!-- Zero-width bridge: keeps the hover region contiguous across the gap -->
     <div v-if="open" class="absolute left-full top-0 bottom-0 w-2" />
 
-    <div
-      v-if="open"
-      class="flex flex-col gap-0.5 absolute left-full top-0 -mt-[1px] ml-2 max-h-72 overflow-y-auto rounded-2xl bg-glass-elevated backdrop-blur-xl ring-1 ring-border-glass shadow-2xl p-1.5"
-      :style="{ minWidth: panelWidth + 'px' }"
-    >
-      <slot />
-    </div>
+    <Teleport to="body">
+      <div
+        v-if="open"
+        class="fixed z-[999] flex flex-col gap-0.5 max-h-72 overflow-y-auto rounded-2xl bg-glass-elevated backdrop-blur-xl ring-1 ring-border-glass shadow-2xl p-1.5 transform-gpu isolate"
+        :style="{ left: panelX + 'px', top: panelY - 1 + 'px', minWidth: panelWidth + 'px' }"
+        @mouseenter="onEnter"
+        @mouseleave="onLeave"
+      >
+        <slot />
+      </div>
+    </Teleport>
   </div>
 </template>
