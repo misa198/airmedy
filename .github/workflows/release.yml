@@ -80,6 +80,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-mingw-w64-x86-64 nasm
+          # Ubuntu's gcc-mingw-w64-x86-64 leaves the compiler as an unconfigured
+          # update-alternatives symlink (posix vs win32 threading model); pin it
+          # explicitly or `x86_64-w64-mingw32-gcc` resolves but fails to run.
+          sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
           # Windows ARM64 has no apt mingw package; llvm-mingw provides
           # aarch64-w64-mingw32-* (clang-based) cross-compilers.
           LLVM_MINGW=llvm-mingw-20260616-ucrt-ubuntu-22.04-x86_64
@@ -96,6 +100,51 @@ jobs:
         with:
           name: ffmpeg-windows
           path: internal/infra/audio/ffmpeg_libs
+
+  build-aubio-windows:
+    name: Build aubio for Windows
+    needs: bump
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ github.event.inputs.version }}
+
+      - name: Cache aubio (Windows)
+        id: cache-aubio
+        uses: actions/cache@v4
+        with:
+          path: internal/infra/audio/aubio_libs
+          key: aubio-Windows-v2-${{ hashFiles('scripts/build-aubio-windows.sh') }}
+
+      - name: Install mingw cross-compilers
+        if: steps.cache-aubio.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64-x86-64 python3
+          sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
+          LLVM_MINGW=llvm-mingw-20260616-ucrt-ubuntu-22.04-x86_64
+          curl -L "https://github.com/mstorsjo/llvm-mingw/releases/download/20260616/${LLVM_MINGW}.tar.xz" -o /tmp/llvm-mingw.tar.xz
+          sudo tar -xf /tmp/llvm-mingw.tar.xz -C /opt
+          echo "/opt/${LLVM_MINGW}/bin" >> "$GITHUB_PATH"
+
+      - name: Build aubio (Windows AMD64 + ARM64)
+        if: steps.cache-aubio.outputs.cache-hit != 'true'
+        run: bash scripts/build-aubio-windows.sh
+
+      - name: Upload aubio config.log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aubio-windows-config-log
+          path: /tmp/aubio-build-airmedy-windows/work-*/build/config.log
+
+      - name: Upload aubio libs
+        uses: actions/upload-artifact@v4
+        with:
+          name: aubio-windows
+          path: internal/infra/audio/aubio_libs
 
   build-sfb-darwin:
     name: Build SFBAudioEngine for Darwin
@@ -246,7 +295,7 @@ jobs:
 
   build:
     name: Build ${{ matrix.os }}
-    needs: [bump, build-ffmpeg-windows, build-sfb-darwin, build-ffmpeg-darwin, build-aubio-darwin, build-ffmpeg-linux, build-aubio-linux]
+    needs: [bump, build-ffmpeg-windows, build-aubio-windows, build-sfb-darwin, build-ffmpeg-darwin, build-aubio-darwin, build-ffmpeg-linux, build-aubio-linux]
     strategy:
       fail-fast: false
       matrix:
@@ -361,6 +410,13 @@ jobs:
         with:
           name: ffmpeg-windows
           path: internal/infra/audio/ffmpeg_libs
+
+      - name: Download aubio (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/download-artifact@v4
+        with:
+          name: aubio-windows
+          path: internal/infra/audio/aubio_libs
 
       - name: Download FFmpeg (Darwin)
         if: runner.os == 'macOS'
