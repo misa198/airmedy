@@ -11,6 +11,17 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
+const trayLabelMaxLen = 40
+
+// truncateLabel trims s to at most max runes, appending "..." if truncated.
+func truncateLabel(s string, max int) string {
+	runes := []rune(s)
+	if len(runes) <= max {
+		return s
+	}
+	return string(runes[:max-3]) + "..."
+}
+
 type TrayManager struct {
 	app            *application.App
 	playerService  *player.PlayerService
@@ -184,14 +195,31 @@ func (m *TrayManager) onQueueChange(queue []*domain.TrackDTO) {
 func (m *TrayManager) updateTrackLabelsInternal() {
 	track := m.playerService.GetCurrentTrack()
 	if track != nil {
+		title := strings.TrimSpace(track.Title)
+
 		artistNames := []string{}
 		for _, a := range track.Artists {
-			artistNames = append(artistNames, a.Name)
+			if a == nil {
+				continue
+			}
+			name := strings.TrimSpace(a.Name)
+			if name != "" {
+				artistNames = append(artistNames, name)
+			}
 		}
-		label := track.Title
+
+		label := title
 		if len(artistNames) > 0 {
-			label = fmt.Sprintf("%s — %s", track.Title, strings.Join(artistNames, ", "))
+			if title != "" {
+				label = fmt.Sprintf("%s — %s", title, strings.Join(artistNames, ", "))
+			} else {
+				label = strings.Join(artistNames, ", ")
+			}
 		}
+		if strings.TrimSpace(label) == "" {
+			label = "Unknown"
+		}
+		label = truncateLabel(label, trayLabelMaxLen)
 		m.currentTrackItem.SetLabel(label)
 		m.favoriteItem.SetChecked(track.IsFavorite)
 
@@ -211,7 +239,12 @@ func (m *TrayManager) updateTrackLabelsInternal() {
 
 	nextTrack := m.playerService.PeekNextTrack()
 	if nextTrack != nil {
-		m.nextTrackItem.SetLabel(m.i18nService.T("tray.next", nextTrack.Title))
+		nextTitle := strings.TrimSpace(nextTrack.Title)
+		if nextTitle == "" {
+			nextTitle = "Unknown"
+		}
+		label := truncateLabel(m.i18nService.T("tray.next", nextTitle), trayLabelMaxLen)
+		m.nextTrackItem.SetLabel(label)
 		m.nextActionItem.SetEnabled(true)
 	} else {
 		m.nextTrackItem.SetLabel(m.i18nService.T("tray.next_none"))
