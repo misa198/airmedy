@@ -25,7 +25,6 @@
 
 <div align="center">
 <img src="docs/remote.webp" alt="remote" width="824" />
-<img src="docs/tracks.webp" alt="tracks" width="824" />
 </div>
 
 ---
