@@ -110,7 +110,7 @@ function updateAxis(key: keyof MoodBox, raw: string) {
 
       <div class="flex flex-col gap-1">
         <div class="relative" :style="{ width: `${SIZE}px`, height: `${SIZE}px` }">
-          <svg :width="SIZE" :height="SIZE" class="rounded-xl overflow-hidden">
+          <svg :width="SIZE" :height="SIZE" class="overflow-visible">
             <rect x="0" y="0" :width="SIZE" :height="SIZE" class="fill-foreground/[0.03]" />
             <rect
               v-for="cell in cells"
