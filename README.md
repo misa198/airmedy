@@ -30,6 +30,37 @@
 
 ---
 
+<details>
+<summary><b>Screenshots</b></summary>
+<br>
+
+<table>
+<tr>
+<td width="33%"><img src="docs/screenshots/home.png" alt="Home" width="100%" /><p align="center">Home</p></td>
+<td width="33%"><img src="docs/screenshots/tracks.png" alt="Tracks" width="100%" /><p align="center">Tracks</p></td>
+<td width="33%"><img src="docs/screenshots/tracks-compact-mode.png" alt="Tracks (compact mode)" width="100%" /><p align="center">Tracks (compact mode)</p></td>
+</tr>
+<tr>
+<td width="33%"><img src="docs/screenshots/albums.png" alt="Albums" width="100%" /><p align="center">Albums</p></td>
+<td width="33%"><img src="docs/screenshots/album.png" alt="Album" width="100%" /><p align="center">Album</p></td>
+<td width="33%"><img src="docs/screenshots/artists.png" alt="Artists" width="100%" /><p align="center">Artists</p></td>
+</tr>
+<tr>
+<td width="33%"><img src="docs/screenshots/genres.png" alt="Genres" width="100%" /><p align="center">Genres</p></td>
+<td width="33%"><img src="docs/screenshots/playlists.png" alt="Playlists" width="100%" /><p align="center">Playlists</p></td>
+<td width="33%"><img src="docs/screenshots/playlist.png" alt="Playlist" width="100%" /><p align="center">Playlist</p></td>
+</tr>
+<tr>
+<td width="33%"><img src="docs/screenshots/fullscreen-player.png" alt="Fullscreen player" width="100%" /><p align="center">Fullscreen player</p></td>
+<td width="33%"><img src="docs/screenshots/mini-player.png" alt="Mini player" width="100%" /><p align="center">Mini player</p></td>
+<td width="33%"></td>
+</tr>
+</table>
+
+</details>
+
+---
+
 ## Features
 
 - **Your whole library** — add any folder and Airmedy scans it, even with tens of thousands of tracks. Rescans on a configurable interval (default hourly) to pick up changes made outside the app.
@@ -51,6 +82,29 @@
 - **Volume normalization** — consistent loudness across your library, no more reaching for the volume knob between tracks. Analyzes your library with FFmpeg (LUFS loudness + true peak), then applies per-track pre-amp gain at playback. Track mode normalizes each song individually; album mode keeps an album's natural dynamics by applying one gain across all its tracks. Target loudness is configurable (default -14 LUFS), with an optional prevent-clipping guard.
 - **Mood Radio** — start an auto-refilling radio queue from any track. Finds similar tracks across your whole library by comparing energy, danceability, and tempo derived from per-track audio analysis.
 - **Smart Playlists** — auto-updating playlists built from rules (genre, artist, year, play count, rating, and more) or from a mood picker that filters your library by energy × danceability.
+
+---
+
+## Keyboard Shortcuts
+
+`Ctrl` on Windows/Linux, `Cmd` on macOS. Ignored while typing in an input/textarea.
+
+| Shortcut                | Action                    |
+| ------------------------ | ------------------------- |
+| `Space`                  | Play / pause              |
+| `Ctrl/Cmd + →`           | Next track                |
+| `Ctrl/Cmd + Alt + →`     | Fast forward               |
+| `Ctrl/Cmd + ←`           | Previous track             |
+| `Ctrl/Cmd + Alt + ←`     | Rewind                    |
+| `Ctrl/Cmd + ↑`           | Volume up                 |
+| `Ctrl/Cmd + ↓`           | Volume down                |
+| `Ctrl/Cmd + Alt + ↓`     | Mute toggle                |
+| `Ctrl/Cmd + S`           | Shuffle toggle             |
+| `Ctrl/Cmd + R`           | Cycle repeat mode          |
+| `Ctrl/Cmd + F`           | Go to search               |
+| `Ctrl/Cmd + ,`           | Open settings              |
+
+---
 
 ## Audio Format Support
 
