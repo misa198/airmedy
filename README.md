@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/airmedy.png" alt="Airmedy" width="96" height="96" />
+<img src="docs/airmedy.webp" alt="Airmedy" width="96" height="96" />
 
 # Airmedy
 
@@ -24,8 +24,8 @@
 ---
 
 <div align="center">
-<img src="docs/remote.png" alt="remote" width="824" />
-<img src="docs/tracks.png" alt="tracks" width="824" />
+<img src="docs/remote.webp" alt="remote" width="824" />
+<img src="docs/tracks.webp" alt="tracks" width="824" />
 </div>
 
 ---
@@ -36,24 +36,24 @@
 
 <table>
 <tr>
-<td width="33%"><img src="docs/screenshots/home.png" alt="Home" width="100%" /><p align="center">Home</p></td>
-<td width="33%"><img src="docs/screenshots/tracks.png" alt="Tracks" width="100%" /><p align="center">Tracks</p></td>
-<td width="33%"><img src="docs/screenshots/tracks-compact-mode.png" alt="Tracks (compact mode)" width="100%" /><p align="center">Tracks (compact mode)</p></td>
+<td width="33%"><img src="docs/screenshots/home.webp" alt="Home" width="100%" /><p align="center">Home</p></td>
+<td width="33%"><img src="docs/screenshots/tracks.webp" alt="Tracks" width="100%" /><p align="center">Tracks</p></td>
+<td width="33%"><img src="docs/screenshots/tracks-compact-mode.webp" alt="Tracks (compact mode)" width="100%" /><p align="center">Tracks (compact mode)</p></td>
 </tr>
 <tr>
-<td width="33%"><img src="docs/screenshots/albums.png" alt="Albums" width="100%" /><p align="center">Albums</p></td>
-<td width="33%"><img src="docs/screenshots/album.png" alt="Album" width="100%" /><p align="center">Album</p></td>
-<td width="33%"><img src="docs/screenshots/artists.png" alt="Artists" width="100%" /><p align="center">Artists</p></td>
+<td width="33%"><img src="docs/screenshots/albums.webp" alt="Albums" width="100%" /><p align="center">Albums</p></td>
+<td width="33%"><img src="docs/screenshots/album.webp" alt="Album" width="100%" /><p align="center">Album</p></td>
+<td width="33%"><img src="docs/screenshots/artists.webp" alt="Artists" width="100%" /><p align="center">Artists</p></td>
 </tr>
 <tr>
-<td width="33%"><img src="docs/screenshots/genres.png" alt="Genres" width="100%" /><p align="center">Genres</p></td>
-<td width="33%"><img src="docs/screenshots/playlists.png" alt="Playlists" width="100%" /><p align="center">Playlists</p></td>
-<td width="33%"><img src="docs/screenshots/playlist.png" alt="Playlist" width="100%" /><p align="center">Playlist</p></td>
+<td width="33%"><img src="docs/screenshots/genres.webp" alt="Genres" width="100%" /><p align="center">Genres</p></td>
+<td width="33%"><img src="docs/screenshots/playlists.webp" alt="Playlists" width="100%" /><p align="center">Playlists</p></td>
+<td width="33%"><img src="docs/screenshots/playlist.webp" alt="Playlist" width="100%" /><p align="center">Playlist</p></td>
 </tr>
 <tr>
-<td width="33%"><img src="docs/screenshots/fullscreen-player.png" alt="Fullscreen player" width="100%" /><p align="center">Fullscreen player</p></td>
-<td width="33%"><img src="docs/screenshots/mini-player.png" alt="Mini player" width="100%" /><p align="center">Mini player</p></td>
-<td width="33%"></td>
+<td width="33%"><img src="docs/screenshots/fullscreen-player.webp" alt="Fullscreen player" width="100%" /><p align="center">Fullscreen player</p></td>
+<td width="33%"><img src="docs/screenshots/mini-player.webp" alt="Mini player" width="100%" /><p align="center">Mini player</p></td>
+<td width="33%"><img src="docs/screenshots/search.webp" alt="Search" width="100%" /><p align="center">Search</p></td>
 </tr>
 </table>
 
@@ -77,7 +77,7 @@
 - **Tray menu** — control playback from the system tray.
 - **Prevent sleep** — optionally keep your system awake while music is playing.
 - **Themes** — light, dark (gray), and black (pure black for OLED screens) themes.
-- **Artist images** — uses local `artist.jpg`/`.jpeg`/`.png` files from your music folders (in the artist folder or beside the songs), or set your own custom image per artist. Toggle "Online Artist Artwork" to use Deezer images instead; turn it off to use your local files.
+- **Artist images** — uses local `artist.jpg`/`.jpeg`/`.webp` files from your music folders (in the artist folder or beside the songs), or set your own custom image per artist. Toggle "Online Artist Artwork" to use Deezer images instead; turn it off to use your local files.
 - **Remote control** — control playback from any browser on the same network. Enable the remote server in settings, open the displayed URL on your phone or tablet, and enter the PIN to start controlling playback, managing the queue, and viewing lyrics remotely.
 - **Volume normalization** — consistent loudness across your library, no more reaching for the volume knob between tracks. Analyzes your library with FFmpeg (LUFS loudness + true peak), then applies per-track pre-amp gain at playback. Track mode normalizes each song individually; album mode keeps an album's natural dynamics by applying one gain across all its tracks. Target loudness is configurable (default -14 LUFS), with an optional prevent-clipping guard.
 - **Mood Radio** — start an auto-refilling radio queue from any track. Finds similar tracks across your whole library by comparing energy, danceability, and tempo derived from per-track audio analysis.
