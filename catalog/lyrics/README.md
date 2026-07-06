@@ -9,7 +9,8 @@ Fetches and displays synchronized (LRC) or plain-text lyrics for the current tra
 | File                                        | Purpose                              |
 | ------------------------------------------- | ------------------------------------ |
 | `internal/domain/repositories.go`           | `LyricsProvider` + `LocalLyricsReader` port interfaces |
-| `internal/app/lyrics/lyrics_service.go`     | Use-case orchestration, CRUD, racing, resolution |
+| `internal/app/lyrics/lyrics_service.go`     | Use-case orchestration, CRUD, racing, resolution, manual `.lrc` file save |
+| `internal/app/lyrics/subfolder.go`          | `ValidSubfolderName` / `ResolveSubdir` — shared subfolder name validation and case-insensitive resolution, used for both read (`PlayerService`) and write (`LyricsService.SaveLyricsFile`) |
 | `internal/infra/lyrics/local.go`            | Sibling `.lrc`/`.txt` file reader    |
 | `internal/infra/lyrics/lrclib.go`           | lrclib.net HTTP adapter              |
 | `internal/infra/lyrics/kugou.go`            | KuGou Music HTTP adapter             |
@@ -99,6 +100,27 @@ If both `enable_lrclib` and `enable_kugou` are false, no external fetch is attem
 - Paths joined with `filepath.Join` → cross-platform (Unix `/`, Windows `\`).
 - Sources: `local-lrc`, `local-txt`. Frontend keys synced/plain off the content (timestamps), so
   `.lrc` renders synced and `.txt` renders plain automatically.
+
+### Manual `.lrc` File Save
+
+`LyricsService.SaveLyricsFile(ctx, audioPath, content string) error` writes `content` as a
+sibling `.lrc` file for `audioPath`, independent of the DB-backed `SaveLyrics` (which always
+runs and only upserts the `lyrics` table row).
+
+Candidate directories, in priority order:
+
+1. Dedicated lyrics folder (`lyrics_folder_path`), when `lyrics_folder_enabled`.
+2. Lyrics subfolder next to the track (`ResolveSubdir(trackDir, lyrics_subfolder_name)`),
+   when `lyrics_subfolder_enabled` and the name passes `ValidSubfolderName`.
+3. The track's own directory.
+
+`SaveLyricsFile` first searches the candidates in that order for an existing `<base>.lrc`; if
+found, it overwrites that file in place. If none exists, it creates a new one in the
+highest-priority enabled candidate (creating the directory via `os.MkdirAll` if needed).
+
+Exposed to the frontend as `LyricsService.SaveLyricsFile(audioPath, content)`. Invoked from
+`FindLyricsDialog.vue` when the "Save .lrc file" checkbox is checked (default unchecked) at
+the point the user clicks the result-selection button.
 
 ## Fetch Strategy
 
@@ -196,6 +218,7 @@ Providers are wired via FX value group `lyrics_providers`. `LyricsService` recei
 GetLyrics(trackID: string): Lyric | null
 FetchLyrics(trackID: string, track: TrackDTO): Lyric | null
 SaveLyrics(trackID: string, content: string, source: string): void
+SaveLyricsFile(audioPath: string, content: string): void
 DeleteLyrics(trackID: string): void
 ```
 
@@ -259,6 +282,6 @@ Parsed into `{ text: "English text", secondary: "中文翻译" }`.
 
 **Refresh button:** In the track context menu (`context_menu.refresh_lyrics`), calls `FetchLyrics()` to force re-fetch even if cached.
 
-**Manual Search:** In the track context menu (`context_menu.find_lyrics`), opens `FindLyricsDialog.vue`. This allows users to manually search for lyrics by title and artist. It provides a list of candidates from both LRCLIB and KuGou, scored using the same "Search and Rank" logic as the automatic fetch. Users can preview and save the selected lyrics.
+**Manual Search:** In the track context menu (`context_menu.find_lyrics`), opens `FindLyricsDialog.vue`. This allows users to manually search for lyrics by title and artist. It provides a list of candidates from both LRCLIB and KuGou, scored using the same "Search and Rank" logic as the automatic fetch. Users preview a candidate and confirm via the "Select" button, which always upserts the DB row (`SaveLyrics`) and, if the "Save .lrc file" checkbox is checked, also calls `SaveLyricsFile` (see Manual `.lrc` File Save above). An info icon next to the checkbox shows a hover tooltip (`Tooltip` component, `@airmedy/ui`) explaining the save-location priority.
 
 **Manual Edit:** Users can manually edit lyrics in the `MetadataEditDialog`. These edits are written to the file's `LYRICS` tag and stored as `meta_content` in the database.

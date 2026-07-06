@@ -214,6 +214,23 @@ Props: `modelValue`, `min`, `max`, `step`, `class`, `scrollable`.
 
 `scrollable` (default `false`) — enables mouse wheel to increment/decrement by one `step`. Use only on volume sliders; seek bar and other sliders must leave it unset to avoid hijacking page scroll. Currently enabled on: `PlayerVolumeControl.vue`, `PlayerFooter.vue` (volume only), `MiniPlayerFloating.vue` (volume popup), `remote/PlayerControls.vue`.
 
+### Checkbox (`packages/ui/src/checkbox/Checkbox.vue`)
+
+Props: `checked: boolean`, `variant?: 'outlined' | 'contained'`. Emits `update:checked`. Purely
+presentational (no internal click handler) — pair with a wrapping `<label>` that toggles state
+on click, e.g. `SmartPlaylistDialog.vue` (limit toggle) and `FindLyricsDialog.vue` (save-file
+toggle).
+
+### Tooltip (`packages/ui/src/tooltip/Tooltip.vue`)
+
+Props: `text: string`. Wraps a default slot trigger in a `relative inline-flex group` span; a
+`absolute`-positioned popup (card-styled, positioned above the trigger) fades in on
+`group-hover`. CSS-only, no JS positioning — used where a hover explanation is needed on a small
+element (e.g. the info icon next to `FindLyricsDialog.vue`'s save-file checkbox). Native `title`
+attributes are the fallback convention elsewhere in the app (e.g. `RemoteServerSettings.vue`)
+but do not render reliably inside the Wails webview for icon components, so prefer `Tooltip` for
+new hover explanations.
+
 ## Interactive Polish
 
 - **Auto-scroll to Active**: `TrackTable.vue` and `QueueDrawer.vue` automatically scroll to the currently playing track when opened or when the track changes. Uses a 100ms delay to ensure layout stability.

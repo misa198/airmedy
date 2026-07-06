@@ -33,7 +33,7 @@
 ## Features
 
 - **Your whole library** — add any folder and Airmedy scans it, even with tens of thousands of tracks. Rescans on a configurable interval (default hourly) to pick up changes made outside the app.
-- **Lyrics that follow along** — synced lyrics scroll line-by-line as the song plays. Plain-text lyrics shown when sync data isn't available. Sources, in priority order: local lyric files next to the track (`.lrc`, then `.txt`), embedded lyrics, then online lyrics from LRCLIB and Kugou.
+- **Lyrics that follow along** — synced lyrics scroll line-by-line as the song plays. Plain-text lyrics shown when sync data isn't available. Sources, in priority order: local lyric files next to the track (`.lrc`, then `.txt`), embedded lyrics, then online lyrics from LRCLIB and Kugou. Search and pick lyrics manually, optionally saving the result as a `.lrc` file (dedicated lyrics folder, subfolder next to the track, or next to the track itself, in that order).
 - **Fullscreen & miniplayer modes** — go fullscreen for an immersive listening experience, or shrink to a miniplayer that stays out of your way.
 - **Playlists** — create and manage playlists, import and export them, and browse your collection by genre, artist, or album.
 - **Gapless playback** — tracks transition without any silence or interruption.

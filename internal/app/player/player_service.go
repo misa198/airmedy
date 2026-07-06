@@ -797,47 +797,6 @@ func (s *PlayerService) extractAndEmitPalette(track *domain.TrackDTO) {
 	}
 }
 
-// validLyricsSubfolderName reports whether name is a safe single path segment for
-// a lyrics subfolder next to a track. Rejects empty, path separators, and any
-// traversal so the joined path can't escape the track's directory.
-func validLyricsSubfolderName(name string) bool {
-	name = strings.TrimSpace(name)
-	if name == "" || name == "." || name == ".." {
-		return false
-	}
-	if strings.ContainsAny(name, `/\`) || strings.Contains(name, "..") {
-		return false
-	}
-	return true
-}
-
-// resolveLyricsSubdir returns the path of the lyrics subfolder named `name` inside
-// `parent`, matching case-insensitively. macOS/Windows filesystems are already
-// case-insensitive; this makes Linux (case-sensitive) behave the same, so the name
-// the user typed matches regardless of case. Falls back to the exact join if no
-// directory matches (path may not exist yet).
-func resolveLyricsSubdir(parent, name string) string {
-	entries, err := os.ReadDir(parent)
-	if err == nil {
-		var caseInsensitiveMatch string
-		for _, e := range entries {
-			if !e.IsDir() {
-				continue
-			}
-			if e.Name() == name {
-				return filepath.Join(parent, e.Name())
-			}
-			if caseInsensitiveMatch == "" && strings.EqualFold(e.Name(), name) {
-				caseInsensitiveMatch = e.Name()
-			}
-		}
-		if caseInsensitiveMatch != "" {
-			return filepath.Join(parent, caseInsensitiveMatch)
-		}
-	}
-	return filepath.Join(parent, name)
-}
-
 // lyricsResolveParams builds the preference + extra lyric dirs used by both the
 // emit-on-track-change path and the pull-based GetCurrentLyrics. Extra dirs are
 // in priority order (sibling dir is always checked first by the reader):
@@ -848,8 +807,8 @@ func (s *PlayerService) lyricsResolveParams(ctx context.Context, track *domain.T
 		settings = &domain.AppSettings{}
 	}
 	preferLocal = settings.PreferLocalLyrics
-	if settings.LyricsSubfolderEnabled && validLyricsSubfolderName(settings.LyricsSubfolderName) {
-		extraDirs = append(extraDirs, resolveLyricsSubdir(filepath.Dir(track.Path), settings.LyricsSubfolderName))
+	if settings.LyricsSubfolderEnabled && lyrics.ValidSubfolderName(settings.LyricsSubfolderName) {
+		extraDirs = append(extraDirs, lyrics.ResolveSubdir(filepath.Dir(track.Path), settings.LyricsSubfolderName))
 	}
 	if settings.LyricsFolderEnabled && settings.LyricsFolderPath != "" {
 		extraDirs = append(extraDirs, settings.LyricsFolderPath)

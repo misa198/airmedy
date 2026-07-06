@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Search, X, Loader2, Music, User, Globe, Clock } from '@lucide/vue'
+import { Search, X, Loader2, Music, User, Globe, Clock, Info } from '@lucide/vue'
 import { Modal } from '@airmedy/ui'
 import { Input } from '@airmedy/ui'
+import { Checkbox } from '@airmedy/ui'
+import { Tooltip } from '@airmedy/ui'
 import { useFindLyricsDialog } from '@/composables/useFindLyricsDialog'
 import { usePlayerStore } from '@/stores/player'
 import { formatTime } from '@airmedy/utils'
@@ -19,6 +21,7 @@ const searchArtist = ref('')
 const isSearching = ref(false)
 const results = ref<LyricsSearchResult[]>([])
 const selectedIndex = ref(-1)
+const saveFile = ref(false)
 
 const formattedDuration = computed(() => {
   if (!targetTrack.value?.duration) return '0:00'
@@ -31,6 +34,7 @@ watch(isVisible, (val) => {
     searchArtist.value = targetTrack.value.artists?.[0]?.name || ''
     results.value = []
     selectedIndex.value = -1
+    saveFile.value = false
   }
 })
 
@@ -54,7 +58,10 @@ async function save() {
   const selected = results.value[selectedIndex.value]
   try {
     await LyricsService.SaveLyrics(targetTrack.value.id, selected.content, selected.source)
-    
+    if (saveFile.value && targetTrack.value.path) {
+      await LyricsService.SaveLyricsFile(targetTrack.value.path, selected.content)
+    }
+
     // Update player store if it's the current track
     if (playerStore.currentTrack?.id === targetTrack.value.id) {
       playerStore.lyrics = {
@@ -188,12 +195,19 @@ async function save() {
     </div>
 
     <!-- Footer -->
-    <div class="p-4 border-t border-border/50 flex justify-end gap-3 bg-card mt-auto">
+    <div class="p-4 border-t border-border/50 flex items-center justify-end gap-3 bg-card mt-auto">
+      <label class="flex items-center gap-1.5 text-sm text-foreground/80 cursor-pointer mr-auto select-none" @click="saveFile = !saveFile">
+        <Checkbox :checked="saveFile" />
+        {{ t('find_lyrics.save_file') }}
+        <Tooltip :text="t('find_lyrics.save_file_tooltip')">
+          <Info class="w-3.5 h-3.5 text-muted-foreground" />
+        </Tooltip>
+      </label>
       <button class="px-6 py-2 hover:bg-hover rounded-lg font-medium transition-colors" @click="close">
         {{ t('common.cancel') }}
       </button>
       <button class="px-6 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-bold transition-colors disabled:opacity-50" :disabled="selectedIndex === -1" @click="save">
-        {{ t('find_lyrics.save') }}
+        {{ t('find_lyrics.select') }}
       </button>
     </div>
   </Modal>

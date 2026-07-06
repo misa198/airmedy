@@ -4,19 +4,23 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"airmedy/internal/domain"
 )
 
 type LyricsService struct {
-	repo        domain.LyricRepository
-	logger      *slog.Logger
-	providers   []domain.LyricsProvider
-	localReader domain.LocalLyricsReader
+	repo         domain.LyricRepository
+	logger       *slog.Logger
+	providers    []domain.LyricsProvider
+	localReader  domain.LocalLyricsReader
+	settingsRepo domain.SettingsRepository
 }
 
-func NewLyricsService(repo domain.LyricRepository, logger *slog.Logger, providers []domain.LyricsProvider, localReader domain.LocalLyricsReader) *LyricsService {
-	return &LyricsService{repo: repo, logger: logger, providers: providers, localReader: localReader}
+func NewLyricsService(repo domain.LyricRepository, logger *slog.Logger, providers []domain.LyricsProvider, localReader domain.LocalLyricsReader, settingsRepo domain.SettingsRepository) *LyricsService {
+	return &LyricsService{repo: repo, logger: logger, providers: providers, localReader: localReader, settingsRepo: settingsRepo}
 }
 
 func (s *LyricsService) GetLyrics(ctx context.Context, trackID string) (*domain.Lyric, error) {
@@ -39,6 +43,46 @@ func (s *LyricsService) SaveLyrics(ctx context.Context, trackID, content, source
 
 func (s *LyricsService) DeleteLyrics(ctx context.Context, trackID string) error {
 	return s.repo.Delete(ctx, trackID)
+}
+
+// SaveLyricsFile writes content as a sibling .lrc file for audioPath. If a
+// .lrc file already exists in any candidate location (dedicated lyrics
+// folder, lyrics subfolder next to the track, or the track's own directory,
+// searched in that priority order), it is updated in place. Otherwise a new
+// file is created at the highest-priority enabled location.
+func (s *LyricsService) SaveLyricsFile(ctx context.Context, audioPath, content string) error {
+	if audioPath == "" {
+		return errors.New("audio path required")
+	}
+	settings, err := s.settingsRepo.Load(ctx)
+	if err != nil {
+		settings = &domain.AppSettings{}
+	}
+
+	dir := filepath.Dir(audioPath)
+	var candidates []string
+	if settings.LyricsFolderEnabled && settings.LyricsFolderPath != "" {
+		candidates = append(candidates, settings.LyricsFolderPath)
+	}
+	if settings.LyricsSubfolderEnabled && ValidSubfolderName(settings.LyricsSubfolderName) {
+		candidates = append(candidates, ResolveSubdir(dir, settings.LyricsSubfolderName))
+	}
+	candidates = append(candidates, dir)
+
+	base := strings.TrimSuffix(filepath.Base(audioPath), filepath.Ext(audioPath))
+
+	for _, d := range candidates {
+		path := filepath.Join(d, base+".lrc")
+		if _, err := os.Stat(path); err == nil {
+			return os.WriteFile(path, []byte(content), 0o644)
+		}
+	}
+
+	targetDir := candidates[0]
+	if err := os.MkdirAll(targetDir, 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(targetDir, base+".lrc"), []byte(content), 0o644)
 }
 
 func (s *LyricsService) SearchLyrics(ctx context.Context, title, artist string, duration int, enableLrclib, enableKugou bool) ([]*domain.LyricsSearchResult, error) {
