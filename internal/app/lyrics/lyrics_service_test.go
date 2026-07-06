@@ -33,7 +33,7 @@ func (s stubLocal) Read(string, ...string) (string, string, bool) {
 }
 
 func newService(lyric *domain.Lyric, local domain.LocalLyricsReader) *LyricsService {
-	return NewLyricsService(&stubRepo{lyric: lyric}, slog.New(slog.NewTextHandler(io.Discard, nil)), nil, local)
+	return NewLyricsService(&stubRepo{lyric: lyric}, slog.New(slog.NewTextHandler(io.Discard, nil)), nil, local, nil)
 }
 
 func TestResolveLyrics(t *testing.T) {

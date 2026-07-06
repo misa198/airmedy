@@ -1,4 +1,4 @@
-package player
+package lyrics
 
 import (
 	"os"
@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestValidLyricsSubfolderName(t *testing.T) {
+func TestValidSubfolderName(t *testing.T) {
 	cases := map[string]bool{
 		"lyrics":  true,
 		"Lyrics":  true,
@@ -21,13 +21,13 @@ func TestValidLyricsSubfolderName(t *testing.T) {
 		"ok..bad": false,
 	}
 	for name, want := range cases {
-		if got := validLyricsSubfolderName(name); got != want {
-			t.Errorf("validLyricsSubfolderName(%q) = %v, want %v", name, got, want)
+		if got := ValidSubfolderName(name); got != want {
+			t.Errorf("ValidSubfolderName(%q) = %v, want %v", name, got, want)
 		}
 	}
 }
 
-func TestResolveLyricsSubdir_CaseInsensitive(t *testing.T) {
+func TestResolveSubdir_CaseInsensitive(t *testing.T) {
 	parent := t.TempDir()
 	// Actual folder on disk is "Lyrics"; user typed "lyrics".
 	actual := filepath.Join(parent, "Lyrics")
@@ -35,19 +35,19 @@ func TestResolveLyricsSubdir_CaseInsensitive(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got := resolveLyricsSubdir(parent, "lyrics")
+	got := ResolveSubdir(parent, "lyrics")
 	if got != actual {
-		t.Errorf("resolveLyricsSubdir matched case-insensitively: got %q, want %q", got, actual)
+		t.Errorf("ResolveSubdir matched case-insensitively: got %q, want %q", got, actual)
 	}
 
 	// Exact match wins without scanning.
-	if got := resolveLyricsSubdir(parent, "Lyrics"); got != actual {
+	if got := ResolveSubdir(parent, "Lyrics"); got != actual {
 		t.Errorf("exact match: got %q, want %q", got, actual)
 	}
 
 	// No matching dir → falls back to exact join (non-existent).
 	want := filepath.Join(parent, "nope")
-	if got := resolveLyricsSubdir(parent, "nope"); got != want {
+	if got := ResolveSubdir(parent, "nope"); got != want {
 		t.Errorf("fallback: got %q, want %q", got, want)
 	}
 }

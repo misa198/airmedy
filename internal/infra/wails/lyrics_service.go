@@ -29,6 +29,10 @@ func (s *LyricsService) DeleteLyrics(trackID string) error {
 	return s.service.DeleteLyrics(context.Background(), trackID)
 }
 
+func (s *LyricsService) SaveLyricsFile(audioPath, content string) error {
+	return s.service.SaveLyricsFile(context.Background(), audioPath, content)
+}
+
 func (s *LyricsService) SearchLyrics(title, artist string, duration int) ([]*domain.LyricsSearchResult, error) {
 	settings, _ := s.settingsService.GetSettings(context.Background())
 	enableLrclib, enableKugou := true, true

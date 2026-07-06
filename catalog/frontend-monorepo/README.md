@@ -72,6 +72,7 @@ Run `pnpm --filter @airmedy/ui build` (or `pnpm dev` from root for watch mode).
 | `DetailsButton`     | `DetailsButton.vue`               | Button variant        |
 | `TabSwitcher`       | `TabSwitcher.vue`                 | Custom tabs           |
 | `Checkbox`          | `checkbox/Checkbox.vue`           | Radix CheckboxRoot    |
+| `Tooltip`           | `tooltip/Tooltip.vue`             | Custom CSS (group-hover popup) |
 | `Input`, `index`    | `input/`                          | Native input wrapper  |
 | `Slider`            | `slider/`                         | Radix SliderRoot      |
 | `Switch`            | `switch/`                         | Radix SwitchRoot      |
