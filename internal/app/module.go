@@ -145,6 +145,13 @@ var Module = fx.Module("app",
 					}
 				})
 
+				// Apply the queue size cap live so a lowered limit trims the
+				// running queue immediately (in addition to the startup load
+				// in PlayerService.restoreState).
+				settingsSvc.AddChangeListener(func(settings *domain.AppSettings) {
+					playerSvc.SetMaxQueueSize(domain.ResolveMaxQueueSize(settings.MaxQueueSize))
+				})
+
 				if err := playlistSvc.EnsureFavoritesPlaylist(ctx); err != nil {
 					slog.Error("Failed to ensure favorites playlist", "error", err)
 				}

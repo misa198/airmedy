@@ -340,6 +340,7 @@ type QueueService struct {
     currentIndex int
     repeatMode   RepeatMode
     shuffle      bool
+    maxSize      int          // 0 = unlimited; else caps active list length (AppSettings.MaxQueueSize)
 }
 ```
 
@@ -360,6 +361,23 @@ Fisher-Yates shuffle. When entering shuffle mode with a playing track, the curre
 ### Insert After Current
 
 `PlayNext(track)` / `PlayNextTracks(tracks)` inserts after the current index in both `originalList` and `shuffledList`.
+
+### Max Queue Size
+
+`SetMaxSize(n)` sets the cap (0 = unlimited) and immediately trims an over-cap queue; called from `PlayerService.restoreState` at startup and from a `SettingsService` change-listener (`internal/app/module.go`) so a lowered limit trims the running queue live.
+
+Trim rule (`trimActiveToLocked`, shared by `enforceMaxSizeLocked`): drop oldest history first (indices before `currentIndex`), then — if history alone isn't enough — drop from the tail (farthest future). The current track's index is never touched as long as the target size is ≥ 1 when a current track exists.
+
+Entry points enforce the cap differently depending on how they grow the queue:
+
+| Method | Over-cap behavior |
+| --- | --- |
+| `SetQueue(tracks, startIndex)` | Truncates to the first `maxSize` tracks; `startIndex` clamped into range |
+| `ShuffleTracks(tracks)` | Shuffles, then takes the first `maxSize` of the shuffled result — doubles as random sampling |
+| `AppendTracks(tracks)` / `InsertListAfterCurrent(tracks)` | Incoming batch is first capped to `maxSize` (or `maxSize-1` if a current track exists, reserving its slot), then the *existing* queue is trimmed via `trimActiveToLocked` to make room before the batch is added — so newly added tracks are never the ones sacrificed |
+| `Restore(...)` | Trimmed via `enforceMaxSizeLocked` after hydration, so a session saved under a higher/no limit is truncated on load |
+
+`AppSettings.MaxQueueSize` (one of `domain.ValidMaxQueueSizes`: 100/500/1000/2000/3000, default 1000) is the source of truth; see [settings](../settings/README.md).
 
 ### Other QueueService Methods
 

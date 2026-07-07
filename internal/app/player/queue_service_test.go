@@ -1,6 +1,7 @@
 package player
 
 import (
+	"log/slog"
 	"testing"
 
 	"airmedy/internal/domain"
@@ -20,7 +21,7 @@ func queueIDs(q *QueueService) []string {
 }
 
 func TestInsertAfterCurrent_EmptyQueue(t *testing.T) {
-	q := NewQueueService()
+	q := NewQueueService(slog.Default())
 	q.InsertAfterCurrent(makeTrack("A"))
 	ids := queueIDs(q)
 	if len(ids) != 1 || ids[0] != "A" {
@@ -29,7 +30,7 @@ func TestInsertAfterCurrent_EmptyQueue(t *testing.T) {
 }
 
 func TestInsertAfterCurrent_AtHead(t *testing.T) {
-	q := NewQueueService()
+	q := NewQueueService(slog.Default())
 	q.SetQueue([]*domain.TrackDTO{makeTrack("A"), makeTrack("B"), makeTrack("C")}, 0)
 	q.InsertAfterCurrent(makeTrack("X"))
 	ids := queueIDs(q)
@@ -40,7 +41,7 @@ func TestInsertAfterCurrent_AtHead(t *testing.T) {
 }
 
 func TestInsertAfterCurrent_AtMiddle(t *testing.T) {
-	q := NewQueueService()
+	q := NewQueueService(slog.Default())
 	q.SetQueue([]*domain.TrackDTO{makeTrack("A"), makeTrack("B"), makeTrack("C")}, 1)
 	q.InsertAfterCurrent(makeTrack("X"))
 	ids := queueIDs(q)
@@ -51,7 +52,7 @@ func TestInsertAfterCurrent_AtMiddle(t *testing.T) {
 }
 
 func TestInsertAfterCurrent_AtEnd(t *testing.T) {
-	q := NewQueueService()
+	q := NewQueueService(slog.Default())
 	q.SetQueue([]*domain.TrackDTO{makeTrack("A"), makeTrack("B"), makeTrack("C")}, 2)
 	q.InsertAfterCurrent(makeTrack("X"))
 	ids := queueIDs(q)
@@ -62,7 +63,7 @@ func TestInsertAfterCurrent_AtEnd(t *testing.T) {
 }
 
 func TestInsertAfterCurrent_ShuffleInsertsAtCurrentPlusOne(t *testing.T) {
-	q := NewQueueService()
+	q := NewQueueService(slog.Default())
 	tracks := []*domain.TrackDTO{makeTrack("A"), makeTrack("B"), makeTrack("C")}
 	q.SetQueue(tracks, 0)
 	q.SetShuffle(true)
@@ -95,7 +96,7 @@ func TestInsertAfterCurrent_ShuffleInsertsAtCurrentPlusOne(t *testing.T) {
 }
 
 func TestInsertAfterCurrent_CurrentlyPlayingTrack_NoOp(t *testing.T) {
-	q := NewQueueService()
+	q := NewQueueService(slog.Default())
 	q.SetQueue([]*domain.TrackDTO{makeTrack("A"), makeTrack("B"), makeTrack("C")}, 1)
 	q.InsertAfterCurrent(makeTrack("B")) // B is currently playing
 	ids := queueIDs(q)
@@ -106,7 +107,7 @@ func TestInsertAfterCurrent_CurrentlyPlayingTrack_NoOp(t *testing.T) {
 }
 
 func TestInsertAfterCurrent_DuplicateAfterCurrent_MovesNext(t *testing.T) {
-	q := NewQueueService()
+	q := NewQueueService(slog.Default())
 	q.SetQueue([]*domain.TrackDTO{makeTrack("A"), makeTrack("B"), makeTrack("C"), makeTrack("D")}, 0)
 	q.InsertAfterCurrent(makeTrack("C")) // C is after current (A)
 	ids := queueIDs(q)
@@ -117,7 +118,7 @@ func TestInsertAfterCurrent_DuplicateAfterCurrent_MovesNext(t *testing.T) {
 }
 
 func TestInsertAfterCurrent_DuplicateBeforeCurrent_MovesNext(t *testing.T) {
-	q := NewQueueService()
+	q := NewQueueService(slog.Default())
 	q.SetQueue([]*domain.TrackDTO{makeTrack("A"), makeTrack("B"), makeTrack("C"), makeTrack("D")}, 2)
 	q.InsertAfterCurrent(makeTrack("A")) // A is before current (C)
 	ids := queueIDs(q)
@@ -128,7 +129,7 @@ func TestInsertAfterCurrent_DuplicateBeforeCurrent_MovesNext(t *testing.T) {
 }
 
 func TestInsertAfterCurrent_DuplicateBeforeCurrent_Shuffle(t *testing.T) {
-	q := NewQueueService()
+	q := NewQueueService(slog.Default())
 	// Build a known shuffled order by setting queue then manually verifying via GetQueue
 	tracks := []*domain.TrackDTO{makeTrack("A"), makeTrack("B"), makeTrack("C"), makeTrack("D")}
 	q.SetQueue(tracks, 0)

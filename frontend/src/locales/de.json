@@ -173,7 +173,9 @@
       "prevent_sleep": "Ruhezustand beim Abspielen verhindern",
       "prevent_sleep_desc": "Computer wach halten, während Musik abgespielt wird",
       "show_player_indicator": "Aktiv-Indikator anzeigen",
-      "show_player_indicator_desc": "Einen Punkt unter den Shuffle- und Wiederholungs-Schaltflächen anzeigen, wenn sie aktiv sind"
+      "show_player_indicator_desc": "Einen Punkt unter den Shuffle- und Wiederholungs-Schaltflächen anzeigen, wenn sie aktiv sind",
+      "max_queue_size": "Maximale Warteschlangengröße",
+      "max_queue_size_desc": "Begrenzt, wie viele Titel die Wiedergabeliste enthalten kann, einschließlich des aktuellen Titels. Die ältesten Titel werden zuerst entfernt, sobald das Limit erreicht ist."
     },
     "remote": {
       "title": "Fernbedienung",

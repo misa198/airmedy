@@ -463,6 +463,7 @@ func (s *PlayerService) ShuffleTrackIDs(ctx context.Context, trackIDs []string) 
 // PlayTracks sets a new queue and starts playing from the specified index.
 func (s *PlayerService) PlayTracks(tracks []*domain.TrackDTO, startIndex int) error {
 	s.queue.SetQueue(tracks, startIndex)
+	s.emitQueue()
 	track := s.queue.GetCurrentTrack()
 	if track == nil {
 		return nil
@@ -492,6 +493,13 @@ func (s *PlayerService) SetShuffle(enabled bool) error {
 	s.emitRemoteState()
 	s.emitQueueOrder()
 	return nil
+}
+
+// SetMaxQueueSize applies a live queue-size cap change (e.g. a settings save)
+// to the running queue and notifies the frontend if it trimmed anything.
+func (s *PlayerService) SetMaxQueueSize(n int) {
+	s.queue.SetMaxSize(n)
+	s.emitQueue()
 }
 
 // SetRepeatMode sets the repeat mode.
@@ -1360,6 +1368,13 @@ func (s *PlayerService) restoreState(ctx context.Context) {
 	// treat active as original.
 	if len(originalTracks) == 0 && len(activeTracks) > 0 {
 		originalTracks = activeTracks
+	}
+
+	// Apply the configured queue cap before anything touches the queue —
+	// regardless of whether a session was persisted — so it's never left at
+	// the zero-value (unlimited) until the settings are next saved.
+	if settings, err := s.settingsRepo.Load(ctx); err == nil {
+		s.queue.SetMaxSize(domain.ResolveMaxQueueSize(settings.MaxQueueSize))
 	}
 
 	if len(activeTracks) > 0 {

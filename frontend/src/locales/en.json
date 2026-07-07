@@ -173,7 +173,9 @@
       "prevent_sleep": "Prevent sleep while playing",
       "prevent_sleep_desc": "Keep your computer awake while music is playing",
       "show_player_indicator": "Show active indicator",
-      "show_player_indicator_desc": "Show a dot below shuffle and repeat buttons when active"
+      "show_player_indicator_desc": "Show a dot below shuffle and repeat buttons when active",
+      "max_queue_size": "Max queue size",
+      "max_queue_size_desc": "Caps how many tracks the play queue can hold, including the current track. Oldest tracks are dropped first once the limit is reached."
     },
     "remote": {
       "title": "Remote Control",

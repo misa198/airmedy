@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"slices"
+	"time"
+)
 
 // Track represents a music track in the library
 type Track struct {
@@ -338,6 +341,21 @@ func SyncIntervalDuration(interval string) (time.Duration, bool) {
 	}
 }
 
+// ValidMaxQueueSizes are the selectable options for AppSettings.MaxQueueSize.
+var ValidMaxQueueSizes = []int{100, 500, 1000, 2000, 3000}
+
+// DefaultMaxQueueSize is the queue size cap applied when none is set.
+const DefaultMaxQueueSize = 1000
+
+// ResolveMaxQueueSize maps a stored value to a valid queue size cap, falling
+// back to DefaultMaxQueueSize for zero/unrecognized values.
+func ResolveMaxQueueSize(n int) int {
+	if slices.Contains(ValidMaxQueueSizes, n) {
+		return n
+	}
+	return DefaultMaxQueueSize
+}
+
 // TrackFeatures holds one-time DSP analysis results for a track (loudness, dynamics,
 // spectral shape).
 type TrackFeatures struct {
@@ -415,6 +433,10 @@ type AppSettings struct {
 	// added/changed/removed files. One of the SyncInterval* constants; empty
 	// falls back to DefaultSyncInterval.
 	LibrarySyncInterval string `json:"library_sync_interval"`
+
+	// MaxQueueSize caps how many tracks the play queue can hold (current track
+	// included). One of ValidMaxQueueSizes; zero falls back to DefaultMaxQueueSize.
+	MaxQueueSize int `json:"max_queue_size"`
 
 	// Library analysis pipeline (feeds Normalization). Opt-in: off disables the
 	// background worker pool entirely (no backfill/enqueue/boost). Normalization

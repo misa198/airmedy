@@ -173,7 +173,9 @@
       "prevent_sleep": "Empêcher la mise en veille pendant la lecture",
       "prevent_sleep_desc": "Maintenir l'ordinateur actif pendant la lecture de musique",
       "show_player_indicator": "Afficher l'indicateur actif",
-      "show_player_indicator_desc": "Afficher un point sous les boutons aléatoire et répétition lorsqu'ils sont actifs"
+      "show_player_indicator_desc": "Afficher un point sous les boutons aléatoire et répétition lorsqu'ils sont actifs",
+      "max_queue_size": "Taille maximale de la file d'attente",
+      "max_queue_size_desc": "Limite le nombre de titres que la file d'attente peut contenir, y compris le titre en cours. Les titres les plus anciens sont supprimés en premier une fois la limite atteinte."
     },
     "remote": {
       "title": "Télécommande",
