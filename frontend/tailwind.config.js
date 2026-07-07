@@ -8,7 +8,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', '"PingFang SC"', '"Microsoft YaHei"', '"Hiragino Kaku Gothic Pro"', '"Meiryo"', '"Apple SD Gothic Neo"', '"Malgun Gothic"', 'sans-serif'],
+        sans: ['-apple-system', 'BlinkMacSystemFont', '"PingFang SC"', '"Hiragino Kaku Gothic Pro"', '"Apple SD Gothic Neo"', '"Segoe UI Variable Display"', '"Segoe UI"', '"Microsoft YaHei UI"', '"Meiryo"', '"Malgun Gothic"', 'sans-serif'],
       },
       colors: {
         background: 'var(--bg-main)',
