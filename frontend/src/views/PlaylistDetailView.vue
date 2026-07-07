@@ -36,6 +36,7 @@ const playlistsStore = usePlaylistsStore()
 const playlist = ref<Playlist | null>(null)
 const tracks = shallowRef<TrackDTO[]>([])
 const isLoading = ref(true)
+const tracksLoading = ref(false)
 const searchQuery = ref('')
 
 const filteredTracks = computed(() => {
@@ -123,6 +124,14 @@ async function load(silent = false, idOverride?: string) {
   if (!id) return
   currentPlaylistId = id
 
+  // Switching to a different playlist: drop the old track list so a
+  // track-derived artwork mosaic (no custom artwork_key) doesn't flash the
+  // previous playlist's covers while the new tracks are still loading.
+  if (playlist.value?.id !== id) {
+    tracks.value = []
+    playlistTheme.value = null
+  }
+
   if (!silent) isLoading.value = true
 
   // Favorites has a real playlist row (for artwork/theme) but its track list
@@ -149,17 +158,26 @@ async function load(silent = false, idOverride?: string) {
   }
 
   try {
-    const [p, t] = await Promise.all([
-      PlaylistService.GetPlaylistByID(id),
-      PlaylistService.GetPlaylistTracks(id),
-    ])
+    const p = await PlaylistService.GetPlaylistByID(id)
     if (isStale(id)) return
     playlist.value = p
-    tracks.value = t.filter((t): t is TrackDTO => t !== null)
   } catch (e) {
     console.error('Failed to load playlist', e)
   } finally {
     if (!silent && !isStale(id)) isLoading.value = false
+  }
+
+  if (isStale(id)) return
+
+  tracksLoading.value = true
+  try {
+    const t = await PlaylistService.GetPlaylistTracks(id)
+    if (isStale(id)) return
+    tracks.value = t.filter((t): t is TrackDTO => t !== null)
+  } catch (e) {
+    console.error('Failed to load playlist tracks', e)
+  } finally {
+    if (!isStale(id)) tracksLoading.value = false
   }
 }
 
@@ -226,6 +244,7 @@ onUnmounted(() => {
 })
 
 const totalDurationFormatted = computed(() => {
+  if (tracksLoading.value) return '--'
   const totalSeconds = tracks.value.reduce((acc, t) => acc + (t.duration || 0), 0)
   return formatTotalDuration(totalSeconds, t)
 })
@@ -349,7 +368,7 @@ async function handleReorder(newTracks: TrackDTO[]) {
       <div class="flex gap-2 text-sm items-end flex-wrap">
         <div class="flex items-center gap-2">
           <Music class="w-4 h-4" />
-          <span>{{ tracks.length }} {{ $t('library.songs') }}</span>
+          <span>{{ tracksLoading ? '--' : tracks.length }} {{ $t('library.songs') }}</span>
         </div>
         <div class="flex items-center gap-2">
           <Clock class="w-4 h-4" />
@@ -376,6 +395,7 @@ async function handleReorder(newTracks: TrackDTO[]) {
     <template #body>
       <TrackTable
         :tracks="filteredTracks"
+        :is-loading="tracksLoading"
         :show-artwork="true"
         :simple-mode="true"
         :allow-dnd="playlist.id !== 'favorites' && !playlist.is_smart"

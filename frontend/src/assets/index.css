@@ -90,6 +90,11 @@
   optgroup {
     font-family: inherit;
   }
+
+  /* WKWebView (Wails on macOS) defaults placeholder text to italic; normalize it */
+  ::placeholder {
+    font-style: normal;
+  }
 }
 
 /* Fix WebKit rendering issues with semi-transparent backgrounds, blurs, and opacity */
