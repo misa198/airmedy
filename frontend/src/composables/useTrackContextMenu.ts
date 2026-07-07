@@ -19,6 +19,7 @@ export interface TrackContextMenuOptions {
   showRemoveFromQueue?: boolean
   excludeAddToQueue?: boolean
   playlistId?: string
+  isSmartPlaylist?: boolean
 }
 
 export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
@@ -207,7 +208,7 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
       action: () => { LibraryService.ShowInExplorer(track.id) },
     })
 
-    if (options.playlistId && options.playlistId !== 'favorites') {
+    if (options.playlistId && options.playlistId !== 'favorites' && !options.isSmartPlaylist) {
       items.push({ separator: true })
       items.push({
         label: t('context_menu.remove_from_playlist'),
@@ -292,7 +293,7 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
       })
     }
 
-    if (options.playlistId && options.playlistId !== 'favorites') {
+    if (options.playlistId && options.playlistId !== 'favorites' && !options.isSmartPlaylist) {
       items.push({ separator: true })
       items.push({
         label: t('context_menu.remove_from_playlist'),

@@ -368,7 +368,7 @@ async function handleReorder(newTracks: TrackDTO[]) {
         :show-artwork="true"
         :simple-mode="true"
         :allow-dnd="playlist.id !== 'favorites' && !playlist.is_smart"
-        :context-menu-options="{ playlistId: playlist.id }"
+        :context-menu-options="{ playlistId: playlist.id, isSmartPlaylist: playlist.is_smart }"
         @play-track="(_, index, queue) => playerStore.playTracks(queue, index)"
         @reorder="handleReorder"
         @navigate-album="id => router.push(`/albums/${id}`)"
