@@ -1,0 +1,1 @@
+ALTER TABLE app_settings ADD COLUMN max_queue_size INTEGER NOT NULL DEFAULT 1000;

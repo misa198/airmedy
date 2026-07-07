@@ -173,7 +173,9 @@
       "prevent_sleep": "Impedisci la sospensione durante la riproduzione",
       "prevent_sleep_desc": "Mantieni il computer attivo mentre la musica è in riproduzione",
       "show_player_indicator": "Mostra indicatore attivo",
-      "show_player_indicator_desc": "Mostra un punto sotto i pulsanti shuffle e ripetizione quando sono attivi"
+      "show_player_indicator_desc": "Mostra un punto sotto i pulsanti shuffle e ripetizione quando sono attivi",
+      "max_queue_size": "Dimensione massima della coda",
+      "max_queue_size_desc": "Limita il numero di brani che la coda di riproduzione può contenere, incluso quello attuale. I brani più vecchi vengono rimossi per primi al raggiungimento del limite."
     },
     "remote": {
       "title": "Controllo Remoto",

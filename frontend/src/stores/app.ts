@@ -9,6 +9,7 @@ import * as AnalysisService from '../../bindings/airmedy/internal/infra/wails/an
 import * as EQService from '../../bindings/airmedy/internal/infra/wails/eqservice'
 import { UpdateInfo } from '../../bindings/airmedy/internal/app/updater/models'
 import { DEFAULT_SYNC_INTERVAL, isSyncInterval, type SyncInterval } from '@/lib/librarySync'
+import { DEFAULT_MAX_QUEUE_SIZE, isMaxQueueSize, type MaxQueueSize } from '@/lib/queue'
 
 export const NORMALIZATION_TARGET_LUFS_MIN = -24
 export const NORMALIZATION_TARGET_LUFS_MAX = -6
@@ -46,6 +47,7 @@ export const useAppStore = defineStore('app', () => {
   const normalizationPreventClip = ref(true)
   const showPlayerIndicator = ref(true)
   const librarySyncInterval = ref<SyncInterval>(DEFAULT_SYNC_INTERVAL)
+  const maxQueueSize = ref<MaxQueueSize>(DEFAULT_MAX_QUEUE_SIZE)
   const remoteServerEnabled = ref(false)
   const remoteServerPort = ref(0)
   const remoteServerPassword = ref('')
@@ -110,6 +112,9 @@ export const useAppStore = defineStore('app', () => {
         showPlayerIndicator.value = settings.show_player_indicator !== false
         if (isSyncInterval(settings.library_sync_interval)) {
           librarySyncInterval.value = settings.library_sync_interval
+        }
+        if (isMaxQueueSize(settings.max_queue_size)) {
+          maxQueueSize.value = settings.max_queue_size
         }
         libraryAnalysisEnabled.value = !!settings.library_analysis_enabled
         normalizationEnabled.value = !!settings.normalization_enabled
@@ -201,6 +206,7 @@ export const useAppStore = defineStore('app', () => {
         prevent_sleep_while_playing: preventSleepWhilePlaying.value,
         show_player_indicator: showPlayerIndicator.value,
         library_sync_interval: librarySyncInterval.value,
+        max_queue_size: maxQueueSize.value,
         library_analysis_enabled: libraryAnalysisEnabled.value,
         normalization_enabled: normalizationEnabled.value,
         normalization_mode: normalizationMode.value,
@@ -317,6 +323,11 @@ export const useAppStore = defineStore('app', () => {
     await saveSettings()
   }
 
+  const updateMaxQueueSize = async (size: MaxQueueSize) => {
+    maxQueueSize.value = size
+    await saveSettings()
+  }
+
   const updateLibraryAnalysisEnabled = async (enabled: boolean) => {
     libraryAnalysisEnabled.value = enabled
     // Mirrors the backend cross-toggle (AnalysisService.SetEnabled forces
@@ -413,6 +424,7 @@ export const useAppStore = defineStore('app', () => {
     preventSleepWhilePlaying,
     showPlayerIndicator,
     librarySyncInterval,
+    maxQueueSize,
     libraryAnalysisEnabled,
     normalizationEnabled,
     normalizationMode,
@@ -448,6 +460,7 @@ export const useAppStore = defineStore('app', () => {
     updatePreventSleepWhilePlaying,
     updateShowPlayerIndicator,
     updateLibrarySyncInterval,
+    updateMaxQueueSize,
     updateLibraryAnalysisEnabled,
     updateNormalizationEnabled,
     updateNormalizationMode,

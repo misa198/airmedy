@@ -173,7 +173,9 @@
       "prevent_sleep": "Ngăn máy ngủ khi đang phát nhạc",
       "prevent_sleep_desc": "Giữ máy tính thức khi đang phát nhạc",
       "show_player_indicator": "Hiển thị chỉ báo kích hoạt",
-      "show_player_indicator_desc": "Hiện chấm nhỏ bên dưới nút xáo trộn và lặp lại khi được kích hoạt"
+      "show_player_indicator_desc": "Hiện chấm nhỏ bên dưới nút xáo trộn và lặp lại khi được kích hoạt",
+      "max_queue_size": "Giới hạn hàng đợi",
+      "max_queue_size_desc": "Giới hạn số track tối đa trong hàng đợi phát, tính cả track đang phát. Khi vượt giới hạn, track cũ nhất sẽ bị loại bỏ trước."
     },
     "remote": {
       "title": "Điều Khiển Từ Xa",

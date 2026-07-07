@@ -7,6 +7,7 @@ import { GetProgress } from '../../../bindings/airmedy/internal/infra/wails/anal
 import EQPanel from '@/components/EQPanel.vue'
 import { Switch, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, Slider } from '@airmedy/ui'
 import { useAppStore, NORMALIZATION_TARGET_LUFS_MIN, NORMALIZATION_TARGET_LUFS_MAX } from '@/stores/app'
+import { MAX_QUEUE_SIZE_OPTIONS, type MaxQueueSize } from '@/lib/queue'
 import SettingSection from './SettingSection.vue'
 import SettingRow from './SettingRow.vue'
 
@@ -122,6 +123,21 @@ onUnmounted(() => {
           :model-value="appStore.showPlayerIndicator"
           @update:model-value="appStore.updateShowPlayerIndicator"
         />
+      </SettingRow>
+      <SettingRow :title="t('settings.playback.max_queue_size')" :description="t('settings.playback.max_queue_size_desc')">
+        <Select
+          :model-value="String(appStore.maxQueueSize)"
+          @update:model-value="val => appStore.updateMaxQueueSize(Number(val) as MaxQueueSize)"
+        >
+          <SelectTrigger class="w-[120px] bg-foreground/[0.04] border-0 h-9 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="size in MAX_QUEUE_SIZE_OPTIONS" :key="size" :value="String(size)">
+              {{ size }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </SettingRow>
     </SettingSection>
 

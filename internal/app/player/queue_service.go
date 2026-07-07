@@ -1,6 +1,7 @@
 package player
 
 import (
+	"log/slog"
 	"math/rand"
 	"sync"
 	"time"
@@ -17,14 +18,93 @@ type QueueService struct {
 	repeatMode   domain.RepeatMode
 	shuffle      bool
 	rng          *rand.Rand
+	maxSize      int // 0 = unlimited
+	logger       *slog.Logger
 }
 
-func NewQueueService() *QueueService {
+func NewQueueService(logger *slog.Logger) *QueueService {
 	return &QueueService{
 		currentIndex: -1,
 		repeatMode:   domain.RepeatModeOff,
 		rng:          rand.New(rand.NewSource(time.Now().UnixNano())),
+		logger:       logger,
 	}
+}
+
+// SetMaxSize sets the queue's maximum track count (0 = unlimited) and, if the
+// existing queue now exceeds it, trims it immediately (FIFO drop-oldest).
+func (s *QueueService) SetMaxSize(n int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.maxSize = n
+	s.enforceMaxSizeLocked()
+}
+
+// enforceMaxSizeLocked trims the queue down to s.maxSize. Must be called with
+// s.mu held.
+func (s *QueueService) enforceMaxSizeLocked() {
+	if s.maxSize <= 0 {
+		return
+	}
+	dropped := s.trimActiveToLocked(s.maxSize)
+	if dropped > 0 && s.logger != nil {
+		s.logger.Info("queue trimmed to max size", "max_size", s.maxSize, "dropped", dropped)
+	}
+}
+
+// trimActiveToLocked trims the active list down to at most `target` tracks
+// (target < 0 is treated as 0), dropping the oldest history tracks first
+// (those before currentIndex); if the upcoming tracks from currentIndex
+// onward alone exceed the target, the remainder is dropped from the tail
+// (farthest future). Returns the number of tracks dropped. Must be called
+// with s.mu held.
+func (s *QueueService) trimActiveToLocked(target int) int {
+	if target < 0 {
+		target = 0
+	}
+	active := s.activeList()
+	overflow := len(active) - target
+	if overflow <= 0 {
+		return 0
+	}
+
+	dropFront := overflow
+	if dropFront > s.currentIndex {
+		dropFront = s.currentIndex
+	}
+	if dropFront < 0 {
+		dropFront = 0
+	}
+	dropTail := overflow - dropFront
+
+	removeIDs := make(map[string]bool, overflow)
+	for _, t := range active[:dropFront] {
+		removeIDs[t.ID] = true
+	}
+	if dropTail > 0 {
+		for _, t := range active[len(active)-dropTail:] {
+			removeIDs[t.ID] = true
+		}
+	}
+
+	s.originalList = filterOutIDs(s.originalList, removeIDs)
+	s.shuffledList = filterOutIDs(s.shuffledList, removeIDs)
+	s.currentIndex -= dropFront
+
+	return overflow
+}
+
+func filterOutIDs(list []*domain.TrackDTO, removeIDs map[string]bool) []*domain.TrackDTO {
+	if len(list) == 0 || len(removeIDs) == 0 {
+		return list
+	}
+	out := make([]*domain.TrackDTO, 0, len(list))
+	for _, t := range list {
+		if !removeIDs[t.ID] {
+			out = append(out, t)
+		}
+	}
+	return out
 }
 
 // SetQueue replaces the entire queue and sets the current track index.
@@ -32,6 +112,13 @@ func NewQueueService() *QueueService {
 func (s *QueueService) SetQueue(tracks []*domain.TrackDTO, startIndex int) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	if s.maxSize > 0 && len(tracks) > s.maxSize {
+		tracks = tracks[:s.maxSize]
+		if startIndex >= s.maxSize {
+			startIndex = s.maxSize - 1
+		}
+	}
 
 	s.shuffle = false
 	s.shuffledList = nil
@@ -44,10 +131,10 @@ func (s *QueueService) ShuffleTracks(tracks []*domain.TrackDTO) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.originalList = tracks
 	s.shuffle = true
 
 	if len(tracks) == 0 {
+		s.originalList = nil
 		s.shuffledList = nil
 		s.currentIndex = -1
 		return
@@ -59,6 +146,16 @@ func (s *QueueService) ShuffleTracks(tracks []*domain.TrackDTO) {
 		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
 	})
 
+	// If the source list exceeds the cap, sampling the first maxSize tracks
+	// off an already-shuffled copy doubles as "pick N random tracks" — no
+	// separate sampling step needed.
+	if s.maxSize > 0 && len(shuffled) > s.maxSize {
+		shuffled = shuffled[:s.maxSize]
+	}
+
+	original := make([]*domain.TrackDTO, len(shuffled))
+	copy(original, shuffled)
+	s.originalList = original
 	s.shuffledList = shuffled
 	s.currentIndex = 0
 }
@@ -259,6 +356,8 @@ func (s *QueueService) insertAfterCurrentLocked(track *domain.TrackDTO) {
 		}
 		s.shuffledList = sliceInsert(s.shuffledList, si, track)
 	}
+
+	s.enforceMaxSizeLocked()
 }
 
 // AppendTracks adds tracks to the end of the queue without disturbing the
@@ -270,16 +369,53 @@ func (s *QueueService) AppendTracks(tracks []*domain.TrackDTO) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	// The current track always keeps its slot — cap the incoming batch itself
+	// to maxSize-1 so it can never crowd out every other track, current included.
+	tracks = s.capIncomingLocked(tracks)
+
+	// Free up room in the *existing* queue before appending, so a full queue
+	// drops its own oldest history/farthest-future tracks rather than the
+	// tracks we're about to add (which would otherwise land at the tail and
+	// get immediately trimmed back off by enforceMaxSizeLocked below).
+	if s.maxSize > 0 {
+		s.trimActiveToLocked(s.maxSize - len(tracks))
+	}
+
 	s.originalList = append(s.originalList, tracks...)
 	if s.shuffle {
 		s.shuffledList = append(s.shuffledList, tracks...)
 	}
+
+	s.enforceMaxSizeLocked()
+}
+
+// capIncomingLocked truncates an incoming batch of tracks (about to be added
+// to the queue) to at most maxSize-1, reserving one slot for the current
+// track — unless there is no now-playing track, in which case the full
+// maxSize is available. No-op when unlimited. Must be called with s.mu held.
+func (s *QueueService) capIncomingLocked(tracks []*domain.TrackDTO) []*domain.TrackDTO {
+	if s.maxSize <= 0 {
+		return tracks
+	}
+	limit := s.maxSize
+	if s.currentIndex >= 0 && s.currentIndex < len(s.activeList()) {
+		limit--
+	}
+	if limit < 0 {
+		limit = 0
+	}
+	if len(tracks) > limit {
+		return tracks[:limit]
+	}
+	return tracks
 }
 
 // InsertListAfterCurrent inserts a list of tracks immediately after the current position.
 func (s *QueueService) InsertListAfterCurrent(tracks []*domain.TrackDTO) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	tracks = s.capIncomingLocked(tracks)
 
 	// Insert in reverse order using the locked version to maintain correct final order
 	// and keep implementation simple while avoiding repeated locking.
@@ -392,6 +528,7 @@ func (s *QueueService) Restore(original, shuffled []*domain.TrackDTO, currentInd
 	s.currentIndex = currentIndex
 	s.shuffle = shuffle
 	s.repeatMode = repeatMode
+	s.enforceMaxSizeLocked()
 }
 
 // IsEmpty returns true if the queue has no tracks.

@@ -133,7 +133,7 @@ func (r *fakePlayerStateRepo) Load(_ context.Context) (*domain.PlayerState, erro
 // emitCount is incremented by a goroutine — callers should wait briefly.
 func newTestService(t *testing.T, player domain.AudioPlayer) (*PlayerService, *int64) {
 	t.Helper()
-	queue := NewQueueService()
+	queue := NewQueueService(slog.Default())
 	var emitCount int64
 
 	s := &PlayerService{

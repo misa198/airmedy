@@ -46,6 +46,7 @@ type AppSettings struct {
     AlbumArtistDelimiters  []string
     GenreDelimiters        []string
     ComposerDelimiters     []string
+    MaxQueueSize            int                // play queue cap, incl. current track; one of domain.ValidMaxQueueSizes (100/500/1000/2000/3000), default 1000
 }
 ```
 

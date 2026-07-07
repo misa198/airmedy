@@ -173,7 +173,9 @@
       "prevent_sleep": "Evitar suspensão durante a reprodução",
       "prevent_sleep_desc": "Manter o computador ativo enquanto a música está sendo reproduzida",
       "show_player_indicator": "Mostrar indicador ativo",
-      "show_player_indicator_desc": "Mostrar um ponto abaixo dos botões de aleatório e repetição quando estiverem ativos"
+      "show_player_indicator_desc": "Mostrar um ponto abaixo dos botões de aleatório e repetição quando estiverem ativos",
+      "max_queue_size": "Tamanho máximo da fila",
+      "max_queue_size_desc": "Limita quantas faixas a fila de reprodução pode conter, incluindo a faixa atual. As faixas mais antigas são removidas primeiro ao atingir o limite."
     },
     "remote": {
       "title": "Controlo Remoto",

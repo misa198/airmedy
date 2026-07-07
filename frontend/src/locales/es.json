@@ -173,7 +173,9 @@
       "prevent_sleep": "Evitar suspensión al reproducir",
       "prevent_sleep_desc": "Mantener el equipo activo mientras se reproduce música",
       "show_player_indicator": "Mostrar indicador activo",
-      "show_player_indicator_desc": "Mostrar un punto debajo de los botones de aleatorio y repetición cuando estén activos"
+      "show_player_indicator_desc": "Mostrar un punto debajo de los botones de aleatorio y repetición cuando estén activos",
+      "max_queue_size": "Tamaño máximo de la cola",
+      "max_queue_size_desc": "Limita cuántas pistas puede contener la cola de reproducción, incluyendo la pista actual. Las pistas más antiguas se eliminan primero al alcanzar el límite."
     },
     "remote": {
       "title": "Control Remoto",

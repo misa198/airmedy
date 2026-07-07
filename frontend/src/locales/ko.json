@@ -173,7 +173,9 @@
       "prevent_sleep": "재생 중 절전 모드 방지",
       "prevent_sleep_desc": "음악 재생 중 컴퓨터가 절전 모드로 전환되지 않도록 합니다",
       "show_player_indicator": "활성 인디케이터 표시",
-      "show_player_indicator_desc": "셔플 및 반복 버튼이 활성화될 때 버튼 아래에 점을 표시합니다"
+      "show_player_indicator_desc": "셔플 및 반복 버튼이 활성화될 때 버튼 아래에 점을 표시합니다",
+      "max_queue_size": "최대 대기열 크기",
+      "max_queue_size_desc": "현재 트랙을 포함하여 재생 대기열에 담을 수 있는 트랙 수를 제한합니다. 한도에 도달하면 가장 오래된 트랙부터 제거됩니다."
     },
     "remote": {
       "title": "원격 제어",
