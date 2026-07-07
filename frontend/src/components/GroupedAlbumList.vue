@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
 import { Play, Disc } from '@lucide/vue'
 import type { TrackDTO, AlbumDTO } from '../../bindings/airmedy/internal/domain/models'
 import { usePlayerStore } from '../stores/player'
@@ -47,7 +48,7 @@ const groupedAlbums = computed(() => {
     groups[albumId].tracks.push(track)
   }
 
-  const result = Object.values(groups).filter(g => g.tracks.length > 0)
+  const result = Object.values(groups).filter(g => g.tracks.length > 0) as { album: AlbumDTO | null, tracks: TrackDTO[], _key: string }[]
 
   result.sort((a, b) => {
     if (a.album?.id === unknownAlbumId) return 1
@@ -65,6 +66,7 @@ const groupedAlbums = computed(() => {
       if (d1 !== d2) return d1 - d2
       return (t1.track_number || 0) - (t2.track_number || 0)
     })
+    group._key = group.album?.id || unknownAlbumId
   }
 
   return result
@@ -77,55 +79,75 @@ function tableHeight(trackCount: number): string {
 </script>
 
 <template>
-  <div class="space-y-12 pb-12">
-    <div v-for="group in groupedAlbums" :key="group.album?.id || 'unknown'" class="space-y-4">
-      <!-- Album Header -->
-      <div class="flex items-end gap-6 pr-2" @contextmenu.prevent="e => group.album && onContextMenu(e, group.album, group.tracks)">
-        <div
-          class="w-32 h-32 md:w-40 md:h-40 rounded-xl shadow-xl overflow-hidden ring-1 ring-foreground/8 bg-foreground/5 flex-shrink-0 group relative cursor-pointer"
-          @click="group.album && router.push(`/albums/${group.album.id}`)">
-          <LazyImg v-if="group.album?.artwork_key" :src="buildArtworkUrl(group.album.artwork_key, 'md')"
-            class="w-full h-full object-cover" />
-          <div v-else class="w-full h-full flex items-center justify-center text-foreground opacity-30">
-            <Disc class="w-16 h-16" />
+  <DynamicScroller
+    :items="groupedAlbums"
+    key-field="_key"
+    :min-item-size="200"
+    class="h-full px-8"
+  >
+    <template #before>
+      <div class="h-8" />
+    </template>
+    <template #default="{ item: group, index, active }">
+      <DynamicScrollerItem
+        :item="group"
+        :active="active"
+        :data-index="index"
+        class="pb-12"
+      >
+        <div class="space-y-4">
+          <!-- Album Header -->
+          <div class="flex items-end gap-6 pr-2" @contextmenu.prevent="e => group.album && onContextMenu(e, group.album, group.tracks)">
+            <div
+              class="w-32 h-32 md:w-40 md:h-40 rounded-xl shadow-xl overflow-hidden ring-1 ring-foreground/8 bg-foreground/5 flex-shrink-0 group relative cursor-pointer"
+              @click="group.album && router.push(`/albums/${group.album.id}`)">
+              <LazyImg v-if="group.album?.artwork_key" :src="buildArtworkUrl(group.album.artwork_key, 'md')"
+                class="w-full h-full object-cover" />
+              <div v-else class="w-full h-full flex items-center justify-center text-foreground opacity-30">
+                <Disc class="w-16 h-16" />
+              </div>
+              <div v-if="group.album"
+                class="absolute inset-0 bg-background/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <button
+                  class="w-12 h-12 bg-foreground text-background rounded-full shadow-xl flex items-center justify-center transform scale-90 group-hover:scale-100 transition-all duration-300"
+                  @click.stop="playerStore.playTracks(group.tracks, 0)">
+                  <Play class="w-6 h-6 fill-current ml-1" />
+                </button>
+              </div>
+            </div>
+
+            <div class="flex-1 pb-2">
+              <h2 class="text-2xl md:text-3xl font-bold tracking-tight mb-1 cursor-pointer hover:text-primary transition-colors inline-block"
+                @click="group.album && router.push(`/albums/${group.album.id}`)">
+                {{ group.album?.title || 'Unknown Album' }}
+              </h2>
+              <div class="flex items-center gap-3 text-sm text-foreground opacity-60">
+                <span v-if="group.album?.year" class="font-medium">{{ group.album.year }}</span>
+                <span v-if="group.album?.year">•</span>
+                <span>{{ group.tracks.length }} tracks</span>
+              </div>
+            </div>
           </div>
-          <div v-if="group.album"
-            class="absolute inset-0 bg-background/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <button
-              class="w-12 h-12 bg-foreground text-background rounded-full shadow-xl flex items-center justify-center transform scale-90 group-hover:scale-100 transition-all duration-300"
-              @click.stop="playerStore.playTracks(group.tracks, 0)">
-              <Play class="w-6 h-6 fill-current ml-1" />
-            </button>
+
+          <!-- Virtualized Track Table -->
+          <div class="rounded-xl overflow-hidden ring-1 ring-foreground/[0.06]"
+            :style="{ height: tableHeight(group.tracks.length) }">
+            <TrackTable
+              :tracks="group.tracks"
+              :simple-mode="true"
+              :virtual-scroll="false"
+              @play-track="(_, index, queue) => playerStore.playTracks(queue, index)"
+              @navigate-album="id => router.push(`/albums/${id}`)"
+              @navigate-artist="id => router.push(`/artists/${id}`)"
+            />
           </div>
         </div>
-
-        <div class="flex-1 pb-2">
-          <h2 class="text-2xl md:text-3xl font-bold tracking-tight mb-1 cursor-pointer hover:text-primary transition-colors inline-block"
-            @click="group.album && router.push(`/albums/${group.album.id}`)">
-            {{ group.album?.title || 'Unknown Album' }}
-          </h2>
-          <div class="flex items-center gap-3 text-sm text-foreground opacity-60">
-            <span v-if="group.album?.year" class="font-medium">{{ group.album.year }}</span>
-            <span v-if="group.album?.year">•</span>
-            <span>{{ group.tracks.length }} tracks</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Virtualized Track Table -->
-      <div class="rounded-xl overflow-hidden ring-1 ring-foreground/[0.06]"
-        :style="{ height: tableHeight(group.tracks.length) }">
-        <TrackTable
-          :tracks="group.tracks"
-          :simple-mode="true"
-          :virtual-scroll="false"
-          @play-track="(_, index, queue) => playerStore.playTracks(queue, index)"
-          @navigate-album="id => router.push(`/albums/${id}`)"
-          @navigate-artist="id => router.push(`/artists/${id}`)"
-        />
-      </div>
-    </div>
-  </div>
+      </DynamicScrollerItem>
+    </template>
+    <template #after>
+      <div class="h-8" />
+    </template>
+  </DynamicScroller>
 
   <ContextMenu
     :visible="contextMenu.visible.value"

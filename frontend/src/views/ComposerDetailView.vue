@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, shallowRef, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, shallowRef, computed, onMounted } from 'vue'
+import { useRoute, onBeforeRouteUpdate } from 'vue-router'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { Composer, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import GroupedAlbumList from '../components/GroupedAlbumList.vue'
@@ -57,7 +57,8 @@ onMounted(() => {
   if (id) loadComposerDetails(id)
 })
 
-watch(() => route.params.id, (newId) => {
+onBeforeRouteUpdate((to) => {
+  const newId = to.params.id
   if (newId) loadComposerDetails(newId as string)
 })
 </script>
@@ -90,7 +91,7 @@ watch(() => route.params.id, (newId) => {
       </div>
 
       <!-- Grouped Albums -->
-      <div class="flex-1 overflow-y-auto p-8">
+      <div class="flex-1 min-h-0">
         <GroupedAlbumList :tracks="tracks" />
       </div>
     </div>

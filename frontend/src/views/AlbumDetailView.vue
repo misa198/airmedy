@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, shallowRef, computed, onMounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, shallowRef, computed, onMounted } from 'vue'
+import { useRoute, useRouter, onBeforeRouteUpdate } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import LazyImg from '@/components/LazyImg.vue'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
@@ -88,7 +88,8 @@ onMounted(() => {
   if (id) loadAlbumDetails(id)
 })
 
-watch(() => route.params.id, (newId) => {
+onBeforeRouteUpdate((to) => {
+  const newId = to.params.id
   if (newId) loadAlbumDetails(newId as string)
 })
 

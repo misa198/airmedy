@@ -7,9 +7,9 @@ import { DetailsButton } from '@airmedy/ui'
 import { hexToRgba } from '@airmedy/utils'
 import { Disc, ImagePlus, MoreVertical, Music, Play, Shuffle, Trash2 } from '@lucide/vue'
 import { Events } from '@wailsio/runtime'
-import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, onBeforeRouteUpdate } from 'vue-router'
 import type { AlbumDTO, Artist, ThemeColors, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import ContextMenu from '../components/ContextMenu.vue'
@@ -136,7 +136,8 @@ onUnmounted(() => {
   if (offArtworkUpdated) offArtworkUpdated()
 })
 
-watch(() => route.params.id, (newId) => {
+onBeforeRouteUpdate((to) => {
+  const newId = to.params.id
   if (newId) loadArtistDetails(newId as string)
 })
 </script>
@@ -147,10 +148,10 @@ watch(() => route.params.id, (newId) => {
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
     </div>
 
-    <div v-else-if="artist" class="flex-1 overflow-y-auto">
+    <div v-else-if="artist" class="flex-1 flex flex-col overflow-hidden">
       <!-- Artist Hero Section -->
       <div
-        class="p-8 md:p-12 flex flex-col md:flex-row gap-8 items-center bg-gradient-to-b from-dynamic-surface to-transparent border-b border-foreground/[0.06]"
+        class="flex-shrink-0 p-8 md:p-12 flex flex-col md:flex-row gap-8 items-center bg-gradient-to-b from-dynamic-surface to-transparent border-b border-foreground/[0.06]"
         :style="{ '--dynamic-surface': artistTheme ? hexToRgba(artistTheme.dominant, 0.15) : 'var(--bg-glass)' }">
         <div
           class="group relative w-32 h-32 xl:w-42 xl:h-42 rounded-full shadow-2xl overflow-hidden ring-2 ring-foreground/[0.08] bg-foreground/5 flex-shrink-0"
@@ -192,7 +193,7 @@ watch(() => route.params.id, (newId) => {
         </div>
       </div>
 
-      <div class="p-8">
+      <div class="flex-1 min-h-0">
         <GroupedAlbumList :tracks="tracks" :albums="albums" />
       </div>
     </div>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, shallowRef, onMounted, computed, watch, onUnmounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, onBeforeRouteUpdate } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Play, Shuffle, MoreVertical, Clock, Music, X, Search, Sparkles } from '@lucide/vue'
 import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
@@ -110,8 +110,8 @@ function openContextMenu(e: MouseEvent) {
   }))
 }
 
-async function load(silent = false) {
-  const id = route.params.id as string
+async function load(silent = false, idOverride?: string) {
+  const id = idOverride ?? (route.params.id as string)
   if (!id) return
 
   if (!silent) isLoading.value = true
@@ -174,7 +174,10 @@ async function loadTheme() {
 }
 
 watch(tracks, () => loadTheme())
-watch(() => route.params.id, () => load())
+onBeforeRouteUpdate((to) => {
+  const newId = to.params.id
+  if (newId) load(false, newId as string)
+})
 watch(() => favoritesStore.version, () => {
   if (route.params.id === 'favorites') load(true)
 })
