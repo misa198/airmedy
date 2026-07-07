@@ -9,7 +9,7 @@ import { Disc, ImagePlus, MoreVertical, Music, Play, Shuffle, Trash2 } from '@lu
 import { Events } from '@wailsio/runtime'
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import type { AlbumDTO, Artist, ThemeColors, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import ContextMenu from '../components/ContextMenu.vue'
@@ -20,7 +20,6 @@ import { useDetailRouteLoader } from '@/composables/useDetailRouteLoader'
 
 const { t } = useI18n()
 
-const route = useRoute()
 const router = useRouter()
 const playerStore = usePlayerStore()
 const artist = ref<Artist | null>(null)
@@ -37,6 +36,13 @@ function openContextMenu(e: MouseEvent) {
   contextMenu.open(e, buildMenuItems(tracks.value))
 }
 
+// Synchronous token marking the most recently requested artist, set before
+// any await so a fast-resolving load can't be mistaken for stale (comparing
+// against vue-router's reactive route.params.id instead is racy: it may not
+// have finished updating yet by the time a quick fetch resolves).
+let currentArtistId: string | null = null
+const isStale = (id: string) => currentArtistId !== id
+
 const loadTheme = async (id: string) => {
   artistTheme.value = null
   try {
@@ -51,6 +57,7 @@ const loadTheme = async (id: string) => {
 // silent: event-driven reload that keeps the current view visible (no spinner /
 // theme flash) and swaps data in when it arrives.
 const loadArtistDetails = async (id: string, silent = false) => {
+  currentArtistId = id
   if (!silent) {
     isLoading.value = true
     loadTheme(id)
@@ -73,8 +80,10 @@ const loadArtistDetails = async (id: string, silent = false) => {
 }
 
 // Track edits can move tracks/albums in or out of this artist; refresh silently.
+// Reads our own loaded artist id, not route.params.id — this listener stays
+// registered while KeepAlive backgrounds this instance on an unrelated route.
 useLibrarySync(() => {
-  const id = route.params.id as string
+  const id = artist.value?.id
   if (id) loadArtistDetails(id, true)
 })
 
@@ -137,7 +146,7 @@ onUnmounted(() => {
   if (offArtworkUpdated) offArtworkUpdated()
 })
 
-const { isStale } = useDetailRouteLoader(loadArtistDetails)
+useDetailRouteLoader(loadArtistDetails)
 </script>
 
 <template>

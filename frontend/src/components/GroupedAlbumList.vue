@@ -99,15 +99,17 @@ function tableHeight(trackCount: number): string {
           <!-- Album Header -->
           <div class="flex items-end gap-6 pr-2" @contextmenu.prevent="e => group.album && onContextMenu(e, group.album, group.tracks)">
             <div
-              class="w-32 h-32 md:w-40 md:h-40 rounded-xl shadow-xl overflow-hidden ring-1 ring-foreground/8 bg-foreground/5 flex-shrink-0 group relative cursor-pointer"
+              class="w-32 h-32 md:w-40 md:h-40 rounded-xl shadow-xl ring-1 ring-foreground/8 bg-foreground/5 flex-shrink-0 group relative cursor-pointer"
               @click="group.album && router.push(`/albums/${group.album.id}`)">
-              <LazyImg v-if="group.album?.artwork_key" :src="buildArtworkUrl(group.album.artwork_key, 'md')"
-                class="w-full h-full object-cover" />
-              <div v-else class="w-full h-full flex items-center justify-center text-foreground opacity-30">
-                <Disc class="w-16 h-16" />
+              <div class="w-full h-full rounded-xl overflow-hidden">
+                <LazyImg v-if="group.album?.artwork_key" :src="buildArtworkUrl(group.album.artwork_key, 'md')"
+                  class="w-full h-full object-cover" />
+                <div v-else class="w-full h-full flex items-center justify-center text-foreground opacity-30">
+                  <Disc class="w-16 h-16" />
+                </div>
               </div>
               <div v-if="group.album"
-                class="absolute inset-0 bg-background/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                class="absolute inset-0 bg-background/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl">
                 <button
                   class="w-12 h-12 bg-foreground text-background rounded-full shadow-xl flex items-center justify-center transform scale-90 group-hover:scale-100 transition-all duration-300"
                   @click.stop="playerStore.playTracks(group.tracks, 0)">
@@ -130,16 +132,18 @@ function tableHeight(trackCount: number): string {
           </div>
 
           <!-- Virtualized Track Table -->
-          <div class="rounded-xl overflow-hidden ring-1 ring-foreground/[0.06]"
+          <div class="rounded-xl ring-1 ring-foreground/[0.06]"
             :style="{ height: tableHeight(group.tracks.length) }">
-            <TrackTable
-              :tracks="group.tracks"
-              :simple-mode="true"
-              :virtual-scroll="false"
-              @play-track="(_, index, queue) => playerStore.playTracks(queue, index)"
-              @navigate-album="id => router.push(`/albums/${id}`)"
-              @navigate-artist="id => router.push(`/artists/${id}`)"
-            />
+            <div class="w-full h-full rounded-xl overflow-hidden">
+              <TrackTable
+                :tracks="group.tracks"
+                :simple-mode="true"
+                :virtual-scroll="false"
+                @play-track="(_, index, queue) => playerStore.playTracks(queue, index)"
+                @navigate-album="id => router.push(`/albums/${id}`)"
+                @navigate-artist="id => router.push(`/artists/${id}`)"
+              />
+            </div>
           </div>
         </div>
       </DynamicScrollerItem>
@@ -157,3 +161,11 @@ function tableHeight(trackCount: number): string {
     @close="contextMenu.close()"
   />
 </template>
+
+<style scoped>
+/* vue-virtual-scroller hardcodes overflow:hidden on each item wrapper,
+   which clips album artwork shadow and track table border/ring. */
+:deep(.vue-recycle-scroller__item-wrapper) {
+  overflow: visible;
+}
+</style>

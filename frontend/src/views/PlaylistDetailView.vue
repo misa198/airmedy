@@ -111,9 +111,17 @@ function openContextMenu(e: MouseEvent) {
   }))
 }
 
+// Synchronous token marking the most recently requested playlist, set before
+// any await so a fast-resolving load can't be mistaken for stale (comparing
+// against vue-router's reactive route.params.id instead is racy: it may not
+// have finished updating yet by the time a quick fetch resolves).
+let currentPlaylistId: string | null = null
+const isStale = (id: string) => currentPlaylistId !== id
+
 async function load(silent = false, idOverride?: string) {
   const id = idOverride ?? (route.params.id as string)
   if (!id) return
+  currentPlaylistId = id
 
   if (!silent) isLoading.value = true
 
@@ -179,9 +187,9 @@ async function loadTheme() {
 }
 
 watch(tracks, () => loadTheme())
-const { isStale } = useDetailRouteLoader((id) => load(false, id))
+useDetailRouteLoader((id) => load(false, id))
 watch(() => favoritesStore.version, () => {
-  if (playlist.value?.id === 'favorites') load(true)
+  if (playlist.value?.id === 'favorites') load(true, 'favorites')
 })
 
 const sessionId = Math.random().toString(36).substring(2, 15)
@@ -189,8 +197,11 @@ const sessionId = Math.random().toString(36).substring(2, 15)
 const handlePlaylistChange = (ev: Events.WailsEvent) => {
   const data = ev.data as { playlist_id: string, sender_id: string }
   if (data.sender_id === sessionId) return
+  // This listener stays registered while KeepAlive backgrounds this instance
+  // on an unrelated route, so `id` must come from our own state, not the
+  // (possibly unrelated) global route.params.id.
   if (data.playlist_id === playlist.value?.id) {
-    load(true)
+    load(true, playlist.value.id)
   }
 }
 

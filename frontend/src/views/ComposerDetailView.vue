@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, shallowRef, computed } from 'vue'
-import { useRoute } from 'vue-router'
 import { useDetailRouteLoader } from '@/composables/useDetailRouteLoader'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { Composer, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
@@ -17,7 +16,6 @@ import { useLibrarySync } from '@/composables/useLibrarySync'
 
 const { t } = useI18n()
 
-const route = useRoute()
 const playerStore = usePlayerStore()
 const composer = ref<Composer | null>(null)
 const tracks = shallowRef<TrackDTO[]>([])
@@ -31,7 +29,15 @@ function openContextMenu(e: MouseEvent) {
   contextMenu.open(e, buildMenuItems(tracks.value))
 }
 
+// Synchronous token marking the most recently requested composer, set before
+// any await so a fast-resolving load can't be mistaken for stale (comparing
+// against vue-router's reactive route.params.id instead is racy: it may not
+// have finished updating yet by the time a quick fetch resolves).
+let currentComposerId: string | null = null
+const isStale = (id: string) => currentComposerId !== id
+
 const loadComposerDetails = async (id: string, silent = false) => {
+  currentComposerId = id
   if (!silent) isLoading.value = true
   try {
     const [composerData, tracksData] = await Promise.all([
@@ -49,12 +55,14 @@ const loadComposerDetails = async (id: string, silent = false) => {
 }
 
 // Track edits can move tracks in or out of this composer; refresh silently.
+// Reads our own loaded composer id, not route.params.id — this listener stays
+// registered while KeepAlive backgrounds this instance on an unrelated route.
 useLibrarySync(() => {
-  const id = route.params.id as string
+  const id = composer.value?.id
   if (id) loadComposerDetails(id, true)
 })
 
-const { isStale } = useDetailRouteLoader(loadComposerDetails)
+useDetailRouteLoader(loadComposerDetails)
 </script>
 
 <template>

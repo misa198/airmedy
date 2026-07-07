@@ -59,7 +59,15 @@ function openContextMenu(e: MouseEvent) {
   }
 }
 
+// Synchronous token marking the most recently requested album, set before
+// any await so a fast-resolving load can't be mistaken for stale (comparing
+// against vue-router's reactive route.params.id instead is racy: it may not
+// have finished updating yet by the time a quick fetch resolves).
+let currentAlbumId: string | null = null
+const isStale = (id: string) => currentAlbumId !== id
+
 const loadAlbumDetails = async (id: string) => {
+  currentAlbumId = id
   isLoading.value = true
   try {
     const [albumData, tracksData] = await Promise.all([
@@ -85,7 +93,7 @@ const loadAlbumDetails = async (id: string) => {
   }
 }
 
-const { isStale } = useDetailRouteLoader(loadAlbumDetails)
+useDetailRouteLoader(loadAlbumDetails)
 
 const getTotalDuration = (tracks: TrackDTO[]) => {
   const totalSeconds = tracks.reduce((acc, t) => acc + (t.duration || 0), 0)
