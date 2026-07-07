@@ -130,8 +130,8 @@ export function usePlaylistContextMenu() {
           {
             label: t('context_menu.add_to_playlist'),
             icon: ListPlus,
-            disabled: playlistsStore.playlists.length <= 1,
-            children: playlistsStore.playlists
+            disabled: playlistsStore.manualPlaylists.filter(p => p.id !== playlist.id).length === 0,
+            children: playlistsStore.manualPlaylists
               .filter(p => p.id !== playlist.id)
               .map(p => ({
                 label: p.name,

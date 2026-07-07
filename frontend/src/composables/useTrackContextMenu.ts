@@ -129,8 +129,9 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
     })
 
     if (!options.playlistId) {
-      const playlistChildren: ContextMenuItem[] = playlistsStore.playlists.length
-        ? playlistsStore.playlists.map(p => ({
+      const addablePlaylists = playlistsStore.manualPlaylists
+      const playlistChildren: ContextMenuItem[] = addablePlaylists.length
+        ? addablePlaylists.map(p => ({
           label: p.name,
           action: () => { PlaylistService.AddTrackToPlaylist(p.id, track.id, '') },
         }))
@@ -147,7 +148,7 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
         if (!playlistIds || !playlistIds.length) return
 
         playlistChildren.forEach((child, index) => {
-          const p = playlistsStore.playlists[index]
+          const p = addablePlaylists[index]
           if (p && playlistIds.includes(p.id)) {
             child.iconRight = Check
             child.action = () => { PlaylistService.RemoveTrackFromPlaylist(p.id, track.id, '') }
@@ -275,8 +276,8 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
     })
 
     if (!options.playlistId) {
-      const playlistChildren: ContextMenuItem[] = playlistsStore.playlists.length
-        ? playlistsStore.playlists.map(p => ({
+      const playlistChildren: ContextMenuItem[] = playlistsStore.manualPlaylists.length
+        ? playlistsStore.manualPlaylists.map(p => ({
           label: p.name,
           action: () => {
             PlaylistService.AddTracksToPlaylist(p.id, tracks.map(t => t.id), '')

@@ -146,6 +146,10 @@ export const usePlaylistsStore = defineStore('playlists', () => {
       .sort((a, b) => (a.pinned_at! < b.pinned_at! ? -1 : 1))
   )
 
+  // Smart playlists derive their tracks from rules and reject manual
+  // add/remove server-side — keep them out of "add to playlist" menus.
+  const manualPlaylists = computed(() => playlists.value.filter((p) => !p.is_smart))
+
   return {
     playlists,
     loading,
@@ -159,6 +163,7 @@ export const usePlaylistsStore = defineStore('playlists', () => {
     isPinned,
     togglePinned,
     pinnedPlaylists,
+    manualPlaylists,
     dispose,
   }
 })
