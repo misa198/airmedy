@@ -7,19 +7,19 @@ import { DetailsButton } from '@airmedy/ui'
 import { hexToRgba } from '@airmedy/utils'
 import { Disc, ImagePlus, MoreVertical, Music, Play, Shuffle, Trash2 } from '@lucide/vue'
 import { Events } from '@wailsio/runtime'
-import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import type { AlbumDTO, Artist, ThemeColors, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import ContextMenu from '../components/ContextMenu.vue'
 import GroupedAlbumList from '../components/GroupedAlbumList.vue'
 import { usePlayerStore } from '../stores/player'
 import { useLibrarySync } from '@/composables/useLibrarySync'
+import { useDetailRouteLoader } from '@/composables/useDetailRouteLoader'
 
 const { t } = useI18n()
 
-const route = useRoute()
 const router = useRouter()
 const playerStore = usePlayerStore()
 const artist = ref<Artist | null>(null)
@@ -36,10 +36,19 @@ function openContextMenu(e: MouseEvent) {
   contextMenu.open(e, buildMenuItems(tracks.value))
 }
 
+// Synchronous token marking the most recently requested artist, set before
+// any await so a fast-resolving load can't be mistaken for stale (comparing
+// against vue-router's reactive route.params.id instead is racy: it may not
+// have finished updating yet by the time a quick fetch resolves).
+let currentArtistId: string | null = null
+const isStale = (id: string) => currentArtistId !== id
+
 const loadTheme = async (id: string) => {
   artistTheme.value = null
   try {
-    artistTheme.value = await LibraryService.GetArtistColors(id)
+    const colors = await LibraryService.GetArtistColors(id)
+    if (isStale(id)) return
+    artistTheme.value = colors
   } catch (err) {
     console.error('Failed to load artist colors:', err)
   }
@@ -48,6 +57,7 @@ const loadTheme = async (id: string) => {
 // silent: event-driven reload that keeps the current view visible (no spinner /
 // theme flash) and swaps data in when it arrives.
 const loadArtistDetails = async (id: string, silent = false) => {
+  currentArtistId = id
   if (!silent) {
     isLoading.value = true
     loadTheme(id)
@@ -58,19 +68,22 @@ const loadArtistDetails = async (id: string, silent = false) => {
       LibraryService.GetAlbumsByArtistID(id),
       LibraryService.GetTracksByArtistID(id)
     ])
+    if (isStale(id)) return
     artist.value = artistData
     albums.value = albumsData.filter((a): a is AlbumDTO => a !== null)
     tracks.value = tracksData.filter((t): t is TrackDTO => t !== null)
   } catch (err) {
     console.error('Failed to load artist details:', err)
   } finally {
-    if (!silent) isLoading.value = false
+    if (!isStale(id)) isLoading.value = false
   }
 }
 
 // Track edits can move tracks/albums in or out of this artist; refresh silently.
+// Reads our own loaded artist id, not route.params.id — this listener stays
+// registered while KeepAlive backgrounds this instance on an unrelated route.
 useLibrarySync(() => {
-  const id = route.params.id as string
+  const id = artist.value?.id
   if (id) loadArtistDetails(id, true)
 })
 
@@ -119,9 +132,6 @@ function openArtworkMenu(e: MouseEvent) {
 let offArtworkUpdated: (() => void) | null = null
 
 onMounted(() => {
-  const id = route.params.id as string
-  if (id) loadArtistDetails(id)
-
   // Artwork can change asynchronously (e.g. Deezer online fetch completes);
   // re-extract colors so the hero tint follows the new image.
   offArtworkUpdated = Events.On('artist-artwork-updated', (ev) => {
@@ -136,9 +146,7 @@ onUnmounted(() => {
   if (offArtworkUpdated) offArtworkUpdated()
 })
 
-watch(() => route.params.id, (newId) => {
-  if (newId) loadArtistDetails(newId as string)
-})
+useDetailRouteLoader(loadArtistDetails)
 </script>
 
 <template>
@@ -147,10 +155,10 @@ watch(() => route.params.id, (newId) => {
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
     </div>
 
-    <div v-else-if="artist" class="flex-1 overflow-y-auto">
+    <div v-else-if="artist" class="flex-1 flex flex-col overflow-hidden">
       <!-- Artist Hero Section -->
       <div
-        class="p-8 md:p-12 flex flex-col md:flex-row gap-8 items-center bg-gradient-to-b from-dynamic-surface to-transparent border-b border-foreground/[0.06]"
+        class="flex-shrink-0 p-8 md:p-12 flex flex-col md:flex-row gap-8 items-center bg-gradient-to-b from-dynamic-surface to-transparent border-b border-foreground/[0.06]"
         :style="{ '--dynamic-surface': artistTheme ? hexToRgba(artistTheme.dominant, 0.15) : 'var(--bg-glass)' }">
         <div
           class="group relative w-32 h-32 xl:w-42 xl:h-42 rounded-full shadow-2xl overflow-hidden ring-2 ring-foreground/[0.08] bg-foreground/5 flex-shrink-0"
@@ -192,7 +200,7 @@ watch(() => route.params.id, (newId) => {
         </div>
       </div>
 
-      <div class="p-8">
+      <div class="flex-1 min-h-0">
         <GroupedAlbumList :tracks="tracks" :albums="albums" />
       </div>
     </div>

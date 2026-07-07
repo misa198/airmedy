@@ -20,8 +20,8 @@ export function useGroupContextMenu() {
       {
         label: t('context_menu.add_to_playlist'),
         icon: ListPlus,
-        children: playlistsStore.playlists.length
-          ? playlistsStore.playlists.map(p => ({
+        children: playlistsStore.manualPlaylists.length
+          ? playlistsStore.manualPlaylists.map(p => ({
               label: p.name,
               action: async () => {
                 // Add all tracks to playlist

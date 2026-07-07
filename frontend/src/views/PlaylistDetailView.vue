@@ -22,6 +22,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { emptyConfig, type SmartPlaylistConfig } from '@/lib/smartPlaylistFields'
 import { Input } from '@airmedy/ui'
 import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
+import { useDetailRouteLoader } from '@/composables/useDetailRouteLoader'
 import { usePlaylistsStore } from '@/stores/playlists'
 import { Events } from '@wailsio/runtime'
 
@@ -35,6 +36,7 @@ const playlistsStore = usePlaylistsStore()
 const playlist = ref<Playlist | null>(null)
 const tracks = shallowRef<TrackDTO[]>([])
 const isLoading = ref(true)
+const tracksLoading = ref(false)
 const searchQuery = ref('')
 
 const filteredTracks = computed(() => {
@@ -110,9 +112,25 @@ function openContextMenu(e: MouseEvent) {
   }))
 }
 
-async function load(silent = false) {
-  const id = route.params.id as string
+// Synchronous token marking the most recently requested playlist, set before
+// any await so a fast-resolving load can't be mistaken for stale (comparing
+// against vue-router's reactive route.params.id instead is racy: it may not
+// have finished updating yet by the time a quick fetch resolves).
+let currentPlaylistId: string | null = null
+const isStale = (id: string) => currentPlaylistId !== id
+
+async function load(silent = false, idOverride?: string) {
+  const id = idOverride ?? (route.params.id as string)
   if (!id) return
+  currentPlaylistId = id
+
+  // Switching to a different playlist: drop the old track list so a
+  // track-derived artwork mosaic (no custom artwork_key) doesn't flash the
+  // previous playlist's covers while the new tracks are still loading.
+  if (playlist.value?.id !== id) {
+    tracks.value = []
+    playlistTheme.value = null
+  }
 
   if (!silent) isLoading.value = true
 
@@ -124,6 +142,7 @@ async function load(silent = false) {
         PlaylistService.GetPlaylistByID(id),
         LibraryService.GetFavoriteTracks(),
       ])
+      if (isStale(id)) return
       playlist.value = p ?? ({ id: 'favorites', name: t('sidebar.favorites'), description: '', artwork_key: null } as Playlist)
       if (playlist.value.name === 'Favorites') {
         playlist.value = { ...playlist.value, name: t('sidebar.favorites') }
@@ -133,32 +152,43 @@ async function load(silent = false) {
     } catch (e) {
       console.error('Failed to load favorite tracks', e)
     } finally {
-      if (!silent) isLoading.value = false
+      if (!silent && !isStale(id)) isLoading.value = false
     }
     return
   }
 
   try {
-    const [p, t] = await Promise.all([
-      PlaylistService.GetPlaylistByID(id),
-      PlaylistService.GetPlaylistTracks(id),
-    ])
+    const p = await PlaylistService.GetPlaylistByID(id)
+    if (isStale(id)) return
     playlist.value = p
-    tracks.value = t.filter((t): t is TrackDTO => t !== null)
   } catch (e) {
     console.error('Failed to load playlist', e)
   } finally {
-    if (!silent) isLoading.value = false
+    if (!silent && !isStale(id)) isLoading.value = false
+  }
+
+  if (isStale(id)) return
+
+  tracksLoading.value = true
+  try {
+    const t = await PlaylistService.GetPlaylistTracks(id)
+    if (isStale(id)) return
+    tracks.value = t.filter((t): t is TrackDTO => t !== null)
+  } catch (e) {
+    console.error('Failed to load playlist tracks', e)
+  } finally {
+    if (!isStale(id)) tracksLoading.value = false
   }
 }
 
 async function loadTheme() {
   if (!playlist.value) return
-  
+  const id = playlist.value.id
+
   try {
     // 1. Try playlist custom theme
-    let colors: ThemeColors | null = await PlaylistService.GetPlaylistColors(playlist.value.id)
-    
+    let colors: ThemeColors | null = await PlaylistService.GetPlaylistColors(id)
+
     // 2. Fallback to first track's album theme if no custom artwork
     if (!colors && tracks.value.length > 0) {
       const trackWithAlbum = tracks.value.find(t => t.album_id)
@@ -166,7 +196,8 @@ async function loadTheme() {
         colors = await LibraryService.GetAlbumColors(trackWithAlbum.album_id)
       }
     }
-    
+
+    if (playlist.value?.id !== id) return
     playlistTheme.value = colors
   } catch (e) {
     console.warn('Failed to load playlist theme', e)
@@ -174,9 +205,9 @@ async function loadTheme() {
 }
 
 watch(tracks, () => loadTheme())
-watch(() => route.params.id, () => load())
+useDetailRouteLoader((id) => load(false, id))
 watch(() => favoritesStore.version, () => {
-  if (route.params.id === 'favorites') load(true)
+  if (playlist.value?.id === 'favorites') load(true, 'favorites')
 })
 
 const sessionId = Math.random().toString(36).substring(2, 15)
@@ -184,14 +215,17 @@ const sessionId = Math.random().toString(36).substring(2, 15)
 const handlePlaylistChange = (ev: Events.WailsEvent) => {
   const data = ev.data as { playlist_id: string, sender_id: string }
   if (data.sender_id === sessionId) return
-  if (data.playlist_id === route.params.id) {
-    load(true)
+  // This listener stays registered while KeepAlive backgrounds this instance
+  // on an unrelated route, so `id` must come from our own state, not the
+  // (possibly unrelated) global route.params.id.
+  if (data.playlist_id === playlist.value?.id) {
+    load(true, playlist.value.id)
   }
 }
 
 const handlePlaylistDeleted = (ev: Events.WailsEvent) => {
   const deletedId = ev.data as string
-  if (deletedId === route.params.id) {
+  if (deletedId === playlist.value?.id) {
     router.push('/')
   }
 }
@@ -200,7 +234,6 @@ let offPlaylistChange: (() => void) | null = null
 let offPlaylistDeleted: (() => void) | null = null
 
 onMounted(() => {
-  load()
   offPlaylistChange = Events.On('playlist:tracks-changed', handlePlaylistChange)
   offPlaylistDeleted = Events.On('playlist:deleted', handlePlaylistDeleted)
 })
@@ -211,6 +244,7 @@ onUnmounted(() => {
 })
 
 const totalDurationFormatted = computed(() => {
+  if (tracksLoading.value) return '--'
   const totalSeconds = tracks.value.reduce((acc, t) => acc + (t.duration || 0), 0)
   return formatTotalDuration(totalSeconds, t)
 })
@@ -334,7 +368,7 @@ async function handleReorder(newTracks: TrackDTO[]) {
       <div class="flex gap-2 text-sm items-end flex-wrap">
         <div class="flex items-center gap-2">
           <Music class="w-4 h-4" />
-          <span>{{ tracks.length }} {{ $t('library.songs') }}</span>
+          <span>{{ tracksLoading ? '--' : tracks.length }} {{ $t('library.songs') }}</span>
         </div>
         <div class="flex items-center gap-2">
           <Clock class="w-4 h-4" />
@@ -361,10 +395,11 @@ async function handleReorder(newTracks: TrackDTO[]) {
     <template #body>
       <TrackTable
         :tracks="filteredTracks"
+        :is-loading="tracksLoading"
         :show-artwork="true"
         :simple-mode="true"
         :allow-dnd="playlist.id !== 'favorites' && !playlist.is_smart"
-        :context-menu-options="{ playlistId: playlist.id }"
+        :context-menu-options="{ playlistId: playlist.id, isSmartPlaylist: playlist.is_smart }"
         @play-track="(_, index, queue) => playerStore.playTracks(queue, index)"
         @reorder="handleReorder"
         @navigate-album="id => router.push(`/albums/${id}`)"
