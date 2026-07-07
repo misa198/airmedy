@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, shallowRef, computed, onMounted } from 'vue'
-import { useRoute, onBeforeRouteUpdate } from 'vue-router'
+import { ref, shallowRef, computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { useDetailRouteLoader } from '@/composables/useDetailRouteLoader'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { Genre, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import GroupedAlbumList from '../components/GroupedAlbumList.vue'
@@ -37,12 +38,13 @@ const loadGenreDetails = async (id: string, silent = false) => {
       LibraryService.GetGenreByID(id),
       LibraryService.GetTracksByGenreID(id)
     ])
+    if (isStale(id)) return
     genre.value = genreData
     tracks.value = tracksData.filter((t): t is TrackDTO => t !== null)
   } catch (err) {
     console.error('Failed to load genre details:', err)
   } finally {
-    if (!silent) isLoading.value = false
+    if (!isStale(id)) isLoading.value = false
   }
 }
 
@@ -52,15 +54,7 @@ useLibrarySync(() => {
   if (id) loadGenreDetails(id, true)
 })
 
-onMounted(() => {
-  const id = route.params.id as string
-  if (id) loadGenreDetails(id)
-})
-
-onBeforeRouteUpdate((to) => {
-  const newId = to.params.id
-  if (newId) loadGenreDetails(newId as string)
-})
+const { isStale } = useDetailRouteLoader(loadGenreDetails)
 </script>
 
 <template>

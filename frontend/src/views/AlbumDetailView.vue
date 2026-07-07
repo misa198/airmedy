@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, shallowRef, computed, onMounted } from 'vue'
-import { useRoute, useRouter, onBeforeRouteUpdate } from 'vue-router'
+import { ref, shallowRef, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useDetailRouteLoader } from '@/composables/useDetailRouteLoader'
 import { useI18n } from 'vue-i18n'
 import LazyImg from '@/components/LazyImg.vue'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
@@ -23,7 +24,6 @@ const settings = useTrackTableSettings()
 const playerStore = usePlayerStore()
 const { t } = useI18n()
 
-const route = useRoute()
 const router = useRouter()
 const album = ref<AlbumDTO | null>(null)
 const tracks = shallowRef<TrackDTO[]>([])
@@ -46,7 +46,7 @@ const tableHeight = computed(() => {
 
 // Drop a track from this view if an edit moved it to a different album.
 useLibraryUpdates(tracks, {
-  belongs: t => t.album?.id === route.params.id,
+  belongs: t => t.album?.id === album.value?.id,
 })
 const albumTheme = ref<ThemeColors | null>(null)
 
@@ -66,12 +66,14 @@ const loadAlbumDetails = async (id: string) => {
       LibraryService.GetAlbumByID(id),
       LibraryService.GetTracksByAlbumID(id)
     ])
+    if (isStale(id)) return
     album.value = albumData
     tracks.value = tracksData.filter((t): t is TrackDTO => t !== null)
 
     // Fetch album colors for local theme
     try {
       const colors = await LibraryService.GetAlbumColors(id)
+      if (isStale(id)) return
       albumTheme.value = colors
     } catch (e) {
       console.warn('Failed to fetch album colors', e)
@@ -79,19 +81,11 @@ const loadAlbumDetails = async (id: string) => {
   } catch (err) {
     console.error('Failed to load album details:', err)
   } finally {
-    isLoading.value = false
+    if (!isStale(id)) isLoading.value = false
   }
 }
 
-onMounted(() => {
-  const id = route.params.id as string
-  if (id) loadAlbumDetails(id)
-})
-
-onBeforeRouteUpdate((to) => {
-  const newId = to.params.id
-  if (newId) loadAlbumDetails(newId as string)
-})
+const { isStale } = useDetailRouteLoader(loadAlbumDetails)
 
 const getTotalDuration = (tracks: TrackDTO[]) => {
   const totalSeconds = tracks.reduce((acc, t) => acc + (t.duration || 0), 0)

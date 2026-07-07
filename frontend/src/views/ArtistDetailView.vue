@@ -9,13 +9,14 @@ import { Disc, ImagePlus, MoreVertical, Music, Play, Shuffle, Trash2 } from '@lu
 import { Events } from '@wailsio/runtime'
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter, onBeforeRouteUpdate } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import type { AlbumDTO, Artist, ThemeColors, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import ContextMenu from '../components/ContextMenu.vue'
 import GroupedAlbumList from '../components/GroupedAlbumList.vue'
 import { usePlayerStore } from '../stores/player'
 import { useLibrarySync } from '@/composables/useLibrarySync'
+import { useDetailRouteLoader } from '@/composables/useDetailRouteLoader'
 
 const { t } = useI18n()
 
@@ -39,7 +40,9 @@ function openContextMenu(e: MouseEvent) {
 const loadTheme = async (id: string) => {
   artistTheme.value = null
   try {
-    artistTheme.value = await LibraryService.GetArtistColors(id)
+    const colors = await LibraryService.GetArtistColors(id)
+    if (isStale(id)) return
+    artistTheme.value = colors
   } catch (err) {
     console.error('Failed to load artist colors:', err)
   }
@@ -58,13 +61,14 @@ const loadArtistDetails = async (id: string, silent = false) => {
       LibraryService.GetAlbumsByArtistID(id),
       LibraryService.GetTracksByArtistID(id)
     ])
+    if (isStale(id)) return
     artist.value = artistData
     albums.value = albumsData.filter((a): a is AlbumDTO => a !== null)
     tracks.value = tracksData.filter((t): t is TrackDTO => t !== null)
   } catch (err) {
     console.error('Failed to load artist details:', err)
   } finally {
-    if (!silent) isLoading.value = false
+    if (!isStale(id)) isLoading.value = false
   }
 }
 
@@ -119,9 +123,6 @@ function openArtworkMenu(e: MouseEvent) {
 let offArtworkUpdated: (() => void) | null = null
 
 onMounted(() => {
-  const id = route.params.id as string
-  if (id) loadArtistDetails(id)
-
   // Artwork can change asynchronously (e.g. Deezer online fetch completes);
   // re-extract colors so the hero tint follows the new image.
   offArtworkUpdated = Events.On('artist-artwork-updated', (ev) => {
@@ -136,10 +137,7 @@ onUnmounted(() => {
   if (offArtworkUpdated) offArtworkUpdated()
 })
 
-onBeforeRouteUpdate((to) => {
-  const newId = to.params.id
-  if (newId) loadArtistDetails(newId as string)
-})
+const { isStale } = useDetailRouteLoader(loadArtistDetails)
 </script>
 
 <template>

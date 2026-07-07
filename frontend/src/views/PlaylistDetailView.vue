@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, shallowRef, onMounted, computed, watch, onUnmounted } from 'vue'
-import { useRoute, useRouter, onBeforeRouteUpdate } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Play, Shuffle, MoreVertical, Clock, Music, X, Search, Sparkles } from '@lucide/vue'
 import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
@@ -22,6 +22,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { emptyConfig, type SmartPlaylistConfig } from '@/lib/smartPlaylistFields'
 import { Input } from '@airmedy/ui'
 import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
+import { useDetailRouteLoader } from '@/composables/useDetailRouteLoader'
 import { usePlaylistsStore } from '@/stores/playlists'
 import { Events } from '@wailsio/runtime'
 
@@ -124,6 +125,7 @@ async function load(silent = false, idOverride?: string) {
         PlaylistService.GetPlaylistByID(id),
         LibraryService.GetFavoriteTracks(),
       ])
+      if (isStale(id)) return
       playlist.value = p ?? ({ id: 'favorites', name: t('sidebar.favorites'), description: '', artwork_key: null } as Playlist)
       if (playlist.value.name === 'Favorites') {
         playlist.value = { ...playlist.value, name: t('sidebar.favorites') }
@@ -133,7 +135,7 @@ async function load(silent = false, idOverride?: string) {
     } catch (e) {
       console.error('Failed to load favorite tracks', e)
     } finally {
-      if (!silent) isLoading.value = false
+      if (!silent && !isStale(id)) isLoading.value = false
     }
     return
   }
@@ -143,22 +145,24 @@ async function load(silent = false, idOverride?: string) {
       PlaylistService.GetPlaylistByID(id),
       PlaylistService.GetPlaylistTracks(id),
     ])
+    if (isStale(id)) return
     playlist.value = p
     tracks.value = t.filter((t): t is TrackDTO => t !== null)
   } catch (e) {
     console.error('Failed to load playlist', e)
   } finally {
-    if (!silent) isLoading.value = false
+    if (!silent && !isStale(id)) isLoading.value = false
   }
 }
 
 async function loadTheme() {
   if (!playlist.value) return
-  
+  const id = playlist.value.id
+
   try {
     // 1. Try playlist custom theme
-    let colors: ThemeColors | null = await PlaylistService.GetPlaylistColors(playlist.value.id)
-    
+    let colors: ThemeColors | null = await PlaylistService.GetPlaylistColors(id)
+
     // 2. Fallback to first track's album theme if no custom artwork
     if (!colors && tracks.value.length > 0) {
       const trackWithAlbum = tracks.value.find(t => t.album_id)
@@ -166,7 +170,8 @@ async function loadTheme() {
         colors = await LibraryService.GetAlbumColors(trackWithAlbum.album_id)
       }
     }
-    
+
+    if (playlist.value?.id !== id) return
     playlistTheme.value = colors
   } catch (e) {
     console.warn('Failed to load playlist theme', e)
@@ -174,12 +179,9 @@ async function loadTheme() {
 }
 
 watch(tracks, () => loadTheme())
-onBeforeRouteUpdate((to) => {
-  const newId = to.params.id
-  if (newId) load(false, newId as string)
-})
+const { isStale } = useDetailRouteLoader((id) => load(false, id))
 watch(() => favoritesStore.version, () => {
-  if (route.params.id === 'favorites') load(true)
+  if (playlist.value?.id === 'favorites') load(true)
 })
 
 const sessionId = Math.random().toString(36).substring(2, 15)
@@ -187,14 +189,14 @@ const sessionId = Math.random().toString(36).substring(2, 15)
 const handlePlaylistChange = (ev: Events.WailsEvent) => {
   const data = ev.data as { playlist_id: string, sender_id: string }
   if (data.sender_id === sessionId) return
-  if (data.playlist_id === route.params.id) {
+  if (data.playlist_id === playlist.value?.id) {
     load(true)
   }
 }
 
 const handlePlaylistDeleted = (ev: Events.WailsEvent) => {
   const deletedId = ev.data as string
-  if (deletedId === route.params.id) {
+  if (deletedId === playlist.value?.id) {
     router.push('/')
   }
 }
@@ -203,7 +205,6 @@ let offPlaylistChange: (() => void) | null = null
 let offPlaylistDeleted: (() => void) | null = null
 
 onMounted(() => {
-  load()
   offPlaylistChange = Events.On('playlist:tracks-changed', handlePlaylistChange)
   offPlaylistDeleted = Events.On('playlist:deleted', handlePlaylistDeleted)
 })
