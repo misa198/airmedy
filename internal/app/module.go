@@ -152,6 +152,12 @@ var Module = fx.Module("app",
 					playerSvc.SetMaxQueueSize(domain.ResolveMaxQueueSize(settings.MaxQueueSize))
 				})
 
+				// Apply crossfade duration changes live (initial value is loaded
+				// in PlayerService.restoreState).
+				settingsSvc.AddChangeListener(func(settings *domain.AppSettings) {
+					playerSvc.SetCrossfadeSeconds(domain.ClampCrossfadeSeconds(settings.CrossfadeSeconds))
+				})
+
 				if err := playlistSvc.EnsureFavoritesPlaylist(ctx); err != nil {
 					slog.Error("Failed to ensure favorites playlist", "error", err)
 				}

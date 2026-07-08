@@ -27,9 +27,14 @@ void SetEQEnabled(void* player, int enabled);
 void SetPreampGainPlayer(void* player, double db);
 void EnqueueNextPlayer(void* player, const char* path);
 void ClearEnqueuedPlayer(void* player);
+void SetCrossfadeDurationPlayer(void* player, double seconds);
+int BeginCrossfadePlayer(void* player, double durationSec, double nextPreampDB);
+void FinishCrossfadePlayer(void* player);
+int StartPreloadedPlayer(void* player);
 */
 import "C"
 import (
+	"fmt"
 	"log/slog"
 	"sync"
 	"unsafe"
@@ -108,6 +113,7 @@ type DarwinPlayer struct {
 	logger        *slog.Logger
 	playerPointer unsafe.Pointer
 	status        domain.PlayerStatus
+	crossfadeSec  float64 // 0 = off (gapless via SFB auto-transition)
 }
 
 func NewPlayer(logger *slog.Logger) domain.AudioPlayer {
@@ -222,19 +228,48 @@ func (p *DarwinPlayer) EnqueueNext(track *domain.TrackDTO) error {
 }
 
 func (p *DarwinPlayer) StartPreloaded(track *domain.TrackDTO) error {
-	// SFBAudioEngine auto-transitioned; update Go-side status tracking.
+	// Crossfade off: SFBAudioEngine auto-transitioned, nothing to start.
+	// Crossfade on: the preload lives in the idle deck — start it now.
+	if C.StartPreloadedPlayer(p.playerPointer) == 0 {
+		return fmt.Errorf("no preloaded track to start for %s", track.Path)
+	}
 	p.status.TrackID = track.ID
 	p.status.Duration = float64(track.Duration)
 	p.status.Position = 0
 	return nil
 }
 
+// AutoTransitions is dynamic: with crossfade off the pre-queued track lives in
+// the active deck's SFB queue and the engine transitions on its own; with
+// crossfade on it lives in the idle deck and Go drives the transition.
 func (p *DarwinPlayer) AutoTransitions() bool {
-	return true
+	return p.crossfadeSec == 0
 }
 
 func (p *DarwinPlayer) ClearEnqueued() {
 	C.ClearEnqueuedPlayer(p.playerPointer)
+}
+
+// --- CrossfadePlayer ---
+
+func (p *DarwinPlayer) SetCrossfadeDuration(seconds float64) {
+	p.crossfadeSec = seconds
+	C.SetCrossfadeDurationPlayer(p.playerPointer, C.double(seconds))
+}
+
+func (p *DarwinPlayer) BeginCrossfadeToPreloaded(track *domain.TrackDTO, durationSec, preampGainDB float64) error {
+	if C.BeginCrossfadePlayer(p.playerPointer, C.double(durationSec), C.double(preampGainDB)) == 0 {
+		return fmt.Errorf("crossfade begin failed for %s", track.Path)
+	}
+	p.status.TrackID = track.ID
+	p.status.Duration = float64(track.Duration)
+	p.status.Position = 0
+	p.status.PlaybackState = domain.PlaybackStatePlaying
+	return nil
+}
+
+func (p *DarwinPlayer) FinishCrossfade() {
+	C.FinishCrossfadePlayer(p.playerPointer)
 }
 
 // --- NowPlayingController ---

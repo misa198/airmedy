@@ -41,13 +41,24 @@ struct MaPlayer {
     ma_peak_node          eq_bands[10];
     int                   eq_enabled;
     float                 eq_gains[10];
+
+    /* Per-sound normalization pre-amp (linear). cur applies to the active
+     * sound; nxt preserves the outgoing sound's gain while old_fading. */
+    float                 preamp_cur_linear;
+    float                 preamp_nxt_linear;
+    /* Crossfade in progress: the nxt slot holds the fading-out former
+     * current sound instead of a pre-loaded next track. */
+    int                   old_fading;
 };
 
 static float g_eq_frequencies[] = {32.0f, 64.0f, 125.0f, 250.0f, 500.0f, 1000.0f, 2000.0f, 4000.0f, 8000.0f, 16000.0f};
 
 static void internal_end_cb(void* userdata, ma_sound* pSound) {
-    (void)pSound;
     MaPlayer* p = (MaPlayer*)userdata;
+    /* During a crossfade the fading-out sound (living in the nxt slot) can
+     * drain naturally; only the active sound's end is a track end, otherwise
+     * the app would advance the queue twice. */
+    if (pSound != p->cur_sound) return;
     if (p->end_cb) p->end_cb(p->end_userdata);
 }
 
@@ -70,6 +81,22 @@ static void unload_nxt_locked(MaPlayer* p) {
     if (p->nxt_using_ffmpeg) {
         ma_ffmpeg_data_source_uninit(p->nxt_ffmpeg_ds);
         p->nxt_using_ffmpeg = 0;
+    }
+}
+
+/* Force-complete a running crossfade: stop and unload the fading-out sound,
+ * snap the incoming sound's fader to full. Caller holds mu. No-op when not
+ * fading (must never run on the audio thread — uninits a sound). */
+static void finish_fade_locked(MaPlayer* p) {
+    if (p->old_fading) {
+        ma_sound_stop(p->nxt_sound);
+        unload_nxt_locked(p);
+        p->old_fading = 0;
+        p->preamp_nxt_linear = 1.0f;
+    }
+    if (p->cur_loaded) {
+        /* -1 = start from the fader's current level; 0 ms = instant. */
+        ma_sound_set_fade_in_milliseconds(p->cur_sound, -1.0f, 1.0f, 0);
     }
 }
 
@@ -111,6 +138,8 @@ MaPlayer* ma_player_create(void) {
     if (ma_engine_init(NULL, &p->engine) != MA_SUCCESS) { free(p); return NULL; }
     ma_mutex_init(&p->mu);
     p->volume = 1.0f;
+    p->preamp_cur_linear = 1.0f;
+    p->preamp_nxt_linear = 1.0f;
 
     p->cur_sound     = &p->slot_a;
     p->cur_ffmpeg_ds = &p->ffmpeg_a;
@@ -148,6 +177,9 @@ void ma_player_destroy(MaPlayer* p) {
 int ma_player_load(MaPlayer* p, const char* path) {
     if (!p || !path) return -1;
     ma_mutex_lock(&p->mu);
+    /* Hard load: complete any crossfade, discard any pre-loaded next track
+     * and reload the current slot. */
+    finish_fade_locked(p);
     unload_nxt_locked(p);
     unload_cur_locked(p);
 
@@ -155,7 +187,7 @@ int ma_player_load(MaPlayer* p, const char* path) {
                            p->cur_sound, p->cur_ffmpeg_ds,
                            &p->cur_using_ffmpeg, &p->cur_loaded);
     if (r == 0) {
-        ma_sound_set_volume(p->cur_sound, p->volume);
+        ma_sound_set_volume(p->cur_sound, p->volume * p->preamp_cur_linear);
         if (p->end_cb) ma_sound_set_end_callback(p->cur_sound, internal_end_cb, p);
     }
     ma_mutex_unlock(&p->mu);
@@ -201,8 +233,12 @@ int ma_player_seek(MaPlayer* p, double seconds) {
 
 int ma_player_set_volume(MaPlayer* p, float volume) {
     if (!p) return -1;
+    ma_mutex_lock(&p->mu);
     p->volume = volume;
-    if (p->cur_loaded) ma_sound_set_volume(p->cur_sound, volume);
+    if (p->cur_loaded) ma_sound_set_volume(p->cur_sound, volume * p->preamp_cur_linear);
+    if (p->old_fading && p->nxt_loaded)
+        ma_sound_set_volume(p->nxt_sound, volume * p->preamp_nxt_linear);
+    ma_mutex_unlock(&p->mu);
     return 0;
 }
 
@@ -268,14 +304,17 @@ int ma_player_set_eq_enabled(MaPlayer* p, int enabled) {
     return 0;
 }
 
-/* The EQ-enabled and EQ-bypassed paths both converge at the engine endpoint,
- * which is otherwise untouched (user volume goes through per-sound
- * ma_sound_set_volume, never the endpoint) — so its output-bus volume is a
- * natural, topology-free pre-amp stage for normalization. */
+/* Normalization gain is per-sound (volume × gain on the active sound) so two
+ * overlapping sounds during a crossfade each keep their own track's gain.
+ * For a single sound this is equivalent to the previous endpoint-volume
+ * approach (endpoint_gain × sound_volume ≡ sound_volume × gain). */
 int ma_player_set_preamp_gain(MaPlayer* p, float gainDB) {
     if (!p) return -1;
-    float linear = powf(10.0f, gainDB / 20.0f);
-    ma_node_set_output_bus_volume(ma_engine_get_endpoint(&p->engine), 0, linear);
+    ma_mutex_lock(&p->mu);
+    p->preamp_cur_linear = powf(10.0f, gainDB / 20.0f);
+    if (p->cur_loaded)
+        ma_sound_set_volume(p->cur_sound, p->volume * p->preamp_cur_linear);
+    ma_mutex_unlock(&p->mu);
     return 0;
 }
 
@@ -284,6 +323,9 @@ int ma_player_set_preamp_gain(MaPlayer* p, float gainDB) {
 int ma_player_preload_next(MaPlayer* p, const char* path) {
     if (!p || !path) return -1;
     ma_mutex_lock(&p->mu);
+    /* The nxt slot may still hold a fading-out sound — complete the fade
+     * before reusing it. */
+    finish_fade_locked(p);
     unload_nxt_locked(p);
     int r = load_into_slot(p, path,
                            p->nxt_sound, p->nxt_ffmpeg_ds,
@@ -303,7 +345,7 @@ int ma_player_preload_next(MaPlayer* p, const char* path) {
 int ma_player_start_preloaded(MaPlayer* p) {
     if (!p) return -1;
     ma_mutex_lock(&p->mu);
-    if (!p->nxt_loaded) {
+    if (!p->nxt_loaded || p->old_fading) {
         ma_mutex_unlock(&p->mu);
         return -1;
     }
@@ -324,6 +366,9 @@ int ma_player_start_preloaded(MaPlayer* p) {
     p->nxt_using_ffmpeg = tmp_using;
     p->nxt_loaded       = 0;
 
+    /* The previous track's pre-amp gain applies until the app pushes the new
+     * track's gain moments later. */
+    ma_sound_set_volume(p->cur_sound, p->volume * p->preamp_cur_linear);
     if (p->end_cb) ma_sound_set_end_callback(p->cur_sound, internal_end_cb, p);
     ma_result r = ma_sound_start(p->cur_sound);
     ma_mutex_unlock(&p->mu);
@@ -333,6 +378,74 @@ int ma_player_start_preloaded(MaPlayer* p) {
 void ma_player_clear_preloaded(MaPlayer* p) {
     if (!p) return;
     ma_mutex_lock(&p->mu);
-    unload_nxt_locked(p);
+    /* While fading the nxt slot holds the outgoing sound, not a preload —
+     * leave the fade alone (there is nothing pre-loaded to clear). */
+    if (!p->old_fading) {
+        unload_nxt_locked(p);
+    }
     ma_mutex_unlock(&p->mu);
+}
+
+/* --- Crossfade --- */
+
+int ma_player_begin_crossfade(MaPlayer* p, double duration_sec, float next_gain_db) {
+    if (!p) return -1;
+    ma_mutex_lock(&p->mu);
+    if (!p->nxt_loaded || !p->cur_loaded || p->old_fading) {
+        ma_mutex_unlock(&p->mu);
+        return -1;
+    }
+
+    ma_uint64 ms = (ma_uint64)(duration_sec * 1000.0);
+    float next_linear = powf(10.0f, next_gain_db / 20.0f);
+
+    /* Incoming: current EQ routing, its own normalization gain, fade in
+     * from silence. */
+    ma_node_attach_output_bus(p->nxt_sound, 0,
+                              p->eq_enabled ? (ma_node*)&p->eq_bands[0]
+                                            : ma_engine_get_endpoint(&p->engine), 0);
+    ma_sound_set_volume(p->nxt_sound, p->volume * next_linear);
+    ma_sound_set_fade_in_milliseconds(p->nxt_sound, 0.0f, 1.0f, ms);
+    ma_result r = ma_sound_start(p->nxt_sound);
+    if (r != MA_SUCCESS) {
+        ma_mutex_unlock(&p->mu);
+        return (int)r;
+    }
+
+    /* Outgoing: fade to silence, then stop. Stopping does not fire the end
+     * callback, and a natural drain during the overlap is swallowed by the
+     * cur_sound guard in internal_end_cb. */
+    ma_sound_stop_with_fade_in_milliseconds(p->cur_sound, ms);
+
+    /* Swap cur/nxt WITHOUT uniniting: the outgoing sound keeps playing out
+     * of the nxt slot until the fade completes. */
+    ma_sound*              tmp_sound  = p->cur_sound;
+    ma_ffmpeg_data_source* tmp_ffmpeg = p->cur_ffmpeg_ds;
+    int                    tmp_using  = p->cur_using_ffmpeg;
+
+    p->cur_sound        = p->nxt_sound;
+    p->cur_ffmpeg_ds    = p->nxt_ffmpeg_ds;
+    p->cur_using_ffmpeg = p->nxt_using_ffmpeg;
+    p->cur_loaded       = 1;
+
+    p->nxt_sound        = tmp_sound;
+    p->nxt_ffmpeg_ds    = tmp_ffmpeg;
+    p->nxt_using_ffmpeg = tmp_using;
+    p->nxt_loaded       = 1;
+
+    p->old_fading        = 1;
+    p->preamp_nxt_linear = p->preamp_cur_linear;
+    p->preamp_cur_linear = next_linear;
+
+    if (p->end_cb) ma_sound_set_end_callback(p->cur_sound, internal_end_cb, p);
+    ma_mutex_unlock(&p->mu);
+    return 0;
+}
+
+int ma_player_finish_crossfade(MaPlayer* p) {
+    if (!p) return -1;
+    ma_mutex_lock(&p->mu);
+    finish_fade_locked(p);
+    ma_mutex_unlock(&p->mu);
+    return 0;
 }

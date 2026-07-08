@@ -613,6 +613,385 @@ func TestLoadAndPlay_AppliesNormalizationGain(t *testing.T) {
 	}
 }
 
+// fakeCrossfadePlayer wraps fakeGaplessPlayer and implements CrossfadePlayer,
+// recording begin/finish calls for state-machine tests.
+type fakeCrossfadePlayer struct {
+	fakeGaplessPlayer
+	cfMu         sync.Mutex
+	crossfadeSec float64
+	beginTracks  []string
+	beginDurs    []float64
+	finishCount  int
+	loadCount    int
+}
+
+func (p *fakeCrossfadePlayer) SetCrossfadeDuration(sec float64) {
+	p.cfMu.Lock()
+	p.crossfadeSec = sec
+	p.cfMu.Unlock()
+}
+
+func (p *fakeCrossfadePlayer) BeginCrossfadeToPreloaded(track *domain.TrackDTO, durationSec, _ float64) error {
+	p.cfMu.Lock()
+	p.beginTracks = append(p.beginTracks, track.ID)
+	p.beginDurs = append(p.beginDurs, durationSec)
+	p.cfMu.Unlock()
+
+	p.fakePlayer.mu.Lock()
+	p.status.TrackID = track.ID
+	p.status.Duration = float64(track.Duration)
+	p.status.Position = 0
+	p.status.PlaybackState = domain.PlaybackStatePlaying
+	p.fakePlayer.mu.Unlock()
+
+	// The preload is consumed by the fade.
+	p.mu.Lock()
+	p.enqueuedTrack = nil
+	p.mu.Unlock()
+	return nil
+}
+
+func (p *fakeCrossfadePlayer) FinishCrossfade() {
+	p.cfMu.Lock()
+	p.finishCount++
+	p.cfMu.Unlock()
+}
+
+func (p *fakeCrossfadePlayer) Load(track *domain.TrackDTO) error {
+	p.cfMu.Lock()
+	p.loadCount++
+	p.cfMu.Unlock()
+	return p.fakePlayer.Load(track)
+}
+
+func (p *fakeCrossfadePlayer) counts() (begins []string, finishes, loads int) {
+	p.cfMu.Lock()
+	defer p.cfMu.Unlock()
+	return append([]string{}, p.beginTracks...), p.finishCount, p.loadCount
+}
+
+func newCrossfadeFixture(t *testing.T, seconds int, tracks ...*domain.TrackDTO) (*PlayerService, *fakeCrossfadePlayer) {
+	t.Helper()
+	fp := &fakeCrossfadePlayer{
+		fakeGaplessPlayer: fakeGaplessPlayer{fakePlayer: fakePlayer{status: domain.PlayerStatus{Volume: 1.0}}},
+	}
+	s, _ := newTestService(t, fp)
+	s.SetCrossfadeSeconds(seconds)
+	s.queue.SetQueue(tracks, 0)
+	s.mu.Lock()
+	s.currentTrack = tracks[0]
+	if len(tracks) > 1 {
+		s.nextPreQueued = tracks[1]
+	}
+	s.mu.Unlock()
+	fp.fakePlayer.mu.Lock()
+	fp.status.TrackID = tracks[0].ID
+	fp.status.Duration = float64(tracks[0].Duration)
+	fp.status.PlaybackState = domain.PlaybackStatePlaying
+	fp.fakePlayer.mu.Unlock()
+	return s, fp
+}
+
+func playingStatus(trackID string, position, duration float64) domain.PlayerStatus {
+	return domain.PlayerStatus{
+		TrackID:       trackID,
+		Position:      position,
+		Duration:      duration,
+		PlaybackState: domain.PlaybackStatePlaying,
+	}
+}
+
+func TestCrossfade_NaturalTriggerFiresOnce(t *testing.T) {
+	t1 := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 300}}
+	t2 := &domain.TrackDTO{Track: domain.Track{ID: "t2", Duration: 300}}
+	s, fp := newCrossfadeFixture(t, 6, t1, t2)
+
+	// Too early — no fade yet.
+	s.maybeStartCrossfade(playingStatus("t1", 200, 300))
+	if begins, _, _ := fp.counts(); len(begins) != 0 {
+		t.Fatalf("fade started too early: %v", begins)
+	}
+
+	s.maybeStartCrossfade(playingStatus("t1", 296, 300))
+	begins, _, loads := fp.counts()
+	if len(begins) != 1 || begins[0] != "t2" {
+		t.Fatalf("expected one crossfade into t2, got %v", begins)
+	}
+	if loads != 0 {
+		t.Errorf("expected no hard load, got %d", loads)
+	}
+	if ct := s.GetCurrentTrack(); ct == nil || ct.ID != "t2" {
+		t.Errorf("expected currentTrack t2 at fade start")
+	}
+	if next := s.queue.PeekNext(); next != nil {
+		t.Errorf("expected queue advanced to last track, PeekNext = %v", next.ID)
+	}
+
+	// Second tick during the fade must not start another one.
+	s.maybeStartCrossfade(playingStatus("t2", 1, 300))
+	s.maybeStartCrossfade(playingStatus("t1", 297, 300))
+	if begins, _, _ := fp.counts(); len(begins) != 1 {
+		t.Errorf("expected exactly one begin, got %v", begins)
+	}
+}
+
+func TestCrossfade_DisabledNeverBegins(t *testing.T) {
+	t1 := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 300}}
+	t2 := &domain.TrackDTO{Track: domain.Track{ID: "t2", Duration: 300}}
+	s, fp := newCrossfadeFixture(t, 0, t1, t2)
+
+	s.maybeStartCrossfade(playingStatus("t1", 299, 300))
+	if begins, _, _ := fp.counts(); len(begins) != 0 {
+		t.Errorf("crossfade=0 must never begin a fade, got %v", begins)
+	}
+
+	// Manual next hard-loads.
+	if err := s.Next(); err != nil {
+		t.Fatalf("Next: %v", err)
+	}
+	begins, _, loads := fp.counts()
+	if len(begins) != 0 || loads != 1 {
+		t.Errorf("expected hard load on Next with crossfade off, begins=%v loads=%d", begins, loads)
+	}
+}
+
+func TestCrossfade_ShortTrackAndLastInstantSkipped(t *testing.T) {
+	t1 := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 300}}
+	t2 := &domain.TrackDTO{Track: domain.Track{ID: "t2", Duration: 300}}
+	s, fp := newCrossfadeFixture(t, 6, t1, t2)
+
+	// Sub-2s track: never fade.
+	s.maybeStartCrossfade(playingStatus("t1", 1.0, 1.5))
+	// Last 0.4s: let the gapless end-callback path win.
+	s.maybeStartCrossfade(playingStatus("t1", 299.8, 300))
+	if begins, _, _ := fp.counts(); len(begins) != 0 {
+		t.Errorf("expected no fades, got %v", begins)
+	}
+
+	// Short-but-fadeable track clamps to duration/2.
+	s.maybeStartCrossfade(playingStatus("t1", 7, 10))
+	begins, _, _ := fp.counts()
+	if len(begins) != 1 {
+		t.Fatalf("expected clamped fade to fire, got %v", begins)
+	}
+	fp.cfMu.Lock()
+	dur := fp.beginDurs[0]
+	fp.cfMu.Unlock()
+	if dur != 5 {
+		t.Errorf("expected fade clamped to 5s (duration/2), got %v", dur)
+	}
+}
+
+// Manual Next/Previous/PlayQueueIndex never crossfade — only the natural
+// end-of-track auto-advance does.
+func TestCrossfade_ManualNextHardLoads(t *testing.T) {
+	t1 := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 300}}
+	t2 := &domain.TrackDTO{Track: domain.Track{ID: "t2", Duration: 300}}
+	t3 := &domain.TrackDTO{Track: domain.Track{ID: "t3", Duration: 300}}
+	s, fp := newCrossfadeFixture(t, 6, t1, t2, t3)
+
+	if err := s.Next(); err != nil {
+		t.Fatalf("Next: %v", err)
+	}
+	begins, _, loads := fp.counts()
+	if len(begins) != 0 || loads != 1 {
+		t.Fatalf("manual Next must hard-load without fade, begins=%v loads=%d", begins, loads)
+	}
+	if ct := s.GetCurrentTrack(); ct == nil || ct.ID != "t2" {
+		t.Errorf("expected currentTrack t2")
+	}
+}
+
+func TestCrossfade_ManualPreviousHardLoads(t *testing.T) {
+	t1 := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 300}}
+	t2 := &domain.TrackDTO{Track: domain.Track{ID: "t2", Duration: 300}}
+	s, fp := newCrossfadeFixture(t, 6, t1, t2)
+
+	if err := s.Next(); err != nil {
+		t.Fatalf("Next: %v", err)
+	}
+	if err := s.Previous(); err != nil {
+		t.Fatalf("Previous: %v", err)
+	}
+	begins, _, _ := fp.counts()
+	if len(begins) != 0 {
+		t.Errorf("manual Previous must not fade, begins=%v", begins)
+	}
+	if ct := s.GetCurrentTrack(); ct == nil || ct.ID != "t1" {
+		t.Errorf("expected currentTrack t1")
+	}
+}
+
+func TestCrossfade_PlayQueueIndexHardLoads(t *testing.T) {
+	t1 := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 300}}
+	t2 := &domain.TrackDTO{Track: domain.Track{ID: "t2", Duration: 300}}
+	t3 := &domain.TrackDTO{Track: domain.Track{ID: "t3", Duration: 300}}
+	s, fp := newCrossfadeFixture(t, 6, t1, t2, t3)
+
+	if err := s.PlayQueueIndex(2); err != nil {
+		t.Fatalf("PlayQueueIndex: %v", err)
+	}
+	begins, _, _ := fp.counts()
+	if len(begins) != 0 {
+		t.Errorf("PlayQueueIndex must not fade, begins=%v", begins)
+	}
+	if ct := s.GetCurrentTrack(); ct == nil || ct.ID != "t3" {
+		t.Errorf("expected currentTrack t3")
+	}
+}
+
+func TestCrossfade_PauseDuringFadeFinishes(t *testing.T) {
+	t1 := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 300}}
+	t2 := &domain.TrackDTO{Track: domain.Track{ID: "t2", Duration: 300}}
+	t3 := &domain.TrackDTO{Track: domain.Track{ID: "t3", Duration: 300}}
+	s, fp := newCrossfadeFixture(t, 6, t1, t2, t3)
+
+	s.maybeStartCrossfade(playingStatus("t1", 296, 300))
+	if err := s.Pause(); err != nil {
+		t.Fatalf("Pause: %v", err)
+	}
+
+	_, finishes, _ := fp.counts()
+	if finishes != 1 {
+		t.Errorf("expected fade finished on pause, got %d finishes", finishes)
+	}
+	s.mu.RLock()
+	fading := s.fading
+	nq := s.nextPreQueued
+	s.mu.RUnlock()
+	if fading {
+		t.Error("expected fading=false after pause")
+	}
+	// finishActiveCrossfade pre-enqueues the following track (t3).
+	if nq == nil || nq.ID != "t3" {
+		got := "<nil>"
+		if nq != nil {
+			got = nq.ID
+		}
+		t.Errorf("expected t3 pre-enqueued after finish, got %s", got)
+	}
+}
+
+func TestCrossfade_HandleTrackEndDuringFadeIgnored(t *testing.T) {
+	t1 := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 300}}
+	t2 := &domain.TrackDTO{Track: domain.Track{ID: "t2", Duration: 300}}
+	t3 := &domain.TrackDTO{Track: domain.Track{ID: "t3", Duration: 300}}
+	s, fp := newCrossfadeFixture(t, 6, t1, t2, t3)
+
+	s.maybeStartCrossfade(playingStatus("t1", 296, 300))
+
+	// The outgoing track drains during the overlap — must not double-advance.
+	s.HandleTrackEnd()
+
+	if ct := s.GetCurrentTrack(); ct == nil || ct.ID != "t2" {
+		t.Errorf("expected currentTrack to stay t2 after ignored end")
+	}
+	if next := s.queue.PeekNext(); next == nil || next.ID != "t3" {
+		t.Errorf("expected queue still pointing at t2 (next=t3)")
+	}
+	if _, _, loads := fp.counts(); loads != 0 {
+		t.Errorf("expected no hard load, got %d", loads)
+	}
+}
+
+func TestCrossfade_StaleGenerationIsNoop(t *testing.T) {
+	t1 := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 300}}
+	t2 := &domain.TrackDTO{Track: domain.Track{ID: "t2", Duration: 300}}
+	s, fp := newCrossfadeFixture(t, 6, t1, t2)
+
+	s.maybeStartCrossfade(playingStatus("t1", 296, 300))
+	s.mu.RLock()
+	gen := s.fadeGen
+	s.mu.RUnlock()
+
+	if !s.snapCrossfade(gen) {
+		t.Fatal("expected snap to complete the live fade")
+	}
+	// A stale completion (e.g. the scheduled AfterFunc) must be a no-op.
+	s.finishCrossfade(gen)
+	s.finishCrossfade(gen - 1)
+
+	_, finishes, _ := fp.counts()
+	if finishes != 1 {
+		t.Errorf("expected exactly one native finish, got %d", finishes)
+	}
+	s.mu.RLock()
+	nq := s.nextPreQueued
+	s.mu.RUnlock()
+	if nq != nil {
+		t.Errorf("stale finish must not pre-enqueue, got %s", nq.ID)
+	}
+}
+
+func TestCrossfade_RepeatOneFadesIntoSameTrack(t *testing.T) {
+	t1 := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 300}}
+	t2 := &domain.TrackDTO{Track: domain.Track{ID: "t2", Duration: 300}}
+	s, fp := newCrossfadeFixture(t, 6, t1, t2)
+	_ = s.SetRepeatMode(domain.RepeatModeOne)
+	s.mu.Lock()
+	s.nextPreQueued = t1 // RepeatOne pre-queues the current track
+	s.mu.Unlock()
+
+	s.maybeStartCrossfade(playingStatus("t1", 296, 300))
+	begins, _, _ := fp.counts()
+	if len(begins) != 1 || begins[0] != "t1" {
+		t.Fatalf("expected crossfade into t1 itself, got %v", begins)
+	}
+	if ct := s.GetCurrentTrack(); ct == nil || ct.ID != "t1" {
+		t.Errorf("expected currentTrack t1")
+	}
+}
+
+func TestCrossfade_EndOfQueueNeverBegins(t *testing.T) {
+	t1 := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 300}}
+	s, fp := newCrossfadeFixture(t, 6, t1)
+
+	s.maybeStartCrossfade(playingStatus("t1", 296, 300))
+	if begins, _, _ := fp.counts(); len(begins) != 0 {
+		t.Errorf("no pre-queued track — fade must not begin, got %v", begins)
+	}
+}
+
+func TestSetCrossfadeSeconds_ResyncsPreQueue(t *testing.T) {
+	fp := &fakeCrossfadePlayer{
+		fakeGaplessPlayer: fakeGaplessPlayer{fakePlayer: fakePlayer{status: domain.PlayerStatus{Volume: 1.0}}},
+	}
+	s, _ := newTestService(t, fp)
+
+	t1 := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 300}}
+	t2 := &domain.TrackDTO{Track: domain.Track{ID: "t2", Duration: 300}}
+	s.queue.SetQueue([]*domain.TrackDTO{t1, t2}, 0)
+	s.mu.Lock()
+	s.nextPreQueued = t2
+	s.mu.Unlock()
+	_ = fp.EnqueueNext(t2)
+
+	s.SetCrossfadeSeconds(6)
+
+	fp.cfMu.Lock()
+	sec := fp.crossfadeSec
+	fp.cfMu.Unlock()
+	if sec != 6 {
+		t.Errorf("expected native duration 6, got %v", sec)
+	}
+	fp.mu.Lock()
+	cleared := fp.clearCount
+	enq := fp.enqueuedTrack
+	fp.mu.Unlock()
+	if cleared != 1 || enq == nil || enq.ID != "t2" {
+		t.Errorf("expected pre-queue re-synced (cleared=1, t2 re-enqueued), got cleared=%d enq=%v", cleared, enq)
+	}
+
+	// Clamping: out-of-range values.
+	s.SetCrossfadeSeconds(99)
+	fp.cfMu.Lock()
+	sec = fp.crossfadeSec
+	fp.cfMu.Unlock()
+	if sec != float64(domain.MaxCrossfadeSeconds) {
+		t.Errorf("expected clamp to %d, got %v", domain.MaxCrossfadeSeconds, sec)
+	}
+}
+
 func TestLoadAndPlay_FiresTrackLoadListener(t *testing.T) {
 	fp := &fakePlayer{status: domain.PlayerStatus{Volume: 1.0}}
 	s, _ := newTestService(t, fp)

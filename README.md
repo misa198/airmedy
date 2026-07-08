@@ -67,6 +67,7 @@
 - **Fullscreen & miniplayer modes** — go fullscreen for an immersive listening experience, or shrink to a miniplayer that stays out of your way.
 - **Playlists** — create and manage playlists, import and export them, and browse your collection by genre, artist, or album.
 - **Gapless playback** — tracks transition without any silence or interruption.
+- **Crossfade** — overlap the end of the current track with the start of the next using an equal-power fade curve. Adjustable from 1 to 12 seconds in Playback settings, or turn it off for pure gapless transitions.
 - **10-band equalizer** — tune the sound to your headphones or speakers. Runs natively on macOS (SFBAudioEngine) and Windows/Linux (miniaudio) for optimal performance.
 - **Lock screen & media keys** — control playback from your keyboard, lock screen, or Control Center — just like a first-party app.
 - **Last.fm scrobbling** — sync your listening history and loved tracks automatically.

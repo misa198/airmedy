@@ -356,6 +356,20 @@ func ResolveMaxQueueSize(n int) int {
 	return DefaultMaxQueueSize
 }
 
+// MaxCrossfadeSeconds is the upper bound for AppSettings.CrossfadeSeconds.
+const MaxCrossfadeSeconds = 12
+
+// ClampCrossfadeSeconds maps a stored value into [0, MaxCrossfadeSeconds].
+func ClampCrossfadeSeconds(n int) int {
+	if n < 0 {
+		return 0
+	}
+	if n > MaxCrossfadeSeconds {
+		return MaxCrossfadeSeconds
+	}
+	return n
+}
+
 // TrackFeatures holds one-time DSP analysis results for a track (loudness, dynamics,
 // spectral shape).
 type TrackFeatures struct {
@@ -437,6 +451,10 @@ type AppSettings struct {
 	// MaxQueueSize caps how many tracks the play queue can hold (current track
 	// included). One of ValidMaxQueueSizes; zero falls back to DefaultMaxQueueSize.
 	MaxQueueSize int `json:"max_queue_size"`
+
+	// CrossfadeSeconds is the track-transition overlap length in seconds,
+	// clamped to [0, MaxCrossfadeSeconds]. Zero disables crossfade (gapless).
+	CrossfadeSeconds int `json:"crossfade_seconds"`
 
 	// Library analysis pipeline (feeds Normalization). Opt-in: off disables the
 	// background worker pool entirely (no backfill/enqueue/boost). Normalization

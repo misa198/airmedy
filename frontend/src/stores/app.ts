@@ -14,6 +14,9 @@ import { DEFAULT_MAX_QUEUE_SIZE, isMaxQueueSize, type MaxQueueSize } from '@/lib
 export const NORMALIZATION_TARGET_LUFS_MIN = -24
 export const NORMALIZATION_TARGET_LUFS_MAX = -6
 
+// Mirrors domain.MaxCrossfadeSeconds; 0 = crossfade off (gapless).
+export const CROSSFADE_MAX_SECONDS = 12
+
 export const useAppStore = defineStore('app', () => {
   const theme = ref<'system' | 'light' | 'dark' | 'black'>('system')
   const language = ref('en')
@@ -48,6 +51,7 @@ export const useAppStore = defineStore('app', () => {
   const showPlayerIndicator = ref(true)
   const librarySyncInterval = ref<SyncInterval>(DEFAULT_SYNC_INTERVAL)
   const maxQueueSize = ref<MaxQueueSize>(DEFAULT_MAX_QUEUE_SIZE)
+  const crossfadeSeconds = ref(0)
   const remoteServerEnabled = ref(false)
   const remoteServerPort = ref(0)
   const remoteServerPassword = ref('')
@@ -116,6 +120,7 @@ export const useAppStore = defineStore('app', () => {
         if (isMaxQueueSize(settings.max_queue_size)) {
           maxQueueSize.value = settings.max_queue_size
         }
+        crossfadeSeconds.value = Math.min(CROSSFADE_MAX_SECONDS, Math.max(0, Math.round(settings.crossfade_seconds ?? 0)))
         libraryAnalysisEnabled.value = !!settings.library_analysis_enabled
         normalizationEnabled.value = !!settings.normalization_enabled
         // DB default is 'track'; the mode select only offers Track/Album (never 'off').
@@ -207,6 +212,7 @@ export const useAppStore = defineStore('app', () => {
         show_player_indicator: showPlayerIndicator.value,
         library_sync_interval: librarySyncInterval.value,
         max_queue_size: maxQueueSize.value,
+        crossfade_seconds: crossfadeSeconds.value,
         library_analysis_enabled: libraryAnalysisEnabled.value,
         normalization_enabled: normalizationEnabled.value,
         normalization_mode: normalizationMode.value,
@@ -328,6 +334,11 @@ export const useAppStore = defineStore('app', () => {
     await saveSettings()
   }
 
+  const updateCrossfadeSeconds = async (seconds: number) => {
+    crossfadeSeconds.value = Math.min(CROSSFADE_MAX_SECONDS, Math.max(0, Math.round(seconds)))
+    await saveSettings()
+  }
+
   const updateLibraryAnalysisEnabled = async (enabled: boolean) => {
     libraryAnalysisEnabled.value = enabled
     // Mirrors the backend cross-toggle (AnalysisService.SetEnabled forces
@@ -425,6 +436,7 @@ export const useAppStore = defineStore('app', () => {
     showPlayerIndicator,
     librarySyncInterval,
     maxQueueSize,
+    crossfadeSeconds,
     libraryAnalysisEnabled,
     normalizationEnabled,
     normalizationMode,
@@ -461,6 +473,7 @@ export const useAppStore = defineStore('app', () => {
     updateShowPlayerIndicator,
     updateLibrarySyncInterval,
     updateMaxQueueSize,
+    updateCrossfadeSeconds,
     updateLibraryAnalysisEnabled,
     updateNormalizationEnabled,
     updateNormalizationMode,

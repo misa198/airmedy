@@ -47,6 +47,7 @@ type AppSettings struct {
     GenreDelimiters        []string
     ComposerDelimiters     []string
     MaxQueueSize            int                // play queue cap, incl. current track; one of domain.ValidMaxQueueSizes (100/500/1000/2000/3000), default 1000
+    CrossfadeSeconds        int                // track-transition overlap in seconds, clamped to [0, domain.MaxCrossfadeSeconds]=12; 0 = off (gapless), default 0
 }
 ```
 
@@ -99,6 +100,7 @@ interface AppStore {
   lyricsSubfolderName: string;
   useOnlineArtistArtwork: boolean;
   preventSleepWhilePlaying: boolean;
+  crossfadeSeconds: number; // 0–CROSSFADE_MAX_SECONDS (12); 0 = off; slider in PlaybackSettings.vue
   artistDelimiters: string[];
   albumArtistDelimiters: string[];
   genreDelimiters: string[];
