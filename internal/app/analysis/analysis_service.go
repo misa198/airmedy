@@ -16,7 +16,7 @@ import (
 // analyzerVersion is the algorithm/schema version stamped on every analysis
 // result; tracks with tracks.analyzed_version < this are pending. Must be
 // kept in sync with audio.AnalyzerVersion (internal/infra/audio/analyzer.go).
-const analyzerVersion = 3
+const analyzerVersion = 4
 
 // moodVersion is the algorithm version for the derived mood formulas
 // (energy/danceability). Bump on formula/weight changes only — independent
@@ -239,7 +239,7 @@ func (s *AnalysisService) startPool() {
 	s.runCtx = runCtx
 	s.runCancel = cancel
 	s.enabled = true
-	workers := max(runtime.NumCPU()/2, 1)
+	workers := analysisWorkerCount()
 	s.workersTotal = workers
 	s.activeLimit = workers
 	s.mu.Unlock()
@@ -416,6 +416,24 @@ func (s *AnalysisService) promoteToFrontLocked(trackID string) {
 // to exercise both the low-core and high-core throttling paths.
 var numCPU = runtime.NumCPU
 
+// maxAnalysisWorkers caps the worker-pool size regardless of core count. The
+// per-track ffmpeg decode is embarrassingly parallel, but the aubio tempo/onset
+// stage is serialized process-wide behind a single mutex (its bundled ooura FFT
+// isn't reentrant — see ffmpeg_analyzer.h). Past a handful of workers the extra
+// decoders don't gain throughput, they just add CPU heat and lock-convoy
+// contention on that mutex — which on weak / thermally-limited laptops
+// (ultra-low-power U-series CPUs) saturates every core, stalls forward progress,
+// and can freeze the whole machine. Keep the pool small.
+const maxAnalysisWorkers = 4
+
+// analysisWorkerCount picks the background worker-pool size: a quarter of the
+// logical cores (leaving headroom for the UI, audio thread, and OS on the
+// weak laptops that hit trouble), clamped to [1, maxAnalysisWorkers]. Uses the
+// stubbable numCPU so tests can exercise the low- and high-core paths.
+func analysisWorkerCount() int {
+	return max(min(numCPU()/4, maxAnalysisWorkers), 1)
+}
+
 // throttledLimit returns the worker concurrency cap to apply while playback
 // is active. Machines with more than 4 cores have enough headroom to keep a
 // reduced pool running alongside playback without audio contention; weaker
@@ -452,6 +470,14 @@ func (s *AnalysisService) SetThrottled(throttled bool) {
 // cap. Exits when ctx is cancelled.
 func (s *AnalysisService) worker(ctx context.Context) {
 	defer s.wg.Done()
+
+	// Background analysis must never starve the UI or the audio thread. Pin
+	// this goroutine to its OS thread and drop that thread's scheduling
+	// priority so the OS preempts the CPU-heavy ffmpeg/aubio decode in favour
+	// of interactive work. No-op on platforms without an implementation.
+	runtime.LockOSThread()
+	lowerCurrentThreadPriority()
+
 	for {
 		s.mu.Lock()
 		for (s.active >= s.activeLimit || (len(s.boostQueue) == 0 && len(s.normalQueue) == 0)) && ctx.Err() == nil {

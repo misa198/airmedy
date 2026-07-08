@@ -216,8 +216,12 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
     probe_locked = 1;
 
     AVDictionary *format_opts = NULL;
-    av_dict_set(&format_opts, "probesize", "32000000", 0);
-    av_dict_set(&format_opts, "analyzeduration", "10000000", 0);
+    /* Modest probe budget: large enough to find the audio stream past an
+     * embedded cover-art image, small enough that probing 400+ files on a
+     * weak laptop doesn't dominate CPU. (Was 32MB/10s — needlessly heavy for
+     * the mp3/common formats this analyzes.) */
+    av_dict_set(&format_opts, "probesize", "5000000", 0);
+    av_dict_set(&format_opts, "analyzeduration", "5000000", 0);
     if (avformat_open_input(&fmt_ctx, path, NULL, &format_opts) < 0) {
         av_dict_free(&format_opts);
         rc = FFA_ERR_OPEN;

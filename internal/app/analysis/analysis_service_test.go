@@ -322,6 +322,30 @@ func TestBoostPriorityPromotesQueuedTrack(t *testing.T) {
 	}
 }
 
+func TestAnalysisWorkerCount(t *testing.T) {
+	old := numCPU
+	defer func() { numCPU = old }()
+
+	cases := []struct {
+		cores, want int
+	}{
+		{1, 1},   // clamp up to at least 1
+		{2, 1},   // 2/4 -> 0 -> clamped to 1
+		{4, 1},   // 4/4 = 1
+		{8, 2},   // 8/4 = 2
+		{12, 3},  // the reporter's i5: 12 threads -> 3, not 6
+		{16, 4},  // 16/4 = 4 (at cap)
+		{32, 4},  // clamped to maxAnalysisWorkers
+		{128, 4}, // clamped
+	}
+	for _, c := range cases {
+		numCPU = func() int { return c.cores }
+		if got := analysisWorkerCount(); got != c.want {
+			t.Errorf("analysisWorkerCount() with %d cores = %d, want %d", c.cores, got, c.want)
+		}
+	}
+}
+
 func TestSetThrottledBlocksNewWorkOnWeakMachines(t *testing.T) {
 	old := numCPU
 	numCPU = func() int { return 2 }
