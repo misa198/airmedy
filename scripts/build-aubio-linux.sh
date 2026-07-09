@@ -4,8 +4,8 @@
 #         internal/infra/audio/aubio_libs/include/aubio/  (shared headers)
 #
 # Used by the in-process audio-analysis pipeline for tempo (BPM) detection via
-# aubio_tempo. Built with every optional backend disabled, so libaubio.a depends
-# only on libm (aubio uses its bundled ooura FFT).
+# aubio_tempo. Built against vendored FFTW3F so aubio does not fall back to its
+# bundled Ooura FFT.
 #
 # Requirements:
 #   - gcc, make, python3 (for waf), curl
@@ -27,11 +27,15 @@ WAF_URL="https://waf.io/waf-${WAF_VERSION}"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT_BASE="${REPO_ROOT}/internal/infra/audio/aubio_libs/linux"
 INCLUDE_OUT="${REPO_ROOT}/internal/infra/audio/aubio_libs/include"
+FFTW3_BASE="${REPO_ROOT}/internal/infra/audio/fftw3_libs/linux"
+FFTW3_INCLUDE="${REPO_ROOT}/internal/infra/audio/fftw3_libs/include"
+FFTW3_PKGCONFIG_BASE="${REPO_ROOT}/internal/infra/audio/fftw3_libs/pkgconfig/linux"
 BUILD_DIR="${TMPDIR:-/tmp}/aubio-build-airmedy-linux"
 WAF_BIN="${BUILD_DIR}/waf-${WAF_VERSION}"
 
 WAF_FLAGS=(
-    --disable-fftw3 --disable-fftw3f --disable-intelipp --disable-accelerate
+    --enable-fftw3f
+    --disable-intelipp --disable-accelerate
     --disable-sndfile --disable-samplerate --disable-jack --disable-avcodec
     --disable-blas --disable-docs --disable-tests --disable-examples --notests
 )
@@ -41,6 +45,13 @@ build_arch() {
     local CC="${2:-gcc}"  # compiler (cross-compiler for arm64)
     local SRC_DIR="${BUILD_DIR}/src"
     local WORK_DIR="${BUILD_DIR}/work-${OUT_ARCH}"
+    local FFTW3_LIB="${FFTW3_BASE}/${OUT_ARCH}/libfftw3f.a"
+
+    if [[ ! -f "${FFTW3_LIB}" ]]; then
+        echo "==> FFTW3 static lib missing for ${OUT_ARCH}, building it first..."
+        bash "${REPO_ROOT}/scripts/build-fftw3-linux.sh" "${OUT_ARCH}"
+    fi
+    [[ -f "${FFTW3_LIB}" ]] || { echo "    ERROR: ${FFTW3_LIB} not produced" >&2; exit 1; }
 
     echo "==> Building aubio ${AUBIO_VERSION} for linux/${OUT_ARCH}..."
     rm -rf "${WORK_DIR}"
@@ -55,7 +66,10 @@ build_arch() {
 
     export CC
     export AR="${CC%gcc}ar"
-    export CFLAGS="-O2 -fPIC"
+    export CFLAGS="-O2 -fPIC -I${FFTW3_INCLUDE}"
+    export LDFLAGS="-L${FFTW3_BASE}/${OUT_ARCH}"
+    export LIBS="-lfftw3f"
+    export PKG_CONFIG_PATH="${FFTW3_PKGCONFIG_BASE}/${OUT_ARCH}${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}"
     command -v "${AR}" &>/dev/null || unset AR
 
     # configure and build in one invocation: aubio's build() reads
@@ -83,7 +97,7 @@ build_arch() {
 
 verify_aubio() {
     local LIB="$1"; local CROSS_PREFIX="${2:-}"
-    echo "==> Verifying aubio_tempo in $(basename "${LIB}")..."
+    echo "==> Verifying aubio_tempo + FFTW3F linkage in $(basename "${LIB}")..."
     local NM="${CROSS_PREFIX}nm"
     command -v "${NM}" &>/dev/null || NM="nm"
     # Capture nm output first: piping into `grep -q` makes grep close the pipe on
@@ -92,7 +106,9 @@ verify_aubio() {
     SYMS="$("${NM}" "${LIB}" 2>/dev/null || true)"
     grep -q "new_aubio_tempo" <<<"${SYMS}" \
         || { echo "    ERROR: aubio_tempo missing from libaubio.a"; exit 1; }
-    echo "    OK: aubio_tempo present in libaubio.a"
+    grep -q "fftwf_" <<<"${SYMS}" \
+        || { echo "    ERROR: FFTW3F symbols missing from libaubio.a"; exit 1; }
+    echo "    OK: aubio_tempo present and archive references FFTW3F"
 }
 
 build_arm64() {

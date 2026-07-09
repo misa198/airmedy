@@ -17,10 +17,14 @@ AUBIO_URL="https://aubio.org/pub/aubio-${AUBIO_VERSION}.tar.bz2"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT_BASE="${REPO_ROOT}/internal/infra/audio/aubio_libs/windows"
 INCLUDE_OUT="${REPO_ROOT}/internal/infra/audio/aubio_libs/include"
+FFTW3_BASE="${REPO_ROOT}/internal/infra/audio/fftw3_libs/windows"
+FFTW3_INCLUDE="${REPO_ROOT}/internal/infra/audio/fftw3_libs/include"
+FFTW3_PKGCONFIG_BASE="${REPO_ROOT}/internal/infra/audio/fftw3_libs/pkgconfig/windows"
 BUILD_DIR="/tmp/aubio-build-airmedy-windows"
 
 WAF_FLAGS=(
-    --disable-fftw3 --disable-fftw3f --disable-intelipp --disable-accelerate
+    --enable-fftw3f
+    --disable-intelipp --disable-accelerate
     --disable-sndfile --disable-samplerate --disable-jack --disable-avcodec
     --disable-blas --disable-docs --disable-tests --disable-examples --notests
     --disable-wavread --disable-wavwrite
@@ -126,6 +130,13 @@ build_arch() {
     local WAF_CC_NAME="$5"   # canonical name waf searches for: 'gcc' or 'clang'
     local OUT_DIR="${OUT_BASE}/${ARCH}"
     local WORK_DIR="${BUILD_DIR}/work-${ARCH}"
+    local FFTW3_LIB="${FFTW3_BASE}/${ARCH}/libfftw3f.a"
+
+    if [[ ! -f "${FFTW3_LIB}" ]]; then
+        echo "==> FFTW3 static lib missing for ${ARCH}, building it first..."
+        bash "${REPO_ROOT}/scripts/build-fftw3-windows.sh" "${ARCH}"
+    fi
+    [[ -f "${FFTW3_LIB}" ]] || { echo "    ERROR: ${FFTW3_LIB} not produced" >&2; exit 1; }
 
     echo "==> Building aubio ${AUBIO_VERSION} for Windows ${ARCH}..."
     rm -rf "${WORK_DIR}"
@@ -156,7 +167,10 @@ build_arch() {
 
     export CC="${CC_EXPORT}"
     export AR="${AR_EXPORT}"
-    export CFLAGS="-O2"
+    export CFLAGS="-O2 -I${FFTW3_INCLUDE}"
+    export LINKFLAGS="-L${FFTW3_BASE}/${ARCH}"
+    export LIBS="-lfftw3f"
+    export PKG_CONFIG_PATH="${FFTW3_PKGCONFIG_BASE}/${ARCH}${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}"
     python3 ./waf configure "${WAF_FLAGS[@]}" "--check-c-compiler=${WAF_CC_NAME}" --prefix="${WORK_DIR}/install"
     python3 ./waf build "${WAF_FLAGS[@]}"
 
@@ -168,9 +182,13 @@ build_arch() {
     cp "${LIB}" "${OUT_DIR}/libaubio.a"
     echo "    copied libaubio.a -> aubio_libs/windows/${ARCH}/"
 
-    "${NM_TOOL}" "${OUT_DIR}/libaubio.a" 2>/dev/null | grep -q "new_aubio_tempo" \
+    local SYMS
+    SYMS="$("${NM_TOOL}" "${OUT_DIR}/libaubio.a" 2>/dev/null || true)"
+    grep -q "new_aubio_tempo" <<<"${SYMS}" \
         || { echo "    ERROR: aubio_tempo missing from libaubio.a"; exit 1; }
-    echo "    OK: aubio_tempo present in libaubio.a"
+    grep -q "fftwf_" <<<"${SYMS}" \
+        || { echo "    ERROR: FFTW3F symbols missing from libaubio.a"; exit 1; }
+    echo "    OK: aubio_tempo present and archive references FFTW3F"
 
     cd "${REPO_ROOT}"
 }

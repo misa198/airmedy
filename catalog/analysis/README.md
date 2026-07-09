@@ -15,6 +15,18 @@ The pipeline is **opt-in** (`AppSettings.LibraryAnalysisEnabled`, default `false
 the worker pool exists only while enabled. Disabling it also force-disables
 Normalization, since Normalization has no other source of loudness data.
 
+## Aubio FFT Backend
+
+The tempo/onset stage now vendors **FFTW3F** (`libfftw3f.a`) and builds aubio
+with `--enable-fftw3f` via a vendored `pkg-config` manifest under
+`internal/infra/audio/fftw3_libs/pkgconfig/<platform>/<arch>/fftw3f.pc`.
+This keeps aubio on its single-precision ABI (`smpl_t=float`) while avoiding
+the old Ooura fallback that forced process-wide serialization.
+
+`ffmpeg_analyzer.h` no longer wraps aubio `new_/do_/del_` calls in an
+application-global mutex. Concurrency is now limited only by the outer analysis
+worker pool and aubio's own internal FFTW plan guards.
+
 ## Data Flow
 
 ```mermaid
@@ -50,6 +62,7 @@ corpus-wide percentile distribution). Mood then backs **Mood Radio** similarity.
 | `internal/infra/wails/analysis_service.go` | Wails binding (`SetLibraryAnalysisEnabled`) |
 | `internal/infra/wails/mood_radio_service.go` | Wails binding (`SeedMoodRadio`) |
 | `internal/infra/audio/analyzer.go` + `ffmpeg_analyzer.h` | cgo adapter implementing `domain.LoudnessAnalyzer` |
+| `scripts/build-fftw3-*.sh` + `scripts/build-aubio-*.sh` | Vendored FFTW3F/aubio builders for macOS, Linux, Windows |
 | `internal/infra/sqlite/analysis_repository.go` | `track_features` CRUD, pending-count/list, `MarkFailed`, percentile table CRUD, mood-pending list |
 | `internal/infra/sqlite/track_query_repository.go` | `FindSimilar` — weighted-euclidean nearest-neighbor query over energy/danceability/tempo, backs Mood Radio |
 | `internal/domain/audio.go` | `LoudnessAnalyzer` interface |

@@ -101,9 +101,50 @@ jobs:
           name: ffmpeg-windows
           path: internal/infra/audio/ffmpeg_libs
 
+  build-fftw3-windows:
+    name: Build FFTW3 for Windows
+    needs: bump
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ github.event.inputs.version }}
+
+      - name: Cache FFTW3 (Windows)
+        id: cache-fftw3
+        uses: actions/cache@v4
+        with:
+          path: |
+            internal/infra/audio/fftw3_libs/windows
+            internal/infra/audio/fftw3_libs/include
+            internal/infra/audio/fftw3_libs/pkgconfig/windows
+          key: fftw3-Windows-v1-${{ hashFiles('scripts/build-fftw3-windows.sh') }}
+
+      - name: Install mingw cross-compilers
+        if: steps.cache-fftw3.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64-x86-64 make
+          sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
+          LLVM_MINGW=llvm-mingw-20260616-ucrt-ubuntu-22.04-x86_64
+          curl -L "https://github.com/mstorsjo/llvm-mingw/releases/download/20260616/${LLVM_MINGW}.tar.xz" -o /tmp/llvm-mingw.tar.xz
+          sudo tar -xf /tmp/llvm-mingw.tar.xz -C /opt
+          echo "/opt/${LLVM_MINGW}/bin" >> "$GITHUB_PATH"
+
+      - name: Build FFTW3 (Windows AMD64 + ARM64)
+        if: steps.cache-fftw3.outputs.cache-hit != 'true'
+        run: bash scripts/build-fftw3-windows.sh
+
+      - name: Upload FFTW3 libs
+        uses: actions/upload-artifact@v4
+        with:
+          name: fftw3-windows
+          path: internal/infra/audio/fftw3_libs
+
   build-aubio-windows:
     name: Build aubio for Windows
-    needs: bump
+    needs: [bump, build-fftw3-windows]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -118,11 +159,18 @@ jobs:
           path: internal/infra/audio/aubio_libs
           key: aubio-Windows-v2-${{ hashFiles('scripts/build-aubio-windows.sh') }}
 
+      - name: Download FFTW3 (Windows)
+        if: steps.cache-aubio.outputs.cache-hit != 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: fftw3-windows
+          path: internal/infra/audio/fftw3_libs
+
       - name: Install mingw cross-compilers
         if: steps.cache-aubio.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-mingw-w64-x86-64 python3
+          sudo apt-get install -y gcc-mingw-w64-x86-64 python3 pkg-config
           sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
           LLVM_MINGW=llvm-mingw-20260616-ucrt-ubuntu-22.04-x86_64
           curl -L "https://github.com/mstorsjo/llvm-mingw/releases/download/20260616/${LLVM_MINGW}.tar.xz" -o /tmp/llvm-mingw.tar.xz
@@ -200,9 +248,39 @@ jobs:
           name: ffmpeg-darwin
           path: internal/infra/audio/ffmpeg_libs
 
+  build-fftw3-darwin:
+    name: Build FFTW3 for Darwin
+    needs: bump
+    runs-on: macos-26
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ github.event.inputs.version }}
+
+      - name: Cache FFTW3 (Darwin)
+        id: cache-fftw3
+        uses: actions/cache@v4
+        with:
+          path: |
+            internal/infra/audio/fftw3_libs/darwin
+            internal/infra/audio/fftw3_libs/include
+            internal/infra/audio/fftw3_libs/pkgconfig/darwin
+          key: fftw3-Darwin-v1-${{ hashFiles('scripts/build-fftw3-darwin.sh') }}
+
+      - name: Build FFTW3 (Darwin ARM64 + AMD64)
+        if: steps.cache-fftw3.outputs.cache-hit != 'true'
+        run: bash scripts/build-fftw3-darwin.sh all
+
+      - name: Upload FFTW3 libs
+        uses: actions/upload-artifact@v4
+        with:
+          name: fftw3-darwin
+          path: internal/infra/audio/fftw3_libs
+
   build-aubio-darwin:
     name: Build aubio for Darwin
-    needs: bump
+    needs: [bump, build-fftw3-darwin]
     runs-on: macos-26
     steps:
       - name: Checkout code
@@ -216,6 +294,17 @@ jobs:
         with:
           path: internal/infra/audio/aubio_libs
           key: aubio-Darwin-v2-${{ hashFiles('scripts/build-aubio-darwin.sh') }}
+
+      - name: Download FFTW3 (Darwin)
+        if: steps.cache-aubio.outputs.cache-hit != 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: fftw3-darwin
+          path: internal/infra/audio/fftw3_libs
+
+      - name: Install pkg-config
+        if: steps.cache-aubio.outputs.cache-hit != 'true'
+        run: brew install pkg-config
 
       - name: Build aubio (Darwin ARM64 + AMD64)
         if: steps.cache-aubio.outputs.cache-hit != 'true'
@@ -260,9 +349,45 @@ jobs:
           name: ffmpeg-linux
           path: internal/infra/audio/ffmpeg_libs
 
+  build-fftw3-linux:
+    name: Build FFTW3 for Linux
+    needs: bump
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: v${{ github.event.inputs.version }}
+
+      - name: Cache FFTW3 (Linux)
+        id: cache-fftw3
+        uses: actions/cache@v4
+        with:
+          path: |
+            internal/infra/audio/fftw3_libs/linux
+            internal/infra/audio/fftw3_libs/include
+            internal/infra/audio/fftw3_libs/pkgconfig/linux
+          key: fftw3-Linux-v1-${{ hashFiles('scripts/build-fftw3-linux.sh') }}
+
+      - name: Install Linux cross-compile dependencies
+        if: steps.cache-fftw3.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential gcc-aarch64-linux-gnu libc6-dev-arm64-cross pkg-config
+
+      - name: Build FFTW3 (Linux AMD64 + ARM64)
+        if: steps.cache-fftw3.outputs.cache-hit != 'true'
+        run: bash scripts/build-fftw3-linux.sh
+
+      - name: Upload FFTW3 libs
+        uses: actions/upload-artifact@v4
+        with:
+          name: fftw3-linux
+          path: internal/infra/audio/fftw3_libs
+
   build-aubio-linux:
     name: Build aubio for Linux
-    needs: bump
+    needs: [bump, build-fftw3-linux]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -276,6 +401,13 @@ jobs:
         with:
           path: internal/infra/audio/aubio_libs
           key: aubio-Linux-v2-${{ hashFiles('scripts/build-aubio-linux.sh') }}
+
+      - name: Download FFTW3 (Linux)
+        if: steps.cache-aubio.outputs.cache-hit != 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: fftw3-linux
+          path: internal/infra/audio/fftw3_libs
 
       - name: Install Linux cross-compile dependencies
         if: steps.cache-aubio.outputs.cache-hit != 'true'
@@ -295,7 +427,7 @@ jobs:
 
   build:
     name: Build ${{ matrix.os }}
-    needs: [bump, build-ffmpeg-windows, build-aubio-windows, build-sfb-darwin, build-ffmpeg-darwin, build-aubio-darwin, build-ffmpeg-linux, build-aubio-linux]
+    needs: [bump, build-ffmpeg-windows, build-fftw3-windows, build-aubio-windows, build-sfb-darwin, build-ffmpeg-darwin, build-fftw3-darwin, build-aubio-darwin, build-ffmpeg-linux, build-fftw3-linux, build-aubio-linux]
     strategy:
       fail-fast: false
       matrix:
@@ -418,6 +550,13 @@ jobs:
           name: aubio-windows
           path: internal/infra/audio/aubio_libs
 
+      - name: Download FFTW3 (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/download-artifact@v4
+        with:
+          name: fftw3-windows
+          path: internal/infra/audio/fftw3_libs
+
       - name: Download FFmpeg (Darwin)
         if: runner.os == 'macOS'
         uses: actions/download-artifact@v4
@@ -431,6 +570,13 @@ jobs:
         with:
           name: aubio-darwin
           path: internal/infra/audio/aubio_libs
+
+      - name: Download FFTW3 (Darwin)
+        if: runner.os == 'macOS'
+        uses: actions/download-artifact@v4
+        with:
+          name: fftw3-darwin
+          path: internal/infra/audio/fftw3_libs
 
       - name: Restore SFB Audio Engine (Darwin)
         if: runner.os == 'macOS'
@@ -454,6 +600,13 @@ jobs:
         with:
           name: aubio-linux
           path: internal/infra/audio/aubio_libs
+
+      - name: Download FFTW3 (Linux)
+        if: runner.os == 'Linux'
+        uses: actions/download-artifact@v4
+        with:
+          name: fftw3-linux
+          path: internal/infra/audio/fftw3_libs
 
       - name: Fetch miniaudio (Windows and Linux)
         if: (runner.os == 'Windows' || runner.os == 'Linux') && steps.cache-miniaudio.outputs.cache-hit != 'true'
