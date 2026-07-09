@@ -32,7 +32,7 @@ const trackContextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
 // Queue panel holds a 50k-track virtual list; keep it mounted after first
 // open (v-show toggle) instead of remounting on every open/close. Lyrics
 // panel stays fully lazy (v-if) — cheap to mount, and should reload on open.
-const hasOpenedQueue = ref(false)
+const hasOpenedQueue = ref(store.isQueueOpen)
 watch(() => store.isQueueOpen, (open) => {
   if (open) hasOpenedQueue.value = true
 })
@@ -158,7 +158,7 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
               leave-active-class="transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
               leave-from-class="opacity-100 translate-x-0" leave-to-class="opacity-0 translate-x-24">
               <PlayerQueuePanel v-if="hasOpenedQueue" v-show="store.isQueueOpen" key="queue" :queue="store.queue"
-                @close="store.closeAllDrawers()" @play-track="(index) => store.playTracks(store.queue, index)" />
+                @close="store.closeAllDrawers()" @play-track="(index) => store.playQueueIndex(index)" />
             </Transition>
 
             <Transition enter-active-class="transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"

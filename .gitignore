@@ -120,3 +120,5 @@ internal/infra/audio/miniaudio/
 .turbo/
 internal/app/analysis/analysis_service_test.db-shm
 internal/app/analysis/analysis_service_test.db-wal
+
+.pnpm-store/
