@@ -218,7 +218,10 @@
       "title": "Análisis de la biblioteca",
       "enable": "Activar análisis de la biblioteca",
       "enable_desc": "Escanea tu biblioteca musical en segundo plano para medir la sonoridad y las características de audio de cada pista.\nNecesario antes de poder usar la normalización de volumen y la Radio de estados de ánimo.\nEste proceso puede tardar un tiempo, según las prestaciones de tu equipo.",
-      "requires_enable": "Activa el análisis de la biblioteca arriba para usar la normalización de volumen"
+      "requires_enable": "Activa el análisis de la biblioteca para usar la normalización de volumen",
+      "worker_count": "Trabajadores simultáneos",
+      "worker_count_desc": "Más trabajadores aceleran el análisis, pero usan más CPU y pueden hacer que tu equipo se caliente más.",
+      "worker_count_value": "{count} trabajadores"
     },
     "normalization": {
       "title": "Normalización de volumen",

@@ -5,8 +5,8 @@
 #
 # Used only by the in-process audio-analysis pipeline for tempo (BPM) detection
 # via aubio_tempo. FFmpeg decodes the file; the decoded PCM is fed to aubio.
-# Built with all external backends disabled, so the archive depends only on libm
-# (aubio uses its bundled ooura FFT when fftw is unavailable).
+# Built against vendored FFTW3F so tempo/onset can avoid aubio's bundled Ooura
+# FFT fallback.
 #
 # Requirements: Xcode command line tools (clang, make) + python3 (for waf).
 #
@@ -24,6 +24,9 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 OUT_BASE="${REPO_ROOT}/internal/infra/audio/aubio_libs/darwin"
 INCLUDE_OUT="${REPO_ROOT}/internal/infra/audio/aubio_libs/include"
+FFTW3_BASE="${REPO_ROOT}/internal/infra/audio/fftw3_libs/darwin"
+FFTW3_INCLUDE="${REPO_ROOT}/internal/infra/audio/fftw3_libs/include"
+FFTW3_PKGCONFIG_BASE="${REPO_ROOT}/internal/infra/audio/fftw3_libs/pkgconfig/darwin"
 BUILD_DIR="${TMPDIR:-/tmp}/aubio-build-airmedy-darwin"
 MIN_MACOS="14.0"
 
@@ -34,10 +37,10 @@ case "${HOST_ARCH}" in
     *) echo "ERROR: unsupported host arch ${HOST_ARCH}" >&2; exit 1 ;;
 esac
 
-# Disable every optional backend so libaubio.a only needs libm.
+# Keep optional I/O backends off; FFTW3F stays enabled so aubio does not fall
+# back to its bundled Ooura FFT path.
 WAF_FLAGS=(
-    --disable-fftw3
-    --disable-fftw3f
+    --enable-fftw3f
     --disable-intelipp
     --disable-accelerate
     --disable-apple-audio
@@ -61,6 +64,13 @@ build_arch() {
         *) echo "ERROR: unknown arch ${OUT_ARCH}" >&2; exit 1 ;;
     esac
 
+    local FFTW3_LIB="${FFTW3_BASE}/${OUT_ARCH}/libfftw3f.a"
+    if [[ ! -f "${FFTW3_LIB}" ]]; then
+        echo "==> FFTW3 static lib missing for ${OUT_ARCH}, building it first..."
+        bash "${SCRIPT_DIR}/build-fftw3-darwin.sh" "${OUT_ARCH}"
+    fi
+    [[ -f "${FFTW3_LIB}" ]] || { echo "    ERROR: ${FFTW3_LIB} not produced" >&2; exit 1; }
+
     local SRC_DIR="${BUILD_DIR}/src"
     local WORK_DIR="${BUILD_DIR}/work-${OUT_ARCH}"
 
@@ -71,8 +81,10 @@ build_arch() {
 
     local FLAGS="-arch ${CLANG_ARCH} -mmacosx-version-min=${MIN_MACOS} -O2 -fPIC"
     export CC="clang"
-    export CFLAGS="${FLAGS}"
-    export LINKFLAGS="${FLAGS}"
+    export CFLAGS="${FLAGS} -I${FFTW3_INCLUDE}"
+    export LINKFLAGS="${FLAGS} -L${FFTW3_BASE}/${OUT_ARCH}"
+    export LIBS="-lfftw3f"
+    export PKG_CONFIG_PATH="${FFTW3_PKGCONFIG_BASE}/${OUT_ARCH}${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}"
 
     # waf is bundled with the aubio source. Configure + build only the library.
     python3 ./waf configure "${WAF_FLAGS[@]}" --prefix="${WORK_DIR}/install"
@@ -111,11 +123,12 @@ build_arch() {
 # Asserts the tempo API is present in libaubio.a.
 verify_aubio() {
     local LIB="$1"
-    echo "==> Verifying aubio_tempo in $(basename "${LIB}")..."
+    echo "==> Verifying aubio_tempo + FFTW3F linkage in $(basename "${LIB}")..."
     local SYMS
     SYMS="$(nm "${LIB}" 2>/dev/null || true)"
     grep -q "_new_aubio_tempo" <<<"${SYMS}" || { echo "    ERROR: aubio_tempo missing from libaubio.a"; exit 1; }
-    echo "    OK: aubio_tempo present in libaubio.a"
+    grep -q "_fftwf_" <<<"${SYMS}" || { echo "    ERROR: FFTW3F symbols missing from libaubio.a"; exit 1; }
+    echo "    OK: aubio_tempo present and archive references FFTW3F"
 }
 
 mkdir -p "${BUILD_DIR}/src"

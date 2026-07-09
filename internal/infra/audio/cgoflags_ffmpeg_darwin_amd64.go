@@ -9,8 +9,8 @@ package audio
 
 /*
 #cgo CFLAGS: -I${SRCDIR}/ffmpeg_libs/include -I${SRCDIR}/aubio_libs/include
-#cgo LDFLAGS: -L${SRCDIR}/ffmpeg_libs/darwin/amd64 -L${SRCDIR}/aubio_libs/darwin/amd64
-#cgo LDFLAGS: -lavfilter -lavformat -lavcodec -lswresample -lavutil -laubio
+#cgo LDFLAGS: -L${SRCDIR}/ffmpeg_libs/darwin/amd64 -L${SRCDIR}/aubio_libs/darwin/amd64 -L${SRCDIR}/fftw3_libs/darwin/amd64
+#cgo LDFLAGS: -lavfilter -lavformat -lavcodec -lswresample -lavutil -laubio -lfftw3f
 #cgo LDFLAGS: -lz -lbz2 -liconv -lm
 #cgo LDFLAGS: -framework CoreFoundation -framework CoreMedia -framework CoreVideo -framework VideoToolbox -framework AudioToolbox -framework Security
 */

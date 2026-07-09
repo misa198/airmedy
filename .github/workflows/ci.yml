@@ -124,6 +124,30 @@ jobs:
           path: internal/infra/audio/aubio_libs
           key: aubio-linux-v2-${{ hashFiles('scripts/build-aubio-linux.sh') }}
 
+      - name: Restore FFTW3 (Linux)
+        id: cache-fftw3
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            internal/infra/audio/fftw3_libs/linux
+            internal/infra/audio/fftw3_libs/include
+            internal/infra/audio/fftw3_libs/pkgconfig/linux
+          key: fftw3-linux-v1-${{ hashFiles('scripts/build-fftw3-linux.sh') }}
+
+      - name: Build FFTW3 (Linux)
+        if: steps.cache-fftw3.outputs.cache-hit != 'true'
+        run: bash scripts/build-fftw3-linux.sh amd64
+
+      - name: Save FFTW3 (Linux)
+        if: steps.cache-fftw3.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            internal/infra/audio/fftw3_libs/linux
+            internal/infra/audio/fftw3_libs/include
+            internal/infra/audio/fftw3_libs/pkgconfig/linux
+          key: fftw3-linux-v1-${{ hashFiles('scripts/build-fftw3-linux.sh') }}
+
       - name: Build aubio (Linux)
         if: steps.cache-aubio.outputs.cache-hit != 'true'
         run: bash scripts/build-aubio-linux.sh amd64
