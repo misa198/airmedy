@@ -40,10 +40,21 @@ tasks:
     cmds:
       - bash {{.ROOT_DIR}}/scripts/build-ffmpeg-darwin.sh {{.ARCH | default ARCH}}
 
+  build:fftw3:
+    summary: Builds FFTW3 static libs for the target arch if not already present
+    status:
+      - test -f {{.ROOT_DIR}}/internal/infra/audio/fftw3_libs/darwin/{{.ARCH | default ARCH}}/libfftw3f.a
+    cmds:
+      - bash {{.ROOT_DIR}}/scripts/build-fftw3-darwin.sh {{.ARCH | default ARCH}}
+
   build:aubio:
     summary: Builds the aubio static lib (tempo/BPM detection) for the target arch if not already present
     status:
       - test -f {{.ROOT_DIR}}/internal/infra/audio/aubio_libs/darwin/{{.ARCH | default ARCH}}/libaubio.a
+    deps:
+      - task: build:fftw3
+        vars:
+          ARCH: '{{.ARCH}}'
     cmds:
       - bash {{.ROOT_DIR}}/scripts/build-aubio-darwin.sh {{.ARCH | default ARCH}}
 

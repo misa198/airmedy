@@ -223,7 +223,10 @@
       "title": "Analyse de la bibliothèque",
       "enable": "Activer l'analyse de la bibliothèque",
       "enable_desc": "Analyse votre bibliothèque musicale en arrière-plan pour mesurer le volume sonore et les caractéristiques audio de chaque piste.\nRequis avant de pouvoir utiliser la normalisation du volume et la Radio d'ambiance.\nCe processus peut prendre du temps, selon la configuration de votre machine.",
-      "requires_enable": "Activez l'analyse de la bibliothèque ci-dessus pour utiliser la normalisation du volume"
+      "requires_enable": "Activez l'analyse de la bibliothèque pour utiliser la normalisation du volume",
+      "worker_count": "Workers simultanés",
+      "worker_count_desc": "Davantage de workers accélèrent l'analyse, mais utilisent plus de CPU et peuvent faire chauffer davantage votre ordinateur.",
+      "worker_count_value": "{count} workers"
     },
     "normalization": {
       "title": "Normalisation du volume",

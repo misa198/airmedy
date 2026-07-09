@@ -223,7 +223,10 @@
       "title": "Library Analysis",
       "enable": "Enable Library Analysis",
       "enable_desc": "Scans your music library in the background to measure each track's loudness and audio characteristics.\nRequired before Volume Normalization, Mood Radio, and Smart Playlists can be used.\nThis process can take a while, depending on your machine's specs.",
-      "requires_enable": "Enable Library Analysis above to use Volume Normalization"
+      "requires_enable": "Enable Library Analysis to use Volume Normalization",
+      "worker_count": "Concurrent Workers",
+      "worker_count_desc": "More workers speed up analysis, but use more CPU and can make your computer run hotter.",
+      "worker_count_value": "{count} workers"
     },
     "normalization": {
       "title": "Volume Normalization",

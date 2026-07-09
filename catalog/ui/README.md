@@ -206,6 +206,36 @@ inline validation (trim, reject empty/duplicate, max 5 chars), allows removing t
 (empty list = splitting disabled), and supports Backspace-on-empty to delete the last chip. A
 `color` prop (`neutral` default | `primary` | `success` | `warning` | `danger`) themes the chips.
 
+## Settings Panels
+
+### Library Settings (`components/settings/LibrarySettings.vue`)
+
+Owns watched-folder management, tag delimiters, and Library Analysis controls.
+The Library Analysis section contains:
+
+- An enable switch.
+- A live `analysis:progress` status line.
+- A library-readiness percentage (`libraryDone / libraryTotal`).
+- A worker-count slider when more than one worker is available.
+
+`LibrarySettings.vue` subscribes to `analysis:progress` on mount, stores the
+returned off-function, and also issues an immediate `AnalysisService.GetProgress()`
+fetch so the panel starts from the current snapshot instead of waiting for the
+next event. A `receivedLiveEvent` guard prevents a slower initial IPC response
+from overwriting newer event-driven state.
+
+The worker-count slider uses a "live while dragging, persist on release"
+pattern: `workerCountLive` updates during drag, but the store action only fires
+on `mouseup` / `touchend`, avoiding backend writes on every drag frame.
+
+### Playback Settings (`components/settings/PlaybackSettings.vue`)
+
+Now contains the EQ panel, prevent-sleep toggle, and Volume Normalization
+controls. Library Analysis controls were moved out to `LibrarySettings.vue`; the
+playback panel only retains the dependency hint
+(`settings.library_analysis.requires_enable`) when normalization is unavailable
+because analysis is off.
+
 ## UI Primitives (`@airmedy/ui`)
 
 ### Slider (`packages/ui/src/slider/Slider.vue`)

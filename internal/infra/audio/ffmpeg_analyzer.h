@@ -30,7 +30,6 @@
 #include <libswresample/swresample.h>
 
 #include <aubio/aubio.h>
-#include <pthread.h>
 
 #include "ffmpeg_shared_mu.h"
 
@@ -40,16 +39,10 @@
 #define FFA_TEMPO_HOP  512
 
 /*
- * aubio is built here with --disable-fftw3/--disable-accelerate, so it falls
- * back to its bundled ooura FFT, which keeps mutable state in static/global
- * work buffers and is NOT reentrant. The rest of this file (avcodec/avformat/
- * avfilter) is safe to run concurrently from a worker pool, but every aubio
- * entry point (new_/del_/do_ for both tempo and onset) must be serialized
- * process-wide or concurrent calls corrupt the heap (observed as
- * "malloc: *** error ... pointer being freed was not allocated" -> SIGABRT
- * under a multi-worker analysis pool).
+ * aubio is built here against FFTW3F rather than its bundled Ooura fallback.
+ * Each analyzer instance owns its own tempo/onset state, while FFTW plan
+ * creation/destruction is serialized internally by aubio itself.
  */
-static pthread_mutex_t ffa_aubio_mu = PTHREAD_MUTEX_INITIALIZER;
 
 /*
  * Covers avformat_open_input .. avcodec_open2 (format probing + codec open).
@@ -132,7 +125,6 @@ static void ffa_feed_tempo_onset(AVFrame *frame, SwrContext *swr, float **swr_ou
         buf[(*fill)++] = (*swr_out)[i];
         if (*fill == FFA_TEMPO_HOP) {
             memcpy(in->data, buf, sizeof(smpl_t) * FFA_TEMPO_HOP);
-            pthread_mutex_lock(&ffa_aubio_mu);
             aubio_tempo_do(tempo, in, out);
             if (out->data[0] != 0) { /* a beat was detected this hop */
                 double b = (double)aubio_tempo_get_bpm(tempo);
@@ -156,7 +148,6 @@ static void ffa_feed_tempo_onset(AVFrame *frame, SwrContext *swr, float **swr_ou
                 }
                 *onset_total_samples += FFA_TEMPO_HOP;
             }
-            pthread_mutex_unlock(&ffa_aubio_mu);
             *fill = 0;
         }
     }
@@ -216,8 +207,12 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
     probe_locked = 1;
 
     AVDictionary *format_opts = NULL;
-    av_dict_set(&format_opts, "probesize", "32000000", 0);
-    av_dict_set(&format_opts, "analyzeduration", "10000000", 0);
+    /* Modest probe budget: large enough to find the audio stream past an
+     * embedded cover-art image, small enough that probing 400+ files on a
+     * weak laptop doesn't dominate CPU. (Was 32MB/10s — needlessly heavy for
+     * the mp3/common formats this analyzes.) */
+    av_dict_set(&format_opts, "probesize", "5000000", 0);
+    av_dict_set(&format_opts, "analyzeduration", "5000000", 0);
     if (avformat_open_input(&fmt_ctx, path, NULL, &format_opts) < 0) {
         av_dict_free(&format_opts);
         rc = FFA_ERR_OPEN;
@@ -343,7 +338,6 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
         if (tempo_swr && swr_init(tempo_swr) < 0) { swr_free(&tempo_swr); tempo_swr = NULL; }
 
         if (tempo_swr) {
-            pthread_mutex_lock(&ffa_aubio_mu);
             tempo = new_aubio_tempo("default", FFA_TEMPO_BUF, FFA_TEMPO_HOP, FFA_TEMPO_RATE);
             tempo_in = new_fvec(FFA_TEMPO_HOP);
             tempo_out = new_fvec(2);
@@ -357,13 +351,11 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
                 swr_free(&tempo_swr);
                 tempo = NULL; tempo_in = NULL; tempo_out = NULL; tempo_buf = NULL; tempo_swr = NULL;
             }
-            pthread_mutex_unlock(&ffa_aubio_mu);
         }
 
         /* ---- onset detection: reuses tempo's swr + hop buffer, independent of
          * tempo's own success/failure. Non-fatal: leave out->onset_variance = 0. */
         if (tempo_swr) {
-            pthread_mutex_lock(&ffa_aubio_mu);
             onset = new_aubio_onset("hfc", FFA_TEMPO_BUF, FFA_TEMPO_HOP, FFA_TEMPO_RATE);
             onset_out = new_fvec(1);
             if (!onset || !onset_out) {
@@ -371,7 +363,6 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
                 if (onset_out) del_fvec(onset_out);
                 onset = NULL; onset_out = NULL;
             }
-            pthread_mutex_unlock(&ffa_aubio_mu);
         }
     }
 
@@ -491,13 +482,11 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
 
 done:
     if (probe_locked) pthread_mutex_unlock(&ffmpeg_probe_mu);
-    pthread_mutex_lock(&ffa_aubio_mu);
     if (onset) del_aubio_onset(onset);
     if (onset_out) del_fvec(onset_out);
     if (tempo) del_aubio_tempo(tempo);
     if (tempo_in) del_fvec(tempo_in);
     if (tempo_out) del_fvec(tempo_out);
-    pthread_mutex_unlock(&ffa_aubio_mu);
     free(tempo_buf);
     free(swr_out);
     if (tempo_swr) swr_free(&tempo_swr);

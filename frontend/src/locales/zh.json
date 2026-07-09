@@ -223,7 +223,10 @@
       "title": "媒体库分析",
       "enable": "启用媒体库分析",
       "enable_desc": "在后台扫描你的音乐库，测量每首曲目的响度和音频特征。\n必须先完成分析才能使用音量均衡和心情电台功能。\n此过程可能需要一些时间，具体取决于你设备的性能。",
-      "requires_enable": "请先在上方启用媒体库分析以使用音量均衡"
+      "requires_enable": "请先启用媒体库分析以使用音量均衡",
+      "worker_count": "并发工作线程",
+      "worker_count_desc": "更多工作线程可以加快分析速度，但会占用更多 CPU，也可能让电脑更热。",
+      "worker_count_value": "{count} 个工作线程"
     },
     "normalization": {
       "title": "音量标准化",

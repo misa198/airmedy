@@ -44,6 +44,8 @@ export const useAppStore = defineStore('app', () => {
   const moodDerivationVersion = ref(0)
   const preventSleepWhilePlaying = ref(false)
   const libraryAnalysisEnabled = ref(false)
+  const libraryAnalysisWorkerCount = ref(2)
+  const libraryAnalysisMaxWorkerCount = ref(4)
   const normalizationEnabled = ref(false)
   const normalizationMode = ref<'off' | 'track' | 'album'>('track')
   const normalizationTargetLufs = ref(-14)
@@ -143,6 +145,14 @@ export const useAppStore = defineStore('app', () => {
         applyTheme(theme.value)
       }
 
+      try {
+        const workerInfo = await AnalysisService.GetWorkerCountInfo()
+        libraryAnalysisWorkerCount.value = workerInfo.count
+        libraryAnalysisMaxWorkerCount.value = workerInfo.max
+      } catch (err) {
+        console.error('Failed to load library analysis worker count:', err)
+      }
+
       // Check for updates on startup if enabled
       if (autoCheckUpdate.value && !skipUpdateCheck) {
         checkForUpdate()
@@ -214,6 +224,7 @@ export const useAppStore = defineStore('app', () => {
         max_queue_size: maxQueueSize.value,
         crossfade_seconds: crossfadeSeconds.value,
         library_analysis_enabled: libraryAnalysisEnabled.value,
+        library_analysis_worker_count: libraryAnalysisWorkerCount.value,
         normalization_enabled: normalizationEnabled.value,
         normalization_mode: normalizationMode.value,
         normalization_target_lufs: normalizationTargetLufs.value,
@@ -349,6 +360,14 @@ export const useAppStore = defineStore('app', () => {
     await AnalysisService.SetLibraryAnalysisEnabled(enabled)
   }
 
+  const updateLibraryAnalysisWorkerCount = async (count: number) => {
+    if (!Number.isFinite(count)) return
+    const clamped = Math.min(libraryAnalysisMaxWorkerCount.value, Math.max(1, Math.round(count)))
+    libraryAnalysisWorkerCount.value = clamped
+    console.debug('[analysis] workerCount ->', clamped)
+    await AnalysisService.SetWorkerCount(clamped)
+  }
+
   const updateNormalizationEnabled = async (enabled: boolean) => {
     normalizationEnabled.value = enabled
     console.debug('[normalization] enabled ->', enabled)
@@ -438,6 +457,8 @@ export const useAppStore = defineStore('app', () => {
     maxQueueSize,
     crossfadeSeconds,
     libraryAnalysisEnabled,
+    libraryAnalysisWorkerCount,
+    libraryAnalysisMaxWorkerCount,
     normalizationEnabled,
     normalizationMode,
     normalizationTargetLufs,
@@ -475,6 +496,7 @@ export const useAppStore = defineStore('app', () => {
     updateMaxQueueSize,
     updateCrossfadeSeconds,
     updateLibraryAnalysisEnabled,
+    updateLibraryAnalysisWorkerCount,
     updateNormalizationEnabled,
     updateNormalizationMode,
     updateNormalizationTargetLufs,

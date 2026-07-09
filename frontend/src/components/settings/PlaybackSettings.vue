@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { AudioLines, Wrench, Gauge, Volume2, Blend } from '@lucide/vue'
-import { Events } from '@wailsio/runtime'
-import { GetProgress } from '../../../bindings/airmedy/internal/infra/wails/analysisservice'
+import { AudioLines, Wrench, Volume2, Blend } from '@lucide/vue'
 import EQPanel from '@/components/EQPanel.vue'
 import { Switch, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, Slider } from '@airmedy/ui'
 import { useAppStore, NORMALIZATION_TARGET_LUFS_MIN, NORMALIZATION_TARGET_LUFS_MAX, CROSSFADE_MAX_SECONDS } from '@/stores/app'
@@ -77,73 +75,6 @@ const LUFS_MARKS = [
 
 const lufsMarkPct = (value: number) =>
   ((value - NORMALIZATION_TARGET_LUFS_MIN) / (NORMALIZATION_TARGET_LUFS_MAX - NORMALIZATION_TARGET_LUFS_MIN)) * 100
-
-const analysisDone = ref(0)
-const analysisTotal = ref(0)
-const analysisState = ref<'analyzing' | 'paused' | 'done'>('done')
-const libraryDone = ref(0)
-const libraryTotal = ref(0)
-
-// Session progress: how far the current analysis run has gotten through the
-// tracks it found pending when it started.
-const analysisPercent = computed(() =>
-  analysisTotal.value > 0 ? Math.round((analysisDone.value / analysisTotal.value) * 100) : 100
-)
-// Library readiness: how much of the whole library has ever been analyzed.
-// Distinct from analysisPercent — adding new tracks drops this but resets
-// analysisPercent's own session to 0%, so the two must not share one number.
-const readinessPercent = computed(() =>
-  libraryTotal.value > 0 ? Math.round((libraryDone.value / libraryTotal.value) * 100) : 100
-)
-
-type AnalysisProgressData = {
-  done: number
-  total: number
-  state: 'analyzing' | 'paused' | 'done'
-  libraryDone: number
-  libraryTotal: number
-}
-
-const applyAnalysisProgress = (data: AnalysisProgressData) => {
-  analysisDone.value = data.done
-  analysisTotal.value = data.total
-  analysisState.value = data.state
-  libraryDone.value = data.libraryDone
-  libraryTotal.value = data.libraryTotal
-}
-
-// Set once a live event has landed, so the initial GetProgress fetch (below)
-// knows to discard its own result if it resolves after a fresher event
-// already updated the refs — otherwise a slow IPC round-trip could overwrite
-// newer data with a stale snapshot.
-let receivedLiveEvent = false
-
-const handleAnalysisProgress = (ev: Events.WailsEvent) => {
-  const data = ev.data as AnalysisProgressData
-  console.debug('[analysis:progress]', data)
-  receivedLiveEvent = true
-  applyAnalysisProgress(data)
-}
-
-let offAnalysisProgress: (() => void) | null = null
-
-onMounted(() => {
-  // Subscribe first so no event landing between the fetch and its resolution
-  // is missed, then fetch the current snapshot immediately — otherwise the
-  // UI starts from the zero-valued refs above (100% readiness, no
-  // in-progress banner) until the next event happens to fire, which could be
-  // long after a sync already left the library partially analyzed.
-  offAnalysisProgress = Events.On('analysis:progress', handleAnalysisProgress)
-  GetProgress()
-    .then((data) => {
-      if (!receivedLiveEvent) applyAnalysisProgress(data as unknown as AnalysisProgressData)
-    })
-    .catch((error) => console.error('[analysis:progress] initial fetch failed', error))
-})
-
-onUnmounted(() => {
-  offAnalysisProgress?.()
-})
 </script>
 
 <template>
@@ -195,25 +126,6 @@ onUnmounted(() => {
         </div>
       </div>
     </SettingSection>
-
-    <SettingSection :icon="Gauge" :label="t('settings.library_analysis.title')">
-      <template #header-extra>
-        <p v-if="appStore.libraryAnalysisEnabled" class="text-xs text-foreground opacity-50">
-          {{ t('settings.normalization.readiness', { percent: readinessPercent }) }}
-        </p>
-      </template>
-      <SettingRow :title="t('settings.library_analysis.enable')"
-        :description="t('settings.library_analysis.enable_desc')">
-        <Switch :model-value="appStore.libraryAnalysisEnabled"
-          @update:model-value="appStore.updateLibraryAnalysisEnabled" />
-      </SettingRow>
-      <div v-if="appStore.libraryAnalysisEnabled && analysisState !== 'done'"
-        class="px-5 py-3 text-xs text-foreground opacity-60">
-        {{ t('settings.normalization.analyzing', { done: analysisDone, total: analysisTotal, percent: analysisPercent })
-        }}
-      </div>
-    </SettingSection>
-
     <SettingSection :icon="Volume2" :label="t('settings.normalization.title')">
       <p v-if="!appStore.libraryAnalysisEnabled" class="px-5 py-3 text-xs text-foreground opacity-50">
         {{ t('settings.library_analysis.requires_enable') }}

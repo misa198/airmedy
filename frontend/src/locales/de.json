@@ -223,7 +223,10 @@
       "title": "Bibliotheksanalyse",
       "enable": "Bibliotheksanalyse aktivieren",
       "enable_desc": "Durchsucht deine Musikbibliothek im Hintergrund, um Lautstärke und Klangmerkmale jedes Titels zu ermitteln.\nErforderlich, bevor Lautstärkenormalisierung und Mood Radio genutzt werden können.\nDieser Vorgang kann je nach Leistung deines Geräts eine Weile dauern.",
-      "requires_enable": "Aktiviere oben die Bibliotheksanalyse, um die Lautstärkenormalisierung zu nutzen"
+      "requires_enable": "Aktiviere die Bibliotheksanalyse, um die Lautstärkenormalisierung zu nutzen",
+      "worker_count": "Gleichzeitige Worker",
+      "worker_count_desc": "Mehr Worker beschleunigen die Analyse, verbrauchen aber mehr CPU und können den Computer stärker erhitzen.",
+      "worker_count_value": "{count} Worker"
     },
     "normalization": {
       "title": "Lautstärkenormalisierung",

@@ -14,6 +14,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 )
 
@@ -286,5 +287,41 @@ func TestAnalyzeCancelled(t *testing.T) {
 
 	if _, err := NewLoudnessAnalyzer().Analyze(ctx, path); err == nil {
 		t.Fatal("expected cancellation error, got nil")
+	}
+}
+
+// TestAnalyzeConcurrent guards the aubio FFT reentrancy switch (Ooura ->
+// FFTW3F, see ffmpeg_analyzer.h): every aubio tempo/onset call used to be
+// serialized process-wide because Ooura keeps mutable state in static/global
+// work buffers, and running it concurrently corrupted the heap ("malloc: ***
+// error ... pointer being freed was not allocated" -> SIGABRT under a
+// multi-worker analysis pool). Run with -race to also catch any remaining
+// data race, not just a hard crash.
+func TestAnalyzeConcurrent(t *testing.T) {
+	const bpm = 120.0
+	path := writeJitteredClickWAV(t, bpm, 0.3, 6.0, 44100)
+
+	const workers = 8
+	const runsPerWorker = 4
+	a := NewLoudnessAnalyzer()
+
+	var wg sync.WaitGroup
+	errs := make(chan error, workers*runsPerWorker)
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < runsPerWorker; j++ {
+				if _, err := a.Analyze(context.Background(), path); err != nil {
+					errs <- err
+				}
+			}
+		}()
+	}
+	wg.Wait()
+	close(errs)
+
+	for err := range errs {
+		t.Errorf("concurrent Analyze failed: %v", err)
 	}
 }

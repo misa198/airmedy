@@ -223,7 +223,10 @@
       "title": "Analisi della libreria",
       "enable": "Attiva analisi della libreria",
       "enable_desc": "Analizza la tua libreria musicale in background per misurare il volume e le caratteristiche audio di ogni brano.\nNecessario prima di poter usare la normalizzazione del volume e la Radio dell'umore.\nQuesto processo può richiedere del tempo, in base alle prestazioni del tuo computer.",
-      "requires_enable": "Attiva l'analisi della libreria sopra per usare la normalizzazione del volume"
+      "requires_enable": "Attiva l'analisi della libreria per usare la normalizzazione del volume",
+      "worker_count": "Worker simultanei",
+      "worker_count_desc": "Più worker accelerano l'analisi, ma usano più CPU e possono far scaldare di più il computer.",
+      "worker_count_value": "{count} worker"
     },
     "normalization": {
       "title": "Normalizzazione del volume",
