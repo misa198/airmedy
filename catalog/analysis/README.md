@@ -59,16 +59,16 @@ corpus-wide percentile distribution). Mood then backs **Mood Radio** similarity.
 | `internal/app/analysis/analysis_service.go` | Worker pool, queue, enable/disable lifecycle, mood-derivation trigger |
 | `internal/app/analysis/module.go` | FX module |
 | `internal/app/analysis/mood/` | Mood formulas, percentile normalization, corpus percentile recompute |
-| `internal/infra/wails/analysis_service.go` | Wails binding (`SetLibraryAnalysisEnabled`) |
+| `internal/infra/wails/analysis_service.go` | Wails binding (`SetLibraryAnalysisEnabled`, `GetWorkerCountInfo`, `SetWorkerCount`, `GetProgress`) |
 | `internal/infra/wails/mood_radio_service.go` | Wails binding (`SeedMoodRadio`) |
 | `internal/infra/audio/analyzer.go` + `ffmpeg_analyzer.h` | cgo adapter implementing `domain.LoudnessAnalyzer` |
 | `scripts/build-fftw3-*.sh` + `scripts/build-aubio-*.sh` | Vendored FFTW3F/aubio builders for macOS, Linux, Windows |
 | `internal/infra/sqlite/analysis_repository.go` | `track_features` CRUD, pending-count/list, `MarkFailed`, percentile table CRUD, mood-pending list |
 | `internal/infra/sqlite/track_query_repository.go` | `FindSimilar` — weighted-euclidean nearest-neighbor query over energy/danceability/tempo, backs Mood Radio |
 | `internal/domain/audio.go` | `LoudnessAnalyzer` interface |
-| `internal/domain/models.go` | `TrackFeatures`, `FeaturePercentileRow`, `AppSettings.LibraryAnalysisEnabled`/`MoodDerivationVersion`, `AnalysisProgress` |
+| `internal/domain/models.go` | `TrackFeatures`, `FeaturePercentileRow`, `AppSettings.LibraryAnalysisEnabled`/`LibraryAnalysisWorkerCount`/`MoodDerivationVersion`, `AnalysisProgress` |
 | `internal/domain/repositories.go` | `AnalysisRepository` (percentile/mood methods), `TrackQueryRepository` |
-| `internal/infra/sqlite/settings_repository.go` | Persistence for `library_analysis_enabled`, `mood_derivation_version` |
+| `internal/infra/sqlite/settings_repository.go` | Persistence for `library_analysis_enabled`, `library_analysis_worker_count`, `mood_derivation_version` |
 | `internal/app/module.go` | Central wiring: import → enqueue, playback → throttle, on-play → boost, delete → mood-change notify |
 | `frontend/src/stores/moodRadio.ts` | Mood Radio queue-seeding/auto-refill store |
 
@@ -77,19 +77,27 @@ corpus-wide percentile distribution). Mood then backs **Mood Radio** similarity.
 | Field | Type | Default | Meaning |
 | ----- | ---- | ------- | ------- |
 | `LibraryAnalysisEnabled` | bool | `false` | Master on/off for the worker pool |
+| `LibraryAnalysisWorkerCount` | int | `2` | Desired concurrent decode-worker count; `0` falls back to the default and runtime clamps it to `[1, numCPU/2]` |
 
 ## Enable/Disable Lifecycle (`AnalysisService`)
 
-- `Start(ctx)` (fx `OnStart`, called once): reads `LibraryAnalysisEnabled` from
-  `domain.SettingsRepository` and calls `startPool()` if true. Otherwise the pool
-  stays off until `SetEnabled(ctx, true)`.
+- `Start(ctx)` (fx `OnStart`, called once): reads `LibraryAnalysisEnabled` and
+  `LibraryAnalysisWorkerCount` from `domain.SettingsRepository`, warms the
+  in-memory worker-count setting, and calls `startPool()` if true. Otherwise the
+  pool stays off until `SetEnabled(ctx, true)`.
 - `SetEnabled(ctx, enabled bool) error`: persists the toggle, and **if disabling,
   also force-disables `NormalizationEnabled`** in the same settings write (cross-
   toggle — Normalization depends entirely on data this pipeline produces). Then
   starts or stops the pool to match.
-- `startPool()`: spawns `max(NumCPU()/2, 1)` worker goroutines on a fresh
-  `context.WithCancel`, then kicks off a one-time backfill (`ListPending` →
-  `Enqueue` every pending track ID). Idempotent — no-op if already running.
+- `SetWorkerCount(ctx, count) error`: persists the desired concurrent-worker
+  count, clamps it, and applies it live. Because the worker goroutine count is
+  fixed at pool start, a running pool is stopped and restarted to pick up the
+  new size; a stopped pool just uses it next time it starts.
+- `GetWorkerCount(ctx) (count, max int)`: returns the configured worker count
+  after defaulting/clamping, plus the UI ceiling (`numCPU/2`, minimum 1).
+- `startPool()`: spawns `clampWorkerCount(workerCount)` worker goroutines on a
+  fresh `context.WithCancel`, then kicks off a one-time backfill (`ListPending`
+  → `Enqueue` every pending track ID). Idempotent — no-op if already running.
 - `stopPool()`: cancels the pool's context (workers exit `cond.Wait()` loops on
   next wake — cancel happens *before* the broadcast to avoid a race where a
   worker re-enters `Wait()` before observing cancellation), waits for in-flight
@@ -104,7 +112,7 @@ corpus-wide percentile distribution). Mood then backs **Mood Radio** similarity.
 
 Two queues (`boostQueue`, `normalQueue`) guarded by one `sync.Mutex` + `sync.Cond`.
 Workers drain `boostQueue` first. Concurrency is governed by an `active`/`activeLimit`
-counter (not a bool): `startPool()` sets `workersTotal = activeLimit = max(NumCPU()/2, 1)`.
+counter (not a bool): `startPool()` sets `workersTotal = activeLimit = clampWorkerCount(workerCount)`.
 `SetThrottled(true)` (driven by `PlayerService.AddStatusListener` — playback active)
 lowers `activeLimit` via `throttledLimit(workersTotal)` instead of stopping dequeue
 outright:
@@ -112,6 +120,11 @@ outright:
 - `numCPU() > 4`: `activeLimit = max(workersTotal/2, 1)` — a reduced pool keeps
   analyzing in the background alongside playback; fully pauses only when a track
   finishes and no slot is free.
+
+`DefaultWorkerCount` is `domain.DefaultLibraryAnalysisWorkerCount` (`2`).
+`MaxWorkerCount()` returns `max(numCPU()/2, 1)`, which is both the runtime cap
+and the settings slider ceiling. `clampWorkerCount` resolves a requested value:
+`<= 0` falls back to the default, then clamps the result to `[1, MaxWorkerCount()]`.
 
 `numCPU` is a package var aliasing `runtime.NumCPU`, overridable in tests.
 `emitProgress` reports `state = paused` only when the resulting `activeLimit == 0`;
@@ -316,6 +329,8 @@ lookup rather than a full re-analysis.
 
 ```go
 SetLibraryAnalysisEnabled(enabled bool) error
+GetWorkerCountInfo() WorkerCountInfo
+SetWorkerCount(count int) error
 ```
 
 Calls `AnalysisService.SetEnabled`, then `PlayerService.ReapplyNormalization()` —
@@ -333,13 +348,20 @@ gain must be cleared immediately.
 
 ## Frontend
 
-Settings → Playback tab, "Library Analysis" section directly above "Volume
-Normalization" (`frontend/src/components/settings/PlaybackSettings.vue`): a single
-enable switch with description text, plus the "Analyzing N/M (x%)" progress line,
-shown while `libraryAnalysisEnabled && analysisState !== 'done'` (i.e. for both
-`analyzing` and `paused`, so it stays visible across play/pause throttle changes).
-State lives in `frontend/src/stores/app.ts` (`libraryAnalysisEnabled`). The
+Settings → Library tab, "Library Analysis" section
+(`frontend/src/components/settings/LibrarySettings.vue`): enable switch,
+"Analyzing N/M (x%)" progress line, library-readiness percentage, and a
+worker-count slider (`libraryAnalysisWorkerCount`) shown when more than one
+worker is available. The panel subscribes to `analysis:progress` and also
+fetches an initial `GetProgress()` snapshot on mount so the UI starts from the
+current backend state instead of waiting for the next event.
+
+State lives in `frontend/src/stores/app.ts` (`libraryAnalysisEnabled`,
+`libraryAnalysisWorkerCount`, `libraryAnalysisMaxWorkerCount`). The store loads
+worker-count metadata from `AnalysisService.GetWorkerCountInfo()`. The
 `updateLibraryAnalysisEnabled` action calls `AnalysisService.SetLibraryAnalysisEnabled`
-and optimistically clears local `normalizationEnabled` when disabling, mirroring the
-backend cross-toggle so the Normalization switch locks immediately without waiting on
-a refetch. See `catalog/normalization/README.md` for the dependent UI.
+and optimistically clears local `normalizationEnabled` when disabling, mirroring
+the backend cross-toggle so the Normalization switch locks immediately without
+waiting on a refetch. `updateLibraryAnalysisWorkerCount` clamps in the frontend
+and calls `AnalysisService.SetWorkerCount()` on slider release rather than on
+every drag frame. See `catalog/normalization/README.md` for the dependent UI.

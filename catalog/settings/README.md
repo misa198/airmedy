@@ -38,6 +38,7 @@ type AppSettings struct {
     LastScanVersion        string              // app version of last artist-image rescan
     PreventSleepWhilePlaying bool             // prevent OS sleep during playback
     LibraryAnalysisEnabled  bool               // opt-in: gates the analysis worker pool entirely (default off)
+    LibraryAnalysisWorkerCount int             // desired concurrent analysis workers; default 2, runtime-clamped to [1, numCPU/2]
     NormalizationEnabled    bool               // volume normalization on/off; cannot be true while LibraryAnalysisEnabled is false
     NormalizationMode       string             // "off", "track", "album"
     NormalizationTargetLUFS float64            // target loudness, default -14 (domain.DefaultTargetLUFS)
@@ -77,6 +78,9 @@ GetSettings(): AppSettings
 SaveSettings(settings: AppSettings): void
 GetAppInfo(): AppInfo      // name, version, build info
 OpenAppDataFolder(): void  // opens $XDG_DATA_HOME/airmedy in Finder/Explorer
+GetProgress(): AnalysisProgress
+GetWorkerCountInfo(): { count: number; max: number }
+SetWorkerCount(count: number): void
 ```
 
 ## Frontend Store (`stores/app.ts`)
@@ -103,6 +107,8 @@ interface AppStore {
   albumArtistDelimiters: string[];
   genreDelimiters: string[];
   composerDelimiters: string[];
+  libraryAnalysisWorkerCount: number;
+  libraryAnalysisMaxWorkerCount: number;
   // Update state
   updateInfo: UpdateInfo | null;
   isCheckingUpdate: boolean;
@@ -131,6 +137,7 @@ interface AppStore {
   updatePreferLocalArtistArtwork(enabled: boolean): Promise<void>;
   updatePreventSleepWhilePlaying(enabled: boolean): Promise<void>;
   updateDelimiters(field: "artist" | "albumArtist" | "genre" | "composer", value: string[]): Promise<void>;
+  updateLibraryAnalysisWorkerCount(count: number): Promise<void>;
   checkForUpdate(): Promise<void>;
   applyUpdate(): Promise<void>;
   restartApp(): Promise<void>;
@@ -139,6 +146,9 @@ interface AppStore {
 ```
 
 Each `update*()` method calls `SettingsService.SaveSettings()` with the full settings object (all fields at once, not partial).
+
+`loadSettings()` also fetches `AnalysisService.GetWorkerCountInfo()` separately to
+hydrate the library-analysis worker slider's current value and its runtime max.
 
 `applyTheme()` manages CSS classes on `document.documentElement`. `dark` theme adds `.dark`; `black` theme adds both `.dark` and `.black` (pure black bg override for OLED screens); `light` removes both. When theme is `system`, it respects `prefers-color-scheme` media query (resolves to dark, not black).
 
@@ -168,9 +178,9 @@ Version constant moved from `internal/domain/version.go` (deleted) to `internal/
 | Tab          | Content                                                                    |
 | ------------ | -------------------------------------------------------------------------- |
 | General      | Theme selector, Language picker, Start at Login, Auto-check updates toggle |
-| Library      | Watched folders list, Add/Remove folder, Sync All, Reindex; **Tag Delimiters** section — 4 chip inputs (`DelimiterInput.vue`) for artist/album-artist/genre/composer split delimiters with inline validation, plus a persistent "Sync Library to apply" hint (`DelimitersPendingResync`) shown while pending |
+| Library      | Watched folders list, Add/Remove folder, Sync All, Reindex; **Tag Delimiters** section — 4 chip inputs (`DelimiterInput.vue`) for artist/album-artist/genre/composer split delimiters with inline validation, plus a persistent "Sync Library to apply" hint (`DelimitersPendingResync`) shown while pending; **Library Analysis** section — enable toggle, live progress/readiness text, and a concurrent-worker slider when more than one worker is available |
 | Integrations | Last.fm account + lyrics providers (LRClib, Kugou), prefer-local toggle, lyrics-subfolder toggle + validated name input (matched case-insensitively, with a hint), and dedicated lyrics folder toggle + picker (reuses `LibraryService.SelectFolder`). Toggles with conditional sub-settings use `SettingExpandableRow.vue` (header + `#control` slot + animated, inset `#expanded` slot) so the sub-setting reads as nested under its toggle. |
-| Playback     | EQ profiles and band sliders, prevent-sleep toggle (`PlaybackSettings.vue`) |
+| Playback     | EQ profiles and band sliders, prevent-sleep toggle, and Volume Normalization controls (`PlaybackSettings.vue`) |
 | Remote       | Control remote server (enable/disable), change or regenerate access PIN, show QR code, and choose between reachable IP addresses grouped by network interface (`RemoteServerSettings.vue`) |
 | About        | App version, GitHub link, License, Open Data Folder button                 |
 
@@ -231,3 +241,4 @@ Settings evolved across multiple migrations:
 | 000032    | Add `,` to the default delimiter set for rows still on the previous default `'[";","\\"]'` |
 | 000033    | Update default delimiters: change single backslash `\` to double backslash `\\` (JSON `'[";","\\\\",","]'`) for rows still on the previous default |
 | 000034    | Add `normalization_enabled` (0), `normalization_mode` ('off'), `normalization_target_lufs` (-14), `normalization_prevent_clip` (1), `library_analysis_enabled` (0) — volume normalization + library analysis opt-in settings (also adds `track_features` table + `tracks.analyzed_version`) |
+| 000047    | Add `library_analysis_worker_count INTEGER NOT NULL DEFAULT 2` — persists the desired concurrent library-analysis worker count; down intentionally keeps the column |

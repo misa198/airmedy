@@ -59,6 +59,7 @@ bin/
 *.test
 *.out
 
+
 # Remote web app build output (rebuilt by task build:remote)
 remote/dist/
 remote/node_modules/
@@ -117,3 +118,5 @@ internal/infra/audio/sfb_build/
 internal/infra/audio/miniaudio/
 
 .turbo/
+internal/app/analysis/analysis_service_test.db-shm
+internal/app/analysis/analysis_service_test.db-wal

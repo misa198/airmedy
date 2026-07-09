@@ -65,6 +65,7 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000038 | `track_mood_version.up.sql`          | `ALTER TABLE tracks ADD COLUMN mood_derived_version INTEGER NOT NULL DEFAULT 0` + `idx_tracks_mood_derived_version` — marks a track's mood stale vs `app_settings.mood_derivation_version` for re-derivation |
 | 000039 | `track_bitdepth_codec.up.sql`        | `ALTER TABLE tracks ADD COLUMN bit_depth INTEGER NOT NULL DEFAULT 0`, `ADD COLUMN codec TEXT NOT NULL DEFAULT ''` — bits-per-sample and inner codec (e.g. m4a `aac`/`alac`) from the `go-taglib` fork, used to classify Lossy/Lossless/Hi-Res/DSD |
 | 000040 | `metadata_schema_version.up.sql`     | `ALTER TABLE library_sync_state ADD COLUMN metadata_schema_version INTEGER NOT NULL DEFAULT 0` — tracks which extractor field-set a library's data reflects, so a sync can force one full re-parse when it's behind (see `catalog/library`) |
+| 000047 | `library_analysis_worker_count.up.sql` | `ALTER TABLE app_settings ADD COLUMN library_analysis_worker_count INTEGER NOT NULL DEFAULT 2` — persists the desired concurrent worker count for the library-analysis pool; down intentionally keeps the column |
 
 ## Full Schema
 
@@ -240,6 +241,7 @@ app_settings (
     album_artist_delimiters TEXT NOT NULL DEFAULT '[";","\\\\",","]',  -- JSON array
     genre_delimiters TEXT NOT NULL DEFAULT '[";","\\\\",","]',         -- JSON array
     composer_delimiters TEXT NOT NULL DEFAULT '[";","\\\\",","]',      -- JSON array
+    library_analysis_worker_count INTEGER NOT NULL DEFAULT 2,          -- desired analysis-pool worker count; runtime clamps to [1, numCPU/2] (000047)
     normalization_enabled INTEGER NOT NULL DEFAULT 0,                  -- volume normalization (000034)
     normalization_mode TEXT NOT NULL DEFAULT 'off',                    -- off | track | album
     normalization_target_lufs REAL NOT NULL DEFAULT -14,

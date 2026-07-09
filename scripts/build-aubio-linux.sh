@@ -15,15 +15,13 @@
 #   No arch argument builds both (arm64 skipped if the cross-compiler is absent).
 #
 # Note: aubio 0.4.9 ships waf 2.0.14, which imports the `imp` module removed in
-# Python 3.12+. We download waf 2.0.27 (same 2.0 API, modern-Python compatible)
-# and use it instead.
+# Python 3.12+ and still uses deprecated 'rU' file mode. Patch the bundled waf
+# in place instead of downloading a replacement from the network.
 
 set -euo pipefail
 
 AUBIO_VERSION="0.4.9"
 AUBIO_URL="https://aubio.org/pub/aubio-${AUBIO_VERSION}.tar.bz2"
-WAF_VERSION="2.0.27"
-WAF_URL="https://waf.io/waf-${WAF_VERSION}"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT_BASE="${REPO_ROOT}/internal/infra/audio/aubio_libs/linux"
 INCLUDE_OUT="${REPO_ROOT}/internal/infra/audio/aubio_libs/include"
@@ -31,7 +29,25 @@ FFTW3_BASE="${REPO_ROOT}/internal/infra/audio/fftw3_libs/linux"
 FFTW3_INCLUDE="${REPO_ROOT}/internal/infra/audio/fftw3_libs/include"
 FFTW3_PKGCONFIG_BASE="${REPO_ROOT}/internal/infra/audio/fftw3_libs/pkgconfig/linux"
 BUILD_DIR="${TMPDIR:-/tmp}/aubio-build-airmedy-linux"
-WAF_BIN="${BUILD_DIR}/waf-${WAF_VERSION}"
+
+# Inject an imp shim for Python 3.12+ so aubio's bundled waf still runs.
+IMP_SHIM="${BUILD_DIR}/pyshim"
+mkdir -p "${IMP_SHIM}"
+cat > "${IMP_SHIM}/imp.py" << 'PYEOF'
+"""Shim: imp was removed in Python 3.12; provide what aubio's bundled waf needs."""
+import importlib.util as _u
+import types
+
+def new_module(name):
+    return types.ModuleType(name)
+
+def load_source(name, path):
+    spec = _u.spec_from_file_location(name, path)
+    mod = _u.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+PYEOF
+export PYTHONPATH="${IMP_SHIM}${PYTHONPATH:+:${PYTHONPATH}}"
 
 WAF_FLAGS=(
     --enable-fftw3f
@@ -58,11 +74,9 @@ build_arch() {
     cp -R "${SRC_DIR}" "${WORK_DIR}"
     cd "${WORK_DIR}"
 
-    # Replace aubio's bundled waf (2.0.14, incompatible with Python 3.12+) with
-    # the downloaded 2.0.27; drop the unpacked waflib so waf re-extracts its own.
-    cp "${WAF_BIN}" "${WORK_DIR}/waf"
-    chmod +x "${WORK_DIR}/waf"
-    rm -rf "${WORK_DIR}/waflib"
+    # 'rU' mode was removed in Python 3.11; plain 'r' keeps universal newline
+    # handling. Patch aubio's extracted waflib in place.
+    find waflib -name '*.py' -exec sed -i "s/'rU'/'r'/g" {} \;
 
     export CC
     export AR="${CC%gcc}ar"
@@ -130,11 +144,9 @@ if [[ ! -f "${BUILD_DIR}/aubio.tar.bz2" ]]; then
     echo "==> Downloading aubio ${AUBIO_VERSION}..."
     curl -L "${AUBIO_URL}" -o "${BUILD_DIR}/aubio.tar.bz2"
 fi
-if [[ ! -f "${WAF_BIN}" ]]; then
-    echo "==> Downloading waf ${WAF_VERSION}..."
-    curl -L "${WAF_URL}" -o "${WAF_BIN}"
-fi
 echo "==> Extracting..."
+rm -rf "${BUILD_DIR}/src"
+mkdir -p "${BUILD_DIR}/src"
 tar -xjf "${BUILD_DIR}/aubio.tar.bz2" -C "${BUILD_DIR}/src" --strip-components=1
 
 case "${TARGET_ARCH}" in

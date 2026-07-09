@@ -347,6 +347,10 @@ var ValidMaxQueueSizes = []int{100, 500, 1000, 2000, 3000}
 // DefaultMaxQueueSize is the queue size cap applied when none is set.
 const DefaultMaxQueueSize = 1000
 
+// DefaultLibraryAnalysisWorkerCount is the concurrent-worker count applied
+// when AppSettings.LibraryAnalysisWorkerCount is unset (0).
+const DefaultLibraryAnalysisWorkerCount = 2
+
 // ResolveMaxQueueSize maps a stored value to a valid queue size cap, falling
 // back to DefaultMaxQueueSize for zero/unrecognized values.
 func ResolveMaxQueueSize(n int) int {
@@ -442,6 +446,11 @@ type AppSettings struct {
 	// background worker pool entirely (no backfill/enqueue/boost). Normalization
 	// cannot be enabled while this is off.
 	LibraryAnalysisEnabled bool `json:"library_analysis_enabled"`
+
+	// LibraryAnalysisWorkerCount is the number of concurrent decode workers the
+	// analysis pool runs. 0 (unset) falls back to DefaultLibraryAnalysisWorkerCount;
+	// clamped at pool start to [1, numCPU/2] (see analysis.MaxWorkerCount).
+	LibraryAnalysisWorkerCount int `json:"library_analysis_worker_count"`
 
 	// Volume normalization (analysis pipeline feeds these). Mode is "off", "track", or
 	// "album"; target defaults to DefaultTargetLUFS (-14).

@@ -80,6 +80,7 @@ type AnalysisService struct {
 	active       int             // number of workers currently analyzing (< activeLimit)
 	activeLimit  int             // concurrency cap; lowered (not zeroed) while playback is active
 	workersTotal int             // total worker goroutines spawned by startPool
+	workerCount  int             // desired worker count from settings; clamped via clampWorkerCount at startPool
 	enabled      bool            // true while the worker pool is running
 	runCtx       context.Context
 	runCancel    context.CancelFunc
@@ -146,6 +147,10 @@ func (s *AnalysisService) Start(ctx context.Context) error {
 	// library still keeps corpus stats fresh.
 	s.loadPercentileCache(ctx)
 	s.maybeRecomputeOnStartup(ctx)
+
+	s.mu.Lock()
+	s.workerCount = clampWorkerCount(settings.LibraryAnalysisWorkerCount)
+	s.mu.Unlock()
 
 	if settings.LibraryAnalysisEnabled {
 		s.startPool()
@@ -219,12 +224,54 @@ func (s *AnalysisService) SetEnabled(ctx context.Context, enabled bool) error {
 	}
 
 	if enabled {
+		s.mu.Lock()
+		s.workerCount = clampWorkerCount(settings.LibraryAnalysisWorkerCount)
+		s.mu.Unlock()
 		s.startPool()
 	} else {
 		s.stopPool()
 	}
 	s.logger.Debug("analysis: library analysis enabled changed", "enabled", enabled)
 	return nil
+}
+
+// SetWorkerCount persists the desired concurrent-worker count for the
+// analysis pool and applies it live. Worker goroutine count is fixed at
+// pool-start, so a running pool is stopped and restarted to pick up the new
+// value; a stopped pool just picks it up next time it starts.
+func (s *AnalysisService) SetWorkerCount(ctx context.Context, count int) error {
+	count = clampWorkerCount(count)
+
+	settings, err := s.settingsRepo.Load(ctx)
+	if err != nil {
+		return err
+	}
+	settings.LibraryAnalysisWorkerCount = count
+	if err := s.settingsRepo.Save(ctx, settings); err != nil {
+		return err
+	}
+
+	s.mu.Lock()
+	wasEnabled := s.enabled
+	s.workerCount = count
+	s.mu.Unlock()
+
+	if wasEnabled {
+		s.stopPool()
+		s.startPool()
+	}
+	s.logger.Debug("analysis: worker count changed", "count", count)
+	return nil
+}
+
+// GetWorkerCount returns the currently configured worker count (clamped) and
+// the maximum value the settings UI should allow.
+func (s *AnalysisService) GetWorkerCount(ctx context.Context) (count, max int) {
+	settings, err := s.settingsRepo.Load(ctx)
+	if err != nil {
+		return DefaultWorkerCount, MaxWorkerCount()
+	}
+	return clampWorkerCount(settings.LibraryAnalysisWorkerCount), MaxWorkerCount()
 }
 
 // startPool spawns the worker goroutines and kicks off the backfill scan.
@@ -239,7 +286,7 @@ func (s *AnalysisService) startPool() {
 	s.runCtx = runCtx
 	s.runCancel = cancel
 	s.enabled = true
-	workers := analysisWorkerCount()
+	workers := clampWorkerCount(s.workerCount)
 	s.workersTotal = workers
 	s.activeLimit = workers
 	s.mu.Unlock()
@@ -416,22 +463,32 @@ func (s *AnalysisService) promoteToFrontLocked(trackID string) {
 // to exercise both the low-core and high-core throttling paths.
 var numCPU = runtime.NumCPU
 
-// maxAnalysisWorkers caps the worker-pool size regardless of core count. The
-// per-track ffmpeg decode is embarrassingly parallel, but the aubio tempo/onset
-// stage is serialized process-wide behind a single mutex (its bundled ooura FFT
-// isn't reentrant — see ffmpeg_analyzer.h). Past a handful of workers the extra
-// decoders don't gain throughput, they just add CPU heat and lock-convoy
-// contention on that mutex — which on weak / thermally-limited laptops
-// (ultra-low-power U-series CPUs) saturates every core, stalls forward progress,
-// and can freeze the whole machine. Keep the pool small.
-const maxAnalysisWorkers = 4
+// DefaultWorkerCount is the concurrent-worker count applied when the user
+// hasn't configured one (LibraryAnalysisWorkerCount == 0).
+const DefaultWorkerCount = domain.DefaultLibraryAnalysisWorkerCount
 
-// analysisWorkerCount picks the background worker-pool size: a quarter of the
-// logical cores (leaving headroom for the UI, audio thread, and OS on the
-// weak laptops that hit trouble), clamped to [1, maxAnalysisWorkers]. Uses the
-// stubbable numCPU so tests can exercise the low- and high-core paths.
-func analysisWorkerCount() int {
-	return max(min(numCPU()/4, maxAnalysisWorkers), 1)
+// MaxWorkerCount returns the highest worker count the pool will honor: half
+// the logical core count, at least 1. The per-track ffmpeg decode is
+// embarrassingly parallel, but the aubio tempo/onset stage is serialized
+// process-wide behind a single mutex (its bundled ooura FFT isn't reentrant —
+// see ffmpeg_analyzer.h), so past a handful of workers the extra decoders
+// don't gain throughput, they just add CPU heat and lock-convoy contention —
+// which on weak / thermally-limited laptops can saturate every core and
+// stall forward progress. This is the user-facing ceiling (settings slider
+// bound); the user picks their own tradeoff within it.
+func MaxWorkerCount() int {
+	return max(numCPU()/2, 1)
+}
+
+// clampWorkerCount resolves a requested worker count to a valid value:
+// unset (<= 0) falls back to DefaultWorkerCount, otherwise clamped to
+// [1, MaxWorkerCount()]. Uses the stubbable numCPU so tests can exercise the
+// low- and high-core paths.
+func clampWorkerCount(n int) int {
+	if n <= 0 {
+		n = DefaultWorkerCount
+	}
+	return max(min(n, MaxWorkerCount()), 1)
 }
 
 // throttledLimit returns the worker concurrency cap to apply while playback

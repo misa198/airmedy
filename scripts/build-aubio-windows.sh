@@ -146,6 +146,33 @@ build_arch() {
     # 'rU' mode removed in Python 3.11; 'r' has universal newlines by default.
     find waflib -name '*.py' -exec sed -i "s/'rU'/'r'/g" {} \;
 
+    # aubio's upstream build recipe selects a shared-library target on some
+    # Windows code paths. This repo only consumes libaubio.a, so force the
+    # extracted recipe to build the static archive only.
+    python3 - <<'PYEOF'
+from pathlib import Path
+import re
+path = Path("src/wscript_build")
+text = path.read_text()
+pattern = re.compile(
+    r"# build libaubio\.so \(cshlib\) and/or libaubio\.a \(cstlib\)\n"
+    r"if ctx\.env\['DEST_OS'\].*?"
+    r"else:\n"
+    r"    # linux, darwin, android, mingw, \.\.\.\n"
+    r"    build_features = \['cstlib', 'cshlib'\]\n",
+    re.S,
+)
+replacement = (
+    "# build libaubio.a only for this vendored integration.\n"
+    "build_features = ['cstlib']\n"
+)
+new_text, count = pattern.subn(replacement, text, count=1)
+if count != 1:
+    raise SystemExit("ERROR: failed to patch src/wscript_build build_features block")
+path.write_text(new_text)
+PYEOF
+    grep -n "build_features" src/wscript_build
+
     # waf's find_program searches PATH for a binary by canonical name ('gcc'/'clang').
     # Cross-compilers have a target prefix so they're never found that way.
     # Fix: set CC to the compiler's absolute path so waf's os.path.isabs() branch
@@ -169,7 +196,10 @@ build_arch() {
     export AR="${AR_EXPORT}"
     export CFLAGS="-O2 -I${FFTW3_INCLUDE}"
     export LINKFLAGS="-L${FFTW3_BASE}/${ARCH}"
-    export LIBS="-lfftw3f"
+    # aubio's FFTW backend uses pthread mutexes around FFTW plan lifecycle on
+    # Windows too, so the intermediate aubio DLL/static-lib link must pull in
+    # the MinGW pthread runtime rather than relying on the app's final link.
+    export LIBS="-lfftw3f -lpthread"
     export PKG_CONFIG_PATH="${FFTW3_PKGCONFIG_BASE}/${ARCH}${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}"
     python3 ./waf configure "${WAF_FLAGS[@]}" "--check-c-compiler=${WAF_CC_NAME}" --prefix="${WORK_DIR}/install"
     python3 ./waf build "${WAF_FLAGS[@]}"
@@ -199,6 +229,8 @@ if [[ ! -f "${BUILD_DIR}/aubio.tar.bz2" ]]; then
     curl -L "${AUBIO_URL}" -o "${BUILD_DIR}/aubio.tar.bz2"
 fi
 echo "==> Extracting..."
+rm -rf "${BUILD_DIR}/src"
+mkdir -p "${BUILD_DIR}/src"
 tar -xjf "${BUILD_DIR}/aubio.tar.bz2" -C "${BUILD_DIR}/src" --strip-components=1
 
 TARGET="${1:-all}"

@@ -23,7 +23,7 @@ func (m *mockTrackRepo) GetByID(ctx context.Context, id string) (*domain.TrackDT
 
 type mockAnalysisRepo struct {
 	domain.AnalysisRepository
-	mu       sync.Mutex
+	mu        sync.Mutex
 	versions  map[string]int
 	calls     []string // order of UpsertFeatures calls (analyzer-call order proxy)
 	moodCalls []string // order of UpsertMoodFeatures calls
@@ -322,26 +322,46 @@ func TestBoostPriorityPromotesQueuedTrack(t *testing.T) {
 	}
 }
 
-func TestAnalysisWorkerCount(t *testing.T) {
+func TestMaxWorkerCount(t *testing.T) {
 	old := numCPU
 	defer func() { numCPU = old }()
 
 	cases := []struct {
 		cores, want int
 	}{
-		{1, 1},   // clamp up to at least 1
-		{2, 1},   // 2/4 -> 0 -> clamped to 1
-		{4, 1},   // 4/4 = 1
-		{8, 2},   // 8/4 = 2
-		{12, 3},  // the reporter's i5: 12 threads -> 3, not 6
-		{16, 4},  // 16/4 = 4 (at cap)
-		{32, 4},  // clamped to maxAnalysisWorkers
-		{128, 4}, // clamped
+		{1, 1},  // clamp up to at least 1
+		{2, 1},  // 2/2 = 1
+		{4, 2},  // 4/2 = 2
+		{8, 4},  // 8/2 = 4
+		{12, 6}, // 12/2 = 6
+		{16, 8}, // 16/2 = 8
 	}
 	for _, c := range cases {
 		numCPU = func() int { return c.cores }
-		if got := analysisWorkerCount(); got != c.want {
-			t.Errorf("analysisWorkerCount() with %d cores = %d, want %d", c.cores, got, c.want)
+		if got := MaxWorkerCount(); got != c.want {
+			t.Errorf("MaxWorkerCount() with %d cores = %d, want %d", c.cores, got, c.want)
+		}
+	}
+}
+
+func TestClampWorkerCount(t *testing.T) {
+	old := numCPU
+	defer func() { numCPU = old }()
+
+	cases := []struct {
+		cores, requested, want int
+	}{
+		{8, 0, DefaultWorkerCount},  // unset -> default
+		{8, -1, DefaultWorkerCount}, // invalid -> default
+		{8, 2, 2},
+		{8, 10, 4}, // clamped to MaxWorkerCount() (8/2)
+		{2, 5, 1},  // MaxWorkerCount() with 2 cores = 1
+		{16, 3, 3},
+	}
+	for _, c := range cases {
+		numCPU = func() int { return c.cores }
+		if got := clampWorkerCount(c.requested); got != c.want {
+			t.Errorf("clampWorkerCount(%d) with %d cores = %d, want %d", c.requested, c.cores, got, c.want)
 		}
 	}
 }

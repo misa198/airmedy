@@ -34,3 +34,22 @@ func (s *AnalysisService) SetLibraryAnalysisEnabled(enabled bool) error {
 func (s *AnalysisService) GetProgress() domain.AnalysisProgress {
 	return s.service.GetProgress()
 }
+
+// WorkerCountInfo is the current + max worker count, for the settings slider.
+type WorkerCountInfo struct {
+	Count int `json:"count"`
+	Max   int `json:"max"`
+}
+
+// GetWorkerCountInfo returns the currently configured worker count and the
+// maximum value the settings UI should allow (half the logical core count).
+func (s *AnalysisService) GetWorkerCountInfo() WorkerCountInfo {
+	count, max := s.service.GetWorkerCount(context.Background())
+	return WorkerCountInfo{Count: count, Max: max}
+}
+
+// SetWorkerCount persists the desired concurrent-worker count and applies it
+// live, restarting the pool if it's currently running.
+func (s *AnalysisService) SetWorkerCount(count int) error {
+	return s.service.SetWorkerCount(context.Background(), count)
+}
