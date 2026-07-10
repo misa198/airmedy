@@ -17,7 +17,10 @@
     "shuffle": "Aleatório",
     "repeat": "Repetir",
     "view": "Visualizar",
-    "search": "Buscar"
+    "search": "Buscar",
+    "help": "Ajuda",
+    "github": "GitHub",
+    "sponsor": "Patrocinar"
   },
   "tray": {
     "no_track": "Nenhuma faixa reproduzindo",

@@ -17,7 +17,10 @@
     "shuffle": "Phát ngẫu nhiên",
     "repeat": "Lặp lại",
     "view": "Xem",
-    "search": "Tìm kiếm"
+    "search": "Tìm kiếm",
+    "help": "Trợ giúp",
+    "github": "GitHub",
+    "sponsor": "Tài trợ"
   },
   "tray": {
     "no_track": "Không có bài hát đang phát",

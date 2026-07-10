@@ -17,7 +17,10 @@
     "shuffle": "Shuffle",
     "repeat": "Repeat",
     "view": "View",
-    "search": "Search"
+    "search": "Search",
+    "help": "Help",
+    "github": "GitHub",
+    "sponsor": "Sponsor"
   },
   "tray": {
     "no_track": "No track playing",

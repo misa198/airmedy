@@ -17,7 +17,10 @@
     "shuffle": "สุ่ม",
     "repeat": "ทำซ้ำ",
     "view": "มุมมอง",
-    "search": "ค้นหา"
+    "search": "ค้นหา",
+    "help": "วิธีใช้",
+    "github": "GitHub",
+    "sponsor": "สนับสนุน"
   },
   "tray": {
     "no_track": "ไม่มีเพลงที่กำลังเล่น",

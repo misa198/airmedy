@@ -231,10 +231,16 @@ The frontend lives inside a **pnpm + Turbo monorepo** rooted at the repo root. S
 | EQ support          | AVAudioEngine EQ bands     | 10-band miniaudio chain|
 | OS Now Playing      | `MPNowPlayingInfoCenter`   | Windows SMTC / Linux MPRIS (D-Bus) |
 | Taskbar controls    | Not applicable             | Windows: thumbnail toolbar (`ITaskbarList3`, `infra/wails/thumbbar_*`) |
-| App menu            | Full macOS menu bar        | File menu only        |
+| App menu            | Airmedy, Edit, Playback, Window, Help | Edit, Playback, Window, Help |
 | Translucent window  | NSVisualEffectView         | Not applicable        |
 | Title bar colour    | Hidden (translucent)       | Windows: `DwmSetWindowAttribute` (Linux n/a) |
 | Single instance     | Wails default              | Loopback-socket guard + arg/deep-link relay (`singleinstance/`) |
+
+The macOS-only **Airmedy** menu contains the standard application actions. On all
+desktop platforms, **Help** contains GitHub and Sponsor actions that open the
+project repository and GitHub Sponsors page in the default browser. The menu is
+rebuilt when `language:changed` is emitted so these labels follow the selected
+backend locale.
 
 ## Native Build Artifacts (audio)
 

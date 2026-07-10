@@ -458,17 +458,6 @@ func buildAppMenu(wailsApp *application.App, i18nService *i18n.Service, playerSe
 		appMenu.AddRole(application.ShowAll)
 		appMenu.AddSeparator()
 		appMenu.AddRole(application.Quit)
-
-		menu.AddRole(application.FileMenu)
-	} else {
-		fileMenu := menu.AddSubmenu(i18nService.T("menu.file"))
-		fileMenu.Add(i18nService.T("menu.settings")).
-			SetAccelerator("Ctrl+,").
-			OnClick(func(ctx *application.Context) {
-				wailsApp.Event.Emit("open-settings")
-			})
-		fileMenu.AddSeparator()
-		fileMenu.AddRole(application.Quit)
 	}
 
 	menu.AddRole(application.EditMenu)
@@ -540,21 +529,21 @@ func buildAppMenu(wailsApp *application.App, i18nService *i18n.Service, playerSe
 			wailsApp.Event.Emit("player:cycle-repeat")
 		})
 
-	// View menu
-	viewMenu := menu.AddSubmenu(i18nService.T("menu.view"))
-	viewMenu.Add(i18nService.T("menu.search")).
-		SetAccelerator(ctrl + "+F").
-		OnClick(func(ctx *application.Context) {
-			wailsApp.Event.Emit("open-search")
-		})
-	viewMenu.AddSeparator()
-	viewMenu.AddRole(application.Reload)
-	viewMenu.AddRole(application.ForceReload)
-	viewMenu.AddRole(application.ToggleFullscreen)
-	viewMenu.AddRole(application.OpenDevTools)
-
 	menu.AddRole(application.WindowMenu)
-	menu.AddRole(application.HelpMenu)
+
+	helpMenu := menu.AddSubmenu(i18nService.T("menu.help"))
+	helpMenu.Add(i18nService.T("menu.github")).
+		OnClick(func(ctx *application.Context) {
+			if err := wailsApp.Browser.OpenURL("https://github.com/misa198/airmedy"); err != nil {
+				slog.Error("failed to open GitHub repository", "error", err)
+			}
+		})
+	helpMenu.Add(i18nService.T("menu.sponsor")).
+		OnClick(func(ctx *application.Context) {
+			if err := wailsApp.Browser.OpenURL("https://github.com/sponsors/misa198"); err != nil {
+				slog.Error("failed to open GitHub Sponsors", "error", err)
+			}
+		})
 
 	return menu
 }
