@@ -60,13 +60,14 @@ type PlayerService struct {
 
 	trackLoadListeners []func(*domain.TrackDTO)
 
-	statusListeners        []func(domain.PlayerStatus)
-	trackMetadataListeners []func(domain.PlayerTrackMetadata)
-	remoteStateListeners   []func(domain.RemotePlayerState)
-	queueListeners         []func([]*domain.TrackDTO)
-	scrobbleListeners      []func(*domain.TrackDTO, time.Time)
-	npListeners            []func(*domain.TrackDTO)
-	lyricsListeners        []func(*domain.Lyric)
+	statusListeners           []func(domain.PlayerStatus)
+	trackMetadataListeners    []func(domain.PlayerTrackMetadata)
+	remoteStateListeners      []func(domain.RemotePlayerState)
+	queueListeners            []func([]*domain.TrackDTO)
+	scrobbleListeners         []func(*domain.TrackDTO, time.Time)
+	npListeners               []func(*domain.TrackDTO)
+	lyricsListeners           []func(*domain.Lyric)
+	artworkCrossfadeListeners []func(domain.ArtworkCrossfadeEvent)
 }
 
 func NewPlayerService(
@@ -1357,6 +1358,19 @@ func (s *PlayerService) runCrossfade(cp domain.CrossfadePlayer, next *domain.Tra
 		return err
 	}
 
+	s.mu.RLock()
+	current := s.currentTrack
+	s.mu.RUnlock()
+	if current != nil {
+		s.emitArtworkCrossfade(domain.ArtworkCrossfadeEvent{
+			TransitionID:   gen,
+			Phase:          "start",
+			FromArtworkKey: current.ArtworkKey,
+			ToArtworkKey:   next.ArtworkKey,
+			DurationMS:     int(math.Round(effFade * 1000)),
+		})
+	}
+
 	s.transitionToTrack(next)
 
 	time.AfterFunc(time.Duration((effFade+0.3)*float64(time.Second)), func() {
@@ -1380,7 +1394,28 @@ func (s *PlayerService) snapCrossfade(gen int) bool {
 	if cp, ok := s.player.(domain.CrossfadePlayer); ok {
 		cp.FinishCrossfade()
 	}
+	s.emitArtworkCrossfade(domain.ArtworkCrossfadeEvent{TransitionID: gen, Phase: "end"})
 	return true
+}
+
+// emitArtworkCrossfade keeps fullscreen artwork synchronized with the native
+// overlap. It is deliberately separate from player:status so manual changes
+// cannot be mistaken for a crossfade by the frontend.
+func (s *PlayerService) emitArtworkCrossfade(event domain.ArtworkCrossfadeEvent) {
+	for _, listener := range s.artworkCrossfadeListeners {
+		listener(event)
+	}
+	app := application.Get()
+	if app != nil && app.Event != nil {
+		defer func() { _ = recover() }()
+		app.Event.Emit("player:artwork-crossfade", event)
+	}
+}
+
+// AddArtworkCrossfadeListener registers an observer for visual crossfade
+// lifecycle events. It is used by unit tests and non-Wails adapters.
+func (s *PlayerService) AddArtworkCrossfadeListener(listener func(domain.ArtworkCrossfadeEvent)) {
+	s.artworkCrossfadeListeners = append(s.artworkCrossfadeListeners, listener)
 }
 
 // snapActiveCrossfade snaps whatever fade is currently running, without

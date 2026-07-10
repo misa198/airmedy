@@ -178,6 +178,8 @@
       "crossfade": "Crossfade",
       "crossfade_desc": "Overlap the end of each track with the start of the next",
       "crossfade_duration": "Duration",
+      "blend_artwork_during_crossfade": "Blend artwork during crossfade",
+      "blend_artwork_during_crossfade_desc": "Blend album artwork in the fullscreen player for the same duration",
       "crossfade_off": "Off",
       "max_queue_size": "Max queue size",
       "max_queue_size_desc": "Caps how many tracks the play queue can hold, including the current track. Oldest tracks are dropped first once the limit is reached."

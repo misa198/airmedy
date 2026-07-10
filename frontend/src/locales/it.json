@@ -178,6 +178,8 @@
       "crossfade": "Dissolvenza incrociata",
       "crossfade_desc": "Sovrappone la fine di ogni brano con l'inizio del successivo",
       "crossfade_duration": "Durata",
+      "blend_artwork_during_crossfade": "Dissolvi la copertina durante il crossfade",
+      "blend_artwork_during_crossfade_desc": "Dissolve le copertine nel lettore a schermo intero per la stessa durata",
       "crossfade_off": "Disattivata",
       "max_queue_size": "Dimensione massima della coda",
       "max_queue_size_desc": "Limita il numero di brani che la coda di riproduzione può contenere, incluso quello attuale. I brani più vecchi vengono rimossi per primi al raggiungimento del limite."

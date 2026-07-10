@@ -113,6 +113,12 @@ const lufsMarkPct = (value: number) =>
       <SettingRow :title="t('settings.playback.crossfade')" :description="t('settings.playback.crossfade_desc')">
         <Switch :model-value="crossfadeEnabled" @update:model-value="onCrossfadeToggle" />
       </SettingRow>
+      <SettingRow class="transition-opacity" :class="!crossfadeEnabled && 'opacity-40 pointer-events-none'"
+        :title="t('settings.playback.blend_artwork_during_crossfade')"
+        :description="t('settings.playback.blend_artwork_during_crossfade_desc')">
+        <Switch :model-value="appStore.blendArtworkDuringCrossfade"
+          @update:model-value="appStore.updateBlendArtworkDuringCrossfade" />
+      </SettingRow>
       <div class="p-5 transition-opacity" :class="!crossfadeEnabled && 'opacity-40 pointer-events-none'">
         <div class="flex items-center justify-between gap-x-2 mb-3">
           <p class="text-sm font-semibold">{{ t('settings.playback.crossfade_duration') }}</p>

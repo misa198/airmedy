@@ -70,7 +70,10 @@ describe('FullScreenPlayer', () => {
         ],
         stubs: {
           LivingArtworkBackground: true,
-          PlayerArtwork: true,
+          PlayerArtwork: {
+            props: ['maxSize'],
+            template: '<div data-test="artwork" :data-max-size="maxSize" />',
+          },
           PlayerTrackInfo: true,
           PlayerSeekBar: true,
           PlayerPlaybackControls: true,
@@ -98,5 +101,17 @@ describe('FullScreenPlayer', () => {
     expect(store.playQueueIndex).toHaveBeenCalledOnce()
     expect(store.playQueueIndex).toHaveBeenCalledWith(1)
     expect(store.playTracks).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    [false, 22],
+    [true, 20],
+  ])('sets the artwork maximum size to %irem when the right column is %s', (rightColumnOpen, expectedMaxSize) => {
+    const wrapper = mountPlayer({
+      isQueueOpen: rightColumnOpen,
+      isLyricsOpen: false,
+    })
+
+    expect(wrapper.get('[data-test="artwork"]').attributes('data-max-size')).toBe(String(expectedMaxSize))
   })
 })

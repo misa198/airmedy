@@ -387,6 +387,7 @@ flowchart TB
   - *Completion:* `finishCrossfade` = native `FinishCrossfade` + pre-enqueue of the next-next track — pre-enqueueing is deferred to here because the idle deck/slot is occupied by the outgoing source until the fade ends.
   - *Interruptions:* `Pause`/`Seek` finish the fade first (`finishActiveCrossfade`); `Stop`/`loadAndPlay` snap it without re-enqueueing (`snapActiveCrossfade`), so a manual `Next`/`Previous`/`PlayQueueIndex` mid-fade snaps the overlap then hard-loads; `HandleTrackEnd` returns early while fading (belt-and-suspenders over the native guards). A mid-fade `SetCrossfadeSeconds` lets the in-flight fade complete with its captured duration.
   - *Repeat-one* fades the track into itself (the preload holds the same file in the second deck/slot); *end of queue* never triggers (no preload).
+  - On successful native fade start, emits `player:artwork-crossfade` with `{ transition_id, phase: "start", from_artwork_key, to_artwork_key, duration_ms }`; it emits the matching `phase: "end"` when the fade completes or is snapped. The frontend uses this event, rather than track-status changes, so manual navigation never blends artwork.
 
 Crossfade overlap lifecycle:
 
@@ -559,10 +560,11 @@ On app startup, `Load()` restores queue, seeks to saved position, but does not a
 | `player:queue-updated` | Queue modified (insert, remove, reorder, new playlist) |
 | `player:theme`         | New track loaded — artwork color palette               |
 | `player:lyrics`        | New track loaded — lyrics object (may be null)         |
+| `player:artwork-crossfade` | Automatic audio crossfade begins/ends; fullscreen artwork transition payload |
 
 ## Frontend Store (`stores/player.ts`)
 
-**State:** `status`, `queue`, `currentTrack`, `theme`, `lyrics`, `playerMode` (`sticky | mini | fullscreen`), drawer visibility flags.
+**State:** `status`, `queue`, `currentTrack`, `theme`, `lyrics`, `artworkCrossfade`, `playerMode` (`sticky | mini | fullscreen`), drawer visibility flags.
 
 **Playback Interpolation:**
 To ensure smooth 60fps progress updates and reduce IPC overhead, the store uses a **Sync-and-Drift** mechanism:
@@ -573,6 +575,8 @@ To ensure smooth 60fps progress updates and reduce IPC overhead, the store uses 
 **Computed:** `isPlaying`, `isPaused`, `progressPercent`, `artworkUrl`, `artworkUrlMd`, `artworkUrlSm`.
 
 **Artwork URLs:** Constructed from `artworkKey` using variant naming: `{key}_sm.jpg` (64px), `{key}_md.jpg` (500px), `{key}.jpg` (original).
+
+When `BlendArtworkDuringCrossfade` is on (default), `FullScreenPlayer` keeps the outgoing cover below the preloaded incoming cover and advances both layers with the same equal-power curve as audio: outgoing opacity `cos(t*pi/2)`, incoming opacity `sin(t*pi/2)`. The incoming layer uses `plus-lighter` compositing so both weights contribute visually over the event's exact effective audio fade duration. This is fullscreen-only; player bars and mini players switch immediately. Disabling the setting settles an active transition on the incoming cover.
 
 **Player modes:**
 

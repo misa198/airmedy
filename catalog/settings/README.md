@@ -49,6 +49,7 @@ type AppSettings struct {
     ComposerDelimiters     []string
     MaxQueueSize            int                // play queue cap, incl. current track; one of domain.ValidMaxQueueSizes (100/500/1000/2000/3000), default 1000
     CrossfadeSeconds        int                // track-transition overlap in seconds, clamped to [0, domain.MaxCrossfadeSeconds]=12; 0 = off (gapless), default 0
+    BlendArtworkDuringCrossfade bool           // fullscreen cover blend during automatic crossfade, default true
 }
 ```
 
@@ -105,6 +106,7 @@ interface AppStore {
   useOnlineArtistArtwork: boolean;
   preventSleepWhilePlaying: boolean;
   crossfadeSeconds: number; // 0–CROSSFADE_MAX_SECONDS (12); 0 = off; slider in PlaybackSettings.vue
+  blendArtworkDuringCrossfade: boolean; // default true; fullscreen only
   artistDelimiters: string[];
   albumArtistDelimiters: string[];
   genreDelimiters: string[];
@@ -239,6 +241,7 @@ Settings evolved across multiple migrations:
 | 000025    | Split artist artwork into per-source key columns                 |
 | 000027    | Add `lyrics_folder_enabled`, `lyrics_folder_path`, `lyrics_subfolder_enabled`, `lyrics_subfolder_name` (folder + subfolder lyrics lookup) |
 | 000028    | Re-add `prefer_local_artist_artwork BOOLEAN NOT NULL DEFAULT 1` (nested sub-toggle under online artwork) |
+| 000049    | Add `blend_artwork_during_crossfade BOOLEAN NOT NULL DEFAULT 1` |
 | 000030    | Add `artist_delimiters`, `album_artist_delimiters`, `genre_delimiters`, `composer_delimiters` (TEXT JSON arrays, default `'[";","\\",","]'`) |
 | 000032    | Add `,` to the default delimiter set for rows still on the previous default `'[";","\\"]'` |
 | 000033    | Update default delimiters: change single backslash `\` to double backslash `\\` (JSON `'[";","\\\\",","]'`) for rows still on the previous default |

@@ -178,6 +178,8 @@
       "crossfade": "Chuyển bài mượt",
       "crossfade_desc": "Chồng phần cuối của mỗi bài với phần đầu của bài tiếp theo",
       "crossfade_duration": "Thời lượng",
+      "blend_artwork_during_crossfade": "Hòa ảnh bìa khi chuyển bài mượt",
+      "blend_artwork_during_crossfade_desc": "Hòa ảnh bìa trong trình phát toàn màn hình cùng thời lượng chuyển bài",
       "crossfade_off": "Tắt",
       "max_queue_size": "Giới hạn hàng đợi",
       "max_queue_size_desc": "Giới hạn số track tối đa trong hàng đợi phát, tính cả track đang phát. Khi vượt giới hạn, track cũ nhất sẽ bị loại bỏ trước."

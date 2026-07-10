@@ -178,6 +178,8 @@
       "crossfade": "クロスフェード",
       "crossfade_desc": "各トラックの終わりを次のトラックの始まりと重ねる",
       "crossfade_duration": "長さ",
+      "blend_artwork_during_crossfade": "クロスフェード中にアートワークをブレンド",
+      "blend_artwork_during_crossfade_desc": "フルスクリーンプレーヤーで同じ時間だけアルバムアートをブレンドします",
       "crossfade_off": "オフ",
       "max_queue_size": "キューの最大サイズ",
       "max_queue_size_desc": "再生キューに保持できるトラック数の上限（現在のトラックを含む）。上限に達すると、最も古いトラックから削除されます。"

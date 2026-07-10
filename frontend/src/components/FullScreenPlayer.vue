@@ -79,11 +79,16 @@ const trackArtist = computed(() =>
 const albumTitle = computed(() => store.currentTrack?.album?.title ?? '')
 
 const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
+const artworkMaxSize = computed(() => showRightColumn.value ? 20 : 22)
+const artworkCrossfade = computed(() =>
+  appStore.blendArtworkDuringCrossfade ? store.artworkCrossfade : null,
+)
 </script>
 
 <template>
   <div class="fixed inset-0 z-100 flex flex-col overflow-hidden bg-[#0A0A0A] select-none dark">
-    <LivingArtworkBackground :theme="store.theme" :is-playing="store.isPlaying" />
+    <LivingArtworkBackground :theme="store.theme" :is-playing="store.isPlaying"
+      :artwork-crossfade="artworkCrossfade" />
 
     <div class="relative z-10 flex flex-col h-full text-white">
       <!-- Top bar -->
@@ -118,6 +123,8 @@ const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
             <div class="flex flex-col items-center justify-center gap-[clamp(0.75rem,2.5vh,1.5rem)] w-full min-h-0">
               <!-- Artwork -->
               <PlayerArtwork :artwork-url="store.artworkUrl" :track-title="trackTitle" :is-playing="store.isPlaying"
+                :crossfade="artworkCrossfade"
+                :max-size="artworkMaxSize"
                 class="cursor-pointer"
                 @click="openTrackInfo"
                 @contextmenu.prevent="openContextMenu" />

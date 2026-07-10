@@ -178,6 +178,8 @@
       "crossfade": "Überblenden",
       "crossfade_desc": "Das Ende jedes Titels mit dem Anfang des nächsten überlappen",
       "crossfade_duration": "Dauer",
+      "blend_artwork_during_crossfade": "Albumcover beim Überblenden mischen",
+      "blend_artwork_during_crossfade_desc": "Mischt Albumcover im Vollbild-Player für dieselbe Dauer",
       "crossfade_off": "Aus",
       "max_queue_size": "Maximale Warteschlangengröße",
       "max_queue_size_desc": "Begrenzt, wie viele Titel die Wiedergabeliste enthalten kann, einschließlich des aktuellen Titels. Die ältesten Titel werden zuerst entfernt, sobald das Limit erreicht ist."

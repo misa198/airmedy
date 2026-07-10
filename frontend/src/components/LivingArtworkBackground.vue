@@ -3,9 +3,15 @@ import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { Renderer, Program, Mesh, Triangle } from 'ogl'
 import type { ThemeColors } from '../../bindings/airmedy/internal/domain/models'
 
+type ArtworkCrossfadeTiming = {
+  transitionId: number
+  durationMs: number
+}
+
 const props = defineProps<{
   theme: ThemeColors | null,
   isPlaying?: boolean,
+  artworkCrossfade?: ArtworkCrossfadeTiming | null,
 }>()
 const containerRef = ref<HTMLDivElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -55,7 +61,14 @@ function colorsFromTheme(theme: ThemeColors | null) {
 }
 
 const targetColors = ref(colorsFromTheme(props.theme))
-watch(() => props.theme, (t) => { targetColors.value = colorsFromTheme(t) })
+let targetVersion = 0
+watch(() => props.theme, (t) => {
+  targetColors.value = colorsFromTheme(t)
+  targetVersion++
+})
+watch(() => props.artworkCrossfade?.transitionId, (id) => {
+  if (id !== undefined) targetVersion++
+})
 
 // --- Shaders ---
 
@@ -212,6 +225,13 @@ onMounted(() => {
   const FRAME_MS = 1000 / 30 // 30 fps cap — motion is too slow to need 60 fps
   let lastTime = 0
   let currentUtime = 0
+  let appliedTargetVersion = -1
+  let colorTransitionStartedAt = 0
+  let colorTransitionFrom: { c1: Vec3, c2: Vec3, c3: Vec3, base: Vec3 } = {
+    c1: [...curC1], c2: [...curC2], c3: [...curC3], base: [...curBase],
+  }
+  let colorTransitionId: number | null = null
+  let colorTransitionDurationMs = 1500
 
   function render(time: number) {
     rafId = requestAnimationFrame(render)
@@ -224,11 +244,38 @@ onMounted(() => {
     currentUtime += dt * speed
 
     const { c1, c2, c3, base } = targetColors.value
-    const f = 1 - Math.exp(-dt * 1.5)
-    curC1 = lerp3(curC1, c1, f)
-    curC2 = lerp3(curC2, c2, f)
-    curC3 = lerp3(curC3, c3, f)
-    curBase = lerp3(curBase, base, f)
+    if (targetVersion !== appliedTargetVersion) {
+      const crossfade = props.artworkCrossfade
+      // A delayed player:theme event belongs to the same artwork transition;
+      // do not restart its clock when the palette arrives asynchronously.
+      if (crossfade?.transitionId !== colorTransitionId) {
+        colorTransitionFrom = {
+          c1: [...curC1], c2: [...curC2], c3: [...curC3], base: [...curBase],
+        }
+        colorTransitionStartedAt = time
+        colorTransitionId = crossfade?.transitionId ?? null
+        colorTransitionDurationMs = crossfade?.durationMs ?? 1500
+      }
+      appliedTargetVersion = targetVersion
+    }
+
+    const crossfade = props.artworkCrossfade
+    if (crossfade && colorTransitionId === crossfade.transitionId) {
+      const progress = Math.min(1, Math.max(0, (time - colorTransitionStartedAt) / Math.max(1, colorTransitionDurationMs)))
+      const incomingWeight = Math.sin(progress * Math.PI / 2)
+      const outgoingWeight = Math.cos(progress * Math.PI / 2)
+      curC1 = [colorTransitionFrom.c1[0] * outgoingWeight + c1[0] * incomingWeight, colorTransitionFrom.c1[1] * outgoingWeight + c1[1] * incomingWeight, colorTransitionFrom.c1[2] * outgoingWeight + c1[2] * incomingWeight]
+      curC2 = [colorTransitionFrom.c2[0] * outgoingWeight + c2[0] * incomingWeight, colorTransitionFrom.c2[1] * outgoingWeight + c2[1] * incomingWeight, colorTransitionFrom.c2[2] * outgoingWeight + c2[2] * incomingWeight]
+      curC3 = [colorTransitionFrom.c3[0] * outgoingWeight + c3[0] * incomingWeight, colorTransitionFrom.c3[1] * outgoingWeight + c3[1] * incomingWeight, colorTransitionFrom.c3[2] * outgoingWeight + c3[2] * incomingWeight]
+      curBase = [colorTransitionFrom.base[0] * outgoingWeight + base[0] * incomingWeight, colorTransitionFrom.base[1] * outgoingWeight + base[1] * incomingWeight, colorTransitionFrom.base[2] * outgoingWeight + base[2] * incomingWeight]
+    } else {
+      const f = 1 - Math.exp(-dt * 1.5)
+      curC1 = lerp3(curC1, c1, f)
+      curC2 = lerp3(curC2, c2, f)
+      curC3 = lerp3(curC3, c3, f)
+      curBase = lerp3(curBase, base, f)
+      colorTransitionId = null
+    }
 
     program.uniforms.uTime.value = currentUtime
     program.uniforms.uColor1.value = curC1

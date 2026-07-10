@@ -460,6 +460,10 @@ type AppSettings struct {
 	// clamped to [0, MaxCrossfadeSeconds]. Zero disables crossfade (gapless).
 	CrossfadeSeconds int `json:"crossfade_seconds"`
 
+	// BlendArtworkDuringCrossfade controls the fullscreen album-art transition
+	// for automatic audio crossfades. It does not affect audio playback.
+	BlendArtworkDuringCrossfade bool `json:"blend_artwork_during_crossfade"`
+
 	// Library analysis pipeline (feeds Normalization). Opt-in: off disables the
 	// background worker pool entirely (no backfill/enqueue/boost). Normalization
 	// cannot be enabled while this is off.
@@ -489,4 +493,14 @@ type AppSettings struct {
 	// stale (< this value) and therefore re-picked-up for re-derivation.
 	// Not user-facing.
 	MoodDerivationVersion int `json:"mood_derivation_version"`
+}
+
+// ArtworkCrossfadeEvent describes one visual artwork transition that follows
+// an automatic audio crossfade. Phase is either "start" or "end".
+type ArtworkCrossfadeEvent struct {
+	TransitionID   int    `json:"transition_id"`
+	Phase          string `json:"phase"`
+	FromArtworkKey string `json:"from_artwork_key,omitempty"`
+	ToArtworkKey   string `json:"to_artwork_key,omitempty"`
+	DurationMS     int    `json:"duration_ms,omitempty"`
 }

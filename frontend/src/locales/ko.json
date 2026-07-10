@@ -178,6 +178,8 @@
       "crossfade": "크로스페이드",
       "crossfade_desc": "각 트랙의 끝을 다음 트랙의 시작과 겹치게 합니다",
       "crossfade_duration": "지속 시간",
+      "blend_artwork_during_crossfade": "크로스페이드 중 앨범 아트 혼합",
+      "blend_artwork_during_crossfade_desc": "전체 화면 플레이어에서 같은 시간 동안 앨범 아트를 혼합합니다",
       "crossfade_off": "끄기",
       "max_queue_size": "최대 대기열 크기",
       "max_queue_size_desc": "현재 트랙을 포함하여 재생 대기열에 담을 수 있는 트랙 수를 제한합니다. 한도에 도달하면 가장 오래된 트랙부터 제거됩니다."

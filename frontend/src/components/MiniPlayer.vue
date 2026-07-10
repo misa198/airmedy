@@ -4,21 +4,32 @@ import { usePlayerStore } from '../stores/player'
 import { formatTime, getTrackDisplayTitle } from '@airmedy/utils'
 import { MarqueeText } from '@airmedy/ui'
 import LazyImg from '@/components/LazyImg.vue'
+import { computed } from 'vue'
+import { useAppStore } from '@/stores/app'
+import { useArtworkCrossfadeOpacity } from '@/composables/useArtworkCrossfadeOpacity'
 
 const store = usePlayerStore()
+const appStore = useAppStore()
+const artworkCrossfade = computed(() =>
+  appStore.blendArtworkDuringCrossfade ? store.artworkCrossfade : null,
+)
+const { outgoingOpacity, incomingOpacity } = useArtworkCrossfadeOpacity(artworkCrossfade)
 </script>
 
 <template>
   <div class="h-14 bg-background/80 backdrop-blur-2xl border-t border-foreground/[0.06] flex items-center px-4 gap-3">
     <!-- Artwork + track info -->
     <div class="flex items-center gap-3 flex-1 min-w-0">
-      <div class="w-9 h-9 rounded-md flex-shrink-0 overflow-hidden ring-1 ring-foreground/10 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+      <div class="relative w-9 h-9 rounded-md flex-shrink-0 overflow-hidden ring-1 ring-foreground/10 cursor-pointer transition-transform hover:scale-105 active:scale-95"
         @click="store.openTrackInfo(store.currentTrack)">
-        <LazyImg
-          v-if="store.artworkUrlSm"
-          :src="store.artworkUrlSm"
-          class="w-full h-full object-cover"
-        />
+        <template v-if="artworkCrossfade">
+          <LazyImg v-if="artworkCrossfade.fromUrl" :src="artworkCrossfade.fromUrl"
+            class="absolute inset-0 w-full h-full object-cover" :style="{ opacity: outgoingOpacity }" />
+          <LazyImg v-if="artworkCrossfade.toUrl" :src="artworkCrossfade.toUrl"
+            class="absolute inset-0 w-full h-full object-cover artwork-crossfade-incoming"
+            :style="{ opacity: incomingOpacity }" />
+        </template>
+        <LazyImg v-else-if="store.artworkUrlSm" :src="store.artworkUrlSm" class="w-full h-full object-cover" />
         <div v-else class="w-full h-full bg-foreground/5 flex items-center justify-center">
           <Music class="w-4 h-4 text-foreground opacity-40" />
         </div>
@@ -63,3 +74,7 @@ const store = usePlayerStore()
     </div>
   </div>
 </template>
+
+<style scoped>
+.artwork-crossfade-incoming { mix-blend-mode: plus-lighter; }
+</style>

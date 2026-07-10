@@ -16,10 +16,15 @@ import * as WindowService from '../../bindings/airmedy/internal/infra/wails/wind
 import PlayerControlButton from './player/PlayerControlButton.vue'
 import { useAppStore } from '@/stores/app'
 import { useDeviceStore } from '@/stores/device'
+import { useArtworkCrossfadeOpacity } from '@/composables/useArtworkCrossfadeOpacity'
 
 const store = usePlayerStore()
 const appStore = useAppStore()
 const deviceStore = useDeviceStore()
+const artworkCrossfade = computed(() =>
+  appStore.blendArtworkDuringCrossfade ? store.artworkCrossfade : null,
+)
+const { outgoingOpacity, incomingOpacity } = useArtworkCrossfadeOpacity(artworkCrossfade)
 
 const alwaysOnTop = ref(false)
 const isSeeking = ref(false)
@@ -88,7 +93,14 @@ watch(() => store.theme, (colors) => {
     @mouseenter="isHovered = true" @mouseleave="isHovered = false">
     <!-- Artwork fills entire window -->
     <div class="absolute inset-0 bg-[#0A0A0A]" style="-webkit-app-region: no-drag">
-      <LazyImg v-if="store.artworkUrl" :src="store.artworkUrl" :alt="trackTitle" class="w-full h-full object-cover" />
+      <template v-if="artworkCrossfade">
+        <LazyImg v-if="artworkCrossfade.fromUrl" :src="artworkCrossfade.fromUrl" :alt="trackTitle"
+          class="absolute inset-0 w-full h-full object-cover" :style="{ opacity: outgoingOpacity }" />
+        <LazyImg v-if="artworkCrossfade.toUrl" :src="artworkCrossfade.toUrl" :alt="trackTitle"
+          class="absolute inset-0 w-full h-full object-cover artwork-crossfade-incoming"
+          :style="{ opacity: incomingOpacity }" />
+      </template>
+      <LazyImg v-else-if="store.artworkUrl" :src="store.artworkUrl" :alt="trackTitle" class="w-full h-full object-cover" />
       <div v-else class="w-full h-full flex items-center justify-center bg-white/5">
         <Music class="w-16 h-16 text-white/20" />
       </div>
@@ -195,6 +207,10 @@ watch(() => store.theme, (colors) => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.artwork-crossfade-incoming { mix-blend-mode: plus-lighter; }
+</style>
 
 <style scoped>
 .fade-enter-active,

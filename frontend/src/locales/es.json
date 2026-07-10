@@ -178,6 +178,8 @@
       "crossfade": "Fundido cruzado",
       "crossfade_desc": "Superpone el final de cada pista con el inicio de la siguiente",
       "crossfade_duration": "Duración",
+      "blend_artwork_during_crossfade": "Mezclar carátula durante el fundido",
+      "blend_artwork_during_crossfade_desc": "Mezcla las carátulas en el reproductor de pantalla completa durante la misma duración",
       "crossfade_off": "Desactivado",
       "max_queue_size": "Tamaño máximo de la cola",
       "max_queue_size_desc": "Limita cuántas pistas puede contener la cola de reproducción, incluyendo la pista actual. Las pistas más antiguas se eliminan primero al alcanzar el límite."

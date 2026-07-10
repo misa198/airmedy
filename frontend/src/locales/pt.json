@@ -178,6 +178,8 @@
       "crossfade": "Crossfade",
       "crossfade_desc": "Sobrepõe o final de cada faixa com o início da próxima",
       "crossfade_duration": "Duração",
+      "blend_artwork_during_crossfade": "Misturar capa durante o crossfade",
+      "blend_artwork_during_crossfade_desc": "Mistura as capas no player em tela cheia pela mesma duração",
       "crossfade_off": "Desativado",
       "max_queue_size": "Tamanho máximo da fila",
       "max_queue_size_desc": "Limita quantas faixas a fila de reprodução pode conter, incluindo a faixa atual. As faixas mais antigas são removidas primeiro ao atingir o limite."
