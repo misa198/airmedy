@@ -24,7 +24,7 @@
 ---
 
 <div align="center">
-<img src="docs/remote.webp" alt="remote" width="824" />
+<img src="docs/remote-1.webp" alt="remote" width="824" />
 </div>
 
 ---
