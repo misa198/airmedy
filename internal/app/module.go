@@ -9,6 +9,7 @@ import (
 	"airmedy/internal/app/lastfm"
 	"airmedy/internal/app/library"
 	"airmedy/internal/app/lyrics"
+	"airmedy/internal/app/moodradio"
 	"airmedy/internal/app/normalization"
 	"airmedy/internal/app/player"
 	"airmedy/internal/app/playlist"
@@ -93,6 +94,7 @@ var Module = fx.Module("app",
 	lyrics.Module,
 	eq.Module,
 	normalization.Module,
+	moodradio.Module,
 	lastfm.Module,
 	appsettings.Module,
 	remoteserver.Module,

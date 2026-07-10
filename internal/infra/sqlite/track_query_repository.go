@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"airmedy/internal/domain"
@@ -24,7 +25,7 @@ const (
 	similarityWeightTempo        = 1.0
 )
 
-func (r *trackQueryRepository) FindSimilar(ctx context.Context, seedTrackID string, limit int) ([]*domain.TrackDTO, error) {
+func (r *trackQueryRepository) FindSimilar(ctx context.Context, seedTrackID string, excludeTrackIDs []string, limit int) ([]*domain.TrackDTO, error) {
 	// If the seed track itself has no analyzed feature row, every correlated
 	// subquery below yields NULL, so all distances are NULL and ORDER BY
 	// degenerates to an arbitrary order — returning tracks unrelated to the
@@ -50,11 +51,29 @@ func (r *trackQueryRepository) FindSimilar(ctx context.Context, seedTrackID stri
 	// dominate the distance regardless of weighting. Unanalyzed tracks
 	// (NULL features) are excluded so they never rank as spuriously "close"
 	// due to SQL NULL arithmetic.
+	exclusions := ""
+	var exclusionJSON string
+	if len(excludeTrackIDs) > 0 {
+		exclusionBytes, err := json.Marshal(excludeTrackIDs)
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode excluded track IDs: %w", err)
+		}
+		exclusionJSON = string(exclusionBytes)
+		// json_each keeps the entire exclusion list in one bind parameter. This
+		// avoids SQLite's variable limit when a user's queue has thousands of
+		// tracks, without needing a connection-scoped temporary table.
+		exclusions = `
+		  AND NOT EXISTS (
+			  SELECT 1 FROM json_each(?) excluded
+			  WHERE excluded.value = t.id
+		  )`
+	}
 	query := `
 		SELECT t.id
 		FROM tracks t
 		JOIN track_features tf ON tf.track_id = t.id
 		WHERE t.id != ?
+		` + exclusions + `
 		  AND tf.energy IS NOT NULL
 		  AND tf.danceability IS NOT NULL
 		  AND tf.tempo IS NOT NULL
@@ -70,11 +89,16 @@ func (r *trackQueryRepository) FindSimilar(ctx context.Context, seedTrackID stri
 	`
 	args := []any{
 		seedTrackID,
+	}
+	if exclusionJSON != "" {
+		args = append(args, exclusionJSON)
+	}
+	args = append(args,
 		similarityWeightEnergy, seedTrackID, seedTrackID,
 		similarityWeightDanceability, seedTrackID, seedTrackID,
 		similarityWeightTempo, seedTrackID, seedTrackID,
 		limit,
-	}
+	)
 
 	var ids []string
 	if err := r.db.Ext(ctx).SelectContext(ctx, &ids, query, args...); err != nil {

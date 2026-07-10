@@ -275,19 +275,33 @@ backfills it.
 
 "Give me more like this" queue seeding/auto-refill, gated on
 `AppSettings.LibraryAnalysisEnabled` (energy/danceability/tempo are its only
-inputs). `MoodRadioService.SeedMoodRadio(seedTrackID, limit)` calls
-`TrackQueryRepository.FindSimilar`, which ranks analyzed tracks by weighted-
-euclidean distance over `energy`/`danceability`/`tempo` (tempo scaled `/200`
-to bring its BPM range in line with the 0-1 normalized features), computed
-entirely in SQL via correlated subqueries against the seed's own feature row,
-excluding unanalyzed tracks and the seed itself. If the seed track itself has
-no analyzed feature row, `FindSimilar` returns no results (rather than an
-arbitrary order from NULL-valued distances).
+inputs). `MoodRadioService.GenerateMoodRadio(seedTrackID, excludeTrackIDs,
+limit)` forwards to `app/moodradio.Service`. The service asks
+`TrackQueryRepository.FindSimilar` for the nearest 80 analyzed candidates,
+excluding the seed and every supplied queue/history ID. SQLite ranks candidates
+by weighted-euclidean distance over `energy`/`danceability`/`tempo` (tempo
+scaled `/200` to bring its BPM range in line with the 0-1 normalized features),
+computed entirely in SQL via correlated subqueries against the seed's own
+feature row. If the seed track itself has no analyzed feature row, `FindSimilar`
+returns no results (rather than an arbitrary order from NULL-valued distances).
+The exclusion IDs are encoded as one JSON array and filtered with SQLite
+`json_each(?)`, so a large playback queue does not consume one SQL bind
+parameter per track.
+
+The app service turns those deterministic candidates into a varied batch. Its
+first three selections are weighted-random within the top 20; remaining
+selections use the full candidate pool with rank weight `1 / sqrt(rank + 1)`.
+Selection is without replacement and avoids a primary artist from the previous
+three tracks plus a second track from an already selected album whenever an
+alternative exists. It relaxes the album rule first, then artist cooldown, so
+small libraries still receive a full batch.
 
 The frontend store starts Mood Radio by seeding + prepending the seed track
 (`FindSimilar` always excludes it), then auto-refills the queue as it drains
 below `REFILL_THRESHOLD` (3) remaining tracks, appending `SEED_BATCH_SIZE` (15)
-more similar tracks at a time and deduping against what's already queued.
+more similar tracks at a time. The whole existing queue is supplied as
+`excludeTrackIDs` on refill, so already queued/played tracks are removed before
+the SQL candidate limit rather than being discarded too late in the frontend.
 Turning off Library Analysis mid-session stops the radio immediately (watched
 reactively), since its only data source just went away.
 
