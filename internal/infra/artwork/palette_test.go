@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"image/jpeg"
+	"image/png"
 	"os"
 	"path/filepath"
 	"strings"
@@ -45,6 +46,46 @@ func TestExtractPalette_SolidColor(t *testing.T) {
 		if !strings.HasPrefix(hex, "#") || len(hex) != 7 {
 			t.Errorf("invalid hex format: %q", hex)
 		}
+	}
+}
+
+func TestExtractPalette_PreservesSmallVibrantAccent(t *testing.T) {
+	dir := t.TempDir()
+	img := image.NewRGBA(image.Rect(0, 0, 1000, 1000))
+	white := color.RGBA{R: 250, G: 250, B: 250, A: 255}
+	red := color.RGBA{R: 220, G: 20, B: 35, A: 255}
+	for y := range 1000 {
+		for x := range 1000 {
+			img.SetRGBA(x, y, white)
+		}
+	}
+	// Place the accent late in pixel order so k-means' evenly-spaced seeds are
+	// all white. The independent accent pass must still retain it.
+	for y := 900; y < 940; y++ {
+		for x := 900; x < 940; x++ {
+			img.SetRGBA(x, y, red)
+		}
+	}
+
+	path := filepath.Join(dir, "accent.png")
+	f, err := os.Create(path)
+	if err != nil {
+		t.Fatalf("create image: %v", err)
+	}
+	if err := png.Encode(f, img); err != nil {
+		_ = f.Close()
+		t.Fatalf("encode image: %v", err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatalf("close image: %v", err)
+	}
+
+	palette, err := ExtractPalette(path)
+	if err != nil {
+		t.Fatalf("ExtractPalette: %v", err)
+	}
+	if palette.Vibrant != "#DC1423" {
+		t.Errorf("Vibrant = %s, want small red accent #DC1423", palette.Vibrant)
 	}
 }
 

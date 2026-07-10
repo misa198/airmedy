@@ -55,11 +55,11 @@ Called via `LibraryService.GetAlbumColors(albumID)` or `LibraryService.GetArtist
 ### Algorithm
 
 1. **Decode** the cached JPEG/PNG.
-2. **Downsample** to 64×64px thumbnail for speed.
+2. **Downsample** to a 64×64px thumbnail for dominant/muted clustering, plus a 256×256 sample for accent detection.
 3. **Collect pixels:** Non-transparent pixels only (alpha ≥ `0x8000`).
 4. **K-means clustering:** k=3, 10 iterations. Each cluster centroid is an RGB color.
 5. **Classify clusters:**
-   - **Vibrant** — cluster with highest `saturation × value` (HSV) score.
+   - **Vibrant** — highest-scoring recurring saturated RGB bucket from the 256px accent sample (minimum 0.1% coverage or 4 pixels); this preserves small coloured text/logos that k-means would otherwise miss. Falls back to the cluster with highest `saturation × value` (HSV) score when no accent exists.
    - **Dominant** — cluster with the largest pixel count.
    - **Muted** — the remaining cluster.
 6. Return as `ThemeColors{Vibrant, Dominant, Muted}` as hex strings (`#RRGGBB`).

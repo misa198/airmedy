@@ -8,6 +8,7 @@ const props = defineProps<{
   lyrics?: string
   isLoading?: boolean
   currentPosition?: number
+  immersive?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -46,6 +47,7 @@ const { isSynced, syncedLines, plainLines } = useLyrics(toRef(props, 'lyrics'))
       class="flex-1"
       :lines="syncedLines"
       :current-position="currentPosition ?? 0"
+      :immersive="immersive"
       @seek="(time) => emit('seek', time)"
     />
 

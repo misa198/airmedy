@@ -162,6 +162,9 @@ func TestNormalizationSettingsRoundTrip(t *testing.T) {
 	if def.LibraryAnalysisEnabled != false {
 		t.Errorf("Expected LibraryAnalysisEnabled default false, got %+v", def)
 	}
+	if def.HighContrastLyrics != true {
+		t.Errorf("Expected HighContrastLyrics default true, got %+v", def)
+	}
 
 	// Non-default values round-trip.
 	in := &domain.AppSettings{
@@ -172,6 +175,7 @@ func TestNormalizationSettingsRoundTrip(t *testing.T) {
 		NormalizationMode:        "album",
 		NormalizationTargetLUFS:  -18,
 		NormalizationPreventClip: false,
+		HighContrastLyrics:       false,
 	}
 	if err := repo.Save(ctx, in); err != nil {
 		t.Fatalf("Failed to save settings: %v", err)
@@ -186,5 +190,8 @@ func TestNormalizationSettingsRoundTrip(t *testing.T) {
 	}
 	if out.LibraryAnalysisEnabled != true {
 		t.Errorf("LibraryAnalysisEnabled round-trip mismatch: %+v", out)
+	}
+	if out.HighContrastLyrics != false {
+		t.Errorf("HighContrastLyrics round-trip mismatch: %+v", out)
 	}
 }

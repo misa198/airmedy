@@ -55,6 +55,7 @@ export const useAppStore = defineStore('app', () => {
   const maxQueueSize = ref<MaxQueueSize>(DEFAULT_MAX_QUEUE_SIZE)
   const crossfadeSeconds = ref(0)
   const blendArtworkDuringCrossfade = ref(true)
+  const highContrastLyrics = ref(true)
   const remoteServerEnabled = ref(false)
   const remoteServerPort = ref(0)
   const remoteServerPassword = ref('')
@@ -125,6 +126,7 @@ export const useAppStore = defineStore('app', () => {
         }
         crossfadeSeconds.value = Math.min(CROSSFADE_MAX_SECONDS, Math.max(0, Math.round(settings.crossfade_seconds ?? 0)))
         blendArtworkDuringCrossfade.value = settings.blend_artwork_during_crossfade !== false
+        highContrastLyrics.value = settings.high_contrast_lyrics !== false
         libraryAnalysisEnabled.value = !!settings.library_analysis_enabled
         normalizationEnabled.value = !!settings.normalization_enabled
         // DB default is 'track'; the mode select only offers Track/Album (never 'off').
@@ -226,6 +228,7 @@ export const useAppStore = defineStore('app', () => {
         max_queue_size: maxQueueSize.value,
         crossfade_seconds: crossfadeSeconds.value,
         blend_artwork_during_crossfade: blendArtworkDuringCrossfade.value,
+        high_contrast_lyrics: highContrastLyrics.value,
         library_analysis_enabled: libraryAnalysisEnabled.value,
         library_analysis_worker_count: libraryAnalysisWorkerCount.value,
         normalization_enabled: normalizationEnabled.value,
@@ -358,6 +361,11 @@ export const useAppStore = defineStore('app', () => {
     await saveSettings()
   }
 
+  const updateHighContrastLyrics = async (enabled: boolean) => {
+    highContrastLyrics.value = enabled
+    await saveSettings()
+  }
+
   const updateLibraryAnalysisEnabled = async (enabled: boolean) => {
     libraryAnalysisEnabled.value = enabled
     // Mirrors the backend cross-toggle (AnalysisService.SetEnabled forces
@@ -465,6 +473,7 @@ export const useAppStore = defineStore('app', () => {
     maxQueueSize,
     crossfadeSeconds,
     blendArtworkDuringCrossfade,
+    highContrastLyrics,
     libraryAnalysisEnabled,
     libraryAnalysisWorkerCount,
     libraryAnalysisMaxWorkerCount,
@@ -505,6 +514,7 @@ export const useAppStore = defineStore('app', () => {
     updateMaxQueueSize,
     updateCrossfadeSeconds,
     updateBlendArtworkDuringCrossfade,
+    updateHighContrastLyrics,
     updateLibraryAnalysisEnabled,
     updateLibraryAnalysisWorkerCount,
     updateNormalizationEnabled,

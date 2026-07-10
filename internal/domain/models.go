@@ -464,6 +464,10 @@ type AppSettings struct {
 	// for automatic audio crossfades. It does not affect audio playback.
 	BlendArtworkDuringCrossfade bool `json:"blend_artwork_during_crossfade"`
 
+	// HighContrastLyrics selects the glass, headered lyrics panel in the
+	// fullscreen player. When false, lyrics render directly over the artwork.
+	HighContrastLyrics bool `json:"high_contrast_lyrics"`
+
 	// Library analysis pipeline (feeds Normalization). Opt-in: off disables the
 	// background worker pool entirely (no backfill/enqueue/boost). Normalization
 	// cannot be enabled while this is off.

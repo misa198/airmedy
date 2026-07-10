@@ -50,6 +50,7 @@ type AppSettings struct {
     MaxQueueSize            int                // play queue cap, incl. current track; one of domain.ValidMaxQueueSizes (100/500/1000/2000/3000), default 1000
     CrossfadeSeconds        int                // track-transition overlap in seconds, clamped to [0, domain.MaxCrossfadeSeconds]=12; 0 = off (gapless), default 0
     BlendArtworkDuringCrossfade bool           // fullscreen cover blend during automatic crossfade, default true
+    HighContrastLyrics       bool              // fullscreen glass lyrics panel; false renders lyrics directly over artwork, default true
 }
 ```
 
@@ -107,6 +108,7 @@ interface AppStore {
   preventSleepWhilePlaying: boolean;
   crossfadeSeconds: number; // 0–CROSSFADE_MAX_SECONDS (12); 0 = off; slider in PlaybackSettings.vue
   blendArtworkDuringCrossfade: boolean; // default true; fullscreen only
+  highContrastLyrics: boolean; // default true; fullscreen lyrics only
   artistDelimiters: string[];
   albumArtistDelimiters: string[];
   genreDelimiters: string[];
@@ -184,7 +186,7 @@ Version constant moved from `internal/domain/version.go` (deleted) to `internal/
 | General      | Theme selector, Language picker, Start at Login, Auto-check updates toggle |
 | Library      | Watched folders list, Add/Remove folder, Sync All, Reindex; **Tag Delimiters** section — 4 chip inputs (`DelimiterInput.vue`) for artist/album-artist/genre/composer split delimiters with inline validation, plus a persistent "Sync Library to apply" hint (`DelimitersPendingResync`) shown while pending; **Library Analysis** section — enable toggle, live progress/readiness text, and a concurrent-worker slider when more than one worker is available |
 | Integrations | Last.fm account + lyrics providers (LRClib, Kugou), prefer-local toggle, lyrics-subfolder toggle + validated name input (matched case-insensitively, with a hint), and dedicated lyrics folder toggle + picker (reuses `LibraryService.SelectFolder`). Toggles with conditional sub-settings use `SettingExpandableRow.vue` (header + `#control` slot + animated, inset `#expanded` slot) so the sub-setting reads as nested under its toggle. |
-| Playback     | EQ profiles and band sliders, prevent-sleep toggle, and Volume Normalization controls (`PlaybackSettings.vue`) |
+| Playback     | EQ profiles and band sliders, prevent-sleep toggle, Fullscreen High Contrast Lyrics toggle, and Volume Normalization controls (`PlaybackSettings.vue`) |
 | Remote       | Control remote server (enable/disable), change or regenerate access PIN, show QR code, and choose between reachable IP addresses grouped by network interface (`RemoteServerSettings.vue`) |
 | About        | App version, GitHub link, License, Open Data Folder button                 |
 

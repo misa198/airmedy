@@ -15,8 +15,9 @@ import (
 
 // ExtractPalette reads an image file and returns a dominant color palette.
 // It downsamples to a 64×64 thumbnail, runs 3-cluster k-means for 10 iterations,
-// and classifies clusters as Vibrant (highest saturation×value), Dominant (largest),
-// and Muted (remaining).
+// then separately scans a 256×256 sample for a recurring saturated accent. The
+// accent pass preserves small artwork details (such as coloured title text) that
+// are otherwise too small to survive k-means clustering.
 func ExtractPalette(imagePath string) (*domain.ThemeColors, error) {
 	f, err := os.Open(imagePath)
 	if err != nil {
@@ -48,15 +49,81 @@ func ExtractPalette(imagePath string) (*domain.ThemeColors, error) {
 		counts[closest]++
 	}
 
-	vibrantIdx := mostVibrant(centers)
+	vibrant := centers[mostVibrant(centers)]
+	if accent, found := mostVibrantAccent(src); found {
+		vibrant = accent
+	}
 	dominantIdx := largest(counts)
-	mutedIdx := remaining(vibrantIdx, dominantIdx, len(centers))
+	mutedIdx := remaining(mostVibrant(centers), dominantIdx, len(centers))
 
 	return &domain.ThemeColors{
-		Vibrant:  toHex(centers[vibrantIdx]),
+		Vibrant:  toHex(vibrant),
 		Muted:    toHex(centers[mutedIdx]),
 		Dominant: toHex(centers[dominantIdx]),
 	}, nil
+}
+
+const accentSampleSize = 256
+
+// mostVibrantAccent finds a recurring saturated colour independently of the
+// k-means clusters. Quantising samples into RGB buckets means antialiased text
+// and small shapes contribute to one candidate instead of being treated as
+// unrelated single pixels. A bucket must cover at least 0.1% of the sample (or
+// four pixels) so JPEG noise cannot become the theme colour.
+func mostVibrantAccent(src image.Image) (color.RGBA, bool) {
+	sample := downsample(src, accentSampleSize, accentSampleSize)
+	total := sample.Bounds().Dx() * sample.Bounds().Dy()
+	minCount := max(4, total/1000)
+
+	type bucket struct {
+		sumR, sumG, sumB int
+		count            int
+	}
+	buckets := make(map[uint16]bucket)
+
+	for y := sample.Bounds().Min.Y; y < sample.Bounds().Max.Y; y++ {
+		for x := sample.Bounds().Min.X; x < sample.Bounds().Max.X; x++ {
+			r, g, b, a := sample.At(x, y).RGBA()
+			if a < 0x8000 {
+				continue
+			}
+			pixel := color.RGBA{R: uint8(r >> 8), G: uint8(g >> 8), B: uint8(b >> 8), A: 0xFF}
+			if vibrance(pixel) < 0.35 {
+				continue
+			}
+
+			// 32-value channels absorb antialiasing/compression variation.
+			key := uint16(pixel.R>>5)<<10 | uint16(pixel.G>>5)<<5 | uint16(pixel.B>>5)
+			entry := buckets[key]
+			entry.sumR += int(pixel.R)
+			entry.sumG += int(pixel.G)
+			entry.sumB += int(pixel.B)
+			entry.count++
+			buckets[key] = entry
+		}
+	}
+
+	var best color.RGBA
+	bestScore := -1.0
+	for _, entry := range buckets {
+		if entry.count < minCount {
+			continue
+		}
+		candidate := color.RGBA{
+			R: uint8(entry.sumR / entry.count),
+			G: uint8(entry.sumG / entry.count),
+			B: uint8(entry.sumB / entry.count),
+			A: 0xFF,
+		}
+		// Saturation is primary; recurrence provides a small tie-breaker without
+		// allowing a large neutral-ish region to hide a deliberate accent.
+		score := vibrance(candidate) + math.Min(0.15, float64(entry.count)/float64(total))
+		if score > bestScore {
+			best, bestScore = candidate, score
+		}
+	}
+
+	return best, bestScore >= 0
 }
 
 func downsample(src image.Image, maxW, maxH int) *image.RGBA {

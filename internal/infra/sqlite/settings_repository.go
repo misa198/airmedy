@@ -62,8 +62,8 @@ func NewSettingsRepository(db *DB) domain.SettingsRepository {
 
 func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSettings) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO app_settings (id, language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator, library_sync_interval, library_analysis_enabled, library_analysis_worker_count, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, mood_derivation_version, max_queue_size, crossfade_seconds, blend_artwork_during_crossfade, updated_at)
-		 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+		`INSERT INTO app_settings (id, language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator, library_sync_interval, library_analysis_enabled, library_analysis_worker_count, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, mood_derivation_version, max_queue_size, crossfade_seconds, blend_artwork_during_crossfade, high_contrast_lyrics, updated_at)
+		 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 		 ON CONFLICT(id) DO UPDATE SET
 		   language = excluded.language,
 		   theme = excluded.theme,
@@ -102,6 +102,7 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		   max_queue_size = excluded.max_queue_size,
 		   crossfade_seconds = excluded.crossfade_seconds,
 		   blend_artwork_during_crossfade = excluded.blend_artwork_during_crossfade,
+		   high_contrast_lyrics = excluded.high_contrast_lyrics,
 		   updated_at = excluded.updated_at`,
 		settings.Language,
 		settings.Theme,
@@ -140,6 +141,7 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		settings.MaxQueueSize,
 		domain.ClampCrossfadeSeconds(settings.CrossfadeSeconds),
 		settings.BlendArtworkDuringCrossfade,
+		settings.HighContrastLyrics,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to save app settings: %w", err)
@@ -186,9 +188,10 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		MaxQueueSize                int            `db:"max_queue_size"`
 		CrossfadeSeconds            int            `db:"crossfade_seconds"`
 		BlendArtworkDuringCrossfade bool           `db:"blend_artwork_during_crossfade"`
+		HighContrastLyrics          bool           `db:"high_contrast_lyrics"`
 	}
 	err := r.db.GetContext(ctx, &row,
-		`SELECT language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator, library_sync_interval, library_analysis_enabled, library_analysis_worker_count, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, mood_derivation_version, max_queue_size, crossfade_seconds, blend_artwork_during_crossfade FROM app_settings WHERE id = 1`,
+		`SELECT language, theme, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator, library_sync_interval, library_analysis_enabled, library_analysis_worker_count, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, mood_derivation_version, max_queue_size, crossfade_seconds, blend_artwork_during_crossfade, high_contrast_lyrics FROM app_settings WHERE id = 1`,
 	)
 	if err == sql.ErrNoRows {
 		return &domain.AppSettings{
@@ -219,6 +222,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 			MaxQueueSize:                domain.DefaultMaxQueueSize,
 			CrossfadeSeconds:            0,
 			BlendArtworkDuringCrossfade: true,
+			HighContrastLyrics:          true,
 		}, nil
 	}
 	if err != nil {
@@ -263,5 +267,6 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		MaxQueueSize:                domain.ResolveMaxQueueSize(row.MaxQueueSize),
 		CrossfadeSeconds:            domain.ClampCrossfadeSeconds(row.CrossfadeSeconds),
 		BlendArtworkDuringCrossfade: row.BlendArtworkDuringCrossfade,
+		HighContrastLyrics:          row.HighContrastLyrics,
 	}, nil
 }

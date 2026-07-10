@@ -27,7 +27,7 @@ describe('FullScreenPlayer', () => {
     vi.clearAllMocks()
   })
 
-  function mountPlayer(storeState = {}) {
+  function mountPlayer(storeState = {}, appState = {}) {
     return mount(FullScreenPlayer, {
       global: {
         plugins: [
@@ -64,6 +64,8 @@ describe('FullScreenPlayer', () => {
               },
               app: {
                 showPlayerIndicator: false,
+                highContrastLyrics: true,
+                ...appState,
               },
             },
           }),
@@ -79,6 +81,7 @@ describe('FullScreenPlayer', () => {
           PlayerPlaybackControls: true,
           PlayerVolumeControl: true,
           PlayerLyricsPanel: true,
+          ImmersiveLyricsPanel: true,
           TrackContextMenu: true,
           TabSwitcher: true,
           Transition: false,
@@ -113,5 +116,19 @@ describe('FullScreenPlayer', () => {
     })
 
     expect(wrapper.get('[data-test="artwork"]').attributes('data-max-size')).toBe(String(expectedMaxSize))
+  })
+
+  it('uses the high-contrast lyrics panel when enabled', () => {
+    const wrapper = mountPlayer({ isQueueOpen: false, isLyricsOpen: true })
+
+    expect(wrapper.find('player-lyrics-panel-stub').exists()).toBe(true)
+    expect(wrapper.find('immersive-lyrics-panel-stub').exists()).toBe(false)
+  })
+
+  it('uses the immersive lyrics panel when high contrast is disabled', () => {
+    const wrapper = mountPlayer({ isQueueOpen: false, isLyricsOpen: true }, { highContrastLyrics: false })
+
+    expect(wrapper.find('player-lyrics-panel-stub').exists()).toBe(false)
+    expect(wrapper.find('immersive-lyrics-panel-stub').exists()).toBe(true)
   })
 })

@@ -578,6 +578,10 @@ To ensure smooth 60fps progress updates and reduce IPC overhead, the store uses 
 
 When `BlendArtworkDuringCrossfade` is on (default), `FullScreenPlayer` keeps the outgoing cover below the preloaded incoming cover and advances both layers with the same equal-power curve as audio: outgoing opacity `cos(t*pi/2)`, incoming opacity `sin(t*pi/2)`. The incoming layer uses `plus-lighter` compositing so both weights contribute visually over the event's exact effective audio fade duration. This is fullscreen-only; player bars and mini players switch immediately. Disabling the setting settles an active transition on the incoming cover.
 
+Fullscreen lyrics have two separate panel components selected by `HighContrastLyrics` (default true). `PlayerLyricsPanel` is the existing glass, bordered, headered high-contrast panel. `ImmersiveLyricsPanel` renders the same parsed/synced lyric content directly over the living artwork background without a background, border, shadow, or header. This setting does not affect `LyricsDrawer` or the mini player.
+
+In the fullscreen left column, `PlayerArtwork` is offset upward by `0.5rem` relative to the track-info block so the cover sits slightly higher without changing the controls layout.
+
 **Player modes:**
 
 - `sticky` — Full player footer pinned at bottom.

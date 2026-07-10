@@ -89,6 +89,10 @@ const lufsMarkPct = (value: number) =>
         :description="t('settings.playback.show_player_indicator_desc')">
         <Switch :model-value="appStore.showPlayerIndicator" @update:model-value="appStore.updateShowPlayerIndicator" />
       </SettingRow>
+      <SettingRow :title="t('settings.playback.high_contrast_lyrics')"
+        :description="t('settings.playback.high_contrast_lyrics_desc')">
+        <Switch :model-value="appStore.highContrastLyrics" @update:model-value="appStore.updateHighContrastLyrics" />
+      </SettingRow>
       <SettingRow :title="t('settings.playback.max_queue_size')"
         :description="t('settings.playback.max_queue_size_desc')">
         <Select :model-value="String(appStore.maxQueueSize)"

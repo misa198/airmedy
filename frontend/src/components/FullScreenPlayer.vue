@@ -19,6 +19,7 @@ import PlayerPlaybackControls from './player/PlayerPlaybackControls.vue'
 import PlayerVolumeControl from './player/PlayerVolumeControl.vue'
 import PlayerQueuePanel from './player/PlayerQueuePanel.vue'
 import PlayerLyricsPanel from './player/PlayerLyricsPanel.vue'
+import ImmersiveLyricsPanel from './player/ImmersiveLyricsPanel.vue'
 import TrackContextMenu from './TrackContextMenu.vue'
 import { useAppStore } from '../stores/app'
 
@@ -79,7 +80,7 @@ const trackArtist = computed(() =>
 const albumTitle = computed(() => store.currentTrack?.album?.title ?? '')
 
 const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
-const artworkMaxSize = computed(() => showRightColumn.value ? 20 : 22)
+const artworkMaxSize = computed(() => !showRightColumn.value || !appStore.highContrastLyrics ? 22 : 20)
 const artworkCrossfade = computed(() =>
   appStore.blendArtworkDuringCrossfade ? store.artworkCrossfade : null,
 )
@@ -125,7 +126,7 @@ const artworkCrossfade = computed(() =>
               <PlayerArtwork :artwork-url="store.artworkUrl" :track-title="trackTitle" :is-playing="store.isPlaying"
                 :crossfade="artworkCrossfade"
                 :max-size="artworkMaxSize"
-                class="cursor-pointer"
+                class="-translate-y-4 cursor-pointer"
                 @click="openTrackInfo"
                 @contextmenu.prevent="openContextMenu" />
 
@@ -172,9 +173,12 @@ const artworkCrossfade = computed(() =>
               enter-from-class="opacity-0 translate-x-24" enter-to-class="opacity-100 translate-x-0"
               leave-active-class="transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
               leave-from-class="opacity-100 translate-x-0" leave-to-class="opacity-0 translate-x-24">
-              <PlayerLyricsPanel v-if="store.isLyricsOpen" key="lyrics" :lyrics="store.lyrics?.content"
-                :loading="store.lyricsLoading" :position="store.position" @close="store.closeAllDrawers()"
-                @seek="(time) => store.seek(time)" />
+              <PlayerLyricsPanel v-if="store.isLyricsOpen && appStore.highContrastLyrics" key="high-contrast-lyrics"
+                :lyrics="store.lyrics?.content" :loading="store.lyricsLoading" :position="store.position"
+                @close="store.closeAllDrawers()" @seek="(time) => store.seek(time)" />
+              <ImmersiveLyricsPanel v-else-if="store.isLyricsOpen" key="immersive-lyrics"
+                :lyrics="store.lyrics?.content" :loading="store.lyricsLoading" :position="store.position"
+                @close="store.closeAllDrawers()" @seek="(time) => store.seek(time)" />
             </Transition>
           </div>
         </div>
