@@ -305,6 +305,8 @@ The mini player controls sit over a CSS glassmorphism panel (`.glass-panel` in `
 - Views are lazy-loaded (dynamic `import()` in router) — only the home view loads eagerly.
 - Search is debounced 300ms in `stores/search.ts`.
 - Artwork requests use variants (`_sm`, `_md`) sized appropriately for each context.
+- Fullscreen `PlayerArtwork` can stack outgoing and incoming covers for an automatic audio crossfade; `requestAnimationFrame` applies equal-power `cos(t*pi/2)`/`sin(t*pi/2)` opacity weights over the backend-provided effective fade duration, using `plus-lighter` compositing. Its maximum size is explicitly set by `FullScreenPlayer`: `22rem` without a right column and `20rem` when queue or lyrics is open. Player bars and mini-player artwork do not blend.
+- Fullscreen lyrics use `PlayerLyricsPanel` when `appStore.highContrastLyrics` is on (glass surface and header) and `ImmersiveLyricsPanel` when off (transparent, headerless content over the artwork background). Both delegate lyric parsing, loading, seek, and scrolling to `PlayerLyrics`; `LyricsDrawer` is unaffected.
 - `shallowRef` used for large reactive arrays (queue, tracks, albums).
 - Column widths cached in localStorage to avoid recalculation.
 - Mini player glass panel uses `backdrop-filter` on a GPU-composited layer (no rendered artwork copy).

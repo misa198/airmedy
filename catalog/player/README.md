@@ -63,13 +63,48 @@ type GaplessPlayer interface {
     // HandleTrackEnd must NOT call Load/Play when this returns true.
     AutoTransitions() bool
     // ClearEnqueued discards the pending pre-queued track from the engine without
-    // affecting the currently playing track. Called by SetRepeatMode to re-sync
-    // the pre-queue when the repeat mode changes during playback.
+    // affecting the currently playing track. Called by PlayerService.resyncPreQueue
+    // to re-sync the pre-queue whenever a queue mutation changes what track
+    // immediately follows the currently-playing one.
     ClearEnqueued()
 }
 ```
 
 Both `DarwinPlayer` (macOS) and `MiniAudioPlayer` (Win/Linux) implement `GaplessPlayer`.
+
+## CrossfadePlayer Interface (Optional)
+
+Extends `GaplessPlayer` for adapters that can overlap the current track with the
+pre-loaded next track under a volume ramp. Detected via type assertion in
+`PlayerService`; both platform adapters implement it.
+
+```go
+type CrossfadePlayer interface {
+    GaplessPlayer
+    // Fade length in seconds. 0 disables crossfade and restores pure gapless
+    // behavior, including where EnqueueNext pre-loads to (see below).
+    SetCrossfadeDuration(seconds float64)
+    // Start the pre-loaded track overlapped with the current one, ramping
+    // current→0 and preloaded→full over durationSec. preampGainDB is the
+    // incoming track's normalization gain, applied per-source. Updates player
+    // status to the new track.
+    BeginCrossfadeToPreloaded(track *TrackDTO, durationSec, preampGainDB float64) error
+    // Force-complete an in-progress fade: outgoing source stopped and
+    // unloaded, incoming snaps to full, idle slot freed. No-op when not fading.
+    FinishCrossfade()
+}
+```
+
+The crossfade duration is `AppSettings.CrossfadeSeconds` (0–`domain.MaxCrossfadeSeconds` = 12,
+0 = off/default), persisted in `app_settings.crossfade_seconds` and pushed live via an
+`appsettings` change listener in `internal/app/module.go` →
+`PlayerService.SetCrossfadeSeconds` (initial value loaded in `restoreState`).
+
+**Preload placement is mode-dependent on macOS:** with crossfade off,
+`EnqueueNext` targets the active deck's SFB queue (engine auto-transition);
+with crossfade on it targets the idle deck. `SetCrossfadeSeconds` therefore
+re-syncs the pre-queue (`ClearEnqueued` + re-`EnqueueNext`) on every 0↔N change.
+`DarwinPlayer.AutoTransitions()` is dynamic: `true` only when crossfade is off.
 
 ## NowPlayingController Interface (Optional)
 
@@ -120,8 +155,8 @@ type NormalizationController interface {
 
 | Platform | Mechanism |
 | -------- | --------- |
-| macOS    | `AVAudioUnitEQ.globalGain` (dB) on the same persistent EQ node, applied after all bands. `SetEQEnabled` bypasses each **band** individually rather than the whole unit, so this stays independent of EQ on/off — a whole-unit `bypass` would silence `globalGain` too. |
-| Windows/Linux | `ma_node_set_output_bus_volume()` on the engine endpoint (linear, converted from dB), which both the EQ-enabled and EQ-bypassed paths already converge on — no topology change needed, and it never overlaps with per-sound `ma_sound_set_volume` (user volume) |
+| macOS    | `AVAudioUnitEQ.globalGain` (dB) on the **active deck's** persistent EQ node, applied after all bands. `SetEQEnabled` bypasses each **band** individually rather than the whole unit, so this stays independent of EQ on/off — a whole-unit `bypass` would silence `globalGain` too. Per-source: during a crossfade the incoming deck receives its own track's gain via `BeginCrossfadeToPreloaded`. |
+| Windows/Linux | Per-sound: the active `ma_sound`'s volume is `user_volume × 10^(dB/20)` (`preamp_cur_linear` in the wrapper). Equivalent to the former endpoint-volume stage for a single sound, but correct during a crossfade where two overlapping sounds each keep their own track's gain (the outgoing sound's factor is preserved as `preamp_nxt_linear`). |
 
 `ApplyToPlayer(ctx, track, next *domain.TrackDTO)` is called from every place
 `PlayerService` changes the current track — `loadAndPlay` (right after
@@ -156,10 +191,43 @@ type SleepInhibitor interface {
 - Framework deps: `SFBAudioEngine`, `AVFoundation`, `CoreMedia`, `MediaPlayer`, `AppKit`, `CoreFoundation`, `Security`, `AudioToolbox`, `opus`, `sndfile`, `lame`, `FLAC`, `tta-cpp`, `vorbis`, `wavpack`, `mpg123`, `mpc`, `ogg`.
 - SFBAudioEngine and its dependencies are dynamic xcframeworks built/downloaded by `task build:sfbaudioengine` and stored at `internal/infra/audio/sfb_libs/` (not committed; add to `.gitignore`). At runtime, the frameworks are embedded in `Contents/Frameworks/`.
 - **Format support:** All formats natively — MP3, FLAC, AAC, WAV, AIFF, Opus, Vorbis, WavPack, APE, DSD, and more. No FFmpeg required on darwin.
-- **EQ:** `AVAudioUnitEQ` (10-band parametric, ISO frequencies) injected into SFBAudioEngine's graph via `modifyProcessingGraph:` on init and reconnected on format changes via the `reconfigureProcessingGraph:withFormat:` delegate. Returns the EQ node so SFBAudioEngine connects `sourceNode → EQ → mainMixerNode`.
-- **Normalization:** `SetPreampGain` sets `equalizer.globalGain` (dB) on the same persistent `AVAudioUnitEQ` node — applied after all bands. `setEQEnabled` bypasses each band individually (not `equalizer.bypass` on the whole unit), keeping `globalGain` unaffected by EQ on/off.
-- **Track end:** `SFBAudioPlayerDelegate audioPlayer:renderingComplete:` fires when last sample is rendered (not when decoding finishes). When a next track was pre-queued gaplessly, SFBAudioEngine is still playing; `renderingComplete:` fires for each track in the queue, allowing the Go layer to advance state without stopping audio.
-- **Gapless:** `EnqueueNext` calls `[sfbPlayer enqueueURL:url forImmediatePlayback:NO]`. SFBAudioEngine transitions seamlessly if sample rate and channel count match. `AutoTransitions()` returns `true`.
+- **Dual-deck architecture** (`native_player_darwin.m`): `AirmedyDeck` owns one `SFBAudioPlayer` + one persistent 10-band `AVAudioUnitEQ`; the `AirmedyPlayer` controller holds `decks[2]` + `activeIndex` and routes transport/position/preamp to the active deck. Two decks exist because `SFBAudioPlayer` exposes a single serial decoder queue and cannot host two simultaneous sources — during a crossfade both decks play and their `AVAudioEngine`s mix at the CoreAudio device level. Gain stages compose per deck: `setVolume:` (output AU, user volume — fanned out to both decks) × `mainMixerNode.outputVolume` (crossfade ramp) × EQ `globalGain` (per-source normalization).
+
+```mermaid
+flowchart LR
+    PS["PlayerService / AirmedyPlayer"]
+    PS --> AD["Active deck"]
+    PS --> ID["Idle deck"]
+
+    subgraph Active["Deck A or B (active)"]
+        ADP["SFBAudioPlayer"]
+        ADEQ["AVAudioUnitEQ"]
+        ADM["mainMixerNode.outputVolume"]
+        ADP --> ADEQ --> ADM
+    end
+
+    subgraph Idle["Other deck (idle or incoming)"]
+        IDP["SFBAudioPlayer"]
+        IDEQ["AVAudioUnitEQ"]
+        IDM["mainMixerNode.outputVolume"]
+        IDP --> IDEQ --> IDM
+    end
+
+    AD --> ADP
+    ID --> IDP
+    ADM --> CA["CoreAudio device mix"]
+    IDM --> CA
+
+    PS -. "crossfade off:\nEnqueueNext -> active deck queue" .-> AD
+    PS -. "crossfade on:\npreload next into idle deck" .-> ID
+    PS -. "fade start:\nswap activeIndex,\nramp out/in per deck" .-> CA
+```
+
+- **EQ:** each deck's `AVAudioUnitEQ` (10-band parametric, ISO frequencies) is injected into its SFBAudioEngine graph via `modifyProcessingGraph:` on init and reconnected on format changes via the `reconfigureProcessingGraph:withFormat:` delegate (deck identified by the `SFBAudioPlayer*` argument). Band parameters and bypass are mirrored to **both** decks so the pre-loaded deck always carries the current EQ.
+- **Normalization:** `SetPreampGain` sets `equalizer.globalGain` (dB) on the active deck — applied after all bands. `setEQEnabled` bypasses each band individually (not `equalizer.bypass` on the whole unit), keeping `globalGain` unaffected by EQ on/off.
+- **Track end:** `SFBAudioPlayerDelegate audioPlayer:renderingComplete:` fires when last sample is rendered (not when decoding finishes). Forwarded to Go only from the **active** deck while not fading — a fading-out deck draining naturally is already accounted for. When a next track was pre-queued gaplessly, SFBAudioEngine is still playing; `renderingComplete:` fires for each track in the queue, allowing the Go layer to advance state without stopping audio.
+- **Gapless (crossfade off):** `EnqueueNext` enqueues into the active deck with `forImmediatePlayback:NO`. SFBAudioEngine transitions seamlessly if sample rate and channel count match. `AutoTransitions()` returns `true`.
+- **Crossfade (crossfade on):** `EnqueueNext` pre-loads into the stopped idle deck (`forImmediatePlayback:YES` queues the decoder without playing). `BeginCrossfadePlayer` sets the incoming deck's `globalGain`, starts it at `mainMixerNode.outputVolume = 0`, swaps `activeIndex` **at fade start** (position/status/preamp immediately target the incoming deck), and runs an equal-power ramp (outgoing `cos(t·π/2)`, incoming `sin(t·π/2)`) on a 20 ms `dispatch_source_t` timer on a private serial `fadeQueue`; all fade state is mutated only on that queue. Completion (or `FinishCrossfadePlayer`) stops and resets the outgoing deck. `StartPreloadedPlayer` is the no-overlap fallback (natural end that raced past the fade window): start idle deck at full level and swap; no-op success when crossfade is off. Format mismatch between tracks is a non-issue — each deck reconfigures its own graph. Trade-off: during the overlap there is no single in-process tap point (mixing happens at device level); a future AirPlay tap must tap post-EQ per deck and mix in software, or patch vendored SFB to host two sources in one engine.
 - Provides `NowPlayingController` for OS-level media info (lock screen, menu bar).
 - Remote command callbacks: Play, Pause, Next, Previous, Seek (media keys + AirPods).
 - `UpdateNowPlaying(track, position, artworkPath)` — populates the macOS Now Playing widget.
@@ -171,8 +239,31 @@ type SleepInhibitor interface {
 - Functions: `ma_player_create()`, `ma_player_play()`, `ma_player_pause()`, `ma_player_stop()`, `ma_player_seek()`, `ma_player_set_volume()`.
 - Track end detected via `goMiniAudioTrackEnd()` Go callback.
 - **EQ:** Implemented via a chain of 10 `ma_peak_node` filters. Enabled state routes audio through the chain before output. Support for live band updates.
-- **Normalization:** `ma_player_set_preamp_gain` sets `ma_node_set_output_bus_volume()` on the engine endpoint (`ma_engine_get_endpoint`) — the point both the EQ-enabled and EQ-bypassed sound-routing paths already converge on, so no extra node or rewiring is needed. Separate from `ma_player_set_volume` (per-sound user volume).
+- **Normalization:** `ma_player_set_preamp_gain` stores the linear factor (`preamp_cur_linear`) and applies `volume × factor` to the active `ma_sound` — per-source, so overlapping sounds during a crossfade each keep their own track's gain (`preamp_nxt_linear` preserves the outgoing sound's factor; `ma_player_set_volume` re-applies both while fading). Separate from the miniaudio fader used for crossfade ramps.
 - **Gapless (near-gapless):** Uses a ping-pong slot design (`slot_a`/`slot_b`). `ma_player_preload_next` initializes the next track into the idle slot. On `HandleTrackEnd`, Go calls `ma_player_start_preloaded` which uninits the current slot and starts the pre-loaded slot — gap is only goroutine scheduling latency (~1–5 ms). `AutoTransitions()` returns `false`.
+- **Crossfade:** `ma_player_begin_crossfade(duration, next_gain_db)` overlaps the two slots instead of the uninit-then-start swap: the pre-loaded sound starts with `ma_sound_set_fade_in_milliseconds(0→1)` and the outgoing sound gets `ma_sound_stop_with_fade_in_milliseconds` (fade to silence then stop — no end callback). The cur/nxt pointers swap **without** uninit (`old_fading = 1` marks that the nxt slot holds the outgoing sound). `ma_player_finish_crossfade` (and, defensively, `ma_player_load`/`ma_player_preload_next`) stops + uninits the outgoing sound and snaps the incoming fader to full. `internal_end_cb` forwards only when `pSound == cur_sound`, so an outgoing sound draining naturally during the overlap cannot double-advance the queue. Fades ride the miniaudio fader, which multiplies independently of `ma_sound_set_volume` (user volume × normalization). Crossfade calls must come from goroutines, never the audio thread.
+
+```mermaid
+flowchart LR
+    PS["PlayerService / ma_player"]
+    CS["cur_sound slot"]
+    NS["nxt_sound slot"]
+    EQ["EQ chain or endpoint"]
+    OUT["Audio output"]
+
+    PS --> CS
+    PS --> NS
+    CS --> EQ --> OUT
+    NS --> EQ
+
+    PS -. "gapless:\npreload next into idle slot" .-> NS
+    PS -. "track end:\nstart_preloaded,\nuninit old cur slot" .-> CS
+
+    NS -. "crossfade begin:\nvolume * next gain,\nfade 0 -> 1,\nstart()" .-> EQ
+    CS -. "crossfade begin:\nstop_with_fade()" .-> EQ
+    PS -. "swap cur/nxt pointers\nwithout uninit" .-> CS
+    PS -. "finish fade:\nstop + uninit outgoing slot" .-> NS
+```
 
 ### Windows — System Media Transport Controls (Now Playing)
 
@@ -278,6 +369,7 @@ flowchart TB
 - Manages playback state transitions.
 - Runs a **500ms ticker** for internal logic:
   - Increments play counts and scrobbling thresholds via `checkThreshold()`.
+  - Starts the crossfade near track end via `maybeStartCrossfade()` (when enabled).
   - Updates OS-level Now Playing position via `UpdateNowPlayingPosition()`.
   - **Note:** This ticker no longer emits `player:status` every 500ms; status is only emitted on meaningful state changes (Play, Pause, Seek, Stop, Track End) to reduce IPC overhead.
 - Acquires OS sleep inhibition (`domain.SleepInhibitor`) when ticker starts (playback begins); releases on ticker stop (pause/stop). Controlled by `PreventSleepWhilePlaying` setting.
@@ -287,7 +379,58 @@ flowchart TB
 - Fetches/delivers lyrics on track load.
 - Resets playback position to 0 on track change to ensure clean UI transitions.
 - Handles track-end → advance queue → load next.
-- **Gapless playback (always on):** `loadAndPlay` pre-enqueues the next track via `GaplessPlayer.EnqueueNext`. On `HandleTrackEnd`, the service calls `GaplessPlayer.StartPreloaded` (for miniaudio) or just updates status (SFBAudioEngine auto-transitions), then calls `transitionToTrack` to update currentTrack, Now Playing, palette, and lyrics without interrupting audio.
+- **Gapless playback (always on):** `loadAndPlay` pre-enqueues the next track via `GaplessPlayer.EnqueueNext` (helper `preEnqueueNext`). On `HandleTrackEnd`, the service calls `GaplessPlayer.StartPreloaded` (for non-auto-transition players) or just updates status (SFBAudioEngine auto-transitions when crossfade is off), then calls `transitionToTrack` to update currentTrack, Now Playing, palette, and lyrics without interrupting audio.
+- **Pre-queue invariant:** `nextPreQueued *TrackDTO` caches the track `preEnqueueNext` last handed to the native engine; both `maybeStartCrossfade` and `HandleTrackEnd` play this cached value directly rather than re-peeking the queue, so it must always match `queue.PeekNext()` for the currently-playing track. Any mutation that can change what immediately follows the current track — `ReorderQueue`, `PlayNext`/`PlayNextTracks` (insert-after-current), `RemoveFromQueue` (non-current track), `SetShuffle`, `SetRepeatMode`, `SetCrossfadeSeconds` — calls `resyncPreQueue()`, which clears `nextPreQueued`, calls `GaplessPlayer.ClearEnqueued()`, and re-runs `preEnqueueNext()` against the post-mutation queue. `loadAndPlay` (used by `PlayTracks`/`ShuffleTracks`/`PlayQueueIndex`/`Next`/`Previous`/current-track removal) clears and rebuilds the cache unconditionally as part of the hard load. `AppendTracks` is exempt — it only grows the queue tail and never changes the immediate-next track.
+- **Crossfade state machine** (active when `crossfadeSec > 0` and the player implements `CrossfadePlayer`): guarded by `fading bool` + `fadeGen int` (generation counter voiding stale completion timers).
+  - *Natural trigger:* the 500 ms ticker calls `maybeStartCrossfade(status)` — fires when `remaining ≤ min(crossfadeSec, duration/2)` and `remaining > 0.4 s` (below that the normal end-callback/gapless path wins; tracks under 2 s never fade). It claims the fade, advances the queue, calls `BeginCrossfadeToPreloaded` with the incoming track's `ComputeGain`, runs `transitionToTrack` (UI flips at fade start), and schedules `finishCrossfade(gen)` via `time.AfterFunc(fade + 300 ms)`.
+  - *Only the natural trigger fades.* Every manual transition — `Next`/`Previous`/`PlayQueueIndex`, plus `PlayTracks`/`ShuffleTracks`/`RemoveFromQueue` — routes through `loadAndPlay` (hard load, no fade). Crossfade fires exclusively on the automatic end-of-track queue advance.
+  - *Completion:* `finishCrossfade` = native `FinishCrossfade` + pre-enqueue of the next-next track — pre-enqueueing is deferred to here because the idle deck/slot is occupied by the outgoing source until the fade ends.
+  - *Interruptions:* `Pause`/`Seek` finish the fade first (`finishActiveCrossfade`); `Stop`/`loadAndPlay` snap it without re-enqueueing (`snapActiveCrossfade`), so a manual `Next`/`Previous`/`PlayQueueIndex` mid-fade snaps the overlap then hard-loads; `HandleTrackEnd` returns early while fading (belt-and-suspenders over the native guards). A mid-fade `SetCrossfadeSeconds` lets the in-flight fade complete with its captured duration.
+  - *Repeat-one* fades the track into itself (the preload holds the same file in the second deck/slot); *end of queue* never triggers (no preload).
+  - On successful native fade start, emits `player:artwork-crossfade` with `{ transition_id, phase: "start", from_artwork_key, to_artwork_key, duration_ms }`; it emits the matching `phase: "end"` when the fade completes or is snapped. The frontend uses this event, rather than track-status changes, so manual navigation never blends artwork.
+
+Crossfade overlap lifecycle:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Tick as 500 ms ticker
+    participant PS as PlayerService
+    participant Q as QueueService
+    participant Native as CrossfadePlayer
+    participant UI as Frontend / Now Playing
+
+    Tick->>PS: maybeStartCrossfade(status)
+    PS->>PS: remaining <= min(crossfadeSec, duration / 2)\n&& remaining > 0.4 s
+    PS->>Q: Advance to next track
+    Q-->>PS: next track
+    PS->>Native: BeginCrossfadeToPreloaded(next, duration, nextGainDB)
+    Note over Native: Outgoing stays audible\nIncoming starts at 0 gain
+    Native-->>Native: overlap current + preloaded
+    PS->>UI: transitionToTrack(next)
+    Note over UI: currentTrack / lyrics / artwork /\nNow Playing flip at fade start
+    PS->>PS: schedule finishCrossfade(gen)\nfor duration + 300 ms
+    Native-->>Native: equal-power fade runs
+    PS->>Native: FinishCrossfade()
+    Native-->>PS: outgoing stopped, incoming at full,\nidle deck/slot freed
+    PS->>Native: EnqueueNext(next-next)
+```
+
+Equal-power fade curve used during crossfade:
+
+```mermaid
+xychart-beta
+    title "Crossfade Fade Curve"
+    x-axis "Normalized fade progress t (0 → 1)" 0 --> 1
+    y-axis "Per-source gain" 0 --> 1
+    line "Outgoing gain = cos(t·π/2)" [1.0, 0.98, 0.92, 0.83, 0.71, 0.56, 0.38, 0.20, 0.00]
+    line "Incoming gain = sin(t·π/2)" [0.0, 0.20, 0.38, 0.56, 0.71, 0.83, 0.92, 0.98, 1.00]
+```
+
+The native adapters use an equal-power law rather than a linear fade, so the
+perceived loudness stays steadier through the overlap. The outgoing source uses
+`cos(t·π/2)` and the incoming source uses `sin(t·π/2)`, with `t` advancing from
+0 at fade start to 1 at fade completion.
 - **Volume normalization:** `loadAndPlay`, `transitionToTrack`, and `restoreState` all call `NormalizationService.ApplyToPlayer(ctx, track, s.queue.PeekNext())` to push the pre-amp gain whenever the current track changes (hard load, gapless auto-advance, and app-boot restore respectively) — `next` drives the album-mode look-ahead (see `catalog/normalization/README.md`). `ReapplyNormalization()` re-runs this for the current track when normalization settings change mid-playback (called by the Wails binding).
 - **Track-load listeners:** `AddTrackLoadListener` registers callbacks fired in `loadAndPlay` right after load (same point as the normalization push). Wired centrally in `internal/app/module.go` to boost-enqueue the loaded track in the analysis pipeline (`AnalysisService.Enqueue(trackID, true)`)
 
@@ -304,6 +447,7 @@ SetVolume(volume float64) error
 SetMuted(muted bool) error
 SetShuffle(enabled bool) error
 SetRepeatMode(mode RepeatMode) error
+SetCrossfadeSeconds(n int)      // live crossfade duration change; re-syncs the pre-queue
 PlayTracks(tracks []*TrackDTO, startIndex int) error
 PlayTrackIDs(ids []string, startIndex int) error
 ShuffleTracks(tracks []*TrackDTO) error
@@ -416,10 +560,11 @@ On app startup, `Load()` restores queue, seeks to saved position, but does not a
 | `player:queue-updated` | Queue modified (insert, remove, reorder, new playlist) |
 | `player:theme`         | New track loaded — artwork color palette               |
 | `player:lyrics`        | New track loaded — lyrics object (may be null)         |
+| `player:artwork-crossfade` | Automatic audio crossfade begins/ends; fullscreen artwork transition payload |
 
 ## Frontend Store (`stores/player.ts`)
 
-**State:** `status`, `queue`, `currentTrack`, `theme`, `lyrics`, `playerMode` (`sticky | mini | fullscreen`), drawer visibility flags.
+**State:** `status`, `queue`, `currentTrack`, `theme`, `lyrics`, `artworkCrossfade`, `playerMode` (`sticky | mini | fullscreen`), drawer visibility flags.
 
 **Playback Interpolation:**
 To ensure smooth 60fps progress updates and reduce IPC overhead, the store uses a **Sync-and-Drift** mechanism:
@@ -430,6 +575,12 @@ To ensure smooth 60fps progress updates and reduce IPC overhead, the store uses 
 **Computed:** `isPlaying`, `isPaused`, `progressPercent`, `artworkUrl`, `artworkUrlMd`, `artworkUrlSm`.
 
 **Artwork URLs:** Constructed from `artworkKey` using variant naming: `{key}_sm.jpg` (64px), `{key}_md.jpg` (500px), `{key}.jpg` (original).
+
+When `BlendArtworkDuringCrossfade` is on (default), `FullScreenPlayer` keeps the outgoing cover below the preloaded incoming cover and advances both layers with the same equal-power curve as audio: outgoing opacity `cos(t*pi/2)`, incoming opacity `sin(t*pi/2)`. The incoming layer uses `plus-lighter` compositing so both weights contribute visually over the event's exact effective audio fade duration. This is fullscreen-only; player bars and mini players switch immediately. Disabling the setting settles an active transition on the incoming cover.
+
+Fullscreen lyrics have two separate panel components selected by `HighContrastLyrics` (default true). `PlayerLyricsPanel` is the existing glass, bordered, headered high-contrast panel. `ImmersiveLyricsPanel` renders the same parsed/synced lyric content directly over the living artwork background without a background, border, shadow, or header. This setting does not affect `LyricsDrawer` or the mini player.
+
+In the fullscreen left column, `PlayerArtwork` is offset upward by `0.5rem` relative to the track-info block so the cover sits slightly higher without changing the controls layout.
 
 **Player modes:**
 

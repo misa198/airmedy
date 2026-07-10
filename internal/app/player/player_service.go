@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"math"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -48,6 +49,10 @@ type PlayerService struct {
 	endedNaturally bool             // true when queue ran out; cleared on Play or loadAndPlay
 	nextPreQueued  *domain.TrackDTO // track pre-enqueued for gapless transition
 
+	crossfadeSec float64 // crossfade duration in seconds; 0 = off (gapless)
+	fading       bool    // a crossfade overlap is currently in progress
+	fadeGen      int     // bumped on every fade begin/snap; voids stale completion timers
+
 	sleepInhibitor domain.SleepInhibitor
 
 	// emitStatusHook overrides event emission in tests (nil in production).
@@ -55,13 +60,14 @@ type PlayerService struct {
 
 	trackLoadListeners []func(*domain.TrackDTO)
 
-	statusListeners        []func(domain.PlayerStatus)
-	trackMetadataListeners []func(domain.PlayerTrackMetadata)
-	remoteStateListeners   []func(domain.RemotePlayerState)
-	queueListeners         []func([]*domain.TrackDTO)
-	scrobbleListeners      []func(*domain.TrackDTO, time.Time)
-	npListeners            []func(*domain.TrackDTO)
-	lyricsListeners        []func(*domain.Lyric)
+	statusListeners           []func(domain.PlayerStatus)
+	trackMetadataListeners    []func(domain.PlayerTrackMetadata)
+	remoteStateListeners      []func(domain.RemotePlayerState)
+	queueListeners            []func([]*domain.TrackDTO)
+	scrobbleListeners         []func(*domain.TrackDTO, time.Time)
+	npListeners               []func(*domain.TrackDTO)
+	lyricsListeners           []func(*domain.Lyric)
+	artworkCrossfadeListeners []func(domain.ArtworkCrossfadeEvent)
 }
 
 func NewPlayerService(
@@ -247,6 +253,15 @@ func (s *PlayerService) Play() error {
 	err := s.player.Play()
 	if err == nil {
 		s.startPositionTicker()
+		// Prime the pre-queued next track if it isn't already. A session-restored
+		// track is Loaded but never pre-enqueued, so without this a plain resume
+		// leaves nextPreQueued == nil and the first auto-advance skips crossfade.
+		s.mu.RLock()
+		hasNext := s.nextPreQueued != nil
+		s.mu.RUnlock()
+		if !hasNext {
+			s.preEnqueueNext()
+		}
 		// Ensure the OS Now Playing card is populated before flipping the glyph.
 		// After an app restart the track is restored (loaded) but never pushed to
 		// the OS controls, so a plain resume would otherwise toggle play state on a
@@ -261,6 +276,8 @@ func (s *PlayerService) Play() error {
 
 // Pause pauses playback.
 func (s *PlayerService) Pause() error {
+	// Snap an in-flight crossfade so resume is a plain single-source resume.
+	s.finishActiveCrossfade()
 	err := s.player.Pause()
 	if err == nil {
 		s.stopPositionTicker()
@@ -296,6 +313,7 @@ func (s *PlayerService) SetNowPlayingActivateCallback(cb func()) {
 
 // Stop stops playback.
 func (s *PlayerService) Stop() error {
+	s.snapActiveCrossfade()
 	err := s.player.Stop()
 	if err == nil {
 		s.stopPositionTicker()
@@ -401,6 +419,8 @@ func (s *PlayerService) ToggleMute() error {
 
 // Seek moves playback to the specified position in seconds.
 func (s *PlayerService) Seek(position float64) error {
+	// Snap an in-flight crossfade first so the seek targets the incoming track.
+	s.finishActiveCrossfade()
 	err := s.player.Seek(position)
 	if err == nil {
 		s.mu.Lock()
@@ -489,6 +509,9 @@ func (s *PlayerService) ShuffleTracks(tracks []*domain.TrackDTO) error {
 // SetShuffle enables or disables shuffling.
 func (s *PlayerService) SetShuffle(enabled bool) error {
 	s.queue.SetShuffle(enabled)
+	// Toggling shuffle rebuilds the play order, so whatever was cached as
+	// the "next" track before the toggle is very likely wrong now.
+	s.resyncPreQueue()
 	s.emitStatus()
 	s.emitRemoteState()
 	s.emitQueueOrder()
@@ -502,29 +525,35 @@ func (s *PlayerService) SetMaxQueueSize(n int) {
 	s.emitQueue()
 }
 
+// SetCrossfadeSeconds applies a live crossfade duration change. The pre-queue
+// is re-synced because switching 0↔N changes where EnqueueNext pre-loads the
+// next track to on macOS (engine queue vs. second deck). An in-flight fade
+// completes with its captured duration.
+func (s *PlayerService) SetCrossfadeSeconds(n int) {
+	sec := float64(domain.ClampCrossfadeSeconds(n))
+
+	s.mu.Lock()
+	if s.crossfadeSec == sec {
+		s.mu.Unlock()
+		return
+	}
+	s.crossfadeSec = sec
+	s.mu.Unlock()
+
+	if cp, ok := s.player.(domain.CrossfadePlayer); ok {
+		cp.SetCrossfadeDuration(sec)
+	}
+
+	s.resyncPreQueue()
+}
+
 // SetRepeatMode sets the repeat mode.
 func (s *PlayerService) SetRepeatMode(mode domain.RepeatMode) error {
 	s.queue.SetRepeatMode(mode)
 
 	// Re-sync the gapless pre-queue with the new repeat mode so that stale
 	// pre-queued tracks don't cause the wrong track to play on the next track-end.
-	s.mu.Lock()
-	hadPreQueued := s.nextPreQueued != nil
-	s.nextPreQueued = nil
-	s.mu.Unlock()
-
-	if hadPreQueued {
-		if gp, ok := s.player.(domain.GaplessPlayer); ok {
-			gp.ClearEnqueued()
-			if next := s.queue.PeekNext(); next != nil {
-				if err := gp.EnqueueNext(next); err == nil {
-					s.mu.Lock()
-					s.nextPreQueued = next
-					s.mu.Unlock()
-				}
-			}
-		}
-	}
+	s.resyncPreQueue()
 
 	s.emitStatus()
 	s.emitRemoteState()
@@ -534,12 +563,16 @@ func (s *PlayerService) SetRepeatMode(mode domain.RepeatMode) error {
 // PlayNext inserts a track immediately after the currently playing track.
 func (s *PlayerService) PlayNext(track *domain.TrackDTO) {
 	s.queue.InsertAfterCurrent(track)
+	// Inserting right after the current track changes what plays next, so
+	// any cached pre-queued track from before this insert is stale.
+	s.resyncPreQueue()
 	s.emitQueue()
 }
 
 // PlayNextTracks inserts a list of tracks immediately after the currently playing track.
 func (s *PlayerService) PlayNextTracks(tracks []*domain.TrackDTO) {
 	s.queue.InsertListAfterCurrent(tracks)
+	s.resyncPreQueue()
 	s.emitQueue()
 }
 
@@ -570,6 +603,11 @@ func (s *PlayerService) RemoveFromQueue(trackID string) {
 			s.mu.Unlock()
 			_ = s.Stop()
 		}
+	} else {
+		// The removed track may have been the cached pre-queued "next"
+		// track — if so, that cache now points at a track no longer in
+		// the queue and must be recomputed.
+		s.resyncPreQueue()
 	}
 }
 
@@ -587,6 +625,12 @@ func (s *PlayerService) PlayQueueIndex(index int) error {
 // ReorderQueue updates the order of tracks in the queue using track IDs.
 func (s *PlayerService) ReorderQueue(trackIDs []string) {
 	s.queue.ReorderQueue(trackIDs)
+
+	// Reordering can change which track comes after the currently-playing
+	// one, so the cached nextPreQueued (captured before the reorder) may
+	// point at a now-stale track.
+	s.resyncPreQueue()
+
 	s.emitQueue()
 	s.saveState(context.Background())
 }
@@ -661,6 +705,8 @@ func (s *PlayerService) ReapplyNormalization() {
 // Internal helpers
 
 func (s *PlayerService) loadAndPlay(track *domain.TrackDTO) error {
+	// A hard load supersedes any in-flight crossfade.
+	s.snapActiveCrossfade()
 	s.stopPositionTicker()
 
 	// Clear any stale pre-queue — hard load supersedes gapless pre-loading.
@@ -713,17 +759,7 @@ func (s *PlayerService) loadAndPlay(track *domain.TrackDTO) error {
 
 	// Pre-enqueue the next track for gapless transitions.
 	if gapless {
-		if next := s.queue.PeekNext(); next != nil {
-			if gp, ok := s.player.(domain.GaplessPlayer); ok {
-				if err := gp.EnqueueNext(next); err != nil {
-					s.logger.Warn("failed to pre-enqueue next track", "error", err)
-				} else {
-					s.mu.Lock()
-					s.nextPreQueued = next
-					s.mu.Unlock()
-				}
-			}
-		}
+		s.preEnqueueNext()
 	}
 
 	return nil
@@ -1183,6 +1219,7 @@ func (s *PlayerService) startPositionTicker() {
 
 				status := s.player.GetStatus()
 				s.checkThreshold(track, status)
+				s.maybeStartCrossfade(status)
 
 				if s.nowPlaying != nil {
 					s.nowPlaying.UpdateNowPlayingPosition(status.Position)
@@ -1203,8 +1240,230 @@ func (s *PlayerService) stopPositionTicker() {
 	}
 }
 
+// preEnqueueNext pre-loads the queue's next track into the player for a
+// gapless or crossfade transition, recording it in nextPreQueued.
+func (s *PlayerService) preEnqueueNext() {
+	next := s.queue.PeekNext()
+	if next == nil {
+		return
+	}
+	gp, ok := s.player.(domain.GaplessPlayer)
+	if !ok {
+		return
+	}
+	if err := gp.EnqueueNext(next); err != nil {
+		s.logger.Warn("failed to pre-enqueue next track", "error", err)
+		return
+	}
+	s.mu.Lock()
+	s.nextPreQueued = next
+	s.mu.Unlock()
+}
+
+// resyncPreQueue clears a stale gapless pre-queue and recomputes it from the
+// queue's current state. Any mutation that can change which track
+// immediately follows the currently-playing one (reorder, insert-next,
+// remove, shuffle toggle, repeat-mode change, crossfade-duration change)
+// must call this — otherwise the cached nextPreQueued keeps pointing at the
+// track that used to be next, and the wrong track plays at crossfade/track-end.
+func (s *PlayerService) resyncPreQueue() {
+	s.mu.Lock()
+	hadPreQueued := s.nextPreQueued != nil
+	s.nextPreQueued = nil
+	s.mu.Unlock()
+
+	if !hadPreQueued {
+		return
+	}
+
+	if gp, ok := s.player.(domain.GaplessPlayer); ok {
+		gp.ClearEnqueued()
+	}
+	s.preEnqueueNext()
+}
+
+// maybeStartCrossfade begins the crossfade into the pre-queued track when the
+// current track is close enough to its end. Called from the position ticker.
+func (s *PlayerService) maybeStartCrossfade(status domain.PlayerStatus) {
+	cp, ok := s.player.(domain.CrossfadePlayer)
+	if !ok {
+		return
+	}
+
+	s.mu.RLock()
+	sec := s.crossfadeSec
+	fading := s.fading
+	hasNext := s.nextPreQueued != nil
+	s.mu.RUnlock()
+
+	if sec <= 0 || fading || !hasNext {
+		return
+	}
+	if status.PlaybackState != domain.PlaybackStatePlaying || status.Duration < 2 {
+		return
+	}
+	effFade := math.Min(sec, status.Duration/2)
+	remaining := status.Duration - status.Position
+	// Below 0.4s remaining, let the normal end-callback/gapless path win
+	// (covers a seek that landed on the last instant of the track).
+	if remaining > effFade || remaining <= 0.4 {
+		return
+	}
+
+	// Claim the fade before touching the queue so a concurrent manual skip
+	// can't start a second overlap.
+	s.mu.Lock()
+	if s.fading || s.nextPreQueued == nil {
+		s.mu.Unlock()
+		return
+	}
+	next := s.nextPreQueued
+	s.nextPreQueued = nil
+	s.fading = true
+	s.fadeGen++
+	gen := s.fadeGen
+	s.mu.Unlock()
+
+	// Advance the queue index to the pre-queued track so transitionToTrack
+	// and normalization see the correct PeekNext.
+	if s.queue.Next() == nil {
+		s.mu.Lock()
+		s.fading = false
+		s.mu.Unlock()
+		return
+	}
+
+	if err := s.runCrossfade(cp, next, effFade, gen); err != nil {
+		s.logger.Error("crossfade begin failed, falling back to hard load", "error", err)
+		s.mu.Lock()
+		s.fading = false
+		s.mu.Unlock()
+		if err2 := s.loadAndPlay(next); err2 != nil {
+			s.logger.Error("fallback loadAndPlay failed", "error", err2)
+		}
+	}
+}
+
+// runCrossfade drives the native overlap for an already-claimed fade (fading
+// set, queue index already on next) and schedules its completion.
+func (s *PlayerService) runCrossfade(cp domain.CrossfadePlayer, next *domain.TrackDTO, effFade float64, gen int) error {
+	gainDB := 0.0
+	if s.normSvc != nil {
+		if g, _, err := s.normSvc.ComputeGain(context.Background(), next, s.queue.PeekNext()); err == nil {
+			gainDB = g
+		}
+	}
+
+	if err := cp.BeginCrossfadeToPreloaded(next, effFade, gainDB); err != nil {
+		return err
+	}
+
+	s.mu.RLock()
+	current := s.currentTrack
+	s.mu.RUnlock()
+	if current != nil {
+		s.emitArtworkCrossfade(domain.ArtworkCrossfadeEvent{
+			TransitionID:   gen,
+			Phase:          "start",
+			FromArtworkKey: current.ArtworkKey,
+			ToArtworkKey:   next.ArtworkKey,
+			DurationMS:     int(math.Round(effFade * 1000)),
+		})
+	}
+
+	s.transitionToTrack(next)
+
+	time.AfterFunc(time.Duration((effFade+0.3)*float64(time.Second)), func() {
+		s.finishCrossfade(gen)
+	})
+	return nil
+}
+
+// snapCrossfade force-completes the in-progress fade with generation gen:
+// the outgoing source is stopped and the incoming one snaps to full level.
+// Returns false when that fade is stale or none is running.
+func (s *PlayerService) snapCrossfade(gen int) bool {
+	s.mu.Lock()
+	if !s.fading || gen != s.fadeGen {
+		s.mu.Unlock()
+		return false
+	}
+	s.fading = false
+	s.mu.Unlock()
+
+	if cp, ok := s.player.(domain.CrossfadePlayer); ok {
+		cp.FinishCrossfade()
+	}
+	s.emitArtworkCrossfade(domain.ArtworkCrossfadeEvent{TransitionID: gen, Phase: "end"})
+	return true
+}
+
+// emitArtworkCrossfade keeps fullscreen artwork synchronized with the native
+// overlap. It is deliberately separate from player:status so manual changes
+// cannot be mistaken for a crossfade by the frontend.
+func (s *PlayerService) emitArtworkCrossfade(event domain.ArtworkCrossfadeEvent) {
+	for _, listener := range s.artworkCrossfadeListeners {
+		listener(event)
+	}
+	app := application.Get()
+	if app != nil && app.Event != nil {
+		defer func() { _ = recover() }()
+		app.Event.Emit("player:artwork-crossfade", event)
+	}
+}
+
+// AddArtworkCrossfadeListener registers an observer for visual crossfade
+// lifecycle events. It is used by unit tests and non-Wails adapters.
+func (s *PlayerService) AddArtworkCrossfadeListener(listener func(domain.ArtworkCrossfadeEvent)) {
+	s.artworkCrossfadeListeners = append(s.artworkCrossfadeListeners, listener)
+}
+
+// snapActiveCrossfade snaps whatever fade is currently running, without
+// pre-enqueueing a follow-up track (the caller is about to replace it).
+func (s *PlayerService) snapActiveCrossfade() {
+	s.mu.RLock()
+	fading := s.fading
+	gen := s.fadeGen
+	s.mu.RUnlock()
+	if fading {
+		s.snapCrossfade(gen)
+	}
+}
+
+// finishCrossfade completes the fade and pre-enqueues the following track.
+// Pre-enqueueing is deferred to here because the idle deck/slot is occupied
+// by the outgoing source until the fade ends.
+func (s *PlayerService) finishCrossfade(gen int) {
+	if !s.snapCrossfade(gen) {
+		return
+	}
+	s.preEnqueueNext()
+}
+
+// finishActiveCrossfade finishes whatever fade is currently running,
+// including the follow-up pre-enqueue. No-op when not fading.
+func (s *PlayerService) finishActiveCrossfade() {
+	s.mu.RLock()
+	fading := s.fading
+	gen := s.fadeGen
+	s.mu.RUnlock()
+	if fading {
+		s.finishCrossfade(gen)
+	}
+}
+
 // HandleTrackEnd is called by the native player when a track finishes playing.
 func (s *PlayerService) HandleTrackEnd() {
+	// During a crossfade the outgoing source's end is already accounted for;
+	// the native layers also guard this, but never double-advance the queue.
+	s.mu.RLock()
+	fading := s.fading
+	s.mu.RUnlock()
+	if fading {
+		s.logger.Debug("track end during crossfade ignored")
+		return
+	}
+
 	s.stopPositionTicker()
 	s.logger.Debug("track ended, moving to next")
 
@@ -1240,17 +1499,7 @@ func (s *PlayerService) HandleTrackEnd() {
 		s.transitionToTrack(preQueued)
 
 		// Pre-enqueue the next-next track.
-		if nextNext := s.queue.PeekNext(); nextNext != nil {
-			if gp, ok := s.player.(domain.GaplessPlayer); ok {
-				if err := gp.EnqueueNext(nextNext); err != nil {
-					s.logger.Warn("failed to pre-enqueue next track", "error", err)
-				} else {
-					s.mu.Lock()
-					s.nextPreQueued = nextNext
-					s.mu.Unlock()
-				}
-			}
-		}
+		s.preEnqueueNext()
 		return
 	}
 
@@ -1375,6 +1624,7 @@ func (s *PlayerService) restoreState(ctx context.Context) {
 	// the zero-value (unlimited) until the settings are next saved.
 	if settings, err := s.settingsRepo.Load(ctx); err == nil {
 		s.queue.SetMaxSize(domain.ResolveMaxQueueSize(settings.MaxQueueSize))
+		s.SetCrossfadeSeconds(settings.CrossfadeSeconds)
 	}
 
 	if len(activeTracks) > 0 {

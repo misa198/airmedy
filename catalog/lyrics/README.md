@@ -258,6 +258,17 @@ interface PlainLine {
 }
 ```
 
+### Immersive Fullscreen Rendering
+
+When fullscreen High Contrast Lyrics is off, `ImmersiveLyricsPanel` passes
+`immersive=true` to `PlayerLyrics`. For synced lyrics, `SyncedLyricsView` keeps
+the active line sharp; its immediate neighbors have only a `0.35px` blur, then
+lines farther away use `1.25px` and `2px` blur while fading from 25% to 10%
+opacity. The active line retains the existing 105% scale. The
+high-contrast fullscreen panel and `LyricsDrawer` retain their existing styling.
+Immersive auto-scroll positions the active line at 32% of the lyric viewport;
+other lyric surfaces keep it centered.
+
 ### `isSynced` Detection
 
 Checks if `content` contains at least one valid LRC timestamp pattern: `[MM:SS.ms]`.

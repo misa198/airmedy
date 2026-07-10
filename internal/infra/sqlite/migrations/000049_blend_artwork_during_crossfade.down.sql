@@ -1,0 +1,1 @@
+ALTER TABLE app_settings DROP COLUMN blend_artwork_during_crossfade;

@@ -74,16 +74,18 @@ func (s *SettingsService) GetSettings(ctx context.Context) (*domain.AppSettings,
 	if err != nil {
 		s.logger.Error("failed to load app settings, using defaults", "error", err)
 		s.cache = &domain.AppSettings{
-			Language:              "en",
-			Theme:                 "system",
-			StartAtLogin:          false,
-			ShowTrayIcon:          true,
-			AutoCheckUpdate:       true,
-			EQEnabled:             true,
-			ArtistDelimiters:      domain.DefaultDelimiters(),
-			AlbumArtistDelimiters: domain.DefaultDelimiters(),
-			GenreDelimiters:       domain.DefaultDelimiters(),
-			ComposerDelimiters:    domain.DefaultDelimiters(),
+			Language:                    "en",
+			Theme:                       "system",
+			StartAtLogin:                false,
+			ShowTrayIcon:                true,
+			AutoCheckUpdate:             true,
+			EQEnabled:                   true,
+			BlendArtworkDuringCrossfade: true,
+			HighContrastLyrics:          true,
+			ArtistDelimiters:            domain.DefaultDelimiters(),
+			AlbumArtistDelimiters:       domain.DefaultDelimiters(),
+			GenreDelimiters:             domain.DefaultDelimiters(),
+			ComposerDelimiters:          domain.DefaultDelimiters(),
 		}
 		return s.cache, nil
 	}

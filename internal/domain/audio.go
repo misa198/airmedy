@@ -112,6 +112,25 @@ type GaplessPlayer interface {
 	ClearEnqueued()
 }
 
+// CrossfadePlayer is an optional interface for audio players that can overlap
+// the current track with the pre-loaded next track under a volume ramp.
+type CrossfadePlayer interface {
+	GaplessPlayer
+	// SetCrossfadeDuration sets the fade length in seconds. Zero disables
+	// crossfade and restores pure gapless behavior (including where
+	// EnqueueNext pre-loads the next track to).
+	SetCrossfadeDuration(seconds float64)
+	// BeginCrossfadeToPreloaded starts the pre-loaded track overlapped with
+	// the current one, ramping current→0 and preloaded→full over durationSec.
+	// preampGainDB is the incoming track's normalization gain, applied
+	// per-source. Updates player status to the new track.
+	BeginCrossfadeToPreloaded(track *TrackDTO, durationSec, preampGainDB float64) error
+	// FinishCrossfade force-completes any in-progress fade: the outgoing
+	// source is stopped and unloaded, the incoming source snaps to full
+	// level, and the idle slot becomes available. No-op when not fading.
+	FinishCrossfade()
+}
+
 // EQController is an optional interface implemented by audio players that support EQ
 type EQController interface {
 	SetEQBand(index int, frequency, gain, bandwidth float64) error

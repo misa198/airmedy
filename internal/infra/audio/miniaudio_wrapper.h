@@ -36,8 +36,10 @@ int    ma_player_is_playing(MaPlayer* p);
 int ma_player_set_eq_band(MaPlayer* p, int index, float frequency, float gain, float bandwidth);
 int ma_player_set_eq_enabled(MaPlayer* p, int enabled);
 
-/* Volume normalization pre-amp gain (dB), applied at the engine endpoint —
- * separate from per-sound user volume (ma_player_set_volume). */
+/* Volume normalization pre-amp gain (dB) for the active sound, composed with
+ * per-sound user volume (ma_player_set_volume) as volume × gain. Per-source:
+ * during a crossfade the incoming sound carries its own gain (passed to
+ * ma_player_begin_crossfade) while the outgoing sound keeps its old one. */
 int ma_player_set_preamp_gain(MaPlayer* p, float gainDB);
 
 /* Track-end callback — fired from MiniAudio device thread, must not block */
@@ -49,6 +51,15 @@ int  ma_player_preload_next(MaPlayer* p, const char* path);
 int  ma_player_start_preloaded(MaPlayer* p);
 /* Gapless: discard pre-loaded track without playing */
 void ma_player_clear_preloaded(MaPlayer* p);
+
+/* Crossfade: overlap the pre-loaded next track with the current one — the
+ * incoming sound fades 0→full while the outgoing fades full→0 then stops.
+ * next_gain_db is the incoming track's normalization gain (per-sound).
+ * Call from a goroutine, never the audio thread. */
+int ma_player_begin_crossfade(MaPlayer* p, double duration_sec, float next_gain_db);
+/* Crossfade: force-complete — uninit the fading-out sound, snap the incoming
+ * fader to full. Safe to call when not fading. Call from a goroutine. */
+int ma_player_finish_crossfade(MaPlayer* p);
 
 #ifdef __cplusplus
 }

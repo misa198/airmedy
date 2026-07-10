@@ -360,6 +360,20 @@ func ResolveMaxQueueSize(n int) int {
 	return DefaultMaxQueueSize
 }
 
+// MaxCrossfadeSeconds is the upper bound for AppSettings.CrossfadeSeconds.
+const MaxCrossfadeSeconds = 12
+
+// ClampCrossfadeSeconds maps a stored value into [0, MaxCrossfadeSeconds].
+func ClampCrossfadeSeconds(n int) int {
+	if n < 0 {
+		return 0
+	}
+	if n > MaxCrossfadeSeconds {
+		return MaxCrossfadeSeconds
+	}
+	return n
+}
+
 // TrackFeatures holds one-time DSP analysis results for a track (loudness, dynamics,
 // spectral shape).
 type TrackFeatures struct {
@@ -442,6 +456,18 @@ type AppSettings struct {
 	// included). One of ValidMaxQueueSizes; zero falls back to DefaultMaxQueueSize.
 	MaxQueueSize int `json:"max_queue_size"`
 
+	// CrossfadeSeconds is the track-transition overlap length in seconds,
+	// clamped to [0, MaxCrossfadeSeconds]. Zero disables crossfade (gapless).
+	CrossfadeSeconds int `json:"crossfade_seconds"`
+
+	// BlendArtworkDuringCrossfade controls the fullscreen album-art transition
+	// for automatic audio crossfades. It does not affect audio playback.
+	BlendArtworkDuringCrossfade bool `json:"blend_artwork_during_crossfade"`
+
+	// HighContrastLyrics selects the glass, headered lyrics panel in the
+	// fullscreen player. When false, lyrics render directly over the artwork.
+	HighContrastLyrics bool `json:"high_contrast_lyrics"`
+
 	// Library analysis pipeline (feeds Normalization). Opt-in: off disables the
 	// background worker pool entirely (no backfill/enqueue/boost). Normalization
 	// cannot be enabled while this is off.
@@ -471,4 +497,14 @@ type AppSettings struct {
 	// stale (< this value) and therefore re-picked-up for re-derivation.
 	// Not user-facing.
 	MoodDerivationVersion int `json:"mood_derivation_version"`
+}
+
+// ArtworkCrossfadeEvent describes one visual artwork transition that follows
+// an automatic audio crossfade. Phase is either "start" or "end".
+type ArtworkCrossfadeEvent struct {
+	TransitionID   int    `json:"transition_id"`
+	Phase          string `json:"phase"`
+	FromArtworkKey string `json:"from_artwork_key,omitempty"`
+	ToArtworkKey   string `json:"to_artwork_key,omitempty"`
+	DurationMS     int    `json:"duration_ms,omitempty"`
 }

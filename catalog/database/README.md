@@ -66,6 +66,9 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000039 | `track_bitdepth_codec.up.sql`        | `ALTER TABLE tracks ADD COLUMN bit_depth INTEGER NOT NULL DEFAULT 0`, `ADD COLUMN codec TEXT NOT NULL DEFAULT ''` — bits-per-sample and inner codec (e.g. m4a `aac`/`alac`) from the `go-taglib` fork, used to classify Lossy/Lossless/Hi-Res/DSD |
 | 000040 | `metadata_schema_version.up.sql`     | `ALTER TABLE library_sync_state ADD COLUMN metadata_schema_version INTEGER NOT NULL DEFAULT 0` — tracks which extractor field-set a library's data reflects, so a sync can force one full re-parse when it's behind (see `catalog/library`) |
 | 000047 | `library_analysis_worker_count.up.sql` | `ALTER TABLE app_settings ADD COLUMN library_analysis_worker_count INTEGER NOT NULL DEFAULT 2` — persists the desired concurrent worker count for the library-analysis pool; down intentionally keeps the column |
+| 000048 | `crossfade_seconds.up.sql`              | `ALTER TABLE app_settings ADD COLUMN crossfade_seconds INTEGER NOT NULL DEFAULT 0` — track-transition overlap in seconds, 0 = off/gapless (see `catalog/player`) |
+| 000049 | `blend_artwork_during_crossfade.up.sql` | `ALTER TABLE app_settings ADD COLUMN blend_artwork_during_crossfade BOOLEAN NOT NULL DEFAULT 1` — fullscreen artwork blend during automatic crossfade |
+| 000050 | `high_contrast_lyrics.up.sql` | `ALTER TABLE app_settings ADD COLUMN high_contrast_lyrics BOOLEAN NOT NULL DEFAULT 1` — fullscreen lyrics glass panel; false uses the immersive panel |
 
 ## Full Schema
 
@@ -247,8 +250,11 @@ app_settings (
     normalization_target_lufs REAL NOT NULL DEFAULT -14,
     normalization_prevent_clip INTEGER NOT NULL DEFAULT 1,
     mood_derivation_version INTEGER NOT NULL DEFAULT 0,               -- bumped on corpus percentile recompute → stales every track's mood (000037)
+    crossfade_seconds INTEGER NOT NULL DEFAULT 0,                     -- track-transition overlap in seconds; 0 = off/gapless (000048)
+    blend_artwork_during_crossfade BOOLEAN NOT NULL DEFAULT 1,        -- fullscreen cover blend during automatic crossfade (000049)
+    high_contrast_lyrics BOOLEAN NOT NULL DEFAULT 1,                  -- fullscreen lyrics glass panel; false is immersive (000050)
     updated_at DATETIME
-    -- (also: show_tray_icon, prevent_sleep_while_playing, remote_server_*, show_player_indicator)
+    -- (also: show_tray_icon, prevent_sleep_while_playing, remote_server_*, show_player_indicator, max_queue_size)
 )
 
 library_sync_state (

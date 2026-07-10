@@ -26,6 +26,10 @@ const translations = {
                 title: "10-band Equalizer",
                 desc: "Tune the sound to your headphones. Native performance on macOS, Windows, and Linux."
             },
+            crossfade: {
+                title: "Crossfade",
+                desc: "Blend the end of the current track into the next with a smooth equal-power fade. Adjustable in Playback settings."
+            },
             search: {
                 title: "Fast Search",
                 desc: "Find any track, album, or artist in milliseconds with our lightning-fast indexing."
@@ -151,6 +155,10 @@ const translations = {
             eq: {
                 title: "10-Band-Equalizer",
                 desc: "Stimme den Klang auf deine Kopfhörer ab. Native Leistung unter macOS, Windows und Linux."
+            },
+            crossfade: {
+                title: "Überblenden",
+                desc: "Lasse das Ende des aktuellen Titels mit dem Anfang des nächsten über eine sanfte Equal-Power-Kurve ineinander übergehen. In den Wiedergabeeinstellungen anpassbar."
             },
             search: {
                 title: "Schnellsuche",
@@ -278,6 +286,10 @@ const translations = {
                 title: "Ecualizador de 10 bandas",
                 desc: "Ajusta el sonido a tus auriculares. Rendimiento nativo en macOS, Windows y Linux."
             },
+            crossfade: {
+                title: "Fundido cruzado",
+                desc: "Fusiona el final de la pista actual con el inicio de la siguiente con un fundido suave de potencia constante. Se puede ajustar en la configuración de reproducción."
+            },
             search: {
                 title: "Búsqueda rápida",
                 desc: "Encuentra cualquier pista, álbum o artista en milisegundos con nuestra indexación ultrarrápida."
@@ -403,6 +415,10 @@ const translations = {
             eq: {
                 title: "Égaliseur 10 bandes",
                 desc: "Ajustez le son à vos écouteurs. Performance native sur macOS, Windows et Linux."
+            },
+            crossfade: {
+                title: "Fondu enchaîné",
+                desc: "Mélange la fin du morceau en cours avec le début du suivant grâce à une courbe de fondu equal-power fluide. Réglable dans les paramètres de lecture."
             },
             search: {
                 title: "Recherche rapide",
@@ -530,6 +546,10 @@ const translations = {
                 title: "Equalizzatore a 10 bande",
                 desc: "Sintonizza il suono per le tue cuffie. Prestazioni native su macOS, Windows e Linux."
             },
+            crossfade: {
+                title: "Dissolvenza incrociata",
+                desc: "Unisce la fine del brano corrente con l'inizio del successivo tramite una morbida curva equal-power. Regolabile nelle impostazioni di riproduzione."
+            },
             search: {
                 title: "Ricerca rapida",
                 desc: "Trova qualsiasi brano, album o artista in millisecondi con la nostra indicizzazione fulminea."
@@ -655,6 +675,10 @@ const translations = {
             eq: {
                 title: "10バンドイコライザー",
                 desc: "ヘッドフォンに合わせてサウンドを調整。macOS、Windows、Linuxでネイティブなパフォーマンスを実現。"
+            },
+            crossfade: {
+                title: "クロスフェード",
+                desc: "現在の曲の終わりと次の曲の始まりを、滑らかなイコールパワーカーブで重ねます。再生設定で調整できます。"
             },
             search: {
                 title: "高速検索",
@@ -782,6 +806,10 @@ const translations = {
                 title: "10밴드 이퀄라이저",
                 desc: "헤드폰에 맞게 사운드를 조정하세요. macOS, Windows, Linux에서 네이티브 성능을 제공합니다."
             },
+            crossfade: {
+                title: "크로스페이드",
+                desc: "부드러운 이퀄 파워 페이드로 현재 곡의 끝부분을 다음 곡의 시작과 자연스럽게 겹칩니다. 재생 설정에서 조절할 수 있습니다."
+            },
             search: {
                 title: "빠른 검색",
                 desc: "초고속 인덱싱으로 단 몇 밀리초 만에 모든 트랙, 앨범, 아티스트를 찾을 수 있습니다."
@@ -907,6 +935,10 @@ const translations = {
             eq: {
                 title: "Equalizador de 10 bandas",
                 desc: "Ajuste o som para seus fones de ouvido. Desempenho nativo no macOS, Windows e Linux."
+            },
+            crossfade: {
+                title: "Crossfade",
+                desc: "Misture o fim da faixa atual com o início da próxima com uma transição suave de potência constante. Ajustável nas configurações de reprodução."
             },
             search: {
                 title: "Busca Rápida",
@@ -1034,6 +1066,10 @@ const translations = {
                 title: "10-полосный эквалайзер",
                 desc: "Настройте звук под свои наушники. Нативная производительность на macOS, Windows и Linux."
             },
+            crossfade: {
+                title: "Плавный переход",
+                desc: "Плавно смешивает конец текущего трека с началом следующего с помощью smooth equal-power fade. Настраивается в параметрах воспроизведения."
+            },
             search: {
                 title: "Быстрый поиск",
                 desc: "Найдите любой трек, альбом или исполнителя за миллисекунды благодаря нашей сверхбыстрой индексации."
@@ -1159,6 +1195,10 @@ const translations = {
             eq: {
                 title: "อีควอไลเซอร์ 10 แบนด์",
                 desc: "ปรับแต่งเสียงให้เข้ากับหูฟังของคุณ ประสิทธิภาพระดับเนทีฟบน macOS, Windows และ Linux"
+            },
+            crossfade: {
+                title: "ครอสเฟด",
+                desc: "ผสานช่วงท้ายของเพลงปัจจุบันเข้ากับช่วงต้นของเพลงถัดไปด้วยเฟดแบบ equal-power ที่ลื่นไหล ปรับได้ในตั้งค่าการเล่น"
             },
             search: {
                 title: "ค้นหาอย่างรวดเร็ว",
@@ -1286,6 +1326,10 @@ const translations = {
                 title: "Bộ cân bằng 10 băng tần",
                 desc: "Điều chỉnh âm thanh cho tai nghe của bạn. Hiệu suất gốc trên macOS, Windows và Linux."
             },
+            crossfade: {
+                title: "Chuyển bài mượt",
+                desc: "Hoà phần cuối của bài hiện tại vào phần đầu của bài kế tiếp bằng đường fade equal-power mượt mà. Có thể chỉnh trong cài đặt phát lại."
+            },
             search: {
                 title: "Tìm kiếm nhanh",
                 desc: "Tìm bất kỳ bài hát, album hoặc nghệ sĩ nào trong tích tắc với hệ thống lập chỉ mục cực nhanh."
@@ -1411,6 +1455,10 @@ const translations = {
             eq: {
                 title: "10 段均衡器",
                 desc: "为您的耳机调节音质。在 macOS、Windows 和 Linux 上均拥有原生性能。"
+            },
+            crossfade: {
+                title: "交叉淡入淡出",
+                desc: "用平滑的 equal-power 淡变，将当前曲目的结尾自然衔接到下一首的开头。可在播放设置中调节。"
             },
             search: {
                 title: "快速搜索",

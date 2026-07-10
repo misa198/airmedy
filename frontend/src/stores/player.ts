@@ -9,6 +9,21 @@ import { useMoodRadioStore } from './moodRadio'
 
 export type PlayerMode = 'sticky' | 'mini' | 'fullscreen'
 
+export type ArtworkCrossfadeState = {
+  transitionId: number
+  fromUrl: string | null
+  toUrl: string | null
+  durationMs: number
+}
+
+type ArtworkCrossfadeEvent = {
+  transition_id: number
+  phase: 'start' | 'end'
+  from_artwork_key?: string
+  to_artwork_key?: string
+  duration_ms?: number
+}
+
 export const usePlayerStore = defineStore('player', () => {
   // State
   const status = shallowRef<PlayerStatus | null>(null)
@@ -23,6 +38,7 @@ export const usePlayerStore = defineStore('player', () => {
   const playerMode = ref<PlayerMode>('sticky')
   const lyrics = ref<Lyric | null>(null)
   const lyricsLoading = ref(false)
+  const artworkCrossfade = shallowRef<ArtworkCrossfadeState | null>(null)
 
   // Interpolation state
   const localInterpolatedPosition = ref(0)
@@ -61,6 +77,12 @@ export const usePlayerStore = defineStore('player', () => {
   const artworkUrl = computed(() => buildArtworkUrl(currentTrack.value?.artwork_key, 'lg') ?? null)
   const artworkUrlMd = computed(() => buildArtworkUrl(currentTrack.value?.artwork_key, 'md') ?? null)
   const artworkUrlSm = computed(() => buildArtworkUrl(currentTrack.value?.artwork_key, 'sm') ?? null)
+
+  function preloadArtwork(url: string | null) {
+    if (!url) return
+    const image = new Image()
+    image.src = url
+  }
 
   // Clear lyrics immediately whenever the playing track changes
   watch(currentTrack, (newTrack, oldTrack) => {
@@ -137,6 +159,29 @@ export const usePlayerStore = defineStore('player', () => {
 
       Events.On('player:theme', (ev: Events.WailsEvent) => {
         theme.value = ev.data as ThemeColors
+      }),
+
+      Events.On('player:artwork-crossfade', (ev: Events.WailsEvent) => {
+        const transition = ev.data as ArtworkCrossfadeEvent
+        if (!transition || !Number.isInteger(transition.transition_id)) return
+
+        if (transition.phase === 'end') {
+          if (artworkCrossfade.value?.transitionId === transition.transition_id) {
+            artworkCrossfade.value = null
+          }
+          return
+        }
+        if (transition.phase !== 'start') return
+
+        const fromUrl = buildArtworkUrl(transition.from_artwork_key, 'lg') ?? null
+        const toUrl = buildArtworkUrl(transition.to_artwork_key, 'lg') ?? null
+        preloadArtwork(toUrl)
+        artworkCrossfade.value = {
+          transitionId: transition.transition_id,
+          fromUrl,
+          toUrl,
+          durationMs: Math.max(1, transition.duration_ms ?? 0),
+        }
       }),
 
       Events.On('player:lyrics', (ev: Events.WailsEvent) => {
@@ -216,6 +261,7 @@ export const usePlayerStore = defineStore('player', () => {
       _rafId = null
     }
     _initialized = false
+    artworkCrossfade.value = null
   }
 
   async function play() {
@@ -405,6 +451,7 @@ export const usePlayerStore = defineStore('player', () => {
     artworkUrl,
     artworkUrlMd,
     artworkUrlSm,
+    artworkCrossfade,
     // Actions
     init,
     dispose,

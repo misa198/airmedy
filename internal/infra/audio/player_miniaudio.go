@@ -230,3 +230,28 @@ func (p *MiniAudioPlayer) AutoTransitions() bool {
 func (p *MiniAudioPlayer) ClearEnqueued() {
 	C.ma_player_clear_preloaded((*C.MaPlayer)(p.ptr))
 }
+
+// --- CrossfadePlayer ---
+
+// SetCrossfadeDuration is Go-side only: the native layer takes the duration
+// per ma_player_begin_crossfade call.
+func (p *MiniAudioPlayer) SetCrossfadeDuration(seconds float64) {}
+
+// BeginCrossfadeToPreloaded overlaps the pre-loaded sound with the current
+// one under a fade. Must be called from a goroutine, never the audio thread.
+func (p *MiniAudioPlayer) BeginCrossfadeToPreloaded(track *domain.TrackDTO, durationSec, preampGainDB float64) error {
+	if rc := C.ma_player_begin_crossfade((*C.MaPlayer)(p.ptr), C.double(durationSec), C.float(preampGainDB)); rc != 0 {
+		return fmt.Errorf("ma_player_begin_crossfade failed: %d (path: %s)", rc, track.Path)
+	}
+	p.status.TrackID = track.ID
+	p.status.Duration = float64(C.ma_player_get_length((*C.MaPlayer)(p.ptr)))
+	p.status.Position = 0
+	p.status.PlaybackState = domain.PlaybackStatePlaying
+	return nil
+}
+
+// FinishCrossfade force-completes an in-progress fade. Must be called from a
+// goroutine, never the audio thread (it uninits the outgoing sound).
+func (p *MiniAudioPlayer) FinishCrossfade() {
+	C.ma_player_finish_crossfade((*C.MaPlayer)(p.ptr))
+}
