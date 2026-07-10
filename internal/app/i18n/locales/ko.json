@@ -17,7 +17,10 @@
     "shuffle": "셔플",
     "repeat": "반복",
     "view": "보기",
-    "search": "검색"
+    "search": "검색",
+    "help": "도움말",
+    "github": "GitHub",
+    "sponsor": "후원"
   },
   "tray": {
     "no_track": "재생 중인 트랙 없음",

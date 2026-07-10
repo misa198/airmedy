@@ -17,7 +17,10 @@
     "shuffle": "Aléatoire",
     "repeat": "Répéter",
     "view": "Présentation",
-    "search": "Recherche"
+    "search": "Recherche",
+    "help": "Aide",
+    "github": "GitHub",
+    "sponsor": "Soutenir"
   },
   "tray": {
     "no_track": "Aucun morceau en lecture",

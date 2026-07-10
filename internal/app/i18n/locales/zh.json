@@ -17,7 +17,10 @@
     "shuffle": "随机播放",
     "repeat": "循环播放",
     "view": "视图",
-    "search": "搜索"
+    "search": "搜索",
+    "help": "帮助",
+    "github": "GitHub",
+    "sponsor": "赞助"
   },
   "tray": {
     "no_track": "未在播放",
