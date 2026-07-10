@@ -47,7 +47,7 @@ function immersiveLineStyle(index: number) {
   // Keep the lines beside the current lyric legible. Far lines fade away more
   // than they blur, avoiding the visually noisy, out-of-focus wall of text.
   const blurByDistance = [0, 0.35, 1.25, 2]
-  const opacityByDistance = [1, 0.25, 0.15, 0.1]
+  const opacityByDistance = [1, 0.25, 0.2, 0.15]
   const level = Math.min(distance, blurByDistance.length - 1)
 
   return {

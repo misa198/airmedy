@@ -65,15 +65,33 @@ func ExtractPalette(imagePath string) (*domain.ThemeColors, error) {
 
 const accentSampleSize = 256
 
+// accentMinAreaFraction is the minimum fraction of sample pixels a bucket must
+// cover to be considered at all. At 256×256 this is ~262 pixels (~0.4%).
+// This eliminates single-pixel JPEG artefacts and tiny logos before scoring.
+const accentMinAreaFraction = 0.004
+
+// accentAreaKnee is the area fraction at which the multiplicative area weight
+// reaches ~63% of its maximum (the "knee" of the sqrt curve). Colors at this
+// fraction or above are only mildly penalised; colors far below it are heavily
+// penalised. Set to ~2% so a 2%-coverage accent has a weight of ~1.0 and a
+// 0.4%-coverage micro-logo has a weight of ~0.45.
+const accentAreaKnee = 0.02
+
 // mostVibrantAccent finds a recurring saturated colour independently of the
 // k-means clusters. Quantising samples into RGB buckets means antialiased text
 // and small shapes contribute to one candidate instead of being treated as
-// unrelated single pixels. A bucket must cover at least 0.1% of the sample (or
-// four pixels) so JPEG noise cannot become the theme colour.
+// unrelated single pixels.
+//
+// Scoring uses a multiplicative area weight instead of an additive bonus so
+// that a tiny, ultra-saturated cluster (e.g. a red logo on a muted cover)
+// cannot simply overpower a larger legitimate accent through raw saturation.
+// The weight follows a sqrt curve that is near-1 for colours covering ≥2% of
+// pixels and falls sharply for rarer clusters, completely excluding anything
+// below accentMinAreaFraction.
 func mostVibrantAccent(src image.Image) (color.RGBA, bool) {
 	sample := downsample(src, accentSampleSize, accentSampleSize)
 	total := sample.Bounds().Dx() * sample.Bounds().Dy()
-	minCount := max(4, total/1000)
+	minCount := max(int(math.Round(float64(total)*accentMinAreaFraction)), 4)
 
 	type bucket struct {
 		sumR, sumG, sumB int
@@ -115,9 +133,21 @@ func mostVibrantAccent(src image.Image) (color.RGBA, bool) {
 			B: uint8(entry.sumB / entry.count),
 			A: 0xFF,
 		}
-		// Saturation is primary; recurrence provides a small tie-breaker without
-		// allowing a large neutral-ish region to hide a deliberate accent.
-		score := vibrance(candidate) + math.Min(0.15, float64(entry.count)/float64(total))
+
+		// Area weight: sqrt(ratio / knee), clamped to [0, 1].
+		// This gives a smooth, non-linear penalty to low-coverage buckets:
+		//   ratio = 0.4% (min gate) → weight ≈ 0.45
+		//   ratio = 1%              → weight ≈ 0.71
+		//   ratio = 2% (knee)       → weight = 1.00
+		//   ratio > 2%              → weight = 1.00 (clamped)
+		//
+		// Multiplying vibrance by areaWeight means a hyper-saturated micro-logo
+		// (vibrance≈1.0, weight≈0.45) scores ≈0.45, while a moderately vibrant
+		// but genuinely prevalent accent (vibrance≈0.7, weight≈0.80) scores ≈0.56.
+		areaRatio := float64(entry.count) / float64(total)
+		areaWeight := math.Min(1.0, math.Sqrt(areaRatio/accentAreaKnee))
+		score := vibrance(candidate) * areaWeight
+
 		if score > bestScore {
 			best, bestScore = candidate, score
 		}
