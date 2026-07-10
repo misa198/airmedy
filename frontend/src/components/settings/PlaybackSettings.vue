@@ -32,7 +32,7 @@ const onLufsRelease = () => {
 // Crossfade is split into an on/off switch and a duration slider. Backend still
 // stores a single crossfade_seconds where 0 = off, so the switch just toggles
 // between 0 and the remembered duration.
-const CROSSFADE_DEFAULT_SECONDS = 6
+const CROSSFADE_DEFAULT_SECONDS = 4
 const crossfadeEnabled = computed(() => appStore.crossfadeSeconds > 0)
 // Remember the last non-zero duration so flipping the switch off then on
 // restores the previous value instead of resetting to 0.
