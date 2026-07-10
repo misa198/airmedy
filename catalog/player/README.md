@@ -63,8 +63,9 @@ type GaplessPlayer interface {
     // HandleTrackEnd must NOT call Load/Play when this returns true.
     AutoTransitions() bool
     // ClearEnqueued discards the pending pre-queued track from the engine without
-    // affecting the currently playing track. Called by SetRepeatMode to re-sync
-    // the pre-queue when the repeat mode changes during playback.
+    // affecting the currently playing track. Called by PlayerService.resyncPreQueue
+    // to re-sync the pre-queue whenever a queue mutation changes what track
+    // immediately follows the currently-playing one.
     ClearEnqueued()
 }
 ```
@@ -379,6 +380,7 @@ flowchart TB
 - Resets playback position to 0 on track change to ensure clean UI transitions.
 - Handles track-end → advance queue → load next.
 - **Gapless playback (always on):** `loadAndPlay` pre-enqueues the next track via `GaplessPlayer.EnqueueNext` (helper `preEnqueueNext`). On `HandleTrackEnd`, the service calls `GaplessPlayer.StartPreloaded` (for non-auto-transition players) or just updates status (SFBAudioEngine auto-transitions when crossfade is off), then calls `transitionToTrack` to update currentTrack, Now Playing, palette, and lyrics without interrupting audio.
+- **Pre-queue invariant:** `nextPreQueued *TrackDTO` caches the track `preEnqueueNext` last handed to the native engine; both `maybeStartCrossfade` and `HandleTrackEnd` play this cached value directly rather than re-peeking the queue, so it must always match `queue.PeekNext()` for the currently-playing track. Any mutation that can change what immediately follows the current track — `ReorderQueue`, `PlayNext`/`PlayNextTracks` (insert-after-current), `RemoveFromQueue` (non-current track), `SetShuffle`, `SetRepeatMode`, `SetCrossfadeSeconds` — calls `resyncPreQueue()`, which clears `nextPreQueued`, calls `GaplessPlayer.ClearEnqueued()`, and re-runs `preEnqueueNext()` against the post-mutation queue. `loadAndPlay` (used by `PlayTracks`/`ShuffleTracks`/`PlayQueueIndex`/`Next`/`Previous`/current-track removal) clears and rebuilds the cache unconditionally as part of the hard load. `AppendTracks` is exempt — it only grows the queue tail and never changes the immediate-next track.
 - **Crossfade state machine** (active when `crossfadeSec > 0` and the player implements `CrossfadePlayer`): guarded by `fading bool` + `fadeGen int` (generation counter voiding stale completion timers).
   - *Natural trigger:* the 500 ms ticker calls `maybeStartCrossfade(status)` — fires when `remaining ≤ min(crossfadeSec, duration/2)` and `remaining > 0.4 s` (below that the normal end-callback/gapless path wins; tracks under 2 s never fade). It claims the fade, advances the queue, calls `BeginCrossfadeToPreloaded` with the incoming track's `ComputeGain`, runs `transitionToTrack` (UI flips at fade start), and schedules `finishCrossfade(gen)` via `time.AfterFunc(fade + 300 ms)`.
   - *Only the natural trigger fades.* Every manual transition — `Next`/`Previous`/`PlayQueueIndex`, plus `PlayTracks`/`ShuffleTracks`/`RemoveFromQueue` — routes through `loadAndPlay` (hard load, no fade). Crossfade fires exclusively on the automatic end-of-track queue advance.

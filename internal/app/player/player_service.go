@@ -508,6 +508,9 @@ func (s *PlayerService) ShuffleTracks(tracks []*domain.TrackDTO) error {
 // SetShuffle enables or disables shuffling.
 func (s *PlayerService) SetShuffle(enabled bool) error {
 	s.queue.SetShuffle(enabled)
+	// Toggling shuffle rebuilds the play order, so whatever was cached as
+	// the "next" track before the toggle is very likely wrong now.
+	s.resyncPreQueue()
 	s.emitStatus()
 	s.emitRemoteState()
 	s.emitQueueOrder()
@@ -534,20 +537,13 @@ func (s *PlayerService) SetCrossfadeSeconds(n int) {
 		return
 	}
 	s.crossfadeSec = sec
-	hadPreQueued := s.nextPreQueued != nil
-	s.nextPreQueued = nil
 	s.mu.Unlock()
 
 	if cp, ok := s.player.(domain.CrossfadePlayer); ok {
 		cp.SetCrossfadeDuration(sec)
 	}
 
-	if hadPreQueued {
-		if gp, ok := s.player.(domain.GaplessPlayer); ok {
-			gp.ClearEnqueued()
-		}
-		s.preEnqueueNext()
-	}
+	s.resyncPreQueue()
 }
 
 // SetRepeatMode sets the repeat mode.
@@ -556,23 +552,7 @@ func (s *PlayerService) SetRepeatMode(mode domain.RepeatMode) error {
 
 	// Re-sync the gapless pre-queue with the new repeat mode so that stale
 	// pre-queued tracks don't cause the wrong track to play on the next track-end.
-	s.mu.Lock()
-	hadPreQueued := s.nextPreQueued != nil
-	s.nextPreQueued = nil
-	s.mu.Unlock()
-
-	if hadPreQueued {
-		if gp, ok := s.player.(domain.GaplessPlayer); ok {
-			gp.ClearEnqueued()
-			if next := s.queue.PeekNext(); next != nil {
-				if err := gp.EnqueueNext(next); err == nil {
-					s.mu.Lock()
-					s.nextPreQueued = next
-					s.mu.Unlock()
-				}
-			}
-		}
-	}
+	s.resyncPreQueue()
 
 	s.emitStatus()
 	s.emitRemoteState()
@@ -582,12 +562,16 @@ func (s *PlayerService) SetRepeatMode(mode domain.RepeatMode) error {
 // PlayNext inserts a track immediately after the currently playing track.
 func (s *PlayerService) PlayNext(track *domain.TrackDTO) {
 	s.queue.InsertAfterCurrent(track)
+	// Inserting right after the current track changes what plays next, so
+	// any cached pre-queued track from before this insert is stale.
+	s.resyncPreQueue()
 	s.emitQueue()
 }
 
 // PlayNextTracks inserts a list of tracks immediately after the currently playing track.
 func (s *PlayerService) PlayNextTracks(tracks []*domain.TrackDTO) {
 	s.queue.InsertListAfterCurrent(tracks)
+	s.resyncPreQueue()
 	s.emitQueue()
 }
 
@@ -618,6 +602,11 @@ func (s *PlayerService) RemoveFromQueue(trackID string) {
 			s.mu.Unlock()
 			_ = s.Stop()
 		}
+	} else {
+		// The removed track may have been the cached pre-queued "next"
+		// track — if so, that cache now points at a track no longer in
+		// the queue and must be recomputed.
+		s.resyncPreQueue()
 	}
 }
 
@@ -635,6 +624,12 @@ func (s *PlayerService) PlayQueueIndex(index int) error {
 // ReorderQueue updates the order of tracks in the queue using track IDs.
 func (s *PlayerService) ReorderQueue(trackIDs []string) {
 	s.queue.ReorderQueue(trackIDs)
+
+	// Reordering can change which track comes after the currently-playing
+	// one, so the cached nextPreQueued (captured before the reorder) may
+	// point at a now-stale track.
+	s.resyncPreQueue()
+
 	s.emitQueue()
 	s.saveState(context.Background())
 }
@@ -1262,6 +1257,28 @@ func (s *PlayerService) preEnqueueNext() {
 	s.mu.Lock()
 	s.nextPreQueued = next
 	s.mu.Unlock()
+}
+
+// resyncPreQueue clears a stale gapless pre-queue and recomputes it from the
+// queue's current state. Any mutation that can change which track
+// immediately follows the currently-playing one (reorder, insert-next,
+// remove, shuffle toggle, repeat-mode change, crossfade-duration change)
+// must call this — otherwise the cached nextPreQueued keeps pointing at the
+// track that used to be next, and the wrong track plays at crossfade/track-end.
+func (s *PlayerService) resyncPreQueue() {
+	s.mu.Lock()
+	hadPreQueued := s.nextPreQueued != nil
+	s.nextPreQueued = nil
+	s.mu.Unlock()
+
+	if !hadPreQueued {
+		return
+	}
+
+	if gp, ok := s.player.(domain.GaplessPlayer); ok {
+		gp.ClearEnqueued()
+	}
+	s.preEnqueueNext()
 }
 
 // maybeStartCrossfade begins the crossfade into the pre-queued track when the
