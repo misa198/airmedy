@@ -21,10 +21,10 @@ const { isSynced, syncedLines, plainLines } = useLyrics(toRef(props, 'lyrics'))
 <template>
   <div class="h-full w-full flex flex-col overflow-hidden">
     <!-- Loading skeleton -->
-    <div v-if="isLoading" class="flex-1 overflow-hidden px-8 py-48">
+    <div v-if="isLoading" class="flex-1 overflow-hidden px-8 py-14">
       <div class="max-w-2xl mx-auto space-y-10">
         <div
-          v-for="(width, i) in ['w-3/4', 'w-1/2', 'w-5/6', 'w-2/3', 'w-1/3', 'w-4/5', 'w-1/2', 'w-2/3', 'w-3/4', 'w-1/4']"
+          v-for="(width, i) in ['w-3/4', 'w-1/2', 'w-5/6', 'w-2/3', 'w-1/3', 'w-4/5', 'w-1/2', 'w-2/3', 'w-3/4']"
           :key="i"
           class="h-8 md:h-12 rounded-lg bg-white/[0.06] animate-pulse"
           :class="width"

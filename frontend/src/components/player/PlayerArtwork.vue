@@ -24,10 +24,11 @@ function stopCrossfadeAnimation() {
 }
 
 function startCrossfadeAnimation(crossfade: ArtworkCrossfadeState) {
-  const startedAt = performance.now()
   const durationMs = Math.max(1, crossfade.durationMs)
+  let startedAt: number | null = null
 
   const update = (now: number) => {
+    if (startedAt === null) startedAt = now
     const t = Math.min((now - startedAt) / durationMs, 1)
     // Match the equal-power audio crossfade: old = cos(t*pi/2), new = sin(t*pi/2).
     outgoingOpacity.value = Math.cos(t * Math.PI / 2)
@@ -66,10 +67,10 @@ onUnmounted(stopCrossfadeAnimation)
       <div v-else class="absolute inset-0 bg-white/5 flex items-center justify-center" :style="{ opacity: outgoingOpacity }">
         <Music class="w-20 h-20 text-white/15" />
       </div>
-      <LazyImg v-if="crossfade.toUrl" :key="crossfade.transitionId" :src="crossfade.toUrl" :alt="trackTitle"
+      <LazyImg v-if="crossfade.toUrl" :key="`${crossfade.transitionId}-img`" :src="crossfade.toUrl" :alt="trackTitle"
         class="absolute inset-0 w-full h-full object-cover artwork-crossfade-incoming"
         :style="{ opacity: incomingOpacity }" />
-      <div v-else :key="crossfade.transitionId" class="absolute inset-0 bg-white/5 artwork-crossfade-incoming"
+      <div v-else :key="`${crossfade.transitionId}-placeholder`" class="absolute inset-0 bg-white/5 artwork-crossfade-incoming"
         :style="{ opacity: incomingOpacity }">
         <Music class="w-20 h-20 text-white/15" />
       </div>

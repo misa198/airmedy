@@ -37,7 +37,12 @@ describe('PlayerArtwork', () => {
       '/artwork/from.jpg',
       '/artwork/to.jpg',
     ])
-    frame?.(performance.now() + 2500)
+    const startTime = performance.now()
+    // First tick: establishes startedAt inside the animation loop.
+    frame?.(startTime)
+    await nextTick()
+    // Second tick: exactly half-duration later → t = 0.5 → equal-power weights.
+    frame?.(startTime + 2500)
     await nextTick()
     const images = wrapper.findAll('img')
     expect(images).toHaveLength(2)
