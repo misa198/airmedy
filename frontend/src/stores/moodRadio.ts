@@ -18,11 +18,11 @@ export const useMoodRadioStore = defineStore('moodRadio', () => {
     seedTrackId.value = seedTrack.id
     active.value = true
     try {
-      // SeedMoodRadio/FindSimilar excludes the seed track from its results
+      // GenerateMoodRadio/FindSimilar excludes the seed track from its results
       // (it's always excluded as a candidate for itself), so it has to be
       // prepended here — otherwise the track the user picked never plays,
       // a similar track plays first instead.
-      const similar = await fetchSimilar(seedTrack.id)
+      const similar = await fetchSimilar(seedTrack.id, [])
       const tracks = [seedTrack, ...similar.filter(t => t.id !== seedTrack.id)]
       const playerStore = usePlayerStore()
       await playerStore.playTracks(tracks, 0, true)
@@ -40,14 +40,14 @@ export const useMoodRadioStore = defineStore('moodRadio', () => {
     seedTrackId.value = null
   }
 
-  async function fetchSimilar(trackId: string): Promise<TrackDTO[]> {
-    const result = await MoodRadioService.SeedMoodRadio(trackId, SEED_BATCH_SIZE)
+  async function fetchSimilar(trackId: string, excludeTrackIDs: string[]): Promise<TrackDTO[]> {
+    const result = await MoodRadioService.GenerateMoodRadio(trackId, excludeTrackIDs, SEED_BATCH_SIZE)
     return result.filter(Boolean) as TrackDTO[]
   }
 
   async function refillIfNeeded() {
     if (!active.value || refilling) return
-    // Library analysis feeds SeedMoodRadio's similarity search; if the user
+    // Library analysis feeds GenerateMoodRadio's similarity search; if the user
     // disables it mid-session (the context menu already hides the "Start
     // Mood Radio" entry in that case), the queue must stop silently growing
     // instead of continuing to fetch "similar" tracks from stale data.
@@ -73,7 +73,7 @@ export const useMoodRadioStore = defineStore('moodRadio', () => {
     refilling = true
     try {
       const existingSet = new Set(playerStore.queue.map(t => t.id))
-      const next = (await fetchSimilar(seed)).filter(t => !existingSet.has(t.id))
+      const next = await fetchSimilar(seed, [...existingSet])
       if (next.length) {
         // AppendTracks adds straight to the tail in one mutation. The
         // previous approach (PlayNextTracks then ReorderQueueIDs) fired two

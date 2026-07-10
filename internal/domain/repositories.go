@@ -245,9 +245,9 @@ type AnalysisRepository interface {
 type TrackQueryRepository interface {
 	// FindSimilar returns up to limit tracks most similar to seedTrackID by
 	// weighted-euclidean distance over analyzed mood/tempo features,
-	// nearest first, excluding the seed track itself and any unanalyzed
-	// track. Returns no tracks if the seed itself is unanalyzed.
-	FindSimilar(ctx context.Context, seedTrackID string, limit int) ([]*TrackDTO, error)
+	// nearest first, excluding the seed, excluded track IDs, and any
+	// unanalyzed track. Returns no tracks if the seed itself is unanalyzed.
+	FindSimilar(ctx context.Context, seedTrackID string, excludeTrackIDs []string, limit int) ([]*TrackDTO, error)
 	// MoodDensityGrid buckets all tracks with a non-null energy and
 	// danceability into a gridSize x gridSize grid for the Mood Playlist
 	// heatmap. See MoodDensityGrid for the bucket layout.

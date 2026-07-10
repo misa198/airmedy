@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"testing"
@@ -79,4 +80,100 @@ func TestTrackQueryRepository_MoodDensityGrid(t *testing.T) {
 	if sum != grid.AnalyzedCount {
 		t.Fatalf("sum of bucket counts (%d) should equal AnalyzedCount (%d)", sum, grid.AnalyzedCount)
 	}
+}
+
+func TestTrackQueryRepository_FindSimilarExcludesQueuedTracksBeforeLimit(t *testing.T) {
+	dbPath := "test_find_similar_exclusions.db"
+	defer func() { _ = os.Remove(dbPath) }()
+
+	db, err := NewDB(dbPath, slog.Default())
+	if err != nil {
+		t.Fatalf("failed to create test db: %v", err)
+	}
+	defer func() { _ = db.Close() }()
+
+	ctx := context.Background()
+	trackRepo := NewTrackRepository(db)
+	queryRepo := NewTrackQueryRepository(db, trackRepo)
+	for _, track := range []*domain.Track{
+		{ID: "seed", Path: "/m/seed.mp3", Title: "Seed", SortTitle: "seed", Format: "mp3"},
+		{ID: "closest", Path: "/m/closest.mp3", Title: "Closest", SortTitle: "closest", Format: "mp3"},
+		{ID: "next", Path: "/m/next.mp3", Title: "Next", SortTitle: "next", Format: "mp3"},
+		{ID: "far", Path: "/m/far.mp3", Title: "Far", SortTitle: "far", Format: "mp3"},
+	} {
+		if err := trackRepo.Save(ctx, track); err != nil {
+			t.Fatalf("failed to save track %s: %v", track.ID, err)
+		}
+	}
+	if _, err := db.ExecContext(ctx, `
+		INSERT INTO track_features (track_id, energy, danceability, tempo) VALUES
+			('seed', 0.50, 0.50, 120),
+			('closest', 0.51, 0.50, 120),
+			('next', 0.55, 0.50, 120),
+			('far', 0.90, 0.90, 180)
+	`); err != nil {
+		t.Fatalf("failed to seed track features: %v", err)
+	}
+
+	tracks, err := queryRepo.FindSimilar(ctx, "seed", []string{"closest"}, 2)
+	if err != nil {
+		t.Fatalf("FindSimilar: %v", err)
+	}
+	if len(tracks) != 2 || tracks[0].ID != "next" || tracks[1].ID != "far" {
+		t.Fatalf("expected excluded closest track to be skipped before LIMIT, got %#v", trackIDs(tracks))
+	}
+}
+
+func TestTrackQueryRepository_FindSimilarSupportsLargeExclusionLists(t *testing.T) {
+	dbPath := "test_find_similar_large_exclusions.db"
+	defer func() { _ = os.Remove(dbPath) }()
+
+	db, err := NewDB(dbPath, slog.Default())
+	if err != nil {
+		t.Fatalf("failed to create test db: %v", err)
+	}
+	defer func() { _ = db.Close() }()
+
+	ctx := context.Background()
+	trackRepo := NewTrackRepository(db)
+	queryRepo := NewTrackQueryRepository(db, trackRepo)
+	for _, track := range []*domain.Track{
+		{ID: "seed", Path: "/m/seed.mp3", Title: "Seed", SortTitle: "seed", Format: "mp3"},
+		{ID: "closest", Path: "/m/closest.mp3", Title: "Closest", SortTitle: "closest", Format: "mp3"},
+		{ID: "next", Path: "/m/next.mp3", Title: "Next", SortTitle: "next", Format: "mp3"},
+	} {
+		if err := trackRepo.Save(ctx, track); err != nil {
+			t.Fatalf("failed to save track %s: %v", track.ID, err)
+		}
+	}
+	if _, err := db.ExecContext(ctx, `
+		INSERT INTO track_features (track_id, energy, danceability, tempo) VALUES
+			('seed', 0.50, 0.50, 120),
+			('closest', 0.51, 0.50, 120),
+			('next', 0.55, 0.50, 120)
+	`); err != nil {
+		t.Fatalf("failed to seed track features: %v", err)
+	}
+
+	excluded := make([]string, 0, 3001)
+	for i := 0; i < 3000; i++ {
+		excluded = append(excluded, fmt.Sprintf("queued-%d", i))
+	}
+	excluded = append(excluded, "closest")
+
+	tracks, err := queryRepo.FindSimilar(ctx, "seed", excluded, 1)
+	if err != nil {
+		t.Fatalf("FindSimilar with 3,001 exclusions: %v", err)
+	}
+	if len(tracks) != 1 || tracks[0].ID != "next" {
+		t.Fatalf("expected next track after excluding closest, got %#v", trackIDs(tracks))
+	}
+}
+
+func trackIDs(tracks []*domain.TrackDTO) []string {
+	ids := make([]string, len(tracks))
+	for i, track := range tracks {
+		ids[i] = track.ID
+	}
+	return ids
 }
