@@ -186,6 +186,7 @@
       "max_queue_size": "Giới hạn hàng đợi",
       "max_queue_size_desc": "Giới hạn số track tối đa trong hàng đợi phát, tính cả track đang phát. Khi vượt giới hạn, track cũ nhất sẽ bị loại bỏ trước."
     },
+    "quick_menu": { "enable_eq": "Bật bộ cân bằng âm", "eq_presets": "Bộ cài đặt EQ", "go_to_equalizer": "Đi đến cài đặt Equalizer" },
     "remote": {
       "title": "Điều Khiển Từ Xa",
       "enable": "Bật máy chủ điều khiển từ xa",
@@ -221,7 +222,11 @@
       "add_profile": "Thêm hồ sơ",
       "delete_profile": "Xóa hồ sơ",
       "rename_profile": "Đổi tên hồ sơ",
-      "select_profile": "Chọn hồ sơ"
+      "select_profile": "Chọn hồ sơ",
+      "preamp": "Tiền khuếch đại",
+      "stereo_width": "Độ rộng âm thanh nổi",
+      "mono": "Mono",
+      "wide": "Rộng"
     },
     "library_analysis": {
       "title": "Phân tích thư viện",

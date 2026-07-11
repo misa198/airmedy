@@ -8,7 +8,7 @@ import { Checkbox } from '@airmedy/ui'
 import { Tooltip } from '@airmedy/ui'
 import { useFindLyricsDialog } from '@/composables/useFindLyricsDialog'
 import { usePlayerStore } from '@/stores/player'
-import { formatTime } from '@airmedy/utils'
+import { formatTime, decodeHTMLEntities } from '@airmedy/utils'
 import * as LyricsService from '../../bindings/airmedy/internal/infra/wails/lyricsservice'
 import type { LyricsSearchResult } from '../../bindings/airmedy/internal/domain/models'
 
@@ -184,7 +184,7 @@ async function save() {
         </div>
         <div class="flex-1 overflow-y-auto p-6 font-medium leading-relaxed">
           <template v-if="selectedIndex !== -1">
-            <pre class="whitespace-pre-wrap font-sans text-sm">{{ results[selectedIndex].content }}</pre>
+            <pre class="whitespace-pre-wrap font-sans text-sm">{{ decodeHTMLEntities(results[selectedIndex].content) }}</pre>
           </template>
           <div v-else class="h-full flex flex-col items-center justify-center text-muted-foreground">
             <Music class="w-12 h-12 mb-2 opacity-20" />

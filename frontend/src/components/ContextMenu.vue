@@ -22,6 +22,14 @@ const activeSubmenuIndex = ref<number | null>(null)
 const submenuX = ref(0)
 const submenuY = ref(0)
 
+function getViewportWidth() {
+  return document.documentElement.clientWidth || window.innerWidth
+}
+
+function getViewportHeight() {
+  return document.documentElement.clientHeight || window.innerHeight
+}
+
 watch(
   [() => props.visible, () => props.x, () => props.y],
   async ([visible, x, y]) => {
@@ -29,13 +37,13 @@ watch(
       activeSubmenuIndex.value = null
       adjustedX.value = x
       adjustedY.value = y
-      
+
       await nextTick()
       if (!menuEl.value) return
       
       const rect = menuEl.value.getBoundingClientRect()
-      const vw = window.innerWidth
-      const vh = window.innerHeight
+      const vw = getViewportWidth()
+      const vh = getViewportHeight()
       
       if (x + rect.width > vw) {
         adjustedX.value = Math.max(0, Math.min(x - rect.width, vw - rect.width))
@@ -71,8 +79,8 @@ async function handleMouseEnter(item: ContextMenuItem, index: number, e: MouseEv
     if (!submenuEl.value) return
 
     const submenuRect = submenuEl.value.getBoundingClientRect()
-    const vw = window.innerWidth
-    const vh = window.innerHeight
+    const vw = getViewportWidth()
+    const vh = getViewportHeight()
 
     // Check right edge
     if (rect.right + submenuRect.width > vw) {
@@ -146,17 +154,19 @@ function handleSubmenuItemClick(item: ContextMenuItem) {
             :style="{ left: submenuX + 'px', top: submenuY + 'px' }"
             @mouseleave="activeSubmenuIndex = null"
             >
-            <div
-            v-for="(child, ci) in items[activeSubmenuIndex]!.children"
-            :key="ci"
-            class="flex items-center gap-3 px-3 py-1.5 text-sm cursor-default transition-all rounded-lg mx-0.5"
-            :class="child.disabled ? 'text-foreground opacity-40' : 'text-foreground opacity-80 hover:text-foreground hover:bg-foreground/15'"
-            @click="handleSubmenuItemClick(child)"
-            >
-            <component :is="child.icon" v-if="child.icon" class="w-4 h-4 shrink-0 opacity-70" />
-            <span class="flex-1">{{ child.label }}</span>
-            <component :is="child.iconRight" v-if="child.iconRight" class="w-4 h-4 shrink-0 opacity-70 ml-auto" />
-            </div>
+            <template v-for="(child, ci) in items[activeSubmenuIndex]!.children" :key="ci">
+              <div v-if="child.separator" class="my-1 mx-2 border-t border-border-glass" />
+              <div
+                v-else
+                class="flex items-center gap-3 px-3 py-1.5 text-sm cursor-default transition-all rounded-lg mx-0.5"
+                :class="child.disabled ? 'text-foreground opacity-40' : 'text-foreground opacity-80 hover:text-foreground hover:bg-foreground/15'"
+                @click="handleSubmenuItemClick(child)"
+              >
+                <component :is="child.icon" v-if="child.icon" class="w-4 h-4 shrink-0 opacity-70" />
+                <span class="flex-1">{{ child.label }}</span>
+                <component :is="child.iconRight" v-if="child.iconRight" class="w-4 h-4 shrink-0 opacity-70 ml-auto" />
+              </div>
+            </template>
             <div v-if="!items[activeSubmenuIndex]!.children!.length" class="px-3 py-1.5 text-sm text-foreground opacity-50">
 
           No playlists

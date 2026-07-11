@@ -25,6 +25,8 @@ void UpdateNowPlayingPosition(void* player, double position);
 void SetEQBand(void* player, int index, double freq, double gain, double bandwidth);
 void SetEQEnabled(void* player, int enabled);
 void SetPreampGainPlayer(void* player, double db);
+void SetEQPreampPlayer(void* player, double db);
+void SetStereoWidthPlayer(void* player, double pct);
 void EnqueueNextPlayer(void* player, const char* path);
 void ClearEnqueuedPlayer(void* player);
 void SetCrossfadeDurationPlayer(void* player, double seconds);
@@ -208,6 +210,20 @@ func (p *DarwinPlayer) SetEQEnabled(enabled bool) error {
 		val = 1
 	}
 	C.SetEQEnabled(p.playerPointer, C.int(val))
+	return nil
+}
+
+// --- EQPreampController ---
+
+func (p *DarwinPlayer) SetEQPreamp(db float64) error {
+	C.SetEQPreampPlayer(p.playerPointer, C.double(db))
+	return nil
+}
+
+// --- StereoWidthController ---
+
+func (p *DarwinPlayer) SetStereoWidth(widthPercent float64) error {
+	C.SetStereoWidthPlayer(p.playerPointer, C.double(widthPercent))
 	return nil
 }
 

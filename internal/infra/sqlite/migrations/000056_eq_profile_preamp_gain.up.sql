@@ -1,0 +1,1 @@
+ALTER TABLE eq_profiles ADD COLUMN preamp_gain REAL NOT NULL DEFAULT 0;

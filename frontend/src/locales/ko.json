@@ -186,6 +186,7 @@
       "max_queue_size": "최대 대기열 크기",
       "max_queue_size_desc": "현재 트랙을 포함하여 재생 대기열에 담을 수 있는 트랙 수를 제한합니다. 한도에 도달하면 가장 오래된 트랙부터 제거됩니다."
     },
+    "quick_menu": { "enable_eq": "이퀄라이저 활성화", "eq_presets": "EQ 프리셋", "go_to_equalizer": "이퀄라이저 설정으로 이동" },
     "remote": {
       "title": "원격 제어",
       "enable": "원격 서버 활성화",
@@ -221,7 +222,11 @@
       "add_profile": "프로필 추가",
       "delete_profile": "프로필 삭제",
       "rename_profile": "프로필 이름 바꾸기",
-      "select_profile": "프로필 선택"
+      "select_profile": "프로필 선택",
+      "preamp": "프리앰프",
+      "stereo_width": "스테레오 폭",
+      "mono": "모노",
+      "wide": "와이드"
     },
     "library_analysis": {
       "title": "라이브러리 분석",

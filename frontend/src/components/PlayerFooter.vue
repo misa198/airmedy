@@ -26,6 +26,7 @@ import { useI18n } from 'vue-i18n'
 import TrackContextMenu from './TrackContextMenu.vue'
 import { MarqueeText } from '@airmedy/ui'
 import PlayerControlButton from './player/PlayerControlButton.vue'
+import PlayerQuickSettingsMenu from './player/PlayerQuickSettingsMenu.vue'
 import { useAppStore } from '../stores/app'
 
 const { t } = useI18n()
@@ -33,10 +34,17 @@ const store = usePlayerStore()
 const appStore = useAppStore()
 
 const trackContextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
+const quickSettingsMenu = ref<InstanceType<typeof PlayerQuickSettingsMenu> | null>(null)
 
 function openArtworkContextMenu(e: MouseEvent) {
   if (!store.currentTrack) return
   trackContextMenu.value?.open(e, store.currentTrack, { excludePlayNext: true, excludeAddToQueue: true })
+}
+
+function openQuickSettingsMenu(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  if (target.closest('button, [data-player-footer-interactive="true"]')) return
+  quickSettingsMenu.value?.open(e)
 }
 
 const isSeeking = ref(false)
@@ -75,10 +83,12 @@ async function onSeekEnd() {
 
 <template>
   <div
-    class="h-[72px] bg-background border-t border-foreground/[0.06] flex items-center justify-between px-6 gap-6 select-none">
+    class="h-[72px] bg-background border-t border-foreground/[0.06] flex items-center justify-between px-6 gap-6 select-none"
+    @contextmenu.prevent="openQuickSettingsMenu">
     <!-- Track Info -->
     <div class="flex items-center justify-start gap-3 w-1/4 min-w-[200px]">
       <div
+        data-player-footer-interactive="true"
         class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 shadow-lg ring-1 ring-foreground/10 cursor-pointer transition-transform hover:scale-105 active:scale-95"
         @click="store.openTrackInfo(store.currentTrack)" @contextmenu.prevent="openArtworkContextMenu">
         <LazyImg v-if="store.artworkUrlSm" :src="store.artworkUrlSm" :alt="trackTitle"
@@ -148,7 +158,7 @@ async function onSeekEnd() {
 
     <!-- Volume & Options -->
     <div class="flex items-center justify-end gap-4 w-1/4 min-w-[200px]">
-      <div class="flex items-center gap-2 w-28">
+      <div data-player-footer-interactive="true" class="flex items-center gap-2 w-28">
         <button class="text-foreground opacity-60 hover:text-foreground opacity-50 transition-colors flex-shrink-0"
           @click="store.setMuted(!store.muted)" :title="store.muted ? t('player.unmute') : t('player.mute')">
           <VolumeX v-if="store.muted" class="w-4 h-4" />
@@ -179,4 +189,5 @@ async function onSeekEnd() {
   </div>
 
   <TrackContextMenu ref="trackContextMenu" />
+  <PlayerQuickSettingsMenu ref="quickSettingsMenu" />
 </template>

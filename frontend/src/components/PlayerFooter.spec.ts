@@ -1,9 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { defineComponent, h } from 'vue'
 import { createTestingPinia } from '@pinia/testing'
 import PlayerFooter from './PlayerFooter.vue'
 import { usePlayerStore } from '../stores/player'
 import { PlaybackState, RepeatMode } from '../../bindings/airmedy/internal/domain/models'
+
+const mocks = vi.hoisted(() => ({
+  quickSettingsOpen: vi.fn(),
+}))
 
 vi.mock('vue-i18n', () => ({
   useI18n: () => ({
@@ -42,13 +47,26 @@ vi.mock('../../bindings/airmedy/internal/infra/wails/playerservice', () => ({
   PlayTracks: vi.fn(),
 }))
 
+vi.mock('./player/PlayerQuickSettingsMenu.vue', () => ({
+  default: defineComponent({
+    name: 'PlayerQuickSettingsMenu',
+    setup(_, { expose }) {
+      expose({ open: mocks.quickSettingsOpen })
+      return {}
+    },
+    render() {
+      return h('div')
+    }
+  }),
+}))
+
 describe('PlayerFooter', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
   function mountFooter(storeState = {}) {
-    return mount(PlayerFooter, {
+    const wrapper = mount(PlayerFooter, {
       global: {
         plugins: [
           createTestingPinia({
@@ -66,16 +84,18 @@ describe('PlayerFooter', () => {
             },
           }),
         ],
-        stubs: { 
+        stubs: {
           teleport: true,
           MarqueeText: {
             template: '<div><slot />{{ text }}</div>',
-            props: ['text']
+            props: ['text'],
           },
-          TrackContextMenu: true
+          TrackContextMenu: true,
         },
       },
     })
+
+    return wrapper
   }
 
   it('renders "Not Playing" when no track', () => {
@@ -121,5 +141,18 @@ describe('PlayerFooter', () => {
     expect(queueBtn).toBeDefined()
     await queueBtn!.trigger('click')
     expect(store.toggleQueue).toHaveBeenCalledOnce()
+  })
+
+  it('opens quick settings menu on right click in empty footer area', async () => {
+    const wrapper = mountFooter()
+    await wrapper.find('div').trigger('contextmenu')
+    expect(mocks.quickSettingsOpen).toHaveBeenCalledOnce()
+    expect(mocks.quickSettingsOpen.mock.calls[0]?.[0]).toBeTruthy()
+  })
+
+  it('does not open quick settings menu on left click', async () => {
+    const wrapper = mountFooter()
+    await wrapper.trigger('click')
+    expect(mocks.quickSettingsOpen).not.toHaveBeenCalled()
   })
 })

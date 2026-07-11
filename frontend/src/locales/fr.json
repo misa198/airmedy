@@ -186,6 +186,7 @@
       "max_queue_size": "Taille maximale de la file d'attente",
       "max_queue_size_desc": "Limite le nombre de titres que la file d'attente peut contenir, y compris le titre en cours. Les titres les plus anciens sont supprimés en premier une fois la limite atteinte."
     },
+    "quick_menu": { "enable_eq": "Activer l'égaliseur", "eq_presets": "Préréglages EQ", "go_to_equalizer": "Accéder aux réglages de l'égaliseur" },
     "remote": {
       "title": "Télécommande",
       "enable": "Activer le serveur distant",
@@ -221,7 +222,11 @@
       "add_profile": "Ajouter un profil",
       "delete_profile": "Supprimer le profil",
       "rename_profile": "Renommer le profil",
-      "select_profile": "Sélectionner un profil"
+      "select_profile": "Sélectionner un profil",
+      "preamp": "Préamplification",
+      "stereo_width": "Largeur stéréo",
+      "mono": "Mono",
+      "wide": "Large"
     },
     "library_analysis": {
       "title": "Analyse de la bibliothèque",

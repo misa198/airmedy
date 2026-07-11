@@ -190,6 +190,10 @@ Version constant moved from `internal/domain/version.go` (deleted) to `internal/
 | Remote       | Control remote server (enable/disable), change or regenerate access PIN, show QR code, and choose between reachable IP addresses grouped by network interface (`RemoteServerSettings.vue`) |
 | About        | App version, GitHub link, License, Open Data Folder button                 |
 
+The Playback route accepts `?section=equalizer`. `SettingsView` waits for the
+Playback panel to render, then smoothly scrolls the Equalizer section into view;
+the player footer quick-settings menu uses this shortcut.
+
 ## Last.fm Integration
 
 Authentication is handled via Wails v3 custom protocol (`airmedy://auth`). When a user authorizes the app, Last.fm redirects to this deep link, which is captured by the Go backend to exchange the token for a permanent session key.

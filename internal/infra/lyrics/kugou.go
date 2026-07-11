@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"html"
 	"io"
 	"log/slog"
 	"math"
@@ -91,7 +92,7 @@ func (p *KugouProvider) Search(ctx context.Context, title, artist string, durati
 			TrackName:  title,  // Kugou search results don't return track name/artist name for each candidate
 			ArtistName: artist, // using the search terms as placeholders
 			Duration:   c.Duration / 1000,
-			Content:    content,
+			Content:    html.UnescapeString(content),
 			Source:     source,
 		})
 	}
@@ -134,7 +135,7 @@ func (p *KugouProvider) Fetch(ctx context.Context, track *domain.TrackDTO) (*dom
 					if kugouIsSynced(content) {
 						source = "kugou-synced"
 					}
-					return &domain.Lyric{TrackID: track.ID, Content: content, Source: source}, nil
+					return &domain.Lyric{TrackID: track.ID, Content: html.UnescapeString(content), Source: source}, nil
 				}
 			}
 		}

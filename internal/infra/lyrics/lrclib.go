@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html"
 	"io"
 	"log/slog"
 	"math"
@@ -95,7 +96,7 @@ func (p *LrclibProvider) Search(ctx context.Context, title, artist string, durat
 			TrackName:  c.TrackName,
 			ArtistName: c.ArtistName,
 			Duration:   int(c.Duration),
-			Content:    content,
+			Content:    html.UnescapeString(content),
 			Source:     source,
 		})
 	}
@@ -187,7 +188,7 @@ func (p *LrclibProvider) exactGet(ctx context.Context, trackID, title, artist, a
 	if content == "" {
 		return nil, nil
 	}
-	return &domain.Lyric{TrackID: trackID, Content: content, Source: source}, nil
+	return &domain.Lyric{TrackID: trackID, Content: html.UnescapeString(content), Source: source}, nil
 }
 
 func (p *LrclibProvider) searchAndRank(ctx context.Context, trackID, normTitle, normArtist string, duration int) (*domain.Lyric, error) {
@@ -248,7 +249,7 @@ func (p *LrclibProvider) searchAndRank(ctx context.Context, trackID, normTitle, 
 	if content == "" {
 		return nil, nil
 	}
-	return &domain.Lyric{TrackID: trackID, Content: content, Source: source}, nil
+	return &domain.Lyric{TrackID: trackID, Content: html.UnescapeString(content), Source: source}, nil
 }
 
 func pickContent(synced, plain string) (content, source string) {

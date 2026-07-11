@@ -1,0 +1,1 @@
+ALTER TABLE app_settings ADD COLUMN stereo_width REAL NOT NULL DEFAULT 100;

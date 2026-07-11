@@ -74,6 +74,10 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000051 | `analysis_component_versions.up.sql` | Add `track_analysis_components` for independently versioned `ffmpeg`/`aubio` raw analysis; backfill only legacy tracks with `analyzed_version >= 4` (missing feature row becomes `failed`) |
 | 000052 | `track_analysis_pending_mask.up.sql` | Add indexed `tracks.analysis_pending_mask` (FFmpeg=1, aubio=2), backfilled from component versions; makes progress/backfill proportional to unresolved tracks |
 | 000053 | `pending_analysis_backfill_order.up.sql` | Add partial `(created_at, id)` index for stable pending-analysis backfill without a temp sort |
+| 000056 | `eq_profile_preamp_gain.up.sql` | Add legacy per-profile `preamp_gain` to `eq_profiles` |
+| 000057 | `app_settings_stereo_width.up.sql` | Add global `stereo_width` (default 100) to `app_settings` |
+| 000058 | `global_eq_preamp.up.sql` | Move the active profile's legacy preamp to global `app_settings.eq_preamp`, then remove `eq_profiles.preamp_gain` |
+| 000059 | `eq_preset_key.up.sql` | Add unique non-empty `eq_profiles.preset_key` for stable built-in preset identity |
 
 ## Full Schema
 
@@ -296,6 +300,7 @@ mini_player_state (
 ```sql
 eq_profiles (
     id TEXT PRIMARY KEY,
+    preset_key TEXT NOT NULL DEFAULT '', -- stable built-in key; empty for user profiles
     name TEXT NOT NULL,
     is_active INTEGER DEFAULT 0,
     is_default INTEGER DEFAULT 0,

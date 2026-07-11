@@ -127,7 +127,15 @@ type NormalizationController interface {
 | Platform | Mechanism |
 | -------- | --------- |
 | macOS | `AVAudioUnitEQ.globalGain` (dB) on the persistent EQ node. `setEQEnabled` bypasses **each band individually** (`AVAudioUnitEQFilterParameters.bypass`), not the whole `AVAudioUnitEQ` unit — the unit-level `bypass` property silences the *entire* Audio Unit including `globalGain`, so a naive whole-unit bypass would silently break normalization whenever the user's EQ is off. See `catalog/equalizer/README.md`. |
-| Windows/Linux | `ma_node_set_output_bus_volume()` on the engine endpoint (`ma_engine_get_endpoint`), converted from dB to linear (`10^(dB/20)`). Both the EQ-enabled and EQ-bypassed sound-routing paths already converge there, so no extra node or topology change was needed. Independent of `ma_player_set_volume` (per-sound user volume). |
+| Windows/Linux | Per-sound linear multiplier (`preamp_cur_linear`/`preamp_nxt_linear`, `10^(dB/20)`) applied via `ma_sound_set_volume(sound, volume * preamp_linear * eq_preamp_linear)`. Per-source: during a crossfade the incoming sound carries its own gain while the outgoing sound keeps its old one. |
+
+**Composition with the user EQ preamp:** since [Catalog Equalizer](../equalizer/README.md) added
+a user-adjustable EQ preamp that is per-profile and global (not per-source), it cannot reuse this
+normalization gain's storage slot. The two are tracked as separate values and combined:
+- macOS: `AirmedyDeck.normPreampDB` (this normalization gain) + `AirmedyPlayer.eqPreampDB` (user EQ
+  preamp) are summed into `equalizer.globalGain` (dB addition == linear multiplication).
+- Windows/Linux: `preamp_cur_linear`/`preamp_nxt_linear` (this normalization gain) and
+  `eq_preamp_linear` (user EQ preamp) are both multiplied into every `ma_sound_set_volume` call.
 
 ## Wails-Exposed Methods (`NormalizationService`)
 

@@ -42,6 +42,14 @@ int ma_player_set_eq_enabled(MaPlayer* p, int enabled);
  * ma_player_begin_crossfade) while the outgoing sound keeps its old one. */
 int ma_player_set_preamp_gain(MaPlayer* p, float gainDB);
 
+/* User EQ preamp gain (dB), stored per EQ profile — global (both sounds),
+ * composes additively (in dB) with the normalization preamp above rather
+ * than replacing it. */
+int ma_player_set_eq_preamp(MaPlayer* p, float gainDB);
+
+/* Global stereo width: 0=mono, 100=neutral (identity), up to 200=wider. */
+int ma_player_set_stereo_width(MaPlayer* p, float widthPercent);
+
 /* Track-end callback — fired from MiniAudio device thread, must not block */
 void ma_player_set_end_callback(MaPlayer* p, MaEndCallback cb, void* userdata);
 

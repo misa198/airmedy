@@ -186,6 +186,7 @@
       "max_queue_size": "Maximale Warteschlangengröße",
       "max_queue_size_desc": "Begrenzt, wie viele Titel die Wiedergabeliste enthalten kann, einschließlich des aktuellen Titels. Die ältesten Titel werden zuerst entfernt, sobald das Limit erreicht ist."
     },
+    "quick_menu": { "enable_eq": "Equalizer aktivieren", "eq_presets": "EQ-Voreinstellungen", "go_to_equalizer": "Zu den Equalizer-Einstellungen" },
     "remote": {
       "title": "Fernbedienung",
       "enable": "Remoteserver aktivieren",
@@ -221,7 +222,11 @@
       "add_profile": "Profil hinzufügen",
       "delete_profile": "Profil löschen",
       "rename_profile": "Profil umbenennen",
-      "select_profile": "Profil auswählen"
+      "select_profile": "Profil auswählen",
+      "preamp": "Vorverstärkung",
+      "stereo_width": "Stereobreite",
+      "mono": "Mono",
+      "wide": "Breit"
     },
     "library_analysis": {
       "title": "Bibliotheksanalyse",

@@ -91,6 +91,7 @@ func TestSqliteRepositories(t *testing.T) {
 		Language:  "fr",
 		Theme:     "dark",
 		EQEnabled: false,
+		EQPreamp:  -3.5,
 	}
 	err = settingsRepo.Save(ctx, settings)
 	if err != nil {
@@ -109,6 +110,24 @@ func TestSqliteRepositories(t *testing.T) {
 	}
 	if savedSettings.EQEnabled != false {
 		t.Errorf("Expected EQEnabled false, got %v", savedSettings.EQEnabled)
+	}
+	if savedSettings.EQPreamp != -3.5 {
+		t.Errorf("Expected EQPreamp -3.5, got %v", savedSettings.EQPreamp)
+	}
+
+	var profilePreampColumns int
+	if err := db.Get(&profilePreampColumns, `SELECT COUNT(*) FROM pragma_table_info('eq_profiles') WHERE name = 'preamp_gain'`); err != nil {
+		t.Fatalf("failed to inspect eq_profiles schema: %v", err)
+	}
+	if profilePreampColumns != 0 {
+		t.Errorf("expected eq_profiles to contain only profile metadata and bands, found preamp_gain")
+	}
+	var profileKeyColumns int
+	if err := db.Get(&profileKeyColumns, `SELECT COUNT(*) FROM pragma_table_info('eq_profiles') WHERE name = 'preset_key'`); err != nil {
+		t.Fatalf("failed to inspect eq_profiles key schema: %v", err)
+	}
+	if profileKeyColumns != 1 {
+		t.Errorf("expected eq_profiles.preset_key column, got %d", profileKeyColumns)
 	}
 }
 

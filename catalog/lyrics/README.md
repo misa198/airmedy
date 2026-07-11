@@ -285,7 +285,7 @@ Parsed into `{ text: "English text", secondary: "中文翻译" }`.
 
 ## Frontend Display
 
-**`LyricsDrawer.vue`** renders lines with active-line highlighting. Auto-scrolls to keep the current line centered as the track position advances.
+**`LyricsDrawer.vue`** renders lines with active-line highlighting. `SyncedLyricsView` auto-scrolls to keep the current line centered as the track position advances and also schedules an initial post-mount scroll. If fullscreen lyrics is mounted while its right column is still collapsed, a `ResizeObserver` waits for the first non-zero layout before scrolling, so the panel immediately shows its active lyric.
 
 **View toggle:** If synced lyrics are available, user can switch between synced (auto-scrolling with highlights) and plain (full text) views.
 

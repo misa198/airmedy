@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, watch, nextTick } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
   Folder, Settings,
   Play, Info, Blocks, Wifi,
@@ -15,6 +15,7 @@ import RemoteServerSettings from '@/components/settings/RemoteServerSettings.vue
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 
 const props = defineProps<{
   category?: string
@@ -40,6 +41,14 @@ const setCategory = (id: string) => {
   activeCategory.value = id
   router.replace(`/settings/${id}`)
 }
+
+async function scrollToRequestedSection() {
+  if (activeCategory.value !== 'playback' || route.query.section !== 'equalizer') return
+  await nextTick()
+  document.getElementById('equalizer')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+watch([activeCategory, () => route.query.section], scrollToRequestedSection, { immediate: true })
 
 </script>
 

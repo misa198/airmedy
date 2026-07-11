@@ -186,6 +186,7 @@
       "max_queue_size": "Tamanho máximo da fila",
       "max_queue_size_desc": "Limita quantas faixas a fila de reprodução pode conter, incluindo a faixa atual. As faixas mais antigas são removidas primeiro ao atingir o limite."
     },
+    "quick_menu": { "enable_eq": "Ativar equalizador", "eq_presets": "Predefinições de EQ", "go_to_equalizer": "Ir para as definições do equalizador" },
     "remote": {
       "title": "Controlo Remoto",
       "enable": "Ativar servidor remoto",
@@ -221,7 +222,11 @@
       "add_profile": "Adicionar perfil",
       "delete_profile": "Excluir perfil",
       "rename_profile": "Renomear perfil",
-      "select_profile": "Selecionar perfil"
+      "select_profile": "Selecionar perfil",
+      "preamp": "Pré-amplificação",
+      "stereo_width": "Amplitude estéreo",
+      "mono": "Mono",
+      "wide": "Amplo"
     },
     "library_analysis": {
       "title": "Análise da biblioteca",

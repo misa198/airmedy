@@ -186,6 +186,7 @@
       "max_queue_size": "Dimensione massima della coda",
       "max_queue_size_desc": "Limita il numero di brani che la coda di riproduzione può contenere, incluso quello attuale. I brani più vecchi vengono rimossi per primi al raggiungimento del limite."
     },
+    "quick_menu": { "enable_eq": "Attiva equalizzatore", "eq_presets": "Predefiniti EQ", "go_to_equalizer": "Vai alle impostazioni dell'equalizzatore" },
     "remote": {
       "title": "Controllo Remoto",
       "enable": "Abilita server remoto",
@@ -221,7 +222,11 @@
       "add_profile": "Aggiungi profilo",
       "delete_profile": "Elimina profilo",
       "rename_profile": "Rinomina profilo",
-      "select_profile": "Seleziona profilo"
+      "select_profile": "Seleziona profilo",
+      "preamp": "Preamplificazione",
+      "stereo_width": "Ampiezza stereo",
+      "mono": "Mono",
+      "wide": "Ampio"
     },
     "library_analysis": {
       "title": "Analisi della libreria",

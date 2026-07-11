@@ -192,6 +192,24 @@ func (p *MiniAudioPlayer) SetEQEnabled(enabled bool) error {
 	return nil
 }
 
+// --- EQPreampController ---
+
+func (p *MiniAudioPlayer) SetEQPreamp(db float64) error {
+	if rc := C.ma_player_set_eq_preamp((*C.MaPlayer)(p.ptr), C.float(db)); rc != 0 {
+		return fmt.Errorf("ma_player_set_eq_preamp failed: %d", rc)
+	}
+	return nil
+}
+
+// --- StereoWidthController ---
+
+func (p *MiniAudioPlayer) SetStereoWidth(widthPercent float64) error {
+	if rc := C.ma_player_set_stereo_width((*C.MaPlayer)(p.ptr), C.float(widthPercent)); rc != 0 {
+		return fmt.Errorf("ma_player_set_stereo_width failed: %d", rc)
+	}
+	return nil
+}
+
 // --- NormalizationController ---
 
 func (p *MiniAudioPlayer) SetPreampGain(db float64) error {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { LyricLine } from '../composables/useLyrics'
 
 const props = defineProps<{
@@ -21,6 +21,9 @@ const activeIndex = computed(() => {
 
 const scrollContainer = ref<HTMLElement | null>(null)
 const lineRefs = ref<HTMLElement[]>([])
+let scrollFrame: number | undefined
+let resizeObserver: ResizeObserver | null = null
+let waitingForLayout = false
 
 // Reset stale refs when the track's lines change so indexes stay aligned.
 watch(() => props.lines, () => {
@@ -28,15 +31,30 @@ watch(() => props.lines, () => {
 })
 
 function scrollToActive(index: number) {
-  if (index === -1) return
+  if (index === -1) return false
   const container = scrollContainer.value
   const el = lineRefs.value[index]
-  // Container may be hidden (clientHeight 0) or refs not laid out yet.
-  if (!container || !el || container.clientHeight === 0) return
+  // The fullscreen right column animates from zero width. Wait until it has a
+  // real layout; otherwise offset measurements are invalid on first open.
+  if (!container || !el || container.clientHeight === 0 || container.clientWidth === 0) return false
   const activeLineViewportPosition = props.immersive ? 0.32 : 0.5
   container.scrollTo({
     top: el.offsetTop - container.clientHeight * activeLineViewportPosition + el.clientHeight / 2,
     behavior: 'smooth',
+  })
+  return true
+}
+
+function scheduleScrollToActive(index: number) {
+  nextTick(() => {
+    if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame)
+    // A watcher with `immediate` runs before mount, when the container and
+    // line refs do not exist yet. Defer to the first painted frame so opening
+    // the lyrics panel immediately centers its already-active line.
+    scrollFrame = requestAnimationFrame(() => {
+      scrollFrame = undefined
+      waitingForLayout = index !== -1 && !scrollToActive(index)
+    })
   })
 }
 
@@ -56,27 +74,42 @@ function immersiveLineStyle(index: number) {
   }
 }
 
-// flush:'post' → DOM patched + layout settled before measuring offsets.
-// immediate + nextTick handles first paint and the lyrics-just-loaded race
-// where the active line exists before its ref is populated.
+// flush:'post' → DOM patched before measuring offsets. The mounted hook is
+// required because the immediate watcher runs before template refs exist.
 watch(activeIndex, (newIndex) => {
-  nextTick(() => scrollToActive(newIndex))
+  scheduleScrollToActive(newIndex)
 }, { flush: 'post', immediate: true })
+
+onMounted(() => {
+  scheduleScrollToActive(activeIndex.value)
+  if (typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(() => {
+      if (waitingForLayout) scheduleScrollToActive(activeIndex.value)
+    })
+    if (scrollContainer.value) resizeObserver.observe(scrollContainer.value)
+  }
+})
+
+onUnmounted(() => {
+  if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame)
+  resizeObserver?.disconnect()
+  resizeObserver = null
+})
 </script>
 
 <template>
-  <div ref="scrollContainer" class="h-full overflow-y-auto px-8 py-48 scrollbar-hide scroll-smooth">
-    <div class="max-w-2xl mx-auto space-y-10">
+  <div ref="scrollContainer" class="h-full overflow-y-auto py-48 scrollbar-hide scroll-smooth" :class="props.immersive ? 'pl-8 pr-16' : 'px-8'">
+    <div class="max-w-2xl mx-auto space-y-6">
       <div
         v-for="(line, index) in lines"
         :key="index"
         ref="lineRefs"
         data-test="lyric-line"
-        class="font-bold transition-[filter,opacity,transform] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] cursor-pointer select-none origin-left py-2"
+        class="font-bold transition-[filter,opacity,transform,scale] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] cursor-pointer select-none origin-left py-2"
         :class="[
           props.immersive
             ? index === activeIndex
-              ? 'text-white scale-105'
+              ? 'text-white scale-110'
               : 'text-white'
             : index === activeIndex
             ? 'text-white scale-105 blur-none opacity-100'

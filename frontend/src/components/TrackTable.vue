@@ -224,6 +224,12 @@ function handleScroll(e: Event) {
   trackContextMenu.value?.close()
 }
 
+function handleHeaderScroll(e: Event) {
+  const scrollLeft = (e.target as HTMLElement).scrollLeft
+  const list = props.virtualScroll ? scrollerRef.value?.$el : plainListRef.value
+  if (list) list.scrollLeft = scrollLeft
+}
+
 function scrollToCurrentTrack() {
   if (!playerStore.currentTrack || props.tracks.length === 0) return
   const index = displayTracks.value.findIndex((t) => t.id === playerStore.currentTrack?.id)
@@ -328,7 +334,12 @@ defineExpose({ scrollToCurrentTrack, optionalColumns, sortColumn, sortDir, cycle
       </div>
 
       <div v-else class="h-full flex flex-col overflow-hidden">
-        <div ref="headerContainerRef" class="overflow-hidden flex-shrink-0">
+        <div
+          ref="headerContainerRef"
+          data-testid="track-table-header-scroll-container"
+          class="overflow-x-auto overflow-y-hidden scrollbar-hide flex-shrink-0"
+          @scroll="handleHeaderScroll"
+        >
           <div :style="{ minWidth: totalMinWidth }">
             <TrackTableHeader v-if="!hideHeader" :ordered-visible-columns="orderedVisibleColumns"
               :simple-mode="simpleMode" :sort-column="sortColumn" :sort-dir="sortDir"

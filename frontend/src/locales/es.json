@@ -186,6 +186,7 @@
       "max_queue_size": "Tamaño máximo de la cola",
       "max_queue_size_desc": "Limita cuántas pistas puede contener la cola de reproducción, incluyendo la pista actual. Las pistas más antiguas se eliminan primero al alcanzar el límite."
     },
+    "quick_menu": { "enable_eq": "Activar ecualizador", "eq_presets": "Preajustes de EQ", "go_to_equalizer": "Ir a ajustes del ecualizador" },
     "remote": {
       "title": "Control Remoto",
       "enable": "Habilitar servidor remoto",
@@ -221,7 +222,11 @@
       "add_profile": "Agregar perfil",
       "delete_profile": "Eliminar perfil",
       "rename_profile": "Renombrar perfil",
-      "select_profile": "Seleccionar perfil"
+      "select_profile": "Seleccionar perfil",
+      "preamp": "Preamplificación",
+      "stereo_width": "Amplitud estéreo",
+      "mono": "Mono",
+      "wide": "Ancho"
     },
     "library_analysis": {
       "title": "Análisis de la biblioteca",
