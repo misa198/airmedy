@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { LyricLine } from '../composables/useLyrics'
 
 const props = defineProps<{
@@ -21,6 +21,9 @@ const activeIndex = computed(() => {
 
 const scrollContainer = ref<HTMLElement | null>(null)
 const lineRefs = ref<HTMLElement[]>([])
+let scrollFrame: number | undefined
+let resizeObserver: ResizeObserver | null = null
+let waitingForLayout = false
 
 // Reset stale refs when the track's lines change so indexes stay aligned.
 watch(() => props.lines, () => {
@@ -28,15 +31,30 @@ watch(() => props.lines, () => {
 })
 
 function scrollToActive(index: number) {
-  if (index === -1) return
+  if (index === -1) return false
   const container = scrollContainer.value
   const el = lineRefs.value[index]
-  // Container may be hidden (clientHeight 0) or refs not laid out yet.
-  if (!container || !el || container.clientHeight === 0) return
+  // The fullscreen right column animates from zero width. Wait until it has a
+  // real layout; otherwise offset measurements are invalid on first open.
+  if (!container || !el || container.clientHeight === 0 || container.clientWidth === 0) return false
   const activeLineViewportPosition = props.immersive ? 0.32 : 0.5
   container.scrollTo({
     top: el.offsetTop - container.clientHeight * activeLineViewportPosition + el.clientHeight / 2,
     behavior: 'smooth',
+  })
+  return true
+}
+
+function scheduleScrollToActive(index: number) {
+  nextTick(() => {
+    if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame)
+    // A watcher with `immediate` runs before mount, when the container and
+    // line refs do not exist yet. Defer to the first painted frame so opening
+    // the lyrics panel immediately centers its already-active line.
+    scrollFrame = requestAnimationFrame(() => {
+      scrollFrame = undefined
+      waitingForLayout = index !== -1 && !scrollToActive(index)
+    })
   })
 }
 
@@ -56,12 +74,27 @@ function immersiveLineStyle(index: number) {
   }
 }
 
-// flush:'post' → DOM patched + layout settled before measuring offsets.
-// immediate + nextTick handles first paint and the lyrics-just-loaded race
-// where the active line exists before its ref is populated.
+// flush:'post' → DOM patched before measuring offsets. The mounted hook is
+// required because the immediate watcher runs before template refs exist.
 watch(activeIndex, (newIndex) => {
-  nextTick(() => scrollToActive(newIndex))
+  scheduleScrollToActive(newIndex)
 }, { flush: 'post', immediate: true })
+
+onMounted(() => {
+  scheduleScrollToActive(activeIndex.value)
+  if (typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(() => {
+      if (waitingForLayout) scheduleScrollToActive(activeIndex.value)
+    })
+    if (scrollContainer.value) resizeObserver.observe(scrollContainer.value)
+  }
+})
+
+onUnmounted(() => {
+  if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame)
+  resizeObserver?.disconnect()
+  resizeObserver = null
+})
 </script>
 
 <template>
