@@ -15,8 +15,8 @@ func ToRawFeatures(f *domain.TrackFeatures) RawFeatures {
 	}
 }
 
-// Derive computes both energy and danceability for f against pctl in one call.
-func Derive(f *domain.TrackFeatures, pctl PercentileSet) (energy, danceability float64) {
+// Derive computes energy, danceability, and brightness for f against pctl in one call.
+func Derive(f *domain.TrackFeatures, pctl PercentileSet) (energy, danceability, brightness float64) {
 	raw := ToRawFeatures(f)
-	return DeriveEnergy(raw, pctl), DeriveDanceability(raw, pctl)
+	return DeriveEnergy(raw, pctl), DeriveDanceability(raw, pctl), DeriveBrightness(raw, pctl)
 }

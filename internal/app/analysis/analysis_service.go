@@ -13,16 +13,25 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-// analyzerVersion is the algorithm/schema version stamped on every analysis
-// result; tracks with tracks.analyzed_version < this are pending. Must be
-// kept in sync with audio.AnalyzerVersion (internal/infra/audio/analyzer.go).
+// analyzerVersion is retained for legacy repositories. New raw-analysis
+// freshness is tracked independently by source below.
 const analyzerVersion = 4
 
+const (
+	ffmpegAnalysisVersion = 1
+	aubioAnalysisVersion  = 1
+)
+
+var requiredAnalysisComponents = map[domain.AnalysisComponents]int{
+	domain.AnalysisComponentFFmpeg: ffmpegAnalysisVersion,
+	domain.AnalysisComponentAubio:  aubioAnalysisVersion,
+}
+
 // moodVersion is the algorithm version for the derived mood formulas
-// (energy/danceability). Bump on formula/weight changes only — independent
+// (energy/danceability/brightness). Bump on formula/weight changes only — independent
 // of analyzerVersion (raw DSP) and app_settings.mood_derivation_version
 // (corpus-percentile staleness, bumped at runtime on recompute).
-const moodVersion = 1
+const moodVersion = 2
 
 // percentileRecomputeBatchSize triggers a corpus percentile recompute once
 // this many tracks have been added (successfully analyzed) or removed,
@@ -46,6 +55,10 @@ const percentileStalenessThreshold = 24 * time.Hour
 // stalled read (network mount, truncated/corrupt stream) can otherwise wedge
 // a worker — and therefore stopPool's wg.Wait() — forever.
 const analyzeTimeout = 3 * time.Minute
+
+// backfillBatchSize bounds the in-memory queue while a large existing library
+// is adopted after enabling analysis or upgrading an analyzer component.
+const backfillBatchSize = 1_000
 
 // stopPoolWaitTimeout bounds how long stopPool waits for in-flight workers
 // before giving up and returning anyway, so a single wedged analysis (see
@@ -345,18 +358,56 @@ func (s *AnalysisService) stopPool() {
 	s.emitProgress(domain.AnalysisStateDone)
 }
 
-// backfill enqueues every track with analyzed_version < analyzerVersion once
-// at pool startup. Track-ID strings are cheap even at large library sizes (no
-// need to paginate repeatedly); new imports arrive incrementally via Enqueue
-// from the library listener.
+// backfill discovers pending tracks in bounded batches at pool startup. It
+// waits for each batch to drain before fetching the next, so a large library
+// does not turn into an unbounded in-memory queue. New imports still arrive
+// incrementally via Enqueue from the library listener.
 func (s *AnalysisService) backfill(ctx context.Context) {
-	ids, err := s.analysisRepo.ListPending(ctx, analyzerVersion, 1_000_000)
-	if err != nil {
-		s.logger.Warn("failed to list pending analysis for backfill", "error", err)
+	if componentRepo, ok := s.analysisRepo.(domain.ComponentAnalysisRepository); ok {
+		s.backfillBatches(ctx, func() ([]string, error) {
+			return componentRepo.ListPendingComponentTracks(ctx, requiredAnalysisComponents, backfillBatchSize)
+		})
 		return
 	}
-	for _, id := range ids {
-		s.Enqueue(id, false)
+	s.backfillBatches(ctx, func() ([]string, error) {
+		return s.analysisRepo.ListPending(ctx, analyzerVersion, backfillBatchSize)
+	})
+}
+
+func (s *AnalysisService) backfillBatches(ctx context.Context, next func() ([]string, error)) {
+	for {
+		ids, err := next()
+		if err != nil {
+			s.logger.Warn("failed to list pending analysis for backfill", "error", err)
+			return
+		}
+		if len(ids) == 0 {
+			return
+		}
+		for _, id := range ids {
+			s.Enqueue(id, false)
+		}
+		if !s.waitForQueueDrain(ctx) {
+			return
+		}
+	}
+}
+
+func (s *AnalysisService) waitForQueueDrain(ctx context.Context) bool {
+	ticker := time.NewTicker(50 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		s.mu.Lock()
+		drained := len(s.boostQueue) == 0 && len(s.normalQueue) == 0 && len(s.inFlight) == 0
+		s.mu.Unlock()
+		if drained {
+			return true
+		}
+		select {
+		case <-ctx.Done():
+			return false
+		case <-ticker.C:
+		}
 	}
 }
 
@@ -574,6 +625,10 @@ func (s *AnalysisService) analyzeOne(ctx context.Context, trackID string) {
 		s.logger.Warn("analysis: track lookup failed, skipping", "track_id", trackID, "error", err)
 		return
 	}
+	if componentRepo, ok := s.analysisRepo.(domain.ComponentAnalysisRepository); ok {
+		s.analyzeComponents(ctx, componentRepo, track)
+		return
+	}
 
 	// The on-play boost hook enqueues every track it loads, whether or not it's
 	// already analyzed (Enqueue only dedups in-flight/queued, not analyzed
@@ -622,6 +677,49 @@ func (s *AnalysisService) analyzeOne(ctx context.Context, trackID string) {
 	s.driveMoodDerivation(ctx, trackID)
 }
 
+func (s *AnalysisService) analyzeComponents(ctx context.Context, repo domain.ComponentAnalysisRepository, track *domain.TrackDTO) {
+	components, _, err := repo.ComponentStatus(ctx, track.ID, requiredAnalysisComponents)
+	if err != nil || components == 0 {
+		if err != nil {
+			s.logger.Warn("failed to check pending analysis components", "track_id", track.ID, "error", err)
+		}
+		return
+	}
+
+	analyzeCtx, cancel := context.WithTimeout(ctx, analyzeTimeout)
+	defer cancel()
+	var feat *domain.TrackFeatures
+	if analyzer, ok := s.analyzer.(domain.ComponentAnalyzer); ok {
+		feat, err = analyzer.AnalyzeComponents(analyzeCtx, track.Path, components)
+	} else {
+		feat, err = s.analyzer.Analyze(analyzeCtx, track.Path)
+	}
+	if err != nil {
+		if ctx.Err() != nil {
+			return
+		}
+		s.logger.Warn("analysis component failed, marking resolved", "track_id", track.ID, "components", components, "error", err)
+		if markErr := repo.MarkComponentsFailed(ctx, track.ID, components, requiredAnalysisComponents); markErr != nil {
+			s.logger.Error("failed to mark analysis components failed", "track_id", track.ID, "error", markErr)
+		}
+		s.emitProgress(domain.AnalysisStateAnalyzing)
+		return
+	}
+	feat.TrackID = track.ID
+	feat.AnalyzedAt = time.Now().UTC()
+	if err := repo.UpsertComponentFeatures(ctx, feat, components, requiredAnalysisComponents); err != nil {
+		s.logger.Error("failed to persist analysis components", "track_id", track.ID, "error", err)
+		return
+	}
+	s.progMu.Lock()
+	s.done++
+	s.progMu.Unlock()
+	s.emitProgress(domain.AnalysisStateAnalyzing)
+	if _, complete, err := repo.ComponentStatus(ctx, track.ID, requiredAnalysisComponents); err == nil && complete {
+		s.driveMoodDerivation(ctx, track.ID)
+	}
+}
+
 // driveMoodDerivation attempts mood derivation for a track immediately after
 // its raw features were written, using whatever percentile cache is
 // currently loaded. If the cache is cold (true cold start: no corpus yet),
@@ -639,8 +737,8 @@ func (s *AnalysisService) driveMoodDerivation(ctx context.Context, trackID strin
 	// safely fall back to neutral 0.5 for any missing feature, so derive.
 	if pctl != nil {
 		if feat, err := s.analysisRepo.GetFeatures(ctx, trackID); err == nil && feat != nil {
-			energy, dance := mood.Derive(feat, pctl)
-			if err := s.analysisRepo.UpsertMoodFeatures(ctx, trackID, energy, dance, moodVersion); err != nil {
+			energy, dance, brightness := mood.Derive(feat, pctl)
+			if err := s.analysisRepo.UpsertMoodFeatures(ctx, trackID, energy, dance, brightness, moodVersion); err != nil {
 				s.logger.Warn("mood: failed to persist derived mood features", "track_id", trackID, "error", err)
 			}
 		}
@@ -795,8 +893,8 @@ func (s *AnalysisService) backfillMood(ctx context.Context, currentMoodVersion i
 			if err != nil || feat == nil {
 				continue
 			}
-			energy, dance := mood.Derive(feat, pctl)
-			if err := s.analysisRepo.UpsertMoodFeatures(ctx, id, energy, dance, currentMoodVersion); err != nil {
+			energy, dance, brightness := mood.Derive(feat, pctl)
+			if err := s.analysisRepo.UpsertMoodFeatures(ctx, id, energy, dance, brightness, currentMoodVersion); err != nil {
 				s.logger.Warn("mood: failed to persist derived mood features during backfill", "track_id", id, "error", err)
 				continue
 			}
@@ -847,7 +945,13 @@ func (s *AnalysisService) currentProgress(state string) domain.AnalysisProgress 
 	// Always a fresh background context: this may be called after the pool's
 	// own context was just cancelled (stopPool), where reusing it would make
 	// CountPending fail immediately.
-	pending, err := s.analysisRepo.CountPending(context.Background(), analyzerVersion)
+	pending := 0
+	var err error
+	if componentRepo, ok := s.analysisRepo.(domain.ComponentAnalysisRepository); ok {
+		pending, err = componentRepo.CountPendingComponentTracks(context.Background(), requiredAnalysisComponents)
+	} else {
+		pending, err = s.analysisRepo.CountPending(context.Background(), analyzerVersion)
+	}
 	if err != nil {
 		pending = -1 // count unknown; resolveProgress keeps the caller's state as-is
 	}

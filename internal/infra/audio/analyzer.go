@@ -32,8 +32,18 @@ func NewLoudnessAnalyzer() domain.LoudnessAnalyzer {
 }
 
 func (a *ffmpegAnalyzer) Analyze(ctx context.Context, path string) (*domain.TrackFeatures, error) {
+	return a.AnalyzeComponents(ctx, path, domain.AnalysisComponentsAll)
+}
+
+// AnalyzeComponents decodes once and initializes only the requested source
+// pipelines. This lets a later aubio-only or FFmpeg-only version bump avoid
+// the other source's CPU work.
+func (a *ffmpegAnalyzer) AnalyzeComponents(ctx context.Context, path string, components domain.AnalysisComponents) (*domain.TrackFeatures, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
+	}
+	if components == 0 {
+		return nil, fmt.Errorf("no analysis components requested")
 	}
 
 	cPath := C.CString(path)
@@ -56,7 +66,7 @@ func (a *ffmpegAnalyzer) Analyze(ctx context.Context, path string) (*domain.Trac
 	}()
 
 	var res C.FFAnalysisResult
-	rc := int(C.ffmpeg_analyze(cPath, &res, cancel))
+	rc := int(C.ffmpeg_analyze(cPath, &res, cancel, C.int(components)))
 	if rc != 0 {
 		if err := ctx.Err(); err != nil {
 			return nil, err

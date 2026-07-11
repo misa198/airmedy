@@ -16,6 +16,8 @@ import (
 	"path/filepath"
 	"sync"
 	"testing"
+
+	"airmedy/internal/domain"
 )
 
 // writeSineWAV writes a stereo 16-bit PCM WAV of a sine tone and returns its path.
@@ -96,6 +98,31 @@ func TestAnalyzeSineTone(t *testing.T) {
 	}
 	t.Logf("features: LUFS=%.2f LRA=%.2f truePeak=%.2f rms=%.2f centroid=%.1f",
 		feat.LoudnessLUFS, feat.LoudnessRange, feat.TruePeak, feat.RMS, feat.SpectralCentroid)
+}
+
+func TestAnalyzeComponentsSkipsUnrequestedSource(t *testing.T) {
+	path := writeSineWAV(t, 440, 3.0, 44100)
+	analyzer, ok := NewLoudnessAnalyzer().(domain.ComponentAnalyzer)
+	if !ok {
+		t.Fatal("loudness analyzer must support component analysis")
+	}
+	ffmpeg, err := analyzer.AnalyzeComponents(context.Background(), path, domain.AnalysisComponentFFmpeg)
+	if err != nil {
+		t.Fatalf("ffmpeg-only analysis: %v", err)
+	}
+	if ffmpeg.LoudnessLUFS == 0 {
+		t.Fatalf("ffmpeg-only analysis did not produce loudness")
+	}
+	if ffmpeg.Tempo != 0 || ffmpeg.OnsetVariance != 0 {
+		t.Fatalf("ffmpeg-only analysis unexpectedly produced aubio features: %+v", ffmpeg)
+	}
+	aubio, err := analyzer.AnalyzeComponents(context.Background(), path, domain.AnalysisComponentAubio)
+	if err != nil {
+		t.Fatalf("aubio-only analysis: %v", err)
+	}
+	if aubio.LoudnessLUFS != 0 || aubio.SpectralCentroid != 0 {
+		t.Fatalf("aubio-only analysis unexpectedly produced ffmpeg features: %+v", aubio)
+	}
 }
 
 // writeClickWAV writes a stereo 16-bit PCM WAV with a short percussive click on

@@ -63,12 +63,17 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000036 | `onset_variance.up.sql`              | `ALTER TABLE track_features ADD COLUMN onset_variance REAL` (danceability input; down keeps column — SQLite `DROP COLUMN` unsafe across versions) |
 | 000037 | `corpus_feature_stats.up.sql`        | Add `feature_percentiles` table (per-feature `p1/p5/p50/p95/p99` + `sample_count`/`computed_at`, corpus normalization stats for mood derivation); add `app_settings.mood_derivation_version INTEGER NOT NULL DEFAULT 0` |
 | 000038 | `track_mood_version.up.sql`          | `ALTER TABLE tracks ADD COLUMN mood_derived_version INTEGER NOT NULL DEFAULT 0` + `idx_tracks_mood_derived_version` — marks a track's mood stale vs `app_settings.mood_derivation_version` for re-derivation |
+| 000054 | `track_brightness.up.sql`            | Add corpus-normalized `track_features.brightness`, derived from spectral centroid for Mood Radio similarity; invalidate cached mood values for backfill |
+| 000055 | `track_brightness_index.up.sql`      | Add `idx_track_features_brightness` for live Smart Playlist brightness ranges |
 | 000039 | `track_bitdepth_codec.up.sql`        | `ALTER TABLE tracks ADD COLUMN bit_depth INTEGER NOT NULL DEFAULT 0`, `ADD COLUMN codec TEXT NOT NULL DEFAULT ''` — bits-per-sample and inner codec (e.g. m4a `aac`/`alac`) from the `go-taglib` fork, used to classify Lossy/Lossless/Hi-Res/DSD |
 | 000040 | `metadata_schema_version.up.sql`     | `ALTER TABLE library_sync_state ADD COLUMN metadata_schema_version INTEGER NOT NULL DEFAULT 0` — tracks which extractor field-set a library's data reflects, so a sync can force one full re-parse when it's behind (see `catalog/library`) |
 | 000047 | `library_analysis_worker_count.up.sql` | `ALTER TABLE app_settings ADD COLUMN library_analysis_worker_count INTEGER NOT NULL DEFAULT 2` — persists the desired concurrent worker count for the library-analysis pool; down intentionally keeps the column |
 | 000048 | `crossfade_seconds.up.sql`              | `ALTER TABLE app_settings ADD COLUMN crossfade_seconds INTEGER NOT NULL DEFAULT 0` — track-transition overlap in seconds, 0 = off/gapless (see `catalog/player`) |
 | 000049 | `blend_artwork_during_crossfade.up.sql` | `ALTER TABLE app_settings ADD COLUMN blend_artwork_during_crossfade BOOLEAN NOT NULL DEFAULT 1` — fullscreen artwork blend during automatic crossfade |
 | 000050 | `high_contrast_lyrics.up.sql` | `ALTER TABLE app_settings ADD COLUMN high_contrast_lyrics BOOLEAN NOT NULL DEFAULT 1` — fullscreen lyrics glass panel; false uses the immersive panel |
+| 000051 | `analysis_component_versions.up.sql` | Add `track_analysis_components` for independently versioned `ffmpeg`/`aubio` raw analysis; backfill only legacy tracks with `analyzed_version >= 4` (missing feature row becomes `failed`) |
+| 000052 | `track_analysis_pending_mask.up.sql` | Add indexed `tracks.analysis_pending_mask` (FFmpeg=1, aubio=2), backfilled from component versions; makes progress/backfill proportional to unresolved tracks |
+| 000053 | `pending_analysis_backfill_order.up.sql` | Add partial `(created_at, id)` index for stable pending-analysis backfill without a temp sort |
 
 ## Full Schema
 
@@ -142,6 +147,7 @@ tracks (
     play_count INTEGER DEFAULT 0,
     is_favorite INTEGER DEFAULT 0,
     analyzed_version INTEGER NOT NULL DEFAULT 0,  -- 0 = pending DSP analysis (000034)
+    analysis_pending_mask INTEGER NOT NULL DEFAULT 3, -- FFmpeg=1, aubio=2; indexed unresolved work (000052)
     mood_derived_version INTEGER NOT NULL DEFAULT 0,  -- stale vs app_settings.mood_derivation_version → re-derive (000038)
     mtime DATETIME,
     created_at DATETIME,
@@ -157,7 +163,16 @@ track_features (   -- one-time DSP analysis (000034); 0 rows until analyzer runs
     spectral_flux REAL, zcr REAL,                                                          -- aspectralstats
     onset_variance REAL,                                                                   -- aubio onset spread; danceability input (000036)
     tempo REAL,                                                                             -- aubio tempo
-    energy REAL, danceability REAL                                                         -- derived from raw features vs feature_percentiles (000044: dropped musical_key/mode/valence)
+    energy REAL, danceability REAL, brightness REAL                                         -- derived from raw features vs feature_percentiles; brightness is normalized spectral centroid
+)
+
+track_analysis_components (   -- independent raw-source freshness (000051)
+    track_id TEXT REFERENCES tracks(id) ON DELETE CASCADE,
+    component TEXT,           -- ffmpeg | aubio
+    version INTEGER,
+    status TEXT,              -- complete | failed
+    analyzed_at DATETIME,
+    PRIMARY KEY (track_id, component)
 )
 
 feature_percentiles (   -- corpus-wide normalization stats, one row per raw feature (000037)

@@ -84,6 +84,17 @@ func TestDeriveEnergy_TempoCapClampsBeforeNormalize(t *testing.T) {
 	}
 }
 
+func TestDeriveBrightness_UsesNormalizedSpectralCentroid(t *testing.T) {
+	pctl := medianPctlSet()
+
+	if got := DeriveBrightness(RawFeatures{SpectralCentroid: 50}, pctl); !approxEqual(got, 0.5, 1e-9) {
+		t.Errorf("DeriveBrightness at centroid median = %v, want 0.5", got)
+	}
+	if high, low := DeriveBrightness(RawFeatures{SpectralCentroid: 90}, pctl), DeriveBrightness(RawFeatures{SpectralCentroid: 10}, pctl); high <= low {
+		t.Errorf("brightness should increase with spectral centroid: high=%v low=%v", high, low)
+	}
+}
+
 func TestDeriveDanceability_AllInputsAtMedian(t *testing.T) {
 	pctl := medianPctlSet()
 	f := RawFeatures{Tempo: 115, OnsetVariance: 50, Crest: 50, LoudnessRange: 50}

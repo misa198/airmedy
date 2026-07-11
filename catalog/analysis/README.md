@@ -7,9 +7,24 @@ graph (`ebur128,aspectralstats,astats`) plus aubio tempo detection in-process
 via cgo, and stores the result (loudness, dynamics, spectral features, tempo,
 onset variance) in `track_features`. This is the sole data source for
 [Volume Normalization](../normalization/README.md).
-`energy`/`danceability` are derived from these raw features (rule-based, no ML,
+`energy`/`danceability`/`brightness` are derived from these raw features (rule-based, no ML,
 normalized against corpus-wide percentiles — see Mood Derivation below) and
 consumed by Mood Radio (see below).
+
+Raw-source freshness is stored per track in `track_analysis_components`: the
+FFmpeg filter graph and aubio rhythm detector each have an independent version.
+A version bump queues only its stale component; when both are stale they still
+share one decode. The current component versions start at `ffmpeg@1` and
+`aubio@1`. Migration 000051 adopts only legacy `analyzed_version >= 4` data,
+so older results are deliberately re-analyzed.
+
+`tracks.analysis_pending_mask` materializes unresolved source work (FFmpeg =
+`1`, aubio = `2`) and has a partial index for non-zero rows. Progress counts
+and backfill queries use this mask, so they scale with pending work instead of
+scanning the full library. Any future source-version bump must include a
+migration that ORs its component bit into affected tracks' masks.
+Backfill reads pending tracks in stable `created_at, id` order through a
+matching partial index.
 
 The pipeline is **opt-in** (`AppSettings.LibraryAnalysisEnabled`, default `false`):
 the worker pool exists only while enabled. Disabling it also force-disables
@@ -40,16 +55,16 @@ flowchart TB
     RAW --> PCT["Recompute corpus percentiles"]
     PCT --> PCTBL[("feature_percentiles<br/><i>p1/p5/p50/p95/p99 per feature</i>")]
 
-    RAW --> MOOD["Mood derivation<br/>energy / danceability"]
+    RAW --> MOOD["Mood derivation<br/>energy / danceability / brightness"]
     PCTBL --> MOOD
-    MOOD --> MOODF[("track_features<br/><i>mood: energy, danceability</i>")]
+    MOOD --> MOODF[("track_features<br/><i>mood: energy, danceability, brightness</i>")]
 
     MOODF --> SIM["FindSimilar<br/>(weighted-euclidean)"]
     SIM --> RADIO["Mood Radio queue<br/>seed + auto-refill"]
 ```
 
 Raw features feed two independent consumers: **Normalization** (loudness → gain)
-and **Mood** (all features → energy/danceability, but only relative to the
+and **Mood** (all features → energy/danceability/brightness, but only relative to the
 corpus-wide percentile distribution). Mood then backs **Mood Radio** similarity.
 
 ## Files
@@ -64,7 +79,7 @@ corpus-wide percentile distribution). Mood then backs **Mood Radio** similarity.
 | `internal/infra/audio/analyzer.go` + `ffmpeg_analyzer.h` | cgo adapter implementing `domain.LoudnessAnalyzer` |
 | `scripts/build-fftw3-*.sh` + `scripts/build-aubio-*.sh` | Vendored FFTW3F/aubio builders for macOS, Linux, Windows |
 | `internal/infra/sqlite/analysis_repository.go` | `track_features` CRUD, pending-count/list, `MarkFailed`, percentile table CRUD, mood-pending list |
-| `internal/infra/sqlite/track_query_repository.go` | `FindSimilar` — weighted-euclidean nearest-neighbor query over energy/danceability/tempo, backs Mood Radio |
+| `internal/infra/sqlite/track_query_repository.go` | `FindSimilar` — weighted-euclidean nearest-neighbor query over energy/danceability/brightness/tempo, backs Mood Radio |
 | `internal/domain/audio.go` | `LoudnessAnalyzer` interface |
 | `internal/domain/models.go` | `TrackFeatures`, `FeaturePercentileRow`, `AppSettings.LibraryAnalysisEnabled`/`LibraryAnalysisWorkerCount`/`MoodDerivationVersion`, `AnalysisProgress` |
 | `internal/domain/repositories.go` | `AnalysisRepository` (percentile/mood methods), `TrackQueryRepository` |
@@ -96,8 +111,9 @@ corpus-wide percentile distribution). Mood then backs **Mood Radio** similarity.
 - `GetWorkerCount(ctx) (count, max int)`: returns the configured worker count
   after defaulting/clamping, plus the UI ceiling (`numCPU/2`, minimum 1).
 - `startPool()`: spawns `clampWorkerCount(workerCount)` worker goroutines on a
-  fresh `context.WithCancel`, then kicks off a one-time backfill (`ListPending`
-  → `Enqueue` every pending track ID). Idempotent — no-op if already running.
+  fresh `context.WithCancel`, then kicks off a bounded backfill: 1,000 pending
+  IDs are enqueued at a time and the batch drains before the next is fetched.
+  This bounds queue memory for large libraries. Idempotent — no-op if already running.
 - `stopPool()`: cancels the pool's context (workers exit `cond.Wait()` loops on
   next wake — cancel happens *before* the broadcast to avoid a race where a
   worker re-enters `Wait()` before observing cancellation), waits for in-flight
@@ -143,12 +159,15 @@ otherwise it stays `analyzing` even while throttled, since work is still progres
 
 ### Failed tracks
 
-A track whose `Analyze()` errors permanently (corrupt file, unsupported codec) is
-recorded via `AnalysisRepository.MarkFailed(ctx, trackID, currentVersion)`, which
-bumps `tracks.analyzed_version` **without** writing a `track_features` row:
+A track/component whose analysis errors permanently (corrupt file, unsupported
+codec, or source-specific setup failure) is recorded as `failed` at that
+component's current version in `track_analysis_components`. It is resolved for
+progress and does not retry until that component's version increases. A decode
+failure marks every requested component failed; a single-source run does not
+invalidate the other source's completed data.
 
-- `GetFeatures` still returns nil → Normalization treats it as unanalyzed (gain 0).
-- `CountPending`/`ListPending` stop counting it → `pending` can reach 0.
+- A track with no feature row still makes Normalization no-op (gain 0).
+- Component-pending queries stop counting the failed source → progress can reach 0.
 - It is counted in neither `pending` nor `done`, so `total` excludes it; 100% is
   reached once every *attemptable* track is resolved.
 
@@ -169,7 +188,7 @@ the single SQLite writer.
 
 ## Mood Derivation (`internal/app/analysis/mood/`)
 
-`energy`/`danceability` are computed from raw `track_features` columns
+`energy`/`danceability`/`brightness` are computed from raw `track_features` columns
 (`rms`, `spectral_centroid`, `spectral_flux`, `tempo`, `crest`,
 `onset_variance`, `loudness_range`) via locked formulas in `formulas.go`
 (`DeriveEnergy`, `DeriveDanceability`) — weighted sums of each feature run
@@ -194,12 +213,19 @@ danceability = 0.45·tempoScore(tempo)        // triangular, NOT percentile-norm
              + 0.30·(1 − norm(onset_variance))
              + 0.15·(1 − norm(crest))
              + 0.10·(1 − norm(loudness_range))
+
+brightness   = norm(spectral_centroid)        // direct bright ↔ dark similarity axis
 ```
 
 Each weight set sums to 1.0, so both scores land in `[0,1]`. A `PercentileSet`
 entry missing for a feature normalizes to a neutral `0.5` (degenerate-spread
 branch), so a partial/empty warm cache still yields a valid score. Bump
 `moodVersion` (`analysis_service.go`) on any weight/formula change.
+
+`brightness` is not valence: it is a direct bright↔dark axis derived solely
+from `spectral_centroid`. Migration 000054 invalidates cached percentile/mood
+rows so the normal startup recompute path backfills brightness for existing
+tracks before Mood Radio considers them.
 
 `Normalize` needs a `PercentileSet` (`map[featureName]Percentile{P1,P5,P50,P95,P99}`)
 computed across the whole analyzed library — a single track's raw features are
@@ -274,12 +300,12 @@ backfills it.
 ## Mood Radio (`frontend/src/stores/moodRadio.ts`, `MoodRadioService`)
 
 "Give me more like this" queue seeding/auto-refill, gated on
-`AppSettings.LibraryAnalysisEnabled` (energy/danceability/tempo are its only
+`AppSettings.LibraryAnalysisEnabled` (energy/danceability/brightness/tempo are its only
 inputs). `MoodRadioService.GenerateMoodRadio(seedTrackID, excludeTrackIDs,
 limit)` forwards to `app/moodradio.Service`. The service asks
 `TrackQueryRepository.FindSimilar` for the nearest 80 analyzed candidates,
 excluding the seed and every supplied queue/history ID. SQLite ranks candidates
-by weighted-euclidean distance over `energy`/`danceability`/`tempo` (tempo
+by weighted-euclidean distance over `energy`/`danceability`/`brightness`/`tempo` (tempo
 scaled `/200` to bring its BPM range in line with the 0-1 normalized features),
 computed entirely in SQL via correlated subqueries against the seed's own
 feature row. If the seed track itself has no analyzed feature row, `FindSimilar`
@@ -297,7 +323,10 @@ alternative exists. It relaxes the album rule first, then artist cooldown, so
 small libraries still receive a full batch.
 
 The frontend store starts Mood Radio by seeding + prepending the seed track
-(`FindSimilar` always excludes it), then auto-refills the queue as it drains
+(`FindSimilar` always excludes it). When that seed is already the active
+track, it replaces only the queue through `ReplaceQueueKeepingCurrentTrackIDs`,
+so the native player retains its current position rather than replaying the
+seed. It then auto-refills the queue as it drains
 below `REFILL_THRESHOLD` (3) remaining tracks, appending `SEED_BATCH_SIZE` (15)
 more similar tracks at a time. The whole existing queue is supplied as
 `excludeTrackIDs` on refill, so already queued/played tracks are removed before
@@ -334,10 +363,8 @@ from disk are detected on the next periodic sync scan, not instantly — see
 
 The on-play boost fires on **every** track load, whether or not the track is
 already analyzed — `Enqueue`'s dedup tracks only in-flight/queued state, not
-analysis freshness. `analyzeOne` therefore re-checks `AnalysisRepository.GetFeatures`
-and returns early when `existing.AnalyzerVersion >= analyzerVersion`, before running
-the ffmpeg pass, so replaying an already-analyzed track costs one `GetFeatures`
-lookup rather than a full re-analysis.
+analysis freshness. `analyzeOne` re-checks the pending component mask before
+running; replaying a current track costs only component-version lookups.
 
 ## Wails-Exposed Methods (`AnalysisService`)
 

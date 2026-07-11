@@ -61,12 +61,13 @@ func TestBuildWhereClause_BitrateField(t *testing.T) {
 	}
 }
 
-func TestBuildWhereClause_EnergyDanceabilityFields(t *testing.T) {
+func TestBuildWhereClause_MoodFields(t *testing.T) {
 	group := domain.SmartRuleGroup{
 		Match: "all",
 		Rules: []domain.SmartRule{
 			{Field: "energy", Op: "between", Value: []any{0.6, 1.0}},
 			{Field: "danceability", Op: "gte", Value: 0.5},
+			{Field: "brightness", Op: "between", Value: []any{0.2, 0.8}},
 		},
 	}
 	where, args, err := BuildWhereClause(group)
@@ -79,8 +80,11 @@ func TestBuildWhereClause_EnergyDanceabilityFields(t *testing.T) {
 	if !strings.Contains(where, "tf.danceability >= ?") {
 		t.Errorf("expected danceability clause, got %q", where)
 	}
-	if len(args) != 3 {
-		t.Fatalf("expected 3 args, got %d: %v", len(args), args)
+	if !strings.Contains(where, "tf.brightness BETWEEN ? AND ?") {
+		t.Errorf("expected brightness clause, got %q", where)
+	}
+	if len(args) != 5 {
+		t.Fatalf("expected 5 args, got %d: %v", len(args), args)
 	}
 }
 

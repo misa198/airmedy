@@ -235,8 +235,9 @@ recompute.
 | `added_at`    | `tracks.created_at`                 | number  | `in_last_days`                        |
 | `energy`      | `track_features.energy` (aliased `tf`) | number | `gt`, `lt`, `gte`, `lte`, `between`  |
 | `danceability`| `track_features.danceability` (aliased `tf`) | number | `gt`, `lt`, `gte`, `lte`, `between` |
+| `brightness`  | `track_features.brightness` (aliased `tf`) | number | `gt`, `lt`, `gte`, `lte`, `between` |
 
-`energy`/`danceability` are intentionally absent from the frontend's mirrored
+`energy`/`danceability`/`brightness` are intentionally absent from the frontend's mirrored
 allowlist (`SMART_PLAYLIST_FIELDS` in `smartPlaylistFields.ts`) — they're
 present here only so `GetByRules` can evaluate the rules the Mood tab builds
 directly (see "Mood Playlists" below), not so the generic Filters-tab
@@ -262,7 +263,8 @@ every read of a live-updating playlist using this field.
 
 Single-column B-tree indexes on `tracks.year`, `tracks.bpm`,
 `tracks.duration`, `tracks.bitrate`, `tracks.play_count`,
-`tracks.created_at`, `track_features.energy`, `track_features.danceability`
+`tracks.created_at`, `track_features.energy`, `track_features.danceability`,
+`track_features.brightness`
 — the numeric fields in the allowlist above that a `gt`/`lt`/`between` rule
 can filter on. These matter most for `LiveUpdating: true` playlists (mood
 playlists default to it), since the rule tree re-executes on every read
@@ -273,7 +275,7 @@ plain scan is already fast, and a proper 2D range structure would mean an
 R-tree virtual table (more moving parts: a shadow table plus triggers to
 keep it in sync) that isn't justified without a measured need for it.
 
-`energy`/`danceability` are populated by the mood-derivation stage of the
+`energy`/`danceability`/`brightness` are populated by the mood-derivation stage of the
 audio analysis pipeline (see `catalog/analysis`), sigmoid-normalized to a
 fixed `[0,1]` range per track. `GetByRules` (`track_repository.go`) joins
 `track_features` as `tf` (1:1 on `track_id`, so it never duplicates rows) so
@@ -287,7 +289,7 @@ complex/categorical for this feature and are not fields here.
 ### Mood Playlists
 
 The "Mood" tab in `SmartPlaylistDialog.vue` builds a smart playlist from a 2D
-region instead of the row-by-row rule builder: `MoodHeatmap.vue` renders a
+region plus an optional brightness range instead of the row-by-row rule builder: `MoodHeatmap.vue` renders a
 density heatmap of analyzed tracks over energy (Y) × danceability (X),
 fetched via `MoodRadioService.GetMoodDensityGrid(gridSize)` (bucket counts
 computed in SQL by `TrackQueryRepository.MoodDensityGrid`, zero-count
@@ -296,7 +298,9 @@ so "no data" never reads as "low value"). The user drags a box
 (`useQuadrantBrush.ts`, wrapping `d3-brush`) or drags the dual-range sliders
 next to the heatmap; either produces a `MoodBox` (`energyMin/Max`,
 `danceMin/Max`), converted by `moodPlaylistFields.ts`'s `moodConfigFromBox`
-into a two-rule root group:
+into a two-rule root group. The separate Dark↔Bright range slider adds a third
+`brightness between` rule only when its range is narrower than `[0,1]`, so
+existing mood playlists without brightness retain their original match:
 
 ```json
 {
@@ -310,10 +314,12 @@ into a two-rule root group:
 ```
 
 `boxFromMoodConfig` is the inverse, used to re-populate the heatmap's
-selection when reopening a mood playlist for editing; it returns `null` (and
-the tab falls back to a default centered box) if the stored config isn't
-exactly this two-rule shape — e.g. if the playlist was subsequently hand-edited
-via the Filters tab into something else. Mood playlists are otherwise
+selection when reopening a mood playlist for editing; it accepts the legacy
+two-rule shape or the three-rule shape with an optional brightness range, and
+returns `null` (so the tab falls back to a default centered box) for any other
+shape — e.g. if the playlist was subsequently hand-edited
+via the Filters tab into something else. A legacy two-rule config restores the
+brightness range as unrestricted `[0,1]`. Mood playlists are otherwise
 ordinary smart playlists: same `is_smart`/`rules` storage, same
 `CreateSmart`/`UpdateSmartRules` calls, same `LiveUpdating` semantics (mood
 playlists default it to `true`). They are not combined with Filters-tab rules

@@ -41,6 +41,8 @@ export function useQuadrantBrush(
       danceMax: x1 / w,
       energyMin: 1 - y1 / h,
       energyMax: 1 - y0 / h,
+      brightnessMin: box.value.brightnessMin,
+      brightnessMax: box.value.brightnessMax,
     }
   }
 

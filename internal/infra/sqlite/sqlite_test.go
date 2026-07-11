@@ -23,14 +23,14 @@ func TestSqliteRepositories(t *testing.T) {
 	trackRepo := NewTrackRepository(db)
 
 	track := &domain.Track{
-		ID:        "test-1",
-		Path:      "/path/to/test.mp3",
-		Title:     "Test Track",
-		SortTitle: "Test Track",
-		Copyright: "Test Copyright",
+		ID:            "test-1",
+		Path:          "/path/to/test.mp3",
+		Title:         "Test Track",
+		SortTitle:     "Test Track",
+		Copyright:     "Test Copyright",
 		OtherMetadata: `{"test":"meta"}`,
-		Format:    "mp3",
-		AlbumID:   "",
+		Format:        "mp3",
+		AlbumID:       "",
 	}
 
 	err = trackRepo.Save(ctx, track)
@@ -134,6 +134,74 @@ func TestTrackFeaturesMigration(t *testing.T) {
 	// tracks.analyzed_version pending marker exists.
 	if err := db.Get(&count, `SELECT COUNT(*) FROM pragma_table_info('tracks') WHERE name = 'analyzed_version'`); err != nil || count != 1 {
 		t.Errorf("tracks.analyzed_version missing (count=%d, err=%v)", count, err)
+	}
+}
+
+func TestAnalysisComponentVersionsMigration(t *testing.T) {
+	db, err := NewDB(":memory:", slog.Default())
+	if err != nil {
+		t.Fatalf("NewDB: %v", err)
+	}
+	defer func() { _ = db.Close() }()
+	var count int
+	if err := db.Get(&count, `SELECT COUNT(*) FROM pragma_table_info('track_analysis_components') WHERE name IN ('track_id', 'component', 'version', 'status')`); err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Fatalf("component analysis table columns: got %d want 4", count)
+	}
+	if err := db.Get(&count, `SELECT COUNT(*) FROM pragma_index_list('tracks') WHERE name = 'idx_tracks_analysis_pending_backfill'`); err != nil {
+		t.Fatal(err)
+	}
+	if count != 1 {
+		t.Fatalf("pending analysis backfill index missing (count=%d)", count)
+	}
+}
+
+func TestAnalysisComponentVersionsMigrationBackfillsOnlyV4(t *testing.T) {
+	db, err := NewDB(":memory:", slog.Default())
+	if err != nil {
+		t.Fatalf("NewDB: %v", err)
+	}
+	defer func() { _ = db.Close() }()
+	ctx := context.Background()
+	tracks := NewTrackRepository(db)
+	for _, id := range []string{"current", "failed", "old"} {
+		if err := tracks.Save(ctx, &domain.Track{ID: id, Path: "/m/" + id, Title: id, Format: "mp3"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := db.Exec(`UPDATE tracks SET analyzed_version = 4 WHERE id IN ('current', 'failed')`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`UPDATE tracks SET analyzed_version = 3 WHERE id = 'old'`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`INSERT INTO track_features (track_id, analyzer_version) VALUES ('current', 4)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`DROP TABLE track_analysis_components`); err != nil {
+		t.Fatal(err)
+	}
+	migration, err := os.ReadFile("migrations/000051_analysis_component_versions.up.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(string(migration)); err != nil {
+		t.Fatal(err)
+	}
+	var currentComplete, failedRows, oldRows int
+	if err := db.Get(&currentComplete, `SELECT COUNT(*) FROM track_analysis_components WHERE track_id = 'current' AND version = 1 AND status = 'complete'`); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Get(&failedRows, `SELECT COUNT(*) FROM track_analysis_components WHERE track_id = 'failed' AND version = 1 AND status = 'failed'`); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Get(&oldRows, `SELECT COUNT(*) FROM track_analysis_components WHERE track_id = 'old'`); err != nil {
+		t.Fatal(err)
+	}
+	if currentComplete != 2 || failedRows != 2 || oldRows != 0 {
+		t.Fatalf("unexpected backfill: current=%d failed=%d old=%d", currentComplete, failedRows, oldRows)
 	}
 }
 

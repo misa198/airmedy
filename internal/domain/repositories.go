@@ -212,13 +212,13 @@ type AnalysisRepository interface {
 	// skip re-running the analyzer on a track that already failed once.
 	IsAnalyzed(ctx context.Context, trackID string, currentVersion int) (bool, error)
 
-	// UpsertMoodFeatures writes the derived energy/danceability for a track
+	// UpsertMoodFeatures writes the derived energy/danceability/brightness for a track
 	// and, in the same transaction, bumps tracks.mood_derived_version to
-	// moodVersion. Touches only the energy/danceability columns of
+	// moodVersion. Touches only the derived mood columns of
 	// track_features (leaves the raw analyzer columns untouched). Requires
 	// an existing track_features row for trackID (raw analysis must have
 	// run first).
-	UpsertMoodFeatures(ctx context.Context, trackID string, energy, danceability float64, moodVersion int) error
+	UpsertMoodFeatures(ctx context.Context, trackID string, energy, danceability, brightness float64, moodVersion int) error
 	// GetFeaturePercentiles returns the full cached corpus percentile table
 	// (one row per feature name), or an empty map if none computed yet.
 	GetFeaturePercentiles(ctx context.Context) (map[string]FeaturePercentileRow, error)
@@ -237,6 +237,21 @@ type AnalysisRepository interface {
 	ListMoodPending(ctx context.Context, currentMoodVersion, limit int) ([]string, error)
 }
 
+// ComponentAnalysisRepository is an optional extension of AnalysisRepository
+// used by the component-versioned pipeline. Keeping it narrow lets older test
+// doubles and third-party adapters continue to implement AnalysisRepository.
+type ComponentAnalysisRepository interface {
+	PendingComponents(ctx context.Context, trackID string, required map[AnalysisComponents]int) (AnalysisComponents, error)
+	ComponentsComplete(ctx context.Context, trackID string, required map[AnalysisComponents]int) (bool, error)
+	// ComponentStatus returns both the stale-source mask and whether every
+	// requested source completed successfully, with one repository lookup.
+	ComponentStatus(ctx context.Context, trackID string, required map[AnalysisComponents]int) (pending AnalysisComponents, complete bool, err error)
+	ListPendingComponentTracks(ctx context.Context, required map[AnalysisComponents]int, limit int) ([]string, error)
+	CountPendingComponentTracks(ctx context.Context, required map[AnalysisComponents]int) (int, error)
+	UpsertComponentFeatures(ctx context.Context, f *TrackFeatures, components AnalysisComponents, versions map[AnalysisComponents]int) error
+	MarkComponentsFailed(ctx context.Context, trackID string, components AnalysisComponents, versions map[AnalysisComponents]int) error
+}
+
 // TrackQueryRepository answers similarity lookups over analyzed track
 // features. Currently just backs Mood Radio's "give me more like this"
 // queue refill — kept as its own narrow interface (rather than growing
@@ -244,7 +259,7 @@ type AnalysisRepository interface {
 // stable CRUD/listing port.
 type TrackQueryRepository interface {
 	// FindSimilar returns up to limit tracks most similar to seedTrackID by
-	// weighted-euclidean distance over analyzed mood/tempo features,
+	// weighted-euclidean distance over analyzed mood/brightness/tempo features,
 	// nearest first, excluding the seed, excluded track IDs, and any
 	// unanalyzed track. Returns no tracks if the seed itself is unanalyzed.
 	FindSimilar(ctx context.Context, seedTrackID string, excludeTrackIDs []string, limit int) ([]*TrackDTO, error)

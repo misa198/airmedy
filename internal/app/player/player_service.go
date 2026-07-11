@@ -471,6 +471,17 @@ func (s *PlayerService) PlayTrackIDs(ctx context.Context, trackIDs []string, sta
 	return s.PlayTracks(tracks, startIndex)
 }
 
+// ReplaceQueueKeepingCurrentTrackIDs replaces the queue while leaving the
+// currently loaded track playing at its current position. It is intended for
+// queue sources (such as Mood Radio) that use the current track as their seed.
+func (s *PlayerService) ReplaceQueueKeepingCurrentTrackIDs(ctx context.Context, trackIDs []string) error {
+	tracks, err := s.trackRepo.GetByIDs(ctx, trackIDs)
+	if err != nil {
+		return fmt.Errorf("failed to fetch tracks by ids: %w", err)
+	}
+	return s.ReplaceQueueKeepingCurrentTrack(tracks)
+}
+
 // ShuffleTrackIDs fetches tracks by ID from the repository and shuffles them.
 func (s *PlayerService) ShuffleTrackIDs(ctx context.Context, trackIDs []string) error {
 	tracks, err := s.trackRepo.GetByIDs(ctx, trackIDs)
@@ -489,6 +500,39 @@ func (s *PlayerService) PlayTracks(tracks []*domain.TrackDTO, startIndex int) er
 		return nil
 	}
 	return s.loadAndPlay(track)
+}
+
+// ReplaceQueueKeepingCurrentTrack replaces the queue and points it at the
+// active track without reloading the audio engine. The active track must occur
+// in tracks; callers should use PlayTracks when they intend to start a track.
+func (s *PlayerService) ReplaceQueueKeepingCurrentTrack(tracks []*domain.TrackDTO) error {
+	s.mu.RLock()
+	currentTrack := s.currentTrack
+	s.mu.RUnlock()
+	if currentTrack == nil {
+		return fmt.Errorf("cannot replace queue while no track is loaded")
+	}
+
+	currentIndex := -1
+	for i, track := range tracks {
+		if track != nil && track.ID == currentTrack.ID {
+			currentIndex = i
+			break
+		}
+	}
+	if currentIndex == -1 {
+		return fmt.Errorf("current track %q is not in replacement queue", currentTrack.ID)
+	}
+
+	s.queue.SetQueue(tracks, currentIndex)
+	// The next track changed, so discard any previous gapless preload without
+	// disturbing the active audio source and preload the new successor.
+	s.resyncPreQueue()
+	s.emitQueue()
+	s.emitStatus()
+	s.emitRemoteState()
+	s.saveState(context.Background())
+	return nil
 }
 
 // ShuffleTracks shuffles the given tracks and starts playing the first one.

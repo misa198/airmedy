@@ -154,6 +154,24 @@ func TestTrackRepository_GetByRules(t *testing.T) {
 		t.Fatalf("expected only t1 (high energy/danceability), got %+v", got)
 	}
 
+	if _, err := db.ExecContext(ctx, `UPDATE track_features SET brightness = 0.7 WHERE track_id = 't1'`); err != nil {
+		t.Fatalf("failed to seed brightness: %v", err)
+	}
+	where, args, err = playlist.BuildWhereClause(domain.SmartRuleGroup{
+		Match: "all",
+		Rules: []domain.SmartRule{{Field: "brightness", Op: "between", Value: []any{0.6, 0.8}}},
+	})
+	if err != nil {
+		t.Fatalf("build brightness where: %v", err)
+	}
+	got, err = trackRepo.GetByRules(ctx, where, args, 0, "")
+	if err != nil {
+		t.Fatalf("GetByRules brightness: %v", err)
+	}
+	if len(got) != 1 || got[0].ID != "t1" {
+		t.Fatalf("expected only t1 (matching brightness; NULL is excluded), got %+v", got)
+	}
+
 	// added_at: t1/t2/t3 all just saved (now), t4 backdated 60 days — the
 	// sargable rewrite (t.created_at >= ?) must exclude it for a 30-day window.
 	old := &domain.Track{ID: "t4", Path: "/m/t4.mp3", Title: "Old Track", SortTitle: "old track", Format: "mp3", CreatedAt: time.Now().Add(-60 * 24 * time.Hour)}

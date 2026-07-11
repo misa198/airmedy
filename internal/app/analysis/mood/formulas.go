@@ -65,6 +65,12 @@ func DeriveDanceability(f RawFeatures, pctl PercentileSet) float64 {
 		0.10*(1-Normalize(f.LoudnessRange, pctl[FeatureLoudnessRange], sigmoidSteepness))
 }
 
+// DeriveBrightness maps spectral centroid, the raw proxy for perceived spectral
+// brightness, onto the corpus-relative [0,1] mood scale used by Mood Radio.
+func DeriveBrightness(f RawFeatures, pctl PercentileSet) float64 {
+	return Normalize(f.SpectralCentroid, pctl[FeatureSpectralCentroid], sigmoidSteepness)
+}
+
 // tempoScore is a self-contained triangular function on raw BPM, NOT routed
 // through Normalize/percentiles: 0 at <=60bpm, rises linearly to 1 at
 // tempoScorePeak (~115bpm), falls linearly back to 0 at >=180bpm.

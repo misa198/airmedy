@@ -90,6 +90,12 @@ func (s *PlayerService) PlayTrackIDs(trackIDs []string, startIndex int) error {
 	return s.service.PlayTrackIDs(context.Background(), trackIDs, startIndex)
 }
 
+// ReplaceQueueKeepingCurrentTrackIDs swaps the queue without restarting the
+// currently loaded track.
+func (s *PlayerService) ReplaceQueueKeepingCurrentTrackIDs(trackIDs []string) error {
+	return s.service.ReplaceQueueKeepingCurrentTrackIDs(context.Background(), trackIDs)
+}
+
 func (s *PlayerService) ShuffleTracks(tracks []*domain.TrackDTO) error {
 	return s.service.ShuffleTracks(tracks)
 }

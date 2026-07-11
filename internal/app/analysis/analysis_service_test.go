@@ -80,7 +80,7 @@ func (m *mockAnalysisRepo) MarkFailed(ctx context.Context, trackID string, curre
 	return nil
 }
 
-func (m *mockAnalysisRepo) UpsertMoodFeatures(ctx context.Context, trackID string, energy, danceability float64, moodVersion int) error {
+func (m *mockAnalysisRepo) UpsertMoodFeatures(ctx context.Context, trackID string, energy, danceability, brightness float64, moodVersion int) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.moodCalls = append(m.moodCalls, trackID)

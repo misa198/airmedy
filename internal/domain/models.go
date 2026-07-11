@@ -395,6 +395,7 @@ type TrackFeatures struct {
 	OnsetVariance float64 `json:"onset_variance" db:"onset_variance"`
 	Energy        float64 `json:"energy" db:"energy"`
 	Danceability  float64 `json:"danceability" db:"danceability"`
+	Brightness    float64 `json:"brightness" db:"brightness"`
 }
 
 // MoodDensityGrid buckets analyzed tracks (non-null energy and danceability)

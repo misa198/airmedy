@@ -85,6 +85,10 @@ var smartPlaylistFields = map[string]fieldSpec{
 		kind: fieldKindColumn, valueType: valueTypeNumber, column: "tf.danceability",
 		ops: map[string]bool{"gt": true, "lt": true, "gte": true, "lte": true, "between": true},
 	},
+	"brightness": {
+		kind: fieldKindColumn, valueType: valueTypeNumber, column: "tf.brightness",
+		ops: map[string]bool{"gt": true, "lt": true, "gte": true, "lte": true, "between": true},
+	},
 	"is_favorite": {
 		kind: fieldKindColumn, valueType: valueTypeBool, column: "t.is_favorite",
 		ops: map[string]bool{"is": true},

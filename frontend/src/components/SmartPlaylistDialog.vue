@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Checkbox, Input, Modal, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@airmedy/ui'
+import { Checkbox, Input, Modal, RangeSlider, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@airmedy/ui'
 import RuleBuilder from './RuleBuilder.vue'
 import MoodHeatmap from './MoodHeatmap.vue'
 import { useAppStore } from '../stores/app'
@@ -122,6 +122,12 @@ function toggleLiveUpdating(live: boolean) {
 const ruleCount = computed(() => countRules(config.value.root))
 const hasRules = computed(() => ruleCount.value > 0)
 const rulesValid = computed(() => isGroupValid(config.value.root))
+const brightnessRange = computed<[number, number]>({
+  get: () => [moodBox.value.brightnessMin, moodBox.value.brightnessMax] as [number, number],
+  set: ([brightnessMin, brightnessMax]) => {
+    moodBox.value = { ...moodBox.value, brightnessMin, brightnessMax }
+  },
+})
 const canSubmit = computed(() => {
   if (!name.value.trim()) return false
   if (activeTab.value === 'mood') return appStore.libraryAnalysisEnabled && isMoodBoxValid(moodBox.value)
@@ -183,7 +189,20 @@ function submit() {
         {{ t('common.loading') }}
       </div>
 
-      <MoodHeatmap v-else v-model="moodBox" :grid="moodGrid" />
+      <template v-else>
+        <MoodHeatmap v-model="moodBox" :grid="moodGrid" />
+        <div class="rounded-xl bg-glass-elevated backdrop-blur-xl border border-border-glass px-4 py-3">
+          <div class="mb-2 flex items-center justify-between text-sm">
+            <span class="text-foreground/70">{{ t('playlists.smart.mood_brightness') }}</span>
+            <span class="text-foreground/40 tabular-nums">{{ brightnessRange[0].toFixed(2) }}–{{ brightnessRange[1].toFixed(2) }}</span>
+          </div>
+          <RangeSlider v-model="brightnessRange" :min="0" :max="1" :step="0.01" />
+          <div class="mt-1 flex justify-between text-xs text-foreground/40">
+            <span>{{ t('playlists.smart.mood_brightness_dark') }}</span>
+            <span>{{ t('playlists.smart.mood_brightness_bright') }}</span>
+          </div>
+        </div>
+      </template>
 
       <div class="border-t border-foreground/10 pt-3 space-y-3">
         <label class="flex items-center gap-2 text-sm text-foreground/80 cursor-pointer" @click="toggleLimitEnabled(!config.limit.enabled)">
