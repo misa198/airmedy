@@ -105,7 +105,7 @@ onUnmounted(() => {
         :key="index"
         ref="lineRefs"
         data-test="lyric-line"
-        class="font-bold transition-[filter,opacity,transform,scale] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] cursor-pointer select-none origin-left py-2"
+        class="font-bold transition-[filter,opacity,transform,scale] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] cursor-pointer select-none origin-left py-2 transform-gpu"
         :class="[
           props.immersive
             ? index === activeIndex
