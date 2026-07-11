@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { Slider } from '@airmedy/ui'
@@ -14,6 +14,7 @@ import {
 } from '@airmedy/ui'
 import { MoreHorizontal, Plus, Pencil, Trash2, Power } from '@lucide/vue'
 import { useContextMenu } from '@/composables/useContextMenu'
+import { Events } from '@wailsio/runtime'
 import ContextMenu from './ContextMenu.vue'
 import EQProfileDialog from './EQProfileDialog.vue'
 
@@ -31,7 +32,10 @@ const contextMenu = useContextMenu()
 
 const FREQ_LABELS = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k']
 
-onMounted(async () => {
+let offActiveProfileChanged: (() => void) | undefined
+let offProfilesUpdated: (() => void) | undefined
+
+async function loadAllData() {
   try {
     const [all, active] = await Promise.all([
       EQService.GetAllProfiles(),
@@ -41,10 +45,37 @@ onMounted(async () => {
     profiles.value = filtered
     if (active) {
       activeProfile.value = filtered.find((p) => p.id === active.id) || active
+    } else {
+      activeProfile.value = null
     }
   } catch (e) {
     console.error('Failed to load EQ profiles', e)
   }
+}
+
+onMounted(async () => {
+  await loadAllData()
+
+  offActiveProfileChanged = Events.On('eq:active-profile-changed', async (event) => {
+    const activeId = event.data as string
+    if (activeProfile.value?.id !== activeId) {
+      const found = profiles.value.find((p) => p.id === activeId)
+      if (found) {
+        activeProfile.value = found
+      } else {
+        await loadAllData()
+      }
+    }
+  })
+
+  offProfilesUpdated = Events.On('eq:profiles-updated', async () => {
+    await loadAllData()
+  })
+})
+
+onUnmounted(() => {
+  offActiveProfileChanged?.()
+  offProfilesUpdated?.()
 })
 
 const bands = computed(() => {

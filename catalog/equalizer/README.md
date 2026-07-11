@@ -108,6 +108,11 @@ DeleteProfile(id: string): void
 SetEnabled(enabled: boolean): void
 ```
 
+## Wails Events
+
+- `"eq:active-profile-changed"` (data: `id` string): Emitted when a profile is applied/switched.
+- `"eq:profiles-updated"` (data: `nil`): Emitted when a profile is created, renamed, or deleted.
+
 ## Database Tables
 
 ```sql
@@ -123,6 +128,7 @@ Located in Settings → Equalizer tab.
 
 - Uses global `app` store for EQ enabled state and profile management.
 - Fetches all profiles on mount.
+- Listens to Wails events `"eq:active-profile-changed"` and `"eq:profiles-updated"` to synchronize its local state if the active profile or the profile list is modified from another component (like the player quick settings).
 - Renders 10 vertical sliders (one per band), range -12 to +12 dB.
 - Moving a slider calls `UpdateBand()` immediately — live effect while playing.
 - Profile dropdown switches active profile (`ApplyProfile()`).

@@ -186,7 +186,7 @@
       "max_queue_size": "Dimensione massima della coda",
       "max_queue_size_desc": "Limita il numero di brani che la coda di riproduzione può contenere, incluso quello attuale. I brani più vecchi vengono rimossi per primi al raggiungimento del limite."
     },
-    "quick_menu": { "eq_presets": "Predefiniti EQ", "go_to_equalizer": "Vai alle impostazioni dell'equalizzatore" },
+    "quick_menu": { "enable_eq": "Attiva equalizzatore", "eq_presets": "Predefiniti EQ", "go_to_equalizer": "Vai alle impostazioni dell'equalizzatore" },
     "remote": {
       "title": "Controllo Remoto",
       "enable": "Abilita server remoto",

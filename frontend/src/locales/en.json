@@ -186,7 +186,7 @@
       "max_queue_size": "Max queue size",
       "max_queue_size_desc": "Caps how many tracks the play queue can hold, including the current track. Oldest tracks are dropped first once the limit is reached."
     },
-    "quick_menu": { "eq_presets": "EQ Presets", "go_to_equalizer": "Go to Equalizer settings" },
+    "quick_menu": { "enable_eq": "Enable Equalizer", "eq_presets": "EQ Presets", "go_to_equalizer": "Go to Equalizer settings" },
     "remote": {
       "title": "Remote Control",
       "enable": "Enable Remote Server",

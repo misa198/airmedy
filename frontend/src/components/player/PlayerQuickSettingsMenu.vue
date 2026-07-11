@@ -48,13 +48,26 @@ function goToEqualizerSettings() {
 }
 
 function buildItems(): ContextMenuItem[] {
-  const eqChildren: ContextMenuItem[] = profiles.value.map((profile) => ({
-    label: profile.name,
-    iconRight: profile.id === activeProfileID.value ? Check : undefined,
-    action: () => selectProfile(profile),
-  }))
+  const eqChildren: ContextMenuItem[] = [
+    {
+      label: t('settings.quick_menu.enable_eq'),
+      iconRight: appStore.eqEnabled ? Check : undefined,
+      action: () => appStore.updateEQEnabled(!appStore.eqEnabled),
+    },
+  ]
 
-  if (eqChildren.length) eqChildren.push({ separator: true })
+  if (profiles.value.length > 0) {
+    eqChildren.push({ separator: true })
+    profiles.value.forEach((profile) => {
+      eqChildren.push({
+        label: profile.name,
+        iconRight: (appStore.eqEnabled && profile.id === activeProfileID.value) ? Check : undefined,
+        action: () => selectProfile(profile),
+      })
+    })
+  }
+
+  eqChildren.push({ separator: true })
   eqChildren.push({
     label: t('settings.quick_menu.go_to_equalizer'),
     icon: Settings2,

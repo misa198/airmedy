@@ -186,7 +186,7 @@
       "max_queue_size": "Taille maximale de la file d'attente",
       "max_queue_size_desc": "Limite le nombre de titres que la file d'attente peut contenir, y compris le titre en cours. Les titres les plus anciens sont supprimés en premier une fois la limite atteinte."
     },
-    "quick_menu": { "eq_presets": "Préréglages EQ", "go_to_equalizer": "Accéder aux réglages de l'égaliseur" },
+    "quick_menu": { "enable_eq": "Activer l'égaliseur", "eq_presets": "Préréglages EQ", "go_to_equalizer": "Accéder aux réglages de l'égaliseur" },
     "remote": {
       "title": "Télécommande",
       "enable": "Activer le serveur distant",

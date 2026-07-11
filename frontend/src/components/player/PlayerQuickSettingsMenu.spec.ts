@@ -85,7 +85,8 @@ describe('PlayerQuickSettingsMenu', () => {
     expect(preventSleepItem.iconRight).toBeTruthy()
     expect(showIndicatorItem.iconRight).toBeUndefined()
     expect(crossfadeItem.iconRight).toBeTruthy()
-    expect(eqItem.children?.[0].iconRight).toBeTruthy()
+    expect(eqItem.children?.[0].iconRight).toBeTruthy() // enable_eq check
+    expect(eqItem.children?.[2].iconRight).toBeTruthy() // flat profile check
   })
 
   it('uses app-store actions for the setting toggles and crossfade default', async () => {
@@ -109,6 +110,20 @@ describe('PlayerQuickSettingsMenu', () => {
     expect(store.updateCrossfadeSeconds).toHaveBeenCalledWith(4)
   })
 
+  it('toggles the EQ enabled state when clicking the enable toggle', async () => {
+    const { wrapper } = mountMenu({ eqEnabled: true })
+    const store = useAppStore()
+    const items = await openMenu(wrapper)
+    const eqItems = getItem(items, 'settings.quick_menu.eq_presets').children!
+
+    const toggleItem = eqItems[0]
+    expect(toggleItem.label).toBe('settings.quick_menu.enable_eq')
+    expect(toggleItem.iconRight).toBeTruthy()
+
+    await toggleItem.action?.()
+    expect(store.updateEQEnabled).toHaveBeenCalledWith(false)
+  })
+
   it('applies an EQ profile, enables EQ, and links to the EQ section', async () => {
     const { wrapper, router } = mountMenu()
     const store = useAppStore()
@@ -116,8 +131,8 @@ describe('PlayerQuickSettingsMenu', () => {
     const items = await openMenu(wrapper)
     const eqItems = getItem(items, 'settings.quick_menu.eq_presets').children!
 
-    await eqItems[1].action?.()
-    eqItems[3].action?.()
+    await eqItems[3].action?.() // Click Rock profile
+    eqItems[5].action?.() // Click Go to settings
 
     expect(EQService.ApplyProfile).toHaveBeenCalledWith('rock')
     expect(store.updateEQEnabled).toHaveBeenCalledWith(true)
