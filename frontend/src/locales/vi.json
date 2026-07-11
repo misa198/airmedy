@@ -186,6 +186,7 @@
       "max_queue_size": "Giới hạn hàng đợi",
       "max_queue_size_desc": "Giới hạn số track tối đa trong hàng đợi phát, tính cả track đang phát. Khi vượt giới hạn, track cũ nhất sẽ bị loại bỏ trước."
     },
+    "quick_menu": { "eq_presets": "Bộ cài đặt EQ", "go_to_equalizer": "Đi đến cài đặt Equalizer" },
     "remote": {
       "title": "Điều Khiển Từ Xa",
       "enable": "Bật máy chủ điều khiển từ xa",

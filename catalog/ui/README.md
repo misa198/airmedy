@@ -185,7 +185,17 @@ Row height: 56px (default) or 36px (compact mode), header height: 40px. Column v
 | Edit Metadata       | Open `MetadataEditDialog`                    |
 | Show in Explorer    | `LibraryService.ShowInExplorer()`            |
 
-`ContextMenu.vue` is rendered via `<Teleport to="body">`. Handles viewport edge detection and keyboard navigation.
+`ContextMenu.vue` is rendered via `<Teleport to="body">`. It clamps against the layout viewport (`document.documentElement.clientWidth/clientHeight`) so menus stay inside the visible content area even when browser scrollbars reduce usable space. It handles viewport edge detection and keyboard navigation.
+It supports one hover-open submenu level, including separators within the submenu.
+
+### Player Footer Quick Settings
+
+`PlayerQuickSettingsMenu.vue` opens from a left click on a non-interactive area of
+the sticky player footer. It provides persisted toggles for prevent-sleep, active
+player indicators, and crossfade, plus an EQ-profile submenu. The submenu loads
+the current profiles on open, marks the active profile, applies a chosen profile
+live, and links to the EQ section at `/settings/playback?section=equalizer`.
+Artwork, sliders, and buttons retain their normal footer interactions.
 
 ## Modal & Dialog System
 
@@ -235,6 +245,9 @@ controls. Library Analysis controls were moved out to `LibrarySettings.vue`; the
 playback panel only retains the dependency hint
 (`settings.library_analysis.requires_enable`) when normalization is unavailable
 because analysis is off.
+
+The EQ section is identified by `#equalizer`; `SettingsView` recognizes the
+`section=equalizer` query on the Playback route and scrolls that section into view.
 
 ## UI Primitives (`@airmedy/ui`)
 

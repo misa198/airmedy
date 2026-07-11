@@ -126,6 +126,8 @@ Located in Settings → Equalizer tab.
 - Renders 10 vertical sliders (one per band), range -12 to +12 dB.
 - Moving a slider calls `UpdateBand()` immediately — live effect while playing.
 - Profile dropdown switches active profile (`ApplyProfile()`).
+- The player footer quick-settings menu also loads and applies profiles on demand;
+  it marks the active profile and enables EQ when a profile is selected.
 - Create / Rename / Delete profile buttons with confirmation dialogs.
 - Global enable/disable toggle (persisted).
 - Platform note: EQ interaction is live on all platforms.

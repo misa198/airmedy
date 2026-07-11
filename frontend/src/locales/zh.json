@@ -186,6 +186,7 @@
       "max_queue_size": "队列最大长度",
       "max_queue_size_desc": "限制播放队列可容纳的曲目数量（含当前曲目）。达到上限后，最早的曲目将被优先移除。"
     },
+    "quick_menu": { "eq_presets": "EQ 预设", "go_to_equalizer": "前往均衡器设置" },
     "remote": {
       "title": "远程控制",
       "enable": "启用远程服务器",

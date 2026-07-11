@@ -109,7 +109,7 @@ const lufsMarkPct = (value: number) =>
       </SettingRow>
     </SettingSection>
 
-    <SettingSection :icon="AudioLines" :label="t('settings.equalizer.title')" variant="panel">
+    <SettingSection id="equalizer" :icon="AudioLines" :label="t('settings.equalizer.title')" variant="panel">
       <EQPanel />
     </SettingSection>
 

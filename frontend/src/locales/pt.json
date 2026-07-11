@@ -186,6 +186,7 @@
       "max_queue_size": "Tamanho máximo da fila",
       "max_queue_size_desc": "Limita quantas faixas a fila de reprodução pode conter, incluindo a faixa atual. As faixas mais antigas são removidas primeiro ao atingir o limite."
     },
+    "quick_menu": { "eq_presets": "Predefinições de EQ", "go_to_equalizer": "Ir para as definições do equalizador" },
     "remote": {
       "title": "Controlo Remoto",
       "enable": "Ativar servidor remoto",
