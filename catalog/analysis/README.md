@@ -7,7 +7,7 @@ graph (`ebur128,aspectralstats,astats`) plus aubio tempo detection in-process
 via cgo, and stores the result (loudness, dynamics, spectral features, tempo,
 onset variance) in `track_features`. This is the sole data source for
 [Volume Normalization](../normalization/README.md).
-`energy`/`danceability` are derived from these raw features (rule-based, no ML,
+`energy`/`danceability`/`brightness` are derived from these raw features (rule-based, no ML,
 normalized against corpus-wide percentiles — see Mood Derivation below) and
 consumed by Mood Radio (see below).
 
@@ -55,16 +55,16 @@ flowchart TB
     RAW --> PCT["Recompute corpus percentiles"]
     PCT --> PCTBL[("feature_percentiles<br/><i>p1/p5/p50/p95/p99 per feature</i>")]
 
-    RAW --> MOOD["Mood derivation<br/>energy / danceability"]
+    RAW --> MOOD["Mood derivation<br/>energy / danceability / brightness"]
     PCTBL --> MOOD
-    MOOD --> MOODF[("track_features<br/><i>mood: energy, danceability</i>")]
+    MOOD --> MOODF[("track_features<br/><i>mood: energy, danceability, brightness</i>")]
 
     MOODF --> SIM["FindSimilar<br/>(weighted-euclidean)"]
     SIM --> RADIO["Mood Radio queue<br/>seed + auto-refill"]
 ```
 
 Raw features feed two independent consumers: **Normalization** (loudness → gain)
-and **Mood** (all features → energy/danceability, but only relative to the
+and **Mood** (all features → energy/danceability/brightness, but only relative to the
 corpus-wide percentile distribution). Mood then backs **Mood Radio** similarity.
 
 ## Files
@@ -79,7 +79,7 @@ corpus-wide percentile distribution). Mood then backs **Mood Radio** similarity.
 | `internal/infra/audio/analyzer.go` + `ffmpeg_analyzer.h` | cgo adapter implementing `domain.LoudnessAnalyzer` |
 | `scripts/build-fftw3-*.sh` + `scripts/build-aubio-*.sh` | Vendored FFTW3F/aubio builders for macOS, Linux, Windows |
 | `internal/infra/sqlite/analysis_repository.go` | `track_features` CRUD, pending-count/list, `MarkFailed`, percentile table CRUD, mood-pending list |
-| `internal/infra/sqlite/track_query_repository.go` | `FindSimilar` — weighted-euclidean nearest-neighbor query over energy/danceability/tempo, backs Mood Radio |
+| `internal/infra/sqlite/track_query_repository.go` | `FindSimilar` — weighted-euclidean nearest-neighbor query over energy/danceability/brightness/tempo, backs Mood Radio |
 | `internal/domain/audio.go` | `LoudnessAnalyzer` interface |
 | `internal/domain/models.go` | `TrackFeatures`, `FeaturePercentileRow`, `AppSettings.LibraryAnalysisEnabled`/`LibraryAnalysisWorkerCount`/`MoodDerivationVersion`, `AnalysisProgress` |
 | `internal/domain/repositories.go` | `AnalysisRepository` (percentile/mood methods), `TrackQueryRepository` |
@@ -188,7 +188,7 @@ the single SQLite writer.
 
 ## Mood Derivation (`internal/app/analysis/mood/`)
 
-`energy`/`danceability` are computed from raw `track_features` columns
+`energy`/`danceability`/`brightness` are computed from raw `track_features` columns
 (`rms`, `spectral_centroid`, `spectral_flux`, `tempo`, `crest`,
 `onset_variance`, `loudness_range`) via locked formulas in `formulas.go`
 (`DeriveEnergy`, `DeriveDanceability`) — weighted sums of each feature run
@@ -213,12 +213,19 @@ danceability = 0.45·tempoScore(tempo)        // triangular, NOT percentile-norm
              + 0.30·(1 − norm(onset_variance))
              + 0.15·(1 − norm(crest))
              + 0.10·(1 − norm(loudness_range))
+
+brightness   = norm(spectral_centroid)        // direct bright ↔ dark similarity axis
 ```
 
 Each weight set sums to 1.0, so both scores land in `[0,1]`. A `PercentileSet`
 entry missing for a feature normalizes to a neutral `0.5` (degenerate-spread
 branch), so a partial/empty warm cache still yields a valid score. Bump
 `moodVersion` (`analysis_service.go`) on any weight/formula change.
+
+`brightness` is not valence: it is a direct bright↔dark axis derived solely
+from `spectral_centroid`. Migration 000054 invalidates cached percentile/mood
+rows so the normal startup recompute path backfills brightness for existing
+tracks before Mood Radio considers them.
 
 `Normalize` needs a `PercentileSet` (`map[featureName]Percentile{P1,P5,P50,P95,P99}`)
 computed across the whole analyzed library — a single track's raw features are
@@ -293,12 +300,12 @@ backfills it.
 ## Mood Radio (`frontend/src/stores/moodRadio.ts`, `MoodRadioService`)
 
 "Give me more like this" queue seeding/auto-refill, gated on
-`AppSettings.LibraryAnalysisEnabled` (energy/danceability/tempo are its only
+`AppSettings.LibraryAnalysisEnabled` (energy/danceability/brightness/tempo are its only
 inputs). `MoodRadioService.GenerateMoodRadio(seedTrackID, excludeTrackIDs,
 limit)` forwards to `app/moodradio.Service`. The service asks
 `TrackQueryRepository.FindSimilar` for the nearest 80 analyzed candidates,
 excluding the seed and every supplied queue/history ID. SQLite ranks candidates
-by weighted-euclidean distance over `energy`/`danceability`/`tempo` (tempo
+by weighted-euclidean distance over `energy`/`danceability`/`brightness`/`tempo` (tempo
 scaled `/200` to bring its BPM range in line with the 0-1 normalized features),
 computed entirely in SQL via correlated subqueries against the seed's own
 feature row. If the seed track itself has no analyzed feature row, `FindSimilar`

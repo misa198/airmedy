@@ -24,7 +24,7 @@ func (r *analysisRepository) UpsertFeatures(ctx context.Context, f *domain.Track
 
 		// Phase-2 columns (loudness/dynamics/spectral) plus tempo (BPM, via aubio)
 		// and onset_variance. The remaining reserved mood columns
-		// (energy/danceability) are left untouched on conflict — written
+		// (energy/danceability/brightness) are left untouched on conflict — written
 		// separately by the mood-derivation stage.
 		_, err := ex.ExecContext(ctx,
 			`INSERT INTO track_features (
@@ -97,6 +97,7 @@ func (r *analysisRepository) GetFeatures(ctx context.Context, trackID string) (*
 		OnsetVariance    float64      `db:"onset_variance"`
 		Energy           float64      `db:"energy"`
 		Danceability     float64      `db:"danceability"`
+		Brightness       float64      `db:"brightness"`
 	}
 	err := r.db.Ext(ctx).GetContext(ctx, &row,
 		`SELECT
@@ -114,7 +115,8 @@ func (r *analysisRepository) GetFeatures(ctx context.Context, trackID string) (*
 		   COALESCE(tempo, 0) AS tempo,
 		   COALESCE(onset_variance, 0) AS onset_variance,
 		   COALESCE(energy, 0) AS energy,
-		   COALESCE(danceability, 0) AS danceability
+		   COALESCE(danceability, 0) AS danceability,
+		   COALESCE(brightness, 0) AS brightness
 		 FROM track_features WHERE track_id = ?`,
 		trackID,
 	)
@@ -147,6 +149,7 @@ func (r *analysisRepository) GetFeatures(ctx context.Context, trackID string) (*
 		OnsetVariance:    row.OnsetVariance,
 		Energy:           row.Energy,
 		Danceability:     row.Danceability,
+		Brightness:       row.Brightness,
 	}, nil
 }
 
@@ -365,17 +368,17 @@ func (r *analysisRepository) MarkComponentsFailed(ctx context.Context, trackID s
 	return nil
 }
 
-// UpsertMoodFeatures writes derived energy/danceability for a track and, in
+// UpsertMoodFeatures writes derived energy/danceability/brightness for a track and, in
 // the same transaction, bumps tracks.mood_derived_version. A plain UPDATE
 // (not upsert): a track_features row always exists by the time mood
 // derivation runs, since it's always downstream of a successful UpsertFeatures.
-func (r *analysisRepository) UpsertMoodFeatures(ctx context.Context, trackID string, energy, danceability float64, moodVersion int) error {
+func (r *analysisRepository) UpsertMoodFeatures(ctx context.Context, trackID string, energy, danceability, brightness float64, moodVersion int) error {
 	return r.db.RunTx(ctx, func(ctx context.Context) error {
 		ex := r.db.Ext(ctx)
 
 		res, err := ex.ExecContext(ctx,
-			`UPDATE track_features SET energy = ?, danceability = ? WHERE track_id = ?`,
-			energy, danceability, trackID,
+			`UPDATE track_features SET energy = ?, danceability = ?, brightness = ? WHERE track_id = ?`,
+			energy, danceability, brightness, trackID,
 		)
 		if err != nil {
 			return fmt.Errorf("failed to upsert mood features: %w", err)

@@ -22,6 +22,7 @@ func NewTrackQueryRepository(db *DB, tracks domain.TrackRepository) domain.Track
 const (
 	similarityWeightEnergy       = 1.0
 	similarityWeightDanceability = 1.0
+	similarityWeightBrightness   = 1.0
 	similarityWeightTempo        = 1.0
 )
 
@@ -36,6 +37,7 @@ func (r *trackQueryRepository) FindSimilar(ctx context.Context, seedTrackID stri
 		 WHERE track_id = ?
 		   AND energy IS NOT NULL
 		   AND danceability IS NOT NULL
+		   AND brightness IS NOT NULL
 		   AND tempo IS NOT NULL`, seedTrackID); err != nil {
 		return nil, fmt.Errorf("failed to check seed track features: %w", err)
 	}
@@ -46,7 +48,7 @@ func (r *trackQueryRepository) FindSimilar(ctx context.Context, seedTrackID stri
 	// Distance is computed purely in SQL against the seed's own feature row
 	// (correlated subqueries), so we never round-trip seed values through
 	// Go. Tempo is on a very different numeric scale (BPM, ~40-220) than
-	// energy/danceability (0-1 normalized), so it's divided by 200 before
+	// energy/danceability/brightness (0-1 normalized), so tempo is divided by 200 before
 	// squaring to bring it into a comparable range — otherwise it would
 	// dominate the distance regardless of weighting. Unanalyzed tracks
 	// (NULL features) are excluded so they never rank as spuriously "close"
@@ -76,12 +78,15 @@ func (r *trackQueryRepository) FindSimilar(ctx context.Context, seedTrackID stri
 		` + exclusions + `
 		  AND tf.energy IS NOT NULL
 		  AND tf.danceability IS NOT NULL
+		  AND tf.brightness IS NOT NULL
 		  AND tf.tempo IS NOT NULL
 		ORDER BY (
 			? * (tf.energy       - (SELECT energy       FROM track_features WHERE track_id = ?)) *
 			     (tf.energy       - (SELECT energy       FROM track_features WHERE track_id = ?)) +
 			? * (tf.danceability - (SELECT danceability FROM track_features WHERE track_id = ?)) *
 			     (tf.danceability - (SELECT danceability FROM track_features WHERE track_id = ?)) +
+			? * (tf.brightness   - (SELECT brightness   FROM track_features WHERE track_id = ?)) *
+			     (tf.brightness   - (SELECT brightness   FROM track_features WHERE track_id = ?)) +
 			? * ((tf.tempo - (SELECT tempo FROM track_features WHERE track_id = ?)) / 200.0) *
 			     ((tf.tempo - (SELECT tempo FROM track_features WHERE track_id = ?)) / 200.0)
 		) ASC
@@ -96,6 +101,7 @@ func (r *trackQueryRepository) FindSimilar(ctx context.Context, seedTrackID stri
 	args = append(args,
 		similarityWeightEnergy, seedTrackID, seedTrackID,
 		similarityWeightDanceability, seedTrackID, seedTrackID,
+		similarityWeightBrightness, seedTrackID, seedTrackID,
 		similarityWeightTempo, seedTrackID, seedTrackID,
 		limit,
 	)

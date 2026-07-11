@@ -1,4 +1,5 @@
-// Package mood derives rule-based mood/rhythm scores (energy, danceability)
+// Package mood derives rule-based mood/rhythm scores (energy, danceability,
+// brightness)
 // from a track's raw DSP features, normalized against corpus-wide
 // percentiles. Pure Go, no cgo/db dependency except percentiles.go's use of
 // domain.AnalysisRepository to pull/persist the corpus stats.

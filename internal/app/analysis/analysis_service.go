@@ -28,10 +28,10 @@ var requiredAnalysisComponents = map[domain.AnalysisComponents]int{
 }
 
 // moodVersion is the algorithm version for the derived mood formulas
-// (energy/danceability). Bump on formula/weight changes only — independent
+// (energy/danceability/brightness). Bump on formula/weight changes only — independent
 // of analyzerVersion (raw DSP) and app_settings.mood_derivation_version
 // (corpus-percentile staleness, bumped at runtime on recompute).
-const moodVersion = 1
+const moodVersion = 2
 
 // percentileRecomputeBatchSize triggers a corpus percentile recompute once
 // this many tracks have been added (successfully analyzed) or removed,
@@ -737,8 +737,8 @@ func (s *AnalysisService) driveMoodDerivation(ctx context.Context, trackID strin
 	// safely fall back to neutral 0.5 for any missing feature, so derive.
 	if pctl != nil {
 		if feat, err := s.analysisRepo.GetFeatures(ctx, trackID); err == nil && feat != nil {
-			energy, dance := mood.Derive(feat, pctl)
-			if err := s.analysisRepo.UpsertMoodFeatures(ctx, trackID, energy, dance, moodVersion); err != nil {
+			energy, dance, brightness := mood.Derive(feat, pctl)
+			if err := s.analysisRepo.UpsertMoodFeatures(ctx, trackID, energy, dance, brightness, moodVersion); err != nil {
 				s.logger.Warn("mood: failed to persist derived mood features", "track_id", trackID, "error", err)
 			}
 		}
@@ -893,8 +893,8 @@ func (s *AnalysisService) backfillMood(ctx context.Context, currentMoodVersion i
 			if err != nil || feat == nil {
 				continue
 			}
-			energy, dance := mood.Derive(feat, pctl)
-			if err := s.analysisRepo.UpsertMoodFeatures(ctx, id, energy, dance, currentMoodVersion); err != nil {
+			energy, dance, brightness := mood.Derive(feat, pctl)
+			if err := s.analysisRepo.UpsertMoodFeatures(ctx, id, energy, dance, brightness, currentMoodVersion); err != nil {
 				s.logger.Warn("mood: failed to persist derived mood features during backfill", "track_id", id, "error", err)
 				continue
 			}

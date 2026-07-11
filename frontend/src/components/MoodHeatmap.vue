@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { RangeSlider } from '@airmedy/ui'
 import type { MoodDensityGrid } from '../../bindings/airmedy/internal/domain/models'
 import { isMoodBoxValid, type MoodBox } from '../lib/moodPlaylistFields'
 import { useQuadrantBrush } from '../composables/useQuadrantBrush'
@@ -83,21 +84,15 @@ const { box, setBox } = useQuadrantBrush(brushGroup, width, height, props.modelV
 
 const boxIsValid = computed(() => isMoodBoxValid(box.value))
 
-// Dual-thumb range sliders for precision / non-drag access — edits here call
-// setBox so the brush's own drag state stays in sync (a subsequent drag
-// continues from the slid value, not the stale rendered rect). Clamped so
-// the min thumb can't cross past the max thumb and vice versa.
-function updateAxis(key: keyof MoodBox, raw: string) {
-  const n = Number(raw)
-  if (!Number.isFinite(n)) return
-  const next = { ...box.value }
-  if (key === 'energyMin') next.energyMin = Math.min(n, box.value.energyMax)
-  else if (key === 'energyMax') next.energyMax = Math.max(n, box.value.energyMin)
-  else if (key === 'danceMin') next.danceMin = Math.min(n, box.value.danceMax)
-  else next.danceMax = Math.max(n, box.value.danceMin)
+function updateMoodBox(next: MoodBox) {
   setBox(next)
   emit('update:modelValue', next)
 }
+
+// Brightness is controlled outside the heatmap. Keep the brush's internal
+// box synchronized so later energy/danceability edits preserve that range.
+watch(() => props.modelValue, (next) => setBox({ ...next }))
+
 </script>
 
 <template>
@@ -151,46 +146,16 @@ function updateAxis(key: keyof MoodBox, raw: string) {
             {{ t('playlists.smart.mood_energy_axis') }}
             <span class="text-foreground/30">{{ box.energyMin.toFixed(2) }}–{{ box.energyMax.toFixed(2) }}</span>
           </div>
-          <div class="dual-range">
-            <div class="dual-range-track" />
-            <div
-              class="dual-range-fill"
-              :style="{ left: `${box.energyMin * 100}%`, width: `${(box.energyMax - box.energyMin) * 100}%` }"
-            />
-            <input
-              type="range" min="0" max="1" step="0.01"
-              :value="box.energyMin"
-              @input="e => updateAxis('energyMin', (e.target as HTMLInputElement).value)"
-            >
-            <input
-              type="range" min="0" max="1" step="0.01"
-              :value="box.energyMax"
-              @input="e => updateAxis('energyMax', (e.target as HTMLInputElement).value)"
-            >
-          </div>
+          <RangeSlider :model-value="[box.energyMin, box.energyMax]" :min="0" :max="1" :step="0.01"
+            @update:model-value="range => updateMoodBox({ ...box, energyMin: range[0], energyMax: range[1] })" />
         </div>
         <div>
           <div class="text-foreground/50 mb-2">
             {{ t('playlists.smart.mood_danceability_axis') }}
             <span class="text-foreground/30">{{ box.danceMin.toFixed(2) }}–{{ box.danceMax.toFixed(2) }}</span>
           </div>
-          <div class="dual-range">
-            <div class="dual-range-track" />
-            <div
-              class="dual-range-fill"
-              :style="{ left: `${box.danceMin * 100}%`, width: `${(box.danceMax - box.danceMin) * 100}%` }"
-            />
-            <input
-              type="range" min="0" max="1" step="0.01"
-              :value="box.danceMin"
-              @input="e => updateAxis('danceMin', (e.target as HTMLInputElement).value)"
-            >
-            <input
-              type="range" min="0" max="1" step="0.01"
-              :value="box.danceMax"
-              @input="e => updateAxis('danceMax', (e.target as HTMLInputElement).value)"
-            >
-          </div>
+          <RangeSlider :model-value="[box.danceMin, box.danceMax]" :min="0" :max="1" :step="0.01"
+            @update:model-value="range => updateMoodBox({ ...box, danceMin: range[0], danceMax: range[1] })" />
         </div>
 
         <div class="border-t border-border-glass pt-4 flex flex-col gap-2">

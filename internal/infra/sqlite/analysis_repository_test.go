@@ -78,6 +78,24 @@ func TestAnalysisRepository(t *testing.T) {
 		t.Errorf("analyzer version: got %d want %d", got.AnalyzerVersion, version)
 	}
 
+	if err := repo.UpsertMoodFeatures(ctx, "trk-1", 0.7, 0.6, 0.8, 3); err != nil {
+		t.Fatalf("UpsertMoodFeatures: %v", err)
+	}
+	got, err = repo.GetFeatures(ctx, "trk-1")
+	if err != nil || got == nil {
+		t.Fatalf("GetFeatures after mood upsert: got %v, err %v", got, err)
+	}
+	if got.Energy != 0.7 || got.Danceability != 0.6 || got.Brightness != 0.8 {
+		t.Errorf("mood round-trip: got energy=%v danceability=%v brightness=%v", got.Energy, got.Danceability, got.Brightness)
+	}
+	var moodVersion int
+	if err := db.GetContext(ctx, &moodVersion, `SELECT mood_derived_version FROM tracks WHERE id = 'trk-1'`); err != nil {
+		t.Fatalf("read mood version: %v", err)
+	}
+	if moodVersion != 3 {
+		t.Errorf("mood version: got %d want 3", moodVersion)
+	}
+
 	// trk-1 no longer pending; trk-2 still is.
 	if n, err := repo.CountPending(ctx, version); err != nil || n != 1 {
 		t.Fatalf("CountPending after: got %d, err %v", n, err)

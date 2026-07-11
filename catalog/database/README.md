@@ -63,6 +63,8 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000036 | `onset_variance.up.sql`              | `ALTER TABLE track_features ADD COLUMN onset_variance REAL` (danceability input; down keeps column — SQLite `DROP COLUMN` unsafe across versions) |
 | 000037 | `corpus_feature_stats.up.sql`        | Add `feature_percentiles` table (per-feature `p1/p5/p50/p95/p99` + `sample_count`/`computed_at`, corpus normalization stats for mood derivation); add `app_settings.mood_derivation_version INTEGER NOT NULL DEFAULT 0` |
 | 000038 | `track_mood_version.up.sql`          | `ALTER TABLE tracks ADD COLUMN mood_derived_version INTEGER NOT NULL DEFAULT 0` + `idx_tracks_mood_derived_version` — marks a track's mood stale vs `app_settings.mood_derivation_version` for re-derivation |
+| 000054 | `track_brightness.up.sql`            | Add corpus-normalized `track_features.brightness`, derived from spectral centroid for Mood Radio similarity; invalidate cached mood values for backfill |
+| 000055 | `track_brightness_index.up.sql`      | Add `idx_track_features_brightness` for live Smart Playlist brightness ranges |
 | 000039 | `track_bitdepth_codec.up.sql`        | `ALTER TABLE tracks ADD COLUMN bit_depth INTEGER NOT NULL DEFAULT 0`, `ADD COLUMN codec TEXT NOT NULL DEFAULT ''` — bits-per-sample and inner codec (e.g. m4a `aac`/`alac`) from the `go-taglib` fork, used to classify Lossy/Lossless/Hi-Res/DSD |
 | 000040 | `metadata_schema_version.up.sql`     | `ALTER TABLE library_sync_state ADD COLUMN metadata_schema_version INTEGER NOT NULL DEFAULT 0` — tracks which extractor field-set a library's data reflects, so a sync can force one full re-parse when it's behind (see `catalog/library`) |
 | 000047 | `library_analysis_worker_count.up.sql` | `ALTER TABLE app_settings ADD COLUMN library_analysis_worker_count INTEGER NOT NULL DEFAULT 2` — persists the desired concurrent worker count for the library-analysis pool; down intentionally keeps the column |
@@ -161,7 +163,7 @@ track_features (   -- one-time DSP analysis (000034); 0 rows until analyzer runs
     spectral_flux REAL, zcr REAL,                                                          -- aspectralstats
     onset_variance REAL,                                                                   -- aubio onset spread; danceability input (000036)
     tempo REAL,                                                                             -- aubio tempo
-    energy REAL, danceability REAL                                                         -- derived from raw features vs feature_percentiles (000044: dropped musical_key/mode/valence)
+    energy REAL, danceability REAL, brightness REAL                                         -- derived from raw features vs feature_percentiles; brightness is normalized spectral centroid
 )
 
 track_analysis_components (   -- independent raw-source freshness (000051)

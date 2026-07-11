@@ -212,13 +212,13 @@ type AnalysisRepository interface {
 	// skip re-running the analyzer on a track that already failed once.
 	IsAnalyzed(ctx context.Context, trackID string, currentVersion int) (bool, error)
 
-	// UpsertMoodFeatures writes the derived energy/danceability for a track
+	// UpsertMoodFeatures writes the derived energy/danceability/brightness for a track
 	// and, in the same transaction, bumps tracks.mood_derived_version to
-	// moodVersion. Touches only the energy/danceability columns of
+	// moodVersion. Touches only the derived mood columns of
 	// track_features (leaves the raw analyzer columns untouched). Requires
 	// an existing track_features row for trackID (raw analysis must have
 	// run first).
-	UpsertMoodFeatures(ctx context.Context, trackID string, energy, danceability float64, moodVersion int) error
+	UpsertMoodFeatures(ctx context.Context, trackID string, energy, danceability, brightness float64, moodVersion int) error
 	// GetFeaturePercentiles returns the full cached corpus percentile table
 	// (one row per feature name), or an empty map if none computed yet.
 	GetFeaturePercentiles(ctx context.Context) (map[string]FeaturePercentileRow, error)
@@ -259,7 +259,7 @@ type ComponentAnalysisRepository interface {
 // stable CRUD/listing port.
 type TrackQueryRepository interface {
 	// FindSimilar returns up to limit tracks most similar to seedTrackID by
-	// weighted-euclidean distance over analyzed mood/tempo features,
+	// weighted-euclidean distance over analyzed mood/brightness/tempo features,
 	// nearest first, excluding the seed, excluded track IDs, and any
 	// unanalyzed track. Returns no tracks if the seed itself is unanalyzed.
 	FindSimilar(ctx context.Context, seedTrackID string, excludeTrackIDs []string, limit int) ([]*TrackDTO, error)

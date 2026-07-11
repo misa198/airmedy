@@ -106,11 +106,11 @@ func TestTrackQueryRepository_FindSimilarExcludesQueuedTracksBeforeLimit(t *test
 		}
 	}
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO track_features (track_id, energy, danceability, tempo) VALUES
-			('seed', 0.50, 0.50, 120),
-			('closest', 0.51, 0.50, 120),
-			('next', 0.55, 0.50, 120),
-			('far', 0.90, 0.90, 180)
+		INSERT INTO track_features (track_id, energy, danceability, brightness, tempo) VALUES
+			('seed', 0.50, 0.50, 0.50, 120),
+			('closest', 0.51, 0.50, 0.50, 120),
+			('next', 0.55, 0.50, 0.50, 120),
+			('far', 0.90, 0.90, 0.90, 180)
 	`); err != nil {
 		t.Fatalf("failed to seed track features: %v", err)
 	}
@@ -147,10 +147,10 @@ func TestTrackQueryRepository_FindSimilarSupportsLargeExclusionLists(t *testing.
 		}
 	}
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO track_features (track_id, energy, danceability, tempo) VALUES
-			('seed', 0.50, 0.50, 120),
-			('closest', 0.51, 0.50, 120),
-			('next', 0.55, 0.50, 120)
+		INSERT INTO track_features (track_id, energy, danceability, brightness, tempo) VALUES
+			('seed', 0.50, 0.50, 0.50, 120),
+			('closest', 0.51, 0.50, 0.50, 120),
+			('next', 0.55, 0.50, 0.50, 120)
 	`); err != nil {
 		t.Fatalf("failed to seed track features: %v", err)
 	}
@@ -167,6 +167,46 @@ func TestTrackQueryRepository_FindSimilarSupportsLargeExclusionLists(t *testing.
 	}
 	if len(tracks) != 1 || tracks[0].ID != "next" {
 		t.Fatalf("expected next track after excluding closest, got %#v", trackIDs(tracks))
+	}
+}
+
+func TestTrackQueryRepository_FindSimilarRanksByBrightness(t *testing.T) {
+	dbPath := "test_find_similar_brightness.db"
+	defer func() { _ = os.Remove(dbPath) }()
+
+	db, err := NewDB(dbPath, slog.Default())
+	if err != nil {
+		t.Fatalf("failed to create test db: %v", err)
+	}
+	defer func() { _ = db.Close() }()
+
+	ctx := context.Background()
+	trackRepo := NewTrackRepository(db)
+	queryRepo := NewTrackQueryRepository(db, trackRepo)
+	for _, track := range []*domain.Track{
+		{ID: "seed", Path: "/m/seed.mp3", Title: "Seed", SortTitle: "seed", Format: "mp3"},
+		{ID: "bright-match", Path: "/m/bright-match.mp3", Title: "Bright match", SortTitle: "bright match", Format: "mp3"},
+		{ID: "dark-match", Path: "/m/dark-match.mp3", Title: "Dark match", SortTitle: "dark match", Format: "mp3"},
+	} {
+		if err := trackRepo.Save(ctx, track); err != nil {
+			t.Fatalf("failed to save track %s: %v", track.ID, err)
+		}
+	}
+	if _, err := db.ExecContext(ctx, `
+		INSERT INTO track_features (track_id, energy, danceability, brightness, tempo) VALUES
+			('seed', 0.50, 0.50, 0.80, 120),
+			('bright-match', 0.50, 0.50, 0.79, 120),
+			('dark-match', 0.50, 0.50, 0.20, 120)
+	`); err != nil {
+		t.Fatalf("failed to seed track features: %v", err)
+	}
+
+	tracks, err := queryRepo.FindSimilar(ctx, "seed", nil, 2)
+	if err != nil {
+		t.Fatalf("FindSimilar: %v", err)
+	}
+	if len(tracks) != 2 || tracks[0].ID != "bright-match" || tracks[1].ID != "dark-match" {
+		t.Fatalf("expected brightness-nearest track first, got %#v", trackIDs(tracks))
 	}
 }
 
