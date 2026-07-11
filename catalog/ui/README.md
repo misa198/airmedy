@@ -133,7 +133,7 @@ Virtualized list of tracks supporting reordering, sorting, and horizontal scroll
 
 - **Virtualization**: Uses `vue-virtual-sortable`. Root `VirtualList` handles both vertical virtualization and horizontal scrolling.
 - **Absolute Rows**: `TrackTableRow` uses `absolute inset-x-0` positioning within each virtual item container. This allows rows to span the full width of the scrollable area while maintaining high performance.
-- **Scroll Sync**: Header horizontal scroll is programmatically synced to the `VirtualList` scroll position via the `handleScroll` event.
+- **Scroll Sync**: The header is its own hidden-scrollbar horizontal scroll container. It is bidirectionally synced with the `VirtualList` scroll position, so its sticky `dnd` and `index` cells remain pinned while either the rows or header receives horizontal scrolling.
 - **Sticky Columns**:
   - `dnd`: Sticky left (`z-10`).
   - `index`: Sticky left (`z-10`). If `dnd` is active, it offsets by 32px to stay visible next to the handle.
