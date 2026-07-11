@@ -708,14 +708,6 @@ jobs:
               else
                 echo "No windows installer found"
               fi
-              # Standalone binary for auto-update
-              if [ -f bin/airmedy.exe ]; then
-                if command -v zip >/dev/null 2>&1; then
-                  cd bin && zip ../dist/Airmedy_${VERSION}_windows-amd64.zip airmedy.exe && cd ..
-                else
-                  cd bin && 7z a ../dist/Airmedy_${VERSION}_windows-amd64.zip airmedy.exe && cd ..
-                fi
-              fi
               ;;
             "Windows-ARM64")
               # Installer (zipped)
@@ -733,14 +725,6 @@ jobs:
                 fi
               else
                 echo "No windows arm64 installer found"
-              fi
-              # Standalone binary for auto-update
-              if [ -f bin/airmedy.exe ]; then
-                if command -v zip >/dev/null 2>&1; then
-                  cd bin && zip ../dist/Airmedy_${VERSION}_windows-arm64.zip airmedy.exe && cd ..
-                else
-                  cd bin && 7z a ../dist/Airmedy_${VERSION}_windows-arm64.zip airmedy.exe && cd ..
-                fi
               fi
               ;;
             "Linux-AMD64")
