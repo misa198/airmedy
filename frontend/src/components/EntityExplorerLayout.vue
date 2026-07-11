@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T extends { id: string; name: string }">
-import { ref, computed, onActivated } from 'vue'
+import { ref, computed, watch, nextTick, onActivated } from 'vue'
 import { Search, Play } from '@lucide/vue'
 import { Input } from '@airmedy/ui'
 import { foldUnicode } from '@airmedy/utils'
@@ -46,6 +46,26 @@ const filteredItems = computed(() => {
     foldUnicode(item.name || '').includes(query)
   )
 })
+
+let scrollRetries = 0
+
+const scrollSelectedIntoView = () => {
+  if (!props.selectedId) return
+  if (!scrollerRef.value || !scrollerRef.value.$el) {
+    if (scrollRetries++ < 20) requestAnimationFrame(scrollSelectedIntoView)
+    return
+  }
+  scrollRetries = 0
+  const index = filteredItems.value.findIndex(item => item.id === props.selectedId)
+  if (index !== -1) {
+    scrollerRef.value.scrollToItem(index)
+  }
+}
+
+watch(() => [props.selectedId, props.isLoading, filteredItems.value] as const, () => {
+  scrollRetries = 0
+  nextTick(() => requestAnimationFrame(scrollSelectedIntoView))
+}, { immediate: true })
 </script>
 
 <template>
