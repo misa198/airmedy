@@ -88,6 +88,7 @@ type EQBand struct {
 // EQProfile represents a named equalizer preset
 type EQProfile struct {
 	ID        string   `json:"id" db:"id"`
+	Key       string   `json:"key" db:"preset_key"` // stable identifier for built-in presets; empty for user profiles
 	Name      string   `json:"name" db:"name"`
 	IsActive  bool     `json:"is_active" db:"is_active"`
 	IsDefault bool     `json:"is_default" db:"is_default"`
@@ -135,6 +136,20 @@ type CrossfadePlayer interface {
 type EQController interface {
 	SetEQBand(index int, frequency, gain, bandwidth float64) error
 	SetEQEnabled(enabled bool) error
+}
+
+// EQPreampController is an optional interface implemented by audio players that support a
+// global user-adjustable EQ preamp (dB). This is independent from and composes
+// with NormalizationController's automatic loudness-normalization gain — the two are never the
+// same value.
+type EQPreampController interface {
+	SetEQPreamp(db float64) error
+}
+
+// StereoWidthController is an optional interface implemented by audio players that support a
+// global stereo-width (mid/side) adjustment. 100 is neutral/identity, 0 is mono, up to 200 is wider.
+type StereoWidthController interface {
+	SetStereoWidth(widthPercent float64) error
 }
 
 // NormalizationController is an optional interface implemented by audio players that can

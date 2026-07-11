@@ -9,6 +9,10 @@ const props = defineProps<{
   step?: number
   class?: string
   scrollable?: boolean
+  anchorValue?: number
+  trackColorClass?: string
+  thumbColor?: string
+  alwaysShowThumb?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -38,6 +42,30 @@ const fillPct = computed(() => {
   const range = resolvedMax.value - resolvedMin.value
   if (range === 0) return 0
   return Math.min(100, Math.max(0, ((localValue.value - resolvedMin.value) / range) * 100))
+})
+
+const trackStyle = computed(() => {
+  if (props.anchorValue === undefined) {
+    return {
+      left: '0%',
+      width: `${fillPct.value}%`
+    }
+  }
+
+  const range = resolvedMax.value - resolvedMin.value
+  if (range === 0) return { left: '0%', width: '0%' }
+
+  const anchor = Math.min(resolvedMax.value, Math.max(resolvedMin.value, props.anchorValue))
+  const anchorPct = ((anchor - resolvedMin.value) / range) * 100
+  const valuePct = ((localValue.value - resolvedMin.value) / range) * 100
+
+  const left = Math.min(anchorPct, valuePct)
+  const width = Math.abs(valuePct - anchorPct)
+
+  return {
+    left: `${left}%`,
+    width: `${width}%`
+  }
 })
 
 const handleInput = (e: Event) => {
@@ -86,12 +114,17 @@ onUnmounted(() => {
 
 <template>
   <div :class="cn('relative h-4 flex items-center group/slider cursor-pointer select-none', props.class)"
+    :style="{
+      '--slider-thumb-color': props.thumbColor || 'white',
+      '--slider-thumb-opacity': props.alwaysShowThumb ? '1' : '0'
+    }"
     v-on="props.scrollable ? { wheel: handleWheel } : {}">
     <!-- Visual track -->
     <div class="absolute w-full h-1 rounded-full bg-foreground/15">
       <div
-        class="h-full rounded-full bg-foreground"
-        :style="{ width: `${fillPct}%` }"
+        class="absolute h-full rounded-full"
+        :class="props.trackColorClass || 'bg-foreground'"
+        :style="trackStyle"
       />
     </div>
     
@@ -118,10 +151,10 @@ onUnmounted(() => {
   -webkit-appearance: none;
   width: 12px;
   height: 12px;
-  background: white;
+  background: var(--slider-thumb-color);
   border-radius: 50%;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  opacity: 0;
+  opacity: var(--slider-thumb-opacity, 0);
   transition: opacity 150ms ease;
 }
 
@@ -132,11 +165,11 @@ onUnmounted(() => {
 .custom-slider::-moz-range-thumb {
   width: 12px;
   height: 12px;
-  background: white;
+  background: var(--slider-thumb-color);
   border-radius: 50%;
   border: none;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  opacity: 0;
+  opacity: var(--slider-thumb-opacity, 0);
   transition: opacity 150ms ease;
 }
 

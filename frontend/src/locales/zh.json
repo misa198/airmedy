@@ -222,7 +222,9 @@
       "add_profile": "添加配置文件",
       "delete_profile": "删除配置文件",
       "rename_profile": "重命名配置文件",
-      "select_profile": "选择配置文件"
+      "select_profile": "选择配置文件",
+      "preamp": "前置增益",
+      "stereo_width": "立体声宽度"
     },
     "library_analysis": {
       "title": "媒体库分析",

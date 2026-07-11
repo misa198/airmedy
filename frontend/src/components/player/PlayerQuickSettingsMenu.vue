@@ -24,7 +24,8 @@ async function loadProfiles() {
       EQService.GetAllProfiles(),
       EQService.GetActiveProfile(),
     ])
-    profiles.value = (all.filter(Boolean) as EQProfile[])
+    const filtered = all.filter(Boolean) as EQProfile[]
+    profiles.value = filtered
     activeProfileID.value = active?.id ?? null
   } catch (error) {
     console.error('Failed to load EQ profiles for player quick settings:', error)

@@ -9,6 +9,62 @@
 #include <math.h>
 
 /*
+ * Stereo widener: mid/side width adjustment, always the tail of the chain
+ * (before the engine endpoint) so it applies whether or not the EQ is
+ * enabled. width=1.0 is the identity transform (L'=L, R'=R), so it can stay
+ * permanently attached at the default with no audible effect.
+ */
+typedef struct {
+    ma_node_base base;
+    float        width; /* 1.0 = neutral, 0.0 = mono, up to 2.0 = wider */
+} ma_widener_node;
+
+static void ma_widener_node_process_pcm_frames(ma_node* pNode, const float** ppFramesIn, ma_uint32* pFrameCountIn,
+                                                float** ppFramesOut, ma_uint32* pFrameCountOut)
+{
+    ma_widener_node* pWidener = (ma_widener_node*)pNode;
+    (void)pFrameCountIn;
+
+    ma_uint32 frameCount = *pFrameCountOut;
+    const float* in = ppFramesIn[0];
+    float* out = ppFramesOut[0];
+    float width = pWidener->width;
+
+    for (ma_uint32 i = 0; i < frameCount; i++) {
+        float l = in[2 * i];
+        float r = in[2 * i + 1];
+        float m = 0.5f * (l + r);
+        float s = 0.5f * (l - r) * width;
+        out[2 * i]     = m + s;
+        out[2 * i + 1] = m - s;
+    }
+}
+
+static ma_node_vtable g_widener_node_vtable = {
+    ma_widener_node_process_pcm_frames,
+    NULL, /* onGetRequiredInputFrameCount */
+    1,    /* One input bus. */
+    1,    /* One output bus. */
+    0     /* Default flags. */
+};
+
+static ma_result ma_widener_node_init(ma_node_graph* pNodeGraph, ma_widener_node* pNode)
+{
+    ma_node_config config;
+    ma_uint32 channels = 2;
+
+    MA_ZERO_OBJECT(pNode);
+    pNode->width = 1.0f;
+
+    config = ma_node_config_init();
+    config.vtable          = &g_widener_node_vtable;
+    config.pInputChannels  = &channels;
+    config.pOutputChannels = &channels;
+
+    return ma_node_init(pNodeGraph, &config, NULL, &pNode->base);
+}
+
+/*
  * Ping-pong slot design: two sound/ffmpeg-ds slot pairs (slot_a, slot_b).
  * cur_* pointers always target the active slot; nxt_* target the idle slot.
  * On a gapless transition, we uninit cur, start nxt, then swap the pointers.
@@ -41,11 +97,15 @@ struct MaPlayer {
     ma_peak_node          eq_bands[10];
     int                   eq_enabled;
     float                 eq_gains[10];
+    ma_widener_node       widener;
 
     /* Per-sound normalization pre-amp (linear). cur applies to the active
      * sound; nxt preserves the outgoing sound's gain while old_fading. */
     float                 preamp_cur_linear;
     float                 preamp_nxt_linear;
+    /* User EQ preamp (linear), global — unlike normalization gain, the same
+     * for both sounds and not swapped during a crossfade. */
+    float                 eq_preamp_linear;
     /* Crossfade in progress: the nxt slot holds the fading-out former
      * current sound instead of a pre-loaded next track. */
     int                   old_fading;
@@ -118,9 +178,7 @@ static int load_into_slot(MaPlayer* p,
     ma_sound_config config = ma_sound_config_init_2(&p->engine);
     config.pDataSource = ffmpeg_ds;
     config.channelsOut = 2;
-    if (p->eq_enabled) {
-        config.pInitialAttachment = (ma_node*)&p->eq_bands[0];
-    }
+    config.pInitialAttachment = p->eq_enabled ? (ma_node*)&p->eq_bands[0] : (ma_node*)&p->widener;
 
     sr = ma_sound_init_ex(&p->engine, &config, sound);
     if (sr != MA_SUCCESS) {
@@ -140,6 +198,7 @@ MaPlayer* ma_player_create(void) {
     p->volume = 1.0f;
     p->preamp_cur_linear = 1.0f;
     p->preamp_nxt_linear = 1.0f;
+    p->eq_preamp_linear = 1.0f;
 
     p->cur_sound     = &p->slot_a;
     p->cur_ffmpeg_ds = &p->ffmpeg_a;
@@ -147,6 +206,10 @@ MaPlayer* ma_player_create(void) {
     p->nxt_ffmpeg_ds = &p->ffmpeg_b;
 
     ma_node* last_node = ma_engine_get_endpoint(&p->engine);
+    if (ma_widener_node_init(ma_engine_get_node_graph(&p->engine), &p->widener) == MA_SUCCESS) {
+        ma_node_attach_output_bus(&p->widener, 0, last_node, 0);
+        last_node = (ma_node*)&p->widener;
+    }
     for (int i = 9; i >= 0; i--) {
         ma_peak_node_config config = ma_peak_node_config_init(2, ma_engine_get_sample_rate(&p->engine), 0.0, 1.0, g_eq_frequencies[i]);
         if (ma_peak_node_init(ma_engine_get_node_graph(&p->engine), &config, NULL, &p->eq_bands[i]) == MA_SUCCESS) {
@@ -169,6 +232,7 @@ void ma_player_destroy(MaPlayer* p) {
     for (int i = 0; i < 10; i++) {
         ma_peak_node_uninit(&p->eq_bands[i], NULL);
     }
+    ma_node_uninit(&p->widener, NULL);
     ma_engine_uninit(&p->engine);
     ma_mutex_uninit(&p->mu);
     free(p);
@@ -187,7 +251,7 @@ int ma_player_load(MaPlayer* p, const char* path) {
                            p->cur_sound, p->cur_ffmpeg_ds,
                            &p->cur_using_ffmpeg, &p->cur_loaded);
     if (r == 0) {
-        ma_sound_set_volume(p->cur_sound, p->volume * p->preamp_cur_linear);
+        ma_sound_set_volume(p->cur_sound, p->volume * p->preamp_cur_linear * p->eq_preamp_linear);
         if (p->end_cb) ma_sound_set_end_callback(p->cur_sound, internal_end_cb, p);
     }
     ma_mutex_unlock(&p->mu);
@@ -235,9 +299,9 @@ int ma_player_set_volume(MaPlayer* p, float volume) {
     if (!p) return -1;
     ma_mutex_lock(&p->mu);
     p->volume = volume;
-    if (p->cur_loaded) ma_sound_set_volume(p->cur_sound, volume * p->preamp_cur_linear);
+    if (p->cur_loaded) ma_sound_set_volume(p->cur_sound, volume * p->preamp_cur_linear * p->eq_preamp_linear);
     if (p->old_fading && p->nxt_loaded)
-        ma_sound_set_volume(p->nxt_sound, volume * p->preamp_nxt_linear);
+        ma_sound_set_volume(p->nxt_sound, volume * p->preamp_nxt_linear * p->eq_preamp_linear);
     ma_mutex_unlock(&p->mu);
     return 0;
 }
@@ -297,7 +361,7 @@ int ma_player_set_eq_enabled(MaPlayer* p, int enabled) {
         if (enabled) {
             ma_node_attach_output_bus(p->cur_sound, 0, &p->eq_bands[0], 0);
         } else {
-            ma_node_attach_output_bus(p->cur_sound, 0, ma_engine_get_endpoint(&p->engine), 0);
+            ma_node_attach_output_bus(p->cur_sound, 0, &p->widener, 0);
         }
     }
     ma_mutex_unlock(&p->mu);
@@ -313,8 +377,31 @@ int ma_player_set_preamp_gain(MaPlayer* p, float gainDB) {
     ma_mutex_lock(&p->mu);
     p->preamp_cur_linear = powf(10.0f, gainDB / 20.0f);
     if (p->cur_loaded)
-        ma_sound_set_volume(p->cur_sound, p->volume * p->preamp_cur_linear);
+        ma_sound_set_volume(p->cur_sound, p->volume * p->preamp_cur_linear * p->eq_preamp_linear);
     ma_mutex_unlock(&p->mu);
+    return 0;
+}
+
+/* User EQ preamp (dB) — global, composes with normalization gain rather than
+ * replacing it (see the eq_preamp_linear field comment on MaPlayer). */
+int ma_player_set_eq_preamp(MaPlayer* p, float gainDB) {
+    if (!p) return -1;
+    ma_mutex_lock(&p->mu);
+    p->eq_preamp_linear = powf(10.0f, gainDB / 20.0f);
+    if (p->cur_loaded)
+        ma_sound_set_volume(p->cur_sound, p->volume * p->preamp_cur_linear * p->eq_preamp_linear);
+    if (p->old_fading && p->nxt_loaded)
+        ma_sound_set_volume(p->nxt_sound, p->volume * p->preamp_nxt_linear * p->eq_preamp_linear);
+    ma_mutex_unlock(&p->mu);
+    return 0;
+}
+
+/* Global stereo width (0=mono, 100=neutral, up to 200=wider). Not protected
+ * by the mutex: a single float write racing the audio thread's read is
+ * harmless (same pattern miniaudio itself uses for node parameters). */
+int ma_player_set_stereo_width(MaPlayer* p, float widthPercent) {
+    if (!p) return -1;
+    p->widener.width = widthPercent / 100.0f;
     return 0;
 }
 
@@ -331,7 +418,7 @@ int ma_player_preload_next(MaPlayer* p, const char* path) {
                            p->nxt_sound, p->nxt_ffmpeg_ds,
                            &p->nxt_using_ffmpeg, &p->nxt_loaded);
     if (r == 0) {
-        ma_sound_set_volume(p->nxt_sound, p->volume);
+        ma_sound_set_volume(p->nxt_sound, p->volume * p->eq_preamp_linear);
     }
     ma_mutex_unlock(&p->mu);
     return r;
@@ -368,7 +455,7 @@ int ma_player_start_preloaded(MaPlayer* p) {
 
     /* The previous track's pre-amp gain applies until the app pushes the new
      * track's gain moments later. */
-    ma_sound_set_volume(p->cur_sound, p->volume * p->preamp_cur_linear);
+    ma_sound_set_volume(p->cur_sound, p->volume * p->preamp_cur_linear * p->eq_preamp_linear);
     if (p->end_cb) ma_sound_set_end_callback(p->cur_sound, internal_end_cb, p);
     ma_result r = ma_sound_start(p->cur_sound);
     ma_mutex_unlock(&p->mu);
@@ -403,8 +490,8 @@ int ma_player_begin_crossfade(MaPlayer* p, double duration_sec, float next_gain_
      * from silence. */
     ma_node_attach_output_bus(p->nxt_sound, 0,
                               p->eq_enabled ? (ma_node*)&p->eq_bands[0]
-                                            : ma_engine_get_endpoint(&p->engine), 0);
-    ma_sound_set_volume(p->nxt_sound, p->volume * next_linear);
+                                            : (ma_node*)&p->widener, 0);
+    ma_sound_set_volume(p->nxt_sound, p->volume * next_linear * p->eq_preamp_linear);
     ma_sound_set_fade_in_milliseconds(p->nxt_sound, 0.0f, 1.0f, ms);
     ma_result r = ma_sound_start(p->nxt_sound);
     if (r != MA_SUCCESS) {

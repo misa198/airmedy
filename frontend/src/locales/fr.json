@@ -222,7 +222,9 @@
       "add_profile": "Ajouter un profil",
       "delete_profile": "Supprimer le profil",
       "rename_profile": "Renommer le profil",
-      "select_profile": "Sélectionner un profil"
+      "select_profile": "Sélectionner un profil",
+      "preamp": "Préamplification",
+      "stereo_width": "Largeur stéréo"
     },
     "library_analysis": {
       "title": "Analyse de la bibliothèque",

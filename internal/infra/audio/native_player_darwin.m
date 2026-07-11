@@ -1,4 +1,5 @@
 #import <AppKit/AppKit.h>
+#import <AudioToolbox/AudioToolbox.h>
 #import <AVFoundation/AVFoundation.h>
 #import <Foundation/Foundation.h>
 #import <MediaPlayer/MediaPlayer.h>
@@ -13,6 +14,109 @@ extern void goHandleRemotePrevious();
 extern void goHandleRemoteSeek(double position);
 
 // ============================================================
+// AirmedyStereoWidener — custom in-process AUAudioUnit performing a mid/side
+// stereo-width adjustment (M=(L+R)/2, S=(L-R)/2*width, L'=M+S, R'=M-S).
+// width=1.0 is mathematically the identity transform, so the node can stay
+// permanently in the graph at the default. Registered once per process and
+// instantiated synchronously (no XPC hop needed for in-process components).
+// ============================================================
+
+@interface AirmedyStereoWidener : AUAudioUnit
+@property (atomic, assign) float width; // 1.0 = neutral, 0.0 = mono, up to 2.0 = wider
+@end
+
+@implementation AirmedyStereoWidener {
+    AUAudioUnitBusArray *_inputBusArray;
+    AUAudioUnitBusArray *_outputBusArray;
+}
+
+- (instancetype)initWithComponentDescription:(AudioComponentDescription)componentDescription
+                                      options:(AudioComponentInstantiationOptions)options
+                                        error:(NSError **)outError {
+    self = [super initWithComponentDescription:componentDescription options:options error:outError];
+    if (!self) return nil;
+
+    _width = 1.0f;
+    AVAudioFormat *format = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:44100 channels:2];
+    NSError *busErr = nil;
+    AUAudioUnitBus *inputBus  = [[AUAudioUnitBus alloc] initWithFormat:format error:&busErr];
+    AUAudioUnitBus *outputBus = [[AUAudioUnitBus alloc] initWithFormat:format error:&busErr];
+    _inputBusArray  = [[AUAudioUnitBusArray alloc] initWithAudioUnit:self busType:AUAudioUnitBusTypeInput  busses:@[inputBus]];
+    _outputBusArray = [[AUAudioUnitBusArray alloc] initWithAudioUnit:self busType:AUAudioUnitBusTypeOutput busses:@[outputBus]];
+    return self;
+}
+
+- (AUAudioUnitBusArray *)inputBusses  { return _inputBusArray; }
+- (AUAudioUnitBusArray *)outputBusses { return _outputBusArray; }
+
+- (AUInternalRenderBlock)internalRenderBlock {
+    AirmedyStereoWidener * __weak weakSelf = self;
+    return ^AUAudioUnitStatus(AudioUnitRenderActionFlags *actionFlags,
+                               const AudioTimeStamp     *timestamp,
+                               AVAudioFrameCount         frameCount,
+                               NSInteger                 outputBusNumber,
+                               AudioBufferList          *outputData,
+                               const AURenderEvent      *realtimeEventListHead,
+                               AURenderPullInputBlock    pullInputBlock) {
+        AirmedyStereoWidener *strongSelf = weakSelf;
+        if (!strongSelf || !pullInputBlock) return kAudioUnitErr_NoConnection;
+
+        AudioUnitRenderActionFlags pullFlags = 0;
+        AUAudioUnitStatus err = pullInputBlock(&pullFlags, timestamp, frameCount, 0, outputData);
+        if (err != noErr) return err;
+        if (outputData->mNumberBuffers < 2) return noErr; // mono: nothing to widen
+
+        float w = strongSelf.width;
+        float *L = (float *)outputData->mBuffers[0].mData;
+        float *R = (float *)outputData->mBuffers[1].mData;
+        if (!L || !R) return noErr;
+        for (AVAudioFrameCount i = 0; i < frameCount; i++) {
+            float l = L[i], r = R[i];
+            float m = 0.5f * (l + r);
+            float s = 0.5f * (l - r) * w;
+            L[i] = m + s;
+            R[i] = m - s;
+        }
+        return noErr;
+    };
+}
+
+@end
+
+// Registers AirmedyStereoWidener as an in-process AudioComponent exactly once.
+static void EnsureStereoWidenerRegistered(void) {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        AudioComponentDescription desc = {
+            .componentType         = kAudioUnitType_Effect,
+            .componentSubType      = 'awdn',
+            .componentManufacturer = 'Amdy',
+            .componentFlags        = 0,
+            .componentFlagsMask    = 0,
+        };
+        [AUAudioUnit registerSubclass:[AirmedyStereoWidener class]
+               asComponentDescription:desc
+                                  name:@"Airmedy: Stereo Widener"
+                               version:1];
+    });
+}
+
+// Instantiates a fresh widener node. In-process registered components support
+// synchronous instantiation (no XPC round-trip), so the throwing/async APIs
+// are unnecessary here.
+static AVAudioUnitEffect *MakeStereoWidenerNode(void) {
+    EnsureStereoWidenerRegistered();
+    AudioComponentDescription desc = {
+        .componentType         = kAudioUnitType_Effect,
+        .componentSubType      = 'awdn',
+        .componentManufacturer = 'Amdy',
+        .componentFlags        = 0,
+        .componentFlagsMask    = 0,
+    };
+    return [[AVAudioUnitEffect alloc] initWithAudioComponentDescription:desc];
+}
+
+// ============================================================
 // AirmedyDeck — one SFBAudioPlayer with its own persistent EQ.
 //
 // Two decks exist so tracks can overlap for crossfading:
@@ -25,8 +129,10 @@ extern void goHandleRemoteSeek(double position);
 // ============================================================
 
 @interface AirmedyDeck : NSObject
-@property (strong, nonatomic) SFBAudioPlayer  *sfbPlayer;
-@property (strong, nonatomic) AVAudioUnitEQ   *equalizer;
+@property (strong, nonatomic) SFBAudioPlayer     *sfbPlayer;
+@property (strong, nonatomic) AVAudioUnitEQ      *equalizer;
+@property (strong, nonatomic) AVAudioUnitEffect  *widener;
+@property (assign, nonatomic) float               normPreampDB; // per-source normalization gain (dB)
 @end
 
 @implementation AirmedyDeck
@@ -47,13 +153,14 @@ extern void goHandleRemoteSeek(double position);
         b.bypass     = NO;
     }
     _equalizer.bypass = NO;
+    _widener = MakeStereoWidenerNode();
 
     _sfbPlayer = [[SFBAudioPlayer alloc] init];
     _sfbPlayer.delegate = delegate;
 
-    // Insert EQ between sourceNode and mainMixerNode.
+    // Insert EQ + widener between sourceNode and mainMixerNode.
     // On init, SFBAudioEngine connects: sourceNode → mainMixerNode.
-    // We insert EQ so: sourceNode → EQ → mainMixerNode.
+    // We insert: sourceNode → EQ → widener → mainMixerNode.
     // Subsequent format changes are handled by reconfigureProcessingGraph:withFormat:.
     __weak AirmedyDeck *weakSelf = self;
     [_sfbPlayer modifyProcessingGraph:^(AVAudioEngine *engine) {
@@ -63,8 +170,10 @@ extern void goHandleRemoteSeek(double position);
         AVAudioMixerNode *mixer = engine.mainMixerNode;
         [engine disconnectNodeOutput:src bus:0];
         [engine attachNode:s->_equalizer];
+        [engine attachNode:s->_widener];
         [engine connect:src to:s->_equalizer format:nil];
-        [engine connect:s->_equalizer to:mixer format:nil];
+        [engine connect:s->_equalizer to:s->_widener format:nil];
+        [engine connect:s->_widener to:mixer format:nil];
     }];
 
     return self;
@@ -120,6 +229,7 @@ extern void goHandleRemoteSeek(double position);
 @property (assign, nonatomic) BOOL             isPlaying;
 @property (assign, nonatomic) NSTimeInterval   pausePosition;
 @property (assign, nonatomic) double           crossfadeDuration; // seconds; 0 = off (gapless)
+@property (assign, nonatomic) float            eqPreampDB; // user EQ preamp, global, composes with normPreampDB
 @property (assign, nonatomic) BOOL             fading;
 @property (strong, nonatomic) NSString        *preloadedPath;     // pending track in the idle deck
 @property (strong, nonatomic) AirmedyDeck     *outgoingDeck;      // fading-out deck while fading
@@ -161,8 +271,9 @@ extern void goHandleRemoteSeek(double position);
                     withFormat:(AVAudioFormat *)format
 {
     AVAudioUnitEQ *eq = nil;
+    AVAudioUnitEffect *widener = nil;
     for (AirmedyDeck *d in self.decks) {
-        if (d.sfbPlayer == audioPlayer) { eq = d.equalizer; break; }
+        if (d.sfbPlayer == audioPlayer) { eq = d.equalizer; widener = d.widener; break; }
     }
     if (!eq) return engine.mainMixerNode;
 
@@ -171,7 +282,17 @@ extern void goHandleRemoteSeek(double position);
     } else {
         [engine attachNode:eq];
     }
-    [engine connect:eq to:engine.mainMixerNode format:format];
+    if (widener) {
+        if ([engine.attachedNodes containsObject:widener]) {
+            [engine disconnectNodeOutput:widener bus:0];
+        } else {
+            [engine attachNode:widener];
+        }
+        [engine connect:eq to:widener format:format];
+        [engine connect:widener to:engine.mainMixerNode format:format];
+    } else {
+        [engine connect:eq to:engine.mainMixerNode format:format];
+    }
     return eq;
 }
 
@@ -349,7 +470,8 @@ extern void goHandleRemoteSeek(double position);
 
         // Per-source normalization: the incoming deck gets the incoming
         // track's gain; the outgoing deck keeps its own until it is stopped.
-        to.equalizer.globalGain = (float)db;
+        to.normPreampDB = (float)db;
+        [self applyGlobalGainForDeck:to];
         [to.sfbPlayer setVolume:self.volume error:nil];
         to.sfbPlayer.mainMixerNode.outputVolume = 0.0f;
 
@@ -481,14 +603,42 @@ extern void goHandleRemoteSeek(double position);
     }
 }
 
-// --- Normalization ---
+// --- Normalization + user EQ preamp ---
 
 // globalGain is applied by AVAudioUnitEQ after all bands, on the same
 // persistent node used for EQ — independent of per-band bypass/eqEnabled.
-// Active deck only: gain is per-source (the incoming deck receives its own
-// track's gain in beginCrossfade:).
+// It carries the sum of two independently-tracked gains: the automatic
+// normalization gain (per-deck/source, normPreampDB) and the user's global
+// EQ preamp (eqPreampDB). Combining in dB (== multiplying linear gains) lets
+// either be changed without disturbing the other.
+- (void)applyGlobalGainForDeck:(AirmedyDeck *)deck {
+    deck.equalizer.globalGain = deck.normPreampDB + self.eqPreampDB;
+}
+
+// Active deck only: normalization gain is per-source (the incoming deck
+// receives its own track's gain in beginCrossfade:).
 - (void)setPreampGainDB:(double)db {
-    self.activeDeck.equalizer.globalGain = (float)db;
+    self.activeDeck.normPreampDB = (float)db;
+    [self applyGlobalGainForDeck:self.activeDeck];
+}
+
+// User EQ preamp is global (same for both decks) and persists across track
+// changes and crossfades, unlike normalization gain.
+- (void)setEQPreampDB:(double)db {
+    self.eqPreampDB = (float)db;
+    for (AirmedyDeck *d in self.decks) {
+        [self applyGlobalGainForDeck:d];
+    }
+}
+
+// --- Stereo width ---
+
+- (void)setStereoWidthPercent:(double)pct {
+    float w = (float)(pct / 100.0);
+    for (AirmedyDeck *d in self.decks) {
+        AirmedyStereoWidener *au = (AirmedyStereoWidener *)d.widener.AUAudioUnit;
+        au.width = w;
+    }
 }
 
 // --- Now Playing ---
@@ -672,6 +822,14 @@ void SetEQEnabled(void *playerPtr, int enabled) {
 
 void SetPreampGainPlayer(void *playerPtr, double db) {
     [(__bridge AirmedyPlayer *)playerPtr setPreampGainDB:db];
+}
+
+void SetEQPreampPlayer(void *playerPtr, double db) {
+    [(__bridge AirmedyPlayer *)playerPtr setEQPreampDB:db];
+}
+
+void SetStereoWidthPlayer(void *playerPtr, double pct) {
+    [(__bridge AirmedyPlayer *)playerPtr setStereoWidthPercent:pct];
 }
 
 void EnqueueNextPlayer(void *playerPtr, const char *path) {

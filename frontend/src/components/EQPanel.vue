@@ -105,6 +105,14 @@ async function onBandRelease(bandIndex: number) {
   await EQService.UpdateBand(activeProfile.value.id, bandIndex, gain)
 }
 
+function onPreampInput(gain: number) {
+  appStore.eqPreamp = gain
+}
+
+async function onPreampRelease() {
+  await appStore.updateEQPreamp(appStore.eqPreamp)
+}
+
 async function toggleEnabled() {
   await appStore.updateEQEnabled(!appStore.eqEnabled)
 }
@@ -216,18 +224,49 @@ function openProfileMenu(e: MouseEvent) {
       </button>
     </div>
 
-    <!-- 10-band vertical sliders -->
+    <!-- Global preamp + 10-band preset sliders -->
     <div class="flex items-end justify-between gap-1 h-72 px-1">
+      <!-- Global Preamp vertical slider; selecting a preset never changes it. -->
+      <div class="flex flex-col items-center flex-1 min-w-0 h-full">
+        <p class="text-[10px] text-foreground opacity-80 mb-1 tabular-nums w-full text-center">
+          {{ appStore.eqPreamp >= 0 ? '+' : '' }}{{ appStore.eqPreamp.toFixed(1) }}
+        </p>
+        <div class="flex-1 flex items-center justify-center w-full">
+          <div class="relative" style="width: 24px; height: 200px;">
+            <div class="absolute left-0 right-0 top-1/2 h-px bg-foreground/25 pointer-events-none" />
+            <div class="absolute inset-0 flex items-center justify-center"
+              style="transform: rotate(-90deg); transform-origin: center; width: 200px; height: 24px; top: 50%; left: 50%; margin-top: -12px; margin-left: -100px;">
+              <Slider
+                :model-value="appStore.eqPreamp"
+                :min="-12"
+                :max="12"
+                :step="0.5"
+                class="w-full"
+                :anchor-value="0"
+                thumb-color="currentColor"
+                always-show-thumb
+                @update:model-value="(val: number) => onPreampInput(val)"
+                @mouseup="onPreampRelease"
+                @touchend="onPreampRelease" />
+            </div>
+          </div>
+        </div>
+        <p class="text-[10px] text-foreground opacity-80 mt-1 truncate max-w-full text-center" :title="t('settings.equalizer.preamp')">
+          {{ t('settings.equalizer.preamp') }}
+        </p>
+      </div>
+
       <!-- Scale marks: max / center / min -->
       <div class="flex flex-col items-end flex-none h-full">
         <p class="text-[10px] mb-1 opacity-0 select-none">0.0</p>
         <div class="flex-1 flex flex-col items-end justify-between py-1 pr-1">
-          <span class="text-[10px] text-foreground opacity-60 tabular-nums">+12</span>
+          <span class="text-[10px] text-foreground opacity-60 tabular-nums">12</span>
           <span class="text-[10px] text-foreground opacity-60 tabular-nums">0</span>
           <span class="text-[10px] text-foreground opacity-60 tabular-nums">-12</span>
         </div>
         <p class="text-[10px] mt-1 opacity-0 select-none">32</p>
       </div>
+
       <div v-for="(label, i) in FREQ_LABELS" :key="i" class="flex flex-col items-center flex-1 min-w-0 h-full">
         <!-- Gain value -->
         <p class="text-[10px] text-foreground opacity-80 mb-1 tabular-nums w-full text-center">
@@ -240,6 +279,9 @@ function openProfileMenu(e: MouseEvent) {
             <div class="absolute inset-0 flex items-center justify-center"
               style="transform: rotate(-90deg); transform-origin: center; width: 200px; height: 24px; top: 50%; left: 50%; margin-top: -12px; margin-left: -100px;">
               <Slider :model-value="getBandGain(i)" :min="-12" :max="12" :step="0.5" class="w-full"
+                :anchor-value="0"
+                thumb-color="currentColor"
+                always-show-thumb
                 @update:model-value="(val: number) => onBandInput(i, val)"
                 @mouseup="() => onBandRelease(i)"
                 @touchend="() => onBandRelease(i)" />

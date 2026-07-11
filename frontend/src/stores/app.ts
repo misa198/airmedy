@@ -17,6 +17,10 @@ export const NORMALIZATION_TARGET_LUFS_MAX = -6
 // Mirrors domain.MaxCrossfadeSeconds; 0 = crossfade off (gapless).
 export const CROSSFADE_MAX_SECONDS = 12
 
+// Stereo widener: 0=mono, 100=neutral (identity), 200=widest.
+export const STEREO_WIDTH_MIN = 0
+export const STEREO_WIDTH_MAX = 200
+
 export const useAppStore = defineStore('app', () => {
   const theme = ref<'system' | 'light' | 'dark' | 'black'>('system')
   const language = ref('en')
@@ -59,6 +63,8 @@ export const useAppStore = defineStore('app', () => {
   const remoteServerEnabled = ref(false)
   const remoteServerPort = ref(0)
   const remoteServerPassword = ref('')
+  const eqPreamp = ref(0)
+  const stereoWidth = ref(100)
 
   // User-configurable delimiters for splitting multi-value tags.
   const DEFAULT_DELIMITERS = [';', '\\\\', ',']
@@ -140,6 +146,9 @@ export const useAppStore = defineStore('app', () => {
         remoteServerEnabled.value = !!settings.remote_server_enabled
         remoteServerPort.value = settings.remote_server_port ?? 0
         remoteServerPassword.value = settings.remote_server_password ?? ''
+        eqPreamp.value = settings.eq_preamp ?? 0
+        // Nullish (not ||): 0 is a legitimate stored value (mono), not "unset".
+        stereoWidth.value = settings.stereo_width ?? 100
         // Preserve an intentional empty array (splitting disabled); only fall
         // back to defaults when the field is missing entirely.
         artistDelimiters.value = Array.isArray(settings.artist_delimiters) ? [...settings.artist_delimiters] : [...DEFAULT_DELIMITERS]
@@ -238,6 +247,8 @@ export const useAppStore = defineStore('app', () => {
         remote_server_enabled: remoteServerEnabled.value,
         remote_server_port: remoteServerPort.value,
         remote_server_password: remoteServerPassword.value,
+        eq_preamp: eqPreamp.value,
+        stereo_width: stereoWidth.value,
         artist_delimiters: [...artistDelimiters.value],
         album_artist_delimiters: [...albumArtistDelimiters.value],
         genre_delimiters: [...genreDelimiters.value],
@@ -417,6 +428,21 @@ export const useAppStore = defineStore('app', () => {
     remoteServerPassword.value = password
   }
 
+  const updateEQPreamp = async (gainDB: number) => {
+    if (!Number.isFinite(gainDB)) return
+    const clamped = Math.min(12, Math.max(-12, gainDB))
+    eqPreamp.value = clamped
+    await EQService.SetPreamp(clamped)
+  }
+
+  const updateStereoWidth = async (widthPercent: number) => {
+    if (!Number.isFinite(widthPercent)) return
+    const clamped = Math.min(STEREO_WIDTH_MAX, Math.max(STEREO_WIDTH_MIN, widthPercent))
+    stereoWidth.value = clamped
+    await EQService.SetStereoWidth(clamped)
+    await saveSettings()
+  }
+
   const updateDelimiters = async (
     field: 'artist' | 'albumArtist' | 'genre' | 'composer',
     value: string[],
@@ -525,6 +551,10 @@ export const useAppStore = defineStore('app', () => {
     remoteServerPort,
     remoteServerPassword,
     updateRemoteServerPassword,
+    eqPreamp,
+    updateEQPreamp,
+    stereoWidth,
+    updateStereoWidth,
     artistDelimiters,
     albumArtistDelimiters,
     genreDelimiters,

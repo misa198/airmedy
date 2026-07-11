@@ -222,7 +222,9 @@
       "add_profile": "프로필 추가",
       "delete_profile": "프로필 삭제",
       "rename_profile": "프로필 이름 바꾸기",
-      "select_profile": "프로필 선택"
+      "select_profile": "프로필 선택",
+      "preamp": "프리앰프",
+      "stereo_width": "스테레오 폭"
     },
     "library_analysis": {
       "title": "라이브러리 분석",

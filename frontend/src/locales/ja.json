@@ -222,7 +222,9 @@
       "add_profile": "プロファイルを追加",
       "delete_profile": "プロファイルを削除",
       "rename_profile": "プロファイルの名前を変更",
-      "select_profile": "プロファイルを選択"
+      "select_profile": "プロファイルを選択",
+      "preamp": "プリアンプ",
+      "stereo_width": "ステレオ幅"
     },
     "library_analysis": {
       "title": "ライブラリ分析",

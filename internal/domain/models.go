@@ -425,28 +425,30 @@ type FeaturePercentileRow struct {
 
 // AppSettings holds general application settings
 type AppSettings struct {
-	Language                 string `json:"language"`
-	Theme                    string `json:"theme"` // "system", "light", "dark"
-	StartAtLogin             bool   `json:"start_at_login"`
-	ShowTrayIcon             bool   `json:"show_tray_icon"`
-	AutoCheckUpdate          bool   `json:"auto_check_update"`
-	LastFmUsername           string `json:"lastfm_username"`
-	EQEnabled                bool   `json:"eq_enabled"`
-	EnableLrclib             bool   `json:"enable_lrclib"`
-	EnableKugou              bool   `json:"enable_kugou"`
-	PreferLocalLyrics        bool   `json:"prefer_local_lyrics"`
-	LyricsFolderEnabled      bool   `json:"lyrics_folder_enabled"`
-	LyricsFolderPath         string `json:"lyrics_folder_path"`
-	LyricsSubfolderEnabled   bool   `json:"lyrics_subfolder_enabled"`
-	LyricsSubfolderName      string `json:"lyrics_subfolder_name"`
-	UseOnlineArtistArtwork   bool   `json:"use_online_artist_artwork"`
-	PreferLocalArtistArtwork bool   `json:"prefer_local_artist_artwork"`
-	LastScanVersion          string `json:"last_scan_version"`
-	PreventSleepWhilePlaying bool   `json:"prevent_sleep_while_playing"`
-	RemoteServerEnabled      bool   `json:"remote_server_enabled"`
-	RemoteServerPort         int    `json:"remote_server_port"`
-	RemoteServerPassword     string `json:"remote_server_password"`
-	ShowPlayerIndicator      bool   `json:"show_player_indicator"`
+	Language                 string  `json:"language"`
+	Theme                    string  `json:"theme"` // "system", "light", "dark"
+	StartAtLogin             bool    `json:"start_at_login"`
+	ShowTrayIcon             bool    `json:"show_tray_icon"`
+	AutoCheckUpdate          bool    `json:"auto_check_update"`
+	LastFmUsername           string  `json:"lastfm_username"`
+	EQEnabled                bool    `json:"eq_enabled"`
+	EQPreamp                 float64 `json:"eq_preamp"`    // dB, global EQ gain, -12 to +12
+	StereoWidth              float64 `json:"stereo_width"` // 0=mono, 100=neutral, up to 200=wider
+	EnableLrclib             bool    `json:"enable_lrclib"`
+	EnableKugou              bool    `json:"enable_kugou"`
+	PreferLocalLyrics        bool    `json:"prefer_local_lyrics"`
+	LyricsFolderEnabled      bool    `json:"lyrics_folder_enabled"`
+	LyricsFolderPath         string  `json:"lyrics_folder_path"`
+	LyricsSubfolderEnabled   bool    `json:"lyrics_subfolder_enabled"`
+	LyricsSubfolderName      string  `json:"lyrics_subfolder_name"`
+	UseOnlineArtistArtwork   bool    `json:"use_online_artist_artwork"`
+	PreferLocalArtistArtwork bool    `json:"prefer_local_artist_artwork"`
+	LastScanVersion          string  `json:"last_scan_version"`
+	PreventSleepWhilePlaying bool    `json:"prevent_sleep_while_playing"`
+	RemoteServerEnabled      bool    `json:"remote_server_enabled"`
+	RemoteServerPort         int     `json:"remote_server_port"`
+	RemoteServerPassword     string  `json:"remote_server_password"`
+	ShowPlayerIndicator      bool    `json:"show_player_indicator"`
 
 	// LibrarySyncInterval controls how often watched folders are rescanned for
 	// added/changed/removed files. One of the SyncInterval* constants; empty

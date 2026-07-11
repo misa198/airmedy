@@ -222,7 +222,9 @@
       "add_profile": "Добавить профиль",
       "delete_profile": "Удалить профиль",
       "rename_profile": "Переименовать профиль",
-      "select_profile": "Выбрать профиль"
+      "select_profile": "Выбрать профиль",
+      "preamp": "Предусиление",
+      "stereo_width": "Стереоширина"
     },
     "library_analysis": {
       "title": "Анализ библиотеки",

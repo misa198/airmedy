@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { AudioLines, Wrench, Volume2, Blend } from '@lucide/vue'
 import EQPanel from '@/components/EQPanel.vue'
 import { Switch, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, Slider } from '@airmedy/ui'
-import { useAppStore, NORMALIZATION_TARGET_LUFS_MIN, NORMALIZATION_TARGET_LUFS_MAX, CROSSFADE_MAX_SECONDS } from '@/stores/app'
+import { useAppStore, NORMALIZATION_TARGET_LUFS_MIN, NORMALIZATION_TARGET_LUFS_MAX, CROSSFADE_MAX_SECONDS, STEREO_WIDTH_MIN, STEREO_WIDTH_MAX } from '@/stores/app'
 import { MAX_QUEUE_SIZE_OPTIONS, type MaxQueueSize } from '@/lib/queue'
 import SettingSection from './SettingSection.vue'
 import SettingRow from './SettingRow.vue'
@@ -75,6 +75,41 @@ const LUFS_MARKS = [
 
 const lufsMarkPct = (value: number) =>
   ((value - NORMALIZATION_TARGET_LUFS_MIN) / (NORMALIZATION_TARGET_LUFS_MAX - NORMALIZATION_TARGET_LUFS_MIN)) * 100
+
+// Global stereo width: same live-drag + commit-on-release pattern as the LUFS slider.
+const stereoWidthLive = ref(appStore.stereoWidth)
+const stereoWidthDragging = ref(false)
+watch(() => appStore.stereoWidth, (val) => {
+  if (!stereoWidthDragging.value) stereoWidthLive.value = val
+})
+const onStereoWidthInput = (val: number) => {
+  stereoWidthDragging.value = true
+  stereoWidthLive.value = val
+}
+const onStereoWidthRelease = () => {
+  appStore.updateStereoWidth(stereoWidthLive.value)
+  stereoWidthDragging.value = false
+}
+
+const sectorPath = computed(() => {
+  const cx = 80
+  const cy = 80
+  const r = 60
+  const widthVal = stereoWidthLive.value ?? 100
+  const maxAngle = (widthVal / 200) * 90
+  const rad = (maxAngle * Math.PI) / 180
+  
+  const xLeft = cx - r * Math.sin(rad)
+  const yLeft = cy - r * Math.cos(rad)
+  const xRight = cx + r * Math.sin(rad)
+  const yRight = cy - r * Math.cos(rad)
+  
+  if (maxAngle < 0.1) {
+    return `M ${cx} ${cy} L ${cx} ${cy - r}`
+  }
+  
+  return `M ${cx} ${cy} L ${xLeft} ${yLeft} A ${r} ${r} 0 0 1 ${xRight} ${yRight} Z`
+})
 </script>
 
 <template>
@@ -111,6 +146,66 @@ const lufsMarkPct = (value: number) =>
 
     <SettingSection id="equalizer" :icon="AudioLines" :label="t('settings.equalizer.title')" variant="panel">
       <EQPanel />
+      <div class="p-5">
+        <div class="flex items-center justify-between gap-x-2 mb-3">
+          <p class="text-sm font-semibold">{{ t('settings.equalizer.stereo_width') }}</p>
+          <p class="text-sm font-semibold tabular-nums">{{ stereoWidthLive }}%</p>
+        </div>
+
+        <div class="flex flex-col items-center mb-6">
+          <svg width="160" height="90" viewBox="0 0 160 90" class="overflow-visible">
+            <!-- Background semi-circle bounds -->
+            <path
+              d="M 20 80 A 60 60 0 0 1 140 80"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              class="opacity-10"
+            />
+            <!-- Center mono guide line -->
+            <line
+              x1="80"
+              y1="80"
+              x2="80"
+              y2="20"
+              stroke="currentColor"
+              stroke-width="1"
+              stroke-dasharray="2 2"
+              class="opacity-25"
+            />
+            <!-- Left (Mono/0%) label reference -->
+            <text x="15" y="88" class="text-[9px] fill-foreground opacity-30 text-center" text-anchor="middle">L</text>
+            <!-- Center/0% label reference -->
+            <text x="80" y="14" class="text-[9px] fill-foreground opacity-30 text-center" text-anchor="middle">Mono</text>
+            <!-- Right (Wide/200%) label reference -->
+            <text x="145" y="88" class="text-[9px] fill-foreground opacity-30 text-center" text-anchor="middle">R</text>
+
+            <!-- Dynamic filled sector/arc representing stereo width -->
+            <path
+              :d="sectorPath"
+              fill="var(--primary)"
+              fill-opacity="0.12"
+              stroke="var(--primary)"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="transition-all duration-75"
+            />
+            
+            <!-- Central origin marker node -->
+            <circle cx="80" cy="80" r="3" fill="var(--primary)" />
+          </svg>
+        </div>
+
+        <div class="flex items-center gap-x-3">
+          <span class="text-xs text-foreground opacity-60 tabular-nums w-8 text-left">{{ STEREO_WIDTH_MIN }}</span>
+          <Slider class="flex-1" :model-value="stereoWidthLive" :min="STEREO_WIDTH_MIN" :max="STEREO_WIDTH_MAX"
+            :step="5" :anchor-value="100" thumb-color="currentColor" always-show-thumb
+            @update:model-value="onStereoWidthInput" @mouseup="onStereoWidthRelease"
+            @touchend="onStereoWidthRelease" />
+          <span class="text-xs text-foreground opacity-60 tabular-nums w-8 text-right">{{ STEREO_WIDTH_MAX }}</span>
+        </div>
+      </div>
     </SettingSection>
 
     <SettingSection :icon="Blend" :label="t('settings.playback.song_transition')">

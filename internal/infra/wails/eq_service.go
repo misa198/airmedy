@@ -49,6 +49,18 @@ func (s *EQService) UpdateBand(profileID string, bandIndex int, gain float64) er
 	return s.service.UpdateBand(context.Background(), profileID, bandIndex, gain)
 }
 
+func (s *EQService) SetPreamp(gainDB float64) error {
+	return s.service.SetPreamp(context.Background(), gainDB)
+}
+
+func (s *EQService) GetStereoWidth() (float64, error) {
+	return s.service.GetStereoWidth(context.Background())
+}
+
+func (s *EQService) SetStereoWidth(width float64) error {
+	return s.service.SetStereoWidth(context.Background(), width)
+}
+
 func (s *EQService) RenameProfile(id, name string) error {
 	err := s.service.RenameProfile(context.Background(), id, name)
 	if err == nil {

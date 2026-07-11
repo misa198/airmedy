@@ -222,7 +222,9 @@
       "add_profile": "Thêm hồ sơ",
       "delete_profile": "Xóa hồ sơ",
       "rename_profile": "Đổi tên hồ sơ",
-      "select_profile": "Chọn hồ sơ"
+      "select_profile": "Chọn hồ sơ",
+      "preamp": "Tiền khuếch đại",
+      "stereo_width": "Độ rộng âm thanh nổi"
     },
     "library_analysis": {
       "title": "Phân tích thư viện",
