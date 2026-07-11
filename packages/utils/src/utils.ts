@@ -55,3 +55,30 @@ export function foldUnicode(s: string): string {
     .replace(/Đ/g, 'D')
     .toLowerCase()
 }
+
+export function decodeHTMLEntities(str: string): string {
+  if (!str) return ''
+  
+  const htmlEntities: Record<string, string> = {
+    amp: '&',
+    apos: "'",
+    lt: '<',
+    gt: '>',
+    quot: '"',
+    nbsp: ' ',
+  }
+
+  return str.replace(/&(#(?:\d+|x[a-fA-F0-9]+)|[a-zA-Z]+);/g, (match, entity) => {
+    if (entity.startsWith('#')) {
+      if (entity[1]?.toLowerCase() === 'x') {
+        const code = parseInt(entity.substring(2), 16)
+        return isNaN(code) ? match : String.fromCharCode(code)
+      } else {
+        const code = parseInt(entity.substring(1), 10)
+        return isNaN(code) ? match : String.fromCharCode(code)
+      }
+    }
+    return htmlEntities[entity.toLowerCase()] || match
+  })
+}
+

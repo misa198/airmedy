@@ -1,4 +1,5 @@
 import { computed, type Ref } from 'vue'
+import { decodeHTMLEntities } from '@airmedy/utils'
 
 export interface LyricLine {
   text: string
@@ -24,11 +25,16 @@ function parseBilingual(text: string): { primary: string; secondary?: string } {
 }
 
 export function useLyrics(lyrics: Ref<string | undefined>) {
-  const isSynced = computed(() => !!lyrics.value && LRC_PATTERN.test(lyrics.value))
+  const decodedLyrics = computed(() => {
+    if (!lyrics.value) return undefined
+    return decodeHTMLEntities(lyrics.value)
+  })
+
+  const isSynced = computed(() => !!decodedLyrics.value && LRC_PATTERN.test(decodedLyrics.value))
 
   const syncedLines = computed<LyricLine[]>(() => {
-    if (!lyrics.value) return []
-    return lyrics.value.split('\n').flatMap(line => {
+    if (!decodedLyrics.value) return []
+    return decodedLyrics.value.split('\n').flatMap(line => {
       const match = line.match(LINE_PATTERN)
       if (!match) return []
       const minutes = parseInt(match[1], 10)
@@ -39,8 +45,8 @@ export function useLyrics(lyrics: Ref<string | undefined>) {
   })
 
   const plainLines = computed<PlainLine[]>(() => {
-    if (!lyrics.value) return []
-    return lyrics.value
+    if (!decodedLyrics.value) return []
+    return decodedLyrics.value
       .split('\n')
       .map(l => l.replace(/^\[(\d+):(\d+\.\d+)\]/, '').trim())
       .filter(l => l)
@@ -52,3 +58,4 @@ export function useLyrics(lyrics: Ref<string | undefined>) {
 
   return { isSynced, syncedLines, plainLines }
 }
+

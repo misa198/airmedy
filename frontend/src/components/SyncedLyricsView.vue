@@ -98,18 +98,18 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="scrollContainer" class="h-full overflow-y-auto px-8 py-48 scrollbar-hide scroll-smooth">
-    <div class="max-w-2xl mx-auto space-y-10">
+  <div ref="scrollContainer" class="h-full overflow-y-auto py-48 scrollbar-hide scroll-smooth" :class="props.immersive ? 'pl-8 pr-16' : 'px-8'">
+    <div class="max-w-2xl mx-auto space-y-6">
       <div
         v-for="(line, index) in lines"
         :key="index"
         ref="lineRefs"
         data-test="lyric-line"
-        class="font-bold transition-[filter,opacity,transform] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] cursor-pointer select-none origin-left py-2"
+        class="font-bold transition-[filter,opacity,transform,scale] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] cursor-pointer select-none origin-left py-2"
         :class="[
           props.immersive
             ? index === activeIndex
-              ? 'text-white scale-105'
+              ? 'text-white scale-110'
               : 'text-white'
             : index === activeIndex
             ? 'text-white scale-105 blur-none opacity-100'
