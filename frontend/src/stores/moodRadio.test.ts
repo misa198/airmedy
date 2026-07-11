@@ -4,6 +4,7 @@ import { nextTick } from 'vue'
 
 const mockGenerateMoodRadio = vi.fn()
 const mockPlayTrackIDs = vi.fn()
+const mockReplaceQueueKeepingCurrentTrackIDs = vi.fn()
 const mockAppendTracks = vi.fn()
 
 vi.mock('@wailsio/runtime', () => ({
@@ -23,6 +24,7 @@ vi.mock('../../bindings/airmedy/internal/infra/wails/moodradioservice', () => ({
 
 vi.mock('../../bindings/airmedy/internal/infra/wails/playerservice', () => ({
   PlayTrackIDs: (...args: unknown[]) => mockPlayTrackIDs(...args),
+  ReplaceQueueKeepingCurrentTrackIDs: (...args: unknown[]) => mockReplaceQueueKeepingCurrentTrackIDs(...args),
   AppendTracks: (...args: unknown[]) => mockAppendTracks(...args),
 }))
 
@@ -36,6 +38,7 @@ describe('useMoodRadioStore', () => {
     vi.clearAllMocks()
     mockGenerateMoodRadio.mockResolvedValue([])
     mockPlayTrackIDs.mockResolvedValue(undefined)
+    mockReplaceQueueKeepingCurrentTrackIDs.mockResolvedValue(undefined)
     mockAppendTracks.mockResolvedValue(undefined)
   })
 
@@ -46,6 +49,18 @@ describe('useMoodRadioStore', () => {
 
     expect(mockGenerateMoodRadio).toHaveBeenCalledWith('seed', [], 15)
     expect(mockPlayTrackIDs).toHaveBeenCalledWith(['seed', 'similar'], 0)
+  })
+
+  it('keeps the current seed playing when it starts Mood Radio', async () => {
+    const player = usePlayerStore()
+    player.currentTrack = { id: 'seed' } as any
+    mockGenerateMoodRadio.mockResolvedValue([{ id: 'similar' }])
+
+    await useMoodRadioStore().start({ id: 'seed' } as any)
+
+    expect(mockReplaceQueueKeepingCurrentTrackIDs).toHaveBeenCalledWith(['seed', 'similar'])
+    expect(mockPlayTrackIDs).not.toHaveBeenCalled()
+    expect(player.queue).toEqual([{ id: 'seed' }, { id: 'similar' }])
   })
 
   it('excludes the full existing queue when refilling', async () => {

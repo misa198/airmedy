@@ -25,7 +25,15 @@ export const useMoodRadioStore = defineStore('moodRadio', () => {
       const similar = await fetchSimilar(seedTrack.id, [])
       const tracks = [seedTrack, ...similar.filter(t => t.id !== seedTrack.id)]
       const playerStore = usePlayerStore()
-      await playerStore.playTracks(tracks, 0, true)
+      if (playerStore.currentTrack?.id === seedTrack.id) {
+        // The seed is already loaded and playing. Replace only the upcoming
+        // queue, preserving the native player's current position instead of
+        // hard-loading the seed again from the beginning.
+        playerStore.queue = tracks
+        await PlayerService.ReplaceQueueKeepingCurrentTrackIDs(tracks.map(t => t.id))
+      } else {
+        await playerStore.playTracks(tracks, 0, true)
+      }
     } catch (e) {
       // Seeding failed (e.g. seed track not yet analyzed, backend error) —
       // reset instead of leaving the radio "on" over a queue that never

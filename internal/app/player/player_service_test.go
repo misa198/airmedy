@@ -18,6 +18,7 @@ type fakePlayer struct {
 	status         domain.PlayerStatus
 	onEnd          func()
 	lastPreampGain float64
+	loadCalls      int
 }
 
 func (p *fakePlayer) Play() error {
@@ -64,12 +65,42 @@ func (p *fakePlayer) SetMuted(m bool) error {
 
 func (p *fakePlayer) Load(track *domain.TrackDTO) error {
 	p.mu.Lock()
+	p.loadCalls++
 	p.status.TrackID = track.ID
 	p.status.Duration = float64(track.Duration)
 	p.status.Position = 0
 	p.status.PlaybackState = domain.PlaybackStateStopped
 	p.mu.Unlock()
 	return nil
+}
+
+func TestReplaceQueueKeepingCurrentTrackPreservesPlaybackPosition(t *testing.T) {
+	fp := &fakePlayer{status: domain.PlayerStatus{Volume: 1.0}}
+	s, _ := newTestService(t, fp)
+	seed := &domain.TrackDTO{Track: domain.Track{ID: "seed", Duration: 120}}
+	similar := &domain.TrackDTO{Track: domain.Track{ID: "similar", Duration: 180}}
+
+	if err := s.PlayTracks([]*domain.TrackDTO{seed}, 0); err != nil {
+		t.Fatalf("start seed track: %v", err)
+	}
+	if err := s.Seek(42); err != nil {
+		t.Fatalf("seek seed track: %v", err)
+	}
+	if err := s.ReplaceQueueKeepingCurrentTrack([]*domain.TrackDTO{seed, similar}); err != nil {
+		t.Fatalf("replace queue: %v", err)
+	}
+
+	status := fp.GetStatus()
+	if status.TrackID != seed.ID || status.Position != 42 || status.PlaybackState != domain.PlaybackStatePlaying {
+		t.Fatalf("playback was interrupted: %+v", status)
+	}
+	if fp.loadCalls != 1 {
+		t.Fatalf("Load called %d times, want 1", fp.loadCalls)
+	}
+	queue := s.GetQueue()
+	if len(queue) != 2 || queue[0].ID != seed.ID || queue[1].ID != similar.ID {
+		t.Fatalf("unexpected replacement queue: %+v", queue)
+	}
 }
 
 func (p *fakePlayer) Unload() error {

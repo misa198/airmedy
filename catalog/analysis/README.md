@@ -323,7 +323,10 @@ alternative exists. It relaxes the album rule first, then artist cooldown, so
 small libraries still receive a full batch.
 
 The frontend store starts Mood Radio by seeding + prepending the seed track
-(`FindSimilar` always excludes it), then auto-refills the queue as it drains
+(`FindSimilar` always excludes it). When that seed is already the active
+track, it replaces only the queue through `ReplaceQueueKeepingCurrentTrackIDs`,
+so the native player retains its current position rather than replaying the
+seed. It then auto-refills the queue as it drains
 below `REFILL_THRESHOLD` (3) remaining tracks, appending `SEED_BATCH_SIZE` (15)
 more similar tracks at a time. The whole existing queue is supplied as
 `excludeTrackIDs` on refill, so already queued/played tracks are removed before

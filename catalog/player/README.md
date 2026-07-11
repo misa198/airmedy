@@ -448,6 +448,7 @@ SetMuted(muted bool) error
 SetShuffle(enabled bool) error
 SetRepeatMode(mode RepeatMode) error
 SetCrossfadeSeconds(n int)      // live crossfade duration change; re-syncs the pre-queue
+ReplaceQueueKeepingCurrentTrack // replaces queue without reloading the active track
 PlayTracks(tracks []*TrackDTO, startIndex int) error
 PlayTrackIDs(ids []string, startIndex int) error
 ShuffleTracks(tracks []*TrackDTO) error
