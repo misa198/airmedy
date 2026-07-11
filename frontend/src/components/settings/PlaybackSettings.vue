@@ -173,12 +173,38 @@ const sectorPath = computed(() => {
               stroke-dasharray="2 2"
               class="opacity-25"
             />
-            <!-- Left (Mono/0%) label reference -->
-            <text x="15" y="88" class="text-[9px] fill-foreground opacity-30 text-center" text-anchor="middle">L</text>
-            <!-- Center/0% label reference -->
-            <text x="80" y="14" class="text-[9px] fill-foreground opacity-30 text-center" text-anchor="middle">Mono</text>
-            <!-- Right (Wide/200%) label reference -->
-            <text x="145" y="88" class="text-[9px] fill-foreground opacity-30 text-center" text-anchor="middle">R</text>
+            <!-- Left speaker guide line (-45°) -->
+            <line
+              x1="80"
+              y1="80"
+              x2="37.6"
+              y2="37.6"
+              stroke="currentColor"
+              stroke-width="1"
+              stroke-dasharray="2 2"
+              class="opacity-15"
+            />
+            <!-- Right speaker guide line (+45°) -->
+            <line
+              x1="80"
+              y1="80"
+              x2="122.4"
+              y2="37.6"
+              stroke="currentColor"
+              stroke-width="1"
+              stroke-dasharray="2 2"
+              class="opacity-15"
+            />
+            <!-- Left (Wide/-90%) label reference -->
+            <text x="15" y="88" class="text-[9px] fill-foreground opacity-30 text-center" text-anchor="middle">{{ t('settings.equalizer.wide') }}</text>
+            <!-- Left Speaker (-45%) label reference -->
+            <text x="29" y="29" class="text-[9px] fill-foreground opacity-30 text-center" text-anchor="middle">L</text>
+            <!-- Center (Mono/0%) label reference -->
+            <text x="80" y="14" class="text-[9px] fill-foreground opacity-30 text-center" text-anchor="middle">{{ t('settings.equalizer.mono') }}</text>
+            <!-- Right Speaker (+45%) label reference -->
+            <text x="131" y="29" class="text-[9px] fill-foreground opacity-30 text-center" text-anchor="middle">R</text>
+            <!-- Right (Wide/+90%) label reference -->
+            <text x="145" y="88" class="text-[9px] fill-foreground opacity-30 text-center" text-anchor="middle">{{ t('settings.equalizer.wide') }}</text>
 
             <!-- Dynamic filled sector/arc representing stereo width -->
             <path

@@ -224,7 +224,9 @@
       "rename_profile": "Переименовать профиль",
       "select_profile": "Выбрать профиль",
       "preamp": "Предусиление",
-      "stereo_width": "Стереоширина"
+      "stereo_width": "Стереоширина",
+      "mono": "Моно",
+      "wide": "Широкий"
     },
     "library_analysis": {
       "title": "Анализ библиотеки",

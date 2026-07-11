@@ -224,7 +224,9 @@
       "rename_profile": "Rename Profile",
       "select_profile": "Select Profile",
       "preamp": "Preamp",
-      "stereo_width": "Stereo Width"
+      "stereo_width": "Stereo Width",
+      "mono": "Mono",
+      "wide": "Wide"
     },
     "library_analysis": {
       "title": "Library Analysis",
