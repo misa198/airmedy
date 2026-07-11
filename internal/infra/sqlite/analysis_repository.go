@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"airmedy/internal/domain"
@@ -192,6 +193,176 @@ func (r *analysisRepository) ListPending(ctx context.Context, currentVersion, li
 		return nil, fmt.Errorf("failed to list pending analysis: %w", err)
 	}
 	return ids, nil
+}
+
+func componentName(component domain.AnalysisComponents) (string, error) {
+	switch component {
+	case domain.AnalysisComponentFFmpeg:
+		return "ffmpeg", nil
+	case domain.AnalysisComponentAubio:
+		return "aubio", nil
+	default:
+		return "", fmt.Errorf("unknown analysis component %d", component)
+	}
+}
+
+func requestedComponents(required map[domain.AnalysisComponents]int) []domain.AnalysisComponents {
+	components := make([]domain.AnalysisComponents, 0, 2)
+	for _, component := range []domain.AnalysisComponents{domain.AnalysisComponentFFmpeg, domain.AnalysisComponentAubio} {
+		if required[component] > 0 {
+			components = append(components, component)
+		}
+	}
+	return components
+}
+
+func (r *analysisRepository) PendingComponents(ctx context.Context, trackID string, required map[domain.AnalysisComponents]int) (domain.AnalysisComponents, error) {
+	var mask int
+	err := r.db.Ext(ctx).GetContext(ctx, &mask, `SELECT analysis_pending_mask FROM tracks WHERE id = ?`, trackID)
+	if err == sql.ErrNoRows {
+		return domain.AnalysisComponentsAll, nil
+	}
+	if err != nil {
+		return 0, fmt.Errorf("failed to get pending analysis mask: %w", err)
+	}
+	return domain.AnalysisComponents(mask) & domain.AnalysisComponentsAll, nil
+}
+
+func (r *analysisRepository) ComponentsComplete(ctx context.Context, trackID string, required map[domain.AnalysisComponents]int) (bool, error) {
+	for _, component := range requestedComponents(required) {
+		name, _ := componentName(component)
+		var status string
+		err := r.db.Ext(ctx).GetContext(ctx, &status, `SELECT status FROM track_analysis_components WHERE track_id = ? AND component = ? AND version >= ?`, trackID, name, required[component])
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		if err != nil {
+			return false, fmt.Errorf("failed to get %s analysis status: %w", name, err)
+		}
+		if status != "complete" {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func (r *analysisRepository) ComponentStatus(ctx context.Context, trackID string, required map[domain.AnalysisComponents]int) (domain.AnalysisComponents, bool, error) {
+	components := requestedComponents(required)
+	if len(components) == 0 {
+		return 0, true, nil
+	}
+	names := make([]any, 0, len(components)+1)
+	names = append(names, trackID)
+	placeholders := make([]string, 0, len(components))
+	for _, component := range components {
+		name, _ := componentName(component)
+		placeholders = append(placeholders, "?")
+		names = append(names, name)
+	}
+	type statusRow struct {
+		Component string `db:"component"`
+		Version   int    `db:"version"`
+		Status    string `db:"status"`
+	}
+	type componentStatusRow struct {
+		PendingMask int `db:"analysis_pending_mask"`
+		statusRow
+	}
+	var rows []componentStatusRow
+	query := `SELECT t.analysis_pending_mask, COALESCE(c.component, '') AS component, COALESCE(c.version, 0) AS version, COALESCE(c.status, '') AS status FROM tracks t LEFT JOIN track_analysis_components c ON c.track_id = t.id AND c.component IN (` + strings.Join(placeholders, ",") + `) WHERE t.id = ?`
+	args := append(names[1:], names[0])
+	if err := r.db.Ext(ctx).SelectContext(ctx, &rows, query, args...); err != nil {
+		return 0, false, fmt.Errorf("failed to get component analysis status: %w", err)
+	}
+	if len(rows) == 0 {
+		return domain.AnalysisComponentsAll, false, nil
+	}
+	stored := make(map[string]statusRow, len(components))
+	for _, row := range rows {
+		if row.Component != "" {
+			stored[row.Component] = row.statusRow
+		}
+	}
+	pending := domain.AnalysisComponents(rows[0].PendingMask) & domain.AnalysisComponentsAll
+	complete := pending == 0
+	for _, component := range components {
+		name, _ := componentName(component)
+		row, ok := stored[name]
+		if !ok || row.Version < required[component] || pending&component != 0 {
+			complete = false
+			continue
+		}
+		if row.Status != "complete" {
+			complete = false
+		}
+	}
+	return pending, complete, nil
+}
+
+func (r *analysisRepository) ListPendingComponentTracks(ctx context.Context, required map[domain.AnalysisComponents]int, limit int) ([]string, error) {
+	var ids []string
+	if err := r.db.Ext(ctx).SelectContext(ctx, &ids, `SELECT id FROM tracks WHERE analysis_pending_mask != 0 ORDER BY created_at ASC, id ASC LIMIT ?`, limit); err != nil {
+		return nil, fmt.Errorf("failed to list pending component analysis: %w", err)
+	}
+	return ids, nil
+}
+
+func (r *analysisRepository) CountPendingComponentTracks(ctx context.Context, required map[domain.AnalysisComponents]int) (int, error) {
+	var count int
+	if err := r.db.Ext(ctx).GetContext(ctx, &count, `SELECT COUNT(*) FROM tracks WHERE analysis_pending_mask != 0`); err != nil {
+		return 0, fmt.Errorf("failed to count pending component analysis: %w", err)
+	}
+	return count, nil
+}
+
+func (r *analysisRepository) UpsertComponentFeatures(ctx context.Context, f *domain.TrackFeatures, components domain.AnalysisComponents, versions map[domain.AnalysisComponents]int) error {
+	return r.db.RunTx(ctx, func(ctx context.Context) error {
+		ex := r.db.Ext(ctx)
+		if _, err := ex.ExecContext(ctx, `INSERT INTO track_features (track_id, analyzer_version, analyzed_at) VALUES (?, 0, ?) ON CONFLICT(track_id) DO NOTHING`, f.TrackID, f.AnalyzedAt); err != nil {
+			return fmt.Errorf("failed to create track features: %w", err)
+		}
+		if components&domain.AnalysisComponentFFmpeg != 0 {
+			if _, err := ex.ExecContext(ctx, `UPDATE track_features SET analyzer_version = 4, analyzed_at = ?, loudness_lufs = ?, loudness_range = ?, true_peak = ?, rms = ?, crest = ?, spectral_centroid = ?, spectral_rolloff = ?, spectral_flatness = ?, spectral_flux = ?, zcr = ? WHERE track_id = ?`, f.AnalyzedAt, f.LoudnessLUFS, f.LoudnessRange, f.TruePeak, f.RMS, f.Crest, f.SpectralCentroid, f.SpectralRolloff, f.SpectralFlatness, f.SpectralFlux, f.ZCR, f.TrackID); err != nil {
+				return fmt.Errorf("failed to update ffmpeg features: %w", err)
+			}
+		}
+		if components&domain.AnalysisComponentAubio != 0 {
+			if _, err := ex.ExecContext(ctx, `UPDATE track_features SET analyzed_at = ?, tempo = ?, onset_variance = ? WHERE track_id = ?`, f.AnalyzedAt, f.Tempo, f.OnsetVariance, f.TrackID); err != nil {
+				return fmt.Errorf("failed to update aubio features: %w", err)
+			}
+		}
+		for _, component := range requestedComponents(versions) {
+			if components&component == 0 {
+				continue
+			}
+			name, _ := componentName(component)
+			if _, err := ex.ExecContext(ctx, `INSERT INTO track_analysis_components (track_id, component, version, status, analyzed_at) VALUES (?, ?, ?, 'complete', ?) ON CONFLICT(track_id, component) DO UPDATE SET version = excluded.version, status = excluded.status, analyzed_at = excluded.analyzed_at`, f.TrackID, name, versions[component], f.AnalyzedAt); err != nil {
+				return fmt.Errorf("failed to mark %s analysis complete: %w", name, err)
+			}
+		}
+		remainingMask := int(domain.AnalysisComponentsAll &^ components)
+		if _, err := ex.ExecContext(ctx, `UPDATE tracks SET analyzed_version = 4, analysis_pending_mask = analysis_pending_mask & ? WHERE id = ?`, remainingMask, f.TrackID); err != nil {
+			return fmt.Errorf("failed to maintain legacy analyzed version: %w", err)
+		}
+		return nil
+	})
+}
+
+func (r *analysisRepository) MarkComponentsFailed(ctx context.Context, trackID string, components domain.AnalysisComponents, versions map[domain.AnalysisComponents]int) error {
+	for _, component := range requestedComponents(versions) {
+		if components&component == 0 {
+			continue
+		}
+		name, _ := componentName(component)
+		if _, err := r.db.Ext(ctx).ExecContext(ctx, `INSERT INTO track_analysis_components (track_id, component, version, status) VALUES (?, ?, ?, 'failed') ON CONFLICT(track_id, component) DO UPDATE SET version = excluded.version, status = excluded.status, analyzed_at = NULL`, trackID, name, versions[component]); err != nil {
+			return fmt.Errorf("failed to mark %s analysis failed: %w", name, err)
+		}
+	}
+	remainingMask := int(domain.AnalysisComponentsAll &^ components)
+	if _, err := r.db.Ext(ctx).ExecContext(ctx, `UPDATE tracks SET analyzed_version = 4, analysis_pending_mask = analysis_pending_mask & ? WHERE id = ?`, remainingMask, trackID); err != nil {
+		return fmt.Errorf("failed to maintain legacy analyzed version for failed track: %w", err)
+	}
+	return nil
 }
 
 // UpsertMoodFeatures writes derived energy/danceability for a track and, in

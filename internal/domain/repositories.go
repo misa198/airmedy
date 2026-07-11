@@ -237,6 +237,21 @@ type AnalysisRepository interface {
 	ListMoodPending(ctx context.Context, currentMoodVersion, limit int) ([]string, error)
 }
 
+// ComponentAnalysisRepository is an optional extension of AnalysisRepository
+// used by the component-versioned pipeline. Keeping it narrow lets older test
+// doubles and third-party adapters continue to implement AnalysisRepository.
+type ComponentAnalysisRepository interface {
+	PendingComponents(ctx context.Context, trackID string, required map[AnalysisComponents]int) (AnalysisComponents, error)
+	ComponentsComplete(ctx context.Context, trackID string, required map[AnalysisComponents]int) (bool, error)
+	// ComponentStatus returns both the stale-source mask and whether every
+	// requested source completed successfully, with one repository lookup.
+	ComponentStatus(ctx context.Context, trackID string, required map[AnalysisComponents]int) (pending AnalysisComponents, complete bool, err error)
+	ListPendingComponentTracks(ctx context.Context, required map[AnalysisComponents]int, limit int) ([]string, error)
+	CountPendingComponentTracks(ctx context.Context, required map[AnalysisComponents]int) (int, error)
+	UpsertComponentFeatures(ctx context.Context, f *TrackFeatures, components AnalysisComponents, versions map[AnalysisComponents]int) error
+	MarkComponentsFailed(ctx context.Context, trackID string, components AnalysisComponents, versions map[AnalysisComponents]int) error
+}
+
 // TrackQueryRepository answers similarity lookups over analyzed track
 // features. Currently just backs Mood Radio's "give me more like this"
 // queue refill — kept as its own narrow interface (rather than growing

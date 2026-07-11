@@ -37,6 +37,8 @@
 #define FFA_TEMPO_RATE 44100
 #define FFA_TEMPO_BUF  1024
 #define FFA_TEMPO_HOP  512
+#define FFA_COMPONENT_FFMPEG 1
+#define FFA_COMPONENT_AUBIO  2
 
 /*
  * aubio is built here against FFTW3F rather than its bundled Ooura fallback.
@@ -158,7 +160,7 @@ static void ffa_feed_tempo_onset(AVFrame *frame, SwrContext *swr, float **swr_ou
  * the work loop; setting it non-zero aborts with FFA_ERR_CANCELLED. Returns
  * FFA_OK (0) on success or a negative FFA_ERR_* code.
  */
-static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int *cancel) {
+static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int *cancel, int components) {
     if (!path || !out) return FFA_ERR_OPEN;
     memset(out, 0, sizeof(*out));
 
@@ -243,7 +245,8 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
 
     if (codec_ctx->sample_rate == 0) { rc = FFA_ERR_DECODER; goto done; }
 
-    /* ---- build the filter graph ---- */
+    /* ---- build the filter graph only for FFmpeg features ---- */
+    if (components & FFA_COMPONENT_FFMPEG) {
     graph = avfilter_graph_alloc();
     if (!graph) { rc = FFA_ERR_ALLOC; goto done; }
 
@@ -304,10 +307,11 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
         }
         if (avfilter_graph_config(graph, NULL) < 0) { rc = FFA_ERR_GRAPH; goto done; }
     }
+    }
 
     /* ---- tempo (BPM): swr to mono float @ FFA_TEMPO_RATE -> aubio_tempo ----
      * Tempo failures are non-fatal: leave out->tempo = 0 and keep analyzing. */
-    {
+    if (components & FFA_COMPONENT_AUBIO) {
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 37, 100)
         AVChannelLayout in_l, out_l;
         if (codec_ctx->ch_layout.order == AV_CHANNEL_ORDER_UNSPEC) {
@@ -382,21 +386,23 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
 
             int ret = avcodec_receive_frame(codec_ctx, frame);
             if (ret == 0) {
-                if (av_buffersrc_add_frame_flags(src_ctx, frame, AV_BUFFERSRC_FLAG_KEEP_REF) < 0) {
+                if (src_ctx && av_buffersrc_add_frame_flags(src_ctx, frame, AV_BUFFERSRC_FLAG_KEEP_REF) < 0) {
                     av_frame_unref(frame);
                     rc = FFA_ERR_PROCESS; goto done;
                 }
-                ffa_feed_tempo_onset(frame, tempo_swr, &swr_out, &swr_out_cap,
-                               tempo, tempo_in, tempo_out, tempo_buf, &tempo_fill,
-                               &bpm_sum, &bpm_count,
-                               onset, onset_out,
-                               &onset_total_samples, &onset_last_pos,
-                               &onset_count, &onset_mean, &onset_M2);
+                if (components & FFA_COMPONENT_AUBIO) {
+                    ffa_feed_tempo_onset(frame, tempo_swr, &swr_out, &swr_out_cap,
+                                   tempo, tempo_in, tempo_out, tempo_buf, &tempo_fill,
+                                   &bpm_sum, &bpm_count,
+                                   onset, onset_out,
+                                   &onset_total_samples, &onset_last_pos,
+                                   &onset_count, &onset_mean, &onset_M2);
+                }
                 av_frame_unref(frame);
             } else if (ret == AVERROR(EAGAIN)) {
                 if (flushed) {
                     /* decoder drained: signal EOS to the graph and drain it below */
-                    (void)av_buffersrc_add_frame_flags(src_ctx, NULL, 0);
+                    if (src_ctx) (void)av_buffersrc_add_frame_flags(src_ctx, NULL, 0);
                     eof = 1;
                 } else if (av_read_frame(fmt_ctx, pkt) >= 0) {
                     if (pkt->stream_index == stream_idx) {
@@ -409,14 +415,14 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
                     flushed = 1;
                 }
             } else if (ret == AVERROR_EOF) {
-                (void)av_buffersrc_add_frame_flags(src_ctx, NULL, 0);
+                if (src_ctx) (void)av_buffersrc_add_frame_flags(src_ctx, NULL, 0);
                 eof = 1;
             } else {
                 rc = FFA_ERR_PROCESS; goto done;
             }
 
             /* pull whatever the sink has ready */
-            for (;;) {
+            for (; sink_ctx;) {
                 int fr = av_buffersink_get_frame(sink_ctx, filt);
                 if (fr == AVERROR(EAGAIN) || fr == AVERROR_EOF) break;
                 if (fr < 0) { rc = FFA_ERR_PROCESS; goto done; }
@@ -453,8 +459,9 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
             }
         }
 
-        if (!have_loudness && !have_astats) { rc = FFA_ERR_PROCESS; goto done; }
+        if ((components & FFA_COMPONENT_FFMPEG) && !have_loudness && !have_astats) { rc = FFA_ERR_PROCESS; goto done; }
 
+        if (components & FFA_COMPONENT_FFMPEG) {
         out->loudness_lufs = last_lufs;
         out->loudness_range = last_lra;
         if (have_true_peak && tp_lin > 0) {
@@ -473,10 +480,13 @@ static int ffmpeg_analyze(const char *path, FFAnalysisResult *out, volatile int 
             out->spectral_flatness = sp_flatness / (double)sp_count;
             out->spectral_flux = sp_flux / (double)sp_count;
         }
+        }
         /* Mean of the per-beat BPM estimates; 0 when no stable beat was found. */
+        if (components & FFA_COMPONENT_AUBIO) {
         out->tempo = (bpm_count > 0) ? (bpm_sum / (double)bpm_count) : 0;
         /* Sample variance of inter-onset intervals; 0 when too few onsets to measure. */
         out->onset_variance = (onset_count > 1) ? (onset_M2 / (double)(onset_count - 1)) : 0;
+        }
         rc = FFA_OK;
     }
 

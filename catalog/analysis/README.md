@@ -11,6 +11,21 @@ onset variance) in `track_features`. This is the sole data source for
 normalized against corpus-wide percentiles — see Mood Derivation below) and
 consumed by Mood Radio (see below).
 
+Raw-source freshness is stored per track in `track_analysis_components`: the
+FFmpeg filter graph and aubio rhythm detector each have an independent version.
+A version bump queues only its stale component; when both are stale they still
+share one decode. The current component versions start at `ffmpeg@1` and
+`aubio@1`. Migration 000051 adopts only legacy `analyzed_version >= 4` data,
+so older results are deliberately re-analyzed.
+
+`tracks.analysis_pending_mask` materializes unresolved source work (FFmpeg =
+`1`, aubio = `2`) and has a partial index for non-zero rows. Progress counts
+and backfill queries use this mask, so they scale with pending work instead of
+scanning the full library. Any future source-version bump must include a
+migration that ORs its component bit into affected tracks' masks.
+Backfill reads pending tracks in stable `created_at, id` order through a
+matching partial index.
+
 The pipeline is **opt-in** (`AppSettings.LibraryAnalysisEnabled`, default `false`):
 the worker pool exists only while enabled. Disabling it also force-disables
 Normalization, since Normalization has no other source of loudness data.
@@ -96,8 +111,9 @@ corpus-wide percentile distribution). Mood then backs **Mood Radio** similarity.
 - `GetWorkerCount(ctx) (count, max int)`: returns the configured worker count
   after defaulting/clamping, plus the UI ceiling (`numCPU/2`, minimum 1).
 - `startPool()`: spawns `clampWorkerCount(workerCount)` worker goroutines on a
-  fresh `context.WithCancel`, then kicks off a one-time backfill (`ListPending`
-  → `Enqueue` every pending track ID). Idempotent — no-op if already running.
+  fresh `context.WithCancel`, then kicks off a bounded backfill: 1,000 pending
+  IDs are enqueued at a time and the batch drains before the next is fetched.
+  This bounds queue memory for large libraries. Idempotent — no-op if already running.
 - `stopPool()`: cancels the pool's context (workers exit `cond.Wait()` loops on
   next wake — cancel happens *before* the broadcast to avoid a race where a
   worker re-enters `Wait()` before observing cancellation), waits for in-flight
@@ -143,12 +159,15 @@ otherwise it stays `analyzing` even while throttled, since work is still progres
 
 ### Failed tracks
 
-A track whose `Analyze()` errors permanently (corrupt file, unsupported codec) is
-recorded via `AnalysisRepository.MarkFailed(ctx, trackID, currentVersion)`, which
-bumps `tracks.analyzed_version` **without** writing a `track_features` row:
+A track/component whose analysis errors permanently (corrupt file, unsupported
+codec, or source-specific setup failure) is recorded as `failed` at that
+component's current version in `track_analysis_components`. It is resolved for
+progress and does not retry until that component's version increases. A decode
+failure marks every requested component failed; a single-source run does not
+invalidate the other source's completed data.
 
-- `GetFeatures` still returns nil → Normalization treats it as unanalyzed (gain 0).
-- `CountPending`/`ListPending` stop counting it → `pending` can reach 0.
+- A track with no feature row still makes Normalization no-op (gain 0).
+- Component-pending queries stop counting the failed source → progress can reach 0.
 - It is counted in neither `pending` nor `done`, so `total` excludes it; 100% is
   reached once every *attemptable* track is resolved.
 
@@ -334,10 +353,8 @@ from disk are detected on the next periodic sync scan, not instantly — see
 
 The on-play boost fires on **every** track load, whether or not the track is
 already analyzed — `Enqueue`'s dedup tracks only in-flight/queued state, not
-analysis freshness. `analyzeOne` therefore re-checks `AnalysisRepository.GetFeatures`
-and returns early when `existing.AnalyzerVersion >= analyzerVersion`, before running
-the ffmpeg pass, so replaying an already-analyzed track costs one `GetFeatures`
-lookup rather than a full re-analysis.
+analysis freshness. `analyzeOne` re-checks the pending component mask before
+running; replaying a current track costs only component-version lookups.
 
 ## Wails-Exposed Methods (`AnalysisService`)
 

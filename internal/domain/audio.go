@@ -149,6 +149,22 @@ type LoudnessAnalyzer interface {
 	Analyze(ctx context.Context, path string) (*TrackFeatures, error)
 }
 
+// AnalysisComponents identifies independently versioned raw-analysis sources.
+// A track can be current for one source while still needing the other.
+type AnalysisComponents uint8
+
+const (
+	AnalysisComponentFFmpeg AnalysisComponents = 1 << iota
+	AnalysisComponentAubio
+	AnalysisComponentsAll = AnalysisComponentFFmpeg | AnalysisComponentAubio
+)
+
+// ComponentAnalyzer is implemented by analyzers that can skip stale sources
+// while sharing one decode when more than one source is requested.
+type ComponentAnalyzer interface {
+	AnalyzeComponents(ctx context.Context, path string, components AnalysisComponents) (*TrackFeatures, error)
+}
+
 // SleepInhibitor prevents the OS from sleeping while music is playing.
 type SleepInhibitor interface {
 	Inhibit() error

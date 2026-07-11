@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS idx_tracks_analysis_pending_backfill;
