@@ -159,12 +159,12 @@ watch(() => store.theme, (colors) => {
 
       <!-- Seek bar -->
       <div class="flex items-center gap-1.5 mt-2">
-        <span class="text-[10px] text-white/40 tabular-nums w-7 text-right shrink-0">
+        <span class="text-[10px] text-white/80 tabular-nums w-7 text-right shrink-0">
           {{ formatTime(displayPosition) }}
         </span>
         <Slider :model-value="isSeeking ? seekValue : store.progressPercent" :min="0" :max="100" :step="0.1"
           class="flex-1" @update:model-value="(v) => (seekValue = v)" @mousedown="onSeekStart" @mouseup="onSeekEnd" />
-        <span class="text-[10px] text-white/40 tabular-nums w-7 shrink-0">
+        <span class="text-[10px] text-white/80 tabular-nums w-7 shrink-0">
           {{ formatTime(store.duration) }}
         </span>
       </div>
