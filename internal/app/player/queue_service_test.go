@@ -169,6 +169,83 @@ func TestSetShuffle_WithoutCurrentTrackShufflesEntireQueue(t *testing.T) {
 	}
 }
 
+func TestShuffleTracks_DisablingRestoresSourceOrderAndCurrentTrack(t *testing.T) {
+	q := NewQueueService(slog.Default())
+	q.rng = rand.New(rand.NewSource(1))
+	source := []*domain.TrackDTO{
+		makeTrack("A"), makeTrack("B"), makeTrack("C"),
+		makeTrack("D"), makeTrack("E"), makeTrack("F"),
+	}
+
+	q.ShuffleTracks(source)
+	currentID := q.GetCurrentTrack().ID
+	if ids := queueIDs(q); equalSlices(ids, []string{"A", "B", "C", "D", "E", "F"}) {
+		t.Fatalf("expected ShuffleTracks to reorder source queue, got %v", ids)
+	}
+
+	q.SetShuffle(false)
+
+	if ids := queueIDs(q); !equalSlices(ids, []string{"A", "B", "C", "D", "E", "F"}) {
+		t.Fatalf("expected source order after unshuffle, got %v", ids)
+	}
+	if track := q.GetCurrentTrack(); track == nil || track.ID != currentID {
+		t.Fatalf("expected current track %q to remain selected, got %#v", currentID, track)
+	}
+}
+
+func TestShuffleTracks_WithQueueCapUnshufflesSelectedTracksInSourceOrder(t *testing.T) {
+	q := NewQueueService(slog.Default())
+	q.rng = rand.New(rand.NewSource(1))
+	q.SetMaxSize(3)
+	source := []*domain.TrackDTO{
+		makeTrack("A"), makeTrack("B"), makeTrack("C"),
+		makeTrack("D"), makeTrack("E"), makeTrack("F"),
+	}
+
+	q.ShuffleTracks(source)
+	selected := queueIDs(q)
+	currentID := q.GetCurrentTrack().ID
+
+	q.SetShuffle(false)
+
+	selectedSet := make(map[string]bool, len(selected))
+	for _, id := range selected {
+		selectedSet[id] = true
+	}
+	want := make([]string, 0, len(selected))
+	for _, track := range source {
+		if selectedSet[track.ID] {
+			want = append(want, track.ID)
+		}
+	}
+	if ids := queueIDs(q); !equalSlices(ids, want) {
+		t.Fatalf("expected selected tracks in source order %v, got %v", want, ids)
+	}
+	if track := q.GetCurrentTrack(); track == nil || track.ID != currentID {
+		t.Fatalf("expected current track %q to remain selected, got %#v", currentID, track)
+	}
+}
+
+func TestMoodRadioRefill_UnshuffleRestoresSeedAndGeneratedOrder(t *testing.T) {
+	q := NewQueueService(slog.Default())
+	q.rng = rand.New(rand.NewSource(1))
+	seedBatch := []*domain.TrackDTO{makeTrack("seed"), makeTrack("one"), makeTrack("two")}
+	refillBatch := []*domain.TrackDTO{makeTrack("three"), makeTrack("four")}
+
+	q.ShuffleTracks(seedBatch)
+	q.AppendTracks(refillBatch)
+	currentID := q.GetCurrentTrack().ID
+
+	q.SetShuffle(false)
+
+	if ids := queueIDs(q); !equalSlices(ids, []string{"seed", "one", "two", "three", "four"}) {
+		t.Fatalf("expected Mood Radio seed and refill order after unshuffle, got %v", ids)
+	}
+	if track := q.GetCurrentTrack(); track == nil || track.ID != currentID {
+		t.Fatalf("expected current track %q to remain selected, got %#v", currentID, track)
+	}
+}
+
 func TestInsertAfterCurrent_CurrentlyPlayingTrack_NoOp(t *testing.T) {
 	q := NewQueueService(slog.Default())
 	q.SetQueue([]*domain.TrackDTO{makeTrack("A"), makeTrack("B"), makeTrack("C")}, 1)

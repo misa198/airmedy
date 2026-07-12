@@ -79,4 +79,27 @@ describe('useMoodRadioStore', () => {
     expect(mockGenerateMoodRadio).toHaveBeenCalledWith('current', ['seed', 'current'], 15)
     radio.dispose()
   })
+
+  it('refills after unshuffle moves the current radio track near the queue tail', async () => {
+    const app = useAppStore()
+    app.libraryAnalysisEnabled = true
+    const player = usePlayerStore()
+    player.queue = [{ id: 'D' }, { id: 'C' }, { id: 'G' }, { id: 'B' }, { id: 'A' }, { id: 'E' }] as any
+    player.currentTrack = { id: 'G' } as any
+    const radio = useMoodRadioStore()
+    radio.active = true
+    radio.init()
+    mockGenerateMoodRadio.mockResolvedValue([{ id: 'refill' }])
+
+    // Unshuffle keeps G playing but restores the original source order,
+    // placing G at the tail. Queue length and current ID are unchanged.
+    player.queue = [{ id: 'A' }, { id: 'B' }, { id: 'C' }, { id: 'D' }, { id: 'E' }, { id: 'G' }] as any
+
+    await nextTick()
+    await nextTick()
+
+    expect(mockGenerateMoodRadio).toHaveBeenCalledWith('G', ['A', 'B', 'C', 'D', 'E', 'G'], 15)
+    expect(mockAppendTracks).toHaveBeenCalledWith([{ id: 'refill' }])
+    radio.dispose()
+  })
 })

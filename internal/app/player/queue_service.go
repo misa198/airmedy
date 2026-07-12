@@ -140,8 +140,15 @@ func (s *QueueService) ShuffleTracks(tracks []*domain.TrackDTO) {
 		return
 	}
 
-	shuffled := make([]*domain.TrackDTO, len(tracks))
-	copy(shuffled, tracks)
+	// Keep the source order independently from the playback order. In
+	// particular, starting a queue through a "Shuffle" action must not make
+	// unshuffle restore the already-randomized order: albums, playlists, and
+	// every other source need to come back in their supplied order.
+	source := make([]*domain.TrackDTO, len(tracks))
+	copy(source, tracks)
+
+	shuffled := make([]*domain.TrackDTO, len(source))
+	copy(shuffled, source)
 	s.rng.Shuffle(len(shuffled), func(i, j int) {
 		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
 	})
@@ -153,9 +160,19 @@ func (s *QueueService) ShuffleTracks(tracks []*domain.TrackDTO) {
 		shuffled = shuffled[:s.maxSize]
 	}
 
-	original := make([]*domain.TrackDTO, len(shuffled))
-	copy(original, shuffled)
-	s.originalList = original
+	// The cap chooses the active track set from the shuffled list. Put that
+	// same set back into source order for unshuffle, rather than preserving its
+	// random order as the original queue.
+	selected := make(map[string]struct{}, len(shuffled))
+	for _, track := range shuffled {
+		selected[track.ID] = struct{}{}
+	}
+	s.originalList = make([]*domain.TrackDTO, 0, len(shuffled))
+	for _, track := range source {
+		if _, ok := selected[track.ID]; ok {
+			s.originalList = append(s.originalList, track)
+		}
+	}
 	s.shuffledList = shuffled
 	s.currentIndex = 0
 }

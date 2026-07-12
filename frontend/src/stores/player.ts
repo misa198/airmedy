@@ -324,6 +324,12 @@ export const usePlayerStore = defineStore('player', () => {
     await PlayerService.SetShuffle(s)
     const q = await PlayerService.GetQueue()
     queue.value = (q.filter(Boolean) as TrackDTO[])
+
+    // Do not rely solely on the queue-order watcher: unshuffle can leave the
+    // current track and queue length unchanged while moving that track to the
+    // tail. Ask Mood Radio to re-check after this store has the authoritative
+    // post-toggle order. Its refilling guard coalesces this with the watcher.
+    void useMoodRadioStore().refillIfNeeded()
   }
 
   async function setRepeatMode(m: string) {
