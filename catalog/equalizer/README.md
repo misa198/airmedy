@@ -2,7 +2,7 @@
 
 ## Summary
 
-10-band parametric equalizer with named profiles and built-in presets. EQ is applied at the audio adapter level across all platforms (SFBAudioEngine on macOS, miniaudio on Windows/Linux). Users can create, rename, delete, and switch profiles. Band gains are applied live. The global enabled state is persisted across app restarts via `AppSettings`. Presets contain only their ten band gains; **Preamp** (dB) and **Stereo Widener** (mid/side width) are global settings.
+10-band parametric equalizer with named profiles and built-in presets. EQ is applied at the audio adapter level across all platforms (SFBAudioEngine on macOS, miniaudio on Windows/Linux). Users can create, rename, delete, and switch profiles. Band gains are applied live. The global enabled state is persisted across app restarts via `AppSettings`. Presets contain only their ten band gains; **Preamp** (dB) and **Stereo Widener** (mid/side width) are global settings whose audible effect is controlled by the EQ on/off toggle.
 
 ## Files
 
@@ -126,12 +126,16 @@ bands individually, not the shared `AVAudioUnitEQ` unit's own `bypass` property.
 The same persistent EQ node also carries [Volume Normalization](../normalization/README.md)'s
 `globalGain`, and a unit-level bypass silences the *whole* Audio Unit — `globalGain`
 included. Per-band bypass keeps EQ toggling and normalization gain independent.
+When EQ is disabled, `EQService` explicitly applies neutral user values (`0 dB` preamp and
+`100%` stereo width); its saved values are restored when EQ is re-enabled.
 
 ## Preamp (global)
 
 A user-adjustable gain (dB, -12..12) stored in `AppSettings.EQPreamp`, applied at startup and
-live via `EQService.SetPreamp`. It is never changed by loading, creating, or editing a preset;
-presets always contain exactly the ten bands. This is a **different value** from Volume
+live via `EQService.SetPreamp` while EQ is enabled. Disabling EQ applies a neutral `0 dB`
+preamp without changing the saved setting; enabling it restores the saved value. It is never
+changed by loading, creating, or editing a preset; presets always contain exactly the ten bands.
+This is a **different value** from Volume
 Normalization's automatic loudness-matching gain — the two compose rather than share storage:
 
 - **macOS** (`native_player_darwin.m`): `AirmedyDeck.normPreampDB` (normalization, per-deck/source)
@@ -143,7 +147,8 @@ Normalization's automatic loudness-matching gain — the two compose rather than
 
 ## Stereo Widener (global)
 
-A mid/side width adjustment applied independently of the active EQ profile, stored in
+A mid/side width adjustment applied independently of the active EQ profile but controlled by
+the EQ toggle, stored in
 `AppSettings.StereoWidth` (0=mono, 100=neutral/identity, up to 200=wider):
 
 ```
@@ -165,7 +170,8 @@ node stays permanently in the audio graph with no special-casing for the default
   wiring changes to route through the widener.
 - **Windows/Linux**: a custom `ma_node` (`ma_widener_node`, one input/output bus, vtable-based
   process callback) always attached as the tail of the chain, before the engine endpoint — so it
-  applies regardless of whether the EQ is enabled. The 3 sites that route a sound to either
+  stays in the graph when EQ is disabled, but `EQService` sets it to the neutral width of 100%.
+  The 3 sites that route a sound to either
   `eq_bands[0]` or a fallback (`load_into_slot`, `ma_player_set_eq_enabled`,
   `ma_player_begin_crossfade`) target the widener instead of the raw engine endpoint when EQ is
   disabled.
@@ -183,10 +189,14 @@ UpdateBand(ctx, profileID string, bandIndex int, gain float64) error  // live up
 SetPreamp(ctx, gainDB float64) error                              // global live update, clamped [-12, 12]
 RenameProfile(ctx, id, name string) error
 DeleteProfile(ctx, id string) error               // error if default profile
-SetEnabled(ctx, enabled bool) error               // toggle EQ globally
+SetEnabled(ctx, enabled bool) error               // toggle EQ, preamp, and stereo width globally
 GetStereoWidth(ctx) (float64, error)              // global, 100 = neutral
 SetStereoWidth(ctx, widthPercent float64) error   // clamped [0, 200]
 ```
+
+At debug log level, `EQService` records EQ enable-state changes plus the saved and effective
+preamp/stereo-width values sent to the audio adapter. This makes it possible to confirm that
+disabling EQ applies the neutral values without losing the user's saved settings.
 
 ## Wails-Exposed Methods
 
@@ -243,4 +253,6 @@ Located in Settings → Equalizer tab.
   live-drag + commit-on-release pattern as the Normalization Target LUFS slider. State lives in
   `frontend/src/stores/app.ts` (`stereoWidth`, `updateStereoWidth`); loaded with `?? 100`
   (nullish, not `||`) so a stored `0` (mono) is preserved rather than coerced back to neutral.
+- While EQ is disabled, changes to Preamp and Stereo Width are persisted but their live audio
+  effect remains neutral (`0 dB` / `100%`) until EQ is re-enabled.
 - Platform note: EQ interaction is live on all platforms.

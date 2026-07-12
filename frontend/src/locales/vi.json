@@ -19,7 +19,8 @@
     "min": "phút",
     "delete": "Xóa",
     "yes": "Có",
-    "no": "Không"
+    "no": "Không",
+    "open_devtools": "Mở công cụ dành cho nhà phát triển"
   },
   "app": {
     "update_available": "Có bản cập nhật mới",

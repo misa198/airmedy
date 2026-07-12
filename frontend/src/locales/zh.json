@@ -19,7 +19,8 @@
     "min": "分钟",
     "delete": "删除",
     "yes": "是",
-    "no": "否"
+    "no": "否",
+    "open_devtools": "打开开发者工具"
   },
   "app": {
     "update_available": "有可用更新",

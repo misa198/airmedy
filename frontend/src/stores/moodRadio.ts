@@ -64,10 +64,10 @@ export const useMoodRadioStore = defineStore('moodRadio', () => {
       return
     }
     const playerStore = usePlayerStore()
-    // queue.length is the full backend list (it doesn't shrink as tracks
-    // play), so "remaining" has to be measured from the current track's
-    // position, not raw length — otherwise jumping straight to (or near)
-    // the last queued track never trips a refill.
+    // The queue is the full backend list (it doesn't shrink as tracks play),
+    // so "remaining" has to be measured from the current track's position,
+    // not raw length — otherwise jumping straight to (or near) the last
+    // queued track never trips a refill.
     const currentIndex = playerStore.currentTrack
       ? playerStore.queue.findIndex(t => t.id === playerStore.currentTrack!.id)
       : -1
@@ -107,7 +107,11 @@ export const useMoodRadioStore = defineStore('moodRadio', () => {
     _initialized = true
     const playerStore = usePlayerStore()
     _stopWatch = watch(
-      [() => playerStore.queue.length, () => playerStore.currentTrack?.id],
+      // A shuffle toggle can move the current track close to the tail without
+      // changing either queue length or its ID. Watch the ordered ID sequence
+      // so an unshuffle immediately re-evaluates the remaining count and
+      // refills Mood Radio when needed.
+      [() => playerStore.queue.map(track => track.id).join('\u0000'), () => playerStore.currentTrack?.id],
       () => refillIfNeeded(),
     )
     // Turning off library analysis mid-session must end Mood Radio right
@@ -136,6 +140,7 @@ export const useMoodRadioStore = defineStore('moodRadio', () => {
     seedTrackId,
     start,
     stop,
+    refillIfNeeded,
     init,
     dispose,
   }

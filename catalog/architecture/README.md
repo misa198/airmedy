@@ -134,7 +134,8 @@ Go emits events via `application.EmitEvent(name, data)`. Frontend subscribes via
 Automatic macOS track-transition notifications are emitted natively through the injected
 `domain.TrackTransitionNotifier`; they do not traverse the Wails event bus. Their activation
 callback is registered after the main window is created and calls `WindowService.ShowMain`, so a
-notification click reveals the full window even if the mini player is open.
+notification click reveals the full window even if the mini player is open, without changing its
+saved frame or maximized state.
 
 **Library events:** `library:sync-started`, `library:sync-progress`, `library:sync-finished`, `library:track-updated`, `library:updated`
 

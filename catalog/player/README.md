@@ -118,6 +118,7 @@ artwork is attached when present. The macOS authorization request happens on the
 notification; a denial never affects playback.
 Clicking the notification invokes `TrackTransitionNotificationActivator`, which calls
 `WindowService.ShowMain()` to bring the main window to front (or open it if closed).
+This only shows and focuses the existing window; it preserves its maximized state and frame.
 
 ## NowPlayingController Interface (Optional)
 
@@ -512,7 +513,7 @@ type QueueService struct {
 
 ### Shuffle
 
-Fisher-Yates shuffle. When entering shuffle mode with a playing track, the current track retains focus (its new shuffled index is tracked) but is not pinned at any fixed position.
+Fisher-Yates shuffle. When entering shuffle mode with a playing track, the playback history and current track retain their existing positions; only the upcoming tracks after the current index are shuffled. With Repeat All, playback loops through this resulting order without reshuffling. If no current track is selected, the entire queue is shuffled and index 0 becomes current. `ShuffleTracks` also keeps an independent source-order `originalList`, so disabling shuffle restores the supplied playlist/album/track-list order while retaining the current track. Mood Radio refill batches append to both lists; unshuffle therefore restores the seed and every generated batch in generation order. The Mood Radio store watches the ordered queue IDs as well as the current track, and `playerStore.setShuffle` explicitly invokes the same refill check after receiving the authoritative post-toggle queue; an unshuffle that moves the current track near the tail therefore refills even if a reactive reorder notification is missed.
 
 **Shuffle state invariant:** `SetQueue` (called by `PlayTracks`/`PlayTrackIDs`) always resets shuffle to false. `ShuffleTracks`/`ShuffleTrackIDs` always sets shuffle to true. UI components must not call `SetShuffle(false)` after `playTracks` — the invariant is enforced at the queue layer.
 
@@ -531,7 +532,7 @@ Entry points enforce the cap differently depending on how they grow the queue:
 | Method | Over-cap behavior |
 | --- | --- |
 | `SetQueue(tracks, startIndex)` | Truncates to the first `maxSize` tracks; `startIndex` clamped into range |
-| `ShuffleTracks(tracks)` | Shuffles, then takes the first `maxSize` of the shuffled result — doubles as random sampling |
+| `ShuffleTracks(tracks)` | Shuffles, then takes the first `maxSize` of the shuffled result — doubles as random sampling; its retained tracks restore in their original source order when shuffle is disabled |
 | `AppendTracks(tracks)` / `InsertListAfterCurrent(tracks)` | Incoming batch is first capped to `maxSize` (or `maxSize-1` if a current track exists, reserving its slot), then the *existing* queue is trimmed via `trimActiveToLocked` to make room before the batch is added — so newly added tracks are never the ones sacrificed |
 | `Restore(...)` | Trimmed via `enforceMaxSizeLocked` after hydration, so a session saved under a higher/no limit is truncated on load |
 

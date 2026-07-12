@@ -152,15 +152,15 @@ type EQController interface {
 }
 
 // EQPreampController is an optional interface implemented by audio players that support a
-// global user-adjustable EQ preamp (dB). This is independent from and composes
-// with NormalizationController's automatic loudness-normalization gain — the two are never the
-// same value.
+// global user-adjustable EQ preamp (dB). It composes with NormalizationController's automatic
+// loudness-normalization gain, but EQService applies 0 dB whenever EQ is disabled.
 type EQPreampController interface {
 	SetEQPreamp(db float64) error
 }
 
 // StereoWidthController is an optional interface implemented by audio players that support a
-// global stereo-width (mid/side) adjustment. 100 is neutral/identity, 0 is mono, up to 200 is wider.
+// global stereo-width (mid/side) adjustment. EQService applies 100 (neutral/identity) whenever
+// EQ is disabled; 0 is mono, up to 200 is wider.
 type StereoWidthController interface {
 	SetStereoWidth(widthPercent float64) error
 }

@@ -34,7 +34,7 @@ var defaultPresets = []struct {
 
 // defaultPresetOrder is the canonical order returned to every UI consumer.
 var defaultPresetOrder = []string{
-	"flat", "classical", "club", "dance", "full_bass", "full_bass_treble", "full_treble",
+	"flat", "classical", "club", "dance", "full_bass", "full_treble", "full_bass_treble",
 	"headphones", "large_hall", "live", "party", "pop", "reggae", "rock", "jazz", "hip_hop", "ska", "soft",
 	"soft_rock", "techno", "bass_booster", "treble_booster", "acoustic_vocal", "electronic_dance",
 	"rnb_soul", "vocal_booster", "loudness", "spoken_word_podcast", "harman_target", "sony_excited",
@@ -88,21 +88,7 @@ func (s *EQService) ApplyActiveProfile(ctx context.Context) error {
 		}
 		_ = s.player.SetEQEnabled(enabled)
 	}
-	if s.preamp != nil {
-		preamp := 0.0
-		if settings != nil {
-			preamp = settings.EQPreamp
-		}
-		_ = s.preamp.SetEQPreamp(preamp)
-	}
-	if s.width != nil {
-		width := 100.0
-		if settings != nil {
-			width = settings.StereoWidth
-		}
-		_ = s.width.SetStereoWidth(width)
-	}
-	return nil
+	return s.applyGlobalControls(settings)
 }
 
 func (s *EQService) SeedDefaults(ctx context.Context) error {
@@ -215,7 +201,9 @@ func (s *EQService) ApplyProfile(ctx context.Context, id string) error {
 	}
 
 	// Also ensure EQ is enabled when a profile is applied
-	if settings, err := s.settings.Load(ctx); err == nil {
+	var settings *domain.AppSettings
+	if loadedSettings, err := s.settings.Load(ctx); err == nil {
+		settings = loadedSettings
 		settings.EQEnabled = true
 		_ = s.settings.Save(ctx, settings)
 	}
@@ -228,7 +216,7 @@ func (s *EQService) ApplyProfile(ctx context.Context, id string) error {
 		}
 		_ = s.player.SetEQEnabled(true)
 	}
-	return nil
+	return s.applyGlobalControls(settings)
 }
 
 func (s *EQService) CreateProfile(ctx context.Context, name string) (*domain.EQProfile, error) {
@@ -280,8 +268,11 @@ func (s *EQService) SetPreamp(ctx context.Context, gainDB float64) error {
 	if err := s.settings.Save(ctx, settings); err != nil {
 		return err
 	}
+	if s.logger != nil {
+		s.logger.Debug("updated eq preamp", "saved_db", gainDB, "effective_db", effectivePreamp(settings), "eq_enabled", settings.EQEnabled)
+	}
 	if s.preamp != nil {
-		return s.preamp.SetEQPreamp(gainDB)
+		return s.preamp.SetEQPreamp(effectivePreamp(settings))
 	}
 	return nil
 }
@@ -310,8 +301,11 @@ func (s *EQService) SetStereoWidth(ctx context.Context, widthPercent float64) er
 	if err := s.settings.Save(ctx, settings); err != nil {
 		return err
 	}
+	if s.logger != nil {
+		s.logger.Debug("updated eq stereo width", "saved_percent", widthPercent, "effective_percent", effectiveStereoWidth(settings), "eq_enabled", settings.EQEnabled)
+	}
 	if s.width != nil {
-		return s.width.SetStereoWidth(widthPercent)
+		return s.width.SetStereoWidth(effectiveStereoWidth(settings))
 	}
 	return nil
 }
@@ -349,11 +343,55 @@ func (s *EQService) SetEnabled(ctx context.Context, enabled bool) error {
 	if err := s.settings.Save(ctx, settings); err != nil {
 		return err
 	}
+	if s.logger != nil {
+		s.logger.Debug("updated eq enabled state", "enabled", enabled, "saved_preamp_db", settings.EQPreamp, "saved_stereo_width_percent", settings.StereoWidth)
+	}
 
 	if s.player != nil {
-		return s.player.SetEQEnabled(enabled)
+		if err := s.player.SetEQEnabled(enabled); err != nil {
+			return err
+		}
+	}
+	return s.applyGlobalControls(settings)
+}
+
+// applyGlobalControls applies the preamp and stereo-width values that are effective
+// for the current EQ state. Their saved values are retained while EQ is off so they
+// can be restored unchanged when it is enabled again.
+func (s *EQService) applyGlobalControls(settings *domain.AppSettings) error {
+	if settings == nil {
+		return nil
+	}
+	preamp := effectivePreamp(settings)
+	width := effectiveStereoWidth(settings)
+	if s.logger != nil {
+		s.logger.Debug("applied eq global controls", "eq_enabled", settings.EQEnabled, "preamp_db", preamp, "stereo_width_percent", width)
+	}
+	if s.preamp != nil {
+		if err := s.preamp.SetEQPreamp(preamp); err != nil {
+			return err
+		}
+	}
+	if s.width != nil {
+		if err := s.width.SetStereoWidth(width); err != nil {
+			return err
+		}
 	}
 	return nil
+}
+
+func effectivePreamp(settings *domain.AppSettings) float64 {
+	if !settings.EQEnabled {
+		return 0
+	}
+	return settings.EQPreamp
+}
+
+func effectiveStereoWidth(settings *domain.AppSettings) float64 {
+	if !settings.EQEnabled {
+		return 100
+	}
+	return settings.StereoWidth
 }
 
 func makeBands(gains []float64) []domain.EQBand {

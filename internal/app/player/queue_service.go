@@ -140,8 +140,15 @@ func (s *QueueService) ShuffleTracks(tracks []*domain.TrackDTO) {
 		return
 	}
 
-	shuffled := make([]*domain.TrackDTO, len(tracks))
-	copy(shuffled, tracks)
+	// Keep the source order independently from the playback order. In
+	// particular, starting a queue through a "Shuffle" action must not make
+	// unshuffle restore the already-randomized order: albums, playlists, and
+	// every other source need to come back in their supplied order.
+	source := make([]*domain.TrackDTO, len(tracks))
+	copy(source, tracks)
+
+	shuffled := make([]*domain.TrackDTO, len(source))
+	copy(shuffled, source)
 	s.rng.Shuffle(len(shuffled), func(i, j int) {
 		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
 	})
@@ -153,9 +160,19 @@ func (s *QueueService) ShuffleTracks(tracks []*domain.TrackDTO) {
 		shuffled = shuffled[:s.maxSize]
 	}
 
-	original := make([]*domain.TrackDTO, len(shuffled))
-	copy(original, shuffled)
-	s.originalList = original
+	// The cap chooses the active track set from the shuffled list. Put that
+	// same set back into source order for unshuffle, rather than preserving its
+	// random order as the original queue.
+	selected := make(map[string]struct{}, len(shuffled))
+	for _, track := range shuffled {
+		selected[track.ID] = struct{}{}
+	}
+	s.originalList = make([]*domain.TrackDTO, 0, len(shuffled))
+	for _, track := range source {
+		if _, ok := selected[track.ID]; ok {
+			s.originalList = append(s.originalList, track)
+		}
+	}
 	s.shuffledList = shuffled
 	s.currentIndex = 0
 }
@@ -449,23 +466,27 @@ func (s *QueueService) SetShuffle(enabled bool) {
 	}
 
 	if enabled {
-		// Enabling shuffle: build shuffled list and find current track's new index
-		var currentID string
-		if s.currentIndex >= 0 && s.currentIndex < len(s.originalList) {
-			currentID = s.originalList[s.currentIndex].ID
+		if s.currentIndex < 0 || s.currentIndex >= len(s.originalList) {
+			// Without a current track there is no playback history to preserve.
+			s.shuffle = true
+			s.rebuildShuffle(-1, false)
+			return
 		}
 
+		// Preserve playback history and the current track. Only the tracks that
+		// have not been played yet are randomized.
+		currentIndex := s.currentIndex
+		shuffled := make([]*domain.TrackDTO, len(s.originalList))
+		copy(shuffled[:currentIndex+1], s.originalList[:currentIndex+1])
+		copy(shuffled[currentIndex+1:], s.originalList[currentIndex+1:])
+		s.rng.Shuffle(len(shuffled)-currentIndex-1, func(i, j int) {
+			i += currentIndex + 1
+			j += currentIndex + 1
+			shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
+		})
+
+		s.shuffledList = shuffled
 		s.shuffle = true
-		s.rebuildShuffle(-1, false)
-
-		if currentID != "" {
-			for i, t := range s.shuffledList {
-				if t.ID == currentID {
-					s.currentIndex = i
-					break
-				}
-			}
-		}
 	} else {
 		// Disabling shuffle: restore original index
 		if s.currentIndex >= 0 && s.currentIndex < len(s.shuffledList) {

@@ -19,7 +19,8 @@
     "min": "分",
     "delete": "削除",
     "yes": "はい",
-    "no": "いいえ"
+    "no": "いいえ",
+    "open_devtools": "開発者ツールを開く"
   },
   "app": {
     "update_available": "アップデートが利用可能です",

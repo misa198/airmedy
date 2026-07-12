@@ -3,6 +3,7 @@ import { onMounted, watch, onUnmounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import MainLayout from './layouts/MainLayout.vue'
 import FindLyricsDialog from './components/FindLyricsDialog.vue'
+import DevToolsOverlay from './components/DevToolsOverlay.vue'
 import { hexToRgba } from '@airmedy/utils'
 import { usePlayerStore } from './stores/player'
 import { useDeviceStore } from './stores/device'
@@ -21,6 +22,7 @@ const deviceStore = useDeviceStore()
 const playlistsStore = usePlaylistsStore()
 const moodRadioStore = useMoodRadioStore()
 const appStore = useAppStore()
+const isDevelopment = import.meta.env.DEV
 
 const isRouterReady = ref(false)
 const isMiniPlayer = computed(() => {
@@ -183,6 +185,7 @@ watch(() => playerStore.playerMode, (newMode) => {
     <RouterView v-if="isMiniPlayer" />
     <MainLayout v-else />
   </template>
+  <DevToolsOverlay v-if="isDevelopment && !isMiniPlayer" />
   <FindLyricsDialog />
 </template>
 

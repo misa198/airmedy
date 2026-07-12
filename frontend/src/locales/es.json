@@ -19,7 +19,8 @@
     "min": "min",
     "delete": "Eliminar",
     "yes": "Sí",
-    "no": "No"
+    "no": "No",
+    "open_devtools": "Abrir herramientas de desarrollo"
   },
   "app": {
     "update_available": "Actualización disponible",

@@ -258,6 +258,12 @@ playback panel only retains the dependency hint
 (`settings.library_analysis.requires_enable`) when normalization is unavailable
 because analysis is off.
 
+### About Settings (`components/settings/AboutSettings.vue`)
+
+The application icon uses a rounded wrapper with a regular `box-shadow`, rather
+than `filter: drop-shadow()`. This avoids an intermittent gray compositing
+surface rendered by the desktop webview when the About panel mounts.
+
 The EQ section is identified by `#equalizer`; `SettingsView` recognizes the
 `section=equalizer` query on the Playback route and scrolls that section into view.
 
@@ -292,6 +298,13 @@ new hover explanations.
 - **Path Morphing**: Play/Pause buttons in `PlayerFooter`, `PlayerPlaybackControls`, and `MiniPlayer` use SVG path morphing for Apple Music-style fluid transitions.
 - **Tactile Feedback**: Interactive buttons use a `scale-95` active state for a "pressed" feel.
 - **Glass-Morphism**: Surfaces use `var(--bg-glass)` with `backdrop-filter: blur(30px)`.
+
+### Development Tools Overlay
+
+`DevToolsOverlay.vue` is mounted by `App.vue` only when `import.meta.env.DEV` is true (and never
+in the mini-player window). Its glass button invokes Wails `Window.OpenDevTools()` for the current
+webview and supports pointer dragging anywhere within the viewport for the current session. The
+overlay is not rendered in production builds.
 
 ## Track Table (`TrackTable.vue`)
 

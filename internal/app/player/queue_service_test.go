@@ -2,6 +2,7 @@ package player
 
 import (
 	"log/slog"
+	"math/rand"
 	"testing"
 
 	"airmedy/internal/domain"
@@ -95,6 +96,156 @@ func TestInsertAfterCurrent_ShuffleInsertsAtCurrentPlusOne(t *testing.T) {
 	}
 }
 
+func TestSetShuffle_OnlyShufflesTracksAfterCurrent(t *testing.T) {
+	q := NewQueueService(slog.Default())
+	q.rng = rand.New(rand.NewSource(1))
+	q.SetQueue([]*domain.TrackDTO{
+		makeTrack("A"), makeTrack("B"), makeTrack("C"),
+		makeTrack("D"), makeTrack("E"), makeTrack("F"),
+	}, 2)
+
+	q.SetShuffle(true)
+	ids := queueIDs(q)
+	if !equalSlices(ids[:3], []string{"A", "B", "C"}) {
+		t.Fatalf("expected history and current track to remain [A B C], got %v", ids[:3])
+	}
+	if !sameTrackIDs(ids[3:], []string{"D", "E", "F"}) {
+		t.Fatalf("expected shuffled suffix to contain [D E F], got %v", ids[3:])
+	}
+	if equalSlices(ids[3:], []string{"D", "E", "F"}) {
+		t.Fatalf("expected deterministic shuffle to reorder upcoming tracks, got %v", ids[3:])
+	}
+	if q.currentIndex != 2 || q.GetCurrentTrack().ID != "C" {
+		t.Fatalf("expected C to remain current at index 2, got %q at index %d", q.GetCurrentTrack().ID, q.currentIndex)
+	}
+}
+
+func TestSetShuffle_AtLastTrackKeepsQueueOrder(t *testing.T) {
+	q := NewQueueService(slog.Default())
+	q.SetQueue([]*domain.TrackDTO{makeTrack("A"), makeTrack("B"), makeTrack("C")}, 2)
+
+	q.SetShuffle(true)
+
+	if ids := queueIDs(q); !equalSlices(ids, []string{"A", "B", "C"}) {
+		t.Fatalf("expected no order change when no upcoming tracks exist, got %v", ids)
+	}
+}
+
+func TestSetShuffle_DisablingRestoresOriginalOrderAndCurrentTrack(t *testing.T) {
+	q := NewQueueService(slog.Default())
+	q.rng = rand.New(rand.NewSource(1))
+	q.SetQueue([]*domain.TrackDTO{
+		makeTrack("A"), makeTrack("B"), makeTrack("C"),
+		makeTrack("D"), makeTrack("E"), makeTrack("F"),
+	}, 2)
+	q.SetShuffle(true)
+
+	q.SetShuffle(false)
+
+	if ids := queueIDs(q); !equalSlices(ids, []string{"A", "B", "C", "D", "E", "F"}) {
+		t.Fatalf("expected original queue order, got %v", ids)
+	}
+	if q.currentIndex != 2 || q.GetCurrentTrack().ID != "C" {
+		t.Fatalf("expected C to remain current at index 2, got %q at index %d", q.GetCurrentTrack().ID, q.currentIndex)
+	}
+}
+
+func TestSetShuffle_WithoutCurrentTrackShufflesEntireQueue(t *testing.T) {
+	q := NewQueueService(slog.Default())
+	q.rng = rand.New(rand.NewSource(1))
+	q.SetQueue([]*domain.TrackDTO{makeTrack("A"), makeTrack("B"), makeTrack("C")}, -1)
+
+	q.SetShuffle(true)
+
+	ids := queueIDs(q)
+	if !sameTrackIDs(ids, []string{"A", "B", "C"}) {
+		t.Fatalf("expected shuffled queue to contain [A B C], got %v", ids)
+	}
+	if equalSlices(ids, []string{"A", "B", "C"}) {
+		t.Fatalf("expected deterministic full-queue shuffle to reorder tracks, got %v", ids)
+	}
+	if q.currentIndex != 0 {
+		t.Fatalf("expected shuffled queue to select index 0, got %d", q.currentIndex)
+	}
+}
+
+func TestShuffleTracks_DisablingRestoresSourceOrderAndCurrentTrack(t *testing.T) {
+	q := NewQueueService(slog.Default())
+	q.rng = rand.New(rand.NewSource(1))
+	source := []*domain.TrackDTO{
+		makeTrack("A"), makeTrack("B"), makeTrack("C"),
+		makeTrack("D"), makeTrack("E"), makeTrack("F"),
+	}
+
+	q.ShuffleTracks(source)
+	currentID := q.GetCurrentTrack().ID
+	if ids := queueIDs(q); equalSlices(ids, []string{"A", "B", "C", "D", "E", "F"}) {
+		t.Fatalf("expected ShuffleTracks to reorder source queue, got %v", ids)
+	}
+
+	q.SetShuffle(false)
+
+	if ids := queueIDs(q); !equalSlices(ids, []string{"A", "B", "C", "D", "E", "F"}) {
+		t.Fatalf("expected source order after unshuffle, got %v", ids)
+	}
+	if track := q.GetCurrentTrack(); track == nil || track.ID != currentID {
+		t.Fatalf("expected current track %q to remain selected, got %#v", currentID, track)
+	}
+}
+
+func TestShuffleTracks_WithQueueCapUnshufflesSelectedTracksInSourceOrder(t *testing.T) {
+	q := NewQueueService(slog.Default())
+	q.rng = rand.New(rand.NewSource(1))
+	q.SetMaxSize(3)
+	source := []*domain.TrackDTO{
+		makeTrack("A"), makeTrack("B"), makeTrack("C"),
+		makeTrack("D"), makeTrack("E"), makeTrack("F"),
+	}
+
+	q.ShuffleTracks(source)
+	selected := queueIDs(q)
+	currentID := q.GetCurrentTrack().ID
+
+	q.SetShuffle(false)
+
+	selectedSet := make(map[string]bool, len(selected))
+	for _, id := range selected {
+		selectedSet[id] = true
+	}
+	want := make([]string, 0, len(selected))
+	for _, track := range source {
+		if selectedSet[track.ID] {
+			want = append(want, track.ID)
+		}
+	}
+	if ids := queueIDs(q); !equalSlices(ids, want) {
+		t.Fatalf("expected selected tracks in source order %v, got %v", want, ids)
+	}
+	if track := q.GetCurrentTrack(); track == nil || track.ID != currentID {
+		t.Fatalf("expected current track %q to remain selected, got %#v", currentID, track)
+	}
+}
+
+func TestMoodRadioRefill_UnshuffleRestoresSeedAndGeneratedOrder(t *testing.T) {
+	q := NewQueueService(slog.Default())
+	q.rng = rand.New(rand.NewSource(1))
+	seedBatch := []*domain.TrackDTO{makeTrack("seed"), makeTrack("one"), makeTrack("two")}
+	refillBatch := []*domain.TrackDTO{makeTrack("three"), makeTrack("four")}
+
+	q.ShuffleTracks(seedBatch)
+	q.AppendTracks(refillBatch)
+	currentID := q.GetCurrentTrack().ID
+
+	q.SetShuffle(false)
+
+	if ids := queueIDs(q); !equalSlices(ids, []string{"seed", "one", "two", "three", "four"}) {
+		t.Fatalf("expected Mood Radio seed and refill order after unshuffle, got %v", ids)
+	}
+	if track := q.GetCurrentTrack(); track == nil || track.ID != currentID {
+		t.Fatalf("expected current track %q to remain selected, got %#v", currentID, track)
+	}
+}
+
 func TestInsertAfterCurrent_CurrentlyPlayingTrack_NoOp(t *testing.T) {
 	q := NewQueueService(slog.Default())
 	q.SetQueue([]*domain.TrackDTO{makeTrack("A"), makeTrack("B"), makeTrack("C")}, 1)
@@ -134,7 +285,7 @@ func TestInsertAfterCurrent_DuplicateBeforeCurrent_Shuffle(t *testing.T) {
 	tracks := []*domain.TrackDTO{makeTrack("A"), makeTrack("B"), makeTrack("C"), makeTrack("D")}
 	q.SetQueue(tracks, 0)
 	q.SetShuffle(true)
-	
+
 	// Find where A is in the shuffled list
 	list := q.GetQueue()
 	aIdx := -1
@@ -186,6 +337,23 @@ func equalSlices(a, b []string) bool {
 	}
 	for i := range a {
 		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func sameTrackIDs(got, want []string) bool {
+	if len(got) != len(want) {
+		return false
+	}
+	counts := make(map[string]int, len(got))
+	for _, id := range got {
+		counts[id]++
+	}
+	for _, id := range want {
+		counts[id]--
+		if counts[id] < 0 {
 			return false
 		}
 	}

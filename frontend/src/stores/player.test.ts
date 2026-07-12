@@ -23,6 +23,8 @@ vi.mock('@wailsio/runtime', () => ({
 // Mock PlayerService bindings
 const mockGetStatus = vi.fn()
 const mockGetQueue = vi.fn()
+const mockAppendTracks = vi.fn()
+const mockGenerateMoodRadio = vi.fn()
 vi.mock('../../bindings/airmedy/internal/infra/wails/playerservice', () => ({
   GetStatus: () => mockGetStatus(),
   GetQueue: () => mockGetQueue(),
@@ -37,8 +39,15 @@ vi.mock('../../bindings/airmedy/internal/infra/wails/playerservice', () => ({
   SetShuffle: vi.fn(),
   SetRepeatMode: vi.fn(),
   PlayTracks: vi.fn(),
+  AppendTracks: (...args: unknown[]) => mockAppendTracks(...args),
 }))
 
+vi.mock('../../bindings/airmedy/internal/infra/wails/moodradioservice', () => ({
+  GenerateMoodRadio: (...args: unknown[]) => mockGenerateMoodRadio(...args),
+}))
+
+import { useAppStore } from './app'
+import { useMoodRadioStore } from './moodRadio'
 import { usePlayerStore } from './player'
 
 describe('usePlayerStore', () => {
@@ -152,6 +161,24 @@ describe('usePlayerStore', () => {
     expect(store.isQueueOpen).toBe(false)
     expect(store.isLyricsOpen).toBe(false)
     expect(store.isTrackInfoOpen).toBe(false)
+  })
+
+  it('checks Mood Radio refill after unshuffle reorders the current track to the tail', async () => {
+    const app = useAppStore()
+    app.libraryAnalysisEnabled = true
+    const radio = useMoodRadioStore()
+    radio.active = true
+    const store = usePlayerStore()
+    store.currentTrack = { id: 'G' } as any
+    mockGetQueue.mockResolvedValue([{ id: 'A' }, { id: 'B' }, { id: 'C' }, { id: 'D' }, { id: 'E' }, { id: 'G' }])
+    mockGenerateMoodRadio.mockResolvedValue([{ id: 'refill' }])
+
+    await store.setShuffle(false)
+    await nextTick()
+    await nextTick()
+
+    expect(mockGenerateMoodRadio).toHaveBeenCalledWith('G', ['A', 'B', 'C', 'D', 'E', 'G'], 15)
+    expect(mockAppendTracks).toHaveBeenCalledWith([{ id: 'refill' }])
   })
 
   it('init fetches status, theme and queue from backend', async () => {
