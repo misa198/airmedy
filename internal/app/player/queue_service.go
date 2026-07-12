@@ -449,23 +449,27 @@ func (s *QueueService) SetShuffle(enabled bool) {
 	}
 
 	if enabled {
-		// Enabling shuffle: build shuffled list and find current track's new index
-		var currentID string
-		if s.currentIndex >= 0 && s.currentIndex < len(s.originalList) {
-			currentID = s.originalList[s.currentIndex].ID
+		if s.currentIndex < 0 || s.currentIndex >= len(s.originalList) {
+			// Without a current track there is no playback history to preserve.
+			s.shuffle = true
+			s.rebuildShuffle(-1, false)
+			return
 		}
 
+		// Preserve playback history and the current track. Only the tracks that
+		// have not been played yet are randomized.
+		currentIndex := s.currentIndex
+		shuffled := make([]*domain.TrackDTO, len(s.originalList))
+		copy(shuffled[:currentIndex+1], s.originalList[:currentIndex+1])
+		copy(shuffled[currentIndex+1:], s.originalList[currentIndex+1:])
+		s.rng.Shuffle(len(shuffled)-currentIndex-1, func(i, j int) {
+			i += currentIndex + 1
+			j += currentIndex + 1
+			shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
+		})
+
+		s.shuffledList = shuffled
 		s.shuffle = true
-		s.rebuildShuffle(-1, false)
-
-		if currentID != "" {
-			for i, t := range s.shuffledList {
-				if t.ID == currentID {
-					s.currentIndex = i
-					break
-				}
-			}
-		}
 	} else {
 		// Disabling shuffle: restore original index
 		if s.currentIndex >= 0 && s.currentIndex < len(s.shuffledList) {

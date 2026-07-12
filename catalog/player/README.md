@@ -512,7 +512,7 @@ type QueueService struct {
 
 ### Shuffle
 
-Fisher-Yates shuffle. When entering shuffle mode with a playing track, the current track retains focus (its new shuffled index is tracked) but is not pinned at any fixed position.
+Fisher-Yates shuffle. When entering shuffle mode with a playing track, the playback history and current track retain their existing positions; only the upcoming tracks after the current index are shuffled. With Repeat All, playback loops through this resulting order without reshuffling. If no current track is selected, the entire queue is shuffled and index 0 becomes current.
 
 **Shuffle state invariant:** `SetQueue` (called by `PlayTracks`/`PlayTrackIDs`) always resets shuffle to false. `ShuffleTracks`/`ShuffleTrackIDs` always sets shuffle to true. UI components must not call `SetShuffle(false)` after `playTracks` — the invariant is enforced at the queue layer.
 
