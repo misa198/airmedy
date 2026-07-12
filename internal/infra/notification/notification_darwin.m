@@ -1,6 +1,8 @@
 #import <Foundation/Foundation.h>
 #import <UserNotifications/UserNotifications.h>
 
+extern void goHandleTrackTransitionNotificationActivation(void);
+
 @interface AirmedyNotificationDelegate : NSObject <UNUserNotificationCenterDelegate>
 @end
 
@@ -10,6 +12,13 @@
        willPresentNotification:(UNNotification *)notification
          withCompletionHandler:(void (^)(UNNotificationPresentationOptions options))completionHandler {
     completionHandler(UNNotificationPresentationOptionBanner | UNNotificationPresentationOptionList);
+}
+
+- (void)userNotificationCenter:(UNUserNotificationCenter *)center
+ didReceiveNotificationResponse:(UNNotificationResponse *)response
+          withCompletionHandler:(void (^)(void))completionHandler {
+    goHandleTrackTransitionNotificationActivation();
+    completionHandler();
 }
 
 @end
@@ -26,14 +35,23 @@ static void scheduleTrackAdvancedNotification(UNUserNotificationCenter *center,
 
     // Deliberately leave content.sound unset: automatic track changes are silent.
     if (artworkPath.length > 0) {
-        NSURL *url = [NSURL fileURLWithPath:artworkPath];
-        NSError *attachmentError = nil;
-        UNNotificationAttachment *attachment = [UNNotificationAttachment attachmentWithIdentifier:@"artwork"
-                                                                                                  URL:url
-                                                                                              options:nil
-                                                                                                error:&attachmentError];
-        if (attachment != nil) {
-            content.attachments = @[attachment];
+        // UNNotificationAttachment takes ownership of (moves) the file at the given URL
+        // into system-managed storage, which the OS later reclaims/deletes. Copy the
+        // artwork into a throwaway temp file first so the app's shared artwork cache
+        // (used by the now-playing UI and MPNowPlayingInfoCenter) is never consumed.
+        NSString *tempPath = [NSTemporaryDirectory() stringByAppendingPathComponent:
+                               [[NSUUID UUID].UUIDString stringByAppendingPathExtension:artworkPath.pathExtension]];
+        NSError *copyError = nil;
+        if ([[NSFileManager defaultManager] copyItemAtPath:artworkPath toPath:tempPath error:&copyError]) {
+            NSURL *url = [NSURL fileURLWithPath:tempPath];
+            NSError *attachmentError = nil;
+            UNNotificationAttachment *attachment = [UNNotificationAttachment attachmentWithIdentifier:@"artwork"
+                                                                                                      URL:url
+                                                                                                  options:nil
+                                                                                                    error:&attachmentError];
+            if (attachment != nil) {
+                content.attachments = @[attachment];
+            }
         }
     }
 

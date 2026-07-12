@@ -11,3 +11,5 @@ func NewTrackTransitionNotifier() domain.TrackTransitionNotifier {
 }
 
 func (noopTrackTransitionNotifier) NotifyTrackAdvanced(_, _, _ string) {}
+
+func (noopTrackTransitionNotifier) SetTrackTransitionActivationCallback(func()) {}

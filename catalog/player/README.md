@@ -116,6 +116,8 @@ gapless/preloaded advance, or crossfade start. Manual navigation and repeat-one 
 The title is the track title (falling back to filename), the body is `artist - album`, and cached
 artwork is attached when present. The macOS authorization request happens on the first attempted
 notification; a denial never affects playback.
+Clicking the notification invokes `TrackTransitionNotificationActivator`, which calls
+`WindowService.ShowMain()` to bring the main window to front (or open it if closed).
 
 ## NowPlayingController Interface (Optional)
 

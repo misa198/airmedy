@@ -13,10 +13,16 @@ import "C"
 
 import (
 	"airmedy/internal/domain"
+	"sync"
 	"unsafe"
 )
 
 type darwinTrackTransitionNotifier struct{}
+
+var (
+	activationCallbackMu sync.Mutex
+	activationCallback   func()
+)
 
 func NewTrackTransitionNotifier() domain.TrackTransitionNotifier {
 	return &darwinTrackTransitionNotifier{}
@@ -31,4 +37,20 @@ func (n *darwinTrackTransitionNotifier) NotifyTrackAdvanced(title, body, artwork
 	defer C.free(unsafe.Pointer(cArtworkPath))
 
 	C.SendTrackAdvancedNotification(cTitle, cBody, cArtworkPath)
+}
+
+func (n *darwinTrackTransitionNotifier) SetTrackTransitionActivationCallback(callback func()) {
+	activationCallbackMu.Lock()
+	activationCallback = callback
+	activationCallbackMu.Unlock()
+}
+
+//export goHandleTrackTransitionNotificationActivation
+func goHandleTrackTransitionNotificationActivation() {
+	activationCallbackMu.Lock()
+	callback := activationCallback
+	activationCallbackMu.Unlock()
+	if callback != nil {
+		callback()
+	}
 }

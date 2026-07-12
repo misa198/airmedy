@@ -84,6 +84,12 @@ type TrackTransitionNotifier interface {
 	NotifyTrackAdvanced(title, body, artworkPath string)
 }
 
+// TrackTransitionNotificationActivator registers the action invoked when a
+// user clicks a platform track-transition notification.
+type TrackTransitionNotificationActivator interface {
+	SetTrackTransitionActivationCallback(callback func())
+}
+
 // EQBand represents a single frequency band in the equalizer
 type EQBand struct {
 	Index     int     `json:"index" db:"band_index"`
