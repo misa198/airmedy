@@ -92,6 +92,7 @@ onMounted(loadTracks)
       :tracks="filteredTracks"
       :is-loading="isLoading"
       :show-artwork="true"
+      storage-key="airmedy:tracks-sort"
       @play-track="(_, index, queue) => playerStore.playTracks(queue, index)"
       @navigate-album="id => router.push(`/albums/${id}`)"
       @navigate-artist="id => router.push(`/artists/${id}`)"

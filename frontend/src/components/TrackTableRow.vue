@@ -98,7 +98,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
             <Music class="w-4 h-4" />
           </div>
         </div>
-        <span class="truncate" :class="{ 'text-primary': isCurrentTrack(track.id) }">
+        <span class="truncate">
           {{ getTrackDisplayTitle(track) || $t('library.unknown_title') }}
         </span>
       </div>

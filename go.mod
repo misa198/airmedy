@@ -18,7 +18,7 @@ require (
 	github.com/misa198/lexorank-go v1.0.2
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
-	github.com/wailsapp/wails/v3 v3.0.0-alpha2.114
+	github.com/wailsapp/wails/v3 v3.0.0-alpha2.117
 	github.com/zalando/go-keyring v0.2.8
 	go.uber.org/fx v1.24.0
 	golang.org/x/sys v0.43.0

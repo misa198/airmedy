@@ -1,6 +1,19 @@
 This software includes third-party components with the following licenses:
 
 --------------------------------------------------------------------------------
+Wails
+https://wails.io
+--------------------------------------------------------------------------------
+This software is built with Wails by Lea Anthony, which is licensed under the
+MIT License.
+
+Copyright (c) 2018-Present Lea Anthony
+
+The Wails source code is available at https://github.com/wailsapp/wails
+
+License text: https://opensource.org/licenses/MIT
+
+--------------------------------------------------------------------------------
 FFmpeg
 https://ffmpeg.org
 --------------------------------------------------------------------------------
@@ -41,3 +54,93 @@ License (GPL) version 2 or later.
 The aubio source code is available at https://github.com/aubio/aubio
 
 License text: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+
+--------------------------------------------------------------------------------
+FFTW3
+https://fftw.org
+--------------------------------------------------------------------------------
+This software uses FFTW (Fastest Fourier Transform in the West) by Matteo Frigo
+and Steven G. Johnson, which is licensed under the GNU General Public License
+(GPL) version 2 or later.
+
+The FFTW source code is available at https://github.com/FFTW/fftw3
+
+License text: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+
+--------------------------------------------------------------------------------
+TagLib
+https://taglib.org
+--------------------------------------------------------------------------------
+This software uses TagLib, which is dual-licensed under the GNU Lesser General
+Public License (LGPL) version 2.1 and the Mozilla Public License (MPL)
+version 1.1.
+
+The TagLib source code is available at https://github.com/taglib/taglib
+
+License text: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+
+--------------------------------------------------------------------------------
+mpg123
+https://www.mpg123.de
+--------------------------------------------------------------------------------
+This software uses mpg123, which is licensed under the GNU Lesser General
+Public License (LGPL) version 2.1.
+
+The mpg123 source code is available at https://sourceforge.net/projects/mpg123
+
+License text: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+
+--------------------------------------------------------------------------------
+libogg
+https://xiph.org/ogg
+--------------------------------------------------------------------------------
+This software uses libogg by Xiph.Org Foundation, which is licensed under the
+3-Clause BSD License.
+
+The libogg source code is available at https://github.com/xiph/ogg
+
+License text: https://opensource.org/licenses/BSD-3-Clause
+
+--------------------------------------------------------------------------------
+libvorbis
+https://xiph.org/vorbis
+--------------------------------------------------------------------------------
+This software uses libvorbis by Xiph.Org Foundation, which is licensed under
+the 3-Clause BSD License.
+
+The libvorbis source code is available at https://github.com/xiph/vorbis
+
+License text: https://opensource.org/licenses/BSD-3-Clause
+
+--------------------------------------------------------------------------------
+libopus
+https://opus-codec.org
+--------------------------------------------------------------------------------
+This software uses libopus, which is licensed under the 3-Clause BSD License.
+
+The libopus source code is available at https://github.com/xiph/opus
+
+License text: https://opensource.org/licenses/BSD-3-Clause
+
+--------------------------------------------------------------------------------
+libFLAC
+https://xiph.org/flac
+--------------------------------------------------------------------------------
+This software uses libFLAC by Xiph.Org Foundation, which is licensed under
+the 3-Clause BSD License.
+
+The libFLAC source code is available at https://github.com/xiph/flac
+
+License text: https://opensource.org/licenses/BSD-3-Clause
+
+--------------------------------------------------------------------------------
+WavPack
+https://www.wavpack.com
+--------------------------------------------------------------------------------
+This software uses WavPack, which is licensed under the 3-Clause BSD License.
+
+The WavPack source code is available at https://github.com/dbry/WavPack
+
+License text: https://opensource.org/licenses/BSD-3-Clause
+
+
