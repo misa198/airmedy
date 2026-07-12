@@ -13,11 +13,27 @@ import { useAppStore } from '@/stores/app'
 import { RouterView } from 'vue-router'
 import { ref, onUnmounted } from 'vue'
 
-const SIDEBAR_MIN_WIDTH = 230;
-const SIDEBAR_MAX_WIDTH = 250;
+const SIDEBAR_MIN_WIDTH = 180
+const SIDEBAR_MAX_WIDTH = 260
+const SIDEBAR_DEFAULT_WIDTH = 250
+const SIDEBAR_WIDTH_STORAGE_KEY = 'airmedy:sidebar-width'
+
+function loadSidebarWidth(): number {
+  try {
+    const savedWidth = Number(localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY))
+    if (Number.isFinite(savedWidth) && savedWidth >= SIDEBAR_MIN_WIDTH && savedWidth <= SIDEBAR_MAX_WIDTH) {
+      return savedWidth
+    }
+  } catch {}
+
+  return SIDEBAR_DEFAULT_WIDTH
+}
+
 const playerStore = usePlayerStore()
 const deviceStore = useDeviceStore()
 const appStore = useAppStore()
+
+playerStore.sidebarWidth = loadSidebarWidth()
 
 const isResizing = ref(false)
 
@@ -51,11 +67,18 @@ const handleMouseMove = (e: MouseEvent) => {
 }
 
 const stopResizing = () => {
+  const wasResizing = isResizing.value
   isResizing.value = false
   document.removeEventListener('mousemove', handleMouseMove)
   document.removeEventListener('mouseup', stopResizing)
   document.body.style.cursor = ''
   document.body.style.userSelect = ''
+
+  if (wasResizing) {
+    try {
+      localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(playerStore.sidebarWidth))
+    } catch {}
+  }
 }
 
 onUnmounted(() => {

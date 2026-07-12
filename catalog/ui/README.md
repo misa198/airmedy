@@ -125,6 +125,17 @@ Cards use lower blur with hover scale:
 }
 ```
 
+## Main Layout Sidebar
+
+The left sidebar in `MainLayout.vue` can be resized between 10px and 250px.
+Its final width is saved when the resize drag ends and restored on the next app
+load from `localStorage` key `airmedy:sidebar-width`. Missing, invalid, or
+out-of-range saved values fall back to the existing 260px default.
+
+Sidebar labels use a shrinking text region with `truncate`; adjacent navigation
+and action icons are `flex-shrink-0`, so a narrow sidebar shows an ellipsis
+without compressing or overlapping icons.
+
 ## Track Table (`TrackTable.vue`)
 
 Virtualized list of tracks supporting reordering, sorting, and horizontal scrolling with sticky columns.
