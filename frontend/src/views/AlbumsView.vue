@@ -44,7 +44,7 @@ const loadAlbums = async (silent = false) => {
   try {
     const result = await LibraryService.GetAllAlbums()
     albums.value = result.filter((a): a is AlbumDTO => a !== null).sort((a, b) =>
-      (a.title || '').localeCompare(b.title || '')
+      (a.sort_title || a.title || '').localeCompare(b.sort_title || b.title || '')
     )
   } catch (err) {
     console.error('Failed to load albums:', err)
@@ -77,8 +77,8 @@ const processedAlbums = computed(() => {
         const diff = new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         return dir === 'asc' ? diff : -diff
       }
-      const aVal = col === 'title' ? (a.title || '') : (a.artists?.[0]?.name || '')
-      const bVal = col === 'title' ? (b.title || '') : (b.artists?.[0]?.name || '')
+      const aVal = col === 'title' ? (a.sort_title || a.title || '') : (a.artists?.[0]?.sort_name || a.artists?.[0]?.name || '')
+      const bVal = col === 'title' ? (b.sort_title || b.title || '') : (b.artists?.[0]?.sort_name || b.artists?.[0]?.name || '')
       const cmp = aVal.localeCompare(bVal)
       return dir === 'asc' ? cmp : -cmp
     })

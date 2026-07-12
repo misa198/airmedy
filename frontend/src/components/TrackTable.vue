@@ -33,6 +33,7 @@ const props = withDefaults(defineProps<{
   contextMenuOptions?: TrackContextMenuOptions
   allowDnd?: boolean
   virtualScroll?: boolean
+  storageKey?: string
 }>(), {
   allowDnd: false,
   virtualScroll: true
@@ -51,8 +52,23 @@ watch(() => props.tracks, (newTracks) => {
 }, { immediate: true })
 
 // ── Sorting ────────────────────────────────────────────────────────────────
-const sortColumn = ref<ColumnKey | null>(null)
-const sortDir = ref<'asc' | 'desc' | null>(null)
+function loadSortState(key: string | undefined): { col: ColumnKey | null; dir: 'asc' | 'desc' | null } {
+  if (!key) return { col: null, dir: null }
+  try {
+    const raw = localStorage.getItem(key)
+    if (raw) return JSON.parse(raw)
+  } catch {}
+  return { col: null, dir: null }
+}
+
+const _initial = loadSortState(props.storageKey)
+const sortColumn = ref<ColumnKey | null>(_initial.col)
+const sortDir = ref<'asc' | 'desc' | null>(_initial.dir)
+
+watch([sortColumn, sortDir], ([col, dir]) => {
+  if (!props.storageKey) return
+  localStorage.setItem(props.storageKey, JSON.stringify({ col, dir }))
+})
 
 function cycleSort(key: ColumnKey) {
   if (props.simpleMode) return

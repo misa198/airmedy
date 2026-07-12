@@ -62,7 +62,7 @@ export const COLUMNS: ColumnDef[] = [
     minWidthPx: 180,
     alwaysVisible: true,
     sortable: true,
-    sortFn: (a, b) => strCmp(getTrackDisplayTitle(a), getTrackDisplayTitle(b)),
+    sortFn: (a, b) => strCmp(a.sort_title || getTrackDisplayTitle(a), b.sort_title || getTrackDisplayTitle(b)),
     draggable: true,
   },
   {
@@ -92,7 +92,7 @@ export const COLUMNS: ColumnDef[] = [
     minWidthPx: 140,
     alwaysVisible: false,
     sortable: true,
-    sortFn: (a, b) => strCmp(a.album?.title || '', b.album?.title || ''),
+    sortFn: (a, b) => strCmp(a.album?.sort_title || a.album?.title || '', b.album?.sort_title || b.album?.title || ''),
     draggable: true,
   },
   {
