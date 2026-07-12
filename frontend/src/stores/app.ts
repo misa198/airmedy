@@ -55,6 +55,7 @@ export const useAppStore = defineStore('app', () => {
   const normalizationTargetLufs = ref(-14)
   const normalizationPreventClip = ref(true)
   const showPlayerIndicator = ref(true)
+  const autoAdvanceNotificationsEnabled = ref(true)
   const librarySyncInterval = ref<SyncInterval>(DEFAULT_SYNC_INTERVAL)
   const maxQueueSize = ref<MaxQueueSize>(DEFAULT_MAX_QUEUE_SIZE)
   const crossfadeSeconds = ref(0)
@@ -124,6 +125,7 @@ export const useAppStore = defineStore('app', () => {
         moodDerivationVersion.value = settings.mood_derivation_version ?? 0
         preventSleepWhilePlaying.value = !!settings.prevent_sleep_while_playing
         showPlayerIndicator.value = settings.show_player_indicator !== false
+        autoAdvanceNotificationsEnabled.value = settings.auto_advance_notifications_enabled !== false
         if (isSyncInterval(settings.library_sync_interval)) {
           librarySyncInterval.value = settings.library_sync_interval
         }
@@ -233,6 +235,7 @@ export const useAppStore = defineStore('app', () => {
         mood_derivation_version: moodDerivationVersion.value,
         prevent_sleep_while_playing: preventSleepWhilePlaying.value,
         show_player_indicator: showPlayerIndicator.value,
+        auto_advance_notifications_enabled: autoAdvanceNotificationsEnabled.value,
         library_sync_interval: librarySyncInterval.value,
         max_queue_size: maxQueueSize.value,
         crossfade_seconds: crossfadeSeconds.value,
@@ -349,6 +352,11 @@ export const useAppStore = defineStore('app', () => {
 
   const updateShowPlayerIndicator = async (enabled: boolean) => {
     showPlayerIndicator.value = enabled
+    await saveSettings()
+  }
+
+  const updateAutoAdvanceNotificationsEnabled = async (enabled: boolean) => {
+    autoAdvanceNotificationsEnabled.value = enabled
     await saveSettings()
   }
 
@@ -495,6 +503,7 @@ export const useAppStore = defineStore('app', () => {
     preferLocalArtistArtwork,
     preventSleepWhilePlaying,
     showPlayerIndicator,
+    autoAdvanceNotificationsEnabled,
     librarySyncInterval,
     maxQueueSize,
     crossfadeSeconds,
@@ -536,6 +545,7 @@ export const useAppStore = defineStore('app', () => {
     updatePreferLocalArtistArtwork,
     updatePreventSleepWhilePlaying,
     updateShowPlayerIndicator,
+    updateAutoAdvanceNotificationsEnabled,
     updateLibrarySyncInterval,
     updateMaxQueueSize,
     updateCrossfadeSeconds,

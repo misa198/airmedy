@@ -1,0 +1,1 @@
+ALTER TABLE app_settings DROP COLUMN auto_advance_notifications_enabled;

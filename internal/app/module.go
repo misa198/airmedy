@@ -22,6 +22,7 @@ import (
 	"airmedy/internal/infra/logging"
 	lyricsinfra "airmedy/internal/infra/lyrics"
 	"airmedy/internal/infra/metadata"
+	"airmedy/internal/infra/notification"
 	"airmedy/internal/infra/power"
 	"airmedy/internal/infra/sqlite"
 	"airmedy/internal/infra/wails"
@@ -90,6 +91,7 @@ var Module = fx.Module("app",
 	lyricsinfra.Module,
 	player.Module,
 	power.Module,
+	notification.Module,
 	playlist.Module,
 	lyrics.Module,
 	eq.Module,
@@ -158,6 +160,11 @@ var Module = fx.Module("app",
 				// in PlayerService.restoreState).
 				settingsSvc.AddChangeListener(func(settings *domain.AppSettings) {
 					playerSvc.SetCrossfadeSeconds(domain.ClampCrossfadeSeconds(settings.CrossfadeSeconds))
+				})
+
+				// Apply macOS automatic-track notification preference live.
+				settingsSvc.AddChangeListener(func(settings *domain.AppSettings) {
+					playerSvc.SetAutoAdvanceNotificationsEnabled(settings.AutoAdvanceNotificationsEnabled)
 				})
 
 				if err := playlistSvc.EnsureFavoritesPlaylist(ctx); err != nil {

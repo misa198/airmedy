@@ -106,6 +106,17 @@ with crossfade on it targets the idle deck. `SetCrossfadeSeconds` therefore
 re-syncs the pre-queue (`ClearEnqueued` + re-`EnqueueNext`) on every 0↔N change.
 `DarwinPlayer.AutoTransitions()` is dynamic: `true` only when crossfade is off.
 
+## Automatic Track-change Notifications (macOS)
+
+`domain.TrackTransitionNotifier` is an optional platform port injected into `PlayerService`.
+On macOS, `infra/notification` uses `UNUserNotificationCenter`; other platforms provide a no-op.
+When `AppSettings.AutoAdvanceNotificationsEnabled` is true (default), the service sends a silent
+notification only after an automatic advance to a different track: standard queue advance,
+gapless/preloaded advance, or crossfade start. Manual navigation and repeat-one do not notify.
+The title is the track title (falling back to filename), the body is `artist - album`, and cached
+artwork is attached when present. The macOS authorization request happens on the first attempted
+notification; a denial never affects playback.
+
 ## NowPlayingController Interface (Optional)
 
 Implemented by audio adapters that provide OS-level Now Playing info and media-key

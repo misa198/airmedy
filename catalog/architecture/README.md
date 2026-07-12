@@ -131,6 +131,9 @@ Go emits events via `application.EmitEvent(name, data)`. Frontend subscribes via
 
 **Player events:** `player:status`, `player:queue-updated`, `player:theme`, `player:lyrics`
 
+Automatic macOS track-transition notifications are emitted natively through the injected
+`domain.TrackTransitionNotifier`; they do not traverse the Wails event bus.
+
 **Library events:** `library:sync-started`, `library:sync-progress`, `library:sync-finished`, `library:track-updated`, `library:updated`
 
 **Playlist events:** `playlist:tracks-changed`

@@ -5,12 +5,14 @@ import { AudioLines, Wrench, Volume2, Blend } from '@lucide/vue'
 import EQPanel from '@/components/EQPanel.vue'
 import { Switch, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, Slider } from '@airmedy/ui'
 import { useAppStore, NORMALIZATION_TARGET_LUFS_MIN, NORMALIZATION_TARGET_LUFS_MAX, CROSSFADE_MAX_SECONDS, STEREO_WIDTH_MIN, STEREO_WIDTH_MAX } from '@/stores/app'
+import { useDeviceStore } from '@/stores/device'
 import { MAX_QUEUE_SIZE_OPTIONS, type MaxQueueSize } from '@/lib/queue'
 import SettingSection from './SettingSection.vue'
 import SettingRow from './SettingRow.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
+const deviceStore = useDeviceStore()
 
 // Live value while dragging; only persisted (via the store, which clamps +
 // calls NormalizationService.SetTarget) on release — same pattern as EQPanel's
@@ -123,6 +125,11 @@ const sectorPath = computed(() => {
       <SettingRow :title="t('settings.playback.show_player_indicator')"
         :description="t('settings.playback.show_player_indicator_desc')">
         <Switch :model-value="appStore.showPlayerIndicator" @update:model-value="appStore.updateShowPlayerIndicator" />
+      </SettingRow>
+      <SettingRow v-if="deviceStore.isMac" :title="t('settings.playback.auto_advance_notifications')"
+        :description="t('settings.playback.auto_advance_notifications_desc')">
+        <Switch :model-value="appStore.autoAdvanceNotificationsEnabled"
+          @update:model-value="appStore.updateAutoAdvanceNotificationsEnabled" />
       </SettingRow>
       <SettingRow :title="t('settings.playback.high_contrast_lyrics')"
         :description="t('settings.playback.high_contrast_lyrics_desc')">

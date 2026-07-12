@@ -78,6 +78,7 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000057 | `app_settings_stereo_width.up.sql` | Add global `stereo_width` (default 100) to `app_settings` |
 | 000058 | `global_eq_preamp.up.sql` | Move the active profile's legacy preamp to global `app_settings.eq_preamp`, then remove `eq_profiles.preamp_gain` |
 | 000059 | `eq_preset_key.up.sql` | Add unique non-empty `eq_profiles.preset_key` for stable built-in preset identity |
+| 000060 | `app_settings_auto_advance_notifications.up.sql` | Add `app_settings.auto_advance_notifications_enabled BOOLEAN NOT NULL DEFAULT TRUE` for the macOS automatic-track notification preference |
 
 ## Full Schema
 
