@@ -19,6 +19,7 @@ const emit = defineEmits<{
 }>()
 
 const searchQuery = ref('')
+const clickedFromList = ref(false)
 const scrollerRef = ref<any>(null)
 const lastScrollTop = ref(0)
 
@@ -30,12 +31,16 @@ const handleScroll = (event: Event) => {
 }
 
 onActivated(() => {
-  if (scrollerRef.value && lastScrollTop.value > 0) {
-    setTimeout(() => {
-      if (scrollerRef.value && scrollerRef.value.$el) {
+  if (props.selectedId) {
+    // Keep-alive re-entry: reactive deps haven't changed so watch won't re-fire.
+    // scrollerRef is already mounted here — scroll immediately.
+    nextTick(doScroll)
+  } else if (lastScrollTop.value > 0) {
+    nextTick(() => {
+      if (scrollerRef.value?.$el) {
         scrollerRef.value.$el.scrollTop = lastScrollTop.value
       }
-    }, 0)
+    })
   }
 })
 
@@ -47,24 +52,37 @@ const filteredItems = computed(() => {
   )
 })
 
-let scrollRetries = 0
-
-const scrollSelectedIntoView = () => {
-  if (!props.selectedId) return
-  if (!scrollerRef.value || !scrollerRef.value.$el) {
-    if (scrollRetries++ < 20) requestAnimationFrame(scrollSelectedIntoView)
-    return
-  }
-  scrollRetries = 0
+const doScroll = () => {
+  if (!props.selectedId || !scrollerRef.value) return
   const index = filteredItems.value.findIndex(item => item.id === props.selectedId)
   if (index !== -1) {
     scrollerRef.value.scrollToItem(index)
   }
 }
 
+// When RecycleScroller finishes mounting (ref goes null → instance),
+// scroll to the selected item — no polling needed.
+watch(scrollerRef, (scroller) => {
+  if (scroller && props.selectedId && !clickedFromList.value) {
+    nextTick(doScroll)
+  }
+})
+
+const handleListItemClick = (id: string) => {
+  clickedFromList.value = true
+  emit('select', id)
+}
+
+// When selectedId or items change and the scroller is already mounted, scroll.
+// If the scroller isn't ready yet, the scrollerRef watch above will handle it.
 watch(() => [props.selectedId, props.isLoading, filteredItems.value] as const, () => {
-  scrollRetries = 0
-  nextTick(() => requestAnimationFrame(scrollSelectedIntoView))
+  if (clickedFromList.value) {
+    clickedFromList.value = false
+    return
+  }
+  if (scrollerRef.value) {
+    nextTick(doScroll)
+  }
 }, { immediate: true })
 </script>
 
@@ -88,7 +106,7 @@ watch(() => [props.selectedId, props.isLoading, filteredItems.value] as const, (
 
         <RecycleScroller v-else ref="scrollerRef" class="h-full px-3" :items="filteredItems" :item-size="56"
           key-field="id" v-slot="{ item }" @scroll.passive="handleScroll">
-          <div @click="emit('select', item.id)" :class="[
+          <div @click="handleListItemClick(item.id)" :class="[
             'flex items-center gap-3 p-2 rounded-lg group transition-colors cursor-pointer mb-1',
             selectedId === item.id ? 'bg-foreground/[0.08] text-foreground font-medium' : 'hover:bg-foreground/[0.04]'
           ]">
