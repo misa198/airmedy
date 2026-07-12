@@ -9,7 +9,7 @@ info:
   productName: "Airmedy" # The name of the application
   productIdentifier: "me.misa198.airmedy" # The unique product identifier
   description: "An offline music player for macOS, Windows and Linux." # The application description
-  copyright: "(c) 2026, Thanh Vu" # Copyright text
+  copyright: "(c) 2026, Thanh Vu (misa198)" # Copyright text
   comments: "An offline music player for macOS, Windows and Linux." # Comments
   version: "1.0.2" # The application version
   # cfBundleIconName: "appicon" # The macOS icon name in Assets.car icon bundles (optional)
