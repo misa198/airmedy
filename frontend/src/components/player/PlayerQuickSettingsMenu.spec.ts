@@ -81,6 +81,7 @@ describe('PlayerQuickSettingsMenu', () => {
       'settings.playback.show_player_indicator',
       'settings.playback.crossfade',
       'settings.quick_menu.eq_presets',
+      'settings.quick_menu.go_to_playback',
     ])
     expect(preventSleepItem.iconRight).toBeTruthy()
     expect(showIndicatorItem.iconRight).toBeUndefined()
@@ -140,6 +141,20 @@ describe('PlayerQuickSettingsMenu', () => {
       name: 'settings',
       params: { category: 'playback' },
       query: { section: 'equalizer' },
+    })
+  })
+
+  it('links to the playback settings', async () => {
+    const { wrapper, router } = mountMenu()
+    const push = vi.spyOn(router, 'push')
+    const items = await openMenu(wrapper)
+    const playbackSettingsItem = getItem(items, 'settings.quick_menu.go_to_playback')
+
+    playbackSettingsItem.action?.()
+
+    expect(push).toHaveBeenCalledWith({
+      name: 'settings',
+      params: { category: 'playback' },
     })
   })
 })

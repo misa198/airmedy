@@ -73,8 +73,8 @@ let offSyncFinished: (() => void) | null = null
 
 onMounted(() => {
   fetchData()
-  offSyncFinished = Events.On('library:sync-finished', () => {
-    fetchData()
+  offSyncFinished = Events.On('library:sync-finished', (ev: Events.WailsEvent) => {
+    if (!(ev.data as { background?: boolean })?.background) fetchData()
   })
 })
 

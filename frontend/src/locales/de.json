@@ -188,7 +188,7 @@
       "max_queue_size": "Maximale Warteschlangengröße",
       "max_queue_size_desc": "Begrenzt, wie viele Titel die Wiedergabeliste enthalten kann, einschließlich des aktuellen Titels. Die ältesten Titel werden zuerst entfernt, sobald das Limit erreicht ist."
     },
-    "quick_menu": { "enable_eq": "Equalizer aktivieren", "eq_presets": "EQ-Voreinstellungen", "go_to_equalizer": "Zu den Equalizer-Einstellungen" },
+    "quick_menu": { "enable_eq": "Equalizer aktivieren", "eq_presets": "EQ-Voreinstellungen", "go_to_equalizer": "Zu den Equalizer-Einstellungen", "go_to_playback": "Zu den Wiedergabe-Einstellungen" },
     "remote": {
       "title": "Fernbedienung",
       "enable": "Remoteserver aktivieren",
