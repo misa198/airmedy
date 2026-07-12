@@ -293,6 +293,13 @@ new hover explanations.
 - **Tactile Feedback**: Interactive buttons use a `scale-95` active state for a "pressed" feel.
 - **Glass-Morphism**: Surfaces use `var(--bg-glass)` with `backdrop-filter: blur(30px)`.
 
+### Development Tools Overlay
+
+`DevToolsOverlay.vue` is mounted by `App.vue` only when `import.meta.env.DEV` is true (and never
+in the mini-player window). Its glass button invokes Wails `Window.OpenDevTools()` for the current
+webview and supports pointer dragging anywhere within the viewport for the current session. The
+overlay is not rendered in production builds.
+
 ## Track Table (`TrackTable.vue`)
 
 

@@ -19,7 +19,8 @@
     "min": "min",
     "delete": "Delete",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "open_devtools": "Open Developer Tools"
   },
   "app": {
     "update_available": "Update Available",

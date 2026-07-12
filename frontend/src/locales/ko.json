@@ -19,7 +19,8 @@
     "min": "분",
     "delete": "삭제",
     "yes": "예",
-    "no": "아니요"
+    "no": "아니요",
+    "open_devtools": "개발자 도구 열기"
   },
   "app": {
     "update_available": "업데이트 가능",
