@@ -117,10 +117,21 @@ func (s *WindowService) ShowMain() {
 		s.miniWindow.Hide()
 	}
 	if s.mainWindow != nil {
-		s.mainWindow.Restore()
-		s.mainWindow.Show()
-		s.mainWindow.Focus()
+		// Do not restore here: notification activation must preserve the user's
+		// maximized window state. Show brings a hidden/minimised window forward
+		// without changing its frame.
+		showAndFocus(s.mainWindow)
 	}
+}
+
+// showAndFocus reveals an existing window without altering its size or state.
+// In particular, Restore must not be called here because it exits maximized mode.
+func showAndFocus(window interface {
+	Show() application.Window
+	Focus()
+}) {
+	window.Show()
+	window.Focus()
 }
 
 // SetTitleBarTheme updates the native title bar colour to match the given app

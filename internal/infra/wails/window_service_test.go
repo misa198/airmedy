@@ -1,10 +1,32 @@
 package wails
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
+
+type recordingWindow struct {
+	calls []string
+}
+
+func (w *recordingWindow) Show() application.Window {
+	w.calls = append(w.calls, "show")
+	return nil
+}
+
+func (w *recordingWindow) Focus() { w.calls = append(w.calls, "focus") }
+
+func TestShowAndFocusPreservesWindowState(t *testing.T) {
+	window := &recordingWindow{}
+
+	showAndFocus(window)
+
+	if want := []string{"show", "focus"}; !reflect.DeepEqual(window.calls, want) {
+		t.Fatalf("window calls = %v, want %v", window.calls, want)
+	}
+}
 
 func TestClampRectToWorkArea(t *testing.T) {
 	// Primary screen work area: 1920x1080 at origin (dock-free for simplicity).

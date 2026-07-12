@@ -118,6 +118,7 @@ artwork is attached when present. The macOS authorization request happens on the
 notification; a denial never affects playback.
 Clicking the notification invokes `TrackTransitionNotificationActivator`, which calls
 `WindowService.ShowMain()` to bring the main window to front (or open it if closed).
+This only shows and focuses the existing window; it preserves its maximized state and frame.
 
 ## NowPlayingController Interface (Optional)
 
