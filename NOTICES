@@ -90,3 +90,57 @@ The mpg123 source code is available at https://sourceforge.net/projects/mpg123
 
 License text: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
 
+--------------------------------------------------------------------------------
+libogg
+https://xiph.org/ogg
+--------------------------------------------------------------------------------
+This software uses libogg by Xiph.Org Foundation, which is licensed under the
+3-Clause BSD License.
+
+The libogg source code is available at https://github.com/xiph/ogg
+
+License text: https://opensource.org/licenses/BSD-3-Clause
+
+--------------------------------------------------------------------------------
+libvorbis
+https://xiph.org/vorbis
+--------------------------------------------------------------------------------
+This software uses libvorbis by Xiph.Org Foundation, which is licensed under
+the 3-Clause BSD License.
+
+The libvorbis source code is available at https://github.com/xiph/vorbis
+
+License text: https://opensource.org/licenses/BSD-3-Clause
+
+--------------------------------------------------------------------------------
+libopus
+https://opus-codec.org
+--------------------------------------------------------------------------------
+This software uses libopus, which is licensed under the 3-Clause BSD License.
+
+The libopus source code is available at https://github.com/xiph/opus
+
+License text: https://opensource.org/licenses/BSD-3-Clause
+
+--------------------------------------------------------------------------------
+libFLAC
+https://xiph.org/flac
+--------------------------------------------------------------------------------
+This software uses libFLAC by Xiph.Org Foundation, which is licensed under
+the 3-Clause BSD License.
+
+The libFLAC source code is available at https://github.com/xiph/flac
+
+License text: https://opensource.org/licenses/BSD-3-Clause
+
+--------------------------------------------------------------------------------
+WavPack
+https://www.wavpack.com
+--------------------------------------------------------------------------------
+This software uses WavPack, which is licensed under the 3-Clause BSD License.
+
+The WavPack source code is available at https://github.com/dbry/WavPack
+
+License text: https://opensource.org/licenses/BSD-3-Clause
+
+
