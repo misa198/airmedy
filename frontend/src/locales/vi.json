@@ -174,6 +174,8 @@
       "prevent_sleep_desc": "Giữ máy tính thức khi đang phát nhạc",
       "show_player_indicator": "Hiển thị chỉ báo kích hoạt",
       "show_player_indicator_desc": "Hiện chấm nhỏ bên dưới nút xáo trộn và lặp lại khi được kích hoạt",
+      "auto_advance_notifications": "Track change notifications",
+      "auto_advance_notifications_desc": "Show a silent macOS notification when playback automatically moves to the next track",
       "high_contrast_lyrics": "Lời bài hát tương phản cao",
       "high_contrast_lyrics_desc": "Hiển thị lời bài hát toàn màn hình trong bảng kính nổi bật",
       "song_transition": "Chuyển bài",

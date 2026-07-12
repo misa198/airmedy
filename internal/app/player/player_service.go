@@ -23,19 +23,21 @@ import (
 
 // PlayerService coordinates playback and queue management.
 type PlayerService struct {
-	mu            sync.RWMutex
-	player        domain.AudioPlayer
-	queue         *QueueService
-	logger        *slog.Logger
-	artworkCache  domain.ArtworkCache
-	lyricsService *lyrics.LyricsService
-	nowPlaying    domain.NowPlayingController // nil on non-darwin or when unsupported
-	currentTrack  *domain.TrackDTO
-	currentTheme  *domain.ThemeColors
-	trackRepo     domain.TrackRepository
-	stateRepo     domain.PlayerStateRepository
-	settingsRepo  domain.SettingsRepository
-	normSvc       *normalization.NormalizationService
+	mu                              sync.RWMutex
+	player                          domain.AudioPlayer
+	queue                           *QueueService
+	logger                          *slog.Logger
+	artworkCache                    domain.ArtworkCache
+	lyricsService                   *lyrics.LyricsService
+	nowPlaying                      domain.NowPlayingController // nil on non-darwin or when unsupported
+	currentTrack                    *domain.TrackDTO
+	currentTheme                    *domain.ThemeColors
+	trackRepo                       domain.TrackRepository
+	stateRepo                       domain.PlayerStateRepository
+	settingsRepo                    domain.SettingsRepository
+	normSvc                         *normalization.NormalizationService
+	notifier                        domain.TrackTransitionNotifier
+	autoAdvanceNotificationsEnabled bool
 
 	trackStartTime time.Time
 	playCounted    map[string]bool // trackID -> bool
@@ -81,23 +83,26 @@ func NewPlayerService(
 	settingsRepo domain.SettingsRepository,
 	sleepInhibitor domain.SleepInhibitor,
 	normSvc *normalization.NormalizationService,
+	notifier domain.TrackTransitionNotifier,
 	lc fx.Lifecycle,
 ) *PlayerService {
 	s := &PlayerService{
-		player:         player,
-		queue:          queue,
-		logger:         logger,
-		artworkCache:   artworkCache,
-		lyricsService:  lyricsService,
-		trackRepo:      trackRepo,
-		stateRepo:      stateRepo,
-		settingsRepo:   settingsRepo,
-		sleepInhibitor: sleepInhibitor,
-		normSvc:        normSvc,
-		tickInterval:   500 * time.Millisecond,
-		playCounted:    make(map[string]bool),
-		npReported:     make(map[string]bool),
-		posConfirmed:   make(map[string]bool),
+		player:                          player,
+		queue:                           queue,
+		logger:                          logger,
+		artworkCache:                    artworkCache,
+		lyricsService:                   lyricsService,
+		trackRepo:                       trackRepo,
+		stateRepo:                       stateRepo,
+		settingsRepo:                    settingsRepo,
+		sleepInhibitor:                  sleepInhibitor,
+		normSvc:                         normSvc,
+		notifier:                        notifier,
+		autoAdvanceNotificationsEnabled: true,
+		tickInterval:                    500 * time.Millisecond,
+		playCounted:                     make(map[string]bool),
+		npReported:                      make(map[string]bool),
+		posConfirmed:                    make(map[string]bool),
 	}
 	s.player.OnTrackEnd(s.HandleTrackEnd)
 
@@ -591,6 +596,14 @@ func (s *PlayerService) SetCrossfadeSeconds(n int) {
 	s.resyncPreQueue()
 }
 
+// SetAutoAdvanceNotificationsEnabled applies the persisted notification
+// preference without interrupting playback.
+func (s *PlayerService) SetAutoAdvanceNotificationsEnabled(enabled bool) {
+	s.mu.Lock()
+	s.autoAdvanceNotificationsEnabled = enabled
+	s.mu.Unlock()
+}
+
 // SetRepeatMode sets the repeat mode.
 func (s *PlayerService) SetRepeatMode(mode domain.RepeatMode) error {
 	s.queue.SetRepeatMode(mode)
@@ -859,6 +872,48 @@ func (s *PlayerService) transitionToTrack(track *domain.TrackDTO) {
 	go s.fetchAndEmitLyrics(track)
 
 	s.saveState(context.Background())
+}
+
+// notifyTrackAutoAdvanced sends a best-effort OS notification only for an
+// automatic move to a different track. It intentionally does not share the
+// generic load path because that path is also used by manual navigation.
+func (s *PlayerService) notifyTrackAutoAdvanced(track *domain.TrackDTO, previousTrackID string) {
+	if track == nil || s.notifier == nil {
+		return
+	}
+
+	s.mu.RLock()
+	enabled := s.autoAdvanceNotificationsEnabled
+	s.mu.RUnlock()
+	if !enabled || (previousTrackID != "" && previousTrackID == track.ID) {
+		return
+	}
+
+	title := track.Title
+	if title == "" {
+		title = fallbackTitle(track.Path)
+	}
+	artist := track.RawArtistNames
+	if len(track.Artists) > 0 {
+		names := make([]string, 0, len(track.Artists))
+		for _, a := range track.Artists {
+			if a != nil && a.Name != "" {
+				names = append(names, a.Name)
+			}
+		}
+		if len(names) > 0 {
+			artist = strings.Join(names, ", ")
+		}
+	}
+	album := ""
+	if track.Album != nil {
+		album = track.Album.Title
+	}
+	artworkPath := ""
+	if track.ArtworkKey != "" {
+		artworkPath = s.artworkCache.GetPath(track.ArtworkKey)
+	}
+	s.notifier.NotifyTrackAdvanced(title, fmt.Sprintf("%s - %s", artist, album), artworkPath)
 }
 
 func (s *PlayerService) extractAndEmitPalette(track *domain.TrackDTO) {
@@ -1415,6 +1470,13 @@ func (s *PlayerService) runCrossfade(cp domain.CrossfadePlayer, next *domain.Tra
 		})
 	}
 
+	s.mu.RLock()
+	previousTrackID := ""
+	if s.currentTrack != nil {
+		previousTrackID = s.currentTrack.ID
+	}
+	s.mu.RUnlock()
+	s.notifyTrackAutoAdvanced(next, previousTrackID)
 	s.transitionToTrack(next)
 
 	time.AfterFunc(time.Duration((effFade+0.3)*float64(time.Second)), func() {
@@ -1514,6 +1576,10 @@ func (s *PlayerService) HandleTrackEnd() {
 	s.mu.Lock()
 	preQueued := s.nextPreQueued
 	s.nextPreQueued = nil
+	previousTrackID := ""
+	if s.currentTrack != nil {
+		previousTrackID = s.currentTrack.ID
+	}
 	s.mu.Unlock()
 
 	if preQueued != nil {
@@ -1535,11 +1601,14 @@ func (s *PlayerService) HandleTrackEnd() {
 				s.logger.Error("gapless start failed, falling back to hard load", "error", err)
 				if err2 := s.loadAndPlay(preQueued); err2 != nil {
 					s.logger.Error("fallback loadAndPlay failed", "error", err2)
+				} else {
+					s.notifyTrackAutoAdvanced(preQueued, previousTrackID)
 				}
 				return
 			}
 		}
 
+		s.notifyTrackAutoAdvanced(preQueued, previousTrackID)
 		s.transitionToTrack(preQueued)
 
 		// Pre-enqueue the next-next track.
@@ -1560,6 +1629,8 @@ func (s *PlayerService) HandleTrackEnd() {
 	}
 	if err := s.loadAndPlay(track); err != nil {
 		s.logger.Error("failed to play next track", "error", err)
+	} else {
+		s.notifyTrackAutoAdvanced(track, previousTrackID)
 	}
 }
 
@@ -1669,6 +1740,7 @@ func (s *PlayerService) restoreState(ctx context.Context) {
 	if settings, err := s.settingsRepo.Load(ctx); err == nil {
 		s.queue.SetMaxSize(domain.ResolveMaxQueueSize(settings.MaxQueueSize))
 		s.SetCrossfadeSeconds(settings.CrossfadeSeconds)
+		s.SetAutoAdvanceNotificationsEnabled(settings.AutoAdvanceNotificationsEnabled)
 	}
 
 	if len(activeTracks) > 0 {

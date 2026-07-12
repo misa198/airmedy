@@ -109,6 +109,20 @@ func (s *WindowService) ShowCurrent() {
 	}
 }
 
+// ShowMain returns to the primary app window. If the mini player is open, it
+// stays alive but is hidden so it cannot obscure the main window that was
+// explicitly requested by a notification click.
+func (s *WindowService) ShowMain() {
+	if s.miniWindow != nil {
+		s.miniWindow.Hide()
+	}
+	if s.mainWindow != nil {
+		s.mainWindow.Restore()
+		s.mainWindow.Show()
+		s.mainWindow.Focus()
+	}
+}
+
 // SetTitleBarTheme updates the native title bar colour to match the given app
 // theme. Effective on Windows only; no-op on other platforms.
 func (s *WindowService) SetTitleBarTheme(theme string) {

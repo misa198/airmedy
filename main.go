@@ -107,6 +107,7 @@ func main() {
 	var artworkCache domain.ArtworkCache
 	var remoteServerService *wails.RemoteServerService
 	var moodRadioService *wails.MoodRadioService
+	var trackTransitionNotificationActivator domain.TrackTransitionNotificationActivator
 	var (
 		lastfmService *wails.LastFmService
 		wailsApp      *application.App
@@ -122,7 +123,7 @@ func main() {
 		// onto the same instance instead of constructing its own.
 		fx.Supply(logRotator, logger),
 		fx.Provide(func() remoteserver.RemoteFS { return remoteserver.RemoteFS{FS: remoteFS} }),
-		fx.Populate(&greetService, &libraryService, &playerService, &searchService, &playlistService, &lyricsService, &eqService, &normalizationService, &analysisService, &windowService, &i18nService, &settingsService, &lastfmService, &updaterService, &artworkCache, &remoteServerService, &moodRadioService),
+		fx.Populate(&greetService, &libraryService, &playerService, &searchService, &playlistService, &lyricsService, &eqService, &normalizationService, &analysisService, &windowService, &i18nService, &settingsService, &lastfmService, &updaterService, &artworkCache, &remoteServerService, &moodRadioService, &trackTransitionNotificationActivator),
 		fx.NopLogger, // Keep logs clean for now
 	)
 
@@ -214,6 +215,9 @@ func main() {
 		e.Cancel()
 	})
 	windowService.SetMainWindow(mainWindow)
+	trackTransitionNotificationActivator.SetTrackTransitionActivationCallback(func() {
+		application.InvokeAsync(windowService.ShowMain)
+	})
 	windowService.SetTitleBarTheme(settings.Theme)
 	mainWindow.Show()
 	mainWindow.Focus()
@@ -443,9 +447,9 @@ func winCustomTheme(appTheme string) application.ThemeSettings {
 	}
 
 	return application.ThemeSettings{
-		DarkModeActive:   darkTheme,
-		DarkModeInactive: darkTheme,
-		LightModeActive:  lightTheme,
+		DarkModeActive:    darkTheme,
+		DarkModeInactive:  darkTheme,
+		LightModeActive:   lightTheme,
 		LightModeInactive: lightTheme,
 	}
 }

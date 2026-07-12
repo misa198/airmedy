@@ -449,6 +449,9 @@ type AppSettings struct {
 	RemoteServerPort         int     `json:"remote_server_port"`
 	RemoteServerPassword     string  `json:"remote_server_password"`
 	ShowPlayerIndicator      bool    `json:"show_player_indicator"`
+	// AutoAdvanceNotificationsEnabled controls the macOS notification shown when
+	// playback automatically advances to a different track.
+	AutoAdvanceNotificationsEnabled bool `json:"auto_advance_notifications_enabled"`
 
 	// LibrarySyncInterval controls how often watched folders are rescanned for
 	// added/changed/removed files. One of the SyncInterval* constants; empty

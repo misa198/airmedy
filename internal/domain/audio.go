@@ -77,6 +77,19 @@ type NowPlayingPlaybackState interface {
 	SetNowPlayingPlaybackState(playing bool)
 }
 
+// TrackTransitionNotifier is an optional platform integration used when
+// playback automatically advances to another track. Implementations must not
+// block or alter playback when the operating system declines notifications.
+type TrackTransitionNotifier interface {
+	NotifyTrackAdvanced(title, body, artworkPath string)
+}
+
+// TrackTransitionNotificationActivator registers the action invoked when a
+// user clicks a platform track-transition notification.
+type TrackTransitionNotificationActivator interface {
+	SetTrackTransitionActivationCallback(callback func())
+}
+
 // EQBand represents a single frequency band in the equalizer
 type EQBand struct {
 	Index     int     `json:"index" db:"band_index"`

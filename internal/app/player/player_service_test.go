@@ -145,6 +145,20 @@ func (c *fakeArtworkCache) CleanupOrphaned(_ context.Context, _ map[string]bool)
 	return nil
 }
 
+type notificationCall struct {
+	title       string
+	body        string
+	artworkPath string
+}
+
+type fakeTrackTransitionNotifier struct {
+	calls []notificationCall
+}
+
+func (n *fakeTrackTransitionNotifier) NotifyTrackAdvanced(title, body, artworkPath string) {
+	n.calls = append(n.calls, notificationCall{title: title, body: body, artworkPath: artworkPath})
+}
+
 type fakeTrackRepo struct {
 	domain.TrackRepository
 }
@@ -168,16 +182,17 @@ func newTestService(t *testing.T, player domain.AudioPlayer) (*PlayerService, *i
 	var emitCount int64
 
 	s := &PlayerService{
-		player:       player,
-		queue:        queue,
-		logger:       slog.Default(),
-		artworkCache: &fakeArtworkCache{},
-		trackRepo:    &fakeTrackRepo{},
-		stateRepo:    &fakePlayerStateRepo{},
-		tickInterval: 10 * time.Millisecond,
-		playCounted:  make(map[string]bool),
-		npReported:   make(map[string]bool),
-		posConfirmed: make(map[string]bool),
+		player:                          player,
+		queue:                           queue,
+		logger:                          slog.Default(),
+		artworkCache:                    &fakeArtworkCache{},
+		trackRepo:                       &fakeTrackRepo{},
+		stateRepo:                       &fakePlayerStateRepo{},
+		tickInterval:                    10 * time.Millisecond,
+		playCounted:                     make(map[string]bool),
+		npReported:                      make(map[string]bool),
+		posConfirmed:                    make(map[string]bool),
+		autoAdvanceNotificationsEnabled: true,
 	}
 	s.player.OnTrackEnd(s.HandleTrackEnd)
 
@@ -565,6 +580,70 @@ func TestHandleTrackEnd_RepeatOffAdvancesToNext(t *testing.T) {
 			got = ct.ID
 		}
 		t.Errorf("expected current track t2 after RepeatOff end, got %s", got)
+	}
+}
+
+func TestHandleTrackEnd_NotifiesForAutomaticAdvanceOnly(t *testing.T) {
+	fp := &fakeGaplessPlayer{fakePlayer: fakePlayer{status: domain.PlayerStatus{Volume: 1.0}}}
+	s, _ := newTestService(t, fp)
+	notifier := &fakeTrackTransitionNotifier{}
+	s.notifier = notifier
+
+	t1 := &domain.TrackDTO{Track: domain.Track{ID: "t1", Title: "First", Duration: 300}}
+	t2 := &domain.TrackDTO{
+		Track:   domain.Track{ID: "t2", Title: "Second", Duration: 300, ArtworkKey: "artwork-key"},
+		Artists: []*domain.Artist{{Name: "Artist A"}, {Name: "Artist B"}},
+		Album:   &domain.Album{Title: "Album A"},
+	}
+	s.queue.SetQueue([]*domain.TrackDTO{t1, t2}, 0)
+	s.mu.Lock()
+	s.currentTrack = t1
+	s.nextPreQueued = t2
+	s.mu.Unlock()
+
+	s.HandleTrackEnd()
+
+	if len(notifier.calls) != 1 {
+		t.Fatalf("expected one automatic-advance notification, got %#v", notifier.calls)
+	}
+	if got, want := notifier.calls[0], (notificationCall{title: "Second", body: "Artist A, Artist B - Album A", artworkPath: "artwork-key"}); got != want {
+		t.Fatalf("notification payload = %#v, want %#v", got, want)
+	}
+
+	if err := s.Next(); err != nil {
+		t.Fatalf("manual Next: %v", err)
+	}
+	if len(notifier.calls) != 1 {
+		t.Fatalf("manual Next must not notify, got %#v", notifier.calls)
+	}
+}
+
+func TestHandleTrackEnd_DoesNotNotifyWhenDisabledOrRepeatingSameTrack(t *testing.T) {
+	fp := &fakeGaplessPlayer{fakePlayer: fakePlayer{status: domain.PlayerStatus{Volume: 1.0}}}
+	s, _ := newTestService(t, fp)
+	notifier := &fakeTrackTransitionNotifier{}
+	s.notifier = notifier
+
+	t1 := &domain.TrackDTO{Track: domain.Track{ID: "t1", Title: "Repeat", Duration: 300}}
+	t2 := &domain.TrackDTO{Track: domain.Track{ID: "t2", Title: "Next", Duration: 300}}
+	s.queue.SetQueue([]*domain.TrackDTO{t1, t2}, 0)
+	s.mu.Lock()
+	s.currentTrack = t1
+	s.nextPreQueued = t1
+	s.mu.Unlock()
+	s.HandleTrackEnd()
+	if len(notifier.calls) != 0 {
+		t.Fatalf("repeat-one must not notify, got %#v", notifier.calls)
+	}
+
+	s.SetAutoAdvanceNotificationsEnabled(false)
+	s.mu.Lock()
+	s.currentTrack = t1
+	s.nextPreQueued = t2
+	s.mu.Unlock()
+	s.HandleTrackEnd()
+	if len(notifier.calls) != 0 {
+		t.Fatalf("disabled setting must not notify, got %#v", notifier.calls)
 	}
 }
 
