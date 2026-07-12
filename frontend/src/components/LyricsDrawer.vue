@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { AlignLeft, Mic2, Timer, X } from '@lucide/vue'
 import { usePlayerStore } from '../stores/player'
 import { useI18n } from 'vue-i18n'
@@ -29,20 +29,65 @@ const activeIndex = computed(() => {
 
 const scrollContainer = ref<HTMLElement | null>(null)
 const lineRefs = ref<HTMLElement[]>([])
+const rootEl = ref<HTMLElement | null>(null)
+let scrollFrame: number | undefined
+let resizeObserver: ResizeObserver | null = null
+let waitingForLayout = false
 
-watch(activeIndex, (newIndex) => {
-  if (newIndex === -1 || !lineRefs.value[newIndex] || !scrollContainer.value) return
+// Reset stale refs when lines change so indexes stay aligned.
+watch(() => syncedLines.value, () => {
+  lineRefs.value = []
+})
+
+function scrollToActive(index: number): boolean {
+  if (index === -1) return false
   const container = scrollContainer.value
-  const el = lineRefs.value[newIndex]
+  const el = lineRefs.value[index]
+  // The drawer animates in from zero width/height. Wait until it has a real
+  // layout; otherwise offset measurements are invalid on first open.
+  if (!container || !el || container.clientHeight === 0 || container.clientWidth === 0) return false
   container.scrollTo({
     top: el.offsetTop - container.clientHeight / 2 + el.clientHeight / 2,
     behavior: 'smooth',
   })
+  return true
+}
+
+function scheduleScrollToActive(index: number) {
+  nextTick(() => {
+    if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame)
+    scrollFrame = requestAnimationFrame(() => {
+      scrollFrame = undefined
+      waitingForLayout = index !== -1 && !scrollToActive(index)
+    })
+  })
+}
+
+// flush:'post' → DOM patched before measuring offsets.
+watch(activeIndex, (newIndex) => {
+  scheduleScrollToActive(newIndex)
+}, { flush: 'post', immediate: true })
+
+onMounted(() => {
+  scheduleScrollToActive(activeIndex.value)
+  if (typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(() => {
+      if (waitingForLayout) scheduleScrollToActive(activeIndex.value)
+    })
+    if (scrollContainer.value) resizeObserver.observe(scrollContainer.value)
+    else if (rootEl.value) resizeObserver.observe(rootEl.value)
+  }
+})
+
+onUnmounted(() => {
+  if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame)
+  resizeObserver?.disconnect()
+  resizeObserver = null
 })
 </script>
 
 <template>
-  <div class="h-full w-full bg-background flex flex-col">
+  <div ref="rootEl" class="h-full w-full bg-background flex flex-col">
     <!-- Header -->
     <div class="flex items-center justify-between px-4 py-3 border-b border-foreground/[0.06] select-none">
       <div class="flex items-center gap-2 font-semibold flex-shrink-0">
