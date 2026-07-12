@@ -101,4 +101,30 @@ describe('SyncedLyricsView', () => {
     expect(lines[5].attributes('style')).toContain('opacity: 0.15')
     expect(lines[0].attributes('style')).toContain('opacity: 0.1')
   })
+
+  it('uses GPU transforms only for the active lyric and two surrounding lines', () => {
+    const wrapper = mount(SyncedLyricsView, {
+      props: {
+        currentPosition: 15,
+        lines: [
+          { text: 'First', time: 0 },
+          { text: 'Previous', time: 10 },
+          { text: 'Active', time: 15 },
+          { text: 'Next', time: 20 },
+          { text: 'Second next', time: 25 },
+          { text: 'Last', time: 30 },
+        ],
+      },
+    })
+
+    const lines = wrapper.findAll('[data-test="lyric-line"]')
+    expect(lines.map(line => line.classes('transform-gpu'))).toEqual([
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+    ])
+  })
 })

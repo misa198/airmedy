@@ -240,6 +240,16 @@ func (s *WindowService) SetMiniAlwaysOnTop(b bool) {
 	s.persistMiniState()
 }
 
+// RestoreMiniAlwaysOnTop reapplies the persisted pin level to the open mini
+// player. macOS may reset a floating NSWindow's level when the app is
+// reactivated from the Dock, while the persisted pin preference remains true.
+func (s *WindowService) RestoreMiniAlwaysOnTop() {
+	if s.miniWindow == nil {
+		return
+	}
+	s.miniWindow.SetAlwaysOnTop(s.loadMiniState().AlwaysOnTop)
+}
+
 // MiniState is the subset of mini player state the frontend needs on open.
 type MiniState struct {
 	AlwaysOnTop bool `json:"always_on_top"`

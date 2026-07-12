@@ -230,6 +230,17 @@ func main() {
 		})
 	})
 
+	// Wails/AppKit can reset a floating window's level while macOS reactivates
+	// the app from its Dock icon. Reapply the persisted mini-player pin state
+	// after both activation and reopen, without changing the user's preference.
+	if runtime.GOOS == "darwin" {
+		restoreMiniPin := func(_ *application.ApplicationEvent) {
+			application.InvokeAsync(windowService.RestoreMiniAlwaysOnTop)
+		}
+		wailsApp.Event.OnApplicationEvent(events.Mac.ApplicationDidBecomeActive, restoreMiniPin)
+		wailsApp.Event.OnApplicationEvent(events.Mac.ApplicationShouldHandleReopen, restoreMiniPin)
+	}
+
 	windowService.SetMiniWindowFactory(func() *application.WebviewWindow {
 		w := wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
 			Title:               "Mini Player",

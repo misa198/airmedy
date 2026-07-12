@@ -116,14 +116,14 @@ function openFavoritesContextMenu(e: MouseEvent) {
 
 <template>
   <div class="flex-1 overflow-y-auto px-3 pb-2">
-    <div class="sticky top-0 z-10 flex items-center justify-between px-3 py-2 bg-sidebar">
-      <div class="flex items-center gap-2 text-foreground opacity-80">
-        <Library class="w-3.5 h-3.5" />
-        <span class="text-xs font-semibold uppercase tracking-widest">{{ t('sidebar.playlists') }}</span>
+    <div class="sticky top-0 z-10 flex min-w-0 items-center justify-between px-3 py-2 bg-sidebar">
+      <div class="flex min-w-0 flex-1 items-center gap-2 text-foreground opacity-80">
+        <Library class="w-3.5 h-3.5 flex-shrink-0" />
+        <span class="min-w-0 truncate text-xs font-semibold uppercase tracking-widest">{{ t('sidebar.playlists') }}</span>
       </div>
-      <div class="flex items-center gap-1">
+      <div class="ml-1 flex flex-shrink-0 items-center gap-1">
         <button
-          class="w-6 h-6 flex items-center justify-center rounded text-foreground opacity-80 hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
+          class="w-6 h-6 flex flex-shrink-0 items-center justify-center rounded text-foreground opacity-80 hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
           @click.stop="openCreateDialog" :title="t('sidebar.new_playlist')">
           <Plus class="w-3.5 h-3.5" />
         </button>
