@@ -9,6 +9,14 @@ vi.mock('vue-i18n', () => ({
 
 vi.mock('@wailsio/runtime', () => ({
   Browser: { OpenURL: vi.fn() },
+  Events: { On: vi.fn(() => () => {}) },
+  Create: {
+    Nullable: (create: (value: unknown) => unknown) => (value: unknown) => value == null ? null : create(value),
+    Array: (create: (value: unknown) => unknown) => (values: unknown[]) => (values ?? []).map(create),
+    Struct: (ctor: new (value: unknown) => unknown) => (value: unknown) => value == null ? null : new ctor(value),
+    Map: () => (value: unknown) => value,
+  },
+  Call: { ByID: vi.fn() },
 }))
 
 vi.mock('../../../bindings/airmedy/internal/infra/wails/settingsservice', () => ({

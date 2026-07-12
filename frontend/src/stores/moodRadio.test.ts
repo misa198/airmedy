@@ -95,11 +95,11 @@ describe('useMoodRadioStore', () => {
     // placing G at the tail. Queue length and current ID are unchanged.
     player.queue = [{ id: 'A' }, { id: 'B' }, { id: 'C' }, { id: 'D' }, { id: 'E' }, { id: 'G' }] as any
 
-    await nextTick()
-    await nextTick()
+    await vi.waitFor(() => {
+      expect(mockAppendTracks).toHaveBeenCalledWith([{ id: 'refill' }])
+    })
 
     expect(mockGenerateMoodRadio).toHaveBeenCalledWith('G', ['A', 'B', 'C', 'D', 'E', 'G'], 15)
-    expect(mockAppendTracks).toHaveBeenCalledWith([{ id: 'refill' }])
     radio.dispose()
   })
 })

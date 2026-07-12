@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import DevToolsOverlay from './DevToolsOverlay.vue'
 
-const openDevTools = vi.fn()
+const { openDevTools } = vi.hoisted(() => ({ openDevTools: vi.fn() }))
 
 vi.mock('@wailsio/runtime', () => ({
   Window: { OpenDevTools: openDevTools },
