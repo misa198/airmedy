@@ -258,6 +258,12 @@ playback panel only retains the dependency hint
 (`settings.library_analysis.requires_enable`) when normalization is unavailable
 because analysis is off.
 
+### About Settings (`components/settings/AboutSettings.vue`)
+
+The application icon uses a rounded wrapper with a regular `box-shadow`, rather
+than `filter: drop-shadow()`. This avoids an intermittent gray compositing
+surface rendered by the desktop webview when the About panel mounts.
+
 The EQ section is identified by `#equalizer`; `SettingsView` recognizes the
 `section=equalizer` query on the Playback route and scrolls that section into view.
 

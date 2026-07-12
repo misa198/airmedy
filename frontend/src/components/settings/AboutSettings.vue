@@ -87,7 +87,9 @@ onMounted(() => {
 <template>
   <div class="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
     <div class="text-center py-8">
-      <img src="/airmedy.png" alt="Airmedy" class="w-24 h-24 mx-auto mb-6 drop-shadow-2xl" />
+      <div class="app-icon-shadow w-24 h-24 mx-auto mb-6 rounded-[30%]">
+        <img src="/airmedy.png" alt="Airmedy" class="block w-full h-full" />
+      </div>
       <h2 class="text-3xl font-black mb-2">{{ appInfo?.name || 'Airmedy' }}</h2>
       <p class="text-sm font-bold text-primary mb-2">{{ t("settings.about.version") }} {{ appInfo?.version || '1.0.0' }}
       </p>
@@ -183,3 +185,11 @@ onMounted(() => {
     </section>
   </div>
 </template>
+
+<style scoped>
+.app-icon-shadow {
+  /* Avoid filter: drop-shadow() here: it occasionally leaves a gray compositing
+     surface in the desktop webview when the settings panel is mounted. */
+  box-shadow: 0 16px 32px -12px rgb(0 0 0 / 0.35);
+}
+</style>
