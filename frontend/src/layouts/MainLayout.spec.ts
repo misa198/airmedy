@@ -39,7 +39,7 @@ describe('MainLayout sidebar width persistence', () => {
     localStorage.setItem('airmedy:sidebar-width', '300')
     mountLayout()
 
-    expect(usePlayerStore().sidebarWidth).toBe(260)
+    expect(usePlayerStore().sidebarWidth).toBe(250)
   })
 
   it('persists the final clamped width when resizing ends', async () => {
@@ -50,7 +50,7 @@ describe('MainLayout sidebar width persistence', () => {
     document.dispatchEvent(new MouseEvent('mousemove', { clientX: 1000 }))
     document.dispatchEvent(new MouseEvent('mouseup'))
 
-    expect(usePlayerStore().sidebarWidth).toBe(250)
-    expect(localStorage.getItem('airmedy:sidebar-width')).toBe('250')
+    expect(usePlayerStore().sidebarWidth).toBe(260)
+    expect(localStorage.getItem('airmedy:sidebar-width')).toBe('260')
   })
 })

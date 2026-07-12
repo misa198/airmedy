@@ -74,6 +74,28 @@ function immersiveLineStyle(index: number) {
   }
 }
 
+function lineClasses(index: number) {
+  const isActive = index === activeIndex.value
+  const isNearActive = activeIndex.value !== -1 && Math.abs(index - activeIndex.value) <= 2
+
+  return [
+    props.immersive
+      ? isActive
+        ? 'text-white scale-110'
+        : 'text-white'
+      : isActive
+        ? 'text-white scale-105 blur-none opacity-100'
+        : index < activeIndex.value
+          ? 'text-white/20 blur-[0.5px] opacity-60 hover:text-white/40'
+          : 'text-white/30 blur-[1px] opacity-40 hover:text-white/60 hover:blur-none',
+    {
+      'text-4xl': !props.immersive,
+      'text-[44px]': props.immersive,
+      'transform-gpu': isNearActive,
+    },
+  ]
+}
+
 // flush:'post' → DOM patched before measuring offsets. The mounted hook is
 // required because the immediate watcher runs before template refs exist.
 watch(activeIndex, (newIndex) => {
@@ -105,22 +127,8 @@ onUnmounted(() => {
         :key="index"
         ref="lineRefs"
         data-test="lyric-line"
-        class="font-bold transition-[filter,opacity,transform,scale] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] cursor-pointer select-none origin-left py-2 transform-gpu"
-        :class="[
-          props.immersive
-            ? index === activeIndex
-              ? 'text-white scale-110'
-              : 'text-white'
-            : index === activeIndex
-            ? 'text-white scale-105 blur-none opacity-100'
-            : index < activeIndex
-              ? 'text-white/20 blur-[0.5px] opacity-60 hover:text-white/40'
-              : 'text-white/30 blur-[1px] opacity-40 hover:text-white/60 hover:blur-none',
-              {
-                'text-4xl': !props.immersive,
-                'text-[44px]': props.immersive,
-              }
-        ]"
+        class="font-bold transition-[filter,opacity,transform,scale] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] cursor-pointer select-none origin-left py-2"
+        :class="lineClasses(index)"
         :style="props.immersive ? immersiveLineStyle(index) : undefined"
         @click="emit('seek', line.time)"
       >

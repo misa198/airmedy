@@ -127,10 +127,10 @@ Cards use lower blur with hover scale:
 
 ## Main Layout Sidebar
 
-The left sidebar in `MainLayout.vue` can be resized between 10px and 250px.
+The left sidebar in `MainLayout.vue` can be resized between 180px and 260px.
 Its final width is saved when the resize drag ends and restored on the next app
 load from `localStorage` key `airmedy:sidebar-width`. Missing, invalid, or
-out-of-range saved values fall back to the existing 260px default.
+out-of-range saved values fall back to the 250px default.
 
 Sidebar labels use a shrinking text region with `truncate`; adjacent navigation
 and action icons are `flex-shrink-0`, so a narrow sidebar shows an ellipsis
@@ -331,6 +331,7 @@ The mini player controls sit over a CSS glassmorphism panel (`.glass-panel` in `
 - Artwork requests use variants (`_sm`, `_md`) sized appropriately for each context.
 - Fullscreen `PlayerArtwork` can stack outgoing and incoming covers for an automatic audio crossfade; `requestAnimationFrame` applies equal-power `cos(t*pi/2)`/`sin(t*pi/2)` opacity weights over the backend-provided effective fade duration, using `plus-lighter` compositing. Its maximum size is explicitly set by `FullScreenPlayer`: `22rem` without a right column and `20rem` when queue or lyrics is open. Player bars and mini-player artwork do not blend.
 - Fullscreen lyrics use `PlayerLyricsPanel` when `appStore.highContrastLyrics` is on (glass surface and header) and `ImmersiveLyricsPanel` when off (transparent, headerless content over the artwork background). Both delegate lyric parsing, loading, seek, and scrolling to `PlayerLyrics`; `LyricsDrawer` is unaffected.
+- `SyncedLyricsView` applies the GPU transform hint only to the active lyric and the two lines on either side, limiting composited layers while preserving smooth nearby transitions.
 - `shallowRef` used for large reactive arrays (queue, tracks, albums).
 - Column widths cached in localStorage to avoid recalculation.
 - Mini player glass panel uses `backdrop-filter` on a GPU-composited layer (no rendered artwork copy).
