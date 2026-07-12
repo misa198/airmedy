@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { Check, Moon, CircleDot, SlidersHorizontal, Blend, Settings2 } from '@lucide/vue'
+import { Check, Moon, CircleDot, SlidersHorizontal, Blend, Settings2, Settings } from '@lucide/vue'
 import type { EQProfile } from '../../../bindings/airmedy/internal/domain/models'
 import * as EQService from '../../../bindings/airmedy/internal/infra/wails/eqservice'
 import { useAppStore } from '@/stores/app'
@@ -45,6 +45,13 @@ function goToEqualizerSettings() {
     name: 'settings',
     params: { category: 'playback' },
     query: { section: 'equalizer' },
+  })
+}
+
+function goToPlaybackSettings() {
+  router.push({
+    name: 'settings',
+    params: { category: 'playback' },
   })
 }
 
@@ -102,6 +109,12 @@ function buildItems(): ContextMenuItem[] {
       label: t('settings.quick_menu.eq_presets'),
       icon: SlidersHorizontal,
       children: eqChildren,
+    },
+    { separator: true },
+    {
+      label: t('settings.quick_menu.go_to_playback'),
+      icon: Settings,
+      action: goToPlaybackSettings,
     },
   ]
 }

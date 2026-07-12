@@ -203,9 +203,10 @@ It supports one hover-open submenu level, including separators within the submen
 
 `PlayerQuickSettingsMenu.vue` opens from a left click on a non-interactive area of
 the sticky player footer. It provides persisted toggles for prevent-sleep, active
-player indicators, and crossfade, plus an EQ-profile submenu. The submenu loads
+player indicators, and crossfade, plus an EQ-profile submenu (which loads
 the current profiles on open, marks the active profile, applies a chosen profile
-live, and links to the EQ section at `/settings/playback?section=equalizer`.
+live, and links to the EQ section at `/settings/playback?section=equalizer`), and
+an option at the end to open general playback settings.
 Artwork, sliders, and buttons retain their normal footer interactions.
 
 ## Modal & Dialog System
