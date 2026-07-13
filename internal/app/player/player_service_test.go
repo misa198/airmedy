@@ -132,7 +132,9 @@ func (p *fakePlayer) SetPreampGain(db float64) error {
 }
 
 // fakeArtworkCache is a no-op artwork cache for tests.
-type fakeArtworkCache struct{}
+type fakeArtworkCache struct {
+	existing map[string]bool
+}
 
 func (c *fakeArtworkCache) Save(_ context.Context, _ []byte, _ string) (string, error) {
 	return "", nil
@@ -140,7 +142,7 @@ func (c *fakeArtworkCache) Save(_ context.Context, _ []byte, _ string) (string, 
 
 func (c *fakeArtworkCache) GetPath(key string) string           { return key }
 func (c *fakeArtworkCache) GetVariantPath(key, _ string) string { return key }
-func (c *fakeArtworkCache) Exists(_ string) bool                { return false }
+func (c *fakeArtworkCache) Exists(key string) bool              { return c.existing[key] }
 func (c *fakeArtworkCache) CleanupOrphaned(_ context.Context, _ map[string]bool) error {
 	return nil
 }
@@ -298,15 +300,48 @@ func TestNowPlayingController_CalledOnLoadAndPlay(t *testing.T) {
 	}
 }
 
+func TestPushNowPlaying_ClearsArtworkWhenCacheEntryIsMissing(t *testing.T) {
+	service, _ := newTestService(t, &fakePlayer{})
+	nowPlaying := &fakeNowPlaying{}
+	service.nowPlaying = nowPlaying
+
+	service.pushNowPlaying(&domain.TrackDTO{Track: domain.Track{
+		ID:         "t1",
+		ArtworkKey: "missing.jpg",
+	}}, 0)
+
+	if nowPlaying.artworkPath != "" {
+		t.Errorf("artwork path = %q, want empty for missing cache entry", nowPlaying.artworkPath)
+	}
+}
+
+func TestPushNowPlaying_UsesExistingArtwork(t *testing.T) {
+	service, _ := newTestService(t, &fakePlayer{})
+	service.artworkCache = &fakeArtworkCache{existing: map[string]bool{"cover.jpg": true}}
+	nowPlaying := &fakeNowPlaying{}
+	service.nowPlaying = nowPlaying
+
+	service.pushNowPlaying(&domain.TrackDTO{Track: domain.Track{
+		ID:         "t1",
+		ArtworkKey: "cover.jpg",
+	}}, 0)
+
+	if nowPlaying.artworkPath != "cover.jpg" {
+		t.Errorf("artwork path = %q, want cover.jpg", nowPlaying.artworkPath)
+	}
+}
+
 // fakeNowPlaying satisfies domain.NowPlayingController.
 type fakeNowPlaying struct {
 	updateFn         func()
 	updatePositionFn func(float64)
+	artworkPath      string
 }
 
 func (n *fakeNowPlaying) SetupRemoteCommands()                                  {}
 func (n *fakeNowPlaying) SetRemoteCallbacks(_, _, _, _ func(), _ func(float64)) {}
-func (n *fakeNowPlaying) UpdateNowPlaying(_ *domain.TrackDTO, _ float64, _ string) {
+func (n *fakeNowPlaying) UpdateNowPlaying(_ *domain.TrackDTO, _ float64, artworkPath string) {
+	n.artworkPath = artworkPath
 	if n.updateFn != nil {
 		n.updateFn()
 	}

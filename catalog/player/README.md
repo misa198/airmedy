@@ -144,6 +144,12 @@ itself — it delegates to a `nowPlayingBackend` (`nowplaying.go`) selected per 
 `newNowPlayingBackend` may return nil when the OS integration is unavailable (e.g. no D-Bus
 session bus), in which case every delegated call is a no-op.
 
+Before every Now Playing update, `PlayerService` verifies that a non-empty
+artwork cache key still resolves to an existing file. A missing entry is sent as
+no artwork, which clears stale artwork on every platform. Windows also clears
+the SMTC thumbnail if opening its artwork stream fails; Linux serializes the
+path as an escaped `file:` URI for MPRIS.
+
 ### Playback state (play/pause glyph)
 
 The `domain.NowPlayingPlaybackState` interface (`SetNowPlayingPlaybackState(playing bool)`) and

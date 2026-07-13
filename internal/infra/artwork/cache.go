@@ -1,9 +1,13 @@
 package artwork
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"image"
+	_ "image/jpeg"
+	_ "image/png"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -24,10 +28,23 @@ func NewDiskArtworkCache(basePath string) (domain.ArtworkCache, error) {
 	return &diskArtworkCache{basePath: basePath}, nil
 }
 
-func (c *diskArtworkCache) Save(ctx context.Context, data []byte, mimeType string) (string, error) {
+func (c *diskArtworkCache) Save(ctx context.Context, data []byte, _ string) (string, error) {
+	if len(data) == 0 {
+		return "", fmt.Errorf("artwork data is empty")
+	}
+
+	decoded, format, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		return "", fmt.Errorf("decode artwork: %w", err)
+	}
+	bounds := decoded.Bounds()
+	if bounds.Dx() <= 0 || bounds.Dy() <= 0 {
+		return "", fmt.Errorf("artwork has invalid dimensions: %dx%d", bounds.Dx(), bounds.Dy())
+	}
+
 	hash := fmt.Sprintf("%x", sha256.Sum256(data))
 	ext := ".jpg"
-	if mimeType == "image/png" {
+	if format == "png" {
 		ext = ".png"
 	}
 
@@ -109,9 +126,9 @@ func (c *diskArtworkCache) CleanupOrphaned(ctx context.Context, activeKeys map[s
 
 		name := entry.Name()
 
-		// Variant files: keep if their base key is active.
-		if baseKey, ok := variantBaseKey(name); ok {
-			if !activeKeys[baseKey] {
+		// Variants are JPEGs even when their original is PNG.
+		if hash, ok := variantHash(name); ok {
+			if !activeKeys[hash+".jpg"] && !activeKeys[hash+".png"] {
 				os.Remove(filepath.Join(c.basePath, name)) //nolint:errcheck
 			}
 			continue
@@ -125,13 +142,12 @@ func (c *diskArtworkCache) CleanupOrphaned(ctx context.Context, activeKeys map[s
 	return nil
 }
 
-// variantBaseKey detects files like "{hash}_sm.jpg" or "{hash}_md.jpg" and
-// returns the base key ("{hash}.jpg") and true. Returns "", false otherwise.
-func variantBaseKey(name string) (string, bool) {
+// variantHash detects files like "{hash}_sm.jpg" or "{hash}_md.jpg" and
+// returns the content hash and true.
+func variantHash(name string) (string, bool) {
 	for _, suffix := range []string{"_sm.jpg", "_md.jpg"} {
 		if strings.HasSuffix(name, suffix) {
-			hash := strings.TrimSuffix(name, suffix)
-			return hash + ".jpg", true
+			return strings.TrimSuffix(name, suffix), true
 		}
 	}
 	return "", false

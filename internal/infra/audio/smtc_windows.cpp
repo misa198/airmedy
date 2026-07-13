@@ -321,6 +321,8 @@ void ApplyThumbnail(const std::wstring& path) {
 	if (FAILED(hr) || ras == nullptr) {
 		SmtcDbg("thumbnail: CreateRandomAccessStreamOnFile failed 0x%08X for %ls",
 		        (unsigned)hr, path.c_str());
+		// A bad path must not leave the previous track's artwork visible.
+		g_updater->put_Thumbnail(nullptr);
 		return;
 	}
 
@@ -333,6 +335,7 @@ void ApplyThumbnail(const std::wstring& path) {
 		SmtcDbg("thumbnail: applied");
 	} else {
 		SmtcDbg("thumbnail: CreateFromStream failed 0x%08X", (unsigned)hr);
+		g_updater->put_Thumbnail(nullptr);
 	}
 }
 

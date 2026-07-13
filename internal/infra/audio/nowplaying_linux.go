@@ -4,6 +4,7 @@ package audio
 
 import (
 	"log/slog"
+	"net/url"
 	"strings"
 	"sync"
 
@@ -153,7 +154,7 @@ func (b *mprisBackend) updateNowPlaying(track *domain.TrackDTO, position float64
 	// lets some shells keep showing the previous track's art.
 	artURL := ""
 	if artworkPath != "" {
-		artURL = "file://" + artworkPath
+		artURL = (&url.URL{Scheme: "file", Path: artworkPath}).String()
 	}
 	meta := map[string]dbus.Variant{
 		"mpris:trackid": dbus.MakeVariant(trackObjectPath(track.ID)),
