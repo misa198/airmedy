@@ -201,7 +201,7 @@ type SleepInhibitor interface {
 ### macOS — SFBAudioEngine (`player_darwin.go`)
 
 - Implemented via **cgo** calling Objective-C bridging code (`native_player_darwin.m`).
-- Audio engine: **SFBAudioEngine** (v0.12.1) — replaces AVAudioEngine + FFmpeg.
+- Audio engine: **SFBAudioEngine** (v0.13.0) — replaces AVAudioEngine + FFmpeg.
 - Framework deps: `SFBAudioEngine`, `AVFoundation`, `CoreMedia`, `MediaPlayer`, `AppKit`, `CoreFoundation`, `Security`, `AudioToolbox`, `opus`, `sndfile`, `lame`, `FLAC`, `tta-cpp`, `vorbis`, `wavpack`, `mpg123`, `mpc`, `ogg`.
 - SFBAudioEngine and its dependencies are dynamic xcframeworks built/downloaded by `task build:sfbaudioengine` and stored at `internal/infra/audio/sfb_libs/` (not committed; add to `.gitignore`). At runtime, the frameworks are embedded in `Contents/Frameworks/`.
 - **Format support:** All formats natively — MP3, FLAC, AAC, WAV, AIFF, Opus, Vorbis, WavPack, APE, DSD, and more. No FFmpeg required on darwin.
