@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="0.12.1"
+VERSION="0.13.0"
 REPO_URL="https://github.com/sbooth/SFBAudioEngine"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="${SCRIPT_DIR}/../internal/infra/audio/sfb_build"

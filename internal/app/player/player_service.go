@@ -829,7 +829,7 @@ func (s *PlayerService) pushNowPlaying(track *domain.TrackDTO, position float64)
 		return
 	}
 	artworkPath := ""
-	if track.ArtworkKey != "" {
+	if track.ArtworkKey != "" && s.artworkCache.Exists(track.ArtworkKey) {
 		artworkPath = s.artworkCache.GetPath(track.ArtworkKey)
 	}
 	npTrack := *track

@@ -32,7 +32,11 @@ type ArtworkCache interface {
 
 **Key generation:** SHA256 hash of the raw image bytes. Same artwork across different albums reuses a single file (content-addressed).
 
-**Storage format:** Original saved as `{hash}.jpg` or `{hash}.png` depending on MIME type.
+**Storage format:** Original saved as `{hash}.jpg` or `{hash}.png` according to
+the decoded image format (not the caller-provided MIME type). Empty, corrupt, or
+unsupported image bytes are rejected before writing. JPEG and PNG are currently
+supported; this also guarantees the original is compatible with the JPEG variant
+pipeline.
 
 **Variants** generated asynchronously after save:
 
@@ -105,6 +109,7 @@ Returns 404 if the key doesn't exist in cache.
 ## Orphan Cleanup
 
 After every sync, `CleanupOrphaned(ctx, activeKeys)` compares all files in the artwork directory against `activeKeys` (built from `TrackRepository.GetAllArtworkKeys()`). Files not in the active set (original and variants) are deleted.
+JPEG variants of a PNG original are retained by matching their shared content hash.
 
 ## Frontend Artwork URL Construction
 
