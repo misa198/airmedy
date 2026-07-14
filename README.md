@@ -82,7 +82,7 @@
 - **Volume normalization** — consistent loudness across your library, no more reaching for the volume knob between tracks. Analyzes your library with FFmpeg (LUFS loudness + true peak), then applies per-track pre-amp gain at playback. Track mode normalizes each song individually; album mode keeps an album's natural dynamics by applying one gain across all its tracks. Target loudness is configurable (default -14 LUFS), with an optional prevent-clipping guard.
 - **Mood Radio** — start an auto-refilling radio queue from any track. Finds similar tracks across your whole library by comparing energy, danceability, and tempo derived from per-track audio analysis.
 - **Smart Playlists** — auto-updating playlists built from rules (genre, artist, year, play count, rating, and more) or from a mood picker that filters your library by energy × danceability.
-- **Player quick settings** — right-click the settings icon in the player bar to toggle prevent sleep, player indicator, and crossfade on/off, switch EQ presets, or jump straight to Playback settings — all without leaving the current view.
+- **Player quick settings** — right-click the footer player bar to toggle prevent sleep, player indicator, and crossfade on/off, switch EQ presets, or jump straight to Playback settings — all without leaving the current view.
 
 ---
 
