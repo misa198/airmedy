@@ -163,7 +163,7 @@ hydrate the library-analysis worker slider's current value and its runtime max.
 
 `applyTheme()` manages CSS classes on `document.documentElement`. `dark` theme adds `.dark`; `black` theme adds both `.dark` and `.black` (pure black bg override for OLED screens); `light` removes both. When theme is `system`, it respects `prefers-color-scheme` media query (resolves to dark, not black).
 
-`applyPrimaryColor()` applies the saved normalized `#RRGGBB` accent to the primary CSS variables and chooses a black or white primary foreground for contrast. General Settings offers seven circular presets (`#E11D48`, `#2563EB`, `#7E22CE`, `#DB2777`, `#EA580C`, `#CA8A04`, `#15803D`) plus a shared in-app color picker for any valid hex color.
+`applyPrimaryColor()` applies the saved normalized `#RRGGBB` accent to the primary CSS variables and chooses a black or white primary foreground for contrast. General Settings offers seven circular presets (`#E11D48`, `#2563EB`, `#7E22CE`, `#DB2777`, `#EA580C`, `#CA8A04`, `#15803D`) plus a shared in-app color picker for any valid hex color. The horizontal preset group uses half the row width (capped at 18rem), so its controls wrap in a narrow Settings section; the row title truncates rather than wrapping.
 
 `updateLanguage()` sets `i18n.locale.value` immediately for instant locale switch without reload.
 
@@ -190,7 +190,7 @@ Version constant moved from `internal/domain/version.go` (deleted) to `internal/
 
 | Tab          | Content                                                                    |
 | ------------ | -------------------------------------------------------------------------- |
-| General      | Theme selector, Language picker, Start at Login, Auto-check updates toggle |
+| General      | Language picker, Theme selector, primary accent color, Start at Login, Auto-check updates toggle |
 | Library      | Watched folders list, Add/Remove folder, Sync All, Reindex; **Tag Delimiters** section — 4 chip inputs (`DelimiterInput.vue`) for artist/album-artist/genre/composer split delimiters with inline validation, plus a persistent "Sync Library to apply" hint (`DelimitersPendingResync`) shown while pending; **Library Analysis** section — enable toggle, live progress/readiness text, and a concurrent-worker slider when more than one worker is available |
 | Integrations | Last.fm account + lyrics providers (LRClib, Kugou), prefer-local toggle, lyrics-subfolder toggle + validated name input (matched case-insensitively, with a hint), and dedicated lyrics folder toggle + picker (reuses `LibraryService.SelectFolder`). Toggles with conditional sub-settings use `SettingExpandableRow.vue` (header + `#control` slot + animated, inset `#expanded` slot) so the sub-setting reads as nested under its toggle. |
 | Playback     | EQ profiles and band sliders, prevent-sleep toggle, Fullscreen High Contrast Lyrics toggle, and Volume Normalization controls (`PlaybackSettings.vue`) |

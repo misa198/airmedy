@@ -78,61 +78,11 @@ const toggleAutoCheckUpdate = async (enabled: boolean) => {
     </SettingSection>
 
     <SettingSection :icon="Sun" :label="t('settings.general.appearance')">
-      <SettingRow :title="t('settings.appearance.theme')" :description="t('settings.appearance.theme_desc')">
-        <template #leading>
-          <div class="p-2 bg-foreground/[0.04] rounded-xl">
-            <Sun v-if="appStore.theme === 'light'" class="w-5 h-5 text-foreground opacity-80" />
-            <Moon v-else-if="appStore.theme === 'dark'" class="w-5 h-5 text-foreground opacity-80" />
-            <Circle v-else-if="appStore.theme === 'black'" class="w-5 h-5 text-foreground opacity-80" />
-            <Monitor v-else class="w-5 h-5 text-foreground opacity-80" />
-          </div>
-        </template>
-        <Select
-          :model-value="appStore.theme"
-          @update:model-value="val => appStore.updateTheme(val as any)"
-        >
-          <SelectTrigger class="w-[140px] bg-foreground/[0.04] border-0 h-9 text-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="system">{{ t('settings.appearance.system') }}</SelectItem>
-            <SelectItem value="light">{{ t('settings.appearance.light') }}</SelectItem>
-            <SelectItem value="dark">{{ t('settings.appearance.dark') }}</SelectItem>
-            <SelectItem value="black">{{ t('settings.appearance.black') }}</SelectItem>
-          </SelectContent>
-        </Select>
-      </SettingRow>
-
-      <SettingRow :title="t('settings.appearance.primary_color')" :description="t('settings.appearance.primary_color_desc')">
-        <template #leading>
-          <div class="p-2 bg-foreground/[0.04] rounded-xl">
-            <Palette class="w-5 h-5 text-foreground opacity-80" />
-          </div>
-        </template>
-        <div class="flex items-center gap-2">
-          <button
-            v-for="color in primaryColorPresets"
-            :key="color"
-            type="button"
-            class="flex h-7 w-7 items-center justify-center rounded-full border-2 transition-all duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-            :class="appStore.primaryColor === color ? 'border-primary' : 'border-transparent'"
-            :aria-label="t('settings.appearance.primary_color_preset', { color })"
-            :aria-pressed="appStore.primaryColor === color"
-            @click="appStore.updatePrimaryColor(color)"
-          >
-            <span class="h-5 w-5 rounded-full" :style="{ backgroundColor: color }" />
-          </button>
-          <ColorPicker
-            :model-value="appStore.primaryColor"
-            :presets="primaryColorPresets"
-            :ariaLabel="t('settings.appearance.custom_primary_color')"
-            :hex-label="t('settings.appearance.primary_color_hex')"
-            @update:model-value="appStore.updatePrimaryColor"
-          />
-        </div>
-      </SettingRow>
-
-      <SettingRow :title="t('settings.appearance.language')" :description="t('settings.appearance.select_language')">
+      <SettingRow
+        data-testid="language-setting"
+        :title="t('settings.appearance.language')"
+        :description="t('settings.appearance.select_language')"
+      >
         <template #leading>
           <div class="p-2 bg-foreground/[0.04] rounded-xl">
             <Languages class="w-5 h-5 text-foreground opacity-80" />
@@ -161,6 +111,73 @@ const toggleAutoCheckUpdate = async (enabled: boolean) => {
           </SelectContent>
         </Select>
       </SettingRow>
+
+      <SettingRow
+        data-testid="theme-setting"
+        :title="t('settings.appearance.theme')"
+        :description="t('settings.appearance.theme_desc')"
+      >
+        <template #leading>
+          <div class="p-2 bg-foreground/[0.04] rounded-xl">
+            <Sun v-if="appStore.theme === 'light'" class="w-5 h-5 text-foreground opacity-80" />
+            <Moon v-else-if="appStore.theme === 'dark'" class="w-5 h-5 text-foreground opacity-80" />
+            <Circle v-else-if="appStore.theme === 'black'" class="w-5 h-5 text-foreground opacity-80" />
+            <Monitor v-else class="w-5 h-5 text-foreground opacity-80" />
+          </div>
+        </template>
+        <Select
+          :model-value="appStore.theme"
+          @update:model-value="val => appStore.updateTheme(val as any)"
+        >
+          <SelectTrigger class="w-[140px] bg-foreground/[0.04] border-0 h-9 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="system">{{ t('settings.appearance.system') }}</SelectItem>
+            <SelectItem value="light">{{ t('settings.appearance.light') }}</SelectItem>
+            <SelectItem value="dark">{{ t('settings.appearance.dark') }}</SelectItem>
+            <SelectItem value="black">{{ t('settings.appearance.black') }}</SelectItem>
+          </SelectContent>
+        </Select>
+      </SettingRow>
+
+      <SettingRow
+        data-testid="primary-color-setting"
+        no-title-wrap
+        :title="t('settings.appearance.primary_color')"
+        :description="t('settings.appearance.primary_color_desc')"
+      >
+        <template #leading>
+          <div class="p-2 bg-foreground/[0.04] rounded-xl">
+            <Palette class="w-5 h-5 text-foreground opacity-80" />
+          </div>
+        </template>
+        <div
+          class="flex w-1/2 max-w-[18rem] flex-wrap items-center justify-end gap-2"
+          data-testid="primary-color-presets"
+        >
+          <button
+            v-for="color in primaryColorPresets"
+            :key="color"
+            type="button"
+            class="flex h-7 w-7 items-center justify-center rounded-full border-2 transition-all duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+            :class="appStore.primaryColor === color ? 'border-primary' : 'border-transparent'"
+            :aria-label="t('settings.appearance.primary_color_preset', { color })"
+            :aria-pressed="appStore.primaryColor === color"
+            @click="appStore.updatePrimaryColor(color)"
+          >
+            <span class="h-5 w-5 rounded-full" :style="{ backgroundColor: color }" />
+          </button>
+          <ColorPicker
+            :model-value="appStore.primaryColor"
+            :presets="primaryColorPresets"
+            :ariaLabel="t('settings.appearance.custom_primary_color')"
+            :hex-label="t('settings.appearance.primary_color_hex')"
+            @update:model-value="appStore.updatePrimaryColor"
+          />
+        </div>
+      </SettingRow>
+
     </SettingSection>
 
     <RestartModal v-model:open="showRestartDialog" />
