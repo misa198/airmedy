@@ -82,6 +82,9 @@ TailwindCSS v4 uses a **CSS-first** `@theme` directive approach. All design toke
 
 `@airmedy/ui` exports `ColorPicker`, a stateless popover primitive with hue, saturation/brightness, preview, and validated `#RRGGBB` input. General Settings uses it after the six primary-color preset circles.
 
+The Track Info Drawer keeps its Lossless quality badge on the original rose
+`#E11D48`; it deliberately does not follow the user-configured primary color.
+
 ### Dynamic Variables (Artwork-Derived)
 
 Updated via JavaScript on each track change. Declared with `@property` for CSS transition support:

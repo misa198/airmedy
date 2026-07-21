@@ -25,7 +25,7 @@ const qualityBadge = computed(() => {
     case 'DSD':
       return { icon: Crown, label: t('track_info.dsd'), class: 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-400/30' }
     case 'LOSSLESS':
-      return { icon: AudioLines, label: t('track_info.lossless'), class: 'bg-primary/10 text-primary border-primary/20' }
+      return { icon: AudioLines, label: t('track_info.lossless'), class: 'bg-[#E11D48]/10 text-[#E11D48] border-[#E11D48]/20' }
     default:
       return null
   }
