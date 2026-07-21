@@ -166,6 +166,11 @@
       "light": "Claro",
       "dark": "Oscuro",
       "black": "Negro",
+      "primary_color": "Color de acento",
+      "primary_color_desc": "Elegir color de acento",
+      "primary_color_preset": "Usar {color} como color de acento",
+      "custom_primary_color": "Elegir un color de acento personalizado",
+      "primary_color_hex": "Valor hexadecimal del color de acento",
       "language": "Idioma",
       "select_language": "Seleccionar idioma de la aplicación"
     },

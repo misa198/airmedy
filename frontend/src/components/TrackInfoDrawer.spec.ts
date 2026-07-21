@@ -58,6 +58,7 @@ describe('TrackInfoDrawer quality badge', () => {
   it('shows LOSSLESS badge for 16-bit/44.1kHz flac', () => {
     const w = mountDrawer(makeTrack({ format: 'flac', bit_depth: 16, sample_rate: 44100 }))
     expect(w.text()).toContain('track_info.lossless')
+    expect(w.get('.bg-\\[\\#E11D48\\]\\/10').classes()).toContain('text-[#E11D48]')
   })
 
   it('shows HI-RES badge for 24-bit/96kHz flac', () => {

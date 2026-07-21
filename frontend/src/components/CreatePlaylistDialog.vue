@@ -46,7 +46,7 @@ function submit() {
           class="px-3 py-1.5 text-sm text-foreground opacity-70 hover:text-foreground rounded-lg hover:bg-foreground/[0.05] transition-colors"
           @click="emit('update:open', false)">{{ t('common.cancel') }}</button>
         <button
-          class="px-3 py-1.5 text-sm bg-primary text-white rounded-lg transition-colors font-medium disabled:opacity-40"
+          class="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-lg transition-colors font-medium disabled:opacity-40"
           :disabled="!name.trim()"
           @click="submit">{{ confirmLabel ?? (title === t('sidebar.rename_playlist_title') ? t('sidebar.rename') : t('common.create')) }}</button>
       </div>

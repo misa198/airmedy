@@ -166,6 +166,11 @@
       "light": "Sáng",
       "dark": "Tối",
       "black": "Đen",
+      "primary_color": "Màu nhấn",
+      "primary_color_desc": "Chọn màu nhấn",
+      "primary_color_preset": "Dùng {color} làm màu nhấn",
+      "custom_primary_color": "Chọn màu nhấn tùy chỉnh",
+      "primary_color_hex": "Mã hex màu nhấn",
       "language": "Ngôn ngữ",
       "select_language": "Chọn ngôn ngữ ứng dụng"
     },

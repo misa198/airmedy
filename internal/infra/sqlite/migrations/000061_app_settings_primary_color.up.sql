@@ -1,0 +1,1 @@
+ALTER TABLE app_settings ADD COLUMN primary_color TEXT NOT NULL DEFAULT '#E11D48';

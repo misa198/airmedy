@@ -88,10 +88,11 @@ func TestSqliteRepositories(t *testing.T) {
 	// Test SettingsRepository
 	settingsRepo := NewSettingsRepository(db)
 	settings := &domain.AppSettings{
-		Language:  "fr",
-		Theme:     "dark",
-		EQEnabled: false,
-		EQPreamp:  -3.5,
+		Language:     "fr",
+		Theme:        "dark",
+		PrimaryColor: "#3B82F6",
+		EQEnabled:    false,
+		EQPreamp:     -3.5,
 	}
 	err = settingsRepo.Save(ctx, settings)
 	if err != nil {
@@ -107,6 +108,9 @@ func TestSqliteRepositories(t *testing.T) {
 	}
 	if savedSettings.Theme != "dark" {
 		t.Errorf("Expected theme 'dark', got '%s'", savedSettings.Theme)
+	}
+	if savedSettings.PrimaryColor != "#3B82F6" {
+		t.Errorf("Expected primary color #3B82F6, got %q", savedSettings.PrimaryColor)
 	}
 	if savedSettings.EQEnabled != false {
 		t.Errorf("Expected EQEnabled false, got %v", savedSettings.EQEnabled)
@@ -258,14 +262,14 @@ func TestNormalizationSettingsRoundTrip(t *testing.T) {
 
 	// Non-default values round-trip.
 	in := &domain.AppSettings{
-		Language:                 "en",
-		Theme:                    "dark",
-		LibraryAnalysisEnabled:   true,
-		NormalizationEnabled:     true,
-		NormalizationMode:        "album",
-		NormalizationTargetLUFS:  -18,
-		NormalizationPreventClip: false,
-		HighContrastLyrics:       false,
+		Language:                        "en",
+		Theme:                           "dark",
+		LibraryAnalysisEnabled:          true,
+		NormalizationEnabled:            true,
+		NormalizationMode:               "album",
+		NormalizationTargetLUFS:         -18,
+		NormalizationPreventClip:        false,
+		HighContrastLyrics:              false,
 		AutoAdvanceNotificationsEnabled: false,
 	}
 	if err := repo.Save(ctx, in); err != nil {

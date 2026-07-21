@@ -11,6 +11,7 @@ const props = defineProps<{
   scrollable?: boolean
   anchorValue?: number
   trackColorClass?: string
+  trackBackground?: string
   thumbColor?: string
   alwaysShowThumb?: boolean
 }>()
@@ -120,7 +121,7 @@ onUnmounted(() => {
     }"
     v-on="props.scrollable ? { wheel: handleWheel } : {}">
     <!-- Visual track -->
-    <div class="absolute w-full h-1 rounded-full bg-foreground/15">
+    <div class="absolute w-full h-1 rounded-full bg-foreground/15" :style="props.trackBackground ? { background: props.trackBackground } : undefined">
       <div
         class="absolute h-full rounded-full"
         :class="props.trackColorClass || 'bg-foreground'"

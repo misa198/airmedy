@@ -23,7 +23,7 @@ const trackTable = ref<InstanceType<typeof TrackTable> | null>(null)
 
 function navigate(path: string) {
   if (playerStore.playerMode === 'fullscreen') {
-    playerStore.playerMode = 'sticky'
+    playerStore.setPlayerMode('sticky')
   }
   router.push(path)
   emit('close')

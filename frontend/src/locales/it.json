@@ -166,6 +166,11 @@
       "light": "Chiaro",
       "dark": "Scuro",
       "black": "Nero",
+      "primary_color": "Colore di accento",
+      "primary_color_desc": "Scegli il colore di accento",
+      "primary_color_preset": "Usa {color} come colore di accento",
+      "custom_primary_color": "Scegli un colore di accento personalizzato",
+      "primary_color_hex": "Valore esadecimale del colore di accento",
       "language": "Lingua",
       "select_language": "Seleziona la lingua dell'applicazione"
     },

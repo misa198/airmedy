@@ -182,7 +182,7 @@ async function onSeekEnd() {
         <PictureInPicture2 class="w-4 h-4" />
       </button>
       <button class="text-foreground opacity-60 hover:text-foreground opacity-50 transition-colors"
-        @click="store.playerMode = 'fullscreen'" :title="t('player.fullscreen')">
+        @click="store.setPlayerMode('fullscreen')" :title="t('player.fullscreen')">
         <Maximize class="w-4 h-4" />
       </button>
     </div>

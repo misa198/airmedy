@@ -78,6 +78,13 @@ TailwindCSS v4 uses a **CSS-first** `@theme` directive approach. All design toke
 --text-main: #0a0a0a --text-muted: #52525b;
 ```
 
+`--primary` and its RGB/tint/foreground companion variables are updated at runtime from the persisted primary-color setting. This is independent of artwork-derived `--dynamic-*` colors.
+
+`@airmedy/ui` exports `ColorPicker`, a stateless popover primitive with hue, saturation/brightness, preview, and validated `#RRGGBB` input. General Settings uses it after the six primary-color preset circles.
+
+The Track Info Drawer keeps its Lossless quality badge on the original rose
+`#E11D48`; it deliberately does not follow the user-configured primary color.
+
 ### Dynamic Variables (Artwork-Derived)
 
 Updated via JavaScript on each track change. Declared with `@property` for CSS transition support:
@@ -201,13 +208,16 @@ It supports one hover-open submenu level, including separators within the submen
 
 ### Player Footer Quick Settings
 
-`PlayerQuickSettingsMenu.vue` opens from a left click on a non-interactive area of
-the sticky player footer. It provides persisted toggles for prevent-sleep, active
+`PlayerQuickSettingsMenu.vue` opens from a right click on a non-interactive area of
+the sticky player footer or fullscreen player. Artwork, track information, sliders,
+buttons, tabs, and queue/lyrics panels retain their own interactions and do not open
+the quick settings menu. It provides persisted toggles for prevent-sleep, active
 player indicators, and crossfade, plus an EQ-profile submenu (which loads
 the current profiles on open, marks the active profile, applies a chosen profile
 live, and links to the EQ section at `/settings/playback?section=equalizer`), and
-an option at the end to open general playback settings.
-Artwork, sliders, and buttons retain their normal footer interactions.
+an option at the end to open general playback settings. When either settings
+link is selected from fullscreen player, it returns the player to sticky mode
+before navigating.
 
 ## Modal & Dialog System
 

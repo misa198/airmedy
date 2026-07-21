@@ -166,6 +166,11 @@
       "light": "Светлая",
       "dark": "Темная",
       "black": "Чёрный",
+      "primary_color": "Акцентный цвет",
+      "primary_color_desc": "Выбрать акцентный цвет",
+      "primary_color_preset": "Использовать {color} как акцентный цвет",
+      "custom_primary_color": "Выбрать пользовательский акцентный цвет",
+      "primary_color_hex": "Шестнадцатеричное значение акцентного цвета",
       "language": "Язык",
       "select_language": "Выберите язык приложения"
     },

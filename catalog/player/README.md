@@ -587,6 +587,9 @@ On app startup, `Load()` restores queue, seeks to saved position, but does not a
 
 **State:** `status`, `queue`, `currentTrack`, `theme`, `lyrics`, `artworkCrossfade`, `playerMode` (`sticky | mini | fullscreen`), drawer visibility flags.
 
+**Actions:** `setPlayerMode(mode)` is the single frontend mutation point for
+`playerMode`; components use it instead of assigning the state directly.
+
 **Playback Interpolation:**
 To ensure smooth 60fps progress updates and reduce IPC overhead, the store uses a **Sync-and-Drift** mechanism:
 - **Sync:** Listens for `player:status` from the backend to get the authoritative position (`lastSyncPosition`) and records the arrival time (`lastSyncTime` via `performance.now()`).

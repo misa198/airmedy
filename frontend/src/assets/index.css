@@ -24,10 +24,11 @@
     --border-glass: rgba(0, 0, 0, 0.1);
 
     --primary: #e11d48;
-    --primary-gradient: linear-gradient(135deg, #e11d48 0%, #fb7185 100%);
+    --primary-rgb: 225 29 72;
+    --primary-gradient: linear-gradient(135deg, var(--primary) 0%, rgb(var(--primary-rgb) / 0.62) 100%);
     --primary-foreground: #ffffff;
-    --primary-100: #fce7eb;
-    --primary-200: #f9d2da;
+    --primary-100: rgb(var(--primary-rgb) / 0.10);
+    --primary-200: rgb(var(--primary-rgb) / 0.18);
     --text-main: #0a0a0a;
     --text-muted: #52525b;
     --text-inverse: #ffffff;
@@ -55,8 +56,8 @@
     --text-muted: #a1a1aa;
     --text-inverse: #000000;
     --primary-foreground: #ffffff;
-    --primary-100: #3f1620;
-    --primary-200: #591e2c;
+    --primary-100: rgb(var(--primary-rgb) / 0.18);
+    --primary-200: rgb(var(--primary-rgb) / 0.30);
 
     --bg-zebra: rgba(255, 255, 255, 0.02);
     --scrollbar-thumb: rgba(255, 255, 255, 0.25);

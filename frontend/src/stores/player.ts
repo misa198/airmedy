@@ -428,6 +428,11 @@ export const usePlayerStore = defineStore('player', () => {
     isTrackInfoOpen.value = false
   }
 
+  function setPlayerMode(mode: PlayerMode) {
+    if (playerMode.value === mode) return
+    playerMode.value = mode
+  }
+
   return {
     // State
     status,
@@ -487,6 +492,7 @@ export const usePlayerStore = defineStore('player', () => {
     openLyrics,
     openTrackInfo,
     closeAllDrawers,
+    setPlayerMode,
     cycleRepeat,
   }
 })

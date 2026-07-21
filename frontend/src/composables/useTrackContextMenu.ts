@@ -37,7 +37,7 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
 
     const closeFullScreen = () => {
       if (playerStore.playerMode === 'fullscreen') {
-        playerStore.playerMode = 'sticky'
+        playerStore.setPlayerMode('sticky')
       }
     }
 

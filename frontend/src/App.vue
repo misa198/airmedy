@@ -97,7 +97,7 @@ onMounted(async () => {
       WindowService.CloseMiniPlayer()
     } else {
       if (playerStore.playerMode !== 'sticky') {
-        playerStore.playerMode = 'sticky'
+        playerStore.setPlayerMode('sticky')
       }
       router.push('/settings')
     }

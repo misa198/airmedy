@@ -6,6 +6,7 @@ import { Check, Moon, CircleDot, SlidersHorizontal, Blend, Settings2, Settings }
 import type { EQProfile } from '../../../bindings/airmedy/internal/domain/models'
 import * as EQService from '../../../bindings/airmedy/internal/infra/wails/eqservice'
 import { useAppStore } from '@/stores/app'
+import { usePlayerStore } from '@/stores/player'
 import { useContextMenu, type ContextMenuItem } from '@/composables/useContextMenu'
 import ContextMenu from '@/components/ContextMenu.vue'
 
@@ -14,6 +15,7 @@ const CROSSFADE_DEFAULT_SECONDS = 4
 const { t } = useI18n()
 const router = useRouter()
 const appStore = useAppStore()
+const playerStore = usePlayerStore()
 const contextMenu = useContextMenu()
 const profiles = ref<EQProfile[]>([])
 const activeProfileID = ref<string | null>(null)
@@ -41,6 +43,7 @@ async function selectProfile(profile: EQProfile) {
 }
 
 function goToEqualizerSettings() {
+  closeFullscreenPlayer()
   router.push({
     name: 'settings',
     params: { category: 'playback' },
@@ -48,7 +51,14 @@ function goToEqualizerSettings() {
   })
 }
 
+function closeFullscreenPlayer() {
+  if (playerStore.playerMode === 'fullscreen') {
+    playerStore.setPlayerMode('sticky')
+  }
+}
+
 function goToPlaybackSettings() {
+  closeFullscreenPlayer()
   router.push({
     name: 'settings',
     params: { category: 'playback' },

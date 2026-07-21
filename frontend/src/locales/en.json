@@ -166,6 +166,11 @@
       "light": "Light",
       "dark": "Dark",
       "black": "Black",
+      "primary_color": "Accent color",
+      "primary_color_desc": "Choose accent color",
+      "primary_color_preset": "Use {color} as primary color",
+      "custom_primary_color": "Choose a custom primary color",
+      "primary_color_hex": "Primary color hex value",
       "language": "Language",
       "select_language": "Select application language"
     },
