@@ -72,10 +72,10 @@ function close() {
         <button
           v-if="!appStore.updateApplied"
           @click="handleUpdate()"
-          class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
+          class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
           :disabled="appStore.isUpdating"
         >
-          <div v-if="appStore.isUpdating" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          <div v-if="appStore.isUpdating" class="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
           {{ appStore.isUpdating ? t('app.updating') : t('app.update_now') }}
         </button>
         <template v-if="appStore.updateApplied">
@@ -87,7 +87,7 @@ function close() {
           </button>
           <button
             @click="handleRestart()"
-            class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors flex items-center gap-2"
+            class="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center gap-2"
           >
             {{ t('app.restart_now') }}
           </button>

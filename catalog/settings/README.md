@@ -2,7 +2,7 @@
 
 ## Summary
 
-Application-level settings: UI theme, display language, launch-at-login. Settings are persisted in SQLite and loaded at startup. A separate Settings view provides UI for all configuration including Library management and EQ (covered in their own catalog entries).
+Application-level settings: UI theme, primary accent color, display language, launch-at-login. Settings are persisted in SQLite and loaded at startup. A separate Settings view provides UI for all configuration including Library management and EQ (covered in their own catalog entries).
 
 ## Files
 
@@ -22,6 +22,7 @@ Application-level settings: UI theme, display language, launch-at-login. Setting
 type AppSettings struct {
     Language               string              // BCP 47 language tag, e.g., "en", "zh", "ja"
     Theme                  string              // "system", "light", "dark", "black"
+    PrimaryColor           string              // normalized #RRGGBB; default #E11D48
     StartAtLogin           bool
     AutoCheckUpdate        bool
     LastFmUsername         string              // Connected Last.fm account name
@@ -93,6 +94,7 @@ SetWorkerCount(count: number): void
 interface AppStore {
   // Settings state
   theme: "system" | "light" | "dark" | "black";
+  primaryColor: string; // #RRGGBB
   language: string;
   startAtLogin: boolean;
   autoCheckUpdate: boolean;
@@ -129,6 +131,7 @@ interface AppStore {
   loadSettings(): Promise<void>;
   applyTheme(theme: string): void;
   updateTheme(theme: string): Promise<void>;
+  updatePrimaryColor(color: string): Promise<void>;
   updateLanguage(lang: string): Promise<void>;
   updateStartAtLogin(enabled: boolean): Promise<void>;
   updateAutoCheckUpdate(enabled: boolean): Promise<void>;
@@ -159,6 +162,8 @@ Each `update*()` method calls `SettingsService.SaveSettings()` with the full set
 hydrate the library-analysis worker slider's current value and its runtime max.
 
 `applyTheme()` manages CSS classes on `document.documentElement`. `dark` theme adds `.dark`; `black` theme adds both `.dark` and `.black` (pure black bg override for OLED screens); `light` removes both. When theme is `system`, it respects `prefers-color-scheme` media query (resolves to dark, not black).
+
+`applyPrimaryColor()` applies the saved normalized `#RRGGBB` accent to the primary CSS variables and chooses a black or white primary foreground for contrast. General Settings offers seven circular presets (`#E11D48`, `#2563EB`, `#7E22CE`, `#DB2777`, `#EA580C`, `#CA8A04`, `#15803D`) plus a shared in-app color picker for any valid hex color.
 
 `updateLanguage()` sets `i18n.locale.value` immediately for instant locale switch without reload.
 
@@ -251,6 +256,7 @@ Settings evolved across multiple migrations:
 | 000028    | Re-add `prefer_local_artist_artwork BOOLEAN NOT NULL DEFAULT 1` (nested sub-toggle under online artwork) |
 | 000049    | Add `blend_artwork_during_crossfade BOOLEAN NOT NULL DEFAULT 1` |
 | 000060    | Add `auto_advance_notifications_enabled BOOLEAN NOT NULL DEFAULT 1` for the macOS silent automatic-track notification |
+| 000061    | Add `primary_color TEXT NOT NULL DEFAULT '#E11D48'` for the user-selected accent color |
 | 000030    | Add `artist_delimiters`, `album_artist_delimiters`, `genre_delimiters`, `composer_delimiters` (TEXT JSON arrays, default `'[";","\\",","]'`) |
 | 000032    | Add `,` to the default delimiter set for rows still on the previous default `'[";","\\"]'` |
 | 000033    | Update default delimiters: change single backslash `\` to double backslash `\\` (JSON `'[";","\\\\",","]'`) for rows still on the previous default |

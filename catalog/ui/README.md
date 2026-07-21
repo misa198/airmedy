@@ -78,6 +78,10 @@ TailwindCSS v4 uses a **CSS-first** `@theme` directive approach. All design toke
 --text-main: #0a0a0a --text-muted: #52525b;
 ```
 
+`--primary` and its RGB/tint/foreground companion variables are updated at runtime from the persisted primary-color setting. This is independent of artwork-derived `--dynamic-*` colors.
+
+`@airmedy/ui` exports `ColorPicker`, a stateless popover primitive with hue, saturation/brightness, preview, and validated `#RRGGBB` input. General Settings uses it after the six primary-color preset circles.
+
 ### Dynamic Variables (Artwork-Derived)
 
 Updated via JavaScript on each track change. Declared with `@property` for CSS transition support:

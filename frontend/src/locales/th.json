@@ -166,6 +166,11 @@
       "light": "สว่าง",
       "dark": "มืด",
       "black": "ดำสนิท",
+      "primary_color": "สีเน้น",
+      "primary_color_desc": "เลือกสีเน้น",
+      "primary_color_preset": "ใช้ {color} เป็นสีเน้น",
+      "custom_primary_color": "เลือกสีเน้นแบบกำหนดเอง",
+      "primary_color_hex": "ค่าเลขฐานสิบหกของสีเน้น",
       "language": "ภาษา",
       "select_language": "เลือกภาษาของแอปพลิเคชัน"
     },

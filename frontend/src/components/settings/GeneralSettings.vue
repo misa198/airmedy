@@ -3,8 +3,8 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { useDeviceStore } from '@/stores/device'
-import { AppWindow, Sun, Moon, Monitor, Languages, Circle } from '@lucide/vue'
-import { Switch } from '@airmedy/ui'
+import { AppWindow, Sun, Moon, Monitor, Languages, Circle, Palette } from '@lucide/vue'
+import { ColorPicker, Switch } from '@airmedy/ui'
 import RestartModal from '../RestartModal.vue'
 import SettingSection from './SettingSection.vue'
 import SettingRow from './SettingRow.vue'
@@ -20,6 +20,7 @@ const { t } = useI18n()
 const appStore = useAppStore()
 const deviceStore = useDeviceStore()
 const showRestartDialog = ref(false)
+const primaryColorPresets = ['#E11D48', '#2563EB', '#7E22CE', '#DB2777', '#EA580C', '#CA8A04', '#15803D']
 
 const toggleStartAtLogin = async (enabled: boolean) => {
   try {
@@ -100,6 +101,35 @@ const toggleAutoCheckUpdate = async (enabled: boolean) => {
             <SelectItem value="black">{{ t('settings.appearance.black') }}</SelectItem>
           </SelectContent>
         </Select>
+      </SettingRow>
+
+      <SettingRow :title="t('settings.appearance.primary_color')" :description="t('settings.appearance.primary_color_desc')">
+        <template #leading>
+          <div class="p-2 bg-foreground/[0.04] rounded-xl">
+            <Palette class="w-5 h-5 text-foreground opacity-80" />
+          </div>
+        </template>
+        <div class="flex items-center gap-2">
+          <button
+            v-for="color in primaryColorPresets"
+            :key="color"
+            type="button"
+            class="flex h-7 w-7 items-center justify-center rounded-full border-2 transition-all duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+            :class="appStore.primaryColor === color ? 'border-primary' : 'border-transparent'"
+            :aria-label="t('settings.appearance.primary_color_preset', { color })"
+            :aria-pressed="appStore.primaryColor === color"
+            @click="appStore.updatePrimaryColor(color)"
+          >
+            <span class="h-5 w-5 rounded-full" :style="{ backgroundColor: color }" />
+          </button>
+          <ColorPicker
+            :model-value="appStore.primaryColor"
+            :presets="primaryColorPresets"
+            :ariaLabel="t('settings.appearance.custom_primary_color')"
+            :hex-label="t('settings.appearance.primary_color_hex')"
+            @update:model-value="appStore.updatePrimaryColor"
+          />
+        </div>
       </SettingRow>
 
       <SettingRow :title="t('settings.appearance.language')" :description="t('settings.appearance.select_language')">

@@ -427,6 +427,7 @@ type FeaturePercentileRow struct {
 type AppSettings struct {
 	Language                 string  `json:"language"`
 	Theme                    string  `json:"theme"` // "system", "light", "dark"
+	PrimaryColor             string  `json:"primary_color"`
 	StartAtLogin             bool    `json:"start_at_login"`
 	ShowTrayIcon             bool    `json:"show_tray_icon"`
 	AutoCheckUpdate          bool    `json:"auto_check_update"`

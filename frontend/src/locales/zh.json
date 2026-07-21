@@ -166,6 +166,11 @@
       "light": "浅色",
       "dark": "深色",
       "black": "纯黑",
+      "primary_color": "强调色",
+      "primary_color_desc": "选择强调色",
+      "primary_color_preset": "使用 {color} 作为强调色",
+      "custom_primary_color": "选择自定义强调色",
+      "primary_color_hex": "强调色十六进制值",
       "language": "语言",
       "select_language": "选择应用程序语言"
     },

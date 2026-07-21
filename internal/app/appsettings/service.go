@@ -76,6 +76,7 @@ func (s *SettingsService) GetSettings(ctx context.Context) (*domain.AppSettings,
 		s.cache = &domain.AppSettings{
 			Language:                        "en",
 			Theme:                           "system",
+			PrimaryColor:                    domain.DefaultPrimaryColor,
 			StartAtLogin:                    false,
 			ShowTrayIcon:                    true,
 			AutoCheckUpdate:                 true,
@@ -105,6 +106,12 @@ func (s *SettingsService) SaveSettings(ctx context.Context, settings *domain.App
 		settings.ShowTrayIcon = true
 	}
 
+	primaryColor, err := domain.NormalizePrimaryColor(settings.PrimaryColor)
+	if err != nil {
+		return fmt.Errorf("invalid primary color: %w", err)
+	}
+	settings.PrimaryColor = primaryColor
+
 	// Validate user-configured delimiters before persisting.
 	for label, list := range map[string][]string{
 		"artist":       settings.ArtistDelimiters,
@@ -117,7 +124,7 @@ func (s *SettingsService) SaveSettings(ctx context.Context, settings *domain.App
 		}
 	}
 
-	err := s.repo.Save(ctx, settings)
+	err = s.repo.Save(ctx, settings)
 	if err != nil {
 		s.logger.Error("failed to save app settings", "error", err)
 		return fmt.Errorf("failed to save app settings: %w", err)

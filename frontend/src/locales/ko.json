@@ -166,6 +166,11 @@
       "light": "라이트",
       "dark": "다크",
       "black": "블랙",
+      "primary_color": "강조 색상",
+      "primary_color_desc": "강조 색상 선택",
+      "primary_color_preset": "{color}을 강조 색상으로 사용",
+      "custom_primary_color": "사용자 지정 강조 색상 선택",
+      "primary_color_hex": "강조 색상 16진수 값",
       "language": "언어",
       "select_language": "애플리케이션 언어 선택"
     },

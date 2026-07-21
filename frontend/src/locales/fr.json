@@ -166,6 +166,11 @@
       "light": "Clair",
       "dark": "Sombre",
       "black": "Noir",
+      "primary_color": "Couleur d’accent",
+      "primary_color_desc": "Choisir la couleur d’accent",
+      "primary_color_preset": "Utiliser {color} comme couleur d’accent",
+      "custom_primary_color": "Choisir une couleur d’accent personnalisée",
+      "primary_color_hex": "Valeur hexadécimale de la couleur d’accent",
       "language": "Langue",
       "select_language": "Sélectionner la langue de l'application"
     },

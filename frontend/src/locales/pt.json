@@ -166,6 +166,11 @@
       "light": "Claro",
       "dark": "Escuro",
       "black": "Preto",
+      "primary_color": "Cor de destaque",
+      "primary_color_desc": "Escolher cor de destaque",
+      "primary_color_preset": "Usar {color} como cor de destaque",
+      "custom_primary_color": "Escolher uma cor de destaque personalizada",
+      "primary_color_hex": "Valor hexadecimal da cor de destaque",
       "language": "Idioma",
       "select_language": "Selecionar idioma do aplicativo"
     },

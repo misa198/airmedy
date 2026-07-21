@@ -10,6 +10,7 @@ import * as EQService from '../../bindings/airmedy/internal/infra/wails/eqservic
 import { UpdateInfo } from '../../bindings/airmedy/internal/app/updater/models'
 import { DEFAULT_SYNC_INTERVAL, isSyncInterval, type SyncInterval } from '@/lib/librarySync'
 import { DEFAULT_MAX_QUEUE_SIZE, isMaxQueueSize, type MaxQueueSize } from '@/lib/queue'
+import { DEFAULT_PRIMARY_COLOR, hexToRgbChannels, normalizeHexColor, primaryForeground } from '@/lib/color'
 
 export const NORMALIZATION_TARGET_LUFS_MIN = -24
 export const NORMALIZATION_TARGET_LUFS_MAX = -6
@@ -21,8 +22,13 @@ export const CROSSFADE_MAX_SECONDS = 12
 export const STEREO_WIDTH_MIN = 0
 export const STEREO_WIDTH_MAX = 200
 
+// Dragging the color picker can emit many values per second. Keep the preview
+// immediate, but collapse persistence into one backend call after input settles.
+export const PRIMARY_COLOR_SAVE_DEBOUNCE_MS = 250
+
 export const useAppStore = defineStore('app', () => {
   const theme = ref<'system' | 'light' | 'dark' | 'black'>('system')
+  const primaryColor = ref(DEFAULT_PRIMARY_COLOR)
   const language = ref('en')
   const startAtLogin = ref(false)
   const showTrayIcon = ref(true)
@@ -81,6 +87,9 @@ export const useAppStore = defineStore('app', () => {
   const updateApplied = ref(false)
   const updateProgress = ref(0)
   const updateChecked = ref(false)
+  let _primaryColorSaveTimer: ReturnType<typeof setTimeout> | null = null
+  let _primaryColorSaveVersion = 0
+  let _primaryColorSaveWaiters: Array<{ resolve: () => void; reject: (error: unknown) => void }> = []
 
   const applyTheme = (newTheme: 'system' | 'light' | 'dark' | 'black') => {
     const root = document.documentElement
@@ -101,11 +110,20 @@ export const useAppStore = defineStore('app', () => {
     WindowService.SetTitleBarTheme(resolved).catch(() => {})
   }
 
+  const applyPrimaryColor = (color: string) => {
+    const normalized = normalizeHexColor(color) ?? DEFAULT_PRIMARY_COLOR
+    const root = document.documentElement
+    root.style.setProperty('--primary', normalized)
+    root.style.setProperty('--primary-rgb', hexToRgbChannels(normalized))
+    root.style.setProperty('--primary-foreground', primaryForeground(normalized))
+  }
+
   const loadSettings = async (skipUpdateCheck = false) => {
     try {
       const settings = await SettingsService.GetSettings()
       if (settings) {
         if (settings.theme) theme.value = settings.theme as any
+        primaryColor.value = normalizeHexColor(settings.primary_color) ?? DEFAULT_PRIMARY_COLOR
         if (settings.language) language.value = settings.language
         startAtLogin.value = !!settings.start_at_login
         showTrayIcon.value = settings.show_tray_icon !== false
@@ -158,6 +176,7 @@ export const useAppStore = defineStore('app', () => {
         genreDelimiters.value = Array.isArray(settings.genre_delimiters) ? [...settings.genre_delimiters] : [...DEFAULT_DELIMITERS]
         composerDelimiters.value = Array.isArray(settings.composer_delimiters) ? [...settings.composer_delimiters] : [...DEFAULT_DELIMITERS]
         applyTheme(theme.value)
+        applyPrimaryColor(primaryColor.value)
       }
 
       try {
@@ -216,6 +235,7 @@ export const useAppStore = defineStore('app', () => {
     try {
       await SettingsService.SaveSettings({
         theme: theme.value,
+        primary_color: primaryColor.value,
         language: language.value,
         start_at_login: startAtLogin.value,
         show_tray_icon: showTrayIcon.value,
@@ -267,6 +287,33 @@ export const useAppStore = defineStore('app', () => {
     theme.value = newTheme
     applyTheme(newTheme)
     await saveSettings()
+  }
+
+  const updatePrimaryColor = async (color: string) => {
+    const normalized = normalizeHexColor(color)
+    if (!normalized) return
+    primaryColor.value = normalized
+    applyPrimaryColor(normalized)
+    _primaryColorSaveVersion += 1
+    if (_primaryColorSaveTimer) clearTimeout(_primaryColorSaveTimer)
+
+    await new Promise<void>((resolve, reject) => {
+      _primaryColorSaveWaiters.push({ resolve, reject })
+      const scheduledVersion = _primaryColorSaveVersion
+      _primaryColorSaveTimer = setTimeout(async () => {
+        _primaryColorSaveTimer = null
+        try {
+          await saveSettings()
+          // A newer color may have arrived while this save was in flight; its
+          // own timer will persist the latest value and settle every caller.
+          if (scheduledVersion !== _primaryColorSaveVersion) return
+          _primaryColorSaveWaiters.splice(0).forEach(waiter => waiter.resolve())
+        } catch (err) {
+          if (scheduledVersion !== _primaryColorSaveVersion) return
+          _primaryColorSaveWaiters.splice(0).forEach(waiter => waiter.reject(err))
+        }
+      }, PRIMARY_COLOR_SAVE_DEBOUNCE_MS)
+    })
   }
 
   const updateLanguage = async (newLanguage: string) => {
@@ -480,12 +527,15 @@ export const useAppStore = defineStore('app', () => {
   })
 
   function dispose() {
+    if (_primaryColorSaveTimer) clearTimeout(_primaryColorSaveTimer)
+    _primaryColorSaveTimer = null
     _darkMQ?.removeEventListener('change', _onDarkMQChange)
     _offUpdaterProgress()
   }
 
   return {
     theme,
+    primaryColor,
     language,
     startAtLogin,
     showTrayIcon,
@@ -528,6 +578,7 @@ export const useAppStore = defineStore('app', () => {
     applyUpdate,
     restartApp,
     updateTheme,
+    updatePrimaryColor,
     updateLanguage,
     updateStartAtLogin,
     updateShowTrayIcon,

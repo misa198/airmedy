@@ -246,7 +246,7 @@ function submit() {
           class="px-3 py-1.5 text-sm text-foreground opacity-70 hover:text-foreground rounded-lg hover:bg-foreground/[0.05] transition-colors"
           @click="emit('update:open', false)">{{ t('common.cancel') }}</button>
         <button
-          class="px-3 py-1.5 text-sm bg-primary text-white rounded-lg transition-colors font-medium"
+          class="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-lg transition-colors font-medium"
           :class="!canSubmit && 'opacity-40 pointer-events-none'"
           @click="submit">{{ confirmLabel ?? t('common.create') }}</button>
       </div>

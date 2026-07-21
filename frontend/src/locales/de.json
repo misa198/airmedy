@@ -166,6 +166,11 @@
       "light": "Hell",
       "dark": "Dunkel",
       "black": "Schwarz",
+      "primary_color": "Akzentfarbe",
+      "primary_color_desc": "Akzentfarbe auswählen",
+      "primary_color_preset": "{color} als Akzentfarbe verwenden",
+      "custom_primary_color": "Benutzerdefinierte Akzentfarbe auswählen",
+      "primary_color_hex": "Hexwert der Akzentfarbe",
       "language": "Sprache",
       "select_language": "Anwendungssprache auswählen"
     },

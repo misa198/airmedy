@@ -166,6 +166,11 @@
       "light": "ライト",
       "dark": "ダーク",
       "black": "ブラック",
+      "primary_color": "アクセントカラー",
+      "primary_color_desc": "アクセントカラーを選択",
+      "primary_color_preset": "{color} をアクセントカラーとして使用",
+      "custom_primary_color": "カスタムアクセントカラーを選択",
+      "primary_color_hex": "アクセントカラーの16進値",
       "language": "言語",
       "select_language": "アプリの言語を選択"
     },
