@@ -5,6 +5,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import PlayerQuickSettingsMenu from './PlayerQuickSettingsMenu.vue'
 import ContextMenu from '@/components/ContextMenu.vue'
 import { useAppStore } from '@/stores/app'
+import { usePlayerStore } from '@/stores/player'
 import * as EQService from '../../../bindings/airmedy/internal/infra/wails/eqservice'
 import type { ContextMenuItem } from '@/composables/useContextMenu'
 
@@ -23,7 +24,7 @@ const profiles = [
   { id: 'rock', name: 'Rock', is_active: false, is_default: true, bands: [] },
 ]
 
-function mountMenu(appState = {}) {
+function mountMenu(appState = {}, playerState = {}) {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [{ path: '/settings/:category?', name: 'settings', component: { template: '<div />' } }],
@@ -34,7 +35,7 @@ function mountMenu(appState = {}) {
         router,
         createTestingPinia({
           createSpy: vi.fn,
-          initialState: { app: appState },
+          initialState: { app: appState, player: playerState },
         }),
       ],
       stubs: { Teleport: true },
@@ -155,6 +156,38 @@ describe('PlayerQuickSettingsMenu', () => {
     expect(push).toHaveBeenCalledWith({
       name: 'settings',
       params: { category: 'playback' },
+    })
+  })
+
+  it('closes fullscreen player before opening playback settings', async () => {
+    const { wrapper, router } = mountMenu({}, { playerMode: 'fullscreen' })
+    const playerStore = usePlayerStore()
+    const push = vi.spyOn(router, 'push')
+    const items = await openMenu(wrapper)
+
+    getItem(items, 'settings.quick_menu.go_to_playback').action?.()
+
+    expect(playerStore.setPlayerMode).toHaveBeenCalledWith('sticky')
+    expect(push).toHaveBeenCalledWith({
+      name: 'settings',
+      params: { category: 'playback' },
+    })
+  })
+
+  it('closes fullscreen player before opening equalizer settings', async () => {
+    const { wrapper, router } = mountMenu({}, { playerMode: 'fullscreen' })
+    const playerStore = usePlayerStore()
+    const push = vi.spyOn(router, 'push')
+    const items = await openMenu(wrapper)
+    const equalizerSettingsItem = getItem(items, 'settings.quick_menu.eq_presets').children!.at(-1)!
+
+    equalizerSettingsItem.action?.()
+
+    expect(playerStore.setPlayerMode).toHaveBeenCalledWith('sticky')
+    expect(push).toHaveBeenCalledWith({
+      name: 'settings',
+      params: { category: 'playback' },
+      query: { section: 'equalizer' },
     })
   })
 })

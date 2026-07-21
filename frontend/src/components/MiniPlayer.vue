@@ -67,7 +67,7 @@ const { outgoingOpacity, incomingOpacity } = useArtworkCrossfadeOpacity(artworkC
       </span>
       <button
         class="text-foreground opacity-60 hover:text-foreground opacity-90 transition-colors"
-        @click="store.playerMode = 'sticky'"
+        @click="store.setPlayerMode('sticky')"
       >
         <Maximize class="w-4 h-4" />
       </button>

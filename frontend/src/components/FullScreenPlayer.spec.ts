@@ -5,6 +5,11 @@ import FullScreenPlayer from './FullScreenPlayer.vue'
 import { usePlayerStore } from '../stores/player'
 import { PlaybackState, RepeatMode } from '../../bindings/airmedy/internal/domain/models'
 
+const mocks = vi.hoisted(() => ({
+  quickSettingsOpen: vi.fn(),
+  trackContextOpen: vi.fn(),
+}))
+
 vi.mock('vue-i18n', () => ({
   useI18n: () => ({
     t: (key: string) => key,
@@ -20,6 +25,24 @@ vi.mock('@wailsio/runtime', () => ({
     Map: (k: any, v: any) => (val: any) => val,
   },
   Call: { ByID: vi.fn().mockResolvedValue(null) },
+}))
+
+vi.mock('./player/PlayerQuickSettingsMenu.vue', () => ({
+  default: {
+    setup(_: unknown, { expose }: { expose: (value: object) => void }) {
+      expose({ open: mocks.quickSettingsOpen })
+      return () => null
+    },
+  },
+}))
+
+vi.mock('./TrackContextMenu.vue', () => ({
+  default: {
+    setup(_: unknown, { expose }: { expose: (value: object) => void }) {
+      expose({ open: mocks.trackContextOpen })
+      return () => null
+    },
+  },
 }))
 
 describe('FullScreenPlayer', () => {
@@ -82,7 +105,6 @@ describe('FullScreenPlayer', () => {
           PlayerVolumeControl: true,
           PlayerLyricsPanel: true,
           ImmersiveLyricsPanel: true,
-          TrackContextMenu: true,
           TabSwitcher: true,
           Transition: false,
           PlayerQueuePanel: {
@@ -104,6 +126,23 @@ describe('FullScreenPlayer', () => {
     expect(store.playQueueIndex).toHaveBeenCalledOnce()
     expect(store.playQueueIndex).toHaveBeenCalledWith(1)
     expect(store.playTracks).not.toHaveBeenCalled()
+  })
+
+  it('opens quick settings when right clicking an empty fullscreen area', async () => {
+    const wrapper = mountPlayer()
+
+    await wrapper.get('[data-test="fullscreen-player"]').trigger('contextmenu')
+
+    expect(mocks.quickSettingsOpen).toHaveBeenCalledOnce()
+  })
+
+  it('keeps the track context menu on artwork right click', async () => {
+    const wrapper = mountPlayer()
+
+    await wrapper.get('[data-test="artwork"]').trigger('contextmenu')
+
+    expect(mocks.trackContextOpen).toHaveBeenCalledOnce()
+    expect(mocks.quickSettingsOpen).not.toHaveBeenCalled()
   })
 
   it.each([

@@ -309,7 +309,7 @@ function openContextMenu(e: MouseEvent, item: TrackDTO) {
 // ── Navigation ─────────────────────────────────────────────────────────────
 const navigateToAlbum = (id: string) => {
   if (playerStore.playerMode === 'fullscreen') {
-    playerStore.playerMode = 'sticky'
+    playerStore.setPlayerMode('sticky')
   }
   router.push(`/albums/${id}`)
   emit('navigate-album', id)
@@ -317,7 +317,7 @@ const navigateToAlbum = (id: string) => {
 const navigateToArtist = (id: string) => {
   if (!id) return
   if (playerStore.playerMode === 'fullscreen') {
-    playerStore.playerMode = 'sticky'
+    playerStore.setPlayerMode('sticky')
   }
   router.push(`/artists/${id}`)
   emit('navigate-artist', id)
