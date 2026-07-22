@@ -45,7 +45,7 @@ Shared utility functions. Zero Vue dependency — safe to import anywhere.
 | `cn`         | `utils.ts`     | `clsx` + `tailwind-merge` combiner  |
 | `logger`     | `logger.ts`    | Structured logging helpers          |
 | `test-utils` | `test-utils.ts`| Vitest/Vue Test Utils helpers       |
-| `formatTotalDuration` | `utils.ts` | Localized duration formatting; handles invalid values and includes days for long totals |
+| `formatTotalDuration` | `utils.ts` | Localized duration formatting; shows seconds below one minute, handles invalid values, and includes days for long totals |
 
 **Peer deps** (not bundled): `pinia`, `vue-i18n`.
 

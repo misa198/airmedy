@@ -46,5 +46,6 @@ describe('HomeAnalysis empty state', () => {
     expect(wrapper.get('[data-testid="analytics-listening-empty"]').text()).toContain('No listening data for this period yet.')
     expect(wrapper.get('[data-testid="analytics-quality-empty"]').text()).toContain('No audio quality data yet.')
     expect(wrapper.find('[data-testid="analytics-library-summary"]').exists()).toBe(true)
+    expect(wrapper.text().indexOf('analytics.plays')).toBeLessThan(wrapper.text().indexOf('analytics.total_time'))
   })
 })

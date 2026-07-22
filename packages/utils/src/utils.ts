@@ -40,12 +40,14 @@ export function getTrackDisplayTitle(track: { title?: string; path?: string }): 
 }
 
 export function formatTotalDuration(totalSeconds: number, t: (key: string) => string): string {
-	if (!isFinite(totalSeconds) || totalSeconds < 0) return `0 ${t('common.min')}`
+	if (!isFinite(totalSeconds) || totalSeconds < 0) return `0 ${t('common.sec')}`
 	const days = Math.floor(totalSeconds / 86400)
 	const hours = Math.floor((totalSeconds % 86400) / 3600)
 	const mins = Math.floor((totalSeconds % 3600) / 60)
+	const secs = Math.floor(totalSeconds % 60)
 	if (days > 0) return `${days} ${t('common.day')} ${hours} ${t('common.hr')}`
 	if (hours > 0) return `${hours} ${t('common.hr')} ${mins} ${t('common.min')}`
+	if (mins === 0) return `${secs} ${t('common.sec')}`
 	return `${mins} ${t('common.min')}`
 }
 

@@ -126,6 +126,44 @@ onUnmounted(() => { request?.cancel(); topTrackRequest?.cancel() })
         <button class="mt-3 text-white/70" @click="load">{{ t('analytics.retry') }}</button>
       </div>
       <template v-else>
+        <div class="grid gap-4 @3xl:grid-cols-2 @5xl:grid-cols-5" data-testid="analytics-library-summary">
+          <article
+            class="rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px]">
+            <div class="flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
+              <HardDrive class="h-4 w-4" />{{ t('analytics.library_size') }}
+            </div>
+            <p class="mt-3 text-2xl font-semibold">{{ formatNumber(insights.library_tracks) }}</p>
+            <p class="mt-1 text-xs text-[color:var(--text-muted)]">{{ formatBytes(insights.library_bytes) }}</p>
+          </article>
+          <article
+            class="rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px]">
+            <div class="flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
+              <Disc class="h-4 w-4" />{{ t('analytics.total_albums') }}
+            </div>
+            <p class="mt-3 text-2xl font-semibold">{{ formatNumber(insights.library_albums) }}</p>
+          </article>
+          <article
+            class="rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px]">
+            <div class="flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
+              <UserRound class="h-4 w-4" />{{ t('analytics.total_artists') }}
+            </div>
+            <p class="mt-3 text-2xl font-semibold">{{ formatNumber(insights.library_artists) }}</p>
+          </article>
+          <article
+            class="rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px]">
+            <div class="flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
+              <ListMusic class="h-4 w-4" />{{ t('analytics.total_playlists') }}
+            </div>
+            <p class="mt-3 text-2xl font-semibold">{{ formatNumber(insights.library_playlists) }}</p>
+          </article>
+          <article
+              class="rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px]">
+            <div class="flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
+              <Music class="h-4 w-4" />{{ t('analytics.plays') }}
+            </div>
+            <p class="mt-3 text-2xl font-semibold">{{ formatNumber(insights.plays) }}</p>
+          </article>
+        </div>
         <div class="grid gap-4 @5xl:grid-cols-5">
           <article
             class="@container relative flex min-h-[17rem] flex-col overflow-hidden rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-6 backdrop-blur-[30px] @5xl:col-span-3">
@@ -150,91 +188,53 @@ onUnmounted(() => { request?.cancel(); topTrackRequest?.cancel() })
           </article>
           <article
             class="@container flex min-h-[17rem] flex-col rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px] @5xl:col-span-2">
-            <div class="mb-4 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
-              <ListMusic class="h-4 w-4" />{{ t('analytics.genre_distribution') }}
-            </div>
-            <div v-if="insights.genres?.length"
-              class="flex flex-1 flex-col gap-5 @md:flex-row @md:items-center @md:gap-6">
-              <GenreDistributionChart :genres="insights.genres" />
+            <h2 class="mb-4 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
+              <AudioLines class="h-4 w-4" />{{ t('analytics.quality') }}
+            </h2>
+            <div v-if="insights.quality?.length" class="flex flex-1 flex-col gap-5 @md:flex-row @md:items-center @md:gap-8">
+              <AudioQualityChart :quality="insights.quality" />
               <div class="min-w-0 flex-1 space-y-2.5">
-                <div v-for="genre in insights.genres" :key="genre.is_other ? 'other' : genre.name"
+                <div v-for="item in insights.quality" :key="item.kind"
                   class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-3 text-xs">
-                  <span class="truncate text-[color:var(--text-muted)]">{{ genre.is_other ? t('analytics.genre_other')
-                    : genre.name }}</span>
-                  <span class="text-right tabular-nums text-[color:var(--text-muted)]">{{
-                    formatTime(genre.listened_seconds) }}</span>
-                  <span class="w-9 text-right tabular-nums text-[color:var(--text-muted)]">{{ totalGenres ?
-                    Math.round(genre.listened_seconds / totalGenres * 100) : 0 }}%</span>
+                  <span class="truncate text-[color:var(--text-muted)]">{{ t(`analytics.quality_${item.kind}`)
+                  }}</span>
+                  <span class="text-right tabular-nums text-[color:var(--text-muted)]">{{ formatNumber(item.count)
+                  }}</span>
+                  <span class="w-9 text-right tabular-nums text-[color:var(--text-muted)]">{{ totalQuality ?
+                    Math.round(item.count / totalQuality * 100) : 0 }}%</span>
                 </div>
               </div>
             </div>
-            <div v-else class="flex flex-1 flex-col items-center justify-center text-center text-[color:var(--text-muted)]">
-              <ListMusic class="mb-2 h-6 w-6 opacity-60" />
-              <p class="text-sm">{{ t('analytics.no_genres') }}</p>
+            <div v-else data-testid="analytics-quality-empty" class="flex flex-1 flex-col items-center justify-center text-center text-[color:var(--text-muted)]">
+              <AudioLines class="mb-2 h-6 w-6 opacity-60" />
+              <p class="text-sm">{{ t('analytics.no_audio_quality') }}</p>
             </div>
           </article>
         </div>
-          <div class="grid gap-4 @3xl:grid-cols-2 @5xl:grid-cols-5" data-testid="analytics-library-summary">
-            <article
-              class="rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px]">
-              <div class="flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
-                <Music class="h-4 w-4" />{{ t('analytics.plays') }}
-              </div>
-              <p class="mt-3 text-2xl font-semibold">{{ formatNumber(insights.plays) }}</p>
-            </article>
-            <article
-              class="rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px]">
-              <div class="flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
-                <HardDrive class="h-4 w-4" />{{ t('analytics.library_size') }}
-              </div>
-              <p class="mt-3 text-2xl font-semibold">{{ formatNumber(insights.library_tracks) }}</p>
-              <p class="mt-1 text-xs text-[color:var(--text-muted)]">{{ formatBytes(insights.library_bytes) }}</p>
-            </article>
-            <article
-              class="rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px]">
-              <div class="flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
-                <Disc class="h-4 w-4" />{{ t('analytics.total_albums') }}
-              </div>
-              <p class="mt-3 text-2xl font-semibold">{{ formatNumber(insights.library_albums) }}</p>
-            </article>
-            <article
-              class="rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px]">
-              <div class="flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
-                <UserRound class="h-4 w-4" />{{ t('analytics.total_artists') }}
-              </div>
-              <p class="mt-3 text-2xl font-semibold">{{ formatNumber(insights.library_artists) }}</p>
-            </article>
-            <article
-              class="rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px]">
-              <div class="flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
-                <ListMusic class="h-4 w-4" />{{ t('analytics.total_playlists') }}
-              </div>
-              <p class="mt-3 text-2xl font-semibold">{{ formatNumber(insights.library_playlists) }}</p>
-            </article>
-          </div>
           <div class="grid gap-4 @5xl:grid-cols-5">
             <article
               class="@container flex min-h-[17rem] flex-col rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px] @5xl:col-span-2">
-              <h2 class="mb-4 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
-                <AudioLines class="h-4 w-4" />{{ t('analytics.quality') }}
-              </h2>
-              <div v-if="insights.quality?.length" class="flex flex-1 flex-col gap-5 @md:flex-row @md:items-center @md:gap-8">
-                <AudioQualityChart :quality="insights.quality" />
+              <div class="mb-4 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
+                <ListMusic class="h-4 w-4" />{{ t('analytics.genre_distribution') }}
+              </div>
+              <div v-if="insights.genres?.length"
+                class="flex flex-1 flex-col gap-5 @md:flex-row @md:items-center @md:gap-6">
+                <GenreDistributionChart :genres="insights.genres" />
                 <div class="min-w-0 flex-1 space-y-2.5">
-                  <div v-for="item in insights.quality" :key="item.kind"
+                  <div v-for="genre in insights.genres" :key="genre.is_other ? 'other' : genre.name"
                     class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-3 text-xs">
-                    <span class="truncate text-[color:var(--text-muted)]">{{ t(`analytics.quality_${item.kind}`)
-                    }}</span>
-                    <span class="text-right tabular-nums text-[color:var(--text-muted)]">{{ formatNumber(item.count)
-                    }}</span>
-                    <span class="w-9 text-right tabular-nums text-[color:var(--text-muted)]">{{ totalQuality ?
-                      Math.round(item.count / totalQuality * 100) : 0 }}%</span>
+                    <span class="truncate text-[color:var(--text-muted)]">{{ genre.is_other ? t('analytics.genre_other')
+                      : genre.name }}</span>
+                    <span class="text-right tabular-nums text-[color:var(--text-muted)]">{{
+                      formatTime(genre.listened_seconds) }}</span>
+                    <span class="w-9 text-right tabular-nums text-[color:var(--text-muted)]">{{ totalGenres ?
+                      Math.round(genre.listened_seconds / totalGenres * 100) : 0 }}%</span>
                   </div>
                 </div>
               </div>
-              <div v-else data-testid="analytics-quality-empty" class="flex flex-1 flex-col items-center justify-center text-center text-[color:var(--text-muted)]">
-                <AudioLines class="mb-2 h-6 w-6 opacity-60" />
-                <p class="text-sm">{{ t('analytics.no_audio_quality') }}</p>
+              <div v-else class="flex flex-1 flex-col items-center justify-center text-center text-[color:var(--text-muted)]">
+                <ListMusic class="mb-2 h-6 w-6 opacity-60" />
+                <p class="text-sm">{{ t('analytics.no_genres') }}</p>
               </div>
             </article>
             <article
