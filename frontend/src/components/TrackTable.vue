@@ -7,7 +7,7 @@ import { usePlayerStore } from '../stores/player'
 import TrackContextMenu from './TrackContextMenu.vue'
 import TrackTableHeader from './TrackTableHeader.vue'
 import TrackTableRow from './TrackTableRow.vue'
-import { COLUMNS, type ColumnKey, useTrackTableSettings } from '@/composables/useTrackTableSettings'
+import { COLUMNS, type ColumnDef, type ColumnKey, useTrackTableSettings } from '@/composables/useTrackTableSettings'
 import { useRowBackground } from '@/composables/useRowBackground'
 import type { TrackContextMenuOptions } from '@/composables/useTrackContextMenu'
 import VirtualList from 'vue-virtual-sortable'
@@ -27,6 +27,8 @@ const props = withDefaults(defineProps<{
   showArtwork?: boolean
   scrollToCurrent?: boolean
   simpleMode?: boolean
+  simpleColumns?: ColumnKey[]
+  additionalColumns?: ColumnDef[]
   hideColumns?: ColumnKey[]
   hideHeader?: boolean
   variant?: 'default' | 'glass'
@@ -47,6 +49,7 @@ const emit = defineEmits<{
 }>()
 
 const internalTracks = ref<TrackDTO[]>([])
+const availableColumns = computed(() => [...COLUMNS, ...(props.additionalColumns ?? [])])
 watch(() => props.tracks, (newTracks) => {
   internalTracks.value = newTracks
 }, { immediate: true })
@@ -88,7 +91,7 @@ function cycleSort(key: ColumnKey) {
 const displayTracks = computed({
   get: () => {
     if (!sortColumn.value || !sortDir.value) return internalTracks.value
-    const col = COLUMNS.find((c) => c.key === sortColumn.value)
+    const col = availableColumns.value.find((c) => c.key === sortColumn.value)
     if (!col?.sortFn) return internalTracks.value
     const fn = col.sortFn
     return [...internalTracks.value].sort((a, b) => {
@@ -106,22 +109,22 @@ const displayTracks = computed({
 const orderedVisibleColumns = computed(() => {
   const hideSet = new Set(props.hideColumns ?? [])
   const visibleSet = props.simpleMode
-    ? new Set(SIMPLE_COLUMNS)
+    ? new Set(props.simpleColumns ?? SIMPLE_COLUMNS)
     : new Set(settings.visibleColumns.value)
+  const columnOrder = props.simpleMode ? (props.simpleColumns ?? SIMPLE_COLUMNS) : settings.columnOrder.value
 
-  const cols = settings.columnOrder.value
-    .map((k) => COLUMNS.find((c) => c.key === k)!)
+  const cols = columnOrder
+    .map((k) => availableColumns.value.find((c) => c.key === k)!)
     .filter(
       (col) =>
         col &&
         col.key !== 'dnd' && // Handle dnd separately based on props.allowDnd
         visibleSet.has(col.key) &&
-        !hideSet.has(col.key) &&
-        (props.simpleMode ? SIMPLE_COLUMNS.includes(col.key) : true),
+        !hideSet.has(col.key),
     )
 
   if (props.allowDnd) {
-    const dndCol = COLUMNS.find(c => c.key === 'dnd')!
+    const dndCol = availableColumns.value.find(c => c.key === 'dnd')!
     return [dndCol, ...cols]
   }
 

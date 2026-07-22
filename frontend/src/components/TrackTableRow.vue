@@ -183,6 +183,14 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
         {{ track.play_count || 0 }}
       </div>
 
+      <!-- Aggregated listening time cell -->
+      <div
+        v-else-if="col.key === 'listened_seconds'"
+        class="text-center text-foreground opacity-80 text-xs px-2 tabular-nums"
+      >
+        {{ col.formatValue?.(track) ?? formatTime(track.listened_seconds || 0) }}
+      </div>
+
       <!-- Disc number cell -->
       <div
         v-else-if="col.key === 'disc_number'"
@@ -245,4 +253,3 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
     </template>
   </div>
 </template>
-

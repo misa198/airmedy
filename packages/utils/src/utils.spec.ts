@@ -77,10 +77,11 @@ describe('utils', () => {
   })
 
   describe('formatTotalDuration', () => {
-    it('formats duration with hours and minutes', () => {
-      const mockT = (key: string) => key === 'common.hr' ? 'hr' : 'min'
+    it('formats duration with hours and minutes, then days and hours', () => {
+      const mockT = (key: string) => ({ 'common.day': 'd', 'common.hr': 'hr', 'common.min': 'min' })[key] || key
       expect(formatTotalDuration(3660, mockT)).toBe('1 hr 1 min')
       expect(formatTotalDuration(120, mockT)).toBe('2 min')
+      expect(formatTotalDuration(52 * 86400 + 3 * 3600 + 30 * 60, mockT)).toBe('52 d 3 hr')
     })
   })
 

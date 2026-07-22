@@ -121,7 +121,7 @@ onUnmounted(() => {
 })
 
 function setInt(key: keyof MetadataUpdate, val: string) {
-  ;(form.value as Record<string, unknown>)[key] = parseInt(val) || 0
+  ;(form.value as any)[key] = parseInt(val) || 0
 }
 
 function triggerFileSelect() {

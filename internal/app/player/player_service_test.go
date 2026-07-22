@@ -2,6 +2,7 @@ package player
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"sync"
 	"sync/atomic"
@@ -1179,5 +1180,121 @@ func TestLoadAndPlay_FiresTrackLoadListener(t *testing.T) {
 
 	if gotID != "t1" {
 		t.Errorf("expected track-load listener to fire with t1, got %q", gotID)
+	}
+}
+
+type fakeListeningRepository struct{ sessions []domain.ListeningSession }
+
+func (r *fakeListeningRepository) RecordSession(_ context.Context, session domain.ListeningSession) error {
+	r.sessions = append(r.sessions, session)
+	return nil
+}
+func (r *fakeListeningRepository) CleanupSessions(context.Context, time.Time) error { return nil }
+func (r *fakeListeningRepository) GetInsights(context.Context, domain.ListeningRange, time.Time) (*domain.AnalyticsInsights, error) {
+	return nil, nil
+}
+
+type blockingListeningRepository struct {
+	fakeListeningRepository
+	once    sync.Once
+	entered chan struct{}
+	release chan struct{}
+}
+
+func (r *blockingListeningRepository) RecordSession(_ context.Context, session domain.ListeningSession) error {
+	r.once.Do(func() { close(r.entered) })
+	<-r.release
+	r.sessions = append(r.sessions, session)
+	return nil
+}
+
+type failingPlayPlayer struct{ fakePlayer }
+
+func (p *failingPlayPlayer) Play() error { return errors.New("play failed") }
+
+func TestListeningSessionFlushesPlayedTime(t *testing.T) {
+	repo := &fakeListeningRepository{}
+	s := &PlayerService{logger: slog.Default(), listeningRepo: repo}
+	track := &domain.TrackDTO{Track: domain.Track{ID: "track-1"}}
+	s.startListening(track)
+	s.mu.Lock()
+	s.listeningActiveAt = time.Now().Add(-12 * time.Second)
+	s.listeningQualified = true
+	s.mu.Unlock()
+	s.flushListening(context.Background())
+	if len(repo.sessions) != 1 {
+		t.Fatalf("expected one session, got %d", len(repo.sessions))
+	}
+	if !repo.sessions[0].QualifiedPlay || repo.sessions[0].ListenedSeconds < 10 {
+		t.Fatalf("unexpected session: %#v", repo.sessions[0])
+	}
+}
+
+func TestLoadAndPlayDoesNotWaitForListeningWrite(t *testing.T) {
+	repo := &blockingListeningRepository{entered: make(chan struct{}), release: make(chan struct{})}
+	s, _ := newTestService(t, &fakePlayer{status: domain.PlayerStatus{Volume: 1.0}})
+	s.listeningRepo = repo
+	s.listeningWrites = make(chan listeningWrite, 1)
+	s.listeningWritesDone = make(chan struct{})
+	s.startListeningWriter()
+
+	previous := &domain.TrackDTO{Track: domain.Track{ID: "previous"}}
+	s.startListening(previous)
+	s.mu.Lock()
+	s.listeningActiveAt = time.Now().Add(-12 * time.Second)
+	s.mu.Unlock()
+	next := &domain.TrackDTO{Track: domain.Track{ID: "next", Duration: 60}}
+
+	started := time.Now()
+	if err := s.loadAndPlay(next); err != nil {
+		t.Fatalf("loadAndPlay: %v", err)
+	}
+	if elapsed := time.Since(started); elapsed > 100*time.Millisecond {
+		t.Fatalf("loadAndPlay waited for listening write: %s", elapsed)
+	}
+	select {
+	case <-repo.entered:
+	case <-time.After(time.Second):
+		t.Fatal("listening write was not dispatched")
+	}
+	close(repo.release)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	s.stopListeningWriter(ctx)
+	_ = s.Stop()
+}
+
+func TestLoadAndPlayDoesNotStartListeningWhenPlaybackFails(t *testing.T) {
+	repo := &fakeListeningRepository{}
+	s, _ := newTestService(t, &failingPlayPlayer{})
+	s.listeningRepo = repo
+	track := &domain.TrackDTO{Track: domain.Track{ID: "track-1"}}
+
+	if err := s.loadAndPlay(track); err == nil {
+		t.Fatal("expected playback failure")
+	}
+	s.flushListening(context.Background())
+
+	if len(repo.sessions) != 0 {
+		t.Fatalf("failed playback recorded listening sessions: %#v", repo.sessions)
+	}
+}
+
+func TestCrossfadeListeningSplitsOverlap(t *testing.T) {
+	s := &PlayerService{
+		logger:                slog.Default(),
+		listeningRepo:         &fakeListeningRepository{},
+		listeningTrack:        &domain.TrackDTO{Track: domain.Track{ID: "incoming"}},
+		listeningSeconds:      10,
+		fadeListeningOutgoing: &domain.TrackDTO{Track: domain.Track{ID: "outgoing"}},
+		fadeListeningStarted:  time.Now().Add(-4 * time.Second),
+		fadeListeningMaxSec:   8,
+	}
+	s.finalizeCrossfadeListening()
+	s.mu.RLock()
+	remaining := s.listeningSeconds
+	s.mu.RUnlock()
+	if remaining < 7 || remaining > 8 {
+		t.Fatalf("expected roughly half the 4s overlap moved from incoming, got %d", remaining)
 	}
 }

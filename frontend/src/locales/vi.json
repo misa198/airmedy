@@ -15,8 +15,9 @@
     "later": "Để sau",
     "on": "Bật",
     "off": "Tắt",
-    "hr": "giờ",
-    "min": "phút",
+    "hr": "g",
+    "min": "ph",
+    "day": "ng",
     "delete": "Xóa",
     "yes": "Có",
     "no": "Không",
@@ -194,7 +195,12 @@
       "max_queue_size": "Giới hạn hàng đợi",
       "max_queue_size_desc": "Giới hạn số track tối đa trong hàng đợi phát, tính cả track đang phát. Khi vượt giới hạn, track cũ nhất sẽ bị loại bỏ trước."
     },
-    "quick_menu": { "enable_eq": "Bật bộ cân bằng âm", "eq_presets": "Bộ cài đặt EQ", "go_to_equalizer": "Đi đến cài đặt Equalizer", "go_to_playback": "Đi đến cài đặt phát lại" },
+    "quick_menu": {
+      "enable_eq": "Bật bộ cân bằng âm",
+      "eq_presets": "Bộ cài đặt EQ",
+      "go_to_equalizer": "Đi đến cài đặt Equalizer",
+      "go_to_playback": "Đi đến cài đặt phát lại"
+    },
     "remote": {
       "title": "Điều Khiển Từ Xa",
       "enable": "Bật máy chủ điều khiển từ xa",
@@ -559,5 +565,36 @@
       "live_updating_label": "Cập nhật trực tiếp",
       "live_updating_hint": "Tự động cập nhật các bài hát khớp. Tắt để giữ nguyên kết quả hiện tại."
     }
+  },
+  "analytics": {
+    "title": "Thống kê nghe nhạc",
+    "subtitle": "Thói quen nghe nhạc của bạn",
+    "range_7d": "7N",
+    "range_30d": "30N",
+    "range_all": "Tất cả",
+    "total_time": "Tổng thời gian",
+    "plays": "Lượt nghe",
+    "library_size": "Thư viện",
+    "total_albums": "Tổng số album",
+    "total_artists": "Tổng số nghệ sĩ",
+    "total_playlists": "Tổng số playlist",
+    "genre_distribution": "Phân bố thể loại",
+    "genre_other": "Khác",
+    "no_genres": "Chưa có dữ liệu nghe theo thể loại",
+    "activity": "Hoạt động nghe",
+    "quality": "Chất lượng âm thanh",
+    "top_artists": "Nghệ sĩ nghe nhiều",
+    "top_tracks": "Bài hát phát nhiều",
+    "quality_lossy": "Lossy",
+    "quality_lossless": "Lossless",
+    "quality_hi_res": "Hi-Res",
+    "quality_dsd": "DSD",
+    "quality_unknown": "Không rõ",
+    "empty": "Hãy bắt đầu nghe nhạc để xem thống kê.",
+    "error": "Không tải được thống kê.",
+    "retry": "Thử lại",
+    "refresh": "Làm mới thống kê",
+    "no_top_artists": "Chưa có lượt nghe nghệ sĩ",
+    "no_top_tracks": "Chưa có bài hát được phát"
   }
 }

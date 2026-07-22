@@ -24,7 +24,7 @@ Hash history mode (`createWebHashHistory`). All views lazy-loaded except HomeVie
 
 | Route             | View                 | Notes                                          |
 | ----------------- | -------------------- | ---------------------------------------------- |
-| `/`               | HomeView             | Recently played, most/least listened carousels |
+| `/`               | HomeView             | Overview carousels and listening analytics tabs |
 | `/recently-added` | RecentlyAddedView    | TrackCard grid, tracks sorted by import date   |
 | `/albums`         | AlbumsView           | Album grid                                     |
 | `/albums/:id`     | AlbumDetailView      | Hero + track table                             |
@@ -172,6 +172,7 @@ Virtualized list of tracks supporting reordering, sorting, and horizontal scroll
 | `genre`        | Genre        | No                 | No       | No     |
 | `favorite`     | ♥            | Yes                | No       | No     |
 | `play_count`   | Plays        | No                 | Yes      | No     |
+| `listened_seconds` | Listening time | Feature-supplied | Yes | No |
 | `disc_number`  | Disc         | No                 | Yes      | No     |
 | `track_number` | Track        | No                 | Yes      | No     |
 | `album_artist` | Album Artist | No                 | No       | No     |
@@ -301,6 +302,24 @@ element (e.g. the info icon next to `FindLyricsDialog.vue`'s save-file checkbox)
 attributes are the fallback convention elsewhere in the app (e.g. `RemoteServerSettings.vue`)
 but do not render reliably inside the Wails webview for icon components, so prefer `Tooltip` for
 new hover explanations.
+
+### TabSwitcher (`packages/ui/src/TabSwitcher.vue`)
+
+Props: `options`, `modelValue`, `mandatory?`, `variant?: 'icon' | 'label'`.
+The default icon mode uses fixed-size buttons. Label mode measures the active
+button and moves/resizes the slider to match it; a `ResizeObserver` keeps that
+measurement current and is disconnected on unmount.
+
+## Home Analytics
+
+`HomeView` owns the Overview/Analytics tab selection and delegates to
+`components/home/HomeOverview.vue` and `HomeAnalysis.vue`. Analytics loads
+`AnalyticsService.GetInsights('7d' | '30d' | 'all')`, supports request
+cancellation on period changes/unmount, and renders activity, audio-quality,
+genre, top-artist, and top-track summaries. Top tracks are hydrated through
+`LibraryService.GetTracksByIDs` and shown in the virtualized `TrackTable` with
+the feature-supplied `listened_seconds` column. Charts use SVG-rendered
+`vue-echarts` components.
 
 ## Interactive Polish
 

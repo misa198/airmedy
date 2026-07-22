@@ -2,6 +2,7 @@ package app
 
 import (
 	"airmedy/internal/app/analysis"
+	"airmedy/internal/app/analytics"
 	"airmedy/internal/app/appsettings"
 	"airmedy/internal/app/config"
 	"airmedy/internal/app/eq"
@@ -65,6 +66,7 @@ var Module = fx.Module("app",
 		},
 		func() domain.MetadataExtractor { return metadata.NewTagLibExtractor() },
 		func() domain.MetadataWriter { return metadata.NewTagLibWriter() },
+		audio.NewPlayer,
 		func() domain.LoudnessAnalyzer { return audio.NewLoudnessAnalyzer() },
 		library.NewLibraryService,
 		wails.NewLibraryService,
@@ -75,6 +77,7 @@ var Module = fx.Module("app",
 		wails.NewEQService,
 		wails.NewNormalizationService,
 		wails.NewAnalysisService,
+		wails.NewAnalyticsService,
 		wails.NewLastFmService,
 		wails.NewWindowService,
 		wails.NewSettingsService,
@@ -101,6 +104,7 @@ var Module = fx.Module("app",
 	appsettings.Module,
 	remoteserver.Module,
 	analysis.Module,
+	analytics.Module,
 	fx.Invoke(func(lc fx.Lifecycle, db *sqlite.DB, search domain.SearchService, lib *library.LibraryService, playerSvc *player.PlayerService, eqSvc *eq.EQService, lastfmSvc *lastfm.LastFmService, analysisSvc *analysis.AnalysisService, settingsSvc *appsettings.SettingsService, playlistSvc *playlist.PlaylistService) {
 		lc.Append(fx.Hook{
 			OnStart: func(ctx context.Context) error {

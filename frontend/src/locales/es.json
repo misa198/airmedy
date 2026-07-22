@@ -17,6 +17,7 @@
     "off": "Desactivado",
     "hr": "h",
     "min": "min",
+    "day": "d",
     "delete": "Eliminar",
     "yes": "Sí",
     "no": "No",
@@ -194,7 +195,12 @@
       "max_queue_size": "Tamaño máximo de la cola",
       "max_queue_size_desc": "Limita cuántas pistas puede contener la cola de reproducción, incluyendo la pista actual. Las pistas más antiguas se eliminan primero al alcanzar el límite."
     },
-    "quick_menu": { "enable_eq": "Activar ecualizador", "eq_presets": "Preajustes de EQ", "go_to_equalizer": "Ir a ajustes del ecualizador", "go_to_playback": "Ir a ajustes de reproducción" },
+    "quick_menu": {
+      "enable_eq": "Activar ecualizador",
+      "eq_presets": "Preajustes de EQ",
+      "go_to_equalizer": "Ir a ajustes del ecualizador",
+      "go_to_playback": "Ir a ajustes de reproducción"
+    },
     "remote": {
       "title": "Control Remoto",
       "enable": "Habilitar servidor remoto",
@@ -559,5 +565,34 @@
       "live_updating_label": "Actualización en vivo",
       "live_updating_hint": "Mantén las pistas coincidentes actualizadas automáticamente. Desactiva para congelar las coincidencias actuales."
     }
+  },
+  "analytics": {
+    "title": "Estadísticas de escucha",
+    "subtitle": "Tus hábitos de escucha de un vistazo",
+    "range_7d": "7 d",
+    "range_30d": "30 d",
+    "range_all": "Todo",
+    "total_time": "Tiempo total",
+    "plays": "Reproducciones",
+    "library_size": "Tamaño de la biblioteca",
+    "total_albums": "Total de álbumes",
+    "total_artists": "Total de artistas",
+    "total_playlists": "Total de playlists",
+    "genre_distribution": "Distribución por género", "genre_other": "Otros", "no_genres": "Aún no hay datos de escucha por género",
+    "activity": "Listening Activity",
+    "quality": "Calidad de audio",
+    "top_artists": "Artistas principales",
+    "top_tracks": "Canciones más reproducidas",
+    "quality_lossy": "Lossy",
+    "quality_lossless": "Lossless",
+    "quality_hi_res": "Hi-Res",
+    "quality_dsd": "DSD",
+    "quality_unknown": "Unknown",
+    "empty": "Start listening to see your insights.",
+    "error": "Could not load listening insights.",
+    "retry": "Try again",
+    "refresh": "Refresh insights",
+    "no_top_artists": "No artist listens yet",
+    "no_top_tracks": "No played tracks yet"
   }
 }

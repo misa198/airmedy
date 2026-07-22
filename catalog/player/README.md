@@ -395,6 +395,12 @@ flowchart TB
 - Acquires OS sleep inhibition (`domain.SleepInhibitor`) when ticker starts (playback begins); releases on ticker stop (pause/stop). Controlled by `PreventSleepWhilePlaying` setting.
 - Persists and restores state via `PlayerStateRepository`.
 - Increments play counts via `TrackRepository.IncrementPlayCount()`.
+- Records listening sessions through `domain.ListeningRepository`. Playback is
+  accumulated in memory and queued to a single bounded background writer at
+  track transitions, shutdown, or a one-minute checkpoint; intervals shorter
+  than 10 seconds are discarded. The queue prevents SQLite write contention
+  from delaying Play/Next/Stop, and shutdown drains pending writes within the
+  lifecycle context. Startup removes raw sessions older than 180 days.
 - Syncs artwork theme colors on track load.
 - Fetches/delivers lyrics on track load.
 - Resets playback position to 0 on track change to ensure clean UI transitions.
@@ -408,6 +414,10 @@ flowchart TB
   - *Interruptions:* `Pause`/`Seek` finish the fade first (`finishActiveCrossfade`); `Stop`/`loadAndPlay` snap it without re-enqueueing (`snapActiveCrossfade`), so a manual `Next`/`Previous`/`PlayQueueIndex` mid-fade snaps the overlap then hard-loads; `HandleTrackEnd` returns early while fading (belt-and-suspenders over the native guards). A mid-fade `SetCrossfadeSeconds` lets the in-flight fade complete with its captured duration.
   - *Repeat-one* fades the track into itself (the preload holds the same file in the second deck/slot); *end of queue* never triggers (no preload).
   - On successful native fade start, emits `player:artwork-crossfade` with `{ transition_id, phase: "start", from_artwork_key, to_artwork_key, duration_ms }`; it emits the matching `phase: "end"` when the fade completes or is snapped. The frontend uses this event, rather than track-status changes, so manual navigation never blends artwork.
+  - **Listening attribution:** after a crossfade ends or is snapped, its actual
+    overlap (capped to the configured fade duration) is divided equally between
+    outgoing and incoming tracks. The outgoing share is persisted as its own
+    unqualified listening session and removed from the incoming session.
 
 Crossfade overlap lifecycle:
 

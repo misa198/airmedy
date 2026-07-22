@@ -100,6 +100,7 @@ func main() {
 	var eqService *wails.EQService
 	var normalizationService *wails.NormalizationService
 	var analysisService *wails.AnalysisService
+	var analyticsService *wails.AnalyticsService
 	var windowService *wails.WindowService
 	var i18nService *i18n.Service
 	var settingsService *wails.SettingsService
@@ -123,7 +124,7 @@ func main() {
 		// onto the same instance instead of constructing its own.
 		fx.Supply(logRotator, logger),
 		fx.Provide(func() remoteserver.RemoteFS { return remoteserver.RemoteFS{FS: remoteFS} }),
-		fx.Populate(&greetService, &libraryService, &playerService, &searchService, &playlistService, &lyricsService, &eqService, &normalizationService, &analysisService, &windowService, &i18nService, &settingsService, &lastfmService, &updaterService, &artworkCache, &remoteServerService, &moodRadioService, &trackTransitionNotificationActivator),
+		fx.Populate(&greetService, &libraryService, &playerService, &searchService, &playlistService, &lyricsService, &eqService, &normalizationService, &analysisService, &analyticsService, &windowService, &i18nService, &settingsService, &lastfmService, &updaterService, &artworkCache, &remoteServerService, &moodRadioService, &trackTransitionNotificationActivator),
 		fx.NopLogger, // Keep logs clean for now
 	)
 
@@ -160,6 +161,7 @@ func main() {
 			application.NewService(eqService),
 			application.NewService(normalizationService),
 			application.NewService(analysisService),
+			application.NewService(analyticsService),
 			application.NewService(lastfmService),
 			application.NewService(windowService),
 			application.NewService(settingsService),

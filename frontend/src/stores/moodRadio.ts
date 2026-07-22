@@ -80,7 +80,7 @@ export const useMoodRadioStore = defineStore('moodRadio', () => {
 
     refilling = true
     try {
-      const existingSet = new Set(playerStore.queue.map(t => t.id))
+      const existingSet = new Set<string>(playerStore.queue.map(t => String(t.id)))
       const next = await fetchSimilar(seed, [...existingSet])
       if (next.length) {
         // AppendTracks adds straight to the tail in one mutation. The

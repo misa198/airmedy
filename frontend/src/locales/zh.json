@@ -15,8 +15,9 @@
     "later": "稍后",
     "on": "开启",
     "off": "关闭",
-    "hr": "小时",
-    "min": "分钟",
+    "hr": "时",
+    "min": "分",
+    "day": "天",
     "delete": "删除",
     "yes": "是",
     "no": "否",
@@ -194,7 +195,12 @@
       "max_queue_size": "队列最大长度",
       "max_queue_size_desc": "限制播放队列可容纳的曲目数量（含当前曲目）。达到上限后，最早的曲目将被优先移除。"
     },
-    "quick_menu": { "enable_eq": "启用均衡器", "eq_presets": "EQ 预设", "go_to_equalizer": "前往均衡器设置", "go_to_playback": "前往播放设置" },
+    "quick_menu": {
+      "enable_eq": "启用均衡器",
+      "eq_presets": "EQ 预设",
+      "go_to_equalizer": "前往均衡器设置",
+      "go_to_playback": "前往播放设置"
+    },
     "remote": {
       "title": "远程控制",
       "enable": "启用远程服务器",
@@ -559,5 +565,36 @@
       "live_updating_label": "实时更新",
       "live_updating_hint": "自动保持匹配曲目为最新。关闭后将冻结当前匹配结果。"
     }
+  },
+  "analytics": {
+    "title": "收听统计",
+    "subtitle": "一览您的收听习惯",
+    "range_7d": "7天",
+    "range_30d": "30天",
+    "range_all": "全部",
+    "total_time": "总收听时长",
+    "plays": "播放次数",
+    "library_size": "媒体库大小",
+    "total_albums": "专辑总数",
+    "total_artists": "艺人总数",
+    "total_playlists": "播放列表总数",
+    "genre_distribution": "流派分布",
+    "genre_other": "Other",
+    "no_genres": "No genre listening data yet",
+    "activity": "Listening Activity",
+    "quality": "音频质量",
+    "top_artists": "热门艺人",
+    "top_tracks": "播放最多的曲目",
+    "quality_lossy": "Lossy",
+    "quality_lossless": "Lossless",
+    "quality_hi_res": "Hi-Res",
+    "quality_dsd": "DSD",
+    "quality_unknown": "Unknown",
+    "empty": "Start listening to see your insights.",
+    "error": "Could not load listening insights.",
+    "retry": "Try again",
+    "refresh": "Refresh insights",
+    "no_top_artists": "No artist listens yet",
+    "no_top_tracks": "No played tracks yet"
   }
 }

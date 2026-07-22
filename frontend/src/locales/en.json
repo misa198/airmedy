@@ -15,8 +15,9 @@
     "later": "Later",
     "on": "On",
     "off": "Off",
-    "hr": "hr",
-    "min": "min",
+    "hr": "h",
+    "min": "m",
+    "day": "d",
     "delete": "Delete",
     "yes": "Yes",
     "no": "No",
@@ -194,7 +195,12 @@
       "max_queue_size": "Max queue size",
       "max_queue_size_desc": "Caps how many tracks the play queue can hold, including the current track. Oldest tracks are dropped first once the limit is reached."
     },
-    "quick_menu": { "enable_eq": "Enable Equalizer", "eq_presets": "EQ Presets", "go_to_equalizer": "Go to Equalizer settings", "go_to_playback": "Go to Playback settings" },
+    "quick_menu": {
+      "enable_eq": "Enable Equalizer",
+      "eq_presets": "EQ Presets",
+      "go_to_equalizer": "Go to Equalizer settings",
+      "go_to_playback": "Go to Playback settings"
+    },
     "remote": {
       "title": "Remote Control",
       "enable": "Enable Remote Server",
@@ -559,5 +565,34 @@
       "live_updating_label": "Live updating",
       "live_updating_hint": "Keep matching tracks up to date automatically. Turn off to freeze the current matches."
     }
+  },
+  "analytics": {
+    "title": "Listening Insights",
+    "subtitle": "Your listening habits at a glance",
+    "range_7d": "7D",
+    "range_30d": "30D",
+    "range_all": "All",
+    "total_time": "Total Time",
+    "plays": "Plays",
+    "library_size": "Library Size",
+    "total_albums": "Total Albums",
+    "total_artists": "Total Artists",
+    "total_playlists": "Total Playlists",
+    "genre_distribution": "Genre Distribution", "genre_other": "Other", "no_genres": "No genre listening data yet",
+    "activity": "Listening Activity",
+    "quality": "Audio Quality",
+    "top_artists": "Top Artists",
+    "top_tracks": "Most Played Tracks",
+    "quality_lossy": "Lossy",
+    "quality_lossless": "Lossless",
+    "quality_hi_res": "Hi-Res",
+    "quality_dsd": "DSD",
+    "quality_unknown": "Unknown",
+    "empty": "Start listening to see your insights.",
+    "error": "Could not load listening insights.",
+    "retry": "Try again",
+    "refresh": "Refresh insights",
+    "no_top_artists": "No artist listens yet",
+    "no_top_tracks": "No played tracks yet"
   }
 }

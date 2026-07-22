@@ -17,6 +17,7 @@
     "off": "ปิด",
     "hr": "ชม.",
     "min": "นาที",
+    "day": "ว.",
     "delete": "ลบ",
     "yes": "ใช่",
     "no": "ไม่ใช่",
@@ -194,7 +195,12 @@
       "max_queue_size": "ขนาดคิวสูงสุด",
       "max_queue_size_desc": "จำกัดจำนวนเพลงที่คิวการเล่นสามารถเก็บได้ รวมถึงเพลงที่กำลังเล่นอยู่ เมื่อถึงขีดจำกัด เพลงเก่าสุดจะถูกลบออกก่อน"
     },
-    "quick_menu": { "enable_eq": "เปิดใช้งานอีควอไลเซอร์", "eq_presets": "ค่าล่วงหน้า EQ", "go_to_equalizer": "ไปยังการตั้งค่าอีควอไลเซอร์", "go_to_playback": "ไปยังการตั้งค่าการเล่น" },
+    "quick_menu": {
+      "enable_eq": "เปิดใช้งานอีควอไลเซอร์",
+      "eq_presets": "ค่าล่วงหน้า EQ",
+      "go_to_equalizer": "ไปยังการตั้งค่าอีควอไลเซอร์",
+      "go_to_playback": "ไปยังการตั้งค่าการเล่น"
+    },
     "remote": {
       "title": "รีโมทคอนโทรล",
       "enable": "เปิดใช้งานเซิร์ฟเวอร์รีโมท",
@@ -559,5 +565,36 @@
       "live_updating_label": "อัปเดตแบบสด",
       "live_updating_hint": "ให้เพลงที่ตรงกันอัปเดตโดยอัตโนมัติ ปิดเพื่อล็อกผลลัพธ์ปัจจุบัน"
     }
+  },
+  "analytics": {
+    "title": "สถิติการฟัง",
+    "subtitle": "พฤติกรรมการฟังของคุณโดยสรุป",
+    "range_7d": "7 วัน",
+    "range_30d": "30 วัน",
+    "range_all": "ทั้งหมด",
+    "total_time": "เวลาในการฟังทั้งหมด",
+    "plays": "จำนวนครั้งที่เล่น",
+    "library_size": "ขนาดคลังเพลง",
+    "total_albums": "อัลบั้มทั้งหมด",
+    "total_artists": "ศิลปินทั้งหมด",
+    "total_playlists": "เพลย์ลิสต์ทั้งหมด",
+    "genre_distribution": "การกระจายตามแนวเพลง",
+    "genre_other": "Other",
+    "no_genres": "No genre listening data yet",
+    "activity": "Listening Activity",
+    "quality": "คุณภาพเสียง",
+    "top_artists": "ศิลปินยอดนิยม",
+    "top_tracks": "เพลงที่เล่นบ่อยที่สุด",
+    "quality_lossy": "Lossy",
+    "quality_lossless": "Lossless",
+    "quality_hi_res": "Hi-Res",
+    "quality_dsd": "DSD",
+    "quality_unknown": "Unknown",
+    "empty": "Start listening to see your insights.",
+    "error": "Could not load listening insights.",
+    "retry": "Try again",
+    "refresh": "Refresh insights",
+    "no_top_artists": "No artist listens yet",
+    "no_top_tracks": "No played tracks yet"
   }
 }

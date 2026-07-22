@@ -17,6 +17,7 @@
     "off": "Désactivé",
     "hr": "h",
     "min": "min",
+    "day": "j",
     "delete": "Supprimer",
     "yes": "Oui",
     "no": "Non",
@@ -194,7 +195,12 @@
       "max_queue_size": "Taille maximale de la file d'attente",
       "max_queue_size_desc": "Limite le nombre de titres que la file d'attente peut contenir, y compris le titre en cours. Les titres les plus anciens sont supprimés en premier une fois la limite atteinte."
     },
-    "quick_menu": { "enable_eq": "Activer l'égaliseur", "eq_presets": "Préréglages EQ", "go_to_equalizer": "Accéder aux réglages de l'égaliseur", "go_to_playback": "Accéder aux réglages de lecture" },
+    "quick_menu": {
+      "enable_eq": "Activer l'égaliseur",
+      "eq_presets": "Préréglages EQ",
+      "go_to_equalizer": "Accéder aux réglages de l'égaliseur",
+      "go_to_playback": "Accéder aux réglages de lecture"
+    },
     "remote": {
       "title": "Télécommande",
       "enable": "Activer le serveur distant",
@@ -559,5 +565,34 @@
       "live_updating_label": "Mise à jour en direct",
       "live_updating_hint": "Garder les titres correspondants à jour automatiquement. Désactivez pour figer les résultats actuels."
     }
+  },
+  "analytics": {
+    "title": "Statistiques d'écoute",
+    "subtitle": "Vos habitudes d'écoute en un coup d'œil",
+    "range_7d": "7 j",
+    "range_30d": "30 j",
+    "range_all": "Tout",
+    "total_time": "Durée totale",
+    "plays": "Lectures",
+    "library_size": "Taille de la bibliothèque",
+    "total_albums": "Total des albums",
+    "total_artists": "Total des artistes",
+    "total_playlists": "Total des playlists",
+    "genre_distribution": "Répartition des genres", "genre_other": "Autres", "no_genres": "Pas encore de données d'écoute par genre",
+    "activity": "Listening Activity",
+    "quality": "Qualité audio",
+    "top_artists": "Artistes les plus écoutés",
+    "top_tracks": "Titres les plus écoutés",
+    "quality_lossy": "Lossy",
+    "quality_lossless": "Lossless",
+    "quality_hi_res": "Hi-Res",
+    "quality_dsd": "DSD",
+    "quality_unknown": "Unknown",
+    "empty": "Start listening to see your insights.",
+    "error": "Could not load listening insights.",
+    "retry": "Try again",
+    "refresh": "Refresh insights",
+    "no_top_artists": "No artist listens yet",
+    "no_top_tracks": "No played tracks yet"
   }
 }
