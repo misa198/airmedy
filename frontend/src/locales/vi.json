@@ -590,6 +590,8 @@
     "quality_hi_res": "Hi-Res",
     "quality_dsd": "DSD",
     "quality_unknown": "Không rõ",
+    "no_listening_data": "Chưa có dữ liệu nghe nhạc trong khoảng thời gian này.",
+    "no_audio_quality": "Chưa có dữ liệu chất lượng âm thanh.",
     "empty": "Hãy bắt đầu nghe nhạc để xem thống kê.",
     "error": "Không tải được thống kê.",
     "retry": "Thử lại",

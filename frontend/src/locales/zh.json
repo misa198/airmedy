@@ -590,6 +590,8 @@
     "quality_hi_res": "Hi-Res",
     "quality_dsd": "DSD",
     "quality_unknown": "Unknown",
+    "no_listening_data": "此时间段暂无收听数据。",
+    "no_audio_quality": "暂无音频质量数据。",
     "empty": "Start listening to see your insights.",
     "error": "Could not load listening insights.",
     "retry": "Try again",

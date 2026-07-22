@@ -590,6 +590,8 @@
     "quality_hi_res": "Hi-Res",
     "quality_dsd": "DSD",
     "quality_unknown": "Unknown",
+    "no_listening_data": "ยังไม่มีข้อมูลการฟังสำหรับช่วงเวลานี้",
+    "no_audio_quality": "ยังไม่มีข้อมูลคุณภาพเสียง",
     "empty": "Start listening to see your insights.",
     "error": "Could not load listening insights.",
     "retry": "Try again",

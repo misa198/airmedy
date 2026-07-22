@@ -588,6 +588,8 @@
     "quality_hi_res": "Hi-Res",
     "quality_dsd": "DSD",
     "quality_unknown": "Unknown",
+    "no_listening_data": "Non ci sono ancora dati di ascolto per questo periodo.",
+    "no_audio_quality": "Non ci sono ancora dati sulla qualità audio.",
     "empty": "Start listening to see your insights.",
     "error": "Could not load listening insights.",
     "retry": "Try again",

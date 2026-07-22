@@ -588,6 +588,8 @@
     "quality_hi_res": "Hi-Res",
     "quality_dsd": "DSD",
     "quality_unknown": "Unknown",
+    "no_listening_data": "この期間の再生データはまだありません。",
+    "no_audio_quality": "オーディオ品質データはまだありません。",
     "empty": "Start listening to see your insights.",
     "error": "Could not load listening insights.",
     "retry": "Try again",

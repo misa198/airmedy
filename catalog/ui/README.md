@@ -318,8 +318,10 @@ measurement current and is disconnected on unmount.
 cancellation on period changes/unmount, and renders activity, audio-quality,
 genre, top-artist, and top-track summaries. Top tracks are hydrated through
 `LibraryService.GetTracksByIDs` and shown in the virtualized `TrackTable` with
-the feature-supplied `listened_seconds` column. Charts use SVG-rendered
-`vue-echarts` components.
+the feature-supplied `listened_seconds` column. A null response is normalized
+to empty insights so the full analytics layout remains visible; each card
+renders its own placeholder when its data is unavailable. Charts use
+SVG-rendered `vue-echarts` components.
 
 ## Interactive Polish
 

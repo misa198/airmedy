@@ -63,7 +63,7 @@ onUnmounted(() => resizeObserver?.disconnect())
 </script>
 
 <template>
-  <article ref="carouselRef" class="rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px]">
+  <article ref="carouselRef" class="flex min-h-[17rem] flex-col rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px]">
     <div class="mb-4 flex items-center justify-between gap-4">
       <div class="flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]"><Users class="h-4 w-4" /><h2>{{ t('analytics.top_artists') }}</h2></div>
       <div v-if="totalPages > 1" class="flex gap-1">
@@ -85,7 +85,7 @@ onUnmounted(() => resizeObserver?.disconnect())
         </div>
       </Transition>
     </div>
-    <div v-else class="flex min-h-32 flex-col items-center justify-center text-center text-[color:var(--text-muted)]"><Users class="mb-2 h-6 w-6 opacity-60" /><p class="text-sm">{{ t('analytics.no_top_artists') }}</p></div>
+    <div v-else class="flex flex-1 flex-col items-center justify-center text-center text-[color:var(--text-muted)]"><Users class="mb-2 h-6 w-6 opacity-60" /><p class="text-sm">{{ t('analytics.no_top_artists') }}</p></div>
   </article>
 </template>
 

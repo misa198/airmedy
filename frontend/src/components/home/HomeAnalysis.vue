@@ -39,6 +39,21 @@ const periodOptions = computed(() => [
 ])
 const totalQuality = computed(() => insights.value?.quality.reduce((sum: number, item: any) => sum + item.count, 0) || 0)
 const totalGenres = computed(() => insights.value?.genres.reduce((sum: number, item: any) => sum + item.listened_seconds, 0) || 0)
+const hasListeningData = computed(() => (insights.value?.listened_seconds ?? 0) > 0)
+const emptyInsights = () => ({
+  listened_seconds: 0,
+  plays: 0,
+  library_tracks: 0,
+  library_albums: 0,
+  library_artists: 0,
+  library_playlists: 0,
+  library_bytes: 0,
+  activity: [],
+  quality: [],
+  genres: [],
+  top_artists: [],
+  top_tracks: [],
+})
 const formatNumber = (value: number) => new Intl.NumberFormat(locale.value).format(value)
 const formatTime = (seconds: number) => formatTotalDuration(seconds, t)
 const formatBytes = (bytes: number) => new Intl.NumberFormat(locale.value, {
@@ -53,8 +68,8 @@ async function load() {
   try {
     const result = await pending
     if (request !== pending) return
-    insights.value = result
-    void loadTopTrackQueue(result?.top_tracks ?? [])
+    insights.value = result ?? emptyInsights()
+    void loadTopTrackQueue(insights.value.top_tracks)
   } catch (err) { if (request === pending) { console.error('Failed to load analytics:', err); error.value = true } } finally { if (request === pending) { loading.value = false; request = null } }
 }
 let request: ReturnType<typeof AnalyticsService.GetInsights> | null = null
@@ -110,55 +125,55 @@ onUnmounted(() => { request?.cancel(); topTrackRequest?.cancel() })
         <p>{{ t('analytics.error') }}</p>
         <button class="mt-3 text-white/70" @click="load">{{ t('analytics.retry') }}</button>
       </div>
-      <template v-else-if="insights">
-        <div v-if="insights.listened_seconds === 0"
-          class="py-16 text-center rounded-xl bg-[var(--bg-glass)] backdrop-blur-[30px] border border-[var(--border-glass)]">
-          <BarChart3 class="mx-auto w-8 h-8 text-white/30 mb-3" />
-          <p class="text-white/40">{{ t('analytics.empty') }}</p>
-        </div>
-        <template v-else>
-          <div class="grid gap-4 @5xl:grid-cols-5">
-            <article
-              class="@container relative min-h-[17rem] overflow-hidden rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-6 backdrop-blur-[30px] @5xl:col-span-3">
-              <div
-                class="pointer-events-none absolute inset-0 bg-gradient-to-br from-[var(--dynamic-surface)] to-transparent opacity-70" />
-              <div
-                class="relative grid h-full grid-cols-1 items-stretch gap-4 @md:grid-cols-[auto_minmax(0,1fr)] @md:gap-6">
+      <template v-else>
+        <div class="grid gap-4 @5xl:grid-cols-5">
+          <article
+            class="@container relative flex min-h-[17rem] flex-col overflow-hidden rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-6 backdrop-blur-[30px] @5xl:col-span-3">
+            <div class="pointer-events-none absolute inset-0 bg-gradient-to-br from-[var(--dynamic-surface)] to-transparent opacity-70" />
+            <div class="relative mb-6 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
+              <Clock class="h-4 w-4" />{{ t('analytics.total_time') }}
+            </div>
+            <template v-if="hasListeningData">
+              <div class="relative grid flex-1 grid-cols-1 items-stretch gap-4 @md:grid-cols-[auto_minmax(0,1fr)] @md:gap-6">
                 <div>
-                  <div class="mb-6 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
-                    <Clock class="h-4 w-4" />{{ t('analytics.total_time') }}
-                  </div>
                   <p class="text-4xl font-bold tracking-[-0.03em]">{{ formatTime(insights.listened_seconds) }}</p>
                   <p v-if="insights.change_percent !== undefined" class="mt-2 text-xs text-[color:var(--text-muted)]">{{
                     insights.change_percent >= 0 ? '+' : '' }}{{ insights.change_percent.toFixed(0) }}%</p>
                 </div>
                 <ListeningActivityChart class="h-full w-full self-stretch" :activity="insights.activity" />
               </div>
-            </article>
-            <article
-              class="@container min-h-[17rem] rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px] @5xl:col-span-2">
-              <div class="flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
-                <ListMusic class="h-4 w-4" />{{ t('analytics.genre_distribution') }}
-              </div>
-              <div v-if="insights.genres?.length"
-                class="mt-4 flex flex-col gap-5 @md:flex-row @md:items-center @md:gap-6">
-                <GenreDistributionChart :genres="insights.genres" />
-                <div class="min-w-0 flex-1 space-y-2.5">
-                  <div v-for="genre in insights.genres" :key="genre.is_other ? 'other' : genre.name"
-                    class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-3 text-xs">
-                    <span class="truncate text-[color:var(--text-muted)]">{{ genre.is_other ? t('analytics.genre_other')
-                      : genre.name }}</span>
-                    <span class="text-right tabular-nums text-[color:var(--text-muted)]">{{
-                      formatTime(genre.listened_seconds) }}</span>
-                    <span class="w-9 text-right tabular-nums text-[color:var(--text-muted)]">{{ totalGenres ?
-                      Math.round(genre.listened_seconds / totalGenres * 100) : 0 }}%</span>
-                  </div>
+            </template>
+            <div v-else data-testid="analytics-listening-empty" class="relative flex flex-1 flex-col items-center justify-center text-center text-[color:var(--text-muted)]">
+              <BarChart3 class="mb-2 h-6 w-6 opacity-60" />
+              <p class="text-sm">{{ t('analytics.no_listening_data') }}</p>
+            </div>
+          </article>
+          <article
+            class="@container flex min-h-[17rem] flex-col rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px] @5xl:col-span-2">
+            <div class="mb-4 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
+              <ListMusic class="h-4 w-4" />{{ t('analytics.genre_distribution') }}
+            </div>
+            <div v-if="insights.genres?.length"
+              class="flex flex-1 flex-col gap-5 @md:flex-row @md:items-center @md:gap-6">
+              <GenreDistributionChart :genres="insights.genres" />
+              <div class="min-w-0 flex-1 space-y-2.5">
+                <div v-for="genre in insights.genres" :key="genre.is_other ? 'other' : genre.name"
+                  class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-3 text-xs">
+                  <span class="truncate text-[color:var(--text-muted)]">{{ genre.is_other ? t('analytics.genre_other')
+                    : genre.name }}</span>
+                  <span class="text-right tabular-nums text-[color:var(--text-muted)]">{{
+                    formatTime(genre.listened_seconds) }}</span>
+                  <span class="w-9 text-right tabular-nums text-[color:var(--text-muted)]">{{ totalGenres ?
+                    Math.round(genre.listened_seconds / totalGenres * 100) : 0 }}%</span>
                 </div>
               </div>
-              <div v-else class="flex min-h-36 items-center justify-center text-sm text-[color:var(--text-muted)]">{{
-                t('analytics.no_genres') }}</div>
-            </article>
-          </div>
+            </div>
+            <div v-else class="flex flex-1 flex-col items-center justify-center text-center text-[color:var(--text-muted)]">
+              <ListMusic class="mb-2 h-6 w-6 opacity-60" />
+              <p class="text-sm">{{ t('analytics.no_genres') }}</p>
+            </div>
+          </article>
+        </div>
           <div class="grid gap-4 @3xl:grid-cols-2 @5xl:grid-cols-5" data-testid="analytics-library-summary">
             <article
               class="rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px]">
@@ -199,11 +214,11 @@ onUnmounted(() => { request?.cancel(); topTrackRequest?.cancel() })
           </div>
           <div class="grid gap-4 @5xl:grid-cols-5">
             <article
-              class="@container rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px] @5xl:col-span-2">
-              <h2 class="flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
+              class="@container flex min-h-[17rem] flex-col rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px] @5xl:col-span-2">
+              <h2 class="mb-4 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
                 <AudioLines class="h-4 w-4" />{{ t('analytics.quality') }}
               </h2>
-              <div class="mt-5 flex flex-col gap-5 @md:flex-row @md:items-center @md:gap-8">
+              <div v-if="insights.quality?.length" class="flex flex-1 flex-col gap-5 @md:flex-row @md:items-center @md:gap-8">
                 <AudioQualityChart :quality="insights.quality" />
                 <div class="min-w-0 flex-1 space-y-2.5">
                   <div v-for="item in insights.quality" :key="item.kind"
@@ -217,10 +232,14 @@ onUnmounted(() => { request?.cancel(); topTrackRequest?.cancel() })
                   </div>
                 </div>
               </div>
+              <div v-else data-testid="analytics-quality-empty" class="flex flex-1 flex-col items-center justify-center text-center text-[color:var(--text-muted)]">
+                <AudioLines class="mb-2 h-6 w-6 opacity-60" />
+                <p class="text-sm">{{ t('analytics.no_audio_quality') }}</p>
+              </div>
             </article>
             <article
-              class="rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px] @5xl:col-span-3">
-              <h2 class="flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
+              class="flex min-h-[17rem] flex-col rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px] @5xl:col-span-3">
+              <h2 class="mb-4 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
                 <Music class="h-4 w-4" />{{ t('analytics.top_tracks') }}
               </h2>
               <div v-if="topTrackQueue.length" class="mt-3 h-96">
@@ -229,19 +248,18 @@ onUnmounted(() => { request?.cancel(); topTrackRequest?.cancel() })
                   :additional-columns="topTrackColumns" :virtual-scroll="false" variant="glass"
                   @play-track="(_, index, queue) => playerStore.playTracks(queue, index)" />
               </div>
-              <div v-else-if="topTracksLoading" class="mt-3 h-40 animate-pulse rounded-lg bg-white/[0.04]" />
+              <div v-else-if="topTracksLoading" class="flex-1 animate-pulse rounded-lg bg-white/[0.04]" />
               <div v-else-if="insights.top_tracks.length"
-                class="flex min-h-32 items-center justify-center text-sm text-[color:var(--text-muted)]">{{
+                class="flex flex-1 items-center justify-center text-sm text-[color:var(--text-muted)]">{{
                   t('analytics.no_top_tracks') }}</div>
               <div v-else
-                class="flex min-h-32 flex-col items-center justify-center text-center text-[color:var(--text-muted)]">
+                class="flex flex-1 flex-col items-center justify-center text-center text-[color:var(--text-muted)]">
                 <Music class="mb-2 h-6 w-6 opacity-60" />
                 <p class="text-sm">{{ t('analytics.no_top_tracks') }}</p>
               </div>
             </article>
           </div>
           <TopArtistsCarousel :artists="insights.top_artists" />
-        </template>
       </template>
     </div>
   </section>

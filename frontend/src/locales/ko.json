@@ -588,6 +588,8 @@
     "quality_hi_res": "Hi-Res",
     "quality_dsd": "DSD",
     "quality_unknown": "Unknown",
+    "no_listening_data": "이 기간의 감상 데이터가 아직 없습니다.",
+    "no_audio_quality": "오디오 품질 데이터가 아직 없습니다.",
     "empty": "Start listening to see your insights.",
     "error": "Could not load listening insights.",
     "retry": "Try again",
