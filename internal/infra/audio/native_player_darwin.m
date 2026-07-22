@@ -228,6 +228,10 @@ static AVAudioUnitEffect *MakeStereoWidenerNode(void) {
 @property (assign, nonatomic) float            volume;
 @property (assign, nonatomic) BOOL             isPlaying;
 @property (assign, nonatomic) NSTimeInterval   pausePosition;
+// SFBAudioEngine activates enqueued decoders asynchronously. Keep a seek made
+// immediately after Load (session restore) until that decoder is active.
+@property (assign, nonatomic) BOOL             hasPendingSeek;
+@property (assign, nonatomic) NSTimeInterval   pendingSeekPosition;
 @property (assign, nonatomic) double           crossfadeDuration; // seconds; 0 = off (gapless)
 @property (assign, nonatomic) float            eqPreampDB; // user EQ preamp, global, composes with normPreampDB
 @property (assign, nonatomic) BOOL             fading;
@@ -246,6 +250,8 @@ static AVAudioUnitEffect *MakeStereoWidenerNode(void) {
     _volume        = 1.0f;
     _isPlaying     = NO;
     _pausePosition = 0.0;
+    _hasPendingSeek = NO;
+    _pendingSeekPosition = 0.0;
     _activeIndex   = 0;
     _crossfadeDuration = 0.0;
     _fadeQueue = dispatch_queue_create("com.airmedy.player.fade", DISPATCH_QUEUE_SERIAL);
@@ -262,6 +268,20 @@ static AVAudioUnitEffect *MakeStereoWidenerNode(void) {
 - (AirmedyDeck *)idleDeck   { return self.decks[self.activeIndex ^ 1]; }
 
 // --- SFBAudioPlayerDelegate ---
+
+- (void)audioPlayer:(SFBAudioPlayer *)audioPlayer
+      decodingStarted:(id<SFBPCMDecoding>)decoder
+{
+    if (audioPlayer != self.activeDeck.sfbPlayer || !self.hasPendingSeek) {
+        return;
+    }
+
+    const NSTimeInterval position = self.pendingSeekPosition;
+    if ([audioPlayer seekToTime:position]) {
+        self.pausePosition = position;
+        self.hasPendingSeek = NO;
+    }
+}
 
 // Called when audio format changes; reconnect the owning deck's EQ with the
 // new format. SFBAudioEngine connects sourceNode → returned node with format.
@@ -378,6 +398,7 @@ static AVAudioUnitEffect *MakeStereoWidenerNode(void) {
     BOOL wasPlaying = self.isPlaying;
     self.isPlaying = NO;
     self.pausePosition = 0.0;
+    self.hasPendingSeek = NO;
 
     // A hard load supersedes any fade and any pre-loaded next track.
     dispatch_sync(self.fadeQueue, ^{
@@ -430,8 +451,13 @@ static AVAudioUnitEffect *MakeStereoWidenerNode(void) {
 }
 
 - (void)seek:(double)seconds {
+    // The first active decoder is created asynchronously after enqueue. Retain
+    // the target so decodingStarted can apply it before audio renders.
+    self.pausePosition = seconds;
+    self.pendingSeekPosition = seconds;
+    self.hasPendingSeek = YES;
     if ([self.activeDeck.sfbPlayer seekToTime:seconds]) {
-        self.pausePosition = seconds;
+        self.hasPendingSeek = NO;
     }
 }
 

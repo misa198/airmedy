@@ -151,6 +151,11 @@ func main() {
 	wailsApp = application.New(application.Options{
 		Name:        "airmedy",
 		Description: "A modern music player",
+		// Wails invokes OnShutdown synchronously from macOS'
+		// applicationShouldTerminate callback. Unlike ApplicationWillTerminate
+		// event listeners, this blocks Cmd+Q until the FX lifecycle has persisted
+		// the current playback state.
+		OnShutdown: stopFX,
 		Services: []application.Service{
 			application.NewService(greetService),
 			application.NewService(libraryService),
@@ -341,11 +346,6 @@ func main() {
 			}
 		}()
 	}
-
-	// Cmd+Q fires ApplicationWillTerminate, bypassing WindowClosing on macOS.
-	wailsApp.Event.OnApplicationEvent(events.Mac.ApplicationWillTerminate, func(_ *application.ApplicationEvent) {
-		stopFX()
-	})
 
 	var trayManager *wails.TrayManager
 	settings, err = settingsService.GetSettings(context.Background())

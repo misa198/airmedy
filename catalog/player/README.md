@@ -581,6 +581,18 @@ type PlayerState struct {
 }
 ```
 
+On macOS, Cmd+Q is handled by Wails `application.Options.OnShutdown`, which runs
+synchronously from AppKit's `applicationShouldTerminate` callback. It stops the FX
+lifecycle before the application exits, so `PlayerService.OnStop` flushes the final
+player state rather than relying on the asynchronous `ApplicationWillTerminate` event.
+Within `PlayerService.OnStop`, player state is written before waiting for listening
+analytics writes, since both use SQLite and analytics contention must not consume the
+shutdown deadline needed to persist the resume position.
+
+On macOS, `SFBAudioPlayer` activates a loaded decoder asynchronously. Restore calls
+`Load()` followed by `Seek()`; if the decoder is not active yet, `DarwinPlayer` retains
+the seek and applies it from the native `decodingStarted` callback before audio renders.
+
 On app startup, `Load()` restores queue, seeks to saved position, but does not auto-play (playback state is paused on restore).
 
 ## Events Emitted

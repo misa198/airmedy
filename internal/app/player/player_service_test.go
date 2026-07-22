@@ -170,11 +170,42 @@ func (r *fakeTrackRepo) IncrementPlayCount(_ context.Context, _ string) error { 
 
 type fakePlayerStateRepo struct {
 	domain.PlayerStateRepository
+	mu         sync.Mutex
+	savedState *domain.PlayerState
 }
 
-func (r *fakePlayerStateRepo) Save(_ context.Context, _ *domain.PlayerState) error { return nil }
+func (r *fakePlayerStateRepo) Save(_ context.Context, state *domain.PlayerState) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	copy := *state
+	copy.QueueTrackIDs = append([]string(nil), state.QueueTrackIDs...)
+	copy.OriginalTrackIDs = append([]string(nil), state.OriginalTrackIDs...)
+	r.savedState = &copy
+	return nil
+}
 func (r *fakePlayerStateRepo) Load(_ context.Context) (*domain.PlayerState, error) {
 	return &domain.PlayerState{Volume: 1.0}, nil
+}
+
+func (r *fakePlayerStateRepo) lastSavedState() *domain.PlayerState {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.savedState == nil {
+		return nil
+	}
+	copy := *r.savedState
+	return &copy
+}
+
+type contextAwarePlayerStateRepo struct {
+	fakePlayerStateRepo
+}
+
+func (r *contextAwarePlayerStateRepo) Save(ctx context.Context, state *domain.PlayerState) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	return r.fakePlayerStateRepo.Save(ctx, state)
 }
 
 // newTestService builds a PlayerService with fast tick interval for tests.
@@ -1262,6 +1293,44 @@ func TestLoadAndPlayDoesNotWaitForListeningWrite(t *testing.T) {
 	defer cancel()
 	s.stopListeningWriter(ctx)
 	_ = s.Stop()
+}
+
+func TestShutdownSavesPlayerStateBeforeWaitingForListeningWrites(t *testing.T) {
+	listeningRepo := &blockingListeningRepository{entered: make(chan struct{}), release: make(chan struct{})}
+	stateRepo := &contextAwarePlayerStateRepo{}
+	player := &fakePlayer{status: domain.PlayerStatus{TrackID: "track-1", Position: 42, Volume: 0.8}}
+	s, _ := newTestService(t, player)
+	s.stateRepo = stateRepo
+	s.listeningRepo = listeningRepo
+	s.listeningWrites = make(chan listeningWrite, 1)
+	s.listeningWritesDone = make(chan struct{})
+	s.startListeningWriter()
+
+	track := &domain.TrackDTO{Track: domain.Track{ID: "track-1", Duration: 120}}
+	s.queue.SetQueue([]*domain.TrackDTO{track}, 0)
+	s.mu.Lock()
+	s.currentTrack = track
+	s.listeningTrack = track
+	s.listeningStart = time.Now().Add(-12 * time.Second)
+	s.listeningActiveAt = time.Now().Add(-12 * time.Second)
+	s.mu.Unlock()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Millisecond)
+	defer cancel()
+	if err := s.shutdown(ctx); err != nil {
+		t.Fatalf("shutdown: %v", err)
+	}
+
+	saved := stateRepo.lastSavedState()
+	if saved == nil || saved.CurrentTrackID != track.ID || saved.Position != 42 {
+		t.Fatalf("player state was not saved before listening shutdown: %+v", saved)
+	}
+	close(listeningRepo.release)
+	select {
+	case <-s.listeningWritesDone:
+	case <-time.After(time.Second):
+		t.Fatal("listening writer did not stop")
+	}
 }
 
 func TestLoadAndPlayDoesNotStartListeningWhenPlaybackFails(t *testing.T) {

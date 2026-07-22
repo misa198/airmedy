@@ -163,18 +163,25 @@ func NewPlayerService(
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
-			s.stopPositionTicker()
-			s.flushListening(ctx)
-			s.stopListeningWriter(ctx)
-			s.saveState(ctx)
-			if closer, ok := s.player.(interface{ Close() }); ok {
-				closer.Close()
-			}
-			return nil
+			return s.shutdown(ctx)
 		},
 	})
 
 	return s
+}
+
+// shutdown persists player state before waiting for analytics writes. Both paths
+// share SQLite; a delayed listening write must not consume the shutdown context
+// and prevent the resume position from being saved.
+func (s *PlayerService) shutdown(ctx context.Context) error {
+	s.stopPositionTicker()
+	s.saveState(ctx)
+	s.flushListening(ctx)
+	s.stopListeningWriter(ctx)
+	if closer, ok := s.player.(interface{ Close() }); ok {
+		closer.Close()
+	}
+	return nil
 }
 
 // AddStatusListener registers a callback that will be called whenever the player status changes.
