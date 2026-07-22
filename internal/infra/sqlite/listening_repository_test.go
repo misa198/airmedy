@@ -2,12 +2,50 @@ package sqlite
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"testing"
 	"time"
 
 	"airmedy/internal/domain"
 )
+
+func TestListeningRepositoryReturnsFiftyTopArtistsAndTracks(t *testing.T) {
+	db, err := NewDB(":memory:", slog.Default())
+	if err != nil {
+		t.Fatalf("NewDB: %v", err)
+	}
+	defer db.Close()
+
+	ctx := context.Background()
+	trackRepo := NewTrackRepository(db)
+	repo := NewListeningRepository(db)
+	now := time.Now()
+	for i := 0; i < 51; i++ {
+		trackID := fmt.Sprintf("track-%02d", i)
+		artistID := fmt.Sprintf("artist-%02d", i)
+		if err := trackRepo.Save(ctx, &domain.Track{ID: trackID, Path: "/music/" + trackID + ".flac", Title: trackID, SortTitle: trackID, Format: "flac"}); err != nil {
+			t.Fatalf("save track %d: %v", i, err)
+		}
+		if _, err := db.ExecContext(ctx, `INSERT INTO artists (id, name, sort_name) VALUES (?, ?, ?)`, artistID, artistID, artistID); err != nil {
+			t.Fatalf("save artist %d: %v", i, err)
+		}
+		if _, err := db.ExecContext(ctx, `INSERT INTO track_artists (track_id, artist_id, position) VALUES (?, ?, 0)`, trackID, artistID); err != nil {
+			t.Fatalf("link artist %d: %v", i, err)
+		}
+		if err := repo.RecordSession(ctx, domain.ListeningSession{TrackID: trackID, StartedAt: now, EndedAt: now.Add(time.Minute), ListenedSeconds: 60, QualifiedPlay: true}); err != nil {
+			t.Fatalf("record session %d: %v", i, err)
+		}
+	}
+
+	insights, err := repo.GetInsights(ctx, domain.ListeningRangeAll, now)
+	if err != nil {
+		t.Fatalf("get insights: %v", err)
+	}
+	if len(insights.TopArtists) != 50 || len(insights.TopTracks) != 50 {
+		t.Fatalf("top insight counts = artists:%d tracks:%d, want 50 each", len(insights.TopArtists), len(insights.TopTracks))
+	}
+}
 
 func TestListeningRepositoryRollsUpSessions(t *testing.T) {
 	db, err := NewDB(":memory:", slog.Default())

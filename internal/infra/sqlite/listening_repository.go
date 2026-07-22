@@ -10,6 +10,8 @@ import (
 	"github.com/google/uuid"
 )
 
+const listeningInsightsTopItemsLimit = 50
+
 type listeningRepository struct{ db *DB }
 
 func NewListeningRepository(db *DB) domain.ListeningRepository { return &listeningRepository{db: db} }
@@ -197,15 +199,15 @@ func (r *listeningRepository) GetInsights(ctx context.Context, period domain.Lis
 		}
 	}
 
-	artistSQL := `SELECT a.id, a.name, COALESCE(a.artwork_key_manual, a.artwork_key_local, a.artwork_key_online, '') artwork_key, SUM(d.listened_seconds) listened_seconds FROM daily_track_listening_stats d JOIN track_artists ta ON ta.track_id=d.track_id JOIN artists a ON a.id=ta.artist_id ` + strings.Replace(where, "local_date", "d.local_date", 1) + ` GROUP BY a.id ORDER BY listened_seconds DESC, a.name LIMIT 25`
+	artistSQL := `SELECT a.id, a.name, COALESCE(a.artwork_key_manual, a.artwork_key_local, a.artwork_key_online, '') artwork_key, SUM(d.listened_seconds) listened_seconds FROM daily_track_listening_stats d JOIN track_artists ta ON ta.track_id=d.track_id JOIN artists a ON a.id=ta.artist_id ` + strings.Replace(where, "local_date", "d.local_date", 1) + fmt.Sprintf(` GROUP BY a.id ORDER BY listened_seconds DESC, a.name LIMIT %d`, listeningInsightsTopItemsLimit)
 	if err := r.db.SelectContext(ctx, &result.TopArtists, artistSQL, args...); err != nil {
 		return nil, fmt.Errorf("read top artists: %w", err)
 	}
 	trackSQL := `SELECT t.id, t.title,
 		COALESCE((SELECT GROUP_CONCAT(name, ', ') FROM (SELECT a.name FROM track_artists ta JOIN artists a ON a.id=ta.artist_id WHERE ta.track_id=t.id ORDER BY ta.position)), '') artist,
 		stats.play_count, stats.listened_seconds
-		FROM (SELECT d.track_id, SUM(d.play_count) play_count, SUM(d.listened_seconds) listened_seconds FROM daily_track_listening_stats d ` + strings.Replace(where, "local_date", "d.local_date", 1) + ` GROUP BY d.track_id) stats
-		JOIN tracks t ON t.id=stats.track_id ORDER BY stats.play_count DESC, t.title LIMIT 25`
+		FROM (SELECT d.track_id, SUM(d.play_count) play_count, SUM(d.listened_seconds) listened_seconds FROM daily_track_listening_stats d ` + strings.Replace(where, "local_date", "d.local_date", 1) + fmt.Sprintf(` GROUP BY d.track_id) stats
+		JOIN tracks t ON t.id=stats.track_id ORDER BY stats.play_count DESC, t.title LIMIT %d`, listeningInsightsTopItemsLimit)
 	if err := r.db.SelectContext(ctx, &result.TopTracks, trackSQL, args...); err != nil {
 		return nil, fmt.Errorf("read top tracks: %w", err)
 	}

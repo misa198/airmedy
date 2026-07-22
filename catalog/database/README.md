@@ -82,6 +82,9 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000060 | `app_settings_auto_advance_notifications.up.sql` | Add `app_settings.auto_advance_notifications_enabled BOOLEAN NOT NULL DEFAULT TRUE` for the macOS automatic-track notification preference |
 | 000062 | `listening_insights.up.sql` | Add append-only `listening_sessions` plus per-track/day aggregate `daily_track_listening_stats`, with date indexes, for listening insights |
 
+`listeningRepository.GetInsights` returns up to 50 entries for both Top Artists
+(ordered by listened seconds) and Top Tracks (ordered by play count).
+
 ## Full Schema
 
 ### Core Entity Tables
