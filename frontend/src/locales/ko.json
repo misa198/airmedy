@@ -17,6 +17,8 @@
     "off": "꺼짐",
     "hr": "시간",
     "min": "분",
+    "sec": "초",
+    "day": "일",
     "delete": "삭제",
     "yes": "예",
     "no": "아니요",
@@ -180,8 +182,8 @@
       "prevent_sleep_desc": "음악 재생 중 컴퓨터가 절전 모드로 전환되지 않도록 합니다",
       "show_player_indicator": "활성 인디케이터 표시",
       "show_player_indicator_desc": "셔플 및 반복 버튼이 활성화될 때 버튼 아래에 점을 표시합니다",
-      "auto_advance_notifications": "Track change notifications",
-      "auto_advance_notifications_desc": "Show a silent macOS notification when playback automatically moves to the next track",
+      "auto_advance_notifications": "트랙 변경 알림",
+      "auto_advance_notifications_desc": "재생이 자동으로 다음 트랙으로 넘어갈 때 macOS 알림을 조용히 표시합니다",
       "high_contrast_lyrics": "고대비 가사",
       "high_contrast_lyrics_desc": "전체 화면 가사를 눈에 띄는 글래스 패널에 표시합니다",
       "song_transition": "곡 전환",
@@ -194,7 +196,12 @@
       "max_queue_size": "최대 대기열 크기",
       "max_queue_size_desc": "현재 트랙을 포함하여 재생 대기열에 담을 수 있는 트랙 수를 제한합니다. 한도에 도달하면 가장 오래된 트랙부터 제거됩니다."
     },
-    "quick_menu": { "enable_eq": "이퀄라이저 활성화", "eq_presets": "EQ 프리셋", "go_to_equalizer": "이퀄라이저 설정으로 이동", "go_to_playback": "재생 설정으로 이동" },
+    "quick_menu": {
+      "enable_eq": "이퀄라이저 활성화",
+      "eq_presets": "EQ 프리셋",
+      "go_to_equalizer": "이퀄라이저 설정으로 이동",
+      "go_to_playback": "재생 설정으로 이동"
+    },
     "remote": {
       "title": "원격 제어",
       "enable": "원격 서버 활성화",
@@ -559,5 +566,36 @@
       "live_updating_label": "실시간 업데이트",
       "live_updating_hint": "일치하는 트랙을 자동으로 최신 상태로 유지합니다. 끄면 현재 결과를 고정합니다."
     }
+  },
+  "analytics": {
+    "title": "청취 통계",
+    "subtitle": "한눈에 보는 나의 청취 습관",
+    "range_7d": "7일",
+    "range_30d": "30일",
+    "range_all": "전체",
+    "total_time": "총 재생 시간",
+    "plays": "재생 횟수",
+    "library_size": "라이브러리 크기",
+    "total_albums": "총 앨범 수",
+    "total_artists": "총 아티스트 수",
+    "total_playlists": "총 플레이리스트 수",
+    "genre_distribution": "장르 분포", "genre_other": "기타", "no_genres": "장르별 감상 데이터가 아직 없습니다",
+    "activity": "감상 활동",
+    "quality": "음질",
+    "top_artists": "많이 들은 아티스트",
+    "top_tracks": "많이 재생한 트랙",
+    "quality_lossy": "손실 압축",
+    "quality_lossless": "무손실",
+    "quality_hi_res": "Hi-Res",
+    "quality_dsd": "DSD",
+    "quality_unknown": "알 수 없음",
+    "no_listening_data": "이 기간의 감상 데이터가 아직 없습니다.",
+    "no_audio_quality": "오디오 품질 데이터가 아직 없습니다.",
+    "empty": "감상을 시작하면 통계를 확인할 수 있습니다.",
+    "error": "청취 통계를 불러올 수 없습니다.",
+    "retry": "다시 시도",
+    "refresh": "통계 새로 고침",
+    "no_top_artists": "아직 아티스트 감상 기록이 없습니다",
+    "no_top_tracks": "아직 재생한 트랙이 없습니다"
   }
 }

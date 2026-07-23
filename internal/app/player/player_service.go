@@ -37,12 +37,22 @@ type PlayerService struct {
 	settingsRepo                    domain.SettingsRepository
 	normSvc                         *normalization.NormalizationService
 	notifier                        domain.TrackTransitionNotifier
+	listeningRepo                   domain.ListeningRepository
 	autoAdvanceNotificationsEnabled bool
 
-	trackStartTime time.Time
-	playCounted    map[string]bool // trackID -> bool
-	npReported     map[string]bool // trackID -> bool
-	posConfirmed   map[string]bool // trackID -> bool
+	trackStartTime        time.Time
+	playCounted           map[string]bool // trackID -> bool
+	npReported            map[string]bool // trackID -> bool
+	posConfirmed          map[string]bool // trackID -> bool
+	listeningTrack        *domain.TrackDTO
+	listeningStart        time.Time
+	listeningActiveAt     time.Time
+	listeningSeconds      int
+	listeningQualified    bool
+	listeningWrites       chan listeningWrite
+	listeningWritesDone   chan struct{}
+	listeningWritesMu     sync.Mutex
+	listeningWritesClosed bool
 
 	tickerMu     sync.Mutex
 	tickerCancel context.CancelFunc
@@ -51,9 +61,12 @@ type PlayerService struct {
 	endedNaturally bool             // true when queue ran out; cleared on Play or loadAndPlay
 	nextPreQueued  *domain.TrackDTO // track pre-enqueued for gapless transition
 
-	crossfadeSec float64 // crossfade duration in seconds; 0 = off (gapless)
-	fading       bool    // a crossfade overlap is currently in progress
-	fadeGen      int     // bumped on every fade begin/snap; voids stale completion timers
+	crossfadeSec          float64 // crossfade duration in seconds; 0 = off (gapless)
+	fading                bool    // a crossfade overlap is currently in progress
+	fadeGen               int     // bumped on every fade begin/snap; voids stale completion timers
+	fadeListeningOutgoing *domain.TrackDTO
+	fadeListeningStarted  time.Time
+	fadeListeningMaxSec   float64
 
 	sleepInhibitor domain.SleepInhibitor
 
@@ -72,6 +85,15 @@ type PlayerService struct {
 	artworkCrossfadeListeners []func(domain.ArtworkCrossfadeEvent)
 }
 
+type listeningWrite struct {
+	track     *domain.TrackDTO
+	started   time.Time
+	seconds   int
+	qualified bool
+}
+
+const listeningWriteQueueSize = 64
+
 func NewPlayerService(
 	player domain.AudioPlayer,
 	queue *QueueService,
@@ -84,6 +106,7 @@ func NewPlayerService(
 	sleepInhibitor domain.SleepInhibitor,
 	normSvc *normalization.NormalizationService,
 	notifier domain.TrackTransitionNotifier,
+	listeningRepo domain.ListeningRepository,
 	lc fx.Lifecycle,
 ) *PlayerService {
 	s := &PlayerService{
@@ -98,12 +121,16 @@ func NewPlayerService(
 		sleepInhibitor:                  sleepInhibitor,
 		normSvc:                         normSvc,
 		notifier:                        notifier,
+		listeningRepo:                   listeningRepo,
 		autoAdvanceNotificationsEnabled: true,
 		tickInterval:                    500 * time.Millisecond,
 		playCounted:                     make(map[string]bool),
 		npReported:                      make(map[string]bool),
 		posConfirmed:                    make(map[string]bool),
+		listeningWrites:                 make(chan listeningWrite, listeningWriteQueueSize),
+		listeningWritesDone:             make(chan struct{}),
 	}
+	s.startListeningWriter()
 	s.player.OnTrackEnd(s.HandleTrackEnd)
 
 	if npc, ok := player.(domain.NowPlayingController); ok {
@@ -126,19 +153,35 @@ func NewPlayerService(
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			s.restoreState(ctx)
+			if s.listeningRepo != nil {
+				go func() {
+					if err := s.listeningRepo.CleanupSessions(context.Background(), time.Now().AddDate(0, 0, -180)); err != nil {
+						s.logger.Warn("failed to cleanup listening sessions", "error", err)
+					}
+				}()
+			}
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
-			s.stopPositionTicker()
-			s.saveState(ctx)
-			if closer, ok := s.player.(interface{ Close() }); ok {
-				closer.Close()
-			}
-			return nil
+			return s.shutdown(ctx)
 		},
 	})
 
 	return s
+}
+
+// shutdown persists player state before waiting for analytics writes. Both paths
+// share SQLite; a delayed listening write must not consume the shutdown context
+// and prevent the resume position from being saved.
+func (s *PlayerService) shutdown(ctx context.Context) error {
+	s.stopPositionTicker()
+	s.saveState(ctx)
+	s.flushListening(ctx)
+	s.stopListeningWriter(ctx)
+	if closer, ok := s.player.(interface{ Close() }); ok {
+		closer.Close()
+	}
+	return nil
 }
 
 // AddStatusListener registers a callback that will be called whenever the player status changes.
@@ -257,6 +300,7 @@ func (s *PlayerService) Play() error {
 
 	err := s.player.Play()
 	if err == nil {
+		s.resumeListening()
 		s.startPositionTicker()
 		// Prime the pre-queued next track if it isn't already. A session-restored
 		// track is Loaded but never pre-enqueued, so without this a plain resume
@@ -285,6 +329,12 @@ func (s *PlayerService) Pause() error {
 	s.finishActiveCrossfade()
 	err := s.player.Pause()
 	if err == nil {
+		// A paused session may remain paused indefinitely, so persist it now rather
+		// than leaving the analytics view with only its previous checkpoint.
+		// Pause the native player first: a failed native pause must not stop the
+		// in-memory listening clock while audio is still playing.
+		s.pauseListening()
+		s.flushListening(context.Background())
 		s.stopPositionTicker()
 		s.setNowPlayingPlaybackState(false)
 		s.emitStatus()
@@ -319,6 +369,8 @@ func (s *PlayerService) SetNowPlayingActivateCallback(cb func()) {
 // Stop stops playback.
 func (s *PlayerService) Stop() error {
 	s.snapActiveCrossfade()
+	s.pauseListening()
+	s.flushListening(context.Background())
 	err := s.player.Stop()
 	if err == nil {
 		s.stopPositionTicker()
@@ -764,6 +816,7 @@ func (s *PlayerService) ReapplyNormalization() {
 func (s *PlayerService) loadAndPlay(track *domain.TrackDTO) error {
 	// A hard load supersedes any in-flight crossfade.
 	s.snapActiveCrossfade()
+	s.flushListening(context.Background())
 	s.stopPositionTicker()
 
 	// Clear any stale pre-queue — hard load supersedes gapless pre-loading.
@@ -792,6 +845,7 @@ func (s *PlayerService) loadAndPlay(track *domain.TrackDTO) error {
 		s.logger.Error("failed to play track", "track", track.Path, "error", err)
 		return err
 	}
+	s.startListening(track)
 
 	s.mu.Lock()
 	s.currentTrack = track
@@ -848,6 +902,7 @@ func fallbackTitle(path string) string {
 // transitionToTrack updates app state when the audio engine has already transitioned
 // to track (gapless path). Does NOT call player.Load/Play.
 func (s *PlayerService) transitionToTrack(track *domain.TrackDTO) {
+	s.flushListening(context.Background())
 	s.mu.Lock()
 	s.currentTrack = track
 	s.currentTheme = nil
@@ -856,6 +911,7 @@ func (s *PlayerService) transitionToTrack(track *domain.TrackDTO) {
 	delete(s.npReported, track.ID)
 	delete(s.posConfirmed, track.ID)
 	s.mu.Unlock()
+	s.startListening(track)
 
 	if s.normSvc != nil {
 		s.normSvc.ApplyToPlayer(context.Background(), track, s.queue.PeekNext())
@@ -1239,6 +1295,7 @@ func (s *PlayerService) checkThreshold(track *domain.TrackDTO, status domain.Pla
 		s.mu.Unlock()
 
 		s.logger.Info("track playback threshold reached", "title", track.Title)
+		s.markListeningQualified(track.ID)
 
 		// Increment local play count
 		go func(id string) {
@@ -1253,6 +1310,155 @@ func (s *PlayerService) checkThreshold(track *domain.TrackDTO, status domain.Pla
 		}
 	} else {
 		s.mu.Unlock()
+	}
+}
+
+// startListening starts a new in-memory listening session. Persistence happens
+// only at discrete playback boundaries, keeping the hot 500ms ticker write-free.
+func (s *PlayerService) startListening(track *domain.TrackDTO) {
+	now := time.Now()
+	s.mu.Lock()
+	s.listeningTrack = track
+	s.listeningStart = now
+	s.listeningActiveAt = now
+	s.listeningSeconds = 0
+	s.listeningQualified = false
+	s.mu.Unlock()
+}
+
+func (s *PlayerService) resumeListening() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	now := time.Now()
+	if s.listeningTrack != nil && s.listeningActiveAt.IsZero() {
+		s.listeningActiveAt = now
+		return
+	}
+	// Pause persists and clears the completed interval so analytics is current
+	// immediately. Starting playback again must therefore begin a fresh
+	// interval for the still-loaded track. This also covers restored tracks,
+	// which are loaded in a paused state without an in-memory session.
+	if s.listeningTrack == nil && s.currentTrack != nil {
+		s.listeningTrack = s.currentTrack
+		s.listeningStart = now
+		s.listeningActiveAt = now
+		s.listeningSeconds = 0
+		s.listeningQualified = false
+	}
+}
+
+func (s *PlayerService) pauseListening() {
+	s.mu.Lock()
+	if s.listeningTrack != nil && !s.listeningActiveAt.IsZero() {
+		s.listeningSeconds += int(time.Since(s.listeningActiveAt).Seconds())
+		s.listeningActiveAt = time.Time{}
+	}
+	s.mu.Unlock()
+}
+
+func (s *PlayerService) markListeningQualified(trackID string) {
+	s.mu.Lock()
+	if s.listeningTrack != nil && s.listeningTrack.ID == trackID {
+		s.listeningQualified = true
+	}
+	s.mu.Unlock()
+}
+
+func (s *PlayerService) flushListening(ctx context.Context) {
+	s.pauseListening()
+	s.mu.Lock()
+	track, started, seconds, qualified := s.listeningTrack, s.listeningStart, s.listeningSeconds, s.listeningQualified
+	s.listeningTrack = nil
+	s.listeningStart = time.Time{}
+	s.listeningSeconds = 0
+	s.listeningQualified = false
+	s.mu.Unlock()
+	s.recordListening(ctx, track, started, seconds, qualified)
+}
+
+func (s *PlayerService) checkpointListening() {
+	s.mu.Lock()
+	if s.listeningTrack == nil || s.listeningActiveAt.IsZero() || time.Since(s.listeningStart) < time.Minute {
+		s.mu.Unlock()
+		return
+	}
+	now := time.Now()
+	s.listeningSeconds += int(now.Sub(s.listeningActiveAt).Seconds())
+	track, started, seconds, qualified := s.listeningTrack, s.listeningStart, s.listeningSeconds, s.listeningQualified
+	s.listeningStart, s.listeningActiveAt = now, now
+	s.listeningSeconds, s.listeningQualified = 0, false
+	s.mu.Unlock()
+	s.recordListening(context.Background(), track, started, seconds, qualified)
+}
+
+func (s *PlayerService) recordListening(ctx context.Context, track *domain.TrackDTO, started time.Time, seconds int, qualified bool) {
+	if s.listeningRepo == nil || track == nil || seconds < 10 {
+		return
+	}
+	s.enqueueListening(ctx, listeningWrite{track: track, started: started, seconds: seconds, qualified: qualified})
+}
+
+func (s *PlayerService) recordListeningPart(ctx context.Context, track *domain.TrackDTO, started time.Time, seconds int, qualified bool) {
+	if s.listeningRepo == nil || track == nil || seconds <= 0 {
+		return
+	}
+	if err := s.listeningRepo.RecordSession(ctx, domain.ListeningSession{TrackID: track.ID, StartedAt: started, EndedAt: time.Now(), ListenedSeconds: seconds, QualifiedPlay: qualified}); err != nil {
+		s.logger.Warn("failed to record listening session", "track_id", track.ID, "error", err)
+	}
+}
+
+// startListeningWriter serializes listening writes away from playback paths.
+// SQLite accepts one writer at a time, so a small bounded queue avoids both
+// transport stalls and unbounded goroutine growth during database contention.
+func (s *PlayerService) startListeningWriter() {
+	if s.listeningWrites == nil || s.listeningRepo == nil {
+		return
+	}
+	go func() {
+		defer close(s.listeningWritesDone)
+		for write := range s.listeningWrites {
+			s.recordListeningPart(context.Background(), write.track, write.started, write.seconds, write.qualified)
+		}
+	}()
+}
+
+func (s *PlayerService) enqueueListening(ctx context.Context, write listeningWrite) {
+	// Directly-constructed test services do not start the worker.
+	if s.listeningWrites == nil {
+		s.recordListeningPart(ctx, write.track, write.started, write.seconds, write.qualified)
+		return
+	}
+	s.listeningWritesMu.Lock()
+	defer s.listeningWritesMu.Unlock()
+	if s.listeningWritesClosed {
+		s.logger.Warn("listening session writer stopped; dropping session", "track_id", write.track.ID)
+		return
+	}
+	select {
+	case s.listeningWrites <- write:
+	case <-ctx.Done():
+		s.logger.Warn("listening session write cancelled", "track_id", write.track.ID)
+	default:
+		s.logger.Warn("listening session queue full; dropping session", "track_id", write.track.ID)
+	}
+}
+
+func (s *PlayerService) stopListeningWriter(ctx context.Context) {
+	if s.listeningWrites == nil {
+		return
+	}
+	s.listeningWritesMu.Lock()
+	if !s.listeningWritesClosed {
+		s.listeningWritesClosed = true
+		close(s.listeningWrites)
+	}
+	done := s.listeningWritesDone
+	s.listeningWritesMu.Unlock()
+	select {
+	case <-done:
+	case <-ctx.Done():
+		s.logger.Warn("timed out waiting for listening session writes", "error", ctx.Err())
 	}
 }
 
@@ -1318,6 +1524,7 @@ func (s *PlayerService) startPositionTicker() {
 
 				status := s.player.GetStatus()
 				s.checkThreshold(track, status)
+				s.checkpointListening()
 				s.maybeStartCrossfade(status)
 
 				if s.nowPlaying != nil {
@@ -1478,6 +1685,11 @@ func (s *PlayerService) runCrossfade(cp domain.CrossfadePlayer, next *domain.Tra
 	s.mu.RUnlock()
 	s.notifyTrackAutoAdvanced(next, previousTrackID)
 	s.transitionToTrack(next)
+	s.mu.Lock()
+	s.fadeListeningOutgoing = current
+	s.fadeListeningStarted = time.Now()
+	s.fadeListeningMaxSec = effFade
+	s.mu.Unlock()
 
 	time.AfterFunc(time.Duration((effFade+0.3)*float64(time.Second)), func() {
 		s.finishCrossfade(gen)
@@ -1496,12 +1708,48 @@ func (s *PlayerService) snapCrossfade(gen int) bool {
 	}
 	s.fading = false
 	s.mu.Unlock()
+	s.finalizeCrossfadeListening()
 
 	if cp, ok := s.player.(domain.CrossfadePlayer); ok {
 		cp.FinishCrossfade()
 	}
 	s.emitArtworkCrossfade(domain.ArtworkCrossfadeEvent{TransitionID: gen, Phase: "end"})
 	return true
+}
+
+// finalizeCrossfadeListening divides the actual overlap equally between the
+// outgoing and incoming tracks. The incoming session initially owns the whole
+// wall-clock interval, so half is moved to a small outgoing session here.
+func (s *PlayerService) finalizeCrossfadeListening() {
+	now := time.Now()
+	s.mu.Lock()
+	outgoing, started, maxSec := s.fadeListeningOutgoing, s.fadeListeningStarted, s.fadeListeningMaxSec
+	s.fadeListeningOutgoing = nil
+	s.fadeListeningStarted = time.Time{}
+	s.fadeListeningMaxSec = 0
+	if outgoing == nil || started.IsZero() {
+		s.mu.Unlock()
+		return
+	}
+	elapsed := now.Sub(started).Seconds()
+	if elapsed > maxSec {
+		elapsed = maxSec
+	}
+	share := int(elapsed / 2)
+	if share < 1 {
+		s.mu.Unlock()
+		return
+	}
+	if s.listeningTrack != nil && !s.listeningActiveAt.IsZero() {
+		s.listeningSeconds += int(now.Sub(s.listeningActiveAt).Seconds())
+		s.listeningActiveAt = now
+	}
+	if s.listeningSeconds < share {
+		share = s.listeningSeconds
+	}
+	s.listeningSeconds -= share
+	s.mu.Unlock()
+	s.enqueueListening(context.Background(), listeningWrite{track: outgoing, started: started, seconds: share, qualified: false})
 }
 
 // emitArtworkCrossfade keeps fullscreen artwork synchronized with the native

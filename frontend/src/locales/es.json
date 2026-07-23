@@ -17,6 +17,8 @@
     "off": "Desactivado",
     "hr": "h",
     "min": "min",
+    "sec": "s",
+    "day": "d",
     "delete": "Eliminar",
     "yes": "Sí",
     "no": "No",
@@ -180,8 +182,8 @@
       "prevent_sleep_desc": "Mantener el equipo activo mientras se reproduce música",
       "show_player_indicator": "Mostrar indicador activo",
       "show_player_indicator_desc": "Mostrar un punto debajo de los botones de aleatorio y repetición cuando estén activos",
-      "auto_advance_notifications": "Track change notifications",
-      "auto_advance_notifications_desc": "Show a silent macOS notification when playback automatically moves to the next track",
+      "auto_advance_notifications": "Notificaciones de cambio de pista",
+      "auto_advance_notifications_desc": "Mostrar una notificación silenciosa de macOS cuando la reproducción avance automáticamente a la siguiente pista",
       "high_contrast_lyrics": "Letras de alto contraste",
       "high_contrast_lyrics_desc": "Mostrar letras en pantalla completa en un destacado panel de cristal",
       "song_transition": "Transición entre canciones",
@@ -194,7 +196,12 @@
       "max_queue_size": "Tamaño máximo de la cola",
       "max_queue_size_desc": "Limita cuántas pistas puede contener la cola de reproducción, incluyendo la pista actual. Las pistas más antiguas se eliminan primero al alcanzar el límite."
     },
-    "quick_menu": { "enable_eq": "Activar ecualizador", "eq_presets": "Preajustes de EQ", "go_to_equalizer": "Ir a ajustes del ecualizador", "go_to_playback": "Ir a ajustes de reproducción" },
+    "quick_menu": {
+      "enable_eq": "Activar ecualizador",
+      "eq_presets": "Preajustes de EQ",
+      "go_to_equalizer": "Ir a ajustes del ecualizador",
+      "go_to_playback": "Ir a ajustes de reproducción"
+    },
     "remote": {
       "title": "Control Remoto",
       "enable": "Habilitar servidor remoto",
@@ -559,5 +566,36 @@
       "live_updating_label": "Actualización en vivo",
       "live_updating_hint": "Mantén las pistas coincidentes actualizadas automáticamente. Desactiva para congelar las coincidencias actuales."
     }
+  },
+  "analytics": {
+    "title": "Estadísticas de escucha",
+    "subtitle": "Tus hábitos de escucha de un vistazo",
+    "range_7d": "7 d",
+    "range_30d": "30 d",
+    "range_all": "Todo",
+    "total_time": "Tiempo total",
+    "plays": "Reproducciones",
+    "library_size": "Tamaño de la biblioteca",
+    "total_albums": "Total de álbumes",
+    "total_artists": "Total de artistas",
+    "total_playlists": "Total de playlists",
+    "genre_distribution": "Distribución por género", "genre_other": "Otros", "no_genres": "Aún no hay datos de escucha por género",
+    "activity": "Actividad de escucha",
+    "quality": "Calidad de audio",
+    "top_artists": "Artistas principales",
+    "top_tracks": "Canciones más reproducidas",
+    "quality_lossy": "Con pérdida",
+    "quality_lossless": "Sin pérdida",
+    "quality_hi_res": "Hi-Res",
+    "quality_dsd": "DSD",
+    "quality_unknown": "Desconocida",
+    "no_listening_data": "Aún no hay datos de escucha para este período.",
+    "no_audio_quality": "Aún no hay datos de calidad de audio.",
+    "empty": "Empieza a escuchar para ver tus estadísticas.",
+    "error": "No se pudieron cargar las estadísticas de escucha.",
+    "retry": "Intentar de nuevo",
+    "refresh": "Actualizar estadísticas",
+    "no_top_artists": "Aún no hay escuchas de artistas",
+    "no_top_tracks": "Aún no hay canciones reproducidas"
   }
 }

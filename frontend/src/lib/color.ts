@@ -12,13 +12,20 @@ export function hexToRgbChannels(color: string): string {
   return `${parseInt(normalized.slice(1, 3), 16)} ${parseInt(normalized.slice(3, 5), 16)} ${parseInt(normalized.slice(5, 7), 16)}`
 }
 
-export function primaryForeground(color: string): '#000000' | '#FFFFFF' {
-  const [red, green, blue] = hexToRgbChannels(color).split(' ').map(Number)
-  const luminance = [red, green, blue]
-    .map(channel => {
-      const value = channel / 255
-      return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
-    })
-    .reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0)
-  return luminance > 0.179 ? '#000000' : '#FFFFFF'
+function perceivedBrightness(color: string): number {
+  const channels = hexToRgbChannels(color).split(' ').map(Number)
+  const [red, green, blue] = channels
+  return Math.sqrt(
+    0.299 * red ** 2 +
+    0.587 * green ** 2 +
+    0.114 * blue ** 2,
+  )
+}
+
+// Accent controls favor white text unless a color is visibly light (especially
+// yellow or pastel). This keeps saturated colors such as orange visually cohesive.
+const lightForegroundThreshold = 165
+
+export function primaryForeground(color: string): '#FFFFFF' | '#18181B' {
+  return perceivedBrightness(color) >= lightForegroundThreshold ? '#18181B' : '#FFFFFF'
 }

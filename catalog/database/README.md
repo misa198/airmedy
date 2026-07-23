@@ -12,6 +12,7 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | `internal/infra/sqlite/migrations/`     | SQL up/down migration files  |
 | `internal/infra/sqlite/columns.go`      | Shared SQL column selections |
 | `internal/infra/sqlite/*_repository.go` | Repository implementations   |
+| `internal/infra/sqlite/listening_repository.go` | Listening session persistence and analytics aggregates |
 
 ## Connection Setup
 
@@ -79,6 +80,11 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000058 | `global_eq_preamp.up.sql` | Move the active profile's legacy preamp to global `app_settings.eq_preamp`, then remove `eq_profiles.preamp_gain` |
 | 000059 | `eq_preset_key.up.sql` | Add unique non-empty `eq_profiles.preset_key` for stable built-in preset identity |
 | 000060 | `app_settings_auto_advance_notifications.up.sql` | Add `app_settings.auto_advance_notifications_enabled BOOLEAN NOT NULL DEFAULT TRUE` for the macOS automatic-track notification preference |
+| 000062 | `listening_insights.up.sql` | Add append-only `listening_sessions` plus per-track/day aggregate `daily_track_listening_stats`, with date indexes, for listening insights |
+
+`listeningRepository.GetInsights` returns up to 50 entries for both Top Artists
+(ordered by listened seconds) and Top Tracks (ordered by play count, then listened
+seconds, then title for a stable tie-break).
 
 ## Full Schema
 
@@ -296,6 +302,33 @@ mini_player_state (
 )
 ```
 
+### Listening Insights Tables
+
+```sql
+listening_sessions (
+    id TEXT PRIMARY KEY,
+    track_id TEXT REFERENCES tracks(id) ON DELETE CASCADE,
+    started_at DATETIME,
+    ended_at DATETIME,
+    listened_seconds INTEGER,
+    qualified_play INTEGER DEFAULT 0
+)
+
+daily_track_listening_stats (
+    local_date TEXT,
+    track_id TEXT REFERENCES tracks(id) ON DELETE CASCADE,
+    listened_seconds INTEGER DEFAULT 0,
+    play_count INTEGER DEFAULT 0,
+    PRIMARY KEY (local_date, track_id)
+)
+```
+
+`ListeningRepository.RecordSession` writes both tables in one transaction. It
+splits elapsed listening time across local calendar days and increments the
+daily play count only on the session's ending day when the playback threshold
+was reached. `listening_sessions` is retained for 180 days; aggregates remain
+available for all-time insights.
+
 ### EQ Tables
 
 ```sql
@@ -337,6 +370,9 @@ idx_track_album_artists_artist_id  ON track_album_artists(artist_id)
 idx_track_genres_genre_id          ON track_genres(genre_id)
 idx_track_composers_composer_id    ON track_composers(composer_id)
 idx_album_artists_artist_id        ON album_artists(artist_id)
+idx_listening_sessions_started_at  ON listening_sessions(started_at)
+idx_listening_sessions_ended_at    ON listening_sessions(ended_at)  -- retention cleanup
+idx_daily_track_listening_stats_date ON daily_track_listening_stats(local_date)
 ```
 
 ## Repository Patterns

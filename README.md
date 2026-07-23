@@ -71,6 +71,7 @@
 - **10-band equalizer** — tune the sound to your headphones or speakers. Runs natively on macOS (SFBAudioEngine) and Windows/Linux (miniaudio) for optimal performance.
 - **Lock screen & media keys** — control playback from your keyboard, lock screen, or Control Center — just like a first-party app.
 - **Last.fm scrobbling** — sync your listening history and loved tracks automatically.
+- **Listening insights** — see your listening activity, total time, qualified plays, top artists, and most-played tracks over the last 7 days, 30 days, or all time. When tracks have the same play count, longer listening time breaks the tie.
 - **Fast search** — find any track, album, or artist in milliseconds.
 - **Metadata editor** — update track titles, artists, albums, and other tags. Support for updating album artwork with automatic JPEG conversion.
 - **Plays in the background** — close the window and music keeps going. Quit when you actually mean it.

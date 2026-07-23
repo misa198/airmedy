@@ -15,8 +15,10 @@
     "later": "後で",
     "on": "オン",
     "off": "オフ",
-    "hr": "時間",
+    "hr": "時",
     "min": "分",
+    "sec": "秒",
+    "day": "日",
     "delete": "削除",
     "yes": "はい",
     "no": "いいえ",
@@ -180,8 +182,8 @@
       "prevent_sleep_desc": "音楽再生中はコンピュータをスリープさせません",
       "show_player_indicator": "アクティブインジケーターを表示",
       "show_player_indicator_desc": "シャッフルとリピートボタンがオンのとき、ボタンの下にドットを表示します",
-      "auto_advance_notifications": "Track change notifications",
-      "auto_advance_notifications_desc": "Show a silent macOS notification when playback automatically moves to the next track",
+      "auto_advance_notifications": "曲の切り替え通知",
+      "auto_advance_notifications_desc": "再生が自動的に次の曲へ移ったときに、macOSのサイレント通知を表示します",
       "high_contrast_lyrics": "高コントラスト歌詞",
       "high_contrast_lyrics_desc": "フルスクリーンの歌詞を目立つガラスパネルで表示します",
       "song_transition": "曲の切り替え",
@@ -194,7 +196,12 @@
       "max_queue_size": "キューの最大サイズ",
       "max_queue_size_desc": "再生キューに保持できるトラック数の上限（現在のトラックを含む）。上限に達すると、最も古いトラックから削除されます。"
     },
-    "quick_menu": { "enable_eq": "イコライザーを有効にする", "eq_presets": "EQプリセット", "go_to_equalizer": "イコライザー設定を開く", "go_to_playback": "再生設定を開く" },
+    "quick_menu": {
+      "enable_eq": "イコライザーを有効にする",
+      "eq_presets": "EQプリセット",
+      "go_to_equalizer": "イコライザー設定を開く",
+      "go_to_playback": "再生設定を開く"
+    },
     "remote": {
       "title": "リモコン",
       "enable": "リモートサーバーを有効化",
@@ -559,5 +566,36 @@
       "live_updating_label": "ライブ更新",
       "live_updating_hint": "一致する曲を自動的に最新に保ちます。オフにすると現在の結果を固定します。"
     }
+  },
+  "analytics": {
+    "title": "リスニング統計",
+    "subtitle": "あなたの視聴習慣をひと目で",
+    "range_7d": "7日",
+    "range_30d": "30日",
+    "range_all": "すべて",
+    "total_time": "合計再生時間",
+    "plays": "再生回数",
+    "library_size": "ライブラリのサイズ",
+    "total_albums": "アルバム総数",
+    "total_artists": "アーティスト総数",
+    "total_playlists": "プレイリスト総数",
+    "genre_distribution": "ジャンル分布", "genre_other": "その他", "no_genres": "ジャンル別の再生データはまだありません",
+    "activity": "再生活動",
+    "quality": "音質",
+    "top_artists": "よく聴くアーティスト",
+    "top_tracks": "最も再生した曲",
+    "quality_lossy": "非可逆圧縮",
+    "quality_lossless": "可逆圧縮",
+    "quality_hi_res": "Hi-Res",
+    "quality_dsd": "DSD",
+    "quality_unknown": "不明",
+    "no_listening_data": "この期間の再生データはまだありません。",
+    "no_audio_quality": "オーディオ品質データはまだありません。",
+    "empty": "再生を始めると統計を確認できます。",
+    "error": "リスニング統計を読み込めませんでした。",
+    "retry": "再試行",
+    "refresh": "統計を更新",
+    "no_top_artists": "アーティストの再生履歴はまだありません",
+    "no_top_tracks": "再生した曲はまだありません"
   }
 }

@@ -17,6 +17,8 @@
     "off": "Désactivé",
     "hr": "h",
     "min": "min",
+    "sec": "s",
+    "day": "j",
     "delete": "Supprimer",
     "yes": "Oui",
     "no": "Non",
@@ -180,8 +182,8 @@
       "prevent_sleep_desc": "Maintenir l'ordinateur actif pendant la lecture de musique",
       "show_player_indicator": "Afficher l'indicateur actif",
       "show_player_indicator_desc": "Afficher un point sous les boutons aléatoire et répétition lorsqu'ils sont actifs",
-      "auto_advance_notifications": "Track change notifications",
-      "auto_advance_notifications_desc": "Show a silent macOS notification when playback automatically moves to the next track",
+      "auto_advance_notifications": "Notifications de changement de piste",
+      "auto_advance_notifications_desc": "Afficher une notification macOS silencieuse lorsque la lecture passe automatiquement au morceau suivant",
       "high_contrast_lyrics": "Paroles à contraste élevé",
       "high_contrast_lyrics_desc": "Afficher les paroles en plein écran dans un panneau en verre bien visible",
       "song_transition": "Transition entre les morceaux",
@@ -194,7 +196,12 @@
       "max_queue_size": "Taille maximale de la file d'attente",
       "max_queue_size_desc": "Limite le nombre de titres que la file d'attente peut contenir, y compris le titre en cours. Les titres les plus anciens sont supprimés en premier une fois la limite atteinte."
     },
-    "quick_menu": { "enable_eq": "Activer l'égaliseur", "eq_presets": "Préréglages EQ", "go_to_equalizer": "Accéder aux réglages de l'égaliseur", "go_to_playback": "Accéder aux réglages de lecture" },
+    "quick_menu": {
+      "enable_eq": "Activer l'égaliseur",
+      "eq_presets": "Préréglages EQ",
+      "go_to_equalizer": "Accéder aux réglages de l'égaliseur",
+      "go_to_playback": "Accéder aux réglages de lecture"
+    },
     "remote": {
       "title": "Télécommande",
       "enable": "Activer le serveur distant",
@@ -559,5 +566,36 @@
       "live_updating_label": "Mise à jour en direct",
       "live_updating_hint": "Garder les titres correspondants à jour automatiquement. Désactivez pour figer les résultats actuels."
     }
+  },
+  "analytics": {
+    "title": "Statistiques d'écoute",
+    "subtitle": "Vos habitudes d'écoute en un coup d'œil",
+    "range_7d": "7 j",
+    "range_30d": "30 j",
+    "range_all": "Tout",
+    "total_time": "Durée totale",
+    "plays": "Lectures",
+    "library_size": "Taille de la bibliothèque",
+    "total_albums": "Total des albums",
+    "total_artists": "Total des artistes",
+    "total_playlists": "Total des playlists",
+    "genre_distribution": "Répartition des genres", "genre_other": "Autres", "no_genres": "Pas encore de données d'écoute par genre",
+    "activity": "Activité d'écoute",
+    "quality": "Qualité audio",
+    "top_artists": "Artistes les plus écoutés",
+    "top_tracks": "Titres les plus écoutés",
+    "quality_lossy": "Avec perte",
+    "quality_lossless": "Sans perte",
+    "quality_hi_res": "Hi-Res",
+    "quality_dsd": "DSD",
+    "quality_unknown": "Inconnue",
+    "no_listening_data": "Aucune donnée d’écoute n’est encore disponible pour cette période.",
+    "no_audio_quality": "Aucune donnée sur la qualité audio pour le moment.",
+    "empty": "Commencez à écouter pour voir vos statistiques.",
+    "error": "Impossible de charger les statistiques d'écoute.",
+    "retry": "Réessayer",
+    "refresh": "Actualiser les statistiques",
+    "no_top_artists": "Aucune écoute d'artiste pour le moment",
+    "no_top_tracks": "Aucun titre lu pour le moment"
   }
 }

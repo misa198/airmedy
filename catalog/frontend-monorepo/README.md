@@ -45,6 +45,7 @@ Shared utility functions. Zero Vue dependency — safe to import anywhere.
 | `cn`         | `utils.ts`     | `clsx` + `tailwind-merge` combiner  |
 | `logger`     | `logger.ts`    | Structured logging helpers          |
 | `test-utils` | `test-utils.ts`| Vitest/Vue Test Utils helpers       |
+| `formatTotalDuration` | `utils.ts` | Localized duration formatting; shows seconds below one minute, handles invalid values, and includes days for long totals |
 
 **Peer deps** (not bundled): `pinia`, `vue-i18n`.
 
@@ -80,6 +81,10 @@ Run `pnpm --filter @airmedy/ui build` (or `pnpm dev` from root for watch mode).
 | `ResizablePanel`, `ResizableHandle`, `ResizablePanelGroup` | `resizable/` | vue-resizable-panels |
 
 All exports are re-exported from `packages/ui/src/index.ts`.
+
+`TabSwitcher` supports icon tabs and variable-width label tabs. Its label
+variant tracks the active button's geometry with `ResizeObserver` so the
+selection slider remains aligned after content or layout changes.
 
 ### Dependencies
 

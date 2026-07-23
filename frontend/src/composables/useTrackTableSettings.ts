@@ -13,6 +13,7 @@ export type ColumnKey =
   | 'genre'
   | 'favorite'
   | 'play_count'
+  | 'listened_seconds'
   | 'disc_number'
   | 'track_number'
   | 'album_artist'
@@ -27,6 +28,7 @@ export interface ColumnDef {
   alwaysVisible: boolean
   sortable: boolean
   sortFn?: (a: TrackDTO, b: TrackDTO) => number
+  formatValue?: (track: TrackDTO) => string
   sticky?: 'left' | 'right'
   draggable: boolean
 }

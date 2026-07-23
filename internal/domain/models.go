@@ -44,11 +44,12 @@ type Track struct {
 // TrackDTO represents a track with its related entities populated for the frontend
 type TrackDTO struct {
 	Track
-	Artists      []*Artist   `json:"artists,omitempty"`
-	Album        *Album      `json:"album,omitempty"`
-	AlbumArtists []*Artist   `json:"album_artists,omitempty"`
-	Genres       []*Genre    `json:"genres,omitempty"`
-	Composers    []*Composer `json:"composers,omitempty"`
+	Artists         []*Artist   `json:"artists,omitempty"`
+	Album           *Album      `json:"album,omitempty"`
+	AlbumArtists    []*Artist   `json:"album_artists,omitempty"`
+	Genres          []*Genre    `json:"genres,omitempty"`
+	Composers       []*Composer `json:"composers,omitempty"`
+	ListenedSeconds int         `json:"listened_seconds,omitempty" db:"-"`
 }
 
 // Album represents a music album

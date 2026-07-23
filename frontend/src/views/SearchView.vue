@@ -9,9 +9,13 @@ import ArtistCard from '@/components/ArtistCard.vue'
 import PlaylistCard from '@/components/PlaylistCard.vue'
 import ComposerCard from '@/components/ComposerCard.vue'
 import SearchSection from '@/components/SearchSection.vue'
+import TrackContextMenu from '@/components/TrackContextMenu.vue'
+import ContextMenu from '@/components/ContextMenu.vue'
 import { useSearchStore } from '@/stores/search'
 import { usePlayerStore } from '@/stores/player'
-import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
+import { useContextMenu } from '@/composables/useContextMenu'
+import { useAlbumContextMenu } from '@/composables/useAlbumContextMenu'
+import type { AlbumDTO, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import { buildArtworkUrl } from '@airmedy/utils'
 
 const router = useRouter()
@@ -20,6 +24,9 @@ const playerStore = usePlayerStore()
 
 const inputValue = ref(store.query)
 const searchInput = ref<InstanceType<typeof Input>>()
+const trackContextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
+const albumContextMenu = useContextMenu()
+const { buildMenuItems: buildAlbumMenuItems } = useAlbumContextMenu()
 
 watch(inputValue, (val) => {
   store.search(val)
@@ -42,6 +49,14 @@ function playSearchTrack(track: TrackDTO) {
   const list = (store.results?.tracks?.filter(Boolean) ?? []) as TrackDTO[]
   const idx = list.findIndex(t => t.id === track.id)
   playerStore.playTracks(list, idx === -1 ? 0 : idx)
+}
+
+function openTrackContextMenu(event: MouseEvent, track: TrackDTO) {
+  trackContextMenu.value?.open(event, track)
+}
+
+function openAlbumContextMenu(event: MouseEvent, album: AlbumDTO) {
+  albumContextMenu.open(event, buildAlbumMenuItems(album))
 }
 
 function navigateToArtist(id: string) {
@@ -75,7 +90,7 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists() || hasPlayli
     </div>
 
     <!-- Content area -->
-    <div class="flex-1 overflow-y-auto px-8 pb-8 space-y-12 custom-scrollbar">
+    <div class="flex-1 overflow-y-auto px-8 pb-8 space-y-12 custom-scrollbar select-none">
 
       <!-- Empty state (no query) -->
       <div v-if="!inputValue.trim()" class="flex flex-col items-center justify-center h-64 text-center">
@@ -117,7 +132,8 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists() || hasPlayli
           <template #default="{ item: track }">
             <div
               class="flex items-center gap-3 p-2 rounded-xl hover:bg-foreground/[0.04] cursor-pointer group transition-all"
-              @click="playSearchTrack(track)">
+              @click="playSearchTrack(track)"
+              @contextmenu.prevent="openTrackContextMenu($event, track)">
               <div
                 class="w-12 h-12 flex-shrink-0 rounded-lg bg-foreground/[0.06] overflow-hidden ring-1 ring-foreground/[0.06]">
                 <LazyImg v-if="track.artwork_key || track.album?.artwork_key"
@@ -142,7 +158,8 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists() || hasPlayli
         <SearchSection v-if="hasAlbums()" :title="$t('library.albums')" :icon="Disc"
           :items="store.results!.albums!.filter(Boolean)" id="search-albums">
           <template #default="{ item: album }">
-            <AlbumCard :album="album" :show-play="false" @click="navigateToAlbum(album.id)" @artist-click="navigateToArtist" />
+            <AlbumCard :album="album" :show-play="false" @click="navigateToAlbum(album.id)" @artist-click="navigateToArtist"
+              @contextmenu="openAlbumContextMenu" />
           </template>
         </SearchSection>
 
@@ -172,9 +189,17 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists() || hasPlayli
 
       </div>
     </div>
+
+    <TrackContextMenu ref="trackContextMenu" />
+    <ContextMenu
+      :visible="albumContextMenu.visible.value"
+      :x="albumContextMenu.x.value"
+      :y="albumContextMenu.y.value"
+      :items="albumContextMenu.items.value"
+      @close="albumContextMenu.close()"
+    />
   </div>
 </template>
 
 <style scoped>
 </style>
-

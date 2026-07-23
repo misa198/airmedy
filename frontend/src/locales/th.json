@@ -17,6 +17,8 @@
     "off": "ปิด",
     "hr": "ชม.",
     "min": "นาที",
+    "sec": "วิ.",
+    "day": "ว.",
     "delete": "ลบ",
     "yes": "ใช่",
     "no": "ไม่ใช่",
@@ -180,8 +182,8 @@
       "prevent_sleep_desc": "ป้องกันไม่ให้คอมพิวเตอร์สลีปขณะเล่นเพลง",
       "show_player_indicator": "แสดงตัวบ่งชี้ที่ใช้งานอยู่",
       "show_player_indicator_desc": "แสดงจุดใต้ปุ่มสุ่มและเล่นซ้ำเมื่อเปิดใช้งาน",
-      "auto_advance_notifications": "Track change notifications",
-      "auto_advance_notifications_desc": "Show a silent macOS notification when playback automatically moves to the next track",
+      "auto_advance_notifications": "การแจ้งเตือนเมื่อเปลี่ยนเพลง",
+      "auto_advance_notifications_desc": "แสดงการแจ้งเตือน macOS แบบเงียบเมื่อการเล่นเปลี่ยนไปยังเพลงถัดไปโดยอัตโนมัติ",
       "high_contrast_lyrics": "เนื้อเพลงคอนทราสต์สูง",
       "high_contrast_lyrics_desc": "แสดงเนื้อเพลงเต็มหน้าจอในแผงกระจกที่โดดเด่น",
       "song_transition": "การเปลี่ยนเพลง",
@@ -194,7 +196,12 @@
       "max_queue_size": "ขนาดคิวสูงสุด",
       "max_queue_size_desc": "จำกัดจำนวนเพลงที่คิวการเล่นสามารถเก็บได้ รวมถึงเพลงที่กำลังเล่นอยู่ เมื่อถึงขีดจำกัด เพลงเก่าสุดจะถูกลบออกก่อน"
     },
-    "quick_menu": { "enable_eq": "เปิดใช้งานอีควอไลเซอร์", "eq_presets": "ค่าล่วงหน้า EQ", "go_to_equalizer": "ไปยังการตั้งค่าอีควอไลเซอร์", "go_to_playback": "ไปยังการตั้งค่าการเล่น" },
+    "quick_menu": {
+      "enable_eq": "เปิดใช้งานอีควอไลเซอร์",
+      "eq_presets": "ค่าล่วงหน้า EQ",
+      "go_to_equalizer": "ไปยังการตั้งค่าอีควอไลเซอร์",
+      "go_to_playback": "ไปยังการตั้งค่าการเล่น"
+    },
     "remote": {
       "title": "รีโมทคอนโทรล",
       "enable": "เปิดใช้งานเซิร์ฟเวอร์รีโมท",
@@ -559,5 +566,38 @@
       "live_updating_label": "อัปเดตแบบสด",
       "live_updating_hint": "ให้เพลงที่ตรงกันอัปเดตโดยอัตโนมัติ ปิดเพื่อล็อกผลลัพธ์ปัจจุบัน"
     }
+  },
+  "analytics": {
+    "title": "สถิติการฟัง",
+    "subtitle": "พฤติกรรมการฟังของคุณโดยสรุป",
+    "range_7d": "7 วัน",
+    "range_30d": "30 วัน",
+    "range_all": "ทั้งหมด",
+    "total_time": "เวลาในการฟังทั้งหมด",
+    "plays": "จำนวนครั้งที่เล่น",
+    "library_size": "ขนาดคลังเพลง",
+    "total_albums": "อัลบั้มทั้งหมด",
+    "total_artists": "ศิลปินทั้งหมด",
+    "total_playlists": "เพลย์ลิสต์ทั้งหมด",
+    "genre_distribution": "การกระจายตามแนวเพลง",
+    "genre_other": "อื่น ๆ",
+    "no_genres": "ยังไม่มีข้อมูลการฟังตามแนวเพลง",
+    "activity": "กิจกรรมการฟัง",
+    "quality": "คุณภาพเสียง",
+    "top_artists": "ศิลปินยอดนิยม",
+    "top_tracks": "เพลงที่เล่นบ่อยที่สุด",
+    "quality_lossy": "มีการสูญเสียข้อมูล",
+    "quality_lossless": "ไม่สูญเสียข้อมูล",
+    "quality_hi_res": "Hi-Res",
+    "quality_dsd": "DSD",
+    "quality_unknown": "ไม่ทราบ",
+    "no_listening_data": "ยังไม่มีข้อมูลการฟังสำหรับช่วงเวลานี้",
+    "no_audio_quality": "ยังไม่มีข้อมูลคุณภาพเสียง",
+    "empty": "เริ่มฟังเพื่อดูสถิติของคุณ",
+    "error": "ไม่สามารถโหลดสถิติการฟังได้",
+    "retry": "ลองอีกครั้ง",
+    "refresh": "รีเฟรชสถิติ",
+    "no_top_artists": "ยังไม่มีประวัติการฟังศิลปิน",
+    "no_top_tracks": "ยังไม่มีเพลงที่เล่น"
   }
 }

@@ -17,6 +17,8 @@
     "off": "Desligado",
     "hr": "h",
     "min": "min",
+    "sec": "s",
+    "day": "d",
     "delete": "Excluir",
     "yes": "Sim",
     "no": "Não",
@@ -180,8 +182,8 @@
       "prevent_sleep_desc": "Manter o computador ativo enquanto a música está sendo reproduzida",
       "show_player_indicator": "Mostrar indicador ativo",
       "show_player_indicator_desc": "Mostrar um ponto abaixo dos botões de aleatório e repetição quando estiverem ativos",
-      "auto_advance_notifications": "Track change notifications",
-      "auto_advance_notifications_desc": "Show a silent macOS notification when playback automatically moves to the next track",
+      "auto_advance_notifications": "Notificações de mudança de faixa",
+      "auto_advance_notifications_desc": "Mostrar uma notificação silenciosa do macOS quando a reprodução avançar automaticamente para a próxima faixa",
       "high_contrast_lyrics": "Letras de alto contraste",
       "high_contrast_lyrics_desc": "Mostrar letras em tela cheia em um painel de vidro destacado",
       "song_transition": "Transição entre músicas",
@@ -194,7 +196,12 @@
       "max_queue_size": "Tamanho máximo da fila",
       "max_queue_size_desc": "Limita quantas faixas a fila de reprodução pode conter, incluindo a faixa atual. As faixas mais antigas são removidas primeiro ao atingir o limite."
     },
-    "quick_menu": { "enable_eq": "Ativar equalizador", "eq_presets": "Predefinições de EQ", "go_to_equalizer": "Ir para as definições do equalizador", "go_to_playback": "Ir para as definições de reprodução" },
+    "quick_menu": {
+      "enable_eq": "Ativar equalizador",
+      "eq_presets": "Predefinições de EQ",
+      "go_to_equalizer": "Ir para as definições do equalizador",
+      "go_to_playback": "Ir para as definições de reprodução"
+    },
     "remote": {
       "title": "Controlo Remoto",
       "enable": "Ativar servidor remoto",
@@ -559,5 +566,36 @@
       "live_updating_label": "Atualização ao vivo",
       "live_updating_hint": "Manter as faixas correspondentes atualizadas automaticamente. Desative para congelar os resultados atuais."
     }
+  },
+  "analytics": {
+    "title": "Estatísticas de audição",
+    "subtitle": "Seus hábitos de audição em um relance",
+    "range_7d": "7 d",
+    "range_30d": "30 d",
+    "range_all": "Tudo",
+    "total_time": "Tempo total",
+    "plays": "Reproduções",
+    "library_size": "Tamanho da biblioteca",
+    "total_albums": "Total de álbuns",
+    "total_artists": "Total de artistas",
+    "total_playlists": "Total de playlists",
+    "genre_distribution": "Distribuição por gênero", "genre_other": "Outros", "no_genres": "Ainda não há dados de audição por gênero",
+    "activity": "Atividade de audição",
+    "quality": "Qualidade de áudio",
+    "top_artists": "Principais artistas",
+    "top_tracks": "Faixas mais reproduzidas",
+    "quality_lossy": "Com perdas",
+    "quality_lossless": "Sem perdas",
+    "quality_hi_res": "Hi-Res",
+    "quality_dsd": "DSD",
+    "quality_unknown": "Desconhecida",
+    "no_listening_data": "Ainda não há dados de escuta para este período.",
+    "no_audio_quality": "Ainda não há dados de qualidade de áudio.",
+    "empty": "Comece a ouvir para ver suas estatísticas.",
+    "error": "Não foi possível carregar as estatísticas de audição.",
+    "retry": "Tentar novamente",
+    "refresh": "Atualizar estatísticas",
+    "no_top_artists": "Ainda não há audições de artistas",
+    "no_top_tracks": "Ainda não há faixas reproduzidas"
   }
 }

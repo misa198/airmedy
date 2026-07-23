@@ -24,7 +24,7 @@ Hash history mode (`createWebHashHistory`). All views lazy-loaded except HomeVie
 
 | Route             | View                 | Notes                                          |
 | ----------------- | -------------------- | ---------------------------------------------- |
-| `/`               | HomeView             | Recently played, most/least listened carousels |
+| `/`               | HomeView             | Overview carousels and listening analytics tabs |
 | `/recently-added` | RecentlyAddedView    | TrackCard grid, tracks sorted by import date   |
 | `/albums`         | AlbumsView           | Album grid                                     |
 | `/albums/:id`     | AlbumDetailView      | Hero + track table                             |
@@ -79,6 +79,11 @@ TailwindCSS v4 uses a **CSS-first** `@theme` directive approach. All design toke
 ```
 
 `--primary` and its RGB/tint/foreground companion variables are updated at runtime from the persisted primary-color setting. This is independent of artwork-derived `--dynamic-*` colors.
+
+`--primary-foreground` favors `#FFFFFF` for saturated primary accents and uses
+`#18181B` only when the primary's perceived brightness is high (for example,
+yellow or pastel). This keeps orange and similar accents visually cohesive
+without using pure black.
 
 `@airmedy/ui` exports `ColorPicker`, a stateless popover primitive with hue, saturation/brightness, preview, and validated `#RRGGBB` input. General Settings uses it after the six primary-color preset circles.
 
@@ -172,6 +177,7 @@ Virtualized list of tracks supporting reordering, sorting, and horizontal scroll
 | `genre`        | Genre        | No                 | No       | No     |
 | `favorite`     | ♥            | Yes                | No       | No     |
 | `play_count`   | Plays        | No                 | Yes      | No     |
+| `listened_seconds` | Listening time | Feature-supplied | Yes | No |
 | `disc_number`  | Disc         | No                 | Yes      | No     |
 | `track_number` | Track        | No                 | Yes      | No     |
 | `album_artist` | Album Artist | No                 | No       | No     |
@@ -302,6 +308,28 @@ attributes are the fallback convention elsewhere in the app (e.g. `RemoteServerS
 but do not render reliably inside the Wails webview for icon components, so prefer `Tooltip` for
 new hover explanations.
 
+### TabSwitcher (`packages/ui/src/TabSwitcher.vue`)
+
+Props: `options`, `modelValue`, `mandatory?`, `variant?: 'icon' | 'label'`.
+The default icon mode uses fixed-size buttons. Label mode measures the active
+button and moves/resizes the slider to match it; a `ResizeObserver` keeps that
+measurement current and is disconnected on unmount.
+
+## Home Analytics
+
+`HomeView` owns the Overview/Analytics tab selection and delegates to
+`components/home/HomeOverview.vue` and `HomeAnalysis.vue`. Analytics loads
+`AnalyticsService.GetInsights('7d' | '30d' | 'all')`, supports request
+cancellation on period changes/unmount, and renders activity, audio-quality,
+genre, top-artist, and top-track summaries. Top tracks are hydrated through
+`LibraryService.GetTracksByIDs` and shown in the virtualized `TrackTable` with
+period-specific `play_count` and the feature-supplied `listened_seconds` column.
+The queue preserves the analytics rank (play count descending, then listened
+seconds, then title) rather than the library-wide play count returned by track hydration. A null or partial response is normalized
+to empty insight fields so the full analytics layout remains visible; each card
+renders its own placeholder when its data is unavailable. Charts use
+SVG-rendered `vue-echarts` components.
+
 ## Interactive Polish
 
 - **Auto-scroll to Active**: `TrackTable.vue` and `QueueDrawer.vue` automatically scroll to the currently playing track when opened or when the track changes. Uses a 100ms delay to ensure layout stability.
@@ -352,6 +380,7 @@ The mini player controls sit over a CSS glassmorphism panel (`.glass-panel` in `
 - `vue-virtual-sortable` renders only visible rows in track lists (56px or 36px each).
 - Views are lazy-loaded (dynamic `import()` in router) — only the home view loads eagerly.
 - Search is debounced 300ms in `stores/search.ts`.
+- Track and album results in `SearchView` expose their shared context menus on right-click, matching the actions available on other track and album surfaces.
 - Artwork requests use variants (`_sm`, `_md`) sized appropriately for each context.
 - Fullscreen `PlayerArtwork` can stack outgoing and incoming covers for an automatic audio crossfade; `requestAnimationFrame` applies equal-power `cos(t*pi/2)`/`sin(t*pi/2)` opacity weights over the backend-provided effective fade duration, using `plus-lighter` compositing. Its maximum size is explicitly set by `FullScreenPlayer`: `22rem` without a right column and `20rem` when queue or lyrics is open. Player bars and mini-player artwork do not blend.
 - Fullscreen lyrics use `PlayerLyricsPanel` when `appStore.highContrastLyrics` is on (glass surface and header) and `ImmersiveLyricsPanel` when off (transparent, headerless content over the artwork background). Both delegate lyric parsing, loading, seek, and scrolling to `PlayerLyrics`; `LyricsDrawer` is unaffected.

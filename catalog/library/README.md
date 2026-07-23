@@ -154,6 +154,7 @@ ShowInExplorer(trackID: string): void
 // Track queries
 GetAllTracks(): TrackDTO[]
 GetTracksPaginated(offset, limit): TrackDTO[]
+GetTracksByIDs(ids: string[]): TrackDTO[]       // preserves requested ID order
 GetTrackCount(): number
 GetTracksByAlbumID(albumID: string): TrackDTO[]
 GetTracksByArtistID(artistID: string): TrackDTO[]
@@ -193,7 +194,10 @@ GetComposerByID(id: string): Composer
 
 **`useLibraryUpdates(tracks)` composable** listens for `library:track-updated` and `library:track-deleted` events and mutates the provided reactive array in-place, so all views stay current without re-fetching.
 
-**Home view** fetches `GetRecentlyPlayedTracks`, `GetMostListenedTracks`, `GetLeastListenedTracks` for carousel sections.
+**Home overview** fetches `GetRecentlyPlayedTracks`, `GetMostListenedTracks`, and
+`GetLeastListenedTracks` for carousel sections. The analytics tab uses
+`GetTracksByIDs` to hydrate the ranked track IDs returned by `AnalyticsService`;
+the binding preserves the supplied ordering.
 
 **Settings → Library tab** (`LibrarySettings.vue`) renders three sections: watched folders list
 with Add/Remove/Sync All/Optimize Search, a Rescan Interval section (`SYNC_INTERVALS` /

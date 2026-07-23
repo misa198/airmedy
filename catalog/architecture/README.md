@@ -17,7 +17,7 @@ flowchart TB
     FE -.->|"Wails Bindings (auto-gen TS)<br/>Wails Events (Go → frontend push)"| WAILS
 
     subgraph WAILS["infra/wails — Adapter Layer (thin wrappers)"]
-        Adapters["PlayerService · LibraryService · SearchService · PlaylistService<br/>LyricsService · EQService · SettingsService · UpdaterService · WindowService<br/>LastfmService · RemoteServerService · GreetService"]
+        Adapters["PlayerService · LibraryService · AnalyticsService · SearchService · PlaylistService<br/>LyricsService · EQService · SettingsService · UpdaterService · WindowService<br/>LastfmService · RemoteServerService · GreetService"]
     end
 
     subgraph APP["internal/app — Application Services"]
@@ -66,6 +66,7 @@ fxApp := fx.New(
         &playlistService,
         &lyricsService,
         &eqService,
+        &analyticsService,
         &windowService,
         &i18nService,
         &settingsService,
@@ -91,6 +92,7 @@ wailsApp := application.New(application.Options{
     Services: []application.Service{
         application.NewService(libraryService),
         application.NewService(playerService),
+        application.NewService(analyticsService),
         // ...
     },
     Assets: application.AssetOptions{
@@ -246,7 +248,9 @@ The macOS-only **Airmedy** menu contains the standard application actions. On al
 desktop platforms, **Help** contains GitHub and Sponsor actions that open the
 project repository and GitHub Sponsors page in the default browser. The menu is
 rebuilt when `language:changed` is emitted so these labels follow the selected
-backend locale.
+backend locale. `infra/wails.BuildAppMenu` owns the menu construction behind a
+small playback-controller interface; keeping its test outside the root `main`
+package avoids linking the native audio archives into the menu test binary.
 
 ## Native Build Artifacts (audio)
 

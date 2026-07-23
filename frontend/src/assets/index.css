@@ -27,8 +27,9 @@
     --primary-rgb: 225 29 72;
     --primary-gradient: linear-gradient(135deg, var(--primary) 0%, rgb(var(--primary-rgb) / 0.62) 100%);
     --primary-foreground: #ffffff;
-    --primary-100: rgb(var(--primary-rgb) / 0.10);
-    --primary-200: rgb(var(--primary-rgb) / 0.18);
+    /* Opaque selected-row shades derived from the runtime primary accent. */
+    --primary-100: color-mix(in srgb, var(--primary) 11%, #ffffff);
+    --primary-200: color-mix(in srgb, var(--primary) 20%, #ffffff);
     --text-main: #0a0a0a;
     --text-muted: #52525b;
     --text-inverse: #ffffff;
@@ -56,8 +57,8 @@
     --text-muted: #a1a1aa;
     --text-inverse: #000000;
     --primary-foreground: #ffffff;
-    --primary-100: rgb(var(--primary-rgb) / 0.18);
-    --primary-200: rgb(var(--primary-rgb) / 0.30);
+    --primary-100: color-mix(in srgb, var(--primary) 22%, #0f0f11);
+    --primary-200: color-mix(in srgb, var(--primary) 34%, #0f0f11);
 
     --bg-zebra: rgba(255, 255, 255, 0.02);
     --scrollbar-thumb: rgba(255, 255, 255, 0.25);

@@ -17,6 +17,8 @@
     "off": "Aus",
     "hr": "Std.",
     "min": "Min.",
+    "sec": "Sek.",
+    "day": "T.",
     "delete": "Löschen",
     "yes": "Ja",
     "no": "Nein",
@@ -180,8 +182,8 @@
       "prevent_sleep_desc": "Computer wach halten, während Musik abgespielt wird",
       "show_player_indicator": "Aktiv-Indikator anzeigen",
       "show_player_indicator_desc": "Einen Punkt unter den Shuffle- und Wiederholungs-Schaltflächen anzeigen, wenn sie aktiv sind",
-      "auto_advance_notifications": "Track change notifications",
-      "auto_advance_notifications_desc": "Show a silent macOS notification when playback automatically moves to the next track",
+      "auto_advance_notifications": "Benachrichtigungen bei Titelwechsel",
+      "auto_advance_notifications_desc": "Eine stille macOS-Benachrichtigung anzeigen, wenn die Wiedergabe automatisch zum nächsten Titel wechselt",
       "high_contrast_lyrics": "Kontrastreiche Liedtexte",
       "high_contrast_lyrics_desc": "Liedtexte im Vollbildplayer in einem hervorgehobenen Glas-Panel anzeigen",
       "song_transition": "Titelübergang",
@@ -194,7 +196,12 @@
       "max_queue_size": "Maximale Warteschlangengröße",
       "max_queue_size_desc": "Begrenzt, wie viele Titel die Wiedergabeliste enthalten kann, einschließlich des aktuellen Titels. Die ältesten Titel werden zuerst entfernt, sobald das Limit erreicht ist."
     },
-    "quick_menu": { "enable_eq": "Equalizer aktivieren", "eq_presets": "EQ-Voreinstellungen", "go_to_equalizer": "Zu den Equalizer-Einstellungen", "go_to_playback": "Zu den Wiedergabe-Einstellungen" },
+    "quick_menu": {
+      "enable_eq": "Equalizer aktivieren",
+      "eq_presets": "EQ-Voreinstellungen",
+      "go_to_equalizer": "Zu den Equalizer-Einstellungen",
+      "go_to_playback": "Zu den Wiedergabe-Einstellungen"
+    },
     "remote": {
       "title": "Fernbedienung",
       "enable": "Remoteserver aktivieren",
@@ -559,5 +566,36 @@
       "live_updating_label": "Live-Aktualisierung",
       "live_updating_hint": "Passende Titel automatisch aktuell halten. Deaktivieren, um die aktuellen Treffer einzufrieren."
     }
+  },
+  "analytics": {
+    "title": "Hörstatistiken",
+    "subtitle": "Deine Hörgewohnheiten auf einen Blick",
+    "range_7d": "7 T",
+    "range_30d": "30 T",
+    "range_all": "Alle",
+    "total_time": "Gesamte Hörzeit",
+    "plays": "Wiedergaben",
+    "library_size": "Bibliotheksgröße",
+    "total_albums": "Alben insgesamt",
+    "total_artists": "Künstler insgesamt",
+    "total_playlists": "Playlists insgesamt",
+    "genre_distribution": "Genre-Verteilung", "genre_other": "Andere", "no_genres": "Noch keine Hördaten nach Genre",
+    "activity": "Höraktivität",
+    "quality": "Audioqualität",
+    "top_artists": "Top-Künstler",
+    "top_tracks": "Meistgespielte Titel",
+    "quality_lossy": "Verlustbehaftet",
+    "quality_lossless": "Verlustfrei",
+    "quality_hi_res": "Hi-Res",
+    "quality_dsd": "DSD",
+    "quality_unknown": "Unbekannt",
+    "no_listening_data": "Für diesen Zeitraum liegen noch keine Hördaten vor.",
+    "no_audio_quality": "Noch keine Daten zur Audioqualität.",
+    "empty": "Beginne zu hören, um deine Statistiken zu sehen.",
+    "error": "Hörstatistiken konnten nicht geladen werden.",
+    "retry": "Erneut versuchen",
+    "refresh": "Statistiken aktualisieren",
+    "no_top_artists": "Noch keine Künstlerwiedergaben",
+    "no_top_tracks": "Noch keine wiedergegebenen Titel"
   }
 }
