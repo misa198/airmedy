@@ -47,6 +47,44 @@ func TestListeningRepositoryReturnsFiftyTopArtistsAndTracks(t *testing.T) {
 	}
 }
 
+func TestListeningRepositoryRanksTopTracksByPlayCountThenListeningTime(t *testing.T) {
+	db, err := NewDB(":memory:", slog.Default())
+	if err != nil {
+		t.Fatalf("NewDB: %v", err)
+	}
+	defer db.Close()
+
+	ctx := context.Background()
+	trackRepo := NewTrackRepository(db)
+	for _, track := range []*domain.Track{
+		{ID: "alphabetical", Path: "/music/alphabetical.flac", Title: "A Track", SortTitle: "A Track", Format: "flac"},
+		{ID: "longer", Path: "/music/longer.flac", Title: "Z Track", SortTitle: "Z Track", Format: "flac"},
+	} {
+		if err := trackRepo.Save(ctx, track); err != nil {
+			t.Fatalf("save track %q: %v", track.ID, err)
+		}
+	}
+
+	repo := NewListeningRepository(db)
+	now := time.Now()
+	for _, session := range []domain.ListeningSession{
+		{TrackID: "alphabetical", StartedAt: now.Add(-2 * time.Minute), EndedAt: now.Add(-time.Minute), ListenedSeconds: 60, QualifiedPlay: true},
+		{TrackID: "longer", StartedAt: now.Add(-3 * time.Minute), EndedAt: now.Add(-time.Minute), ListenedSeconds: 120, QualifiedPlay: true},
+	} {
+		if err := repo.RecordSession(ctx, session); err != nil {
+			t.Fatalf("record session for %q: %v", session.TrackID, err)
+		}
+	}
+
+	insights, err := repo.GetInsights(ctx, domain.ListeningRangeAll, now)
+	if err != nil {
+		t.Fatalf("get insights: %v", err)
+	}
+	if len(insights.TopTracks) != 2 || insights.TopTracks[0].ID != "longer" || insights.TopTracks[1].ID != "alphabetical" {
+		t.Fatalf("top track order = %#v, want longer-listened track before alphabetical title", insights.TopTracks)
+	}
+}
+
 func TestListeningRepositoryRollsUpSessions(t *testing.T) {
 	db, err := NewDB(":memory:", slog.Default())
 	if err != nil {

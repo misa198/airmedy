@@ -207,7 +207,7 @@ func (r *listeningRepository) GetInsights(ctx context.Context, period domain.Lis
 		COALESCE((SELECT GROUP_CONCAT(name, ', ') FROM (SELECT a.name FROM track_artists ta JOIN artists a ON a.id=ta.artist_id WHERE ta.track_id=t.id ORDER BY ta.position)), '') artist,
 		stats.play_count, stats.listened_seconds
 		FROM (SELECT d.track_id, SUM(d.play_count) play_count, SUM(d.listened_seconds) listened_seconds FROM daily_track_listening_stats d ` + strings.Replace(where, "local_date", "d.local_date", 1) + fmt.Sprintf(` GROUP BY d.track_id) stats
-		JOIN tracks t ON t.id=stats.track_id ORDER BY stats.play_count DESC, t.title LIMIT %d`, listeningInsightsTopItemsLimit)
+		JOIN tracks t ON t.id=stats.track_id ORDER BY stats.play_count DESC, stats.listened_seconds DESC, t.title LIMIT %d`, listeningInsightsTopItemsLimit)
 	if err := r.db.SelectContext(ctx, &result.TopTracks, trackSQL, args...); err != nil {
 		return nil, fmt.Errorf("read top tracks: %w", err)
 	}
