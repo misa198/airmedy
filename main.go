@@ -194,7 +194,7 @@ func main() {
 	i18nService.SetLocale(settings.Language)
 
 	// Create application menu
-	menu := buildAppMenu(wailsApp, i18nService, playerService)
+	menu := wails.BuildAppMenu(wailsApp, i18nService, playerService)
 	wailsApp.Menu.SetApplicationMenu(menu)
 
 	mainWindow = wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
@@ -371,7 +371,7 @@ func main() {
 		if lang, ok := event.Data.(string); ok {
 			i18nService.SetLocale(lang)
 			application.InvokeSync(func() {
-				newMenu := buildAppMenu(wailsApp, i18nService, playerService)
+				newMenu := wails.BuildAppMenu(wailsApp, i18nService, playerService)
 				wailsApp.Menu.SetApplicationMenu(newMenu)
 				if trayManager != nil {
 					trayManager.UpdateLanguage()
@@ -454,113 +454,4 @@ func winCustomTheme(appTheme string) application.ThemeSettings {
 		LightModeActive:   lightTheme,
 		LightModeInactive: lightTheme,
 	}
-}
-
-func buildAppMenu(wailsApp *application.App, i18nService *i18n.Service, playerService *wails.PlayerService) *application.Menu {
-	menu := application.NewMenu()
-	if runtime.GOOS == "darwin" {
-		appMenu := menu.AddSubmenu(i18nService.T("menu.airmedy"))
-		appMenu.AddRole(application.About)
-		appMenu.AddSeparator()
-		appMenu.Add(i18nService.T("menu.settings")).
-			SetAccelerator("Cmd+,").
-			OnClick(func(ctx *application.Context) {
-				wailsApp.Event.Emit("open-settings")
-			})
-		appMenu.AddSeparator()
-		appMenu.AddRole(application.ServicesMenu)
-		appMenu.AddSeparator()
-		appMenu.AddRole(application.Hide)
-		appMenu.AddRole(application.HideOthers)
-		appMenu.AddRole(application.ShowAll)
-		appMenu.AddSeparator()
-		appMenu.AddRole(application.Quit)
-	}
-
-	menu.AddRole(application.EditMenu)
-
-	// Playback menu
-	playbackMenu := menu.AddSubmenu(i18nService.T("menu.playback"))
-	var ctrl, opt string
-	if runtime.GOOS == "darwin" {
-		ctrl = "Cmd"
-		opt = "Option"
-	} else {
-		ctrl = "Ctrl"
-		opt = "Alt"
-	}
-
-	playbackMenu.Add(i18nService.T("menu.play_pause")).
-		SetAccelerator("Space").
-		OnClick(func(ctx *application.Context) {
-			_ = playerService.TogglePause()
-		})
-	playbackMenu.AddSeparator()
-	playbackMenu.Add(i18nService.T("menu.next_track")).
-		SetAccelerator(ctrl + "+Right").
-		OnClick(func(ctx *application.Context) {
-			_ = playerService.Next()
-		})
-	playbackMenu.Add(i18nService.T("menu.previous_track")).
-		SetAccelerator(ctrl + "+Left").
-		OnClick(func(ctx *application.Context) {
-			_ = playerService.Previous()
-		})
-	playbackMenu.AddSeparator()
-	playbackMenu.Add(i18nService.T("menu.fast_forward")).
-		SetAccelerator(opt + "+" + ctrl + "+Right").
-		OnClick(func(ctx *application.Context) {
-			_ = playerService.FastForward()
-		})
-	playbackMenu.Add(i18nService.T("menu.rewind")).
-		SetAccelerator(opt + "+" + ctrl + "+Left").
-		OnClick(func(ctx *application.Context) {
-			_ = playerService.Rewind()
-		})
-	playbackMenu.AddSeparator()
-	playbackMenu.Add(i18nService.T("menu.increase_volume")).
-		SetAccelerator(ctrl + "+Up").
-		OnClick(func(ctx *application.Context) {
-			_ = playerService.IncreaseVolume()
-		})
-	playbackMenu.Add(i18nService.T("menu.decrease_volume")).
-		SetAccelerator(ctrl + "+Down").
-		OnClick(func(ctx *application.Context) {
-			_ = playerService.DecreaseVolume()
-		})
-	playbackMenu.Add(i18nService.T("menu.mute")).
-		SetAccelerator(opt + "+" + ctrl + "+Down").
-		OnClick(func(ctx *application.Context) {
-			_ = playerService.ToggleMute()
-		})
-	playbackMenu.AddSeparator()
-	playbackMenu.Add(i18nService.T("menu.shuffle")).
-		SetAccelerator(ctrl + "+S").
-		OnClick(func(ctx *application.Context) {
-			status := playerService.GetStatus()
-			_ = playerService.SetShuffle(!status.Shuffle)
-		})
-	playbackMenu.Add(i18nService.T("menu.repeat")).
-		SetAccelerator(ctrl + "+R").
-		OnClick(func(ctx *application.Context) {
-			wailsApp.Event.Emit("player:cycle-repeat")
-		})
-
-	menu.AddRole(application.WindowMenu)
-
-	helpMenu := menu.AddSubmenu(i18nService.T("menu.help"))
-	helpMenu.Add(i18nService.T("menu.github")).
-		OnClick(func(ctx *application.Context) {
-			if err := wailsApp.Browser.OpenURL("https://github.com/misa198/airmedy"); err != nil {
-				slog.Error("failed to open GitHub repository", "error", err)
-			}
-		})
-	helpMenu.Add(i18nService.T("menu.sponsor")).
-		OnClick(func(ctx *application.Context) {
-			if err := wailsApp.Browser.OpenURL("https://github.com/sponsors/misa198"); err != nil {
-				slog.Error("failed to open GitHub Sponsors", "error", err)
-			}
-		})
-
-	return menu
 }

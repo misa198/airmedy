@@ -325,8 +325,8 @@ genre, top-artist, and top-track summaries. Top tracks are hydrated through
 `LibraryService.GetTracksByIDs` and shown in the virtualized `TrackTable` with
 period-specific `play_count` and the feature-supplied `listened_seconds` column.
 The queue preserves the analytics rank (play count descending, then listened
-seconds, then title) rather than the library-wide play count returned by track hydration. A null response is normalized
-to empty insights so the full analytics layout remains visible; each card
+seconds, then title) rather than the library-wide play count returned by track hydration. A null or partial response is normalized
+to empty insight fields so the full analytics layout remains visible; each card
 renders its own placeholder when its data is unavailable. Charts use
 SVG-rendered `vue-echarts` components.
 

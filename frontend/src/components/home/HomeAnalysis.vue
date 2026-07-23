@@ -54,6 +54,15 @@ const emptyInsights = () => ({
   top_artists: [],
   top_tracks: [],
 })
+const normalizeInsights = (result: any) => ({
+  ...emptyInsights(),
+  ...result,
+  activity: result?.activity ?? [],
+  quality: result?.quality ?? [],
+  genres: result?.genres ?? [],
+  top_artists: result?.top_artists ?? [],
+  top_tracks: result?.top_tracks ?? [],
+})
 const formatNumber = (value: number) => new Intl.NumberFormat(locale.value).format(value)
 const formatTime = (seconds: number) => formatTotalDuration(seconds, t)
 const formatBytes = (bytes: number) => new Intl.NumberFormat(locale.value, {
@@ -68,7 +77,7 @@ async function load() {
   try {
     const result = await pending
     if (request !== pending) return
-    insights.value = result ?? emptyInsights()
+    insights.value = normalizeInsights(result)
     void loadTopTrackQueue(insights.value.top_tracks)
   } catch (err) { if (request === pending) { console.error('Failed to load analytics:', err); error.value = true } } finally { if (request === pending) { loading.value = false; request = null } }
 }

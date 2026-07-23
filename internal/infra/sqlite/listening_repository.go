@@ -24,7 +24,7 @@ func (r *listeningRepository) RecordSession(ctx context.Context, s domain.Listen
 	if err != nil {
 		return fmt.Errorf("begin listening session transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 	if _, err = tx.ExecContext(ctx, `INSERT INTO listening_sessions (id, track_id, started_at, ended_at, listened_seconds, qualified_play) VALUES (?, ?, ?, ?, ?, ?)`, uuid.NewString(), s.TrackID, s.StartedAt, s.EndedAt, s.ListenedSeconds, s.QualifiedPlay); err != nil {
 		return fmt.Errorf("insert listening session: %w", err)
 	}

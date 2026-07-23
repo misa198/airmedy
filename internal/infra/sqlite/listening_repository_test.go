@@ -15,7 +15,7 @@ func TestListeningRepositoryReturnsFiftyTopArtistsAndTracks(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewDB: %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	ctx := context.Background()
 	trackRepo := NewTrackRepository(db)
@@ -52,7 +52,7 @@ func TestListeningRepositoryRanksTopTracksByPlayCountThenListeningTime(t *testin
 	if err != nil {
 		t.Fatalf("NewDB: %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	ctx := context.Background()
 	trackRepo := NewTrackRepository(db)
@@ -90,7 +90,7 @@ func TestListeningRepositoryRollsUpSessions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewDB: %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	ctx := context.Background()
 	if err := NewTrackRepository(db).Save(ctx, &domain.Track{ID: "track-1", Path: "/music/one.flac", Title: "One", SortTitle: "One", Format: "flac", FileSize: 1024}); err != nil {
 		t.Fatalf("save track: %v", err)
@@ -143,7 +143,7 @@ func TestListeningRepositoryCleanupAndQualityClassification(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewDB: %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	ctx := context.Background()
 	tracks := []*domain.Track{
 		{ID: "hires", Path: "/hires.flac", Title: "Hi", SortTitle: "Hi", Format: "flac", BitDepth: 24},

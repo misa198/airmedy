@@ -73,7 +73,7 @@ function syncLabelSlider() {
 watch([activeIndex, () => props.options, () => props.variant], () => nextTick(syncLabelSlider), { deep: true, flush: 'post' })
 onMounted(() => {
   syncLabelSlider()
-  if (containerRef.value) {
+  if (containerRef.value && typeof ResizeObserver !== 'undefined') {
     resizeObserver = new ResizeObserver(syncLabelSlider)
     resizeObserver.observe(containerRef.value)
   }

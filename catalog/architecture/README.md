@@ -248,7 +248,9 @@ The macOS-only **Airmedy** menu contains the standard application actions. On al
 desktop platforms, **Help** contains GitHub and Sponsor actions that open the
 project repository and GitHub Sponsors page in the default browser. The menu is
 rebuilt when `language:changed` is emitted so these labels follow the selected
-backend locale.
+backend locale. `infra/wails.BuildAppMenu` owns the menu construction behind a
+small playback-controller interface; keeping its test outside the root `main`
+package avoids linking the native audio archives into the menu test binary.
 
 ## Native Build Artifacts (audio)
 
