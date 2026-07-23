@@ -375,6 +375,7 @@ The mini player controls sit over a CSS glassmorphism panel (`.glass-panel` in `
 - `vue-virtual-sortable` renders only visible rows in track lists (56px or 36px each).
 - Views are lazy-loaded (dynamic `import()` in router) — only the home view loads eagerly.
 - Search is debounced 300ms in `stores/search.ts`.
+- Track and album results in `SearchView` expose their shared context menus on right-click, matching the actions available on other track and album surfaces.
 - Artwork requests use variants (`_sm`, `_md`) sized appropriately for each context.
 - Fullscreen `PlayerArtwork` can stack outgoing and incoming covers for an automatic audio crossfade; `requestAnimationFrame` applies equal-power `cos(t*pi/2)`/`sin(t*pi/2)` opacity weights over the backend-provided effective fade duration, using `plus-lighter` compositing. Its maximum size is explicitly set by `FullScreenPlayer`: `22rem` without a right column and `20rem` when queue or lyrics is open. Player bars and mini-player artwork do not blend.
 - Fullscreen lyrics use `PlayerLyricsPanel` when `appStore.highContrastLyrics` is on (glass surface and header) and `ImmersiveLyricsPanel` when off (transparent, headerless content over the artwork background). Both delegate lyric parsing, loading, seek, and scrolling to `PlayerLyrics`; `LyricsDrawer` is unaffected.
