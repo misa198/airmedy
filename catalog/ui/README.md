@@ -318,7 +318,9 @@ measurement current and is disconnected on unmount.
 cancellation on period changes/unmount, and renders activity, audio-quality,
 genre, top-artist, and top-track summaries. Top tracks are hydrated through
 `LibraryService.GetTracksByIDs` and shown in the virtualized `TrackTable` with
-the feature-supplied `listened_seconds` column. A null response is normalized
+period-specific `play_count` and the feature-supplied `listened_seconds` column.
+The queue preserves the analytics rank (play count descending) rather than the
+library-wide play count returned by track hydration. A null response is normalized
 to empty insights so the full analytics layout remains visible; each card
 renders its own placeholder when its data is unavailable. Charts use
 SVG-rendered `vue-echarts` components.

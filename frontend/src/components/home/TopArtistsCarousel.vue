@@ -74,7 +74,7 @@ onUnmounted(() => resizeObserver?.disconnect())
     <div v-if="artists.length" class="relative overflow-hidden">
       <Transition :name="transitionName">
         <div :key="currentPage" class="grid gap-4" :style="{ gridTemplateColumns: `repeat(${columnsPerPage}, minmax(0, 1fr))` }">
-          <button v-for="artist in paginatedArtists" :key="artist.id" type="button" class="group min-w-0 text-center" @click="router.push(`/artists/${artist.id}`)">
+          <button v-for="artist in paginatedArtists" :key="artist.id" type="button" class="group min-w-0 text-center cursor-pointer" @click="router.push(`/artists/${artist.id}`)">
             <div class="relative mx-auto aspect-square w-full max-w-32 overflow-hidden rounded-full border border-[var(--border-glass)] bg-white/[0.04] transition-all duration-300 group-hover:brightness-110">
               <LazyImg v-if="artist.artwork_key" :src="buildArtworkUrl(artist.artwork_key, 'md')" :alt="artist.name" class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
               <Users v-else class="absolute inset-0 m-auto h-9 w-9 text-[color:var(--text-muted)]" />

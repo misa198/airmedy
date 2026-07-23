@@ -75,7 +75,7 @@ async function load() {
 let request: ReturnType<typeof AnalyticsService.GetInsights> | null = null
 let topTrackRequest: ReturnType<typeof LibraryService.GetTracksByIDs> | null = null
 
-async function loadTopTrackQueue(topTracks: { id: string; listened_seconds: number }[]) {
+async function loadTopTrackQueue(topTracks: { id: string; play_count: number; listened_seconds: number }[]) {
   topTrackRequest?.cancel()
   const ids = topTracks.map(track => track.id)
   if (!ids.length) { topTrackQueue.value = []; topTracksLoading.value = false; return }
@@ -86,10 +86,15 @@ async function loadTopTrackQueue(topTracks: { id: string; listened_seconds: numb
     const tracks = (await pending).filter((track): track is TrackDTO => track !== null)
     if (topTrackRequest !== pending) return
     const byID = new Map(tracks.map(track => [track.id, track]))
-    const listenedSecondsByID = new Map(topTracks.map(track => [track.id, track.listened_seconds]))
+    const analyticsByID = new Map(topTracks.map(track => [track.id, track]))
     topTrackQueue.value = ids.flatMap((id) => {
       const track = byID.get(id)
-      return track ? [{ ...track, listened_seconds: listenedSecondsByID.get(id) || 0 }] : []
+      const analytics = analyticsByID.get(id)
+      return track && analytics ? [{
+        ...track,
+        play_count: analytics.play_count,
+        listened_seconds: analytics.listened_seconds,
+      }] : []
     })
   } catch (err) {
     if (topTrackRequest === pending) console.error('Failed to load top tracks:', err)
