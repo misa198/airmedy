@@ -80,6 +80,11 @@ TailwindCSS v4 uses a **CSS-first** `@theme` directive approach. All design toke
 
 `--primary` and its RGB/tint/foreground companion variables are updated at runtime from the persisted primary-color setting. This is independent of artwork-derived `--dynamic-*` colors.
 
+`--primary-foreground` favors `#FFFFFF` for saturated primary accents and uses
+`#18181B` only when the primary's perceived brightness is high (for example,
+yellow or pastel). This keeps orange and similar accents visually cohesive
+without using pure black.
+
 `@airmedy/ui` exports `ColorPicker`, a stateless popover primitive with hue, saturation/brightness, preview, and validated `#RRGGBB` input. General Settings uses it after the six primary-color preset circles.
 
 The Track Info Drawer keeps its Lossless quality badge on the original rose

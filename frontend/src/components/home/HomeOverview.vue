@@ -52,7 +52,7 @@ onUnmounted(() => off?.())
   <div v-if="loading" class="h-full flex items-center justify-center"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" /></div>
   <div v-else-if="!hasTracks" class="h-full flex flex-col items-center justify-center text-center">
     <Music class="w-12 h-12 text-white/40 mb-6" /><h2 class="text-3xl font-bold mb-3">{{ t('home.empty.title') }}</h2><p class="text-white/40 max-w-md mb-8">{{ t('home.empty.description') }}</p>
-    <button class="flex items-center gap-2 px-6 py-3 bg-primary rounded-lg" @click="router.push('/settings/library')"><SettingsIcon class="w-4 h-4" />{{ t('home.empty.action') }}</button>
+    <button class="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg" @click="router.push('/settings/library')"><SettingsIcon class="w-4 h-4" />{{ t('home.empty.action') }}</button>
   </div>
   <div v-else class="space-y-16 pb-12 animate-in fade-in duration-700">
     <HomeSection :title="t('home.keep_listening')" :icon="History" :items="recentlyPlayed" id="carousel-recent" @play-all="playAll(recentlyPlayed)"><template #default="{ item }"><TrackCard :track="item" @play="play" @click="openTrack" @artist-click="openArtist" @album-click="openAlbum" @contextmenu="onMenu" /></template></HomeSection>
