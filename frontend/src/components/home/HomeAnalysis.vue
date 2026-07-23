@@ -104,7 +104,10 @@ async function loadTopTrackQueue(topTracks: { id: string; play_count: number; li
 }
 
 watch(period, load, { immediate: true })
-onUnmounted(() => { request?.cancel(); topTrackRequest?.cancel() })
+onUnmounted(() => {
+  request?.cancel()
+  topTrackRequest?.cancel()
+})
 </script>
 
 <template>

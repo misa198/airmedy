@@ -397,10 +397,12 @@ flowchart TB
 - Increments play counts via `TrackRepository.IncrementPlayCount()`.
 - Records listening sessions through `domain.ListeningRepository`. Playback is
   accumulated in memory and queued to a single bounded background writer at
-  track transitions, shutdown, or a one-minute checkpoint; intervals shorter
+  track transitions, pause, shutdown, or a one-minute checkpoint; intervals shorter
   than 10 seconds are discarded. The queue prevents SQLite write contention
   from delaying Play/Next/Stop, and shutdown drains pending writes within the
-  lifecycle context. Startup removes raw sessions older than 180 days.
+  lifecycle context. Startup removes raw sessions older than 180 days. Since pause
+  flushes and clears its completed
+  interval, a subsequent Play starts a new interval for the still-loaded track.
 - Syncs artwork theme colors on track load.
 - Fetches/delivers lyrics on track load.
 - Resets playback position to 0 on track change to ensure clean UI transitions.

@@ -327,9 +327,14 @@ func (s *PlayerService) Play() error {
 func (s *PlayerService) Pause() error {
 	// Snap an in-flight crossfade so resume is a plain single-source resume.
 	s.finishActiveCrossfade()
-	s.pauseListening()
 	err := s.player.Pause()
 	if err == nil {
+		// A paused session may remain paused indefinitely, so persist it now rather
+		// than leaving the analytics view with only its previous checkpoint.
+		// Pause the native player first: a failed native pause must not stop the
+		// in-memory listening clock while audio is still playing.
+		s.pauseListening()
+		s.flushListening(context.Background())
 		s.stopPositionTicker()
 		s.setNowPlayingPlaybackState(false)
 		s.emitStatus()
@@ -1323,10 +1328,24 @@ func (s *PlayerService) startListening(track *domain.TrackDTO) {
 
 func (s *PlayerService) resumeListening() {
 	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	now := time.Now()
 	if s.listeningTrack != nil && s.listeningActiveAt.IsZero() {
-		s.listeningActiveAt = time.Now()
+		s.listeningActiveAt = now
+		return
 	}
-	s.mu.Unlock()
+	// Pause persists and clears the completed interval so analytics is current
+	// immediately. Starting playback again must therefore begin a fresh
+	// interval for the still-loaded track. This also covers restored tracks,
+	// which are loaded in a paused state without an in-memory session.
+	if s.listeningTrack == nil && s.currentTrack != nil {
+		s.listeningTrack = s.currentTrack
+		s.listeningStart = now
+		s.listeningActiveAt = now
+		s.listeningSeconds = 0
+		s.listeningQualified = false
+	}
 }
 
 func (s *PlayerService) pauseListening() {

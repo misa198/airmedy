@@ -1261,6 +1261,59 @@ func TestListeningSessionFlushesPlayedTime(t *testing.T) {
 	}
 }
 
+func TestPauseFlushesListeningTime(t *testing.T) {
+	repo := &fakeListeningRepository{}
+	s, _ := newTestService(t, &fakePlayer{status: domain.PlayerStatus{PlaybackState: domain.PlaybackStatePlaying}})
+	s.listeningRepo = repo
+	track := &domain.TrackDTO{Track: domain.Track{ID: "track-1"}}
+	s.startListening(track)
+	s.mu.Lock()
+	s.listeningActiveAt = time.Now().Add(-12 * time.Second)
+	s.mu.Unlock()
+
+	if err := s.Pause(); err != nil {
+		t.Fatalf("Pause: %v", err)
+	}
+	if len(repo.sessions) != 1 {
+		t.Fatalf("expected one persisted session after pause, got %d", len(repo.sessions))
+	}
+	if got := repo.sessions[0].ListenedSeconds; got < 10 {
+		t.Fatalf("expected at least 10 persisted seconds after pause, got %d", got)
+	}
+}
+
+func TestResumeAfterPauseStartsNewListeningSession(t *testing.T) {
+	repo := &fakeListeningRepository{}
+	s, _ := newTestService(t, &fakePlayer{status: domain.PlayerStatus{PlaybackState: domain.PlaybackStatePlaying}})
+	s.listeningRepo = repo
+	track := &domain.TrackDTO{Track: domain.Track{ID: "track-1"}}
+	s.startListening(track)
+	s.mu.Lock()
+	s.currentTrack = track
+	s.listeningActiveAt = time.Now().Add(-23 * time.Second)
+	s.mu.Unlock()
+
+	if err := s.Pause(); err != nil {
+		t.Fatalf("first Pause: %v", err)
+	}
+	if err := s.Play(); err != nil {
+		t.Fatalf("resume Play: %v", err)
+	}
+	s.mu.Lock()
+	s.listeningActiveAt = time.Now().Add(-60 * time.Second)
+	s.mu.Unlock()
+	if err := s.Pause(); err != nil {
+		t.Fatalf("second Pause: %v", err)
+	}
+
+	if len(repo.sessions) != 2 {
+		t.Fatalf("expected two persisted sessions, got %d: %#v", len(repo.sessions), repo.sessions)
+	}
+	if got := repo.sessions[0].ListenedSeconds + repo.sessions[1].ListenedSeconds; got < 82 || got > 84 {
+		t.Fatalf("expected about 83 persisted seconds across pauses, got %d", got)
+	}
+}
+
 func TestLoadAndPlayDoesNotWaitForListeningWrite(t *testing.T) {
 	repo := &blockingListeningRepository{entered: make(chan struct{}), release: make(chan struct{})}
 	s, _ := newTestService(t, &fakePlayer{status: domain.PlayerStatus{Volume: 1.0}})
