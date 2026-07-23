@@ -19,7 +19,10 @@
 set -euo pipefail
 
 AUBIO_VERSION="0.4.9"
-AUBIO_URL="https://aubio.org/pub/aubio-${AUBIO_VERSION}.tar.bz2"
+# GitHub's generated tag archive omits aubio's bundled Waf files. Use the
+# complete, release-published PyPI source distribution instead.
+AUBIO_URL="https://files.pythonhosted.org/packages/cd/80/302d89240603e5347c7f8026c8b02c59f8dfaec66c91a743d82de7c86006/aubio-${AUBIO_VERSION}.tar.gz"
+AUBIO_SHA256="df1244f6c4cf5bea382c8c2d35aa43bc31f4cf631fe325ae3992c219546a4202"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 OUT_BASE="${REPO_ROOT}/internal/infra/audio/aubio_libs/darwin"
@@ -132,12 +135,13 @@ verify_aubio() {
 }
 
 mkdir -p "${BUILD_DIR}/src"
-if [[ ! -f "${BUILD_DIR}/aubio.tar.bz2" ]]; then
+if [[ ! -f "${BUILD_DIR}/aubio.tar.gz" ]]; then
     echo "==> Downloading aubio ${AUBIO_VERSION}..."
-    curl -L "${AUBIO_URL}" -o "${BUILD_DIR}/aubio.tar.bz2"
+    curl --fail --location --retry 3 "${AUBIO_URL}" -o "${BUILD_DIR}/aubio.tar.gz"
 fi
+echo "${AUBIO_SHA256}  ${BUILD_DIR}/aubio.tar.gz" | shasum -a 256 -c -
 echo "==> Extracting..."
-tar -xjf "${BUILD_DIR}/aubio.tar.bz2" -C "${BUILD_DIR}/src" --strip-components=1
+tar -xzf "${BUILD_DIR}/aubio.tar.gz" -C "${BUILD_DIR}/src" --strip-components=1
 
 # Bundled waf (from 2019) is incompatible with modern python3:
 #  - imports the stdlib 'imp' module, removed in Python 3.12+
