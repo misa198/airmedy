@@ -77,7 +77,7 @@ corpus-wide percentile distribution). Mood then backs **Mood Radio** similarity.
 | `internal/infra/wails/analysis_service.go` | Wails binding (`SetLibraryAnalysisEnabled`, `GetWorkerCountInfo`, `SetWorkerCount`, `GetProgress`) |
 | `internal/infra/wails/mood_radio_service.go` | Wails binding (`SeedMoodRadio`) |
 | `internal/infra/audio/analyzer.go` + `ffmpeg_analyzer.h` | cgo adapter implementing `domain.LoudnessAnalyzer` |
-| `scripts/build-fftw3-*.sh` + `scripts/build-aubio-*.sh` | Vendored FFTW3F/aubio builders for macOS, Linux, Windows; Aubio `0.4.9` source is fetched from its tagged GitHub archive |
+| `scripts/build-fftw3-*.sh` + `scripts/build-aubio-*.sh` | Vendored FFTW3F/aubio builders for macOS, Linux, Windows; Aubio `0.4.9` source is fetched from its SHA-256-pinned PyPI source distribution because GitHub's generated tag archive omits bundled Waf files |
 | `internal/infra/sqlite/analysis_repository.go` | `track_features` CRUD, pending-count/list, `MarkFailed`, percentile table CRUD, mood-pending list |
 | `internal/infra/sqlite/track_query_repository.go` | `FindSimilar` — weighted-euclidean nearest-neighbor query over energy/danceability/brightness/tempo, backs Mood Radio |
 | `internal/domain/audio.go` | `LoudnessAnalyzer` interface |

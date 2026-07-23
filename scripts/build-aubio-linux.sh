@@ -21,8 +21,10 @@
 set -euo pipefail
 
 AUBIO_VERSION="0.4.9"
-# Use the tagged GitHub source archive: the previous release host is unreliable.
-AUBIO_URL="https://github.com/aubio/aubio/archive/refs/tags/${AUBIO_VERSION}.tar.gz"
+# GitHub's generated tag archive omits aubio's bundled Waf files. Use the
+# complete, release-published PyPI source distribution instead.
+AUBIO_URL="https://files.pythonhosted.org/packages/cd/80/302d89240603e5347c7f8026c8b02c59f8dfaec66c91a743d82de7c86006/aubio-${AUBIO_VERSION}.tar.gz"
+AUBIO_SHA256="df1244f6c4cf5bea382c8c2d35aa43bc31f4cf631fe325ae3992c219546a4202"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT_BASE="${REPO_ROOT}/internal/infra/audio/aubio_libs/linux"
 INCLUDE_OUT="${REPO_ROOT}/internal/infra/audio/aubio_libs/include"
@@ -145,6 +147,7 @@ if [[ ! -f "${BUILD_DIR}/aubio.tar.gz" ]]; then
     echo "==> Downloading aubio ${AUBIO_VERSION}..."
     curl --fail --location --retry 3 "${AUBIO_URL}" -o "${BUILD_DIR}/aubio.tar.gz"
 fi
+echo "${AUBIO_SHA256}  ${BUILD_DIR}/aubio.tar.gz" | sha256sum -c -
 echo "==> Extracting..."
 rm -rf "${BUILD_DIR}/src"
 mkdir -p "${BUILD_DIR}/src"
