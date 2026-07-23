@@ -21,7 +21,7 @@
 set -euo pipefail
 
 AUBIO_VERSION="0.4.9"
-AUBIO_URL="https://aubio.org/pub/aubio-${AUBIO_VERSION}.tar.bz2"
+AUBIO_URL="https://github.com/aubio/aubio/archive/refs/tags/${AUBIO_VERSION}.tar.gz"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT_BASE="${REPO_ROOT}/internal/infra/audio/aubio_libs/linux"
 INCLUDE_OUT="${REPO_ROOT}/internal/infra/audio/aubio_libs/include"
@@ -140,14 +140,14 @@ case "${TARGET_ARCH}" in
 esac
 
 mkdir -p "${BUILD_DIR}/src"
-if [[ ! -f "${BUILD_DIR}/aubio.tar.bz2" ]]; then
+if [[ ! -f "${BUILD_DIR}/aubio.tar.gz" ]]; then
     echo "==> Downloading aubio ${AUBIO_VERSION}..."
-    curl -L "${AUBIO_URL}" -o "${BUILD_DIR}/aubio.tar.bz2"
+    curl -L "${AUBIO_URL}" -o "${BUILD_DIR}/aubio.tar.gz"
 fi
 echo "==> Extracting..."
 rm -rf "${BUILD_DIR}/src"
 mkdir -p "${BUILD_DIR}/src"
-tar -xjf "${BUILD_DIR}/aubio.tar.bz2" -C "${BUILD_DIR}/src" --strip-components=1
+tar -xzf "${BUILD_DIR}/aubio.tar.gz" -C "${BUILD_DIR}/src" --strip-components=1
 
 case "${TARGET_ARCH}" in
     amd64)
