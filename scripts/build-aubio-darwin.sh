@@ -19,7 +19,8 @@
 set -euo pipefail
 
 AUBIO_VERSION="0.4.9"
-AUBIO_URL="https://aubio.org/pub/aubio-${AUBIO_VERSION}.tar.bz2"
+# Use the tagged GitHub source archive: the previous release host is unreliable.
+AUBIO_URL="https://github.com/aubio/aubio/archive/refs/tags/${AUBIO_VERSION}.tar.gz"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 OUT_BASE="${REPO_ROOT}/internal/infra/audio/aubio_libs/darwin"
@@ -132,12 +133,12 @@ verify_aubio() {
 }
 
 mkdir -p "${BUILD_DIR}/src"
-if [[ ! -f "${BUILD_DIR}/aubio.tar.bz2" ]]; then
+if [[ ! -f "${BUILD_DIR}/aubio.tar.gz" ]]; then
     echo "==> Downloading aubio ${AUBIO_VERSION}..."
-    curl -L "${AUBIO_URL}" -o "${BUILD_DIR}/aubio.tar.bz2"
+    curl --fail --location --retry 3 "${AUBIO_URL}" -o "${BUILD_DIR}/aubio.tar.gz"
 fi
 echo "==> Extracting..."
-tar -xjf "${BUILD_DIR}/aubio.tar.bz2" -C "${BUILD_DIR}/src" --strip-components=1
+tar -xzf "${BUILD_DIR}/aubio.tar.gz" -C "${BUILD_DIR}/src" --strip-components=1
 
 # Bundled waf (from 2019) is incompatible with modern python3:
 #  - imports the stdlib 'imp' module, removed in Python 3.12+
