@@ -21,9 +21,34 @@ type ListeningSession struct {
 	QualifiedPlay   bool
 }
 
+type PlaybackEndReason string
+
+const (
+	PlaybackEndCompleted PlaybackEndReason = "completed"
+	PlaybackEndSkipped   PlaybackEndReason = "skipped"
+	PlaybackEndStopped   PlaybackEndReason = "stopped"
+)
+
+// PlaybackAttempt is one continuous selection of a track. Unlike listening
+// sessions, it survives pause/resume and is used for completion/skip rates.
+type PlaybackAttempt struct {
+	ID                   string
+	TrackID              string
+	StartedAt            time.Time
+	EndedAt              time.Time
+	StartPositionSeconds float64
+	ListenedSeconds      int
+	EndReason            PlaybackEndReason
+}
+
 type AnalyticsPoint struct {
 	Date            string `json:"date" db:"date"`
 	ListenedSeconds int    `json:"listened_seconds" db:"listened_seconds"`
+}
+
+type AnalyticsLibraryGrowthPoint struct {
+	Date       string `json:"date" db:"date"`
+	TrackCount int    `json:"track_count" db:"track_count"`
 }
 
 type AnalyticsQualityBucket struct {
@@ -53,23 +78,35 @@ type AnalyticsTrack struct {
 }
 
 type AnalyticsInsights struct {
-	ListenedSeconds  int                      `json:"listened_seconds"`
-	Plays            int                      `json:"plays"`
-	ChangePercent    *float64                 `json:"change_percent,omitempty"`
-	LibraryTracks    int                      `json:"library_tracks"`
-	LibraryAlbums    int                      `json:"library_albums"`
-	LibraryArtists   int                      `json:"library_artists"`
-	LibraryPlaylists int                      `json:"library_playlists"`
-	LibraryBytes     int64                    `json:"library_bytes"`
-	Activity         []AnalyticsPoint         `json:"activity"`
-	Quality          []AnalyticsQualityBucket `json:"quality"`
-	Genres           []AnalyticsGenre         `json:"genres"`
-	TopArtists       []AnalyticsArtist        `json:"top_artists"`
-	TopTracks        []AnalyticsTrack         `json:"top_tracks"`
+	ListenedSeconds       int                           `json:"listened_seconds"`
+	Plays                 int                           `json:"plays"`
+	Attempts              int                           `json:"attempts"`
+	Completed             int                           `json:"completed"`
+	Skipped               int                           `json:"skipped"`
+	Stopped               int                           `json:"stopped"`
+	CompletionRate        *float64                      `json:"completion_rate,omitempty"`
+	SkipRate              *float64                      `json:"skip_rate,omitempty"`
+	AverageSessionSeconds int                           `json:"average_session_seconds"`
+	StreakDays            int                           `json:"streak_days"`
+	ChangePercent         *float64                      `json:"change_percent,omitempty"`
+	LibraryTracks         int                           `json:"library_tracks"`
+	LibraryAlbums         int                           `json:"library_albums"`
+	LibraryArtists        int                           `json:"library_artists"`
+	LibraryPlaylists      int                           `json:"library_playlists"`
+	LibraryBytes          int64                         `json:"library_bytes"`
+	LibraryGrowth         []AnalyticsLibraryGrowthPoint `json:"library_growth"`
+	Activity              []AnalyticsPoint              `json:"activity"`
+	Quality               []AnalyticsQualityBucket      `json:"quality"`
+	Genres                []AnalyticsGenre              `json:"genres"`
+	TopArtists            []AnalyticsArtist             `json:"top_artists"`
+	TopTracks             []AnalyticsTrack              `json:"top_tracks"`
 }
 
 type ListeningRepository interface {
 	RecordSession(ctx context.Context, session ListeningSession) error
 	CleanupSessions(ctx context.Context, before time.Time) error
+	RecordAttemptStart(ctx context.Context, attempt PlaybackAttempt) error
+	FinalizeAttempt(ctx context.Context, attempt PlaybackAttempt) error
+	RecoverOpenAttempts(ctx context.Context) error
 	GetInsights(ctx context.Context, period ListeningRange, now time.Time) (*AnalyticsInsights, error)
 }

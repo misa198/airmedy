@@ -82,6 +82,106 @@ func (r *listeningRepository) CleanupSessions(ctx context.Context, before time.T
 	if _, err := r.db.ExecContext(ctx, `DELETE FROM listening_sessions WHERE ended_at < ?`, before); err != nil {
 		return fmt.Errorf("cleanup listening sessions: %w", err)
 	}
+	if _, err := r.db.ExecContext(ctx, `DELETE FROM playback_attempts WHERE started_at < ?`, before); err != nil {
+		return fmt.Errorf("cleanup playback attempts: %w", err)
+	}
+	return nil
+}
+
+func (r *listeningRepository) RecordAttemptStart(ctx context.Context, a domain.PlaybackAttempt) error {
+	if a.ID == "" || a.TrackID == "" {
+		return nil
+	}
+	result, err := r.db.ExecContext(ctx, `INSERT INTO playback_attempts (id, track_id, started_at, start_position_seconds) VALUES (?, ?, ?, ?)
+		ON CONFLICT(id) DO NOTHING`, a.ID, a.TrackID, a.StartedAt, a.StartPositionSeconds)
+	if err != nil {
+		return fmt.Errorf("insert playback attempt: %w", err)
+	}
+	inserted, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("read inserted playback attempt: %w", err)
+	}
+	if inserted == 0 {
+		return nil
+	}
+	date := a.StartedAt.In(time.Local).Format("2006-01-02")
+	if _, err := r.db.ExecContext(ctx, `INSERT INTO daily_playback_attempt_stats (local_date, attempts) VALUES (?, 1)
+		ON CONFLICT(local_date) DO UPDATE SET attempts = attempts + 1`, date); err != nil {
+		return fmt.Errorf("aggregate playback attempt start: %w", err)
+	}
+	return nil
+}
+
+func (r *listeningRepository) FinalizeAttempt(ctx context.Context, a domain.PlaybackAttempt) error {
+	if a.ID == "" || a.TrackID == "" || a.EndReason == "" {
+		return nil
+	}
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin finalize playback attempt: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	result, err := tx.ExecContext(ctx, `UPDATE playback_attempts SET ended_at = ?, listened_seconds = ?, end_reason = ? WHERE id = ? AND end_reason IS NULL`, a.EndedAt, a.ListenedSeconds, a.EndReason, a.ID)
+	if err != nil {
+		return fmt.Errorf("finalize playback attempt: %w", err)
+	}
+	changed, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("read finalized playback attempt: %w", err)
+	}
+	if changed == 0 {
+		var existing int
+		if err = tx.GetContext(ctx, &existing, `SELECT COUNT(*) FROM playback_attempts WHERE id = ?`, a.ID); err != nil {
+			return fmt.Errorf("check playback attempt: %w", err)
+		}
+		if existing > 0 {
+			return nil // already finalized; a duplicate worker message is a no-op.
+		}
+		if _, err = tx.ExecContext(ctx, `INSERT INTO playback_attempts (id, track_id, started_at, ended_at, start_position_seconds, listened_seconds, end_reason) VALUES (?, ?, ?, ?, ?, ?, ?)`, a.ID, a.TrackID, a.StartedAt, a.EndedAt, a.StartPositionSeconds, a.ListenedSeconds, a.EndReason); err != nil {
+			return fmt.Errorf("upsert finalized playback attempt: %w", err)
+		}
+		// A dropped start message must still contribute one attempt.
+		if _, err = tx.ExecContext(ctx, `INSERT INTO daily_playback_attempt_stats (local_date, attempts) VALUES (?, 1)
+			ON CONFLICT(local_date) DO UPDATE SET attempts = attempts + 1`, a.StartedAt.In(time.Local).Format("2006-01-02")); err != nil {
+			return fmt.Errorf("aggregate recovered attempt start: %w", err)
+		}
+	}
+	date := a.StartedAt.In(time.Local).Format("2006-01-02")
+	column := string(a.EndReason)
+	if column != string(domain.PlaybackEndCompleted) && column != string(domain.PlaybackEndSkipped) && column != string(domain.PlaybackEndStopped) {
+		return fmt.Errorf("invalid playback end reason %q", a.EndReason)
+	}
+	if _, err = tx.ExecContext(ctx, `INSERT INTO daily_playback_attempt_stats (local_date, `+column+`, listened_seconds) VALUES (?, 1, ?)
+		ON CONFLICT(local_date) DO UPDATE SET `+column+` = `+column+` + 1, listened_seconds = listened_seconds + excluded.listened_seconds`, date, a.ListenedSeconds); err != nil {
+		return fmt.Errorf("aggregate finalized playback attempt: %w", err)
+	}
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("commit finalized playback attempt: %w", err)
+	}
+	return nil
+}
+
+func (r *listeningRepository) RecoverOpenAttempts(ctx context.Context) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin recover playback attempts: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	var dates []string
+	if err = tx.SelectContext(ctx, &dates, `SELECT strftime('%Y-%m-%d', started_at, 'localtime') FROM playback_attempts WHERE end_reason IS NULL`); err != nil {
+		return fmt.Errorf("list open playback attempts: %w", err)
+	}
+	if _, err = tx.ExecContext(ctx, `UPDATE playback_attempts SET ended_at = started_at, listened_seconds = 0, end_reason = 'stopped' WHERE end_reason IS NULL`); err != nil {
+		return fmt.Errorf("recover playback attempts: %w", err)
+	}
+	for _, date := range dates {
+		if _, err = tx.ExecContext(ctx, `INSERT INTO daily_playback_attempt_stats (local_date, stopped) VALUES (?, 1) ON CONFLICT(local_date) DO UPDATE SET stopped = stopped + 1`, date); err != nil {
+			return fmt.Errorf("aggregate recovered playback attempt: %w", err)
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("commit recovered playback attempts: %w", err)
+	}
 	return nil
 }
 
@@ -105,7 +205,7 @@ func (r *listeningRepository) GetInsights(ctx context.Context, period domain.Lis
 	if err != nil {
 		return nil, err
 	}
-	result := &domain.AnalyticsInsights{Activity: []domain.AnalyticsPoint{}, Quality: []domain.AnalyticsQualityBucket{}, Genres: []domain.AnalyticsGenre{}, TopArtists: []domain.AnalyticsArtist{}, TopTracks: []domain.AnalyticsTrack{}}
+	result := &domain.AnalyticsInsights{LibraryGrowth: []domain.AnalyticsLibraryGrowthPoint{}, Activity: []domain.AnalyticsPoint{}, Quality: []domain.AnalyticsQualityBucket{}, Genres: []domain.AnalyticsGenre{}, TopArtists: []domain.AnalyticsArtist{}, TopTracks: []domain.AnalyticsTrack{}}
 	where, args := "", []any{}
 	if bounded {
 		where, args = "WHERE local_date >= ?", []any{start.Format("2006-01-02")}
@@ -115,6 +215,22 @@ func (r *listeningRepository) GetInsights(ctx context.Context, period domain.Lis
 	}
 	if err := r.db.GetContext(ctx, &result.Plays, `SELECT COALESCE(SUM(play_count), 0) FROM daily_track_listening_stats `+where, args...); err != nil {
 		return nil, fmt.Errorf("sum listening plays: %w", err)
+	}
+	attemptWhere := ""
+	if bounded {
+		attemptWhere = "WHERE local_date >= ?"
+	}
+	var attemptSeconds int
+	if err := r.db.QueryRowxContext(ctx, `SELECT COALESCE(SUM(attempts), 0), COALESCE(SUM(completed), 0), COALESCE(SUM(skipped), 0), COALESCE(SUM(stopped), 0), COALESCE(SUM(listened_seconds), 0) FROM daily_playback_attempt_stats `+attemptWhere, args...).Scan(&result.Attempts, &result.Completed, &result.Skipped, &result.Stopped, &attemptSeconds); err != nil {
+		return nil, fmt.Errorf("sum playback attempts: %w", err)
+	}
+	if denominator := result.Completed + result.Skipped + result.Stopped; denominator > 0 {
+		completion, skip := float64(result.Completed)*100/float64(denominator), float64(result.Skipped)*100/float64(denominator)
+		result.CompletionRate, result.SkipRate = &completion, &skip
+		result.AverageSessionSeconds = attemptSeconds / denominator
+	}
+	if result.StreakDays, err = r.currentListeningStreak(ctx, now); err != nil {
+		return nil, err
 	}
 	if bounded {
 		windowDays := 7
@@ -139,6 +255,9 @@ func (r *listeningRepository) GetInsights(ctx context.Context, period domain.Lis
 		COALESCE(SUM(file_size), 0)
 		FROM tracks`).Scan(&result.LibraryTracks, &result.LibraryAlbums, &result.LibraryArtists, &result.LibraryPlaylists, &result.LibraryBytes); err != nil {
 		return nil, fmt.Errorf("read library summary: %w", err)
+	}
+	if result.LibraryGrowth, err = r.libraryGrowth(ctx, period, now); err != nil {
+		return nil, err
 	}
 
 	activitySQL := `SELECT local_date AS date, SUM(listened_seconds) AS listened_seconds FROM daily_track_listening_stats ` + where + ` GROUP BY local_date ORDER BY local_date`
@@ -212,6 +331,95 @@ func (r *listeningRepository) GetInsights(ctx context.Context, period domain.Lis
 		return nil, fmt.Errorf("read top tracks: %w", err)
 	}
 	return result, nil
+}
+
+func (r *listeningRepository) currentListeningStreak(ctx context.Context, now time.Time) (int, error) {
+	today := now.In(time.Local)
+	var dates []string
+	if err := r.db.SelectContext(ctx, &dates, `SELECT local_date FROM daily_track_listening_stats WHERE local_date <= ? GROUP BY local_date HAVING SUM(listened_seconds) > 0 ORDER BY local_date DESC`, today.Format("2006-01-02")); err != nil {
+		return 0, fmt.Errorf("read listening streak dates: %w", err)
+	}
+
+	activeDates := make(map[string]struct{}, len(dates))
+	for _, date := range dates {
+		activeDates[date] = struct{}{}
+	}
+	if _, listenedToday := activeDates[today.Format("2006-01-02")]; !listenedToday {
+		today = today.AddDate(0, 0, -1)
+	}
+
+	streak := 0
+	for {
+		if _, listened := activeDates[today.Format("2006-01-02")]; !listened {
+			return streak, nil
+		}
+		streak++
+		today = today.AddDate(0, 0, -1)
+	}
+}
+
+func (r *listeningRepository) libraryGrowth(ctx context.Context, period domain.ListeningRange, now time.Time) ([]domain.AnalyticsLibraryGrowthPoint, error) {
+	localNow := now.In(time.Local)
+	if period == domain.ListeningRangeAll {
+		var rows []struct {
+			Date       string `db:"date"`
+			TrackCount int    `db:"track_count"`
+		}
+		if err := r.db.SelectContext(ctx, &rows, `SELECT strftime('%Y', created_at, 'localtime') AS date, COUNT(*) AS track_count FROM tracks GROUP BY date ORDER BY date`); err != nil {
+			return nil, fmt.Errorf("read yearly library growth: %w", err)
+		}
+		if len(rows) == 0 {
+			return []domain.AnalyticsLibraryGrowthPoint{}, nil
+		}
+		byYear := make(map[int]int, len(rows))
+		firstYear := localNow.Year()
+		for _, row := range rows {
+			parsed, err := time.Parse("2006", row.Date)
+			if err != nil {
+				return nil, fmt.Errorf("parse library growth year %q: %w", row.Date, err)
+			}
+			year := parsed.Year()
+			byYear[year] = row.TrackCount
+			if year < firstYear {
+				firstYear = year
+			}
+		}
+		growth := make([]domain.AnalyticsLibraryGrowthPoint, 0, localNow.Year()-firstYear+1)
+		total := 0
+		for year := firstYear; year <= localNow.Year(); year++ {
+			total += byYear[year]
+			growth = append(growth, domain.AnalyticsLibraryGrowthPoint{Date: fmt.Sprintf("%04d", year), TrackCount: total})
+		}
+		return growth, nil
+	}
+
+	start, _, err := periodStart(period, localNow)
+	if err != nil {
+		return nil, err
+	}
+	end := time.Date(localNow.Year(), localNow.Month(), localNow.Day()+1, 0, 0, 0, 0, time.Local)
+	var base int
+	if err := r.db.GetContext(ctx, &base, `SELECT COUNT(*) FROM tracks WHERE created_at < ?`, start); err != nil {
+		return nil, fmt.Errorf("read library growth baseline: %w", err)
+	}
+	var rows []struct {
+		Date       string `db:"date"`
+		TrackCount int    `db:"track_count"`
+	}
+	if err := r.db.SelectContext(ctx, &rows, `SELECT date(created_at, 'localtime') AS date, COUNT(*) AS track_count FROM tracks WHERE created_at >= ? AND created_at < ? GROUP BY date ORDER BY date`, start, end); err != nil {
+		return nil, fmt.Errorf("read daily library growth: %w", err)
+	}
+	byDate := make(map[string]int, len(rows))
+	for _, row := range rows {
+		byDate[row.Date] = row.TrackCount
+	}
+	growth := make([]domain.AnalyticsLibraryGrowthPoint, 0, int(end.Sub(start).Hours()/24))
+	for day := start; day.Before(end); day = day.AddDate(0, 0, 1) {
+		date := day.Format("2006-01-02")
+		base += byDate[date]
+		growth = append(growth, domain.AnalyticsLibraryGrowthPoint{Date: date, TrackCount: base})
+	}
+	return growth, nil
 }
 
 func classifyQuality(format, codec string, bitDepth, sampleRate int) string {

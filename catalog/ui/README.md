@@ -320,8 +320,22 @@ measurement current and is disconnected on unmount.
 `HomeView` owns the Overview/Analytics tab selection and delegates to
 `components/home/HomeOverview.vue` and `HomeAnalysis.vue`. Analytics loads
 `AnalyticsService.GetInsights('7d' | '30d' | 'all')`, supports request
-cancellation on period changes/unmount, and renders activity, audio-quality,
-genre, top-artist, and top-track summaries. Top tracks are hydrated through
+cancellation on period changes/unmount, and renders cumulative library growth,
+listening activity, audio-quality, genre, top-artist, and top-track summaries.
+It also shows a Playback Outcomes donut for the selected range, splitting
+completed, skipped, and stopped attempts; the three slices total 100% and the
+card remains unavailable until at least one playback attempt has ended. The
+same row includes a one-column Average Session card, calculated from actual
+audio-running seconds per finalized playback attempt.
+Library growth is an SVG ECharts area chart with a fading primary-color gradient
+inside its chart; the Library Growth and Streak cards themselves intentionally
+do not inherit the current track's artwork surface color.
+7D and 30D use daily points, while All uses yearly points. The total-time card
+shares its row with a one-column current listening-streak card; streak is
+independent of the selected range and is based on local calendar days. Its warm
+flame treatment uses a decorative glow and watermark with a hover-only halo;
+these visuals are hidden from assistive technology and their transitions are
+disabled for `prefers-reduced-motion`. Top tracks are hydrated through
 `LibraryService.GetTracksByIDs` and shown in the virtualized `TrackTable` with
 period-specific `play_count` and the feature-supplied `listened_seconds` column.
 The queue preserves the analytics rank (play count descending, then listened

@@ -1214,13 +1214,26 @@ func TestLoadAndPlay_FiresTrackLoadListener(t *testing.T) {
 	}
 }
 
-type fakeListeningRepository struct{ sessions []domain.ListeningSession }
+type fakeListeningRepository struct {
+	sessions        []domain.ListeningSession
+	attemptStarts   []domain.PlaybackAttempt
+	attemptFinishes []domain.PlaybackAttempt
+}
 
 func (r *fakeListeningRepository) RecordSession(_ context.Context, session domain.ListeningSession) error {
 	r.sessions = append(r.sessions, session)
 	return nil
 }
 func (r *fakeListeningRepository) CleanupSessions(context.Context, time.Time) error { return nil }
+func (r *fakeListeningRepository) RecordAttemptStart(_ context.Context, attempt domain.PlaybackAttempt) error {
+	r.attemptStarts = append(r.attemptStarts, attempt)
+	return nil
+}
+func (r *fakeListeningRepository) FinalizeAttempt(_ context.Context, attempt domain.PlaybackAttempt) error {
+	r.attemptFinishes = append(r.attemptFinishes, attempt)
+	return nil
+}
+func (r *fakeListeningRepository) RecoverOpenAttempts(context.Context) error { return nil }
 func (r *fakeListeningRepository) GetInsights(context.Context, domain.ListeningRange, time.Time) (*domain.AnalyticsInsights, error) {
 	return nil, nil
 }
@@ -1258,6 +1271,25 @@ func TestListeningSessionFlushesPlayedTime(t *testing.T) {
 	}
 	if !repo.sessions[0].QualifiedPlay || repo.sessions[0].ListenedSeconds < 10 {
 		t.Fatalf("unexpected session: %#v", repo.sessions[0])
+	}
+}
+
+func TestPlaybackAttemptPersistsStartAndStopWithoutSplittingOnPause(t *testing.T) {
+	repo := &fakeListeningRepository{}
+	s := &PlayerService{logger: slog.Default(), listeningRepo: repo}
+	track := &domain.TrackDTO{Track: domain.Track{ID: "track-1"}}
+	s.startPlaybackAttempt(track, 42)
+	s.mu.Lock()
+	s.attemptActiveAt = time.Now().Add(-12 * time.Second)
+	s.mu.Unlock()
+	s.pausePlaybackAttempt()
+	s.resumePlaybackAttempt(track, 42)
+	s.finishPlaybackAttempt(context.Background(), domain.PlaybackEndStopped)
+	if len(repo.attemptStarts) != 1 || len(repo.attemptFinishes) != 1 {
+		t.Fatalf("attempt lifecycle = starts:%d finishes:%d", len(repo.attemptStarts), len(repo.attemptFinishes))
+	}
+	if repo.attemptStarts[0].StartPositionSeconds != 42 || repo.attemptFinishes[0].EndReason != domain.PlaybackEndStopped {
+		t.Fatalf("unexpected attempts: %#v %#v", repo.attemptStarts[0], repo.attemptFinishes[0])
 	}
 }
 
