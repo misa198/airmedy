@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ChevronLeft, ChevronRight, Users } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { buildArtworkUrl, formatTotalDuration } from '@airmedy/utils'
+import type { Artist } from '../../../bindings/airmedy/internal/domain/models'
+import * as LibraryService from '../../../bindings/airmedy/internal/infra/wails/libraryservice'
+import ArtistCard from '@/components/ArtistCard.vue'
 import LazyImg from '@/components/LazyImg.vue'
 
 const props = defineProps<{
@@ -16,7 +19,9 @@ const carouselRef = ref<HTMLElement | null>(null)
 const columnsPerPage = ref(4)
 const currentPage = ref(0)
 const transitionName = ref('slide-next')
+const artistsByID = shallowRef(new Map<string, Artist>())
 let resizeObserver: ResizeObserver | null = null
+let artistsRequest: ReturnType<typeof LibraryService.GetAllArtists> | null = null
 
 const itemsPerPage = computed(() => columnsPerPage.value)
 const totalPages = computed(() => Math.ceil(props.artists.length / itemsPerPage.value))
@@ -27,6 +32,36 @@ const paginatedArtists = computed(() => {
 })
 
 const formatTime = (seconds: number) => formatTotalDuration(seconds, t)
+
+const getArtist = (id: string) => artistsByID.value.get(id)
+
+async function loadArtistArtworkData() {
+  artistsRequest?.cancel()
+  const ids = new Set(props.artists.map(artist => artist.id))
+  if (!ids.size) {
+    artistsByID.value = new Map()
+    return
+  }
+
+  const pending = LibraryService.GetAllArtists()
+  artistsRequest = pending
+  try {
+    const artists = await pending
+    if (artistsRequest !== pending) return
+    artistsByID.value = new Map(
+      artists
+        .filter((artist): artist is Artist => artist !== null && ids.has(artist.id))
+        .map(artist => [artist.id, artist]),
+    )
+  } catch (err) {
+    if (artistsRequest === pending) {
+      artistsByID.value = new Map()
+      console.error('Failed to load top artist artwork data:', err)
+    }
+  } finally {
+    if (artistsRequest === pending) artistsRequest = null
+  }
+}
 
 function updateColumns() {
   if (!carouselRef.value) return
@@ -48,6 +83,7 @@ function previous() {
 }
 
 watch(() => props.artists.length, () => { currentPage.value = 0 })
+watch(() => props.artists.map(artist => artist.id).join(','), loadArtistArtworkData, { immediate: true })
 watch(totalPages, (pages) => {
   if (currentPage.value >= pages && pages > 0) currentPage.value = pages - 1
 })
@@ -60,6 +96,10 @@ onMounted(() => {
   }
 })
 onUnmounted(() => resizeObserver?.disconnect())
+onUnmounted(() => {
+  artistsRequest?.cancel()
+  artistsRequest = null
+})
 </script>
 
 <template>
@@ -76,7 +116,8 @@ onUnmounted(() => resizeObserver?.disconnect())
         <div :key="currentPage" class="grid gap-4" :style="{ gridTemplateColumns: `repeat(${columnsPerPage}, minmax(0, 1fr))` }">
           <button v-for="artist in paginatedArtists" :key="artist.id" type="button" class="group min-w-0 text-center cursor-pointer" @click="router.push(`/artists/${artist.id}`)">
             <div class="relative mx-auto aspect-square w-full max-w-32 overflow-hidden rounded-full border border-[var(--border-glass)] bg-white/[0.04] transition-all duration-300 group-hover:brightness-110">
-              <LazyImg v-if="artist.artwork_key" :src="buildArtworkUrl(artist.artwork_key, 'md')" :alt="artist.name" class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+              <ArtistCard v-if="getArtist(artist.id)" :key="artist.id" :artist="getArtist(artist.id)!" variant="avatar" />
+              <LazyImg v-else-if="artist.artwork_key" :src="buildArtworkUrl(artist.artwork_key, 'md')" :alt="artist.name" class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
               <Users v-else class="absolute inset-0 m-auto h-9 w-9 text-[color:var(--text-muted)]" />
             </div>
             <p class="mt-3 truncate text-sm font-medium">{{ artist.name }}</p>
