@@ -329,6 +329,16 @@ daily play count only on the session's ending day when the playback threshold
 was reached. `listening_sessions` is retained for 180 days; aggregates remain
 available for all-time insights.
 
+`ListeningRepository.GetInsights` also returns `streak_days`: the current
+consecutive local-calendar-day listening streak, beginning today when active or
+yesterday otherwise; a second missed day resets it to zero. It is calculated
+from all listening aggregates, independently of the selected insight range.
+It also returns `library_growth`, calculated
+from the indexed `tracks.created_at` column. Bounded periods first count tracks
+before the requested range and aggregate additions only within that range, then
+build the cumulative daily series in memory. All-time insights aggregate once
+per local calendar year. This avoids a full-library count for every chart point.
+
 ### EQ Tables
 
 ```sql

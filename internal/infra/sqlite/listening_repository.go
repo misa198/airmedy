@@ -105,7 +105,7 @@ func (r *listeningRepository) GetInsights(ctx context.Context, period domain.Lis
 	if err != nil {
 		return nil, err
 	}
-	result := &domain.AnalyticsInsights{Activity: []domain.AnalyticsPoint{}, Quality: []domain.AnalyticsQualityBucket{}, Genres: []domain.AnalyticsGenre{}, TopArtists: []domain.AnalyticsArtist{}, TopTracks: []domain.AnalyticsTrack{}}
+	result := &domain.AnalyticsInsights{LibraryGrowth: []domain.AnalyticsLibraryGrowthPoint{}, Activity: []domain.AnalyticsPoint{}, Quality: []domain.AnalyticsQualityBucket{}, Genres: []domain.AnalyticsGenre{}, TopArtists: []domain.AnalyticsArtist{}, TopTracks: []domain.AnalyticsTrack{}}
 	where, args := "", []any{}
 	if bounded {
 		where, args = "WHERE local_date >= ?", []any{start.Format("2006-01-02")}
@@ -115,6 +115,9 @@ func (r *listeningRepository) GetInsights(ctx context.Context, period domain.Lis
 	}
 	if err := r.db.GetContext(ctx, &result.Plays, `SELECT COALESCE(SUM(play_count), 0) FROM daily_track_listening_stats `+where, args...); err != nil {
 		return nil, fmt.Errorf("sum listening plays: %w", err)
+	}
+	if result.StreakDays, err = r.currentListeningStreak(ctx, now); err != nil {
+		return nil, err
 	}
 	if bounded {
 		windowDays := 7
@@ -139,6 +142,9 @@ func (r *listeningRepository) GetInsights(ctx context.Context, period domain.Lis
 		COALESCE(SUM(file_size), 0)
 		FROM tracks`).Scan(&result.LibraryTracks, &result.LibraryAlbums, &result.LibraryArtists, &result.LibraryPlaylists, &result.LibraryBytes); err != nil {
 		return nil, fmt.Errorf("read library summary: %w", err)
+	}
+	if result.LibraryGrowth, err = r.libraryGrowth(ctx, period, now); err != nil {
+		return nil, err
 	}
 
 	activitySQL := `SELECT local_date AS date, SUM(listened_seconds) AS listened_seconds FROM daily_track_listening_stats ` + where + ` GROUP BY local_date ORDER BY local_date`
@@ -212,6 +218,95 @@ func (r *listeningRepository) GetInsights(ctx context.Context, period domain.Lis
 		return nil, fmt.Errorf("read top tracks: %w", err)
 	}
 	return result, nil
+}
+
+func (r *listeningRepository) currentListeningStreak(ctx context.Context, now time.Time) (int, error) {
+	today := now.In(time.Local)
+	var dates []string
+	if err := r.db.SelectContext(ctx, &dates, `SELECT local_date FROM daily_track_listening_stats WHERE local_date <= ? GROUP BY local_date HAVING SUM(listened_seconds) > 0 ORDER BY local_date DESC`, today.Format("2006-01-02")); err != nil {
+		return 0, fmt.Errorf("read listening streak dates: %w", err)
+	}
+
+	activeDates := make(map[string]struct{}, len(dates))
+	for _, date := range dates {
+		activeDates[date] = struct{}{}
+	}
+	if _, listenedToday := activeDates[today.Format("2006-01-02")]; !listenedToday {
+		today = today.AddDate(0, 0, -1)
+	}
+
+	streak := 0
+	for {
+		if _, listened := activeDates[today.Format("2006-01-02")]; !listened {
+			return streak, nil
+		}
+		streak++
+		today = today.AddDate(0, 0, -1)
+	}
+}
+
+func (r *listeningRepository) libraryGrowth(ctx context.Context, period domain.ListeningRange, now time.Time) ([]domain.AnalyticsLibraryGrowthPoint, error) {
+	localNow := now.In(time.Local)
+	if period == domain.ListeningRangeAll {
+		var rows []struct {
+			Date       string `db:"date"`
+			TrackCount int    `db:"track_count"`
+		}
+		if err := r.db.SelectContext(ctx, &rows, `SELECT strftime('%Y', created_at, 'localtime') AS date, COUNT(*) AS track_count FROM tracks GROUP BY date ORDER BY date`); err != nil {
+			return nil, fmt.Errorf("read yearly library growth: %w", err)
+		}
+		if len(rows) == 0 {
+			return []domain.AnalyticsLibraryGrowthPoint{}, nil
+		}
+		byYear := make(map[int]int, len(rows))
+		firstYear := localNow.Year()
+		for _, row := range rows {
+			parsed, err := time.Parse("2006", row.Date)
+			if err != nil {
+				return nil, fmt.Errorf("parse library growth year %q: %w", row.Date, err)
+			}
+			year := parsed.Year()
+			byYear[year] = row.TrackCount
+			if year < firstYear {
+				firstYear = year
+			}
+		}
+		growth := make([]domain.AnalyticsLibraryGrowthPoint, 0, localNow.Year()-firstYear+1)
+		total := 0
+		for year := firstYear; year <= localNow.Year(); year++ {
+			total += byYear[year]
+			growth = append(growth, domain.AnalyticsLibraryGrowthPoint{Date: fmt.Sprintf("%04d", year), TrackCount: total})
+		}
+		return growth, nil
+	}
+
+	start, _, err := periodStart(period, localNow)
+	if err != nil {
+		return nil, err
+	}
+	end := time.Date(localNow.Year(), localNow.Month(), localNow.Day()+1, 0, 0, 0, 0, time.Local)
+	var base int
+	if err := r.db.GetContext(ctx, &base, `SELECT COUNT(*) FROM tracks WHERE created_at < ?`, start); err != nil {
+		return nil, fmt.Errorf("read library growth baseline: %w", err)
+	}
+	var rows []struct {
+		Date       string `db:"date"`
+		TrackCount int    `db:"track_count"`
+	}
+	if err := r.db.SelectContext(ctx, &rows, `SELECT date(created_at, 'localtime') AS date, COUNT(*) AS track_count FROM tracks WHERE created_at >= ? AND created_at < ? GROUP BY date ORDER BY date`, start, end); err != nil {
+		return nil, fmt.Errorf("read daily library growth: %w", err)
+	}
+	byDate := make(map[string]int, len(rows))
+	for _, row := range rows {
+		byDate[row.Date] = row.TrackCount
+	}
+	growth := make([]domain.AnalyticsLibraryGrowthPoint, 0, int(end.Sub(start).Hours()/24))
+	for day := start; day.Before(end); day = day.AddDate(0, 0, 1) {
+		date := day.Format("2006-01-02")
+		base += byDate[date]
+		growth = append(growth, domain.AnalyticsLibraryGrowthPoint{Date: date, TrackCount: base})
+	}
+	return growth, nil
 }
 
 func classifyQuality(format, codec string, bitDepth, sampleRate int) string {

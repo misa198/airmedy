@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"reflect"
 	"testing"
 	"time"
 
@@ -135,6 +136,121 @@ func TestListeningRepositoryRollsUpSessions(t *testing.T) {
 	}
 	if len(insights.Genres) != 6 || insights.Genres[0].Name != "Genre 1" || !insights.Genres[5].IsOther || insights.Genres[5].ListenedSeconds != 105 {
 		t.Fatalf("unexpected listening genres: %#v", insights.Genres)
+	}
+}
+
+func TestListeningRepositoryReturnsCumulativeLibraryGrowth(t *testing.T) {
+	db, err := NewDB(":memory:", slog.Default())
+	if err != nil {
+		t.Fatalf("NewDB: %v", err)
+	}
+	defer func() { _ = db.Close() }()
+
+	ctx := context.Background()
+	trackRepo := NewTrackRepository(db)
+	now := time.Date(2026, time.July, 24, 15, 0, 0, 0, time.Local)
+	for _, track := range []*domain.Track{
+		{ID: "old", Path: "/music/old.flac", Title: "Old", SortTitle: "Old", Format: "flac", CreatedAt: time.Date(2026, time.July, 15, 12, 0, 0, 0, time.Local)},
+		{ID: "day-19", Path: "/music/day-19.flac", Title: "Day 19", SortTitle: "Day 19", Format: "flac", CreatedAt: time.Date(2026, time.July, 19, 12, 0, 0, 0, time.Local)},
+		{ID: "day-21-a", Path: "/music/day-21-a.flac", Title: "Day 21 A", SortTitle: "Day 21 A", Format: "flac", CreatedAt: time.Date(2026, time.July, 21, 12, 0, 0, 0, time.Local)},
+		{ID: "day-21-b", Path: "/music/day-21-b.flac", Title: "Day 21 B", SortTitle: "Day 21 B", Format: "flac", CreatedAt: time.Date(2026, time.July, 21, 13, 0, 0, 0, time.Local)},
+	} {
+		if err := trackRepo.Save(ctx, track); err != nil {
+			t.Fatalf("save track %q: %v", track.ID, err)
+		}
+	}
+
+	repo := NewListeningRepository(db)
+	insights, err := repo.GetInsights(ctx, domain.ListeningRange7D, now)
+	if err != nil {
+		t.Fatalf("get 7d insights: %v", err)
+	}
+	if got, want := insights.LibraryGrowth, []domain.AnalyticsLibraryGrowthPoint{
+		{Date: "2026-07-18", TrackCount: 1}, {Date: "2026-07-19", TrackCount: 2},
+		{Date: "2026-07-20", TrackCount: 2}, {Date: "2026-07-21", TrackCount: 4},
+		{Date: "2026-07-22", TrackCount: 4}, {Date: "2026-07-23", TrackCount: 4},
+		{Date: "2026-07-24", TrackCount: 4},
+	}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("7d library growth = %#v, want %#v", got, want)
+	}
+
+	insights, err = repo.GetInsights(ctx, domain.ListeningRange30D, now)
+	if err != nil {
+		t.Fatalf("get 30d insights: %v", err)
+	}
+	if len(insights.LibraryGrowth) != 30 || insights.LibraryGrowth[0].Date != "2026-06-25" || insights.LibraryGrowth[len(insights.LibraryGrowth)-1].TrackCount != 4 {
+		t.Fatalf("unexpected 30d library growth: %#v", insights.LibraryGrowth)
+	}
+
+	if err := trackRepo.Save(ctx, &domain.Track{ID: "year-2024", Path: "/music/year-2024.flac", Title: "2024", SortTitle: "2024", Format: "flac", CreatedAt: time.Date(2024, time.June, 1, 12, 0, 0, 0, time.Local)}); err != nil {
+		t.Fatalf("save 2024 track: %v", err)
+	}
+	if err := trackRepo.Save(ctx, &domain.Track{ID: "year-2025", Path: "/music/year-2025.flac", Title: "2025", SortTitle: "2025", Format: "flac", CreatedAt: time.Date(2025, time.June, 1, 12, 0, 0, 0, time.Local)}); err != nil {
+		t.Fatalf("save 2025 track: %v", err)
+	}
+	insights, err = repo.GetInsights(ctx, domain.ListeningRangeAll, now)
+	if err != nil {
+		t.Fatalf("get all insights: %v", err)
+	}
+	if got, want := insights.LibraryGrowth, []domain.AnalyticsLibraryGrowthPoint{
+		{Date: "2024", TrackCount: 1}, {Date: "2025", TrackCount: 2}, {Date: "2026", TrackCount: 6},
+	}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("all library growth = %#v, want %#v", got, want)
+	}
+}
+
+func TestListeningRepositoryReturnsCurrentListeningStreak(t *testing.T) {
+	db, err := NewDB(":memory:", slog.Default())
+	if err != nil {
+		t.Fatalf("NewDB: %v", err)
+	}
+	defer func() { _ = db.Close() }()
+
+	ctx := context.Background()
+	if err := NewTrackRepository(db).Save(ctx, &domain.Track{ID: "streak-track", Path: "/music/streak.flac", Title: "Streak", SortTitle: "Streak", Format: "flac"}); err != nil {
+		t.Fatalf("save track: %v", err)
+	}
+	repo := NewListeningRepository(db)
+	now := time.Date(2026, time.July, 24, 15, 0, 0, 0, time.Local)
+	seedStreak := func(offsets ...int) {
+		t.Helper()
+		if _, err := db.ExecContext(ctx, `DELETE FROM daily_track_listening_stats`); err != nil {
+			t.Fatalf("clear listening stats: %v", err)
+		}
+		for _, offset := range offsets {
+			if _, err := db.ExecContext(ctx, `INSERT INTO daily_track_listening_stats (local_date, track_id, listened_seconds) VALUES (?, 'streak-track', 60)`, now.AddDate(0, 0, offset).Format("2006-01-02")); err != nil {
+				t.Fatalf("seed listening stat for offset %d: %v", offset, err)
+			}
+		}
+	}
+
+	seedStreak(0, -1, -2, -3, -4, -5, -6, -7, -8, -9)
+	for _, period := range []domain.ListeningRange{domain.ListeningRange7D, domain.ListeningRangeAll} {
+		insights, err := repo.GetInsights(ctx, period, now)
+		if err != nil {
+			t.Fatalf("get insights for %s: %v", period, err)
+		}
+		if insights.StreakDays != 10 {
+			t.Fatalf("streak for %s = %d, want 10", period, insights.StreakDays)
+		}
+	}
+
+	seedStreak(-1, -2)
+	insights, err := repo.GetInsights(ctx, domain.ListeningRange7D, now)
+	if err != nil {
+		t.Fatalf("get insights with yesterday streak: %v", err)
+	}
+	if insights.StreakDays != 2 {
+		t.Fatalf("yesterday streak = %d, want 2", insights.StreakDays)
+	}
+
+	seedStreak(-2)
+	insights, err = repo.GetInsights(ctx, domain.ListeningRange7D, now)
+	if err != nil {
+		t.Fatalf("get insights with broken streak: %v", err)
+	}
+	if insights.StreakDays != 0 {
+		t.Fatalf("broken streak = %d, want 0", insights.StreakDays)
 	}
 }
 

@@ -26,6 +26,11 @@ type AnalyticsPoint struct {
 	ListenedSeconds int    `json:"listened_seconds" db:"listened_seconds"`
 }
 
+type AnalyticsLibraryGrowthPoint struct {
+	Date       string `json:"date" db:"date"`
+	TrackCount int    `json:"track_count" db:"track_count"`
+}
+
 type AnalyticsQualityBucket struct {
 	Kind  string `json:"kind" db:"kind"`
 	Count int    `json:"count" db:"count"`
@@ -53,19 +58,21 @@ type AnalyticsTrack struct {
 }
 
 type AnalyticsInsights struct {
-	ListenedSeconds  int                      `json:"listened_seconds"`
-	Plays            int                      `json:"plays"`
-	ChangePercent    *float64                 `json:"change_percent,omitempty"`
-	LibraryTracks    int                      `json:"library_tracks"`
-	LibraryAlbums    int                      `json:"library_albums"`
-	LibraryArtists   int                      `json:"library_artists"`
-	LibraryPlaylists int                      `json:"library_playlists"`
-	LibraryBytes     int64                    `json:"library_bytes"`
-	Activity         []AnalyticsPoint         `json:"activity"`
-	Quality          []AnalyticsQualityBucket `json:"quality"`
-	Genres           []AnalyticsGenre         `json:"genres"`
-	TopArtists       []AnalyticsArtist        `json:"top_artists"`
-	TopTracks        []AnalyticsTrack         `json:"top_tracks"`
+	ListenedSeconds  int                           `json:"listened_seconds"`
+	Plays            int                           `json:"plays"`
+	StreakDays       int                           `json:"streak_days"`
+	ChangePercent    *float64                      `json:"change_percent,omitempty"`
+	LibraryTracks    int                           `json:"library_tracks"`
+	LibraryAlbums    int                           `json:"library_albums"`
+	LibraryArtists   int                           `json:"library_artists"`
+	LibraryPlaylists int                           `json:"library_playlists"`
+	LibraryBytes     int64                         `json:"library_bytes"`
+	LibraryGrowth    []AnalyticsLibraryGrowthPoint `json:"library_growth"`
+	Activity         []AnalyticsPoint              `json:"activity"`
+	Quality          []AnalyticsQualityBucket      `json:"quality"`
+	Genres           []AnalyticsGenre              `json:"genres"`
+	TopArtists       []AnalyticsArtist             `json:"top_artists"`
+	TopTracks        []AnalyticsTrack              `json:"top_tracks"`
 }
 
 type ListeningRepository interface {
