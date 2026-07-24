@@ -13,6 +13,9 @@ vi.mock('vue-i18n', () => ({
       'analytics.no_listening_data': 'No listening data for this period yet.',
       'analytics.no_audio_quality': 'No audio quality data yet.',
       'analytics.no_library_growth': 'No tracks in your library yet.',
+      'analytics.average_session': 'Average Session',
+      'analytics.per_playback_attempt': 'Per playback attempt',
+      'common.min': 'min',
     })[key] ?? key,
   }),
 }))
