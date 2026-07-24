@@ -1,0 +1,1 @@
+ALTER TABLE daily_playback_attempt_stats DROP COLUMN listened_seconds;

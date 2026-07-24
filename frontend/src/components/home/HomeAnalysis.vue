@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, shallowRef, watch } from 'vue'
-import { AudioLines, BarChart3, Clock, Disc, Flame, HardDrive, ListMusic, Music, RefreshCw, UserRound } from '@lucide/vue'
+import { AudioLines, BarChart3, Clock, Disc, Flame, HardDrive, ListMusic, Music, RefreshCw, Timer, UserRound } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { formatTotalDuration } from '@airmedy/utils'
 import * as AnalyticsService from '../../../bindings/airmedy/internal/infra/wails/analyticsservice'
@@ -15,6 +15,7 @@ import AudioQualityChart from './AudioQualityChart.vue'
 import GenreDistributionChart from './GenreDistributionChart.vue'
 import ListeningActivityChart from './ListeningActivityChart.vue'
 import LibraryGrowthChart from './LibraryGrowthChart.vue'
+import PlaybackOutcomesChart from './PlaybackOutcomesChart.vue'
 
 const { t, locale } = useI18n()
 const playerStore = usePlayerStore()
@@ -151,7 +152,6 @@ onUnmounted(() => {
           <article
             data-testid="analytics-library-growth-card"
             class="@container relative flex min-h-[17rem] flex-col overflow-hidden rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-6 backdrop-blur-[30px] @5xl:col-span-3">
-            <div class="pointer-events-none absolute inset-0 bg-gradient-to-br from-[var(--dynamic-surface)] to-transparent opacity-70" />
             <div class="relative mb-6 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
               <HardDrive class="h-4 w-4" />{{ t('analytics.library_growth') }}
             </div>
@@ -232,7 +232,7 @@ onUnmounted(() => {
           <article
             data-testid="analytics-total-time-card"
             class="@container relative flex min-h-[17rem] flex-col overflow-hidden rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-6 backdrop-blur-[30px] @5xl:col-span-4">
-            <div class="pointer-events-none absolute inset-0 bg-gradient-to-br from-[var(--dynamic-surface)] to-transparent opacity-70" />
+            <div class="pointer-events-none absolute inset-0] to-transparent opacity-70" />
             <div class="relative mb-6 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
               <Clock class="h-4 w-4" />{{ t('analytics.total_time') }}
             </div>
@@ -253,13 +253,14 @@ onUnmounted(() => {
           </article>
           <article
             data-testid="analytics-streak-card"
-            class="relative flex min-h-[17rem] flex-col overflow-hidden rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-6 backdrop-blur-[30px] @5xl:col-span-1">
-            <div class="pointer-events-none absolute inset-0 bg-gradient-to-br from-[var(--dynamic-surface)] to-transparent opacity-70" />
+            class="streak-card group relative flex min-h-[17rem] flex-col overflow-hidden rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-6 backdrop-blur-[30px] @5xl:col-span-1">
+            <div data-testid="analytics-streak-glow" aria-hidden="true" class="streak-glow pointer-events-none absolute -right-16 -bottom-16 h-52 w-52 rounded-full" />
+            <Flame aria-hidden="true" class="streak-watermark pointer-events-none absolute -right-7 -bottom-8 h-40 w-40" stroke-width="1" />
             <div class="relative mb-6 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
               <Flame class="h-4 w-4" />{{ t('analytics.streak') }}
             </div>
             <div class="relative flex flex-1 flex-col justify-center">
-              <p class="text-4xl font-bold tracking-[-0.03em]">{{ formatNumber(insights.streak_days) }}</p>
+              <p class="streak-value text-4xl font-bold tracking-[-0.03em]">{{ formatNumber(insights.streak_days) }}</p>
               <p class="mt-2 text-xs text-[color:var(--text-muted)]">{{ t('analytics.days') }}</p>
             </div>
           </article>
@@ -290,8 +291,37 @@ onUnmounted(() => {
                 <p class="text-sm">{{ t('analytics.no_genres') }}</p>
               </div>
             </article>
+            <article data-testid="analytics-playback-outcomes-card"
+              class="@container flex min-h-[17rem] flex-col rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px] @5xl:col-span-2">
+              <div class="mb-4 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
+                <Music class="h-4 w-4" />{{ t('analytics.playback_outcomes') }}
+              </div>
+              <div v-if="(insights.completed + insights.skipped + insights.stopped) > 0" class="flex flex-1 flex-col items-center gap-5 @md:flex-row @md:gap-6">
+                <PlaybackOutcomesChart :completed="insights.completed" :skipped="insights.skipped" :stopped="insights.stopped" />
+                <div class="min-w-0 flex-1 space-y-2.5 text-xs">
+                  <div v-for="item in [{ key: 'completed', value: insights.completed }, { key: 'skipped', value: insights.skipped }, { key: 'stopped', value: insights.stopped }]" :key="item.key" class="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3">
+                    <span class="truncate text-[color:var(--text-muted)]">{{ t(`analytics.outcome_${item.key}`) }}</span>
+                    <span class="tabular-nums text-[color:var(--text-muted)]">{{ formatNumber(item.value) }}</span>
+                    <span class="w-9 text-right tabular-nums text-[color:var(--text-muted)]">{{ Math.round(item.value / (insights.completed + insights.skipped + insights.stopped) * 100) }}%</span>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="flex flex-1 items-center justify-center text-sm text-[color:var(--text-muted)]">{{ t('analytics.no_playback_outcomes') }}</div>
+            </article>
+            <article data-testid="analytics-average-session-card"
+              class="flex min-h-[17rem] flex-col rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px] @5xl:col-span-1">
+              <div class="flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
+                <Timer class="h-4 w-4" />{{ t('analytics.average_session') }}
+              </div>
+              <div class="flex flex-1 flex-col justify-center">
+                <p class="text-3xl font-semibold tracking-[-0.03em]">{{ insights.average_session_seconds ? formatTime(insights.average_session_seconds) : '—' }}</p>
+                <p class="mt-2 text-xs text-[color:var(--text-muted)]">{{ t('analytics.per_playback_attempt') }}</p>
+              </div>
+            </article>
+          </div>
+          <div class="grid gap-4">
             <article
-              class="flex min-h-[17rem] flex-col rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px] @5xl:col-span-3">
+              class="flex min-h-[17rem] flex-col rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px]">
               <h2 class="mb-4 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
                 <Music class="h-4 w-4" />{{ t('analytics.top_tracks') }}
               </h2>
@@ -317,3 +347,51 @@ onUnmounted(() => {
     </div>
   </section>
 </template>
+
+<style scoped>
+.streak-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.streak-glow {
+  background: radial-gradient(circle, rgb(251 146 60 / 0.28), rgb(244 63 94 / 0.1) 42%, transparent 70%);
+  filter: blur(12px);
+  opacity: 0.7;
+  transform: scale(0.9);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.streak-watermark {
+  color: rgb(251 146 60 / 0.12);
+  transform: rotate(-12deg);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.streak-card:hover {
+  border-color: rgb(251 146 60 / 0.3);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 0 32px rgb(244 63 94 / 0.12);
+  transform: scale(1.02);
+}
+
+.streak-card:hover .streak-glow {
+  opacity: 1;
+  transform: scale(1.12);
+}
+
+.streak-card:hover .streak-watermark {
+  color: rgb(253 186 116 / 0.2);
+  transform: rotate(-5deg) scale(1.04);
+}
+
+.streak-card:hover .streak-value {
+  text-shadow: 0 0 24px rgb(251 146 60 / 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .streak-card,
+  .streak-glow,
+  .streak-watermark {
+    transition: none;
+  }
+}
+</style>

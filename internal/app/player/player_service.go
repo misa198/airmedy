@@ -17,6 +17,7 @@ import (
 	"airmedy/internal/domain"
 	"airmedy/internal/infra/artwork"
 
+	"github.com/google/uuid"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"go.uber.org/fx"
 )
@@ -49,6 +50,8 @@ type PlayerService struct {
 	listeningActiveAt     time.Time
 	listeningSeconds      int
 	listeningQualified    bool
+	playbackAttempt       *domain.PlaybackAttempt
+	attemptActiveAt       time.Time
 	listeningWrites       chan listeningWrite
 	listeningWritesDone   chan struct{}
 	listeningWritesMu     sync.Mutex
@@ -86,10 +89,12 @@ type PlayerService struct {
 }
 
 type listeningWrite struct {
-	track     *domain.TrackDTO
-	started   time.Time
-	seconds   int
-	qualified bool
+	track           *domain.TrackDTO
+	started         time.Time
+	seconds         int
+	qualified       bool
+	attemptStart    *domain.PlaybackAttempt
+	attemptFinalize *domain.PlaybackAttempt
 }
 
 const listeningWriteQueueSize = 64
@@ -152,6 +157,11 @@ func NewPlayerService(
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
+			if s.listeningRepo != nil {
+				if err := s.listeningRepo.RecoverOpenAttempts(ctx); err != nil {
+					s.logger.Warn("failed to recover open playback attempts", "error", err)
+				}
+			}
 			s.restoreState(ctx)
 			if s.listeningRepo != nil {
 				go func() {
@@ -177,6 +187,7 @@ func (s *PlayerService) shutdown(ctx context.Context) error {
 	s.stopPositionTicker()
 	s.saveState(ctx)
 	s.flushListening(ctx)
+	s.finishPlaybackAttempt(context.Background(), domain.PlaybackEndStopped)
 	s.stopListeningWriter(ctx)
 	if closer, ok := s.player.(interface{ Close() }); ok {
 		closer.Close()
@@ -301,6 +312,7 @@ func (s *PlayerService) Play() error {
 	err := s.player.Play()
 	if err == nil {
 		s.resumeListening()
+		s.resumePlaybackAttempt(ct, s.player.GetStatus().Position)
 		s.startPositionTicker()
 		// Prime the pre-queued next track if it isn't already. A session-restored
 		// track is Loaded but never pre-enqueued, so without this a plain resume
@@ -334,6 +346,7 @@ func (s *PlayerService) Pause() error {
 		// Pause the native player first: a failed native pause must not stop the
 		// in-memory listening clock while audio is still playing.
 		s.pauseListening()
+		s.pausePlaybackAttempt()
 		s.flushListening(context.Background())
 		s.stopPositionTicker()
 		s.setNowPlayingPlaybackState(false)
@@ -373,6 +386,7 @@ func (s *PlayerService) Stop() error {
 	s.flushListening(context.Background())
 	err := s.player.Stop()
 	if err == nil {
+		s.finishPlaybackAttempt(context.Background(), domain.PlaybackEndStopped)
 		s.stopPositionTicker()
 		if s.nowPlaying != nil {
 			s.nowPlaying.ClearNowPlaying()
@@ -814,9 +828,14 @@ func (s *PlayerService) ReapplyNormalization() {
 // Internal helpers
 
 func (s *PlayerService) loadAndPlay(track *domain.TrackDTO) error {
+	return s.loadAndPlayWithEndReason(track, domain.PlaybackEndSkipped)
+}
+
+func (s *PlayerService) loadAndPlayWithEndReason(track *domain.TrackDTO, previousReason domain.PlaybackEndReason) error {
 	// A hard load supersedes any in-flight crossfade.
 	s.snapActiveCrossfade()
 	s.flushListening(context.Background())
+	s.finishPlaybackAttempt(context.Background(), previousReason)
 	s.stopPositionTicker()
 
 	// Clear any stale pre-queue — hard load supersedes gapless pre-loading.
@@ -846,6 +865,7 @@ func (s *PlayerService) loadAndPlay(track *domain.TrackDTO) error {
 		return err
 	}
 	s.startListening(track)
+	s.startPlaybackAttempt(track, 0)
 
 	s.mu.Lock()
 	s.currentTrack = track
@@ -903,6 +923,7 @@ func fallbackTitle(path string) string {
 // to track (gapless path). Does NOT call player.Load/Play.
 func (s *PlayerService) transitionToTrack(track *domain.TrackDTO) {
 	s.flushListening(context.Background())
+	s.finishPlaybackAttempt(context.Background(), domain.PlaybackEndCompleted)
 	s.mu.Lock()
 	s.currentTrack = track
 	s.currentTheme = nil
@@ -912,6 +933,7 @@ func (s *PlayerService) transitionToTrack(track *domain.TrackDTO) {
 	delete(s.posConfirmed, track.ID)
 	s.mu.Unlock()
 	s.startListening(track)
+	s.startPlaybackAttempt(track, 0)
 
 	if s.normSvc != nil {
 		s.normSvc.ApplyToPlayer(context.Background(), track, s.queue.PeekNext())
@@ -1326,6 +1348,60 @@ func (s *PlayerService) startListening(track *domain.TrackDTO) {
 	s.mu.Unlock()
 }
 
+// startPlaybackAttempt starts a logical play attempt. Persistence is delegated
+// to the bounded writer, keeping the audio transport path write-free.
+func (s *PlayerService) startPlaybackAttempt(track *domain.TrackDTO, position float64) {
+	if track == nil {
+		return
+	}
+	now := time.Now()
+	attempt := &domain.PlaybackAttempt{ID: uuid.NewString(), TrackID: track.ID, StartedAt: now, StartPositionSeconds: position}
+	s.mu.Lock()
+	s.playbackAttempt = attempt
+	s.attemptActiveAt = now
+	s.mu.Unlock()
+	s.enqueueListening(context.Background(), listeningWrite{attemptStart: attempt})
+}
+
+func (s *PlayerService) resumePlaybackAttempt(track *domain.TrackDTO, position float64) {
+	s.mu.Lock()
+	if s.playbackAttempt != nil && s.attemptActiveAt.IsZero() {
+		s.attemptActiveAt = time.Now()
+		s.mu.Unlock()
+		return
+	}
+	missing := s.playbackAttempt == nil
+	s.mu.Unlock()
+	if missing {
+		s.startPlaybackAttempt(track, position)
+	}
+}
+
+func (s *PlayerService) pausePlaybackAttempt() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.playbackAttempt != nil && !s.attemptActiveAt.IsZero() {
+		s.playbackAttempt.ListenedSeconds += int(time.Since(s.attemptActiveAt).Seconds())
+		s.attemptActiveAt = time.Time{}
+	}
+}
+
+func (s *PlayerService) finishPlaybackAttempt(ctx context.Context, reason domain.PlaybackEndReason) {
+	s.pausePlaybackAttempt()
+	s.mu.Lock()
+	attempt := s.playbackAttempt
+	s.playbackAttempt = nil
+	s.attemptActiveAt = time.Time{}
+	if attempt != nil {
+		attempt.EndedAt = time.Now()
+		attempt.EndReason = reason
+	}
+	s.mu.Unlock()
+	if attempt != nil {
+		s.enqueueListening(ctx, listeningWrite{attemptFinalize: attempt})
+	}
+}
+
 func (s *PlayerService) resumeListening() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -1418,7 +1494,19 @@ func (s *PlayerService) startListeningWriter() {
 	go func() {
 		defer close(s.listeningWritesDone)
 		for write := range s.listeningWrites {
-			s.recordListeningPart(context.Background(), write.track, write.started, write.seconds, write.qualified)
+			if write.attemptStart != nil {
+				if err := s.listeningRepo.RecordAttemptStart(context.Background(), *write.attemptStart); err != nil {
+					s.logger.Warn("failed to record playback attempt start", "track_id", write.attemptStart.TrackID, "error", err)
+				}
+			}
+			if write.attemptFinalize != nil {
+				if err := s.listeningRepo.FinalizeAttempt(context.Background(), *write.attemptFinalize); err != nil {
+					s.logger.Warn("failed to finalize playback attempt", "track_id", write.attemptFinalize.TrackID, "error", err)
+				}
+			}
+			if write.track != nil {
+				s.recordListeningPart(context.Background(), write.track, write.started, write.seconds, write.qualified)
+			}
 		}
 	}()
 }
@@ -1426,21 +1514,39 @@ func (s *PlayerService) startListeningWriter() {
 func (s *PlayerService) enqueueListening(ctx context.Context, write listeningWrite) {
 	// Directly-constructed test services do not start the worker.
 	if s.listeningWrites == nil {
-		s.recordListeningPart(ctx, write.track, write.started, write.seconds, write.qualified)
+		if write.attemptStart != nil && s.listeningRepo != nil {
+			_ = s.listeningRepo.RecordAttemptStart(ctx, *write.attemptStart)
+		}
+		if write.attemptFinalize != nil && s.listeningRepo != nil {
+			_ = s.listeningRepo.FinalizeAttempt(ctx, *write.attemptFinalize)
+		}
+		if write.track != nil {
+			s.recordListeningPart(ctx, write.track, write.started, write.seconds, write.qualified)
+		}
 		return
+	}
+	trackID := ""
+	if write.track != nil {
+		trackID = write.track.ID
+	}
+	if write.attemptStart != nil {
+		trackID = write.attemptStart.TrackID
+	}
+	if write.attemptFinalize != nil {
+		trackID = write.attemptFinalize.TrackID
 	}
 	s.listeningWritesMu.Lock()
 	defer s.listeningWritesMu.Unlock()
 	if s.listeningWritesClosed {
-		s.logger.Warn("listening session writer stopped; dropping session", "track_id", write.track.ID)
+		s.logger.Warn("listening analytics writer stopped; dropping write", "track_id", trackID)
 		return
 	}
 	select {
 	case s.listeningWrites <- write:
 	case <-ctx.Done():
-		s.logger.Warn("listening session write cancelled", "track_id", write.track.ID)
+		s.logger.Warn("listening analytics write cancelled", "track_id", trackID)
 	default:
-		s.logger.Warn("listening session queue full; dropping session", "track_id", write.track.ID)
+		s.logger.Warn("listening analytics queue full; dropping write", "track_id", trackID)
 	}
 }
 
@@ -1837,6 +1943,7 @@ func (s *PlayerService) HandleTrackEnd() {
 			s.mu.Lock()
 			s.endedNaturally = true
 			s.mu.Unlock()
+			s.finishPlaybackAttempt(context.Background(), domain.PlaybackEndCompleted)
 			if err := s.Stop(); err != nil {
 				s.logger.Error("failed to stop after queue end (gapless)", "error", err)
 			}
@@ -1847,7 +1954,7 @@ func (s *PlayerService) HandleTrackEnd() {
 		if gp, ok := s.player.(domain.GaplessPlayer); ok {
 			if err := gp.StartPreloaded(preQueued); err != nil {
 				s.logger.Error("gapless start failed, falling back to hard load", "error", err)
-				if err2 := s.loadAndPlay(preQueued); err2 != nil {
+				if err2 := s.loadAndPlayWithEndReason(preQueued, domain.PlaybackEndCompleted); err2 != nil {
 					s.logger.Error("fallback loadAndPlay failed", "error", err2)
 				} else {
 					s.notifyTrackAutoAdvanced(preQueued, previousTrackID)
@@ -1870,12 +1977,13 @@ func (s *PlayerService) HandleTrackEnd() {
 		s.mu.Lock()
 		s.endedNaturally = true
 		s.mu.Unlock()
+		s.finishPlaybackAttempt(context.Background(), domain.PlaybackEndCompleted)
 		if err := s.Stop(); err != nil {
 			s.logger.Error("failed to stop after queue end", "error", err)
 		}
 		return
 	}
-	if err := s.loadAndPlay(track); err != nil {
+	if err := s.loadAndPlayWithEndReason(track, domain.PlaybackEndCompleted); err != nil {
 		s.logger.Error("failed to play next track", "error", err)
 	} else {
 		s.notifyTrackAutoAdvanced(track, previousTrackID)

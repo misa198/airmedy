@@ -81,6 +81,8 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000059 | `eq_preset_key.up.sql` | Add unique non-empty `eq_profiles.preset_key` for stable built-in preset identity |
 | 000060 | `app_settings_auto_advance_notifications.up.sql` | Add `app_settings.auto_advance_notifications_enabled BOOLEAN NOT NULL DEFAULT TRUE` for the macOS automatic-track notification preference |
 | 000062 | `listening_insights.up.sql` | Add append-only `listening_sessions` plus per-track/day aggregate `daily_track_listening_stats`, with date indexes, for listening insights |
+| 000063 | `playback_attempts.up.sql` | Add raw playback attempts plus daily completion/skip/stop aggregates for completion and skip rates |
+| 000064 | `playback_attempt_listening_time.up.sql` | Add aggregate listened seconds to calculate average playback session length |
 
 `listeningRepository.GetInsights` returns up to 50 entries for both Top Artists
 (ordered by listened seconds) and Top Tracks (ordered by play count, then listened
@@ -321,13 +323,38 @@ daily_track_listening_stats (
     play_count INTEGER DEFAULT 0,
     PRIMARY KEY (local_date, track_id)
 )
+
+playback_attempts (
+    id TEXT PRIMARY KEY,
+    track_id TEXT REFERENCES tracks(id) ON DELETE CASCADE,
+    started_at DATETIME,
+    ended_at DATETIME,
+    start_position_seconds REAL,
+    listened_seconds INTEGER,
+    end_reason TEXT -- completed, skipped, stopped; NULL while active
+)
+
+daily_playback_attempt_stats (
+    local_date TEXT PRIMARY KEY,
+    attempts INTEGER,
+    completed INTEGER,
+    skipped INTEGER,
+    stopped INTEGER,
+    listened_seconds INTEGER
+)
 ```
 
 `ListeningRepository.RecordSession` writes both tables in one transaction. It
 splits elapsed listening time across local calendar days and increments the
 daily play count only on the session's ending day when the playback threshold
 was reached. `listening_sessions` is retained for 180 days; aggregates remain
-available for all-time insights.
+available for all-time insights. Playback attempts are separate from listening
+sessions: one attempt spans pause/resume and seek, starts asynchronously after
+playback starts, and is finalized by the same bounded background writer.
+Completion Rate is `completed / (completed + skipped + stopped)`; Skip Rate
+uses `skipped` as its numerator. Raw attempts are retained for 180 days while
+daily aggregates remain for all-time rates; startup converts unclosed attempts
+left by a crash into `stopped` attempts.
 
 `ListeningRepository.GetInsights` also returns `streak_days`: the current
 consecutive local-calendar-day listening streak, beginning today when active or

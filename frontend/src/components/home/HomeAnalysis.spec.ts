@@ -138,5 +138,22 @@ describe('HomeAnalysis library growth', () => {
     expect(wrapper.get('[data-testid="analytics-library-growth-card"]').text()).toContain('150')
     expect(wrapper.get('[data-testid="analytics-total-time-card"]').classes()).toContain('@5xl:col-span-4')
     expect(wrapper.get('[data-testid="analytics-streak-card"]').text()).toContain('3')
+    expect(wrapper.get('[data-testid="analytics-streak-glow"]').attributes('aria-hidden')).toBe('true')
+    expect(wrapper.get('[data-testid="analytics-streak-card"]').classes()).toContain('streak-card')
+  })
+})
+
+describe('HomeAnalysis playback outcomes', () => {
+  it('renders a single outcomes donut when attempts exist', async () => {
+    vi.mocked(AnalyticsService.GetInsights).mockReturnValue(cancellable({
+      completed: 75, skipped: 20, stopped: 5, average_session_seconds: 180,
+      library_growth: [], activity: [], quality: [], genres: [], top_artists: [], top_tracks: [],
+    }) as unknown as ReturnType<typeof AnalyticsService.GetInsights>)
+    const wrapper = mount(HomeAnalysis, { global: { plugins: [createTestingPinia({ createSpy: vi.fn })], stubs: { AudioQualityChart: true, GenreDistributionChart: true, LibraryGrowthChart: true, ListeningActivityChart: true, PlaybackOutcomesChart: { name: 'PlaybackOutcomesChart', props: ['completed', 'skipped', 'stopped'], template: '<div />' }, TabSwitcher: true, TopArtistsCarousel: true, TrackTable: true } } })
+    await flushPromises()
+    expect(wrapper.get('[data-testid="analytics-playback-outcomes-card"]').text()).toContain('75%')
+    expect(wrapper.get('[data-testid="analytics-playback-outcomes-card"]').text()).toContain('20%')
+    expect(wrapper.get('[data-testid="analytics-average-session-card"]').text()).toContain('3 min')
+    expect(wrapper.getComponent({ name: 'PlaybackOutcomesChart' }).props()).toMatchObject({ completed: 75, skipped: 20, stopped: 5 })
   })
 })

@@ -403,6 +403,11 @@ flowchart TB
   lifecycle context. Startup removes raw sessions older than 180 days. Since pause
   flushes and clears its completed
   interval, a subsequent Play starts a new interval for the still-loaded track.
+- Records one `PlaybackAttempt` per selected track through the same bounded
+  writer. Attempts span pause/resume and seek; only actual running audio time
+  is counted. Natural end, gapless advance, and automatic crossfade finalize
+  as `completed`; manual track changes finalize as `skipped`; Stop, shutdown,
+  and crash recovery finalize as `stopped`. The writer never blocks transport.
 - Syncs artwork theme colors on track load.
 - Fetches/delivers lyrics on track load.
 - Resets playback position to 0 on track change to ensure clean UI transitions.

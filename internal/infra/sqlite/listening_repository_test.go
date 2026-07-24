@@ -305,3 +305,68 @@ func TestSplitListeningByLocalDate(t *testing.T) {
 		t.Fatalf("unexpected midnight split: %#v", parts)
 	}
 }
+
+func TestListeningRepositoryAggregatesPlaybackAttempts(t *testing.T) {
+	db, err := NewDB(":memory:", slog.Default())
+	if err != nil {
+		t.Fatalf("NewDB: %v", err)
+	}
+	defer func() { _ = db.Close() }()
+	ctx := context.Background()
+	if err := NewTrackRepository(db).Save(ctx, &domain.Track{ID: "attempt-track", Path: "/attempt.flac", Title: "Attempt", SortTitle: "Attempt", Format: "flac"}); err != nil {
+		t.Fatalf("save track: %v", err)
+	}
+	repo := NewListeningRepository(db)
+	now := time.Date(2026, time.July, 24, 10, 0, 0, 0, time.Local)
+	for i, reason := range []domain.PlaybackEndReason{domain.PlaybackEndCompleted, domain.PlaybackEndSkipped, domain.PlaybackEndStopped} {
+		a := domain.PlaybackAttempt{ID: fmt.Sprintf("attempt-%d", i), TrackID: "attempt-track", StartedAt: now, StartPositionSeconds: 12}
+		if err := repo.RecordAttemptStart(ctx, a); err != nil {
+			t.Fatalf("start attempt: %v", err)
+		}
+		a.EndedAt, a.ListenedSeconds, a.EndReason = now.Add(time.Minute), 60, reason
+		if err := repo.FinalizeAttempt(ctx, a); err != nil {
+			t.Fatalf("finalize attempt: %v", err)
+		}
+	}
+	insights, err := repo.GetInsights(ctx, domain.ListeningRange7D, now)
+	if err != nil {
+		t.Fatalf("GetInsights: %v", err)
+	}
+	if insights.Attempts != 3 || insights.Completed != 1 || insights.Skipped != 1 || insights.Stopped != 1 || insights.AverageSessionSeconds != 60 {
+		t.Fatalf("attempt totals: %#v", insights)
+	}
+	if insights.CompletionRate == nil || insights.SkipRate == nil || *insights.CompletionRate != 100.0/3 || *insights.SkipRate != 100.0/3 {
+		t.Fatalf("attempt rates: %#v", insights)
+	}
+}
+
+func TestListeningRepositoryRecoversOpenPlaybackAttempts(t *testing.T) {
+	db, err := NewDB(":memory:", slog.Default())
+	if err != nil {
+		t.Fatalf("NewDB: %v", err)
+	}
+	defer func() { _ = db.Close() }()
+	ctx := context.Background()
+	if err := NewTrackRepository(db).Save(ctx, &domain.Track{ID: "open-track", Path: "/open.flac", Title: "Open", SortTitle: "Open", Format: "flac"}); err != nil {
+		t.Fatalf("save track: %v", err)
+	}
+	repo := NewListeningRepository(db)
+	started := time.Now().Add(-time.Hour)
+	if err := repo.RecordAttemptStart(ctx, domain.PlaybackAttempt{ID: "open", TrackID: "open-track", StartedAt: started}); err != nil {
+		t.Fatalf("start attempt: %v", err)
+	}
+	if err := repo.RecoverOpenAttempts(ctx); err != nil {
+		t.Fatalf("recover attempts: %v", err)
+	}
+	var reason string
+	if err := db.Get(&reason, `SELECT end_reason FROM playback_attempts WHERE id = 'open'`); err != nil || reason != string(domain.PlaybackEndStopped) {
+		t.Fatalf("recovered reason=%q err=%v", reason, err)
+	}
+	insights, err := repo.GetInsights(ctx, domain.ListeningRangeAll, time.Now())
+	if err != nil {
+		t.Fatalf("GetInsights: %v", err)
+	}
+	if insights.Stopped != 1 || insights.CompletionRate == nil || *insights.CompletionRate != 0 {
+		t.Fatalf("recovered insights: %#v", insights)
+	}
+}

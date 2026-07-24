@@ -82,6 +82,106 @@ func (r *listeningRepository) CleanupSessions(ctx context.Context, before time.T
 	if _, err := r.db.ExecContext(ctx, `DELETE FROM listening_sessions WHERE ended_at < ?`, before); err != nil {
 		return fmt.Errorf("cleanup listening sessions: %w", err)
 	}
+	if _, err := r.db.ExecContext(ctx, `DELETE FROM playback_attempts WHERE started_at < ?`, before); err != nil {
+		return fmt.Errorf("cleanup playback attempts: %w", err)
+	}
+	return nil
+}
+
+func (r *listeningRepository) RecordAttemptStart(ctx context.Context, a domain.PlaybackAttempt) error {
+	if a.ID == "" || a.TrackID == "" {
+		return nil
+	}
+	result, err := r.db.ExecContext(ctx, `INSERT INTO playback_attempts (id, track_id, started_at, start_position_seconds) VALUES (?, ?, ?, ?)
+		ON CONFLICT(id) DO NOTHING`, a.ID, a.TrackID, a.StartedAt, a.StartPositionSeconds)
+	if err != nil {
+		return fmt.Errorf("insert playback attempt: %w", err)
+	}
+	inserted, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("read inserted playback attempt: %w", err)
+	}
+	if inserted == 0 {
+		return nil
+	}
+	date := a.StartedAt.In(time.Local).Format("2006-01-02")
+	if _, err := r.db.ExecContext(ctx, `INSERT INTO daily_playback_attempt_stats (local_date, attempts) VALUES (?, 1)
+		ON CONFLICT(local_date) DO UPDATE SET attempts = attempts + 1`, date); err != nil {
+		return fmt.Errorf("aggregate playback attempt start: %w", err)
+	}
+	return nil
+}
+
+func (r *listeningRepository) FinalizeAttempt(ctx context.Context, a domain.PlaybackAttempt) error {
+	if a.ID == "" || a.TrackID == "" || a.EndReason == "" {
+		return nil
+	}
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin finalize playback attempt: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	result, err := tx.ExecContext(ctx, `UPDATE playback_attempts SET ended_at = ?, listened_seconds = ?, end_reason = ? WHERE id = ? AND end_reason IS NULL`, a.EndedAt, a.ListenedSeconds, a.EndReason, a.ID)
+	if err != nil {
+		return fmt.Errorf("finalize playback attempt: %w", err)
+	}
+	changed, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("read finalized playback attempt: %w", err)
+	}
+	if changed == 0 {
+		var existing int
+		if err = tx.GetContext(ctx, &existing, `SELECT COUNT(*) FROM playback_attempts WHERE id = ?`, a.ID); err != nil {
+			return fmt.Errorf("check playback attempt: %w", err)
+		}
+		if existing > 0 {
+			return nil // already finalized; a duplicate worker message is a no-op.
+		}
+		if _, err = tx.ExecContext(ctx, `INSERT INTO playback_attempts (id, track_id, started_at, ended_at, start_position_seconds, listened_seconds, end_reason) VALUES (?, ?, ?, ?, ?, ?, ?)`, a.ID, a.TrackID, a.StartedAt, a.EndedAt, a.StartPositionSeconds, a.ListenedSeconds, a.EndReason); err != nil {
+			return fmt.Errorf("upsert finalized playback attempt: %w", err)
+		}
+		// A dropped start message must still contribute one attempt.
+		if _, err = tx.ExecContext(ctx, `INSERT INTO daily_playback_attempt_stats (local_date, attempts) VALUES (?, 1)
+			ON CONFLICT(local_date) DO UPDATE SET attempts = attempts + 1`, a.StartedAt.In(time.Local).Format("2006-01-02")); err != nil {
+			return fmt.Errorf("aggregate recovered attempt start: %w", err)
+		}
+	}
+	date := a.StartedAt.In(time.Local).Format("2006-01-02")
+	column := string(a.EndReason)
+	if column != string(domain.PlaybackEndCompleted) && column != string(domain.PlaybackEndSkipped) && column != string(domain.PlaybackEndStopped) {
+		return fmt.Errorf("invalid playback end reason %q", a.EndReason)
+	}
+	if _, err = tx.ExecContext(ctx, `INSERT INTO daily_playback_attempt_stats (local_date, `+column+`, listened_seconds) VALUES (?, 1, ?)
+		ON CONFLICT(local_date) DO UPDATE SET `+column+` = `+column+` + 1, listened_seconds = listened_seconds + excluded.listened_seconds`, date, a.ListenedSeconds); err != nil {
+		return fmt.Errorf("aggregate finalized playback attempt: %w", err)
+	}
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("commit finalized playback attempt: %w", err)
+	}
+	return nil
+}
+
+func (r *listeningRepository) RecoverOpenAttempts(ctx context.Context) error {
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin recover playback attempts: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	var dates []string
+	if err = tx.SelectContext(ctx, &dates, `SELECT strftime('%Y-%m-%d', started_at, 'localtime') FROM playback_attempts WHERE end_reason IS NULL`); err != nil {
+		return fmt.Errorf("list open playback attempts: %w", err)
+	}
+	if _, err = tx.ExecContext(ctx, `UPDATE playback_attempts SET ended_at = started_at, listened_seconds = 0, end_reason = 'stopped' WHERE end_reason IS NULL`); err != nil {
+		return fmt.Errorf("recover playback attempts: %w", err)
+	}
+	for _, date := range dates {
+		if _, err = tx.ExecContext(ctx, `INSERT INTO daily_playback_attempt_stats (local_date, stopped) VALUES (?, 1) ON CONFLICT(local_date) DO UPDATE SET stopped = stopped + 1`, date); err != nil {
+			return fmt.Errorf("aggregate recovered playback attempt: %w", err)
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("commit recovered playback attempts: %w", err)
+	}
 	return nil
 }
 
@@ -115,6 +215,19 @@ func (r *listeningRepository) GetInsights(ctx context.Context, period domain.Lis
 	}
 	if err := r.db.GetContext(ctx, &result.Plays, `SELECT COALESCE(SUM(play_count), 0) FROM daily_track_listening_stats `+where, args...); err != nil {
 		return nil, fmt.Errorf("sum listening plays: %w", err)
+	}
+	attemptWhere := ""
+	if bounded {
+		attemptWhere = "WHERE local_date >= ?"
+	}
+	var attemptSeconds int
+	if err := r.db.QueryRowxContext(ctx, `SELECT COALESCE(SUM(attempts), 0), COALESCE(SUM(completed), 0), COALESCE(SUM(skipped), 0), COALESCE(SUM(stopped), 0), COALESCE(SUM(listened_seconds), 0) FROM daily_playback_attempt_stats `+attemptWhere, args...).Scan(&result.Attempts, &result.Completed, &result.Skipped, &result.Stopped, &attemptSeconds); err != nil {
+		return nil, fmt.Errorf("sum playback attempts: %w", err)
+	}
+	if denominator := result.Completed + result.Skipped + result.Stopped; denominator > 0 {
+		completion, skip := float64(result.Completed)*100/float64(denominator), float64(result.Skipped)*100/float64(denominator)
+		result.CompletionRate, result.SkipRate = &completion, &skip
+		result.AverageSessionSeconds = attemptSeconds / denominator
 	}
 	if result.StreakDays, err = r.currentListeningStreak(ctx, now); err != nil {
 		return nil, err
