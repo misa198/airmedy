@@ -184,6 +184,13 @@ displayed image — so live changes and preference toggles both reflect instantl
 `GetArtistColors` so the hero tint follows async artwork changes (e.g. a Deezer
 fetch completing).
 
+`TopArtistsCarousel.vue` uses the same `ArtistCard` artwork path for analytics
+artists. It loads the full artist records by ID before rendering, so top artists
+also honor the online/local artwork preferences and background fetch behavior;
+the analytics `artwork_key` remains a fallback while those records load. When a
+card remounts after pagination, `ArtistCard` also applies the URL returned by
+`GetArtistArtwork`, covering cached artwork that does not emit a new event.
+
 ### Local file scan
 
 - `findArtistImageFile(dir)` looks for `artist.jpg`, then `artist.jpeg`, then

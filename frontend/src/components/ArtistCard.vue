@@ -54,7 +54,14 @@ const seedKeys = () => {
 // manual, and not suppressed by a local image under prefer-local) and none cached.
 const maybeFetchOnline = () => {
   if (!canShowOnline.value || keys.manual || keys.online) return
-  LibraryService.GetArtistArtwork(props.artist.id, `artist-artwork:${props.artist.id}`)
+  const artistID = props.artist.id
+  LibraryService.GetArtistArtwork(artistID, `artist-artwork:${artistID}`)
+    .then((url) => {
+      // The artwork may already be cached by a card that was unmounted during
+      // carousel pagination. The service returns its resolved URL in that case
+      // without emitting another update event, so render it immediately.
+      if (url && props.artist.id === artistID) imageUrl.value = url
+    })
     .catch((err) => console.error(`[ArtistCard] artwork fetch failed for ${props.artist.name}:`, err))
 }
 
