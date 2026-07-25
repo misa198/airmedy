@@ -11,7 +11,7 @@ import { usePlayerStore } from '@/stores/player'
 import { formatTime, decodeHTMLEntities } from '@airmedy/utils'
 import * as LyricsService from '../../bindings/airmedy/internal/infra/wails/lyricsservice'
 import * as PlayerService from '../../bindings/airmedy/internal/infra/wails/playerservice'
-import type { LyricsSearchResult } from '../../bindings/airmedy/internal/domain/models'
+import { Lyric, type LyricsSearchResult } from '../../bindings/airmedy/internal/domain/models'
 
 const { t } = useI18n()
 const { isVisible, targetTrack, close } = useFindLyricsDialog()
@@ -67,15 +67,13 @@ async function save() {
     // This cancels a late automatic lookup and gives this selection a request
     // ID, so its lifecycle is consistent with lyrics loaded on track changes.
     if (playerStore.currentTrack?.id === targetTrack.value.id) {
-      await PlayerService.PublishCurrentLyrics({
+      await PlayerService.PublishCurrentLyrics(new Lyric({
         track_id: targetTrack.value.id,
         content: selected.content,
         source: selected.source,
         meta_content: playerStore.lyrics?.meta_content || '',
         meta_source: playerStore.lyrics?.meta_source || '',
-        created_at: '',
-        updated_at: ''
-      } as any)
+      }))
     }
     
     close()
