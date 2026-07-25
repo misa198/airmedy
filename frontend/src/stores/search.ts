@@ -9,11 +9,31 @@ export const useSearchStore = defineStore('search', () => {
   const loading = ref(false)
 
   let debounceTimer: ReturnType<typeof setTimeout> | null = null
+  let requestVersion = 0
+
+  async function runSearch(q: string, version: number) {
+    try {
+      const res = await SearchService.Search(q)
+      if (version === requestVersion) results.value = res
+    } catch (e) {
+      if (version === requestVersion) {
+        console.error('Search failed', e)
+        results.value = null
+      }
+    } finally {
+      if (version === requestVersion) loading.value = false
+    }
+  }
 
   async function search(q: string) {
     query.value = q
 
-    if (debounceTimer) clearTimeout(debounceTimer)
+    if (debounceTimer) {
+      clearTimeout(debounceTimer)
+      debounceTimer = null
+    }
+
+    const version = ++requestVersion
 
     if (!q.trim()) {
       results.value = null
@@ -23,17 +43,26 @@ export const useSearchStore = defineStore('search', () => {
 
     loading.value = true
 
-    debounceTimer = setTimeout(async () => {
-      try {
-        const res = await SearchService.Search(q.trim())
-        results.value = res
-      } catch (e) {
-        console.error('Search failed', e)
-        results.value = null
-      } finally {
-        loading.value = false
-      }
+    debounceTimer = setTimeout(() => {
+      debounceTimer = null
+      void runSearch(q.trim(), version)
     }, 300)
+  }
+
+  // Re-run the existing query after a library mutation without resetting the
+  // visible results to a loading skeleton. It also supersedes any pending
+  // debounced input request so an older response cannot overwrite fresh data.
+  async function refresh() {
+    const q = query.value.trim()
+    if (!q) return
+
+    if (debounceTimer) {
+      clearTimeout(debounceTimer)
+      debounceTimer = null
+    }
+
+    const version = ++requestVersion
+    await runSearch(q, version)
   }
 
   function clear() {
@@ -41,7 +70,9 @@ export const useSearchStore = defineStore('search', () => {
     results.value = null
     loading.value = false
     if (debounceTimer) clearTimeout(debounceTimer)
+    debounceTimer = null
+    requestVersion++
   }
 
-  return { query, results, loading, search, clear }
+  return { query, results, loading, search, refresh, clear }
 })

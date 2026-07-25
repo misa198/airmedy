@@ -50,4 +50,26 @@ describe('TrackTable', () => {
 
     expect((list.element as HTMLElement).scrollLeft).toBe(128)
   })
+
+  it('can expand a non-virtualized table instead of creating a nested vertical scroller', () => {
+    const wrapper = mount(TrackTable, {
+      props: {
+        tracks: [{ id: 'track-1' } as TrackDTO],
+        virtualScroll: false,
+        autoHeight: true,
+      },
+      global: {
+        plugins: [createTestingPinia({ createSpy: vi.fn })],
+        mocks: { $t: (key: string) => key },
+        stubs: {
+          TrackContextMenu: true,
+          TrackTableHeader: true,
+          TrackTableRow: true,
+        },
+      },
+    })
+
+    expect(wrapper.find('.overflow-auto').exists()).toBe(false)
+    expect(wrapper.find('.overflow-visible').exists()).toBe(true)
+  })
 })

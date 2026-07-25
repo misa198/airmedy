@@ -24,6 +24,13 @@ type ArtworkCrossfadeEvent = {
   duration_ms?: number
 }
 
+type LyricsEvent = {
+  track_id: string
+  request_id: number
+  state: 'loading' | 'ready' | 'error'
+  lyric?: Lyric | null
+}
+
 export const usePlayerStore = defineStore('player', () => {
   // State
   const status = shallowRef<PlayerStatus | null>(null)
@@ -38,6 +45,7 @@ export const usePlayerStore = defineStore('player', () => {
   const playerMode = ref<PlayerMode>('sticky')
   const lyrics = ref<Lyric | null>(null)
   const lyricsLoading = ref(false)
+  const lyricsRequestId = ref(0)
   const artworkCrossfade = shallowRef<ArtworkCrossfadeState | null>(null)
 
   // Interpolation state
@@ -87,8 +95,13 @@ export const usePlayerStore = defineStore('player', () => {
   // Clear lyrics immediately whenever the playing track changes
   watch(currentTrack, (newTrack, oldTrack) => {
     if (newTrack?.id !== oldTrack?.id) {
-      lyrics.value = null
-      lyricsLoading.value = true
+      // Events from the backend can deliver `ready` immediately after the
+      // status event that changes currentTrack. This watcher runs on Vue's
+      // next flush, so do not erase a lyric that already belongs to the new
+      // track (otherwise automatic lyrics appear to load and then vanish).
+      const hasNewTrackLyrics = lyrics.value?.track_id === newTrack?.id
+      if (!hasNewTrackLyrics) lyrics.value = null
+      lyricsLoading.value = !!newTrack && !hasNewTrackLyrics
     }
   })
 
@@ -105,6 +118,7 @@ export const usePlayerStore = defineStore('player', () => {
       const s = await PlayerService.GetStatus()
       status.value = s
       theme.value = s.theme
+      lyricsRequestId.value = s.lyrics_request_id
 
       const q = await PlayerService.GetQueue()
       queue.value = (q.filter(Boolean) as TrackDTO[])
@@ -148,6 +162,12 @@ export const usePlayerStore = defineStore('player', () => {
         status.value = s
         if (s.theme) theme.value = s.theme
 
+        if (s.track_id && s.lyrics_request_id !== lyricsRequestId.value) {
+          lyricsRequestId.value = s.lyrics_request_id
+          lyrics.value = null
+          lyricsLoading.value = true
+        }
+
         if (s?.track_id) {
           const found = queue.value.find((t) => t.id === s.track_id)
           if (found) currentTrack.value = found
@@ -185,12 +205,16 @@ export const usePlayerStore = defineStore('player', () => {
       }),
 
       Events.On('player:lyrics', (ev: Events.WailsEvent) => {
-        const lyric = (ev.data as Lyric) ?? null
-        // Discard stale lyrics from a previous track (race condition on fast skipping)
-        if (lyric && lyric.track_id !== currentTrack.value?.id) return
-        // Discard a stale null if we already have correct lyrics for the current track
-        if (!lyric && lyrics.value?.track_id === currentTrack.value?.id) return
-        lyrics.value = lyric
+        const event = ev.data as LyricsEvent
+        if (!event || event.track_id !== currentTrack.value?.id) return
+        if (lyricsRequestId.value !== 0 && event.request_id !== lyricsRequestId.value) return
+        lyricsRequestId.value = event.request_id
+        if (event.state === 'loading') {
+          lyricsLoading.value = true
+          return
+        }
+        if (event.state === 'ready') lyrics.value = event.lyric ?? null
+        // An error ends loading but deliberately preserves lyrics already shown.
         lyricsLoading.value = false
       }),
 
@@ -241,14 +265,19 @@ export const usePlayerStore = defineStore('player', () => {
     // only in a sibling file or embedded metadata tag, not just cached provider content.
     if (currentTrack.value) {
       const trackId = currentTrack.value.id
+
+      const requestId = lyricsRequestId.value
       try {
-        const lyric = await PlayerService.GetCurrentLyrics()
-        if (currentTrack.value?.id === trackId) {
-          lyrics.value = lyric ?? null
+        const event = await PlayerService.GetCurrentLyrics()
+        if (event && currentTrack.value?.id === trackId && event.request_id === requestId) {
+          if (event.state === 'ready') lyrics.value = event.lyric ?? null
           lyricsLoading.value = false
         }
       } catch (e) {
         logger.error('Failed to pull initial lyrics', e)
+        if (currentTrack.value?.id === trackId && lyricsRequestId.value === requestId) {
+          lyricsLoading.value = false
+        }
       }
     }
   }
@@ -278,6 +307,11 @@ export const usePlayerStore = defineStore('player', () => {
     } else {
       await play()
     }
+  }
+
+  async function refreshCurrentLyrics() {
+    if (!currentTrack.value) return
+    await PlayerService.RefreshCurrentLyrics()
   }
 
   async function next() {
@@ -470,6 +504,7 @@ export const usePlayerStore = defineStore('player', () => {
     play,
     pause,
     togglePlayPause,
+    refreshCurrentLyrics,
     next,
     previous,
     fastForward,

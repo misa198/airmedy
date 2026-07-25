@@ -18,6 +18,7 @@ import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/pl
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import { foldUnicode } from '@airmedy/utils'
 import { useI18n } from 'vue-i18n'
+import { useLibrarySync } from '@/composables/useLibrarySync'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -199,6 +200,12 @@ async function loadArtworkTracks() {
 
   tracksByPlaylist.value = map
 }
+
+// A metadata edit can change the artwork source of a track used by a playlist
+// mosaic without changing playlist membership, so no playlist event is sent.
+useLibrarySync(() => {
+  void loadArtworkTracks()
+})
 
 const offArtworkChanged = Events.On('playlist:artwork-changed', (ev: Events.WailsEvent) => {
   const payload = ev.data as { playlist_id: string; artwork_key: string | null }

@@ -15,6 +15,7 @@ import { useSearchStore } from '@/stores/search'
 import { usePlayerStore } from '@/stores/player'
 import { useContextMenu } from '@/composables/useContextMenu'
 import { useAlbumContextMenu } from '@/composables/useAlbumContextMenu'
+import { useLibrarySync } from '@/composables/useLibrarySync'
 import type { AlbumDTO, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import { buildArtworkUrl } from '@airmedy/utils'
 
@@ -30,6 +31,13 @@ const { buildMenuItems: buildAlbumMenuItems } = useAlbumContextMenu()
 
 watch(inputValue, (val) => {
   store.search(val)
+})
+
+// Search results are a stored response, not a live query. Re-run the current
+// query after metadata/import mutations; useLibrarySync defers this while the
+// route is cached by KeepAlive and refreshes when it becomes visible again.
+useLibrarySync(() => {
+  void store.refresh()
 })
 
 onMounted(() => {

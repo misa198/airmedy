@@ -22,6 +22,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { emptyConfig, type SmartPlaylistConfig } from '@/lib/smartPlaylistFields'
 import { Input } from '@airmedy/ui'
 import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
+import { useLibrarySync } from '@/composables/useLibrarySync'
 import { useDetailRouteLoader } from '@/composables/useDetailRouteLoader'
 import { usePlaylistsStore } from '@/stores/playlists'
 import { Events } from '@wailsio/runtime'
@@ -206,6 +207,12 @@ async function loadTheme() {
 
 watch(tracks, () => loadTheme())
 useDetailRouteLoader((id) => load(false, id))
+// Smart playlist rules can gain or lose tracks after a metadata edit. A full
+// silent reload keeps both smart and regular playlist membership authoritative.
+useLibrarySync(() => {
+  const id = playlist.value?.id
+  if (id) void load(true, id)
+})
 watch(() => favoritesStore.version, () => {
   if (playlist.value?.id === 'favorites') load(true, 'favorites')
 })

@@ -30,6 +30,8 @@ type PlayerService struct {
 	logger                          *slog.Logger
 	artworkCache                    domain.ArtworkCache
 	lyricsService                   *lyrics.LyricsService
+	lyricsRequestID                 uint64
+	lyricsRequestCancel             context.CancelFunc
 	nowPlaying                      domain.NowPlayingController // nil on non-darwin or when unsupported
 	currentTrack                    *domain.TrackDTO
 	currentTheme                    *domain.ThemeColors
@@ -75,6 +77,8 @@ type PlayerService struct {
 
 	// emitStatusHook overrides event emission in tests (nil in production).
 	emitStatusHook func()
+	// emitLyricsHook captures lyric lifecycle events in tests.
+	emitLyricsHook func(domain.LyricsEvent)
 
 	trackLoadListeners []func(*domain.TrackDTO)
 
@@ -98,6 +102,8 @@ type listeningWrite struct {
 }
 
 const listeningWriteQueueSize = 64
+
+const lyricsFetchTimeout = 35 * time.Second
 
 func NewPlayerService(
 	player domain.AudioPlayer,
@@ -184,6 +190,7 @@ func NewPlayerService(
 // share SQLite; a delayed listening write must not consume the shutdown context
 // and prevent the resume position from being saved.
 func (s *PlayerService) shutdown(ctx context.Context) error {
+	s.cancelLyricsRequest()
 	s.stopPositionTicker()
 	s.saveState(ctx)
 	s.flushListening(ctx)
@@ -766,6 +773,7 @@ func (s *PlayerService) GetStatus() domain.PlayerStatus {
 	status.RepeatMode = s.queue.GetRepeatMode()
 	status.Shuffle = s.queue.GetShuffle()
 	status.Theme = s.currentTheme
+	status.LyricsRequestID = s.lyricsRequestID
 	return status
 }
 
@@ -875,6 +883,7 @@ func (s *PlayerService) loadAndPlayWithEndReason(track *domain.TrackDTO, previou
 	delete(s.npReported, track.ID)
 	delete(s.posConfirmed, track.ID)
 	s.mu.Unlock()
+	lyricsCtx, lyricsRequestID := s.startLyricsRequest()
 
 	s.startPositionTicker()
 	s.emitStatus()
@@ -884,7 +893,8 @@ func (s *PlayerService) loadAndPlayWithEndReason(track *domain.TrackDTO, previou
 	s.pushNowPlaying(track, 0)
 
 	go s.extractAndEmitPalette(track)
-	go s.fetchAndEmitLyrics(track)
+	s.emitLyricsEvent(track.ID, lyricsRequestID, "loading", nil)
+	go s.fetchAndEmitLyrics(lyricsCtx, lyricsRequestID, track, false)
 
 	s.saveState(context.Background())
 
@@ -932,6 +942,7 @@ func (s *PlayerService) transitionToTrack(track *domain.TrackDTO) {
 	delete(s.npReported, track.ID)
 	delete(s.posConfirmed, track.ID)
 	s.mu.Unlock()
+	lyricsCtx, lyricsRequestID := s.startLyricsRequest()
 	s.startListening(track)
 	s.startPlaybackAttempt(track, 0)
 
@@ -947,7 +958,8 @@ func (s *PlayerService) transitionToTrack(track *domain.TrackDTO) {
 	s.pushNowPlaying(track, 0)
 
 	go s.extractAndEmitPalette(track)
-	go s.fetchAndEmitLyrics(track)
+	s.emitLyricsEvent(track.ID, lyricsRequestID, "loading", nil)
+	go s.fetchAndEmitLyrics(lyricsCtx, lyricsRequestID, track, false)
 
 	s.saveState(context.Background())
 }
@@ -1037,37 +1049,116 @@ func (s *PlayerService) lyricsResolveParams(ctx context.Context, track *domain.T
 	return preferLocal, extraDirs
 }
 
-// GetCurrentLyrics resolves the best available lyric for the currently loaded
-// track (sibling file, embedded metadata tag, or cached provider content),
-// honoring the user's local-vs-provider preference. Used by the frontend on
-// startup to recover lyrics for a restored track, since the restore-time
-// player:lyrics emit happens before the frontend's listener is registered.
-func (s *PlayerService) GetCurrentLyrics() *domain.Lyric {
+// GetCurrentLyrics resolves a snapshot for the currently loaded lyric request.
+// The request id allows a startup pull that completes late to be discarded.
+func (s *PlayerService) GetCurrentLyrics() *domain.LyricsEvent {
 	if s.lyricsService == nil {
 		return nil
 	}
 	s.mu.RLock()
 	track := s.currentTrack
+	requestID := s.lyricsRequestID
 	s.mu.RUnlock()
 	if track == nil {
 		return nil
 	}
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), lyricsFetchTimeout)
+	defer cancel()
 	preferLocal, extraDirs := s.lyricsResolveParams(ctx, track)
-	return s.lyricsService.ResolveLyrics(ctx, track.ID, track.Path, preferLocal, extraDirs...)
+	lyric := s.lyricsService.ResolveLyrics(ctx, track.ID, track.Path, preferLocal, extraDirs...)
+	state := "ready"
+	if ctx.Err() != nil {
+		state = "error"
+	}
+	return &domain.LyricsEvent{TrackID: track.ID, RequestID: requestID, State: state, Lyric: lyric}
 }
 
-func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
+// RefreshCurrentLyrics starts a new, forced provider fetch for the playing
+// track. Its event lifecycle is identical to a track-change request.
+func (s *PlayerService) RefreshCurrentLyrics() uint64 {
+	s.mu.RLock()
+	track := s.currentTrack
+	s.mu.RUnlock()
+	if track == nil || s.lyricsService == nil {
+		return 0
+	}
+	ctx, requestID := s.startLyricsRequest()
+	s.emitStatus()
+	s.emitLyricsEvent(track.ID, requestID, "loading", nil)
+	go s.fetchAndEmitLyrics(ctx, requestID, track, true)
+	return requestID
+}
+
+func (s *PlayerService) startLyricsRequest() (context.Context, uint64) {
+	ctx, cancel := context.WithTimeout(context.Background(), lyricsFetchTimeout)
+	return ctx, s.beginLyricsRequest(cancel)
+}
+
+// beginLyricsRequest advances the request sequence and cancels any prior
+// asynchronous resolver. Callers that do not start asynchronous work (such as
+// a user selecting a lyric that is already available in the UI) pass nil.
+func (s *PlayerService) beginLyricsRequest(cancel context.CancelFunc) uint64 {
+	s.mu.Lock()
+	if s.lyricsRequestCancel != nil {
+		s.lyricsRequestCancel()
+	}
+	s.lyricsRequestID++
+	requestID := s.lyricsRequestID
+	s.lyricsRequestCancel = cancel
+	s.mu.Unlock()
+	return requestID
+}
+
+func (s *PlayerService) cancelLyricsRequest() {
+	s.mu.Lock()
+	if s.lyricsRequestCancel != nil {
+		s.lyricsRequestCancel()
+		s.lyricsRequestCancel = nil
+	}
+	s.mu.Unlock()
+}
+
+// PublishCurrentLyrics immediately publishes a lyric selected by the user for
+// the track that is currently playing. It advances the lyric request ID first,
+// cancelling any automatic lookup still in flight so that a late provider
+// result cannot overwrite the user's selection in the UI.
+//
+// Persistence is deliberately handled by LyricsService before this method is
+// called; PlayerService owns only the playback-facing lifecycle event.
+func (s *PlayerService) PublishCurrentLyrics(lyric *domain.Lyric) uint64 {
+	if lyric == nil || lyric.TrackID == "" {
+		return 0
+	}
+	s.mu.RLock()
+	isCurrent := s.currentTrack != nil && s.currentTrack.ID == lyric.TrackID
+	s.mu.RUnlock()
+	if !isCurrent {
+		return 0
+	}
+
+	requestID := s.beginLyricsRequest(nil)
+	s.emitStatus()
+	s.emitLyricsEvent(lyric.TrackID, requestID, "ready", lyric)
+	return requestID
+}
+
+func (s *PlayerService) fetchAndEmitLyrics(ctx context.Context, requestID uint64, track *domain.TrackDTO, forceFetch bool) {
 	if s.lyricsService == nil {
+		s.emitLyricsEvent(track.ID, requestID, "ready", nil)
 		return
 	}
-	ctx := context.Background()
 
 	preferLocal, extraDirs := s.lyricsResolveParams(ctx, track)
+	if s.handleLyricsRequestContext(track.ID, requestID, ctx) {
+		return
+	}
 
 	settings, err := s.settingsRepo.Load(ctx)
 	if err != nil {
 		settings = &domain.AppSettings{}
+	}
+	if s.handleLyricsRequestContext(track.ID, requestID, ctx) {
+		return
 	}
 
 	// 1. Emit the best currently-available lyric for the chosen preference.
@@ -1079,58 +1170,78 @@ func (s *PlayerService) fetchAndEmitLyrics(track *domain.TrackDTO) {
 	dbLyric, _ := s.lyricsService.GetLyrics(ctx, track.ID)
 	hasExternal := dbLyric != nil && dbLyric.Content != ""
 	anyProviderEnabled := settings.EnableLrclib || settings.EnableKugou
-	willFetch := (!preferLocal || !hasLocal) && !hasExternal && anyProviderEnabled
+	willFetch := (forceFetch || ((!preferLocal || !hasLocal) && !hasExternal)) && anyProviderEnabled
 
-	// Only emit immediately if we are not going to fetch, or if the lyric
-	// we have is already the preferred type (e.g. we prefer local, or we have cached external).
-	// If we will fetch and prefer online lyrics, we hold off emitting the local fallback
-	// lyric to avoid a visual flash on the UI.
-	if lyric != nil && (!willFetch || preferLocal) {
-		s.emitLyrics(track.ID, lyric)
-	}
-
-	// 2. When local lyrics are preferred and present, they win outright. Don't
-	//    fetch providers, so nothing overrides the displayed local lyric.
-	if preferLocal && hasLocal {
+	if !willFetch {
+		s.emitLyricsEvent(track.ID, requestID, "ready", lyric)
 		return
 	}
 
-	// 3. Fetch from providers when enabled and not already cached.
+	// Fetch from providers when enabled. A forced refresh fetches even when a
+	// local/cached lyric exists, but final resolution still honors preference.
 	if willFetch {
 		if _, err := s.lyricsService.FetchFromProviders(ctx, track, settings.EnableLrclib, settings.EnableKugou); err != nil {
+			if s.handleLyricsRequestContext(track.ID, requestID, ctx) {
+				return
+			}
 			s.logger.Warn("failed to fetch lyrics from providers", "track_id", track.ID, "error", err)
+			s.emitLyricsEvent(track.ID, requestID, "error", nil)
+			return
 		}
+	}
+	if s.handleLyricsRequestContext(track.ID, requestID, ctx) {
+		return
 	}
 
 	// 4. Re-resolve so the final emit honors the preference now that provider
 	//    content may be cached. This is the single source of priority truth.
 	resolved := s.lyricsService.ResolveLyrics(ctx, track.ID, track.Path, preferLocal, extraDirs...)
-	s.emitLyrics(track.ID, resolved)
+	s.emitLyricsEvent(track.ID, requestID, "ready", resolved)
 }
 
-func (s *PlayerService) emitLyrics(trackID string, lyric *domain.Lyric) {
+// handleLyricsRequestContext suppresses terminal events for explicitly
+// cancelled requests, while making timeout a terminal error so the UI cannot
+// remain loading forever.
+func (s *PlayerService) handleLyricsRequestContext(trackID string, requestID uint64, ctx context.Context) bool {
+	if err := ctx.Err(); err != nil {
+		if err != context.Canceled {
+			s.logger.Warn("lyrics request timed out", "track_id", trackID, "request_id", requestID, "error", err)
+			s.emitLyricsEvent(trackID, requestID, "error", nil)
+		}
+		return true
+	}
+	return false
+}
+
+func (s *PlayerService) emitLyricsEvent(trackID string, requestID uint64, state string, lyric *domain.Lyric) {
 	s.mu.RLock()
 	currentID := ""
 	if s.currentTrack != nil {
 		currentID = s.currentTrack.ID
 	}
+	currentRequestID := s.lyricsRequestID
 	listeners := make([]func(*domain.Lyric), len(s.lyricsListeners))
 	copy(listeners, s.lyricsListeners)
 	s.mu.RUnlock()
 
-	if currentID != trackID {
+	if currentID != trackID || currentRequestID != requestID {
 		return
 	}
 
-	for _, f := range listeners {
-		f(lyric)
+	if state == "ready" {
+		for _, f := range listeners {
+			f(lyric)
+		}
+	}
+	if s.emitLyricsHook != nil {
+		s.emitLyricsHook(domain.LyricsEvent{TrackID: trackID, RequestID: requestID, State: state, Lyric: lyric})
 	}
 
 	a := application.Get()
 	if a == nil || a.Event == nil {
 		return
 	}
-	a.Event.Emit("player:lyrics", lyric)
+	a.Event.Emit("player:lyrics", domain.LyricsEvent{TrackID: trackID, RequestID: requestID, State: state, Lyric: lyric})
 }
 
 func (s *PlayerService) emitStatus() {
@@ -2122,6 +2233,7 @@ func (s *PlayerService) restoreState(ctx context.Context) {
 				s.mu.Lock()
 				s.currentTrack = currentTrack
 				s.mu.Unlock()
+				lyricsCtx, lyricsRequestID := s.startLyricsRequest()
 
 				if s.normSvc != nil {
 					s.normSvc.ApplyToPlayer(ctx, currentTrack, s.queue.PeekNext())
@@ -2130,7 +2242,8 @@ func (s *PlayerService) restoreState(ctx context.Context) {
 				s.pushNowPlaying(currentTrack, state.Position)
 
 				go s.extractAndEmitPalette(currentTrack)
-				go s.fetchAndEmitLyrics(currentTrack)
+				s.emitLyricsEvent(currentTrack.ID, lyricsRequestID, "loading", nil)
+				go s.fetchAndEmitLyrics(lyricsCtx, lyricsRequestID, currentTrack, false)
 			}
 		}
 	}

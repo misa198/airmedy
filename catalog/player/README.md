@@ -606,10 +606,10 @@ On app startup, `Load()` restores queue, seeks to saved position, but does not a
 
 | Event                  | When                                                   |
 | ---------------------- | ------------------------------------------------------ |
-| `player:status`        | On any state change (Play, Pause, Seek, Stop, Track Change) |
+| `player:status`        | On any state change (Play, Pause, Seek, Stop, Track Change); includes `lyrics_request_id` for the active lyric lifecycle |
 | `player:queue-updated` | Queue modified (insert, remove, reorder, new playlist) |
 | `player:theme`         | New track loaded — artwork color palette               |
-| `player:lyrics`        | New track loaded — lyrics object (may be null)         |
+| `player:lyrics`        | Current lyric lifecycle — `{ track_id, request_id, state, lyric? }`; stale request IDs are discarded by the UI |
 | `player:artwork-crossfade` | Automatic audio crossfade begins/ends; fullscreen artwork transition payload |
 
 ## Frontend Store (`stores/player.ts`)

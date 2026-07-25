@@ -42,6 +42,32 @@ Hash history mode (`createWebHashHistory`). All views lazy-loaded except HomeVie
 
 The `/mini-player` route bypasses the MainLayout wrapper and renders directly.
 
+### Cached Route Data Refresh
+
+`MainLayout` and entity explorer routes use `KeepAlive` to preserve UI state.
+`useLibrarySync` therefore treats Wails library data events as invalidations:
+the currently visible view reloads silently (with closely spaced events
+coalesced), while a deactivated cached view is marked dirty and reloads only
+when `onActivated` runs. This preserves scroll/filter state and avoids fetching
+data for routes the user cannot see. `library:track-updated`, `library:updated`,
+and non-background `library:sync-finished` all use this behavior.
+
+`SearchView` uses the same invalidation flow. Its Pinia store retains a search
+response, so `useLibrarySync` calls `searchStore.refresh()` for a non-empty
+query. Refresh bypasses typing debounce, keeps the existing results visible,
+and supersedes any pending older request.
+
+`HomeOverview` also uses `useLibrarySync` to silently reload its listening
+carousels after library mutations. This prevents a cached home track from
+linking to an album ID that was removed after a metadata edit.
+
+Album and playlist detail pages use the same invalidation flow so their cached
+headers and membership cannot outlive metadata changes. This is essential for
+smart playlists, whose rules can add or remove a track after its metadata is
+edited. Home Analytics silently refreshes its hydrated top-track DTOs and
+summary data, and Playlists refreshes mosaic-preview tracks even when playlist
+membership itself did not change.
+
 ### Mini Player Window Lifecycle
 
 The mini player window is **destroyed on close and recreated on open** (not just hidden). `WindowService` holds a factory function (`SetMiniWindowFactory`) that creates a fresh `WebviewWindow` each time. Closing the window does not call `e.Cancel()` on the `WindowClosing` hook, so Wails destroys the native window and frees its memory. Reopening calls the factory to create a new window. This resets all Vue/Pinia state in that webview.
@@ -190,6 +216,11 @@ Row height: 56px (default) or 36px (compact mode), header height: 40px. Column v
 - `airmedy:track-table-widths`
 - `airmedy:track-table-collapsed`
 
+For small, non-virtualized embedded lists, `autoHeight` lets the table expand to
+its rows instead of creating a nested vertical scroll region. The Home analytics
+"Most played tracks" table uses this mode so normal wheel/trackpad scrolling
+continues through the page.
+
 ## Context Menu System
 
 **`useContextMenu()`** composable: manages position, visibility, and items for a generic `ContextMenu.vue`.
@@ -327,6 +358,8 @@ completed, skipped, and stopped attempts; the three slices total 100% and the
 card remains unavailable until at least one playback attempt has ended. The
 same row includes a one-column Average Session card, calculated from actual
 audio-running seconds per finalized playback attempt.
+Every donut's adjacent breakdown is sorted by value descending. Genre
+breakdowns place the aggregate `Other` entry last regardless of its value.
 Library growth is an SVG ECharts area chart with a fading primary-color gradient
 inside its chart; the Library Growth and Streak cards themselves intentionally
 do not inherit the current track's artwork surface color.
@@ -350,6 +383,7 @@ SVG-rendered `vue-echarts` components.
 - **Path Morphing**: Play/Pause buttons in `PlayerFooter`, `PlayerPlaybackControls`, and `MiniPlayer` use SVG path morphing for Apple Music-style fluid transitions.
 - **Tactile Feedback**: Interactive buttons use a `scale-95` active state for a "pressed" feel.
 - **Glass-Morphism**: Surfaces use `var(--bg-glass)` with `backdrop-filter: blur(30px)`.
+- **Lyrics lifecycle**: `stores/player.ts` tracks `lyrics_request_id` from `player:status` and applies a `player:lyrics` update only when its track and request IDs both match. A matching error ends loading without clearing an already shown lyric.
 
 ### Development Tools Overlay
 

@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
+import { onMounted, ref, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 import { Ghost, History, Music, Podium, Settings as SettingsIcon } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
-import { Events } from '@wailsio/runtime'
 import * as LibraryService from '../../../bindings/airmedy/internal/infra/wails/libraryservice'
 import type { TrackDTO } from '../../../bindings/airmedy/internal/domain/models'
 import { usePlayerStore } from '@/stores/player'
 import HomeSection from '@/components/HomeSection.vue'
 import TrackCard from '@/components/TrackCard.vue'
 import TrackContextMenu from '@/components/TrackContextMenu.vue'
+import { useLibrarySync } from '@/composables/useLibrarySync'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -21,8 +21,8 @@ const mostListened = shallowRef<TrackDTO[]>([])
 const leastListened = shallowRef<TrackDTO[]>([])
 const contextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
 
-async function fetchData() {
-  loading.value = true
+async function fetchData(silent = false) {
+  if (!silent) loading.value = true
   try {
     hasTracks.value = (await LibraryService.GetTrackCount()) > 0
     if (!hasTracks.value) return
@@ -30,7 +30,9 @@ async function fetchData() {
     recentlyPlayed.value = (recent || []).filter((track): track is TrackDTO => track !== null)
     mostListened.value = (most || []).filter((track): track is TrackDTO => track !== null)
     leastListened.value = (least || []).filter((track): track is TrackDTO => track !== null)
-  } catch (error) { console.error('Failed to fetch home data:', error) } finally { loading.value = false }
+  } catch (error) { console.error('Failed to fetch home data:', error) } finally {
+    if (!silent) loading.value = false
+  }
 }
 const play = (track: TrackDTO) => playerStore.playTracks([track], 0)
 const playAll = (tracks: TrackDTO[]) => { if (tracks.length) playerStore.playTracks(tracks, 0) }
@@ -38,14 +40,15 @@ const openTrack = (track: TrackDTO) => { if (track.album) router.push(`/albums/$
 const openArtist = (id: string) => router.push(`/artists/${id}`)
 const openAlbum = (id: string) => router.push(`/albums/${id}`)
 const onMenu = (event: MouseEvent, track: TrackDTO) => contextMenu.value?.open(event, track)
-let off: (() => void) | undefined
 onMounted(() => {
-  fetchData()
-  off = Events.On('library:sync-finished', (event: Events.WailsEvent) => {
-    if (!(event.data as { background?: boolean })?.background) fetchData()
-  })
+  void fetchData()
 })
-onUnmounted(() => off?.())
+
+// Track metadata can change an album/artist relationship. Reload the carousel
+// data instead of retaining a TrackDTO whose album ID has since been removed.
+useLibrarySync(() => {
+  void fetchData(true)
+})
 </script>
 
 <template>

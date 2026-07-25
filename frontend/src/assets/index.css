@@ -122,6 +122,11 @@ img {
   user-select: none;
 }
 
+a {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
 /* Custom Scrollbar Global */
 ::-webkit-scrollbar {
   width: 10px;
