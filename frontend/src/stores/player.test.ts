@@ -162,6 +162,50 @@ describe('usePlayerStore', () => {
     store.dispose()
   })
 
+  it('keeps a manually selected lyric ready when its event arrives before the status update', async () => {
+    vi.stubGlobal('requestAnimationFrame', vi.fn(() => 1))
+    vi.stubGlobal('cancelAnimationFrame', vi.fn())
+    mockGetStatus.mockResolvedValue({
+      track_id: 't1',
+      lyrics_request_id: 2,
+      playback_state: PlaybackState.PlaybackStatePlaying,
+      position: 0,
+      duration: 180,
+      volume: 1,
+      muted: false,
+      repeat_mode: RepeatMode.RepeatModeOff,
+      shuffle: false,
+    })
+    mockGetQueue.mockResolvedValue([{ id: 't1' }])
+    mockGetCurrentLyrics.mockResolvedValue({
+      track_id: 't1', request_id: 2, state: 'ready', lyric: { track_id: 't1', content: 'local lyric' },
+    })
+
+    const store = usePlayerStore()
+    await store.init()
+    const lyricsListener = (Events.On as any).mock.calls.find(([name]: [string]) => name === 'player:lyrics')[1]
+    const statusListener = (Events.On as any).mock.calls.find(([name]: [string]) => name === 'player:status')[1]
+
+    // This is the event ordering produced when a second manual selection's
+    // `ready` event overtakes its `player:status` notification.
+    lyricsListener({ data: { track_id: 't1', request_id: 3, state: 'ready', lyric: { track_id: 't1', content: 'selected lyric' } } })
+    statusListener({ data: {
+      track_id: 't1',
+      lyrics_request_id: 3,
+      playback_state: PlaybackState.PlaybackStatePlaying,
+      position: 0,
+      duration: 180,
+      volume: 1,
+      muted: false,
+      repeat_mode: RepeatMode.RepeatModeOff,
+      shuffle: false,
+    } })
+
+    expect(store.lyrics?.content).toBe('selected lyric')
+    expect(store.lyricsLoading).toBe(false)
+    store.dispose()
+  })
+
   it('toggleQueue flips isQueueOpen and closes other drawers', () => {
     const store = usePlayerStore()
     store.isLyricsOpen = true
