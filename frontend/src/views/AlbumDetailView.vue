@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, shallowRef, computed } from 'vue'
+import { ref, shallowRef, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDetailRouteLoader } from '@/composables/useDetailRouteLoader'
 import { useI18n } from 'vue-i18n'
@@ -16,7 +16,9 @@ import ContextMenu from '@/components/ContextMenu.vue'
 import { DetailsButton, Input } from '@airmedy/ui'
 import DetailPageLayout from '@/components/DetailPageLayout.vue'
 import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
+import { useLibrarySync } from '@/composables/useLibrarySync'
 import { useTrackTableSettings } from '@/composables/useTrackTableSettings'
+import { Events } from '@wailsio/runtime'
 
 const TABLE_HEADER_HEIGHT = 41
 const settings = useTrackTableSettings()
@@ -29,6 +31,23 @@ const album = ref<AlbumDTO | null>(null)
 const tracks = shallowRef<TrackDTO[]>([])
 const isLoading = ref(true)
 const searchQuery = ref('')
+
+// An album-name edit normally creates a new normalized album ID. Move the
+// detail route with the edited track instead of attempting to render the
+// deleted predecessor as an empty page. Register before useLibraryUpdates so
+// this observes membership before that composable removes the old track.
+const handleTrackUpdated = (event: Events.WailsEvent) => {
+  const updated = event.data as TrackDTO
+  if (!updated?.id || !updated.album?.id || updated.album.id === album.value?.id) return
+  if (tracks.value.some(track => track.id === updated.id)) {
+    router.replace(`/albums/${updated.album.id}`)
+  }
+}
+let offTrackUpdated: (() => void) | null = null
+onMounted(() => {
+  offTrackUpdated = Events.On('library:track-updated', handleTrackUpdated)
+})
+onUnmounted(() => offTrackUpdated?.())
 
 const filteredTracks = computed(() => {
   if (!searchQuery.value) return tracks.value
@@ -66,9 +85,9 @@ function openContextMenu(e: MouseEvent) {
 let currentAlbumId: string | null = null
 const isStale = (id: string) => currentAlbumId !== id
 
-const loadAlbumDetails = async (id: string) => {
+const loadAlbumDetails = async (id: string, silent = false) => {
   currentAlbumId = id
-  isLoading.value = true
+  if (!silent) isLoading.value = true
   try {
     const [albumData, tracksData] = await Promise.all([
       LibraryService.GetAlbumByID(id),
@@ -89,11 +108,19 @@ const loadAlbumDetails = async (id: string) => {
   } catch (err) {
     console.error('Failed to load album details:', err)
   } finally {
-    if (!isStale(id)) isLoading.value = false
+    if (!silent && !isStale(id)) isLoading.value = false
   }
 }
 
 useDetailRouteLoader(loadAlbumDetails)
+
+// An edit can replace this album's entity (for example, a title change creates
+// a new normalized album ID). Reload the header and membership rather than
+// retaining the now-stale album DTO.
+useLibrarySync(() => {
+  const id = album.value?.id
+  if (id) void loadAlbumDetails(id, true)
+})
 
 const getTotalDuration = (tracks: TrackDTO[]) => {
   const totalSeconds = tracks.reduce((acc, t) => acc + (t.duration || 0), 0)

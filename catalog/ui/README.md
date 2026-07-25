@@ -42,6 +42,32 @@ Hash history mode (`createWebHashHistory`). All views lazy-loaded except HomeVie
 
 The `/mini-player` route bypasses the MainLayout wrapper and renders directly.
 
+### Cached Route Data Refresh
+
+`MainLayout` and entity explorer routes use `KeepAlive` to preserve UI state.
+`useLibrarySync` therefore treats Wails library data events as invalidations:
+the currently visible view reloads silently (with closely spaced events
+coalesced), while a deactivated cached view is marked dirty and reloads only
+when `onActivated` runs. This preserves scroll/filter state and avoids fetching
+data for routes the user cannot see. `library:track-updated`, `library:updated`,
+and non-background `library:sync-finished` all use this behavior.
+
+`SearchView` uses the same invalidation flow. Its Pinia store retains a search
+response, so `useLibrarySync` calls `searchStore.refresh()` for a non-empty
+query. Refresh bypasses typing debounce, keeps the existing results visible,
+and supersedes any pending older request.
+
+`HomeOverview` also uses `useLibrarySync` to silently reload its listening
+carousels after library mutations. This prevents a cached home track from
+linking to an album ID that was removed after a metadata edit.
+
+Album and playlist detail pages use the same invalidation flow so their cached
+headers and membership cannot outlive metadata changes. This is essential for
+smart playlists, whose rules can add or remove a track after its metadata is
+edited. Home Analytics silently refreshes its hydrated top-track DTOs and
+summary data, and Playlists refreshes mosaic-preview tracks even when playlist
+membership itself did not change.
+
 ### Mini Player Window Lifecycle
 
 The mini player window is **destroyed on close and recreated on open** (not just hidden). `WindowService` holds a factory function (`SetMiniWindowFactory`) that creates a fresh `WebviewWindow` each time. Closing the window does not call `e.Cancel()` on the `WindowClosing` hook, so Wails destroys the native window and frees its memory. Reopening calls the factory to create a new window. This resets all Vue/Pinia state in that webview.

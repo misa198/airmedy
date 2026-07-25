@@ -16,6 +16,7 @@ import GenreDistributionChart from './GenreDistributionChart.vue'
 import ListeningActivityChart from './ListeningActivityChart.vue'
 import LibraryGrowthChart from './LibraryGrowthChart.vue'
 import PlaybackOutcomesChart from './PlaybackOutcomesChart.vue'
+import { useLibrarySync } from '@/composables/useLibrarySync'
 
 const { t, locale } = useI18n()
 const playerStore = usePlayerStore()
@@ -84,9 +85,12 @@ const formatBytes = (bytes: number) => new Intl.NumberFormat(locale.value, {
   style: 'unit', unit: 'gigabyte', unitDisplay: 'narrow', maximumFractionDigits: 1,
 }).format(bytes / 1024 / 1024 / 1024)
 
-async function load() {
+async function loadInsights(silent = false) {
   request?.cancel()
-  loading.value = true; error.value = false
+  if (!silent) {
+    loading.value = true
+    error.value = false
+  }
   const pending = AnalyticsService.GetInsights(period.value)
   request = pending
   try {
@@ -127,7 +131,18 @@ async function loadTopTrackQueue(topTracks: { id: string; play_count: number; li
   }
 }
 
-watch(period, load, { immediate: true })
+function load() {
+  return loadInsights()
+}
+
+watch(period, () => {
+  void loadInsights()
+}, { immediate: true })
+// Rehydrate top-track DTOs and library summaries after metadata edits without
+// replacing the currently visible analytics UI with a loading state.
+useLibrarySync(() => {
+  void loadInsights(true)
+})
 onUnmounted(() => {
   request?.cancel()
   topTrackRequest?.cancel()
