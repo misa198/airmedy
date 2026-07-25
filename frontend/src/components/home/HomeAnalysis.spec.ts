@@ -104,6 +104,38 @@ describe('HomeAnalysis top tracks', () => {
       { id: 'track-b', play_count: 3, listened_seconds: 600 },
     ])
   })
+
+  it('previews five tracks and expands to the full ranking', async () => {
+    const analyticsTracks = Array.from({ length: 50 }, (_, index) => ({
+      id: `track-${index}`, title: `Track ${index}`, artist: 'Artist', play_count: 50 - index, listened_seconds: 60,
+    }))
+    vi.mocked(AnalyticsService.GetInsights).mockReturnValue(cancellable({ listened_seconds: 3000, top_tracks: analyticsTracks }) as unknown as ReturnType<typeof AnalyticsService.GetInsights>)
+    vi.mocked(LibraryService.GetTracksByIDs).mockReturnValue(cancellable(analyticsTracks as unknown as TrackDTO[]) as unknown as ReturnType<typeof LibraryService.GetTracksByIDs>)
+
+    const wrapper = mount(HomeAnalysis, {
+      global: {
+        plugins: [createTestingPinia({ createSpy: vi.fn })],
+        stubs: {
+          AudioQualityChart: true, GenreDistributionChart: true, LibraryGrowthChart: true,
+          ListeningActivityChart: true, TabSwitcher: true, TopArtistsCarousel: true,
+          TrackTable: { name: 'TrackTable', props: ['tracks'], template: '<div />' },
+        },
+      },
+    })
+    await flushPromises()
+
+    const table = wrapper.findComponent({ name: 'TrackTable' })
+    expect((table.props('tracks') as TrackDTO[])).toHaveLength(5)
+    const toggle = wrapper.get('[data-testid="analytics-top-tracks-toggle"]')
+    expect(toggle.attributes('aria-expanded')).toBe('false')
+
+    await toggle.trigger('click')
+    expect((table.props('tracks') as TrackDTO[])).toHaveLength(50)
+    expect(toggle.attributes('aria-expanded')).toBe('true')
+
+    await toggle.trigger('click')
+    expect((table.props('tracks') as TrackDTO[])).toHaveLength(5)
+  })
 })
 
 describe('HomeAnalysis library growth', () => {

@@ -604,6 +604,8 @@
     "retry": "Réessayer",
     "refresh": "Actualiser les statistiques",
     "no_top_artists": "Aucune écoute d'artiste pour le moment",
-    "no_top_tracks": "Aucun titre lu pour le moment"
+    "no_top_tracks": "Aucun titre lu pour le moment",
+    "show_more": "Afficher plus",
+    "show_less": "Afficher moins"
   }
 }

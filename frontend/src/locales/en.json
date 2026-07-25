@@ -611,6 +611,8 @@
     "retry": "Try again",
     "refresh": "Refresh insights",
     "no_top_artists": "No artist listens yet",
-    "no_top_tracks": "No played tracks yet"
+    "no_top_tracks": "No played tracks yet",
+    "show_more": "Show more",
+    "show_less": "Show less"
   }
 }

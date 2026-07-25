@@ -604,6 +604,8 @@
     "retry": "Erneut versuchen",
     "refresh": "Statistiken aktualisieren",
     "no_top_artists": "Noch keine Künstlerwiedergaben",
-    "no_top_tracks": "Noch keine wiedergegebenen Titel"
+    "no_top_tracks": "Noch keine wiedergegebenen Titel",
+    "show_more": "Mehr anzeigen",
+    "show_less": "Weniger anzeigen"
   }
 }

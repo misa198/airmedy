@@ -606,6 +606,8 @@
     "retry": "Thử lại",
     "refresh": "Làm mới thống kê",
     "no_top_artists": "Chưa có lượt nghe nghệ sĩ",
-    "no_top_tracks": "Chưa có bài hát được phát"
+    "no_top_tracks": "Chưa có bài hát được phát",
+    "show_more": "Xem thêm",
+    "show_less": "Thu gọn"
   }
 }

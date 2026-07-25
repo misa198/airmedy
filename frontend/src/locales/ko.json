@@ -604,6 +604,8 @@
     "retry": "다시 시도",
     "refresh": "통계 새로 고침",
     "no_top_artists": "아직 아티스트 감상 기록이 없습니다",
-    "no_top_tracks": "아직 재생한 트랙이 없습니다"
+    "no_top_tracks": "아직 재생한 트랙이 없습니다",
+    "show_more": "더 보기",
+    "show_less": "간략히 보기"
   }
 }

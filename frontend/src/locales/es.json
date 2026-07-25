@@ -604,6 +604,8 @@
     "retry": "Intentar de nuevo",
     "refresh": "Actualizar estadísticas",
     "no_top_artists": "Aún no hay escuchas de artistas",
-    "no_top_tracks": "Aún no hay canciones reproducidas"
+    "no_top_tracks": "Aún no hay canciones reproducidas",
+    "show_more": "Mostrar más",
+    "show_less": "Mostrar menos"
   }
 }
