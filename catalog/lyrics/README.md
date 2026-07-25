@@ -237,7 +237,9 @@ player:lyrics → { track_id, request_id, state: "loading" | "ready" | "error", 
 ```
 
 `PlayerStatus.lyrics_request_id` identifies the currently expected request before the terminal
-event arrives. The player store accepts an event only when both track and request IDs match;
+event arrives. Delivery of the status and lyric event is independent, so the player store accepts
+the same-track event when its request ID is equal to or newer than the latest seen ID, and ignores
+only older IDs; a late older status likewise cannot restore loading after a newer terminal event.
 `error` ends loading without clearing an already displayed lyric. `GetCurrentLyrics` returns the
 same request-identified snapshot so a late startup pull cannot overwrite a newer request.
 When the status and `ready` event arrive in the same browser tick, the track-change watcher keeps

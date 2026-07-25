@@ -162,7 +162,11 @@ export const usePlayerStore = defineStore('player', () => {
         status.value = s
         if (s.theme) theme.value = s.theme
 
-        if (s.track_id && s.lyrics_request_id !== lyricsRequestId.value) {
+        // Wails events are delivered independently, so a terminal lyric event
+        // can arrive before the accompanying status update. Request IDs are
+        // monotonic: never let a late status for an older request put the UI
+        // back into loading after accepting a newer terminal event.
+        if (s.track_id && s.lyrics_request_id > lyricsRequestId.value) {
           lyricsRequestId.value = s.lyrics_request_id
           lyrics.value = null
           lyricsLoading.value = true
@@ -207,7 +211,10 @@ export const usePlayerStore = defineStore('player', () => {
       Events.On('player:lyrics', (ev: Events.WailsEvent) => {
         const event = ev.data as LyricsEvent
         if (!event || event.track_id !== currentTrack.value?.id) return
-        if (lyricsRequestId.value !== 0 && event.request_id !== lyricsRequestId.value) return
+        // A newer lyric event may beat its status event to the frontend. It is
+        // authoritative for that request; only discard events from an older
+        // request, which are necessarily stale.
+        if (event.request_id < lyricsRequestId.value) return
         lyricsRequestId.value = event.request_id
         if (event.state === 'loading') {
           lyricsLoading.value = true

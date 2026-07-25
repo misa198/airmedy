@@ -108,6 +108,7 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
     })
 
     if (appStore.libraryAnalysisEnabled) {
+      items.push({ separator: true })
       items.push({
         label: t('context_menu.start_mood_radio'),
         icon: Radio,
