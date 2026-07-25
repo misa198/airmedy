@@ -159,4 +159,37 @@ describe('HomeAnalysis playback outcomes', () => {
     expect(wrapper.get('[data-testid="analytics-average-session-card"]').text()).toContain('3 min')
     expect(wrapper.getComponent({ name: 'PlaybackOutcomesChart' }).props()).toMatchObject({ completed: 75, skipped: 20, stopped: 5 })
   })
+
+  it('sorts each donut breakdown descending and keeps Other at the bottom', async () => {
+    vi.mocked(AnalyticsService.GetInsights).mockReturnValue(cancellable({
+      quality: [
+        { kind: 'lossless', count: 3 }, { kind: 'lossy', count: 20 }, { kind: 'hi_res', count: 10 },
+      ],
+      genres: [
+        { name: 'Other', listened_seconds: 50, is_other: true },
+        { name: 'Rock', listened_seconds: 10, is_other: false },
+        { name: 'Pop', listened_seconds: 30, is_other: false },
+      ],
+      completed: 1, skipped: 9, stopped: 5,
+      library_growth: [], activity: [], top_artists: [], top_tracks: [],
+    }) as unknown as ReturnType<typeof AnalyticsService.GetInsights>)
+
+    const wrapper = mount(HomeAnalysis, { global: { plugins: [createTestingPinia({ createSpy: vi.fn })], stubs: { AudioQualityChart: true, GenreDistributionChart: true, LibraryGrowthChart: true, ListeningActivityChart: true, PlaybackOutcomesChart: true, TabSwitcher: true, TopArtistsCarousel: true, TrackTable: true } } })
+    await flushPromises()
+
+    const rowText = (testId: string) => wrapper.get(`[data-testid="${testId}"]`).findAll(':scope > div').map(row => row.text())
+    expect(rowText('analytics-quality-breakdown')).toMatchObject([
+      expect.stringContaining('analytics.quality_lossy'),
+      expect.stringContaining('analytics.quality_hi_res'),
+      expect.stringContaining('analytics.quality_lossless'),
+    ])
+    expect(rowText('analytics-genre-breakdown')).toMatchObject([
+      expect.stringContaining('Pop'), expect.stringContaining('Rock'), expect.stringContaining('analytics.genre_other'),
+    ])
+    expect(rowText('analytics-playback-outcomes-breakdown')).toMatchObject([
+      expect.stringContaining('analytics.outcome_skipped'),
+      expect.stringContaining('analytics.outcome_stopped'),
+      expect.stringContaining('analytics.outcome_completed'),
+    ])
+  })
 })

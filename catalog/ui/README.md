@@ -190,6 +190,11 @@ Row height: 56px (default) or 36px (compact mode), header height: 40px. Column v
 - `airmedy:track-table-widths`
 - `airmedy:track-table-collapsed`
 
+For small, non-virtualized embedded lists, `autoHeight` lets the table expand to
+its rows instead of creating a nested vertical scroll region. The Home analytics
+"Most played tracks" table uses this mode so normal wheel/trackpad scrolling
+continues through the page.
+
 ## Context Menu System
 
 **`useContextMenu()`** composable: manages position, visibility, and items for a generic `ContextMenu.vue`.
@@ -327,6 +332,8 @@ completed, skipped, and stopped attempts; the three slices total 100% and the
 card remains unavailable until at least one playback attempt has ended. The
 same row includes a one-column Average Session card, calculated from actual
 audio-running seconds per finalized playback attempt.
+Every donut's adjacent breakdown is sorted by value descending. Genre
+breakdowns place the aggregate `Other` entry last regardless of its value.
 Library growth is an SVG ECharts area chart with a fading primary-color gradient
 inside its chart; the Library Growth and Streak cards themselves intentionally
 do not inherit the current track's artwork surface color.

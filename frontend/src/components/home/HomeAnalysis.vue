@@ -41,6 +41,16 @@ const periodOptions = computed(() => [
 ])
 const totalQuality = computed(() => insights.value?.quality.reduce((sum: number, item: any) => sum + item.count, 0) || 0)
 const totalGenres = computed(() => insights.value?.genres.reduce((sum: number, item: any) => sum + item.listened_seconds, 0) || 0)
+const sortedQuality = computed(() => [...(insights.value?.quality ?? [])].sort((a, b) => b.count - a.count))
+const sortedGenres = computed(() => [...(insights.value?.genres ?? [])].sort((a, b) => {
+  if (a.is_other !== b.is_other) return a.is_other ? 1 : -1
+  return b.listened_seconds - a.listened_seconds
+}))
+const sortedPlaybackOutcomes = computed(() => [
+  { key: 'completed', value: insights.value?.completed ?? 0 },
+  { key: 'skipped', value: insights.value?.skipped ?? 0 },
+  { key: 'stopped', value: insights.value?.stopped ?? 0 },
+].sort((a, b) => b.value - a.value))
 const hasListeningData = computed(() => (insights.value?.listened_seconds ?? 0) > 0)
 const emptyInsights = () => ({
   listened_seconds: 0,
@@ -175,9 +185,9 @@ onUnmounted(() => {
               <AudioLines class="h-4 w-4" />{{ t('analytics.quality') }}
             </h2>
             <div v-if="insights.quality?.length" class="flex flex-1 flex-col gap-5 @md:flex-row @md:items-center @md:gap-8">
-              <AudioQualityChart :quality="insights.quality" />
-              <div class="min-w-0 flex-1 space-y-2.5">
-                <div v-for="item in insights.quality" :key="item.kind"
+              <AudioQualityChart :quality="sortedQuality" />
+              <div data-testid="analytics-quality-breakdown" class="min-w-0 flex-1 space-y-2.5">
+                <div v-for="item in sortedQuality" :key="item.kind"
                   class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-3 text-xs">
                   <span class="truncate text-[color:var(--text-muted)]">{{ t(`analytics.quality_${item.kind}`) }}</span>
                   <span class="text-right tabular-nums text-[color:var(--text-muted)]">{{ formatNumber(item.count) }}</span>
@@ -255,7 +265,7 @@ onUnmounted(() => {
             data-testid="analytics-streak-card"
             class="streak-card group relative flex min-h-[17rem] flex-col overflow-hidden rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-6 backdrop-blur-[30px] @5xl:col-span-1">
             <div data-testid="analytics-streak-glow" aria-hidden="true" class="streak-glow pointer-events-none absolute -right-16 -bottom-16 h-52 w-52 rounded-full" />
-            <Flame aria-hidden="true" class="streak-watermark pointer-events-none absolute -right-7 -bottom-8 h-40 w-40" stroke-width="1" />
+            <Flame aria-hidden="true" class="streak-watermark pointer-events-none absolute -right-10 -bottom-8 h-40 w-40" stroke-width="0.25" fill="currentColor" />
             <div class="relative mb-6 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
               <Flame class="h-4 w-4" />{{ t('analytics.streak') }}
             </div>
@@ -273,9 +283,9 @@ onUnmounted(() => {
               </div>
               <div v-if="insights.genres?.length"
                 class="flex flex-1 flex-col gap-5 @md:flex-row @md:items-center @md:gap-6">
-                <GenreDistributionChart :genres="insights.genres" />
-                <div class="min-w-0 flex-1 space-y-2.5">
-                  <div v-for="genre in insights.genres" :key="genre.is_other ? 'other' : genre.name"
+                <GenreDistributionChart :genres="sortedGenres" />
+                <div data-testid="analytics-genre-breakdown" class="min-w-0 flex-1 space-y-2.5">
+                  <div v-for="genre in sortedGenres" :key="genre.is_other ? 'other' : genre.name"
                     class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-3 text-xs">
                     <span class="truncate text-[color:var(--text-muted)]">{{ genre.is_other ? t('analytics.genre_other')
                       : genre.name }}</span>
@@ -298,8 +308,8 @@ onUnmounted(() => {
               </div>
               <div v-if="(insights.completed + insights.skipped + insights.stopped) > 0" class="flex flex-1 flex-col items-center gap-5 @md:flex-row @md:gap-6">
                 <PlaybackOutcomesChart :completed="insights.completed" :skipped="insights.skipped" :stopped="insights.stopped" />
-                <div class="min-w-0 flex-1 space-y-2.5 text-xs">
-                  <div v-for="item in [{ key: 'completed', value: insights.completed }, { key: 'skipped', value: insights.skipped }, { key: 'stopped', value: insights.stopped }]" :key="item.key" class="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3">
+                <div data-testid="analytics-playback-outcomes-breakdown" class="min-w-0 flex-1 space-y-2.5 text-xs">
+                  <div v-for="item in sortedPlaybackOutcomes" :key="item.key" class="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3">
                     <span class="truncate text-[color:var(--text-muted)]">{{ t(`analytics.outcome_${item.key}`) }}</span>
                     <span class="tabular-nums text-[color:var(--text-muted)]">{{ formatNumber(item.value) }}</span>
                     <span class="w-9 text-right tabular-nums text-[color:var(--text-muted)]">{{ Math.round(item.value / (insights.completed + insights.skipped + insights.stopped) * 100) }}%</span>
@@ -319,16 +329,18 @@ onUnmounted(() => {
               </div>
             </article>
           </div>
+          <TopArtistsCarousel :artists="insights.top_artists" />
           <div class="grid gap-4">
             <article
               class="flex min-h-[17rem] flex-col rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px]">
               <h2 class="mb-4 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
                 <Music class="h-4 w-4" />{{ t('analytics.top_tracks') }}
               </h2>
-              <div v-if="topTrackQueue.length" class="mt-3 h-96">
+              <div v-if="topTrackQueue.length" class="mt-3">
                 <TrackTable :tracks="topTrackQueue" :show-artwork="true" simple-mode
                   :simple-columns="['index', 'title', 'artist', 'listened_seconds', 'play_count']"
                   :additional-columns="topTrackColumns" :virtual-scroll="false" variant="glass"
+                  auto-height
                   @play-track="(_, index, queue) => playerStore.playTracks(queue, index)" />
               </div>
               <div v-else-if="topTracksLoading" class="flex-1 animate-pulse rounded-lg bg-white/[0.04]" />
@@ -342,7 +354,6 @@ onUnmounted(() => {
               </div>
             </article>
           </div>
-          <TopArtistsCarousel :artists="insights.top_artists" />
       </template>
     </div>
   </section>

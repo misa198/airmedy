@@ -35,10 +35,12 @@ const props = withDefaults(defineProps<{
   contextMenuOptions?: TrackContextMenuOptions
   allowDnd?: boolean
   virtualScroll?: boolean
+  autoHeight?: boolean
   storageKey?: string
 }>(), {
   allowDnd: false,
-  virtualScroll: true
+  virtualScroll: true,
+  autoHeight: false,
 })
 
 const emit = defineEmits<{
@@ -340,8 +342,8 @@ defineExpose({ scrollToCurrentTrack, optionalColumns, sortColumn, sortDir, cycle
 </script>
 
 <template>
-  <div class="h-full flex flex-col overflow-hidden">
-    <div class="flex-1 overflow-hidden">
+  <div :class="autoHeight ? 'flex flex-col overflow-visible' : 'h-full flex flex-col overflow-hidden'">
+    <div :class="autoHeight ? 'overflow-visible' : 'flex-1 overflow-hidden'">
       <div v-if="isLoading" class="h-full flex items-center justify-center">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
@@ -352,7 +354,7 @@ defineExpose({ scrollToCurrentTrack, optionalColumns, sortColumn, sortDir, cycle
         <p>{{ $t('library.no_tracks') }}</p>
       </div>
 
-      <div v-else class="h-full flex flex-col overflow-hidden">
+      <div v-else :class="autoHeight ? 'flex flex-col overflow-visible' : 'h-full flex flex-col overflow-hidden'">
         <div
           ref="headerContainerRef"
           data-testid="track-table-header-scroll-container"
@@ -400,7 +402,7 @@ defineExpose({ scrollToCurrentTrack, optionalColumns, sortColumn, sortDir, cycle
         <div
           v-else
           ref="plainListRef"
-          class="flex-1 overflow-auto custom-scrollbar"
+          :class="autoHeight ? 'overflow-visible' : 'flex-1 overflow-auto custom-scrollbar'"
           :style="{ minWidth: totalMinWidth }"
           @scroll="handleScroll"
         >
