@@ -219,7 +219,8 @@ Row height: 56px (default) or 36px (compact mode), header height: 40px. Column v
 For small, non-virtualized embedded lists, `autoHeight` lets the table expand to
 its rows instead of creating a nested vertical scroll region. The Home analytics
 "Most played tracks" table uses this mode so normal wheel/trackpad scrolling
-continues through the page.
+continues through the page. It previews five tracks by default and provides an
+expand/collapse control for the full 50-track analytics ranking.
 
 ## Context Menu System
 

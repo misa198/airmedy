@@ -604,6 +604,8 @@
     "retry": "Riprova",
     "refresh": "Aggiorna statistiche",
     "no_top_artists": "Nessun ascolto di artisti ancora",
-    "no_top_tracks": "Nessun brano riprodotto ancora"
+    "no_top_tracks": "Nessun brano riprodotto ancora",
+    "show_more": "Mostra altro",
+    "show_less": "Mostra meno"
   }
 }

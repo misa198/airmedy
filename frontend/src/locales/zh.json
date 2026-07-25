@@ -606,6 +606,8 @@
     "retry": "重试",
     "refresh": "刷新统计",
     "no_top_artists": "暂无艺人收听记录",
-    "no_top_tracks": "暂无已播放曲目"
+    "no_top_tracks": "暂无已播放曲目",
+    "show_more": "显示更多",
+    "show_less": "显示更少"
   }
 }

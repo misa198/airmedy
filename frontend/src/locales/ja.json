@@ -604,6 +604,8 @@
     "retry": "再試行",
     "refresh": "統計を更新",
     "no_top_artists": "アーティストの再生履歴はまだありません",
-    "no_top_tracks": "再生した曲はまだありません"
+    "no_top_tracks": "再生した曲はまだありません",
+    "show_more": "もっと見る",
+    "show_less": "表示を減らす"
   }
 }

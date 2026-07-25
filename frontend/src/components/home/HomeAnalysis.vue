@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, shallowRef, watch } from 'vue'
-import { AudioLines, BarChart3, Clock, Disc, Flame, HardDrive, ListMusic, Music, RefreshCw, Timer, UserRound } from '@lucide/vue'
+import { AudioLines, BarChart3, ChevronDown, ChevronUp, Clock, Disc, Flame, HardDrive, ListMusic, Music, RefreshCw, Timer, UserRound } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { formatTotalDuration } from '@airmedy/utils'
 import * as AnalyticsService from '../../../bindings/airmedy/internal/infra/wails/analyticsservice'
@@ -26,6 +26,8 @@ const error = ref(false)
 const insights = ref<any>(null)
 const topTrackQueue = shallowRef<TrackDTO[]>([])
 const topTracksLoading = ref(false)
+const topTracksExpanded = ref(false)
+const topTracksPreviewLimit = 5
 const topTrackColumns: ColumnDef[] = [{
   key: 'listened_seconds',
   labelKey: 'analytics.total_time',
@@ -40,6 +42,9 @@ const topTrackColumns: ColumnDef[] = [{
 const periodOptions = computed(() => [
   { value: '7d', label: t('analytics.range_7d') }, { value: '30d', label: t('analytics.range_30d') }, { value: 'all', label: t('analytics.range_all') },
 ])
+const visibleTopTracks = computed(() => topTracksExpanded.value
+  ? topTrackQueue.value
+  : topTrackQueue.value.slice(0, topTracksPreviewLimit))
 const totalQuality = computed(() => insights.value?.quality.reduce((sum: number, item: any) => sum + item.count, 0) || 0)
 const totalGenres = computed(() => insights.value?.genres.reduce((sum: number, item: any) => sum + item.listened_seconds, 0) || 0)
 const sortedQuality = computed(() => [...(insights.value?.quality ?? [])].sort((a, b) => b.count - a.count))
@@ -97,6 +102,7 @@ async function loadInsights(silent = false) {
     const result = await pending
     if (request !== pending) return
     insights.value = normalizeInsights(result)
+    topTracksExpanded.value = false
     void loadTopTrackQueue(insights.value.top_tracks)
   } catch (err) { if (request === pending) { console.error('Failed to load analytics:', err); error.value = true } } finally { if (request === pending) { loading.value = false; request = null } }
 }
@@ -350,9 +356,16 @@ onUnmounted(() => {
               class="flex min-h-[17rem] flex-col rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px]">
               <h2 class="mb-4 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
                 <Music class="h-4 w-4" />{{ t('analytics.top_tracks') }}
+                <button v-if="topTrackQueue.length > topTracksPreviewLimit" data-testid="analytics-top-tracks-toggle"
+                  type="button" :aria-expanded="topTracksExpanded" class="ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-[color:var(--text-muted)]"
+                  @click="topTracksExpanded = !topTracksExpanded">
+                  <span>{{ t(topTracksExpanded ? 'analytics.show_less' : 'analytics.show_more') }}</span>
+                  <ChevronUp v-if="topTracksExpanded" class="h-3.5 w-3.5" aria-hidden="true" />
+                  <ChevronDown v-else class="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
               </h2>
               <div v-if="topTrackQueue.length" class="mt-3">
-                <TrackTable :tracks="topTrackQueue" :show-artwork="true" simple-mode
+                <TrackTable :tracks="visibleTopTracks" :show-artwork="true" simple-mode
                   :simple-columns="['index', 'title', 'artist', 'listened_seconds', 'play_count']"
                   :additional-columns="topTrackColumns" :virtual-scroll="false" variant="glass"
                   auto-height

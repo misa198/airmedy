@@ -604,6 +604,8 @@
     "retry": "Tentar novamente",
     "refresh": "Atualizar estatísticas",
     "no_top_artists": "Ainda não há audições de artistas",
-    "no_top_tracks": "Ainda não há faixas reproduzidas"
+    "no_top_tracks": "Ainda não há faixas reproduzidas",
+    "show_more": "Mostrar mais",
+    "show_less": "Mostrar menos"
   }
 }
