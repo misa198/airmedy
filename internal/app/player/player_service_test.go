@@ -259,6 +259,46 @@ func TestPositionTicker_StartsOnPlay(t *testing.T) {
 	}
 }
 
+func TestLyricsRequestCancelsPreviousAndRejectsStaleEvents(t *testing.T) {
+	s, _ := newTestService(t, &fakePlayer{status: domain.PlayerStatus{Volume: 1}})
+	track := &domain.TrackDTO{Track: domain.Track{ID: "track-a"}}
+	s.mu.Lock()
+	s.currentTrack = track
+	s.mu.Unlock()
+
+	firstCtx, firstID := s.startLyricsRequest()
+	_, secondID := s.startLyricsRequest()
+	if secondID != firstID+1 {
+		t.Fatalf("second request id = %d, want %d", secondID, firstID+1)
+	}
+	select {
+	case <-firstCtx.Done():
+	case <-time.After(time.Second):
+		t.Fatal("starting a newer lyrics request did not cancel the previous request")
+	}
+	if got := s.GetStatus().LyricsRequestID; got != secondID {
+		t.Fatalf("status lyrics request id = %d, want %d", got, secondID)
+	}
+
+	var events []domain.LyricsEvent
+	s.emitLyricsHook = func(event domain.LyricsEvent) { events = append(events, event) }
+	s.emitLyricsEvent(track.ID, firstID, "ready", &domain.Lyric{TrackID: track.ID, Content: "stale"})
+	s.emitLyricsEvent(track.ID, secondID, "ready", &domain.Lyric{TrackID: track.ID, Content: "current"})
+	if len(events) != 1 || events[0].Lyric == nil || events[0].Lyric.Content != "current" {
+		t.Fatalf("stale lyrics event was emitted: %#v", events)
+	}
+
+	timeoutCtx, timeoutCancel := context.WithTimeout(context.Background(), 0)
+	defer timeoutCancel()
+	<-timeoutCtx.Done()
+	if !s.handleLyricsRequestContext(track.ID, secondID, timeoutCtx) {
+		t.Fatal("timed-out lyrics request was not handled")
+	}
+	if len(events) != 2 || events[1].State != "error" {
+		t.Fatalf("timed-out request did not emit a terminal error: %#v", events)
+	}
+}
+
 func TestPositionTicker_StopsOnPause(t *testing.T) {
 	fp := &fakePlayer{status: domain.PlayerStatus{Volume: 1.0}}
 	s, _ := newTestService(t, fp)

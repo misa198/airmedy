@@ -84,12 +84,11 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
       icon: RefreshCw,
       action: async () => {
         const isCurrentTrack = playerStore.currentTrack?.id === track.id
-        if (isCurrentTrack) playerStore.lyricsLoading = true
-        const lyric = await LyricsService.FetchLyrics(track.id, track)
         if (isCurrentTrack) {
-          playerStore.lyrics = lyric ?? null
-          playerStore.lyricsLoading = false
+          await playerStore.refreshCurrentLyrics()
+          return
         }
+        await LyricsService.FetchLyrics(track.id, track)
       },
     })
 
@@ -251,13 +250,12 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
       label: t('context_menu.refresh_lyrics'),
       icon: RefreshCw,
       action: async () => {
-        for (const track of tracks) {
+        const currentTrackID = playerStore.currentTrack?.id
+        for (const track of tracks.filter(track => track.id !== currentTrackID)) {
           await LyricsService.FetchLyrics(track.id, track)
         }
-        // If current track is in the selection, update its lyrics in store
-        if (playerStore.currentTrack && tracks.some(t => t.id === playerStore.currentTrack?.id)) {
-          const lyric = await LyricsService.GetLyrics(playerStore.currentTrack.id)
-          playerStore.lyrics = lyric ?? null
+        if (currentTrackID && playerStore.currentTrack?.id === currentTrackID && tracks.some(track => track.id === currentTrackID)) {
+          await playerStore.refreshCurrentLyrics()
         }
       },
     })

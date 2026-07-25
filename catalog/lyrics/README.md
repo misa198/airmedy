@@ -217,6 +217,8 @@ Providers are wired via FX value group `lyrics_providers`. `LyricsService` recei
 ```typescript
 GetLyrics(trackID: string): Lyric | null
 FetchLyrics(trackID: string, track: TrackDTO): Lyric | null
+PlayerService.GetCurrentLyrics(): LyricsEvent | null
+PlayerService.RefreshCurrentLyrics(): number
 SaveLyrics(trackID: string, content: string, source: string): void
 SaveLyricsFile(audioPath: string, content: string): void
 DeleteLyrics(trackID: string): void
@@ -226,13 +228,18 @@ DeleteLyrics(trackID: string): void
 
 ## Event Delivery
 
-On track load, `PlayerService` calls `LyricsService.GetLyrics()` (or fetches if uncached) and emits:
+On track load (and when the current track is manually refreshed), `PlayerService` creates a
+monotonic request ID, cancels the preceding lyric context, and uses a 35-second total deadline.
+It emits a lifecycle event:
 
 ```
-player:lyrics → { track_id, content, source } | null
+player:lyrics → { track_id, request_id, state: "loading" | "ready" | "error", lyric?: Lyric }
 ```
 
-The player store receives this and sets `playerStore.lyrics`.
+`PlayerStatus.lyrics_request_id` identifies the currently expected request before the terminal
+event arrives. The player store accepts an event only when both track and request IDs match;
+`error` ends loading without clearing an already displayed lyric. `GetCurrentLyrics` returns the
+same request-identified snapshot so a late startup pull cannot overwrite a newer request.
 
 ## LRC Format Parser (`useLyrics.ts`)
 
@@ -291,7 +298,7 @@ Parsed into `{ text: "English text", secondary: "中文翻译" }`.
 
 **Fullscreen player:** Lyrics panel shown as the right column or via tab in the fullscreen overlay.
 
-**Refresh button:** In the track context menu (`context_menu.refresh_lyrics`), calls `FetchLyrics()` to force re-fetch even if cached.
+**Refresh button:** For the current track, the context menu calls `PlayerService.RefreshCurrentLyrics()` so it uses the same request-ID lifecycle as automatic loading. Other selected tracks still call `FetchLyrics()` only to refresh their cache.
 
 **Manual Search:** In the track context menu (`context_menu.find_lyrics`), opens `FindLyricsDialog.vue`. This allows users to manually search for lyrics by title and artist. It provides a list of candidates from both LRCLIB and KuGou, scored using the same "Search and Rank" logic as the automatic fetch. Users preview a candidate and confirm via the "Select" button, which always upserts the DB row (`SaveLyrics`) and, if the "Save .lrc file" checkbox is checked, also calls `SaveLyricsFile` (see Manual `.lrc` File Save above). An info icon next to the checkbox shows a hover tooltip (`Tooltip` component, `@airmedy/ui`) explaining the save-location priority.
 

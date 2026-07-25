@@ -20,10 +20,15 @@ func (s *PlayerService) GetService() *player.PlayerService {
 	return s.service
 }
 
-// GetCurrentLyrics resolves the best lyric for the currently loaded track.
+// GetCurrentLyrics resolves a request-identified lyric snapshot for the current track.
 // The frontend pulls this on startup to recover lyrics for a restored track.
-func (s *PlayerService) GetCurrentLyrics() *domain.Lyric {
+func (s *PlayerService) GetCurrentLyrics() *domain.LyricsEvent {
 	return s.service.GetCurrentLyrics()
+}
+
+// RefreshCurrentLyrics starts a forced lyrics request for the playing track.
+func (s *PlayerService) RefreshCurrentLyrics() uint64 {
+	return s.service.RefreshCurrentLyrics()
 }
 
 func (s *PlayerService) Play() error {

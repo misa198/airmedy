@@ -41,15 +41,25 @@ type RemotePlayerState struct {
 
 // PlayerStatus represents the full state of the playback engine for the UI
 type PlayerStatus struct {
-	TrackID       string        `json:"track_id"`
-	PlaybackState PlaybackState `json:"playback_state"`
-	Position      float64       `json:"position"` // Current position in seconds
-	Duration      float64       `json:"duration"` // Total duration in seconds
-	Volume        float64       `json:"volume"`   // 0.0 to 1.0
-	Muted         bool          `json:"muted"`
-	RepeatMode    RepeatMode    `json:"repeat_mode"`
-	Shuffle       bool          `json:"shuffle"`
-	Theme         *ThemeColors  `json:"theme"`
+	TrackID         string        `json:"track_id"`
+	LyricsRequestID uint64        `json:"lyrics_request_id"`
+	PlaybackState   PlaybackState `json:"playback_state"`
+	Position        float64       `json:"position"` // Current position in seconds
+	Duration        float64       `json:"duration"` // Total duration in seconds
+	Volume          float64       `json:"volume"`   // 0.0 to 1.0
+	Muted           bool          `json:"muted"`
+	RepeatMode      RepeatMode    `json:"repeat_mode"`
+	Shuffle         bool          `json:"shuffle"`
+	Theme           *ThemeColors  `json:"theme"`
+}
+
+// LyricsEvent is the lifecycle update for the current track's lyric request.
+// RequestID lets clients discard results from an older load of the same track.
+type LyricsEvent struct {
+	TrackID   string `json:"track_id"`
+	RequestID uint64 `json:"request_id"`
+	State     string `json:"state"` // loading, ready, or error
+	Lyric     *Lyric `json:"lyric,omitempty"`
 }
 
 // ThemeColors holds extracted palette data from the current track's artwork

@@ -6,7 +6,7 @@ import { PlaybackState, RepeatMode } from '../../bindings/airmedy/internal/domai
 // Mock Wails runtime — must be before any import that uses it
 vi.mock('@wailsio/runtime', () => ({
   Events: {
-    On: vi.fn(),
+    On: vi.fn(() => () => {}),
     Off: vi.fn(),
   },
   Create: {
@@ -23,11 +23,14 @@ vi.mock('@wailsio/runtime', () => ({
 // Mock PlayerService bindings
 const mockGetStatus = vi.fn()
 const mockGetQueue = vi.fn()
+const mockGetCurrentLyrics = vi.fn()
 const mockAppendTracks = vi.fn()
 const mockGenerateMoodRadio = vi.fn()
 vi.mock('../../bindings/airmedy/internal/infra/wails/playerservice', () => ({
   GetStatus: () => mockGetStatus(),
   GetQueue: () => mockGetQueue(),
+  GetCurrentLyrics: () => mockGetCurrentLyrics(),
+  RefreshCurrentLyrics: vi.fn(),
   Play: vi.fn(),
   Pause: vi.fn(),
   Stop: vi.fn(),
@@ -49,6 +52,7 @@ vi.mock('../../bindings/airmedy/internal/infra/wails/moodradioservice', () => ({
 import { useAppStore } from './app'
 import { useMoodRadioStore } from './moodRadio'
 import { usePlayerStore } from './player'
+import { Events } from '@wailsio/runtime'
 
 describe('usePlayerStore', () => {
   beforeEach(() => {
@@ -109,6 +113,40 @@ describe('usePlayerStore', () => {
   it('returns null artworkUrl when no currentTrack', () => {
     const store = usePlayerStore()
     expect(store.artworkUrl).toBeNull()
+  })
+
+  it('ignores stale lyric events and clears loading after the matching terminal event', async () => {
+    vi.stubGlobal('requestAnimationFrame', vi.fn(() => 1))
+    vi.stubGlobal('cancelAnimationFrame', vi.fn())
+    mockGetStatus.mockResolvedValue({
+      track_id: 't1',
+      lyrics_request_id: 2,
+      playback_state: PlaybackState.PlaybackStatePlaying,
+      position: 0,
+      duration: 180,
+      volume: 1,
+      muted: false,
+      repeat_mode: RepeatMode.RepeatModeOff,
+      shuffle: false,
+    })
+    mockGetQueue.mockResolvedValue([{ id: 't1' }])
+    mockGetCurrentLyrics.mockResolvedValue({
+      track_id: 't1', request_id: 2, state: 'ready', lyric: { track_id: 't1', content: 'initial' },
+    })
+
+    const store = usePlayerStore()
+    await store.init()
+    const lyricsListener = (Events.On as any).mock.calls.find(([name]: [string]) => name === 'player:lyrics')[1]
+
+    lyricsListener({ data: { track_id: 't1', request_id: 1, state: 'ready', lyric: { track_id: 't1', content: 'stale' } } })
+    expect(store.lyrics?.content).toBe('initial')
+
+    lyricsListener({ data: { track_id: 't1', request_id: 2, state: 'loading' } })
+    expect(store.lyricsLoading).toBe(true)
+    lyricsListener({ data: { track_id: 't1', request_id: 2, state: 'error' } })
+    expect(store.lyrics?.content).toBe('initial')
+    expect(store.lyricsLoading).toBe(false)
+    store.dispose()
   })
 
   it('toggleQueue flips isQueueOpen and closes other drawers', () => {

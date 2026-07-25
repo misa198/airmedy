@@ -357,6 +357,7 @@ SVG-rendered `vue-echarts` components.
 - **Path Morphing**: Play/Pause buttons in `PlayerFooter`, `PlayerPlaybackControls`, and `MiniPlayer` use SVG path morphing for Apple Music-style fluid transitions.
 - **Tactile Feedback**: Interactive buttons use a `scale-95` active state for a "pressed" feel.
 - **Glass-Morphism**: Surfaces use `var(--bg-glass)` with `backdrop-filter: blur(30px)`.
+- **Lyrics lifecycle**: `stores/player.ts` tracks `lyrics_request_id` from `player:status` and applies a `player:lyrics` update only when its track and request IDs both match. A matching error ends loading without clearing an already shown lyric.
 
 ### Development Tools Overlay
 
