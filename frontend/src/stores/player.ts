@@ -95,8 +95,13 @@ export const usePlayerStore = defineStore('player', () => {
   // Clear lyrics immediately whenever the playing track changes
   watch(currentTrack, (newTrack, oldTrack) => {
     if (newTrack?.id !== oldTrack?.id) {
-      lyrics.value = null
-      lyricsLoading.value = !!newTrack
+      // Events from the backend can deliver `ready` immediately after the
+      // status event that changes currentTrack. This watcher runs on Vue's
+      // next flush, so do not erase a lyric that already belongs to the new
+      // track (otherwise automatic lyrics appear to load and then vanish).
+      const hasNewTrackLyrics = lyrics.value?.track_id === newTrack?.id
+      if (!hasNewTrackLyrics) lyrics.value = null
+      lyricsLoading.value = !!newTrack && !hasNewTrackLyrics
     }
   })
 

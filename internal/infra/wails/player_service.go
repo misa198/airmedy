@@ -31,6 +31,13 @@ func (s *PlayerService) RefreshCurrentLyrics() uint64 {
 	return s.service.RefreshCurrentLyrics()
 }
 
+// PublishCurrentLyrics updates the active lyric view after a user manually
+// selects a saved lyric. The application service assigns a new request ID so
+// a pending automatic lookup cannot replace it.
+func (s *PlayerService) PublishCurrentLyrics(lyric *domain.Lyric) uint64 {
+	return s.service.PublishCurrentLyrics(lyric)
+}
+
 func (s *PlayerService) Play() error {
 	return s.service.Play()
 }

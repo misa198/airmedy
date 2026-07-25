@@ -240,6 +240,9 @@ player:lyrics → { track_id, request_id, state: "loading" | "ready" | "error", 
 event arrives. The player store accepts an event only when both track and request IDs match;
 `error` ends loading without clearing an already displayed lyric. `GetCurrentLyrics` returns the
 same request-identified snapshot so a late startup pull cannot overwrite a newer request.
+When the status and `ready` event arrive in the same browser tick, the track-change watcher keeps
+a lyric whose `track_id` already matches the new track; this prevents Vue's deferred watcher flush
+from clearing a successfully resolved automatic lyric.
 
 ## LRC Format Parser (`useLyrics.ts`)
 
@@ -301,5 +304,7 @@ Parsed into `{ text: "English text", secondary: "中文翻译" }`.
 **Refresh button:** For the current track, the context menu calls `PlayerService.RefreshCurrentLyrics()` so it uses the same request-ID lifecycle as automatic loading. Other selected tracks still call `FetchLyrics()` only to refresh their cache.
 
 **Manual Search:** In the track context menu (`context_menu.find_lyrics`), opens `FindLyricsDialog.vue`. This allows users to manually search for lyrics by title and artist. It provides a list of candidates from both LRCLIB and KuGou, scored using the same "Search and Rank" logic as the automatic fetch. Users preview a candidate and confirm via the "Select" button, which always upserts the DB row (`SaveLyrics`) and, if the "Save .lrc file" checkbox is checked, also calls `SaveLyricsFile` (see Manual `.lrc` File Save above). An info icon next to the checkbox shows a hover tooltip (`Tooltip` component, `@airmedy/ui`) explaining the save-location priority.
+
+For the currently playing track, the dialog then calls `PlayerService.PublishCurrentLyrics`. This advances the lyric request ID, cancels any in-flight automatic lookup, and emits the selected lyric as `ready`; a late provider response therefore cannot overwrite or hide the manual selection.
 
 **Manual Edit:** Users can manually edit lyrics in the `MetadataEditDialog`. These edits are written to the file's `LYRICS` tag and stored as `meta_content` in the database.

@@ -10,6 +10,7 @@ import { useFindLyricsDialog } from '@/composables/useFindLyricsDialog'
 import { usePlayerStore } from '@/stores/player'
 import { formatTime, decodeHTMLEntities } from '@airmedy/utils'
 import * as LyricsService from '../../bindings/airmedy/internal/infra/wails/lyricsservice'
+import * as PlayerService from '../../bindings/airmedy/internal/infra/wails/playerservice'
 import type { LyricsSearchResult } from '../../bindings/airmedy/internal/domain/models'
 
 const { t } = useI18n()
@@ -62,9 +63,11 @@ async function save() {
       await LyricsService.SaveLyricsFile(targetTrack.value.path, selected.content)
     }
 
-    // Update player store if it's the current track
+    // Publish through PlayerService rather than mutating the Pinia store.
+    // This cancels a late automatic lookup and gives this selection a request
+    // ID, so its lifecycle is consistent with lyrics loaded on track changes.
     if (playerStore.currentTrack?.id === targetTrack.value.id) {
-      playerStore.lyrics = {
+      await PlayerService.PublishCurrentLyrics({
         track_id: targetTrack.value.id,
         content: selected.content,
         source: selected.source,
@@ -72,7 +75,7 @@ async function save() {
         meta_source: playerStore.lyrics?.meta_source || '',
         created_at: '',
         updated_at: ''
-      } as any
+      } as any)
     }
     
     close()

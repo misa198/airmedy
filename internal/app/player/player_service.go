@@ -1091,6 +1091,13 @@ func (s *PlayerService) RefreshCurrentLyrics() uint64 {
 
 func (s *PlayerService) startLyricsRequest() (context.Context, uint64) {
 	ctx, cancel := context.WithTimeout(context.Background(), lyricsFetchTimeout)
+	return ctx, s.beginLyricsRequest(cancel)
+}
+
+// beginLyricsRequest advances the request sequence and cancels any prior
+// asynchronous resolver. Callers that do not start asynchronous work (such as
+// a user selecting a lyric that is already available in the UI) pass nil.
+func (s *PlayerService) beginLyricsRequest(cancel context.CancelFunc) uint64 {
 	s.mu.Lock()
 	if s.lyricsRequestCancel != nil {
 		s.lyricsRequestCancel()
@@ -1099,7 +1106,7 @@ func (s *PlayerService) startLyricsRequest() (context.Context, uint64) {
 	requestID := s.lyricsRequestID
 	s.lyricsRequestCancel = cancel
 	s.mu.Unlock()
-	return ctx, requestID
+	return requestID
 }
 
 func (s *PlayerService) cancelLyricsRequest() {
@@ -1109,6 +1116,30 @@ func (s *PlayerService) cancelLyricsRequest() {
 		s.lyricsRequestCancel = nil
 	}
 	s.mu.Unlock()
+}
+
+// PublishCurrentLyrics immediately publishes a lyric selected by the user for
+// the track that is currently playing. It advances the lyric request ID first,
+// cancelling any automatic lookup still in flight so that a late provider
+// result cannot overwrite the user's selection in the UI.
+//
+// Persistence is deliberately handled by LyricsService before this method is
+// called; PlayerService owns only the playback-facing lifecycle event.
+func (s *PlayerService) PublishCurrentLyrics(lyric *domain.Lyric) uint64 {
+	if lyric == nil || lyric.TrackID == "" {
+		return 0
+	}
+	s.mu.RLock()
+	isCurrent := s.currentTrack != nil && s.currentTrack.ID == lyric.TrackID
+	s.mu.RUnlock()
+	if !isCurrent {
+		return 0
+	}
+
+	requestID := s.beginLyricsRequest(nil)
+	s.emitStatus()
+	s.emitLyricsEvent(lyric.TrackID, requestID, "ready", lyric)
+	return requestID
 }
 
 func (s *PlayerService) fetchAndEmitLyrics(ctx context.Context, requestID uint64, track *domain.TrackDTO, forceFetch bool) {

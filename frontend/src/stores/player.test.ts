@@ -115,6 +115,19 @@ describe('usePlayerStore', () => {
     expect(store.artworkUrl).toBeNull()
   })
 
+  it('keeps lyrics that arrive for a newly selected track before the track watcher flushes', async () => {
+    const store = usePlayerStore()
+    store.currentTrack = { id: 'old-track' } as any
+    await nextTick()
+
+    store.currentTrack = { id: 'new-track' } as any
+    store.lyrics = { track_id: 'new-track', content: '[00:01.00]Ready' } as any
+    await nextTick()
+
+    expect(store.lyrics?.content).toBe('[00:01.00]Ready')
+    expect(store.lyricsLoading).toBe(false)
+  })
+
   it('ignores stale lyric events and clears loading after the matching terminal event', async () => {
     vi.stubGlobal('requestAnimationFrame', vi.fn(() => 1))
     vi.stubGlobal('cancelAnimationFrame', vi.fn())
