@@ -408,8 +408,6 @@ onUnmounted(() => {
 
 .streak-card:hover {
   border-color: rgb(251 146 60 / 0.3);
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 0 32px rgb(244 63 94 / 0.12);
-  transform: scale(1.02);
 }
 
 .streak-card:hover .streak-glow {
