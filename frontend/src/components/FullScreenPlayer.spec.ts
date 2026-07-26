@@ -136,6 +136,17 @@ describe('FullScreenPlayer', () => {
     expect(mocks.quickSettingsOpen).toHaveBeenCalledOnce()
   })
 
+  it('returns to the sticky player when Escape is pressed', async () => {
+    const wrapper = mountPlayer()
+    const store = usePlayerStore()
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }))
+
+    expect(store.setPlayerMode).toHaveBeenCalledOnce()
+    expect(store.setPlayerMode).toHaveBeenCalledWith('sticky')
+    wrapper.unmount()
+  })
+
   it('keeps the track context menu on artwork right click', async () => {
     const wrapper = mountPlayer()
 

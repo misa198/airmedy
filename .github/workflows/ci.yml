@@ -17,11 +17,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# actions/cache save needs a writable token scope; without this the restricted
-# default GITHUB_TOKEN yields "cache write denied: token has no writable scopes".
 permissions:
   contents: read
-  actions: write
 
 jobs:
   ci:

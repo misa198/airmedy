@@ -257,6 +257,9 @@ an option at the end to open general playback settings. When either settings
 link is selected from fullscreen player, it returns the player to sticky mode
 before navigating.
 
+`FullScreenPlayer.vue` listens for `Escape` while the player mode is fullscreen and
+returns the player to sticky mode. Its window key listener is removed on unmount.
+
 ## Modal & Dialog System
 
 Common dialogs are consolidated under the **`Modal.vue`** primitive. It provides synchronized transitions, standard backdrop behavior, and consistent header styling.

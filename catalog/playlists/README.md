@@ -525,6 +525,6 @@ Playlists appear in the sidebar below the main navigation items, ordered by crea
 
 The `Add to Playlist` context menu item fetches `GetPlaylistsForTrack(trackID)` to show a checkmark next to playlists that already contain the track. Clicking a playlist name calls `AddTracksToPlaylist` (batch, for multi-track selection) or `RemoveTrackFromPlaylist` depending on current membership.
 
-Every Add to Playlist submenu starts with Create Playlist, followed by a divider and the existing manual playlists. Confirming its shared name dialog creates a normal playlist and immediately adds the tracks from the initiating track, multi-selection, album, or group; it does not navigate away from the current view.
+Every Add to Playlist submenu starts with a text-only Create Playlist action (no icon), followed by a divider and the existing manual playlists. Confirming its shared name dialog creates a normal playlist and immediately adds the tracks from the initiating track, multi-selection, album, or group; it does not navigate away from the current view.
 
 `AddTracksToPlaylist` uses a single DB transaction to assign sequential LexoRank positions, preventing the race condition that occurred when multiple `AddTrackToPlaylist` calls fired concurrently and all read the same max position.

@@ -1,4 +1,3 @@
-import { ListPlus } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import type { ContextMenuItem } from './useContextMenu'
 import { useCreatePlaylistWithTracks } from './useCreatePlaylistWithTracks'
@@ -11,7 +10,6 @@ export function useAddToPlaylistMenu() {
     return [
       {
         label: t('sidebar.new_playlist'),
-        icon: ListPlus,
         action: async () => {
           createPlaylistWithTracks.open(typeof trackIDs === 'function' ? await trackIDs() : trackIDs)
         },
