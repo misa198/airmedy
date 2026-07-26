@@ -7,6 +7,7 @@ import { usePlayerStore } from '@/stores/player'
 import { useAppStore } from '@/stores/app'
 import { useMoodRadioStore } from '@/stores/moodRadio'
 import { useFindLyricsDialog } from './useFindLyricsDialog'
+import { useAddToPlaylistMenu } from './useAddToPlaylistMenu'
 import type { ContextMenuItem } from './useContextMenu'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import * as PlayerService from '../../bindings/airmedy/internal/infra/wails/playerservice'
@@ -31,6 +32,7 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
   const moodRadioStore = useMoodRadioStore()
   const router = useRouter()
   const findLyricsDialog = useFindLyricsDialog()
+  const { buildCreatePlaylistItems } = useAddToPlaylistMenu()
 
   function buildMenuItems(track: TrackDTO, options: TrackContextMenuOptions = {}): ContextMenuItem[] {
     const items: ContextMenuItem[] = []
@@ -131,12 +133,16 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
 
     if (!options.playlistId) {
       const addablePlaylists = playlistsStore.manualPlaylists
-      const playlistChildren: ContextMenuItem[] = addablePlaylists.length
+      const existingPlaylistChildren: ContextMenuItem[] = addablePlaylists.length
         ? addablePlaylists.map(p => ({
           label: p.name,
           action: () => { PlaylistService.AddTrackToPlaylist(p.id, track.id, '') },
         }))
         : [{ label: t('context_menu.no_playlists'), disabled: true }]
+      const playlistChildren = [
+        ...buildCreatePlaylistItems([track.id]),
+        ...existingPlaylistChildren,
+      ]
 
       items.push({
         label: t('context_menu.add_to_playlist'),
@@ -148,7 +154,7 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
       PlaylistService.GetPlaylistsForTrack(track.id).then(playlistIds => {
         if (!playlistIds || !playlistIds.length) return
 
-        playlistChildren.forEach((child, index) => {
+        existingPlaylistChildren.forEach((child, index) => {
           const p = addablePlaylists[index]
           if (p && playlistIds.includes(p.id)) {
             child.iconRight = Check
@@ -276,14 +282,17 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
     })
 
     if (!options.playlistId) {
-      const playlistChildren: ContextMenuItem[] = playlistsStore.manualPlaylists.length
-        ? playlistsStore.manualPlaylists.map(p => ({
-          label: p.name,
-          action: () => {
-            PlaylistService.AddTracksToPlaylist(p.id, tracks.map(t => t.id), '')
-          },
-        }))
-        : [{ label: t('context_menu.no_playlists'), disabled: true }]
+      const playlistChildren: ContextMenuItem[] = [
+        ...buildCreatePlaylistItems(tracks.map(track => track.id)),
+        ...(playlistsStore.manualPlaylists.length
+          ? playlistsStore.manualPlaylists.map(p => ({
+              label: p.name,
+              action: () => {
+                PlaylistService.AddTracksToPlaylist(p.id, tracks.map(t => t.id), '')
+              },
+            }))
+          : [{ label: t('context_menu.no_playlists'), disabled: true }]),
+      ]
 
       items.push({
         label: t('context_menu.add_to_playlist'),

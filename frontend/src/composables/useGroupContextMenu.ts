@@ -1,6 +1,7 @@
 import { ListEnd, ListPlus } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
+import { useAddToPlaylistMenu } from './useAddToPlaylistMenu'
 import type { ContextMenuItem } from './useContextMenu'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import * as PlayerService from '../../bindings/airmedy/internal/infra/wails/playerservice'
@@ -9,6 +10,7 @@ import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/pl
 export function useGroupContextMenu() {
   const { t } = useI18n()
   const playlistsStore = usePlaylistsStore()
+  const { buildCreatePlaylistItems } = useAddToPlaylistMenu()
 
   function buildMenuItems(tracks: TrackDTO[]): ContextMenuItem[] {
     return [
@@ -20,8 +22,10 @@ export function useGroupContextMenu() {
       {
         label: t('context_menu.add_to_playlist'),
         icon: ListPlus,
-        children: playlistsStore.manualPlaylists.length
-          ? playlistsStore.manualPlaylists.map(p => ({
+        children: [
+          ...buildCreatePlaylistItems(tracks.map(track => track.id)),
+          ...(playlistsStore.manualPlaylists.length
+            ? playlistsStore.manualPlaylists.map(p => ({
               label: p.name,
               action: async () => {
                 // Add all tracks to playlist
@@ -30,7 +34,8 @@ export function useGroupContextMenu() {
                 }
               },
             }))
-          : [{ label: t('context_menu.no_playlists'), disabled: true }],
+            : [{ label: t('context_menu.no_playlists'), disabled: true }]),
+        ],
       },
     ]
   }
