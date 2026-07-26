@@ -808,8 +808,7 @@ func (s *PlayerService) PeekPreviousTrack() *domain.TrackDTO {
 func (s *PlayerService) SyncTrack(track *domain.TrackDTO) {
 	s.mu.Lock()
 	if s.currentTrack != nil && s.currentTrack.ID == track.ID {
-		s.currentTrack.IsFavorite = track.IsFavorite
-		// Copy other relevant fields if needed, but for now focus on Favorite
+		s.currentTrack = track
 		s.mu.Unlock()
 		s.emitStatus()
 	} else {
@@ -818,6 +817,54 @@ func (s *PlayerService) SyncTrack(track *domain.TrackDTO) {
 
 	// Also update in queue if present
 	s.queue.UpdateTrack(track)
+}
+
+// ReloadCurrentTrackAfterFileMutation reloads a currently selected track from
+// disk after an operation (such as a tag write) changed its media file. The
+// caller must have stopped playback before modifying the file. A previously
+// paused or stopped track retains that state. If the user selected another
+// track while the mutation was in progress, this is a no-op.
+func (s *PlayerService) ReloadCurrentTrackAfterFileMutation(ctx context.Context, trackID string, position float64, previousState domain.PlaybackState) error {
+	s.mu.RLock()
+	current := s.currentTrack
+	s.mu.RUnlock()
+	if current == nil || current.ID != trackID {
+		return nil
+	}
+
+	track, err := s.trackRepo.GetByID(ctx, trackID)
+	if err != nil {
+		return fmt.Errorf("get updated track %s: %w", trackID, err)
+	}
+	if track == nil {
+		return fmt.Errorf("updated track not found: %s", trackID)
+	}
+
+	// Check again after the repository call so a concurrent track change is
+	// never overwritten by the completion of a metadata write.
+	s.mu.RLock()
+	stillCurrent := s.currentTrack != nil && s.currentTrack.ID == trackID
+	s.mu.RUnlock()
+	if !stillCurrent {
+		return nil
+	}
+
+	if position < 0 {
+		position = 0
+	}
+	if duration := float64(track.Duration); duration > 0 && position > duration {
+		position = duration
+	}
+
+	s.queue.UpdateTrack(track)
+	switch previousState {
+	case domain.PlaybackStatePlaying:
+		return s.loadAndPlayAtPosition(track, position, domain.PlaybackEndStopped)
+	case domain.PlaybackStatePaused:
+		return s.loadInactiveAtPosition(track, position, true)
+	default:
+		return s.loadInactiveAtPosition(track, position, false)
+	}
 }
 
 // ReapplyNormalization recomputes and pushes the pre-amp gain for the
@@ -840,6 +887,55 @@ func (s *PlayerService) loadAndPlay(track *domain.TrackDTO) error {
 }
 
 func (s *PlayerService) loadAndPlayWithEndReason(track *domain.TrackDTO, previousReason domain.PlaybackEndReason) error {
+	return s.loadAndPlayAtPosition(track, 0, previousReason)
+}
+
+func (s *PlayerService) loadInactiveAtPosition(track *domain.TrackDTO, position float64, paused bool) error {
+	s.stopPositionTicker()
+	s.mu.Lock()
+	s.nextPreQueued = nil
+	s.mu.Unlock()
+
+	if err := s.player.Load(track); err != nil {
+		s.logger.Error("failed to reload inactive track", "track", track.Path, "error", err)
+		return err
+	}
+	if s.normSvc != nil {
+		s.normSvc.ApplyToPlayer(context.Background(), track, s.queue.PeekNext())
+	}
+	if position > 0 {
+		if err := s.player.Seek(position); err != nil {
+			return fmt.Errorf("seek reloaded inactive track: %w", err)
+		}
+	}
+	if paused {
+		if err := s.player.Pause(); err != nil {
+			return fmt.Errorf("pause reloaded track: %w", err)
+		}
+	}
+
+	s.mu.Lock()
+	s.currentTrack = track
+	s.currentTheme = nil
+	s.trackStartTime = time.Now().Add(-time.Duration(position) * time.Second)
+	s.mu.Unlock()
+	lyricsCtx, lyricsRequestID := s.startLyricsRequest()
+
+	s.emitStatus()
+	s.emitTrackMetadata()
+	s.emitRemoteState()
+	if paused {
+		s.pushNowPlaying(track, position)
+		s.setNowPlayingPlaybackState(false)
+	}
+	go s.extractAndEmitPalette(track)
+	s.emitLyricsEvent(track.ID, lyricsRequestID, "loading", nil)
+	go s.fetchAndEmitLyrics(lyricsCtx, lyricsRequestID, track, false)
+	s.saveState(context.Background())
+	return nil
+}
+
+func (s *PlayerService) loadAndPlayAtPosition(track *domain.TrackDTO, position float64, previousReason domain.PlaybackEndReason) error {
 	// A hard load supersedes any in-flight crossfade.
 	s.snapActiveCrossfade()
 	s.flushListening(context.Background())
@@ -860,6 +956,12 @@ func (s *PlayerService) loadAndPlayWithEndReason(track *domain.TrackDTO, previou
 	if s.normSvc != nil {
 		s.normSvc.ApplyToPlayer(context.Background(), track, s.queue.PeekNext())
 	}
+	if position > 0 {
+		if err := s.player.Seek(position); err != nil {
+			s.logger.Error("failed to seek loaded track", "track", track.Path, "position", position, "error", err)
+			return err
+		}
+	}
 
 	s.mu.RLock()
 	loadListeners := append([]func(*domain.TrackDTO){}, s.trackLoadListeners...)
@@ -873,12 +975,12 @@ func (s *PlayerService) loadAndPlayWithEndReason(track *domain.TrackDTO, previou
 		return err
 	}
 	s.startListening(track)
-	s.startPlaybackAttempt(track, 0)
+	s.startPlaybackAttempt(track, position)
 
 	s.mu.Lock()
 	s.currentTrack = track
 	s.currentTheme = nil
-	s.trackStartTime = time.Now()
+	s.trackStartTime = time.Now().Add(-time.Duration(position) * time.Second)
 	delete(s.playCounted, track.ID)
 	delete(s.npReported, track.ID)
 	delete(s.posConfirmed, track.ID)
@@ -890,7 +992,7 @@ func (s *PlayerService) loadAndPlayWithEndReason(track *domain.TrackDTO, previou
 	s.emitTrackMetadata()
 	s.emitRemoteState()
 
-	s.pushNowPlaying(track, 0)
+	s.pushNowPlaying(track, position)
 
 	go s.extractAndEmitPalette(track)
 	s.emitLyricsEvent(track.ID, lyricsRequestID, "loading", nil)

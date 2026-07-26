@@ -8,24 +8,27 @@ import (
 	"strings"
 
 	"airmedy/internal/app/library"
+	"airmedy/internal/app/player"
 	"airmedy/internal/domain"
 	"airmedy/internal/infra/artwork"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 type LibraryService struct {
-	libService   *library.LibraryService
-	folderRepo   domain.WatchedFolderRepository
-	trackRepo    domain.TrackRepository
-	albumRepo    domain.AlbumRepository
-	artistRepo   domain.ArtistRepository
-	genreRepo    domain.GenreRepository
-	composerRepo domain.ComposerRepository
-	artworkCache domain.ArtworkCache
+	libService    *library.LibraryService
+	playerService *player.PlayerService
+	folderRepo    domain.WatchedFolderRepository
+	trackRepo     domain.TrackRepository
+	albumRepo     domain.AlbumRepository
+	artistRepo    domain.ArtistRepository
+	genreRepo     domain.GenreRepository
+	composerRepo  domain.ComposerRepository
+	artworkCache  domain.ArtworkCache
 }
 
 func NewLibraryService(
 	libService *library.LibraryService,
+	playerService *player.PlayerService,
 	folderRepo domain.WatchedFolderRepository,
 	trackRepo domain.TrackRepository,
 	albumRepo domain.AlbumRepository,
@@ -35,14 +38,15 @@ func NewLibraryService(
 	artworkCache domain.ArtworkCache,
 ) *LibraryService {
 	return &LibraryService{
-		libService:   libService,
-		folderRepo:   folderRepo,
-		trackRepo:    trackRepo,
-		albumRepo:    albumRepo,
-		artistRepo:   artistRepo,
-		genreRepo:    genreRepo,
-		composerRepo: composerRepo,
-		artworkCache: artworkCache,
+		libService:    libService,
+		playerService: playerService,
+		folderRepo:    folderRepo,
+		trackRepo:     trackRepo,
+		albumRepo:     albumRepo,
+		artistRepo:    artistRepo,
+		genreRepo:     genreRepo,
+		composerRepo:  composerRepo,
+		artworkCache:  artworkCache,
 	}
 }
 
@@ -288,7 +292,40 @@ func (s *LibraryService) ShowInExplorer(trackID string) error {
 }
 
 func (s *LibraryService) UpdateTrackMetadata(trackID string, update domain.MetadataUpdate) error {
-	return s.libService.UpdateMetadata(context.Background(), trackID, update)
+	ctx := context.Background()
+	current := s.playerService.GetCurrentTrack()
+	previousState := domain.PlaybackStateStopped
+	reload := false
+	position := 0.0
+	if current != nil && current.ID == trackID {
+		status := s.playerService.GetStatus()
+		previousState = status.PlaybackState
+		reload = true
+		position = status.Position
+		if previousState != domain.PlaybackStateStopped {
+			if err := s.playerService.Stop(); err != nil {
+				return fmt.Errorf("stop track before updating metadata: %w", err)
+			}
+		}
+	}
+
+	if err := s.libService.UpdateMetadata(ctx, trackID, update); err != nil {
+		// The writer may fail after touching the container. Re-open the current
+		// file when possible so a playback session is not left stopped with a
+		// stale decoder; preserve the original edit error for the caller.
+		if reload {
+			if restoreErr := s.playerService.ReloadCurrentTrackAfterFileMutation(ctx, trackID, position, previousState); restoreErr != nil {
+				return fmt.Errorf("update metadata: %w (also failed to restore playback: %v)", err, restoreErr)
+			}
+		}
+		return err
+	}
+	if reload {
+		if err := s.playerService.ReloadCurrentTrackAfterFileMutation(ctx, trackID, position, previousState); err != nil {
+			return fmt.Errorf("reload track after updating metadata: %w", err)
+		}
+	}
+	return nil
 }
 
 func (s *LibraryService) GetAlbumColors(id string) (*domain.ThemeColors, error) {

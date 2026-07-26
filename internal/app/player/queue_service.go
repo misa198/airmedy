@@ -564,14 +564,14 @@ func (s *QueueService) UpdateTrack(track *domain.TrackDTO) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	for _, t := range s.originalList {
+	for i, t := range s.originalList {
 		if t.ID == track.ID {
-			t.IsFavorite = track.IsFavorite
+			s.originalList[i] = track
 		}
 	}
-	for _, t := range s.shuffledList {
+	for i, t := range s.shuffledList {
 		if t.ID == track.ID {
-			t.IsFavorite = track.IsFavorite
+			s.shuffledList[i] = track
 		}
 	}
 }
