@@ -29,6 +29,7 @@ describe('useAddToPlaylistMenu', () => {
     const items = buildCreatePlaylistItems(['track-1'])
 
     expect(items[0].label).toBe('sidebar.new_playlist')
+    expect(items[0].icon).toBeUndefined()
     expect(items[1].separator).toBe(true)
 
     await items[0].action?.()
