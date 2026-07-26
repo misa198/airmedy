@@ -15,12 +15,10 @@ on:
         type: boolean
         default: false
 
-# Default token scope for cache jobs. actions: write lets actions/cache save
-# (otherwise "cache write denied: token has no writable scopes"). The bump and
-# release jobs override this with their own job-level contents: write.
+# The bump and release jobs override this with their own job-level
+# contents: write permission.
 permissions:
   contents: read
-  actions: write
 
 jobs:
   bump:
