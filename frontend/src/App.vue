@@ -3,6 +3,7 @@ import { onMounted, watch, onUnmounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import MainLayout from './layouts/MainLayout.vue'
 import FindLyricsDialog from './components/FindLyricsDialog.vue'
+import CreatePlaylistWithTracksDialog from './components/CreatePlaylistWithTracksDialog.vue'
 import DevToolsOverlay from './components/DevToolsOverlay.vue'
 import { hexToRgba } from '@airmedy/utils'
 import { usePlayerStore } from './stores/player'
@@ -187,6 +188,7 @@ watch(() => playerStore.playerMode, (newMode) => {
   </template>
   <DevToolsOverlay v-if="isDevelopment && !isMiniPlayer" />
   <FindLyricsDialog />
+  <CreatePlaylistWithTracksDialog v-if="!isMiniPlayer" />
 </template>
 
 <style>

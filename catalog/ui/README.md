@@ -235,7 +235,7 @@ expand/collapse control for the full 50-track analytics ranking.
 | Refresh Lyrics      | `LyricsService.FetchLyrics()`                |
 | Find Lyrics         | Open `FindLyricsDialog.vue`                  |
 | Add/Remove Favorite | `LibraryService.ToggleFavorite()`            |
-| Add to Playlist     | Submenu with playlist list                   |
+| Add to Playlist     | Create Playlist action, divider, then playlist list |
 | Go to Album         | Router navigate to `/albums/:id`             |
 | Go to Artist(s)     | Submenu or direct navigate to `/artists/:id` |
 | Edit Metadata       | Open `MetadataEditDialog`                    |
@@ -401,6 +401,8 @@ overlay is not rendered in production builds.
 | `useContextMenu`        | Generic context menu state manager                      |
 | `useTrackContextMenu`   | Track-specific menu item builder                        |
 | `useGroupContextMenu`   | Multi-track selection menu (Play Next, Add to Playlist) |
+| `useAddToPlaylistMenu`  | Shared Create Playlist submenu prefix                   |
+| `useCreatePlaylistWithTracks` | Global create-then-add-tracks dialog state        |
 | `useTrackTableSettings` | Column config with localStorage persistence             |
 | `useLyrics`             | LRC parser for synced/plain view                        |
 | `useKeyboardShortcut`   | Global key binding registration                         |

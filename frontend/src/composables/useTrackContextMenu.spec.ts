@@ -78,6 +78,16 @@ describe('useTrackContextMenu', () => {
     expect(playNextItem?.label).toBe('context_menu.play_next')
   })
 
+  it('puts Create Playlist before the existing playlists', () => {
+    const track: TrackDTO = { id: 'track-1', title: 'Track 1' } as any
+    const { buildMenuItems } = useTrackContextMenu(vi.fn())
+
+    const addToPlaylist = buildMenuItems(track).find(item => item.label === 'context_menu.add_to_playlist')
+
+    expect(addToPlaylist?.children?.[0].label).toBe('sidebar.new_playlist')
+    expect(addToPlaylist?.children?.[1].separator).toBe(true)
+  })
+
   it('excludes "Play Next" if excludePlayNext option is true', () => {
     const track: TrackDTO = { id: 'track-1', title: 'Track 1' } as any
     const otherTrack: TrackDTO = { id: 'track-2', title: 'Track 2' } as any

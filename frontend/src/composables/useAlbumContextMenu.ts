@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
 import { usePlayerStore } from '@/stores/player'
 import { useFavoritesStore } from '@/stores/favorites'
+import { useAddToPlaylistMenu } from './useAddToPlaylistMenu'
 import type { ContextMenuItem } from './useContextMenu'
 import type { TrackDTO, AlbumDTO } from '../../bindings/airmedy/internal/domain/models'
 import * as PlayerService from '../../bindings/airmedy/internal/infra/wails/playerservice'
@@ -18,6 +19,7 @@ export function useAlbumContextMenu() {
   const playlistsStore = usePlaylistsStore()
   const playerStore = usePlayerStore()
   const favoritesStore = useFavoritesStore()
+  const { buildCreatePlaylistItems } = useAddToPlaylistMenu()
 
   async function getTracks(albumId: string, providedTracks?: TrackDTO[]): Promise<TrackDTO[]> {
     if (providedTracks && providedTracks.length > 0) return providedTracks
@@ -103,8 +105,10 @@ export function useAlbumContextMenu() {
       {
         label: t('context_menu.add_to_playlist'),
         icon: ListPlus,
-        children: playlistsStore.manualPlaylists.length
-          ? playlistsStore.manualPlaylists.map(p => ({
+        children: [
+          ...buildCreatePlaylistItems(async () => (await fetchTracks()).map(track => track.id)),
+          ...(playlistsStore.manualPlaylists.length
+            ? playlistsStore.manualPlaylists.map(p => ({
               label: p.name,
               action: async () => {
                 const tracks = await fetchTracks()
@@ -113,7 +117,8 @@ export function useAlbumContextMenu() {
                 }
               },
             }))
-          : [{ label: t('context_menu.no_playlists'), disabled: true }],
+            : [{ label: t('context_menu.no_playlists'), disabled: true }]),
+        ],
       }
     )
 
