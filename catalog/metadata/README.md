@@ -157,6 +157,16 @@ type MetadataUpdate struct {
 
 After writing tags and optional artwork, `library/service.go` re-extracts the file and upserts the updated track to DB and search index.
 
+### Editing the Current Track During Playback
+
+Writing tags can rewrite the media container, so the Wails metadata binding
+stops a currently playing or paused track before calling `WriteMetadata()`.
+After re-import completes, it reloads the track through `PlayerService` using
+the fresh DTO. A playing track resumes at its prior position (clamped to a
+shorter updated duration); paused and stopped tracks retain their state.
+If the user selected a different track while the write was in progress, the
+new playback is left untouched.
+
 ## Raw Metadata Storage
 
 All extracted tags are serialized as JSON and stored in `tracks.other_metadata` (TEXT column). This allows future migrations to re-parse additional fields without re-scanning files.

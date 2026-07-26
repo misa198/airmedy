@@ -48,6 +48,18 @@ type AudioPlayer interface {
 }
 ```
 
+## Reload After Media-File Mutation
+
+`PlayerService.ReloadCurrentTrackAfterFileMutation()` is used after an edit
+that rewrites the audio file, such as embedded metadata. The caller stops the
+current decoder before the write, then reloads only if the same track is still
+current when re-import finishes. The player seeks to the saved position before
+resuming, clamps it to the refreshed duration, and retains paused or stopped
+state without starting playback. This shared service flow applies to every platform; platform
+adapters must treat `Load()` as a hard replacement of any active/preloaded
+source. Miniaudio already unloads both slots in `ma_player_load`; Darwin resets
+its active deck before enqueueing the replacement decoder.
+
 ## GaplessPlayer Interface (Optional)
 
 Implemented by audio adapters that support gapless or near-gapless transitions. Detected via type assertion in `PlayerService`.

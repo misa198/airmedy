@@ -168,6 +168,18 @@ type fakeTrackRepo struct {
 
 func (r *fakeTrackRepo) IncrementPlayCount(_ context.Context, _ string) error { return nil }
 
+type reloadTrackRepo struct {
+	fakeTrackRepo
+	track *domain.TrackDTO
+}
+
+func (r *reloadTrackRepo) GetByID(_ context.Context, id string) (*domain.TrackDTO, error) {
+	if r.track != nil && r.track.ID == id {
+		return r.track, nil
+	}
+	return nil, nil
+}
+
 type fakePlayerStateRepo struct {
 	domain.PlayerStateRepository
 	mu         sync.Mutex
@@ -256,6 +268,77 @@ func TestPositionTicker_StartsOnPlay(t *testing.T) {
 	n := atomic.LoadInt64(&tickCount)
 	if n < 2 {
 		t.Errorf("expected ≥2 ticker ticks, got %d", n)
+	}
+}
+
+func TestReloadCurrentTrackAfterFileMutationRestoresPositionAndMetadata(t *testing.T) {
+	fp := &fakePlayer{status: domain.PlayerStatus{Volume: 1}}
+	s, _ := newTestService(t, fp)
+	original := &domain.TrackDTO{Track: domain.Track{ID: "track-1", Title: "Before", Duration: 120}}
+	updated := &domain.TrackDTO{Track: domain.Track{ID: "track-1", Title: "After", Duration: 90}}
+	s.trackRepo = &reloadTrackRepo{track: updated}
+	s.queue.SetQueue([]*domain.TrackDTO{original}, 0)
+
+	if err := s.loadAndPlay(original); err != nil {
+		t.Fatalf("start track: %v", err)
+	}
+	if err := s.Stop(); err != nil {
+		t.Fatalf("stop before metadata write: %v", err)
+	}
+	if err := s.ReloadCurrentTrackAfterFileMutation(context.Background(), original.ID, 42, domain.PlaybackStatePlaying); err != nil {
+		t.Fatalf("reload current track: %v", err)
+	}
+
+	status := fp.GetStatus()
+	if status.TrackID != original.ID || status.Position != 42 || status.PlaybackState != domain.PlaybackStatePlaying {
+		t.Fatalf("unexpected restored playback status: %+v", status)
+	}
+	if fp.loadCalls != 2 {
+		t.Fatalf("Load called %d times, want 2", fp.loadCalls)
+	}
+	if got := s.GetCurrentTrack(); got == nil || got.Title != "After" {
+		t.Fatalf("current metadata was not refreshed: %+v", got)
+	}
+	if queue := s.GetQueue(); len(queue) != 1 || queue[0].Title != "After" {
+		t.Fatalf("queue metadata was not refreshed: %+v", queue)
+	}
+}
+
+func TestReloadCurrentTrackAfterFileMutationKeepsPausedTrackPaused(t *testing.T) {
+	fp := &fakePlayer{status: domain.PlayerStatus{Volume: 1}}
+	s, _ := newTestService(t, fp)
+	original := &domain.TrackDTO{Track: domain.Track{ID: "track-1", Title: "Before", Duration: 120}}
+	updated := &domain.TrackDTO{Track: domain.Track{ID: "track-1", Title: "After", Duration: 30}}
+	s.trackRepo = &reloadTrackRepo{track: updated}
+	s.queue.SetQueue([]*domain.TrackDTO{original}, 0)
+	s.currentTrack = original
+
+	if err := s.ReloadCurrentTrackAfterFileMutation(context.Background(), original.ID, 42, domain.PlaybackStatePaused); err != nil {
+		t.Fatalf("reload paused track: %v", err)
+	}
+
+	status := fp.GetStatus()
+	if status.Position != 30 || status.PlaybackState != domain.PlaybackStatePaused {
+		t.Fatalf("paused playback was not restored: %+v", status)
+	}
+}
+
+func TestReloadCurrentTrackAfterFileMutationKeepsStoppedTrackStopped(t *testing.T) {
+	fp := &fakePlayer{status: domain.PlayerStatus{Volume: 1}}
+	s, _ := newTestService(t, fp)
+	original := &domain.TrackDTO{Track: domain.Track{ID: "track-1", Title: "Before", Duration: 120}}
+	updated := &domain.TrackDTO{Track: domain.Track{ID: "track-1", Title: "After", Duration: 120}}
+	s.trackRepo = &reloadTrackRepo{track: updated}
+	s.queue.SetQueue([]*domain.TrackDTO{original}, 0)
+	s.currentTrack = original
+
+	if err := s.ReloadCurrentTrackAfterFileMutation(context.Background(), original.ID, 18, domain.PlaybackStateStopped); err != nil {
+		t.Fatalf("reload stopped track: %v", err)
+	}
+
+	status := fp.GetStatus()
+	if status.Position != 18 || status.PlaybackState != domain.PlaybackStateStopped {
+		t.Fatalf("stopped playback was not restored: %+v", status)
 	}
 }
 

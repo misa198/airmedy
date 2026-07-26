@@ -406,6 +406,10 @@ static AVAudioUnitEffect *MakeStereoWidenerNode(void) {
         [self.idleDeck reset];
         self.preloadedPath = nil;
     });
+    // A hard load must discard the current decoder as well. This is
+    // particularly important after metadata writes, which can replace or
+    // rewrite the file while its previous decoder was loaded.
+    [self.activeDeck reset];
 
     if (![self.activeDeck enqueuePath:path forImmediatePlayback:YES]) {
         return;
