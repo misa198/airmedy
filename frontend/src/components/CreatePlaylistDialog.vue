@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 import { Input } from '@airmedy/ui'
 import { Modal } from '@airmedy/ui'
 import { useI18n } from 'vue-i18n'
@@ -18,10 +18,16 @@ const emit = defineEmits<{
 }>()
 
 const name = ref(props.initialName ?? '')
+const nameInput = ref<InstanceType<typeof Input>>()
 
 watch(() => props.open, (val) => {
-  if (val) name.value = props.initialName ?? ''
-})
+  if (!val) return
+
+  name.value = props.initialName ?? ''
+  void nextTick(() => {
+    if (props.open) nameInput.value?.focus()
+  })
+}, { flush: 'post' })
 
 function submit() {
   if (!name.value.trim()) return
@@ -33,11 +39,10 @@ function submit() {
 <template>
   <Modal :open="open" :title="title ?? t('sidebar.new_playlist')" width-class="w-[30rem]" @close="emit('update:open', false)">
     <Input
+      ref="nameInput"
       v-model="name"
       :placeholder="t('sidebar.playlist_name')"
       class="bg-foreground/[0.07] border-foreground/20 text-foreground placeholder:text-foreground/40 focus-visible:ring-primary/20"
-
-      autofocus
       @keydown.enter="submit" />
 
     <template #footer>
