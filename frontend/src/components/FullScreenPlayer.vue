@@ -4,7 +4,7 @@ import {
   Mic2,
   Minimize2,
 } from '@lucide/vue'
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { usePlayerStore } from '../stores/player'
 import { useDeviceStore } from '../stores/device'
 import LivingArtworkBackground from './LivingArtworkBackground.vue'
@@ -92,6 +92,21 @@ const artworkMaxSize = computed(() => !showRightColumn.value || !appStore.highCo
 const artworkCrossfade = computed(() =>
   appStore.blendArtworkDuringCrossfade ? store.artworkCrossfade : null,
 )
+
+function handleKeyDown(event: KeyboardEvent) {
+  if (event.key !== 'Escape' || store.playerMode !== 'fullscreen') return
+
+  event.preventDefault()
+  store.setPlayerMode('sticky')
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown)
+})
 </script>
 
 <template>
