@@ -32,6 +32,7 @@ type PlayerService struct {
 	lyricsService                   *lyrics.LyricsService
 	lyricsRequestID                 uint64
 	lyricsRequestCancel             context.CancelFunc
+	currentLyricsEvent              *domain.LyricsEvent
 	nowPlaying                      domain.NowPlayingController // nil on non-darwin or when unsupported
 	currentTrack                    *domain.TrackDTO
 	currentTheme                    *domain.ThemeColors
@@ -1154,14 +1155,19 @@ func (s *PlayerService) lyricsResolveParams(ctx context.Context, track *domain.T
 // GetCurrentLyrics resolves a snapshot for the currently loaded lyric request.
 // The request id allows a startup pull that completes late to be discarded.
 func (s *PlayerService) GetCurrentLyrics() *domain.LyricsEvent {
-	if s.lyricsService == nil {
-		return nil
-	}
 	s.mu.RLock()
 	track := s.currentTrack
 	requestID := s.lyricsRequestID
+	if s.currentLyricsEvent != nil &&
+		track != nil &&
+		s.currentLyricsEvent.TrackID == track.ID &&
+		s.currentLyricsEvent.RequestID == requestID {
+		snapshot := *s.currentLyricsEvent
+		s.mu.RUnlock()
+		return &snapshot
+	}
 	s.mu.RUnlock()
-	if track == nil {
+	if track == nil || s.lyricsService == nil {
 		return nil
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), lyricsFetchTimeout)
@@ -1207,6 +1213,15 @@ func (s *PlayerService) beginLyricsRequest(cancel context.CancelFunc) uint64 {
 	s.lyricsRequestID++
 	requestID := s.lyricsRequestID
 	s.lyricsRequestCancel = cancel
+	if s.currentTrack != nil {
+		s.currentLyricsEvent = &domain.LyricsEvent{
+			TrackID:   s.currentTrack.ID,
+			RequestID: requestID,
+			State:     "loading",
+		}
+	} else {
+		s.currentLyricsEvent = nil
+	}
 	s.mu.Unlock()
 	return requestID
 }
@@ -1316,19 +1331,25 @@ func (s *PlayerService) handleLyricsRequestContext(trackID string, requestID uin
 }
 
 func (s *PlayerService) emitLyricsEvent(trackID string, requestID uint64, state string, lyric *domain.Lyric) {
-	s.mu.RLock()
+	s.mu.Lock()
 	currentID := ""
 	if s.currentTrack != nil {
 		currentID = s.currentTrack.ID
 	}
 	currentRequestID := s.lyricsRequestID
-	listeners := make([]func(*domain.Lyric), len(s.lyricsListeners))
-	copy(listeners, s.lyricsListeners)
-	s.mu.RUnlock()
-
 	if currentID != trackID || currentRequestID != requestID {
+		s.mu.Unlock()
 		return
 	}
+	s.currentLyricsEvent = &domain.LyricsEvent{
+		TrackID:   trackID,
+		RequestID: requestID,
+		State:     state,
+		Lyric:     lyric,
+	}
+	listeners := make([]func(*domain.Lyric), len(s.lyricsListeners))
+	copy(listeners, s.lyricsListeners)
+	s.mu.Unlock()
 
 	if state == "ready" {
 		for _, f := range listeners {
