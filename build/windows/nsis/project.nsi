@@ -79,22 +79,17 @@ Function .onInit
    !insertmacro wails.checkArchitecture
 FunctionEnd
 
-!define START_MENU_GROUP "Entertainment"
-
 ; Updates run this installer elevated, which uses the all-users Start Menu.
 ; Older user-scoped installs can therefore leave a second shortcut behind. Clean
-; both scopes and both legacy/canonical locations before creating the single
-; canonical shortcut in the Entertainment folder (and on uninstall).
+; both scopes before creating the single canonical shortcut (and on uninstall).
 !macro RemoveAirmedyShortcuts
     SetShellVarContext current
     Delete "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk"
-    Delete "$SMPROGRAMS\${START_MENU_GROUP}\${INFO_PRODUCTNAME}.lnk"
     Delete "$DESKTOP\${INFO_PRODUCTNAME}.lnk"
 
     ${If} ${REQUEST_EXECUTION_LEVEL} == "admin"
         SetShellVarContext all
         Delete "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk"
-        Delete "$SMPROGRAMS\${START_MENU_GROUP}\${INFO_PRODUCTNAME}.lnk"
         Delete "$DESKTOP\${INFO_PRODUCTNAME}.lnk"
     ${EndIf}
 !macroend
@@ -118,8 +113,7 @@ Section
     ; map to the same identity, these shortcuts can carry a matching
     ; System.AppUserModel.ID via the WinShell/ShortcutProperties NSIS plugin.
     !insertmacro RemoveAirmedyShortcuts
-    CreateDirectory "$SMPROGRAMS\${START_MENU_GROUP}"
-    CreateShortcut "$SMPROGRAMS\${START_MENU_GROUP}\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
+    CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
 
     !insertmacro wails.associateFiles
