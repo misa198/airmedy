@@ -13,6 +13,9 @@ func TestProjectCleansShortcutsAcrossShellContexts(t *testing.T) {
 	}
 
 	source := string(project)
+	if !strings.Contains(source, "!define START_MENU_GROUP \"Entertainment\"") {
+		t.Fatal("installer must place Airmedy in the Entertainment Start Menu folder")
+	}
 	cleanup := "!macro RemoveAirmedyShortcuts"
 	cleanupAt := strings.Index(source, cleanup)
 	if cleanupAt < 0 {
@@ -28,6 +31,7 @@ func TestProjectCleansShortcutsAcrossShellContexts(t *testing.T) {
 		"SetShellVarContext current",
 		"SetShellVarContext all",
 		"Delete \"$SMPROGRAMS\\${INFO_PRODUCTNAME}.lnk\"",
+		"Delete \"$SMPROGRAMS\\${START_MENU_GROUP}\\${INFO_PRODUCTNAME}.lnk\"",
 		"Delete \"$DESKTOP\\${INFO_PRODUCTNAME}.lnk\"",
 	} {
 		if !strings.Contains(cleanupSource, want) {
@@ -36,7 +40,7 @@ func TestProjectCleansShortcutsAcrossShellContexts(t *testing.T) {
 	}
 
 	installCleanup := strings.Index(source, "!insertmacro RemoveAirmedyShortcuts")
-	installShortcut := strings.Index(source, "CreateShortcut \"$SMPROGRAMS\\${INFO_PRODUCTNAME}.lnk\"")
+	installShortcut := strings.Index(source, "CreateShortcut \"$SMPROGRAMS\\${START_MENU_GROUP}\\${INFO_PRODUCTNAME}.lnk\"")
 	if installCleanup < 0 || installShortcut < 0 || installCleanup > installShortcut {
 		t.Error("installer must remove existing shortcuts before creating the Start Menu shortcut")
 	}
