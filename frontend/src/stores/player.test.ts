@@ -24,13 +24,14 @@ vi.mock('@wailsio/runtime', () => ({
 const mockGetStatus = vi.fn()
 const mockGetQueue = vi.fn()
 const mockGetCurrentLyrics = vi.fn()
+const mockRefreshCurrentLyrics = vi.fn()
 const mockAppendTracks = vi.fn()
 const mockGenerateMoodRadio = vi.fn()
 vi.mock('../../bindings/airmedy/internal/infra/wails/playerservice', () => ({
   GetStatus: () => mockGetStatus(),
   GetQueue: () => mockGetQueue(),
   GetCurrentLyrics: () => mockGetCurrentLyrics(),
-  RefreshCurrentLyrics: vi.fn(),
+  RefreshCurrentLyrics: () => mockRefreshCurrentLyrics(),
   Play: vi.fn(),
   Pause: vi.fn(),
   Stop: vi.fn(),
@@ -56,6 +57,7 @@ import { Events } from '@wailsio/runtime'
 
 describe('usePlayerStore', () => {
   beforeEach(() => {
+    vi.useRealTimers()
     setActivePinia(createPinia())
     vi.clearAllMocks()
   })
@@ -202,6 +204,83 @@ describe('usePlayerStore', () => {
     } })
 
     expect(store.lyrics?.content).toBe('selected lyric')
+    expect(store.lyricsLoading).toBe(false)
+    store.dispose()
+  })
+
+  it('accepts a newer initial lyrics snapshot when the first online fetch races startup', async () => {
+    vi.stubGlobal('requestAnimationFrame', vi.fn(() => 1))
+    vi.stubGlobal('cancelAnimationFrame', vi.fn())
+    mockGetStatus.mockResolvedValue({
+      track_id: 't1',
+      lyrics_request_id: 1,
+      playback_state: PlaybackState.PlaybackStatePlaying,
+      position: 0,
+      duration: 180,
+      volume: 1,
+      muted: false,
+      repeat_mode: RepeatMode.RepeatModeOff,
+      shuffle: false,
+    })
+    mockGetQueue.mockResolvedValue([{ id: 't1' }])
+    // The first online request can advance and finish while init is awaiting
+    // GetQueue, before player:lyrics listeners have been registered.
+    mockGetCurrentLyrics.mockResolvedValue({
+      track_id: 't1',
+      request_id: 2,
+      state: 'ready',
+      lyric: { track_id: 't1', content: 'fetched online' },
+    })
+
+    const store = usePlayerStore()
+    await store.init()
+
+    expect(store.lyrics?.content).toBe('fetched online')
+    expect(store.lyricsLoading).toBe(false)
+    store.dispose()
+  })
+
+  it('reconciles a refresh result when the first online terminal event is missed', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal('requestAnimationFrame', vi.fn(() => 1))
+    vi.stubGlobal('cancelAnimationFrame', vi.fn())
+    mockGetStatus.mockResolvedValue({
+      track_id: 't1',
+      lyrics_request_id: 1,
+      playback_state: PlaybackState.PlaybackStatePlaying,
+      position: 0,
+      duration: 180,
+      volume: 1,
+      muted: false,
+      repeat_mode: RepeatMode.RepeatModeOff,
+      shuffle: false,
+    })
+    mockGetQueue.mockResolvedValue([{ id: 't1' }])
+    mockGetCurrentLyrics
+      .mockResolvedValueOnce({
+        track_id: 't1', request_id: 1, state: 'ready', lyric: null,
+      })
+      .mockResolvedValueOnce({
+        track_id: 't1', request_id: 2, state: 'loading', lyric: null,
+      })
+      .mockResolvedValueOnce({
+        track_id: 't1',
+        request_id: 2,
+        state: 'ready',
+        lyric: { track_id: 't1', content: 'first online result' },
+      })
+    mockRefreshCurrentLyrics.mockResolvedValue(2)
+
+    const store = usePlayerStore()
+    await store.init()
+    await store.refreshCurrentLyrics()
+    expect(store.lyricsLoading).toBe(true)
+
+    await vi.advanceTimersByTimeAsync(250)
+    expect(store.lyricsLoading).toBe(true)
+    await vi.advanceTimersByTimeAsync(250)
+
+    expect(store.lyrics?.content).toBe('first online result')
     expect(store.lyricsLoading).toBe(false)
     store.dispose()
   })

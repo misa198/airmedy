@@ -133,6 +133,88 @@ export const usePlayerStore = defineStore('player', () => {
   let _offFns: (() => void)[] = []
   let _initialized = false
   let _rafId: number | null = null
+  let _lyricsReconcileTimer: ReturnType<typeof setTimeout> | null = null
+  let _lyricsReconcileRequestId = 0
+  let _lyricsReconcileDeadline = 0
+  let _lyricsReconcileGeneration = 0
+
+  const lyricsReconcileIntervalMs = 250
+  const lyricsReconcileTimeoutMs = 36_000
+
+  function stopLyricsReconciliation() {
+    if (_lyricsReconcileTimer !== null) {
+      clearTimeout(_lyricsReconcileTimer)
+      _lyricsReconcileTimer = null
+    }
+    _lyricsReconcileRequestId = 0
+    _lyricsReconcileDeadline = 0
+    _lyricsReconcileGeneration++
+  }
+
+  function acceptLyricsEvent(event: LyricsEvent): boolean {
+    if (!event || event.track_id !== currentTrack.value?.id) return false
+    if (event.request_id < lyricsRequestId.value) return false
+
+    lyricsRequestId.value = event.request_id
+    if (event.state === 'loading') {
+      lyricsLoading.value = true
+      scheduleLyricsReconciliation(event.track_id, event.request_id)
+      return true
+    }
+
+    if (event.state === 'ready') lyrics.value = event.lyric ?? null
+    // An error ends loading but deliberately preserves lyrics already shown.
+    lyricsLoading.value = false
+    stopLyricsReconciliation()
+    return true
+  }
+
+  function scheduleLyricsReconciliation(trackId: string, requestId: number) {
+    if (!trackId || requestId <= 0) return
+
+    if (_lyricsReconcileRequestId !== requestId) {
+      _lyricsReconcileRequestId = requestId
+      _lyricsReconcileDeadline = Date.now() + lyricsReconcileTimeoutMs
+    }
+    if (_lyricsReconcileTimer !== null) clearTimeout(_lyricsReconcileTimer)
+    const generation = ++_lyricsReconcileGeneration
+
+    _lyricsReconcileTimer = setTimeout(async () => {
+      _lyricsReconcileTimer = null
+      if (
+        generation !== _lyricsReconcileGeneration
+        || currentTrack.value?.id !== trackId
+        || lyricsRequestId.value > requestId
+        || !lyricsLoading.value
+      ) {
+        return
+      }
+
+      try {
+        const snapshot = await PlayerService.GetCurrentLyrics()
+        if (generation !== _lyricsReconcileGeneration) return
+        if (
+          snapshot
+          && snapshot.track_id === trackId
+          && snapshot.request_id >= requestId
+          && acceptLyricsEvent(snapshot as LyricsEvent)
+        ) {
+          return
+        }
+      } catch (e) {
+        logger.error('Failed to reconcile lyrics request', e)
+      }
+
+      if (Date.now() >= _lyricsReconcileDeadline) {
+        if (currentTrack.value?.id === trackId && lyricsRequestId.value === requestId) {
+          lyricsLoading.value = false
+        }
+        stopLyricsReconciliation()
+        return
+      }
+      scheduleLyricsReconciliation(trackId, requestId)
+    }, lyricsReconcileIntervalMs)
+  }
 
   function updateInterpolatedPosition() {
     if (isPlaying.value) {
@@ -170,6 +252,7 @@ export const usePlayerStore = defineStore('player', () => {
           lyricsRequestId.value = s.lyrics_request_id
           lyrics.value = null
           lyricsLoading.value = true
+          scheduleLyricsReconciliation(s.track_id, s.lyrics_request_id)
         }
 
         if (s?.track_id) {
@@ -210,19 +293,7 @@ export const usePlayerStore = defineStore('player', () => {
 
       Events.On('player:lyrics', (ev: Events.WailsEvent) => {
         const event = ev.data as LyricsEvent
-        if (!event || event.track_id !== currentTrack.value?.id) return
-        // A newer lyric event may beat its status event to the frontend. It is
-        // authoritative for that request; only discard events from an older
-        // request, which are necessarily stale.
-        if (event.request_id < lyricsRequestId.value) return
-        lyricsRequestId.value = event.request_id
-        if (event.state === 'loading') {
-          lyricsLoading.value = true
-          return
-        }
-        if (event.state === 'ready') lyrics.value = event.lyric ?? null
-        // An error ends loading but deliberately preserves lyrics already shown.
-        lyricsLoading.value = false
+        acceptLyricsEvent(event)
       }),
 
       Events.On('player:queue-reordered', (ev: Events.WailsEvent) => {
@@ -276,9 +347,17 @@ export const usePlayerStore = defineStore('player', () => {
       const requestId = lyricsRequestId.value
       try {
         const event = await PlayerService.GetCurrentLyrics()
-        if (event && currentTrack.value?.id === trackId && event.request_id === requestId) {
-          if (event.state === 'ready') lyrics.value = event.lyric ?? null
-          lyricsLoading.value = false
+        if (
+          event
+          && event.track_id === trackId
+          && currentTrack.value?.id === trackId
+          && event.request_id >= lyricsRequestId.value
+        ) {
+          // The first online lookup may advance and finish while init is still
+          // awaiting its startup IPC calls, before the event listeners exist.
+          // Its pull snapshot is newer than the status we initially observed,
+          // so accept it just like a newer player:lyrics event.
+          acceptLyricsEvent(event as LyricsEvent)
         }
       } catch (e) {
         logger.error('Failed to pull initial lyrics', e)
@@ -296,6 +375,7 @@ export const usePlayerStore = defineStore('player', () => {
       cancelAnimationFrame(_rafId)
       _rafId = null
     }
+    stopLyricsReconciliation()
     _initialized = false
     artworkCrossfade.value = null
   }
@@ -318,7 +398,21 @@ export const usePlayerStore = defineStore('player', () => {
 
   async function refreshCurrentLyrics() {
     if (!currentTrack.value) return
-    await PlayerService.RefreshCurrentLyrics()
+    const trackId = currentTrack.value.id
+    const requestId = await PlayerService.RefreshCurrentLyrics()
+    if (!requestId || currentTrack.value?.id !== trackId) return
+
+    // RefreshCurrentLyrics starts work asynchronously. Do not depend solely on
+    // event delivery: the first Wails terminal event after app startup can be
+    // missed while the bridge is warming up.
+    if (requestId > lyricsRequestId.value) {
+      lyricsRequestId.value = requestId
+      lyrics.value = null
+      lyricsLoading.value = true
+    }
+    if (requestId === lyricsRequestId.value && lyricsLoading.value) {
+      scheduleLyricsReconciliation(trackId, requestId)
+    }
   }
 
   async function next() {

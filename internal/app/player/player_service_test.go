@@ -382,6 +382,27 @@ func TestLyricsRequestCancelsPreviousAndRejectsStaleEvents(t *testing.T) {
 	}
 }
 
+func TestGetCurrentLyricsReturnsStoredRequestLifecycle(t *testing.T) {
+	s, _ := newTestService(t, &fakePlayer{status: domain.PlayerStatus{Volume: 1}})
+	track := &domain.TrackDTO{Track: domain.Track{ID: "track-a"}}
+	s.mu.Lock()
+	s.currentTrack = track
+	s.mu.Unlock()
+
+	_, requestID := s.startLyricsRequest()
+	loading := s.GetCurrentLyrics()
+	if loading == nil || loading.TrackID != track.ID || loading.RequestID != requestID || loading.State != "loading" {
+		t.Fatalf("loading snapshot = %#v", loading)
+	}
+
+	want := &domain.Lyric{TrackID: track.ID, Content: "online lyric"}
+	s.emitLyricsEvent(track.ID, requestID, "ready", want)
+	ready := s.GetCurrentLyrics()
+	if ready == nil || ready.RequestID != requestID || ready.State != "ready" || ready.Lyric == nil || ready.Lyric.Content != want.Content {
+		t.Fatalf("ready snapshot = %#v", ready)
+	}
+}
+
 func TestPublishCurrentLyricsCancelsLookupAndEmitsCurrentSelection(t *testing.T) {
 	s, _ := newTestService(t, &fakePlayer{status: domain.PlayerStatus{Volume: 1}})
 	track := &domain.TrackDTO{Track: domain.Track{ID: "track-a"}}

@@ -240,8 +240,14 @@ player:lyrics → { track_id, request_id, state: "loading" | "ready" | "error", 
 event arrives. Delivery of the status and lyric event is independent, so the player store accepts
 the same-track event when its request ID is equal to or newer than the latest seen ID, and ignores
 only older IDs; a late older status likewise cannot restore loading after a newer terminal event.
-`error` ends loading without clearing an already displayed lyric. `GetCurrentLyrics` returns the
-same request-identified snapshot so a late startup pull cannot overwrite a newer request.
+`error` ends loading without clearing an already displayed lyric. `PlayerService` stores the latest
+`loading` / `ready` / `error` event for the active request, and `GetCurrentLyrics` returns that
+lifecycle snapshot rather than independently re-resolving the database as an always-`ready`
+result. The frontend accepts a snapshot whose request ID is equal to or newer than the latest ID it
+has observed. While loading, it reconciles the snapshot every 250 ms (with a 36-second UI
+failsafe), so a first online request whose terminal Wails event is lost while the event bridge is
+starting still reaches `ready` or `error`. Older snapshots are discarded and cannot overwrite a
+newer request.
 When the status and `ready` event arrive in the same browser tick, the track-change watcher keeps
 a lyric whose `track_id` already matches the new track; this prevents Vue's deferred watcher flush
 from clearing a successfully resolved automatic lyric.
