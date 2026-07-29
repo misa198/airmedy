@@ -79,6 +79,21 @@ Function .onInit
    !insertmacro wails.checkArchitecture
 FunctionEnd
 
+; Updates run this installer elevated, which uses the all-users Start Menu.
+; Older user-scoped installs can therefore leave a second shortcut behind. Clean
+; both scopes before creating the single canonical shortcut (and on uninstall).
+!macro RemoveAirmedyShortcuts
+    SetShellVarContext current
+    Delete "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk"
+    Delete "$DESKTOP\${INFO_PRODUCTNAME}.lnk"
+
+    ${If} ${REQUEST_EXECUTION_LEVEL} == "admin"
+        SetShellVarContext all
+        Delete "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk"
+        Delete "$DESKTOP\${INFO_PRODUCTNAME}.lnk"
+    ${EndIf}
+!macroend
+
 Section
     !insertmacro wails.setShellContext
 
@@ -97,6 +112,7 @@ Section
     ; Controls (Now Playing) session is attributed to Airmedy. For taskbar pinning to
     ; map to the same identity, these shortcuts can carry a matching
     ; System.AppUserModel.ID via the WinShell/ShortcutProperties NSIS plugin.
+    !insertmacro RemoveAirmedyShortcuts
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
 
@@ -113,8 +129,7 @@ Section "uninstall"
 
     RMDir /r $INSTDIR
 
-    Delete "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk"
-    Delete "$DESKTOP\${INFO_PRODUCTNAME}.lnk"
+    !insertmacro RemoveAirmedyShortcuts
 
     !insertmacro wails.unassociateFiles
     !insertmacro wails.unassociateCustomProtocols
