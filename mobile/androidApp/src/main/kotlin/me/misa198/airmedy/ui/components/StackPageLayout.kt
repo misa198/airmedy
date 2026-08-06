@@ -1,5 +1,6 @@
 package me.misa198.airmedy.ui.components
 
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
@@ -27,6 +28,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +47,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
@@ -123,6 +127,11 @@ fun StackPageHeader(
     val colors = LocalAirmedyColors.current
     val density = LocalDensity.current
     val statusBarPadding = with(density) { WindowInsets.statusBars.getTop(this).toDp() }
+    val targetTitleStartPadding = PageHorizontalPadding + if (onBackClick != null) {
+        HeaderHeight + HeaderControlGap
+    } else {
+        0.dp
+    }
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -145,7 +154,7 @@ fun StackPageHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
-                    start = PageHorizontalPadding + if (onBackClick != null) HeaderHeight + HeaderControlGap else 0.dp,
+                    start = targetTitleStartPadding,
                     end = PageHorizontalPadding,
                     top = statusBarPadding + HeaderTopPadding,
                 )
@@ -157,11 +166,16 @@ fun StackPageHeader(
                 targetState = HeaderTitle(stackKey = titleStackKey, text = title),
                 modifier = Modifier.weight(1f),
                 transitionSpec = {
-                    if (initialState.stackKey == targetState.stackKey) {
-                        (slideInHorizontally { it / 3 } + fadeIn()) togetherWith
-                            (slideOutHorizontally { -it / 3 } + fadeOut())
+                    // Header controls can change the title's constraints during
+                    // stack navigation. Keep the slide but disable size
+                    // interpolation, so a longer title never uses an old width.
+                    if (animateChanges) {
+                        (
+                            (slideInHorizontally { it / 3 } + fadeIn()) togetherWith
+                                (slideOutHorizontally { -it / 3 } + fadeOut())
+                            ).using(null)
                     } else {
-                        fadeIn(animationSpec = tween(durationMillis = 100)) togetherWith ExitTransition.None
+                        (EnterTransition.None togetherWith ExitTransition.None).using(null)
                     }
                 },
                 label = "page-title",
@@ -171,20 +185,16 @@ fun StackPageHeader(
                     modifier = Modifier.wrapContentWidth(Alignment.Start),
                     color = colors.textMain,
                     style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            AnimatedVisibility(
+            HeaderActionSlot(
                 visible = hasActions,
-                enter = if (animateChanges) fadeIn() else EnterTransition.None,
-                exit = if (animateChanges) fadeOut() else ExitTransition.None,
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    content = actions,
-                )
-            }
+                animateChanges = animateChanges,
+                actions = actions,
+            )
         }
         Box(
             modifier = Modifier
@@ -206,13 +216,55 @@ fun StackPageHeader(
 }
 
 @Composable
+private fun HeaderActionSlot(
+    visible: Boolean,
+    animateChanges: Boolean,
+    actions: @Composable RowScope.() -> Unit,
+) {
+    // Reserve one header-control slot even when it is empty. This keeps a
+    // changing action from resizing the title after its exit fades.
+    Box(
+        modifier = Modifier.width(HeaderHeight),
+        contentAlignment = Alignment.Center,
+    ) {
+        AnimatedVisibility(
+            visible = visible,
+            enter = if (animateChanges) fadeIn() else EnterTransition.None,
+            exit = if (animateChanges) fadeOut() else ExitTransition.None,
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                content = actions,
+            )
+        }
+    }
+}
+
+@Composable
 fun AirmedyBackButton(
     hazeState: HazeState,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colors = LocalAirmedyColors.current
     val label = stringResource(R.string.navigate_back)
+    AirmedyGlassIconButton(
+        hazeState = hazeState,
+        iconRes = LucideR.drawable.lucide_ic_chevron_left,
+        label = label,
+        onClick = onClick,
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun AirmedyGlassIconButton(
+    hazeState: HazeState,
+    @DrawableRes iconRes: Int,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = LocalAirmedyColors.current
     Box(
         modifier = modifier
             .size(HeaderHeight)
@@ -236,7 +288,7 @@ fun AirmedyBackButton(
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            painter = painterResource(LucideR.drawable.lucide_ic_chevron_left),
+            painter = painterResource(iconRes),
             contentDescription = null,
             tint = colors.textMain,
         )

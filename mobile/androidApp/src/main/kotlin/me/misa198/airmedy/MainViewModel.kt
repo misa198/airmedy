@@ -16,6 +16,7 @@ data class AppUiState(
     val selectedDestination: AppDestination = AppDestination.Home,
     val themeMode: ThemeMode = ThemeMode.System,
     val destinationStacks: Map<AppDestination, List<AppStackPage>> = rootDestinationStacks(),
+    val syncDevice: SyncDevice? = null,
 ) {
     fun stackFor(destination: AppDestination): List<AppStackPage> =
         destinationStacks[destination].orEmpty().ifEmpty { listOf(AppStackPage.Root) }
@@ -47,6 +48,12 @@ class MainViewModel(
     )
 
     fun selectDestination(destination: AppDestination) {
+        if (destination == selectedDestination.value) {
+            destinationStacks.value = destinationStacks.value + (
+                destination to listOf(AppStackPage.Root)
+            )
+            return
+        }
         selectedDestination.value = destination
     }
 
@@ -66,6 +73,16 @@ class MainViewModel(
         if (settingsStack.lastOrNull() != AppStackPage.SettingsAppearance) {
             destinationStacks.value = destinationStacks.value + (
                 AppDestination.Settings to settingsStack + AppStackPage.SettingsAppearance
+            )
+        }
+    }
+
+    fun openSettingsSync() {
+        selectedDestination.value = AppDestination.Settings
+        val settingsStack = destinationStacks.value.getValue(AppDestination.Settings)
+        if (settingsStack.lastOrNull() != AppStackPage.SettingsSync) {
+            destinationStacks.value = destinationStacks.value + (
+                AppDestination.Settings to settingsStack + AppStackPage.SettingsSync
             )
         }
     }

@@ -12,6 +12,13 @@
     <string name="appearance_theme_title">Theme</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_sync">Sync</string>
+    <string name="sync_title">Sync</string>
+    <string name="sync_add_device">Add device</string>
+    <string name="sync_empty_title">No connected devices</string>
+    <string name="sync_empty_description">Connect a device to keep your listening in sync.</string>
+    <string name="sync_device_type_desktop">Desktop</string>
+    <string name="sync_status_connected">Connected</string>
+    <string name="sync_revoke">Revoke</string>
     <string name="settings_playback">Playback</string>
     <string name="settings_integration">Integration</string>
     <string name="settings_about">About</string>

@@ -2,7 +2,7 @@ package me.misa198.airmedy
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -16,6 +16,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -28,6 +29,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
@@ -45,14 +47,21 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.graphics.ClipOp
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -62,12 +71,15 @@ import com.composables.icons.lucide.R as LucideR
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
+import kotlinx.coroutines.launch
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.ui.components.ActionList
 import me.misa198.airmedy.ui.components.ActionListContainerStyle
 import me.misa198.airmedy.ui.components.ActionListItem
+import me.misa198.airmedy.ui.components.AirmedyGlassIconButton
 import me.misa198.airmedy.ui.components.Card
 import me.misa198.airmedy.ui.components.HomeDemoContent
+import me.misa198.airmedy.ui.components.HeroCard
 import me.misa198.airmedy.ui.components.Selection
 import me.misa198.airmedy.ui.components.SelectionOption
 import me.misa198.airmedy.ui.components.StackPageLayout
@@ -100,11 +112,13 @@ fun App(
     onThemeModeSelected: (ThemeMode) -> Unit = {},
     onHomeSampleDetailSelected: () -> Unit = {},
     onAppearanceSelected: () -> Unit = {},
+    onSyncSelected: () -> Unit = {},
     onNavigateBack: () -> Unit = {},
 ) {
     AirmedyTheme(themeMode = uiState.themeMode) {
         val hazeState = rememberHazeState()
         val homeListState = rememberLazyListState()
+        val coroutineScope = rememberCoroutineScope()
         var previousDestination by remember { mutableStateOf(uiState.selectedDestination) }
         var previousHeaderWasBlurred by remember { mutableStateOf(false) }
         val destinationChanged = previousDestination != uiState.selectedDestination
@@ -114,6 +128,7 @@ fun App(
             WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
         val pageTitle = stringResource(currentPage.titleRes(uiState.selectedDestination))
         val showBack = currentPage != AppStackPage.Root
+        val showSyncAddAction = currentPage == AppStackPage.SettingsSync && uiState.syncDevice == null
         BackHandler(enabled = showBack, onBack = onNavigateBack)
         val isContentScrolled = uiState.selectedDestination == AppDestination.Home &&
             currentPage == AppStackPage.Root &&
@@ -138,6 +153,8 @@ fun App(
                 onThemeModeSelected = onThemeModeSelected,
                 onHomeSampleDetailSelected = onHomeSampleDetailSelected,
                 onAppearanceSelected = onAppearanceSelected,
+                onSyncSelected = onSyncSelected,
+                syncDevice = uiState.syncDevice,
                 onNavigateBack = onNavigateBack,
             )
             StackPageHeader(
@@ -145,13 +162,31 @@ fun App(
                 hazeState = hazeState,
                 isContentScrolled = showHeaderBlur,
                 onBackClick = if (showBack) onNavigateBack else null,
+                hasActions = showSyncAddAction,
                 animateChanges = animateHeaderChanges,
-                titleStackKey = uiState.selectedDestination.name,
-            )
+                // A stack-page change can add or remove header controls, which
+                // changes the title's available width. Give it a separate key
+                // so the header crossfades rather than sliding through a reflow.
+                titleStackKey = "${uiState.selectedDestination.name}:${currentPage.name}",
+            ) {
+                AirmedyGlassIconButton(
+                    hazeState = hazeState,
+                    iconRes = LucideR.drawable.lucide_ic_plus,
+                    label = stringResource(R.string.sync_add_device),
+                    onClick = {},
+                )
+            }
             FloatingNavigationBar(
                 selectedDestination = uiState.selectedDestination,
                 hazeState = hazeState,
-                onDestinationSelected = onDestinationSelected,
+                onDestinationSelected = { destination ->
+                    if (destination == uiState.selectedDestination && destination == AppDestination.Home) {
+                        coroutineScope.launch {
+                            homeListState.animateScrollToItem(0)
+                        }
+                    }
+                    onDestinationSelected(destination)
+                },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()
@@ -172,6 +207,8 @@ private fun AppDestinationContent(
     onThemeModeSelected: (ThemeMode) -> Unit,
     onHomeSampleDetailSelected: () -> Unit,
     onAppearanceSelected: () -> Unit,
+    onSyncSelected: () -> Unit,
+    syncDevice: SyncDevice?,
     onNavigateBack: () -> Unit,
 ) {
     val colors = LocalAirmedyColors.current
@@ -202,8 +239,7 @@ private fun AppDestinationContent(
                 modifier = modifier,
                 transitionSpec = {
                     if (targetState.destination != initialState.destination) {
-                        fadeIn(animationSpec = tween(durationMillis = 100)) togetherWith
-                            ExitTransition.None
+                        EnterTransition.None togetherWith ExitTransition.None
                     } else if (targetState.isForwardFrom(initialState)) {
                         (slideInHorizontally { it } + fadeIn()) togetherWith
                             (slideOutHorizontally { -it / 4 } + fadeOut())
@@ -227,16 +263,20 @@ private fun AppDestinationContent(
                             modifier = Modifier.padding(contentPadding),
                         )
                     }
-                    AppDestination.Settings -> if (currentPage.page == AppStackPage.SettingsAppearance) {
-                        AppearanceContent(
+                    AppDestination.Settings -> when (currentPage.page) {
+                        AppStackPage.SettingsAppearance -> AppearanceContent(
                             modifier = Modifier.padding(contentPadding),
                             themeMode = themeMode,
                             onThemeModeSelected = onThemeModeSelected,
                         )
-                    } else {
-                        SettingsContent(
+                        AppStackPage.SettingsSync -> SyncContent(
+                            syncDevice = syncDevice,
+                            modifier = Modifier.padding(contentPadding),
+                        )
+                        else -> SettingsContent(
                             modifier = Modifier.padding(contentPadding),
                             onAppearanceSelected = onAppearanceSelected,
+                            onSyncSelected = onSyncSelected,
                         )
                     }
                     else -> PlaceholderContent(
@@ -252,14 +292,17 @@ private fun AppDestinationContent(
 private fun PageKey.isForwardFrom(previous: PageKey): Boolean = when {
     page == AppStackPage.HomeSampleDetail -> true
     page == AppStackPage.SettingsAppearance -> true
+    page == AppStackPage.SettingsSync -> true
     previous.page == AppStackPage.HomeSampleDetail -> false
     previous.page == AppStackPage.SettingsAppearance -> false
+    previous.page == AppStackPage.SettingsSync -> false
     else -> false
 }
 
 private fun AppStackPage.titleRes(destination: AppDestination): Int = when (this) {
     AppStackPage.HomeSampleDetail -> R.string.home_sample_page_title
     AppStackPage.SettingsAppearance -> R.string.appearance_title
+    AppStackPage.SettingsSync -> R.string.sync_title
     AppStackPage.Root -> destination.titleRes
 }
 
@@ -296,14 +339,10 @@ private fun PlaceholderContent(destination: AppDestination, modifier: Modifier =
 @Composable
 private fun SettingsContent(
     onAppearanceSelected: () -> Unit,
+    onSyncSelected: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            text = stringResource(AppDestination.Settings.placeholderRes),
-            style = MaterialTheme.typography.bodyLarge,
-            color = LocalAirmedyColors.current.textMuted,
-        )
+    Column(modifier = modifier) {
         ActionList(
             items = listOf(
                 ActionListItem(
@@ -311,7 +350,11 @@ private fun SettingsContent(
                     LucideR.drawable.lucide_ic_palette,
                     onClick = onAppearanceSelected,
                 ),
-                ActionListItem(R.string.settings_sync, LucideR.drawable.lucide_ic_refresh_cw),
+                ActionListItem(
+                    R.string.settings_sync,
+                    LucideR.drawable.lucide_ic_refresh_cw,
+                    onClick = onSyncSelected,
+                ),
                 ActionListItem(R.string.settings_playback, LucideR.drawable.lucide_ic_play),
                 ActionListItem(R.string.settings_integration, LucideR.drawable.lucide_ic_plug),
                 ActionListItem(R.string.settings_about, LucideR.drawable.lucide_ic_info),
@@ -320,6 +363,68 @@ private fun SettingsContent(
         )
     }
 }
+
+@Composable
+private fun SyncContent(
+    syncDevice: SyncDevice?,
+    modifier: Modifier = Modifier,
+) {
+    val colors = LocalAirmedyColors.current
+    Column(modifier = modifier) {
+        if (syncDevice == null) {
+            HeroCard(
+                iconRes = LucideR.drawable.lucide_ic_plug,
+                title = stringResource(R.string.sync_empty_title),
+                description = stringResource(R.string.sync_empty_description),
+            )
+        } else {
+            Card(
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(24.dp),
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = syncDevice.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = colors.textMain,
+                    )
+                    Text(
+                        text = stringResource(syncDevice.type.labelRes),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.textMuted,
+                    )
+                    Text(
+                        text = stringResource(R.string.sync_status_connected),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.primary,
+                    )
+                    Text(
+                        text = stringResource(R.string.sync_revoke),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp)
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(colors.glassElevated)
+                            .border(1.dp, colors.borderGlass, RoundedCornerShape(24.dp))
+                            .clickable(
+                                onClick = {},
+                                role = Role.Button,
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                            )
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = colors.textMain,
+                    )
+                }
+            }
+        }
+    }
+}
+
+private val SyncDeviceType.labelRes: Int
+    get() = when (this) {
+        SyncDeviceType.Desktop -> R.string.sync_device_type_desktop
+    }
 
 @Composable
 private fun AppearanceContent(
@@ -409,12 +514,32 @@ private fun FloatingNavigationBar(
                         .clip(RoundedCornerShape(InnerPillRadius))
                         .background(colors.navigationActive),
                 )
+                FloatingNavigationVisuals(
+                    foreground = colors.textMain,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .navigationForegroundMask(
+                            indicatorOffset = indicatorOffset,
+                            itemWidth = itemWidth,
+                            clipOp = ClipOp.Difference,
+                        ),
+                )
+                FloatingNavigationVisuals(
+                    foreground = colors.primary,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .navigationForegroundMask(
+                            indicatorOffset = indicatorOffset,
+                            itemWidth = itemWidth,
+                            clipOp = ClipOp.Intersect,
+                        ),
+                )
                 Row(
                     modifier = Modifier.fillMaxSize(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     AppDestination.entries.forEach { destination ->
-                        FloatingNavigationItem(
+                        FloatingNavigationTarget(
                             destination = destination,
                             selected = destination == selectedDestination,
                             onClick = { onDestinationSelected(destination) },
@@ -427,33 +552,61 @@ private fun FloatingNavigationBar(
     }
 }
 
+private fun Modifier.navigationForegroundMask(
+    indicatorOffset: androidx.compose.ui.unit.Dp,
+    itemWidth: androidx.compose.ui.unit.Dp,
+    clipOp: ClipOp,
+): Modifier = drawWithContent {
+    val contentDrawScope = this
+    // Modifier.offset rounds Dp to whole pixels. Match that conversion so the
+    // inactive and active foregrounds meet on the pill's exact edge.
+    val pillLeft = indicatorOffset.roundToPx().toFloat()
+    val pillWidth = itemWidth.roundToPx().toFloat()
+    val pillRadius = InnerPillRadius.roundToPx().toFloat()
+    val pillPath = Path().apply {
+        addRoundRect(
+            RoundRect(
+                left = pillLeft,
+                top = 0f,
+                right = pillLeft + pillWidth,
+                bottom = size.height,
+                radiusX = pillRadius,
+                radiusY = pillRadius,
+            ),
+        )
+    }
+    clipPath(pillPath, clipOp = clipOp) { contentDrawScope.drawContent() }
+}
+
 @Composable
-private fun FloatingNavigationItem(
-    destination: AppDestination,
-    selected: Boolean,
-    onClick: () -> Unit,
+private fun FloatingNavigationVisuals(
+    foreground: androidx.compose.ui.graphics.Color,
     modifier: Modifier = Modifier,
 ) {
-    val colors = LocalAirmedyColors.current
-    val foreground by animateColorAsState(
-        targetValue = if (selected) colors.primary else colors.textMain,
-        animationSpec = tween(durationMillis = 250),
-        label = "navigation-item-foreground",
-    )
+    Row(
+        modifier = modifier.clearAndSetSemantics { },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        AppDestination.entries.forEach { destination ->
+            FloatingNavigationVisual(
+                destination = destination,
+                foreground = foreground,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun FloatingNavigationVisual(
+    destination: AppDestination,
+    foreground: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier,
+) {
     val destinationLabel = stringResource(destination.titleRes)
-    val innerPillShape = RoundedCornerShape(InnerPillRadius)
     Column(
         modifier = modifier
-            .fillMaxSize()
-            .clip(innerPillShape)
-            .semantics { contentDescription = destinationLabel }
-            .selectable(
-                selected = selected,
-                onClick = onClick,
-                role = Role.Tab,
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-            ),
+            .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -468,6 +621,29 @@ private fun FloatingNavigationItem(
             color = foreground,
         )
     }
+}
+
+@Composable
+private fun FloatingNavigationTarget(
+    destination: AppDestination,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val destinationLabel = stringResource(destination.titleRes)
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .clip(RoundedCornerShape(InnerPillRadius))
+            .semantics { contentDescription = destinationLabel }
+            .selectable(
+                selected = selected,
+                onClick = onClick,
+                role = Role.Tab,
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ),
+    )
 }
 
 private val AppDestination.titleRes: Int
@@ -498,4 +674,21 @@ private val AppDestination.iconRes: Int
 @Composable
 private fun AppPreview() {
     App()
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun SyncConnectedPreview() {
+    App(
+        uiState = AppUiState(
+            selectedDestination = AppDestination.Settings,
+            destinationStacks = rootDestinationStacks() + (
+                AppDestination.Settings to listOf(AppStackPage.Root, AppStackPage.SettingsSync)
+            ),
+            syncDevice = SyncDevice(
+                name = "Airmedy Desktop",
+                type = SyncDeviceType.Desktop,
+            ),
+        ),
+    )
 }

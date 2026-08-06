@@ -41,6 +41,7 @@ class MainActivity : ComponentActivity() {
                 onThemeModeSelected = viewModel::setThemeMode,
                 onHomeSampleDetailSelected = viewModel::openHomeSampleDetail,
                 onAppearanceSelected = viewModel::openSettingsAppearance,
+                onSyncSelected = viewModel::openSettingsSync,
                 onNavigateBack = viewModel::navigateBack,
             )
         }

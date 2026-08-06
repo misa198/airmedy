@@ -12,6 +12,17 @@ enum class AppStackPage {
     Root,
     HomeSampleDetail,
     SettingsAppearance,
+    SettingsSync,
+}
+
+/** Temporary Android UI model until the sync service and its shared contract exist. */
+data class SyncDevice(
+    val name: String,
+    val type: SyncDeviceType,
+)
+
+enum class SyncDeviceType {
+    Desktop,
 }
 
 fun rootDestinationStacks(): Map<AppDestination, List<AppStackPage>> =

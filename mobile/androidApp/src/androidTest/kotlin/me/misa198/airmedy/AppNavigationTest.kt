@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -20,6 +21,22 @@ import me.misa198.airmedy.settings.ThemeMode
 class AppNavigationTest {
     @get:Rule
     val composeTestRule = createComposeRule()
+
+    @Test
+    fun navigationExposesOneAccessibleTargetPerDestination() {
+        composeTestRule.setContent { App() }
+
+        listOf(
+            R.string.destination_home,
+            R.string.destination_library,
+            R.string.destination_search,
+            R.string.destination_settings,
+        ).forEach { labelRes ->
+            composeTestRule
+                .onAllNodesWithContentDescription(string(labelRes))
+                .assertCountEquals(1)
+        }
+    }
 
     @Test
     fun selectingLibraryUpdatesTheVisibleDestinationAndSelectedTab() {
@@ -78,7 +95,62 @@ class AppNavigationTest {
         composeTestRule.onNodeWithText(darkLabel).performClick()
         composeTestRule.onNodeWithText(darkLabel).assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription(string(R.string.navigate_back)).performClick()
-        composeTestRule.onNodeWithText(string(R.string.placeholder_settings)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(string(R.string.settings_sync)).assertIsDisplayed()
+    }
+
+    @Test
+    fun syncOpensFromSettingsAndShowsTheEmptyDeviceState() {
+        var state by mutableStateOf(AppUiState(selectedDestination = AppDestination.Settings))
+        composeTestRule.setContent {
+            App(
+                uiState = state,
+                onSyncSelected = {
+                    state = state.copy(
+                        destinationStacks = state.destinationStacks + (
+                            AppDestination.Settings to state.stackFor(AppDestination.Settings) + AppStackPage.SettingsSync
+                        ),
+                    )
+                },
+                onNavigateBack = {
+                    state = state.copy(
+                        destinationStacks = state.destinationStacks + (
+                            AppDestination.Settings to state.stackFor(AppDestination.Settings).dropLast(1)
+                        ),
+                    )
+                },
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription(string(R.string.settings_sync)).performClick()
+
+        composeTestRule.onNodeWithText(string(R.string.sync_empty_title)).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(string(R.string.sync_add_device)).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(string(R.string.navigate_back)).performClick()
+        composeTestRule.onNodeWithText(string(R.string.settings_sync)).assertIsDisplayed()
+    }
+
+    @Test
+    fun connectedSyncDeviceShowsDetailsAndHidesTheAddAction() {
+        val device = SyncDevice(name = "Airmedy Desktop", type = SyncDeviceType.Desktop)
+        composeTestRule.setContent {
+            App(
+                uiState = AppUiState(
+                    selectedDestination = AppDestination.Settings,
+                    destinationStacks = rootDestinationStacks() + (
+                        AppDestination.Settings to listOf(AppStackPage.Root, AppStackPage.SettingsSync)
+                    ),
+                    syncDevice = device,
+                ),
+            )
+        }
+
+        composeTestRule.onNodeWithText(device.name).assertIsDisplayed()
+        composeTestRule.onNodeWithText(string(R.string.sync_device_type_desktop)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(string(R.string.sync_status_connected)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(string(R.string.sync_revoke)).assertIsDisplayed()
+        composeTestRule
+            .onAllNodesWithContentDescription(string(R.string.sync_add_device))
+            .assertCountEquals(0)
     }
 
     @Test
@@ -109,6 +181,53 @@ class AppNavigationTest {
 
         composeTestRule.onNodeWithText(finalSection).assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription(homeLabel).assertIsDisplayed()
+    }
+
+    @Test
+    fun reselectingTheHomeDestinationScrollsItsRootPageToTheTop() {
+        composeTestRule.setContent { App() }
+
+        val finalSection = string(R.string.home_demo_section_title, 4)
+        val homeTitle = string(R.string.home_demo_title)
+        val homeLabel = string(R.string.destination_home)
+
+        composeTestRule.onNodeWithText(finalSection).performScrollTo()
+        composeTestRule.onNodeWithText(finalSection).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(homeLabel).performClick()
+
+        composeTestRule.onNodeWithText(homeTitle).assertIsDisplayed()
+    }
+
+    @Test
+    fun reselectingADestinationWithAnOpenPageReturnsItsStackToRoot() {
+        var state by mutableStateOf(
+            AppUiState(
+                destinationStacks = rootDestinationStacks() + (
+                    AppDestination.Home to listOf(AppStackPage.Root, AppStackPage.HomeSampleDetail)
+                ),
+            ),
+        )
+        composeTestRule.setContent {
+            App(
+                uiState = state,
+                onDestinationSelected = { destination ->
+                    state = if (destination == state.selectedDestination) {
+                        state.copy(
+                            destinationStacks = state.destinationStacks + (
+                                destination to listOf(AppStackPage.Root)
+                            ),
+                        )
+                    } else {
+                        state.copy(selectedDestination = destination)
+                    }
+                },
+            )
+        }
+
+        composeTestRule.onNodeWithText(string(R.string.home_sample_page_heading)).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(string(R.string.destination_home)).performClick()
+
+        composeTestRule.onNodeWithText(string(R.string.home_demo_title)).assertIsDisplayed()
     }
 
     @Test

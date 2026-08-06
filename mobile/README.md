@@ -35,8 +35,8 @@ sharedLogic
 The floating Home, Library, Search, and Settings destinations each own an
 independent Android UI stack. Switching destinations preserves the currently
 open page in every other stack. Stack changes within a destination use the
-standard page transition; switching between destination stacks uses a quick,
-subtle fade while the floating navigation remains in place.
+standard page transition; switching destination stacks changes the title and
+content together while the floating navigation remains in place.
 
 `sharedLogic` must remain UI- and platform-neutral. Android implements its ports
 inside `androidApp`. When iOS work is authorized, it will have native SwiftUI and
