@@ -14,10 +14,21 @@ dependencies {
     implementation(project(":sharedLogic"))
 
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.lifecycle.runtimeCompose)
+    implementation(libs.androidx.lifecycle.viewmodelKtx)
 
     implementation(libs.compose.material3)
+    implementation(libs.compose.lucideIcons)
     implementation(libs.compose.uiToolingPreview)
+    implementation(libs.haze.core)
+    implementation(libs.haze.blur)
+
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.testExt.junit)
+    androidTestImplementation(libs.compose.uiTestJunit4)
     debugImplementation(libs.compose.uiTooling)
+    debugImplementation(libs.compose.uiTestManifest)
 }
 
 android {

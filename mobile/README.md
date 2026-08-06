@@ -7,6 +7,8 @@ database, Wails bindings, or Remote API.
 ## Status
 
 - Android development is active and uses native Jetpack Compose UI.
+- Android supports API 31 (Android 12) and newer; this baseline allows the
+  floating navigation to use true backdrop blur.
 - `sharedLogic` is the future cross-platform business-logic module.
 - iOS is intentionally frozen. Do not modify `iosApp` or iOS targets unless a
   task explicitly enables iOS work.
