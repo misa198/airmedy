@@ -11,6 +11,7 @@ enum class AppDestination {
 enum class AppStackPage {
     Root,
     HomeSampleDetail,
+    SettingsAppearance,
 }
 
 fun rootDestinationStacks(): Map<AppDestination, List<AppStackPage>> =

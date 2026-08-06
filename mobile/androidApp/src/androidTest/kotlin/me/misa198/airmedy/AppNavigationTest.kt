@@ -43,7 +43,7 @@ class AppNavigationTest {
     }
 
     @Test
-    fun settingsThemeControlMarksTheSelectedThemeMode() {
+    fun appearanceOpensFromSettingsAndThemeSelectionUpdatesState() {
         var state by mutableStateOf(AppUiState(selectedDestination = AppDestination.Settings))
         composeTestRule.setContent {
             App(
@@ -51,14 +51,51 @@ class AppNavigationTest {
                 onThemeModeSelected = { themeMode ->
                     state = state.copy(themeMode = themeMode)
                 },
+                onAppearanceSelected = {
+                    state = state.copy(
+                        destinationStacks = state.destinationStacks + (
+                            AppDestination.Settings to state.stackFor(AppDestination.Settings) + AppStackPage.SettingsAppearance
+                        ),
+                    )
+                },
+                onNavigateBack = {
+                    state = state.copy(
+                        destinationStacks = state.destinationStacks + (
+                            AppDestination.Settings to state.stackFor(AppDestination.Settings).dropLast(1)
+                        ),
+                    )
+                },
             )
         }
 
+        val appearanceLabel = string(R.string.settings_appearance)
+        val themeSelectorValue = string(R.string.theme_system)
         val darkLabel = string(R.string.theme_dark)
 
+        composeTestRule.onNodeWithContentDescription(appearanceLabel).performClick()
+        composeTestRule.onNodeWithText(string(R.string.appearance_theme_title)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(themeSelectorValue).performClick()
         composeTestRule.onNodeWithText(darkLabel).performClick()
+        composeTestRule.onNodeWithText(darkLabel).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(string(R.string.navigate_back)).performClick()
+        composeTestRule.onNodeWithText(string(R.string.placeholder_settings)).assertIsDisplayed()
+    }
 
-        composeTestRule.onNodeWithText(darkLabel).assertIsSelected()
+    @Test
+    fun settingsShowsItsActionList() {
+        composeTestRule.setContent {
+            App(uiState = AppUiState(selectedDestination = AppDestination.Settings))
+        }
+
+        listOf(
+            R.string.settings_appearance,
+            R.string.settings_sync,
+            R.string.settings_playback,
+            R.string.settings_integration,
+            R.string.settings_about,
+        ).forEach { labelRes ->
+            composeTestRule.onNodeWithText(string(labelRes)).assertIsDisplayed()
+        }
     }
 
     @Test

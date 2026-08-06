@@ -31,7 +31,7 @@ fun Card(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(28.dp))
             .background(colors.card)
             .then(modifier)
             .padding(contentPadding),

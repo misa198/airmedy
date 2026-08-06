@@ -1,8 +1,8 @@
 package me.misa198.airmedy
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -63,7 +63,13 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import me.misa198.airmedy.settings.ThemeMode
+import me.misa198.airmedy.ui.components.ActionList
+import me.misa198.airmedy.ui.components.ActionListContainerStyle
+import me.misa198.airmedy.ui.components.ActionListItem
+import me.misa198.airmedy.ui.components.Card
 import me.misa198.airmedy.ui.components.HomeDemoContent
+import me.misa198.airmedy.ui.components.Selection
+import me.misa198.airmedy.ui.components.SelectionOption
 import me.misa198.airmedy.ui.components.StackPageLayout
 import me.misa198.airmedy.ui.components.StackPageHeader
 import me.misa198.airmedy.ui.components.liquidGlassBackground
@@ -93,6 +99,7 @@ fun App(
     onDestinationSelected: (AppDestination) -> Unit = {},
     onThemeModeSelected: (ThemeMode) -> Unit = {},
     onHomeSampleDetailSelected: () -> Unit = {},
+    onAppearanceSelected: () -> Unit = {},
     onNavigateBack: () -> Unit = {},
 ) {
     AirmedyTheme(themeMode = uiState.themeMode) {
@@ -105,13 +112,7 @@ fun App(
         val currentPage = uiState.currentPage
         val navigationBottomPadding = NavigationHeight + NavigationBottomMargin +
             WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-        val pageTitle = if (
-            uiState.selectedDestination == AppDestination.Home && currentPage == AppStackPage.HomeSampleDetail
-        ) {
-            stringResource(R.string.home_sample_page_title)
-        } else {
-            stringResource(uiState.selectedDestination.titleRes)
-        }
+        val pageTitle = stringResource(currentPage.titleRes(uiState.selectedDestination))
         val showBack = currentPage != AppStackPage.Root
         BackHandler(enabled = showBack, onBack = onNavigateBack)
         val isContentScrolled = uiState.selectedDestination == AppDestination.Home &&
@@ -136,6 +137,7 @@ fun App(
                 homeListState = homeListState,
                 onThemeModeSelected = onThemeModeSelected,
                 onHomeSampleDetailSelected = onHomeSampleDetailSelected,
+                onAppearanceSelected = onAppearanceSelected,
                 onNavigateBack = onNavigateBack,
             )
             StackPageHeader(
@@ -169,6 +171,7 @@ private fun AppDestinationContent(
     homeListState: androidx.compose.foundation.lazy.LazyListState,
     onThemeModeSelected: (ThemeMode) -> Unit,
     onHomeSampleDetailSelected: () -> Unit,
+    onAppearanceSelected: () -> Unit,
     onNavigateBack: () -> Unit,
 ) {
     val colors = LocalAirmedyColors.current
@@ -183,11 +186,7 @@ private fun AppDestinationContent(
             .hazeSource(hazeState),
     ) {
         StackPageLayout(
-            title = if (destination == AppDestination.Home && page == AppStackPage.HomeSampleDetail) {
-                stringResource(R.string.home_sample_page_title)
-            } else {
-                stringResource(destination.titleRes)
-            },
+            title = stringResource(page.titleRes(destination)),
             hazeState = hazeState,
             contentBottomPadding = navigationBottomPadding,
             isContentScrolled = false,
@@ -228,11 +227,18 @@ private fun AppDestinationContent(
                             modifier = Modifier.padding(contentPadding),
                         )
                     }
-                    AppDestination.Settings -> SettingsContent(
-                        modifier = Modifier.padding(contentPadding),
-                        themeMode = themeMode,
-                        onThemeModeSelected = onThemeModeSelected,
-                    )
+                    AppDestination.Settings -> if (currentPage.page == AppStackPage.SettingsAppearance) {
+                        AppearanceContent(
+                            modifier = Modifier.padding(contentPadding),
+                            themeMode = themeMode,
+                            onThemeModeSelected = onThemeModeSelected,
+                        )
+                    } else {
+                        SettingsContent(
+                            modifier = Modifier.padding(contentPadding),
+                            onAppearanceSelected = onAppearanceSelected,
+                        )
+                    }
                     else -> PlaceholderContent(
                         destination = currentPage.destination,
                         modifier = Modifier.padding(contentPadding),
@@ -245,8 +251,16 @@ private fun AppDestinationContent(
 
 private fun PageKey.isForwardFrom(previous: PageKey): Boolean = when {
     page == AppStackPage.HomeSampleDetail -> true
+    page == AppStackPage.SettingsAppearance -> true
     previous.page == AppStackPage.HomeSampleDetail -> false
+    previous.page == AppStackPage.SettingsAppearance -> false
     else -> false
+}
+
+private fun AppStackPage.titleRes(destination: AppDestination): Int = when (this) {
+    AppStackPage.HomeSampleDetail -> R.string.home_sample_page_title
+    AppStackPage.SettingsAppearance -> R.string.appearance_title
+    AppStackPage.Root -> destination.titleRes
 }
 
 @Composable
@@ -281,8 +295,7 @@ private fun PlaceholderContent(destination: AppDestination, modifier: Modifier =
 
 @Composable
 private fun SettingsContent(
-    themeMode: ThemeMode,
-    onThemeModeSelected: (ThemeMode) -> Unit,
+    onAppearanceSelected: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -291,59 +304,42 @@ private fun SettingsContent(
             style = MaterialTheme.typography.bodyLarge,
             color = LocalAirmedyColors.current.textMuted,
         )
-        ThemeModeSelector(
-            selectedThemeMode = themeMode,
-            onThemeModeSelected = onThemeModeSelected,
+        ActionList(
+            items = listOf(
+                ActionListItem(
+                    R.string.settings_appearance,
+                    LucideR.drawable.lucide_ic_palette,
+                    onClick = onAppearanceSelected,
+                ),
+                ActionListItem(R.string.settings_sync, LucideR.drawable.lucide_ic_refresh_cw),
+                ActionListItem(R.string.settings_playback, LucideR.drawable.lucide_ic_play),
+                ActionListItem(R.string.settings_integration, LucideR.drawable.lucide_ic_plug),
+                ActionListItem(R.string.settings_about, LucideR.drawable.lucide_ic_info),
+            ),
+            containerStyle = ActionListContainerStyle.Card,
         )
     }
 }
 
 @Composable
-private fun ThemeModeSelector(
-    selectedThemeMode: ThemeMode,
+private fun AppearanceContent(
+    themeMode: ThemeMode,
     onThemeModeSelected: (ThemeMode) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val colors = LocalAirmedyColors.current
     Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(
-            text = stringResource(R.string.appearance_title),
-            style = MaterialTheme.typography.titleMedium,
-            color = colors.textMain,
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ThemeMode.entries.forEach { mode ->
-                val selected = mode == selectedThemeMode
-                val background by animateColorAsState(
-                    targetValue = if (selected) colors.primary.copy(alpha = 0.16f) else colors.glassElevated,
-                    animationSpec = tween(durationMillis = 220),
-                    label = "theme-mode-background",
-                )
-                val labelColor by animateColorAsState(
-                    targetValue = if (selected) colors.primary else colors.textMain,
-                    animationSpec = tween(durationMillis = 220),
-                    label = "theme-mode-text",
-                )
-                Text(
-                    text = stringResource(mode.labelRes),
-                    color = labelColor,
-                    style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier
-                        .clip(MaterialTheme.shapes.large)
-                        .background(background)
-                        .border(1.dp, colors.borderGlass, MaterialTheme.shapes.large)
-                        .selectable(
-                            selected = selected,
-                            onClick = { onThemeModeSelected(mode) },
-                            role = Role.RadioButton,
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                        )
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                )
-            }
+        Card {
+            Selection(
+                labelRes = R.string.appearance_theme_title,
+                options = ThemeMode.entries.map { mode ->
+                    SelectionOption(value = mode, labelRes = mode.labelRes)
+                },
+                selectedValue = themeMode,
+                onValueSelected = onThemeModeSelected,
+            )
         }
     }
 }

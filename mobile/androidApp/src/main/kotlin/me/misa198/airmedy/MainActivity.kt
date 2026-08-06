@@ -40,6 +40,7 @@ class MainActivity : ComponentActivity() {
                 onDestinationSelected = viewModel::selectDestination,
                 onThemeModeSelected = viewModel::setThemeMode,
                 onHomeSampleDetailSelected = viewModel::openHomeSampleDetail,
+                onAppearanceSelected = viewModel::openSettingsAppearance,
                 onNavigateBack = viewModel::navigateBack,
             )
         }
