@@ -9,6 +9,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Rule
 import org.junit.Test
 import me.misa198.airmedy.settings.ThemeMode
@@ -29,10 +30,13 @@ class AppNavigationTest {
             )
         }
 
-        composeTestRule.onNodeWithContentDescription("Library").performClick()
+        val libraryLabel = string(R.string.destination_library)
+        val libraryPlaceholder = string(R.string.placeholder_library)
 
-        composeTestRule.onNodeWithContentDescription("Library").assertIsSelected()
-        composeTestRule.onNodeWithText("Your library will appear here.").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(libraryLabel).performClick()
+
+        composeTestRule.onNodeWithContentDescription(libraryLabel).assertIsSelected()
+        composeTestRule.onNodeWithText(libraryPlaceholder).assertIsDisplayed()
     }
 
     @Test
@@ -47,8 +51,13 @@ class AppNavigationTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Dark").performClick()
+        val darkLabel = string(R.string.theme_dark)
 
-        composeTestRule.onNodeWithText("Dark").assertIsSelected()
+        composeTestRule.onNodeWithText(darkLabel).performClick()
+
+        composeTestRule.onNodeWithText(darkLabel).assertIsSelected()
     }
+
+    private fun string(resourceId: Int): String =
+        InstrumentationRegistry.getInstrumentation().targetContext.getString(resourceId)
 }

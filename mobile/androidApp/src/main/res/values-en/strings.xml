@@ -1,5 +1,4 @@
 <resources>
-    <!-- Default fallback for locales that do not yet have a translation. -->
     <string name="app_name">Airmedy</string>
     <string name="destination_home">Home</string>
     <string name="destination_library">Library</string>
