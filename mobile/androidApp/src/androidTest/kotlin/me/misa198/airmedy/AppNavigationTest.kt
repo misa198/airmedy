@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -102,6 +103,42 @@ class AppNavigationTest {
         composeTestRule.onNodeWithContentDescription(string(R.string.navigate_back)).performClick()
 
         composeTestRule.onNodeWithText(string(R.string.home_demo_open_page)).assertIsDisplayed()
+    }
+
+    @Test
+    fun homeActionListsOpenAndPopTheSharedFakePage() {
+        var state by mutableStateOf(AppUiState())
+        composeTestRule.setContent {
+            App(
+                uiState = state,
+                onHomeSampleDetailSelected = {
+                    state = state.copy(
+                        destinationStacks = state.destinationStacks + (
+                            AppDestination.Home to state.stackFor(AppDestination.Home) + AppStackPage.HomeSampleDetail
+                        ),
+                    )
+                },
+                onNavigateBack = {
+                    state = state.copy(
+                        destinationStacks = state.destinationStacks + (
+                            AppDestination.Home to state.stackFor(AppDestination.Home).dropLast(1)
+                        ),
+                    )
+                },
+            )
+        }
+
+        val actionOne = string(R.string.home_action_one)
+        val actionTwo = string(R.string.home_action_two)
+        val plainTitle = string(R.string.home_action_list_plain_title)
+
+        composeTestRule.onAllNodesWithContentDescription(actionOne)[0].performClick()
+        composeTestRule.onNodeWithText(string(R.string.home_sample_page_heading)).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(string(R.string.navigate_back)).performClick()
+
+        composeTestRule.onNodeWithText(plainTitle).performScrollTo()
+        composeTestRule.onAllNodesWithContentDescription(actionTwo)[1].performClick()
+        composeTestRule.onNodeWithText(string(R.string.home_sample_page_heading)).assertIsDisplayed()
     }
 
     @Test

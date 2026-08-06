@@ -16,6 +16,9 @@ database, Wails bindings, or Remote API.
 See [AGENTS.md](AGENTS.md) for the mandatory engineering rules and cleanup
 sequence.
 
+Android Compose UI architecture and reusable components are documented in the
+[mobile UI catalog](catalog/ui/README.md).
+
 ## Module boundaries
 
 ```text

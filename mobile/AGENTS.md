@@ -124,6 +124,17 @@ intent using native Android Compose.
 5. Update this README and this guide whenever the mobile module graph, shared
    contracts, platform boundary, commands, or supported targets change.
 
+## Mobile UI catalog maintenance
+
+`mobile/catalog/ui/README.md` is the living catalog for Android Compose UI.
+
+- Read it before changing Android navigation, themes, shared composables,
+  screen layout, accessibility semantics, or Android UI tests.
+- Update it in the same task whenever those areas change. Record the affected
+  component contract, Home/navigation integration, or verification pattern so
+  future agents do not need to rediscover it from source.
+- Do not update the desktop `catalog/ui/README.md` for Android-only work.
+
 ## Out of scope until explicitly requested
 
 - iOS implementation, Xcode project changes, and iOS test/build commands.

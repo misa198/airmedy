@@ -24,4 +24,9 @@
     <string name="home_sample_page_title">Sample page</string>
     <string name="home_sample_page_heading">A fake detail page</string>
     <string name="home_sample_page_body">This page sits above Home in its own stack. The persistent navigation remains available, while the glass Back button returns to the Home root.</string>
+    <string name="home_action_list_card_title">Actions in a card</string>
+    <string name="home_action_list_plain_title">Actions without a card</string>
+    <string name="home_action_one">Action one</string>
+    <string name="home_action_two">Action two</string>
+    <string name="home_action_three">Action three</string>
 </resources>

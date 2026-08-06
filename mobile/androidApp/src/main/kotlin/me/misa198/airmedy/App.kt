@@ -3,6 +3,7 @@ package me.misa198.airmedy
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -73,12 +74,18 @@ private val OuterPillRadius = 36.dp
 private val InnerPillRadius = 32.dp
 private val PillGap = 4.dp
 private val NavigationHeight = 72.dp
-private val NavigationBottomMargin = 12.dp
+private val NavigationBottomMargin = 4.dp
 
 private data class PageKey(
     val destination: AppDestination,
     val page: AppStackPage,
 )
+
+internal fun shouldShowHeaderBlur(
+    isContentScrolled: Boolean,
+    destinationChanged: Boolean,
+    previousHeaderWasBlurred: Boolean,
+): Boolean = isContentScrolled || (destinationChanged && previousHeaderWasBlurred)
 
 @Composable
 fun App(
@@ -92,8 +99,9 @@ fun App(
         val hazeState = rememberHazeState()
         val homeListState = rememberLazyListState()
         var previousDestination by remember { mutableStateOf(uiState.selectedDestination) }
-        val animateHeaderChanges = previousDestination == uiState.selectedDestination
-        SideEffect { previousDestination = uiState.selectedDestination }
+        var previousHeaderWasBlurred by remember { mutableStateOf(false) }
+        val destinationChanged = previousDestination != uiState.selectedDestination
+        val animateHeaderChanges = !destinationChanged
         val currentPage = uiState.currentPage
         val navigationBottomPadding = NavigationHeight + NavigationBottomMargin +
             WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -109,6 +117,15 @@ fun App(
         val isContentScrolled = uiState.selectedDestination == AppDestination.Home &&
             currentPage == AppStackPage.Root &&
             (homeListState.firstVisibleItemIndex > 0 || homeListState.firstVisibleItemScrollOffset > 0)
+        val showHeaderBlur = shouldShowHeaderBlur(
+            isContentScrolled = isContentScrolled,
+            destinationChanged = destinationChanged,
+            previousHeaderWasBlurred = previousHeaderWasBlurred,
+        )
+        SideEffect {
+            previousDestination = uiState.selectedDestination
+            previousHeaderWasBlurred = isContentScrolled
+        }
         Box(modifier = Modifier.fillMaxSize()) {
             AppDestinationContent(
                 destination = uiState.selectedDestination,
@@ -124,7 +141,7 @@ fun App(
             StackPageHeader(
                 title = pageTitle,
                 hazeState = hazeState,
-                isContentScrolled = isContentScrolled,
+                isContentScrolled = showHeaderBlur,
                 onBackClick = if (showBack) onNavigateBack else null,
                 animateChanges = animateHeaderChanges,
                 titleStackKey = uiState.selectedDestination.name,
@@ -186,8 +203,8 @@ private fun AppDestinationContent(
                 modifier = modifier,
                 transitionSpec = {
                     if (targetState.destination != initialState.destination) {
-                        fadeIn(animationSpec = tween(durationMillis = 150)) togetherWith
-                            fadeOut(animationSpec = tween(durationMillis = 100))
+                        fadeIn(animationSpec = tween(durationMillis = 100)) togetherWith
+                            ExitTransition.None
                     } else if (targetState.isForwardFrom(initialState)) {
                         (slideInHorizontally { it } + fadeIn()) togetherWith
                             (slideOutHorizontally { -it / 4 } + fadeOut())

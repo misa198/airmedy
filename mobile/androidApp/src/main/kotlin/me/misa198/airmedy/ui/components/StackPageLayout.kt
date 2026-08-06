@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -160,7 +161,7 @@ fun StackPageHeader(
                         (slideInHorizontally { it / 3 } + fadeIn()) togetherWith
                             (slideOutHorizontally { -it / 3 } + fadeOut())
                     } else {
-                        EnterTransition.None togetherWith ExitTransition.None
+                        fadeIn(animationSpec = tween(durationMillis = 100)) togetherWith ExitTransition.None
                     }
                 },
                 label = "page-title",

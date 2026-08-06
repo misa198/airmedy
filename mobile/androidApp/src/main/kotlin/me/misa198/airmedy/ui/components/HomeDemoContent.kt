@@ -2,9 +2,6 @@ package me.misa198.airmedy.ui.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,7 +16,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,9 +23,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.composables.icons.lucide.R as LucideR
 import me.misa198.airmedy.R
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
@@ -67,14 +63,33 @@ fun HomeDemoContent(
             }
         }
         item { SampleArtwork() }
-        item { OpenSampleDetailCard(onClick = onOpenSampleDetail) }
+        item {
+            Card(
+                title = stringResource(R.string.home_demo_open_page),
+                description = stringResource(R.string.home_demo_open_page_hint),
+                onClick = onOpenSampleDetail,
+            )
+        }
+        item {
+            HomeActionListSection(
+                title = stringResource(R.string.home_action_list_card_title),
+                containerStyle = ActionListContainerStyle.Card,
+                onOpenSampleDetail = onOpenSampleDetail,
+            )
+        }
+        item {
+            HomeActionListSection(
+                title = stringResource(R.string.home_action_list_plain_title),
+                containerStyle = ActionListContainerStyle.Plain,
+                onOpenSampleDetail = onOpenSampleDetail,
+            )
+        }
         items(4) { section ->
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
                     .background(colors.glassElevated)
-                    .border(1.dp, colors.borderGlass, RoundedCornerShape(12.dp))
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
@@ -94,32 +109,37 @@ fun HomeDemoContent(
 }
 
 @Composable
-private fun OpenSampleDetailCard(onClick: () -> Unit) {
+private fun HomeActionListSection(
+    title: String,
+    containerStyle: ActionListContainerStyle,
+    onOpenSampleDetail: () -> Unit,
+) {
     val colors = LocalAirmedyColors.current
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(colors.glass)
-            .border(1.dp, colors.borderGlass, RoundedCornerShape(12.dp))
-            .clickable(
-                onClick = onClick,
-                role = Role.Button,
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-            )
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            text = stringResource(R.string.home_demo_open_page),
+            text = title,
             style = MaterialTheme.typography.titleMedium,
             color = colors.textMain,
         )
-        Text(
-            text = stringResource(R.string.home_demo_open_page_hint),
-            style = MaterialTheme.typography.bodyMedium,
-            color = colors.textMuted,
+        ActionList(
+            items = listOf(
+                ActionListItem(
+                    labelRes = R.string.home_action_one,
+                    iconRes = LucideR.drawable.lucide_ic_circle_play,
+                    onClick = onOpenSampleDetail,
+                ),
+                ActionListItem(
+                    labelRes = R.string.home_action_two,
+                    iconRes = LucideR.drawable.lucide_ic_list_music,
+                    onClick = onOpenSampleDetail,
+                ),
+                ActionListItem(
+                    labelRes = R.string.home_action_three,
+                    iconRes = LucideR.drawable.lucide_ic_sliders_horizontal,
+                    onClick = onOpenSampleDetail,
+                ),
+            ),
+            containerStyle = containerStyle,
         )
     }
 }
@@ -134,7 +154,6 @@ private fun SampleArtwork() {
             .height(240.dp)
             .clip(RoundedCornerShape(20.dp))
             .background(colors.glassElevated)
-            .border(1.dp, colors.borderGlass, RoundedCornerShape(20.dp))
             .semantics { contentDescription = artworkDescription },
         contentAlignment = Alignment.Center,
     ) {
