@@ -39,6 +39,8 @@ class MainActivity : ComponentActivity() {
                 uiState = uiState,
                 onDestinationSelected = viewModel::selectDestination,
                 onThemeModeSelected = viewModel::setThemeMode,
+                onHomeSampleDetailSelected = viewModel::openHomeSampleDetail,
+                onNavigateBack = viewModel::navigateBack,
             )
         }
     }

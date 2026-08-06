@@ -1,0 +1,243 @@
+package me.misa198.airmedy.ui.components
+
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import com.composables.icons.lucide.R as LucideR
+import dev.chrisbanes.haze.HazeInputScale
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.blur.HazeColorEffect
+import dev.chrisbanes.haze.blur.blurEffect
+import dev.chrisbanes.haze.hazeEffect
+import me.misa198.airmedy.R
+import me.misa198.airmedy.ui.theme.LocalAirmedyColors
+
+private val PageHorizontalPadding = 24.dp
+private val HeaderTopPadding = 16.dp
+private val HeaderHeight = 48.dp
+private val HeaderContentGap = 20.dp
+private val HeaderControlGap = 12.dp
+
+private data class HeaderTitle(
+    val stackKey: String,
+    val text: String,
+)
+
+/** Common stack page chrome. The content stays beneath the header and persistent navigation. */
+@Composable
+fun StackPageLayout(
+    title: String,
+    hazeState: HazeState,
+    contentBottomPadding: Dp,
+    isContentScrolled: Boolean,
+    onBackClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+    showHeader: Boolean = true,
+    hasActions: Boolean = false,
+    animateChanges: Boolean = true,
+    titleStackKey: String = "",
+    actions: @Composable RowScope.() -> Unit = {},
+    content: @Composable (Modifier, PaddingValues) -> Unit,
+) {
+    val density = LocalDensity.current
+    val statusBarPadding = with(density) { WindowInsets.statusBars.getTop(this).toDp() }
+    val contentPadding = PaddingValues(
+        start = PageHorizontalPadding,
+        top = statusBarPadding + HeaderTopPadding + HeaderHeight + HeaderContentGap,
+        end = PageHorizontalPadding,
+        bottom = contentBottomPadding,
+    )
+    Box(modifier = modifier.fillMaxSize()) {
+        content(Modifier.fillMaxSize(), contentPadding)
+        if (showHeader) {
+            StackPageHeader(
+                title = title,
+                hazeState = hazeState,
+                isContentScrolled = isContentScrolled,
+                onBackClick = onBackClick,
+                hasActions = hasActions,
+                animateChanges = animateChanges,
+                titleStackKey = titleStackKey,
+                actions = actions,
+            )
+        }
+    }
+}
+
+@Composable
+fun StackPageHeader(
+    title: String,
+    hazeState: HazeState,
+    isContentScrolled: Boolean,
+    onBackClick: (() -> Unit)?,
+    hasActions: Boolean = false,
+    animateChanges: Boolean = true,
+    titleStackKey: String = "",
+    actions: @Composable RowScope.() -> Unit = {},
+) {
+    val colors = LocalAirmedyColors.current
+    val density = LocalDensity.current
+    val statusBarPadding = with(density) { WindowInsets.statusBars.getTop(this).toDp() }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(statusBarPadding + HeaderTopPadding + HeaderHeight),
+    ) {
+        AnimatedVisibility(
+            visible = isContentScrolled,
+            enter = if (animateChanges) fadeIn() else EnterTransition.None,
+            exit = if (animateChanges) fadeOut() else ExitTransition.None,
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RectangleShape)
+                    .liquidGlassBackground(hazeState, colors)
+                    .background(colors.glass)
+            )
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    start = PageHorizontalPadding + if (onBackClick != null) HeaderHeight + HeaderControlGap else 0.dp,
+                    end = PageHorizontalPadding,
+                    top = statusBarPadding + HeaderTopPadding,
+                )
+                .height(HeaderHeight),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            AnimatedContent(
+                targetState = HeaderTitle(stackKey = titleStackKey, text = title),
+                modifier = Modifier.weight(1f),
+                transitionSpec = {
+                    if (initialState.stackKey == targetState.stackKey) {
+                        (slideInHorizontally { it / 3 } + fadeIn()) togetherWith
+                            (slideOutHorizontally { -it / 3 } + fadeOut())
+                    } else {
+                        EnterTransition.None togetherWith ExitTransition.None
+                    }
+                },
+                label = "page-title",
+            ) { currentTitle ->
+                Text(
+                    text = currentTitle.text,
+                    modifier = Modifier.wrapContentWidth(Alignment.Start),
+                    color = colors.textMain,
+                    style = MaterialTheme.typography.headlineLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            AnimatedVisibility(
+                visible = hasActions,
+                enter = if (animateChanges) fadeIn() else EnterTransition.None,
+                exit = if (animateChanges) fadeOut() else ExitTransition.None,
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    content = actions,
+                )
+            }
+        }
+        Box(
+            modifier = Modifier
+                .padding(
+                    start = PageHorizontalPadding,
+                    top = statusBarPadding + HeaderTopPadding,
+                )
+                .size(HeaderHeight),
+        ) {
+            AnimatedVisibility(
+                visible = onBackClick != null,
+                enter = if (animateChanges) fadeIn() else EnterTransition.None,
+                exit = if (animateChanges) fadeOut() else ExitTransition.None,
+            ) {
+                AirmedyBackButton(hazeState = hazeState, onClick = onBackClick ?: {})
+            }
+        }
+    }
+}
+
+@Composable
+fun AirmedyBackButton(
+    hazeState: HazeState,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = LocalAirmedyColors.current
+    val label = stringResource(R.string.navigate_back)
+    Box(
+        modifier = modifier
+            .size(HeaderHeight)
+            .clip(CircleShape)
+            .hazeEffect(hazeState) {
+                inputScale = HazeInputScale.Auto
+                blurEffect {
+                    blurRadius = 30.dp
+                    colorEffects = listOf(HazeColorEffect.tint(colors.glass))
+                }
+            }
+            .background(colors.glass)
+            .border(1.dp, colors.borderGlass, CircleShape)
+            .semantics { contentDescription = label }
+            .clickable(
+                onClick = onClick,
+                role = Role.Button,
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            painter = painterResource(LucideR.drawable.lucide_ic_chevron_left),
+            contentDescription = null,
+            tint = colors.textMain,
+        )
+    }
+}

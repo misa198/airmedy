@@ -12,4 +12,16 @@
     <string name="theme_system">System</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
+    <string name="navigate_back">Go back</string>
+    <string name="home_demo_eyebrow">JUST FOR YOU</string>
+    <string name="home_demo_title">An evening made for listening.</string>
+    <string name="home_demo_intro">A relaxed, scrollable home page preview with room for artwork, stories, and the music you want to return to.</string>
+    <string name="home_demo_artwork_description">Abstract album artwork</string>
+    <string name="home_demo_section_title">Listen closer %1$d</string>
+    <string name="home_demo_section_body">This is sample home content for checking the reading rhythm and the safe space above the persistent navigation bar. It stays comfortable to scan while the page grows longer.</string>
+    <string name="home_demo_open_page">Open sample page</string>
+    <string name="home_demo_open_page_hint">Test navigation forward and Back within the Home stack.</string>
+    <string name="home_sample_page_title">Sample page</string>
+    <string name="home_sample_page_heading">A fake detail page</string>
+    <string name="home_sample_page_body">This page sits above Home in its own stack. The persistent navigation remains available, while the glass Back button returns to the Home root.</string>
 </resources>

@@ -1,10 +1,17 @@
 package me.misa198.airmedy
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -15,21 +22,25 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,8 +48,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -46,15 +57,15 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.tooling.preview.Preview
-import dev.chrisbanes.haze.HazeInputScale
+import com.composables.icons.lucide.R as LucideR
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
-import dev.chrisbanes.haze.blur.HazeColorEffect
-import dev.chrisbanes.haze.blur.blurEffect
-import com.composables.icons.lucide.R as LucideR
 import me.misa198.airmedy.settings.ThemeMode
+import me.misa198.airmedy.ui.components.HomeDemoContent
+import me.misa198.airmedy.ui.components.StackPageLayout
+import me.misa198.airmedy.ui.components.StackPageHeader
+import me.misa198.airmedy.ui.components.liquidGlassBackground
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
@@ -62,21 +73,61 @@ private val OuterPillRadius = 36.dp
 private val InnerPillRadius = 32.dp
 private val PillGap = 4.dp
 private val NavigationHeight = 72.dp
+private val NavigationBottomMargin = 12.dp
+
+private data class PageKey(
+    val destination: AppDestination,
+    val page: AppStackPage,
+)
 
 @Composable
 fun App(
     uiState: AppUiState = AppUiState(),
     onDestinationSelected: (AppDestination) -> Unit = {},
     onThemeModeSelected: (ThemeMode) -> Unit = {},
+    onHomeSampleDetailSelected: () -> Unit = {},
+    onNavigateBack: () -> Unit = {},
 ) {
     AirmedyTheme(themeMode = uiState.themeMode) {
         val hazeState = rememberHazeState()
+        val homeListState = rememberLazyListState()
+        var previousDestination by remember { mutableStateOf(uiState.selectedDestination) }
+        val animateHeaderChanges = previousDestination == uiState.selectedDestination
+        SideEffect { previousDestination = uiState.selectedDestination }
+        val currentPage = uiState.currentPage
+        val navigationBottomPadding = NavigationHeight + NavigationBottomMargin +
+            WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        val pageTitle = if (
+            uiState.selectedDestination == AppDestination.Home && currentPage == AppStackPage.HomeSampleDetail
+        ) {
+            stringResource(R.string.home_sample_page_title)
+        } else {
+            stringResource(uiState.selectedDestination.titleRes)
+        }
+        val showBack = currentPage != AppStackPage.Root
+        BackHandler(enabled = showBack, onBack = onNavigateBack)
+        val isContentScrolled = uiState.selectedDestination == AppDestination.Home &&
+            currentPage == AppStackPage.Root &&
+            (homeListState.firstVisibleItemIndex > 0 || homeListState.firstVisibleItemScrollOffset > 0)
         Box(modifier = Modifier.fillMaxSize()) {
             AppDestinationContent(
                 destination = uiState.selectedDestination,
+                page = currentPage,
                 themeMode = uiState.themeMode,
                 hazeState = hazeState,
+                navigationBottomPadding = navigationBottomPadding,
+                homeListState = homeListState,
                 onThemeModeSelected = onThemeModeSelected,
+                onHomeSampleDetailSelected = onHomeSampleDetailSelected,
+                onNavigateBack = onNavigateBack,
+            )
+            StackPageHeader(
+                title = pageTitle,
+                hazeState = hazeState,
+                isContentScrolled = isContentScrolled,
+                onBackClick = if (showBack) onNavigateBack else null,
+                animateChanges = animateHeaderChanges,
+                titleStackKey = uiState.selectedDestination.name,
             )
             FloatingNavigationBar(
                 selectedDestination = uiState.selectedDestination,
@@ -85,7 +136,7 @@ fun App(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()
-                    .padding(start = 20.dp, end = 20.dp, bottom = 12.dp),
+                    .padding(start = 20.dp, end = 20.dp, bottom = NavigationBottomMargin),
             )
         }
     }
@@ -94,41 +145,139 @@ fun App(
 @Composable
 private fun AppDestinationContent(
     destination: AppDestination,
+    page: AppStackPage,
     themeMode: ThemeMode,
     hazeState: HazeState,
+    navigationBottomPadding: androidx.compose.ui.unit.Dp,
+    homeListState: androidx.compose.foundation.lazy.LazyListState,
     onThemeModeSelected: (ThemeMode) -> Unit,
+    onHomeSampleDetailSelected: () -> Unit,
+    onNavigateBack: () -> Unit,
 ) {
     val colors = LocalAirmedyColors.current
+    val pageKey = PageKey(
+        destination = destination,
+        page = page,
+    )
     Surface(
         color = colors.background,
         modifier = Modifier
             .fillMaxSize()
             .hazeSource(hazeState),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                text = stringResource(destination.titleRes),
-                style = MaterialTheme.typography.headlineLarge,
-                color = colors.textMain,
-            )
-            Text(
-                text = stringResource(destination.placeholderRes),
-                style = MaterialTheme.typography.bodyLarge,
-                color = colors.textMuted,
-            )
-            if (destination == AppDestination.Settings) {
-                ThemeModeSelector(
-                    selectedThemeMode = themeMode,
-                    onThemeModeSelected = onThemeModeSelected,
-                )
+        StackPageLayout(
+            title = if (destination == AppDestination.Home && page == AppStackPage.HomeSampleDetail) {
+                stringResource(R.string.home_sample_page_title)
+            } else {
+                stringResource(destination.titleRes)
+            },
+            hazeState = hazeState,
+            contentBottomPadding = navigationBottomPadding,
+            isContentScrolled = false,
+            onBackClick = if (page != AppStackPage.Root) {
+                onNavigateBack
+            } else {
+                null
+            },
+            showHeader = false,
+        ) { modifier, contentPadding ->
+            AnimatedContent(
+                targetState = pageKey,
+                modifier = modifier,
+                transitionSpec = {
+                    if (targetState.destination != initialState.destination) {
+                        fadeIn(animationSpec = tween(durationMillis = 150)) togetherWith
+                            fadeOut(animationSpec = tween(durationMillis = 100))
+                    } else if (targetState.isForwardFrom(initialState)) {
+                        (slideInHorizontally { it } + fadeIn()) togetherWith
+                            (slideOutHorizontally { -it / 4 } + fadeOut())
+                    } else {
+                        (slideInHorizontally { -it / 4 } + fadeIn()) togetherWith
+                            (slideOutHorizontally { it } + fadeOut())
+                    }
+                },
+                label = "stack-page-content",
+            ) { currentPage ->
+                when (currentPage.destination) {
+                    AppDestination.Home -> if (currentPage.page == AppStackPage.Root) {
+                        HomeDemoContent(
+                            modifier = Modifier.fillMaxSize(),
+                            listState = homeListState,
+                            contentPadding = contentPadding,
+                            onOpenSampleDetail = onHomeSampleDetailSelected,
+                        )
+                    } else {
+                        HomeSampleDetailContent(
+                            modifier = Modifier.padding(contentPadding),
+                        )
+                    }
+                    AppDestination.Settings -> SettingsContent(
+                        modifier = Modifier.padding(contentPadding),
+                        themeMode = themeMode,
+                        onThemeModeSelected = onThemeModeSelected,
+                    )
+                    else -> PlaceholderContent(
+                        destination = currentPage.destination,
+                        modifier = Modifier.padding(contentPadding),
+                    )
+                }
             }
         }
+    }
+}
+
+private fun PageKey.isForwardFrom(previous: PageKey): Boolean = when {
+    page == AppStackPage.HomeSampleDetail -> true
+    previous.page == AppStackPage.HomeSampleDetail -> false
+    else -> false
+}
+
+@Composable
+private fun HomeSampleDetailContent(modifier: Modifier = Modifier) {
+    val colors = LocalAirmedyColors.current
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.home_sample_page_heading),
+            style = MaterialTheme.typography.headlineMedium,
+            color = colors.textMain,
+        )
+        Text(
+            text = stringResource(R.string.home_sample_page_body),
+            style = MaterialTheme.typography.bodyLarge,
+            color = colors.textMuted,
+        )
+    }
+}
+
+@Composable
+private fun PlaceholderContent(destination: AppDestination, modifier: Modifier = Modifier) {
+    Text(
+        text = stringResource(destination.placeholderRes),
+        modifier = modifier,
+        style = MaterialTheme.typography.bodyLarge,
+        color = LocalAirmedyColors.current.textMuted,
+    )
+}
+
+@Composable
+private fun SettingsContent(
+    themeMode: ThemeMode,
+    onThemeModeSelected: (ThemeMode) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = stringResource(AppDestination.Settings.placeholderRes),
+            style = MaterialTheme.typography.bodyLarge,
+            color = LocalAirmedyColors.current.textMuted,
+        )
+        ThemeModeSelector(
+            selectedThemeMode = themeMode,
+            onThemeModeSelected = onThemeModeSelected,
+        )
     }
 }
 
@@ -139,9 +288,7 @@ private fun ThemeModeSelector(
 ) {
     val colors = LocalAirmedyColors.current
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 20.dp),
+        modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Text(
@@ -199,14 +346,7 @@ private fun FloatingNavigationBar(
             .fillMaxWidth()
             .height(NavigationHeight)
             .clip(outerPillShape)
-            .hazeEffect(hazeState) {
-                inputScale = HazeInputScale.Auto
-                blurEffect {
-                    blurRadius = 30.dp
-                    colorEffects = listOf(HazeColorEffect.tint(colors.glass))
-                }
-            }
-            .background(colors.glass)
+            .liquidGlassBackground(hazeState, colors)
             .border(1.dp, colors.borderGlass, outerPillShape)
             .padding(PillGap),
     ) {
@@ -218,14 +358,10 @@ private fun FloatingNavigationBar(
             val targetOffset = if (isDragging) dragOffset else itemWidth * selectedDestination.ordinal
             val indicatorOffset by animateDpAsState(
                 targetValue = targetOffset,
-                animationSpec = if (isDragging) {
-                    snap()
-                } else {
-                    spring(
-                        dampingRatio = Spring.DampingRatioNoBouncy,
-                        stiffness = Spring.StiffnessMediumLow,
-                    )
-                },
+                animationSpec = if (isDragging) snap() else spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessMediumLow,
+                ),
                 label = "navigation-selection-offset",
             )
             Box(
@@ -237,12 +373,9 @@ private fun FloatingNavigationBar(
                                 isDragging = true
                                 dragOffset = itemWidth * selectedDestination.ordinal
                             },
-                            onDragCancel = {
-                                isDragging = false
-                            },
+                            onDragCancel = { isDragging = false },
                             onDragEnd = {
-                                val destinationIndex = (dragOffset / itemWidth)
-                                    .toInt()
+                                val destinationIndex = (dragOffset / itemWidth).toInt()
                                     .coerceIn(0, AppDestination.entries.lastIndex)
                                 onDestinationSelected(AppDestination.entries[destinationIndex])
                                 isDragging = false

@@ -15,18 +15,31 @@ import me.misa198.airmedy.settings.ThemePreferences
 data class AppUiState(
     val selectedDestination: AppDestination = AppDestination.Home,
     val themeMode: ThemeMode = ThemeMode.System,
-)
+    val destinationStacks: Map<AppDestination, List<AppStackPage>> = rootDestinationStacks(),
+) {
+    fun stackFor(destination: AppDestination): List<AppStackPage> =
+        destinationStacks[destination].orEmpty().ifEmpty { listOf(AppStackPage.Root) }
+
+    val currentPage: AppStackPage
+        get() = stackFor(selectedDestination).last()
+}
 
 class MainViewModel(
     private val themePreferences: ThemePreferences,
 ) : ViewModel() {
     private val selectedDestination = MutableStateFlow(AppDestination.Home)
+    private val destinationStacks = MutableStateFlow(rootDestinationStacks())
 
     val uiState: StateFlow<AppUiState> = combine(
         themePreferences.themeMode,
         selectedDestination,
-    ) { themeMode, destination ->
-        AppUiState(selectedDestination = destination, themeMode = themeMode)
+        destinationStacks,
+    ) { themeMode, destination, pages ->
+        AppUiState(
+            selectedDestination = destination,
+            themeMode = themeMode,
+            destinationStacks = pages,
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
@@ -35,6 +48,24 @@ class MainViewModel(
 
     fun selectDestination(destination: AppDestination) {
         selectedDestination.value = destination
+    }
+
+    fun openHomeSampleDetail() {
+        selectedDestination.value = AppDestination.Home
+        val homeStack = destinationStacks.value.getValue(AppDestination.Home)
+        if (homeStack.lastOrNull() != AppStackPage.HomeSampleDetail) {
+            destinationStacks.value = destinationStacks.value + (
+                AppDestination.Home to homeStack + AppStackPage.HomeSampleDetail
+            )
+        }
+    }
+
+    fun navigateBack() {
+        val destination = selectedDestination.value
+        val stack = destinationStacks.value.getValue(destination)
+        if (stack.size > 1) {
+            destinationStacks.value = destinationStacks.value + (destination to stack.dropLast(1))
+        }
     }
 
     fun setThemeMode(themeMode: ThemeMode) {
