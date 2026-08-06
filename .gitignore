@@ -108,7 +108,7 @@ Thumbs.db
 # Go
 go.work
 
-airmedy
+/airmedy
 # SFBAudioEngine pre-built framework (built locally by task build:sfbaudioengine)
 internal/infra/audio/sfb_libs/
 # SFBAudioEngine intermediate build artifacts (source clone + framework intermediates)

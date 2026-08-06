@@ -20,6 +20,16 @@
 
 ---
 
+## Mobile App (Kotlin Multiplatform)
+
+The desktop rules below apply to the Wails/Go/Vue application. Before changing
+anything under [`mobile/`](mobile/), read [`mobile/AGENTS.md`](mobile/AGENTS.md).
+It defines the Android-first KMP architecture and overrides desktop-specific UI,
+testing, and platform instructions for that subtree. General repository rules
+(research, conventional commits, and preserving unrelated changes) still apply.
+
+---
+
 ## 1. Performance
 
 - Track lists/grids MUST use `vue-virtual-scroller` (56px row height, or 36px in compact/collapsed mode).
