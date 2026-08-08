@@ -33,6 +33,9 @@ import me.misa198.airmedy.ui.navigation.FloatingNavigationHeight
 import me.misa198.airmedy.ui.navigation.depth
 import me.misa198.airmedy.ui.navigation.titleRes
 import me.misa198.airmedy.ui.theme.AirmedyTheme
+import me.misa198.airmedy.ui.components.TrackSortHeaderButton
+import me.misa198.airmedy.ui.screens.LibraryTracksUiState
+import me.misa198.airmedy.ui.screens.TrackSortOption
 
 internal fun shouldShowHeaderBlur(
     isContentScrolled: Boolean,
@@ -44,7 +47,10 @@ internal fun shouldShowHeaderBlur(
 fun App(
     uiState: AppUiState = AppUiState(),
     syncUiState: SyncUiState = SyncUiState(),
+    tracksUiState: LibraryTracksUiState = LibraryTracksUiState(),
     onIntent: (AppIntent) -> Unit = {},
+    onSortOptionSelected: (TrackSortOption) -> Unit = {},
+    onToggleSortOrder: () -> Unit = {},
     onPairingQrScanned: (String) -> Boolean = { false },
     onUnpair: () -> Unit = {},
     onSyncScreenVisible: () -> Unit = {},
@@ -53,6 +59,9 @@ fun App(
     AirmedyTheme(themeMode = uiState.themeMode) {
         val hazeState = rememberHazeState()
         val homeListState = rememberLazyListState()
+        val tracksListState = remember(tracksUiState.sortOption, tracksUiState.sortOrder) {
+            androidx.compose.foundation.lazy.LazyListState()
+        }
         val coroutineScope = rememberCoroutineScope()
         var previousDestination by remember { mutableStateOf(uiState.selectedDestination) }
         var previousHeaderWasBlurred by remember { mutableStateOf(false) }
@@ -66,10 +75,15 @@ fun App(
         val pageTitle = stringResource(currentPage.titleRes(uiState.selectedDestination))
         val showBack = currentPage != AppStackPage.Root
         val showSyncAddAction = currentPage == AppStackPage.SettingsSync && syncUiState.desktop == null && !syncUiState.isPairing
+        val showTracksSortAction = currentPage == AppStackPage.LibraryTracks
         BackHandler(enabled = showBack) { onIntent(AppIntent.NavigateBack) }
-        val isContentScrolled = uiState.selectedDestination == AppDestination.Home &&
-            currentPage == AppStackPage.Root &&
-            (homeListState.firstVisibleItemIndex > 0 || homeListState.firstVisibleItemScrollOffset > 0)
+        val isContentScrolled = when {
+            uiState.selectedDestination == AppDestination.Home && currentPage == AppStackPage.Root ->
+                homeListState.firstVisibleItemIndex > 0 || homeListState.firstVisibleItemScrollOffset > 0
+            currentPage == AppStackPage.LibraryTracks ->
+                tracksListState.firstVisibleItemIndex > 0 || tracksListState.firstVisibleItemScrollOffset > 0
+            else -> false
+        }
         val showHeaderBlur = shouldShowHeaderBlur(
             isContentScrolled = isContentScrolled,
             destinationChanged = destinationChanged,
@@ -88,8 +102,12 @@ fun App(
                 hazeState = hazeState,
                 navigationBottomPadding = navigationBottomPadding,
                 homeListState = homeListState,
+                tracksListState = tracksListState,
                 onIntent = onIntent,
                 syncUiState = syncUiState,
+                tracksUiState = tracksUiState,
+                onSortOptionSelected = onSortOptionSelected,
+                onToggleSortOrder = onToggleSortOrder,
                 onPairingQrScanned = onPairingQrScanned,
                 onUnpair = onUnpair,
                 onSyncScreenVisible = onSyncScreenVisible,
@@ -104,17 +122,27 @@ fun App(
                 } else {
                     null
                 },
-                hasActions = showSyncAddAction,
+                hasActions = showSyncAddAction || showTracksSortAction,
                 animateChanges = animateHeaderChanges,
                 titleStackKey = "${uiState.selectedDestination.name}:${currentPage.name}",
                 isForward = isForwardHeaderTransition,
             ) {
-                AirmedyGlassIconButton(
-                    hazeState = hazeState,
-                    iconRes = LucideR.drawable.lucide_ic_plus,
-                    label = stringResource(R.string.sync_add_device),
-                    onClick = { onIntent(AppIntent.OpenPage(AppStackPage.SettingsSyncScanner)) },
-                )
+                if (showSyncAddAction) {
+                    AirmedyGlassIconButton(
+                        hazeState = hazeState,
+                        iconRes = LucideR.drawable.lucide_ic_plus,
+                        label = stringResource(R.string.sync_add_device),
+                        onClick = { onIntent(AppIntent.OpenPage(AppStackPage.SettingsSyncScanner)) },
+                    )
+                } else if (showTracksSortAction) {
+                    TrackSortHeaderButton(
+                        hazeState = hazeState,
+                        sortOption = tracksUiState.sortOption,
+                        sortOrder = tracksUiState.sortOrder,
+                        onSortOptionSelected = onSortOptionSelected,
+                        onToggleSortOrder = onToggleSortOrder,
+                    )
+                }
             }
             FloatingNavigationBar(
                 selectedDestination = uiState.selectedDestination,

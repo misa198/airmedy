@@ -52,6 +52,8 @@ internal data class SyncTrackEntity(
     val artists: String,
     val album: String,
     val artworkKey: String?,
+    val playCount: Int = 0,
+    val createdAt: String = "",
     val rawJson: String,
 )
 
@@ -73,9 +75,14 @@ internal data class SyncDocumentEntity(
 )
 
 internal data class LibraryTrackRow(
+    val id: String,
     val title: String,
     val artists: String,
     val album: String,
+    val artworkKey: String?,
+    val playCount: Int,
+    val createdAt: String,
+    val artworkPath: String?,
 )
 
 @Dao
@@ -123,31 +130,69 @@ internal interface SyncDao {
     @Query("DELETE FROM sync_playlists WHERE planId = :planId") suspend fun deletePlaylists(planId: String)
     @Query("DELETE FROM sync_documents WHERE planId = :planId") suspend fun deleteDocuments(planId: String)
     @Query("DELETE FROM sync_plans WHERE planId = :planId AND active = 0") suspend fun deleteInactivePlan(planId: String)
-    @Query("SELECT t.title AS title, t.artists AS artists, t.album AS album FROM sync_tracks t INNER JOIN sync_plans p ON p.planId = t.planId WHERE p.active = 1 ORDER BY t.artists, t.album, t.title")
+    @Query("""
+        SELECT t.trackId AS id,
+               t.title AS title,
+               t.artists AS artists,
+               t.album AS album,
+               t.artworkKey AS artworkKey,
+               t.playCount AS playCount,
+               t.createdAt AS createdAt,
+               a.relativePath AS artworkPath
+        FROM sync_tracks t
+        INNER JOIN sync_plans p ON p.planId = t.planId
+        LEFT JOIN sync_assets a ON a.planId = t.planId AND (a.assetId = t.artworkKey OR a.assetId = ('artwork:' || t.artworkKey))
+        WHERE p.active = 1
+        ORDER BY t.artists, t.album, t.title
+    """)
     fun observeTracks(): Flow<List<LibraryTrackRow>>
 }
 
 @Database(
     entities = [SyncPlanEntity::class, SyncAssetEntity::class, SyncTrackEntity::class, SyncPlaylistEntity::class, SyncDocumentEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = false,
 )
 internal abstract class SyncDatabase : RoomDatabase() {
     abstract fun syncDao(): SyncDao
 
     companion object {
-        fun create(context: Context): SyncDatabase = Room.databaseBuilder(context, SyncDatabase::class.java, "library-sync.db").build()
+        fun create(context: Context): SyncDatabase = Room.databaseBuilder(context, SyncDatabase::class.java, "library-sync.db")
+            .fallbackToDestructiveMigration()
+            .build()
     }
 }
 
-data class LibraryTrack(val title: String, val artists: String, val album: String)
+data class LibraryTrack(
+    val id: String = "",
+    val title: String,
+    val artists: String,
+    val album: String,
+    val artworkKey: String? = null,
+    val playCount: Int = 0,
+    val createdAt: String = "",
+    val artworkPath: String? = null,
+)
 
 internal class AndroidLibrarySyncStore(
     private val database: SyncDatabase,
     private val filesDir: File,
 ) : LibrarySyncStore {
     private val dao = database.syncDao()
-    val tracks: Flow<List<LibraryTrack>> = dao.observeTracks().map { rows -> rows.map { LibraryTrack(it.title, it.artists, it.album) } }
+    val tracks: Flow<List<LibraryTrack>> = dao.observeTracks().map { rows ->
+        rows.map { row ->
+            LibraryTrack(
+                id = row.id,
+                title = row.title,
+                artists = row.artists,
+                album = row.album,
+                artworkKey = row.artworkKey,
+                playCount = row.playCount,
+                createdAt = row.createdAt,
+                artworkPath = row.artworkPath,
+            )
+        }
+    }
 
     override suspend fun prepare(request: LibrarySyncRequest, manifest: LibrarySyncManifest) {
         database.withTransaction {
@@ -234,7 +279,21 @@ internal class AndroidLibrarySyncStore(
 
     private fun JsonObject.toTrack(planId: String): SyncTrackEntity? {
         val id = string("id") ?: return null
-        return SyncTrackEntity(planId, id, string("title") ?: "", arrayNames("artists"), (this["album"] as? JsonObject)?.string("title") ?: "", string("artwork_key"), toString())
+        val playCount = (this["play_count"] as? JsonPrimitive)?.contentOrNull?.toIntOrNull() ?: 0
+        val createdAt = (this["created_at"] as? JsonPrimitive)?.contentOrNull
+            ?: (this["mtime"] as? JsonPrimitive)?.contentOrNull
+            ?: ""
+        return SyncTrackEntity(
+            planId = planId,
+            trackId = id,
+            title = string("title") ?: "",
+            artists = arrayNames("artists"),
+            album = (this["album"] as? JsonObject)?.string("title") ?: "",
+            artworkKey = string("artwork_key"),
+            playCount = playCount,
+            createdAt = createdAt,
+            rawJson = toString(),
+        )
     }
 
     private fun JsonObject.toPlaylist(planId: String): SyncPlaylistEntity? {

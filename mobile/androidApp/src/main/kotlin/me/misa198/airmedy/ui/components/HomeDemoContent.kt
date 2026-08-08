@@ -83,8 +83,11 @@ fun HomeDemoContent(
                 containerStyle = ActionListContainerStyle.Plain,
                 onOpenSampleDetail = onOpenSampleDetail,
             )
-        }
-        items(4) { section ->
+        items(
+            count = 4,
+            key = { section -> "demo_section_$section" },
+            contentType = { "demo_section" },
+        ) { section ->
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

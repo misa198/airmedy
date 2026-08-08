@@ -10,6 +10,7 @@ import me.misa198.airmedy.R
 @StringRes
 internal fun AppStackPage.titleRes(destination: AppDestination): Int = when (this) {
     AppStackPage.HomeSampleDetail -> R.string.home_sample_page_title
+    AppStackPage.LibraryTracks -> R.string.library_tracks
     AppStackPage.SettingsAppearance -> R.string.appearance_title
     AppStackPage.SettingsSync -> R.string.sync_title
     AppStackPage.SettingsSyncScanner -> R.string.sync_scan_title

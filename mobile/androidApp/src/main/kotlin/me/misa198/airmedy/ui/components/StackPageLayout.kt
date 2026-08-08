@@ -41,6 +41,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -62,9 +64,10 @@ import me.misa198.airmedy.R
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 private val PageHorizontalPadding = 24.dp
-private val HeaderTopPadding = 16.dp
+private val HeaderTopPadding = 6.dp
+private val HeaderBottomPadding = 10.dp
 private val HeaderHeight = 48.dp
-private val HeaderContentGap = 20.dp
+private val HeaderContentGap = 12.dp
 private val HeaderControlGap = 12.dp
 
 private data class HeaderTitle(
@@ -93,7 +96,7 @@ fun StackPageLayout(
     val statusBarPadding = with(density) { WindowInsets.statusBars.getTop(this).toDp() }
     val contentPadding = PaddingValues(
         start = PageHorizontalPadding,
-        top = statusBarPadding + HeaderTopPadding + HeaderHeight + HeaderContentGap,
+        top = statusBarPadding + HeaderTopPadding + HeaderHeight + HeaderBottomPadding + HeaderContentGap,
         end = PageHorizontalPadding,
         bottom = contentBottomPadding,
     )
@@ -138,7 +141,7 @@ fun StackPageHeader(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(statusBarPadding + HeaderTopPadding + HeaderHeight),
+            .height(statusBarPadding + HeaderTopPadding + HeaderHeight + HeaderBottomPadding),
     ) {
         AnimatedVisibility(
             visible = isContentScrolled,
@@ -151,6 +154,16 @@ fun StackPageHeader(
                     .clip(RectangleShape)
                     .liquidGlassBackground(hazeState, colors)
                     .background(colors.glass)
+                    .drawBehind {
+                        val strokeWidth = 1.dp.toPx()
+                        val y = size.height - strokeWidth / 2
+                        drawLine(
+                            color = colors.borderGlass,
+                            start = Offset(0f, y),
+                            end = Offset(size.width, y),
+                            strokeWidth = strokeWidth,
+                        )
+                    },
             )
         }
         Row(

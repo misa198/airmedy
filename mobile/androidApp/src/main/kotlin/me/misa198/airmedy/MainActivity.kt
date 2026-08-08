@@ -30,6 +30,8 @@ import me.misa198.airmedy.pairing.AndroidTrustedDesktopDiscovery
 import me.misa198.airmedy.sync.AndroidSyncRuntime
 import me.misa198.airmedy.sync.LibrarySyncService
 
+import me.misa198.airmedy.ui.screens.LibraryTracksViewModel
+
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels {
         MainViewModel.Factory(ThemePreferences(applicationContext))
@@ -53,6 +55,9 @@ class MainActivity : ComponentActivity() {
             },
         )
     }
+    private val tracksViewModel: LibraryTracksViewModel by viewModels {
+        LibraryTracksViewModel.Factory(AndroidSyncRuntime.syncStore())
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -65,6 +70,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
             val syncUiState by syncViewModel.uiState.collectAsStateWithLifecycle()
+            val tracksUiState by tracksViewModel.uiState.collectAsStateWithLifecycle()
             LaunchedEffect(viewModel) {
                 viewModel.effects.collect { effect ->
                     when (effect) {
@@ -86,7 +92,10 @@ class MainActivity : ComponentActivity() {
             App(
                 uiState = uiState,
                 syncUiState = syncUiState,
+                tracksUiState = tracksUiState,
                 onIntent = viewModel::dispatch,
+                onSortOptionSelected = tracksViewModel::setSortOption,
+                onToggleSortOrder = tracksViewModel::toggleSortOrder,
                 onPairingQrScanned = { raw ->
                     if (syncViewModel.acceptsQr(raw)) {
                         syncViewModel.pair(raw)

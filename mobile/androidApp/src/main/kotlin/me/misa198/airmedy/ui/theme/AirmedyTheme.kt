@@ -28,7 +28,7 @@ data class AirmedyColors(
 private val LightColors = AirmedyColors(
     background = Color(0xFFF4F4F5),
     card = Color.White,
-    glass = Color.White.copy(alpha = 0.70f),
+    glass = Color.White.copy(alpha = 0.4f),
     glassElevated = Color.White.copy(alpha = 0.90f),
     buttonSecondary = Color(0xFFE4E4E7),
     borderGlass = Color.Black.copy(alpha = 0.10f),
@@ -43,7 +43,7 @@ private val LightColors = AirmedyColors(
 private val DarkColors = AirmedyColors(
     background = Color(0xFF18181B),
     card = Color(0xFF27272A),
-    glass = Color(0xFF232326).copy(alpha = 0.60f),
+    glass = Color(0xFF232326).copy(alpha = 0.4f),
     glassElevated = Color(0xFF37373C).copy(alpha = 0.40f),
     buttonSecondary = Color(0xFF52525B),
     borderGlass = Color.White.copy(alpha = 0.10f),

@@ -86,4 +86,15 @@
     <string name="home_action_one">Action one</string>
     <string name="home_action_two">Action two</string>
     <string name="home_action_three">Action three</string>
+    <string name="sort_by">Sort by</string>
+    <string name="sort_name">Name</string>
+    <string name="sort_artist">Artist</string>
+    <string name="sort_play_count">Play count</string>
+    <string name="sort_date_added">Date added</string>
+    <string name="sort_order_asc">Ascending</string>
+    <string name="sort_order_desc">Descending</string>
+    <string name="track_row_more_options">Track options</string>
+    <string name="tracks_count">%1$d tracks</string>
+    <string name="tracks_empty_title">No tracks in library</string>
+    <string name="tracks_empty_description">Synced tracks will appear here once mobile sync completes.</string>
 </resources>

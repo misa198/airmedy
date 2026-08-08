@@ -36,6 +36,10 @@ import me.misa198.airmedy.ui.screens.SyncContent
 import me.misa198.airmedy.ui.screens.SyncScannerContent
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
+import me.misa198.airmedy.ui.screens.LibraryTracksContent
+import me.misa198.airmedy.ui.screens.LibraryTracksUiState
+import me.misa198.airmedy.ui.screens.TrackSortOption
+
 internal data class PageKey(
     val destination: AppDestination,
     val page: AppStackPage,
@@ -49,8 +53,12 @@ internal fun AppDestinationContent(
     hazeState: HazeState,
     navigationBottomPadding: Dp,
     homeListState: LazyListState,
+    tracksListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     onIntent: (AppIntent) -> Unit,
     syncUiState: SyncUiState,
+    tracksUiState: LibraryTracksUiState = LibraryTracksUiState(),
+    onSortOptionSelected: (TrackSortOption) -> Unit = {},
+    onToggleSortOrder: () -> Unit = {},
     onPairingQrScanned: (String) -> Boolean,
     onUnpair: () -> Unit,
     onSyncScreenVisible: () -> Unit,
@@ -96,8 +104,7 @@ internal fun AppDestinationContent(
                 },
                 label = "stack-page-content",
             ) { currentPage ->
-                Surface(
-                    color = colors.background,
+                Box(
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     when (currentPage.destination) {
@@ -151,10 +158,23 @@ internal fun AppDestinationContent(
                                 },
                             )
                         }
-                        AppDestination.Library -> LibraryContent(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = contentPadding,
-                        )
+                        AppDestination.Library -> when (currentPage.page) {
+                            AppStackPage.LibraryTracks -> LibraryTracksContent(
+                                uiState = tracksUiState,
+                                onSortOptionSelected = onSortOptionSelected,
+                                onToggleSortOrder = onToggleSortOrder,
+                                listState = tracksListState,
+                                contentPadding = contentPadding,
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                            else -> LibraryContent(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = contentPadding,
+                                onTracksSelected = {
+                                    onIntent(AppIntent.OpenPage(AppStackPage.LibraryTracks))
+                                },
+                            )
+                        }
                         else -> PlaceholderContent(destination = currentPage.destination, modifier = Modifier.padding(contentPadding))
                     }
                 }
@@ -167,6 +187,7 @@ internal val AppStackPage.depth: Int
     get() = when (this) {
         AppStackPage.Root -> 0
         AppStackPage.HomeSampleDetail,
+        AppStackPage.LibraryTracks,
         AppStackPage.SettingsAppearance,
         AppStackPage.SettingsSync,
         AppStackPage.SettingsAbout -> 1

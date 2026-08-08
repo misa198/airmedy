@@ -15,9 +15,9 @@ fun Modifier.liquidGlassBackground(
     hazeState: HazeState,
     colors: AirmedyColors,
 ): Modifier = hazeEffect(hazeState) {
-    inputScale = HazeInputScale.Auto
+    inputScale = HazeInputScale.Subsampled(0.25f)
     blurEffect {
-        blurRadius = 30.dp
+        blurRadius = 24.dp
         colorEffects = listOf(HazeColorEffect.tint(colors.glass))
     }
 }.background(colors.glass)
