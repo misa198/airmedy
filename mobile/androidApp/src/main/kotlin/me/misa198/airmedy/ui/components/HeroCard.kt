@@ -21,11 +21,13 @@ fun HeroCard(
     title: String,
     description: String,
     modifier: Modifier = Modifier,
+    belowTitle: (@Composable () -> Unit)? = null,
 ) {
     HeroCard(
         title = title,
         description = description,
         modifier = modifier,
+        belowTitle = belowTitle,
     ) {
         Icon(
             painter = painterResource(iconRes),
@@ -42,6 +44,7 @@ fun HeroCard(
     title: String,
     description: String,
     modifier: Modifier = Modifier,
+    belowTitle: (@Composable () -> Unit)? = null,
     icon: @Composable () -> Unit,
 ) {
     val colors = LocalAirmedyColors.current
@@ -57,9 +60,10 @@ fun HeroCard(
             fontWeight = FontWeight.Bold,
             color = colors.textMain,
         )
+        belowTitle?.invoke()
         Text(
             text = description,
-            modifier = Modifier.padding(top = 8.dp),
+            modifier = Modifier.padding(top = if (belowTitle == null) 8.dp else 12.dp),
             style = MaterialTheme.typography.bodyMedium,
             color = colors.textMuted,
         )

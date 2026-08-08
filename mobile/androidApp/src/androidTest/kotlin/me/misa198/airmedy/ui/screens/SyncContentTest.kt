@@ -1,0 +1,58 @@
+package me.misa198.airmedy.ui.screens
+
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import me.misa198.airmedy.SyncUiState
+import me.misa198.airmedy.pairing.PairedDesktop
+import me.misa198.airmedy.settings.ThemeMode
+import me.misa198.airmedy.ui.theme.AirmedyTheme
+import org.junit.Rule
+import org.junit.Test
+
+class SyncContentTest {
+    @get:Rule
+    val composeTestRule = createComposeRule()
+
+    @Test
+    fun pairedDesktopShowsHeroDescriptionAndSeparateRevokeAction() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                SyncContent(
+                    syncUiState = SyncUiState(
+                        desktop = PairedDesktop(
+                            desktopId = "01234567-89ab-cdef-0123-456789abcdef",
+                            displayName = "Studio Mac",
+                            publicKey = ByteArray(32),
+                            host = "192.168.1.2",
+                            port = 1883,
+                        ),
+                    ),
+                    onUnpair = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Studio Mac").assertIsDisplayed()
+        composeTestRule.onNodeWithText("This phone can connect to one desktop at a time. Revoke it before pairing a new desktop.").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Revoke").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Offline").assertIsDisplayed()
+    }
+
+    @Test
+    fun pairedDesktopShowsOnlineBadgeWhenMqttSessionIsConnected() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                SyncContent(
+                    syncUiState = SyncUiState(
+                        desktop = PairedDesktop("01234567-89ab-cdef-0123-456789abcdef", "Studio Mac", ByteArray(32), "192.168.1.2", 1883),
+                        isMqttConnected = true,
+                    ),
+                    onUnpair = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Online").assertIsDisplayed()
+    }
+}

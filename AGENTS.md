@@ -44,13 +44,13 @@ testing, and platform instructions for that subtree. General repository rules
 
 - Surfaces: `background: var(--bg-glass); backdrop-filter: blur(30px)`.
 - Borders: `1px solid var(--border-glass)`. Never plain `border` without explicit opacity.
-- Row hover: `hover:bg-white/[0.04]`. Never `hover:bg-accent/50`.
-- Button inactive/active: opacity variation (`text-white/40 → text-white/70`), not color switch.
-- Play button: white circle + black icon (`bg-white text-black`).
-- Secondary/metadata text: `text-white/40` or `text-white/30`. Never `text-muted-foreground` on dark translucent backgrounds.
-- Cards: `border-radius: 12px`, hover `scale(1.02)` + border brightness, shadow `0 10px 15px -3px rgba(0,0,0,0.4)`.
+- Row hover: `hover:bg-foreground/[0.04]`. Never `hover:bg-accent/50`.
+- Button inactive/active: opacity variation of the theme foreground (`text-foreground/40 → text-foreground/70`), not a colour switch.
+- Play button: theme primary-foreground circle + theme background icon.
+- Secondary/metadata text: a muted theme token such as `text-[color:var(--text-muted)]`, optionally with opacity. Never `text-muted-foreground` on dark translucent backgrounds.
+- Cards: `border-radius: 12px`, hover `scale(1.02)` + border brightness, and a theme-defined shadow token.
 - Icons: **Lucide Vue only**. No Phosphor or others.
-- Progress bars: 4px, expands 6px on hover, white thumb.
+- Progress bars: 4px, expands 6px on hover, theme-foreground thumb.
 - Transitions: `all 0.3s cubic-bezier(0.4, 0, 0.2, 1)`. Theme color shifts: `1.5s ease-in-out`.
 
 ### TailwindCSS v4
@@ -58,6 +58,13 @@ testing, and platform instructions for that subtree. General repository rules
 - Tokens defined via `@theme` directive in global CSS — **not** `tailwind.config.js extend.colors`.
 - CSS custom properties are the primary theming mechanism.
 - New design tokens go under `@theme` only.
+
+### Theme-Safe Colours
+
+- Every UI colour in a component MUST resolve from a semantic theme token or CSS custom property, so it remains correct in every supported theme. Use existing utilities such as `text-foreground`, `bg-foreground/[0.04]`, and `text-[color:var(--text-muted)]`, or add a semantic token when needed.
+- Do not use raw colour values in component markup or styles: no hex, `rgb`/`rgba`, named colours, or Tailwind palette utilities such as `white`, `black`, `red-*`, `zinc-*`, or `slate-*`. The only exceptions are token declarations in global theme CSS and explicitly documented runtime/dynamic artwork values.
+- Do not use white- or black-based opacity overlays for interaction states. Derive overlays, borders, muted text, icons, and disabled states from the active theme tokens instead.
+- After any UI colour change, verify light, dark, and black themes; add or update the relevant component test when the state can be asserted.
 
 ### Mandatory CSS Variables
 

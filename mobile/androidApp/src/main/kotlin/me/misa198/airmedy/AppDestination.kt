@@ -13,6 +13,7 @@ enum class AppStackPage {
     HomeSampleDetail,
     SettingsAppearance,
     SettingsSync,
+    SettingsSyncScanner,
     SettingsAbout,
 }
 
@@ -21,19 +22,10 @@ val AppStackPage.destination: AppDestination
         AppStackPage.Root, AppStackPage.HomeSampleDetail -> AppDestination.Home
         AppStackPage.SettingsAppearance,
         AppStackPage.SettingsSync,
+        AppStackPage.SettingsSyncScanner,
         AppStackPage.SettingsAbout,
         -> AppDestination.Settings
     }
-
-/** Temporary Android UI model until the sync service and its shared contract exist. */
-data class SyncDevice(
-    val name: String,
-    val type: SyncDeviceType,
-)
-
-enum class SyncDeviceType {
-    Desktop,
-}
 
 fun rootDestinationStacks(): Map<AppDestination, List<AppStackPage>> =
     AppDestination.entries.associateWith { listOf(AppStackPage.Root) }

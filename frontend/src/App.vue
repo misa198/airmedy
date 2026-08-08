@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import MainLayout from './layouts/MainLayout.vue'
 import FindLyricsDialog from './components/FindLyricsDialog.vue'
 import CreatePlaylistWithTracksDialog from './components/CreatePlaylistWithTracksDialog.vue'
+import MobilePairingDialog from './components/MobilePairingDialog.vue'
 import DevToolsOverlay from './components/DevToolsOverlay.vue'
 import { hexToRgba } from '@airmedy/utils'
 import { usePlayerStore } from './stores/player'
@@ -11,6 +12,7 @@ import { useDeviceStore } from './stores/device'
 import { usePlaylistsStore } from './stores/playlists'
 import { useMoodRadioStore } from './stores/moodRadio'
 import { useAppStore } from './stores/app'
+import { useMobilePairingStore } from './stores/mobilePairing'
 import { useI18n } from 'vue-i18n'
 import { Events } from '@wailsio/runtime'
 import * as WindowService from '../bindings/airmedy/internal/infra/wails/windowservice'
@@ -23,6 +25,7 @@ const deviceStore = useDeviceStore()
 const playlistsStore = usePlaylistsStore()
 const moodRadioStore = useMoodRadioStore()
 const appStore = useAppStore()
+const mobilePairingStore = useMobilePairingStore()
 const isDevelopment = import.meta.env.DEV
 
 const isRouterReady = ref(false)
@@ -119,6 +122,7 @@ onMounted(async () => {
   deviceStore.checkFullscreen()
   playlistsStore.loadAll()
   moodRadioStore.init()
+  mobilePairingStore.init()
 
   offCycleRepeat = Events.On('player:cycle-repeat', () => {
     playerStore.cycleRepeat()
@@ -140,6 +144,7 @@ onUnmounted(() => {
   deviceStore.dispose()
   playlistsStore.dispose()
   moodRadioStore.dispose()
+  mobilePairingStore.dispose()
   appStore.dispose()
 })
 
@@ -189,6 +194,7 @@ watch(() => playerStore.playerMode, (newMode) => {
   <DevToolsOverlay v-if="isDevelopment && !isMiniPlayer" />
   <FindLyricsDialog />
   <CreatePlaylistWithTracksDialog v-if="!isMiniPlayer" />
+  <MobilePairingDialog v-if="!isMiniPlayer" />
 </template>
 
 <style>

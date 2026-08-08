@@ -83,6 +83,7 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000062 | `listening_insights.up.sql` | Add append-only `listening_sessions` plus per-track/day aggregate `daily_track_listening_stats`, with date indexes, for listening insights |
 | 000063 | `playback_attempts.up.sql` | Add raw playback attempts plus daily completion/skip/stop aggregates for completion and skip rates |
 | 000064 | `playback_attempt_listening_time.up.sql` | Add aggregate listened seconds to calculate average playback session length |
+| 000065 | `mobile_pairing.up.sql` | Add desktop pairing identity and trusted mobile public-key tables |
 
 `listeningRepository.GetInsights` returns up to 50 entries for both Top Artists
 (ordered by listened seconds) and Top Tracks (ordered by play count, then listened

@@ -3,7 +3,7 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   Folder, Settings,
-  Play, Info, Blocks, Wifi,
+  Play, Info, Blocks, Wifi, Smartphone,
 } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import GeneralSettings from '@/components/settings/GeneralSettings.vue'
@@ -12,6 +12,7 @@ import IntegrationsSettings from '@/components/settings/IntegrationsSettings.vue
 import PlaybackSettings from '@/components/settings/PlaybackSettings.vue'
 import AboutSettings from '@/components/settings/AboutSettings.vue'
 import RemoteServerSettings from '@/components/settings/RemoteServerSettings.vue'
+import MobileDevicesSettings from '@/components/settings/MobileDevicesSettings.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -34,6 +35,7 @@ const categories = computed(() => [
   { id: 'integrations', name: t('settings.categories.integrations', 'Integrations'), icon: Blocks },
   { id: 'playback', name: t('settings.categories.playback'), icon: Play },
   { id: 'remote', name: t('settings.categories.remote', 'Remote'), icon: Wifi },
+  { id: 'mobile-devices', name: t('settings.categories.mobile_devices'), icon: Smartphone },
   { id: 'about', name: t('settings.categories.about'), icon: Info },
 ])
 
@@ -100,6 +102,8 @@ watch([activeCategory, () => route.query.section], scrollToRequestedSection, { i
 
         <!-- Remote Server -->
         <RemoteServerSettings v-if="activeCategory === 'remote'" />
+
+        <MobileDevicesSettings v-if="activeCategory === 'mobile-devices'" />
 
         <!-- About -->
         <AboutSettings 

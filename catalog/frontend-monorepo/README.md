@@ -72,6 +72,7 @@ Run `pnpm --filter @airmedy/ui build` (or `pnpm dev` from root for watch mode).
 | `Modal`             | `Modal.vue`                       | Custom dialog         |
 | `DetailsButton`     | `DetailsButton.vue`               | Button variant        |
 | `TabSwitcher`       | `TabSwitcher.vue`                 | Custom tabs           |
+| `Badge`             | `Badge.vue`                       | Theme-aware status label |
 | `Checkbox`          | `checkbox/Checkbox.vue`           | Radix CheckboxRoot    |
 | `Tooltip`           | `tooltip/Tooltip.vue`             | Custom CSS (group-hover popup) |
 | `Input`, `index`    | `input/`                          | Native input wrapper  |
@@ -85,6 +86,9 @@ All exports are re-exported from `packages/ui/src/index.ts`.
 `TabSwitcher` supports icon tabs and variable-width label tabs. Its label
 variant tracks the active button's geometry with `ResizeObserver` so the
 selection slider remains aligned after content or layout changes.
+
+`Badge` accepts a CSS `color` value (default `var(--primary)`) and applies it
+to its text and border; its background uses the same colour at low opacity.
 
 ### Dependencies
 

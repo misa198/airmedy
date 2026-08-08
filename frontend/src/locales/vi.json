@@ -75,7 +75,8 @@
       "integrations": "Tích hợp",
       "playback": "Phát lại",
       "about": "Giới thiệu",
-      "remote": "Điều khiển"
+      "remote": "Điều khiển",
+      "mobile_devices": "Thiết bị di động"
     },
     "general": {
       "behavior": "Hành vi",
@@ -230,6 +231,7 @@
       "interface_virtual": "Mạng ảo (Virtual)",
       "interface_virtual_vm": "Mạng ảo (VM)"
     },
+    "mobile_pairing": { "title": "Thiết bị di động", "connection_title": "Máy chủ ghép nối di động", "connection_desc": "Airmedy sẵn sàng ghép nối điện thoại trong mạng này.", "running": "Máy chủ MQTT đang chạy ở cổng {port}", "unavailable": "Máy chủ ghép nối di động không khả dụng.", "retry": "Thử lại", "scan_title": "Quét để ghép nối", "scan_desc": "Chọn địa chỉ mạng điện thoại có thể truy cập, sau đó quét mã QR trong ứng dụng Airmedy mobile.", "copy_qr": "Sao chép liên kết ghép nối", "trusted_title": "Thiết bị tin cậy", "no_devices": "Chưa có thiết bị di động nào được ghép nối.", "online": "Trực tuyến", "offline": "Ngoại tuyến", "request_title": "Thiết bị di động muốn kết nối", "request_desc": "Chỉ chấp nhận nếu đây là thiết bị của bạn. Public key của thiết bị sẽ được lưu trên desktop.", "fingerprint": "Dấu vân tay public key", "accept": "Chấp nhận", "decline": "Từ chối" },
     "equalizer": {
       "title": "Bộ cân bằng âm",
       "new_profile": "Hồ sơ mới",

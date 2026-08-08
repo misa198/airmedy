@@ -38,11 +38,19 @@ describe the desktop Vue UI or future iOS UI.
 - Appearance contains vertically arranged sections, each in its own `Card`.
   Its Theme section uses `Selection`, the reusable iOS-style dropdown row, to
   persist the System, Light, or Dark theme choice.
-- Sync opens `SettingsSync` in the Settings stack. Its temporary Android UI
-  model is nullable: no device shows one connection placeholder card and a
-  glass Add-device header action; a connected device shows one device card
-  (name, type, Connected status, and presentational Revoke action) and hides
-  the header action. Connection and revoke behavior are not implemented yet.
+- Sync opens `SettingsSync` in the Settings stack. `SyncViewModel` owns pairing
+  state from the shared pairing use case: no device shows the empty hero and a
+  glass Add-device header action; a pending request shows an approval hero; a
+  paired device uses a HeroCard with a Lucide computer icon, bold QR-provided
+  desktop name, a green Online/red Offline MQTT session badge, and a one-desktop pairing explanation. The badge is driven by the long-lived Android MQTT session, which reconnects while the Sync ViewModel is alive and is the transport foundation for later sync messages. Its separate destructive
+  Revoke button opens the shared mobile dialog. LAN host and port are used only
+  for the temporary pairing transport and are never saved or displayed.
+  The action opens `SettingsSyncScanner`, with a centred rounded QR viewfinder,
+  descriptive scan guidance, and an image-picker fallback decoded by ML Kit for
+  devices whose camera is unavailable.
+  Its session identifies itself to desktop as `airmedy-sync-<desktop-id>-<mobile-id>`;
+  this is an internal transport detail, never shown in UI. Revoke is deliberately local-only: it clears the mobile binding and permits a
+  new desktop scan, while the old desktop remains trusted until revoked there.
 - Home content is supplied by `HomeDemoContent`. A forward action calls the
   callback provided by the app shell, which pushes `HomeSampleDetail`; Android
   Back pops that destination stack while the floating navigation remains shown.
@@ -57,11 +65,13 @@ describe the desktop Vue UI or future iOS UI.
 | Component | Contract |
 | --- | --- |
 | `Card` | Standard 28dp, borderless, opaque themed card surface. It accepts slot content and optional padding; its title/description overload remains a tappable primary-action card. |
-| `HeroCard` | A non-interactive informational card with a 40dp decorative icon, bold `titleLarge` title, and muted description. Sync uses it for its empty device state. |
+| `HeroCard` | A non-interactive informational card with a 40dp decorative icon, bold `titleLarge` title, optional content directly below its title, and muted description. Sync uses this slot for its MQTT Online/Offline badge, aligned with the desktop name. |
 | `ActionList` | Displays 56dp `ActionListItem` rows with optional leading Lucide drawable, resource-backed label, optional trailing composable slot, and a chevron only for clickable rows without a supplied trailing slot. `FullWidth` and `InsetForLeadingIcon` divider styles are available. `Card` uses the shared `Card` surface; `Plain` has no enclosing surface. A row is clickable only when its item has `onClick`. |
 | `Selection` | Renders an iOS-style dropdown row and custom elevated menu with a 28dp radius for mutually exclusive `SelectionOption` values. Its selected value uses the standard row typography with the muted action colour; each menu option is at least 44dp tall. Only the right-side action slot opens and anchors the right-aligned menu; the opaque, rounded menu expands and collapses vertically while fading and scaling over 220ms. The caller owns selected state and receives the selected value through `onValueSelected`. |
 | `StackPageLayout` | Places content below the status/header region and above the persistent navigation; screens must use its supplied padding. Its page-header title uses bold `headlineLarge` typography. |
 | `AirmedyGlassIconButton` | A 48dp circular blurred glass icon button with border and button semantics. Back and header actions use this shared primitive. |
+| `AirmedyPillButton` | A borderless 52dp minimum-height capsule action. `Primary` and `Destructive` use the primary background with `onPrimary` text; `Secondary` uses the stronger `buttonSecondary` theme surface with normal foreground text. Its label supplies button semantics. |
+| `AirmedyDialog` | A 36dp-radius, two-action mobile dialog. Its text content has 20dp horizontal inset; the button area has a thinner 16dp horizontal/bottom inset. It supports `Horizontal` and `Vertical` action layouts; the left/top action always dismisses with `Secondary`. |
 
 ## UI rules
 

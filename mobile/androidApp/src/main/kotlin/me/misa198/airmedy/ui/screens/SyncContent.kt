@@ -1,89 +1,126 @@
 package me.misa198.airmedy.ui.screens
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.R as LucideR
 import me.misa198.airmedy.R
-import me.misa198.airmedy.SyncDevice
-import me.misa198.airmedy.SyncDeviceType
-import me.misa198.airmedy.ui.components.Card
+import me.misa198.airmedy.SyncUiState
+import me.misa198.airmedy.pairing.PairingFailure
+import me.misa198.airmedy.ui.components.AirmedyDialog
+import me.misa198.airmedy.ui.components.AirmedyPillButton
+import me.misa198.airmedy.ui.components.AirmedyPillButtonVariant
 import me.misa198.airmedy.ui.components.HeroCard
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 @Composable
 internal fun SyncContent(
-    syncDevice: SyncDevice?,
+    syncUiState: SyncUiState,
+    onUnpair: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalAirmedyColors.current
+    var showRevokeConfirmation by remember { mutableStateOf(false) }
     Column(modifier = modifier) {
-        if (syncDevice == null) {
-            HeroCard(
+        when {
+            syncUiState.desktop != null -> {
+                HeroCard(
+                    iconRes = LucideR.drawable.lucide_ic_computer,
+                    title = syncUiState.desktop.displayName,
+                    description = stringResource(R.string.sync_paired_device_description),
+                    belowTitle = {
+                        MqttConnectionBadge(
+                            isConnected = syncUiState.isMqttConnected,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                    },
+                )
+                AirmedyPillButton(
+                    label = stringResource(R.string.sync_revoke),
+                    onClick = { showRevokeConfirmation = true },
+                    variant = AirmedyPillButtonVariant.Destructive,
+                    modifier = Modifier.padding(top = 16.dp),
+                )
+            }
+            syncUiState.isPairing -> HeroCard(
+                iconRes = LucideR.drawable.lucide_ic_loader_circle,
+                title = stringResource(R.string.sync_waiting_title),
+                description = stringResource(R.string.sync_waiting_description),
+            )
+            else -> HeroCard(
                 iconRes = LucideR.drawable.lucide_ic_plug,
                 title = stringResource(R.string.sync_empty_title),
                 description = stringResource(R.string.sync_empty_description),
             )
-        } else {
-            Card(contentPadding = PaddingValues(24.dp)) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = syncDevice.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = colors.textMain,
-                    )
-                    Text(
-                        text = stringResource(syncDevice.type.labelRes),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = colors.textMuted,
-                    )
-                    Text(
-                        text = stringResource(R.string.sync_status_connected),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = colors.primary,
-                    )
-                    Text(
-                        text = stringResource(R.string.sync_revoke),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 48.dp)
-                            .clip(RoundedCornerShape(24.dp))
-                            .background(colors.glassElevated)
-                            .border(1.dp, colors.borderGlass, RoundedCornerShape(24.dp))
-                            .clickable(
-                                onClick = {},
-                                role = Role.Button,
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                            )
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = colors.textMain,
-                    )
-                }
-            }
         }
+        syncUiState.failure?.let { failure ->
+            Text(
+                text = stringResource(failure.messageRes()),
+                modifier = Modifier.padding(top = 16.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.textMuted,
+            )
+        }
+    }
+    if (showRevokeConfirmation) {
+        AirmedyDialog(
+            title = stringResource(R.string.sync_revoke_confirm_title),
+            description = stringResource(R.string.sync_revoke_confirm_description),
+            dismissLabel = stringResource(R.string.cancel),
+            onDismiss = { showRevokeConfirmation = false },
+            confirmLabel = stringResource(R.string.sync_revoke),
+            onConfirm = { showRevokeConfirmation = false; onUnpair() },
+            confirmVariant = AirmedyPillButtonVariant.Destructive,
+        )
     }
 }
 
-private val SyncDeviceType.labelRes: Int
-    get() = when (this) {
-        SyncDeviceType.Desktop -> R.string.sync_device_type_desktop
+@Composable
+private fun MqttConnectionBadge(isConnected: Boolean, modifier: Modifier = Modifier) {
+    val colors = LocalAirmedyColors.current
+    val label = stringResource(if (isConnected) R.string.sync_status_online else R.string.sync_status_offline)
+    val statusColor = if (isConnected) colors.success else colors.primary
+    Row(
+        modifier = modifier
+            .background(colors.buttonSecondary, CircleShape)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        androidx.compose.foundation.layout.Spacer(
+            modifier = Modifier
+                .size(8.dp)
+                .background(statusColor, CircleShape),
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = statusColor,
+        )
     }
+}
+
+private fun PairingFailure.messageRes(): Int = when (this) {
+    PairingFailure.AlreadyPaired -> R.string.sync_error_already_paired
+    is PairingFailure.InvalidQr -> R.string.sync_error_invalid_qr
+    is PairingFailure.Transport -> R.string.sync_error_transport
+    PairingFailure.TimedOut -> R.string.sync_error_timeout
+    PairingFailure.Rejected -> R.string.sync_error_rejected
+    PairingFailure.Expired -> R.string.sync_error_expired
+    PairingFailure.InvalidResponse -> R.string.sync_error_invalid_response
+}

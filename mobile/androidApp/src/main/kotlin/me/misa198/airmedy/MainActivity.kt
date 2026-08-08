@@ -17,10 +17,29 @@ import androidx.compose.ui.tooling.preview.Preview
 import android.view.WindowInsetsController
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.settings.ThemePreferences
+import me.misa198.airmedy.pairing.AndroidPairingClock
+import me.misa198.airmedy.pairing.AndroidPairingIdGenerator
+import me.misa198.airmedy.pairing.HiveMqPairingTransport
+import me.misa198.airmedy.pairing.HiveMqSyncSession
+import me.misa198.airmedy.pairing.MobilePairingUseCase
+import me.misa198.airmedy.pairing.PairingPreferences
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels {
         MainViewModel.Factory(ThemePreferences(applicationContext))
+    }
+    private val syncViewModel: SyncViewModel by viewModels {
+        val preferences = PairingPreferences(applicationContext)
+        SyncViewModel.Factory(
+            MobilePairingUseCase(
+                identityProvider = preferences,
+                bindingStore = preferences,
+                transport = HiveMqPairingTransport(),
+                clock = AndroidPairingClock,
+                ids = AndroidPairingIdGenerator,
+            ),
+            mqttSession = HiveMqSyncSession(),
+        )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,6 +48,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val syncUiState by syncViewModel.uiState.collectAsStateWithLifecycle()
             LaunchedEffect(viewModel) {
                 viewModel.effects.collect { effect ->
                     when (effect) {
@@ -49,7 +69,18 @@ class MainActivity : ComponentActivity() {
             }
             App(
                 uiState = uiState,
+                syncUiState = syncUiState,
                 onIntent = viewModel::dispatch,
+                onPairingQrScanned = { raw ->
+                    if (syncViewModel.acceptsQr(raw)) {
+                        syncViewModel.pair(raw)
+                        viewModel.dispatch(AppIntent.NavigateBack)
+                        true
+                    } else {
+                        false
+                    }
+                },
+                onUnpair = syncViewModel::unpair,
             )
         }
     }

@@ -42,6 +42,20 @@ Hash history mode (`createWebHashHistory`). All views lazy-loaded except HomeVie
 
 The `/mini-player` route bypasses the MainLayout wrapper and renders directly.
 
+## Mobile Pairing UI
+
+`MobileDevicesSettings.vue` is a separate Settings category from browser Remote
+Control. It selects one reachable LAN address for the pairing QR, lists trusted
+mobiles with broker-session Online/Offline badges, and invokes revocation. MQTT
+port selection and recovery are automatic implementation details and are never
+shown or configured in the UI. `mobilePairing.ts`
+owns the `pairing:request` Wails subscription and its cleanup; the globally mounted
+`MobilePairingDialog.vue` accepts or rejects a pending request even when Settings
+is not open. `NetworkAddressList.vue` and `useNetworkInterface.ts` are shared by
+this page and `RemoteServerSettings.vue`, so address cards, selection, copy state,
+interface icons, labels, and tooltips remain identical. The protocol itself is
+documented in [mobile pairing](../pairing/README.md).
+
 ### Cached Route Data Refresh
 
 `MainLayout` and entity explorer routes use `KeepAlive` to preserve UI state.

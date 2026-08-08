@@ -70,6 +70,9 @@ export const useAppStore = defineStore('app', () => {
   const remoteServerEnabled = ref(false)
   const remoteServerPort = ref(0)
   const remoteServerPassword = ref('')
+  // Pairing owns this value, but every settings save must preserve it so the
+  // MQTT broker can reuse its port on the next desktop launch.
+  const pairingMqttPort = ref(0)
   const eqPreamp = ref(0)
   const stereoWidth = ref(100)
 
@@ -166,6 +169,7 @@ export const useAppStore = defineStore('app', () => {
         remoteServerEnabled.value = !!settings.remote_server_enabled
         remoteServerPort.value = settings.remote_server_port ?? 0
         remoteServerPassword.value = settings.remote_server_password ?? ''
+        pairingMqttPort.value = settings.pairing_mqtt_port ?? 0
         eqPreamp.value = settings.eq_preamp ?? 0
         // Nullish (not ||): 0 is a legitimate stored value (mono), not "unset".
         stereoWidth.value = settings.stereo_width ?? 100
@@ -270,6 +274,7 @@ export const useAppStore = defineStore('app', () => {
         remote_server_enabled: remoteServerEnabled.value,
         remote_server_port: remoteServerPort.value,
         remote_server_password: remoteServerPassword.value,
+        pairing_mqtt_port: pairingMqttPort.value,
         eq_preamp: eqPreamp.value,
         stereo_width: stereoWidth.value,
         artist_delimiters: [...artistDelimiters.value],

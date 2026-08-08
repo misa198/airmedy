@@ -42,7 +42,10 @@ internal fun shouldShowHeaderBlur(
 @Composable
 fun App(
     uiState: AppUiState = AppUiState(),
+    syncUiState: SyncUiState = SyncUiState(),
     onIntent: (AppIntent) -> Unit = {},
+    onPairingQrScanned: (String) -> Boolean = { false },
+    onUnpair: () -> Unit = {},
 ) {
     AirmedyTheme(themeMode = uiState.themeMode) {
         val hazeState = rememberHazeState()
@@ -57,7 +60,7 @@ fun App(
             WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
         val pageTitle = stringResource(currentPage.titleRes(uiState.selectedDestination))
         val showBack = currentPage != AppStackPage.Root
-        val showSyncAddAction = currentPage == AppStackPage.SettingsSync && uiState.syncDevice == null
+        val showSyncAddAction = currentPage == AppStackPage.SettingsSync && syncUiState.desktop == null && !syncUiState.isPairing
         BackHandler(enabled = showBack) { onIntent(AppIntent.NavigateBack) }
         val isContentScrolled = uiState.selectedDestination == AppDestination.Home &&
             currentPage == AppStackPage.Root &&
@@ -80,7 +83,9 @@ fun App(
                 navigationBottomPadding = navigationBottomPadding,
                 homeListState = homeListState,
                 onIntent = onIntent,
-                syncDevice = uiState.syncDevice,
+                syncUiState = syncUiState,
+                onPairingQrScanned = onPairingQrScanned,
+                onUnpair = onUnpair,
             )
             StackPageHeader(
                 title = pageTitle,
@@ -99,7 +104,7 @@ fun App(
                     hazeState = hazeState,
                     iconRes = LucideR.drawable.lucide_ic_plus,
                     label = stringResource(R.string.sync_add_device),
-                    onClick = {},
+                    onClick = { onIntent(AppIntent.OpenPage(AppStackPage.SettingsSyncScanner)) },
                 )
             }
             FloatingNavigationBar(

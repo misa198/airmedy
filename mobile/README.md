@@ -42,6 +42,14 @@ content together while the floating navigation remains in place.
 inside `androidApp`. When iOS work is authorized, it will have native SwiftUI and
 its own adapters while using the same shared business contracts.
 
+The mobile pairing protocol is implemented in `sharedLogic`: QR parsing, MQTT
+topic construction, signed request/response validation, and the pairing state
+machine are shared. Android supplies camera, MQTT, encrypted identity storage,
+and Compose UI adapters. After pairing, Android keeps an MQTT session open while
+the Sync ViewModel lives; its connection state drives the desktop Online/Offline
+badge and provides the transport boundary for future sync messages. See the
+repository pairing catalog for the wire contract.
+
 ## Prerequisites
 
 - JDK 11, as configured by the Gradle modules.

@@ -450,6 +450,7 @@ type AppSettings struct {
 	RemoteServerEnabled      bool    `json:"remote_server_enabled"`
 	RemoteServerPort         int     `json:"remote_server_port"`
 	RemoteServerPassword     string  `json:"remote_server_password"`
+	PairingMQTTPort          int     `json:"pairing_mqtt_port"`
 	ShowPlayerIndicator      bool    `json:"show_player_indicator"`
 	// AutoAdvanceNotificationsEnabled controls the macOS notification shown when
 	// playback automatically advances to a different track.

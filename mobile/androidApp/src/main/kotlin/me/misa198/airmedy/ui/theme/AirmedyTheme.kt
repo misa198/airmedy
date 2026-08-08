@@ -15,10 +15,12 @@ data class AirmedyColors(
     val card: Color,
     val glass: Color,
     val glassElevated: Color,
+    val buttonSecondary: Color,
     val borderGlass: Color,
     val textMain: Color,
     val textMuted: Color,
     val primary: Color,
+    val success: Color,
     val navigationActive: Color,
 )
 
@@ -27,10 +29,12 @@ private val LightColors = AirmedyColors(
     card = Color.White,
     glass = Color.White.copy(alpha = 0.70f),
     glassElevated = Color.White.copy(alpha = 0.90f),
+    buttonSecondary = Color(0xFFE4E4E7),
     borderGlass = Color.Black.copy(alpha = 0.10f),
     textMain = Color(0xFF0A0A0A),
     textMuted = Color(0xFF52525B),
     primary = Color(0xFFE11D48),
+    success = Color(0xFF16A34A),
     navigationActive = Color.Black.copy(alpha = 0.08f),
 )
 
@@ -39,10 +43,12 @@ private val DarkColors = AirmedyColors(
     card = Color(0xFF27272A),
     glass = Color(0xFF232326).copy(alpha = 0.60f),
     glassElevated = Color(0xFF37373C).copy(alpha = 0.40f),
+    buttonSecondary = Color(0xFF52525B),
     borderGlass = Color.White.copy(alpha = 0.10f),
     textMain = Color.White,
     textMuted = Color(0xFFA1A1AA),
     primary = Color(0xFFE11D48),
+    success = Color(0xFF4ADE80),
     navigationActive = Color.Black.copy(alpha = 0.40f),
 )
 

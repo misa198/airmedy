@@ -19,7 +19,6 @@ data class AppUiState(
     val selectedDestination: AppDestination = AppDestination.Home,
     val themeMode: ThemeMode = ThemeMode.System,
     val destinationStacks: Map<AppDestination, List<AppStackPage>> = rootDestinationStacks(),
-    val syncDevice: SyncDevice? = null,
 ) {
     fun stackFor(destination: AppDestination): List<AppStackPage> =
         destinationStacks[destination].orEmpty().ifEmpty { listOf(AppStackPage.Root) }

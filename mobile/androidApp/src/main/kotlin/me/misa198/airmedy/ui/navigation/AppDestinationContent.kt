@@ -21,7 +21,7 @@ import dev.chrisbanes.haze.hazeSource
 import me.misa198.airmedy.AppDestination
 import me.misa198.airmedy.AppIntent
 import me.misa198.airmedy.AppStackPage
-import me.misa198.airmedy.SyncDevice
+import me.misa198.airmedy.SyncUiState
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.ui.components.HomeDemoContent
 import me.misa198.airmedy.ui.components.StackPageLayout
@@ -31,6 +31,7 @@ import me.misa198.airmedy.ui.screens.HomeSampleDetailContent
 import me.misa198.airmedy.ui.screens.PlaceholderContent
 import me.misa198.airmedy.ui.screens.SettingsContent
 import me.misa198.airmedy.ui.screens.SyncContent
+import me.misa198.airmedy.ui.screens.SyncScannerContent
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 private data class PageKey(
@@ -47,7 +48,9 @@ internal fun AppDestinationContent(
     navigationBottomPadding: Dp,
     homeListState: LazyListState,
     onIntent: (AppIntent) -> Unit,
-    syncDevice: SyncDevice?,
+    syncUiState: SyncUiState,
+    onPairingQrScanned: (String) -> Boolean,
+    onUnpair: () -> Unit,
 ) {
     val colors = LocalAirmedyColors.current
     val pageKey = PageKey(destination = destination, page = page)
@@ -107,7 +110,12 @@ internal fun AppDestinationContent(
                             },
                         )
                         AppStackPage.SettingsSync -> SyncContent(
-                            syncDevice = syncDevice,
+                            syncUiState = syncUiState,
+                            onUnpair = onUnpair,
+                            modifier = Modifier.padding(contentPadding),
+                        )
+                        AppStackPage.SettingsSyncScanner -> SyncScannerContent(
+                            onQrScanned = onPairingQrScanned,
                             modifier = Modifier.padding(contentPadding),
                         )
                         AppStackPage.SettingsAbout -> AboutContent(
@@ -143,10 +151,12 @@ private fun PageKey.isForwardFrom(previous: PageKey): Boolean = when {
     page == AppStackPage.HomeSampleDetail -> true
     page == AppStackPage.SettingsAppearance -> true
     page == AppStackPage.SettingsSync -> true
+    page == AppStackPage.SettingsSyncScanner -> true
     page == AppStackPage.SettingsAbout -> true
     previous.page == AppStackPage.HomeSampleDetail -> false
     previous.page == AppStackPage.SettingsAppearance -> false
     previous.page == AppStackPage.SettingsSync -> false
+    previous.page == AppStackPage.SettingsSyncScanner -> false
     previous.page == AppStackPage.SettingsAbout -> false
     else -> false
 }

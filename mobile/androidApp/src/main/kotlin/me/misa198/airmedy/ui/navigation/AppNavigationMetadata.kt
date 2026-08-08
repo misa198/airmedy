@@ -12,6 +12,7 @@ internal fun AppStackPage.titleRes(destination: AppDestination): Int = when (thi
     AppStackPage.HomeSampleDetail -> R.string.home_sample_page_title
     AppStackPage.SettingsAppearance -> R.string.appearance_title
     AppStackPage.SettingsSync -> R.string.sync_title
+    AppStackPage.SettingsSyncScanner -> R.string.sync_scan_title
     AppStackPage.SettingsAbout -> R.string.about_title
     AppStackPage.Root -> destination.titleRes
 }
