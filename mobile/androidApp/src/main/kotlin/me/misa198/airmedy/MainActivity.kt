@@ -10,6 +10,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.tooling.preview.Preview
@@ -28,6 +29,15 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            LaunchedEffect(viewModel) {
+                viewModel.effects.collect { effect ->
+                    when (effect) {
+                        is AppEffect.OpenExternalUrl -> {
+                            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(effect.url)))
+                        }
+                    }
+                }
+            }
             val darkTheme = isDarkTheme(uiState.themeMode)
             SideEffect {
                 val lightSystemBars = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or
@@ -39,16 +49,7 @@ class MainActivity : ComponentActivity() {
             }
             App(
                 uiState = uiState,
-                onDestinationSelected = viewModel::selectDestination,
-                onThemeModeSelected = viewModel::setThemeMode,
-                onHomeSampleDetailSelected = viewModel::openHomeSampleDetail,
-                onAppearanceSelected = viewModel::openSettingsAppearance,
-                onSyncSelected = viewModel::openSettingsSync,
-                onAboutSelected = viewModel::openSettingsAbout,
-                onOpenExternalUrl = { url ->
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                },
-                onNavigateBack = viewModel::navigateBack,
+                onIntent = viewModel::dispatch,
             )
         }
     }

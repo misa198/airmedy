@@ -16,6 +16,15 @@ enum class AppStackPage {
     SettingsAbout,
 }
 
+val AppStackPage.destination: AppDestination
+    get() = when (this) {
+        AppStackPage.Root, AppStackPage.HomeSampleDetail -> AppDestination.Home
+        AppStackPage.SettingsAppearance,
+        AppStackPage.SettingsSync,
+        AppStackPage.SettingsAbout,
+        -> AppDestination.Settings
+    }
+
 /** Temporary Android UI model until the sync service and its shared contract exist. */
 data class SyncDevice(
     val name: String,

@@ -13,6 +13,15 @@ describe the desktop Vue UI or future iOS UI.
   selection pill is also an active-foreground mask: a primary-coloured duplicate
   of the icons and labels is clipped to the pill, so only the exact covered
   portions of an icon or label become active while it moves.
+- The Android app shell follows unidirectional data flow: `MainViewModel`
+  exposes immutable `AppUiState`, `App.kt` emits the sealed `AppIntent` through
+  one callback, and the ViewModel reduces navigation/theme inputs. One-time
+  host work is emitted as `AppEffect`; `MainActivity` collects it and performs
+  Android-only actions such as opening an external URL. Feature state remains
+  in Android ViewModels; `sharedLogic` does not contain UI state or effects.
+- `ThemeModeStore` is the Android-local settings port consumed by the app
+  shell. `ThemePreferences` implements it with DataStore, while tests use an
+  in-memory implementation.
 - Header title animation keys include both destination and current stack page.
   Stack changes retain the title slide while disabling size interpolation; the
   header always reserves one action slot, preventing a title-width reflow when

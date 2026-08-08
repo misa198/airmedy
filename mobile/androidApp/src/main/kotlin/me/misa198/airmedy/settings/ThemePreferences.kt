@@ -22,14 +22,20 @@ enum class ThemeMode(val storageValue: String, val labelRes: Int) {
     }
 }
 
+interface ThemeModeStore {
+    val themeMode: Flow<ThemeMode>
+
+    suspend fun setThemeMode(themeMode: ThemeMode)
+}
+
 class ThemePreferences(
     private val context: Context,
-) {
-    val themeMode: Flow<ThemeMode> = context.themeDataStore.data.map { preferences: Preferences ->
+) : ThemeModeStore {
+    override val themeMode: Flow<ThemeMode> = context.themeDataStore.data.map { preferences: Preferences ->
         ThemeMode.fromStorage(preferences[ThemeModeKey])
     }
 
-    suspend fun setThemeMode(themeMode: ThemeMode) {
+    override suspend fun setThemeMode(themeMode: ThemeMode) {
         context.themeDataStore.edit { preferences ->
             preferences[ThemeModeKey] = themeMode.storageValue
         }

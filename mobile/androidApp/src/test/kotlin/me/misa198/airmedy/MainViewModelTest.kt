@@ -1,0 +1,122 @@
+package me.misa198.airmedy
+
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.resetMain
+import me.misa198.airmedy.settings.ThemeMode
+import me.misa198.airmedy.settings.ThemeModeStore
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
+import org.junit.Assert.assertEquals
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class MainViewModelTest {
+    private val dispatcher = StandardTestDispatcher()
+
+    @Before
+    fun setUp() {
+        Dispatchers.setMain(dispatcher)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
+
+    @Test
+    fun `selecting a new destination retains other destination stacks`() = runTest {
+        val viewModel = MainViewModel(FakeThemeModeStore())
+        activateState(viewModel)
+
+        viewModel.dispatch(AppIntent.OpenPage(AppStackPage.HomeSampleDetail))
+        viewModel.dispatch(AppIntent.SelectDestination(AppDestination.Library))
+        advanceUntilIdle()
+
+        assertEquals(AppDestination.Library, viewModel.uiState.value.selectedDestination)
+        assertEquals(
+            listOf(AppStackPage.Root, AppStackPage.HomeSampleDetail),
+            viewModel.uiState.value.stackFor(AppDestination.Home),
+        )
+    }
+
+    @Test
+    fun `reselecting the destination restores its root stack`() = runTest {
+        val viewModel = MainViewModel(FakeThemeModeStore())
+        activateState(viewModel)
+
+        viewModel.dispatch(AppIntent.OpenPage(AppStackPage.HomeSampleDetail))
+        viewModel.dispatch(AppIntent.SelectDestination(AppDestination.Home))
+        advanceUntilIdle()
+
+        assertEquals(listOf(AppStackPage.Root), viewModel.uiState.value.stackFor(AppDestination.Home))
+    }
+
+    @Test
+    fun `opening a settings page selects settings and back pops it`() = runTest {
+        val viewModel = MainViewModel(FakeThemeModeStore())
+        activateState(viewModel)
+
+        viewModel.dispatch(AppIntent.OpenPage(AppStackPage.SettingsAppearance))
+        advanceUntilIdle()
+        assertEquals(AppDestination.Settings, viewModel.uiState.value.selectedDestination)
+        assertEquals(AppStackPage.SettingsAppearance, viewModel.uiState.value.currentPage)
+
+        viewModel.dispatch(AppIntent.NavigateBack)
+        advanceUntilIdle()
+        assertEquals(AppStackPage.Root, viewModel.uiState.value.currentPage)
+    }
+
+    @Test
+    fun `setting the theme persists it and updates ui state`() = runTest {
+        val store = FakeThemeModeStore()
+        val viewModel = MainViewModel(store)
+        activateState(viewModel)
+
+        viewModel.dispatch(AppIntent.SetThemeMode(ThemeMode.Dark))
+        advanceUntilIdle()
+
+        assertEquals(listOf(ThemeMode.Dark), store.savedModes)
+        assertEquals(ThemeMode.Dark, viewModel.uiState.value.themeMode)
+    }
+
+    @Test
+    fun `opening an external url emits one host effect`() = runTest {
+        val viewModel = MainViewModel(FakeThemeModeStore())
+        val expected = AppEffect.OpenExternalUrl("https://example.com")
+        val effect = async { viewModel.effects.first() }
+
+        viewModel.dispatch(AppIntent.OpenExternalUrl(expected.url))
+
+        assertEquals(expected, effect.await())
+    }
+
+    private fun TestScope.activateState(viewModel: MainViewModel) {
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.uiState.collect()
+        }
+    }
+}
+
+private class FakeThemeModeStore(initialThemeMode: ThemeMode = ThemeMode.System) : ThemeModeStore {
+    private val mutableThemeMode = MutableStateFlow(initialThemeMode)
+    override val themeMode: Flow<ThemeMode> = mutableThemeMode
+    val savedModes = mutableListOf<ThemeMode>()
+
+    override suspend fun setThemeMode(themeMode: ThemeMode) {
+        savedModes += themeMode
+        mutableThemeMode.value = themeMode
+    }
+}

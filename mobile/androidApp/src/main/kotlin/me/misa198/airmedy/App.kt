@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.R as LucideR
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.launch
-import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.ui.components.AirmedyGlassIconButton
 import me.misa198.airmedy.ui.components.StackPageHeader
 import me.misa198.airmedy.ui.navigation.AppDestinationContent
@@ -43,14 +42,7 @@ internal fun shouldShowHeaderBlur(
 @Composable
 fun App(
     uiState: AppUiState = AppUiState(),
-    onDestinationSelected: (AppDestination) -> Unit = {},
-    onThemeModeSelected: (ThemeMode) -> Unit = {},
-    onHomeSampleDetailSelected: () -> Unit = {},
-    onAppearanceSelected: () -> Unit = {},
-    onSyncSelected: () -> Unit = {},
-    onAboutSelected: () -> Unit = {},
-    onOpenExternalUrl: (String) -> Unit = {},
-    onNavigateBack: () -> Unit = {},
+    onIntent: (AppIntent) -> Unit = {},
 ) {
     AirmedyTheme(themeMode = uiState.themeMode) {
         val hazeState = rememberHazeState()
@@ -66,7 +58,7 @@ fun App(
         val pageTitle = stringResource(currentPage.titleRes(uiState.selectedDestination))
         val showBack = currentPage != AppStackPage.Root
         val showSyncAddAction = currentPage == AppStackPage.SettingsSync && uiState.syncDevice == null
-        BackHandler(enabled = showBack, onBack = onNavigateBack)
+        BackHandler(enabled = showBack) { onIntent(AppIntent.NavigateBack) }
         val isContentScrolled = uiState.selectedDestination == AppDestination.Home &&
             currentPage == AppStackPage.Root &&
             (homeListState.firstVisibleItemIndex > 0 || homeListState.firstVisibleItemScrollOffset > 0)
@@ -87,20 +79,18 @@ fun App(
                 hazeState = hazeState,
                 navigationBottomPadding = navigationBottomPadding,
                 homeListState = homeListState,
-                onThemeModeSelected = onThemeModeSelected,
-                onHomeSampleDetailSelected = onHomeSampleDetailSelected,
-                onAppearanceSelected = onAppearanceSelected,
-                onSyncSelected = onSyncSelected,
-                onAboutSelected = onAboutSelected,
-                onOpenExternalUrl = onOpenExternalUrl,
+                onIntent = onIntent,
                 syncDevice = uiState.syncDevice,
-                onNavigateBack = onNavigateBack,
             )
             StackPageHeader(
                 title = pageTitle,
                 hazeState = hazeState,
                 isContentScrolled = showHeaderBlur,
-                onBackClick = if (showBack) onNavigateBack else null,
+                onBackClick = if (showBack) {
+                    { onIntent(AppIntent.NavigateBack) }
+                } else {
+                    null
+                },
                 hasActions = showSyncAddAction,
                 animateChanges = animateHeaderChanges,
                 titleStackKey = "${uiState.selectedDestination.name}:${currentPage.name}",
@@ -121,7 +111,7 @@ fun App(
                             homeListState.animateScrollToItem(0)
                         }
                     }
-                    onDestinationSelected(destination)
+                    onIntent(AppIntent.SelectDestination(destination))
                 },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)

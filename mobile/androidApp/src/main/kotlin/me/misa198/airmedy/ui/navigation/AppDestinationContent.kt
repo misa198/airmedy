@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import me.misa198.airmedy.AppDestination
+import me.misa198.airmedy.AppIntent
 import me.misa198.airmedy.AppStackPage
 import me.misa198.airmedy.SyncDevice
 import me.misa198.airmedy.settings.ThemeMode
@@ -45,14 +46,8 @@ internal fun AppDestinationContent(
     hazeState: HazeState,
     navigationBottomPadding: Dp,
     homeListState: LazyListState,
-    onThemeModeSelected: (ThemeMode) -> Unit,
-    onHomeSampleDetailSelected: () -> Unit,
-    onAppearanceSelected: () -> Unit,
-    onSyncSelected: () -> Unit,
-    onAboutSelected: () -> Unit,
-    onOpenExternalUrl: (String) -> Unit,
+    onIntent: (AppIntent) -> Unit,
     syncDevice: SyncDevice?,
-    onNavigateBack: () -> Unit,
 ) {
     val colors = LocalAirmedyColors.current
     val pageKey = PageKey(destination = destination, page = page)
@@ -67,7 +62,11 @@ internal fun AppDestinationContent(
             hazeState = hazeState,
             contentBottomPadding = navigationBottomPadding,
             isContentScrolled = false,
-            onBackClick = if (page != AppStackPage.Root) onNavigateBack else null,
+            onBackClick = if (page != AppStackPage.Root) {
+                { onIntent(AppIntent.NavigateBack) }
+            } else {
+                null
+            },
             showHeader = false,
         ) { modifier, contentPadding ->
             AnimatedContent(
@@ -92,7 +91,9 @@ internal fun AppDestinationContent(
                             modifier = Modifier.fillMaxSize(),
                             listState = homeListState,
                             contentPadding = contentPadding,
-                            onOpenSampleDetail = onHomeSampleDetailSelected,
+                            onOpenSampleDetail = {
+                                onIntent(AppIntent.OpenPage(AppStackPage.HomeSampleDetail))
+                            },
                         )
                     } else {
                         HomeSampleDetailContent(modifier = Modifier.padding(contentPadding))
@@ -101,7 +102,9 @@ internal fun AppDestinationContent(
                         AppStackPage.SettingsAppearance -> AppearanceContent(
                             modifier = Modifier.padding(contentPadding),
                             themeMode = themeMode,
-                            onThemeModeSelected = onThemeModeSelected,
+                            onThemeModeSelected = { themeMode ->
+                                onIntent(AppIntent.SetThemeMode(themeMode))
+                            },
                         )
                         AppStackPage.SettingsSync -> SyncContent(
                             syncDevice = syncDevice,
@@ -109,13 +112,21 @@ internal fun AppDestinationContent(
                         )
                         AppStackPage.SettingsAbout -> AboutContent(
                             modifier = Modifier.padding(contentPadding),
-                            onOpenExternalUrl = onOpenExternalUrl,
+                            onOpenExternalUrl = { url ->
+                                onIntent(AppIntent.OpenExternalUrl(url))
+                            },
                         )
                         else -> SettingsContent(
                             modifier = Modifier.padding(contentPadding),
-                            onAppearanceSelected = onAppearanceSelected,
-                            onSyncSelected = onSyncSelected,
-                            onAboutSelected = onAboutSelected,
+                            onAppearanceSelected = {
+                                onIntent(AppIntent.OpenPage(AppStackPage.SettingsAppearance))
+                            },
+                            onSyncSelected = {
+                                onIntent(AppIntent.OpenPage(AppStackPage.SettingsSync))
+                            },
+                            onAboutSelected = {
+                                onIntent(AppIntent.OpenPage(AppStackPage.SettingsAbout))
+                            },
                         )
                     }
                     else -> PlaceholderContent(

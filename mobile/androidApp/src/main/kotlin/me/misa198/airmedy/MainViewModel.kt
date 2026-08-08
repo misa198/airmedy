@@ -7,10 +7,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import me.misa198.airmedy.settings.ThemeMode
-import me.misa198.airmedy.settings.ThemePreferences
+import me.misa198.airmedy.settings.ThemeModeStore
 
 data class AppUiState(
     val selectedDestination: AppDestination = AppDestination.Home,
@@ -26,13 +29,16 @@ data class AppUiState(
 }
 
 class MainViewModel(
-    private val themePreferences: ThemePreferences,
+    private val themeModeStore: ThemeModeStore,
 ) : ViewModel() {
     private val selectedDestination = MutableStateFlow(AppDestination.Home)
     private val destinationStacks = MutableStateFlow(rootDestinationStacks())
+    private val _effects = Channel<AppEffect>(Channel.BUFFERED)
+
+    val effects = _effects.receiveAsFlow()
 
     val uiState: StateFlow<AppUiState> = combine(
-        themePreferences.themeMode,
+        themeModeStore.themeMode,
         selectedDestination,
         destinationStacks,
     ) { themeMode, destination, pages ->
@@ -47,77 +53,64 @@ class MainViewModel(
         initialValue = AppUiState(),
     )
 
-    fun selectDestination(destination: AppDestination) {
+    fun dispatch(intent: AppIntent) {
+        when (intent) {
+            is AppIntent.SelectDestination -> selectDestination(intent.destination)
+            is AppIntent.OpenPage -> openPage(intent.page)
+            AppIntent.NavigateBack -> navigateBack()
+            is AppIntent.SetThemeMode -> setThemeMode(intent.themeMode)
+            is AppIntent.OpenExternalUrl -> _effects.trySend(AppEffect.OpenExternalUrl(intent.url))
+        }
+    }
+
+    private fun selectDestination(destination: AppDestination) {
         if (destination == selectedDestination.value) {
-            destinationStacks.value = destinationStacks.value + (
-                destination to listOf(AppStackPage.Root)
-            )
-            return
+            destinationStacks.update { stacks ->
+                stacks + (destination to listOf(AppStackPage.Root))
+            }
+        } else {
+            selectedDestination.value = destination
         }
+    }
+
+    private fun openPage(page: AppStackPage) {
+        val destination = page.destination
         selectedDestination.value = destination
-    }
-
-    fun openHomeSampleDetail() {
-        selectedDestination.value = AppDestination.Home
-        val homeStack = destinationStacks.value.getValue(AppDestination.Home)
-        if (homeStack.lastOrNull() != AppStackPage.HomeSampleDetail) {
-            destinationStacks.value = destinationStacks.value + (
-                AppDestination.Home to homeStack + AppStackPage.HomeSampleDetail
-            )
+        destinationStacks.update { stacks ->
+            val stack = stacks.getValue(destination)
+            if (stack.lastOrNull() == page) {
+                stacks
+            } else {
+                stacks + (destination to stack + page)
+            }
         }
     }
 
-    fun openSettingsAppearance() {
-        selectedDestination.value = AppDestination.Settings
-        val settingsStack = destinationStacks.value.getValue(AppDestination.Settings)
-        if (settingsStack.lastOrNull() != AppStackPage.SettingsAppearance) {
-            destinationStacks.value = destinationStacks.value + (
-                AppDestination.Settings to settingsStack + AppStackPage.SettingsAppearance
-            )
-        }
-    }
-
-    fun openSettingsSync() {
-        selectedDestination.value = AppDestination.Settings
-        val settingsStack = destinationStacks.value.getValue(AppDestination.Settings)
-        if (settingsStack.lastOrNull() != AppStackPage.SettingsSync) {
-            destinationStacks.value = destinationStacks.value + (
-                AppDestination.Settings to settingsStack + AppStackPage.SettingsSync
-            )
-        }
-    }
-
-    fun openSettingsAbout() {
-        selectedDestination.value = AppDestination.Settings
-        val settingsStack = destinationStacks.value.getValue(AppDestination.Settings)
-        if (settingsStack.lastOrNull() != AppStackPage.SettingsAbout) {
-            destinationStacks.value = destinationStacks.value + (
-                AppDestination.Settings to settingsStack + AppStackPage.SettingsAbout
-            )
-        }
-    }
-
-    fun navigateBack() {
+    private fun navigateBack() {
         val destination = selectedDestination.value
-        val stack = destinationStacks.value.getValue(destination)
-        if (stack.size > 1) {
-            destinationStacks.value = destinationStacks.value + (destination to stack.dropLast(1))
+        destinationStacks.update { stacks ->
+            val stack = stacks.getValue(destination)
+            if (stack.size > 1) stacks + (destination to stack.dropLast(1)) else stacks
         }
     }
 
-    fun setThemeMode(themeMode: ThemeMode) {
+    private fun setThemeMode(themeMode: ThemeMode) {
         viewModelScope.launch {
-            themePreferences.setThemeMode(themeMode)
+            themeModeStore.setThemeMode(themeMode)
         }
+    }
+
+    override fun onCleared() {
+        _effects.close()
     }
 
     class Factory(
-        private val themePreferences: ThemePreferences,
+        private val themeModeStore: ThemeModeStore,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             check(modelClass.isAssignableFrom(MainViewModel::class.java))
-            return MainViewModel(themePreferences) as T
+            return MainViewModel(themeModeStore) as T
         }
     }
 }
