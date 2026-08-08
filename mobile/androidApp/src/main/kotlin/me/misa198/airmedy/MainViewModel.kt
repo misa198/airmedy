@@ -87,6 +87,16 @@ class MainViewModel(
         }
     }
 
+    fun openSettingsAbout() {
+        selectedDestination.value = AppDestination.Settings
+        val settingsStack = destinationStacks.value.getValue(AppDestination.Settings)
+        if (settingsStack.lastOrNull() != AppStackPage.SettingsAbout) {
+            destinationStacks.value = destinationStacks.value + (
+                AppDestination.Settings to settingsStack + AppStackPage.SettingsAbout
+            )
+        }
+    }
+
     fun navigateBack() {
         val destination = selectedDestination.value
         val stack = destinationStacks.value.getValue(destination)

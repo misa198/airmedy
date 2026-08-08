@@ -8,6 +8,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -34,35 +35,45 @@ enum class ActionListContainerStyle {
     Plain,
 }
 
+enum class ActionListDividerStyle {
+    InsetForLeadingIcon,
+    FullWidth,
+}
+
 data class ActionListItem(
     @StringRes val labelRes: Int,
-    @DrawableRes val iconRes: Int,
+    @DrawableRes val leadingIconRes: Int? = null,
+    val trailingContent: (@Composable RowScope.() -> Unit)? = null,
     val onClick: (() -> Unit)? = null,
 )
 
-/** A vertical list of optional actions with leading icons, dividers, and trailing chevrons. */
+/** A vertical list of optional actions with adaptable leading and trailing content. */
 @Composable
 fun ActionList(
     items: List<ActionListItem>,
     containerStyle: ActionListContainerStyle,
+    dividerStyle: ActionListDividerStyle = ActionListDividerStyle.InsetForLeadingIcon,
     modifier: Modifier = Modifier,
 ) {
     when (containerStyle) {
         ActionListContainerStyle.Card -> Card(modifier = modifier) {
-            ActionListItems(items)
+            ActionListItems(items, dividerStyle)
         }
         ActionListContainerStyle.Plain -> Column(modifier = modifier.fillMaxWidth()) {
-            ActionListItems(items)
+            ActionListItems(items, dividerStyle)
         }
     }
 }
 
 @Composable
-private fun ColumnScope.ActionListItems(items: List<ActionListItem>) {
+private fun ColumnScope.ActionListItems(
+    items: List<ActionListItem>,
+    dividerStyle: ActionListDividerStyle,
+) {
     items.forEachIndexed { index, item ->
         ActionListRow(item = item)
         if (index < items.lastIndex) {
-            ActionListDivider()
+            ActionListDivider(dividerStyle)
         }
     }
 }
@@ -88,36 +99,44 @@ private fun ActionListRow(item: ActionListItem) {
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            painter = painterResource(item.iconRes),
-            contentDescription = null,
-            modifier = Modifier.size(20.dp),
-            tint = colors.textMain,
-        )
+        item.leadingIconRes?.let { iconRes ->
+            Icon(
+                painter = painterResource(iconRes),
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = colors.textMain,
+            )
+        }
         Text(
             text = label,
             modifier = Modifier
                 .weight(1f)
-                .padding(start = 16.dp),
+                .padding(start = if (item.leadingIconRes != null) 16.dp else 0.dp),
             style = MaterialTheme.typography.bodyLarge,
             color = colors.textMain,
         )
-        Icon(
-            painter = painterResource(LucideR.drawable.lucide_ic_chevron_right),
-            contentDescription = null,
-            modifier = Modifier.size(20.dp),
-            tint = colors.textMuted,
-        )
+        when {
+            item.trailingContent != null -> Row(content = item.trailingContent)
+            item.onClick != null -> Icon(
+                painter = painterResource(LucideR.drawable.lucide_ic_chevron_right),
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = colors.textMuted,
+            )
+        }
     }
 }
 
 @Composable
-private fun ActionListDivider() {
+private fun ActionListDivider(style: ActionListDividerStyle) {
     val colors = LocalAirmedyColors.current
     androidx.compose.foundation.layout.Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 52.dp, end = 16.dp)
+            .padding(
+                start = if (style == ActionListDividerStyle.InsetForLeadingIcon) 52.dp else 0.dp,
+                end = if (style == ActionListDividerStyle.InsetForLeadingIcon) 16.dp else 0.dp,
+            )
             .height(1.dp)
             .background(colors.borderGlass),
     )

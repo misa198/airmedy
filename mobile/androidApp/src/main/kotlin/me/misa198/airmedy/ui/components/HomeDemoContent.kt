@@ -125,17 +125,17 @@ private fun HomeActionListSection(
             items = listOf(
                 ActionListItem(
                     labelRes = R.string.home_action_one,
-                    iconRes = LucideR.drawable.lucide_ic_circle_play,
+                    leadingIconRes = LucideR.drawable.lucide_ic_circle_play,
                     onClick = onOpenSampleDetail,
                 ),
                 ActionListItem(
                     labelRes = R.string.home_action_two,
-                    iconRes = LucideR.drawable.lucide_ic_list_music,
+                    leadingIconRes = LucideR.drawable.lucide_ic_list_music,
                     onClick = onOpenSampleDetail,
                 ),
                 ActionListItem(
                     labelRes = R.string.home_action_three,
-                    iconRes = LucideR.drawable.lucide_ic_sliders_horizontal,
+                    leadingIconRes = LucideR.drawable.lucide_ic_sliders_horizontal,
                     onClick = onOpenSampleDetail,
                 ),
             ),

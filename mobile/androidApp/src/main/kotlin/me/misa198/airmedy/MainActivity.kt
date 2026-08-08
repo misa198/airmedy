@@ -2,6 +2,8 @@ package me.misa198.airmedy
 
 import android.os.Bundle
 import android.content.res.Configuration
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -42,6 +44,10 @@ class MainActivity : ComponentActivity() {
                 onHomeSampleDetailSelected = viewModel::openHomeSampleDetail,
                 onAppearanceSelected = viewModel::openSettingsAppearance,
                 onSyncSelected = viewModel::openSettingsSync,
+                onAboutSelected = viewModel::openSettingsAbout,
+                onOpenExternalUrl = { url ->
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                },
                 onNavigateBack = viewModel::navigateBack,
             )
         }

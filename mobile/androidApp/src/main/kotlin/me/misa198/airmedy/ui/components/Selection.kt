@@ -63,9 +63,11 @@ fun <T> Selection(
     val menuOffset = with(LocalDensity.current) { IntOffset(0, 56.dp.roundToPx()) }
 
     Box(modifier = modifier) {
-        LabeledActionRow(
-            labelRes = labelRes,
-        ) {
+        ActionList(
+            items = listOf(
+                ActionListItem(
+                    labelRes = labelRes,
+                    trailingContent = {
             Box(
                 modifier = Modifier
                     .heightIn(min = 48.dp)
@@ -104,7 +106,11 @@ fun <T> Selection(
                     )
                 }
             }
-        }
+                    },
+                ),
+            ),
+            containerStyle = ActionListContainerStyle.Plain,
+        )
     }
 }
 

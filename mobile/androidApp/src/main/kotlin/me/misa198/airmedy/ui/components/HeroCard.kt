@@ -22,17 +22,34 @@ fun HeroCard(
     description: String,
     modifier: Modifier = Modifier,
 ) {
+    HeroCard(
+        title = title,
+        description = description,
+        modifier = modifier,
+    ) {
+        Icon(
+            painter = painterResource(iconRes),
+            contentDescription = null,
+            modifier = Modifier.size(40.dp),
+            tint = LocalAirmedyColors.current.textMuted,
+        )
+    }
+}
+
+/** A prominent informational card with caller-provided decorative content, title, and description. */
+@Composable
+fun HeroCard(
+    title: String,
+    description: String,
+    modifier: Modifier = Modifier,
+    icon: @Composable () -> Unit,
+) {
     val colors = LocalAirmedyColors.current
     Card(
         modifier = modifier,
         contentPadding = PaddingValues(24.dp),
     ) {
-        Icon(
-            painter = painterResource(iconRes),
-            contentDescription = null,
-            modifier = Modifier.size(36.dp),
-            tint = colors.textMuted,
-        )
+        icon()
         Text(
             text = title,
             modifier = Modifier.padding(top = 12.dp),

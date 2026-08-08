@@ -13,6 +13,7 @@ enum class AppStackPage {
     HomeSampleDetail,
     SettingsAppearance,
     SettingsSync,
+    SettingsAbout,
 }
 
 /** Temporary Android UI model until the sync service and its shared contract exist. */

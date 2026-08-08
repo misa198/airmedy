@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -168,6 +169,53 @@ class AppNavigationTest {
         ).forEach { labelRes ->
             composeTestRule.onNodeWithText(string(labelRes)).assertIsDisplayed()
         }
+    }
+
+    @Test
+    fun aboutOpensFromSettingsAndExposesAppDetailsAndLinks() {
+        var state by mutableStateOf(AppUiState(selectedDestination = AppDestination.Settings))
+        val openedUrls = mutableListOf<String>()
+        composeTestRule.setContent {
+            App(
+                uiState = state,
+                onAboutSelected = {
+                    state = state.copy(
+                        destinationStacks = state.destinationStacks + (
+                            AppDestination.Settings to state.stackFor(AppDestination.Settings) + AppStackPage.SettingsAbout
+                        ),
+                    )
+                },
+                onOpenExternalUrl = openedUrls::add,
+                onNavigateBack = {
+                    state = state.copy(
+                        destinationStacks = state.destinationStacks + (
+                            AppDestination.Settings to state.stackFor(AppDestination.Settings).dropLast(1)
+                        ),
+                    )
+                },
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription(string(R.string.settings_about)).performClick()
+
+        composeTestRule.onNodeWithText(string(R.string.app_name)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(string(R.string.about_description)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(BuildConfig.VERSION_NAME).assertIsDisplayed()
+        composeTestRule
+            .onNodeWithContentDescription(string(R.string.about_version))
+            .assertHasNoClickAction()
+        composeTestRule.onNodeWithContentDescription(string(R.string.about_github)).performClick()
+        composeTestRule.onNodeWithContentDescription(string(R.string.about_license)).performClick()
+        composeTestRule.onNodeWithContentDescription(string(R.string.navigate_back)).performClick()
+
+        org.junit.Assert.assertEquals(
+            listOf(
+                "https://github.com/misa198/airmedy",
+                "https://github.com/misa198/airmedy/blob/main/LICENSE",
+            ),
+            openedUrls,
+        )
+        composeTestRule.onNodeWithText(string(R.string.settings_sync)).assertIsDisplayed()
     }
 
     @Test
