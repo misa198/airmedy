@@ -66,10 +66,8 @@ describe the desktop Vue UI or future iOS UI.
   service. Sync Settings renders its preparing/progress/completed/failed state inside a dedicated `Card` featuring a top gap, primary `LinearProgressIndicator` progress bar, status text, and percentage indicator;
   the system notification remains the background control surface and provides
   Cancel. Revoke stops the transfer before deleting all mirrored library data.
-- Library is a read-only `LazyColumn` backed by the active Room mirror. Before a
-  completed transfer it renders a dedicated empty hero; rows show title, artist,
-  and album metadata. Playback, search, and editing are intentionally outside
-  this first sync UI.
+- Library root page displays a plain `ActionList` (`ActionListContainerStyle.Plain`) with actions for Artists,
+  Albums, Tracks, Genres, and Composers. Playback, search, and editing are intentionally outside this root UI.
 - Home content is supplied by `HomeDemoContent`. A forward action calls the
   callback provided by the app shell, which pushes `HomeSampleDetail`; Android
   Back pops that destination stack while the floating navigation remains shown.

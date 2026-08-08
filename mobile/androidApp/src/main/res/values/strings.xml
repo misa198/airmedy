@@ -50,6 +50,11 @@
     <string name="sync_error_background_timeout">Sync paused because Android reached its background time limit.</string>
     <string name="sync_progress_connecting">Preparing library sync…</string>
     <string name="sync_progress_items">Syncing %1$d of %2$d items</string>
+    <string name="library_artists">Artists</string>
+    <string name="library_albums">Albums</string>
+    <string name="library_tracks">Tracks</string>
+    <string name="library_genres">Genres</string>
+    <string name="library_composers">Composers</string>
     <string name="library_empty_title">No synced music yet</string>
     <string name="library_empty_description">Start Sync on your connected desktop to bring your library here.</string>
     <string name="cancel">Cancel</string>

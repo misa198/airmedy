@@ -28,6 +28,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.R as LucideR
+import androidx.compose.ui.graphics.Color
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 enum class ActionListContainerStyle {
@@ -43,6 +44,7 @@ enum class ActionListDividerStyle {
 data class ActionListItem(
     @StringRes val labelRes: Int,
     @DrawableRes val leadingIconRes: Int? = null,
+    val leadingIconTint: Color? = null,
     val trailingContent: (@Composable RowScope.() -> Unit)? = null,
     val onClick: (() -> Unit)? = null,
 )
@@ -104,7 +106,7 @@ private fun ActionListRow(item: ActionListItem) {
                 painter = painterResource(iconRes),
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
-                tint = colors.textMain,
+                tint = item.leadingIconTint ?: colors.textMain,
             )
         }
         Text(
