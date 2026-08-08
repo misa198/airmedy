@@ -13,7 +13,7 @@ withDefaults(defineProps<{
 <template>
   <section>
     <div class="flex items-center justify-between gap-2 mb-6 select-none">
-      <div class="flex items-center gap-2 text-foreground opacity-60">
+      <div class="flex items-center gap-2 text-dim">
         <component :is="icon" class="w-4 h-4" />
         <h2 class="text-sm font-bold uppercase tracking-wider">{{ label }}</h2>
       </div>

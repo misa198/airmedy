@@ -308,7 +308,7 @@ onMounted(async () => {
       </div>
 
       <template v-else-if="processedPlaylists.length === 0">
-        <div class="h-full flex flex-col items-center justify-center text-foreground opacity-60">
+        <div class="h-full flex flex-col items-center justify-center text-dim">
           <Library class="w-12 h-12 mb-4 opacity-20" />
           <p>{{ $t('library.no_playlists') }}</p>
         </div>

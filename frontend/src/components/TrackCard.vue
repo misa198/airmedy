@@ -36,7 +36,7 @@ const artistNames = (artists: (Artist | null)[] | undefined) => {
           class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
       </div>
-      <div v-else class="w-full h-full flex items-center justify-center text-foreground opacity-40 group-hover:scale-105 transition-transform duration-500">
+      <div v-else class="w-full h-full flex items-center justify-center text-dimmer group-hover:scale-105 transition-transform duration-500">
         <Music class="w-1/3 h-1/3" />
       </div>
 
@@ -52,7 +52,7 @@ const artistNames = (artists: (Artist | null)[] | undefined) => {
 
     <div class="space-y-1 px-1">
       <h3 class="font-medium text-sm truncate group-hover:text-foreground transition-colors">{{ getTrackDisplayTitle(track) || $t('library.unknown_title') }}</h3>
-      <div class="text-xs text-foreground opacity-60 truncate flex flex-col gap-0.5">
+      <div class="text-xs text-dim truncate flex flex-col gap-0.5">
         <div class="flex items-center gap-1 truncate">
           <User class="w-3 h-3 flex-shrink-0" />
           <div class="truncate">

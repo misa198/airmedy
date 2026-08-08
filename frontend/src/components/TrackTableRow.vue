@@ -93,7 +93,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
           />
           <div
             v-else
-            class="w-full h-full flex items-center justify-center text-foreground opacity-50"
+            class="w-full h-full flex items-center justify-center text-subdued"
           >
             <Music class="w-4 h-4" />
           </div>
@@ -171,7 +171,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
           class="w-3.5 h-3.5 transition-colors"
           :class="favoritesStore.isFavorite(track)
             ? 'text-primary fill-current'
-            : 'text-foreground opacity-40 group-hover:text-foreground opacity-60'"
+            : 'text-dimmer group-hover:text-foreground opacity-60'"
         />
       </div>
 
@@ -244,7 +244,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
         :style="{ background: isSelected ? 'transparent' : rowBg(currentIndex, true) }"
       >
         <button
-          class="p-2 hover:bg-foreground/8 rounded-full text-foreground opacity-50 hover:text-foreground opacity-90 transition-colors"
+          class="p-2 hover:bg-foreground/8 rounded-full text-subdued hover:text-foreground opacity-90 transition-colors"
           @click.stop="emit('contextmenu', $event, track)"
         >
           <MoreVertical class="w-4 h-4" />

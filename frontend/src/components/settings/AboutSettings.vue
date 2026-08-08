@@ -162,7 +162,7 @@ onMounted(() => {
           class="w-full flex items-center justify-between px-5 py-4 hover:bg-foreground/[0.02] transition-colors text-left"
         >
           <span class="text-sm font-medium">{{ t('settings.about.github') }}</span>
-          <ChevronRight class="w-4 h-4 text-foreground opacity-50" />
+          <ChevronRight class="w-4 h-4 text-subdued" />
         </button>
 
         <button
@@ -171,7 +171,7 @@ onMounted(() => {
           class="w-full flex items-center justify-between px-5 py-4 border-t border-foreground/[0.08] hover:bg-foreground/[0.02] transition-colors text-left"
         >
           <span class="text-sm font-medium">{{ t('settings.about.license') }}</span>
-          <ChevronRight class="w-4 h-4 text-foreground opacity-50" />
+          <ChevronRight class="w-4 h-4 text-subdued" />
         </button>
 
         <button
@@ -179,7 +179,7 @@ onMounted(() => {
           class="w-full flex items-center justify-between px-5 py-4 border-t border-foreground/[0.08] hover:bg-foreground/[0.02] transition-colors text-left"
         >
           <span class="text-sm font-medium">{{ t('settings.about.open_data_folder') }}</span>
-          <ChevronRight class="w-4 h-4 text-foreground opacity-50" />
+          <ChevronRight class="w-4 h-4 text-subdued" />
         </button>
       </div>
     </section>

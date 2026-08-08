@@ -17,7 +17,7 @@ const searchQuery = defineModel<string>({ default: '' })
       <div class="flex items-center gap-2">
         <slot name="actions" />
         <div v-if="props.searchPlaceholder" class="relative max-w-sm w-full z-[99]">
-          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground opacity-60" />
+          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim" />
           <Input
             v-model="searchQuery"
             type="text"

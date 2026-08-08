@@ -79,7 +79,7 @@ useDetailRouteLoader(loadComposerDetails)
         </div>
         <div class="flex-1 space-y-2">
           <h1 class="text-3xl font-bold tracking-tight line-clamp-2">{{ composer.name || t('library.unknown_composer') }}</h1>
-          <div class="flex items-center gap-4 text-foreground opacity-60">
+          <div class="flex items-center gap-4 text-dim">
             <span class="flex items-center gap-1 text-sm"><Music class="w-4 h-4" /> {{ t('composer.compositions_count', { count: tracks.length }) }}</span>
           </div>
           <div class="pt-2 flex items-center gap-4">

@@ -1,16 +1,15 @@
 <script setup lang="ts">
-import { Input } from '@airmedy/ui'
-import { Switch } from '@airmedy/ui'
+import { Input, Switch } from '@airmedy/ui'
 import { useAppStore } from '@/stores/app'
 import { useDeviceStore } from '@/stores/device'
-import { Radio } from '@airmedy/ui'
-import { Copy, Dices, Save, Wifi, Info, EthernetPort, GlobeLock, Waypoints, Cable, Layers2 } from '@lucide/vue'
+import { Dices, Save, Wifi, Info } from '@lucide/vue'
 import QRCodeStyling from 'qr-code-styling'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as RemoteServerService from '../../../bindings/airmedy/internal/infra/wails/remoteserverservice'
 import SettingSection from './SettingSection.vue'
 import SettingRow from './SettingRow.vue'
+import NetworkAddressList from './NetworkAddressList.vue'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -134,6 +133,7 @@ const urls = computed(() => {
   const port = status.value.port
   return status.value.addresses.map(a => ({
     url: `http://${a.ip}:${port}`,
+    ip: a.ip,
     iface: a.iface,
     kind: a.kind,
   }))
@@ -179,42 +179,6 @@ watch([qrUrl, qrContainer], ([url, container]) => {
 
 const pinChanged = computed(() => pinInput.value !== (status.value?.password ?? ''))
 
-function getInterfaceIcon(kind: string, iface: string) {
-  const k = kind.toLowerCase()
-  if (k === 'wifi') return Wifi
-  if (k === 'ethernet') return EthernetPort
-  if (k === 'vpn') return GlobeLock
-  if (k === 'link_local' || k === 'link-local') return Cable
-  if (k === 'virtual') {
-    const name = iface.toLowerCase()
-    if (name.includes('vbox') || name.includes('vmnet') || name.includes('vnic') || name.includes('hyper-v') || name.includes('vnet') || name.includes('virtual')) {
-      return Layers2
-    }
-    return Waypoints
-  }
-  return Wifi // Fallback
-}
-
-function getInterfaceLabel(kind: string, iface: string) {
-  const k = kind.toLowerCase()
-  if (k === 'wifi') return t('settings.remote.interface_wifi')
-  if (k === 'ethernet') return t('settings.remote.interface_ethernet')
-  if (k === 'vpn') return t('settings.remote.interface_vpn')
-  if (k === 'link_local' || k === 'link-local') return t('settings.remote.interface_link_local')
-  if (k === 'virtual') {
-    const name = iface.toLowerCase()
-    if (name.includes('vbox') || name.includes('vmnet') || name.includes('vnic') || name.includes('hyper-v') || name.includes('vnet') || name.includes('virtual')) {
-      return t('settings.remote.interface_virtual_vm')
-    }
-    return t('settings.remote.interface_virtual')
-  }
-  return kind
-}
-
-function getInterfaceTooltip(kind: string, iface: string) {
-  return `${getInterfaceLabel(kind, iface)} (${iface})`
-}
-
 onMounted(loadStatus)
 </script>
 
@@ -227,7 +191,7 @@ onMounted(loadStatus)
         </SettingRow>
 
         <!-- Firewall info -->
-        <div class="px-5 py-3 flex items-start gap-2 text-xs text-foreground opacity-60">
+        <div class="px-5 py-3 flex items-start gap-2 text-xs text-dim">
           <Info class="w-3 h-3 mt-0.5 shrink-0" />
           <span v-if="deviceStore.isMac">{{ t('settings.remote.firewall_macos') }}</span>
           <span v-else-if="deviceStore.isWindows">{{ t('settings.remote.firewall_windows') }}</span>
@@ -236,43 +200,13 @@ onMounted(loadStatus)
 
         <!-- Server URLs (when running) -->
         <template v-if="status?.running && urls.length > 0">
-          <div class="p-5">
-            <p class="text-sm font-semibold mb-3">{{ t('settings.remote.access_urls') }}</p>
-            <div class="space-y-2">
-              <div v-for="item in urls" :key="item.url"
-                class="flex flex-col gap-2 bg-foreground/[0.02] border rounded-xl p-3 cursor-pointer transition-all duration-200"
-                :class="selectedUrl === item.url ? 'border-foreground/20 bg-foreground/[0.03]' : 'border-foreground/[0.04]'"
-                @click="selectedUrl = item.url">
-                <!-- Tầng trên (Label) -->
-                <div class="flex items-center gap-1.5 text-xs text-foreground opacity-60 font-medium select-none" :title="getInterfaceTooltip(item.kind, item.iface)">
-                  <component
-                    :is="getInterfaceIcon(item.kind, item.iface)"
-                    class="w-3.5 h-3.5 shrink-0"
-                  />
-                  <span>{{ getInterfaceLabel(item.kind, item.iface) }}</span>
-                </div>
-
-                <!-- Tầng dưới -->
-                <div class="flex items-center justify-between gap-2 min-w-0">
-                  <div class="flex items-center gap-2 min-w-0">
-                    <Radio :value="item.url" :model-value="selectedUrl" @update:model-value="selectedUrl = String($event)" />
-                    <code class="text-xs text-foreground opacity-80 truncate font-mono select-all">{{ item.url }}</code>
-                  </div>
-                  <button @click.prevent.stop="copyUrl(item.url)"
-                    class="text-xs text-foreground opacity-50 transition-opacity shrink-0 p-1 hover:bg-foreground/[0.04] rounded">
-                    <span v-if="copiedUrl === item.url" class="text-xs font-semibold">{{ t('settings.remote.copied') }}</span>
-                    <Copy v-else class="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <NetworkAddressList :entries="urls.map(item => ({ ...item, value: item.url, display: item.url }))" :model-value="selectedUrl" :copied-value="copiedUrl" @update:model-value="selectedUrl = $event" @copy="copyUrl($event.value)" />
 
           <!-- QR Code -->
           <div v-if="qrUrl" class="p-5 flex flex-col items-center gap-2">
             <div class="w-full mb-2">
               <p class="text-sm font-semibold">{{ t('settings.remote.scan_to_connect') }}</p>
-              <p class="text-xs text-foreground opacity-60 mt-1">{{ t('settings.remote.qr_select_hint') }}</p>
+              <p class="text-xs text-dim mt-1">{{ t('settings.remote.qr_select_hint') }}</p>
             </div>
             <div ref="qrContainer" class="rounded-2xl overflow-hidden" />
           </div>
@@ -282,7 +216,7 @@ onMounted(loadStatus)
             <div class="flex items-start justify-between gap-x-2">
               <div>
                 <p class="text-sm font-semibold">{{ t('settings.remote.access_pin') }}</p>
-                <p class="text-xs text-foreground opacity-60 mt-1">{{ t('settings.remote.access_pin_desc') }}</p>
+                <p class="text-xs text-dim mt-1">{{ t('settings.remote.access_pin_desc') }}</p>
               </div>
               <div class="flex items-center gap-4">
                 <Input type="text" inputmode="numeric" maxlength="4" :model-value="pinInput"
@@ -294,7 +228,7 @@ onMounted(loadStatus)
                   <Save class="w-4 h-4" :class="{ 'animate-spin': pinSaving }" />
                 </button>
                 <button @click="regeneratePin" :disabled="regenerating"
-                  class="text-xs text-foreground opacity-50 hover:opacity-100 transition-opacity disabled:opacity-30">
+                  class="text-xs text-subdued hover:opacity-100 transition-opacity disabled:opacity-30">
                   <Dices class="w-4 h-4" :class="{ 'animate-spin': regenerating }" />
                 </button>
               </div>

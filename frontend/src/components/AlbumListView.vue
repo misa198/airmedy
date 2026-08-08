@@ -71,7 +71,7 @@ const { rowBg } = useRowBackground()
 <template>
   <div class="h-full flex flex-col overflow-hidden">
     <div class="flex-1 overflow-hidden">
-      <div v-if="albums.length === 0" class="h-full flex flex-col items-center justify-center text-foreground opacity-60">
+      <div v-if="albums.length === 0" class="h-full flex flex-col items-center justify-center text-dim">
         <Disc class="w-12 h-12 mb-4 opacity-20" />
         <p>{{ $t('library.no_albums') }}</p>
       </div>
@@ -157,7 +157,7 @@ const { rowBg } = useRowBackground()
                       :alt="album.title"
                       class="w-full h-full object-cover"
                     />
-                    <div v-else class="w-full h-full flex items-center justify-center text-foreground opacity-40">
+                    <div v-else class="w-full h-full flex items-center justify-center text-dimmer">
                       <Disc class="w-4 h-4" />
                     </div>
                   </div>
@@ -196,7 +196,7 @@ const { rowBg } = useRowBackground()
                   :style="{ background: rowBg(index, true) }"
                 >
                   <button
-                    class="p-2 hover:bg-foreground/[0.08] rounded-full text-foreground opacity-50 hover:opacity-90 transition-colors"
+                    class="p-2 hover:bg-foreground/[0.08] rounded-full text-subdued hover:opacity-90 transition-colors"
                     @click.stop="onContextMenu($event, album)"
                   >
                     <MoreVertical class="w-4 h-4" />

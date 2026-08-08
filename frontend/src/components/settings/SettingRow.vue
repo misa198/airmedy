@@ -20,7 +20,7 @@ defineProps<{
             <slot name="title">{{ title }}</slot>
           </p>
           <div v-if="description || $slots.description"
-            class="text-xs text-foreground opacity-60 mt-1 whitespace-pre-line">
+            class="text-xs text-dim mt-1 whitespace-pre-line">
             <slot name="description">{{ description }}</slot>
           </div>
         </div>
@@ -30,7 +30,7 @@ defineProps<{
           <slot name="title">{{ title }}</slot>
         </p>
         <div v-if="description || $slots.description"
-          class="text-xs text-foreground opacity-60 mt-1 whitespace-pre-line">
+          class="text-xs text-dim mt-1 whitespace-pre-line">
           <slot name="description">{{ description }}</slot>
         </div>
       </div>

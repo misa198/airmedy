@@ -99,6 +99,25 @@
   }
 }
 
+/* Reusable dim-text utilities */
+/* text-dim      ≡ text-foreground opacity-60  (secondary/metadata text)       */
+/* text-subdued  ≡ text-foreground opacity-50  (tertiary / hint text)           */
+/* text-dimmer   ≡ text-foreground opacity-40  (ghost/placeholder/disabled text) */
+@utility text-dim {
+  color: var(--text-main);
+  opacity: 0.6;
+}
+
+@utility text-subdued {
+  color: var(--text-main);
+  opacity: 0.5;
+}
+
+@utility text-dimmer {
+  color: var(--text-main);
+  opacity: 0.4;
+}
+
 /* Fix WebKit rendering issues with semi-transparent backgrounds, blurs, and opacity */
 [class*="bg-"][class*="/"],
 [class*="bg-"][class*="\\["],

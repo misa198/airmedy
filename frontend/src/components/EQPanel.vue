@@ -260,9 +260,9 @@ function openProfileMenu(e: MouseEvent) {
       <div class="flex flex-col items-end flex-none h-full">
         <p class="text-[10px] mb-1 opacity-0 select-none">0.0</p>
         <div class="flex-1 flex flex-col items-end justify-between py-1 pr-1">
-          <span class="text-[10px] text-foreground opacity-60 tabular-nums">12</span>
-          <span class="text-[10px] text-foreground opacity-60 tabular-nums">0</span>
-          <span class="text-[10px] text-foreground opacity-60 tabular-nums">-12</span>
+          <span class="text-[10px] text-dim tabular-nums">12</span>
+          <span class="text-[10px] text-dim tabular-nums">0</span>
+          <span class="text-[10px] text-dim tabular-nums">-12</span>
         </div>
         <p class="text-[10px] mt-1 opacity-0 select-none">32</p>
       </div>

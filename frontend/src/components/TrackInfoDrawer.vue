@@ -77,7 +77,7 @@ function formatFileSize(bytes: number) {
         <span class="text-sm">{{ t('track_info.title') }}</span>
       </div>
       <button
-        class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-foreground opacity-60 hover:text-foreground"
+        class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-dim hover:text-foreground"
         @click="store.closeAllDrawers()">
         <X class="w-4 h-4" />
       </button>
@@ -114,14 +114,14 @@ function formatFileSize(bytes: number) {
 
         <!-- Details -->
         <div class="w-full max-w-sm px-2">
-          <h3 class="text-[10px] font-bold uppercase tracking-widest text-foreground opacity-50 mb-4 text-left">
+          <h3 class="text-[10px] font-bold uppercase tracking-widest text-subdued mb-4 text-left">
             {{ t('track_info.details') }}
           </h3>
 
           <div class="space-y-3">
             <div v-for="detail in details" :key="detail.label"
               class="flex justify-between items-start gap-4 py-1.5 border-b border-foreground/[0.03]">
-              <span class="text-[11px] text-foreground opacity-60 font-bold uppercase tracking-tight whitespace-nowrap pt-0.5">
+              <span class="text-[11px] text-dim font-bold uppercase tracking-tight whitespace-nowrap pt-0.5">
                 {{ detail.label }}
               </span>
               <span class="text-xs font-semibold text-right selection:bg-primary/20"
@@ -133,7 +133,7 @@ function formatFileSize(bytes: number) {
         </div>
       </div>
 
-      <div v-else class="h-full flex items-center justify-center p-8 text-foreground opacity-50 italic">
+      <div v-else class="h-full flex items-center justify-center p-8 text-subdued italic">
         {{ t('player.select_track') }}
       </div>
     </div>

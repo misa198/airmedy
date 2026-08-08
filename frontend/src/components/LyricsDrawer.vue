@@ -104,20 +104,20 @@ onUnmounted(() => {
           :class="viewType === 'plain' ? 'translate-x-full' : 'translate-x-0'" />
         <button
           class="relative z-10 p-1.5 rounded-full transition-colors duration-200 flex items-center justify-center"
-          :class="viewType === 'synced' ? 'text-foreground' : 'text-foreground opacity-60 hover:opacity-90'"
+          :class="viewType === 'synced' ? 'text-foreground' : 'text-dim hover:opacity-90'"
           @click="viewType = 'synced'">
           <Timer class="w-3.5 h-3.5" />
         </button>
         <button
           class="relative z-10 p-1.5 rounded-full transition-colors duration-200 flex items-center justify-center"
-          :class="viewType === 'plain' ? 'text-foreground' : 'text-foreground opacity-60 hover:opacity-90'"
+          :class="viewType === 'plain' ? 'text-foreground' : 'text-dim hover:opacity-90'"
           @click="viewType = 'plain'">
           <AlignLeft class="w-3.5 h-3.5" />
         </button>
       </div>
 
       <button
-        class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-foreground opacity-60 hover:text-foreground flex-shrink-0"
+        class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-dim hover:text-foreground flex-shrink-0"
         @click="store.toggleLyrics()">
         <X class="w-4 h-4" />
       </button>

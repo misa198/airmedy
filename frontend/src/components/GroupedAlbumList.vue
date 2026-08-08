@@ -123,7 +123,7 @@ function tableHeight(trackCount: number): string {
                 @click="group.album && router.push(`/albums/${group.album.id}`)">
                 {{ group.album?.title || 'Unknown Album' }}
               </h2>
-              <div class="flex items-center gap-3 text-sm text-foreground opacity-60">
+              <div class="flex items-center gap-3 text-sm text-dim">
                 <span v-if="group.album?.year" class="font-medium">{{ group.album.year }}</span>
                 <span v-if="group.album?.year">•</span>
                 <span>{{ group.tracks.length }} tracks</span>

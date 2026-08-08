@@ -231,12 +231,12 @@ const sectorPath = computed(() => {
         </div>
 
         <div class="flex items-center gap-x-3">
-          <span class="text-xs text-foreground opacity-60 tabular-nums w-8 text-left">{{ STEREO_WIDTH_MIN }}</span>
+          <span class="text-xs text-dim tabular-nums w-8 text-left">{{ STEREO_WIDTH_MIN }}</span>
           <Slider class="flex-1" :model-value="stereoWidthLive" :min="STEREO_WIDTH_MIN" :max="STEREO_WIDTH_MAX"
             :step="5" :anchor-value="100" thumb-color="currentColor" always-show-thumb
             @update:model-value="onStereoWidthInput" @mouseup="onStereoWidthRelease"
             @touchend="onStereoWidthRelease" />
-          <span class="text-xs text-foreground opacity-60 tabular-nums w-8 text-right">{{ STEREO_WIDTH_MAX }}</span>
+          <span class="text-xs text-dim tabular-nums w-8 text-right">{{ STEREO_WIDTH_MAX }}</span>
         </div>
       </div>
     </SettingSection>
@@ -257,15 +257,15 @@ const sectorPath = computed(() => {
           <p class="text-sm font-semibold tabular-nums">{{ crossfadeSliderValue }} s</p>
         </div>
         <div class="flex items-center gap-x-3">
-          <span class="text-xs text-foreground opacity-60 tabular-nums">1</span>
+          <span class="text-xs text-dim tabular-nums">1</span>
           <Slider class="flex-1" :model-value="crossfadeSliderValue" :min="1" :max="CROSSFADE_MAX_SECONDS" :step="1"
             @update:model-value="onCrossfadeInput" @mouseup="onCrossfadeRelease" @touchend="onCrossfadeRelease" />
-          <span class="text-xs text-foreground opacity-60 tabular-nums">{{ CROSSFADE_MAX_SECONDS }}</span>
+          <span class="text-xs text-dim tabular-nums">{{ CROSSFADE_MAX_SECONDS }}</span>
         </div>
       </div>
     </SettingSection>
     <SettingSection :icon="Volume2" :label="t('settings.normalization.title')">
-      <p v-if="!appStore.libraryAnalysisEnabled" class="px-5 py-3 text-xs text-foreground opacity-50">
+      <p v-if="!appStore.libraryAnalysisEnabled" class="px-5 py-3 text-xs text-subdued">
         {{ t('settings.library_analysis.requires_enable') }}
       </p>
       <SettingRow class="transition-opacity"
@@ -278,8 +278,8 @@ const sectorPath = computed(() => {
         :class="(!appStore.libraryAnalysisEnabled || !appStore.normalizationEnabled) && 'opacity-40 pointer-events-none'"
         :title="t('settings.normalization.mode')">
         <template #description>
-          <p class="text-xs text-foreground opacity-60">{{ t('settings.normalization.mode_track_desc') }}</p>
-          <p class="text-xs text-foreground opacity-60">{{ t('settings.normalization.mode_album_desc') }}</p>
+          <p class="text-xs text-dim">{{ t('settings.normalization.mode_track_desc') }}</p>
+          <p class="text-xs text-dim">{{ t('settings.normalization.mode_album_desc') }}</p>
         </template>
         <Select :model-value="appStore.normalizationMode"
           @update:model-value="val => appStore.updateNormalizationMode(val as 'track' | 'album')">
@@ -299,7 +299,7 @@ const sectorPath = computed(() => {
           <p class="text-sm font-semibold tabular-nums">{{ lufsLive }} LUFS</p>
         </div>
         <div class="flex items-center gap-x-3">
-          <span class="text-xs text-foreground opacity-60 tabular-nums">{{ NORMALIZATION_TARGET_LUFS_MIN }}</span>
+          <span class="text-xs text-dim tabular-nums">{{ NORMALIZATION_TARGET_LUFS_MIN }}</span>
           <div class="relative flex-1">
             <Slider :model-value="lufsLive" :min="NORMALIZATION_TARGET_LUFS_MIN" :max="NORMALIZATION_TARGET_LUFS_MAX"
               :step="1" @update:model-value="onLufsInput" @mouseup="onLufsRelease" @touchend="onLufsRelease" />
@@ -309,12 +309,12 @@ const sectorPath = computed(() => {
                 class="absolute top-0 -translate-x-1/2 flex flex-col items-center"
                 :style="{ left: `${lufsMarkPct(mark.value)}%` }">
                 <span class="w-px h-1.5 bg-foreground/20" />
-                <span class="text-[10px] text-foreground opacity-50 whitespace-nowrap mt-0.5">{{ t(mark.labelKey)
+                <span class="text-[10px] text-subdued whitespace-nowrap mt-0.5">{{ t(mark.labelKey)
                   }}</span>
               </div>
             </div>
           </div>
-          <span class="text-xs text-foreground opacity-60 tabular-nums">{{ NORMALIZATION_TARGET_LUFS_MAX }}</span>
+          <span class="text-xs text-dim tabular-nums">{{ NORMALIZATION_TARGET_LUFS_MAX }}</span>
         </div>
       </div>
       <SettingRow class="transition-opacity"

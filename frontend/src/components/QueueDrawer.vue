@@ -56,14 +56,14 @@ onUnmounted(() => {
       </div>
       <div class="flex items-center gap-1">
         <button
-          class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-foreground opacity-60 hover:text-foreground"
+          class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-dim hover:text-foreground"
           @click="scrollToCurrentTrack()"
           :title="t('player.scroll_to_current')"
         >
           <Goal class="w-4 h-4" />
         </button>
         <button
-          class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-foreground opacity-60 hover:text-foreground"
+          class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-dim hover:text-foreground"
           @click="store.toggleQueue()"
           :title="t('common.close')"
         >
@@ -140,7 +140,7 @@ onUnmounted(() => {
                 <div class="text-xs text-muted-foreground mt-0.5">{{ formatTime(item.duration) }}</div>
               </div>
               <button
-                class="p-2 hover:bg-foreground/8 rounded-full text-foreground opacity-50 hover:text-foreground opacity-90 transition-colors"
+                class="p-2 hover:bg-foreground/8 rounded-full text-subdued hover:text-foreground opacity-90 transition-colors"
                 @click.stop="onContextMenu($event, item)"
               >
                 <MoreVertical class="w-4 h-4" />

@@ -66,7 +66,7 @@ const submenuGroup = useHoverSubmenuGroup()
       </div>
 
       <div class="mt-2 pt-2 border-t border-foreground/10">
-        <p class="text-[10px] font-semibold text-foreground opacity-60 uppercase tracking-widest px-1 mb-2">
+        <p class="text-[10px] font-semibold text-dim uppercase tracking-widest px-1 mb-2">
           {{ $t('settings.appearance.title') }}
         </p>
         <div
