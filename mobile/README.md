@@ -45,10 +45,14 @@ its own adapters while using the same shared business contracts.
 The mobile pairing protocol is implemented in `sharedLogic`: QR parsing, MQTT
 topic construction, signed request/response validation, and the pairing state
 machine are shared. Android supplies camera, MQTT, encrypted identity storage,
-and Compose UI adapters. After pairing, Android keeps an MQTT session open while
-the Sync ViewModel lives; its connection state drives the desktop Online/Offline
-badge and provides the transport boundary for future sync messages. See the
-repository pairing catalog for the wire contract.
+and Compose UI adapters. Android makes one opportunistic MQTT connection using
+the QR-verified route when the app starts, without background retries. Its
+connection state drives the desktop Online/Offline badge and provides the
+transport boundary for future sync messages. When an already trusted desktop is
+Offline, Android browses for its short-lived mDNS broadcast only while Sync
+Settings is visible; a discovered route is transient and never replaces the
+QR-verified saved endpoint. See the repository pairing catalog for the wire
+contract.
 
 ## Prerequisites
 

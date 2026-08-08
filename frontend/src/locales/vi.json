@@ -1,5 +1,6 @@
 {
   "common": {
+    "mobile_pairing_broadcast": { "title": "Phát để ghép nối", "description": "Cho phép tìm thấy desktop này trong 30 giây.", "broadcasting_desc": "Đang phát trong {seconds} giây.", "broadcasting": "Đang phát", "start": "Phát", "stop": "Dừng" },
     "play": "Phát",
     "shuffle": "Trộn bài",
     "home": "Trang chủ",

@@ -23,6 +23,7 @@ import me.misa198.airmedy.pairing.HiveMqPairingTransport
 import me.misa198.airmedy.pairing.HiveMqSyncSession
 import me.misa198.airmedy.pairing.MobilePairingUseCase
 import me.misa198.airmedy.pairing.PairingPreferences
+import me.misa198.airmedy.pairing.AndroidTrustedDesktopDiscovery
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels {
@@ -39,6 +40,7 @@ class MainActivity : ComponentActivity() {
                 ids = AndroidPairingIdGenerator,
             ),
             mqttSession = HiveMqSyncSession(),
+            discovery = AndroidTrustedDesktopDiscovery(applicationContext),
         )
     }
 
@@ -81,6 +83,8 @@ class MainActivity : ComponentActivity() {
                     }
                 },
                 onUnpair = syncViewModel::unpair,
+                onSyncScreenVisible = syncViewModel::onSyncScreenVisible,
+                onSyncScreenHidden = syncViewModel::onSyncScreenHidden,
             )
         }
     }

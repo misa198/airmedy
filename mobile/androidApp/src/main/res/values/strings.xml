@@ -23,6 +23,7 @@
     <string name="sync_status_online">Online</string>
     <string name="sync_status_offline">Offline</string>
     <string name="sync_paired_device_description">This phone can connect to one desktop at a time. Revoke it before pairing a new desktop.</string>
+    <string name="sync_ready_to_connect_description">Ready to connect. Start Broadcast in Airmedy on your desktop; this screen connects automatically.</string>
     <string name="sync_revoke">Revoke</string>
     <string name="sync_waiting_title">Waiting for desktop approval</string>
     <string name="sync_waiting_description">Approve this phone in the Airmedy desktop app.</string>

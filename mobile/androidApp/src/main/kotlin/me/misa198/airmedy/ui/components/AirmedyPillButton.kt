@@ -46,7 +46,7 @@ fun AirmedyPillButton(
     val contentColor = when (variant) {
         AirmedyPillButtonVariant.Primary,
         AirmedyPillButtonVariant.Destructive,
-        -> MaterialTheme.colorScheme.onPrimary
+        -> colors.onPrimary
         AirmedyPillButtonVariant.Secondary -> colors.textMain
     }
     Box(

@@ -42,9 +42,18 @@ describe the desktop Vue UI or future iOS UI.
   state from the shared pairing use case: no device shows the empty hero and a
   glass Add-device header action; a pending request shows an approval hero; a
   paired device uses a HeroCard with a Lucide computer icon, bold QR-provided
-  desktop name, a green Online/red Offline MQTT session badge, and a one-desktop pairing explanation. The badge is driven by the long-lived Android MQTT session, which reconnects while the Sync ViewModel is alive and is the transport foundation for later sync messages. Its separate destructive
-  Revoke button opens the shared mobile dialog. LAN host and port are used only
-  for the temporary pairing transport and are never saved or displayed.
+  desktop name, and a green Online/red Offline MQTT session badge. Offline
+  guidance says the desktop is ready to connect and instructs the user to start
+  Broadcast on desktop; the screen connects automatically. While this screen is
+  visible, and only while a trusted desktop is Offline, Android browses its
+  mDNS broadcast; entering the scanner or leaving the screen stops browsing and
+  releases the multicast lock. A saved QR route gets one connection attempt at
+  app start, without a background retry loop; foreground discovery is the only
+  source of reconnect attempts. The MQTT session remains connected after leaving
+  the screen, but its transient discovery endpoint is never persisted or reused
+  for discovery outside this lifecycle. Its separate destructive Revoke button
+  opens the shared mobile dialog. LAN host and port are used only for the
+  temporary pairing transport and are never displayed.
   The action opens `SettingsSyncScanner`, with a centred rounded QR viewfinder,
   descriptive scan guidance, and an image-picker fallback decoded by ML Kit for
   devices whose camera is unavailable.
@@ -70,7 +79,7 @@ describe the desktop Vue UI or future iOS UI.
 | `Selection` | Renders an iOS-style dropdown row and custom elevated menu with a 28dp radius for mutually exclusive `SelectionOption` values. Its selected value uses the standard row typography with the muted action colour; each menu option is at least 44dp tall. Only the right-side action slot opens and anchors the right-aligned menu; the opaque, rounded menu expands and collapses vertically while fading and scaling over 220ms. The caller owns selected state and receives the selected value through `onValueSelected`. |
 | `StackPageLayout` | Places content below the status/header region and above the persistent navigation; screens must use its supplied padding. Its page-header title uses bold `headlineLarge` typography. |
 | `AirmedyGlassIconButton` | A 48dp circular blurred glass icon button with border and button semantics. Back and header actions use this shared primitive. |
-| `AirmedyPillButton` | A borderless 52dp minimum-height capsule action. `Primary` and `Destructive` use the primary background with `onPrimary` text; `Secondary` uses the stronger `buttonSecondary` theme surface with normal foreground text. Its label supplies button semantics. |
+| `AirmedyPillButton` | A borderless 52dp minimum-height capsule action. `Primary` and `Destructive` use the primary background with the explicit white `onPrimary` token in both light and dark themes; `Secondary` uses the stronger `buttonSecondary` theme surface with normal foreground text. Its label supplies button semantics. |
 | `AirmedyDialog` | A 36dp-radius, two-action mobile dialog. Its text content has 20dp horizontal inset; the button area has a thinner 16dp horizontal/bottom inset. It supports `Horizontal` and `Vertical` action layouts; the left/top action always dismisses with `Secondary`. |
 
 ## UI rules

@@ -51,6 +51,8 @@ internal fun AppDestinationContent(
     syncUiState: SyncUiState,
     onPairingQrScanned: (String) -> Boolean,
     onUnpair: () -> Unit,
+    onSyncScreenVisible: () -> Unit,
+    onSyncScreenHidden: () -> Unit,
 ) {
     val colors = LocalAirmedyColors.current
     val pageKey = PageKey(destination = destination, page = page)
@@ -112,6 +114,8 @@ internal fun AppDestinationContent(
                         AppStackPage.SettingsSync -> SyncContent(
                             syncUiState = syncUiState,
                             onUnpair = onUnpair,
+                            onScreenVisible = onSyncScreenVisible,
+                            onScreenHidden = onSyncScreenHidden,
                             modifier = Modifier.padding(contentPadding),
                         )
                         AppStackPage.SettingsSyncScanner -> SyncScannerContent(

@@ -27,6 +27,42 @@ data class PairedDesktop(
     val port: Int? = null,
 )
 
+/** A transient MQTT route obtained from a trusted desktop's mDNS broadcast. */
+data class PairingEndpoint(
+    val host: String,
+    val port: Int,
+)
+
+/** Raw DNS-SD data needed to validate an already resolved pairing broadcast. */
+data class PairingBroadcastRecord(
+    val srvPort: Int,
+    val txt: Map<String, String>,
+)
+
+/**
+ * Validates the endpoint-only discovery record. It deliberately has no access
+ * to desktop public keys: mDNS may locate only a desktop already trusted by ID.
+ */
+object PairingBroadcastResolver {
+    private val uuid = Regex("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+    private val decimalPort = Regex("^[0-9]+$")
+
+    fun resolve(record: PairingBroadcastRecord, trustedDesktopId: String): PairingEndpoint? {
+        val host = record.txt["ip"] ?: return null
+        val advertisedPort = record.txt["port"] ?: return null
+        val deviceId = record.txt["device_id"] ?: return null
+        val port = advertisedPort.takeIf(decimalPort::matches)?.toIntOrNull() ?: return null
+        if (!isIpv4(host) || port !in 1..65535 || record.srvPort !in 1..65535 ||
+            port != record.srvPort || !uuid.matches(deviceId) || deviceId != trustedDesktopId
+        ) return null
+        return PairingEndpoint(host, port)
+    }
+
+    private fun isIpv4(value: String): Boolean = value.split('.').let { parts ->
+        parts.size == 4 && parts.all { it.isNotEmpty() && it.all(Char::isDigit) && it.toIntOrNull() in 0..255 }
+    }
+}
+
 sealed interface PairingFailure {
     data object AlreadyPaired : PairingFailure
     data class InvalidQr(val reason: String) : PairingFailure

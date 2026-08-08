@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import me.misa198.airmedy.pairing.PairingEndpoint
 import me.misa198.airmedy.pairing.PairedDesktop
 
 /**
@@ -18,27 +19,30 @@ import me.misa198.airmedy.pairing.PairedDesktop
  * sync features can add topic subscriptions and publishing here without making
  * UI state or pairing validation depend on HiveMQ APIs.
  */
-class HiveMqSyncSession {
+class HiveMqSyncSession : SyncSession {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val _isConnected = MutableStateFlow(false)
-    val isConnected: StateFlow<Boolean> = _isConnected
+    override val isConnected: StateFlow<Boolean> = _isConnected
 
     private var sessionJob: Job? = null
     private var client: Mqtt3AsyncClient? = null
-    private var endpoint: PairedDesktop? = null
+    private var endpoint: PairingEndpoint? = null
+    @Volatile private var reconnectEnabled = false
 
-    fun connect(desktop: PairedDesktop, mobileID: String) {
-        val host = desktop.host ?: return disconnect()
-        val port = desktop.port ?: return disconnect()
-        if (endpoint == desktop && sessionJob?.isActive == true) return
+    override fun connect(desktop: PairedDesktop, endpoint: PairingEndpoint, mobileId: String, reconnect: Boolean) {
+        if (this.endpoint == endpoint && sessionJob?.isActive == true) {
+            reconnectEnabled = reconnectEnabled || reconnect
+            return
+        }
         disconnect()
-        endpoint = desktop
+        this.endpoint = endpoint
+        reconnectEnabled = reconnect
         sessionJob = scope.launch {
             val mqttClient = MqttClient.builder()
                 .useMqttVersion3()
-                .identifier("airmedy-sync-${desktop.desktopId}-$mobileID")
-                .serverHost(host)
-                .serverPort(port)
+                .identifier("airmedy-sync-${desktop.desktopId}-$mobileId")
+                .serverHost(endpoint.host)
+                .serverPort(endpoint.port)
                 .buildAsync()
             client = mqttClient
             while (isActive) {
@@ -48,15 +52,21 @@ class HiveMqSyncSession {
                     delay(CONNECTION_POLL_INTERVAL_MS)
                 }
                 _isConnected.value = false
+                if (!reconnectEnabled) return@launch
                 delay(RECONNECT_DELAY_MS)
             }
         }
     }
 
-    fun disconnect() {
+    override fun stopReconnecting() {
+        reconnectEnabled = false
+    }
+
+    override fun disconnect() {
         sessionJob?.cancel()
         sessionJob = null
         endpoint = null
+        reconnectEnabled = false
         val mqttClient = client
         client = null
         _isConnected.value = false

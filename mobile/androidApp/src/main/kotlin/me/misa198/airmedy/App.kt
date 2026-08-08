@@ -46,6 +46,8 @@ fun App(
     onIntent: (AppIntent) -> Unit = {},
     onPairingQrScanned: (String) -> Boolean = { false },
     onUnpair: () -> Unit = {},
+    onSyncScreenVisible: () -> Unit = {},
+    onSyncScreenHidden: () -> Unit = {},
 ) {
     AirmedyTheme(themeMode = uiState.themeMode) {
         val hazeState = rememberHazeState()
@@ -86,6 +88,8 @@ fun App(
                 syncUiState = syncUiState,
                 onPairingQrScanned = onPairingQrScanned,
                 onUnpair = onUnpair,
+                onSyncScreenVisible = onSyncScreenVisible,
+                onSyncScreenHidden = onSyncScreenHidden,
             )
             StackPageHeader(
                 title = pageTitle,

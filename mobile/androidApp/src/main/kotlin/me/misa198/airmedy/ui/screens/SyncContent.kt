@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,8 +33,14 @@ import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 internal fun SyncContent(
     syncUiState: SyncUiState,
     onUnpair: () -> Unit,
+    onScreenVisible: () -> Unit = {},
+    onScreenHidden: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
+    DisposableEffect(Unit) {
+        onScreenVisible()
+        onDispose(onScreenHidden)
+    }
     val colors = LocalAirmedyColors.current
     var showRevokeConfirmation by remember { mutableStateOf(false) }
     Column(modifier = modifier) {
@@ -42,7 +49,10 @@ internal fun SyncContent(
                 HeroCard(
                     iconRes = LucideR.drawable.lucide_ic_computer,
                     title = syncUiState.desktop.displayName,
-                    description = stringResource(R.string.sync_paired_device_description),
+                    description = stringResource(
+                        if (syncUiState.isMqttConnected) R.string.sync_paired_device_description
+                        else R.string.sync_ready_to_connect_description,
+                    ),
                     belowTitle = {
                         MqttConnectionBadge(
                             isConnected = syncUiState.isMqttConnected,

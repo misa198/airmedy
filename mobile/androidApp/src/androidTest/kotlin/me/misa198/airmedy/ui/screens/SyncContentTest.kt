@@ -15,7 +15,7 @@ class SyncContentTest {
     val composeTestRule = createComposeRule()
 
     @Test
-    fun pairedDesktopShowsHeroDescriptionAndSeparateRevokeAction() {
+    fun offlinePairedDesktopShowsReadyToConnectGuidanceAndSeparateRevokeAction() {
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 SyncContent(
@@ -34,7 +34,7 @@ class SyncContentTest {
         }
 
         composeTestRule.onNodeWithText("Studio Mac").assertIsDisplayed()
-        composeTestRule.onNodeWithText("This phone can connect to one desktop at a time. Revoke it before pairing a new desktop.").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Ready to connect. Start Broadcast in Airmedy on your desktop; this screen connects automatically.").assertIsDisplayed()
         composeTestRule.onNodeWithText("Revoke").assertIsDisplayed()
         composeTestRule.onNodeWithText("Offline").assertIsDisplayed()
     }
@@ -54,5 +54,6 @@ class SyncContentTest {
         }
 
         composeTestRule.onNodeWithText("Online").assertIsDisplayed()
+        composeTestRule.onNodeWithText("This phone can connect to one desktop at a time. Revoke it before pairing a new desktop.").assertIsDisplayed()
     }
 }

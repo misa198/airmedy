@@ -24,6 +24,7 @@ import (
 	keyringinfra "airmedy/internal/infra/keyring"
 	"airmedy/internal/infra/logging"
 	lyricsinfra "airmedy/internal/infra/lyrics"
+	mdnsinfra "airmedy/internal/infra/mdns"
 	"airmedy/internal/infra/metadata"
 	mqttinfra "airmedy/internal/infra/mqtt"
 	"airmedy/internal/infra/notification"
@@ -94,6 +95,7 @@ var Module = fx.Module("app",
 		func() *wails.GreetService { return &wails.GreetService{} },
 		func() domain.PairingKeyStore { return keyringinfra.NewPairingKeyStore() },
 		func(logger *slog.Logger) domain.PairingBroker { return mqttinfra.NewPairingBroker(logger) },
+		func(logger *slog.Logger) domain.PairingAdvertiser { return mdnsinfra.NewPairingAdvertiser(logger) },
 	),
 	sqlite.Module,
 	logging.Module,

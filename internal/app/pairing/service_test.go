@@ -83,11 +83,12 @@ func (s *memoryPairingSettings) SaveSettings(_ context.Context, settings *domain
 }
 
 type testBroker struct {
-	mu        sync.Mutex
-	handler   func([]byte)
-	published [][]byte
-	ports     []int
-	failures  map[int]error
+	mu           sync.Mutex
+	handler      func([]byte)
+	published    [][]byte
+	ports        []int
+	failures     map[int]error
+	disconnected []string
 }
 
 func (b *testBroker) Start(_ context.Context, _ string, preferredPort int, handler func([]byte), _ func(string, bool)) (int, error) {
@@ -99,6 +100,10 @@ func (b *testBroker) Start(_ context.Context, _ string, preferredPort int, handl
 	return 54321, nil
 }
 func (b *testBroker) Stop(context.Context) error { return nil }
+func (b *testBroker) Disconnect(_ context.Context, deviceID string) error {
+	b.disconnected = append(b.disconnected, deviceID)
+	return nil
+}
 func (b *testBroker) Publish(_ context.Context, _ string, payload []byte) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -106,6 +111,26 @@ func (b *testBroker) Publish(_ context.Context, _ string, payload []byte) error 
 	return nil
 }
 func (b *testBroker) Running() bool { return b.handler != nil }
+
+type testAdvertiser struct {
+	calls []struct {
+		deviceID string
+		port     int
+	}
+	stops int
+	err   error
+}
+
+func (a *testAdvertiser) Advertise(_ context.Context, deviceID string, port int) (func(), error) {
+	if a.err != nil {
+		return nil, a.err
+	}
+	a.calls = append(a.calls, struct {
+		deviceID string
+		port     int
+	}{deviceID, port})
+	return func() { a.stops++ }, nil
+}
 
 func requireLogger(_ *testing.T) *slog.Logger { return slog.New(slog.NewTextHandler(io.Discard, nil)) }
 
@@ -127,7 +152,7 @@ func TestAcceptRequestPersistsTrustedDeviceAndSignsResponse(t *testing.T) {
 	devices := &memoryDeviceRepo{devices: map[string]*domain.TrustedMobileDevice{}}
 	keys := &memoryKeyStore{}
 	broker := &testBroker{}
-	svc := NewService(identityRepo, devices, keys, broker, &memoryPairingSettings{settings: &domain.AppSettings{}}, nil)
+	svc := NewService(identityRepo, devices, keys, broker, nil, &memoryPairingSettings{settings: &domain.AppSettings{}}, nil)
 	svc.logger = requireLogger(t)
 	require.NoError(t, svc.start(context.Background()))
 	_, mobilePrivate, err := ed25519.GenerateKey(rand.Reader)
@@ -154,7 +179,7 @@ func TestTrustedDeviceIsAutomaticallyApprovedOnce(t *testing.T) {
 	devices := &memoryDeviceRepo{devices: map[string]*domain.TrustedMobileDevice{}}
 	keys := &memoryKeyStore{}
 	broker := &testBroker{}
-	svc := NewService(identityRepo, devices, keys, broker, &memoryPairingSettings{settings: &domain.AppSettings{}}, requireLogger(t))
+	svc := NewService(identityRepo, devices, keys, broker, nil, &memoryPairingSettings{settings: &domain.AppSettings{}}, requireLogger(t))
 	require.NoError(t, svc.start(context.Background()))
 	_, mobilePrivate, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
@@ -181,14 +206,14 @@ func TestStartCachesAndReusesPairingMQTTPort(t *testing.T) {
 	settings := &memoryPairingSettings{settings: &domain.AppSettings{}}
 
 	firstBroker := &testBroker{}
-	first := NewService(identityRepo, devices, keys, firstBroker, settings, requireLogger(t))
+	first := NewService(identityRepo, devices, keys, firstBroker, nil, settings, requireLogger(t))
 	require.NoError(t, first.start(context.Background()))
 	require.Equal(t, []int{0}, firstBroker.ports)
 	require.Equal(t, 54321, settings.settings.PairingMQTTPort)
 	require.Equal(t, 1, settings.saves)
 
 	secondBroker := &testBroker{}
-	second := NewService(identityRepo, devices, keys, secondBroker, settings, requireLogger(t))
+	second := NewService(identityRepo, devices, keys, secondBroker, nil, settings, requireLogger(t))
 	require.NoError(t, second.start(context.Background()))
 	require.Equal(t, []int{54321}, secondBroker.ports)
 	require.Equal(t, 1, settings.saves)
@@ -200,7 +225,7 @@ func TestStartReplacesUnavailableCachedPairingMQTTPort(t *testing.T) {
 	keys := &memoryKeyStore{}
 	settings := &memoryPairingSettings{settings: &domain.AppSettings{PairingMQTTPort: 42000}}
 	broker := &testBroker{failures: map[int]error{42000: errors.New("address already in use")}}
-	svc := NewService(identityRepo, devices, keys, broker, settings, requireLogger(t))
+	svc := NewService(identityRepo, devices, keys, broker, nil, settings, requireLogger(t))
 
 	require.NoError(t, svc.start(context.Background()))
 	require.Equal(t, []int{42000, 0}, broker.ports)
@@ -208,12 +233,45 @@ func TestStartReplacesUnavailableCachedPairingMQTTPort(t *testing.T) {
 	require.Equal(t, 1, settings.saves)
 }
 
+func TestPairingBroadcastAdvertisesEndpointAndCanBeStopped(t *testing.T) {
+	identityRepo := &memoryIdentityRepo{}
+	broker := &testBroker{}
+	advertiser := &testAdvertiser{}
+	svc := NewService(identityRepo, &memoryDeviceRepo{devices: map[string]*domain.TrustedMobileDevice{}}, &memoryKeyStore{}, broker, advertiser, &memoryPairingSettings{settings: &domain.AppSettings{}}, requireLogger(t))
+	received := 0
+	svc.AddBroadcastListener(func() { received++ })
+	require.NoError(t, svc.StartBroadcast(context.Background()))
+
+	status := svc.GetStatus()
+	require.True(t, status.Broadcasting)
+	require.WithinDuration(t, time.Now().Add(broadcastTTL), status.BroadcastUntil, time.Second)
+	require.Len(t, advertiser.calls, 1)
+	require.Equal(t, identityRepo.identity.DeviceID, advertiser.calls[0].deviceID)
+	require.Equal(t, 54321, advertiser.calls[0].port)
+
+	svc.StopBroadcast()
+	require.False(t, svc.GetStatus().Broadcasting)
+	require.Equal(t, 1, advertiser.stops)
+	require.Equal(t, 2, received)
+}
+
+func TestPairingBroadcastRestartsWithFreshEndpointRecord(t *testing.T) {
+	identityRepo := &memoryIdentityRepo{}
+	advertiser := &testAdvertiser{}
+	svc := NewService(identityRepo, &memoryDeviceRepo{devices: map[string]*domain.TrustedMobileDevice{}}, &memoryKeyStore{}, &testBroker{}, advertiser, &memoryPairingSettings{settings: &domain.AppSettings{}}, requireLogger(t))
+	require.NoError(t, svc.StartBroadcast(context.Background()))
+	require.NoError(t, svc.StartBroadcast(context.Background()))
+	require.Len(t, advertiser.calls, 2)
+	require.Equal(t, 1, advertiser.stops)
+	svc.StopBroadcast()
+}
+
 func TestTrustedDeviceOnlineStateFollowsMQTTSession(t *testing.T) {
 	deviceID := uuid.NewString()
 	devices := &memoryDeviceRepo{devices: map[string]*domain.TrustedMobileDevice{
 		deviceID: {DeviceID: deviceID},
 	}}
-	svc := NewService(&memoryIdentityRepo{}, devices, &memoryKeyStore{}, &testBroker{}, &memoryPairingSettings{settings: &domain.AppSettings{}}, requireLogger(t))
+	svc := NewService(&memoryIdentityRepo{}, devices, &memoryKeyStore{}, &testBroker{}, nil, &memoryPairingSettings{settings: &domain.AppSettings{}}, requireLogger(t))
 
 	svc.setDeviceConnection(deviceID, true)
 	trusted, err := svc.ListTrustedDevices(context.Background())
@@ -225,4 +283,19 @@ func TestTrustedDeviceOnlineStateFollowsMQTTSession(t *testing.T) {
 	trusted, err = svc.ListTrustedDevices(context.Background())
 	require.NoError(t, err)
 	require.False(t, trusted[0].Online)
+}
+
+func TestRevokeDeviceDisconnectsItsActiveSyncSession(t *testing.T) {
+	deviceID := uuid.NewString()
+	devices := &memoryDeviceRepo{devices: map[string]*domain.TrustedMobileDevice{
+		deviceID: {DeviceID: deviceID},
+	}}
+	broker := &testBroker{}
+	svc := NewService(&memoryIdentityRepo{}, devices, &memoryKeyStore{}, broker, nil, &memoryPairingSettings{settings: &domain.AppSettings{}}, requireLogger(t))
+	svc.setDeviceConnection(deviceID, true)
+
+	require.NoError(t, svc.RevokeDevice(context.Background(), deviceID))
+	require.NotContains(t, devices.devices, deviceID)
+	require.Equal(t, []string{deviceID}, broker.disconnected)
+	require.False(t, svc.online[deviceID])
 }

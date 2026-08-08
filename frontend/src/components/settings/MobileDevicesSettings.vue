@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Events } from '@wailsio/runtime'
-import { LoaderCircle, MoreHorizontal, RefreshCw, ShieldCheck, Smartphone, Trash2, Wifi } from '@lucide/vue'
+import { LoaderCircle, MoreHorizontal, Radio, RefreshCw, ShieldCheck, Smartphone, Trash2, Wifi, X } from '@lucide/vue'
 import QRCodeStyling from 'qr-code-styling'
 import { Badge } from '@airmedy/ui'
 import * as MobilePairingService from '../../../bindings/airmedy/internal/infra/wails/mobilepairingservice'
@@ -14,7 +14,7 @@ import NetworkAddressList, { type NetworkAddressEntry } from './NetworkAddressLi
 const { t } = useI18n()
 
 interface LocalAddress { ip: string; iface: string; kind: string }
-interface PairingStatus { running: boolean; port: number; device_id: string; desktop_name: string; public_key: string; error: string; addresses: LocalAddress[] }
+interface PairingStatus { running: boolean; port: number; device_id: string; desktop_name: string; public_key: string; error: string; addresses: LocalAddress[]; broadcasting: boolean; broadcasting_until: string }
 interface TrustedDevice { device_id: string; display_name: string; platform: string; fingerprint: string; paired_at: string; last_seen_at: string; online: boolean }
 
 const status = ref<PairingStatus | null>(null)
@@ -22,12 +22,17 @@ const devices = ref<TrustedDevice[]>([])
 const selectedIP = ref('')
 const loading = ref(false)
 const revoking = ref('')
+const broadcastingAction = ref(false)
+const broadcastSecondsRemaining = ref(0)
 const qrContainer = ref<HTMLElement | null>(null)
 let qr: QRCodeStyling | null = null
 let offTrustedDevicesChanged: (() => void) | null = null
+let offBroadcastChanged: (() => void) | null = null
+let broadcastTimer: ReturnType<typeof setInterval> | null = null
 const deviceContextMenu = useContextMenu()
 
 const usableAddresses = computed(() => status.value?.addresses ?? [])
+const isBroadcasting = computed(() => !!status.value?.broadcasting)
 const networkEntries = computed<NetworkAddressEntry[]>(() => usableAddresses.value.map(address => ({ ...address, value: address.ip, display: address.ip })))
 const pairingURL = computed(() => {
   if (!status.value?.running || !selectedIP.value) return ''
@@ -56,6 +61,53 @@ async function revoke(deviceID: string) {
   try { await MobilePairingService.RevokeDevice(deviceID); await load() }
   catch (error) { console.error('Failed to revoke mobile device:', error) }
   finally { revoking.value = '' }
+}
+
+function updateBroadcastCountdown() {
+  const deadline = status.value?.broadcasting_until ? new Date(status.value.broadcasting_until).getTime() : 0
+  broadcastSecondsRemaining.value = Math.max(0, Math.ceil((deadline - Date.now()) / 1000))
+  if (broadcastSecondsRemaining.value === 0 && status.value?.broadcasting) void load()
+}
+
+function stopBroadcastTimer() {
+  if (broadcastTimer) clearInterval(broadcastTimer)
+  broadcastTimer = null
+}
+
+function syncBroadcastTimer() {
+  stopBroadcastTimer()
+  if (!isBroadcasting.value) {
+    broadcastSecondsRemaining.value = 0
+    return
+  }
+  updateBroadcastCountdown()
+  broadcastTimer = setInterval(updateBroadcastCountdown, 250)
+}
+
+async function startBroadcast() {
+  if (broadcastingAction.value) return
+  broadcastingAction.value = true
+  try {
+    await MobilePairingService.StartBroadcast()
+    await load()
+  } catch (error) {
+    console.error('Failed to start mobile pairing broadcast:', error)
+  } finally {
+    broadcastingAction.value = false
+  }
+}
+
+async function stopBroadcast() {
+  if (broadcastingAction.value) return
+  broadcastingAction.value = true
+  try {
+    await MobilePairingService.StopBroadcast()
+    await load()
+  } catch (error) {
+    console.error('Failed to stop mobile pairing broadcast:', error)
+  } finally {
+    broadcastingAction.value = false
+  }
 }
 
 function openDeviceMenu(event: MouseEvent | KeyboardEvent, device: TrustedDevice) {
@@ -104,14 +156,20 @@ watch([pairingURL, qrContainer], ([url, container]) => {
   } else qr.update({ data: url })
 }, { immediate: true })
 
+watch(isBroadcasting, syncBroadcastTimer, { immediate: true })
+
 onMounted(() => {
   void load()
   offTrustedDevicesChanged = Events.On('pairing:trusted-devices-changed', load)
+  offBroadcastChanged = Events.On('pairing:broadcast-changed', load)
 })
 
 onUnmounted(() => {
   offTrustedDevicesChanged?.()
   offTrustedDevicesChanged = null
+  offBroadcastChanged?.()
+  offBroadcastChanged = null
+  stopBroadcastTimer()
 })
 </script>
 
@@ -126,6 +184,27 @@ onUnmounted(() => {
       <div v-if="pairingURL" class="flex flex-col items-center gap-2 p-5">
         <div class="mb-2 w-full"><p class="text-sm font-semibold">{{ t('settings.mobile_pairing.scan_title') }}</p></div>
         <div ref="qrContainer" class="overflow-hidden rounded-2xl" />
+      </div>
+    </SettingSection>
+
+    <SettingSection v-if="status?.running" :icon="Radio" :label="t('common.mobile_pairing_broadcast.title')">
+      <div class="flex items-center justify-between gap-4 p-5">
+        <div class="min-w-0">
+          <p class="text-xs text-dim">{{ isBroadcasting ? t('common.mobile_pairing_broadcast.broadcasting_desc', { seconds: broadcastSecondsRemaining }) : t('common.mobile_pairing_broadcast.description') }}</p>
+          <p data-testid="broadcast-status" class="mt-2 flex h-4 items-center gap-2 text-xs text-foreground opacity-70" :class="{ invisible: !isBroadcasting }"><span class="size-2 animate-pulse rounded-full bg-primary" />{{ t('common.mobile_pairing_broadcast.broadcasting') }}</p>
+        </div>
+        <button
+          data-testid="broadcast-button"
+          class="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-all hover:scale-[1.02] disabled:opacity-50"
+          :class="isBroadcasting ? 'text-subdued hover:bg-foreground/[0.04]' : 'bg-primary text-primary-foreground'"
+          :disabled="broadcastingAction"
+          @click="isBroadcasting ? stopBroadcast() : startBroadcast()"
+        >
+          <LoaderCircle v-if="broadcastingAction" class="size-4 animate-spin" />
+          <X v-else-if="isBroadcasting" class="size-4" />
+          <Radio v-else class="size-4" />
+          <span class="ml-1.5">{{ t(isBroadcasting ? 'common.mobile_pairing_broadcast.stop' : 'common.mobile_pairing_broadcast.start') }}</span>
+        </button>
       </div>
     </SettingSection>
 
@@ -144,7 +223,7 @@ onUnmounted(() => {
         >
           <div class="flex size-9 items-center justify-center rounded-full bg-foreground/[0.06]"><Smartphone class="size-4 text-dim" /></div>
           <div class="min-w-0 flex-1 flex flex-col gap-y-1">
-            <div class="flex items-center gap-2"><p class="truncate text-sm font-medium text-foreground opacity-80">{{ device.display_name }}</p><Badge data-testid="device-status-badge" class="gap-1" :color="device.online ? 'var(--primary)' : 'var(--text-muted)'"><span class="size-1 rounded-full bg-current" />{{ t(device.online ? 'settings.mobile_pairing.online' : 'settings.mobile_pairing.offline') }}</Badge></div>
+            <div class="flex items-center gap-2"><p class="truncate text-sm font-medium text-foreground opacity-80">{{ device.display_name }}</p><Badge data-testid="device-status-badge" class="gap-1" :color="device.online ? 'var(--status-online)' : 'var(--text-muted)'"><span class="size-1 rounded-full bg-current" />{{ t(device.online ? 'settings.mobile_pairing.online' : 'settings.mobile_pairing.offline') }}</Badge></div>
             <p class="mt-0.5 text-xs text-dim">{{ platformLabel(device.platform) }} · {{ device.fingerprint }}</p>
           </div>
           <button

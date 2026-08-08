@@ -22,10 +22,11 @@ const maxPairingPayload = 16 * 1024
 // PairingBroker embeds a deliberately narrow MQTT broker. It exposes only the
 // v1 pairing request and response topics; player control is not transportable here.
 type PairingBroker struct {
-	logger *slog.Logger
-	mu     sync.RWMutex
-	server *mqtt.Server
-	port   int
+	logger    *slog.Logger
+	mu        sync.RWMutex
+	server    *mqtt.Server
+	port      int
+	desktopID string
 }
 
 func NewPairingBroker(logger *slog.Logger) *PairingBroker { return &PairingBroker{logger: logger} }
@@ -76,6 +77,7 @@ func (b *PairingBroker) Start(_ context.Context, desktopID string, preferredPort
 	}
 	b.server = server
 	b.port = port
+	b.desktopID = desktopID
 	b.logger.Info("mobile pairing MQTT broker started", "port", port)
 	return port, nil
 }
@@ -89,7 +91,26 @@ func (b *PairingBroker) Stop(_ context.Context) error {
 	err := b.server.Close()
 	b.server = nil
 	b.port = 0
+	b.desktopID = ""
 	return err
+}
+
+// Disconnect forcibly closes the live sync session for a revoked mobile device.
+func (b *PairingBroker) Disconnect(_ context.Context, deviceID string) error {
+	b.mu.RLock()
+	server, desktopID := b.server, b.desktopID
+	b.mu.RUnlock()
+	if server == nil || desktopID == "" {
+		return nil
+	}
+	client, ok := server.Clients.Get("airmedy-sync-" + desktopID + "-" + deviceID)
+	if !ok {
+		return nil
+	}
+	if err := server.DisconnectClient(client, packets.ErrNotAuthorized); err != nil {
+		return fmt.Errorf("disconnect mobile sync session: %w", err)
+	}
+	return nil
 }
 
 func (b *PairingBroker) Publish(_ context.Context, topic string, payload []byte) error {

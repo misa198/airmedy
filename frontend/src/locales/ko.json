@@ -1,5 +1,6 @@
 {
   "common": {
+    "mobile_pairing_broadcast": { "title": "Broadcast to pair", "description": "Make this desktop available for 30 seconds.", "broadcasting_desc": "Broadcasting for {seconds} seconds.", "broadcasting": "Broadcasting", "start": "Broadcast", "stop": "Stop" },
     "play": "재생",
     "shuffle": "셔플",
     "home": "홈",

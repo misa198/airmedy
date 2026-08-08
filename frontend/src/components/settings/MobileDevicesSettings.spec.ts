@@ -2,17 +2,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
 
-const { getStatus, getTrustedDevices, on, revokeDevice } = vi.hoisted(() => ({
+const { getStatus, getTrustedDevices, on, revokeDevice, startBroadcast, stopBroadcast } = vi.hoisted(() => ({
   getStatus: vi.fn(),
   getTrustedDevices: vi.fn(),
-  on: vi.fn(() => vi.fn()),
+  on: vi.fn((_event: string, _listener: () => void) => vi.fn()),
   revokeDevice: vi.fn(),
+  startBroadcast: vi.fn(),
+  stopBroadcast: vi.fn(),
 }))
 
 vi.mock('../../../bindings/airmedy/internal/infra/wails/mobilepairingservice', () => ({
   GetStatus: getStatus,
   GetTrustedDevices: getTrustedDevices,
   RevokeDevice: revokeDevice,
+  StartBroadcast: startBroadcast,
+  StopBroadcast: stopBroadcast,
 }))
 vi.mock('@wailsio/runtime', () => ({ Events: { On: on } }))
 
@@ -41,6 +45,10 @@ function mountSettings() {
             offline: 'Offline',
           },
         },
+        common: {
+          delete: 'Delete',
+          mobile_pairing_broadcast: { title: 'Broadcast to pair', description: 'Make this desktop available for 30 seconds.', broadcasting_desc: 'Broadcasting for {seconds} seconds.', broadcasting: 'Broadcasting', start: 'Broadcast', stop: 'Stop' },
+        },
       },
     },
   })
@@ -57,10 +65,36 @@ function mountSettings() {
 
 describe('MobileDevicesSettings', () => {
   beforeEach(() => {
-    getStatus.mockResolvedValue({ running: false, addresses: [] })
+    getStatus.mockResolvedValue({ running: false, addresses: [], broadcasting: false, broadcasting_until: '' })
     getTrustedDevices.mockReset()
     revokeDevice.mockReset()
+    startBroadcast.mockReset()
+    stopBroadcast.mockReset()
     on.mockClear()
+  })
+
+  it('starts and stops the short-lived mDNS broadcast from its status button', async () => {
+    getStatus.mockResolvedValue({ running: true, addresses: [], broadcasting: false, broadcasting_until: '' })
+    const wrapper = mountSettings()
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="broadcast-button"]').text()).toContain('Broadcast')
+    await wrapper.find('[data-testid="broadcast-button"]').trigger('click')
+    expect(startBroadcast).toHaveBeenCalledOnce()
+
+    getStatus.mockResolvedValue({ running: true, addresses: [], broadcasting: true, broadcasting_until: new Date(Date.now() + 30_000).toISOString() })
+    await wrapper.vm.$nextTick()
+    const broadcastChanged = on.mock.calls.find(([event]) => event === 'pairing:broadcast-changed')
+    expect(broadcastChanged).toBeDefined()
+    await broadcastChanged![1]()
+    await flushPromises()
+    expect(wrapper.find('[data-testid="broadcast-status"]').text()).toContain('Broadcasting')
+
+    getStatus.mockResolvedValue({ running: true, addresses: [], broadcasting: false, broadcasting_until: '' })
+    await wrapper.find('[data-testid="broadcast-button"]').trigger('click')
+    expect(stopBroadcast).toHaveBeenCalledOnce()
+    await flushPromises()
+    wrapper.unmount()
   })
 
   it('shows the MQTT online state for every trusted device row', async () => {
@@ -74,7 +108,7 @@ describe('MobileDevicesSettings', () => {
     expect(wrapper.text()).toContain('Old phone')
     expect(wrapper.text()).toContain('Offline')
     const badges = wrapper.findAll('[data-testid="device-status-badge"]')
-    expect(badges[0].attributes('style')).toContain('--badge-color: var(--primary)')
+    expect(badges[0].attributes('style')).toContain('--badge-color: var(--status-online)')
     expect(badges[1].attributes('style')).toContain('--badge-color: var(--text-muted)')
     expect(on).toHaveBeenCalledWith('pairing:trusted-devices-changed', expect.any(Function))
   })

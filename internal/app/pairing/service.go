@@ -21,18 +21,21 @@ import (
 )
 
 const (
-	pendingTTL = 2 * time.Minute
-	seenTTL    = 10 * time.Minute
+	pendingTTL   = 2 * time.Minute
+	seenTTL      = 10 * time.Minute
+	broadcastTTL = 30 * time.Second
 )
 
 // Status is safe to expose through the Wails adapter; it contains no private material.
 type Status struct {
-	Running     bool   `json:"running"`
-	Port        int    `json:"port"`
-	DeviceID    string `json:"device_id"`
-	DesktopName string `json:"desktop_name"`
-	PublicKey   string `json:"public_key"`
-	Error       string `json:"error"`
+	Running        bool      `json:"running"`
+	Port           int       `json:"port"`
+	DeviceID       string    `json:"device_id"`
+	DesktopName    string    `json:"desktop_name"`
+	PublicKey      string    `json:"public_key"`
+	Error          string    `json:"error"`
+	Broadcasting   bool      `json:"broadcasting"`
+	BroadcastUntil time.Time `json:"broadcasting_until"`
 }
 
 // PendingRequest is emitted only after a complete, verified request from an untrusted key.
@@ -54,6 +57,7 @@ type Service struct {
 	devices      domain.TrustedMobileDeviceRepository
 	keys         domain.PairingKeyStore
 	broker       domain.PairingBroker
+	advertiser   domain.PairingAdvertiser
 	settings     pairingSettings
 	logger       *slog.Logger
 	now          func() time.Time
@@ -69,6 +73,10 @@ type Service struct {
 	deviceConnectionListeners []func()
 	online                    map[string]bool
 	cancel                    context.CancelFunc
+	broadcastStop             func()
+	broadcastUntil            time.Time
+	broadcastTimer            *time.Timer
+	broadcastListeners        []func()
 }
 
 type pairingSettings interface {
@@ -76,8 +84,8 @@ type pairingSettings interface {
 	SaveSettings(context.Context, *domain.AppSettings) error
 }
 
-func NewService(identityRepo domain.PairingIdentityRepository, devices domain.TrustedMobileDeviceRepository, keys domain.PairingKeyStore, broker domain.PairingBroker, settings pairingSettings, logger *slog.Logger) *Service {
-	return &Service{identityRepo: identityRepo, devices: devices, keys: keys, broker: broker, settings: settings, logger: logger, now: time.Now, pending: make(map[string]pendingRequest), seen: make(map[string]time.Time), online: make(map[string]bool)}
+func NewService(identityRepo domain.PairingIdentityRepository, devices domain.TrustedMobileDeviceRepository, keys domain.PairingKeyStore, broker domain.PairingBroker, advertiser domain.PairingAdvertiser, settings pairingSettings, logger *slog.Logger) *Service {
+	return &Service{identityRepo: identityRepo, devices: devices, keys: keys, broker: broker, advertiser: advertiser, settings: settings, logger: logger, now: time.Now, pending: make(map[string]pendingRequest), seen: make(map[string]time.Time), online: make(map[string]bool)}
 }
 
 func (s *Service) OnStart(ctx context.Context) error {
@@ -91,6 +99,7 @@ func (s *Service) OnStart(ctx context.Context) error {
 }
 
 func (s *Service) OnStop(ctx context.Context) error {
+	s.StopBroadcast()
 	s.mu.Lock()
 	if s.cancel != nil {
 		s.cancel()
@@ -98,6 +107,69 @@ func (s *Service) OnStop(ctx context.Context) error {
 	}
 	s.mu.Unlock()
 	return s.broker.Stop(ctx)
+}
+
+// StartBroadcast advertises the pairing endpoint over mDNS for at most 30 seconds.
+func (s *Service) StartBroadcast(ctx context.Context) error {
+	if !s.broker.Running() {
+		if err := s.Retry(ctx); err != nil {
+			return fmt.Errorf("start pairing broker for broadcast: %w", err)
+		}
+	}
+	s.mu.Lock()
+	identity, port := s.identity, s.port
+	s.mu.Unlock()
+	if identity == nil || port == 0 {
+		return fmt.Errorf("pairing endpoint is unavailable")
+	}
+	if s.advertiser == nil {
+		return fmt.Errorf("pairing broadcast is unavailable")
+	}
+	// A second press begins a fresh 30-second window; unregister first so the
+	// mDNS implementation never has two records with the same service name.
+	s.StopBroadcast()
+
+	stop, err := s.advertiser.Advertise(ctx, identity.DeviceID, port)
+	if err != nil {
+		return fmt.Errorf("advertise pairing endpoint: %w", err)
+	}
+
+	s.mu.Lock()
+	s.broadcastStop = stop
+	s.broadcastUntil = s.now().Add(broadcastTTL)
+	s.broadcastTimer = time.AfterFunc(broadcastTTL, s.StopBroadcast)
+	listeners := append([]func(){}, s.broadcastListeners...)
+	s.mu.Unlock()
+	for _, listener := range listeners {
+		listener()
+	}
+	return nil
+}
+
+// StopBroadcast immediately removes the pairing discovery record.
+func (s *Service) StopBroadcast() {
+	s.mu.Lock()
+	changed := s.broadcastStop != nil
+	s.stopBroadcastLocked()
+	listeners := append([]func(){}, s.broadcastListeners...)
+	s.mu.Unlock()
+	if changed {
+		for _, listener := range listeners {
+			listener()
+		}
+	}
+}
+
+func (s *Service) stopBroadcastLocked() {
+	if s.broadcastTimer != nil {
+		s.broadcastTimer.Stop()
+		s.broadcastTimer = nil
+	}
+	if s.broadcastStop != nil {
+		s.broadcastStop()
+		s.broadcastStop = nil
+	}
+	s.broadcastUntil = time.Time{}
 }
 
 func (s *Service) Retry(ctx context.Context) error {
@@ -189,7 +261,29 @@ func (s *Service) AddDeviceConnectionListener(listener func()) {
 	s.deviceConnectionListeners = append(s.deviceConnectionListeners, listener)
 }
 
+func (s *Service) AddBroadcastListener(listener func()) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.broadcastListeners = append(s.broadcastListeners, listener)
+}
+
 func (s *Service) setDeviceConnection(deviceID string, connected bool) {
+	if connected {
+		trusted, err := s.devices.GetByDeviceID(context.Background(), deviceID)
+		if err != nil || trusted == nil {
+			if err != nil {
+				s.logger.Warn("failed to verify connected mobile device", "device_id", deviceID, "error", err)
+			}
+			// A revoked mobile's Sync ViewModel retries automatically. Close any
+			// attempted reconnect before it becomes an Online trusted device.
+			go func() {
+				if err := s.broker.Disconnect(context.Background(), deviceID); err != nil {
+					s.logger.Warn("failed to disconnect untrusted mobile device", "device_id", deviceID, "error", err)
+				}
+			}()
+			return
+		}
+	}
 	s.mu.Lock()
 	if s.online[deviceID] == connected {
 		s.mu.Unlock()
@@ -206,7 +300,7 @@ func (s *Service) setDeviceConnection(deviceID string, connected bool) {
 func (s *Service) GetStatus() Status {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	status := Status{Running: s.broker.Running(), Port: s.port, DesktopName: desktopDisplayName(), Error: s.lastError}
+	status := Status{Running: s.broker.Running(), Port: s.port, DesktopName: desktopDisplayName(), Error: s.lastError, Broadcasting: s.broadcastStop != nil, BroadcastUntil: s.broadcastUntil}
 	if s.identity != nil {
 		status.DeviceID = s.identity.DeviceID
 		status.PublicKey = base64.RawURLEncoding.EncodeToString(s.identity.PublicKey)
@@ -246,7 +340,22 @@ func (s *Service) RevokeDevice(ctx context.Context, deviceID string) error {
 	if _, err := uuid.Parse(deviceID); err != nil {
 		return fmt.Errorf("invalid paired device ID")
 	}
-	return s.devices.Delete(ctx, deviceID)
+	if err := s.devices.Delete(ctx, deviceID); err != nil {
+		return err
+	}
+	// Revocation is authoritative even if the broker is already stopping. Remove
+	// the local Online state immediately, then force-close any live MQTT session.
+	s.mu.Lock()
+	delete(s.online, deviceID)
+	listeners := append([]func(){}, s.deviceConnectionListeners...)
+	s.mu.Unlock()
+	if err := s.broker.Disconnect(ctx, deviceID); err != nil {
+		s.logger.Warn("failed to disconnect revoked mobile device", "device_id", deviceID, "error", err)
+	}
+	for _, listener := range listeners {
+		listener()
+	}
+	return nil
 }
 
 func (s *Service) Respond(ctx context.Context, requestID string, accepted bool) error {

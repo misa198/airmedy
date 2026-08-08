@@ -56,6 +56,14 @@ this page and `RemoteServerSettings.vue`, so address cards, selection, copy stat
 interface icons, labels, and tooltips remain identical. The protocol itself is
 documented in [mobile pairing](../pairing/README.md).
 
+The same panel has a short-lived **Broadcast to pair** action. While mDNS is
+active it displays a pulsing status and backend-derived 30-second countdown, can
+stop early, refreshes on `pairing:broadcast-changed`, and clears its interval and
+Wails event listener on unmount.
+
+Trusted mobile-device status uses the semantic `--status-online` token for the
+Online badge (green in every theme); Offline continues to use `--text-muted`.
+
 ### Cached Route Data Refresh
 
 `MainLayout` and entity explorer routes use `KeepAlive` to preserve UI state.

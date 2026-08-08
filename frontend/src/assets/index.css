@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @config "../../tailwind.config.js";
 
+@theme {
+  --color-status-online: var(--status-online);
+}
+
 /* Enable CSS custom property transitions in WebKit/Safari (used by Wails on macOS) */
 @property --dynamic-primary {
   syntax: "<color>";
@@ -34,6 +38,7 @@
     --text-muted: #52525b;
     --text-inverse: #ffffff;
     --accent-favorite: #ef4444;
+    --status-online: #15803d;
 
     --bg-zebra: rgba(0, 0, 0, 0.02);
     --scrollbar-thumb: rgba(0, 0, 0, 0.2);
@@ -56,6 +61,7 @@
     --text-main: #ffffff;
     --text-muted: #a1a1aa;
     --text-inverse: #000000;
+    --status-online: #4ade80;
     --primary-foreground: #ffffff;
     --primary-100: color-mix(in srgb, var(--primary) 22%, #0f0f11);
     --primary-200: color-mix(in srgb, var(--primary) 34%, #0f0f11);

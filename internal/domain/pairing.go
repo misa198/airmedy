@@ -50,6 +50,14 @@ type PairingBroker interface {
 	// Start binds preferredPort when it is non-zero; zero selects an ephemeral port.
 	Start(ctx context.Context, desktopID string, preferredPort int, onRequest func([]byte), onDeviceConnection func(deviceID string, connected bool)) (port int, err error)
 	Stop(ctx context.Context) error
+	// Disconnect removes an active trusted-device sync session, if present.
+	Disconnect(ctx context.Context, deviceID string) error
 	Publish(ctx context.Context, topic string, payload []byte) error
 	Running() bool
+}
+
+// PairingAdvertiser publishes a short-lived LAN discovery record for the
+// desktop pairing broker. The returned stop function must be safe to call once.
+type PairingAdvertiser interface {
+	Advertise(ctx context.Context, deviceID string, port int) (stop func(), err error)
 }

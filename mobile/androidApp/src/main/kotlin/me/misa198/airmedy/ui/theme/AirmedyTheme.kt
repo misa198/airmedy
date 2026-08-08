@@ -20,6 +20,7 @@ data class AirmedyColors(
     val textMain: Color,
     val textMuted: Color,
     val primary: Color,
+    val onPrimary: Color,
     val success: Color,
     val navigationActive: Color,
 )
@@ -34,6 +35,7 @@ private val LightColors = AirmedyColors(
     textMain = Color(0xFF0A0A0A),
     textMuted = Color(0xFF52525B),
     primary = Color(0xFFE11D48),
+    onPrimary = Color.White,
     success = Color(0xFF16A34A),
     navigationActive = Color.Black.copy(alpha = 0.08f),
 )
@@ -48,6 +50,7 @@ private val DarkColors = AirmedyColors(
     textMain = Color.White,
     textMuted = Color(0xFFA1A1AA),
     primary = Color(0xFFE11D48),
+    onPrimary = Color.White,
     success = Color(0xFF4ADE80),
     navigationActive = Color.Black.copy(alpha = 0.40f),
 )
@@ -68,6 +71,7 @@ fun AirmedyTheme(
     val colorScheme = if (darkTheme) {
         darkColorScheme(
             primary = colors.primary,
+            onPrimary = colors.onPrimary,
             background = colors.background,
             surface = colors.glass,
             onBackground = colors.textMain,
@@ -76,6 +80,7 @@ fun AirmedyTheme(
     } else {
         lightColorScheme(
             primary = colors.primary,
+            onPrimary = colors.onPrimary,
             background = colors.background,
             surface = colors.glass,
             onBackground = colors.textMain,
