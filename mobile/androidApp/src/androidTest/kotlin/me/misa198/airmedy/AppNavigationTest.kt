@@ -46,7 +46,7 @@ class AppNavigationTest {
         composeTestRule.onNodeWithContentDescription(libraryLabel).performClick()
 
         composeTestRule.onNodeWithContentDescription(libraryLabel).assertIsSelected()
-        composeTestRule.onNodeWithText(string(R.string.placeholder_library)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(string(R.string.library_empty_title)).assertIsDisplayed()
         assertEquals(AppIntent.SelectDestination(AppDestination.Library), harness.intents.last())
     }
 

@@ -30,6 +30,7 @@ import me.misa198.airmedy.ui.navigation.AppDestinationContent
 import me.misa198.airmedy.ui.navigation.FloatingNavigationBar
 import me.misa198.airmedy.ui.navigation.FloatingNavigationBottomMargin
 import me.misa198.airmedy.ui.navigation.FloatingNavigationHeight
+import me.misa198.airmedy.ui.navigation.depth
 import me.misa198.airmedy.ui.navigation.titleRes
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 
@@ -58,6 +59,8 @@ fun App(
         val destinationChanged = previousDestination != uiState.selectedDestination
         val animateHeaderChanges = !destinationChanged
         val currentPage = uiState.currentPage
+        var previousPage by remember { mutableStateOf(currentPage) }
+        val isForwardHeaderTransition = currentPage.depth >= previousPage.depth
         val navigationBottomPadding = FloatingNavigationHeight + FloatingNavigationBottomMargin +
             WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
         val pageTitle = stringResource(currentPage.titleRes(uiState.selectedDestination))
@@ -75,6 +78,7 @@ fun App(
         SideEffect {
             previousDestination = uiState.selectedDestination
             previousHeaderWasBlurred = isContentScrolled
+            previousPage = currentPage
         }
         Box(modifier = Modifier.fillMaxSize()) {
             AppDestinationContent(
@@ -103,6 +107,7 @@ fun App(
                 hasActions = showSyncAddAction,
                 animateChanges = animateHeaderChanges,
                 titleStackKey = "${uiState.selectedDestination.name}:${currentPage.name}",
+                isForward = isForwardHeaderTransition,
             ) {
                 AirmedyGlassIconButton(
                     hazeState = hazeState,

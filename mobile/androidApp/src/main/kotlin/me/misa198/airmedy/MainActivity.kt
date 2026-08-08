@@ -1,6 +1,9 @@
 package me.misa198.airmedy
 
 import android.os.Bundle
+import android.os.Build
+import android.Manifest
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.content.Intent
 import android.net.Uri
@@ -24,6 +27,8 @@ import me.misa198.airmedy.pairing.HiveMqSyncSession
 import me.misa198.airmedy.pairing.MobilePairingUseCase
 import me.misa198.airmedy.pairing.PairingPreferences
 import me.misa198.airmedy.pairing.AndroidTrustedDesktopDiscovery
+import me.misa198.airmedy.sync.AndroidSyncRuntime
+import me.misa198.airmedy.sync.LibrarySyncService
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels {
@@ -41,12 +46,21 @@ class MainActivity : ComponentActivity() {
             ),
             mqttSession = HiveMqSyncSession(),
             discovery = AndroidTrustedDesktopDiscovery(applicationContext),
+            onSyncRequest = { payload, endpoint, session -> AndroidSyncRuntime.start(applicationContext, payload, endpoint, session) },
+            onBeforeUnpair = {
+                LibrarySyncService.cancel(applicationContext)
+                AndroidSyncRuntime.clearAll()
+            },
         )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        AndroidSyncRuntime.initialize(applicationContext)
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), NotificationPermissionRequest)
+        }
 
         setContent {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -88,6 +102,8 @@ class MainActivity : ComponentActivity() {
             )
         }
     }
+
+    private companion object { const val NotificationPermissionRequest = 51 }
 
     private fun isDarkTheme(themeMode: ThemeMode): Boolean = when (themeMode) {
         ThemeMode.System -> {

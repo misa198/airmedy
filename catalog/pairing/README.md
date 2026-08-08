@@ -131,11 +131,15 @@ connected until it receives a response. A reconnect after no response creates a 
 request ID; clients must not reuse expired or rejected IDs.
 
 After an approved pairing, Android retains the verified QR host and port and keeps
-a separate MQTT client session open for the lifetime of its Sync ViewModel. Its
+a separate MQTT client session open for the lifetime of its Sync ViewModel. During
+an active library transfer, the Android `dataSync` foreground service takes over
+the MQTT connection so it can continue in the background and publish receipts.
+Its
 client ID is `airmedy-sync-<desktop-id>-<mobile-id>`, enabling desktop to mark the
 matching trusted device Online or Offline from broker session events; it retries
 after a disconnect. This session has no publish/subscribe command topics yet;
-future sync messages must use a separately versioned, authenticated topic namespace.
+library sync uses the separately versioned, authenticated topic namespace defined
+in the [sync catalog](../sync/README.md).
 
 ## Handshake messages
 
@@ -403,3 +407,8 @@ sequenceDiagram
     Note over M: Mobile loses connection — retries fail because session is no longer trusted
 ```
 
+## Library sync
+
+Pairing only establishes the trusted Ed25519 relationship and the long-lived
+MQTT session. Library transfer is specified separately in
+[`catalog/sync/README.md`](../sync/README.md).

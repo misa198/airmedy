@@ -24,14 +24,22 @@ import me.misa198.airmedy.pairing.PairedDesktop
 import me.misa198.airmedy.pairing.SyncSession
 import me.misa198.airmedy.pairing.TransportResult
 import me.misa198.airmedy.pairing.TrustedDesktopDiscovery
+import me.misa198.airmedy.sync.AndroidSyncRuntime
 import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.junit.Assert.assertEquals
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SyncViewModelTest {
+    @Before
+    fun resetSyncRuntime() = AndroidSyncRuntime.idle()
+
     @After
-    fun tearDown() = Dispatchers.resetMain()
+    fun tearDown() {
+        AndroidSyncRuntime.idle()
+        Dispatchers.resetMain()
+    }
 
     @Test
     fun discoversOnlyWhileTheVisibleSyncScreenIsOfflineAndConnectsMatchingEndpoint() = runTest {
@@ -97,6 +105,41 @@ class SyncViewModelTest {
         viewModel.onSyncScreenHidden()
     }
 
+    @Test
+    fun doesNotReplaceTheForegroundSyncServiceMqttSessionWhenAppOpens() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val session = FakeSyncSession()
+        SyncViewModel(
+            useCase(FakeBindings(PairedDesktop(DesktopId, "Studio Mac", ByteArray(32), "192.168.1.20", 1883))),
+            session,
+            FakeDiscovery(),
+            isForegroundSyncRunning = { true },
+        )
+        advanceUntilIdle()
+
+        assertEquals(emptyList<FakeSyncSession.Connect>(), session.connects)
+    }
+
+    @Test
+    fun handsTheReceivingMqttSessionToTheSyncServiceStarter() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val session = FakeSyncSession()
+        val endpoint = PairingEndpoint("192.168.1.20", 1883)
+        var received: Triple<String, PairingEndpoint, SyncSession>? = null
+        SyncViewModel(
+            useCase(FakeBindings(PairedDesktop(DesktopId, "Studio Mac", ByteArray(32)))),
+            session,
+            FakeDiscovery(),
+            onSyncRequest = { payload, route, mqtt -> received = Triple(payload, route, mqtt) },
+        )
+        advanceUntilIdle()
+        session.setEndpoint(endpoint)
+        session.emitRequest("request")
+        advanceUntilIdle()
+
+        assertEquals(Triple("request", endpoint, session), received)
+    }
+
     private fun useCase(bindings: FakeBindings) = MobilePairingUseCase(
         identityProvider = FakeIdentity,
         bindingStore = bindings,
@@ -129,13 +172,20 @@ class SyncViewModelTest {
     private class FakeSyncSession(connected: Boolean = false) : SyncSession {
         private val state = MutableStateFlow(connected)
         override val isConnected: StateFlow<Boolean> = state.asStateFlow()
+        private val endpoint = MutableStateFlow<PairingEndpoint?>(null)
+        override val connectedEndpoint: StateFlow<PairingEndpoint?> = endpoint.asStateFlow()
+        private val requests = MutableSharedFlow<String>()
+        override val syncRequests: Flow<String> = requests
         data class Connect(val endpoint: PairingEndpoint, val reconnect: Boolean)
         val connects = mutableListOf<Connect>()
         var stopReconnectCalls = 0
         override fun connect(desktop: PairedDesktop, endpoint: PairingEndpoint, mobileId: String, reconnect: Boolean) { connects += Connect(endpoint, reconnect) }
         override fun stopReconnecting() { stopReconnectCalls++ }
+        override suspend fun publish(topic: String, payload: String) = Unit
         override fun disconnect() = Unit
         fun setConnected(connected: Boolean) { state.value = connected }
+        fun setEndpoint(value: PairingEndpoint?) { endpoint.value = value }
+        suspend fun emitRequest(value: String) { requests.emit(value) }
     }
 
     private object FakeIdentity : PairingIdentityProvider {

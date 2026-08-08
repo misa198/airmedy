@@ -110,7 +110,8 @@ func (b *testBroker) Publish(_ context.Context, _ string, payload []byte) error 
 	b.published = append(b.published, payload)
 	return nil
 }
-func (b *testBroker) Running() bool { return b.handler != nil }
+func (b *testBroker) Subscribe(_ context.Context, _ string, _ func([]byte)) error { return nil }
+func (b *testBroker) Running() bool                                               { return b.handler != nil }
 
 type testAdvertiser struct {
 	calls []struct {

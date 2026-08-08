@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { Events } from '@wailsio/runtime'
 import { LoaderCircle, MoreHorizontal, Radio, RefreshCw, ShieldCheck, Smartphone, Trash2, Wifi, X } from '@lucide/vue'
 import QRCodeStyling from 'qr-code-styling'
@@ -12,6 +13,7 @@ import SettingSection from './SettingSection.vue'
 import NetworkAddressList, { type NetworkAddressEntry } from './NetworkAddressList.vue'
 
 const { t } = useI18n()
+const router = useRouter()
 
 interface LocalAddress { ip: string; iface: string; kind: string }
 interface PairingStatus { running: boolean; port: number; device_id: string; desktop_name: string; public_key: string; error: string; addresses: LocalAddress[]; broadcasting: boolean; broadcasting_until: string }
@@ -127,6 +129,11 @@ function openDeviceMenu(event: MouseEvent | KeyboardEvent, device: TrustedDevice
   }])
 }
 
+function openSync(device: TrustedDevice) {
+  if (!device.online) return
+  void router?.push(`/settings/mobile-devices/${device.device_id}/sync`)
+}
+
 function platformLabel(platform: string) {
   switch (platform.toLowerCase()) {
     case 'android': return 'Android'
@@ -214,12 +221,14 @@ onUnmounted(() => {
         <div
           v-for="device in devices"
           :key="device.device_id"
-          class="trusted-device-row flex cursor-pointer items-center gap-3 p-5"
-          role="button"
-          tabindex="0"
+          class="trusted-device-row flex items-center gap-3 p-5"
+          :class="device.online ? 'cursor-pointer' : 'cursor-not-allowed'"
+          :role="device.online ? 'button' : undefined"
+          :tabindex="device.online ? 0 : undefined"
+          @click="openSync(device)"
           @contextmenu="openDeviceMenu($event, device)"
-          @keydown.enter="openDeviceMenu($event, device)"
-          @keydown.space.prevent="openDeviceMenu($event, device)"
+          @keydown.enter="openSync(device)"
+          @keydown.space.prevent="openSync(device)"
         >
           <div class="flex size-9 items-center justify-center rounded-full bg-foreground/[0.06]"><Smartphone class="size-4 text-dim" /></div>
           <div class="min-w-0 flex-1 flex flex-col gap-y-1">

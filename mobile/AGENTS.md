@@ -106,6 +106,10 @@ intent using native Android Compose.
 - Add a test with each feature or fix: common business rules in `sharedLogic`
   common tests, Android adapter/ViewModel behaviour in Android host tests, and
   Compose UI behaviour in Android UI tests when UI is introduced.
+- Long-running library downloads use an Android `dataSync` foreground service,
+  with a user-visible progress notification and cancellation. The service owns
+  MQTT only while a transfer is active; do not introduce an always-on background
+  connection without an explicit product requirement.
 
 ## Workflow and verification
 

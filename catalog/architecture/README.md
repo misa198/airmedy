@@ -17,11 +17,11 @@ flowchart TB
     FE -.->|"Wails Bindings (auto-gen TS)<br/>Wails Events (Go → frontend push)"| WAILS
 
     subgraph WAILS["infra/wails — Adapter Layer (thin wrappers)"]
-        Adapters["PlayerService · LibraryService · AnalyticsService · SearchService · PlaylistService<br/>LyricsService · EQService · SettingsService · UpdaterService · WindowService<br/>LastfmService · RemoteServerService · GreetService"]
+        Adapters["PlayerService · LibraryService · AnalyticsService · SearchService · PlaylistService<br/>LyricsService · EQService · SettingsService · UpdaterService · WindowService<br/>LastfmService · RemoteServerService · MobileLibrarySyncService · GreetService"]
     end
 
     subgraph APP["internal/app — Application Services"]
-        AppSvc["library/ · player/ · playlist/ · moodradio/ · eq/ · lyrics/ · config/ · i18n/ · updater/<br/>lastfm/ · remoteserver/ · pairing/ · appsettings/ · singleinstance/<br/><i>orchestrates domain entities + ports; framework-agnostic</i>"]
+        AppSvc["library/ · player/ · playlist/ · moodradio/ · eq/ · lyrics/ · config/ · i18n/ · updater/<br/>lastfm/ · remoteserver/ · pairing/ · mobilesync/ · appsettings/ · singleinstance/<br/><i>orchestrates domain entities + ports; framework-agnostic</i>"]
     end
 
     subgraph DOMAIN["internal/domain — Core"]

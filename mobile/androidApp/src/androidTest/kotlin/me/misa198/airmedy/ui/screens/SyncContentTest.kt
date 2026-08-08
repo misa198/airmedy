@@ -7,6 +7,7 @@ import me.misa198.airmedy.SyncUiState
 import me.misa198.airmedy.pairing.PairedDesktop
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.ui.theme.AirmedyTheme
+import me.misa198.airmedy.sync.AndroidSyncState
 import org.junit.Rule
 import org.junit.Test
 
@@ -56,4 +57,42 @@ class SyncContentTest {
         composeTestRule.onNodeWithText("Online").assertIsDisplayed()
         composeTestRule.onNodeWithText("This phone can connect to one desktop at a time. Revoke it before pairing a new desktop.").assertIsDisplayed()
     }
+
+    @Test
+    fun syncRunningDisplaysProgressCardAndPercentage() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                SyncContent(
+                    syncUiState = SyncUiState(
+                        librarySync = AndroidSyncState.Running(
+                            planId = "plan-1",
+                            completed = 45,
+                            total = 100,
+                        ),
+                    ),
+                    onUnpair = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("45%").assertIsDisplayed()
+    }
+
+    @Test
+    fun syncCompletedDisplaysCompleteStatusAndFullPercentage() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                SyncContent(
+                    syncUiState = SyncUiState(
+                        librarySync = AndroidSyncState.Completed("plan-1"),
+                    ),
+                    onUnpair = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("100%").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Library sync complete").assertIsDisplayed()
+    }
 }
+

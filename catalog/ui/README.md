@@ -4,6 +4,17 @@
 
 The frontend is a Vue 3 SPA built with Vite 5, TailwindCSS v4, and Pinia. It uses a glass-morphism design system with dynamic artwork-based color theming. All views are lazy-loaded except Home. Track lists use virtual scrolling for performance.
 
+## Mobile library sync
+
+An Online device in Settings → Mobile Devices opens `/settings/mobile-devices/:deviceId/sync`.
+The desktop-only view reuses shared Radio, TabSwitcher, Input and Checkbox
+primitives and virtualizes its selector. It supports all-library sync or one
+active selected source tab: artists, albums, genres, or playlists. It owns and
+disposes subscriptions to pairing and `mobile-library-sync:updated` events. An
+active plan also polls its status once per second, so completed-asset progress
+remains current if a desktop runtime event is missed; polling stops when the
+plan finishes or the view unmounts.
+
 ## Tech Stack
 
 | Library              | Version | Purpose                              |

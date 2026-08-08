@@ -53,6 +53,9 @@ type PairingBroker interface {
 	// Disconnect removes an active trusted-device sync session, if present.
 	Disconnect(ctx context.Context, deviceID string) error
 	Publish(ctx context.Context, topic string, payload []byte) error
+	// Subscribe registers an internal desktop-side handler for a narrow topic.
+	// It is used by separately-versioned authenticated protocols after pairing.
+	Subscribe(ctx context.Context, topic string, handler func([]byte)) error
 	Running() bool
 }
 

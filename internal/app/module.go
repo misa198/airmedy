@@ -10,6 +10,7 @@ import (
 	"airmedy/internal/app/lastfm"
 	"airmedy/internal/app/library"
 	"airmedy/internal/app/lyrics"
+	"airmedy/internal/app/mobilesync"
 	"airmedy/internal/app/moodradio"
 	"airmedy/internal/app/normalization"
 	"airmedy/internal/app/pairing"
@@ -87,6 +88,7 @@ var Module = fx.Module("app",
 		wails.NewSettingsService,
 		wails.NewRemoteServerService,
 		wails.NewMobilePairingService,
+		wails.NewMobileLibrarySyncService,
 		wails.NewUpdaterService,
 		wails.NewMoodRadioService,
 		func(logger *slog.Logger) *updater.Service {
@@ -112,6 +114,7 @@ var Module = fx.Module("app",
 	appsettings.Module,
 	remoteserver.Module,
 	pairing.Module,
+	mobilesync.Module,
 	analysis.Module,
 	analytics.Module,
 	fx.Invoke(func(lc fx.Lifecycle, db *sqlite.DB, search domain.SearchService, lib *library.LibraryService, playerSvc *player.PlayerService, eqSvc *eq.EQService, lastfmSvc *lastfm.LastFmService, analysisSvc *analysis.AnalysisService, settingsSvc *appsettings.SettingsService, playlistSvc *playlist.PlaylistService) {

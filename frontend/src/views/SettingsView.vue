@@ -24,6 +24,7 @@ const props = defineProps<{
 
 // State
 const activeCategory = ref(props.category || 'general')
+const isMobileLibrarySync = computed(() => route.name === 'mobile-library-sync')
 
 watch(() => props.category, (newCat) => {
   activeCategory.value = newCat || 'general'
@@ -80,8 +81,9 @@ watch([activeCategory, () => route.query.section], scrollToRequestedSection, { i
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 overflow-y-auto custom-scrollbar">
-      <div class="max-w-3xl p-8 mx-auto">
+    <main class="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+      <router-view v-if="isMobileLibrarySync" />
+      <div v-else class="max-w-3xl p-8 mx-auto">
         <!-- General Settings -->
         <GeneralSettings
           v-if="activeCategory === 'general'"

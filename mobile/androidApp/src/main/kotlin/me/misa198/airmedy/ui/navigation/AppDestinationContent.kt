@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Surface
@@ -28,13 +29,14 @@ import me.misa198.airmedy.ui.components.StackPageLayout
 import me.misa198.airmedy.ui.screens.AboutContent
 import me.misa198.airmedy.ui.screens.AppearanceContent
 import me.misa198.airmedy.ui.screens.HomeSampleDetailContent
+import me.misa198.airmedy.ui.screens.LibraryContent
 import me.misa198.airmedy.ui.screens.PlaceholderContent
 import me.misa198.airmedy.ui.screens.SettingsContent
 import me.misa198.airmedy.ui.screens.SyncContent
 import me.misa198.airmedy.ui.screens.SyncScannerContent
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
-private data class PageKey(
+internal data class PageKey(
     val destination: AppDestination,
     val page: AppStackPage,
 )
@@ -79,88 +81,97 @@ internal fun AppDestinationContent(
                 modifier = modifier,
                 transitionSpec = {
                     if (targetState.destination != initialState.destination) {
-                        EnterTransition.None togetherWith ExitTransition.None
-                    } else if (targetState.isForwardFrom(initialState)) {
-                        (slideInHorizontally { it } + fadeIn()) togetherWith
-                            (slideOutHorizontally { -it / 4 } + fadeOut())
+                        fadeIn(animationSpec = tween(durationMillis = 200)) togetherWith ExitTransition.None
+                    } else if (isForwardTransition(targetState, initialState)) {
+                        (slideInHorizontally { it } togetherWith
+                            slideOutHorizontally { -it / 4 }).apply {
+                            targetContentZIndex = 1f
+                        }
                     } else {
-                        (slideInHorizontally { -it / 4 } + fadeIn()) togetherWith
-                            (slideOutHorizontally { it } + fadeOut())
+                        (slideInHorizontally { -it / 4 } togetherWith
+                            slideOutHorizontally { it }).apply {
+                            targetContentZIndex = -1f
+                        }
                     }
                 },
                 label = "stack-page-content",
             ) { currentPage ->
-                when (currentPage.destination) {
-                    AppDestination.Home -> if (currentPage.page == AppStackPage.Root) {
-                        HomeDemoContent(
+                Surface(
+                    color = colors.background,
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    when (currentPage.destination) {
+                        AppDestination.Home -> if (currentPage.page == AppStackPage.Root) {
+                            HomeDemoContent(
+                                modifier = Modifier.fillMaxSize(),
+                                listState = homeListState,
+                                contentPadding = contentPadding,
+                                onOpenSampleDetail = {
+                                    onIntent(AppIntent.OpenPage(AppStackPage.HomeSampleDetail))
+                                },
+                            )
+                        } else {
+                            HomeSampleDetailContent(modifier = Modifier.padding(contentPadding))
+                        }
+                        AppDestination.Settings -> when (currentPage.page) {
+                            AppStackPage.SettingsAppearance -> AppearanceContent(
+                                modifier = Modifier.padding(contentPadding),
+                                themeMode = themeMode,
+                                onThemeModeSelected = { themeMode ->
+                                    onIntent(AppIntent.SetThemeMode(themeMode))
+                                },
+                            )
+                            AppStackPage.SettingsSync -> SyncContent(
+                                syncUiState = syncUiState,
+                                onUnpair = onUnpair,
+                                onScreenVisible = onSyncScreenVisible,
+                                onScreenHidden = onSyncScreenHidden,
+                                modifier = Modifier.padding(contentPadding),
+                            )
+                            AppStackPage.SettingsSyncScanner -> SyncScannerContent(
+                                onQrScanned = onPairingQrScanned,
+                                modifier = Modifier.padding(contentPadding),
+                            )
+                            AppStackPage.SettingsAbout -> AboutContent(
+                                modifier = Modifier.padding(contentPadding),
+                                onOpenExternalUrl = { url ->
+                                    onIntent(AppIntent.OpenExternalUrl(url))
+                                },
+                            )
+                            else -> SettingsContent(
+                                modifier = Modifier.padding(contentPadding),
+                                onAppearanceSelected = {
+                                    onIntent(AppIntent.OpenPage(AppStackPage.SettingsAppearance))
+                                },
+                                onSyncSelected = {
+                                    onIntent(AppIntent.OpenPage(AppStackPage.SettingsSync))
+                                },
+                                onAboutSelected = {
+                                    onIntent(AppIntent.OpenPage(AppStackPage.SettingsAbout))
+                                },
+                            )
+                        }
+                        AppDestination.Library -> LibraryContent(
                             modifier = Modifier.fillMaxSize(),
-                            listState = homeListState,
                             contentPadding = contentPadding,
-                            onOpenSampleDetail = {
-                                onIntent(AppIntent.OpenPage(AppStackPage.HomeSampleDetail))
-                            },
                         )
-                    } else {
-                        HomeSampleDetailContent(modifier = Modifier.padding(contentPadding))
+                        else -> PlaceholderContent(destination = currentPage.destination, modifier = Modifier.padding(contentPadding))
                     }
-                    AppDestination.Settings -> when (currentPage.page) {
-                        AppStackPage.SettingsAppearance -> AppearanceContent(
-                            modifier = Modifier.padding(contentPadding),
-                            themeMode = themeMode,
-                            onThemeModeSelected = { themeMode ->
-                                onIntent(AppIntent.SetThemeMode(themeMode))
-                            },
-                        )
-                        AppStackPage.SettingsSync -> SyncContent(
-                            syncUiState = syncUiState,
-                            onUnpair = onUnpair,
-                            onScreenVisible = onSyncScreenVisible,
-                            onScreenHidden = onSyncScreenHidden,
-                            modifier = Modifier.padding(contentPadding),
-                        )
-                        AppStackPage.SettingsSyncScanner -> SyncScannerContent(
-                            onQrScanned = onPairingQrScanned,
-                            modifier = Modifier.padding(contentPadding),
-                        )
-                        AppStackPage.SettingsAbout -> AboutContent(
-                            modifier = Modifier.padding(contentPadding),
-                            onOpenExternalUrl = { url ->
-                                onIntent(AppIntent.OpenExternalUrl(url))
-                            },
-                        )
-                        else -> SettingsContent(
-                            modifier = Modifier.padding(contentPadding),
-                            onAppearanceSelected = {
-                                onIntent(AppIntent.OpenPage(AppStackPage.SettingsAppearance))
-                            },
-                            onSyncSelected = {
-                                onIntent(AppIntent.OpenPage(AppStackPage.SettingsSync))
-                            },
-                            onAboutSelected = {
-                                onIntent(AppIntent.OpenPage(AppStackPage.SettingsAbout))
-                            },
-                        )
-                    }
-                    else -> PlaceholderContent(
-                        destination = currentPage.destination,
-                        modifier = Modifier.padding(contentPadding),
-                    )
                 }
             }
         }
     }
 }
 
-private fun PageKey.isForwardFrom(previous: PageKey): Boolean = when {
-    page == AppStackPage.HomeSampleDetail -> true
-    page == AppStackPage.SettingsAppearance -> true
-    page == AppStackPage.SettingsSync -> true
-    page == AppStackPage.SettingsSyncScanner -> true
-    page == AppStackPage.SettingsAbout -> true
-    previous.page == AppStackPage.HomeSampleDetail -> false
-    previous.page == AppStackPage.SettingsAppearance -> false
-    previous.page == AppStackPage.SettingsSync -> false
-    previous.page == AppStackPage.SettingsSyncScanner -> false
-    previous.page == AppStackPage.SettingsAbout -> false
-    else -> false
-}
+internal val AppStackPage.depth: Int
+    get() = when (this) {
+        AppStackPage.Root -> 0
+        AppStackPage.HomeSampleDetail,
+        AppStackPage.SettingsAppearance,
+        AppStackPage.SettingsSync,
+        AppStackPage.SettingsAbout -> 1
+        AppStackPage.SettingsSyncScanner -> 2
+    }
+
+internal fun isForwardTransition(target: PageKey, initial: PageKey): Boolean =
+    target.page.depth > initial.page.depth

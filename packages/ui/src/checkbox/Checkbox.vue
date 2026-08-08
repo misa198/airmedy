@@ -18,6 +18,6 @@ defineEmits<{
         ? 'border-primary'
         : 'border-primary bg-primary'
       : 'border-foreground/20 hover:border-foreground/40'" @click="$emit('update:checked', !checked)">
-    <Check v-if="checked" class="w-2.5 h-2.5" :class="variant === 'outlined' ? 'text-primary' : 'text-white'" />
+    <Check v-if="checked" class="w-2.5 h-2.5" :class="variant === 'outlined' ? 'text-primary' : 'text-primary-foreground'" />
   </div>
 </template>

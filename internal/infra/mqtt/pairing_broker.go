@@ -126,6 +126,25 @@ func (b *PairingBroker) Publish(_ context.Context, topic string, payload []byte)
 	return nil
 }
 
+func (b *PairingBroker) Subscribe(_ context.Context, topic string, handler func([]byte)) error {
+	b.mu.RLock()
+	server := b.server
+	b.mu.RUnlock()
+	if server == nil {
+		return fmt.Errorf("pairing MQTT broker is not running")
+	}
+	if err := server.Subscribe(topic, 1, func(_ *mqtt.Client, _ packets.Subscription, pk packets.Packet) {
+		if len(pk.Payload) > maxPairingPayload || handler == nil {
+			return
+		}
+		payload := append([]byte(nil), pk.Payload...)
+		go handler(payload)
+	}); err != nil {
+		return fmt.Errorf("subscribe pairing MQTT topic: %w", err)
+	}
+	return nil
+}
+
 func (b *PairingBroker) Running() bool {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
@@ -158,7 +177,16 @@ func (h *pairingACLHook) OnDisconnect(client *mqtt.Client, _ error, _ bool) {
 	}
 }
 
-func (h *pairingACLHook) OnACLCheck(_ *mqtt.Client, topic string, write bool) bool {
+func (h *pairingACLHook) OnACLCheck(client *mqtt.Client, topic string, write bool) bool {
+	if client != nil {
+		if deviceID, ok := syncClientDeviceID(client.ID, h.desktopID); ok {
+			base := "airmedy/library-sync/v1/" + h.desktopID + "/" + deviceID + "/"
+			if write {
+				return topic == base+"receipt"
+			}
+			return topic == base+"request"
+		}
+	}
 	if write {
 		return topic == pairingRequestTopic(h.desktopID)
 	}

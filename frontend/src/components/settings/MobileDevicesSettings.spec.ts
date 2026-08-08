@@ -119,7 +119,7 @@ describe('MobileDevicesSettings', () => {
     const wrapper = mountSettings()
     await flushPromises()
 
-    await wrapper.find('.trusted-device-row').trigger('click')
+    await wrapper.find('.trusted-device-row').trigger('contextmenu')
     let menu = wrapper.findComponent({ name: 'ContextMenu' })
     expect(menu.props('visible')).toBe(true)
     expect(menu.props('items')).toEqual(expect.arrayContaining([

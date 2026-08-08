@@ -85,6 +85,7 @@ fun StackPageLayout(
     hasActions: Boolean = false,
     animateChanges: Boolean = true,
     titleStackKey: String = "",
+    isForward: Boolean = true,
     actions: @Composable RowScope.() -> Unit = {},
     content: @Composable (Modifier, PaddingValues) -> Unit,
 ) {
@@ -107,6 +108,7 @@ fun StackPageLayout(
                 hasActions = hasActions,
                 animateChanges = animateChanges,
                 titleStackKey = titleStackKey,
+                isForward = isForward,
                 actions = actions,
             )
         }
@@ -122,6 +124,7 @@ fun StackPageHeader(
     hasActions: Boolean = false,
     animateChanges: Boolean = true,
     titleStackKey: String = "",
+    isForward: Boolean = true,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     val colors = LocalAirmedyColors.current
@@ -171,9 +174,9 @@ fun StackPageHeader(
                     // interpolation, so a longer title never uses an old width.
                     if (animateChanges) {
                         (
-                            (slideInHorizontally { it / 3 } + fadeIn()) togetherWith
-                                (slideOutHorizontally { -it / 3 } + fadeOut())
-                            ).using(null)
+                            (slideInHorizontally(animationSpec = tween(200)) { width -> if (isForward) width / 3 else -width / 3 } + fadeIn(animationSpec = tween(200)))
+                                togetherWith ExitTransition.None
+                        ).using(null)
                     } else {
                         (EnterTransition.None togetherWith ExitTransition.None).using(null)
                     }
