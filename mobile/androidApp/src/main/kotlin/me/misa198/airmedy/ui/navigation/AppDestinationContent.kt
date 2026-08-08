@@ -9,6 +9,8 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Surface
@@ -89,7 +91,8 @@ internal fun AppDestinationContent(
                 modifier = modifier,
                 transitionSpec = {
                     if (targetState.destination != initialState.destination) {
-                        fadeIn(animationSpec = tween(durationMillis = 200)) togetherWith ExitTransition.None
+                        fadeIn(animationSpec = tween(durationMillis = 200)) togetherWith
+                            fadeOut(animationSpec = tween(durationMillis = 200))
                     } else if (isForwardTransition(targetState, initialState)) {
                         (slideInHorizontally { it } togetherWith
                             slideOutHorizontally { -it / 4 }).apply {
@@ -98,14 +101,16 @@ internal fun AppDestinationContent(
                     } else {
                         (slideInHorizontally { -it / 4 } togetherWith
                             slideOutHorizontally { it }).apply {
-                            targetContentZIndex = -1f
+                            targetContentZIndex = 0f
                         }
                     }
                 },
                 label = "stack-page-content",
             ) { currentPage ->
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(colors.background),
                 ) {
                     when (currentPage.destination) {
                         AppDestination.Home -> if (currentPage.page == AppStackPage.Root) {

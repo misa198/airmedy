@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,16 +28,17 @@ import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.launch
 import me.misa198.airmedy.ui.components.AirmedyGlassIconButton
 import me.misa198.airmedy.ui.components.StackPageHeader
+import me.misa198.airmedy.ui.components.TrackSortHeaderButton
 import me.misa198.airmedy.ui.navigation.AppDestinationContent
 import me.misa198.airmedy.ui.navigation.FloatingNavigationBar
 import me.misa198.airmedy.ui.navigation.FloatingNavigationBottomMargin
+import me.misa198.airmedy.ui.navigation.FloatingNavigationContentGap
 import me.misa198.airmedy.ui.navigation.FloatingNavigationHeight
 import me.misa198.airmedy.ui.navigation.depth
 import me.misa198.airmedy.ui.navigation.titleRes
-import me.misa198.airmedy.ui.theme.AirmedyTheme
-import me.misa198.airmedy.ui.components.TrackSortHeaderButton
 import me.misa198.airmedy.ui.screens.LibraryTracksUiState
 import me.misa198.airmedy.ui.screens.TrackSortOption
+import me.misa198.airmedy.ui.theme.AirmedyTheme
 
 internal fun shouldShowHeaderBlur(
     isContentScrolled: Boolean,
@@ -60,7 +63,7 @@ fun App(
         val hazeState = rememberHazeState()
         val homeListState = rememberLazyListState()
         val tracksListState = remember(tracksUiState.sortOption, tracksUiState.sortOrder) {
-            androidx.compose.foundation.lazy.LazyListState()
+            LazyListState()
         }
         val coroutineScope = rememberCoroutineScope()
         var previousDestination by remember { mutableStateOf(uiState.selectedDestination) }
@@ -70,19 +73,24 @@ fun App(
         val currentPage = uiState.currentPage
         var previousPage by remember { mutableStateOf(currentPage) }
         val isForwardHeaderTransition = currentPage.depth >= previousPage.depth
-        val navigationBottomPadding = FloatingNavigationHeight + FloatingNavigationBottomMargin +
+        val navigationBottomPadding = FloatingNavigationHeight + FloatingNavigationBottomMargin + FloatingNavigationContentGap +
             WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
         val pageTitle = stringResource(currentPage.titleRes(uiState.selectedDestination))
         val showBack = currentPage != AppStackPage.Root
         val showSyncAddAction = currentPage == AppStackPage.SettingsSync && syncUiState.desktop == null && !syncUiState.isPairing
         val showTracksSortAction = currentPage == AppStackPage.LibraryTracks
         BackHandler(enabled = showBack) { onIntent(AppIntent.NavigateBack) }
-        val isContentScrolled = when {
-            uiState.selectedDestination == AppDestination.Home && currentPage == AppStackPage.Root ->
-                homeListState.firstVisibleItemIndex > 0 || homeListState.firstVisibleItemScrollOffset > 0
-            currentPage == AppStackPage.LibraryTracks ->
-                tracksListState.firstVisibleItemIndex > 0 || tracksListState.firstVisibleItemScrollOffset > 0
-            else -> false
+
+        val isContentScrolled by remember(uiState.selectedDestination, currentPage, homeListState, tracksListState) {
+            derivedStateOf {
+                when {
+                    uiState.selectedDestination == AppDestination.Home && currentPage == AppStackPage.Root ->
+                        homeListState.firstVisibleItemIndex > 0 || homeListState.firstVisibleItemScrollOffset > 0
+                    currentPage == AppStackPage.LibraryTracks ->
+                        tracksListState.firstVisibleItemIndex > 0 || tracksListState.firstVisibleItemScrollOffset > 0
+                    else -> false
+                }
+            }
         }
         val showHeaderBlur = shouldShowHeaderBlur(
             isContentScrolled = isContentScrolled,

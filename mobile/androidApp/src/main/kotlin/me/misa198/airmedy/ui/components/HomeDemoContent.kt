@@ -83,6 +83,7 @@ fun HomeDemoContent(
                 containerStyle = ActionListContainerStyle.Plain,
                 onOpenSampleDetail = onOpenSampleDetail,
             )
+        }
         items(
             count = 4,
             key = { section -> "demo_section_$section" },

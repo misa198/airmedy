@@ -45,12 +45,14 @@ internal fun LibraryTracksContent(
             )
         }
     } else {
-        val listPadding = PaddingValues(
-            top = contentPadding.calculateTopPadding(),
-            bottom = contentPadding.calculateBottomPadding(),
-            start = 0.dp,
-            end = 0.dp,
-        )
+        val listPadding = remember(contentPadding) {
+            PaddingValues(
+                top = contentPadding.calculateTopPadding(),
+                bottom = contentPadding.calculateBottomPadding(),
+                start = 0.dp,
+                end = 0.dp,
+            )
+        }
 
         LazyColumn(
             modifier = modifier.fillMaxSize(),
@@ -62,12 +64,18 @@ internal fun LibraryTracksContent(
                 key = { track -> track.id.ifBlank { "${track.title}_${track.artists}" } },
                 contentType = { "track_row" },
             ) { track ->
+                val onItemClick = remember(onTrackClick, track) {
+                    if (onTrackClick != null) { { onTrackClick(track) } } else null
+                }
+                val onItemMoreClick = remember(onTrackMoreClick, track) {
+                    if (onTrackMoreClick != null) { { onTrackMoreClick(track) } } else null
+                }
                 TrackRow(
                     title = track.title,
                     artist = track.artists,
                     artworkPath = track.artworkPath,
-                    onClick = { onTrackClick?.invoke(track) },
-                    onMoreClick = { onTrackMoreClick?.invoke(track) },
+                    onClick = onItemClick,
+                    onMoreClick = onItemMoreClick,
                 )
             }
         }

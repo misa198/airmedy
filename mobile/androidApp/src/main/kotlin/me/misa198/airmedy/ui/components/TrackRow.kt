@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -41,9 +42,7 @@ import kotlinx.coroutines.withContext
 import me.misa198.airmedy.R
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
-import androidx.compose.ui.platform.LocalContext
-
-private val artworkCache = LruCache<String, ImageBitmap>(100)
+private val artworkCache = LruCache<String, ImageBitmap>(250)
 
 @Composable
 private fun rememberArtworkThumbnail(artworkPath: String?): ImageBitmap? {
@@ -100,12 +99,22 @@ fun TrackRow(
 ) {
     val colors = LocalAirmedyColors.current
     val bitmap = rememberArtworkThumbnail(artworkPath)
+    val clickModifier = remember(onClick) {
+        if (onClick != null) {
+            Modifier.clickable(onClick = onClick)
+        } else {
+            Modifier
+        }
+    }
+    val handleMoreClick = remember(onMoreClick) {
+        { onMoreClick?.invoke(); Unit }
+    }
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(horizontal = 24.dp, vertical = 6.dp),
+            .then(clickModifier)
+            .padding(top = 6.dp, end = 8.dp, bottom = 6.dp, start = 24.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // 1. Artwork
@@ -159,7 +168,7 @@ fun TrackRow(
 
         // 3. More options (...) button
         IconButton(
-            onClick = { onMoreClick?.invoke() },
+            onClick = handleMoreClick,
             modifier = Modifier.size(48.dp),
         ) {
             Icon(
