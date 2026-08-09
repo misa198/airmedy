@@ -70,13 +70,14 @@ describe the desktop Vue UI or future iOS UI.
   the system notification remains the background control surface and provides
   Cancel. Revoke stops the transfer before deleting all mirrored library data.
 - Library root page displays a plain `ActionList` (`ActionListContainerStyle.Plain`) with actions for Artists,
-  Albums, Tracks, Genres, and Composers. Tapping Artists opens `LibraryArtists`; tapping Tracks opens
-  `LibraryTracks` on the Library stack.
+  Albums, Tracks, Genres, and Composers. Tapping Artists opens `LibraryArtists`, Albums opens `LibraryAlbums`,
+  and Tracks opens `LibraryTracks` on the Library stack.
 - `LibraryArtists` derives its rows from the normalized artist objects in the active sync manifest, grouped by
   desktop artist ID so collaborations retain the desktop delimiter behavior. It renders a virtualized, divided
   list with circular artist artwork and a Name/Date added ASC/DESC header sort. Artist rows are presentational
   until artist details and an overflow menu are introduced.
 - `LibraryTracks` renders a virtualized `LazyColumn` of tracks with sorting controls (Name, Artist, Play count, Date added; ASC/DESC). Track titles use semibold typography, matching the mini player; a subtle theme-border divider runs between rows across the artwork and metadata area. Tapping a track delegates its ID to `LibraryTracksViewModel`, which starts playback from a queue built from the visible sorted order; the overflow action remains independent.
+- `LibraryAlbums` derives unique, valid albums from the active sync manifest, using album ID/title/artwork and album artists. When the current desktop manifest omits album artists, it falls back to the track artist; only albums with neither display Unknown artist. It renders a virtualized, divided list with Name/Artist/Date added ASC/DESC header sorting. Album rows show a rounded 48dp artwork thumbnail, title, artist, and a presentational overflow control.
 - Home content is supplied by `HomeDemoContent`. A forward action calls the
   callback provided by the app shell, which pushes `HomeSampleDetail`; Android
   Back pops that destination stack while the floating navigation remains shown.
@@ -181,6 +182,7 @@ describe the desktop Vue UI or future iOS UI.
 | `Card` | Standard 28dp, borderless, opaque themed card surface. It accepts slot content and optional padding; its title/description overload remains a tappable primary-action card. |
 | `HeroCard` | A non-interactive informational card with a 40dp decorative icon, bold `titleLarge` title, optional content directly below its title, and muted description. Sync uses this slot for its MQTT Online/Offline badge, aligned with the desktop name. |
 | `TrackRow` | Displays a track row with 48dp rounded artwork (or fallback glass icon), semibold 2-line title/artist text display, and a trailing `...` overflow button. |
+| `AlbumRow` | Displays a 48dp rounded album-artwork thumbnail (or themed album fallback), semibold title/album-artist text, and a trailing `...` overflow button. |
 | `ArtistRow` | Displays a 48dp circular artist artwork (or themed person fallback), semibold one-line artist name, and a trailing `...` overflow button. |
 | `LibraryVirtualList` | Shared `LazyColumn` treatment for Library entity pages: caller-provided stable keys and rows, themed inter-row dividers, content padding, and empty-state slot. |
 | `LibrarySortHeaderButton` | Shared animated header sort menu. The caller supplies typed, resource-backed sort options plus selected option/order callbacks. |
@@ -189,7 +191,7 @@ describe the desktop Vue UI or future iOS UI.
 | `StackPageLayout` | Places content below the status/header region and above the persistent navigation; screens must use its supplied padding. Its page-header title uses bold `headlineLarge` typography. |
 | `AirmedyGlassIconButton` | A 48dp circular blurred glass icon button with border and button semantics. Back and header actions use this shared primitive. |
 | `AirmedyIconButton` | A 48dp icon action with `Ghost` and `Glass` variants. Glass uses the liquid-glass surface and border; both variants support optional `tint`, `glassColor`, `circleSize`, and `iconSize` overrides and provide an accessible label. |
-| `AirmedyMarqueeText` | A single-line text treatment for constrained playback metadata. It clips overflow and eases linearly to its end before reversing direction. |
+| `AirmedyMarqueeText` | A single-line text treatment for constrained playback metadata. It start-aligns unbounded text, clips overflow, and uses pingpong keyframe animation with pauses at start/end matching desktop MarqueeText behavior. |
 | `AirmedyTrackSlider` | Shared custom-drawn slider for fullscreen-player seek and Android music-stream volume. It preserves a 48dp touch target while rendering a translucent gray glass track with a white current-value fill and no thumb or Material Slider terminal indicator. `trackHeight` lets the fullscreen seek bar render at 6dp while the volume bar keeps its 3dp default. Slider range semantics and touch/drag seeking remain available to accessibility services. The fullscreen volume row places muted low/high-volume icons at either end. |
 | `AirmedyPillButton` | A borderless 52dp minimum-height capsule action. `Primary` and `Destructive` use the primary background with the explicit white `onPrimary` token in both light and dark themes; `Secondary` uses the stronger `buttonSecondary` theme surface with normal foreground text. Its label supplies button semantics. |
 | `AirmedyDialog` | A 36dp-radius, two-action mobile dialog. Its text content has 20dp horizontal inset; the button area has a thinner 16dp horizontal/bottom inset. It supports `Horizontal` and `Vertical` action layouts; the left/top action always dismisses with `Secondary`. |

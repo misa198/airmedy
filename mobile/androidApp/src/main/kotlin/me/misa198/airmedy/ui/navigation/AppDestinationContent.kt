@@ -49,6 +49,9 @@ import me.misa198.airmedy.ui.screens.LibraryTracksUiState
 import me.misa198.airmedy.ui.screens.TrackSortOption
 import me.misa198.airmedy.ui.screens.LibraryArtistsContent
 import me.misa198.airmedy.ui.screens.LibraryArtistsUiState
+import me.misa198.airmedy.ui.screens.AlbumSortOption
+import me.misa198.airmedy.ui.screens.LibraryAlbumsContent
+import me.misa198.airmedy.ui.screens.LibraryAlbumsUiState
 
 internal data class PageKey(
     val destination: AppDestination,
@@ -82,13 +85,17 @@ internal fun AppDestinationContent(
     homeListState: LazyListState,
     tracksListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     artistsListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
+    albumsListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     onIntent: (AppIntent) -> Unit,
     syncUiState: SyncUiState,
     tracksUiState: LibraryTracksUiState = LibraryTracksUiState(),
     artistsUiState: LibraryArtistsUiState = LibraryArtistsUiState(),
+    albumsUiState: LibraryAlbumsUiState = LibraryAlbumsUiState(),
     onSortOptionSelected: (TrackSortOption) -> Unit = {},
     onToggleSortOrder: () -> Unit = {},
     onTrackClick: (String) -> Unit = {},
+    onAlbumSortOptionSelected: (AlbumSortOption) -> Unit = {},
+    onAlbumToggleSortOrder: () -> Unit = {},
     onPairingQrScanned: (String) -> Boolean,
     onUnpair: () -> Unit,
     onSyncScreenVisible: () -> Unit,
@@ -219,6 +226,12 @@ internal fun AppDestinationContent(
                                 contentPadding = contentPadding,
                                 modifier = Modifier.fillMaxSize(),
                             )
+                            AppStackPage.LibraryAlbums -> LibraryAlbumsContent(
+                                uiState = albumsUiState,
+                                listState = albumsListState,
+                                contentPadding = contentPadding,
+                                modifier = Modifier.fillMaxSize(),
+                            )
                             AppStackPage.LibraryTracks -> LibraryTracksContent(
                                 uiState = tracksUiState,
                                 onSortOptionSelected = onSortOptionSelected,
@@ -237,6 +250,9 @@ internal fun AppDestinationContent(
                                 onArtistsSelected = {
                                     onIntent(AppIntent.OpenPage(AppStackPage.LibraryArtists))
                                 },
+                                onAlbumsSelected = {
+                                    onIntent(AppIntent.OpenPage(AppStackPage.LibraryAlbums))
+                                },
                             )
                         }
                         else -> PlaceholderContent(destination = currentPage.destination, modifier = Modifier.padding(contentPadding))
@@ -252,6 +268,7 @@ internal val AppStackPage.depth: Int
         AppStackPage.Root -> 0
         AppStackPage.HomeSampleDetail,
         AppStackPage.LibraryArtists,
+        AppStackPage.LibraryAlbums,
         AppStackPage.LibraryTracks,
         AppStackPage.SettingsAppearance,
         AppStackPage.SettingsSync,

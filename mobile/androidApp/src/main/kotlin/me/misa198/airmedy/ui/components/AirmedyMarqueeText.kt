@@ -1,11 +1,11 @@
 package me.misa198.airmedy.ui.components
 
-import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
@@ -46,14 +47,32 @@ fun AirmedyMarqueeText(
             ).size.width
         }
         val travelDistancePx = (textWidthPx - availableWidthPx).coerceAtLeast(0)
-        val durationMs = (travelDistancePx / 0.04f).roundToInt().coerceIn(2_000, 10_000)
+        val targetOffset = if (travelDistancePx > 0) -travelDistancePx.toFloat() else 0f
+        val totalDurationMs = if (travelDistancePx > 0) {
+            ((travelDistancePx / 20f + 4f) * 1000f).roundToInt().coerceAtLeast(4_000)
+        } else {
+            4_000
+        }
+        val pauseStartMs = (totalDurationMs * 0.15f).roundToInt()
+        val moveEndMs = (totalDurationMs * 0.45f).roundToInt()
+        val pauseEndMs = (totalDurationMs * 0.55f).roundToInt()
+        val moveBackMs = (totalDurationMs * 0.85f).roundToInt()
+
         val transition = rememberInfiniteTransition(label = "airmedy-marquee")
         val translationX by transition.animateFloat(
             initialValue = 0f,
-            targetValue = -travelDistancePx.toFloat(),
+            targetValue = targetOffset,
             animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = durationMs, easing = LinearEasing),
-                repeatMode = RepeatMode.Reverse,
+                animation = keyframes {
+                    durationMillis = totalDurationMs
+                    0f at 0 using FastOutSlowInEasing
+                    0f at pauseStartMs using FastOutSlowInEasing
+                    targetOffset at moveEndMs using FastOutSlowInEasing
+                    targetOffset at pauseEndMs using FastOutSlowInEasing
+                    0f at moveBackMs using FastOutSlowInEasing
+                    0f at totalDurationMs
+                },
+                repeatMode = RepeatMode.Restart,
             ),
             label = "airmedy-marquee-translation",
         )
@@ -61,7 +80,7 @@ fun AirmedyMarqueeText(
         Text(
             text = text,
             modifier = Modifier
-                .wrapContentWidth(unbounded = true)
+                .wrapContentWidth(align = Alignment.Start, unbounded = true)
                 .graphicsLayer { this.translationX = translationX },
             color = color,
             style = style,

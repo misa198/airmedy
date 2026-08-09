@@ -73,6 +73,17 @@ class AppNavigationTest {
     }
 
     @Test
+    fun libraryAlbumsActionOpensTheAlbumList() {
+        val harness = AppHarness(AppUiState(selectedDestination = AppDestination.Library))
+        composeTestRule.setContent { harness.Render() }
+
+        composeTestRule.onNodeWithContentDescription(string(R.string.library_albums)).performClick()
+
+        composeTestRule.onNodeWithText(string(R.string.albums_empty_title)).assertIsDisplayed()
+        assertEquals(AppIntent.OpenPage(AppStackPage.LibraryAlbums), harness.intents.last())
+    }
+
+    @Test
     fun appearanceOpensAndThemeSelectionDispatchesIntents() {
         val harness = AppHarness(AppUiState(selectedDestination = AppDestination.Settings))
         composeTestRule.setContent { harness.Render() }

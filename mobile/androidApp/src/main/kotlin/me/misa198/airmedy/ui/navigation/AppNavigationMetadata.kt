@@ -10,6 +10,7 @@ import me.misa198.airmedy.ui.components.MaterialSymbols
 internal fun AppStackPage.titleRes(destination: AppDestination): Int = when (this) {
     AppStackPage.HomeSampleDetail -> R.string.home_sample_page_title
     AppStackPage.LibraryArtists -> R.string.library_artists
+    AppStackPage.LibraryAlbums -> R.string.library_albums
     AppStackPage.LibraryTracks -> R.string.library_tracks
     AppStackPage.SettingsAppearance -> R.string.appearance_title
     AppStackPage.SettingsSync -> R.string.sync_title
@@ -37,7 +38,7 @@ internal val AppDestination.placeholderRes: Int
 internal val AppDestination.symbol: String
     get() = when (this) {
         AppDestination.Home -> MaterialSymbols.Home
-        AppDestination.Library -> MaterialSymbols.Album
+        AppDestination.Library -> MaterialSymbols.GraphicEq
         AppDestination.Search -> MaterialSymbols.Search
         AppDestination.Settings -> MaterialSymbols.Settings
     }
