@@ -71,13 +71,14 @@ describe the desktop Vue UI or future iOS UI.
   Cancel. Revoke stops the transfer before deleting all mirrored library data.
 - Library root page displays a plain `ActionList` (`ActionListContainerStyle.Plain`) with actions for Artists,
   Albums, Tracks, Genres, and Composers. Tapping Artists opens `LibraryArtists`, Albums opens `LibraryAlbums`,
-  and Tracks opens `LibraryTracks` on the Library stack.
+  Tracks opens `LibraryTracks`, and Genres opens `LibraryGenres` on the Library stack.
 - `LibraryArtists` derives its rows from the normalized artist objects in the active sync manifest, grouped by
   desktop artist ID so collaborations retain the desktop delimiter behavior. It renders a virtualized, divided
   list with circular artist artwork and a Name/Date added ASC/DESC header sort. Artist rows are presentational
   until artist details and an overflow menu are introduced.
 - `LibraryTracks` renders a virtualized `LazyColumn` of tracks with sorting controls (Name, Artist, Play count, Date added; ASC/DESC). Track titles use semibold typography, matching the mini player; a subtle theme-border divider runs between rows across the artwork and metadata area. Tapping a track delegates its ID to `LibraryTracksViewModel`, which starts playback from a queue built from the visible sorted order; the overflow action remains independent.
 - `LibraryAlbums` derives unique, valid albums from the active sync manifest, using album ID/title/artwork and album artists. When the current desktop manifest omits album artists, it falls back to the track artist; only albums with neither display Unknown artist. It renders a virtualized, divided list with Name/Artist/Date added ASC/DESC header sorting. Album rows show a rounded 48dp artwork thumbnail, title, artist, and a presentational overflow control.
+- `LibraryGenres` derives unique genres from the active sync manifest. It renders a virtualized, divided list with Name/Date added ASC/DESC header sorting using `GenreRow` (48dp rounded glass icon box with label glyph, semibold title, overflow action).
 - Home content is supplied by `HomeDemoContent`. A forward action calls the
   callback provided by the app shell, which pushes `HomeSampleDetail`; Android
   Back pops that destination stack while the floating navigation remains shown.
@@ -184,6 +185,7 @@ describe the desktop Vue UI or future iOS UI.
 | `TrackRow` | Displays a track row with 48dp rounded artwork (or fallback glass icon), semibold 2-line title/artist text display, and a trailing `...` overflow button. |
 | `AlbumRow` | Displays a 48dp rounded album-artwork thumbnail (or themed album fallback), semibold title/album-artist text, and a trailing `...` overflow button. |
 | `ArtistRow` | Displays a 48dp circular artist artwork (or themed person fallback), semibold one-line artist name, and a trailing `...` overflow button. |
+| `GenreRow` | Displays a 48dp circular glass icon box with label glyph, semibold one-line genre name, and a trailing `...` overflow button. |
 | `LibraryVirtualList` | Shared `LazyColumn` treatment for Library entity pages: caller-provided stable keys and rows, themed inter-row dividers, content padding, and empty-state slot. |
 | `LibrarySortHeaderButton` | Shared animated header sort menu. The caller supplies typed, resource-backed sort options plus selected option/order callbacks. |
 | `ActionList` | Displays 56dp `ActionListItem` rows with optional leading Material Symbol, resource-backed label, optional trailing composable slot, and a chevron only for clickable rows without a supplied trailing slot. `FullWidth` and `InsetForLeadingIcon` divider styles are available. `Card` uses the shared `Card` surface; `Plain` has no enclosing surface. A row is clickable only when its item has `onClick`. |

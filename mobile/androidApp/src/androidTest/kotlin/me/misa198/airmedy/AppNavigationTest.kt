@@ -84,6 +84,17 @@ class AppNavigationTest {
     }
 
     @Test
+    fun libraryGenresActionOpensTheGenreList() {
+        val harness = AppHarness(AppUiState(selectedDestination = AppDestination.Library))
+        composeTestRule.setContent { harness.Render() }
+
+        composeTestRule.onNodeWithContentDescription(string(R.string.library_genres)).performClick()
+
+        composeTestRule.onNodeWithText(string(R.string.genres_empty_title)).assertIsDisplayed()
+        assertEquals(AppIntent.OpenPage(AppStackPage.LibraryGenres), harness.intents.last())
+    }
+
+    @Test
     fun appearanceOpensAndThemeSelectionDispatchesIntents() {
         val harness = AppHarness(AppUiState(selectedDestination = AppDestination.Settings))
         composeTestRule.setContent { harness.Render() }

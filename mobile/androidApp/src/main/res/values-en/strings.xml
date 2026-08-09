@@ -102,4 +102,7 @@
     <string name="album_unknown_artist">Unknown artist</string>
     <string name="albums_empty_title">No albums in library</string>
     <string name="albums_empty_description">Synced albums will appear here once mobile sync completes.</string>
+    <string name="genre_row_more_options">Genre options</string>
+    <string name="genres_empty_title">No genres in library</string>
+    <string name="genres_empty_description">Synced genres will appear here once mobile sync completes.</string>
 </resources>

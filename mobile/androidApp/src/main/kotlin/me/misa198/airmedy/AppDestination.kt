@@ -14,6 +14,7 @@ enum class AppStackPage {
     LibraryArtists,
     LibraryAlbums,
     LibraryTracks,
+    LibraryGenres,
     SettingsAppearance,
     SettingsSync,
     SettingsSyncScanner,
@@ -26,6 +27,7 @@ val AppStackPage.destination: AppDestination
         AppStackPage.LibraryArtists,
         AppStackPage.LibraryAlbums,
         AppStackPage.LibraryTracks,
+        AppStackPage.LibraryGenres,
         -> AppDestination.Library
         AppStackPage.SettingsAppearance,
         AppStackPage.SettingsSync,

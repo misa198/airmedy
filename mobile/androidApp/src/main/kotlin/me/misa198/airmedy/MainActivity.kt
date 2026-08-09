@@ -45,6 +45,7 @@ import me.misa198.airmedy.player.AndroidPlaybackRuntime
 import me.misa198.airmedy.ui.screens.LibraryTracksViewModel
 import me.misa198.airmedy.ui.screens.LibraryArtistsViewModel
 import me.misa198.airmedy.ui.screens.LibraryAlbumsViewModel
+import me.misa198.airmedy.ui.screens.LibraryGenresViewModel
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels {
@@ -78,6 +79,9 @@ class MainActivity : ComponentActivity() {
     private val albumsViewModel: LibraryAlbumsViewModel by viewModels {
         LibraryAlbumsViewModel.Factory(AndroidSyncRuntime.syncStore())
     }
+    private val genresViewModel: LibraryGenresViewModel by viewModels {
+        LibraryGenresViewModel.Factory(AndroidSyncRuntime.syncStore())
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -94,6 +98,7 @@ class MainActivity : ComponentActivity() {
             val tracksUiState by tracksViewModel.uiState.collectAsStateWithLifecycle()
             val artistsUiState by artistsViewModel.uiState.collectAsStateWithLifecycle()
             val albumsUiState by albumsViewModel.uiState.collectAsStateWithLifecycle()
+            val genresUiState by genresViewModel.uiState.collectAsStateWithLifecycle()
             val playbackController = AndroidPlaybackRuntime.controller()
             val playbackState by playbackController.state.collectAsStateWithLifecycle()
             var systemVolume by remember { mutableFloatStateOf(currentSystemMusicVolume()) }
@@ -145,6 +150,7 @@ class MainActivity : ComponentActivity() {
                 tracksUiState = tracksUiState,
                 artistsUiState = artistsUiState,
                 albumsUiState = albumsUiState,
+                genresUiState = genresUiState,
                 onIntent = viewModel::dispatch,
                 onSortOptionSelected = tracksViewModel::setSortOption,
                 onToggleSortOrder = tracksViewModel::toggleSortOrder,
@@ -153,6 +159,8 @@ class MainActivity : ComponentActivity() {
                 onArtistToggleSortOrder = artistsViewModel::toggleSortOrder,
                 onAlbumSortOptionSelected = albumsViewModel::setSortOption,
                 onAlbumToggleSortOrder = albumsViewModel::toggleSortOrder,
+                onGenreSortOptionSelected = genresViewModel::setSortOption,
+                onGenreToggleSortOrder = genresViewModel::toggleSortOrder,
                 onPairingQrScanned = { raw ->
                     if (syncViewModel.acceptsQr(raw)) {
                         syncViewModel.pair(raw)

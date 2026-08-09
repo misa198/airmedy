@@ -209,6 +209,12 @@ data class LibraryAlbum(
     val artworkPath: String? = null,
 )
 
+data class LibraryGenre(
+    val id: String,
+    val name: String,
+    val createdAt: String = "",
+)
+
 internal class AndroidLibrarySyncStore(
     private val database: SyncDatabase,
     private val filesDir: File,
@@ -244,6 +250,9 @@ internal class AndroidLibrarySyncStore(
         libraryAlbumsFrom(rows, artworkAssets.associate { asset ->
             asset.assetId.removePrefix("artwork:") to asset.relativePath
         })
+    }
+    val genres: Flow<List<LibraryGenre>> = dao.observeTracks().map { rows ->
+        libraryGenresFrom(rows)
     }
 
     override suspend fun prepare(request: LibrarySyncRequest, manifest: LibrarySyncManifest) {
@@ -421,6 +430,77 @@ internal fun libraryAlbumsFrom(
         } ?: candidate
     }
     return albums.values.toList()
+}
+
+internal fun libraryGenresFrom(
+    tracks: List<LibraryTrackRow>,
+): List<LibraryGenre> {
+    val genres = linkedMapOf<String, LibraryGenre>()
+    tracks.forEach { track ->
+        val root = runCatching { LibrarySyncProtocol.json.parseToJsonElement(track.rawJson) as? JsonObject }.getOrNull()
+            ?: return@forEach
+
+        fun addGenre(rawId: String?, rawName: String, createdAt: String) {
+            val name = rawName.trim()
+            if (name.isBlank()) return
+            val id = rawId?.trim()?.takeIf(String::isNotBlank) ?: name.lowercase()
+            val candidate = LibraryGenre(
+                id = id,
+                name = name,
+                createdAt = createdAt,
+            )
+            genres[id] = genres[id]?.let { existing ->
+                existing.copy(
+                    createdAt = listOf(existing.createdAt, candidate.createdAt)
+                        .filter(String::isNotBlank)
+                        .minOrNull()
+                        .orEmpty(),
+                )
+            } ?: candidate
+        }
+
+        fun parseElement(element: kotlinx.serialization.json.JsonElement?) {
+            when (element) {
+                is JsonArray -> {
+                    element.forEach { value ->
+                        when (value) {
+                            is JsonObject -> {
+                                val id = value.string("id")
+                                val name = value.string("name") ?: value.string("title") ?: ""
+                                val createdAt = value.string("created_at").orEmpty().ifBlank { track.createdAt }
+                                addGenre(id, name, createdAt)
+                            }
+                            is JsonPrimitive -> {
+                                val name = value.contentOrNull ?: ""
+                                addGenre(null, name, track.createdAt)
+                            }
+                            else -> {}
+                        }
+                    }
+                }
+                is JsonObject -> {
+                    val id = element.string("id")
+                    val name = element.string("name") ?: element.string("title") ?: ""
+                    val createdAt = element.string("created_at").orEmpty().ifBlank { track.createdAt }
+                    addGenre(id, name, createdAt)
+                }
+                is JsonPrimitive -> {
+                    val str = element.contentOrNull.orEmpty()
+                    str.split(',', ';', '/').forEach { part ->
+                        addGenre(null, part, track.createdAt)
+                    }
+                }
+                else -> {}
+            }
+        }
+
+        parseElement(root["genres"])
+        parseElement(root["genre"])
+        parseElement(root["raw_genre_names"])
+        parseElement(root["raw_genres"])
+        parseElement(root["genre_names"])
+    }
+    return genres.values.toList()
 }
 
 internal fun cachedAssetPath(filesDir: File, asset: SyncAssetEntity?): String? = asset
