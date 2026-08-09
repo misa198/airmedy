@@ -50,7 +50,7 @@ import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 @Composable
 fun TrackSortHeaderButton(
-    hazeState: HazeState,
+    hazeState: HazeState?,
     sortOption: TrackSortOption,
     sortOrder: SortOrder,
     onSortOptionSelected: (TrackSortOption) -> Unit,

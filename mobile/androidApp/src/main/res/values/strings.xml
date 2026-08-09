@@ -11,6 +11,7 @@
     <string name="placeholder_settings">Customize how Airmedy looks.</string>
     <string name="appearance_title">Appearance</string>
     <string name="appearance_theme_title">Theme</string>
+    <string name="appearance_reduce_transparency">Reduce transparency</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_sync">Sync</string>
     <string name="sync_title">Sync</string>

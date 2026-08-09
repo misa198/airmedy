@@ -29,7 +29,7 @@ internal fun PlaybackState.showsMiniPlayer(): Boolean = when (this) {
 internal fun NavigationChrome(
     selectedDestination: AppDestination,
     playbackState: PlaybackState,
-    hazeState: HazeState,
+    hazeState: HazeState?,
     compact: Boolean = false,
     onExpandClick: () -> Unit = {},
     onDestinationSelected: (AppDestination) -> Unit,

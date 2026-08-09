@@ -74,7 +74,8 @@ internal fun AppDestinationContent(
     destination: AppDestination,
     page: AppStackPage,
     themeMode: ThemeMode,
-    hazeState: HazeState,
+    reduceTransparency: Boolean,
+    hazeState: HazeState?,
     navigationBottomPadding: Dp,
     homeListState: LazyListState,
     tracksListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
@@ -112,7 +113,7 @@ internal fun AppDestinationContent(
         modifier = Modifier
             .fillMaxSize()
             .nestedScroll(scrollConnection)
-            .hazeSource(hazeState),
+            .then(if (hazeState == null) Modifier else Modifier.hazeSource(hazeState)),
     ) {
         StackPageLayout(
             title = stringResource(page.titleRes(destination)),
@@ -169,8 +170,12 @@ internal fun AppDestinationContent(
                             AppStackPage.SettingsAppearance -> AppearanceContent(
                                 modifier = Modifier.padding(contentPadding),
                                 themeMode = themeMode,
+                                reduceTransparency = reduceTransparency,
                                 onThemeModeSelected = { themeMode ->
                                     onIntent(AppIntent.SetThemeMode(themeMode))
+                                },
+                                onReduceTransparencyChanged = { enabled ->
+                                    onIntent(AppIntent.SetReduceTransparency(enabled))
                                 },
                             )
                             AppStackPage.SettingsSync -> SyncContent(

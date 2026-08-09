@@ -39,7 +39,10 @@ describe the desktop Vue UI or future iOS UI.
   GitHub and GPL-3.0 license rows delegate opening their URLs to the Android host.
 - Appearance contains vertically arranged sections, each in its own `Card`.
   Its Theme section uses `Selection`, the reusable iOS-style dropdown row, to
-  persist the System, Light, or Dark theme choice.
+  persist the System, Light, or Dark theme choice. The same card includes a
+  persisted Reduce transparency switch. It defaults off; when enabled it removes
+  every Haze source/effect from the app shell and renders header, navigation,
+  mini-player, and glass icon controls with opaque theme surfaces immediately.
 - Sync opens `SettingsSync` in the Settings stack. `SyncViewModel` owns pairing
   state from the shared pairing use case: no device shows the empty hero and a
   glass Add-device header action; a pending request shows an approval hero; a
@@ -68,7 +71,7 @@ describe the desktop Vue UI or future iOS UI.
   Cancel. Revoke stops the transfer before deleting all mirrored library data.
 - Library root page displays a plain `ActionList` (`ActionListContainerStyle.Plain`) with actions for Artists,
   Albums, Tracks, Genres, and Composers. Tapping Tracks opens `LibraryTracks` on the Library stack.
-- `LibraryTracks` renders a virtualized `LazyColumn` of tracks with sorting controls (Name, Artist, Play count, Date added; ASC/DESC). Tapping a track delegates its ID to `LibraryTracksViewModel`, which starts playback from a queue built from the visible sorted order; the overflow action remains independent.
+- `LibraryTracks` renders a virtualized `LazyColumn` of tracks with sorting controls (Name, Artist, Play count, Date added; ASC/DESC). Track titles use semibold typography, matching the mini player; a subtle theme-border divider runs between rows across the artwork and metadata area. Tapping a track delegates its ID to `LibraryTracksViewModel`, which starts playback from a queue built from the visible sorted order; the overflow action remains independent.
 - Home content is supplied by `HomeDemoContent`. A forward action calls the
   callback provided by the app shell, which pushes `HomeSampleDetail`; Android
   Back pops that destination stack while the floating navigation remains shown.
@@ -81,7 +84,7 @@ describe the desktop Vue UI or future iOS UI.
   same max width, border, blur, and safe-area placement. It appears for
   Preparing, Playing, and Paused playback, reserving matching page-bottom space;
   it is absent for Idle and Failed states. It presents 48dp square artwork with
-  a 10dp radius with an 8dp left inset (or the Lucide music fallback), marquee title/artist labels,
+  a 10dp radius with an 8dp left inset (or the Lucide music fallback), a semibold marquee title and artist label,
   and larger, sharp-cornered filled Lucide Previous, Play/Pause, and Next controls with
   visually overlapping 48dp touch targets. Preparing disables its play/pause control. Its
   title/artist area also accepts horizontal transport
@@ -146,7 +149,7 @@ describe the desktop Vue UI or future iOS UI.
 | --- | --- |
 | `Card` | Standard 28dp, borderless, opaque themed card surface. It accepts slot content and optional padding; its title/description overload remains a tappable primary-action card. |
 | `HeroCard` | A non-interactive informational card with a 40dp decorative icon, bold `titleLarge` title, optional content directly below its title, and muted description. Sync uses this slot for its MQTT Online/Offline badge, aligned with the desktop name. |
-| `TrackRow` | Displays a track row with 48dp rounded artwork (or fallback glass icon), 2-line title/artist text display, and a trailing `...` overflow button. |
+| `TrackRow` | Displays a track row with 48dp rounded artwork (or fallback glass icon), semibold 2-line title/artist text display, and a trailing `...` overflow button. |
 | `ActionList` | Displays 56dp `ActionListItem` rows with optional leading Lucide drawable, resource-backed label, optional trailing composable slot, and a chevron only for clickable rows without a supplied trailing slot. `FullWidth` and `InsetForLeadingIcon` divider styles are available. `Card` uses the shared `Card` surface; `Plain` has no enclosing surface. A row is clickable only when its item has `onClick`. |
 | `Selection` | Renders an iOS-style dropdown row and custom elevated menu with a 28dp radius for mutually exclusive `SelectionOption` values. Its selected value uses the standard row typography with the muted action colour; each menu option is at least 44dp tall. Only the right-side action slot opens and anchors the right-aligned menu; the opaque, rounded menu expands and collapses vertically while fading and scaling over 220ms. The caller owns selected state and receives the selected value through `onValueSelected`. |
 | `StackPageLayout` | Places content below the status/header region and above the persistent navigation; screens must use its supplied padding. Its page-header title uses bold `headlineLarge` typography. |

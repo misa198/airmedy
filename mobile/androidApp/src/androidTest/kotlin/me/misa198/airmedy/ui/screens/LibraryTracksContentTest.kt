@@ -1,7 +1,9 @@
 package me.misa198.airmedy.ui.screens
 
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import me.misa198.airmedy.settings.ThemeMode
@@ -54,6 +56,7 @@ class LibraryTracksContentTest {
 
         composeTestRule.onNodeWithText("Song A").assertExists()
         composeTestRule.onNodeWithText("Song B").assertExists()
+        composeTestRule.onAllNodesWithTag("track-row-divider").assertCountEquals(1)
     }
 
     @Test

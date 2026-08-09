@@ -12,6 +12,8 @@ sealed interface AppIntent {
 
     data class SetThemeMode(val themeMode: ThemeMode) : AppIntent
 
+    data class SetReduceTransparency(val enabled: Boolean) : AppIntent
+
     data class OpenExternalUrl(val url: String) : AppIntent
 }
 

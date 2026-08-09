@@ -71,6 +71,18 @@ class AppNavigationTest {
     }
 
     @Test
+    fun appearanceCanEnableReducedTransparency() {
+        val harness = AppHarness(AppUiState(selectedDestination = AppDestination.Settings))
+        composeTestRule.setContent { harness.Render() }
+
+        composeTestRule.onNodeWithContentDescription(string(R.string.settings_appearance)).performClick()
+        composeTestRule.onNodeWithContentDescription(string(R.string.appearance_reduce_transparency)).performClick()
+
+        assertEquals(AppIntent.SetReduceTransparency(true), harness.intents.last())
+        assertEquals(true, harness.state.reduceTransparency)
+    }
+
+    @Test
     fun aboutLinkDispatchesOneTimeExternalUrlIntent() {
         val harness = AppHarness(
             AppUiState(
@@ -225,5 +237,6 @@ private fun reduceAppState(state: AppUiState, intent: AppIntent): AppUiState = w
         }
     }
     is AppIntent.SetThemeMode -> state.copy(themeMode = intent.themeMode)
+    is AppIntent.SetReduceTransparency -> state.copy(reduceTransparency = intent.enabled)
     is AppIntent.OpenExternalUrl -> state
 }

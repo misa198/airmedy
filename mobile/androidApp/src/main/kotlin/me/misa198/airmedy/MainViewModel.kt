@@ -18,6 +18,7 @@ import me.misa198.airmedy.settings.ThemeModeStore
 data class AppUiState(
     val selectedDestination: AppDestination = AppDestination.Home,
     val themeMode: ThemeMode = ThemeMode.System,
+    val reduceTransparency: Boolean = false,
     val destinationStacks: Map<AppDestination, List<AppStackPage>> = rootDestinationStacks(),
 ) {
     fun stackFor(destination: AppDestination): List<AppStackPage> =
@@ -38,12 +39,14 @@ class MainViewModel(
 
     val uiState: StateFlow<AppUiState> = combine(
         themeModeStore.themeMode,
+        themeModeStore.reduceTransparency,
         selectedDestination,
         destinationStacks,
-    ) { themeMode, destination, pages ->
+    ) { themeMode, reduceTransparency, destination, pages ->
         AppUiState(
             selectedDestination = destination,
             themeMode = themeMode,
+            reduceTransparency = reduceTransparency,
             destinationStacks = pages,
         )
     }.stateIn(
@@ -58,6 +61,7 @@ class MainViewModel(
             is AppIntent.OpenPage -> openPage(intent.page)
             AppIntent.NavigateBack -> navigateBack()
             is AppIntent.SetThemeMode -> setThemeMode(intent.themeMode)
+            is AppIntent.SetReduceTransparency -> setReduceTransparency(intent.enabled)
             is AppIntent.OpenExternalUrl -> _effects.trySend(AppEffect.OpenExternalUrl(intent.url))
         }
     }
@@ -96,6 +100,12 @@ class MainViewModel(
     private fun setThemeMode(themeMode: ThemeMode) {
         viewModelScope.launch {
             themeModeStore.setThemeMode(themeMode)
+        }
+    }
+
+    private fun setReduceTransparency(enabled: Boolean) {
+        viewModelScope.launch {
+            themeModeStore.setReduceTransparency(enabled)
         }
     }
 

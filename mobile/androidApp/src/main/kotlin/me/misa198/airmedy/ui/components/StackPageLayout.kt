@@ -11,7 +11,6 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -55,11 +54,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.R as LucideR
-import dev.chrisbanes.haze.HazeInputScale
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.blur.HazeColorEffect
-import dev.chrisbanes.haze.blur.blurEffect
-import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.HazeInputScale
 import me.misa198.airmedy.R
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
@@ -79,7 +75,7 @@ private data class HeaderTitle(
 @Composable
 fun StackPageLayout(
     title: String,
-    hazeState: HazeState,
+    hazeState: HazeState?,
     contentBottomPadding: Dp,
     isContentScrolled: Boolean,
     onBackClick: (() -> Unit)? = null,
@@ -121,7 +117,7 @@ fun StackPageLayout(
 @Composable
 fun StackPageHeader(
     title: String,
-    hazeState: HazeState,
+    hazeState: HazeState?,
     isContentScrolled: Boolean,
     onBackClick: (() -> Unit)?,
     hasActions: Boolean = false,
@@ -153,7 +149,6 @@ fun StackPageHeader(
                     .fillMaxSize()
                     .clip(RectangleShape)
                     .liquidGlassBackground(hazeState, colors)
-                    .background(colors.glass)
                     .drawBehind {
                         val strokeWidth = 1.dp.toPx()
                         val y = size.height - strokeWidth / 2
@@ -258,7 +253,7 @@ private fun HeaderActionSlot(
 
 @Composable
 fun AirmedyBackButton(
-    hazeState: HazeState,
+    hazeState: HazeState?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -274,7 +269,7 @@ fun AirmedyBackButton(
 
 @Composable
 fun AirmedyGlassIconButton(
-    hazeState: HazeState,
+    hazeState: HazeState?,
     @DrawableRes iconRes: Int,
     label: String,
     onClick: () -> Unit,
@@ -285,14 +280,12 @@ fun AirmedyGlassIconButton(
         modifier = modifier
             .size(HeaderHeight)
             .clip(CircleShape)
-            .hazeEffect(hazeState) {
-                inputScale = HazeInputScale.Auto
-                blurEffect {
-                    blurRadius = 30.dp
-                    colorEffects = listOf(HazeColorEffect.tint(colors.glass))
-                }
-            }
-            .background(colors.glass)
+            .liquidGlassBackground(
+                hazeState = hazeState,
+                colors = colors,
+                hazeInputScale = HazeInputScale.Auto,
+                hazeBlurRadius = 30.dp,
+            )
             .border(1.dp, colors.borderGlass, CircleShape)
             .semantics { contentDescription = label }
             .clickable(

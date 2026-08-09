@@ -52,6 +52,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
@@ -81,7 +82,7 @@ private const val MetadataSwipeVelocityPxPerMs = 1.2f
 @Composable
 internal fun MiniPlayer(
     playbackState: PlaybackState,
-    hazeState: HazeState,
+    hazeState: HazeState?,
     compact: Boolean = false,
     onPreviousClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
@@ -317,7 +318,11 @@ internal fun MiniPlayer(
                 Column(
                     modifier = Modifier.offset { IntOffset(displayedMetadataDragOffset.roundToInt(), 0) },
                 ) {
-                    MarqueeText(item.title, colors.textMain, MaterialTheme.typography.bodyMedium)
+                    MarqueeText(
+                        item.title,
+                        colors.textMain,
+                        MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    )
                     MarqueeText(item.artist, colors.textMuted, MaterialTheme.typography.bodySmall)
                 }
             }

@@ -82,7 +82,7 @@ internal fun App(
     onMiniPlayerDismiss: () -> Unit = {},
 ) {
     AirmedyTheme(themeMode = uiState.themeMode) {
-        val hazeState = rememberHazeState()
+        val hazeState = if (uiState.reduceTransparency) null else rememberHazeState()
         val homeListState = rememberLazyListState()
         val tracksListState = remember(tracksUiState.sortOption, tracksUiState.sortOrder) {
             LazyListState()
@@ -157,6 +157,7 @@ internal fun App(
                 destination = uiState.selectedDestination,
                 page = currentPage,
                 themeMode = uiState.themeMode,
+                reduceTransparency = uiState.reduceTransparency,
                 hazeState = hazeState,
                 navigationBottomPadding = navigationBottomPadding,
                 homeListState = homeListState,

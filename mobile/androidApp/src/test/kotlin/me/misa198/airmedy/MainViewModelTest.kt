@@ -93,6 +93,19 @@ class MainViewModelTest {
     }
 
     @Test
+    fun `setting reduce transparency persists it and updates ui state`() = runTest {
+        val store = FakeThemeModeStore()
+        val viewModel = MainViewModel(store)
+        activateState(viewModel)
+
+        viewModel.dispatch(AppIntent.SetReduceTransparency(true))
+        advanceUntilIdle()
+
+        assertEquals(listOf(true), store.savedReduceTransparencyValues)
+        assertEquals(true, viewModel.uiState.value.reduceTransparency)
+    }
+
+    @Test
     fun `opening an external url emits one host effect`() = runTest {
         val viewModel = MainViewModel(FakeThemeModeStore())
         val expected = AppEffect.OpenExternalUrl("https://example.com")
@@ -112,11 +125,19 @@ class MainViewModelTest {
 
 private class FakeThemeModeStore(initialThemeMode: ThemeMode = ThemeMode.System) : ThemeModeStore {
     private val mutableThemeMode = MutableStateFlow(initialThemeMode)
+    private val mutableReduceTransparency = MutableStateFlow(false)
     override val themeMode: Flow<ThemeMode> = mutableThemeMode
+    override val reduceTransparency: Flow<Boolean> = mutableReduceTransparency
     val savedModes = mutableListOf<ThemeMode>()
+    val savedReduceTransparencyValues = mutableListOf<Boolean>()
 
     override suspend fun setThemeMode(themeMode: ThemeMode) {
         savedModes += themeMode
         mutableThemeMode.value = themeMode
+    }
+
+    override suspend fun setReduceTransparency(enabled: Boolean) {
+        savedReduceTransparencyValues += enabled
+        mutableReduceTransparency.value = enabled
     }
 }

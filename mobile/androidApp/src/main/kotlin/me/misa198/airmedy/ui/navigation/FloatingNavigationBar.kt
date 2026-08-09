@@ -71,7 +71,7 @@ private val PillGap = 4.dp
 @Composable
 internal fun FloatingNavigationBar(
     selectedDestination: AppDestination,
-    hazeState: HazeState,
+    hazeState: HazeState?,
     onDestinationSelected: (AppDestination) -> Unit,
     fullNavigationContentAlpha: Float = 1f,
     onCompactClick: () -> Unit = {},
