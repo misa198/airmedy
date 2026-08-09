@@ -59,6 +59,8 @@ import me.misa198.airmedy.ui.screens.AlbumSortOption
 import me.misa198.airmedy.ui.screens.LibraryAlbumsUiState
 import me.misa198.airmedy.ui.screens.LibraryGenresUiState
 import me.misa198.airmedy.ui.screens.GenreSortOption
+import me.misa198.airmedy.ui.screens.LibraryComposersUiState
+import me.misa198.airmedy.ui.screens.ComposerSortOption
 import me.misa198.airmedy.ui.screens.TrackSortOption
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import me.misa198.airmedy.player.PlaybackState
@@ -77,6 +79,7 @@ internal fun App(
     artistsUiState: LibraryArtistsUiState = LibraryArtistsUiState(),
     albumsUiState: LibraryAlbumsUiState = LibraryAlbumsUiState(),
     genresUiState: LibraryGenresUiState = LibraryGenresUiState(),
+    composersUiState: LibraryComposersUiState = LibraryComposersUiState(),
     onIntent: (AppIntent) -> Unit = {},
     onSortOptionSelected: (TrackSortOption) -> Unit = {},
     onToggleSortOrder: () -> Unit = {},
@@ -87,6 +90,8 @@ internal fun App(
     onAlbumToggleSortOrder: () -> Unit = {},
     onGenreSortOptionSelected: (GenreSortOption) -> Unit = {},
     onGenreToggleSortOrder: () -> Unit = {},
+    onComposerSortOptionSelected: (ComposerSortOption) -> Unit = {},
+    onComposerToggleSortOrder: () -> Unit = {},
     onPairingQrScanned: (String) -> Boolean = { false },
     onUnpair: () -> Unit = {},
     onSyncScreenVisible: () -> Unit = {},
@@ -115,6 +120,9 @@ internal fun App(
             LazyListState()
         }
         val genresListState = remember(genresUiState.sortOption, genresUiState.sortOrder) {
+            LazyListState()
+        }
+        val composersListState = remember(composersUiState.sortOption, composersUiState.sortOrder) {
             LazyListState()
         }
         val coroutineScope = rememberCoroutineScope()
@@ -165,10 +173,10 @@ internal fun App(
         val showSyncAddAction = currentPage == AppStackPage.SettingsSync && syncUiState.desktop == null && !syncUiState.isPairing
         val showLibrarySortAction = currentPage == AppStackPage.LibraryTracks ||
             currentPage == AppStackPage.LibraryArtists || currentPage == AppStackPage.LibraryAlbums ||
-            currentPage == AppStackPage.LibraryGenres
+            currentPage == AppStackPage.LibraryGenres || currentPage == AppStackPage.LibraryComposers
         BackHandler(enabled = showBack) { onIntent(AppIntent.NavigateBack) }
 
-        val isContentScrolled by remember(uiState.selectedDestination, currentPage, homeListState, tracksListState, artistsListState, albumsListState, genresListState) {
+        val isContentScrolled by remember(uiState.selectedDestination, currentPage, homeListState, tracksListState, artistsListState, albumsListState, genresListState, composersListState) {
             derivedStateOf {
                 when {
                     uiState.selectedDestination == AppDestination.Home && currentPage == AppStackPage.Root ->
@@ -181,6 +189,8 @@ internal fun App(
                         albumsListState.firstVisibleItemIndex > 0 || albumsListState.firstVisibleItemScrollOffset > 0
                     currentPage == AppStackPage.LibraryGenres ->
                         genresListState.firstVisibleItemIndex > 0 || genresListState.firstVisibleItemScrollOffset > 0
+                    currentPage == AppStackPage.LibraryComposers ->
+                        composersListState.firstVisibleItemIndex > 0 || composersListState.firstVisibleItemScrollOffset > 0
                     else -> false
                 }
             }
@@ -208,12 +218,14 @@ internal fun App(
                 artistsListState = artistsListState,
                 albumsListState = albumsListState,
                 genresListState = genresListState,
+                composersListState = composersListState,
                 onIntent = onIntent,
                 syncUiState = syncUiState,
                 tracksUiState = tracksUiState,
                 artistsUiState = artistsUiState,
                 albumsUiState = albumsUiState,
                 genresUiState = genresUiState,
+                composersUiState = composersUiState,
                 onSortOptionSelected = onSortOptionSelected,
                 onToggleSortOrder = onToggleSortOrder,
                 onTrackClick = onTrackClick,
@@ -304,6 +316,18 @@ internal fun App(
                         sortOrder = genresUiState.sortOrder,
                         onSortOptionSelected = onGenreSortOptionSelected,
                         onToggleSortOrder = onGenreToggleSortOrder,
+                    )
+                } else if (currentPage == AppStackPage.LibraryComposers) {
+                    LibrarySortHeaderButton(
+                        hazeState = hazeState,
+                        options = listOf(
+                            LibrarySortOption(ComposerSortOption.Name, R.string.sort_name),
+                            LibrarySortOption(ComposerSortOption.DateAdded, R.string.sort_date_added),
+                        ),
+                        selectedOption = composersUiState.sortOption,
+                        sortOrder = composersUiState.sortOrder,
+                        onSortOptionSelected = onComposerSortOptionSelected,
+                        onToggleSortOrder = onComposerToggleSortOrder,
                     )
                 }
             }

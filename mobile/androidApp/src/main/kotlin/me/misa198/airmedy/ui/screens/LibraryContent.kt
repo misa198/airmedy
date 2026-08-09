@@ -60,7 +60,7 @@ internal fun LibraryContent(
                 ),
                 ActionListItem(
                     labelRes = R.string.library_composers,
-                    leadingSymbol = MaterialSymbols.Mic,
+                    leadingSymbol = MaterialSymbols.StylusFountainPen,
                     leadingIconTint = colors.primary,
                     onClick = onComposersSelected,
                 ),

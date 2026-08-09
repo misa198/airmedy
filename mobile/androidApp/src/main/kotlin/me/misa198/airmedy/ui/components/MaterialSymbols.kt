@@ -81,6 +81,7 @@ object MaterialSymbols {
     const val FavoriteBorder = "favorite"
     const val Favorite = "favorite"
     const val SwapVert = "swap_vert"
+    const val StylusFountainPen = "stylus_fountain_pen"
 }
 
 @Composable

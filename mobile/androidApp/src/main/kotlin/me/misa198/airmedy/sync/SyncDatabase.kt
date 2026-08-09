@@ -215,6 +215,13 @@ data class LibraryGenre(
     val createdAt: String = "",
 )
 
+data class LibraryComposer(
+    val id: String,
+    val name: String,
+    val createdAt: String = "",
+    val artworkPath: String? = null,
+)
+
 internal class AndroidLibrarySyncStore(
     private val database: SyncDatabase,
     private val filesDir: File,
@@ -253,6 +260,14 @@ internal class AndroidLibrarySyncStore(
     }
     val genres: Flow<List<LibraryGenre>> = dao.observeTracks().map { rows ->
         libraryGenresFrom(rows)
+    }
+    val composers: Flow<List<LibraryComposer>> = combine(
+        dao.observeTracks(),
+        dao.observeArtworkAssets(),
+    ) { rows, artworkAssets ->
+        libraryComposersFrom(rows, artworkAssets.associate { asset ->
+            asset.assetId.removePrefix("artwork:") to asset.relativePath
+        })
     }
 
     override suspend fun prepare(request: LibrarySyncRequest, manifest: LibrarySyncManifest) {
@@ -501,6 +516,86 @@ internal fun libraryGenresFrom(
         parseElement(root["genre_names"])
     }
     return genres.values.toList()
+}
+
+internal fun libraryComposersFrom(
+    tracks: List<LibraryTrackRow>,
+    artworkPaths: Map<String, String>,
+): List<LibraryComposer> {
+    val composers = linkedMapOf<String, LibraryComposer>()
+    tracks.forEach { track ->
+        val root = runCatching { LibrarySyncProtocol.json.parseToJsonElement(track.rawJson) as? JsonObject }.getOrNull()
+            ?: return@forEach
+
+        fun addComposer(rawId: String?, rawName: String, artworkKey: String?, createdAt: String) {
+            val name = rawName.trim()
+            if (name.isBlank()) return
+            val id = rawId?.trim()?.takeIf(String::isNotBlank) ?: name.lowercase()
+            val candidate = LibraryComposer(
+                id = id,
+                name = name,
+                createdAt = createdAt,
+                artworkPath = artworkKey?.let(artworkPaths::get),
+            )
+            composers[id] = composers[id]?.let { existing ->
+                existing.copy(
+                    artworkPath = existing.artworkPath ?: candidate.artworkPath,
+                    createdAt = listOf(existing.createdAt, candidate.createdAt)
+                        .filter(String::isNotBlank)
+                        .minOrNull()
+                        .orEmpty(),
+                )
+            } ?: candidate
+        }
+
+        fun parseElement(element: kotlinx.serialization.json.JsonElement?) {
+            when (element) {
+                is JsonArray -> {
+                    element.forEach { value ->
+                        when (value) {
+                            is JsonObject -> {
+                                val id = value.string("id")
+                                val name = value.string("name") ?: value.string("title") ?: ""
+                                val artworkKey = value.string("artwork_key")?.takeIf(String::isNotBlank)
+                                    ?: listOf("artwork_key_manual", "artwork_key_local", "artwork_key_online")
+                                        .firstNotNullOfOrNull { key -> value.string(key)?.takeIf(String::isNotBlank) }
+                                val createdAt = value.string("created_at").orEmpty().ifBlank { track.createdAt }
+                                addComposer(id, name, artworkKey, createdAt)
+                            }
+                            is JsonPrimitive -> {
+                                val name = value.contentOrNull ?: ""
+                                addComposer(null, name, null, track.createdAt)
+                            }
+                            else -> {}
+                        }
+                    }
+                }
+                is JsonObject -> {
+                    val id = element.string("id")
+                    val name = element.string("name") ?: element.string("title") ?: ""
+                    val artworkKey = element.string("artwork_key")?.takeIf(String::isNotBlank)
+                        ?: listOf("artwork_key_manual", "artwork_key_local", "artwork_key_online")
+                            .firstNotNullOfOrNull { key -> element.string(key)?.takeIf(String::isNotBlank) }
+                    val createdAt = element.string("created_at").orEmpty().ifBlank { track.createdAt }
+                    addComposer(id, name, artworkKey, createdAt)
+                }
+                is JsonPrimitive -> {
+                    val str = element.contentOrNull.orEmpty()
+                    str.split(',', ';', '/').forEach { part ->
+                        addComposer(null, part, null, track.createdAt)
+                    }
+                }
+                else -> {}
+            }
+        }
+
+        parseElement(root["composers"])
+        parseElement(root["composer"])
+        parseElement(root["raw_composer_names"])
+        parseElement(root["raw_composers"])
+        parseElement(root["composer_names"])
+    }
+    return composers.values.toList()
 }
 
 internal fun cachedAssetPath(filesDir: File, asset: SyncAssetEntity?): String? = asset

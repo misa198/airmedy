@@ -13,6 +13,7 @@ internal fun AppStackPage.titleRes(destination: AppDestination): Int = when (thi
     AppStackPage.LibraryAlbums -> R.string.library_albums
     AppStackPage.LibraryTracks -> R.string.library_tracks
     AppStackPage.LibraryGenres -> R.string.library_genres
+    AppStackPage.LibraryComposers -> R.string.library_composers
     AppStackPage.SettingsAppearance -> R.string.appearance_title
     AppStackPage.SettingsSync -> R.string.sync_title
     AppStackPage.SettingsSyncScanner -> R.string.sync_scan_title

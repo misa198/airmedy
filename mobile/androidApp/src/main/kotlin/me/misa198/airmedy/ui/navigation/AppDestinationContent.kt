@@ -54,6 +54,8 @@ import me.misa198.airmedy.ui.screens.LibraryAlbumsContent
 import me.misa198.airmedy.ui.screens.LibraryAlbumsUiState
 import me.misa198.airmedy.ui.screens.LibraryGenresContent
 import me.misa198.airmedy.ui.screens.LibraryGenresUiState
+import me.misa198.airmedy.ui.screens.LibraryComposersContent
+import me.misa198.airmedy.ui.screens.LibraryComposersUiState
 
 internal data class PageKey(
     val destination: AppDestination,
@@ -89,12 +91,14 @@ internal fun AppDestinationContent(
     artistsListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     albumsListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     genresListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
+    composersListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     onIntent: (AppIntent) -> Unit,
     syncUiState: SyncUiState,
     tracksUiState: LibraryTracksUiState = LibraryTracksUiState(),
     artistsUiState: LibraryArtistsUiState = LibraryArtistsUiState(),
     albumsUiState: LibraryAlbumsUiState = LibraryAlbumsUiState(),
     genresUiState: LibraryGenresUiState = LibraryGenresUiState(),
+    composersUiState: LibraryComposersUiState = LibraryComposersUiState(),
     onSortOptionSelected: (TrackSortOption) -> Unit = {},
     onToggleSortOrder: () -> Unit = {},
     onTrackClick: (String) -> Unit = {},
@@ -242,6 +246,12 @@ internal fun AppDestinationContent(
                                 contentPadding = contentPadding,
                                 modifier = Modifier.fillMaxSize(),
                             )
+                            AppStackPage.LibraryComposers -> LibraryComposersContent(
+                                uiState = composersUiState,
+                                listState = composersListState,
+                                contentPadding = contentPadding,
+                                modifier = Modifier.fillMaxSize(),
+                            )
                             AppStackPage.LibraryTracks -> LibraryTracksContent(
                                 uiState = tracksUiState,
                                 onSortOptionSelected = onSortOptionSelected,
@@ -266,6 +276,9 @@ internal fun AppDestinationContent(
                                 onGenresSelected = {
                                     onIntent(AppIntent.OpenPage(AppStackPage.LibraryGenres))
                                 },
+                                onComposersSelected = {
+                                    onIntent(AppIntent.OpenPage(AppStackPage.LibraryComposers))
+                                },
                             )
                         }
                         else -> PlaceholderContent(destination = currentPage.destination, modifier = Modifier.padding(contentPadding))
@@ -284,6 +297,7 @@ internal val AppStackPage.depth: Int
         AppStackPage.LibraryAlbums,
         AppStackPage.LibraryTracks,
         AppStackPage.LibraryGenres,
+        AppStackPage.LibraryComposers,
         AppStackPage.SettingsAppearance,
         AppStackPage.SettingsSync,
         AppStackPage.SettingsAbout -> 1

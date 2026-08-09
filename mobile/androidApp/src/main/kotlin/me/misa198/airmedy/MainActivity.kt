@@ -46,6 +46,7 @@ import me.misa198.airmedy.ui.screens.LibraryTracksViewModel
 import me.misa198.airmedy.ui.screens.LibraryArtistsViewModel
 import me.misa198.airmedy.ui.screens.LibraryAlbumsViewModel
 import me.misa198.airmedy.ui.screens.LibraryGenresViewModel
+import me.misa198.airmedy.ui.screens.LibraryComposersViewModel
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels {
@@ -82,6 +83,9 @@ class MainActivity : ComponentActivity() {
     private val genresViewModel: LibraryGenresViewModel by viewModels {
         LibraryGenresViewModel.Factory(AndroidSyncRuntime.syncStore())
     }
+    private val composersViewModel: LibraryComposersViewModel by viewModels {
+        LibraryComposersViewModel.Factory(AndroidSyncRuntime.syncStore())
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -99,6 +103,7 @@ class MainActivity : ComponentActivity() {
             val artistsUiState by artistsViewModel.uiState.collectAsStateWithLifecycle()
             val albumsUiState by albumsViewModel.uiState.collectAsStateWithLifecycle()
             val genresUiState by genresViewModel.uiState.collectAsStateWithLifecycle()
+            val composersUiState by composersViewModel.uiState.collectAsStateWithLifecycle()
             val playbackController = AndroidPlaybackRuntime.controller()
             val playbackState by playbackController.state.collectAsStateWithLifecycle()
             var systemVolume by remember { mutableFloatStateOf(currentSystemMusicVolume()) }
@@ -151,6 +156,7 @@ class MainActivity : ComponentActivity() {
                 artistsUiState = artistsUiState,
                 albumsUiState = albumsUiState,
                 genresUiState = genresUiState,
+                composersUiState = composersUiState,
                 onIntent = viewModel::dispatch,
                 onSortOptionSelected = tracksViewModel::setSortOption,
                 onToggleSortOrder = tracksViewModel::toggleSortOrder,
@@ -161,6 +167,8 @@ class MainActivity : ComponentActivity() {
                 onAlbumToggleSortOrder = albumsViewModel::toggleSortOrder,
                 onGenreSortOptionSelected = genresViewModel::setSortOption,
                 onGenreToggleSortOrder = genresViewModel::toggleSortOrder,
+                onComposerSortOptionSelected = composersViewModel::setSortOption,
+                onComposerToggleSortOrder = composersViewModel::toggleSortOrder,
                 onPairingQrScanned = { raw ->
                     if (syncViewModel.acceptsQr(raw)) {
                         syncViewModel.pair(raw)

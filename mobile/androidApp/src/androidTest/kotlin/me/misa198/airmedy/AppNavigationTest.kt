@@ -95,6 +95,17 @@ class AppNavigationTest {
     }
 
     @Test
+    fun libraryComposersActionOpensTheComposerList() {
+        val harness = AppHarness(AppUiState(selectedDestination = AppDestination.Library))
+        composeTestRule.setContent { harness.Render() }
+
+        composeTestRule.onNodeWithContentDescription(string(R.string.library_composers)).performClick()
+
+        composeTestRule.onNodeWithText(string(R.string.composers_empty_title)).assertIsDisplayed()
+        assertEquals(AppIntent.OpenPage(AppStackPage.LibraryComposers), harness.intents.last())
+    }
+
+    @Test
     fun appearanceOpensAndThemeSelectionDispatchesIntents() {
         val harness = AppHarness(AppUiState(selectedDestination = AppDestination.Settings))
         composeTestRule.setContent { harness.Render() }
