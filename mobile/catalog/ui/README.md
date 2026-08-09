@@ -70,8 +70,8 @@ describe the desktop Vue UI or future iOS UI.
   the system notification remains the background control surface and provides
   Cancel. Revoke stops the transfer before deleting all mirrored library data.
 - Library root page displays a plain `ActionList` (`ActionListContainerStyle.Plain`) with actions for Artists,
-  Albums, Tracks, Genres, and Composers. Tapping Artists opens `LibraryArtists`, Albums opens `LibraryAlbums`,
-  Tracks opens `LibraryTracks`, Genres opens `LibraryGenres`, and Composers opens `LibraryComposers` on the Library stack.
+  Albums, Tracks, Genres, and Composers. Below the action list, it renders a 2-column grid of up to 50 recently added tracks sorted by creation date descending using `DiscCard`. Tapping Artists opens `LibraryArtists`, Albums opens `LibraryAlbums`,
+  Tracks opens `LibraryTracks`, Genres opens `LibraryGenres`, and Composers opens `LibraryComposers` on the Library stack; tapping a recent track card starts playback.
 - `LibraryArtists` derives its rows from the normalized artist objects in the active sync manifest, grouped by
   desktop artist ID so collaborations retain the desktop delimiter behavior. It renders a virtualized, divided
   list with circular artist artwork and a Name/Date added ASC/DESC header sort. Artist rows are presentational
@@ -182,6 +182,7 @@ describe the desktop Vue UI or future iOS UI.
 | Component | Contract |
 | --- | --- |
 | `Card` | Standard 28dp, borderless, opaque themed card surface. It accepts slot content and optional padding; its title/description overload remains a tappable primary-action card. |
+| `DiscCard` | Displays a vertical card featuring a 1:1 square rounded artwork thumbnail (or glass symbol fallback), semibold single-line title, and muted single-line subtitle. Usable for album or track cards. |
 | `HeroCard` | A non-interactive informational card with a 40dp decorative icon, bold `titleLarge` title, optional content directly below its title, and muted description. Sync uses this slot for its MQTT Online/Offline badge, aligned with the desktop name. |
 | `TrackRow` | Displays a track row with 48dp rounded artwork (or fallback glass icon), semibold 2-line title/artist text display, and a trailing `...` overflow button. |
 | `AlbumRow` | Displays a 48dp rounded album-artwork thumbnail (or themed album fallback), semibold title/album-artist text, and a trailing `...` overflow button. |

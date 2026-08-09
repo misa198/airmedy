@@ -23,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
@@ -50,14 +51,16 @@ fun ActionList(
     items: List<ActionListItem>,
     containerStyle: ActionListContainerStyle,
     dividerStyle: ActionListDividerStyle = ActionListDividerStyle.InsetForLeadingIcon,
+    horizontalContentPadding: Dp = 16.dp,
+    showTrailingDivider: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     when (containerStyle) {
         ActionListContainerStyle.Card -> Card(modifier = modifier) {
-            ActionListItems(items, dividerStyle)
+            ActionListItems(items, dividerStyle, horizontalContentPadding, showTrailingDivider)
         }
         ActionListContainerStyle.Plain -> Column(modifier = modifier.fillMaxWidth()) {
-            ActionListItems(items, dividerStyle)
+            ActionListItems(items, dividerStyle, horizontalContentPadding, showTrailingDivider)
         }
     }
 }
@@ -66,17 +69,22 @@ fun ActionList(
 private fun ColumnScope.ActionListItems(
     items: List<ActionListItem>,
     dividerStyle: ActionListDividerStyle,
+    horizontalContentPadding: Dp = 16.dp,
+    showTrailingDivider: Boolean = false,
 ) {
     items.forEachIndexed { index, item ->
-        ActionListRow(item = item)
-        if (index < items.lastIndex) {
-            ActionListDivider(dividerStyle)
+        ActionListRow(item = item, horizontalContentPadding = horizontalContentPadding)
+        if (index < items.lastIndex || showTrailingDivider) {
+            ActionListDivider(dividerStyle, horizontalContentPadding)
         }
     }
 }
 
 @Composable
-private fun ActionListRow(item: ActionListItem) {
+private fun ActionListRow(
+    item: ActionListItem,
+    horizontalContentPadding: Dp = 16.dp,
+) {
     val colors = LocalAirmedyColors.current
     val label = stringResource(item.labelRes)
     val clickModifier = item.onClick?.let { onClick ->
@@ -93,7 +101,7 @@ private fun ActionListRow(item: ActionListItem) {
             .heightIn(min = 56.dp)
             .semantics(mergeDescendants = true) { contentDescription = label }
             .then(clickModifier)
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = horizontalContentPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         item.leadingSymbol?.let { symbol ->
@@ -127,6 +135,7 @@ private fun ActionListRow(item: ActionListItem) {
 @Composable
 fun ActionListDivider(
     style: ActionListDividerStyle = ActionListDividerStyle.InsetForLeadingIcon,
+    horizontalContentPadding: Dp = 16.dp,
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalAirmedyColors.current
@@ -134,8 +143,8 @@ fun ActionListDivider(
         modifier = modifier
             .fillMaxWidth()
             .padding(
-                start = if (style == ActionListDividerStyle.InsetForLeadingIcon) 52.dp else 0.dp,
-                end = if (style == ActionListDividerStyle.InsetForLeadingIcon) 16.dp else 0.dp,
+                start = if (style == ActionListDividerStyle.InsetForLeadingIcon) 36.dp + horizontalContentPadding else 0.dp,
+                end = if (style == ActionListDividerStyle.InsetForLeadingIcon) horizontalContentPadding else 0.dp,
             )
             .height(1.dp)
             .background(colors.borderGlass),

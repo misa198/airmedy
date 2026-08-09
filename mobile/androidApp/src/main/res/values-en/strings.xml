@@ -70,6 +70,8 @@
     <string name="sync_progress_connecting">Preparing library sync…</string>
     <string name="sync_progress_items">Syncing %1$d of %2$d items</string>
     <string name="library_empty_title">No synced music yet</string>
+    <string name="library_playlists">Playlists</string>
+    <string name="library_recently_added">Recently Added</string>
     <string name="library_empty_description">Start Sync on your connected desktop to bring your library here.</string>
     <string name="home_demo_artwork_description">Abstract album artwork</string>
     <string name="home_demo_section_title">Listen closer %1$d</string>

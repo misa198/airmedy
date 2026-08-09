@@ -72,4 +72,26 @@ class LibraryTracksViewModelTest {
         assertEquals(listOf("1", "2", "3"), request.trackIds)
         assertEquals(1, request.startIndex)
     }
+
+    @Test
+    fun recentTracksLimitsTo50AndSortsByCreatedAtDescending() {
+        val manyTracks = (1..60).map { index ->
+            LibraryTrack(
+                id = "t$index",
+                title = "Track $index",
+                artists = "Artist $index",
+                album = "Album",
+                createdAt = String.format("2026-01-%02dT00:00:00Z", (index % 28) + 1),
+            )
+        }
+        val recent = manyTracks
+            .sortedWith(compareByDescending<LibraryTrack> { it.createdAt }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.title })
+            .take(50)
+
+        assertEquals(50, recent.size)
+        assertEquals(
+            recent.sortedWith(compareByDescending<LibraryTrack> { it.createdAt }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.title }),
+            recent,
+        )
+    }
 }

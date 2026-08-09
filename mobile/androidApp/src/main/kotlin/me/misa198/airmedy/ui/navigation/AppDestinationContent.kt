@@ -87,6 +87,7 @@ internal fun AppDestinationContent(
     hazeState: HazeState?,
     navigationBottomPadding: Dp,
     homeListState: LazyListState,
+    libraryListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     tracksListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     artistsListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     albumsListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
@@ -264,6 +265,9 @@ internal fun AppDestinationContent(
                             else -> LibraryContent(
                                 modifier = Modifier.fillMaxSize(),
                                 contentPadding = contentPadding,
+                                recentTracks = tracksUiState.recentTracks,
+                                listState = libraryListState,
+                                onTrackClick = onTrackClick,
                                 onTracksSelected = {
                                     onIntent(AppIntent.OpenPage(AppStackPage.LibraryTracks))
                                 },

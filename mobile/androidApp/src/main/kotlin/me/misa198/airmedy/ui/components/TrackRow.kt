@@ -44,17 +44,21 @@ import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 private val artworkCache = LruCache<String, ImageBitmap>(250)
 
 @Composable
-internal fun rememberArtworkThumbnail(artworkPath: String?): ImageBitmap? {
+internal fun rememberArtworkThumbnail(
+    artworkPath: String?,
+    targetPx: Int = 120,
+): ImageBitmap? {
     if (artworkPath.isNullOrBlank()) return null
     val context = LocalContext.current
     val absolutePath = remember(artworkPath, context) {
         val file = File(artworkPath)
         if (file.isAbsolute) file.absolutePath else File(context.filesDir, artworkPath).absolutePath
     }
+    val cacheKey = "$absolutePath:$targetPx"
 
-    var bitmap by remember(absolutePath) { mutableStateOf(artworkCache.get(absolutePath)) }
+    var bitmap by remember(cacheKey) { mutableStateOf(artworkCache.get(cacheKey)) }
 
-    LaunchedEffect(absolutePath) {
+    LaunchedEffect(cacheKey) {
         if (bitmap == null) {
             val loaded = withContext(Dispatchers.IO) {
                 val file = File(absolutePath)
@@ -63,7 +67,6 @@ internal fun rememberArtworkThumbnail(artworkPath: String?): ImageBitmap? {
                     val boundsOptions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
                     BitmapFactory.decodeFile(file.absolutePath, boundsOptions)
 
-                    val targetPx = 120
                     var sampleSize = 1
                     while (boundsOptions.outWidth / (sampleSize * 2) >= targetPx &&
                         boundsOptions.outHeight / (sampleSize * 2) >= targetPx
@@ -79,7 +82,7 @@ internal fun rememberArtworkThumbnail(artworkPath: String?): ImageBitmap? {
                 }.getOrNull()
             }
             if (loaded != null) {
-                artworkCache.put(absolutePath, loaded)
+                artworkCache.put(cacheKey, loaded)
                 bitmap = loaded
             }
         }

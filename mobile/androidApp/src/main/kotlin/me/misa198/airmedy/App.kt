@@ -110,6 +110,7 @@ internal fun App(
     AirmedyTheme(themeMode = uiState.themeMode) {
         val hazeState = if (uiState.reduceTransparency) null else rememberHazeState()
         val homeListState = rememberLazyListState()
+        val libraryListState = rememberLazyListState()
         val tracksListState = remember(tracksUiState.sortOption, tracksUiState.sortOrder) {
             LazyListState()
         }
@@ -176,11 +177,13 @@ internal fun App(
             currentPage == AppStackPage.LibraryGenres || currentPage == AppStackPage.LibraryComposers
         BackHandler(enabled = showBack) { onIntent(AppIntent.NavigateBack) }
 
-        val isContentScrolled by remember(uiState.selectedDestination, currentPage, homeListState, tracksListState, artistsListState, albumsListState, genresListState, composersListState) {
+        val isContentScrolled by remember(uiState.selectedDestination, currentPage, homeListState, libraryListState, tracksListState, artistsListState, albumsListState, genresListState, composersListState) {
             derivedStateOf {
                 when {
                     uiState.selectedDestination == AppDestination.Home && currentPage == AppStackPage.Root ->
                         homeListState.firstVisibleItemIndex > 0 || homeListState.firstVisibleItemScrollOffset > 0
+                    uiState.selectedDestination == AppDestination.Library && currentPage == AppStackPage.Root ->
+                        libraryListState.firstVisibleItemIndex > 0 || libraryListState.firstVisibleItemScrollOffset > 0
                     currentPage == AppStackPage.LibraryTracks ->
                         tracksListState.firstVisibleItemIndex > 0 || tracksListState.firstVisibleItemScrollOffset > 0
                     currentPage == AppStackPage.LibraryArtists ->
@@ -214,6 +217,7 @@ internal fun App(
                 hazeState = hazeState,
                 navigationBottomPadding = navigationBottomPadding,
                 homeListState = homeListState,
+                libraryListState = libraryListState,
                 tracksListState = tracksListState,
                 artistsListState = artistsListState,
                 albumsListState = albumsListState,
@@ -341,9 +345,15 @@ internal fun App(
                     navigationScrollState = NavigationChromeScrollState()
                 },
                 onDestinationSelected = { destination ->
-                    if (destination == uiState.selectedDestination && destination == AppDestination.Home) {
-                        coroutineScope.launch {
-                            homeListState.animateScrollToItem(0)
+                    if (destination == uiState.selectedDestination) {
+                        if (destination == AppDestination.Home) {
+                            coroutineScope.launch {
+                                homeListState.animateScrollToItem(0)
+                            }
+                        } else if (destination == AppDestination.Library && currentPage == AppStackPage.Root) {
+                            coroutineScope.launch {
+                                libraryListState.animateScrollToItem(0)
+                            }
                         }
                     }
                     onIntent(AppIntent.SelectDestination(destination))
