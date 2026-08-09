@@ -125,10 +125,13 @@ private fun ActionListRow(item: ActionListItem) {
 }
 
 @Composable
-private fun ActionListDivider(style: ActionListDividerStyle) {
+fun ActionListDivider(
+    style: ActionListDividerStyle = ActionListDividerStyle.InsetForLeadingIcon,
+    modifier: Modifier = Modifier,
+) {
     val colors = LocalAirmedyColors.current
     androidx.compose.foundation.layout.Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(
                 start = if (style == ActionListDividerStyle.InsetForLeadingIcon) 52.dp else 0.dp,
@@ -138,3 +141,4 @@ private fun ActionListDivider(style: ActionListDividerStyle) {
             .background(colors.borderGlass),
     )
 }
+

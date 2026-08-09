@@ -39,8 +39,8 @@ describe the desktop Vue UI or future iOS UI.
   GitHub and GPL-3.0 license rows delegate opening their URLs to the Android host.
 - Appearance contains vertically arranged sections, each in its own `Card`.
   Its Theme section uses `Selection`, the reusable iOS-style dropdown row, to
-  persist the System, Light, or Dark theme choice. The same card includes a
-  persisted Reduce transparency switch. It defaults off; when enabled it removes
+  persist the System, Light, or Dark theme choice. An `ActionListDivider` with full-width style separates it from a
+  persisted Reduce transparency switch row. It defaults off; when enabled it removes
   every Haze source/effect from the app shell and renders header, navigation,
   mini-player, and glass icon controls with opaque theme surfaces immediately.
 - Sync opens `SettingsSync` in the Settings stack. `SyncViewModel` owns pairing

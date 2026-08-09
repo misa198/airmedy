@@ -10,6 +10,8 @@ import me.misa198.airmedy.R
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.ui.components.ActionList
 import me.misa198.airmedy.ui.components.ActionListContainerStyle
+import me.misa198.airmedy.ui.components.ActionListDivider
+import me.misa198.airmedy.ui.components.ActionListDividerStyle
 import me.misa198.airmedy.ui.components.ActionListItem
 import me.misa198.airmedy.ui.components.Card
 import me.misa198.airmedy.ui.components.Selection
@@ -36,6 +38,7 @@ internal fun AppearanceContent(
                 selectedValue = themeMode,
                 onValueSelected = onThemeModeSelected,
             )
+            ActionListDivider(style = ActionListDividerStyle.FullWidth)
             ActionList(
                 items = listOf(
                     ActionListItem(
