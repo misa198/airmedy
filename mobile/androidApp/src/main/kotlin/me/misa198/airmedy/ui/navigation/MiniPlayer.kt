@@ -1,9 +1,7 @@
 package me.misa198.airmedy.ui.navigation
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.background
-import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -63,6 +61,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import com.composables.icons.lucide.R as LucideR
 import dev.chrisbanes.haze.HazeState
 import me.misa198.airmedy.R
+import me.misa198.airmedy.ui.components.AirmedyMarqueeText
 import me.misa198.airmedy.player.PlaybackItem
 import me.misa198.airmedy.player.PlaybackState
 import me.misa198.airmedy.ui.components.liquidGlassBackground
@@ -318,12 +317,12 @@ internal fun MiniPlayer(
                 Column(
                     modifier = Modifier.offset { IntOffset(displayedMetadataDragOffset.roundToInt(), 0) },
                 ) {
-                    MarqueeText(
+                    AirmedyMarqueeText(
                         item.title,
                         colors.textMain,
                         MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                     )
-                    MarqueeText(item.artist, colors.textMuted, MaterialTheme.typography.bodySmall)
+                    AirmedyMarqueeText(item.artist, colors.textMuted, MaterialTheme.typography.bodySmall)
                 }
             }
         }
@@ -354,18 +353,6 @@ internal fun MiniPlayer(
         }
         }
     }
-}
-
-@Composable
-private fun MarqueeText(text: String, color: Color, style: TextStyle) {
-    Text(
-        text = text,
-        modifier = Modifier.fillMaxWidth().basicMarquee(animationMode = MarqueeAnimationMode.Immediately),
-        color = color,
-        style = style,
-        maxLines = 1,
-        overflow = TextOverflow.Clip,
-    )
 }
 
 @Composable

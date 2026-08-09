@@ -168,11 +168,12 @@ turning shuffle off still restores the original order.
 
 Player session state is private Android app data and is never synchronized to
 the desktop application. Persist it after queue mutations and meaningful
-transport changes (track change, pause, stop, seek, repeat/shuffle/volume/mute
-changes), and flush it during service shutdown.
+transport changes (track change, pause, stop, seek, repeat, and shuffle
+changes), and flush it during service shutdown. Fullscreen volume controls use
+Android's system music stream, so they are not stored in this session.
 
 The persisted snapshot contains both queue orders, the current track ID,
-position, volume, mute state, shuffle state, and repeat mode. On restore:
+position, shuffle state, and repeat mode. On restore:
 
 1. Resolve IDs only from the current synced local library and drop unavailable
    tracks while retaining the stored order.
@@ -186,8 +187,10 @@ position, volume, mute state, shuffle state, and repeat mode. On restore:
 
 ## Non-goals
 
-This contract does not require gapless preload, crossfade, artwork palette
-processing, desktop analytics, or desktop queue synchronization. FFmpeg remains
+This contract does not require gapless preload, crossfade, desktop analytics, or
+desktop queue synchronization. Android's fullscreen player may locally derive a
+blurred gradient from loaded artwork; it falls back to theme colours and does not
+alter playback metadata or synchronize a palette. FFmpeg remains
 the only mobile decoder/demuxer path; adding a Media3, ExoPlayer, or MediaCodec
 fallback requires an explicit policy change.
 

@@ -94,12 +94,12 @@ describe the desktop Vue UI or future iOS UI.
   reaches the distance or velocity threshold and dispatches a transport command. Horizontal
   gestures are scoped to metadata so they do not conflict with the pill's vertical
   fullscreen/dismiss gestures or its control buttons. Tapping the mini player has no ripple.
-  Tapping its non-control surface opens the temporary `FullScreenPlayerPlaceholder`.
+  Tapping its non-control surface opens `FullScreenPlayer`.
   Pulling upward moves the mini player up by its full 56dp height while fading it out.
   The edge-to-edge overlay follows that pull continuously from the bottom and
   reaches full opacity while the mini player fades away. Releasing after any
   upward drag completes the transition to the fullscreen player. Once
-  released, it uses the slower 520ms slide/fade only to complete the current
+  released, it uses a slower 760ms slide/fade only to complete the current
   partial transition. Pulling the mini player down by 36dp keeps it sliding
   off the bottom of the screen without rebounding while playback stops and clears the
   persisted queue. Tap and vertical drag are separate consumed gesture paths,
@@ -111,8 +111,32 @@ describe the desktop Vue UI or future iOS UI.
   The pill remains visually below navigation while dismissing. Its drag receiver
   stays anchored at the initial mini-player position, so the same downward drag
   continues even after the pill passes behind the navigation.
-  The placeholder has no player controls yet; pulling it down by 96dp or pressing
-  system Back slides it down and returns to the unchanged navigation/page state.
+  The fullscreen player retains that opening animation and can be pulled down by
+  96dp or closed with system Back. Reversing an in-progress downward pull immediately reduces its dismissal offset, so it can be returned to the top before release. Artwork scales down to 60% over 500ms while paused and returns to full size on playback.
+  While it is visible, the activity forces light status-bar content so it remains
+  legible above the fullscreen artwork; closing it restores the theme's status-bar
+  appearance.
+  Swiping left/right on either artwork or the title/artist metadata moves only
+  the title/artist cluster with the finger, springs it back after release, and
+  dispatches Next/Previous respectively after the same distance/velocity threshold
+  and confirmation haptic used by mini-player metadata swipes; the artwork stays still.
+  A 36dp-wide, semi-opaque white drag handle is
+  centered with an 8dp gap below the status-bar safe area and a 20dp gap before the near-full-width rounded artwork,
+  visually indicating the downward-dismiss gesture. Artwork remains in its own top section;
+  the remaining screen height is a separate `SpaceEvenly` column of three groups: metadata/seek,
+  primary transport, and volume/secondary actions. The primary transport controls are centered with a
+  compact fixed gap with 34dp previous/next icons and a 40dp play/pause icon; bottom secondary-action icons render at 24dp in `foregroundSubtle` inside their standard touch targets.
+  It renders near-full-width rounded artwork, with marquee white title text and
+  marquee `foregroundSubtle` artist/duration text. Overlong marquee text travels
+  to its end and reverses back rather than wrapping continuously. The metadata column keeps a
+  12dp gap before the Heart/More button pair,
+  a dominant-colour gradient extracted from the artwork, animated over 280ms when artwork changes; the prior artwork remains visible while the replacement decodes to prevent a fallback-colour flash, with a
+  restrained dark `playerBackdrop` overlay and fallback in every app theme, seek/duration, transport controls, Android music-stream volume (the system settings provider is observed recursively so hardware keys and route-specific system-volume events keep it current),
+  and ghost Lyrics/Queue affordances. The centred secondary action is a Lucide
+  Cast button; on Android 14 (API 34) and later it delegates opening Android's
+  system Media Output Switcher for the active Airmedy media session to the
+  activity. Heart, More, Lyrics, and Queue are visual actions only; they do not
+  yet persist state or open a screen.
   Every new open clears any residual downward-dismiss offset before expanding,
   so consecutive opens always finish flush with the top of the screen.
 - While the mini player is visible, the app shell observes user-driven nested
@@ -154,12 +178,15 @@ describe the desktop Vue UI or future iOS UI.
 | `Selection` | Renders an iOS-style dropdown row and custom elevated menu with a 28dp radius for mutually exclusive `SelectionOption` values. Its selected value uses the standard row typography with the muted action colour; each menu option is at least 44dp tall. Only the right-side action slot opens and anchors the right-aligned menu; the opaque, rounded menu expands and collapses vertically while fading and scaling over 220ms. The caller owns selected state and receives the selected value through `onValueSelected`. |
 | `StackPageLayout` | Places content below the status/header region and above the persistent navigation; screens must use its supplied padding. Its page-header title uses bold `headlineLarge` typography. |
 | `AirmedyGlassIconButton` | A 48dp circular blurred glass icon button with border and button semantics. Back and header actions use this shared primitive. |
+| `AirmedyIconButton` | A 48dp Lucide-only icon action with `Ghost` and `Glass` variants. Glass uses the liquid-glass surface and border; both variants provide an accessible label. |
+| `AirmedyMarqueeText` | A single-line text treatment for constrained playback metadata. It clips overflow and eases linearly to its end before reversing direction. |
+| `AirmedyTrackSlider` | Shared custom-drawn slider for fullscreen-player seek and Android music-stream volume. It preserves a 48dp touch target while rendering a translucent gray glass track with a white current-value fill and no thumb or Material Slider terminal indicator. `trackHeight` lets the fullscreen seek bar render at 6dp while the volume bar keeps its 3dp default. Slider range semantics and touch/drag seeking remain available to accessibility services. The fullscreen volume row places muted low/high-volume Lucide icons at either end. |
 | `AirmedyPillButton` | A borderless 52dp minimum-height capsule action. `Primary` and `Destructive` use the primary background with the explicit white `onPrimary` token in both light and dark themes; `Secondary` uses the stronger `buttonSecondary` theme surface with normal foreground text. Its label supplies button semantics. |
 | `AirmedyDialog` | A 36dp-radius, two-action mobile dialog. Its text content has 20dp horizontal inset; the button area has a thinner 16dp horizontal/bottom inset. It supports `Horizontal` and `Vertical` action layouts; the left/top action always dismisses with `Secondary`. |
 
 ## UI rules
 
-- Use `AirmedyTheme` and `LocalAirmedyColors`; feature composables do not add raw colours.
+- Use `AirmedyTheme` and `LocalAirmedyColors`; feature composables do not add raw colours. Reusable subtle foreground details use the semi-opaque white `foregroundSubtle` token.
 - Use Lucide Android drawables and resource-backed strings. Decorative icons have no content description; actionable rows expose their label through Compose semantics.
 - Keep interactive targets at least 48dp. Rows and cards delegate click behavior through callbacks rather than storing navigation state.
 - Card surfaces are borderless unless a feature explicitly requires a border.
@@ -174,5 +201,5 @@ describe the desktop Vue UI or future iOS UI.
 - `MiniPlayerTest` covers playback visibility, transport controls, metadata left/right swipe
   transport dispatch, and the upward fullscreen-opening gesture in both full and compact
   navigation-chrome layouts.
-  `AppNavigationTest` covers the fullscreen overlay's tap-open, downward-dismiss,
+  `AppNavigationTest` covers fullscreen player content, tap-open, downward-dismiss,
   and system-Back behavior.

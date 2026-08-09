@@ -42,7 +42,7 @@ import me.misa198.airmedy.ui.navigation.ContentScrollDirection
 import me.misa198.airmedy.ui.navigation.FloatingNavigationBottomMargin
 import me.misa198.airmedy.ui.navigation.FloatingNavigationContentGap
 import me.misa198.airmedy.ui.navigation.FloatingNavigationHeight
-import me.misa198.airmedy.ui.navigation.FullScreenPlayerPlaceholder
+import me.misa198.airmedy.ui.navigation.FullScreenPlayer
 import me.misa198.airmedy.ui.navigation.MiniPlayerHeight
 import me.misa198.airmedy.ui.navigation.MiniPlayerNavigationGap
 import me.misa198.airmedy.ui.navigation.NavigationChrome
@@ -79,7 +79,12 @@ internal fun App(
     onPlaybackPrevious: () -> Unit = {},
     onPlaybackPlayPause: () -> Unit = {},
     onPlaybackNext: () -> Unit = {},
+    onPlaybackSeek: (Long) -> Unit = {},
+    systemVolume: Float = 0f,
+    onSystemVolumeChange: (Float) -> Unit = {},
     onMiniPlayerDismiss: () -> Unit = {},
+    onOpenMediaOutputSwitcher: () -> Unit = {},
+    onFullScreenPlayerVisibilityChanged: (Boolean) -> Unit = {},
 ) {
     AirmedyTheme(themeMode = uiState.themeMode) {
         val hazeState = if (uiState.reduceTransparency) null else rememberHazeState()
@@ -97,11 +102,15 @@ internal fun App(
         val isForwardHeaderTransition = currentPage.depth >= previousPage.depth
         val showsMiniPlayer = playbackState.showsMiniPlayer()
         var isFullScreenPlayerVisible by rememberSaveable { mutableStateOf(false) }
+        var isFullScreenPlayerOpeningFromSwipe by remember { mutableStateOf(false) }
         var fullScreenPlayerDragProgress by remember { mutableFloatStateOf(0f) }
         var isFullScreenPlayerDragging by remember { mutableStateOf(false) }
         var isNavigationCompact by remember { mutableStateOf(false) }
         var navigationScrollState by remember { mutableStateOf(NavigationChromeScrollState()) }
         val navigationScrollThresholdPx = with(LocalDensity.current) { 24.dp.toPx() }
+        LaunchedEffect(isFullScreenPlayerVisible) {
+            onFullScreenPlayerVisibilityChanged(isFullScreenPlayerVisible)
+        }
         LaunchedEffect(showsMiniPlayer, uiState.selectedDestination, currentPage) {
             isNavigationCompact = false
             navigationScrollState = NavigationChromeScrollState()
@@ -109,6 +118,7 @@ internal fun App(
         LaunchedEffect(showsMiniPlayer) {
             if (!showsMiniPlayer) {
                 isFullScreenPlayerVisible = false
+                isFullScreenPlayerOpeningFromSwipe = false
                 isFullScreenPlayerDragging = false
                 fullScreenPlayerDragProgress = 0f
             }
@@ -238,7 +248,10 @@ internal fun App(
                     navigationScrollState = NavigationChromeScrollState()
                     onMiniPlayerDismiss()
                 },
-                onOpenFullScreenPlayer = { isFullScreenPlayerVisible = true },
+                onOpenFullScreenPlayer = {
+                    isFullScreenPlayerOpeningFromSwipe = false
+                    isFullScreenPlayerVisible = true
+                },
                 onFullScreenPlayerDrag = { progress ->
                     isFullScreenPlayerDragging = true
                     fullScreenPlayerDragProgress = progress
@@ -249,6 +262,7 @@ internal fun App(
                     // once the pointer is released. The overlay then animates to either
                     // its closed or fully-open resting state.
                     fullScreenPlayerDragProgress = 0f
+                    isFullScreenPlayerOpeningFromSwipe = shouldOpen
                     isFullScreenPlayerVisible = shouldOpen
                 },
                 modifier = Modifier
@@ -256,14 +270,29 @@ internal fun App(
                     .navigationBarsPadding()
                     .padding(start = 20.dp, end = 20.dp, bottom = FloatingNavigationBottomMargin),
             )
-            FullScreenPlayerPlaceholder(
+            FullScreenPlayer(
                 visible = isFullScreenPlayerVisible,
                 dragProgress = fullScreenPlayerDragProgress,
                 isDragging = isFullScreenPlayerDragging,
-                onDismiss = { isFullScreenPlayerVisible = false },
+                openingFromMiniPlayerSwipe = isFullScreenPlayerOpeningFromSwipe,
+                playbackState = playbackState,
+                volume = systemVolume,
+                onSeek = onPlaybackSeek,
+                onVolumeChange = onSystemVolumeChange,
+                onPrevious = onPlaybackPrevious,
+                onPlayPause = onPlaybackPlayPause,
+                onNext = onPlaybackNext,
+                onOpenMediaOutputSwitcher = onOpenMediaOutputSwitcher,
+                onDismiss = {
+                    isFullScreenPlayerVisible = false
+                    isFullScreenPlayerOpeningFromSwipe = false
+                },
             )
         }
-        BackHandler(enabled = isFullScreenPlayerVisible) { isFullScreenPlayerVisible = false }
+        BackHandler(enabled = isFullScreenPlayerVisible) {
+            isFullScreenPlayerVisible = false
+            isFullScreenPlayerOpeningFromSwipe = false
+        }
     }
 }
 

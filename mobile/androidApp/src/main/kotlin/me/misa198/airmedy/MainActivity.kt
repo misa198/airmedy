@@ -7,16 +7,27 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.content.Intent
 import android.net.Uri
+import android.media.AudioManager
+import android.media.MediaRouter2
+import android.database.ContentObserver
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
 import android.view.WindowInsetsController
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.settings.ThemePreferences
@@ -75,6 +86,21 @@ class MainActivity : ComponentActivity() {
             val tracksUiState by tracksViewModel.uiState.collectAsStateWithLifecycle()
             val playbackController = AndroidPlaybackRuntime.controller()
             val playbackState by playbackController.state.collectAsStateWithLifecycle()
+            var systemVolume by remember { mutableFloatStateOf(currentSystemMusicVolume()) }
+            DisposableEffect(Unit) {
+                val volumeObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+                    override fun onChange(selfChange: Boolean) {
+                        systemVolume = currentSystemMusicVolume()
+                    }
+                }
+                contentResolver.registerContentObserver(
+                    Settings.System.CONTENT_URI,
+                    true,
+                    volumeObserver,
+                )
+                onDispose { contentResolver.unregisterContentObserver(volumeObserver) }
+            }
+            var isFullScreenPlayerVisible by remember { mutableStateOf(false) }
             LaunchedEffect(viewModel) {
                 viewModel.effects.collect { effect ->
                     when (effect) {
@@ -88,8 +114,18 @@ class MainActivity : ComponentActivity() {
             SideEffect {
                 val lightSystemBars = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or
                     WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
+                val statusBarAppearance = if (darkTheme || isFullScreenPlayerVisible) {
+                    0
+                } else {
+                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                }
+                val navigationBarAppearance = if (darkTheme) {
+                    0
+                } else {
+                    WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
+                }
                 window.insetsController?.setSystemBarsAppearance(
-                    if (darkTheme) 0 else lightSystemBars,
+                    statusBarAppearance or navigationBarAppearance,
                     lightSystemBars,
                 )
             }
@@ -123,12 +159,42 @@ class MainActivity : ComponentActivity() {
                     }
                 },
                 onPlaybackNext = playbackController::next,
+                onPlaybackSeek = playbackController::seekTo,
+                systemVolume = systemVolume,
+                onSystemVolumeChange = { volume ->
+                    systemVolume = volume.coerceIn(0f, 1f)
+                    setSystemMusicVolume(systemVolume)
+                },
                 onMiniPlayerDismiss = playbackController::clearQueue,
+                onOpenMediaOutputSwitcher = ::openMediaOutputSwitcher,
+                onFullScreenPlayerVisibilityChanged = { isFullScreenPlayerVisible = it },
             )
         }
     }
 
-    private companion object { const val NotificationPermissionRequest = 51 }
+    private companion object {
+        const val NotificationPermissionRequest = 51
+    }
+
+    private fun currentSystemMusicVolume(): Float {
+        val manager = getSystemService(AudioManager::class.java)
+        return normalizeSystemMusicVolume(
+            current = manager.getStreamVolume(AudioManager.STREAM_MUSIC),
+            maximum = manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC),
+        )
+    }
+
+    private fun setSystemMusicVolume(volume: Float) {
+        val manager = getSystemService(AudioManager::class.java)
+        val maximum = manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        manager.setStreamVolume(AudioManager.STREAM_MUSIC, (maximum * volume).toInt(), 0)
+    }
+
+    private fun openMediaOutputSwitcher() {
+        if (canShowSystemMediaOutputSwitcher(Build.VERSION.SDK_INT)) {
+            MediaRouter2.getInstance(this).showSystemOutputSwitcher()
+        }
+    }
 
     private fun isDarkTheme(themeMode: ThemeMode): Boolean = when (themeMode) {
         ThemeMode.System -> {
@@ -138,6 +204,12 @@ class MainActivity : ComponentActivity() {
         ThemeMode.Dark -> true
     }
 }
+
+internal fun canShowSystemMediaOutputSwitcher(sdkInt: Int): Boolean =
+    sdkInt >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+
+internal fun normalizeSystemMusicVolume(current: Int, maximum: Int): Float =
+    current.coerceIn(0, maximum.coerceAtLeast(1)).toFloat() / maximum.coerceAtLeast(1)
 
 @Preview
 @Composable

@@ -13,11 +13,14 @@ import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
+import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.swipeRight
 import androidx.test.platform.app.InstrumentationRegistry
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.player.PlaybackItem
@@ -127,15 +130,93 @@ class AppNavigationTest {
 
     @Test
     fun fullScreenPlayerOpensAboveNavigationAndClosesWhenDraggedDown() {
-        composeTestRule.setContent { App(playbackState = playingState) }
+        var fullScreenPlayerVisible = false
+        composeTestRule.setContent {
+            App(
+                playbackState = playingState,
+                onFullScreenPlayerVisibilityChanged = { fullScreenPlayerVisible = it },
+            )
+        }
 
         composeTestRule.onNodeWithText(playingItem.title).performClick()
-        composeTestRule.onNodeWithContentDescription(string(R.string.full_screen_player_placeholder)).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(string(R.string.full_screen_player)).assertIsDisplayed()
+        assertEquals(true, fullScreenPlayerVisible)
+        composeTestRule.onNodeWithTag("full_screen_player_drag_handle").assertIsDisplayed()
+        composeTestRule.onNodeWithText(playingItem.artist).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(string(R.string.player_seek)).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(string(R.string.player_volume)).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(string(R.string.player_heart)).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(string(R.string.player_lyrics)).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(string(R.string.player_cast)).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(string(R.string.player_queue)).assertIsDisplayed()
 
-        composeTestRule.onNodeWithContentDescription(string(R.string.full_screen_player_placeholder))
+        composeTestRule.onNodeWithContentDescription(string(R.string.full_screen_player))
             .performTouchInput { swipeDown() }
         composeTestRule.waitForIdle()
-        composeTestRule.onAllNodesWithContentDescription(string(R.string.full_screen_player_placeholder)).assertCountEquals(0)
+        composeTestRule.onAllNodesWithContentDescription(string(R.string.full_screen_player)).assertCountEquals(0)
+        assertEquals(false, fullScreenPlayerVisible)
+    }
+
+    @Test
+    fun pullingTheFullScreenPlayerBackUpCancelsItsDismissal() {
+        var fullScreenPlayerVisible = false
+        composeTestRule.setContent {
+            App(
+                playbackState = playingState,
+                onFullScreenPlayerVisibilityChanged = { fullScreenPlayerVisible = it },
+            )
+        }
+
+        composeTestRule.onNodeWithText(playingItem.title).performClick()
+        composeTestRule.onNodeWithContentDescription(string(R.string.full_screen_player))
+            .performTouchInput {
+                down(center)
+                moveBy(Offset(x = 0f, y = 500f))
+                moveBy(Offset(x = 0f, y = -500f))
+                up()
+            }
+
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithContentDescription(string(R.string.full_screen_player)).assertIsDisplayed()
+        assertEquals(true, fullScreenPlayerVisible)
+    }
+
+    @Test
+    fun fullScreenPlayerCastButtonRequestsTheMediaOutputSwitcher() {
+        var outputSwitcherRequests = 0
+        composeTestRule.setContent {
+            App(
+                playbackState = playingState,
+                onOpenMediaOutputSwitcher = { outputSwitcherRequests += 1 },
+            )
+        }
+
+        composeTestRule.onNodeWithText(playingItem.title).performClick()
+        composeTestRule.onNodeWithContentDescription(string(R.string.player_cast)).performClick()
+
+        assertEquals(1, outputSwitcherRequests)
+    }
+
+    @Test
+    fun fullScreenPlayerArtworkAndMetadataSwipesDispatchTransport() {
+        var nextRequests = 0
+        var previousRequests = 0
+        composeTestRule.setContent {
+            App(
+                playbackState = playingState,
+                onPlaybackNext = { nextRequests += 1 },
+                onPlaybackPrevious = { previousRequests += 1 },
+            )
+        }
+
+        composeTestRule.onNodeWithText(playingItem.title).performClick()
+        composeTestRule.onNodeWithTag("full_screen_player_artwork_swipe_target")
+            .performTouchInput { swipeLeft() }
+        composeTestRule.onNodeWithTag("full_screen_player_metadata_swipe_target")
+            .performTouchInput { swipeRight() }
+
+        assertEquals(1, nextRequests)
+        assertEquals(1, previousRequests)
     }
 
     @Test
@@ -149,7 +230,7 @@ class AppNavigationTest {
         }
 
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithContentDescription(string(R.string.full_screen_player_placeholder))
+        composeTestRule.onNodeWithContentDescription(string(R.string.full_screen_player))
             .assertTopPositionInRootIsEqualTo(0.dp)
     }
 
@@ -158,10 +239,10 @@ class AppNavigationTest {
         composeTestRule.setContent { App(playbackState = playingState) }
 
         composeTestRule.onNodeWithText(playingItem.title).performClick()
-        composeTestRule.onNodeWithContentDescription(string(R.string.full_screen_player_placeholder)).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(string(R.string.full_screen_player)).assertIsDisplayed()
         InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
 
-        composeTestRule.onAllNodesWithContentDescription(string(R.string.full_screen_player_placeholder)).assertCountEquals(0)
+        composeTestRule.onAllNodesWithContentDescription(string(R.string.full_screen_player)).assertCountEquals(0)
         composeTestRule.onNodeWithContentDescription(string(R.string.destination_home)).assertIsSelected()
     }
 
