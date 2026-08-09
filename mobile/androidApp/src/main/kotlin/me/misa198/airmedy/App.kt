@@ -287,6 +287,7 @@ internal fun App(
                     isFullScreenPlayerVisible = false
                     isFullScreenPlayerOpeningFromSwipe = false
                 },
+                hazeState = hazeState,
             )
         }
         BackHandler(enabled = isFullScreenPlayerVisible) {

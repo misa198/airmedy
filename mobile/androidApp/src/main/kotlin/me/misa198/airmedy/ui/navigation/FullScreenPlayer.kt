@@ -65,6 +65,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -86,6 +88,7 @@ private val FullScreenArtworkShape = RoundedCornerShape(16.dp)
 private val FullScreenPlayerDragHandleShape = RoundedCornerShape(2.dp)
 private const val FullScreenPlayerDragHandleTestTag = "full_screen_player_drag_handle"
 private const val FullScreenPlayerArtworkSwipeTestTag = "full_screen_player_artwork_swipe_target"
+private const val FullScreenPlayerArtworkTestTag = "full_screen_player_artwork"
 private const val FullScreenPlayerMetadataSwipeTestTag = "full_screen_player_metadata_swipe_target"
 private val FullScreenPlayerSwipeMaximum = 40.dp
 private val FullScreenPlayerSwipeThreshold = 32.dp
@@ -107,6 +110,7 @@ internal fun FullScreenPlayer(
     onOpenMediaOutputSwitcher: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    hazeState: HazeState? = null,
 ) {
     val item = playbackState.fullScreenItemOrNull() ?: return
     val colors = LocalAirmedyColors.current
@@ -182,7 +186,12 @@ internal fun FullScreenPlayer(
                 )
             },
     ) {
-            FullScreenPlayerBackground(artwork, Modifier.fillMaxSize())
+            FullScreenPlayerBackground(
+                artwork = artwork,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(if (hazeState == null) Modifier else Modifier.hazeSource(hazeState)),
+            )
             Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -200,52 +209,72 @@ internal fun FullScreenPlayer(
                 onPrevious = onPrevious,
                 onNext = onNext,
             ) {
-                Artwork(
-                    artwork,
-                    Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .graphicsLayer {
-                            scaleX = artworkScale
-                            scaleY = artworkScale
-                        },
-                )
+                Column {
+                    Artwork(
+                        artwork,
+                        Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(1f)
+                            .semantics { testTag = FullScreenPlayerArtworkTestTag }
+                            .graphicsLayer {
+                                scaleX = artworkScale
+                                scaleY = artworkScale
+                            },
+                    )
+                    Spacer(Modifier.height(36.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clipToBounds()
+                                .graphicsLayer { translationX = displayedHorizontalSwipeOffset }
+                                .semantics { testTag = FullScreenPlayerMetadataSwipeTestTag },
+                        ) {
+                            AirmedyMarqueeText(
+                                text = item.title,
+                                color = colors.onPrimary,
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            )
+                            AirmedyMarqueeText(
+                                text = item.artist,
+                                color = colors.foregroundSubtle,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                        Spacer(Modifier.width(4.dp))
+                        AirmedyIconButton(
+                            symbol = MaterialSymbols.FavoriteBorder,
+                            label = stringResource(R.string.player_heart),
+                            onClick = {},
+                            variant = AirmedyIconButtonVariant.Glass,
+                            tint = colors.onPrimary,
+                            glassColor = Color.White.copy(alpha = 0.06f),
+                            hazeState = hazeState,
+                            circleSize = 36.dp,
+                            iconSize = 20.dp,
+                        )
+                        AirmedyIconButton(
+                            symbol = MaterialSymbols.MoreVert,
+                            label = stringResource(R.string.player_more),
+                            onClick = {},
+                            variant = AirmedyIconButtonVariant.Glass,
+                            tint = colors.onPrimary,
+                            glassColor = Color.White.copy(alpha = 0.06f),
+                            hazeState = hazeState,
+                            circleSize = 36.dp,
+                            iconSize = 20.dp,
+                        )
+                    }
+                }
             }
-            Spacer(Modifier.height(24.dp))
             Column(
                 modifier = Modifier.fillMaxWidth().weight(1f),
                 verticalArrangement = Arrangement.SpaceEvenly,
             ) {
                 Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        FullScreenPlayerSwipeTarget(
-                            testTag = FullScreenPlayerMetadataSwipeTestTag,
-                            swipeState = horizontalSwipeState,
-                            displayedOffset = displayedHorizontalSwipeOffset,
-                            onPrevious = onPrevious,
-                            onNext = onNext,
-                            modifier = Modifier.weight(1f),
-                            movesContent = true,
-                        ) {
-                            Column {
-                                AirmedyMarqueeText(
-                                    text = item.title,
-                                    color = colors.onPrimary,
-                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                                )
-                                AirmedyMarqueeText(
-                                    text = item.artist,
-                                    color = colors.foregroundSubtle,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
-                            }
-                        }
-                        Spacer(Modifier.width(12.dp))
-                        AirmedyIconButton(MaterialSymbols.FavoriteBorder, stringResource(R.string.player_heart), {}, variant = AirmedyIconButtonVariant.Glass)
-                        Spacer(Modifier.width(4.dp))
-                        AirmedyIconButton(MaterialSymbols.MoreVert, stringResource(R.string.player_more), {}, variant = AirmedyIconButtonVariant.Glass)
-                    }
-                    Spacer(Modifier.height(12.dp))
                     AirmedyTrackSlider(
                         value = pendingSeekFraction ?: if (durationMs > 0) currentPositionMs.toFloat() / durationMs else 0f,
                         onValueChange = { pendingSeekFraction = it },
@@ -264,17 +293,9 @@ internal fun FullScreenPlayer(
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    FullScreenTransportButton(
-                        symbol = MaterialSymbols.Shuffle,
-                        label = stringResource(R.string.player_shuffle),
-                        onClick = {},
-                        iconSize = 24.dp,
-                        tint = colors.foregroundSubtle,
-                        filled = false,
-                    )
                     FullScreenTransportButton(
                         symbol = MaterialSymbols.SkipPrevious,
                         label = stringResource(R.string.player_previous),
@@ -293,14 +314,6 @@ internal fun FullScreenPlayer(
                         label = stringResource(R.string.player_next),
                         onClick = onNext,
                         iconSize = 36.dp,
-                    )
-                    FullScreenTransportButton(
-                        symbol = MaterialSymbols.Repeat,
-                        label = stringResource(R.string.player_repeat),
-                        onClick = {},
-                        iconSize = 24.dp,
-                        tint = colors.foregroundSubtle,
-                        filled = false,
                     )
                 }
                 Column {
@@ -333,7 +346,7 @@ internal fun FullScreenPlayer(
                             filled = true
                         )
                     }
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(4.dp))
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         FullScreenControlSlot {
                             FullScreenTransportButton(

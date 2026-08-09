@@ -116,20 +116,22 @@ describe the desktop Vue UI or future iOS UI.
   While it is visible, the activity forces light status-bar content so it remains
   legible above the fullscreen artwork; closing it restores the theme's status-bar
   appearance.
-  Swiping left/right on either artwork or the title/artist metadata moves only
-  the title/artist cluster with the finger, springs it back after release, and
-  dispatches Next/Previous respectively after the same distance/velocity threshold
-  and confirmation haptic used by mini-player metadata swipes; the artwork stays still.
+  Swiping left/right anywhere in the artwork/metadata block moves only the
+  title/artist cluster with the finger while the artwork and actions remain still;
+  it springs back after release and dispatches Next/Previous respectively after
+  the same distance/velocity threshold and confirmation haptic used by mini-player
+  metadata swipes.
   A 36dp-wide, semi-opaque white drag handle is
   centered with an 8dp gap below the status-bar safe area and a 20dp gap before the near-full-width rounded artwork,
-  visually indicating the downward-dismiss gesture. Artwork remains in its own top section;
-  the remaining screen height is a separate `SpaceEvenly` column of three groups: metadata/seek,
-  primary transport, and volume/secondary actions. The primary transport controls are centered with a
+  visually indicating the downward-dismiss gesture. Artwork, the title/artist metadata, and its
+  Heart/More actions form one top block, with a 24dp artwork-to-metadata gap and a 12dp
+  metadata-to-seek gap; the remaining screen height is a separate `SpaceEvenly`
+  column of three groups: seek, primary transport, and volume/secondary actions. The primary transport controls are centered with a
   compact fixed gap with 34dp previous/next icons and a 40dp play/pause icon; bottom secondary-action icons render at 24dp in `foregroundSubtle` inside their standard touch targets.
   It renders near-full-width rounded artwork, with marquee white title text and
   marquee `foregroundSubtle` artist/duration text. Overlong marquee text travels
   to its end and reverses back rather than wrapping continuously. The metadata column keeps a
-  12dp gap before the Heart/More button pair,
+  12dp gap before the blurred glass Heart/More button pair (using Haze backdrop blur and a subtle 6% glass tint),
   a dominant-colour gradient extracted from the artwork, animated over 280ms when artwork changes; the prior artwork remains visible while the replacement decodes to prevent a fallback-colour flash, with a
   restrained dark `playerBackdrop` overlay and fallback in every app theme, seek/duration, transport controls, Android music-stream volume (the system settings provider is observed recursively so hardware keys and route-specific system-volume events keep it current),
   and ghost Lyrics/Queue affordances. The centred secondary action is a Lucide
@@ -178,7 +180,7 @@ describe the desktop Vue UI or future iOS UI.
 | `Selection` | Renders an iOS-style dropdown row and custom elevated menu with a 28dp radius for mutually exclusive `SelectionOption` values. Its selected value uses the standard row typography with the muted action colour; each menu option is at least 44dp tall. Only the right-side action slot opens and anchors the right-aligned menu; the opaque, rounded menu expands and collapses vertically while fading and scaling over 220ms. The caller owns selected state and receives the selected value through `onValueSelected`. |
 | `StackPageLayout` | Places content below the status/header region and above the persistent navigation; screens must use its supplied padding. Its page-header title uses bold `headlineLarge` typography. |
 | `AirmedyGlassIconButton` | A 48dp circular blurred glass icon button with border and button semantics. Back and header actions use this shared primitive. |
-| `AirmedyIconButton` | A 48dp icon action with `Ghost` and `Glass` variants. Glass uses the liquid-glass surface and border; both variants provide an accessible label. |
+| `AirmedyIconButton` | A 48dp icon action with `Ghost` and `Glass` variants. Glass uses the liquid-glass surface and border; both variants support optional `tint`, `glassColor`, `circleSize`, and `iconSize` overrides and provide an accessible label. |
 | `AirmedyMarqueeText` | A single-line text treatment for constrained playback metadata. It clips overflow and eases linearly to its end before reversing direction. |
 | `AirmedyTrackSlider` | Shared custom-drawn slider for fullscreen-player seek and Android music-stream volume. It preserves a 48dp touch target while rendering a translucent gray glass track with a white current-value fill and no thumb or Material Slider terminal indicator. `trackHeight` lets the fullscreen seek bar render at 6dp while the volume bar keeps its 3dp default. Slider range semantics and touch/drag seeking remain available to accessibility services. The fullscreen volume row places muted low/high-volume icons at either end. |
 | `AirmedyPillButton` | A borderless 52dp minimum-height capsule action. `Primary` and `Destructive` use the primary background with the explicit white `onPrimary` token in both light and dark themes; `Secondary` uses the stronger `buttonSecondary` theme surface with normal foreground text. Its label supplies button semantics. |

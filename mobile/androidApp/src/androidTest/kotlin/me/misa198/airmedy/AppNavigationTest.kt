@@ -26,6 +26,7 @@ import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.player.PlaybackItem
 import me.misa198.airmedy.player.PlaybackState
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -217,6 +218,24 @@ class AppNavigationTest {
 
         assertEquals(1, nextRequests)
         assertEquals(1, previousRequests)
+    }
+
+    @Test
+    fun fullScreenPlayerKeepsMetadataWithArtwork() {
+        composeTestRule.setContent { App(playbackState = playingState) }
+
+        composeTestRule.onNodeWithText(playingItem.title).performClick()
+        val artworkBounds = composeTestRule.onNodeWithTag("full_screen_player_artwork")
+            .fetchSemanticsNode().boundsInRoot
+        val metadataBounds = composeTestRule.onNodeWithTag("full_screen_player_metadata_swipe_target")
+            .fetchSemanticsNode().boundsInRoot
+        val maximumGapPx = with(composeTestRule.density) { 24.dp.toPx() }
+
+        assertTrue("Metadata must follow the artwork", metadataBounds.top >= artworkBounds.bottom)
+        assertTrue(
+            "Artwork and metadata must remain in the same visual block",
+            metadataBounds.top - artworkBounds.bottom <= maximumGapPx,
+        )
     }
 
     @Test
