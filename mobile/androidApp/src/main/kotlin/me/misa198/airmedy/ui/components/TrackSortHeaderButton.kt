@@ -41,7 +41,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.composables.icons.lucide.R as LucideR
 import dev.chrisbanes.haze.HazeState
 import me.misa198.airmedy.R
 import me.misa198.airmedy.ui.screens.SortOrder
@@ -63,7 +62,7 @@ fun TrackSortHeaderButton(
     Box(modifier = modifier) {
         AirmedyGlassIconButton(
             hazeState = hazeState,
-            iconRes = LucideR.drawable.lucide_ic_arrow_up_down,
+            symbol = MaterialSymbols.SwapVert,
             label = stringResource(R.string.sort_by),
             onClick = { menuVisibility.targetState = true },
         )
@@ -158,10 +157,10 @@ private fun TrackSortMenu(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (selected) {
-                    Icon(
-                        painter = painterResource(LucideR.drawable.lucide_ic_check),
+                    MaterialSymbol(
+                        symbol = MaterialSymbols.Check,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp),
+                        size = 18.dp,
                         tint = colors.primary,
                     )
                 } else {
@@ -197,10 +196,10 @@ private fun TrackSortMenu(
 
         // ASC / DESC toggle row
         val orderTextRes = if (sortOrder == SortOrder.Ascending) R.string.sort_order_asc else R.string.sort_order_desc
-        val orderIconRes = if (sortOrder == SortOrder.Ascending) {
-            LucideR.drawable.lucide_ic_arrow_up_narrow_wide
+        val orderSymbol = if (sortOrder == SortOrder.Ascending) {
+            MaterialSymbols.ArrowUpward
         } else {
-            LucideR.drawable.lucide_ic_arrow_down_wide_narrow
+            MaterialSymbols.ArrowDownward
         }
 
         Row(
@@ -217,10 +216,10 @@ private fun TrackSortMenu(
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                painter = painterResource(orderIconRes),
+            MaterialSymbol(
+                symbol = orderSymbol,
                 contentDescription = null,
-                modifier = Modifier.size(18.dp),
+                size = 18.dp,
                 tint = colors.primary,
             )
             Text(

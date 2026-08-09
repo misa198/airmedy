@@ -75,9 +75,7 @@ intent using native Android Compose.
 - Use Haze backdrop blur only with a corresponding `hazeSource`. Keep the
   strong 30dp blur scoped to this persistent nav rather than adding expensive
   blur effects to every list item or card.
-- Icons are Lucide Android drawables (`com.composables:icons-lucide-android`),
-  never Material Icons. Pair each with its text label and provide Compose
-  semantics/content descriptions.
+- Icons are Material Symbols Rounded font glyphs via the `MaterialSymbol` composable (`me.misa198.airmedy.ui.components.MaterialSymbol`), loaded from `res/font/material_symbols_rounded.ttf`, never raw SVGs or legacy Material Icons. Pair each with its text label and provide Compose semantics/content descriptions.
 - The selected pill is a single shared layer. It slides between tab slots with
   a soft, non-bouncy spring; it follows horizontal dragging continuously and
   selection changes only when the gesture ends in a tab's slot. Tapping a tab

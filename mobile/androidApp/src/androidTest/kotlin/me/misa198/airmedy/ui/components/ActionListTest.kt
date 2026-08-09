@@ -12,7 +12,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
-import com.composables.icons.lucide.R as LucideR
 import me.misa198.airmedy.R
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.ui.theme.AirmedyTheme
@@ -31,12 +30,12 @@ class ActionListTest {
                     items = listOf(
                         ActionListItem(
                             labelRes = R.string.home_action_one,
-                            leadingIconRes = LucideR.drawable.lucide_ic_circle_play,
+                            leadingSymbol = MaterialSymbols.PlayCircle,
                             onClick = {},
                         ),
                         ActionListItem(
                             labelRes = R.string.home_action_two,
-                            leadingIconRes = LucideR.drawable.lucide_ic_list_music,
+                            leadingSymbol = MaterialSymbols.QueueMusic,
                         ),
                     ),
                     containerStyle = ActionListContainerStyle.Card,

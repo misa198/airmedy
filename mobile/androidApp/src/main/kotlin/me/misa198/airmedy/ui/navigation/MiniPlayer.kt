@@ -55,13 +55,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
-import com.composables.icons.lucide.R as LucideR
 import dev.chrisbanes.haze.HazeState
 import me.misa198.airmedy.R
 import me.misa198.airmedy.ui.components.AirmedyMarqueeText
+import me.misa198.airmedy.ui.components.MaterialSymbol
+import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.player.PlaybackItem
 import me.misa198.airmedy.player.PlaybackState
 import me.misa198.airmedy.ui.components.liquidGlassBackground
@@ -263,11 +265,11 @@ internal fun MiniPlayer(
                     modifier = Modifier.fillMaxSize(),
                 )
             } else {
-                Icon(
-                    painter = painterResource(LucideR.drawable.lucide_ic_music),
+                MaterialSymbol(
+                    symbol = MaterialSymbols.MusicNote,
                     contentDescription = null,
                     tint = colors.textMuted,
-                    modifier = Modifier.size(22.dp),
+                    size = 22.dp,
                 )
             }
         }
@@ -332,21 +334,21 @@ internal fun MiniPlayer(
             exit = fadeOut(animationSpec = tween(160)),
         ) {
             MiniPlayerControl(
-                iconRes = R.drawable.ic_player_previous_filled,
+                symbol = MaterialSymbols.SkipPrevious,
                 label = stringResource(R.string.player_previous),
                 onClick = onPreviousClick,
                 horizontalOffset = 16.dp,
             )
         }
         MiniPlayerControl(
-            iconRes = if (isPlaying) R.drawable.ic_player_pause_filled else R.drawable.ic_player_play_filled,
+            symbol = if (isPlaying) MaterialSymbols.Pause else MaterialSymbols.PlayArrow,
             label = stringResource(if (isPlaying) R.string.player_pause else R.string.player_play),
             onClick = onPlayPauseClick,
             enabled = !isPreparing,
             horizontalOffset = 8.dp,
         )
         MiniPlayerControl(
-            iconRes = R.drawable.ic_player_next_filled,
+            symbol = MaterialSymbols.SkipNext,
             label = stringResource(R.string.player_next),
             onClick = onNextClick,
         )
@@ -357,7 +359,7 @@ internal fun MiniPlayer(
 
 @Composable
 private fun MiniPlayerControl(
-    iconRes: Int,
+    symbol: String,
     label: String,
     onClick: () -> Unit,
     enabled: Boolean = true,
@@ -371,11 +373,12 @@ private fun MiniPlayerControl(
             .size(48.dp)
             .offset(x = horizontalOffset),
     ) {
-        Icon(
-            painter = painterResource(iconRes),
+        MaterialSymbol(
+            symbol = symbol,
             contentDescription = label,
             tint = if (enabled) colors.textMain else colors.textMuted,
-            modifier = Modifier.size(24.dp),
+            size = 24.dp,
+            filled = true,
         )
     }
 }

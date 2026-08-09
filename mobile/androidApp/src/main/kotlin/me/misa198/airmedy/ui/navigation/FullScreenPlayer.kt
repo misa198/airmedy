@@ -61,10 +61,10 @@ import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
-import com.composables.icons.lucide.R as LucideR
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -76,6 +76,8 @@ import me.misa198.airmedy.player.PlaybackItem
 import me.misa198.airmedy.player.PlaybackState
 import me.misa198.airmedy.ui.components.AirmedyIconButton
 import me.misa198.airmedy.ui.components.AirmedyIconButtonVariant
+import me.misa198.airmedy.ui.components.MaterialSymbol
+import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.ui.components.AirmedyMarqueeText
 import me.misa198.airmedy.ui.components.AirmedyTrackSlider
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
@@ -239,9 +241,9 @@ internal fun FullScreenPlayer(
                             }
                         }
                         Spacer(Modifier.width(12.dp))
-                        AirmedyIconButton(LucideR.drawable.lucide_ic_heart, stringResource(R.string.player_heart), {}, variant = AirmedyIconButtonVariant.Glass)
+                        AirmedyIconButton(MaterialSymbols.FavoriteBorder, stringResource(R.string.player_heart), {}, variant = AirmedyIconButtonVariant.Glass)
                         Spacer(Modifier.width(4.dp))
-                        AirmedyIconButton(LucideR.drawable.lucide_ic_ellipsis, stringResource(R.string.player_more), {}, variant = AirmedyIconButtonVariant.Glass)
+                        AirmedyIconButton(MaterialSymbols.MoreVert, stringResource(R.string.player_more), {}, variant = AirmedyIconButtonVariant.Glass)
                     }
                     Spacer(Modifier.height(12.dp))
                     AirmedyTrackSlider(
@@ -262,27 +264,43 @@ internal fun FullScreenPlayer(
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     FullScreenTransportButton(
-                        R.drawable.ic_player_previous_filled,
-                        stringResource(R.string.player_previous),
-                        onPrevious,
-                        iconSize = 32.dp,
+                        symbol = MaterialSymbols.Shuffle,
+                        label = stringResource(R.string.player_shuffle),
+                        onClick = {},
+                        iconSize = 24.dp,
+                        tint = colors.foregroundSubtle,
+                        filled = false,
                     )
                     FullScreenTransportButton(
-                        iconRes = if (isPlaying) R.drawable.ic_player_pause_filled else R.drawable.ic_player_play_filled,
+                        symbol = MaterialSymbols.SkipPrevious,
+                        label = stringResource(R.string.player_previous),
+                        onClick = onPrevious,
+                        iconSize = 36.dp,
+                    )
+                    FullScreenTransportButton(
+                        symbol = if (isPlaying) MaterialSymbols.Pause else MaterialSymbols.PlayArrow,
                         label = stringResource(if (isPlaying) R.string.player_pause else R.string.player_play),
                         enabled = !isPreparing,
-                        iconSize = 44.dp,
+                        iconSize = 48.dp,
                         onClick = onPlayPause,
                     )
                     FullScreenTransportButton(
-                        R.drawable.ic_player_next_filled,
-                        stringResource(R.string.player_next),
-                        onNext,
-                        iconSize = 32.dp,
+                        symbol = MaterialSymbols.SkipNext,
+                        label = stringResource(R.string.player_next),
+                        onClick = onNext,
+                        iconSize = 36.dp,
+                    )
+                    FullScreenTransportButton(
+                        symbol = MaterialSymbols.Repeat,
+                        label = stringResource(R.string.player_repeat),
+                        onClick = {},
+                        iconSize = 24.dp,
+                        tint = colors.foregroundSubtle,
+                        filled = false,
                     )
                 }
                 Column {
@@ -290,11 +308,12 @@ internal fun FullScreenPlayer(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(
-                            painter = painterResource(LucideR.drawable.lucide_ic_volume_1),
+                        MaterialSymbol(
+                            symbol = MaterialSymbols.VolumeDown,
                             contentDescription = null,
                             tint = colors.textMuted,
-                            modifier = Modifier.size(14.dp),
+                            size = 20.dp,
+                            filled = true
                         )
                         Spacer(Modifier.width(10.dp))
                         AirmedyTrackSlider(
@@ -306,40 +325,44 @@ internal fun FullScreenPlayer(
                                 .semantics { contentDescription = volumeLabel },
                         )
                         Spacer(Modifier.width(10.dp))
-                        Icon(
-                            painter = painterResource(LucideR.drawable.lucide_ic_volume_2),
+                        MaterialSymbol(
+                            symbol = MaterialSymbols.VolumeUp,
                             contentDescription = null,
                             tint = colors.textMuted,
-                            modifier = Modifier.size(14.dp),
+                            size = 20.dp,
+                            filled = true
                         )
                     }
                     Spacer(Modifier.height(8.dp))
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         FullScreenControlSlot {
                             FullScreenTransportButton(
-                                R.drawable.ic_player_lyrics_filled,
+                                MaterialSymbols.Chat,
                                 stringResource(R.string.player_lyrics),
                                 {},
                                 iconSize = 24.dp,
                                 tint = colors.foregroundSubtle,
+                                filled = false,
                             )
                         }
                         FullScreenControlSlot {
                             FullScreenTransportButton(
-                                LucideR.drawable.lucide_ic_cast,
+                                MaterialSymbols.Airplay,
                                 stringResource(R.string.player_cast),
                                 onOpenMediaOutputSwitcher,
                                 iconSize = 24.dp,
                                 tint = colors.foregroundSubtle,
+                                filled = false,
                             )
                         }
                         FullScreenControlSlot {
                             FullScreenTransportButton(
-                                R.drawable.ic_player_queue_filled,
+                                MaterialSymbols.QueueMusic,
                                 stringResource(R.string.player_queue),
                                 {},
                                 iconSize = 24.dp,
                                 tint = colors.foregroundSubtle,
+                                filled = false,
                             )
                         }
                     }
@@ -462,7 +485,7 @@ private fun Artwork(artwork: FullScreenArtwork?, modifier: Modifier) {
     val colors = LocalAirmedyColors.current
     Box(modifier.clip(FullScreenArtworkShape).background(colors.glassElevated), contentAlignment = Alignment.Center) {
         if (artwork != null) Image(artwork.image, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-        else Icon(painterResource(LucideR.drawable.lucide_ic_music), null, tint = colors.textMuted, modifier = Modifier.size(64.dp))
+        else MaterialSymbol(symbol = MaterialSymbols.MusicNote, contentDescription = null, tint = colors.textMuted, size = 64.dp)
     }
 }
 
@@ -473,20 +496,22 @@ private fun RowScope.FullScreenControlSlot(content: @Composable () -> Unit) {
 
 @Composable
 private fun FullScreenTransportButton(
-    iconRes: Int,
+    symbol: String,
     label: String,
     onClick: () -> Unit,
     enabled: Boolean = true,
     iconSize: androidx.compose.ui.unit.Dp = 32.dp,
     tint: Color? = null,
+    filled: Boolean = true,
 ) {
     val colors = LocalAirmedyColors.current
     IconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(64.dp)) {
-        Icon(
-            painter = painterResource(iconRes),
+        MaterialSymbol(
+            symbol = symbol,
             contentDescription = label,
             tint = tint ?: if (enabled) colors.onPrimary else colors.textMuted,
-            modifier = Modifier.size(iconSize),
+            size = iconSize,
+            filled = filled,
         )
     }
 }

@@ -6,12 +6,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.composables.icons.lucide.R as LucideR
 import me.misa198.airmedy.R
 import me.misa198.airmedy.ui.components.ActionList
 import me.misa198.airmedy.ui.components.ActionListContainerStyle
 import me.misa198.airmedy.ui.components.ActionListItem
-
+import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 @Composable
@@ -37,31 +36,31 @@ internal fun LibraryContent(
             items = listOf(
                 ActionListItem(
                     labelRes = R.string.library_artists,
-                    leadingIconRes = LucideR.drawable.lucide_ic_users,
+                    leadingSymbol = MaterialSymbols.People,
                     leadingIconTint = colors.primary,
                     onClick = onArtistsSelected,
                 ),
                 ActionListItem(
                     labelRes = R.string.library_albums,
-                    leadingIconRes = LucideR.drawable.lucide_ic_disc,
+                    leadingSymbol = MaterialSymbols.Album,
                     leadingIconTint = colors.primary,
                     onClick = onAlbumsSelected,
                 ),
                 ActionListItem(
                     labelRes = R.string.library_tracks,
-                    leadingIconRes = LucideR.drawable.lucide_ic_music,
+                    leadingSymbol = MaterialSymbols.MusicNote,
                     leadingIconTint = colors.primary,
                     onClick = onTracksSelected,
                 ),
                 ActionListItem(
                     labelRes = R.string.library_genres,
-                    leadingIconRes = LucideR.drawable.lucide_ic_tags,
+                    leadingSymbol = MaterialSymbols.Label,
                     leadingIconTint = colors.primary,
                     onClick = onGenresSelected,
                 ),
                 ActionListItem(
                     labelRes = R.string.library_composers,
-                    leadingIconRes = LucideR.drawable.lucide_ic_mic,
+                    leadingSymbol = MaterialSymbols.Mic,
                     leadingIconTint = colors.primary,
                     onClick = onComposersSelected,
                 ),

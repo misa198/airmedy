@@ -41,7 +41,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.composables.icons.lucide.R as LucideR
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 data class SelectionOption<T>(
@@ -87,13 +86,12 @@ fun <T> Selection(
                         style = MaterialTheme.typography.bodyLarge,
                         color = colors.textMuted,
                     )
-                    Icon(
-                        painter = painterResource(LucideR.drawable.lucide_ic_chevrons_up_down),
+                    MaterialSymbol(
+                        symbol = MaterialSymbols.UnfoldMore,
                         contentDescription = null,
-                        modifier = Modifier
-                            .padding(start = 8.dp)
-                            .size(18.dp),
+                        size = 18.dp,
                         tint = colors.textMuted,
+                        modifier = Modifier.padding(start = 8.dp),
                     )
                 }
                 if (menuVisibility.currentState || menuVisibility.targetState) {
@@ -197,10 +195,10 @@ private fun <T> SelectionMenu(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (selected) {
-                    Icon(
-                        painter = painterResource(LucideR.drawable.lucide_ic_check),
+                    MaterialSymbol(
+                        symbol = MaterialSymbols.Check,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp),
+                        size = 18.dp,
                         tint = colors.textMain,
                     )
                 } else {

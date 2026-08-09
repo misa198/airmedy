@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import com.composables.icons.lucide.R as LucideR
+import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.R
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.ui.components.HeroCard
@@ -47,7 +47,7 @@ internal fun LibraryTracksContent(
             HeroCard(
                 title = stringResource(R.string.tracks_empty_title),
                 description = stringResource(R.string.tracks_empty_description),
-                iconRes = LucideR.drawable.lucide_ic_music,
+                symbol = MaterialSymbols.MusicNote,
             )
         }
     } else {

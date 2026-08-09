@@ -31,12 +31,10 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.composables.icons.lucide.R as LucideR
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -134,11 +132,11 @@ fun TrackRow(
                     modifier = Modifier.matchParentSize(),
                 )
             } else {
-                Icon(
-                    painter = painterResource(LucideR.drawable.lucide_ic_music),
+                MaterialSymbol(
+                    symbol = MaterialSymbols.MusicNote,
                     contentDescription = null,
+                    size = 22.dp,
                     tint = colors.textMuted,
-                    modifier = Modifier.size(22.dp),
                 )
             }
         }
@@ -172,11 +170,11 @@ fun TrackRow(
             onClick = handleMoreClick,
             modifier = Modifier.size(48.dp),
         ) {
-            Icon(
-                painter = painterResource(LucideR.drawable.lucide_ic_ellipsis),
+            MaterialSymbol(
+                symbol = MaterialSymbols.MoreVert,
                 contentDescription = stringResource(R.string.track_row_more_options),
+                size = 20.dp,
                 tint = colors.textMuted,
-                modifier = Modifier.size(20.dp),
             )
         }
     }

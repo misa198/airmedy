@@ -28,7 +28,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.composables.icons.lucide.R as LucideR
 import me.misa198.airmedy.R
 import me.misa198.airmedy.SyncUiState
 import me.misa198.airmedy.pairing.PairingFailure
@@ -38,6 +37,7 @@ import me.misa198.airmedy.ui.components.AirmedyPillButton
 import me.misa198.airmedy.ui.components.AirmedyPillButtonVariant
 import me.misa198.airmedy.ui.components.Card
 import me.misa198.airmedy.ui.components.HeroCard
+import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 @Composable
@@ -58,7 +58,7 @@ internal fun SyncContent(
         when {
             syncUiState.desktop != null -> {
                 HeroCard(
-                    iconRes = LucideR.drawable.lucide_ic_computer,
+                    symbol = MaterialSymbols.DesktopWindows,
                     title = syncUiState.desktop.displayName,
                     description = stringResource(
                         if (syncUiState.isMqttConnected) R.string.sync_paired_device_description
@@ -79,12 +79,12 @@ internal fun SyncContent(
                 )
             }
             syncUiState.isPairing -> HeroCard(
-                iconRes = LucideR.drawable.lucide_ic_loader_circle,
+                symbol = MaterialSymbols.Sync,
                 title = stringResource(R.string.sync_waiting_title),
                 description = stringResource(R.string.sync_waiting_description),
             )
             else -> HeroCard(
-                iconRes = LucideR.drawable.lucide_ic_plug,
+                symbol = MaterialSymbols.Power,
                 title = stringResource(R.string.sync_empty_title),
                 description = stringResource(R.string.sync_empty_description),
             )

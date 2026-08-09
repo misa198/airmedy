@@ -53,7 +53,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.composables.icons.lucide.R as LucideR
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeInputScale
 import me.misa198.airmedy.R
@@ -260,7 +259,7 @@ fun AirmedyBackButton(
     val label = stringResource(R.string.navigate_back)
     AirmedyGlassIconButton(
         hazeState = hazeState,
-        iconRes = LucideR.drawable.lucide_ic_chevron_left,
+        symbol = MaterialSymbols.ChevronLeft,
         label = label,
         onClick = onClick,
         modifier = modifier,
@@ -270,7 +269,7 @@ fun AirmedyBackButton(
 @Composable
 fun AirmedyGlassIconButton(
     hazeState: HazeState?,
-    @DrawableRes iconRes: Int,
+    symbol: String,
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -296,8 +295,8 @@ fun AirmedyGlassIconButton(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            painter = painterResource(iconRes),
+        MaterialSymbol(
+            symbol = symbol,
             contentDescription = null,
             tint = colors.textMain,
         )

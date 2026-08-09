@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
 import me.misa198.airmedy.AppDestination
 import me.misa198.airmedy.ui.components.liquidGlassBackground
+import me.misa198.airmedy.ui.components.MaterialSymbol
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 internal val FloatingNavigationHeight = 72.dp
@@ -168,6 +169,7 @@ internal fun FloatingNavigationBar(
                 )
                 FloatingNavigationVisuals(
                     foreground = colors.textMain,
+                    filled = true,
                     modifier = Modifier
                         .fillMaxSize()
                         .navigationForegroundMask(
@@ -178,6 +180,7 @@ internal fun FloatingNavigationBar(
                 )
                 FloatingNavigationVisuals(
                     foreground = colors.primary,
+                    filled = true,
                     modifier = Modifier
                         .fillMaxSize()
                         .navigationForegroundMask(
@@ -221,10 +224,10 @@ private fun CompactNavigationTarget(
             .clip(RoundedCornerShape(InnerPillRadius))
             .semantics { contentDescription = destinationLabel },
     ) {
-        Icon(
-            painter = painterResource(selectedDestination.iconRes),
-            contentDescription = null,
+        MaterialSymbol(
+            symbol = selectedDestination.symbol,
             tint = colors.primary,
+            filled = true,
         )
     }
 }
@@ -256,6 +259,7 @@ private fun Modifier.navigationForegroundMask(
 @Composable
 private fun FloatingNavigationVisuals(
     foreground: Color,
+    filled: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -266,6 +270,7 @@ private fun FloatingNavigationVisuals(
             FloatingNavigationVisual(
                 destination = destination,
                 foreground = foreground,
+                filled = filled,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -276,6 +281,7 @@ private fun FloatingNavigationVisuals(
 private fun FloatingNavigationVisual(
     destination: AppDestination,
     foreground: Color,
+    filled: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val destinationLabel = stringResource(destination.titleRes)
@@ -284,10 +290,10 @@ private fun FloatingNavigationVisual(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(
-            painter = painterResource(destination.iconRes),
-            contentDescription = null,
+        MaterialSymbol(
+            symbol = destination.symbol,
             tint = foreground,
+            filled = filled,
         )
         Text(
             text = destinationLabel,

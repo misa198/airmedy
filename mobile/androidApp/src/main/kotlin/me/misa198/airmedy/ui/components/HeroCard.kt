@@ -1,6 +1,5 @@
 package me.misa198.airmedy.ui.components
 
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -9,7 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
@@ -17,7 +16,7 @@ import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 /** A prominent informational card with a decorative icon, title, and supporting description. */
 @Composable
 fun HeroCard(
-    @DrawableRes iconRes: Int,
+    symbol: String,
     title: String,
     description: String,
     modifier: Modifier = Modifier,
@@ -29,10 +28,10 @@ fun HeroCard(
         modifier = modifier,
         belowTitle = belowTitle,
     ) {
-        Icon(
-            painter = painterResource(iconRes),
+        MaterialSymbol(
+            symbol = symbol,
             contentDescription = null,
-            modifier = Modifier.size(40.dp),
+            size = 40.dp,
             tint = LocalAirmedyColors.current.textMuted,
         )
     }

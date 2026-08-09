@@ -58,6 +58,8 @@
     <string name="player_volume">Music volume</string>
     <string name="player_heart">Favorite</string>
     <string name="player_more">More options</string>
+    <string name="player_shuffle">Shuffle</string>
+    <string name="player_repeat">Repeat</string>
     <string name="player_lyrics">Lyrics</string>
     <string name="player_cast">Cast</string>
     <string name="player_queue">Queue</string>

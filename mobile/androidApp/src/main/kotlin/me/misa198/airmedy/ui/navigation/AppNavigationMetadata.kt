@@ -1,11 +1,10 @@
 package me.misa198.airmedy.ui.navigation
 
-import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import com.composables.icons.lucide.R as LucideR
 import me.misa198.airmedy.AppDestination
 import me.misa198.airmedy.AppStackPage
 import me.misa198.airmedy.R
+import me.misa198.airmedy.ui.components.MaterialSymbols
 
 @StringRes
 internal fun AppStackPage.titleRes(destination: AppDestination): Int = when (this) {
@@ -34,10 +33,10 @@ internal val AppDestination.placeholderRes: Int
         AppDestination.Settings -> R.string.placeholder_settings
     }
 
-internal val AppDestination.iconRes: Int
-    @DrawableRes get() = when (this) {
-        AppDestination.Home -> LucideR.drawable.lucide_ic_house
-        AppDestination.Library -> LucideR.drawable.lucide_ic_library_big
-        AppDestination.Search -> LucideR.drawable.lucide_ic_search
-        AppDestination.Settings -> LucideR.drawable.lucide_ic_settings
+internal val AppDestination.symbol: String
+    get() = when (this) {
+        AppDestination.Home -> MaterialSymbols.Home
+        AppDestination.Library -> MaterialSymbols.Album
+        AppDestination.Search -> MaterialSymbols.Search
+        AppDestination.Settings -> MaterialSymbols.Settings
     }

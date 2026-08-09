@@ -25,7 +25,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.composables.icons.lucide.R as LucideR
 import me.misa198.airmedy.R
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
@@ -129,17 +128,17 @@ private fun HomeActionListSection(
             items = listOf(
                 ActionListItem(
                     labelRes = R.string.home_action_one,
-                    leadingIconRes = LucideR.drawable.lucide_ic_circle_play,
+                    leadingSymbol = MaterialSymbols.PlayCircle,
                     onClick = onOpenSampleDetail,
                 ),
                 ActionListItem(
                     labelRes = R.string.home_action_two,
-                    leadingIconRes = LucideR.drawable.lucide_ic_list_music,
+                    leadingSymbol = MaterialSymbols.QueueMusic,
                     onClick = onOpenSampleDetail,
                 ),
                 ActionListItem(
                     labelRes = R.string.home_action_three,
-                    leadingIconRes = LucideR.drawable.lucide_ic_sliders_horizontal,
+                    leadingSymbol = MaterialSymbols.Tune,
                     onClick = onOpenSampleDetail,
                 ),
             ),

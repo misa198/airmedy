@@ -1,6 +1,5 @@
 package me.misa198.airmedy.ui.components
 
-import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -13,22 +12,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.composables.icons.lucide.R as LucideR
-import androidx.compose.ui.graphics.Color
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 enum class ActionListContainerStyle {
@@ -43,7 +38,7 @@ enum class ActionListDividerStyle {
 
 data class ActionListItem(
     @StringRes val labelRes: Int,
-    @DrawableRes val leadingIconRes: Int? = null,
+    val leadingSymbol: String? = null,
     val leadingIconTint: Color? = null,
     val trailingContent: (@Composable RowScope.() -> Unit)? = null,
     val onClick: (() -> Unit)? = null,
@@ -101,11 +96,11 @@ private fun ActionListRow(item: ActionListItem) {
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        item.leadingIconRes?.let { iconRes ->
-            Icon(
-                painter = painterResource(iconRes),
+        item.leadingSymbol?.let { symbol ->
+            MaterialSymbol(
+                symbol = symbol,
                 contentDescription = null,
-                modifier = Modifier.size(20.dp),
+                size = 20.dp,
                 tint = item.leadingIconTint ?: colors.textMain,
             )
         }
@@ -113,16 +108,16 @@ private fun ActionListRow(item: ActionListItem) {
             text = label,
             modifier = Modifier
                 .weight(1f)
-                .padding(start = if (item.leadingIconRes != null) 16.dp else 0.dp),
+                .padding(start = if (item.leadingSymbol != null) 16.dp else 0.dp),
             style = MaterialTheme.typography.bodyLarge,
             color = colors.textMain,
         )
         when {
             item.trailingContent != null -> Row(content = item.trailingContent)
-            item.onClick != null -> Icon(
-                painter = painterResource(LucideR.drawable.lucide_ic_chevron_right),
+            item.onClick != null -> MaterialSymbol(
+                symbol = MaterialSymbols.ChevronRight,
                 contentDescription = null,
-                modifier = Modifier.size(20.dp),
+                size = 20.dp,
                 tint = colors.textMuted,
             )
         }

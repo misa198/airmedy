@@ -30,10 +30,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.composables.icons.lucide.R as LucideR
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.launch
 import me.misa198.airmedy.ui.components.AirmedyGlassIconButton
+import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.ui.components.StackPageHeader
 import me.misa198.airmedy.ui.components.TrackSortHeaderButton
 import me.misa198.airmedy.ui.navigation.AppDestinationContent
@@ -209,7 +209,7 @@ internal fun App(
                 if (showSyncAddAction) {
                     AirmedyGlassIconButton(
                         hazeState = hazeState,
-                        iconRes = LucideR.drawable.lucide_ic_plus,
+                        symbol = MaterialSymbols.Add,
                         label = stringResource(R.string.sync_add_device),
                         onClick = { onIntent(AppIntent.OpenPage(AppStackPage.SettingsSyncScanner)) },
                     )
