@@ -1,0 +1,423 @@
+package me.misa198.airmedy.player
+
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.Notification
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.app.PendingIntent
+import android.app.Service
+import android.content.Context
+import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
+import android.media.MediaMetadata
+import android.media.session.MediaSession
+import android.media.session.PlaybackState as AndroidMediaPlaybackState
+import android.os.IBinder
+import android.util.Log
+import java.io.File
+import android.util.LruCache
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import me.misa198.airmedy.MainActivity
+import me.misa198.airmedy.R
+import me.misa198.airmedy.sync.AndroidSyncRuntime
+
+/** Owns Android transport; queue semantics are delegated to sharedLogic. */
+class PlaybackService : Service() {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val commandMutex = Mutex()
+    private val restored = CompletableDeferred<Unit>()
+    private val queue = PlaybackQueue()
+    private var decoder: FfmpegDecoder? = null
+    private lateinit var sessionStore: PlaybackSessionStore
+    private lateinit var audioManager: AudioManager
+    private lateinit var mediaSession: MediaSession
+    private lateinit var focusRequest: AudioFocusRequest
+
+    override fun onCreate() {
+        super.onCreate()
+        AndroidPlaybackRuntime.initialize(applicationContext, AndroidSyncRuntime.syncStore())
+        sessionStore = PlaybackSessionStore(applicationContext)
+        audioManager = getSystemService(AudioManager::class.java)
+        focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            .setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
+            .setOnAudioFocusChangeListener { change -> if (change <= AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) dispatch(ActionPause) }
+            .build()
+        mediaSession = MediaSession(this, "AirmedyPlayback").apply {
+            setCallback(object : MediaSession.Callback() {
+                override fun onPlay() { dispatch(ActionResume) }
+                override fun onPause() { dispatch(ActionPause) }
+                override fun onSkipToNext() { dispatch(ActionNext) }
+                override fun onSkipToPrevious() { dispatch(ActionPrevious) }
+                override fun onSeekTo(pos: Long) { dispatch(ActionSeek, positionMs = pos) }
+                override fun onStop() { dispatch(ActionStop) }
+            })
+            isActive = false
+        }
+        scope.launch {
+            sessionStore.load()?.let { saved ->
+                val available = saved.originalTrackIds.filter { AndroidPlaybackRuntime.controller().resolve(it) != null }
+                val availableSet = available.toSet()
+                queue.restore(saved.copy(
+                    originalTrackIds = available,
+                    activeTrackIds = saved.activeTrackIds.filter(availableSet::contains),
+                ))
+                publishQueue()
+            }
+            restored.complete(Unit)
+        }
+        scope.launch {
+            while (true) {
+                delay(200)
+                commandMutex.withLock {
+                    refreshPlaybackPosition()
+                    if (decoder?.isFinished() == true && state.value is PlaybackState.Playing) {
+                        handleTransition(queue.next())
+                        publishQueue()
+                    }
+                }
+            }
+        }
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        when (intent?.action) {
+            ActionPlay, ActionShuffle -> dispatch(
+                action = intent.action!!,
+                trackIds = intent.getStringArrayExtra(TrackIdsExtra).orEmpty().toList(),
+                startIndex = intent.getIntExtra(StartIndexExtra, 0),
+            )
+            ActionSeek -> dispatch(ActionSeek, positionMs = intent.getLongExtra(PositionMsExtra, 0L))
+            ActionSetShuffle -> dispatch(ActionSetShuffle, enabled = intent.getBooleanExtra(EnabledExtra, false))
+            ActionSetRepeat -> dispatch(
+                ActionSetRepeat,
+                repeat = intent.getStringExtra(RepeatModeExtra)?.let { value -> runCatching { RepeatMode.valueOf(value) }.getOrNull() },
+            )
+            ActionPlayNext, ActionAppend, ActionReorder -> dispatch(
+                action = intent.action!!,
+                trackIds = intent.getStringArrayExtra(TrackIdsExtra).orEmpty().toList(),
+            )
+            ActionRemove -> dispatch(ActionRemove, trackIds = listOfNotNull(intent.getStringExtra(TrackIdExtra)))
+            null -> Unit
+            else -> dispatch(intent.action!!)
+        }
+        return START_NOT_STICKY
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onDestroy() {
+        runBlocking { sessionStore.save(queue.snapshot()) }
+        decoder?.close()
+        mediaSession.release()
+        audioManager.abandonAudioFocusRequest(focusRequest)
+        scope.cancel()
+        state.value = PlaybackState.Idle
+        super.onDestroy()
+    }
+
+    private fun dispatch(
+        action: String,
+        positionMs: Long = 0L,
+        trackIds: List<String> = emptyList(),
+        startIndex: Int = 0,
+        enabled: Boolean = false,
+        repeat: RepeatMode? = null,
+    ) = scope.launch {
+        restored.await()
+        commandMutex.withLock {
+            Log.d(PlaybackLogTag, "Handling action=$action queueSize=${queue.snapshot().activeTrackIds.size}")
+            when (action) {
+                ActionPlay -> handleTransition(runCatching { queue.play(PlaybackRequest(trackIds, startIndex)) }
+                    .getOrElse { QueueTransition.Stop })
+                ActionShuffle -> handleTransition(runCatching { queue.playShuffled(PlaybackRequest(trackIds, startIndex)) }
+                    .getOrElse { QueueTransition.Stop })
+                ActionPause -> pauseCurrent()
+                ActionResume -> resumeCurrent()
+                ActionStop -> stopPlayback()
+                ActionNext -> handleTransition(queue.next())
+                ActionPrevious -> {
+                    if ((decoder?.positionMs() ?: 0L) > PreviousRestartThresholdMs) decoder?.seekTo(0)
+                    else handleTransition(queue.previous())
+                }
+                ActionSeek -> seekCurrent(positionMs)
+                ActionSetShuffle -> handleTransition(queue.setShuffle(enabled))
+                ActionSetRepeat -> repeat?.let(queue::setRepeatMode)
+                ActionPlayNext -> queue.playNext(trackIds)
+                ActionAppend -> queue.append(trackIds)
+                ActionRemove -> trackIds.firstOrNull()?.let { handleTransition(queue.removeFromQueue(it)) }
+                ActionReorder -> queue.reorderQueue(trackIds)
+            }
+            publishQueue()
+        }
+    }
+
+    private suspend fun handleTransition(transition: QueueTransition) {
+        when (transition) {
+            is QueueTransition.Play -> playCurrent()
+            QueueTransition.Stop -> stopPlayback()
+            QueueTransition.Unchanged -> Unit
+        }
+    }
+
+    private suspend fun playCurrent() {
+        val trackId = queue.snapshot().currentTrackId ?: return stopPlayback()
+        Log.d(PlaybackLogTag, "Preparing current queue track id=$trackId")
+        val item = AndroidPlaybackRuntime.controller().resolve(trackId) ?: return fail(trackId, "Audio asset is not available")
+        state.value = PlaybackState.Preparing(item)
+        publishNowPlaying(item, AndroidMediaPlaybackState.STATE_BUFFERING, positionMs = 0L, durationMs = 0L)
+        if (audioManager.requestAudioFocus(focusRequest) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) return fail(trackId, "Audio focus was not granted")
+        try {
+            decoder?.close()
+            decoder = FfmpegDecoder().also {
+                it.prepare(File(item.audioPath)); it.play()
+                state.value = PlaybackState.Playing(item, it.positionMs(), it.durationMs())
+                publishNowPlaying(item, AndroidMediaPlaybackState.STATE_PLAYING, it.positionMs(), it.durationMs())
+            }
+            showForeground(item)
+            Log.d(PlaybackLogTag, "Playback started id=$trackId durationMs=${decoder?.durationMs()}")
+        } catch (error: Throwable) {
+            fail(trackId, error.message ?: "Unable to decode audio")
+        }
+    }
+
+    private fun pauseCurrent() {
+        decoder?.pause()
+        (state.value as? PlaybackState.Playing)?.let { current ->
+            val positionMs = decoder?.positionMs() ?: current.positionMs
+            state.value = PlaybackState.Paused(current.item, positionMs, current.durationMs)
+            publishNowPlaying(current.item, AndroidMediaPlaybackState.STATE_PAUSED, positionMs, current.durationMs)
+        }
+        updateNotification()
+    }
+
+    private suspend fun resumeCurrent() {
+        val paused = state.value as? PlaybackState.Paused
+        val currentDecoder = decoder
+        if (paused == null || currentDecoder == null) {
+            playCurrent()
+            return
+        }
+        if (audioManager.requestAudioFocus(focusRequest) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            fail(paused.item.trackId, "Audio focus was not granted")
+            return
+        }
+        currentDecoder.play()
+        val positionMs = currentDecoder.positionMs()
+        state.value = PlaybackState.Playing(paused.item, positionMs, paused.durationMs)
+        publishNowPlaying(paused.item, AndroidMediaPlaybackState.STATE_PLAYING, positionMs, paused.durationMs)
+        updateNotification()
+        Log.d(PlaybackLogTag, "Playback resumed id=${paused.item.trackId} positionMs=$positionMs")
+    }
+
+    private fun seekCurrent(requestedPositionMs: Long) {
+        val current = state.value
+        val item: PlaybackItem
+        val durationMs: Long
+        val playing: Boolean
+        when (current) {
+            is PlaybackState.Playing -> {
+                item = current.item
+                durationMs = current.durationMs
+                playing = true
+            }
+            is PlaybackState.Paused -> {
+                item = current.item
+                durationMs = current.durationMs
+                playing = false
+            }
+            else -> return
+        }
+        val targetPositionMs = clampSeekPosition(requestedPositionMs, durationMs)
+        decoder?.seekTo(targetPositionMs) ?: return
+        if (playing) {
+            state.value = PlaybackState.Playing(item, targetPositionMs, durationMs)
+            publishNowPlaying(item, AndroidMediaPlaybackState.STATE_PLAYING, targetPositionMs, durationMs)
+        } else {
+            state.value = PlaybackState.Paused(item, targetPositionMs, durationMs)
+            publishNowPlaying(item, AndroidMediaPlaybackState.STATE_PAUSED, targetPositionMs, durationMs)
+        }
+        Log.d(PlaybackLogTag, "Seek requested id=${item.trackId} targetMs=$targetPositionMs playing=$playing")
+    }
+
+    private fun stopPlayback() {
+        decoder?.close(); decoder = null
+        audioManager.abandonAudioFocusRequest(focusRequest)
+        state.value = PlaybackState.Idle
+        mediaSession.setPlaybackState(androidPlaybackState(AndroidMediaPlaybackState.STATE_STOPPED, 0L))
+        mediaSession.isActive = false
+        stopForeground(STOP_FOREGROUND_REMOVE)
+    }
+
+    private fun fail(trackId: String?, reason: String) {
+        Log.e(PlaybackLogTag, "Playback failed id=$trackId reason=$reason")
+        decoder?.close(); decoder = null
+        state.value = PlaybackState.Failed(trackId, reason)
+        mediaSession.setPlaybackState(androidPlaybackState(AndroidMediaPlaybackState.STATE_ERROR, 0L))
+        mediaSession.isActive = false
+        stopForeground(STOP_FOREGROUND_REMOVE)
+    }
+
+    private fun publishQueue() {
+        val snapshot = queue.snapshot()
+        queueState.value = snapshot
+        scope.launch { sessionStore.save(snapshot) }
+    }
+
+    private fun showForeground(item: PlaybackItem) {
+        createChannel()
+        startForeground(NotificationId, notification(item), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+    }
+
+    private fun updateNotification() {
+        val item = when (val current = state.value) {
+            is PlaybackState.Playing -> current.item
+            is PlaybackState.Paused -> current.item
+            else -> return
+        }
+        getSystemService(NotificationManager::class.java).notify(NotificationId, notification(item))
+    }
+
+    /** Publishes metadata and transport state to Android System Now Playing surfaces. */
+    private fun publishNowPlaying(item: PlaybackItem, state: Int, positionMs: Long, durationMs: Long) {
+        mediaSession.isActive = true
+        val metadata = MediaMetadata.Builder()
+                .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, item.trackId)
+                .putString(MediaMetadata.METADATA_KEY_TITLE, item.title)
+                .putString(MediaMetadata.METADATA_KEY_ARTIST, item.artist)
+                .putLong(MediaMetadata.METADATA_KEY_DURATION, durationMs)
+        loadNowPlayingArtwork(item.artworkPath)?.let { artwork ->
+            metadata.putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, artwork)
+            metadata.putBitmap(MediaMetadata.METADATA_KEY_ART, artwork)
+            metadata.putBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON, artwork)
+        }
+        mediaSession.setMetadata(metadata.build())
+        mediaSession.setPlaybackState(androidPlaybackState(state, positionMs))
+        Log.d(PlaybackLogTag, "Published Android Now Playing id=${item.trackId} state=$state")
+    }
+
+    private fun updateNowPlayingTransportState() {
+        when (val current = state.value) {
+            is PlaybackState.Playing -> mediaSession.setPlaybackState(
+                androidPlaybackState(AndroidMediaPlaybackState.STATE_PLAYING, decoder?.positionMs() ?: current.positionMs),
+            )
+            is PlaybackState.Paused -> mediaSession.setPlaybackState(
+                androidPlaybackState(AndroidMediaPlaybackState.STATE_PAUSED, decoder?.positionMs() ?: current.positionMs),
+            )
+            else -> Unit
+        }
+    }
+
+    private fun refreshPlaybackPosition() {
+        val current = state.value as? PlaybackState.Playing ?: return
+        val positionMs = decoder?.positionMs()?.let { clampSeekPosition(it, current.durationMs) } ?: return
+        if (positionMs == current.positionMs) return
+        state.value = current.copy(positionMs = positionMs)
+        mediaSession.setPlaybackState(androidPlaybackState(AndroidMediaPlaybackState.STATE_PLAYING, positionMs))
+    }
+
+    private fun androidPlaybackState(state: Int, positionMs: Long): AndroidMediaPlaybackState =
+        AndroidMediaPlaybackState.Builder()
+            .setActions(
+                AndroidMediaPlaybackState.ACTION_PLAY or
+                    AndroidMediaPlaybackState.ACTION_PAUSE or
+                    AndroidMediaPlaybackState.ACTION_PLAY_PAUSE or
+                    AndroidMediaPlaybackState.ACTION_SKIP_TO_NEXT or
+                    AndroidMediaPlaybackState.ACTION_SKIP_TO_PREVIOUS or
+                    AndroidMediaPlaybackState.ACTION_SEEK_TO or
+                    AndroidMediaPlaybackState.ACTION_STOP,
+            )
+            .setState(state, positionMs, if (state == AndroidMediaPlaybackState.STATE_PLAYING) 1f else 0f)
+            .build()
+
+    private fun loadNowPlayingArtwork(path: String?): Bitmap? {
+        if (path.isNullOrBlank()) return null
+        nowPlayingArtworkCache.get(path)?.let { return it }
+        val artwork = runCatching {
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(path, bounds)
+            var sampleSize = 1
+            while (bounds.outWidth / (sampleSize * 2) >= NowPlayingArtworkSizePx &&
+                bounds.outHeight / (sampleSize * 2) >= NowPlayingArtworkSizePx
+            ) sampleSize *= 2
+            BitmapFactory.decodeFile(path, BitmapFactory.Options().apply {
+                inSampleSize = sampleSize
+                inPreferredConfig = Bitmap.Config.ARGB_8888
+            })
+        }.getOrNull()
+        if (artwork != null) nowPlayingArtworkCache.put(path, artwork)
+        else Log.w(PlaybackLogTag, "Unable to decode Now Playing artwork path=$path")
+        return artwork
+    }
+
+    private fun notification(item: PlaybackItem): Notification = Notification.Builder(this, ChannelId)
+        .setSmallIcon(R.drawable.ic_launcher_monochrome)
+        .setContentTitle(item.title)
+        .setContentText(item.artist)
+        .setContentIntent(nowPlayingContentIntent())
+        .setVisibility(Notification.VISIBILITY_PUBLIC)
+        .setOnlyAlertOnce(true)
+        .setOngoing(true)
+        .setStyle(Notification.MediaStyle().setMediaSession(mediaSession.sessionToken))
+        .build()
+
+    private fun nowPlayingContentIntent(): PendingIntent = PendingIntent.getActivity(
+        this,
+        0,
+        Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        },
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+    )
+
+    private fun createChannel() {
+        getSystemService(NotificationManager::class.java).createNotificationChannel(
+            NotificationChannel(ChannelId, getString(R.string.playback_notification_channel), NotificationManager.IMPORTANCE_LOW),
+        )
+    }
+
+    companion object {
+        internal const val ActionPlay = "me.misa198.airmedy.player.PLAY"
+        internal const val ActionShuffle = "me.misa198.airmedy.player.SHUFFLE"
+        internal const val ActionPause = "me.misa198.airmedy.player.PAUSE"
+        internal const val ActionResume = "me.misa198.airmedy.player.RESUME"
+        internal const val ActionStop = "me.misa198.airmedy.player.STOP"
+        internal const val ActionNext = "me.misa198.airmedy.player.NEXT"
+        internal const val ActionPrevious = "me.misa198.airmedy.player.PREVIOUS"
+        internal const val ActionSeek = "me.misa198.airmedy.player.SEEK"
+        internal const val ActionSetShuffle = "me.misa198.airmedy.player.SET_SHUFFLE"
+        internal const val ActionSetRepeat = "me.misa198.airmedy.player.SET_REPEAT"
+        internal const val ActionPlayNext = "me.misa198.airmedy.player.PLAY_NEXT"
+        internal const val ActionAppend = "me.misa198.airmedy.player.APPEND"
+        internal const val ActionRemove = "me.misa198.airmedy.player.REMOVE"
+        internal const val ActionReorder = "me.misa198.airmedy.player.REORDER"
+        internal const val TrackIdsExtra = "track_ids"
+        internal const val TrackIdExtra = "track_id"
+        internal const val StartIndexExtra = "start_index"
+        internal const val PositionMsExtra = "position_ms"
+        internal const val EnabledExtra = "enabled"
+        internal const val RepeatModeExtra = "repeat_mode"
+        private const val PreviousRestartThresholdMs = 3_000L
+        private const val ChannelId = "playback"
+        private const val NotificationId = 2002
+        private const val NowPlayingArtworkSizePx = 512
+        private val nowPlayingArtworkCache = LruCache<String, Bitmap>(20)
+        internal val state = MutableStateFlow<PlaybackState>(PlaybackState.Idle)
+        internal val queueState = MutableStateFlow(PlaybackQueueSnapshot())
+        internal fun intent(context: Context, action: String) = Intent(context, PlaybackService::class.java).setAction(action)
+    }
+}

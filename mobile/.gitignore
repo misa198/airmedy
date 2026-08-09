@@ -10,6 +10,7 @@ local.properties
 captures
 .externalNativeBuild
 .cxx
+androidApp/src/main/jniLibs/
 *.xcodeproj/*
 !*.xcodeproj/project.pbxproj
 !*.xcodeproj/xcshareddata/

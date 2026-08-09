@@ -68,7 +68,7 @@ describe the desktop Vue UI or future iOS UI.
   Cancel. Revoke stops the transfer before deleting all mirrored library data.
 - Library root page displays a plain `ActionList` (`ActionListContainerStyle.Plain`) with actions for Artists,
   Albums, Tracks, Genres, and Composers. Tapping Tracks opens `LibraryTracks` on the Library stack.
-- `LibraryTracks` renders a virtualized `LazyColumn` of tracks with sorting controls (Name, Artist, Play count, Date added; ASC/DESC).
+- `LibraryTracks` renders a virtualized `LazyColumn` of tracks with sorting controls (Name, Artist, Play count, Date added; ASC/DESC). Tapping a track delegates its ID to `LibraryTracksViewModel`, which starts playback from a queue built from the visible sorted order; the overflow action remains independent.
 - Home content is supplied by `HomeDemoContent`. A forward action calls the
   callback provided by the app shell, which pushes `HomeSampleDetail`; Android
   Back pops that destination stack while the floating navigation remains shown.

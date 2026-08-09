@@ -61,6 +61,7 @@ internal fun AppDestinationContent(
     tracksUiState: LibraryTracksUiState = LibraryTracksUiState(),
     onSortOptionSelected: (TrackSortOption) -> Unit = {},
     onToggleSortOrder: () -> Unit = {},
+    onTrackClick: (String) -> Unit = {},
     onPairingQrScanned: (String) -> Boolean,
     onUnpair: () -> Unit,
     onSyncScreenVisible: () -> Unit,
@@ -171,6 +172,7 @@ internal fun AppDestinationContent(
                                 listState = tracksListState,
                                 contentPadding = contentPadding,
                                 modifier = Modifier.fillMaxSize(),
+                                onTrackClick = { track -> onTrackClick(track.id) },
                             )
                             else -> LibraryContent(
                                 modifier = Modifier.fillMaxSize(),

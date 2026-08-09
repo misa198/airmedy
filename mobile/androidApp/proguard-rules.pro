@@ -19,3 +19,8 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# JNI method names are resolved by FFmpeg's native player at runtime.
+-keepclasseswithmembernames class * {
+    native <methods>;
+}

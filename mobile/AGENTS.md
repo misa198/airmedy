@@ -38,6 +38,10 @@ androidApp (Android Compose UI, ViewModels, navigation, Android adapters)
   `sharedLogic` depends only on its own contracts and multiplatform libraries.
   Construct dependencies at the Android composition root. Prefer constructor
   injection; do not add a DI framework without a task-level reason.
+- Android audio playback is an `androidApp` native adapter: FFmpeg performs
+  demux/decode and AAudio receives float PCM. Do not add a Media3/MediaCodec
+  decoder fallback unless a task explicitly changes that policy. Build its
+  generated Android libraries first with `bash ../scripts/build-ffmpeg-android.sh all`.
 
 ## Mobile UI philosophy
 

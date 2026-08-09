@@ -74,6 +74,29 @@ Run from `mobile/`:
 ./gradlew :sharedLogic:testAndroidHostTest
 ```
 
+### FFmpeg player build
+
+Android playback uses FFmpeg directly for local synced audio: FFmpeg demuxes and
+decodes every enabled music format, then the native player sends float PCM to
+AAudio. It does not use a Media3 or platform-decoder fallback. `assembleDebug`
+and release builds require `../scripts/build-ffmpeg-android.sh all` to have run
+first. It downloads the pinned FFmpeg 8.1 tarball to a temporary cache and writes generated
+headers and `.so` files below `androidApp/build/` and `androidApp/src/main/jniLibs/`.
+Those artifacts are ignored by Git. The build requires Android NDK 30.0.15729638.
+
+For a manual rebuild, run from the repository root:
+
+```bash
+bash scripts/build-ffmpeg-android.sh arm64-v8a
+```
+
+The FFmpeg build enables the complete upstream decoder/demuxer/parser registry,
+so music never falls back to Android decoding. It stays smaller than a full
+distribution by excluding programs, encoders, muxers, filters, devices and
+network protocols. It is LGPL-only: it does not enable GPL or nonfree components.
+Release attribution must provide the matching FFmpeg source archive, configure
+line, and any patches.
+
 Or, from the repository root:
 
 ```bash

@@ -1,0 +1,28 @@
+package me.misa198.airmedy.player
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
+import org.junit.Test
+
+class PlaybackModelsTest {
+    @Test
+    fun `request retains a valid queue start index`() {
+        val request = PlaybackRequest(listOf("track-1", "track-2"), startIndex = 1)
+
+        assertEquals(listOf("track-1", "track-2"), request.trackIds)
+        assertEquals(1, request.startIndex)
+    }
+
+    @Test
+    fun `request rejects empty queue and invalid start index`() {
+        assertThrows(IllegalArgumentException::class.java) { PlaybackRequest(emptyList()) }
+        assertThrows(IllegalArgumentException::class.java) { PlaybackRequest(listOf("track-1"), startIndex = 1) }
+    }
+
+    @Test
+    fun `seek position is clamped to the loaded track duration`() {
+        assertEquals(0L, clampSeekPosition(-1L, 10_000L))
+        assertEquals(5_000L, clampSeekPosition(5_000L, 10_000L))
+        assertEquals(10_000L, clampSeekPosition(12_000L, 10_000L))
+    }
+}

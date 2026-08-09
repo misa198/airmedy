@@ -83,6 +83,7 @@ internal data class LibraryTrackRow(
     val playCount: Int,
     val createdAt: String,
     val artworkPath: String?,
+    val audioPath: String?,
 )
 
 @Dao
@@ -138,10 +139,12 @@ internal interface SyncDao {
                t.artworkKey AS artworkKey,
                t.playCount AS playCount,
                t.createdAt AS createdAt,
-               a.relativePath AS artworkPath
+               a.relativePath AS artworkPath,
+               audio.relativePath AS audioPath
         FROM sync_tracks t
         INNER JOIN sync_plans p ON p.planId = t.planId
         LEFT JOIN sync_assets a ON a.planId = t.planId AND (a.assetId = t.artworkKey OR a.assetId = ('artwork:' || t.artworkKey))
+        LEFT JOIN sync_assets audio ON audio.planId = t.planId AND audio.assetId = ('audio:' || t.trackId)
         WHERE p.active = 1
         ORDER BY t.artists, t.album, t.title
     """)
@@ -172,6 +175,7 @@ data class LibraryTrack(
     val playCount: Int = 0,
     val createdAt: String = "",
     val artworkPath: String? = null,
+    val audioPath: String? = null,
 )
 
 internal class AndroidLibrarySyncStore(
@@ -190,6 +194,7 @@ internal class AndroidLibrarySyncStore(
                 playCount = row.playCount,
                 createdAt = row.createdAt,
                 artworkPath = row.artworkPath,
+                audioPath = row.audioPath,
             )
         }
     }

@@ -49,6 +49,7 @@ dependencies {
 android {
     namespace = "me.misa198.airmedy"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
+    ndkVersion = "30.0.15729638"
 
     defaultConfig {
         applicationId = "me.misa198.airmedy"
@@ -56,6 +57,15 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+
+        externalNativeBuild {
+            cmake {
+                cppFlags += listOf("-std=c++20", "-fexceptions", "-frtti")
+            }
+        }
+        ndk {
+            abiFilters += setOf("arm64-v8a", "x86_64")
+        }
     }
     packaging {
         resources {
@@ -66,7 +76,8 @@ android {
     }
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -80,6 +91,12 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
     }
     testOptions {
         unitTests.isReturnDefaultValues = true

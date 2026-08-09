@@ -4,6 +4,7 @@ import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.ui.screens.SortOrder
 import me.misa198.airmedy.ui.screens.TrackSortOption
 import me.misa198.airmedy.ui.screens.sortTracks
+import me.misa198.airmedy.ui.screens.playbackRequestFor
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -61,5 +62,14 @@ class LibraryTracksViewModelTest {
     fun sortsByDateAddedDescending() {
         val sorted = sortTracks(sampleTracks, TrackSortOption.DateAdded, SortOrder.Descending)
         assertEquals(listOf("2026-05-01T00:00:00Z", "2026-01-01T00:00:00Z", "2025-12-01T00:00:00Z"), sorted.map { it.createdAt })
+    }
+
+    @Test
+    fun clickedTrackBuildsQueueFromVisibleSortedOrder() {
+        val request = playbackRequestFor(sampleTracks, "2")
+
+        requireNotNull(request)
+        assertEquals(listOf("1", "2", "3"), request.trackIds)
+        assertEquals(1, request.startIndex)
     }
 }

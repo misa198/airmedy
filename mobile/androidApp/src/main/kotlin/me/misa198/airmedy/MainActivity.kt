@@ -29,6 +29,7 @@ import me.misa198.airmedy.pairing.PairingPreferences
 import me.misa198.airmedy.pairing.AndroidTrustedDesktopDiscovery
 import me.misa198.airmedy.sync.AndroidSyncRuntime
 import me.misa198.airmedy.sync.LibrarySyncService
+import me.misa198.airmedy.player.AndroidPlaybackRuntime
 
 import me.misa198.airmedy.ui.screens.LibraryTracksViewModel
 
@@ -56,13 +57,14 @@ class MainActivity : ComponentActivity() {
         )
     }
     private val tracksViewModel: LibraryTracksViewModel by viewModels {
-        LibraryTracksViewModel.Factory(AndroidSyncRuntime.syncStore())
+        LibraryTracksViewModel.Factory(AndroidSyncRuntime.syncStore(), AndroidPlaybackRuntime.controller())
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         AndroidSyncRuntime.initialize(applicationContext)
+        AndroidPlaybackRuntime.initialize(applicationContext, AndroidSyncRuntime.syncStore())
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), NotificationPermissionRequest)
         }
@@ -96,6 +98,7 @@ class MainActivity : ComponentActivity() {
                 onIntent = viewModel::dispatch,
                 onSortOptionSelected = tracksViewModel::setSortOption,
                 onToggleSortOrder = tracksViewModel::toggleSortOrder,
+                onTrackClick = tracksViewModel::playTrack,
                 onPairingQrScanned = { raw ->
                     if (syncViewModel.acceptsQr(raw)) {
                         syncViewModel.pair(raw)

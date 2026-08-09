@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.platform.app.InstrumentationRegistry
 import me.misa198.airmedy.R
+import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -24,7 +25,7 @@ class LibraryContentTest {
         var composersClicked = false
 
         composeTestRule.setContent {
-            AirmedyTheme {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
                 LibraryContent(
                     onArtistsSelected = { artistsClicked = true },
                     onAlbumsSelected = { albumsClicked = true },

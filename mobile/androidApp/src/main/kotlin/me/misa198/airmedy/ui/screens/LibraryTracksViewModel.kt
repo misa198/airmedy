@@ -2,12 +2,16 @@ package me.misa198.airmedy.ui.screens
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import me.misa198.airmedy.sync.AndroidLibrarySyncStore
+import me.misa198.airmedy.player.PlaybackController
+import me.misa198.airmedy.player.PlaybackRequest
+import me.misa198.airmedy.player.PlaybackLogTag
 import me.misa198.airmedy.sync.LibraryTrack
 
 enum class TrackSortOption {
@@ -30,11 +34,15 @@ data class LibraryTracksUiState(
 
 internal class LibraryTracksViewModel(
     syncStore: AndroidLibrarySyncStore,
+    private val playbackController: PlaybackController,
 ) : ViewModel() {
-    class Factory(private val syncStore: AndroidLibrarySyncStore) : androidx.lifecycle.ViewModelProvider.Factory {
+    class Factory(
+        private val syncStore: AndroidLibrarySyncStore,
+        private val playbackController: PlaybackController,
+    ) : androidx.lifecycle.ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return LibraryTracksViewModel(syncStore) as T
+            return LibraryTracksViewModel(syncStore, playbackController) as T
         }
     }
 
@@ -73,6 +81,18 @@ internal class LibraryTracksViewModel(
             SortOrder.Ascending
         }
     }
+
+    fun playTrack(trackId: String) {
+        playbackRequestFor(uiState.value.tracks, trackId)?.let { request ->
+            Log.d(PlaybackLogTag, "Track row clicked id=$trackId queueSize=${request.trackIds.size} startIndex=${request.startIndex}")
+            playbackController.play(request)
+        } ?: Log.w(PlaybackLogTag, "Track row click ignored: id=$trackId is not in visible tracks")
+    }
+}
+
+internal fun playbackRequestFor(tracks: List<LibraryTrack>, trackId: String): PlaybackRequest? {
+    val startIndex = tracks.indexOfFirst { it.id == trackId }
+    return startIndex.takeIf { it >= 0 }?.let { PlaybackRequest(tracks.map { track -> track.id }, it) }
 }
 
 internal fun sortTracks(
