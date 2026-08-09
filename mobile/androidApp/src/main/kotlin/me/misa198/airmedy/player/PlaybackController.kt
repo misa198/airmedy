@@ -28,6 +28,7 @@ internal class PlaybackController(
     fun pause() = command(PlaybackService.ActionPause)
     fun resume() = command(PlaybackService.ActionResume)
     fun stop() = command(PlaybackService.ActionStop)
+    fun clearQueue() = command(PlaybackService.ActionClearQueue)
     fun next() = command(PlaybackService.ActionNext)
     fun previous() = command(PlaybackService.ActionPrevious)
     fun shuffle(request: PlaybackRequest) = context.startForegroundService(

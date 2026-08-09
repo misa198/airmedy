@@ -6,7 +6,7 @@ describe the desktop Vue UI or future iOS UI.
 ## App shell and navigation
 
 - `App.kt` is the app shell: it owns the theme, shared Haze/list state, header,
-  and placement of the floating navigation. `ui/navigation/AppDestinationContent.kt`
+  and placement of the navigation chrome. `ui/navigation/AppDestinationContent.kt`
   routes each destination's independent `AppStackPage` stack, and
   `ui/navigation/FloatingNavigationBar.kt` owns its visual and gesture behavior.
   Individual page content lives in `ui/screens/`. The navigation's shared
@@ -75,6 +75,19 @@ describe the desktop Vue UI or future iOS UI.
 - Tapping the selected navigation destination restores that destination stack
   to `Root`; on Home it also animates the root `LazyColumn` back to its first item.
   Tapping another destination continues to switch stacks without resetting it.
+- `NavigationChrome` owns the floating navigation plus its optional mini player,
+  so later animations can treat them as one persistent navigation unit. The mini
+  player is a 60dp glass pill positioned 8dp above the navigation and uses the
+  same max width, border, blur, and safe-area placement. It appears for
+  Preparing, Playing, and Paused playback, reserving matching page-bottom space;
+  it is absent for Idle and Failed states. It presents 48dp square artwork with
+  a 10dp radius with an 8dp left inset (or the Lucide music fallback), marquee title/artist labels,
+  and larger, sharp-cornered filled Previous, Play/Pause, and Next controls with
+  visually overlapping 48dp touch targets. Metadata is display-only for now; Preparing
+  disables its play/pause control.
+  Pulling the mini player down by 36dp slides the entire pill off the bottom
+  of the screen, then
+  stops playback and clears the persisted queue.
 - Shared page chrome is in `ui/components/StackPageLayout.kt`; it owns safe-area
   content padding and the optional glass Back button.
 

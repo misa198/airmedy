@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -30,15 +32,19 @@ import me.misa198.airmedy.ui.components.AirmedyGlassIconButton
 import me.misa198.airmedy.ui.components.StackPageHeader
 import me.misa198.airmedy.ui.components.TrackSortHeaderButton
 import me.misa198.airmedy.ui.navigation.AppDestinationContent
-import me.misa198.airmedy.ui.navigation.FloatingNavigationBar
 import me.misa198.airmedy.ui.navigation.FloatingNavigationBottomMargin
 import me.misa198.airmedy.ui.navigation.FloatingNavigationContentGap
 import me.misa198.airmedy.ui.navigation.FloatingNavigationHeight
+import me.misa198.airmedy.ui.navigation.MiniPlayerHeight
+import me.misa198.airmedy.ui.navigation.MiniPlayerNavigationGap
+import me.misa198.airmedy.ui.navigation.NavigationChrome
 import me.misa198.airmedy.ui.navigation.depth
+import me.misa198.airmedy.ui.navigation.showsMiniPlayer
 import me.misa198.airmedy.ui.navigation.titleRes
 import me.misa198.airmedy.ui.screens.LibraryTracksUiState
 import me.misa198.airmedy.ui.screens.TrackSortOption
 import me.misa198.airmedy.ui.theme.AirmedyTheme
+import me.misa198.airmedy.player.PlaybackState
 
 internal fun shouldShowHeaderBlur(
     isContentScrolled: Boolean,
@@ -47,7 +53,7 @@ internal fun shouldShowHeaderBlur(
 ): Boolean = isContentScrolled || (destinationChanged && previousHeaderWasBlurred)
 
 @Composable
-fun App(
+internal fun App(
     uiState: AppUiState = AppUiState(),
     syncUiState: SyncUiState = SyncUiState(),
     tracksUiState: LibraryTracksUiState = LibraryTracksUiState(),
@@ -59,6 +65,11 @@ fun App(
     onUnpair: () -> Unit = {},
     onSyncScreenVisible: () -> Unit = {},
     onSyncScreenHidden: () -> Unit = {},
+    playbackState: PlaybackState = PlaybackState.Idle,
+    onPlaybackPrevious: () -> Unit = {},
+    onPlaybackPlayPause: () -> Unit = {},
+    onPlaybackNext: () -> Unit = {},
+    onMiniPlayerDismiss: () -> Unit = {},
 ) {
     AirmedyTheme(themeMode = uiState.themeMode) {
         val hazeState = rememberHazeState()
@@ -74,8 +85,14 @@ fun App(
         val currentPage = uiState.currentPage
         var previousPage by remember { mutableStateOf(currentPage) }
         val isForwardHeaderTransition = currentPage.depth >= previousPage.depth
-        val navigationBottomPadding = FloatingNavigationHeight + FloatingNavigationBottomMargin + FloatingNavigationContentGap +
+        val miniPlayerReservedHeight = if (playbackState.showsMiniPlayer()) MiniPlayerHeight + MiniPlayerNavigationGap else 0.dp
+        val targetNavigationBottomPadding = FloatingNavigationHeight + miniPlayerReservedHeight + FloatingNavigationBottomMargin + FloatingNavigationContentGap +
             WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        val navigationBottomPadding by animateDpAsState(
+            targetValue = targetNavigationBottomPadding,
+            animationSpec = tween(250),
+            label = "navigation-bottom-padding",
+        )
         val pageTitle = stringResource(currentPage.titleRes(uiState.selectedDestination))
         val showBack = currentPage != AppStackPage.Root
         val showSyncAddAction = currentPage == AppStackPage.SettingsSync && syncUiState.desktop == null && !syncUiState.isPairing
@@ -154,8 +171,9 @@ fun App(
                     )
                 }
             }
-            FloatingNavigationBar(
+            NavigationChrome(
                 selectedDestination = uiState.selectedDestination,
+                playbackState = playbackState,
                 hazeState = hazeState,
                 onDestinationSelected = { destination ->
                     if (destination == uiState.selectedDestination && destination == AppDestination.Home) {
@@ -165,6 +183,10 @@ fun App(
                     }
                     onIntent(AppIntent.SelectDestination(destination))
                 },
+                onPreviousClick = onPlaybackPrevious,
+                onPlayPauseClick = onPlaybackPlayPause,
+                onNextClick = onPlaybackNext,
+                onMiniPlayerDismiss = onMiniPlayerDismiss,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()

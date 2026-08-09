@@ -60,4 +60,15 @@ class PlaybackQueueTest {
         queue.reorderQueue(listOf("c", "c"))
         assertEquals(listOf("a", "c"), queue.snapshot().activeTrackIds)
     }
+
+    @Test
+    fun `clear removes every queue entry and resets queue options`() {
+        val queue = PlaybackQueue()
+        queue.play(PlaybackRequest(listOf("a", "b")))
+        queue.setShuffle(true)
+        queue.setRepeatMode(RepeatMode.All)
+
+        assertEquals(QueueTransition.Stop, queue.clear())
+        assertEquals(PlaybackQueueSnapshot(), queue.snapshot())
+    }
 }

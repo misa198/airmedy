@@ -62,6 +62,7 @@ pause(); resume(); stop()
 next(); previous(); seekTo(positionMs)
 setShuffle(enabled)
 setRepeatMode(mode)
+clear()                       // stop playback and remove the entire queue
 playNext(trackId); playNext(trackIds)
 append(trackIds)
 removeFromQueue(trackId)

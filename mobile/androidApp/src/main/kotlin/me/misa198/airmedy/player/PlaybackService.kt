@@ -149,6 +149,7 @@ class PlaybackService : Service() {
                 ActionPause -> pauseCurrent()
                 ActionResume -> resumeCurrent()
                 ActionStop -> stopPlayback()
+                ActionClearQueue -> handleTransition(queue.clear())
                 ActionNext -> handleTransition(queue.next())
                 ActionPrevious -> {
                     if ((decoder?.positionMs() ?: 0L) > PreviousRestartThresholdMs) decoder?.seekTo(0)
@@ -396,6 +397,7 @@ class PlaybackService : Service() {
         internal const val ActionPause = "me.misa198.airmedy.player.PAUSE"
         internal const val ActionResume = "me.misa198.airmedy.player.RESUME"
         internal const val ActionStop = "me.misa198.airmedy.player.STOP"
+        internal const val ActionClearQueue = "me.misa198.airmedy.player.CLEAR_QUEUE"
         internal const val ActionNext = "me.misa198.airmedy.player.NEXT"
         internal const val ActionPrevious = "me.misa198.airmedy.player.PREVIOUS"
         internal const val ActionSeek = "me.misa198.airmedy.player.SEEK"

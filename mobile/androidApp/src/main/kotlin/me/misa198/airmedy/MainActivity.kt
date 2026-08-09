@@ -73,6 +73,8 @@ class MainActivity : ComponentActivity() {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
             val syncUiState by syncViewModel.uiState.collectAsStateWithLifecycle()
             val tracksUiState by tracksViewModel.uiState.collectAsStateWithLifecycle()
+            val playbackController = AndroidPlaybackRuntime.controller()
+            val playbackState by playbackController.state.collectAsStateWithLifecycle()
             LaunchedEffect(viewModel) {
                 viewModel.effects.collect { effect ->
                     when (effect) {
@@ -111,6 +113,17 @@ class MainActivity : ComponentActivity() {
                 onUnpair = syncViewModel::unpair,
                 onSyncScreenVisible = syncViewModel::onSyncScreenVisible,
                 onSyncScreenHidden = syncViewModel::onSyncScreenHidden,
+                playbackState = playbackState,
+                onPlaybackPrevious = playbackController::previous,
+                onPlaybackPlayPause = {
+                    when (playbackState) {
+                        is me.misa198.airmedy.player.PlaybackState.Playing -> playbackController.pause()
+                        is me.misa198.airmedy.player.PlaybackState.Paused -> playbackController.resume()
+                        else -> Unit
+                    }
+                },
+                onPlaybackNext = playbackController::next,
+                onMiniPlayerDismiss = playbackController::clearQueue,
             )
         }
     }

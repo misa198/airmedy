@@ -57,7 +57,7 @@ internal val FloatingNavigationHeight = 72.dp
 internal val FloatingNavigationBottomMargin = 4.dp
 internal val FloatingNavigationContentGap = 16.dp
 
-private val OuterPillRadius = 36.dp
+internal val OuterPillRadius = 36.dp
 private val InnerPillRadius = 32.dp
 private val PillGap = 4.dp
 

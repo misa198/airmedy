@@ -106,6 +106,16 @@ class PlaybackQueue(private val random: Random = Random.Default) {
 
     fun setRepeatMode(mode: RepeatMode) { repeatMode = mode }
 
+    /** Removes all queue entries and resets queue-specific playback options. */
+    fun clear(): QueueTransition {
+        original.clear()
+        active.clear()
+        currentIndex = -1
+        shuffle = false
+        repeatMode = RepeatMode.Off
+        return QueueTransition.Stop
+    }
+
     fun next(): QueueTransition {
         val current = currentTrackId() ?: return selectFirstOrStop()
         if (repeatMode == RepeatMode.One) return QueueTransition.Play(current)

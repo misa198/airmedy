@@ -45,7 +45,7 @@ import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 private val artworkCache = LruCache<String, ImageBitmap>(250)
 
 @Composable
-private fun rememberArtworkThumbnail(artworkPath: String?): ImageBitmap? {
+internal fun rememberArtworkThumbnail(artworkPath: String?): ImageBitmap? {
     if (artworkPath.isNullOrBlank()) return null
     val context = LocalContext.current
     val absolutePath = remember(artworkPath, context) {
