@@ -13,16 +13,20 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,12 +38,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -54,6 +60,7 @@ import me.misa198.airmedy.ui.components.liquidGlassBackground
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 internal val FloatingNavigationHeight = 72.dp
+internal val CompactNavigationHeight = 56.dp
 internal val FloatingNavigationBottomMargin = 4.dp
 internal val FloatingNavigationContentGap = 16.dp
 
@@ -66,21 +73,54 @@ internal fun FloatingNavigationBar(
     selectedDestination: AppDestination,
     hazeState: HazeState,
     onDestinationSelected: (AppDestination) -> Unit,
+    fullNavigationContentAlpha: Float = 1f,
+    onCompactClick: () -> Unit = {},
+    height: Dp = FloatingNavigationHeight,
+    stableGlassWidth: Dp? = null,
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalAirmedyColors.current
+    val density = LocalDensity.current
     val outerPillShape = RoundedCornerShape(OuterPillRadius)
     Box(
         modifier = modifier
             .widthIn(max = 420.dp)
             .fillMaxWidth()
-            .height(FloatingNavigationHeight)
+            .height(height)
             .clip(outerPillShape)
-            .liquidGlassBackground(hazeState, colors)
             .border(1.dp, colors.borderGlass, outerPillShape)
-            .padding(PillGap),
     ) {
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = if (stableGlassWidth == null) {
+                Modifier.fillMaxSize()
+            } else {
+                Modifier
+                    .align(Alignment.CenterStart)
+                    .requiredWidth(stableGlassWidth)
+                    .requiredHeight(FloatingNavigationHeight)
+            }
+                .liquidGlassBackground(hazeState, colors),
+        )
+        Box(modifier = Modifier.fillMaxSize().padding(PillGap)) {
+            if (fullNavigationContentAlpha < 1f) {
+                CompactNavigationTarget(
+                    selectedDestination = selectedDestination,
+                    onClick = onCompactClick,
+                    modifier = Modifier.graphicsLayer(alpha = 1f - fullNavigationContentAlpha),
+                )
+            }
+            if (fullNavigationContentAlpha > 0f) {
+                val contentTranslationY = with(density) { (1f - fullNavigationContentAlpha) * 8.dp.toPx() }
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer(
+                            alpha = fullNavigationContentAlpha,
+                            scaleX = 0.96f + (0.04f * fullNavigationContentAlpha),
+                            scaleY = 0.96f + (0.04f * fullNavigationContentAlpha),
+                            translationY = contentTranslationY,
+                        ),
+                ) {
             val itemWidth = maxWidth / AppDestination.entries.size
             val maxIndicatorOffset = maxWidth - itemWidth
             var isDragging by remember { mutableStateOf(false) }
@@ -159,8 +199,33 @@ internal fun FloatingNavigationBar(
                         )
                     }
                 }
+                }
+            }
             }
         }
+    }
+}
+
+@Composable
+private fun CompactNavigationTarget(
+    selectedDestination: AppDestination,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = LocalAirmedyColors.current
+    val destinationLabel = stringResource(selectedDestination.titleRes)
+    IconButton(
+        onClick = onClick,
+        modifier = modifier
+            .fillMaxSize()
+            .clip(RoundedCornerShape(InnerPillRadius))
+            .semantics { contentDescription = destinationLabel },
+    ) {
+        Icon(
+            painter = painterResource(selectedDestination.iconRes),
+            contentDescription = null,
+            tint = colors.primary,
+        )
     }
 }
 

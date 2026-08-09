@@ -12,9 +12,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -23,6 +25,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -60,10 +65,12 @@ private val MiniPlayerPillRadius = 30.dp
 internal fun MiniPlayer(
     playbackState: PlaybackState,
     hazeState: HazeState,
+    compact: Boolean = false,
     onPreviousClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
     onNextClick: () -> Unit,
     onDismiss: () -> Unit,
+    stableGlassWidth: Dp? = null,
     modifier: Modifier = Modifier,
 ) {
     val item = playbackState.itemOrNull() ?: return
@@ -79,13 +86,12 @@ internal fun MiniPlayer(
     val dismissThresholdPx = with(density) { 36.dp.toPx() }
     val dismissTargetPx = with(density) { configuration.screenHeightDp.dp.toPx() }
 
-    Row(
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .height(MiniPlayerHeight)
             .offset { IntOffset(0, dragOffset.value.roundToInt()) }
             .clip(shape)
-            .liquidGlassBackground(hazeState, colors)
             .border(1.dp, colors.borderGlass, shape)
             .pointerInput(dismissThresholdPx, dismissTargetPx) {
                 detectVerticalDragGestures(
@@ -109,10 +115,25 @@ internal fun MiniPlayer(
                         }
                     },
                 )
-            }
-            .padding(start = 16.dp, top = 4.dp, end = 4.dp, bottom = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            },
     ) {
+        Box(
+            modifier = if (stableGlassWidth == null) {
+                Modifier.fillMaxSize()
+            } else {
+                Modifier
+                    .align(Alignment.CenterStart)
+                    .requiredWidth(stableGlassWidth)
+                    .fillMaxHeight()
+            }
+                .liquidGlassBackground(hazeState, colors),
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(start = 16.dp, top = 4.dp, end = 4.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
         Box(
             modifier = Modifier
                 .size(38.dp)
@@ -145,12 +166,18 @@ internal fun MiniPlayer(
             MarqueeText(item.title, colors.textMain, MaterialTheme.typography.bodyMedium)
             MarqueeText(item.artist, colors.textMuted, MaterialTheme.typography.bodySmall)
         }
-        MiniPlayerControl(
-            iconRes = R.drawable.ic_player_previous_filled,
-            label = stringResource(R.string.player_previous),
-            onClick = onPreviousClick,
-            horizontalOffset = 16.dp,
-        )
+        AnimatedVisibility(
+            visible = !compact,
+            enter = fadeIn(animationSpec = tween(160)),
+            exit = fadeOut(animationSpec = tween(160)),
+        ) {
+            MiniPlayerControl(
+                iconRes = R.drawable.ic_player_previous_filled,
+                label = stringResource(R.string.player_previous),
+                onClick = onPreviousClick,
+                horizontalOffset = 16.dp,
+            )
+        }
         MiniPlayerControl(
             iconRes = if (isPlaying) R.drawable.ic_player_pause_filled else R.drawable.ic_player_play_filled,
             label = stringResource(if (isPlaying) R.string.player_pause else R.string.player_play),
@@ -163,6 +190,7 @@ internal fun MiniPlayer(
             label = stringResource(R.string.player_next),
             onClick = onNextClick,
         )
+        }
     }
 }
 
@@ -190,13 +218,15 @@ private fun MiniPlayerControl(
     IconButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = Modifier.size(48.dp).offset(x = horizontalOffset),
+        modifier = Modifier
+            .size(48.dp)
+            .offset(x = horizontalOffset),
     ) {
         Icon(
             painter = painterResource(iconRes),
             contentDescription = label,
             tint = if (enabled) colors.textMain else colors.textMuted,
-            modifier = Modifier.size(26.dp),
+            modifier = Modifier.size(24.dp),
         )
     }
 }

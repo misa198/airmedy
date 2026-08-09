@@ -18,6 +18,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.foundation.lazy.LazyListState
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
@@ -47,6 +53,22 @@ internal data class PageKey(
     val page: AppStackPage,
 )
 
+internal enum class ContentScrollDirection {
+    Up,
+    Down,
+}
+
+internal data class ContentScrollDelta(
+    val direction: ContentScrollDirection,
+    val distancePx: Float,
+)
+
+internal fun contentScrollDelta(consumedY: Float): ContentScrollDelta? = when {
+    consumedY < 0f -> ContentScrollDelta(ContentScrollDirection.Up, -consumedY)
+    consumedY > 0f -> ContentScrollDelta(ContentScrollDirection.Down, consumedY)
+    else -> null
+}
+
 @Composable
 internal fun AppDestinationContent(
     destination: AppDestination,
@@ -66,13 +88,30 @@ internal fun AppDestinationContent(
     onUnpair: () -> Unit,
     onSyncScreenVisible: () -> Unit,
     onSyncScreenHidden: () -> Unit,
+    onContentScroll: (ContentScrollDelta) -> Unit = {},
 ) {
     val colors = LocalAirmedyColors.current
     val pageKey = PageKey(destination = destination, page = page)
+    val currentOnContentScroll = rememberUpdatedState(onContentScroll)
+    val scrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource,
+            ): Offset {
+                if (source == NestedScrollSource.UserInput) {
+                    contentScrollDelta(consumed.y)?.let(currentOnContentScroll.value)
+                }
+                return Offset.Zero
+            }
+        }
+    }
     Surface(
         color = colors.background,
         modifier = Modifier
             .fillMaxSize()
+            .nestedScroll(scrollConnection)
             .hazeSource(hazeState),
     ) {
         StackPageLayout(

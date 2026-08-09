@@ -2,13 +2,19 @@ package me.misa198.airmedy.ui.navigation
 
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
+import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import dev.chrisbanes.haze.rememberHazeState
 import me.misa198.airmedy.AppDestination
 import me.misa198.airmedy.player.PlaybackItem
@@ -76,6 +82,40 @@ class MiniPlayerTest {
         composeTestRule.waitUntil(timeoutMillis = 2_000) { dismisses == 1 }
 
         assertEquals(1, dismisses)
+    }
+
+    @Test
+    fun compactChromeShowsTheActiveDestinationPlayPauseAndNext() {
+        var compact by mutableStateOf(true)
+        val calls = mutableListOf<String>()
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                NavigationChrome(
+                    selectedDestination = AppDestination.Home,
+                    playbackState = PlaybackState.Playing(item, positionMs = 0L, durationMs = 120_000L),
+                    hazeState = rememberHazeState(),
+                    compact = compact,
+                    onExpandClick = { compact = false },
+                    onDestinationSelected = {},
+                    onPreviousClick = { calls += "previous" },
+                    onPlayPauseClick = { calls += "pause" },
+                    onNextClick = { calls += "next" },
+                    onMiniPlayerDismiss = { compact = false },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Home").assertExists()
+        composeTestRule.onNodeWithContentDescription("Home").assertWidthIsEqualTo(48.dp)
+        composeTestRule.onAllNodes(hasContentDescription("Previous")).assertCountEquals(0)
+        composeTestRule.onNodeWithContentDescription("Pause").performClick()
+        composeTestRule.onNodeWithContentDescription("Next").performClick()
+        assertEquals(listOf("pause", "next"), calls)
+
+        composeTestRule.onNodeWithContentDescription("Home").performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithContentDescription("Previous").assertExists()
+        composeTestRule.onNodeWithContentDescription("Next").assertExists()
     }
 
     @androidx.compose.runtime.Composable

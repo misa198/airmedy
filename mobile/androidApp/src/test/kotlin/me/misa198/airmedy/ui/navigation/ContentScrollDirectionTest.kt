@@ -1,0 +1,38 @@
+package me.misa198.airmedy.ui.navigation
+
+import org.junit.Assert.assertEquals
+import org.junit.Test
+
+class ContentScrollDirectionTest {
+    @Test
+    fun mapsConsumedScrollDeltasToContentDirection() {
+        assertEquals(ContentScrollDelta(ContentScrollDirection.Up, 1f), contentScrollDelta(-1f))
+        assertEquals(ContentScrollDelta(ContentScrollDirection.Down, 1f), contentScrollDelta(1f))
+        assertEquals(null, contentScrollDelta(0f))
+    }
+
+    @Test
+    fun requiresContinuousScrollDistanceBeforeChangingChromeMode() {
+        val thresholdPx = 24f
+        val shortUpwardScroll = reduceNavigationChromeScroll(
+            NavigationChromeScrollState(),
+            ContentScrollDelta(ContentScrollDirection.Up, 8f),
+            thresholdPx,
+        )
+        assertEquals(NavigationChromeScrollState(accumulatedDistancePx = -8f), shortUpwardScroll)
+
+        val reversedScroll = reduceNavigationChromeScroll(
+            shortUpwardScroll,
+            ContentScrollDelta(ContentScrollDirection.Down, 8f),
+            thresholdPx,
+        )
+        assertEquals(NavigationChromeScrollState(), reversedScroll)
+
+        val compact = reduceNavigationChromeScroll(
+            shortUpwardScroll,
+            ContentScrollDelta(ContentScrollDirection.Up, 16f),
+            thresholdPx,
+        )
+        assertEquals(NavigationChromeScrollState(compact = true), compact)
+    }
+}

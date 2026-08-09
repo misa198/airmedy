@@ -12,7 +12,9 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -22,6 +24,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -32,12 +35,16 @@ import me.misa198.airmedy.ui.components.AirmedyGlassIconButton
 import me.misa198.airmedy.ui.components.StackPageHeader
 import me.misa198.airmedy.ui.components.TrackSortHeaderButton
 import me.misa198.airmedy.ui.navigation.AppDestinationContent
+import me.misa198.airmedy.ui.navigation.CompactNavigationHeight
+import me.misa198.airmedy.ui.navigation.ContentScrollDirection
 import me.misa198.airmedy.ui.navigation.FloatingNavigationBottomMargin
 import me.misa198.airmedy.ui.navigation.FloatingNavigationContentGap
 import me.misa198.airmedy.ui.navigation.FloatingNavigationHeight
 import me.misa198.airmedy.ui.navigation.MiniPlayerHeight
 import me.misa198.airmedy.ui.navigation.MiniPlayerNavigationGap
 import me.misa198.airmedy.ui.navigation.NavigationChrome
+import me.misa198.airmedy.ui.navigation.NavigationChromeScrollState
+import me.misa198.airmedy.ui.navigation.reduceNavigationChromeScroll
 import me.misa198.airmedy.ui.navigation.depth
 import me.misa198.airmedy.ui.navigation.showsMiniPlayer
 import me.misa198.airmedy.ui.navigation.titleRes
@@ -85,12 +92,24 @@ internal fun App(
         val currentPage = uiState.currentPage
         var previousPage by remember { mutableStateOf(currentPage) }
         val isForwardHeaderTransition = currentPage.depth >= previousPage.depth
-        val miniPlayerReservedHeight = if (playbackState.showsMiniPlayer()) MiniPlayerHeight + MiniPlayerNavigationGap else 0.dp
-        val targetNavigationBottomPadding = FloatingNavigationHeight + miniPlayerReservedHeight + FloatingNavigationBottomMargin + FloatingNavigationContentGap +
+        val showsMiniPlayer = playbackState.showsMiniPlayer()
+        var isNavigationCompact by remember { mutableStateOf(false) }
+        var navigationScrollState by remember { mutableStateOf(NavigationChromeScrollState()) }
+        val navigationScrollThresholdPx = with(LocalDensity.current) { 24.dp.toPx() }
+        LaunchedEffect(showsMiniPlayer, uiState.selectedDestination, currentPage) {
+            isNavigationCompact = false
+            navigationScrollState = NavigationChromeScrollState()
+        }
+        val navigationChromeHeight = when {
+            showsMiniPlayer && isNavigationCompact -> CompactNavigationHeight
+            showsMiniPlayer -> FloatingNavigationHeight + MiniPlayerHeight + MiniPlayerNavigationGap
+            else -> FloatingNavigationHeight
+        }
+        val targetNavigationBottomPadding = navigationChromeHeight + FloatingNavigationBottomMargin + FloatingNavigationContentGap +
             WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
         val navigationBottomPadding by animateDpAsState(
             targetValue = targetNavigationBottomPadding,
-            animationSpec = tween(250),
+            animationSpec = tween(420, easing = FastOutSlowInEasing),
             label = "navigation-bottom-padding",
         )
         val pageTitle = stringResource(currentPage.titleRes(uiState.selectedDestination))
@@ -139,6 +158,15 @@ internal fun App(
                 onUnpair = onUnpair,
                 onSyncScreenVisible = onSyncScreenVisible,
                 onSyncScreenHidden = onSyncScreenHidden,
+                onContentScroll = { delta ->
+                    if (!showsMiniPlayer) return@AppDestinationContent
+                    navigationScrollState = reduceNavigationChromeScroll(
+                        state = navigationScrollState.copy(compact = isNavigationCompact),
+                        delta = delta,
+                        thresholdPx = navigationScrollThresholdPx,
+                    )
+                    isNavigationCompact = navigationScrollState.compact
+                },
             )
             StackPageHeader(
                 title = pageTitle,
@@ -175,6 +203,11 @@ internal fun App(
                 selectedDestination = uiState.selectedDestination,
                 playbackState = playbackState,
                 hazeState = hazeState,
+                compact = showsMiniPlayer && isNavigationCompact,
+                onExpandClick = {
+                    isNavigationCompact = false
+                    navigationScrollState = NavigationChromeScrollState()
+                },
                 onDestinationSelected = { destination ->
                     if (destination == uiState.selectedDestination && destination == AppDestination.Home) {
                         coroutineScope.launch {
@@ -186,7 +219,11 @@ internal fun App(
                 onPreviousClick = onPlaybackPrevious,
                 onPlayPauseClick = onPlaybackPlayPause,
                 onNextClick = onPlaybackNext,
-                onMiniPlayerDismiss = onMiniPlayerDismiss,
+                onMiniPlayerDismiss = {
+                    isNavigationCompact = false
+                    navigationScrollState = NavigationChromeScrollState()
+                    onMiniPlayerDismiss()
+                },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()

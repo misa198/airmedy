@@ -3,5 +3,7 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <path android:fillColor="#FF000000" android:pathData="M7,5h4v14H7V5zM13,5h4v14h-4V5z" />
+    <!-- Lucide Pause geometry, rendered as a solid transport control. -->
+    <path android:fillColor="#FF000000" android:pathData="M15,3H18A1,1 0,0 1,19,4V20A1,1 0,0 1,18,21H15A1,1 0,0 1,14,20V4A1,1 0,0 1,15,3Z" />
+    <path android:fillColor="#FF000000" android:pathData="M6,3H9A1,1 0,0 1,10,4V20A1,1 0,0 1,9,21H6A1,1 0,0 1,5,20V4A1,1 0,0 1,6,3Z" />
 </vector>

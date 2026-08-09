@@ -77,17 +77,42 @@ describe the desktop Vue UI or future iOS UI.
   Tapping another destination continues to switch stacks without resetting it.
 - `NavigationChrome` owns the floating navigation plus its optional mini player,
   so later animations can treat them as one persistent navigation unit. The mini
-  player is a 60dp glass pill positioned 8dp above the navigation and uses the
+  player is a 56dp glass pill positioned 8dp above the navigation and uses the
   same max width, border, blur, and safe-area placement. It appears for
   Preparing, Playing, and Paused playback, reserving matching page-bottom space;
   it is absent for Idle and Failed states. It presents 48dp square artwork with
   a 10dp radius with an 8dp left inset (or the Lucide music fallback), marquee title/artist labels,
-  and larger, sharp-cornered filled Previous, Play/Pause, and Next controls with
+  and larger, sharp-cornered filled Lucide Previous, Play/Pause, and Next controls with
   visually overlapping 48dp touch targets. Metadata is display-only for now; Preparing
   disables its play/pause control.
   Pulling the mini player down by 36dp slides the entire pill off the bottom
   of the screen, then
   stops playback and clears the persisted queue.
+- While the mini player is visible, the app shell observes user-driven nested
+  scrolling from any page content. A content-upward delta switches the chrome
+  to its 56dp compact row: a left-side circular button for the active destination
+  and the mini player to its right. The compact player keeps artwork, title/artist,
+  and Play/Pause plus Next; Previous fades out, then its vacated slot is reclaimed
+  by the title/artist while Play/Pause and Next remain trailing controls. A downward delta, tapping
+  the active-destination button, changing pages, or dismissing the mini player
+  restores the standard 72dp four-tab navigation with the full mini player above
+  it. This is one shared chrome layout: navigation width/height, mini-player
+  width, and its X/Y position animate together over 280ms, so the player shrinks
+  and slides into the compact row rather than a replacement bar appearing. Its
+  16dp horizontal content inset and 38dp artwork remain fixed while moving. Page
+  bottom padding animates with these chrome layouts. During expansion, the compact
+  active icon remains left-aligned until the navigation surface reaches 85% of its
+  full width; its opacity cross-fades with the four icon/label targets over 160ms,
+  while the full targets rise 8dp and scale from 96% to 100%. All chrome geometry
+  uses one shared 420ms eased transition, preventing labels and icons from being
+  compressed or appearing abruptly on slower GPUs. The compact target fills the
+  navigation's padded content bounds rather than requesting its own fixed width,
+  preventing end-of-transition clipping as the 56dp capsule settles. Its Haze background keeps a
+  stable full-width render surface while the visible capsule is clipped horizontally,
+  avoiding blur re-render work on every compact-transition frame; the mini player
+  uses the same stable-surface approach while it narrows.
+  Direction changes have a 24dp hysteresis threshold: a short reversal or a few
+  pixels of incidental scroll never toggles the compact chrome.
 - Shared page chrome is in `ui/components/StackPageLayout.kt`; it owns safe-area
   content padding and the optional glass Back button.
 
@@ -119,3 +144,5 @@ describe the desktop Vue UI or future iOS UI.
 - Test component interaction and screen-level navigation separately. `ActionListTest`
   covers optional callbacks and iconless trailing slots; `AppNavigationTest` covers
   Home-to-detail and Settings-to-About navigation.
+- `MiniPlayerTest` covers playback visibility and transport controls in both full
+  and compact navigation-chrome layouts.
