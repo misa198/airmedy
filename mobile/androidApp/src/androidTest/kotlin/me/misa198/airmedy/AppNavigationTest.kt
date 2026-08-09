@@ -62,6 +62,17 @@ class AppNavigationTest {
     }
 
     @Test
+    fun libraryArtistsActionOpensTheArtistList() {
+        val harness = AppHarness(AppUiState(selectedDestination = AppDestination.Library))
+        composeTestRule.setContent { harness.Render() }
+
+        composeTestRule.onNodeWithContentDescription(string(R.string.library_artists)).performClick()
+
+        composeTestRule.onNodeWithText(string(R.string.artists_empty_title)).assertIsDisplayed()
+        assertEquals(AppIntent.OpenPage(AppStackPage.LibraryArtists), harness.intents.last())
+    }
+
+    @Test
     fun appearanceOpensAndThemeSelectionDispatchesIntents() {
         val harness = AppHarness(AppUiState(selectedDestination = AppDestination.Settings))
         composeTestRule.setContent { harness.Render() }

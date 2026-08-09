@@ -13,7 +13,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
-class TrackSortHeaderButtonTest {
+class LibrarySortHeaderButtonTest {
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -25,9 +25,13 @@ class TrackSortHeaderButtonTest {
         composeTestRule.setContent {
             val hazeState = rememberHazeState()
             AirmedyTheme(themeMode = ThemeMode.Dark) {
-                TrackSortHeaderButton(
+                LibrarySortHeaderButton(
                     hazeState = hazeState,
-                    sortOption = TrackSortOption.Name,
+                    options = listOf(
+                        LibrarySortOption(TrackSortOption.Name, me.misa198.airmedy.R.string.sort_name),
+                        LibrarySortOption(TrackSortOption.Artist, me.misa198.airmedy.R.string.sort_artist),
+                    ),
+                    selectedOption = TrackSortOption.Name,
                     sortOrder = SortOrder.Ascending,
                     onSortOptionSelected = { selectedOption = it },
                     onToggleSortOrder = { orderToggled = true },

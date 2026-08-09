@@ -67,6 +67,7 @@ object MaterialSymbols {
     const val VolumeDown = "volume_down"
     const val VolumeUp = "volume_up"
     const val People = "group"
+    const val Person = "person"
     const val Album = "album"
     const val Label = "label"
     const val Palette = "palette"

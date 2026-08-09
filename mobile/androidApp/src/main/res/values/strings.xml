@@ -113,4 +113,7 @@
     <string name="tracks_count">%1$d tracks</string>
     <string name="tracks_empty_title">No tracks in library</string>
     <string name="tracks_empty_description">Synced tracks will appear here once mobile sync completes.</string>
+    <string name="artist_row_more_options">Artist options</string>
+    <string name="artists_empty_title">No artists in library</string>
+    <string name="artists_empty_description">Synced artists will appear here once mobile sync completes.</string>
 </resources>

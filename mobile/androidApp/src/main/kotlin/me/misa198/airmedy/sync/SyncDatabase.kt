@@ -13,6 +13,7 @@ import androidx.room.Transaction
 import androidx.room.withTransaction
 import java.io.File
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -84,6 +85,12 @@ internal data class LibraryTrackRow(
     val createdAt: String,
     val artworkPath: String?,
     val audioPath: String?,
+    val rawJson: String,
+)
+
+internal data class ArtworkAssetRow(
+    val assetId: String,
+    val relativePath: String,
 )
 
 @Dao
@@ -140,7 +147,8 @@ internal interface SyncDao {
                t.playCount AS playCount,
                t.createdAt AS createdAt,
                a.relativePath AS artworkPath,
-               audio.relativePath AS audioPath
+               audio.relativePath AS audioPath,
+               t.rawJson AS rawJson
         FROM sync_tracks t
         INNER JOIN sync_plans p ON p.planId = t.planId
         LEFT JOIN sync_assets a ON a.planId = t.planId AND (a.assetId = t.artworkKey OR a.assetId = ('artwork:' || t.artworkKey))
@@ -149,6 +157,14 @@ internal interface SyncDao {
         ORDER BY t.artists, t.album, t.title
     """)
     fun observeTracks(): Flow<List<LibraryTrackRow>>
+
+    @Query("""
+        SELECT a.assetId AS assetId, a.relativePath AS relativePath
+        FROM sync_assets a
+        INNER JOIN sync_plans p ON p.planId = a.planId
+        WHERE p.active = 1 AND a.relativePath IS NOT NULL AND a.assetId LIKE 'artwork:%'
+    """)
+    fun observeArtworkAssets(): Flow<List<ArtworkAssetRow>>
 }
 
 @Database(
@@ -178,6 +194,13 @@ data class LibraryTrack(
     val audioPath: String? = null,
 )
 
+data class LibraryArtist(
+    val id: String,
+    val name: String,
+    val createdAt: String = "",
+    val artworkPath: String? = null,
+)
+
 internal class AndroidLibrarySyncStore(
     private val database: SyncDatabase,
     private val filesDir: File,
@@ -197,6 +220,14 @@ internal class AndroidLibrarySyncStore(
                 audioPath = row.audioPath,
             )
         }
+    }
+    val artists: Flow<List<LibraryArtist>> = combine(
+        dao.observeTracks(),
+        dao.observeArtworkAssets(),
+    ) { rows, artworkAssets ->
+        libraryArtistsFrom(rows, artworkAssets.associate { asset ->
+            asset.assetId.removePrefix("artwork:") to asset.relativePath
+        })
     }
 
     override suspend fun prepare(request: LibrarySyncRequest, manifest: LibrarySyncManifest) {
@@ -307,11 +338,46 @@ internal class AndroidLibrarySyncStore(
         return SyncPlaylistEntity(planId, id, playlist.string("name") ?: "", (this["track_ids"] as? JsonArray)?.toString() ?: "[]", toString())
     }
 
-    private fun JsonObject.string(name: String): String? = (this[name] as? JsonPrimitive)?.contentOrNull
     private fun JsonObject.arrayNames(name: String): String = ((this[name] as? JsonArray).orEmpty()).mapNotNull { (it as? JsonObject)?.string("name") }.joinToString(", ")
+}
+
+internal fun libraryArtistsFrom(
+    tracks: List<LibraryTrackRow>,
+    artworkPaths: Map<String, String>,
+): List<LibraryArtist> {
+    val artists = linkedMapOf<String, LibraryArtist>()
+    tracks.forEach { track ->
+        val root = runCatching { LibrarySyncProtocol.json.parseToJsonElement(track.rawJson) as? JsonObject }.getOrNull()
+            ?: return@forEach
+        ((root["artists"] as? JsonArray).orEmpty()).forEach { value ->
+            val artist = value as? JsonObject ?: return@forEach
+            val id = artist.string("id")?.takeIf(String::isNotBlank) ?: return@forEach
+            val name = artist.string("name")?.trim().orEmpty().takeIf(String::isNotEmpty) ?: return@forEach
+            val artworkKey = artist.string("artwork_key")?.takeIf(String::isNotBlank)
+                ?: listOf("artwork_key_manual", "artwork_key_local", "artwork_key_online")
+                    .firstNotNullOfOrNull { key -> artist.string(key)?.takeIf(String::isNotBlank) }
+            val candidate = LibraryArtist(
+                id = id,
+                name = name,
+                createdAt = artist.string("created_at").orEmpty(),
+                artworkPath = artworkKey?.let(artworkPaths::get),
+            )
+            artists[id] = artists[id]?.let { existing ->
+                existing.copy(
+                    artworkPath = existing.artworkPath ?: candidate.artworkPath,
+                    createdAt = listOf(existing.createdAt, candidate.createdAt)
+                        .filter(String::isNotBlank)
+                        .minOrNull().orEmpty(),
+                )
+            } ?: candidate
+        }
+    }
+    return artists.values.toList()
 }
 
 internal fun cachedAssetPath(filesDir: File, asset: SyncAssetEntity?): String? = asset
     ?.relativePath
     ?.takeIf { !it.startsWith('/') && ".." !in it.split('/') }
     ?.takeIf { File(filesDir, it).isFile }
+
+private fun JsonObject.string(name: String): String? = (this[name] as? JsonPrimitive)?.contentOrNull

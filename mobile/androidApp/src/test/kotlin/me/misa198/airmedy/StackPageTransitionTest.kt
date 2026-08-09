@@ -13,6 +13,7 @@ class StackPageTransitionTest {
     fun stackPageDepthsFormCorrectHierarchy() {
         assertEquals(0, AppStackPage.Root.depth)
         assertEquals(1, AppStackPage.HomeSampleDetail.depth)
+        assertEquals(1, AppStackPage.LibraryArtists.depth)
         assertEquals(1, AppStackPage.SettingsAppearance.depth)
         assertEquals(1, AppStackPage.SettingsSync.depth)
         assertEquals(1, AppStackPage.SettingsAbout.depth)

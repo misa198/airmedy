@@ -41,18 +41,24 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import androidx.annotation.StringRes
 import dev.chrisbanes.haze.HazeState
 import me.misa198.airmedy.R
 import me.misa198.airmedy.ui.screens.SortOrder
-import me.misa198.airmedy.ui.screens.TrackSortOption
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
+data class LibrarySortOption<T>(
+    val value: T,
+    @StringRes val labelRes: Int,
+)
+
 @Composable
-fun TrackSortHeaderButton(
+fun <T> LibrarySortHeaderButton(
     hazeState: HazeState?,
-    sortOption: TrackSortOption,
+    options: List<LibrarySortOption<T>>,
+    selectedOption: T,
     sortOrder: SortOrder,
-    onSortOptionSelected: (TrackSortOption) -> Unit,
+    onSortOptionSelected: (T) -> Unit,
     onToggleSortOrder: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -91,8 +97,9 @@ fun TrackSortHeaderButton(
                         animationSpec = tween(durationMillis = 220),
                     ) + fadeOut(animationSpec = tween(durationMillis = 220)),
                 ) {
-                    TrackSortMenu(
-                        sortOption = sortOption,
+                    LibrarySortMenu(
+                        options = options,
+                        selectedOption = selectedOption,
                         sortOrder = sortOrder,
                         onSortOptionSelected = { option ->
                             onSortOptionSelected(option)
@@ -110,21 +117,15 @@ fun TrackSortHeaderButton(
 }
 
 @Composable
-private fun TrackSortMenu(
-    sortOption: TrackSortOption,
+private fun <T> LibrarySortMenu(
+    options: List<LibrarySortOption<T>>,
+    selectedOption: T,
     sortOrder: SortOrder,
-    onSortOptionSelected: (TrackSortOption) -> Unit,
+    onSortOptionSelected: (T) -> Unit,
     onToggleSortOrder: () -> Unit,
 ) {
     val colors = LocalAirmedyColors.current
     val shape = RoundedCornerShape(24.dp)
-
-    val options = listOf(
-        TrackSortOption.Name to R.string.sort_name,
-        TrackSortOption.Artist to R.string.sort_artist,
-        TrackSortOption.PlayCount to R.string.sort_play_count,
-        TrackSortOption.DateAdded to R.string.sort_date_added,
-    )
 
     Column(
         modifier = Modifier
@@ -140,15 +141,15 @@ private fun TrackSortMenu(
             .background(colors.card)
             .border(1.dp, colors.borderGlass, shape),
     ) {
-        options.forEachIndexed { index, (option, labelRes) ->
-            val selected = option == sortOption
+        options.forEachIndexed { index, option ->
+            val selected = option.value == selectedOption
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 44.dp)
                     .selectable(
                         selected = selected,
-                        onClick = { onSortOptionSelected(option) },
+                        onClick = { onSortOptionSelected(option.value) },
                         role = Role.RadioButton,
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -167,7 +168,7 @@ private fun TrackSortMenu(
                     Box(modifier = Modifier.size(18.dp))
                 }
                 Text(
-                    text = stringResource(labelRes),
+                    text = stringResource(option.labelRes),
                     modifier = Modifier.padding(start = 12.dp),
                     style = MaterialTheme.typography.bodyMedium,
                     color = colors.textMain,

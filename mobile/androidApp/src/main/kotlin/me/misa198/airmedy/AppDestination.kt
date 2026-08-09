@@ -11,6 +11,7 @@ enum class AppDestination {
 enum class AppStackPage {
     Root,
     HomeSampleDetail,
+    LibraryArtists,
     LibraryTracks,
     SettingsAppearance,
     SettingsSync,
@@ -21,7 +22,9 @@ enum class AppStackPage {
 val AppStackPage.destination: AppDestination
     get() = when (this) {
         AppStackPage.Root, AppStackPage.HomeSampleDetail -> AppDestination.Home
-        AppStackPage.LibraryTracks -> AppDestination.Library
+        AppStackPage.LibraryArtists,
+        AppStackPage.LibraryTracks,
+        -> AppDestination.Library
         AppStackPage.SettingsAppearance,
         AppStackPage.SettingsSync,
         AppStackPage.SettingsSyncScanner,

@@ -47,6 +47,8 @@ import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 import me.misa198.airmedy.ui.screens.LibraryTracksContent
 import me.misa198.airmedy.ui.screens.LibraryTracksUiState
 import me.misa198.airmedy.ui.screens.TrackSortOption
+import me.misa198.airmedy.ui.screens.LibraryArtistsContent
+import me.misa198.airmedy.ui.screens.LibraryArtistsUiState
 
 internal data class PageKey(
     val destination: AppDestination,
@@ -79,9 +81,11 @@ internal fun AppDestinationContent(
     navigationBottomPadding: Dp,
     homeListState: LazyListState,
     tracksListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
+    artistsListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     onIntent: (AppIntent) -> Unit,
     syncUiState: SyncUiState,
     tracksUiState: LibraryTracksUiState = LibraryTracksUiState(),
+    artistsUiState: LibraryArtistsUiState = LibraryArtistsUiState(),
     onSortOptionSelected: (TrackSortOption) -> Unit = {},
     onToggleSortOrder: () -> Unit = {},
     onTrackClick: (String) -> Unit = {},
@@ -209,6 +213,12 @@ internal fun AppDestinationContent(
                             )
                         }
                         AppDestination.Library -> when (currentPage.page) {
+                            AppStackPage.LibraryArtists -> LibraryArtistsContent(
+                                uiState = artistsUiState,
+                                listState = artistsListState,
+                                contentPadding = contentPadding,
+                                modifier = Modifier.fillMaxSize(),
+                            )
                             AppStackPage.LibraryTracks -> LibraryTracksContent(
                                 uiState = tracksUiState,
                                 onSortOptionSelected = onSortOptionSelected,
@@ -224,6 +234,9 @@ internal fun AppDestinationContent(
                                 onTracksSelected = {
                                     onIntent(AppIntent.OpenPage(AppStackPage.LibraryTracks))
                                 },
+                                onArtistsSelected = {
+                                    onIntent(AppIntent.OpenPage(AppStackPage.LibraryArtists))
+                                },
                             )
                         }
                         else -> PlaceholderContent(destination = currentPage.destination, modifier = Modifier.padding(contentPadding))
@@ -238,6 +251,7 @@ internal val AppStackPage.depth: Int
     get() = when (this) {
         AppStackPage.Root -> 0
         AppStackPage.HomeSampleDetail,
+        AppStackPage.LibraryArtists,
         AppStackPage.LibraryTracks,
         AppStackPage.SettingsAppearance,
         AppStackPage.SettingsSync,
