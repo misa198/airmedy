@@ -1,6 +1,7 @@
 package me.misa198.airmedy.ui.navigation
 
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -11,6 +12,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
+import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.swipeRight
+import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -71,17 +76,93 @@ class MiniPlayerTest {
     @Test
     fun draggingMiniPlayerDownDismissesIt() {
         var dismisses = 0
+        var opens = 0
         composeTestRule.setContent {
             NavigationChromeForTest(
                 state = PlaybackState.Playing(item, positionMs = 0L, durationMs = 120_000L),
                 onDismiss = { dismisses += 1 },
+                onOpenFullScreenPlayer = { opens += 1 },
             )
         }
 
         composeTestRule.onNodeWithText(item.title).performTouchInput { swipeDown() }
         composeTestRule.waitUntil(timeoutMillis = 2_000) { dismisses == 1 }
+        composeTestRule.waitForIdle()
 
         assertEquals(1, dismisses)
+        assertEquals(0, opens)
+        composeTestRule.onNodeWithText(item.title).assertIsNotDisplayed()
+    }
+
+    @Test
+    fun draggingMiniPlayerUpOpensTheFullScreenPlayer() {
+        var opens = 0
+        composeTestRule.setContent {
+            NavigationChromeForTest(
+                state = PlaybackState.Playing(item, positionMs = 0L, durationMs = 120_000L),
+                onOpenFullScreenPlayer = { opens += 1 },
+            )
+        }
+
+        composeTestRule.onNodeWithText(item.title).performTouchInput { swipeUp() }
+        composeTestRule.waitUntil(timeoutMillis = 2_000) { opens == 1 }
+
+        assertEquals(1, opens)
+    }
+
+    @Test
+    fun swipingMetadataLeftSkipsToTheNextTrackWithNoVerticalPlayerAction() {
+        val calls = mutableListOf<String>()
+        composeTestRule.setContent {
+            NavigationChromeForTest(
+                state = PlaybackState.Playing(item, positionMs = 0L, durationMs = 120_000L),
+                onNext = { calls += "next" },
+                onDismiss = { calls += "dismiss" },
+                onOpenFullScreenPlayer = { calls += "open" },
+            )
+        }
+
+        composeTestRule.onNodeWithText(item.title).performTouchInput { swipeLeft() }
+        composeTestRule.waitUntil(timeoutMillis = 2_000) { calls.isNotEmpty() }
+
+        assertEquals(listOf("next"), calls)
+    }
+
+    @Test
+    fun swipingMetadataRightReturnsToThePreviousTrack() {
+        val calls = mutableListOf<String>()
+        composeTestRule.setContent {
+            NavigationChromeForTest(
+                state = PlaybackState.Playing(item, positionMs = 0L, durationMs = 120_000L),
+                onPrevious = { calls += "previous" },
+            )
+        }
+
+        composeTestRule.onNodeWithText(item.artist).performTouchInput { swipeRight() }
+        composeTestRule.waitUntil(timeoutMillis = 2_000) { calls.isNotEmpty() }
+
+        assertEquals(listOf("previous"), calls)
+    }
+
+    @Test
+    fun shortSlowMetadataDragDoesNotDispatchTransport() {
+        val calls = mutableListOf<String>()
+        composeTestRule.setContent {
+            NavigationChromeForTest(
+                state = PlaybackState.Playing(item, positionMs = 0L, durationMs = 120_000L),
+                onPrevious = { calls += "previous" },
+                onNext = { calls += "next" },
+            )
+        }
+
+        composeTestRule.onNodeWithText(item.title).performTouchInput {
+            down(center)
+            moveBy(Offset(x = 20f, y = 0f), delayMillis = 300)
+            up()
+        }
+        composeTestRule.waitForIdle()
+
+        assertEquals(emptyList<String>(), calls)
     }
 
     @Test
@@ -125,6 +206,7 @@ class MiniPlayerTest {
         onPlayPause: () -> Unit = {},
         onNext: () -> Unit = {},
         onDismiss: () -> Unit = {},
+        onOpenFullScreenPlayer: () -> Unit = {},
     ) {
         AirmedyTheme(themeMode = ThemeMode.Dark) {
             NavigationChrome(
@@ -136,6 +218,7 @@ class MiniPlayerTest {
                 onPlayPauseClick = onPlayPause,
                 onNextClick = onNext,
                 onMiniPlayerDismiss = onDismiss,
+                onOpenFullScreenPlayer = onOpenFullScreenPlayer,
             )
         }
     }

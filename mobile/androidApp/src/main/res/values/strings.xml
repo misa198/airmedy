@@ -52,6 +52,7 @@
     <string name="player_play">Play</string>
     <string name="player_pause">Pause</string>
     <string name="player_next">Next</string>
+    <string name="full_screen_player_placeholder">Full screen player</string>
     <string name="sync_error_background_timeout">Sync paused because Android reached its background time limit.</string>
     <string name="sync_progress_connecting">Preparing library sync…</string>
     <string name="sync_progress_items">Syncing %1$d of %2$d items</string>

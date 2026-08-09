@@ -37,6 +37,9 @@ internal fun NavigationChrome(
     onPlayPauseClick: () -> Unit,
     onNextClick: () -> Unit,
     onMiniPlayerDismiss: () -> Unit,
+    onOpenFullScreenPlayer: () -> Unit = {},
+    onFullScreenPlayerDrag: (Float) -> Unit = {},
+    onFullScreenPlayerDragEnd: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val isCompact = compact && playbackState.showsMiniPlayer()
@@ -94,6 +97,9 @@ internal fun NavigationChrome(
                     onPlayPauseClick = onPlayPauseClick,
                     onNextClick = onNextClick,
                     onDismiss = onMiniPlayerDismiss,
+                    onOpenFullScreenPlayer = onOpenFullScreenPlayer,
+                    onFullScreenPlayerDrag = onFullScreenPlayerDrag,
+                    onFullScreenPlayerDragEnd = onFullScreenPlayerDragEnd,
                     stableGlassWidth = maxWidth,
                     modifier = Modifier
                         .align(Alignment.BottomStart)

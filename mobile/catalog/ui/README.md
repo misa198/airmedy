@@ -83,11 +83,35 @@ describe the desktop Vue UI or future iOS UI.
   it is absent for Idle and Failed states. It presents 48dp square artwork with
   a 10dp radius with an 8dp left inset (or the Lucide music fallback), marquee title/artist labels,
   and larger, sharp-cornered filled Lucide Previous, Play/Pause, and Next controls with
-  visually overlapping 48dp touch targets. Metadata is display-only for now; Preparing
-  disables its play/pause control.
-  Pulling the mini player down by 36dp slides the entire pill off the bottom
-  of the screen, then
-  stops playback and clears the persisted queue.
+  visually overlapping 48dp touch targets. Preparing disables its play/pause control. Its
+  title/artist area also accepts horizontal transport
+  gestures: a left swipe advances to Next and a right swipe invokes Previous. The metadata
+  follows the drag inside a clipped metadata viewport, so it cannot overlap artwork or
+  controls; it snaps back after release and emits one confirmation haptic only when the swipe
+  reaches the distance or velocity threshold and dispatches a transport command. Horizontal
+  gestures are scoped to metadata so they do not conflict with the pill's vertical
+  fullscreen/dismiss gestures or its control buttons. Tapping the mini player has no ripple.
+  Tapping its non-control surface opens the temporary `FullScreenPlayerPlaceholder`.
+  Pulling upward moves the mini player up by its full 56dp height while fading it out.
+  The edge-to-edge overlay follows that pull continuously from the bottom and
+  reaches full opacity while the mini player fades away. Releasing after any
+  upward drag completes the transition to the fullscreen player. Once
+  released, it uses the slower 520ms slide/fade only to complete the current
+  partial transition. Pulling the mini player down by 36dp keeps it sliding
+  off the bottom of the screen without rebounding while playback stops and clears the
+  persisted queue. Tap and vertical drag are separate consumed gesture paths,
+  so a slow downward dismiss or a cancelled drag can never be reinterpreted as
+  an open-fullscreen tap. Every pointer-down clears any interrupted fullscreen
+  pull state before classifying the new gesture. Once a vertical gesture crosses
+  touch-slop, its initial direction is locked: a downward drag can only dismiss
+  or settle the mini player, never transition to fullscreen.
+  The pill remains visually below navigation while dismissing. Its drag receiver
+  stays anchored at the initial mini-player position, so the same downward drag
+  continues even after the pill passes behind the navigation.
+  The placeholder has no player controls yet; pulling it down by 96dp or pressing
+  system Back slides it down and returns to the unchanged navigation/page state.
+  Every new open clears any residual downward-dismiss offset before expanding,
+  so consecutive opens always finish flush with the top of the screen.
 - While the mini player is visible, the app shell observes user-driven nested
   scrolling from any page content. A content-upward delta switches the chrome
   to its 56dp compact row: a left-side circular button for the active destination
@@ -144,5 +168,8 @@ describe the desktop Vue UI or future iOS UI.
 - Test component interaction and screen-level navigation separately. `ActionListTest`
   covers optional callbacks and iconless trailing slots; `AppNavigationTest` covers
   Home-to-detail and Settings-to-About navigation.
-- `MiniPlayerTest` covers playback visibility and transport controls in both full
-  and compact navigation-chrome layouts.
+- `MiniPlayerTest` covers playback visibility, transport controls, metadata left/right swipe
+  transport dispatch, and the upward fullscreen-opening gesture in both full and compact
+  navigation-chrome layouts.
+  `AppNavigationTest` covers the fullscreen overlay's tap-open, downward-dismiss,
+  and system-Back behavior.

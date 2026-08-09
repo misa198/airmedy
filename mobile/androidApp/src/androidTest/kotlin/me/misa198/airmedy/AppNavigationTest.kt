@@ -4,17 +4,24 @@ import android.view.KeyEvent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
 import androidx.test.platform.app.InstrumentationRegistry
 import me.misa198.airmedy.settings.ThemeMode
+import me.misa198.airmedy.player.PlaybackItem
+import me.misa198.airmedy.player.PlaybackState
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -107,6 +114,46 @@ class AppNavigationTest {
     }
 
     @Test
+    fun fullScreenPlayerOpensAboveNavigationAndClosesWhenDraggedDown() {
+        composeTestRule.setContent { App(playbackState = playingState) }
+
+        composeTestRule.onNodeWithText(playingItem.title).performClick()
+        composeTestRule.onNodeWithContentDescription(string(R.string.full_screen_player_placeholder)).assertIsDisplayed()
+
+        composeTestRule.onNodeWithContentDescription(string(R.string.full_screen_player_placeholder))
+            .performTouchInput { swipeDown() }
+        composeTestRule.waitForIdle()
+        composeTestRule.onAllNodesWithContentDescription(string(R.string.full_screen_player_placeholder)).assertCountEquals(0)
+    }
+
+    @Test
+    fun partialSlowMiniPlayerPullCompletesOpeningTheFullScreenPlayer() {
+        composeTestRule.setContent { App(playbackState = playingState) }
+
+        composeTestRule.onNodeWithText(playingItem.title).performTouchInput {
+            down(center)
+            moveBy(Offset(x = 0f, y = -100f), delayMillis = 500)
+            up()
+        }
+
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithContentDescription(string(R.string.full_screen_player_placeholder))
+            .assertTopPositionInRootIsEqualTo(0.dp)
+    }
+
+    @Test
+    fun systemBackClosesFullScreenPlayerBeforeNavigating() {
+        composeTestRule.setContent { App(playbackState = playingState) }
+
+        composeTestRule.onNodeWithText(playingItem.title).performClick()
+        composeTestRule.onNodeWithContentDescription(string(R.string.full_screen_player_placeholder)).assertIsDisplayed()
+        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+
+        composeTestRule.onAllNodesWithContentDescription(string(R.string.full_screen_player_placeholder)).assertCountEquals(0)
+        composeTestRule.onNodeWithContentDescription(string(R.string.destination_home)).assertIsSelected()
+    }
+
+    @Test
     fun reselectingHomeRestoresItsRootStackAndScrollsToTheTop() {
         val harness = AppHarness(
             AppUiState(
@@ -124,6 +171,16 @@ class AppNavigationTest {
 
     private fun string(resourceId: Int, vararg formatArgs: Any): String =
         InstrumentationRegistry.getInstrumentation().targetContext.getString(resourceId, *formatArgs)
+
+    private companion object {
+        val playingItem = PlaybackItem(
+            trackId = "track-1",
+            title = "Test track",
+            artist = "Test artist",
+            audioPath = "/audio/track-1.flac",
+        )
+        val playingState = PlaybackState.Playing(playingItem, positionMs = 0L, durationMs = 120_000L)
+    }
 }
 
 private class AppHarness(initialState: AppUiState = AppUiState()) {

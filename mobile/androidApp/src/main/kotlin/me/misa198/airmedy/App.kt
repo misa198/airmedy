@@ -19,8 +19,10 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,6 +42,7 @@ import me.misa198.airmedy.ui.navigation.ContentScrollDirection
 import me.misa198.airmedy.ui.navigation.FloatingNavigationBottomMargin
 import me.misa198.airmedy.ui.navigation.FloatingNavigationContentGap
 import me.misa198.airmedy.ui.navigation.FloatingNavigationHeight
+import me.misa198.airmedy.ui.navigation.FullScreenPlayerPlaceholder
 import me.misa198.airmedy.ui.navigation.MiniPlayerHeight
 import me.misa198.airmedy.ui.navigation.MiniPlayerNavigationGap
 import me.misa198.airmedy.ui.navigation.NavigationChrome
@@ -93,12 +96,22 @@ internal fun App(
         var previousPage by remember { mutableStateOf(currentPage) }
         val isForwardHeaderTransition = currentPage.depth >= previousPage.depth
         val showsMiniPlayer = playbackState.showsMiniPlayer()
+        var isFullScreenPlayerVisible by rememberSaveable { mutableStateOf(false) }
+        var fullScreenPlayerDragProgress by remember { mutableFloatStateOf(0f) }
+        var isFullScreenPlayerDragging by remember { mutableStateOf(false) }
         var isNavigationCompact by remember { mutableStateOf(false) }
         var navigationScrollState by remember { mutableStateOf(NavigationChromeScrollState()) }
         val navigationScrollThresholdPx = with(LocalDensity.current) { 24.dp.toPx() }
         LaunchedEffect(showsMiniPlayer, uiState.selectedDestination, currentPage) {
             isNavigationCompact = false
             navigationScrollState = NavigationChromeScrollState()
+        }
+        LaunchedEffect(showsMiniPlayer) {
+            if (!showsMiniPlayer) {
+                isFullScreenPlayerVisible = false
+                isFullScreenPlayerDragging = false
+                fullScreenPlayerDragProgress = 0f
+            }
         }
         val navigationChromeHeight = when {
             showsMiniPlayer && isNavigationCompact -> CompactNavigationHeight
@@ -224,12 +237,32 @@ internal fun App(
                     navigationScrollState = NavigationChromeScrollState()
                     onMiniPlayerDismiss()
                 },
+                onOpenFullScreenPlayer = { isFullScreenPlayerVisible = true },
+                onFullScreenPlayerDrag = { progress ->
+                    isFullScreenPlayerDragging = true
+                    fullScreenPlayerDragProgress = progress
+                },
+                onFullScreenPlayerDragEnd = { shouldOpen ->
+                    isFullScreenPlayerDragging = false
+                    // A partial pull must not remain as the overlay's source of truth
+                    // once the pointer is released. The overlay then animates to either
+                    // its closed or fully-open resting state.
+                    fullScreenPlayerDragProgress = 0f
+                    isFullScreenPlayerVisible = shouldOpen
+                },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()
                     .padding(start = 20.dp, end = 20.dp, bottom = FloatingNavigationBottomMargin),
             )
+            FullScreenPlayerPlaceholder(
+                visible = isFullScreenPlayerVisible,
+                dragProgress = fullScreenPlayerDragProgress,
+                isDragging = isFullScreenPlayerDragging,
+                onDismiss = { isFullScreenPlayerVisible = false },
+            )
         }
+        BackHandler(enabled = isFullScreenPlayerVisible) { isFullScreenPlayerVisible = false }
     }
 }
 
