@@ -150,7 +150,21 @@ describe the desktop Vue UI or future iOS UI.
   12dp gap before the blurred glass Heart/More button pair (using a fullscreen-local Haze backdrop source and a subtle 6% glass tint),
   a dominant-colour gradient extracted from the artwork, animated over 280ms when artwork changes; the prior artwork remains visible while the replacement decodes to prevent a fallback-colour flash, with a
   restrained dark `playerBackdrop` overlay and fallback in every app theme, seek/duration, transport controls, Android music-stream volume (the system settings provider is observed recursively so hardware keys and route-specific system-volume events keep it current),
-  and ghost Lyrics/Queue affordances. The centred secondary action is a Lucide
+  and Lyrics/Queue affordances. Selecting Lyrics or Queue compresses the
+  artwork into a 96dp square, animating its anchor from centre to top-left when
+  leaving the paused presentation. The expanded
+  title/artist cluster slides slightly upward while fading out; a separate
+  compact title/artist/More cluster then slides upward into the adjacent 96dp
+  row while fading in 120ms after the artwork begins, with a 16dp
+  gap and no right inset (Favorite is hidden in this compact state); the top block retains its
+  expanded height, and its freed upper space displays a transparent placeholder
+  that slides upward and fades in with the compact cluster after the same 120ms delay. The selected pane
+  remains open across track changes. Selecting the same action again closes it,
+  while selecting the other action switches the placeholder in place. The active
+  Lyrics or Queue action fills with `foregroundSubtle` over 220ms; its
+  semi-transparent player-backdrop icon changes over the same duration so the
+  fill remains visible through it without flashing. Fullscreen transport actions
+  suppress ripple indications. The centred secondary action is a Lucide
   Cast button; on Android 14 (API 34) and later it delegates opening Android's
   system Media Output Switcher for the active Airmedy media session to the
   activity. Heart, More, Lyrics, and Queue are visual actions only; they do not

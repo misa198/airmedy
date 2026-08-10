@@ -3,15 +3,22 @@ package me.misa198.airmedy.ui.navigation
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -19,10 +26,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -30,8 +37,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,6 +54,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -56,6 +64,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -94,6 +103,13 @@ private const val FullScreenPlayerMetadataSwipeTestTag = "full_screen_player_met
 private val FullScreenPlayerSwipeMaximum = 40.dp
 private val FullScreenPlayerSwipeThreshold = 32.dp
 private const val FullScreenPlayerSwipeVelocityPxPerMs = 1.2f
+private val FullScreenPlayerCompactArtworkSize = 96.dp
+private val FullScreenPlayerCompactGap = 24.dp
+
+private enum class FullScreenPlayerPanel {
+    Lyrics,
+    Queue,
+}
 
 @Composable
 internal fun FullScreenPlayer(
@@ -150,10 +166,53 @@ internal fun FullScreenPlayer(
     val durationMs = playbackState.durationMsOrZero()
     val isPreparing = playbackState is PlaybackState.Preparing
     val isPlaying = playbackState is PlaybackState.Playing
+    var selectedPanel by remember { mutableStateOf<FullScreenPlayerPanel?>(null) }
+    val isPanelOpen = selectedPanel != null
+    val lyricsButtonBackground by animateColorAsState(
+        targetValue = if (selectedPanel == FullScreenPlayerPanel.Lyrics) {
+            colors.foregroundSubtle
+        } else {
+            colors.foregroundSubtle.copy(alpha = 0f)
+        },
+        animationSpec = tween(220, easing = FastOutSlowInEasing),
+        label = "full-screen-lyrics-button-background",
+    )
+    val queueButtonBackground by animateColorAsState(
+        targetValue = if (selectedPanel == FullScreenPlayerPanel.Queue) {
+            colors.foregroundSubtle
+        } else {
+            colors.foregroundSubtle.copy(alpha = 0f)
+        },
+        animationSpec = tween(220, easing = FastOutSlowInEasing),
+        label = "full-screen-queue-button-background",
+    )
+    val lyricsButtonIconColor by animateColorAsState(
+        targetValue = if (selectedPanel == FullScreenPlayerPanel.Lyrics) {
+            colors.playerBackdrop.copy(alpha = 0.72f)
+        } else {
+            colors.foregroundSubtle
+        },
+        animationSpec = tween(220, easing = FastOutSlowInEasing),
+        label = "full-screen-lyrics-button-icon",
+    )
+    val queueButtonIconColor by animateColorAsState(
+        targetValue = if (selectedPanel == FullScreenPlayerPanel.Queue) {
+            colors.playerBackdrop.copy(alpha = 0.72f)
+        } else {
+            colors.foregroundSubtle
+        },
+        animationSpec = tween(220, easing = FastOutSlowInEasing),
+        label = "full-screen-queue-button-icon",
+    )
     val artworkScale by animateFloatAsState(
-        targetValue = if (playbackState is PlaybackState.Paused) 0.75f else 1f,
-        animationSpec = tween(500, easing = FastOutSlowInEasing),
+        targetValue = if (playbackState is PlaybackState.Paused && !isPanelOpen) 0.75f else 1f,
+        animationSpec = tween(if (isPanelOpen) 320 else 500, easing = FastOutSlowInEasing),
         label = "full-screen-artwork-scale",
+    )
+    val artworkTransformOrigin by animateFloatAsState(
+        targetValue = if (isPanelOpen) 0f else 0.5f,
+        animationSpec = tween(320, easing = FastOutSlowInEasing),
+        label = "full-screen-artwork-transform-origin",
     )
     var pendingSeekFraction by remember(item.trackId) { mutableStateOf<Float?>(null) }
     val horizontalSwipeState = remember { FullScreenPlayerSwipeState() }
@@ -164,6 +223,18 @@ internal fun FullScreenPlayer(
     )
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        // The player column has 20dp padding on each side, so the full-screen
+        // artwork must use its content width rather than this outer constraint.
+        val expandedArtworkSize = maxWidth - 40.dp
+        val compactMetadataWidth = maxWidth - 20.dp
+        val artworkSize by animateDpAsState(
+            targetValue = if (isPanelOpen) FullScreenPlayerCompactArtworkSize else expandedArtworkSize,
+            animationSpec = tween(320, easing = FastOutSlowInEasing),
+            label = "full-screen-artwork-size",
+        )
+        // Keep the top block's expanded footprint reserved while a panel is open.
+        // Otherwise the player controls below would climb into the newly freed space.
+        val topBlockHeight = expandedArtworkSize + 96.dp
         val panelHeightPx = with(androidx.compose.ui.platform.LocalDensity.current) { maxHeight.toPx() }
         val panelOffsetPx = panelHeightPx * (1f - expansionProgress.value)
         Box(
@@ -215,69 +286,74 @@ internal fun FullScreenPlayer(
                 onPrevious = onPrevious,
                 onNext = onNext,
             ) {
-                Column {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(topBlockHeight),
+                ) {
                     Artwork(
                         artwork,
                         Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(1f)
+                            .size(artworkSize)
                             .semantics { testTag = FullScreenPlayerArtworkTestTag }
                             .graphicsLayer {
                                 scaleX = artworkScale
                                 scaleY = artworkScale
+                                transformOrigin = TransformOrigin(artworkTransformOrigin, artworkTransformOrigin)
                             },
                     )
-                    Spacer(Modifier.height(36.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = !isPanelOpen,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .offset(y = expandedArtworkSize + 36.dp),
+                        enter = fadeIn(tween(160)) + slideInVertically(tween(160)) { 10 },
+                        exit = fadeOut(tween(120)) + slideOutVertically(tween(120)) { -10 },
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clipToBounds()
-                                .graphicsLayer { translationX = displayedHorizontalSwipeOffset }
-                                .semantics { testTag = FullScreenPlayerMetadataSwipeTestTag },
-                        ) {
-                            AirmedyMarqueeText(
-                                text = item.title,
-                                color = colors.onPrimary,
-                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                            )
-                            AirmedyMarqueeText(
-                                text = item.artist,
-                                color = colors.foregroundSubtle,
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                        }
-                        Spacer(Modifier.width(4.dp))
-                        AirmedyIconButton(
-                            symbol = MaterialSymbols.FavoriteBorder,
-                            label = stringResource(R.string.player_heart),
-                            onClick = {},
-                            variant = AirmedyIconButtonVariant.Glass,
-                            tint = colors.onPrimary,
-                            glassColor = Color.White.copy(alpha = 0.06f),
+                        FullScreenPlayerMetadata(
+                            item = item,
+                            displayedHorizontalSwipeOffset = displayedHorizontalSwipeOffset,
                             hazeState = glassHazeState,
-                            circleSize = 36.dp,
-                            iconSize = 20.dp,
+                            compact = false,
                         )
-                        AirmedyIconButton(
-                            symbol = MaterialSymbols.MoreVert,
-                            label = stringResource(R.string.player_more),
-                            onClick = {},
-                            variant = AirmedyIconButtonVariant.Glass,
-                            tint = colors.onPrimary,
-                            glassColor = Color.White.copy(alpha = 0.06f),
+                    }
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = isPanelOpen,
+                        modifier = Modifier
+                            // Extend only the compact metadata into the outer
+                            // column's right inset, leaving it flush to screen edge.
+                            .requiredWidth(compactMetadataWidth)
+                            .padding(start = FullScreenPlayerCompactArtworkSize + FullScreenPlayerCompactGap)
+                            .height(FullScreenPlayerCompactArtworkSize),
+                        enter = fadeIn(tween(200, delayMillis = 120)) + slideInVertically(tween(200, delayMillis = 120)) { 12 },
+                        exit = fadeOut(tween(120)) + slideOutVertically(tween(120)) { -10 },
+                    ) {
+                        FullScreenPlayerMetadata(
+                            item = item,
+                            displayedHorizontalSwipeOffset = displayedHorizontalSwipeOffset,
                             hazeState = glassHazeState,
-                            circleSize = 36.dp,
-                            iconSize = 20.dp,
+                            compact = true,
+                        )
+                    }
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = isPanelOpen,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = FullScreenPlayerCompactArtworkSize + 16.dp),
+                        enter = fadeIn(tween(200, delayMillis = 120)) + slideInVertically(tween(200, delayMillis = 120)) { 12 },
+                        exit = fadeOut(tween(120)) + slideOutVertically(tween(120)) { -10 },
+                    ) {
+                        FullScreenPlayerPanelPlaceholder(
+                            panel = selectedPanel ?: FullScreenPlayerPanel.Lyrics,
+                            modifier = Modifier.fillMaxSize(),
                         )
                     }
                 }
             }
             Column(
-                modifier = Modifier.fillMaxWidth().weight(1f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
                 verticalArrangement = Arrangement.SpaceEvenly,
             ) {
                 Column {
@@ -358,9 +434,16 @@ internal fun FullScreenPlayer(
                             FullScreenTransportButton(
                                 MaterialSymbols.Chat,
                                 stringResource(R.string.player_lyrics),
-                                {},
+                                {
+                                    selectedPanel = if (selectedPanel == FullScreenPlayerPanel.Lyrics) {
+                                        null
+                                    } else {
+                                        FullScreenPlayerPanel.Lyrics
+                                    }
+                                },
                                 iconSize = 24.dp,
-                                tint = colors.foregroundSubtle,
+                                tint = lyricsButtonIconColor,
+                                containerColor = lyricsButtonBackground,
                                 filled = false,
                             )
                         }
@@ -378,9 +461,16 @@ internal fun FullScreenPlayer(
                             FullScreenTransportButton(
                                 MaterialSymbols.QueueMusic,
                                 stringResource(R.string.player_queue),
-                                {},
+                                {
+                                    selectedPanel = if (selectedPanel == FullScreenPlayerPanel.Queue) {
+                                        null
+                                    } else {
+                                        FullScreenPlayerPanel.Queue
+                                    }
+                                },
                                 iconSize = 24.dp,
-                                tint = colors.foregroundSubtle,
+                                tint = queueButtonIconColor,
+                                containerColor = queueButtonBackground,
                                 filled = false,
                             )
                         }
@@ -389,6 +479,89 @@ internal fun FullScreenPlayer(
             }
             }
         }
+    }
+}
+
+@Composable
+private fun FullScreenPlayerMetadata(
+    item: PlaybackItem,
+    displayedHorizontalSwipeOffset: Float,
+    hazeState: HazeState?,
+    compact: Boolean,
+) {
+    val colors = LocalAirmedyColors.current
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .clipToBounds()
+                .graphicsLayer { translationX = displayedHorizontalSwipeOffset }
+                .semantics { testTag = FullScreenPlayerMetadataSwipeTestTag },
+        ) {
+            AirmedyMarqueeText(
+                text = item.title,
+                color = colors.onPrimary,
+                style = if (compact) {
+                    MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                } else {
+                    MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                },
+            )
+            AirmedyMarqueeText(
+                text = item.artist,
+                color = colors.foregroundSubtle,
+                style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
+            )
+        }
+        Spacer(Modifier.width(4.dp))
+        if (!compact) {
+            AirmedyIconButton(
+                symbol = MaterialSymbols.FavoriteBorder,
+                label = stringResource(R.string.player_heart),
+                onClick = {},
+                variant = AirmedyIconButtonVariant.Glass,
+                tint = colors.onPrimary,
+                glassColor = Color.White.copy(alpha = 0.06f),
+                hazeState = hazeState,
+                circleSize = 36.dp,
+                iconSize = 20.dp,
+            )
+        }
+        AirmedyIconButton(
+            symbol = MaterialSymbols.MoreVert,
+            label = stringResource(R.string.player_more),
+            onClick = {},
+            variant = AirmedyIconButtonVariant.Glass,
+            tint = colors.onPrimary,
+            glassColor = Color.White.copy(alpha = 0.06f),
+            hazeState = hazeState,
+            circleSize = if (compact) 32.dp else 36.dp,
+            iconSize = if (compact) 18.dp else 20.dp,
+        )
+    }
+}
+
+@Composable
+private fun FullScreenPlayerPanelPlaceholder(
+    panel: FullScreenPlayerPanel,
+    modifier: Modifier = Modifier,
+) {
+    val colors = LocalAirmedyColors.current
+    val label = stringResource(
+        if (panel == FullScreenPlayerPanel.Lyrics) R.string.player_lyrics else R.string.player_queue,
+    )
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            color = colors.foregroundSubtle,
+            style = MaterialTheme.typography.titleMedium,
+        )
     }
 }
 
@@ -416,7 +589,6 @@ private fun FullScreenPlayerSwipeTarget(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clipToBounds()
             .semantics { this.testTag = testTag }
             .pointerInput(maximumOffsetPx, thresholdPx) {
                 detectHorizontalDragGestures(
@@ -521,13 +693,36 @@ private fun FullScreenTransportButton(
     enabled: Boolean = true,
     iconSize: androidx.compose.ui.unit.Dp = 32.dp,
     tint: Color? = null,
+    containerColor: Color? = null,
     filled: Boolean = true,
 ) {
     val colors = LocalAirmedyColors.current
-    IconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(64.dp)) {
+    Box(
+        modifier = Modifier
+            .size(64.dp)
+            .then(
+                if (containerColor == null) {
+                    Modifier
+                } else {
+                    Modifier
+                        .padding(8.dp)
+                        .clip(CircleShape)
+                        .background(containerColor)
+                },
+            )
+            .semantics { contentDescription = label }
+            .clickable(
+                enabled = enabled,
+                onClick = onClick,
+                role = Role.Button,
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
         MaterialSymbol(
             symbol = symbol,
-            contentDescription = label,
+            contentDescription = null,
             tint = tint ?: if (enabled) colors.onPrimary else colors.textMuted,
             size = iconSize,
             filled = filled,
