@@ -45,6 +45,9 @@ internal class PlaybackController(
     fun playNext(trackId: String) = playNext(listOf(trackId))
     fun playNext(trackIds: List<String>) = tracksCommand(PlaybackService.ActionPlayNext, trackIds)
     fun append(trackIds: List<String>) = tracksCommand(PlaybackService.ActionAppend, trackIds)
+    fun selectQueueTrack(trackId: String) = context.startForegroundService(
+        PlaybackService.intent(context, PlaybackService.ActionSelect).putExtra(PlaybackService.TrackIdExtra, trackId),
+    )
     fun removeFromQueue(trackId: String) = context.startForegroundService(
         PlaybackService.intent(context, PlaybackService.ActionRemove).putExtra(PlaybackService.TrackIdExtra, trackId),
     )

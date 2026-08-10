@@ -63,6 +63,35 @@ class PlaybackQueueTest {
     }
 
     @Test
+    fun `selecting queued track preserves playback options`() {
+        val queue = PlaybackQueue(Random(1))
+        queue.play(PlaybackRequest(listOf("a", "b", "c"), 1))
+        queue.setShuffle(true)
+        queue.setRepeatMode(RepeatMode.All)
+        val activeOrder = queue.snapshot().activeTrackIds
+
+        assertEquals(QueueTransition.Play("c"), queue.select("c"))
+        assertEquals("c", queue.snapshot().currentTrackId)
+        assertEquals(activeOrder, queue.snapshot().activeTrackIds)
+        assertEquals(true, queue.snapshot().shuffle)
+        assertEquals(RepeatMode.All, queue.snapshot().repeatMode)
+        assertEquals(QueueTransition.Unchanged, queue.select("missing"))
+    }
+
+    @Test
+    fun `reordering active queue keeps current track selected`() {
+        val queue = PlaybackQueue()
+        queue.play(PlaybackRequest(listOf("a", "b", "c"), 1))
+        queue.setRepeatMode(RepeatMode.All)
+
+        queue.reorderQueue(listOf("c", "b", "a"))
+
+        assertEquals(listOf("c", "b", "a"), queue.snapshot().activeTrackIds)
+        assertEquals("b", queue.snapshot().currentTrackId)
+        assertEquals(RepeatMode.All, queue.snapshot().repeatMode)
+    }
+
+    @Test
     fun `clear removes every queue entry and resets queue options`() {
         val queue = PlaybackQueue()
         queue.play(PlaybackRequest(listOf("a", "b")))

@@ -73,6 +73,9 @@ import me.misa198.airmedy.ui.screens.TrackSortOption
 import me.misa198.airmedy.ui.screens.AlbumDetailsUiState
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import me.misa198.airmedy.player.PlaybackState
+import me.misa198.airmedy.player.PlaybackQueueSnapshot
+import me.misa198.airmedy.player.RepeatMode
+import me.misa198.airmedy.sync.LibraryTrack
 
 internal fun shouldShowHeaderBlur(
     isContentScrolled: Boolean,
@@ -110,10 +113,16 @@ internal fun App(
     onSyncScreenVisible: () -> Unit = {},
     onSyncScreenHidden: () -> Unit = {},
     playbackState: PlaybackState = PlaybackState.Idle,
+    playbackQueue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
+    queueTracks: List<LibraryTrack> = emptyList(),
     onPlaybackPrevious: () -> Unit = {},
     onPlaybackPlayPause: () -> Unit = {},
     onPlaybackNext: () -> Unit = {},
     onPlaybackSeek: (Long) -> Unit = {},
+    onQueueTrackSelected: (String) -> Unit = {},
+    onQueueReordered: (List<String>) -> Unit = {},
+    onShuffleChange: (Boolean) -> Unit = {},
+    onRepeatModeChange: (RepeatMode) -> Unit = {},
     systemVolume: Float = 0f,
     onSystemVolumeChange: (Float) -> Unit = {},
     onMiniPlayerDismiss: () -> Unit = {},
@@ -444,12 +453,18 @@ internal fun App(
                 isDragging = isFullScreenPlayerDragging,
                 openingFromMiniPlayerSwipe = isFullScreenPlayerOpeningFromSwipe,
                 playbackState = playbackState,
+                queue = playbackQueue,
+                queueTracks = queueTracks,
                 volume = systemVolume,
                 onSeek = onPlaybackSeek,
                 onVolumeChange = onSystemVolumeChange,
                 onPrevious = onPlaybackPrevious,
                 onPlayPause = onPlaybackPlayPause,
                 onNext = onPlaybackNext,
+                onQueueTrackSelected = onQueueTrackSelected,
+                onQueueReordered = onQueueReordered,
+                onShuffleChange = onShuffleChange,
+                onRepeatModeChange = onRepeatModeChange,
                 onOpenMediaOutputSwitcher = onOpenMediaOutputSwitcher,
                 onDismiss = {
                     setFullScreenPlayerVisible(false)

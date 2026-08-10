@@ -159,8 +159,8 @@ describe the desktop Vue UI or future iOS UI.
   gap and no right inset (Favorite is hidden in this compact state); the top block retains its
   expanded height, and its freed upper space displays a transparent placeholder
   that slides upward and fades in with the compact cluster after the same 120ms delay. The selected pane
-  remains open across track changes. Selecting the same action again closes it,
-  while selecting the other action switches the placeholder in place. The active
+  remains open across track changes. Tapping the compact artwork or selecting the same action closes it,
+  while switching to the other action fades its panel in while sliding it upward. The active
   Lyrics or Queue action fills with `foregroundSubtle` over 220ms; its
   semi-transparent player-backdrop icon changes over the same duration so the
   fill remains visible through it without flashing. Fullscreen transport actions
@@ -169,6 +169,28 @@ describe the desktop Vue UI or future iOS UI.
   system Media Output Switcher for the active Airmedy media session to the
   activity. Heart, More, Lyrics, and Queue are visual actions only; they do not
   yet persist state or open a screen.
+  The Queue pane is the exception: it renders the active playback order in a
+  virtualized `LazyColumn`. Its header keeps Queue at the left and themed
+  Shuffle/Repeat controls at the right. Their inactive background/icon match the
+  fullscreen Favorite action; their active background/icon match active Lyrics.
+  Shuffle toggles directly; Repeat cycles
+  Off, All, One, then Off. Rows are 56dp with artwork, title/artist metadata,
+  and a trailing Material Symbols menu icon aligned flush to the row's end, which
+  uses the same muted token as the volume icons. Queue rows have no horizontal
+  content padding. The current item's artwork has a `playerBackdrop` overlay
+  with a centred three-bar primary `AirmedyPlayingIndicator`; the bars animate
+  while playback is active and rest at a short height when paused. Tapping the
+  row selects and starts that item. Opening it, including switching from Lyrics,
+  preserves the list's initial position without scrolling. On auto-next, it
+  follows the new item only while the
+  prior current item remains visible; when a user has browsed elsewhere in the
+  queue, their scroll position remains untouched. Long-press dragging the
+  trailing touch target reorders the active queue and preserves the current
+  track, shuffle state, and repeat mode.
+  `FullScreenPlayer.kt` remains the screen coordinator; the queue-specific UI,
+  local drag state, and reorder dispatch live in `FullScreenPlayerQueuePanel.kt`.
+  Keep this boundary when evolving either feature so queue interaction does not
+  add more state to the fullscreen shell.
   Every new open clears any residual downward-dismiss offset before expanding,
   so consecutive opens always finish flush with the top of the screen.
 - While the mini player is visible, the app shell observes user-driven nested
@@ -222,6 +244,7 @@ describe the desktop Vue UI or future iOS UI.
 | `AirmedyIconButton` | A 48dp icon action with `Ghost` and `Glass` variants. Glass uses the liquid-glass surface and border; both variants support optional `tint`, `glassColor`, `circleSize`, and `iconSize` overrides and provide an accessible label. |
 | `AirmedyMarqueeText` | A single-line text treatment for constrained playback metadata. It start-aligns unbounded text, clips overflow, and uses pingpong keyframe animation with pauses at start/end matching desktop MarqueeText behavior. |
 | `AirmedyTrackSlider` | Shared custom-drawn slider for fullscreen-player seek and Android music-stream volume. It preserves a 48dp touch target while rendering a translucent gray glass track with a white current-value fill and no thumb or Material Slider terminal indicator. `trackHeight` lets the fullscreen seek bar render at 6dp while the volume bar keeps its 3dp default. Slider range semantics and touch/drag seeking remain available to accessibility services. The fullscreen volume row places muted low/high-volume icons at either end. |
+| `AirmedyPlayingIndicator` | A decorative three-bar, white (`onPrimary`) playback indicator. It animates bar height while `isPlaying` and presents short resting bars otherwise; play/pause changes tween smoothly between these states. The fullscreen queue overlays it at the centre of the current track's artwork. |
 | `AirmedyPillButton` | A borderless 52dp minimum-height capsule action. `Primary` and `Destructive` use the primary background with the explicit white `onPrimary` token in both light and dark themes; `Secondary` uses the stronger `buttonSecondary` theme surface with normal foreground text. Its label supplies button semantics. |
 | `AirmedyDialog` | A 36dp-radius, two-action mobile dialog. Its text content has 20dp horizontal inset; the button area has a thinner 16dp horizontal/bottom inset. It supports `Horizontal` and `Vertical` action layouts; the left/top action always dismisses with `Secondary`. |
 

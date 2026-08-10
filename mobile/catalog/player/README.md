@@ -172,6 +172,10 @@ unique IDs, changes only the active order, and relocates the cursor to the
 same current ID. While shuffled, this does not overwrite source order, so
 turning shuffle off still restores the original order.
 
+`select(trackId)` selects an existing active entry and returns a Play transition
+without changing the active order, shuffle flag, or repeat mode. Android exposes
+it as the fullscreen Queue row-tap action.
+
 ## Local Session Persistence
 
 Player session state is private Android app data and is never synchronized to

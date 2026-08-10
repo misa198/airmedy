@@ -59,10 +59,17 @@
     <string name="player_heart">Favorite</string>
     <string name="player_more">More options</string>
     <string name="player_shuffle">Shuffle</string>
+    <string name="player_shuffle_on">Shuffle on</string>
     <string name="player_repeat">Repeat</string>
+    <string name="player_repeat_off">Repeat off</string>
+    <string name="player_repeat_all">Repeat all</string>
+    <string name="player_repeat_one">Repeat one</string>
     <string name="player_lyrics">Lyrics</string>
     <string name="player_cast">Cast</string>
     <string name="player_queue">Queue</string>
+    <string name="player_queue_drag_handle">Reorder track</string>
+    <string name="player_queue_current">Currently playing</string>
+    <string name="player_queue_unknown_track">Unavailable track</string>
     <string name="sync_error_background_timeout">Sync paused because Android reached its background time limit.</string>
     <string name="sync_progress_connecting">Preparing library sync…</string>
     <string name="sync_progress_items">Syncing %1$d of %2$d items</string>

@@ -111,6 +111,7 @@ class PlaybackService : Service() {
                 action = intent.action!!,
                 trackIds = intent.getStringArrayExtra(TrackIdsExtra).orEmpty().toList(),
             )
+            ActionSelect -> dispatch(ActionSelect, trackIds = listOfNotNull(intent.getStringExtra(TrackIdExtra)))
             ActionRemove -> dispatch(ActionRemove, trackIds = listOfNotNull(intent.getStringExtra(TrackIdExtra)))
             null -> Unit
             else -> dispatch(intent.action!!)
@@ -160,6 +161,7 @@ class PlaybackService : Service() {
                 ActionSetRepeat -> repeat?.let(queue::setRepeatMode)
                 ActionPlayNext -> queue.playNext(trackIds)
                 ActionAppend -> queue.append(trackIds)
+                ActionSelect -> trackIds.firstOrNull()?.let { handleTransition(queue.select(it)) }
                 ActionRemove -> trackIds.firstOrNull()?.let { handleTransition(queue.removeFromQueue(it)) }
                 ActionReorder -> queue.reorderQueue(trackIds)
             }
@@ -420,6 +422,7 @@ class PlaybackService : Service() {
         internal const val ActionSetRepeat = "me.misa198.airmedy.player.SET_REPEAT"
         internal const val ActionPlayNext = "me.misa198.airmedy.player.PLAY_NEXT"
         internal const val ActionAppend = "me.misa198.airmedy.player.APPEND"
+        internal const val ActionSelect = "me.misa198.airmedy.player.SELECT"
         internal const val ActionRemove = "me.misa198.airmedy.player.REMOVE"
         internal const val ActionReorder = "me.misa198.airmedy.player.REORDER"
         internal const val TrackIdsExtra = "track_ids"

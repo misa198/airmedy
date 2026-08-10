@@ -108,6 +108,14 @@ class PlaybackQueue(private val random: Random = Random.Default) {
 
     fun setRepeatMode(mode: RepeatMode) { repeatMode = mode }
 
+    /** Selects an entry already present in the active playback order. */
+    fun select(trackId: String): QueueTransition {
+        val selectedIndex = active.indexOf(trackId)
+        if (selectedIndex < 0) return QueueTransition.Unchanged
+        currentIndex = selectedIndex
+        return QueueTransition.Play(trackId)
+    }
+
     /** Removes all queue entries and resets queue-specific playback options. */
     fun clear(): QueueTransition {
         original.clear()

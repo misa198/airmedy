@@ -111,6 +111,7 @@ class MainActivity : ComponentActivity() {
             val albumDetailsUiState by albumDetailsViewModel.uiState.collectAsStateWithLifecycle()
             val playbackController = AndroidPlaybackRuntime.controller()
             val playbackState by playbackController.state.collectAsStateWithLifecycle()
+            val playbackQueue by playbackController.queue.collectAsStateWithLifecycle()
             var systemVolume by remember { mutableFloatStateOf(currentSystemMusicVolume()) }
             DisposableEffect(Unit) {
                 val volumeObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
@@ -175,6 +176,8 @@ class MainActivity : ComponentActivity() {
                 onSyncScreenVisible = syncViewModel::onSyncScreenVisible,
                 onSyncScreenHidden = syncViewModel::onSyncScreenHidden,
                 playbackState = playbackState,
+                playbackQueue = playbackQueue,
+                queueTracks = tracksUiState.tracks,
                 onPlaybackPrevious = playbackController::previous,
                 onPlaybackPlayPause = {
                     when (playbackState) {
@@ -185,6 +188,10 @@ class MainActivity : ComponentActivity() {
                 },
                 onPlaybackNext = playbackController::next,
                 onPlaybackSeek = playbackController::seekTo,
+                onQueueTrackSelected = playbackController::selectQueueTrack,
+                onQueueReordered = playbackController::reorderQueue,
+                onShuffleChange = playbackController::setShuffle,
+                onRepeatModeChange = playbackController::setRepeatMode,
                 systemVolume = systemVolume,
                 onSystemVolumeChange = { volume ->
                     systemVolume = volume.coerceIn(0f, 1f)

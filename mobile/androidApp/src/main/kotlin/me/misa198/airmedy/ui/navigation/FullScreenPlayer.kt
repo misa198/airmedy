@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
@@ -15,9 +16,14 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -65,9 +71,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -83,15 +91,20 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 import kotlin.math.absoluteValue
+import kotlin.math.abs
 import me.misa198.airmedy.R
 import me.misa198.airmedy.player.PlaybackItem
+import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.player.PlaybackState
+import me.misa198.airmedy.player.RepeatMode
+import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.ui.components.AirmedyIconButton
 import me.misa198.airmedy.ui.components.AirmedyIconButtonVariant
 import me.misa198.airmedy.ui.components.MaterialSymbol
 import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.ui.components.AirmedyMarqueeText
 import me.misa198.airmedy.ui.components.AirmedyTrackSlider
+import me.misa198.airmedy.ui.components.rememberArtworkThumbnail
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 private val FullScreenArtworkShape = RoundedCornerShape(16.dp)
@@ -103,7 +116,7 @@ private const val FullScreenPlayerMetadataSwipeTestTag = "full_screen_player_met
 private val FullScreenPlayerSwipeMaximum = 40.dp
 private val FullScreenPlayerSwipeThreshold = 32.dp
 private const val FullScreenPlayerSwipeVelocityPxPerMs = 1.2f
-private val FullScreenPlayerCompactArtworkSize = 96.dp
+private val FullScreenPlayerCompactArtworkSize = 80.dp
 private val FullScreenPlayerCompactGap = 24.dp
 
 private enum class FullScreenPlayerPanel {
@@ -118,12 +131,18 @@ internal fun FullScreenPlayer(
     isDragging: Boolean,
     openingFromMiniPlayerSwipe: Boolean,
     playbackState: PlaybackState,
+    queue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
+    queueTracks: List<LibraryTrack> = emptyList(),
     volume: Float,
     onSeek: (Long) -> Unit,
     onVolumeChange: (Float) -> Unit,
     onPrevious: () -> Unit,
     onPlayPause: () -> Unit,
     onNext: () -> Unit,
+    onQueueTrackSelected: (String) -> Unit = {},
+    onQueueReordered: (List<String>) -> Unit = {},
+    onShuffleChange: (Boolean) -> Unit = {},
+    onRepeatModeChange: (RepeatMode) -> Unit = {},
     onOpenMediaOutputSwitcher: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -274,9 +293,9 @@ internal fun FullScreenPlayer(
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
+                .padding(start = 20.dp, end = 20.dp, bottom = 16.dp),
             ) {
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(8.dp))
             FullScreenPlayerDragHandle()
             Spacer(Modifier.height(20.dp))
             FullScreenPlayerSwipeTarget(
@@ -296,6 +315,18 @@ internal fun FullScreenPlayer(
                         Modifier
                             .size(artworkSize)
                             .semantics { testTag = FullScreenPlayerArtworkTestTag }
+                            .then(
+                                if (isPanelOpen) {
+                                    Modifier.clickable(
+                                        onClick = { selectedPanel = null },
+                                        role = Role.Button,
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                    )
+                                } else {
+                                    Modifier
+                                },
+                            )
                             .graphicsLayer {
                                 scaleX = artworkScale
                                 scaleY = artworkScale
@@ -339,14 +370,39 @@ internal fun FullScreenPlayer(
                         visible = isPanelOpen,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = FullScreenPlayerCompactArtworkSize + 16.dp),
+                            .padding(top = FullScreenPlayerCompactArtworkSize + 8.dp),
                         enter = fadeIn(tween(200, delayMillis = 120)) + slideInVertically(tween(200, delayMillis = 120)) { 12 },
                         exit = fadeOut(tween(120)) + slideOutVertically(tween(120)) { -10 },
                     ) {
-                        FullScreenPlayerPanelPlaceholder(
-                            panel = selectedPanel ?: FullScreenPlayerPanel.Lyrics,
-                            modifier = Modifier.fillMaxSize(),
-                        )
+                        androidx.compose.animation.AnimatedContent(
+                            targetState = selectedPanel,
+                            transitionSpec = {
+                                (fadeIn(tween(200, easing = FastOutSlowInEasing)) +
+                                    slideInVertically(tween(200, easing = FastOutSlowInEasing)) { 12 }) togetherWith
+                                    (fadeOut(tween(120, easing = FastOutSlowInEasing)) +
+                                        slideOutVertically(tween(120, easing = FastOutSlowInEasing)) { -10 })
+                            },
+                            label = "full-screen-player-panel-content",
+                        ) { panel ->
+                            if (panel == FullScreenPlayerPanel.Queue) {
+                                FullScreenQueuePanel(
+                                    queue = queue,
+                                    tracks = queueTracks,
+                                    currentTrackId = item.trackId,
+                                    isPlaying = isPlaying,
+                                    onTrackSelected = onQueueTrackSelected,
+                                    onReorder = onQueueReordered,
+                                    onShuffleChange = onShuffleChange,
+                                    onRepeatModeChange = onRepeatModeChange,
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+                            } else {
+                                FullScreenPlayerPanelPlaceholder(
+                                    panel = FullScreenPlayerPanel.Lyrics,
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -564,6 +620,7 @@ private fun FullScreenPlayerPanelPlaceholder(
         )
     }
 }
+
 
 private class FullScreenPlayerSwipeState {
     var dragOffset by mutableStateOf(0f)
