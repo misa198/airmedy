@@ -13,6 +13,7 @@ enum class AppStackPage {
     HomeSampleDetail,
     LibraryArtists,
     LibraryAlbums,
+    AlbumDetails,
     LibraryTracks,
     LibraryGenres,
     LibraryComposers,
@@ -27,6 +28,7 @@ val AppStackPage.destination: AppDestination
         AppStackPage.Root, AppStackPage.HomeSampleDetail -> AppDestination.Home
         AppStackPage.LibraryArtists,
         AppStackPage.LibraryAlbums,
+        AppStackPage.AlbumDetails,
         AppStackPage.LibraryTracks,
         AppStackPage.LibraryGenres,
         AppStackPage.LibraryComposers,

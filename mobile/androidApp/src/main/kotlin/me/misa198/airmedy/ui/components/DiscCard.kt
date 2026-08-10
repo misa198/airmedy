@@ -3,6 +3,7 @@ package me.misa198.airmedy.ui.components
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
@@ -17,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -35,7 +37,12 @@ fun DiscCard(
     val bitmap = rememberArtworkThumbnail(artworkPath, targetPx = 250)
     val clickModifier = remember(onClick) {
         if (onClick != null) {
-            Modifier.clickable(onClick = onClick)
+            Modifier.clickable(
+                onClick = onClick,
+                role = Role.Button,
+                interactionSource = MutableInteractionSource(),
+                indication = null,
+            )
         } else {
             Modifier
         }

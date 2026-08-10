@@ -3,10 +3,11 @@ package me.misa198.airmedy.ui.navigation
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,47 +16,48 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -72,6 +74,7 @@ import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 import kotlin.math.absoluteValue
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 
 internal val MiniPlayerHeight = 56.dp
 internal val MiniPlayerNavigationGap = 8.dp
@@ -104,11 +107,11 @@ internal fun MiniPlayer(
     val density = LocalDensity.current
     val hapticFeedback = LocalHapticFeedback.current
     val configuration = LocalConfiguration.current
-    var dragOffset by remember { mutableStateOf(0f) }
-    var isDragging by remember { mutableStateOf(false) }
-    var isDismissing by remember { mutableStateOf(false) }
+    val dragOffset = remember { Animatable(0f) }
+    val coroutineScope = rememberCoroutineScope()
     val dismissThresholdPx = with(density) { 36.dp.toPx() }
-    val fullScreenOpenDistancePx = with(density) { 240.dp.toPx() }
+    val fullScreenTransitionDistancePx = with(density) { configuration.screenHeightDp.dp.toPx() }
+    val fullScreenCatchUpTravelPx = with(density) { 120.dp.toPx() }
     val maximumOpenPullPx = with(density) { MiniPlayerHeight.toPx() }
     val dismissTargetPx = with(density) { configuration.screenHeightDp.dp.toPx() }
     val metadataSwipeMaximumPx = with(density) { MetadataSwipeMaximum.toPx() }
@@ -121,34 +124,37 @@ internal fun MiniPlayer(
         animationSpec = spring(),
         label = "mini-player-metadata-swipe",
     )
-    val settledDragOffset by animateFloatAsState(
-        targetValue = when {
-            isDismissing -> dismissTargetPx
-            isDragging -> dragOffset
-            else -> 0f
-        },
-        animationSpec = tween(180, easing = FastOutSlowInEasing),
-        label = "mini-player-drag-settle",
-    )
-    val displayedDragOffset = if (isDragging) dragOffset else settledDragOffset
+    val displayedDragOffset = dragOffset.value
     val upwardPullProgress = (-displayedDragOffset / maximumOpenPullPx).coerceIn(0f, 1f)
     val miniPlayerAlpha = 1f - upwardPullProgress
     var fullScreenPullPx by remember { mutableStateOf(0f) }
+    var miniPlayerTopPx by remember { mutableStateOf(0f) }
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(MiniPlayerHeight)
-            .pointerInput(dismissThresholdPx, fullScreenOpenDistancePx, maximumOpenPullPx, dismissTargetPx) {
+            .onGloballyPositioned { miniPlayerTopPx = it.positionInRoot().y }
+            .pointerInput(
+                dismissThresholdPx,
+                fullScreenTransitionDistancePx,
+                fullScreenCatchUpTravelPx,
+                maximumOpenPullPx,
+                dismissTargetPx,
+                miniPlayerTopPx,
+            ) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
                     // A cancelled gesture may skip its terminal branch. A new pointer
                     // must always start from the mini-player resting state.
                     fullScreenPullPx = 0f
+                    var currentDragOffset = 0f
+                    coroutineScope.launch { dragOffset.snapTo(0f) }
                     var totalDragX = 0f
                     var totalDragY = 0f
                     var isVerticalDrag = false
                     var isHorizontalDrag = false
                     var isOpeningFullscreen = false
+                    var fullScreenCatchUpPx = 0f
                     var wasCancelled = false
                     var change = down
 
@@ -169,8 +175,13 @@ internal fun MiniPlayer(
                                     abs(totalDragY) > abs(totalDragX) -> {
                                     isVerticalDrag = true
                                     isOpeningFullscreen = totalDragY < 0f
-                                    dragOffset = settledDragOffset
-                                    isDragging = true
+                                    if (isOpeningFullscreen) {
+                                        val fingerStartY = miniPlayerTopPx + down.position.y
+                                        fullScreenCatchUpPx = (fullScreenTransitionDistancePx - fingerStartY)
+                                            .coerceAtLeast(0f)
+                                    }
+                                    currentDragOffset = 0f
+                                    coroutineScope.launch { dragOffset.snapTo(0f) }
                                 }
                                 abs(totalDragX) > viewConfiguration.touchSlop -> {
                                     isHorizontalDrag = true
@@ -182,12 +193,30 @@ internal fun MiniPlayer(
                             change.consume()
                             if (isOpeningFullscreen) {
                                 fullScreenPullPx = (fullScreenPullPx - delta.y)
-                                    .coerceIn(0f, fullScreenOpenDistancePx)
-                                dragOffset = -fullScreenPullPx.coerceAtMost(maximumOpenPullPx)
-                                onFullScreenPlayerDrag(fullScreenPullPx / fullScreenOpenDistancePx)
+                                    .coerceIn(0f, fullScreenTransitionDistancePx)
+                                currentDragOffset = -fullScreenPullPx.coerceAtMost(maximumOpenPullPx)
+                                val targetDragOffset = currentDragOffset
+                                coroutineScope.launch { dragOffset.snapTo(targetDragOffset) }
+                                val catchUpProgress = (
+                                    fullScreenPullPx / fullScreenCatchUpTravelPx
+                                ).coerceIn(0f, 1f)
+                                val easedCatchUpProgress = 1f -
+                                    (1f - catchUpProgress) * (1f - catchUpProgress)
+                                val panelDistancePx = fullScreenPullPx +
+                                    fullScreenCatchUpPx * easedCatchUpProgress
+                                onFullScreenPlayerDrag(
+                                    (panelDistancePx / fullScreenTransitionDistancePx)
+                                        .coerceIn(0f, 1f),
+                                )
                             } else {
-                                dragOffset = (dragOffset + delta.y.coerceAtLeast(0f))
-                                    .coerceAtMost(dismissTargetPx)
+                                // A downward dismissal pull must remain reversible.  Keeping
+                                // the gesture's initial direction locked avoids turning a
+                                // reversal into a fullscreen open, while allowing the user to
+                                // pull the pill back to its resting position before release.
+                                currentDragOffset = (currentDragOffset + delta.y)
+                                    .coerceIn(0f, dismissTargetPx)
+                                val targetDragOffset = currentDragOffset
+                                coroutineScope.launch { dragOffset.snapTo(targetDragOffset) }
                             }
                         }
                     }
@@ -196,24 +225,37 @@ internal fun MiniPlayer(
                         isVerticalDrag && wasCancelled -> {
                             onFullScreenPlayerDragEnd(false)
                             fullScreenPullPx = 0f
-                            isDragging = false
+                            coroutineScope.launch {
+                                dragOffset.animateTo(0f, tween(180, easing = FastOutSlowInEasing))
+                            }
                         }
                         isVerticalDrag -> {
                             when {
-                                fullScreenPullPx > 0f -> {
+                                // An upward gesture can be reversed before release. Do not
+                                // complete the fullscreen transition when only a sub-slop
+                                // upward remainder is left after the reversal.
+                                fullScreenPullPx > viewConfiguration.touchSlop -> {
                                     onFullScreenPlayerDragEnd(true)
                                     fullScreenPullPx = 0f
+                                    coroutineScope.launch { dragOffset.snapTo(0f) }
                                 }
-                                dragOffset >= dismissThresholdPx -> {
-                                    isDismissing = true
-                                    onDismiss()
+                                currentDragOffset >= dismissThresholdPx -> {
+                                    coroutineScope.launch {
+                                        dragOffset.animateTo(
+                                            dismissTargetPx,
+                                            tween(180, easing = FastOutSlowInEasing),
+                                        )
+                                        onDismiss()
+                                    }
                                 }
                                 else -> {
                                     onFullScreenPlayerDragEnd(false)
                                     fullScreenPullPx = 0f
+                                    coroutineScope.launch {
+                                        dragOffset.animateTo(0f, tween(180, easing = FastOutSlowInEasing))
+                                    }
                                 }
                             }
-                            isDragging = false
                         }
                         !wasCancelled && !isHorizontalDrag && !change.pressed &&
                             abs(totalDragX) <= viewConfiguration.touchSlop &&
@@ -366,12 +408,18 @@ private fun MiniPlayerControl(
     horizontalOffset: Dp = 0.dp,
 ) {
     val colors = LocalAirmedyColors.current
-    IconButton(
-        onClick = onClick,
-        enabled = enabled,
+    Box(
         modifier = Modifier
             .size(48.dp)
-            .offset(x = horizontalOffset),
+            .offset(x = horizontalOffset)
+            .clickable(
+                enabled = enabled,
+                role = Role.Button,
+                onClick = onClick,
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ),
+        contentAlignment = Alignment.Center,
     ) {
         MaterialSymbol(
             symbol = symbol,

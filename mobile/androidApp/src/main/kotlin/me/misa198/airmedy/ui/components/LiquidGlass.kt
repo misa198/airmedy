@@ -2,6 +2,7 @@ package me.misa198.airmedy.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeInputScale
@@ -17,6 +18,7 @@ fun Modifier.liquidGlassBackground(
     colors: AirmedyColors,
     hazeInputScale: HazeInputScale = HazeInputScale.Fixed(0.20f),
     hazeBlurRadius: Dp = 16.dp,
+    glassTint: Color? = null,
 ): Modifier = if (hazeState == null) {
     background(colors.glassOpaque)
 } else {
@@ -24,7 +26,7 @@ fun Modifier.liquidGlassBackground(
         inputScale = hazeInputScale
         blurEffect {
             blurRadius = hazeBlurRadius
-            colorEffects = listOf(HazeColorEffect.tint(colors.glass))
+            colorEffects = listOf(HazeColorEffect.tint(glassTint ?: colors.glass))
         }
-    }.background(colors.glass)
+    }.background(glassTint ?: colors.glass)
 }

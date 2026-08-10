@@ -10,7 +10,12 @@ queue and observes its `StateFlow<PlaybackState>`.
 and the JNI `FfmpegDecoder`. The native decoder opens the private synced file,
 uses FFmpeg for demuxing and decoding, converts samples through
 `libswresample` to stereo float PCM, and sends them to AAudio through a bounded
-ring buffer. There is no Media3, ExoPlayer, or `MediaCodec` decoder fallback.
+ring buffer. AAudio uses its power-saving performance mode because music
+playback does not require live-audio latency. When the ring buffer is full, the
+decode thread blocks on a condition variable until the callback consumes data;
+it never busy-spins. Pausing also pauses the AAudio stream, so it does not keep
+rendering silent callbacks. There is no Media3, ExoPlayer, or `MediaCodec`
+decoder fallback.
 
 `PlaybackService` publishes the active item's title, artist, artwork, duration,
 position, and transport state through the platform `MediaSession`. Android
@@ -129,7 +134,10 @@ Natural completion and the Next command use the same navigation rule:
 At the player-control level, Previous first restarts the current item when its
 position is greater than three seconds. At three seconds or less it performs
 the queue Previous action above. Stopping after repeat-off exhaustion leaves
-the queue intact so Play can reload the selected track.
+the queue intact and retains the final item as a stopped/paused player state,
+so its controls remain visible and Play reloads that selected track. This is
+distinct from Clear Queue, which removes every entry and returns the player to
+an idle state.
 
 Shuffle uses Fisher-Yates:
 

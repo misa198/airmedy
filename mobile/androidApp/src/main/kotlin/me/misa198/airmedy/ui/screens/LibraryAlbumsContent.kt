@@ -23,6 +23,7 @@ internal fun LibraryAlbumsContent(
     modifier: Modifier = Modifier,
     listState: LazyListState = remember(uiState.sortOption, uiState.sortOrder) { LazyListState() },
     contentPadding: PaddingValues = PaddingValues(),
+    onAlbumClick: ((me.misa198.airmedy.sync.LibraryAlbum) -> Unit)? = null,
 ) {
     val listPadding = remember(contentPadding) {
         PaddingValues(
@@ -57,6 +58,7 @@ internal fun LibraryAlbumsContent(
             title = album.title,
             artist = album.artist.ifBlank { stringResource(R.string.album_unknown_artist) },
             artworkPath = album.artworkPath,
+            onClick = onAlbumClick?.let { callback -> { callback(album) } },
         )
     }
 }

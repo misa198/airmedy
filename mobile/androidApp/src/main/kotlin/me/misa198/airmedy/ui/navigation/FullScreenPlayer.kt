@@ -67,6 +67,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -114,6 +115,11 @@ internal fun FullScreenPlayer(
 ) {
     val item = playbackState.fullScreenItemOrNull() ?: return
     val colors = LocalAirmedyColors.current
+    // The fullscreen panel moves independently from the persistent chrome. Its
+    // blur source must therefore be isolated: sharing the shell source lets its
+    // dark backdrop be sampled by the mini player while this panel is closing.
+    val fullScreenHazeState = rememberHazeState()
+    val glassHazeState = fullScreenHazeState.takeIf { hazeState != null }
     val coroutineScope = rememberCoroutineScope()
     val dragOffset = remember { Animatable(0f) }
     val expansionProgress = remember { Animatable(0f) }
@@ -190,7 +196,7 @@ internal fun FullScreenPlayer(
                 artwork = artwork,
                 modifier = Modifier
                     .fillMaxSize()
-                    .then(if (hazeState == null) Modifier else Modifier.hazeSource(hazeState)),
+                    .then(if (glassHazeState == null) Modifier else Modifier.hazeSource(glassHazeState)),
             )
             Column(
             modifier = Modifier
@@ -252,7 +258,7 @@ internal fun FullScreenPlayer(
                             variant = AirmedyIconButtonVariant.Glass,
                             tint = colors.onPrimary,
                             glassColor = Color.White.copy(alpha = 0.06f),
-                            hazeState = hazeState,
+                            hazeState = glassHazeState,
                             circleSize = 36.dp,
                             iconSize = 20.dp,
                         )
@@ -263,7 +269,7 @@ internal fun FullScreenPlayer(
                             variant = AirmedyIconButtonVariant.Glass,
                             tint = colors.onPrimary,
                             glassColor = Color.White.copy(alpha = 0.06f),
-                            hazeState = hazeState,
+                            hazeState = glassHazeState,
                             circleSize = 36.dp,
                             iconSize = 20.dp,
                         )

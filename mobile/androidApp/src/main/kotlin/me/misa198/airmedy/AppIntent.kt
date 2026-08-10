@@ -8,6 +8,8 @@ sealed interface AppIntent {
 
     data class OpenPage(val page: AppStackPage) : AppIntent
 
+    data class OpenAlbumDetails(val albumId: String) : AppIntent
+
     data object NavigateBack : AppIntent
 
     data class SetThemeMode(val themeMode: ThemeMode) : AppIntent

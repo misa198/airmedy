@@ -95,6 +95,31 @@ class MiniPlayerTest {
     }
 
     @Test
+    fun reversingADownwardMiniPlayerDragReturnsItToRestWithoutDismissing() {
+        var dismisses = 0
+        var opens = 0
+        composeTestRule.setContent {
+            NavigationChromeForTest(
+                state = PlaybackState.Playing(item, positionMs = 0L, durationMs = 120_000L),
+                onDismiss = { dismisses += 1 },
+                onOpenFullScreenPlayer = { opens += 1 },
+            )
+        }
+
+        composeTestRule.onNodeWithText(item.title).performTouchInput {
+            down(center)
+            moveBy(Offset(x = 0f, y = 64f))
+            moveBy(Offset(x = 0f, y = -64f))
+            up()
+        }
+        composeTestRule.waitForIdle()
+
+        assertEquals(0, dismisses)
+        assertEquals(0, opens)
+        composeTestRule.onNodeWithText(item.title).assertExists()
+    }
+
+    @Test
     fun draggingMiniPlayerUpOpensTheFullScreenPlayer() {
         var opens = 0
         composeTestRule.setContent {
@@ -108,6 +133,28 @@ class MiniPlayerTest {
         composeTestRule.waitUntil(timeoutMillis = 2_000) { opens == 1 }
 
         assertEquals(1, opens)
+    }
+
+    @Test
+    fun reversingAnUpwardMiniPlayerDragToASubSlopRemainderDoesNotOpenFullscreen() {
+        var opens = 0
+        composeTestRule.setContent {
+            NavigationChromeForTest(
+                state = PlaybackState.Playing(item, positionMs = 0L, durationMs = 120_000L),
+                onOpenFullScreenPlayer = { opens += 1 },
+            )
+        }
+
+        composeTestRule.onNodeWithText(item.title).performTouchInput {
+            down(center)
+            moveBy(Offset(x = 0f, y = -64f))
+            moveBy(Offset(x = 0f, y = 56f))
+            up()
+        }
+        composeTestRule.waitForIdle()
+
+        assertEquals(0, opens)
+        composeTestRule.onNodeWithText(item.title).assertExists()
     }
 
     @Test

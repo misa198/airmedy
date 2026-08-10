@@ -47,6 +47,7 @@ import me.misa198.airmedy.ui.screens.LibraryArtistsViewModel
 import me.misa198.airmedy.ui.screens.LibraryAlbumsViewModel
 import me.misa198.airmedy.ui.screens.LibraryGenresViewModel
 import me.misa198.airmedy.ui.screens.LibraryComposersViewModel
+import me.misa198.airmedy.ui.screens.AlbumDetailsViewModel
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels {
@@ -86,6 +87,9 @@ class MainActivity : ComponentActivity() {
     private val composersViewModel: LibraryComposersViewModel by viewModels {
         LibraryComposersViewModel.Factory(AndroidSyncRuntime.syncStore())
     }
+    private val albumDetailsViewModel: AlbumDetailsViewModel by viewModels {
+        AlbumDetailsViewModel.Factory(AndroidSyncRuntime.syncStore(), AndroidPlaybackRuntime.controller())
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -104,6 +108,7 @@ class MainActivity : ComponentActivity() {
             val albumsUiState by albumsViewModel.uiState.collectAsStateWithLifecycle()
             val genresUiState by genresViewModel.uiState.collectAsStateWithLifecycle()
             val composersUiState by composersViewModel.uiState.collectAsStateWithLifecycle()
+            val albumDetailsUiState by albumDetailsViewModel.uiState.collectAsStateWithLifecycle()
             val playbackController = AndroidPlaybackRuntime.controller()
             val playbackState by playbackController.state.collectAsStateWithLifecycle()
             var systemVolume by remember { mutableFloatStateOf(currentSystemMusicVolume()) }
@@ -132,22 +137,7 @@ class MainActivity : ComponentActivity() {
             }
             val darkTheme = isDarkTheme(uiState.themeMode)
             SideEffect {
-                val lightSystemBars = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or
-                    WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-                val statusBarAppearance = if (darkTheme || isFullScreenPlayerVisible) {
-                    0
-                } else {
-                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                }
-                val navigationBarAppearance = if (darkTheme) {
-                    0
-                } else {
-                    WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-                }
-                window.insetsController?.setSystemBarsAppearance(
-                    statusBarAppearance or navigationBarAppearance,
-                    lightSystemBars,
-                )
+                updateSystemBarAppearance(darkTheme, isFullScreenPlayerVisible)
             }
             App(
                 uiState = uiState,
@@ -157,6 +147,7 @@ class MainActivity : ComponentActivity() {
                 albumsUiState = albumsUiState,
                 genresUiState = genresUiState,
                 composersUiState = composersUiState,
+                albumDetailsUiState = albumDetailsUiState,
                 onIntent = viewModel::dispatch,
                 onSortOptionSelected = tracksViewModel::setSortOption,
                 onToggleSortOrder = tracksViewModel::toggleSortOrder,
@@ -165,6 +156,8 @@ class MainActivity : ComponentActivity() {
                 onArtistToggleSortOrder = artistsViewModel::toggleSortOrder,
                 onAlbumSortOptionSelected = albumsViewModel::setSortOption,
                 onAlbumToggleSortOrder = albumsViewModel::toggleSortOrder,
+                onAlbumPlay = albumDetailsViewModel::play,
+                onAlbumTrackPlay = albumDetailsViewModel::playTrack,
                 onGenreSortOptionSelected = genresViewModel::setSortOption,
                 onGenreToggleSortOrder = genresViewModel::toggleSortOrder,
                 onComposerSortOptionSelected = composersViewModel::setSortOption,
@@ -199,9 +192,31 @@ class MainActivity : ComponentActivity() {
                 },
                 onMiniPlayerDismiss = playbackController::clearQueue,
                 onOpenMediaOutputSwitcher = ::openMediaOutputSwitcher,
-                onFullScreenPlayerVisibilityChanged = { isFullScreenPlayerVisible = it },
+                onFullScreenPlayerVisibilityChanged = { visible ->
+                    isFullScreenPlayerVisible = visible
+                    updateSystemBarAppearance(darkTheme, visible)
+                },
             )
         }
+    }
+
+    private fun updateSystemBarAppearance(darkTheme: Boolean, fullScreenPlayerVisible: Boolean) {
+        val lightSystemBars = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or
+            WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
+        val statusBarAppearance = if (darkTheme || fullScreenPlayerVisible) {
+            0
+        } else {
+            WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+        }
+        val navigationBarAppearance = if (darkTheme) {
+            0
+        } else {
+            WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
+        }
+        window.insetsController?.setSystemBarsAppearance(
+            statusBarAppearance or navigationBarAppearance,
+            lightSystemBars,
+        )
     }
 
     private companion object {

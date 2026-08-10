@@ -61,6 +61,7 @@ fun <T> LibrarySortHeaderButton(
     onSortOptionSelected: (T) -> Unit,
     onToggleSortOrder: () -> Unit,
     modifier: Modifier = Modifier,
+    glassSurfaceColor: Color? = null,
 ) {
     val menuVisibility = remember { MutableTransitionState(false) }
     val menuOffset = with(LocalDensity.current) { IntOffset(0, 52.dp.roundToPx()) }
@@ -71,6 +72,7 @@ fun <T> LibrarySortHeaderButton(
             symbol = MaterialSymbols.SwapVert,
             label = stringResource(R.string.sort_by),
             onClick = { menuVisibility.targetState = true },
+            surfaceColor = glassSurfaceColor,
         )
 
         if (menuVisibility.currentState || menuVisibility.targetState) {

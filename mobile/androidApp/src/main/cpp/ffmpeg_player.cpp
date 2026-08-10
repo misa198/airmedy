@@ -46,6 +46,8 @@ struct Player {
   std::atomic<bool> input_exhausted = false;
   std::atomic<bool> finished = false;
   std::thread decode_thread;
+  std::mutex buffer_mutex;
+  std::condition_variable buffer_changed;
   std::mutex control_mutex;
 };
 
@@ -62,7 +64,11 @@ size_t available(const Player& player) {
 
 void push_samples(Player& player, const float* samples, size_t frames) {
   for (size_t i = 0; i < frames && !player.stopping.load(); ++i) {
-    while (available(player) >= kRingFrames - 1 && !player.stopping.load()) std::this_thread::yield();
+    std::unique_lock<std::mutex> lock(player.buffer_mutex);
+    player.buffer_changed.wait(lock, [&player] {
+      return player.stopping.load() || available(player) < kRingFrames - 1;
+    });
+    if (player.stopping.load()) return;
     const size_t write = player.write_frame.load(std::memory_order_relaxed);
     std::copy_n(samples + i * kOutputChannels, kOutputChannels, player.ring.data() + write * kOutputChannels);
     player.write_frame.store((write + 1) % kRingFrames, std::memory_order_release);
@@ -86,6 +92,7 @@ aaudio_data_callback_result_t audio_callback(AAudioStream*, void* user, void* au
     output[i * kOutputChannels] = player.ring[read * kOutputChannels];
     output[i * kOutputChannels + 1] = player.ring[read * kOutputChannels + 1];
     player.read_frame.store((read + 1) % kRingFrames, std::memory_order_release);
+    player.buffer_changed.notify_one();
   }
   return AAUDIO_CALLBACK_RESULT_CONTINUE;
 }
@@ -116,7 +123,9 @@ bool open_media(Player& player, int fd, std::string& error) {
   AAudioStreamBuilder_setDirection(builder, AAUDIO_DIRECTION_OUTPUT);
   AAudioStreamBuilder_setFormat(builder, AAUDIO_FORMAT_PCM_FLOAT);
   AAudioStreamBuilder_setChannelCount(builder, kOutputChannels);
-  AAudioStreamBuilder_setPerformanceMode(builder, AAUDIO_PERFORMANCE_MODE_LOW_LATENCY);
+  // Music playback does not need the short buffers required for live audio;
+  // prefer the platform's lower-power mixer path.
+  AAudioStreamBuilder_setPerformanceMode(builder, AAUDIO_PERFORMANCE_MODE_POWER_SAVING);
   AAudioStreamBuilder_setDataCallback(builder, audio_callback, &player);
   const aaudio_result_t output = AAudioStreamBuilder_openStream(builder, &player.stream);
   AAudioStreamBuilder_delete(builder);
@@ -164,7 +173,7 @@ void decoder_loop(Player& player) {
 extern "C" JNIEXPORT jlong JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativeCreate(JNIEnv*, jclass) { return reinterpret_cast<jlong>(new Player()); }
 extern "C" JNIEXPORT void JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativeDestroy(JNIEnv*, jclass, jlong value) {
   auto* player = reinterpret_cast<Player*>(value); if (player == nullptr) return;
-  player->stopping = true; if (player->decode_thread.joinable()) player->decode_thread.join(); release_media(*player); delete player;
+  player->stopping = true; player->buffer_changed.notify_all(); if (player->decode_thread.joinable()) player->decode_thread.join(); release_media(*player); delete player;
 }
 extern "C" JNIEXPORT void JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativePrepare(JNIEnv* env, jclass, jlong value, jint fd) {
   auto* player = reinterpret_cast<Player*>(value); std::string error;
@@ -172,8 +181,8 @@ extern "C" JNIEXPORT void JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_n
   close(fd); player->stopping = false; player->input_exhausted = false; player->finished = false; player->decode_thread = std::thread(decoder_loop, std::ref(*player));
 }
 extern "C" JNIEXPORT void JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativePlay(JNIEnv*, jclass, jlong value) { auto* p = reinterpret_cast<Player*>(value); if (p != nullptr) { p->playing = true; AAudioStream_requestStart(p->stream); } }
-extern "C" JNIEXPORT void JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativePause(JNIEnv*, jclass, jlong value) { auto* p = reinterpret_cast<Player*>(value); if (p != nullptr) p->playing = false; }
-extern "C" JNIEXPORT void JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativeStop(JNIEnv*, jclass, jlong value) { auto* p = reinterpret_cast<Player*>(value); if (p != nullptr) { p->playing = false; p->read_frame = 0; p->write_frame = 0; } }
+extern "C" JNIEXPORT void JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativePause(JNIEnv*, jclass, jlong value) { auto* p = reinterpret_cast<Player*>(value); if (p != nullptr) { p->playing = false; AAudioStream_requestPause(p->stream); } }
+extern "C" JNIEXPORT void JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativeStop(JNIEnv*, jclass, jlong value) { auto* p = reinterpret_cast<Player*>(value); if (p != nullptr) { p->playing = false; p->read_frame = 0; p->write_frame = 0; AAudioStream_requestPause(p->stream); p->buffer_changed.notify_all(); } }
 extern "C" JNIEXPORT void JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativeSeekTo(JNIEnv*, jclass, jlong value, jlong ms) {
   auto* p = reinterpret_cast<Player*>(value);
   if (p != nullptr) {

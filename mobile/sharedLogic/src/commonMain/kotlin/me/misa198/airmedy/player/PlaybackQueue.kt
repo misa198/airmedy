@@ -31,6 +31,8 @@ data class PlaybackQueueSnapshot(
 
 sealed interface QueueTransition {
     data class Play(val trackId: String) : QueueTransition
+    /** Playback reached the final item with repeat disabled; retain that selected item. */
+    data object StopAtCurrent : QueueTransition
     data object Stop : QueueTransition
     data object Unchanged : QueueTransition
 }
@@ -127,7 +129,7 @@ class PlaybackQueue(private val random: Random = Random.Default) {
             currentIndex = 0
             QueueTransition.Play(active.first())
         } else {
-            QueueTransition.Stop
+            QueueTransition.StopAtCurrent
         }
     }
 

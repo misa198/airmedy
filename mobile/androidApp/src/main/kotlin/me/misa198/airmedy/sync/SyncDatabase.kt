@@ -9,6 +9,8 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.room.Transaction
 import androidx.room.withTransaction
 import java.io.File
@@ -51,10 +53,14 @@ internal data class SyncTrackEntity(
     val trackId: String,
     val title: String,
     val artists: String,
-    val album: String,
+    val album: String = "",
+    val albumId: String = "",
     val artworkKey: String?,
     val playCount: Int = 0,
     val createdAt: String = "",
+    val discNumber: Int = 0,
+    val trackNumber: Int = 0,
+    val syncOrder: Int = 0,
     val rawJson: String,
 )
 
@@ -80,9 +86,13 @@ internal data class LibraryTrackRow(
     val title: String,
     val artists: String,
     val album: String,
+    val albumId: String = "",
     val artworkKey: String?,
     val playCount: Int,
     val createdAt: String,
+    val discNumber: Int = 0,
+    val trackNumber: Int = 0,
+    val syncOrder: Int = 0,
     val artworkPath: String?,
     val audioPath: String?,
     val rawJson: String,
@@ -143,9 +153,13 @@ internal interface SyncDao {
                t.title AS title,
                t.artists AS artists,
                t.album AS album,
+               t.albumId AS albumId,
                t.artworkKey AS artworkKey,
                t.playCount AS playCount,
                t.createdAt AS createdAt,
+               t.discNumber AS discNumber,
+               t.trackNumber AS trackNumber,
+               t.syncOrder AS syncOrder,
                a.relativePath AS artworkPath,
                audio.relativePath AS audioPath,
                t.rawJson AS rawJson
@@ -169,7 +183,7 @@ internal interface SyncDao {
 
 @Database(
     entities = [SyncPlanEntity::class, SyncAssetEntity::class, SyncTrackEntity::class, SyncPlaylistEntity::class, SyncDocumentEntity::class],
-    version = 2,
+    version = 5,
     exportSchema = false,
 )
 internal abstract class SyncDatabase : RoomDatabase() {
@@ -177,8 +191,26 @@ internal abstract class SyncDatabase : RoomDatabase() {
 
     companion object {
         fun create(context: Context): SyncDatabase = Room.databaseBuilder(context, SyncDatabase::class.java, "library-sync.db")
+            .addMigrations(Migration2To3, Migration3To4, Migration4To5)
             .fallbackToDestructiveMigration()
             .build()
+
+        private val Migration2To3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE sync_tracks ADD COLUMN discNumber INTEGER NOT NULL DEFAULT 0")
+                database.execSQL("ALTER TABLE sync_tracks ADD COLUMN trackNumber INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+        private val Migration3To4 = object : Migration(3, 4) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE sync_tracks ADD COLUMN albumId TEXT NOT NULL DEFAULT ''")
+            }
+        }
+        private val Migration4To5 = object : Migration(4, 5) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE sync_tracks ADD COLUMN syncOrder INTEGER NOT NULL DEFAULT 0")
+            }
+        }
     }
 }
 
@@ -186,13 +218,24 @@ data class LibraryTrack(
     val id: String = "",
     val title: String,
     val artists: String,
-    val album: String,
+    val album: String = "",
+    val albumId: String = "",
     val artworkKey: String? = null,
     val playCount: Int = 0,
     val createdAt: String = "",
+    val discNumber: Int = 0,
+    val trackNumber: Int = 0,
+    val syncOrder: Int = 0,
+    /** Canonical lossless TrackDTO JSON from the desktop manifest (desktop path excluded). */
+    val metadataJson: String = "{}",
     val artworkPath: String? = null,
     val audioPath: String? = null,
 )
+
+/** Reads non-indexed desktop metadata without requiring a Room schema change. */
+fun LibraryTrack.metadataObject(): JsonObject? = runCatching {
+    LibrarySyncProtocol.json.parseToJsonElement(metadataJson) as? JsonObject
+}.getOrNull()
 
 data class LibraryArtist(
     val id: String,
@@ -234,9 +277,14 @@ internal class AndroidLibrarySyncStore(
                 title = row.title,
                 artists = row.artists,
                 album = row.album,
+                albumId = row.albumId,
                 artworkKey = row.artworkKey,
                 playCount = row.playCount,
                 createdAt = row.createdAt,
+                discNumber = row.discNumber,
+                trackNumber = row.trackNumber,
+                syncOrder = row.syncOrder,
+                metadataJson = row.rawJson,
                 artworkPath = row.artworkPath,
                 audioPath = row.audioPath,
             )
@@ -282,7 +330,7 @@ internal class AndroidLibrarySyncStore(
                 val cachedPath = cachedPaths[asset.sha256 to asset.size]
                 SyncAssetEntity(request.planId, asset.id, asset.kind, asset.sha256, asset.size, cachedPath)
             })
-            dao.insertTracks(manifest.tracks.orEmpty().mapNotNull { it.toTrack(request.planId) })
+            dao.insertTracks(manifest.tracks.orEmpty().mapIndexedNotNull { index, track -> track.toTrack(request.planId, index) })
             dao.insertPlaylists(manifest.playlists.orEmpty().mapNotNull { it.toPlaylist(request.planId) })
             dao.insertDocuments(manifest.lyrics.entries.map { SyncDocumentEntity(request.planId, "lyric", it.key, it.value.toString()) })
             dao.insertDocuments(manifest.analysis.entries.map { SyncDocumentEntity(request.planId, "analysis", it.key, it.value.toString()) })
@@ -353,7 +401,7 @@ internal class AndroidLibrarySyncStore(
         assets.forEach { it.relativePath?.let { path -> File(filesDir, path).delete() } }
     }
 
-    private fun JsonObject.toTrack(planId: String): SyncTrackEntity? {
+    private fun JsonObject.toTrack(planId: String, syncOrder: Int): SyncTrackEntity? {
         val id = string("id") ?: return null
         val playCount = (this["play_count"] as? JsonPrimitive)?.contentOrNull?.toIntOrNull() ?: 0
         val createdAt = (this["created_at"] as? JsonPrimitive)?.contentOrNull
@@ -365,9 +413,13 @@ internal class AndroidLibrarySyncStore(
             title = string("title") ?: "",
             artists = arrayNames("artists"),
             album = (this["album"] as? JsonObject)?.string("title") ?: "",
+            albumId = (this["album"] as? JsonObject)?.string("id") ?: "",
             artworkKey = string("artwork_key"),
             playCount = playCount,
             createdAt = createdAt,
+            discNumber = int("disc_number"),
+            trackNumber = int("track_number"),
+            syncOrder = syncOrder,
             rawJson = toString(),
         )
     }
@@ -379,6 +431,8 @@ internal class AndroidLibrarySyncStore(
     }
 
     private fun JsonObject.arrayNames(name: String): String = ((this[name] as? JsonArray).orEmpty()).mapNotNull { (it as? JsonObject)?.string("name") }.joinToString(", ")
+
+    private fun JsonObject.int(name: String): Int = (this[name] as? JsonPrimitive)?.contentOrNull?.toIntOrNull() ?: 0
 }
 
 internal fun libraryArtistsFrom(

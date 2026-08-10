@@ -2,9 +2,12 @@ package me.misa198.airmedy
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -12,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.LaunchedEffect
@@ -25,12 +29,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
+import dev.chrisbanes.haze.HazeInputScale
 import kotlinx.coroutines.launch
 import me.misa198.airmedy.ui.components.AirmedyGlassIconButton
 import me.misa198.airmedy.ui.components.MaterialSymbols
@@ -62,6 +70,7 @@ import me.misa198.airmedy.ui.screens.GenreSortOption
 import me.misa198.airmedy.ui.screens.LibraryComposersUiState
 import me.misa198.airmedy.ui.screens.ComposerSortOption
 import me.misa198.airmedy.ui.screens.TrackSortOption
+import me.misa198.airmedy.ui.screens.AlbumDetailsUiState
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import me.misa198.airmedy.player.PlaybackState
 
@@ -80,6 +89,7 @@ internal fun App(
     albumsUiState: LibraryAlbumsUiState = LibraryAlbumsUiState(),
     genresUiState: LibraryGenresUiState = LibraryGenresUiState(),
     composersUiState: LibraryComposersUiState = LibraryComposersUiState(),
+    albumDetailsUiState: AlbumDetailsUiState = AlbumDetailsUiState(),
     onIntent: (AppIntent) -> Unit = {},
     onSortOptionSelected: (TrackSortOption) -> Unit = {},
     onToggleSortOrder: () -> Unit = {},
@@ -88,6 +98,9 @@ internal fun App(
     onArtistToggleSortOrder: () -> Unit = {},
     onAlbumSortOptionSelected: (AlbumSortOption) -> Unit = {},
     onAlbumToggleSortOrder: () -> Unit = {},
+    onAlbumPlay: (String, Boolean) -> Unit = { _, _ -> },
+    onAlbumTrackPlay: (String, String) -> Unit = { _, _ -> },
+    onAlbumHeroColorChanged: (Color) -> Unit = {},
     onGenreSortOptionSelected: (GenreSortOption) -> Unit = {},
     onGenreToggleSortOrder: () -> Unit = {},
     onComposerSortOptionSelected: (ComposerSortOption) -> Unit = {},
@@ -140,10 +153,23 @@ internal fun App(
         var fullScreenPlayerDragProgress by remember { mutableFloatStateOf(0f) }
         var isFullScreenPlayerDragging by remember { mutableStateOf(false) }
         var isNavigationCompact by remember { mutableStateOf(false) }
+        var albumHeroColor by remember { mutableStateOf<Color?>(null) }
+        val albumHeaderFade by animateFloatAsState(
+            targetValue = if (currentPage == AppStackPage.AlbumDetails) 1f else 0f,
+            animationSpec = tween(1500, easing = FastOutSlowInEasing),
+            label = "album-header-glass-colour-fade",
+        )
+        val albumHeaderGlassSurface = albumHeroColor?.takeIf { albumHeaderFade > 0.01f }
+            ?.copy(alpha = 0.18f * albumHeaderFade)
         var navigationScrollState by remember { mutableStateOf(NavigationChromeScrollState()) }
         val navigationScrollThresholdPx = with(LocalDensity.current) { 24.dp.toPx() }
-        LaunchedEffect(isFullScreenPlayerVisible) {
-            onFullScreenPlayerVisibilityChanged(isFullScreenPlayerVisible)
+        fun setFullScreenPlayerVisible(visible: Boolean) {
+            if (isFullScreenPlayerVisible == visible) return
+            isFullScreenPlayerVisible = visible
+            // System-bar content must be updated in the same user interaction as
+            // the panel. Deferring this callback to LaunchedEffect can leave it
+            // stale until an unrelated playback-state recomposition occurs.
+            onFullScreenPlayerVisibilityChanged(visible)
         }
         LaunchedEffect(showsMiniPlayer, uiState.selectedDestination, currentPage) {
             isNavigationCompact = false
@@ -151,7 +177,7 @@ internal fun App(
         }
         LaunchedEffect(showsMiniPlayer) {
             if (!showsMiniPlayer) {
-                isFullScreenPlayerVisible = false
+                setFullScreenPlayerVisible(false)
                 isFullScreenPlayerOpeningFromSwipe = false
                 isFullScreenPlayerDragging = false
                 fullScreenPlayerDragProgress = 0f
@@ -169,7 +195,7 @@ internal fun App(
             animationSpec = tween(420, easing = FastOutSlowInEasing),
             label = "navigation-bottom-padding",
         )
-        val pageTitle = stringResource(currentPage.titleRes(uiState.selectedDestination))
+        val pageTitle = if (currentPage == AppStackPage.AlbumDetails) "" else stringResource(currentPage.titleRes(uiState.selectedDestination))
         val showBack = currentPage != AppStackPage.Root
         val showSyncAddAction = currentPage == AppStackPage.SettingsSync && syncUiState.desktop == null && !syncUiState.isPairing
         val showLibrarySortAction = currentPage == AppStackPage.LibraryTracks ||
@@ -223,6 +249,8 @@ internal fun App(
                 albumsListState = albumsListState,
                 genresListState = genresListState,
                 composersListState = composersListState,
+                albumDetailsUiState = albumDetailsUiState,
+                selectedAlbumId = uiState.selectedAlbumId,
                 onIntent = onIntent,
                 syncUiState = syncUiState,
                 tracksUiState = tracksUiState,
@@ -235,6 +263,12 @@ internal fun App(
                 onTrackClick = onTrackClick,
                 onAlbumSortOptionSelected = onAlbumSortOptionSelected,
                 onAlbumToggleSortOrder = onAlbumToggleSortOrder,
+                onAlbumPlay = onAlbumPlay,
+                onAlbumTrackPlay = onAlbumTrackPlay,
+                onAlbumHeroColorChanged = { color ->
+                    albumHeroColor = color
+                    onAlbumHeroColorChanged(color)
+                },
                 onPairingQrScanned = onPairingQrScanned,
                 onUnpair = onUnpair,
                 onSyncScreenVisible = onSyncScreenVisible,
@@ -249,6 +283,19 @@ internal fun App(
                     isNavigationCompact = navigationScrollState.compact
                 },
             )
+            albumHeroColor?.takeIf { albumHeaderFade > 0.01f }?.let { color ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .background(
+                            Brush.verticalGradient(
+                                0f to color.copy(alpha = 0.36f * albumHeaderFade),
+                                1f to color.copy(alpha = 0f),
+                            ),
+                        ),
+                )
+            }
             StackPageHeader(
                 title = pageTitle,
                 hazeState = hazeState,
@@ -262,6 +309,8 @@ internal fun App(
                 animateChanges = animateHeaderChanges,
                 titleStackKey = "${uiState.selectedDestination.name}:${currentPage.name}",
                 isForward = isForwardHeaderTransition,
+                backGlassTintAlpha = if (currentPage == AppStackPage.AlbumDetails) 0.08f else null,
+                backHazeInputScale = if (currentPage == AppStackPage.AlbumDetails) HazeInputScale.Fixed(1f) else HazeInputScale.Auto,
             ) {
                 if (showSyncAddAction) {
                     AirmedyGlassIconButton(
@@ -308,6 +357,7 @@ internal fun App(
                         sortOrder = albumsUiState.sortOrder,
                         onSortOptionSelected = onAlbumSortOptionSelected,
                         onToggleSortOrder = onAlbumToggleSortOrder,
+                        glassSurfaceColor = albumHeaderGlassSurface,
                     )
                 } else if (currentPage == AppStackPage.LibraryGenres) {
                     LibrarySortHeaderButton(
@@ -368,7 +418,7 @@ internal fun App(
                 },
                 onOpenFullScreenPlayer = {
                     isFullScreenPlayerOpeningFromSwipe = false
-                    isFullScreenPlayerVisible = true
+                    setFullScreenPlayerVisible(true)
                 },
                 onFullScreenPlayerDrag = { progress ->
                     isFullScreenPlayerDragging = true
@@ -381,7 +431,7 @@ internal fun App(
                     // its closed or fully-open resting state.
                     fullScreenPlayerDragProgress = 0f
                     isFullScreenPlayerOpeningFromSwipe = shouldOpen
-                    isFullScreenPlayerVisible = shouldOpen
+                    setFullScreenPlayerVisible(shouldOpen)
                 },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -402,14 +452,14 @@ internal fun App(
                 onNext = onPlaybackNext,
                 onOpenMediaOutputSwitcher = onOpenMediaOutputSwitcher,
                 onDismiss = {
-                    isFullScreenPlayerVisible = false
+                    setFullScreenPlayerVisible(false)
                     isFullScreenPlayerOpeningFromSwipe = false
                 },
                 hazeState = hazeState,
             )
         }
         BackHandler(enabled = isFullScreenPlayerVisible) {
-            isFullScreenPlayerVisible = false
+            setFullScreenPlayerVisible(false)
             isFullScreenPlayerOpeningFromSwipe = false
         }
     }

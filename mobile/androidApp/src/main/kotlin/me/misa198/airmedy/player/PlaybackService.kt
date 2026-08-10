@@ -170,6 +170,7 @@ class PlaybackService : Service() {
     private suspend fun handleTransition(transition: QueueTransition) {
         when (transition) {
             is QueueTransition.Play -> playCurrent()
+            QueueTransition.StopAtCurrent -> stopAtCurrentTrack()
             QueueTransition.Stop -> stopPlayback()
             QueueTransition.Unchanged -> Unit
         }
@@ -262,6 +263,20 @@ class PlaybackService : Service() {
         mediaSession.setPlaybackState(androidPlaybackState(AndroidMediaPlaybackState.STATE_STOPPED, 0L))
         mediaSession.isActive = false
         stopForeground(STOP_FOREGROUND_REMOVE)
+    }
+
+    /**
+     * Natural repeat-off exhaustion is distinct from clearing or stopping the queue:
+     * retain the final item so its player controls remain available for replay.
+     */
+    private fun stopAtCurrentTrack() {
+        val current = state.value as? PlaybackState.Playing ?: return stopPlayback()
+        decoder?.close(); decoder = null
+        audioManager.abandonAudioFocusRequest(focusRequest)
+        state.value = PlaybackState.Paused(current.item, current.durationMs, current.durationMs)
+        publishNowPlaying(current.item, AndroidMediaPlaybackState.STATE_PAUSED, current.durationMs, current.durationMs)
+        updateNotification()
+        Log.d(PlaybackLogTag, "Playback reached final queue track id=${current.item.trackId}")
     }
 
     private fun fail(trackId: String?, reason: String) {

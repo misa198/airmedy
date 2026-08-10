@@ -78,6 +78,7 @@ describe the desktop Vue UI or future iOS UI.
   until artist details and an overflow menu are introduced.
 - `LibraryTracks` renders a virtualized `LazyColumn` of tracks with sorting controls (Name, Artist, Play count, Date added; ASC/DESC). Track titles use semibold typography, matching the mini player; a subtle theme-border divider runs between rows across the artwork and metadata area. Tapping a track delegates its ID to `LibraryTracksViewModel`, which starts playback from a queue built from the visible sorted order; the overflow action remains independent.
 - `LibraryAlbums` derives unique, valid albums from the active sync manifest, using album ID/title/artwork and album artists. When the current desktop manifest omits album artists, it falls back to the track artist; only albums with neither display Unknown artist. It renders a virtualized, divided list with Name/Artist/Date added ASC/DESC header sorting. Album rows show a rounded 48dp artwork thumbnail, title, artist, and a presentational overflow control.
+- Tapping an album row pushes `AlbumDetails` on the Library stack. It has a centered reusable `DetailHero` (large square album artwork, title, artist, glass Shuffle/More controls, and theme-inverted Play pill) followed by virtualized numbered album tracks. Play and Shuffle replace the Android queue with the ordered album tracks; overflow controls remain presentational. Track ordering is disc number, track number, then manifest order; missing numbers use the visible fallback index.
 - `LibraryGenres` derives unique genres from the active sync manifest. It renders a virtualized, divided list with Name/Date added ASC/DESC header sorting using `GenreRow` (48dp rounded glass icon box with label glyph, semibold title, overflow action).
 - `LibraryComposers` derives unique composers from the active sync manifest. It renders a virtualized, divided list with Name/Date added ASC/DESC header sorting using `ComposerRow` (48dp circular artwork thumbnail or microphone fallback, semibold title, overflow action).
 - Home content is supplied by `HomeDemoContent`. A forward action calls the
@@ -101,28 +102,35 @@ describe the desktop Vue UI or future iOS UI.
   controls; it snaps back after release and emits one confirmation haptic only when the swipe
   reaches the distance or velocity threshold and dispatches a transport command. Horizontal
   gestures are scoped to metadata so they do not conflict with the pill's vertical
-  fullscreen/dismiss gestures or its control buttons. Tapping the mini player has no ripple.
-  Tapping its non-control surface opens `FullScreenPlayer`.
+  fullscreen/dismiss gestures or its control buttons. The mini player pill and its transport
+  controls suppress press indications, so starting or reversing a drag never leaves a dark
+  ripple-like surface behind. Tapping its non-control surface opens `FullScreenPlayer`.
   Pulling upward moves the mini player up by its full 56dp height while fading it out.
-  The edge-to-edge overlay follows that pull continuously from the bottom and
-  reaches full opacity while the mini player fades away. Releasing after any
-  upward drag completes the transition to the fullscreen player. Once
+  The edge-to-edge overlay uses the first 48dp of an upward pull to accelerate
+  from below the screen until its edge catches the finger, then follows at the
+  same approximate pixel distance. Releasing after an upward drag whose remaining
+  travel exceeds touch-slop completes the transition to the fullscreen player;
+  a sub-slop remainder after reversing returns the mini player to rest. Once
   released, it uses a slower 760ms slide/fade only to complete the current
   partial transition. Pulling the mini player down by 36dp keeps it sliding
-  off the bottom of the screen without rebounding while playback stops and clears the
+  from its exact release position off the bottom of the screen without rebounding,
+  then stops playback and clears the
   persisted queue. Tap and vertical drag are separate consumed gesture paths,
   so a slow downward dismiss or a cancelled drag can never be reinterpreted as
   an open-fullscreen tap. Every pointer-down clears any interrupted fullscreen
   pull state before classifying the new gesture. Once a vertical gesture crosses
-  touch-slop, its initial direction is locked: a downward drag can only dismiss
-  or settle the mini player, never transition to fullscreen.
+  touch-slop, its initial direction is locked: a downward drag can be reversed
+  back to the mini player's resting position before release, but it never
+  transitions to fullscreen within that same gesture.
   The pill remains visually below navigation while dismissing. Its drag receiver
   stays anchored at the initial mini-player position, so the same downward drag
   continues even after the pill passes behind the navigation.
   The fullscreen player retains that opening animation and can be pulled down by
   96dp or closed with system Back. Reversing an in-progress downward pull immediately reduces its dismissal offset, so it can be returned to the top before release. Artwork scales down to 60% over 500ms while paused and returns to full size on playback.
   While it is visible, the activity forces light status-bar content so it remains
-  legible above the fullscreen artwork; closing it restores the theme's status-bar
+  legible above the fullscreen artwork; opening and closing apply that appearance
+  directly through the activity's window controller, without waiting for a
+  playback-state or Compose update. Closing it restores the theme's status-bar
   appearance.
   Swiping left/right anywhere in the artwork/metadata block moves only the
   title/artist cluster with the finger while the artwork and actions remain still;
@@ -139,7 +147,7 @@ describe the desktop Vue UI or future iOS UI.
   It renders near-full-width rounded artwork, with marquee white title text and
   marquee `foregroundSubtle` artist/duration text. Overlong marquee text travels
   to its end and reverses back rather than wrapping continuously. The metadata column keeps a
-  12dp gap before the blurred glass Heart/More button pair (using Haze backdrop blur and a subtle 6% glass tint),
+  12dp gap before the blurred glass Heart/More button pair (using a fullscreen-local Haze backdrop source and a subtle 6% glass tint),
   a dominant-colour gradient extracted from the artwork, animated over 280ms when artwork changes; the prior artwork remains visible while the replacement decodes to prevent a fallback-colour flash, with a
   restrained dark `playerBackdrop` overlay and fallback in every app theme, seek/duration, transport controls, Android music-stream volume (the system settings provider is observed recursively so hardware keys and route-specific system-volume events keep it current),
   and ghost Lyrics/Queue affordances. The centred secondary action is a Lucide
@@ -182,8 +190,10 @@ describe the desktop Vue UI or future iOS UI.
 | Component | Contract |
 | --- | --- |
 | `Card` | Standard 28dp, borderless, opaque themed card surface. It accepts slot content and optional padding; its title/description overload remains a tappable primary-action card. |
-| `DiscCard` | Displays a vertical card featuring a 1:1 square rounded artwork thumbnail (or glass symbol fallback), semibold single-line title, and muted single-line subtitle. Usable for album or track cards. |
+| `DiscCard` | Displays a vertical card featuring a 1:1 square rounded artwork thumbnail (or glass symbol fallback), semibold single-line title, and muted single-line subtitle. Usable for album or track cards. Clickable cards retain button semantics but suppress the press ripple. |
 | `HeroCard` | A non-interactive informational card with a 40dp decorative icon, bold `titleLarge` title, optional content directly below its title, and muted description. Sync uses this slot for its MQTT Online/Offline badge, aligned with the desktop name. |
+| `DetailHero` | Centered detail-page identity header with configurable square/circular artwork, title/subtitle, and Shuffle/Play/More callbacks. |
+| `AlbumTrackRow` | Detail-page track row with ordinal, two-line title/artist metadata, and an independent trailing overflow action. |
 | `TrackRow` | Displays a track row with 48dp rounded artwork (or fallback glass icon), semibold 2-line title/artist text display, and a trailing `...` overflow button. |
 | `AlbumRow` | Displays a 48dp rounded album-artwork thumbnail (or themed album fallback), semibold title/album-artist text, and a trailing `...` overflow button. |
 | `ArtistRow` | Displays a 48dp circular artist artwork (or themed person fallback), semibold one-line artist name, and a trailing `...` overflow button. |

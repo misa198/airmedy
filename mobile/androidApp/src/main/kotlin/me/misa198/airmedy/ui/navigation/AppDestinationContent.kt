@@ -56,6 +56,10 @@ import me.misa198.airmedy.ui.screens.LibraryGenresContent
 import me.misa198.airmedy.ui.screens.LibraryGenresUiState
 import me.misa198.airmedy.ui.screens.LibraryComposersContent
 import me.misa198.airmedy.ui.screens.LibraryComposersUiState
+import me.misa198.airmedy.ui.screens.AlbumDetailsContent
+import me.misa198.airmedy.ui.screens.AlbumDetailsUiState
+import me.misa198.airmedy.ui.screens.albumDetailsUiStateFor
+import androidx.compose.ui.graphics.Color
 
 internal data class PageKey(
     val destination: AppDestination,
@@ -93,6 +97,8 @@ internal fun AppDestinationContent(
     albumsListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     genresListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     composersListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
+    albumDetailsUiState: AlbumDetailsUiState = AlbumDetailsUiState(),
+    selectedAlbumId: String? = null,
     onIntent: (AppIntent) -> Unit,
     syncUiState: SyncUiState,
     tracksUiState: LibraryTracksUiState = LibraryTracksUiState(),
@@ -105,6 +111,9 @@ internal fun AppDestinationContent(
     onTrackClick: (String) -> Unit = {},
     onAlbumSortOptionSelected: (AlbumSortOption) -> Unit = {},
     onAlbumToggleSortOrder: () -> Unit = {},
+    onAlbumPlay: (String, Boolean) -> Unit = { _, _ -> },
+    onAlbumTrackPlay: (String, String) -> Unit = { _, _ -> },
+    onAlbumHeroColorChanged: (Color) -> Unit = {},
     onPairingQrScanned: (String) -> Boolean,
     onUnpair: () -> Unit,
     onSyncScreenVisible: () -> Unit,
@@ -240,6 +249,17 @@ internal fun AppDestinationContent(
                                 listState = albumsListState,
                                 contentPadding = contentPadding,
                                 modifier = Modifier.fillMaxSize(),
+                                onAlbumClick = { album -> onIntent(AppIntent.OpenAlbumDetails(album.id)) },
+                            )
+                            AppStackPage.AlbumDetails -> AlbumDetailsContent(
+                                uiState = selectedAlbumId?.let { albumDetailsUiStateFor(albumDetailsUiState, it) } ?: AlbumDetailsUiState(),
+                                contentPadding = contentPadding,
+                                modifier = Modifier.fillMaxSize(),
+                                hazeState = hazeState,
+                                onHeroColorChanged = onAlbumHeroColorChanged,
+                                onPlay = { selectedAlbumId?.let { onAlbumPlay(it, false) } },
+                                onShuffle = { selectedAlbumId?.let { onAlbumPlay(it, true) } },
+                                onTrackClick = { trackId -> selectedAlbumId?.let { onAlbumTrackPlay(it, trackId) } },
                             )
                             AppStackPage.LibraryGenres -> LibraryGenresContent(
                                 uiState = genresUiState,
@@ -299,6 +319,7 @@ internal val AppStackPage.depth: Int
         AppStackPage.HomeSampleDetail,
         AppStackPage.LibraryArtists,
         AppStackPage.LibraryAlbums,
+        AppStackPage.AlbumDetails,
         AppStackPage.LibraryTracks,
         AppStackPage.LibraryGenres,
         AppStackPage.LibraryComposers,

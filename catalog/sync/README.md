@@ -8,8 +8,12 @@ and mobile Ed25519 key pair. Desktop owns scope selection and creates an
 immutable plan; mobile downloads a manifest and its assets over LAN HTTP, then
 acknowledges verified writes through MQTT.
 
-This catalog is the implementation contract for the future mobile client. The
-current implementation is desktop-only.
+Android implements the protocol with a Room-backed mirror. Each track retains
+the full manifest `TrackDTO` JSON (without desktop `path`) as its canonical
+metadata snapshot, while indexed projection fields support the mobile UI.
+New sync plans stage their metadata and assets, atomically activate after all
+assets verify, then remove the old mirror; initiating Sync again therefore
+replaces changed metadata while reusing unchanged content-addressed assets.
 
 ## Preconditions and lifecycle
 

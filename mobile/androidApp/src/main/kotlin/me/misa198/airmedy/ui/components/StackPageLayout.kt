@@ -12,6 +12,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -40,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.RectangleShape
@@ -107,6 +109,7 @@ fun StackPageLayout(
                 animateChanges = animateChanges,
                 titleStackKey = titleStackKey,
                 isForward = isForward,
+                solidBackButton = false,
                 actions = actions,
             )
         }
@@ -123,6 +126,9 @@ fun StackPageHeader(
     animateChanges: Boolean = true,
     titleStackKey: String = "",
     isForward: Boolean = true,
+    solidBackButton: Boolean = false,
+    backGlassTintAlpha: Float? = null,
+    backHazeInputScale: HazeInputScale = HazeInputScale.Auto,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     val colors = LocalAirmedyColors.current
@@ -219,7 +225,13 @@ fun StackPageHeader(
                 enter = if (animateChanges) fadeIn() else EnterTransition.None,
                 exit = if (animateChanges) fadeOut() else ExitTransition.None,
             ) {
-                AirmedyBackButton(hazeState = hazeState, onClick = onBackClick ?: {})
+                AirmedyBackButton(
+                    hazeState = hazeState,
+                    solid = solidBackButton,
+                    glassTint = backGlassTintAlpha?.let { colors.glass.copy(alpha = it) },
+                    hazeInputScale = backHazeInputScale,
+                    onClick = onBackClick ?: {},
+                )
             }
         }
     }
@@ -255,14 +267,22 @@ fun AirmedyBackButton(
     hazeState: HazeState?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    solid: Boolean = false,
+    glassTint: Color? = null,
+    hazeInputScale: HazeInputScale = HazeInputScale.Auto,
 ) {
     val label = stringResource(R.string.navigate_back)
+    val colors = LocalAirmedyColors.current
     AirmedyGlassIconButton(
         hazeState = hazeState,
         symbol = MaterialSymbols.ChevronLeft,
         label = label,
         onClick = onClick,
         modifier = modifier,
+        surfaceColor = if (solid) colors.background else null,
+        borderColor = if (solid) colors.textMuted.copy(alpha = 0.55f) else null,
+        glassTint = glassTint,
+        hazeInputScale = hazeInputScale,
     )
 }
 
@@ -273,19 +293,21 @@ fun AirmedyGlassIconButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    surfaceColor: Color? = null,
+    borderColor: Color? = null,
+    glassTint: Color? = null,
+    hazeInputScale: HazeInputScale = HazeInputScale.Auto,
 ) {
     val colors = LocalAirmedyColors.current
     Box(
         modifier = modifier
             .size(HeaderHeight)
             .clip(CircleShape)
-            .liquidGlassBackground(
-                hazeState = hazeState,
-                colors = colors,
-                hazeInputScale = HazeInputScale.Auto,
-                hazeBlurRadius = 30.dp,
+            .then(
+                if (surfaceColor == null) Modifier.liquidGlassBackground(hazeState, colors, hazeInputScale, 30.dp, glassTint)
+                else Modifier.background(surfaceColor),
             )
-            .border(1.dp, colors.borderGlass, CircleShape)
+            .border(1.dp, borderColor ?: colors.borderGlass, CircleShape)
             .semantics { contentDescription = label }
             .clickable(
                 onClick = onClick,

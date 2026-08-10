@@ -203,6 +203,24 @@ class AppNavigationTest {
     }
 
     @Test
+    fun fullScreenPlayerUpdatesSystemBarVisibilityWhilePaused() {
+        val visibilityChanges = mutableListOf<Boolean>()
+        val pausedState = PlaybackState.Paused(playingItem, positionMs = 42_000L, durationMs = 120_000L)
+        composeTestRule.setContent {
+            App(
+                playbackState = pausedState,
+                onFullScreenPlayerVisibilityChanged = visibilityChanges::add,
+            )
+        }
+
+        composeTestRule.onNodeWithText(playingItem.title).performClick()
+        assertEquals(listOf(true), visibilityChanges)
+
+        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+        assertEquals(listOf(true, false), visibilityChanges)
+    }
+
+    @Test
     fun pullingTheFullScreenPlayerBackUpCancelsItsDismissal() {
         var fullScreenPlayerVisible = false
         composeTestRule.setContent {
@@ -370,6 +388,15 @@ private fun reduceAppState(state: AppUiState, intent: AppIntent): AppUiState = w
             } else {
                 state.destinationStacks + (intent.page.destination to stack + intent.page)
             },
+        )
+    }
+    is AppIntent.OpenAlbumDetails -> {
+        val stack = state.stackFor(AppDestination.Library)
+        state.copy(
+            selectedDestination = AppDestination.Library,
+            selectedAlbumId = intent.albumId,
+            destinationStacks = if (stack.lastOrNull() == AppStackPage.AlbumDetails) state.destinationStacks
+            else state.destinationStacks + (AppDestination.Library to stack + AppStackPage.AlbumDetails),
         )
     }
     AppIntent.NavigateBack -> {

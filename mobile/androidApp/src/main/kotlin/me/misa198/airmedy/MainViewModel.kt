@@ -19,6 +19,7 @@ data class AppUiState(
     val selectedDestination: AppDestination = AppDestination.Home,
     val themeMode: ThemeMode = ThemeMode.System,
     val reduceTransparency: Boolean = false,
+    val selectedAlbumId: String? = null,
     val destinationStacks: Map<AppDestination, List<AppStackPage>> = rootDestinationStacks(),
 ) {
     fun stackFor(destination: AppDestination): List<AppStackPage> =
@@ -33,6 +34,7 @@ class MainViewModel(
 ) : ViewModel() {
     private val selectedDestination = MutableStateFlow(AppDestination.Home)
     private val destinationStacks = MutableStateFlow(rootDestinationStacks())
+    private val selectedAlbumId = MutableStateFlow<String?>(null)
     private val _effects = Channel<AppEffect>(Channel.BUFFERED)
 
     val effects = _effects.receiveAsFlow()
@@ -42,11 +44,13 @@ class MainViewModel(
         themeModeStore.reduceTransparency,
         selectedDestination,
         destinationStacks,
-    ) { themeMode, reduceTransparency, destination, pages ->
+        selectedAlbumId,
+    ) { themeMode, reduceTransparency, destination, pages, albumId ->
         AppUiState(
             selectedDestination = destination,
             themeMode = themeMode,
             reduceTransparency = reduceTransparency,
+            selectedAlbumId = albumId,
             destinationStacks = pages,
         )
     }.stateIn(
@@ -59,6 +63,7 @@ class MainViewModel(
         when (intent) {
             is AppIntent.SelectDestination -> selectDestination(intent.destination)
             is AppIntent.OpenPage -> openPage(intent.page)
+            is AppIntent.OpenAlbumDetails -> openAlbumDetails(intent.albumId)
             AppIntent.NavigateBack -> navigateBack()
             is AppIntent.SetThemeMode -> setThemeMode(intent.themeMode)
             is AppIntent.SetReduceTransparency -> setReduceTransparency(intent.enabled)
@@ -87,6 +92,11 @@ class MainViewModel(
                 stacks + (destination to stack + page)
             }
         }
+    }
+
+    private fun openAlbumDetails(albumId: String) {
+        selectedAlbumId.value = albumId
+        openPage(AppStackPage.AlbumDetails)
     }
 
     private fun navigateBack() {

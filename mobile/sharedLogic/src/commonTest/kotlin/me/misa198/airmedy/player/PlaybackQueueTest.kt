@@ -19,7 +19,8 @@ class PlaybackQueueTest {
     fun `repeat off stops at final track while repeat all wraps`() {
         val queue = PlaybackQueue()
         queue.play(PlaybackRequest(listOf("a", "b"), 1))
-        assertEquals(QueueTransition.Stop, queue.next())
+        assertEquals(QueueTransition.StopAtCurrent, queue.next())
+        assertEquals("b", queue.snapshot().currentTrackId)
 
         queue.setRepeatMode(RepeatMode.All)
         assertEquals(QueueTransition.Play("a"), queue.next())

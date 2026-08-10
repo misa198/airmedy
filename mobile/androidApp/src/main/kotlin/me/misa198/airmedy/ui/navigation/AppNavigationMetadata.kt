@@ -11,6 +11,7 @@ internal fun AppStackPage.titleRes(destination: AppDestination): Int = when (thi
     AppStackPage.HomeSampleDetail -> R.string.home_sample_page_title
     AppStackPage.LibraryArtists -> R.string.library_artists
     AppStackPage.LibraryAlbums -> R.string.library_albums
+    AppStackPage.AlbumDetails -> R.string.album_details_title
     AppStackPage.LibraryTracks -> R.string.library_tracks
     AppStackPage.LibraryGenres -> R.string.library_genres
     AppStackPage.LibraryComposers -> R.string.library_composers
