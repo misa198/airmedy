@@ -178,7 +178,7 @@ class FullScreenPlayerTest {
     }
 
     @Test
-    fun queueDoesNotScrollCurrentTrackIntoViewWhenPanelFirstOpens() {
+    fun queueScrollsCurrentTrackIntoViewWhenPanelFirstOpens() {
         val trackIds = List(12) { "queue-$it" }
         val currentTrackId = trackIds.last()
         composeTestRule.setContent {
@@ -203,7 +203,7 @@ class FullScreenPlayerTest {
             }
         }
 
-        composeTestRule.onAllNodesWithText("Track 11").assertCountEquals(0)
+        composeTestRule.onNodeWithText("Track 11").assertExists()
     }
 
     private companion object {

@@ -30,6 +30,7 @@ import dev.chrisbanes.haze.hazeSource
 import me.misa198.airmedy.AppDestination
 import me.misa198.airmedy.AppIntent
 import me.misa198.airmedy.AppStackPage
+import me.misa198.airmedy.StackPageEntry
 import me.misa198.airmedy.SyncUiState
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.ui.components.HomeDemoContent
@@ -61,10 +62,7 @@ import me.misa198.airmedy.ui.screens.AlbumDetailsUiState
 import me.misa198.airmedy.ui.screens.albumDetailsUiStateFor
 import androidx.compose.ui.graphics.Color
 
-internal data class PageKey(
-    val destination: AppDestination,
-    val page: AppStackPage,
-)
+internal typealias PageKey = StackPageEntry
 
 internal enum class ContentScrollDirection {
     Up,
@@ -84,8 +82,7 @@ internal fun contentScrollDelta(consumedY: Float): ContentScrollDelta? = when {
 
 @Composable
 internal fun AppDestinationContent(
-    destination: AppDestination,
-    page: AppStackPage,
+    stackPage: StackPageEntry,
     themeMode: ThemeMode,
     reduceTransparency: Boolean,
     hazeState: HazeState?,
@@ -121,7 +118,8 @@ internal fun AppDestinationContent(
     onContentScroll: (ContentScrollDelta) -> Unit = {},
 ) {
     val colors = LocalAirmedyColors.current
-    val pageKey = PageKey(destination = destination, page = page)
+    val destination = stackPage.destination
+    val page = stackPage.page
     val currentOnContentScroll = rememberUpdatedState(onContentScroll)
     val scrollConnection = remember {
         object : NestedScrollConnection {
@@ -157,7 +155,7 @@ internal fun AppDestinationContent(
             showHeader = false,
         ) { modifier, contentPadding ->
             AnimatedContent(
-                targetState = pageKey,
+                targetState = stackPage,
                 modifier = modifier,
                 transitionSpec = {
                     if (targetState.destination != initialState.destination) {
@@ -313,21 +311,5 @@ internal fun AppDestinationContent(
     }
 }
 
-internal val AppStackPage.depth: Int
-    get() = when (this) {
-        AppStackPage.Root -> 0
-        AppStackPage.HomeSampleDetail,
-        AppStackPage.LibraryArtists,
-        AppStackPage.LibraryAlbums,
-        AppStackPage.AlbumDetails,
-        AppStackPage.LibraryTracks,
-        AppStackPage.LibraryGenres,
-        AppStackPage.LibraryComposers,
-        AppStackPage.SettingsAppearance,
-        AppStackPage.SettingsSync,
-        AppStackPage.SettingsAbout -> 1
-        AppStackPage.SettingsSyncScanner -> 2
-    }
-
 internal fun isForwardTransition(target: PageKey, initial: PageKey): Boolean =
-    target.page.depth > initial.page.depth
+    target.index > initial.index

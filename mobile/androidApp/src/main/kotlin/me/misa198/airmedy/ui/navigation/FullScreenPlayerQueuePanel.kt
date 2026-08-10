@@ -82,7 +82,8 @@ internal fun FullScreenQueuePanel(
     var orderedIds by remember(queue.activeTrackIds) { mutableStateOf(queue.activeTrackIds) }
     var draggedIndex by remember { mutableStateOf<Int?>(null) }
     var draggedOffset by remember { mutableStateOf(0f) }
-    var previouslyCurrentTrackId by remember { mutableStateOf<String?>(null) }
+    var hasPositionedInitialTrack by remember { mutableStateOf(false) }
+    var previousCurrentTrackId by remember { mutableStateOf<String?>(null) }
     val haptics = LocalHapticFeedback.current
     val reorderThresholdPx = with(LocalDensity.current) { 56.dp.toPx() }
     val repeatLabel = stringResource(
@@ -93,19 +94,22 @@ internal fun FullScreenQueuePanel(
         },
     )
 
-    LaunchedEffect(currentTrackId) {
+    LaunchedEffect(currentTrackId, orderedIds) {
         val targetIndex = orderedIds.indexOf(currentTrackId)
-        val previousIndex = previouslyCurrentTrackId?.let(orderedIds::indexOf)
-        // Opening Queue (or returning from Lyrics) establishes an initial item;
-        // it must not move the user's view. Only follow a later auto-next when
-        // the previous current item is still visible in this already-open list.
-        val isFollowingCurrentTrack = previousIndex != null &&
-            listState.layoutInfo.visibleItemsInfo.any { it.index == previousIndex }
         targetIndex
             .takeIf { it >= 0 }
-            ?.takeIf { isFollowingCurrentTrack }
-            ?.let { index -> listState.animateScrollToItem(index) }
-        previouslyCurrentTrackId = currentTrackId
+            ?.let { index ->
+                if (!hasPositionedInitialTrack) {
+                    listState.scrollToItem(index)
+                    hasPositionedInitialTrack = true
+                } else {
+                    val previousIndex = previousCurrentTrackId?.let(orderedIds::indexOf)
+                    val isFollowingCurrentTrack = previousIndex != null &&
+                        listState.layoutInfo.visibleItemsInfo.any { it.index == previousIndex }
+                    if (isFollowingCurrentTrack) listState.animateScrollToItem(index)
+                }
+                previousCurrentTrackId = currentTrackId
+            }
     }
 
     Column(modifier = modifier) {

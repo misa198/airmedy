@@ -23,6 +23,13 @@ enum class AppStackPage {
     SettingsAbout,
 }
 
+/** Identifies the visible page and its actual position in a destination stack. */
+data class StackPageEntry(
+    val destination: AppDestination,
+    val page: AppStackPage,
+    val index: Int,
+)
+
 val AppStackPage.destination: AppDestination
     get() = when (this) {
         AppStackPage.Root, AppStackPage.HomeSampleDetail -> AppDestination.Home
@@ -42,3 +49,6 @@ val AppStackPage.destination: AppDestination
 
 fun rootDestinationStacks(): Map<AppDestination, List<AppStackPage>> =
     AppDestination.entries.associateWith { listOf(AppStackPage.Root) }
+
+fun List<AppStackPage>.currentStackPage(destination: AppDestination): StackPageEntry =
+    StackPageEntry(destination = destination, page = last(), index = lastIndex)

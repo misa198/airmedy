@@ -57,7 +57,6 @@ import me.misa198.airmedy.ui.navigation.MiniPlayerNavigationGap
 import me.misa198.airmedy.ui.navigation.NavigationChrome
 import me.misa198.airmedy.ui.navigation.NavigationChromeScrollState
 import me.misa198.airmedy.ui.navigation.reduceNavigationChromeScroll
-import me.misa198.airmedy.ui.navigation.depth
 import me.misa198.airmedy.ui.navigation.showsMiniPlayer
 import me.misa198.airmedy.ui.navigation.titleRes
 import me.misa198.airmedy.ui.screens.LibraryTracksUiState
@@ -153,9 +152,10 @@ internal fun App(
         var previousHeaderWasBlurred by remember { mutableStateOf(false) }
         val destinationChanged = previousDestination != uiState.selectedDestination
         val animateHeaderChanges = !destinationChanged
-        val currentPage = uiState.currentPage
-        var previousPage by remember { mutableStateOf(currentPage) }
-        val isForwardHeaderTransition = currentPage.depth >= previousPage.depth
+        val currentStackPage = uiState.stackFor(uiState.selectedDestination).currentStackPage(uiState.selectedDestination)
+        val currentPage = currentStackPage.page
+        var previousStackPage by remember { mutableStateOf(currentStackPage) }
+        val isForwardHeaderTransition = currentStackPage.index >= previousStackPage.index
         val showsMiniPlayer = playbackState.showsMiniPlayer()
         var isFullScreenPlayerVisible by rememberSaveable { mutableStateOf(false) }
         var isFullScreenPlayerOpeningFromSwipe by remember { mutableStateOf(false) }
@@ -241,12 +241,11 @@ internal fun App(
         SideEffect {
             previousDestination = uiState.selectedDestination
             previousHeaderWasBlurred = isContentScrolled
-            previousPage = currentPage
+            previousStackPage = currentStackPage
         }
         Box(modifier = Modifier.fillMaxSize()) {
             AppDestinationContent(
-                destination = uiState.selectedDestination,
-                page = currentPage,
+                stackPage = currentStackPage,
                 themeMode = uiState.themeMode,
                 reduceTransparency = uiState.reduceTransparency,
                 hazeState = hazeState,

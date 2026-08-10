@@ -5,6 +5,9 @@ describe the desktop Vue UI or future iOS UI.
 
 ## App shell and navigation
 
+- `MainActivity` is locked to portrait in the Android manifest. The mobile
+  layouts and navigation transitions do not support landscape orientation.
+
 - `App.kt` is the app shell: it owns the theme, shared Haze/list state, header,
   and placement of the navigation chrome. `ui/navigation/AppDestinationContent.kt`
   routes each destination's independent `AppStackPage` stack, and
@@ -23,6 +26,8 @@ describe the desktop Vue UI or future iOS UI.
   shell. `ThemePreferences` implements it with DataStore, while tests use an
   in-memory implementation.
 - Header title animation keys include both destination and current stack page.
+  The shared `StackPageEntry` carries its actual stack index, so all pushes and
+  pops—including a third-level Album Details page—use the correct direction.
   Stack changes retain the title slide while disabling size interpolation; the
   header always reserves one action slot, preventing a title-width reflow when
   controls disappear. Switching bottom-navigation destination stacks changes
@@ -180,11 +185,11 @@ describe the desktop Vue UI or future iOS UI.
   content padding. The current item's artwork has a `playerBackdrop` overlay
   with a centred three-bar primary `AirmedyPlayingIndicator`; the bars animate
   while playback is active and rest at a short height when paused. Tapping the
-  row selects and starts that item. Opening it, including switching from Lyrics,
-  preserves the list's initial position without scrolling. On auto-next, it
-  follows the new item only while the
-  prior current item remains visible; when a user has browsed elsewhere in the
-  queue, their scroll position remains untouched. Long-press dragging the
+  row selects and starts that item. Opening Queue, including switching from
+  Lyrics, immediately positions the current item in view without an animation.
+  It then animates to a subsequent current-track change only while the prior
+  current item remains visible; a user who has browsed elsewhere keeps their
+  chosen viewport. Long-press dragging the
   trailing touch target reorders the active queue and preserves the current
   track, shuffle state, and repeat mode.
   `FullScreenPlayer.kt` remains the screen coordinator; the queue-specific UI,

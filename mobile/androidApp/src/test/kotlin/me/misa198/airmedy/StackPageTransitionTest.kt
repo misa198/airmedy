@@ -1,32 +1,17 @@
 package me.misa198.airmedy
 
 import me.misa198.airmedy.ui.navigation.PageKey
-import me.misa198.airmedy.ui.navigation.depth
 import me.misa198.airmedy.ui.navigation.isForwardTransition
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class StackPageTransitionTest {
     @Test
-    fun stackPageDepthsFormCorrectHierarchy() {
-        assertEquals(0, AppStackPage.Root.depth)
-        assertEquals(1, AppStackPage.HomeSampleDetail.depth)
-        assertEquals(1, AppStackPage.LibraryArtists.depth)
-        assertEquals(1, AppStackPage.LibraryAlbums.depth)
-        assertEquals(1, AppStackPage.LibraryGenres.depth)
-        assertEquals(1, AppStackPage.SettingsAppearance.depth)
-        assertEquals(1, AppStackPage.SettingsSync.depth)
-        assertEquals(1, AppStackPage.SettingsAbout.depth)
-        assertEquals(2, AppStackPage.SettingsSyncScanner.depth)
-    }
-
-    @Test
     fun pushesInStackAreIdentifiedAsForwardTransitions() {
-        val rootKey = PageKey(AppDestination.Settings, AppStackPage.Root)
-        val syncKey = PageKey(AppDestination.Settings, AppStackPage.SettingsSync)
-        val scannerKey = PageKey(AppDestination.Settings, AppStackPage.SettingsSyncScanner)
+        val rootKey = PageKey(AppDestination.Settings, AppStackPage.Root, index = 0)
+        val syncKey = PageKey(AppDestination.Settings, AppStackPage.SettingsSync, index = 1)
+        val scannerKey = PageKey(AppDestination.Settings, AppStackPage.SettingsSyncScanner, index = 2)
 
         assertTrue(isForwardTransition(target = syncKey, initial = rootKey))
         assertTrue(isForwardTransition(target = scannerKey, initial = syncKey))
@@ -34,9 +19,9 @@ class StackPageTransitionTest {
 
     @Test
     fun popsInStackAreIdentifiedAsBackwardTransitions() {
-        val rootKey = PageKey(AppDestination.Settings, AppStackPage.Root)
-        val syncKey = PageKey(AppDestination.Settings, AppStackPage.SettingsSync)
-        val scannerKey = PageKey(AppDestination.Settings, AppStackPage.SettingsSyncScanner)
+        val rootKey = PageKey(AppDestination.Settings, AppStackPage.Root, index = 0)
+        val syncKey = PageKey(AppDestination.Settings, AppStackPage.SettingsSync, index = 1)
+        val scannerKey = PageKey(AppDestination.Settings, AppStackPage.SettingsSyncScanner, index = 2)
 
         assertFalse(isForwardTransition(target = syncKey, initial = scannerKey))
         assertFalse(isForwardTransition(target = rootKey, initial = syncKey))
@@ -44,9 +29,22 @@ class StackPageTransitionTest {
 
     @Test
     fun destinationChangesAreNotIdentifiedAsStackTransitions() {
-        val homeKey = PageKey(AppDestination.Home, AppStackPage.Root)
-        val libraryKey = PageKey(AppDestination.Library, AppStackPage.Root)
+        val homeKey = PageKey(AppDestination.Home, AppStackPage.Root, index = 0)
+        val libraryKey = PageKey(AppDestination.Library, AppStackPage.Root, index = 0)
 
         assertFalse(homeKey.destination == libraryKey.destination)
+    }
+
+    @Test
+    fun albumDetailsPushesForwardFromTheAlbumList() {
+        val stack = listOf(
+            AppStackPage.Root,
+            AppStackPage.LibraryAlbums,
+            AppStackPage.AlbumDetails,
+        )
+        val albumsKey = stack.dropLast(1).currentStackPage(AppDestination.Library)
+        val albumDetailsKey = stack.currentStackPage(AppDestination.Library)
+
+        assertTrue(isForwardTransition(target = albumDetailsKey, initial = albumsKey))
     }
 }
