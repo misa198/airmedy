@@ -23,6 +23,7 @@ internal fun LibraryArtistsContent(
     modifier: Modifier = Modifier,
     listState: LazyListState = remember(uiState.sortOption, uiState.sortOrder) { LazyListState() },
     contentPadding: PaddingValues = PaddingValues(),
+    onArtistClick: ((me.misa198.airmedy.sync.LibraryArtist) -> Unit)? = null,
 ) {
     val listPadding = remember(contentPadding) {
         PaddingValues(
@@ -55,6 +56,10 @@ internal fun LibraryArtistsContent(
             }
         },
     ) { artist ->
-        ArtistRow(name = artist.name, artworkPath = artist.artworkPath)
+        ArtistRow(
+            name = artist.name,
+            artworkPath = artist.artworkPath,
+            onClick = onArtistClick?.let { callback -> { callback(artist) } },
+        )
     }
 }

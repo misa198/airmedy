@@ -25,6 +25,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.player.PlaybackItem
 import me.misa198.airmedy.player.PlaybackState
+import me.misa198.airmedy.ui.screens.LibraryArtistsUiState
+import me.misa198.airmedy.sync.LibraryArtist
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -70,6 +72,27 @@ class AppNavigationTest {
 
         composeTestRule.onNodeWithText(string(R.string.artists_empty_title)).assertIsDisplayed()
         assertEquals(AppIntent.OpenPage(AppStackPage.LibraryArtists), harness.intents.last())
+    }
+
+    @Test
+    fun tappingArtistDispatchesArtistDetailsIntent() {
+        val intents = mutableListOf<AppIntent>()
+        composeTestRule.setContent {
+            App(
+                uiState = AppUiState(
+                    selectedDestination = AppDestination.Library,
+                    destinationStacks = rootDestinationStacks() + (
+                        AppDestination.Library to listOf(AppStackPage.Root, AppStackPage.LibraryArtists)
+                    ),
+                ),
+                artistsUiState = LibraryArtistsUiState(artists = listOf(LibraryArtist("muse", "Muse"))),
+                onIntent = intents::add,
+            )
+        }
+
+        composeTestRule.onNodeWithText("Muse").performClick()
+
+        assertEquals(AppIntent.OpenArtistDetails("muse"), intents.last())
     }
 
     @Test
@@ -397,6 +420,15 @@ private fun reduceAppState(state: AppUiState, intent: AppIntent): AppUiState = w
             selectedAlbumId = intent.albumId,
             destinationStacks = if (stack.lastOrNull() == AppStackPage.AlbumDetails) state.destinationStacks
             else state.destinationStacks + (AppDestination.Library to stack + AppStackPage.AlbumDetails),
+        )
+    }
+    is AppIntent.OpenArtistDetails -> {
+        val stack = state.stackFor(AppDestination.Library)
+        state.copy(
+            selectedDestination = AppDestination.Library,
+            selectedArtistId = intent.artistId,
+            destinationStacks = if (stack.lastOrNull() == AppStackPage.ArtistDetails) state.destinationStacks
+            else state.destinationStacks + (AppDestination.Library to stack + AppStackPage.ArtistDetails),
         )
     }
     AppIntent.NavigateBack -> {

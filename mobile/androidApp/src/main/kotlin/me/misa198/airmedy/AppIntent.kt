@@ -10,6 +10,8 @@ sealed interface AppIntent {
 
     data class OpenAlbumDetails(val albumId: String) : AppIntent
 
+    data class OpenArtistDetails(val artistId: String) : AppIntent
+
     data object NavigateBack : AppIntent
 
     data class SetThemeMode(val themeMode: ThemeMode) : AppIntent

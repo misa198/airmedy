@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
 import me.misa198.airmedy.R
@@ -30,6 +31,12 @@ internal fun AlbumDetailsContent(uiState: AlbumDetailsUiState, modifier: Modifie
         return
     }
     val colors = LocalAirmedyColors.current
+    val trackCount = pluralStringResource(R.plurals.album_details_track_count, uiState.tracks.size, uiState.tracks.size)
+    val metadata = if (album.year > 0) {
+        stringResource(R.string.album_details_metadata_with_year, album.year, trackCount)
+    } else {
+        trackCount
+    }
     val listPadding = PaddingValues(
         top = 0.dp,
         bottom = contentPadding.calculateBottomPadding(),
@@ -42,6 +49,7 @@ internal fun AlbumDetailsContent(uiState: AlbumDetailsUiState, modifier: Modifie
                 DetailHero(
                     album.title,
                     album.artist.ifBlank { stringResource(R.string.album_unknown_artist) },
+                    metadata,
                     stringResource(R.string.player_play),
                     stringResource(R.string.player_shuffle),
                     stringResource(R.string.album_row_more_options),

@@ -35,7 +35,7 @@ class LibraryArtistMapperTest {
     fun groupsAlbumsByManifestIdAndResolvesAlbumArtwork() {
         val albums = libraryAlbumsFrom(
             tracks = listOf(
-                row("""{"album":{"id":"album-a","title":"Album A","artwork_key":"album-art","created_at":"2026-02-01T00:00:00Z"},"album_artists":[{"name":"Artist A"}]}"""),
+                row("""{"album":{"id":"album-a","title":"Album A","year":2001,"artwork_key":"album-art","created_at":"2026-02-01T00:00:00Z"},"album_artists":[{"name":"Artist A"}]}"""),
                 row("""{"album":{"id":"album-a","title":"Album A","artwork_key":"album-art"},"album_artists":[{"name":"Artist A"}]}"""),
                 row("""{"album":{"id":"album-b","title":"Album B"},"album_artists":[]}"""),
             ),
@@ -46,6 +46,7 @@ class LibraryArtistMapperTest {
         assertEquals("Artist A", albums.first().artist)
         assertEquals("artwork/album-a.jpg", albums.first().artworkPath)
         assertEquals("2026-02-01T00:00:00Z", albums.first().createdAt)
+        assertEquals(2001, albums.first().year)
         assertEquals("", albums.last().artist)
     }
 

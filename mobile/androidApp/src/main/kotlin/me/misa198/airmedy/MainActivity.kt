@@ -48,6 +48,7 @@ import me.misa198.airmedy.ui.screens.LibraryAlbumsViewModel
 import me.misa198.airmedy.ui.screens.LibraryGenresViewModel
 import me.misa198.airmedy.ui.screens.LibraryComposersViewModel
 import me.misa198.airmedy.ui.screens.AlbumDetailsViewModel
+import me.misa198.airmedy.ui.screens.ArtistDetailsViewModel
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels {
@@ -90,6 +91,9 @@ class MainActivity : ComponentActivity() {
     private val albumDetailsViewModel: AlbumDetailsViewModel by viewModels {
         AlbumDetailsViewModel.Factory(AndroidSyncRuntime.syncStore(), AndroidPlaybackRuntime.controller())
     }
+    private val artistDetailsViewModel: ArtistDetailsViewModel by viewModels {
+        ArtistDetailsViewModel.Factory(AndroidSyncRuntime.syncStore(), AndroidPlaybackRuntime.controller())
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -109,6 +113,7 @@ class MainActivity : ComponentActivity() {
             val genresUiState by genresViewModel.uiState.collectAsStateWithLifecycle()
             val composersUiState by composersViewModel.uiState.collectAsStateWithLifecycle()
             val albumDetailsUiState by albumDetailsViewModel.uiState.collectAsStateWithLifecycle()
+            val artistDetailsUiState by artistDetailsViewModel.uiState.collectAsStateWithLifecycle()
             val playbackController = AndroidPlaybackRuntime.controller()
             val playbackState by playbackController.state.collectAsStateWithLifecycle()
             val playbackQueue by playbackController.queue.collectAsStateWithLifecycle()
@@ -149,6 +154,7 @@ class MainActivity : ComponentActivity() {
                 genresUiState = genresUiState,
                 composersUiState = composersUiState,
                 albumDetailsUiState = albumDetailsUiState,
+                artistDetailsUiState = artistDetailsUiState,
                 onIntent = viewModel::dispatch,
                 onSortOptionSelected = tracksViewModel::setSortOption,
                 onToggleSortOrder = tracksViewModel::toggleSortOrder,
@@ -159,6 +165,7 @@ class MainActivity : ComponentActivity() {
                 onAlbumToggleSortOrder = albumsViewModel::toggleSortOrder,
                 onAlbumPlay = albumDetailsViewModel::play,
                 onAlbumTrackPlay = albumDetailsViewModel::playTrack,
+                onArtistPlay = artistDetailsViewModel::play,
                 onGenreSortOptionSelected = genresViewModel::setSortOption,
                 onGenreToggleSortOrder = genresViewModel::toggleSortOrder,
                 onComposerSortOptionSelected = composersViewModel::setSortOption,

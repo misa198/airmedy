@@ -60,6 +60,9 @@ import me.misa198.airmedy.ui.screens.LibraryComposersUiState
 import me.misa198.airmedy.ui.screens.AlbumDetailsContent
 import me.misa198.airmedy.ui.screens.AlbumDetailsUiState
 import me.misa198.airmedy.ui.screens.albumDetailsUiStateFor
+import me.misa198.airmedy.ui.screens.ArtistDetailsContent
+import me.misa198.airmedy.ui.screens.ArtistDetailsUiState
+import me.misa198.airmedy.ui.screens.artistDetailsUiStateFor
 import androidx.compose.ui.graphics.Color
 
 internal typealias PageKey = StackPageEntry
@@ -92,10 +95,13 @@ internal fun AppDestinationContent(
     tracksListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     artistsListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     albumsListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
+    artistDetailsListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     genresListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     composersListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     albumDetailsUiState: AlbumDetailsUiState = AlbumDetailsUiState(),
+    artistDetailsUiState: ArtistDetailsUiState = ArtistDetailsUiState(),
     selectedAlbumId: String? = null,
+    selectedArtistId: String? = null,
     onIntent: (AppIntent) -> Unit,
     syncUiState: SyncUiState,
     tracksUiState: LibraryTracksUiState = LibraryTracksUiState(),
@@ -110,6 +116,7 @@ internal fun AppDestinationContent(
     onAlbumToggleSortOrder: () -> Unit = {},
     onAlbumPlay: (String, Boolean) -> Unit = { _, _ -> },
     onAlbumTrackPlay: (String, String) -> Unit = { _, _ -> },
+    onArtistPlay: (String, Boolean) -> Unit = { _, _ -> },
     onAlbumHeroColorChanged: (Color) -> Unit = {},
     onPairingQrScanned: (String) -> Boolean,
     onUnpair: () -> Unit,
@@ -241,6 +248,18 @@ internal fun AppDestinationContent(
                                 listState = artistsListState,
                                 contentPadding = contentPadding,
                                 modifier = Modifier.fillMaxSize(),
+                                onArtistClick = { artist -> onIntent(AppIntent.OpenArtistDetails(artist.id)) },
+                            )
+                            AppStackPage.ArtistDetails -> ArtistDetailsContent(
+                                uiState = selectedArtistId?.let { artistDetailsUiStateFor(artistDetailsUiState, it) } ?: ArtistDetailsUiState(),
+                                listState = artistDetailsListState,
+                                contentPadding = contentPadding,
+                                modifier = Modifier.fillMaxSize(),
+                                hazeState = hazeState,
+                                onHeroColorChanged = onAlbumHeroColorChanged,
+                                onPlay = { selectedArtistId?.let { onArtistPlay(it, false) } },
+                                onShuffle = { selectedArtistId?.let { onArtistPlay(it, true) } },
+                                onAlbumClick = { album -> onIntent(AppIntent.OpenAlbumDetails(album.id)) },
                             )
                             AppStackPage.LibraryAlbums -> LibraryAlbumsContent(
                                 uiState = albumsUiState,

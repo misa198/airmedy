@@ -127,6 +127,9 @@ intent using native Android Compose.
 4. Run any Android-specific test task added by the feature. `task verify` at the
    repository root currently validates the desktop app only and does not replace
    these mobile checks.
+   Never run tests on a physical Android device or emulator. Limit verification
+   to host-side Gradle test, compile, and build tasks unless the user explicitly
+   authorizes device or emulator testing.
 5. Update this README and this guide whenever the mobile module graph, shared
    contracts, platform boundary, commands, or supported targets change.
 

@@ -79,11 +79,16 @@ describe the desktop Vue UI or future iOS UI.
   Tracks opens `LibraryTracks`, Genres opens `LibraryGenres`, and Composers opens `LibraryComposers` on the Library stack; tapping a recent track card starts playback.
 - `LibraryArtists` derives its rows from the normalized artist objects in the active sync manifest, grouped by
   desktop artist ID so collaborations retain the desktop delimiter behavior. It renders a virtualized, divided
-  list with circular artist artwork and a Name/Date added ASC/DESC header sort. Artist rows are presentational
-  until artist details and an overflow menu are introduced.
+  list with circular artist artwork and a Name/Date added ASC/DESC header sort. Tapping an artist pushes
+  `ArtistDetails` on the Library stack.
+- `ArtistDetails` uses the shared artwork-derived `DetailHero` with 144dp circular artist artwork, the artist name,
+  a localized album-and-track count, and Play/Shuffle actions. Its unique albums are derived from canonical
+  track-artist IDs and sorted case-insensitively by album title A–Z. Artist playback uses that album order, then
+  each matching artist track's disc number, track number, and manifest order. It renders the existing album-row
+  treatment; tapping an album pushes `AlbumDetails`.
 - `LibraryTracks` renders a virtualized `LazyColumn` of tracks with sorting controls (Name, Artist, Play count, Date added; ASC/DESC). Track titles use semibold typography, matching the mini player; a subtle theme-border divider runs between rows across the artwork and metadata area. Tapping a track delegates its ID to `LibraryTracksViewModel`, which starts playback from a queue built from the visible sorted order; the overflow action remains independent.
 - `LibraryAlbums` derives unique, valid albums from the active sync manifest, using album ID/title/artwork and album artists. When the current desktop manifest omits album artists, it falls back to the track artist; only albums with neither display Unknown artist. It renders a virtualized, divided list with Name/Artist/Date added ASC/DESC header sorting. Album rows show a rounded 48dp artwork thumbnail, title, artist, and a presentational overflow control.
-- Tapping an album row pushes `AlbumDetails` on the Library stack. It has a centered reusable `DetailHero` (large square album artwork, title, artist, glass Shuffle/More controls, and theme-inverted Play pill) followed by virtualized numbered album tracks. Play and Shuffle replace the Android queue with the ordered album tracks; overflow controls remain presentational. Track ordering is disc number, track number, then manifest order; missing numbers use the visible fallback index.
+- Tapping an album row pushes `AlbumDetails` on the Library stack. It has a centered reusable `DetailHero` (large square album artwork, title, artist, then a separate optional published-year and localized-track-count metadata line, glass Shuffle/More controls, and theme-inverted Play pill) followed by virtualized numbered album tracks. Play and Shuffle replace the Android queue with the ordered album tracks; overflow controls remain presentational. Track ordering is disc number, track number, then manifest order; missing numbers use the visible fallback index.
 - `LibraryGenres` derives unique genres from the active sync manifest. It renders a virtualized, divided list with Name/Date added ASC/DESC header sorting using `GenreRow` (48dp rounded glass icon box with label glyph, semibold title, overflow action).
 - `LibraryComposers` derives unique composers from the active sync manifest. It renders a virtualized, divided list with Name/Date added ASC/DESC header sorting using `ComposerRow` (48dp circular artwork thumbnail or microphone fallback, semibold title, overflow action).
 - Home content is supplied by `HomeDemoContent`. A forward action calls the

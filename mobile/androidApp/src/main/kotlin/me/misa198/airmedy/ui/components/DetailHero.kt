@@ -38,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import dev.chrisbanes.haze.HazeState
@@ -96,12 +97,14 @@ private fun artworkDominantColor(bitmap: ImageBitmap): Color {
 fun DetailHero(
     title: String,
     subtitle: String,
+    metadata: String? = null,
     playLabel: String,
     shuffleLabel: String,
     moreLabel: String,
     modifier: Modifier = Modifier,
     artworkPath: String? = null,
     artworkShape: DetailHeroArtworkShape = DetailHeroArtworkShape.Square,
+    artworkSize: Dp = 248.dp,
     fallbackSymbol: String = MaterialSymbols.Album,
     onPlayClick: () -> Unit = {},
     onShuffleClick: () -> Unit = {},
@@ -116,7 +119,7 @@ fun DetailHero(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Box(
-            modifier = Modifier.size(248.dp).clip(artworkClip).background(colors.glassElevated),
+            modifier = Modifier.size(artworkSize).clip(artworkClip).background(colors.glassElevated),
             contentAlignment = Alignment.Center,
         ) {
             if (bitmap != null) Image(bitmap = bitmap, contentDescription = null, modifier = Modifier.matchParentSize(), contentScale = ContentScale.Crop)
@@ -128,6 +131,9 @@ fun DetailHero(
         ) {
             Text(title, style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold), color = colors.textMain, maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
             Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = colors.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
+            metadata?.takeIf(String::isNotBlank)?.let { value ->
+                Text(value, style = MaterialTheme.typography.bodySmall, color = colors.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
+            }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
             DetailHeroGlassAction(MaterialSymbols.Shuffle, shuffleLabel, onShuffleClick)

@@ -250,6 +250,7 @@ data class LibraryAlbum(
     val artist: String = "",
     val createdAt: String = "",
     val artworkPath: String? = null,
+    val year: Int = 0,
 )
 
 data class LibraryGenre(
@@ -486,6 +487,7 @@ internal fun libraryAlbumsFrom(
             artist = root.arrayNames("album_artists").ifBlank { root.arrayNames("artists") },
             createdAt = album.string("created_at").orEmpty().ifBlank { track.createdAt },
             artworkPath = album.string("artwork_key")?.takeIf(String::isNotBlank)?.let(artworkPaths::get),
+            year = album.int("year"),
         )
         albums[id] = albums[id]?.let { existing ->
             existing.copy(
@@ -495,6 +497,7 @@ internal fun libraryAlbumsFrom(
                     .filter(String::isNotBlank)
                     .minOrNull()
                     .orEmpty(),
+                year = existing.year.takeIf { it > 0 } ?: candidate.year,
             )
         } ?: candidate
     }
@@ -658,6 +661,8 @@ internal fun cachedAssetPath(filesDir: File, asset: SyncAssetEntity?): String? =
     ?.takeIf { File(filesDir, it).isFile }
 
 private fun JsonObject.string(name: String): String? = (this[name] as? JsonPrimitive)?.contentOrNull
+
+private fun JsonObject.int(name: String): Int = (this[name] as? JsonPrimitive)?.contentOrNull?.toIntOrNull() ?: 0
 
 private fun JsonObject.arrayNames(name: String): String = ((this[name] as? JsonArray).orEmpty())
     .mapNotNull { (it as? JsonObject)?.string("name")?.trim()?.takeIf(String::isNotEmpty) }
