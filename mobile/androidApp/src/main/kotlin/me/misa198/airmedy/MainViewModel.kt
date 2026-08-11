@@ -19,6 +19,7 @@ data class AppUiState(
     val selectedDestination: AppDestination = AppDestination.Home,
     val themeMode: ThemeMode = ThemeMode.System,
     val reduceTransparency: Boolean = false,
+    val syncedLyricsEnabled: Boolean = true,
     val selectedAlbumId: String? = null,
     val selectedArtistId: String? = null,
     val selectedGenreId: String? = null,
@@ -59,6 +60,8 @@ class MainViewModel(
             selectedAlbumId = albumId,
             destinationStacks = pages,
         )
+    }.combine(themeModeStore.syncedLyricsEnabled) { state, syncedLyricsEnabled ->
+        state.copy(syncedLyricsEnabled = syncedLyricsEnabled)
     }.combine(selectedArtistId) { state, artistId ->
         state.copy(selectedArtistId = artistId)
     }.combine(selectedGenreId) { state, genreId ->
@@ -82,6 +85,7 @@ class MainViewModel(
             AppIntent.NavigateBack -> navigateBack()
             is AppIntent.SetThemeMode -> setThemeMode(intent.themeMode)
             is AppIntent.SetReduceTransparency -> setReduceTransparency(intent.enabled)
+            is AppIntent.SetSyncedLyricsEnabled -> setSyncedLyricsEnabled(intent.enabled)
             is AppIntent.OpenExternalUrl -> _effects.trySend(AppEffect.OpenExternalUrl(intent.url))
         }
     }
@@ -146,6 +150,12 @@ class MainViewModel(
     private fun setReduceTransparency(enabled: Boolean) {
         viewModelScope.launch {
             themeModeStore.setReduceTransparency(enabled)
+        }
+    }
+
+    private fun setSyncedLyricsEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            themeModeStore.setSyncedLyricsEnabled(enabled)
         }
     }
 

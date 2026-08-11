@@ -42,7 +42,11 @@ struct Player {
   std::atomic<bool> stopping = false;
   std::atomic<bool> seek_pending = false;
   std::atomic<int64_t> seek_us = 0;
-  std::atomic<int64_t> position_us = 0;
+  // Decoding stays up to two seconds ahead in the ring buffer. Playback
+  // position must follow frames actually consumed by AAudio so lyrics do not
+  // advance ahead of the audible audio.
+  std::atomic<int64_t> position_base_us = 0;
+  std::atomic<int64_t> rendered_frames = 0;
   std::atomic<bool> input_exhausted = false;
   std::atomic<bool> finished = false;
   std::thread decode_thread;
@@ -92,6 +96,7 @@ aaudio_data_callback_result_t audio_callback(AAudioStream*, void* user, void* au
     output[i * kOutputChannels] = player.ring[read * kOutputChannels];
     output[i * kOutputChannels + 1] = player.ring[read * kOutputChannels + 1];
     player.read_frame.store((read + 1) % kRingFrames, std::memory_order_release);
+    player.rendered_frames.fetch_add(1, std::memory_order_relaxed);
     player.buffer_changed.notify_one();
   }
   return AAUDIO_CALLBACK_RESULT_CONTINUE;
@@ -160,9 +165,6 @@ void decoder_loop(Player& player) {
         const int converted = swr_convert(player.resampler, out_data, out_frames,
                                           const_cast<const uint8_t**>(player.frame->extended_data), player.frame->nb_samples);
         if (converted > 0) push_samples(player, output.data(), converted);
-        if (player.frame->best_effort_timestamp != AV_NOPTS_VALUE) {
-          player.position_us = av_rescale_q(player.frame->best_effort_timestamp, player.format->streams[player.audio_stream]->time_base, AVRational{1, AV_TIME_BASE});
-        }
       }
     }
     av_packet_unref(player.packet);
@@ -186,7 +188,8 @@ extern "C" JNIEXPORT void JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_n
 extern "C" JNIEXPORT void JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativeSeekTo(JNIEnv*, jclass, jlong value, jlong ms) {
   auto* p = reinterpret_cast<Player*>(value);
   if (p != nullptr) {
-    p->position_us = std::max<int64_t>(0, ms) * 1000;
+    p->position_base_us = std::max<int64_t>(0, ms) * 1000;
+    p->rendered_frames = 0;
     p->input_exhausted = false;
     p->finished = false;
     p->seek_us = ms * 1000;
@@ -194,5 +197,10 @@ extern "C" JNIEXPORT void JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_n
   }
 }
 extern "C" JNIEXPORT jlong JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativeDurationMs(JNIEnv*, jclass, jlong value) { auto* p = reinterpret_cast<Player*>(value); return p != nullptr && p->format != nullptr && p->format->duration > 0 ? p->format->duration / 1000 : 0; }
-extern "C" JNIEXPORT jlong JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativePositionMs(JNIEnv*, jclass, jlong value) { auto* p = reinterpret_cast<Player*>(value); return p != nullptr ? p->position_us.load() / 1000 : 0; }
+extern "C" JNIEXPORT jlong JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativePositionMs(JNIEnv*, jclass, jlong value) {
+  auto* p = reinterpret_cast<Player*>(value);
+  if (p == nullptr) return 0;
+  const int64_t elapsed_us = av_rescale(p->rendered_frames.load(std::memory_order_relaxed), AV_TIME_BASE, p->output_rate);
+  return (p->position_base_us.load(std::memory_order_relaxed) + elapsed_us) / 1000;
+}
 extern "C" JNIEXPORT jboolean JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativeIsFinished(JNIEnv*, jclass, jlong value) { auto* p = reinterpret_cast<Player*>(value); return p != nullptr && p->finished.load(); }

@@ -25,6 +25,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
+import kotlinx.coroutines.flow.flowOf
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -41,6 +42,7 @@ import me.misa198.airmedy.pairing.AndroidTrustedDesktopDiscovery
 import me.misa198.airmedy.sync.AndroidSyncRuntime
 import me.misa198.airmedy.sync.LibrarySyncService
 import me.misa198.airmedy.player.AndroidPlaybackRuntime
+import me.misa198.airmedy.player.PlaybackState
 
 import me.misa198.airmedy.ui.screens.LibraryTracksViewModel
 import me.misa198.airmedy.ui.screens.LibraryArtistsViewModel
@@ -127,6 +129,16 @@ class MainActivity : ComponentActivity() {
             val playbackController = AndroidPlaybackRuntime.controller()
             val playbackState by playbackController.state.collectAsStateWithLifecycle()
             val playbackQueue by playbackController.queue.collectAsStateWithLifecycle()
+            val lyricsTrackId = when (val state = playbackState) {
+                is PlaybackState.Preparing -> state.item.trackId
+                is PlaybackState.Playing -> state.item.trackId
+                is PlaybackState.Paused -> state.item.trackId
+                else -> null
+            }
+            val lyricsFlow = remember(lyricsTrackId) {
+                lyricsTrackId?.let(AndroidSyncRuntime.syncStore()::lyrics) ?: flowOf(null)
+            }
+            val lyrics by lyricsFlow.collectAsStateWithLifecycle(initialValue = null)
             var systemVolume by remember { mutableFloatStateOf(currentSystemMusicVolume()) }
             DisposableEffect(Unit) {
                 val volumeObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
@@ -199,6 +211,7 @@ class MainActivity : ComponentActivity() {
                 playbackState = playbackState,
                 playbackQueue = playbackQueue,
                 queueTracks = tracksUiState.tracks,
+                lyrics = lyrics,
                 onPlaybackPrevious = playbackController::previous,
                 onPlaybackPlayPause = {
                     when (playbackState) {
@@ -213,6 +226,7 @@ class MainActivity : ComponentActivity() {
                 onQueueReordered = playbackController::reorderQueue,
                 onShuffleChange = playbackController::setShuffle,
                 onRepeatModeChange = playbackController::setRepeatMode,
+                onSyncedLyricsEnabledChange = { enabled -> viewModel.dispatch(AppIntent.SetSyncedLyricsEnabled(enabled)) },
                 systemVolume = systemVolume,
                 onSystemVolumeChange = { volume ->
                     systemVolume = volume.coerceIn(0f, 1f)

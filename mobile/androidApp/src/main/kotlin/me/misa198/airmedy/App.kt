@@ -123,6 +123,7 @@ internal fun App(
     playbackState: PlaybackState = PlaybackState.Idle,
     playbackQueue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
     queueTracks: List<LibraryTrack> = emptyList(),
+    lyrics: String? = null,
     onPlaybackPrevious: () -> Unit = {},
     onPlaybackPlayPause: () -> Unit = {},
     onPlaybackNext: () -> Unit = {},
@@ -131,6 +132,7 @@ internal fun App(
     onQueueReordered: (List<String>) -> Unit = {},
     onShuffleChange: (Boolean) -> Unit = {},
     onRepeatModeChange: (RepeatMode) -> Unit = {},
+    onSyncedLyricsEnabledChange: (Boolean) -> Unit = {},
     systemVolume: Float = 0f,
     onSystemVolumeChange: (Float) -> Unit = {},
     onMiniPlayerDismiss: () -> Unit = {},
@@ -485,6 +487,8 @@ internal fun App(
                 playbackState = playbackState,
                 queue = playbackQueue,
                 queueTracks = queueTracks,
+                lyrics = lyrics,
+                syncedLyricsEnabled = uiState.syncedLyricsEnabled,
                 volume = systemVolume,
                 onSeek = onPlaybackSeek,
                 onVolumeChange = onSystemVolumeChange,
@@ -495,6 +499,7 @@ internal fun App(
                 onQueueReordered = onQueueReordered,
                 onShuffleChange = onShuffleChange,
                 onRepeatModeChange = onRepeatModeChange,
+                onSyncedLyricsEnabledChange = onSyncedLyricsEnabledChange,
                 onOpenMediaOutputSwitcher = onOpenMediaOutputSwitcher,
                 onDismiss = {
                     setFullScreenPlayerVisible(false)

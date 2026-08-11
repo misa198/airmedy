@@ -65,6 +65,9 @@
     <string name="player_repeat_all">Repeat all</string>
     <string name="player_repeat_one">Repeat one</string>
     <string name="player_lyrics">Lyrics</string>
+    <string name="player_synced_lyrics_on">Synced lyrics on</string>
+    <string name="player_synced_lyrics_off">Synced lyrics off</string>
+    <string name="player_lyrics_not_available">Lyrics are not available for this track.</string>
     <string name="player_cast">Cast</string>
     <string name="player_queue">Queue</string>
     <string name="player_queue_drag_handle">Reorder track</string>

@@ -24,8 +24,10 @@ foreground notification is only the service companion.
 
 Seek requests clamp to the loaded duration and publish the target position to
 the media session immediately. While playing, Android refreshes the published
-position from the decoder so System Now Playing converges on the actual seek
-position.
+position from PCM frames consumed by the AAudio callback, rather than decoded
+frame timestamps: the decoder can fill the two-second ring buffer ahead of
+audible sound, so using decoded PTS would make Now Playing and synced lyrics
+advance early.
 
 Opening the Android System Now Playing card uses a `CLEAR_TOP | SINGLE_TOP`
 activity intent. It brings the existing `MainActivity` task forward rather than

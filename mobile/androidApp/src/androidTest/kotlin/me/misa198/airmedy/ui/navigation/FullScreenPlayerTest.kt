@@ -79,6 +79,32 @@ class FullScreenPlayerTest {
     }
 
     @Test
+    fun syncedLyricsToggleSwitchesToPlainBilingualLyrics() {
+        var syncedLyricsEnabled by mutableStateOf(true)
+        var seekPositionMs: Long? = null
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenPlayerLyricsPanel(
+                    lyrics = "[00:01.00]Primary ^ Translation\n[00:03.00]Next line",
+                    currentPositionMs = 1_000L,
+                    syncedLyricsEnabled = syncedLyricsEnabled,
+                    onSyncedLyricsEnabledChange = { syncedLyricsEnabled = it },
+                    onSeek = { seekPositionMs = it },
+                    modifier = Modifier.height(180.dp),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("synced_lyrics_list").assertExists()
+        composeTestRule.onNodeWithText("Translation").assertExists()
+        composeTestRule.onNodeWithTag("synced_lyric_3.0").performClick()
+        composeTestRule.runOnIdle { assertEquals(3_000L, seekPositionMs) }
+        composeTestRule.onNodeWithContentDescription("Synced lyrics on").performClick()
+        composeTestRule.onNodeWithTag("plain_lyrics_list").assertExists()
+        composeTestRule.onNodeWithContentDescription("Synced lyrics off").assertIsSelected()
+    }
+
+    @Test
     fun queueShowsTracksAndDispatchesPlaybackControls() {
         var selectedTrack: String? = null
         var shuffle: Boolean? = null

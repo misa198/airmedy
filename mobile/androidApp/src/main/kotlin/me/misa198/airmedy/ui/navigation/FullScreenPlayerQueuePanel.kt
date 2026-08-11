@@ -120,11 +120,11 @@ internal fun FullScreenQueuePanel(
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f),
             )
-            QueueModeButton(MaterialSymbols.Shuffle, stringResource(if (queue.shuffle) R.string.player_shuffle_on else R.string.player_shuffle), queue.shuffle) {
+            PlayerModeButton(MaterialSymbols.Shuffle, stringResource(if (queue.shuffle) R.string.player_shuffle_on else R.string.player_shuffle), queue.shuffle) {
                 onShuffleChange(!queue.shuffle)
             }
             Spacer(Modifier.width(8.dp))
-            QueueModeButton(if (queue.repeatMode == RepeatMode.One) MaterialSymbols.RepeatOne else MaterialSymbols.Repeat, repeatLabel, queue.repeatMode != RepeatMode.Off) {
+            PlayerModeButton(if (queue.repeatMode == RepeatMode.One) MaterialSymbols.RepeatOne else MaterialSymbols.Repeat, repeatLabel, queue.repeatMode != RepeatMode.Off) {
                 onRepeatModeChange(queue.repeatMode.next())
             }
         }
@@ -167,7 +167,7 @@ internal fun FullScreenQueuePanel(
 }
 
 @Composable
-private fun QueueModeButton(symbol: String, label: String, active: Boolean, onClick: () -> Unit) {
+internal fun PlayerModeButton(symbol: String, label: String, active: Boolean, onClick: () -> Unit) {
     val colors = LocalAirmedyColors.current
     val backgroundColor by animateColorAsState(if (active) colors.foregroundSubtle else Color.White.copy(alpha = 0.06f), tween(220, easing = FastOutSlowInEasing), label = "queue-mode-background")
     val iconColor by animateColorAsState(if (active) colors.playerBackdrop.copy(alpha = 0.72f) else colors.onPrimary, tween(220, easing = FastOutSlowInEasing), label = "queue-mode-icon")

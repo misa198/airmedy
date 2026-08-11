@@ -182,8 +182,8 @@ describe the desktop Vue UI or future iOS UI.
   suppress ripple indications. The centred secondary action is a Lucide
   Cast button; on Android 14 (API 34) and later it delegates opening Android's
   system Media Output Switcher for the active Airmedy media session to the
-  activity. Heart, More, Lyrics, and Queue are visual actions only; they do not
-  yet persist state or open a screen.
+  activity. Heart and More remain visual actions only. Lyrics and Queue open
+  their respective fullscreen panes.
   The Queue pane is the exception: it renders the active playback order in a
   virtualized `LazyColumn`. Its header keeps Queue at the left and themed
   Shuffle/Repeat controls at the right. Their inactive background/icon match the
@@ -206,6 +206,29 @@ describe the desktop Vue UI or future iOS UI.
   local drag state, and reorder dispatch live in `FullScreenPlayerQueuePanel.kt`.
   Keep this boundary when evolving either feature so queue interaction does not
   add more state to the fullscreen shell.
+  The Lyrics pane is backed by the active sync plan's `sync_documents` lyric
+  entry for the playing track; its raw synced `Lyric` JSON is decoded by
+  `AndroidLibrarySyncStore` without adding a Room schema column. Timestamped
+  LRC lines render in `FullScreenPlayerLyricsPanel.kt`, with the active line
+  sharp and the surrounding lines progressively faded and blurred. Synced
+  lyrics auto-scroll to the active line in focus mode. A manual drag enters
+  browse mode: it pauses auto-follow and removes fade/blur so all lyric lines
+  remain readable. Tapping a timestamped line seeks to it and restores focus
+  mode. The initial focus position is applied without animation; later tracked
+  changes animate using the measured target offset so wrapped lyrics do not
+  need a visible second correction. Blur effects are suspended while this
+  programmatic scroll is in progress to keep it smooth, then restored at rest.
+  Rows have a modest 20dp vertical gap and a right inset so
+  the active line's subtle scale transform does not clip or change wrapping.
+  The app-wide
+  `synced_lyrics_enabled` DataStore preference defaults to true and is toggled
+  by the right-aligned timer control, while the left title matches Queue; an
+  empty 72×48dp slot is retained when synced lyrics are unavailable. The
+  control uses the same treatment as Queue Shuffle. When
+  disabled, or when no valid LRC timestamps exist, the full plain-text lyric
+  list is shown. Both modes split `^` or `/` bilingual text into primary and
+  muted secondary lines. Tapping a timestamped synced line seeks Android
+  playback to that line's timestamp; plain lines are read-only.
   Every new open clears any residual downward-dismiss offset before expanding,
   so consecutive opens always finish flush with the top of the screen.
 - While the mini player is visible, the app shell observes user-driven nested

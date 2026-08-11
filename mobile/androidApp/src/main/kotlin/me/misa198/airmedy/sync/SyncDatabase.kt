@@ -21,6 +21,8 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import me.misa198.airmedy.sync.LibrarySyncAsset
 import me.misa198.airmedy.sync.LibrarySyncManifest
 import me.misa198.airmedy.sync.LibrarySyncRequest
@@ -179,6 +181,15 @@ internal interface SyncDao {
         WHERE p.active = 1 AND a.relativePath IS NOT NULL AND a.assetId LIKE 'artwork:%'
     """)
     fun observeArtworkAssets(): Flow<List<ArtworkAssetRow>>
+
+    @Query("""
+        SELECT d.rawJson
+        FROM sync_documents d
+        INNER JOIN sync_plans p ON p.planId = d.planId
+        WHERE p.active = 1 AND d.kind = 'lyric' AND d.documentKey = :trackId
+        LIMIT 1
+    """)
+    fun observeLyrics(trackId: String): Flow<String?>
 }
 
 @Database(
@@ -327,6 +338,14 @@ internal class AndroidLibrarySyncStore(
         libraryComposersFrom(rows, artworkAssets.associate { asset ->
             asset.assetId.removePrefix("artwork:") to asset.relativePath
         })
+    }
+
+    fun lyrics(trackId: String): Flow<String?> = dao.observeLyrics(trackId).map { rawJson ->
+        rawJson?.let { value ->
+            runCatching {
+                LibrarySyncProtocol.json.parseToJsonElement(value).jsonObject["content"]?.jsonPrimitive?.contentOrNull
+            }.getOrNull()
+        }
     }
 
     override suspend fun prepare(request: LibrarySyncRequest, manifest: LibrarySyncManifest) {

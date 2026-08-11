@@ -130,6 +130,19 @@ class MainViewModelTest {
     }
 
     @Test
+    fun `setting synced lyrics mode persists it and updates ui state`() = runTest {
+        val store = FakeThemeModeStore()
+        val viewModel = MainViewModel(store)
+        activateState(viewModel)
+
+        viewModel.dispatch(AppIntent.SetSyncedLyricsEnabled(false))
+        advanceUntilIdle()
+
+        assertEquals(listOf(false), store.savedSyncedLyricsEnabledValues)
+        assertEquals(false, viewModel.uiState.value.syncedLyricsEnabled)
+    }
+
+    @Test
     fun `opening an external url emits one host effect`() = runTest {
         val viewModel = MainViewModel(FakeThemeModeStore())
         val expected = AppEffect.OpenExternalUrl("https://example.com")
@@ -150,10 +163,13 @@ class MainViewModelTest {
 private class FakeThemeModeStore(initialThemeMode: ThemeMode = ThemeMode.System) : ThemeModeStore {
     private val mutableThemeMode = MutableStateFlow(initialThemeMode)
     private val mutableReduceTransparency = MutableStateFlow(false)
+    private val mutableSyncedLyricsEnabled = MutableStateFlow(true)
     override val themeMode: Flow<ThemeMode> = mutableThemeMode
     override val reduceTransparency: Flow<Boolean> = mutableReduceTransparency
+    override val syncedLyricsEnabled: Flow<Boolean> = mutableSyncedLyricsEnabled
     val savedModes = mutableListOf<ThemeMode>()
     val savedReduceTransparencyValues = mutableListOf<Boolean>()
+    val savedSyncedLyricsEnabledValues = mutableListOf<Boolean>()
 
     override suspend fun setThemeMode(themeMode: ThemeMode) {
         savedModes += themeMode
@@ -163,5 +179,10 @@ private class FakeThemeModeStore(initialThemeMode: ThemeMode = ThemeMode.System)
     override suspend fun setReduceTransparency(enabled: Boolean) {
         savedReduceTransparencyValues += enabled
         mutableReduceTransparency.value = enabled
+    }
+
+    override suspend fun setSyncedLyricsEnabled(enabled: Boolean) {
+        savedSyncedLyricsEnabledValues += enabled
+        mutableSyncedLyricsEnabled.value = enabled
     }
 }
