@@ -213,21 +213,18 @@ describe the desktop Vue UI or future iOS UI.
   sharp and the surrounding lines progressively faded and blurred. Synced
   lyrics auto-scroll to the active line in focus mode. A manual drag enters
   browse mode: it pauses auto-follow and removes fade/blur so all lyric lines
-  remain readable. Tapping a timestamped line seeks to it and restores focus
-  mode. The initial focus position is applied without animation; later tracked
+  remain readable. Tapping a timestamped line smoothly moves that selected row
+  into the active slot before seeking and restoring focus mode. The initial
+  focus position is applied without animation; later tracked
   changes animate using the measured target offset so wrapped lyrics do not
   need a visible second correction. Blur effects are suspended while this
   programmatic scroll is in progress to keep it smooth, then restored at rest.
   Rows have a modest 20dp vertical gap and a right inset so
   the active line's subtle scale transform does not clip or change wrapping.
-  The app-wide
-  `synced_lyrics_enabled` DataStore preference defaults to true and is toggled
-  by the right-aligned timer control, while the left title matches Queue; an
-  empty 72×48dp slot is retained when synced lyrics are unavailable. The
-  control uses the same treatment as Queue Shuffle. When
-  disabled, or when no valid LRC timestamps exist, the full plain-text lyric
-  list is shown. Both modes split `^` or `/` bilingual text into primary and
-  muted secondary lines. Tapping a timestamped synced line seeks Android
+  The pane has no lyrics header or synced/plain toggle: valid timestamped LRC
+  always renders in the synced view, while tracks without timestamps use the
+  full plain-text list. Both modes split `^` or `/` bilingual text into primary
+  and muted secondary lines. Tapping a timestamped synced line seeks Android
   playback to that line's timestamp; plain lines are read-only.
   Every new open clears any residual downward-dismiss offset before expanding,
   so consecutive opens always finish flush with the top of the screen.

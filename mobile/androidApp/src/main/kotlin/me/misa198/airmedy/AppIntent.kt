@@ -22,8 +22,6 @@ sealed interface AppIntent {
 
     data class SetReduceTransparency(val enabled: Boolean) : AppIntent
 
-    data class SetSyncedLyricsEnabled(val enabled: Boolean) : AppIntent
-
     data class OpenExternalUrl(val url: String) : AppIntent
 }
 

@@ -5,13 +5,10 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -40,7 +37,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import me.misa198.airmedy.R
-import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 import kotlinx.coroutines.flow.first
 import kotlin.math.roundToInt
@@ -75,45 +71,15 @@ private fun parsePlayerLyricText(text: String, timestampSeconds: Float?): Player
 internal fun FullScreenPlayerLyricsPanel(
     lyrics: String?,
     currentPositionMs: Long,
-    syncedLyricsEnabled: Boolean,
-    onSyncedLyricsEnabledChange: (Boolean) -> Unit,
     onSeek: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colors = LocalAirmedyColors.current
     val parsedLines = remember(lyrics) { lyrics?.let(::parsePlayerLyrics).orEmpty() }
     val syncedLines = remember(parsedLines) { parsedLines.filter { it.timestampSeconds != null } }
-    val supportsSyncedLyrics = syncedLines.isNotEmpty()
-    val showSyncedLyrics = supportsSyncedLyrics && syncedLyricsEnabled
-
     Column(modifier = modifier) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.player_lyrics),
-                color = colors.onPrimary,
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f),
-            )
-            if (supportsSyncedLyrics) {
-                PlayerModeButton(
-                    symbol = MaterialSymbols.Timer,
-                    label = stringResource(if (syncedLyricsEnabled) R.string.player_synced_lyrics_on else R.string.player_synced_lyrics_off),
-                    active = syncedLyricsEnabled,
-                    onClick = { onSyncedLyricsEnabledChange(!syncedLyricsEnabled) },
-                )
-            } else {
-                // Keep the Lyrics title aligned with Queue even when this
-                // track has no synchronized lyric mode to toggle.
-                Spacer(Modifier.width(72.dp).height(48.dp))
-            }
-        }
-        Spacer(Modifier.height(8.dp))
         when {
             lyrics.isNullOrBlank() -> LyricsEmptyState(Modifier.fillMaxSize())
-            showSyncedLyrics -> SyncedLyricsList(syncedLines, currentPositionMs, onSeek, Modifier.fillMaxSize())
+            syncedLines.isNotEmpty() -> SyncedLyricsList(syncedLines, currentPositionMs, onSeek, Modifier.fillMaxSize())
             else -> PlainLyricsList(parsedLines, Modifier.fillMaxSize())
         }
     }
@@ -133,6 +99,9 @@ private fun SyncedLyricsList(
     var hasPositionedInitialLine by remember(lines) { mutableStateOf(false) }
     var previousActiveIndex by remember(lines) { mutableStateOf<Int?>(null) }
     var isBrowsing by remember(lines) { mutableStateOf(false) }
+    var selectedLineIndex by remember(lines) { mutableStateOf<Int?>(null) }
+    var activeIndexWhenLineSelected by remember(lines) { mutableStateOf<Int?>(null) }
+    var selectedLineAnimationComplete by remember(lines) { mutableStateOf(false) }
     var isAutoScrolling by remember { mutableStateOf(false) }
     val activeIndex = remember(lines, currentPositionMs) {
         lines.indexOfLast { (it.timestampSeconds ?: Float.MAX_VALUE) <= currentPositionMs / 1_000f }
@@ -140,10 +109,9 @@ private fun SyncedLyricsList(
     LaunchedEffect(listState.isScrollInProgress, isAutoScrolling) {
         if (listState.isScrollInProgress && !isAutoScrolling) isBrowsing = true
     }
-    LaunchedEffect(lines, activeIndex, isBrowsing) {
-        if (activeIndex < 0 || isBrowsing) return@LaunchedEffect
-        val previousIndex = (activeIndex - 1).coerceAtLeast(0)
-        suspend fun previousLineOffset(): Int = if (previousIndex < activeIndex) {
+    suspend fun previousLineOffset(activeLineIndex: Int): Int {
+        val previousIndex = (activeLineIndex - 1).coerceAtLeast(0)
+        return if (previousIndex < activeLineIndex) {
             snapshotFlow { rowHeights[previousIndex] to trailingLineHeights[previousIndex] }
                 .first { (rowHeight, trailingLineHeight) -> rowHeight != null && trailingLineHeight != null }
                 .let { (rowHeight, trailingLineHeight) ->
@@ -152,39 +120,60 @@ private fun SyncedLyricsList(
         } else {
             0
         }
+    }
 
-        suspend fun positionInitialLine() {
-            listState.scrollToItem(previousIndex)
-            listState.scrollToItem(previousIndex, previousLineOffset())
-        }
+    suspend fun positionInitialLine(activeLineIndex: Int) {
+        val previousIndex = (activeLineIndex - 1).coerceAtLeast(0)
+        listState.scrollToItem(previousIndex)
+        listState.scrollToItem(previousIndex, previousLineOffset(activeLineIndex))
+    }
 
-        suspend fun animateToActiveLine() {
-            isAutoScrolling = true
-            try {
-                val offset = previousLineOffset()
-                val target = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == previousIndex }
-                if (target != null) {
-                    listState.animateScrollBy(
-                        (target.offset + offset).toFloat(),
-                        animationSpec = tween(280, easing = FastOutSlowInEasing),
-                    )
-                } else {
-                    listState.animateScrollToItem(previousIndex)
-                    listState.animateScrollToItem(previousIndex, offset)
-                }
-            } finally {
-                isAutoScrolling = false
+    suspend fun animateToActiveLine(activeLineIndex: Int) {
+        val previousIndex = (activeLineIndex - 1).coerceAtLeast(0)
+        isAutoScrolling = true
+        try {
+            val offset = previousLineOffset(activeLineIndex)
+            val target = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == previousIndex }
+            if (target != null) {
+                listState.animateScrollBy(
+                    (target.offset + offset).toFloat(),
+                    animationSpec = tween(280, easing = FastOutSlowInEasing),
+                )
+            } else {
+                listState.animateScrollToItem(previousIndex)
+                listState.animateScrollToItem(previousIndex, offset)
             }
+        } finally {
+            isAutoScrolling = false
         }
+    }
 
+    // Keep the tapped line in view and move it into the active slot before
+    // seeking. This avoids the abrupt focus jump that otherwise occurs after
+    // a listener has manually browsed away from the current lyric.
+    LaunchedEffect(selectedLineIndex) {
+        val selectedIndex = selectedLineIndex ?: return@LaunchedEffect
+        animateToActiveLine(selectedIndex)
+        hasPositionedInitialLine = true
+        previousActiveIndex = selectedIndex
+        selectedLineAnimationComplete = true
+        if (selectedIndex == activeIndexWhenLineSelected) selectedLineIndex = null
+    }
+    LaunchedEffect(activeIndex, selectedLineIndex, activeIndexWhenLineSelected, selectedLineAnimationComplete) {
+        if (selectedLineAnimationComplete && selectedLineIndex != null && selectedLineIndex == activeIndex && activeIndex != activeIndexWhenLineSelected) {
+            selectedLineIndex = null
+        }
+    }
+    LaunchedEffect(lines, activeIndex, isBrowsing, selectedLineIndex) {
+        if (activeIndex < 0 || isBrowsing || selectedLineIndex != null) return@LaunchedEffect
         if (!hasPositionedInitialLine) {
-            positionInitialLine()
+            positionInitialLine(activeIndex)
             hasPositionedInitialLine = true
         } else {
             val previousActiveLineInViewport = previousActiveIndex
                 ?.let { index -> listState.layoutInfo.visibleItemsInfo.any { it.index == index } }
                 ?: false
-            if (previousActiveLineInViewport) animateToActiveLine()
+            if (previousActiveLineInViewport) animateToActiveLine(activeIndex)
         }
         previousActiveIndex = activeIndex
     }
@@ -198,8 +187,10 @@ private fun SyncedLyricsList(
                 line = line,
                 distance = if (activeIndex >= 0) kotlin.math.abs(index - activeIndex) else Int.MAX_VALUE,
                 onClick = {
-                    hasPositionedInitialLine = false
                     isBrowsing = false
+                    activeIndexWhenLineSelected = activeIndex
+                    selectedLineAnimationComplete = false
+                    selectedLineIndex = index
                     onSeek((line.timestampSeconds!! * 1_000).toLong())
                 },
                 onRowHeightChanged = { rowHeights[index] = it },

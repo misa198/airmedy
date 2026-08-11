@@ -550,6 +550,5 @@ private fun reduceAppState(state: AppUiState, intent: AppIntent): AppUiState = w
     }
     is AppIntent.SetThemeMode -> state.copy(themeMode = intent.themeMode)
     is AppIntent.SetReduceTransparency -> state.copy(reduceTransparency = intent.enabled)
-    is AppIntent.SetSyncedLyricsEnabled -> state.copy(syncedLyricsEnabled = intent.enabled)
     is AppIntent.OpenExternalUrl -> state
 }

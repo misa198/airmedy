@@ -80,7 +80,6 @@ object MaterialSymbols {
     const val Power = "power"
     const val DesktopWindows = "desktop_windows"
     const val Sync = "sync"
-    const val Timer = "timer"
     const val Add = "add"
     const val FavoriteBorder = "favorite"
     const val Favorite = "favorite"

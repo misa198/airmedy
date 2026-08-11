@@ -134,7 +134,6 @@ internal fun FullScreenPlayer(
     queue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
     queueTracks: List<LibraryTrack> = emptyList(),
     lyrics: String? = null,
-    syncedLyricsEnabled: Boolean = true,
     volume: Float,
     onSeek: (Long) -> Unit,
     onVolumeChange: (Float) -> Unit,
@@ -145,7 +144,6 @@ internal fun FullScreenPlayer(
     onQueueReordered: (List<String>) -> Unit = {},
     onShuffleChange: (Boolean) -> Unit = {},
     onRepeatModeChange: (RepeatMode) -> Unit = {},
-    onSyncedLyricsEnabledChange: (Boolean) -> Unit = {},
     onOpenMediaOutputSwitcher: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -403,8 +401,6 @@ internal fun FullScreenPlayer(
                                 FullScreenPlayerLyricsPanel(
                                     lyrics = lyrics,
                                     currentPositionMs = currentPositionMs,
-                                    syncedLyricsEnabled = syncedLyricsEnabled,
-                                    onSyncedLyricsEnabledChange = onSyncedLyricsEnabledChange,
                                     onSeek = onSeek,
                                     modifier = Modifier.fillMaxSize(),
                                 )

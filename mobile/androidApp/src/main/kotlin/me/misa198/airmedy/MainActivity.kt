@@ -226,7 +226,6 @@ class MainActivity : ComponentActivity() {
                 onQueueReordered = playbackController::reorderQueue,
                 onShuffleChange = playbackController::setShuffle,
                 onRepeatModeChange = playbackController::setRepeatMode,
-                onSyncedLyricsEnabledChange = { enabled -> viewModel.dispatch(AppIntent.SetSyncedLyricsEnabled(enabled)) },
                 systemVolume = systemVolume,
                 onSystemVolumeChange = { volume ->
                     systemVolume = volume.coerceIn(0f, 1f)
