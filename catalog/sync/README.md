@@ -168,6 +168,11 @@ belongs to a playlist); mobile must treat that form exactly as an empty array.
 `tracks` contains the full Airmedy normalized track metadata: album, artists
 (including each artist's manual/local/online artwork source keys), album artists,
 genres, composers, raw metadata, format/technical fields and track artwork keys.
+The nested album projection preserves all album fields, including canonical
+`sort_title`, timestamps, and normalization metadata, so mobile album-name and
+date-added sorting use the same data as the desktop library. Batch manifests
+also preserve ordered album artists, genres, and composers as their canonical
+objects rather than relying on raw-name fallbacks.
 `lyrics` is keyed by track ID and contains only the
 desktop-effective `content`/`source` snapshot for each track (not raw metadata
 and provider alternatives). `analysis` is keyed by track

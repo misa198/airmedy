@@ -224,7 +224,7 @@ func (r *playlistRepository) GetMaxPosition(ctx context.Context, playlistID stri
 
 func (r *playlistRepository) GetTracks(ctx context.Context, playlistID string) ([]*domain.TrackDTO, error) {
 	query := fmt.Sprintf(`
-		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year, 
+		SELECT %s, a.title AS album_title, a.sort_title AS album_sort_title, a.normalization_key AS album_normalization_key, a.copyright AS album_copyright, a.artwork_key AS album_artwork_key, a.year AS album_year, a.created_at AS album_created_at, a.updated_at AS album_updated_at,
 		       GROUP_CONCAT(art.name, '; ') AS artist_names,
 		       GROUP_CONCAT(art.id, '; ') AS artist_ids
 		FROM tracks t
@@ -252,7 +252,7 @@ func (r *playlistRepository) GetTracks(ctx context.Context, playlistID string) (
 // the playlist's full membership.
 func (r *playlistRepository) GetTracksPreview(ctx context.Context, playlistID string, limit int) ([]*domain.TrackDTO, error) {
 	query := fmt.Sprintf(`
-		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year,
+		SELECT %s, a.title AS album_title, a.sort_title AS album_sort_title, a.normalization_key AS album_normalization_key, a.copyright AS album_copyright, a.artwork_key AS album_artwork_key, a.year AS album_year, a.created_at AS album_created_at, a.updated_at AS album_updated_at,
 		       GROUP_CONCAT(art.name, '; ') AS artist_names,
 		       GROUP_CONCAT(art.id, '; ') AS artist_ids
 		FROM tracks t
