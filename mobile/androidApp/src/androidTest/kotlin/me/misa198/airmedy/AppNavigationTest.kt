@@ -10,6 +10,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
+import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -21,12 +22,17 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
+import androidx.compose.ui.test.swipeUp
 import androidx.test.platform.app.InstrumentationRegistry
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.player.PlaybackItem
 import me.misa198.airmedy.player.PlaybackState
 import me.misa198.airmedy.ui.screens.LibraryArtistsUiState
 import me.misa198.airmedy.sync.LibraryArtist
+import me.misa198.airmedy.sync.LibraryGenre
+import me.misa198.airmedy.ui.screens.LibraryGenresUiState
+import me.misa198.airmedy.ui.screens.LibraryComposersUiState
+import me.misa198.airmedy.sync.LibraryComposer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -118,6 +124,27 @@ class AppNavigationTest {
     }
 
     @Test
+    fun tappingGenreDispatchesGenreDetailsIntent() {
+        val intents = mutableListOf<AppIntent>()
+        composeTestRule.setContent {
+            App(
+                uiState = AppUiState(
+                    selectedDestination = AppDestination.Library,
+                    destinationStacks = rootDestinationStacks() + (
+                        AppDestination.Library to listOf(AppStackPage.Root, AppStackPage.LibraryGenres)
+                    ),
+                ),
+                genresUiState = LibraryGenresUiState(genres = listOf(LibraryGenre("electronic", "Electronic"))),
+                onIntent = intents::add,
+            )
+        }
+
+        composeTestRule.onNodeWithText("Electronic").performClick()
+
+        assertEquals(AppIntent.OpenGenreDetails("electronic"), intents.last())
+    }
+
+    @Test
     fun libraryComposersActionOpensTheComposerList() {
         val harness = AppHarness(AppUiState(selectedDestination = AppDestination.Library))
         composeTestRule.setContent { harness.Render() }
@@ -126,6 +153,27 @@ class AppNavigationTest {
 
         composeTestRule.onNodeWithText(string(R.string.composers_empty_title)).assertIsDisplayed()
         assertEquals(AppIntent.OpenPage(AppStackPage.LibraryComposers), harness.intents.last())
+    }
+
+    @Test
+    fun tappingComposerDispatchesComposerDetailsIntent() {
+        val intents = mutableListOf<AppIntent>()
+        composeTestRule.setContent {
+            App(
+                uiState = AppUiState(
+                    selectedDestination = AppDestination.Library,
+                    destinationStacks = rootDestinationStacks() + (
+                        AppDestination.Library to listOf(AppStackPage.Root, AppStackPage.LibraryComposers)
+                    ),
+                ),
+                composersUiState = LibraryComposersUiState(composers = listOf(LibraryComposer("glass", "Philip Glass"))),
+                onIntent = intents::add,
+            )
+        }
+
+        composeTestRule.onNodeWithText("Philip Glass").performClick()
+
+        assertEquals(AppIntent.OpenComposerDetails("glass"), intents.last())
     }
 
     @Test
@@ -366,6 +414,49 @@ class AppNavigationTest {
         composeTestRule.onNodeWithText(string(R.string.home_demo_title)).assertIsDisplayed()
     }
 
+    @Test
+    fun draggingBackToTheSelectedDestinationDoesNotReselectIt() {
+        val harness = AppHarness(
+            AppUiState(
+                destinationStacks = rootDestinationStacks() + (
+                    AppDestination.Home to listOf(AppStackPage.Root, AppStackPage.HomeSampleDetail)
+                ),
+            ),
+        )
+        composeTestRule.setContent { harness.Render() }
+
+        composeTestRule.onNodeWithContentDescription(string(R.string.destination_home)).performTouchInput {
+            down(center)
+            moveBy(Offset(x = 240f, y = 0f))
+            moveBy(Offset(x = -240f, y = 0f))
+            up()
+        }
+
+        assertEquals(emptyList<AppIntent>(), harness.intents)
+        composeTestRule.onNodeWithText(string(R.string.home_sample_page_heading)).assertIsDisplayed()
+    }
+
+    @Test
+    fun changingStackPageKeepsCompactNavigationAndMiniPlayer() {
+        val harness = AppHarness()
+        composeTestRule.setContent { harness.Render(playbackState = playingState) }
+
+        composeTestRule.onNodeWithText(string(R.string.home_demo_title)).performTouchInput {
+            swipeUp(endY = center.y - 80f)
+        }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithContentDescription(string(R.string.destination_home))
+            .assertWidthIsEqualTo(48.dp)
+
+        composeTestRule.onNodeWithText(string(R.string.home_demo_open_page)).performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText(string(R.string.home_sample_page_heading)).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(string(R.string.destination_home))
+            .assertWidthIsEqualTo(48.dp)
+        composeTestRule.onNodeWithText(playingItem.title).assertIsDisplayed()
+    }
+
     private fun string(resourceId: Int, vararg formatArgs: Any): String =
         InstrumentationRegistry.getInstrumentation().targetContext.getString(resourceId, *formatArgs)
 
@@ -386,8 +477,8 @@ private class AppHarness(initialState: AppUiState = AppUiState()) {
     val intents = mutableListOf<AppIntent>()
 
     @androidx.compose.runtime.Composable
-    fun Render() {
-        App(uiState = state, onIntent = ::dispatch)
+    fun Render(playbackState: PlaybackState = PlaybackState.Idle) {
+        App(uiState = state, playbackState = playbackState, onIntent = ::dispatch)
     }
 
     private fun dispatch(intent: AppIntent) {
@@ -429,6 +520,24 @@ private fun reduceAppState(state: AppUiState, intent: AppIntent): AppUiState = w
             selectedArtistId = intent.artistId,
             destinationStacks = if (stack.lastOrNull() == AppStackPage.ArtistDetails) state.destinationStacks
             else state.destinationStacks + (AppDestination.Library to stack + AppStackPage.ArtistDetails),
+        )
+    }
+    is AppIntent.OpenGenreDetails -> {
+        val stack = state.stackFor(AppDestination.Library)
+        state.copy(
+            selectedDestination = AppDestination.Library,
+            selectedGenreId = intent.genreId,
+            destinationStacks = if (stack.lastOrNull() == AppStackPage.GenreDetails) state.destinationStacks
+            else state.destinationStacks + (AppDestination.Library to stack + AppStackPage.GenreDetails),
+        )
+    }
+    is AppIntent.OpenComposerDetails -> {
+        val stack = state.stackFor(AppDestination.Library)
+        state.copy(
+            selectedDestination = AppDestination.Library,
+            selectedComposerId = intent.composerId,
+            destinationStacks = if (stack.lastOrNull() == AppStackPage.ComposerDetails) state.destinationStacks
+            else state.destinationStacks + (AppDestination.Library to stack + AppStackPage.ComposerDetails),
         )
     }
     AppIntent.NavigateBack -> {

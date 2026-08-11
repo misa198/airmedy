@@ -106,6 +106,7 @@ fun DetailHero(
     artworkShape: DetailHeroArtworkShape = DetailHeroArtworkShape.Square,
     artworkSize: Dp = 248.dp,
     fallbackSymbol: String = MaterialSymbols.Album,
+    showArtwork: Boolean = true,
     onPlayClick: () -> Unit = {},
     onShuffleClick: () -> Unit = {},
     onMoreClick: () -> Unit = {},
@@ -118,12 +119,14 @@ fun DetailHero(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Box(
-            modifier = Modifier.size(artworkSize).clip(artworkClip).background(colors.glassElevated),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (bitmap != null) Image(bitmap = bitmap, contentDescription = null, modifier = Modifier.matchParentSize(), contentScale = ContentScale.Crop)
-            else MaterialSymbol(fallbackSymbol, null, size = 44.dp, tint = colors.textMuted)
+        if (showArtwork) {
+            Box(
+                modifier = Modifier.size(artworkSize).clip(artworkClip).background(colors.glassElevated),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (bitmap != null) Image(bitmap = bitmap, contentDescription = null, modifier = Modifier.matchParentSize(), contentScale = ContentScale.Crop)
+                else MaterialSymbol(fallbackSymbol, null, size = 44.dp, tint = colors.textMuted)
+            }
         }
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,

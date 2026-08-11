@@ -148,7 +148,13 @@ internal fun FloatingNavigationBar(
                             onDragEnd = {
                                 val destinationIndex = (dragOffset / itemWidth).toInt()
                                     .coerceIn(0, AppDestination.entries.lastIndex)
-                                onDestinationSelected(AppDestination.entries[destinationIndex])
+                                val destination = AppDestination.entries[destinationIndex]
+                                // A drag is only a selection gesture when it finishes in a
+                                // different slot. In particular, returning to the original
+                                // tab must not reselect it and reset its stack.
+                                if (destination != selectedDestination) {
+                                    onDestinationSelected(destination)
+                                }
                                 isDragging = false
                             },
                             onDrag = { change, dragAmount ->

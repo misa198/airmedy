@@ -80,6 +80,30 @@ class MainViewModelTest {
     }
 
     @Test
+    fun `opening genre details selects the genre and pushes the library page`() = runTest {
+        val viewModel = MainViewModel(FakeThemeModeStore())
+        activateState(viewModel)
+
+        viewModel.dispatch(AppIntent.OpenGenreDetails("electronic"))
+        advanceUntilIdle()
+
+        assertEquals("electronic", viewModel.uiState.value.selectedGenreId)
+        assertEquals(AppStackPage.GenreDetails, viewModel.uiState.value.currentPage)
+    }
+
+    @Test
+    fun `opening composer details selects the composer and pushes the library page`() = runTest {
+        val viewModel = MainViewModel(FakeThemeModeStore())
+        activateState(viewModel)
+
+        viewModel.dispatch(AppIntent.OpenComposerDetails("glass"))
+        advanceUntilIdle()
+
+        assertEquals("glass", viewModel.uiState.value.selectedComposerId)
+        assertEquals(AppStackPage.ComposerDetails, viewModel.uiState.value.currentPage)
+    }
+
+    @Test
     fun `setting the theme persists it and updates ui state`() = runTest {
         val store = FakeThemeModeStore()
         val viewModel = MainViewModel(store)

@@ -63,6 +63,13 @@ import me.misa198.airmedy.ui.screens.albumDetailsUiStateFor
 import me.misa198.airmedy.ui.screens.ArtistDetailsContent
 import me.misa198.airmedy.ui.screens.ArtistDetailsUiState
 import me.misa198.airmedy.ui.screens.artistDetailsUiStateFor
+import me.misa198.airmedy.ui.screens.GenreDetailsContent
+import me.misa198.airmedy.ui.screens.GenreDetailsUiState
+import me.misa198.airmedy.ui.screens.genreDetailsUiStateFor
+import me.misa198.airmedy.ui.screens.ComposerDetailsContent
+import me.misa198.airmedy.ui.screens.ComposerDetailsUiState
+import me.misa198.airmedy.ui.screens.composerDetailsUiStateFor
+import me.misa198.airmedy.sync.LibraryGenre
 import androidx.compose.ui.graphics.Color
 
 internal typealias PageKey = StackPageEntry
@@ -96,12 +103,18 @@ internal fun AppDestinationContent(
     artistsListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     albumsListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     artistDetailsListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
+    genreDetailsListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
+    composerDetailsListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     genresListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     composersListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     albumDetailsUiState: AlbumDetailsUiState = AlbumDetailsUiState(),
     artistDetailsUiState: ArtistDetailsUiState = ArtistDetailsUiState(),
+    genreDetailsUiState: GenreDetailsUiState = GenreDetailsUiState(),
+    composerDetailsUiState: ComposerDetailsUiState = ComposerDetailsUiState(),
     selectedAlbumId: String? = null,
     selectedArtistId: String? = null,
+    selectedGenreId: String? = null,
+    selectedComposerId: String? = null,
     onIntent: (AppIntent) -> Unit,
     syncUiState: SyncUiState,
     tracksUiState: LibraryTracksUiState = LibraryTracksUiState(),
@@ -117,6 +130,8 @@ internal fun AppDestinationContent(
     onAlbumPlay: (String, Boolean) -> Unit = { _, _ -> },
     onAlbumTrackPlay: (String, String) -> Unit = { _, _ -> },
     onArtistPlay: (String, Boolean) -> Unit = { _, _ -> },
+    onGenrePlay: (String, Boolean) -> Unit = { _, _ -> },
+    onComposerPlay: (String, Boolean) -> Unit = { _, _ -> },
     onAlbumHeroColorChanged: (Color) -> Unit = {},
     onPairingQrScanned: (String) -> Boolean,
     onUnpair: () -> Unit,
@@ -261,6 +276,28 @@ internal fun AppDestinationContent(
                                 onShuffle = { selectedArtistId?.let { onArtistPlay(it, true) } },
                                 onAlbumClick = { album -> onIntent(AppIntent.OpenAlbumDetails(album.id)) },
                             )
+                            AppStackPage.GenreDetails -> GenreDetailsContent(
+                                uiState = selectedGenreId?.let { genreDetailsUiStateFor(genreDetailsUiState, it) } ?: GenreDetailsUiState(),
+                                listState = genreDetailsListState,
+                                contentPadding = contentPadding,
+                                modifier = Modifier.fillMaxSize(),
+                                hazeState = hazeState,
+                                onHeroColorChanged = onAlbumHeroColorChanged,
+                                onPlay = { selectedGenreId?.let { onGenrePlay(it, false) } },
+                                onShuffle = { selectedGenreId?.let { onGenrePlay(it, true) } },
+                                onAlbumClick = { album -> onIntent(AppIntent.OpenAlbumDetails(album.id)) },
+                            )
+                            AppStackPage.ComposerDetails -> ComposerDetailsContent(
+                                uiState = selectedComposerId?.let { composerDetailsUiStateFor(composerDetailsUiState, it) } ?: ComposerDetailsUiState(),
+                                listState = composerDetailsListState,
+                                contentPadding = contentPadding,
+                                modifier = Modifier.fillMaxSize(),
+                                hazeState = hazeState,
+                                onHeroColorChanged = onAlbumHeroColorChanged,
+                                onPlay = { selectedComposerId?.let { onComposerPlay(it, false) } },
+                                onShuffle = { selectedComposerId?.let { onComposerPlay(it, true) } },
+                                onAlbumClick = { album -> onIntent(AppIntent.OpenAlbumDetails(album.id)) },
+                            )
                             AppStackPage.LibraryAlbums -> LibraryAlbumsContent(
                                 uiState = albumsUiState,
                                 listState = albumsListState,
@@ -283,12 +320,14 @@ internal fun AppDestinationContent(
                                 listState = genresListState,
                                 contentPadding = contentPadding,
                                 modifier = Modifier.fillMaxSize(),
+                                onGenreClick = { genre -> onIntent(AppIntent.OpenGenreDetails(genre.id)) },
                             )
                             AppStackPage.LibraryComposers -> LibraryComposersContent(
                                 uiState = composersUiState,
                                 listState = composersListState,
                                 contentPadding = contentPadding,
                                 modifier = Modifier.fillMaxSize(),
+                                onComposerClick = { composer -> onIntent(AppIntent.OpenComposerDetails(composer.id)) },
                             )
                             AppStackPage.LibraryTracks -> LibraryTracksContent(
                                 uiState = tracksUiState,

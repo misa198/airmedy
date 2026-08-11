@@ -151,9 +151,33 @@
     </plurals>
     <string name="album_track_row_more_options">Track options</string>
     <string name="genre_row_more_options">Genre options</string>
+    <string name="genre_details_title">Genre</string>
+    <string name="genre_details_empty_title">Genre unavailable</string>
+    <string name="genre_details_empty_description">This genre is no longer in the synced library.</string>
+    <string name="genre_details_summary">%1$s · %2$s</string>
+    <plurals name="genre_details_album_count">
+        <item quantity="one">%d album</item>
+        <item quantity="other">%d albums</item>
+    </plurals>
+    <plurals name="genre_details_track_count">
+        <item quantity="one">%d track</item>
+        <item quantity="other">%d tracks</item>
+    </plurals>
     <string name="genres_empty_title">No genres in library</string>
     <string name="genres_empty_description">Synced genres will appear here once mobile sync completes.</string>
     <string name="composer_row_more_options">Composer options</string>
+    <string name="composer_details_title">Composer</string>
+    <string name="composer_details_empty_title">Composer unavailable</string>
+    <string name="composer_details_empty_description">This composer is no longer in the synced library.</string>
+    <string name="composer_details_summary">%1$s · %2$s</string>
+    <plurals name="composer_details_album_count">
+        <item quantity="one">%d album</item>
+        <item quantity="other">%d albums</item>
+    </plurals>
+    <plurals name="composer_details_track_count">
+        <item quantity="one">%d track</item>
+        <item quantity="other">%d tracks</item>
+    </plurals>
     <string name="composers_empty_title">No composers in library</string>
     <string name="composers_empty_description">Synced composers will appear here once mobile sync completes.</string>
 </resources>

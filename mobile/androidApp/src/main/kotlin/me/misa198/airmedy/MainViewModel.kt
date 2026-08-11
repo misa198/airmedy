@@ -21,6 +21,8 @@ data class AppUiState(
     val reduceTransparency: Boolean = false,
     val selectedAlbumId: String? = null,
     val selectedArtistId: String? = null,
+    val selectedGenreId: String? = null,
+    val selectedComposerId: String? = null,
     val destinationStacks: Map<AppDestination, List<AppStackPage>> = rootDestinationStacks(),
 ) {
     fun stackFor(destination: AppDestination): List<AppStackPage> =
@@ -37,6 +39,8 @@ class MainViewModel(
     private val destinationStacks = MutableStateFlow(rootDestinationStacks())
     private val selectedAlbumId = MutableStateFlow<String?>(null)
     private val selectedArtistId = MutableStateFlow<String?>(null)
+    private val selectedGenreId = MutableStateFlow<String?>(null)
+    private val selectedComposerId = MutableStateFlow<String?>(null)
     private val _effects = Channel<AppEffect>(Channel.BUFFERED)
 
     val effects = _effects.receiveAsFlow()
@@ -57,6 +61,10 @@ class MainViewModel(
         )
     }.combine(selectedArtistId) { state, artistId ->
         state.copy(selectedArtistId = artistId)
+    }.combine(selectedGenreId) { state, genreId ->
+        state.copy(selectedGenreId = genreId)
+    }.combine(selectedComposerId) { state, composerId ->
+        state.copy(selectedComposerId = composerId)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
@@ -69,6 +77,8 @@ class MainViewModel(
             is AppIntent.OpenPage -> openPage(intent.page)
             is AppIntent.OpenAlbumDetails -> openAlbumDetails(intent.albumId)
             is AppIntent.OpenArtistDetails -> openArtistDetails(intent.artistId)
+            is AppIntent.OpenGenreDetails -> openGenreDetails(intent.genreId)
+            is AppIntent.OpenComposerDetails -> openComposerDetails(intent.composerId)
             AppIntent.NavigateBack -> navigateBack()
             is AppIntent.SetThemeMode -> setThemeMode(intent.themeMode)
             is AppIntent.SetReduceTransparency -> setReduceTransparency(intent.enabled)
@@ -107,6 +117,16 @@ class MainViewModel(
     private fun openArtistDetails(artistId: String) {
         selectedArtistId.value = artistId
         openPage(AppStackPage.ArtistDetails)
+    }
+
+    private fun openGenreDetails(genreId: String) {
+        selectedGenreId.value = genreId
+        openPage(AppStackPage.GenreDetails)
+    }
+
+    private fun openComposerDetails(composerId: String) {
+        selectedComposerId.value = composerId
+        openPage(AppStackPage.ComposerDetails)
     }
 
     private fun navigateBack() {

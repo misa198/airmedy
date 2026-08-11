@@ -71,6 +71,8 @@ import me.misa198.airmedy.ui.screens.ComposerSortOption
 import me.misa198.airmedy.ui.screens.TrackSortOption
 import me.misa198.airmedy.ui.screens.AlbumDetailsUiState
 import me.misa198.airmedy.ui.screens.ArtistDetailsUiState
+import me.misa198.airmedy.ui.screens.GenreDetailsUiState
+import me.misa198.airmedy.ui.screens.ComposerDetailsUiState
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import me.misa198.airmedy.player.PlaybackState
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
@@ -94,6 +96,8 @@ internal fun App(
     composersUiState: LibraryComposersUiState = LibraryComposersUiState(),
     albumDetailsUiState: AlbumDetailsUiState = AlbumDetailsUiState(),
     artistDetailsUiState: ArtistDetailsUiState = ArtistDetailsUiState(),
+    genreDetailsUiState: GenreDetailsUiState = GenreDetailsUiState(),
+    composerDetailsUiState: ComposerDetailsUiState = ComposerDetailsUiState(),
     onIntent: (AppIntent) -> Unit = {},
     onSortOptionSelected: (TrackSortOption) -> Unit = {},
     onToggleSortOrder: () -> Unit = {},
@@ -105,6 +109,8 @@ internal fun App(
     onAlbumPlay: (String, Boolean) -> Unit = { _, _ -> },
     onAlbumTrackPlay: (String, String) -> Unit = { _, _ -> },
     onArtistPlay: (String, Boolean) -> Unit = { _, _ -> },
+    onGenrePlay: (String, Boolean) -> Unit = { _, _ -> },
+    onComposerPlay: (String, Boolean) -> Unit = { _, _ -> },
     onAlbumHeroColorChanged: (Color) -> Unit = {},
     onGenreSortOptionSelected: (GenreSortOption) -> Unit = {},
     onGenreToggleSortOrder: () -> Unit = {},
@@ -145,6 +151,8 @@ internal fun App(
             LazyListState()
         }
         val artistDetailsListState = remember(uiState.selectedArtistId) { LazyListState() }
+        val genreDetailsListState = remember(uiState.selectedGenreId) { LazyListState() }
+        val composerDetailsListState = remember(uiState.selectedComposerId) { LazyListState() }
         val genresListState = remember(genresUiState.sortOption, genresUiState.sortOrder) {
             LazyListState()
         }
@@ -168,7 +176,7 @@ internal fun App(
         var isNavigationCompact by remember { mutableStateOf(false) }
         var albumHeroColor by remember { mutableStateOf<Color?>(null) }
         val albumHeaderFade by animateFloatAsState(
-            targetValue = if (currentPage == AppStackPage.AlbumDetails || currentPage == AppStackPage.ArtistDetails) 1f else 0f,
+            targetValue = if (currentPage == AppStackPage.AlbumDetails || currentPage == AppStackPage.ArtistDetails || currentPage == AppStackPage.GenreDetails || currentPage == AppStackPage.ComposerDetails) 1f else 0f,
             animationSpec = tween(1500, easing = FastOutSlowInEasing),
             label = "album-header-glass-colour-fade",
         )
@@ -184,12 +192,13 @@ internal fun App(
             // stale until an unrelated playback-state recomposition occurs.
             onFullScreenPlayerVisibilityChanged(visible)
         }
-        LaunchedEffect(showsMiniPlayer, uiState.selectedDestination, currentPage) {
-            isNavigationCompact = false
-            navigationScrollState = NavigationChromeScrollState()
-        }
         LaunchedEffect(showsMiniPlayer) {
             if (!showsMiniPlayer) {
+                // Keep the chrome geometry while destinations and pages change.
+                // Playback ending is the only transition that invalidates a
+                // compact mini-player layout.
+                isNavigationCompact = false
+                navigationScrollState = NavigationChromeScrollState()
                 setFullScreenPlayerVisible(false)
                 isFullScreenPlayerOpeningFromSwipe = false
                 isFullScreenPlayerDragging = false
@@ -208,7 +217,7 @@ internal fun App(
             animationSpec = tween(420, easing = FastOutSlowInEasing),
             label = "navigation-bottom-padding",
         )
-        val pageTitle = if (currentPage == AppStackPage.AlbumDetails || currentPage == AppStackPage.ArtistDetails) "" else stringResource(currentPage.titleRes(uiState.selectedDestination))
+        val pageTitle = if (currentPage == AppStackPage.AlbumDetails || currentPage == AppStackPage.ArtistDetails || currentPage == AppStackPage.GenreDetails || currentPage == AppStackPage.ComposerDetails) "" else stringResource(currentPage.titleRes(uiState.selectedDestination))
         val showBack = currentPage != AppStackPage.Root
         val showSyncAddAction = currentPage == AppStackPage.SettingsSync && syncUiState.desktop == null && !syncUiState.isPairing
         val showLibrarySortAction = currentPage == AppStackPage.LibraryTracks ||
@@ -216,7 +225,7 @@ internal fun App(
             currentPage == AppStackPage.LibraryGenres || currentPage == AppStackPage.LibraryComposers
         BackHandler(enabled = showBack) { onIntent(AppIntent.NavigateBack) }
 
-        val isContentScrolled by remember(uiState.selectedDestination, currentPage, homeListState, libraryListState, tracksListState, artistsListState, albumsListState, artistDetailsListState, genresListState, composersListState) {
+        val isContentScrolled by remember(uiState.selectedDestination, currentPage, homeListState, libraryListState, tracksListState, artistsListState, albumsListState, artistDetailsListState, genreDetailsListState, composerDetailsListState, genresListState, composersListState) {
             derivedStateOf {
                 when {
                     uiState.selectedDestination == AppDestination.Home && currentPage == AppStackPage.Root ->
@@ -231,6 +240,10 @@ internal fun App(
                         albumsListState.firstVisibleItemIndex > 0 || albumsListState.firstVisibleItemScrollOffset > 0
                     currentPage == AppStackPage.ArtistDetails ->
                         artistDetailsListState.firstVisibleItemIndex > 0 || artistDetailsListState.firstVisibleItemScrollOffset > 0
+                    currentPage == AppStackPage.GenreDetails ->
+                        genreDetailsListState.firstVisibleItemIndex > 0 || genreDetailsListState.firstVisibleItemScrollOffset > 0
+                    currentPage == AppStackPage.ComposerDetails ->
+                        composerDetailsListState.firstVisibleItemIndex > 0 || composerDetailsListState.firstVisibleItemScrollOffset > 0
                     currentPage == AppStackPage.LibraryGenres ->
                         genresListState.firstVisibleItemIndex > 0 || genresListState.firstVisibleItemScrollOffset > 0
                     currentPage == AppStackPage.LibraryComposers ->
@@ -265,9 +278,15 @@ internal fun App(
                 composersListState = composersListState,
                 albumDetailsUiState = albumDetailsUiState,
                 artistDetailsUiState = artistDetailsUiState,
+                genreDetailsUiState = genreDetailsUiState,
+                composerDetailsUiState = composerDetailsUiState,
                 selectedAlbumId = uiState.selectedAlbumId,
                 selectedArtistId = uiState.selectedArtistId,
+                selectedGenreId = uiState.selectedGenreId,
+                selectedComposerId = uiState.selectedComposerId,
                 artistDetailsListState = artistDetailsListState,
+                genreDetailsListState = genreDetailsListState,
+                composerDetailsListState = composerDetailsListState,
                 onIntent = onIntent,
                 syncUiState = syncUiState,
                 tracksUiState = tracksUiState,
@@ -283,6 +302,8 @@ internal fun App(
                 onAlbumPlay = onAlbumPlay,
                 onAlbumTrackPlay = onAlbumTrackPlay,
                 onArtistPlay = onArtistPlay,
+                onGenrePlay = onGenrePlay,
+                onComposerPlay = onComposerPlay,
                 onAlbumHeroColorChanged = { color ->
                     albumHeroColor = color
                     onAlbumHeroColorChanged(color)
@@ -327,8 +348,8 @@ internal fun App(
                 animateChanges = animateHeaderChanges,
                 titleStackKey = "${uiState.selectedDestination.name}:${currentPage.name}",
                 isForward = isForwardHeaderTransition,
-                backGlassTintAlpha = if (currentPage == AppStackPage.AlbumDetails || currentPage == AppStackPage.ArtistDetails) 0.08f else null,
-                backHazeInputScale = if (currentPage == AppStackPage.AlbumDetails || currentPage == AppStackPage.ArtistDetails) HazeInputScale.Fixed(1f) else HazeInputScale.Auto,
+                backGlassTintAlpha = if (currentPage == AppStackPage.AlbumDetails || currentPage == AppStackPage.ArtistDetails || currentPage == AppStackPage.GenreDetails || currentPage == AppStackPage.ComposerDetails) 0.08f else null,
+                backHazeInputScale = if (currentPage == AppStackPage.AlbumDetails || currentPage == AppStackPage.ArtistDetails || currentPage == AppStackPage.GenreDetails || currentPage == AppStackPage.ComposerDetails) HazeInputScale.Fixed(1f) else HazeInputScale.Auto,
             ) {
                 if (showSyncAddAction) {
                     AirmedyGlassIconButton(

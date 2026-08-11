@@ -1,0 +1,60 @@
+package me.misa198.airmedy.ui.screens
+
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import me.misa198.airmedy.settings.ThemeMode
+import me.misa198.airmedy.sync.LibraryAlbum
+import me.misa198.airmedy.sync.LibraryGenre
+import me.misa198.airmedy.sync.LibraryTrack
+import me.misa198.airmedy.ui.theme.AirmedyTheme
+import org.junit.Assert.assertEquals
+import org.junit.Rule
+import org.junit.Test
+
+class GenreDetailsContentTest {
+    @get:Rule val composeTestRule = createComposeRule()
+
+    @Test
+    fun displaysGenreSummaryAndOpensSelectedAlbum() {
+        var selectedAlbumId: String? = null
+        var playCount = 0
+        var shuffleCount = 0
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                GenreDetailsContent(
+                    uiState = GenreDetailsUiState(
+                        genre = LibraryGenre("electronic", "Electronic"),
+                        albums = listOf(LibraryAlbum("album", "Untrue", "Burial")),
+                        tracks = List(3) { index -> LibraryTrack("$index", "Track $index", "Burial") },
+                    ),
+                    listState = rememberLazyListState(),
+                    onPlay = { playCount++ },
+                    onShuffle = { shuffleCount++ },
+                    onAlbumClick = { selectedAlbumId = it.id },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Electronic").assertExists()
+        composeTestRule.onNodeWithText("1 album · 3 tracks").assertExists()
+        composeTestRule.onNodeWithText("Play").performClick()
+        composeTestRule.onNodeWithText("Shuffle").performClick()
+        composeTestRule.onNodeWithText("Untrue").performClick()
+        assertEquals(1, playCount)
+        assertEquals(1, shuffleCount)
+        assertEquals("album", selectedAlbumId)
+    }
+
+    @Test
+    fun displaysUnavailableStateWhenGenreIsMissing() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                GenreDetailsContent(GenreDetailsUiState(), listState = rememberLazyListState())
+            }
+        }
+
+        composeTestRule.onNodeWithText("Genre unavailable").assertExists()
+    }
+}

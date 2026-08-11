@@ -49,6 +49,8 @@ import me.misa198.airmedy.ui.screens.LibraryGenresViewModel
 import me.misa198.airmedy.ui.screens.LibraryComposersViewModel
 import me.misa198.airmedy.ui.screens.AlbumDetailsViewModel
 import me.misa198.airmedy.ui.screens.ArtistDetailsViewModel
+import me.misa198.airmedy.ui.screens.GenreDetailsViewModel
+import me.misa198.airmedy.ui.screens.ComposerDetailsViewModel
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels {
@@ -94,6 +96,12 @@ class MainActivity : ComponentActivity() {
     private val artistDetailsViewModel: ArtistDetailsViewModel by viewModels {
         ArtistDetailsViewModel.Factory(AndroidSyncRuntime.syncStore(), AndroidPlaybackRuntime.controller())
     }
+    private val genreDetailsViewModel: GenreDetailsViewModel by viewModels {
+        GenreDetailsViewModel.Factory(AndroidSyncRuntime.syncStore(), AndroidPlaybackRuntime.controller())
+    }
+    private val composerDetailsViewModel: ComposerDetailsViewModel by viewModels {
+        ComposerDetailsViewModel.Factory(AndroidSyncRuntime.syncStore(), AndroidPlaybackRuntime.controller())
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -114,6 +122,8 @@ class MainActivity : ComponentActivity() {
             val composersUiState by composersViewModel.uiState.collectAsStateWithLifecycle()
             val albumDetailsUiState by albumDetailsViewModel.uiState.collectAsStateWithLifecycle()
             val artistDetailsUiState by artistDetailsViewModel.uiState.collectAsStateWithLifecycle()
+            val genreDetailsUiState by genreDetailsViewModel.uiState.collectAsStateWithLifecycle()
+            val composerDetailsUiState by composerDetailsViewModel.uiState.collectAsStateWithLifecycle()
             val playbackController = AndroidPlaybackRuntime.controller()
             val playbackState by playbackController.state.collectAsStateWithLifecycle()
             val playbackQueue by playbackController.queue.collectAsStateWithLifecycle()
@@ -155,6 +165,8 @@ class MainActivity : ComponentActivity() {
                 composersUiState = composersUiState,
                 albumDetailsUiState = albumDetailsUiState,
                 artistDetailsUiState = artistDetailsUiState,
+                genreDetailsUiState = genreDetailsUiState,
+                composerDetailsUiState = composerDetailsUiState,
                 onIntent = viewModel::dispatch,
                 onSortOptionSelected = tracksViewModel::setSortOption,
                 onToggleSortOrder = tracksViewModel::toggleSortOrder,
@@ -166,6 +178,8 @@ class MainActivity : ComponentActivity() {
                 onAlbumPlay = albumDetailsViewModel::play,
                 onAlbumTrackPlay = albumDetailsViewModel::playTrack,
                 onArtistPlay = artistDetailsViewModel::play,
+                onGenrePlay = genreDetailsViewModel::play,
+                onComposerPlay = composerDetailsViewModel::play,
                 onGenreSortOptionSelected = genresViewModel::setSortOption,
                 onGenreToggleSortOrder = genresViewModel::toggleSortOrder,
                 onComposerSortOptionSelected = composersViewModel::setSortOption,

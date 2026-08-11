@@ -90,14 +90,18 @@ describe the desktop Vue UI or future iOS UI.
 - `LibraryTracks` renders a virtualized `LazyColumn` of tracks with sorting controls (Name, Artist, Play count, Date added; ASC/DESC). All title/artist comparisons and title tie-breakers use manifest `sort_title`/`sort_name`, while titles remain display-only. Track titles use semibold typography, matching the mini player; a subtle theme-border divider runs between rows across the artwork and metadata area. Tapping a track delegates its ID to `LibraryTracksViewModel`, which starts playback from a queue built from the visible sorted order; the overflow action remains independent.
 - `LibraryAlbums` derives unique, valid albums from the active sync manifest, using album ID/title/artwork and album artists. When the current desktop manifest omits album artists, it falls back to the track artist; only albums with neither display Unknown artist. It renders a virtualized, divided list with Name/Artist/Date added ASC/DESC header sorting using `sort_title`/`sort_name`; display labels are never sort keys. Album rows show a rounded 48dp artwork thumbnail, title, artist, and a presentational overflow control.
 - Tapping an album row pushes `AlbumDetails` on the Library stack. It has a centered reusable `DetailHero` (large square album artwork, title, artist, then a separate optional published-year and localized-track-count metadata line, glass Shuffle/More controls, and theme-inverted Play pill) followed by virtualized numbered album tracks. Play and Shuffle replace the Android queue with the ordered album tracks; overflow controls remain presentational. Track ordering is disc number, track number, then manifest order; missing numbers use the visible fallback index.
-- `LibraryGenres` derives unique genres from the active sync manifest. It renders a virtualized, divided list with Name/Date added ASC/DESC header sorting using the manifest `normalization_key` retained as Android `sortName`, never the display name, and `GenreRow` (48dp rounded glass icon box with label glyph, semibold title, overflow action).
-- `LibraryComposers` derives unique composers from the active sync manifest. It renders a virtualized, divided list with Name/Date added ASC/DESC header sorting using the manifest `normalization_key` retained as Android `sortName`, never the display name, and `ComposerRow` (48dp circular artwork thumbnail or microphone fallback, semibold title, overflow action).
+- `LibraryGenres` derives unique genres from the active sync manifest. It renders a virtualized, divided list with Name/Date added ASC/DESC header sorting using the manifest `normalization_key` retained as Android `sortName`, never the display name, and `GenreRow` (artwork-free semibold title with trailing overflow action).
+- `GenreDetails` mirrors `ArtistDetails` without artwork: its `DetailHero` shows the genre name, localized album-and-track count, and Play/Shuffle actions. It matches all supported genre fields from track metadata to the selected normalized genre ID, orders unique albums by canonical album sort title/artist, and orders playback by album, disc number, track number, then manifest order. Its album rows open `AlbumDetails`.
+- `LibraryComposers` derives unique composers from the active sync manifest. It renders a virtualized, divided list with Name/Date added ASC/DESC header sorting using the manifest `normalization_key` retained as Android `sortName`, never the display name, and `ComposerRow` (artwork-free semibold title with trailing overflow action).
+- `ComposerDetails` mirrors `GenreDetails` without artwork: its `DetailHero` shows the composer name, localized album-and-track count, and Play/Shuffle actions. It matches all supported composer fields from track metadata to the selected normalized composer ID, orders unique albums by canonical album sort title/artist, and orders playback by album, disc number, track number, then manifest order. Its album rows open `AlbumDetails`.
 - Home content is supplied by `HomeDemoContent`. A forward action calls the
   callback provided by the app shell, which pushes `HomeSampleDetail`; Android
   Back pops that destination stack while the floating navigation remains shown.
 - Tapping the selected navigation destination restores that destination stack
   to `Root`; on Home it also animates the root `LazyColumn` back to its first item.
   Tapping another destination continues to switch stacks without resetting it.
+  A drag that leaves the selected tab but ends back in its slot is not a reselection,
+  so it preserves that stack and scroll position.
 - `NavigationChrome` owns the floating navigation plus its optional mini player,
   so later animations can treat them as one persistent navigation unit. The mini
   player is a 56dp glass pill positioned 8dp above the navigation and uses the
@@ -210,9 +214,10 @@ describe the desktop Vue UI or future iOS UI.
   and the mini player to its right. The compact player keeps artwork, title/artist,
   and Play/Pause plus Next; Previous fades out, then its vacated slot is reclaimed
   by the title/artist while Play/Pause and Next remain trailing controls. A downward delta, tapping
-  the active-destination button, changing pages, or dismissing the mini player
-  restores the standard 72dp four-tab navigation with the full mini player above
-  it. This is one shared chrome layout: navigation width/height, mini-player
+  the active-destination button, or dismissing the mini player restores the standard
+  72dp four-tab navigation with the full mini player above it. Switching destination
+  stacks or pages preserves the current compact/full chrome geometry. This is one
+  shared chrome layout: navigation width/height, mini-player
   width, and its X/Y position animate together over 280ms, so the player shrinks
   and slides into the compact row rather than a replacement bar appearing. Its
   16dp horizontal content inset and 38dp artwork remain fixed while moving. Page
@@ -245,7 +250,7 @@ describe the desktop Vue UI or future iOS UI.
 | `AlbumRow` | Displays a 48dp rounded album-artwork thumbnail (or themed album fallback), semibold title/album-artist text, and a trailing `...` overflow button. |
 | `ArtistRow` | Displays a 48dp circular artist artwork (or themed person fallback), semibold one-line artist name, and a trailing `...` overflow button. |
 | `GenreRow` | Displays a 48dp circular glass icon box with label glyph, semibold one-line genre name, and a trailing `...` overflow button. |
-| `ComposerRow` | Displays a 48dp circular composer artwork (or themed mic fallback), semibold one-line composer name, and a trailing `...` overflow button. |
+| `ComposerRow` | Displays an artwork-free semibold one-line composer name and a trailing `...` overflow button. |
 | `LibraryVirtualList` | Shared `LazyColumn` treatment for Library entity pages: caller-provided stable keys and rows, themed inter-row dividers, content padding, and empty-state slot. |
 | `LibrarySortHeaderButton` | Shared animated header sort menu. The caller supplies typed, resource-backed sort options plus selected option/order callbacks. |
 | `ActionList` | Displays 56dp `ActionListItem` rows with optional leading Material Symbol, resource-backed label, optional trailing composable slot, and a chevron only for clickable rows without a supplied trailing slot. `FullWidth` and `InsetForLeadingIcon` divider styles are available. `Card` uses the shared `Card` surface; `Plain` has no enclosing surface. A row is clickable only when its item has `onClick`. |

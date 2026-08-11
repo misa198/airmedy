@@ -16,6 +16,7 @@ import me.misa198.airmedy.ui.components.ComposerRow
 import me.misa198.airmedy.ui.components.HeroCard
 import me.misa198.airmedy.ui.components.LibraryVirtualList
 import me.misa198.airmedy.ui.components.MaterialSymbols
+import me.misa198.airmedy.sync.LibraryComposer
 
 @Composable
 internal fun LibraryComposersContent(
@@ -23,6 +24,7 @@ internal fun LibraryComposersContent(
     modifier: Modifier = Modifier,
     listState: LazyListState = remember(uiState.sortOption, uiState.sortOrder) { LazyListState() },
     contentPadding: PaddingValues = PaddingValues(),
+    onComposerClick: (LibraryComposer) -> Unit = {},
 ) {
     val listPadding = remember(contentPadding) {
         PaddingValues(
@@ -55,6 +57,6 @@ internal fun LibraryComposersContent(
             }
         },
     ) { composer ->
-        ComposerRow(name = composer.name, artworkPath = composer.artworkPath)
+        ComposerRow(name = composer.name, onClick = { onComposerClick(composer) })
     }
 }

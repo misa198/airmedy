@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import me.misa198.airmedy.R
+import me.misa198.airmedy.sync.LibraryGenre
 import me.misa198.airmedy.ui.components.GenreRow
 import me.misa198.airmedy.ui.components.HeroCard
 import me.misa198.airmedy.ui.components.LibraryVirtualList
@@ -23,6 +24,7 @@ internal fun LibraryGenresContent(
     modifier: Modifier = Modifier,
     listState: LazyListState = remember(uiState.sortOption, uiState.sortOrder) { LazyListState() },
     contentPadding: PaddingValues = PaddingValues(),
+    onGenreClick: (LibraryGenre) -> Unit = {},
 ) {
     val listPadding = remember(contentPadding) {
         PaddingValues(
@@ -55,6 +57,6 @@ internal fun LibraryGenresContent(
             }
         },
     ) { genre ->
-        GenreRow(name = genre.name)
+        GenreRow(name = genre.name, onClick = { onGenreClick(genre) })
     }
 }
