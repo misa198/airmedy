@@ -27,6 +27,12 @@ position, and transport state through the platform `MediaSession`. Android
 System Now Playing (lock screen and Quick Settings) consumes that session; the
 foreground notification is only the service companion.
 
+The service also publishes its live `MediaSession.Token` through the Android-only
+`AndroidPlaybackSession` registry. The fullscreen Output Switcher uses that token
+on Android versions exposing the session-bound platform API, so Android displays
+the Airmedy route rather than inferring another active session; it falls back to
+the Android 14 generic switcher on earlier platform versions.
+
 Seek requests clamp to the loaded duration and publish the target position to
 the media session immediately. While playing, Android refreshes the published
 position from PCM frames consumed by the AAudio callback, rather than decoded

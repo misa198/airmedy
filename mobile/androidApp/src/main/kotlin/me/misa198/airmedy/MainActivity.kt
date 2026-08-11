@@ -9,6 +9,7 @@ import android.content.Intent
 import android.net.Uri
 import android.media.AudioManager
 import android.media.MediaRouter2
+import android.media.session.MediaSession
 import android.database.ContentObserver
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -30,6 +31,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.view.WindowInsetsController
+import android.view.KeyEvent
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.settings.ThemePreferences
 import me.misa198.airmedy.pairing.AndroidPairingClock
@@ -42,7 +44,9 @@ import me.misa198.airmedy.pairing.AndroidTrustedDesktopDiscovery
 import me.misa198.airmedy.sync.AndroidSyncRuntime
 import me.misa198.airmedy.sync.LibrarySyncService
 import me.misa198.airmedy.player.AndroidPlaybackRuntime
+import me.misa198.airmedy.player.AndroidPlaybackSession
 import me.misa198.airmedy.player.PlaybackState
+import kotlin.math.roundToInt
 
 import me.misa198.airmedy.ui.screens.LibraryTracksViewModel
 import me.misa198.airmedy.ui.screens.LibraryArtistsViewModel
@@ -55,6 +59,7 @@ import me.misa198.airmedy.ui.screens.GenreDetailsViewModel
 import me.misa198.airmedy.ui.screens.ComposerDetailsViewModel
 
 class MainActivity : ComponentActivity() {
+    private var systemMusicVolumeState by mutableFloatStateOf(0f)
     private val viewModel: MainViewModel by viewModels {
         MainViewModel.Factory(ThemePreferences(applicationContext))
     }
@@ -110,6 +115,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         AndroidSyncRuntime.initialize(applicationContext)
         AndroidPlaybackRuntime.initialize(applicationContext, AndroidSyncRuntime.syncStore())
+        systemMusicVolumeState = currentSystemMusicVolume()
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), NotificationPermissionRequest)
         }
@@ -139,11 +145,10 @@ class MainActivity : ComponentActivity() {
                 lyricsTrackId?.let(AndroidSyncRuntime.syncStore()::lyrics) ?: flowOf(null)
             }
             val lyrics by lyricsFlow.collectAsStateWithLifecycle(initialValue = null)
-            var systemVolume by remember { mutableFloatStateOf(currentSystemMusicVolume()) }
             DisposableEffect(Unit) {
                 val volumeObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
                     override fun onChange(selfChange: Boolean) {
-                        systemVolume = currentSystemMusicVolume()
+                        systemMusicVolumeState = currentSystemMusicVolume()
                     }
                 }
                 contentResolver.registerContentObserver(
@@ -226,10 +231,10 @@ class MainActivity : ComponentActivity() {
                 onQueueReordered = playbackController::reorderQueue,
                 onShuffleChange = playbackController::setShuffle,
                 onRepeatModeChange = playbackController::setRepeatMode,
-                systemVolume = systemVolume,
+                systemVolume = systemMusicVolumeState,
                 onSystemVolumeChange = { volume ->
-                    systemVolume = volume.coerceIn(0f, 1f)
-                    setSystemMusicVolume(systemVolume)
+                    systemMusicVolumeState = volume.coerceIn(0f, 1f)
+                    setSystemMusicVolume(systemMusicVolumeState)
                 },
                 onMiniPlayerDismiss = playbackController::clearQueue,
                 onOpenMediaOutputSwitcher = ::openMediaOutputSwitcher,
@@ -278,9 +283,26 @@ class MainActivity : ComponentActivity() {
         manager.setStreamVolume(AudioManager.STREAM_MUSIC, (maximum * volume).toInt(), 0)
     }
 
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        when (keyCode) {
+            KeyEvent.KEYCODE_VOLUME_DOWN -> predictSystemMusicVolumeChange(-1)
+            KeyEvent.KEYCODE_VOLUME_UP -> predictSystemMusicVolumeChange(1)
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    private fun predictSystemMusicVolumeChange(direction: Int) {
+        val manager = getSystemService(AudioManager::class.java)
+        val maximum = manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        systemMusicVolumeState = adjustSystemMusicVolume(systemMusicVolumeState, maximum, direction)
+    }
+
     private fun openMediaOutputSwitcher() {
         if (canShowSystemMediaOutputSwitcher(Build.VERSION.SDK_INT)) {
-            MediaRouter2.getInstance(this).showSystemOutputSwitcher()
+            showSystemOutputSwitcher(
+                router = MediaRouter2.getInstance(this),
+                sessionToken = AndroidPlaybackSession.tokenOrNull(),
+            )
         }
     }
 
@@ -298,6 +320,31 @@ internal fun canShowSystemMediaOutputSwitcher(sdkInt: Int): Boolean =
 
 internal fun normalizeSystemMusicVolume(current: Int, maximum: Int): Float =
     current.coerceIn(0, maximum.coerceAtLeast(1)).toFloat() / maximum.coerceAtLeast(1)
+
+internal fun adjustSystemMusicVolume(current: Float, maximum: Int, direction: Int): Float =
+    normalizeSystemMusicVolume(
+        current = (current.coerceIn(0f, 1f) * maximum.coerceAtLeast(1)).roundToInt() + direction,
+        maximum = maximum,
+    )
+
+/**
+ * Android 16 QPR 1 added the session-bound overload. Reflection keeps the app
+ * buildable with API 36 while using it on devices where the platform provides it.
+ */
+internal fun showSystemOutputSwitcher(router: MediaRouter2, sessionToken: MediaSession.Token?): Boolean {
+    if (sessionToken != null) {
+        val method = router.javaClass.methods.firstOrNull { candidate ->
+            candidate.name == "showSystemOutputSwitcher" &&
+                candidate.parameterTypes.contentEquals(arrayOf(MediaSession.Token::class.java))
+        }
+        if (method != null) {
+            runCatching { method.invoke(router, sessionToken) as Boolean }.getOrNull()?.let { result ->
+                return result
+            }
+        }
+    }
+    return router.showSystemOutputSwitcher()
+}
 
 @Preview
 @Composable

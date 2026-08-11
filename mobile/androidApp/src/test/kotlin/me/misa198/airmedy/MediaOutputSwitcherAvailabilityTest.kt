@@ -22,4 +22,11 @@ class MediaOutputSwitcherAvailabilityTest {
         assertEquals(0.5f, normalizeSystemMusicVolume(current = 5, maximum = 10), 0f)
         assertEquals(1f, normalizeSystemMusicVolume(current = 12, maximum = 10), 0f)
     }
+
+    @Test
+    fun predictsHardwareMusicVolumeChangesImmediately() {
+        assertEquals(0.6f, adjustSystemMusicVolume(current = 0.5f, maximum = 10, direction = 1), 0f)
+        assertEquals(0f, adjustSystemMusicVolume(current = 0f, maximum = 10, direction = -1), 0f)
+        assertEquals(1f, adjustSystemMusicVolume(current = 1f, maximum = 10, direction = 1), 0f)
+    }
 }

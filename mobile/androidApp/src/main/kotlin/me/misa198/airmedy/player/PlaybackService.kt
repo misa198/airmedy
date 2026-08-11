@@ -75,8 +75,15 @@ class PlaybackService : Service() {
                 override fun onSeekTo(pos: Long) { dispatch(ActionSeek, positionMs = pos) }
                 override fun onStop() { dispatch(ActionStop) }
             })
+            setPlaybackToLocal(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build(),
+            )
             isActive = false
         }
+        AndroidPlaybackSession.publish(mediaSession.sessionToken)
         scope.launch {
             sessionStore.load()?.let { saved ->
                 val available = saved.originalTrackIds.filter { AndroidPlaybackRuntime.controller().resolve(it) != null }
@@ -134,6 +141,7 @@ class PlaybackService : Service() {
         runBlocking { sessionStore.save(queue.snapshot()) }
         decoder?.close()
         unregisterReceiver(noisyAudioReceiver)
+        AndroidPlaybackSession.clear()
         mediaSession.release()
         audioManager.abandonAudioFocusRequest(focusRequest)
         scope.cancel()

@@ -162,7 +162,7 @@ describe the desktop Vue UI or future iOS UI.
   to its end and reverses back rather than wrapping continuously. The metadata column keeps a
   12dp gap before the blurred glass Heart/More button pair (using a fullscreen-local Haze backdrop source and a subtle 6% glass tint),
   a dominant-colour gradient extracted from the artwork, animated over 280ms when artwork changes; the prior artwork remains visible while the replacement decodes to prevent a fallback-colour flash, with a
-  restrained dark `playerBackdrop` overlay and fallback in every app theme, seek/duration, transport controls, Android music-stream volume (the system settings provider is observed recursively so hardware keys and route-specific system-volume events keep it current),
+  restrained dark `playerBackdrop` overlay and fallback in every app theme, seek/duration, transport controls, Android music-stream volume (the system settings provider is observed recursively so hardware keys and route-specific system-volume events keep it current; hardware-key changes are also predicted immediately before that asynchronous observer confirms the route's actual volume),
   and Lyrics/Queue affordances. Selecting Lyrics or Queue compresses the
   artwork into a 96dp square, animating its anchor from centre to top-left when
   leaving the paused presentation. The expanded
