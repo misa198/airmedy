@@ -98,8 +98,10 @@ describe the desktop Vue UI or future iOS UI.
 - Tapping the selected navigation destination restores that destination stack
   to `Root`; on Home it also animates the root `LazyColumn` back to its first item.
   Tapping another destination continues to switch stacks without resetting it.
-  A drag that leaves the selected tab but ends back in its slot is not a reselection,
-  so it preserves that stack and scroll position.
+  On release, a navigation-pill drag chooses the slot containing the pill's centre,
+  so a pill that is mostly over the next destination selects that destination.
+  A drag that leaves the selected tab but ends with its centre back in that tab is
+  not a reselection, so it preserves that stack and scroll position.
 - `NavigationChrome` owns the floating navigation plus its optional mini player,
   so later animations can treat them as one persistent navigation unit. The mini
   player is a 56dp glass pill positioned 8dp above the navigation and uses the

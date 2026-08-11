@@ -146,7 +146,10 @@ internal fun FloatingNavigationBar(
                             },
                             onDragCancel = { isDragging = false },
                             onDragEnd = {
-                                val destinationIndex = (dragOffset / itemWidth).toInt()
+                                // Select by the pill's centre, rather than its leading edge.
+                                // The leading edge can still be in the previous slot when the
+                                // pill visually covers nearly all of the next destination.
+                                val destinationIndex = ((dragOffset + (itemWidth / 2)) / itemWidth).toInt()
                                     .coerceIn(0, AppDestination.entries.lastIndex)
                                 val destination = AppDestination.entries[destinationIndex]
                                 // A drag is only a selection gesture when it finishes in a

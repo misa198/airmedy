@@ -437,6 +437,22 @@ class AppNavigationTest {
     }
 
     @Test
+    fun draggingPillMostlyOverTheNextDestinationSelectsIt() {
+        val harness = AppHarness()
+        composeTestRule.setContent { harness.Render() }
+
+        val homeTarget = composeTestRule.onNodeWithContentDescription(string(R.string.destination_home))
+        val dragDistance = homeTarget.fetchSemanticsNode().boundsInRoot.width * 0.9f
+        homeTarget.performTouchInput {
+            down(center)
+            moveBy(Offset(x = dragDistance, y = 0f))
+            up()
+        }
+
+        assertEquals(AppIntent.SelectDestination(AppDestination.Library), harness.intents.last())
+    }
+
+    @Test
     fun changingStackPageKeepsCompactNavigationAndMiniPlayer() {
         val harness = AppHarness()
         composeTestRule.setContent { harness.Render(playbackState = playingState) }
