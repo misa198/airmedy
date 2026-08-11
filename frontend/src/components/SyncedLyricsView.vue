@@ -21,16 +21,27 @@ const activeIndex = computed(() => {
 
 const scrollContainer = ref<HTMLElement | null>(null)
 const lineRefs = ref<HTMLElement[]>([])
+const isBrowsing = ref(false)
 let scrollFrame: number | undefined
 let resizeObserver: ResizeObserver | null = null
 let waitingForLayout = false
+let hasPositionedInitialLine = false
+let previousActiveIndex = -1
 
 // Reset stale refs when the track's lines change so indexes stay aligned.
 watch(() => props.lines, () => {
   lineRefs.value = []
+  isBrowsing.value = false
+  hasPositionedInitialLine = false
+  previousActiveIndex = -1
 })
 
-function scrollToActive(index: number) {
+function isVisible(container: HTMLElement, el: HTMLElement) {
+  return el.offsetTop < container.scrollTop + container.clientHeight
+    && el.offsetTop + el.clientHeight > container.scrollTop
+}
+
+function scrollToActive(index: number, behavior: ScrollBehavior) {
   if (index === -1) return false
   const container = scrollContainer.value
   const el = lineRefs.value[index]
@@ -40,12 +51,13 @@ function scrollToActive(index: number) {
   const activeLineViewportPosition = props.immersive ? 0.32 : 0.5
   container.scrollTo({
     top: el.offsetTop - container.clientHeight * activeLineViewportPosition + el.clientHeight / 2,
-    behavior: 'smooth',
+    behavior,
   })
+  hasPositionedInitialLine = true
   return true
 }
 
-function scheduleScrollToActive(index: number) {
+function scheduleScrollToActive(index: number, previousIndex = previousActiveIndex) {
   nextTick(() => {
     if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame)
     // A watcher with `immediate` runs before mount, when the container and
@@ -53,12 +65,33 @@ function scheduleScrollToActive(index: number) {
     // the lyrics panel immediately centers its already-active line.
     scrollFrame = requestAnimationFrame(() => {
       scrollFrame = undefined
-      waitingForLayout = index !== -1 && !scrollToActive(index)
+      const container = scrollContainer.value
+      const previous = lineRefs.value[previousIndex]
+      const behavior: ScrollBehavior = hasPositionedInitialLine && container && previous && isVisible(container, previous)
+        ? 'smooth'
+        : 'auto'
+      waitingForLayout = index !== -1 && !scrollToActive(index, behavior)
     })
   })
 }
 
+function enterBrowseMode() {
+  isBrowsing.value = true
+}
+
+function seekAndResume(time: number, index: number) {
+  isBrowsing.value = false
+  // The tapped line is necessarily visible. Use it as the scroll reference so
+  // it glides into the active slot immediately, instead of waiting for the
+  // playback position update and potentially snapping there.
+  hasPositionedInitialLine = true
+  previousActiveIndex = index
+  scheduleScrollToActive(index, index)
+  emit('seek', time)
+}
+
 function immersiveLineStyle(index: number) {
+  if (isBrowsing.value) return { filter: 'blur(0)', opacity: '1' }
   const distance = Math.abs(index - activeIndex.value)
   if (distance === 0) return { filter: 'blur(0)', opacity: '1' }
 
@@ -75,6 +108,12 @@ function immersiveLineStyle(index: number) {
 }
 
 function lineClasses(index: number) {
+  if (isBrowsing.value) {
+    return [
+      'text-white blur-none opacity-100',
+      { 'text-4xl': !props.immersive, 'text-[44px]': props.immersive },
+    ]
+  }
   const isActive = index === activeIndex.value
   const isNearActive = activeIndex.value !== -1 && Math.abs(index - activeIndex.value) <= 2
 
@@ -99,14 +138,16 @@ function lineClasses(index: number) {
 // flush:'post' → DOM patched before measuring offsets. The mounted hook is
 // required because the immediate watcher runs before template refs exist.
 watch(activeIndex, (newIndex) => {
-  scheduleScrollToActive(newIndex)
+  const previousIndex = previousActiveIndex
+  if (!isBrowsing.value) scheduleScrollToActive(newIndex, previousIndex)
+  previousActiveIndex = newIndex
 }, { flush: 'post', immediate: true })
 
 onMounted(() => {
   scheduleScrollToActive(activeIndex.value)
   if (typeof ResizeObserver !== 'undefined') {
     resizeObserver = new ResizeObserver(() => {
-      if (waitingForLayout) scheduleScrollToActive(activeIndex.value)
+      if (waitingForLayout && !isBrowsing.value) scheduleScrollToActive(activeIndex.value)
     })
     if (scrollContainer.value) resizeObserver.observe(scrollContainer.value)
   }
@@ -120,7 +161,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="scrollContainer" class="h-full overflow-y-auto py-48 scrollbar-hide scroll-smooth" :class="props.immersive ? 'pl-8 pr-16' : 'px-8'">
+  <div ref="scrollContainer" class="h-full overflow-y-auto py-48 scrollbar-hide" :class="props.immersive ? 'pl-8 pr-16' : 'px-8'" @wheel.passive="enterBrowseMode" @pointerdown="enterBrowseMode">
     <div class="max-w-2xl mx-auto space-y-6">
       <div
         v-for="(line, index) in lines"
@@ -130,7 +171,7 @@ onUnmounted(() => {
         class="font-bold transition-[filter,opacity,transform,scale] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] cursor-pointer select-none origin-left py-2"
         :class="lineClasses(index)"
         :style="props.immersive ? immersiveLineStyle(index) : undefined"
-        @click="emit('seek', line.time)"
+        @click="seekAndResume(line.time, index)"
       >
         <div>{{ line.text }}</div>
         <div v-if="line.secondary" class="text-lg md:text-2xl font-bold mt-1 opacity-80">{{ line.secondary }}</div>
