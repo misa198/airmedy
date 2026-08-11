@@ -55,7 +55,6 @@
     <string name="home_demo_eyebrow">JUST FOR YOU</string>
     <string name="home_demo_title">An evening made for listening.</string>
     <string name="home_demo_intro">A relaxed, scrollable home page preview with room for artwork, stories, and the music you want to return to.</string>
-    <string name="sync_cancel">Cancel sync</string>
     <string name="sync_notification_channel">Library sync</string>
     <string name="sync_notification_title">Syncing Airmedy library</string>
     <string name="sync_notification_connecting">Connecting to desktop…</string>

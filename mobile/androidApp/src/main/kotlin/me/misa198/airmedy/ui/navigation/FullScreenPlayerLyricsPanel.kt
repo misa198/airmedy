@@ -61,6 +61,15 @@ internal fun parsePlayerLyrics(content: String): List<PlayerLyricLine> = content
 
 internal fun hasSyncedPlayerLyrics(content: String?): Boolean = content != null && parsePlayerLyrics(content).any { it.timestampSeconds != null }
 
+/** Resume automatic following once playback reaches the tapped lyric or passes it. */
+internal fun shouldResumeLyricsAutoScroll(
+    selectedLineIndex: Int?,
+    activeIndex: Int,
+    activeIndexWhenLineSelected: Int?,
+    selectedLineAnimationComplete: Boolean,
+): Boolean = selectedLineAnimationComplete && selectedLineIndex != null &&
+    activeIndex >= selectedLineIndex && activeIndex != activeIndexWhenLineSelected
+
 private fun parsePlayerLyricText(text: String, timestampSeconds: Float?): PlayerLyricLine {
     val parts = BilingualSeparator.split(text, limit = 2)
     val secondary = parts.getOrNull(1)?.trim()?.takeIf(String::isNotEmpty)
@@ -76,7 +85,7 @@ internal fun FullScreenPlayerLyricsPanel(
 ) {
     val parsedLines = remember(lyrics) { lyrics?.let(::parsePlayerLyrics).orEmpty() }
     val syncedLines = remember(parsedLines) { parsedLines.filter { it.timestampSeconds != null } }
-    Column(modifier = modifier) {
+    Column(modifier = modifier.padding(top = 8.dp)) {
         when {
             lyrics.isNullOrBlank() -> LyricsEmptyState(Modifier.fillMaxSize())
             syncedLines.isNotEmpty() -> SyncedLyricsList(syncedLines, currentPositionMs, onSeek, Modifier.fillMaxSize())
@@ -160,7 +169,7 @@ private fun SyncedLyricsList(
         if (selectedIndex == activeIndexWhenLineSelected) selectedLineIndex = null
     }
     LaunchedEffect(activeIndex, selectedLineIndex, activeIndexWhenLineSelected, selectedLineAnimationComplete) {
-        if (selectedLineAnimationComplete && selectedLineIndex != null && selectedLineIndex == activeIndex && activeIndex != activeIndexWhenLineSelected) {
+        if (shouldResumeLyricsAutoScroll(selectedLineIndex, activeIndex, activeIndexWhenLineSelected, selectedLineAnimationComplete)) {
             selectedLineIndex = null
         }
     }

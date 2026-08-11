@@ -54,7 +54,7 @@ fun AirmedyPillButton(
             .fillMaxWidth()
             .defaultMinSize(minHeight = 52.dp)
             .clip(shape)
-            .background(background)
+            .background(if (enabled) background else background.copy(alpha = 0.45f))
             .semantics { contentDescription = label }
             .clickable(
                 enabled = enabled,
@@ -68,7 +68,7 @@ fun AirmedyPillButton(
         Text(
             text = label,
             style = MaterialTheme.typography.labelLarge,
-            color = if (enabled) contentColor else colors.textMuted,
+            color = contentColor,
         )
     }
 }

@@ -83,12 +83,6 @@ class LibrarySyncService : Service() {
     private var session: SyncSession? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == CancelAction) {
-            Log.i(LogTag, "Received cancel action for library sync service")
-            syncJob?.cancel()
-            stopSync()
-            return START_NOT_STICKY
-        }
         val payload = intent?.getStringExtra(RequestExtra) ?: return START_NOT_STICKY
         val host = intent.getStringExtra(HostExtra) ?: return START_NOT_STICKY
         val port = intent.getIntExtra(PortExtra, 0)
@@ -149,7 +143,11 @@ class LibrarySyncService : Service() {
                     Log.d(LogTag, "Sync progress: $completed/$total assets")
                     AndroidSyncRuntime.running(completed = completed, total = total)
                     val percent = if (total == 0) 0 else (completed * 100 / total).coerceIn(0, 100)
-                    showForeground(getString(R.string.sync_notification_progress, percent), indeterminate = false)
+                    showForeground(
+                        getString(R.string.sync_notification_progress, percent),
+                        indeterminate = false,
+                        progressPercent = percent,
+                    )
                 },
             )
             when (val result = coordinator.handle(payload, desktop)) {
@@ -177,27 +175,26 @@ class LibrarySyncService : Service() {
         }
     }
 
-    private fun showForeground(text: String, indeterminate: Boolean) {
+    private fun showForeground(text: String, indeterminate: Boolean, progressPercent: Int? = null) {
         createChannel()
-        startForeground(NotificationId, notification(text, indeterminate, ongoing = true), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        startForeground(NotificationId, notification(text, indeterminate, progressPercent, ongoing = true), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
     }
 
     private fun notifyTerminal(text: String) {
         createChannel()
-        (getSystemService(NotificationManager::class.java)).notify(NotificationId, notification(text, indeterminate = false, ongoing = false))
+        (getSystemService(NotificationManager::class.java)).notify(NotificationId, notification(text, indeterminate = false, progressPercent = null, ongoing = false))
     }
 
-    private fun notification(text: String, indeterminate: Boolean, ongoing: Boolean): Notification {
-        val cancel = PendingIntent.getService(this, 1, Intent(this, LibrarySyncService::class.java).setAction(CancelAction), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+    private fun notification(text: String, indeterminate: Boolean, progressPercent: Int?, ongoing: Boolean): Notification {
+        val progress = syncNotificationProgress(progressPercent, indeterminate)
         return Notification.Builder(this, ChannelId)
         .setSmallIcon(R.mipmap.ic_launcher)
         .setContentTitle(getString(R.string.sync_notification_title))
         .setContentText(text)
         .setOnlyAlertOnce(true)
         .setOngoing(ongoing)
-        .setProgress(0, 0, indeterminate)
+        .setProgress(progress.max, progress.current, progress.indeterminate)
         .setContentIntent(PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
-        .addAction(Notification.Action.Builder(null, getString(R.string.sync_cancel), cancel).build())
         .build()
     }
 
@@ -214,7 +211,6 @@ class LibrarySyncService : Service() {
         const val RequestExtra = "library_sync_request"
         const val HostExtra = "library_sync_host"
         const val PortExtra = "library_sync_port"
-        private const val CancelAction = "me.misa198.airmedy.sync.CANCEL"
         private const val ChannelId = "library-sync"
         private const val NotificationId = 2101
         private const val LogTag = "AirmedyLibrarySync"
@@ -228,4 +224,16 @@ class LibrarySyncService : Service() {
 
 internal fun releaseMqttSession(session: SyncSession, wasHandedOff: Boolean) {
     if (!wasHandedOff) session.disconnect()
+}
+
+internal data class SyncNotificationProgress(
+    val max: Int,
+    val current: Int,
+    val indeterminate: Boolean,
+)
+
+internal fun syncNotificationProgress(percent: Int?, indeterminate: Boolean): SyncNotificationProgress = when {
+    indeterminate -> SyncNotificationProgress(max = 0, current = 0, indeterminate = true)
+    percent != null -> SyncNotificationProgress(max = 100, current = percent.coerceIn(0, 100), indeterminate = false)
+    else -> SyncNotificationProgress(max = 0, current = 0, indeterminate = false)
 }

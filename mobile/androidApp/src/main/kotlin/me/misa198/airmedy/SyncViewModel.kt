@@ -148,6 +148,7 @@ class SyncViewModel(
     }
 
     fun unpair() {
+        if (_uiState.value.librarySync is AndroidSyncState.Running) return
         viewModelScope.launch { onBeforeUnpair(); pairing.unpair() }
     }
 

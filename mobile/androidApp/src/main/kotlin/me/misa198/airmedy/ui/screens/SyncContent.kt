@@ -53,6 +53,7 @@ internal fun SyncContent(
         onDispose(onScreenHidden)
     }
     val colors = LocalAirmedyColors.current
+    val isSyncRunning = syncUiState.librarySync is AndroidSyncState.Running
     var showRevokeConfirmation by remember { mutableStateOf(false) }
     Column(modifier = modifier) {
         when {
@@ -75,6 +76,7 @@ internal fun SyncContent(
                             label = stringResource(R.string.sync_revoke),
                             onClick = { showRevokeConfirmation = true },
                             variant = AirmedyPillButtonVariant.Destructive,
+                            enabled = !isSyncRunning,
                             modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 16.dp),
                         )
                     },
@@ -103,7 +105,7 @@ internal fun SyncContent(
             syncState = syncUiState.librarySync,
         )
     }
-    if (showRevokeConfirmation) {
+    if (showRevokeConfirmation && !isSyncRunning) {
         AirmedyDialog(
             title = stringResource(R.string.sync_revoke_confirm_title),
             description = stringResource(R.string.sync_revoke_confirm_description),

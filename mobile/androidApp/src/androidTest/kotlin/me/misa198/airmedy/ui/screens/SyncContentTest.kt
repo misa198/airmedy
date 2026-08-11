@@ -1,6 +1,7 @@
 package me.misa198.airmedy.ui.screens
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -80,6 +81,23 @@ class SyncContentTest {
         }
 
         composeTestRule.onNodeWithText("45%").assertIsDisplayed()
+    }
+
+    @Test
+    fun syncRunningDisablesRevokeAction() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                SyncContent(
+                    syncUiState = SyncUiState(
+                        desktop = PairedDesktop("01234567-89ab-cdef-0123-456789abcdef", "Studio Mac", ByteArray(32)),
+                        librarySync = AndroidSyncState.Running(planId = "plan-1"),
+                    ),
+                    onUnpair = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Revoke").assertIsNotEnabled()
     }
 
     @Test

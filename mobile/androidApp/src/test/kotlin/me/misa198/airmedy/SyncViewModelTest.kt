@@ -140,6 +140,29 @@ class SyncViewModelTest {
         assertEquals(Triple("request", endpoint, session), received)
     }
 
+    @Test
+    fun doesNotUnpairWhileLibrarySyncIsRunning() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val desktop = PairedDesktop(DesktopId, "Studio Mac", ByteArray(32))
+        val bindings = FakeBindings(desktop)
+        var beforeUnpairCalls = 0
+        val viewModel = SyncViewModel(
+            useCase(bindings),
+            FakeSyncSession(),
+            FakeDiscovery(),
+            onBeforeUnpair = { beforeUnpairCalls++ },
+        )
+        advanceUntilIdle()
+        AndroidSyncRuntime.running()
+        advanceUntilIdle()
+
+        viewModel.unpair()
+        advanceUntilIdle()
+
+        assertEquals(0, beforeUnpairCalls)
+        assertEquals(desktop, bindings.current())
+    }
+
     private fun useCase(bindings: FakeBindings) = MobilePairingUseCase(
         identityProvider = FakeIdentity,
         bindingStore = bindings,

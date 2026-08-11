@@ -41,7 +41,6 @@
     <string name="sync_error_rejected">The desktop rejected this pairing request.</string>
     <string name="sync_error_expired">The desktop pairing request expired. Scan its QR code again.</string>
     <string name="sync_error_invalid_response">The desktop response could not be verified.</string>
-    <string name="sync_cancel">Cancel sync</string>
     <string name="sync_notification_channel">Library sync</string>
     <string name="sync_notification_title">Syncing Airmedy library</string>
     <string name="sync_notification_connecting">Connecting to desktop…</string>

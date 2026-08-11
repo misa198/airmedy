@@ -7,6 +7,18 @@ import org.junit.Test
 
 class PlayerLyricsParserTest {
     @Test
+    fun resumesAutoScrollWhenPlaybackSkipsPastATappedCloselyTimedLine() {
+        assertTrue(
+            shouldResumeLyricsAutoScroll(
+                selectedLineIndex = 2,
+                activeIndex = 3,
+                activeIndexWhenLineSelected = 1,
+                selectedLineAnimationComplete = true,
+            ),
+        )
+    }
+
+    @Test
     fun parsesTimedBilingualLines() {
         val lines = parsePlayerLyrics("[01:02.50]Primary ^ Translation\n[01:04.00]Next")
 

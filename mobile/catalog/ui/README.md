@@ -71,9 +71,7 @@ describe the desktop Vue UI or future iOS UI.
   this is an internal transport detail, never shown in UI. Revoke is deliberately local-only: it clears the mobile binding and permits a
   new desktop scan, while the old desktop remains trusted until revoked there.
 - A valid desktop library-sync request starts Android's foreground transfer
-  service. Sync Settings renders its preparing/progress/completed/failed state inside a dedicated `Card` featuring a top gap, text-coloured `LinearProgressIndicator` progress bar with no fill/track gap, status text, and percentage indicator; it never exposes an asset count. The foreground-service notification likewise reports percentage only.
-  the system notification remains the background control surface and provides
-  Cancel. Revoke stops the transfer before deleting all mirrored library data.
+  service. Sync Settings renders its preparing/progress/completed/failed state inside a dedicated `Card` featuring a top gap, text-coloured `LinearProgressIndicator` progress bar with no fill/track gap, status text, and percentage indicator; it never exposes an asset count. The foreground-service notification uses an indeterminate bar while connecting and a native 0–100% determinate bar during transfer, with the percentage also shown in its text; it has no cancellation action. Revoke is disabled while a transfer is running (and `SyncViewModel` rejects any concurrent unpair request), then becomes available once sync completes or fails; it stops the transfer before deleting all mirrored library data.
 - Library root page displays a plain `ActionList` (`ActionListContainerStyle.Plain`) with actions for Artists,
   Albums, Tracks, Genres, and Composers. Below the action list, it renders a 2-column grid of up to 50 recently added tracks sorted by creation date descending using `DiscCard`. Tapping Artists opens `LibraryArtists`, Albums opens `LibraryAlbums`,
   Tracks opens `LibraryTracks`, Genres opens `LibraryGenres`, and Composers opens `LibraryComposers` on the Library stack; tapping a recent track card starts playback.
@@ -214,12 +212,14 @@ describe the desktop Vue UI or future iOS UI.
   lyrics auto-scroll to the active line in focus mode. A manual drag enters
   browse mode: it pauses auto-follow and removes fade/blur so all lyric lines
   remain readable. Tapping a timestamped line smoothly moves that selected row
-  into the active slot before seeking and restoring focus mode. The initial
+  into the active slot before seeking and restoring focus mode. If tightly timed
+  lines cause playback to advance past the tapped line, the pane resumes
+  auto-follow once it reaches that line or any later line. The initial
   focus position is applied without animation; later tracked
   changes animate using the measured target offset so wrapped lyrics do not
   need a visible second correction. Blur effects are suspended while this
   programmatic scroll is in progress to keep it smooth, then restored at rest.
-  Rows have a modest 20dp vertical gap and a right inset so
+  The pane has an 8dp top inset. Rows have a modest 20dp vertical gap and a right inset so
   the active line's subtle scale transform does not clip or change wrapping.
   The pane has no lyrics header or synced/plain toggle: valid timestamped LRC
   always renders in the synced view, while tracks without timestamps use the
@@ -281,7 +281,7 @@ describe the desktop Vue UI or future iOS UI.
 | `AirmedyMarqueeText` | A single-line text treatment for constrained playback metadata. It start-aligns unbounded text, clips overflow, and uses pingpong keyframe animation with pauses at start/end matching desktop MarqueeText behavior. |
 | `AirmedyTrackSlider` | Shared custom-drawn slider for fullscreen-player seek and Android music-stream volume. It preserves a 48dp touch target while rendering a translucent gray glass track with a white current-value fill and no thumb or Material Slider terminal indicator. `trackHeight` lets the fullscreen seek bar render at 6dp while the volume bar keeps its 3dp default. Slider range semantics and touch/drag seeking remain available to accessibility services. The fullscreen volume row places muted low/high-volume icons at either end. |
 | `AirmedyPlayingIndicator` | A decorative three-bar, white (`onPrimary`) playback indicator. It animates bar height while `isPlaying` and presents short resting bars otherwise; play/pause changes tween smoothly between these states. The fullscreen queue overlays it at the centre of the current track's artwork. |
-| `AirmedyPillButton` | A borderless 52dp minimum-height capsule action. `Primary` and `Destructive` use the primary background with the explicit white `onPrimary` token in both light and dark themes; `Secondary` uses the stronger `buttonSecondary` theme surface with normal foreground text. Its label supplies button semantics. |
+| `AirmedyPillButton` | A borderless 52dp minimum-height capsule action. `Primary` and `Destructive` use the primary background with the explicit white `onPrimary` token in both light and dark themes; `Secondary` uses the stronger `buttonSecondary` theme surface with normal foreground text. When disabled, only its themed background fades while label colour stays unchanged. Its label supplies button semantics. |
 | `AirmedyDialog` | A 36dp-radius, two-action mobile dialog. Its text content has 20dp horizontal inset; the button area has a thinner 16dp horizontal/bottom inset. It supports `Horizontal` and `Vertical` action layouts; the left/top action always dismisses with `Secondary`. |
 
 ## UI rules

@@ -12,6 +12,22 @@ import org.junit.Test
 
 class LibrarySyncServiceTest {
     @Test
+    fun progressNotificationUsesADeterminatePercentageBar() {
+        assertEquals(
+            SyncNotificationProgress(max = 100, current = 45, indeterminate = false),
+            syncNotificationProgress(percent = 45, indeterminate = false),
+        )
+    }
+
+    @Test
+    fun connectingNotificationUsesAnIndeterminateProgressBar() {
+        assertEquals(
+            SyncNotificationProgress(max = 0, current = 0, indeterminate = true),
+            syncNotificationProgress(percent = null, indeterminate = true),
+        )
+    }
+
+    @Test
     fun retainsTheUiMqttSessionAfterSyncServiceStops() {
         val session = FakeSyncSession()
 
