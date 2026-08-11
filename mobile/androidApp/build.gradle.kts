@@ -52,11 +52,10 @@ android {
     ndkVersion = "30.0.15729638"
 
     defaultConfig {
-        applicationId = "me.misa198.airmedy"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
-        versionName = "1.0"
+        versionName = "0.0.1"
 
         externalNativeBuild {
             cmake {
@@ -65,6 +64,17 @@ android {
         }
         ndk {
             abiFilters += setOf("arm64-v8a", "x86_64")
+        }
+    }
+    flavorDimensions += "environment"
+    productFlavors {
+        create("dev") {
+            dimension = "environment"
+            applicationId = "me.misa198.airmedy.dev"
+        }
+        create("prod") {
+            dimension = "environment"
+            applicationId = "me.misa198.airmedy"
         }
     }
     packaging {

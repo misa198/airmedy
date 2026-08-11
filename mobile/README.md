@@ -70,16 +70,32 @@ contract.
 Run from `mobile/`:
 
 ```bash
-./gradlew :androidApp:assembleDebug
+./gradlew :androidApp:assembleDevDebug
+./gradlew :androidApp:assembleProdDebug
 ./gradlew :sharedLogic:testAndroidHostTest
 ```
+
+The Android app has two installable variants: `dev` uses application ID
+`me.misa198.airmedy.dev`; `prod` uses `me.misa198.airmedy`. This allows both
+variants to be installed on the same device.
+
+### Android versioning
+
+Android releases use a three-part `versionName` and a monotonically increasing
+`versionCode`. To bump both values, run this from the repository root:
+
+```bash
+task bump-mobile-version VERSION=0.0.2
+```
+
+The command accepts only `X.Y.Z` versions and increments `versionCode` by one.
 
 ### FFmpeg player build
 
 Android playback uses FFmpeg directly for local synced audio: FFmpeg demuxes and
 decodes every enabled music format, then the native player sends float PCM to
-AAudio. It does not use a Media3 or platform-decoder fallback. `assembleDebug`
-and release builds require `../scripts/build-ffmpeg-android.sh all` to have run
+AAudio. It does not use a Media3 or platform-decoder fallback. All Android app
+variants require `../scripts/build-ffmpeg-android.sh all` to have run
 first. It downloads the pinned FFmpeg 8.1 tarball to a temporary cache and writes generated
 headers and `.so` files below `androidApp/build/` and `androidApp/src/main/jniLibs/`.
 Those artifacts are ignored by Git. The build requires Android NDK 30.0.15729638.
@@ -100,7 +116,8 @@ line, and any patches.
 Or, from the repository root:
 
 ```bash
-./mobile/gradlew :androidApp:assembleDebug
+./mobile/gradlew :androidApp:assembleDevDebug
+./mobile/gradlew :androidApp:assembleProdDebug
 ./mobile/gradlew :sharedLogic:testAndroidHostTest
 ```
 

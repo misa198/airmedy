@@ -7,8 +7,10 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
@@ -16,6 +18,7 @@ import android.media.AudioManager
 import android.media.MediaMetadata
 import android.media.session.MediaSession
 import android.media.session.PlaybackState as AndroidMediaPlaybackState
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import java.io.File
@@ -47,12 +50,18 @@ class PlaybackService : Service() {
     private lateinit var audioManager: AudioManager
     private lateinit var mediaSession: MediaSession
     private lateinit var focusRequest: AudioFocusRequest
+    private val noisyAudioReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (audioBecomingNoisyRequiresPause(intent.action)) dispatch(ActionPause)
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
         AndroidPlaybackRuntime.initialize(applicationContext, AndroidSyncRuntime.syncStore())
         sessionStore = PlaybackSessionStore(applicationContext)
         audioManager = getSystemService(AudioManager::class.java)
+        registerNoisyAudioReceiver()
         focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
             .setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
             .setOnAudioFocusChangeListener { change -> if (change <= AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) dispatch(ActionPause) }
@@ -124,6 +133,7 @@ class PlaybackService : Service() {
     override fun onDestroy() {
         runBlocking { sessionStore.save(queue.snapshot()) }
         decoder?.close()
+        unregisterReceiver(noisyAudioReceiver)
         mediaSession.release()
         audioManager.abandonAudioFocusRequest(focusRequest)
         scope.cancel()
@@ -308,6 +318,16 @@ class PlaybackService : Service() {
             else -> return
         }
         getSystemService(NotificationManager::class.java).notify(NotificationId, notification(item))
+    }
+
+    private fun registerNoisyAudioReceiver() {
+        val filter = IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(noisyAudioReceiver, filter, RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("DEPRECATION")
+            registerReceiver(noisyAudioReceiver, filter)
+        }
     }
 
     /** Publishes metadata and transport state to Android System Now Playing surfaces. */

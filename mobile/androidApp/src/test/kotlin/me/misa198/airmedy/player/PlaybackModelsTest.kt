@@ -1,10 +1,20 @@
 package me.misa198.airmedy.player
 
+import android.media.AudioManager
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PlaybackModelsTest {
+    @Test
+    fun `audio becoming noisy pauses playback`() {
+        assertTrue(audioBecomingNoisyRequiresPause(AudioManager.ACTION_AUDIO_BECOMING_NOISY))
+        assertFalse(audioBecomingNoisyRequiresPause("me.misa198.airmedy.player.PAUSE"))
+        assertFalse(audioBecomingNoisyRequiresPause(null))
+    }
+
     @Test
     fun `request retains a valid queue start index`() {
         val request = PlaybackRequest(listOf("track-1", "track-2"), startIndex = 1)

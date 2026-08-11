@@ -1,9 +1,15 @@
 package me.misa198.airmedy.player
 
+import android.media.AudioManager
+
 internal const val PlaybackLogTag = "AirmedyPlayback"
 
 internal fun clampSeekPosition(positionMs: Long, durationMs: Long): Long =
     positionMs.coerceAtLeast(0L).let { position -> if (durationMs > 0L) position.coerceAtMost(durationMs) else position }
+
+/** Android sends this action when the current music output is about to become audible. */
+internal fun audioBecomingNoisyRequiresPause(action: String?): Boolean =
+    action == AudioManager.ACTION_AUDIO_BECOMING_NOISY
 
 /** An item the Android-native player can resolve from the synced library. */
 data class PlaybackItem(

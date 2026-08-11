@@ -17,6 +17,11 @@ it never busy-spins. Pausing also pauses the AAudio stream, so it does not keep
 rendering silent callbacks. There is no Media3, ExoPlayer, or `MediaCodec`
 decoder fallback.
 
+While playback is active, `PlaybackService` also listens for Android's
+`ACTION_AUDIO_BECOMING_NOISY` broadcast. This occurs when a wired or Bluetooth
+audio route disconnects and dispatches the same pause action as the player
+controls; the receiver is unregistered when the service is destroyed.
+
 `PlaybackService` publishes the active item's title, artist, artwork, duration,
 position, and transport state through the platform `MediaSession`. Android
 System Now Playing (lock screen and Quick Settings) consumes that session; the
