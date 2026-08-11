@@ -69,8 +69,8 @@ internal fun artistDetailsUiStateFor(
     val albums = state.allAlbums
         .filter { it.id in tracksByAlbumId }
         .sortedWith(
-            compareBy<LibraryAlbum, String>(String.CASE_INSENSITIVE_ORDER) { it.title }
-                .thenBy(String.CASE_INSENSITIVE_ORDER) { it.artist }
+            compareBy<LibraryAlbum, String>(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }
+                .thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortArtist }
                 .thenBy { it.id },
         )
     val tracks = albums.flatMap { album ->

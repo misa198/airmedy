@@ -9,9 +9,9 @@ import org.junit.Test
 
 class LibraryGenresViewModelTest {
     private val genres = listOf(
-        LibraryGenre(id = "1", name = "Rock", createdAt = "2026-01-01T00:00:00Z"),
-        LibraryGenre(id = "2", name = "Ambient", createdAt = "2026-05-01T00:00:00Z"),
-        LibraryGenre(id = "3", name = "Classical", createdAt = "2025-12-01T00:00:00Z"),
+        LibraryGenre(id = "1", name = "Rock", createdAt = "2026-01-01T00:00:00Z", sortName = "Rock"),
+        LibraryGenre(id = "2", name = "Ambient", createdAt = "2026-05-01T00:00:00Z", sortName = "Ambient"),
+        LibraryGenre(id = "3", name = "Classical", createdAt = "2025-12-01T00:00:00Z", sortName = "Classical"),
     )
 
     @Test
@@ -32,5 +32,15 @@ class LibraryGenresViewModelTest {
             listOf("Classical", "Rock", "Ambient"),
             sortGenres(genres, GenreSortOption.DateAdded, SortOrder.Ascending).map { it.name },
         )
+    }
+
+    @Test
+    fun usesNormalizationDerivedSortNameInsteadOfDisplayName() {
+        val genres = listOf(
+            LibraryGenre(id = "1", name = "Zulu", sortName = "Alpha"),
+            LibraryGenre(id = "2", name = "Alpha", sortName = "Zulu"),
+        )
+
+        assertEquals(listOf("Zulu", "Alpha"), sortGenres(genres, GenreSortOption.Name, SortOrder.Ascending).map { it.name })
     }
 }

@@ -57,7 +57,7 @@ internal class LibraryTracksViewModel(
     ) { rawTracks, option, order ->
         val sorted = sortTracks(rawTracks, option, order)
         val recent = rawTracks
-            .sortedWith(compareByDescending<LibraryTrack> { it.createdAt }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.title })
+            .sortedWith(compareByDescending<LibraryTrack> { it.createdAt }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }.thenBy { it.id })
             .take(50)
         LibraryTracksUiState(
             tracks = sorted,
@@ -106,14 +106,18 @@ internal fun sortTracks(
     order: SortOrder,
 ): List<LibraryTrack> {
     val comparator = when (option) {
-        TrackSortOption.Name -> compareBy<LibraryTrack, String>(String.CASE_INSENSITIVE_ORDER) { it.title }
-            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.artists }
-        TrackSortOption.Artist -> compareBy<LibraryTrack, String>(String.CASE_INSENSITIVE_ORDER) { it.artists }
-            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.title }
+        TrackSortOption.Name -> compareBy<LibraryTrack, String>(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortArtists }
+            .thenBy { it.id }
+        TrackSortOption.Artist -> compareBy<LibraryTrack, String>(String.CASE_INSENSITIVE_ORDER) { it.sortArtists }
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }
+            .thenBy { it.id }
         TrackSortOption.PlayCount -> compareBy<LibraryTrack> { it.playCount }
-            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.title }
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }
+            .thenBy { it.id }
         TrackSortOption.DateAdded -> compareBy<LibraryTrack> { it.createdAt }
-            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.title }
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }
+            .thenBy { it.id }
     }
 
     val sorted = tracks.sortedWith(comparator)

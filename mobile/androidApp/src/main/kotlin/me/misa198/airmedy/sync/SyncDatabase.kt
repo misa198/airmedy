@@ -168,7 +168,7 @@ internal interface SyncDao {
         LEFT JOIN sync_assets a ON a.planId = t.planId AND (a.assetId = t.artworkKey OR a.assetId = ('artwork:' || t.artworkKey))
         LEFT JOIN sync_assets audio ON audio.planId = t.planId AND audio.assetId = ('audio:' || t.trackId)
         WHERE p.active = 1
-        ORDER BY t.artists, t.album, t.title
+        ORDER BY t.syncOrder
     """)
     fun observeTracks(): Flow<List<LibraryTrackRow>>
 
@@ -230,6 +230,8 @@ data class LibraryTrack(
     val metadataJson: String = "{}",
     val artworkPath: String? = null,
     val audioPath: String? = null,
+    val sortTitle: String = "",
+    val sortArtists: String = "",
 )
 
 /** Reads non-indexed desktop metadata without requiring a Room schema change. */
@@ -242,6 +244,7 @@ data class LibraryArtist(
     val name: String,
     val createdAt: String = "",
     val artworkPath: String? = null,
+    val sortName: String = "",
 )
 
 data class LibraryAlbum(
@@ -251,12 +254,15 @@ data class LibraryAlbum(
     val createdAt: String = "",
     val artworkPath: String? = null,
     val year: Int = 0,
+    val sortTitle: String = "",
+    val sortArtist: String = "",
 )
 
 data class LibraryGenre(
     val id: String,
     val name: String,
     val createdAt: String = "",
+    val sortName: String = "",
 )
 
 data class LibraryComposer(
@@ -264,6 +270,7 @@ data class LibraryComposer(
     val name: String,
     val createdAt: String = "",
     val artworkPath: String? = null,
+    val sortName: String = "",
 )
 
 internal class AndroidLibrarySyncStore(
@@ -273,10 +280,13 @@ internal class AndroidLibrarySyncStore(
     private val dao = database.syncDao()
     val tracks: Flow<List<LibraryTrack>> = dao.observeTracks().map { rows ->
         rows.map { row ->
+            val metadata = row.metadataObject()
             LibraryTrack(
                 id = row.id,
                 title = row.title,
+                sortTitle = metadata?.string("sort_title").orEmpty(),
                 artists = row.artists,
+                sortArtists = metadata?.arraySortNames("artists").orEmpty(),
                 album = row.album,
                 albumId = row.albumId,
                 artworkKey = row.artworkKey,
@@ -454,11 +464,13 @@ internal fun libraryArtistsFrom(
             val candidate = LibraryArtist(
                 id = id,
                 name = name,
+                sortName = artist.string("sort_name").orEmpty(),
                 createdAt = artist.string("created_at").orEmpty(),
                 artworkPath = artworkKey?.let(artworkPaths::get),
             )
             artists[id] = artists[id]?.let { existing ->
                 existing.copy(
+                    sortName = existing.sortName.ifBlank { candidate.sortName },
                     artworkPath = existing.artworkPath ?: candidate.artworkPath,
                     createdAt = listOf(existing.createdAt, candidate.createdAt)
                         .filter(String::isNotBlank)
@@ -484,14 +496,18 @@ internal fun libraryAlbumsFrom(
         val candidate = LibraryAlbum(
             id = id,
             title = title,
+            sortTitle = album.string("sort_title").orEmpty(),
             artist = root.arrayNames("album_artists").ifBlank { root.arrayNames("artists") },
+            sortArtist = root.arraySortNames("album_artists").ifBlank { root.arraySortNames("artists") },
             createdAt = album.string("created_at").orEmpty().ifBlank { track.createdAt },
             artworkPath = album.string("artwork_key")?.takeIf(String::isNotBlank)?.let(artworkPaths::get),
             year = album.int("year"),
         )
         albums[id] = albums[id]?.let { existing ->
             existing.copy(
+                sortTitle = existing.sortTitle.ifBlank { candidate.sortTitle },
                 artist = existing.artist.ifBlank { candidate.artist },
+                sortArtist = existing.sortArtist.ifBlank { candidate.sortArtist },
                 artworkPath = existing.artworkPath ?: candidate.artworkPath,
                 createdAt = listOf(existing.createdAt, candidate.createdAt)
                     .filter(String::isNotBlank)
@@ -512,17 +528,19 @@ internal fun libraryGenresFrom(
         val root = runCatching { LibrarySyncProtocol.json.parseToJsonElement(track.rawJson) as? JsonObject }.getOrNull()
             ?: return@forEach
 
-        fun addGenre(rawId: String?, rawName: String, createdAt: String) {
+        fun addGenre(rawId: String?, rawName: String, sortName: String, createdAt: String) {
             val name = rawName.trim()
             if (name.isBlank()) return
             val id = rawId?.trim()?.takeIf(String::isNotBlank) ?: name.lowercase()
             val candidate = LibraryGenre(
                 id = id,
                 name = name,
+                sortName = sortName,
                 createdAt = createdAt,
             )
             genres[id] = genres[id]?.let { existing ->
                 existing.copy(
+                    sortName = existing.sortName.ifBlank { candidate.sortName },
                     createdAt = listOf(existing.createdAt, candidate.createdAt)
                         .filter(String::isNotBlank)
                         .minOrNull()
@@ -540,11 +558,11 @@ internal fun libraryGenresFrom(
                                 val id = value.string("id")
                                 val name = value.string("name") ?: value.string("title") ?: ""
                                 val createdAt = value.string("created_at").orEmpty().ifBlank { track.createdAt }
-                                addGenre(id, name, createdAt)
+                                addGenre(id, name, value.string("normalization_key").orEmpty(), createdAt)
                             }
                             is JsonPrimitive -> {
                                 val name = value.contentOrNull ?: ""
-                                addGenre(null, name, track.createdAt)
+                                addGenre(null, name, "", track.createdAt)
                             }
                             else -> {}
                         }
@@ -554,12 +572,12 @@ internal fun libraryGenresFrom(
                     val id = element.string("id")
                     val name = element.string("name") ?: element.string("title") ?: ""
                     val createdAt = element.string("created_at").orEmpty().ifBlank { track.createdAt }
-                    addGenre(id, name, createdAt)
+                    addGenre(id, name, element.string("normalization_key").orEmpty(), createdAt)
                 }
                 is JsonPrimitive -> {
                     val str = element.contentOrNull.orEmpty()
                     str.split(',', ';', '/').forEach { part ->
-                        addGenre(null, part, track.createdAt)
+                        addGenre(null, part, "", track.createdAt)
                     }
                 }
                 else -> {}
@@ -584,18 +602,20 @@ internal fun libraryComposersFrom(
         val root = runCatching { LibrarySyncProtocol.json.parseToJsonElement(track.rawJson) as? JsonObject }.getOrNull()
             ?: return@forEach
 
-        fun addComposer(rawId: String?, rawName: String, artworkKey: String?, createdAt: String) {
+        fun addComposer(rawId: String?, rawName: String, sortName: String, artworkKey: String?, createdAt: String) {
             val name = rawName.trim()
             if (name.isBlank()) return
             val id = rawId?.trim()?.takeIf(String::isNotBlank) ?: name.lowercase()
             val candidate = LibraryComposer(
                 id = id,
                 name = name,
+                sortName = sortName,
                 createdAt = createdAt,
                 artworkPath = artworkKey?.let(artworkPaths::get),
             )
             composers[id] = composers[id]?.let { existing ->
                 existing.copy(
+                    sortName = existing.sortName.ifBlank { candidate.sortName },
                     artworkPath = existing.artworkPath ?: candidate.artworkPath,
                     createdAt = listOf(existing.createdAt, candidate.createdAt)
                         .filter(String::isNotBlank)
@@ -617,11 +637,11 @@ internal fun libraryComposersFrom(
                                     ?: listOf("artwork_key_manual", "artwork_key_local", "artwork_key_online")
                                         .firstNotNullOfOrNull { key -> value.string(key)?.takeIf(String::isNotBlank) }
                                 val createdAt = value.string("created_at").orEmpty().ifBlank { track.createdAt }
-                                addComposer(id, name, artworkKey, createdAt)
+                                addComposer(id, name, value.string("normalization_key").orEmpty(), artworkKey, createdAt)
                             }
                             is JsonPrimitive -> {
                                 val name = value.contentOrNull ?: ""
-                                addComposer(null, name, null, track.createdAt)
+                                addComposer(null, name, "", null, track.createdAt)
                             }
                             else -> {}
                         }
@@ -634,12 +654,12 @@ internal fun libraryComposersFrom(
                         ?: listOf("artwork_key_manual", "artwork_key_local", "artwork_key_online")
                             .firstNotNullOfOrNull { key -> element.string(key)?.takeIf(String::isNotBlank) }
                     val createdAt = element.string("created_at").orEmpty().ifBlank { track.createdAt }
-                    addComposer(id, name, artworkKey, createdAt)
+                    addComposer(id, name, element.string("normalization_key").orEmpty(), artworkKey, createdAt)
                 }
                 is JsonPrimitive -> {
                     val str = element.contentOrNull.orEmpty()
                     str.split(',', ';', '/').forEach { part ->
-                        addComposer(null, part, null, track.createdAt)
+                        addComposer(null, part, "", null, track.createdAt)
                     }
                 }
                 else -> {}
@@ -667,3 +687,11 @@ private fun JsonObject.int(name: String): Int = (this[name] as? JsonPrimitive)?.
 private fun JsonObject.arrayNames(name: String): String = ((this[name] as? JsonArray).orEmpty())
     .mapNotNull { (it as? JsonObject)?.string("name")?.trim()?.takeIf(String::isNotEmpty) }
     .joinToString(", ")
+
+private fun JsonObject.arraySortNames(name: String): String = ((this[name] as? JsonArray).orEmpty())
+    .mapNotNull { (it as? JsonObject)?.string("sort_name")?.trim()?.takeIf(String::isNotEmpty) }
+    .joinToString(", ")
+
+private fun LibraryTrackRow.metadataObject(): JsonObject? = runCatching {
+    LibrarySyncProtocol.json.parseToJsonElement(rawJson) as? JsonObject
+}.getOrNull()

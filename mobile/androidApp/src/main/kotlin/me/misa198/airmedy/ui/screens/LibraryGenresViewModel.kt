@@ -68,9 +68,11 @@ internal fun sortGenres(
     order: SortOrder,
 ): List<LibraryGenre> {
     val comparator = when (option) {
-        GenreSortOption.Name -> compareBy<LibraryGenre, String>(String.CASE_INSENSITIVE_ORDER) { it.name }
+        GenreSortOption.Name -> compareBy<LibraryGenre, String>(String.CASE_INSENSITIVE_ORDER) { it.sortName }
+            .thenBy { it.id }
         GenreSortOption.DateAdded -> compareBy<LibraryGenre> { it.createdAt }
-            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortName }
+            .thenBy { it.id }
     }
     val sorted = genres.sortedWith(comparator)
     return if (order == SortOrder.Descending) sorted.reversed() else sorted

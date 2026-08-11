@@ -61,12 +61,15 @@ internal fun sortAlbums(
     order: SortOrder,
 ): List<LibraryAlbum> {
     val comparator = when (option) {
-        AlbumSortOption.Name -> compareBy<LibraryAlbum, String>(String.CASE_INSENSITIVE_ORDER) { it.title }
-            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.artist }
-        AlbumSortOption.Artist -> compareBy<LibraryAlbum, String>(String.CASE_INSENSITIVE_ORDER) { it.artist }
-            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.title }
+        AlbumSortOption.Name -> compareBy<LibraryAlbum, String>(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortArtist }
+            .thenBy { it.id }
+        AlbumSortOption.Artist -> compareBy<LibraryAlbum, String>(String.CASE_INSENSITIVE_ORDER) { it.sortArtist }
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }
+            .thenBy { it.id }
         AlbumSortOption.DateAdded -> compareBy<LibraryAlbum> { it.createdAt }
-            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.title }
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }
+            .thenBy { it.id }
     }
     return albums.sortedWith(comparator).let { if (order == SortOrder.Descending) it.reversed() else it }
 }

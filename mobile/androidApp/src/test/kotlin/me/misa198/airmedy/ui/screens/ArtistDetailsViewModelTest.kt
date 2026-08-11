@@ -8,12 +8,12 @@ import org.junit.Test
 
 class ArtistDetailsViewModelTest {
     @Test
-    fun detailsSortAlbumsByTitleAndTracksByDiscThenTrackNumber() {
+    fun detailsSortAlbumsByCanonicalSortTitleAndTracksByDiscThenTrackNumber() {
         val state = ArtistDetailsUiState(
             allArtists = listOf(LibraryArtist("artist", "Artist")),
             allAlbums = listOf(
-                LibraryAlbum("z", "Zebra", "Artist"),
-                LibraryAlbum("a", "Alpha", "Artist"),
+                LibraryAlbum("z", "Alpha", "Artist", sortTitle = "Zulu", sortArtist = "Zulu Artist"),
+                LibraryAlbum("a", "Zulu", "Artist", sortTitle = "Alpha", sortArtist = "Alpha Artist"),
             ),
             tracks = listOf(
                 track("z-two", "z", disc = 1, number = 2, order = 2),

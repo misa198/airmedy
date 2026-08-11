@@ -69,9 +69,11 @@ internal fun sortArtists(
     order: SortOrder,
 ): List<LibraryArtist> {
     val comparator = when (option) {
-        ArtistSortOption.Name -> compareBy<LibraryArtist, String>(String.CASE_INSENSITIVE_ORDER) { it.name }
+        ArtistSortOption.Name -> compareBy<LibraryArtist, String>(String.CASE_INSENSITIVE_ORDER) { it.sortName }
+            .thenBy { it.id }
         ArtistSortOption.DateAdded -> compareBy<LibraryArtist> { it.createdAt }
-            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortName }
+            .thenBy { it.id }
     }
     val sorted = artists.sortedWith(comparator)
     return if (order == SortOrder.Descending) sorted.reversed() else sorted

@@ -69,9 +69,11 @@ internal fun sortComposers(
     order: SortOrder,
 ): List<LibraryComposer> {
     val comparator = when (option) {
-        ComposerSortOption.Name -> compareBy<LibraryComposer, String>(String.CASE_INSENSITIVE_ORDER) { it.name }
+        ComposerSortOption.Name -> compareBy<LibraryComposer, String>(String.CASE_INSENSITIVE_ORDER) { it.sortName }
+            .thenBy { it.id }
         ComposerSortOption.DateAdded -> compareBy<LibraryComposer> { it.createdAt }
-            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name }
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortName }
+            .thenBy { it.id }
     }
     val sorted = composers.sortedWith(comparator)
     return if (order == SortOrder.Descending) sorted.reversed() else sorted

@@ -8,13 +8,14 @@ class LibraryGenreMapperTest {
     fun groupsNormalizedManifestGenres() {
         val genres = libraryGenresFrom(
             tracks = listOf(
-                row("""{"genres":[{"id":"rock","name":"Rock","created_at":"2026-02-01T00:00:00Z"},{"id":"pop","name":"Pop"}]}"""),
+                row("""{"genres":[{"id":"rock","name":"Rock","normalization_key":"rock","created_at":"2026-02-01T00:00:00Z"},{"id":"pop","name":"Pop"}]}"""),
                 row("""{"genres":[{"id":"rock","name":"Rock","created_at":"2026-01-01T00:00:00Z"}]}"""),
             ),
         )
 
         assertEquals(listOf("rock", "pop"), genres.map { it.id })
         assertEquals("Rock", genres.first().name)
+        assertEquals("rock", genres.first().sortName)
         assertEquals("2026-01-01T00:00:00Z", genres.first().createdAt)
     }
 

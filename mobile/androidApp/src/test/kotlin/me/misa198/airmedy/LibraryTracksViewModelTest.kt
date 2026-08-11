@@ -11,9 +11,9 @@ import org.junit.Test
 class LibraryTracksViewModelTest {
 
     private val sampleTracks = listOf(
-        LibraryTrack(id = "1", title = "Charlie", artists = "Zebra", album = "A1", playCount = 10, createdAt = "2026-01-01T00:00:00Z"),
-        LibraryTrack(id = "2", title = "Alpha", artists = "Beta", album = "A2", playCount = 5, createdAt = "2026-05-01T00:00:00Z"),
-        LibraryTrack(id = "3", title = "Bravo", artists = "Delta", album = "A3", playCount = 50, createdAt = "2025-12-01T00:00:00Z"),
+        LibraryTrack(id = "1", title = "Charlie", artists = "Zebra", album = "A1", playCount = 10, createdAt = "2026-01-01T00:00:00Z", sortTitle = "Charlie", sortArtists = "Zebra"),
+        LibraryTrack(id = "2", title = "Alpha", artists = "Beta", album = "A2", playCount = 5, createdAt = "2026-05-01T00:00:00Z", sortTitle = "Alpha", sortArtists = "Beta"),
+        LibraryTrack(id = "3", title = "Bravo", artists = "Delta", album = "A3", playCount = 50, createdAt = "2025-12-01T00:00:00Z", sortTitle = "Bravo", sortArtists = "Delta"),
     )
 
     @Test
@@ -26,6 +26,17 @@ class LibraryTracksViewModelTest {
     fun sortsByNameDescending() {
         val sorted = sortTracks(sampleTracks, TrackSortOption.Name, SortOrder.Descending)
         assertEquals(listOf("Charlie", "Bravo", "Alpha"), sorted.map { it.title })
+    }
+
+    @Test
+    fun usesCanonicalTrackAndArtistSortKeysInsteadOfDisplayLabels() {
+        val tracks = listOf(
+            LibraryTrack(id = "1", title = "Zulu", artists = "Zulu Artist", sortTitle = "Alpha", sortArtists = "Beta"),
+            LibraryTrack(id = "2", title = "Alpha", artists = "Alpha Artist", sortTitle = "Zulu", sortArtists = "Alpha"),
+        )
+
+        assertEquals(listOf("Zulu", "Alpha"), sortTracks(tracks, TrackSortOption.Name, SortOrder.Ascending).map { it.title })
+        assertEquals(listOf("Alpha Artist", "Zulu Artist"), sortTracks(tracks, TrackSortOption.Artist, SortOrder.Ascending).map { it.artists })
     }
 
     @Test
@@ -82,15 +93,16 @@ class LibraryTracksViewModelTest {
                 artists = "Artist $index",
                 album = "Album",
                 createdAt = String.format("2026-01-%02dT00:00:00Z", (index % 28) + 1),
+                sortTitle = "Track $index",
             )
         }
         val recent = manyTracks
-            .sortedWith(compareByDescending<LibraryTrack> { it.createdAt }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.title })
+            .sortedWith(compareByDescending<LibraryTrack> { it.createdAt }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }.thenBy { it.id })
             .take(50)
 
         assertEquals(50, recent.size)
         assertEquals(
-            recent.sortedWith(compareByDescending<LibraryTrack> { it.createdAt }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.title }),
+            recent.sortedWith(compareByDescending<LibraryTrack> { it.createdAt }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }.thenBy { it.id }),
             recent,
         )
     }

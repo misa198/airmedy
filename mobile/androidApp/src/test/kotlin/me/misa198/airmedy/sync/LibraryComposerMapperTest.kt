@@ -9,7 +9,7 @@ class LibraryComposerMapperTest {
     fun groupsNormalizedManifestComposersAndResolvesArtworkAssets() {
         val composers = libraryComposersFrom(
             tracks = listOf(
-                row("""{"composers":[{"id":"c1","name":"Beethoven","artwork_key":"beethoven-art","created_at":"2026-02-01T00:00:00Z"},{"id":"c2","name":"Mozart"}]}"""),
+                row("""{"composers":[{"id":"c1","name":"Beethoven","normalization_key":"beethoven, ludwig van","artwork_key":"beethoven-art","created_at":"2026-02-01T00:00:00Z"},{"id":"c2","name":"Mozart"}]}"""),
                 row("""{"composers":[{"id":"c1","name":"Beethoven","created_at":"2026-01-01T00:00:00Z"}]}"""),
             ),
             artworkPaths = mapOf("beethoven-art" to "artwork/beethoven.jpg"),
@@ -17,6 +17,7 @@ class LibraryComposerMapperTest {
 
         assertEquals(listOf("c1", "c2"), composers.map { it.id })
         assertEquals("Beethoven", composers.first().name)
+        assertEquals("beethoven, ludwig van", composers.first().sortName)
         assertEquals("artwork/beethoven.jpg", composers.first().artworkPath)
         assertEquals("2026-01-01T00:00:00Z", composers.first().createdAt)
         assertNull(composers.last().artworkPath)

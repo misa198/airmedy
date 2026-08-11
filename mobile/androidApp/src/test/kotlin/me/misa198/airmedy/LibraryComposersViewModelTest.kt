@@ -9,9 +9,9 @@ import org.junit.Test
 
 class LibraryComposersViewModelTest {
     private val composers = listOf(
-        LibraryComposer(id = "1", name = "Zimmer", createdAt = "2026-01-01T00:00:00Z"),
-        LibraryComposer(id = "2", name = "Bach", createdAt = "2026-05-01T00:00:00Z"),
-        LibraryComposer(id = "3", name = "Chopin", createdAt = "2025-12-01T00:00:00Z"),
+        LibraryComposer(id = "1", name = "Zimmer", createdAt = "2026-01-01T00:00:00Z", sortName = "Zimmer"),
+        LibraryComposer(id = "2", name = "Bach", createdAt = "2026-05-01T00:00:00Z", sortName = "Bach"),
+        LibraryComposer(id = "3", name = "Chopin", createdAt = "2025-12-01T00:00:00Z", sortName = "Chopin"),
     )
 
     @Test
@@ -32,5 +32,15 @@ class LibraryComposersViewModelTest {
             listOf("Chopin", "Zimmer", "Bach"),
             sortComposers(composers, ComposerSortOption.DateAdded, SortOrder.Ascending).map { it.name },
         )
+    }
+
+    @Test
+    fun usesNormalizationDerivedSortNameInsteadOfDisplayName() {
+        val composers = listOf(
+            LibraryComposer(id = "1", name = "Zulu", sortName = "Alpha"),
+            LibraryComposer(id = "2", name = "Alpha", sortName = "Zulu"),
+        )
+
+        assertEquals(listOf("Zulu", "Alpha"), sortComposers(composers, ComposerSortOption.Name, SortOrder.Ascending).map { it.name })
     }
 }

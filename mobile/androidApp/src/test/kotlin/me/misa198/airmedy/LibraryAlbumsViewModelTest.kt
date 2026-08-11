@@ -9,9 +9,9 @@ import org.junit.Test
 
 class LibraryAlbumsViewModelTest {
     private val albums = listOf(
-        LibraryAlbum(id = "1", title = "Zebra", artist = "Delta", createdAt = "2026-01-01T00:00:00Z"),
-        LibraryAlbum(id = "2", title = "Alpha", artist = "Zebra", createdAt = "2026-05-01T00:00:00Z"),
-        LibraryAlbum(id = "3", title = "Bravo", artist = "Alpha", createdAt = "2025-12-01T00:00:00Z"),
+        LibraryAlbum(id = "1", title = "Zebra", artist = "Delta", createdAt = "2026-01-01T00:00:00Z", sortTitle = "Zebra", sortArtist = "Delta"),
+        LibraryAlbum(id = "2", title = "Alpha", artist = "Zebra", createdAt = "2026-05-01T00:00:00Z", sortTitle = "Alpha", sortArtist = "Zebra"),
+        LibraryAlbum(id = "3", title = "Bravo", artist = "Alpha", createdAt = "2025-12-01T00:00:00Z", sortTitle = "Bravo", sortArtist = "Alpha"),
     )
 
     @Test
@@ -24,5 +24,16 @@ class LibraryAlbumsViewModelTest {
     @Test
     fun reversesTheSortedAlbumOrder() {
         assertEquals(listOf("Zebra", "Bravo", "Alpha"), sortAlbums(albums, AlbumSortOption.Name, SortOrder.Descending).map { it.title })
+    }
+
+    @Test
+    fun usesCanonicalAlbumAndArtistSortKeysInsteadOfDisplayLabels() {
+        val albums = listOf(
+            LibraryAlbum(id = "1", title = "Zulu", artist = "Zulu Artist", sortTitle = "Alpha", sortArtist = "Beta"),
+            LibraryAlbum(id = "2", title = "Alpha", artist = "Alpha Artist", sortTitle = "Zulu", sortArtist = "Alpha"),
+        )
+
+        assertEquals(listOf("Zulu", "Alpha"), sortAlbums(albums, AlbumSortOption.Name, SortOrder.Ascending).map { it.title })
+        assertEquals(listOf("Alpha Artist", "Zulu Artist"), sortAlbums(albums, AlbumSortOption.Artist, SortOrder.Ascending).map { it.artist })
     }
 }
