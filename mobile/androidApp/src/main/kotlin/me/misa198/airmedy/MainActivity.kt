@@ -188,6 +188,7 @@ class MainActivity : ComponentActivity() {
                 onSortOptionSelected = tracksViewModel::setSortOption,
                 onToggleSortOrder = tracksViewModel::toggleSortOrder,
                 onTrackClick = tracksViewModel::playTrack,
+                onRecentTrackClick = tracksViewModel::playRecentTrack,
                 onArtistSortOptionSelected = artistsViewModel::setSortOption,
                 onArtistToggleSortOrder = artistsViewModel::toggleSortOrder,
                 onAlbumSortOptionSelected = albumsViewModel::setSortOption,

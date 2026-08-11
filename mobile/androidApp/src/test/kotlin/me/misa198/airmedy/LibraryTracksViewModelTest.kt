@@ -85,6 +85,16 @@ class LibraryTracksViewModelTest {
     }
 
     @Test
+    fun clickedRecentlyAddedTrackBuildsQueueFromRecentOrder() {
+        val recentTracks = listOf(sampleTracks[1], sampleTracks[0], sampleTracks[2])
+
+        val request = requireNotNull(playbackRequestFor(recentTracks, "1"))
+
+        assertEquals(listOf("2", "1", "3"), request.trackIds)
+        assertEquals(1, request.startIndex)
+    }
+
+    @Test
     fun recentTracksLimitsTo50AndSortsByCreatedAtDescending() {
         val manyTracks = (1..60).map { index ->
             LibraryTrack(

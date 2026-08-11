@@ -125,6 +125,7 @@ internal fun AppDestinationContent(
     onSortOptionSelected: (TrackSortOption) -> Unit = {},
     onToggleSortOrder: () -> Unit = {},
     onTrackClick: (String) -> Unit = {},
+    onRecentTrackClick: (String) -> Unit = {},
     onAlbumSortOptionSelected: (AlbumSortOption) -> Unit = {},
     onAlbumToggleSortOrder: () -> Unit = {},
     onAlbumPlay: (String, Boolean) -> Unit = { _, _ -> },
@@ -343,7 +344,7 @@ internal fun AppDestinationContent(
                                 contentPadding = contentPadding,
                                 recentTracks = tracksUiState.recentTracks,
                                 listState = libraryListState,
-                                onTrackClick = onTrackClick,
+                                onTrackClick = onRecentTrackClick,
                                 onTracksSelected = {
                                     onIntent(AppIntent.OpenPage(AppStackPage.LibraryTracks))
                                 },

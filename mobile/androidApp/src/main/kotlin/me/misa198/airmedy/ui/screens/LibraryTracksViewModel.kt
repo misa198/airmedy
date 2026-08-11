@@ -88,10 +88,18 @@ internal class LibraryTracksViewModel(
     }
 
     fun playTrack(trackId: String) {
-        playbackRequestFor(uiState.value.tracks, trackId)?.let { request ->
-            Log.d(PlaybackLogTag, "Track row clicked id=$trackId queueSize=${request.trackIds.size} startIndex=${request.startIndex}")
+        playFromQueue(trackId, uiState.value.tracks, "Track row")
+    }
+
+    fun playRecentTrack(trackId: String) {
+        playFromQueue(trackId, uiState.value.recentTracks, "Recently added track")
+    }
+
+    private fun playFromQueue(trackId: String, queueTracks: List<LibraryTrack>, source: String) {
+        playbackRequestFor(queueTracks, trackId)?.let { request ->
+            Log.d(PlaybackLogTag, "$source clicked id=$trackId queueSize=${request.trackIds.size} startIndex=${request.startIndex}")
             playbackController.play(request)
-        } ?: Log.w(PlaybackLogTag, "Track row click ignored: id=$trackId is not in visible tracks")
+        } ?: Log.w(PlaybackLogTag, "$source click ignored: id=$trackId is not in its visible queue")
     }
 }
 
