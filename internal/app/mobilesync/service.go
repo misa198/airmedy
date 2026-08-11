@@ -18,6 +18,7 @@ import (
 	"sync"
 	"time"
 
+	lyricsapp "airmedy/internal/app/lyrics"
 	"airmedy/internal/domain"
 
 	"github.com/google/uuid"
@@ -53,17 +54,18 @@ type syncReceipt struct {
 }
 
 type Service struct {
-	plans     domain.MobileLibrarySyncPlanRepository
-	tracks    domain.TrackRepository
-	playlists domain.PlaylistRepository
-	lyrics    domain.LyricRepository
-	analysis  domain.AnalysisRepository
-	artwork   domain.ArtworkCache
-	devices   domain.TrustedMobileDeviceRepository
-	identity  domain.PairingIdentityRepository
-	keys      domain.PairingKeyStore
-	broker    domain.PairingBroker
-	logger    *slog.Logger
+	plans      domain.MobileLibrarySyncPlanRepository
+	tracks     domain.TrackRepository
+	playlists  domain.PlaylistRepository
+	lyrics     *lyricsapp.LyricsService
+	lyricCache domain.MobileSyncLyricCacheRepository
+	analysis   domain.AnalysisRepository
+	artwork    domain.ArtworkCache
+	devices    domain.TrustedMobileDeviceRepository
+	identity   domain.PairingIdentityRepository
+	keys       domain.PairingKeyStore
+	broker     domain.PairingBroker
+	logger     *slog.Logger
 
 	mu                 sync.Mutex
 	server             *http.Server
@@ -73,8 +75,8 @@ type Service struct {
 	listeners          []func(*domain.MobileLibrarySyncPlan)
 }
 
-func NewService(plans domain.MobileLibrarySyncPlanRepository, tracks domain.TrackRepository, playlists domain.PlaylistRepository, lyrics domain.LyricRepository, analysis domain.AnalysisRepository, artwork domain.ArtworkCache, devices domain.TrustedMobileDeviceRepository, identity domain.PairingIdentityRepository, keys domain.PairingKeyStore, broker domain.PairingBroker, logger *slog.Logger) *Service {
-	return &Service{plans: plans, tracks: tracks, playlists: playlists, lyrics: lyrics, analysis: analysis, artwork: artwork, devices: devices, identity: identity, keys: keys, broker: broker, logger: logger, nonces: make(map[string]time.Time)}
+func NewService(plans domain.MobileLibrarySyncPlanRepository, tracks domain.TrackRepository, playlists domain.PlaylistRepository, lyrics *lyricsapp.LyricsService, lyricCache domain.MobileSyncLyricCacheRepository, analysis domain.AnalysisRepository, artwork domain.ArtworkCache, devices domain.TrustedMobileDeviceRepository, identity domain.PairingIdentityRepository, keys domain.PairingKeyStore, broker domain.PairingBroker, logger *slog.Logger) *Service {
+	return &Service{plans: plans, tracks: tracks, playlists: playlists, lyrics: lyrics, lyricCache: lyricCache, analysis: analysis, artwork: artwork, devices: devices, identity: identity, keys: keys, broker: broker, logger: logger, nonces: make(map[string]time.Time)}
 }
 
 func (s *Service) OnStop(ctx context.Context) error {
@@ -171,6 +173,10 @@ func (s *Service) createPlan(ctx context.Context, deviceID string, scope domain.
 	planID := uuid.NewString()
 	manifest := domain.MobileLibrarySyncManifest{Version: syncProtocolVersion, PlanID: planID, Scope: scope, Lyrics: map[string]*domain.Lyric{}, Analysis: map[string]*domain.TrackFeatures{}}
 	assets := make([]domain.MobileLibrarySyncAsset, 0, len(tracks)*2)
+	resolvedLyrics, err := s.lyrics.ResolveForMobileSync(ctx, tracks, s.lyricCache)
+	if err != nil {
+		return nil, fmt.Errorf("resolve sync lyrics: %w", err)
+	}
 	artworkKeys := map[string]struct{}{}
 	selected := map[string]struct{}{}
 	for _, dto := range tracks {
@@ -184,9 +190,7 @@ func (s *Service) createPlan(ctx context.Context, deviceID string, scope domain.
 		copy.Track = dto.Track
 		copy.Path = ""
 		manifest.Tracks = append(manifest.Tracks, &copy)
-		if lyric, err := s.lyrics.GetByTrackID(ctx, dto.ID); err != nil {
-			return nil, fmt.Errorf("load lyrics: %w", err)
-		} else if lyric != nil {
+		if lyric := resolvedLyrics[dto.ID]; lyric != nil {
 			manifest.Lyrics[dto.ID] = lyric
 		}
 		if feature, err := s.analysis.GetFeatures(ctx, dto.ID); err != nil {

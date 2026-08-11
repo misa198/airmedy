@@ -85,6 +85,7 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000064 | `playback_attempt_listening_time.up.sql` | Add aggregate listened seconds to calculate average playback session length |
 | 000065 | `mobile_pairing.up.sql` | Add desktop pairing identity and trusted mobile public-key tables |
 | 000067 | `mobile_library_sync.up.sql` | Add persisted per-device library-sync plans and idempotent asset receipts |
+| 000068 | `mobile_sync_lyric_cache.up.sql` | Add desktop cache of effective lyric snapshots, output versions, and input fingerprints used while creating mobile-sync plans |
 
 `listeningRepository.GetInsights` returns up to 50 entries for both Top Artists
 (ordered by listened seconds) and Top Tracks (ordered by play count, then listened

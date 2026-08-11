@@ -70,12 +70,14 @@ internal fun SyncContent(
                             modifier = Modifier.padding(top = 8.dp),
                         )
                     },
-                )
-                AirmedyPillButton(
-                    label = stringResource(R.string.sync_revoke),
-                    onClick = { showRevokeConfirmation = true },
-                    variant = AirmedyPillButtonVariant.Destructive,
-                    modifier = Modifier.padding(top = 16.dp),
+                    bottomContent = {
+                        AirmedyPillButton(
+                            label = stringResource(R.string.sync_revoke),
+                            onClick = { showRevokeConfirmation = true },
+                            variant = AirmedyPillButtonVariant.Destructive,
+                            modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 16.dp),
+                        )
+                    },
                 )
             }
             syncUiState.isPairing -> HeroCard(
@@ -163,7 +165,7 @@ private fun SyncProgressCard(
             if (syncState.total == 0) {
                 stringResource(R.string.sync_progress_connecting)
             } else {
-                stringResource(R.string.sync_progress_items, syncState.completed, syncState.total)
+                stringResource(R.string.sync_progress_syncing)
             }
         }
         is AndroidSyncState.Completed -> stringResource(R.string.sync_notification_complete)
@@ -206,7 +208,7 @@ private fun SyncProgressCard(
                             text = pct,
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
-                            color = colors.primary,
+                            color = colors.textMain,
                             modifier = Modifier.padding(start = 8.dp),
                         )
                     }
@@ -214,7 +216,7 @@ private fun SyncProgressCard(
 
                 AirmedyProgressBar(
                     progress = progressFloat,
-                    color = colors.primary,
+                    color = colors.textMain,
                     trackColor = colors.buttonSecondary,
                 )
             }
@@ -238,6 +240,7 @@ private fun AirmedyProgressBar(
             color = color,
             trackColor = trackColor,
             strokeCap = StrokeCap.Round,
+            gapSize = 0.dp,
         )
     } else {
         LinearProgressIndicator(
@@ -249,8 +252,8 @@ private fun AirmedyProgressBar(
             color = color,
             trackColor = trackColor,
             strokeCap = StrokeCap.Round,
+            gapSize = 0.dp,
             drawStopIndicator = {},
         )
     }
 }
-

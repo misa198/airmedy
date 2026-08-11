@@ -61,9 +61,9 @@ describe the desktop Vue UI or future iOS UI.
   app start, without a background retry loop; foreground discovery is the only
   source of reconnect attempts. The MQTT session remains connected after leaving
   the screen, but its transient discovery endpoint is never persisted or reused
-  for discovery outside this lifecycle. Its separate destructive Revoke button
-  opens the shared mobile dialog. LAN host and port are used only for the
-  temporary pairing transport and are never displayed.
+  for discovery outside this lifecycle. Its destructive Revoke button sits
+  in a bottom slot of the paired-device HeroCard and opens the shared mobile dialog. LAN host
+  and port are used only for the temporary pairing transport and are never displayed.
   The action opens `SettingsSyncScanner`, with a centred rounded QR viewfinder,
   descriptive scan guidance, and an image-picker fallback decoded by ML Kit for
   devices whose camera is unavailable.
@@ -71,7 +71,7 @@ describe the desktop Vue UI or future iOS UI.
   this is an internal transport detail, never shown in UI. Revoke is deliberately local-only: it clears the mobile binding and permits a
   new desktop scan, while the old desktop remains trusted until revoked there.
 - A valid desktop library-sync request starts Android's foreground transfer
-  service. Sync Settings renders its preparing/progress/completed/failed state inside a dedicated `Card` featuring a top gap, primary `LinearProgressIndicator` progress bar, status text, and percentage indicator;
+  service. Sync Settings renders its preparing/progress/completed/failed state inside a dedicated `Card` featuring a top gap, text-coloured `LinearProgressIndicator` progress bar with no fill/track gap, status text, and percentage indicator; it never exposes an asset count. The foreground-service notification likewise reports percentage only.
   the system notification remains the background control surface and provides
   Cancel. Revoke stops the transfer before deleting all mirrored library data.
 - Library root page displays a plain `ActionList` (`ActionListContainerStyle.Plain`) with actions for Artists,
@@ -232,7 +232,7 @@ describe the desktop Vue UI or future iOS UI.
 | --- | --- |
 | `Card` | Standard 28dp, borderless, opaque themed card surface. It accepts slot content and optional padding; its title/description overload remains a tappable primary-action card. |
 | `DiscCard` | Displays a vertical card featuring a 1:1 square rounded artwork thumbnail (or glass symbol fallback), semibold single-line title, and muted single-line subtitle. Usable for album or track cards. Clickable cards retain button semantics but suppress the press ripple. |
-| `HeroCard` | A non-interactive informational card with a 40dp decorative icon, bold `titleLarge` title, optional content directly below its title, and muted description. Sync uses this slot for its MQTT Online/Offline badge, aligned with the desktop name. |
+| `HeroCard` | A non-interactive informational card with a 40dp decorative icon, bold `titleLarge` title, optional content directly below its title, and muted description. Its optional bottom slot stays inside the card but outside the standard 24dp content padding. Sync uses these slots for its MQTT Online/Offline badge and in-card Revoke action. |
 | `DetailHero` | Centered detail-page identity header with configurable square/circular artwork, title/subtitle, and Shuffle/Play/More callbacks. |
 | `AlbumTrackRow` | Detail-page track row with ordinal, two-line title/artist metadata, and an independent trailing overflow action. |
 | `TrackRow` | Displays a track row with 48dp rounded artwork (or fallback glass icon), semibold 2-line title/artist text display, and a trailing `...` overflow button. |

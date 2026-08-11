@@ -71,7 +71,7 @@ describe('MobileLibrarySyncView', () => {
     await flushPromises()
 
     expect(getStatus).toHaveBeenCalledTimes(2)
-    expect(wrapper.text()).toContain('1 / 4')
+    expect(wrapper.text()).toContain('25%')
     wrapper.unmount()
   })
 })

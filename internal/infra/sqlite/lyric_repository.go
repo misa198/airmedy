@@ -7,10 +7,34 @@ import (
 	"time"
 
 	"airmedy/internal/domain"
+	"github.com/jmoiron/sqlx"
 )
 
 type lyricRepository struct {
 	db *DB
+}
+
+func (r *lyricRepository) GetByTrackIDs(ctx context.Context, trackIDs []string) (map[string]*domain.Lyric, error) {
+	result := make(map[string]*domain.Lyric, len(trackIDs))
+	for start := 0; start < len(trackIDs); start += 900 {
+		end := start + 900
+		if end > len(trackIDs) {
+			end = len(trackIDs)
+		}
+		query, args, err := sqlx.In("SELECT "+lyricSelectFields+" FROM lyrics WHERE track_id IN (?)", trackIDs[start:end])
+		if err != nil {
+			return nil, fmt.Errorf("build lyrics batch query: %w", err)
+		}
+		query = r.db.Rebind(query)
+		var rows []domain.Lyric
+		if err := r.db.SelectContext(ctx, &rows, query, args...); err != nil {
+			return nil, fmt.Errorf("get lyrics by track ids: %w", err)
+		}
+		for i := range rows {
+			result[rows[i].TrackID] = &rows[i]
+		}
+	}
+	return result, nil
 }
 
 func NewLyricRepository(db *DB) domain.LyricRepository {

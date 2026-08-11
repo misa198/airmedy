@@ -231,6 +231,19 @@ type Lyric struct {
 	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
+// MobileSyncLyricCache stores the single lyric snapshot exported to mobile.
+// Fingerprint captures every desktop input which could change that snapshot;
+// Version changes only when the exported content/source changes.
+type MobileSyncLyricCache struct {
+	TrackID     string    `db:"track_id"`
+	Content     string    `db:"content"`
+	Source      string    `db:"source"`
+	HasLyric    bool      `db:"has_lyric"`
+	Version     string    `db:"version"`
+	Fingerprint string    `db:"fingerprint"`
+	UpdatedAt   time.Time `db:"updated_at"`
+}
+
 // LyricsSearchResult represents a single search result from a lyrics provider
 type LyricsSearchResult struct {
 	Provider   string `json:"provider"`

@@ -3,6 +3,7 @@ package me.misa198.airmedy.ui.screens
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import me.misa198.airmedy.SyncUiState
 import me.misa198.airmedy.pairing.PairedDesktop
 import me.misa198.airmedy.settings.ThemeMode
@@ -16,7 +17,7 @@ class SyncContentTest {
     val composeTestRule = createComposeRule()
 
     @Test
-    fun offlinePairedDesktopShowsReadyToConnectGuidanceAndSeparateRevokeAction() {
+    fun offlinePairedDesktopShowsReadyToConnectGuidanceAndRevokeActionInDeviceCard() {
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 SyncContent(
@@ -38,6 +39,9 @@ class SyncContentTest {
         composeTestRule.onNodeWithText("Ready to connect. Start Broadcast in Airmedy on your desktop; this screen connects automatically.").assertIsDisplayed()
         composeTestRule.onNodeWithText("Revoke").assertIsDisplayed()
         composeTestRule.onNodeWithText("Offline").assertIsDisplayed()
+
+        composeTestRule.onNodeWithText("Revoke").performClick()
+        composeTestRule.onNodeWithText("Disconnect this desktop?").assertIsDisplayed()
     }
 
     @Test
@@ -95,4 +99,3 @@ class SyncContentTest {
         composeTestRule.onNodeWithText("Library sync complete").assertIsDisplayed()
     }
 }
-

@@ -132,9 +132,17 @@ type PlaylistRepository interface {
 
 type LyricRepository interface {
 	GetByTrackID(ctx context.Context, trackID string) (*Lyric, error)
+	GetByTrackIDs(ctx context.Context, trackIDs []string) (map[string]*Lyric, error)
 	Save(ctx context.Context, lyric *Lyric) error
 	Upsert(ctx context.Context, lyric *Lyric) error
 	Delete(ctx context.Context, trackID string) error
+}
+
+// MobileSyncLyricCacheRepository persists resolved lyric snapshots used only
+// while building immutable desktop-to-mobile library sync manifests.
+type MobileSyncLyricCacheRepository interface {
+	GetByTrackIDs(ctx context.Context, trackIDs []string) (map[string]*MobileSyncLyricCache, error)
+	Upsert(ctx context.Context, entry *MobileSyncLyricCache) error
 }
 
 type LyricsProvider interface {

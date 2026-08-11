@@ -165,9 +165,12 @@ The manifest is a self-contained snapshot:
 emit `null` for an empty collection (notably `playlists` when no selected track
 belongs to a playlist); mobile must treat that form exactly as an empty array.
 
-`tracks` contains the full Airmedy normalized track metadata: album, artists,
-album artists, genres, composers, raw metadata, format/technical fields and
-track artwork keys. `lyrics` is keyed by track ID. `analysis` is keyed by track
+`tracks` contains the full Airmedy normalized track metadata: album, artists
+(including each artist's manual/local/online artwork source keys), album artists,
+genres, composers, raw metadata, format/technical fields and track artwork keys.
+`lyrics` is keyed by track ID and contains only the
+desktop-effective `content`/`source` snapshot for each track (not raw metadata
+and provider alternatives). `analysis` is keyed by track
 ID and is absent for tracks without analysis. Artist, album, playlist and track
 artwork are represented by deduplicated `artwork:<artwork-key>` assets. Audio is
 represented by exactly one `audio:<track-id>` asset per track.

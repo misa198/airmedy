@@ -33,6 +33,18 @@ type Lyric struct {
 }
 ```
 
+## Mobile Library Sync Cache
+
+Mobile library-sync exports one **effective** lyric (`content` + `source`) per
+track, never the raw provider and metadata variants together. Desktop stores
+that result in `mobile_sync_lyric_cache` with an output `version` and an input
+fingerprint. A new sync plan indexes candidate lyric directories once per
+unique directory and fingerprints existing candidate files by size/mtime; it
+only reads `.lrc`/`.txt` contents again when the fingerprint changes. The
+first plan resolves every selected track. When provider lyrics are preferred
+and cached provider content exists, local sidecars are skipped because they
+cannot affect the exported result. This path never fetches online providers.
+
 ## Resolution Strategy
 
 Resolution priority (default `prefer_local_lyrics=true`) — first hit wins:

@@ -148,7 +148,8 @@ class LibrarySyncService : Service() {
                 progress = LibrarySyncProgressReporter { completed, total ->
                     Log.d(LogTag, "Sync progress: $completed/$total assets")
                     AndroidSyncRuntime.running(completed = completed, total = total)
-                    showForeground(getString(R.string.sync_notification_progress, completed, total), indeterminate = false)
+                    val percent = if (total == 0) 0 else (completed * 100 / total).coerceIn(0, 100)
+                    showForeground(getString(R.string.sync_notification_progress, percent), indeterminate = false)
                 },
             )
             when (val result = coordinator.handle(payload, desktop)) {

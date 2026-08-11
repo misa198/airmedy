@@ -235,7 +235,7 @@ func (r *playlistRepository) GetTracks(ctx context.Context, playlistID string) (
 		WHERE pt.playlist_id = ?
 		GROUP BY t.id, pt.position
 		ORDER BY pt.position, pt.track_id`, trackSelectFields)
-	
+
 	var rows []trackRow
 	err := r.db.Ext(ctx).SelectContext(ctx, &rows, query, playlistID)
 	if err != nil {
@@ -243,7 +243,7 @@ func (r *playlistRepository) GetTracks(ctx context.Context, playlistID string) (
 	}
 
 	tr := &trackRepository{db: r.db}
-	return tr.scanTrackRows(rows), nil
+	return tr.scanTrackRowsWithArtistArtwork(ctx, rows)
 }
 
 // GetTracksPreview is GetTracks capped with a SQL LIMIT — for callers that
@@ -272,7 +272,7 @@ func (r *playlistRepository) GetTracksPreview(ctx context.Context, playlistID st
 	}
 
 	tr := &trackRepository{db: r.db}
-	return tr.scanTrackRows(rows), nil
+	return tr.scanTrackRowsWithArtistArtwork(ctx, rows)
 }
 
 func (r *playlistRepository) TogglePinned(ctx context.Context, id string) (bool, error) {

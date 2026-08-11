@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Events } from '@wailsio/runtime'
-import { ArrowLeft, HardDrive, Search, RefreshCcw } from '@lucide/vue'
+import { ArrowLeft, Search, RefreshCcw } from '@lucide/vue'
 import { Badge, Checkbox, Input, Radio, TabSwitcher, IconButton } from '@airmedy/ui'
 import { RecycleScroller } from 'vue-virtual-scroller'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
@@ -44,7 +44,10 @@ const activeItems = computed(() => items.value[activeTab.value].filter(item => i
 const activeSelected = computed(() => selected.value[activeTab.value])
 const currentScope = computed(() => new MobileLibrarySyncScope({ kind: mode.value === 'all' ? 'all' : activeTab.value, selected_ids: mode.value === 'all' ? [] : Array.from(activeSelected.value).sort() }))
 const canSync = computed(() => !!device.value?.online && !syncing.value && (mode.value === 'all' || activeSelected.value.size > 0))
-const progressLabel = computed(() => plan.value ? `${plan.value.completed} / ${plan.value.total}` : '')
+const progressPercent = computed(() => {
+  if (!plan.value || plan.value.total <= 0) return 0
+  return Math.floor((plan.value.completed / plan.value.total) * 100)
+})
 
 function sameScope() {
   if (!plan.value || plan.value.status !== 'active') return false
@@ -200,6 +203,17 @@ onUnmounted(() => {
           {{ syncing ? $t('settings.sync.syncing') : $t('mobile_sync.sync') }}
         </button>
       </div>
+      <div v-if="plan" class="mt-5 border-t border-foreground/[0.06] pt-4">
+        <div class="flex items-baseline justify-between gap-4">
+          <p class="text-sm font-medium">{{ plan.status === 'complete' ? $t('mobile_sync.complete') :
+            $t('mobile_sync.pending') }}</p>
+          <span class="text-sm font-semibold tabular-nums text-foreground/70">{{ progressPercent }}%</span>
+        </div>
+        <div class="mt-2 h-1 overflow-hidden rounded-full bg-foreground/[0.06] transition-all duration-300 hover:h-1.5">
+          <div class="h-full bg-foreground transition-all duration-300"
+            :style="{ width: `${progressPercent}%` }" />
+        </div>
+      </div>
       <div v-if="mode === 'selected'"
         class="mt-6 flex min-h-0 flex-1 flex-col rounded-xl border border-[var(--border-glass)] bg-foreground/[0.03] p-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
@@ -234,21 +248,6 @@ onUnmounted(() => {
       </div>
     </section>
 
-    <section v-if="plan"
-      class="flex items-center justify-between gap-4 rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px]">
-      <div class="flex items-center gap-3">
-        <HardDrive class="size-5 text-[color:var(--text-muted)]" />
-        <div>
-          <p class="text-sm font-medium">{{ plan.status === 'complete' ? $t('mobile_sync.complete') :
-            $t('mobile_sync.pending') }}</p>
-          <p class="text-xs text-[color:var(--text-muted)]">{{ progressLabel }} {{ $t('mobile_sync.assets') }}</p>
-        </div>
-      </div>
-      <div class="h-1 w-28 overflow-hidden rounded-full bg-foreground/[0.08]">
-        <div class="h-full bg-foreground transition-all duration-300"
-          :style="{ width: `${plan.total ? (plan.completed / plan.total) * 100 : 0}%` }" />
-      </div>
-    </section>
     <ConfirmDialog :open="replaceOpen" :title="$t('mobile_sync.replace_title')"
       :message="$t('mobile_sync.replace_desc')" :confirm-label="$t('mobile_sync.replace')" danger
       @cancel="replaceOpen = false" @confirm="sync(true)" />
