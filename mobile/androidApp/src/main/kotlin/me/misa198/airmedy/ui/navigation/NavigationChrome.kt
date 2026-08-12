@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
 import me.misa198.airmedy.AppDestination
 import me.misa198.airmedy.player.PlaybackState
+import me.misa198.airmedy.player.PlaybackQueueSnapshot
 
 internal fun PlaybackState.showsMiniPlayer(): Boolean = when (this) {
     PlaybackState.Idle, is PlaybackState.Failed -> false
@@ -34,6 +35,7 @@ internal fun PlaybackState.showsMiniPlayer(): Boolean = when (this) {
 internal fun NavigationChrome(
     selectedDestination: AppDestination,
     playbackState: PlaybackState,
+    playbackQueue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
     hazeState: HazeState?,
     compact: Boolean = false,
     onExpandClick: () -> Unit = {},
@@ -106,6 +108,7 @@ internal fun NavigationChrome(
             ) {
                 MiniPlayer(
                     playbackState = playbackState,
+                    playbackQueue = playbackQueue,
                     hazeState = hazeState,
                     compact = isCompact,
                     onPreviousClick = onPreviousClick,

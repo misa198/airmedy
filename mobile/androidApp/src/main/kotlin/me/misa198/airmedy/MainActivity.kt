@@ -249,8 +249,11 @@ class MainActivity : ComponentActivity() {
                 onRepeatModeChange = playbackController::setRepeatMode,
                 systemVolume = systemMusicVolumeState,
                 onSystemVolumeChange = { volume ->
-                    systemMusicVolumeState = volume.coerceIn(0f, 1f)
-                    setSystemMusicVolume(systemMusicVolumeState)
+                    setSystemMusicVolume(volume.coerceIn(0f, 1f))
+                    // Reflect the system's discrete stream step immediately,
+                    // so a delayed settings observer cannot snap the slider
+                    // backward after a drag ends.
+                    systemMusicVolumeState = currentSystemMusicVolume()
                 },
                 onMiniPlayerDismiss = playbackController::clearQueue,
                 onOpenMediaOutputSwitcher = ::openMediaOutputSwitcher,
@@ -296,7 +299,7 @@ class MainActivity : ComponentActivity() {
     private fun setSystemMusicVolume(volume: Float) {
         val manager = getSystemService(AudioManager::class.java)
         val maximum = manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-        manager.setStreamVolume(AudioManager.STREAM_MUSIC, (maximum * volume).toInt(), 0)
+        manager.setStreamVolume(AudioManager.STREAM_MUSIC, (maximum * volume).roundToInt(), 0)
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {

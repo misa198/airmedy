@@ -96,6 +96,19 @@ class MiniPlayerTest {
     }
 
     @Test
+    fun playPauseControlTransitionsItsAccessibleStateWithPlayback() {
+        var playbackState by mutableStateOf<PlaybackState>(PlaybackState.Paused(item, 0L, 120_000L))
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent { NavigationChromeForTest(playbackState) }
+
+        composeTestRule.onNodeWithContentDescription("Play").assertExists()
+        playbackState = PlaybackState.Playing(item, positionMs = 0L, durationMs = 120_000L)
+        composeTestRule.mainClock.advanceTimeBy(260)
+
+        composeTestRule.onNodeWithContentDescription("Pause").assertExists()
+    }
+
+    @Test
     fun draggingMiniPlayerDownDismissesIt() {
         var dismisses = 0
         var opens = 0

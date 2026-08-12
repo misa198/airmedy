@@ -225,10 +225,10 @@ class PlaybackService : Service() {
                 ActionResume -> resumeCurrent()
                 ActionStop -> stopPlayback()
                 ActionClearQueue -> handleTransition(queue.clear())
-                ActionNext -> handleTransition(queue.next())
+                ActionNext -> handleTransition(queue.next(), preservePlaybackState = true)
                 ActionPrevious -> {
                     if ((decoder?.positionMs() ?: 0L) > PreviousRestartThresholdMs) decoder?.seekTo(0)
-                    else handleTransition(queue.previous())
+                    else handleTransition(queue.previous(), preservePlaybackState = true)
                 }
                 ActionSeek -> seekCurrent(positionMs)
                 ActionSetShuffle -> handleTransition(queue.setShuffle(enabled))
@@ -252,16 +252,19 @@ class PlaybackService : Service() {
         }
     }
 
-    private suspend fun handleTransition(transition: QueueTransition) {
+    private suspend fun handleTransition(
+        transition: QueueTransition,
+        preservePlaybackState: Boolean = false,
+    ) {
         when (transition) {
-            is QueueTransition.Play -> playCurrent()
+            is QueueTransition.Play -> playCurrent(startPaused = preservePlaybackState && state.value is PlaybackState.Paused)
             QueueTransition.StopAtCurrent -> stopAtCurrentTrack()
             QueueTransition.Stop -> stopPlayback()
             QueueTransition.Unchanged -> Unit
         }
     }
 
-    private suspend fun playCurrent(startPositionMs: Long = 0L) {
+    private suspend fun playCurrent(startPositionMs: Long = 0L, startPaused: Boolean = false) {
         clearArtworkCrossfade()
         val trackId = queue.snapshot().currentTrackId ?: return stopPlayback()
         Log.d(PlaybackLogTag, "Preparing current queue track id=$trackId")
@@ -274,9 +277,15 @@ class PlaybackService : Service() {
             decoder = FfmpegDecoder().also {
                 it.prepare(File(item.audioPath))
                 if (startPositionMs > 0L) it.seekTo(clampSeekPosition(startPositionMs, it.durationMs()))
-                it.play()
-                state.value = PlaybackState.Playing(item, it.positionMs(), it.durationMs())
-                publishNowPlaying(item, AndroidMediaPlaybackState.STATE_PLAYING, it.positionMs(), it.durationMs())
+                if (startPaused) {
+                    it.pause()
+                    state.value = PlaybackState.Paused(item, it.positionMs(), it.durationMs())
+                    publishNowPlaying(item, AndroidMediaPlaybackState.STATE_PAUSED, it.positionMs(), it.durationMs())
+                } else {
+                    it.play()
+                    state.value = PlaybackState.Playing(item, it.positionMs(), it.durationMs())
+                    publishNowPlaying(item, AndroidMediaPlaybackState.STATE_PLAYING, it.positionMs(), it.durationMs())
+                }
             }
             preloadNext()
             showForeground(item)

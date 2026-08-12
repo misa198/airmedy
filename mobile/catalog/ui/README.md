@@ -122,8 +122,31 @@ describe the desktop Vue UI or future iOS UI.
   Preparing, Playing, and Paused playback, reserving matching page-bottom space;
   it is absent for Idle and Failed states. It presents 48dp square artwork with
   a 10dp radius with an 8dp left inset (or the Lucide music fallback), a semibold marquee title and artist label,
-  and larger, sharp-cornered filled Lucide Previous, Play/Pause, and Next controls with
+  and larger Previous and Next controls rendered as two softly rounded connected triangles, plus
+  Play/Pause, with
   visually overlapping 48dp touch targets. Preparing disables its play/pause control. Its
+  Play/Pause uses separate, lightly rounded Play and Pause glyphs: the current glyph shrinks and
+  fades while the next glyph grows from roughly half-size at the shared centre over a restrained
+  320ms transition.
+  During a transient Preparing state while advancing tracks, it retains the last settled glyph so
+  the transport icon never flashes Play before playback resumes; it also retains its normal tint
+  while disabled for that hand-off.
+  Pressing it
+  contracts its lightly rounded glyph and shows a close, subtle halo; release expands and fades
+  that halo while the glyph returns to its resting size.
+  Previous and Next use a contained halo and a directional replacement: pressing smoothly contracts the
+  double-triangle glyph; on release the current glyph fades while moving in the transport
+  direction, and a replacement enters from the opposite side at half-size and grows into the
+  shared centre over a soft 620ms transition with no spring or overshoot. The outgoing
+  glyph fades gradually at rest while the incoming glyph is revealed; the incoming glyph then travels from
+  farther behind, clipped to the icon bounds so its complete double-triangle shape remains intact. The rear
+  pair uses equal triangles with both sharp ends softly rounded. Its halo is larger than the Play/Pause
+  halo so the wider double-triangle glyph keeps the same visual breathing room.
+  With Repeat off, Previous is disabled at the first active queue item and Next is disabled at the
+  last active queue item; any repeat mode keeps both transport controls available at the boundaries.
+  Metadata swipe gestures obey those same availability rules and do not dispatch or haptic at a
+  disabled boundary. Manual Previous/Next preserves the current Playing or Paused state; only an
+  automatic end-of-track transition starts the incoming track.
   title/artist area also accepts horizontal transport
   gestures: a left swipe advances to Next and a right swipe invokes Previous. The metadata
   follows the drag inside a clipped metadata viewport, so it cannot overlap artwork or
@@ -171,7 +194,8 @@ describe the desktop Vue UI or future iOS UI.
   Heart/More actions form one top block, with a 24dp artwork-to-metadata gap and a 12dp
   metadata-to-seek gap; the remaining screen height is a separate `SpaceEvenly`
   column of three groups: seek, primary transport, and volume/secondary actions. The primary transport controls are centered with a
-  compact fixed gap with 34dp previous/next icons and a 40dp play/pause icon; bottom secondary-action icons render at 24dp in `foregroundSubtle` inside their standard touch targets.
+  compact fixed gap with 34dp previous/next icons and a 40dp play/pause icon; its play/pause
+  glyph uses the same restrained 320ms continuous Play/Pause morph as the mini player; bottom secondary-action icons render at 24dp in `foregroundSubtle` inside their standard touch targets.
   It renders near-full-width rounded artwork, with marquee white title text and
   marquee `foregroundSubtle` artist/duration text. Overlong marquee text travels
   to its end and reverses back rather than wrapping continuously. The metadata column keeps a
@@ -316,14 +340,14 @@ describe the desktop Vue UI or future iOS UI.
 | `AirmedyGlassIconButton` | A 48dp circular blurred glass icon button with border and button semantics. Back and header actions use this shared primitive. |
 | `AirmedyIconButton` | A 48dp icon action with `Ghost` and `Glass` variants. Glass uses the liquid-glass surface and border; both variants support optional `tint`, `glassColor`, `circleSize`, and `iconSize` overrides and provide an accessible label. |
 | `AirmedyMarqueeText` | A single-line text treatment for constrained playback metadata. It start-aligns unbounded text, clips overflow, and uses pingpong keyframe animation with pauses at start/end matching desktop MarqueeText behavior. |
-| `AirmedyTrackSlider` | Shared custom-drawn slider for fullscreen-player seek and Android music-stream volume. It preserves a 48dp touch target while rendering a translucent gray glass track with a white current-value fill and no thumb or Material Slider terminal indicator. `trackHeight` lets the fullscreen seek bar render at 6dp while the volume bar keeps its 3dp default. Slider range semantics and touch/drag seeking remain available to accessibility services. Its long-lived pointer handler dispatches through the newest callback after a crossfade changes track duration, so tap fractions cannot be evaluated against the prior track. The fullscreen seek control keeps its selected preview (and elapsed-time label) until the playback service publishes a position within 250ms of the requested target; this prevents a tap from briefly flashing back to the old position on slow devices. The fullscreen volume row places muted low/high-volume icons at either end. |
+| `AirmedyTrackSlider` | Shared custom-drawn slider for fullscreen-player seek and Android music-stream volume. It preserves a 48dp touch target while rendering a `sliderInactive`-tinted frosted-glass track: fullscreen supplies its local artwork Haze source so the backdrop is visibly blurred through the unfilled portion. The `sliderInactive` token is also used by the inactive time labels and volume icons, separately from the more transparent general-purpose `foregroundSubtle` token. The filled portion rests at a midpoint between `foregroundSubtle` and `onPrimary`, then transitions to `onPrimary` during press/drag along with the relevant labels or icons. When Reduce transparency is enabled it uses the standard opaque glass fallback. It has no thumb or Material Slider terminal indicator. The full track expands from its centre over 220ms (3% horizontally, 10% vertically, and 3dp thicker). Its time labels sit 2dp closer to the track at rest; `onInteractionChange` offsets them 4dp down and outward while moving volume icons 4dp outward, without reflowing surrounding content. Touching it alone never changes the value; a horizontal drag is required. A local preview owns the displayed value throughout a drag so asynchronous playback or system-volume updates cannot override it; each drag snapshots that preview/current value at press time and applies only horizontal distance. The fill follows drag input without interpolation, then settles over 140ms to the rounded discrete system-volume step after release rather than snapping. Slider range semantics and drag seeking remain available to accessibility services. Its long-lived pointer handler dispatches through the newest callbacks after a crossfade changes track duration. The fullscreen seek control keeps its selected preview (and elapsed-time label) until the playback service publishes a position within 250ms of the requested target. The fullscreen volume row places muted low/high-volume icons at either end. |
 | `AirmedyPlayingIndicator` | A decorative three-bar, white (`onPrimary`) playback indicator. It animates bar height while `isPlaying` and presents short resting bars otherwise; play/pause changes tween smoothly between these states. The fullscreen queue overlays it at the centre of the current track's artwork. |
 | `AirmedyPillButton` | A borderless 52dp minimum-height capsule action. `Primary` and `Destructive` use the primary background with the explicit white `onPrimary` token in both light and dark themes; `Secondary` uses the stronger `buttonSecondary` theme surface with normal foreground text. When disabled, only its themed background fades while label colour stays unchanged. Its label supplies button semantics. |
 | `AirmedyDialog` | A 36dp-radius, two-action mobile dialog. Its text content has 20dp horizontal inset; the button area has a thinner 16dp horizontal/bottom inset. It supports `Horizontal` and `Vertical` action layouts; the left/top action always dismisses with `Secondary`. |
 
 ## UI rules
 
-- Use `AirmedyTheme` and `LocalAirmedyColors`; feature composables do not add raw colours. Reusable subtle foreground details use the semi-opaque white `foregroundSubtle` token.
+- Use `AirmedyTheme` and `LocalAirmedyColors`; feature composables do not add raw colours. Reusable subtle foreground details use the low-opacity white `foregroundSubtle` token (46% opacity).
 - Icons are Material Symbols Rounded font glyphs (`MaterialSymbol` composable loading `material_symbols_rounded.ttf`), paired with resource-backed strings. Decorative icons have no content description; actionable rows expose their label through Compose semantics.
 - Keep interactive targets at least 48dp. Rows and cards delegate click behavior through callbacks rather than storing navigation state.
 - Card surfaces are borderless unless a feature explicitly requires a border.

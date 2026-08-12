@@ -30,6 +30,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -107,6 +108,8 @@ import me.misa198.airmedy.player.PlaybackState
 import me.misa198.airmedy.player.RepeatMode
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.ui.components.AirmedyIconButton
+import me.misa198.airmedy.ui.components.AnimatedPlayPauseSymbol
+import me.misa198.airmedy.ui.components.AnimatedSkipSymbol
 import me.misa198.airmedy.ui.components.AirmedyIconButtonVariant
 import me.misa198.airmedy.ui.components.MaterialSymbol
 import me.misa198.airmedy.ui.components.MaterialSymbols
@@ -223,6 +226,8 @@ internal fun FullScreenPlayer(
     val durationMs = playbackState.durationMsOrZero()
     val isPreparing = playbackState is PlaybackState.Preparing
     val isPlaying = playbackState is PlaybackState.Playing
+    val canNavigatePrevious = queue.canNavigatePrevious()
+    val canNavigateNext = queue.canNavigateNext()
     var selectedPanel by remember { mutableStateOf<FullScreenPlayerPanel?>(null) }
     val isPanelOpen = selectedPanel != null
     val lyricsButtonBackground by animateColorAsState(
@@ -275,6 +280,28 @@ internal fun FullScreenPlayer(
     var isAwaitingSeekConfirmation by remember(item.trackId) { mutableStateOf(false) }
     var lyricsSeekPositionMs by remember(item.trackId) { mutableStateOf<Long?>(null) }
     var lyricsSeekRequestId by remember(item.trackId) { mutableLongStateOf(0L) }
+    var isSeekSliderInteracting by remember { mutableStateOf(false) }
+    var isVolumeSliderInteracting by remember { mutableStateOf(false) }
+    val seekSupportingOffset by animateDpAsState(
+        targetValue = if (isSeekSliderInteracting) 4.dp else 0.dp,
+        animationSpec = tween(220, easing = FastOutSlowInEasing),
+        label = "full-screen-seek-supporting-offset",
+    )
+    val seekTimeLabelColor by animateColorAsState(
+        targetValue = if (isSeekSliderInteracting) colors.onPrimary else colors.sliderInactive,
+        animationSpec = tween(220, easing = FastOutSlowInEasing),
+        label = "full-screen-seek-time-label-colour",
+    )
+    val volumeIconOffset by animateDpAsState(
+        targetValue = if (isVolumeSliderInteracting) 4.dp else 0.dp,
+        animationSpec = tween(220, easing = FastOutSlowInEasing),
+        label = "full-screen-volume-icon-offset",
+    )
+    val volumeIconColor by animateColorAsState(
+        targetValue = if (isVolumeSliderInteracting) colors.onPrimary else colors.sliderInactive,
+        animationSpec = tween(220, easing = FastOutSlowInEasing),
+        label = "full-screen-volume-icon-colour",
+    )
     LaunchedEffect(currentPositionMs, durationMs, isAwaitingSeekConfirmation) {
         val seekFraction = pendingSeekFraction
         if (
@@ -361,6 +388,8 @@ internal fun FullScreenPlayer(
                 displayedOffset = displayedHorizontalSwipeOffset,
                 onPrevious = onPrevious,
                 onNext = onNext,
+                canNavigatePrevious = canNavigatePrevious,
+                canNavigateNext = canNavigateNext,
             ) {
                 Box(
                     modifier = Modifier
@@ -494,7 +523,9 @@ internal fun FullScreenPlayer(
                             isAwaitingSeekConfirmation = pendingSeekFraction != null
                         },
                         enabled = durationMs > 0 && !isPreparing,
+                        onInteractionChange = { isSeekSliderInteracting = it },
                         trackHeight = 6.dp,
+                        hazeState = glassHazeState,
                         modifier = Modifier.semantics { contentDescription = seekLabel },
                     )
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -502,10 +533,16 @@ internal fun FullScreenPlayer(
                             formatPlaybackTime(
                                 pendingSeekFraction?.let { (durationMs * it).toLong() } ?: currentPositionMs,
                             ),
-                            color = colors.foregroundSubtle,
+                            color = seekTimeLabelColor,
                             style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.offset(x = -seekSupportingOffset, y = (-8).dp + seekSupportingOffset),
                         )
-                        Text(formatPlaybackTime(durationMs), color = colors.foregroundSubtle, style = MaterialTheme.typography.labelSmall)
+                        Text(
+                            formatPlaybackTime(durationMs),
+                            color = seekTimeLabelColor,
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.offset(x = seekSupportingOffset, y = (-8).dp + seekSupportingOffset),
+                        )
                     }
                 }
                 Row(
@@ -518,19 +555,23 @@ internal fun FullScreenPlayer(
                         label = stringResource(R.string.player_previous),
                         onClick = onPrevious,
                         iconSize = 36.dp,
+                        skipForward = false,
+                        enabled = canNavigatePrevious,
                     )
                     FullScreenTransportButton(
-                        symbol = if (isPlaying) MaterialSymbols.Pause else MaterialSymbols.PlayArrow,
                         label = stringResource(if (isPlaying) R.string.player_pause else R.string.player_play),
                         enabled = !isPreparing,
                         iconSize = 48.dp,
                         onClick = onPlayPause,
+                        isPlaying = isPlaying,
                     )
                     FullScreenTransportButton(
                         symbol = MaterialSymbols.SkipNext,
                         label = stringResource(R.string.player_next),
                         onClick = onNext,
                         iconSize = 36.dp,
+                        skipForward = true,
+                        enabled = canNavigateNext,
                     )
                 }
                 Column {
@@ -541,15 +582,18 @@ internal fun FullScreenPlayer(
                         MaterialSymbol(
                             symbol = MaterialSymbols.VolumeDown,
                             contentDescription = null,
-                            tint = colors.textMuted,
+                            tint = volumeIconColor,
                             size = 20.dp,
-                            filled = true
+                            filled = true,
+                            modifier = Modifier.offset(x = -volumeIconOffset),
                         )
                         Spacer(Modifier.width(10.dp))
                         AirmedyTrackSlider(
                             value = volume,
                             onValueChange = onVolumeChange,
+                            onInteractionChange = { isVolumeSliderInteracting = it },
                             trackHeight = 6.dp,
+                            hazeState = glassHazeState,
                             modifier = Modifier
                                 .weight(1f)
                                 .semantics { contentDescription = volumeLabel },
@@ -558,9 +602,10 @@ internal fun FullScreenPlayer(
                         MaterialSymbol(
                             symbol = MaterialSymbols.VolumeUp,
                             contentDescription = null,
-                            tint = colors.textMuted,
+                            tint = volumeIconColor,
                             size = 20.dp,
-                            filled = true
+                            filled = true,
+                            modifier = Modifier.offset(x = volumeIconOffset),
                         )
                     }
                     Spacer(Modifier.height(4.dp))
@@ -747,6 +792,8 @@ private fun FullScreenPlayerSwipeTarget(
     displayedOffset: Float,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
+    canNavigatePrevious: Boolean,
+    canNavigateNext: Boolean,
     modifier: Modifier = Modifier,
     movesContent: Boolean = false,
     content: @Composable () -> Unit,
@@ -782,7 +829,10 @@ private fun FullScreenPlayerSwipeTarget(
                         swipeState.isDragging = false
                         swipeState.dragOffset = 0f
 
-                        if (shouldChangeTrack && swipeDirection != 0) {
+                        if (
+                            shouldChangeTrack &&
+                            canDispatchQueueSwipe(swipeDirection, canNavigatePrevious, canNavigateNext)
+                        ) {
                             hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
                             if (swipeDirection < 0) onNext() else onPrevious()
                         }
@@ -902,7 +952,7 @@ private fun RowScope.FullScreenControlSlot(content: @Composable () -> Unit) {
 
 @Composable
 private fun FullScreenTransportButton(
-    symbol: String,
+    symbol: String? = null,
     label: String,
     onClick: () -> Unit,
     enabled: Boolean = true,
@@ -910,8 +960,12 @@ private fun FullScreenTransportButton(
     tint: Color? = null,
     containerColor: Color? = null,
     filled: Boolean = true,
+    isPlaying: Boolean? = null,
+    skipForward: Boolean? = null,
 ) {
     val colors = LocalAirmedyColors.current
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
     Box(
         modifier = Modifier
             .size(64.dp)
@@ -930,18 +984,41 @@ private fun FullScreenTransportButton(
                 enabled = enabled,
                 onClick = onClick,
                 role = Role.Button,
-                interactionSource = remember { MutableInteractionSource() },
+                interactionSource = interactionSource,
                 indication = null,
             ),
         contentAlignment = Alignment.Center,
     ) {
-        MaterialSymbol(
-            symbol = symbol,
-            contentDescription = null,
-            tint = tint ?: if (enabled) colors.onPrimary else colors.textMuted,
-            size = iconSize,
-            filled = filled,
-        )
+        // Keep the transport glyph's settled tint while Preparing. The control
+        // remains disabled, but changing its tint during the hand-off creates
+        // a perceptible flash between consecutive tracks.
+        val iconTint = tint ?: if (enabled || isPlaying != null) colors.onPrimary else colors.textMuted
+        if (isPlaying != null) {
+            AnimatedPlayPauseSymbol(
+                isPlaying = isPlaying,
+                isPreparing = !enabled,
+                isPressed = isPressed,
+                tint = iconTint,
+                size = iconSize,
+                touchTargetSize = 64.dp,
+            )
+        } else if (skipForward != null) {
+            AnimatedSkipSymbol(
+                forward = skipForward,
+                isPressed = isPressed,
+                tint = iconTint,
+                size = iconSize,
+                touchTargetSize = 64.dp,
+            )
+        } else {
+            MaterialSymbol(
+                symbol = requireNotNull(symbol),
+                contentDescription = null,
+                tint = iconTint,
+                size = iconSize,
+                filled = filled,
+            )
+        }
     }
 }
 

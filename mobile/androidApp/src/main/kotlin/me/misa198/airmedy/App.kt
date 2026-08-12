@@ -442,6 +442,7 @@ internal fun App(
             NavigationChrome(
                 selectedDestination = uiState.selectedDestination,
                 playbackState = playbackState,
+                playbackQueue = playbackQueue,
                 hazeState = hazeState,
                 compact = showsMiniPlayer && isNavigationCompact,
                 onExpandClick = {

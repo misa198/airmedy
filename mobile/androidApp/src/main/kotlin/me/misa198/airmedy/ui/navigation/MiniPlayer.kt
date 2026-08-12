@@ -8,6 +8,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,6 +51,7 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -64,9 +66,12 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import dev.chrisbanes.haze.HazeState
 import me.misa198.airmedy.R
 import me.misa198.airmedy.ui.components.AirmedyMarqueeText
+import me.misa198.airmedy.ui.components.AnimatedPlayPauseSymbol
+import me.misa198.airmedy.ui.components.AnimatedSkipSymbol
 import me.misa198.airmedy.ui.components.MaterialSymbol
 import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.player.PlaybackItem
+import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.player.PlaybackState
 import me.misa198.airmedy.ui.components.liquidGlassBackground
 import me.misa198.airmedy.ui.components.rememberArtworkThumbnail
@@ -86,6 +91,7 @@ private const val MetadataSwipeVelocityPxPerMs = 1.2f
 @Composable
 internal fun MiniPlayer(
     playbackState: PlaybackState,
+    playbackQueue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
     hazeState: HazeState?,
     compact: Boolean = false,
     onPreviousClick: () -> Unit,
@@ -103,6 +109,8 @@ internal fun MiniPlayer(
     val shape = RoundedCornerShape(MiniPlayerPillRadius)
     val isPlaying = playbackState is PlaybackState.Playing
     val isPreparing = playbackState is PlaybackState.Preparing
+    val canNavigatePrevious = playbackQueue.canNavigatePrevious()
+    val canNavigateNext = playbackQueue.canNavigateNext()
     val artwork = rememberArtworkThumbnail(item.artworkPath)
     val density = LocalDensity.current
     val hapticFeedback = LocalHapticFeedback.current
@@ -350,7 +358,10 @@ internal fun MiniPlayer(
                             isMetadataDragging = false
                             metadataDragOffset = 0f
 
-                            if (shouldChangeTrack && swipeDirection != 0) {
+                            if (
+                                shouldChangeTrack &&
+                                canDispatchQueueSwipe(swipeDirection, canNavigatePrevious, canNavigateNext)
+                            ) {
                                 hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
                                 if (swipeDirection < 0) onNextClick() else onPreviousClick()
                             }
@@ -380,19 +391,23 @@ internal fun MiniPlayer(
                 label = stringResource(R.string.player_previous),
                 onClick = onPreviousClick,
                 horizontalOffset = 16.dp,
+                skipForward = false,
+                enabled = canNavigatePrevious,
             )
         }
         MiniPlayerControl(
-            symbol = if (isPlaying) MaterialSymbols.Pause else MaterialSymbols.PlayArrow,
             label = stringResource(if (isPlaying) R.string.player_pause else R.string.player_play),
             onClick = onPlayPauseClick,
             enabled = !isPreparing,
             horizontalOffset = 8.dp,
+            isPlaying = isPlaying,
         )
         MiniPlayerControl(
             symbol = MaterialSymbols.SkipNext,
             label = stringResource(R.string.player_next),
             onClick = onNextClick,
+            skipForward = true,
+            enabled = canNavigateNext,
         )
         }
         }
@@ -401,13 +416,17 @@ internal fun MiniPlayer(
 
 @Composable
 private fun MiniPlayerControl(
-    symbol: String,
     label: String,
     onClick: () -> Unit,
     enabled: Boolean = true,
     horizontalOffset: Dp = 0.dp,
+    isPlaying: Boolean? = null,
+    skipForward: Boolean? = null,
+    symbol: String? = null,
 ) {
     val colors = LocalAirmedyColors.current
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
     Box(
         modifier = Modifier
             .size(48.dp)
@@ -416,18 +435,41 @@ private fun MiniPlayerControl(
                 enabled = enabled,
                 role = Role.Button,
                 onClick = onClick,
-                interactionSource = remember { MutableInteractionSource() },
+                interactionSource = interactionSource,
                 indication = null,
-            ),
+            )
+            .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
-        MaterialSymbol(
-            symbol = symbol,
-            contentDescription = label,
-            tint = if (enabled) colors.textMain else colors.textMuted,
-            size = 24.dp,
-            filled = true,
-        )
+        // Preparing disables interaction but must not dim the retained Pause
+        // glyph during a track hand-off, which reads as a visual flash.
+        val tint = if (enabled || isPlaying != null) colors.textMain else colors.textMuted
+        if (isPlaying != null) {
+            AnimatedPlayPauseSymbol(
+                isPlaying = isPlaying,
+                isPreparing = !enabled,
+                isPressed = isPressed,
+                tint = tint,
+                size = 24.dp,
+                touchTargetSize = 48.dp,
+            )
+        } else if (skipForward != null) {
+            AnimatedSkipSymbol(
+                forward = skipForward,
+                isPressed = isPressed,
+                tint = tint,
+                size = 24.dp,
+                touchTargetSize = 48.dp,
+            )
+        } else {
+            MaterialSymbol(
+                symbol = requireNotNull(symbol),
+                contentDescription = label,
+                tint = tint,
+                size = 24.dp,
+                filled = true,
+            )
+        }
     }
 }
 
