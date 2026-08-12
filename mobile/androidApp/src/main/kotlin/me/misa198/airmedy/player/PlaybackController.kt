@@ -3,7 +3,11 @@ package me.misa198.airmedy.player
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 
 /**
  * Android-only command boundary for the future UI. It deliberately does not
@@ -15,6 +19,8 @@ internal class PlaybackController(
 ) {
     val state: StateFlow<PlaybackState> get() = PlaybackService.state
     val queue: StateFlow<PlaybackQueueSnapshot> get() = PlaybackService.queueState
+    val artworkCrossfade: StateFlow<ArtworkCrossfadeTransition?> get() = PlaybackService.artworkCrossfade
+    val crossfadeSeconds: Flow<Int> get() = PlaybackService.crossfadeSeconds
 
     fun play(request: PlaybackRequest) {
         Log.d(PlaybackLogTag, "Queue play requested size=${request.trackIds.size} startIndex=${request.startIndex} startId=${request.trackIds[request.startIndex]}")
@@ -55,6 +61,24 @@ internal class PlaybackController(
     fun seekTo(positionMs: Long) = context.startForegroundService(
         PlaybackService.intent(context, PlaybackService.ActionSeek).putExtra(PlaybackService.PositionMsExtra, positionMs),
     )
+    /**
+     * A preference edit must not start the media foreground service: when no
+     * track is playing it has no notification to promote within Android's
+     * foreground-service deadline. A running service observes this DataStore
+     * value and resyncs its preload itself.
+     */
+    fun setCrossfadeSeconds(seconds: Int) {
+        val clamped = clampCrossfadeSeconds(seconds)
+        CoroutineScope(Dispatchers.IO).launch {
+            PlaybackPreferences(context).setCrossfadeSeconds(clamped)
+        }
+    }
+
+    fun setBlendArtworkDuringCrossfade(enabled: Boolean) {
+        CoroutineScope(Dispatchers.IO).launch {
+            PlaybackPreferences(context).setBlendArtworkDuringCrossfade(enabled)
+        }
+    }
 
     internal suspend fun resolve(trackId: String): PlaybackItem? = resolver.resolve(trackId)
 

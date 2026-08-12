@@ -14,6 +14,34 @@ internal fun audioBecomingNoisyRequiresPause(action: String?): Boolean =
 /** AAudio streams cannot be restarted after Android disconnects their output route. */
 internal fun audioOutputDisconnectRequiresRecovery(isOutputDisconnected: Boolean): Boolean = isOutputDisconnected
 
+/** Pure policy shared by the service ticker and host tests. */
+internal fun shouldStartCrossfade(
+    crossfadeSeconds: Int,
+    positionMs: Long,
+    durationMs: Long,
+    hasPreloadedNext: Boolean,
+): Boolean {
+    if (!hasPreloadedNext || crossfadeSeconds <= 0 || durationMs < 2_000L) return false
+    val remainingMs = durationMs - positionMs
+    val effectiveFadeMs = minOf(crossfadeSeconds * 1_000L, durationMs / 2)
+    return remainingMs in 401..effectiveFadeMs
+}
+
+/** Keep the outgoing gain ramp within the audible remainder of its source. */
+internal fun crossfadeDurationMs(crossfadeSeconds: Int, positionMs: Long, durationMs: Long): Long =
+    minOf(
+        crossfadeSeconds.coerceAtLeast(0) * 1_000L,
+        durationMs.coerceAtLeast(0L) / 2,
+        (durationMs - positionMs).coerceAtLeast(0L),
+    )
+
+/**
+ * The native engine has exactly two source slots. During a fade they belong to
+ * the incoming and outgoing tracks, so the queue's following item cannot be
+ * loaded until the outgoing slot has been retired.
+ */
+internal fun canPreloadNext(isCrossfading: Boolean): Boolean = !isCrossfading
+
 /** An item the Android-native player can resolve from the synced library. */
 data class PlaybackItem(
     val trackId: String,
@@ -21,6 +49,14 @@ data class PlaybackItem(
     val artist: String,
     val audioPath: String,
     val artworkPath: String? = null,
+)
+
+/** Visual lifecycle for an automatic native audio crossfade; manual changes never create one. */
+internal data class ArtworkCrossfadeTransition(
+    val id: Long,
+    val fromArtworkPath: String?,
+    val toArtworkPath: String?,
+    val durationMs: Long,
 )
 
 sealed interface PlaybackState {

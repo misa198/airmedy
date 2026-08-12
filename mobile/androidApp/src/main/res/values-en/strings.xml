@@ -41,6 +41,14 @@
     <string name="sync_error_invalid_response">The desktop response could not be verified.</string>
     <string name="cancel">Cancel</string>
     <string name="settings_playback">Playback</string>
+    <string name="playback_settings_title">Playback</string>
+    <string name="song_transition_title">Song Transition</string>
+    <string name="playback_crossfade">Crossfade</string>
+    <string name="playback_crossfade_duration">Crossfade duration</string>
+    <string name="playback_crossfade_duration_value">%1$d seconds</string>
+    <string name="playback_crossfade_minimum">1s</string>
+    <string name="playback_crossfade_maximum">12s</string>
+    <string name="playback_blend_artwork_during_crossfade">Blend artwork and background</string>
     <string name="settings_integration">Integration</string>
     <string name="settings_about">About</string>
     <string name="about_title">About</string>

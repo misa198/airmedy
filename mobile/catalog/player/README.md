@@ -10,12 +10,13 @@ queue and observes its `StateFlow<PlaybackState>`.
 and the JNI `FfmpegDecoder`. The native decoder opens the private synced file,
 uses FFmpeg for demuxing and decoding, converts samples through
 `libswresample` to stereo float PCM, and sends them to AAudio through a bounded
-ring buffer. AAudio uses its power-saving performance mode because music
-playback does not require live-audio latency. When the ring buffer is full, the
-decode thread blocks on a condition variable until the callback consumes data;
-it never busy-spins. Pausing also pauses the AAudio stream, so it does not keep
-rendering silent callbacks. There is no Media3, ExoPlayer, or `MediaCodec`
-decoder fallback.
+ring buffer. `PlaybackEngine` owns two independent source slots (active and
+preloaded) and one shared power-saving AAudio stream. Each slot has its own
+FFmpeg state, resampler and decode worker; the callback only uses atomic state
+and preallocated PCM to apply per-source normalization, equal-power mix and a
+neutral global DSP stage. It never locks, allocates, calls JNI, or performs I/O.
+Pausing also pauses the AAudio stream, so it does not keep rendering silent
+callbacks. There is no Media3, ExoPlayer, or `MediaCodec` decoder fallback.
 
 When the service is started by a new Play or Shuffle command, that new queue
 takes precedence over saved-session restoration. The service cancels restoration
@@ -54,14 +55,55 @@ frame timestamps: the decoder can fill the two-second ring buffer ahead of
 audible sound, so using decoded PTS would make Now Playing and synced lyrics
 advance early.
 
+Native FFmpeg seeks use a preceding keyframe for decoder safety, then reset the
+resampler and discard decoded PCM before the requested timestamp. This keeps
+the audible position aligned with the seek bar after a crossfade promotion as
+well as during normal playback.
+
 Opening the Android System Now Playing card uses a `CLEAR_TOP | SINGLE_TOP`
 activity intent. It brings the existing `MainActivity` task forward rather than
 creating a second app UI session.
 
 The queue contract below is implemented by the platform-neutral shared logic.
-It intentionally matches desktop queue semantics where they are user-visible, while excluding
-desktop-only gapless playback, crossfade, listening analytics, Wails events,
-and desktop-database integration.
+It intentionally matches desktop queue semantics where they are user-visible,
+while excluding desktop analytics, Wails events, and desktop-database integration.
+
+## Native Transitions and DSP
+
+Android persists `crossfade_seconds` separately from the resumable queue
+session (`0` = disabled; values are clamped to `0..12`). The current default is
+off; `4` is the UI default when the user enables it. It also persists
+`blend_artwork_during_crossfade`, which defaults on and changes only fullscreen
+visuals, never audio. `PlaybackService` keeps a
+read-only `PlaybackQueue.peekNext()` look-ahead and asks its native decoder to
+preload that immediate next item after a hard load and after mutations which
+can change the next item (insert-next, remove, reorder, shuffle, repeat).
+
+The JNI boundary exposes load/preload status, idle-slot clearing, crossfade
+begin/finish/snap, per-source gains, active/preloaded timing, output disconnect,
+and a one-shot native transition event. At a natural end, the callback promotes
+the preloaded source on the next audio frame. At crossfade start, it promotes
+the incoming source immediately and uses equal-power `cos/sin` gains based on
+the AAudio frame clock; the outgoing worker is reclaimed after the fade.
+`PlaybackService` consumes that event outside the callback, advances the queue,
+and publishes the incoming MediaSession metadata. A gapless promotion can
+preload the new next item immediately. During a crossfade, both native source
+slots are occupied by the incoming and fading-out items, so it defers that
+preload until the callback retires the outgoing slot; this prevents the source
+being faded out from being overwritten by the queue item after next.
+
+Crossfade duration is captured when it begins and is capped by the outgoing
+track's remaining rendered time, so its gain reaches zero before that source
+ends; setting changes only resync the preload. Pause and seek snap/finish a
+fade, while Stop and manual navigation snap it. `normalizationGainDb` is applied before mix. A thread-safe immutable
+global DSP snapshot reserves preamp/EQ/stereo controls after mix; its initial
+implementation is neutral/pass-through.
+
+On every successful automatic crossfade start, `PlaybackService` publishes an
+Android-only `ArtworkCrossfadeTransition` containing a monotonic ID, source and
+destination artwork paths, and that effective duration. It clears the state at
+fade completion or when playback is snapped. This separates visual lifecycle
+from normal track-state changes so manual navigation never blends artwork.
 
 ## Ownership and Public Contract
 

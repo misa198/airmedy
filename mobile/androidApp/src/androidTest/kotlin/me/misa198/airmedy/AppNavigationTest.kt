@@ -11,6 +11,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -199,6 +200,62 @@ class AppNavigationTest {
 
         assertEquals(AppIntent.SetReduceTransparency(true), harness.intents.last())
         assertEquals(true, harness.state.reduceTransparency)
+    }
+
+    @Test
+    fun playbackSettingsExposePersistedCrossfadeControls() {
+        var requestedSeconds: Int? = null
+        var blendArtwork: Boolean? = null
+        val settingsState = AppUiState(selectedDestination = AppDestination.Settings)
+        composeTestRule.setContent {
+            App(
+                uiState = settingsState,
+                crossfadeSeconds = 0,
+                lastEnabledCrossfadeSeconds = 4,
+                onCrossfadeSecondsChanged = { requestedSeconds = it },
+                blendArtworkDuringCrossfade = true,
+                onBlendArtworkDuringCrossfadeChanged = { blendArtwork = it },
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription(string(R.string.settings_playback)).performClick()
+        composeTestRule.onNodeWithContentDescription(string(R.string.song_transition_title)).performClick()
+        composeTestRule.onAllNodesWithText(string(R.string.playback_crossfade_duration)).assertCountEquals(0)
+        composeTestRule.onNodeWithContentDescription(string(R.string.playback_crossfade)).performClick()
+
+        assertEquals(4, requestedSeconds)
+        composeTestRule.onNodeWithContentDescription(string(R.string.playback_blend_artwork_during_crossfade)).performClick()
+        assertEquals(false, blendArtwork)
+    }
+
+    @Test
+    fun playbackCardsRespectThePageHorizontalInset() {
+        val settingsState = AppUiState(selectedDestination = AppDestination.Settings)
+        composeTestRule.setContent {
+            App(
+                uiState = settingsState,
+                crossfadeSeconds = 4,
+                lastEnabledCrossfadeSeconds = 4,
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription(string(R.string.settings_playback)).performClick()
+        val expectedCardLeft = with(composeTestRule.density) { 24.dp.toPx() }
+        val songTransitionLeft = composeTestRule
+            .onNodeWithContentDescription(string(R.string.song_transition_title))
+            .fetchSemanticsNode()
+            .boundsInRoot
+            .left
+        assertEquals("Playback card must respect the page inset", expectedCardLeft, songTransitionLeft, 0.5f)
+
+        composeTestRule.onNodeWithContentDescription(string(R.string.song_transition_title)).performClick()
+        val expectedContentLeft = with(composeTestRule.density) { 40.dp.toPx() }
+        val durationLeft = composeTestRule
+            .onNodeWithText(string(R.string.playback_crossfade_duration_value, 4))
+            .fetchSemanticsNode()
+            .boundsInRoot
+            .left
+        assertEquals("Song transition card must respect the page inset", expectedContentLeft, durationLeft, 0.5f)
     }
 
     @Test

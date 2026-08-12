@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -39,6 +40,11 @@ fun AirmedyTrackSlider(
     trackHeight: Dp = 3.dp,
 ) {
     val colors = LocalAirmedyColors.current
+    // The pointer-input coroutine is intentionally not restarted when a new
+    // track changes only the callback's captured duration. Always dispatch to
+    // the most recent lambdas instead.
+    val currentOnValueChange = rememberUpdatedState(onValueChange)
+    val currentOnValueChangeFinished = rememberUpdatedState(onValueChangeFinished)
     val safeValue = value.coerceIn(valueRange.start, valueRange.endInclusive)
     val rangeSize = valueRange.endInclusive - valueRange.start
     val fraction = if (rangeSize > 0f) {
@@ -48,7 +54,7 @@ fun AirmedyTrackSlider(
     }
     val updateValueFromPosition: (Float, Float) -> Unit = { x, width ->
         if (enabled && width > 0f) {
-            onValueChange(
+            currentOnValueChange.value(
                 (valueRange.start + rangeSize * (x / width).coerceIn(0f, 1f))
                     .coerceIn(valueRange.start, valueRange.endInclusive),
             )
@@ -63,7 +69,7 @@ fun AirmedyTrackSlider(
                 progressBarRangeInfo = ProgressBarRangeInfo(safeValue, valueRange, 0)
                 if (enabled) {
                     setProgress { requestedValue ->
-                        onValueChange(requestedValue.coerceIn(valueRange.start, valueRange.endInclusive))
+                        currentOnValueChange.value(requestedValue.coerceIn(valueRange.start, valueRange.endInclusive))
                         true
                     }
                 }
@@ -77,7 +83,7 @@ fun AirmedyTrackSlider(
                         change.consume()
                         updateValueFromPosition(change.position.x, size.width.toFloat())
                     }
-                    onValueChangeFinished?.invoke()
+                    currentOnValueChangeFinished.value?.invoke()
                 }
             },
         contentAlignment = Alignment.Center,
@@ -87,7 +93,9 @@ fun AirmedyTrackSlider(
                 .fillMaxWidth()
                 .height(trackHeight),
         ) {
-            drawTrack(if (enabled) colors.sliderTrack else colors.textMuted.copy(alpha = 0.45f), 1f)
+            // A disabled control remains discoverable; only its interaction and
+            // filled value are muted, never the full track itself.
+            drawTrack(colors.sliderTrack.copy(alpha = if (enabled) 1f else 0.6f), 1f)
             if (enabled) {
                 drawTrack(colors.onPrimary, fraction)
             }

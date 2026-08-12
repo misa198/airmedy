@@ -53,6 +53,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
@@ -66,6 +67,7 @@ private val HeaderBottomPadding = 10.dp
 private val HeaderHeight = 48.dp
 private val HeaderContentGap = 12.dp
 private val HeaderControlGap = 12.dp
+internal const val StackPageTitleTag = "stack-page-title"
 
 private data class HeaderTitle(
     val stackKey: String,
@@ -198,9 +200,15 @@ fun StackPageHeader(
             ) { currentTitle ->
                 Text(
                     text = currentTitle.text,
-                    modifier = Modifier.wrapContentWidth(Alignment.Start),
+                    modifier = Modifier
+                        .wrapContentWidth(Alignment.Start)
+                        .testTag(StackPageTitleTag),
                     color = colors.textMain,
-                    style = MaterialTheme.typography.headlineLarge,
+                    style = if (onBackClick != null) {
+                        MaterialTheme.typography.headlineSmall
+                    } else {
+                        MaterialTheme.typography.headlineLarge
+                    },
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

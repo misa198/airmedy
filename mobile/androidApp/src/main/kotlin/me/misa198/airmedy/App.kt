@@ -75,6 +75,7 @@ import me.misa198.airmedy.ui.screens.GenreDetailsUiState
 import me.misa198.airmedy.ui.screens.ComposerDetailsUiState
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import me.misa198.airmedy.player.PlaybackState
+import me.misa198.airmedy.player.ArtworkCrossfadeTransition
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.player.RepeatMode
 import me.misa198.airmedy.sync.LibraryTrack
@@ -121,6 +122,12 @@ internal fun App(
     onUnpair: () -> Unit = {},
     onSyncScreenVisible: () -> Unit = {},
     onSyncScreenHidden: () -> Unit = {},
+    crossfadeSeconds: Int = 0,
+    lastEnabledCrossfadeSeconds: Int = 4,
+    onCrossfadeSecondsChanged: (Int) -> Unit = {},
+    blendArtworkDuringCrossfade: Boolean = true,
+    onBlendArtworkDuringCrossfadeChanged: (Boolean) -> Unit = {},
+    artworkCrossfade: ArtworkCrossfadeTransition? = null,
     playbackState: PlaybackState = PlaybackState.Idle,
     playbackQueue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
     queueTracks: List<LibraryTrack> = emptyList(),
@@ -315,6 +322,11 @@ internal fun App(
                 onUnpair = onUnpair,
                 onSyncScreenVisible = onSyncScreenVisible,
                 onSyncScreenHidden = onSyncScreenHidden,
+                crossfadeSeconds = crossfadeSeconds,
+                lastEnabledCrossfadeSeconds = lastEnabledCrossfadeSeconds,
+                onCrossfadeSecondsChanged = onCrossfadeSecondsChanged,
+                blendArtworkDuringCrossfade = blendArtworkDuringCrossfade,
+                onBlendArtworkDuringCrossfadeChanged = onBlendArtworkDuringCrossfadeChanged,
                 onContentScroll = { delta ->
                     if (!showsMiniPlayer) return@AppDestinationContent
                     navigationScrollState = reduceNavigationChromeScroll(
@@ -489,6 +501,8 @@ internal fun App(
                 queue = playbackQueue,
                 queueTracks = queueTracks,
                 lyrics = lyrics,
+                artworkCrossfade = artworkCrossfade,
+                blendArtworkDuringCrossfade = blendArtworkDuringCrossfade,
                 volume = systemVolume,
                 onSeek = onPlaybackSeek,
                 onVolumeChange = onSystemVolumeChange,

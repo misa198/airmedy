@@ -47,6 +47,10 @@ object MaterialSymbols {
     const val PlayCircle = "play_circle"
     const val QueueMusic = "queue_music"
     const val Tune = "tune"
+    const val MaskedTransitions = "masked_transitions"
+
+    const val Gradient = "gradient"
+    const val Subwoofer = "subwoofer"
     const val ChevronRight = "chevron_right"
     const val ChevronLeft = "chevron_left"
     const val UnfoldMore = "unfold_more"

@@ -3,10 +3,14 @@ package me.misa198.airmedy.ui.navigation
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -14,6 +18,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -51,6 +56,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -95,6 +101,7 @@ import kotlin.math.absoluteValue
 import kotlin.math.abs
 import me.misa198.airmedy.R
 import me.misa198.airmedy.player.PlaybackItem
+import me.misa198.airmedy.player.ArtworkCrossfadeTransition
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.player.PlaybackState
 import me.misa198.airmedy.player.RepeatMode
@@ -151,6 +158,8 @@ internal fun FullScreenPlayer(
     queue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
     queueTracks: List<LibraryTrack> = emptyList(),
     lyrics: String? = null,
+    artworkCrossfade: ArtworkCrossfadeTransition? = null,
+    blendArtworkDuringCrossfade: Boolean = true,
     volume: Float,
     onSeek: (Long) -> Unit,
     onVolumeChange: (Float) -> Unit,
@@ -199,6 +208,17 @@ internal fun FullScreenPlayer(
 
     if (expansionProgress.value <= 0f) return
     val artwork = rememberFullscreenArtwork(item.artworkPath)
+    val activeArtworkCrossfade = artworkCrossfade.takeIf { blendArtworkDuringCrossfade }
+    val incomingArtwork = rememberFullscreenArtwork(activeArtworkCrossfade?.toArtworkPath, keepPrevious = false)
+    val crossfadeProgress = rememberArtworkCrossfadeProgress(artworkCrossfade)
+    // Freeze the cover already on screen at transition start. Never render a
+    // placeholder layer during a crossfade: slow/background decode races can
+    // otherwise surface a one-frame flash before the incoming bitmap arrives.
+    val outgoingArtwork = remember(activeArtworkCrossfade?.id) {
+        activeArtworkCrossfade?.let { artwork }
+    }
+    val isArtworkCrossfading = activeArtworkCrossfade != null &&
+        outgoingArtwork != null && incomingArtwork != null
     val currentPositionMs = playbackState.positionMsOrZero()
     val durationMs = playbackState.durationMsOrZero()
     val isPreparing = playbackState is PlaybackState.Preparing
@@ -317,6 +337,10 @@ internal fun FullScreenPlayer(
     ) {
             FullScreenPlayerBackground(
                 artwork = artwork,
+                outgoingArtwork = outgoingArtwork,
+                incomingArtwork = incomingArtwork,
+                crossfadeProgress = crossfadeProgress,
+                isArtworkCrossfading = isArtworkCrossfading,
                 modifier = Modifier
                     .fillMaxSize()
                     .then(if (glassHazeState == null) Modifier else Modifier.hazeSource(glassHazeState)),
@@ -344,7 +368,11 @@ internal fun FullScreenPlayer(
                         .height(topBlockHeight),
                 ) {
                     Artwork(
-                        artwork,
+                        artwork = artwork,
+                        outgoingArtwork = outgoingArtwork,
+                        incomingArtwork = incomingArtwork,
+                        crossfadeProgress = crossfadeProgress,
+                        isArtworkCrossfading = isArtworkCrossfading,
                         Modifier
                             .size(artworkSize)
                             .semantics { testTag = FullScreenPlayerArtworkTestTag }
@@ -374,8 +402,9 @@ internal fun FullScreenPlayer(
                         enter = fadeIn(tween(160)) + slideInVertically(tween(160)) { 10 },
                         exit = fadeOut(tween(120)) + slideOutVertically(tween(120)) { -10 },
                     ) {
-                        FullScreenPlayerMetadata(
+                        FullScreenPlayerMetadataTransition(
                             item = item,
+                            crossfade = artworkCrossfade,
                             displayedHorizontalSwipeOffset = displayedHorizontalSwipeOffset,
                             hazeState = glassHazeState,
                             compact = false,
@@ -392,8 +421,9 @@ internal fun FullScreenPlayer(
                         enter = fadeIn(tween(200, delayMillis = 120)) + slideInVertically(tween(200, delayMillis = 120)) { 12 },
                         exit = fadeOut(tween(120)) + slideOutVertically(tween(120)) { -10 },
                     ) {
-                        FullScreenPlayerMetadata(
+                        FullScreenPlayerMetadataTransition(
                             item = item,
+                            crossfade = artworkCrossfade,
                             displayedHorizontalSwipeOffset = displayedHorizontalSwipeOffset,
                             hazeState = glassHazeState,
                             compact = true,
@@ -588,6 +618,39 @@ internal fun FullScreenPlayer(
 }
 
 @Composable
+private fun FullScreenPlayerMetadataTransition(
+    item: PlaybackItem,
+    crossfade: ArtworkCrossfadeTransition?,
+    displayedHorizontalSwipeOffset: Float,
+    hazeState: HazeState?,
+    compact: Boolean,
+) {
+    // The player state switches to the incoming source as native crossfade
+    // starts. Mirror that moment in metadata instead of waiting for midpoint.
+    androidx.compose.animation.AnimatedContent(
+        targetState = item,
+        transitionSpec = {
+            if (crossfade != null) {
+                (slideInHorizontally(tween(200, easing = FastOutSlowInEasing)) { it / 4 } +
+                    fadeIn(tween(200, easing = FastOutSlowInEasing))) togetherWith
+                    (slideOutHorizontally(tween(180, easing = FastOutSlowInEasing)) { -it / 4 } +
+                        fadeOut(tween(160, easing = FastOutSlowInEasing)))
+            } else {
+                EnterTransition.None togetherWith ExitTransition.None
+            }
+        },
+        label = "full-screen-player-metadata-crossfade",
+    ) { animatedItem ->
+        FullScreenPlayerMetadata(
+            item = animatedItem,
+            displayedHorizontalSwipeOffset = displayedHorizontalSwipeOffset,
+            hazeState = hazeState,
+            compact = compact,
+        )
+    }
+}
+
+@Composable
 private fun FullScreenPlayerMetadata(
     item: PlaybackItem,
     displayedHorizontalSwipeOffset: Float,
@@ -758,7 +821,14 @@ private fun FullScreenPlayerDragHandle() {
 }
 
 @Composable
-private fun FullScreenPlayerBackground(artwork: FullScreenArtwork?, modifier: Modifier) {
+private fun FullScreenPlayerBackground(
+    artwork: FullScreenArtwork?,
+    outgoingArtwork: FullScreenArtwork?,
+    incomingArtwork: FullScreenArtwork?,
+    crossfadeProgress: Float,
+    isArtworkCrossfading: Boolean,
+    modifier: Modifier,
+) {
     val colors = LocalAirmedyColors.current
     val dominantColor by animateColorAsState(
         targetValue = artwork?.dominant ?: colors.playerBackdrop,
@@ -766,23 +836,62 @@ private fun FullScreenPlayerBackground(artwork: FullScreenArtwork?, modifier: Mo
         label = "full-screen-background-colour",
     )
     Box(modifier.background(colors.playerBackdrop)) {
-        Box(
-            Modifier.fillMaxSize().background(
-                Brush.verticalGradient(
-                    listOf(dominantColor.copy(alpha = 0.72f), colors.playerBackdrop.copy(alpha = 0.12f)),
-                ),
-            ),
-        )
+        if (isArtworkCrossfading) {
+            val outgoingAlpha = equalPowerOutgoing(crossfadeProgress)
+            val incomingAlpha = equalPowerIncoming(crossfadeProgress)
+            PlayerBackgroundGradient(outgoingArtwork?.dominant ?: colors.playerBackdrop, outgoingAlpha)
+            PlayerBackgroundGradient(incomingArtwork?.dominant ?: colors.playerBackdrop, incomingAlpha)
+        } else {
+            PlayerBackgroundGradient(dominantColor, 1f)
+        }
         Box(Modifier.fillMaxSize().background(colors.playerBackdrop.copy(alpha = 0.36f)))
     }
 }
 
 @Composable
-private fun Artwork(artwork: FullScreenArtwork?, modifier: Modifier) {
+private fun PlayerBackgroundGradient(dominant: Color, alpha: Float) {
+    val colors = LocalAirmedyColors.current
+    Box(
+        Modifier
+            .fillMaxSize()
+            .alpha(alpha)
+            .background(
+                Brush.verticalGradient(
+                    listOf(dominant.copy(alpha = 0.72f), colors.playerBackdrop.copy(alpha = 0.12f)),
+                ),
+            ),
+    )
+}
+
+@Composable
+private fun Artwork(
+    artwork: FullScreenArtwork?,
+    outgoingArtwork: FullScreenArtwork?,
+    incomingArtwork: FullScreenArtwork?,
+    crossfadeProgress: Float,
+    isArtworkCrossfading: Boolean,
+    modifier: Modifier,
+) {
     val colors = LocalAirmedyColors.current
     Box(modifier.clip(FullScreenArtworkShape).background(colors.glassElevated), contentAlignment = Alignment.Center) {
-        if (artwork != null) Image(artwork.image, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-        else MaterialSymbol(symbol = MaterialSymbols.MusicNote, contentDescription = null, tint = colors.textMuted, size = 64.dp)
+        if (isArtworkCrossfading) {
+            ArtworkLayer(outgoingArtwork, equalPowerOutgoing(crossfadeProgress))
+            ArtworkLayer(incomingArtwork, equalPowerIncoming(crossfadeProgress))
+        } else {
+            ArtworkLayer(artwork, 1f)
+        }
+    }
+}
+
+@Composable
+private fun ArtworkLayer(artwork: FullScreenArtwork?, alpha: Float) {
+    val colors = LocalAirmedyColors.current
+    if (artwork != null) {
+        Image(artwork.image, null, Modifier.fillMaxSize().alpha(alpha), contentScale = ContentScale.Crop)
+    } else {
+        Box(Modifier.fillMaxSize().alpha(alpha), contentAlignment = Alignment.Center) {
+            MaterialSymbol(symbol = MaterialSymbols.MusicNote, contentDescription = null, tint = colors.textMuted, size = 64.dp)
+        }
     }
 }
 
@@ -842,10 +951,41 @@ private data class FullScreenArtwork(
 )
 
 @Composable
-private fun rememberFullscreenArtwork(artworkPath: String?): FullScreenArtwork? {
+private fun rememberArtworkCrossfadeProgress(crossfade: ArtworkCrossfadeTransition?): Float {
+    // Key the initial value to the transition ID. LaunchedEffect runs after a
+    // composition; retaining the previous completed value (1f) for that first
+    // frame briefly displayed the incoming cover at full opacity.
+    var progress by remember(crossfade?.id) {
+        mutableFloatStateOf(if (crossfade == null) 1f else 0f)
+    }
+    LaunchedEffect(crossfade?.id) {
+        if (crossfade == null) {
+            return@LaunchedEffect
+        }
+        val durationNanos = crossfade.durationMs.coerceAtLeast(1L) * 1_000_000L
+        var startedAtNanos = 0L
+        while (progress < 1f) {
+            withFrameNanos { frameNanos ->
+                if (startedAtNanos == 0L) startedAtNanos = frameNanos
+                progress = ((frameNanos - startedAtNanos).toFloat() / durationNanos).coerceIn(0f, 1f)
+            }
+        }
+    }
+    return progress
+}
+
+private fun equalPowerOutgoing(progress: Float): Float =
+    kotlin.math.cos(progress.coerceIn(0f, 1f) * Math.PI.toFloat() / 2f)
+
+private fun equalPowerIncoming(progress: Float): Float =
+    kotlin.math.sin(progress.coerceIn(0f, 1f) * Math.PI.toFloat() / 2f)
+
+@Composable
+private fun rememberFullscreenArtwork(artworkPath: String?, keepPrevious: Boolean = true): FullScreenArtwork? {
     val context = LocalContext.current
     var artwork by remember { mutableStateOf<FullScreenArtwork?>(null) }
     LaunchedEffect(artworkPath) {
+        if (!keepPrevious) artwork = null
         if (artworkPath.isNullOrBlank()) {
             artwork = null
             return@LaunchedEffect

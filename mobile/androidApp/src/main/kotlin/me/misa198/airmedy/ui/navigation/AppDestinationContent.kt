@@ -41,6 +41,8 @@ import me.misa198.airmedy.ui.screens.HomeSampleDetailContent
 import me.misa198.airmedy.ui.screens.LibraryContent
 import me.misa198.airmedy.ui.screens.PlaceholderContent
 import me.misa198.airmedy.ui.screens.SettingsContent
+import me.misa198.airmedy.ui.screens.PlaybackSettingsContent
+import me.misa198.airmedy.ui.screens.SongTransitionContent
 import me.misa198.airmedy.ui.screens.SyncContent
 import me.misa198.airmedy.ui.screens.SyncScannerContent
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
@@ -138,6 +140,11 @@ internal fun AppDestinationContent(
     onUnpair: () -> Unit,
     onSyncScreenVisible: () -> Unit,
     onSyncScreenHidden: () -> Unit,
+    crossfadeSeconds: Int = 0,
+    lastEnabledCrossfadeSeconds: Int = 4,
+    onCrossfadeSecondsChanged: (Int) -> Unit = {},
+    blendArtworkDuringCrossfade: Boolean = true,
+    onBlendArtworkDuringCrossfadeChanged: (Boolean) -> Unit = {},
     onContentScroll: (ContentScrollDelta) -> Unit = {},
 ) {
     val colors = LocalAirmedyColors.current
@@ -235,6 +242,20 @@ internal fun AppDestinationContent(
                                 onScreenHidden = onSyncScreenHidden,
                                 modifier = Modifier.padding(contentPadding),
                             )
+                            AppStackPage.SettingsPlayback -> PlaybackSettingsContent(
+                                onSongTransitionSelected = {
+                                    onIntent(AppIntent.OpenPage(AppStackPage.SettingsSongTransition))
+                                },
+                                modifier = Modifier.padding(contentPadding),
+                            )
+                            AppStackPage.SettingsSongTransition -> SongTransitionContent(
+                                crossfadeSeconds = crossfadeSeconds,
+                                lastEnabledCrossfadeSeconds = lastEnabledCrossfadeSeconds,
+                                onCrossfadeSecondsChanged = onCrossfadeSecondsChanged,
+                                blendArtworkDuringCrossfade = blendArtworkDuringCrossfade,
+                                onBlendArtworkDuringCrossfadeChanged = onBlendArtworkDuringCrossfadeChanged,
+                                modifier = Modifier.padding(contentPadding),
+                            )
                             AppStackPage.SettingsSyncScanner -> SyncScannerContent(
                                 onQrScanned = onPairingQrScanned,
                                 modifier = Modifier.padding(contentPadding),
@@ -249,6 +270,9 @@ internal fun AppDestinationContent(
                                 modifier = Modifier.padding(contentPadding),
                                 onAppearanceSelected = {
                                     onIntent(AppIntent.OpenPage(AppStackPage.SettingsAppearance))
+                                },
+                                onPlaybackSelected = {
+                                    onIntent(AppIntent.OpenPage(AppStackPage.SettingsPlayback))
                                 },
                                 onSyncSelected = {
                                     onIntent(AppIntent.OpenPage(AppStackPage.SettingsSync))

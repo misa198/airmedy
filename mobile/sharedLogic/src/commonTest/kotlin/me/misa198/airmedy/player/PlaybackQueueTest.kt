@@ -4,8 +4,27 @@ import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 
 class PlaybackQueueTest {
+    @Test
+    fun `peek next follows repeat semantics without moving the cursor`() {
+        val queue = PlaybackQueue(Random(0))
+        queue.play(PlaybackRequest(listOf("one", "two")))
+
+        assertEquals("two", queue.peekNext())
+        assertEquals("one", queue.snapshot().currentTrackId)
+
+        queue.setRepeatMode(RepeatMode.One)
+        assertEquals("one", queue.peekNext())
+
+        queue.setRepeatMode(RepeatMode.Off)
+        queue.next()
+        assertNull(queue.peekNext())
+
+        queue.setRepeatMode(RepeatMode.All)
+        assertEquals("one", queue.peekNext())
+    }
     @Test
     fun `play uses source order and clicked start index`() {
         val queue = PlaybackQueue()

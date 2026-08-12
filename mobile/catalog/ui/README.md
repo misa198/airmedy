@@ -36,8 +36,19 @@ describe the desktop Vue UI or future iOS UI.
   opaque page surfaces, and Z-index ordering to prevent ghosting/overlap.
 - The Settings root shows one card-contained action list for Appearance, Sync,
   Playback, Integration, and About. Appearance opens `SettingsAppearance`, Sync
-  opens `SettingsSync`, and About opens `SettingsAbout` in the Settings stack;
-  Playback and Integration remain presentational.
+  opens `SettingsSync`, Playback opens `SettingsPlayback`, and About opens
+  `SettingsAbout` in the Settings stack; Integration remains presentational.
+- Playback Settings uses the `subwoofer` Material Symbol and presents a Song
+  Transition action with the `masked_transitions` symbol. Song Transition owns
+  the Crossfade switch and semantic 1–12 second slider; it defaults off,
+  enables at four seconds for new users, and retains the last enabled duration
+  while switched off. While enabled, the duration fades in as its own card below
+  a reusable `LabeledCard` muted section label; its current value is a small
+  top-left label and the 1–12 second bounds sit below the slider at its opposing
+  ends. The slider itself has a 10dp inset from the card content edges, keeping
+  its thumbs comfortably away from the edge. While enabled it also exposes a persisted Blend artwork and
+  background switch, default on. Both pages apply the shared page inset outside their card, so the
+  card surface does not extend edge-to-edge.
 - About has an informational hero card using the desktop-derived
   `airmedy_about_app_icon` drawable, app name and description, followed by an
   iconless, card-contained action list. Its version is static build metadata;
@@ -165,9 +176,10 @@ describe the desktop Vue UI or future iOS UI.
   marquee `foregroundSubtle` artist/duration text. Overlong marquee text travels
   to its end and reverses back rather than wrapping continuously. The metadata column keeps a
   12dp gap before the blurred glass Heart/More button pair (using a fullscreen-local Haze backdrop source and a subtle 6% glass tint),
-  a dominant-colour gradient extracted from the artwork, animated over 280ms when artwork changes; the prior artwork remains visible while the replacement decodes to prevent a fallback-colour flash, with a
-  restrained dark `playerBackdrop` overlay and fallback in every app theme, seek/duration, transport controls, Android music-stream volume (the system settings provider is observed recursively so hardware keys and route-specific system-volume events keep it current; hardware-key changes are also predicted immediately before that asynchronous observer confirms the route's actual volume),
-  and Lyrics/Queue affordances. Selecting Lyrics or Queue compresses the
+  a dominant-colour gradient extracted from the artwork, animated over 280ms when artwork changes; during an automatic crossfade with Blend artwork and background enabled, outgoing and incoming covers plus their gradients use the audio-matched equal-power `cos/sin` curve for the actual fade duration. The visual is fullscreen-only; mini-player artwork switches immediately. The prior artwork remains visible while the replacement decodes to prevent a fallback-colour flash, with a
+  restrained dark `playerBackdrop` overlay and fallback in every app theme, seek/duration, transport controls, Android music-stream volume (the system settings provider is observed recursively so hardware keys and route-specific system-volume events keep it current; hardware-key changes are also predicted immediately before that asynchronous observer confirms the route's actual volume).
+  Fullscreen title/artist begin changing as the incoming source starts: incoming metadata fades and slides horizontally in from the right while the outgoing label exits left; this applies to both expanded and compact player layouts.
+  Lyrics/Queue affordances follow. Selecting Lyrics or Queue compresses the
   artwork into a 96dp square, animating its anchor from centre to top-left when
   leaving the paused presentation. The expanded
   title/artist cluster slides slightly upward while fading out; a separate
@@ -286,6 +298,7 @@ describe the desktop Vue UI or future iOS UI.
 | Component | Contract |
 | --- | --- |
 | `Card` | Standard 28dp, borderless, opaque themed card surface. It accepts slot content and optional padding; its title/description overload remains a tappable primary-action card. |
+| `LabeledCard` | Reusable small, semibold muted section label (with a 4dp leading inset) above a standard `Card`. |
 | `DiscCard` | Displays a vertical card featuring a 1:1 square rounded artwork thumbnail (or glass symbol fallback), semibold single-line title, and muted single-line subtitle. Usable for album or track cards. Clickable cards retain button semantics but suppress the press ripple. |
 | `HeroCard` | A non-interactive informational card with a 40dp decorative icon, bold `titleLarge` title, optional content directly below its title, and muted description. Its optional bottom slot stays inside the card but outside the standard 24dp content padding. Sync uses these slots for its MQTT Online/Offline badge and in-card Revoke action. |
 | `DetailHero` | Centered detail-page identity header with configurable square/circular artwork, title/subtitle, and Shuffle/Play/More callbacks. |
@@ -299,11 +312,11 @@ describe the desktop Vue UI or future iOS UI.
 | `LibrarySortHeaderButton` | Shared animated header sort menu. The caller supplies typed, resource-backed sort options plus selected option/order callbacks. |
 | `ActionList` | Displays 56dp `ActionListItem` rows with optional leading Material Symbol, resource-backed label, optional trailing composable slot, and a chevron only for clickable rows without a supplied trailing slot. `FullWidth` and `InsetForLeadingIcon` divider styles are available. `Card` uses the shared `Card` surface; `Plain` has no enclosing surface. A row is clickable only when its item has `onClick`. |
 | `Selection` | Renders an iOS-style dropdown row and custom elevated menu with a 28dp radius for mutually exclusive `SelectionOption` values. Its selected value uses the standard row typography with the muted action colour; each menu option is at least 44dp tall. Only the right-side action slot opens and anchors the right-aligned menu; the opaque, rounded menu expands and collapses vertically while fading and scaling over 220ms. The caller owns selected state and receives the selected value through `onValueSelected`. |
-| `StackPageLayout` | Places content below the status/header region and above the persistent navigation; screens must use its supplied padding. Its page-header title uses bold `headlineLarge` typography. |
+| `StackPageLayout` | Places content below the status/header region and above the persistent navigation; screens must use its supplied padding. Root page headers use bold `headlineLarge` typography; stack pages with a Back button use normal-sized, bold `bodyLarge` title text. |
 | `AirmedyGlassIconButton` | A 48dp circular blurred glass icon button with border and button semantics. Back and header actions use this shared primitive. |
 | `AirmedyIconButton` | A 48dp icon action with `Ghost` and `Glass` variants. Glass uses the liquid-glass surface and border; both variants support optional `tint`, `glassColor`, `circleSize`, and `iconSize` overrides and provide an accessible label. |
 | `AirmedyMarqueeText` | A single-line text treatment for constrained playback metadata. It start-aligns unbounded text, clips overflow, and uses pingpong keyframe animation with pauses at start/end matching desktop MarqueeText behavior. |
-| `AirmedyTrackSlider` | Shared custom-drawn slider for fullscreen-player seek and Android music-stream volume. It preserves a 48dp touch target while rendering a translucent gray glass track with a white current-value fill and no thumb or Material Slider terminal indicator. `trackHeight` lets the fullscreen seek bar render at 6dp while the volume bar keeps its 3dp default. Slider range semantics and touch/drag seeking remain available to accessibility services. The fullscreen seek control keeps its selected preview (and elapsed-time label) until the playback service publishes a position within 250ms of the requested target; this prevents a tap from briefly flashing back to the old position on slow devices. The fullscreen volume row places muted low/high-volume icons at either end. |
+| `AirmedyTrackSlider` | Shared custom-drawn slider for fullscreen-player seek and Android music-stream volume. It preserves a 48dp touch target while rendering a translucent gray glass track with a white current-value fill and no thumb or Material Slider terminal indicator. `trackHeight` lets the fullscreen seek bar render at 6dp while the volume bar keeps its 3dp default. Slider range semantics and touch/drag seeking remain available to accessibility services. Its long-lived pointer handler dispatches through the newest callback after a crossfade changes track duration, so tap fractions cannot be evaluated against the prior track. The fullscreen seek control keeps its selected preview (and elapsed-time label) until the playback service publishes a position within 250ms of the requested target; this prevents a tap from briefly flashing back to the old position on slow devices. The fullscreen volume row places muted low/high-volume icons at either end. |
 | `AirmedyPlayingIndicator` | A decorative three-bar, white (`onPrimary`) playback indicator. It animates bar height while `isPlaying` and presents short resting bars otherwise; play/pause changes tween smoothly between these states. The fullscreen queue overlays it at the centre of the current track's artwork. |
 | `AirmedyPillButton` | A borderless 52dp minimum-height capsule action. `Primary` and `Destructive` use the primary background with the explicit white `onPrimary` token in both light and dark themes; `Secondary` uses the stronger `buttonSecondary` theme surface with normal foreground text. When disabled, only its themed background fades while label colour stays unchanged. Its label supplies button semantics. |
 | `AirmedyDialog` | A 36dp-radius, two-action mobile dialog. Its text content has 20dp horizontal inset; the button area has a thinner 16dp horizontal/bottom inset. It supports `Horizontal` and `Vertical` action layouts; the left/top action always dismisses with `Secondary`. |

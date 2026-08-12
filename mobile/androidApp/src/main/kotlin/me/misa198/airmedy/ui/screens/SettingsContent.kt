@@ -12,6 +12,7 @@ import me.misa198.airmedy.ui.components.MaterialSymbols
 @Composable
 internal fun SettingsContent(
     onAppearanceSelected: () -> Unit,
+    onPlaybackSelected: () -> Unit,
     onSyncSelected: () -> Unit,
     onAboutSelected: () -> Unit,
     modifier: Modifier = Modifier,
@@ -29,7 +30,11 @@ internal fun SettingsContent(
                     leadingSymbol = MaterialSymbols.Refresh,
                     onClick = onSyncSelected,
                 ),
-                ActionListItem(R.string.settings_playback, leadingSymbol = MaterialSymbols.PlayArrow),
+                ActionListItem(
+                    R.string.settings_playback,
+                    leadingSymbol = MaterialSymbols.Subwoofer,
+                    onClick = onPlaybackSelected,
+                ),
                 ActionListItem(R.string.settings_integration, leadingSymbol = MaterialSymbols.Power),
                 ActionListItem(
                     R.string.settings_about,

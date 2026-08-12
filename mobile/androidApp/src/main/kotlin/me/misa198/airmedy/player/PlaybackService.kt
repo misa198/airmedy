@@ -32,6 +32,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
@@ -48,7 +49,10 @@ class PlaybackService : Service() {
     private lateinit var restoreJob: Job
     private val queue = PlaybackQueue()
     private var decoder: FfmpegDecoder? = null
+    private var preloadedItem: PlaybackItem? = null
     private lateinit var sessionStore: PlaybackSessionStore
+    private lateinit var playbackPreferences: PlaybackPreferences
+    private var preferencesJob: Job? = null
     private lateinit var audioManager: AudioManager
     private lateinit var mediaSession: MediaSession
     private lateinit var focusRequest: AudioFocusRequest
@@ -62,6 +66,19 @@ class PlaybackService : Service() {
         super.onCreate()
         AndroidPlaybackRuntime.initialize(applicationContext, AndroidSyncRuntime.syncStore())
         sessionStore = PlaybackSessionStore(applicationContext)
+        playbackPreferences = PlaybackPreferences(applicationContext)
+        preferencesJob = scope.launch {
+            playbackPreferences.settings.collectLatest { settings ->
+                commandMutex.withLock {
+                    crossfadeSeconds.value = settings.seconds
+                    blendArtworkDuringCrossfade.value = settings.blendArtworkDuringCrossfade
+                    if (!settings.blendArtworkDuringCrossfade) clearArtworkCrossfade()
+                    // A preference update must never change a fade already
+                    // running, but it does refresh the idle source afterward.
+                    if (decoder?.isCrossfading() != true) preloadNext()
+                }
+            }
+        }
         audioManager = getSystemService(AudioManager::class.java)
         registerNoisyAudioReceiver()
         focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
@@ -108,12 +125,20 @@ class PlaybackService : Service() {
                 delay(200)
                 commandMutex.withLock {
                     refreshPlaybackPosition()
+                    consumeNativeTransition()
+                    if (decoder?.isCrossfading() != true) clearArtworkCrossfade()
                     if (audioOutputDisconnectRequiresRecovery(decoder?.isOutputDisconnected() == true)) {
                         recoverAfterOutputDisconnect()
+                    } else if (maybeStartCrossfade()) {
+                        consumeNativeTransition()
                     } else if (decoder?.isFinished() == true && state.value is PlaybackState.Playing) {
                         handleTransition(queue.next())
                         publishQueue()
                     }
+                    // A crossfade occupies both native source slots. Once its
+                    // callback retires the outgoing item, populate that slot
+                    // with the queue's new immediate successor.
+                    if (canPreloadNext(decoder?.isCrossfading() == true)) preloadNext()
                 }
             }
         }
@@ -139,6 +164,11 @@ class PlaybackService : Service() {
                 ActionSetRepeat,
                 repeat = intent.getStringExtra(RepeatModeExtra)?.let { value -> runCatching { RepeatMode.valueOf(value) }.getOrNull() },
             )
+            ActionSetCrossfade -> scope.launch {
+                playbackPreferences.setCrossfadeSeconds(
+                    intent.getIntExtra(CrossfadeSecondsExtra, CrossfadeDisabledSeconds),
+                )
+            }
             ActionPlayNext, ActionAppend, ActionReorder -> dispatch(
                 action = intent.action!!,
                 trackIds = intent.getStringArrayExtra(TrackIdsExtra).orEmpty().toList(),
@@ -156,11 +186,13 @@ class PlaybackService : Service() {
     override fun onDestroy() {
         runBlocking { sessionStore.save(queue.snapshot()) }
         decoder?.close()
+        preferencesJob?.cancel()
         unregisterReceiver(noisyAudioReceiver)
         AndroidPlaybackSession.clear()
         mediaSession.release()
         audioManager.abandonAudioFocusRequest(focusRequest)
         scope.cancel()
+        clearArtworkCrossfade()
         state.value = PlaybackState.Idle
         super.onDestroy()
     }
@@ -175,6 +207,7 @@ class PlaybackService : Service() {
     ) = scope.launch {
         restored.await()
         commandMutex.withLock {
+            consumeNativeTransition()
             Log.d(PlaybackLogTag, "Handling action=$action queueSize=${queue.snapshot().activeTrackIds.size}")
             when (action) {
                 ActionPlay -> handleTransition(runCatching { queue.play(PlaybackRequest(trackIds, startIndex)) }
@@ -199,6 +232,15 @@ class PlaybackService : Service() {
                 ActionRemove -> trackIds.firstOrNull()?.let { handleTransition(queue.removeFromQueue(it)) }
                 ActionReorder -> queue.reorderQueue(trackIds)
             }
+            if (action in PreloadResyncActions) {
+                // The old source must not remain part of a fade whose queued
+                // successor has just changed.
+                if (decoder?.isCrossfading() == true) {
+                    clearArtworkCrossfade()
+                    decoder?.snapCrossfade()
+                }
+                preloadNext()
+            }
             publishQueue()
         }
     }
@@ -213,6 +255,7 @@ class PlaybackService : Service() {
     }
 
     private suspend fun playCurrent(startPositionMs: Long = 0L) {
+        clearArtworkCrossfade()
         val trackId = queue.snapshot().currentTrackId ?: return stopPlayback()
         Log.d(PlaybackLogTag, "Preparing current queue track id=$trackId")
         val item = AndroidPlaybackRuntime.controller().resolve(trackId) ?: return fail(trackId, "Audio asset is not available")
@@ -228,6 +271,7 @@ class PlaybackService : Service() {
                 state.value = PlaybackState.Playing(item, it.positionMs(), it.durationMs())
                 publishNowPlaying(item, AndroidMediaPlaybackState.STATE_PLAYING, it.positionMs(), it.durationMs())
             }
+            preloadNext()
             showForeground(item)
             Log.d(PlaybackLogTag, "Playback started id=$trackId durationMs=${decoder?.durationMs()}")
         } catch (error: Throwable) {
@@ -236,6 +280,7 @@ class PlaybackService : Service() {
     }
 
     private fun pauseCurrent() {
+        clearArtworkCrossfade()
         decoder?.pause()
         (state.value as? PlaybackState.Playing)?.let { current ->
             val positionMs = decoder?.positionMs() ?: current.positionMs
@@ -302,6 +347,7 @@ class PlaybackService : Service() {
             else -> return
         }
         val targetPositionMs = clampSeekPosition(requestedPositionMs, durationMs)
+        clearArtworkCrossfade()
         decoder?.seekTo(targetPositionMs) ?: return
         if (playing) {
             state.value = PlaybackState.Playing(item, targetPositionMs, durationMs)
@@ -314,7 +360,9 @@ class PlaybackService : Service() {
     }
 
     private fun stopPlayback() {
-        decoder?.close(); decoder = null
+        clearArtworkCrossfade()
+        decoder?.snapCrossfade()
+        decoder?.close(); decoder = null; preloadedItem = null
         audioManager.abandonAudioFocusRequest(focusRequest)
         state.value = PlaybackState.Idle
         mediaSession.setPlaybackState(androidPlaybackState(AndroidMediaPlaybackState.STATE_STOPPED, 0L))
@@ -328,6 +376,8 @@ class PlaybackService : Service() {
      */
     private fun stopAtCurrentTrack() {
         val current = state.value as? PlaybackState.Playing ?: return stopPlayback()
+        clearArtworkCrossfade()
+        decoder?.snapCrossfade()
         decoder?.close(); decoder = null
         audioManager.abandonAudioFocusRequest(focusRequest)
         state.value = PlaybackState.Paused(current.item, current.durationMs, current.durationMs)
@@ -338,7 +388,8 @@ class PlaybackService : Service() {
 
     private fun fail(trackId: String?, reason: String) {
         Log.e(PlaybackLogTag, "Playback failed id=$trackId reason=$reason")
-        decoder?.close(); decoder = null
+        clearArtworkCrossfade()
+        decoder?.close(); decoder = null; preloadedItem = null
         state.value = PlaybackState.Failed(trackId, reason)
         mediaSession.setPlaybackState(androidPlaybackState(AndroidMediaPlaybackState.STATE_ERROR, 0L))
         mediaSession.isActive = false
@@ -349,6 +400,83 @@ class PlaybackService : Service() {
         val snapshot = queue.snapshot()
         queueState.value = snapshot
         scope.launch { sessionStore.save(snapshot) }
+    }
+
+    /** Keep native idle slot aligned with the queue's immediate next item. */
+    private suspend fun preloadNext() {
+        val nextId = queue.peekNext()
+        val currentDecoder = decoder ?: return
+        if (nextId == preloadedItem?.trackId && currentDecoder.hasPreloaded()) return
+        currentDecoder.clearPreloaded()
+        preloadedItem = nextId?.let { id -> AndroidPlaybackRuntime.controller().resolve(id) }
+        preloadedItem?.let { item ->
+            runCatching { currentDecoder.preload(File(item.audioPath)) }
+                .onSuccess { loaded ->
+                    if (!loaded) preloadedItem = null
+                }
+                .onFailure { error ->
+                    Log.w(PlaybackLogTag, "Unable to preload next id=${item.trackId}", error)
+                    preloadedItem = null
+                }
+        }
+    }
+
+    /** Native promotes audio first; this service transaction promotes queue/UI metadata. */
+    private suspend fun consumeNativeTransition() {
+        val transition = decoder?.consumeTransition() ?: return
+        val incoming = preloadedItem ?: return
+        val queueTransition = queue.next()
+        if (queueTransition !is QueueTransition.Play || queueTransition.trackId != incoming.trackId) {
+            fail(incoming.trackId, "Native transition no longer matches the playback queue")
+            return
+        }
+        preloadedItem = null
+        val currentDecoder = decoder ?: return
+        val positionMs = currentDecoder.positionMs()
+        val durationMs = currentDecoder.durationMs()
+        state.value = PlaybackState.Playing(incoming, positionMs, durationMs)
+        publishNowPlaying(incoming, AndroidMediaPlaybackState.STATE_PLAYING, positionMs, durationMs)
+        updateNotification()
+        // During a crossfade both native slots are live (incoming + outgoing).
+        // Loading i+2 here would reuse the outgoing slot and cut i off instead
+        // of letting it fade out. The ticker reloads after the fade completes.
+        if (canPreloadNext(currentDecoder.isCrossfading())) preloadNext()
+        publishQueue()
+        Log.d(PlaybackLogTag, "Consumed native transition=$transition id=${incoming.trackId}")
+    }
+
+    private fun maybeStartCrossfade(): Boolean {
+        val current = state.value as? PlaybackState.Playing ?: return false
+        val currentDecoder = decoder ?: return false
+        val incoming = preloadedItem ?: return false
+        if (currentDecoder.isCrossfading()) return false
+        if (!shouldStartCrossfade(
+                crossfadeSeconds = crossfadeSeconds.value,
+                positionMs = currentDecoder.positionMs(),
+                durationMs = current.durationMs,
+                hasPreloadedNext = preloadedItem != null && currentDecoder.hasPreloaded(),
+            )
+        ) return false
+        val effectiveDurationMs = crossfadeDurationMs(
+            crossfadeSeconds = crossfadeSeconds.value,
+            positionMs = currentDecoder.positionMs(),
+            durationMs = current.durationMs,
+        )
+        currentDecoder.beginCrossfade(effectiveDurationMs)
+        if (currentDecoder.isCrossfading()) {
+            nextArtworkCrossfadeId += 1
+            artworkCrossfade.value = ArtworkCrossfadeTransition(
+                id = nextArtworkCrossfadeId,
+                fromArtworkPath = current.item.artworkPath,
+                toArtworkPath = incoming.artworkPath,
+                durationMs = effectiveDurationMs.coerceAtLeast(1L),
+            )
+        }
+        return true
+    }
+
+    private fun clearArtworkCrossfade() {
+        artworkCrossfade.value = null
     }
 
     private fun showForeground(item: PlaybackItem) {
@@ -500,9 +628,18 @@ class PlaybackService : Service() {
         private const val ChannelId = "playback"
         private const val NotificationId = 2002
         private const val NowPlayingArtworkSizePx = 512
+        private val PreloadResyncActions = setOf(
+            ActionSetShuffle, ActionSetRepeat, ActionPlayNext, ActionRemove, ActionReorder,
+        )
         private val nowPlayingArtworkCache = LruCache<String, Bitmap>(20)
         internal val state = MutableStateFlow<PlaybackState>(PlaybackState.Idle)
         internal val queueState = MutableStateFlow(PlaybackQueueSnapshot())
+        internal val crossfadeSeconds = MutableStateFlow(CrossfadeDisabledSeconds)
+        internal val blendArtworkDuringCrossfade = MutableStateFlow(true)
+        internal val artworkCrossfade = MutableStateFlow<ArtworkCrossfadeTransition?>(null)
+        private var nextArtworkCrossfadeId = 0L
+        internal const val ActionSetCrossfade = "me.misa198.airmedy.player.SET_CROSSFADE"
+        internal const val CrossfadeSecondsExtra = "crossfade_seconds"
         internal fun intent(context: Context, action: String) = Intent(context, PlaybackService::class.java).setAction(action)
     }
 }

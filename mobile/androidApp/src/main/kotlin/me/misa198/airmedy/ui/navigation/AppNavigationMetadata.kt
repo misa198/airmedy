@@ -19,6 +19,8 @@ internal fun AppStackPage.titleRes(destination: AppDestination): Int = when (thi
     AppStackPage.LibraryComposers -> R.string.library_composers
     AppStackPage.ComposerDetails -> R.string.composer_details_title
     AppStackPage.SettingsAppearance -> R.string.appearance_title
+    AppStackPage.SettingsPlayback -> R.string.playback_settings_title
+    AppStackPage.SettingsSongTransition -> R.string.song_transition_title
     AppStackPage.SettingsSync -> R.string.sync_title
     AppStackPage.SettingsSyncScanner -> R.string.sync_scan_title
     AppStackPage.SettingsAbout -> R.string.about_title

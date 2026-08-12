@@ -133,8 +133,13 @@ class MainActivity : ComponentActivity() {
             val genreDetailsUiState by genreDetailsViewModel.uiState.collectAsStateWithLifecycle()
             val composerDetailsUiState by composerDetailsViewModel.uiState.collectAsStateWithLifecycle()
             val playbackController = AndroidPlaybackRuntime.controller()
+            val playbackPreferences = remember { me.misa198.airmedy.player.PlaybackPreferences(applicationContext) }
+            val crossfadeSettings by playbackPreferences.settings.collectAsStateWithLifecycle(
+                initialValue = me.misa198.airmedy.player.CrossfadeSettings(0, 4, true),
+            )
             val playbackState by playbackController.state.collectAsStateWithLifecycle()
             val playbackQueue by playbackController.queue.collectAsStateWithLifecycle()
+            val artworkCrossfade by playbackController.artworkCrossfade.collectAsStateWithLifecycle()
             val lyricsTrackId = when (val state = playbackState) {
                 is PlaybackState.Preparing -> state.item.trackId
                 is PlaybackState.Playing -> state.item.trackId
@@ -214,6 +219,12 @@ class MainActivity : ComponentActivity() {
                 onUnpair = syncViewModel::unpair,
                 onSyncScreenVisible = syncViewModel::onSyncScreenVisible,
                 onSyncScreenHidden = syncViewModel::onSyncScreenHidden,
+                crossfadeSeconds = crossfadeSettings.seconds,
+                lastEnabledCrossfadeSeconds = crossfadeSettings.lastEnabledSeconds,
+                onCrossfadeSecondsChanged = playbackController::setCrossfadeSeconds,
+                blendArtworkDuringCrossfade = crossfadeSettings.blendArtworkDuringCrossfade,
+                onBlendArtworkDuringCrossfadeChanged = playbackController::setBlendArtworkDuringCrossfade,
+                artworkCrossfade = artworkCrossfade,
                 playbackState = playbackState,
                 playbackQueue = playbackQueue,
                 queueTracks = tracksUiState.tracks,

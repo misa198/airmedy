@@ -141,6 +141,17 @@ class PlaybackQueue(private val random: Random = Random.Default) {
         }
     }
 
+    /** Read-only next-item look-ahead for native gapless preloading. */
+    fun peekNext(): String? {
+        val current = currentTrackId() ?: return active.firstOrNull()
+        return when {
+            repeatMode == RepeatMode.One -> current
+            currentIndex < active.lastIndex -> active[currentIndex + 1]
+            repeatMode == RepeatMode.All -> active.firstOrNull()
+            else -> null
+        }
+    }
+
     fun previous(): QueueTransition {
         val current = currentTrackId() ?: return selectFirstOrStop()
         if (repeatMode == RepeatMode.One) return QueueTransition.Play(current)
