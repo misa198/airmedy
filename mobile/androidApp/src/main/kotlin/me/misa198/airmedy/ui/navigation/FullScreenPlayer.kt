@@ -399,6 +399,7 @@ internal fun FullScreenPlayer(
                                 )
                             } else {
                                 FullScreenPlayerLyricsPanel(
+                                    trackId = item.trackId,
                                     lyrics = lyrics,
                                     currentPositionMs = currentPositionMs,
                                     onSeek = onSeek,

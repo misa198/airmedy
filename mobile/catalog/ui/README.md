@@ -221,6 +221,12 @@ describe the desktop Vue UI or future iOS UI.
   changes animate using the measured target offset so wrapped lyrics do not
   need a visible second correction. Blur effects are suspended while this
   programmatic scroll is in progress to keep it smooth, then restored at rest.
+  Returning to the foreground clears browse mode and immediately repositions
+  the active lyric line, including when playback advanced beyond the previously
+  visible rows while the app was locked or backgrounded.
+  Changing track always resets the lyrics viewport to its first row. The same
+  reset occurs when repeat/replay restarts the active track near zero, even
+  though its track ID and lyric content are unchanged.
   The pane has an 8dp top inset. Rows have a modest 20dp vertical gap and a right inset so
   the active line's subtle scale transform does not clip or change wrapping.
   The pane has no lyrics header or synced/plain toggle: valid timestamped LRC

@@ -84,6 +84,7 @@ class FullScreenPlayerTest {
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 FullScreenPlayerLyricsPanel(
+                    trackId = "track-1",
                     lyrics = "[00:01.00]Primary ^ Translation\n[00:03.00]Next line",
                     currentPositionMs = 1_000L,
                     onSeek = { seekPositionMs = it },

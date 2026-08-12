@@ -18,9 +18,11 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -36,6 +38,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import me.misa198.airmedy.R
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 import kotlinx.coroutines.flow.first
@@ -70,6 +75,14 @@ internal fun shouldResumeLyricsAutoScroll(
 ): Boolean = selectedLineAnimationComplete && selectedLineIndex != null &&
     activeIndex >= selectedLineIndex && activeIndex != activeIndexWhenLineSelected
 
+/** The active line may advance beyond the visible viewport while the app is backgrounded. */
+internal fun shouldFollowLyricsActiveLine(previousActiveLineInViewport: Boolean, returnedToForeground: Boolean): Boolean =
+    previousActiveLineInViewport || returnedToForeground
+
+/** A repeat/replay restarts the same track near zero without changing its track ID. */
+internal fun shouldResetLyricsForReplay(previousPositionMs: Long, currentPositionMs: Long): Boolean =
+    previousPositionMs > 1_000L && currentPositionMs <= 1_000L
+
 private fun parsePlayerLyricText(text: String, timestampSeconds: Float?): PlayerLyricLine {
     val parts = BilingualSeparator.split(text, limit = 2)
     val secondary = parts.getOrNull(1)?.trim()?.takeIf(String::isNotEmpty)
@@ -78,6 +91,7 @@ private fun parsePlayerLyricText(text: String, timestampSeconds: Float?): Player
 
 @Composable
 internal fun FullScreenPlayerLyricsPanel(
+    trackId: String,
     lyrics: String?,
     currentPositionMs: Long,
     onSeek: (Long) -> Unit,
@@ -88,7 +102,7 @@ internal fun FullScreenPlayerLyricsPanel(
     Column(modifier = modifier.padding(top = 8.dp)) {
         when {
             lyrics.isNullOrBlank() -> LyricsEmptyState(Modifier.fillMaxSize())
-            syncedLines.isNotEmpty() -> SyncedLyricsList(syncedLines, currentPositionMs, onSeek, Modifier.fillMaxSize())
+            syncedLines.isNotEmpty() -> SyncedLyricsList(trackId, syncedLines, currentPositionMs, onSeek, Modifier.fillMaxSize())
             else -> PlainLyricsList(parsedLines, Modifier.fillMaxSize())
         }
     }
@@ -96,11 +110,13 @@ internal fun FullScreenPlayerLyricsPanel(
 
 @Composable
 private fun SyncedLyricsList(
+    trackId: String,
     lines: List<PlayerLyricLine>,
     currentPositionMs: Long,
     onSeek: (Long) -> Unit,
     modifier: Modifier,
 ) {
+    val lifecycleOwner = LocalLifecycleOwner.current
     val listState = rememberLazyListState()
     val rowHeights = remember(lines) { mutableStateMapOf<Int, Int>() }
     val trailingLineHeights = remember(lines) { mutableStateMapOf<Int, Int>() }
@@ -112,8 +128,38 @@ private fun SyncedLyricsList(
     var activeIndexWhenLineSelected by remember(lines) { mutableStateOf<Int?>(null) }
     var selectedLineAnimationComplete by remember(lines) { mutableStateOf(false) }
     var isAutoScrolling by remember { mutableStateOf(false) }
+    var returnedToForeground by remember(lines) { mutableStateOf(false) }
+    var previousPositionMs by remember(trackId) { mutableLongStateOf(currentPositionMs) }
     val activeIndex = remember(lines, currentPositionMs) {
         lines.indexOfLast { (it.timestampSeconds ?: Float.MAX_VALUE) <= currentPositionMs / 1_000f }
+    }
+    DisposableEffect(lifecycleOwner, lines) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                // A StateFlow collector receives only the latest position after a stopped
+                // activity resumes. Re-centre it even when the old active row is off-screen.
+                returnedToForeground = true
+                isBrowsing = false
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    suspend fun resetToStart() {
+        isBrowsing = false
+        selectedLineIndex = null
+        activeIndexWhenLineSelected = null
+        selectedLineAnimationComplete = false
+        hasPositionedInitialLine = false
+        previousActiveIndex = null
+        listState.scrollToItem(0)
+    }
+    LaunchedEffect(trackId) {
+        resetToStart()
+    }
+    LaunchedEffect(trackId, currentPositionMs) {
+        if (shouldResetLyricsForReplay(previousPositionMs, currentPositionMs)) resetToStart()
+        previousPositionMs = currentPositionMs
     }
     LaunchedEffect(listState.isScrollInProgress, isAutoScrolling) {
         if (listState.isScrollInProgress && !isAutoScrolling) isBrowsing = true
@@ -173,16 +219,20 @@ private fun SyncedLyricsList(
             selectedLineIndex = null
         }
     }
-    LaunchedEffect(lines, activeIndex, isBrowsing, selectedLineIndex) {
+    LaunchedEffect(lines, activeIndex, isBrowsing, selectedLineIndex, returnedToForeground) {
         if (activeIndex < 0 || isBrowsing || selectedLineIndex != null) return@LaunchedEffect
         if (!hasPositionedInitialLine) {
             positionInitialLine(activeIndex)
             hasPositionedInitialLine = true
+            returnedToForeground = false
         } else {
             val previousActiveLineInViewport = previousActiveIndex
                 ?.let { index -> listState.layoutInfo.visibleItemsInfo.any { it.index == index } }
                 ?: false
-            if (previousActiveLineInViewport) animateToActiveLine(activeIndex)
+            if (shouldFollowLyricsActiveLine(previousActiveLineInViewport, returnedToForeground)) {
+                if (returnedToForeground) positionInitialLine(activeIndex) else animateToActiveLine(activeIndex)
+                returnedToForeground = false
+            }
         }
         previousActiveIndex = activeIndex
     }

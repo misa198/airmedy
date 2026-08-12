@@ -7,6 +7,28 @@ import org.junit.Test
 
 class PlayerLyricsParserTest {
     @Test
+    fun resetsLyricsForRepeatOrReplayAtTrackStart() {
+        assertTrue(shouldResetLyricsForReplay(previousPositionMs = 84_000L, currentPositionMs = 0L))
+        assertFalse(shouldResetLyricsForReplay(previousPositionMs = 84_000L, currentPositionMs = 4_000L))
+    }
+
+    @Test
+    fun followsActiveLineAgainAfterReturningFromBackground() {
+        assertTrue(
+            shouldFollowLyricsActiveLine(
+                previousActiveLineInViewport = false,
+                returnedToForeground = true,
+            ),
+        )
+        assertFalse(
+            shouldFollowLyricsActiveLine(
+                previousActiveLineInViewport = false,
+                returnedToForeground = false,
+            ),
+        )
+    }
+
+    @Test
     fun resumesAutoScrollWhenPlaybackSkipsPastATappedCloselyTimedLine() {
         assertTrue(
             shouldResumeLyricsAutoScroll(
