@@ -101,8 +101,8 @@ fun AlbumRow(
             modifier = Modifier.size(48.dp),
         ) {
             MaterialSymbol(
-                symbol = MaterialSymbols.MoreVert,
-                contentDescription = stringResource(R.string.album_row_more_options),
+                symbol = MaterialSymbols.ChevronRight,
+                contentDescription = stringResource(R.string.album_row_open),
                 size = 20.dp,
                 tint = colors.textMuted,
             )

@@ -7,6 +7,15 @@ internal const val PlaybackLogTag = "AirmedyPlayback"
 internal fun clampSeekPosition(positionMs: Long, durationMs: Long): Long =
     positionMs.coerceAtLeast(0L).let { position -> if (durationMs > 0L) position.coerceAtMost(durationMs) else position }
 
+/** Drops queue entries no longer represented by the current synced library. */
+internal fun queueForAvailableTracks(
+    snapshot: PlaybackQueueSnapshot,
+    availableTrackIds: Set<String>,
+): PlaybackQueueSnapshot = snapshot.copy(
+    originalTrackIds = snapshot.originalTrackIds.filter(availableTrackIds::contains),
+    activeTrackIds = snapshot.activeTrackIds.filter(availableTrackIds::contains),
+)
+
 /** Android sends this action when the current music output is about to become audible. */
 internal fun audioBecomingNoisyRequiresPause(action: String?): Boolean =
     action == AudioManager.ACTION_AUDIO_BECOMING_NOISY

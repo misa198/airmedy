@@ -253,8 +253,10 @@ transport changes (track change, pause, stop, seek, repeat, and shuffle
 changes), and flush it during service shutdown. Fullscreen volume controls use
 Android's system music stream, so they are not stored in this session.
 
-The persisted snapshot contains both queue orders, the current track ID,
-position, shuffle state, and repeat mode. On restore:
+The persisted session contains both queue orders, the current track ID,
+position, shuffle state, and repeat mode. `MainActivity` starts
+`PlaybackService` when the app process opens so this restoration occurs before
+the Compose player state is observed. On restore:
 
 1. Resolve IDs only from the current synced local library and drop unavailable
    tracks while retaining the stored order.
@@ -265,6 +267,9 @@ position, shuffle state, and repeat mode. On restore:
    remaining active item without loading it.
 4. When the current item is available, load it, clamp the saved position to its
    duration, and expose a paused state. Restoration never auto-plays.
+5. If session JSON is corrupt, no saved track remains, or opening the selected
+   audio asset fails, clear the saved session and expose an idle player. A bad
+   session therefore cannot make later launches fail repeatedly.
 
 ## Non-goals
 

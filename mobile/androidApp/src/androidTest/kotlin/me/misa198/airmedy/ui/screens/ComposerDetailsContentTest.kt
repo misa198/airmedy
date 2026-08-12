@@ -2,6 +2,8 @@ package me.misa198.airmedy.ui.screens
 
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import me.misa198.airmedy.settings.ThemeMode
@@ -26,7 +28,7 @@ class ComposerDetailsContentTest {
                 ComposerDetailsContent(
                     uiState = ComposerDetailsUiState(
                         composer = LibraryComposer("glass", "Philip Glass"),
-                        albums = listOf(LibraryAlbum("album", "Glassworks", "Philip Glass")),
+                        albums = listOf(LibraryAlbum("album", "Glassworks", "Philip Glass"), LibraryAlbum("album-2", "Koyaanisqatsi", "Philip Glass")),
                         tracks = List(3) { index -> LibraryTrack("$index", "Track $index", "Philip Glass") },
                     ),
                     listState = rememberLazyListState(),
@@ -38,10 +40,11 @@ class ComposerDetailsContentTest {
         }
 
         composeTestRule.onNodeWithText("Philip Glass").assertExists()
-        composeTestRule.onNodeWithText("1 album · 3 tracks").assertExists()
+        composeTestRule.onNodeWithText("2 albums · 3 tracks").assertExists()
         composeTestRule.onNodeWithText("Play").performClick()
         composeTestRule.onNodeWithText("Shuffle").performClick()
         composeTestRule.onNodeWithText("Glassworks").performClick()
+        composeTestRule.onAllNodesWithTag("composer-detail-album-divider").assertCountEquals(3)
         assertEquals(1, playCount)
         assertEquals(1, shuffleCount)
         assertEquals("album", selectedAlbumId)
@@ -56,5 +59,22 @@ class ComposerDetailsContentTest {
         }
 
         composeTestRule.onNodeWithText("Composer unavailable").assertExists()
+    }
+
+    @Test
+    fun doesNotDisplayAnAlbumDividerForOneAlbum() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                ComposerDetailsContent(
+                    uiState = ComposerDetailsUiState(
+                        composer = LibraryComposer("glass", "Philip Glass"),
+                        albums = listOf(LibraryAlbum("album", "Glassworks", "Philip Glass")),
+                    ),
+                    listState = rememberLazyListState(),
+                )
+            }
+        }
+
+        composeTestRule.onAllNodesWithTag("composer-detail-album-divider").assertCountEquals(2)
     }
 }

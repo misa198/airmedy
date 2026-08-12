@@ -34,7 +34,7 @@ class ComposerRowTest {
 
         composeTestRule.onNodeWithText("Beethoven").performClick()
         assertTrue(rowClicked)
-        composeTestRule.onNode(hasContentDescription("Composer options")).performClick()
+        composeTestRule.onNode(hasContentDescription("Open composer")).performClick()
         assertTrue(moreClicked)
     }
 }

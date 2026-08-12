@@ -105,16 +105,23 @@ class PlaybackService : Service() {
         AndroidPlaybackSession.publish(mediaSession.sessionToken)
         restoreJob = scope.launch {
             try {
-                sessionStore.load()?.let { saved ->
+                sessionStore.load()?.let { session ->
+                    val saved = session.queue
                     val available = saved.originalTrackIds.filter { AndroidPlaybackRuntime.controller().resolve(it) != null }
                     val availableSet = available.toSet()
                     commandMutex.withLock {
-                        queue.restore(saved.copy(
-                            originalTrackIds = available,
-                            activeTrackIds = saved.activeTrackIds.filter(availableSet::contains),
-                        ))
-                        publishQueue()
+                        if (available.isEmpty()) {
+                            clearRestoredSession()
+                            return@withLock
+                        }
+                        queue.restore(queueForAvailableTracks(saved, availableSet))
+                        restoreCurrent(session.positionMs)
                     }
+                }
+            } catch (error: Throwable) {
+                if (error !is kotlinx.coroutines.CancellationException) {
+                    Log.w(PlaybackLogTag, "Unable to restore playback session; clearing it", error)
+                    commandMutex.withLock { clearRestoredSession() }
                 }
             } finally {
                 restored.complete(Unit)
@@ -184,7 +191,7 @@ class PlaybackService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
-        runBlocking { sessionStore.save(queue.snapshot()) }
+        runBlocking { sessionStore.save(currentSession()) }
         decoder?.close()
         preferencesJob?.cancel()
         unregisterReceiver(noisyAudioReceiver)
@@ -276,6 +283,31 @@ class PlaybackService : Service() {
             Log.d(PlaybackLogTag, "Playback started id=$trackId durationMs=${decoder?.durationMs()}")
         } catch (error: Throwable) {
             fail(trackId, error.message ?: "Unable to decode audio")
+        }
+    }
+
+    /** Restores the selected item paused, so reopening the app never starts audio by itself. */
+    private suspend fun restoreCurrent(savedPositionMs: Long) {
+        val trackId = queue.snapshot().currentTrackId ?: return clearRestoredSession()
+        val item = AndroidPlaybackRuntime.controller().resolve(trackId)
+            ?: return clearRestoredSession()
+        try {
+            decoder?.close()
+            decoder = FfmpegDecoder().also {
+                it.prepare(File(item.audioPath))
+                val positionMs = clampSeekPosition(savedPositionMs, it.durationMs())
+                if (positionMs > 0L) it.seekTo(positionMs)
+                it.pause()
+                state.value = PlaybackState.Paused(item, positionMs, it.durationMs())
+                publishNowPlaying(item, AndroidMediaPlaybackState.STATE_PAUSED, positionMs, it.durationMs())
+            }
+            preloadNext()
+            showForeground(item)
+            publishQueue()
+            Log.d(PlaybackLogTag, "Restored paused playback id=$trackId positionMs=${decoder?.positionMs()}")
+        } catch (error: Throwable) {
+            Log.w(PlaybackLogTag, "Unable to restore playback id=$trackId; clearing session", error)
+            clearRestoredSession()
         }
     }
 
@@ -399,7 +431,27 @@ class PlaybackService : Service() {
     private fun publishQueue() {
         val snapshot = queue.snapshot()
         queueState.value = snapshot
-        scope.launch { sessionStore.save(snapshot) }
+        scope.launch { sessionStore.save(currentSession(snapshot)) }
+    }
+
+    private fun currentSession(snapshot: PlaybackQueueSnapshot = queue.snapshot()): PlaybackSession {
+        val positionMs = when (val current = state.value) {
+            is PlaybackState.Playing -> decoder?.positionMs() ?: current.positionMs
+            is PlaybackState.Paused -> decoder?.positionMs() ?: current.positionMs
+            else -> 0L
+        }
+        return PlaybackSession(snapshot, positionMs.coerceAtLeast(0L))
+    }
+
+    private suspend fun clearRestoredSession() {
+        decoder?.close(); decoder = null; preloadedItem = null
+        queue.clear()
+        queueState.value = queue.snapshot()
+        state.value = PlaybackState.Idle
+        mediaSession.setPlaybackState(androidPlaybackState(AndroidMediaPlaybackState.STATE_NONE, 0L))
+        mediaSession.isActive = false
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        sessionStore.clear()
     }
 
     /** Keep native idle slot aligned with the queue's immediate next item. */

@@ -28,7 +28,7 @@ class AlbumRowTest {
 
         composeTestRule.onNodeWithText("Absolution").performClick()
         assertTrue(rowClicked)
-        composeTestRule.onNode(hasContentDescription("Album options")).performClick()
+        composeTestRule.onNode(hasContentDescription("Open album")).performClick()
         assertTrue(moreClicked)
     }
 }

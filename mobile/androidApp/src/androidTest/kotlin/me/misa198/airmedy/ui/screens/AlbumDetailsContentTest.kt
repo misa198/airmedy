@@ -1,6 +1,8 @@
 package me.misa198.airmedy.ui.screens
 
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithText
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.sync.LibraryAlbum
@@ -30,5 +32,22 @@ class AlbumDetailsContentTest {
 
         composeTestRule.onNodeWithText("Muse").assertExists()
         composeTestRule.onNodeWithText("2003 · 2 tracks").assertExists()
+        composeTestRule.onAllNodesWithTag("album-detail-track-divider").assertCountEquals(3)
+    }
+
+    @Test
+    fun displaysCopyrightBelowTheTrackListWhenPresent() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                AlbumDetailsContent(
+                    AlbumDetailsUiState(
+                        album = LibraryAlbum("album", "Absolution", "Muse", copyright = "© 2003 Taste Media"),
+                        tracks = listOf(LibraryTrack("one", "One", "Muse")),
+                    ),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("© 2003 Taste Media").assertExists()
     }
 }

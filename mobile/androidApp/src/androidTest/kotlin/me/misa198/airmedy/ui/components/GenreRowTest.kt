@@ -13,28 +13,28 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
-class ArtistRowTest {
+class GenreRowTest {
     @get:Rule
     val composeTestRule = createComposeRule()
 
     @Test
-    fun displaysArtistAndHandlesOptionalCallbacks() {
+    fun displaysGenreAndHandlesOptionalCallbacks() {
         var rowClicked by mutableStateOf(false)
-        var moreClicked by mutableStateOf(false)
+        var openClicked by mutableStateOf(false)
 
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
-                ArtistRow(
-                    name = "Muse",
+                GenreRow(
+                    name = "Alternative",
                     onClick = { rowClicked = true },
-                    onMoreClick = { moreClicked = true },
+                    onMoreClick = { openClicked = true },
                 )
             }
         }
 
-        composeTestRule.onNodeWithText("Muse").performClick()
+        composeTestRule.onNodeWithText("Alternative").performClick()
         assertTrue(rowClicked)
-        composeTestRule.onNode(hasContentDescription("Open artist")).performClick()
-        assertTrue(moreClicked)
+        composeTestRule.onNode(hasContentDescription("Open genre")).performClick()
+        assertTrue(openClicked)
     }
 }

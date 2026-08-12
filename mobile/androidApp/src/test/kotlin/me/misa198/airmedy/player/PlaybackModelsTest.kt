@@ -6,8 +6,45 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlinx.serialization.json.Json
 
 class PlaybackModelsTest {
+    @Test
+    fun `playback session persists queue and paused position`() {
+        val session = PlaybackSession(
+            queue = PlaybackQueueSnapshot(originalTrackIds = listOf("track-1"), activeTrackIds = listOf("track-1"), currentIndex = 0),
+            positionMs = 42_000L,
+        )
+
+        assertEquals(session, decodePlaybackSession(encodePlaybackSession(session)))
+    }
+
+    @Test
+    fun `queue-only session from an earlier app version remains restorable`() {
+        val legacyQueue = PlaybackQueueSnapshot(
+            originalTrackIds = listOf("track-1"),
+            activeTrackIds = listOf("track-1"),
+            currentIndex = 0,
+        )
+
+        assertEquals(PlaybackSession(queue = legacyQueue), decodePlaybackSession(Json.encodeToString(legacyQueue)))
+    }
+
+    @Test
+    fun `restoration drops tracks removed from the synced library`() {
+        val filtered = queueForAvailableTracks(
+            PlaybackQueueSnapshot(
+                originalTrackIds = listOf("kept", "deleted"),
+                activeTrackIds = listOf("deleted", "kept"),
+                currentIndex = 0,
+            ),
+            availableTrackIds = setOf("kept"),
+        )
+
+        assertEquals(listOf("kept"), filtered.originalTrackIds)
+        assertEquals(listOf("kept"), filtered.activeTrackIds)
+    }
+
     @Test
     fun `crossfade policy only starts inside the valid automatic transition window`() {
         assertTrue(shouldStartCrossfade(4, positionMs = 116_000, durationMs = 120_000, hasPreloadedNext = true))

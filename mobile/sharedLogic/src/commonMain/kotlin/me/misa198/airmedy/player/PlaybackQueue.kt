@@ -64,7 +64,12 @@ class PlaybackQueue(private val random: Random = Random.Default) {
             ?.toMutableList() ?: source.toMutableList()
         shuffle = snapshot.shuffle
         repeatMode = snapshot.repeatMode
-        currentIndex = snapshot.currentTrackId?.let(active::indexOf) ?: -1
+        // A removed current item must not leave a restorable queue without a
+        // selection. The service can then safely expose the first available
+        // item as paused instead of restoring a broken session.
+        currentIndex = snapshot.currentTrackId?.let(active::indexOf)
+            ?: active.indices.firstOrNull()
+            ?: -1
     }
 
     fun play(request: PlaybackRequest): QueueTransition {

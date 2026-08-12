@@ -105,16 +105,20 @@
     <string name="tracks_empty_title">No tracks in library</string>
     <string name="tracks_empty_description">Synced tracks will appear here once mobile sync completes.</string>
     <string name="artist_row_more_options">Artist options</string>
+    <string name="artist_row_open">Open artist</string>
     <string name="artists_empty_title">No artists in library</string>
     <string name="artists_empty_description">Synced artists will appear here once mobile sync completes.</string>
     <string name="album_row_more_options">Album options</string>
+    <string name="album_row_open">Open album</string>
     <string name="album_unknown_artist">Unknown artist</string>
     <string name="albums_empty_title">No albums in library</string>
     <string name="albums_empty_description">Synced albums will appear here once mobile sync completes.</string>
     <string name="genre_row_more_options">Genre options</string>
+    <string name="genre_row_open">Open genre</string>
     <string name="genres_empty_title">No genres in library</string>
     <string name="genres_empty_description">Synced genres will appear here once mobile sync completes.</string>
     <string name="composer_row_more_options">Composer options</string>
+    <string name="composer_row_open">Open composer</string>
     <string name="composers_empty_title">No composers in library</string>
     <string name="composers_empty_description">Synced composers will appear here once mobile sync completes.</string>
 </resources>

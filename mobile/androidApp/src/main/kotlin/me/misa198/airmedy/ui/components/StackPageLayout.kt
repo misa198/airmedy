@@ -14,6 +14,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,6 +47,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -144,7 +147,19 @@ fun StackPageHeader(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(statusBarPadding + HeaderTopPadding + HeaderHeight + HeaderBottomPadding),
+            .height(statusBarPadding + HeaderTopPadding + HeaderHeight + HeaderBottomPadding)
+            // The header overlays scrolling content. Participating in pointer
+            // hit-testing keeps taps in its transparent area from reaching a
+            // row beneath it, while child buttons still receive their taps.
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    var change = down
+                    while (change.pressed) {
+                        change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
+                    }
+                }
+            },
     ) {
         AnimatedVisibility(
             visible = isContentScrolled,

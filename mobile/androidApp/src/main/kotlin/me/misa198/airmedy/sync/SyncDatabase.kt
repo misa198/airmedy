@@ -262,6 +262,7 @@ data class LibraryAlbum(
     val id: String,
     val title: String,
     val artist: String = "",
+    val copyright: String = "",
     val createdAt: String = "",
     val artworkPath: String? = null,
     val year: Int = 0,
@@ -517,6 +518,7 @@ internal fun libraryAlbumsFrom(
             title = title,
             sortTitle = album.string("sort_title").orEmpty(),
             artist = root.arrayNames("album_artists").ifBlank { root.arrayNames("artists") },
+            copyright = album.string("copyright").orEmpty(),
             sortArtist = root.arraySortNames("album_artists").ifBlank { root.arraySortNames("artists") },
             createdAt = album.string("created_at").orEmpty().ifBlank { track.createdAt },
             artworkPath = album.string("artwork_key")?.takeIf(String::isNotBlank)?.let(artworkPaths::get),
@@ -526,6 +528,7 @@ internal fun libraryAlbumsFrom(
             existing.copy(
                 sortTitle = existing.sortTitle.ifBlank { candidate.sortTitle },
                 artist = existing.artist.ifBlank { candidate.artist },
+                copyright = existing.copyright.ifBlank { candidate.copyright },
                 sortArtist = existing.sortArtist.ifBlank { candidate.sortArtist },
                 artworkPath = existing.artworkPath ?: candidate.artworkPath,
                 createdAt = listOf(existing.createdAt, candidate.createdAt)

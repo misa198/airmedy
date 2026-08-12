@@ -8,6 +8,21 @@ import kotlin.test.assertNull
 
 class PlaybackQueueTest {
     @Test
+    fun `restore selects first available item when saved current item is gone`() {
+        val queue = PlaybackQueue()
+
+        queue.restore(
+            PlaybackQueueSnapshot(
+                originalTrackIds = listOf("available"),
+                activeTrackIds = listOf("available"),
+                currentIndex = -1,
+            ),
+        )
+
+        assertEquals("available", queue.snapshot().currentTrackId)
+    }
+
+    @Test
     fun `peek next follows repeat semantics without moving the cursor`() {
         val queue = PlaybackQueue(Random(0))
         queue.play(PlaybackRequest(listOf("one", "two")))

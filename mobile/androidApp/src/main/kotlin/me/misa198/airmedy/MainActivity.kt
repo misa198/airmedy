@@ -45,6 +45,7 @@ import me.misa198.airmedy.sync.AndroidSyncRuntime
 import me.misa198.airmedy.sync.LibrarySyncService
 import me.misa198.airmedy.player.AndroidPlaybackRuntime
 import me.misa198.airmedy.player.AndroidPlaybackSession
+import me.misa198.airmedy.player.PlaybackService
 import me.misa198.airmedy.player.PlaybackState
 import kotlin.math.roundToInt
 
@@ -115,6 +116,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         AndroidSyncRuntime.initialize(applicationContext)
         AndroidPlaybackRuntime.initialize(applicationContext, AndroidSyncRuntime.syncStore())
+        // Start the service once per app process so it can rebuild the last
+        // private playback session before Compose observes its StateFlows.
+        startService(Intent(this, PlaybackService::class.java))
         systemMusicVolumeState = currentSystemMusicVolume()
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), NotificationPermissionRequest)

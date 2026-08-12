@@ -2,6 +2,8 @@ package me.misa198.airmedy.ui.screens
 
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import me.misa198.airmedy.settings.ThemeMode
@@ -23,7 +25,7 @@ class ArtistDetailsContentTest {
                 ArtistDetailsContent(
                     uiState = ArtistDetailsUiState(
                         artist = LibraryArtist("artist", "Muse"),
-                        albums = listOf(LibraryAlbum("album", "Absolution", "Muse")),
+                        albums = listOf(LibraryAlbum("album", "Absolution", "Muse"), LibraryAlbum("album-2", "Origin of Symmetry", "Muse")),
                         tracks = List(3) { index -> me.misa198.airmedy.sync.LibraryTrack("$index", "Track $index", "Muse") },
                     ),
                     listState = rememberLazyListState(),
@@ -33,8 +35,9 @@ class ArtistDetailsContentTest {
         }
 
         composeTestRule.onNodeWithText("Muse").assertExists()
-        composeTestRule.onNodeWithText("1 album · 3 tracks").assertExists()
+        composeTestRule.onNodeWithText("2 albums · 3 tracks").assertExists()
         composeTestRule.onNodeWithText("Absolution").performClick()
+        composeTestRule.onAllNodesWithTag("artist-detail-album-divider").assertCountEquals(3)
         assertEquals("album", selectedAlbumId)
     }
 
@@ -47,5 +50,22 @@ class ArtistDetailsContentTest {
         }
 
         composeTestRule.onNodeWithText("Artist unavailable").assertExists()
+    }
+
+    @Test
+    fun doesNotDisplayAnAlbumDividerForOneAlbum() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                ArtistDetailsContent(
+                    uiState = ArtistDetailsUiState(
+                        artist = LibraryArtist("artist", "Muse"),
+                        albums = listOf(LibraryAlbum("album", "Absolution", "Muse")),
+                    ),
+                    listState = rememberLazyListState(),
+                )
+            }
+        }
+
+        composeTestRule.onAllNodesWithTag("artist-detail-album-divider").assertCountEquals(2)
     }
 }

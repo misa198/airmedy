@@ -1,7 +1,5 @@
 package me.misa198.airmedy.ui.screens
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,7 +22,10 @@ import me.misa198.airmedy.ui.components.DetailHero
 import me.misa198.airmedy.ui.components.DetailHeroArtworkShape
 import me.misa198.airmedy.ui.components.HeroCard
 import me.misa198.airmedy.ui.components.MaterialSymbols
-import me.misa198.airmedy.ui.theme.LocalAirmedyColors
+import androidx.compose.ui.platform.testTag
+import me.misa198.airmedy.ui.components.InsetListDivider
+
+private const val ArtistAlbumDividerTag = "artist-detail-album-divider"
 
 @Composable
 internal fun ArtistDetailsContent(
@@ -48,7 +49,6 @@ internal fun ArtistDetailsContent(
         )
         return
     }
-    val colors = LocalAirmedyColors.current
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         state = listState,
@@ -83,15 +83,14 @@ internal fun ArtistDetailsContent(
             }
         }
         itemsIndexed(uiState.albums, key = { _, album -> album.id }, contentType = { _, _ -> "artist_album_row" }) { index, album ->
+            if (index == 0) InsetListDivider(Modifier.testTag(ArtistAlbumDividerTag))
             AlbumRow(
                 title = album.title,
                 artist = album.artist.ifBlank { stringResource(R.string.album_unknown_artist) },
                 artworkPath = album.artworkPath,
                 onClick = { onAlbumClick(album) },
             )
-            if (index < uiState.albums.lastIndex) {
-                Box(Modifier.fillMaxWidth().padding(horizontal = 24.dp).background(colors.borderGlass).padding(top = 1.dp))
-            }
+            InsetListDivider(Modifier.testTag(ArtistAlbumDividerTag))
         }
     }
 }
