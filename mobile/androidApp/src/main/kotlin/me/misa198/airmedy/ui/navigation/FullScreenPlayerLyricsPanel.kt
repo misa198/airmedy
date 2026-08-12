@@ -9,9 +9,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.animateScrollBy
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -32,10 +33,15 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -54,6 +60,12 @@ internal data class PlayerLyricLine(
 
 private val TimestampedLyricLine = Regex("^\\[(\\d+):(\\d+(?:\\.\\d+)?)\\](.*)$")
 private val BilingualSeparator = Regex("\\s*\\^\\s*|\\s*/\\s*")
+private const val ForwardSeekAnimatedApproachRows = 3
+
+internal enum class LyricsSeekDirection { Backward, Forward }
+
+internal fun lyricsSeekDirection(targetIndex: Int, firstVisibleIndex: Int): LyricsSeekDirection =
+    if (targetIndex < firstVisibleIndex) LyricsSeekDirection.Backward else LyricsSeekDirection.Forward
 
 internal fun parsePlayerLyrics(content: String): List<PlayerLyricLine> = content.lineSequence()
     .mapNotNull { rawLine ->
@@ -83,6 +95,17 @@ internal fun shouldFollowLyricsActiveLine(previousActiveLineInViewport: Boolean,
 internal fun shouldResetLyricsForReplay(previousPositionMs: Long, currentPositionMs: Long): Boolean =
     previousPositionMs > 1_000L && currentPositionMs <= 1_000L
 
+/** Prefer a slider's requested position until playback confirms the seek. */
+internal fun displayedLyricsPositionMs(playbackPositionMs: Long, pendingSeekPositionMs: Long?): Long =
+    pendingSeekPositionMs ?: playbackPositionMs
+
+/** Programmatic lyric positioning must not be interpreted as manual browsing. */
+internal fun shouldEnterLyricsBrowseMode(isUserDragging: Boolean, isFollowingSelectedLine: Boolean = false): Boolean =
+    isUserDragging && !isFollowingSelectedLine
+
+/** Small finger drift on a lyric row is still a seek, not a manual browse. */
+internal fun shouldSeekFromLyricTap(dragDistancePx: Float, tapSlopPx: Float): Boolean = dragDistancePx <= tapSlopPx
+
 private fun parsePlayerLyricText(text: String, timestampSeconds: Float?): PlayerLyricLine {
     val parts = BilingualSeparator.split(text, limit = 2)
     val secondary = parts.getOrNull(1)?.trim()?.takeIf(String::isNotEmpty)
@@ -94,6 +117,8 @@ internal fun FullScreenPlayerLyricsPanel(
     trackId: String,
     lyrics: String?,
     currentPositionMs: Long,
+    pendingSeekPositionMs: Long? = null,
+    seekRequestId: Long = 0L,
     onSeek: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -102,7 +127,15 @@ internal fun FullScreenPlayerLyricsPanel(
     Column(modifier = modifier.padding(top = 8.dp)) {
         when {
             lyrics.isNullOrBlank() -> LyricsEmptyState(Modifier.fillMaxSize())
-            syncedLines.isNotEmpty() -> SyncedLyricsList(trackId, syncedLines, currentPositionMs, onSeek, Modifier.fillMaxSize())
+            syncedLines.isNotEmpty() -> SyncedLyricsList(
+                trackId,
+                syncedLines,
+                currentPositionMs,
+                pendingSeekPositionMs,
+                seekRequestId,
+                onSeek,
+                Modifier.fillMaxSize(),
+            )
             else -> PlainLyricsList(parsedLines, Modifier.fillMaxSize())
         }
     }
@@ -113,6 +146,8 @@ private fun SyncedLyricsList(
     trackId: String,
     lines: List<PlayerLyricLine>,
     currentPositionMs: Long,
+    pendingSeekPositionMs: Long?,
+    seekRequestId: Long,
     onSeek: (Long) -> Unit,
     modifier: Modifier,
 ) {
@@ -121,17 +156,20 @@ private fun SyncedLyricsList(
     val rowHeights = remember(lines) { mutableStateMapOf<Int, Int>() }
     val trailingLineHeights = remember(lines) { mutableStateMapOf<Int, Int>() }
     val rowBottomPaddingPx = with(LocalDensity.current) { 10.dp.roundToPx() }
+    val backwardSeekApproachPx = with(LocalDensity.current) { 72.dp.roundToPx() }
     var hasPositionedInitialLine by remember(lines) { mutableStateOf(false) }
     var previousActiveIndex by remember(lines) { mutableStateOf<Int?>(null) }
     var isBrowsing by remember(lines) { mutableStateOf(false) }
     var selectedLineIndex by remember(lines) { mutableStateOf<Int?>(null) }
     var activeIndexWhenLineSelected by remember(lines) { mutableStateOf<Int?>(null) }
     var selectedLineAnimationComplete by remember(lines) { mutableStateOf(false) }
-    var isAutoScrolling by remember { mutableStateOf(false) }
+    var isFollowingSelectedLine by remember(lines) { mutableStateOf(false) }
     var returnedToForeground by remember(lines) { mutableStateOf(false) }
     var previousPositionMs by remember(trackId) { mutableLongStateOf(currentPositionMs) }
-    val activeIndex = remember(lines, currentPositionMs) {
-        lines.indexOfLast { (it.timestampSeconds ?: Float.MAX_VALUE) <= currentPositionMs / 1_000f }
+    val isUserDragging by listState.interactionSource.collectIsDraggedAsState()
+    val displayedPositionMs = displayedLyricsPositionMs(currentPositionMs, pendingSeekPositionMs)
+    val activeIndex = remember(lines, displayedPositionMs) {
+        lines.indexOfLast { (it.timestampSeconds ?: Float.MAX_VALUE) <= displayedPositionMs / 1_000f }
     }
     DisposableEffect(lifecycleOwner, lines) {
         val observer = LifecycleEventObserver { _, event ->
@@ -161,8 +199,8 @@ private fun SyncedLyricsList(
         if (shouldResetLyricsForReplay(previousPositionMs, currentPositionMs)) resetToStart()
         previousPositionMs = currentPositionMs
     }
-    LaunchedEffect(listState.isScrollInProgress, isAutoScrolling) {
-        if (listState.isScrollInProgress && !isAutoScrolling) isBrowsing = true
+    LaunchedEffect(isUserDragging, isFollowingSelectedLine) {
+        if (shouldEnterLyricsBrowseMode(isUserDragging, isFollowingSelectedLine)) isBrowsing = true
     }
     suspend fun previousLineOffset(activeLineIndex: Int): Int {
         val previousIndex = (activeLineIndex - 1).coerceAtLeast(0)
@@ -185,21 +223,58 @@ private fun SyncedLyricsList(
 
     suspend fun animateToActiveLine(activeLineIndex: Int) {
         val previousIndex = (activeLineIndex - 1).coerceAtLeast(0)
-        isAutoScrolling = true
-        try {
+        val target = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == previousIndex }
+        if (target != null) {
             val offset = previousLineOffset(activeLineIndex)
-            val target = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == previousIndex }
-            if (target != null) {
-                listState.animateScrollBy(
-                    (target.offset + offset).toFloat(),
-                    animationSpec = tween(280, easing = FastOutSlowInEasing),
-                )
-            } else {
-                listState.animateScrollToItem(previousIndex)
-                listState.animateScrollToItem(previousIndex, offset)
+            listState.animateScrollBy(
+                (target.offset + offset).toFloat(),
+                animationSpec = tween(280, easing = FastOutSlowInEasing),
+            )
+        } else {
+            // Do not animate through a long remote list: it makes a fast seek
+            // feel sluggish. Jump just before the target so its measured height
+            // is available, then perform one final alignment animation. This
+            // avoids a visible second correction for wrapped lyric lines.
+            val firstVisibleIndex = listState.layoutInfo.visibleItemsInfo.firstOrNull()?.index ?: previousIndex
+            when (lyricsSeekDirection(previousIndex, firstVisibleIndex)) {
+                LyricsSeekDirection.Forward -> {
+                    listState.scrollToItem((previousIndex - ForwardSeekAnimatedApproachRows).coerceAtLeast(0))
+                    val alignedTarget = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == previousIndex }
+                    if (alignedTarget != null) {
+                        listState.animateScrollBy(
+                            (alignedTarget.offset + previousLineOffset(activeLineIndex)).toFloat(),
+                            animationSpec = tween(280, easing = FastOutSlowInEasing),
+                        )
+                    } else {
+                        listState.scrollToItem(previousIndex, previousLineOffset(activeLineIndex))
+                    }
+                }
+                LyricsSeekDirection.Backward -> {
+                    // Measure the remote row, then begin above its focus slot so
+                    // the final movement visibly follows the backward seek.
+                    listState.scrollToItem(previousIndex)
+                    val focusOffset = previousLineOffset(activeLineIndex)
+                    listState.scrollToItem(previousIndex, focusOffset + backwardSeekApproachPx)
+                    listState.animateScrollBy(
+                        -backwardSeekApproachPx.toFloat(),
+                        animationSpec = tween(280, easing = FastOutSlowInEasing),
+                    )
+                }
             }
-        } finally {
-            isAutoScrolling = false
+        }
+    }
+
+    LaunchedEffect(seekRequestId) {
+        if (seekRequestId > 0L && activeIndex >= 0) {
+            // Handle every slider seek as its own positioning command. Do not
+            // depend on the regular active-line follower: it intentionally
+            // respects browse mode after a previous scroll.
+            isBrowsing = false
+            selectedLineIndex = null
+            animateToActiveLine(activeIndex)
+            hasPositionedInitialLine = true
+            previousActiveIndex = activeIndex
+            returnedToForeground = false
         }
     }
 
@@ -208,11 +283,16 @@ private fun SyncedLyricsList(
     // a listener has manually browsed away from the current lyric.
     LaunchedEffect(selectedLineIndex) {
         val selectedIndex = selectedLineIndex ?: return@LaunchedEffect
-        animateToActiveLine(selectedIndex)
-        hasPositionedInitialLine = true
-        previousActiveIndex = selectedIndex
-        selectedLineAnimationComplete = true
-        if (selectedIndex == activeIndexWhenLineSelected) selectedLineIndex = null
+        isFollowingSelectedLine = true
+        try {
+            animateToActiveLine(selectedIndex)
+            hasPositionedInitialLine = true
+            previousActiveIndex = selectedIndex
+            selectedLineAnimationComplete = true
+            if (selectedIndex == activeIndexWhenLineSelected) selectedLineIndex = null
+        } finally {
+            isFollowingSelectedLine = false
+        }
     }
     LaunchedEffect(activeIndex, selectedLineIndex, activeIndexWhenLineSelected, selectedLineAnimationComplete) {
         if (shouldResumeLyricsAutoScroll(selectedLineIndex, activeIndex, activeIndexWhenLineSelected, selectedLineAnimationComplete)) {
@@ -249,6 +329,7 @@ private fun SyncedLyricsList(
                     isBrowsing = false
                     activeIndexWhenLineSelected = activeIndex
                     selectedLineAnimationComplete = false
+                    isFollowingSelectedLine = true
                     selectedLineIndex = index
                     onSeek((line.timestampSeconds!! * 1_000).toLong())
                 },
@@ -293,6 +374,7 @@ private fun SyncedLyricRow(
     val blur = if (distance == 0) 0.dp else animatedBlur
     val scale by animateFloatAsState(if (focusMode && distance == 0) 1.04f else 1f, tween(300, easing = FastOutSlowInEasing), label = "synced-lyric-scale")
     val activeOffsetPx = with(LocalDensity.current) { 4.dp.toPx() }
+    val lyricTapSlopPx = with(LocalDensity.current) { 20.dp.toPx() }
     val animatedTranslationY by animateFloatAsState(
         if (focusMode && distance == 0) -activeOffsetPx else 0f,
         tween(300, easing = FastOutSlowInEasing),
@@ -318,11 +400,25 @@ private fun SyncedLyricRow(
                 clip = false
             }
             .onSizeChanged { onRowHeightChanged(it.height) }
-            .clickable(
-                onClick = onClick,
-                interactionSource = androidx.compose.runtime.remember { MutableInteractionSource() },
-                indication = null,
-            )
+            .pointerInput(line.timestampSeconds) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    val startPosition = down.position
+                    var dragDistancePx = 0f
+                    var pressed = true
+                    while (pressed) {
+                        val event = awaitPointerEvent()
+                        val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                        dragDistancePx = maxOf(dragDistancePx, (change.position - startPosition).getDistance())
+                        pressed = change.pressed
+                    }
+                    if (shouldSeekFromLyricTap(dragDistancePx, lyricTapSlopPx)) onClick()
+                }
+            }
+            .semantics {
+                role = Role.Button
+                onClick { onClick(); true }
+            }
             .testTag("synced_lyric_${line.timestampSeconds}"),
     ) {
         Text(

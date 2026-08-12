@@ -50,6 +50,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -118,6 +119,22 @@ private val FullScreenPlayerSwipeThreshold = 32.dp
 private const val FullScreenPlayerSwipeVelocityPxPerMs = 1.2f
 private val FullScreenPlayerCompactArtworkSize = 80.dp
 private val FullScreenPlayerCompactGap = 24.dp
+private const val SeekConfirmationToleranceMs = 250L
+
+/**
+ * The service publishes playback position asynchronously after a seek. Retain
+ * the locally selected position until that publication reaches the target so
+ * the slider never briefly redraws at the old playback position.
+ */
+internal fun hasConfirmedSeekPosition(
+    seekFraction: Float,
+    playbackPositionMs: Long,
+    durationMs: Long,
+): Boolean {
+    if (durationMs <= 0L) return false
+    val targetPositionMs = (durationMs * seekFraction.coerceIn(0f, 1f)).toLong()
+    return abs(playbackPositionMs - targetPositionMs) <= SeekConfirmationToleranceMs
+}
 
 private enum class FullScreenPlayerPanel {
     Lyrics,
@@ -235,6 +252,21 @@ internal fun FullScreenPlayer(
         label = "full-screen-artwork-transform-origin",
     )
     var pendingSeekFraction by remember(item.trackId) { mutableStateOf<Float?>(null) }
+    var isAwaitingSeekConfirmation by remember(item.trackId) { mutableStateOf(false) }
+    var lyricsSeekPositionMs by remember(item.trackId) { mutableStateOf<Long?>(null) }
+    var lyricsSeekRequestId by remember(item.trackId) { mutableLongStateOf(0L) }
+    LaunchedEffect(currentPositionMs, durationMs, isAwaitingSeekConfirmation) {
+        val seekFraction = pendingSeekFraction
+        if (
+            isAwaitingSeekConfirmation &&
+            seekFraction != null &&
+            hasConfirmedSeekPosition(seekFraction, currentPositionMs, durationMs)
+        ) {
+            pendingSeekFraction = null
+            isAwaitingSeekConfirmation = false
+            lyricsSeekPositionMs = null
+        }
+    }
     val horizontalSwipeState = remember { FullScreenPlayerSwipeState() }
     val displayedHorizontalSwipeOffset by animateFloatAsState(
         targetValue = if (horizontalSwipeState.isDragging) horizontalSwipeState.dragOffset else 0f,
@@ -402,6 +434,8 @@ internal fun FullScreenPlayer(
                                     trackId = item.trackId,
                                     lyrics = lyrics,
                                     currentPositionMs = currentPositionMs,
+                                    pendingSeekPositionMs = lyricsSeekPositionMs,
+                                    seekRequestId = lyricsSeekRequestId,
                                     onSeek = onSeek,
                                     modifier = Modifier.fillMaxSize(),
                                 )
@@ -421,15 +455,26 @@ internal fun FullScreenPlayer(
                         value = pendingSeekFraction ?: if (durationMs > 0) currentPositionMs.toFloat() / durationMs else 0f,
                         onValueChange = { pendingSeekFraction = it },
                         onValueChangeFinished = {
-                            pendingSeekFraction?.let { fraction -> onSeek((durationMs * fraction).toLong()) }
-                            pendingSeekFraction = null
+                            pendingSeekFraction?.let { fraction ->
+                                val targetPositionMs = (durationMs * fraction).toLong()
+                                lyricsSeekPositionMs = targetPositionMs
+                                lyricsSeekRequestId += 1
+                                onSeek(targetPositionMs)
+                            }
+                            isAwaitingSeekConfirmation = pendingSeekFraction != null
                         },
                         enabled = durationMs > 0 && !isPreparing,
                         trackHeight = 6.dp,
                         modifier = Modifier.semantics { contentDescription = seekLabel },
                     )
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(formatPlaybackTime(currentPositionMs), color = colors.foregroundSubtle, style = MaterialTheme.typography.labelSmall)
+                        Text(
+                            formatPlaybackTime(
+                                pendingSeekFraction?.let { (durationMs * it).toLong() } ?: currentPositionMs,
+                            ),
+                            color = colors.foregroundSubtle,
+                            style = MaterialTheme.typography.labelSmall,
+                        )
                         Text(formatPlaybackTime(durationMs), color = colors.foregroundSubtle, style = MaterialTheme.typography.labelSmall)
                     }
                 }

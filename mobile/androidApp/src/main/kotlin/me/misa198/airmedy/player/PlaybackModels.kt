@@ -11,6 +11,9 @@ internal fun clampSeekPosition(positionMs: Long, durationMs: Long): Long =
 internal fun audioBecomingNoisyRequiresPause(action: String?): Boolean =
     action == AudioManager.ACTION_AUDIO_BECOMING_NOISY
 
+/** AAudio streams cannot be restarted after Android disconnects their output route. */
+internal fun audioOutputDisconnectRequiresRecovery(isOutputDisconnected: Boolean): Boolean = isOutputDisconnected
+
 /** An item the Android-native player can resolve from the synced library. */
 data class PlaybackItem(
     val trackId: String,
@@ -26,6 +29,12 @@ sealed interface PlaybackState {
     data class Playing(val item: PlaybackItem, val positionMs: Long, val durationMs: Long) : PlaybackState
     data class Paused(val item: PlaybackItem, val positionMs: Long, val durationMs: Long) : PlaybackState
     data class Failed(val trackId: String?, val reason: String) : PlaybackState
+}
+
+/** A newly selected queue takes precedence over restoring the prior session. */
+internal fun playbackActionReplacesRestoredQueue(action: String?): Boolean = when (action) {
+    PlaybackService.ActionPlay, PlaybackService.ActionShuffle -> true
+    else -> false
 }
 
 internal fun interface PlaybackItemResolver {

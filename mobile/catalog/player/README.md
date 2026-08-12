@@ -17,10 +17,24 @@ it never busy-spins. Pausing also pauses the AAudio stream, so it does not keep
 rendering silent callbacks. There is no Media3, ExoPlayer, or `MediaCodec`
 decoder fallback.
 
+When the service is started by a new Play or Shuffle command, that new queue
+takes precedence over saved-session restoration. The service cancels restoration
+before handling the command, so DataStore reads and validation of an old queue
+cannot delay the initial `Preparing` state or the mini-player. Restoration still
+occurs when the service starts without a queue-replacing command.
+
 While playback is active, `PlaybackService` also listens for Android's
 `ACTION_AUDIO_BECOMING_NOISY` broadcast. This occurs when a wired or Bluetooth
 audio route disconnects and dispatches the same pause action as the player
 controls; the receiver is unregistered when the service is destroyed.
+
+AAudio can also report `AAUDIO_ERROR_DISCONNECTED` without that broadcast (for
+example while changing output routes). The native decoder marks that stream as
+terminal; while still playing, the service closes it and creates a fresh decoder
+for the new route at the rendered position, so manual output switching continues
+without interruption. A physical device removal also sends
+`ACTION_AUDIO_BECOMING_NOISY`; that queued action pauses playback instead, and a
+later Play recreates the invalid decoder from the retained position.
 
 `PlaybackService` publishes the active item's title, artist, artwork, duration,
 position, and transport state through the platform `MediaSession`. Android

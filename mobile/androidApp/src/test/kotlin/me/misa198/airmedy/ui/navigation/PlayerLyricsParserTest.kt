@@ -7,9 +7,34 @@ import org.junit.Test
 
 class PlayerLyricsParserTest {
     @Test
+    fun entersLyricsBrowseModeOnlyForUserDragging() {
+        assertTrue(shouldEnterLyricsBrowseMode(isUserDragging = true))
+        assertFalse(shouldEnterLyricsBrowseMode(isUserDragging = false))
+        assertFalse(shouldEnterLyricsBrowseMode(isUserDragging = true, isFollowingSelectedLine = true))
+    }
+
+    @Test
+    fun derivesLyricsAnimationDirectionFromTheSeekTarget() {
+        assertEquals(LyricsSeekDirection.Backward, lyricsSeekDirection(targetIndex = 4, firstVisibleIndex = 12))
+        assertEquals(LyricsSeekDirection.Forward, lyricsSeekDirection(targetIndex = 18, firstVisibleIndex = 12))
+    }
+
+    @Test
+    fun treatsSmallFingerDriftOnALyricAsATap() {
+        assertTrue(shouldSeekFromLyricTap(dragDistancePx = 12f, tapSlopPx = 20f))
+        assertFalse(shouldSeekFromLyricTap(dragDistancePx = 24f, tapSlopPx = 20f))
+    }
+
+    @Test
     fun resetsLyricsForRepeatOrReplayAtTrackStart() {
         assertTrue(shouldResetLyricsForReplay(previousPositionMs = 84_000L, currentPositionMs = 0L))
         assertFalse(shouldResetLyricsForReplay(previousPositionMs = 84_000L, currentPositionMs = 4_000L))
+    }
+
+    @Test
+    fun displaysThePendingSliderSeekUntilPlaybackConfirmsIt() {
+        assertEquals(72_000L, displayedLyricsPositionMs(playbackPositionMs = 12_000L, pendingSeekPositionMs = 72_000L))
+        assertEquals(12_000L, displayedLyricsPositionMs(playbackPositionMs = 12_000L, pendingSeekPositionMs = null))
     }
 
     @Test

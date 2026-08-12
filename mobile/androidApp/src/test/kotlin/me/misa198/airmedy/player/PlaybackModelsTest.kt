@@ -16,6 +16,20 @@ class PlaybackModelsTest {
     }
 
     @Test
+    fun `disconnected AAudio output recreates the stream`() {
+        assertTrue(audioOutputDisconnectRequiresRecovery(isOutputDisconnected = true))
+        assertFalse(audioOutputDisconnectRequiresRecovery(isOutputDisconnected = false))
+    }
+
+    @Test
+    fun `new play actions take precedence over session restoration`() {
+        assertTrue(playbackActionReplacesRestoredQueue(PlaybackService.ActionPlay))
+        assertTrue(playbackActionReplacesRestoredQueue(PlaybackService.ActionShuffle))
+        assertFalse(playbackActionReplacesRestoredQueue(PlaybackService.ActionResume))
+        assertFalse(playbackActionReplacesRestoredQueue(null))
+    }
+
+    @Test
     fun `request retains a valid queue start index`() {
         val request = PlaybackRequest(listOf("track-1", "track-2"), startIndex = 1)
 

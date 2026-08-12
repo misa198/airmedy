@@ -25,6 +25,7 @@ internal class FfmpegDecoder : Closeable {
     fun durationMs(): Long = nativeDurationMs(requireHandle())
     fun positionMs(): Long = nativePositionMs(requireHandle())
     fun isFinished(): Boolean = nativeIsFinished(requireHandle())
+    fun isOutputDisconnected(): Boolean = nativeIsOutputDisconnected(requireHandle())
 
     override fun close() {
         val current = handle
@@ -47,5 +48,6 @@ internal class FfmpegDecoder : Closeable {
         @JvmStatic private external fun nativeDurationMs(handle: Long): Long
         @JvmStatic private external fun nativePositionMs(handle: Long): Long
         @JvmStatic private external fun nativeIsFinished(handle: Long): Boolean
+        @JvmStatic private external fun nativeIsOutputDisconnected(handle: Long): Boolean
     }
 }

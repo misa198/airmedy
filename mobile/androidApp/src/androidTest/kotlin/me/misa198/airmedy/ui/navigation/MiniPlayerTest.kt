@@ -27,6 +27,7 @@ import me.misa198.airmedy.player.PlaybackState
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -62,6 +63,27 @@ class MiniPlayerTest {
         composeTestRule.onNodeWithContentDescription("Next").performClick()
 
         assertEquals(listOf("previous", "pause", "next"), calls)
+    }
+
+    @Test
+    fun newlyStartedPlaybackSlidesMiniPlayerUpFromNavigation() {
+        var playbackState by mutableStateOf<PlaybackState>(PlaybackState.Idle)
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            NavigationChromeForTest(playbackState)
+        }
+
+        playbackState = PlaybackState.Playing(item, positionMs = 0L, durationMs = 120_000L)
+        composeTestRule.waitForIdle()
+        val startingTop = composeTestRule.onNodeWithText(item.title).fetchSemanticsNode().boundsInRoot.top
+
+        composeTestRule.mainClock.advanceTimeBy(300)
+        val restingTop = composeTestRule.onNodeWithText(item.title).fetchSemanticsNode().boundsInRoot.top
+
+        assertTrue(
+            "Mini player should slide upward when playback starts (start=$startingTop, end=$restingTop)",
+            restingTop < startingTop,
+        )
     }
 
     @Test

@@ -103,9 +103,11 @@ describe the desktop Vue UI or future iOS UI.
   A drag that leaves the selected tab but ends with its centre back in that tab is
   not a reselection, so it preserves that stack and scroll position.
 - `NavigationChrome` owns the floating navigation plus its optional mini player,
-  so later animations can treat them as one persistent navigation unit. The mini
-  player is a 56dp glass pill positioned 8dp above the navigation and uses the
-  same max width, border, blur, and safe-area placement. It appears for
+  so later animations can treat them as one persistent navigation unit. When
+  playback first creates the mini player, the pill fades in while sliding up
+  from behind the navigation over 280ms. The mini player is a 56dp glass pill
+  positioned 8dp above the navigation and uses the same max width, border,
+  blur, and safe-area placement. It appears for
   Preparing, Playing, and Paused playback, reserving matching page-bottom space;
   it is absent for Idle and Failed states. It presents 48dp square artwork with
   a 10dp radius with an 8dp left inset (or the Lucide music fallback), a semibold marquee title and artist label,
@@ -217,10 +219,24 @@ describe the desktop Vue UI or future iOS UI.
   into the active slot before seeking and restoring focus mode. If tightly timed
   lines cause playback to advance past the tapped line, the pane resumes
   auto-follow once it reaches that line or any later line. The initial
+  selection animation suppresses browse-mode detection, so a tap (or its
+  programmatic repositioning) cannot be misclassified as a manual lyric drag.
+  Lyric rows use a 20dp tap-drift allowance, so a tap with minor finger motion
+  still seeks; only a larger drag remains manual browsing.
   focus position is applied without animation; later tracked
   changes animate using the measured target offset so wrapped lyrics do not
   need a visible second correction. Blur effects are suspended while this
   programmatic scroll is in progress to keep it smooth, then restored at rest.
+  Releasing the fullscreen progress slider also supplies its pending target
+  position and a distinct seek request ID to the pane, which exits browse mode
+  and smoothly follows the target line. For a distant target it jumps near the
+  target, measures any wrapped preceding line, then runs one final focus-slot
+  animation. Forward seeks retain three approaching rows and animate lyrics up;
+  backward seeks start 72dp above the focus slot and animate lyrics down. This
+  avoids both sluggish long-list animation and a visible second alignment
+  correction. The request animation remains active
+  after asynchronous playback-state confirmation clears its pending position,
+  so every rapid seek—including repeated seeks—brings a distant target into view.
   Returning to the foreground clears browse mode and immediately repositions
   the active lyric line, including when playback advanced beyond the previously
   visible rows while the app was locked or backgrounded.
@@ -287,7 +303,7 @@ describe the desktop Vue UI or future iOS UI.
 | `AirmedyGlassIconButton` | A 48dp circular blurred glass icon button with border and button semantics. Back and header actions use this shared primitive. |
 | `AirmedyIconButton` | A 48dp icon action with `Ghost` and `Glass` variants. Glass uses the liquid-glass surface and border; both variants support optional `tint`, `glassColor`, `circleSize`, and `iconSize` overrides and provide an accessible label. |
 | `AirmedyMarqueeText` | A single-line text treatment for constrained playback metadata. It start-aligns unbounded text, clips overflow, and uses pingpong keyframe animation with pauses at start/end matching desktop MarqueeText behavior. |
-| `AirmedyTrackSlider` | Shared custom-drawn slider for fullscreen-player seek and Android music-stream volume. It preserves a 48dp touch target while rendering a translucent gray glass track with a white current-value fill and no thumb or Material Slider terminal indicator. `trackHeight` lets the fullscreen seek bar render at 6dp while the volume bar keeps its 3dp default. Slider range semantics and touch/drag seeking remain available to accessibility services. The fullscreen volume row places muted low/high-volume icons at either end. |
+| `AirmedyTrackSlider` | Shared custom-drawn slider for fullscreen-player seek and Android music-stream volume. It preserves a 48dp touch target while rendering a translucent gray glass track with a white current-value fill and no thumb or Material Slider terminal indicator. `trackHeight` lets the fullscreen seek bar render at 6dp while the volume bar keeps its 3dp default. Slider range semantics and touch/drag seeking remain available to accessibility services. The fullscreen seek control keeps its selected preview (and elapsed-time label) until the playback service publishes a position within 250ms of the requested target; this prevents a tap from briefly flashing back to the old position on slow devices. The fullscreen volume row places muted low/high-volume icons at either end. |
 | `AirmedyPlayingIndicator` | A decorative three-bar, white (`onPrimary`) playback indicator. It animates bar height while `isPlaying` and presents short resting bars otherwise; play/pause changes tween smoothly between these states. The fullscreen queue overlays it at the centre of the current track's artwork. |
 | `AirmedyPillButton` | A borderless 52dp minimum-height capsule action. `Primary` and `Destructive` use the primary background with the explicit white `onPrimary` token in both light and dark themes; `Secondary` uses the stronger `buttonSecondary` theme surface with normal foreground text. When disabled, only its themed background fades while label colour stays unchanged. Its label supplies button semantics. |
 | `AirmedyDialog` | A 36dp-radius, two-action mobile dialog. Its text content has 20dp horizontal inset; the button area has a thinner 16dp horizontal/bottom inset. It supports `Horizontal` and `Vertical` action layouts; the left/top action always dismisses with `Secondary`. |

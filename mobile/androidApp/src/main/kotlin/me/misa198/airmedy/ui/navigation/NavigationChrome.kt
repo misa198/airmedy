@@ -1,8 +1,13 @@
 package me.misa198.airmedy.ui.navigation
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.animateDp
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDp
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -88,7 +93,17 @@ internal fun NavigationChrome(
                 .fillMaxWidth()
                 .height(chromeHeight),
         ) {
-            if (playbackState.showsMiniPlayer()) {
+            AnimatedVisibility(
+                visible = playbackState.showsMiniPlayer(),
+                enter = miniPlayerEnterTransition,
+                // Dismissal is driven by MiniPlayer's drag animation. Other state
+                // changes keep their existing immediate removal behavior.
+                exit = ExitTransition.None,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .width(miniPlayerWidth)
+                    .offset(x = miniPlayerHorizontalOffset, y = miniPlayerVerticalOffset),
+            ) {
                 MiniPlayer(
                     playbackState = playbackState,
                     hazeState = hazeState,
@@ -101,10 +116,7 @@ internal fun NavigationChrome(
                     onFullScreenPlayerDrag = onFullScreenPlayerDrag,
                     onFullScreenPlayerDragEnd = onFullScreenPlayerDragEnd,
                     stableGlassWidth = maxWidth,
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .width(miniPlayerWidth)
-                        .offset(x = miniPlayerHorizontalOffset, y = miniPlayerVerticalOffset),
+                    modifier = Modifier,
                 )
             }
             FloatingNavigationBar(
@@ -122,3 +134,9 @@ internal fun NavigationChrome(
         }
     }
 }
+
+private val miniPlayerEnterTransition: EnterTransition =
+    slideInVertically(
+        initialOffsetY = { fullHeight -> fullHeight },
+        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing),
+    ) + fadeIn(animationSpec = tween(durationMillis = 180))

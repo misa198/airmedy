@@ -26,6 +26,7 @@ import android.util.LruCache
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -44,6 +45,7 @@ class PlaybackService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val commandMutex = Mutex()
     private val restored = CompletableDeferred<Unit>()
+    private lateinit var restoreJob: Job
     private val queue = PlaybackQueue()
     private var decoder: FfmpegDecoder? = null
     private lateinit var sessionStore: PlaybackSessionStore
@@ -84,24 +86,31 @@ class PlaybackService : Service() {
             isActive = false
         }
         AndroidPlaybackSession.publish(mediaSession.sessionToken)
-        scope.launch {
-            sessionStore.load()?.let { saved ->
-                val available = saved.originalTrackIds.filter { AndroidPlaybackRuntime.controller().resolve(it) != null }
-                val availableSet = available.toSet()
-                queue.restore(saved.copy(
-                    originalTrackIds = available,
-                    activeTrackIds = saved.activeTrackIds.filter(availableSet::contains),
-                ))
-                publishQueue()
+        restoreJob = scope.launch {
+            try {
+                sessionStore.load()?.let { saved ->
+                    val available = saved.originalTrackIds.filter { AndroidPlaybackRuntime.controller().resolve(it) != null }
+                    val availableSet = available.toSet()
+                    commandMutex.withLock {
+                        queue.restore(saved.copy(
+                            originalTrackIds = available,
+                            activeTrackIds = saved.activeTrackIds.filter(availableSet::contains),
+                        ))
+                        publishQueue()
+                    }
+                }
+            } finally {
+                restored.complete(Unit)
             }
-            restored.complete(Unit)
         }
         scope.launch {
             while (true) {
                 delay(200)
                 commandMutex.withLock {
                     refreshPlaybackPosition()
-                    if (decoder?.isFinished() == true && state.value is PlaybackState.Playing) {
+                    if (audioOutputDisconnectRequiresRecovery(decoder?.isOutputDisconnected() == true)) {
+                        recoverAfterOutputDisconnect()
+                    } else if (decoder?.isFinished() == true && state.value is PlaybackState.Playing) {
                         handleTransition(queue.next())
                         publishQueue()
                     }
@@ -111,6 +120,13 @@ class PlaybackService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (playbackActionReplacesRestoredQueue(intent?.action)) {
+            // A tap is more important than reconstructing the prior session. In
+            // particular, do not delay its Preparing state (and mini-player)
+            // behind DataStore I/O and validation of every saved queue entry.
+            restoreJob.cancel()
+            restored.complete(Unit)
+        }
         when (intent?.action) {
             ActionPlay, ActionShuffle -> dispatch(
                 action = intent.action!!,
@@ -196,7 +212,7 @@ class PlaybackService : Service() {
         }
     }
 
-    private suspend fun playCurrent() {
+    private suspend fun playCurrent(startPositionMs: Long = 0L) {
         val trackId = queue.snapshot().currentTrackId ?: return stopPlayback()
         Log.d(PlaybackLogTag, "Preparing current queue track id=$trackId")
         val item = AndroidPlaybackRuntime.controller().resolve(trackId) ?: return fail(trackId, "Audio asset is not available")
@@ -206,7 +222,9 @@ class PlaybackService : Service() {
         try {
             decoder?.close()
             decoder = FfmpegDecoder().also {
-                it.prepare(File(item.audioPath)); it.play()
+                it.prepare(File(item.audioPath))
+                if (startPositionMs > 0L) it.seekTo(clampSeekPosition(startPositionMs, it.durationMs()))
+                it.play()
                 state.value = PlaybackState.Playing(item, it.positionMs(), it.durationMs())
                 publishNowPlaying(item, AndroidMediaPlaybackState.STATE_PLAYING, it.positionMs(), it.durationMs())
             }
@@ -230,8 +248,12 @@ class PlaybackService : Service() {
     private suspend fun resumeCurrent() {
         val paused = state.value as? PlaybackState.Paused
         val currentDecoder = decoder
-        if (paused == null || currentDecoder == null) {
-            playCurrent()
+        if (paused == null || currentDecoder == null || currentDecoder.isOutputDisconnected()) {
+            if (currentDecoder?.isOutputDisconnected() == true) {
+                currentDecoder.close()
+                decoder = null
+            }
+            playCurrent(paused?.positionMs ?: 0L)
             return
         }
         if (audioManager.requestAudioFocus(focusRequest) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
@@ -244,6 +266,21 @@ class PlaybackService : Service() {
         publishNowPlaying(paused.item, AndroidMediaPlaybackState.STATE_PLAYING, positionMs, paused.durationMs)
         updateNotification()
         Log.d(PlaybackLogTag, "Playback resumed id=${paused.item.trackId} positionMs=$positionMs")
+    }
+
+    /**
+     * A manual route change invalidates the old AAudio stream without being a
+     * user pause. Recreate it on the new route and retain its rendered position.
+     * A real device removal sends ACTION_AUDIO_BECOMING_NOISY, whose queued
+     * pause action wins and leaves playback paused instead.
+     */
+    private suspend fun recoverAfterOutputDisconnect() {
+        val current = state.value as? PlaybackState.Playing ?: return
+        val positionMs = decoder?.positionMs() ?: current.positionMs
+        decoder?.close()
+        decoder = null
+        Log.w(PlaybackLogTag, "Audio output changed; recreating stream id=${current.item.trackId} positionMs=$positionMs")
+        playCurrent(positionMs)
     }
 
     private fun seekCurrent(requestedPositionMs: Long) {

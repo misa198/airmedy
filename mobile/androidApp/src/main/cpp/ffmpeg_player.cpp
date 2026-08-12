@@ -49,6 +49,10 @@ struct Player {
   std::atomic<int64_t> rendered_frames = 0;
   std::atomic<bool> input_exhausted = false;
   std::atomic<bool> finished = false;
+  // Android invalidates an AAudio stream when an output route disappears. A
+  // stopped callback alone is not enough: a subsequent requestStart on that
+  // stream cannot make it usable again, so Kotlin must recreate the decoder.
+  std::atomic<bool> output_disconnected = false;
   std::thread decode_thread;
   std::mutex buffer_mutex;
   std::condition_variable buffer_changed;
@@ -102,6 +106,15 @@ aaudio_data_callback_result_t audio_callback(AAudioStream*, void* user, void* au
   return AAUDIO_CALLBACK_RESULT_CONTINUE;
 }
 
+void error_callback(AAudioStream*, void* user, aaudio_result_t error) {
+  auto& player = *static_cast<Player*>(user);
+  if (error == AAUDIO_ERROR_DISCONNECTED) {
+    player.output_disconnected = true;
+    player.playing = false;
+    player.buffer_changed.notify_all();
+  }
+}
+
 void release_media(Player& player) {
   if (player.stream != nullptr) { AAudioStream_requestStop(player.stream); AAudioStream_close(player.stream); player.stream = nullptr; }
   swr_free(&player.resampler);
@@ -132,6 +145,7 @@ bool open_media(Player& player, int fd, std::string& error) {
   // prefer the platform's lower-power mixer path.
   AAudioStreamBuilder_setPerformanceMode(builder, AAUDIO_PERFORMANCE_MODE_POWER_SAVING);
   AAudioStreamBuilder_setDataCallback(builder, audio_callback, &player);
+  AAudioStreamBuilder_setErrorCallback(builder, error_callback, &player);
   const aaudio_result_t output = AAudioStreamBuilder_openStream(builder, &player.stream);
   AAudioStreamBuilder_delete(builder);
   if (output != AAUDIO_OK) { error = "AAudio output is unavailable"; return false; }
@@ -180,7 +194,7 @@ extern "C" JNIEXPORT void JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_n
 extern "C" JNIEXPORT void JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativePrepare(JNIEnv* env, jclass, jlong value, jint fd) {
   auto* player = reinterpret_cast<Player*>(value); std::string error;
   if (player == nullptr || !open_media(*player, fd, error)) { close(fd); throw_java(env, error.c_str()); return; }
-  close(fd); player->stopping = false; player->input_exhausted = false; player->finished = false; player->decode_thread = std::thread(decoder_loop, std::ref(*player));
+  close(fd); player->stopping = false; player->input_exhausted = false; player->finished = false; player->output_disconnected = false; player->decode_thread = std::thread(decoder_loop, std::ref(*player));
 }
 extern "C" JNIEXPORT void JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativePlay(JNIEnv*, jclass, jlong value) { auto* p = reinterpret_cast<Player*>(value); if (p != nullptr) { p->playing = true; AAudioStream_requestStart(p->stream); } }
 extern "C" JNIEXPORT void JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativePause(JNIEnv*, jclass, jlong value) { auto* p = reinterpret_cast<Player*>(value); if (p != nullptr) { p->playing = false; AAudioStream_requestPause(p->stream); } }
@@ -204,3 +218,4 @@ extern "C" JNIEXPORT jlong JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_
   return (p->position_base_us.load(std::memory_order_relaxed) + elapsed_us) / 1000;
 }
 extern "C" JNIEXPORT jboolean JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativeIsFinished(JNIEnv*, jclass, jlong value) { auto* p = reinterpret_cast<Player*>(value); return p != nullptr && p->finished.load(); }
+extern "C" JNIEXPORT jboolean JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativeIsOutputDisconnected(JNIEnv*, jclass, jlong value) { auto* p = reinterpret_cast<Player*>(value); return p != nullptr && p->output_disconnected.load(); }
