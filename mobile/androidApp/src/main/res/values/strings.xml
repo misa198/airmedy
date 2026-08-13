@@ -79,6 +79,27 @@
     <string name="library_genres">Genres</string>
     <string name="library_composers">Composers</string>
     <string name="library_playlists">Playlists</string>
+    <string name="library_favorites">Favorites</string>
+    <string name="playlists_empty_title">No playlists in library</string>
+    <string name="playlists_empty_description">Sync playlists from your connected desktop to see them here.</string>
+    <string name="playlist_row_open">Open playlist</string>
+    <string name="playlist_create">Create playlist</string>
+    <string name="playlist_create_title">Create playlist</string>
+    <string name="playlist_name">Playlist name</string>
+    <string name="create">Create</string>
+    <string name="playlist_sync_failed">Could not sync this playlist to desktop</string>
+    <string name="playlist_details_title">Playlist</string>
+    <string name="playlist_details_empty_title">Playlist unavailable</string>
+    <string name="playlist_details_empty_description">This playlist is no longer in the synced library.</string>
+    <string name="playlist_details_metadata">%1$s · %2$s</string>
+    <string name="playlist_duration_day">%1$d d</string>
+    <string name="playlist_duration_hour">%1$d hr</string>
+    <string name="playlist_duration_minute">%1$d min</string>
+    <string name="playlist_duration_second">%1$d s</string>
+    <plurals name="playlist_details_track_count">
+        <item quantity="one">%d track</item>
+        <item quantity="other">%d tracks</item>
+    </plurals>
     <string name="library_recently_added">Recently Added</string>
     <string name="library_empty_title">No synced music yet</string>
     <string name="library_empty_description">Start Sync on your connected desktop to bring your library here.</string>
@@ -142,7 +163,8 @@
     <string name="album_details_title">Album</string>
     <string name="album_details_empty_title">Album unavailable</string>
     <string name="album_details_empty_description">This album is no longer in the synced library.</string>
-    <string name="album_details_metadata_with_year">%1$d · %2$s</string>
+    <string name="album_details_metadata">%1$s · %2$s</string>
+    <string name="album_details_metadata_with_year">%1$d · %2$s · %3$s</string>
     <plurals name="album_details_track_count">
         <item quantity="one">%d track</item>
         <item quantity="other">%d tracks</item>

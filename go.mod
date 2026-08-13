@@ -24,6 +24,7 @@ require (
 	github.com/wailsapp/wails/v3 v3.0.0-alpha2.119
 	github.com/zalando/go-keyring v0.2.8
 	go.uber.org/fx v1.24.0
+	golang.org/x/image v0.40.0
 	golang.org/x/sys v0.43.0
 	golang.org/x/text v0.37.0
 )

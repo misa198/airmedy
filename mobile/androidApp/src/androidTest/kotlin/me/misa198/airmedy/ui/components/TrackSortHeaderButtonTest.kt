@@ -25,17 +25,19 @@ class LibrarySortHeaderButtonTest {
         composeTestRule.setContent {
             val hazeState = rememberHazeState()
             AirmedyTheme(themeMode = ThemeMode.Dark) {
-                LibrarySortHeaderButton(
-                    hazeState = hazeState,
-                    options = listOf(
-                        LibrarySortOption(TrackSortOption.Name, me.misa198.airmedy.R.string.sort_name),
-                        LibrarySortOption(TrackSortOption.Artist, me.misa198.airmedy.R.string.sort_artist),
-                    ),
-                    selectedOption = TrackSortOption.Name,
-                    sortOrder = SortOrder.Ascending,
-                    onSortOptionSelected = { selectedOption = it },
-                    onToggleSortOrder = { orderToggled = true },
-                )
+                AnchoredPopupMenuHost(hazeState = hazeState) {
+                    LibrarySortHeaderButton(
+                        hazeState = hazeState,
+                        options = listOf(
+                            LibrarySortOption(TrackSortOption.Name, me.misa198.airmedy.R.string.sort_name),
+                            LibrarySortOption(TrackSortOption.Artist, me.misa198.airmedy.R.string.sort_artist),
+                        ),
+                        selectedOption = TrackSortOption.Name,
+                        sortOrder = SortOrder.Ascending,
+                        onSortOptionSelected = { selectedOption = it },
+                        onToggleSortOrder = { orderToggled = true },
+                    )
+                }
             }
         }
 

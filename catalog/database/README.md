@@ -86,6 +86,8 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000065 | `mobile_pairing.up.sql` | Add desktop pairing identity and trusted mobile public-key tables |
 | 000067 | `mobile_library_sync.up.sql` | Add persisted per-device library-sync plans and idempotent asset receipts |
 | 000068 | `mobile_sync_lyric_cache.up.sql` | Add desktop cache of effective lyric snapshots, output versions, and input fingerprints used while creating mobile-sync plans |
+| 000069 | `mobile_playlist_sync.up.sql` | Add durable per-device playlist-mutation ledger used to deduplicate mobile reconciliation retries |
+| 000070 | `mobile_playlist_reconciliation.up.sql` | Add global playlist LWW/tombstone watermarks and device/reconciliation-owned artwork staging with expiry index |
 
 `listeningRepository.GetInsights` returns up to 50 entries for both Top Artists
 (ordered by listened seconds) and Top Tracks (ordered by play count, then listened

@@ -96,7 +96,7 @@ private fun artworkDominantColor(bitmap: ImageBitmap): Color {
 @Composable
 fun DetailHero(
     title: String,
-    subtitle: String,
+    subtitle: String? = null,
     metadata: String? = null,
     playLabel: String,
     shuffleLabel: String,
@@ -107,6 +107,7 @@ fun DetailHero(
     artworkSize: Dp = 248.dp,
     fallbackSymbol: String = MaterialSymbols.Album,
     showArtwork: Boolean = true,
+    artworkContent: (@Composable () -> Unit)? = null,
     onPlayClick: () -> Unit = {},
     onShuffleClick: () -> Unit = {},
     onMoreClick: () -> Unit = {},
@@ -124,7 +125,8 @@ fun DetailHero(
                 modifier = Modifier.size(artworkSize).clip(artworkClip).background(colors.glassElevated),
                 contentAlignment = Alignment.Center,
             ) {
-                if (bitmap != null) Image(bitmap = bitmap, contentDescription = null, modifier = Modifier.matchParentSize(), contentScale = ContentScale.Crop)
+                if (artworkContent != null) artworkContent()
+                else if (bitmap != null) Image(bitmap = bitmap, contentDescription = null, modifier = Modifier.matchParentSize(), contentScale = ContentScale.Crop)
                 else MaterialSymbol(fallbackSymbol, null, size = 44.dp, tint = colors.textMuted)
             }
         }
@@ -133,7 +135,9 @@ fun DetailHero(
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(title, style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold), color = colors.textMain, maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
-            Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = colors.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
+            subtitle?.takeIf(String::isNotBlank)?.let { value ->
+                Text(value, style = MaterialTheme.typography.bodyMedium, color = colors.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
+            }
             metadata?.takeIf(String::isNotBlank)?.let { value ->
                 Text(value, style = MaterialTheme.typography.bodySmall, color = colors.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
             }

@@ -412,3 +412,5 @@ sequenceDiagram
 Pairing only establishes the trusted Ed25519 relationship and the long-lived
 MQTT session. Library transfer is specified separately in
 [`catalog/sync/README.md`](../sync/README.md).
+
+The trusted sync client is also ACL-scoped to its own `airmedy/playlist-sync/v1/<desktop-id>/<mobile-id>/request` and `result` topics. It may not publish or subscribe to another paired device's playlist-sync topics.

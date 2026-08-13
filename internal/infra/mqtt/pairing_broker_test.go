@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	mqttserver "github.com/mochi-mqtt/server/v2"
 	"github.com/stretchr/testify/require"
 )
 
@@ -53,4 +54,19 @@ func TestSyncClientDeviceID(t *testing.T) {
 	require.Equal(t, deviceID, got)
 	_, ok = syncClientDeviceID("airmedy-sync-"+desktopID+"-not-a-uuid", desktopID)
 	require.False(t, ok)
+}
+
+func TestPlaylistSyncACLIsDeviceScoped(t *testing.T) {
+	desktopID := "00000000-0000-0000-0000-000000000001"
+	deviceID := "00000000-0000-0000-0000-000000000002"
+	otherID := "00000000-0000-0000-0000-000000000003"
+	hook := &pairingACLHook{desktopID: desktopID}
+	client := &mqttserver.Client{ID: "airmedy-sync-" + desktopID + "-" + deviceID}
+	base := "airmedy/playlist-sync/v1/" + desktopID + "/" + deviceID + "/"
+	require.True(t, hook.OnACLCheck(client, base+"request", false))
+	require.True(t, hook.OnACLCheck(client, base+"result", true))
+	require.False(t, hook.OnACLCheck(client, base+"result", false))
+	require.False(t, hook.OnACLCheck(client, base+"request", true))
+	require.False(t, hook.OnACLCheck(client, "airmedy/playlist-sync/v1/"+desktopID+"/"+otherID+"/request", false))
+	require.False(t, hook.OnACLCheck(client, base+"#", false))
 }

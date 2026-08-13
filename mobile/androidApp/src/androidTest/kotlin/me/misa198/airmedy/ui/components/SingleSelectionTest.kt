@@ -26,14 +26,16 @@ class SelectionTest {
         var selectedValue by mutableStateOf(ThemeMode.System)
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Light) {
-                Selection(
-                    labelRes = R.string.appearance_theme_title,
-                    options = ThemeMode.entries.map { mode ->
-                        SelectionOption(value = mode, labelRes = mode.labelRes)
-                    },
-                    selectedValue = selectedValue,
-                    onValueSelected = { selectedValue = it },
-                )
+                AnchoredPopupMenuHost(hazeState = null) {
+                    Selection(
+                        labelRes = R.string.appearance_theme_title,
+                        options = ThemeMode.entries.map { mode ->
+                            SelectionOption(value = mode, labelRes = mode.labelRes)
+                        },
+                        selectedValue = selectedValue,
+                        onValueSelected = { selectedValue = it },
+                    )
+                }
             }
         }
 

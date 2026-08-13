@@ -14,7 +14,13 @@ internal fun reduceNavigationChromeScroll(
 ): NavigationChromeScrollState {
     val targetCompact = delta.direction == ContentScrollDirection.Up
     if (targetCompact == state.compact) {
-        return state.copy(accumulatedDistancePx = 0f)
+        // Scroll events arrive for every consumed pointer delta. Once the
+        // chrome already matches the direction, preserve the same state
+        // instance instead of allocating a value that the state equality policy
+        // would immediately discard. A pending reversal still needs to reset its
+        // threshold accumulation.
+        return if (state.accumulatedDistancePx == 0f) state
+        else state.copy(accumulatedDistancePx = 0f)
     }
     val signedDistance = if (targetCompact) -delta.distancePx else delta.distancePx
     val accumulatedDistance = if (

@@ -15,15 +15,15 @@ class AlbumDetailsContentTest {
     @get:Rule val composeTestRule = createComposeRule()
 
     @Test
-    fun displaysPublishedYearAndTrackCountInHeroMetadata() {
+    fun displaysPublishedYearTrackCountAndTotalDurationInHeroMetadata() {
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 AlbumDetailsContent(
                     AlbumDetailsUiState(
                         album = LibraryAlbum("album", "Absolution", "Muse", year = 2003),
                         tracks = listOf(
-                            LibraryTrack("one", "One", "Muse"),
-                            LibraryTrack("two", "Two", "Muse"),
+                            LibraryTrack("one", "One", "Muse", metadataJson = """{"duration":60}"""),
+                            LibraryTrack("two", "Two", "Muse", metadataJson = """{"duration":120}"""),
                         ),
                     ),
                 )
@@ -31,7 +31,7 @@ class AlbumDetailsContentTest {
         }
 
         composeTestRule.onNodeWithText("Muse").assertExists()
-        composeTestRule.onNodeWithText("2003 · 2 tracks").assertExists()
+        composeTestRule.onNodeWithText("2003 · 2 tracks · 3 min").assertExists()
         composeTestRule.onAllNodesWithTag("album-detail-track-divider").assertCountEquals(3)
     }
 

@@ -128,7 +128,8 @@ internal class AndroidLibrarySyncPuller(
         val timestamp = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
         val nonceBytes = identity.randomBytes(32)
         val nonce = nonceBytes.base64Url()
-        val input = "GET\n${uri.rawPath}\n$timestamp\n$nonce".encodeToByteArray()
+        val emptyBodyHash = ByteArray(0).sha256()
+        val input = "GET\n${uri.rawPath}\n$emptyBodyHash\n$timestamp\n$nonce".encodeToByteArray()
         val signature = identity.sign(input).base64Url()
         return (uri.toURL().openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"

@@ -23,6 +23,7 @@ data class AppUiState(
     val selectedArtistId: String? = null,
     val selectedGenreId: String? = null,
     val selectedComposerId: String? = null,
+    val selectedPlaylistId: String? = null,
     val destinationStacks: Map<AppDestination, List<AppStackPage>> = rootDestinationStacks(),
 ) {
     fun stackFor(destination: AppDestination): List<AppStackPage> =
@@ -41,6 +42,7 @@ class MainViewModel(
     private val selectedArtistId = MutableStateFlow<String?>(null)
     private val selectedGenreId = MutableStateFlow<String?>(null)
     private val selectedComposerId = MutableStateFlow<String?>(null)
+    private val selectedPlaylistId = MutableStateFlow<String?>(null)
     private val _effects = Channel<AppEffect>(Channel.BUFFERED)
 
     val effects = _effects.receiveAsFlow()
@@ -65,6 +67,8 @@ class MainViewModel(
         state.copy(selectedGenreId = genreId)
     }.combine(selectedComposerId) { state, composerId ->
         state.copy(selectedComposerId = composerId)
+    }.combine(selectedPlaylistId) { state, playlistId ->
+        state.copy(selectedPlaylistId = playlistId)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
@@ -76,6 +80,7 @@ class MainViewModel(
             is AppIntent.SelectDestination -> selectDestination(intent.destination)
             is AppIntent.OpenPage -> openPage(intent.page)
             is AppIntent.OpenAlbumDetails -> openAlbumDetails(intent.albumId)
+            is AppIntent.OpenPlaylistDetails -> openPlaylistDetails(intent.playlistId)
             is AppIntent.OpenArtistDetails -> openArtistDetails(intent.artistId)
             is AppIntent.OpenGenreDetails -> openGenreDetails(intent.genreId)
             is AppIntent.OpenComposerDetails -> openComposerDetails(intent.composerId)
@@ -112,6 +117,11 @@ class MainViewModel(
     private fun openAlbumDetails(albumId: String) {
         selectedAlbumId.value = albumId
         openPage(AppStackPage.AlbumDetails)
+    }
+
+    private fun openPlaylistDetails(playlistId: String) {
+        selectedPlaylistId.value = playlistId
+        openPage(AppStackPage.PlaylistDetails)
     }
 
     private fun openArtistDetails(artistId: String) {

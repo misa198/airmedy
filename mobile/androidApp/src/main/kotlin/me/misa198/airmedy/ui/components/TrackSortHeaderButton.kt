@@ -1,16 +1,6 @@
 package me.misa198.airmedy.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,26 +11,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
 import androidx.annotation.StringRes
 import dev.chrisbanes.haze.HazeState
 import me.misa198.airmedy.R
@@ -63,59 +48,41 @@ fun <T> LibrarySortHeaderButton(
     modifier: Modifier = Modifier,
     glassSurfaceColor: Color? = null,
 ) {
-    val menuVisibility = remember { MutableTransitionState(false) }
-    val menuOffset = with(LocalDensity.current) { IntOffset(0, 52.dp.roundToPx()) }
+    var expanded by remember { mutableStateOf(false) }
 
-    Box(modifier = modifier) {
-        AirmedyGlassIconButton(
-            hazeState = hazeState,
-            symbol = MaterialSymbols.SwapVert,
-            label = stringResource(R.string.sort_by),
-            onClick = { menuVisibility.targetState = true },
-            surfaceColor = glassSurfaceColor,
-        )
-
-        if (menuVisibility.currentState || menuVisibility.targetState) {
-            Popup(
-                alignment = Alignment.TopEnd,
-                offset = menuOffset,
-                onDismissRequest = { menuVisibility.targetState = false },
-                properties = PopupProperties(focusable = true),
-            ) {
-                AnimatedVisibility(
-                    visibleState = menuVisibility,
-                    enter = expandVertically(
-                        expandFrom = Alignment.Top,
-                        animationSpec = tween(durationMillis = 220),
-                    ) + scaleIn(
-                        initialScale = 0.94f,
-                        animationSpec = tween(durationMillis = 220),
-                    ) + fadeIn(animationSpec = tween(durationMillis = 220)),
-                    exit = shrinkVertically(
-                        shrinkTowards = Alignment.Top,
-                        animationSpec = tween(durationMillis = 220),
-                    ) + scaleOut(
-                        targetScale = 0.96f,
-                        animationSpec = tween(durationMillis = 220),
-                    ) + fadeOut(animationSpec = tween(durationMillis = 220)),
-                ) {
-                    LibrarySortMenu(
-                        options = options,
-                        selectedOption = selectedOption,
-                        sortOrder = sortOrder,
-                        onSortOptionSelected = { option ->
-                            onSortOptionSelected(option)
-                            menuVisibility.targetState = false
-                        },
-                        onToggleSortOrder = {
-                            onToggleSortOrder()
-                            menuVisibility.targetState = false
-                        },
-                    )
-                }
-            }
-        }
-    }
+    AnchoredPopupMenu(
+        expanded = expanded,
+        onDismissRequest = { expanded = false },
+        modifier = modifier,
+        offset = DpOffset.Zero,
+        width = 220.dp,
+        hazeState = hazeState,
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+        anchor = {
+            AirmedyGlassIconButton(
+                hazeState = hazeState,
+                symbol = MaterialSymbols.SwapVert,
+                label = stringResource(R.string.sort_by),
+                onClick = { expanded = true },
+                surfaceColor = glassSurfaceColor,
+            )
+        },
+        menu = {
+            LibrarySortMenu(
+                options = options,
+                selectedOption = selectedOption,
+                sortOrder = sortOrder,
+                onSortOptionSelected = { option ->
+                    onSortOptionSelected(option)
+                    expanded = false
+                },
+                onToggleSortOrder = {
+                    onToggleSortOrder()
+                    expanded = false
+                },
+            )
+        },
+    )
 }
 
 @Composable
@@ -127,21 +94,8 @@ private fun <T> LibrarySortMenu(
     onToggleSortOrder: () -> Unit,
 ) {
     val colors = LocalAirmedyColors.current
-    val shape = RoundedCornerShape(24.dp)
-
     Column(
-        modifier = Modifier
-            .width(220.dp)
-            .shadow(
-                elevation = 8.dp,
-                shape = shape,
-                clip = false,
-                ambientColor = Color.Black.copy(alpha = 0.16f),
-                spotColor = Color.Black.copy(alpha = 0.20f),
-            )
-            .clip(shape)
-            .background(colors.card)
-            .border(1.dp, colors.borderGlass, shape),
+        modifier = Modifier.width(220.dp),
     ) {
         options.forEachIndexed { index, option ->
             val selected = option.value == selectedOption

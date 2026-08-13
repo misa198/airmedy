@@ -18,6 +18,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
@@ -71,6 +72,8 @@ internal object AndroidSyncRuntime {
     fun failed(message: String) { _state.value = AndroidSyncState.Failed(message) }
     fun completed(planId: String) { _state.value = AndroidSyncState.Completed(planId) }
     fun idle() { _state.value = AndroidSyncState.Idle }
+    /** Reconciliation must never borrow the MQTT session while foreground sync owns it. */
+    suspend fun awaitNoForegroundSync() { state.first { it !is AndroidSyncState.Running } }
     suspend fun clearAll() { if (::appContext.isInitialized) store.clearAll() }
     fun tracks(): Flow<List<LibraryTrack>> = if (::appContext.isInitialized) store.tracks else flowOf(emptyList())
     internal fun syncStore(): AndroidLibrarySyncStore = store

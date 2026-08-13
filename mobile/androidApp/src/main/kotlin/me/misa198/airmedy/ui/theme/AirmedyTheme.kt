@@ -38,7 +38,7 @@ private val LightColors = AirmedyColors(
     glassElevated = Color.White.copy(alpha = 0.90f),
     // The fullscreen player sits over artwork, so this remains translucent to
     // let that backdrop show through instead of reading as a solid gray bar.
-    sliderInactive = Color.White.copy(alpha = 0.18f),
+    sliderInactive = Color.White.copy(alpha = 0.10f),
     buttonSecondary = Color(0xFFE4E4E7),
     borderGlass = Color.Black.copy(alpha = 0.10f),
     textMain = Color(0xFF0A0A0A),
@@ -57,7 +57,7 @@ private val DarkColors = AirmedyColors(
     glass = Color(0xFF232326).copy(alpha = 0.4f),
     glassOpaque = Color(0xFF232326),
     glassElevated = Color(0xFF37373C).copy(alpha = 0.40f),
-    sliderInactive = Color.White.copy(alpha = 0.18f),
+    sliderInactive = Color.White.copy(alpha = 0.10f),
     buttonSecondary = Color(0xFF52525B),
     borderGlass = Color.White.copy(alpha = 0.10f),
     textMain = Color.White,

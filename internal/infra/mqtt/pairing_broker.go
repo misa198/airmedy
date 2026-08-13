@@ -181,10 +181,11 @@ func (h *pairingACLHook) OnACLCheck(client *mqtt.Client, topic string, write boo
 	if client != nil {
 		if deviceID, ok := syncClientDeviceID(client.ID, h.desktopID); ok {
 			base := "airmedy/library-sync/v1/" + h.desktopID + "/" + deviceID + "/"
+			playlistBase := "airmedy/playlist-sync/v1/" + h.desktopID + "/" + deviceID + "/"
 			if write {
-				return topic == base+"receipt"
+				return topic == base+"receipt" || topic == playlistBase+"result"
 			}
-			return topic == base+"request"
+			return topic == base+"request" || topic == playlistBase+"request"
 		}
 	}
 	if write {

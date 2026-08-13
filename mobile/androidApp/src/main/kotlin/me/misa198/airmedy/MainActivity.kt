@@ -43,6 +43,15 @@ import me.misa198.airmedy.pairing.PairingPreferences
 import me.misa198.airmedy.pairing.AndroidTrustedDesktopDiscovery
 import me.misa198.airmedy.sync.AndroidSyncRuntime
 import me.misa198.airmedy.sync.LibrarySyncService
+import me.misa198.airmedy.sync.AndroidPlaylistReconciliationTransport
+import me.misa198.airmedy.sync.PlaylistReconciliationClock
+import me.misa198.airmedy.sync.PlaylistReconciliationCoordinator
+import me.misa198.airmedy.sync.PlaylistReconciliationPublisher
+import me.misa198.airmedy.sync.PlaylistSyncProtocol
+import me.misa198.airmedy.sync.PlaylistReconciliationOutcome
+import me.misa198.airmedy.sync.PlaylistMutationStatus
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import me.misa198.airmedy.player.AndroidPlaybackRuntime
 import me.misa198.airmedy.player.AndroidPlaybackSession
 import me.misa198.airmedy.player.PlaybackService
@@ -54,18 +63,22 @@ import me.misa198.airmedy.ui.screens.LibraryArtistsViewModel
 import me.misa198.airmedy.ui.screens.LibraryAlbumsViewModel
 import me.misa198.airmedy.ui.screens.LibraryGenresViewModel
 import me.misa198.airmedy.ui.screens.LibraryComposersViewModel
+import me.misa198.airmedy.ui.screens.LibraryPlaylistsViewModel
+import me.misa198.airmedy.ui.screens.PlaylistDetailsViewModel
 import me.misa198.airmedy.ui.screens.AlbumDetailsViewModel
 import me.misa198.airmedy.ui.screens.ArtistDetailsViewModel
 import me.misa198.airmedy.ui.screens.GenreDetailsViewModel
 import me.misa198.airmedy.ui.screens.ComposerDetailsViewModel
 
 class MainActivity : ComponentActivity() {
+    private val reconciliationMutex = Mutex()
     private var systemMusicVolumeState by mutableFloatStateOf(0f)
     private val viewModel: MainViewModel by viewModels {
         MainViewModel.Factory(ThemePreferences(applicationContext))
     }
     private val syncViewModel: SyncViewModel by viewModels {
         val preferences = PairingPreferences(applicationContext)
+        val syncSession = HiveMqSyncSession()
         SyncViewModel.Factory(
             MobilePairingUseCase(
                 identityProvider = preferences,
@@ -74,9 +87,36 @@ class MainActivity : ComponentActivity() {
                 clock = AndroidPairingClock,
                 ids = AndroidPairingIdGenerator,
             ),
-            mqttSession = HiveMqSyncSession(),
+            mqttSession = syncSession,
             discovery = AndroidTrustedDesktopDiscovery(applicationContext),
             onSyncRequest = { payload, endpoint, session -> AndroidSyncRuntime.start(applicationContext, payload, endpoint, session) },
+            onPlaylistReconciliationRequest = { payload ->
+                reconciliationMutex.withLock {
+                AndroidSyncRuntime.awaitNoForegroundSync()
+                preferences.current()?.let { desktop ->
+                    AndroidSyncRuntime.initialize(applicationContext)
+                    val coordinator = PlaylistReconciliationCoordinator(
+                        identityProvider = preferences,
+                        clock = PlaylistReconciliationClock { System.currentTimeMillis() },
+                        store = AndroidSyncRuntime.syncStore(),
+                        transport = AndroidPlaylistReconciliationTransport(preferences, applicationContext.filesDir, AndroidSyncRuntime.syncStore()),
+                        publisher = PlaylistReconciliationPublisher { result ->
+                            val mobileId = preferences.identity().id
+                            syncSession.publish(PlaylistSyncProtocol.resultTopic(desktop.desktopId, mobileId), result)
+                        },
+                    )
+                    when (val outcome = coordinator.handle(payload, desktop)) {
+                        is PlaylistReconciliationOutcome.Completed -> {
+                            val rejected = outcome.results.filter {
+                                it.status == PlaylistMutationStatus.REJECTED || it.status == PlaylistMutationStatus.SCOPE_CONFLICT
+                            }.map { it.mutationId }
+                            AndroidSyncRuntime.syncStore().markLocalPlaylistMutationsFailed(rejected)
+                        }
+                        else -> Unit
+                    }
+                }
+                }
+            },
             onBeforeUnpair = {
                 LibrarySyncService.cancel(applicationContext)
                 AndroidSyncRuntime.clearAll()
@@ -98,8 +138,14 @@ class MainActivity : ComponentActivity() {
     private val composersViewModel: LibraryComposersViewModel by viewModels {
         LibraryComposersViewModel.Factory(AndroidSyncRuntime.syncStore())
     }
+    private val playlistsViewModel: LibraryPlaylistsViewModel by viewModels {
+        LibraryPlaylistsViewModel.Factory(AndroidSyncRuntime.syncStore())
+    }
     private val albumDetailsViewModel: AlbumDetailsViewModel by viewModels {
         AlbumDetailsViewModel.Factory(AndroidSyncRuntime.syncStore(), AndroidPlaybackRuntime.controller())
+    }
+    private val playlistDetailsViewModel: PlaylistDetailsViewModel by viewModels {
+        PlaylistDetailsViewModel.Factory(AndroidSyncRuntime.syncStore(), AndroidPlaybackRuntime.controller())
     }
     private val artistDetailsViewModel: ArtistDetailsViewModel by viewModels {
         ArtistDetailsViewModel.Factory(AndroidSyncRuntime.syncStore(), AndroidPlaybackRuntime.controller())
@@ -132,7 +178,9 @@ class MainActivity : ComponentActivity() {
             val albumsUiState by albumsViewModel.uiState.collectAsStateWithLifecycle()
             val genresUiState by genresViewModel.uiState.collectAsStateWithLifecycle()
             val composersUiState by composersViewModel.uiState.collectAsStateWithLifecycle()
+            val playlistsUiState by playlistsViewModel.uiState.collectAsStateWithLifecycle()
             val albumDetailsUiState by albumDetailsViewModel.uiState.collectAsStateWithLifecycle()
+            val playlistDetailsUiState by playlistDetailsViewModel.uiState.collectAsStateWithLifecycle()
             val artistDetailsUiState by artistDetailsViewModel.uiState.collectAsStateWithLifecycle()
             val genreDetailsUiState by genreDetailsViewModel.uiState.collectAsStateWithLifecycle()
             val composerDetailsUiState by composerDetailsViewModel.uiState.collectAsStateWithLifecycle()
@@ -177,6 +225,11 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+            LaunchedEffect(playlistsViewModel) {
+                playlistsViewModel.createdPlaylistIds.collect { playlistId ->
+                    viewModel.dispatch(AppIntent.OpenPlaylistDetails(playlistId))
+                }
+            }
             val darkTheme = isDarkTheme(uiState.themeMode)
             SideEffect {
                 updateSystemBarAppearance(darkTheme, isFullScreenPlayerVisible)
@@ -189,7 +242,9 @@ class MainActivity : ComponentActivity() {
                 albumsUiState = albumsUiState,
                 genresUiState = genresUiState,
                 composersUiState = composersUiState,
+                playlistsUiState = playlistsUiState,
                 albumDetailsUiState = albumDetailsUiState,
+                playlistDetailsUiState = playlistDetailsUiState,
                 artistDetailsUiState = artistDetailsUiState,
                 genreDetailsUiState = genreDetailsUiState,
                 composerDetailsUiState = composerDetailsUiState,
@@ -204,6 +259,9 @@ class MainActivity : ComponentActivity() {
                 onAlbumToggleSortOrder = albumsViewModel::toggleSortOrder,
                 onAlbumPlay = albumDetailsViewModel::play,
                 onAlbumTrackPlay = albumDetailsViewModel::playTrack,
+                onPlaylistPlay = playlistDetailsViewModel::play,
+                onPlaylistTrackPlay = playlistDetailsViewModel::playTrack,
+                onCreatePlaylist = playlistsViewModel::createPlaylist,
                 onArtistPlay = artistDetailsViewModel::play,
                 onGenrePlay = genreDetailsViewModel::play,
                 onComposerPlay = composerDetailsViewModel::play,

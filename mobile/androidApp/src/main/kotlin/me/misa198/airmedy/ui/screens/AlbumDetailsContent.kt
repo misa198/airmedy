@@ -12,9 +12,10 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.unit.dp
@@ -37,11 +38,19 @@ internal fun AlbumDetailsContent(uiState: AlbumDetailsUiState, modifier: Modifie
         return
     }
     val colors = LocalAirmedyColors.current
+    val context = LocalContext.current
     val trackCount = pluralStringResource(R.plurals.album_details_track_count, uiState.tracks.size, uiState.tracks.size)
+    val duration = formatAlbumTotalDuration(
+        albumTotalDurationSeconds(uiState.tracks),
+        day = { context.getString(R.string.playlist_duration_day, it) },
+        hour = { context.getString(R.string.playlist_duration_hour, it) },
+        minute = { context.getString(R.string.playlist_duration_minute, it) },
+        second = { context.getString(R.string.playlist_duration_second, it) },
+    )
     val metadata = if (album.year > 0) {
-        stringResource(R.string.album_details_metadata_with_year, album.year, trackCount)
+        stringResource(R.string.album_details_metadata_with_year, album.year, trackCount, duration)
     } else {
-        trackCount
+        stringResource(R.string.album_details_metadata, trackCount, duration)
     }
     val listPadding = PaddingValues(
         top = 0.dp,

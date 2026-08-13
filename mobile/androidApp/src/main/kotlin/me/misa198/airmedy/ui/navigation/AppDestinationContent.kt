@@ -59,6 +59,11 @@ import me.misa198.airmedy.ui.screens.LibraryGenresContent
 import me.misa198.airmedy.ui.screens.LibraryGenresUiState
 import me.misa198.airmedy.ui.screens.LibraryComposersContent
 import me.misa198.airmedy.ui.screens.LibraryComposersUiState
+import me.misa198.airmedy.ui.screens.LibraryPlaylistsContent
+import me.misa198.airmedy.ui.screens.LibraryPlaylistsUiState
+import me.misa198.airmedy.ui.screens.PlaylistDetailsContent
+import me.misa198.airmedy.ui.screens.PlaylistDetailsUiState
+import me.misa198.airmedy.ui.screens.playlistDetailsUiStateFor
 import me.misa198.airmedy.ui.screens.AlbumDetailsContent
 import me.misa198.airmedy.ui.screens.AlbumDetailsUiState
 import me.misa198.airmedy.ui.screens.albumDetailsUiStateFor
@@ -109,11 +114,14 @@ internal fun AppDestinationContent(
     composerDetailsListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     genresListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     composersListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
+    playlistsListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     albumDetailsUiState: AlbumDetailsUiState = AlbumDetailsUiState(),
+    playlistDetailsUiState: PlaylistDetailsUiState = PlaylistDetailsUiState(),
     artistDetailsUiState: ArtistDetailsUiState = ArtistDetailsUiState(),
     genreDetailsUiState: GenreDetailsUiState = GenreDetailsUiState(),
     composerDetailsUiState: ComposerDetailsUiState = ComposerDetailsUiState(),
     selectedAlbumId: String? = null,
+    selectedPlaylistId: String? = null,
     selectedArtistId: String? = null,
     selectedGenreId: String? = null,
     selectedComposerId: String? = null,
@@ -124,6 +132,7 @@ internal fun AppDestinationContent(
     albumsUiState: LibraryAlbumsUiState = LibraryAlbumsUiState(),
     genresUiState: LibraryGenresUiState = LibraryGenresUiState(),
     composersUiState: LibraryComposersUiState = LibraryComposersUiState(),
+    playlistsUiState: LibraryPlaylistsUiState = LibraryPlaylistsUiState(),
     onSortOptionSelected: (TrackSortOption) -> Unit = {},
     onToggleSortOrder: () -> Unit = {},
     onTrackClick: (String) -> Unit = {},
@@ -132,6 +141,8 @@ internal fun AppDestinationContent(
     onAlbumToggleSortOrder: () -> Unit = {},
     onAlbumPlay: (String, Boolean) -> Unit = { _, _ -> },
     onAlbumTrackPlay: (String, String) -> Unit = { _, _ -> },
+    onPlaylistPlay: (String, Boolean) -> Unit = { _, _ -> },
+    onPlaylistTrackPlay: (String, String) -> Unit = { _, _ -> },
     onArtistPlay: (String, Boolean) -> Unit = { _, _ -> },
     onGenrePlay: (String, Boolean) -> Unit = { _, _ -> },
     onComposerPlay: (String, Boolean) -> Unit = { _, _ -> },
@@ -234,6 +245,7 @@ internal fun AppDestinationContent(
                                 onReduceTransparencyChanged = { enabled ->
                                     onIntent(AppIntent.SetReduceTransparency(enabled))
                                 },
+                                hazeState = hazeState,
                             )
                             AppStackPage.SettingsSync -> SyncContent(
                                 syncUiState = syncUiState,
@@ -354,6 +366,23 @@ internal fun AppDestinationContent(
                                 modifier = Modifier.fillMaxSize(),
                                 onComposerClick = { composer -> onIntent(AppIntent.OpenComposerDetails(composer.id)) },
                             )
+                            AppStackPage.LibraryPlaylists -> LibraryPlaylistsContent(
+                                uiState = playlistsUiState,
+                                listState = playlistsListState,
+                                contentPadding = contentPadding,
+                                modifier = Modifier.fillMaxSize(),
+                                onPlaylistClick = { playlistId -> onIntent(AppIntent.OpenPlaylistDetails(playlistId)) },
+                            )
+                            AppStackPage.PlaylistDetails -> PlaylistDetailsContent(
+                                uiState = selectedPlaylistId?.let { playlistDetailsUiStateFor(playlistDetailsUiState, it) } ?: PlaylistDetailsUiState(),
+                                contentPadding = contentPadding,
+                                modifier = Modifier.fillMaxSize(),
+                                hazeState = hazeState,
+                                onHeroColorChanged = onAlbumHeroColorChanged,
+                                onPlay = { selectedPlaylistId?.let { onPlaylistPlay(it, false) } },
+                                onShuffle = { selectedPlaylistId?.let { onPlaylistPlay(it, true) } },
+                                onTrackClick = { trackId -> selectedPlaylistId?.let { onPlaylistTrackPlay(it, trackId) } },
+                            )
                             AppStackPage.LibraryTracks -> LibraryTracksContent(
                                 uiState = tracksUiState,
                                 onSortOptionSelected = onSortOptionSelected,
@@ -383,6 +412,9 @@ internal fun AppDestinationContent(
                                 },
                                 onComposersSelected = {
                                     onIntent(AppIntent.OpenPage(AppStackPage.LibraryComposers))
+                                },
+                                onPlaylistsSelected = {
+                                    onIntent(AppIntent.OpenPage(AppStackPage.LibraryPlaylists))
                                 },
                             )
                         }

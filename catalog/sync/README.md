@@ -241,3 +241,35 @@ When a foreground sync is active, reopening the app must not create its normal
 UI MQTT session: MQTT client IDs are device-scoped, so a second connection would
 disconnect the foreground service's session and interrupt the transfer. The UI
 instead observes `AndroidSyncRuntime` progress until the service finishes.
+
+## Playlist mutation foundation
+
+Android now retains a durable, idempotent `PlaylistMutation` queue alongside
+the mirrored playlist snapshot. Mutations are deltas rather than full playlist
+documents so a future two-way reconciliation can safely edit a playlist when
+the mobile scope contains only some of its tracks. The queue is intentionally
+not connected to a Compose playlist UI yet. `AndroidLibrarySyncStore` exposes
+the pending/acknowledge boundary for the protocol layer. Room migration 6 adds
+the mutation table; migration 7 adds durable playlist-artwork staging metadata.
+
+### Playlist scope boundary
+
+Playlist data is not inferred from selected tracks. A manifest includes playlists only for the `all` scope or for explicit `playlists` selections. Mutations are accepted only for `all`, or an explicitly selected playlist; artist, album, and genre scopes return `scope-conflict` and do not touch a playlist outside the selected resource set.
+
+### Reconciliation security and artwork staging
+
+Playlist reconciliation HTTP signatures bind the method, escaped path,
+lowercase SHA-256 of the exact request body, RFC3339 timestamp, and nonce.
+Desktop restores the body after verification and accepts a nonce once per
+device for five minutes.
+
+Desktop stores a global per-playlist LWW watermark `(updated_at, mutation_id)`
+and DELETE tombstone. The lexical mutation ID breaks timestamp ties. Ledger,
+watermark, and playlist mutation share one SQLite transaction. Artwork staging
+is owned by reconciliation ID, device ID, and SHA-256 for the 30-second
+reconciliation lifetime; terminal or expired staging is removed before orphan
+artwork cleanup.
+
+Android Room stores staged artwork SHA-256, MIME, byte size, and relative path.
+It verifies and uploads the artwork before its `SET_ARTWORK` batch mutation,
+and removes it only after no pending mutation still references the hash.

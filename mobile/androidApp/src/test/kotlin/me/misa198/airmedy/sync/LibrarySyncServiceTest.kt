@@ -8,7 +8,11 @@ import me.misa198.airmedy.pairing.PairingEndpoint
 import me.misa198.airmedy.pairing.PairedDesktop
 import me.misa198.airmedy.pairing.SyncSession
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Test
+import kotlinx.coroutines.async
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 
 class LibrarySyncServiceTest {
     @Test
@@ -45,10 +49,20 @@ class LibrarySyncServiceTest {
         assertEquals(1, session.disconnectCalls)
     }
 
+    @Test fun reconciliationWaitsUntilForegroundSyncReleasesMqttOwnership() = runTest {
+        AndroidSyncRuntime.running()
+        val waiter = async { AndroidSyncRuntime.awaitNoForegroundSync() }
+        yield()
+        assertFalse(waiter.isCompleted)
+        AndroidSyncRuntime.idle()
+        waiter.await()
+    }
+
     private class FakeSyncSession : SyncSession {
         override val isConnected: StateFlow<Boolean> = MutableStateFlow(false)
         override val connectedEndpoint: StateFlow<PairingEndpoint?> = MutableStateFlow(null)
         override val syncRequests: Flow<String> = MutableSharedFlow()
+        override val playlistReconciliationRequests: Flow<String> = MutableSharedFlow()
         var disconnectCalls = 0
 
         override fun connect(desktop: PairedDesktop, endpoint: PairingEndpoint, mobileId: String, reconnect: Boolean) = Unit

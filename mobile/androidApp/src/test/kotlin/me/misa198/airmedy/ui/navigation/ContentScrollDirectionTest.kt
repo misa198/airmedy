@@ -1,6 +1,7 @@
 package me.misa198.airmedy.ui.navigation
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertSame
 import org.junit.Test
 
 class ContentScrollDirectionTest {
@@ -34,5 +35,29 @@ class ContentScrollDirectionTest {
             thresholdPx,
         )
         assertEquals(NavigationChromeScrollState(compact = true), compact)
+    }
+
+    @Test
+    fun preservesStateInstanceWhenScrollAlreadyMatchesChromeMode() {
+        val compact = NavigationChromeScrollState(compact = true)
+
+        assertSame(
+            compact,
+            reduceNavigationChromeScroll(
+                compact,
+                ContentScrollDelta(ContentScrollDirection.Up, 12f),
+                thresholdPx = 24f,
+            ),
+        )
+
+        val expanded = NavigationChromeScrollState()
+        assertSame(
+            expanded,
+            reduceNavigationChromeScroll(
+                expanded,
+                ContentScrollDelta(ContentScrollDirection.Down, 12f),
+                thresholdPx = 24f,
+            ),
+        )
     }
 }

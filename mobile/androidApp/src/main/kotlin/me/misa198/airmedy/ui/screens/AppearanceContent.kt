@@ -6,6 +6,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.HazeState
 import me.misa198.airmedy.R
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.ui.components.ActionList
@@ -24,6 +25,7 @@ internal fun AppearanceContent(
     reduceTransparency: Boolean,
     onReduceTransparencyChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    hazeState: HazeState? = null,
 ) {
     Column(
         modifier = modifier,
@@ -37,6 +39,7 @@ internal fun AppearanceContent(
                 },
                 selectedValue = themeMode,
                 onValueSelected = onThemeModeSelected,
+                hazeState = hazeState,
             )
             ActionListDivider(style = ActionListDividerStyle.FullWidth)
             ActionList(

@@ -20,6 +20,8 @@ enum class AppStackPage {
     GenreDetails,
     LibraryComposers,
     ComposerDetails,
+    LibraryPlaylists,
+    PlaylistDetails,
     SettingsAppearance,
     SettingsPlayback,
     SettingsSongTransition,
@@ -47,6 +49,8 @@ val AppStackPage.destination: AppDestination
         AppStackPage.GenreDetails,
         AppStackPage.LibraryComposers,
         AppStackPage.ComposerDetails,
+        AppStackPage.LibraryPlaylists,
+        AppStackPage.PlaylistDetails,
         -> AppDestination.Library
         AppStackPage.SettingsAppearance,
         AppStackPage.SettingsPlayback,

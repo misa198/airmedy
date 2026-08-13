@@ -104,6 +104,18 @@ class MainViewModelTest {
     }
 
     @Test
+    fun `opening playlist details selects the playlist and pushes the library page`() = runTest {
+        val viewModel = MainViewModel(FakeThemeModeStore())
+        activateState(viewModel)
+
+        viewModel.dispatch(AppIntent.OpenPlaylistDetails("favorites"))
+        advanceUntilIdle()
+
+        assertEquals("favorites", viewModel.uiState.value.selectedPlaylistId)
+        assertEquals(AppStackPage.PlaylistDetails, viewModel.uiState.value.currentPage)
+    }
+
+    @Test
     fun `setting the theme persists it and updates ui state`() = runTest {
         val store = FakeThemeModeStore()
         val viewModel = MainViewModel(store)

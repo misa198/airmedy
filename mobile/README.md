@@ -124,3 +124,14 @@ Or, from the repository root:
 The repository-root `task verify` command covers desktop Go/Vue code only.
 Mobile changes must run the relevant Gradle build and tests above, plus any
 feature-specific Android host or UI test task.
+
+## Playlist reconciliation
+
+Playlist reconciliation arrives on a separate MQTT stream from Library Sync
+asset downloads. Android persists playlist deltas in Room and retains them
+until a terminal desktop result (`applied`, `duplicate`, `stale`, `rejected`,
+or `scope-conflict`) acknowledges the mutation.
+
+Artwork staging is stored in Room with its SHA-256, MIME type, byte size, and
+app-private relative path. It is verified and uploaded before `SET_ARTWORK`,
+and mutations are acknowledged only after publishing the signed MQTT result.

@@ -68,3 +68,43 @@ type MobileLibrarySyncPlanRepository interface {
 	MarkReceipt(ctx context.Context, planID, assetID string, at time.Time) (completed int, err error)
 	MarkComplete(ctx context.Context, planID string, at time.Time) error
 }
+
+// PlaylistMutationLedger persists terminal reconciliation results. Its unique
+// (device_id, mutation_id) key makes an HTTP retry safe after a desktop restart.
+type PlaylistMutationLedgerEntry struct {
+	DeviceID   string    `db:"device_id"`
+	MutationID string    `db:"mutation_id"`
+	Result     string    `db:"result"`
+	CreatedAt  time.Time `db:"created_at"`
+}
+
+type PlaylistMutationLedger interface {
+	Get(ctx context.Context, deviceID, mutationID string) (*PlaylistMutationLedgerEntry, error)
+	Save(ctx context.Context, entry PlaylistMutationLedgerEntry) error
+}
+
+// PlaylistMutationLWW stores the durable, per-playlist ordering watermark.
+// Deleted playlists retain a watermark so an older CREATE cannot resurrect one.
+type PlaylistMutationLWW interface {
+	// Claim atomically advances the watermark when (updatedAt, mutationID) wins.
+	// A false result means the mutation is stale.
+	Claim(ctx context.Context, playlistID string, updatedAt int64, mutationID string, deleted bool) (bool, error)
+}
+
+// PlaylistArtworkStaging records artwork uploaded during the short-lived
+// reconciliation session. It is intentionally device- and session-owned.
+type PlaylistArtworkStaging struct {
+	ReconciliationID string    `db:"reconciliation_id"`
+	DeviceID         string    `db:"device_id"`
+	SHA256           string    `db:"sha256"`
+	ArtworkKey       string    `db:"artwork_key"`
+	ExpiresAt        time.Time `db:"expires_at"`
+}
+
+type PlaylistArtworkStagingRepository interface {
+	Save(ctx context.Context, entry PlaylistArtworkStaging) error
+	Get(ctx context.Context, reconciliationID, deviceID, sha256 string) (*PlaylistArtworkStaging, error)
+	DeleteExpired(ctx context.Context, now time.Time) ([]string, error)
+	DeleteReconciliation(ctx context.Context, reconciliationID, deviceID string) ([]string, error)
+	ActiveArtworkKeys(ctx context.Context, now time.Time) ([]string, error)
+}

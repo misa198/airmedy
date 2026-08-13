@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -35,6 +36,7 @@ import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import me.misa198.airmedy.ui.theme.AirmedyColors
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 import dev.chrisbanes.haze.HazeState
 
@@ -77,11 +79,7 @@ fun AirmedyTrackSlider(
         label = "airmedy-track-slider-scale-y",
     )
     val filledTrackColor by animateColorAsState(
-        targetValue = if (isInteracting) {
-            colors.onPrimary
-        } else {
-            lerp(colors.foregroundSubtle, colors.onPrimary, 0.5f)
-        },
+        targetValue = sliderFilledTrackColor(colors, isInteracting),
         animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
         label = "airmedy-track-slider-fill-colour",
     )
@@ -198,6 +196,16 @@ fun AirmedyTrackSlider(
 }
 
 internal const val AirmedyTrackSliderTrackTestTag = "airmedy-track-slider-track"
+
+/** The fill tint shared by fullscreen slider supporting controls. */
+internal fun sliderFilledTrackColor(
+    colors: AirmedyColors,
+    isInteracting: Boolean,
+): Color = if (isInteracting) {
+    colors.onPrimary
+} else {
+    lerp(colors.foregroundSubtle, colors.onPrimary, 0.5f)
+}
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawTrack(
     color: androidx.compose.ui.graphics.Color,

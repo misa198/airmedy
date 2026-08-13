@@ -1,6 +1,7 @@
 package mobilesync
 
 import (
+	"bytes"
 	"context"
 	"crypto/ed25519"
 	"crypto/sha256"
@@ -19,6 +20,7 @@ import (
 	"time"
 
 	lyricsapp "airmedy/internal/app/lyrics"
+	playlistapp "airmedy/internal/app/playlist"
 	"airmedy/internal/domain"
 
 	"github.com/google/uuid"
@@ -53,31 +55,82 @@ type syncReceipt struct {
 	Signature string `json:"signature"`
 }
 
+const (
+	playlistReconciliationRequestType = "playlist.sync.reconcile.request"
+	playlistReconciliationResultType  = "playlist.sync.reconcile.result"
+)
+
+var reconciliationTimeout = 30 * time.Second
+
+type playlistReconciliationRequest struct {
+	Version          int                           `json:"version"`
+	Type             string                        `json:"type"`
+	ReconciliationID string                        `json:"reconciliation_id"`
+	DesktopID        string                        `json:"desktop_id"`
+	MobileID         string                        `json:"mobile_id"`
+	Scope            domain.MobileLibrarySyncScope `json:"scope"`
+	BatchURL         string                        `json:"batch_url"`
+	ArtworkURL       string                        `json:"artwork_url"`
+	IssuedAt         int64                         `json:"issued_at"`
+	Signature        string                        `json:"signature"`
+}
+
+type playlistReconciliationResult struct {
+	Version          int                      `json:"version"`
+	Type             string                   `json:"type"`
+	ReconciliationID string                   `json:"reconciliation_id"`
+	MobileID         string                   `json:"mobile_id"`
+	Results          []playlistMutationResult `json:"results"`
+	IssuedAt         int64                    `json:"issued_at"`
+	Signature        string                   `json:"signature"`
+}
+
+type playlistReconciliation struct {
+	ID       string
+	DeviceID string
+	Scope    domain.MobileLibrarySyncScope
+	Expires  time.Time
+	result   chan playlistReconciliationResult
+	artwork  map[string]string
+}
+
 type Service struct {
-	plans      domain.MobileLibrarySyncPlanRepository
-	tracks     domain.TrackRepository
-	playlists  domain.PlaylistRepository
-	lyrics     *lyricsapp.LyricsService
-	lyricCache domain.MobileSyncLyricCacheRepository
-	analysis   domain.AnalysisRepository
-	artwork    domain.ArtworkCache
-	devices    domain.TrustedMobileDeviceRepository
-	identity   domain.PairingIdentityRepository
-	keys       domain.PairingKeyStore
-	broker     domain.PairingBroker
-	logger     *slog.Logger
+	plans       domain.MobileLibrarySyncPlanRepository
+	tracks      domain.TrackRepository
+	playlists   domain.PlaylistRepository
+	artists     domain.ArtistRepository
+	lyrics      *lyricsapp.LyricsService
+	lyricCache  domain.MobileSyncLyricCacheRepository
+	analysis    domain.AnalysisRepository
+	artwork     domain.ArtworkCache
+	devices     domain.TrustedMobileDeviceRepository
+	identity    domain.PairingIdentityRepository
+	keys        domain.PairingKeyStore
+	broker      domain.PairingBroker
+	ledger      domain.PlaylistMutationLedger
+	lww         domain.PlaylistMutationLWW
+	staging     domain.PlaylistArtworkStagingRepository
+	tx          domain.TxManager
+	playlistSvc *playlistapp.PlaylistService
+	logger      *slog.Logger
 
 	mu                 sync.Mutex
+	mutationMu         sync.Mutex
 	server             *http.Server
 	port               int
 	nonces             map[string]time.Time
+	playlistArtwork    map[string]string
+	reconciliations    map[string]*playlistReconciliation
+	reconciliationSub  bool
 	receiptsSubscribed bool
 	listeners          []func(*domain.MobileLibrarySyncPlan)
 }
 
-func NewService(plans domain.MobileLibrarySyncPlanRepository, tracks domain.TrackRepository, playlists domain.PlaylistRepository, lyrics *lyricsapp.LyricsService, lyricCache domain.MobileSyncLyricCacheRepository, analysis domain.AnalysisRepository, artwork domain.ArtworkCache, devices domain.TrustedMobileDeviceRepository, identity domain.PairingIdentityRepository, keys domain.PairingKeyStore, broker domain.PairingBroker, logger *slog.Logger) *Service {
-	return &Service{plans: plans, tracks: tracks, playlists: playlists, lyrics: lyrics, lyricCache: lyricCache, analysis: analysis, artwork: artwork, devices: devices, identity: identity, keys: keys, broker: broker, logger: logger, nonces: make(map[string]time.Time)}
+func NewService(plans domain.MobileLibrarySyncPlanRepository, tracks domain.TrackRepository, playlists domain.PlaylistRepository, artists domain.ArtistRepository, lyrics *lyricsapp.LyricsService, lyricCache domain.MobileSyncLyricCacheRepository, analysis domain.AnalysisRepository, artwork domain.ArtworkCache, devices domain.TrustedMobileDeviceRepository, identity domain.PairingIdentityRepository, keys domain.PairingKeyStore, broker domain.PairingBroker, ledger domain.PlaylistMutationLedger, lww domain.PlaylistMutationLWW, staging domain.PlaylistArtworkStagingRepository, tx domain.TxManager, playlistSvc *playlistapp.PlaylistService, logger *slog.Logger) *Service {
+	return &Service{plans: plans, tracks: tracks, playlists: playlists, artists: artists, lyrics: lyrics, lyricCache: lyricCache, analysis: analysis, artwork: artwork, devices: devices, identity: identity, keys: keys, broker: broker, ledger: ledger, lww: lww, staging: staging, tx: tx, playlistSvc: playlistSvc, logger: logger, nonces: make(map[string]time.Time), playlistArtwork: make(map[string]string), reconciliations: make(map[string]*playlistReconciliation)}
 }
+
+func (s *Service) OnStart(ctx context.Context) error { return s.cleanupPlaylistArtwork(ctx) }
 
 func (s *Service) OnStop(ctx context.Context) error {
 	s.mu.Lock()
@@ -126,6 +179,12 @@ func (s *Service) Start(ctx context.Context, deviceID string, scope domain.Mobil
 	if trusted == nil {
 		return nil, fmt.Errorf("mobile device is not trusted")
 	}
+	if err := s.ensureHTTPServer(); err != nil {
+		return nil, err
+	}
+	if err := s.reconcilePlaylists(ctx, deviceID, scope, host); err != nil {
+		return nil, err
+	}
 	current, err := s.plans.GetLatest(ctx, deviceID)
 	if err != nil {
 		return nil, err
@@ -153,6 +212,60 @@ func (s *Service) Start(ctx context.Context, deviceID string, scope domain.Mobil
 	}
 	s.emit(plan)
 	return plan, nil
+}
+
+func (s *Service) reconcilePlaylists(ctx context.Context, deviceID string, scope domain.MobileLibrarySyncScope, host string) error {
+	identity, err := s.identity.Load(ctx)
+	if err != nil {
+		return fmt.Errorf("load pairing identity: %w", err)
+	}
+	if identity == nil {
+		return fmt.Errorf("pairing identity unavailable")
+	}
+	if err := s.ensureReconciliationSubscription(ctx, identity.DeviceID); err != nil {
+		return err
+	}
+	key, ok, err := s.keys.Load(ctx)
+	if err != nil {
+		return fmt.Errorf("load pairing key: %w", err)
+	}
+	if !ok {
+		return fmt.Errorf("pairing key unavailable")
+	}
+	reconciliation := &playlistReconciliation{ID: uuid.NewString(), DeviceID: deviceID, Scope: scope, Expires: time.Now().UTC().Add(reconciliationTimeout), result: make(chan playlistReconciliationResult, 1), artwork: make(map[string]string)}
+	s.mu.Lock()
+	s.pruneReconciliationsLocked(time.Now().UTC())
+	s.reconciliations[reconciliation.ID] = reconciliation
+	s.mu.Unlock()
+	defer func() {
+		s.mu.Lock()
+		delete(s.reconciliations, reconciliation.ID)
+		s.mu.Unlock()
+		if s.staging != nil {
+			_, _ = s.staging.DeleteReconciliation(context.Background(), reconciliation.ID, deviceID)
+		}
+		if err := s.cleanupPlaylistArtwork(context.Background()); err != nil && s.logger != nil {
+			s.logger.Warn("cleanup playlist reconciliation artwork", "error", err)
+		}
+	}()
+	base := fmt.Sprintf("http://%s:%d/mobile-sync/v1/reconciliations/%s", host, s.port, reconciliation.ID)
+	request := playlistReconciliationRequest{Version: playlistSyncVersion, Type: playlistReconciliationRequestType, ReconciliationID: reconciliation.ID, DesktopID: identity.DeviceID, MobileID: deviceID, Scope: scope, BatchURL: base + "/playlist-mutations", ArtworkURL: base + "/playlist-artwork", IssuedAt: time.Now().UTC().UnixMilli()}
+	input, _ := json.Marshal(request)
+	request.Signature = base64.RawURLEncoding.EncodeToString(ed25519.Sign(key, input))
+	payload, _ := json.Marshal(request)
+	if err := s.broker.Publish(ctx, playlistRequestTopic(identity.DeviceID, deviceID), payload); err != nil {
+		return fmt.Errorf("publish playlist reconciliation request: %w", err)
+	}
+	timer := time.NewTimer(reconciliationTimeout)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return fmt.Errorf("playlist reconciliation timed out after %s", reconciliationTimeout)
+	case <-reconciliation.result:
+		return nil
+	}
 }
 
 func sameScope(a, b domain.MobileLibrarySyncScope) bool {
@@ -200,7 +313,7 @@ func (s *Service) createPlan(ctx context.Context, deviceID string, scope domain.
 		}
 		collectTrackArtwork(dto, artworkKeys)
 	}
-	if err := s.addPlaylists(ctx, selected, &manifest, artworkKeys); err != nil {
+	if err := s.addPlaylists(ctx, scope, selected, &manifest, artworkKeys); err != nil {
 		return nil, err
 	}
 	keys := make([]string, 0, len(artworkKeys))
@@ -328,14 +441,21 @@ func collectTrackArtwork(track *domain.TrackDTO, keys map[string]struct{}) {
 	}
 }
 
-func (s *Service) addPlaylists(ctx context.Context, selected map[string]struct{}, manifest *domain.MobileLibrarySyncManifest, artworkKeys map[string]struct{}) error {
+func (s *Service) addPlaylists(ctx context.Context, scope domain.MobileLibrarySyncScope, selected map[string]struct{}, manifest *domain.MobileLibrarySyncManifest, artworkKeys map[string]struct{}) error {
+	// Playlists are an explicit sync resource. A track selected through an
+	// artist/album/genre must never pull in a playlist implicitly.
 	playlistIDs := map[string]struct{}{}
-	for trackID := range selected {
-		ids, err := s.playlists.GetPlaylistsForTrack(ctx, trackID)
+	switch scope.Kind {
+	case domain.MobileLibrarySyncScopeAll:
+		rows, err := s.playlists.GetAll(ctx)
 		if err != nil {
-			return fmt.Errorf("get playlists for track: %w", err)
+			return fmt.Errorf("get playlists for all-library sync: %w", err)
 		}
-		for _, id := range ids {
+		for _, row := range rows {
+			playlistIDs[row.ID] = struct{}{}
+		}
+	case domain.MobileLibrarySyncScopePlaylists:
+		for _, id := range scope.SelectedIDs {
 			playlistIDs[id] = struct{}{}
 		}
 	}
@@ -460,6 +580,110 @@ func SyncReceiptTopic(desktopID, mobileID string) string {
 	return "airmedy/library-sync/v1/" + desktopID + "/" + mobileID + "/receipt"
 }
 
+func playlistRequestTopic(desktopID, mobileID string) string {
+	return "airmedy/playlist-sync/v1/" + desktopID + "/" + mobileID + "/request"
+}
+
+func (s *Service) ensureReconciliationSubscription(ctx context.Context, desktopID string) error {
+	s.mu.Lock()
+	alreadySubscribed := s.reconciliationSub
+	s.mu.Unlock()
+	if alreadySubscribed {
+		return nil
+	}
+	if err := s.broker.Subscribe(ctx, "airmedy/playlist-sync/v1/"+desktopID+"/+/result", func(payload []byte) {
+		if err := s.HandlePlaylistReconciliationResult(context.Background(), payload); err != nil {
+			s.logger.Warn("reject playlist reconciliation result", "error", err)
+		}
+	}); err != nil {
+		return fmt.Errorf("subscribe playlist reconciliation results: %w", err)
+	}
+	s.mu.Lock()
+	s.reconciliationSub = true
+	s.mu.Unlock()
+	return nil
+}
+
+// HandlePlaylistReconciliationResult validates a mobile terminal result and
+// wakes only the matching active reconciliation.
+func (s *Service) HandlePlaylistReconciliationResult(ctx context.Context, payload []byte) error {
+	var result playlistReconciliationResult
+	if err := json.Unmarshal(payload, &result); err != nil {
+		return fmt.Errorf("decode playlist reconciliation result: %w", err)
+	}
+	if result.Version != playlistSyncVersion || result.Type != playlistReconciliationResultType || result.ReconciliationID == "" || result.MobileID == "" {
+		return fmt.Errorf("invalid playlist reconciliation result")
+	}
+	if skew := time.Since(time.UnixMilli(result.IssuedAt)); skew > 5*time.Minute || skew < -5*time.Minute {
+		return fmt.Errorf("expired playlist reconciliation result")
+	}
+	device, err := s.devices.GetByDeviceID(ctx, result.MobileID)
+	if err != nil {
+		return fmt.Errorf("load reconciliation device: %w", err)
+	}
+	if device == nil {
+		return fmt.Errorf("untrusted playlist reconciliation result")
+	}
+	signature, err := base64.RawURLEncoding.DecodeString(result.Signature)
+	if err != nil || len(signature) != ed25519.SignatureSize {
+		return fmt.Errorf("invalid playlist reconciliation signature")
+	}
+	result.Signature = ""
+	input, _ := json.Marshal(result)
+	if !ed25519.Verify(ed25519.PublicKey(device.PublicKey), input, signature) {
+		return fmt.Errorf("invalid playlist reconciliation signature")
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.pruneReconciliationsLocked(time.Now().UTC())
+	reconciliation := s.reconciliations[result.ReconciliationID]
+	if reconciliation == nil || reconciliation.DeviceID != result.MobileID {
+		return fmt.Errorf("unknown playlist reconciliation")
+	}
+	select {
+	case reconciliation.result <- result:
+	default:
+	}
+	return nil
+}
+
+func (s *Service) pruneReconciliationsLocked(now time.Time) {
+	for id, reconciliation := range s.reconciliations {
+		if !now.Before(reconciliation.Expires) {
+			delete(s.reconciliations, id)
+		}
+	}
+}
+
+func (s *Service) cleanupPlaylistArtwork(ctx context.Context) error {
+	if s.artwork == nil || s.tracks == nil || s.playlists == nil || s.artists == nil {
+		return nil
+	}
+	active := make(map[string]bool)
+	for _, source := range []func(context.Context) ([]string, error){s.tracks.GetAllArtworkKeys, s.playlists.GetAllArtworkKeys, s.artists.GetAllArtworkKeys} {
+		keys, err := source(ctx)
+		if err != nil {
+			return err
+		}
+		for _, key := range keys {
+			active[key] = true
+		}
+	}
+	if s.staging != nil {
+		if _, err := s.staging.DeleteExpired(ctx, time.Now().UTC()); err != nil {
+			return err
+		}
+		keys, err := s.staging.ActiveArtworkKeys(ctx, time.Now().UTC())
+		if err != nil {
+			return err
+		}
+		for _, key := range keys {
+			active[key] = true
+		}
+	}
+	return s.artwork.CleanupOrphaned(ctx, active)
+}
+
 // HandleReceipt is called by the MQTT adapter after receiving a mobile message.
 func (s *Service) HandleReceipt(ctx context.Context, payload []byte) error {
 	var receipt syncReceipt
@@ -510,11 +734,15 @@ func (s *Service) HandleReceipt(ctx context.Context, payload []byte) error {
 }
 
 func (s *Service) serveHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet || !s.authorizeHTTP(r) {
+	if !s.authorizeHTTP(r) {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
 	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+	if len(parts) >= 5 && parts[0] == "mobile-sync" && parts[1] == "v1" && parts[2] == "reconciliations" {
+		s.serveReconciliationHTTP(w, r, parts)
+		return
+	}
 	if len(parts) < 5 || parts[0] != "mobile-sync" || parts[1] != "v1" || parts[2] != "plans" {
 		http.NotFound(w, r)
 		return
@@ -523,6 +751,10 @@ func (s *Service) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	plan, err := s.findPlan(r.Context(), planID)
 	if err != nil {
 		http.NotFound(w, r)
+		return
+	}
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	if parts[4] == "manifest" && len(parts) == 5 {
@@ -541,6 +773,89 @@ func (s *Service) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.NotFound(w, r)
+}
+
+func (s *Service) serveReconciliationHTTP(w http.ResponseWriter, r *http.Request, parts []string) {
+	if len(parts) < 5 {
+		http.NotFound(w, r)
+		return
+	}
+	deviceID, _ := r.Context().Value(syncDeviceContextKey{}).(string)
+	s.mu.Lock()
+	s.pruneReconciliationsLocked(time.Now().UTC())
+	reconciliation := s.reconciliations[parts[3]]
+	s.mu.Unlock()
+	if reconciliation == nil || reconciliation.DeviceID != deviceID {
+		http.NotFound(w, r)
+		return
+	}
+	if r.Method == http.MethodPost && len(parts) == 5 && parts[4] == "playlist-mutations" {
+		s.servePlaylistMutations(w, r, reconciliation)
+		return
+	}
+	if r.Method == http.MethodPut && len(parts) == 6 && parts[4] == "playlist-artwork" {
+		s.servePlaylistArtwork(w, r, reconciliation, parts[5])
+		return
+	}
+	http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+}
+
+func (s *Service) servePlaylistArtwork(w http.ResponseWriter, r *http.Request, reconciliation *playlistReconciliation, expectedHash string) {
+	claimedMIME := strings.TrimSpace(strings.Split(r.Header.Get("Content-Type"), ";")[0])
+	if !validSHA256(expectedHash) || (claimedMIME != "image/jpeg" && claimedMIME != "image/png" && claimedMIME != "image/webp") {
+		http.Error(w, "invalid artwork", http.StatusBadRequest)
+		return
+	}
+	defer func() { _ = r.Body.Close() }()
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 10<<20))
+	if err != nil || hashBody(body) != expectedHash || http.DetectContentType(body) != claimedMIME {
+		http.Error(w, "invalid artwork", http.StatusBadRequest)
+		return
+	}
+	key, err := s.artwork.Save(r.Context(), body, claimedMIME)
+	if err != nil {
+		http.Error(w, "invalid artwork", http.StatusBadRequest)
+		return
+	}
+	if s.staging != nil {
+		if err := s.staging.Save(r.Context(), domain.PlaylistArtworkStaging{ReconciliationID: reconciliation.ID, DeviceID: reconciliation.DeviceID, SHA256: expectedHash, ArtworkKey: key, ExpiresAt: reconciliation.Expires}); err != nil {
+			http.Error(w, "unable to stage artwork", http.StatusInternalServerError)
+			return
+		}
+	}
+	s.mu.Lock()
+	reconciliation.artwork[expectedHash] = key
+	s.mu.Unlock()
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write([]byte(`{"sha256":"` + expectedHash + `"}`))
+}
+
+func (s *Service) servePlaylistMutations(w http.ResponseWriter, r *http.Request, reconciliation *playlistReconciliation) {
+	defer func() { _ = r.Body.Close() }()
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 512<<10))
+	if err != nil {
+		http.Error(w, "invalid batch", http.StatusBadRequest)
+		return
+	}
+	var batch playlistMutationBatch
+	if err := json.Unmarshal(body, &batch); err != nil || batch.Version != playlistSyncVersion || batch.ReconciliationID != reconciliation.ID {
+		http.Error(w, "invalid batch", http.StatusBadRequest)
+		return
+	}
+	deviceID, _ := r.Context().Value(syncDeviceContextKey{}).(string)
+	s.mu.Lock()
+	uploadedArtwork := make(map[string]string, len(reconciliation.artwork))
+	for hash, key := range reconciliation.artwork {
+		uploadedArtwork[hash] = key
+	}
+	s.mu.Unlock()
+	result := playlistMutationBatchResult{Version: playlistSyncVersion, ReconciliationID: batch.ReconciliationID, Results: make([]playlistMutationResult, 0, len(batch.Mutations))}
+	for _, mutation := range batch.Mutations {
+		status := s.applyPlaylistMutation(r.Context(), deviceID, reconciliation.Scope, mutation, uploadedArtwork)
+		result.Results = append(result.Results, playlistMutationResult{MutationID: mutation.MutationID, Status: status})
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(result)
 }
 
 func (s *Service) findPlan(ctx context.Context, planID string) (*domain.MobileLibrarySyncPlan, error) {
@@ -603,7 +918,12 @@ func (s *Service) authorizeHTTP(r *http.Request) bool {
 	if err != nil {
 		return false
 	}
-	input := []byte(strings.Join([]string{r.Method, r.URL.EscapedPath(), timestamp, nonce}, "\n"))
+	body, err := io.ReadAll(io.LimitReader(r.Body, 10<<20+1))
+	if err != nil || len(body) > 10<<20 {
+		return false
+	}
+	r.Body = io.NopCloser(bytes.NewReader(body))
+	input := []byte(strings.Join([]string{r.Method, r.URL.EscapedPath(), hashBody(body), timestamp, nonce}, "\n"))
 	if !ed25519.Verify(ed25519.PublicKey(device.PublicKey), input, signature) {
 		return false
 	}

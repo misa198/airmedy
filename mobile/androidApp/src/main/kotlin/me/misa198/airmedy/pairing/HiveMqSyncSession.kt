@@ -31,6 +31,8 @@ class HiveMqSyncSession : SyncSession {
     override val connectedEndpoint: StateFlow<PairingEndpoint?> = _connectedEndpoint
     private val _syncRequests = MutableSharedFlow<String>(extraBufferCapacity = 8)
     override val syncRequests: Flow<String> = _syncRequests
+    private val _playlistReconciliationRequests = MutableSharedFlow<String>(extraBufferCapacity = 8)
+    override val playlistReconciliationRequests: Flow<String> = _playlistReconciliationRequests
 
     private var sessionJob: Job? = null
     private var client: Mqtt3AsyncClient? = null
@@ -78,6 +80,16 @@ class HiveMqSyncSession : SyncSession {
                             }
                             .send().await()
                         Log.d(LogTag, "Subscribed to topic $topic")
+                        val playlistTopic = "airmedy/playlist-sync/v1/${desktop.desktopId}/$mobileId/request"
+                        mqttClient.subscribeWith()
+                            .topicFilter(playlistTopic)
+                            .qos(MqttQos.AT_LEAST_ONCE)
+                            .callback { publish ->
+                                publish.payload.orElse(null)?.let { bytes ->
+                                    _playlistReconciliationRequests.tryEmit(java.nio.charset.StandardCharsets.UTF_8.decode(bytes).toString())
+                                }
+                            }
+                            .send().await()
                     }.onFailure { err ->
                         Log.e(LogTag, "Failed to subscribe to sync request topic", err)
                     }

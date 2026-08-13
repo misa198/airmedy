@@ -586,6 +586,15 @@ private fun reduceAppState(state: AppUiState, intent: AppIntent): AppUiState = w
             else state.destinationStacks + (AppDestination.Library to stack + AppStackPage.AlbumDetails),
         )
     }
+    is AppIntent.OpenPlaylistDetails -> {
+        val stack = state.stackFor(AppDestination.Library)
+        state.copy(
+            selectedDestination = AppDestination.Library,
+            selectedPlaylistId = intent.playlistId,
+            destinationStacks = if (stack.lastOrNull() == AppStackPage.PlaylistDetails) state.destinationStacks
+            else state.destinationStacks + (AppDestination.Library to stack + AppStackPage.PlaylistDetails),
+        )
+    }
     is AppIntent.OpenArtistDetails -> {
         val stack = state.stackFor(AppDestination.Library)
         state.copy(

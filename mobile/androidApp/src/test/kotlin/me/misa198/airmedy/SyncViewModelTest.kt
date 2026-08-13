@@ -199,6 +199,7 @@ class SyncViewModelTest {
         override val connectedEndpoint: StateFlow<PairingEndpoint?> = endpoint.asStateFlow()
         private val requests = MutableSharedFlow<String>()
         override val syncRequests: Flow<String> = requests
+        override val playlistReconciliationRequests: Flow<String> = MutableSharedFlow()
         data class Connect(val endpoint: PairingEndpoint, val reconnect: Boolean)
         val connects = mutableListOf<Connect>()
         var stopReconnectCalls = 0

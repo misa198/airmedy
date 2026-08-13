@@ -10,6 +10,8 @@ sealed interface AppIntent {
 
     data class OpenAlbumDetails(val albumId: String) : AppIntent
 
+    data class OpenPlaylistDetails(val playlistId: String) : AppIntent
+
     data class OpenArtistDetails(val artistId: String) : AppIntent
 
     data class OpenGenreDetails(val genreId: String) : AppIntent

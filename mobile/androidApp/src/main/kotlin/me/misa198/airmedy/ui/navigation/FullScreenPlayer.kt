@@ -116,6 +116,7 @@ import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.ui.components.AirmedyMarqueeText
 import me.misa198.airmedy.ui.components.AirmedyTrackSlider
 import me.misa198.airmedy.ui.components.rememberArtworkThumbnail
+import me.misa198.airmedy.ui.components.sliderFilledTrackColor
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 private val FullScreenArtworkShape = RoundedCornerShape(16.dp)
@@ -288,7 +289,7 @@ internal fun FullScreenPlayer(
         label = "full-screen-seek-supporting-offset",
     )
     val seekTimeLabelColor by animateColorAsState(
-        targetValue = if (isSeekSliderInteracting) colors.onPrimary else colors.sliderInactive,
+        targetValue = sliderFilledTrackColor(colors, isSeekSliderInteracting),
         animationSpec = tween(220, easing = FastOutSlowInEasing),
         label = "full-screen-seek-time-label-colour",
     )
@@ -298,7 +299,7 @@ internal fun FullScreenPlayer(
         label = "full-screen-volume-icon-offset",
     )
     val volumeIconColor by animateColorAsState(
-        targetValue = if (isVolumeSliderInteracting) colors.onPrimary else colors.sliderInactive,
+        targetValue = sliderFilledTrackColor(colors, isVolumeSliderInteracting),
         animationSpec = tween(220, easing = FastOutSlowInEasing),
         label = "full-screen-volume-icon-colour",
     )

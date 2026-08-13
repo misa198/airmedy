@@ -19,6 +19,12 @@ import me.misa198.airmedy.pairing.SyncSession
 import me.misa198.airmedy.pairing.TrustedDesktopDiscovery
 import me.misa198.airmedy.sync.AndroidSyncState
 import me.misa198.airmedy.sync.AndroidSyncRuntime
+import me.misa198.airmedy.pairing.PairingPreferences
+import me.misa198.airmedy.sync.AndroidPlaylistReconciliationTransport
+import me.misa198.airmedy.sync.PlaylistReconciliationClock
+import me.misa198.airmedy.sync.PlaylistReconciliationCoordinator
+import me.misa198.airmedy.sync.PlaylistReconciliationPublisher
+import me.misa198.airmedy.sync.PlaylistSyncProtocol
 
 import android.util.Log
 
@@ -35,6 +41,7 @@ class SyncViewModel(
     private val mqttSession: SyncSession,
     private val discovery: TrustedDesktopDiscovery,
     private val onSyncRequest: (String, PairingEndpoint, SyncSession) -> Unit = { _, _, _ -> },
+    private val onPlaylistReconciliationRequest: suspend (String) -> Unit = {},
     private val onBeforeUnpair: suspend () -> Unit = {},
     private val isForegroundSyncRunning: () -> Boolean = { AndroidSyncRuntime.state.value is AndroidSyncState.Running },
 ) : ViewModel() {
@@ -72,6 +79,12 @@ class SyncViewModel(
             mqttSession.syncRequests.collectLatest { request ->
                 Log.i(LogTag, "Handling sync request in ViewModel")
                 mqttSession.connectedEndpoint.value?.let { endpoint -> onSyncRequest(request, endpoint, mqttSession) }
+            }
+        }
+        viewModelScope.launch {
+            mqttSession.playlistReconciliationRequests.collectLatest { request ->
+                Log.i(LogTag, "Handling playlist reconciliation request")
+                onPlaylistReconciliationRequest(request)
             }
         }
         viewModelScope.launch {
@@ -172,12 +185,13 @@ class SyncViewModel(
         private val mqttSession: SyncSession,
         private val discovery: TrustedDesktopDiscovery,
         private val onSyncRequest: (String, PairingEndpoint, SyncSession) -> Unit = { _, _, _ -> },
+        private val onPlaylistReconciliationRequest: suspend (String) -> Unit = {},
         private val onBeforeUnpair: suspend () -> Unit = {},
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             check(modelClass.isAssignableFrom(SyncViewModel::class.java))
-            return SyncViewModel(pairing, mqttSession, discovery, onSyncRequest, onBeforeUnpair) as T
+            return SyncViewModel(pairing, mqttSession, discovery, onSyncRequest, onPlaylistReconciliationRequest, onBeforeUnpair) as T
         }
     }
 }

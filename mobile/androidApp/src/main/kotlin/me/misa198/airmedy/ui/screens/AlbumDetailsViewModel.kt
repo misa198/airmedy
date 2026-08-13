@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.serialization.json.longOrNull
 import me.misa198.airmedy.player.PlaybackController
 import me.misa198.airmedy.player.PlaybackRequest
 import me.misa198.airmedy.sync.AndroidLibrarySyncStore
@@ -60,4 +61,31 @@ internal fun albumDetailsUiStateFor(state: AlbumDetailsUiState, albumId: String)
             .thenBy { it.syncOrder },
     )
     return AlbumDetailsUiState(state.albums.firstOrNull { it.id == albumId }, tracks)
+}
+
+internal fun albumTotalDurationSeconds(tracks: List<LibraryTrack>): Long = tracks.sumOf { track ->
+    (track.metadataObject()?.get("duration") as? kotlinx.serialization.json.JsonPrimitive)
+        ?.longOrNull
+        ?.coerceAtLeast(0L)
+        ?: 0L
+}
+
+internal fun formatAlbumTotalDuration(
+    totalSeconds: Long,
+    day: (Long) -> String,
+    hour: (Long) -> String,
+    minute: (Long) -> String,
+    second: (Long) -> String,
+): String {
+    val seconds = totalSeconds.coerceAtLeast(0L)
+    val days = seconds / 86_400L
+    val hours = seconds % 86_400L / 3_600L
+    val minutes = seconds % 3_600L / 60L
+    val remainder = seconds % 60L
+    return when {
+        days > 0 -> "${day(days)} ${hour(hours)}"
+        hours > 0 -> "${hour(hours)} ${minute(minutes)}"
+        minutes > 0 -> minute(minutes)
+        else -> second(remainder)
+    }
 }
