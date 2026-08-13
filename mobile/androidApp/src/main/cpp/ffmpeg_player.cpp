@@ -449,6 +449,15 @@ extern "C" JNIEXPORT jboolean JNICALL Java_me_misa198_airmedy_player_FfmpegDecod
     return JNI_TRUE;
 }
 
+extern "C" JNIEXPORT void JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativeSetNormalizationGains(JNIEnv *, jclass, jlong value, jfloat active_gain, jfloat preloaded_gain) {
+    auto *engine = reinterpret_cast<PlaybackEngine *>(value);
+    if (engine == nullptr) return;
+    const int active = engine->active_slot.load(std::memory_order_acquire);
+    if (active != kNoSlot) engine->slots[active].normalization_gain_db.store(active_gain, std::memory_order_release);
+    const int preloaded = engine->preloaded_slot.load(std::memory_order_acquire);
+    if (preloaded != kNoSlot) engine->slots[preloaded].normalization_gain_db.store(preloaded_gain, std::memory_order_release);
+}
+
 extern "C" JNIEXPORT void JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativeClearPreloaded(JNIEnv *, jclass, jlong value) {
     auto *engine = reinterpret_cast<PlaybackEngine *>(value);
     if (engine == nullptr) return;

@@ -136,6 +136,9 @@ internal fun App(
     onCrossfadeSecondsChanged: (Int) -> Unit = {},
     blendArtworkDuringCrossfade: Boolean = true,
     onBlendArtworkDuringCrossfadeChanged: (Boolean) -> Unit = {},
+    normalizationAvailable: Boolean = false,
+    normalization: me.misa198.airmedy.player.NormalizationSettings = me.misa198.airmedy.player.NormalizationSettings(),
+    onNormalizationChanged: (me.misa198.airmedy.player.NormalizationSettings) -> Unit = {},
     artworkCrossfade: ArtworkCrossfadeTransition? = null,
     playbackState: PlaybackState = PlaybackState.Idle,
     playbackQueue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
@@ -351,6 +354,9 @@ internal fun App(
                 onCrossfadeSecondsChanged = onCrossfadeSecondsChanged,
                 blendArtworkDuringCrossfade = blendArtworkDuringCrossfade,
                 onBlendArtworkDuringCrossfadeChanged = onBlendArtworkDuringCrossfadeChanged,
+                normalizationAvailable = normalizationAvailable,
+                normalization = normalization,
+                onNormalizationChanged = onNormalizationChanged,
                 onContentScroll = { delta ->
                     if (!showsMiniPlayer) return@AppDestinationContent
                     val updatedNavigationScrollState = reduceNavigationChromeScroll(

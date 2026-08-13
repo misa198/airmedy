@@ -58,6 +58,8 @@ data class PlaybackItem(
     val artist: String,
     val audioPath: String,
     val artworkPath: String? = null,
+    val albumId: String = "",
+    val analysis: TrackAnalysis? = null,
 )
 
 /** Visual lifecycle for an automatic native audio crossfade; manual changes never create one. */

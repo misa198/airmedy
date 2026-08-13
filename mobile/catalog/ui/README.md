@@ -325,6 +325,8 @@ describe the desktop Vue UI or future iOS UI.
 
 ## Shared components
 
+- Settings > Playback links to a dedicated Volume Normalization page. Its switch, Track/Album mode and clipping control are Android-local preferences; they are disabled when the active synced library has no desktop analysis data, which also clears the saved master toggle.
+
 | Component | Contract |
 | --- | --- |
 | `Card` | Standard 28dp, borderless, opaque themed card surface. It accepts slot content and optional padding; its title/description overload remains a tappable primary-action card. |

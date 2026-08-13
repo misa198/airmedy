@@ -33,6 +33,7 @@ import me.misa198.airmedy.sync.PulledAsset
 import me.misa198.airmedy.sync.PlaylistMutationStore
 import me.misa198.airmedy.sync.PlaylistArtworkStagingStore
 import me.misa198.airmedy.sync.StagedPlaylistArtwork
+import me.misa198.airmedy.player.TrackAnalysis
 
 @Entity(tableName = "sync_plans", primaryKeys = ["planId"])
 internal data class SyncPlanEntity(
@@ -108,6 +109,8 @@ internal data class SyncDocumentEntity(
     val documentKey: String,
     val rawJson: String,
 )
+
+internal data class AnalysisDocumentRow(val documentKey: String, val rawJson: String)
 
 internal data class LibraryTrackRow(
     val id: String,
@@ -229,6 +232,11 @@ internal interface SyncDao {
         LIMIT 1
     """)
     fun observeLyrics(trackId: String): Flow<String?>
+
+    @Query("SELECT d.documentKey, d.rawJson FROM sync_documents d INNER JOIN sync_plans p ON p.planId = d.planId WHERE p.active = 1 AND d.kind = 'analysis'")
+    suspend fun activeAnalysisDocuments(): List<AnalysisDocumentRow>
+    @Query("SELECT COUNT(*) > 0 FROM sync_documents d INNER JOIN sync_plans p ON p.planId = d.planId WHERE p.active = 1 AND d.kind = 'analysis'")
+    fun observeAnalysisAvailable(): Flow<Boolean>
 }
 
 @Database(
@@ -347,6 +355,16 @@ internal class AndroidLibrarySyncStore(
     private val filesDir: File,
 ) : LibrarySyncStore, PlaylistMutationStore, PlaylistArtworkStagingStore {
     private val dao = database.syncDao()
+    val analysisAvailable: Flow<Boolean> = dao.observeAnalysisAvailable()
+
+    suspend fun analysis(trackId: String): TrackAnalysis? = activeAnalyses()[trackId]
+
+    suspend fun activeAnalyses(): Map<String, TrackAnalysis> = dao.activeAnalysisDocuments().mapNotNull { document ->
+        val value = runCatching { LibrarySyncProtocol.json.parseToJsonElement(document.rawJson).jsonObject }.getOrNull() ?: return@mapNotNull null
+        val lufs = value["loudness_lufs"]?.jsonPrimitive?.contentOrNull?.toFloatOrNull() ?: return@mapNotNull null
+        val peak = value["true_peak"]?.jsonPrimitive?.contentOrNull?.toFloatOrNull() ?: return@mapNotNull null
+        document.documentKey to TrackAnalysis(lufs, peak)
+    }.toMap()
     val tracks: Flow<List<LibraryTrack>> = dao.observeTracks().map { rows ->
         rows.map { row ->
             val metadata = row.metadataObject()

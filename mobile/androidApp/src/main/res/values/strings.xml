@@ -113,6 +113,17 @@
     <string name="playback_crossfade_minimum">1s</string>
     <string name="playback_crossfade_maximum">12s</string>
     <string name="playback_blend_artwork_during_crossfade">Blend artwork and background</string>
+    <string name="playback_volume_normalization">Volume normalization</string>
+    <string name="playback_normalization_track">Mode: Track</string>
+    <string name="playback_normalization_album">Mode: Album</string>
+    <string name="playback_normalization_prevent_clip">Prevent clipping</string>
+    <string name="playback_normalization_target">Target loudness</string>
+    <string name="playback_normalization_target_value">%1$d LUFS</string>
+    <string name="playback_normalization_mode">Mode</string>
+    <string name="playback_normalization_mode_track">Track</string>
+    <string name="playback_normalization_mode_album">Album</string>
+    <string name="playback_normalization_target_minimum">-30 LUFS</string>
+    <string name="playback_normalization_target_maximum">-5 LUFS</string>
     <string name="settings_integration">Integration</string>
     <string name="settings_about">About</string>
     <string name="about_title">About</string>

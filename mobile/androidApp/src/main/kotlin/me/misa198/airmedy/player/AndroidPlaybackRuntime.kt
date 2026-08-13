@@ -30,7 +30,7 @@ internal object AndroidPlaybackRuntime {
                         ?.takeIf(File::isFile)
                         ?.absolutePath
                     Log.d(PlaybackLogTag, "Resolved audio id=$trackId path=${audio.absolutePath} artwork=${artwork != null}")
-                    PlaybackItem(track.id, track.title, track.artists, audio.absolutePath, artwork)
+                    PlaybackItem(track.id, track.title, track.artists, audio.absolutePath, artwork, track.albumId, syncStore.analysis(track.id))
                 }
             }
         }

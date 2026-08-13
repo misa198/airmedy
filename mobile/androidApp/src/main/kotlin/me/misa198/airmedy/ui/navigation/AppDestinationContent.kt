@@ -42,6 +42,7 @@ import me.misa198.airmedy.ui.screens.LibraryContent
 import me.misa198.airmedy.ui.screens.PlaceholderContent
 import me.misa198.airmedy.ui.screens.SettingsContent
 import me.misa198.airmedy.ui.screens.PlaybackSettingsContent
+import me.misa198.airmedy.ui.screens.VolumeNormalizationContent
 import me.misa198.airmedy.ui.screens.SongTransitionContent
 import me.misa198.airmedy.ui.screens.SyncContent
 import me.misa198.airmedy.ui.screens.SyncScannerContent
@@ -156,6 +157,9 @@ internal fun AppDestinationContent(
     onCrossfadeSecondsChanged: (Int) -> Unit = {},
     blendArtworkDuringCrossfade: Boolean = true,
     onBlendArtworkDuringCrossfadeChanged: (Boolean) -> Unit = {},
+    normalizationAvailable: Boolean = false,
+    normalization: me.misa198.airmedy.player.NormalizationSettings = me.misa198.airmedy.player.NormalizationSettings(),
+    onNormalizationChanged: (me.misa198.airmedy.player.NormalizationSettings) -> Unit = {},
     onContentScroll: (ContentScrollDelta) -> Unit = {},
 ) {
     val colors = LocalAirmedyColors.current
@@ -258,6 +262,9 @@ internal fun AppDestinationContent(
                                 onSongTransitionSelected = {
                                     onIntent(AppIntent.OpenPage(AppStackPage.SettingsSongTransition))
                                 },
+                                onVolumeNormalizationSelected = {
+                                    onIntent(AppIntent.OpenPage(AppStackPage.SettingsVolumeNormalization))
+                                },
                                 modifier = Modifier.padding(contentPadding),
                             )
                             AppStackPage.SettingsSongTransition -> SongTransitionContent(
@@ -266,6 +273,12 @@ internal fun AppDestinationContent(
                                 onCrossfadeSecondsChanged = onCrossfadeSecondsChanged,
                                 blendArtworkDuringCrossfade = blendArtworkDuringCrossfade,
                                 onBlendArtworkDuringCrossfadeChanged = onBlendArtworkDuringCrossfadeChanged,
+                                modifier = Modifier.padding(contentPadding),
+                            )
+                            AppStackPage.SettingsVolumeNormalization -> VolumeNormalizationContent(
+                                normalizationAvailable = normalizationAvailable,
+                                normalization = normalization,
+                                onNormalizationChanged = onNormalizationChanged,
                                 modifier = Modifier.padding(contentPadding),
                             )
                             AppStackPage.SettingsSyncScanner -> SyncScannerContent(

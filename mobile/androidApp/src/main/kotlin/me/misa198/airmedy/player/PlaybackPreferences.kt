@@ -8,7 +8,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-private val Context.playbackPreferencesDataStore by preferencesDataStore(name = "playback_preferences")
+internal val Context.playbackPreferencesDataStore by preferencesDataStore(name = "playback_preferences")
 private val CrossfadeSecondsKey = intPreferencesKey("crossfade_seconds")
 private val LastEnabledCrossfadeSecondsKey = intPreferencesKey("last_enabled_crossfade_seconds")
 private val BlendArtworkDuringCrossfadeKey = booleanPreferencesKey("blend_artwork_during_crossfade")

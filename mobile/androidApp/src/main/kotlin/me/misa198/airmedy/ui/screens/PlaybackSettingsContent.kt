@@ -19,24 +19,91 @@ import androidx.compose.ui.unit.dp
 import me.misa198.airmedy.R
 import me.misa198.airmedy.ui.components.ActionList
 import me.misa198.airmedy.ui.components.ActionListContainerStyle
+import me.misa198.airmedy.ui.components.ActionListDivider
+import me.misa198.airmedy.ui.components.ActionListDividerStyle
 import me.misa198.airmedy.ui.components.ActionListItem
 import me.misa198.airmedy.ui.components.LabeledCard
+import me.misa198.airmedy.ui.components.Selection
+import me.misa198.airmedy.ui.components.SelectionOption
 
 @Composable
 internal fun PlaybackSettingsContent(
     onSongTransitionSelected: () -> Unit,
+    onVolumeNormalizationSelected: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(20.dp)) {
         ActionList(
             items = listOf(
                 ActionListItem(
                     labelRes = R.string.song_transition_title,
                     onClick = onSongTransitionSelected,
                 ),
+                ActionListItem(
+                    labelRes = R.string.playback_volume_normalization,
+                    onClick = onVolumeNormalizationSelected,
+                ),
             ),
             containerStyle = ActionListContainerStyle.Card,
+            dividerStyle = ActionListDividerStyle.FullWidth,
         )
+    }
+}
+
+@Composable
+internal fun VolumeNormalizationContent(
+    normalizationAvailable: Boolean,
+    normalization: me.misa198.airmedy.player.NormalizationSettings,
+    onNormalizationChanged: (me.misa198.airmedy.player.NormalizationSettings) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        me.misa198.airmedy.ui.components.Card {
+            ActionList(
+                items = listOf(
+                    ActionListItem(
+                        labelRes = R.string.playback_volume_normalization,
+                        trailingContent = { Switch(checked = normalization.enabled && normalizationAvailable, enabled = normalizationAvailable, onCheckedChange = { onNormalizationChanged(normalization.copy(enabled = it)) }) },
+                        onClick = { if (normalizationAvailable) onNormalizationChanged(normalization.copy(enabled = !normalization.enabled)) },
+                    ),
+                    ActionListItem(
+                        labelRes = R.string.playback_normalization_prevent_clip,
+                        trailingContent = { Switch(checked = normalization.preventClip, enabled = normalizationAvailable && normalization.enabled, onCheckedChange = { onNormalizationChanged(normalization.copy(preventClip = it)) }) },
+                        onClick = { if (normalizationAvailable && normalization.enabled) onNormalizationChanged(normalization.copy(preventClip = !normalization.preventClip)) },
+                    ),
+                ),
+                containerStyle = ActionListContainerStyle.Plain,
+                dividerStyle = ActionListDividerStyle.FullWidth,
+            )
+            if (normalization.enabled && normalizationAvailable) {
+                ActionListDivider(style = ActionListDividerStyle.FullWidth)
+                Selection(
+                    labelRes = R.string.playback_normalization_mode,
+                    options = listOf(
+                        SelectionOption(me.misa198.airmedy.player.NormalizationMode.Track, R.string.playback_normalization_mode_track),
+                        SelectionOption(me.misa198.airmedy.player.NormalizationMode.Album, R.string.playback_normalization_mode_album),
+                    ),
+                    selectedValue = normalization.mode,
+                    onValueSelected = { onNormalizationChanged(normalization.copy(mode = it)) },
+                )
+            }
+        }
+        AnimatedVisibility(
+            visible = normalization.enabled && normalizationAvailable,
+            enter = fadeIn(animationSpec = tween(durationMillis = 200)),
+            exit = fadeOut(animationSpec = tween(durationMillis = 150)),
+        ) {
+            LabeledCard(label = stringResource(R.string.playback_normalization_target)) {
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                    Text(text = stringResource(R.string.playback_normalization_target_value, normalization.targetLufs.toInt()), style = MaterialTheme.typography.labelMedium, color = me.misa198.airmedy.ui.theme.LocalAirmedyColors.current.textMuted)
+                    LufsTargetSlider(
+                        targetLufs = normalization.targetLufs,
+                        enabled = true,
+                        onTargetChanged = { onNormalizationChanged(normalization.copy(targetLufs = it)) },
+                    )
+                }
+            }
+        }
     }
 }
 

@@ -33,6 +33,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
@@ -52,6 +53,8 @@ class PlaybackService : Service() {
     private var preloadedItem: PlaybackItem? = null
     private lateinit var sessionStore: PlaybackSessionStore
     private lateinit var playbackPreferences: PlaybackPreferences
+    private lateinit var normalizationPreferences: NormalizationPreferences
+    private var normalizationSettings = NormalizationSettings()
     private var preferencesJob: Job? = null
     private lateinit var audioManager: AudioManager
     private lateinit var mediaSession: MediaSession
@@ -67,6 +70,7 @@ class PlaybackService : Service() {
         AndroidPlaybackRuntime.initialize(applicationContext, AndroidSyncRuntime.syncStore())
         sessionStore = PlaybackSessionStore(applicationContext)
         playbackPreferences = PlaybackPreferences(applicationContext)
+        normalizationPreferences = NormalizationPreferences(applicationContext)
         preferencesJob = scope.launch {
             playbackPreferences.settings.collectLatest { settings ->
                 commandMutex.withLock {
@@ -76,6 +80,14 @@ class PlaybackService : Service() {
                     // A preference update must never change a fade already
                     // running, but it does refresh the idle source afterward.
                     if (decoder?.isCrossfading() != true) preloadNext()
+                }
+            }
+        }
+        scope.launch {
+            normalizationPreferences.settings.collectLatest { settings ->
+                commandMutex.withLock {
+                    normalizationSettings = settings
+                    refreshNormalizationGains()
                 }
             }
         }
@@ -275,7 +287,7 @@ class PlaybackService : Service() {
         try {
             decoder?.close()
             decoder = FfmpegDecoder().also {
-                it.prepare(File(item.audioPath))
+                it.prepare(File(item.audioPath), normalizationGain(item, queue.peekNext()))
                 if (startPositionMs > 0L) it.seekTo(clampSeekPosition(startPositionMs, it.durationMs()))
                 if (startPaused) {
                     it.pause()
@@ -303,7 +315,7 @@ class PlaybackService : Service() {
         try {
             decoder?.close()
             decoder = FfmpegDecoder().also {
-                it.prepare(File(item.audioPath))
+                it.prepare(File(item.audioPath), normalizationGain(item, queue.peekNext()))
                 val positionMs = clampSeekPosition(savedPositionMs, it.durationMs())
                 if (positionMs > 0L) it.seekTo(positionMs)
                 it.pause()
@@ -471,7 +483,7 @@ class PlaybackService : Service() {
         currentDecoder.clearPreloaded()
         preloadedItem = nextId?.let { id -> AndroidPlaybackRuntime.controller().resolve(id) }
         preloadedItem?.let { item ->
-            runCatching { currentDecoder.preload(File(item.audioPath)) }
+            runCatching { currentDecoder.preload(File(item.audioPath), normalizationGain(item, queue.peekNext())) }
                 .onSuccess { loaded ->
                     if (!loaded) preloadedItem = null
                 }
@@ -504,6 +516,32 @@ class PlaybackService : Service() {
         if (canPreloadNext(currentDecoder.isCrossfading())) preloadNext()
         publishQueue()
         Log.d(PlaybackLogTag, "Consumed native transition=$transition id=${incoming.trackId}")
+    }
+
+    private suspend fun normalizationGain(item: PlaybackItem, nextId: String?): Float {
+        val analyses = AndroidSyncRuntime.syncStore().activeAnalyses()
+        if (analyses.isEmpty()) {
+            if (normalizationSettings.enabled) normalizationPreferences.disable()
+            return 0f
+        }
+        val next = nextId?.let { AndroidPlaybackRuntime.controller().resolve(it) }
+        val continuousAlbum = normalizationSettings.mode == NormalizationMode.Album &&
+            item.albumId.isNotEmpty() && item.albumId == next?.albumId
+        val albumAnalyses = if (continuousAlbum) {
+            AndroidSyncRuntime.syncStore().tracks.first().filter { it.albumId == item.albumId }.mapNotNull { analyses[it.id] }
+        } else emptyList()
+        return normalizationGainDb(normalizationSettings, item.analysis, albumAnalyses, continuousAlbum)
+    }
+
+    private suspend fun refreshNormalizationGains() {
+        val current = when (val value = state.value) {
+            is PlaybackState.Playing -> value.item
+            is PlaybackState.Paused -> value.item
+            is PlaybackState.Preparing -> value.item
+            else -> null
+        } ?: return
+        val nextId = queue.peekNext()
+        decoder?.setNormalizationGains(normalizationGain(current, nextId), preloadedItem?.let { normalizationGain(it, queue.peekNext()) } ?: 0f)
     }
 
     private fun maybeStartCrossfade(): Boolean {

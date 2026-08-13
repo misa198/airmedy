@@ -24,9 +24,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -186,9 +188,19 @@ class MainActivity : ComponentActivity() {
             val composerDetailsUiState by composerDetailsViewModel.uiState.collectAsStateWithLifecycle()
             val playbackController = AndroidPlaybackRuntime.controller()
             val playbackPreferences = remember { me.misa198.airmedy.player.PlaybackPreferences(applicationContext) }
+            val normalizationPreferences = remember { me.misa198.airmedy.player.NormalizationPreferences(applicationContext) }
+            val preferenceScope = rememberCoroutineScope()
             val crossfadeSettings by playbackPreferences.settings.collectAsStateWithLifecycle(
                 initialValue = me.misa198.airmedy.player.CrossfadeSettings(0, 4, true),
             )
+            val normalizationSettings by normalizationPreferences.settings.collectAsStateWithLifecycle(
+                initialValue = me.misa198.airmedy.player.NormalizationSettings(),
+            )
+            // Avoid clearing a valid preference while Room is still loading the active manifest.
+            val normalizationAvailable by AndroidSyncRuntime.syncStore().analysisAvailable.collectAsStateWithLifecycle(initialValue = true)
+            LaunchedEffect(normalizationAvailable) {
+                if (!normalizationAvailable) normalizationPreferences.disable()
+            }
             val playbackState by playbackController.state.collectAsStateWithLifecycle()
             val playbackQueue by playbackController.queue.collectAsStateWithLifecycle()
             val artworkCrossfade by playbackController.artworkCrossfade.collectAsStateWithLifecycle()
@@ -286,6 +298,11 @@ class MainActivity : ComponentActivity() {
                 onCrossfadeSecondsChanged = playbackController::setCrossfadeSeconds,
                 blendArtworkDuringCrossfade = crossfadeSettings.blendArtworkDuringCrossfade,
                 onBlendArtworkDuringCrossfadeChanged = playbackController::setBlendArtworkDuringCrossfade,
+                normalizationAvailable = normalizationAvailable,
+                normalization = normalizationSettings,
+                onNormalizationChanged = { settings ->
+                    preferenceScope.launch { normalizationPreferences.update { settings } }
+                },
                 artworkCrossfade = artworkCrossfade,
                 playbackState = playbackState,
                 playbackQueue = playbackQueue,

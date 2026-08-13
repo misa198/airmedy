@@ -70,6 +70,10 @@ while excluding desktop analytics, Wails events, and desktop-database integratio
 
 ## Native Transitions and DSP
 
+## Volume Normalization
+
+Android reads per-track `loudness_lufs` and `true_peak` values from the active desktop sync manifest's `analysis` documents. Its Android-local Playback setting uses the desktop Track/Album formula, target `-14 LUFS`, and clipping clamp by default. The decoder receives a separate gain for active and preloaded sources, and setting updates atomically refresh them. If the active manifest has no analysis documents, the persisted normalization master setting is reset to disabled and the Playback controls are disabled; an individual unanalysed track always has neutral gain.
+
 Android persists `crossfade_seconds` separately from the resumable queue
 session (`0` = disabled; values are clamped to `0..12`). The current default is
 off; `4` is the UI default when the user enables it. It also persists
