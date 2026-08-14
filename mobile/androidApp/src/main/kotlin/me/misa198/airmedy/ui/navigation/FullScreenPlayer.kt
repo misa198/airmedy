@@ -174,6 +174,8 @@ internal fun FullScreenPlayer(
     onQueueReordered: (List<String>) -> Unit = {},
     onShuffleChange: (Boolean) -> Unit = {},
     onRepeatModeChange: (RepeatMode) -> Unit = {},
+    isFavorite: Boolean = false,
+    onFavoriteToggle: (String, Boolean) -> Unit = { _, _ -> },
     onOpenMediaOutputSwitcher: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -438,6 +440,8 @@ internal fun FullScreenPlayer(
                             displayedHorizontalSwipeOffset = displayedHorizontalSwipeOffset,
                             hazeState = glassHazeState,
                             compact = false,
+                            isFavorite = isFavorite,
+                            onFavoriteToggle = onFavoriteToggle,
                         )
                     }
                     androidx.compose.animation.AnimatedVisibility(
@@ -457,6 +461,8 @@ internal fun FullScreenPlayer(
                             displayedHorizontalSwipeOffset = displayedHorizontalSwipeOffset,
                             hazeState = glassHazeState,
                             compact = true,
+                            isFavorite = isFavorite,
+                            onFavoriteToggle = onFavoriteToggle,
                         )
                     }
                     androidx.compose.animation.AnimatedVisibility(
@@ -670,6 +676,8 @@ private fun FullScreenPlayerMetadataTransition(
     displayedHorizontalSwipeOffset: Float,
     hazeState: HazeState?,
     compact: Boolean,
+    isFavorite: Boolean,
+    onFavoriteToggle: (String, Boolean) -> Unit,
 ) {
     // The player state switches to the incoming source as native crossfade
     // starts. Mirror that moment in metadata instead of waiting for midpoint.
@@ -692,6 +700,8 @@ private fun FullScreenPlayerMetadataTransition(
             displayedHorizontalSwipeOffset = displayedHorizontalSwipeOffset,
             hazeState = hazeState,
             compact = compact,
+            isFavorite = isFavorite,
+            onFavoriteToggle = onFavoriteToggle,
         )
     }
 }
@@ -702,8 +712,23 @@ private fun FullScreenPlayerMetadata(
     displayedHorizontalSwipeOffset: Float,
     hazeState: HazeState?,
     compact: Boolean,
+    isFavorite: Boolean,
+    onFavoriteToggle: (String, Boolean) -> Unit,
 ) {
     val colors = LocalAirmedyColors.current
+    val favoriteScale = remember(item.trackId) { Animatable(1f) }
+    var previousFavorite by remember(item.trackId) { mutableStateOf(isFavorite) }
+    LaunchedEffect(item.trackId, isFavorite) {
+        val wasAdded = isFavorite && !previousFavorite
+        previousFavorite = isFavorite
+        if (wasAdded) {
+            favoriteScale.snapTo(1f)
+            favoriteScale.animateTo(1.14f, tween(120, easing = FastOutSlowInEasing))
+            favoriteScale.animateTo(1f, tween(180, easing = FastOutSlowInEasing))
+        } else if (!isFavorite) {
+            favoriteScale.snapTo(1f)
+        }
+    }
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -733,15 +758,21 @@ private fun FullScreenPlayerMetadata(
         Spacer(Modifier.width(4.dp))
         if (!compact) {
             AirmedyIconButton(
-                symbol = MaterialSymbols.FavoriteBorder,
+                symbol = if (isFavorite) MaterialSymbols.Favorite else MaterialSymbols.FavoriteBorder,
                 label = stringResource(R.string.player_heart),
-                onClick = {},
+                onClick = { onFavoriteToggle(item.trackId, !isFavorite) },
+                modifier = Modifier.graphicsLayer {
+                    scaleX = favoriteScale.value
+                    scaleY = favoriteScale.value
+                },
                 variant = AirmedyIconButtonVariant.Glass,
                 tint = colors.onPrimary,
                 glassColor = Color.White.copy(alpha = 0.06f),
                 hazeState = hazeState,
                 circleSize = 36.dp,
                 iconSize = 20.dp,
+                filled = isFavorite,
+                suppressPressedIndication = true,
             )
         }
         AirmedyIconButton(

@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.serialization.json.longOrNull
+import kotlinx.serialization.json.booleanOrNull
 import me.misa198.airmedy.player.PlaybackController
 import me.misa198.airmedy.player.PlaybackRequest
 import me.misa198.airmedy.sync.AndroidLibrarySyncStore
@@ -67,9 +68,14 @@ internal fun playlistDetailsUiStateFor(
     state: PlaylistDetailsUiState,
     playlistId: String,
 ): PlaylistDetailsUiState {
-    val playlist = playlistsWithFavorites(state.playlists).firstOrNull { it.id == playlistId }
+    val basePlaylist = playlistsWithFavorites(state.playlists).firstOrNull { it.id == playlistId }
         ?: return PlaylistDetailsUiState()
     val tracksById = state.allTracks.associateBy { it.id }
+    val playlist = if (basePlaylist.id == FavoritesPlaylistId) {
+        basePlaylist.copy(trackIds = state.allTracks.filter(LibraryTrack::isFavorite).map(LibraryTrack::id))
+    } else {
+        basePlaylist
+    }
     val tracks = playlist.trackIds.mapNotNull(tracksById::get)
     return PlaylistDetailsUiState(
         playlist = playlist,
@@ -77,6 +83,9 @@ internal fun playlistDetailsUiStateFor(
         artworkPaths = playlistArtworkPaths(playlist, state.allTracks, state.artworkPathByKey),
     )
 }
+
+internal fun LibraryTrack.isFavorite(): Boolean = (metadataObject()?.get("is_favorite") as? kotlinx.serialization.json.JsonPrimitive)
+    ?.booleanOrNull == true
 
 internal fun playlistTotalDurationSeconds(tracks: List<LibraryTrack>): Long = tracks.sumOf { track ->
     (track.metadataObject()?.get("duration") as? kotlinx.serialization.json.JsonPrimitive)

@@ -1,12 +1,12 @@
 {
   "common": {
     "mobile_pairing_broadcast": {
-      "title": "Broadcast to pair",
-      "description": "Make this desktop available for 30 seconds.",
-      "broadcasting_desc": "Broadcasting for {seconds} seconds.",
-      "broadcasting": "Broadcasting",
-      "start": "Broadcast",
-      "stop": "Stop"
+      "title": "ペアリング信号を送信",
+      "description": "30 秒間信号を送信して、準備ができたデバイスがこのデスクトップを見つけて接続できるようにします。",
+      "broadcasting_desc": "ペアリング信号をあと {seconds} 秒送信します。",
+      "broadcasting": "ペアリング信号を送信中",
+      "start": "信号を送信",
+      "stop": "送信を停止"
     },
     "play": "再生",
     "shuffle": "シャッフル",
@@ -104,7 +104,7 @@
       "playback": "再生",
       "about": "情報",
       "remote": "リモコン",
-      "mobile_devices": "モバイルデバイス"
+      "mobile_devices": "モバイル"
     },
     "general": {
       "behavior": "動作",

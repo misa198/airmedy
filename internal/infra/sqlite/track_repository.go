@@ -534,6 +534,21 @@ func (r *trackRepository) ToggleFavorite(ctx context.Context, id string) (bool, 
 	return val, nil
 }
 
+func (r *trackRepository) SetFavorite(ctx context.Context, id string, favorite bool) error {
+	result, err := r.db.Ext(ctx).ExecContext(ctx, "UPDATE tracks SET is_favorite = ?, updated_at = ? WHERE id = ?", favorite, time.Now(), id)
+	if err != nil {
+		return fmt.Errorf("set favorite: %w", err)
+	}
+	changed, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("check favorite update: %w", err)
+	}
+	if changed == 0 {
+		return fmt.Errorf("track not found: %s", id)
+	}
+	return nil
+}
+
 func (r *trackRepository) IncrementPlayCount(ctx context.Context, id string) error {
 	_, err := r.db.Ext(ctx).ExecContext(ctx,
 		"UPDATE tracks SET play_count = play_count + 1, updated_at = ? WHERE id = ?",

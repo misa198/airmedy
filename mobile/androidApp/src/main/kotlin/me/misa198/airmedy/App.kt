@@ -76,7 +76,8 @@ import me.misa198.airmedy.ui.screens.GenreDetailsUiState
 import me.misa198.airmedy.ui.screens.ComposerDetailsUiState
 import me.misa198.airmedy.ui.screens.LibraryPlaylistsUiState
 import me.misa198.airmedy.ui.screens.PlaylistDetailsUiState
-import me.misa198.airmedy.ui.screens.CreatePlaylistDialog
+import me.misa198.airmedy.ui.screens.isFavorite
+import me.misa198.airmedy.ui.screens.CreatePlaylistBottomSheet
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import me.misa198.airmedy.player.PlaybackState
 import me.misa198.airmedy.player.ArtworkCrossfadeTransition
@@ -118,7 +119,7 @@ internal fun App(
     onAlbumTrackPlay: (String, String) -> Unit = { _, _ -> },
     onPlaylistPlay: (String, Boolean) -> Unit = { _, _ -> },
     onPlaylistTrackPlay: (String, String) -> Unit = { _, _ -> },
-    onCreatePlaylist: (String) -> Unit = {},
+    onCreatePlaylist: (String, android.net.Uri?) -> Unit = { _, _ -> },
     onArtistPlay: (String, Boolean) -> Unit = { _, _ -> },
     onGenrePlay: (String, Boolean) -> Unit = { _, _ -> },
     onComposerPlay: (String, Boolean) -> Unit = { _, _ -> },
@@ -156,6 +157,7 @@ internal fun App(
     onSystemVolumeChange: (Float) -> Unit = {},
     onMiniPlayerDismiss: () -> Unit = {},
     onOpenMediaOutputSwitcher: () -> Unit = {},
+    onFavoriteToggle: (String, Boolean) -> Unit = { _, _ -> },
     onFullScreenPlayerVisibilityChanged: (Boolean) -> Unit = {},
 ) {
     AirmedyTheme(themeMode = uiState.themeMode) {
@@ -246,7 +248,7 @@ internal fun App(
             currentPage == AppStackPage.LibraryArtists || currentPage == AppStackPage.LibraryAlbums ||
             currentPage == AppStackPage.LibraryGenres || currentPage == AppStackPage.LibraryComposers
         val showPlaylistAddAction = currentPage == AppStackPage.LibraryPlaylists
-        var showCreatePlaylistDialog by rememberSaveable { mutableStateOf(false) }
+        var showCreatePlaylistSheet by rememberSaveable { mutableStateOf(false) }
         BackHandler(enabled = showBack) { onIntent(AppIntent.NavigateBack) }
 
         val isContentScrolled by remember(uiState.selectedDestination, currentPage, homeListState, libraryListState, tracksListState, artistsListState, albumsListState, artistDetailsListState, genreDetailsListState, composerDetailsListState, genresListState, composersListState, playlistsListState) {
@@ -411,7 +413,7 @@ internal fun App(
                         hazeState = hazeState,
                         symbol = MaterialSymbols.Add,
                         label = stringResource(R.string.playlist_create),
-                        onClick = { showCreatePlaylistDialog = true },
+                        onClick = { showCreatePlaylistSheet = true },
                     )
                 } else if (currentPage == AppStackPage.LibraryTracks) {
                     LibrarySortHeaderButton(
@@ -479,12 +481,12 @@ internal fun App(
                     )
                 }
             }
-            if (showCreatePlaylistDialog) {
-                CreatePlaylistDialog(
-                    onDismiss = { showCreatePlaylistDialog = false },
-                    onCreate = { name ->
-                        showCreatePlaylistDialog = false
-                        onCreatePlaylist(name)
+            if (showCreatePlaylistSheet) {
+                CreatePlaylistBottomSheet(
+                    onDismiss = { showCreatePlaylistSheet = false },
+                    onCreate = { name, artworkUri ->
+                        showCreatePlaylistSheet = false
+                        onCreatePlaylist(name, artworkUri)
                     },
                 )
             }
@@ -563,6 +565,13 @@ internal fun App(
                 onQueueReordered = onQueueReordered,
                 onShuffleChange = onShuffleChange,
                 onRepeatModeChange = onRepeatModeChange,
+                isFavorite = queueTracks.firstOrNull { track -> track.id == when (val state = playbackState) {
+                    is PlaybackState.Preparing -> state.item.trackId
+                    is PlaybackState.Playing -> state.item.trackId
+                    is PlaybackState.Paused -> state.item.trackId
+                    else -> ""
+                } }?.isFavorite() == true,
+                onFavoriteToggle = onFavoriteToggle,
                 onOpenMediaOutputSwitcher = onOpenMediaOutputSwitcher,
                 onDismiss = {
                     setFullScreenPlayerVisible(false)

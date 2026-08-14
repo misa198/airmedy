@@ -135,3 +135,7 @@ or `scope-conflict`) acknowledges the mutation.
 Artwork staging is stored in Room with its SHA-256, MIME type, byte size, and
 app-private relative path. It is verified and uploaded before `SET_ARTWORK`,
 and mutations are acknowledged only after publishing the signed MQTT result.
+
+Favorites use the same reconciliation request: the fullscreen player queues an
+optimistic `SET_FAVORITE` mutation and the next desktop Sync applies it before
+returning the new scoped library snapshot.

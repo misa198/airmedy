@@ -17,6 +17,12 @@ class PlaylistSyncTest {
         assertEquals("A track ID is required", add.validationError())
         assertNull(add.copy(payload = PlaylistMutationPayload(trackId = "t1")).validationError())
     }
+
+    @Test fun `validates desired favorite state`() {
+        val favorite = PlaylistMutation("m1", "favorites", PlaylistMutationOperation.SET_FAVORITE, 1)
+        assertEquals("Invalid favorite mutation", favorite.validationError())
+        assertNull(favorite.copy(payload = PlaylistMutationPayload(trackId = "t1", isFavorite = true)).validationError())
+    }
 }
 
 class PlaylistSyncProtocolTest {

@@ -6,6 +6,7 @@ import { ArrowLeft, Search, RefreshCcw } from '@lucide/vue'
 import { Badge, Checkbox, Input, Radio, TabSwitcher, IconButton } from '@airmedy/ui'
 import { RecycleScroller } from 'vue-virtual-scroller'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import SettingSection from '@/components/settings/SettingSection.vue'
 import { useRowBackground } from '@/composables/useRowBackground'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
@@ -43,7 +44,8 @@ const tabs = [
 const activeItems = computed(() => items.value[activeTab.value].filter(item => item.label.toLocaleLowerCase().includes(query.value.trim().toLocaleLowerCase())))
 const activeSelected = computed(() => selected.value[activeTab.value])
 const currentScope = computed(() => new MobileLibrarySyncScope({ kind: mode.value === 'all' ? 'all' : activeTab.value, selected_ids: mode.value === 'all' ? [] : Array.from(activeSelected.value).sort() }))
-const canSync = computed(() => !!device.value?.online && !syncing.value && (mode.value === 'all' || activeSelected.value.size > 0))
+const isSyncInProgress = computed(() => syncing.value || plan.value?.status === 'active')
+const canSync = computed(() => !!device.value?.online && !isSyncInProgress.value && (mode.value === 'all' || activeSelected.value.size > 0))
 const progressPercent = computed(() => {
   if (!plan.value || plan.value.total <= 0) return 0
   return Math.floor((plan.value.completed / plan.value.total) * 100)
@@ -165,7 +167,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main class="mx-auto flex h-full min-h-0 w-full max-w-5xl flex-col gap-6 px-8 py-8 select-none">
+  <main class="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col gap-6 p-8 select-none">
     <button type="button" class="relative z-[99] w-fit rounded-full p-2 transition-colors hover:bg-foreground/[0.06]"
       :aria-label="$t('mobile_sync.back')" @click="router.back()">
       <ArrowLeft class="size-6" />
@@ -183,9 +185,14 @@ onUnmounted(() => {
       </div>
     </header>
 
-    <section
-      class="rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-6 backdrop-blur-[30px]"
-      :class="mode === 'selected' ? 'flex min-h-0 flex-1 flex-col' : ''">
+    <SettingSection
+      :icon="RefreshCcw"
+      :label="$t('mobile_sync.sync')"
+      variant="panel"
+      hide-header
+      :class="mode === 'selected' ? 'flex min-h-0 flex-1 flex-col' : ''"
+      :content-class="mode === 'selected' ? 'flex min-h-0 flex-1 flex-col' : ''"
+    >
       <div class="flex justify-between">
         <div class="space-y-4" role="radiogroup">
           <label class="flex cursor-pointer items-center gap-3 text-sm">
@@ -195,12 +202,12 @@ onUnmounted(() => {
             <Radio v-model="mode" value="selected" />{{ $t('mobile_sync.selected_items') }}
           </label>
         </div>
-        <button type="button"
+        <button data-testid="sync-button" type="button"
           class="w-fit h-fit rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-all hover:scale-[1.02] disabled:opacity-50 flex items-center gap-2"
-          :class="{ 'pointer-events-none': syncing, 'cursor-not-allowed': !canSync }" :disabled="!canSync"
+          :class="{ 'pointer-events-none': isSyncInProgress, 'cursor-not-allowed': !canSync }" :disabled="!canSync"
           @click="sync()">
           <RefreshCcw class="w-3.5 h-3.5" />
-          {{ syncing ? $t('settings.sync.syncing') : $t('mobile_sync.sync') }}
+          {{ isSyncInProgress ? $t('settings.sync.syncing') : $t('mobile_sync.sync') }}
         </button>
       </div>
       <div v-if="plan" class="mt-5 border-t border-foreground/[0.06] pt-4">
@@ -246,7 +253,7 @@ onUnmounted(() => {
           </RecycleScroller>
         </div>
       </div>
-    </section>
+    </SettingSection>
 
     <ConfirmDialog :open="replaceOpen" :title="$t('mobile_sync.replace_title')"
       :message="$t('mobile_sync.replace_desc')" :confirm-label="$t('mobile_sync.replace')" danger

@@ -48,16 +48,27 @@ class LibraryPlaylistsContentTest {
     }
 
     @Test
-    fun createDialogRequiresANameAndReturnsTrimmedName() {
+    fun createSheetRequiresANameAndReturnsTrimmedName() {
         var created: String? = null
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
-                CreatePlaylistDialog(onDismiss = {}, onCreate = { created = it })
+                CreatePlaylistBottomSheet(onDismiss = {}, onCreate = { name, _ -> created = name })
             }
         }
         composeTestRule.onNodeWithTag("playlist-create-button").assertIsNotEnabled()
         composeTestRule.onNodeWithTag("playlist-name-input").performTextInput("  Night Drive  ")
         composeTestRule.onNodeWithTag("playlist-create-button").performClick()
         assertEquals("Night Drive", created)
+    }
+
+    @Test
+    fun createSheetExposesAnOptionalArtworkPicker() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                CreatePlaylistBottomSheet(onDismiss = {}, onCreate = { _, _ -> })
+            }
+        }
+        composeTestRule.onNodeWithTag("playlist-artwork-picker").assertExists()
+        composeTestRule.onNodeWithContentDescription("Choose playlist artwork").assertExists()
     }
 }

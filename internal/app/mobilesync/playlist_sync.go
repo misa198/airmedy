@@ -29,6 +29,7 @@ type playlistMutationPayload struct {
 	PreviousTrackID string `json:"previous_track_id,omitempty"`
 	NextTrackID     string `json:"next_track_id,omitempty"`
 	ArtworkSHA256   string `json:"artwork_sha256,omitempty"`
+	IsFavorite      *bool  `json:"is_favorite,omitempty"`
 }
 type playlistMutationBatch struct {
 	Version          int                `json:"version"`
@@ -52,6 +53,9 @@ func (s *Service) applyPlaylistMutation(ctx context.Context, deviceID string, sc
 	defer s.mutationMu.Unlock()
 	if m.MutationID == "" || m.PlaylistID == "" || m.UpdatedAt <= 0 || !uuidLike(m.MutationID) {
 		return "rejected"
+	}
+	if m.Operation == "SET_FAVORITE" {
+		return s.applyFavoriteMutation(ctx, deviceID, m)
 	}
 	status := "rejected"
 	apply := func(txCtx context.Context) error {
@@ -89,6 +93,54 @@ func (s *Service) applyPlaylistMutation(ctx context.Context, deviceID string, sc
 		if s.logger != nil {
 			s.logger.Warn("apply playlist mutation transaction", "error", err)
 		}
+		return "rejected"
+	}
+	return status
+}
+
+func (s *Service) applyFavoriteMutation(ctx context.Context, deviceID string, m playlistMutation) string {
+	if m.PlaylistID != playlistapp.FavoritesPlaylistID || m.Payload.TrackID == "" || m.Payload.IsFavorite == nil || s.favoriteLedger == nil || s.favoriteLWW == nil {
+		return "rejected"
+	}
+	status := "rejected"
+	apply := func(txCtx context.Context) error {
+		if existing, err := s.favoriteLedger.Get(txCtx, deviceID, m.MutationID); err != nil {
+			return err
+		} else if existing != nil {
+			status = "duplicate"
+			return nil
+		}
+		track, err := s.tracks.GetByID(txCtx, m.Payload.TrackID)
+		if err != nil {
+			return err
+		}
+		if track == nil {
+			status = "rejected"
+		} else if track.UpdatedAt.UnixMilli() > m.UpdatedAt {
+			// A desktop-side track update after the mobile edit is newer. This
+			// preserves last-write-wins even before the desktop has a mobile
+			// watermark for this track.
+			status = "stale"
+		} else {
+			wins, err := s.favoriteLWW.Claim(txCtx, track.ID, m.UpdatedAt, m.MutationID, *m.Payload.IsFavorite)
+			if err != nil {
+				return err
+			}
+			if !wins {
+				status = "stale"
+			} else if err := s.tracks.SetFavorite(txCtx, track.ID, *m.Payload.IsFavorite); err != nil {
+				return err
+			} else {
+				status = "applied"
+			}
+		}
+		return s.favoriteLedger.Save(txCtx, domain.PlaylistMutationLedgerEntry{DeviceID: deviceID, MutationID: m.MutationID, Result: status, CreatedAt: time.Now().UTC()})
+	}
+	if s.tx != nil {
+		if err := s.tx.RunInTx(ctx, apply); err != nil {
+			return "rejected"
+		}
+	} else if err := apply(ctx); err != nil {
 		return "rejected"
 	}
 	return status

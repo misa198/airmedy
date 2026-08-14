@@ -1,12 +1,12 @@
 {
   "common": {
     "mobile_pairing_broadcast": {
-      "title": "Broadcast to pair",
-      "description": "Make this desktop available for 30 seconds.",
-      "broadcasting_desc": "Broadcasting for {seconds} seconds.",
-      "broadcasting": "Broadcasting",
-      "start": "Broadcast",
-      "stop": "Stop"
+      "title": "Transmitir sinal de emparelhamento",
+      "description": "Transmite um sinal por 30 segundos para que dispositivos prontos possam encontrar e conectar-se a este computador.",
+      "broadcasting_desc": "Transmitindo sinal de emparelhamento por {seconds} segundos.",
+      "broadcasting": "Transmitindo sinal de emparelhamento",
+      "start": "Transmitir sinal",
+      "stop": "Parar transmissão"
     },
     "play": "Reproduzir",
     "shuffle": "Aleatório",
@@ -104,7 +104,7 @@
       "playback": "Reprodução",
       "about": "Sobre",
       "remote": "Remoto",
-      "mobile_devices": "Dispositivos móveis"
+      "mobile_devices": "Móvel"
     },
     "general": {
       "behavior": "Comportamento",

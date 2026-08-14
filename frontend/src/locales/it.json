@@ -1,12 +1,12 @@
 {
   "common": {
     "mobile_pairing_broadcast": {
-      "title": "Broadcast to pair",
-      "description": "Make this desktop available for 30 seconds.",
-      "broadcasting_desc": "Broadcasting for {seconds} seconds.",
-      "broadcasting": "Broadcasting",
-      "start": "Broadcast",
-      "stop": "Stop"
+      "title": "Trasmetti segnale di associazione",
+      "description": "Trasmette un segnale per 30 secondi affinché i dispositivi pronti possano trovare e connettersi a questo computer.",
+      "broadcasting_desc": "Trasmissione del segnale di associazione per {seconds} secondi.",
+      "broadcasting": "Trasmissione del segnale di associazione",
+      "start": "Trasmetti segnale",
+      "stop": "Interrompi trasmissione"
     },
     "play": "Riproduci",
     "shuffle": "Casuale",
@@ -104,7 +104,7 @@
       "playback": "Riproduzione",
       "about": "Informazioni",
       "remote": "Telecomando",
-      "mobile_devices": "Dispositivi mobili"
+      "mobile_devices": "Mobile"
     },
     "general": {
       "behavior": "Comportamento",

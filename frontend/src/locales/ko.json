@@ -1,12 +1,12 @@
 {
   "common": {
     "mobile_pairing_broadcast": {
-      "title": "Broadcast to pair",
-      "description": "Make this desktop available for 30 seconds.",
-      "broadcasting_desc": "Broadcasting for {seconds} seconds.",
-      "broadcasting": "Broadcasting",
-      "start": "Broadcast",
-      "stop": "Stop"
+      "title": "페어링 신호 브로드캐스트",
+      "description": "준비된 기기가 이 데스크톱을 찾아 연결할 수 있도록 30초 동안 신호를 브로드캐스트합니다.",
+      "broadcasting_desc": "{seconds}초 동안 페어링 신호를 브로드캐스트합니다.",
+      "broadcasting": "페어링 신호 브로드캐스트 중",
+      "start": "신호 브로드캐스트",
+      "stop": "브로드캐스트 중지"
     },
     "play": "재생",
     "shuffle": "셔플",
@@ -104,7 +104,7 @@
       "playback": "재생",
       "about": "정보",
       "remote": "원격",
-      "mobile_devices": "모바일 기기"
+      "mobile_devices": "모바일"
     },
     "general": {
       "behavior": "동작",

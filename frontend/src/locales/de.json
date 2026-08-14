@@ -1,12 +1,12 @@
 {
   "common": {
     "mobile_pairing_broadcast": {
-      "title": "Broadcast to pair",
-      "description": "Make this desktop available for 30 seconds.",
-      "broadcasting_desc": "Broadcasting for {seconds} seconds.",
-      "broadcasting": "Broadcasting",
-      "start": "Broadcast",
-      "stop": "Stop"
+      "title": "Kopplungssignal senden",
+      "description": "Sendet 30 Sekunden lang ein Signal, damit bereite Geräte diesen Desktop finden und verbinden können.",
+      "broadcasting_desc": "Kopplungssignal wird noch {seconds} Sekunden gesendet.",
+      "broadcasting": "Kopplungssignal wird gesendet",
+      "start": "Signal senden",
+      "stop": "Senden beenden"
     },
     "play": "Abspielen",
     "shuffle": "Zufällig",
@@ -104,7 +104,7 @@
       "playback": "Wiedergabe",
       "about": "Über",
       "remote": "Fernbedienung",
-      "mobile_devices": "Mobile Geräte"
+      "mobile_devices": "Mobil"
     },
     "general": {
       "behavior": "Verhalten",

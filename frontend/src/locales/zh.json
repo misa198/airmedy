@@ -1,12 +1,12 @@
 {
   "common": {
     "mobile_pairing_broadcast": {
-      "title": "Broadcast to pair",
-      "description": "Make this desktop available for 30 seconds.",
-      "broadcasting_desc": "Broadcasting for {seconds} seconds.",
-      "broadcasting": "Broadcasting",
-      "start": "Broadcast",
-      "stop": "Stop"
+      "title": "广播配对信号",
+      "description": "广播信号 30 秒，让准备就绪的设备能够发现并连接到此桌面端。",
+      "broadcasting_desc": "正在广播配对信号，持续 {seconds} 秒。",
+      "broadcasting": "正在广播配对信号",
+      "start": "广播信号",
+      "stop": "停止广播"
     },
     "play": "播放",
     "shuffle": "随机播放",
@@ -104,7 +104,7 @@
       "playback": "播放",
       "about": "关于",
       "remote": "远程",
-      "mobile_devices": "移动设备"
+      "mobile_devices": "移动"
     },
     "general": {
       "behavior": "行为",

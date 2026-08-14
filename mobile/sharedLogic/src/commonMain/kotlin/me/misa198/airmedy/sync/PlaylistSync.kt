@@ -24,7 +24,7 @@ data class PlaylistMutation(
 
 @Serializable
 enum class PlaylistMutationOperation {
-    CREATE, UPDATE, DELETE, ADD_TRACK, REMOVE_TRACK, MOVE_TRACK, SET_ARTWORK, REMOVE_ARTWORK,
+    CREATE, UPDATE, DELETE, ADD_TRACK, REMOVE_TRACK, MOVE_TRACK, SET_ARTWORK, REMOVE_ARTWORK, SET_FAVORITE,
 }
 
 @Serializable
@@ -35,6 +35,7 @@ data class PlaylistMutationPayload(
     @SerialName("previous_track_id") val previousTrackId: String? = null,
     @SerialName("next_track_id") val nextTrackId: String? = null,
     @SerialName("artwork_sha256") val artworkSha256: String? = null,
+    @SerialName("is_favorite") val isFavorite: Boolean? = null,
 )
 
 fun PlaylistMutation.validationError(): String? = when {
@@ -42,6 +43,7 @@ fun PlaylistMutation.validationError(): String? = when {
     operation == PlaylistMutationOperation.CREATE && payload.name.isNullOrBlank() -> "A playlist name is required"
     operation in setOf(PlaylistMutationOperation.ADD_TRACK, PlaylistMutationOperation.REMOVE_TRACK, PlaylistMutationOperation.MOVE_TRACK) && payload.trackId.isNullOrBlank() -> "A track ID is required"
     operation == PlaylistMutationOperation.SET_ARTWORK && !Sha256.matches(payload.artworkSha256.orEmpty()) -> "Invalid artwork hash"
+    operation == PlaylistMutationOperation.SET_FAVORITE && (playlistId != "favorites" || payload.trackId.isNullOrBlank() || payload.isFavorite == null) -> "Invalid favorite mutation"
     else -> null
 }
 

@@ -26,6 +26,14 @@ class LibraryPlaylistsViewModelTest {
     }
 
     @Test
+    fun derivesFavoritesArtworkFromFavoriteTracks() {
+        val favorite = tracks.first().copy(metadataJson = """{"is_favorite":true}""")
+        val playlist = playlistsWithFavorites(emptyList(), listOf(favorite)).single()
+
+        assertEquals(listOf("a.jpg"), playlistArtworkPaths(playlist, listOf(favorite), emptyMap()))
+    }
+
+    @Test
     fun usesCustomArtworkBeforeTrackMosaic() {
         val playlist = LibraryPlaylist("p", "Playlist", listOf("a", "c"), """{"playlist":{"artwork_key":"custom"}}""")
 

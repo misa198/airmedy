@@ -95,24 +95,26 @@ type playlistReconciliation struct {
 }
 
 type Service struct {
-	plans       domain.MobileLibrarySyncPlanRepository
-	tracks      domain.TrackRepository
-	playlists   domain.PlaylistRepository
-	artists     domain.ArtistRepository
-	lyrics      *lyricsapp.LyricsService
-	lyricCache  domain.MobileSyncLyricCacheRepository
-	analysis    domain.AnalysisRepository
-	artwork     domain.ArtworkCache
-	devices     domain.TrustedMobileDeviceRepository
-	identity    domain.PairingIdentityRepository
-	keys        domain.PairingKeyStore
-	broker      domain.PairingBroker
-	ledger      domain.PlaylistMutationLedger
-	lww         domain.PlaylistMutationLWW
-	staging     domain.PlaylistArtworkStagingRepository
-	tx          domain.TxManager
-	playlistSvc *playlistapp.PlaylistService
-	logger      *slog.Logger
+	plans          domain.MobileLibrarySyncPlanRepository
+	tracks         domain.TrackRepository
+	playlists      domain.PlaylistRepository
+	artists        domain.ArtistRepository
+	lyrics         *lyricsapp.LyricsService
+	lyricCache     domain.MobileSyncLyricCacheRepository
+	analysis       domain.AnalysisRepository
+	artwork        domain.ArtworkCache
+	devices        domain.TrustedMobileDeviceRepository
+	identity       domain.PairingIdentityRepository
+	keys           domain.PairingKeyStore
+	broker         domain.PairingBroker
+	ledger         domain.PlaylistMutationLedger
+	lww            domain.PlaylistMutationLWW
+	favoriteLedger domain.FavoriteMutationLedger
+	favoriteLWW    domain.FavoriteMutationLWW
+	staging        domain.PlaylistArtworkStagingRepository
+	tx             domain.TxManager
+	playlistSvc    *playlistapp.PlaylistService
+	logger         *slog.Logger
 
 	mu                 sync.Mutex
 	mutationMu         sync.Mutex
@@ -126,8 +128,8 @@ type Service struct {
 	listeners          []func(*domain.MobileLibrarySyncPlan)
 }
 
-func NewService(plans domain.MobileLibrarySyncPlanRepository, tracks domain.TrackRepository, playlists domain.PlaylistRepository, artists domain.ArtistRepository, lyrics *lyricsapp.LyricsService, lyricCache domain.MobileSyncLyricCacheRepository, analysis domain.AnalysisRepository, artwork domain.ArtworkCache, devices domain.TrustedMobileDeviceRepository, identity domain.PairingIdentityRepository, keys domain.PairingKeyStore, broker domain.PairingBroker, ledger domain.PlaylistMutationLedger, lww domain.PlaylistMutationLWW, staging domain.PlaylistArtworkStagingRepository, tx domain.TxManager, playlistSvc *playlistapp.PlaylistService, logger *slog.Logger) *Service {
-	return &Service{plans: plans, tracks: tracks, playlists: playlists, artists: artists, lyrics: lyrics, lyricCache: lyricCache, analysis: analysis, artwork: artwork, devices: devices, identity: identity, keys: keys, broker: broker, ledger: ledger, lww: lww, staging: staging, tx: tx, playlistSvc: playlistSvc, logger: logger, nonces: make(map[string]time.Time), playlistArtwork: make(map[string]string), reconciliations: make(map[string]*playlistReconciliation)}
+func NewService(plans domain.MobileLibrarySyncPlanRepository, tracks domain.TrackRepository, playlists domain.PlaylistRepository, artists domain.ArtistRepository, lyrics *lyricsapp.LyricsService, lyricCache domain.MobileSyncLyricCacheRepository, analysis domain.AnalysisRepository, artwork domain.ArtworkCache, devices domain.TrustedMobileDeviceRepository, identity domain.PairingIdentityRepository, keys domain.PairingKeyStore, broker domain.PairingBroker, ledger domain.PlaylistMutationLedger, lww domain.PlaylistMutationLWW, favoriteLedger domain.FavoriteMutationLedger, favoriteLWW domain.FavoriteMutationLWW, staging domain.PlaylistArtworkStagingRepository, tx domain.TxManager, playlistSvc *playlistapp.PlaylistService, logger *slog.Logger) *Service {
+	return &Service{plans: plans, tracks: tracks, playlists: playlists, artists: artists, lyrics: lyrics, lyricCache: lyricCache, analysis: analysis, artwork: artwork, devices: devices, identity: identity, keys: keys, broker: broker, ledger: ledger, lww: lww, favoriteLedger: favoriteLedger, favoriteLWW: favoriteLWW, staging: staging, tx: tx, playlistSvc: playlistSvc, logger: logger, nonces: make(map[string]time.Time), playlistArtwork: make(map[string]string), reconciliations: make(map[string]*playlistReconciliation)}
 }
 
 func (s *Service) OnStart(ctx context.Context) error { return s.cleanupPlaylistArtwork(ctx) }
@@ -481,9 +483,6 @@ func (s *Service) addPlaylists(ctx context.Context, scope domain.MobileLibrarySy
 			if _, ok := selected[row.ID]; ok {
 				members = append(members, row.ID)
 			}
-		}
-		if len(members) == 0 {
-			continue
 		}
 		manifest.Playlists = append(manifest.Playlists, &domain.MobileSyncPlaylist{Playlist: playlist, TrackIDs: members})
 		if playlist.ArtworkKey != nil && *playlist.ArtworkKey != "" {

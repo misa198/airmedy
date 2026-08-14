@@ -1,12 +1,12 @@
 {
   "common": {
     "mobile_pairing_broadcast": {
-      "title": "Broadcast to pair",
-      "description": "Make this desktop available for 30 seconds.",
-      "broadcasting_desc": "Broadcasting for {seconds} seconds.",
-      "broadcasting": "Broadcasting",
-      "start": "Broadcast",
-      "stop": "Stop"
+      "title": "ส่งสัญญาณจับคู่",
+      "description": "ส่งสัญญาณเป็นเวลา 30 วินาทีเพื่อให้อุปกรณ์ที่พร้อมใช้งานค้นหาและเชื่อมต่อกับเดสก์ท็อปนี้ได้",
+      "broadcasting_desc": "กำลังส่งสัญญาณจับคู่เป็นเวลา {seconds} วินาที",
+      "broadcasting": "กำลังส่งสัญญาณจับคู่",
+      "start": "ส่งสัญญาณ",
+      "stop": "หยุดส่ง"
     },
     "play": "เล่น",
     "shuffle": "สุ่ม",
@@ -104,7 +104,7 @@
       "playback": "การเล่น",
       "about": "เกี่ยวกับ",
       "remote": "รีโมท",
-      "mobile_devices": "อุปกรณ์มือถือ"
+      "mobile_devices": "มือถือ"
     },
     "general": {
       "behavior": "พฤติกรรม",

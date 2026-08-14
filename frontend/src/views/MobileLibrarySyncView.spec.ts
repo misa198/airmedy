@@ -2,10 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
 
-const { getStatus, getTrustedDevices, getPairingStatus, on } = vi.hoisted(() => ({
+const { getStatus, getTrustedDevices, getPairingStatus, sync, on } = vi.hoisted(() => ({
   getStatus: vi.fn(),
   getTrustedDevices: vi.fn(),
   getPairingStatus: vi.fn(),
+  sync: vi.fn(),
   on: vi.fn(() => vi.fn()),
 }))
 
@@ -16,7 +17,7 @@ vi.mock('vue-router', () => ({
 }))
 vi.mock('../../bindings/airmedy/internal/infra/wails/mobilelibrarysyncservice', () => ({
   GetStatus: getStatus,
-  Sync: vi.fn(),
+  Sync: sync,
 }))
 vi.mock('../../bindings/airmedy/internal/infra/wails/mobilepairingservice', () => ({
   GetTrustedDevices: getTrustedDevices,
@@ -47,7 +48,7 @@ function mountView() {
       plugins: [i18n],
       stubs: {
         Badge: true, Checkbox: true, ConfirmDialog: true, IconButton: true, Input: true,
-        Radio: true, RecycleScroller: true, TabSwitcher: true,
+        Radio: true, RecycleScroller: true, SettingSection: { template: '<section><slot /></section>' }, TabSwitcher: true,
       },
     },
   })
@@ -59,6 +60,7 @@ describe('MobileLibrarySyncView', () => {
     getTrustedDevices.mockResolvedValue([{ device_id: 'device-1', display_name: 'Phone', online: true }])
     getPairingStatus.mockResolvedValue({ addresses: [{ ip: '192.168.1.2', kind: 'wifi' }] })
     getStatus.mockReset()
+    sync.mockReset()
     on.mockClear()
   })
 
@@ -72,6 +74,27 @@ describe('MobileLibrarySyncView', () => {
 
     expect(getStatus).toHaveBeenCalledTimes(2)
     expect(wrapper.text()).toContain('25%')
+    wrapper.unmount()
+  })
+
+  it('keeps Sync disabled while its plan is active', async () => {
+    getStatus.mockResolvedValue(activePlan)
+    const wrapper = mountView()
+    await flushPromises()
+
+    const syncButton = wrapper.get('[data-testid="sync-button"]')
+    expect(syncButton.attributes('disabled')).toBeDefined()
+    await syncButton.trigger('click')
+    expect(sync).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('uses the same content width and padding as Settings', async () => {
+    getStatus.mockResolvedValue(null)
+    const wrapper = mountView()
+    await flushPromises()
+
+    expect(wrapper.get('main').classes()).toEqual(expect.arrayContaining(['max-w-3xl', 'p-8']))
     wrapper.unmount()
   })
 })

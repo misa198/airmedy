@@ -1,12 +1,12 @@
 {
   "common": {
     "mobile_pairing_broadcast": {
-      "title": "Broadcast to pair",
-      "description": "Make this desktop available for 30 seconds.",
-      "broadcasting_desc": "Broadcasting for {seconds} seconds.",
-      "broadcasting": "Broadcasting",
-      "start": "Broadcast",
-      "stop": "Stop"
+      "title": "Diffuser le signal d’association",
+      "description": "Diffuse un signal pendant 30 secondes afin que les appareils prêts puissent trouver et se connecter à cet ordinateur.",
+      "broadcasting_desc": "Diffusion du signal d’association pendant {seconds} secondes.",
+      "broadcasting": "Diffusion du signal d’association",
+      "start": "Diffuser le signal",
+      "stop": "Arrêter la diffusion"
     },
     "play": "Lire",
     "shuffle": "Aléatoire",
@@ -104,7 +104,7 @@
       "playback": "Lecture",
       "about": "À propos",
       "remote": "Télécommande",
-      "mobile_devices": "Appareils mobiles"
+      "mobile_devices": "Mobile"
     },
     "general": {
       "behavior": "Comportement",

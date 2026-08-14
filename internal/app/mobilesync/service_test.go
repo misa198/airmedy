@@ -139,6 +139,22 @@ func TestPlaylistMutationTerminalStatusesAndDurableLedger(t *testing.T) {
 	require.Equal(t, "applied", entry.Result)
 }
 
+func TestAddPlaylistsIncludesEmptyPlaylists(t *testing.T) {
+	db, err := sqlite.NewDB(filepath.Join(t.TempDir(), "library.db"), slog.Default())
+	require.NoError(t, err)
+	defer func() { require.NoError(t, db.Close()) }()
+	repo := sqlite.NewPlaylistRepository(db)
+	require.NoError(t, repo.Save(context.Background(), &domain.Playlist{ID: "empty", Name: "Empty"}))
+
+	manifest := domain.MobileLibrarySyncManifest{}
+	svc := &Service{playlists: repo}
+	err = svc.addPlaylists(context.Background(), domain.MobileLibrarySyncScope{Kind: domain.MobileLibrarySyncScopeAll}, map[string]struct{}{}, &manifest, map[string]struct{}{})
+	require.NoError(t, err)
+	require.Len(t, manifest.Playlists, 1)
+	require.Equal(t, "empty", manifest.Playlists[0].Playlist.ID)
+	require.Empty(t, manifest.Playlists[0].TrackIDs)
+}
+
 func TestPlaylistArtworkValidatesMimeHashSizeAndOwnership(t *testing.T) {
 	var body bytes.Buffer
 	img := image.NewRGBA(image.Rect(0, 0, 1, 1))

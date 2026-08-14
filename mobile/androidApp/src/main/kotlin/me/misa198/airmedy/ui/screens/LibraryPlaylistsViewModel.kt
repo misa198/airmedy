@@ -1,5 +1,8 @@
 package me.misa198.airmedy.ui.screens
 
+import android.content.Context
+import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -11,6 +14,9 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
@@ -21,6 +27,7 @@ import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.sync.PlaylistMutation
 import me.misa198.airmedy.sync.PlaylistMutationOperation
 import me.misa198.airmedy.sync.PlaylistMutationPayload
+import me.misa198.airmedy.sync.stagePlaylistArtwork
 import java.util.UUID
 
 internal data class PlaylistListItem(
@@ -32,11 +39,11 @@ internal data class PlaylistListItem(
 
 internal data class LibraryPlaylistsUiState(val playlists: List<PlaylistListItem> = emptyList())
 
-internal class LibraryPlaylistsViewModel(syncStore: AndroidLibrarySyncStore) : ViewModel() {
-    class Factory(private val syncStore: AndroidLibrarySyncStore) : ViewModelProvider.Factory {
+internal class LibraryPlaylistsViewModel(private val context: Context, syncStore: AndroidLibrarySyncStore) : ViewModel() {
+    class Factory(private val context: Context, private val syncStore: AndroidLibrarySyncStore) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T =
-            LibraryPlaylistsViewModel(syncStore) as T
+            LibraryPlaylistsViewModel(context, syncStore) as T
     }
 
     private val syncStore = syncStore
@@ -48,16 +55,25 @@ internal class LibraryPlaylistsViewModel(syncStore: AndroidLibrarySyncStore) : V
         syncStore.tracks,
         syncStore.artworkPaths,
     ) { playlists, tracks, artworkPaths ->
-        LibraryPlaylistsUiState(playlistsWithFavorites(playlists).map { playlist ->
+        LibraryPlaylistsUiState(playlistsWithFavorites(playlists, tracks).map { playlist ->
             PlaylistListItem(playlist.id, playlist.name, playlistArtworkPaths(playlist, tracks, artworkPaths), playlist.syncFailed)
         })
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LibraryPlaylistsUiState())
 
-    fun createPlaylist(rawName: String) {
+    fun createPlaylist(rawName: String, artworkUri: Uri? = null) {
         val name = rawName.trim()
         if (name.isBlank()) return
         viewModelScope.launch {
             val playlistId = UUID.randomUUID().toString()
+            val stagedArtwork = artworkUri?.let { uri ->
+                try {
+                    withContext(Dispatchers.IO) { stagePlaylistArtwork(context.contentResolver, context.filesDir, uri) }
+                } catch (error: Throwable) {
+                    if (error is CancellationException) throw error
+                    Log.w("LibraryPlaylists", "Ignoring unreadable playlist artwork", error)
+                    null
+                }
+            }
             syncStore.createLocalPlaylist(
                 PlaylistMutation(
                     mutationId = UUID.randomUUID().toString(),
@@ -66,6 +82,8 @@ internal class LibraryPlaylistsViewModel(syncStore: AndroidLibrarySyncStore) : V
                     updatedAt = System.currentTimeMillis(),
                     payload = PlaylistMutationPayload(name = name),
                 ),
+                artwork = stagedArtwork,
+                artworkMutationId = stagedArtwork?.let { UUID.randomUUID().toString() },
             )
             _createdPlaylistIds.emit(playlistId)
         }
@@ -74,10 +92,14 @@ internal class LibraryPlaylistsViewModel(syncStore: AndroidLibrarySyncStore) : V
 
 internal const val FavoritesPlaylistId = "favorites"
 
-internal fun playlistsWithFavorites(playlists: List<LibraryPlaylist>): List<LibraryPlaylist> {
+internal fun playlistsWithFavorites(
+    playlists: List<LibraryPlaylist>,
+    tracks: List<LibraryTrack> = emptyList(),
+): List<LibraryPlaylist> {
     val favorites = playlists.firstOrNull { it.id == FavoritesPlaylistId }
         ?: LibraryPlaylist(FavoritesPlaylistId, "", emptyList(), "{}")
-    return listOf(favorites) + playlists.filterNot { it.id == FavoritesPlaylistId }
+    val derivedFavorites = favorites.copy(trackIds = tracks.filter(LibraryTrack::isFavorite).map(LibraryTrack::id))
+    return listOf(derivedFavorites) + playlists.filterNot { it.id == FavoritesPlaylistId }
 }
 
 internal fun playlistArtworkPaths(

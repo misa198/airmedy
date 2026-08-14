@@ -1,12 +1,12 @@
 {
   "common": {
     "mobile_pairing_broadcast": {
-      "title": "Broadcast to pair",
-      "description": "Make this desktop available for 30 seconds.",
-      "broadcasting_desc": "Broadcasting for {seconds} seconds.",
-      "broadcasting": "Broadcasting",
-      "start": "Broadcast",
-      "stop": "Stop"
+      "title": "Передать сигнал сопряжения",
+      "description": "Передаёт сигнал в течение 30 секунд, чтобы готовые устройства могли найти этот компьютер и подключиться к нему.",
+      "broadcasting_desc": "Передача сигнала сопряжения: {seconds} с.",
+      "broadcasting": "Передача сигнала сопряжения",
+      "start": "Передать сигнал",
+      "stop": "Остановить передачу"
     },
     "play": "Играть",
     "shuffle": "Случайный порядок",
@@ -104,7 +104,7 @@
       "playback": "Воспроизведение",
       "about": "О программе",
       "remote": "Пульт",
-      "mobile_devices": "Мобильные устройства"
+      "mobile_devices": "Мобильное"
     },
     "general": {
       "behavior": "Поведение",

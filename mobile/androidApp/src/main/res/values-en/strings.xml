@@ -85,6 +85,8 @@
     <string name="playlist_create">Create playlist</string>
     <string name="playlist_create_title">Create playlist</string>
     <string name="playlist_name">Playlist name</string>
+    <string name="playlist_choose_artwork">Choose playlist artwork</string>
+    <string name="bottom_sheet_dismiss">Dismiss sheet</string>
     <string name="create">Create</string>
     <string name="playlist_sync_failed">Could not sync this playlist to desktop</string>
     <string name="playlist_details_title">Playlist</string>

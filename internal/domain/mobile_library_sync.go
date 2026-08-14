@@ -91,6 +91,17 @@ type PlaylistMutationLWW interface {
 	Claim(ctx context.Context, playlistID string, updatedAt int64, mutationID string, deleted bool) (bool, error)
 }
 
+// FavoriteMutationLedger and FavoriteMutationLWW keep mobile favorite
+// mutations idempotent and resolve concurrent device edits deterministically.
+type FavoriteMutationLedger interface {
+	Get(ctx context.Context, deviceID, mutationID string) (*PlaylistMutationLedgerEntry, error)
+	Save(ctx context.Context, entry PlaylistMutationLedgerEntry) error
+}
+
+type FavoriteMutationLWW interface {
+	Claim(ctx context.Context, trackID string, updatedAt int64, mutationID string, favorite bool) (bool, error)
+}
+
 // PlaylistArtworkStaging records artwork uploaded during the short-lived
 // reconciliation session. It is intentionally device- and session-owned.
 type PlaylistArtworkStaging struct {

@@ -20,6 +20,7 @@ type TrackRepository interface {
 	Count(ctx context.Context) (int, error)
 	GetFavorites(ctx context.Context) ([]*TrackDTO, error)
 	ToggleFavorite(ctx context.Context, id string) (bool, error)
+	SetFavorite(ctx context.Context, id string, favorite bool) error
 	IncrementPlayCount(ctx context.Context, id string) error
 	GetMostListened(ctx context.Context, limit int) ([]*TrackDTO, error)
 	GetLeastListened(ctx context.Context, limit int) ([]*TrackDTO, error)

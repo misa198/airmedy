@@ -1,12 +1,12 @@
 {
   "common": {
     "mobile_pairing_broadcast": {
-      "title": "Phát để ghép nối",
-      "description": "Cho phép tìm thấy desktop này trong 30 giây.",
-      "broadcasting_desc": "Đang phát trong {seconds} giây.",
-      "broadcasting": "Đang phát",
-      "start": "Phát",
-      "stop": "Dừng"
+      "title": "Phát tín hiệu ghép nối",
+      "description": "Phát tín hiệu trong 30 giây để các thiết bị đang sẵn sàng có thể tìm thấy và kết nối với máy tính này.",
+      "broadcasting_desc": "Đang phát tín hiệu ghép nối trong {seconds} giây.",
+      "broadcasting": "Đang phát tín hiệu ghép nối",
+      "start": "Phát tín hiệu",
+      "stop": "Dừng phát"
     },
     "play": "Phát",
     "shuffle": "Trộn bài",
@@ -104,7 +104,7 @@
       "playback": "Phát lại",
       "about": "Giới thiệu",
       "remote": "Điều khiển",
-      "mobile_devices": "Thiết bị di động"
+      "mobile_devices": "Di động"
     },
     "general": {
       "behavior": "Hành vi",

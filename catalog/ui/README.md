@@ -6,7 +6,7 @@ The frontend is a Vue 3 SPA built with Vite 5, TailwindCSS v4, and Pinia. It use
 
 ## Mobile library sync
 
-An Online device in Settings → Mobile Devices opens `/settings/mobile-devices/:deviceId/sync`.
+An Online device in Settings → Mobile opens `/settings/mobile-devices/:deviceId/sync`.
 The desktop-only view reuses shared Radio, TabSwitcher, Input and Checkbox
 primitives and virtualizes its selector. It supports all-library sync or one
 active selected source tab: artists, albums, genres, or playlists. It owns and
@@ -16,6 +16,11 @@ remains current if a desktop runtime event is missed; polling stops when the
 plan finishes or the view unmounts. Its status is rendered inline in the
 existing sync-selection panel with a quiet divider, status label, percentage,
 and a thin progress bar rather than a separate card or technical asset counts.
+The selection panel is a headerless `SettingSection` (`panel` variant), so it
+inherits the same Settings card treatment without duplicating the page title.
+The view uses the same centered `max-w-3xl p-8` content container as Settings.
+Its Sync action remains disabled for the full lifetime of an active plan,
+preventing duplicate sync requests while transfer is in progress.
 
 ## Tech Stack
 
@@ -69,10 +74,12 @@ this page and `RemoteServerSettings.vue`, so address cards, selection, copy stat
 interface icons, labels, and tooltips remain identical. The protocol itself is
 documented in [mobile pairing](../pairing/README.md).
 
-The same panel has a short-lived **Broadcast to pair** action. While mDNS is
-active it displays a pulsing status and backend-derived 30-second countdown, can
-stop early, refreshes on `pairing:broadcast-changed`, and clears its interval and
-Wails event listener on unmount.
+The same panel has a short-lived **Broadcast pairing signal** action. It explains
+that desktop sends the 30-second signal so ready devices can find and connect to
+it, rather than exposing the transport term “broadcast”. While mDNS is active it
+displays a pulsing status and backend-derived 30-second countdown, can stop early,
+refreshes on `pairing:broadcast-changed`, and clears its interval and Wails event
+listener on unmount.
 
 Trusted mobile-device status uses the semantic `--status-online` token for the
 Online badge (green in every theme); Offline continues to use `--text-muted`.

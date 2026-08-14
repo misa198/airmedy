@@ -24,11 +24,16 @@ class PlaylistDetailsViewModelTest {
     }
 
     @Test
-    fun makesFavoritesAvailableWithoutASyncedManifestEntry() {
-        val result = playlistDetailsUiStateFor(PlaylistDetailsUiState(), FavoritesPlaylistId)
+    fun derivesFavoritesTracksFromSyncedTrackMetadata() {
+        val favorite = LibraryTrack("favorite", "Favorite", "Artist", metadataJson = """{"is_favorite":true}""")
+        val notFavorite = LibraryTrack("other", "Other", "Artist", metadataJson = """{"is_favorite":false}""")
+        val result = playlistDetailsUiStateFor(
+            PlaylistDetailsUiState(allTracks = listOf(favorite, notFavorite)),
+            FavoritesPlaylistId,
+        )
 
         assertEquals(FavoritesPlaylistId, result.playlist?.id)
-        assertEquals(emptyList<LibraryTrack>(), result.tracks)
+        assertEquals(listOf("favorite"), result.tracks.map { it.id })
     }
 
     @Test

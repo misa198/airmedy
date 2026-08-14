@@ -141,7 +141,7 @@ class MainActivity : ComponentActivity() {
         LibraryComposersViewModel.Factory(AndroidSyncRuntime.syncStore())
     }
     private val playlistsViewModel: LibraryPlaylistsViewModel by viewModels {
-        LibraryPlaylistsViewModel.Factory(AndroidSyncRuntime.syncStore())
+        LibraryPlaylistsViewModel.Factory(applicationContext, AndroidSyncRuntime.syncStore())
     }
     private val albumDetailsViewModel: AlbumDetailsViewModel by viewModels {
         AlbumDetailsViewModel.Factory(AndroidSyncRuntime.syncStore(), AndroidPlaybackRuntime.controller())
@@ -322,6 +322,9 @@ class MainActivity : ComponentActivity() {
                 onQueueReordered = playbackController::reorderQueue,
                 onShuffleChange = playbackController::setShuffle,
                 onRepeatModeChange = playbackController::setRepeatMode,
+                onFavoriteToggle = { trackId, favorite ->
+                    preferenceScope.launch { AndroidSyncRuntime.syncStore().setFavorite(trackId, favorite) }
+                },
                 systemVolume = systemMusicVolumeState,
                 onSystemVolumeChange = { volume ->
                     setSystemMusicVolume(volume.coerceIn(0f, 1f))

@@ -1,11 +1,19 @@
 package me.misa198.airmedy.ui.screens
 
+import android.graphics.BitmapFactory
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -14,50 +22,105 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+import androidx.compose.foundation.Image
 import me.misa198.airmedy.R
-import me.misa198.airmedy.ui.components.AirmedyPillButton
-import me.misa198.airmedy.ui.components.AirmedyPillButtonVariant
+import me.misa198.airmedy.ui.components.AirmedyBottomSheet
 import me.misa198.airmedy.ui.components.AirmedyTextField
 import me.misa198.airmedy.ui.components.AirmedyTextFieldSize
+import me.misa198.airmedy.ui.components.MaterialSymbol
+import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 @Composable
-internal fun CreatePlaylistDialog(onDismiss: () -> Unit, onCreate: (String) -> Unit) {
+internal fun CreatePlaylistBottomSheet(onDismiss: () -> Unit, onCreate: (String, Uri?) -> Unit) {
     val colors = LocalAirmedyColors.current
+    val context = LocalContext.current
     var name by remember { mutableStateOf("") }
+    var artworkUri by remember { mutableStateOf<Uri?>(null) }
+    val imageLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia(),
+    ) { artworkUri = it }
+    val artwork = remember(artworkUri) {
+        artworkUri?.let { uri -> context.contentResolver.openInputStream(uri)?.use(BitmapFactory::decodeStream)?.asImageBitmap() }
+    }
     val valid = name.trim().isNotEmpty()
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true)) {
-        Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(36.dp)).background(colors.card),
-        ) {
-            Column(
-                modifier = Modifier.padding(start = 20.dp, top = 24.dp, end = 20.dp, bottom = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+    AirmedyBottomSheet(
+        title = { Text(stringResource(R.string.playlist_create_title), style = MaterialTheme.typography.titleMedium, color = colors.textMain) },
+        onDismiss = onDismiss,
+        leadingAction = {
+            CreatePlaylistSheetIconButton(MaterialSymbols.Close, stringResource(R.string.cancel), onDismiss)
+        },
+        trailingAction = {
+            CreatePlaylistSheetIconButton(
+                MaterialSymbols.Check, stringResource(R.string.create),
+                { onCreate(name.trim(), artworkUri) }, enabled = valid,
+                modifier = Modifier.testTag("playlist-create-button"),
+                primary = true,
+            )
+        },
+    ) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(
+                modifier = Modifier.size(168.dp).clip(RoundedCornerShape(18.dp)).background(colors.glassElevated)
+                    .border(1.dp, colors.borderGlass, RoundedCornerShape(18.dp)).testTag("playlist-artwork-picker")
+                    .clickable(onClick = { imageLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }),
+                contentAlignment = Alignment.Center,
             ) {
-                Text(stringResource(R.string.playlist_create_title), style = MaterialTheme.typography.titleLarge, color = colors.textMain)
-                AirmedyTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    modifier = Modifier.fillMaxWidth().testTag("playlist-name-input"),
-                    placeholder = stringResource(R.string.playlist_name),
-                    size = AirmedyTextFieldSize.Small,
-                    onDone = { if (valid) onCreate(name.trim()) },
+                if (artwork != null) Image(artwork, null, Modifier.matchParentSize(), contentScale = ContentScale.Crop)
+                CreatePlaylistSheetIconButton(
+                    MaterialSymbols.Image,
+                    stringResource(R.string.playlist_choose_artwork),
+                    { imageLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                    primary = true,
                 )
             }
-            Row(
-                modifier = Modifier.fillMaxWidth().background(colors.glassElevated).padding(horizontal = 12.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                AirmedyPillButton(stringResource(R.string.cancel), onDismiss, AirmedyPillButtonVariant.Secondary, Modifier.weight(1f))
-                AirmedyPillButton(stringResource(R.string.create), { onCreate(name.trim()) }, AirmedyPillButtonVariant.Primary, Modifier.weight(1f).testTag("playlist-create-button"), enabled = valid)
-            }
+            AirmedyTextField(
+                value = name,
+                onValueChange = { name = it },
+                modifier = Modifier.fillMaxWidth().padding(top = 24.dp).testTag("playlist-name-input"),
+                placeholder = stringResource(R.string.playlist_name),
+                size = AirmedyTextFieldSize.Medium,
+                onDone = { if (valid) onCreate(name.trim(), artworkUri) },
+            )
         }
+    }
+}
+
+@Composable
+private fun CreatePlaylistSheetIconButton(
+    symbol: String,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    primary: Boolean = false,
+) {
+    val colors = LocalAirmedyColors.current
+    Box(
+        modifier = modifier.size(48.dp).clip(RoundedCornerShape(24.dp))
+            .background(if (primary) if (enabled) colors.primary else colors.buttonSecondary else colors.glassElevated)
+            .border(1.dp, if (primary && enabled) colors.primary else colors.borderGlass, RoundedCornerShape(24.dp))
+            .semantics { contentDescription = label }
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        MaterialSymbol(
+            symbol,
+            null,
+            size = 22.dp,
+            tint = if (primary && enabled) colors.onPrimary else if (enabled) colors.textMain else colors.textMuted,
+        )
     }
 }

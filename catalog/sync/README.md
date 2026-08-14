@@ -162,8 +162,12 @@ The manifest is a self-contained snapshot:
 ```
 
 `tracks`, `playlists`, and `assets` are collections. Desktop's Go encoder may
-emit `null` for an empty collection (notably `playlists` when no selected track
-belongs to a playlist); mobile must treat that form exactly as an empty array.
+emit `null` for an empty collection (notably `playlists` for a scope that does
+not include playlists); mobile must treat that form exactly as an empty array.
+
+An included playlist is represented even when it has no tracks: its
+`track_ids` is an empty array. This preserves empty desktop playlists in the
+mobile mirror for `all` and explicit `playlists` scopes.
 
 `tracks` contains the full Airmedy normalized track metadata: album, artists
 (including each artist's manual/local/online artwork source keys), album artists,
@@ -251,6 +255,13 @@ the mobile scope contains only some of its tracks. The queue is intentionally
 not connected to a Compose playlist UI yet. `AndroidLibrarySyncStore` exposes
 the pending/acknowledge boundary for the protocol layer. Room migration 6 adds
 the mutation table; migration 7 adds durable playlist-artwork staging metadata.
+
+Favorites use this same signed reconciliation session and durable queue. The
+Fullscreen Player adds a `SET_FAVORITE` delta (`playlist_id: "favorites"`, track
+ID, desired state, timestamp, and UUID), which immediately overlays the local
+mirror. Before the next plan is built desktop applies the delta through a
+device+mutation ledger and per-track LWW watermark, so the following scoped
+snapshot contains accepted mobile and desktop favorite changes.
 
 ### Playlist scope boundary
 
