@@ -31,7 +31,6 @@ fun ArtistRow(
     modifier: Modifier = Modifier,
     artworkPath: String? = null,
     onClick: (() -> Unit)? = null,
-    onMoreClick: (() -> Unit)? = null,
 ) {
     val colors = LocalAirmedyColors.current
     val bitmap = rememberArtworkThumbnail(artworkPath)
@@ -82,7 +81,7 @@ fun ArtistRow(
         )
 
         IconButton(
-            onClick = { onMoreClick?.invoke() },
+            onClick = { onClick?.invoke() },
             modifier = Modifier.size(48.dp),
         ) {
             MaterialSymbol(

@@ -78,6 +78,8 @@ import me.misa198.airmedy.ui.screens.LibraryPlaylistsUiState
 import me.misa198.airmedy.ui.screens.PlaylistDetailsUiState
 import me.misa198.airmedy.ui.screens.isFavorite
 import me.misa198.airmedy.ui.screens.CreatePlaylistBottomSheet
+import me.misa198.airmedy.ui.components.TrackContextBottomSheet
+import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import me.misa198.airmedy.player.PlaybackState
 import me.misa198.airmedy.player.ArtworkCrossfadeTransition
@@ -111,6 +113,8 @@ internal fun App(
     onToggleSortOrder: () -> Unit = {},
     onTrackClick: (String) -> Unit = {},
     onRecentTrackClick: (String) -> Unit = {},
+    onTrackPlayNext: (String) -> Unit = {},
+    onTrackAddToQueue: (String) -> Unit = {},
     onArtistSortOptionSelected: (ArtistSortOption) -> Unit = {},
     onArtistToggleSortOrder: () -> Unit = {},
     onAlbumSortOptionSelected: (AlbumSortOption) -> Unit = {},
@@ -197,6 +201,8 @@ internal fun App(
         var isFullScreenPlayerOpeningFromSwipe by remember { mutableStateOf(false) }
         var fullScreenPlayerDragProgress by remember { mutableFloatStateOf(0f) }
         var isFullScreenPlayerDragging by remember { mutableStateOf(false) }
+        var pendingFullScreenPlayerAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+        var fullScreenTrackContextSheet by remember { mutableStateOf<TrackContextBottomSheetRequest?>(null) }
         var isNavigationCompact by remember { mutableStateOf(false) }
         var albumHeroColor by remember { mutableStateOf<Color?>(null) }
         val albumHeaderFade by animateFloatAsState(
@@ -215,6 +221,17 @@ internal fun App(
             // the panel. Deferring this callback to LaunchedEffect can leave it
             // stale until an unrelated playback-state recomposition occurs.
             onFullScreenPlayerVisibilityChanged(visible)
+        }
+        fun closeFullScreenPlayerThen(action: () -> Unit) {
+            if (!isFullScreenPlayerVisible) {
+                action()
+                return
+            }
+            pendingFullScreenPlayerAction = action
+            setFullScreenPlayerVisible(false)
+            isFullScreenPlayerOpeningFromSwipe = false
+            isFullScreenPlayerDragging = false
+            fullScreenPlayerDragProgress = 0f
         }
         LaunchedEffect(showsMiniPlayer) {
             if (!showsMiniPlayer) {
@@ -334,6 +351,10 @@ internal fun App(
                 onToggleSortOrder = onToggleSortOrder,
                 onTrackClick = onTrackClick,
                 onRecentTrackClick = onRecentTrackClick,
+                playbackQueue = playbackQueue,
+                onTrackPlayNext = onTrackPlayNext,
+                onTrackAddToQueue = onTrackAddToQueue,
+                onTrackFavoriteToggle = onFavoriteToggle,
                 onAlbumSortOptionSelected = onAlbumSortOptionSelected,
                 onAlbumToggleSortOrder = onAlbumToggleSortOrder,
                 onAlbumPlay = onAlbumPlay,
@@ -572,13 +593,35 @@ internal fun App(
                     else -> ""
                 } }?.isFavorite() == true,
                 onFavoriteToggle = onFavoriteToggle,
+                onTrackPlayNext = onTrackPlayNext,
+                onTrackAddToQueue = onTrackAddToQueue,
+                onTrackGoToAlbum = { albumId -> onIntent(AppIntent.OpenAlbumDetails(albumId)) },
+                onTrackGoToArtist = { artistId -> onIntent(AppIntent.OpenArtistDetails(artistId)) },
+                onTrackContextBottomSheet = { request -> fullScreenTrackContextSheet = request },
+                onCloseFullscreenThen = ::closeFullScreenPlayerThen,
                 onOpenMediaOutputSwitcher = onOpenMediaOutputSwitcher,
                 onDismiss = {
                     setFullScreenPlayerVisible(false)
                     isFullScreenPlayerOpeningFromSwipe = false
                 },
+                onDismissAnimationFinished = {
+                    pendingFullScreenPlayerAction?.let { action ->
+                        pendingFullScreenPlayerAction = null
+                        action()
+                    }
+                },
                 hazeState = hazeState,
             )
+            fullScreenTrackContextSheet?.let { request ->
+                TrackContextBottomSheet(
+                    request = request,
+                    onDismiss = { fullScreenTrackContextSheet = null },
+                    onArtistSelected = { artist ->
+                        fullScreenTrackContextSheet = null
+                        onIntent(AppIntent.OpenArtistDetails(artist.id))
+                    },
+                )
+            }
             }
         }
         BackHandler(enabled = isFullScreenPlayerVisible) {

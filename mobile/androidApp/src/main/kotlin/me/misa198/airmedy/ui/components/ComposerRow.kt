@@ -25,7 +25,6 @@ fun ComposerRow(
     name: String,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
-    onMoreClick: (() -> Unit)? = null,
 ) {
     val colors = LocalAirmedyColors.current
     val clickModifier = remember(onClick) {
@@ -52,7 +51,7 @@ fun ComposerRow(
         )
 
         IconButton(
-            onClick = { onMoreClick?.invoke() },
+            onClick = { onClick?.invoke() },
             modifier = Modifier.size(48.dp),
         ) {
             MaterialSymbol(

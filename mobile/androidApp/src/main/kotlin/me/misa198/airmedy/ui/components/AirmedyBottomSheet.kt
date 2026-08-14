@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -50,7 +51,16 @@ fun AirmedyBottomSheet(
     title: @Composable () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
-    leadingAction: @Composable () -> Unit = {},
+    leadingAction: @Composable () -> Unit = {
+        IconButton(onClick = onDismiss) {
+            MaterialSymbol(
+                symbol = MaterialSymbols.Close,
+                contentDescription = stringResource(R.string.bottom_sheet_dismiss),
+                size = 22.dp,
+                tint = LocalAirmedyColors.current.textMain,
+            )
+        }
+    },
     trailingAction: @Composable () -> Unit = {},
     content: @Composable () -> Unit,
 ) {
@@ -80,7 +90,7 @@ fun AirmedyBottomSheet(
         Box(Modifier.fillMaxSize()) {
             Box(
                 Modifier.fillMaxSize()
-                    .background(colors.background.copy(alpha = 0.48f))
+                    .background(colors.playerBackdrop.copy(alpha = 0.62f * sheetAlpha))
                     .semantics { contentDescription = dismissLabel }
                     .clickable(
                         role = Role.Button,

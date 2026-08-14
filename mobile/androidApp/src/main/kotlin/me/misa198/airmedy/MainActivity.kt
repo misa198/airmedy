@@ -265,6 +265,8 @@ class MainActivity : ComponentActivity() {
                 onToggleSortOrder = tracksViewModel::toggleSortOrder,
                 onTrackClick = tracksViewModel::playTrack,
                 onRecentTrackClick = tracksViewModel::playRecentTrack,
+                onTrackPlayNext = playbackController::playNext,
+                onTrackAddToQueue = { trackId -> playbackController.append(listOf(trackId)) },
                 onArtistSortOptionSelected = artistsViewModel::setSortOption,
                 onArtistToggleSortOrder = artistsViewModel::toggleSortOrder,
                 onAlbumSortOptionSelected = albumsViewModel::setSortOption,

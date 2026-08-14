@@ -1,6 +1,6 @@
 package me.misa198.airmedy.ui.components
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,12 +29,18 @@ fun AlbumTrackRow(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     onMoreClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
 ) {
     val colors = LocalAirmedyColors.current
     Row(
         modifier
             .fillMaxWidth()
-            .then(if (onClick == null) Modifier else Modifier.clickable(onClick = onClick))
+            .then(
+                if (onClick == null && onLongClick == null) Modifier else Modifier.combinedClickable(
+                    onClick = { onClick?.invoke() },
+                    onLongClick = onLongClick,
+                ),
+            )
             .padding(start = 22.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

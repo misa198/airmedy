@@ -4,6 +4,9 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.longClick
+import me.misa198.airmedy.ui.components.AnchoredPopupMenuHost
 import androidx.test.platform.app.InstrumentationRegistry
 import me.misa198.airmedy.R
 import me.misa198.airmedy.settings.ThemeMode
@@ -80,5 +83,21 @@ class LibraryContentTest {
         composeTestRule.onNodeWithText("Recent Song 2").assertIsDisplayed().performClick()
 
         assertEquals("r2", clickedTrackId)
+    }
+
+    @Test
+    fun holdingRecentlyAddedTrackOpensContextMenu() {
+        val track = LibraryTrack(id = "r1", title = "Recent Song", artists = "Artist")
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                AnchoredPopupMenuHost(hazeState = null) {
+                    LibraryContent(recentTracks = listOf(track))
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithText("Recent Song").performTouchInput { longClick() }
+
+        composeTestRule.onNodeWithText("Track info").assertIsDisplayed()
     }
 }

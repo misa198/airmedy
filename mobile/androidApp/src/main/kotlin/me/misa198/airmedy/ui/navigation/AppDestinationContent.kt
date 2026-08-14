@@ -51,6 +51,7 @@ import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 import me.misa198.airmedy.ui.screens.LibraryTracksContent
 import me.misa198.airmedy.ui.screens.LibraryTracksUiState
 import me.misa198.airmedy.ui.screens.TrackSortOption
+import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.ui.screens.LibraryArtistsContent
 import me.misa198.airmedy.ui.screens.LibraryArtistsUiState
 import me.misa198.airmedy.ui.screens.AlbumSortOption
@@ -138,6 +139,10 @@ internal fun AppDestinationContent(
     onToggleSortOrder: () -> Unit = {},
     onTrackClick: (String) -> Unit = {},
     onRecentTrackClick: (String) -> Unit = {},
+    playbackQueue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
+    onTrackPlayNext: (String) -> Unit = {},
+    onTrackAddToQueue: (String) -> Unit = {},
+    onTrackFavoriteToggle: (String, Boolean) -> Unit = { _, _ -> },
     onAlbumSortOptionSelected: (AlbumSortOption) -> Unit = {},
     onAlbumToggleSortOrder: () -> Unit = {},
     onAlbumPlay: (String, Boolean) -> Unit = { _, _ -> },
@@ -364,6 +369,11 @@ internal fun AppDestinationContent(
                                 onPlay = { selectedAlbumId?.let { onAlbumPlay(it, false) } },
                                 onShuffle = { selectedAlbumId?.let { onAlbumPlay(it, true) } },
                                 onTrackClick = { trackId -> selectedAlbumId?.let { onAlbumTrackPlay(it, trackId) } },
+                                playbackQueue = playbackQueue,
+                                onTrackPlayNext = onTrackPlayNext,
+                                onTrackAddToQueue = onTrackAddToQueue,
+                                onTrackFavoriteToggle = onTrackFavoriteToggle,
+                                onTrackArtistClick = { artist -> onIntent(AppIntent.OpenArtistDetails(artist.id)) },
                             )
                             AppStackPage.LibraryGenres -> LibraryGenresContent(
                                 uiState = genresUiState,
@@ -404,6 +414,12 @@ internal fun AppDestinationContent(
                                 contentPadding = contentPadding,
                                 modifier = Modifier.fillMaxSize(),
                                 onTrackClick = { track -> onTrackClick(track.id) },
+                                playbackQueue = playbackQueue,
+                                onTrackPlayNext = { track -> onTrackPlayNext(track.id) },
+                                onTrackAddToQueue = { track -> onTrackAddToQueue(track.id) },
+                                onTrackFavoriteToggle = { track, favorite -> onTrackFavoriteToggle(track.id, favorite) },
+                                onTrackAlbumClick = { track -> onIntent(AppIntent.OpenAlbumDetails(track.albumId)) },
+                                onTrackArtistClick = { artist -> onIntent(AppIntent.OpenArtistDetails(artist.id)) },
                             )
                             else -> LibraryContent(
                                 modifier = Modifier.fillMaxSize(),
@@ -411,6 +427,12 @@ internal fun AppDestinationContent(
                                 recentTracks = tracksUiState.recentTracks,
                                 listState = libraryListState,
                                 onTrackClick = onRecentTrackClick,
+                                playbackQueue = playbackQueue,
+                                onTrackPlayNext = { track -> onTrackPlayNext(track.id) },
+                                onTrackAddToQueue = { track -> onTrackAddToQueue(track.id) },
+                                onTrackFavoriteToggle = { track, favorite -> onTrackFavoriteToggle(track.id, favorite) },
+                                onTrackAlbumClick = { track -> onIntent(AppIntent.OpenAlbumDetails(track.albumId)) },
+                                onTrackArtistClick = { artist -> onIntent(AppIntent.OpenArtistDetails(artist.id)) },
                                 onTracksSelected = {
                                     onIntent(AppIntent.OpenPage(AppStackPage.LibraryTracks))
                                 },

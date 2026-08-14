@@ -46,6 +46,9 @@ object MaterialSymbols {
     const val Settings = "settings"
     const val PlayCircle = "play_circle"
     const val QueueMusic = "queue_music"
+    const val PlaylistAdd = "playlist_add"
+    const val QueuePlayNext = "queue_play_next"
+    const val AddToQueue = "add_to_queue"
     const val Tune = "tune"
     const val MaskedTransitions = "masked_transitions"
 
@@ -89,6 +92,8 @@ object MaterialSymbols {
     const val Image = "image"
     const val FavoriteBorder = "favorite"
     const val Favorite = "favorite"
+    const val HeartPlus = "heart_plus"
+    const val HeartMinus = "heart_minus"
     const val SwapVert = "swap_vert"
     const val StylusFountainPen = "stylus_fountain_pen"
 }

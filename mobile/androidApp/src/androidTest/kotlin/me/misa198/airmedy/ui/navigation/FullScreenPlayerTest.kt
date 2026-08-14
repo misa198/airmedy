@@ -21,6 +21,8 @@ import me.misa198.airmedy.player.RepeatMode
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.ui.theme.AirmedyTheme
+import me.misa198.airmedy.ui.components.TrackContextArtist
+import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.Assert.assertEquals
@@ -28,6 +30,80 @@ import org.junit.Assert.assertEquals
 class FullScreenPlayerTest {
     @get:Rule
     val composeTestRule = createComposeRule()
+
+    @Test
+    fun moreOptionsUsesTheTrackContextMenuForTheCurrentTrack() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenPlayer(
+                    visible = true,
+                    dragProgress = 0f,
+                    isDragging = false,
+                    openingFromMiniPlayerSwipe = false,
+                    playbackState = PlaybackState.Playing(item, 0L, 120_000L),
+                    queue = PlaybackQueueSnapshot(activeTrackIds = listOf(item.trackId), currentIndex = 0),
+                    queueTracks = listOf(LibraryTrack(id = item.trackId, title = item.title, artists = item.artist)),
+                    volume = 0.5f,
+                    onSeek = {},
+                    onVolumeChange = {},
+                    onPrevious = {},
+                    onPlayPause = {},
+                    onNext = {},
+                    onOpenMediaOutputSwitcher = {},
+                    onDismiss = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("More options").performClick()
+        composeTestRule.onNodeWithText("Track info").assertExists()
+        composeTestRule.onNodeWithText("Add to playlist").assertExists()
+    }
+
+    @Test
+    fun moreOptionsRequestsAnArtistPickerForCollaborations() {
+        var bottomSheetRequest: TrackContextBottomSheetRequest? = null
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenPlayer(
+                    visible = true,
+                    dragProgress = 0f,
+                    isDragging = false,
+                    openingFromMiniPlayerSwipe = false,
+                    playbackState = PlaybackState.Playing(item, 0L, 120_000L),
+                    queueTracks = listOf(
+                        LibraryTrack(
+                            id = item.trackId,
+                            title = item.title,
+                            artists = "Artist A, Artist B",
+                            metadataJson = """{\"artists\":[{\"id\":\"artist-a\",\"name\":\"Artist A\"},{\"id\":\"artist-b\",\"name\":\"Artist B\"}]}""",
+                        ),
+                    ),
+                    volume = 0.5f,
+                    onSeek = {},
+                    onVolumeChange = {},
+                    onPrevious = {},
+                    onPlayPause = {},
+                    onNext = {},
+                    onTrackContextBottomSheet = { bottomSheetRequest = it },
+                    onOpenMediaOutputSwitcher = {},
+                    onDismiss = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("More options").performClick()
+        composeTestRule.onNodeWithText("Go to artists").performClick()
+
+        composeTestRule.runOnIdle {
+            assertEquals(
+                TrackContextBottomSheetRequest.Artists(
+                    listOf(TrackContextArtist("artist-a", "Artist A"), TrackContextArtist("artist-b", "Artist B")),
+                ),
+                bottomSheetRequest,
+            )
+        }
+    }
 
     @Test
     fun lyricsAndQueuePanelsToggleAndPersistAcrossTrackChanges() {

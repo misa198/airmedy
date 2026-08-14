@@ -20,21 +20,19 @@ class ComposerRowTest {
     @Test
     fun displaysComposerAndHandlesOptionalCallbacks() {
         var rowClicked by mutableStateOf(false)
-        var moreClicked by mutableStateOf(false)
-
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 ComposerRow(
                     name = "Beethoven",
                     onClick = { rowClicked = true },
-                    onMoreClick = { moreClicked = true },
                 )
             }
         }
 
         composeTestRule.onNodeWithText("Beethoven").performClick()
         assertTrue(rowClicked)
+        rowClicked = false
         composeTestRule.onNode(hasContentDescription("Open composer")).performClick()
-        assertTrue(moreClicked)
+        assertTrue(rowClicked)
     }
 }

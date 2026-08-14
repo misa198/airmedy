@@ -116,6 +116,8 @@ import me.misa198.airmedy.ui.components.MaterialSymbol
 import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.ui.components.AirmedyMarqueeText
 import me.misa198.airmedy.ui.components.AirmedyTrackSlider
+import me.misa198.airmedy.ui.components.TrackContextMenu
+import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import me.misa198.airmedy.ui.components.rememberArtworkThumbnail
 import me.misa198.airmedy.ui.components.sliderFilledTrackColor
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
@@ -177,8 +179,15 @@ internal fun FullScreenPlayer(
     onRepeatModeChange: (RepeatMode) -> Unit = {},
     isFavorite: Boolean = false,
     onFavoriteToggle: (String, Boolean) -> Unit = { _, _ -> },
+    onTrackPlayNext: (String) -> Unit = {},
+    onTrackAddToQueue: (String) -> Unit = {},
+    onTrackGoToAlbum: (String) -> Unit = {},
+    onTrackGoToArtist: (String) -> Unit = {},
+    onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit = {},
+    onCloseFullscreenThen: ((() -> Unit) -> Unit) = { action -> action() },
     onOpenMediaOutputSwitcher: () -> Unit,
     onDismiss: () -> Unit,
+    onDismissAnimationFinished: () -> Unit = {},
     modifier: Modifier = Modifier,
     hazeState: HazeState? = null,
 ) {
@@ -196,12 +205,16 @@ internal fun FullScreenPlayer(
     val playerDescription = stringResource(R.string.full_screen_player)
     val seekLabel = stringResource(R.string.player_seek)
     val volumeLabel = stringResource(R.string.player_volume)
+    var hasBeenVisible by remember { mutableStateOf(visible) }
 
     LaunchedEffect(isDragging, dragProgress, visible, openingFromMiniPlayerSwipe) {
         if (isDragging) {
             expansionProgress.snapTo(dragProgress)
         } else {
-            if (visible) dragOffset.snapTo(0f)
+            if (visible) {
+                hasBeenVisible = true
+                dragOffset.snapTo(0f)
+            }
             expansionProgress.animateTo(
                 targetValue = if (visible) 1f else 0f,
                 animationSpec = tween(
@@ -209,7 +222,13 @@ internal fun FullScreenPlayer(
                     easing = FastOutSlowInEasing,
                 ),
             )
-            if (!visible) dragOffset.snapTo(0f)
+            if (!visible) {
+                dragOffset.snapTo(0f)
+                if (hasBeenVisible) {
+                    hasBeenVisible = false
+                    onDismissAnimationFinished()
+                }
+            }
         }
     }
 
@@ -232,6 +251,8 @@ internal fun FullScreenPlayer(
     val isPlaying = playbackState is PlaybackState.Playing
     val canNavigatePrevious = queue.canNavigatePrevious()
     val canNavigateNext = queue.canNavigateNext()
+    val contextTrack = queueTracks.firstOrNull { it.id == item.trackId }
+    var isTrackContextMenuExpanded by remember(item.trackId) { mutableStateOf(false) }
     var selectedPanel by remember { mutableStateOf<FullScreenPlayerPanel?>(null) }
     val isPanelOpen = selectedPanel != null
     val lyricsButtonBackground by animateColorAsState(
@@ -444,6 +465,17 @@ internal fun FullScreenPlayer(
                             compact = false,
                             isFavorite = isFavorite,
                             onFavoriteToggle = onFavoriteToggle,
+                            contextTrack = contextTrack,
+                            contextMenuExpanded = isTrackContextMenuExpanded,
+                            onContextMenuOpen = { isTrackContextMenuExpanded = true },
+                            onContextMenuDismiss = { isTrackContextMenuExpanded = false },
+                            playbackQueue = queue,
+                            onTrackPlayNext = onTrackPlayNext,
+                            onTrackAddToQueue = onTrackAddToQueue,
+                            onTrackGoToAlbum = onTrackGoToAlbum,
+                            onTrackGoToArtist = onTrackGoToArtist,
+                            onTrackContextBottomSheet = onTrackContextBottomSheet,
+                            onCloseFullscreenThen = onCloseFullscreenThen,
                         )
                     }
                     androidx.compose.animation.AnimatedVisibility(
@@ -465,6 +497,17 @@ internal fun FullScreenPlayer(
                             compact = true,
                             isFavorite = isFavorite,
                             onFavoriteToggle = onFavoriteToggle,
+                            contextTrack = contextTrack,
+                            contextMenuExpanded = isTrackContextMenuExpanded,
+                            onContextMenuOpen = { isTrackContextMenuExpanded = true },
+                            onContextMenuDismiss = { isTrackContextMenuExpanded = false },
+                            playbackQueue = queue,
+                            onTrackPlayNext = onTrackPlayNext,
+                            onTrackAddToQueue = onTrackAddToQueue,
+                            onTrackGoToAlbum = onTrackGoToAlbum,
+                            onTrackGoToArtist = onTrackGoToArtist,
+                            onTrackContextBottomSheet = onTrackContextBottomSheet,
+                            onCloseFullscreenThen = onCloseFullscreenThen,
                         )
                     }
                     androidx.compose.animation.AnimatedVisibility(
@@ -683,6 +726,17 @@ private fun FullScreenPlayerMetadataTransition(
     compact: Boolean,
     isFavorite: Boolean,
     onFavoriteToggle: (String, Boolean) -> Unit,
+    contextTrack: LibraryTrack?,
+    contextMenuExpanded: Boolean,
+    onContextMenuOpen: () -> Unit,
+    onContextMenuDismiss: () -> Unit,
+    playbackQueue: PlaybackQueueSnapshot,
+    onTrackPlayNext: (String) -> Unit,
+    onTrackAddToQueue: (String) -> Unit,
+    onTrackGoToAlbum: (String) -> Unit,
+    onTrackGoToArtist: (String) -> Unit,
+    onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit,
+    onCloseFullscreenThen: ((() -> Unit) -> Unit),
 ) {
     // The player state switches to the incoming source as native crossfade
     // starts. Mirror that moment in metadata instead of waiting for midpoint.
@@ -707,6 +761,17 @@ private fun FullScreenPlayerMetadataTransition(
             compact = compact,
             isFavorite = isFavorite,
             onFavoriteToggle = onFavoriteToggle,
+            contextTrack = contextTrack,
+            contextMenuExpanded = contextMenuExpanded,
+            onContextMenuOpen = onContextMenuOpen,
+            onContextMenuDismiss = onContextMenuDismiss,
+            playbackQueue = playbackQueue,
+            onTrackPlayNext = onTrackPlayNext,
+            onTrackAddToQueue = onTrackAddToQueue,
+            onTrackGoToAlbum = onTrackGoToAlbum,
+            onTrackGoToArtist = onTrackGoToArtist,
+            onTrackContextBottomSheet = onTrackContextBottomSheet,
+            onCloseFullscreenThen = onCloseFullscreenThen,
         )
     }
 }
@@ -719,6 +784,17 @@ private fun FullScreenPlayerMetadata(
     compact: Boolean,
     isFavorite: Boolean,
     onFavoriteToggle: (String, Boolean) -> Unit,
+    contextTrack: LibraryTrack?,
+    contextMenuExpanded: Boolean,
+    onContextMenuOpen: () -> Unit,
+    onContextMenuDismiss: () -> Unit,
+    playbackQueue: PlaybackQueueSnapshot,
+    onTrackPlayNext: (String) -> Unit,
+    onTrackAddToQueue: (String) -> Unit,
+    onTrackGoToAlbum: (String) -> Unit,
+    onTrackGoToArtist: (String) -> Unit,
+    onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit,
+    onCloseFullscreenThen: ((() -> Unit) -> Unit),
 ) {
     val colors = LocalAirmedyColors.current
     val favoriteScale = remember(item.trackId) { Animatable(1f) }
@@ -780,10 +856,10 @@ private fun FullScreenPlayerMetadata(
                 suppressPressedIndication = true,
             )
         }
-        AirmedyIconButton(
+        @Composable fun MoreButton(onClick: () -> Unit) = AirmedyIconButton(
             symbol = MaterialSymbols.MoreVert,
             label = stringResource(R.string.player_more),
-            onClick = {},
+            onClick = onClick,
             variant = AirmedyIconButtonVariant.Glass,
             tint = colors.onPrimary,
             glassColor = fullScreenSecondaryControlBackground(colors),
@@ -791,6 +867,28 @@ private fun FullScreenPlayerMetadata(
             circleSize = if (compact) 32.dp else 36.dp,
             iconSize = if (compact) 18.dp else 20.dp,
         )
+        if (contextTrack == null) {
+            MoreButton(onClick = {})
+        } else {
+            TrackContextMenu(
+                track = contextTrack,
+                expanded = contextMenuExpanded,
+                onDismiss = onContextMenuDismiss,
+                hazeState = hazeState,
+                playbackQueue = playbackQueue,
+                onPlayNext = { onTrackPlayNext(it.id) },
+                onAddToQueue = { onTrackAddToQueue(it.id) },
+                onFavoriteChange = { track, favorite -> onFavoriteToggle(track.id, favorite) },
+                onGoToAlbum = { onTrackGoToAlbum(it.albumId) },
+                onGoToArtist = { artist -> onTrackGoToArtist(artist.id) },
+                onBottomSheetRequested = { request ->
+                    onCloseFullscreenThen { onTrackContextBottomSheet(request) }
+                },
+                onCloseFullscreenThen = onCloseFullscreenThen,
+            ) {
+                MoreButton(onClick = onContextMenuOpen)
+            }
+        }
     }
 }
 

@@ -2,12 +2,18 @@ package me.misa198.airmedy.ui.screens
 
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.longClick
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.sync.LibraryAlbum
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.ui.theme.AirmedyTheme
+import me.misa198.airmedy.ui.components.AnchoredPopupMenuHost
 import org.junit.Rule
 import org.junit.Test
 
@@ -49,5 +55,45 @@ class AlbumDetailsContentTest {
         }
 
         composeTestRule.onNodeWithText("© 2003 Taste Media").assertExists()
+    }
+
+    @Test
+    fun trackOverflowShowsContextMenuWithoutGoToAlbum() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                AnchoredPopupMenuHost(hazeState = null) {
+                    AlbumDetailsContent(
+                        uiState = AlbumDetailsUiState(
+                            album = LibraryAlbum("album", "Absolution", "Muse"),
+                            tracks = listOf(LibraryTrack("one", "One", "Muse")),
+                        ),
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNode(hasContentDescription("Track options")).performClick()
+        composeTestRule.onNodeWithText("Play next").assertExists()
+        composeTestRule.onAllNodesWithText("Go to album").assertCountEquals(0)
+    }
+
+    @Test
+    fun holdingTrackOpensContextMenu() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                AnchoredPopupMenuHost(hazeState = null) {
+                    AlbumDetailsContent(
+                        uiState = AlbumDetailsUiState(
+                            album = LibraryAlbum("album", "Absolution", "Muse"),
+                            tracks = listOf(LibraryTrack("one", "One", "Muse")),
+                        ),
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithText("One").performTouchInput { longClick() }
+
+        composeTestRule.onNodeWithText("Track info").assertExists()
     }
 }

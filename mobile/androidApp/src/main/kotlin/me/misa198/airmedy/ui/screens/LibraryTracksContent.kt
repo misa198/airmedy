@@ -7,16 +7,22 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.R
 import me.misa198.airmedy.sync.LibraryTrack
+import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.ui.components.HeroCard
 import me.misa198.airmedy.ui.components.LibraryVirtualList
 import me.misa198.airmedy.ui.components.TrackRow
+import me.misa198.airmedy.ui.components.TrackContextArtist
+import me.misa198.airmedy.ui.components.TrackContextMenu
 
 @Composable
 internal fun LibraryTracksContent(
@@ -28,7 +34,14 @@ internal fun LibraryTracksContent(
     contentPadding: PaddingValues = PaddingValues(),
     onTrackClick: ((LibraryTrack) -> Unit)? = null,
     onTrackMoreClick: ((LibraryTrack) -> Unit)? = null,
+    playbackQueue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
+    onTrackPlayNext: (LibraryTrack) -> Unit = {},
+    onTrackAddToQueue: (LibraryTrack) -> Unit = {},
+    onTrackFavoriteToggle: (LibraryTrack, Boolean) -> Unit = { _, _ -> },
+    onTrackAlbumClick: (LibraryTrack) -> Unit = {},
+    onTrackArtistClick: (TrackContextArtist) -> Unit = {},
 ) {
+    var contextTrack by remember { mutableStateOf<LibraryTrack?>(null) }
     val listPadding = remember(contentPadding) {
         PaddingValues(
             top = contentPadding.calculateTopPadding(),
@@ -64,14 +77,27 @@ internal fun LibraryTracksContent(
             if (onTrackClick != null) { { onTrackClick(track) } } else null
         }
         val onItemMoreClick = remember(onTrackMoreClick, track) {
-            if (onTrackMoreClick != null) { { onTrackMoreClick(track) } } else null
+            { onTrackMoreClick?.invoke(track); contextTrack = track }
         }
-        TrackRow(
-            title = track.title,
-            artist = track.artists,
-            artworkPath = track.artworkPath,
-            onClick = onItemClick,
-            onMoreClick = onItemMoreClick,
-        )
+        TrackContextMenu(
+            track = track,
+            expanded = contextTrack?.id == track.id,
+            onDismiss = { if (contextTrack?.id == track.id) contextTrack = null },
+            playbackQueue = playbackQueue,
+            onPlayNext = onTrackPlayNext,
+            onAddToQueue = onTrackAddToQueue,
+            onFavoriteChange = onTrackFavoriteToggle,
+            onGoToAlbum = onTrackAlbumClick,
+            onGoToArtist = onTrackArtistClick,
+        ) {
+            TrackRow(
+                title = track.title,
+                artist = track.artists,
+                artworkPath = track.artworkPath,
+                onClick = onItemClick,
+                onMoreClick = onItemMoreClick,
+                onLongClick = { contextTrack = track },
+            )
+        }
     }
 }

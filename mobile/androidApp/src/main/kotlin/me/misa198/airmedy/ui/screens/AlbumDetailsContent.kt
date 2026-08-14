@@ -10,6 +10,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -21,23 +25,42 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
 import me.misa198.airmedy.R
+import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.ui.components.AlbumTrackRow
 import me.misa198.airmedy.ui.components.ArtworkHeroBackdrop
 import me.misa198.airmedy.ui.components.DetailHero
 import me.misa198.airmedy.ui.components.HeroCard
 import me.misa198.airmedy.ui.components.MaterialSymbols
+import me.misa198.airmedy.ui.components.TrackContextArtist
+import me.misa198.airmedy.ui.components.TrackContextMenu
+import me.misa198.airmedy.ui.components.TrackContextMenuActions
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 private const val AlbumTrackDividerTag = "album-detail-track-divider"
 
 @Composable
-internal fun AlbumDetailsContent(uiState: AlbumDetailsUiState, modifier: Modifier = Modifier, contentPadding: PaddingValues = PaddingValues(), hazeState: HazeState? = null, onHeroColorChanged: (Color) -> Unit = {}, onPlay: () -> Unit = {}, onShuffle: () -> Unit = {}, onTrackClick: (String) -> Unit = {}) {
+internal fun AlbumDetailsContent(
+    uiState: AlbumDetailsUiState,
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
+    hazeState: HazeState? = null,
+    onHeroColorChanged: (Color) -> Unit = {},
+    onPlay: () -> Unit = {},
+    onShuffle: () -> Unit = {},
+    onTrackClick: (String) -> Unit = {},
+    playbackQueue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
+    onTrackPlayNext: (String) -> Unit = {},
+    onTrackAddToQueue: (String) -> Unit = {},
+    onTrackFavoriteToggle: (String, Boolean) -> Unit = { _, _ -> },
+    onTrackArtistClick: (TrackContextArtist) -> Unit = {},
+) {
     val album = uiState.album
     if (album == null) {
         HeroCard(symbol = MaterialSymbols.Album, title = stringResource(R.string.album_details_empty_title), description = stringResource(R.string.album_details_empty_description), modifier = modifier.fillMaxSize().padding(contentPadding))
         return
     }
     val colors = LocalAirmedyColors.current
+    var contextTrack by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val trackCount = pluralStringResource(R.plurals.album_details_track_count, uiState.tracks.size, uiState.tracks.size)
     val duration = formatAlbumTotalDuration(
@@ -89,13 +112,27 @@ internal fun AlbumDetailsContent(uiState: AlbumDetailsUiState, modifier: Modifie
                     .background(colors.borderGlass)
                     .testTag(AlbumTrackDividerTag),
             )
-            AlbumTrackRow(
-                track.trackNumber.takeIf { it > 0 } ?: index + 1,
-                track.title,
-                track.artists,
-                modifier = Modifier.fillMaxWidth(),
-                onClick = { onTrackClick(track.id) },
-            )
+            TrackContextMenu(
+                track = track,
+                expanded = contextTrack == track.id,
+                onDismiss = { if (contextTrack == track.id) contextTrack = null },
+                actions = TrackContextMenuActions(goToAlbum = false),
+                playbackQueue = playbackQueue,
+                onPlayNext = { onTrackPlayNext(it.id) },
+                onAddToQueue = { onTrackAddToQueue(it.id) },
+                onFavoriteChange = { item, favorite -> onTrackFavoriteToggle(item.id, favorite) },
+                onGoToArtist = onTrackArtistClick,
+            ) {
+                AlbumTrackRow(
+                    track.trackNumber.takeIf { it > 0 } ?: index + 1,
+                    track.title,
+                    track.artists,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { onTrackClick(track.id) },
+                    onMoreClick = { contextTrack = track.id },
+                    onLongClick = { contextTrack = track.id },
+                )
+            }
             if (index == uiState.tracks.lastIndex) {
                 Box(
                     Modifier

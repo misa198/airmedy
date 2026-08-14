@@ -5,12 +5,14 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -26,6 +28,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
@@ -37,6 +40,7 @@ import kotlin.math.roundToInt
 private data class AnchoredPopupMenuRequest(
     val id: Any,
     val anchorRightPx: Float,
+    val anchorTopPx: Float,
     val anchorBottomPx: Float,
     val offset: DpOffset,
     val width: Dp,
@@ -55,6 +59,7 @@ private class AnchoredPopupMenuHostState {
             current == null ||
             current.id !== request.id ||
             current.anchorRightPx != request.anchorRightPx ||
+            current.anchorTopPx != request.anchorTopPx ||
             current.anchorBottomPx != request.anchorBottomPx ||
             current.offset != request.offset ||
             current.width != request.width ||
@@ -121,7 +126,7 @@ private fun AnchoredPopupMenuOverlay(
     }
     val activeRequest = retainedRequest ?: return
 
-    Box(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .clickable(
@@ -131,24 +136,35 @@ private fun AnchoredPopupMenuOverlay(
             ),
     ) {
         val density = androidx.compose.ui.platform.LocalDensity.current
+        val edgeInsetPx = with(density) { 16.dp.roundToPx() }
+        val hostWidthPx = with(density) { maxWidth.roundToPx() }
+        val hostHeightPx = with(density) { maxHeight.roundToPx() }
         val menuWidthPx = with(density) { activeRequest.width.roundToPx() }
         val offsetX = with(density) { activeRequest.offset.x.roundToPx() }
         val offsetY = with(density) { activeRequest.offset.y.roundToPx() }
+        var menuHeightPx by remember(activeRequest.id) { mutableStateOf(0) }
+        val preferredX = (activeRequest.anchorRightPx - menuWidthPx + offsetX).roundToInt()
+        val maxX = (hostWidthPx - menuWidthPx - edgeInsetPx).coerceAtLeast(edgeInsetPx)
+        val constrainedX = preferredX.coerceIn(edgeInsetPx, maxX)
+        val belowY = (activeRequest.anchorBottomPx + offsetY).roundToInt()
+        val aboveY = (activeRequest.anchorTopPx - offsetY - menuHeightPx).roundToInt()
+        val renderAbove = menuHeightPx > 0 && belowY + menuHeightPx > hostHeightPx - edgeInsetPx
+        val preferredY = if (renderAbove) aboveY else belowY
+        val maxY = (hostHeightPx - menuHeightPx - edgeInsetPx).coerceAtLeast(edgeInsetPx)
+        val constrainedY = preferredY.coerceIn(edgeInsetPx, maxY)
         Box(
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .offset {
-                    IntOffset(
-                        (activeRequest.anchorRightPx - menuWidthPx + offsetX).roundToInt(),
-                        (activeRequest.anchorBottomPx + offsetY).roundToInt(),
-                    )
+                    IntOffset(constrainedX, constrainedY)
                 }
                 .width(activeRequest.width)
+                .onSizeChanged { size -> if (menuHeightPx != size.height) menuHeightPx = size.height }
                 .graphicsLayer {
                     alpha = progress.value
                     scaleX = 0.94f + (0.06f * progress.value)
                     scaleY = 0.94f + (0.06f * progress.value)
-                    transformOrigin = TransformOrigin(1f, 0f)
+                    transformOrigin = TransformOrigin(1f, if (renderAbove) 1f else 0f)
                 }
                 .clip(activeRequest.shape)
                 .liquidGlassBackground(
@@ -182,16 +198,23 @@ fun AnchoredPopupMenu(
     val host = LocalAnchoredPopupMenuHost.current
     val id = remember { Any() }
     var anchorRightPx by remember { mutableStateOf<Float?>(null) }
+    var anchorTopPx by remember { mutableStateOf<Float?>(null) }
     var anchorBottomPx by remember { mutableStateOf<Float?>(null) }
+
+    DisposableEffect(host, id) {
+        onDispose { host?.dismiss(id) }
+    }
 
     SideEffect {
         val right = anchorRightPx
+        val top = anchorTopPx
         val bottom = anchorBottomPx
-        if (expanded && host != null && right != null && bottom != null) {
+        if (expanded && host != null && right != null && top != null && bottom != null) {
             host.show(
                 AnchoredPopupMenuRequest(
                     id = id,
                     anchorRightPx = right,
+                    anchorTopPx = top,
                     anchorBottomPx = bottom,
                     offset = offset,
                     width = width,
@@ -210,6 +233,7 @@ fun AnchoredPopupMenu(
         modifier = modifier.onGloballyPositioned { coordinates ->
             coordinates.boundsInRoot().let { bounds ->
                 anchorRightPx = bounds.right
+                anchorTopPx = bounds.top
                 anchorBottomPx = bounds.bottom
             }
         },

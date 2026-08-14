@@ -19,16 +19,16 @@ class AlbumRowTest {
     @Test
     fun displaysAlbumMetadataAndHandlesOptionalCallbacks() {
         var rowClicked by mutableStateOf(false)
-        var moreClicked by mutableStateOf(false)
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
-                AlbumRow("Absolution", "Muse", onClick = { rowClicked = true }, onMoreClick = { moreClicked = true })
+                AlbumRow("Absolution", "Muse", onClick = { rowClicked = true })
             }
         }
 
         composeTestRule.onNodeWithText("Absolution").performClick()
         assertTrue(rowClicked)
+        rowClicked = false
         composeTestRule.onNode(hasContentDescription("Open album")).performClick()
-        assertTrue(moreClicked)
+        assertTrue(rowClicked)
     }
 }

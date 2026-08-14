@@ -20,21 +20,19 @@ class GenreRowTest {
     @Test
     fun displaysGenreAndHandlesOptionalCallbacks() {
         var rowClicked by mutableStateOf(false)
-        var openClicked by mutableStateOf(false)
-
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 GenreRow(
                     name = "Alternative",
                     onClick = { rowClicked = true },
-                    onMoreClick = { openClicked = true },
                 )
             }
         }
 
         composeTestRule.onNodeWithText("Alternative").performClick()
         assertTrue(rowClicked)
+        rowClicked = false
         composeTestRule.onNode(hasContentDescription("Open genre")).performClick()
-        assertTrue(openClicked)
+        assertTrue(rowClicked)
     }
 }
