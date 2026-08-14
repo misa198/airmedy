@@ -7,6 +7,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitHorizontalTouchSlopOrCancellation
@@ -38,15 +39,15 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import me.misa198.airmedy.ui.theme.AirmedyColors
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
-import dev.chrisbanes.haze.HazeState
 
 /**
  * Shared full-width control track for playback position and volume.
  *
  * This intentionally does not use Material Slider: fullscreen playback needs a
- * frosted-glass track with a white value fill and no Material-style circular
- * thumb. Fullscreen supplies its artwork haze source; the opaque fallback is
- * used when the user enables Reduce transparency.
+ * stable translucent track with a white value fill and no Material-style
+ * circular thumb. The track deliberately does not blur the artwork behind it:
+ * rendering Haze within a 6dp-high clipped shape produces visible sampling
+ * artifacts on the unfilled portion on some Android GPUs.
  */
 @Composable
 fun AirmedyTrackSlider(
@@ -58,7 +59,6 @@ fun AirmedyTrackSlider(
     onValueChangeFinished: (() -> Unit)? = null,
     onInteractionChange: (Boolean) -> Unit = {},
     trackHeight: Dp = 3.dp,
-    hazeState: HazeState? = null,
 ) {
     val colors = LocalAirmedyColors.current
     var isInteracting by remember { mutableStateOf(false) }
@@ -178,12 +178,7 @@ fun AirmedyTrackSlider(
                     scaleY = animatedTrackScaleY
                 }
                 .clip(CircleShape)
-                .liquidGlassBackground(
-                    hazeState = hazeState,
-                    colors = colors,
-                    hazeBlurRadius = 8.dp,
-                    glassTint = colors.sliderInactive,
-                )
+                .background(colors.sliderInactive)
                 .testTag(AirmedyTrackSliderTrackTestTag),
         ) {
             // A disabled control remains discoverable; only its interaction and

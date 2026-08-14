@@ -33,6 +33,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -235,7 +236,7 @@ internal fun FullScreenPlayer(
     val isPanelOpen = selectedPanel != null
     val lyricsButtonBackground by animateColorAsState(
         targetValue = if (selectedPanel == FullScreenPlayerPanel.Lyrics) {
-            colors.foregroundSubtle
+            sliderFilledTrackColor(colors, isInteracting = false)
         } else {
             colors.foregroundSubtle.copy(alpha = 0f)
         },
@@ -244,7 +245,7 @@ internal fun FullScreenPlayer(
     )
     val queueButtonBackground by animateColorAsState(
         targetValue = if (selectedPanel == FullScreenPlayerPanel.Queue) {
-            colors.foregroundSubtle
+            sliderFilledTrackColor(colors, isInteracting = false)
         } else {
             colors.foregroundSubtle.copy(alpha = 0f)
         },
@@ -269,6 +270,7 @@ internal fun FullScreenPlayer(
         animationSpec = tween(220, easing = FastOutSlowInEasing),
         label = "full-screen-queue-button-icon",
     )
+    val queueStatusBadge = queueStatusBadgeSymbol(queue)
     val artworkScale by animateFloatAsState(
         targetValue = if (playbackState is PlaybackState.Paused && !isPanelOpen) 0.75f else 1f,
         animationSpec = tween(if (isPanelOpen) 320 else 500, easing = FastOutSlowInEasing),
@@ -532,7 +534,6 @@ internal fun FullScreenPlayer(
                         enabled = durationMs > 0 && !isPreparing,
                         onInteractionChange = { isSeekSliderInteracting = it },
                         trackHeight = 6.dp,
-                        hazeState = glassHazeState,
                         modifier = Modifier.semantics { contentDescription = seekLabel },
                     )
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -600,7 +601,6 @@ internal fun FullScreenPlayer(
                             onValueChange = onVolumeChange,
                             onInteractionChange = { isVolumeSliderInteracting = it },
                             trackHeight = 6.dp,
-                            hazeState = glassHazeState,
                             modifier = Modifier
                                 .weight(1f)
                                 .semantics { contentDescription = volumeLabel },
@@ -645,21 +645,26 @@ internal fun FullScreenPlayer(
                             )
                         }
                         FullScreenControlSlot {
-                            FullScreenTransportButton(
-                                MaterialSymbols.QueueMusic,
-                                stringResource(R.string.player_queue),
-                                {
-                                    selectedPanel = if (selectedPanel == FullScreenPlayerPanel.Queue) {
-                                        null
-                                    } else {
-                                        FullScreenPlayerPanel.Queue
-                                    }
-                                },
-                                iconSize = 24.dp,
-                                tint = queueButtonIconColor,
-                                containerColor = queueButtonBackground,
-                                filled = false,
-                            )
+                            Box(modifier = Modifier.size(64.dp)) {
+                                FullScreenTransportButton(
+                                    MaterialSymbols.QueueMusic,
+                                    stringResource(R.string.player_queue),
+                                    {
+                                        selectedPanel = if (selectedPanel == FullScreenPlayerPanel.Queue) {
+                                            null
+                                        } else {
+                                            FullScreenPlayerPanel.Queue
+                                        }
+                                    },
+                                    iconSize = 24.dp,
+                                    tint = queueButtonIconColor,
+                                    containerColor = queueButtonBackground,
+                                    filled = false,
+                                )
+                                if (selectedPanel != FullScreenPlayerPanel.Queue && queueStatusBadge != null) {
+                                    QueueStatusBadge(queueStatusBadge)
+                                }
+                            }
                         }
                     }
                 }
@@ -767,7 +772,7 @@ private fun FullScreenPlayerMetadata(
                 },
                 variant = AirmedyIconButtonVariant.Glass,
                 tint = colors.onPrimary,
-                glassColor = Color.White.copy(alpha = 0.06f),
+                glassColor = fullScreenSecondaryControlBackground(colors),
                 hazeState = hazeState,
                 circleSize = 36.dp,
                 iconSize = 20.dp,
@@ -781,7 +786,7 @@ private fun FullScreenPlayerMetadata(
             onClick = {},
             variant = AirmedyIconButtonVariant.Glass,
             tint = colors.onPrimary,
-            glassColor = Color.White.copy(alpha = 0.06f),
+            glassColor = fullScreenSecondaryControlBackground(colors),
             hazeState = hazeState,
             circleSize = if (compact) 32.dp else 36.dp,
             iconSize = if (compact) 18.dp else 20.dp,
@@ -980,6 +985,33 @@ private fun ArtworkLayer(artwork: FullScreenArtwork?, alpha: Float) {
 @Composable
 private fun RowScope.FullScreenControlSlot(content: @Composable () -> Unit) {
     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) { content() }
+}
+
+/** Shuffle takes precedence so the compact indicator always conveys one mode. */
+internal fun queueStatusBadgeSymbol(queue: PlaybackQueueSnapshot): String? = when {
+    queue.shuffle -> MaterialSymbols.Shuffle
+    queue.repeatMode == RepeatMode.One -> MaterialSymbols.RepeatOne
+    queue.repeatMode == RepeatMode.All -> MaterialSymbols.Repeat
+    else -> null
+}
+
+private fun fullScreenSecondaryControlBackground(colors: me.misa198.airmedy.ui.theme.AirmedyColors): Color =
+    colors.sliderInactive.copy(alpha = 0.06f)
+
+@Composable
+private fun BoxScope.QueueStatusBadge(symbol: String) {
+    val colors = LocalAirmedyColors.current
+    Box(
+        modifier = Modifier
+            .align(Alignment.TopEnd)
+            .padding(2.dp)
+            .size(20.dp)
+            .clip(CircleShape)
+            .background(fullScreenSecondaryControlBackground(colors)),
+        contentAlignment = Alignment.Center,
+    ) {
+        MaterialSymbol(symbol = symbol, contentDescription = null, tint = colors.onPrimary, size = 13.dp)
+    }
 }
 
 @Composable
