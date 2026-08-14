@@ -14,6 +14,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -42,6 +43,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -58,6 +60,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -76,6 +79,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -134,6 +138,12 @@ private const val FullScreenPlayerSwipeVelocityPxPerMs = 1.2f
 private val FullScreenPlayerCompactArtworkSize = 80.dp
 private val FullScreenPlayerCompactGap = 24.dp
 private const val SeekConfirmationToleranceMs = 250L
+private const val FullScreenPlayerControlsTestTag = "full_screen_player_controls"
+private const val QueueReorderTransitionDurationMs = 360
+private const val QueueReorderControlsFadeDurationMs = 300
+
+/** Controls are hidden only for an active Queue reorder, never for a normal Queue view. */
+internal fun areFullScreenPlayerControlsVisible(isQueueReordering: Boolean): Boolean = !isQueueReordering
 
 /**
  * The service publishes playback position asynchronously after a seek. Retain
@@ -175,6 +185,7 @@ internal fun FullScreenPlayer(
     onNext: () -> Unit,
     onQueueTrackSelected: (String) -> Unit = {},
     onQueueReordered: (List<String>) -> Unit = {},
+    onQueueTrackRemoved: (String) -> Unit = {},
     onShuffleChange: (Boolean) -> Unit = {},
     onRepeatModeChange: (RepeatMode) -> Unit = {},
     isFavorite: Boolean = false,
@@ -255,6 +266,15 @@ internal fun FullScreenPlayer(
     var isTrackContextMenuExpanded by remember(item.trackId) { mutableStateOf(false) }
     var selectedPanel by remember { mutableStateOf<FullScreenPlayerPanel?>(null) }
     val isPanelOpen = selectedPanel != null
+    var isQueueReordering by remember { mutableStateOf(false) }
+    var restingControlsHeightPx by remember { mutableIntStateOf(0) }
+    // The reorderable library reports the end of a normal drag, but a panel
+    // switch or fullscreen dismissal can interrupt that gesture first.
+    LaunchedEffect(selectedPanel, visible) {
+        if (!visible || selectedPanel != FullScreenPlayerPanel.Queue) {
+            isQueueReordering = false
+        }
+    }
     val lyricsButtonBackground by animateColorAsState(
         targetValue = if (selectedPanel == FullScreenPlayerPanel.Lyrics) {
             sliderFilledTrackColor(colors, isInteracting = false)
@@ -352,14 +372,21 @@ internal fun FullScreenPlayer(
         // artwork must use its content width rather than this outer constraint.
         val expandedArtworkSize = maxWidth - 40.dp
         val compactMetadataWidth = maxWidth - 20.dp
+        val queuePanelWidth = maxWidth
         val artworkSize by animateDpAsState(
             targetValue = if (isPanelOpen) FullScreenPlayerCompactArtworkSize else expandedArtworkSize,
             animationSpec = tween(320, easing = FastOutSlowInEasing),
             label = "full-screen-artwork-size",
         )
         // Keep the top block's expanded footprint reserved while a panel is open.
-        // Otherwise the player controls below would climb into the newly freed space.
-        val topBlockHeight = expandedArtworkSize + 96.dp
+        // During a queue reorder, it temporarily grows through the controls area
+        // so the list can use the complete safe fullscreen height.
+        val restingTopBlockHeight = expandedArtworkSize + 96.dp
+        val topBlockHeight by animateDpAsState(
+            targetValue = if (isQueueReordering) maxHeight else restingTopBlockHeight,
+            animationSpec = tween(QueueReorderTransitionDurationMs, easing = FastOutSlowInEasing),
+            label = "full-screen-queue-reorder-height",
+        )
         val panelHeightPx = with(androidx.compose.ui.platform.LocalDensity.current) { maxHeight.toPx() }
         val panelOffsetPx = panelHeightPx * (1f - expansionProgress.value)
         Box(
@@ -535,10 +562,24 @@ internal fun FullScreenPlayer(
                                     currentTrackId = item.trackId,
                                     isPlaying = isPlaying,
                                     onTrackSelected = onQueueTrackSelected,
+                                    onTrackRemoved = onQueueTrackRemoved,
+                                    onTrackPlayNext = onTrackPlayNext,
                                     onReorder = onQueueReordered,
+                                    onReorderDragStateChange = { isQueueReordering = it },
                                     onShuffleChange = onShuffleChange,
                                     onRepeatModeChange = onRepeatModeChange,
-                                    modifier = Modifier.fillMaxSize(),
+                                    onFavoriteChange = onFavoriteToggle,
+                                    onTrackGoToAlbum = onTrackGoToAlbum,
+                                    onTrackGoToArtist = onTrackGoToArtist,
+                                    onTrackContextBottomSheet = onTrackContextBottomSheet,
+                                    onCloseFullscreenThen = onCloseFullscreenThen,
+                                    hazeState = glassHazeState,
+                                    // Queue owns its row insets so its list and header can
+                                    // reach both screen edges instead of inheriting the player
+                                    // column's horizontal padding.
+                                    modifier = Modifier
+                                        .requiredWidth(queuePanelWidth)
+                                        .fillMaxSize(),
                                 )
                             } else {
                                 FullScreenPlayerLyricsPanel(
@@ -555,12 +596,40 @@ internal fun FullScreenPlayer(
                     }
                 }
             }
-            Column(
-                modifier = Modifier
+            val controlsModifier = if (isQueueReordering && restingControlsHeightPx > 0) {
+                Modifier
                     .fillMaxWidth()
-                    .weight(1f),
-                verticalArrangement = Arrangement.SpaceEvenly,
+                    .requiredHeight(with(LocalDensity.current) { restingControlsHeightPx.toDp() })
+            } else {
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = areFullScreenPlayerControlsVisible(isQueueReordering),
+                modifier = controlsModifier
+                    .onSizeChanged { size ->
+                        if (!isQueueReordering) restingControlsHeightPx = size.height
+                    }
+                    .semantics { testTag = FullScreenPlayerControlsTestTag },
+                enter = fadeIn(
+                    tween(QueueReorderControlsFadeDurationMs, easing = LinearOutSlowInEasing),
+                ) +
+                    slideInVertically(
+                        tween(QueueReorderTransitionDurationMs, easing = FastOutSlowInEasing),
+                    ) { height -> height },
+                exit = fadeOut(
+                    tween(QueueReorderControlsFadeDurationMs, easing = LinearOutSlowInEasing),
+                ) +
+                    slideOutVertically(
+                        tween(QueueReorderTransitionDurationMs, easing = FastOutSlowInEasing),
+                    ) { height -> height },
             ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    verticalArrangement = Arrangement.SpaceEvenly,
+                ) {
                 Column {
                     AirmedyTrackSlider(
                         value = pendingSeekFraction ?: if (durationMs > 0) currentPositionMs.toFloat() / durationMs else 0f,
@@ -710,6 +779,7 @@ internal fun FullScreenPlayer(
                             }
                         }
                     }
+                }
                 }
             }
             }
@@ -1093,7 +1163,7 @@ internal fun queueStatusBadgeSymbol(queue: PlaybackQueueSnapshot): String? = whe
     else -> null
 }
 
-private fun fullScreenSecondaryControlBackground(colors: me.misa198.airmedy.ui.theme.AirmedyColors): Color =
+internal fun fullScreenSecondaryControlBackground(colors: me.misa198.airmedy.ui.theme.AirmedyColors): Color =
     colors.sliderInactive.copy(alpha = 0.06f)
 
 @Composable

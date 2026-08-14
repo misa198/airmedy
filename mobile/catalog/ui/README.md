@@ -248,18 +248,41 @@ describe the desktop Vue UI or future iOS UI.
   slider's resting fill colour and their icon matches active Lyrics.
   Shuffle toggles directly; Repeat cycles
   Off, All, One, then Off. Rows are 56dp with artwork, title/artist metadata,
-  and a trailing Material Symbols menu icon aligned flush to the row's end, which
-  uses the same muted token as the volume icons. Queue rows have no horizontal
-  content padding. The current item's artwork has a `playerBackdrop` overlay
+  and a trailing Material Symbols Reorder icon aligned flush to the row's end, which
+  uses the same muted token as the volume icons. The Queue panel itself reaches
+  the fullscreen edges; its header and each queue row supply their own 20dp
+  horizontal inset so their contents remain aligned with the player shell.
+  Hovering a row reveals a faint full-width background using the same secondary
+  glass tint as the fullscreen Favorite control, while its content remains
+  inset. Touching the Reorder target does not show this preliminary state; the
+  stronger full-width glass surface appears only after a drag has started. The
+  current item's artwork has a `playerBackdrop` overlay
   with a centred three-bar primary `AirmedyPlayingIndicator`; the bars animate
   while playback is active and rest at a short height when paused. Tapping the
-  row selects and starts that item. Opening Queue, including switching from
+  row selects and starts that item. Holding a resolved queue row opens the shared
+  track context menu anchored to that row. Remove from queue is its first action;
+  Add to queue is omitted, and the current item also omits Play next. The trailing
+  Reorder handle remains dedicated to long-press dragging. Opening Queue, including switching from
   Lyrics, immediately positions the current item in view without an animation.
   It then animates to a subsequent current-track change only while the prior
   current item remains visible; a user who has browsed elsewhere keeps their
-  chosen viewport. Long-press dragging the
-  trailing touch target reorders the active queue and preserves the current
-  track, shuffle state, and repeat mode.
+  chosen viewport. Reordering never triggers current-track auto-follow, so it
+  also preserves the chosen viewport. Long-press dragging the dedicated trailing Reorder handle
+  reorders the active queue and preserves the current track, shuffle state,
+  and repeat mode. Its 72dp-wide touch target keeps the glyph flush to the
+  trailing edge while making long-press drag forgiving. Queue reorder uses
+  `sh.calvin.reorderable:reorderable`, whose `ReorderableItem` owns the
+  drag overlay, first-visible-item animation, and edge auto-scroll. The held
+  row uses a square-cornered, strengthened variant of
+  the Favorite control's translucent secondary glass fill and its themed border
+  across the Queue panel's full width (not merely its inset content), and
+  follows the finger directly. It updates the local order as items cross and
+  dispatches the complete order only when the drag stops. While a reorder drag
+  is active, the compact artwork/metadata and Queue header remain visible, but
+  the seek, transport, volume, and Lyrics/Cast/Queue control cluster slides
+  below the viewport. The Queue `LazyColumn` expands into that released safe
+  area; ending or cancelling the drag, closing Queue, or dismissing fullscreen
+  restores the normal player layout.
   `FullScreenPlayer.kt` remains the screen coordinator; the queue-specific UI,
   local drag state, and reorder dispatch live in `FullScreenPlayerQueuePanel.kt`.
   Keep this boundary when evolving either feature so queue interaction does not

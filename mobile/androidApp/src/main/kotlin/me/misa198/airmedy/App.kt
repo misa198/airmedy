@@ -162,6 +162,7 @@ internal fun App(
     onPlaybackSeek: (Long) -> Unit = {},
     onQueueTrackSelected: (String) -> Unit = {},
     onQueueReordered: (List<String>) -> Unit = {},
+    onQueueTrackRemoved: (String) -> Unit = {},
     onShuffleChange: (Boolean) -> Unit = {},
     onRepeatModeChange: (RepeatMode) -> Unit = {},
     systemVolume: Float = 0f,
@@ -603,6 +604,7 @@ internal fun App(
                 onNext = onPlaybackNext,
                 onQueueTrackSelected = onQueueTrackSelected,
                 onQueueReordered = onQueueReordered,
+                onQueueTrackRemoved = onQueueTrackRemoved,
                 onShuffleChange = onShuffleChange,
                 onRepeatModeChange = onRepeatModeChange,
                 isFavorite = queueTracks.firstOrNull { track -> track.id == when (val state = playbackState) {

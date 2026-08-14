@@ -7,12 +7,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.unit.dp
 import me.misa198.airmedy.player.PlaybackItem
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
@@ -58,6 +61,35 @@ class FullScreenPlayerTest {
         composeTestRule.onNodeWithContentDescription("More options").performClick()
         composeTestRule.onNodeWithText("Track info").assertExists()
         composeTestRule.onNodeWithText("Add to playlist").assertExists()
+    }
+
+    @Test
+    fun queueRowLongPressOpensQueueMenuWithoutAddToQueueOrCurrentTrackPlayNext() {
+        var removedTrackId: String? = null
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenQueuePanel(
+                    queue = PlaybackQueueSnapshot(activeTrackIds = listOf("track-1"), currentIndex = 0),
+                    tracks = listOf(LibraryTrack(id = "track-1", title = "Track 1", artists = "Artist")),
+                    currentTrackId = "track-1",
+                    isPlaying = true,
+                    onTrackSelected = {},
+                    onTrackRemoved = { removedTrackId = it },
+                    onReorder = {},
+                    onShuffleChange = {},
+                    onRepeatModeChange = {},
+                    modifier = Modifier.height(160.dp),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Track 1").performTouchInput { longClick() }
+
+        composeTestRule.onNodeWithText("Remove from queue").assertExists()
+        composeTestRule.onAllNodesWithText("Add to queue").assertCountEquals(0)
+        composeTestRule.onAllNodesWithText("Play next").assertCountEquals(0)
+        composeTestRule.onNodeWithText("Remove from queue").performClick()
+        composeTestRule.runOnIdle { assertEquals("track-1", removedTrackId) }
     }
 
     @Test
@@ -222,6 +254,12 @@ class FullScreenPlayerTest {
         }
 
         composeTestRule.onNodeWithContentDescription("Queue").performClick()
+        composeTestRule.onNodeWithTag("full_screen_queue_panel_header")
+            .assertLeftPositionInRootIsEqualTo(20.dp)
+        composeTestRule.onNodeWithTag("full_screen_queue_row-track-1")
+            .assertLeftPositionInRootIsEqualTo(0.dp)
+        composeTestRule.onNodeWithTag("full_screen_queue_row_content-track-1")
+            .assertLeftPositionInRootIsEqualTo(20.dp)
         composeTestRule.onNodeWithContentDescription("More options").assertExists()
         composeTestRule.onNodeWithTag("playing_indicator").assertExists()
         composeTestRule.onNodeWithText("Next track").performClick()
@@ -301,6 +339,30 @@ class FullScreenPlayerTest {
         }
 
         composeTestRule.onNodeWithText("Track 11").assertExists()
+    }
+
+    @Test
+    fun queueExposesASeparateReorderHandle() {
+        var selectedTrack: String? = null
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenQueuePanel(
+                    queue = PlaybackQueueSnapshot(activeTrackIds = listOf("track-1"), currentIndex = 0),
+                    tracks = listOf(LibraryTrack(id = "track-1", title = "Track 1", artists = "Artist")),
+                    currentTrackId = "track-1",
+                    isPlaying = false,
+                    onTrackSelected = { selectedTrack = it },
+                    onReorder = {},
+                    onShuffleChange = {},
+                    onRepeatModeChange = {},
+                    modifier = Modifier.height(160.dp),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Reorder track").assertExists()
+        composeTestRule.onNodeWithText("Track 1").performClick()
+        composeTestRule.runOnIdle { assertEquals("track-1", selectedTrack) }
     }
 
     private companion object {

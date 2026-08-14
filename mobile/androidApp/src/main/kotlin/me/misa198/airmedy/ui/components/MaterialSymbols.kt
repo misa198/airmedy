@@ -50,6 +50,7 @@ object MaterialSymbols {
     const val PlaylistRemove = "playlist_remove"
     const val QueuePlayNext = "queue_play_next"
     const val AddToQueue = "add_to_queue"
+    const val RemoveFromQueue = "remove_from_queue"
     const val Tune = "tune"
     const val MaskedTransitions = "masked_transitions"
 

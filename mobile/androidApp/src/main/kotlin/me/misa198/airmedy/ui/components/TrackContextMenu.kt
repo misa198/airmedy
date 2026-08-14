@@ -36,6 +36,7 @@ import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 /** Per-host visibility policy for the reusable track overflow sheet. */
 data class TrackContextMenuActions(
+    val removeFromQueue: Boolean = false,
     val playNext: Boolean = true,
     val addToQueue: Boolean = true,
     val trackInfo: Boolean = true,
@@ -89,6 +90,7 @@ fun TrackContextMenu(
     actions: TrackContextMenuActions = TrackContextMenuActions(),
     hazeState: HazeState? = null,
     playbackQueue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
+    onRemoveFromQueue: (LibraryTrack) -> Unit = {},
     onPlayNext: (LibraryTrack) -> Unit = {},
     onAddToQueue: (LibraryTrack) -> Unit = {},
     onFavoriteChange: (LibraryTrack, Boolean) -> Unit = { _, _ -> },
@@ -138,6 +140,12 @@ fun TrackContextMenu(
         anchor = anchor,
     ) {
         Column(Modifier.fillMaxWidth()) {
+            if (actions.removeFromQueue) {
+                TrackContextDestructiveAction(R.string.track_context_remove_from_queue, MaterialSymbols.RemoveFromQueue) {
+                    closeAfter { onRemoveFromQueue(track) }
+                }
+                ActionListDivider(ActionListDividerStyle.FullWidth)
+            }
             val showPlayNext = actions.playNext && queueAvailability.showPlayNext
             val showAddToQueue = actions.addToQueue && queueAvailability.showAddToQueue && queueAvailability.addToQueueEnabled
             if (showPlayNext) TrackContextAction(R.string.track_context_play_next, MaterialSymbols.QueuePlayNext) { closeAfter { onPlayNext(track) } }

@@ -323,6 +323,7 @@ class MainActivity : ComponentActivity() {
                 onPlaybackSeek = playbackController::seekTo,
                 onQueueTrackSelected = playbackController::selectQueueTrack,
                 onQueueReordered = playbackController::reorderQueue,
+                onQueueTrackRemoved = playbackController::removeFromQueue,
                 onShuffleChange = playbackController::setShuffle,
                 onRepeatModeChange = playbackController::setRepeatMode,
                 onFavoriteToggle = { trackId, favorite ->

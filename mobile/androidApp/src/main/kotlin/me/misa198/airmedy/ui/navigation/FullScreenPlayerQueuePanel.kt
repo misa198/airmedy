@@ -7,8 +7,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,7 +18,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -36,23 +37,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import kotlin.math.abs
-import kotlin.math.roundToInt
+import dev.chrisbanes.haze.HazeState
 import me.misa198.airmedy.R
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.player.RepeatMode
@@ -60,8 +61,16 @@ import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.ui.components.MaterialSymbol
 import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.ui.components.AirmedyPlayingIndicator
+import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
+import me.misa198.airmedy.ui.components.TrackContextMenu
+import me.misa198.airmedy.ui.components.TrackContextMenuActions
+import me.misa198.airmedy.ui.components.TrackContextArtist
 import me.misa198.airmedy.ui.components.rememberArtworkThumbnail
+import me.misa198.airmedy.ui.components.sliderFilledTrackColor
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.ReorderableCollectionItemScope
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 /** Queue-specific state and drag handling are isolated from the player shell. */
 @Composable
@@ -71,21 +80,34 @@ internal fun FullScreenQueuePanel(
     currentTrackId: String,
     isPlaying: Boolean,
     onTrackSelected: (String) -> Unit,
+    onTrackRemoved: (String) -> Unit = {},
+    onTrackPlayNext: (String) -> Unit = {},
     onReorder: (List<String>) -> Unit,
+    onReorderDragStateChange: (Boolean) -> Unit = {},
     onShuffleChange: (Boolean) -> Unit,
     onRepeatModeChange: (RepeatMode) -> Unit,
+    onFavoriteChange: (String, Boolean) -> Unit = { _, _ -> },
+    onTrackGoToAlbum: (String) -> Unit = {},
+    onTrackGoToArtist: (String) -> Unit = {},
+    onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit = {},
+    onCloseFullscreenThen: ((() -> Unit) -> Unit) = { action -> action() },
+    hazeState: HazeState? = null,
     modifier: Modifier = Modifier,
 ) {
     val colors = LocalAirmedyColors.current
     val listState = rememberLazyListState()
     val tracksById = remember(tracks) { tracks.associateBy(LibraryTrack::id) }
     var orderedIds by remember(queue.activeTrackIds) { mutableStateOf(queue.activeTrackIds) }
-    var draggedIndex by remember { mutableStateOf<Int?>(null) }
-    var draggedOffset by remember { mutableStateOf(0f) }
     var hasPositionedInitialTrack by remember { mutableStateOf(false) }
     var previousCurrentTrackId by remember { mutableStateOf<String?>(null) }
+    var contextTrackId by remember { mutableStateOf<String?>(null) }
     val haptics = LocalHapticFeedback.current
-    val reorderThresholdPx = with(LocalDensity.current) { 56.dp.toPx() }
+    val reorderableState = rememberReorderableLazyListState(listState) { from, to ->
+        if (from.index != to.index) {
+            orderedIds = moveQueueTrack(orderedIds, from.index, to.index)
+            haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+        }
+    }
     val repeatLabel = stringResource(
         when (queue.repeatMode) {
             RepeatMode.Off -> R.string.player_repeat_off
@@ -94,7 +116,9 @@ internal fun FullScreenQueuePanel(
         },
     )
 
-    LaunchedEffect(currentTrackId, orderedIds) {
+    // Reordering must preserve the listener's viewport. Only playback moving
+    // to a different current track is allowed to follow that track in the list.
+    LaunchedEffect(currentTrackId) {
         val targetIndex = orderedIds.indexOf(currentTrackId)
         targetIndex
             .takeIf { it >= 0 }
@@ -113,7 +137,13 @@ internal fun FullScreenQueuePanel(
     }
 
     Column(modifier = modifier) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = QueuePanelRowHorizontalPadding)
+                .semantics { testTag = QueuePanelHeaderTestTag },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
                 text = stringResource(R.string.player_queue),
                 color = colors.onPrimary,
@@ -131,45 +161,88 @@ internal fun FullScreenQueuePanel(
         Spacer(Modifier.height(8.dp))
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
             items(orderedIds, key = { it }, contentType = { "queue-track" }) { trackId ->
-                val index = orderedIds.indexOf(trackId)
-                FullScreenQueueTrackRow(
-                    track = tracksById[trackId], trackId = trackId,
-                    isCurrent = trackId == currentTrackId,
-                    isPlaying = isPlaying,
-                    dragOffset = if (draggedIndex == index) draggedOffset else 0f,
-                    onClick = { onTrackSelected(trackId) },
-                    onDragStart = {
-                        draggedIndex = orderedIds.indexOf(trackId)
-                        draggedOffset = 0f
-                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                    },
-                    onDrag = { dragAmount ->
-                        val currentIndex = draggedIndex ?: return@FullScreenQueueTrackRow
-                        draggedOffset += dragAmount
-                        if (abs(draggedOffset) >= reorderThresholdPx) {
-                            val targetIndex = (currentIndex + if (draggedOffset > 0) 1 else -1).coerceIn(0, orderedIds.lastIndex)
-                            if (targetIndex != currentIndex) {
-                                orderedIds = orderedIds.toMutableList().apply { add(targetIndex, removeAt(currentIndex)) }
-                                draggedIndex = targetIndex
-                                draggedOffset -= if (draggedOffset > 0) reorderThresholdPx else -reorderThresholdPx
-                            }
+                ReorderableItem(reorderableState, key = trackId) { isDragging ->
+                    val track = tracksById[trackId]
+                    if (track == null) {
+                        FullScreenQueueTrackRow(
+                            track = null,
+                            trackId = trackId,
+                            isCurrent = trackId == currentTrackId,
+                            isPlaying = isPlaying,
+                            isDragged = isDragging,
+                            modifier = Modifier,
+                            dragHandleModifier = queueDragHandleModifier(haptics, onReorderDragStateChange, onReorder, orderedIds),
+                            onClick = { onTrackSelected(trackId) },
+                        )
+                    } else {
+                        TrackContextMenu(
+                            track = track,
+                            expanded = contextTrackId == trackId,
+                            onDismiss = { contextTrackId = null },
+                            actions = queueTrackContextMenuActions(),
+                            hazeState = hazeState,
+                            playbackQueue = queue,
+                            onRemoveFromQueue = { onTrackRemoved(it.id) },
+                            onPlayNext = { onTrackPlayNext(it.id) },
+                            onFavoriteChange = { contextTrack, favorite -> onFavoriteChange(contextTrack.id, favorite) },
+                            onGoToAlbum = { onTrackGoToAlbum(it.albumId) },
+                            onGoToArtist = { artist: TrackContextArtist -> onTrackGoToArtist(artist.id) },
+                            onBottomSheetRequested = { request ->
+                                onCloseFullscreenThen { onTrackContextBottomSheet(request) }
+                            },
+                            onCloseFullscreenThen = onCloseFullscreenThen,
+                        ) {
+                            FullScreenQueueTrackRow(
+                                track = track,
+                                trackId = trackId,
+                                isCurrent = trackId == currentTrackId,
+                                isPlaying = isPlaying,
+                                isDragged = isDragging,
+                                modifier = Modifier,
+                                dragHandleModifier = queueDragHandleModifier(haptics, onReorderDragStateChange, onReorder, orderedIds),
+                                onClick = { onTrackSelected(trackId) },
+                                onLongClick = {
+                                    haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                                    contextTrackId = trackId
+                                },
+                            )
                         }
-                    },
-                    onDragEnd = {
-                        if (draggedIndex != null) onReorder(orderedIds)
-                        draggedIndex = null
-                        draggedOffset = 0f
-                    },
-                )
+                    }
+                }
             }
         }
     }
 }
 
+private fun ReorderableCollectionItemScope.queueDragHandleModifier(
+    haptics: androidx.compose.ui.hapticfeedback.HapticFeedback,
+    onReorderDragStateChange: (Boolean) -> Unit,
+    onReorder: (List<String>) -> Unit,
+    orderedIds: List<String>,
+) = Modifier.longPressDraggableHandle(
+    onDragStarted = {
+        haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+        onReorderDragStateChange(true)
+    },
+    onDragStopped = {
+        onReorderDragStateChange(false)
+        haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+        onReorder(orderedIds)
+    },
+)
+
 @Composable
 internal fun PlayerModeButton(symbol: String, label: String, active: Boolean, onClick: () -> Unit) {
     val colors = LocalAirmedyColors.current
-    val backgroundColor by animateColorAsState(if (active) colors.foregroundSubtle else Color.White.copy(alpha = 0.06f), tween(220, easing = FastOutSlowInEasing), label = "queue-mode-background")
+    val backgroundColor by animateColorAsState(
+        targetValue = if (active) {
+            sliderFilledTrackColor(colors, isInteracting = false)
+        } else {
+            fullScreenSecondaryControlBackground(colors)
+        },
+        animationSpec = tween(220, easing = FastOutSlowInEasing),
+        label = "queue-mode-background",
+    )
     val iconColor by animateColorAsState(if (active) colors.playerBackdrop.copy(alpha = 0.72f) else colors.onPrimary, tween(220, easing = FastOutSlowInEasing), label = "queue-mode-icon")
     Box(Modifier.width(72.dp).height(48.dp).semantics { contentDescription = label; selected = active }.clickable(onClick = onClick, role = Role.Button, interactionSource = remember { MutableInteractionSource() }, indication = null), contentAlignment = Alignment.Center) {
         Box(Modifier.width(72.dp).height(36.dp).clip(CircleShape).background(backgroundColor).border(1.dp, colors.borderGlass, CircleShape), contentAlignment = Alignment.Center) {
@@ -179,41 +252,131 @@ internal fun PlayerModeButton(symbol: String, label: String, active: Boolean, on
 }
 
 @Composable
-private fun FullScreenQueueTrackRow(track: LibraryTrack?, trackId: String, isCurrent: Boolean, isPlaying: Boolean, dragOffset: Float, onClick: () -> Unit, onDragStart: () -> Unit, onDrag: (Float) -> Unit, onDragEnd: () -> Unit) {
+private fun FullScreenQueueTrackRow(
+    track: LibraryTrack?,
+    trackId: String,
+    isCurrent: Boolean,
+    isPlaying: Boolean,
+    isDragged: Boolean,
+    modifier: Modifier,
+    dragHandleModifier: Modifier,
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
+) {
     val colors = LocalAirmedyColors.current
     val artwork = rememberArtworkThumbnail(track?.artworkPath)
     val title = track?.title ?: stringResource(R.string.player_queue_unknown_track)
     val artist = track?.artists.orEmpty()
-    val menuLabel = stringResource(R.string.player_more)
+    val dragHandleLabel = stringResource(R.string.player_queue_drag_handle)
     val currentLabel = stringResource(R.string.player_queue_current)
-    Row(
-        Modifier.fillMaxWidth().height(56.dp).offset { IntOffset(0, dragOffset.roundToInt()) }.clip(RoundedCornerShape(12.dp))
+    val dragHandleWidthPx = with(LocalDensity.current) { QueueDragHandleWidth.toPx() }
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    val hoverBackground by animateColorAsState(
+        targetValue = if (isHovered) {
+            fullScreenSecondaryControlBackground(colors)
+        } else {
+            colors.sliderInactive.copy(alpha = 0f)
+        },
+        animationSpec = tween(220, easing = FastOutSlowInEasing),
+        label = "queue-row-hover-background",
+    )
+    Box(
+        modifier.fillMaxWidth()
+            .height(56.dp)
+            .then(
+                if (isDragged) {
+                    // Match the Favorite control's translucent glass rather
+                    // than using the opaque elevated surface, with a stronger
+                    // opacity so the dragged row remains legible. The
+                    // full-width row intentionally has square screen-edge
+                    // corners.
+                    Modifier
+                        .background(queueDraggedRowBackground(colors))
+                        .border(1.dp, colors.borderGlass)
+                } else {
+                    Modifier.background(hoverBackground)
+                },
+            )
             .semantics { if (isCurrent) contentDescription = currentLabel }
-            .clickable(onClick = onClick, interactionSource = remember { MutableInteractionSource() }, indication = null),
-        verticalAlignment = Alignment.CenterVertically,
+            .semantics { testTag = "$QueuePanelRowTestTag-$trackId" }
+            .hoverable(interactionSource)
+            .pointerInput(onClick, onLongClick, dragHandleWidthPx) {
+                detectTapGestures(
+                    onTap = { onClick() },
+                    onLongPress = { position ->
+                        if (shouldOpenQueueTrackContextMenu(position.x, size.width, dragHandleWidthPx)) {
+                            onLongClick?.invoke()
+                        }
+                    },
+                )
+            }
+            .semantics {
+                role = Role.Button
+                onClick { onClick(); true }
+            },
     ) {
-        Box(Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)).background(colors.glassElevated), contentAlignment = Alignment.Center) {
-            if (artwork != null) Image(artwork, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-            else MaterialSymbol(MaterialSymbols.MusicNote, tint = colors.textMuted, size = 20.dp)
-            if (isCurrent) {
-                Box(Modifier.fillMaxSize().background(colors.playerBackdrop.copy(alpha = 0.64f)), contentAlignment = Alignment.Center) {
-                    AirmedyPlayingIndicator(isPlaying = isPlaying)
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = QueuePanelRowHorizontalPadding)
+                .semantics { testTag = "$QueuePanelRowContentTestTag-$trackId" },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)).background(colors.glassElevated), contentAlignment = Alignment.Center) {
+                if (artwork != null) Image(artwork, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                else MaterialSymbol(MaterialSymbols.MusicNote, tint = colors.textMuted, size = 20.dp)
+                if (isCurrent) {
+                    Box(Modifier.fillMaxSize().background(colors.playerBackdrop.copy(alpha = 0.64f)), contentAlignment = Alignment.Center) {
+                        AirmedyPlayingIndicator(isPlaying = isPlaying)
+                    }
                 }
             }
-        }
-        Column(Modifier.weight(1f).padding(horizontal = 12.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center) {
-            Text(text = title, color = colors.onPrimary, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(text = artist, color = colors.foregroundSubtle, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-        Box(Modifier.size(48.dp).semantics { contentDescription = menuLabel }.pointerInput(trackId) {
-            detectDragGesturesAfterLongPress(onDragStart = { onDragStart() }, onDragCancel = onDragEnd, onDragEnd = onDragEnd) { change, amount ->
-                change.consume(); onDrag(amount.y)
+            Column(Modifier.weight(1f).padding(horizontal = 12.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center) {
+                Text(text = title, color = colors.onPrimary, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(text = artist, color = colors.foregroundSubtle, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-        }, contentAlignment = Alignment.CenterEnd) {
-            MaterialSymbol(MaterialSymbols.Menu, tint = colors.textMuted, size = 24.dp)
+            Box(
+                Modifier
+                    .size(QueueDragHandleWidth)
+                    .then(dragHandleModifier)
+                    .semantics { contentDescription = dragHandleLabel },
+                contentAlignment = Alignment.CenterEnd,
+            ) {
+                MaterialSymbol(MaterialSymbols.Menu, tint = colors.sliderInactive, size = 24.dp)
+            }
         }
     }
 }
+
+// Keep the glyph at the row edge but give its long-press gesture a forgiving
+// target, so reordering does not require hitting the icon precisely.
+private val QueueDragHandleWidth = 72.dp
+private val QueuePanelRowHorizontalPadding = 20.dp
+private const val QueuePanelHeaderTestTag = "full_screen_queue_panel_header"
+private const val QueuePanelRowTestTag = "full_screen_queue_row"
+private const val QueuePanelRowContentTestTag = "full_screen_queue_row_content"
+
+internal fun queueTrackContextMenuActions() = TrackContextMenuActions(
+    removeFromQueue = true,
+    addToQueue = false,
+)
+
+internal fun shouldOpenQueueTrackContextMenu(
+    longPressX: Float,
+    rowWidthPx: Int,
+    dragHandleWidthPx: Float,
+): Boolean = longPressX < rowWidthPx - dragHandleWidthPx
+
+private fun queueDraggedRowBackground(colors: me.misa198.airmedy.ui.theme.AirmedyColors) =
+    colors.sliderInactive.copy(alpha = 0.20f)
+
+internal fun moveQueueTrack(trackIds: List<String>, fromIndex: Int, toIndex: Int): List<String> =
+    trackIds.toMutableList().apply {
+        if (fromIndex in indices && toIndex in indices && fromIndex != toIndex) {
+            add(toIndex, removeAt(fromIndex))
+        }
+    }
 
 private fun RepeatMode.next(): RepeatMode = when (this) {
     RepeatMode.Off -> RepeatMode.All
