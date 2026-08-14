@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -94,6 +93,13 @@ internal fun shouldShowHeaderBlur(
 ): Boolean = isContentScrolled || (destinationChanged && previousHeaderWasBlurred)
 
 @Composable
+private fun LazyListState.resetAfterPagePop(generation: Int) {
+    LaunchedEffect(generation) {
+        if (generation > 0) scrollToItem(0)
+    }
+}
+
+@Composable
 internal fun App(
     uiState: AppUiState = AppUiState(),
     syncUiState: SyncUiState = SyncUiState(),
@@ -166,33 +172,44 @@ internal fun App(
 ) {
     AirmedyTheme(themeMode = uiState.themeMode) {
         val hazeState = if (uiState.reduceTransparency) null else rememberHazeState()
-        val homeListState = rememberLazyListState()
-        val libraryListState = rememberLazyListState()
-        val tracksListState = remember(tracksUiState.sortOption, tracksUiState.sortOrder) {
+        val currentStackPage = uiState.stackFor(uiState.selectedDestination).currentStackPage(uiState.selectedDestination)
+        val homeListState = remember(uiState.pageStateGenerationFor(AppDestination.Home, AppStackPage.Root)) { LazyListState() }
+        val libraryListState = remember(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.Root)) { LazyListState() }
+        val tracksListState = remember(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.LibraryTracks), tracksUiState.sortOption, tracksUiState.sortOrder) {
             LazyListState()
         }
-        val artistsListState = remember(artistsUiState.sortOption, artistsUiState.sortOrder) {
+        val artistsListState = remember(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.LibraryArtists), artistsUiState.sortOption, artistsUiState.sortOrder) {
             LazyListState()
         }
-        val albumsListState = remember(albumsUiState.sortOption, albumsUiState.sortOrder) {
+        val albumsListState = remember(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.LibraryAlbums), albumsUiState.sortOption, albumsUiState.sortOrder) {
             LazyListState()
         }
-        val artistDetailsListState = remember(uiState.selectedArtistId) { LazyListState() }
-        val genreDetailsListState = remember(uiState.selectedGenreId) { LazyListState() }
-        val composerDetailsListState = remember(uiState.selectedComposerId) { LazyListState() }
-        val genresListState = remember(genresUiState.sortOption, genresUiState.sortOrder) {
+        val artistDetailsListState = remember(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.ArtistDetails), uiState.selectedArtistId) { LazyListState() }
+        val genreDetailsListState = remember(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.GenreDetails), uiState.selectedGenreId) { LazyListState() }
+        val composerDetailsListState = remember(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.ComposerDetails), uiState.selectedComposerId) { LazyListState() }
+        val genresListState = remember(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.LibraryGenres), genresUiState.sortOption, genresUiState.sortOrder) {
             LazyListState()
         }
-        val composersListState = remember(composersUiState.sortOption, composersUiState.sortOrder) {
+        val composersListState = remember(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.LibraryComposers), composersUiState.sortOption, composersUiState.sortOrder) {
             LazyListState()
         }
-        val playlistsListState = rememberLazyListState()
+        val playlistsListState = remember(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.LibraryPlaylists)) { LazyListState() }
+        homeListState.resetAfterPagePop(uiState.pageStateGenerationFor(AppDestination.Home, AppStackPage.Root))
+        libraryListState.resetAfterPagePop(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.Root))
+        tracksListState.resetAfterPagePop(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.LibraryTracks))
+        artistsListState.resetAfterPagePop(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.LibraryArtists))
+        albumsListState.resetAfterPagePop(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.LibraryAlbums))
+        artistDetailsListState.resetAfterPagePop(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.ArtistDetails))
+        genreDetailsListState.resetAfterPagePop(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.GenreDetails))
+        composerDetailsListState.resetAfterPagePop(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.ComposerDetails))
+        genresListState.resetAfterPagePop(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.LibraryGenres))
+        composersListState.resetAfterPagePop(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.LibraryComposers))
+        playlistsListState.resetAfterPagePop(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.LibraryPlaylists))
         val coroutineScope = rememberCoroutineScope()
         var previousDestination by remember { mutableStateOf(uiState.selectedDestination) }
         var previousHeaderWasBlurred by remember { mutableStateOf(false) }
         val destinationChanged = previousDestination != uiState.selectedDestination
         val animateHeaderChanges = !destinationChanged
-        val currentStackPage = uiState.stackFor(uiState.selectedDestination).currentStackPage(uiState.selectedDestination)
         val currentPage = currentStackPage.page
         var previousStackPage by remember { mutableStateOf(currentStackPage) }
         val isForwardHeaderTransition = currentStackPage.index >= previousStackPage.index

@@ -116,6 +116,56 @@ class MainViewModelTest {
     }
 
     @Test
+    fun `popping a detail page clears its selected page state`() = runTest {
+        val viewModel = MainViewModel(FakeThemeModeStore())
+        activateState(viewModel)
+
+        viewModel.dispatch(AppIntent.OpenAlbumDetails("album-1"))
+        advanceUntilIdle()
+        viewModel.dispatch(AppIntent.NavigateBack)
+        advanceUntilIdle()
+
+        assertEquals(AppStackPage.Root, viewModel.uiState.value.currentPage)
+        assertEquals(null, viewModel.uiState.value.selectedAlbumId)
+    }
+
+    @Test
+    fun `popping a nested detail only clears the page that was popped`() = runTest {
+        val viewModel = MainViewModel(FakeThemeModeStore())
+        activateState(viewModel)
+
+        viewModel.dispatch(AppIntent.OpenArtistDetails("artist-1"))
+        viewModel.dispatch(AppIntent.OpenAlbumDetails("album-1"))
+        advanceUntilIdle()
+        viewModel.dispatch(AppIntent.NavigateBack)
+        advanceUntilIdle()
+
+        assertEquals(AppStackPage.ArtistDetails, viewModel.uiState.value.currentPage)
+        assertEquals("artist-1", viewModel.uiState.value.selectedArtistId)
+        assertEquals(null, viewModel.uiState.value.selectedAlbumId)
+    }
+
+    @Test
+    fun `popping a list page invalidates only that page's cached ui state`() = runTest {
+        val viewModel = MainViewModel(FakeThemeModeStore())
+        activateState(viewModel)
+
+        viewModel.dispatch(AppIntent.OpenPage(AppStackPage.LibraryAlbums))
+        advanceUntilIdle()
+        viewModel.dispatch(AppIntent.NavigateBack)
+        advanceUntilIdle()
+
+        assertEquals(
+            1,
+            viewModel.uiState.value.pageStateGenerationFor(AppDestination.Library, AppStackPage.LibraryAlbums),
+        )
+        assertEquals(
+            0,
+            viewModel.uiState.value.pageStateGenerationFor(AppDestination.Library, AppStackPage.Root),
+        )
+    }
+
+    @Test
     fun `setting the theme persists it and updates ui state`() = runTest {
         val store = FakeThemeModeStore()
         val viewModel = MainViewModel(store)

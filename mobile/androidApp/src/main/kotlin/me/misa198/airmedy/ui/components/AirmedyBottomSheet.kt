@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -52,14 +51,12 @@ fun AirmedyBottomSheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     leadingAction: @Composable () -> Unit = {
-        IconButton(onClick = onDismiss) {
-            MaterialSymbol(
-                symbol = MaterialSymbols.Close,
-                contentDescription = stringResource(R.string.bottom_sheet_dismiss),
-                size = 22.dp,
-                tint = LocalAirmedyColors.current.textMain,
-            )
-        }
+        AirmedyGlassIconButton(
+            hazeState = null,
+            symbol = MaterialSymbols.Close,
+            label = stringResource(R.string.bottom_sheet_dismiss),
+            onClick = onDismiss,
+        )
     },
     trailingAction: @Composable () -> Unit = {},
     content: @Composable () -> Unit,

@@ -15,6 +15,11 @@ import kotlinx.coroutines.launch
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.settings.ThemeModeStore
 
+data class PageStateKey(
+    val destination: AppDestination,
+    val page: AppStackPage,
+)
+
 data class AppUiState(
     val selectedDestination: AppDestination = AppDestination.Home,
     val themeMode: ThemeMode = ThemeMode.System,
@@ -25,12 +30,16 @@ data class AppUiState(
     val selectedComposerId: String? = null,
     val selectedPlaylistId: String? = null,
     val destinationStacks: Map<AppDestination, List<AppStackPage>> = rootDestinationStacks(),
+    val pageStateGenerations: Map<PageStateKey, Int> = emptyMap(),
 ) {
     fun stackFor(destination: AppDestination): List<AppStackPage> =
         destinationStacks[destination].orEmpty().ifEmpty { listOf(AppStackPage.Root) }
 
     val currentPage: AppStackPage
         get() = stackFor(selectedDestination).last()
+
+    fun pageStateGenerationFor(destination: AppDestination, page: AppStackPage): Int =
+        pageStateGenerations[PageStateKey(destination, page)] ?: 0
 }
 
 class MainViewModel(
@@ -43,6 +52,7 @@ class MainViewModel(
     private val selectedGenreId = MutableStateFlow<String?>(null)
     private val selectedComposerId = MutableStateFlow<String?>(null)
     private val selectedPlaylistId = MutableStateFlow<String?>(null)
+    private val pageStateGenerations = MutableStateFlow<Map<PageStateKey, Int>>(emptyMap())
     private val _effects = Channel<AppEffect>(Channel.BUFFERED)
 
     val effects = _effects.receiveAsFlow()
@@ -69,6 +79,8 @@ class MainViewModel(
         state.copy(selectedComposerId = composerId)
     }.combine(selectedPlaylistId) { state, playlistId ->
         state.copy(selectedPlaylistId = playlistId)
+    }.combine(pageStateGenerations) { state, generations ->
+        state.copy(pageStateGenerations = generations)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
@@ -93,9 +105,11 @@ class MainViewModel(
 
     private fun selectDestination(destination: AppDestination) {
         if (destination == selectedDestination.value) {
+            val discardedPages = destinationStacks.value.getValue(destination).drop(1)
             destinationStacks.update { stacks ->
                 stacks + (destination to listOf(AppStackPage.Root))
             }
+            discardedPages.forEach { page -> invalidatePoppedPageState(destination, page) }
         } else {
             selectedDestination.value = destination
         }
@@ -141,9 +155,36 @@ class MainViewModel(
 
     private fun navigateBack() {
         val destination = selectedDestination.value
+        val poppedPage = destinationStacks.value.getValue(destination).takeIf { it.size > 1 }?.last()
         destinationStacks.update { stacks ->
             val stack = stacks.getValue(destination)
             if (stack.size > 1) stacks + (destination to stack.dropLast(1)) else stacks
+        }
+        poppedPage?.let { page -> invalidatePoppedPageState(destination, page) }
+    }
+
+    private fun invalidatePoppedPageState(destination: AppDestination, page: AppStackPage) {
+        val key = PageStateKey(destination, page)
+        pageStateGenerations.update { generations ->
+            generations + (key to (generations[key] ?: 0) + 1)
+        }
+        clearPoppedPageState(page)
+    }
+
+    /**
+     * Detail destinations are parameterized by a selected ID that lives in the
+     * activity-scoped app shell. A stack pop must also discard that parameter;
+     * otherwise reopening the same destination can render its previous page
+     * instance before a new selection is provided.
+     */
+    private fun clearPoppedPageState(page: AppStackPage) {
+        when (page) {
+            AppStackPage.AlbumDetails -> selectedAlbumId.value = null
+            AppStackPage.PlaylistDetails -> selectedPlaylistId.value = null
+            AppStackPage.ArtistDetails -> selectedArtistId.value = null
+            AppStackPage.GenreDetails -> selectedGenreId.value = null
+            AppStackPage.ComposerDetails -> selectedComposerId.value = null
+            else -> Unit
         }
     }
 

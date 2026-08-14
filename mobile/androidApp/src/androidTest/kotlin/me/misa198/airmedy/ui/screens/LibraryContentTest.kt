@@ -100,4 +100,21 @@ class LibraryContentTest {
 
         composeTestRule.onNodeWithText("Track info").assertIsDisplayed()
     }
+
+    @Test
+    fun trackInfoSheetOpensFromRecentlyAddedGrid() {
+        val track = LibraryTrack(id = "r1", title = "Recent Song", artists = "Artist")
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                AnchoredPopupMenuHost(hazeState = null) {
+                    LibraryContent(recentTracks = listOf(track))
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithText("Recent Song").performTouchInput { longClick() }
+        composeTestRule.onNodeWithText("Track info").performClick()
+
+        composeTestRule.onNodeWithText("Coming soon").assertIsDisplayed()
+    }
 }

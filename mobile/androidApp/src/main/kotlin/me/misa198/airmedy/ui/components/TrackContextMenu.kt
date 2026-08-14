@@ -154,11 +154,13 @@ fun TrackContextMenu(
         }
     }
     detailSheet?.let { request ->
+        // The anchor can carry parent-data modifiers (for example RowScope.weight
+        // in Library Home's recent-track grid). A Dialog must not inherit those
+        // constraints, or its sheet can be measured at the top of the window.
         TrackContextBottomSheet(
             request = request,
             onDismiss = dismissAll,
             onArtistSelected = { artist -> presentAfterFullscreenCloses { onGoToArtist(artist) } },
-            modifier = modifier,
         )
     }
 }
