@@ -62,6 +62,23 @@ class PlaybackQueueTest {
     }
 
     @Test
+    fun `restart returns an exhausted queue to the first active track`() {
+        val queue = PlaybackQueue(Random(0))
+        queue.playShuffled(PlaybackRequest(listOf("a", "b", "c")))
+        val activeOrder = queue.snapshot().activeTrackIds
+        queue.setRepeatMode(RepeatMode.Off)
+        queue.next()
+        queue.next()
+
+        assertEquals(QueueTransition.StopAtCurrent, queue.next())
+        assertEquals(QueueTransition.Play(activeOrder.first()), queue.restart())
+        assertEquals(activeOrder.first(), queue.snapshot().currentTrackId)
+        assertEquals(activeOrder, queue.snapshot().activeTrackIds)
+        assertEquals(true, queue.snapshot().shuffle)
+        assertEquals(RepeatMode.Off, queue.snapshot().repeatMode)
+    }
+
+    @Test
     fun `repeat one replays current track`() {
         val queue = PlaybackQueue()
         queue.play(PlaybackRequest(listOf("a", "b")))

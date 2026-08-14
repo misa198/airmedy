@@ -146,6 +146,9 @@ class PlaybackQueue(private val random: Random = Random.Default) {
         }
     }
 
+    /** Starts the active playback order again without changing shuffle or repeat settings. */
+    fun restart(): QueueTransition = selectFirstOrStop()
+
     /** Read-only next-item look-ahead for native gapless preloading. */
     fun peekNext(): String? {
         val current = currentTrackId() ?: return active.firstOrNull()

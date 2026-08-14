@@ -179,7 +179,7 @@ internal fun FullScreenQueuePanel(
                             track = track,
                             expanded = contextTrackId == trackId,
                             onDismiss = { contextTrackId = null },
-                            actions = queueTrackContextMenuActions(),
+                            actions = queueTrackContextMenuActions(isCurrent = trackId == currentTrackId),
                             hazeState = hazeState,
                             playbackQueue = queue,
                             onRemoveFromQueue = { onTrackRemoved(it.id) },
@@ -357,8 +357,8 @@ private const val QueuePanelHeaderTestTag = "full_screen_queue_panel_header"
 private const val QueuePanelRowTestTag = "full_screen_queue_row"
 private const val QueuePanelRowContentTestTag = "full_screen_queue_row_content"
 
-internal fun queueTrackContextMenuActions() = TrackContextMenuActions(
-    removeFromQueue = true,
+internal fun queueTrackContextMenuActions(isCurrent: Boolean) = TrackContextMenuActions(
+    removeFromQueue = !isCurrent,
     addToQueue = false,
 )
 

@@ -136,7 +136,7 @@ The target command surface is:
 ```kotlin
 play(request)                 // replace queue in source order and start at startIndex
 shuffle(request)              // replace queue, Fisher-Yates shuffle, and start at index 0
-pause(); resume(); stop()
+pause(); resume(); stop()     // resume after natural repeat-off completion restarts at active index 0
 next(); previous(); seekTo(positionMs)
 setShuffle(enabled)
 setRepeatMode(mode)
@@ -207,10 +207,14 @@ Natural completion and the Next command use the same navigation rule:
 At the player-control level, Previous first restarts the current item when its
 position is greater than three seconds. At three seconds or less it performs
 the queue Previous action above. Stopping after repeat-off exhaustion leaves
-the queue intact and retains the final item as a stopped/paused player state,
-so its controls remain visible and Play reloads that selected track. This is
-distinct from Clear Queue, which removes every entry and returns the player to
-an idle state.
+the queue intact and retains the final item as a paused player state, so its
+controls remain visible. The completed native decoder is released, and Play
+restarts at the first item in the active order (the shuffled order when shuffle
+is enabled), preserving shuffle and repeat settings. Session persistence
+captures the current position before scheduling its asynchronous DataStore
+write, so a later command cannot make that write access a closed decoder. This
+is distinct from Clear Queue, which removes every entry and returns the player
+to an idle state.
 
 Shuffle uses Fisher-Yates:
 

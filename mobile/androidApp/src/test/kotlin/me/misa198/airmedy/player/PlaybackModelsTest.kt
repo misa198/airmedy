@@ -105,6 +105,13 @@ class PlaybackModelsTest {
     }
 
     @Test
+    fun `resume after natural queue completion restarts the queue`() {
+        assertTrue(shouldRestartQueueOnResume(pausedPositionMs = 120_000L, durationMs = 120_000L, hasDecoder = false))
+        assertFalse(shouldRestartQueueOnResume(pausedPositionMs = 119_999L, durationMs = 120_000L, hasDecoder = false))
+        assertFalse(shouldRestartQueueOnResume(pausedPositionMs = 120_000L, durationMs = 120_000L, hasDecoder = true))
+    }
+
+    @Test
     fun `new play actions take precedence over session restoration`() {
         assertTrue(playbackActionReplacesRestoredQueue(PlaybackService.ActionPlay))
         assertTrue(playbackActionReplacesRestoredQueue(PlaybackService.ActionShuffle))

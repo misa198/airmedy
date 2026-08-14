@@ -260,8 +260,9 @@ describe the desktop Vue UI or future iOS UI.
   with a centred three-bar primary `AirmedyPlayingIndicator`; the bars animate
   while playback is active and rest at a short height when paused. Tapping the
   row selects and starts that item. Holding a resolved queue row opens the shared
-  track context menu anchored to that row. Remove from queue is its first action;
-  Add to queue is omitted, and the current item also omits Play next. The trailing
+  track context menu anchored to that row. Remove from queue is its first action
+  for non-current items; it is omitted for the current track. Add to queue is
+  omitted, and the current item also omits Play next. The trailing
   Reorder handle remains dedicated to long-press dragging. Opening Queue, including switching from
   Lyrics, immediately positions the current item in view without an animation.
   It then animates to a subsequent current-track change only while the prior

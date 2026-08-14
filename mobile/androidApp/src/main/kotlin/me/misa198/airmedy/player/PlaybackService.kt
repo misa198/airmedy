@@ -286,18 +286,26 @@ class PlaybackService : Service() {
         if (audioManager.requestAudioFocus(focusRequest) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) return fail(trackId, "Audio focus was not granted")
         try {
             decoder?.close()
-            decoder = FfmpegDecoder().also {
-                it.prepare(File(item.audioPath), normalizationGain(item, queue.peekNext()))
-                if (startPositionMs > 0L) it.seekTo(clampSeekPosition(startPositionMs, it.durationMs()))
+            // A normalization lookup can suspend. Do not leave a closed decoder
+            // reachable while a queued session write may read playback state.
+            decoder = null
+            val preparedDecoder = FfmpegDecoder()
+            try {
+                preparedDecoder.prepare(File(item.audioPath), normalizationGain(item, queue.peekNext()))
+                if (startPositionMs > 0L) preparedDecoder.seekTo(clampSeekPosition(startPositionMs, preparedDecoder.durationMs()))
                 if (startPaused) {
-                    it.pause()
-                    state.value = PlaybackState.Paused(item, it.positionMs(), it.durationMs())
-                    publishNowPlaying(item, AndroidMediaPlaybackState.STATE_PAUSED, it.positionMs(), it.durationMs())
+                    preparedDecoder.pause()
+                    state.value = PlaybackState.Paused(item, preparedDecoder.positionMs(), preparedDecoder.durationMs())
+                    publishNowPlaying(item, AndroidMediaPlaybackState.STATE_PAUSED, preparedDecoder.positionMs(), preparedDecoder.durationMs())
                 } else {
-                    it.play()
-                    state.value = PlaybackState.Playing(item, it.positionMs(), it.durationMs())
-                    publishNowPlaying(item, AndroidMediaPlaybackState.STATE_PLAYING, it.positionMs(), it.durationMs())
+                    preparedDecoder.play()
+                    state.value = PlaybackState.Playing(item, preparedDecoder.positionMs(), preparedDecoder.durationMs())
+                    publishNowPlaying(item, AndroidMediaPlaybackState.STATE_PLAYING, preparedDecoder.positionMs(), preparedDecoder.durationMs())
                 }
+                decoder = preparedDecoder
+            } catch (error: Throwable) {
+                preparedDecoder.close()
+                throw error
             }
             preloadNext()
             showForeground(item)
@@ -346,6 +354,10 @@ class PlaybackService : Service() {
     private suspend fun resumeCurrent() {
         val paused = state.value as? PlaybackState.Paused
         val currentDecoder = decoder
+        if (paused != null && shouldRestartQueueOnResume(paused.positionMs, paused.durationMs, currentDecoder != null)) {
+            handleTransition(queue.restart())
+            return
+        }
         if (paused == null || currentDecoder == null || currentDecoder.isOutputDisconnected()) {
             if (currentDecoder?.isOutputDisconnected() == true) {
                 currentDecoder.close()
@@ -452,7 +464,10 @@ class PlaybackService : Service() {
     private fun publishQueue() {
         val snapshot = queue.snapshot()
         queueState.value = snapshot
-        scope.launch { sessionStore.save(currentSession(snapshot)) }
+        // Capture before the asynchronous DataStore write. A later command can
+        // close the decoder, but cannot change this immutable session snapshot.
+        val session = currentSession(snapshot)
+        scope.launch { sessionStore.save(session) }
     }
 
     private fun currentSession(snapshot: PlaybackQueueSnapshot = queue.snapshot()): PlaybackSession {

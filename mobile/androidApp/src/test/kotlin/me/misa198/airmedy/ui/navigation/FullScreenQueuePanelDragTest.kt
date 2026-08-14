@@ -34,12 +34,20 @@ class FullScreenQueuePanelDragTest {
     }
 
     @Test
-    fun queueContextMenuEnablesRemovalAndHidesAppend() {
-        val actions = queueTrackContextMenuActions()
+    fun queueContextMenuEnablesRemovalForNonCurrentTrackAndHidesAppend() {
+        val actions = queueTrackContextMenuActions(isCurrent = false)
 
         assertTrue(actions.removeFromQueue)
         assertFalse(actions.addToQueue)
         assertTrue(actions.playNext)
+    }
+
+    @Test
+    fun queueContextMenuHidesRemovalForCurrentTrack() {
+        val actions = queueTrackContextMenuActions(isCurrent = true)
+
+        assertFalse(actions.removeFromQueue)
+        assertFalse(actions.addToQueue)
     }
 
     @Test

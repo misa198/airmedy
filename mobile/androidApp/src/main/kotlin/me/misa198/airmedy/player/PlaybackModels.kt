@@ -23,6 +23,13 @@ internal fun audioBecomingNoisyRequiresPause(action: String?): Boolean =
 /** AAudio streams cannot be restarted after Android disconnects their output route. */
 internal fun audioOutputDisconnectRequiresRecovery(isOutputDisconnected: Boolean): Boolean = isOutputDisconnected
 
+/** A natural repeat-off completion releases the decoder; Play then begins the active queue again. */
+internal fun shouldRestartQueueOnResume(
+    pausedPositionMs: Long,
+    durationMs: Long,
+    hasDecoder: Boolean,
+): Boolean = !hasDecoder && durationMs > 0L && pausedPositionMs >= durationMs
+
 /** Pure policy shared by the service ticker and host tests. */
 internal fun shouldStartCrossfade(
     crossfadeSeconds: Int,
