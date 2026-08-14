@@ -18,6 +18,17 @@ import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class PlaylistReconciliationHostTest {
+    @Test fun pendingRemoveTrackIsProjectedImmediately() {
+        val playlist = LibraryPlaylist("p", "Original", listOf("a", "b", "c"), "{}")
+
+        val projected = applyPendingPlaylistMutations(
+            listOf(playlist),
+            listOf(mutation("1", PlaylistMutationOperation.REMOVE_TRACK, PlaylistMutationPayload(trackId = "b"))),
+        )
+
+        assertEquals(listOf("a", "c"), projected.single().trackIds)
+    }
+
     @Test fun pendingMutationsMergeInQueueOrderAndHonorScope() {
         val snapshot = listOf(playlist("p", "Original", listOf("a", "b", "c")))
         val pending = listOf(

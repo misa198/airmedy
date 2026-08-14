@@ -433,7 +433,11 @@ internal class AndroidLibrarySyncStore(
             asset.assetId.removePrefix("artwork:") to asset.relativePath
         })
     }
-    val playlists: Flow<List<LibraryPlaylist>> = combine(dao.observePlaylists(), dao.observeLocalPlaylists()) { rows, local ->
+    val playlists: Flow<List<LibraryPlaylist>> = combine(
+        dao.observePlaylists(),
+        dao.observeLocalPlaylists(),
+        dao.observePendingPlaylistMutations(),
+    ) { rows, local, pending ->
         val synced = rows.map { row ->
             LibraryPlaylist(
                 row.id,
@@ -446,10 +450,12 @@ internal class AndroidLibrarySyncStore(
             )
         }
         val syncedIds = synced.mapTo(mutableSetOf(), LibraryPlaylist::id)
-        (synced + local.filter { it.playlistId !in syncedIds }.map { row ->
+        val projected = synced + local.filter { it.playlistId !in syncedIds }.map { row ->
             val metadata = row.artworkSha256?.let { hash -> "{\"playlist\":{\"artwork_key\":\"$hash\"}}" } ?: "{}"
             LibraryPlaylist(row.playlistId, row.name, emptyList(), metadata, syncFailed = row.syncState == "failed")
-        }).sortedBy { it.name.lowercase() }
+        }
+        applyPendingPlaylistMutations(projected, pending.mapNotNull(PlaylistMutationEntity::toPlaylistMutation))
+            .sortedBy { it.name.lowercase() }
     }
     val artworkPaths: Flow<Map<String, String>> = combine(dao.observeArtworkAssets(), dao.observePlaylistArtwork()) { assets, staged ->
         (assets.map { asset -> asset.assetId.removePrefix("artwork:") to asset.relativePath } + staged.map { artwork -> artwork.sha256 to artwork.relativePath }).toMap()
@@ -520,17 +526,7 @@ internal class AndroidLibrarySyncStore(
 
     override suspend fun stagedPlaylistArtwork(sha256: String): StagedPlaylistArtwork? = dao.playlistArtwork(sha256)?.let { StagedPlaylistArtwork(it.sha256, it.mime, it.size, it.relativePath) }
 
-    override suspend fun pendingPlaylistMutations(): List<PlaylistMutation> = dao.pendingPlaylistMutations().mapNotNull { row ->
-        runCatching {
-            PlaylistMutation(
-                row.mutationId,
-                row.playlistId,
-                PlaylistMutationOperation.valueOf(row.operation),
-                row.updatedAt,
-                LibrarySyncProtocol.json.decodeFromString(PlaylistMutationPayload.serializer(), row.payloadJson),
-            )
-        }.getOrNull()
-    }
+    override suspend fun pendingPlaylistMutations(): List<PlaylistMutation> = dao.pendingPlaylistMutations().mapNotNull(PlaylistMutationEntity::toPlaylistMutation)
 
     override suspend fun acknowledgePlaylistMutations(ids: List<String>) {
         if (ids.isEmpty()) return
@@ -726,6 +722,47 @@ internal fun mergePlaylistSnapshot(snapshot: List<JsonObject>, scope: JsonObject
 }
 
 private fun trackIds(value: JsonObject): List<String> = ((value["track_ids"] as? JsonArray).orEmpty()).mapNotNull { (it as? JsonPrimitive)?.contentOrNull }
+
+private fun PlaylistMutationEntity.toPlaylistMutation(): PlaylistMutation? = runCatching {
+    PlaylistMutation(
+        mutationId,
+        playlistId,
+        PlaylistMutationOperation.valueOf(operation),
+        updatedAt,
+        LibrarySyncProtocol.json.decodeFromString(PlaylistMutationPayload.serializer(), payloadJson),
+    )
+}.getOrNull()
+
+/** Reflects pending track-order deltas locally until desktop acknowledges them. */
+internal fun applyPendingPlaylistMutations(
+    playlists: List<LibraryPlaylist>,
+    pending: List<PlaylistMutation>,
+): List<LibraryPlaylist> {
+    val projected = playlists.associateByTo(linkedMapOf(), LibraryPlaylist::id)
+    pending.forEach { mutation ->
+        val current = projected[mutation.playlistId] ?: return@forEach
+        val trackId = mutation.payload.trackId ?: return@forEach
+        when (mutation.operation) {
+            PlaylistMutationOperation.ADD_TRACK -> projected[mutation.playlistId] = current.copy(
+                trackIds = (current.trackIds + trackId).distinct(),
+            )
+            PlaylistMutationOperation.REMOVE_TRACK -> projected[mutation.playlistId] = current.copy(
+                trackIds = current.trackIds.filterNot { it == trackId },
+            )
+            PlaylistMutationOperation.MOVE_TRACK -> {
+                val ids = current.trackIds.filterNot { it == trackId }.toMutableList()
+                val index = mutation.payload.nextTrackId?.let(ids::indexOf)?.takeIf { it >= 0 }
+                    ?: mutation.payload.previousTrackId?.let(ids::indexOf)?.takeIf { it >= 0 }?.plus(1)
+                    ?: ids.size
+                ids.add(index.coerceIn(0, ids.size), trackId)
+                projected[mutation.playlistId] = current.copy(trackIds = ids)
+            }
+            else -> Unit
+        }
+    }
+    return projected.values.toList()
+}
+
 private fun playlistSnapshot(mutation: PlaylistMutation, tracks: List<String>, current: JsonObject? = null): JsonObject {
     val playlist = ((current?.get("playlist") as? JsonObject)?.toMutableMap() ?: linkedMapOf()).apply {
         put("id", JsonPrimitive(mutation.playlistId))

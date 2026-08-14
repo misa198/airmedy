@@ -15,6 +15,11 @@ import me.misa198.airmedy.sync.AndroidLibrarySyncStore
 import me.misa198.airmedy.sync.LibraryPlaylist
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.sync.metadataObject
+import me.misa198.airmedy.sync.PlaylistMutation
+import me.misa198.airmedy.sync.PlaylistMutationOperation
+import me.misa198.airmedy.sync.PlaylistMutationPayload
+import java.util.UUID
+import kotlinx.coroutines.launch
 
 internal data class PlaylistDetailsUiState(
     val playlist: LibraryPlaylist? = null,
@@ -26,7 +31,7 @@ internal data class PlaylistDetailsUiState(
 )
 
 internal class PlaylistDetailsViewModel(
-    syncStore: AndroidLibrarySyncStore,
+    private val syncStore: AndroidLibrarySyncStore,
     private val playbackController: PlaybackController,
 ) : ViewModel() {
     class Factory(
@@ -61,6 +66,21 @@ internal class PlaylistDetailsViewModel(
     fun playTrack(playlistId: String, trackId: String) {
         val tracks = playlistDetailsUiStateFor(uiState.value, playlistId).tracks
         albumPlaybackRequestFor(tracks, trackId)?.let(playbackController::play)
+    }
+
+    fun removeTrack(playlistId: String, trackId: String) {
+        if (playlistId == FavoritesPlaylistId || trackId.isBlank()) return
+        viewModelScope.launch {
+            syncStore.queuePlaylistMutation(
+                PlaylistMutation(
+                    mutationId = UUID.randomUUID().toString(),
+                    playlistId = playlistId,
+                    operation = PlaylistMutationOperation.REMOVE_TRACK,
+                    updatedAt = System.currentTimeMillis(),
+                    payload = PlaylistMutationPayload(trackId = trackId),
+                ),
+            )
+        }
     }
 }
 

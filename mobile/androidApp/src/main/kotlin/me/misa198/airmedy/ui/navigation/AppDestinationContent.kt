@@ -149,6 +149,7 @@ internal fun AppDestinationContent(
     onAlbumTrackPlay: (String, String) -> Unit = { _, _ -> },
     onPlaylistPlay: (String, Boolean) -> Unit = { _, _ -> },
     onPlaylistTrackPlay: (String, String) -> Unit = { _, _ -> },
+    onPlaylistTrackRemove: (String, String) -> Unit = { _, _ -> },
     onArtistPlay: (String, Boolean) -> Unit = { _, _ -> },
     onGenrePlay: (String, Boolean) -> Unit = { _, _ -> },
     onComposerPlay: (String, Boolean) -> Unit = { _, _ -> },
@@ -405,6 +406,12 @@ internal fun AppDestinationContent(
                                 onPlay = { selectedPlaylistId?.let { onPlaylistPlay(it, false) } },
                                 onShuffle = { selectedPlaylistId?.let { onPlaylistPlay(it, true) } },
                                 onTrackClick = { trackId -> selectedPlaylistId?.let { onPlaylistTrackPlay(it, trackId) } },
+                                playbackQueue = playbackQueue,
+                                onTrackPlayNext = onTrackPlayNext,
+                                onTrackAddToQueue = onTrackAddToQueue,
+                                onTrackFavoriteToggle = onTrackFavoriteToggle,
+                                onTrackArtistClick = { artist -> onIntent(AppIntent.OpenArtistDetails(artist.id)) },
+                                onTrackRemoveFromPlaylist = { trackId -> selectedPlaylistId?.let { onPlaylistTrackRemove(it, trackId) } },
                             )
                             AppStackPage.LibraryTracks -> LibraryTracksContent(
                                 uiState = tracksUiState,

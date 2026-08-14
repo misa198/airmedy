@@ -43,6 +43,7 @@ data class TrackContextMenuActions(
     val addToPlaylist: Boolean = true,
     val goToAlbum: Boolean = true,
     val goToArtists: Boolean = true,
+    val removeFromPlaylist: Boolean = false,
 )
 
 data class TrackContextArtist(val id: String, val name: String)
@@ -91,6 +92,7 @@ fun TrackContextMenu(
     onPlayNext: (LibraryTrack) -> Unit = {},
     onAddToQueue: (LibraryTrack) -> Unit = {},
     onFavoriteChange: (LibraryTrack, Boolean) -> Unit = { _, _ -> },
+    onRemoveFromPlaylist: (LibraryTrack) -> Unit = {},
     onGoToAlbum: (LibraryTrack) -> Unit = {},
     onGoToArtist: (TrackContextArtist) -> Unit = {},
     onBottomSheetRequested: ((TrackContextBottomSheetRequest) -> Unit)? = null,
@@ -101,6 +103,7 @@ fun TrackContextMenu(
     val artists = remember(track.metadataJson) { trackContextArtists(track) }
     val hasAlbum = track.albumId.isNotBlank() && track.album.isNotBlank()
     val hasArtists = track.artists.isNotBlank() && artists.isNotEmpty()
+    val hasNavigationActions = actions.goToAlbum && hasAlbum || actions.goToArtists && hasArtists
     val queueAvailability = remember(track.id, playbackQueue) {
         trackContextQueueAvailability(track.id, playbackQueue)
     }
@@ -145,11 +148,19 @@ fun TrackContextMenu(
                 closeAfter { onFavoriteChange(track, !favorite) }
             }
             if (actions.addToPlaylist) TrackContextAction(R.string.track_context_add_to_playlist, MaterialSymbols.PlaylistAdd) { requestBottomSheet(TrackContextBottomSheetRequest.Playlist) }
-            if (actions.favorite || actions.addToPlaylist) ActionListDivider(ActionListDividerStyle.FullWidth)
+            if ((actions.favorite || actions.addToPlaylist) && (hasNavigationActions || actions.removeFromPlaylist)) {
+                ActionListDivider(ActionListDividerStyle.FullWidth)
+            }
             if (actions.goToAlbum && hasAlbum) TrackContextAction(R.string.track_context_go_to_album, MaterialSymbols.Album) { presentAfterFullscreenCloses { onGoToAlbum(track) } }
             if (actions.goToArtists && hasArtists && artists.size == 1) TrackContextAction(R.string.track_context_go_to_artist, MaterialSymbols.Person, artists.single().name) { presentAfterFullscreenCloses { onGoToArtist(artists.single()) } }
             if (actions.goToArtists && hasArtists && artists.size > 1) TrackContextAction(R.string.track_context_go_to_artists, MaterialSymbols.People) {
                 requestBottomSheet(TrackContextBottomSheetRequest.Artists(artists))
+            }
+            if (actions.removeFromPlaylist) {
+                if (hasNavigationActions) ActionListDivider(ActionListDividerStyle.FullWidth)
+                TrackContextDestructiveAction(R.string.track_context_remove_from_playlist, MaterialSymbols.PlaylistRemove) {
+                    closeAfter { onRemoveFromPlaylist(track) }
+                }
             }
         }
     }
@@ -201,7 +212,15 @@ internal fun TrackContextBottomSheet(
 
 @Composable private fun TrackContextActionText(label: String, symbol: String, onClick: () -> Unit) {
     val colors = LocalAirmedyColors.current
-    val contentColor = colors.textMain
+    TrackContextActionText(label, symbol, colors.textMain, onClick)
+}
+
+@Composable private fun TrackContextDestructiveAction(label: Int, symbol: String, onClick: () -> Unit) {
+    val colors = LocalAirmedyColors.current
+    TrackContextActionText(stringResource(label), symbol, colors.primary, onClick)
+}
+
+@Composable private fun TrackContextActionText(label: String, symbol: String, contentColor: androidx.compose.ui.graphics.Color, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).semantics {
         contentDescription = label
     }.clickable(role = Role.Button, onClick = onClick).padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {

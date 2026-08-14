@@ -275,6 +275,7 @@ class MainActivity : ComponentActivity() {
                 onAlbumTrackPlay = albumDetailsViewModel::playTrack,
                 onPlaylistPlay = playlistDetailsViewModel::play,
                 onPlaylistTrackPlay = playlistDetailsViewModel::playTrack,
+                onPlaylistTrackRemove = playlistDetailsViewModel::removeTrack,
                 onCreatePlaylist = playlistsViewModel::createPlaylist,
                 onArtistPlay = artistDetailsViewModel::play,
                 onGenrePlay = genreDetailsViewModel::play,

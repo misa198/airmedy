@@ -10,6 +10,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -25,6 +29,10 @@ import me.misa198.airmedy.ui.components.HeroCard
 import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.ui.components.PlaylistArtwork
 import me.misa198.airmedy.ui.components.TrackRow
+import me.misa198.airmedy.ui.components.TrackContextMenu
+import me.misa198.airmedy.ui.components.TrackContextMenuActions
+import me.misa198.airmedy.ui.components.TrackContextArtist
+import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 private const val PlaylistTrackDividerTag = "playlist-detail-track-divider"
@@ -39,6 +47,12 @@ internal fun PlaylistDetailsContent(
     onPlay: () -> Unit = {},
     onShuffle: () -> Unit = {},
     onTrackClick: (String) -> Unit = {},
+    playbackQueue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
+    onTrackPlayNext: (String) -> Unit = {},
+    onTrackAddToQueue: (String) -> Unit = {},
+    onTrackFavoriteToggle: (String, Boolean) -> Unit = { _, _ -> },
+    onTrackArtistClick: (TrackContextArtist) -> Unit = {},
+    onTrackRemoveFromPlaylist: (String) -> Unit = {},
 ) {
     val playlist = uiState.playlist
     if (playlist == null) {
@@ -51,6 +65,7 @@ internal fun PlaylistDetailsContent(
         return
     }
     val colors = LocalAirmedyColors.current
+    var contextTrack by remember(playlist.id) { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val count = pluralStringResource(R.plurals.playlist_details_track_count, uiState.tracks.size, uiState.tracks.size)
     val duration = formatPlaylistTotalDuration(
@@ -90,13 +105,29 @@ internal fun PlaylistDetailsContent(
         }
         itemsIndexed(uiState.tracks, key = { index, track -> "${track.id}:$index" }) { index, track ->
             Box(Modifier.fillMaxWidth().padding(horizontal = 22.dp).height(1.dp).background(colors.borderGlass).testTag(PlaylistTrackDividerTag))
-            TrackRow(
-                title = track.title,
-                artist = track.artists,
-                artworkPath = track.artworkPath,
-                modifier = Modifier.fillMaxWidth(),
-                onClick = { onTrackClick(track.id) },
-            )
+            TrackContextMenu(
+                track = track,
+                expanded = contextTrack == track.id,
+                onDismiss = { if (contextTrack == track.id) contextTrack = null },
+                actions = TrackContextMenuActions(removeFromPlaylist = playlist.id != FavoritesPlaylistId),
+                hazeState = hazeState,
+                playbackQueue = playbackQueue,
+                onPlayNext = { onTrackPlayNext(it.id) },
+                onAddToQueue = { onTrackAddToQueue(it.id) },
+                onFavoriteChange = { item, favorite -> onTrackFavoriteToggle(item.id, favorite) },
+                onGoToArtist = onTrackArtistClick,
+                onRemoveFromPlaylist = { onTrackRemoveFromPlaylist(it.id) },
+            ) {
+                TrackRow(
+                    title = track.title,
+                    artist = track.artists,
+                    artworkPath = track.artworkPath,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { onTrackClick(track.id) },
+                    onMoreClick = { contextTrack = track.id },
+                    onLongClick = { contextTrack = track.id },
+                )
+            }
             if (index == uiState.tracks.lastIndex) {
                 Box(Modifier.fillMaxWidth().padding(horizontal = 22.dp).height(1.dp).background(colors.borderGlass).testTag(PlaylistTrackDividerTag))
             }
