@@ -65,6 +65,26 @@ class LibraryTracksContentTest {
     }
 
     @Test
+    fun playbackActionsAppearForTracksAndDispatchTheirMode() {
+        var playMode: Boolean? = null
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                LibraryTracksContent(
+                    uiState = LibraryTracksUiState(tracks = listOf(LibraryTrack("track", "Song", "Artist"))),
+                    onSortOptionSelected = {},
+                    onToggleSortOrder = {},
+                    onPlayAll = { playMode = it },
+                )
+            }
+        }
+
+        composeTestRule.onNode(hasContentDescription("Play")).performClick()
+        assertEquals(false, playMode)
+        composeTestRule.onNode(hasContentDescription("Shuffle")).performClick()
+        assertEquals(true, playMode)
+    }
+
+    @Test
     fun clickingTrackEmitsTheSelectedTrack() {
         val track = LibraryTrack(id = "selected", title = "Song A", artists = "Artist A", album = "Album A")
         var selectedId: String? = null

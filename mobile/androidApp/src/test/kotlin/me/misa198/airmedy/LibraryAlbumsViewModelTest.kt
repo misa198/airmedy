@@ -4,6 +4,9 @@ import me.misa198.airmedy.sync.LibraryAlbum
 import me.misa198.airmedy.ui.screens.AlbumSortOption
 import me.misa198.airmedy.ui.screens.SortOrder
 import me.misa198.airmedy.ui.screens.sortAlbums
+import me.misa198.airmedy.ui.screens.LibraryAlbumsUiState
+import me.misa198.airmedy.ui.screens.albumCollectionTrackIdsFor
+import me.misa198.airmedy.sync.LibraryTrack
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -35,5 +38,25 @@ class LibraryAlbumsViewModelTest {
 
         assertEquals(listOf("Zulu", "Alpha"), sortAlbums(albums, AlbumSortOption.Name, SortOrder.Ascending).map { it.title })
         assertEquals(listOf("Alpha Artist", "Zulu Artist"), sortAlbums(albums, AlbumSortOption.Artist, SortOrder.Ascending).map { it.artist })
+    }
+
+    @Test
+    fun collectionPlaybackFlattensVisibleAlbumsAndKeepsDiscTrackOrder() {
+        val state = LibraryAlbumsUiState(
+            albums = listOf(
+                LibraryAlbum(id = "second", title = "Second"),
+                LibraryAlbum(id = "first", title = "First"),
+            ),
+            tracks = listOf(
+                LibraryTrack(id = "second-track-2", title = "Two", artists = "Artist", albumId = "second", discNumber = 1, trackNumber = 2),
+                LibraryTrack(id = "first-track", title = "One", artists = "Artist", albumId = "first", discNumber = 1, trackNumber = 1),
+                LibraryTrack(id = "second-track-1", title = "One", artists = "Artist", albumId = "second", discNumber = 1, trackNumber = 1),
+            ),
+        )
+
+        assertEquals(
+            listOf("second-track-1", "second-track-2", "first-track"),
+            albumCollectionTrackIdsFor(state),
+        )
     }
 }

@@ -132,7 +132,7 @@ class MainActivity : ComponentActivity() {
         LibraryArtistsViewModel.Factory(AndroidSyncRuntime.syncStore())
     }
     private val albumsViewModel: LibraryAlbumsViewModel by viewModels {
-        LibraryAlbumsViewModel.Factory(AndroidSyncRuntime.syncStore())
+        LibraryAlbumsViewModel.Factory(AndroidSyncRuntime.syncStore(), AndroidPlaybackRuntime.controller())
     }
     private val genresViewModel: LibraryGenresViewModel by viewModels {
         LibraryGenresViewModel.Factory(AndroidSyncRuntime.syncStore())
@@ -264,6 +264,7 @@ class MainActivity : ComponentActivity() {
                 onSortOptionSelected = tracksViewModel::setSortOption,
                 onToggleSortOrder = tracksViewModel::toggleSortOrder,
                 onTrackClick = tracksViewModel::playTrack,
+                onTracksPlayAll = tracksViewModel::playAll,
                 onRecentTrackClick = tracksViewModel::playRecentTrack,
                 onTrackPlayNext = playbackController::playNext,
                 onTrackAddToQueue = { trackId -> playbackController.append(listOf(trackId)) },
@@ -274,6 +275,7 @@ class MainActivity : ComponentActivity() {
                 onAlbumSortOptionSelected = albumsViewModel::setSortOption,
                 onAlbumToggleSortOrder = albumsViewModel::toggleSortOrder,
                 onAlbumPlay = albumDetailsViewModel::play,
+                onAlbumsPlayAll = albumsViewModel::playAll,
                 onAlbumTrackPlay = albumDetailsViewModel::playTrack,
                 onPlaylistPlay = playlistDetailsViewModel::play,
                 onPlaylistTrackPlay = playlistDetailsViewModel::playTrack,

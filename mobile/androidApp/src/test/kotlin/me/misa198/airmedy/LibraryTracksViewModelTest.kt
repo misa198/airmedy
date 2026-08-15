@@ -5,8 +5,13 @@ import me.misa198.airmedy.ui.screens.SortOrder
 import me.misa198.airmedy.ui.screens.TrackSortOption
 import me.misa198.airmedy.ui.screens.sortTracks
 import me.misa198.airmedy.ui.screens.playbackRequestFor
+import me.misa198.airmedy.ui.screens.collectionPlaybackRequestFor
+import me.misa198.airmedy.player.MaxPlaybackQueueSize
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.random.Random
 
 class LibraryTracksViewModelTest {
 
@@ -115,5 +120,30 @@ class LibraryTracksViewModelTest {
             recent.sortedWith(compareByDescending<LibraryTrack> { it.createdAt }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }.thenBy { it.id }),
             recent,
         )
+    }
+
+    @Test
+    fun collectionPlayUsesTheFirstThousandDistinctVisibleTracks() {
+        val request = requireNotNull(collectionPlaybackRequestFor((1..1_200).map { "track-$it" }, shuffle = false))
+
+        assertEquals(MaxPlaybackQueueSize, request.trackIds.size)
+        assertEquals((1..1_000).map { "track-$it" }, request.trackIds)
+        assertEquals(0, request.startIndex)
+    }
+
+    @Test
+    fun collectionShuffleSamplesThousandDistinctTracksFromTheFullCollection() {
+        val request = requireNotNull(
+            collectionPlaybackRequestFor((1..1_200).map { "track-$it" }, shuffle = true, random = Random(1)),
+        )
+
+        assertEquals(MaxPlaybackQueueSize, request.trackIds.size)
+        assertEquals(request.trackIds.size, request.trackIds.distinct().size)
+        assertTrue(request.trackIds.any { it.removePrefix("track-").toInt() > MaxPlaybackQueueSize })
+    }
+
+    @Test
+    fun collectionPlaybackDoesNotCreateAnEmptyRequest() {
+        assertNull(collectionPlaybackRequestFor(emptyList(), shuffle = false))
     }
 }

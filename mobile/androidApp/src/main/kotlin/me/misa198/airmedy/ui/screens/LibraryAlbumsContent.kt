@@ -20,6 +20,7 @@ import me.misa198.airmedy.ui.components.AlbumRow
 import me.misa198.airmedy.ui.components.AlbumContextMenu
 import me.misa198.airmedy.ui.components.HeroCard
 import me.misa198.airmedy.ui.components.LibraryVirtualList
+import me.misa198.airmedy.ui.components.LibraryPlaybackActions
 import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
 
@@ -36,6 +37,7 @@ internal fun LibraryAlbumsContent(
     onAlbumPlayNext: (List<String>) -> Unit = {},
     onAlbumAddToQueue: (List<String>) -> Unit = {},
     onAlbumAddToFavorites: (List<String>) -> Unit = {},
+    onPlayAll: (Boolean) -> Unit = {},
 ) {
     var contextAlbumId by remember { mutableStateOf<String?>(null) }
     val listPadding = remember(contentPadding) {
@@ -54,6 +56,15 @@ internal fun LibraryAlbumsContent(
         contentPadding = listPadding,
         modifier = modifier,
         dividerTestTag = "album-row-divider",
+        leadingContent = {
+            LibraryPlaybackActions(
+                playLabel = stringResource(R.string.player_play),
+                shuffleLabel = stringResource(R.string.player_shuffle),
+                onPlay = { onPlayAll(false) },
+                onShuffle = { onPlayAll(true) },
+                hazeState = hazeState,
+            )
+        },
         emptyContent = {
             Column(
                 modifier = Modifier.fillMaxSize().padding(contentPadding),

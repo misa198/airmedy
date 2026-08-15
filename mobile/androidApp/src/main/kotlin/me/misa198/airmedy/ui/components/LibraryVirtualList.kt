@@ -26,6 +26,7 @@ fun <T> LibraryVirtualList(
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
     dividerTestTag: String? = null,
+    leadingContent: (@Composable () -> Unit)? = null,
     emptyContent: @Composable () -> Unit,
     itemContent: @Composable (T) -> Unit,
 ) {
@@ -40,6 +41,9 @@ fun <T> LibraryVirtualList(
         state = listState,
         contentPadding = contentPadding,
     ) {
+        if (leadingContent != null) {
+            item(contentType = "library-list-leading-content") { leadingContent() }
+        }
         itemsIndexed(
             items = items,
             key = { _, item -> key(item) },

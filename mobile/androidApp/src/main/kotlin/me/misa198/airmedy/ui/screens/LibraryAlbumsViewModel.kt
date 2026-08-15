@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.stateIn
 import me.misa198.airmedy.sync.AndroidLibrarySyncStore
 import me.misa198.airmedy.sync.LibraryAlbum
 import me.misa198.airmedy.sync.LibraryTrack
+import me.misa198.airmedy.player.PlaybackController
 
 enum class AlbumSortOption {
     Name,
@@ -26,11 +27,15 @@ data class LibraryAlbumsUiState(
 
 internal class LibraryAlbumsViewModel(
     syncStore: AndroidLibrarySyncStore,
+    private val playbackController: PlaybackController,
 ) : ViewModel() {
-    class Factory(private val syncStore: AndroidLibrarySyncStore) : androidx.lifecycle.ViewModelProvider.Factory {
+    class Factory(
+        private val syncStore: AndroidLibrarySyncStore,
+        private val playbackController: PlaybackController,
+    ) : androidx.lifecycle.ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T =
-            LibraryAlbumsViewModel(syncStore) as T
+            LibraryAlbumsViewModel(syncStore, playbackController) as T
     }
 
     private val sortOptionFlow = MutableStateFlow(AlbumSortOption.Name)
@@ -55,6 +60,19 @@ internal class LibraryAlbumsViewModel(
     fun toggleSortOrder() {
         sortOrderFlow.value = if (sortOrderFlow.value == SortOrder.Ascending) SortOrder.Descending else SortOrder.Ascending
     }
+
+    fun playAll(shuffle: Boolean) {
+        collectionPlaybackRequestFor(albumCollectionTrackIdsFor(uiState.value), shuffle)?.let { request ->
+            if (shuffle) playbackController.shuffle(request) else playbackController.play(request)
+        }
+    }
+}
+
+internal fun albumCollectionTrackIdsFor(state: LibraryAlbumsUiState): List<String> = state.albums.flatMap { album ->
+    albumDetailsUiStateFor(
+        AlbumDetailsUiState(albums = state.albums, tracks = state.tracks),
+        album.id,
+    ).tracks.map { track -> track.id }
 }
 
 internal fun sortAlbums(

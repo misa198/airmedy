@@ -138,6 +138,7 @@ internal fun AppDestinationContent(
     onSortOptionSelected: (TrackSortOption) -> Unit = {},
     onToggleSortOrder: () -> Unit = {},
     onTrackClick: (String) -> Unit = {},
+    onTracksPlayAll: (Boolean) -> Unit = {},
     onRecentTrackClick: (String) -> Unit = {},
     playbackQueue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
     onTrackPlayNext: (String) -> Unit = {},
@@ -149,6 +150,7 @@ internal fun AppDestinationContent(
     onAlbumSortOptionSelected: (AlbumSortOption) -> Unit = {},
     onAlbumToggleSortOrder: () -> Unit = {},
     onAlbumPlay: (String, Boolean) -> Unit = { _, _ -> },
+    onAlbumsPlayAll: (Boolean) -> Unit = {},
     onAlbumTrackPlay: (String, String) -> Unit = { _, _ -> },
     onPlaylistPlay: (String, Boolean) -> Unit = { _, _ -> },
     onPlaylistTrackPlay: (String, String) -> Unit = { _, _ -> },
@@ -366,6 +368,7 @@ internal fun AppDestinationContent(
                                 hazeState = hazeState,
                                 playbackQueue = playbackQueue,
                                 onAlbumPlay = onAlbumPlay,
+                                onPlayAll = onAlbumsPlayAll,
                                 onAlbumPlayNext = onAlbumPlayNext,
                                 onAlbumAddToQueue = onAlbumAddToQueue,
                                 onAlbumAddToFavorites = onAlbumAddToFavorites,
@@ -439,6 +442,8 @@ internal fun AppDestinationContent(
                                 onTrackFavoriteToggle = { track, favorite -> onTrackFavoriteToggle(track.id, favorite) },
                                 onTrackAlbumClick = { track -> onIntent(AppIntent.OpenAlbumDetails(track.albumId)) },
                                 onTrackArtistClick = { artist -> onIntent(AppIntent.OpenArtistDetails(artist.id)) },
+                                hazeState = hazeState,
+                                onPlayAll = onTracksPlayAll,
                             )
                             else -> LibraryContent(
                                 modifier = Modifier.fillMaxSize(),

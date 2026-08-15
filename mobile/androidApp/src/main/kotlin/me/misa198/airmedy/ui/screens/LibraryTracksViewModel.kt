@@ -12,7 +12,9 @@ import me.misa198.airmedy.sync.AndroidLibrarySyncStore
 import me.misa198.airmedy.player.PlaybackController
 import me.misa198.airmedy.player.PlaybackRequest
 import me.misa198.airmedy.player.PlaybackLogTag
+import me.misa198.airmedy.player.MaxPlaybackQueueSize
 import me.misa198.airmedy.sync.LibraryTrack
+import kotlin.random.Random
 
 enum class TrackSortOption {
     Name,
@@ -95,6 +97,12 @@ internal class LibraryTracksViewModel(
         playFromQueue(trackId, uiState.value.recentTracks, "Recently added track")
     }
 
+    fun playAll(shuffle: Boolean) {
+        collectionPlaybackRequestFor(uiState.value.tracks.map { it.id }, shuffle)?.let { request ->
+            if (shuffle) playbackController.shuffle(request) else playbackController.play(request)
+        }
+    }
+
     private fun playFromQueue(trackId: String, queueTracks: List<LibraryTrack>, source: String) {
         playbackRequestFor(queueTracks, trackId)?.let { request ->
             Log.d(PlaybackLogTag, "$source clicked id=$trackId queueSize=${request.trackIds.size} startIndex=${request.startIndex}")
@@ -106,6 +114,21 @@ internal class LibraryTracksViewModel(
 internal fun playbackRequestFor(tracks: List<LibraryTrack>, trackId: String): PlaybackRequest? {
     val startIndex = tracks.indexOfFirst { it.id == trackId }
     return startIndex.takeIf { it >= 0 }?.let { PlaybackRequest(tracks.map { track -> track.id }, it) }
+}
+
+/** Bounds a collection action before it crosses the Android service Intent boundary. */
+internal fun collectionPlaybackRequestFor(
+    trackIds: List<String>,
+    shuffle: Boolean,
+    random: Random = Random.Default,
+): PlaybackRequest? {
+    val distinctIds = trackIds.distinct()
+    val selected = if (shuffle) {
+        distinctIds.shuffled(random).take(MaxPlaybackQueueSize)
+    } else {
+        distinctIds.take(MaxPlaybackQueueSize)
+    }
+    return selected.takeIf(List<String>::isNotEmpty)?.let(::PlaybackRequest)
 }
 
 internal fun sortTracks(

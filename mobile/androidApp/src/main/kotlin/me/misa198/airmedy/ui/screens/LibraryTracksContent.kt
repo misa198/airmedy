@@ -14,12 +14,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.HazeState
 import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.R
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.ui.components.HeroCard
 import me.misa198.airmedy.ui.components.LibraryVirtualList
+import me.misa198.airmedy.ui.components.LibraryPlaybackActions
 import me.misa198.airmedy.ui.components.TrackRow
 import me.misa198.airmedy.ui.components.TrackContextArtist
 import me.misa198.airmedy.ui.components.TrackContextMenu
@@ -40,6 +42,8 @@ internal fun LibraryTracksContent(
     onTrackFavoriteToggle: (LibraryTrack, Boolean) -> Unit = { _, _ -> },
     onTrackAlbumClick: (LibraryTrack) -> Unit = {},
     onTrackArtistClick: (TrackContextArtist) -> Unit = {},
+    hazeState: HazeState? = null,
+    onPlayAll: (Boolean) -> Unit = {},
 ) {
     var contextTrack by remember { mutableStateOf<LibraryTrack?>(null) }
     val listPadding = remember(contentPadding) {
@@ -58,6 +62,15 @@ internal fun LibraryTracksContent(
         contentPadding = listPadding,
         modifier = modifier,
         dividerTestTag = "track-row-divider",
+        leadingContent = {
+            LibraryPlaybackActions(
+                playLabel = stringResource(R.string.player_play),
+                shuffleLabel = stringResource(R.string.player_shuffle),
+                onPlay = { onPlayAll(false) },
+                onShuffle = { onPlayAll(true) },
+                hazeState = hazeState,
+            )
+        },
         emptyContent = {
             Column(
                 modifier = Modifier

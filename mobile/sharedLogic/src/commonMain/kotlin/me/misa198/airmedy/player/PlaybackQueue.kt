@@ -3,6 +3,9 @@ package me.misa198.airmedy.player
 import kotlin.random.Random
 import kotlinx.serialization.Serializable
 
+/** Maximum number of distinct tracks retained by an active playback queue. */
+const val MaxPlaybackQueueSize = 1_000
+
 /** Platform-neutral queue and repeat rules shared by Android and future iOS adapters. */
 @Serializable
 enum class RepeatMode { Off, One, All }
@@ -57,10 +60,10 @@ class PlaybackQueue(private val random: Random = Random.Default) {
     )
 
     fun restore(snapshot: PlaybackQueueSnapshot) {
-        val source = distinct(snapshot.originalTrackIds).take(MaxSize)
+        val source = distinct(snapshot.originalTrackIds).take(MaxPlaybackQueueSize)
         val sourceSet = source.toSet()
         original = source.toMutableList()
-        active = snapshot.activeTrackIds.take(MaxSize).takeIf { it.size == source.size && it.toSet() == sourceSet }
+        active = snapshot.activeTrackIds.take(MaxPlaybackQueueSize).takeIf { it.size == source.size && it.toSet() == sourceSet }
             ?.toMutableList() ?: source.toMutableList()
         shuffle = snapshot.shuffle
         repeatMode = snapshot.repeatMode
@@ -73,7 +76,7 @@ class PlaybackQueue(private val random: Random = Random.Default) {
     }
 
     fun play(request: PlaybackRequest): QueueTransition {
-        original = distinct(request.trackIds).take(MaxSize).toMutableList()
+        original = distinct(request.trackIds).take(MaxPlaybackQueueSize).toMutableList()
         active = original.toMutableList()
         shuffle = false
         currentIndex = request.startIndex.coerceIn(0, active.lastIndex)
@@ -82,8 +85,8 @@ class PlaybackQueue(private val random: Random = Random.Default) {
 
     fun playShuffled(request: PlaybackRequest): QueueTransition {
         val selected = distinct(request.trackIds)
-        original = selected.take(MaxSize).toMutableList()
-        active = selected.shuffled(random).take(MaxSize).toMutableList()
+        original = selected.take(MaxPlaybackQueueSize).toMutableList()
+        active = selected.shuffled(random).take(MaxPlaybackQueueSize).toMutableList()
         // In shuffled playback the cap deliberately samples first; source retains that sample's source order.
         original = selected.filter(active::contains).toMutableList()
         shuffle = true
@@ -181,7 +184,7 @@ class PlaybackQueue(private val random: Random = Random.Default) {
         if (incoming.isEmpty()) return QueueTransition.Unchanged
         incoming.forEach(::removeId)
         trimFor(incoming.size)
-        val accepted = incoming.take((MaxSize - active.size).coerceAtLeast(0))
+        val accepted = incoming.take((MaxPlaybackQueueSize - active.size).coerceAtLeast(0))
         val activeAt = if (currentIndex >= 0) currentIndex + 1 else active.size
         active.addAll(activeAt, accepted)
         val sourceAt = current?.let(original::indexOf)?.plus(1) ?: original.size
@@ -196,7 +199,7 @@ class PlaybackQueue(private val random: Random = Random.Default) {
         if (incoming.isEmpty()) return QueueTransition.Unchanged
         incoming.forEach(::removeId)
         trimFor(incoming.size)
-        val accepted = incoming.take((MaxSize - active.size).coerceAtLeast(0))
+        val accepted = incoming.take((MaxPlaybackQueueSize - active.size).coerceAtLeast(0))
         original.addAll(accepted)
         active.addAll(accepted)
         currentIndex = current?.let(active::indexOf) ?: currentIndex
@@ -239,7 +242,7 @@ class PlaybackQueue(private val random: Random = Random.Default) {
     } ?: QueueTransition.Stop
 
     private fun trimFor(incoming: Int) {
-        while (active.size + incoming > MaxSize && active.size > 1) {
+        while (active.size + incoming > MaxPlaybackQueueSize && active.size > 1) {
             val current = currentTrackId()
             val history = active.indices.firstOrNull { it < currentIndex && active[it] != current }
             val future = active.indices.lastOrNull { it > currentIndex && active[it] != current }
@@ -257,5 +260,4 @@ class PlaybackQueue(private val random: Random = Random.Default) {
 
     private fun distinct(ids: List<String>): List<String> = ids.distinct()
 
-    private companion object { const val MaxSize = 1000 }
 }
