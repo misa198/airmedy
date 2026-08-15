@@ -14,6 +14,7 @@ import me.misa198.airmedy.sync.LibraryAlbum
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import me.misa198.airmedy.ui.components.AnchoredPopupMenuHost
+import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import org.junit.Rule
 import org.junit.Test
 
@@ -95,5 +96,55 @@ class AlbumDetailsContentTest {
         composeTestRule.onNodeWithText("One").performTouchInput { longClick() }
 
         composeTestRule.onNodeWithText("Track info").assertExists()
+    }
+
+    @Test
+    fun heroOverflowShowsAlbumActionsAndAddsOnlyNonFavoriteTracks() {
+        var favoriteIds = emptyList<String>()
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                AnchoredPopupMenuHost(hazeState = null) {
+                    AlbumDetailsContent(
+                        uiState = AlbumDetailsUiState(
+                            album = LibraryAlbum("album", "Absolution", "Muse"),
+                            tracks = listOf(
+                                LibraryTrack("one", "One", "Muse"),
+                                LibraryTrack("two", "Two", "Muse", metadataJson = """{"is_favorite":true}"""),
+                            ),
+                        ),
+                        onAlbumAddToFavorites = { favoriteIds = it },
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNode(hasContentDescription("Album options")).performClick()
+        composeTestRule.onNodeWithText("Play next").assertExists()
+        composeTestRule.onNodeWithText("Add to queue").assertExists()
+        composeTestRule.onNodeWithText("Add to favourites").performClick()
+
+        org.junit.Assert.assertEquals(listOf("one"), favoriteIds)
+    }
+
+    @Test
+    fun heroOverflowHidesAddToQueueWhenEveryAlbumTrackIsQueued() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                AnchoredPopupMenuHost(hazeState = null) {
+                    AlbumDetailsContent(
+                        uiState = AlbumDetailsUiState(
+                            album = LibraryAlbum("album", "Absolution", "Muse"),
+                            tracks = listOf(LibraryTrack("one", "One", "Muse")),
+                        ),
+                        playbackQueue = PlaybackQueueSnapshot(activeTrackIds = listOf("one")),
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNode(hasContentDescription("Album options")).performClick()
+        composeTestRule.onAllNodesWithText("Add to queue").assertCountEquals(0)
+        composeTestRule.onNodeWithText("Add to playlist").performClick()
+        composeTestRule.onNodeWithText("Coming soon").assertExists()
     }
 }

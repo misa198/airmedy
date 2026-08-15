@@ -1,10 +1,7 @@
 package me.misa198.airmedy.ui.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -13,13 +10,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
@@ -77,7 +69,7 @@ internal fun trackContextArtists(track: LibraryTrack): List<TrackContextArtist> 
 
 sealed interface TrackContextBottomSheetRequest {
     data object Info : TrackContextBottomSheetRequest
-    data object Playlist : TrackContextBottomSheetRequest
+    data class Playlist(val trackIds: List<String>) : TrackContextBottomSheetRequest
     data class Artists(val artists: List<TrackContextArtist>) : TrackContextBottomSheetRequest
 }
 
@@ -139,38 +131,31 @@ fun TrackContextMenu(
         hazeState = hazeState,
         anchor = anchor,
     ) {
-        Column(Modifier.fillMaxWidth()) {
+        val entries = buildList {
             if (actions.removeFromQueue) {
-                TrackContextDestructiveAction(R.string.track_context_remove_from_queue, MaterialSymbols.RemoveFromQueue) {
-                    closeAfter { onRemoveFromQueue(track) }
-                }
-                ActionListDivider(ActionListDividerStyle.FullWidth)
+                add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_remove_from_queue), MaterialSymbols.RemoveFromQueue, destructive = true) { closeAfter { onRemoveFromQueue(track) } })
+                add(ContextActionMenuEntry.Divider)
             }
             val showPlayNext = actions.playNext && queueAvailability.showPlayNext
             val showAddToQueue = actions.addToQueue && queueAvailability.showAddToQueue && queueAvailability.addToQueueEnabled
-            if (showPlayNext) TrackContextAction(R.string.track_context_play_next, MaterialSymbols.QueuePlayNext) { closeAfter { onPlayNext(track) } }
-            if (showAddToQueue) TrackContextAction(R.string.track_context_add_to_queue, MaterialSymbols.AddToQueue) { closeAfter { onAddToQueue(track) } }
-            if (actions.trackInfo) TrackContextAction(R.string.track_context_track_info, MaterialSymbols.Info) { requestBottomSheet(TrackContextBottomSheetRequest.Info) }
-            if (showPlayNext || showAddToQueue || actions.trackInfo) ActionListDivider(ActionListDividerStyle.FullWidth)
-            if (actions.favorite) TrackContextAction(if (favorite) R.string.track_context_remove_from_favorites else R.string.track_context_add_to_favorites, if (favorite) MaterialSymbols.HeartMinus else MaterialSymbols.HeartPlus) {
-                closeAfter { onFavoriteChange(track, !favorite) }
-            }
-            if (actions.addToPlaylist) TrackContextAction(R.string.track_context_add_to_playlist, MaterialSymbols.PlaylistAdd) { requestBottomSheet(TrackContextBottomSheetRequest.Playlist) }
+            if (showPlayNext) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_play_next), MaterialSymbols.QueuePlayNext) { closeAfter { onPlayNext(track) } })
+            if (showAddToQueue) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_add_to_queue), MaterialSymbols.AddToQueue) { closeAfter { onAddToQueue(track) } })
+            if (actions.trackInfo) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_track_info), MaterialSymbols.Info) { requestBottomSheet(TrackContextBottomSheetRequest.Info) })
+            if (showPlayNext || showAddToQueue || actions.trackInfo) add(ContextActionMenuEntry.Divider)
+            if (actions.favorite) add(ContextActionMenuEntry.Action(stringResource(if (favorite) R.string.track_context_remove_from_favorites else R.string.track_context_add_to_favorites), if (favorite) MaterialSymbols.HeartMinus else MaterialSymbols.HeartPlus) { closeAfter { onFavoriteChange(track, !favorite) } })
+            if (actions.addToPlaylist) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_add_to_playlist), MaterialSymbols.PlaylistAdd) { requestBottomSheet(TrackContextBottomSheetRequest.Playlist(listOf(track.id))) })
             if ((actions.favorite || actions.addToPlaylist) && (hasNavigationActions || actions.removeFromPlaylist)) {
-                ActionListDivider(ActionListDividerStyle.FullWidth)
+                add(ContextActionMenuEntry.Divider)
             }
-            if (actions.goToAlbum && hasAlbum) TrackContextAction(R.string.track_context_go_to_album, MaterialSymbols.Album) { presentAfterFullscreenCloses { onGoToAlbum(track) } }
-            if (actions.goToArtists && hasArtists && artists.size == 1) TrackContextAction(R.string.track_context_go_to_artist, MaterialSymbols.Person, artists.single().name) { presentAfterFullscreenCloses { onGoToArtist(artists.single()) } }
-            if (actions.goToArtists && hasArtists && artists.size > 1) TrackContextAction(R.string.track_context_go_to_artists, MaterialSymbols.People) {
-                requestBottomSheet(TrackContextBottomSheetRequest.Artists(artists))
-            }
+            if (actions.goToAlbum && hasAlbum) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_go_to_album), MaterialSymbols.Album) { presentAfterFullscreenCloses { onGoToAlbum(track) } })
+            if (actions.goToArtists && hasArtists && artists.size == 1) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_go_to_artist, artists.single().name), MaterialSymbols.Person) { presentAfterFullscreenCloses { onGoToArtist(artists.single()) } })
+            if (actions.goToArtists && hasArtists && artists.size > 1) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_go_to_artists), MaterialSymbols.People) { requestBottomSheet(TrackContextBottomSheetRequest.Artists(artists)) })
             if (actions.removeFromPlaylist) {
-                if (hasNavigationActions) ActionListDivider(ActionListDividerStyle.FullWidth)
-                TrackContextDestructiveAction(R.string.track_context_remove_from_playlist, MaterialSymbols.PlaylistRemove) {
-                    closeAfter { onRemoveFromPlaylist(track) }
-                }
+                if (hasNavigationActions) add(ContextActionMenuEntry.Divider)
+                add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_remove_from_playlist), MaterialSymbols.PlaylistRemove, destructive = true) { closeAfter { onRemoveFromPlaylist(track) } })
             }
         }
+        ContextActionMenu(entries)
     }
     detailSheet?.let { request ->
         // The anchor can carry parent-data modifiers (for example RowScope.weight
@@ -195,7 +180,7 @@ internal fun TrackContextBottomSheet(
         TrackContextSheetTitle(
             when (request) {
                 TrackContextBottomSheetRequest.Info -> R.string.track_context_track_info_title
-                TrackContextBottomSheetRequest.Playlist -> R.string.track_context_playlist_picker_title
+                is TrackContextBottomSheetRequest.Playlist -> R.string.track_context_playlist_picker_title
                 is TrackContextBottomSheetRequest.Artists -> R.string.track_context_artist_picker_title
             },
         )
@@ -204,42 +189,14 @@ internal fun TrackContextBottomSheet(
     modifier = modifier,
 ) {
     when (request) {
-        TrackContextBottomSheetRequest.Info, TrackContextBottomSheetRequest.Playlist ->
+        TrackContextBottomSheetRequest.Info, is TrackContextBottomSheetRequest.Playlist ->
             Text(stringResource(R.string.track_context_placeholder), modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp), color = LocalAirmedyColors.current.textMuted)
-        is TrackContextBottomSheetRequest.Artists -> Column(Modifier.fillMaxWidth()) {
-            request.artists.forEach { artist ->
-                TrackContextActionText(artist.name, MaterialSymbols.Person) { onArtistSelected(artist) }
-            }
-        }
+        is TrackContextBottomSheetRequest.Artists -> ContextActionMenu(
+            request.artists.map { artist ->
+                ContextActionMenuEntry.Action(artist.name, MaterialSymbols.Person) { onArtistSelected(artist) }
+            },
+        )
     }
 }
 
 @Composable private fun TrackContextSheetTitle(title: Int) = Text(stringResource(title), style = MaterialTheme.typography.titleMedium, color = LocalAirmedyColors.current.textMain)
-
-@Composable private fun TrackContextAction(label: Int, symbol: String, formatArg: String? = null, onClick: () -> Unit) = TrackContextActionText(stringResource(label, *(formatArg?.let(::arrayOf) ?: emptyArray())), symbol, onClick)
-
-@Composable private fun TrackContextActionText(label: String, symbol: String, onClick: () -> Unit) {
-    val colors = LocalAirmedyColors.current
-    TrackContextActionText(label, symbol, colors.textMain, onClick)
-}
-
-@Composable private fun TrackContextDestructiveAction(label: Int, symbol: String, onClick: () -> Unit) {
-    val colors = LocalAirmedyColors.current
-    TrackContextActionText(stringResource(label), symbol, colors.primary, onClick)
-}
-
-@Composable private fun TrackContextActionText(label: String, symbol: String, contentColor: androidx.compose.ui.graphics.Color, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).semantics {
-        contentDescription = label
-    }.clickable(role = Role.Button, onClick = onClick).padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
-        MaterialSymbol(symbol, null, size = 21.dp, tint = contentColor)
-        Text(
-            text = label,
-            modifier = Modifier.weight(1f).padding(start = 16.dp),
-            style = MaterialTheme.typography.bodyLarge,
-            color = contentColor,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}

@@ -3,6 +3,8 @@ package me.misa198.airmedy.ui.screens
 import me.misa198.airmedy.sync.LibraryAlbum
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.sync.metadataObject
+import me.misa198.airmedy.player.PlaybackQueueSnapshot
+import me.misa198.airmedy.ui.components.albumContextShowsAddToQueue
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -71,5 +73,12 @@ class AlbumDetailsViewModelTest {
         assertEquals("1 hr 1 min", formatAlbumTotalDuration(3660L, day, hour, minute, second))
         assertEquals("2 min", formatAlbumTotalDuration(120L, day, hour, minute, second))
         assertEquals("59 s", formatAlbumTotalDuration(59L, day, hour, minute, second))
+    }
+
+    @Test
+    fun albumQueueActionStaysAvailableUntilEveryTrackIsAlreadyQueued() {
+        assertEquals(true, albumContextShowsAddToQueue(emptyList(), PlaybackQueueSnapshot()))
+        assertEquals(true, albumContextShowsAddToQueue(listOf("one", "two"), PlaybackQueueSnapshot(activeTrackIds = listOf("one"))))
+        assertEquals(false, albumContextShowsAddToQueue(listOf("one", "two"), PlaybackQueueSnapshot(activeTrackIds = listOf("one", "two"))))
     }
 }

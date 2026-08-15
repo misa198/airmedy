@@ -3,9 +3,14 @@ package me.misa198.airmedy.ui.screens
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.longClick
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.sync.LibraryAlbum
+import me.misa198.airmedy.sync.LibraryTrack
+import me.misa198.airmedy.ui.components.AnchoredPopupMenuHost
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import org.junit.Rule
 import org.junit.Test
@@ -39,5 +44,26 @@ class LibraryAlbumsContentTest {
         composeTestRule.onNodeWithText("Artist A").assertExists()
         composeTestRule.onNodeWithText("Unknown artist").assertExists()
         composeTestRule.onAllNodesWithTag("album-row-divider").assertCountEquals(1)
+    }
+
+    @Test
+    fun holdingAnAlbumOpensItsContextMenu() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                AnchoredPopupMenuHost(hazeState = null) {
+                    LibraryAlbumsContent(
+                        LibraryAlbumsUiState(
+                            albums = listOf(LibraryAlbum(id = "album", title = "Album A", artist = "Artist A")),
+                            tracks = listOf(LibraryTrack("track", "Track", "Artist A", albumId = "album")),
+                        ),
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithText("Album A").performTouchInput { longClick() }
+
+        composeTestRule.onNodeWithText("Play next").assertExists()
+        composeTestRule.onNode(hasContentDescription("Add to favourites")).assertExists()
     }
 }

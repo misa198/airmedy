@@ -2,7 +2,7 @@ package me.misa198.airmedy.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,11 +34,15 @@ fun AlbumRow(
     modifier: Modifier = Modifier,
     artworkPath: String? = null,
     onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
 ) {
     val colors = LocalAirmedyColors.current
     val bitmap = rememberArtworkThumbnail(artworkPath)
-    val clickModifier = remember(onClick) {
-        if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
+    val clickModifier = remember(onClick, onLongClick) {
+        if (onClick != null || onLongClick != null) Modifier.combinedClickable(
+            onClick = { onClick?.invoke() },
+            onLongClick = onLongClick,
+        ) else Modifier
     }
 
     Row(

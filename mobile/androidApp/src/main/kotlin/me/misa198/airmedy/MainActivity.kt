@@ -267,6 +267,8 @@ class MainActivity : ComponentActivity() {
                 onRecentTrackClick = tracksViewModel::playRecentTrack,
                 onTrackPlayNext = playbackController::playNext,
                 onTrackAddToQueue = { trackId -> playbackController.append(listOf(trackId)) },
+                onAlbumPlayNext = playbackController::playNext,
+                onAlbumAddToQueue = playbackController::append,
                 onArtistSortOptionSelected = artistsViewModel::setSortOption,
                 onArtistToggleSortOrder = artistsViewModel::toggleSortOrder,
                 onAlbumSortOptionSelected = albumsViewModel::setSortOption,
@@ -328,6 +330,11 @@ class MainActivity : ComponentActivity() {
                 onRepeatModeChange = playbackController::setRepeatMode,
                 onFavoriteToggle = { trackId, favorite ->
                     preferenceScope.launch { AndroidSyncRuntime.syncStore().setFavorite(trackId, favorite) }
+                },
+                onAlbumAddToFavorites = { trackIds ->
+                    preferenceScope.launch {
+                        trackIds.forEach { trackId -> AndroidSyncRuntime.syncStore().setFavorite(trackId, true) }
+                    }
                 },
                 systemVolume = systemMusicVolumeState,
                 onSystemVolumeChange = { volume ->

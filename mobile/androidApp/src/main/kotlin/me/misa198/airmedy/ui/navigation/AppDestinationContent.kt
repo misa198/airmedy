@@ -143,6 +143,9 @@ internal fun AppDestinationContent(
     onTrackPlayNext: (String) -> Unit = {},
     onTrackAddToQueue: (String) -> Unit = {},
     onTrackFavoriteToggle: (String, Boolean) -> Unit = { _, _ -> },
+    onAlbumPlayNext: (List<String>) -> Unit = {},
+    onAlbumAddToQueue: (List<String>) -> Unit = {},
+    onAlbumAddToFavorites: (List<String>) -> Unit = {},
     onAlbumSortOptionSelected: (AlbumSortOption) -> Unit = {},
     onAlbumToggleSortOrder: () -> Unit = {},
     onAlbumPlay: (String, Boolean) -> Unit = { _, _ -> },
@@ -360,6 +363,12 @@ internal fun AppDestinationContent(
                                 contentPadding = contentPadding,
                                 modifier = Modifier.fillMaxSize(),
                                 onAlbumClick = { album -> onIntent(AppIntent.OpenAlbumDetails(album.id)) },
+                                hazeState = hazeState,
+                                playbackQueue = playbackQueue,
+                                onAlbumPlay = onAlbumPlay,
+                                onAlbumPlayNext = onAlbumPlayNext,
+                                onAlbumAddToQueue = onAlbumAddToQueue,
+                                onAlbumAddToFavorites = onAlbumAddToFavorites,
                             )
                             AppStackPage.AlbumDetails -> AlbumDetailsContent(
                                 uiState = selectedAlbumId?.let { albumDetailsUiStateFor(albumDetailsUiState, it) } ?: AlbumDetailsUiState(),
@@ -375,6 +384,9 @@ internal fun AppDestinationContent(
                                 onTrackAddToQueue = onTrackAddToQueue,
                                 onTrackFavoriteToggle = onTrackFavoriteToggle,
                                 onTrackArtistClick = { artist -> onIntent(AppIntent.OpenArtistDetails(artist.id)) },
+                                onAlbumPlayNext = onAlbumPlayNext,
+                                onAlbumAddToQueue = onAlbumAddToQueue,
+                                onAlbumAddToFavorites = onAlbumAddToFavorites,
                             )
                             AppStackPage.LibraryGenres -> LibraryGenresContent(
                                 uiState = genresUiState,

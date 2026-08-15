@@ -27,6 +27,7 @@ import dev.chrisbanes.haze.HazeState
 import me.misa198.airmedy.R
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.ui.components.AlbumTrackRow
+import me.misa198.airmedy.ui.components.AlbumContextMenu
 import me.misa198.airmedy.ui.components.ArtworkHeroBackdrop
 import me.misa198.airmedy.ui.components.DetailHero
 import me.misa198.airmedy.ui.components.HeroCard
@@ -53,6 +54,9 @@ internal fun AlbumDetailsContent(
     onTrackAddToQueue: (String) -> Unit = {},
     onTrackFavoriteToggle: (String, Boolean) -> Unit = { _, _ -> },
     onTrackArtistClick: (TrackContextArtist) -> Unit = {},
+    onAlbumPlayNext: (List<String>) -> Unit = {},
+    onAlbumAddToQueue: (List<String>) -> Unit = {},
+    onAlbumAddToFavorites: (List<String>) -> Unit = {},
 ) {
     val album = uiState.album
     if (album == null) {
@@ -61,6 +65,7 @@ internal fun AlbumDetailsContent(
     }
     val colors = LocalAirmedyColors.current
     var contextTrack by remember { mutableStateOf<String?>(null) }
+    var albumMenuExpanded by remember(album.id) { mutableStateOf(false) }
     val context = LocalContext.current
     val trackCount = pluralStringResource(R.plurals.album_details_track_count, uiState.tracks.size, uiState.tracks.size)
     val duration = formatAlbumTotalDuration(
@@ -84,7 +89,19 @@ internal fun AlbumDetailsContent(
     LazyColumn(modifier.fillMaxSize(), contentPadding = listPadding) {
         item("hero") {
             ArtworkHeroBackdrop(album.artworkPath, Modifier.fillMaxWidth(), hazeState, onHeroColorChanged) {
-                DetailHero(
+                AlbumContextMenu(
+                    tracks = uiState.tracks,
+                    expanded = albumMenuExpanded,
+                    onDismiss = { albumMenuExpanded = false },
+                    hazeState = hazeState,
+                    playbackQueue = playbackQueue,
+                    onPlay = onPlay,
+                    onShuffle = onShuffle,
+                    onPlayNext = onAlbumPlayNext,
+                    onAddToQueue = onAlbumAddToQueue,
+                    onAddToFavorites = onAlbumAddToFavorites,
+                ) {
+                    DetailHero(
                     album.title,
                     album.artist.ifBlank { stringResource(R.string.album_unknown_artist) },
                     metadata,
@@ -100,7 +117,9 @@ internal fun AlbumDetailsContent(
                     album.artworkPath,
                     onPlayClick = onPlay,
                     onShuffleClick = onShuffle,
-                )
+                    onMoreClick = { albumMenuExpanded = true },
+                    )
+                }
             }
         }
         itemsIndexed(uiState.tracks, key = { _, track -> track.id }) { index, track ->

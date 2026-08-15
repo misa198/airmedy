@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import me.misa198.airmedy.sync.AndroidLibrarySyncStore
 import me.misa198.airmedy.sync.LibraryAlbum
+import me.misa198.airmedy.sync.LibraryTrack
 
 enum class AlbumSortOption {
     Name,
@@ -18,6 +19,7 @@ enum class AlbumSortOption {
 
 data class LibraryAlbumsUiState(
     val albums: List<LibraryAlbum> = emptyList(),
+    internal val tracks: List<LibraryTrack> = emptyList(),
     val sortOption: AlbumSortOption = AlbumSortOption.Name,
     val sortOrder: SortOrder = SortOrder.Ascending,
 )
@@ -35,11 +37,11 @@ internal class LibraryAlbumsViewModel(
     private val sortOrderFlow = MutableStateFlow(SortOrder.Ascending)
 
     val uiState: StateFlow<LibraryAlbumsUiState> = combine(
-        syncStore.albums,
+        syncStore.albums, syncStore.tracks,
         sortOptionFlow,
         sortOrderFlow,
-    ) { albums, option, order ->
-        LibraryAlbumsUiState(sortAlbums(albums, option, order), option, order)
+    ) { albums, tracks, option, order ->
+        LibraryAlbumsUiState(sortAlbums(albums, option, order), tracks, option, order)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
