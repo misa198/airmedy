@@ -216,7 +216,7 @@ describe the desktop Vue UI or future iOS UI.
   marquee `foregroundSubtle` artist/duration text. Overlong marquee text travels
   to its end and reverses back rather than wrapping continuously. The metadata column keeps a
   12dp gap before the blurred glass Heart/More button pair (using a fullscreen-local Haze backdrop source and a subtle 6% glass tint),
-  a dominant-colour gradient extracted from the artwork, animated over 280ms when artwork changes; during an automatic crossfade with Blend artwork and background enabled, outgoing and incoming covers plus their gradients use the audio-matched equal-power `cos/sin` curve for the actual fade duration. The visual is fullscreen-only; mini-player artwork switches immediately. The prior artwork remains visible while the replacement decodes to prevent a fallback-colour flash, with a
+  a dominant-colour gradient extracted from the artwork, animated over 280ms when artwork changes; during an automatic crossfade with Blend artwork and background enabled, outgoing and incoming covers plus their gradients use the audio-matched equal-power `cos/sin` curve for the actual fade duration. The visual freezes the cover currently on screen as its outgoing layer, and incoming artwork state is scoped to its path so no bitmap from a preceding transition can occupy that layer while its new path starts decoding. It is fullscreen-only; mini-player artwork switches immediately. The prior artwork remains visible while the replacement decodes to prevent a fallback-colour flash, with a
   restrained dark `playerBackdrop` overlay and fallback in every app theme, seek/duration, transport controls, Android music-stream volume (the system settings provider is observed recursively so hardware keys and route-specific system-volume events keep it current; hardware-key changes are also predicted immediately before that asynchronous observer confirms the route's actual volume).
   Fullscreen title/artist begin changing as the incoming source starts: incoming metadata fades and slides horizontally in from the right while the outgoing label exits left; this applies to both expanded and compact player layouts.
   Lyrics/Queue affordances follow. Selecting Lyrics or Queue compresses the
@@ -243,7 +243,9 @@ describe the desktop Vue UI or future iOS UI.
   Shuffle/Repeat controls at the right. When the Queue panel is closed, its
   bottom control shows a small secondary-glass status badge: Shuffle takes
   precedence, otherwise Repeat/Repeat One is shown, and it is absent when both
-  modes are off. Their inactive background/icon match the
+  modes are off. When Queue closes, the badge waits until the button's 220ms
+  active-background fade has completed, so the two surfaces never overlap.
+  Their inactive background/icon match the
   fullscreen Favorite action; their active background matches the fullscreen
   slider's resting fill colour and their icon matches active Lyrics.
   Shuffle toggles directly; Repeat cycles
@@ -278,7 +280,9 @@ describe the desktop Vue UI or future iOS UI.
   the Favorite control's translucent secondary glass fill and its themed border
   across the Queue panel's full width (not merely its inset content), and
   follows the finger directly. It updates the local order as items cross and
-  dispatches the complete order only when the drag stops. While a reorder drag
+  dispatches the complete, latest local order only when the drag stops; the
+  stop callback reads a current Compose state holder so it cannot submit the
+  pre-drag order retained by the long-press gesture modifier. While a reorder drag
   is active, the compact artwork/metadata and Queue header remain visible, but
   the seek, transport, volume, and Lyrics/Cast/Queue control cluster slides
   below the viewport. The Queue `LazyColumn` expands into that released safe

@@ -10,6 +10,7 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -33,6 +34,42 @@ import org.junit.Assert.assertEquals
 class FullScreenPlayerTest {
     @get:Rule
     val composeTestRule = createComposeRule()
+
+    @Test
+    fun queueStatusBadgeWaitsForQueueButtonBackgroundToFadeOut() {
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenPlayer(
+                    visible = true,
+                    dragProgress = 0f,
+                    isDragging = false,
+                    openingFromMiniPlayerSwipe = false,
+                    playbackState = PlaybackState.Playing(item, 0L, 120_000L),
+                    queue = PlaybackQueueSnapshot(shuffle = true),
+                    volume = 0.5f,
+                    onSeek = {},
+                    onVolumeChange = {},
+                    onPrevious = {},
+                    onPlayPause = {},
+                    onNext = {},
+                    onOpenMediaOutputSwitcher = {},
+                    onDismiss = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(FullScreenQueueStatusBadgeTestTag).assertExists()
+        composeTestRule.onNodeWithContentDescription("Queue").performClick()
+        composeTestRule.onAllNodesWithTag(FullScreenQueueStatusBadgeTestTag).assertCountEquals(0)
+
+        composeTestRule.onNodeWithContentDescription("Queue").performClick()
+        composeTestRule.mainClock.advanceTimeBy(QueueStatusBadgeRevealDelayMs.toLong() - 1L)
+        composeTestRule.onAllNodesWithTag(FullScreenQueueStatusBadgeTestTag).assertCountEquals(0)
+
+        composeTestRule.mainClock.advanceTimeBy(1L)
+        composeTestRule.onNodeWithTag(FullScreenQueueStatusBadgeTestTag).assertExists()
+    }
 
     @Test
     fun moreOptionsUsesTheTrackContextMenuForTheCurrentTrack() {

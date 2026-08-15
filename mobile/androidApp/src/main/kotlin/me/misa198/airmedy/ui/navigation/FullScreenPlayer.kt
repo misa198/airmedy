@@ -100,6 +100,7 @@ import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import java.io.File
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
@@ -141,6 +142,9 @@ private const val SeekConfirmationToleranceMs = 250L
 private const val FullScreenPlayerControlsTestTag = "full_screen_player_controls"
 private const val QueueReorderTransitionDurationMs = 360
 private const val QueueReorderControlsFadeDurationMs = 300
+private const val QueueButtonSelectionTransitionDurationMs = 220
+internal const val QueueStatusBadgeRevealDelayMs = QueueButtonSelectionTransitionDurationMs + 16
+internal const val FullScreenQueueStatusBadgeTestTag = "full_screen_queue_status_badge"
 
 /** Controls are hidden only for an active Queue reorder, never for a normal Queue view. */
 internal fun areFullScreenPlayerControlsVisible(isQueueReordering: Boolean): Boolean = !isQueueReordering
@@ -248,9 +252,10 @@ internal fun FullScreenPlayer(
     val activeArtworkCrossfade = artworkCrossfade.takeIf { blendArtworkDuringCrossfade }
     val incomingArtwork = rememberFullscreenArtwork(activeArtworkCrossfade?.toArtworkPath, keepPrevious = false)
     val crossfadeProgress = rememberArtworkCrossfadeProgress(artworkCrossfade)
-    // Freeze the cover already on screen at transition start. Never render a
-    // placeholder layer during a crossfade: slow/background decode races can
-    // otherwise surface a one-frame flash before the incoming bitmap arrives.
+    // The service announces the visual transition before it promotes the
+    // playback item. Freeze the currently visible cover then, so decoding the
+    // incoming cover never replaces it with a blank layer or a full-opacity
+    // new cover before the blend can render.
     val outgoingArtwork = remember(activeArtworkCrossfade?.id) {
         activeArtworkCrossfade?.let { artwork }
     }
@@ -266,6 +271,7 @@ internal fun FullScreenPlayer(
     var isTrackContextMenuExpanded by remember(item.trackId) { mutableStateOf(false) }
     var selectedPanel by remember { mutableStateOf<FullScreenPlayerPanel?>(null) }
     val isPanelOpen = selectedPanel != null
+    var isQueueStatusBadgeVisible by remember { mutableStateOf(true) }
     var isQueueReordering by remember { mutableStateOf(false) }
     var restingControlsHeightPx by remember { mutableIntStateOf(0) }
     // The reorderable library reports the end of a normal drag, but a panel
@@ -275,13 +281,23 @@ internal fun FullScreenPlayer(
             isQueueReordering = false
         }
     }
+    // The Queue button's selected surface fades away over 220ms. Do not place
+    // its status badge over that outgoing surface when Queue closes.
+    LaunchedEffect(selectedPanel) {
+        if (selectedPanel == FullScreenPlayerPanel.Queue) {
+            isQueueStatusBadgeVisible = false
+        } else {
+            delay(QueueStatusBadgeRevealDelayMs.toLong())
+            isQueueStatusBadgeVisible = true
+        }
+    }
     val lyricsButtonBackground by animateColorAsState(
         targetValue = if (selectedPanel == FullScreenPlayerPanel.Lyrics) {
             sliderFilledTrackColor(colors, isInteracting = false)
         } else {
             colors.foregroundSubtle.copy(alpha = 0f)
         },
-        animationSpec = tween(220, easing = FastOutSlowInEasing),
+        animationSpec = tween(QueueButtonSelectionTransitionDurationMs, easing = FastOutSlowInEasing),
         label = "full-screen-lyrics-button-background",
     )
     val queueButtonBackground by animateColorAsState(
@@ -290,7 +306,7 @@ internal fun FullScreenPlayer(
         } else {
             colors.foregroundSubtle.copy(alpha = 0f)
         },
-        animationSpec = tween(220, easing = FastOutSlowInEasing),
+        animationSpec = tween(QueueButtonSelectionTransitionDurationMs, easing = FastOutSlowInEasing),
         label = "full-screen-queue-button-background",
     )
     val lyricsButtonIconColor by animateColorAsState(
@@ -299,7 +315,7 @@ internal fun FullScreenPlayer(
         } else {
             colors.foregroundSubtle
         },
-        animationSpec = tween(220, easing = FastOutSlowInEasing),
+        animationSpec = tween(QueueButtonSelectionTransitionDurationMs, easing = FastOutSlowInEasing),
         label = "full-screen-lyrics-button-icon",
     )
     val queueButtonIconColor by animateColorAsState(
@@ -308,7 +324,7 @@ internal fun FullScreenPlayer(
         } else {
             colors.foregroundSubtle
         },
-        animationSpec = tween(220, easing = FastOutSlowInEasing),
+        animationSpec = tween(QueueButtonSelectionTransitionDurationMs, easing = FastOutSlowInEasing),
         label = "full-screen-queue-button-icon",
     )
     val queueStatusBadge = queueStatusBadgeSymbol(queue)
@@ -773,7 +789,11 @@ internal fun FullScreenPlayer(
                                     containerColor = queueButtonBackground,
                                     filled = false,
                                 )
-                                if (selectedPanel != FullScreenPlayerPanel.Queue && queueStatusBadge != null) {
+                                if (
+                                    selectedPanel != FullScreenPlayerPanel.Queue &&
+                                    isQueueStatusBadgeVisible &&
+                                    queueStatusBadge != null
+                                ) {
                                     QueueStatusBadge(queueStatusBadge)
                                 }
                             }
@@ -1174,6 +1194,7 @@ private fun BoxScope.QueueStatusBadge(symbol: String) {
             .align(Alignment.TopEnd)
             .padding(2.dp)
             .size(20.dp)
+            .semantics { testTag = FullScreenQueueStatusBadgeTestTag }
             .clip(CircleShape)
             .background(fullScreenSecondaryControlBackground(colors)),
         contentAlignment = Alignment.Center,
@@ -1292,9 +1313,15 @@ private fun equalPowerIncoming(progress: Float): Float =
 @Composable
 private fun rememberFullscreenArtwork(artworkPath: String?, keepPrevious: Boolean = true): FullScreenArtwork? {
     val context = LocalContext.current
-    var artwork by remember { mutableStateOf<FullScreenArtwork?>(null) }
+    // Crossfade layers must never reuse a bitmap from their previous path for
+    // even one composition. `LaunchedEffect` clears after composition, which
+    // made a prior destination cover briefly occupy the next transition's
+    // incoming layer. The normal current-item layer intentionally retains its
+    // previous cover while its replacement decodes.
+    var artwork by remember(fullscreenArtworkMemoryKey(artworkPath, keepPrevious)) {
+        mutableStateOf<FullScreenArtwork?>(null)
+    }
     LaunchedEffect(artworkPath) {
-        if (!keepPrevious) artwork = null
         if (artworkPath.isNullOrBlank()) {
             artwork = null
             return@LaunchedEffect
@@ -1317,6 +1344,12 @@ private fun rememberFullscreenArtwork(artworkPath: String?, keepPrevious: Boolea
     }
     return artwork
 }
+
+/** A crossfade layer is path-scoped; only the normal player cover may persist across paths. */
+internal fun fullscreenArtworkMemoryKey(artworkPath: String?, keepPrevious: Boolean): Any? =
+    if (keepPrevious) FullscreenArtworkRetainedKey else artworkPath
+
+private object FullscreenArtworkRetainedKey
 
 private fun dominantColor(bitmap: Bitmap): Color {
     val sample = Bitmap.createScaledBitmap(bitmap, 24, 24, true)

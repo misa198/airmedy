@@ -33,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -98,6 +99,11 @@ internal fun FullScreenQueuePanel(
     val listState = rememberLazyListState()
     val tracksById = remember(tracks) { tracks.associateBy(LibraryTrack::id) }
     var orderedIds by remember(queue.activeTrackIds) { mutableStateOf(queue.activeTrackIds) }
+    // Reorderable's long-press modifier keeps its gesture callbacks for the
+    // duration of a drag. Keep state holders here so its stop callback commits
+    // the final local order, rather than the order from drag start.
+    val latestOrderedIds = rememberUpdatedState(orderedIds)
+    val latestOnReorder = rememberUpdatedState(onReorder)
     var hasPositionedInitialTrack by remember { mutableStateOf(false) }
     var previousCurrentTrackId by remember { mutableStateOf<String?>(null) }
     var contextTrackId by remember { mutableStateOf<String?>(null) }
@@ -171,7 +177,11 @@ internal fun FullScreenQueuePanel(
                             isPlaying = isPlaying,
                             isDragged = isDragging,
                             modifier = Modifier,
-                            dragHandleModifier = queueDragHandleModifier(haptics, onReorderDragStateChange, onReorder, orderedIds),
+                            dragHandleModifier = queueDragHandleModifier(
+                                haptics,
+                                onReorderDragStateChange,
+                                onReorder = { commitQueueReorder(latestOrderedIds, latestOnReorder) },
+                            ),
                             onClick = { onTrackSelected(trackId) },
                         )
                     } else {
@@ -199,7 +209,11 @@ internal fun FullScreenQueuePanel(
                                 isPlaying = isPlaying,
                                 isDragged = isDragging,
                                 modifier = Modifier,
-                                dragHandleModifier = queueDragHandleModifier(haptics, onReorderDragStateChange, onReorder, orderedIds),
+                                dragHandleModifier = queueDragHandleModifier(
+                                    haptics,
+                                    onReorderDragStateChange,
+                                    onReorder = { commitQueueReorder(latestOrderedIds, latestOnReorder) },
+                                ),
                                 onClick = { onTrackSelected(trackId) },
                                 onLongClick = {
                                     haptics.performHapticFeedback(HapticFeedbackType.Confirm)
@@ -217,8 +231,7 @@ internal fun FullScreenQueuePanel(
 private fun ReorderableCollectionItemScope.queueDragHandleModifier(
     haptics: androidx.compose.ui.hapticfeedback.HapticFeedback,
     onReorderDragStateChange: (Boolean) -> Unit,
-    onReorder: (List<String>) -> Unit,
-    orderedIds: List<String>,
+    onReorder: () -> Unit,
 ) = Modifier.longPressDraggableHandle(
     onDragStarted = {
         haptics.performHapticFeedback(HapticFeedbackType.Confirm)
@@ -227,7 +240,7 @@ private fun ReorderableCollectionItemScope.queueDragHandleModifier(
     onDragStopped = {
         onReorderDragStateChange(false)
         haptics.performHapticFeedback(HapticFeedbackType.Confirm)
-        onReorder(orderedIds)
+        onReorder()
     },
 )
 
@@ -377,6 +390,12 @@ internal fun moveQueueTrack(trackIds: List<String>, fromIndex: Int, toIndex: Int
             add(toIndex, removeAt(fromIndex))
         }
     }
+
+/** Commits the latest Compose-backed local order when a reorder drag ends. */
+internal fun commitQueueReorder(
+    latestOrderedIds: androidx.compose.runtime.State<List<String>>,
+    latestOnReorder: androidx.compose.runtime.State<(List<String>) -> Unit>,
+) = latestOnReorder.value(latestOrderedIds.value)
 
 private fun RepeatMode.next(): RepeatMode = when (this) {
     RepeatMode.Off -> RepeatMode.All

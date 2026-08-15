@@ -1,5 +1,6 @@
 package me.misa198.airmedy.ui.navigation
 
+import androidx.compose.runtime.mutableStateOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -30,6 +31,30 @@ class FullScreenQueuePanelDragTest {
         assertEquals(
             queue,
             moveQueueTrack(queue, fromIndex = -1, toIndex = 1),
+        )
+    }
+
+    @Test
+    fun commitsTheFinalLocalOrderInsteadOfTheOrderFromDragStart() {
+        val latestOrder = mutableStateOf(listOf("one", "two", "three"))
+        var committedOrder: List<String>? = null
+        val latestCallback = mutableStateOf<(List<String>) -> Unit>({ committedOrder = it })
+
+        latestOrder.value = moveQueueTrack(latestOrder.value, fromIndex = 0, toIndex = 2)
+        commitQueueReorder(latestOrder, latestCallback)
+
+        assertEquals(listOf("two", "three", "one"), committedOrder)
+    }
+
+    @Test
+    fun crossfadeArtworkLayersAreResetForEachArtworkPath() {
+        assertFalse(
+            fullscreenArtworkMemoryKey("from.jpg", keepPrevious = false) ==
+                fullscreenArtworkMemoryKey("to.jpg", keepPrevious = false),
+        )
+        assertEquals(
+            fullscreenArtworkMemoryKey("from.jpg", keepPrevious = true),
+            fullscreenArtworkMemoryKey("to.jpg", keepPrevious = true),
         )
     }
 
