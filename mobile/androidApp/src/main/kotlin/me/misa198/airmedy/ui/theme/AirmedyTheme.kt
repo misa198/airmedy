@@ -28,6 +28,10 @@ data class AirmedyColors(
     val foregroundSubtle: Color,
     val success: Color,
     val navigationActive: Color,
+    // Audio quality badge accents mirror the desktop quality palette.
+    val qualityHiRes: Color = Color(0xFFF59E0B),
+    val qualityDsd: Color = Color(0xFFE879F9),
+    val qualityDsdSurface: Color = Color(0xFFD946EF),
 )
 
 private val LightColors = AirmedyColors(
@@ -50,6 +54,9 @@ private val LightColors = AirmedyColors(
     foregroundSubtle = Color.White.copy(alpha = 0.46f),
     success = Color(0xFF16A34A),
     navigationActive = Color.Black.copy(alpha = 0.08f),
+    qualityHiRes = Color(0xFFF59E0B),
+    qualityDsd = Color(0xFFE879F9),
+    qualityDsdSurface = Color(0xFFD946EF),
 )
 
 private val DarkColors = AirmedyColors(
@@ -70,6 +77,9 @@ private val DarkColors = AirmedyColors(
     foregroundSubtle = Color.White.copy(alpha = 0.46f),
     success = Color(0xFF4ADE80),
     navigationActive = Color.Black.copy(alpha = 0.40f),
+    qualityHiRes = Color(0xFFF59E0B),
+    qualityDsd = Color(0xFFE879F9),
+    qualityDsdSurface = Color(0xFFD946EF),
 )
 
 val LocalAirmedyColors = staticCompositionLocalOf { LightColors }

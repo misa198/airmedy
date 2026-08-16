@@ -82,7 +82,7 @@ internal fun trackContextArtists(track: LibraryTrack): List<TrackContextArtist> 
 }
 
 sealed interface TrackContextBottomSheetRequest {
-    data object Info : TrackContextBottomSheetRequest
+    data class Info(val track: LibraryTrack) : TrackContextBottomSheetRequest
     data class Playlist(val trackIds: List<String>) : TrackContextBottomSheetRequest
     data class Artists(val artists: List<TrackContextArtist>) : TrackContextBottomSheetRequest
 }
@@ -157,7 +157,7 @@ fun TrackContextMenu(
             val showAddToQueue = actions.addToQueue && queueAvailability.showAddToQueue && queueAvailability.addToQueueEnabled
             if (showPlayNext) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_play_next), MaterialSymbols.QueuePlayNext) { closeAfter { onPlayNext(track) } })
             if (showAddToQueue) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_add_to_queue), MaterialSymbols.AddToQueue) { closeAfter { onAddToQueue(track) } })
-            if (actions.trackInfo) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_track_info), MaterialSymbols.Info) { requestBottomSheet(TrackContextBottomSheetRequest.Info) })
+            if (actions.trackInfo) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_track_info), MaterialSymbols.Info) { requestBottomSheet(TrackContextBottomSheetRequest.Info(track)) })
             if (showPlayNext || showAddToQueue || actions.trackInfo) add(ContextActionMenuEntry.Divider)
             if (actions.favorite) add(ContextActionMenuEntry.Action(stringResource(if (favorite) R.string.track_context_remove_from_favorites else R.string.track_context_add_to_favorites), if (favorite) MaterialSymbols.HeartMinus else MaterialSymbols.HeartPlus) { closeAfter { onFavoriteChange(track, !favorite) } })
             if (actions.addToPlaylist) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_add_to_playlist), MaterialSymbols.PlaylistAdd) { requestBottomSheet(TrackContextBottomSheetRequest.Playlist(listOf(track.id))) })
@@ -202,7 +202,7 @@ internal fun TrackContextBottomSheet(
     title = {
         TrackContextSheetTitle(
             when (request) {
-                TrackContextBottomSheetRequest.Info -> R.string.track_context_track_info_title
+                is TrackContextBottomSheetRequest.Info -> R.string.track_context_track_info_title
                 is TrackContextBottomSheetRequest.Playlist -> R.string.track_context_playlist_picker_title
                 is TrackContextBottomSheetRequest.Artists -> R.string.track_context_artist_picker_title
             },
@@ -212,8 +212,7 @@ internal fun TrackContextBottomSheet(
     modifier = modifier,
 ) {
     when (request) {
-        TrackContextBottomSheetRequest.Info ->
-            Text(stringResource(R.string.track_context_placeholder), modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp), color = LocalAirmedyColors.current.textMuted)
+        is TrackContextBottomSheetRequest.Info -> TrackInfoContent(request.track)
         is TrackContextBottomSheetRequest.Playlist -> PlaylistPickerContent(
             trackIds = request.trackIds,
             playlists = playlists,

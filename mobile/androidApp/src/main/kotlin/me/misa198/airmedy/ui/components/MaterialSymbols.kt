@@ -62,6 +62,8 @@ object MaterialSymbols {
     const val Check = "check"
     const val Close = "close"
     const val MusicNote = "music_note"
+    const val Bolt = "bolt"
+    const val Crown = "crown"
     const val Menu = "menu"
     const val MoreVert = "more_vert"
     const val ArrowUpward = "arrow_upward"

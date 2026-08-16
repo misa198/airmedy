@@ -156,4 +156,26 @@
     <string name="composers_empty_title">No composers in library</string>
     <string name="composers_empty_description">Synced composers will appear here once mobile sync completes.</string>
     <string name="composers_no_match_title">No matching composers</string>
+    <string name="track_info_details">DETAILS</string>
+    <string name="track_info_quality_lossy">Lossy</string>
+    <string name="track_info_quality_lossless">Lossless</string>
+    <string name="track_info_quality_hi_res">Hi-Res</string>
+    <string name="track_info_quality_dsd">DSD</string>
+    <string name="track_info_artist">Artist</string>
+    <string name="track_info_genre">Genre</string>
+    <string name="track_info_year">Year</string>
+    <string name="track_info_composer">Composer</string>
+    <string name="track_info_disc">Disc</string>
+    <string name="track_info_track">Track</string>
+    <string name="track_info_play_count">Play count</string>
+    <string name="track_info_label">Label</string>
+    <string name="track_info_isrc">ISRC</string>
+    <string name="track_info_duration">Duration</string>
+    <string name="track_info_format">Format</string>
+    <string name="track_info_bitrate">Bitrate</string>
+    <string name="track_info_sample_rate">Sample rate</string>
+    <string name="track_info_bit_depth">Bit depth</string>
+    <string name="track_info_codec">Codec</string>
+    <string name="track_info_bpm">BPM</string>
+    <string name="track_info_file_size">File size</string>
 </resources>
