@@ -1,8 +1,17 @@
 package me.misa198.airmedy.ui.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -11,7 +20,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
@@ -22,6 +34,8 @@ import kotlinx.serialization.json.contentOrNull
 import me.misa198.airmedy.R
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.sync.LibraryTrack
+import me.misa198.airmedy.sync.LibraryPlaylist
+import me.misa198.airmedy.sync.LibrarySyncProtocol
 import me.misa198.airmedy.sync.metadataObject
 import me.misa198.airmedy.ui.screens.isFavorite
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
@@ -91,6 +105,9 @@ fun TrackContextMenu(
     onGoToArtist: (TrackContextArtist) -> Unit = {},
     onBottomSheetRequested: ((TrackContextBottomSheetRequest) -> Unit)? = null,
     onCloseFullscreenThen: ((() -> Unit) -> Unit) = { action -> action() },
+    playlists: List<LibraryPlaylist> = emptyList(),
+    onPlaylistMembershipChange: (playlistId: String, trackIds: List<String>, add: Boolean) -> Unit = { _, _, _ -> },
+    onCreatePlaylistRequested: (trackIds: List<String>) -> Unit = {},
     anchor: @Composable () -> Unit,
 ) {
     var detailSheet by remember(track.id) { mutableStateOf<TrackContextBottomSheetRequest?>(null) }
@@ -165,6 +182,9 @@ fun TrackContextMenu(
             request = request,
             onDismiss = dismissAll,
             onArtistSelected = { artist -> presentAfterFullscreenCloses { onGoToArtist(artist) } },
+            playlists = playlists,
+            onPlaylistMembershipChange = onPlaylistMembershipChange,
+            onCreatePlaylistRequested = onCreatePlaylistRequested,
         )
     }
 }
@@ -175,6 +195,9 @@ internal fun TrackContextBottomSheet(
     onDismiss: () -> Unit,
     onArtistSelected: (TrackContextArtist) -> Unit,
     modifier: Modifier = Modifier,
+    playlists: List<LibraryPlaylist> = emptyList(),
+    onPlaylistMembershipChange: (playlistId: String, trackIds: List<String>, add: Boolean) -> Unit = { _, _, _ -> },
+    onCreatePlaylistRequested: (trackIds: List<String>) -> Unit = {},
 ) = AirmedyBottomSheet(
     title = {
         TrackContextSheetTitle(
@@ -189,8 +212,14 @@ internal fun TrackContextBottomSheet(
     modifier = modifier,
 ) {
     when (request) {
-        TrackContextBottomSheetRequest.Info, is TrackContextBottomSheetRequest.Playlist ->
+        TrackContextBottomSheetRequest.Info ->
             Text(stringResource(R.string.track_context_placeholder), modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp), color = LocalAirmedyColors.current.textMuted)
+        is TrackContextBottomSheetRequest.Playlist -> PlaylistPickerContent(
+            trackIds = request.trackIds,
+            playlists = playlists,
+            onPlaylistMembershipChange = onPlaylistMembershipChange,
+            onCreatePlaylistRequested = onCreatePlaylistRequested,
+        )
         is TrackContextBottomSheetRequest.Artists -> ContextActionMenu(
             request.artists.map { artist ->
                 ContextActionMenuEntry.Action(artist.name, MaterialSymbols.Person) { onArtistSelected(artist) }
@@ -200,3 +229,77 @@ internal fun TrackContextBottomSheet(
 }
 
 @Composable private fun TrackContextSheetTitle(title: Int) = Text(stringResource(title), style = MaterialTheme.typography.titleMedium, color = LocalAirmedyColors.current.textMain)
+
+@Composable
+private fun PlaylistPickerContent(
+    trackIds: List<String>,
+    playlists: List<LibraryPlaylist>,
+    onPlaylistMembershipChange: (playlistId: String, trackIds: List<String>, add: Boolean) -> Unit,
+    onCreatePlaylistRequested: (trackIds: List<String>) -> Unit,
+) {
+    val colors = LocalAirmedyColors.current
+    val editable = remember(playlists) { playlists.filter(::playlistIsEditable) }
+    val singleTrack = trackIds.distinct().singleOrNull()
+    Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable { onCreatePlaylistRequested(trackIds) }.padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) {
+                MaterialSymbol(MaterialSymbols.Add, null, size = 18.dp, tint = colors.primary)
+            }
+            Text(stringResource(R.string.track_context_create_playlist), modifier = Modifier.padding(start = 12.dp), color = colors.textMain)
+        }
+        if (editable.isEmpty()) {
+            Text(stringResource(R.string.track_context_no_editable_playlists), modifier = Modifier.padding(horizontal = 12.dp, vertical = 16.dp), color = colors.textMuted)
+        } else {
+            LazyColumn(Modifier.fillMaxWidth().heightIn(max = 360.dp)) {
+                items(editable, key = LibraryPlaylist::id) { playlist ->
+                    val checked = if (singleTrack != null) {
+                        singleTrack in playlist.trackIds
+                    } else {
+                        trackIds.isNotEmpty() && trackIds.all { it in playlist.trackIds }
+                    }
+                    val add = !checked
+                    val targetIds = when {
+                        singleTrack != null -> listOf(singleTrack)
+                        add -> trackIds.filter { it !in playlist.trackIds }
+                        else -> trackIds
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable { if (targetIds.isNotEmpty()) onPlaylistMembershipChange(playlist.id, targetIds, add) }.padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        PlaylistPickerCheckbox(
+                            checked = checked,
+                            modifier = Modifier.size(24.dp),
+                        )
+                        Text(playlist.name, modifier = Modifier.padding(start = 12.dp), color = colors.textMain)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlaylistPickerCheckbox(checked: Boolean, modifier: Modifier = Modifier) {
+    val colors = LocalAirmedyColors.current
+    val shape = RoundedCornerShape(9.dp)
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .background(if (checked) colors.primary else colors.glassElevated)
+            .border(1.dp, if (checked) colors.primary else colors.borderGlass, shape),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (checked) MaterialSymbol(MaterialSymbols.Check, null, size = 14.dp, tint = colors.onPrimary)
+    }
+}
+
+internal fun playlistIsEditable(playlist: LibraryPlaylist): Boolean {
+    if (playlist.id == "favorites") return false
+    val root = runCatching { LibrarySyncProtocol.json.parseToJsonElement(playlist.metadataJson) as? JsonObject }.getOrNull()
+    val value = (root?.get("playlist") as? JsonObject ?: root)?.get("is_smart") as? JsonPrimitive
+    return value?.contentOrNull != "true"
+}

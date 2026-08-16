@@ -35,6 +35,7 @@ import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.ui.components.TrackContextArtist
 import me.misa198.airmedy.ui.components.TrackContextMenu
 import me.misa198.airmedy.ui.components.TrackContextMenuActions
+import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 private const val AlbumTrackDividerTag = "album-detail-track-divider"
@@ -57,6 +58,7 @@ internal fun AlbumDetailsContent(
     onAlbumPlayNext: (List<String>) -> Unit = {},
     onAlbumAddToQueue: (List<String>) -> Unit = {},
     onAlbumAddToFavorites: (List<String>) -> Unit = {},
+    onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit = {},
 ) {
     val album = uiState.album
     if (album == null) {
@@ -100,6 +102,7 @@ internal fun AlbumDetailsContent(
                     onPlayNext = onAlbumPlayNext,
                     onAddToQueue = onAlbumAddToQueue,
                     onAddToFavorites = onAlbumAddToFavorites,
+                    onBottomSheetRequested = onTrackContextBottomSheet,
                 ) {
                     DetailHero(
                     album.title,
@@ -141,6 +144,7 @@ internal fun AlbumDetailsContent(
                 onAddToQueue = { onTrackAddToQueue(it.id) },
                 onFavoriteChange = { item, favorite -> onTrackFavoriteToggle(item.id, favorite) },
                 onGoToArtist = onTrackArtistClick,
+                onBottomSheetRequested = onTrackContextBottomSheet,
             ) {
                 AlbumTrackRow(
                     track.trackNumber.takeIf { it > 0 } ?: index + 1,

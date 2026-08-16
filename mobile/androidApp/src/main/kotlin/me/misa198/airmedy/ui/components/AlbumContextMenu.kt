@@ -29,18 +29,17 @@ internal fun AlbumContextMenu(
     onPlayNext: (List<String>) -> Unit = {},
     onAddToQueue: (List<String>) -> Unit = {},
     onAddToFavorites: (List<String>) -> Unit = {},
+    onBottomSheetRequested: (TrackContextBottomSheetRequest) -> Unit = {},
     anchor: @Composable () -> Unit,
 ) {
     val trackIds = remember(tracks) { tracks.map(LibraryTrack::id) }
     val showAddToQueue = remember(trackIds, playbackQueue.activeTrackIds) { albumContextShowsAddToQueue(trackIds, playbackQueue) }
-    var detailSheet by remember(trackIds) { mutableStateOf<TrackContextBottomSheetRequest?>(null) }
     val dismissAll = {
-        detailSheet = null
         onDismiss()
     }
     val closeAfter: ((() -> Unit) -> Unit) = { action -> action(); dismissAll() }
     AnchoredPopupMenu(
-        expanded = expanded && detailSheet == null,
+        expanded = expanded,
         onDismissRequest = dismissAll,
         modifier = modifier,
         width = 272.dp,
@@ -58,12 +57,10 @@ internal fun AlbumContextMenu(
                 closeAfter { onAddToFavorites(tracks.filterNot(LibraryTrack::isFavorite).map(LibraryTrack::id)) }
             })
             add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_add_to_playlist), MaterialSymbols.PlaylistAdd) {
-                detailSheet = TrackContextBottomSheetRequest.Playlist(trackIds)
+                dismissAll()
+                onBottomSheetRequested(TrackContextBottomSheetRequest.Playlist(trackIds))
             })
         })
-    }
-    detailSheet?.let { request ->
-        TrackContextBottomSheet(request = request, onDismiss = dismissAll, onArtistSelected = {})
     }
 }
 

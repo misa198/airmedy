@@ -32,6 +32,7 @@ import me.misa198.airmedy.ui.components.TrackRow
 import me.misa198.airmedy.ui.components.TrackContextMenu
 import me.misa198.airmedy.ui.components.TrackContextMenuActions
 import me.misa198.airmedy.ui.components.TrackContextArtist
+import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
@@ -53,6 +54,7 @@ internal fun PlaylistDetailsContent(
     onTrackFavoriteToggle: (String, Boolean) -> Unit = { _, _ -> },
     onTrackArtistClick: (TrackContextArtist) -> Unit = {},
     onTrackRemoveFromPlaylist: (String) -> Unit = {},
+    onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit = {},
 ) {
     val playlist = uiState.playlist
     if (playlist == null) {
@@ -117,6 +119,7 @@ internal fun PlaylistDetailsContent(
                 onFavoriteChange = { item, favorite -> onTrackFavoriteToggle(item.id, favorite) },
                 onGoToArtist = onTrackArtistClick,
                 onRemoveFromPlaylist = { onTrackRemoveFromPlaylist(it.id) },
+                onBottomSheetRequested = onTrackContextBottomSheet,
             ) {
                 TrackRow(
                     title = track.title,

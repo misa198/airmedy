@@ -178,6 +178,8 @@
     <string name="track_context_go_to_artists">Go to artists</string>
     <string name="track_context_artist_picker_title">Artists</string>
     <string name="track_context_playlist_picker_title">Add to playlist</string>
+    <string name="track_context_create_playlist">Create playlist</string>
+    <string name="track_context_no_editable_playlists">Create a playlist to add this track.</string>
     <string name="track_context_track_info_title">Track info</string>
     <string name="track_context_placeholder">Coming soon</string>
     <string name="tracks_count">%1$d tracks</string>

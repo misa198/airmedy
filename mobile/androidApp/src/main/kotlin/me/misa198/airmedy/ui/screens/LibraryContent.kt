@@ -28,6 +28,7 @@ import me.misa198.airmedy.ui.components.DiscGridItem
 import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.ui.components.TrackContextArtist
 import me.misa198.airmedy.ui.components.TrackContextMenu
+import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import me.misa198.airmedy.ui.components.discGridItems
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
@@ -50,6 +51,7 @@ internal fun LibraryContent(
     onGenresSelected: (() -> Unit)? = null,
     onComposersSelected: (() -> Unit)? = null,
     onPlaylistsSelected: (() -> Unit)? = null,
+    onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit = {},
 ) {
     val colors = LocalAirmedyColors.current
     var contextTrack by remember { mutableStateOf<LibraryTrack?>(null) }
@@ -142,6 +144,7 @@ internal fun LibraryContent(
                             onFavoriteChange = onTrackFavoriteToggle,
                             onGoToAlbum = onTrackAlbumClick,
                             onGoToArtist = onTrackArtistClick,
+                            onBottomSheetRequested = onTrackContextBottomSheet,
                             anchor = content,
                         )
                     }

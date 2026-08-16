@@ -1,6 +1,7 @@
 package me.misa198.airmedy.ui.components
 
 import me.misa198.airmedy.sync.LibraryTrack
+import me.misa198.airmedy.sync.LibraryPlaylist
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -48,5 +49,12 @@ class TrackContextMenuTest {
             emptyList<TrackContextArtist>(),
             trackContextArtists(LibraryTrack(id = "track-1", title = "Track", artists = "Artist", metadataJson = "not-json")),
         )
+    }
+
+    @Test
+    fun playlistPickerExcludesFavoritesAndSmartPlaylists() {
+        assertEquals(false, playlistIsEditable(LibraryPlaylist("favorites", "Favorites", emptyList(), "{}")))
+        assertEquals(false, playlistIsEditable(LibraryPlaylist("smart", "Smart", emptyList(), "{\"playlist\":{\"is_smart\":true}}")))
+        assertEquals(true, playlistIsEditable(LibraryPlaylist("normal", "Normal", emptyList(), "{\"playlist\":{\"is_smart\":false}}")))
     }
 }

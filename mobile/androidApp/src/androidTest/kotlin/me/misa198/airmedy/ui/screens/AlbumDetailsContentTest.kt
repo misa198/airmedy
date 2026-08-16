@@ -14,6 +14,7 @@ import me.misa198.airmedy.sync.LibraryAlbum
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import me.misa198.airmedy.ui.components.AnchoredPopupMenuHost
+import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import org.junit.Rule
 import org.junit.Test
@@ -127,7 +128,8 @@ class AlbumDetailsContentTest {
     }
 
     @Test
-    fun heroOverflowHidesAddToQueueWhenEveryAlbumTrackIsQueued() {
+    fun heroOverflowHidesAddToQueueAndRequestsPlaylistPicker() {
+        var request: TrackContextBottomSheetRequest? = null
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 AnchoredPopupMenuHost(hazeState = null) {
@@ -137,6 +139,7 @@ class AlbumDetailsContentTest {
                             tracks = listOf(LibraryTrack("one", "One", "Muse")),
                         ),
                         playbackQueue = PlaybackQueueSnapshot(activeTrackIds = listOf("one")),
+                        onTrackContextBottomSheet = { request = it },
                     )
                 }
             }
@@ -145,6 +148,6 @@ class AlbumDetailsContentTest {
         composeTestRule.onNode(hasContentDescription("Album options")).performClick()
         composeTestRule.onAllNodesWithText("Add to queue").assertCountEquals(0)
         composeTestRule.onNodeWithText("Add to playlist").performClick()
-        composeTestRule.onNodeWithText("Coming soon").assertExists()
+        org.junit.Assert.assertEquals(TrackContextBottomSheetRequest.Playlist(listOf("one")), request)
     }
 }

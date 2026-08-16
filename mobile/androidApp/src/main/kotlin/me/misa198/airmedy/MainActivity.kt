@@ -290,6 +290,8 @@ class MainActivity : ComponentActivity() {
                 onPlaylistTrackPlay = playlistDetailsViewModel::playTrack,
                 onPlaylistTrackRemove = playlistDetailsViewModel::removeTrack,
                 onCreatePlaylist = playlistsViewModel::createPlaylist,
+                onCreatePlaylistWithTracks = { name, artwork, trackIds -> playlistsViewModel.createPlaylist(name, artwork, trackIds) },
+                onPlaylistMembershipChange = playlistsViewModel::changePlaylistMembership,
                 onArtistPlay = artistDetailsViewModel::play,
                 onGenrePlay = genreDetailsViewModel::play,
                 onComposerPlay = composerDetailsViewModel::play,

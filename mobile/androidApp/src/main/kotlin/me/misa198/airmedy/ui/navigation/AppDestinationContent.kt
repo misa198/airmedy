@@ -157,6 +157,7 @@ internal fun AppDestinationContent(
     onPlaylistPlay: (String, Boolean) -> Unit = { _, _ -> },
     onPlaylistTrackPlay: (String, String) -> Unit = { _, _ -> },
     onPlaylistTrackRemove: (String, String) -> Unit = { _, _ -> },
+    onTrackContextBottomSheet: (me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest) -> Unit = {},
     onArtistPlay: (String, Boolean) -> Unit = { _, _ -> },
     onArtistsFilterQueryChange: (String) -> Unit = {},
     onGenrePlay: (String, Boolean) -> Unit = { _, _ -> },
@@ -398,6 +399,7 @@ internal fun AppDestinationContent(
                                 onAlbumPlayNext = onAlbumPlayNext,
                                 onAlbumAddToQueue = onAlbumAddToQueue,
                                 onAlbumAddToFavorites = onAlbumAddToFavorites,
+                                onTrackContextBottomSheet = onTrackContextBottomSheet,
                             )
                             AppStackPage.LibraryGenres -> LibraryGenresContent(
                                 uiState = genresUiState,
@@ -439,6 +441,7 @@ internal fun AppDestinationContent(
                                 onTrackFavoriteToggle = onTrackFavoriteToggle,
                                 onTrackArtistClick = { artist -> onIntent(AppIntent.OpenArtistDetails(artist.id)) },
                                 onTrackRemoveFromPlaylist = { trackId -> selectedPlaylistId?.let { onPlaylistTrackRemove(it, trackId) } },
+                                onTrackContextBottomSheet = onTrackContextBottomSheet,
                             )
                             AppStackPage.LibraryTracks -> LibraryTracksContent(
                                 uiState = tracksUiState,
@@ -457,6 +460,7 @@ internal fun AppDestinationContent(
                                 hazeState = hazeState,
                                 onPlayAll = onTracksPlayAll,
                                 onFilterQueryChange = onTracksFilterQueryChange,
+                                onTrackContextBottomSheet = onTrackContextBottomSheet,
                             )
                             else -> LibraryContent(
                                 modifier = Modifier.fillMaxSize(),
@@ -470,6 +474,7 @@ internal fun AppDestinationContent(
                                 onTrackFavoriteToggle = { track, favorite -> onTrackFavoriteToggle(track.id, favorite) },
                                 onTrackAlbumClick = { track -> onIntent(AppIntent.OpenAlbumDetails(track.albumId)) },
                                 onTrackArtistClick = { artist -> onIntent(AppIntent.OpenArtistDetails(artist.id)) },
+                                onTrackContextBottomSheet = onTrackContextBottomSheet,
                                 onTracksSelected = {
                                     onIntent(AppIntent.OpenPage(AppStackPage.LibraryTracks))
                                 },

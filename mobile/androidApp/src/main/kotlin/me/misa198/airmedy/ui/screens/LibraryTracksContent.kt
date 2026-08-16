@@ -26,6 +26,7 @@ import me.misa198.airmedy.ui.components.LibraryTextFilter
 import me.misa198.airmedy.ui.components.TrackRow
 import me.misa198.airmedy.ui.components.TrackContextArtist
 import me.misa198.airmedy.ui.components.TrackContextMenu
+import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 
 @Composable
 internal fun LibraryTracksContent(
@@ -46,6 +47,7 @@ internal fun LibraryTracksContent(
     hazeState: HazeState? = null,
     onPlayAll: (Boolean) -> Unit = {},
     onFilterQueryChange: (String) -> Unit = {},
+    onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit = {},
 ) {
     var contextTrack by remember { mutableStateOf<LibraryTrack?>(null) }
     val listPadding = remember(contentPadding) {
@@ -114,6 +116,7 @@ internal fun LibraryTracksContent(
             onFavoriteChange = onTrackFavoriteToggle,
             onGoToAlbum = onTrackAlbumClick,
             onGoToArtist = onTrackArtistClick,
+            onBottomSheetRequested = onTrackContextBottomSheet,
         ) {
             TrackRow(
                 title = track.title,

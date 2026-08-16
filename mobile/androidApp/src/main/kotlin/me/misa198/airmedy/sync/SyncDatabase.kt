@@ -491,6 +491,7 @@ internal class AndroidLibrarySyncStore(
         mutation: PlaylistMutation,
         artwork: StagedPlaylistArtwork? = null,
         artworkMutationId: String? = null,
+        initialTrackIds: List<String> = emptyList(),
     ) {
         require(mutation.operation == PlaylistMutationOperation.CREATE) { "Expected playlist create mutation" }
         require(mutation.validationError() == null) { mutation.validationError() ?: "Invalid playlist mutation" }
@@ -511,6 +512,16 @@ internal class AndroidLibrarySyncStore(
                 dao.insertPlaylistMutation(PlaylistMutationEntity(artworkMutation.mutationId, artworkMutation.playlistId, artworkMutation.operation.name, artworkMutation.updatedAt, LibrarySyncProtocol.json.encodeToString(PlaylistMutationPayload.serializer(), artworkMutation.payload)))
             }
             dao.insertLocalPlaylist(LocalPlaylistEntity(mutation.playlistId, mutation.payload.name!!.trim(), mutation.mutationId, artworkSha256 = artwork?.sha256))
+            initialTrackIds.distinct().filter(String::isNotBlank).forEachIndexed { index, trackId ->
+                val addMutation = PlaylistMutation(
+                    mutationId = UUID.randomUUID().toString(),
+                    playlistId = mutation.playlistId,
+                    operation = PlaylistMutationOperation.ADD_TRACK,
+                    updatedAt = mutation.updatedAt + 2 + index,
+                    payload = PlaylistMutationPayload(trackId = trackId),
+                )
+                dao.insertPlaylistMutation(PlaylistMutationEntity(addMutation.mutationId, addMutation.playlistId, addMutation.operation.name, addMutation.updatedAt, LibrarySyncProtocol.json.encodeToString(PlaylistMutationPayload.serializer(), addMutation.payload)))
+            }
         }
     }
 

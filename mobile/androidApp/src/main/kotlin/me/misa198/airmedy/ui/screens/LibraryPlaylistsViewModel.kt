@@ -60,7 +60,7 @@ internal class LibraryPlaylistsViewModel(private val context: Context, syncStore
         })
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LibraryPlaylistsUiState())
 
-    fun createPlaylist(rawName: String, artworkUri: Uri? = null) {
+    fun createPlaylist(rawName: String, artworkUri: Uri? = null, initialTrackIds: List<String> = emptyList()) {
         val name = rawName.trim()
         if (name.isBlank()) return
         viewModelScope.launch {
@@ -84,8 +84,27 @@ internal class LibraryPlaylistsViewModel(private val context: Context, syncStore
                 ),
                 artwork = stagedArtwork,
                 artworkMutationId = stagedArtwork?.let { UUID.randomUUID().toString() },
+                initialTrackIds = initialTrackIds,
             )
             _createdPlaylistIds.emit(playlistId)
+        }
+    }
+
+    fun changePlaylistMembership(playlistId: String, trackIds: List<String>, add: Boolean) {
+        if (playlistId == FavoritesPlaylistId) return
+        val operation = if (add) PlaylistMutationOperation.ADD_TRACK else PlaylistMutationOperation.REMOVE_TRACK
+        viewModelScope.launch {
+            trackIds.distinct().filter(String::isNotBlank).forEach { trackId ->
+                syncStore.queuePlaylistMutation(
+                    PlaylistMutation(
+                        mutationId = UUID.randomUUID().toString(),
+                        playlistId = playlistId,
+                        operation = operation,
+                        updatedAt = System.currentTimeMillis(),
+                        payload = PlaylistMutationPayload(trackId = trackId),
+                    ),
+                )
+            }
         }
     }
 }

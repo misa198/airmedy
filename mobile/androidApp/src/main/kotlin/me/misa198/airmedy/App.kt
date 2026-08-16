@@ -140,6 +140,8 @@ internal fun App(
     onPlaylistTrackPlay: (String, String) -> Unit = { _, _ -> },
     onPlaylistTrackRemove: (String, String) -> Unit = { _, _ -> },
     onCreatePlaylist: (String, android.net.Uri?) -> Unit = { _, _ -> },
+    onCreatePlaylistWithTracks: (String, android.net.Uri?, List<String>) -> Unit = { _, _, _ -> },
+    onPlaylistMembershipChange: (String, List<String>, Boolean) -> Unit = { _, _, _ -> },
     onArtistPlay: (String, Boolean) -> Unit = { _, _ -> },
     onArtistsFilterQueryChange: (String) -> Unit = {},
     onGenrePlay: (String, Boolean) -> Unit = { _, _ -> },
@@ -233,7 +235,7 @@ internal fun App(
         var fullScreenPlayerDragProgress by remember { mutableFloatStateOf(0f) }
         var isFullScreenPlayerDragging by remember { mutableStateOf(false) }
         var pendingFullScreenPlayerAction by remember { mutableStateOf<(() -> Unit)?>(null) }
-        var fullScreenTrackContextSheet by remember { mutableStateOf<TrackContextBottomSheetRequest?>(null) }
+        var trackContextSheet by remember { mutableStateOf<TrackContextBottomSheetRequest?>(null) }
         var isNavigationCompact by remember { mutableStateOf(false) }
         var albumHeroColor by remember { mutableStateOf<Color?>(null) }
         val albumHeaderFade by animateFloatAsState(
@@ -297,6 +299,7 @@ internal fun App(
             currentPage == AppStackPage.LibraryGenres || currentPage == AppStackPage.LibraryComposers
         val showPlaylistAddAction = currentPage == AppStackPage.LibraryPlaylists
         var showCreatePlaylistSheet by rememberSaveable { mutableStateOf(false) }
+        var createPlaylistForTracks by remember { mutableStateOf<List<String>?>(null) }
         BackHandler(enabled = showBack) { onIntent(AppIntent.NavigateBack) }
 
         val isContentScrolled by remember(uiState.selectedDestination, currentPage, homeListState, libraryListState, tracksListState, artistsListState, albumsListState, artistDetailsListState, genreDetailsListState, composerDetailsListState, genresListState, composersListState, playlistsListState) {
@@ -400,6 +403,7 @@ internal fun App(
                 onPlaylistPlay = onPlaylistPlay,
                 onPlaylistTrackPlay = onPlaylistTrackPlay,
                 onPlaylistTrackRemove = onPlaylistTrackRemove,
+                onTrackContextBottomSheet = { request -> trackContextSheet = request },
                 onArtistPlay = onArtistPlay,
                 onArtistsFilterQueryChange = onArtistsFilterQueryChange,
                 onGenrePlay = onGenrePlay,
@@ -548,10 +552,12 @@ internal fun App(
             }
             if (showCreatePlaylistSheet) {
                 CreatePlaylistBottomSheet(
-                    onDismiss = { showCreatePlaylistSheet = false },
+                    onDismiss = { showCreatePlaylistSheet = false; createPlaylistForTracks = null },
                     onCreate = { name, artworkUri ->
                         showCreatePlaylistSheet = false
-                        onCreatePlaylist(name, artworkUri)
+                        createPlaylistForTracks?.let { onCreatePlaylistWithTracks(name, artworkUri, it) }
+                            ?: onCreatePlaylist(name, artworkUri)
+                        createPlaylistForTracks = null
                     },
                 )
             }
@@ -642,7 +648,7 @@ internal fun App(
                 onTrackAddToQueue = onTrackAddToQueue,
                 onTrackGoToAlbum = { albumId -> onIntent(AppIntent.OpenAlbumDetails(albumId)) },
                 onTrackGoToArtist = { artistId -> onIntent(AppIntent.OpenArtistDetails(artistId)) },
-                onTrackContextBottomSheet = { request -> fullScreenTrackContextSheet = request },
+                onTrackContextBottomSheet = { request -> trackContextSheet = request },
                 onCloseFullscreenThen = ::closeFullScreenPlayerThen,
                 onOpenMediaOutputSwitcher = onOpenMediaOutputSwitcher,
                 onDismiss = {
@@ -657,13 +663,20 @@ internal fun App(
                 },
                 hazeState = hazeState,
             )
-            fullScreenTrackContextSheet?.let { request ->
+            trackContextSheet?.let { request ->
                 TrackContextBottomSheet(
                     request = request,
-                    onDismiss = { fullScreenTrackContextSheet = null },
+                    onDismiss = { trackContextSheet = null },
                     onArtistSelected = { artist ->
-                        fullScreenTrackContextSheet = null
+                        trackContextSheet = null
                         onIntent(AppIntent.OpenArtistDetails(artist.id))
+                    },
+                    playlists = playlistDetailsUiState.playlists,
+                    onPlaylistMembershipChange = onPlaylistMembershipChange,
+                    onCreatePlaylistRequested = { trackIds ->
+                        trackContextSheet = null
+                        createPlaylistForTracks = trackIds
+                        showCreatePlaylistSheet = true
                     },
                 )
             }
