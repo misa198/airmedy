@@ -336,7 +336,7 @@ private fun FullScreenQueueTrackRow(
                 .semantics { testTag = "$QueuePanelRowContentTestTag-$trackId" },
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)).background(colors.glassElevated), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)).background(colors.glassElevated).border(1.dp, colors.borderGlass, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
                 if (artwork != null) Image(artwork, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 else MaterialSymbol(MaterialSymbols.MusicNote, tint = colors.textMuted, size = 20.dp)
                 if (isCurrent) {

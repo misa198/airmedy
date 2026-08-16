@@ -2,6 +2,7 @@ package me.misa198.airmedy
 
 import me.misa198.airmedy.sync.LibraryAlbum
 import me.misa198.airmedy.ui.screens.AlbumSortOption
+import me.misa198.airmedy.ui.screens.AlbumLayoutMode
 import me.misa198.airmedy.ui.screens.SortOrder
 import me.misa198.airmedy.ui.screens.sortAlbums
 import me.misa198.airmedy.ui.screens.LibraryAlbumsUiState
@@ -58,5 +59,12 @@ class LibraryAlbumsViewModelTest {
             listOf("second-track-1", "second-track-2", "first-track"),
             albumCollectionTrackIdsFor(state),
         )
+    }
+
+    @Test
+    fun defaultsToListLayoutForMissingOrInvalidStoredValue() {
+        assertEquals(AlbumLayoutMode.List, AlbumLayoutMode.fromStorage(null))
+        assertEquals(AlbumLayoutMode.List, AlbumLayoutMode.fromStorage("unexpected"))
+        assertEquals(AlbumLayoutMode.Grid, AlbumLayoutMode.fromStorage("grid"))
     }
 }

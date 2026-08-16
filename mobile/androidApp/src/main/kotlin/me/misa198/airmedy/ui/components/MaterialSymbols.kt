@@ -97,6 +97,8 @@ object MaterialSymbols {
     const val HeartPlus = "heart_plus"
     const val HeartMinus = "heart_minus"
     const val FilterList = "filter_list"
+    const val GridView = "grid_view"
+    const val ViewList = "view_list"
     const val StylusFountainPen = "stylus_fountain_pen"
 }
 

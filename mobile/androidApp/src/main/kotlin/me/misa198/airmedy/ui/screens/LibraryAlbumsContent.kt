@@ -18,11 +18,13 @@ import androidx.compose.ui.unit.dp
 import me.misa198.airmedy.R
 import me.misa198.airmedy.ui.components.AlbumRow
 import me.misa198.airmedy.ui.components.AlbumContextMenu
+import me.misa198.airmedy.ui.components.DiscGridItem
 import me.misa198.airmedy.ui.components.HeroCard
 import me.misa198.airmedy.ui.components.LibraryVirtualList
 import me.misa198.airmedy.ui.components.LibraryPlaybackActions
 import me.misa198.airmedy.ui.components.LibraryTextFilter
 import me.misa198.airmedy.ui.components.MaterialSymbols
+import me.misa198.airmedy.ui.components.discGridItems
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
 
 @Composable
@@ -42,6 +44,18 @@ internal fun LibraryAlbumsContent(
     onFilterQueryChange: (String) -> Unit = {},
 ) {
     var contextAlbumId by remember { mutableStateOf<String?>(null) }
+    val unknownArtist = stringResource(R.string.album_unknown_artist)
+    val gridItems = remember(uiState.albums, unknownArtist) {
+        uiState.albums.map { album ->
+            DiscGridItem(
+                id = album.id,
+                title = album.title,
+                subtitle = album.artist.ifBlank { unknownArtist },
+                artworkPath = album.artworkPath,
+                fallbackSymbol = MaterialSymbols.Album,
+            )
+        }
+    }
     val listPadding = remember(contentPadding) {
         PaddingValues(
             top = contentPadding.calculateTopPadding(),
@@ -88,6 +102,42 @@ internal fun LibraryAlbumsContent(
                     symbol = MaterialSymbols.Album,
                 )
             }
+        },
+        customItemsContent = if (uiState.layoutMode == AlbumLayoutMode.Grid) {
+            {
+                discGridItems(
+                    items = gridItems,
+                    horizontalContentPadding = 24.dp,
+                    onClick = { albumId -> uiState.albums.find { it.id == albumId }?.let { album -> onAlbumClick?.invoke(album) } },
+                    onLongClick = { albumId -> contextAlbumId = albumId },
+                    itemWrapper = { item, itemModifier, content ->
+                        val album = uiState.albums.find { it.id == item.id }
+                        if (album == null) {
+                            content()
+                        } else {
+                            val tracks = remember(album.id, uiState.tracks) {
+                                albumDetailsUiStateFor(AlbumDetailsUiState(albums = uiState.albums, tracks = uiState.tracks), album.id).tracks
+                            }
+                            AlbumContextMenu(
+                                tracks = tracks,
+                                expanded = contextAlbumId == album.id,
+                                onDismiss = { if (contextAlbumId == album.id) contextAlbumId = null },
+                                hazeState = hazeState,
+                                playbackQueue = playbackQueue,
+                                onPlay = { onAlbumPlay(album.id, false) },
+                                onShuffle = { onAlbumPlay(album.id, true) },
+                                onPlayNext = onAlbumPlayNext,
+                                onAddToQueue = onAlbumAddToQueue,
+                                onAddToFavorites = onAlbumAddToFavorites,
+                                modifier = itemModifier,
+                                anchor = content,
+                            )
+                        }
+                    },
+                )
+            }
+        } else {
+            null
         },
     ) { album ->
         val tracks = remember(album.id, uiState.tracks) {

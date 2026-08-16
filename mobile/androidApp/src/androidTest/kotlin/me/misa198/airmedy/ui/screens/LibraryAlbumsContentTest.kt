@@ -86,4 +86,26 @@ class LibraryAlbumsContentTest {
         composeTestRule.onNodeWithText("Play next").assertExists()
         composeTestRule.onNode(hasContentDescription("Add to favourites")).assertExists()
     }
+
+    @Test
+    fun displaysAlbumsInTwoColumnGridWithoutListDividers() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                LibraryAlbumsContent(
+                    LibraryAlbumsUiState(
+                        layoutMode = AlbumLayoutMode.Grid,
+                        albums = listOf(
+                            LibraryAlbum(id = "a", title = "Album A", artist = "Artist A"),
+                            LibraryAlbum(id = "b", title = "Album B"),
+                        ),
+                    ),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Album A").assertExists()
+        composeTestRule.onNodeWithText("Album B").assertExists()
+        composeTestRule.onNodeWithText("Unknown artist").assertExists()
+        composeTestRule.onAllNodesWithTag("album-row-divider").assertCountEquals(0)
+    }
 }

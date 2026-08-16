@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -50,6 +51,7 @@ fun <T> LibraryVirtualList(
     filterContent: (@Composable (showPlaceholderAndLeadingSymbol: Boolean) -> Unit)? = null,
     leadingContent: (@Composable () -> Unit)? = null,
     emptyContent: @Composable () -> Unit,
+    customItemsContent: (LazyListScope.() -> Unit)? = null,
     itemContent: @Composable (T) -> Unit,
 ) {
     var filterVisible by rememberSaveable(filterKey) { mutableStateOf(false) }
@@ -138,14 +140,18 @@ fun <T> LibraryVirtualList(
                     if (leadingContent != null) {
                         item(contentType = "library-list-leading-content") { leadingContent() }
                     }
-                    itemsIndexed(
-                        items = items,
-                        key = { _, item -> key(item) },
-                        contentType = { _, _ -> contentType },
-                    ) { index, item ->
-                        itemContent(item)
-                        if (index < items.lastIndex) {
-                            LibraryListDivider(dividerTestTag, colors)
+                    if (customItemsContent != null) {
+                        customItemsContent()
+                    } else {
+                        itemsIndexed(
+                            items = items,
+                            key = { _, item -> key(item) },
+                            contentType = { _, _ -> contentType },
+                        ) { index, item ->
+                            itemContent(item)
+                            if (index < items.lastIndex) {
+                                LibraryListDivider(dividerTestTag, colors)
+                            }
                         }
                     }
                 }
@@ -168,14 +174,18 @@ fun <T> LibraryVirtualList(
             if (leadingContent != null) {
                 item(contentType = "library-list-leading-content") { leadingContent() }
             }
-            itemsIndexed(
-                items = items,
-                key = { _, item -> key(item) },
-                contentType = { _, _ -> contentType },
-            ) { index, item ->
-                itemContent(item)
-                if (index < items.lastIndex) {
-                    LibraryListDivider(dividerTestTag, colors)
+            if (customItemsContent != null) {
+                customItemsContent()
+            } else {
+                itemsIndexed(
+                    items = items,
+                    key = { _, item -> key(item) },
+                    contentType = { _, _ -> contentType },
+                ) { index, item ->
+                    itemContent(item)
+                    if (index < items.lastIndex) {
+                        LibraryListDivider(dividerTestTag, colors)
+                    }
                 }
             }
         }

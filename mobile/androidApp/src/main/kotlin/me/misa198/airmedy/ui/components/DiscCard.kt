@@ -2,6 +2,7 @@ package me.misa198.airmedy.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -60,7 +61,8 @@ fun DiscCard(
                 .fillMaxWidth()
                 .aspectRatio(1f)
                 .clip(RoundedCornerShape(10.dp))
-                .background(colors.glassElevated),
+                .background(colors.glassElevated)
+                .border(1.dp, colors.borderGlass, RoundedCornerShape(10.dp)),
             contentAlignment = Alignment.Center,
         ) {
             if (bitmap != null) {

@@ -122,7 +122,7 @@ fun DetailHero(
     ) {
         if (showArtwork) {
             Box(
-                modifier = Modifier.size(artworkSize).clip(artworkClip).background(colors.glassElevated),
+                modifier = Modifier.size(artworkSize).clip(artworkClip).background(colors.glassElevated).border(1.dp, colors.borderGlass, artworkClip),
                 contentAlignment = Alignment.Center,
             ) {
                 if (artworkContent != null) artworkContent()

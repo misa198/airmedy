@@ -63,6 +63,7 @@ import kotlin.math.roundToInt
 import me.misa198.airmedy.ui.screens.LibraryTracksViewModel
 import me.misa198.airmedy.ui.screens.LibraryArtistsViewModel
 import me.misa198.airmedy.ui.screens.LibraryAlbumsViewModel
+import me.misa198.airmedy.ui.screens.LibraryAlbumsLayoutPreferences
 import me.misa198.airmedy.ui.screens.LibraryGenresViewModel
 import me.misa198.airmedy.ui.screens.LibraryComposersViewModel
 import me.misa198.airmedy.ui.screens.LibraryPlaylistsViewModel
@@ -132,7 +133,11 @@ class MainActivity : ComponentActivity() {
         LibraryArtistsViewModel.Factory(AndroidSyncRuntime.syncStore())
     }
     private val albumsViewModel: LibraryAlbumsViewModel by viewModels {
-        LibraryAlbumsViewModel.Factory(AndroidSyncRuntime.syncStore(), AndroidPlaybackRuntime.controller())
+        LibraryAlbumsViewModel.Factory(
+            AndroidSyncRuntime.syncStore(),
+            AndroidPlaybackRuntime.controller(),
+            LibraryAlbumsLayoutPreferences(applicationContext),
+        )
     }
     private val genresViewModel: LibraryGenresViewModel by viewModels {
         LibraryGenresViewModel.Factory(AndroidSyncRuntime.syncStore())
@@ -276,6 +281,7 @@ class MainActivity : ComponentActivity() {
                 onArtistsFilterQueryChange = artistsViewModel::setFilterQuery,
                 onAlbumSortOptionSelected = albumsViewModel::setSortOption,
                 onAlbumToggleSortOrder = albumsViewModel::toggleSortOrder,
+                onAlbumLayoutModeSelected = albumsViewModel::setLayoutMode,
                 onAlbumPlay = albumDetailsViewModel::play,
                 onAlbumsPlayAll = albumsViewModel::playAll,
                 onAlbumsFilterQueryChange = albumsViewModel::setFilterQuery,

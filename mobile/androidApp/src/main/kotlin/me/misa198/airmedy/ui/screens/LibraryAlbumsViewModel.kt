@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import me.misa198.airmedy.sync.AndroidLibrarySyncStore
 import me.misa198.airmedy.sync.LibraryAlbum
 import me.misa198.airmedy.sync.LibraryTrack
@@ -18,32 +19,45 @@ enum class AlbumSortOption {
     DateAdded,
 }
 
+enum class AlbumLayoutMode(val storageValue: String) {
+    List("list"),
+    Grid("grid"),
+    ;
+
+    companion object {
+        fun fromStorage(value: String?): AlbumLayoutMode = entries.firstOrNull { it.storageValue == value } ?: List
+    }
+}
+
 data class LibraryAlbumsUiState(
     val albums: List<LibraryAlbum> = emptyList(),
     internal val tracks: List<LibraryTrack> = emptyList(),
     val filterQuery: String = "",
     val sortOption: AlbumSortOption = AlbumSortOption.Name,
     val sortOrder: SortOrder = SortOrder.Ascending,
+    val layoutMode: AlbumLayoutMode = AlbumLayoutMode.List,
 )
 
 internal class LibraryAlbumsViewModel(
     syncStore: AndroidLibrarySyncStore,
     private val playbackController: PlaybackController,
+    private val layoutStore: LibraryAlbumsLayoutStore,
 ) : ViewModel() {
     class Factory(
         private val syncStore: AndroidLibrarySyncStore,
         private val playbackController: PlaybackController,
+        private val layoutStore: LibraryAlbumsLayoutStore,
     ) : androidx.lifecycle.ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T =
-            LibraryAlbumsViewModel(syncStore, playbackController) as T
+            LibraryAlbumsViewModel(syncStore, playbackController, layoutStore) as T
     }
 
     private val sortOptionFlow = MutableStateFlow(AlbumSortOption.Name)
     private val sortOrderFlow = MutableStateFlow(SortOrder.Ascending)
     private val filterQueryFlow = MutableStateFlow("")
 
-    val uiState: StateFlow<LibraryAlbumsUiState> = combine(
+    private val sortedAlbumsState = combine(
         syncStore.albums, syncStore.tracks,
         sortOptionFlow,
         sortOrderFlow,
@@ -56,6 +70,13 @@ internal class LibraryAlbumsViewModel(
             sortOption = option,
             sortOrder = order,
         )
+    }
+
+    val uiState: StateFlow<LibraryAlbumsUiState> = combine(
+        sortedAlbumsState,
+        layoutStore.layoutMode,
+    ) { state, layoutMode ->
+        state.copy(layoutMode = layoutMode)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -72,6 +93,10 @@ internal class LibraryAlbumsViewModel(
 
     fun toggleSortOrder() {
         sortOrderFlow.value = if (sortOrderFlow.value == SortOrder.Ascending) SortOrder.Descending else SortOrder.Ascending
+    }
+
+    fun setLayoutMode(layoutMode: AlbumLayoutMode) {
+        viewModelScope.launch { layoutStore.setLayoutMode(layoutMode) }
     }
 
     fun playAll(shuffle: Boolean) {

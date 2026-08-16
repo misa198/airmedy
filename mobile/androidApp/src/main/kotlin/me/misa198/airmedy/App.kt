@@ -63,6 +63,7 @@ import me.misa198.airmedy.ui.screens.LibraryTracksUiState
 import me.misa198.airmedy.ui.screens.LibraryArtistsUiState
 import me.misa198.airmedy.ui.screens.ArtistSortOption
 import me.misa198.airmedy.ui.screens.AlbumSortOption
+import me.misa198.airmedy.ui.screens.AlbumLayoutMode
 import me.misa198.airmedy.ui.screens.LibraryAlbumsUiState
 import me.misa198.airmedy.ui.screens.LibraryGenresUiState
 import me.misa198.airmedy.ui.screens.GenreSortOption
@@ -130,6 +131,7 @@ internal fun App(
     onArtistToggleSortOrder: () -> Unit = {},
     onAlbumSortOptionSelected: (AlbumSortOption) -> Unit = {},
     onAlbumToggleSortOrder: () -> Unit = {},
+    onAlbumLayoutModeSelected: (AlbumLayoutMode) -> Unit = {},
     onAlbumPlay: (String, Boolean) -> Unit = { _, _ -> },
     onAlbumsPlayAll: (Boolean) -> Unit = {},
     onAlbumsFilterQueryChange: (String) -> Unit = {},
@@ -193,7 +195,7 @@ internal fun App(
         val artistsListState = remember(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.LibraryArtists), artistsUiState.sortOption, artistsUiState.sortOrder) {
             LazyListState()
         }
-        val albumsListState = remember(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.LibraryAlbums), albumsUiState.sortOption, albumsUiState.sortOrder) {
+        val albumsListState = remember(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.LibraryAlbums), albumsUiState.sortOption, albumsUiState.sortOrder, albumsUiState.layoutMode) {
             LazyListState()
         }
         val artistDetailsListState = remember(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.ArtistDetails), uiState.selectedArtistId) { LazyListState() }
@@ -514,6 +516,8 @@ internal fun App(
                         sortOrder = albumsUiState.sortOrder,
                         onSortOptionSelected = onAlbumSortOptionSelected,
                         onToggleSortOrder = onAlbumToggleSortOrder,
+                        layoutMode = albumsUiState.layoutMode,
+                        onLayoutModeSelected = onAlbumLayoutModeSelected,
                         glassSurfaceColor = albumHeaderGlassSurface,
                     )
                 } else if (currentPage == AppStackPage.LibraryGenres) {

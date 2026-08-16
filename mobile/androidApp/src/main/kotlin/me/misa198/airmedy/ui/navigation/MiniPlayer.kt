@@ -304,7 +304,8 @@ internal fun MiniPlayer(
             modifier = Modifier
                 .size(38.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(colors.glassElevated),
+                .background(colors.glassElevated)
+                .border(1.dp, colors.borderGlass, RoundedCornerShape(8.dp)),
             contentAlignment = Alignment.Center,
         ) {
             if (artwork != null) {

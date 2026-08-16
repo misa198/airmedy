@@ -1148,7 +1148,7 @@ private fun Artwork(
     modifier: Modifier,
 ) {
     val colors = LocalAirmedyColors.current
-    Box(modifier.clip(FullScreenArtworkShape).background(colors.glassElevated), contentAlignment = Alignment.Center) {
+    Box(modifier.clip(FullScreenArtworkShape).background(colors.glassElevated).border(1.dp, colors.borderGlass, FullScreenArtworkShape), contentAlignment = Alignment.Center) {
         if (isArtworkCrossfading) {
             ArtworkLayer(outgoingArtwork, equalPowerOutgoing(crossfadeProgress))
             ArtworkLayer(incomingArtwork, equalPowerIncoming(crossfadeProgress))

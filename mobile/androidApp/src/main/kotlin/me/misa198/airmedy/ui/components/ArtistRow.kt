@@ -2,6 +2,7 @@ package me.misa198.airmedy.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -49,7 +50,8 @@ fun ArtistRow(
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(colors.glassElevated),
+                .background(colors.glassElevated)
+                .border(1.dp, colors.borderGlass, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             if (bitmap != null) {

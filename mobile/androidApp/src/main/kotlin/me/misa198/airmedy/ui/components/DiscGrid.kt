@@ -24,6 +24,7 @@ fun LazyListScope.discGridItems(
     items: List<DiscGridItem>,
     verticalItemPadding: Dp = 4.dp,
     horizontalGap: Dp = 12.dp,
+    horizontalContentPadding: Dp = 0.dp,
     onClick: ((String) -> Unit)? = null,
     onLongClick: ((String) -> Unit)? = null,
     itemWrapper: @Composable (DiscGridItem, Modifier, @Composable () -> Unit) -> Unit = { _, modifier, content ->
@@ -36,7 +37,7 @@ fun LazyListScope.discGridItems(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = verticalItemPadding),
+                .padding(horizontal = horizontalContentPadding, vertical = verticalItemPadding),
             horizontalArrangement = Arrangement.spacedBy(horizontalGap),
         ) {
             for (item in pair) {

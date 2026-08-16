@@ -7,6 +7,7 @@ import androidx.compose.ui.test.performClick
 import dev.chrisbanes.haze.rememberHazeState
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.ui.screens.SortOrder
+import me.misa198.airmedy.ui.screens.AlbumLayoutMode
 import me.misa198.airmedy.ui.screens.TrackSortOption
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import org.junit.Assert.assertTrue
@@ -46,5 +47,32 @@ class LibrarySortHeaderButtonTest {
         composeTestRule.onNodeWithText("Artist").assertExists()
         composeTestRule.onNodeWithText("Artist").performClick()
         assertTrue(selectedOption == TrackSortOption.Artist)
+    }
+
+    @Test
+    fun albumDisplayOptionsSelectGridLayout() {
+        var selectedLayout: AlbumLayoutMode? = null
+
+        composeTestRule.setContent {
+            val hazeState = rememberHazeState()
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                AnchoredPopupMenuHost(hazeState = hazeState) {
+                    LibrarySortHeaderButton(
+                        hazeState = hazeState,
+                        options = listOf(LibrarySortOption(TrackSortOption.Name, me.misa198.airmedy.R.string.sort_name)),
+                        selectedOption = TrackSortOption.Name,
+                        sortOrder = SortOrder.Ascending,
+                        onSortOptionSelected = {},
+                        onToggleSortOrder = {},
+                        layoutMode = AlbumLayoutMode.List,
+                        onLayoutModeSelected = { selectedLayout = it },
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNode(hasContentDescription("Album display options")).performClick()
+        composeTestRule.onNodeWithText("Grid").performClick()
+        assertTrue(selectedLayout == AlbumLayoutMode.Grid)
     }
 }

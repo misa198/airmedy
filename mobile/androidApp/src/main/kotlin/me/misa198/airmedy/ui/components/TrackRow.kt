@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import android.util.LruCache
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -128,7 +129,8 @@ fun TrackRow(
             modifier = Modifier
                 .size(48.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(colors.glassElevated),
+                .background(colors.glassElevated)
+                .border(1.dp, colors.borderGlass, RoundedCornerShape(8.dp)),
             contentAlignment = Alignment.Center,
         ) {
             if (bitmap != null) {

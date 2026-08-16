@@ -30,6 +30,7 @@ import androidx.annotation.StringRes
 import dev.chrisbanes.haze.HazeState
 import me.misa198.airmedy.R
 import me.misa198.airmedy.ui.screens.SortOrder
+import me.misa198.airmedy.ui.screens.AlbumLayoutMode
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 data class LibrarySortOption<T>(
@@ -47,6 +48,8 @@ fun <T> LibrarySortHeaderButton(
     onToggleSortOrder: () -> Unit,
     modifier: Modifier = Modifier,
     glassSurfaceColor: Color? = null,
+    layoutMode: AlbumLayoutMode? = null,
+    onLayoutModeSelected: ((AlbumLayoutMode) -> Unit)? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -62,7 +65,7 @@ fun <T> LibrarySortHeaderButton(
             AirmedyGlassIconButton(
                 hazeState = hazeState,
                 symbol = MaterialSymbols.FilterList,
-                label = stringResource(R.string.sort_by),
+                label = stringResource(if (layoutMode == null) R.string.sort_by else R.string.album_display_options),
                 onClick = { expanded = true },
                 surfaceColor = glassSurfaceColor,
             )
@@ -80,6 +83,13 @@ fun <T> LibrarySortHeaderButton(
                     onToggleSortOrder()
                     expanded = false
                 },
+                layoutMode = layoutMode,
+                onLayoutModeSelected = onLayoutModeSelected?.let { callback ->
+                    { layout ->
+                        callback(layout)
+                        expanded = false
+                    }
+                },
             )
         },
     )
@@ -92,6 +102,8 @@ private fun <T> LibrarySortMenu(
     sortOrder: SortOrder,
     onSortOptionSelected: (T) -> Unit,
     onToggleSortOrder: () -> Unit,
+    layoutMode: AlbumLayoutMode?,
+    onLayoutModeSelected: ((AlbumLayoutMode) -> Unit)?,
 ) {
     val colors = LocalAirmedyColors.current
     Column(
@@ -186,5 +198,81 @@ private fun <T> LibrarySortMenu(
                 color = colors.textMain,
             )
         }
+
+        if (layoutMode != null && onLayoutModeSelected != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .heightIn(min = 1.dp)
+                    .background(colors.borderGlass, RectangleShape),
+            )
+            Text(
+                text = stringResource(R.string.album_display_layout),
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 4.dp),
+                style = MaterialTheme.typography.labelMedium,
+                color = colors.textMuted,
+            )
+            AlbumLayoutOption(
+                mode = AlbumLayoutMode.List,
+                selectedMode = layoutMode,
+                onSelected = onLayoutModeSelected,
+            )
+            AlbumLayoutOption(
+                mode = AlbumLayoutMode.Grid,
+                selectedMode = layoutMode,
+                onSelected = onLayoutModeSelected,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AlbumLayoutOption(
+    mode: AlbumLayoutMode,
+    selectedMode: AlbumLayoutMode,
+    onSelected: (AlbumLayoutMode) -> Unit,
+) {
+    val colors = LocalAirmedyColors.current
+    val selected = mode == selectedMode
+    val labelRes = if (mode == AlbumLayoutMode.List) R.string.album_display_list else R.string.album_display_grid
+    val symbol = if (mode == AlbumLayoutMode.List) MaterialSymbols.ViewList else MaterialSymbols.GridView
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 44.dp)
+            .selectable(
+                selected = selected,
+                onClick = { onSelected(mode) },
+                role = Role.RadioButton,
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            )
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (selected) {
+            MaterialSymbol(
+                symbol = MaterialSymbols.Check,
+                contentDescription = null,
+                size = 18.dp,
+                tint = colors.primary,
+            )
+        } else {
+            Box(modifier = Modifier.size(18.dp))
+        }
+        MaterialSymbol(
+            symbol = symbol,
+            contentDescription = null,
+            modifier = Modifier.padding(start = 12.dp),
+            size = 18.dp,
+            tint = colors.textMain,
+        )
+        Text(
+            text = stringResource(labelRes),
+            modifier = Modifier.padding(start = 12.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = colors.textMain,
+        )
     }
 }
