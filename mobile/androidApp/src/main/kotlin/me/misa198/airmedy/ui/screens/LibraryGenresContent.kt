@@ -16,7 +16,9 @@ import me.misa198.airmedy.sync.LibraryGenre
 import me.misa198.airmedy.ui.components.GenreRow
 import me.misa198.airmedy.ui.components.HeroCard
 import me.misa198.airmedy.ui.components.LibraryVirtualList
+import me.misa198.airmedy.ui.components.LibraryTextFilter
 import me.misa198.airmedy.ui.components.MaterialSymbols
+import dev.chrisbanes.haze.HazeState
 
 @Composable
 internal fun LibraryGenresContent(
@@ -25,6 +27,8 @@ internal fun LibraryGenresContent(
     listState: LazyListState = remember(uiState.sortOption, uiState.sortOrder) { LazyListState() },
     contentPadding: PaddingValues = PaddingValues(),
     onGenreClick: (LibraryGenre) -> Unit = {},
+    onFilterQueryChange: (String) -> Unit = {},
+    hazeState: HazeState? = null,
 ) {
     val listPadding = remember(contentPadding) {
         PaddingValues(
@@ -42,16 +46,26 @@ internal fun LibraryGenresContent(
         contentPadding = listPadding,
         modifier = modifier,
         dividerTestTag = "genre-row-divider",
+        filterKey = "genres",
+        filterActive = uiState.filterQuery.isNotBlank(),
+        filterContent = { showPlaceholderAndLeadingSymbol ->
+            LibraryTextFilter(
+                value = uiState.filterQuery,
+                onValueChange = onFilterQueryChange,
+                placeholder = stringResource(R.string.filter_placeholder_search),
+                showPlaceholderAndLeadingSymbol = showPlaceholderAndLeadingSymbol,
+            )
+        },
         emptyContent = {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(contentPadding),
+                    .padding(horizontal = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 HeroCard(
-                    title = stringResource(R.string.genres_empty_title),
-                    description = stringResource(R.string.genres_empty_description),
+                    title = stringResource(if (uiState.filterQuery.isBlank()) R.string.genres_empty_title else R.string.genres_no_match_title),
+                    description = stringResource(if (uiState.filterQuery.isBlank()) R.string.genres_empty_description else R.string.filter_no_match_description),
                     symbol = MaterialSymbols.Label,
                 )
             }

@@ -61,7 +61,7 @@ fun <T> LibrarySortHeaderButton(
         anchor = {
             AirmedyGlassIconButton(
                 hazeState = hazeState,
-                symbol = MaterialSymbols.SwapVert,
+                symbol = MaterialSymbols.FilterList,
                 label = stringResource(R.string.sort_by),
                 onClick = { expanded = true },
                 surfaceColor = glassSurfaceColor,

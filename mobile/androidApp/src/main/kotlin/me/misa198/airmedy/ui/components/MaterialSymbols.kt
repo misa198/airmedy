@@ -96,7 +96,7 @@ object MaterialSymbols {
     const val Favorite = "favorite"
     const val HeartPlus = "heart_plus"
     const val HeartMinus = "heart_minus"
-    const val SwapVert = "swap_vert"
+    const val FilterList = "filter_list"
     const val StylusFountainPen = "stylus_fountain_pen"
 }
 

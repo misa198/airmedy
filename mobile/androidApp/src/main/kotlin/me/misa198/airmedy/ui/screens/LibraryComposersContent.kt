@@ -15,8 +15,10 @@ import me.misa198.airmedy.R
 import me.misa198.airmedy.ui.components.ComposerRow
 import me.misa198.airmedy.ui.components.HeroCard
 import me.misa198.airmedy.ui.components.LibraryVirtualList
+import me.misa198.airmedy.ui.components.LibraryTextFilter
 import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.sync.LibraryComposer
+import dev.chrisbanes.haze.HazeState
 
 @Composable
 internal fun LibraryComposersContent(
@@ -25,6 +27,8 @@ internal fun LibraryComposersContent(
     listState: LazyListState = remember(uiState.sortOption, uiState.sortOrder) { LazyListState() },
     contentPadding: PaddingValues = PaddingValues(),
     onComposerClick: (LibraryComposer) -> Unit = {},
+    onFilterQueryChange: (String) -> Unit = {},
+    hazeState: HazeState? = null,
 ) {
     val listPadding = remember(contentPadding) {
         PaddingValues(
@@ -42,16 +46,26 @@ internal fun LibraryComposersContent(
         contentPadding = listPadding,
         modifier = modifier,
         dividerTestTag = "composer-row-divider",
+        filterKey = "composers",
+        filterActive = uiState.filterQuery.isNotBlank(),
+        filterContent = { showPlaceholderAndLeadingSymbol ->
+            LibraryTextFilter(
+                value = uiState.filterQuery,
+                onValueChange = onFilterQueryChange,
+                placeholder = stringResource(R.string.filter_placeholder_search),
+                showPlaceholderAndLeadingSymbol = showPlaceholderAndLeadingSymbol,
+            )
+        },
         emptyContent = {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(contentPadding),
+                    .padding(horizontal = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 HeroCard(
-                    title = stringResource(R.string.composers_empty_title),
-                    description = stringResource(R.string.composers_empty_description),
+                    title = stringResource(if (uiState.filterQuery.isBlank()) R.string.composers_empty_title else R.string.composers_no_match_title),
+                    description = stringResource(if (uiState.filterQuery.isBlank()) R.string.composers_empty_description else R.string.filter_no_match_description),
                     symbol = MaterialSymbols.StylusFountainPen,
                 )
             }

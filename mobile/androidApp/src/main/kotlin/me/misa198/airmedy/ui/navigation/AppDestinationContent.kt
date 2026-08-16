@@ -139,6 +139,7 @@ internal fun AppDestinationContent(
     onToggleSortOrder: () -> Unit = {},
     onTrackClick: (String) -> Unit = {},
     onTracksPlayAll: (Boolean) -> Unit = {},
+    onTracksFilterQueryChange: (String) -> Unit = {},
     onRecentTrackClick: (String) -> Unit = {},
     playbackQueue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
     onTrackPlayNext: (String) -> Unit = {},
@@ -151,13 +152,17 @@ internal fun AppDestinationContent(
     onAlbumToggleSortOrder: () -> Unit = {},
     onAlbumPlay: (String, Boolean) -> Unit = { _, _ -> },
     onAlbumsPlayAll: (Boolean) -> Unit = {},
+    onAlbumsFilterQueryChange: (String) -> Unit = {},
     onAlbumTrackPlay: (String, String) -> Unit = { _, _ -> },
     onPlaylistPlay: (String, Boolean) -> Unit = { _, _ -> },
     onPlaylistTrackPlay: (String, String) -> Unit = { _, _ -> },
     onPlaylistTrackRemove: (String, String) -> Unit = { _, _ -> },
     onArtistPlay: (String, Boolean) -> Unit = { _, _ -> },
+    onArtistsFilterQueryChange: (String) -> Unit = {},
     onGenrePlay: (String, Boolean) -> Unit = { _, _ -> },
+    onGenresFilterQueryChange: (String) -> Unit = {},
     onComposerPlay: (String, Boolean) -> Unit = { _, _ -> },
+    onComposersFilterQueryChange: (String) -> Unit = {},
     onAlbumHeroColorChanged: (Color) -> Unit = {},
     onPairingQrScanned: (String) -> Boolean,
     onUnpair: () -> Unit,
@@ -325,6 +330,8 @@ internal fun AppDestinationContent(
                                 contentPadding = contentPadding,
                                 modifier = Modifier.fillMaxSize(),
                                 onArtistClick = { artist -> onIntent(AppIntent.OpenArtistDetails(artist.id)) },
+                                onFilterQueryChange = onArtistsFilterQueryChange,
+                                hazeState = hazeState,
                             )
                             AppStackPage.ArtistDetails -> ArtistDetailsContent(
                                 uiState = selectedArtistId?.let { artistDetailsUiStateFor(artistDetailsUiState, it) } ?: ArtistDetailsUiState(),
@@ -372,6 +379,7 @@ internal fun AppDestinationContent(
                                 onAlbumPlayNext = onAlbumPlayNext,
                                 onAlbumAddToQueue = onAlbumAddToQueue,
                                 onAlbumAddToFavorites = onAlbumAddToFavorites,
+                                onFilterQueryChange = onAlbumsFilterQueryChange,
                             )
                             AppStackPage.AlbumDetails -> AlbumDetailsContent(
                                 uiState = selectedAlbumId?.let { albumDetailsUiStateFor(albumDetailsUiState, it) } ?: AlbumDetailsUiState(),
@@ -397,6 +405,8 @@ internal fun AppDestinationContent(
                                 contentPadding = contentPadding,
                                 modifier = Modifier.fillMaxSize(),
                                 onGenreClick = { genre -> onIntent(AppIntent.OpenGenreDetails(genre.id)) },
+                                onFilterQueryChange = onGenresFilterQueryChange,
+                                hazeState = hazeState,
                             )
                             AppStackPage.LibraryComposers -> LibraryComposersContent(
                                 uiState = composersUiState,
@@ -404,6 +414,8 @@ internal fun AppDestinationContent(
                                 contentPadding = contentPadding,
                                 modifier = Modifier.fillMaxSize(),
                                 onComposerClick = { composer -> onIntent(AppIntent.OpenComposerDetails(composer.id)) },
+                                onFilterQueryChange = onComposersFilterQueryChange,
+                                hazeState = hazeState,
                             )
                             AppStackPage.LibraryPlaylists -> LibraryPlaylistsContent(
                                 uiState = playlistsUiState,
@@ -444,6 +456,7 @@ internal fun AppDestinationContent(
                                 onTrackArtistClick = { artist -> onIntent(AppIntent.OpenArtistDetails(artist.id)) },
                                 hazeState = hazeState,
                                 onPlayAll = onTracksPlayAll,
+                                onFilterQueryChange = onTracksFilterQueryChange,
                             )
                             else -> LibraryContent(
                                 modifier = Modifier.fillMaxSize(),

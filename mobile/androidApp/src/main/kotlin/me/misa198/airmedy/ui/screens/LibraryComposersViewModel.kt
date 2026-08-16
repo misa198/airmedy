@@ -17,6 +17,7 @@ enum class ComposerSortOption {
 
 data class LibraryComposersUiState(
     val composers: List<LibraryComposer> = emptyList(),
+    val filterQuery: String = "",
     val sortOption: ComposerSortOption = ComposerSortOption.Name,
     val sortOrder: SortOrder = SortOrder.Ascending,
 )
@@ -33,14 +34,17 @@ internal class LibraryComposersViewModel(
 
     private val sortOptionFlow = MutableStateFlow(ComposerSortOption.Name)
     private val sortOrderFlow = MutableStateFlow(SortOrder.Ascending)
+    private val filterQueryFlow = MutableStateFlow("")
 
     val uiState: StateFlow<LibraryComposersUiState> = combine(
         syncStore.composers,
         sortOptionFlow,
         sortOrderFlow,
-    ) { composers, option, order ->
+        filterQueryFlow,
+    ) { composers, option, order, query ->
         LibraryComposersUiState(
-            composers = sortComposers(composers, option, order),
+            composers = sortComposers(composers.filter { matchesLibraryTextFilter(query, it.name) }, option, order),
+            filterQuery = query,
             sortOption = option,
             sortOrder = order,
         )
@@ -52,6 +56,10 @@ internal class LibraryComposersViewModel(
 
     fun setSortOption(option: ComposerSortOption) {
         sortOptionFlow.value = option
+    }
+
+    fun setFilterQuery(query: String) {
+        filterQueryFlow.value = query
     }
 
     fun toggleSortOrder() {

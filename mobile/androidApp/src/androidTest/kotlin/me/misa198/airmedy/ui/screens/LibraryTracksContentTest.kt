@@ -2,13 +2,18 @@ package me.misa198.airmedy.ui.screens
 
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.longClick
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
@@ -62,6 +67,75 @@ class LibraryTracksContentTest {
         composeTestRule.onNodeWithText("Song A").assertExists()
         composeTestRule.onNodeWithText("Song B").assertExists()
         composeTestRule.onAllNodesWithTag("track-row-divider").assertCountEquals(1)
+    }
+
+    @Test
+    fun keepsTheFilterVisibleAndReportsChangesWhenAQueryIsActive() {
+        var changedQuery: String? = null
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                LibraryTracksContent(
+                    uiState = LibraryTracksUiState(
+                        tracks = listOf(LibraryTrack(id = "1", title = "Song A", artists = "Artist A")),
+                        filterQuery = "song",
+                    ),
+                    onSortOptionSelected = {},
+                    onToggleSortOrder = {},
+                    onFilterQueryChange = { changedQuery = it },
+                )
+            }
+        }
+
+        composeTestRule.onNode(hasContentDescription("Search...")).assertExists().performTextInput(" a")
+        assertEquals("song a", changedQuery)
+    }
+
+    @Test
+    fun showsTheMatchingEmptyStateForAnActiveFilter() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                LibraryTracksContent(
+                    uiState = LibraryTracksUiState(filterQuery = "missing"),
+                    onSortOptionSelected = {},
+                    onToggleSortOrder = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("No matching tracks").assertExists()
+    }
+
+    @Test
+    fun keepsFilterFocusWhenItsQueryLeavesNoMatches() {
+        var state by mutableStateOf(
+            LibraryTracksUiState(
+                tracks = listOf(LibraryTrack(id = "1", title = "Song A", artists = "Artist A")),
+                filterQuery = "s",
+            ),
+        )
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                LibraryTracksContent(
+                    uiState = state,
+                    onSortOptionSelected = {},
+                    onToggleSortOrder = {},
+                    onFilterQueryChange = { query ->
+                        state = state.copy(
+                            tracks = emptyList(),
+                            filterQuery = query,
+                        )
+                    },
+                )
+            }
+        }
+
+        composeTestRule.onNode(hasContentDescription("Search..."))
+            .performClick()
+            .assertIsFocused()
+            .performTextInput("missing")
+
+        composeTestRule.onNode(hasContentDescription("Search...")).assertIsFocused()
+        composeTestRule.onNodeWithText("No matching tracks").assertExists()
     }
 
     @Test

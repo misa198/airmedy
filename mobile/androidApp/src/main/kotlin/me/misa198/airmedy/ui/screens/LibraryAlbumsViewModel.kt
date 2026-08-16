@@ -21,6 +21,7 @@ enum class AlbumSortOption {
 data class LibraryAlbumsUiState(
     val albums: List<LibraryAlbum> = emptyList(),
     internal val tracks: List<LibraryTrack> = emptyList(),
+    val filterQuery: String = "",
     val sortOption: AlbumSortOption = AlbumSortOption.Name,
     val sortOrder: SortOrder = SortOrder.Ascending,
 )
@@ -40,13 +41,21 @@ internal class LibraryAlbumsViewModel(
 
     private val sortOptionFlow = MutableStateFlow(AlbumSortOption.Name)
     private val sortOrderFlow = MutableStateFlow(SortOrder.Ascending)
+    private val filterQueryFlow = MutableStateFlow("")
 
     val uiState: StateFlow<LibraryAlbumsUiState> = combine(
         syncStore.albums, syncStore.tracks,
         sortOptionFlow,
         sortOrderFlow,
-    ) { albums, tracks, option, order ->
-        LibraryAlbumsUiState(sortAlbums(albums, option, order), tracks, option, order)
+        filterQueryFlow,
+    ) { albums, tracks, option, order, query ->
+        LibraryAlbumsUiState(
+            albums = sortAlbums(albums.filter { matchesLibraryTextFilter(query, it.title, it.artist) }, option, order),
+            tracks = tracks,
+            filterQuery = query,
+            sortOption = option,
+            sortOrder = order,
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -55,6 +64,10 @@ internal class LibraryAlbumsViewModel(
 
     fun setSortOption(option: AlbumSortOption) {
         sortOptionFlow.value = option
+    }
+
+    fun setFilterQuery(query: String) {
+        filterQueryFlow.value = query
     }
 
     fun toggleSortOrder() {

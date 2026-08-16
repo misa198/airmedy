@@ -22,6 +22,7 @@ import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.ui.components.HeroCard
 import me.misa198.airmedy.ui.components.LibraryVirtualList
 import me.misa198.airmedy.ui.components.LibraryPlaybackActions
+import me.misa198.airmedy.ui.components.LibraryTextFilter
 import me.misa198.airmedy.ui.components.TrackRow
 import me.misa198.airmedy.ui.components.TrackContextArtist
 import me.misa198.airmedy.ui.components.TrackContextMenu
@@ -44,6 +45,7 @@ internal fun LibraryTracksContent(
     onTrackArtistClick: (TrackContextArtist) -> Unit = {},
     hazeState: HazeState? = null,
     onPlayAll: (Boolean) -> Unit = {},
+    onFilterQueryChange: (String) -> Unit = {},
 ) {
     var contextTrack by remember { mutableStateOf<LibraryTrack?>(null) }
     val listPadding = remember(contentPadding) {
@@ -62,6 +64,16 @@ internal fun LibraryTracksContent(
         contentPadding = listPadding,
         modifier = modifier,
         dividerTestTag = "track-row-divider",
+        filterKey = "tracks",
+        filterActive = uiState.filterQuery.isNotBlank(),
+        filterContent = { showPlaceholderAndLeadingSymbol ->
+            LibraryTextFilter(
+                value = uiState.filterQuery,
+                onValueChange = onFilterQueryChange,
+                placeholder = stringResource(R.string.filter_placeholder_search),
+                showPlaceholderAndLeadingSymbol = showPlaceholderAndLeadingSymbol,
+            )
+        },
         leadingContent = {
             LibraryPlaybackActions(
                 playLabel = stringResource(R.string.player_play),
@@ -75,12 +87,12 @@ internal fun LibraryTracksContent(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(contentPadding),
+                    .padding(horizontal = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 HeroCard(
-                    title = stringResource(R.string.tracks_empty_title),
-                    description = stringResource(R.string.tracks_empty_description),
+                    title = stringResource(if (uiState.filterQuery.isBlank()) R.string.tracks_empty_title else R.string.tracks_no_match_title),
+                    description = stringResource(if (uiState.filterQuery.isBlank()) R.string.tracks_empty_description else R.string.filter_no_match_description),
                     symbol = MaterialSymbols.MusicNote,
                 )
             }

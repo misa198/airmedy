@@ -68,9 +68,26 @@ private val PageHorizontalPadding = 24.dp
 private val HeaderTopPadding = 6.dp
 private val HeaderBottomPadding = 10.dp
 private val HeaderHeight = 48.dp
-private val HeaderContentGap = 12.dp
+internal val StackPageHeaderContentGap = 12.dp
 private val HeaderControlGap = 12.dp
 internal const val StackPageTitleTag = "stack-page-title"
+
+/** The exact glass surface shared by a scrolling page header and its sticky controls. */
+internal fun Modifier.headerGlassSurface(
+    hazeState: HazeState?,
+    colors: me.misa198.airmedy.ui.theme.AirmedyColors,
+): Modifier = clip(RectangleShape)
+    .liquidGlassBackground(hazeState, colors)
+    .drawBehind {
+        val strokeWidth = 1.dp.toPx()
+        val y = size.height - strokeWidth / 2
+        drawLine(
+            color = colors.borderGlass,
+            start = Offset(0f, y),
+            end = Offset(size.width, y),
+            strokeWidth = strokeWidth,
+        )
+    }
 
 private data class HeaderTitle(
     val stackKey: String,
@@ -98,7 +115,7 @@ fun StackPageLayout(
     val statusBarPadding = with(density) { WindowInsets.statusBars.getTop(this).toDp() }
     val contentPadding = PaddingValues(
         start = PageHorizontalPadding,
-        top = statusBarPadding + HeaderTopPadding + HeaderHeight + HeaderBottomPadding + HeaderContentGap,
+        top = statusBarPadding + HeaderTopPadding + HeaderHeight + HeaderBottomPadding + StackPageHeaderContentGap,
         end = PageHorizontalPadding,
         bottom = contentBottomPadding,
     )
@@ -169,18 +186,7 @@ fun StackPageHeader(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .clip(RectangleShape)
-                    .liquidGlassBackground(hazeState, colors)
-                    .drawBehind {
-                        val strokeWidth = 1.dp.toPx()
-                        val y = size.height - strokeWidth / 2
-                        drawLine(
-                            color = colors.borderGlass,
-                            start = Offset(0f, y),
-                            end = Offset(size.width, y),
-                            strokeWidth = strokeWidth,
-                        )
-                    },
+                    .headerGlassSurface(hazeState, colors),
             )
         }
         Row(

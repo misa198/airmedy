@@ -265,6 +265,7 @@ class MainActivity : ComponentActivity() {
                 onToggleSortOrder = tracksViewModel::toggleSortOrder,
                 onTrackClick = tracksViewModel::playTrack,
                 onTracksPlayAll = tracksViewModel::playAll,
+                onTracksFilterQueryChange = tracksViewModel::setFilterQuery,
                 onRecentTrackClick = tracksViewModel::playRecentTrack,
                 onTrackPlayNext = playbackController::playNext,
                 onTrackAddToQueue = { trackId -> playbackController.append(listOf(trackId)) },
@@ -272,10 +273,12 @@ class MainActivity : ComponentActivity() {
                 onAlbumAddToQueue = playbackController::append,
                 onArtistSortOptionSelected = artistsViewModel::setSortOption,
                 onArtistToggleSortOrder = artistsViewModel::toggleSortOrder,
+                onArtistsFilterQueryChange = artistsViewModel::setFilterQuery,
                 onAlbumSortOptionSelected = albumsViewModel::setSortOption,
                 onAlbumToggleSortOrder = albumsViewModel::toggleSortOrder,
                 onAlbumPlay = albumDetailsViewModel::play,
                 onAlbumsPlayAll = albumsViewModel::playAll,
+                onAlbumsFilterQueryChange = albumsViewModel::setFilterQuery,
                 onAlbumTrackPlay = albumDetailsViewModel::playTrack,
                 onPlaylistPlay = playlistDetailsViewModel::play,
                 onPlaylistTrackPlay = playlistDetailsViewModel::playTrack,
@@ -286,8 +289,10 @@ class MainActivity : ComponentActivity() {
                 onComposerPlay = composerDetailsViewModel::play,
                 onGenreSortOptionSelected = genresViewModel::setSortOption,
                 onGenreToggleSortOrder = genresViewModel::toggleSortOrder,
+                onGenresFilterQueryChange = genresViewModel::setFilterQuery,
                 onComposerSortOptionSelected = composersViewModel::setSortOption,
                 onComposerToggleSortOrder = composersViewModel::toggleSortOrder,
+                onComposersFilterQueryChange = composersViewModel::setFilterQuery,
                 onPairingQrScanned = { raw ->
                     if (syncViewModel.acceptsQr(raw)) {
                         syncViewModel.pair(raw)

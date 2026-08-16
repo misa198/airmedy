@@ -19,6 +19,7 @@ data class AirmedyColors(
     val glassElevated: Color,
     val sliderInactive: Color,
     val buttonSecondary: Color,
+    val textFieldClear: Color,
     val borderGlass: Color,
     val textMain: Color,
     val textMuted: Color,
@@ -40,6 +41,7 @@ private val LightColors = AirmedyColors(
     // let that backdrop show through instead of reading as a solid gray bar.
     sliderInactive = Color.White.copy(alpha = 0.10f),
     buttonSecondary = Color(0xFFE4E4E7),
+    textFieldClear = Color(0xFFD4D4D8),
     borderGlass = Color.Black.copy(alpha = 0.10f),
     textMain = Color(0xFF0A0A0A),
     textMuted = Color(0xFF52525B),
@@ -59,6 +61,7 @@ private val DarkColors = AirmedyColors(
     glassElevated = Color(0xFF37373C).copy(alpha = 0.40f),
     sliderInactive = Color.White.copy(alpha = 0.10f),
     buttonSecondary = Color(0xFF52525B),
+    textFieldClear = Color(0xFF3F3F46),
     borderGlass = Color.White.copy(alpha = 0.10f),
     textMain = Color.White,
     textMuted = Color(0xFFA1A1AA),

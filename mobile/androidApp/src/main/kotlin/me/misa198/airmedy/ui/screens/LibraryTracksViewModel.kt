@@ -31,6 +31,7 @@ enum class SortOrder {
 data class LibraryTracksUiState(
     val tracks: List<LibraryTrack> = emptyList(),
     val recentTracks: List<LibraryTrack> = emptyList(),
+    val filterQuery: String = "",
     val sortOption: TrackSortOption = TrackSortOption.Name,
     val sortOrder: SortOrder = SortOrder.Ascending,
 )
@@ -51,19 +52,25 @@ internal class LibraryTracksViewModel(
 
     private val sortOptionFlow = MutableStateFlow(TrackSortOption.Name)
     private val sortOrderFlow = MutableStateFlow(SortOrder.Ascending)
+    private val filterQueryFlow = MutableStateFlow("")
 
     val uiState: StateFlow<LibraryTracksUiState> = combine(
         syncStore.tracks,
         sortOptionFlow,
         sortOrderFlow,
-    ) { rawTracks, option, order ->
-        val sorted = sortTracks(rawTracks, option, order)
+        filterQueryFlow,
+    ) { rawTracks, option, order, query ->
+        val filtered = rawTracks.filter { track ->
+            matchesVisibleTrackTextFilter(query, track)
+        }
+        val sorted = sortTracks(filtered, option, order)
         val recent = rawTracks
             .sortedWith(compareByDescending<LibraryTrack> { it.createdAt }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }.thenBy { it.id })
             .take(50)
         LibraryTracksUiState(
             tracks = sorted,
             recentTracks = recent,
+            filterQuery = query,
             sortOption = option,
             sortOrder = order,
         )
@@ -75,6 +82,10 @@ internal class LibraryTracksViewModel(
 
     fun setSortOption(option: TrackSortOption) {
         sortOptionFlow.value = option
+    }
+
+    fun setFilterQuery(query: String) {
+        filterQueryFlow.value = query
     }
 
     fun setSortOrder(order: SortOrder) {
@@ -110,6 +121,10 @@ internal class LibraryTracksViewModel(
         } ?: Log.w(PlaybackLogTag, "$source click ignored: id=$trackId is not in its visible queue")
     }
 }
+
+/** Keeps track search aligned with the title and artist labels rendered in each row. */
+internal fun matchesVisibleTrackTextFilter(query: String, track: LibraryTrack): Boolean =
+    matchesLibraryTextFilter(query, track.title, track.artists)
 
 internal fun playbackRequestFor(tracks: List<LibraryTrack>, trackId: String): PlaybackRequest? {
     val startIndex = tracks.indexOfFirst { it.id == trackId }

@@ -15,7 +15,9 @@ import me.misa198.airmedy.R
 import me.misa198.airmedy.ui.components.ArtistRow
 import me.misa198.airmedy.ui.components.HeroCard
 import me.misa198.airmedy.ui.components.LibraryVirtualList
+import me.misa198.airmedy.ui.components.LibraryTextFilter
 import me.misa198.airmedy.ui.components.MaterialSymbols
+import dev.chrisbanes.haze.HazeState
 
 @Composable
 internal fun LibraryArtistsContent(
@@ -24,6 +26,8 @@ internal fun LibraryArtistsContent(
     listState: LazyListState = remember(uiState.sortOption, uiState.sortOrder) { LazyListState() },
     contentPadding: PaddingValues = PaddingValues(),
     onArtistClick: ((me.misa198.airmedy.sync.LibraryArtist) -> Unit)? = null,
+    onFilterQueryChange: (String) -> Unit = {},
+    hazeState: HazeState? = null,
 ) {
     val listPadding = remember(contentPadding) {
         PaddingValues(
@@ -41,16 +45,26 @@ internal fun LibraryArtistsContent(
         contentPadding = listPadding,
         modifier = modifier,
         dividerTestTag = "artist-row-divider",
+        filterKey = "artists",
+        filterActive = uiState.filterQuery.isNotBlank(),
+        filterContent = { showPlaceholderAndLeadingSymbol ->
+            LibraryTextFilter(
+                value = uiState.filterQuery,
+                onValueChange = onFilterQueryChange,
+                placeholder = stringResource(R.string.filter_placeholder_search),
+                showPlaceholderAndLeadingSymbol = showPlaceholderAndLeadingSymbol,
+            )
+        },
         emptyContent = {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(contentPadding),
+                    .padding(horizontal = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 HeroCard(
-                    title = stringResource(R.string.artists_empty_title),
-                    description = stringResource(R.string.artists_empty_description),
+                    title = stringResource(if (uiState.filterQuery.isBlank()) R.string.artists_empty_title else R.string.artists_no_match_title),
+                    description = stringResource(if (uiState.filterQuery.isBlank()) R.string.artists_empty_description else R.string.filter_no_match_description),
                     symbol = MaterialSymbols.People,
                 )
             }

@@ -6,8 +6,10 @@ import me.misa198.airmedy.ui.screens.TrackSortOption
 import me.misa198.airmedy.ui.screens.sortTracks
 import me.misa198.airmedy.ui.screens.playbackRequestFor
 import me.misa198.airmedy.ui.screens.collectionPlaybackRequestFor
+import me.misa198.airmedy.ui.screens.matchesVisibleTrackTextFilter
 import me.misa198.airmedy.player.MaxPlaybackQueueSize
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -20,6 +22,19 @@ class LibraryTracksViewModelTest {
         LibraryTrack(id = "2", title = "Alpha", artists = "Beta", album = "A2", playCount = 5, createdAt = "2026-05-01T00:00:00Z", sortTitle = "Alpha", sortArtists = "Beta"),
         LibraryTrack(id = "3", title = "Bravo", artists = "Delta", album = "A3", playCount = 50, createdAt = "2025-12-01T00:00:00Z", sortTitle = "Bravo", sortArtists = "Delta"),
     )
+
+    @Test
+    fun filtersTracksOnlyByLabelsVisibleInTheRow() {
+        val track = LibraryTrack(
+            id = "1",
+            title = "Title shown",
+            artists = "Artist shown",
+            album = "Hidden album metadata",
+        )
+
+        assertTrue(matchesVisibleTrackTextFilter("artist", track))
+        assertFalse(matchesVisibleTrackTextFilter("hidden", track))
+    }
 
     @Test
     fun sortsByNameAscending() {

@@ -21,6 +21,7 @@ import me.misa198.airmedy.ui.components.AlbumContextMenu
 import me.misa198.airmedy.ui.components.HeroCard
 import me.misa198.airmedy.ui.components.LibraryVirtualList
 import me.misa198.airmedy.ui.components.LibraryPlaybackActions
+import me.misa198.airmedy.ui.components.LibraryTextFilter
 import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
 
@@ -38,6 +39,7 @@ internal fun LibraryAlbumsContent(
     onAlbumAddToQueue: (List<String>) -> Unit = {},
     onAlbumAddToFavorites: (List<String>) -> Unit = {},
     onPlayAll: (Boolean) -> Unit = {},
+    onFilterQueryChange: (String) -> Unit = {},
 ) {
     var contextAlbumId by remember { mutableStateOf<String?>(null) }
     val listPadding = remember(contentPadding) {
@@ -56,6 +58,16 @@ internal fun LibraryAlbumsContent(
         contentPadding = listPadding,
         modifier = modifier,
         dividerTestTag = "album-row-divider",
+        filterKey = "albums",
+        filterActive = uiState.filterQuery.isNotBlank(),
+        filterContent = { showPlaceholderAndLeadingSymbol ->
+            LibraryTextFilter(
+                value = uiState.filterQuery,
+                onValueChange = onFilterQueryChange,
+                placeholder = stringResource(R.string.filter_placeholder_search),
+                showPlaceholderAndLeadingSymbol = showPlaceholderAndLeadingSymbol,
+            )
+        },
         leadingContent = {
             LibraryPlaybackActions(
                 playLabel = stringResource(R.string.player_play),
@@ -67,12 +79,12 @@ internal fun LibraryAlbumsContent(
         },
         emptyContent = {
             Column(
-                modifier = Modifier.fillMaxSize().padding(contentPadding),
+                modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 HeroCard(
-                    title = stringResource(R.string.albums_empty_title),
-                    description = stringResource(R.string.albums_empty_description),
+                    title = stringResource(if (uiState.filterQuery.isBlank()) R.string.albums_empty_title else R.string.albums_no_match_title),
+                    description = stringResource(if (uiState.filterQuery.isBlank()) R.string.albums_empty_description else R.string.filter_no_match_description),
                     symbol = MaterialSymbols.Album,
                 )
             }
