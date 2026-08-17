@@ -117,8 +117,12 @@ internal fun LibraryAlbumsContent(
                         if (album == null) {
                             content()
                         } else {
-                            val tracks = remember(album.id, uiState.tracks) {
-                                albumDetailsUiStateFor(AlbumDetailsUiState(albums = uiState.albums, tracks = uiState.tracks), album.id).tracks
+                            val tracks = if (contextAlbumId == album.id) {
+                                remember(album.id, uiState.tracks) {
+                                    albumDetailsUiStateFor(AlbumDetailsUiState(albums = uiState.albums, tracks = uiState.tracks), album.id).tracks
+                                }
+                            } else {
+                                emptyList()
                             }
                             AlbumContextMenu(
                                 tracks = tracks,
@@ -143,8 +147,12 @@ internal fun LibraryAlbumsContent(
             null
         },
     ) { album ->
-        val tracks = remember(album.id, uiState.tracks) {
-            albumDetailsUiStateFor(AlbumDetailsUiState(albums = uiState.albums, tracks = uiState.tracks), album.id).tracks
+        val tracks = if (contextAlbumId == album.id) {
+            remember(album.id, uiState.tracks) {
+                albumDetailsUiStateFor(AlbumDetailsUiState(albums = uiState.albums, tracks = uiState.tracks), album.id).tracks
+            }
+        } else {
+            emptyList()
         }
         AlbumContextMenu(
             tracks = tracks,

@@ -26,6 +26,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
@@ -353,6 +354,10 @@ private fun SyncedLyricRow(
     blurEnabled: Boolean,
 ) {
     val colors = LocalAirmedyColors.current
+    // The pointer coroutine remains alive across playback-position and track
+    // recompositions. Read the newest callback when a tap finishes so it
+    // cannot dispatch through the callback captured for an earlier track.
+    val latestOnClick = rememberUpdatedState(onClick)
     val targetOpacity = if (!focusMode) {
         1f
     } else when (distance) {
@@ -412,12 +417,12 @@ private fun SyncedLyricRow(
                         dragDistancePx = maxOf(dragDistancePx, (change.position - startPosition).getDistance())
                         pressed = change.pressed
                     }
-                    if (shouldSeekFromLyricTap(dragDistancePx, lyricTapSlopPx)) onClick()
+                    if (shouldSeekFromLyricTap(dragDistancePx, lyricTapSlopPx)) latestOnClick.value()
                 }
             }
             .semantics {
                 role = Role.Button
-                onClick { onClick(); true }
+                onClick { latestOnClick.value(); true }
             }
             .testTag("synced_lyric_${line.timestampSeconds}"),
     ) {

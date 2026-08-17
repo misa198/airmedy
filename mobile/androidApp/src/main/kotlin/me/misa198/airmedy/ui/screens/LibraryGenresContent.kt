@@ -80,8 +80,13 @@ internal fun LibraryGenresContent(
             }
         },
     ) { genre ->
+        val trackIds = if (contextGenreId == genre.id) {
+            orderedTrackIdsForGenre(genre.id)
+        } else {
+            emptyList()
+        }
         GenreContextMenu(
-            trackIds = orderedTrackIdsForGenre(genre.id),
+            trackIds = trackIds,
             expanded = contextGenreId == genre.id,
             onDismiss = { if (contextGenreId == genre.id) contextGenreId = null },
             onPlayNext = onGenrePlayNext,

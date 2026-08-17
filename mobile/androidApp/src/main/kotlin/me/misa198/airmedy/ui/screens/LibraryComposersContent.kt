@@ -80,8 +80,13 @@ internal fun LibraryComposersContent(
             }
         },
     ) { composer ->
+        val trackIds = if (contextComposerId == composer.id) {
+            orderedTrackIdsForComposer(composer.id)
+        } else {
+            emptyList()
+        }
         ComposerContextMenu(
-            trackIds = orderedTrackIdsForComposer(composer.id),
+            trackIds = trackIds,
             expanded = contextComposerId == composer.id,
             onDismiss = { if (contextComposerId == composer.id) contextComposerId = null },
             onPlayNext = onComposerPlayNext,

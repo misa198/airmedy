@@ -99,7 +99,10 @@ describe the desktop Vue UI or future iOS UI.
   desktop artist ID so collaborations retain the desktop delimiter behavior. It renders a virtualized, divided
   list with circular artist artwork, a trailing navigation chevron, and a Name/Date added ASC/DESC header sort. Ordering uses manifest
   `sort_name` (not the display name) for every name comparison and date tie-breaker. Tapping an artist or its chevron pushes
-  `ArtistDetails` on the Library stack.
+  `ArtistDetails` on the Library stack. Context-menu track ordering for Artists, Composers, Genres, and Albums is resolved
+  only for the active menu, so rows do not repeatedly rebuild full track projections while scrolling. Navigation chrome
+  scroll accumulation is kept outside Compose state and only recomposes when compact mode changes. Tracks and Playlists
+  already pass lightweight row data directly and do not perform an eager collection projection per row.
 - `ArtistDetails` uses the shared artwork-derived `DetailHero` with 144dp circular artist artwork, the artist name,
   a localized album-and-track count, and Play/Shuffle actions. Its unique albums are derived from canonical
   track-artist IDs and sorted case-insensitively by album `sort_title` and artist `sort_name`. Artist playback uses that album order, then
@@ -212,7 +215,10 @@ describe the desktop Vue UI or future iOS UI.
   it springs back after release and dispatches Next/Previous respectively only
   for a deliberate, predominantly horizontal gesture (52dp distance, or a fast
   horizontal movement after at least 28px travel), with one confirmation haptic.
-  Vertical gestures with horizontal jitter are ignored.
+  The horizontal detector is direction-specific, so a downward gesture that
+  starts on the artwork reaches the fullscreen dismissal handler instead of
+  being consumed by track navigation; vertical gestures with horizontal jitter
+  therefore dismiss only when the 96dp pull threshold is reached.
   A 36dp-wide, semi-opaque white drag handle is
   centered with an 8dp gap below the status-bar safe area and a 20dp gap before the near-full-width rounded artwork,
   visually indicating the downward-dismiss gesture. Artwork, the title/artist metadata, and its
@@ -330,6 +336,9 @@ describe the desktop Vue UI or future iOS UI.
   programmatic repositioning) cannot be misclassified as a manual lyric drag.
   Lyric rows use a 20dp tap-drift allowance, so a tap with minor finger motion
   still seeks; only a larger drag remains manual browsing.
+  Their long-lived pointer detector reads the latest seek callback at release,
+  so state recomposition while a line is held cannot dispatch a stale playback
+  callback from the preceding track.
   focus position is applied without animation; later tracked
   changes animate using the measured target offset so wrapped lyrics do not
   need a visible second correction. Blur effects are suspended while this

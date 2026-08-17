@@ -79,8 +79,16 @@ internal fun LibraryArtistsContent(
             }
         },
     ) { artist ->
+        // Track IDs are only needed by the context menu. Avoid rebuilding the
+        // artist's full track/album ordering while every row is composed or
+        // recomposed during scrolling.
+        val trackIds = if (contextArtistId == artist.id) {
+            orderedTrackIdsForArtist(artist.id)
+        } else {
+            emptyList()
+        }
         ArtistContextMenu(
-            trackIds = orderedTrackIdsForArtist(artist.id),
+            trackIds = trackIds,
             expanded = contextArtistId == artist.id,
             onDismiss = { if (contextArtistId == artist.id) contextArtistId = null },
             onPlayNext = onArtistPlayNext,

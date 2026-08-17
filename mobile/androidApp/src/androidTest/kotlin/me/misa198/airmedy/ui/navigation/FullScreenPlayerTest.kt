@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -16,6 +17,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.unit.dp
 import me.misa198.airmedy.player.PlaybackItem
@@ -69,6 +71,35 @@ class FullScreenPlayerTest {
 
         composeTestRule.mainClock.advanceTimeBy(1L)
         composeTestRule.onNodeWithTag(FullScreenQueueStatusBadgeTestTag).assertExists()
+    }
+
+    @Test
+    fun swipingDownFromArtworkDismissesFullscreenPlayer() {
+        var dismissCount = 0
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenPlayer(
+                    visible = true,
+                    dragProgress = 0f,
+                    isDragging = false,
+                    openingFromMiniPlayerSwipe = false,
+                    playbackState = PlaybackState.Playing(item, 0L, 120_000L),
+                    volume = 0.5f,
+                    onSeek = {},
+                    onVolumeChange = {},
+                    onPrevious = {},
+                    onPlayPause = {},
+                    onNext = {},
+                    onOpenMediaOutputSwitcher = {},
+                    onDismiss = { dismissCount++ },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("full_screen_player_artwork").performTouchInput {
+            swipeDown()
+        }
+        composeTestRule.runOnIdle { assertEquals(1, dismissCount) }
     }
 
     @Test
@@ -242,6 +273,33 @@ class FullScreenPlayerTest {
         composeTestRule.onNodeWithText("Translation").assertExists()
         composeTestRule.onNodeWithTag("synced_lyric_3.0").performClick()
         composeTestRule.runOnIdle { assertEquals(3_000L, seekPositionMs) }
+    }
+
+    @Test
+    fun syncedLyricsTouchUsesTheLatestSeekCallbackAfterRecomposition() {
+        var callbackGeneration by mutableStateOf(1)
+        var invokedGeneration: Int? = null
+        composeTestRule.setContent {
+            val onSeek: (Long) -> Unit = if (callbackGeneration == 1) {
+                { invokedGeneration = 1 }
+            } else {
+                { invokedGeneration = 2 }
+            }
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenPlayerLyricsPanel(
+                    trackId = "track-1",
+                    lyrics = "[00:03.00]Seekable line",
+                    currentPositionMs = 1_000L,
+                    onSeek = onSeek,
+                    modifier = Modifier.height(180.dp),
+                )
+            }
+        }
+
+        composeTestRule.runOnIdle { callbackGeneration = 2 }
+        composeTestRule.onNodeWithTag("synced_lyric_3.0").performTouchInput { click() }
+
+        composeTestRule.runOnIdle { assertEquals(2, invokedGeneration) }
     }
 
     @Test

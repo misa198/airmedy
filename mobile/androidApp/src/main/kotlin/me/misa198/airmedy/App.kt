@@ -55,8 +55,7 @@ import me.misa198.airmedy.ui.navigation.FullScreenPlayer
 import me.misa198.airmedy.ui.navigation.MiniPlayerHeight
 import me.misa198.airmedy.ui.navigation.MiniPlayerNavigationGap
 import me.misa198.airmedy.ui.navigation.NavigationChrome
-import me.misa198.airmedy.ui.navigation.NavigationChromeScrollState
-import me.misa198.airmedy.ui.navigation.reduceNavigationChromeScroll
+import me.misa198.airmedy.ui.navigation.NavigationChromeScrollAccumulator
 import me.misa198.airmedy.ui.navigation.showsMiniPlayer
 import me.misa198.airmedy.ui.navigation.titleRes
 import me.misa198.airmedy.ui.screens.LibraryTracksUiState
@@ -253,7 +252,7 @@ internal fun App(
         )
         val albumHeaderGlassSurface = albumHeroColor?.takeIf { albumHeaderFade > 0.01f }
             ?.copy(alpha = 0.18f * albumHeaderFade)
-        var navigationScrollState by remember { mutableStateOf(NavigationChromeScrollState()) }
+        val navigationScrollAccumulator = remember { NavigationChromeScrollAccumulator() }
         val navigationScrollThresholdPx = with(LocalDensity.current) { 24.dp.toPx() }
         fun setFullScreenPlayerVisible(visible: Boolean) {
             if (isFullScreenPlayerVisible == visible) return
@@ -280,7 +279,7 @@ internal fun App(
                 // Playback ending is the only transition that invalidates a
                 // compact mini-player layout.
                 isNavigationCompact = false
-                navigationScrollState = NavigationChromeScrollState()
+                navigationScrollAccumulator.reset()
                 setFullScreenPlayerVisible(false)
                 isFullScreenPlayerOpeningFromSwipe = false
                 isFullScreenPlayerDragging = false
@@ -445,14 +444,8 @@ internal fun App(
                 onNormalizationChanged = onNormalizationChanged,
                 onContentScroll = { delta ->
                     if (!showsMiniPlayer) return@AppDestinationContent
-                    val updatedNavigationScrollState = reduceNavigationChromeScroll(
-                        state = navigationScrollState,
-                        delta = delta,
-                        thresholdPx = navigationScrollThresholdPx,
-                    )
-                    if (updatedNavigationScrollState !== navigationScrollState) {
-                        navigationScrollState = updatedNavigationScrollState
-                        isNavigationCompact = updatedNavigationScrollState.compact
+                    if (navigationScrollAccumulator.update(delta, navigationScrollThresholdPx)) {
+                        isNavigationCompact = navigationScrollAccumulator.compact
                     }
                 },
             )
@@ -586,7 +579,7 @@ internal fun App(
                 compact = showsMiniPlayer && isNavigationCompact,
                 onExpandClick = {
                     isNavigationCompact = false
-                    navigationScrollState = NavigationChromeScrollState()
+                    navigationScrollAccumulator.reset()
                 },
                 onDestinationSelected = { destination ->
                     if (destination == uiState.selectedDestination) {
@@ -607,7 +600,7 @@ internal fun App(
                 onNextClick = onPlaybackNext,
                 onMiniPlayerDismiss = {
                     isNavigationCompact = false
-                    navigationScrollState = NavigationChromeScrollState()
+                    navigationScrollAccumulator.reset()
                     onMiniPlayerDismiss()
                 },
                 onOpenFullScreenPlayer = {

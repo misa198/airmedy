@@ -24,7 +24,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.lazy.LazyColumn
@@ -1053,7 +1053,7 @@ private fun FullScreenPlayerSwipeTarget(
             .fillMaxWidth()
             .semantics { this.testTag = testTag }
             .pointerInput(maximumOffsetPx, thresholdPx, velocityMinimumPx) {
-                detectDragGestures(
+                detectHorizontalDragGestures(
                     onDragStart = {
                         swipeState.dragOffset = displayedOffset
                         swipeState.gestureHorizontalOffset = 0f
@@ -1061,14 +1061,11 @@ private fun FullScreenPlayerSwipeTarget(
                         swipeState.dragStartedAtMs = android.os.SystemClock.uptimeMillis()
                         swipeState.isDragging = true
                     },
-                    onDrag = { change, dragAmount ->
-                        swipeState.verticalDragOffset += dragAmount.y
-                        swipeState.gestureHorizontalOffset += dragAmount.x
+                    onHorizontalDrag = { change, dragAmount ->
+                        swipeState.gestureHorizontalOffset += dragAmount
                         swipeState.dragOffset = (displayedOffset + swipeState.gestureHorizontalOffset)
                             .coerceIn(-maximumOffsetPx, maximumOffsetPx)
-                        if (swipeState.gestureHorizontalOffset.absoluteValue >= swipeState.verticalDragOffset.absoluteValue) {
-                            change.consume()
-                        }
+                        change.consume()
                     },
                     onDragCancel = {
                         swipeState.isDragging = false
