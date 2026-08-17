@@ -7,6 +7,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -108,9 +109,14 @@ internal fun FullScreenQueuePanel(
     var previousCurrentTrackId by remember { mutableStateOf<String?>(null) }
     var contextTrackId by remember { mutableStateOf<String?>(null) }
     val haptics = LocalHapticFeedback.current
+    val queueRowHeightPx = with(LocalDensity.current) { QueuePanelRowHeight.toPx() }
     val reorderableState = rememberReorderableLazyListState(listState) { from, to ->
         if (from.index != to.index) {
             orderedIds = moveQueueTrack(orderedIds, from.index, to.index)
+            // Reordering changes the user's chosen viewport and the current
+            // row's anchor. Do not use that moved row as the slot for the
+            // next explicitly selected track.
+            previousCurrentTrackId = null
             haptics.performHapticFeedback(HapticFeedbackType.Confirm)
         }
     }
@@ -130,17 +136,43 @@ internal fun FullScreenQueuePanel(
             .takeIf { it >= 0 }
             ?.let { index ->
                 if (!hasPositionedInitialTrack) {
+                    previousCurrentTrackId = currentTrackId
                     listState.scrollToItem(index)
                     hasPositionedInitialTrack = true
                 } else {
+                    val isExplicitSelection = previousCurrentTrackId == null
                     val previousIndex = previousCurrentTrackId?.let(orderedIds::indexOf)
-                    val isFollowingCurrentTrack = previousIndex != null &&
-                        listState.layoutInfo.visibleItemsInfo.any { it.index == previousIndex }
-                    if (isFollowingCurrentTrack) listState.animateScrollToItem(index)
+                    val visibleItems = listState.layoutInfo.visibleItemsInfo
+                    val previousItem = previousIndex?.let { previous ->
+                        visibleItems.firstOrNull { it.index == previous }
+                    }
+                    // Store this before either scrolling call suspends. A quick
+                    // second Next must follow from the newest track rather than
+                    // restarting from the track that was current before the
+                    // interrupted animation.
+                    previousCurrentTrackId = currentTrackId
+                    if (previousItem == null && !isExplicitSelection) {
+                        // Once the previous current row leaves the viewport,
+                        // the new row's current layout position is not a valid
+                        // anchor. Re-anchor by index so either direction uses
+                        // the same deterministic scroll behaviour.
+                        // This is a new anchor for an automatic hand-off. Apply
+                        // it in one layout pass; animating here lets LazyColumn
+                        // briefly restore the old keyed-row position before
+                        // moving again.
+                        listState.scrollToItem(index)
+                    } else {
+                        // A direct queue selection should travel at a stable,
+                        // readable speed. Compose's indexed animation uses a
+                        // distance-dependent spring and can make long jumps
+                        // feel like a snap. Queue rows have a fixed height, so
+                        // animate the exact pixel distance with a restrained
+                        // tween instead.
+                        animateQueueScrollToItem(listState, index, queueRowHeightPx)
+                    }
                 }
-                previousCurrentTrackId = currentTrackId
             }
-    }
+        }
 
     Column(modifier = modifier) {
         Row(
@@ -182,7 +214,14 @@ internal fun FullScreenQueuePanel(
                                 onReorderDragStateChange,
                                 onReorder = { commitQueueReorder(latestOrderedIds, latestOnReorder) },
                             ),
-                            onClick = { onTrackSelected(trackId) },
+                            onClick = {
+                                // A direct row selection is a new viewport
+                                // request, not a playback hand-off. Clear any
+                                // stale current-row anchor (including one
+                                // retained by a reorder gesture) first.
+                                previousCurrentTrackId = null
+                                onTrackSelected(trackId)
+                            },
                         )
                     } else {
                         TrackContextMenu(
@@ -214,7 +253,10 @@ internal fun FullScreenQueuePanel(
                                     onReorderDragStateChange,
                                     onReorder = { commitQueueReorder(latestOrderedIds, latestOnReorder) },
                                 ),
-                                onClick = { onTrackSelected(trackId) },
+                                onClick = {
+                                    previousCurrentTrackId = null
+                                    onTrackSelected(trackId)
+                                },
                                 onLongClick = {
                                     haptics.performHapticFeedback(HapticFeedbackType.Confirm)
                                     contextTrackId = trackId
@@ -283,6 +325,8 @@ private fun FullScreenQueueTrackRow(
     val dragHandleLabel = stringResource(R.string.player_queue_drag_handle)
     val currentLabel = stringResource(R.string.player_queue_current)
     val dragHandleWidthPx = with(LocalDensity.current) { QueueDragHandleWidth.toPx() }
+    val latestOnClick = rememberUpdatedState(onClick)
+    val latestOnLongClick = rememberUpdatedState(onLongClick)
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
     val hoverBackground by animateColorAsState(
@@ -314,12 +358,16 @@ private fun FullScreenQueueTrackRow(
             .semantics { if (isCurrent) contentDescription = currentLabel }
             .semantics { testTag = "$QueuePanelRowTestTag-$trackId" }
             .hoverable(interactionSource)
-            .pointerInput(onClick, onLongClick, dragHandleWidthPx) {
+            // Keep the gesture detector alive while LazyColumn recomposes during
+            // auto-follow. The callbacks change per composition, but changing
+            // pointerInput keys would cancel an in-flight tap detector and make
+            // rows intermittently miss clicks after several scrolls.
+            .pointerInput(dragHandleWidthPx) {
                 detectTapGestures(
-                    onTap = { onClick() },
+                    onTap = { latestOnClick.value() },
                     onLongPress = { position ->
                         if (shouldOpenQueueTrackContextMenu(position.x, size.width, dragHandleWidthPx)) {
-                            onLongClick?.invoke()
+                            latestOnLongClick.value?.invoke()
                         }
                     },
                 )
@@ -366,6 +414,8 @@ private fun FullScreenQueueTrackRow(
 // target, so reordering does not require hitting the icon precisely.
 private val QueueDragHandleWidth = 72.dp
 private val QueuePanelRowHorizontalPadding = 20.dp
+private val QueuePanelRowHeight = 56.dp
+private const val QueueSelectionScrollDurationMillis = 400
 private const val QueuePanelHeaderTestTag = "full_screen_queue_panel_header"
 private const val QueuePanelRowTestTag = "full_screen_queue_row"
 private const val QueuePanelRowContentTestTag = "full_screen_queue_row_content"
@@ -390,6 +440,47 @@ internal fun moveQueueTrack(trackIds: List<String>, fromIndex: Int, toIndex: Int
             add(toIndex, removeAt(fromIndex))
         }
     }
+
+internal fun queueAutoFollowScrollDelta(
+    previousItemOffset: Int?,
+    targetItemOffset: Int?,
+): Float? = if (previousItemOffset != null && targetItemOffset != null) {
+    (targetItemOffset - previousItemOffset).toFloat()
+} else {
+    null
+}
+
+/** Whether the newly current row needs indexed scrolling to enter the viewport. */
+internal fun queueAutoFollowRequiresIndexedScroll(
+    previousItemOffset: Int?,
+    targetItemOffset: Int?,
+): Boolean = previousItemOffset == null || targetItemOffset == null
+
+private suspend fun animateQueueScrollToItem(
+    listState: androidx.compose.foundation.lazy.LazyListState,
+    targetIndex: Int,
+    rowHeightPx: Float,
+) {
+    val delta = queueScrollTargetDelta(
+        firstVisibleItemIndex = listState.firstVisibleItemIndex,
+        firstVisibleItemScrollOffset = listState.firstVisibleItemScrollOffset,
+        targetIndex = targetIndex,
+        rowHeightPx = rowHeightPx,
+    )
+    if (delta != 0f) {
+        listState.animateScrollBy(
+            value = delta,
+            animationSpec = tween(QueueSelectionScrollDurationMillis, easing = FastOutSlowInEasing),
+        )
+    }
+}
+
+internal fun queueScrollTargetDelta(
+    firstVisibleItemIndex: Int,
+    firstVisibleItemScrollOffset: Int,
+    targetIndex: Int,
+    rowHeightPx: Float,
+): Float = (targetIndex - firstVisibleItemIndex) * rowHeightPx - firstVisibleItemScrollOffset
 
 /** Commits the latest Compose-backed local order when a reorder drag ends. */
 internal fun commitQueueReorder(

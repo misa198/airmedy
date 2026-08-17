@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -111,6 +112,10 @@ internal fun MiniPlayer(
     val isPreparing = playbackState is PlaybackState.Preparing
     val canNavigatePrevious = playbackQueue.canNavigatePrevious()
     val canNavigateNext = playbackQueue.canNavigateNext()
+    val latestCanNavigatePrevious by rememberUpdatedState(canNavigatePrevious)
+    val latestCanNavigateNext by rememberUpdatedState(canNavigateNext)
+    val latestOnPreviousClick by rememberUpdatedState(onPreviousClick)
+    val latestOnNextClick by rememberUpdatedState(onNextClick)
     val artwork = rememberArtworkThumbnail(item.artworkPath)
     val density = LocalDensity.current
     val hapticFeedback = LocalHapticFeedback.current
@@ -337,7 +342,11 @@ internal fun MiniPlayer(
                     .pointerInput(metadataSwipeMaximumPx, metadataSwipeThresholdPx) {
                     detectHorizontalDragGestures(
                         onDragStart = {
-                            metadataDragOffset = displayedMetadataDragOffset
+                            // Never carry an in-flight spring animation into the next
+                            // gesture. A cancelled/rapidly repeated swipe must start at
+                            // the resting position, otherwise its direction and distance
+                            // can be calculated from stale offset.
+                            metadataDragOffset = 0f
                             metadataDragStartedAtMs = android.os.SystemClock.uptimeMillis()
                             isMetadataDragging = true
                         },
@@ -348,23 +357,29 @@ internal fun MiniPlayer(
                         },
                         onDragCancel = {
                             isMetadataDragging = false
+                            metadataDragOffset = 0f
                         },
                         onDragEnd = {
                             val durationMs = (android.os.SystemClock.uptimeMillis() - metadataDragStartedAtMs)
                                 .coerceAtLeast(1L)
-                            val velocityPxPerMs = metadataDragOffset / durationMs
-                            val shouldChangeTrack = metadataDragOffset.absoluteValue >= metadataSwipeThresholdPx ||
+                            val completedDragOffset = metadataDragOffset
+                            val velocityPxPerMs = completedDragOffset / durationMs
+                            val shouldChangeTrack = completedDragOffset.absoluteValue >= metadataSwipeThresholdPx ||
                                 velocityPxPerMs.absoluteValue >= MetadataSwipeVelocityPxPerMs
-                            val swipeDirection = metadataDragOffset.compareTo(0f)
+                            val swipeDirection = completedDragOffset.compareTo(0f)
                             isMetadataDragging = false
                             metadataDragOffset = 0f
 
                             if (
                                 shouldChangeTrack &&
-                                canDispatchQueueSwipe(swipeDirection, canNavigatePrevious, canNavigateNext)
+                                canDispatchQueueSwipe(
+                                    swipeDirection,
+                                    latestCanNavigatePrevious,
+                                    latestCanNavigateNext,
+                                )
                             ) {
                                 hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
-                                if (swipeDirection < 0) onNextClick() else onPreviousClick()
+                                if (swipeDirection < 0) latestOnNextClick() else latestOnPreviousClick()
                             }
                         },
                     )

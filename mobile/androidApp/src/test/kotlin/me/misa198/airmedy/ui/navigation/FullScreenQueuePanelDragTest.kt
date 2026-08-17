@@ -35,6 +35,59 @@ class FullScreenQueuePanelDragTest {
     }
 
     @Test
+    fun autoFollowUsesTheMeasuredDeltaBetweenVisibleQueueRows() {
+        assertEquals(
+            56f,
+            queueAutoFollowScrollDelta(previousItemOffset = 112, targetItemOffset = 168),
+        )
+        assertEquals(
+            -56f,
+            queueAutoFollowScrollDelta(previousItemOffset = 168, targetItemOffset = 112),
+        )
+    }
+
+    @Test
+    fun autoFollowFallsBackToIndexedScrollingWhenEitherQueueRowIsNotVisible() {
+        assertEquals(
+            null,
+            queueAutoFollowScrollDelta(previousItemOffset = 112, targetItemOffset = null),
+        )
+        assertEquals(
+            null,
+            queueAutoFollowScrollDelta(previousItemOffset = null, targetItemOffset = 168),
+        )
+    }
+
+    @Test
+    fun autoFollowUsesIndexedScrollingWhenTheNewCurrentRowIsOutsideViewport() {
+        assertTrue(queueAutoFollowRequiresIndexedScroll(previousItemOffset = 112, targetItemOffset = null))
+        assertTrue(queueAutoFollowRequiresIndexedScroll(previousItemOffset = null, targetItemOffset = 168))
+        assertFalse(queueAutoFollowRequiresIndexedScroll(previousItemOffset = 112, targetItemOffset = 168))
+    }
+
+    @Test
+    fun queueSelectionScrollDeltaAccountsForPartialLeadingRow() {
+        assertEquals(
+            140f,
+            queueScrollTargetDelta(
+                firstVisibleItemIndex = 3,
+                firstVisibleItemScrollOffset = 28,
+                targetIndex = 6,
+                rowHeightPx = 56f,
+            ),
+        )
+        assertEquals(
+            -84f,
+            queueScrollTargetDelta(
+                firstVisibleItemIndex = 6,
+                firstVisibleItemScrollOffset = 28,
+                targetIndex = 5,
+                rowHeightPx = 56f,
+            ),
+        )
+    }
+
+    @Test
     fun commitsTheFinalLocalOrderInsteadOfTheOrderFromDragStart() {
         val latestOrder = mutableStateOf(listOf("one", "two", "three"))
         var committedOrder: List<String>? = null

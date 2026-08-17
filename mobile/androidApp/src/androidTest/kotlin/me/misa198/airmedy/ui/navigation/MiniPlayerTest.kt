@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import dev.chrisbanes.haze.rememberHazeState
 import me.misa198.airmedy.AppDestination
 import me.misa198.airmedy.player.PlaybackItem
+import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.player.PlaybackState
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.ui.theme.AirmedyTheme
@@ -248,6 +249,31 @@ class MiniPlayerTest {
     }
 
     @Test
+    fun metadataSwipeUsesTheLatestQueueNavigationAvailability() {
+        var queue by mutableStateOf(PlaybackQueueSnapshot())
+        val calls = mutableListOf<String>()
+        composeTestRule.setContent {
+            NavigationChromeForTest(
+                state = PlaybackState.Playing(item, positionMs = 0L, durationMs = 120_000L),
+                queue = queue,
+                onNext = { calls += "next" },
+            )
+        }
+
+        // The mini-player remains mounted while playback queue state changes.
+        // Swipe must observe the new queue just like the visible Next button.
+        queue = PlaybackQueueSnapshot(
+            originalTrackIds = listOf("track-1", "track-2"),
+            activeTrackIds = listOf("track-1", "track-2"),
+            currentIndex = 0,
+        )
+        composeTestRule.onNodeWithText(item.title).performTouchInput { swipeLeft() }
+        composeTestRule.waitUntil(timeoutMillis = 2_000) { calls.isNotEmpty() }
+
+        assertEquals(listOf("next"), calls)
+    }
+
+    @Test
     fun compactChromeShowsTheActiveDestinationPlayPauseAndNext() {
         var compact by mutableStateOf(true)
         val calls = mutableListOf<String>()
@@ -284,6 +310,7 @@ class MiniPlayerTest {
     @androidx.compose.runtime.Composable
     private fun NavigationChromeForTest(
         state: PlaybackState,
+        queue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
         onPrevious: () -> Unit = {},
         onPlayPause: () -> Unit = {},
         onNext: () -> Unit = {},
@@ -294,6 +321,7 @@ class MiniPlayerTest {
             NavigationChrome(
                 selectedDestination = AppDestination.Home,
                 playbackState = state,
+                playbackQueue = queue,
                 hazeState = rememberHazeState(),
                 onDestinationSelected = {},
                 onPreviousClick = onPrevious,

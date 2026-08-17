@@ -24,7 +24,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.lazy.LazyColumn
@@ -133,8 +133,9 @@ private const val FullScreenPlayerDragHandleTestTag = "full_screen_player_drag_h
 private const val FullScreenPlayerArtworkSwipeTestTag = "full_screen_player_artwork_swipe_target"
 private const val FullScreenPlayerArtworkTestTag = "full_screen_player_artwork"
 private const val FullScreenPlayerMetadataSwipeTestTag = "full_screen_player_metadata_swipe_target"
-private val FullScreenPlayerSwipeMaximum = 40.dp
-private val FullScreenPlayerSwipeThreshold = 32.dp
+private val FullScreenPlayerSwipeMaximum = 64.dp
+private val FullScreenPlayerSwipeThreshold = 52.dp
+private val FullScreenPlayerSwipeVelocityMinimum = 28.dp
 private const val FullScreenPlayerSwipeVelocityPxPerMs = 1.2f
 private val FullScreenPlayerCompactArtworkSize = 80.dp
 private val FullScreenPlayerCompactGap = 24.dp
@@ -1006,8 +1007,27 @@ private fun FullScreenPlayerPanelPlaceholder(
 
 private class FullScreenPlayerSwipeState {
     var dragOffset by mutableStateOf(0f)
+    var gestureHorizontalOffset by mutableStateOf(0f)
+    var verticalDragOffset by mutableStateOf(0f)
     var isDragging by mutableStateOf(false)
     var dragStartedAtMs by mutableStateOf(0L)
+}
+
+/** Requires a deliberate, predominantly horizontal gesture before changing tracks. */
+internal fun shouldDispatchFullScreenSwipe(
+    horizontalDistancePx: Float,
+    verticalDistancePx: Float,
+    thresholdPx: Float,
+    velocityPxPerMs: Float,
+    velocityThresholdPxPerMs: Float,
+    velocityMinimumPx: Float,
+): Boolean {
+    val horizontal = horizontalDistancePx.absoluteValue
+    val vertical = verticalDistancePx.absoluteValue
+    if (horizontal < vertical * 1.25f) return false
+
+    return horizontal >= thresholdPx ||
+        (horizontal >= velocityMinimumPx && velocityPxPerMs.absoluteValue >= velocityThresholdPxPerMs)
 }
 
 @Composable
@@ -1027,32 +1047,52 @@ private fun FullScreenPlayerSwipeTarget(
     val hapticFeedback = LocalHapticFeedback.current
     val maximumOffsetPx = with(density) { FullScreenPlayerSwipeMaximum.toPx() }
     val thresholdPx = with(density) { FullScreenPlayerSwipeThreshold.toPx() }
+    val velocityMinimumPx = with(density) { FullScreenPlayerSwipeVelocityMinimum.toPx() }
     Box(
         modifier = modifier
             .fillMaxWidth()
             .semantics { this.testTag = testTag }
-            .pointerInput(maximumOffsetPx, thresholdPx) {
-                detectHorizontalDragGestures(
+            .pointerInput(maximumOffsetPx, thresholdPx, velocityMinimumPx) {
+                detectDragGestures(
                     onDragStart = {
                         swipeState.dragOffset = displayedOffset
+                        swipeState.gestureHorizontalOffset = 0f
+                        swipeState.verticalDragOffset = 0f
                         swipeState.dragStartedAtMs = android.os.SystemClock.uptimeMillis()
                         swipeState.isDragging = true
                     },
-                    onHorizontalDrag = { change, dragAmount ->
-                        change.consume()
-                        swipeState.dragOffset = (swipeState.dragOffset + dragAmount)
+                    onDrag = { change, dragAmount ->
+                        swipeState.verticalDragOffset += dragAmount.y
+                        swipeState.gestureHorizontalOffset += dragAmount.x
+                        swipeState.dragOffset = (displayedOffset + swipeState.gestureHorizontalOffset)
                             .coerceIn(-maximumOffsetPx, maximumOffsetPx)
+                        if (swipeState.gestureHorizontalOffset.absoluteValue >= swipeState.verticalDragOffset.absoluteValue) {
+                            change.consume()
+                        }
                     },
-                    onDragCancel = { swipeState.isDragging = false },
+                    onDragCancel = {
+                        swipeState.isDragging = false
+                        swipeState.dragOffset = 0f
+                        swipeState.gestureHorizontalOffset = 0f
+                        swipeState.verticalDragOffset = 0f
+                    },
                     onDragEnd = {
                         val durationMs = (android.os.SystemClock.uptimeMillis() - swipeState.dragStartedAtMs)
                             .coerceAtLeast(1L)
-                        val velocityPxPerMs = swipeState.dragOffset / durationMs
-                        val shouldChangeTrack = swipeState.dragOffset.absoluteValue >= thresholdPx ||
-                            velocityPxPerMs.absoluteValue >= FullScreenPlayerSwipeVelocityPxPerMs
-                        val swipeDirection = swipeState.dragOffset.compareTo(0f)
+                        val velocityPxPerMs = swipeState.gestureHorizontalOffset / durationMs
+                        val shouldChangeTrack = shouldDispatchFullScreenSwipe(
+                            horizontalDistancePx = swipeState.gestureHorizontalOffset,
+                            verticalDistancePx = swipeState.verticalDragOffset,
+                            thresholdPx = thresholdPx,
+                            velocityPxPerMs = velocityPxPerMs,
+                            velocityThresholdPxPerMs = FullScreenPlayerSwipeVelocityPxPerMs,
+                            velocityMinimumPx = velocityMinimumPx,
+                        )
+                        val swipeDirection = swipeState.gestureHorizontalOffset.compareTo(0f)
                         swipeState.isDragging = false
                         swipeState.dragOffset = 0f
+                        swipeState.gestureHorizontalOffset = 0f
+                        swipeState.verticalDragOffset = 0f
 
                         if (
                             shouldChangeTrack &&

@@ -171,7 +171,10 @@ describe the desktop Vue UI or future iOS UI.
   controls; it snaps back after release and emits one confirmation haptic only when the swipe
   reaches the distance or velocity threshold and dispatches a transport command. Horizontal
   gestures are scoped to metadata so they do not conflict with the pill's vertical
-  fullscreen/dismiss gestures or its control buttons. The mini player pill and its transport
+  fullscreen/dismiss gestures or its control buttons. Gesture callbacks read the latest queue
+  availability, so a queue update while the mini player remains mounted immediately enables or
+  disables the corresponding swipe; cancelled gestures reset their offset before the next drag.
+  The mini player pill and its transport
   controls suppress press indications, so starting or reversing a drag never leaves a dark
   ripple-like surface behind. Tapping its non-control surface opens `FullScreenPlayer`.
   Pulling upward moves the mini player up by its full 56dp height while fading it out.
@@ -203,9 +206,10 @@ describe the desktop Vue UI or future iOS UI.
   appearance.
   Swiping left/right anywhere in the artwork/metadata block moves only the
   title/artist cluster with the finger while the artwork and actions remain still;
-  it springs back after release and dispatches Next/Previous respectively after
-  the same distance/velocity threshold and confirmation haptic used by mini-player
-  metadata swipes.
+  it springs back after release and dispatches Next/Previous respectively only
+  for a deliberate, predominantly horizontal gesture (52dp distance, or a fast
+  horizontal movement after at least 28px travel), with one confirmation haptic.
+  Vertical gestures with horizontal jitter are ignored.
   A 36dp-wide, semi-opaque white drag handle is
   centered with an 8dp gap below the status-bar safe area and a 20dp gap before the near-full-width rounded artwork,
   visually indicating the downward-dismiss gesture. Artwork, the title/artist metadata, and its
@@ -269,10 +273,24 @@ describe the desktop Vue UI or future iOS UI.
   omitted, and the current item also omits Play next. The trailing
   Reorder handle remains dedicated to long-press dragging. Opening Queue, including switching from
   Lyrics, immediately positions the current item in view without an animation.
-  It then animates to a subsequent current-track change only while the prior
-  current item remains visible; a user who has browsed elsewhere keeps their
-  chosen viewport. Reordering never triggers current-track auto-follow, so it
-  also preserves the chosen viewport. Long-press dragging the dedicated trailing Reorder handle
+  It then animates to a subsequent current-track change. When both rows are laid
+  out, auto-follow uses their measured pixel delta and preserves the prior row's
+  visual slot instead of re-anchoring the new item by index. If the previous
+  current row has been scrolled out, the new current row is re-anchored by index
+  (even if it is already laid out), so the new row's incidental position never
+  becomes the next auto-follow anchor. This keeps auto-follow correct in either
+  direction and avoids a brief backward jump when Next advances between visible
+  rows. Visible automatic hand-offs use the same fixed-duration pixel tween,
+  avoiding a competing measured-delta correction after keyed rows move. Reordering never triggers
+  current-track auto-follow, so it also preserves the chosen viewport. A
+  reorder invalidates the playback anchor; the next explicitly selected track
+  clears any remaining anchor at the row click and smoothly travels to its
+  indexed position with a fixed 400ms ease-in/out tween, rather than snapping or
+  using a distance-dependent spring. Automatic hand-offs whose prior row is out
+  of view remain synchronously re-anchored; visible hand-offs retain animation.
+  Queue row tap detectors keep a stable pointer-input lifetime while scrolling,
+  so recomposition during repeated auto-follow transitions does not drop taps.
+  Long-press dragging the dedicated trailing Reorder handle
   reorders the active queue and preserves the current track, shuffle state,
   and repeat mode. Its 72dp-wide touch target keeps the glyph flush to the
   trailing edge while making long-press drag forgiving. Queue reorder uses
