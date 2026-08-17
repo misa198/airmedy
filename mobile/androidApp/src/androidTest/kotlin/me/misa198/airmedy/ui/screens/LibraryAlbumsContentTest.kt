@@ -12,6 +12,7 @@ import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.sync.LibraryAlbum
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.ui.components.AnchoredPopupMenuHost
+import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -68,6 +69,7 @@ class LibraryAlbumsContentTest {
 
     @Test
     fun holdingAnAlbumOpensItsContextMenu() {
+        var request: TrackContextBottomSheetRequest? = null
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 AnchoredPopupMenuHost(hazeState = null) {
@@ -76,6 +78,7 @@ class LibraryAlbumsContentTest {
                             albums = listOf(LibraryAlbum(id = "album", title = "Album A", artist = "Artist A")),
                             tracks = listOf(LibraryTrack("track", "Track", "Artist A", albumId = "album")),
                         ),
+                        onTrackContextBottomSheet = { request = it },
                     )
                 }
             }
@@ -85,6 +88,11 @@ class LibraryAlbumsContentTest {
 
         composeTestRule.onNodeWithText("Play next").assertExists()
         composeTestRule.onNode(hasContentDescription("Add to favourites")).assertExists()
+        composeTestRule.onNodeWithText("Add to playlist").performClick()
+        assertEquals(
+            TrackContextBottomSheetRequest.Playlist(listOf("track"), addOnly = true),
+            request,
+        )
     }
 
     @Test

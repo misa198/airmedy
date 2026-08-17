@@ -83,7 +83,7 @@ internal fun trackContextArtists(track: LibraryTrack): List<TrackContextArtist> 
 
 sealed interface TrackContextBottomSheetRequest {
     data class Info(val track: LibraryTrack) : TrackContextBottomSheetRequest
-    data class Playlist(val trackIds: List<String>) : TrackContextBottomSheetRequest
+    data class Playlist(val trackIds: List<String>, val addOnly: Boolean = false) : TrackContextBottomSheetRequest
     data class Artists(val artists: List<TrackContextArtist>) : TrackContextBottomSheetRequest
 }
 
@@ -215,6 +215,7 @@ internal fun TrackContextBottomSheet(
         is TrackContextBottomSheetRequest.Info -> TrackInfoContent(request.track)
         is TrackContextBottomSheetRequest.Playlist -> PlaylistPickerContent(
             trackIds = request.trackIds,
+            addOnly = request.addOnly,
             playlists = playlists,
             onPlaylistMembershipChange = onPlaylistMembershipChange,
             onCreatePlaylistRequested = onCreatePlaylistRequested,
@@ -232,6 +233,7 @@ internal fun TrackContextBottomSheet(
 @Composable
 private fun PlaylistPickerContent(
     trackIds: List<String>,
+    addOnly: Boolean,
     playlists: List<LibraryPlaylist>,
     onPlaylistMembershipChange: (playlistId: String, trackIds: List<String>, add: Boolean) -> Unit,
     onCreatePlaylistRequested: (trackIds: List<String>) -> Unit,
@@ -239,6 +241,7 @@ private fun PlaylistPickerContent(
     val colors = LocalAirmedyColors.current
     val editable = remember(playlists) { playlists.filter(::playlistIsEditable) }
     val singleTrack = trackIds.distinct().singleOrNull()
+    var locallyAddedPlaylistIds by remember(trackIds, addOnly) { mutableStateOf<Set<String>>(emptySet()) }
     Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable { onCreatePlaylistRequested(trackIds) }.padding(horizontal = 12.dp),
@@ -254,19 +257,30 @@ private fun PlaylistPickerContent(
         } else {
             LazyColumn(Modifier.fillMaxWidth().heightIn(max = 360.dp)) {
                 items(editable, key = LibraryPlaylist::id) { playlist ->
-                    val checked = if (singleTrack != null) {
+                    // Genre-scope adds deliberately skip membership inspection. The
+                    // mutation/projection layer deduplicates playlist track IDs, so
+                    // checking every selected track here only adds query/work cost.
+                    val checked = if (addOnly) {
+                        playlist.id in locallyAddedPlaylistIds
+                    } else if (singleTrack != null) {
                         singleTrack in playlist.trackIds
                     } else {
                         trackIds.isNotEmpty() && trackIds.all { it in playlist.trackIds }
                     }
-                    val add = !checked
+                    val add = addOnly || !checked
                     val targetIds = when {
+                        addOnly -> if (checked) emptyList() else trackIds
                         singleTrack != null -> listOf(singleTrack)
                         add -> trackIds.filter { it !in playlist.trackIds }
                         else -> trackIds
                     }
                     Row(
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable { if (targetIds.isNotEmpty()) onPlaylistMembershipChange(playlist.id, targetIds, add) }.padding(horizontal = 12.dp),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable {
+                            if (targetIds.isNotEmpty()) {
+                                if (addOnly) locallyAddedPlaylistIds += playlist.id
+                                onPlaylistMembershipChange(playlist.id, targetIds, add)
+                            }
+                        }.padding(horizontal = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         PlaylistPickerCheckbox(

@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.sync.LibraryAlbum
 import me.misa198.airmedy.sync.LibraryComposer
@@ -76,5 +77,37 @@ class ComposerDetailsContentTest {
         }
 
         composeTestRule.onAllNodesWithTag("composer-detail-album-divider").assertCountEquals(2)
+    }
+
+    @Test
+    fun composerMoreMenuUsesOrderedTracksForPlayNextAndPlaylist() {
+        var nextIds: List<String>? = null
+        var playlistIds: List<String>? = null
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                ComposerDetailsContent(
+                    uiState = ComposerDetailsUiState(
+                        composer = LibraryComposer("bach", "Bach"),
+                        tracks = listOf(
+                            LibraryTrack("first", "First", "Artist"),
+                            LibraryTrack("second", "Second", "Artist"),
+                        ),
+                    ),
+                    listState = rememberLazyListState(),
+                    onPlayNext = { nextIds = it },
+                    onTrackContextBottomSheet = { request ->
+                        playlistIds = (request as TrackContextBottomSheetRequest.Playlist).trackIds
+                    },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Composer options").performClick()
+        composeTestRule.onNodeWithText("Play next").performClick()
+        assertEquals(listOf("first", "second"), nextIds)
+
+        composeTestRule.onNodeWithText("Composer options").performClick()
+        composeTestRule.onNodeWithText("Add to playlist").performClick()
+        assertEquals(listOf("first", "second"), playlistIds)
     }
 }

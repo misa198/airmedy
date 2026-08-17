@@ -57,6 +57,9 @@ internal class GenreDetailsViewModel(
             if (shuffle) playbackController.shuffle(request) else playbackController.play(request)
         }
     }
+
+    fun orderedTrackIds(genreId: String): List<String> =
+        genreDetailsUiStateFor(uiState.value, genreId).tracks.map(LibraryTrack::id)
 }
 
 internal fun genreDetailsUiStateFor(

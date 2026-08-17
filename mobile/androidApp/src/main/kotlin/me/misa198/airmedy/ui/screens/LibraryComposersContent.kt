@@ -7,7 +7,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -17,6 +20,8 @@ import me.misa198.airmedy.ui.components.HeroCard
 import me.misa198.airmedy.ui.components.LibraryVirtualList
 import me.misa198.airmedy.ui.components.LibraryTextFilter
 import me.misa198.airmedy.ui.components.MaterialSymbols
+import me.misa198.airmedy.ui.components.ComposerContextMenu
+import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import me.misa198.airmedy.sync.LibraryComposer
 import dev.chrisbanes.haze.HazeState
 
@@ -28,8 +33,12 @@ internal fun LibraryComposersContent(
     contentPadding: PaddingValues = PaddingValues(),
     onComposerClick: (LibraryComposer) -> Unit = {},
     onFilterQueryChange: (String) -> Unit = {},
+    orderedTrackIdsForComposer: (String) -> List<String> = { emptyList() },
+    onComposerPlayNext: (List<String>) -> Unit = {},
+    onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit = {},
     hazeState: HazeState? = null,
 ) {
+    var contextComposerId by remember { mutableStateOf<String?>(null) }
     val listPadding = remember(contentPadding) {
         PaddingValues(
             top = contentPadding.calculateTopPadding(),
@@ -71,6 +80,20 @@ internal fun LibraryComposersContent(
             }
         },
     ) { composer ->
-        ComposerRow(name = composer.name, onClick = { onComposerClick(composer) })
+        ComposerContextMenu(
+            trackIds = orderedTrackIdsForComposer(composer.id),
+            expanded = contextComposerId == composer.id,
+            onDismiss = { if (contextComposerId == composer.id) contextComposerId = null },
+            onPlayNext = onComposerPlayNext,
+            onBottomSheetRequested = onTrackContextBottomSheet,
+            addToPlaylistOnly = true,
+            hazeState = hazeState,
+        ) {
+            ComposerRow(
+                name = composer.name,
+                onClick = { onComposerClick(composer) },
+                onLongClick = { contextComposerId = composer.id },
+            )
+        }
     }
 }

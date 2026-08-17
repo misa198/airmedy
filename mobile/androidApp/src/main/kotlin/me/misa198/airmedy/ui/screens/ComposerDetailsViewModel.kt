@@ -57,6 +57,9 @@ internal class ComposerDetailsViewModel(
             if (shuffle) playbackController.shuffle(request) else playbackController.play(request)
         }
     }
+
+    fun orderedTrackIds(composerId: String): List<String> =
+        composerDetailsUiStateFor(uiState.value, composerId).tracks.map(LibraryTrack::id)
 }
 
 internal fun composerDetailsUiStateFor(

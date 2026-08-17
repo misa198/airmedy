@@ -161,8 +161,14 @@ internal fun AppDestinationContent(
     onArtistPlay: (String, Boolean) -> Unit = { _, _ -> },
     onArtistsFilterQueryChange: (String) -> Unit = {},
     onGenrePlay: (String, Boolean) -> Unit = { _, _ -> },
+    onGenrePlayNext: (List<String>) -> Unit = {},
+    onGenreTrackContextBottomSheet: (me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest) -> Unit = {},
+    orderedTrackIdsForGenre: (String) -> List<String> = { emptyList() },
     onGenresFilterQueryChange: (String) -> Unit = {},
     onComposerPlay: (String, Boolean) -> Unit = { _, _ -> },
+    onComposerPlayNext: (List<String>) -> Unit = {},
+    onComposerTrackContextBottomSheet: (me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest) -> Unit = {},
+    orderedTrackIdsForComposer: (String) -> List<String> = { emptyList() },
     onComposersFilterQueryChange: (String) -> Unit = {},
     onAlbumHeroColorChanged: (Color) -> Unit = {},
     onPairingQrScanned: (String) -> Boolean,
@@ -354,6 +360,8 @@ internal fun AppDestinationContent(
                                 onHeroColorChanged = onAlbumHeroColorChanged,
                                 onPlay = { selectedGenreId?.let { onGenrePlay(it, false) } },
                                 onShuffle = { selectedGenreId?.let { onGenrePlay(it, true) } },
+                                onPlayNext = onGenrePlayNext,
+                                onTrackContextBottomSheet = onGenreTrackContextBottomSheet,
                                 onAlbumClick = { album -> onIntent(AppIntent.OpenAlbumDetails(album.id)) },
                             )
                             AppStackPage.ComposerDetails -> ComposerDetailsContent(
@@ -365,6 +373,8 @@ internal fun AppDestinationContent(
                                 onHeroColorChanged = onAlbumHeroColorChanged,
                                 onPlay = { selectedComposerId?.let { onComposerPlay(it, false) } },
                                 onShuffle = { selectedComposerId?.let { onComposerPlay(it, true) } },
+                                onPlayNext = onComposerPlayNext,
+                                onTrackContextBottomSheet = onComposerTrackContextBottomSheet,
                                 onAlbumClick = { album -> onIntent(AppIntent.OpenAlbumDetails(album.id)) },
                             )
                             AppStackPage.LibraryAlbums -> LibraryAlbumsContent(
@@ -380,6 +390,7 @@ internal fun AppDestinationContent(
                                 onAlbumPlayNext = onAlbumPlayNext,
                                 onAlbumAddToQueue = onAlbumAddToQueue,
                                 onAlbumAddToFavorites = onAlbumAddToFavorites,
+                                onTrackContextBottomSheet = onTrackContextBottomSheet,
                                 onFilterQueryChange = onAlbumsFilterQueryChange,
                             )
                             AppStackPage.AlbumDetails -> AlbumDetailsContent(
@@ -408,6 +419,9 @@ internal fun AppDestinationContent(
                                 modifier = Modifier.fillMaxSize(),
                                 onGenreClick = { genre -> onIntent(AppIntent.OpenGenreDetails(genre.id)) },
                                 onFilterQueryChange = onGenresFilterQueryChange,
+                                orderedTrackIdsForGenre = orderedTrackIdsForGenre,
+                                onGenrePlayNext = onGenrePlayNext,
+                                onTrackContextBottomSheet = onGenreTrackContextBottomSheet,
                                 hazeState = hazeState,
                             )
                             AppStackPage.LibraryComposers -> LibraryComposersContent(
@@ -417,6 +431,9 @@ internal fun AppDestinationContent(
                                 modifier = Modifier.fillMaxSize(),
                                 onComposerClick = { composer -> onIntent(AppIntent.OpenComposerDetails(composer.id)) },
                                 onFilterQueryChange = onComposersFilterQueryChange,
+                                orderedTrackIdsForComposer = orderedTrackIdsForComposer,
+                                onComposerPlayNext = onComposerPlayNext,
+                                onTrackContextBottomSheet = onComposerTrackContextBottomSheet,
                                 hazeState = hazeState,
                             )
                             AppStackPage.LibraryPlaylists -> LibraryPlaylistsContent(

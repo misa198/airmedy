@@ -24,6 +24,7 @@ import me.misa198.airmedy.ui.components.LibraryVirtualList
 import me.misa198.airmedy.ui.components.LibraryPlaybackActions
 import me.misa198.airmedy.ui.components.LibraryTextFilter
 import me.misa198.airmedy.ui.components.MaterialSymbols
+import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import me.misa198.airmedy.ui.components.discGridItems
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
 
@@ -40,6 +41,7 @@ internal fun LibraryAlbumsContent(
     onAlbumPlayNext: (List<String>) -> Unit = {},
     onAlbumAddToQueue: (List<String>) -> Unit = {},
     onAlbumAddToFavorites: (List<String>) -> Unit = {},
+    onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit = {},
     onPlayAll: (Boolean) -> Unit = {},
     onFilterQueryChange: (String) -> Unit = {},
 ) {
@@ -129,6 +131,7 @@ internal fun LibraryAlbumsContent(
                                 onPlayNext = onAlbumPlayNext,
                                 onAddToQueue = onAlbumAddToQueue,
                                 onAddToFavorites = onAlbumAddToFavorites,
+                                onBottomSheetRequested = onTrackContextBottomSheet,
                                 modifier = itemModifier,
                                 anchor = content,
                             )
@@ -154,6 +157,7 @@ internal fun LibraryAlbumsContent(
             onPlayNext = onAlbumPlayNext,
             onAddToQueue = onAlbumAddToQueue,
             onAddToFavorites = onAlbumAddToFavorites,
+            onBottomSheetRequested = onTrackContextBottomSheet,
         ) {
             AlbumRow(
                 title = album.title,

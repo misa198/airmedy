@@ -1,6 +1,6 @@
 package me.misa198.airmedy.ui.components
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,10 +25,14 @@ fun GenreRow(
     name: String,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
 ) {
     val colors = LocalAirmedyColors.current
-    val clickModifier = remember(onClick) {
-        if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
+    val clickModifier = remember(onClick, onLongClick) {
+        if (onClick != null || onLongClick != null) Modifier.combinedClickable(
+            onClick = { onClick?.invoke() },
+            onLongClick = onLongClick,
+        ) else Modifier
     }
 
     Row(

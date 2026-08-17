@@ -148,6 +148,6 @@ class AlbumDetailsContentTest {
         composeTestRule.onNode(hasContentDescription("Album options")).performClick()
         composeTestRule.onAllNodesWithText("Add to queue").assertCountEquals(0)
         composeTestRule.onNodeWithText("Add to playlist").performClick()
-        org.junit.Assert.assertEquals(TrackContextBottomSheetRequest.Playlist(listOf("one")), request)
+                org.junit.Assert.assertEquals(TrackContextBottomSheetRequest.Playlist(listOf("one"), addOnly = true), request)
     }
 }

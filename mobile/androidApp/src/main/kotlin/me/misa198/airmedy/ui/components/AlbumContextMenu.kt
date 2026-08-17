@@ -58,7 +58,7 @@ internal fun AlbumContextMenu(
             })
             add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_add_to_playlist), MaterialSymbols.PlaylistAdd) {
                 dismissAll()
-                onBottomSheetRequested(TrackContextBottomSheetRequest.Playlist(trackIds))
+                onBottomSheetRequested(TrackContextBottomSheetRequest.Playlist(trackIds, addOnly = true))
             })
         })
     }

@@ -23,6 +23,12 @@ import me.misa198.airmedy.ui.components.HeroCard
 import me.misa198.airmedy.ui.components.MaterialSymbols
 import androidx.compose.ui.platform.testTag
 import me.misa198.airmedy.ui.components.InsetListDivider
+import me.misa198.airmedy.ui.components.GenreContextMenu
+import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 private const val GenreAlbumDividerTag = "genre-detail-album-divider"
 
@@ -36,6 +42,8 @@ internal fun GenreDetailsContent(
     onHeroColorChanged: (Color) -> Unit = {},
     onPlay: () -> Unit = {},
     onShuffle: () -> Unit = {},
+    onPlayNext: (List<String>) -> Unit = {},
+    onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit = {},
     onAlbumClick: (LibraryAlbum) -> Unit = {},
 ) {
     val genre = uiState.genre
@@ -48,6 +56,7 @@ internal fun GenreDetailsContent(
         )
         return
     }
+    var menuExpanded by remember(genre.id) { mutableStateOf(false) }
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         state = listState,
@@ -55,7 +64,15 @@ internal fun GenreDetailsContent(
     ) {
         item("hero") {
             ArtworkHeroBackdrop(null, Modifier.fillMaxWidth(), hazeState, onHeroColorChanged) {
-                DetailHero(
+                GenreContextMenu(
+                    trackIds = uiState.tracks.map { it.id },
+                    expanded = menuExpanded,
+                    onDismiss = { menuExpanded = false },
+                    onPlayNext = onPlayNext,
+                    onBottomSheetRequested = onTrackContextBottomSheet,
+                    hazeState = hazeState,
+                ) {
+                    DetailHero(
                     title = genre.name,
                     subtitle = stringResource(
                         R.string.genre_details_summary,
@@ -75,7 +92,9 @@ internal fun GenreDetailsContent(
                     showArtwork = false,
                     onPlayClick = onPlay,
                     onShuffleClick = onShuffle,
-                )
+                    onMoreClick = { menuExpanded = true },
+                    )
+                }
             }
         }
         itemsIndexed(uiState.albums, key = { _, album -> album.id }, contentType = { _, _ -> "genre_album_row" }) { index, album ->

@@ -11,6 +11,7 @@ import me.misa198.airmedy.sync.LibraryAlbum
 import me.misa198.airmedy.sync.LibraryGenre
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.ui.theme.AirmedyTheme
+import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -76,5 +77,37 @@ class GenreDetailsContentTest {
         }
 
         composeTestRule.onAllNodesWithTag("genre-detail-album-divider").assertCountEquals(2)
+    }
+
+    @Test
+    fun genreMoreMenuUsesOrderedTracksForPlayNextAndPlaylist() {
+        var nextIds: List<String>? = null
+        var playlistIds: List<String>? = null
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                GenreDetailsContent(
+                    uiState = GenreDetailsUiState(
+                        genre = LibraryGenre("electronic", "Electronic"),
+                        tracks = listOf(
+                            LibraryTrack("first", "First", "Artist"),
+                            LibraryTrack("second", "Second", "Artist"),
+                        ),
+                    ),
+                    listState = rememberLazyListState(),
+                    onPlayNext = { nextIds = it },
+                    onTrackContextBottomSheet = { request ->
+                        playlistIds = (request as TrackContextBottomSheetRequest.Playlist).trackIds
+                    },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Genre options").performClick()
+        composeTestRule.onNodeWithText("Play next").performClick()
+        assertEquals(listOf("first", "second"), nextIds)
+
+        composeTestRule.onNodeWithText("Genre options").performClick()
+        composeTestRule.onNodeWithText("Add to playlist").performClick()
+        assertEquals(listOf("first", "second"), playlistIds)
     }
 }
