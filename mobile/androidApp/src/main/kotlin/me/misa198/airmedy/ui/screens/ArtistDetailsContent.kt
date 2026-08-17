@@ -24,6 +24,12 @@ import me.misa198.airmedy.ui.components.HeroCard
 import me.misa198.airmedy.ui.components.MaterialSymbols
 import androidx.compose.ui.platform.testTag
 import me.misa198.airmedy.ui.components.InsetListDivider
+import me.misa198.airmedy.ui.components.ArtistContextMenu
+import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 private const val ArtistAlbumDividerTag = "artist-detail-album-divider"
 
@@ -37,6 +43,8 @@ internal fun ArtistDetailsContent(
     onHeroColorChanged: (Color) -> Unit = {},
     onPlay: () -> Unit = {},
     onShuffle: () -> Unit = {},
+    onPlayNext: (List<String>) -> Unit = {},
+    onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit = {},
     onAlbumClick: (LibraryAlbum) -> Unit = {},
 ) {
     val artist = uiState.artist
@@ -49,6 +57,7 @@ internal fun ArtistDetailsContent(
         )
         return
     }
+    var menuExpanded by remember(artist.id) { mutableStateOf(false) }
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         state = listState,
@@ -56,7 +65,16 @@ internal fun ArtistDetailsContent(
     ) {
         item("hero") {
             ArtworkHeroBackdrop(artist.artworkPath, Modifier.fillMaxWidth(), hazeState, onHeroColorChanged) {
-                DetailHero(
+                ArtistContextMenu(
+                    trackIds = uiState.tracks.map { it.id },
+                    expanded = menuExpanded,
+                    onDismiss = { menuExpanded = false },
+                    onPlayNext = onPlayNext,
+                    onBottomSheetRequested = onTrackContextBottomSheet,
+                    addToPlaylistOnly = true,
+                    hazeState = hazeState,
+                ) {
+                    DetailHero(
                     title = artist.name,
                     subtitle = stringResource(
                         R.string.artist_details_summary,
@@ -79,7 +97,9 @@ internal fun ArtistDetailsContent(
                     fallbackSymbol = MaterialSymbols.Person,
                     onPlayClick = onPlay,
                     onShuffleClick = onShuffle,
-                )
+                    onMoreClick = { menuExpanded = true },
+                    )
+                }
             }
         }
         itemsIndexed(uiState.albums, key = { _, album -> album.id }, contentType = { _, _ -> "artist_album_row" }) { index, album ->

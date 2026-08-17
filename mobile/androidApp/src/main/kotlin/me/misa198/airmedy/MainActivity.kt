@@ -293,6 +293,8 @@ class MainActivity : ComponentActivity() {
                 onCreatePlaylistWithTracks = { name, artwork, trackIds -> playlistsViewModel.createPlaylist(name, artwork, trackIds) },
                 onPlaylistMembershipChange = playlistsViewModel::changePlaylistMembership,
                 onArtistPlay = artistDetailsViewModel::play,
+                onArtistPlayNext = playbackController::playNext,
+                orderedTrackIdsForArtist = artistDetailsViewModel::orderedTrackIds,
                 onGenrePlay = genreDetailsViewModel::play,
                 onGenrePlayNext = playbackController::playNext,
                 orderedTrackIdsForGenre = genreDetailsViewModel::orderedTrackIds,

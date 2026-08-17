@@ -7,17 +7,22 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import me.misa198.airmedy.R
 import me.misa198.airmedy.ui.components.ArtistRow
+import me.misa198.airmedy.ui.components.ArtistContextMenu
 import me.misa198.airmedy.ui.components.HeroCard
 import me.misa198.airmedy.ui.components.LibraryVirtualList
 import me.misa198.airmedy.ui.components.LibraryTextFilter
 import me.misa198.airmedy.ui.components.MaterialSymbols
 import dev.chrisbanes.haze.HazeState
+import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 
 @Composable
 internal fun LibraryArtistsContent(
@@ -27,8 +32,12 @@ internal fun LibraryArtistsContent(
     contentPadding: PaddingValues = PaddingValues(),
     onArtistClick: ((me.misa198.airmedy.sync.LibraryArtist) -> Unit)? = null,
     onFilterQueryChange: (String) -> Unit = {},
+    orderedTrackIdsForArtist: (String) -> List<String> = { emptyList() },
+    onArtistPlayNext: (List<String>) -> Unit = {},
+    onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit = {},
     hazeState: HazeState? = null,
 ) {
+    var contextArtistId by remember { mutableStateOf<String?>(null) }
     val listPadding = remember(contentPadding) {
         PaddingValues(
             top = contentPadding.calculateTopPadding(),
@@ -70,10 +79,21 @@ internal fun LibraryArtistsContent(
             }
         },
     ) { artist ->
-        ArtistRow(
-            name = artist.name,
-            artworkPath = artist.artworkPath,
-            onClick = onArtistClick?.let { callback -> { callback(artist) } },
-        )
+        ArtistContextMenu(
+            trackIds = orderedTrackIdsForArtist(artist.id),
+            expanded = contextArtistId == artist.id,
+            onDismiss = { if (contextArtistId == artist.id) contextArtistId = null },
+            onPlayNext = onArtistPlayNext,
+            onBottomSheetRequested = onTrackContextBottomSheet,
+            addToPlaylistOnly = true,
+            hazeState = hazeState,
+        ) {
+            ArtistRow(
+                name = artist.name,
+                artworkPath = artist.artworkPath,
+                onClick = onArtistClick?.let { callback -> { callback(artist) } },
+                onLongClick = { contextArtistId = artist.id },
+            )
+        }
     }
 }

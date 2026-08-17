@@ -159,6 +159,9 @@ internal fun AppDestinationContent(
     onPlaylistTrackRemove: (String, String) -> Unit = { _, _ -> },
     onTrackContextBottomSheet: (me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest) -> Unit = {},
     onArtistPlay: (String, Boolean) -> Unit = { _, _ -> },
+    onArtistPlayNext: (List<String>) -> Unit = {},
+    orderedTrackIdsForArtist: (String) -> List<String> = { emptyList() },
+    onArtistTrackContextBottomSheet: (me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest) -> Unit = {},
     onArtistsFilterQueryChange: (String) -> Unit = {},
     onGenrePlay: (String, Boolean) -> Unit = { _, _ -> },
     onGenrePlayNext: (List<String>) -> Unit = {},
@@ -338,6 +341,9 @@ internal fun AppDestinationContent(
                                 modifier = Modifier.fillMaxSize(),
                                 onArtistClick = { artist -> onIntent(AppIntent.OpenArtistDetails(artist.id)) },
                                 onFilterQueryChange = onArtistsFilterQueryChange,
+                                orderedTrackIdsForArtist = orderedTrackIdsForArtist,
+                                onArtistPlayNext = onArtistPlayNext,
+                                onTrackContextBottomSheet = onArtistTrackContextBottomSheet,
                                 hazeState = hazeState,
                             )
                             AppStackPage.ArtistDetails -> ArtistDetailsContent(
@@ -349,6 +355,8 @@ internal fun AppDestinationContent(
                                 onHeroColorChanged = onAlbumHeroColorChanged,
                                 onPlay = { selectedArtistId?.let { onArtistPlay(it, false) } },
                                 onShuffle = { selectedArtistId?.let { onArtistPlay(it, true) } },
+                                onPlayNext = onArtistPlayNext,
+                                onTrackContextBottomSheet = onArtistTrackContextBottomSheet,
                                 onAlbumClick = { album -> onIntent(AppIntent.OpenAlbumDetails(album.id)) },
                             )
                             AppStackPage.GenreDetails -> GenreDetailsContent(

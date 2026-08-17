@@ -10,6 +10,7 @@ import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.sync.LibraryAlbum
 import me.misa198.airmedy.sync.LibraryArtist
 import me.misa198.airmedy.ui.theme.AirmedyTheme
+import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -67,5 +68,41 @@ class ArtistDetailsContentTest {
         }
 
         composeTestRule.onAllNodesWithTag("artist-detail-album-divider").assertCountEquals(2)
+    }
+
+    @Test
+    fun artistMoreMenuUsesOrderedTracksForPlayNextAndPlaylist() {
+        var nextIds: List<String>? = null
+        var playlistIds: List<String>? = null
+        var addOnly = false
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                ArtistDetailsContent(
+                    uiState = ArtistDetailsUiState(
+                        artist = LibraryArtist("artist", "Muse"),
+                        tracks = listOf(
+                            me.misa198.airmedy.sync.LibraryTrack("first", "First", "Muse"),
+                            me.misa198.airmedy.sync.LibraryTrack("second", "Second", "Muse"),
+                        ),
+                    ),
+                    listState = rememberLazyListState(),
+                    onPlayNext = { nextIds = it },
+                    onTrackContextBottomSheet = { request ->
+                        val playlistRequest = request as TrackContextBottomSheetRequest.Playlist
+                        playlistIds = playlistRequest.trackIds
+                        addOnly = playlistRequest.addOnly
+                    },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Artist options").performClick()
+        composeTestRule.onNodeWithText("Play next").performClick()
+        assertEquals(listOf("first", "second"), nextIds)
+
+        composeTestRule.onNodeWithText("Artist options").performClick()
+        composeTestRule.onNodeWithText("Add to playlist").performClick()
+        assertEquals(listOf("first", "second"), playlistIds)
+        assertEquals(true, addOnly)
     }
 }
