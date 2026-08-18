@@ -28,6 +28,7 @@ enum class AppStackPage {
     SettingsVolumeNormalization,
     SettingsSync,
     SettingsSyncScanner,
+    SettingsIntegration,
     SettingsAbout,
 }
 
@@ -59,6 +60,7 @@ val AppStackPage.destination: AppDestination
         AppStackPage.SettingsVolumeNormalization,
         AppStackPage.SettingsSync,
         AppStackPage.SettingsSyncScanner,
+        AppStackPage.SettingsIntegration,
         AppStackPage.SettingsAbout,
         -> AppDestination.Settings
     }

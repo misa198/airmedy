@@ -16,6 +16,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -58,6 +59,9 @@ import me.misa198.airmedy.player.AndroidPlaybackRuntime
 import me.misa198.airmedy.player.AndroidPlaybackSession
 import me.misa198.airmedy.player.PlaybackService
 import me.misa198.airmedy.player.PlaybackState
+import me.misa198.airmedy.lastfm.AndroidLastFmRuntime
+import me.misa198.airmedy.lastfm.LastFmService
+import me.misa198.airmedy.lastfm.isLastFmAuthCallback
 import kotlin.math.roundToInt
 
 import me.misa198.airmedy.ui.screens.LibraryTracksViewModel
@@ -75,6 +79,7 @@ import me.misa198.airmedy.ui.screens.ComposerDetailsViewModel
 
 class MainActivity : ComponentActivity() {
     private val reconciliationMutex = Mutex()
+    private lateinit var lastFm: LastFmService
     private var systemMusicVolumeState by mutableFloatStateOf(0f)
     private val viewModel: MainViewModel by viewModels {
         MainViewModel.Factory(ThemePreferences(applicationContext))
@@ -168,6 +173,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         AndroidSyncRuntime.initialize(applicationContext)
+        lastFm = AndroidLastFmRuntime.initialize(applicationContext, AndroidSyncRuntime.syncStore())
+        handleLastFmIntent(intent)
         AndroidPlaybackRuntime.initialize(applicationContext, AndroidSyncRuntime.syncStore())
         // Start the service once per app process so it can rebuild the last
         // private playback session before Compose observes its StateFlows.
@@ -179,6 +186,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val lastFmStatus by lastFm.status.collectAsStateWithLifecycle()
             val syncUiState by syncViewModel.uiState.collectAsStateWithLifecycle()
             val tracksUiState by tracksViewModel.uiState.collectAsStateWithLifecycle()
             val artistsUiState by artistsViewModel.uiState.collectAsStateWithLifecycle()
@@ -326,6 +334,15 @@ class MainActivity : ComponentActivity() {
                 onUnpair = syncViewModel::unpair,
                 onSyncScreenVisible = syncViewModel::onSyncScreenVisible,
                 onSyncScreenHidden = syncViewModel::onSyncScreenHidden,
+                lastFmStatus = lastFmStatus,
+                onLastFmConnect = {
+                    lastFm.authorizationUrl()?.let { url ->
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                    }
+                },
+                onLastFmDisconnect = {
+                    preferenceScope.launch { lastFm.disconnect() }
+                },
                 crossfadeSeconds = crossfadeSettings.seconds,
                 lastEnabledCrossfadeSeconds = crossfadeSettings.lastEnabledSeconds,
                 onCrossfadeSecondsChanged = playbackController::setCrossfadeSeconds,
@@ -357,7 +374,10 @@ class MainActivity : ComponentActivity() {
                 onShuffleChange = playbackController::setShuffle,
                 onRepeatModeChange = playbackController::setRepeatMode,
                 onFavoriteToggle = { trackId, favorite ->
-                    preferenceScope.launch { AndroidSyncRuntime.syncStore().setFavorite(trackId, favorite) }
+                    preferenceScope.launch {
+                        AndroidSyncRuntime.syncStore().setFavorite(trackId, favorite)
+                        lastFm.setLoved(trackId, favorite)
+                    }
                 },
                 onAlbumAddToFavorites = { trackIds ->
                     preferenceScope.launch {
@@ -379,6 +399,20 @@ class MainActivity : ComponentActivity() {
                     updateSystemBarAppearance(darkTheme, visible)
                 },
             )
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleLastFmIntent(intent)
+    }
+
+    private fun handleLastFmIntent(intent: Intent?) {
+        val uri = intent?.data ?: return
+        if (isLastFmAuthCallback(uri.scheme, uri.host, uri.path, uri.getQueryParameter("token"))) {
+            intent.data = null
+            lifecycleScope.launch { lastFm.completeAuthorization(uri) }
         }
     }
 

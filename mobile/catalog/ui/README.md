@@ -3,6 +3,14 @@
 This catalog documents the Android UI owned by `mobile/androidApp`. It does not
 describe the desktop Vue UI or future iOS UI.
 
+The Settings stack includes an Integration page for Android's independent
+Last.fm account. It presents connected username/status and Connect/Disconnect
+actions, launches browser authorization through the activity, and consumes the
+`airmedy://lastfm/auth` callback. When connected, its hero fetches and caches
+the largest available Last.fm profile image and displays it as a rounded-square
+avatar. Missing or failed avatar loads retain the Last.fm hero icon without
+affecting the connected session.
+
 ## App shell and navigation
 
 - `MainActivity` is locked to portrait in the Android manifest. The mobile

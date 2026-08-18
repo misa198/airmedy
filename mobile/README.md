@@ -125,6 +125,24 @@ The repository-root `task verify` command covers desktop Go/Vue code only.
 Mobile changes must run the relevant Gradle build and tests above, plus any
 feature-specific Android host or UI test task.
 
+## Last.fm
+
+Android authenticates independently from desktop through the browser and the
+`airmedy://lastfm/auth` callback. Supply its dedicated API credentials in the
+Git-ignored `mobile/local.properties` file (environment variables remain the CI
+fallback):
+
+```properties
+LASTFM_API_KEY=your_key
+LASTFM_API_SECRET=your_secret
+```
+
+Builds without them remain usable, but the Last.fm Connect action is disabled.
+
+The session key is encrypted with Android Keystore before DataStore persistence.
+Now Playing, scrobbling, and individual favorite love/unlove requests are sent
+directly from Android; they never depend on a paired desktop.
+
 ## Playlist reconciliation
 
 Playlist reconciliation arrives on a separate MQTT stream from Library Sync

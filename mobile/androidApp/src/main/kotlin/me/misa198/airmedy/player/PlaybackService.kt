@@ -41,6 +41,9 @@ import kotlinx.coroutines.sync.withLock
 import me.misa198.airmedy.MainActivity
 import me.misa198.airmedy.R
 import me.misa198.airmedy.sync.AndroidSyncRuntime
+import me.misa198.airmedy.lastfm.AndroidLastFmRuntime
+import me.misa198.airmedy.lastfm.LastFmService
+import me.misa198.airmedy.lastfm.LastFmTrack
 
 /** Owns Android transport; queue semantics are delegated to sharedLogic. */
 class PlaybackService : Service() {
@@ -54,6 +57,7 @@ class PlaybackService : Service() {
     private lateinit var sessionStore: PlaybackSessionStore
     private lateinit var playbackPreferences: PlaybackPreferences
     private lateinit var normalizationPreferences: NormalizationPreferences
+    private lateinit var lastFm: LastFmService
     private var normalizationSettings = NormalizationSettings()
     private var preferencesJob: Job? = null
     private lateinit var audioManager: AudioManager
@@ -68,6 +72,7 @@ class PlaybackService : Service() {
     override fun onCreate() {
         super.onCreate()
         AndroidPlaybackRuntime.initialize(applicationContext, AndroidSyncRuntime.syncStore())
+        lastFm = AndroidLastFmRuntime.initialize(applicationContext, AndroidSyncRuntime.syncStore())
         sessionStore = PlaybackSessionStore(applicationContext)
         playbackPreferences = PlaybackPreferences(applicationContext)
         normalizationPreferences = NormalizationPreferences(applicationContext)
@@ -303,6 +308,7 @@ class PlaybackService : Service() {
                     publishNowPlaying(item, AndroidMediaPlaybackState.STATE_PLAYING, preparedDecoder.positionMs(), preparedDecoder.durationMs())
                 }
                 decoder = preparedDecoder
+                lastFm.startPlayback(item.trackId, preparedDecoder.positionMs())
             } catch (error: Throwable) {
                 preparedDecoder.close()
                 throw error
@@ -329,6 +335,7 @@ class PlaybackService : Service() {
                 it.pause()
                 state.value = PlaybackState.Paused(item, positionMs, it.durationMs())
                 publishNowPlaying(item, AndroidMediaPlaybackState.STATE_PAUSED, positionMs, it.durationMs())
+                lastFm.startPlayback(item.trackId, positionMs)
             }
             preloadNext()
             showForeground(item)
@@ -414,6 +421,7 @@ class PlaybackService : Service() {
         val targetPositionMs = clampSeekPosition(requestedPositionMs, durationMs)
         clearArtworkCrossfade()
         decoder?.seekTo(targetPositionMs) ?: return
+        lastFm.seek(targetPositionMs)
         if (playing) {
             state.value = PlaybackState.Playing(item, targetPositionMs, durationMs)
             publishNowPlaying(item, AndroidMediaPlaybackState.STATE_PLAYING, targetPositionMs, durationMs)
@@ -523,6 +531,7 @@ class PlaybackService : Service() {
         val positionMs = currentDecoder.positionMs()
         val durationMs = currentDecoder.durationMs()
         state.value = PlaybackState.Playing(incoming, positionMs, durationMs)
+        lastFm.startPlayback(incoming.trackId, positionMs)
         publishNowPlaying(incoming, AndroidMediaPlaybackState.STATE_PLAYING, positionMs, durationMs)
         updateNotification()
         // During a crossfade both native slots are live (incoming + outgoing).
@@ -653,7 +662,17 @@ class PlaybackService : Service() {
         if (positionMs == current.positionMs) return
         state.value = current.copy(positionMs = positionMs)
         mediaSession.setPlaybackState(androidPlaybackState(AndroidMediaPlaybackState.STATE_PLAYING, positionMs))
+        lastFm.reportPlayback(current.item.toLastFmTrack(), positionMs, current.durationMs)
     }
+
+    private fun PlaybackItem.toLastFmTrack() = LastFmTrack(
+        id = trackId,
+        title = title,
+        artist = artist,
+        album = album,
+        albumArtist = albumArtist,
+        trackNumber = trackNumber,
+    )
 
     private fun androidPlaybackState(state: Int, positionMs: Long): AndroidMediaPlaybackState =
         AndroidMediaPlaybackState.Builder()

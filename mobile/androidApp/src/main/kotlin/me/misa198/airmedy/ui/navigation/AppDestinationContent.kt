@@ -41,10 +41,12 @@ import me.misa198.airmedy.ui.screens.HomeSampleDetailContent
 import me.misa198.airmedy.ui.screens.LibraryContent
 import me.misa198.airmedy.ui.screens.PlaceholderContent
 import me.misa198.airmedy.ui.screens.SettingsContent
+import me.misa198.airmedy.ui.screens.IntegrationContent
 import me.misa198.airmedy.ui.screens.PlaybackSettingsContent
 import me.misa198.airmedy.ui.screens.VolumeNormalizationContent
 import me.misa198.airmedy.ui.screens.SongTransitionContent
 import me.misa198.airmedy.ui.screens.SyncContent
+import me.misa198.airmedy.lastfm.LastFmStatus
 import me.misa198.airmedy.ui.screens.SyncScannerContent
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
@@ -185,6 +187,9 @@ internal fun AppDestinationContent(
     onUnpair: () -> Unit,
     onSyncScreenVisible: () -> Unit,
     onSyncScreenHidden: () -> Unit,
+    lastFmStatus: LastFmStatus = LastFmStatus(),
+    onLastFmConnect: () -> Unit = {},
+    onLastFmDisconnect: () -> Unit = {},
     crossfadeSeconds: Int = 0,
     lastEnabledCrossfadeSeconds: Int = 4,
     onCrossfadeSecondsChanged: (Int) -> Unit = {},
@@ -318,6 +323,12 @@ internal fun AppDestinationContent(
                                 onQrScanned = onPairingQrScanned,
                                 modifier = Modifier.padding(contentPadding),
                             )
+                            AppStackPage.SettingsIntegration -> IntegrationContent(
+                                status = lastFmStatus,
+                                onConnect = onLastFmConnect,
+                                onDisconnect = onLastFmDisconnect,
+                                modifier = Modifier.padding(contentPadding),
+                            )
                             AppStackPage.SettingsAbout -> AboutContent(
                                 modifier = Modifier.padding(contentPadding),
                                 onOpenExternalUrl = { url ->
@@ -334,6 +345,9 @@ internal fun AppDestinationContent(
                                 },
                                 onSyncSelected = {
                                     onIntent(AppIntent.OpenPage(AppStackPage.SettingsSync))
+                                },
+                                onIntegrationSelected = {
+                                    onIntent(AppIntent.OpenPage(AppStackPage.SettingsIntegration))
                                 },
                                 onAboutSelected = {
                                     onIntent(AppIntent.OpenPage(AppStackPage.SettingsAbout))

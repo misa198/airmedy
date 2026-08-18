@@ -35,6 +35,17 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="lastfm"
+                    android:path="/auth"
+                    android:scheme="airmedy" />
+            </intent-filter>
         </activity>
     </application>
 

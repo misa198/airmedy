@@ -14,6 +14,7 @@ internal fun SettingsContent(
     onAppearanceSelected: () -> Unit,
     onPlaybackSelected: () -> Unit,
     onSyncSelected: () -> Unit,
+    onIntegrationSelected: () -> Unit,
     onAboutSelected: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -35,7 +36,11 @@ internal fun SettingsContent(
                     leadingSymbol = MaterialSymbols.Subwoofer,
                     onClick = onPlaybackSelected,
                 ),
-                ActionListItem(R.string.settings_integration, leadingSymbol = MaterialSymbols.Power),
+                ActionListItem(
+                    R.string.settings_integration,
+                    leadingSymbol = MaterialSymbols.Power,
+                    onClick = onIntegrationSelected,
+                ),
                 ActionListItem(
                     R.string.settings_about,
                     leadingSymbol = MaterialSymbols.Info,

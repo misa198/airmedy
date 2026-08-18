@@ -50,6 +50,15 @@
     <string name="playback_crossfade_maximum">12s</string>
     <string name="playback_blend_artwork_during_crossfade">Blend artwork and background</string>
     <string name="settings_integration">Integration</string>
+    <string name="integration_title">Integration</string>
+    <string name="lastfm_title">Last.fm</string>
+    <string name="lastfm_description">Scrobble your plays and sync favorite tracks with Last.fm.</string>
+    <string name="lastfm_connected_as">Connected as %1$s</string>
+    <string name="lastfm_connect">Connect</string>
+    <string name="lastfm_connecting">Connecting…</string>
+    <string name="lastfm_disconnect">Disconnect</string>
+    <string name="lastfm_error">Could not connect to Last.fm. Try again.</string>
+    <string name="lastfm_not_configured">Last.fm credentials are not configured for this build.</string>
     <string name="settings_about">About</string>
     <string name="about_title">About</string>
     <string name="about_description">A modern local music player</string>

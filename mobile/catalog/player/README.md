@@ -6,6 +6,12 @@ Android playback is independent from the desktop player. `PlaybackController`
 is the Android-only command boundary; Compose UI supplies a synced track-ID
 queue and observes its `StateFlow<PlaybackState>`.
 
+`PlaybackService` also feeds rendered position into the shared
+`LastFmScrobbleTracker`. Each playback instance reports Now Playing after three
+seconds and scrobbles once at 50% or four minutes, provided the track is at
+least 30 seconds long. Seeking adjusts the recorded start timestamp; Last.fm
+network work is best-effort and never blocks the playback ticker.
+
 `PlaybackService` owns audio focus, the platform `MediaSession`, notification,
 and the JNI `FfmpegDecoder`. The native decoder opens the private synced file,
 uses FFmpeg for demuxing and decoding, converts samples through

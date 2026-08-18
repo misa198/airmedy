@@ -1,4 +1,9 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
+
+val localProperties = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.isFile }?.inputStream()?.use { load(it) }
+}
 
 plugins {
     alias(libs.plugins.androidApplication)
@@ -57,6 +62,13 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "0.0.1"
+
+        val lastFmApiKey = localProperties.getProperty("LASTFM_API_KEY")
+            ?: providers.environmentVariable("LASTFM_API_KEY").getOrElse("")
+        val lastFmApiSecret = localProperties.getProperty("LASTFM_API_SECRET")
+            ?: providers.environmentVariable("LASTFM_API_SECRET").getOrElse("")
+        buildConfigField("String", "LASTFM_API_KEY", "\"${lastFmApiKey.replace("\"", "\\\"")}\"")
+        buildConfigField("String", "LASTFM_API_SECRET", "\"${lastFmApiSecret.replace("\"", "\\\"")}\"")
 
         externalNativeBuild {
             cmake {

@@ -4,7 +4,12 @@ import android.content.Context
 import android.util.Log
 import java.io.File
 import kotlinx.coroutines.flow.first
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonPrimitive
 import me.misa198.airmedy.sync.AndroidLibrarySyncStore
+import me.misa198.airmedy.sync.metadataObject
 
 /** Application-scoped composition root for Android playback. */
 internal object AndroidPlaybackRuntime {
@@ -30,7 +35,21 @@ internal object AndroidPlaybackRuntime {
                         ?.takeIf(File::isFile)
                         ?.absolutePath
                     Log.d(PlaybackLogTag, "Resolved audio id=$trackId path=${audio.absolutePath} artwork=${artwork != null}")
-                    PlaybackItem(track.id, track.title, track.artists, audio.absolutePath, artwork, track.albumId, syncStore.analysis(track.id))
+                    val metadata = track.metadataObject()
+                    fun firstName(key: String): String = ((metadata?.get(key) as? JsonArray)?.firstOrNull() as? JsonObject)
+                        ?.get("name")?.jsonPrimitive?.contentOrNull.orEmpty()
+                    PlaybackItem(
+                        trackId = track.id,
+                        title = track.title,
+                        artist = firstName("artists").ifBlank { track.artists.substringBefore(",").trim() },
+                        audioPath = audio.absolutePath,
+                        artworkPath = artwork,
+                        albumId = track.albumId,
+                        analysis = syncStore.analysis(track.id),
+                        album = track.album,
+                        albumArtist = firstName("album_artists"),
+                        trackNumber = track.trackNumber,
+                    )
                 }
             }
         }

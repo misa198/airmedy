@@ -85,6 +85,7 @@ import me.misa198.airmedy.player.ArtworkCrossfadeTransition
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.player.RepeatMode
 import me.misa198.airmedy.sync.LibraryTrack
+import me.misa198.airmedy.lastfm.LastFmStatus
 
 internal fun shouldShowHeaderBlur(
     isContentScrolled: Boolean,
@@ -171,6 +172,9 @@ internal fun App(
     onUnpair: () -> Unit = {},
     onSyncScreenVisible: () -> Unit = {},
     onSyncScreenHidden: () -> Unit = {},
+    lastFmStatus: LastFmStatus = LastFmStatus(),
+    onLastFmConnect: () -> Unit = {},
+    onLastFmDisconnect: () -> Unit = {},
     crossfadeSeconds: Int = 0,
     lastEnabledCrossfadeSeconds: Int = 4,
     onCrossfadeSecondsChanged: (Int) -> Unit = {},
@@ -448,6 +452,9 @@ internal fun App(
                 onUnpair = onUnpair,
                 onSyncScreenVisible = onSyncScreenVisible,
                 onSyncScreenHidden = onSyncScreenHidden,
+                lastFmStatus = lastFmStatus,
+                onLastFmConnect = onLastFmConnect,
+                onLastFmDisconnect = onLastFmDisconnect,
                 crossfadeSeconds = crossfadeSeconds,
                 lastEnabledCrossfadeSeconds = lastEnabledCrossfadeSeconds,
                 onCrossfadeSecondsChanged = onCrossfadeSecondsChanged,
