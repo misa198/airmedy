@@ -24,6 +24,7 @@ import me.misa198.airmedy.ui.components.ComposerContextMenu
 import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import me.misa198.airmedy.sync.LibraryComposer
 import dev.chrisbanes.haze.HazeState
+import me.misa198.airmedy.player.PlaybackQueueSnapshot
 
 @Composable
 internal fun LibraryComposersContent(
@@ -35,8 +36,10 @@ internal fun LibraryComposersContent(
     onFilterQueryChange: (String) -> Unit = {},
     orderedTrackIdsForComposer: (String) -> List<String> = { emptyList() },
     onComposerPlayNext: (List<String>) -> Unit = {},
+    onComposerAddToQueue: (List<String>) -> Unit = {},
     onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit = {},
     hazeState: HazeState? = null,
+    playbackQueue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
 ) {
     var contextComposerId by remember { mutableStateOf<String?>(null) }
     val listPadding = remember(contentPadding) {
@@ -90,9 +93,11 @@ internal fun LibraryComposersContent(
             expanded = contextComposerId == composer.id,
             onDismiss = { if (contextComposerId == composer.id) contextComposerId = null },
             onPlayNext = onComposerPlayNext,
+            onAddToQueue = onComposerAddToQueue,
             onBottomSheetRequested = onTrackContextBottomSheet,
             addToPlaylistOnly = true,
             hazeState = hazeState,
+            playbackQueue = playbackQueue,
         ) {
             ComposerRow(
                 name = composer.name,

@@ -15,6 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
 import me.misa198.airmedy.R
+import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.sync.LibraryAlbum
 import me.misa198.airmedy.ui.components.AlbumRow
 import me.misa198.airmedy.ui.components.ArtworkHeroBackdrop
@@ -44,8 +45,10 @@ internal fun ArtistDetailsContent(
     onPlay: () -> Unit = {},
     onShuffle: () -> Unit = {},
     onPlayNext: (List<String>) -> Unit = {},
+    onAddToQueue: (List<String>) -> Unit = {},
     onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit = {},
     onAlbumClick: (LibraryAlbum) -> Unit = {},
+    playbackQueue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
 ) {
     val artist = uiState.artist
     if (artist == null) {
@@ -70,9 +73,11 @@ internal fun ArtistDetailsContent(
                     expanded = menuExpanded,
                     onDismiss = { menuExpanded = false },
                     onPlayNext = onPlayNext,
+                    onAddToQueue = onAddToQueue,
                     onBottomSheetRequested = onTrackContextBottomSheet,
                     addToPlaylistOnly = true,
                     hazeState = hazeState,
+                    playbackQueue = playbackQueue,
                 ) {
                     DetailHero(
                     title = artist.name,

@@ -24,6 +24,7 @@ import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.ui.components.GenreContextMenu
 import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import dev.chrisbanes.haze.HazeState
+import me.misa198.airmedy.player.PlaybackQueueSnapshot
 
 @Composable
 internal fun LibraryGenresContent(
@@ -35,8 +36,10 @@ internal fun LibraryGenresContent(
     onFilterQueryChange: (String) -> Unit = {},
     orderedTrackIdsForGenre: (String) -> List<String> = { emptyList() },
     onGenrePlayNext: (List<String>) -> Unit = {},
+    onGenreAddToQueue: (List<String>) -> Unit = {},
     onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit = {},
     hazeState: HazeState? = null,
+    playbackQueue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
 ) {
     var contextGenreId by remember { mutableStateOf<String?>(null) }
     val listPadding = remember(contentPadding) {
@@ -90,9 +93,11 @@ internal fun LibraryGenresContent(
             expanded = contextGenreId == genre.id,
             onDismiss = { if (contextGenreId == genre.id) contextGenreId = null },
             onPlayNext = onGenrePlayNext,
+            onAddToQueue = onGenreAddToQueue,
             onBottomSheetRequested = onTrackContextBottomSheet,
             addToPlaylistOnly = true,
             hazeState = hazeState,
+            playbackQueue = playbackQueue,
         ) {
             GenreRow(
                 name = genre.name,

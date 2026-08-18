@@ -33,7 +33,7 @@ internal fun AlbumContextMenu(
     anchor: @Composable () -> Unit,
 ) {
     val trackIds = remember(tracks) { tracks.map(LibraryTrack::id) }
-    val showAddToQueue = remember(trackIds, playbackQueue.activeTrackIds) { albumContextShowsAddToQueue(trackIds, playbackQueue) }
+    val showAddToQueue = remember(trackIds, playbackQueue.activeTrackIds) { collectionContextShowsAddToQueue(trackIds, playbackQueue) }
     val dismissAll = {
         onDismiss()
     }
@@ -64,5 +64,5 @@ internal fun AlbumContextMenu(
     }
 }
 
-internal fun albumContextShowsAddToQueue(trackIds: List<String>, queue: PlaybackQueueSnapshot): Boolean =
+internal fun collectionContextShowsAddToQueue(trackIds: List<String>, queue: PlaybackQueueSnapshot): Boolean =
     trackIds.isEmpty() || trackIds.any { it !in queue.activeTrackIds }

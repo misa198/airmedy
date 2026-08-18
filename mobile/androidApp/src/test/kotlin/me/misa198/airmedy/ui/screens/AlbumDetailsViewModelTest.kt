@@ -4,7 +4,7 @@ import me.misa198.airmedy.sync.LibraryAlbum
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.sync.metadataObject
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
-import me.misa198.airmedy.ui.components.albumContextShowsAddToQueue
+import me.misa198.airmedy.ui.components.collectionContextShowsAddToQueue
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -76,9 +76,9 @@ class AlbumDetailsViewModelTest {
     }
 
     @Test
-    fun albumQueueActionStaysAvailableUntilEveryTrackIsAlreadyQueued() {
-        assertEquals(true, albumContextShowsAddToQueue(emptyList(), PlaybackQueueSnapshot()))
-        assertEquals(true, albumContextShowsAddToQueue(listOf("one", "two"), PlaybackQueueSnapshot(activeTrackIds = listOf("one"))))
-        assertEquals(false, albumContextShowsAddToQueue(listOf("one", "two"), PlaybackQueueSnapshot(activeTrackIds = listOf("one", "two"))))
+    fun collectionQueueActionStaysAvailableUntilEveryTrackIsAlreadyQueued() {
+        assertEquals(true, collectionContextShowsAddToQueue(emptyList(), PlaybackQueueSnapshot()))
+        assertEquals(true, collectionContextShowsAddToQueue(listOf("one", "two"), PlaybackQueueSnapshot(activeTrackIds = listOf("one"))))
+        assertEquals(false, collectionContextShowsAddToQueue(listOf("one", "two"), PlaybackQueueSnapshot(activeTrackIds = listOf("one", "two"))))
     }
 }

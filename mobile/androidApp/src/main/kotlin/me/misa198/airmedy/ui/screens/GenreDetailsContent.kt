@@ -15,6 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
 import me.misa198.airmedy.R
+import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.sync.LibraryAlbum
 import me.misa198.airmedy.ui.components.AlbumRow
 import me.misa198.airmedy.ui.components.ArtworkHeroBackdrop
@@ -43,8 +44,10 @@ internal fun GenreDetailsContent(
     onPlay: () -> Unit = {},
     onShuffle: () -> Unit = {},
     onPlayNext: (List<String>) -> Unit = {},
+    onAddToQueue: (List<String>) -> Unit = {},
     onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit = {},
     onAlbumClick: (LibraryAlbum) -> Unit = {},
+    playbackQueue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
 ) {
     val genre = uiState.genre
     if (genre == null) {
@@ -69,8 +72,10 @@ internal fun GenreDetailsContent(
                     expanded = menuExpanded,
                     onDismiss = { menuExpanded = false },
                     onPlayNext = onPlayNext,
+                    onAddToQueue = onAddToQueue,
                     onBottomSheetRequested = onTrackContextBottomSheet,
                     hazeState = hazeState,
+                    playbackQueue = playbackQueue,
                 ) {
                     DetailHero(
                     title = genre.name,

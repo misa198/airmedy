@@ -23,6 +23,7 @@ import me.misa198.airmedy.ui.components.LibraryTextFilter
 import me.misa198.airmedy.ui.components.MaterialSymbols
 import dev.chrisbanes.haze.HazeState
 import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
+import me.misa198.airmedy.player.PlaybackQueueSnapshot
 
 @Composable
 internal fun LibraryArtistsContent(
@@ -34,8 +35,10 @@ internal fun LibraryArtistsContent(
     onFilterQueryChange: (String) -> Unit = {},
     orderedTrackIdsForArtist: (String) -> List<String> = { emptyList() },
     onArtistPlayNext: (List<String>) -> Unit = {},
+    onArtistAddToQueue: (List<String>) -> Unit = {},
     onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit = {},
     hazeState: HazeState? = null,
+    playbackQueue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
 ) {
     var contextArtistId by remember { mutableStateOf<String?>(null) }
     val listPadding = remember(contentPadding) {
@@ -92,9 +95,11 @@ internal fun LibraryArtistsContent(
             expanded = contextArtistId == artist.id,
             onDismiss = { if (contextArtistId == artist.id) contextArtistId = null },
             onPlayNext = onArtistPlayNext,
+            onAddToQueue = onArtistAddToQueue,
             onBottomSheetRequested = onTrackContextBottomSheet,
             addToPlaylistOnly = true,
             hazeState = hazeState,
+            playbackQueue = playbackQueue,
         ) {
             ArtistRow(
                 name = artist.name,
