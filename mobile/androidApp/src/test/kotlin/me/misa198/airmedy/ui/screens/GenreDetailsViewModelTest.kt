@@ -8,7 +8,7 @@ import org.junit.Test
 
 class GenreDetailsViewModelTest {
     @Test
-    fun detailsMatchManifestGenreShapesAndSortAlbumsAndTracks() {
+    fun detailsMatchManifestGenreObjectsAndSortAlbumsAndTracks() {
         val state = GenreDetailsUiState(
             allGenres = listOf(LibraryGenre("electronic", "Electronic")),
             allAlbums = listOf(
@@ -17,9 +17,9 @@ class GenreDetailsViewModelTest {
             ),
             tracks = listOf(
                 track("z-two", "z", "{\"genres\":[{\"id\":\"electronic\",\"name\":\"Electronic\"}]}", disc = 1, number = 2, order = 2),
-                track("a-string", "a", "{\"raw_genre_names\":\"Electronic / Ambient\"}", disc = 1, number = 2, order = 2),
-                track("z-one", "z", "{\"genre\":\"Electronic\"}", disc = 1, number = 1, order = 1),
-                track("a-one", "a", "{\"genres\":[\"Electronic\"]}", disc = 1, number = 1, order = 1),
+                track("a-raw", "a", "{\"raw_genre_names\":\"Electronic / Ambient\"}", disc = 1, number = 2, order = 2),
+                track("z-raw", "z", "{\"genre\":\"Electronic\"}", disc = 1, number = 1, order = 1),
+                track("a-one", "a", "{\"genres\":[{\"id\":\"electronic\",\"name\":\"Electronic\"}]}", disc = 1, number = 1, order = 1),
                 track("other", "a", "{\"genres\":[\"Ambient\"]}", disc = 1, number = 3, order = 3),
             ),
         )
@@ -28,7 +28,7 @@ class GenreDetailsViewModelTest {
 
         assertEquals("Electronic", details.genre?.name)
         assertEquals(listOf("a", "z"), details.albums.map { it.id })
-        assertEquals(listOf("a-one", "a-string", "z-one", "z-two"), details.tracks.map { it.id })
+        assertEquals(listOf("a-one", "z-two"), details.tracks.map { it.id })
     }
 
     @Test

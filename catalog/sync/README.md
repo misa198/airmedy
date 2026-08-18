@@ -176,7 +176,9 @@ The nested album projection preserves all album fields, including canonical
 `sort_title`, timestamps, and normalization metadata, so mobile album-name and
 date-added sorting use the same data as the desktop library. Batch manifests
 also preserve ordered album artists, genres, and composers as their canonical
-objects rather than relying on raw-name fallbacks.
+objects. Mobile derives its entity lists and genre/composer membership exclusively
+from those objects; raw-name fields remain display metadata and are never re-split
+or inferred on mobile.
 `lyrics` is keyed by track ID and contains only the
 desktop-effective `content`/`source` snapshot for each track (not raw metadata
 and provider alternatives). `analysis` is keyed by track

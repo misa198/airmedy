@@ -10,6 +10,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -97,6 +98,7 @@ fun TrackRow(
     artist: String,
     modifier: Modifier = Modifier,
     artworkPath: String? = null,
+    contentPadding: PaddingValues = PaddingValues(start = 24.dp, top = 6.dp, end = 8.dp, bottom = 6.dp),
     onClick: (() -> Unit)? = null,
     onMoreClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
@@ -121,7 +123,7 @@ fun TrackRow(
         modifier = modifier
             .fillMaxWidth()
             .then(clickModifier)
-            .padding(top = 6.dp, end = 8.dp, bottom = 6.dp, start = 24.dp),
+            .padding(contentPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // 1. Artwork

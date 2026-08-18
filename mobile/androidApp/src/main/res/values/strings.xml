@@ -82,6 +82,12 @@
     <string name="library_tracks">Tracks</string>
     <string name="library_genres">Genres</string>
     <string name="library_composers">Composers</string>
+    <string name="library_search">Search</string>
+    <string name="library_search_placeholder">Search your library</string>
+    <string name="library_search_empty_title">Search your library</string>
+    <string name="library_search_empty_description">Enter a title, artist, album, playlist, or composer.</string>
+    <string name="library_search_no_results_title">No results found</string>
+    <string name="library_search_no_results_description">Try a different search.</string>
     <string name="filter_placeholder_search">Search...</string>
     <string name="text_field_clear">Clear text</string>
     <string name="filter_no_match_description">Try a different filter.</string>

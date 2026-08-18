@@ -98,31 +98,7 @@ private fun LibraryTrack.composerAlbumIdentifier(): String? = albumId.takeIf(Str
 
 private fun LibraryTrack.composerIds(): Set<String> {
     val root = metadataObject() ?: return emptySet()
-    val ids = linkedSetOf<String>()
-
-    fun addComposer(rawId: String?, rawName: String) {
-        val name = rawName.trim()
-        val id = rawId?.trim()?.takeIf(String::isNotBlank) ?: name.lowercase()
-        if (name.isNotBlank()) ids += id
-    }
-
-    fun parseElement(element: kotlinx.serialization.json.JsonElement?) {
-        when (element) {
-            is JsonArray -> element.forEach(::parseElement)
-            is JsonObject -> addComposer(
-                rawId = (element["id"] as? JsonPrimitive)?.content,
-                rawName = (element["name"] as? JsonPrimitive)?.content
-                    ?: (element["title"] as? JsonPrimitive)?.content.orEmpty(),
-            )
-            is JsonPrimitive -> element.content.split(',', ';', '/').forEach { name -> addComposer(null, name) }
-            else -> Unit
-        }
-    }
-
-    parseElement(root["composers"])
-    parseElement(root["composer"])
-    parseElement(root["raw_composer_names"])
-    parseElement(root["raw_composers"])
-    parseElement(root["composer_names"])
-    return ids
+    return (root["composers"] as? JsonArray).orEmpty().mapNotNull { composer ->
+        (composer as? JsonObject)?.get("id")?.let { it as? JsonPrimitive }?.content?.takeIf(String::isNotBlank)
+    }.toSet()
 }

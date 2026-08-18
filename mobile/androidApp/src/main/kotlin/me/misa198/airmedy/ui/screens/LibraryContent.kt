@@ -45,6 +45,7 @@ internal fun LibraryContent(
     onTrackFavoriteToggle: (LibraryTrack, Boolean) -> Unit = { _, _ -> },
     onTrackAlbumClick: (LibraryTrack) -> Unit = {},
     onTrackArtistClick: (TrackContextArtist) -> Unit = {},
+    onSearchSelected: (() -> Unit)? = null,
     onArtistsSelected: (() -> Unit)? = null,
     onAlbumsSelected: (() -> Unit)? = null,
     onTracksSelected: (() -> Unit)? = null,
@@ -63,6 +64,12 @@ internal fun LibraryContent(
         item {
             ActionList(
                 items = listOf(
+                    ActionListItem(
+                        labelRes = R.string.library_search,
+                        leadingSymbol = MaterialSymbols.Search,
+                        leadingIconTint = colors.primary,
+                        onClick = onSearchSelected,
+                    ),
                     ActionListItem(
                         labelRes = R.string.library_artists,
                         leadingSymbol = MaterialSymbols.People,

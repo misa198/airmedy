@@ -41,6 +41,8 @@ import me.misa198.airmedy.ui.components.StackPageLayout
 import me.misa198.airmedy.ui.screens.AboutContent
 import me.misa198.airmedy.ui.screens.AppearanceContent
 import me.misa198.airmedy.ui.screens.LibraryContent
+import me.misa198.airmedy.ui.screens.LibrarySearchContent
+import me.misa198.airmedy.ui.screens.LibrarySearchUiState
 import me.misa198.airmedy.ui.screens.PlaceholderContent
 import me.misa198.airmedy.ui.screens.SettingsContent
 import me.misa198.airmedy.ui.screens.IntegrationContent
@@ -140,9 +142,12 @@ internal fun AppDestinationContent(
     genresUiState: LibraryGenresUiState = LibraryGenresUiState(),
     composersUiState: LibraryComposersUiState = LibraryComposersUiState(),
     playlistsUiState: LibraryPlaylistsUiState = LibraryPlaylistsUiState(),
+    searchUiState: LibrarySearchUiState = LibrarySearchUiState(),
     onSortOptionSelected: (TrackSortOption) -> Unit = {},
     onToggleSortOrder: () -> Unit = {},
     onTrackClick: (String) -> Unit = {},
+    onSearchQueryChange: (String) -> Unit = {},
+    onSearchTrackClick: (String) -> Unit = {},
     onTracksPlayAll: (Boolean) -> Unit = {},
     onTracksFilterQueryChange: (String) -> Unit = {},
     onRecentTrackClick: (String) -> Unit = {},
@@ -336,7 +341,7 @@ internal fun AppDestinationContent(
                             )
                             AppStackPage.SettingsSyncScanner -> SyncScannerContent(
                                 onQrScanned = onPairingQrScanned,
-                                modifier = settingsPageModifier,
+                                modifier = Modifier.padding(contentPadding),
                             )
                             AppStackPage.SettingsIntegration -> IntegrationContent(
                                 status = lastFmStatus,
@@ -371,6 +376,24 @@ internal fun AppDestinationContent(
                             }
                         }
                         AppDestination.Library -> when (currentPage.page) {
+                            AppStackPage.LibrarySearch -> LibrarySearchContent(
+                                uiState = searchUiState,
+                                contentPadding = contentPadding,
+                                onQueryChange = onSearchQueryChange,
+                                onTrackClick = onSearchTrackClick,
+                                onAlbumClick = { onIntent(AppIntent.OpenAlbumDetails(it)) },
+                                onArtistClick = { onIntent(AppIntent.OpenArtistDetails(it)) },
+                                onPlaylistClick = { onIntent(AppIntent.OpenPlaylistDetails(it)) },
+                                onComposerClick = { onIntent(AppIntent.OpenComposerDetails(it)) },
+                                playbackQueue = playbackQueue,
+                                onTrackPlayNext = { onTrackPlayNext(it.id) },
+                                onTrackAddToQueue = { onTrackAddToQueue(it.id) },
+                                onTrackFavoriteToggle = { track, favorite -> onTrackFavoriteToggle(track.id, favorite) },
+                                onTrackContextBottomSheet = onTrackContextBottomSheet,
+                                onAlbumPlayNext = onAlbumPlayNext,
+                                onAlbumAddToQueue = onAlbumAddToQueue,
+                                onAlbumAddToFavorites = onAlbumAddToFavorites,
+                            )
                             AppStackPage.LibraryArtists -> LibraryArtistsContent(
                                 uiState = artistsUiState,
                                 listState = artistsListState,
@@ -560,6 +583,9 @@ internal fun AppDestinationContent(
                                 onTrackAlbumClick = { track -> onIntent(AppIntent.OpenAlbumDetails(track.albumId)) },
                                 onTrackArtistClick = { artist -> onIntent(AppIntent.OpenArtistDetails(artist.id)) },
                                 onTrackContextBottomSheet = onTrackContextBottomSheet,
+                                onSearchSelected = {
+                                    onIntent(AppIntent.OpenPage(AppStackPage.LibrarySearch))
+                                },
                                 onTracksSelected = {
                                     onIntent(AppIntent.OpenPage(AppStackPage.LibraryTracks))
                                 },

@@ -20,18 +20,16 @@ class LibraryGenreMapperTest {
     }
 
     @Test
-    fun parsesGenresFromObjectsWithoutIdOrFromStringsOrRawGenreNames() {
+    fun usesOnlyDesktopNormalizedGenreObjects() {
         val genres = libraryGenresFrom(
             tracks = listOf(
-                row("""{"genres":[{"name":"Electronic"}]}"""),
-                row("""{"genres":["Ambient", "Chill"]}"""),
-                row("""{"genre":"Jazz / Blues"}"""),
-                row("""{"raw_genre_names":"Classical, Instrumental"}"""),
+                row("""{"genres":[{"id":"electronic-ambient","name":"Electronic / Ambient"}],"raw_genre_names":"Electronic / Ambient"}"""),
+                row("""{"genre":"Jazz / Blues","raw_genre_names":"Classical, Instrumental"}"""),
             ),
         )
 
-        assertEquals(listOf("electronic", "ambient", "chill", "jazz", "blues", "classical", "instrumental"), genres.map { it.id })
-        assertEquals(listOf("Electronic", "Ambient", "Chill", "Jazz", "Blues", "Classical", "Instrumental"), genres.map { it.name })
+        assertEquals(listOf("electronic-ambient"), genres.map { it.id })
+        assertEquals(listOf("Electronic / Ambient"), genres.map { it.name })
     }
 
     @Test

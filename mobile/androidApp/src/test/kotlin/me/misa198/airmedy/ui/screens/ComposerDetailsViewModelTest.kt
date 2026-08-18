@@ -8,7 +8,7 @@ import org.junit.Test
 
 class ComposerDetailsViewModelTest {
     @Test
-    fun detailsMatchManifestComposerShapesAndSortAlbumsAndTracks() {
+    fun detailsMatchManifestComposerObjectsAndSortAlbumsAndTracks() {
         val state = ComposerDetailsUiState(
             allComposers = listOf(LibraryComposer("philip glass", "Philip Glass")),
             allAlbums = listOf(
@@ -17,9 +17,9 @@ class ComposerDetailsViewModelTest {
             ),
             tracks = listOf(
                 track("z-two", "z", "{\"composers\":[{\"id\":\"philip glass\",\"name\":\"Philip Glass\"}]}", disc = 1, number = 2, order = 2),
-                track("a-string", "a", "{\"raw_composer_names\":\"Philip Glass / Steve Reich\"}", disc = 1, number = 2, order = 2),
-                track("z-one", "z", "{\"composer\":\"Philip Glass\"}", disc = 1, number = 1, order = 1),
-                track("a-one", "a", "{\"composers\":[\"Philip Glass\"]}", disc = 1, number = 1, order = 1),
+                track("a-raw", "a", "{\"raw_composer_names\":\"Philip Glass / Steve Reich\"}", disc = 1, number = 2, order = 2),
+                track("z-raw", "z", "{\"composer\":\"Philip Glass\"}", disc = 1, number = 1, order = 1),
+                track("a-one", "a", "{\"composers\":[{\"id\":\"philip glass\",\"name\":\"Philip Glass\"}]}", disc = 1, number = 1, order = 1),
                 track("other", "a", "{\"composers\":[\"Steve Reich\"]}", disc = 1, number = 3, order = 3),
             ),
         )
@@ -28,7 +28,7 @@ class ComposerDetailsViewModelTest {
 
         assertEquals("Philip Glass", details.composer?.name)
         assertEquals(listOf("a", "z"), details.albums.map { it.id })
-        assertEquals(listOf("a-one", "a-string", "z-one", "z-two"), details.tracks.map { it.id })
+        assertEquals(listOf("a-one", "z-two"), details.tracks.map { it.id })
     }
 
     @Test

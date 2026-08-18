@@ -75,6 +75,7 @@ import me.misa198.airmedy.ui.screens.ArtistDetailsUiState
 import me.misa198.airmedy.ui.screens.GenreDetailsUiState
 import me.misa198.airmedy.ui.screens.ComposerDetailsUiState
 import me.misa198.airmedy.ui.screens.LibraryPlaylistsUiState
+import me.misa198.airmedy.ui.screens.LibrarySearchUiState
 import me.misa198.airmedy.ui.screens.PlaylistDetailsUiState
 import me.misa198.airmedy.ui.screens.isFavorite
 import me.misa198.airmedy.ui.screens.CreatePlaylistBottomSheet
@@ -118,6 +119,7 @@ internal fun App(
     genresUiState: LibraryGenresUiState = LibraryGenresUiState(),
     composersUiState: LibraryComposersUiState = LibraryComposersUiState(),
     playlistsUiState: LibraryPlaylistsUiState = LibraryPlaylistsUiState(),
+    searchUiState: LibrarySearchUiState = LibrarySearchUiState(),
     albumDetailsUiState: AlbumDetailsUiState = AlbumDetailsUiState(),
     playlistDetailsUiState: PlaylistDetailsUiState = PlaylistDetailsUiState(),
     artistDetailsUiState: ArtistDetailsUiState = ArtistDetailsUiState(),
@@ -127,6 +129,8 @@ internal fun App(
     onSortOptionSelected: (TrackSortOption) -> Unit = {},
     onToggleSortOrder: () -> Unit = {},
     onTrackClick: (String) -> Unit = {},
+    onSearchQueryChange: (String) -> Unit = {},
+    onSearchTrackClick: (String) -> Unit = {},
     onTracksPlayAll: (Boolean) -> Unit = {},
     onTracksFilterQueryChange: (String) -> Unit = {},
     onRecentTrackClick: (String) -> Unit = {},
@@ -412,9 +416,12 @@ internal fun App(
                 genresUiState = genresUiState,
                 composersUiState = composersUiState,
                 playlistsUiState = playlistsUiState,
+                searchUiState = searchUiState,
                 onSortOptionSelected = onSortOptionSelected,
                 onToggleSortOrder = onToggleSortOrder,
                 onTrackClick = onTrackClick,
+                onSearchQueryChange = onSearchQueryChange,
+                onSearchTrackClick = onSearchTrackClick,
                 onTracksPlayAll = onTracksPlayAll,
                 onTracksFilterQueryChange = onTracksFilterQueryChange,
                 onRecentTrackClick = onRecentTrackClick,

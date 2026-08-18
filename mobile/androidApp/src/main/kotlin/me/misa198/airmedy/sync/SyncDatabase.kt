@@ -17,6 +17,7 @@ import java.io.File
 import java.util.UUID
 import java.time.Instant
 import java.time.ZoneId
+import java.util.Locale
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
@@ -1054,10 +1055,9 @@ internal fun libraryGenresFrom(
         val root = runCatching { LibrarySyncProtocol.json.parseToJsonElement(track.rawJson) as? JsonObject }.getOrNull()
             ?: return@forEach
 
-        fun addGenre(rawId: String?, rawName: String, sortName: String, createdAt: String) {
+        fun addGenre(id: String, rawName: String, sortName: String, createdAt: String) {
             val name = rawName.trim()
-            if (name.isBlank()) return
-            val id = rawId?.trim()?.takeIf(String::isNotBlank) ?: name.lowercase()
+            if (id.isBlank() || name.isBlank()) return
             val candidate = LibraryGenre(
                 id = id,
                 name = name,
@@ -1075,46 +1075,15 @@ internal fun libraryGenresFrom(
             } ?: candidate
         }
 
-        fun parseElement(element: kotlinx.serialization.json.JsonElement?) {
-            when (element) {
-                is JsonArray -> {
-                    element.forEach { value ->
-                        when (value) {
-                            is JsonObject -> {
-                                val id = value.string("id")
-                                val name = value.string("name") ?: value.string("title") ?: ""
-                                val createdAt = value.string("created_at").orEmpty().ifBlank { track.createdAt }
-                                addGenre(id, name, value.string("normalization_key").orEmpty(), createdAt)
-                            }
-                            is JsonPrimitive -> {
-                                val name = value.contentOrNull ?: ""
-                                addGenre(null, name, "", track.createdAt)
-                            }
-                            else -> {}
-                        }
-                    }
-                }
-                is JsonObject -> {
-                    val id = element.string("id")
-                    val name = element.string("name") ?: element.string("title") ?: ""
-                    val createdAt = element.string("created_at").orEmpty().ifBlank { track.createdAt }
-                    addGenre(id, name, element.string("normalization_key").orEmpty(), createdAt)
-                }
-                is JsonPrimitive -> {
-                    val str = element.contentOrNull.orEmpty()
-                    str.split(',', ';', '/').forEach { part ->
-                        addGenre(null, part, "", track.createdAt)
-                    }
-                }
-                else -> {}
-            }
+        (root["genres"] as? JsonArray).orEmpty().forEach { value ->
+            val genre = value as? JsonObject ?: return@forEach
+            addGenre(
+                genre.string("id").orEmpty(),
+                genre.string("name") ?: genre.string("title") ?: "",
+                genre.string("normalization_key").orEmpty(),
+                genre.string("created_at").orEmpty().ifBlank { track.createdAt },
+            )
         }
-
-        parseElement(root["genres"])
-        parseElement(root["genre"])
-        parseElement(root["raw_genre_names"])
-        parseElement(root["raw_genres"])
-        parseElement(root["genre_names"])
     }
     return genres.values.toList()
 }
@@ -1124,14 +1093,17 @@ internal fun libraryComposersFrom(
     artworkPaths: Map<String, String>,
 ): List<LibraryComposer> {
     val composers = linkedMapOf<String, LibraryComposer>()
+    val composerIdsByName = mutableMapOf<String, String>()
     tracks.forEach { track ->
         val root = runCatching { LibrarySyncProtocol.json.parseToJsonElement(track.rawJson) as? JsonObject }.getOrNull()
             ?: return@forEach
 
-        fun addComposer(rawId: String?, rawName: String, sortName: String, artworkKey: String?, createdAt: String) {
+        fun addComposer(rawId: String, rawName: String, sortName: String, artworkKey: String?, createdAt: String) {
             val name = rawName.trim()
-            if (name.isBlank()) return
-            val id = rawId?.trim()?.takeIf(String::isNotBlank) ?: name.lowercase()
+            if (rawId.isBlank() || name.isBlank()) return
+            val canonicalName = name.lowercase(Locale.ROOT)
+            val previousId = composerIdsByName[canonicalName]
+            val id = rawId
             val candidate = LibraryComposer(
                 id = id,
                 name = name,
@@ -1139,7 +1111,12 @@ internal fun libraryComposersFrom(
                 createdAt = createdAt,
                 artworkPath = artworkKey?.let(artworkPaths::get),
             )
-            composers[id] = composers[id]?.let { existing ->
+            val existing = when {
+                previousId == id -> composers[id]
+                previousId != null -> composers.remove(previousId)
+                else -> composers.remove(id)
+            }
+            composers[id] = existing?.let { existing ->
                 existing.copy(
                     sortName = existing.sortName.ifBlank { candidate.sortName },
                     artworkPath = existing.artworkPath ?: candidate.artworkPath,
@@ -1149,54 +1126,22 @@ internal fun libraryComposersFrom(
                         .orEmpty(),
                 )
             } ?: candidate
+            composerIdsByName[canonicalName] = id
         }
 
-        fun parseElement(element: kotlinx.serialization.json.JsonElement?) {
-            when (element) {
-                is JsonArray -> {
-                    element.forEach { value ->
-                        when (value) {
-                            is JsonObject -> {
-                                val id = value.string("id")
-                                val name = value.string("name") ?: value.string("title") ?: ""
-                                val artworkKey = value.string("artwork_key")?.takeIf(String::isNotBlank)
-                                    ?: listOf("artwork_key_manual", "artwork_key_local", "artwork_key_online")
-                                        .firstNotNullOfOrNull { key -> value.string(key)?.takeIf(String::isNotBlank) }
-                                val createdAt = value.string("created_at").orEmpty().ifBlank { track.createdAt }
-                                addComposer(id, name, value.string("normalization_key").orEmpty(), artworkKey, createdAt)
-                            }
-                            is JsonPrimitive -> {
-                                val name = value.contentOrNull ?: ""
-                                addComposer(null, name, "", null, track.createdAt)
-                            }
-                            else -> {}
-                        }
-                    }
-                }
-                is JsonObject -> {
-                    val id = element.string("id")
-                    val name = element.string("name") ?: element.string("title") ?: ""
-                    val artworkKey = element.string("artwork_key")?.takeIf(String::isNotBlank)
-                        ?: listOf("artwork_key_manual", "artwork_key_local", "artwork_key_online")
-                            .firstNotNullOfOrNull { key -> element.string(key)?.takeIf(String::isNotBlank) }
-                    val createdAt = element.string("created_at").orEmpty().ifBlank { track.createdAt }
-                    addComposer(id, name, element.string("normalization_key").orEmpty(), artworkKey, createdAt)
-                }
-                is JsonPrimitive -> {
-                    val str = element.contentOrNull.orEmpty()
-                    str.split(',', ';', '/').forEach { part ->
-                        addComposer(null, part, "", null, track.createdAt)
-                    }
-                }
-                else -> {}
-            }
+        (root["composers"] as? JsonArray).orEmpty().forEach { value ->
+            val composer = value as? JsonObject ?: return@forEach
+            val artworkKey = composer.string("artwork_key")?.takeIf(String::isNotBlank)
+                ?: listOf("artwork_key_manual", "artwork_key_local", "artwork_key_online")
+                    .firstNotNullOfOrNull { key -> composer.string(key)?.takeIf(String::isNotBlank) }
+            addComposer(
+                composer.string("id").orEmpty(),
+                composer.string("name") ?: composer.string("title") ?: "",
+                composer.string("normalization_key").orEmpty(),
+                artworkKey,
+                composer.string("created_at").orEmpty().ifBlank { track.createdAt },
+            )
         }
-
-        parseElement(root["composers"])
-        parseElement(root["composer"])
-        parseElement(root["raw_composer_names"])
-        parseElement(root["raw_composers"])
-        parseElement(root["composer_names"])
     }
     return composers.values.toList()
 }

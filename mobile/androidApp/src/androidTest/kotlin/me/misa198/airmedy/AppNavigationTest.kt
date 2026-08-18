@@ -97,6 +97,17 @@ class AppNavigationTest {
     }
 
     @Test
+    fun librarySearchActionOpensTheSearchPage() {
+        val harness = AppHarness(AppUiState(selectedDestination = AppDestination.Library))
+        composeTestRule.setContent { harness.Render() }
+
+        composeTestRule.onNodeWithContentDescription(string(R.string.library_search)).performClick()
+
+        composeTestRule.onNodeWithContentDescription(string(R.string.library_search_placeholder)).assertIsDisplayed()
+        assertEquals(AppIntent.OpenPage(AppStackPage.LibrarySearch), harness.intents.last())
+    }
+
+    @Test
     fun tappingArtistDispatchesArtistDetailsIntent() {
         val intents = mutableListOf<AppIntent>()
         composeTestRule.setContent {

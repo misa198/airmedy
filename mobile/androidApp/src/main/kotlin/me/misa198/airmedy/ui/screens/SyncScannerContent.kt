@@ -13,12 +13,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
@@ -107,47 +108,73 @@ internal fun SyncScannerContent(
         if (!cameraGranted) permissionLauncher.launch(Manifest.permission.CAMERA)
     }
 
-    Column(
-        modifier = modifier.fillMaxSize().padding(horizontal = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            text = stringResource(R.string.sync_scan_description),
-            color = colors.textMuted,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(bottom = 24.dp),
-        )
-        Box(
-            modifier = Modifier.fillMaxWidth().widthIn(max = 300.dp).aspectRatio(1f)
-                .clip(RoundedCornerShape(28.dp)).background(colors.glassElevated)
-                .border(1.dp, colors.borderGlass, RoundedCornerShape(28.dp)),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (cameraGranted) {
-                AndroidView(
-                    factory = { PreviewView(it).apply { this.controller = controller } },
-                    modifier = Modifier.fillMaxSize(),
-                )
-            } else {
-                Text(text = stringResource(R.string.sync_camera_required), color = colors.textMuted, textAlign = TextAlign.Center, modifier = Modifier.padding(28.dp))
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val landscape = maxWidth > maxHeight
+        val viewfinderSize = scannerViewfinderSize(maxWidth, maxHeight, landscape)
+        val viewfinder = @Composable {
+            Box(
+                modifier = Modifier.size(viewfinderSize).clip(RoundedCornerShape(28.dp))
+                    .background(colors.glassElevated).border(1.dp, colors.borderGlass, RoundedCornerShape(28.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (cameraGranted) {
+                    AndroidView(
+                        factory = { PreviewView(it).apply { this.controller = controller } },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    Text(text = stringResource(R.string.sync_camera_required), color = colors.textMuted, textAlign = TextAlign.Center, modifier = Modifier.padding(28.dp))
+                }
             }
         }
-        Text(
-            text = if (invalidQr) stringResource(R.string.sync_error_invalid_qr) else stringResource(R.string.sync_scan_hint),
-            color = colors.textMuted,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 16.dp),
-        )
-        OutlinedButton(
-            onClick = { imageLauncher.launch("image/*") },
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.textMain),
-            modifier = Modifier.padding(top = 20.dp),
-        ) {
-            Text(stringResource(R.string.sync_select_qr_image))
+        val actions = @Composable {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = if (invalidQr) stringResource(R.string.sync_error_invalid_qr) else stringResource(R.string.sync_scan_hint),
+                    color = colors.textMuted,
+                    textAlign = TextAlign.Center,
+                )
+                OutlinedButton(
+                    onClick = { imageLauncher.launch("image/*") },
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.textMain),
+                    modifier = Modifier.padding(top = 20.dp),
+                ) { Text(stringResource(R.string.sync_select_qr_image)) }
+            }
+        }
+
+        if (landscape) {
+            Row(
+                modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+                horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                viewfinder()
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Text(text = stringResource(R.string.sync_scan_description), color = colors.textMuted, textAlign = TextAlign.Center, modifier = Modifier.padding(bottom = 24.dp))
+                    actions()
+                }
+            }
+        } else {
+            Column(
+                modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text(text = stringResource(R.string.sync_scan_description), color = colors.textMuted, textAlign = TextAlign.Center, modifier = Modifier.padding(bottom = 24.dp))
+                viewfinder()
+                Box(modifier = Modifier.padding(top = 16.dp)) { actions() }
+            }
         }
     }
 }
+
+internal fun scannerViewfinderSize(maxWidth: androidx.compose.ui.unit.Dp, maxHeight: androidx.compose.ui.unit.Dp, landscape: Boolean) =
+    if (landscape) minOf(300.dp, maxHeight, (maxWidth - 72.dp) * 0.55f)
+    else minOf(300.dp, maxWidth - 48.dp, (maxHeight - 168.dp).coerceAtLeast(120.dp))
 
 private class QrAnalyzer(
     private val scanner: BarcodeScanner,

@@ -24,19 +24,17 @@ class LibraryComposerMapperTest {
     }
 
     @Test
-    fun parsesComposersFromObjectsWithoutIdOrFromStringsOrRawComposerNames() {
+    fun usesOnlyDesktopNormalizedComposerObjects() {
         val composers = libraryComposersFrom(
             tracks = listOf(
-                row("""{"composers":[{"name":"Bach"}]}"""),
-                row("""{"composers":["Chopin", "Liszt"]}"""),
-                row("""{"composer":"Vivaldi / Handel"}"""),
-                row("""{"raw_composer_names":"Tchaikovsky, Stravinsky"}"""),
+                row("""{"composers":[{"id":"w-n","name":"W/N"}],"raw_composer_names":"W/N"}"""),
+                row("""{"composer":"Vivaldi / Handel","raw_composer_names":"Tchaikovsky, Stravinsky"}"""),
             ),
             artworkPaths = emptyMap(),
         )
 
-        assertEquals(listOf("bach", "chopin", "liszt", "vivaldi", "handel", "tchaikovsky", "stravinsky"), composers.map { it.id })
-        assertEquals(listOf("Bach", "Chopin", "Liszt", "Vivaldi", "Handel", "Tchaikovsky", "Stravinsky"), composers.map { it.name })
+        assertEquals(listOf("w-n"), composers.map { it.id })
+        assertEquals(listOf("W/N"), composers.map { it.name })
     }
 
     @Test
@@ -47,6 +45,16 @@ class LibraryComposerMapperTest {
         )
 
         assertEquals(emptyList<LibraryComposer>(), composers)
+    }
+
+    @Test
+    fun keepsOneComposerWhenStructuredAndRawMetadataNameAgree() {
+        val composers = libraryComposersFrom(
+            tracks = listOf(row("""{"composers":[{"id":"c1","name":"Bach"}],"raw_composer_names":"Bach"}""")),
+            artworkPaths = emptyMap(),
+        )
+
+        assertEquals(listOf("c1"), composers.map { it.id })
     }
 
     private fun row(rawJson: String) = LibraryTrackRow(

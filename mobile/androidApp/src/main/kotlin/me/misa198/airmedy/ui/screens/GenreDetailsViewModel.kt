@@ -98,31 +98,7 @@ private fun LibraryTrack.genreAlbumIdentifier(): String? = albumId.takeIf(String
 
 private fun LibraryTrack.genreIds(): Set<String> {
     val root = metadataObject() ?: return emptySet()
-    val ids = linkedSetOf<String>()
-
-    fun addGenre(rawId: String?, rawName: String) {
-        val name = rawName.trim()
-        val id = rawId?.trim()?.takeIf(String::isNotBlank) ?: name.lowercase()
-        if (name.isNotBlank()) ids += id
-    }
-
-    fun parseElement(element: kotlinx.serialization.json.JsonElement?) {
-        when (element) {
-            is JsonArray -> element.forEach(::parseElement)
-            is JsonObject -> addGenre(
-                rawId = (element["id"] as? JsonPrimitive)?.content,
-                rawName = (element["name"] as? JsonPrimitive)?.content
-                    ?: (element["title"] as? JsonPrimitive)?.content.orEmpty(),
-            )
-            is JsonPrimitive -> element.content.split(',', ';', '/').forEach { name -> addGenre(null, name) }
-            else -> Unit
-        }
-    }
-
-    parseElement(root["genres"])
-    parseElement(root["genre"])
-    parseElement(root["raw_genre_names"])
-    parseElement(root["raw_genres"])
-    parseElement(root["genre_names"])
-    return ids
+    return (root["genres"] as? JsonArray).orEmpty().mapNotNull { genre ->
+        (genre as? JsonObject)?.get("id")?.let { it as? JsonPrimitive }?.content?.takeIf(String::isNotBlank)
+    }.toSet()
 }

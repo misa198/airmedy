@@ -23,6 +23,7 @@ class LibraryContentTest {
 
     @Test
     fun libraryContentDisplaysActionListItems() {
+        var searchClicked = false
         var artistsClicked = false
         var albumsClicked = false
         var tracksClicked = false
@@ -32,6 +33,7 @@ class LibraryContentTest {
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 LibraryContent(
+                    onSearchSelected = { searchClicked = true },
                     onArtistsSelected = { artistsClicked = true },
                     onAlbumsSelected = { albumsClicked = true },
                     onTracksSelected = { tracksClicked = true },
@@ -42,6 +44,9 @@ class LibraryContentTest {
         }
 
         val context = InstrumentationRegistry.getInstrumentation().targetContext
+
+        composeTestRule.onNodeWithText(context.getString(R.string.library_search)).assertIsDisplayed().performClick()
+        assertTrue(searchClicked)
 
         composeTestRule.onNodeWithText(context.getString(R.string.library_artists)).assertIsDisplayed().performClick()
         assertTrue(artistsClicked)

@@ -71,6 +71,8 @@ import me.misa198.airmedy.ui.screens.LibraryAlbumsLayoutPreferences
 import me.misa198.airmedy.ui.screens.LibraryGenresViewModel
 import me.misa198.airmedy.ui.screens.LibraryComposersViewModel
 import me.misa198.airmedy.ui.screens.LibraryPlaylistsViewModel
+import me.misa198.airmedy.ui.screens.LibrarySearchViewModel
+import me.misa198.airmedy.ui.screens.playbackRequestFor
 import me.misa198.airmedy.ui.screens.PlaylistDetailsViewModel
 import me.misa198.airmedy.ui.screens.AlbumDetailsViewModel
 import me.misa198.airmedy.ui.screens.ArtistDetailsViewModel
@@ -156,6 +158,9 @@ class MainActivity : ComponentActivity() {
     private val playlistsViewModel: LibraryPlaylistsViewModel by viewModels {
         LibraryPlaylistsViewModel.Factory(applicationContext, AndroidSyncRuntime.syncStore())
     }
+    private val searchViewModel: LibrarySearchViewModel by viewModels {
+        LibrarySearchViewModel.Factory(AndroidSyncRuntime.syncStore())
+    }
     private val albumDetailsViewModel: AlbumDetailsViewModel by viewModels {
         AlbumDetailsViewModel.Factory(AndroidSyncRuntime.syncStore(), AndroidPlaybackRuntime.controller())
     }
@@ -197,6 +202,7 @@ class MainActivity : ComponentActivity() {
             val genresUiState by genresViewModel.uiState.collectAsStateWithLifecycle()
             val composersUiState by composersViewModel.uiState.collectAsStateWithLifecycle()
             val playlistsUiState by playlistsViewModel.uiState.collectAsStateWithLifecycle()
+            val searchUiState by searchViewModel.uiState.collectAsStateWithLifecycle()
             val albumDetailsUiState by albumDetailsViewModel.uiState.collectAsStateWithLifecycle()
             val playlistDetailsUiState by playlistDetailsViewModel.uiState.collectAsStateWithLifecycle()
             val artistDetailsUiState by artistDetailsViewModel.uiState.collectAsStateWithLifecycle()
@@ -271,15 +277,23 @@ class MainActivity : ComponentActivity() {
                 genresUiState = genresUiState,
                 composersUiState = composersUiState,
                 playlistsUiState = playlistsUiState,
+                searchUiState = searchUiState,
                 albumDetailsUiState = albumDetailsUiState,
                 playlistDetailsUiState = playlistDetailsUiState,
                 artistDetailsUiState = artistDetailsUiState,
                 genreDetailsUiState = genreDetailsUiState,
                 composerDetailsUiState = composerDetailsUiState,
-                onIntent = viewModel::dispatch,
+                onIntent = { intent ->
+                    if (shouldClearLibrarySearch(intent, uiState.currentPage)) searchViewModel.clear()
+                    viewModel.dispatch(intent)
+                },
                 onSortOptionSelected = tracksViewModel::setSortOption,
                 onToggleSortOrder = tracksViewModel::toggleSortOrder,
                 onTrackClick = tracksViewModel::playTrack,
+                onSearchQueryChange = searchViewModel::setQuery,
+                onSearchTrackClick = { trackId ->
+                    playbackRequestFor(searchUiState.tracks, trackId)?.let(playbackController::play)
+                },
                 onTracksPlayAll = tracksViewModel::playAll,
                 onTracksFilterQueryChange = tracksViewModel::setFilterQuery,
                 onRecentTrackClick = tracksViewModel::playRecentTrack,

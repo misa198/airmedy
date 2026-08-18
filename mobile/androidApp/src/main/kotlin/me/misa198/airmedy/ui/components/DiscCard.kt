@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +33,7 @@ fun DiscCard(
     modifier: Modifier = Modifier,
     artworkPath: String? = null,
     fallbackSymbol: String = MaterialSymbols.MusicNote,
+    artworkShape: Shape = RoundedCornerShape(10.dp),
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
 ) {
@@ -60,9 +62,9 @@ fun DiscCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f)
-                .clip(RoundedCornerShape(10.dp))
+                .clip(artworkShape)
                 .background(colors.glassElevated)
-                .border(1.dp, colors.borderGlass, RoundedCornerShape(10.dp)),
+                .border(1.dp, colors.borderGlass, artworkShape),
             contentAlignment = Alignment.Center,
         ) {
             if (bitmap != null) {

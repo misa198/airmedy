@@ -13,8 +13,12 @@ affecting the connected session.
 
 ## App shell and navigation
 
-- `MainActivity` is locked to portrait in the Android manifest. The mobile
-  layouts and navigation transitions do not support landscape orientation.
+- `MainActivity` follows the device or window orientation, so Android renders
+  the app across the full available landscape or portrait bounds.
+
+- Sync's QR scanner receives bounded page constraints rather than the Settings
+  scroll container. In landscape, it places the instructions beside a
+  height-bounded viewfinder so the frame remains within the viewport.
 
 - `App.kt` is the app shell: it owns the theme, shared Haze/list state, header,
   and placement of the navigation chrome. `ui/navigation/AppDestinationContent.kt`
@@ -104,8 +108,8 @@ affecting the connected session.
   new desktop scan, while the old desktop remains trusted until revoked there.
 - A valid desktop library-sync request starts Android's foreground transfer
   service. Sync Settings renders its preparing/progress/completed/failed state inside a dedicated `Card` featuring a top gap, text-coloured `LinearProgressIndicator` progress bar with no fill/track gap, status text, and percentage indicator; it never exposes an asset count. The foreground-service notification uses an indeterminate bar while connecting and a native 0–100% determinate bar during transfer, with the percentage also shown in its text; it has no cancellation action. Revoke is disabled while a transfer is running (and `SyncViewModel` rejects any concurrent unpair request), then becomes available once sync completes or fails; it stops the transfer before deleting all mirrored library data.
-- Library root page displays a plain `ActionList` (`ActionListContainerStyle.Plain`) with actions for Artists,
-  Albums, Tracks, Genres, and Composers. Below the action list, it renders a 2-column grid of up to 50 recently added tracks sorted by creation date descending using `DiscCard`. Tapping Artists opens `LibraryArtists`, Albums opens `LibraryAlbums`,
+- Library root page displays a plain `ActionList` (`ActionListContainerStyle.Plain`) with Search as its first action,
+  followed by Artists, Albums, Tracks, Genres, Composers, and Playlists. Search opens `LibrarySearch` on the Library stack and presents the shared full-width `AirmedyTextField` with the `Search your library` hint. The input text updates immediately; non-empty input waits 300ms after the last keystroke before searching the local mirror in desktop section order (Tracks, Albums, Artists, Playlists, Composers), while clearing it resets results immediately. Matching folds case and diacritics; every whitespace-delimited term must match a field-token prefix, with exact phrases first. Track fields are title, artists, album, and metadata genres; albums use title/artist; other sections use names. Empty input and no results show distinct states; their hero card has a 24dp outer horizontal inset. Popping Search itself resets the query; back from a result detail preserves it. Search sections have a generous vertical gap: Tracks is a horizontally scrolling three-row grid of rows, while Albums, Artists, Playlists, and Composers are each a horizontally scrolling single row of `DiscCard`s. Tracks retain their context menu and play from the result queue, and entity cards open existing detail pages. Below the action list, it renders a 2-column grid of up to 50 recently added tracks sorted by creation date descending using `DiscCard`. Tapping Artists opens `LibraryArtists`, Albums opens `LibraryAlbums`,
   Tracks opens `LibraryTracks`, Genres opens `LibraryGenres`, and Composers opens `LibraryComposers` on the Library stack; tapping a recent track card starts playback from a queue built in the displayed recently-added order, rather than the separate Tracks page's selected sort order.
 - `LibraryArtists` derives its rows from the normalized artist objects in the active sync manifest, grouped by
   desktop artist ID so collaborations retain the desktop delimiter behavior. It renders a virtualized, divided
