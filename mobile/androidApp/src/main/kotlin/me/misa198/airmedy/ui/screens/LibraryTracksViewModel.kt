@@ -31,6 +31,9 @@ enum class SortOrder {
 data class LibraryTracksUiState(
     val tracks: List<LibraryTrack> = emptyList(),
     val recentTracks: List<LibraryTrack> = emptyList(),
+    val keepListeningTracks: List<LibraryTrack> = emptyList(),
+    val mostPlayedTracks: List<LibraryTrack> = emptyList(),
+    val forgottenTracks: List<LibraryTrack> = emptyList(),
     val filterQuery: String = "",
     val sortOption: TrackSortOption = TrackSortOption.Name,
     val sortOrder: SortOrder = SortOrder.Ascending,
@@ -70,6 +73,9 @@ internal class LibraryTracksViewModel(
         LibraryTracksUiState(
             tracks = sorted,
             recentTracks = recent,
+            keepListeningTracks = keepListeningTracks(rawTracks),
+            mostPlayedTracks = mostPlayedTracks(rawTracks),
+            forgottenTracks = forgottenTracks(rawTracks),
             filterQuery = query,
             sortOption = option,
             sortOrder = order,
@@ -108,6 +114,10 @@ internal class LibraryTracksViewModel(
         playFromQueue(trackId, uiState.value.recentTracks, "Recently added track")
     }
 
+    fun playHomeTrack(tracks: List<LibraryTrack>, trackId: String) {
+        playFromQueue(trackId, tracks, "Home track")
+    }
+
     fun playAll(shuffle: Boolean) {
         collectionPlaybackRequestFor(uiState.value.tracks.map { it.id }, shuffle)?.let { request ->
             if (shuffle) playbackController.shuffle(request) else playbackController.play(request)
@@ -121,6 +131,22 @@ internal class LibraryTracksViewModel(
         } ?: Log.w(PlaybackLogTag, "$source click ignored: id=$trackId is not in its visible queue")
     }
 }
+
+internal const val HomeTrackLimit = 28
+
+internal fun keepListeningTracks(tracks: List<LibraryTrack>): List<LibraryTrack> = tracks
+    .filter { it.playCount > 0 }
+    .sortedWith(compareByDescending<LibraryTrack> { it.updatedAt }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }.thenBy { it.id })
+    .take(HomeTrackLimit)
+
+internal fun mostPlayedTracks(tracks: List<LibraryTrack>): List<LibraryTrack> = tracks
+    .filter { it.playCount > 0 }
+    .sortedWith(compareByDescending<LibraryTrack> { it.playCount }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }.thenBy { it.id })
+    .take(HomeTrackLimit)
+
+internal fun forgottenTracks(tracks: List<LibraryTrack>): List<LibraryTrack> = tracks
+    .sortedWith(compareBy<LibraryTrack> { it.playCount }.thenBy { it.updatedAt }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }.thenBy { it.id })
+    .take(HomeTrackLimit)
 
 /** Keeps track search aligned with the title and artist labels rendered in each row. */
 internal fun matchesVisibleTrackTextFilter(query: String, track: LibraryTrack): Boolean =

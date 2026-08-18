@@ -2,6 +2,10 @@
     <!-- Default fallback for locales that do not yet have a translation. -->
     <string name="app_name">Airmedy</string>
     <string name="destination_home">Home</string>
+    <string name="home_greeting_morning">Good morning</string>
+    <string name="home_greeting_afternoon">Good afternoon</string>
+    <string name="home_greeting_evening">Good evening</string>
+    <string name="home_greeting_night">Good night</string>
     <string name="destination_library">Library</string>
     <string name="destination_search">Search</string>
     <string name="destination_settings">Settings</string>
@@ -156,22 +160,9 @@
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="navigate_back">Go back</string>
-    <string name="home_demo_eyebrow">JUST FOR YOU</string>
-    <string name="home_demo_title">An evening made for listening.</string>
-    <string name="home_demo_intro">A relaxed, scrollable home page preview with room for artwork, stories, and the music you want to return to.</string>
-    <string name="home_demo_artwork_description">Abstract album artwork</string>
-    <string name="home_demo_section_title">Listen closer %1$d</string>
-    <string name="home_demo_section_body">This is sample home content for checking the reading rhythm and the safe space above the persistent navigation bar. It stays comfortable to scan while the page grows longer.</string>
-    <string name="home_demo_open_page">Open sample page</string>
-    <string name="home_demo_open_page_hint">Test navigation forward and Back within the Home stack.</string>
-    <string name="home_sample_page_title">Sample page</string>
-    <string name="home_sample_page_heading">A fake detail page</string>
-    <string name="home_sample_page_body">This page sits above Home in its own stack. The persistent navigation remains available, while the glass Back button returns to the Home root.</string>
-    <string name="home_action_list_card_title">Actions in a card</string>
-    <string name="home_action_list_plain_title">Actions without a card</string>
-    <string name="home_action_one">Action one</string>
-    <string name="home_action_two">Action two</string>
-    <string name="home_action_three">Action three</string>
+    <string name="home_keep_listening">Keep listening</string>
+    <string name="home_most_played">Most played</string>
+    <string name="home_forgotten">You seem to have forgotten</string>
     <string name="sort_by">Sort by</string>
     <string name="sort_name">Name</string>
     <string name="sort_artist">Artist</string>

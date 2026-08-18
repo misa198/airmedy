@@ -7,6 +7,9 @@ import me.misa198.airmedy.ui.screens.sortTracks
 import me.misa198.airmedy.ui.screens.playbackRequestFor
 import me.misa198.airmedy.ui.screens.collectionPlaybackRequestFor
 import me.misa198.airmedy.ui.screens.matchesVisibleTrackTextFilter
+import me.misa198.airmedy.ui.screens.keepListeningTracks
+import me.misa198.airmedy.ui.screens.mostPlayedTracks
+import me.misa198.airmedy.ui.screens.forgottenTracks
 import me.misa198.airmedy.player.MaxPlaybackQueueSize
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -135,6 +138,26 @@ class LibraryTracksViewModelTest {
             recent.sortedWith(compareByDescending<LibraryTrack> { it.createdAt }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }.thenBy { it.id }),
             recent,
         )
+    }
+
+    @Test
+    fun homeSectionsMatchDesktopListeningOrderingAndLimit() {
+        val tracks = (1..30).map { index ->
+            LibraryTrack(
+                id = "t$index",
+                title = "Track $index",
+                artists = "Artist",
+                playCount = if (index == 1) 0 else index,
+                updatedAt = String.format("2026-01-%02dT00:00:00Z", index),
+                sortTitle = "Track $index",
+            )
+        }
+
+        assertEquals(28, keepListeningTracks(tracks).size)
+        assertEquals("t30", keepListeningTracks(tracks).first().id)
+        assertEquals("t30", mostPlayedTracks(tracks).first().id)
+        assertEquals("t1", forgottenTracks(tracks).first().id)
+        assertEquals(28, forgottenTracks(tracks).size)
     }
 
     @Test

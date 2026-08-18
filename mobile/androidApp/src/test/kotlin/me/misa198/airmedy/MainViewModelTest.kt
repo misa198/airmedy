@@ -41,14 +41,14 @@ class MainViewModelTest {
         val viewModel = MainViewModel(FakeThemeModeStore())
         activateState(viewModel)
 
-        viewModel.dispatch(AppIntent.OpenPage(AppStackPage.HomeSampleDetail))
+        viewModel.dispatch(AppIntent.OpenPage(AppStackPage.SettingsAppearance))
         viewModel.dispatch(AppIntent.SelectDestination(AppDestination.Library))
         advanceUntilIdle()
 
         assertEquals(AppDestination.Library, viewModel.uiState.value.selectedDestination)
         assertEquals(
-            listOf(AppStackPage.Root, AppStackPage.HomeSampleDetail),
-            viewModel.uiState.value.stackFor(AppDestination.Home),
+            listOf(AppStackPage.Root, AppStackPage.SettingsAppearance),
+            viewModel.uiState.value.stackFor(AppDestination.Settings),
         )
     }
 
@@ -57,11 +57,11 @@ class MainViewModelTest {
         val viewModel = MainViewModel(FakeThemeModeStore())
         activateState(viewModel)
 
-        viewModel.dispatch(AppIntent.OpenPage(AppStackPage.HomeSampleDetail))
-        viewModel.dispatch(AppIntent.SelectDestination(AppDestination.Home))
+        viewModel.dispatch(AppIntent.OpenPage(AppStackPage.SettingsAppearance))
+        viewModel.dispatch(AppIntent.SelectDestination(AppDestination.Settings))
         advanceUntilIdle()
 
-        assertEquals(listOf(AppStackPage.Root), viewModel.uiState.value.stackFor(AppDestination.Home))
+        assertEquals(listOf(AppStackPage.Root), viewModel.uiState.value.stackFor(AppDestination.Settings))
     }
 
     @Test

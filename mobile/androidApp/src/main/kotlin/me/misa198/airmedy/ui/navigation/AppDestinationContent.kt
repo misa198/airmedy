@@ -33,11 +33,10 @@ import me.misa198.airmedy.AppStackPage
 import me.misa198.airmedy.StackPageEntry
 import me.misa198.airmedy.SyncUiState
 import me.misa198.airmedy.settings.ThemeMode
-import me.misa198.airmedy.ui.components.HomeDemoContent
+import me.misa198.airmedy.ui.components.HomeContent
 import me.misa198.airmedy.ui.components.StackPageLayout
 import me.misa198.airmedy.ui.screens.AboutContent
 import me.misa198.airmedy.ui.screens.AppearanceContent
-import me.misa198.airmedy.ui.screens.HomeSampleDetailContent
 import me.misa198.airmedy.ui.screens.LibraryContent
 import me.misa198.airmedy.ui.screens.PlaceholderContent
 import me.misa198.airmedy.ui.screens.SettingsContent
@@ -143,6 +142,7 @@ internal fun AppDestinationContent(
     onTracksPlayAll: (Boolean) -> Unit = {},
     onTracksFilterQueryChange: (String) -> Unit = {},
     onRecentTrackClick: (String) -> Unit = {},
+    onHomeTrackClick: (List<me.misa198.airmedy.sync.LibraryTrack>, String) -> Unit = { _, _ -> },
     playbackQueue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
     onTrackPlayNext: (String) -> Unit = {},
     onTrackAddToQueue: (String) -> Unit = {},
@@ -265,16 +265,22 @@ internal fun AppDestinationContent(
                 ) {
                     when (currentPage.destination) {
                         AppDestination.Home -> if (currentPage.page == AppStackPage.Root) {
-                            HomeDemoContent(
+                            HomeContent(
                                 modifier = Modifier.fillMaxSize(),
                                 listState = homeListState,
                                 contentPadding = contentPadding,
-                                onOpenSampleDetail = {
-                                    onIntent(AppIntent.OpenPage(AppStackPage.HomeSampleDetail))
-                                },
+                                keepListeningTracks = tracksUiState.keepListeningTracks,
+                                mostPlayedTracks = tracksUiState.mostPlayedTracks,
+                                forgottenTracks = tracksUiState.forgottenTracks,
+                                onTrackClick = onHomeTrackClick,
+                                playbackQueue = playbackQueue,
+                                onTrackPlayNext = { track -> onTrackPlayNext(track.id) },
+                                onTrackAddToQueue = { track -> onTrackAddToQueue(track.id) },
+                                onTrackFavoriteToggle = { track, favorite -> onTrackFavoriteToggle(track.id, favorite) },
+                                onTrackAlbumClick = { track -> onIntent(AppIntent.OpenAlbumDetails(track.albumId)) },
+                                onTrackArtistClick = { artist -> onIntent(AppIntent.OpenArtistDetails(artist.id)) },
+                                onTrackContextBottomSheet = onTrackContextBottomSheet,
                             )
-                        } else {
-                            HomeSampleDetailContent(modifier = Modifier.padding(contentPadding))
                         }
                         AppDestination.Settings -> when (currentPage.page) {
                             AppStackPage.SettingsAppearance -> AppearanceContent(

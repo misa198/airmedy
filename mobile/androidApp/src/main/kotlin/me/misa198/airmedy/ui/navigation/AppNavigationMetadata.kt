@@ -8,7 +8,6 @@ import me.misa198.airmedy.ui.components.MaterialSymbols
 
 @StringRes
 internal fun AppStackPage.titleRes(destination: AppDestination): Int = when (this) {
-    AppStackPage.HomeSampleDetail -> R.string.home_sample_page_title
     AppStackPage.LibraryArtists -> R.string.library_artists
     AppStackPage.ArtistDetails -> R.string.artist_details_title
     AppStackPage.LibraryAlbums -> R.string.library_albums

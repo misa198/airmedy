@@ -87,6 +87,13 @@ class TrackInfoContentTest {
     }
 
     @Test
+    fun detailsExcludeZeroBpm() {
+        val details = trackInfoValues(track("""{"bpm":0}"""))
+
+        assertFalse(details.any { it.labelRes == R.string.track_info_bpm })
+    }
+
+    @Test
     fun formattersMatchDesktopDisplay() {
         assertEquals("1:05", formatTrackDuration(65))
         assertEquals("1.5 KB", formatFileSize(1536))

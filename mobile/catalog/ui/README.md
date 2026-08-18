@@ -135,9 +135,17 @@ affecting the connected session.
 - `ComposerDetails` mirrors `GenreDetails` without artwork: its `DetailHero` shows the composer name, localized album-and-track count, and Play/Shuffle actions. It matches all supported composer fields from track metadata to the selected normalized composer ID, orders unique albums by canonical album sort title/artist, and orders playback by album, disc number, track number, then manifest order. Its album rows have 1dp themed inset dividers above and below them, shared by adjacent rows, and open `AlbumDetails`.
 - Artist rows (long-press) and the Artist Details hero (More) expose the shared collection context menu: Play next, conditional Add to queue, and Add to playlist. Both actions receive the complete artist track scope in canonical album/disc/track/manifest order; playlist requests are add-only and use the app-shell playlist picker.
 - Composer rows (long-press) and the Composer Details hero (More) expose the shared collection context menu: Play next, conditional Add to queue, and Add to playlist. Both actions receive the complete composer track scope in canonical album/disc/track/manifest order; playlist requests are add-only and use the app-shell playlist picker.
-- Home content is supplied by `HomeDemoContent`. A forward action calls the
-  callback provided by the app shell, which pushes `HomeSampleDetail`; Android
-  Back pops that destination stack while the floating navigation remains shown.
+- Home uses `HomeContent` for three two-row `LazyHorizontalGrid` carousels:
+  Keep listening contains played tracks ordered by manifest `updated_at` descending,
+  Most played orders played tracks by `play_count` descending, and You seem to have
+  forgotten orders all tracks by `play_count` then `updated_at` ascending. Each
+  section is capped at 28 tracks, reuses `DiscCard`, and tapping a card starts
+  playback from that section's ordered queue. Long-pressing a card opens the
+  shared `TrackContextMenu` with the standard playback, favorite, navigation,
+  and bottom-sheet actions.
+- The Home header replaces its static destination title with the desktop-equivalent
+  time greeting: morning before noon, afternoon before 17:00, evening before
+  21:00, and night thereafter.
 - Tapping the selected navigation destination restores that destination stack
   to `Root`; on Home it also animates the root `LazyColumn` back to its first item.
   Tapping another destination continues to switch stacks without resetting it.

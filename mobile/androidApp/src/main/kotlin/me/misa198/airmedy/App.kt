@@ -35,6 +35,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import java.time.LocalTime
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import dev.chrisbanes.haze.HazeInputScale
@@ -93,6 +94,13 @@ internal fun shouldShowHeaderBlur(
     previousHeaderWasBlurred: Boolean,
 ): Boolean = isContentScrolled || (destinationChanged && previousHeaderWasBlurred)
 
+internal fun homeGreetingTitleRes(hour: Int): Int = when (hour) {
+    in 0..11 -> R.string.home_greeting_morning
+    in 12..16 -> R.string.home_greeting_afternoon
+    in 17..20 -> R.string.home_greeting_evening
+    else -> R.string.home_greeting_night
+}
+
 @Composable
 private fun LazyListState.resetAfterPagePop(generation: Int) {
     LaunchedEffect(generation) {
@@ -122,6 +130,7 @@ internal fun App(
     onTracksPlayAll: (Boolean) -> Unit = {},
     onTracksFilterQueryChange: (String) -> Unit = {},
     onRecentTrackClick: (String) -> Unit = {},
+    onHomeTrackClick: (List<LibraryTrack>, String) -> Unit = { _, _ -> },
     onTrackPlayNext: (String) -> Unit = {},
     onTrackAddToQueue: (String) -> Unit = {},
     onAlbumPlayNext: (List<String>) -> Unit = {},
@@ -309,7 +318,11 @@ internal fun App(
             animationSpec = tween(420, easing = FastOutSlowInEasing),
             label = "navigation-bottom-padding",
         )
-        val pageTitle = if (currentPage == AppStackPage.AlbumDetails || currentPage == AppStackPage.PlaylistDetails || currentPage == AppStackPage.ArtistDetails || currentPage == AppStackPage.GenreDetails || currentPage == AppStackPage.ComposerDetails) "" else stringResource(currentPage.titleRes(uiState.selectedDestination))
+        val pageTitle = when {
+            currentPage == AppStackPage.AlbumDetails || currentPage == AppStackPage.PlaylistDetails || currentPage == AppStackPage.ArtistDetails || currentPage == AppStackPage.GenreDetails || currentPage == AppStackPage.ComposerDetails -> ""
+            uiState.selectedDestination == AppDestination.Home && currentPage == AppStackPage.Root -> stringResource(homeGreetingTitleRes(LocalTime.now().hour))
+            else -> stringResource(currentPage.titleRes(uiState.selectedDestination))
+        }
         val showBack = currentPage != AppStackPage.Root
         val showSyncAddAction = currentPage == AppStackPage.SettingsSync && syncUiState.desktop == null && !syncUiState.isPairing
         val showLibrarySortAction = currentPage == AppStackPage.LibraryTracks ||
@@ -405,6 +418,7 @@ internal fun App(
                 onTracksPlayAll = onTracksPlayAll,
                 onTracksFilterQueryChange = onTracksFilterQueryChange,
                 onRecentTrackClick = onRecentTrackClick,
+                onHomeTrackClick = onHomeTrackClick,
                 playbackQueue = playbackQueue,
                 onTrackPlayNext = onTrackPlayNext,
                 onTrackAddToQueue = onTrackAddToQueue,

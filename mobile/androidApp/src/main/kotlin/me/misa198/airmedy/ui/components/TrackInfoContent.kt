@@ -106,7 +106,7 @@ internal fun trackInfoValues(track: LibraryTrack): List<TrackInfoValue> {
     val metadata = track.metadataObject()
     fun text(name: String) = metadata.string(name)
     fun number(name: String) = metadata.long(name)
-    fun numericText(name: String) = number(name)?.toString().orEmpty()
+    fun numericText(name: String) = number(name)?.takeIf { it > 0 }?.toString().orEmpty()
     val discNumber = number("disc_number") ?: track.discNumber.toLong().takeIf { it > 0 }
     val trackNumber = number("track_number") ?: track.trackNumber.toLong().takeIf { it > 0 }
     val totalDiscs = number("total_discs")

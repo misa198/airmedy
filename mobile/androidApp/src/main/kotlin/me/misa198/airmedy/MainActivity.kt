@@ -283,6 +283,7 @@ class MainActivity : ComponentActivity() {
                 onTracksPlayAll = tracksViewModel::playAll,
                 onTracksFilterQueryChange = tracksViewModel::setFilterQuery,
                 onRecentTrackClick = tracksViewModel::playRecentTrack,
+                onHomeTrackClick = tracksViewModel::playHomeTrack,
                 onTrackPlayNext = playbackController::playNext,
                 onTrackAddToQueue = { trackId -> playbackController.append(listOf(trackId)) },
                 onAlbumPlayNext = playbackController::playNext,

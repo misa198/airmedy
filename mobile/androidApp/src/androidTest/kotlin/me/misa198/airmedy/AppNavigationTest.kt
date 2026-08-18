@@ -20,6 +20,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
@@ -33,7 +34,9 @@ import me.misa198.airmedy.sync.LibraryArtist
 import me.misa198.airmedy.sync.LibraryGenre
 import me.misa198.airmedy.ui.screens.LibraryGenresUiState
 import me.misa198.airmedy.ui.screens.LibraryComposersUiState
+import me.misa198.airmedy.ui.screens.LibraryTracksUiState
 import me.misa198.airmedy.sync.LibraryComposer
+import me.misa198.airmedy.sync.LibraryTrack
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -279,26 +282,50 @@ class AppNavigationTest {
     }
 
     @Test
-    fun homeCanPushAndPopTheSampleDetailPage() {
-        val harness = AppHarness()
-        composeTestRule.setContent { harness.Render() }
+    fun homeDisplaysListeningSectionsAndPlaysFromTheirSectionQueue() {
+        var playedTrackId: String? = null
+        var queuedTrackIds: List<String> = emptyList()
+        val keepListening = listOf(
+            LibraryTrack(id = "keep-1", title = "Keep listening one", artists = "Artist"),
+            LibraryTrack(id = "keep-2", title = "Keep listening two", artists = "Artist"),
+        )
 
-        composeTestRule.onNodeWithText(string(R.string.home_demo_open_page)).performClick()
-        composeTestRule.onNodeWithText(string(R.string.home_sample_page_heading)).assertIsDisplayed()
-        composeTestRule.onNodeWithContentDescription(string(R.string.navigate_back)).performClick()
+        composeTestRule.setContent {
+            App(
+                tracksUiState = LibraryTracksUiState(
+                    keepListeningTracks = keepListening,
+                    mostPlayedTracks = listOf(LibraryTrack(id = "most-1", title = "Most played", artists = "Artist")),
+                    forgottenTracks = listOf(LibraryTrack(id = "forgotten-1", title = "Forgotten", artists = "Artist")),
+                ),
+                onHomeTrackClick = { tracks, trackId ->
+                    queuedTrackIds = tracks.map(LibraryTrack::id)
+                    playedTrackId = trackId
+                },
+            )
+        }
 
-        composeTestRule.onNodeWithText(string(R.string.home_demo_open_page)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(string(R.string.home_keep_listening)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(string(R.string.home_most_played)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(string(R.string.home_forgotten)).assertIsDisplayed()
+        composeTestRule.onNodeWithText("Keep listening two").performClick()
+
+        assertEquals("keep-2", playedTrackId)
+        assertEquals(listOf("keep-1", "keep-2"), queuedTrackIds)
     }
 
     @Test
-    fun systemBackPopsTheCurrentDestinationStack() {
-        val harness = AppHarness()
-        composeTestRule.setContent { harness.Render() }
+    fun longPressingHomeTrackOpensTheTrackContextMenu() {
+        composeTestRule.setContent {
+            App(
+                tracksUiState = LibraryTracksUiState(
+                    keepListeningTracks = listOf(LibraryTrack(id = "keep-1", title = "Keep listening one", artists = "Artist")),
+                ),
+            )
+        }
 
-        composeTestRule.onNodeWithText(string(R.string.home_demo_open_page)).performClick()
-        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+        composeTestRule.onNodeWithText("Keep listening one").performTouchInput { longClick() }
 
-        composeTestRule.onNodeWithText(string(R.string.home_demo_open_page)).assertIsDisplayed()
+        composeTestRule.onNodeWithText("Track info").assertIsDisplayed()
     }
 
     @Test
@@ -459,30 +486,32 @@ class AppNavigationTest {
     fun reselectingHomeRestoresItsRootStackAndScrollsToTheTop() {
         val harness = AppHarness(
             AppUiState(
+                selectedDestination = AppDestination.Library,
                 destinationStacks = rootDestinationStacks() + (
-                    AppDestination.Home to listOf(AppStackPage.Root, AppStackPage.HomeSampleDetail)
+                    AppDestination.Library to listOf(AppStackPage.Root, AppStackPage.LibraryTracks)
                 ),
             ),
         )
         composeTestRule.setContent { harness.Render() }
 
-        composeTestRule.onNodeWithContentDescription(string(R.string.destination_home)).performClick()
+        composeTestRule.onNodeWithContentDescription(string(R.string.destination_library)).performClick()
 
-        composeTestRule.onNodeWithText(string(R.string.home_demo_title)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(string(R.string.library_empty_title)).assertIsDisplayed()
     }
 
     @Test
     fun draggingBackToTheSelectedDestinationDoesNotReselectIt() {
         val harness = AppHarness(
             AppUiState(
+                selectedDestination = AppDestination.Settings,
                 destinationStacks = rootDestinationStacks() + (
-                    AppDestination.Home to listOf(AppStackPage.Root, AppStackPage.HomeSampleDetail)
+                    AppDestination.Settings to listOf(AppStackPage.Root, AppStackPage.SettingsAppearance)
                 ),
             ),
         )
         composeTestRule.setContent { harness.Render() }
 
-        composeTestRule.onNodeWithContentDescription(string(R.string.destination_home)).performTouchInput {
+        composeTestRule.onNodeWithContentDescription(string(R.string.destination_settings)).performTouchInput {
             down(center)
             moveBy(Offset(x = 240f, y = 0f))
             moveBy(Offset(x = -240f, y = 0f))
@@ -490,7 +519,7 @@ class AppNavigationTest {
         }
 
         assertEquals(emptyList<AppIntent>(), harness.intents)
-        composeTestRule.onNodeWithText(string(R.string.home_sample_page_heading)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(string(R.string.appearance_title)).assertIsDisplayed()
     }
 
     @Test
@@ -511,21 +540,21 @@ class AppNavigationTest {
 
     @Test
     fun changingStackPageKeepsCompactNavigationAndMiniPlayer() {
-        val harness = AppHarness()
+        val harness = AppHarness(AppUiState(selectedDestination = AppDestination.Library))
         composeTestRule.setContent { harness.Render(playbackState = playingState) }
 
-        composeTestRule.onNodeWithText(string(R.string.home_demo_title)).performTouchInput {
+        composeTestRule.onNodeWithText(string(R.string.library_artists)).performTouchInput {
             swipeUp(endY = center.y - 80f)
         }
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithContentDescription(string(R.string.destination_home))
+        composeTestRule.onNodeWithContentDescription(string(R.string.destination_library))
             .assertWidthIsEqualTo(48.dp)
 
-        composeTestRule.onNodeWithText(string(R.string.home_demo_open_page)).performClick()
+        composeTestRule.onNodeWithContentDescription(string(R.string.library_artists)).performClick()
         composeTestRule.waitForIdle()
 
-        composeTestRule.onNodeWithText(string(R.string.home_sample_page_heading)).assertIsDisplayed()
-        composeTestRule.onNodeWithContentDescription(string(R.string.destination_home))
+        composeTestRule.onNodeWithText(string(R.string.artists_empty_title)).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(string(R.string.destination_library))
             .assertWidthIsEqualTo(48.dp)
         composeTestRule.onNodeWithText(playingItem.title).assertIsDisplayed()
     }

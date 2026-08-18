@@ -29,12 +29,12 @@ class ActionListTest {
                 ActionList(
                     items = listOf(
                         ActionListItem(
-                            labelRes = R.string.home_action_one,
+                            labelRes = R.string.library_artists,
                             leadingSymbol = MaterialSymbols.PlayCircle,
                             onClick = {},
                         ),
                         ActionListItem(
-                            labelRes = R.string.home_action_two,
+                            labelRes = R.string.library_albums,
                             leadingSymbol = MaterialSymbols.QueueMusic,
                         ),
                     ),
@@ -43,8 +43,8 @@ class ActionListTest {
             }
         }
 
-        composeTestRule.onNodeWithContentDescription(string(R.string.home_action_one)).assertHasClickAction()
-        composeTestRule.onNodeWithContentDescription(string(R.string.home_action_two)).assertHasNoClickAction()
+        composeTestRule.onNodeWithContentDescription(string(R.string.library_artists)).assertHasClickAction()
+        composeTestRule.onNodeWithContentDescription(string(R.string.library_albums)).assertHasNoClickAction()
     }
 
     @Test
