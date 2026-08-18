@@ -1413,6 +1413,12 @@ func (r *fakeListeningRepository) RecoverOpenAttempts(context.Context) error { r
 func (r *fakeListeningRepository) GetInsights(context.Context, domain.ListeningRange, time.Time) (*domain.AnalyticsInsights, error) {
 	return nil, nil
 }
+func (r *fakeListeningRepository) ExportSnapshot(context.Context, string, time.Time) (*domain.ListeningSyncSnapshot, error) {
+	return &domain.ListeningSyncSnapshot{}, nil
+}
+func (r *fakeListeningRepository) ImportSnapshot(context.Context, *domain.ListeningSyncSnapshot) error {
+	return nil
+}
 
 type blockingListeningRepository struct {
 	fakeListeningRepository

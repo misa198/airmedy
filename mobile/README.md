@@ -143,6 +143,15 @@ The session key is encrypted with Android Keystore before DataStore persistence.
 Now Playing, scrobbling, and individual favorite love/unlove requests are sent
 directly from Android; they never depend on a paired desktop.
 
+## Listening tracking
+
+Android independently records actual playing time, qualified plays, and
+completed/skipped/stopped attempts in Room. Raw records are retained for 180
+days and daily origin-tagged aggregates are retained for all-time totals. A
+manual Library Sync exchanges this data in both directions: Android uploads
+only rows owned by its mobile identity, while desktop returns the union from
+all synchronized devices. Repeated syncs are idempotent.
+
 ## Playlist reconciliation
 
 Playlist reconciliation arrives on a separate MQTT stream from Library Sync

@@ -18,6 +18,10 @@ import me.misa198.airmedy.sync.PlaylistMutationBatchResult
 import me.misa198.airmedy.sync.PlaylistReconciliationRequest
 import me.misa198.airmedy.sync.PlaylistReconciliationTransport
 import me.misa198.airmedy.sync.PlaylistArtworkStagingStore
+import me.misa198.airmedy.sync.ListeningSyncSnapshot
+import me.misa198.airmedy.sync.ListeningSyncStore
+import me.misa198.airmedy.sync.ListeningSyncProtocol
+import me.misa198.airmedy.pairing.PairedDesktop
 
 /** Android HTTP adapter for the short-lived, plan-independent reconciliation session. */
 internal class AndroidPlaylistReconciliationTransport(
@@ -25,8 +29,9 @@ internal class AndroidPlaylistReconciliationTransport(
     private val filesDir: File,
     private val staging: PlaylistArtworkStagingStore,
     private val requester: PlaylistHttpRequester? = null,
+    private val listening: ListeningSyncStore? = null,
 ) : PlaylistReconciliationTransport {
-    override suspend fun upload(request: PlaylistReconciliationRequest, mutations: List<PlaylistMutation>): List<PlaylistMutationResult> = withContext(Dispatchers.IO) {
+    override suspend fun upload(request: PlaylistReconciliationRequest, mutations: List<PlaylistMutation>, desktop: PairedDesktop): List<PlaylistMutationResult> = withContext(Dispatchers.IO) {
         mutations.filter { it.operation.name == "SET_ARTWORK" }.forEach { mutation ->
             val hash = mutation.payload.artworkSha256 ?: error("Missing artwork hash")
             val staged = staging.stagedPlaylistArtwork(hash) ?: error("Staged playlist artwork is missing")
@@ -36,7 +41,20 @@ internal class AndroidPlaylistReconciliationTransport(
         val body = LibrarySyncProtocol.json.encodeToString(PlaylistMutationBatch.serializer(), PlaylistMutationBatch(reconciliationId = request.reconciliationId, mutations = mutations)).encodeToByteArray()
         val response = performRequest("POST", request.batchUrl, request.mobileId, body, "application/json")
         if (response.code !in 200..299) error("Playlist mutation upload failed (${response.code})")
-        LibrarySyncProtocol.json.decodeFromString(PlaylistMutationBatchResult.serializer(), response.body.decodeToString()).results
+        val results = LibrarySyncProtocol.json.decodeFromString(PlaylistMutationBatchResult.serializer(), response.body.decodeToString()).results
+        listening?.let { store ->
+            val snapshot = store.listeningSnapshot(request.reconciliationId, System.currentTimeMillis() - ListeningRetentionMs)
+            val listeningBody = LibrarySyncProtocol.json.encodeToString(ListeningSyncSnapshot.serializer(), snapshot).encodeToByteArray()
+            val listeningResponse = performRequest("POST", request.listeningUrl, request.mobileId, listeningBody, "application/json")
+            if (listeningResponse.code !in 200..299) error("Listening sync failed (${listeningResponse.code})")
+            val merged = LibrarySyncProtocol.json.decodeFromString(ListeningSyncSnapshot.serializer(), listeningResponse.body.decodeToString())
+            require(merged.version == 1 && merged.reconciliationId == request.reconciliationId) { "Invalid listening sync response" }
+            val signature = runCatching { Base64.decode(merged.signature, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP) }
+                .getOrNull()?.takeIf { it.size == 64 } ?: error("Invalid listening sync signature")
+            require(identity.verify(desktop.publicKey, ListeningSyncProtocol.signingInput(merged), signature)) { "Invalid listening sync signature" }
+            store.mergeListeningSnapshot(merged)
+        }
+        results
     }
 
     private suspend fun put(url: String, mobileId: String, body: ByteArray, mime: String) {
@@ -66,7 +84,8 @@ internal class AndroidPlaylistReconciliationTransport(
         return try {
             connection.outputStream.use { it.write(body) }
             val code = connection.responseCode
-            val bytes = (if (code in 200..299) connection.inputStream else connection.errorStream)?.use { it.readBytes() } ?: byteArrayOf()
+            val bytes = (if (code in 200..299) connection.inputStream else connection.errorStream)?.use { it.readNBytes(MaxReconciliationBodyBytes + 1) } ?: byteArrayOf()
+            require(bytes.size <= MaxReconciliationBodyBytes) { "Reconciliation response is too large" }
             PlaylistHttpResponse(code, bytes)
         } finally { connection.disconnect() }
     }
@@ -74,6 +93,9 @@ internal class AndroidPlaylistReconciliationTransport(
     private fun ByteArray.sha256(): String = sha256Hex()
     private fun ByteArray.base64Url(): String = Base64.encodeToString(this, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
 }
+
+private const val ListeningRetentionMs = 180L * 24 * 60 * 60 * 1_000
+private const val MaxReconciliationBodyBytes = 32 * 1024 * 1024
 
 internal data class PlaylistHttpResponse(val code: Int, val body: ByteArray)
 internal fun interface PlaylistHttpRequester {

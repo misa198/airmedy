@@ -12,6 +12,16 @@ seconds and scrobbles once at 50% or four minutes, provided the track is at
 least 30 seconds long. Seeking adjusts the recorded start timestamp; Last.fm
 network work is best-effort and never blocks the playback ticker.
 
+The same rendered-position ticker drives an independent `ListeningTracker` in
+`sharedLogic`; it works even when Last.fm is disconnected. Android records
+origin-tagged listening sessions, qualified plays, and playback attempts in
+Room through a serialized 64-entry writer queue. Sessions checkpoint every
+minute, flush on pause/transition/stop, and discard intervals shorter than ten
+seconds. Attempts span pause/resume and seek, ending as `completed`, `skipped`,
+or `stopped`. Open attempts are recovered as stopped after process death.
+Crossfade overlap is split equally between outgoing and incoming listening
+sessions, matching desktop attribution.
+
 `PlaybackService` owns audio focus, the platform `MediaSession`, notification,
 and the JNI `FfmpegDecoder`. The native decoder opens the private synced file,
 uses FFmpeg for demuxing and decoding, converts samples through
@@ -70,9 +80,9 @@ Opening the Android System Now Playing card uses a `CLEAR_TOP | SINGLE_TOP`
 activity intent. It brings the existing `MainActivity` task forward rather than
 creating a second app UI session.
 
-The queue contract below is implemented by the platform-neutral shared logic.
-It intentionally matches desktop queue semantics where they are user-visible,
-while excluding desktop analytics, Wails events, and desktop-database integration.
+The queue and listening-tracker contracts below are implemented by the
+platform-neutral shared logic. They match desktop behavior while excluding
+Wails events and direct desktop-database integration.
 
 ## Native Transitions and DSP
 
@@ -287,8 +297,8 @@ the Compose player state is observed. On restore:
 
 ## Non-goals
 
-This contract does not require gapless preload, crossfade, desktop analytics, or
-desktop queue synchronization. Android's fullscreen player may locally derive a
+This contract does not require an Analytics UI or desktop queue synchronization.
+Android's fullscreen player may locally derive a
 blurred gradient from loaded artwork; it falls back to theme colours and does not
 alter playback metadata or synchronize a palette. FFmpeg remains
 the only mobile decoder/demuxer path; adding a Media3, ExoPlayer, or MediaCodec

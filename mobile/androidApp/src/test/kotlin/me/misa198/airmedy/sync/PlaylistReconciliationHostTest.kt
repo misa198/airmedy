@@ -97,7 +97,7 @@ class PlaylistReconciliationHostTest {
                 PlaylistHttpRequester { method, _, _, _, _ -> calls += method; PlaylistHttpResponse(200, if (method == "POST") resultBody else byteArrayOf()) },
             )
             val mutation = PlaylistMutation("m", "p", PlaylistMutationOperation.SET_ARTWORK, 1, PlaylistMutationPayload(artworkSha256 = hash))
-            transport.upload(me.misa198.airmedy.sync.PlaylistReconciliationRequest(reconciliationId="r",desktopId="desktop",mobileId="mobile",scope=me.misa198.airmedy.sync.PlaylistSyncScope("all",emptyList()),batchUrl="http://desktop/batch",artworkUrl="http://desktop/artwork",issuedAt=1,signature=""), listOf(mutation))
+            transport.upload(me.misa198.airmedy.sync.PlaylistReconciliationRequest(reconciliationId="r",desktopId="desktop",mobileId="mobile",scope=me.misa198.airmedy.sync.PlaylistSyncScope("all",emptyList()),batchUrl="http://desktop/batch",artworkUrl="http://desktop/artwork",listeningUrl="http://desktop/listening",issuedAt=1,signature=""), listOf(mutation), me.misa198.airmedy.pairing.PairedDesktop("desktop", "Desktop", ByteArray(32)))
             assertEquals(listOf("PUT", "POST"), calls)
         } finally { root.deleteRecursively() }
     }

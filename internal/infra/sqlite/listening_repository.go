@@ -2,8 +2,10 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"airmedy/internal/domain"
@@ -12,21 +14,51 @@ import (
 
 const listeningInsightsTopItemsLimit = 50
 
-type listeningRepository struct{ db *DB }
+type listeningRepository struct {
+	db         *DB
+	sourceOnce sync.Once
+}
 
 func NewListeningRepository(db *DB) domain.ListeningRepository { return &listeningRepository{db: db} }
+
+func (r *listeningRepository) sourceID(ctx context.Context, supplied string) string {
+	if supplied != "" {
+		return supplied
+	}
+	var id string
+	if err := r.db.GetContext(ctx, &id, `SELECT device_id FROM pairing_identity WHERE id = 1`); err != nil || id == "" {
+		return "desktop"
+	}
+	r.sourceOnce.Do(func() {
+		for _, table := range []string{"listening_sessions", "playback_attempts", "daily_track_listening_stats", "daily_playback_attempt_stats"} {
+			_, _ = r.db.ExecContext(context.Background(), `UPDATE `+table+` SET source_device_id=? WHERE source_device_id='desktop'`, id)
+		}
+	})
+	return id
+}
 
 func (r *listeningRepository) RecordSession(ctx context.Context, s domain.ListeningSession) error {
 	if s.TrackID == "" || s.ListenedSeconds <= 0 {
 		return nil
+	}
+	source := r.sourceID(ctx, s.SourceDeviceID)
+	id := s.ID
+	if id == "" {
+		id = uuid.NewString()
 	}
 	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin listening session transaction: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
-	if _, err = tx.ExecContext(ctx, `INSERT INTO listening_sessions (id, track_id, started_at, ended_at, listened_seconds, qualified_play) VALUES (?, ?, ?, ?, ?, ?)`, uuid.NewString(), s.TrackID, s.StartedAt, s.EndedAt, s.ListenedSeconds, s.QualifiedPlay); err != nil {
+	inserted, err := tx.ExecContext(ctx, `INSERT INTO listening_sessions (id, source_device_id, track_id, started_at, ended_at, listened_seconds, qualified_play) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING`, id, source, s.TrackID, s.StartedAt, s.EndedAt, s.ListenedSeconds, s.QualifiedPlay)
+	if err != nil {
 		return fmt.Errorf("insert listening session: %w", err)
+	}
+	if n, rowsErr := inserted.RowsAffected(); rowsErr != nil {
+		return fmt.Errorf("read inserted listening session: %w", rowsErr)
+	} else if n == 0 {
+		return tx.Commit()
 	}
 	play := 0
 	if s.QualifiedPlay {
@@ -37,8 +69,8 @@ func (r *listeningRepository) RecordSession(ctx context.Context, s domain.Listen
 		if date == s.EndedAt.In(time.Local).Format("2006-01-02") {
 			datePlay = play
 		}
-		if _, err = tx.ExecContext(ctx, `INSERT INTO daily_track_listening_stats (local_date, track_id, listened_seconds, play_count) VALUES (?, ?, ?, ?)
-            ON CONFLICT(local_date, track_id) DO UPDATE SET listened_seconds = listened_seconds + excluded.listened_seconds, play_count = play_count + excluded.play_count`, date, s.TrackID, seconds, datePlay); err != nil {
+		if _, err = tx.ExecContext(ctx, `INSERT INTO daily_track_listening_stats (source_device_id, local_date, track_id, listened_seconds, play_count) VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(source_device_id, local_date, track_id) DO UPDATE SET listened_seconds = listened_seconds + excluded.listened_seconds, play_count = play_count + excluded.play_count`, source, date, s.TrackID, seconds, datePlay); err != nil {
 			return fmt.Errorf("upsert daily listening stats: %w", err)
 		}
 	}
@@ -92,8 +124,9 @@ func (r *listeningRepository) RecordAttemptStart(ctx context.Context, a domain.P
 	if a.ID == "" || a.TrackID == "" {
 		return nil
 	}
-	result, err := r.db.ExecContext(ctx, `INSERT INTO playback_attempts (id, track_id, started_at, start_position_seconds) VALUES (?, ?, ?, ?)
-		ON CONFLICT(id) DO NOTHING`, a.ID, a.TrackID, a.StartedAt, a.StartPositionSeconds)
+	source := r.sourceID(ctx, a.SourceDeviceID)
+	result, err := r.db.ExecContext(ctx, `INSERT INTO playback_attempts (id, source_device_id, track_id, started_at, start_position_seconds) VALUES (?, ?, ?, ?, ?)
+		ON CONFLICT(id) DO NOTHING`, a.ID, source, a.TrackID, a.StartedAt, a.StartPositionSeconds)
 	if err != nil {
 		return fmt.Errorf("insert playback attempt: %w", err)
 	}
@@ -105,8 +138,8 @@ func (r *listeningRepository) RecordAttemptStart(ctx context.Context, a domain.P
 		return nil
 	}
 	date := a.StartedAt.In(time.Local).Format("2006-01-02")
-	if _, err := r.db.ExecContext(ctx, `INSERT INTO daily_playback_attempt_stats (local_date, attempts) VALUES (?, 1)
-		ON CONFLICT(local_date) DO UPDATE SET attempts = attempts + 1`, date); err != nil {
+	if _, err := r.db.ExecContext(ctx, `INSERT INTO daily_playback_attempt_stats (source_device_id, local_date, attempts) VALUES (?, ?, 1)
+		ON CONFLICT(source_device_id, local_date) DO UPDATE SET attempts = attempts + 1`, source, date); err != nil {
 		return fmt.Errorf("aggregate playback attempt start: %w", err)
 	}
 	return nil
@@ -116,6 +149,7 @@ func (r *listeningRepository) FinalizeAttempt(ctx context.Context, a domain.Play
 	if a.ID == "" || a.TrackID == "" || a.EndReason == "" {
 		return nil
 	}
+	source := r.sourceID(ctx, a.SourceDeviceID)
 	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin finalize playback attempt: %w", err)
@@ -129,6 +163,11 @@ func (r *listeningRepository) FinalizeAttempt(ctx context.Context, a domain.Play
 	if err != nil {
 		return fmt.Errorf("read finalized playback attempt: %w", err)
 	}
+	if changed > 0 {
+		if err = tx.GetContext(ctx, &source, `SELECT source_device_id FROM playback_attempts WHERE id = ?`, a.ID); err != nil {
+			return fmt.Errorf("read playback attempt source: %w", err)
+		}
+	}
 	if changed == 0 {
 		var existing int
 		if err = tx.GetContext(ctx, &existing, `SELECT COUNT(*) FROM playback_attempts WHERE id = ?`, a.ID); err != nil {
@@ -137,12 +176,12 @@ func (r *listeningRepository) FinalizeAttempt(ctx context.Context, a domain.Play
 		if existing > 0 {
 			return nil // already finalized; a duplicate worker message is a no-op.
 		}
-		if _, err = tx.ExecContext(ctx, `INSERT INTO playback_attempts (id, track_id, started_at, ended_at, start_position_seconds, listened_seconds, end_reason) VALUES (?, ?, ?, ?, ?, ?, ?)`, a.ID, a.TrackID, a.StartedAt, a.EndedAt, a.StartPositionSeconds, a.ListenedSeconds, a.EndReason); err != nil {
+		if _, err = tx.ExecContext(ctx, `INSERT INTO playback_attempts (id, source_device_id, track_id, started_at, ended_at, start_position_seconds, listened_seconds, end_reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, a.ID, source, a.TrackID, a.StartedAt, a.EndedAt, a.StartPositionSeconds, a.ListenedSeconds, a.EndReason); err != nil {
 			return fmt.Errorf("upsert finalized playback attempt: %w", err)
 		}
 		// A dropped start message must still contribute one attempt.
-		if _, err = tx.ExecContext(ctx, `INSERT INTO daily_playback_attempt_stats (local_date, attempts) VALUES (?, 1)
-			ON CONFLICT(local_date) DO UPDATE SET attempts = attempts + 1`, a.StartedAt.In(time.Local).Format("2006-01-02")); err != nil {
+		if _, err = tx.ExecContext(ctx, `INSERT INTO daily_playback_attempt_stats (source_device_id, local_date, attempts) VALUES (?, ?, 1)
+			ON CONFLICT(source_device_id, local_date) DO UPDATE SET attempts = attempts + 1`, source, a.StartedAt.In(time.Local).Format("2006-01-02")); err != nil {
 			return fmt.Errorf("aggregate recovered attempt start: %w", err)
 		}
 	}
@@ -151,8 +190,8 @@ func (r *listeningRepository) FinalizeAttempt(ctx context.Context, a domain.Play
 	if column != string(domain.PlaybackEndCompleted) && column != string(domain.PlaybackEndSkipped) && column != string(domain.PlaybackEndStopped) {
 		return fmt.Errorf("invalid playback end reason %q", a.EndReason)
 	}
-	if _, err = tx.ExecContext(ctx, `INSERT INTO daily_playback_attempt_stats (local_date, `+column+`, listened_seconds) VALUES (?, 1, ?)
-		ON CONFLICT(local_date) DO UPDATE SET `+column+` = `+column+` + 1, listened_seconds = listened_seconds + excluded.listened_seconds`, date, a.ListenedSeconds); err != nil {
+	if _, err = tx.ExecContext(ctx, `INSERT INTO daily_playback_attempt_stats (source_device_id, local_date, `+column+`, listened_seconds) VALUES (?, ?, 1, ?)
+		ON CONFLICT(source_device_id, local_date) DO UPDATE SET `+column+` = `+column+` + 1, listened_seconds = listened_seconds + excluded.listened_seconds`, source, date, a.ListenedSeconds); err != nil {
 		return fmt.Errorf("aggregate finalized playback attempt: %w", err)
 	}
 	if err = tx.Commit(); err != nil {
@@ -167,20 +206,114 @@ func (r *listeningRepository) RecoverOpenAttempts(ctx context.Context) error {
 		return fmt.Errorf("begin recover playback attempts: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
-	var dates []string
-	if err = tx.SelectContext(ctx, &dates, `SELECT strftime('%Y-%m-%d', started_at, 'localtime') FROM playback_attempts WHERE end_reason IS NULL`); err != nil {
+	var rows []struct {
+		Date   string `db:"date"`
+		Source string `db:"source"`
+	}
+	if err = tx.SelectContext(ctx, &rows, `SELECT strftime('%Y-%m-%d', started_at, 'localtime') date, source_device_id source FROM playback_attempts WHERE end_reason IS NULL`); err != nil {
 		return fmt.Errorf("list open playback attempts: %w", err)
 	}
 	if _, err = tx.ExecContext(ctx, `UPDATE playback_attempts SET ended_at = started_at, listened_seconds = 0, end_reason = 'stopped' WHERE end_reason IS NULL`); err != nil {
 		return fmt.Errorf("recover playback attempts: %w", err)
 	}
-	for _, date := range dates {
-		if _, err = tx.ExecContext(ctx, `INSERT INTO daily_playback_attempt_stats (local_date, stopped) VALUES (?, 1) ON CONFLICT(local_date) DO UPDATE SET stopped = stopped + 1`, date); err != nil {
+	for _, row := range rows {
+		if _, err = tx.ExecContext(ctx, `INSERT INTO daily_playback_attempt_stats (source_device_id, local_date, stopped) VALUES (?, ?, 1) ON CONFLICT(source_device_id, local_date) DO UPDATE SET stopped = stopped + 1`, row.Source, row.Date); err != nil {
 			return fmt.Errorf("aggregate recovered playback attempt: %w", err)
 		}
 	}
 	if err = tx.Commit(); err != nil {
 		return fmt.Errorf("commit recovered playback attempts: %w", err)
+	}
+	return nil
+}
+
+func (r *listeningRepository) ExportSnapshot(ctx context.Context, reconciliationID string, since time.Time) (*domain.ListeningSyncSnapshot, error) {
+	result := &domain.ListeningSyncSnapshot{Version: 1, ReconciliationID: reconciliationID, Sessions: []domain.ListeningSyncSession{}, Attempts: []domain.ListeningSyncAttempt{}, DailyTracks: []domain.DailyTrackListeningStat{}, DailyAttempts: []domain.DailyPlaybackAttemptStat{}}
+	var sessions []struct {
+		ID              string    `db:"id"`
+		SourceDeviceID  string    `db:"source_device_id"`
+		TrackID         string    `db:"track_id"`
+		StartedAt       time.Time `db:"started_at"`
+		EndedAt         time.Time `db:"ended_at"`
+		ListenedSeconds int       `db:"listened_seconds"`
+		QualifiedPlay   bool      `db:"qualified_play"`
+	}
+	if err := r.db.SelectContext(ctx, &sessions, `SELECT id, source_device_id, track_id, started_at, ended_at, listened_seconds, qualified_play FROM listening_sessions WHERE ended_at >= ?`, since); err != nil {
+		return nil, fmt.Errorf("export listening sessions: %w", err)
+	}
+	for _, row := range sessions {
+		result.Sessions = append(result.Sessions, domain.ListeningSyncSession{ID: row.ID, SourceDeviceID: row.SourceDeviceID, TrackID: row.TrackID, StartedAt: row.StartedAt.UnixMilli(), EndedAt: row.EndedAt.UnixMilli(), ListenedSeconds: row.ListenedSeconds, QualifiedPlay: row.QualifiedPlay})
+	}
+	var attempts []struct {
+		ID                   string    `db:"id"`
+		SourceDeviceID       string    `db:"source_device_id"`
+		TrackID              string    `db:"track_id"`
+		StartedAt            time.Time `db:"started_at"`
+		EndedAt              time.Time `db:"ended_at"`
+		StartPositionSeconds float64   `db:"start_position_seconds"`
+		ListenedSeconds      int       `db:"listened_seconds"`
+		EndReason            string    `db:"end_reason"`
+	}
+	if err := r.db.SelectContext(ctx, &attempts, `SELECT id, source_device_id, track_id, started_at, ended_at, start_position_seconds, listened_seconds, end_reason FROM playback_attempts WHERE ended_at >= ? AND end_reason IS NOT NULL`, since); err != nil {
+		return nil, fmt.Errorf("export playback attempts: %w", err)
+	}
+	for _, row := range attempts {
+		result.Attempts = append(result.Attempts, domain.ListeningSyncAttempt{ID: row.ID, SourceDeviceID: row.SourceDeviceID, TrackID: row.TrackID, StartedAt: row.StartedAt.UnixMilli(), EndedAt: row.EndedAt.UnixMilli(), StartPositionMS: int64(row.StartPositionSeconds * 1000), ListenedSeconds: row.ListenedSeconds, EndReason: row.EndReason})
+	}
+	if err := r.db.SelectContext(ctx, &result.DailyTracks, `SELECT source_device_id, local_date, track_id, listened_seconds, play_count FROM daily_track_listening_stats`); err != nil {
+		return nil, fmt.Errorf("export daily track stats: %w", err)
+	}
+	if err := r.db.SelectContext(ctx, &result.DailyAttempts, `SELECT source_device_id, local_date, attempts, completed, skipped, stopped, listened_seconds FROM daily_playback_attempt_stats`); err != nil {
+		return nil, fmt.Errorf("export daily attempt stats: %w", err)
+	}
+	return result, nil
+}
+
+func (r *listeningRepository) ImportSnapshot(ctx context.Context, snapshot *domain.ListeningSyncSnapshot) error {
+	if snapshot == nil || snapshot.Version != 1 {
+		return fmt.Errorf("invalid listening snapshot")
+	}
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin listening import: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	for _, row := range snapshot.Sessions {
+		_, err = tx.ExecContext(ctx, `INSERT INTO listening_sessions(id,source_device_id,track_id,started_at,ended_at,listened_seconds,qualified_play) SELECT ?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM tracks WHERE id=?) ON CONFLICT(id) DO NOTHING`, row.ID, row.SourceDeviceID, row.TrackID, time.UnixMilli(row.StartedAt), time.UnixMilli(row.EndedAt), row.ListenedSeconds, row.QualifiedPlay, row.TrackID)
+		if err != nil {
+			return fmt.Errorf("import listening session: %w", err)
+		}
+	}
+	for _, row := range snapshot.Attempts {
+		_, err = tx.ExecContext(ctx, `INSERT INTO playback_attempts(id,source_device_id,track_id,started_at,ended_at,start_position_seconds,listened_seconds,end_reason) SELECT ?,?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM tracks WHERE id=?) ON CONFLICT(id) DO NOTHING`, row.ID, row.SourceDeviceID, row.TrackID, time.UnixMilli(row.StartedAt), time.UnixMilli(row.EndedAt), float64(row.StartPositionMS)/1000, row.ListenedSeconds, row.EndReason, row.TrackID)
+		if err != nil {
+			return fmt.Errorf("import playback attempt: %w", err)
+		}
+	}
+	for _, row := range snapshot.DailyTracks {
+		var previous int
+		getErr := tx.GetContext(ctx, &previous, `SELECT play_count FROM daily_track_listening_stats WHERE source_device_id=? AND local_date=? AND track_id=?`, row.SourceDeviceID, row.LocalDate, row.TrackID)
+		if getErr != nil && getErr != sql.ErrNoRows {
+			return fmt.Errorf("read imported play count: %w", getErr)
+		}
+		result, execErr := tx.ExecContext(ctx, `INSERT INTO daily_track_listening_stats(source_device_id,local_date,track_id,listened_seconds,play_count) SELECT ?,?,?,?,? WHERE EXISTS(SELECT 1 FROM tracks WHERE id=?) ON CONFLICT(source_device_id,local_date,track_id) DO UPDATE SET listened_seconds=MAX(listened_seconds,excluded.listened_seconds), play_count=MAX(play_count,excluded.play_count)`, row.SourceDeviceID, row.LocalDate, row.TrackID, row.ListenedSeconds, row.PlayCount, row.TrackID)
+		if execErr != nil {
+			return fmt.Errorf("import daily track stat: %w", execErr)
+		}
+		if changed, _ := result.RowsAffected(); changed > 0 && row.PlayCount > previous {
+			if _, execErr = tx.ExecContext(ctx, `UPDATE tracks SET play_count=play_count+? WHERE id=?`, row.PlayCount-previous, row.TrackID); execErr != nil {
+				return fmt.Errorf("merge imported play count: %w", execErr)
+			}
+		}
+	}
+	for _, row := range snapshot.DailyAttempts {
+		_, err = tx.ExecContext(ctx, `INSERT INTO daily_playback_attempt_stats(source_device_id,local_date,attempts,completed,skipped,stopped,listened_seconds) VALUES(?,?,?,?,?,?,?) ON CONFLICT(source_device_id,local_date) DO UPDATE SET attempts=MAX(attempts,excluded.attempts), completed=MAX(completed,excluded.completed), skipped=MAX(skipped,excluded.skipped), stopped=MAX(stopped,excluded.stopped), listened_seconds=MAX(listened_seconds,excluded.listened_seconds)`, row.SourceDeviceID, row.LocalDate, row.Attempts, row.Completed, row.Skipped, row.Stopped, row.ListenedSeconds)
+		if err != nil {
+			return fmt.Errorf("import daily attempt stat: %w", err)
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("commit listening import: %w", err)
 	}
 	return nil
 }

@@ -107,7 +107,10 @@ class MainActivity : ComponentActivity() {
                         identityProvider = preferences,
                         clock = PlaylistReconciliationClock { System.currentTimeMillis() },
                         store = AndroidSyncRuntime.syncStore(),
-                        transport = AndroidPlaylistReconciliationTransport(preferences, applicationContext.filesDir, AndroidSyncRuntime.syncStore()),
+                        transport = AndroidPlaylistReconciliationTransport(
+                            preferences, applicationContext.filesDir, AndroidSyncRuntime.syncStore(),
+                            listening = AndroidSyncRuntime.syncStore(),
+                        ),
                         publisher = PlaylistReconciliationPublisher { result ->
                             val mobileId = preferences.identity().id
                             syncSession.publish(PlaylistSyncProtocol.resultTopic(desktop.desktopId, mobileId), result)

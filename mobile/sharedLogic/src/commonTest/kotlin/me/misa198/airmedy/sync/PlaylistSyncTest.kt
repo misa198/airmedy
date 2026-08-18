@@ -29,12 +29,12 @@ class PlaylistSyncProtocolTest {
     @Test fun `uses isolated reconciliation topics and compact signing input`() {
         val request = PlaylistReconciliationRequest(
             reconciliationId = "r", desktopId = "desktop", mobileId = "mobile",
-            scope = PlaylistSyncScope("all", emptyList()), batchUrl = "http://desktop/batch", artworkUrl = "http://desktop/artwork",
+            scope = PlaylistSyncScope("all", emptyList()), batchUrl = "http://desktop/batch", artworkUrl = "http://desktop/artwork", listeningUrl = "http://desktop/listening",
             issuedAt = 42, signature = "",
         )
         assertEquals("airmedy/playlist-sync/v1/desktop/mobile/request", PlaylistSyncProtocol.requestTopic("desktop", "mobile"))
         assertEquals("airmedy/playlist-sync/v1/desktop/mobile/result", PlaylistSyncProtocol.resultTopic("desktop", "mobile"))
-        assertEquals("{\"version\":1,\"type\":\"playlist.sync.reconcile.request\",\"reconciliation_id\":\"r\",\"desktop_id\":\"desktop\",\"mobile_id\":\"mobile\",\"scope\":{\"kind\":\"all\",\"selected_ids\":[]},\"batch_url\":\"http://desktop/batch\",\"artwork_url\":\"http://desktop/artwork\",\"issued_at\":42,\"signature\":\"\"}", PlaylistSyncProtocol.requestSigningInput(request))
+        assertEquals("{\"version\":1,\"type\":\"playlist.sync.reconcile.request\",\"reconciliation_id\":\"r\",\"desktop_id\":\"desktop\",\"mobile_id\":\"mobile\",\"scope\":{\"kind\":\"all\",\"selected_ids\":[]},\"batch_url\":\"http://desktop/batch\",\"artwork_url\":\"http://desktop/artwork\",\"listening_url\":\"http://desktop/listening\",\"issued_at\":42,\"signature\":\"\"}", PlaylistSyncProtocol.requestSigningInput(request))
         val result = PlaylistReconciliationResult(reconciliationId = "r", mobileId = "mobile", results = listOf(PlaylistMutationResult("m", PlaylistMutationStatus.APPLIED)), issuedAt = 43, signature = "signed")
         assertEquals("{\"version\":1,\"type\":\"playlist.sync.reconcile.result\",\"reconciliation_id\":\"r\",\"mobile_id\":\"mobile\",\"results\":[{\"mutation_id\":\"m\",\"status\":\"applied\"}],\"issued_at\":43,\"signature\":\"\"}", PlaylistSyncProtocol.resultSigningInput(result))
         assertTrue(PlaylistSyncProtocol.validSignature(Base64Url.encode(ByteArray(64))))
@@ -58,14 +58,14 @@ class PlaylistReconciliationCoordinatorTest {
     private val desktop = PairedDesktop("desktop", "Desktop", ByteArray(32))
     private val request = PlaylistReconciliationRequest(
         reconciliationId = "reconciliation", desktopId = "desktop", mobileId = "mobile",
-        scope = PlaylistSyncScope("all", emptyList()), batchUrl = "http://desktop/batch", artworkUrl = "http://desktop/artwork",
+        scope = PlaylistSyncScope("all", emptyList()), batchUrl = "http://desktop/batch", artworkUrl = "http://desktop/artwork", listeningUrl = "http://desktop/listening",
         issuedAt = 1_000, signature = Base64Url.encode(ByteArray(64)),
     )
 
     @Test fun `acknowledges only after terminal result is published`() = kotlinx.coroutines.test.runTest {
         val events = mutableListOf<String>()
         val coordinator = coordinator(
-            transport = { _, _ -> events += "upload"; listOf(PlaylistMutationResult("mutation", PlaylistMutationStatus.APPLIED)) },
+            transport = { _, _, _ -> events += "upload"; listOf(PlaylistMutationResult("mutation", PlaylistMutationStatus.APPLIED)) },
             publisher = { events += "publish" },
             acknowledge = { events += "ack" },
         )
@@ -75,10 +75,10 @@ class PlaylistReconciliationCoordinatorTest {
 
     @Test fun `transport and publish failures retain pending queue`() = kotlinx.coroutines.test.runTest {
         var acknowledgements = 0
-        val transportFailure = coordinator(transport = { _, _ -> error("offline") }, acknowledge = { acknowledgements++ })
+        val transportFailure = coordinator(transport = { _, _, _ -> error("offline") }, acknowledge = { acknowledgements++ })
         assertIs<PlaylistReconciliationOutcome.TransportFailed>(transportFailure.handle(encoded(request), desktop))
         val publishFailure = coordinator(
-            transport = { _, _ -> listOf(PlaylistMutationResult("mutation", PlaylistMutationStatus.APPLIED)) },
+            transport = { _, _, _ -> listOf(PlaylistMutationResult("mutation", PlaylistMutationStatus.APPLIED)) },
             publisher = { error("mqtt offline") }, acknowledge = { acknowledgements++ },
         )
         assertIs<PlaylistReconciliationOutcome.TransportFailed>(publishFailure.handle(encoded(request), desktop))
@@ -86,7 +86,7 @@ class PlaylistReconciliationCoordinatorTest {
     }
 
     @Test fun `rejects foreign expired invalid scope and incomplete results`() = kotlinx.coroutines.test.runTest {
-        val base = coordinator(transport = { _, _ -> emptyList() })
+        val base = coordinator(transport = { _, _, _ -> emptyList() })
         assertIs<PlaylistReconciliationOutcome.Rejected>(base.handle(encoded(request.copy(mobileId = "foreign")), desktop))
         assertIs<PlaylistReconciliationOutcome.Rejected>(base.handle(encoded(request.copy(issuedAt = -400_000)), desktop))
         assertIs<PlaylistReconciliationOutcome.Rejected>(base.handle(encoded(request.copy(scope = PlaylistSyncScope("playlists", emptyList()))), desktop))
@@ -94,7 +94,7 @@ class PlaylistReconciliationCoordinatorTest {
     }
 
     private fun coordinator(
-        transport: PlaylistReconciliationTransport = PlaylistReconciliationTransport { _, _ -> listOf(PlaylistMutationResult("mutation", PlaylistMutationStatus.APPLIED)) },
+        transport: PlaylistReconciliationTransport = PlaylistReconciliationTransport { _, _, _ -> listOf(PlaylistMutationResult("mutation", PlaylistMutationStatus.APPLIED)) },
         publisher: PlaylistReconciliationPublisher = PlaylistReconciliationPublisher { },
         acknowledge: suspend (List<String>) -> Unit = {},
     ) = PlaylistReconciliationCoordinator(

@@ -62,6 +62,8 @@ const (
 
 var reconciliationTimeout = 30 * time.Second
 
+const maxReconciliationBodySize = 32 << 20
+
 type playlistReconciliationRequest struct {
 	Version          int                           `json:"version"`
 	Type             string                        `json:"type"`
@@ -71,6 +73,7 @@ type playlistReconciliationRequest struct {
 	Scope            domain.MobileLibrarySyncScope `json:"scope"`
 	BatchURL         string                        `json:"batch_url"`
 	ArtworkURL       string                        `json:"artwork_url"`
+	ListeningURL     string                        `json:"listening_url"`
 	IssuedAt         int64                         `json:"issued_at"`
 	Signature        string                        `json:"signature"`
 }
@@ -114,6 +117,7 @@ type Service struct {
 	staging        domain.PlaylistArtworkStagingRepository
 	tx             domain.TxManager
 	playlistSvc    *playlistapp.PlaylistService
+	listening      domain.ListeningRepository
 	logger         *slog.Logger
 
 	mu                 sync.Mutex
@@ -128,8 +132,8 @@ type Service struct {
 	listeners          []func(*domain.MobileLibrarySyncPlan)
 }
 
-func NewService(plans domain.MobileLibrarySyncPlanRepository, tracks domain.TrackRepository, playlists domain.PlaylistRepository, artists domain.ArtistRepository, lyrics *lyricsapp.LyricsService, lyricCache domain.MobileSyncLyricCacheRepository, analysis domain.AnalysisRepository, artwork domain.ArtworkCache, devices domain.TrustedMobileDeviceRepository, identity domain.PairingIdentityRepository, keys domain.PairingKeyStore, broker domain.PairingBroker, ledger domain.PlaylistMutationLedger, lww domain.PlaylistMutationLWW, favoriteLedger domain.FavoriteMutationLedger, favoriteLWW domain.FavoriteMutationLWW, staging domain.PlaylistArtworkStagingRepository, tx domain.TxManager, playlistSvc *playlistapp.PlaylistService, logger *slog.Logger) *Service {
-	return &Service{plans: plans, tracks: tracks, playlists: playlists, artists: artists, lyrics: lyrics, lyricCache: lyricCache, analysis: analysis, artwork: artwork, devices: devices, identity: identity, keys: keys, broker: broker, ledger: ledger, lww: lww, favoriteLedger: favoriteLedger, favoriteLWW: favoriteLWW, staging: staging, tx: tx, playlistSvc: playlistSvc, logger: logger, nonces: make(map[string]time.Time), playlistArtwork: make(map[string]string), reconciliations: make(map[string]*playlistReconciliation)}
+func NewService(plans domain.MobileLibrarySyncPlanRepository, tracks domain.TrackRepository, playlists domain.PlaylistRepository, artists domain.ArtistRepository, lyrics *lyricsapp.LyricsService, lyricCache domain.MobileSyncLyricCacheRepository, analysis domain.AnalysisRepository, artwork domain.ArtworkCache, devices domain.TrustedMobileDeviceRepository, identity domain.PairingIdentityRepository, keys domain.PairingKeyStore, broker domain.PairingBroker, ledger domain.PlaylistMutationLedger, lww domain.PlaylistMutationLWW, favoriteLedger domain.FavoriteMutationLedger, favoriteLWW domain.FavoriteMutationLWW, staging domain.PlaylistArtworkStagingRepository, tx domain.TxManager, playlistSvc *playlistapp.PlaylistService, listening domain.ListeningRepository, logger *slog.Logger) *Service {
+	return &Service{plans: plans, tracks: tracks, playlists: playlists, artists: artists, lyrics: lyrics, lyricCache: lyricCache, analysis: analysis, artwork: artwork, devices: devices, identity: identity, keys: keys, broker: broker, ledger: ledger, lww: lww, favoriteLedger: favoriteLedger, favoriteLWW: favoriteLWW, staging: staging, tx: tx, playlistSvc: playlistSvc, listening: listening, logger: logger, nonces: make(map[string]time.Time), playlistArtwork: make(map[string]string), reconciliations: make(map[string]*playlistReconciliation)}
 }
 
 func (s *Service) OnStart(ctx context.Context) error { return s.cleanupPlaylistArtwork(ctx) }
@@ -251,7 +255,7 @@ func (s *Service) reconcilePlaylists(ctx context.Context, deviceID string, scope
 		}
 	}()
 	base := fmt.Sprintf("http://%s:%d/mobile-sync/v1/reconciliations/%s", host, s.port, reconciliation.ID)
-	request := playlistReconciliationRequest{Version: playlistSyncVersion, Type: playlistReconciliationRequestType, ReconciliationID: reconciliation.ID, DesktopID: identity.DeviceID, MobileID: deviceID, Scope: scope, BatchURL: base + "/playlist-mutations", ArtworkURL: base + "/playlist-artwork", IssuedAt: time.Now().UTC().UnixMilli()}
+	request := playlistReconciliationRequest{Version: playlistSyncVersion, Type: playlistReconciliationRequestType, ReconciliationID: reconciliation.ID, DesktopID: identity.DeviceID, MobileID: deviceID, Scope: scope, BatchURL: base + "/playlist-mutations", ArtworkURL: base + "/playlist-artwork", ListeningURL: base + "/listening", IssuedAt: time.Now().UTC().UnixMilli()}
 	input, _ := json.Marshal(request)
 	request.Signature = base64.RawURLEncoding.EncodeToString(ed25519.Sign(key, input))
 	payload, _ := json.Marshal(request)
@@ -792,11 +796,122 @@ func (s *Service) serveReconciliationHTTP(w http.ResponseWriter, r *http.Request
 		s.servePlaylistMutations(w, r, reconciliation)
 		return
 	}
+	if r.Method == http.MethodPost && len(parts) == 5 && parts[4] == "listening" {
+		s.serveListeningSync(w, r, reconciliation)
+		return
+	}
 	if r.Method == http.MethodPut && len(parts) == 6 && parts[4] == "playlist-artwork" {
 		s.servePlaylistArtwork(w, r, reconciliation, parts[5])
 		return
 	}
 	http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+}
+
+func (s *Service) serveListeningSync(w http.ResponseWriter, r *http.Request, reconciliation *playlistReconciliation) {
+	defer func() { _ = r.Body.Close() }()
+	var snapshot domain.ListeningSyncSnapshot
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxReconciliationBodySize))
+	if err != nil || json.Unmarshal(body, &snapshot) != nil || snapshot.Version != 1 || snapshot.ReconciliationID != reconciliation.ID {
+		http.Error(w, "invalid listening snapshot", http.StatusBadRequest)
+		return
+	}
+	if len(snapshot.Sessions)+len(snapshot.Attempts)+len(snapshot.DailyTracks)+len(snapshot.DailyAttempts) > 200000 {
+		http.Error(w, "invalid listening snapshot", http.StatusBadRequest)
+		return
+	}
+	// The desktop is the sync hub. A mobile may contribute only records it owns;
+	// union rows learned from a previous desktop response are not trusted input.
+	mobileID := reconciliation.DeviceID
+	filtered := domain.ListeningSyncSnapshot{Version: 1, ReconciliationID: reconciliation.ID}
+	for _, row := range snapshot.Sessions {
+		if row.SourceDeviceID == mobileID {
+			filtered.Sessions = append(filtered.Sessions, row)
+		}
+	}
+	for _, row := range snapshot.Attempts {
+		if row.SourceDeviceID == mobileID {
+			filtered.Attempts = append(filtered.Attempts, row)
+		}
+	}
+	for _, row := range snapshot.DailyTracks {
+		if row.SourceDeviceID == mobileID {
+			filtered.DailyTracks = append(filtered.DailyTracks, row)
+		}
+	}
+	for _, row := range snapshot.DailyAttempts {
+		if row.SourceDeviceID == mobileID {
+			filtered.DailyAttempts = append(filtered.DailyAttempts, row)
+		}
+	}
+	if !validListeningSnapshot(&filtered) {
+		http.Error(w, "invalid listening snapshot", http.StatusBadRequest)
+		return
+	}
+	if err := s.listening.ImportSnapshot(r.Context(), &filtered); err != nil {
+		http.Error(w, "unable to import listening snapshot", http.StatusInternalServerError)
+		return
+	}
+	merged, err := s.listening.ExportSnapshot(r.Context(), reconciliation.ID, time.Now().AddDate(0, 0, -180))
+	if err != nil {
+		http.Error(w, "unable to export listening snapshot", http.StatusInternalServerError)
+		return
+	}
+	if len(merged.Sessions)+len(merged.Attempts)+len(merged.DailyTracks)+len(merged.DailyAttempts) > 200000 {
+		http.Error(w, "listening snapshot is too large", http.StatusRequestEntityTooLarge)
+		return
+	}
+	key, ok, err := s.keys.Load(r.Context())
+	if err != nil || !ok {
+		http.Error(w, "pairing key unavailable", http.StatusInternalServerError)
+		return
+	}
+	merged.Signature = ""
+	unsigned, err := json.Marshal(merged)
+	if err != nil {
+		http.Error(w, "unable to encode listening snapshot", http.StatusInternalServerError)
+		return
+	}
+	merged.Signature = base64.RawURLEncoding.EncodeToString(ed25519.Sign(key, unsigned))
+	body, err = json.Marshal(merged)
+	if err != nil {
+		http.Error(w, "unable to encode listening snapshot", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write(body)
+}
+
+func validListeningSnapshot(snapshot *domain.ListeningSyncSnapshot) bool {
+	validReason := func(value string) bool { return value == "completed" || value == "skipped" || value == "stopped" }
+	const maxCounter = 1_000_000_000
+	latest := time.Now().Add(5 * time.Minute).UnixMilli()
+	for _, row := range snapshot.Sessions {
+		if row.ID == "" || len(row.ID) > 128 || row.SourceDeviceID == "" || row.TrackID == "" || len(row.TrackID) > 128 || row.StartedAt <= 0 || row.EndedAt < row.StartedAt || row.EndedAt > latest || row.ListenedSeconds < 0 || row.ListenedSeconds > maxCounter {
+			return false
+		}
+	}
+	for _, row := range snapshot.Attempts {
+		if row.ID == "" || len(row.ID) > 128 || row.SourceDeviceID == "" || row.TrackID == "" || len(row.TrackID) > 128 || row.StartedAt <= 0 || row.EndedAt < row.StartedAt || row.EndedAt > latest || row.ListenedSeconds < 0 || row.ListenedSeconds > maxCounter || !validReason(row.EndReason) {
+			return false
+		}
+	}
+	for _, row := range snapshot.DailyTracks {
+		if row.SourceDeviceID == "" || row.TrackID == "" || len(row.TrackID) > 128 || row.ListenedSeconds < 0 || row.ListenedSeconds > maxCounter || row.PlayCount < 0 || row.PlayCount > maxCounter {
+			return false
+		}
+		if _, err := time.Parse("2006-01-02", row.LocalDate); err != nil {
+			return false
+		}
+	}
+	for _, row := range snapshot.DailyAttempts {
+		if row.SourceDeviceID == "" || row.Attempts < 0 || row.Attempts > maxCounter || row.Completed < 0 || row.Completed > maxCounter || row.Skipped < 0 || row.Skipped > maxCounter || row.Stopped < 0 || row.Stopped > maxCounter || row.Completed+row.Skipped+row.Stopped > row.Attempts || row.ListenedSeconds < 0 || row.ListenedSeconds > maxCounter {
+			return false
+		}
+		if _, err := time.Parse("2006-01-02", row.LocalDate); err != nil {
+			return false
+		}
+	}
+	return true
 }
 
 func (s *Service) servePlaylistArtwork(w http.ResponseWriter, r *http.Request, reconciliation *playlistReconciliation, expectedHash string) {
@@ -917,8 +1032,8 @@ func (s *Service) authorizeHTTP(r *http.Request) bool {
 	if err != nil {
 		return false
 	}
-	body, err := io.ReadAll(io.LimitReader(r.Body, 10<<20+1))
-	if err != nil || len(body) > 10<<20 {
+	body, err := io.ReadAll(io.LimitReader(r.Body, maxReconciliationBodySize+1))
+	if err != nil || len(body) > maxReconciliationBodySize {
 		return false
 	}
 	r.Body = io.NopCloser(bytes.NewReader(body))

@@ -89,6 +89,7 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000069 | `mobile_playlist_sync.up.sql` | Add durable per-device playlist-mutation ledger used to deduplicate mobile reconciliation retries |
 | 000070 | `mobile_playlist_reconciliation.up.sql` | Add global playlist LWW/tombstone watermarks and device/reconciliation-owned artwork staging with expiry index |
 | 000071 | `mobile_favorite_sync.up.sql` | Add trusted-device favorite mutation ledger and per-track last-write-wins favorite watermark for mobile reconciliation |
+| 000072 | `listening_sources.up.sql` | Add source-device identity to raw listening rows and daily aggregate keys for cross-device sync |
 
 `listeningRepository.GetInsights` returns up to 50 entries for both Top Artists
 (ordered by listened seconds) and Top Tracks (ordered by play count, then listened
@@ -315,6 +316,7 @@ mini_player_state (
 ```sql
 listening_sessions (
     id TEXT PRIMARY KEY,
+    source_device_id TEXT,
     track_id TEXT REFERENCES tracks(id) ON DELETE CASCADE,
     started_at DATETIME,
     ended_at DATETIME,
@@ -323,15 +325,17 @@ listening_sessions (
 )
 
 daily_track_listening_stats (
+    source_device_id TEXT,
     local_date TEXT,
     track_id TEXT REFERENCES tracks(id) ON DELETE CASCADE,
     listened_seconds INTEGER DEFAULT 0,
     play_count INTEGER DEFAULT 0,
-    PRIMARY KEY (local_date, track_id)
+    PRIMARY KEY (source_device_id, local_date, track_id)
 )
 
 playback_attempts (
     id TEXT PRIMARY KEY,
+    source_device_id TEXT,
     track_id TEXT REFERENCES tracks(id) ON DELETE CASCADE,
     started_at DATETIME,
     ended_at DATETIME,
@@ -341,14 +345,21 @@ playback_attempts (
 )
 
 daily_playback_attempt_stats (
-    local_date TEXT PRIMARY KEY,
+    source_device_id TEXT,
+    local_date TEXT,
     attempts INTEGER,
     completed INTEGER,
     skipped INTEGER,
     stopped INTEGER,
-    listened_seconds INTEGER
+    listened_seconds INTEGER,
+    PRIMARY KEY (source_device_id, local_date)
 )
 ```
+
+Analytics queries sum across sources; `source_device_id` remains available for
+a future device filter. Snapshot import uses immutable raw IDs and monotonic
+per-origin daily counters, so retrying mobile reconciliation cannot duplicate
+totals.
 
 `ListeningRepository.RecordSession` writes both tables in one transaction. It
 splits elapsed listening time across local calendar days and increments the

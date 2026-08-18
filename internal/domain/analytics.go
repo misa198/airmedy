@@ -14,6 +14,8 @@ const (
 )
 
 type ListeningSession struct {
+	ID              string
+	SourceDeviceID  string
 	TrackID         string
 	StartedAt       time.Time
 	EndedAt         time.Time
@@ -33,6 +35,7 @@ const (
 // sessions, it survives pause/resume and is used for completion/skip rates.
 type PlaybackAttempt struct {
 	ID                   string
+	SourceDeviceID       string
 	TrackID              string
 	StartedAt            time.Time
 	EndedAt              time.Time
@@ -102,6 +105,55 @@ type AnalyticsInsights struct {
 	TopTracks             []AnalyticsTrack              `json:"top_tracks"`
 }
 
+type ListeningSyncSession struct {
+	ID              string `json:"id"`
+	SourceDeviceID  string `json:"source_device_id"`
+	TrackID         string `json:"track_id"`
+	StartedAt       int64  `json:"started_at"`
+	EndedAt         int64  `json:"ended_at"`
+	ListenedSeconds int    `json:"listened_seconds"`
+	QualifiedPlay   bool   `json:"qualified_play"`
+}
+
+type ListeningSyncAttempt struct {
+	ID              string `json:"id"`
+	SourceDeviceID  string `json:"source_device_id"`
+	TrackID         string `json:"track_id"`
+	StartedAt       int64  `json:"started_at"`
+	EndedAt         int64  `json:"ended_at"`
+	StartPositionMS int64  `json:"start_position_ms"`
+	ListenedSeconds int    `json:"listened_seconds"`
+	EndReason       string `json:"end_reason"`
+}
+
+type DailyTrackListeningStat struct {
+	SourceDeviceID  string `json:"source_device_id" db:"source_device_id"`
+	LocalDate       string `json:"local_date" db:"local_date"`
+	TrackID         string `json:"track_id" db:"track_id"`
+	ListenedSeconds int    `json:"listened_seconds" db:"listened_seconds"`
+	PlayCount       int    `json:"play_count" db:"play_count"`
+}
+
+type DailyPlaybackAttemptStat struct {
+	SourceDeviceID  string `json:"source_device_id" db:"source_device_id"`
+	LocalDate       string `json:"local_date" db:"local_date"`
+	Attempts        int    `json:"attempts" db:"attempts"`
+	Completed       int    `json:"completed" db:"completed"`
+	Skipped         int    `json:"skipped" db:"skipped"`
+	Stopped         int    `json:"stopped" db:"stopped"`
+	ListenedSeconds int    `json:"listened_seconds" db:"listened_seconds"`
+}
+
+type ListeningSyncSnapshot struct {
+	Version          int                        `json:"version"`
+	ReconciliationID string                     `json:"reconciliation_id"`
+	Sessions         []ListeningSyncSession     `json:"sessions"`
+	Attempts         []ListeningSyncAttempt     `json:"attempts"`
+	DailyTracks      []DailyTrackListeningStat  `json:"daily_tracks"`
+	DailyAttempts    []DailyPlaybackAttemptStat `json:"daily_attempts"`
+	Signature        string                     `json:"signature"`
+}
+
 type ListeningRepository interface {
 	RecordSession(ctx context.Context, session ListeningSession) error
 	CleanupSessions(ctx context.Context, before time.Time) error
@@ -109,4 +161,6 @@ type ListeningRepository interface {
 	FinalizeAttempt(ctx context.Context, attempt PlaybackAttempt) error
 	RecoverOpenAttempts(ctx context.Context) error
 	GetInsights(ctx context.Context, period ListeningRange, now time.Time) (*AnalyticsInsights, error)
+	ExportSnapshot(ctx context.Context, reconciliationID string, since time.Time) (*ListeningSyncSnapshot, error)
+	ImportSnapshot(ctx context.Context, snapshot *ListeningSyncSnapshot) error
 }

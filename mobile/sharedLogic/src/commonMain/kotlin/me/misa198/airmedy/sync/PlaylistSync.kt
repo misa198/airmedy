@@ -63,6 +63,7 @@ data class PlaylistReconciliationRequest(
     val scope: PlaylistSyncScope,
     @SerialName("batch_url") val batchUrl: String,
     @SerialName("artwork_url") val artworkUrl: String,
+    @SerialName("listening_url") val listeningUrl: String,
     @SerialName("issued_at") val issuedAt: Long,
     val signature: String,
 )
@@ -123,7 +124,7 @@ interface PlaylistMutationStore {
 data class StagedPlaylistArtwork(val sha256: String, val mime: String, val size: Long, val relativePath: String)
 interface PlaylistArtworkStagingStore { suspend fun stagedPlaylistArtwork(sha256: String): StagedPlaylistArtwork? }
 fun interface PlaylistReconciliationTransport {
-    suspend fun upload(request: PlaylistReconciliationRequest, mutations: List<PlaylistMutation>): List<PlaylistMutationResult>
+    suspend fun upload(request: PlaylistReconciliationRequest, mutations: List<PlaylistMutation>, desktop: PairedDesktop): List<PlaylistMutationResult>
 }
 fun interface PlaylistReconciliationPublisher { suspend fun publish(payload: String) }
 
@@ -156,7 +157,7 @@ class PlaylistReconciliationCoordinator(
             return PlaylistReconciliationOutcome.Rejected("Invalid request signature")
         }
         val mutations = store.pendingPlaylistMutations()
-        val results = try { transport.upload(request, mutations) } catch (error: Throwable) {
+        val results = try { transport.upload(request, mutations, desktop) } catch (error: Throwable) {
             if (error is CancellationException) throw error
             return PlaylistReconciliationOutcome.TransportFailed(error.message ?: "Reconciliation upload failed")
         }
@@ -182,7 +183,7 @@ class PlaylistReconciliationCoordinator(
 
     private fun validate(request: PlaylistReconciliationRequest, desktop: PairedDesktop, mobile: MobileIdentity): String? = when {
         request.version != PlaylistSyncVersion || request.type != ReconciliationRequestType -> "Unsupported reconciliation request"
-        request.reconciliationId.isBlank() || request.batchUrl.isBlank() || request.artworkUrl.isBlank() -> "Missing reconciliation fields"
+        request.reconciliationId.isBlank() || request.batchUrl.isBlank() || request.artworkUrl.isBlank() || request.listeningUrl.isBlank() -> "Missing reconciliation fields"
         request.desktopId != desktop.desktopId || request.mobileId != mobile.id -> "Foreign reconciliation request"
         kotlin.math.abs(clock.nowMillis() - request.issuedAt) > 5 * 60 * 1000L -> "Expired reconciliation request"
         request.scope.kind !in setOf("all", "artists", "albums", "genres", "playlists") -> "Invalid reconciliation scope"

@@ -370,3 +370,39 @@ func TestListeningRepositoryRecoversOpenPlaybackAttempts(t *testing.T) {
 		t.Fatalf("recovered insights: %#v", insights)
 	}
 }
+
+func TestListeningSnapshotMergeIsOriginAwareAndIdempotent(t *testing.T) {
+	db, err := NewDB(":memory:", slog.Default())
+	if err != nil {
+		t.Fatalf("NewDB: %v", err)
+	}
+	defer func() { _ = db.Close() }()
+	ctx := context.Background()
+	if err := NewTrackRepository(db).Save(ctx, &domain.Track{ID: "synced", Path: "/synced.flac", Title: "Synced", SortTitle: "Synced", Format: "flac"}); err != nil {
+		t.Fatal(err)
+	}
+	repo := NewListeningRepository(db)
+	now := time.Now()
+	snapshot := &domain.ListeningSyncSnapshot{
+		Version:     1,
+		Sessions:    []domain.ListeningSyncSession{{ID: "session", SourceDeviceID: "phone", TrackID: "synced", StartedAt: now.Add(-time.Minute).UnixMilli(), EndedAt: now.UnixMilli(), ListenedSeconds: 60, QualifiedPlay: true}},
+		DailyTracks: []domain.DailyTrackListeningStat{{SourceDeviceID: "phone", LocalDate: now.Format("2006-01-02"), TrackID: "synced", ListenedSeconds: 60, PlayCount: 1}},
+	}
+	if err := repo.ImportSnapshot(ctx, snapshot); err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.ImportSnapshot(ctx, snapshot); err != nil {
+		t.Fatal(err)
+	}
+	exported, err := repo.ExportSnapshot(ctx, "r", now.Add(-time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(exported.Sessions) != 1 || len(exported.DailyTracks) != 1 || exported.DailyTracks[0].PlayCount != 1 {
+		t.Fatalf("unexpected export: %#v", exported)
+	}
+	var playCount int
+	if err := db.Get(&playCount, `SELECT play_count FROM tracks WHERE id='synced'`); err != nil || playCount != 1 {
+		t.Fatalf("play_count=%d err=%v", playCount, err)
+	}
+}

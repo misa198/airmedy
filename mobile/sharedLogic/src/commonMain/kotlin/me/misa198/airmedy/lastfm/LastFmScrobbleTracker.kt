@@ -1,5 +1,7 @@
 package me.misa198.airmedy.lastfm
 
+import me.misa198.airmedy.player.qualifiesPlayback
+
 enum class LastFmPlaybackEvent {
     NowPlaying,
     Scrobble,
@@ -24,9 +26,7 @@ class LastFmScrobbleTracker {
                 nowPlayingSent = true
                 add(LastFmPlaybackEvent.NowPlaying)
             }
-            if (!scrobbled && durationMs >= 30_000 &&
-                (positionMs >= durationMs / 2 || positionMs >= 240_000)
-            ) {
+            if (!scrobbled && qualifiesPlayback(positionMs, durationMs)) {
                 scrobbled = true
                 add(LastFmPlaybackEvent.Scrobble)
             }

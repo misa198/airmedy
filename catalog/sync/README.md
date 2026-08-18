@@ -246,6 +246,24 @@ UI MQTT session: MQTT client IDs are device-scoped, so a second connection would
 disconnect the foreground service's session and interrupt the transfer. The UI
 instead observes `AndroidSyncRuntime` progress until the service finishes.
 
+## Listening reconciliation
+
+Before desktop creates a library plan, the existing signed reconciliation
+request also supplies `listening_url`. Android POSTs a version-1 snapshot with
+raw sessions/attempts from the last 180 days plus all-time daily aggregates.
+It uses the existing method/path/body-hash/timestamp/nonce Ed25519 authorization
+and has a 32 MiB body ceiling and a 200,000-record ceiling.
+
+Desktop accepts only rows whose `source_device_id` equals the authenticated
+mobile ID, imports them transactionally, then returns the union of every known
+source. The desktop signs that exact response snapshot with its paired Ed25519
+key; Android verifies it with the QR-pinned desktop public key before merging
+it into Room and publishing the terminal
+MQTT reconciliation result. Raw IDs and per-source aggregate keys make retries
+and propagation through multiple mobiles idempotent. Listening data is
+device-wide and is exchanged regardless of selected library scope; Android may
+retain records for tracks outside its current mirror.
+
 ## Playlist mutation foundation
 
 Android now retains a durable, idempotent `PlaylistMutation` queue alongside

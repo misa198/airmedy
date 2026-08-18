@@ -20,8 +20,10 @@ import android.media.session.MediaSession
 import android.media.session.PlaybackState as AndroidMediaPlaybackState
 import android.os.Build
 import android.os.IBinder
+import android.os.SystemClock
 import android.util.Log
 import java.io.File
+import java.util.UUID
 import android.util.LruCache
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -36,6 +38,8 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import me.misa198.airmedy.MainActivity
@@ -44,6 +48,7 @@ import me.misa198.airmedy.sync.AndroidSyncRuntime
 import me.misa198.airmedy.lastfm.AndroidLastFmRuntime
 import me.misa198.airmedy.lastfm.LastFmService
 import me.misa198.airmedy.lastfm.LastFmTrack
+import me.misa198.airmedy.pairing.PairingPreferences
 
 /** Owns Android transport; queue semantics are delegated to sharedLogic. */
 class PlaybackService : Service() {
@@ -58,6 +63,13 @@ class PlaybackService : Service() {
     private lateinit var playbackPreferences: PlaybackPreferences
     private lateinit var normalizationPreferences: NormalizationPreferences
     private lateinit var lastFm: LastFmService
+    private lateinit var listeningTracker: ListeningTracker
+    private val listeningWrites = Channel<ListeningWrite>(64)
+    private lateinit var listeningWriter: Job
+    private var listeningFadeOutgoing: String? = null
+    private var listeningFadeStartedAt = 0L
+    private var listeningFadeStartedElapsed = 0L
+    private var listeningFadeMaxMs = 0L
     private var normalizationSettings = NormalizationSettings()
     private var preferencesJob: Job? = null
     private lateinit var audioManager: AudioManager
@@ -73,6 +85,15 @@ class PlaybackService : Service() {
         super.onCreate()
         AndroidPlaybackRuntime.initialize(applicationContext, AndroidSyncRuntime.syncStore())
         lastFm = AndroidLastFmRuntime.initialize(applicationContext, AndroidSyncRuntime.syncStore())
+        listeningTracker = ListeningTracker(runBlocking { PairingPreferences(applicationContext).identity().id }) { UUID.randomUUID().toString() }
+        listeningWriter = scope.launch {
+            for (write in listeningWrites) AndroidSyncRuntime.syncStore().recordListening(write)
+        }
+        runBlocking {
+            val now = System.currentTimeMillis()
+            AndroidSyncRuntime.syncStore().recoverOpenPlaybackAttempts(now)
+            AndroidSyncRuntime.syncStore().cleanupListening(now - ListeningRetentionMs)
+        }
         sessionStore = PlaybackSessionStore(applicationContext)
         playbackPreferences = PlaybackPreferences(applicationContext)
         normalizationPreferences = NormalizationPreferences(applicationContext)
@@ -149,14 +170,19 @@ class PlaybackService : Service() {
                 delay(200)
                 commandMutex.withLock {
                     refreshPlaybackPosition()
+                    val playing = state.value as? PlaybackState.Playing
+                    if (playing != null) enqueueListening(listeningTracker.tick(
+                        playing.positionMs, playing.durationMs, System.currentTimeMillis(), SystemClock.elapsedRealtime(),
+                    ))
                     consumeNativeTransition()
+                    if (listeningFadeOutgoing != null && decoder?.isCrossfading() != true) finishListeningCrossfade()
                     if (decoder?.isCrossfading() != true) clearArtworkCrossfade()
                     if (audioOutputDisconnectRequiresRecovery(decoder?.isOutputDisconnected() == true)) {
                         recoverAfterOutputDisconnect()
                     } else if (maybeStartCrossfade()) {
                         consumeNativeTransition()
                     } else if (decoder?.isFinished() == true && state.value is PlaybackState.Playing) {
-                        handleTransition(queue.next())
+                        handleTransition(queue.next(), PlaybackEndReason.COMPLETED)
                         publishQueue()
                     }
                     // A crossfade occupies both native source slots. Once its
@@ -208,6 +234,12 @@ class PlaybackService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        runBlocking {
+            finishListeningCrossfade()
+            enqueueListening(listeningTracker.finish(PlaybackEndReason.STOPPED, System.currentTimeMillis(), SystemClock.elapsedRealtime()))
+            listeningWrites.close()
+            withTimeoutOrNull(2_000) { listeningWriter.join() }
+        }
         runBlocking { sessionStore.save(currentSession()) }
         decoder?.close()
         preferencesJob?.cancel()
@@ -235,25 +267,25 @@ class PlaybackService : Service() {
             Log.d(PlaybackLogTag, "Handling action=$action queueSize=${queue.snapshot().activeTrackIds.size}")
             when (action) {
                 ActionPlay -> handleTransition(runCatching { queue.play(PlaybackRequest(trackIds, startIndex)) }
-                    .getOrElse { QueueTransition.Stop })
+                    .getOrElse { QueueTransition.Stop }, PlaybackEndReason.SKIPPED)
                 ActionShuffle -> handleTransition(runCatching { queue.playShuffled(PlaybackRequest(trackIds, startIndex)) }
-                    .getOrElse { QueueTransition.Stop })
+                    .getOrElse { QueueTransition.Stop }, PlaybackEndReason.SKIPPED)
                 ActionPause -> pauseCurrent()
                 ActionResume -> resumeCurrent()
                 ActionStop -> stopPlayback()
                 ActionClearQueue -> handleTransition(queue.clear())
-                ActionNext -> handleTransition(queue.next(), preservePlaybackState = true)
+                ActionNext -> handleTransition(queue.next(), PlaybackEndReason.SKIPPED, preservePlaybackState = true)
                 ActionPrevious -> {
                     if ((decoder?.positionMs() ?: 0L) > PreviousRestartThresholdMs) decoder?.seekTo(0)
-                    else handleTransition(queue.previous(), preservePlaybackState = true)
+                    else handleTransition(queue.previous(), PlaybackEndReason.SKIPPED, preservePlaybackState = true)
                 }
                 ActionSeek -> seekCurrent(positionMs)
                 ActionSetShuffle -> handleTransition(queue.setShuffle(enabled))
                 ActionSetRepeat -> repeat?.let(queue::setRepeatMode)
                 ActionPlayNext -> queue.playNext(trackIds)
                 ActionAppend -> queue.append(trackIds)
-                ActionSelect -> trackIds.firstOrNull()?.let { handleTransition(queue.select(it)) }
-                ActionRemove -> trackIds.firstOrNull()?.let { handleTransition(queue.removeFromQueue(it)) }
+                ActionSelect -> trackIds.firstOrNull()?.let { handleTransition(queue.select(it), PlaybackEndReason.SKIPPED) }
+                ActionRemove -> trackIds.firstOrNull()?.let { handleTransition(queue.removeFromQueue(it), PlaybackEndReason.SKIPPED) }
                 ActionReorder -> queue.reorderQueue(trackIds)
             }
             if (action in PreloadResyncActions) {
@@ -271,17 +303,23 @@ class PlaybackService : Service() {
 
     private suspend fun handleTransition(
         transition: QueueTransition,
+        previousReason: PlaybackEndReason = PlaybackEndReason.STOPPED,
         preservePlaybackState: Boolean = false,
     ) {
         when (transition) {
-            is QueueTransition.Play -> playCurrent(startPaused = preservePlaybackState && state.value is PlaybackState.Paused)
-            QueueTransition.StopAtCurrent -> stopAtCurrentTrack()
+            is QueueTransition.Play -> {
+                finishListeningCrossfade()
+                enqueueListening(listeningTracker.finish(previousReason, System.currentTimeMillis(), SystemClock.elapsedRealtime()))
+                playCurrent(startPaused = preservePlaybackState && state.value is PlaybackState.Paused)
+            }
+            QueueTransition.StopAtCurrent -> stopAtCurrentTrack(previousReason)
             QueueTransition.Stop -> stopPlayback()
             QueueTransition.Unchanged -> Unit
         }
     }
 
-    private suspend fun playCurrent(startPositionMs: Long = 0L, startPaused: Boolean = false) {
+    private suspend fun playCurrent(startPositionMs: Long = 0L, startPaused: Boolean = false, startTracking: Boolean = true) {
+        finishListeningCrossfade()
         clearArtworkCrossfade()
         val trackId = queue.snapshot().currentTrackId ?: return stopPlayback()
         Log.d(PlaybackLogTag, "Preparing current queue track id=$trackId")
@@ -309,6 +347,8 @@ class PlaybackService : Service() {
                 }
                 decoder = preparedDecoder
                 lastFm.startPlayback(item.trackId, preparedDecoder.positionMs())
+                if (!startPaused && startTracking) enqueueListening(listeningTracker.start(item.trackId, preparedDecoder.positionMs(), System.currentTimeMillis(), SystemClock.elapsedRealtime()))
+                if (!startPaused && !startTracking) listeningTracker.resumeAfterInterruption(SystemClock.elapsedRealtime())
             } catch (error: Throwable) {
                 preparedDecoder.close()
                 throw error
@@ -348,8 +388,10 @@ class PlaybackService : Service() {
     }
 
     private fun pauseCurrent() {
+        finishListeningCrossfade()
         clearArtworkCrossfade()
         decoder?.pause()
+        enqueueListening(listeningTracker.pause(System.currentTimeMillis(), SystemClock.elapsedRealtime()))
         (state.value as? PlaybackState.Playing)?.let { current ->
             val positionMs = decoder?.positionMs() ?: current.positionMs
             state.value = PlaybackState.Paused(current.item, positionMs, current.durationMs)
@@ -379,6 +421,11 @@ class PlaybackService : Service() {
         }
         currentDecoder.play()
         val positionMs = currentDecoder.positionMs()
+        if (listeningTracker.activeTrackId == paused.item.trackId) {
+            listeningTracker.resume(System.currentTimeMillis(), SystemClock.elapsedRealtime())
+        } else {
+            enqueueListening(listeningTracker.start(paused.item.trackId, positionMs, System.currentTimeMillis(), SystemClock.elapsedRealtime()))
+        }
         state.value = PlaybackState.Playing(paused.item, positionMs, paused.durationMs)
         publishNowPlaying(paused.item, AndroidMediaPlaybackState.STATE_PLAYING, positionMs, paused.durationMs)
         updateNotification()
@@ -394,10 +441,11 @@ class PlaybackService : Service() {
     private suspend fun recoverAfterOutputDisconnect() {
         val current = state.value as? PlaybackState.Playing ?: return
         val positionMs = decoder?.positionMs() ?: current.positionMs
+        listeningTracker.suspendForInterruption(SystemClock.elapsedRealtime())
         decoder?.close()
         decoder = null
         Log.w(PlaybackLogTag, "Audio output changed; recreating stream id=${current.item.trackId} positionMs=$positionMs")
-        playCurrent(positionMs)
+        playCurrent(positionMs, startTracking = false)
     }
 
     private fun seekCurrent(requestedPositionMs: Long) {
@@ -419,6 +467,7 @@ class PlaybackService : Service() {
             else -> return
         }
         val targetPositionMs = clampSeekPosition(requestedPositionMs, durationMs)
+        finishListeningCrossfade()
         clearArtworkCrossfade()
         decoder?.seekTo(targetPositionMs) ?: return
         lastFm.seek(targetPositionMs)
@@ -433,6 +482,8 @@ class PlaybackService : Service() {
     }
 
     private fun stopPlayback() {
+        finishListeningCrossfade()
+        enqueueListening(listeningTracker.finish(PlaybackEndReason.STOPPED, System.currentTimeMillis(), SystemClock.elapsedRealtime()))
         clearArtworkCrossfade()
         decoder?.snapCrossfade()
         decoder?.close(); decoder = null; preloadedItem = null
@@ -447,8 +498,9 @@ class PlaybackService : Service() {
      * Natural repeat-off exhaustion is distinct from clearing or stopping the queue:
      * retain the final item so its player controls remain available for replay.
      */
-    private fun stopAtCurrentTrack() {
+    private fun stopAtCurrentTrack(reason: PlaybackEndReason = PlaybackEndReason.COMPLETED) {
         val current = state.value as? PlaybackState.Playing ?: return stopPlayback()
+        enqueueListening(listeningTracker.finish(reason, System.currentTimeMillis(), SystemClock.elapsedRealtime()))
         clearArtworkCrossfade()
         decoder?.snapCrossfade()
         decoder?.close(); decoder = null
@@ -461,6 +513,8 @@ class PlaybackService : Service() {
 
     private fun fail(trackId: String?, reason: String) {
         Log.e(PlaybackLogTag, "Playback failed id=$trackId reason=$reason")
+        finishListeningCrossfade()
+        enqueueListening(listeningTracker.finish(PlaybackEndReason.STOPPED, System.currentTimeMillis(), SystemClock.elapsedRealtime()))
         clearArtworkCrossfade()
         decoder?.close(); decoder = null; preloadedItem = null
         state.value = PlaybackState.Failed(trackId, reason)
@@ -530,7 +584,15 @@ class PlaybackService : Service() {
         val currentDecoder = decoder ?: return
         val positionMs = currentDecoder.positionMs()
         val durationMs = currentDecoder.durationMs()
+        if (transition == NativeTransition.CrossfadeStarted) {
+            listeningFadeOutgoing = (state.value as? PlaybackState.Playing)?.item?.trackId
+            listeningFadeStartedAt = System.currentTimeMillis()
+            listeningFadeStartedElapsed = SystemClock.elapsedRealtime()
+            listeningFadeMaxMs = artworkCrossfade.value?.durationMs ?: 0L
+        }
         state.value = PlaybackState.Playing(incoming, positionMs, durationMs)
+        enqueueListening(listeningTracker.finish(PlaybackEndReason.COMPLETED, System.currentTimeMillis(), SystemClock.elapsedRealtime()))
+        enqueueListening(listeningTracker.start(incoming.trackId, positionMs, System.currentTimeMillis(), SystemClock.elapsedRealtime()))
         lastFm.startPlayback(incoming.trackId, positionMs)
         publishNowPlaying(incoming, AndroidMediaPlaybackState.STATE_PLAYING, positionMs, durationMs)
         updateNotification()
@@ -665,6 +727,22 @@ class PlaybackService : Service() {
         lastFm.reportPlayback(current.item.toLastFmTrack(), positionMs, current.durationMs)
     }
 
+    private fun enqueueListening(writes: List<ListeningWrite>) {
+        writes.forEach { write ->
+            if (listeningWrites.trySend(write).isFailure) Log.w(PlaybackLogTag, "Listening write queue is full")
+        }
+    }
+
+    private fun finishListeningCrossfade() {
+        val outgoing = listeningFadeOutgoing ?: return
+        val elapsed = (SystemClock.elapsedRealtime() - listeningFadeStartedElapsed).coerceAtLeast(0).coerceAtMost(listeningFadeMaxMs)
+        enqueueListening(listeningTracker.splitCrossfadeOverlap(outgoing, listeningFadeStartedAt, elapsed))
+        listeningFadeOutgoing = null
+        listeningFadeStartedAt = 0
+        listeningFadeStartedElapsed = 0
+        listeningFadeMaxMs = 0
+    }
+
     private fun PlaybackItem.toLastFmTrack() = LastFmTrack(
         id = trackId,
         title = title,
@@ -761,6 +839,7 @@ class PlaybackService : Service() {
         private const val ChannelId = "playback"
         private const val NotificationId = 2002
         private const val NowPlayingArtworkSizePx = 512
+        private const val ListeningRetentionMs = 180L * 24 * 60 * 60 * 1_000
         private val PreloadResyncActions = setOf(
             ActionSetShuffle, ActionSetRepeat, ActionPlayNext, ActionRemove, ActionReorder,
         )

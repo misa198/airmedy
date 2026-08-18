@@ -103,6 +103,12 @@ func TestAuthorizeHTTPBindsMethodEscapedPathBodyAndRejectsReplay(t *testing.T) {
 	require.False(t, svc.authorizeHTTP(expired))
 }
 
+func TestListeningSnapshotSigningShapeMatchesMobile(t *testing.T) {
+	encoded, err := json.Marshal(domain.ListeningSyncSnapshot{Version: 1, ReconciliationID: "r", Sessions: []domain.ListeningSyncSession{}, Attempts: []domain.ListeningSyncAttempt{}, DailyTracks: []domain.DailyTrackListeningStat{}, DailyAttempts: []domain.DailyPlaybackAttemptStat{}})
+	require.NoError(t, err)
+	require.Equal(t, `{"version":1,"reconciliation_id":"r","sessions":[],"attempts":[],"daily_tracks":[],"daily_attempts":[],"signature":""}`, string(encoded))
+}
+
 func TestPlaylistMutationTerminalStatusesAndDurableLedger(t *testing.T) {
 	dbPath := filepath.Join(t.TempDir(), "library.db")
 	db, err := sqlite.NewDB(dbPath, slog.Default())

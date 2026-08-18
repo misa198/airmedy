@@ -15,6 +15,8 @@ import androidx.room.Transaction
 import androidx.room.withTransaction
 import java.io.File
 import java.util.UUID
+import java.time.Instant
+import java.time.ZoneId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
@@ -36,6 +38,14 @@ import me.misa198.airmedy.sync.PlaylistMutationStore
 import me.misa198.airmedy.sync.PlaylistArtworkStagingStore
 import me.misa198.airmedy.sync.StagedPlaylistArtwork
 import me.misa198.airmedy.player.TrackAnalysis
+import me.misa198.airmedy.player.ListeningSession
+import me.misa198.airmedy.player.PlaybackAttempt
+import me.misa198.airmedy.player.ListeningWrite
+import me.misa198.airmedy.player.PlaybackEndReason
+import me.misa198.airmedy.player.DailyTrackListeningStat
+import me.misa198.airmedy.player.DailyPlaybackAttemptStat
+import me.misa198.airmedy.sync.ListeningSyncSnapshot
+import me.misa198.airmedy.sync.ListeningSyncStore
 
 @Entity(tableName = "sync_plans", primaryKeys = ["planId"])
 internal data class SyncPlanEntity(
@@ -113,6 +123,35 @@ internal data class SyncDocumentEntity(
     val rawJson: String,
 )
 
+@Entity(tableName = "listening_sessions")
+internal data class ListeningSessionEntity(
+    @androidx.room.PrimaryKey val id: String,
+    val sourceDeviceId: String,
+    val trackId: String,
+    val startedAt: Long,
+    val endedAt: Long,
+    val listenedSeconds: Int,
+    val qualifiedPlay: Boolean,
+)
+
+@Entity(tableName = "playback_attempts")
+internal data class PlaybackAttemptEntity(
+    @androidx.room.PrimaryKey val id: String,
+    val sourceDeviceId: String,
+    val trackId: String,
+    val startedAt: Long,
+    val endedAt: Long,
+    val startPositionMs: Long,
+    val listenedSeconds: Int,
+    val endReason: String?,
+)
+
+@Entity(tableName = "daily_track_listening_stats", primaryKeys = ["sourceDeviceId", "localDate", "trackId"])
+internal data class DailyTrackListeningStatEntity(val sourceDeviceId: String, val localDate: String, val trackId: String, val listenedSeconds: Int, val playCount: Int)
+
+@Entity(tableName = "daily_playback_attempt_stats", primaryKeys = ["sourceDeviceId", "localDate"])
+internal data class DailyPlaybackAttemptStatEntity(val sourceDeviceId: String, val localDate: String, val attempts: Int, val completed: Int, val skipped: Int, val stopped: Int, val listenedSeconds: Int)
+
 internal data class AnalysisDocumentRow(val documentKey: String, val rawJson: String)
 
 internal data class LibraryTrackRow(
@@ -147,6 +186,37 @@ internal interface SyncDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insertLocalPlaylist(value: LocalPlaylistEntity)
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insertPlaylistArtwork(value: PlaylistArtworkStagingEntity)
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insertDocuments(values: List<SyncDocumentEntity>)
+    @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insertListeningSession(value: ListeningSessionEntity): Long
+    @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insertPlaybackAttempt(value: PlaybackAttemptEntity): Long
+
+    @Query("UPDATE playback_attempts SET endedAt=:endedAt, listenedSeconds=:seconds, endReason=:reason WHERE id=:id AND endReason IS NULL")
+    suspend fun finishPlaybackAttempt(id: String, endedAt: Long, seconds: Int, reason: String): Int
+
+    @Query("SELECT * FROM playback_attempts WHERE endReason IS NULL")
+    suspend fun openPlaybackAttempts(): List<PlaybackAttemptEntity>
+
+    @Query("INSERT INTO daily_track_listening_stats(sourceDeviceId,localDate,trackId,listenedSeconds,playCount) VALUES(:source,:date,:trackId,:seconds,:plays) ON CONFLICT(sourceDeviceId,localDate,trackId) DO UPDATE SET listenedSeconds=listenedSeconds+:seconds, playCount=playCount+:plays")
+    suspend fun addDailyTrackStat(source: String, date: String, trackId: String, seconds: Int, plays: Int)
+
+    @Query("INSERT INTO daily_playback_attempt_stats(sourceDeviceId,localDate,attempts,completed,skipped,stopped,listenedSeconds) VALUES(:source,:date,:attempts,:completed,:skipped,:stopped,:seconds) ON CONFLICT(sourceDeviceId,localDate) DO UPDATE SET attempts=attempts+:attempts, completed=completed+:completed, skipped=skipped+:skipped, stopped=stopped+:stopped, listenedSeconds=listenedSeconds+:seconds")
+    suspend fun addDailyAttemptStat(source: String, date: String, attempts: Int, completed: Int, skipped: Int, stopped: Int, seconds: Int)
+
+    @Query("UPDATE sync_tracks SET playCount=playCount+1 WHERE trackId=:trackId AND planId IN (SELECT planId FROM sync_plans WHERE active=1)")
+    suspend fun incrementActiveTrackPlayCount(trackId: String)
+
+    @Query("SELECT * FROM listening_sessions WHERE endedAt>=:since") suspend fun listeningSessionsSince(since: Long): List<ListeningSessionEntity>
+    @Query("SELECT * FROM playback_attempts WHERE endedAt>=:since AND endReason IS NOT NULL") suspend fun playbackAttemptsSince(since: Long): List<PlaybackAttemptEntity>
+    @Query("SELECT * FROM daily_track_listening_stats") suspend fun dailyTrackStats(): List<DailyTrackListeningStatEntity>
+    @Query("SELECT * FROM daily_playback_attempt_stats") suspend fun dailyAttemptStats(): List<DailyPlaybackAttemptStatEntity>
+
+    @Query("DELETE FROM listening_sessions WHERE endedAt<:before") suspend fun deleteOldListeningSessions(before: Long)
+    @Query("DELETE FROM playback_attempts WHERE endedAt>0 AND endedAt<:before") suspend fun deleteOldPlaybackAttempts(before: Long)
+
+    @Query("INSERT INTO daily_track_listening_stats(sourceDeviceId,localDate,trackId,listenedSeconds,playCount) VALUES(:source,:date,:trackId,:seconds,:plays) ON CONFLICT(sourceDeviceId,localDate,trackId) DO UPDATE SET listenedSeconds=max(listenedSeconds,:seconds), playCount=max(playCount,:plays)")
+    suspend fun mergeDailyTrackStat(source: String, date: String, trackId: String, seconds: Int, plays: Int)
+
+    @Query("INSERT INTO daily_playback_attempt_stats(sourceDeviceId,localDate,attempts,completed,skipped,stopped,listenedSeconds) VALUES(:source,:date,:attempts,:completed,:skipped,:stopped,:seconds) ON CONFLICT(sourceDeviceId,localDate) DO UPDATE SET attempts=max(attempts,:attempts), completed=max(completed,:completed), skipped=max(skipped,:skipped), stopped=max(stopped,:stopped), listenedSeconds=max(listenedSeconds,:seconds)")
+    suspend fun mergeDailyAttemptStat(source: String, date: String, attempts: Int, completed: Int, skipped: Int, stopped: Int, seconds: Int)
 
     @Query("SELECT * FROM sync_assets WHERE planId = :planId AND assetId = :assetId LIMIT 1")
     suspend fun asset(planId: String, assetId: String): SyncAssetEntity?
@@ -245,8 +315,8 @@ internal interface SyncDao {
 }
 
 @Database(
-    entities = [SyncPlanEntity::class, SyncAssetEntity::class, SyncTrackEntity::class, SyncPlaylistEntity::class, PlaylistMutationEntity::class, LocalPlaylistEntity::class, PlaylistArtworkStagingEntity::class, SyncDocumentEntity::class],
-    version = 9,
+    entities = [SyncPlanEntity::class, SyncAssetEntity::class, SyncTrackEntity::class, SyncPlaylistEntity::class, PlaylistMutationEntity::class, LocalPlaylistEntity::class, PlaylistArtworkStagingEntity::class, SyncDocumentEntity::class, ListeningSessionEntity::class, PlaybackAttemptEntity::class, DailyTrackListeningStatEntity::class, DailyPlaybackAttemptStatEntity::class],
+    version = 10,
     exportSchema = false,
 )
 internal abstract class SyncDatabase : RoomDatabase() {
@@ -254,7 +324,7 @@ internal abstract class SyncDatabase : RoomDatabase() {
 
     companion object {
         fun create(context: Context): SyncDatabase = Room.databaseBuilder(context, SyncDatabase::class.java, "library-sync.db")
-            .addMigrations(Migration2To3, Migration3To4, Migration4To5, Migration5To6, Migration6To7, Migration7To8, Migration8To9)
+            .addMigrations(Migration2To3, Migration3To4, Migration4To5, Migration5To6, Migration6To7, Migration7To8, Migration8To9, Migration9To10)
             .fallbackToDestructiveMigration()
             .build()
 
@@ -292,6 +362,14 @@ internal abstract class SyncDatabase : RoomDatabase() {
         private val Migration8To9 = object : Migration(8, 9) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL("ALTER TABLE local_playlists ADD COLUMN artworkSha256 TEXT")
+            }
+        }
+        private val Migration9To10 = object : Migration(9, 10) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("CREATE TABLE IF NOT EXISTS listening_sessions (id TEXT NOT NULL PRIMARY KEY, sourceDeviceId TEXT NOT NULL, trackId TEXT NOT NULL, startedAt INTEGER NOT NULL, endedAt INTEGER NOT NULL, listenedSeconds INTEGER NOT NULL, qualifiedPlay INTEGER NOT NULL)")
+                database.execSQL("CREATE TABLE IF NOT EXISTS playback_attempts (id TEXT NOT NULL PRIMARY KEY, sourceDeviceId TEXT NOT NULL, trackId TEXT NOT NULL, startedAt INTEGER NOT NULL, endedAt INTEGER NOT NULL, startPositionMs INTEGER NOT NULL, listenedSeconds INTEGER NOT NULL, endReason TEXT)")
+                database.execSQL("CREATE TABLE IF NOT EXISTS daily_track_listening_stats (sourceDeviceId TEXT NOT NULL, localDate TEXT NOT NULL, trackId TEXT NOT NULL, listenedSeconds INTEGER NOT NULL, playCount INTEGER NOT NULL, PRIMARY KEY(sourceDeviceId,localDate,trackId))")
+                database.execSQL("CREATE TABLE IF NOT EXISTS daily_playback_attempt_stats (sourceDeviceId TEXT NOT NULL, localDate TEXT NOT NULL, attempts INTEGER NOT NULL, completed INTEGER NOT NULL, skipped INTEGER NOT NULL, stopped INTEGER NOT NULL, listenedSeconds INTEGER NOT NULL, PRIMARY KEY(sourceDeviceId,localDate))")
             }
         }
     }
@@ -363,7 +441,7 @@ data class LibraryComposer(
 internal class AndroidLibrarySyncStore(
     private val database: SyncDatabase,
     private val filesDir: File,
-) : LibrarySyncStore, PlaylistMutationStore, PlaylistArtworkStagingStore {
+) : LibrarySyncStore, PlaylistMutationStore, PlaylistArtworkStagingStore, ListeningSyncStore {
     private val dao = database.syncDao()
     val analysisAvailable: Flow<Boolean> = dao.observeAnalysisAvailable()
 
@@ -636,6 +714,64 @@ internal class AndroidLibrarySyncStore(
         }
     }
 
+    suspend fun recordListening(write: ListeningWrite) = database.withTransaction {
+        when (write) {
+            is ListeningWrite.Session -> {
+                val value = write.value
+                if (dao.insertListeningSession(value.toEntity()) != -1L) {
+                    splitListeningByDate(value.startedAt, value.endedAt, value.listenedSeconds).forEach { (date, seconds) ->
+                        dao.addDailyTrackStat(value.sourceDeviceId, date, value.trackId, seconds, 0)
+                    }
+                }
+            }
+            is ListeningWrite.AttemptStarted -> {
+                val value = write.value
+                if (dao.insertPlaybackAttempt(value.toEntity()) != -1L) {
+                    dao.addDailyAttemptStat(value.sourceDeviceId, localDate(value.startedAt), 1, 0, 0, 0, 0)
+                }
+            }
+            is ListeningWrite.AttemptFinished -> {
+                val value = write.value
+                if (dao.finishPlaybackAttempt(value.id, value.endedAt, value.listenedSeconds, value.endReason!!.name.lowercase()) > 0) {
+                    val completed = if (value.endReason == PlaybackEndReason.COMPLETED) 1 else 0
+                    val skipped = if (value.endReason == PlaybackEndReason.SKIPPED) 1 else 0
+                    val stopped = if (value.endReason == PlaybackEndReason.STOPPED) 1 else 0
+                    dao.addDailyAttemptStat(value.sourceDeviceId, localDate(value.startedAt), 0, completed, skipped, stopped, value.listenedSeconds)
+                }
+            }
+            is ListeningWrite.QualifiedPlay -> {
+                dao.addDailyTrackStat(write.sourceDeviceId, localDate(write.occurredAt), write.trackId, 0, 1)
+                dao.incrementActiveTrackPlayCount(write.trackId)
+            }
+        }
+    }
+
+    suspend fun recoverOpenPlaybackAttempts(nowMs: Long) {
+        dao.openPlaybackAttempts().forEach { row ->
+            recordListening(ListeningWrite.AttemptFinished(row.toModel().copy(endedAt = nowMs, endReason = PlaybackEndReason.STOPPED)))
+        }
+    }
+
+    suspend fun cleanupListening(beforeMs: Long) {
+        dao.deleteOldListeningSessions(beforeMs)
+        dao.deleteOldPlaybackAttempts(beforeMs)
+    }
+
+    override suspend fun listeningSnapshot(reconciliationId: String, sinceMs: Long) = ListeningSyncSnapshot(
+        reconciliationId = reconciliationId,
+        sessions = dao.listeningSessionsSince(sinceMs).map { ListeningSession(it.id, it.sourceDeviceId, it.trackId, it.startedAt, it.endedAt, it.listenedSeconds, it.qualifiedPlay) },
+        attempts = dao.playbackAttemptsSince(sinceMs).map(PlaybackAttemptEntity::toModel),
+        dailyTracks = dao.dailyTrackStats().map { DailyTrackListeningStat(it.sourceDeviceId, it.localDate, it.trackId, it.listenedSeconds, it.playCount) },
+        dailyAttempts = dao.dailyAttemptStats().map { DailyPlaybackAttemptStat(it.sourceDeviceId, it.localDate, it.attempts, it.completed, it.skipped, it.stopped, it.listenedSeconds) },
+    )
+
+    override suspend fun mergeListeningSnapshot(snapshot: ListeningSyncSnapshot) = database.withTransaction {
+        snapshot.sessions.forEach { dao.insertListeningSession(it.toEntity()) }
+        snapshot.attempts.filter { it.endReason != null }.forEach { dao.insertPlaybackAttempt(it.toEntity()) }
+        snapshot.dailyTracks.forEach { dao.mergeDailyTrackStat(it.sourceDeviceId, it.localDate, it.trackId, it.listenedSeconds, it.playCount) }
+        snapshot.dailyAttempts.forEach { dao.mergeDailyAttemptStat(it.sourceDeviceId, it.localDate, it.attempts, it.completed, it.skipped, it.stopped, it.listenedSeconds) }
+    }
+
     suspend fun clearAll() {
         val assets = database.withTransaction {
             dao.staleAssets("__never_matches__").also {
@@ -690,6 +826,30 @@ internal class AndroidLibrarySyncStore(
     private fun JsonObject.arrayNames(name: String): String = ((this[name] as? JsonArray).orEmpty()).mapNotNull { (it as? JsonObject)?.string("name") }.joinToString(", ")
 
     private fun JsonObject.int(name: String): Int = (this[name] as? JsonPrimitive)?.contentOrNull?.toIntOrNull() ?: 0
+}
+
+private fun ListeningSession.toEntity() = ListeningSessionEntity(id, sourceDeviceId, trackId, startedAt, endedAt, listenedSeconds, qualifiedPlay)
+private fun PlaybackAttempt.toEntity() = PlaybackAttemptEntity(id, sourceDeviceId, trackId, startedAt, endedAt, startPositionMs, listenedSeconds, endReason?.name?.lowercase())
+private fun PlaybackAttemptEntity.toModel() = PlaybackAttempt(id, sourceDeviceId, trackId, startedAt, endedAt, startPositionMs, listenedSeconds, endReason?.let { PlaybackEndReason.valueOf(it.uppercase()) })
+
+private fun localDate(epochMs: Long): String = Instant.ofEpochMilli(epochMs).atZone(ZoneId.systemDefault()).toLocalDate().toString()
+
+internal fun splitListeningByDate(startedAt: Long, endedAt: Long, seconds: Int): Map<String, Int> {
+    if (seconds <= 0 || endedAt <= startedAt) return mapOf(localDate(startedAt) to seconds.coerceAtLeast(0))
+    val zone = ZoneId.systemDefault()
+    val result = linkedMapOf<String, Int>()
+    var cursor = Instant.ofEpochMilli(startedAt).atZone(zone)
+    val end = Instant.ofEpochMilli(endedAt).atZone(zone)
+    var remaining = seconds
+    val wallMs = endedAt - startedAt
+    while (cursor.isBefore(end)) {
+        val next = minOf(cursor.toLocalDate().plusDays(1).atStartOfDay(zone), end)
+        val part = if (next == end) remaining else (((next.toInstant().toEpochMilli() - cursor.toInstant().toEpochMilli()).toDouble() / wallMs) * seconds).toInt()
+        if (part > 0) result[cursor.toLocalDate().toString()] = (result[cursor.toLocalDate().toString()] ?: 0) + part
+        remaining -= part
+        cursor = next
+    }
+    return result.ifEmpty { mapOf(localDate(startedAt) to seconds) }
 }
 
 /** Pending deltas overlay the incoming snapshot until desktop sends a terminal acknowledgement. */
