@@ -42,6 +42,7 @@ object MaterialSymbols {
     const val Home = "home"
     const val Library = "graphic_eq"
     const val GraphicEq = "graphic_eq"
+    const val LegendToggle = "legend_toggle"
     const val Search = "search"
     const val Settings = "settings"
     const val PlayCircle = "play_circle"

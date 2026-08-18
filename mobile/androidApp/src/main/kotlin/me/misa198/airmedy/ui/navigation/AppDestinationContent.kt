@@ -10,11 +10,14 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
@@ -81,6 +84,7 @@ import me.misa198.airmedy.ui.screens.ComposerDetailsUiState
 import me.misa198.airmedy.ui.screens.composerDetailsUiStateFor
 import me.misa198.airmedy.sync.LibraryGenre
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 
 internal typealias PageKey = StackPageEntry
 
@@ -282,9 +286,14 @@ internal fun AppDestinationContent(
                                 onTrackContextBottomSheet = onTrackContextBottomSheet,
                             )
                         }
-                        AppDestination.Settings -> when (currentPage.page) {
+                        AppDestination.Settings -> key(currentPage.page) {
+                            val settingsPageModifier = Modifier
+                                .padding(contentPadding)
+                                .verticalScroll(rememberScrollState())
+                                .testTag("settings-page-scroll")
+                            when (currentPage.page) {
                             AppStackPage.SettingsAppearance -> AppearanceContent(
-                                modifier = Modifier.padding(contentPadding),
+                                modifier = settingsPageModifier,
                                 themeMode = themeMode,
                                 reduceTransparency = reduceTransparency,
                                 onThemeModeSelected = { themeMode ->
@@ -300,7 +309,7 @@ internal fun AppDestinationContent(
                                 onUnpair = onUnpair,
                                 onScreenVisible = onSyncScreenVisible,
                                 onScreenHidden = onSyncScreenHidden,
-                                modifier = Modifier.padding(contentPadding),
+                                modifier = settingsPageModifier,
                             )
                             AppStackPage.SettingsPlayback -> PlaybackSettingsContent(
                                 onSongTransitionSelected = {
@@ -309,7 +318,7 @@ internal fun AppDestinationContent(
                                 onVolumeNormalizationSelected = {
                                     onIntent(AppIntent.OpenPage(AppStackPage.SettingsVolumeNormalization))
                                 },
-                                modifier = Modifier.padding(contentPadding),
+                                modifier = settingsPageModifier,
                             )
                             AppStackPage.SettingsSongTransition -> SongTransitionContent(
                                 crossfadeSeconds = crossfadeSeconds,
@@ -317,32 +326,32 @@ internal fun AppDestinationContent(
                                 onCrossfadeSecondsChanged = onCrossfadeSecondsChanged,
                                 blendArtworkDuringCrossfade = blendArtworkDuringCrossfade,
                                 onBlendArtworkDuringCrossfadeChanged = onBlendArtworkDuringCrossfadeChanged,
-                                modifier = Modifier.padding(contentPadding),
+                                modifier = settingsPageModifier,
                             )
                             AppStackPage.SettingsVolumeNormalization -> VolumeNormalizationContent(
                                 normalizationAvailable = normalizationAvailable,
                                 normalization = normalization,
                                 onNormalizationChanged = onNormalizationChanged,
-                                modifier = Modifier.padding(contentPadding),
+                                modifier = settingsPageModifier,
                             )
                             AppStackPage.SettingsSyncScanner -> SyncScannerContent(
                                 onQrScanned = onPairingQrScanned,
-                                modifier = Modifier.padding(contentPadding),
+                                modifier = settingsPageModifier,
                             )
                             AppStackPage.SettingsIntegration -> IntegrationContent(
                                 status = lastFmStatus,
                                 onConnect = onLastFmConnect,
                                 onDisconnect = onLastFmDisconnect,
-                                modifier = Modifier.padding(contentPadding),
+                                modifier = settingsPageModifier,
                             )
                             AppStackPage.SettingsAbout -> AboutContent(
-                                modifier = Modifier.padding(contentPadding),
+                                modifier = settingsPageModifier,
                                 onOpenExternalUrl = { url ->
                                     onIntent(AppIntent.OpenExternalUrl(url))
                                 },
                             )
                             else -> SettingsContent(
-                                modifier = Modifier.padding(contentPadding),
+                                modifier = settingsPageModifier,
                                 onAppearanceSelected = {
                                     onIntent(AppIntent.OpenPage(AppStackPage.SettingsAppearance))
                                 },
@@ -359,6 +368,7 @@ internal fun AppDestinationContent(
                                     onIntent(AppIntent.OpenPage(AppStackPage.SettingsAbout))
                                 },
                             )
+                            }
                         }
                         AppDestination.Library -> when (currentPage.page) {
                             AppStackPage.LibraryArtists -> LibraryArtistsContent(

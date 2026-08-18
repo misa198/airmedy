@@ -33,23 +33,23 @@ internal fun AppStackPage.titleRes(destination: AppDestination): Int = when (thi
 internal val AppDestination.titleRes: Int
     @StringRes get() = when (this) {
         AppDestination.Home -> R.string.destination_home
+        AppDestination.Insight -> R.string.destination_insight
         AppDestination.Library -> R.string.destination_library
-        AppDestination.Search -> R.string.destination_search
         AppDestination.Settings -> R.string.destination_settings
     }
 
 internal val AppDestination.placeholderRes: Int
     @StringRes get() = when (this) {
         AppDestination.Home -> R.string.placeholder_home
+        AppDestination.Insight -> R.string.placeholder_insight
         AppDestination.Library -> R.string.placeholder_library
-        AppDestination.Search -> R.string.placeholder_search
         AppDestination.Settings -> R.string.placeholder_settings
     }
 
 internal val AppDestination.symbol: String
     get() = when (this) {
         AppDestination.Home -> MaterialSymbols.Home
+        AppDestination.Insight -> MaterialSymbols.LegendToggle
         AppDestination.Library -> MaterialSymbols.GraphicEq
-        AppDestination.Search -> MaterialSymbols.Search
         AppDestination.Settings -> MaterialSymbols.Settings
     }

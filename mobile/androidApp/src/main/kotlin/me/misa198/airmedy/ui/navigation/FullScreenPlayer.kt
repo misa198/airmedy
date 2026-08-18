@@ -139,6 +139,8 @@ private val FullScreenPlayerSwipeVelocityMinimum = 28.dp
 private const val FullScreenPlayerSwipeVelocityPxPerMs = 1.2f
 private val FullScreenPlayerCompactArtworkSize = 80.dp
 private val FullScreenPlayerCompactGap = 24.dp
+// Reserve the player chrome, metadata, and a usable controls area on short screens.
+private val FullScreenPlayerArtworkVerticalReserve = 448.dp
 private const val SeekConfirmationToleranceMs = 250L
 private const val FullScreenPlayerControlsTestTag = "full_screen_player_controls"
 private const val QueueReorderTransitionDurationMs = 360
@@ -385,15 +387,23 @@ internal fun FullScreenPlayer(
     )
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-        // The player column has 20dp padding on each side, so the full-screen
-        // artwork must use its content width rather than this outer constraint.
-        val expandedArtworkSize = maxWidth - 40.dp
+        // The player column has 20dp padding on each side. On short screens,
+        // cap the square cover by height so the controls retain their space.
+        val expandedArtworkSize = minOf(
+            maxWidth - 40.dp,
+            (maxHeight - FullScreenPlayerArtworkVerticalReserve).coerceAtLeast(0.dp),
+        )
         val compactMetadataWidth = maxWidth - 20.dp
         val queuePanelWidth = maxWidth
         val artworkSize by animateDpAsState(
             targetValue = if (isPanelOpen) FullScreenPlayerCompactArtworkSize else expandedArtworkSize,
             animationSpec = tween(320, easing = FastOutSlowInEasing),
             label = "full-screen-artwork-size",
+        )
+        val artworkHorizontalOffset by animateDpAsState(
+            targetValue = if (isPanelOpen) 0.dp else ((maxWidth - 40.dp) - expandedArtworkSize) / 2,
+            animationSpec = tween(320, easing = FastOutSlowInEasing),
+            label = "full-screen-artwork-horizontal-offset",
         )
         // Keep the top block's expanded footprint reserved while a panel is open.
         // During a queue reorder, it temporarily grows through the controls area
@@ -474,6 +484,7 @@ internal fun FullScreenPlayer(
                         isArtworkCrossfading = isArtworkCrossfading,
                         Modifier
                             .size(artworkSize)
+                            .offset(x = artworkHorizontalOffset)
                             .semantics { testTag = FullScreenPlayerArtworkTestTag }
                             .then(
                                 if (isPanelOpen) {

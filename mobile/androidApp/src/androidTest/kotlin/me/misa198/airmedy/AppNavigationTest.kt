@@ -11,6 +11,8 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
@@ -53,11 +55,21 @@ class AppNavigationTest {
         listOf(
             R.string.destination_home,
             R.string.destination_library,
-            R.string.destination_search,
+            R.string.destination_insight,
             R.string.destination_settings,
         ).forEach { labelRes ->
             composeTestRule.onAllNodesWithContentDescription(string(labelRes)).assertCountEquals(1)
         }
+    }
+
+    @Test
+    fun settingsRootAndChildPagesAreScrollable() {
+        val harness = AppHarness(AppUiState(selectedDestination = AppDestination.Settings))
+        composeTestRule.setContent { harness.Render() }
+
+        composeTestRule.onNodeWithTag("settings-page-scroll").assert(hasScrollAction())
+        composeTestRule.onNodeWithContentDescription(string(R.string.settings_appearance)).performClick()
+        composeTestRule.onNodeWithTag("settings-page-scroll").assert(hasScrollAction())
     }
 
     @Test

@@ -20,6 +20,8 @@ affecting the connected session.
   and placement of the navigation chrome. `ui/navigation/AppDestinationContent.kt`
   routes each destination's independent `AppStackPage` stack, and
   `ui/navigation/FloatingNavigationBar.kt` owns its visual and gesture behavior.
+  The four destinations are Home, Insight, Library, and Settings; Insight is a
+  placeholder destination using the `legend_toggle` Material Symbol.
   Individual page content lives in `ui/screens/`. The navigation's shared
   selection pill is also an active-foreground mask: a primary-coloured duplicate
   of the icons and labels is clipped to the pill, so only the exact covered
@@ -55,6 +57,8 @@ affecting the connected session.
   Playback, Integration, and About. Appearance opens `SettingsAppearance`, Sync
   opens `SettingsSync`, Playback opens `SettingsPlayback`, and About opens
   `SettingsAbout` in the Settings stack; Integration remains presentational.
+  The root and every Settings stack page share a vertically scrollable content
+  container, reset to the top when navigating between pages.
 - Playback Settings uses the `subwoofer` Material Symbol and presents a Song
   Transition action with the `masked_transitions` symbol. Song Transition owns
   the Crossfade switch and semantic 1–12 second slider; it defaults off,
@@ -243,7 +247,11 @@ affecting the connected session.
   column of three groups: seek, primary transport, and volume/secondary actions. The primary transport controls are centered with a
   compact fixed gap with 34dp previous/next icons and a 40dp play/pause icon; its play/pause
   glyph uses the same restrained 320ms continuous Play/Pause morph as the mini player; bottom secondary-action icons render at 24dp in `foregroundSubtle` inside their standard touch targets.
-  It renders near-full-width rounded artwork, with marquee white title text and
+  It renders near-full-width rounded artwork centered in its expanded state and
+  capped by the available screen height (after reserving the header, metadata,
+  and controls) on short phones so the controls stay visible. Changing between
+  that state and the compact panel animates its horizontal position alongside
+  its size rather than jumping before scaling. It uses marquee white title text and
   marquee `foregroundSubtle` artist/duration text. Overlong marquee text travels
   to its end and reverses back rather than wrapping continuously. The metadata column keeps a
   12dp gap before the blurred glass Heart/More button pair (using a fullscreen-local Haze backdrop source and a subtle 6% glass tint),

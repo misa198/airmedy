@@ -32,7 +32,7 @@ sharedLogic
 
 ## Navigation
 
-The floating Home, Library, Search, and Settings destinations each own an
+The floating Home, Insight, Library, and Settings destinations each own an
 independent Android UI stack. Switching destinations preserves the currently
 open page in every other stack. Stack changes within a destination use the
 standard page transition; switching destination stacks changes the title and

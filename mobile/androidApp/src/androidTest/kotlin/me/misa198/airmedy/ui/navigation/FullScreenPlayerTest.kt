@@ -4,10 +4,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
+import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -36,6 +38,34 @@ import org.junit.Assert.assertEquals
 class FullScreenPlayerTest {
     @get:Rule
     val composeTestRule = createComposeRule()
+
+    @Test
+    fun shortScreenCentersAndCapsArtworkByAvailableHeight() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenPlayer(
+                    visible = true,
+                    dragProgress = 0f,
+                    isDragging = false,
+                    openingFromMiniPlayerSwipe = false,
+                    playbackState = PlaybackState.Playing(item, 0L, 120_000L),
+                    volume = 0.5f,
+                    onSeek = {},
+                    onVolumeChange = {},
+                    onPrevious = {},
+                    onPlayPause = {},
+                    onNext = {},
+                    onOpenMediaOutputSwitcher = {},
+                    onDismiss = {},
+                    modifier = Modifier.width(360.dp).height(568.dp),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("full_screen_player_artwork")
+            .assertHeightIsEqualTo(120.dp)
+            .assertLeftPositionInRootIsEqualTo(120.dp)
+    }
 
     @Test
     fun queueStatusBadgeWaitsForQueueButtonBackgroundToFadeOut() {
