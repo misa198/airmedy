@@ -33,7 +33,9 @@ import java.util.UUID
 internal data class PlaylistListItem(
     val id: String,
     val name: String,
+    val trackIds: List<String> = emptyList(),
     val artworkPaths: List<String> = emptyList(),
+    val customArtworkPath: String? = null,
     val syncFailed: Boolean = false,
 ) { val isFavorite: Boolean get() = id == FavoritesPlaylistId }
 
@@ -55,8 +57,16 @@ internal class LibraryPlaylistsViewModel(private val context: Context, syncStore
         syncStore.tracks,
         syncStore.artworkPaths,
     ) { playlists, tracks, artworkPaths ->
+        val availableTrackIds = tracks.mapTo(mutableSetOf(), LibraryTrack::id)
         LibraryPlaylistsUiState(playlistsWithFavorites(playlists, tracks).map { playlist ->
-            PlaylistListItem(playlist.id, playlist.name, playlistArtworkPaths(playlist, tracks, artworkPaths), playlist.syncFailed)
+            PlaylistListItem(
+                playlist.id,
+                playlist.name,
+                playlist.trackIds.filter { it in availableTrackIds },
+                playlistArtworkPaths(playlist, tracks, artworkPaths),
+                playlistManualArtworkPath(playlist, artworkPaths),
+                playlist.syncFailed,
+            )
         })
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LibraryPlaylistsUiState())
 
@@ -107,6 +117,49 @@ internal class LibraryPlaylistsViewModel(private val context: Context, syncStore
             }
         }
     }
+
+    fun updatePlaylist(playlistId: String, rawName: String, artworkUri: Uri? = null, clearArtwork: Boolean = false) {
+        val name = rawName.trim()
+        val canRename = playlistId != FavoritesPlaylistId
+        if (canRename && name.isBlank()) return
+        viewModelScope.launch {
+            val updatedAt = System.currentTimeMillis()
+            if (canRename) {
+                syncStore.queuePlaylistMutation(
+                    PlaylistMutation(UUID.randomUUID().toString(), playlistId, PlaylistMutationOperation.UPDATE, updatedAt, PlaylistMutationPayload(name = name)),
+                )
+            }
+            artworkUri?.let { uri ->
+                val staged = try {
+                    withContext(Dispatchers.IO) { stagePlaylistArtwork(context.contentResolver, context.filesDir, uri) }
+                } catch (error: Throwable) {
+                    if (error is CancellationException) throw error
+                    Log.w("LibraryPlaylists", "Ignoring unreadable playlist artwork", error)
+                    null
+                }
+                staged?.let {
+                    syncStore.stagePlaylistArtwork(it)
+                    syncStore.queuePlaylistMutation(
+                        PlaylistMutation(UUID.randomUUID().toString(), playlistId, PlaylistMutationOperation.SET_ARTWORK, updatedAt + 1, PlaylistMutationPayload(artworkSha256 = it.sha256)),
+                    )
+                }
+            }
+            if (clearArtwork) {
+                syncStore.queuePlaylistMutation(
+                    PlaylistMutation(UUID.randomUUID().toString(), playlistId, PlaylistMutationOperation.REMOVE_ARTWORK, updatedAt + 1),
+                )
+            }
+        }
+    }
+
+    fun deletePlaylist(playlistId: String) {
+        if (playlistId == FavoritesPlaylistId) return
+        viewModelScope.launch {
+            syncStore.queuePlaylistMutation(
+                PlaylistMutation(UUID.randomUUID().toString(), playlistId, PlaylistMutationOperation.DELETE, System.currentTimeMillis()),
+            )
+        }
+    }
 }
 
 internal const val FavoritesPlaylistId = "favorites"
@@ -139,6 +192,11 @@ internal fun playlistArtworkPaths(
         .map { (_, path) -> path!! }
         .toList()
 }
+
+internal fun playlistManualArtworkPath(
+    playlist: LibraryPlaylist,
+    artworkPaths: Map<String, String>,
+): String? = playlistArtworkKey(playlist.metadataJson)?.let(artworkPaths::get)
 
 private fun playlistArtworkKey(metadataJson: String): String? = runCatching {
     val root = LibrarySyncProtocol.json.parseToJsonElement(metadataJson) as? JsonObject

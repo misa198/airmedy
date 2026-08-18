@@ -4,16 +4,22 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.unit.dp
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.ui.components.PlaylistRow
+import me.misa198.airmedy.ui.components.AnchoredPopupMenuHost
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import org.junit.Rule
 import org.junit.Test
@@ -70,5 +76,61 @@ class LibraryPlaylistsContentTest {
         }
         composeTestRule.onNodeWithTag("playlist-artwork-picker").assertExists()
         composeTestRule.onNodeWithContentDescription("Choose playlist artwork").assertExists()
+    }
+
+    @Test
+    fun editSheetCanClearAnExistingPlaylistArtwork() {
+        var clearArtwork = false
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                EditPlaylistBottomSheet(
+                    initialName = "Night Drive",
+                    artworkPath = "cover.jpg",
+                    onDismiss = {},
+                    onSave = { _, _, clear -> clearArtwork = clear },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Clear playlist artwork").performClick()
+        composeTestRule.onNodeWithTag("playlist-create-button").performClick()
+        assertEquals(true, clearArtwork)
+    }
+
+    @Test
+    fun favoritesEditorHidesThePlaylistName() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                EditPlaylistBottomSheet(
+                    initialName = "",
+                    artworkPath = null,
+                    showNameInput = false,
+                    onDismiss = {},
+                    onSave = { _, _, _ -> },
+                )
+            }
+        }
+
+        composeTestRule.onAllNodesWithTag("playlist-name-input").assertCountEquals(0)
+        composeTestRule.onNodeWithTag("playlist-create-button").assertIsEnabled()
+    }
+
+    @Test
+    fun longPressingPlaylistRowShowsPlaylistMenu() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                AnchoredPopupMenuHost(hazeState = null) {
+                    LibraryPlaylistsContent(
+                        LibraryPlaylistsUiState(listOf(PlaylistListItem("p", "Night Drive", trackIds = listOf("one")))),
+                        listState = LazyListState(),
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithText("Night Drive").performSemanticsAction(SemanticsActions.OnLongClick)
+        composeTestRule.onNodeWithText("Play next").assertExists()
+        composeTestRule.onNodeWithText("Edit playlist").assertExists()
+        composeTestRule.onNodeWithText("Delete playlist").assertExists()
     }
 }

@@ -102,6 +102,8 @@ object MaterialSymbols {
     const val GridView = "grid_view"
     const val ViewList = "view_list"
     const val StylusFountainPen = "stylus_fountain_pen"
+    const val Edit = "edit"
+    const val Delete = "delete"
 }
 
 @Composable

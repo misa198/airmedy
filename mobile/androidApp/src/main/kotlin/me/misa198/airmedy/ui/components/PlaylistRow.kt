@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -39,10 +40,11 @@ internal fun PlaylistRow(
     modifier: Modifier = Modifier,
     syncFailed: Boolean = false,
     onClick: () -> Unit = {},
+    onLongClick: () -> Unit = {},
 ) {
     val colors = LocalAirmedyColors.current
     Row(
-        modifier = modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(start = 24.dp, top = 8.dp, end = 8.dp, bottom = 8.dp),
+        modifier = modifier.fillMaxWidth().combinedClickable(role = Role.Button, onClick = onClick, onLongClick = onLongClick).padding(start = 24.dp, top = 8.dp, end = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         PlaylistArtwork(playlistId, artworkPaths)

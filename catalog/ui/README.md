@@ -110,6 +110,12 @@ edited. Home Analytics silently refreshes its hydrated top-track DTOs and
 summary data, and Playlists refreshes mosaic-preview tracks even when playlist
 membership itself did not change.
 
+When `mobile-library-sync:updated` reports a completed plan, the same cached
+view invalidation runs. Mobile playlist reconciliation can change the desktop
+playlist database before that plan completes, so the playlists store reloads
+for the sidebar and list while playlist detail and mosaic data refresh through
+`useLibrarySync`.
+
 ### Mini Player Window Lifecycle
 
 The mini player window is **destroyed on close and recreated on open** (not just hidden). `WindowService` holds a factory function (`SetMiniWindowFactory`) that creates a fresh `WebviewWindow` each time. Closing the window does not call `e.Cancel()` on the `WindowClosing` hook, so Wails destroys the native window and frees its memory. Reopening calls the factory to create a new window. This resets all Vue/Pinia state in that webview.

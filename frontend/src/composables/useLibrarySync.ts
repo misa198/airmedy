@@ -11,6 +11,7 @@ export function useLibrarySync(reloadFn: () => void) {
   let offSyncFinished: (() => void) | null = null
   let offLibraryUpdated: (() => void) | null = null
   let offTrackUpdated: (() => void) | null = null
+  let offMobileSyncUpdated: (() => void) | null = null
   let reloadTimer: ReturnType<typeof setTimeout> | null = null
   let isActive = false
   let isDirty = false
@@ -43,6 +44,10 @@ export function useLibrarySync(reloadFn: () => void) {
     })
     offLibraryUpdated = Events.On('library:updated', handleLibraryChange)
     offTrackUpdated = Events.On('library:track-updated', handleLibraryChange)
+    offMobileSyncUpdated = Events.On('mobile-library-sync:updated', (ev: Events.WailsEvent) => {
+      const plan = (Array.isArray(ev.data) ? ev.data[0] : ev.data?.data ?? ev.data) as { status?: string } | undefined
+      if (plan?.status === 'complete') handleLibraryChange()
+    })
   })
 
   onActivated(() => {
@@ -66,5 +71,6 @@ export function useLibrarySync(reloadFn: () => void) {
     offSyncFinished?.()
     offLibraryUpdated?.()
     offTrackUpdated?.()
+    offMobileSyncUpdated?.()
   })
 }

@@ -10,6 +10,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -35,6 +37,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.Image
+import me.misa198.airmedy.ui.components.rememberArtworkThumbnail
 import me.misa198.airmedy.R
 import me.misa198.airmedy.ui.components.AirmedyBottomSheet
 import me.misa198.airmedy.ui.components.AirmedyTextField
@@ -45,27 +48,68 @@ import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 @Composable
 internal fun CreatePlaylistBottomSheet(onDismiss: () -> Unit, onCreate: (String, Uri?) -> Unit) {
+    PlaylistEditorBottomSheet(
+        title = stringResource(R.string.playlist_create_title),
+        actionLabel = stringResource(R.string.create),
+        onDismiss = onDismiss,
+        onSave = { name, artwork, _ -> onCreate(name, artwork) },
+    )
+}
+
+@Composable
+internal fun EditPlaylistBottomSheet(
+    initialName: String,
+    artworkPath: String?,
+    showNameInput: Boolean = true,
+    onDismiss: () -> Unit,
+    onSave: (String, Uri?, Boolean) -> Unit,
+) {
+    PlaylistEditorBottomSheet(
+        title = stringResource(R.string.playlist_edit_title),
+        actionLabel = stringResource(R.string.save),
+        initialName = initialName,
+        artworkPath = artworkPath,
+        canClearArtwork = artworkPath != null,
+        showNameInput = showNameInput,
+        onDismiss = onDismiss,
+        onSave = { name, artwork, clear -> onSave(name, artwork, clear) },
+    )
+}
+
+@Composable
+private fun PlaylistEditorBottomSheet(
+    title: String,
+    actionLabel: String,
+    onDismiss: () -> Unit,
+    onSave: (String, Uri?, Boolean) -> Unit,
+    initialName: String = "",
+    artworkPath: String? = null,
+    canClearArtwork: Boolean = false,
+    showNameInput: Boolean = true,
+) {
     val colors = LocalAirmedyColors.current
     val context = LocalContext.current
-    var name by remember { mutableStateOf("") }
+    var name by remember(initialName) { mutableStateOf(initialName) }
     var artworkUri by remember { mutableStateOf<Uri?>(null) }
+    var clearArtwork by remember { mutableStateOf(false) }
     val imageLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia(),
-    ) { artworkUri = it }
+    ) { uri -> artworkUri = uri; if (uri != null) clearArtwork = false }
     val artwork = remember(artworkUri) {
         artworkUri?.let { uri -> context.contentResolver.openInputStream(uri)?.use(BitmapFactory::decodeStream)?.asImageBitmap() }
     }
-    val valid = name.trim().isNotEmpty()
+    val existingArtwork = rememberArtworkThumbnail(artworkPath, targetPx = 336)
+    val valid = !showNameInput || name.trim().isNotEmpty()
     AirmedyBottomSheet(
-        title = { Text(stringResource(R.string.playlist_create_title), style = MaterialTheme.typography.titleMedium, color = colors.textMain) },
+        title = { Text(title, style = MaterialTheme.typography.titleMedium, color = colors.textMain) },
         onDismiss = onDismiss,
         leadingAction = {
             CreatePlaylistSheetIconButton(MaterialSymbols.Close, stringResource(R.string.cancel), onDismiss)
         },
         trailingAction = {
             CreatePlaylistSheetIconButton(
-                MaterialSymbols.Check, stringResource(R.string.create),
-                { onCreate(name.trim(), artworkUri) }, enabled = valid,
+                MaterialSymbols.Check, actionLabel,
+                { onSave(name.trim(), artworkUri, clearArtwork) }, enabled = valid,
                 modifier = Modifier.testTag("playlist-create-button"),
                 primary = true,
             )
@@ -79,21 +123,33 @@ internal fun CreatePlaylistBottomSheet(onDismiss: () -> Unit, onCreate: (String,
                 contentAlignment = Alignment.Center,
             ) {
                 if (artwork != null) Image(artwork, null, Modifier.matchParentSize(), contentScale = ContentScale.Crop)
-                CreatePlaylistSheetIconButton(
-                    MaterialSymbols.Image,
-                    stringResource(R.string.playlist_choose_artwork),
-                    { imageLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-                    primary = true,
+                else if (!clearArtwork && existingArtwork != null) Image(existingArtwork, null, Modifier.matchParentSize(), contentScale = ContentScale.Crop)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CreatePlaylistSheetIconButton(
+                        MaterialSymbols.Image,
+                        stringResource(R.string.playlist_choose_artwork),
+                        { imageLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                        primary = true,
+                    )
+                    if ((canClearArtwork || artworkUri != null) && !clearArtwork) {
+                        CreatePlaylistSheetIconButton(
+                            MaterialSymbols.Close,
+                            stringResource(R.string.playlist_clear_artwork),
+                            { artworkUri = null; clearArtwork = canClearArtwork },
+                        )
+                    }
+                }
+            }
+            if (showNameInput) {
+                AirmedyTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    modifier = Modifier.fillMaxWidth().padding(top = 24.dp).testTag("playlist-name-input"),
+                    placeholder = stringResource(R.string.playlist_name),
+                    size = AirmedyTextFieldSize.Medium,
+                    onDone = { if (valid) onSave(name.trim(), artworkUri, clearArtwork) },
                 )
             }
-            AirmedyTextField(
-                value = name,
-                onValueChange = { name = it },
-                modifier = Modifier.fillMaxWidth().padding(top = 24.dp).testTag("playlist-name-input"),
-                placeholder = stringResource(R.string.playlist_name),
-                size = AirmedyTextFieldSize.Medium,
-                onDone = { if (valid) onCreate(name.trim(), artworkUri) },
-            )
         }
     }
 }

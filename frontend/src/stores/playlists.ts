@@ -83,12 +83,20 @@ export const usePlaylistsStore = defineStore('playlists', () => {
     }
   })
 
+  // Mobile reconciliation can mutate desktop playlists before the synced
+  // snapshot completes, without going through this Wails service.
+  const _offMobileSyncUpdated = Events.On('mobile-library-sync:updated', (ev: Events.WailsEvent) => {
+    const plan = (Array.isArray(ev.data) ? ev.data[0] : ev.data?.data ?? ev.data) as { status?: string } | undefined
+    if (plan?.status === 'complete') void loadAll()
+  })
+
   function dispose() {
     _offDeleted()
     _offRenamed()
     _offPinned()
     _offArtworkChanged()
     _offRulesChanged()
+    _offMobileSyncUpdated()
   }
 
   async function create(name: string, description = '') {
@@ -167,4 +175,3 @@ export const usePlaylistsStore = defineStore('playlists', () => {
     dispose,
   }
 })
-

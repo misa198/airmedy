@@ -3,6 +3,7 @@ package me.misa198.airmedy.ui.screens
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.performClick
@@ -10,6 +11,7 @@ import me.misa198.airmedy.ui.components.AnchoredPopupMenuHost
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.sync.LibraryPlaylist
 import me.misa198.airmedy.sync.LibraryTrack
+import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import org.junit.Rule
 import org.junit.Test
@@ -51,6 +53,7 @@ class PlaylistDetailsContentTest {
                             playlist = LibraryPlaylist("mix", "Night drive", listOf(track.id), "{}"),
                             tracks = listOf(track),
                         ),
+                        playbackQueue = PlaybackQueueSnapshot(activeTrackIds = listOf(track.id)),
                         onTrackRemoveFromPlaylist = { removedTrackId = it },
                     )
                 }
@@ -60,5 +63,45 @@ class PlaylistDetailsContentTest {
         composeTestRule.onNode(hasContentDescription("Track options")).performClick()
         composeTestRule.onNodeWithText("Remove from playlist").performClick()
         assertEquals(track.id, removedTrackId)
+    }
+
+    @Test
+    fun heroMoreShowsPlaylistPlaybackAndEditingActions() {
+        val track = LibraryTrack("one", "One", "Artist")
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                AnchoredPopupMenuHost(hazeState = null) {
+                    PlaylistDetailsContent(
+                        PlaylistDetailsUiState(
+                            playlist = LibraryPlaylist("mix", "Night drive", listOf(track.id), "{}"),
+                            tracks = listOf(track),
+                        ),
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNode(hasContentDescription("More options")).performClick()
+        composeTestRule.onNodeWithText("Play next").assertExists()
+        composeTestRule.onNodeWithText("Add to queue").assertExists()
+        composeTestRule.onNodeWithText("Edit playlist").assertExists()
+        composeTestRule.onNodeWithText("Delete playlist").assertExists()
+    }
+
+    @Test
+    fun favoritesMenuOffersEditButNotDelete() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                AnchoredPopupMenuHost(hazeState = null) {
+                    PlaylistDetailsContent(
+                        PlaylistDetailsUiState(playlist = LibraryPlaylist(FavoritesPlaylistId, "", emptyList(), "{}")),
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNode(hasContentDescription("More options")).performClick()
+        composeTestRule.onNodeWithText("Edit playlist").assertExists()
+        composeTestRule.onAllNodesWithText("Delete playlist").assertCountEquals(0)
     }
 }

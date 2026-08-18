@@ -3,6 +3,7 @@ package me.misa198.airmedy
 import me.misa198.airmedy.sync.LibraryPlaylist
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.ui.screens.playlistArtworkPaths
+import me.misa198.airmedy.ui.screens.playlistManualArtworkPath
 import me.misa198.airmedy.ui.screens.playlistsWithFavorites
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -52,5 +53,14 @@ class LibraryPlaylistsViewModelTest {
         val playlist = LibraryPlaylist("p", "Playlist", listOf("a"), """{"playlist":{"artwork_key":"missing"}}""")
 
         assertEquals(listOf("a.jpg"), playlistArtworkPaths(playlist, tracks, emptyMap()))
+    }
+
+    @Test
+    fun editorArtworkUsesOnlyThePlaylistManualCover() {
+        val fallback = LibraryPlaylist("p", "Playlist", listOf("a"), "{}")
+        val custom = LibraryPlaylist("p", "Playlist", listOf("a"), """{"playlist":{"artwork_key":"custom"}}""")
+
+        assertEquals(null, playlistManualArtworkPath(fallback, emptyMap()))
+        assertEquals("custom.jpg", playlistManualArtworkPath(custom, mapOf("custom" to "custom.jpg")))
     }
 }

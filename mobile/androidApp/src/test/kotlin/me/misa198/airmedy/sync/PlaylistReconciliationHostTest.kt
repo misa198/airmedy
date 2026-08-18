@@ -18,6 +18,12 @@ import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class PlaylistReconciliationHostTest {
+    @Test fun acknowledgedArtworkIsOnlyCleanedAfterItsPlanActivates() {
+        val hash = "a".repeat(64)
+        assertEquals(emptyList<String>(), unusedPlaylistArtworkHashes(listOf(hash), listOf(mutation("1", PlaylistMutationOperation.SET_ARTWORK, PlaylistMutationPayload(artworkSha256 = hash))), emptyList()))
+        assertEquals(listOf(hash), unusedPlaylistArtworkHashes(listOf(hash), emptyList(), emptyList()))
+    }
+
     @Test fun pendingRemoveTrackIsProjectedImmediately() {
         val playlist = LibraryPlaylist("p", "Original", listOf("a", "b", "c"), "{}")
 
@@ -27,6 +33,21 @@ class PlaylistReconciliationHostTest {
         )
 
         assertEquals(listOf("a", "c"), projected.single().trackIds)
+    }
+
+    @Test fun pendingEditArtworkAndDeleteAreProjectedImmediately() {
+        val playlist = LibraryPlaylist("p", "Original", listOf("a"), "{}")
+        val edited = applyPendingPlaylistMutations(
+            listOf(playlist),
+            listOf(
+                mutation("1", PlaylistMutationOperation.UPDATE, PlaylistMutationPayload(name = "Edited")),
+                mutation("2", PlaylistMutationOperation.SET_ARTWORK, PlaylistMutationPayload(artworkSha256 = "a".repeat(64))),
+            ),
+        ).single()
+
+        assertEquals("Edited", edited.name)
+        assertEquals("a".repeat(64), ((LibrarySyncProtocol.json.parseToJsonElement(edited.metadataJson) as JsonObject)["playlist"] as JsonObject)["artwork_key"]?.let { (it as JsonPrimitive).content })
+        assertEquals(emptyList<LibraryPlaylist>(), applyPendingPlaylistMutations(listOf(edited), listOf(mutation("3", PlaylistMutationOperation.DELETE, PlaylistMutationPayload()))))
     }
 
     @Test fun pendingMutationsMergeInQueueOrderAndHonorScope() {

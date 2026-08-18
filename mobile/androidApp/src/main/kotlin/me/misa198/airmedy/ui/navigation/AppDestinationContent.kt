@@ -157,6 +157,10 @@ internal fun AppDestinationContent(
     onPlaylistPlay: (String, Boolean) -> Unit = { _, _ -> },
     onPlaylistTrackPlay: (String, String) -> Unit = { _, _ -> },
     onPlaylistTrackRemove: (String, String) -> Unit = { _, _ -> },
+    onPlaylistPlayNext: (List<String>) -> Unit = {},
+    onPlaylistAddToQueue: (List<String>) -> Unit = {},
+    onPlaylistUpdate: (String, String, android.net.Uri?, Boolean) -> Unit = { _, _, _, _ -> },
+    onPlaylistDelete: (String) -> Unit = {},
     onTrackContextBottomSheet: (me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest) -> Unit = {},
     onArtistPlay: (String, Boolean) -> Unit = { _, _ -> },
     onArtistPlayNext: (List<String>) -> Unit = {},
@@ -450,6 +454,10 @@ internal fun AppDestinationContent(
                                 contentPadding = contentPadding,
                                 modifier = Modifier.fillMaxSize(),
                                 onPlaylistClick = { playlistId -> onIntent(AppIntent.OpenPlaylistDetails(playlistId)) },
+                                onPlaylistPlayNext = onPlaylistPlayNext,
+                                onPlaylistAddToQueue = onPlaylistAddToQueue,
+                                onPlaylistUpdate = onPlaylistUpdate,
+                                onPlaylistDelete = onPlaylistDelete,
                             )
                             AppStackPage.PlaylistDetails -> PlaylistDetailsContent(
                                 uiState = selectedPlaylistId?.let { playlistDetailsUiStateFor(playlistDetailsUiState, it) } ?: PlaylistDetailsUiState(),
@@ -467,6 +475,13 @@ internal fun AppDestinationContent(
                                 onTrackArtistClick = { artist -> onIntent(AppIntent.OpenArtistDetails(artist.id)) },
                                 onTrackRemoveFromPlaylist = { trackId -> selectedPlaylistId?.let { onPlaylistTrackRemove(it, trackId) } },
                                 onTrackContextBottomSheet = onTrackContextBottomSheet,
+                                onPlaylistPlayNext = onPlaylistPlayNext,
+                                onPlaylistAddToQueue = onPlaylistAddToQueue,
+                                onPlaylistUpdate = onPlaylistUpdate,
+                                onPlaylistDelete = { playlistId ->
+                                    onPlaylistDelete(playlistId)
+                                    onIntent(AppIntent.NavigateBack)
+                                },
                             )
                             AppStackPage.LibraryTracks -> LibraryTracksContent(
                                 uiState = tracksUiState,

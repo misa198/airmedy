@@ -25,6 +25,7 @@ internal data class PlaylistDetailsUiState(
     val playlist: LibraryPlaylist? = null,
     val tracks: List<LibraryTrack> = emptyList(),
     val artworkPaths: List<String> = emptyList(),
+    val customArtworkPath: String? = null,
     internal val playlists: List<LibraryPlaylist> = emptyList(),
     internal val allTracks: List<LibraryTrack> = emptyList(),
     internal val artworkPathByKey: Map<String, String> = emptyMap(),
@@ -101,6 +102,7 @@ internal fun playlistDetailsUiStateFor(
         playlist = playlist,
         tracks = tracks,
         artworkPaths = playlistArtworkPaths(playlist, state.allTracks, state.artworkPathByKey),
+        customArtworkPath = playlistManualArtworkPath(playlist, state.artworkPathByKey),
     )
 }
 

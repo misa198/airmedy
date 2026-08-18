@@ -139,6 +139,21 @@ func TestPlaylistMutationTerminalStatusesAndDurableLedger(t *testing.T) {
 	require.Equal(t, "applied", entry.Result)
 }
 
+func TestFavoriteArtworkMutationIsApplied(t *testing.T) {
+	db, err := sqlite.NewDB(filepath.Join(t.TempDir(), "library.db"), slog.Default())
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, db.Close()) })
+	repo := sqlite.NewPlaylistRepository(db)
+	require.NoError(t, repo.Save(context.Background(), &domain.Playlist{ID: "favorites", Name: "Favorites"}))
+	svc := &Service{playlists: repo}
+	mutation := playlistMutation{PlaylistID: "favorites", Operation: "SET_ARTWORK", Payload: playlistMutationPayload{ArtworkSHA256: strings.Repeat("a", 64)}}
+
+	require.Equal(t, "applied", svc.applyNewPlaylistMutation(context.Background(), domain.MobileLibrarySyncScope{Kind: domain.MobileLibrarySyncScopeAll}, mutation, map[string]string{mutation.Payload.ArtworkSHA256: "artwork-key"}))
+	playlist, err := repo.GetByID(context.Background(), "favorites")
+	require.NoError(t, err)
+	require.Equal(t, "artwork-key", *playlist.ArtworkKey)
+}
+
 func TestAddPlaylistsIncludesEmptyPlaylists(t *testing.T) {
 	db, err := sqlite.NewDB(filepath.Join(t.TempDir(), "library.db"), slog.Default())
 	require.NoError(t, err)

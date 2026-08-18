@@ -541,20 +541,8 @@ internal class AndroidLibrarySyncStore(
 
     override suspend fun acknowledgePlaylistMutations(ids: List<String>) {
         if (ids.isEmpty()) return
-        val acknowledgedArtwork = dao.pendingPlaylistMutations().filter { it.mutationId in ids }.mapNotNull { row ->
-            runCatching { LibrarySyncProtocol.json.decodeFromString(PlaylistMutationPayload.serializer(), row.payloadJson).artworkSha256 }.getOrNull()
-        }
+        // Keep staged artwork visible until the replacement manifest is active.
         dao.acknowledgePlaylistMutations(ids)
-        val remaining = pendingPlaylistMutations().mapNotNull { it.payload.artworkSha256 }.toSet()
-        // A locally-created playlist continues to render from staging until the
-        // next desktop manifest supplies its authoritative artwork asset.
-        val localArtwork = dao.observeLocalPlaylists().first().mapNotNull { it.artworkSha256 }.toSet()
-        val unused = acknowledgedArtwork.filter { it !in remaining && it !in localArtwork }
-        if (unused.isNotEmpty()) {
-            val files = unused.mapNotNull { dao.playlistArtwork(it)?.relativePath }
-            dao.deletePlaylistArtwork(unused)
-            files.forEach { File(filesDir, it).delete() }
-        }
     }
 
     fun lyrics(trackId: String): Flow<String?> = dao.observeLyrics(trackId).map { rawJson ->
@@ -627,6 +615,7 @@ internal class AndroidLibrarySyncStore(
                 ?.takeUnless { it in activePaths }
                 ?.let { File(filesDir, it).delete() }
         }
+        cleanupAcknowledgedPlaylistArtwork()
     }
 
     override suspend fun discard(planId: String) {
@@ -654,6 +643,19 @@ internal class AndroidLibrarySyncStore(
             }
         }
         assets.forEach { it.relativePath?.let { path -> File(filesDir, path).delete() } }
+    }
+
+    private suspend fun cleanupAcknowledgedPlaylistArtwork() {
+        val staged = dao.observePlaylistArtwork().first()
+        val unused = unusedPlaylistArtworkHashes(
+            staged.map(PlaylistArtworkStagingEntity::sha256),
+            pendingPlaylistMutations(),
+            dao.observeLocalPlaylists().first().mapNotNull(LocalPlaylistEntity::artworkSha256),
+        )
+        if (unused.isEmpty()) return
+        val paths = staged.filter { it.sha256 in unused }.map(PlaylistArtworkStagingEntity::relativePath)
+        dao.deletePlaylistArtwork(unused)
+        paths.forEach { File(filesDir, it).delete() }
     }
 
     private fun JsonObject.toTrack(planId: String, syncOrder: Int): SyncTrackEntity? {
@@ -744,7 +746,7 @@ private fun PlaylistMutationEntity.toPlaylistMutation(): PlaylistMutation? = run
     )
 }.getOrNull()
 
-/** Reflects pending track-order deltas locally until desktop acknowledges them. */
+/** Reflects pending playlist deltas locally until desktop acknowledges them. */
 internal fun applyPendingPlaylistMutations(
     playlists: List<LibraryPlaylist>,
     pending: List<PlaylistMutation>,
@@ -752,15 +754,25 @@ internal fun applyPendingPlaylistMutations(
     val projected = playlists.associateByTo(linkedMapOf(), LibraryPlaylist::id)
     pending.forEach { mutation ->
         val current = projected[mutation.playlistId] ?: return@forEach
-        val trackId = mutation.payload.trackId ?: return@forEach
         when (mutation.operation) {
+            PlaylistMutationOperation.DELETE -> projected.remove(mutation.playlistId)
+            PlaylistMutationOperation.UPDATE -> projected[mutation.playlistId] = current.copy(
+                name = mutation.payload.name?.trim()?.takeIf(String::isNotBlank) ?: current.name,
+            )
+            PlaylistMutationOperation.SET_ARTWORK -> mutation.payload.artworkSha256?.let { key ->
+                projected[mutation.playlistId] = current.copy(metadataJson = current.withPlaylistArtworkKey(key))
+            }
+            PlaylistMutationOperation.REMOVE_ARTWORK -> projected[mutation.playlistId] = current.copy(
+                metadataJson = current.withPlaylistArtworkKey(null),
+            )
             PlaylistMutationOperation.ADD_TRACK -> projected[mutation.playlistId] = current.copy(
-                trackIds = (current.trackIds + trackId).distinct(),
+                trackIds = (current.trackIds + (mutation.payload.trackId ?: return@forEach)).distinct(),
             )
             PlaylistMutationOperation.REMOVE_TRACK -> projected[mutation.playlistId] = current.copy(
-                trackIds = current.trackIds.filterNot { it == trackId },
+                trackIds = current.trackIds.filterNot { it == mutation.payload.trackId ?: return@forEach },
             )
             PlaylistMutationOperation.MOVE_TRACK -> {
+                val trackId = mutation.payload.trackId ?: return@forEach
                 val ids = current.trackIds.filterNot { it == trackId }.toMutableList()
                 val index = mutation.payload.nextTrackId?.let(ids::indexOf)?.takeIf { it >= 0 }
                     ?: mutation.payload.previousTrackId?.let(ids::indexOf)?.takeIf { it >= 0 }?.plus(1)
@@ -772,6 +784,19 @@ internal fun applyPendingPlaylistMutations(
         }
     }
     return projected.values.toList()
+}
+
+internal fun unusedPlaylistArtworkHashes(staged: List<String>, pending: List<PlaylistMutation>, localArtwork: List<String>): List<String> {
+    val referenced = pending.mapNotNull { it.payload.artworkSha256 }.toSet() + localArtwork
+    return staged.filter { it !in referenced }
+}
+
+private fun LibraryPlaylist.withPlaylistArtworkKey(key: String?): String {
+    val root = runCatching { LibrarySyncProtocol.json.parseToJsonElement(metadataJson) as? JsonObject }.getOrNull()
+        ?: JsonObject(emptyMap())
+    val container = (root["playlist"] as? JsonObject)?.toMutableMap() ?: linkedMapOf()
+    if (key == null) container.remove("artwork_key") else container["artwork_key"] = JsonPrimitive(key)
+    return LibrarySyncProtocol.json.encodeToString(JsonObject(root.toMutableMap().apply { put("playlist", JsonObject(container)) }))
 }
 
 private fun playlistSnapshot(mutation: PlaylistMutation, tracks: List<String>, current: JsonObject? = null): JsonObject {

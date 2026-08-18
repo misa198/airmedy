@@ -68,4 +68,14 @@ describe('useLibrarySync', () => {
 
     expect(reload).toHaveBeenCalledTimes(1)
   })
+
+  it('reloads after a completed mobile sync', async () => {
+    mount(Host)
+    await nextTick()
+
+    handlers.get('mobile-library-sync:updated')?.({ data: { status: 'complete' } })
+    await vi.advanceTimersByTimeAsync(50)
+
+    expect(reload).toHaveBeenCalledTimes(1)
+  })
 })

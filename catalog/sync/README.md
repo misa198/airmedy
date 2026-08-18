@@ -261,7 +261,9 @@ Fullscreen Player adds a `SET_FAVORITE` delta (`playlist_id: "favorites"`, track
 ID, desired state, timestamp, and UUID), which immediately overlays the local
 mirror. Before the next plan is built desktop applies the delta through a
 device+mutation ledger and per-track LWW watermark, so the following scoped
-snapshot contains accepted mobile and desktop favorite changes.
+snapshot contains accepted mobile and desktop favorite changes. Favorites keeps
+its virtual membership, but accepts `SET_ARTWORK` and `REMOVE_ARTWORK` mutations
+so a mobile-selected cover remains authoritative in the following snapshot.
 
 ### Playlist scope boundary
 
@@ -282,5 +284,7 @@ reconciliation lifetime; terminal or expired staging is removed before orphan
 artwork cleanup.
 
 Android Room stores staged artwork SHA-256, MIME, byte size, and relative path.
-It verifies and uploads the artwork before its `SET_ARTWORK` batch mutation,
-and removes it only after no pending mutation still references the hash.
+It verifies and uploads the artwork before its `SET_ARTWORK` batch mutation.
+Acknowledged staging stays visible until the replacement plan activates, avoiding
+a temporary desktop-cover flash; it is then removed when no pending or local
+playlist still references the hash.

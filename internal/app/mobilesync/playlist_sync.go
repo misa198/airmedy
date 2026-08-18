@@ -156,7 +156,7 @@ func (s *Service) applyNewPlaylistMutation(ctx context.Context, scope domain.Mob
 	if err != nil {
 		return "rejected"
 	}
-	if p != nil && (p.IsSmart || p.ID == playlistapp.FavoritesPlaylistID) {
+	if p != nil && (p.IsSmart || (p.ID == playlistapp.FavoritesPlaylistID && m.Operation != "SET_ARTWORK" && m.Operation != "REMOVE_ARTWORK")) {
 		return "rejected"
 	}
 	switch m.Operation {
