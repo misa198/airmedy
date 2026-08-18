@@ -91,7 +91,7 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000071 | `mobile_favorite_sync.up.sql` | Add trusted-device favorite mutation ledger and per-track last-write-wins favorite watermark for mobile reconciliation |
 | 000072 | `listening_sources.up.sql` | Add source-device identity to raw listening rows and daily aggregate keys for cross-device sync |
 
-`listeningRepository.GetInsights` returns up to 50 entries for both Top Artists
+`listeningRepository.GetListeningInsights` returns up to 50 entries for both Top Artists
 (ordered by listened seconds) and Top Tracks (ordered by play count, then listened
 seconds, then title for a stable tie-break).
 
@@ -373,11 +373,11 @@ uses `skipped` as its numerator. Raw attempts are retained for 180 days while
 daily aggregates remain for all-time rates; startup converts unclosed attempts
 left by a crash into `stopped` attempts.
 
-`ListeningRepository.GetInsights` also returns `streak_days`: the current
+`ListeningRepository.GetListeningInsights` also returns `streak_days`: the current
 consecutive local-calendar-day listening streak, beginning today when active or
 yesterday otherwise; a second missed day resets it to zero. It is calculated
 from all listening aggregates, independently of the selected insight range.
-It also returns `library_growth`, calculated
+`ListeningRepository.GetLibraryInsights` returns `library_growth`, calculated
 from the indexed `tracks.created_at` column. Bounded periods first count tracks
 before the requested range and aggregate additions only within that range, then
 build the cumulative daily series in memory. All-time insights aggregate once

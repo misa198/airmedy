@@ -1,9 +1,10 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import HomeAnalysis from './HomeAnalysis.vue'
 import * as AnalyticsService from '../../../bindings/airmedy/internal/infra/wails/analyticsservice'
 import * as LibraryService from '../../../bindings/airmedy/internal/infra/wails/libraryservice'
+import * as MobilePairingService from '../../../bindings/airmedy/internal/infra/wails/mobilepairingservice'
 import type { TrackDTO } from '../../../bindings/airmedy/internal/domain/models'
 
 vi.mock('vue-i18n', () => ({
@@ -20,19 +21,71 @@ vi.mock('vue-i18n', () => ({
   }),
 }))
 
-vi.mock('../../../bindings/airmedy/internal/infra/wails/analyticsservice', () => ({ GetInsights: vi.fn() }))
+vi.mock('../../../bindings/airmedy/internal/infra/wails/analyticsservice', () => ({ GetLibraryInsights: vi.fn(), GetListeningInsights: vi.fn() }))
 vi.mock('../../../bindings/airmedy/internal/infra/wails/libraryservice', () => ({ GetTracksByIDs: vi.fn() }))
+vi.mock('../../../bindings/airmedy/internal/infra/wails/mobilepairingservice', () => ({ GetStatus: vi.fn(), GetTrustedDevices: vi.fn() }))
+vi.mock('@wailsio/runtime', async importOriginal => {
+  const actual = await importOriginal<typeof import('@wailsio/runtime')>()
+  return { ...actual, Events: { ...actual.Events, On: vi.fn(() => vi.fn()) } }
+})
 
 function cancellable<T>(value: T) {
   return Object.assign(Promise.resolve(value), { cancel: vi.fn() })
 }
+
+beforeEach(() => {
+  vi.mocked(AnalyticsService.GetLibraryInsights).mockReturnValue(cancellable({}) as unknown as ReturnType<typeof AnalyticsService.GetLibraryInsights>)
+  vi.mocked(MobilePairingService.GetStatus).mockResolvedValue({ device_id: 'desktop', desktop_name: 'Desktop' } as never)
+  vi.mocked(MobilePairingService.GetTrustedDevices).mockResolvedValue([] as never)
+})
+
+describe('HomeAnalysis device filter', () => {
+  it('loads all devices by default and reloads for a selected trusted device', async () => {
+    vi.mocked(AnalyticsService.GetListeningInsights).mockReturnValue(cancellable({}) as unknown as ReturnType<typeof AnalyticsService.GetListeningInsights>)
+    vi.mocked(MobilePairingService.GetTrustedDevices).mockResolvedValue([{ device_id: 'phone', display_name: 'Phone' }] as never)
+
+    const wrapper = mount(HomeAnalysis, {
+      global: {
+        plugins: [createTestingPinia({ createSpy: vi.fn })],
+        stubs: {
+          AudioQualityChart: true, GenreDistributionChart: true, LibraryGrowthChart: true,
+          ListeningActivityChart: true, PlaybackOutcomesChart: true,
+          TabSwitcher: { name: 'TabSwitcher', props: ['modelValue'], emits: ['update:modelValue'], template: '<div><slot /></div>' },
+          TopArtistsCarousel: true, TrackTable: true, SelectContent: true, SelectItem: true,
+          SelectLabel: true, SelectSeparator: true, SelectTrigger: true, SelectValue: true,
+          Select: { name: 'Select', props: ['modelValue'], emits: ['update:modelValue'], template: '<div><slot /></div>' },
+        },
+      },
+    })
+    await flushPromises()
+
+    expect(AnalyticsService.GetListeningInsights).toHaveBeenCalledWith('7d', '')
+    expect(AnalyticsService.GetLibraryInsights).toHaveBeenCalledWith('7d')
+    expect(wrapper.find('[data-testid="analytics-device-filter"]').exists()).toBe(true)
+
+    wrapper.findComponent({ name: 'Select' }).vm.$emit('update:modelValue', 'phone')
+    await flushPromises()
+    expect(AnalyticsService.GetListeningInsights).toHaveBeenLastCalledWith('7d', 'phone')
+
+    const [libraryTabs, listeningTabs] = wrapper.findAllComponents({ name: 'TabSwitcher' })
+    const listeningCalls = vi.mocked(AnalyticsService.GetListeningInsights).mock.calls.length
+    libraryTabs.vm.$emit('update:modelValue', '30d')
+    await flushPromises()
+    expect(AnalyticsService.GetLibraryInsights).toHaveBeenLastCalledWith('30d')
+    expect(AnalyticsService.GetListeningInsights).toHaveBeenCalledTimes(listeningCalls)
+
+    listeningTabs.vm.$emit('update:modelValue', '30d')
+    await flushPromises()
+    expect(AnalyticsService.GetListeningInsights).toHaveBeenLastCalledWith('30d', 'phone')
+  })
+})
 
 describe('HomeAnalysis empty state', () => {
   it.each([
     ['insights are unavailable', null],
     ['no listening time has been recorded', { listened_seconds: 0 }],
   ])('shows a placeholder when %s', async (_, insights) => {
-    vi.mocked(AnalyticsService.GetInsights).mockReturnValue(cancellable(insights) as unknown as ReturnType<typeof AnalyticsService.GetInsights>)
+    vi.mocked(AnalyticsService.GetListeningInsights).mockReturnValue(cancellable(insights) as unknown as ReturnType<typeof AnalyticsService.GetListeningInsights>)
 
     const wrapper = mount(HomeAnalysis, {
       global: {
@@ -60,7 +113,7 @@ describe('HomeAnalysis empty state', () => {
 
 describe('HomeAnalysis top tracks', () => {
   it('keeps the analytics ranking and displays period-specific listening metrics', async () => {
-    vi.mocked(AnalyticsService.GetInsights).mockReturnValue(cancellable({
+    vi.mocked(AnalyticsService.GetListeningInsights).mockReturnValue(cancellable({
       listened_seconds: 660,
       plays: 8,
       library_tracks: 2,
@@ -76,7 +129,7 @@ describe('HomeAnalysis top tracks', () => {
         { id: 'track-a', title: 'A', artist: 'Artist', play_count: 5, listened_seconds: 60 },
         { id: 'track-b', title: 'B', artist: 'Artist', play_count: 3, listened_seconds: 600 },
       ],
-    }) as unknown as ReturnType<typeof AnalyticsService.GetInsights>)
+    }) as unknown as ReturnType<typeof AnalyticsService.GetListeningInsights>)
     vi.mocked(LibraryService.GetTracksByIDs).mockReturnValue(cancellable([
       { id: 'track-b', title: 'B', play_count: 200 },
       { id: 'track-a', title: 'A', play_count: 100 },
@@ -109,7 +162,7 @@ describe('HomeAnalysis top tracks', () => {
     const analyticsTracks = Array.from({ length: 50 }, (_, index) => ({
       id: `track-${index}`, title: `Track ${index}`, artist: 'Artist', play_count: 50 - index, listened_seconds: 60,
     }))
-    vi.mocked(AnalyticsService.GetInsights).mockReturnValue(cancellable({ listened_seconds: 3000, top_tracks: analyticsTracks }) as unknown as ReturnType<typeof AnalyticsService.GetInsights>)
+    vi.mocked(AnalyticsService.GetListeningInsights).mockReturnValue(cancellable({ listened_seconds: 3000, top_tracks: analyticsTracks }) as unknown as ReturnType<typeof AnalyticsService.GetListeningInsights>)
     vi.mocked(LibraryService.GetTracksByIDs).mockReturnValue(cancellable(analyticsTracks as unknown as TrackDTO[]) as unknown as ReturnType<typeof LibraryService.GetTracksByIDs>)
 
     const wrapper = mount(HomeAnalysis, {
@@ -140,15 +193,17 @@ describe('HomeAnalysis top tracks', () => {
 
 describe('HomeAnalysis library growth', () => {
   it('renders cumulative library growth separately from total listening time', async () => {
-    vi.mocked(AnalyticsService.GetInsights).mockReturnValue(cancellable({
+    vi.mocked(AnalyticsService.GetListeningInsights).mockReturnValue(cancellable({
       listened_seconds: 60,
 	  streak_days: 3,
+    }) as unknown as ReturnType<typeof AnalyticsService.GetListeningInsights>)
+    vi.mocked(AnalyticsService.GetLibraryInsights).mockReturnValue(cancellable({
       library_tracks: 150,
       library_growth: [
         { date: '2026-07-23', track_count: 100 },
         { date: '2026-07-24', track_count: 150 },
       ],
-    }) as unknown as ReturnType<typeof AnalyticsService.GetInsights>)
+    }) as unknown as ReturnType<typeof AnalyticsService.GetLibraryInsights>)
 
     const wrapper = mount(HomeAnalysis, {
       global: {
@@ -180,10 +235,10 @@ describe('HomeAnalysis library growth', () => {
 
 describe('HomeAnalysis playback outcomes', () => {
   it('renders a single outcomes donut when attempts exist', async () => {
-    vi.mocked(AnalyticsService.GetInsights).mockReturnValue(cancellable({
+    vi.mocked(AnalyticsService.GetListeningInsights).mockReturnValue(cancellable({
       completed: 75, skipped: 20, stopped: 5, average_session_seconds: 180,
       library_growth: [], activity: [], quality: [], genres: [], top_artists: [], top_tracks: [],
-    }) as unknown as ReturnType<typeof AnalyticsService.GetInsights>)
+    }) as unknown as ReturnType<typeof AnalyticsService.GetListeningInsights>)
     const wrapper = mount(HomeAnalysis, { global: { plugins: [createTestingPinia({ createSpy: vi.fn })], stubs: { AudioQualityChart: true, GenreDistributionChart: true, LibraryGrowthChart: true, ListeningActivityChart: true, PlaybackOutcomesChart: { name: 'PlaybackOutcomesChart', props: ['completed', 'skipped', 'stopped'], template: '<div />' }, TabSwitcher: true, TopArtistsCarousel: true, TrackTable: true } } })
     await flushPromises()
     expect(wrapper.get('[data-testid="analytics-playback-outcomes-card"]').text()).toContain('75%')
@@ -193,18 +248,20 @@ describe('HomeAnalysis playback outcomes', () => {
   })
 
   it('sorts each donut breakdown descending and keeps Other at the bottom', async () => {
-    vi.mocked(AnalyticsService.GetInsights).mockReturnValue(cancellable({
-      quality: [
-        { kind: 'lossless', count: 3 }, { kind: 'lossy', count: 20 }, { kind: 'hi_res', count: 10 },
-      ],
+    vi.mocked(AnalyticsService.GetListeningInsights).mockReturnValue(cancellable({
       genres: [
         { name: 'Other', listened_seconds: 50, is_other: true },
         { name: 'Rock', listened_seconds: 10, is_other: false },
         { name: 'Pop', listened_seconds: 30, is_other: false },
       ],
       completed: 1, skipped: 9, stopped: 5,
-      library_growth: [], activity: [], top_artists: [], top_tracks: [],
-    }) as unknown as ReturnType<typeof AnalyticsService.GetInsights>)
+      activity: [], top_artists: [], top_tracks: [],
+    }) as unknown as ReturnType<typeof AnalyticsService.GetListeningInsights>)
+    vi.mocked(AnalyticsService.GetLibraryInsights).mockReturnValue(cancellable({
+      quality: [
+        { kind: 'lossless', count: 3 }, { kind: 'lossy', count: 20 }, { kind: 'hi_res', count: 10 },
+      ],
+    }) as unknown as ReturnType<typeof AnalyticsService.GetLibraryInsights>)
 
     const wrapper = mount(HomeAnalysis, { global: { plugins: [createTestingPinia({ createSpy: vi.fn })], stubs: { AudioQualityChart: true, GenreDistributionChart: true, LibraryGrowthChart: true, ListeningActivityChart: true, PlaybackOutcomesChart: true, TabSwitcher: true, TopArtistsCarousel: true, TrackTable: true } } })
     await flushPromises()

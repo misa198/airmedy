@@ -404,10 +404,13 @@ measurement current and is disconnected on unmount.
 ## Home Analytics
 
 `HomeView` owns the Overview/Analytics tab selection and delegates to
-`components/home/HomeOverview.vue` and `HomeAnalysis.vue`. Analytics loads
-`AnalyticsService.GetInsights('7d' | '30d' | 'all')`, supports request
-cancellation on period changes/unmount, and renders cumulative library growth,
-listening activity, audio-quality, genre, top-artist, and top-track summaries.
+`components/home/HomeOverview.vue` and `HomeAnalysis.vue`. Analytics is split
+into a Desktop Library section, loaded with `AnalyticsService.GetLibraryInsights`
+and its own range, and a Listening History section, loaded with
+`GetListeningInsights(range, sourceDeviceID)`. Their requests are cancellable
+and independent. The device selector defaults to all sources and offers this
+desktop plus every currently trusted mobile device; it applies only to Listening
+History. Library Growth, library totals, and Audio Quality remain desktop-library data.
 It also shows a Playback Outcomes donut for the selected range, splitting
 completed, skipped, and stopped attempts; the three slices total 100% and the
 card remains unavailable until at least one playback attempt has ended. The

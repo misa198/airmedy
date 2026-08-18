@@ -1410,7 +1410,11 @@ func (r *fakeListeningRepository) FinalizeAttempt(_ context.Context, attempt dom
 	return nil
 }
 func (r *fakeListeningRepository) RecoverOpenAttempts(context.Context) error { return nil }
-func (r *fakeListeningRepository) GetInsights(context.Context, domain.ListeningRange, time.Time) (*domain.AnalyticsInsights, error) {
+func (r *fakeListeningRepository) GetLibraryInsights(context.Context, domain.ListeningRange, time.Time) (*domain.LibraryInsights, error) {
+	return nil, nil
+}
+
+func (r *fakeListeningRepository) GetListeningInsights(context.Context, domain.ListeningRange, string, time.Time) (*domain.ListeningInsights, error) {
 	return nil, nil
 }
 func (r *fakeListeningRepository) ExportSnapshot(context.Context, string, time.Time) (*domain.ListeningSyncSnapshot, error) {

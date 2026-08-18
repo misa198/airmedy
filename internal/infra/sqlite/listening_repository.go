@@ -333,53 +333,11 @@ func periodStart(period domain.ListeningRange, now time.Time) (time.Time, bool, 
 	}
 }
 
-func (r *listeningRepository) GetInsights(ctx context.Context, period domain.ListeningRange, now time.Time) (*domain.AnalyticsInsights, error) {
-	start, bounded, err := periodStart(period, now.In(time.Local))
-	if err != nil {
+func (r *listeningRepository) GetLibraryInsights(ctx context.Context, period domain.ListeningRange, now time.Time) (*domain.LibraryInsights, error) {
+	if _, _, err := periodStart(period, now.In(time.Local)); err != nil {
 		return nil, err
 	}
-	result := &domain.AnalyticsInsights{LibraryGrowth: []domain.AnalyticsLibraryGrowthPoint{}, Activity: []domain.AnalyticsPoint{}, Quality: []domain.AnalyticsQualityBucket{}, Genres: []domain.AnalyticsGenre{}, TopArtists: []domain.AnalyticsArtist{}, TopTracks: []domain.AnalyticsTrack{}}
-	where, args := "", []any{}
-	if bounded {
-		where, args = "WHERE local_date >= ?", []any{start.Format("2006-01-02")}
-	}
-	if err := r.db.GetContext(ctx, &result.ListenedSeconds, `SELECT COALESCE(SUM(listened_seconds), 0) FROM daily_track_listening_stats `+where, args...); err != nil {
-		return nil, fmt.Errorf("sum listening time: %w", err)
-	}
-	if err := r.db.GetContext(ctx, &result.Plays, `SELECT COALESCE(SUM(play_count), 0) FROM daily_track_listening_stats `+where, args...); err != nil {
-		return nil, fmt.Errorf("sum listening plays: %w", err)
-	}
-	attemptWhere := ""
-	if bounded {
-		attemptWhere = "WHERE local_date >= ?"
-	}
-	var attemptSeconds int
-	if err := r.db.QueryRowxContext(ctx, `SELECT COALESCE(SUM(attempts), 0), COALESCE(SUM(completed), 0), COALESCE(SUM(skipped), 0), COALESCE(SUM(stopped), 0), COALESCE(SUM(listened_seconds), 0) FROM daily_playback_attempt_stats `+attemptWhere, args...).Scan(&result.Attempts, &result.Completed, &result.Skipped, &result.Stopped, &attemptSeconds); err != nil {
-		return nil, fmt.Errorf("sum playback attempts: %w", err)
-	}
-	if denominator := result.Completed + result.Skipped + result.Stopped; denominator > 0 {
-		completion, skip := float64(result.Completed)*100/float64(denominator), float64(result.Skipped)*100/float64(denominator)
-		result.CompletionRate, result.SkipRate = &completion, &skip
-		result.AverageSessionSeconds = attemptSeconds / denominator
-	}
-	if result.StreakDays, err = r.currentListeningStreak(ctx, now); err != nil {
-		return nil, err
-	}
-	if bounded {
-		windowDays := 7
-		if period == domain.ListeningRange30D {
-			windowDays = 30
-		}
-		previousStart := start.AddDate(0, 0, -windowDays)
-		var previous int
-		if err := r.db.GetContext(ctx, &previous, `SELECT COALESCE(SUM(listened_seconds), 0) FROM daily_track_listening_stats WHERE local_date >= ? AND local_date < ?`, previousStart.Format("2006-01-02"), start.Format("2006-01-02")); err != nil {
-			return nil, fmt.Errorf("sum previous listening time: %w", err)
-		}
-		if previous > 0 {
-			v := (float64(result.ListenedSeconds-previous) / float64(previous)) * 100
-			result.ChangePercent = &v
-		}
-	}
+	result := &domain.LibraryInsights{LibraryGrowth: []domain.AnalyticsLibraryGrowthPoint{}, Quality: []domain.AnalyticsQualityBucket{}}
 	if err := r.db.QueryRowxContext(ctx, `SELECT
 		COUNT(*),
 		COALESCE((SELECT COUNT(*) FROM albums), 0),
@@ -389,14 +347,79 @@ func (r *listeningRepository) GetInsights(ctx context.Context, period domain.Lis
 		FROM tracks`).Scan(&result.LibraryTracks, &result.LibraryAlbums, &result.LibraryArtists, &result.LibraryPlaylists, &result.LibraryBytes); err != nil {
 		return nil, fmt.Errorf("read library summary: %w", err)
 	}
+	var err error
 	if result.LibraryGrowth, err = r.libraryGrowth(ctx, period, now); err != nil {
 		return nil, err
 	}
 
+	qualityRows := []struct {
+		Format     string `db:"format"`
+		Codec      string `db:"codec"`
+		BitDepth   int    `db:"bit_depth"`
+		SampleRate int    `db:"sample_rate"`
+		Count      int    `db:"count"`
+	}{}
+	if err := r.db.SelectContext(ctx, &qualityRows, `SELECT lower(format) format, lower(codec) codec, bit_depth, sample_rate, COUNT(*) count FROM tracks GROUP BY lower(format), lower(codec), bit_depth, sample_rate`); err != nil {
+		return nil, fmt.Errorf("read audio quality: %w", err)
+	}
+	quality := map[string]int{"lossy": 0, "lossless": 0, "hi_res": 0, "dsd": 0, "unknown": 0}
+	for _, row := range qualityRows {
+		quality[classifyQuality(row.Format, row.Codec, row.BitDepth, row.SampleRate)] += row.Count
+	}
+	for _, kind := range []string{"lossy", "lossless", "hi_res", "dsd", "unknown"} {
+		if quality[kind] > 0 {
+			result.Quality = append(result.Quality, domain.AnalyticsQualityBucket{Kind: kind, Count: quality[kind]})
+		}
+	}
+	return result, nil
+}
+
+func (r *listeningRepository) GetListeningInsights(ctx context.Context, period domain.ListeningRange, sourceDeviceID string, now time.Time) (*domain.ListeningInsights, error) {
+	start, bounded, err := periodStart(period, now.In(time.Local))
+	if err != nil {
+		return nil, err
+	}
+	result := &domain.ListeningInsights{Activity: []domain.AnalyticsPoint{}, Genres: []domain.AnalyticsGenre{}, TopArtists: []domain.AnalyticsArtist{}, TopTracks: []domain.AnalyticsTrack{}}
+	where, args := listeningInsightsWhere(bounded, start, sourceDeviceID)
+	if err := r.db.GetContext(ctx, &result.ListenedSeconds, `SELECT COALESCE(SUM(listened_seconds), 0) FROM daily_track_listening_stats `+where, args...); err != nil {
+		return nil, fmt.Errorf("sum listening time: %w", err)
+	}
+	if err := r.db.GetContext(ctx, &result.Plays, `SELECT COALESCE(SUM(play_count), 0) FROM daily_track_listening_stats `+where, args...); err != nil {
+		return nil, fmt.Errorf("sum listening plays: %w", err)
+	}
+	var attemptSeconds int
+	if err := r.db.QueryRowxContext(ctx, `SELECT COALESCE(SUM(attempts), 0), COALESCE(SUM(completed), 0), COALESCE(SUM(skipped), 0), COALESCE(SUM(stopped), 0), COALESCE(SUM(listened_seconds), 0) FROM daily_playback_attempt_stats `+where, args...).Scan(&result.Attempts, &result.Completed, &result.Skipped, &result.Stopped, &attemptSeconds); err != nil {
+		return nil, fmt.Errorf("sum playback attempts: %w", err)
+	}
+	if denominator := result.Completed + result.Skipped + result.Stopped; denominator > 0 {
+		completion, skip := float64(result.Completed)*100/float64(denominator), float64(result.Skipped)*100/float64(denominator)
+		result.CompletionRate, result.SkipRate = &completion, &skip
+		result.AverageSessionSeconds = attemptSeconds / denominator
+	}
+	if result.StreakDays, err = r.currentListeningStreak(ctx, sourceDeviceID, now); err != nil {
+		return nil, err
+	}
+	if bounded {
+		windowDays := 7
+		if period == domain.ListeningRange30D {
+			windowDays = 30
+		}
+		previousStart := start.AddDate(0, 0, -windowDays)
+		previousWhere, previousArgs := listeningInsightsWhere(true, previousStart, sourceDeviceID)
+		previousWhere += ` AND local_date < ?`
+		previousArgs = append(previousArgs, start.Format("2006-01-02"))
+		var previous int
+		if err := r.db.GetContext(ctx, &previous, `SELECT COALESCE(SUM(listened_seconds), 0) FROM daily_track_listening_stats `+previousWhere, previousArgs...); err != nil {
+			return nil, fmt.Errorf("sum previous listening time: %w", err)
+		}
+		if previous > 0 {
+			v := (float64(result.ListenedSeconds-previous) / float64(previous)) * 100
+			result.ChangePercent = &v
+		}
+	}
 	activitySQL := `SELECT local_date AS date, SUM(listened_seconds) AS listened_seconds FROM daily_track_listening_stats ` + where + ` GROUP BY local_date ORDER BY local_date`
 	if period == domain.ListeningRangeAll {
-		activitySQL = `SELECT substr(local_date, 1, 7) AS date, SUM(listened_seconds) AS listened_seconds FROM daily_track_listening_stats GROUP BY substr(local_date, 1, 7) ORDER BY date`
-		args = nil
+		activitySQL = `SELECT substr(local_date, 1, 7) AS date, SUM(listened_seconds) AS listened_seconds FROM daily_track_listening_stats ` + where + ` GROUP BY substr(local_date, 1, 7) ORDER BY date`
 	}
 	if err := r.db.SelectContext(ctx, &result.Activity, activitySQL, args...); err != nil {
 		return nil, fmt.Errorf("read listening activity: %w", err)
@@ -431,26 +454,6 @@ func (r *listeningRepository) GetInsights(ctx context.Context, period domain.Lis
 		result.Genres = append(result.Genres, domain.AnalyticsGenre{ListenedSeconds: otherSeconds, IsOther: true})
 	}
 
-	qualityRows := []struct {
-		Format     string `db:"format"`
-		Codec      string `db:"codec"`
-		BitDepth   int    `db:"bit_depth"`
-		SampleRate int    `db:"sample_rate"`
-		Count      int    `db:"count"`
-	}{}
-	if err := r.db.SelectContext(ctx, &qualityRows, `SELECT lower(format) format, lower(codec) codec, bit_depth, sample_rate, COUNT(*) count FROM tracks GROUP BY lower(format), lower(codec), bit_depth, sample_rate`); err != nil {
-		return nil, fmt.Errorf("read audio quality: %w", err)
-	}
-	quality := map[string]int{"lossy": 0, "lossless": 0, "hi_res": 0, "dsd": 0, "unknown": 0}
-	for _, row := range qualityRows {
-		quality[classifyQuality(row.Format, row.Codec, row.BitDepth, row.SampleRate)] += row.Count
-	}
-	for _, kind := range []string{"lossy", "lossless", "hi_res", "dsd", "unknown"} {
-		if quality[kind] > 0 {
-			result.Quality = append(result.Quality, domain.AnalyticsQualityBucket{Kind: kind, Count: quality[kind]})
-		}
-	}
-
 	artistSQL := `SELECT a.id, a.name, COALESCE(a.artwork_key_manual, a.artwork_key_local, a.artwork_key_online, '') artwork_key, SUM(d.listened_seconds) listened_seconds FROM daily_track_listening_stats d JOIN track_artists ta ON ta.track_id=d.track_id JOIN artists a ON a.id=ta.artist_id ` + strings.Replace(where, "local_date", "d.local_date", 1) + fmt.Sprintf(` GROUP BY a.id ORDER BY listened_seconds DESC, a.name LIMIT %d`, listeningInsightsTopItemsLimit)
 	if err := r.db.SelectContext(ctx, &result.TopArtists, artistSQL, args...); err != nil {
 		return nil, fmt.Errorf("read top artists: %w", err)
@@ -466,10 +469,31 @@ func (r *listeningRepository) GetInsights(ctx context.Context, period domain.Lis
 	return result, nil
 }
 
-func (r *listeningRepository) currentListeningStreak(ctx context.Context, now time.Time) (int, error) {
+func listeningInsightsWhere(bounded bool, start time.Time, sourceDeviceID string) (string, []any) {
+	conditions, args := []string{}, []any{}
+	if bounded {
+		conditions, args = append(conditions, "local_date >= ?"), append(args, start.Format("2006-01-02"))
+	}
+	if sourceDeviceID != "" {
+		conditions, args = append(conditions, "source_device_id = ?"), append(args, sourceDeviceID)
+	}
+	if len(conditions) == 0 {
+		return "", args
+	}
+	return "WHERE " + strings.Join(conditions, " AND "), args
+}
+
+func (r *listeningRepository) currentListeningStreak(ctx context.Context, sourceDeviceID string, now time.Time) (int, error) {
 	today := now.In(time.Local)
 	var dates []string
-	if err := r.db.SelectContext(ctx, &dates, `SELECT local_date FROM daily_track_listening_stats WHERE local_date <= ? GROUP BY local_date HAVING SUM(listened_seconds) > 0 ORDER BY local_date DESC`, today.Format("2006-01-02")); err != nil {
+	where, args := listeningInsightsWhere(false, time.Time{}, sourceDeviceID)
+	if where == "" {
+		where = "WHERE local_date <= ?"
+	} else {
+		where += " AND local_date <= ?"
+	}
+	args = append(args, today.Format("2006-01-02"))
+	if err := r.db.SelectContext(ctx, &dates, `SELECT local_date FROM daily_track_listening_stats `+where+` GROUP BY local_date HAVING SUM(listened_seconds) > 0 ORDER BY local_date DESC`, args...); err != nil {
 		return 0, fmt.Errorf("read listening streak dates: %w", err)
 	}
 

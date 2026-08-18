@@ -80,29 +80,32 @@ type AnalyticsTrack struct {
 	ListenedSeconds int    `json:"listened_seconds" db:"listened_seconds"`
 }
 
-type AnalyticsInsights struct {
-	ListenedSeconds       int                           `json:"listened_seconds"`
-	Plays                 int                           `json:"plays"`
-	Attempts              int                           `json:"attempts"`
-	Completed             int                           `json:"completed"`
-	Skipped               int                           `json:"skipped"`
-	Stopped               int                           `json:"stopped"`
-	CompletionRate        *float64                      `json:"completion_rate,omitempty"`
-	SkipRate              *float64                      `json:"skip_rate,omitempty"`
-	AverageSessionSeconds int                           `json:"average_session_seconds"`
-	StreakDays            int                           `json:"streak_days"`
-	ChangePercent         *float64                      `json:"change_percent,omitempty"`
-	LibraryTracks         int                           `json:"library_tracks"`
-	LibraryAlbums         int                           `json:"library_albums"`
-	LibraryArtists        int                           `json:"library_artists"`
-	LibraryPlaylists      int                           `json:"library_playlists"`
-	LibraryBytes          int64                         `json:"library_bytes"`
-	LibraryGrowth         []AnalyticsLibraryGrowthPoint `json:"library_growth"`
-	Activity              []AnalyticsPoint              `json:"activity"`
-	Quality               []AnalyticsQualityBucket      `json:"quality"`
-	Genres                []AnalyticsGenre              `json:"genres"`
-	TopArtists            []AnalyticsArtist             `json:"top_artists"`
-	TopTracks             []AnalyticsTrack              `json:"top_tracks"`
+type LibraryInsights struct {
+	LibraryTracks    int                           `json:"library_tracks"`
+	LibraryAlbums    int                           `json:"library_albums"`
+	LibraryArtists   int                           `json:"library_artists"`
+	LibraryPlaylists int                           `json:"library_playlists"`
+	LibraryBytes     int64                         `json:"library_bytes"`
+	LibraryGrowth    []AnalyticsLibraryGrowthPoint `json:"library_growth"`
+	Quality          []AnalyticsQualityBucket      `json:"quality"`
+}
+
+type ListeningInsights struct {
+	ListenedSeconds       int               `json:"listened_seconds"`
+	Plays                 int               `json:"plays"`
+	Attempts              int               `json:"attempts"`
+	Completed             int               `json:"completed"`
+	Skipped               int               `json:"skipped"`
+	Stopped               int               `json:"stopped"`
+	CompletionRate        *float64          `json:"completion_rate,omitempty"`
+	SkipRate              *float64          `json:"skip_rate,omitempty"`
+	AverageSessionSeconds int               `json:"average_session_seconds"`
+	StreakDays            int               `json:"streak_days"`
+	ChangePercent         *float64          `json:"change_percent,omitempty"`
+	Activity              []AnalyticsPoint  `json:"activity"`
+	Genres                []AnalyticsGenre  `json:"genres"`
+	TopArtists            []AnalyticsArtist `json:"top_artists"`
+	TopTracks             []AnalyticsTrack  `json:"top_tracks"`
 }
 
 type ListeningSyncSession struct {
@@ -160,7 +163,8 @@ type ListeningRepository interface {
 	RecordAttemptStart(ctx context.Context, attempt PlaybackAttempt) error
 	FinalizeAttempt(ctx context.Context, attempt PlaybackAttempt) error
 	RecoverOpenAttempts(ctx context.Context) error
-	GetInsights(ctx context.Context, period ListeningRange, now time.Time) (*AnalyticsInsights, error)
+	GetLibraryInsights(ctx context.Context, period ListeningRange, now time.Time) (*LibraryInsights, error)
+	GetListeningInsights(ctx context.Context, period ListeningRange, sourceDeviceID string, now time.Time) (*ListeningInsights, error)
 	ExportSnapshot(ctx context.Context, reconciliationID string, since time.Time) (*ListeningSyncSnapshot, error)
 	ImportSnapshot(ctx context.Context, snapshot *ListeningSyncSnapshot) error
 }
