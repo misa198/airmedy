@@ -289,6 +289,9 @@ expand/collapse control for the full 50-track analytics ranking.
 | Edit Metadata       | Open `MetadataEditDialog`                    |
 | Show in Explorer    | `LibraryService.ShowInExplorer()`            |
 
+**`useGroupContextMenu()`**: used by artist, genre, and composer detail menus.
+It supports Play Next, Add to Queue (skipping tracks already queued), and Add to Playlist.
+
 `ContextMenu.vue` is rendered via `<Teleport to="body">`. It clamps against the layout viewport (`document.documentElement.clientWidth/clientHeight`) so menus stay inside the visible content area even when browser scrollbars reduce usable space. It handles viewport edge detection and keyboard navigation.
 It supports one hover-open submenu level, including separators within the submenu.
 
@@ -451,7 +454,7 @@ overlay is not rendered in production builds.
 | ----------------------- | ------------------------------------------------------- |
 | `useContextMenu`        | Generic context menu state manager                      |
 | `useTrackContextMenu`   | Track-specific menu item builder                        |
-| `useGroupContextMenu`   | Multi-track selection menu (Play Next, Add to Playlist) |
+| `useGroupContextMenu`   | Artist/genre/composer menu (Play Next, Add to Queue, Add to Playlist) |
 | `useAddToPlaylistMenu`  | Shared Create Playlist submenu prefix                   |
 | `useCreatePlaylistWithTracks` | Global create-then-add-tracks dialog state        |
 | `useTrackTableSettings` | Column config with localStorage persistence             |
