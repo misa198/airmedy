@@ -1,6 +1,7 @@
 package me.misa198.airmedy.ui.components
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import me.misa198.airmedy.R
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.ui.theme.AirmedyColors
@@ -89,6 +90,12 @@ class TrackInfoContentTest {
     fun formattersMatchDesktopDisplay() {
         assertEquals("1:05", formatTrackDuration(65))
         assertEquals("1.5 KB", formatFileSize(1536))
+    }
+
+    @Test
+    fun contentHeightUsesTheRemainingDialogSpaceAndTopInset() {
+        assertEquals(768.dp, trackInfoMaxContentHeight(800.dp, 24.dp))
+        assertEquals(0.dp, trackInfoMaxContentHeight(20.dp, 24.dp))
     }
 
     private fun track(metadata: String) = LibraryTrack(

@@ -5,12 +5,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -26,12 +26,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -152,6 +152,9 @@ internal fun formatTrackDuration(seconds: Long?): String {
     return "%d:%02d".format(seconds / 60, seconds % 60)
 }
 
+internal fun trackInfoMaxContentHeight(availableHeight: Dp, topInset: Dp): Dp =
+    (availableHeight - topInset - 8.dp).coerceAtLeast(0.dp)
+
 internal fun formatFileSize(bytes: Long): String {
     if (bytes <= 0) return ""
     val units = listOf("B", "KB", "MB", "GB")
@@ -178,16 +181,11 @@ internal fun TrackInfoContent(track: LibraryTrack, modifier: Modifier = Modifier
     val subtitle = listOf(albumArtist, track.album).filter(String::isNotBlank).joinToString(" · ")
     val density = LocalDensity.current
     val topSafeInset = with(density) { WindowInsets.statusBars.getTop(this).toDp() }
-    val bottomSafeInset = with(density) { WindowInsets.navigationBars.getBottom(this).toDp() }
-    val maxContentHeight = maxOf(
-        0.dp,
-        LocalConfiguration.current.screenHeightDp.dp - topSafeInset - bottomSafeInset - 86.dp,
-    )
-
-    LazyColumn(
-        modifier = modifier.fillMaxWidth().height(maxContentHeight),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth().height(trackInfoMaxContentHeight(maxHeight, topSafeInset)),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
         item {
             Column(
                 modifier = Modifier.fillMaxWidth().padding(start = 24.dp, top = 8.dp, end = 24.dp, bottom = 24.dp),
@@ -215,6 +213,7 @@ internal fun TrackInfoContent(track: LibraryTrack, modifier: Modifier = Modifier
                     Text(detail.value, Modifier.weight(0.58f), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = colors.textMain, textAlign = TextAlign.End)
                 }
             }
+        }
         }
     }
 }

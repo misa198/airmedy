@@ -103,8 +103,8 @@ private fun PlaylistEditorBottomSheet(
     AirmedyBottomSheet(
         title = { Text(title, style = MaterialTheme.typography.titleMedium, color = colors.textMain) },
         onDismiss = onDismiss,
-        leadingAction = {
-            CreatePlaylistSheetIconButton(MaterialSymbols.Close, stringResource(R.string.cancel), onDismiss)
+        leadingAction = { dismiss ->
+            CreatePlaylistSheetIconButton(MaterialSymbols.Close, stringResource(R.string.cancel), dismiss)
         },
         trailingAction = {
             CreatePlaylistSheetIconButton(
