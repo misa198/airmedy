@@ -78,6 +78,7 @@ import me.misa198.airmedy.ui.screens.AlbumDetailsViewModel
 import me.misa198.airmedy.ui.screens.ArtistDetailsViewModel
 import me.misa198.airmedy.ui.screens.GenreDetailsViewModel
 import me.misa198.airmedy.ui.screens.ComposerDetailsViewModel
+import me.misa198.airmedy.ui.screens.InsightViewModel
 
 class MainActivity : ComponentActivity() {
     private val reconciliationMutex = Mutex()
@@ -139,6 +140,13 @@ class MainActivity : ComponentActivity() {
     private val tracksViewModel: LibraryTracksViewModel by viewModels {
         LibraryTracksViewModel.Factory(AndroidSyncRuntime.syncStore(), AndroidPlaybackRuntime.controller())
     }
+    private val insightViewModel: InsightViewModel by viewModels {
+        InsightViewModel.Factory(
+            AndroidSyncRuntime.syncStore(),
+            PairingPreferences(applicationContext),
+            AndroidPlaybackRuntime.controller(),
+        )
+    }
     private val artistsViewModel: LibraryArtistsViewModel by viewModels {
         LibraryArtistsViewModel.Factory(AndroidSyncRuntime.syncStore())
     }
@@ -197,6 +205,7 @@ class MainActivity : ComponentActivity() {
             val lastFmStatus by lastFm.status.collectAsStateWithLifecycle()
             val syncUiState by syncViewModel.uiState.collectAsStateWithLifecycle()
             val tracksUiState by tracksViewModel.uiState.collectAsStateWithLifecycle()
+            val insightUiState by insightViewModel.uiState.collectAsStateWithLifecycle()
             val artistsUiState by artistsViewModel.uiState.collectAsStateWithLifecycle()
             val albumsUiState by albumsViewModel.uiState.collectAsStateWithLifecycle()
             val genresUiState by genresViewModel.uiState.collectAsStateWithLifecycle()
@@ -272,6 +281,7 @@ class MainActivity : ComponentActivity() {
                 uiState = uiState,
                 syncUiState = syncUiState,
                 tracksUiState = tracksUiState,
+                insightUiState = insightUiState,
                 artistsUiState = artistsUiState,
                 albumsUiState = albumsUiState,
                 genresUiState = genresUiState,
@@ -294,6 +304,10 @@ class MainActivity : ComponentActivity() {
                 onSearchTrackClick = { trackId ->
                     playbackRequestFor(searchUiState.tracks, trackId)?.let(playbackController::play)
                 },
+                onInsightLibraryPeriodSelected = insightViewModel::setLibraryPeriod,
+                onInsightListeningPeriodSelected = insightViewModel::setListeningPeriod,
+                onInsightSourceSelected = insightViewModel::setSourceFilter,
+                onInsightTrackClick = insightViewModel::playTopTrack,
                 onTracksPlayAll = tracksViewModel::playAll,
                 onTracksFilterQueryChange = tracksViewModel::setFilterQuery,
                 onRecentTrackClick = tracksViewModel::playRecentTrack,

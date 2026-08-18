@@ -24,8 +24,9 @@ affecting the connected session.
   and placement of the navigation chrome. `ui/navigation/AppDestinationContent.kt`
   routes each destination's independent `AppStackPage` stack, and
   `ui/navigation/FloatingNavigationBar.kt` owns its visual and gesture behavior.
-  The four destinations are Home, Insight, Library, and Settings; Insight is a
-  placeholder destination using the `legend_toggle` Material Symbol.
+  The four destinations are Home, Insight, Library, and Settings; Insight uses
+  the `legend_toggle` Material Symbol and renders the mirrored library and
+  listening analytics described below.
   Individual page content lives in `ui/screens/`. The navigation's shared
   selection pill is also an active-foreground mask: a primary-coloured duplicate
   of the icons and labels is clipped to the pill, so only the exact covered
@@ -36,6 +37,28 @@ affecting the connected session.
   host work is emitted as `AppEffect`; `MainActivity` collects it and performs
   Android-only actions such as opening an external URL. Feature state remains
   in Android ViewModels; `sharedLogic` does not contain UI state or effects.
+- Insight mirrors desktop analytics while adapting the presentation to Compose.
+  `InsightViewModel` combines the active Room library snapshot with reactive
+  daily listening/playback aggregates. Library and listening ranges are
+  independent (7D, 30D, All); listening can be filtered to all sources, this
+  phone, the paired desktop, or a grouped set of other synchronized devices.
+  Bounded activity/growth uses daily points, all-time listening uses monthly
+  points, and all-time library growth uses yearly cumulative points. Streak is
+  independent of the selected range. Genre ranking keeps the top five and an
+  aggregate Other bucket; artist and track rankings keep the desktop limit and
+  ordering. Tapping an artist opens its Library detail page, while tapping a
+  ranked track starts playback from the ranked queue.
+- `InsightContent` is one virtualized vertical page. Narrow screens stack chart
+  cards, place the Library range beside its title before its metrics and charts in two-column rows, and place History's device and range filters beside its title; use a full-width horizontal artist list with its own 20dp inner inset,
+  and initially show five ranked tracks. Top-artist cards are 112×168dp so both text rows fit. Its Library size metric spans the full width, while Playlists shares a row with Artists. Widths of 600dp and above pair the
+  growth/quality and genre/outcome cards. Library Growth disables horizontal chart scrolling, compressing 30D and All points to the card width; a single point renders as a dot. Its bar, line, and donut charts use
+  Vico with 400ms transitions, rounded gradient bars that narrow for longer ranges, a thin fixed-size donut,
+  and tap markers (activity shows the formatted listening duration);
+  every chart retains a semantic description
+  and empty data is handled per card. Library range uses the shared glass `Selection` popup. Listening places the label-free device selector before its label-free period selector; device options are all devices, this phone, paired desktop, and other
+  synced devices. Room updates remove the need for a manual refresh action. The
+  Insight list state is hoisted by the app shell so header blur and destination
+  scroll restoration follow the same contract as Home and Library.
 - Popping a parameterized detail page also clears its selected entity ID from
   `MainViewModel`. A later open therefore creates the page from the newly
   supplied ID instead of retaining the page state from the popped instance.
@@ -440,7 +463,7 @@ affecting the connected session.
 | `HeroCard` | A non-interactive informational card with a 40dp decorative icon, bold `titleLarge` title, optional content directly below its title, and muted description. Its optional bottom slot stays inside the card but outside the standard 24dp content padding. Sync uses these slots for its MQTT Online/Offline badge and in-card Revoke action. |
 | `DetailHero` | Centered detail-page identity header with configurable square/circular artwork, title/subtitle, and Shuffle/Play/More callbacks. |
 | `AlbumTrackRow` | Detail-page track row with ordinal, two-line title/artist metadata, and an independent trailing overflow action. |
-| `TrackRow` | Displays a track row with 48dp rounded artwork (or fallback glass icon), semibold 2-line title/artist text display, and a trailing `...` overflow button. |
+| `TrackRow` | Displays a track row with 48dp rounded artwork (or fallback glass icon) and semibold 2-line title/artist text. It defaults to a trailing `...` overflow button; callers can replace that slot, as Insight does with listening duration and play count; Insight separates adjacent rows with a themed divider. |
 | `AlbumRow` | Displays a 48dp rounded album-artwork thumbnail (or themed album fallback), semibold title/album-artist text, and a trailing chevron that invokes the row action. |
 | `ArtistRow` | Displays a 48dp circular artist artwork (or themed person fallback), semibold one-line artist name, and a trailing chevron that invokes the row action. |
 | `GenreRow` | Displays a 48dp circular glass icon box with label glyph, semibold one-line genre name, and a trailing chevron that invokes the row action. |

@@ -212,49 +212,6 @@ onUnmounted(() => {
           <h2 class="text-xl font-semibold">{{ t('analytics.library_section') }}</h2>
           <TabSwitcher v-model="libraryPeriod" :options="periodOptions" variant="label" mandatory data-testid="analytics-library-range-tabs" />
         </header>
-        <div class="grid gap-4 @5xl:grid-cols-5">
-          <article
-            data-testid="analytics-library-growth-card"
-            class="@container relative flex min-h-[17rem] flex-col overflow-hidden rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-6 backdrop-blur-[30px] @5xl:col-span-3">
-            <div class="relative mb-6 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
-              <HardDrive class="h-4 w-4" />{{ t('analytics.library_growth') }}
-            </div>
-            <template v-if="libraryInsights.library_growth.length">
-              <div class="relative grid flex-1 grid-cols-1 items-stretch gap-4 @md:grid-cols-[auto_minmax(0,1fr)] @md:gap-6">
-                <div>
-                  <p class="text-4xl font-bold tracking-[-0.03em]">{{ formatNumber(libraryInsights.library_tracks) }}</p>
-                  <p class="mt-2 text-xs text-[color:var(--text-muted)]">{{ t('analytics.library_tracks') }}</p>
-                </div>
-                <LibraryGrowthChart class="h-full w-full self-stretch" :growth="libraryInsights.library_growth" />
-              </div>
-            </template>
-            <div v-else data-testid="analytics-library-growth-empty" class="relative flex flex-1 flex-col items-center justify-center text-center text-[color:var(--text-muted)]">
-              <BarChart3 class="mb-2 h-6 w-6 opacity-60" />
-              <p class="text-sm">{{ t('analytics.no_library_growth') }}</p>
-            </div>
-          </article>
-          <article
-            class="@container flex min-h-[17rem] flex-col rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px] @5xl:col-span-2">
-            <h2 class="mb-4 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
-              <AudioLines class="h-4 w-4" />{{ t('analytics.quality') }}
-            </h2>
-            <div v-if="libraryInsights.quality.length" class="flex flex-1 flex-col gap-5 @md:flex-row @md:items-center @md:gap-8">
-              <AudioQualityChart :quality="sortedQuality" />
-              <div data-testid="analytics-quality-breakdown" class="min-w-0 flex-1 space-y-2.5">
-                <div v-for="item in sortedQuality" :key="item.kind"
-                  class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-3 text-xs">
-                  <span class="truncate text-[color:var(--text-muted)]">{{ t(`analytics.quality_${item.kind}`) }}</span>
-                  <span class="text-right tabular-nums text-[color:var(--text-muted)]">{{ formatNumber(item.count) }}</span>
-                  <span class="w-9 text-right tabular-nums text-[color:var(--text-muted)]">{{ totalQuality ? Math.round(item.count / totalQuality * 100) : 0 }}%</span>
-                </div>
-              </div>
-            </div>
-            <div v-else data-testid="analytics-quality-empty" class="flex flex-1 flex-col items-center justify-center text-center text-[color:var(--text-muted)]">
-              <AudioLines class="mb-2 h-6 w-6 opacity-60" />
-              <p class="text-sm">{{ t('analytics.no_audio_quality') }}</p>
-            </div>
-          </article>
-        </div>
         <div class="grid gap-4 @3xl:grid-cols-2 @5xl:grid-cols-4" data-testid="analytics-library-summary">
           <article
             class="rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px]">
@@ -285,6 +242,49 @@ onUnmounted(() => {
             <p class="mt-3 text-2xl font-semibold">{{ formatNumber(libraryInsights.library_playlists) }}</p>
           </article>
         </div>
+        <div class="grid gap-4 @5xl:grid-cols-8">
+          <article
+            data-testid="analytics-library-growth-card"
+            class="@container relative flex min-h-[17rem] flex-col overflow-hidden rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-6 backdrop-blur-[30px] @5xl:col-span-5">
+            <div class="relative mb-6 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
+              <HardDrive class="h-4 w-4" />{{ t('analytics.library_growth') }}
+            </div>
+            <template v-if="libraryInsights.library_growth.length">
+              <div class="relative grid flex-1 grid-cols-1 items-stretch gap-4 @md:grid-cols-[auto_minmax(0,1fr)] @md:gap-6">
+                <div>
+                  <p class="text-4xl font-bold tracking-[-0.03em]">{{ formatNumber(libraryInsights.library_tracks) }}</p>
+                  <p class="mt-2 text-xs text-[color:var(--text-muted)]">{{ t('analytics.library_tracks') }}</p>
+                </div>
+                <LibraryGrowthChart class="h-full w-full self-stretch" :growth="libraryInsights.library_growth" />
+              </div>
+            </template>
+            <div v-else data-testid="analytics-library-growth-empty" class="relative flex flex-1 flex-col items-center justify-center text-center text-[color:var(--text-muted)]">
+              <BarChart3 class="mb-2 h-6 w-6 opacity-60" />
+              <p class="text-sm">{{ t('analytics.no_library_growth') }}</p>
+            </div>
+          </article>
+          <article
+            class="@container flex min-h-[17rem] flex-col rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px] @5xl:col-span-3">
+            <h2 class="mb-4 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
+              <AudioLines class="h-4 w-4" />{{ t('analytics.quality') }}
+            </h2>
+            <div v-if="libraryInsights.quality.length" class="flex flex-1 flex-col gap-5 @md:flex-row @md:items-center @md:gap-8">
+              <AudioQualityChart :quality="sortedQuality" />
+              <div data-testid="analytics-quality-breakdown" class="min-w-0 flex-1 space-y-2.5">
+                <div v-for="item in sortedQuality" :key="item.kind"
+                  class="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-3 text-xs">
+                  <span class="truncate text-[color:var(--text-muted)]">{{ t(`analytics.quality_${item.kind}`) }}</span>
+                  <span class="text-right tabular-nums text-[color:var(--text-muted)]">{{ formatNumber(item.count) }}</span>
+                  <span class="w-9 text-right tabular-nums text-[color:var(--text-muted)]">{{ totalQuality ? Math.round(item.count / totalQuality * 100) : 0 }}%</span>
+                </div>
+              </div>
+            </div>
+            <div v-else data-testid="analytics-quality-empty" class="flex flex-1 flex-col items-center justify-center text-center text-[color:var(--text-muted)]">
+              <AudioLines class="mb-2 h-6 w-6 opacity-60" />
+              <p class="text-sm">{{ t('analytics.no_audio_quality') }}</p>
+            </div>
+          </article>
+        </div>
       </section>
       <section class="space-y-6 border-t border-[var(--border-glass)] pt-8">
         <header class="flex flex-wrap items-center justify-between gap-3">
@@ -311,10 +311,10 @@ onUnmounted(() => {
             <TabSwitcher v-model="listeningPeriod" :options="periodOptions" variant="label" mandatory data-testid="analytics-listening-range-tabs" />
           </div>
         </header>
-        <div class="grid gap-4 @5xl:grid-cols-5">
+        <div class="grid gap-4 @5xl:grid-cols-8">
           <article
             data-testid="analytics-total-time-card"
-            class="@container relative flex min-h-[17rem] flex-col overflow-hidden rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-6 backdrop-blur-[30px] @5xl:col-span-4">
+            class="@container relative flex min-h-[17rem] flex-col overflow-hidden rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-6 backdrop-blur-[30px] @5xl:col-span-6">
             <div class="pointer-events-none absolute inset-0] to-transparent opacity-70" />
             <div class="relative mb-6 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
               <Clock class="h-4 w-4" />{{ t('analytics.total_time') }}
@@ -339,7 +339,7 @@ onUnmounted(() => {
           </article>
           <article
             data-testid="analytics-streak-card"
-            class="streak-card group relative flex min-h-[17rem] flex-col overflow-hidden rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-6 backdrop-blur-[30px] @5xl:col-span-1">
+            class="streak-card group relative flex min-h-[17rem] flex-col overflow-hidden rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-6 backdrop-blur-[30px] @5xl:col-span-2">
             <div data-testid="analytics-streak-glow" aria-hidden="true" class="streak-glow pointer-events-none absolute -right-16 -bottom-16 h-52 w-52 rounded-full" />
             <Flame aria-hidden="true" class="streak-watermark pointer-events-none absolute -right-10 -bottom-8 h-40 w-40" stroke-width="0.25" fill="currentColor" />
             <div class="relative mb-6 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
@@ -351,9 +351,9 @@ onUnmounted(() => {
             </div>
           </article>
         </div>
-          <div class="grid gap-4 @5xl:grid-cols-5">
+          <div class="grid gap-4 @5xl:grid-cols-8">
             <article
-              class="@container flex min-h-[17rem] flex-col rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px] @5xl:col-span-2">
+              class="@container flex min-h-[17rem] flex-col rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px] @5xl:col-span-3">
               <div class="mb-4 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
                 <ListMusic class="h-4 w-4" />{{ t('analytics.genre_distribution') }}
               </div>
@@ -378,7 +378,7 @@ onUnmounted(() => {
               </div>
             </article>
             <article data-testid="analytics-playback-outcomes-card"
-              class="@container flex min-h-[17rem] flex-col rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px] @5xl:col-span-2">
+              class="@container flex min-h-[17rem] flex-col rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px] @5xl:col-span-3">
               <div class="mb-4 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
                 <Music class="h-4 w-4" />{{ t('analytics.playback_outcomes') }}
               </div>
@@ -395,7 +395,7 @@ onUnmounted(() => {
               <div v-else class="flex flex-1 items-center justify-center text-sm text-[color:var(--text-muted)]">{{ t('analytics.no_playback_outcomes') }}</div>
             </article>
             <article data-testid="analytics-average-session-card"
-              class="flex min-h-[17rem] flex-col rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px] @5xl:col-span-1">
+              class="flex min-h-[17rem] flex-col rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px] @5xl:col-span-2">
               <div class="flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
                 <Timer class="h-4 w-4" />{{ t('analytics.average_session') }}
               </div>

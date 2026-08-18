@@ -209,6 +209,8 @@ internal interface SyncDao {
     @Query("SELECT * FROM playback_attempts WHERE endedAt>=:since AND endReason IS NOT NULL") suspend fun playbackAttemptsSince(since: Long): List<PlaybackAttemptEntity>
     @Query("SELECT * FROM daily_track_listening_stats") suspend fun dailyTrackStats(): List<DailyTrackListeningStatEntity>
     @Query("SELECT * FROM daily_playback_attempt_stats") suspend fun dailyAttemptStats(): List<DailyPlaybackAttemptStatEntity>
+    @Query("SELECT * FROM daily_track_listening_stats") fun observeDailyTrackStats(): Flow<List<DailyTrackListeningStatEntity>>
+    @Query("SELECT * FROM daily_playback_attempt_stats") fun observeDailyAttemptStats(): Flow<List<DailyPlaybackAttemptStatEntity>>
 
     @Query("DELETE FROM listening_sessions WHERE endedAt<:before") suspend fun deleteOldListeningSessions(before: Long)
     @Query("DELETE FROM playback_attempts WHERE endedAt>0 AND endedAt<:before") suspend fun deleteOldPlaybackAttempts(before: Long)
@@ -446,6 +448,12 @@ internal class AndroidLibrarySyncStore(
 ) : LibrarySyncStore, PlaylistMutationStore, PlaylistArtworkStagingStore, ListeningSyncStore {
     private val dao = database.syncDao()
     val analysisAvailable: Flow<Boolean> = dao.observeAnalysisAvailable()
+    val dailyTrackListeningStats: Flow<List<DailyTrackListeningStat>> = dao.observeDailyTrackStats().map { rows ->
+        rows.map { DailyTrackListeningStat(it.sourceDeviceId, it.localDate, it.trackId, it.listenedSeconds, it.playCount) }
+    }
+    val dailyPlaybackAttemptStats: Flow<List<DailyPlaybackAttemptStat>> = dao.observeDailyAttemptStats().map { rows ->
+        rows.map { DailyPlaybackAttemptStat(it.sourceDeviceId, it.localDate, it.attempts, it.completed, it.skipped, it.stopped, it.listenedSeconds) }
+    }
 
     suspend fun analysis(trackId: String): TrackAnalysis? = activeAnalyses()[trackId]
 

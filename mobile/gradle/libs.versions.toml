@@ -26,6 +26,7 @@ eddsa = "0.3.0"
 room = "2.8.4"
 ksp = "2.3.10"
 reorderable = "3.1.0"
+vico = "3.2.1"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -66,6 +67,7 @@ room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 room-testing = { module = "androidx.room:room-testing", version.ref = "room" }
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
+vico-compose = { module = "com.patrykandpatrick.vico:compose", version.ref = "vico" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

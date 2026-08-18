@@ -76,6 +76,9 @@ import me.misa198.airmedy.ui.screens.GenreDetailsUiState
 import me.misa198.airmedy.ui.screens.ComposerDetailsUiState
 import me.misa198.airmedy.ui.screens.LibraryPlaylistsUiState
 import me.misa198.airmedy.ui.screens.LibrarySearchUiState
+import me.misa198.airmedy.ui.screens.InsightPeriod
+import me.misa198.airmedy.ui.screens.InsightSourceFilter
+import me.misa198.airmedy.ui.screens.InsightUiState
 import me.misa198.airmedy.ui.screens.PlaylistDetailsUiState
 import me.misa198.airmedy.ui.screens.isFavorite
 import me.misa198.airmedy.ui.screens.CreatePlaylistBottomSheet
@@ -120,6 +123,7 @@ internal fun App(
     composersUiState: LibraryComposersUiState = LibraryComposersUiState(),
     playlistsUiState: LibraryPlaylistsUiState = LibraryPlaylistsUiState(),
     searchUiState: LibrarySearchUiState = LibrarySearchUiState(),
+    insightUiState: InsightUiState = InsightUiState(),
     albumDetailsUiState: AlbumDetailsUiState = AlbumDetailsUiState(),
     playlistDetailsUiState: PlaylistDetailsUiState = PlaylistDetailsUiState(),
     artistDetailsUiState: ArtistDetailsUiState = ArtistDetailsUiState(),
@@ -131,6 +135,10 @@ internal fun App(
     onTrackClick: (String) -> Unit = {},
     onSearchQueryChange: (String) -> Unit = {},
     onSearchTrackClick: (String) -> Unit = {},
+    onInsightLibraryPeriodSelected: (InsightPeriod) -> Unit = {},
+    onInsightListeningPeriodSelected: (InsightPeriod) -> Unit = {},
+    onInsightSourceSelected: (InsightSourceFilter) -> Unit = {},
+    onInsightTrackClick: (String) -> Unit = {},
     onTracksPlayAll: (Boolean) -> Unit = {},
     onTracksFilterQueryChange: (String) -> Unit = {},
     onRecentTrackClick: (String) -> Unit = {},
@@ -221,6 +229,7 @@ internal fun App(
         val hazeState = if (uiState.reduceTransparency) null else rememberHazeState()
         val currentStackPage = uiState.stackFor(uiState.selectedDestination).currentStackPage(uiState.selectedDestination)
         val homeListState = remember(uiState.pageStateGenerationFor(AppDestination.Home, AppStackPage.Root)) { LazyListState() }
+        val insightListState = remember(uiState.pageStateGenerationFor(AppDestination.Insight, AppStackPage.Root)) { LazyListState() }
         val libraryListState = remember(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.Root)) { LazyListState() }
         val tracksListState = remember(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.LibraryTracks), tracksUiState.sortOption, tracksUiState.sortOrder) {
             LazyListState()
@@ -242,6 +251,7 @@ internal fun App(
         }
         val playlistsListState = remember(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.LibraryPlaylists)) { LazyListState() }
         homeListState.resetAfterPagePop(uiState.pageStateGenerationFor(AppDestination.Home, AppStackPage.Root))
+        insightListState.resetAfterPagePop(uiState.pageStateGenerationFor(AppDestination.Insight, AppStackPage.Root))
         libraryListState.resetAfterPagePop(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.Root))
         tracksListState.resetAfterPagePop(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.LibraryTracks))
         artistsListState.resetAfterPagePop(uiState.pageStateGenerationFor(AppDestination.Library, AppStackPage.LibraryArtists))
@@ -337,11 +347,13 @@ internal fun App(
         var createPlaylistForTracks by remember { mutableStateOf<List<String>?>(null) }
         BackHandler(enabled = showBack) { onIntent(AppIntent.NavigateBack) }
 
-        val isContentScrolled by remember(uiState.selectedDestination, currentPage, homeListState, libraryListState, tracksListState, artistsListState, albumsListState, artistDetailsListState, genreDetailsListState, composerDetailsListState, genresListState, composersListState, playlistsListState) {
+        val isContentScrolled by remember(uiState.selectedDestination, currentPage, homeListState, insightListState, libraryListState, tracksListState, artistsListState, albumsListState, artistDetailsListState, genreDetailsListState, composerDetailsListState, genresListState, composersListState, playlistsListState) {
             derivedStateOf {
                 when {
                     uiState.selectedDestination == AppDestination.Home && currentPage == AppStackPage.Root ->
                         homeListState.firstVisibleItemIndex > 0 || homeListState.firstVisibleItemScrollOffset > 0
+                    uiState.selectedDestination == AppDestination.Insight && currentPage == AppStackPage.Root ->
+                        insightListState.firstVisibleItemIndex > 0 || insightListState.firstVisibleItemScrollOffset > 0
                     uiState.selectedDestination == AppDestination.Library && currentPage == AppStackPage.Root ->
                         libraryListState.firstVisibleItemIndex > 0 || libraryListState.firstVisibleItemScrollOffset > 0
                     currentPage == AppStackPage.LibraryTracks ->
@@ -388,6 +400,7 @@ internal fun App(
                 hazeState = hazeState,
                 navigationBottomPadding = navigationBottomPadding,
                 homeListState = homeListState,
+                insightListState = insightListState,
                 libraryListState = libraryListState,
                 tracksListState = tracksListState,
                 artistsListState = artistsListState,
@@ -417,6 +430,11 @@ internal fun App(
                 composersUiState = composersUiState,
                 playlistsUiState = playlistsUiState,
                 searchUiState = searchUiState,
+                insightUiState = insightUiState,
+                onInsightLibraryPeriodSelected = onInsightLibraryPeriodSelected,
+                onInsightListeningPeriodSelected = onInsightListeningPeriodSelected,
+                onInsightSourceSelected = onInsightSourceSelected,
+                onInsightTrackClick = onInsightTrackClick,
                 onSortOptionSelected = onSortOptionSelected,
                 onToggleSortOrder = onToggleSortOrder,
                 onTrackClick = onTrackClick,

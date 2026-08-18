@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -102,6 +103,7 @@ fun TrackRow(
     onClick: (() -> Unit)? = null,
     onMoreClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
+    trailingContent: (@Composable RowScope.() -> Unit)? = null,
 ) {
     val colors = LocalAirmedyColors.current
     val bitmap = rememberArtworkThumbnail(artworkPath)
@@ -176,17 +178,18 @@ fun TrackRow(
             )
         }
 
-        // 3. More options (...) button
-        IconButton(
-            onClick = handleMoreClick,
-            modifier = Modifier.size(48.dp),
-        ) {
-            MaterialSymbol(
-                symbol = MaterialSymbols.MoreVert,
-                contentDescription = stringResource(R.string.track_row_more_options),
-                size = 20.dp,
-                tint = colors.textMuted,
-            )
+        trailingContent?.invoke(this) ?: run {
+            IconButton(
+                onClick = handleMoreClick,
+                modifier = Modifier.size(48.dp),
+            ) {
+                MaterialSymbol(
+                    symbol = MaterialSymbols.MoreVert,
+                    contentDescription = stringResource(R.string.track_row_more_options),
+                    size = 20.dp,
+                    tint = colors.textMuted,
+                )
+            }
         }
     }
 }

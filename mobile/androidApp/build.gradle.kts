@@ -41,6 +41,7 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     implementation(libs.reorderable)
+    implementation(libs.vico.compose)
     ksp(libs.room.compiler)
 
     testImplementation(libs.junit)

@@ -31,12 +31,13 @@ import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 data class SelectionOption<T>(
     val value: T,
-    @StringRes val labelRes: Int,
+    @StringRes val labelRes: Int? = null,
+    val label: String? = null,
 )
 
 @Composable
 fun <T> Selection(
-    @StringRes labelRes: Int,
+    @StringRes labelRes: Int? = null,
     options: List<SelectionOption<T>>,
     selectedValue: T,
     onValueSelected: (T) -> Unit,
@@ -56,42 +57,12 @@ fun <T> Selection(
         hazeState = hazeState,
         shape = RoundedCornerShape(28.dp),
         anchor = {
-            ActionList(
-                items = listOf(
-                    ActionListItem(
-                        labelRes = labelRes,
-                        trailingContent = {
-                            Box(
-                                modifier = Modifier
-                                    .heightIn(min = 48.dp)
-                                    .selectable(
-                                        selected = false,
-                                        onClick = { expanded = true },
-                                        role = Role.Button,
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null,
-                                    )
-                                    .padding(start = 8.dp),
-                                contentAlignment = Alignment.CenterEnd,
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = selectedOption?.let { stringResource(it.labelRes) }.orEmpty(),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = colors.textMuted,
-                                    )
-                                    MaterialSymbol(
-                                        symbol = MaterialSymbols.UnfoldMore,
-                                        contentDescription = null,
-                                        size = 18.dp,
-                                        tint = colors.textMuted,
-                                        modifier = Modifier.padding(start = 8.dp),
-                                    )
-                                }
-                            }
-                        },
-                    ),
-                ),
+            if (labelRes == null) {
+                SelectionValue(selectedOption) { expanded = true }
+            } else ActionList(
+                items = listOf(ActionListItem(labelRes, trailingContent = {
+                    SelectionValue(selectedOption) { expanded = true }
+                })),
                 containerStyle = ActionListContainerStyle.Plain,
             )
         },
@@ -106,6 +77,43 @@ fun <T> Selection(
             )
         },
     )
+}
+
+@Composable
+private fun <T> SelectionValue(
+    option: SelectionOption<T>?,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val colors = LocalAirmedyColors.current
+    Box(
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .selectable(
+                selected = false,
+                onClick = onClick,
+                role = Role.Button,
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            )
+            .padding(horizontal = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = option?.label.orEmpty().ifBlank { option?.labelRes?.let { stringResource(it) }.orEmpty() },
+                style = MaterialTheme.typography.bodyLarge,
+                color = colors.textMuted,
+            )
+            MaterialSymbol(
+                symbol = MaterialSymbols.UnfoldMore,
+                contentDescription = null,
+                size = 18.dp,
+                tint = colors.textMuted,
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
+    }
 }
 
 @Composable
@@ -146,7 +154,7 @@ private fun <T> SelectionMenu(
                     Box(modifier = Modifier.size(18.dp))
                 }
                 Text(
-                    text = stringResource(option.labelRes),
+                    text = option.label.orEmpty().ifBlank { option.labelRes?.let { stringResource(it) }.orEmpty() },
                     modifier = Modifier.padding(start = 12.dp),
                     style = MaterialTheme.typography.bodyLarge,
                     color = colors.textMain,

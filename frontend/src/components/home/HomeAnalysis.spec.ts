@@ -107,6 +107,7 @@ describe('HomeAnalysis empty state', () => {
     expect(wrapper.get('[data-testid="analytics-library-growth-empty"]').text()).toContain('No tracks in your library yet.')
     expect(wrapper.get('[data-testid="analytics-quality-empty"]').text()).toContain('No audio quality data yet.')
     expect(wrapper.find('[data-testid="analytics-library-summary"]').exists()).toBe(true)
+    expect(wrapper.html().indexOf('analytics-library-summary')).toBeLessThan(wrapper.html().indexOf('analytics-library-growth-card'))
     expect(wrapper.text().indexOf('analytics.plays')).toBeLessThan(wrapper.text().indexOf('analytics.total_time'))
   })
 })
@@ -226,10 +227,14 @@ describe('HomeAnalysis library growth', () => {
       { date: '2026-07-24', track_count: 150 },
     ])
     expect(wrapper.get('[data-testid="analytics-library-growth-card"]').text()).toContain('150')
-    expect(wrapper.get('[data-testid="analytics-total-time-card"]').classes()).toContain('@5xl:col-span-4')
+    expect(wrapper.get('[data-testid="analytics-library-growth-card"]').classes()).toContain('@5xl:col-span-5')
+    expect(wrapper.get('[data-testid="analytics-total-time-card"]').element.parentElement?.className).toContain('@5xl:grid-cols-8')
+    expect(wrapper.get('[data-testid="analytics-total-time-card"]').classes()).toContain('@5xl:col-span-6')
     expect(wrapper.get('[data-testid="analytics-streak-card"]').text()).toContain('3')
     expect(wrapper.get('[data-testid="analytics-streak-glow"]').attributes('aria-hidden')).toBe('true')
     expect(wrapper.get('[data-testid="analytics-streak-card"]').classes()).toContain('streak-card')
+    expect(wrapper.get('[data-testid="analytics-playback-outcomes-card"]').element.parentElement?.className).toContain('@5xl:grid-cols-8')
+    expect(wrapper.get('[data-testid="analytics-playback-outcomes-card"]').classes()).toContain('@5xl:col-span-3')
   })
 })
 

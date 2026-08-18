@@ -43,7 +43,10 @@ import me.misa198.airmedy.ui.screens.AppearanceContent
 import me.misa198.airmedy.ui.screens.LibraryContent
 import me.misa198.airmedy.ui.screens.LibrarySearchContent
 import me.misa198.airmedy.ui.screens.LibrarySearchUiState
-import me.misa198.airmedy.ui.screens.PlaceholderContent
+import me.misa198.airmedy.ui.screens.InsightContent
+import me.misa198.airmedy.ui.screens.InsightPeriod
+import me.misa198.airmedy.ui.screens.InsightSourceFilter
+import me.misa198.airmedy.ui.screens.InsightUiState
 import me.misa198.airmedy.ui.screens.SettingsContent
 import me.misa198.airmedy.ui.screens.IntegrationContent
 import me.misa198.airmedy.ui.screens.PlaybackSettingsContent
@@ -114,6 +117,7 @@ internal fun AppDestinationContent(
     hazeState: HazeState?,
     navigationBottomPadding: Dp,
     homeListState: LazyListState,
+    insightListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     libraryListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     tracksListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     artistsListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
@@ -143,6 +147,11 @@ internal fun AppDestinationContent(
     composersUiState: LibraryComposersUiState = LibraryComposersUiState(),
     playlistsUiState: LibraryPlaylistsUiState = LibraryPlaylistsUiState(),
     searchUiState: LibrarySearchUiState = LibrarySearchUiState(),
+    insightUiState: InsightUiState = InsightUiState(),
+    onInsightLibraryPeriodSelected: (InsightPeriod) -> Unit = {},
+    onInsightListeningPeriodSelected: (InsightPeriod) -> Unit = {},
+    onInsightSourceSelected: (InsightSourceFilter) -> Unit = {},
+    onInsightTrackClick: (String) -> Unit = {},
     onSortOptionSelected: (TrackSortOption) -> Unit = {},
     onToggleSortOrder: () -> Unit = {},
     onTrackClick: (String) -> Unit = {},
@@ -291,6 +300,17 @@ internal fun AppDestinationContent(
                                 onTrackContextBottomSheet = onTrackContextBottomSheet,
                             )
                         }
+                        AppDestination.Insight -> InsightContent(
+                            state = insightUiState,
+                            listState = insightListState,
+                            contentPadding = contentPadding,
+                            onLibraryPeriodSelected = onInsightLibraryPeriodSelected,
+                            onListeningPeriodSelected = onInsightListeningPeriodSelected,
+                            onSourceSelected = onInsightSourceSelected,
+                            onArtistClick = { onIntent(AppIntent.OpenArtistDetails(it)) },
+                            onTrackClick = onInsightTrackClick,
+                            modifier = Modifier.fillMaxSize(),
+                        )
                         AppDestination.Settings -> key(currentPage.page) {
                             val settingsPageModifier = Modifier
                                 .padding(contentPadding)
@@ -606,7 +626,6 @@ internal fun AppDestinationContent(
                                 },
                             )
                         }
-                        else -> PlaceholderContent(destination = currentPage.destination, modifier = Modifier.padding(contentPadding))
                     }
                 }
             }
