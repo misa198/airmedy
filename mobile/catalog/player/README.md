@@ -38,7 +38,12 @@ When the service is started by a new Play or Shuffle command, that new queue
 takes precedence over saved-session restoration. The service cancels restoration
 before handling the command, so DataStore reads and validation of an old queue
 cannot delay the initial `Preparing` state or the mini-player. Restoration still
-occurs when the service starts without a queue-replacing command.
+occurs when the service starts without a queue-replacing command. It reads the
+synced library once to remove missing audio assets from the saved queue, then
+resolves only the selected item (and later its immediate preload successor).
+The selected item is published as paused before FFmpeg opens it, so the mini
+player can mount without waiting for decoder preparation. If that item cannot
+be opened, the service clears the invalid saved session and returns to Idle.
 
 While playback is active, `PlaybackService` also listens for Android's
 `ACTION_AUDIO_BECOMING_NOISY` broadcast. This occurs when a wired or Bluetooth

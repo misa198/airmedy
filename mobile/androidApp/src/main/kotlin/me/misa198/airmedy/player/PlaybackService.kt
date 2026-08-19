@@ -145,14 +145,13 @@ class PlaybackService : Service() {
             try {
                 sessionStore.load()?.let { session ->
                     val saved = session.queue
-                    val available = saved.originalTrackIds.filter { AndroidPlaybackRuntime.controller().resolve(it) != null }
-                    val availableSet = available.toSet()
+                    val availableTrackIds = AndroidPlaybackRuntime.availableTrackIds(saved.originalTrackIds)
                     commandMutex.withLock {
-                        if (available.isEmpty()) {
+                        if (availableTrackIds.isEmpty()) {
                             clearRestoredSession()
                             return@withLock
                         }
-                        queue.restore(queueForAvailableTracks(saved, availableSet))
+                        queue.restore(queueForAvailableTracks(saved, availableTrackIds))
                         restoreCurrent(session.positionMs)
                     }
                 }
@@ -366,6 +365,8 @@ class PlaybackService : Service() {
         val trackId = queue.snapshot().currentTrackId ?: return clearRestoredSession()
         val item = AndroidPlaybackRuntime.controller().resolve(trackId)
             ?: return clearRestoredSession()
+        // Publish the retained item before FFmpeg opens it, so Compose can mount the mini player.
+        state.value = PlaybackState.Paused(item, savedPositionMs.coerceAtLeast(0L), durationMs = 0L)
         try {
             decoder?.close()
             decoder = FfmpegDecoder().also {

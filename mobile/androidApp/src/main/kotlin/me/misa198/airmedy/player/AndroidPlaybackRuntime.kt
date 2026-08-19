@@ -9,16 +9,19 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import me.misa198.airmedy.sync.AndroidLibrarySyncStore
+import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.sync.metadataObject
 
 /** Application-scoped composition root for Android playback. */
 internal object AndroidPlaybackRuntime {
     private lateinit var appContext: Context
+    private lateinit var syncStore: AndroidLibrarySyncStore
     private lateinit var resolver: PlaybackItemResolver
 
     fun initialize(context: Context, syncStore: AndroidLibrarySyncStore) {
         if (::appContext.isInitialized) return
         appContext = context.applicationContext
+        this.syncStore = syncStore
         resolver = PlaybackItemResolver { trackId ->
             val track = syncStore.tracks.first().firstOrNull { it.id == trackId }
             if (track == null) {
@@ -55,6 +58,13 @@ internal object AndroidPlaybackRuntime {
         }
     }
 
+    /** Validates a restored queue with one library snapshot, without constructing playback items. */
+    suspend fun availableTrackIds(trackIds: Collection<String>): Set<String> {
+        check(::appContext.isInitialized) { "AndroidPlaybackRuntime is not initialized" }
+        if (trackIds.isEmpty()) return emptySet()
+        return availableSyncedTrackIds(appContext.filesDir, syncStore.tracks.first(), trackIds.toSet())
+    }
+
     fun controller(): PlaybackController {
         check(::appContext.isInitialized) { "AndroidPlaybackRuntime is not initialized" }
         return PlaybackController(appContext, resolver)
@@ -64,3 +74,12 @@ internal object AndroidPlaybackRuntime {
 internal fun resolveSyncedAudioFile(filesDir: File, storedPath: String?): File? = storedPath?.let { path ->
     File(path).let { candidate -> if (candidate.isAbsolute) candidate else File(filesDir, path) }
 }
+
+internal fun availableSyncedTrackIds(
+    filesDir: File,
+    tracks: List<LibraryTrack>,
+    requestedTrackIds: Set<String>,
+): Set<String> = tracks.asSequence()
+    .filter { it.id in requestedTrackIds }
+    .filter { resolveSyncedAudioFile(filesDir, it.audioPath)?.isFile == true }
+    .mapTo(LinkedHashSet()) { it.id }
