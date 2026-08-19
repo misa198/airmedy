@@ -65,6 +65,7 @@ type MobileLibrarySyncPlanRepository interface {
 	GetLatest(ctx context.Context, deviceID string) (*MobileLibrarySyncPlan, error)
 	Save(ctx context.Context, plan *MobileLibrarySyncPlan) error
 	MarkSuperseded(ctx context.Context, deviceID string) error
+	MarkAllActiveSuperseded(ctx context.Context) error
 	MarkReceipt(ctx context.Context, planID, assetID string, at time.Time) (completed int, err error)
 	MarkComplete(ctx context.Context, planID string, at time.Time) error
 }

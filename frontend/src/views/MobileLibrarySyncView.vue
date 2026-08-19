@@ -2,8 +2,8 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Events } from '@wailsio/runtime'
-import { ArrowLeft, Search, RefreshCcw } from '@lucide/vue'
-import { Badge, Checkbox, Input, Radio, TabSwitcher, IconButton } from '@airmedy/ui'
+import { ArrowLeft, LoaderCircle, Search, RefreshCcw, X } from '@lucide/vue'
+import { Badge, Checkbox, Input, Radio, TabSwitcher } from '@airmedy/ui'
 import { RecycleScroller } from 'vue-virtual-scroller'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import SettingSection from '@/components/settings/SettingSection.vue'
@@ -72,8 +72,10 @@ function startPolling() {
       stopPolling()
       return
     }
+    const polledPlanID = plan.value.id
     try {
       const status = await MobileLibrarySyncService.GetStatus(deviceID.value)
+      if (plan.value?.id !== polledPlanID || plan.value.status !== 'active') return
       if (status) {
         plan.value = status
         if (status.status !== 'active') {
@@ -145,6 +147,17 @@ async function sync(replace = false) {
   finally { syncing.value = false }
 }
 
+async function cancelSync() {
+  if (plan.value?.status !== 'active') return
+  syncing.value = true
+  try {
+    plan.value = await MobileLibrarySyncService.Cancel(deviceID.value)
+    stopPolling()
+  }
+  catch (error) { console.error('Failed to cancel mobile library sync:', error) }
+  finally { syncing.value = false }
+}
+
 onMounted(() => {
   void load()
   offPairing = Events.On('pairing:trusted-devices-changed', refreshDeviceStatus)
@@ -173,56 +186,70 @@ onUnmounted(() => {
       <ArrowLeft class="size-6" />
     </button>
     <header class="flex items-start justify-between gap-4">
-      <div>
+      <div class="flex gap-1 items-center gap-4">
         <h1 class="mt-1 text-3xl font-bold tracking-[-0.02em]">{{ device?.display_name ?? $t('mobile_sync.title') }}
         </h1>
+        <div>
+          <Badge class="gap-1" :color="device?.online ? 'var(--status-online)' : 'var(--text-muted)'">
+            <span class="size-1 rounded-full bg-current" />
+            {{ $t(device?.online ? 'settings.mobile_pairing.online' : 'settings.mobile_pairing.offline') }}
+          </Badge>
+        </div>
       </div>
       <div class="flex items-center gap-2">
-        <Badge class="gap-1" :color="device?.online ? 'var(--status-online)' : 'var(--text-muted)'">
-          <span class="size-1 rounded-full bg-current" />
-          {{ $t(device?.online ? 'settings.mobile_pairing.online' : 'settings.mobile_pairing.offline') }}
-        </Badge>
+        <div class="flex items-center justify-end gap-2">
+          <div class="flex items-center gap-2">
+            <button v-if="plan?.status === 'active'" data-testid="cancel-sync-button" type="button"
+              class="flex items-center gap-2 rounded-lg bg-foreground/[0.04] px-3 py-2 text-sm font-medium text-foreground/70 transition-all hover:bg-foreground/[0.08] disabled:opacity-50"
+              :disabled="syncing" @click="cancelSync">
+              <X class="size-4" />
+              {{ $t('common.cancel') }}
+            </button>
+            <button data-testid="sync-button" type="button"
+              class="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-all hover:scale-[1.02] disabled:opacity-50"
+              :disabled="!canSync" @click="sync()">
+              <RefreshCcw data-testid="sync-icon" class="size-4" :class="{ 'animate-spin': isSyncInProgress }" />
+              {{ $t('mobile_sync.sync') }}
+            </button>
+          </div>
+        </div>
       </div>
     </header>
 
-    <SettingSection
-      :icon="RefreshCcw"
-      :label="$t('mobile_sync.sync')"
-      variant="panel"
-      hide-header
+    <SettingSection :icon="RefreshCcw" :label="$t('mobile_sync.sync')" variant="panel" hide-header
       :class="mode === 'selected' ? 'flex min-h-0 flex-1 flex-col' : ''"
-      :content-class="mode === 'selected' ? 'flex min-h-0 flex-1 flex-col' : ''"
-    >
+      :content-class="mode === 'selected' ? 'flex min-h-0 flex-1 flex-col' : ''">
       <div class="flex justify-between">
         <div class="space-y-4" role="radiogroup">
-          <label class="flex cursor-pointer items-center gap-3 text-sm">
-            <Radio v-model="mode" value="all" />{{ $t('mobile_sync.entire_library') }}
+          <label class="flex items-center gap-3 text-sm"
+            :class="isSyncInProgress ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
+            <Radio data-testid="scope-all" v-model="mode" value="all" :disabled="isSyncInProgress" />{{
+              $t('mobile_sync.entire_library') }}
           </label>
-          <label class="flex cursor-pointer items-center gap-3 text-sm">
-            <Radio v-model="mode" value="selected" />{{ $t('mobile_sync.selected_items') }}
+          <label class="flex items-center gap-3 text-sm"
+            :class="isSyncInProgress ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'">
+            <Radio data-testid="scope-selected" v-model="mode" value="selected" :disabled="isSyncInProgress" />{{
+              $t('mobile_sync.selected_items') }}
           </label>
         </div>
-        <button data-testid="sync-button" type="button"
-          class="w-fit h-fit rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-all hover:scale-[1.02] disabled:opacity-50 flex items-center gap-2"
-          :class="{ 'pointer-events-none': isSyncInProgress, 'cursor-not-allowed': !canSync }" :disabled="!canSync"
-          @click="sync()">
-          <RefreshCcw class="w-3.5 h-3.5" />
-          {{ isSyncInProgress ? $t('settings.sync.syncing') : $t('mobile_sync.sync') }}
-        </button>
       </div>
       <div v-if="plan" class="mt-5 border-t border-foreground/[0.06] pt-4">
         <div class="flex items-baseline justify-between gap-4">
           <p class="text-sm font-medium">{{ plan.status === 'complete' ? $t('mobile_sync.complete') :
             $t('mobile_sync.pending') }}</p>
-          <span class="text-sm font-semibold tabular-nums text-foreground/70">{{ progressPercent }}%</span>
+          <span class="w-10 text-right text-sm font-semibold tabular-nums text-foreground/70">
+            {{ progressPercent }}%
+          </span>
         </div>
-        <div class="mt-2 h-1 overflow-hidden rounded-full bg-foreground/[0.06] transition-all duration-300 hover:h-1.5">
-          <div class="h-full bg-foreground transition-all duration-300"
-            :style="{ width: `${progressPercent}%` }" />
+        <div v-if="plan" class="mt-2 flex items-center gap-2">
+          <div
+            class="h-1 flex-1 overflow-hidden rounded-full bg-foreground/[0.06] transition-all duration-300 hover:h-1.5">
+            <div class="h-full bg-foreground transition-all duration-300" :style="{ width: `${progressPercent}%` }" />
+          </div>
         </div>
       </div>
       <div v-if="mode === 'selected'"
-        class="mt-6 flex min-h-0 flex-1 flex-col rounded-xl border border-[var(--border-glass)] bg-foreground/[0.03] p-4">
+        class="relative mt-6 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[var(--border-glass)] bg-foreground/[0.03] p-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <TabSwitcher v-model="activeTab" :options="tabs" mandatory variant="label" />
           <div class="relative w-full max-w-xs">
@@ -243,14 +270,18 @@ onUnmounted(() => {
             key-field="id" v-slot="{ item, index }">
             <button type="button"
               class="grid h-14 w-full grid-cols-[2.25rem_minmax(0,1fr)_minmax(0,0.8fr)] items-center text-left text-sm transition-colors hover:bg-foreground/[0.04]"
-              :style="{ background: rowBg(index) }" @click="toggle(item.id)">
+              :style="{ background: rowBg(index) }" :disabled="isSyncInProgress" @click="toggle(item.id)">
               <span class="flex justify-center">
-                <Checkbox :checked="activeSelected.has(item.id)" />
+                <Checkbox :checked="activeSelected.has(item.id)" :disabled="isSyncInProgress" />
               </span>
               <span class="truncate px-3 font-medium">{{ item.label }}</span>
               <span class="truncate px-3 text-xs text-foreground opacity-80">{{ item.detail ?? '' }}</span>
             </button>
           </RecycleScroller>
+        </div>
+        <div v-if="isSyncInProgress" data-testid="sync-selection-overlay" aria-hidden="true"
+          class="absolute inset-0 z-10 flex cursor-not-allowed items-center justify-center bg-disabled-overlay">
+          <LoaderCircle data-testid="sync-selection-spinner" class="size-5 animate-spin text-foreground/60" />
         </div>
       </div>
     </SettingSection>

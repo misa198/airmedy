@@ -27,6 +27,14 @@ func (s *MobileLibrarySyncService) GetStatus(ctx context.Context, deviceID strin
 	return s.svc.GetStatus(ctx, deviceID)
 }
 
+func (s *MobileLibrarySyncService) Cancel(ctx context.Context, deviceID string) (*domain.MobileLibrarySyncPlan, error) {
+	plan, err := s.svc.Cancel(ctx, deviceID)
+	if err != nil {
+		return nil, fmt.Errorf("cancel mobile library sync: %w", err)
+	}
+	return plan, nil
+}
+
 // Sync creates a new plan after a completed sync, resumes an unchanged active
 // plan, or replaces an active plan only when replace was confirmed by the UI.
 func (s *MobileLibrarySyncService) Sync(ctx context.Context, deviceID string, scope domain.MobileLibrarySyncScope, host string, replace bool) (*domain.MobileLibrarySyncPlan, error) {

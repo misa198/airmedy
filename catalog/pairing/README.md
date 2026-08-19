@@ -137,9 +137,10 @@ the MQTT connection so it can continue in the background and publish receipts.
 Its
 client ID is `airmedy-sync-<desktop-id>-<mobile-id>`, enabling desktop to mark the
 matching trusted device Online or Offline from broker session events; it retries
-after a disconnect. This session has no publish/subscribe command topics yet;
-library sync uses the separately versioned, authenticated topic namespace defined
-in the [sync catalog](../sync/README.md).
+after a disconnect. An Offline transition cancels that device's in-progress
+library plan preparation or supersedes its active plan. This session has no
+publish/subscribe command topics yet; library sync uses the separately versioned,
+authenticated topic namespace defined in the [sync catalog](../sync/README.md).
 
 ## Handshake messages
 

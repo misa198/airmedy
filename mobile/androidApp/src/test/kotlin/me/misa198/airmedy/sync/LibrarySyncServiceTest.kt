@@ -32,6 +32,13 @@ class LibrarySyncServiceTest {
     }
 
     @Test
+    fun downloadParallelismUsesHalfTheCpuCountBoundedToTwoThroughFour() {
+        assertEquals(2, syncDownloadParallelism(1))
+        assertEquals(2, syncDownloadParallelism(4))
+        assertEquals(4, syncDownloadParallelism(16))
+    }
+
+    @Test
     fun retainsTheUiMqttSessionAfterSyncServiceStops() {
         val session = FakeSyncSession()
 

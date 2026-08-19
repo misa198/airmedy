@@ -28,10 +28,31 @@
 # ML Kit loads the bundled barcode pipeline by class name after R8 has run.
 -keep class com.google.mlkit.vision.barcode.bundled.internal.** { *; }
 
+# Firebase discovers component registrars from manifest metadata and constructs
+# them reflectively. Its consumer rule keeps their names but not constructors.
+-keep class * implements com.google.firebase.components.ComponentRegistrar {
+    public <init>();
+}
+
 # ---- Optional transitive dependencies not present on Android runtime ----
 # Generated from R8 missing_rules.txt — these are never used at runtime on Android.
 
 # Netty (used by gRPC/OkHttp optional transports)
+# Netty registers these methods with ResourceLeakDetector by name.
+-keepclassmembers class io.netty.util.ReferenceCountUtil {
+    public static java.lang.Object touch(java.lang.Object);
+    public static java.lang.Object touch(java.lang.Object, java.lang.Object);
+}
+
+-keepclassmembernames class io.netty.buffer.AbstractByteBufAllocator {
+    *** toLeakAwareBuffer(...);
+}
+
+# JCTools resolves queue and map fields by name to obtain Unsafe offsets.
+-keepclassmembers class org.jctools.** {
+    <fields>;
+}
+
 -dontwarn io.netty.channel.epoll.Epoll
 -dontwarn io.netty.channel.epoll.EpollEventLoopGroup
 -dontwarn io.netty.channel.epoll.EpollSocketChannel

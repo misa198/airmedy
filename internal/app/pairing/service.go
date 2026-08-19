@@ -70,7 +70,7 @@ type Service struct {
 	pending                   map[string]pendingRequest
 	seen                      map[string]time.Time
 	listeners                 []func(PendingRequest)
-	deviceConnectionListeners []func()
+	deviceConnectionListeners []func(deviceID string, connected bool)
 	online                    map[string]bool
 	cancel                    context.CancelFunc
 	broadcastStop             func()
@@ -255,7 +255,7 @@ func (s *Service) AddRequestListener(listener func(PendingRequest)) {
 	s.listeners = append(s.listeners, listener)
 }
 
-func (s *Service) AddDeviceConnectionListener(listener func()) {
+func (s *Service) AddDeviceConnectionListener(listener func(deviceID string, connected bool)) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.deviceConnectionListeners = append(s.deviceConnectionListeners, listener)
@@ -290,10 +290,10 @@ func (s *Service) setDeviceConnection(deviceID string, connected bool) {
 		return
 	}
 	s.online[deviceID] = connected
-	listeners := append([]func(){}, s.deviceConnectionListeners...)
+	listeners := append([]func(deviceID string, connected bool){}, s.deviceConnectionListeners...)
 	s.mu.Unlock()
 	for _, listener := range listeners {
-		listener()
+		listener(deviceID, connected)
 	}
 }
 
@@ -347,13 +347,13 @@ func (s *Service) RevokeDevice(ctx context.Context, deviceID string) error {
 	// the local Online state immediately, then force-close any live MQTT session.
 	s.mu.Lock()
 	delete(s.online, deviceID)
-	listeners := append([]func(){}, s.deviceConnectionListeners...)
+	listeners := append([]func(deviceID string, connected bool){}, s.deviceConnectionListeners...)
 	s.mu.Unlock()
 	if err := s.broker.Disconnect(ctx, deviceID); err != nil {
 		s.logger.Warn("failed to disconnect revoked mobile device", "device_id", deviceID, "error", err)
 	}
 	for _, listener := range listeners {
-		listener()
+		listener(deviceID, false)
 	}
 	return nil
 }

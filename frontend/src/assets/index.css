@@ -3,6 +3,7 @@
 
 @theme {
   --color-status-online: var(--status-online);
+  --color-disabled-overlay: var(--bg-disabled-overlay);
 }
 
 /* Enable CSS custom property transitions in WebKit/Safari (used by Wails on macOS) */
@@ -25,6 +26,7 @@
     --bg-glass: rgba(255, 255, 255, 0.7);
     --bg-glass-elevated: rgba(255, 255, 255, 0.9);
     --bg-glass-modal: rgba(255, 255, 255, 1);
+    --bg-disabled-overlay: rgba(0, 0, 0, 0.06);
     --border-glass: rgba(0, 0, 0, 0.1);
 
     --primary: #e11d48;
@@ -56,6 +58,7 @@
     --bg-glass: rgba(35, 35, 38, 0.6);
     --bg-glass-elevated: rgba(55, 55, 60, 0.4);
     --bg-glass-modal: rgba(36, 36, 40, 1);
+    --bg-disabled-overlay: rgba(255, 255, 255, 0.06);
     --border-glass: rgba(255, 255, 255, 0.1);
 
     --text-main: #ffffff;
@@ -76,6 +79,7 @@
     --bg-glass: rgba(25, 25, 25, 0.6);
     --bg-glass-elevated: rgba(45, 45, 45, 0.4);
     --bg-glass-modal: rgba(30, 30, 30, 1);
+    --bg-disabled-overlay: rgba(255, 255, 255, 0.06);
   }
 
   html,

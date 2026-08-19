@@ -130,13 +130,22 @@ type Service struct {
 	reconciliationSub  bool
 	receiptsSubscribed bool
 	listeners          []func(*domain.MobileLibrarySyncPlan)
+	starting           map[string]map[uint64]context.CancelFunc
+	nextStartID        uint64
 }
 
 func NewService(plans domain.MobileLibrarySyncPlanRepository, tracks domain.TrackRepository, playlists domain.PlaylistRepository, artists domain.ArtistRepository, lyrics *lyricsapp.LyricsService, lyricCache domain.MobileSyncLyricCacheRepository, analysis domain.AnalysisRepository, artwork domain.ArtworkCache, devices domain.TrustedMobileDeviceRepository, identity domain.PairingIdentityRepository, keys domain.PairingKeyStore, broker domain.PairingBroker, ledger domain.PlaylistMutationLedger, lww domain.PlaylistMutationLWW, favoriteLedger domain.FavoriteMutationLedger, favoriteLWW domain.FavoriteMutationLWW, staging domain.PlaylistArtworkStagingRepository, tx domain.TxManager, playlistSvc *playlistapp.PlaylistService, listening domain.ListeningRepository, logger *slog.Logger) *Service {
 	return &Service{plans: plans, tracks: tracks, playlists: playlists, artists: artists, lyrics: lyrics, lyricCache: lyricCache, analysis: analysis, artwork: artwork, devices: devices, identity: identity, keys: keys, broker: broker, ledger: ledger, lww: lww, favoriteLedger: favoriteLedger, favoriteLWW: favoriteLWW, staging: staging, tx: tx, playlistSvc: playlistSvc, listening: listening, logger: logger, nonces: make(map[string]time.Time), playlistArtwork: make(map[string]string), reconciliations: make(map[string]*playlistReconciliation)}
 }
 
-func (s *Service) OnStart(ctx context.Context) error { return s.cleanupPlaylistArtwork(ctx) }
+func (s *Service) OnStart(ctx context.Context) error {
+	// HTTP plans and MQTT requests disappear when desktop exits, so an active
+	// persisted plan can never resume after restart.
+	if err := s.plans.MarkAllActiveSuperseded(ctx); err != nil {
+		return fmt.Errorf("supersede interrupted mobile library sync plans: %w", err)
+	}
+	return s.cleanupPlaylistArtwork(ctx)
+}
 
 func (s *Service) OnStop(ctx context.Context) error {
 	s.mu.Lock()
@@ -169,6 +178,85 @@ func (s *Service) GetStatus(ctx context.Context, deviceID string) (*domain.Mobil
 	return s.plans.GetLatest(ctx, deviceID)
 }
 
+func (s *Service) startContext(ctx context.Context, deviceID string) (context.Context, func()) {
+	ctx, cancel := context.WithCancel(ctx)
+	s.mu.Lock()
+	if s.starting == nil {
+		s.starting = make(map[string]map[uint64]context.CancelFunc)
+	}
+	s.nextStartID++
+	id := s.nextStartID
+	if s.starting[deviceID] == nil {
+		s.starting[deviceID] = make(map[uint64]context.CancelFunc)
+	}
+	s.starting[deviceID][id] = cancel
+	s.mu.Unlock()
+	return ctx, func() {
+		cancel()
+		s.mu.Lock()
+		delete(s.starting[deviceID], id)
+		if len(s.starting[deviceID]) == 0 {
+			delete(s.starting, deviceID)
+		}
+		s.mu.Unlock()
+	}
+}
+
+func (s *Service) cancelStarts(deviceID string) {
+	s.mu.Lock()
+	cancels := make([]context.CancelFunc, 0, len(s.starting[deviceID]))
+	for _, cancel := range s.starting[deviceID] {
+		cancels = append(cancels, cancel)
+	}
+	s.mu.Unlock()
+	for _, cancel := range cancels {
+		cancel()
+	}
+}
+
+// Cancel makes the active plan unavailable to the passive mobile client.
+func (s *Service) Cancel(ctx context.Context, deviceID string) (*domain.MobileLibrarySyncPlan, error) {
+	if _, err := uuid.Parse(deviceID); err != nil {
+		return nil, fmt.Errorf("invalid mobile device ID")
+	}
+	s.cancelStarts(deviceID)
+	plan, err := s.plans.GetLatest(ctx, deviceID)
+	if err != nil {
+		return nil, err
+	}
+	if plan == nil {
+		return nil, fmt.Errorf("no active mobile sync plan")
+	}
+	if plan.Status != "active" {
+		return plan, nil
+	}
+	if err := s.plans.MarkSuperseded(ctx, deviceID); err != nil {
+		return nil, fmt.Errorf("cancel mobile library sync: %w", err)
+	}
+	plan, err = s.plans.GetLatest(ctx, deviceID)
+	if err != nil {
+		return nil, err
+	}
+	s.emit(plan)
+	return plan, nil
+}
+
+// CancelIfActive stops an in-flight plan without treating an absent or terminal plan as an error.
+func (s *Service) CancelIfActive(ctx context.Context, deviceID string) error {
+	s.cancelStarts(deviceID)
+	plan, err := s.GetStatus(ctx, deviceID)
+	if err != nil {
+		return fmt.Errorf("get mobile library sync status: %w", err)
+	}
+	if plan == nil || plan.Status != "active" {
+		return nil
+	}
+	if _, err := s.Cancel(ctx, deviceID); err != nil {
+		return err
+	}
+	return nil
+}
+
 // Start starts a new immutable snapshot, or re-announces the active snapshot
 // when the user presses Sync again with unchanged scope.
 func (s *Service) Start(ctx context.Context, deviceID string, scope domain.MobileLibrarySyncScope, host string, replace bool) (*domain.MobileLibrarySyncPlan, error) {
@@ -178,6 +266,8 @@ func (s *Service) Start(ctx context.Context, deviceID string, scope domain.Mobil
 	if strings.TrimSpace(host) == "" || net.ParseIP(host) == nil {
 		return nil, fmt.Errorf("invalid desktop sync address")
 	}
+	ctx, done := s.startContext(ctx, deviceID)
+	defer done()
 	trusted, err := s.devices.GetByDeviceID(ctx, deviceID)
 	if err != nil {
 		return nil, fmt.Errorf("load trusted mobile device: %w", err)
@@ -300,7 +390,7 @@ func (s *Service) createPlan(ctx context.Context, deviceID string, scope domain.
 	selected := map[string]struct{}{}
 	for _, dto := range tracks {
 		selected[dto.ID] = struct{}{}
-		asset, err := fileAsset("audio:"+dto.ID, "audio", dto.Path)
+		asset, err := fileAsset(ctx, "audio:"+dto.ID, "audio", dto.Path)
 		if err != nil {
 			return nil, fmt.Errorf("snapshot audio %q: %w", dto.Title, err)
 		}
@@ -331,7 +421,7 @@ func (s *Service) createPlan(ctx context.Context, deviceID string, scope domain.
 		if key == "" || !s.artwork.Exists(key) {
 			continue
 		}
-		asset, err := fileAsset("artwork:"+key, "artwork", s.artwork.GetPath(key))
+		asset, err := fileAsset(ctx, "artwork:"+key, "artwork", s.artwork.GetPath(key))
 		if err != nil {
 			return nil, fmt.Errorf("snapshot artwork: %w", err)
 		}
@@ -496,7 +586,7 @@ func (s *Service) addPlaylists(ctx context.Context, scope domain.MobileLibrarySy
 	return nil
 }
 
-func fileAsset(id, kind, path string) (domain.MobileLibrarySyncAsset, error) {
+func fileAsset(ctx context.Context, id, kind, path string) (domain.MobileLibrarySyncAsset, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return domain.MobileLibrarySyncAsset{}, err
@@ -507,8 +597,21 @@ func fileAsset(id, kind, path string) (domain.MobileLibrarySyncAsset, error) {
 		return domain.MobileLibrarySyncAsset{}, err
 	}
 	h := sha256.New()
-	if _, err := io.Copy(h, f); err != nil {
-		return domain.MobileLibrarySyncAsset{}, err
+	buf := make([]byte, 32<<10)
+	for {
+		if err := ctx.Err(); err != nil {
+			return domain.MobileLibrarySyncAsset{}, err
+		}
+		n, readErr := f.Read(buf)
+		if n > 0 {
+			_, _ = h.Write(buf[:n])
+		}
+		if readErr == io.EOF {
+			break
+		}
+		if readErr != nil {
+			return domain.MobileLibrarySyncAsset{}, readErr
+		}
 	}
 	return domain.MobileLibrarySyncAsset{ID: id, Kind: kind, SHA256: hex.EncodeToString(h.Sum(nil)), Size: info.Size()}, nil
 }

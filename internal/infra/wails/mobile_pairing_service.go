@@ -20,7 +20,7 @@ func NewMobilePairingService(svc *pairing.Service) *MobilePairingService {
 			app.Event.Emit("pairing:request", request)
 		}
 	})
-	svc.AddDeviceConnectionListener(emitTrustedDevicesChanged)
+	svc.AddDeviceConnectionListener(func(string, bool) { emitTrustedDevicesChanged() })
 	svc.AddBroadcastListener(emitPairingBroadcastChanged)
 	return adapter
 }

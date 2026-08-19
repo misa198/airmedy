@@ -1,5 +1,10 @@
 package me.misa198.airmedy.sync
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerialName
@@ -131,8 +136,13 @@ class LibrarySyncCoordinator(
     private val store: LibrarySyncStore,
     private val receipts: LibrarySyncReceiptPublisher,
     private val progress: LibrarySyncProgressReporter = LibrarySyncProgressReporter { _, _ -> },
+    private val assetParallelism: Int = 1,
 ) {
     private val mutex = Mutex()
+
+    init {
+        require(assetParallelism > 0) { "Asset parallelism must be positive" }
+    }
 
     suspend fun handle(payload: String, desktop: PairedDesktop): LibrarySyncResult = mutex.withLock {
         val request = runCatching { LibrarySyncProtocol.json.decodeFromString(LibrarySyncRequest.serializer(), payload) }
@@ -164,13 +174,23 @@ class LibrarySyncCoordinator(
             store.prepare(request, manifest)
             val assets = manifest.assets.orEmpty()
             progress.report(0, assets.size)
-            assets.forEachIndexed { index, asset ->
-                if (!store.isAssetCommitted(request.planId, asset)) {
-                    val pulled = puller.asset(request, asset)
-                    store.stageAsset(request.planId, asset, pulled)
+            val groups = assets.groupBy { AssetContent(it.sha256, it.size) }.values
+            var completed = 0
+            groups.chunked(assetParallelism).forEach { batch ->
+                coroutineScope {
+                    batch.map { group -> async {
+                        if (group.any { !store.isAssetCommitted(request.planId, it) }) {
+                            val pulled = puller.asset(request, group.first())
+                            group.forEach { store.stageAsset(request.planId, it, pulled) }
+                        }
+                        group
+                    } }.awaitAll()
                 }
-                publishReceipt(request.planId, mobile, asset.id, complete = false)
-                progress.report(index + 1, assets.size)
+                batch.forEach { group -> group.forEach { asset ->
+                    publishReceipt(request.planId, mobile, asset.id, complete = false)
+                    completed += 1
+                    progress.report(completed, assets.size)
+                } }
             }
             store.activate(request.planId)
             store.finalize(request.planId)
@@ -179,6 +199,8 @@ class LibrarySyncCoordinator(
         } catch (error: LibrarySyncPullException) {
             LibrarySyncResult.Failed(error.failure)
         } catch (error: Throwable) {
+            currentCoroutineContext().ensureActive()
+            if (error is kotlinx.coroutines.CancellationException) throw error
             LibrarySyncResult.Failed(LibrarySyncFailure.Transport(error.message ?: "Sync failed"))
         }
     }
@@ -214,5 +236,7 @@ class LibrarySyncCoordinator(
 
     private companion object { val Hash = Regex("^[0-9a-f]{64}$") }
 }
+
+private data class AssetContent(val sha256: String, val size: Long)
 
 class LibrarySyncPullException(val failure: LibrarySyncFailure) : Exception()

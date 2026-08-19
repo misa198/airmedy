@@ -305,6 +305,14 @@ class AppNavigationTest {
     }
 
     @Test
+    fun homeDisplaysSyncPlaceholderWhenThereAreNoTracks() {
+        composeTestRule.setContent { App() }
+
+        composeTestRule.onNodeWithText(string(R.string.library_empty_title)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(string(R.string.library_empty_description)).assertIsDisplayed()
+    }
+
+    @Test
     fun homeDisplaysListeningSectionsAndPlaysFromTheirSectionQueue() {
         var playedTrackId: String? = null
         var queuedTrackIds: List<String> = emptyList()

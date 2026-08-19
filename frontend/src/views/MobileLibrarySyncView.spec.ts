@@ -2,13 +2,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
 
-const { getStatus, getTrustedDevices, getPairingStatus, sync, on } = vi.hoisted(() => ({
-  getStatus: vi.fn(),
-  getTrustedDevices: vi.fn(),
-  getPairingStatus: vi.fn(),
-  sync: vi.fn(),
-  on: vi.fn(() => vi.fn()),
-}))
+const { getStatus, getTrustedDevices, getPairingStatus, sync, cancel, eventHandlers, on } = vi.hoisted(() => {
+  const eventHandlers = new Map<string, (event: { data: unknown }) => void>()
+  return {
+    getStatus: vi.fn(),
+    getTrustedDevices: vi.fn(),
+    getPairingStatus: vi.fn(),
+    sync: vi.fn(),
+    cancel: vi.fn(),
+    eventHandlers,
+    on: vi.fn((event: string, handler: (event: { data: unknown }) => void) => {
+      eventHandlers.set(event, handler)
+      return vi.fn()
+    }),
+  }
+})
 
 vi.mock('@wailsio/runtime', () => ({ Events: { On: on } }))
 vi.mock('vue-router', () => ({
@@ -18,6 +26,7 @@ vi.mock('vue-router', () => ({
 vi.mock('../../bindings/airmedy/internal/infra/wails/mobilelibrarysyncservice', () => ({
   GetStatus: getStatus,
   Sync: sync,
+  Cancel: cancel,
 }))
 vi.mock('../../bindings/airmedy/internal/infra/wails/mobilepairingservice', () => ({
   GetTrustedDevices: getTrustedDevices,
@@ -39,7 +48,7 @@ vi.mock('../../bindings/airmedy/internal/domain/models', () => ({
 
 import MobileLibrarySyncView from './MobileLibrarySyncView.vue'
 
-const activePlan = { device_id: 'device-1', status: 'active', completed: 0, total: 4, scope: { kind: 'all', selected_ids: [] } }
+const activePlan = { id: 'plan-1', device_id: 'device-1', status: 'active', completed: 0, total: 4, scope: { kind: 'all', selected_ids: [] } }
 
 function mountView() {
   const i18n = createI18n({ legacy: false, locale: 'en', messages: { en: {} }, missingWarn: false, fallbackWarn: false })
@@ -61,6 +70,8 @@ describe('MobileLibrarySyncView', () => {
     getPairingStatus.mockResolvedValue({ addresses: [{ ip: '192.168.1.2', kind: 'wifi' }] })
     getStatus.mockReset()
     sync.mockReset()
+    cancel.mockReset()
+    eventHandlers.clear()
     on.mockClear()
   })
 
@@ -77,6 +88,23 @@ describe('MobileLibrarySyncView', () => {
     wrapper.unmount()
   })
 
+  it('does not let a stale poll overwrite a completed event', async () => {
+    let resolvePoll!: (plan: typeof activePlan) => void
+    getStatus.mockResolvedValueOnce(activePlan).mockReturnValueOnce(new Promise(resolve => { resolvePoll = resolve }))
+    const wrapper = mountView()
+    await flushPromises()
+
+    vi.advanceTimersByTime(1_000)
+    await flushPromises()
+    eventHandlers.get('mobile-library-sync:updated')!({ data: { ...activePlan, status: 'complete', completed: 4 } })
+    resolvePoll(activePlan)
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="sync-icon"]').classes()).not.toContain('animate-spin')
+    expect(wrapper.find('[data-testid="cancel-sync-button"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
   it('keeps Sync disabled while its plan is active', async () => {
     getStatus.mockResolvedValue(activePlan)
     const wrapper = mountView()
@@ -84,8 +112,34 @@ describe('MobileLibrarySyncView', () => {
 
     const syncButton = wrapper.get('[data-testid="sync-button"]')
     expect(syncButton.attributes('disabled')).toBeDefined()
+    expect(wrapper.get('[data-testid="sync-icon"]').classes()).toContain('animate-spin')
+    expect(wrapper.get('[data-testid="scope-all"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('[data-testid="scope-selected"]').attributes('disabled')).toBeDefined()
     await syncButton.trigger('click')
     expect(sync).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('cancels the active plan from desktop', async () => {
+    getStatus.mockResolvedValue(activePlan)
+    cancel.mockResolvedValue({ ...activePlan, status: 'superseded' })
+    const wrapper = mountView()
+    await flushPromises()
+
+    await wrapper.get('[data-testid="cancel-sync-button"]').trigger('click')
+
+    expect(cancel).toHaveBeenCalledWith('device-1')
+    expect(wrapper.find('[data-testid="cancel-sync-button"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('locks the selected-items table while its plan is active', async () => {
+    getStatus.mockResolvedValue({ ...activePlan, scope: { kind: 'artists', selected_ids: [] } })
+    const wrapper = mountView()
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="sync-selection-overlay"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="sync-selection-spinner"]').exists()).toBe(true)
     wrapper.unmount()
   })
 

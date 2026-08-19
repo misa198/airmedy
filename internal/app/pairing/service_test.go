@@ -273,6 +273,11 @@ func TestTrustedDeviceOnlineStateFollowsMQTTSession(t *testing.T) {
 		deviceID: {DeviceID: deviceID},
 	}}
 	svc := NewService(&memoryIdentityRepo{}, devices, &memoryKeyStore{}, &testBroker{}, nil, &memoryPairingSettings{settings: &domain.AppSettings{}}, requireLogger(t))
+	var states []bool
+	svc.AddDeviceConnectionListener(func(id string, connected bool) {
+		require.Equal(t, deviceID, id)
+		states = append(states, connected)
+	})
 
 	svc.setDeviceConnection(deviceID, true)
 	trusted, err := svc.ListTrustedDevices(context.Background())
@@ -284,6 +289,7 @@ func TestTrustedDeviceOnlineStateFollowsMQTTSession(t *testing.T) {
 	trusted, err = svc.ListTrustedDevices(context.Background())
 	require.NoError(t, err)
 	require.False(t, trusted[0].Online)
+	require.Equal(t, []bool{true, false}, states)
 }
 
 func TestRevokeDeviceDisconnectsItsActiveSyncSession(t *testing.T) {

@@ -16,13 +16,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 import me.misa198.airmedy.MainActivity
 import me.misa198.airmedy.R
@@ -82,6 +85,7 @@ internal object AndroidSyncRuntime {
 
 class LibrarySyncService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val syncMutex = Mutex()
     private var syncJob: Job? = null
     private var session: SyncSession? = null
 
@@ -93,8 +97,12 @@ class LibrarySyncService : Service() {
         Log.i(LogTag, "Starting foreground library sync service (host=$host, port=$port)")
         AndroidSyncRuntime.initialize(applicationContext)
         showForeground(getString(R.string.sync_notification_connecting), indeterminate = true)
-        syncJob?.cancel()
-        syncJob = scope.launch { runSync(payload, PairingEndpoint(host, port), startId) }
+        val previous = syncJob
+        previous?.cancel()
+        syncJob = scope.launch {
+            previous?.join()
+            syncMutex.withLock { runSync(payload, PairingEndpoint(host, port), startId) }
+        }
         return START_NOT_STICKY
     }
 
@@ -103,7 +111,8 @@ class LibrarySyncService : Service() {
     override fun onTimeout(startId: Int, fgsType: Int) {
         Log.e(LogTag, "Background data sync timed out")
         AndroidSyncRuntime.failed(getString(R.string.sync_error_background_timeout))
-        stopSync()
+        syncJob?.cancel()
+        finishSync(startId)
     }
 
     override fun onDestroy() {
@@ -118,7 +127,7 @@ class LibrarySyncService : Service() {
         val desktop = preferences.current() ?: run {
             Log.e(LogTag, "No paired desktop found in preferences")
             AndroidSyncRuntime.failed(getString(R.string.sync_error_transport))
-            stopSync(); return
+            finishSync(startId); return
         }
         val mobileId = preferences.identity().id
         Log.i(LogTag, "Running library sync for desktop=${desktop.desktopId} mobile=$mobileId endpoint=${endpoint.host}:${endpoint.port}")
@@ -152,6 +161,7 @@ class LibrarySyncService : Service() {
                         progressPercent = percent,
                     )
                 },
+                assetParallelism = syncDownloadParallelism(Runtime.getRuntime().availableProcessors()),
             )
             when (val result = coordinator.handle(payload, desktop)) {
                 is LibrarySyncResult.Completed -> {
@@ -167,6 +177,8 @@ class LibrarySyncService : Service() {
                 }
             }
         } catch (error: Throwable) {
+            currentCoroutineContext().ensureActive()
+            if (error is kotlinx.coroutines.CancellationException) throw error
             Log.e(LogTag, "Library sync crashed", error)
             AndroidSyncRuntime.failed(error.message ?: getString(R.string.sync_error_transport))
             notifyTerminal(getString(R.string.sync_notification_failed))
@@ -174,7 +186,7 @@ class LibrarySyncService : Service() {
             Log.d(LogTag, "Cleaning up sync MQTT session & stopping service")
             releaseMqttSession(mqtt, wasHandedOff = handedOffSession != null)
             session = null
-            stopSync()
+            finishSync(startId)
         }
     }
 
@@ -205,9 +217,8 @@ class LibrarySyncService : Service() {
         (getSystemService(NotificationManager::class.java)).createNotificationChannel(NotificationChannel(ChannelId, getString(R.string.sync_notification_channel), NotificationManager.IMPORTANCE_LOW))
     }
 
-    private fun stopSync() {
-        stopForeground(STOP_FOREGROUND_REMOVE)
-        stopSelf()
+    private fun finishSync(startId: Int) {
+        if (stopSelfResult(startId)) stopForeground(STOP_FOREGROUND_REMOVE)
     }
 
     companion object {
@@ -240,3 +251,5 @@ internal fun syncNotificationProgress(percent: Int?, indeterminate: Boolean): Sy
     percent != null -> SyncNotificationProgress(max = 100, current = percent.coerceIn(0, 100), indeterminate = false)
     else -> SyncNotificationProgress(max = 0, current = 0, indeterminate = false)
 }
+
+internal fun syncDownloadParallelism(availableProcessors: Int): Int = (availableProcessors / 2).coerceIn(2, 4)

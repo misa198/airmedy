@@ -70,6 +70,14 @@ func (r *mobileLibrarySyncPlanRepository) MarkSuperseded(ctx context.Context, de
 	return nil
 }
 
+func (r *mobileLibrarySyncPlanRepository) MarkAllActiveSuperseded(ctx context.Context) error {
+	_, err := r.db.Ext(ctx).ExecContext(ctx, `UPDATE mobile_library_sync_plans SET status = 'superseded', updated_at = ? WHERE status = 'active'`, time.Now().UTC())
+	if err != nil {
+		return fmt.Errorf("supersede active mobile library sync plans: %w", err)
+	}
+	return nil
+}
+
 func (r *mobileLibrarySyncPlanRepository) MarkReceipt(ctx context.Context, planID, assetID string, at time.Time) (int, error) {
 	var completed int
 	err := r.db.RunTx(ctx, func(ctx context.Context) error {

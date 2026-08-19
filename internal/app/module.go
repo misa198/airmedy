@@ -117,7 +117,15 @@ var Module = fx.Module("app",
 	mobilesync.Module,
 	analysis.Module,
 	analytics.Module,
-	fx.Invoke(func(lc fx.Lifecycle, db *sqlite.DB, search domain.SearchService, lib *library.LibraryService, playerSvc *player.PlayerService, eqSvc *eq.EQService, lastfmSvc *lastfm.LastFmService, analysisSvc *analysis.AnalysisService, settingsSvc *appsettings.SettingsService, playlistSvc *playlist.PlaylistService) {
+	fx.Invoke(func(lc fx.Lifecycle, db *sqlite.DB, search domain.SearchService, lib *library.LibraryService, playerSvc *player.PlayerService, eqSvc *eq.EQService, lastfmSvc *lastfm.LastFmService, analysisSvc *analysis.AnalysisService, settingsSvc *appsettings.SettingsService, playlistSvc *playlist.PlaylistService, pairingSvc *pairing.Service, mobileSyncSvc *mobilesync.Service, logger *slog.Logger) {
+		pairingSvc.AddDeviceConnectionListener(func(deviceID string, connected bool) {
+			if connected {
+				return
+			}
+			if err := mobileSyncSvc.CancelIfActive(context.Background(), deviceID); err != nil {
+				logger.Error("cancel mobile library sync for offline device", "device_id", deviceID, "error", err)
+			}
+		})
 		lc.Append(fx.Hook{
 			OnStart: func(ctx context.Context) error {
 				// Wire library to player to sync track metadata changes (e.g. favorites)

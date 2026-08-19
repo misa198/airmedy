@@ -26,6 +26,13 @@ replaces changed metadata while reusing unchanged content-addressed assets.
 - If the desktop replaces an unfinished scope, the old plan becomes unavailable.
   Mobile must discard its in-progress state for that plan when it receives a
   newer request.
+- Cancel on desktop, including automatically when the mobile MQTT session goes
+  Offline, stops an in-progress plan preparation or marks an active plan
+  superseded. Its HTTP endpoints then return `404`; mobile passively leaves its
+  existing mirror intact and waits for a later desktop request.
+- Desktop startup also supersedes every persisted active plan: its ephemeral
+  HTTP server and MQTT request cannot survive a desktop restart, so the Sync UI
+  must not present an interrupted plan as still syncing.
 - Mobile must perform mirror deletion only after it has atomically applied a
   plan and is ready to publish the final completion receipt. An interrupted
   transfer must leave existing synced content intact.
@@ -227,6 +234,12 @@ storage. A prepared plan is activated atomically; old mirrored content is
 removed only after the replacement is complete and before the final receipt.
 Assets are content-addressed by SHA-256 and shared across plan revisions, so a
 fresh plan reuses unchanged verified files rather than downloading them again.
+Distinct content hashes download concurrently in bounded batches of two to four
+workers (`availableProcessors / 2`, capped at four); assets with the same hash
+and size share one staged file and are committed together. Receipt publication,
+progress updates, activation, and finalization remain serialized. A newer plan
+cancels and waits for the prior foreground transfer to finish cleanup before it
+can begin, preventing concurrent writers to the shared asset cache.
 
 When an already-online paired MQTT session receives a valid request, Android
 starts a `dataSync` foreground service. The service temporarily uses that

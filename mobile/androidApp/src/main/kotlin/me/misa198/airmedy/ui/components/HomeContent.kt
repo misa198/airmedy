@@ -1,6 +1,7 @@
 package me.misa198.airmedy.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateStartPadding
@@ -57,50 +58,62 @@ internal fun HomeContent(
         ),
         verticalArrangement = Arrangement.spacedBy(36.dp),
     ) {
-        item {
-            HomeTrackSection(
-                titleRes = R.string.home_keep_listening,
-                tracks = keepListeningTracks,
-                onTrackClick = onTrackClick,
-                playbackQueue = playbackQueue,
-                onTrackPlayNext = onTrackPlayNext,
-                onTrackAddToQueue = onTrackAddToQueue,
-                onTrackFavoriteToggle = onTrackFavoriteToggle,
-                onTrackAlbumClick = onTrackAlbumClick,
-                onTrackArtistClick = onTrackArtistClick,
-                onTrackContextBottomSheet = onTrackContextBottomSheet,
-                titleHorizontalPadding = titleHorizontalPadding,
-            )
-        }
-        item {
-            HomeTrackSection(
-                titleRes = R.string.home_most_played,
-                tracks = mostPlayedTracks,
-                onTrackClick = onTrackClick,
-                playbackQueue = playbackQueue,
-                onTrackPlayNext = onTrackPlayNext,
-                onTrackAddToQueue = onTrackAddToQueue,
-                onTrackFavoriteToggle = onTrackFavoriteToggle,
-                onTrackAlbumClick = onTrackAlbumClick,
-                onTrackArtistClick = onTrackArtistClick,
-                onTrackContextBottomSheet = onTrackContextBottomSheet,
-                titleHorizontalPadding = titleHorizontalPadding,
-            )
-        }
-        item {
-            HomeTrackSection(
-                titleRes = R.string.home_forgotten,
-                tracks = forgottenTracks,
-                onTrackClick = onTrackClick,
-                playbackQueue = playbackQueue,
-                onTrackPlayNext = onTrackPlayNext,
-                onTrackAddToQueue = onTrackAddToQueue,
-                onTrackFavoriteToggle = onTrackFavoriteToggle,
-                onTrackAlbumClick = onTrackAlbumClick,
-                onTrackArtistClick = onTrackArtistClick,
-                onTrackContextBottomSheet = onTrackContextBottomSheet,
-                titleHorizontalPadding = titleHorizontalPadding,
-            )
+        if (keepListeningTracks.isEmpty() && mostPlayedTracks.isEmpty() && forgottenTracks.isEmpty()) {
+            item {
+                Box(modifier = Modifier.padding(horizontal = 24.dp)) {
+                    HeroCard(
+                        symbol = MaterialSymbols.MusicNote,
+                        title = stringResource(R.string.library_empty_title),
+                        description = stringResource(R.string.library_empty_description),
+                    )
+                }
+            }
+        } else {
+            item {
+                HomeTrackSection(
+                    titleRes = R.string.home_keep_listening,
+                    tracks = keepListeningTracks,
+                    onTrackClick = onTrackClick,
+                    playbackQueue = playbackQueue,
+                    onTrackPlayNext = onTrackPlayNext,
+                    onTrackAddToQueue = onTrackAddToQueue,
+                    onTrackFavoriteToggle = onTrackFavoriteToggle,
+                    onTrackAlbumClick = onTrackAlbumClick,
+                    onTrackArtistClick = onTrackArtistClick,
+                    onTrackContextBottomSheet = onTrackContextBottomSheet,
+                    titleHorizontalPadding = titleHorizontalPadding,
+                )
+            }
+            item {
+                HomeTrackSection(
+                    titleRes = R.string.home_most_played,
+                    tracks = mostPlayedTracks,
+                    onTrackClick = onTrackClick,
+                    playbackQueue = playbackQueue,
+                    onTrackPlayNext = onTrackPlayNext,
+                    onTrackAddToQueue = onTrackAddToQueue,
+                    onTrackFavoriteToggle = onTrackFavoriteToggle,
+                    onTrackAlbumClick = onTrackAlbumClick,
+                    onTrackArtistClick = onTrackArtistClick,
+                    onTrackContextBottomSheet = onTrackContextBottomSheet,
+                    titleHorizontalPadding = titleHorizontalPadding,
+                )
+            }
+            item {
+                HomeTrackSection(
+                    titleRes = R.string.home_forgotten,
+                    tracks = forgottenTracks,
+                    onTrackClick = onTrackClick,
+                    playbackQueue = playbackQueue,
+                    onTrackPlayNext = onTrackPlayNext,
+                    onTrackAddToQueue = onTrackAddToQueue,
+                    onTrackFavoriteToggle = onTrackFavoriteToggle,
+                    onTrackAlbumClick = onTrackAlbumClick,
+                    onTrackArtistClick = onTrackArtistClick,
+                    onTrackContextBottomSheet = onTrackContextBottomSheet,
+                    titleHorizontalPadding = titleHorizontalPadding,
+                )
+            }
         }
     }
 }

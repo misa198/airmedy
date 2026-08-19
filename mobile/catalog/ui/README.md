@@ -173,7 +173,8 @@ affecting the connected session.
   section is capped at 28 tracks, reuses `DiscCard`, and tapping a card starts
   playback from that section's ordered queue. Long-pressing a card opens the
   shared `TrackContextMenu` with the standard playback, favorite, navigation,
-  and bottom-sheet actions.
+  and bottom-sheet actions. When all three sources are empty, Home replaces the
+  carousels with the standard sync-guidance `HeroCard`.
 - The Home header replaces its static destination title with the desktop-equivalent
   time greeting: morning before noon, afternoon before 17:00, evening before
   21:00, and night thereafter.

@@ -228,6 +228,7 @@ func (testKeyStore) Save(context.Context, ed25519.PrivateKey) error { return nil
 type testBroker struct {
 	publishErr error
 	payload    []byte
+	published  chan struct{}
 }
 
 func (*testBroker) Start(context.Context, string, int, func([]byte), func(string, bool)) (int, error) {
@@ -237,25 +238,131 @@ func (*testBroker) Stop(context.Context) error               { return nil }
 func (*testBroker) Disconnect(context.Context, string) error { return nil }
 func (b *testBroker) Publish(_ context.Context, _ string, payload []byte) error {
 	b.payload = payload
+	if b.published != nil {
+		select {
+		case b.published <- struct{}{}:
+		default:
+		}
+	}
 	return b.publishErr
 }
 func (*testBroker) Subscribe(context.Context, string, func([]byte)) error { return nil }
 func (*testBroker) Running() bool                                         { return true }
 
-type testPlanRepo struct{ saves int }
+type testPlanRepo struct {
+	saves      int
+	plan       *domain.MobileLibrarySyncPlan
+	superseded int
+}
 
-func (*testPlanRepo) GetLatest(context.Context, string) (*domain.MobileLibrarySyncPlan, error) {
-	return nil, nil
+func (r *testPlanRepo) GetLatest(context.Context, string) (*domain.MobileLibrarySyncPlan, error) {
+	return r.plan, nil
 }
 func (r *testPlanRepo) Save(context.Context, *domain.MobileLibrarySyncPlan) error {
 	r.saves++
 	return nil
 }
-func (*testPlanRepo) MarkSuperseded(context.Context, string) error { return nil }
+func (r *testPlanRepo) MarkSuperseded(context.Context, string) error {
+	r.superseded++
+	r.plan.Status = "superseded"
+	return nil
+}
+func (r *testPlanRepo) MarkAllActiveSuperseded(context.Context) error {
+	if r.plan != nil && r.plan.Status == "active" {
+		r.plan.Status = "superseded"
+		r.superseded++
+	}
+	return nil
+}
 func (*testPlanRepo) MarkReceipt(context.Context, string, string, time.Time) (int, error) {
 	return 0, nil
 }
 func (*testPlanRepo) MarkComplete(context.Context, string, time.Time) error { return nil }
+
+func TestCancelMakesTheActivePlanUnavailableAndNotifiesDesktop(t *testing.T) {
+	deviceID := "11111111-1111-4111-8111-111111111111"
+	plans := &testPlanRepo{plan: &domain.MobileLibrarySyncPlan{ID: "plan", DeviceID: deviceID, Status: "active"}}
+	svc := &Service{plans: plans}
+	var updated *domain.MobileLibrarySyncPlan
+	svc.AddListener(func(plan *domain.MobileLibrarySyncPlan) { updated = plan })
+
+	plan, err := svc.Cancel(context.Background(), deviceID)
+
+	require.NoError(t, err)
+	require.Equal(t, "superseded", plan.Status)
+	require.Equal(t, 1, plans.superseded)
+	require.Same(t, plan, updated)
+}
+
+func TestOnStartSupersedesPlanInterruptedByDesktopRestart(t *testing.T) {
+	plans := &testPlanRepo{plan: &domain.MobileLibrarySyncPlan{Status: "active"}}
+	svc := &Service{plans: plans}
+
+	require.NoError(t, svc.OnStart(context.Background()))
+	require.Equal(t, "superseded", plans.plan.Status)
+}
+
+func TestCancelReturnsAnAlreadyCompletedPlan(t *testing.T) {
+	deviceID := "11111111-1111-4111-8111-111111111111"
+	plans := &testPlanRepo{plan: &domain.MobileLibrarySyncPlan{ID: "plan", DeviceID: deviceID, Status: "complete"}}
+
+	plan, err := (&Service{plans: plans}).Cancel(context.Background(), deviceID)
+
+	require.NoError(t, err)
+	require.Equal(t, "complete", plan.Status)
+	require.Zero(t, plans.superseded)
+}
+
+func TestCancelIfActiveLeavesTerminalPlanUnchanged(t *testing.T) {
+	deviceID := "11111111-1111-4111-8111-111111111111"
+	plans := &testPlanRepo{plan: &domain.MobileLibrarySyncPlan{ID: "plan", DeviceID: deviceID, Status: "complete"}}
+
+	err := (&Service{plans: plans}).CancelIfActive(context.Background(), deviceID)
+
+	require.NoError(t, err)
+	require.Zero(t, plans.superseded)
+}
+
+func TestCancelIfActiveSupersedesActivePlan(t *testing.T) {
+	deviceID := "11111111-1111-4111-8111-111111111111"
+	plans := &testPlanRepo{plan: &domain.MobileLibrarySyncPlan{ID: "plan", DeviceID: deviceID, Status: "active"}}
+
+	err := (&Service{plans: plans}).CancelIfActive(context.Background(), deviceID)
+
+	require.NoError(t, err)
+	require.Equal(t, "superseded", plans.plan.Status)
+}
+
+func TestCancelIfActiveCancelsPlanPreparation(t *testing.T) {
+	deviceID := "11111111-1111-4111-8111-111111111111"
+	_, desktopKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+	broker := &testBroker{published: make(chan struct{}, 1)}
+	plans := &testPlanRepo{}
+	svc := &Service{
+		plans:           plans,
+		devices:         testDeviceRepo{&domain.TrustedMobileDevice{DeviceID: deviceID}},
+		identity:        testIdentityRepo{&domain.PairingIdentity{DeviceID: "desktop"}},
+		keys:            testKeyStore{desktopKey},
+		broker:          broker,
+		server:          &http.Server{},
+		reconciliations: map[string]*playlistReconciliation{},
+	}
+	result := make(chan error, 1)
+	go func() {
+		_, err := svc.Start(context.Background(), deviceID, domain.MobileLibrarySyncScope{Kind: "all"}, "127.0.0.1", false)
+		result <- err
+	}()
+	select {
+	case <-broker.published:
+	case <-time.After(time.Second):
+		t.Fatal("plan preparation did not start")
+	}
+
+	require.NoError(t, svc.CancelIfActive(context.Background(), deviceID))
+	require.ErrorIs(t, <-result, context.Canceled)
+	require.Zero(t, plans.saves)
+}
 
 func TestReconciliationOfflineAndTimeoutReturnWithoutPlanWork(t *testing.T) {
 	_, desktopKey, _ := ed25519.GenerateKey(rand.Reader)
@@ -360,7 +467,7 @@ func TestMarshalManifestProducesCompactWireBytes(t *testing.T) {
 func TestFileAssetIncludesStableContentHash(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "track.mp3")
 	require.NoError(t, os.WriteFile(path, []byte("airmedy"), 0o600))
-	asset, err := fileAsset("audio:track-1", "audio", path)
+	asset, err := fileAsset(context.Background(), "audio:track-1", "audio", path)
 	require.NoError(t, err)
 	require.Equal(t, "audio:track-1", asset.ID)
 	require.Equal(t, int64(7), asset.Size)

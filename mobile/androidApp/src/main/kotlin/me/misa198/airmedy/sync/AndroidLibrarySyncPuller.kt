@@ -9,6 +9,8 @@ import java.security.MessageDigest
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import me.misa198.airmedy.pairing.PairingIdentityProvider
 import me.misa198.airmedy.sync.LibrarySyncAsset
@@ -54,6 +56,7 @@ internal class AndroidLibrarySyncPuller(
         repeat(2) { attempt ->
             Log.d(LogTag, "HTTP GET request to $uri (attempt ${attempt + 1})")
             val connection = open(uri, expectedMobileId)
+            val cancellation = currentCoroutineContext()[kotlinx.coroutines.Job]?.invokeOnCompletion { connection.disconnect() }
             try {
                 when (val code = connection.responseCode) {
                     in 200..299 -> {
@@ -74,52 +77,65 @@ internal class AndroidLibrarySyncPuller(
                         throw LibrarySyncPullException(LibrarySyncFailure.Transport("Manifest download failed ($code)"))
                     }
                 }
-            } finally { connection.disconnect() }
+            } finally {
+                cancellation?.dispose()
+                connection.disconnect()
+            }
         }
         error("unreachable")
     }
 
     private suspend fun getToFile(uri: URI, expectedMobileId: String, destination: File): DownloadedFile {
-        repeat(2) { attempt ->
-            Log.d(LogTag, "HTTP GET file to $destination from $uri (attempt ${attempt + 1})")
-            val connection = open(uri, expectedMobileId)
-            try {
-                when (val code = connection.responseCode) {
-                    in 200..299 -> return connection.inputStream.use { input ->
-                        destination.outputStream().use { output ->
-                            val digest = MessageDigest.getInstance("SHA-256")
-                            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-                            var size = 0L
-                            while (true) {
-                                val read = input.read(buffer)
-                                if (read < 0) break
-                                output.write(buffer, 0, read)
-                                digest.update(buffer, 0, read)
-                                size += read
+        try {
+            repeat(2) { attempt ->
+                Log.d(LogTag, "HTTP GET file to $destination from $uri (attempt ${attempt + 1})")
+                val connection = open(uri, expectedMobileId)
+                val cancellation = currentCoroutineContext()[kotlinx.coroutines.Job]?.invokeOnCompletion { connection.disconnect() }
+                try {
+                    when (val code = connection.responseCode) {
+                        in 200..299 -> return connection.inputStream.use { input ->
+                            destination.outputStream().use { output ->
+                                val digest = MessageDigest.getInstance("SHA-256")
+                                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                                var size = 0L
+                                while (true) {
+                                    currentCoroutineContext().ensureActive()
+                                    val read = input.read(buffer)
+                                    if (read < 0) break
+                                    output.write(buffer, 0, read)
+                                    digest.update(buffer, 0, read)
+                                    size += read
+                                }
+                                output.fd.sync()
+                                val downloadedHash = hex(digest.digest())
+                                val headerHash = connection.getHeaderField("X-Airmedy-SHA256") ?: ""
+                                Log.d(LogTag, "HTTP GET file $uri -> $code ($size bytes, sha256=$downloadedHash)")
+                                DownloadedFile(downloadedHash, headerHash, size)
                             }
-                            output.fd.sync()
-                            val downloadedHash = hex(digest.digest())
-                            val headerHash = connection.getHeaderField("X-Airmedy-SHA256") ?: ""
-                            Log.d(LogTag, "HTTP GET file $uri -> $code ($size bytes, sha256=$downloadedHash)")
-                            DownloadedFile(downloadedHash, headerHash, size)
+                        }
+                        401 -> {
+                            Log.w(LogTag, "HTTP GET file $uri -> 401 Unauthorized (attempt ${attempt + 1})")
+                            if (attempt == 0) return@repeat else throw LibrarySyncPullException(LibrarySyncFailure.Transport("Desktop rejected sync credentials"))
+                        }
+                        404 -> {
+                            Log.w(LogTag, "HTTP GET file $uri -> 404 Superseded")
+                            throw LibrarySyncPullException(LibrarySyncFailure.Superseded)
+                        }
+                        else -> {
+                            Log.e(LogTag, "HTTP GET file $uri failed with status $code")
+                            throw LibrarySyncPullException(LibrarySyncFailure.Transport("Asset download failed ($code)"))
                         }
                     }
-                    401 -> {
-                        Log.w(LogTag, "HTTP GET file $uri -> 401 Unauthorized (attempt ${attempt + 1})")
-                        if (attempt == 0) return@repeat else throw LibrarySyncPullException(LibrarySyncFailure.Transport("Desktop rejected sync credentials"))
-                    }
-                    404 -> {
-                        Log.w(LogTag, "HTTP GET file $uri -> 404 Superseded")
-                        throw LibrarySyncPullException(LibrarySyncFailure.Superseded)
-                    }
-                    else -> {
-                        Log.e(LogTag, "HTTP GET file $uri failed with status $code")
-                        throw LibrarySyncPullException(LibrarySyncFailure.Transport("Asset download failed ($code)"))
-                    }
+                } finally {
+                    cancellation?.dispose()
+                    connection.disconnect()
                 }
-            } finally { connection.disconnect() }
+            }
+            error("unreachable")
+        } catch (error: Throwable) {
+            destination.delete()
+            throw error
         }
-        error("unreachable")
     }
 
     private suspend fun open(uri: URI, expectedMobileId: String): HttpURLConnection {

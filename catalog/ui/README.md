@@ -13,14 +13,19 @@ active selected source tab: artists, albums, genres, or playlists. It owns and
 disposes subscriptions to pairing and `mobile-library-sync:updated` events. An
 active plan also polls its status once per second, so percentage progress
 remains current if a desktop runtime event is missed; polling stops when the
-plan finishes or the view unmounts. Its status is rendered inline in the
+plan finishes or the view unmounts. A poll response is ignored if a newer event
+has already completed or replaced that plan, preventing stale active state from
+restarting the spinner after polling stops. Its status is rendered inline in the
 existing sync-selection panel with a quiet divider, status label, percentage,
 and a thin progress bar rather than a separate card or technical asset counts.
 The selection panel is a headerless `SettingSection` (`panel` variant), so it
 inherits the same Settings card treatment without duplicating the page title.
 The view uses the same centered `max-w-3xl p-8` content container as Settings.
-Its Sync action remains disabled for the full lifetime of an active plan,
-preventing duplicate sync requests while transfer is in progress.
+Its Sync action and scope choices remain disabled for the full lifetime of an
+active plan, the action shows a rotating sync icon, and duplicate sync requests
+are prevented while transfer is in progress. When a selected-items table is
+shown, a light theme-safe overlay with a centered spinner blocks edits until
+that plan completes.
 
 ## Tech Stack
 
