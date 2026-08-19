@@ -34,6 +34,7 @@ fun AirmedyIconButton(
     tint: Color? = null,
     glassColor: Color? = null,
     hazeState: HazeState? = null,
+    showGlassBorder: Boolean = true,
     size: Dp = 48.dp,
     circleSize: Dp = size,
     iconSize: Dp = 22.dp,
@@ -49,7 +50,7 @@ fun AirmedyIconButton(
                     if (variant == AirmedyIconButtonVariant.Glass) {
                         Modifier
                             .clip(CircleShape)
-                            .border(1.dp, colors.borderGlass, CircleShape)
+                            .then(if (showGlassBorder) Modifier.border(1.dp, colors.borderGlass, CircleShape) else Modifier)
                             .then(
                                 if (glassColor != null) Modifier.background(glassColor)
                                 else Modifier.liquidGlassBackground(hazeState, colors)

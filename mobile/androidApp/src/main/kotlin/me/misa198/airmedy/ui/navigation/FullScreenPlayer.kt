@@ -952,6 +952,7 @@ private fun FullScreenPlayerMetadata(
                 tint = colors.onPrimary,
                 glassColor = fullScreenSecondaryControlBackground(colors),
                 hazeState = hazeState,
+                showGlassBorder = false,
                 circleSize = 36.dp,
                 iconSize = 20.dp,
                 filled = isFavorite,
@@ -966,6 +967,7 @@ private fun FullScreenPlayerMetadata(
             tint = colors.onPrimary,
             glassColor = fullScreenSecondaryControlBackground(colors),
             hazeState = hazeState,
+            showGlassBorder = false,
             circleSize = if (compact) 32.dp else 36.dp,
             iconSize = if (compact) 18.dp else 20.dp,
         )
