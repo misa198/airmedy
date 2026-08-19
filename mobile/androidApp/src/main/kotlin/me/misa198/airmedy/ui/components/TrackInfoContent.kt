@@ -83,6 +83,8 @@ internal fun trackQualityBadgeStyle(
 
 internal data class TrackInfoValue(val labelRes: Int, val value: String)
 
+internal val trackInfoArtworkSize = 307.2.dp
+
 internal fun trackAudioQuality(track: LibraryTrack): TrackAudioQuality {
     val metadata = track.metadataObject()
     val format = metadata.string("format").lowercase()
@@ -192,7 +194,7 @@ internal fun TrackInfoContent(track: LibraryTrack, modifier: Modifier = Modifier
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Box(
-                    modifier = Modifier.size(192.dp).clip(RoundedCornerShape(16.dp)).background(colors.glassElevated).border(1.dp, colors.borderGlass, RoundedCornerShape(16.dp)),
+                    modifier = Modifier.size(trackInfoArtworkSize).clip(RoundedCornerShape(16.dp)).background(colors.glassElevated).border(1.dp, colors.borderGlass, RoundedCornerShape(16.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (artwork != null) Image(artwork, null, Modifier.matchParentSize(), contentScale = ContentScale.Crop)

@@ -105,6 +105,11 @@ class TrackInfoContentTest {
         assertEquals(0.dp, trackInfoMaxContentHeight(20.dp, 24.dp))
     }
 
+    @Test
+    fun artworkUsesTheExpandedMaximumSize() {
+        assertEquals(307.2.dp, trackInfoArtworkSize)
+    }
+
     private fun track(metadata: String) = LibraryTrack(
         id = "track-1",
         title = "Track",

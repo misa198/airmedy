@@ -3,10 +3,12 @@ package me.misa198.airmedy.ui.components
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -38,6 +40,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.window.Dialog
@@ -47,6 +50,7 @@ import me.misa198.airmedy.R
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 private val BottomSheetExitEasing = CubicBezierEasing(0.8f, 0f, 0.6f, 1f)
+private val BottomSheetDismissDragThreshold = 96.dp
 
 /** Lightweight Apple-inspired sheet. It deliberately does not depend on Material sheet APIs. */
 @Composable
@@ -72,7 +76,10 @@ fun AirmedyBottomSheet(
     var dismissing by remember { mutableStateOf(false) }
     val density = LocalDensity.current
     val hiddenOffset = with(density) { 88.dp.toPx() }
+    val dismissDragThreshold = with(density) { BottomSheetDismissDragThreshold.toPx() }
     val requestDismiss = { if (!dismissing) dismissing = true }
+    var isDragging by remember { mutableStateOf(false) }
+    var dragOffset by remember { mutableStateOf(0f) }
     LaunchedEffect(dismissing) {
         entered = !dismissing
         if (dismissing) {
@@ -86,6 +93,11 @@ fun AirmedyBottomSheet(
         targetValue = if (entered) 0f else hiddenOffset,
         animationSpec = tween(220, easing = motionEasing),
         label = "sheet-translation",
+    )
+    val dragTranslation by animateFloatAsState(
+        targetValue = if (isDragging || dismissing) dragOffset else 0f,
+        animationSpec = if (isDragging) snap() else tween(220, easing = FastOutSlowInEasing),
+        label = "sheet-drag-translation",
     )
     Dialog(
         onDismissRequest = requestDismiss,
@@ -101,7 +113,7 @@ fun AirmedyBottomSheet(
         Box(Modifier.fillMaxSize()) {
             Box(
                 Modifier.fillMaxSize()
-                    .background(colors.playerBackdrop.copy(alpha = 0.62f * sheetAlpha))
+                    .background(colors.playerBackdrop.copy(alpha = 0.62f * sheetAlpha * (1f - (dragTranslation / dismissDragThreshold).coerceIn(0f, 1f))))
                     .semantics { contentDescription = dismissLabel }
                     .clickable(
                         role = Role.Button,
@@ -115,7 +127,7 @@ fun AirmedyBottomSheet(
                     .pointerInput(Unit) {
                         awaitPointerEventScope { while (true) awaitPointerEvent() }
                     }
-                    .graphicsLayer { alpha = sheetAlpha; translationY = sheetTranslation }
+                    .graphicsLayer { alpha = sheetAlpha; translationY = sheetTranslation + dragTranslation }
                     .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
                     .background(colors.glassOpaque)
                     .border(1.dp, colors.borderGlass, RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
@@ -123,10 +135,39 @@ fun AirmedyBottomSheet(
                     .imePadding(),
             ) {
                 Box(Modifier.fillMaxWidth().padding(top = 10.dp), contentAlignment = Alignment.Center) {
-                    Box(Modifier.width(36.dp).height(4.dp).clip(RoundedCornerShape(2.dp)).background(colors.foregroundSubtle))
+                    Box(
+                        Modifier.width(36.dp)
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(colors.textMain.copy(alpha = colors.foregroundSubtle.alpha)),
+                    )
                 }
                 Row(
-                    modifier = Modifier.fillMaxWidth().height(64.dp).padding(horizontal = 12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                        .height(64.dp)
+                        .padding(horizontal = 12.dp)
+                        .testTag("bottom-sheet-header")
+                        .pointerInput(dismissDragThreshold) {
+                            detectVerticalDragGestures(
+                                onDragStart = { isDragging = true },
+                                onDragCancel = {
+                                    isDragging = false
+                                    dragOffset = 0f
+                                },
+                                onDragEnd = {
+                                    isDragging = false
+                                    if (dragOffset >= dismissDragThreshold) {
+                                        requestDismiss()
+                                    } else {
+                                        dragOffset = 0f
+                                    }
+                                },
+                                onVerticalDrag = { change, dragAmount ->
+                                    change.consume()
+                                    dragOffset = (dragOffset + dragAmount).coerceAtLeast(0f)
+                                },
+                            )
+                        },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(Modifier.width(48.dp), contentAlignment = Alignment.Center) { leadingAction(requestDismiss) }
