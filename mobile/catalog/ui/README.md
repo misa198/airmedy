@@ -179,6 +179,9 @@ affecting the connected session.
   and bottom-sheet actions. When all three sources are empty, Home replaces the
   carousels with the standard sync-guidance `HeroCard`, but waits for the first
   Room track snapshot before showing that empty state.
+- Startup observes only the visible destination/page. The Room-backed library
+  store shares active snapshots with replay, so returning to another page uses
+  its latest snapshot without eagerly loading it during Home startup.
 - The Home header replaces its static destination title with the desktop-equivalent
   time greeting: morning before noon, afternoon before 17:00, evening before
   21:00, and night thereafter.

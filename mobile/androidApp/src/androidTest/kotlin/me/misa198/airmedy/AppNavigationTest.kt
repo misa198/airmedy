@@ -347,7 +347,7 @@ class AppNavigationTest {
 
         composeTestRule.setContent {
             App(
-                tracksUiState = LibraryTracksUiState(
+                homeUiState = me.misa198.airmedy.ui.screens.HomeUiState(
                     keepListeningTracks = keepListening,
                     mostPlayedTracks = listOf(LibraryTrack(id = "most-1", title = "Most played", artists = "Artist")),
                     forgottenTracks = listOf(LibraryTrack(id = "forgotten-1", title = "Forgotten", artists = "Artist")),
@@ -372,7 +372,7 @@ class AppNavigationTest {
     fun longPressingHomeTrackOpensTheTrackContextMenu() {
         composeTestRule.setContent {
             App(
-                tracksUiState = LibraryTracksUiState(
+                homeUiState = me.misa198.airmedy.ui.screens.HomeUiState(
                     keepListeningTracks = listOf(LibraryTrack(id = "keep-1", title = "Keep listening one", artists = "Artist")),
                 ),
             )

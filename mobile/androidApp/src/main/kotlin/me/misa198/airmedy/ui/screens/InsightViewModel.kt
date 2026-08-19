@@ -11,7 +11,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -127,7 +129,7 @@ internal class InsightViewModel(
 
     val uiState = combine(raw, libraryPeriod, listeningPeriod, sourceFilter) { data, libraryRange, listeningRange, source ->
         buildInsightUiState(data, libraryRange, listeningRange, source, today())
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), InsightUiState())
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), InsightUiState())
 
     fun setLibraryPeriod(value: InsightPeriod) { libraryPeriod.value = value }
     fun setListeningPeriod(value: InsightPeriod) { listeningPeriod.value = value }

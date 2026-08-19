@@ -3,7 +3,7 @@ package me.misa198.airmedy
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.ui.screens.SortOrder
 import me.misa198.airmedy.ui.screens.TrackSortOption
-import me.misa198.airmedy.ui.screens.LibraryTracksUiState
+import me.misa198.airmedy.ui.screens.HomeUiState
 import me.misa198.airmedy.ui.screens.sortTracks
 import me.misa198.airmedy.ui.screens.playbackRequestFor
 import me.misa198.airmedy.ui.screens.collectionPlaybackRequestFor
@@ -29,7 +29,7 @@ class LibraryTracksViewModelTest {
 
     @Test
     fun initialStateWaitsForTheFirstLibrarySnapshot() {
-        assertFalse(LibraryTracksUiState().isLoaded)
+        assertFalse(HomeUiState().isLoaded)
     }
 
     @Test

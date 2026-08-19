@@ -204,19 +204,34 @@ class MainActivity : ComponentActivity() {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
             val lastFmStatus by lastFm.status.collectAsStateWithLifecycle()
             val syncUiState by syncViewModel.uiState.collectAsStateWithLifecycle()
-            val tracksUiState by tracksViewModel.uiState.collectAsStateWithLifecycle()
-            val insightUiState by insightViewModel.uiState.collectAsStateWithLifecycle()
-            val artistsUiState by artistsViewModel.uiState.collectAsStateWithLifecycle()
-            val albumsUiState by albumsViewModel.uiState.collectAsStateWithLifecycle()
-            val genresUiState by genresViewModel.uiState.collectAsStateWithLifecycle()
-            val composersUiState by composersViewModel.uiState.collectAsStateWithLifecycle()
-            val playlistsUiState by playlistsViewModel.uiState.collectAsStateWithLifecycle()
-            val searchUiState by searchViewModel.uiState.collectAsStateWithLifecycle()
-            val albumDetailsUiState by albumDetailsViewModel.uiState.collectAsStateWithLifecycle()
-            val playlistDetailsUiState by playlistDetailsViewModel.uiState.collectAsStateWithLifecycle()
-            val artistDetailsUiState by artistDetailsViewModel.uiState.collectAsStateWithLifecycle()
-            val genreDetailsUiState by genreDetailsViewModel.uiState.collectAsStateWithLifecycle()
-            val composerDetailsUiState by composerDetailsViewModel.uiState.collectAsStateWithLifecycle()
+            val activePage = uiState.currentPage
+            val activeDestination = uiState.selectedDestination
+            val allTracks by AndroidSyncRuntime.syncStore().tracks.collectAsStateWithLifecycle(initialValue = emptyList())
+            val homeUiState by if (activeDestination == AppDestination.Home && activePage == AppStackPage.Root) {
+                tracksViewModel.homeUiState.collectAsStateWithLifecycle()
+            } else {
+                remember { mutableStateOf(me.misa198.airmedy.ui.screens.HomeUiState()) }
+            }
+            val tracksUiState by if (
+                activeDestination == AppDestination.Library &&
+                (activePage == AppStackPage.Root || activePage == AppStackPage.LibraryTracks)
+            ) {
+                tracksViewModel.uiState.collectAsStateWithLifecycle()
+            } else {
+                remember { mutableStateOf(me.misa198.airmedy.ui.screens.LibraryTracksUiState()) }
+            }
+            val insightUiState by if (activeDestination == AppDestination.Insight && activePage == AppStackPage.Root) insightViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.InsightUiState()) }
+            val artistsUiState by if (activePage == AppStackPage.LibraryArtists) artistsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.LibraryArtistsUiState()) }
+            val albumsUiState by if (activePage == AppStackPage.LibraryAlbums) albumsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.LibraryAlbumsUiState()) }
+            val genresUiState by if (activePage == AppStackPage.LibraryGenres) genresViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.LibraryGenresUiState()) }
+            val composersUiState by if (activePage == AppStackPage.LibraryComposers) composersViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.LibraryComposersUiState()) }
+            val playlistsUiState by if (activePage == AppStackPage.LibraryPlaylists) playlistsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.LibraryPlaylistsUiState()) }
+            val searchUiState by if (activePage == AppStackPage.LibrarySearch) searchViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.LibrarySearchUiState()) }
+            val albumDetailsUiState by if (activePage == AppStackPage.AlbumDetails) albumDetailsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.AlbumDetailsUiState()) }
+            val playlistDetailsUiState by if (activePage == AppStackPage.PlaylistDetails) playlistDetailsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.PlaylistDetailsUiState()) }
+            val artistDetailsUiState by if (activePage == AppStackPage.ArtistDetails) artistDetailsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.ArtistDetailsUiState()) }
+            val genreDetailsUiState by if (activePage == AppStackPage.GenreDetails) genreDetailsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.GenreDetailsUiState()) }
+            val composerDetailsUiState by if (activePage == AppStackPage.ComposerDetails) composerDetailsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.ComposerDetailsUiState()) }
             val playbackController = AndroidPlaybackRuntime.controller()
             val playbackPreferences = remember { me.misa198.airmedy.player.PlaybackPreferences(applicationContext) }
             val normalizationPreferences = remember { me.misa198.airmedy.player.NormalizationPreferences(applicationContext) }
@@ -280,6 +295,7 @@ class MainActivity : ComponentActivity() {
             App(
                 uiState = uiState,
                 syncUiState = syncUiState,
+                homeUiState = homeUiState,
                 tracksUiState = tracksUiState,
                 insightUiState = insightUiState,
                 artistsUiState = artistsUiState,
@@ -388,7 +404,7 @@ class MainActivity : ComponentActivity() {
                 artworkCrossfade = artworkCrossfade,
                 playbackState = playbackState,
                 playbackQueue = playbackQueue,
-                queueTracks = tracksUiState.tracks,
+                queueTracks = allTracks,
                 lyrics = lyrics,
                 onPlaybackPrevious = playbackController::previous,
                 onPlaybackPlayPause = {

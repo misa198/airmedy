@@ -9,7 +9,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -57,7 +59,7 @@ internal class LibrarySearchViewModel(syncStore: AndroidLibrarySyncStore) : View
             playlists = searchLibrary(values[5] as List<LibraryPlaylist>, text, { listOf(it.name, playlistDescription(it)) }, { it.name }, { it.id }),
             composers = searchLibrary(values[6] as List<LibraryComposer>, text, { listOf(it.name) }, { it.sortName }, { it.id }),
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LibrarySearchUiState())
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LibrarySearchUiState())
 
     fun setQuery(value: String) { query.value = value }
     fun clear() { query.value = "" }

@@ -60,6 +60,7 @@ import me.misa198.airmedy.ui.navigation.NavigationChromeScrollAccumulator
 import me.misa198.airmedy.ui.navigation.showsMiniPlayer
 import me.misa198.airmedy.ui.navigation.titleRes
 import me.misa198.airmedy.ui.screens.LibraryTracksUiState
+import me.misa198.airmedy.ui.screens.HomeUiState
 import me.misa198.airmedy.ui.screens.LibraryArtistsUiState
 import me.misa198.airmedy.ui.screens.ArtistSortOption
 import me.misa198.airmedy.ui.screens.AlbumSortOption
@@ -116,6 +117,7 @@ private fun LazyListState.resetAfterPagePop(generation: Int) {
 internal fun App(
     uiState: AppUiState = AppUiState(),
     syncUiState: SyncUiState = SyncUiState(),
+    homeUiState: HomeUiState = HomeUiState(),
     tracksUiState: LibraryTracksUiState = LibraryTracksUiState(),
     artistsUiState: LibraryArtistsUiState = LibraryArtistsUiState(),
     albumsUiState: LibraryAlbumsUiState = LibraryAlbumsUiState(),
@@ -423,6 +425,7 @@ internal fun App(
                 composerDetailsListState = composerDetailsListState,
                 onIntent = onIntent,
                 syncUiState = syncUiState,
+                homeUiState = homeUiState,
                 tracksUiState = tracksUiState,
                 artistsUiState = artistsUiState,
                 albumsUiState = albumsUiState,

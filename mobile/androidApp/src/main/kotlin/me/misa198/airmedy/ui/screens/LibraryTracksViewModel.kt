@@ -7,7 +7,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.Dispatchers
 import me.misa198.airmedy.sync.AndroidLibrarySyncStore
 import me.misa198.airmedy.player.PlaybackController
 import me.misa198.airmedy.player.PlaybackRequest
@@ -29,15 +32,18 @@ enum class SortOrder {
 }
 
 data class LibraryTracksUiState(
-    val isLoaded: Boolean = false,
     val tracks: List<LibraryTrack> = emptyList(),
     val recentTracks: List<LibraryTrack> = emptyList(),
-    val keepListeningTracks: List<LibraryTrack> = emptyList(),
-    val mostPlayedTracks: List<LibraryTrack> = emptyList(),
-    val forgottenTracks: List<LibraryTrack> = emptyList(),
     val filterQuery: String = "",
     val sortOption: TrackSortOption = TrackSortOption.Name,
     val sortOrder: SortOrder = SortOrder.Ascending,
+)
+
+data class HomeUiState(
+    val isLoaded: Boolean = false,
+    val keepListeningTracks: List<LibraryTrack> = emptyList(),
+    val mostPlayedTracks: List<LibraryTrack> = emptyList(),
+    val forgottenTracks: List<LibraryTrack> = emptyList(),
 )
 
 internal class LibraryTracksViewModel(
@@ -58,6 +64,22 @@ internal class LibraryTracksViewModel(
     private val sortOrderFlow = MutableStateFlow(SortOrder.Ascending)
     private val filterQueryFlow = MutableStateFlow("")
 
+    val homeUiState: StateFlow<HomeUiState> = syncStore.tracks
+        .map { rawTracks ->
+            HomeUiState(
+                isLoaded = true,
+                keepListeningTracks = keepListeningTracks(rawTracks),
+                mostPlayedTracks = mostPlayedTracks(rawTracks),
+                forgottenTracks = forgottenTracks(rawTracks),
+            )
+        }
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = HomeUiState(),
+        )
+
     val uiState: StateFlow<LibraryTracksUiState> = combine(
         syncStore.tracks,
         sortOptionFlow,
@@ -72,17 +94,13 @@ internal class LibraryTracksViewModel(
             .sortedWith(compareByDescending<LibraryTrack> { it.createdAt }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }.thenBy { it.id })
             .take(50)
         LibraryTracksUiState(
-            isLoaded = true,
             tracks = sorted,
             recentTracks = recent,
-            keepListeningTracks = keepListeningTracks(rawTracks),
-            mostPlayedTracks = mostPlayedTracks(rawTracks),
-            forgottenTracks = forgottenTracks(rawTracks),
             filterQuery = query,
             sortOption = option,
             sortOrder = order,
         )
-    }.stateIn(
+    }.flowOn(Dispatchers.Default).stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = LibraryTracksUiState(),

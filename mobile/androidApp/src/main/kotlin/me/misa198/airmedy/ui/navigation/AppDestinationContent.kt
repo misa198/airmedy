@@ -59,6 +59,7 @@ import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 import me.misa198.airmedy.ui.screens.LibraryTracksContent
 import me.misa198.airmedy.ui.screens.LibraryTracksUiState
+import me.misa198.airmedy.ui.screens.HomeUiState
 import me.misa198.airmedy.ui.screens.TrackSortOption
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.ui.screens.LibraryArtistsContent
@@ -140,6 +141,7 @@ internal fun AppDestinationContent(
     selectedComposerId: String? = null,
     onIntent: (AppIntent) -> Unit,
     syncUiState: SyncUiState,
+    homeUiState: HomeUiState = HomeUiState(),
     tracksUiState: LibraryTracksUiState = LibraryTracksUiState(),
     artistsUiState: LibraryArtistsUiState = LibraryArtistsUiState(),
     albumsUiState: LibraryAlbumsUiState = LibraryAlbumsUiState(),
@@ -287,10 +289,10 @@ internal fun AppDestinationContent(
                                 modifier = Modifier.fillMaxSize(),
                                 listState = homeListState,
                                 contentPadding = contentPadding,
-                                isLoaded = tracksUiState.isLoaded,
-                                keepListeningTracks = tracksUiState.keepListeningTracks,
-                                mostPlayedTracks = tracksUiState.mostPlayedTracks,
-                                forgottenTracks = tracksUiState.forgottenTracks,
+                                isLoaded = homeUiState.isLoaded,
+                                keepListeningTracks = homeUiState.keepListeningTracks,
+                                mostPlayedTracks = homeUiState.mostPlayedTracks,
+                                forgottenTracks = homeUiState.forgottenTracks,
                                 onTrackClick = onHomeTrackClick,
                                 playbackQueue = playbackQueue,
                                 onTrackPlayNext = { track -> onTrackPlayNext(track.id) },

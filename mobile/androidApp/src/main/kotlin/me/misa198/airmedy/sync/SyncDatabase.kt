@@ -19,9 +19,14 @@ import java.time.Instant
 import java.time.ZoneId
 import java.util.Locale
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -447,6 +452,15 @@ internal class AndroidLibrarySyncStore(
     private val filesDir: File,
 ) : LibrarySyncStore, PlaylistMutationStore, PlaylistArtworkStagingStore, ListeningSyncStore {
     private val dao = database.syncDao()
+    // This store has process lifetime through AndroidSyncRuntime. Sharing avoids one
+    // Room query and JSON projection per visible ViewModel.
+    private val snapshotScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val activeTrackRows = dao.observeTracks()
+        .shareIn(snapshotScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
+    private val pendingPlaylistMutations = dao.observePendingPlaylistMutations()
+        .shareIn(snapshotScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
+    private val artworkAssets = dao.observeArtworkAssets()
+        .shareIn(snapshotScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
     val analysisAvailable: Flow<Boolean> = dao.observeAnalysisAvailable()
     val dailyTrackListeningStats: Flow<List<DailyTrackListeningStat>> = dao.observeDailyTrackStats().map { rows ->
         rows.map { DailyTrackListeningStat(it.sourceDeviceId, it.localDate, it.trackId, it.listenedSeconds, it.playCount) }
@@ -463,7 +477,7 @@ internal class AndroidLibrarySyncStore(
         val peak = value["true_peak"]?.jsonPrimitive?.contentOrNull?.toFloatOrNull() ?: return@mapNotNull null
         document.documentKey to TrackAnalysis(lufs, peak)
     }.toMap()
-    val tracks: Flow<List<LibraryTrack>> = combine(dao.observeTracks(), dao.observePendingPlaylistMutations()) { rows, pending ->
+    val tracks: Flow<List<LibraryTrack>> = combine(activeTrackRows, pendingPlaylistMutations) { rows, pending ->
         val overrides = pending.mapNotNull { row ->
             runCatching { LibrarySyncProtocol.json.decodeFromString(PlaylistMutationPayload.serializer(), row.payloadJson) }
                 .getOrNull()?.takeIf { row.operation == PlaylistMutationOperation.SET_FAVORITE.name }
@@ -494,38 +508,38 @@ internal class AndroidLibrarySyncStore(
                 audioPath = row.audioPath,
             )
         }
-    }
+    }.shareIn(snapshotScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
     val artists: Flow<List<LibraryArtist>> = combine(
-        dao.observeTracks(),
-        dao.observeArtworkAssets(),
+        activeTrackRows,
+        artworkAssets,
     ) { rows, artworkAssets ->
         libraryArtistsFrom(rows, artworkAssets.associate { asset ->
             asset.assetId.removePrefix("artwork:") to asset.relativePath
         })
-    }
+    }.shareIn(snapshotScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
     val albums: Flow<List<LibraryAlbum>> = combine(
-        dao.observeTracks(),
-        dao.observeArtworkAssets(),
+        activeTrackRows,
+        artworkAssets,
     ) { rows, artworkAssets ->
         libraryAlbumsFrom(rows, artworkAssets.associate { asset ->
             asset.assetId.removePrefix("artwork:") to asset.relativePath
         })
-    }
-    val genres: Flow<List<LibraryGenre>> = dao.observeTracks().map { rows ->
+    }.shareIn(snapshotScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
+    val genres: Flow<List<LibraryGenre>> = activeTrackRows.map { rows ->
         libraryGenresFrom(rows)
-    }
+    }.shareIn(snapshotScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
     val composers: Flow<List<LibraryComposer>> = combine(
-        dao.observeTracks(),
-        dao.observeArtworkAssets(),
+        activeTrackRows,
+        artworkAssets,
     ) { rows, artworkAssets ->
         libraryComposersFrom(rows, artworkAssets.associate { asset ->
             asset.assetId.removePrefix("artwork:") to asset.relativePath
         })
-    }
+    }.shareIn(snapshotScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
     val playlists: Flow<List<LibraryPlaylist>> = combine(
         dao.observePlaylists(),
         dao.observeLocalPlaylists(),
-        dao.observePendingPlaylistMutations(),
+        pendingPlaylistMutations,
     ) { rows, local, pending ->
         val synced = rows.map { row ->
             LibraryPlaylist(
@@ -545,10 +559,10 @@ internal class AndroidLibrarySyncStore(
         }
         applyPendingPlaylistMutations(projected, pending.mapNotNull(PlaylistMutationEntity::toPlaylistMutation))
             .sortedBy { it.name.lowercase() }
-    }
-    val artworkPaths: Flow<Map<String, String>> = combine(dao.observeArtworkAssets(), dao.observePlaylistArtwork()) { assets, staged ->
+    }.shareIn(snapshotScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
+    val artworkPaths: Flow<Map<String, String>> = combine(artworkAssets, dao.observePlaylistArtwork()) { assets, staged ->
         (assets.map { asset -> asset.assetId.removePrefix("artwork:") to asset.relativePath } + staged.map { artwork -> artwork.sha256 to artwork.relativePath }).toMap()
-    }
+    }.shareIn(snapshotScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
 
     /** Durable boundary for playlist mutations; list browsing remains read-only for now. */
     suspend fun queuePlaylistMutation(mutation: PlaylistMutation) {
