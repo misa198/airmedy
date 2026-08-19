@@ -8,6 +8,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
@@ -37,6 +38,9 @@ import me.misa198.airmedy.sync.LibraryGenre
 import me.misa198.airmedy.ui.screens.LibraryGenresUiState
 import me.misa198.airmedy.ui.screens.LibraryComposersUiState
 import me.misa198.airmedy.ui.screens.LibraryTracksUiState
+import me.misa198.airmedy.ui.screens.InsightTopTrack
+import me.misa198.airmedy.ui.screens.InsightUiState
+import me.misa198.airmedy.ui.screens.ListeningInsightState
 import me.misa198.airmedy.sync.LibraryComposer
 import me.misa198.airmedy.sync.LibraryTrack
 import org.junit.Assert.assertEquals
@@ -305,6 +309,26 @@ class AppNavigationTest {
     }
 
     @Test
+    fun aboutSponsorLinkDispatchesOneTimeExternalUrlIntent() {
+        val harness = AppHarness(
+            AppUiState(
+                selectedDestination = AppDestination.Settings,
+                destinationStacks = rootDestinationStacks() + (
+                    AppDestination.Settings to listOf(AppStackPage.Root, AppStackPage.SettingsAbout)
+                ),
+            ),
+        )
+        composeTestRule.setContent { harness.Render() }
+
+        composeTestRule.onNodeWithContentDescription(string(R.string.about_sponsor_github)).performClick()
+
+        assertEquals(
+            AppIntent.OpenExternalUrl("https://github.com/sponsors/misa198"),
+            harness.intents.last(),
+        )
+    }
+
+    @Test
     fun homeDisplaysSyncPlaceholderWhenThereAreNoTracks() {
         composeTestRule.setContent { App() }
 
@@ -528,6 +552,27 @@ class AppNavigationTest {
         composeTestRule.onNodeWithContentDescription(string(R.string.destination_library)).performClick()
 
         composeTestRule.onNodeWithText(string(R.string.library_empty_title)).assertIsDisplayed()
+    }
+
+    @Test
+    fun reselectingInsightScrollsToTheTop() {
+        composeTestRule.setContent {
+            App(
+                uiState = AppUiState(selectedDestination = AppDestination.Insight),
+                insightUiState = InsightUiState(
+                    listening = ListeningInsightState(
+                        topTracks = (1..20).map { index ->
+                            InsightTopTrack(LibraryTrack("track-$index", "Track $index", "Artist"), index, index * 60)
+                        },
+                    ),
+                ),
+            )
+        }
+
+        composeTestRule.onNodeWithTag("insight-top-tracks-toggle").performScrollTo()
+        composeTestRule.onNodeWithTag("insight-library-size").assertIsNotDisplayed()
+        composeTestRule.onNodeWithContentDescription(string(R.string.destination_insight)).performClick()
+        composeTestRule.onNodeWithTag("insight-library-size").assertIsDisplayed()
     }
 
     @Test

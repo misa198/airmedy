@@ -21,6 +21,7 @@ import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.ui.screens.InsightPeriod
 import me.misa198.airmedy.ui.screens.InsightLineChart
+import me.misa198.airmedy.ui.screens.InsightDonut
 import me.misa198.airmedy.ui.screens.InsightPoint
 import me.misa198.airmedy.ui.screens.InsightSourceFilter
 import me.misa198.airmedy.ui.screens.InsightTopTrack
@@ -29,6 +30,7 @@ import me.misa198.airmedy.ui.screens.InsightUiState
 import me.misa198.airmedy.ui.screens.LibraryInsightState
 import me.misa198.airmedy.ui.screens.ListeningInsightState
 import me.misa198.airmedy.ui.theme.AirmedyTheme
+import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -100,5 +102,14 @@ class InsightContentTest {
         }
 
         composeTestRule.onNodeWithContentDescription("Single library growth point").assertIsDisplayed()
+    }
+
+    @Test
+    fun donutChartDisplaysASingleValue() {
+        composeTestRule.setContent {
+            AirmedyTheme(ThemeMode.Dark) { InsightDonut(listOf(1 to LocalAirmedyColors.current.primary), "1", "Single donut value") }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Single donut value").assertIsDisplayed()
     }
 }

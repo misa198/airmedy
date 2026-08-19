@@ -3,6 +3,7 @@ package me.misa198.airmedy.ui.screens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -18,10 +19,15 @@ import me.misa198.airmedy.ui.components.ActionListContainerStyle
 import me.misa198.airmedy.ui.components.ActionListDividerStyle
 import me.misa198.airmedy.ui.components.ActionListItem
 import me.misa198.airmedy.ui.components.HeroCard
+import me.misa198.airmedy.ui.components.LabeledCard
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 private const val AirmedyGithubUrl = "https://github.com/misa198/airmedy"
 private const val AirmedyLicenseUrl = "https://github.com/misa198/airmedy/blob/master/LICENSE"
+private const val AirmedyGithubSponsorsUrl = "https://github.com/sponsors/misa198"
+private const val AirmedyKofiUrl = "https://ko-fi.com/misa198"
+private const val AirmedyBuyMeACoffeeUrl = "https://buymeacoffee.com/misa1982"
+private const val AirmedyPatreonUrl = "https://www.patreon.com/c/misa198"
 
 @Composable
 internal fun AboutContent(
@@ -67,5 +73,32 @@ internal fun AboutContent(
             containerStyle = ActionListContainerStyle.Card,
             dividerStyle = ActionListDividerStyle.FullWidth,
         )
+        LabeledCard(
+            label = stringResource(R.string.about_sponsor),
+            modifier = Modifier.padding(top = 8.dp),
+        ) {
+            ActionList(
+                items = listOf(
+                    ActionListItem(
+                        labelRes = R.string.about_sponsor_github,
+                        onClick = { onOpenExternalUrl(AirmedyGithubSponsorsUrl) },
+                    ),
+                    ActionListItem(
+                        labelRes = R.string.about_sponsor_kofi,
+                        onClick = { onOpenExternalUrl(AirmedyKofiUrl) },
+                    ),
+                    ActionListItem(
+                        labelRes = R.string.about_sponsor_bmac,
+                        onClick = { onOpenExternalUrl(AirmedyBuyMeACoffeeUrl) },
+                    ),
+                    ActionListItem(
+                        labelRes = R.string.about_sponsor_patreon,
+                        onClick = { onOpenExternalUrl(AirmedyPatreonUrl) },
+                    ),
+                ),
+                containerStyle = ActionListContainerStyle.Plain,
+                dividerStyle = ActionListDividerStyle.FullWidth,
+            )
+        }
     }
 }

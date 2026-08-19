@@ -29,6 +29,7 @@ enum class SortOrder {
 }
 
 data class LibraryTracksUiState(
+    val isLoaded: Boolean = false,
     val tracks: List<LibraryTrack> = emptyList(),
     val recentTracks: List<LibraryTrack> = emptyList(),
     val keepListeningTracks: List<LibraryTrack> = emptyList(),
@@ -71,6 +72,7 @@ internal class LibraryTracksViewModel(
             .sortedWith(compareByDescending<LibraryTrack> { it.createdAt }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }.thenBy { it.id })
             .take(50)
         LibraryTracksUiState(
+            isLoaded = true,
             tracks = sorted,
             recentTracks = recent,
             keepListeningTracks = keepListeningTracks(rawTracks),

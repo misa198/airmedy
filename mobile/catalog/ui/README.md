@@ -50,9 +50,9 @@ affecting the connected session.
   ranked track starts playback from the ranked queue.
 - `InsightContent` is one virtualized vertical page. Narrow screens stack chart
   cards, place the Library range beside its title before its metrics and charts in two-column rows, and place History's device and range filters beside its title; use a full-width horizontal artist list with its own 20dp inner inset,
-  and initially show five ranked tracks. Top-artist cards are 112×168dp so both text rows fit. Its Library size metric spans the full width, while Playlists shares a row with Artists. Widths of 600dp and above pair the
+  and initially show five ranked tracks. The empty top-artists message uses the same 20dp horizontal inset. Top-artist cards are 112×168dp so both text rows fit. Its Library size metric spans the full width, while Playlists shares a row with Artists. Widths of 600dp and above pair the
   growth/quality and genre/outcome cards. Library Growth disables horizontal chart scrolling, compressing 30D and All points to the card width; a single point renders as a dot. Its bar, line, and donut charts use
-  Vico with 400ms transitions, rounded gradient bars that narrow for longer ranges, a thin fixed-size donut,
+  Vico with 400ms transitions, rounded gradient bars that narrow for longer ranges, a thin fixed-size donut (a single value gets an invisible fractional padding slice so its hole remains open),
   and tap markers (activity shows the formatted listening duration);
   every chart retains a semantic description
   and empty data is handled per card. Library range uses the shared glass `Selection` popup. Listening places the label-free device selector before its label-free period selector; device options are all devices, this phone, paired desktop, and other
@@ -101,6 +101,9 @@ affecting the connected session.
   `airmedy_about_app_icon` drawable, app name and description, followed by an
   iconless, card-contained action list. Its version is static build metadata;
   GitHub and GPL-3.0 license rows delegate opening their URLs to the Android host.
+  A separately labelled Sponsor Airmedy card, separated from the app-info card
+  by 20dp, lists GitHub Sponsors, Ko-fi, Buy Me a Coffee, and Patreon; its rows
+  use the same host URL effect.
 - Appearance contains vertically arranged sections, each in its own `Card`.
   Its Theme section uses `Selection`, the reusable iOS-style dropdown row, to
   persist the System, Light, or Dark theme choice. An `ActionListDivider` with full-width style separates it from a
@@ -174,12 +177,14 @@ affecting the connected session.
   playback from that section's ordered queue. Long-pressing a card opens the
   shared `TrackContextMenu` with the standard playback, favorite, navigation,
   and bottom-sheet actions. When all three sources are empty, Home replaces the
-  carousels with the standard sync-guidance `HeroCard`.
+  carousels with the standard sync-guidance `HeroCard`, but waits for the first
+  Room track snapshot before showing that empty state.
 - The Home header replaces its static destination title with the desktop-equivalent
   time greeting: morning before noon, afternoon before 17:00, evening before
   21:00, and night thereafter.
 - Tapping the selected navigation destination restores that destination stack
-  to `Root`; on Home it also animates the root `LazyColumn` back to its first item.
+  to `Root`; on Home, Insight, and the Library root it also animates the root
+  `LazyColumn` back to its first item.
   Tapping another destination continues to switch stacks without resetting it.
   On release, a navigation-pill drag chooses the slot containing the pill's centre,
   so a pill that is mostly over the next destination selects that destination.

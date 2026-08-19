@@ -89,6 +89,9 @@ listener on unmount.
 
 Trusted mobile-device status uses the semantic `--status-online` token for the
 Online badge (green in every theme); Offline continues to use `--text-muted`.
+While a device has an active mobile-library sync plan, its Delete action is
+disabled in both the row actions and context menu; the panel refreshes this
+state on `mobile-library-sync:updated`.
 
 ### Cached Route Data Refresh
 

@@ -120,6 +120,11 @@
     <string name="about_version">Version</string>
     <string name="about_github">GitHub</string>
     <string name="about_license">License</string>
+    <string name="about_sponsor">Sponsor Airmedy</string>
+    <string name="about_sponsor_github">GitHub Sponsors</string>
+    <string name="about_sponsor_kofi">Ko-fi</string>
+    <string name="about_sponsor_bmac">Buy Me a Coffee</string>
+    <string name="about_sponsor_patreon">Patreon</string>
     <string name="theme_system">System</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>

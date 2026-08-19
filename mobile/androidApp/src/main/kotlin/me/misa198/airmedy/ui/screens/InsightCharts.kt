@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -127,13 +128,17 @@ internal fun InsightDonut(
     modifier: Modifier = Modifier,
 ) {
     val modelProducer = remember { PieChartModelProducer() }
+    val chartValues = values.map { it.first } + listOfNotNull(values.singleOrNull()?.first?.times(0.0001f))
     val chart = rememberPieChart(
-        sliceProvider = PieChart.SliceProvider.series(values.map { (_, color) -> PieChart.Slice(Fill(color)) }),
+        sliceProvider = PieChart.SliceProvider.series(
+            values.map { (_, color) -> PieChart.Slice(Fill(color)) } +
+                listOfNotNull(values.singleOrNull()?.let { PieChart.Slice(Fill(Color.Transparent)) }),
+        ),
         outerSize = PieSize.Outer.fixed(120.dp),
         innerSize = PieSize.Inner.fixed(82.dp),
     )
     LaunchedEffect(values) {
-        modelProducer.runTransaction { pieSeries { series(values.map { it.first }) } }
+        modelProducer.runTransaction { pieSeries { series(chartValues) } }
     }
     Box(modifier, contentAlignment = Alignment.Center) {
         PieChartHost(

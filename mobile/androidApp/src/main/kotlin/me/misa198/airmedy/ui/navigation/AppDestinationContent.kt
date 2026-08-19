@@ -287,6 +287,7 @@ internal fun AppDestinationContent(
                                 modifier = Modifier.fillMaxSize(),
                                 listState = homeListState,
                                 contentPadding = contentPadding,
+                                isLoaded = tracksUiState.isLoaded,
                                 keepListeningTracks = tracksUiState.keepListeningTracks,
                                 mostPlayedTracks = tracksUiState.mostPlayedTracks,
                                 forgottenTracks = tracksUiState.forgottenTracks,

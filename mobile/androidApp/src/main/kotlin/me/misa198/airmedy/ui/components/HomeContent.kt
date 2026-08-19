@@ -32,6 +32,7 @@ import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 @Composable
 internal fun HomeContent(
+    isLoaded: Boolean,
     keepListeningTracks: List<LibraryTrack>,
     mostPlayedTracks: List<LibraryTrack>,
     forgottenTracks: List<LibraryTrack>,
@@ -58,6 +59,9 @@ internal fun HomeContent(
         ),
         verticalArrangement = Arrangement.spacedBy(36.dp),
     ) {
+        if (!isLoaded && keepListeningTracks.isEmpty() && mostPlayedTracks.isEmpty() && forgottenTracks.isEmpty()) {
+            return@LazyColumn
+        }
         if (keepListeningTracks.isEmpty() && mostPlayedTracks.isEmpty() && forgottenTracks.isEmpty()) {
             item {
                 Box(modifier = Modifier.padding(horizontal = 24.dp)) {

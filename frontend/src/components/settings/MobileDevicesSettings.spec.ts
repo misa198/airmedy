@@ -2,9 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
 
-const { getStatus, getTrustedDevices, on, revokeDevice, startBroadcast, stopBroadcast } = vi.hoisted(() => ({
+const { getStatus, getTrustedDevices, getSyncStatus, on, revokeDevice, startBroadcast, stopBroadcast } = vi.hoisted(() => ({
   getStatus: vi.fn(),
   getTrustedDevices: vi.fn(),
+  getSyncStatus: vi.fn(),
   on: vi.fn((_event: string, _listener: () => void) => vi.fn()),
   revokeDevice: vi.fn(),
   startBroadcast: vi.fn(),
@@ -19,6 +20,7 @@ vi.mock('../../../bindings/airmedy/internal/infra/wails/mobilepairingservice', (
   StopBroadcast: stopBroadcast,
 }))
 vi.mock('@wailsio/runtime', () => ({ Events: { On: on } }))
+vi.mock('../../../bindings/airmedy/internal/infra/wails/mobilelibrarysyncservice', () => ({ GetStatus: getSyncStatus }))
 
 import MobileDevicesSettings from './MobileDevicesSettings.vue'
 
@@ -67,6 +69,7 @@ describe('MobileDevicesSettings', () => {
   beforeEach(() => {
     getStatus.mockResolvedValue({ running: false, addresses: [], broadcasting: false, broadcasting_until: '' })
     getTrustedDevices.mockReset()
+    getSyncStatus.mockResolvedValue(null)
     revokeDevice.mockReset()
     startBroadcast.mockReset()
     stopBroadcast.mockReset()
@@ -132,5 +135,20 @@ describe('MobileDevicesSettings', () => {
 
     await wrapper.find('.trusted-device-row').trigger('contextmenu')
     expect(menu.props('visible')).toBe(true)
+  })
+
+  it('disables deleting a device with an active library sync', async () => {
+    getTrustedDevices.mockResolvedValue([{ ...device, online: true }])
+    getSyncStatus.mockResolvedValue({ device_id: device.device_id, status: 'active' })
+
+    const wrapper = mountSettings()
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="device-actions-button"]').attributes('disabled')).toBeDefined()
+    await wrapper.find('.trusted-device-row').trigger('contextmenu')
+    const menu = wrapper.findComponent({ name: 'ContextMenu' })
+    expect(menu.props('items')).toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: 'Delete', disabled: true }),
+    ]))
   })
 })

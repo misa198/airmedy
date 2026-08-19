@@ -7,6 +7,7 @@ import { LoaderCircle, MoreHorizontal, Radio, RefreshCw, ShieldCheck, Smartphone
 import QRCodeStyling from 'qr-code-styling'
 import { Badge } from '@airmedy/ui'
 import * as MobilePairingService from '../../../bindings/airmedy/internal/infra/wails/mobilepairingservice'
+import * as MobileLibrarySyncService from '../../../bindings/airmedy/internal/infra/wails/mobilelibrarysyncservice'
 import ContextMenu from '@/components/ContextMenu.vue'
 import { useContextMenu } from '@/composables/useContextMenu'
 import SettingSection from './SettingSection.vue'
@@ -26,10 +27,12 @@ const loading = ref(false)
 const revoking = ref('')
 const broadcastingAction = ref(false)
 const broadcastSecondsRemaining = ref(0)
+const syncingDeviceIDs = ref(new Set<string>())
 const qrContainer = ref<HTMLElement | null>(null)
 let qr: QRCodeStyling | null = null
 let offTrustedDevicesChanged: (() => void) | null = null
 let offBroadcastChanged: (() => void) | null = null
+let offMobileSyncUpdated: (() => void) | null = null
 let broadcastTimer: ReturnType<typeof setInterval> | null = null
 const deviceContextMenu = useContextMenu()
 
@@ -46,7 +49,10 @@ async function load() {
   loading.value = true
   try {
     status.value = await MobilePairingService.GetStatus() as PairingStatus
-    devices.value = (await MobilePairingService.GetTrustedDevices() ?? []) as TrustedDevice[]
+    const trustedDevices = (await MobilePairingService.GetTrustedDevices() ?? []) as TrustedDevice[]
+    devices.value = trustedDevices
+    const plans = await Promise.all(trustedDevices.map(device => MobileLibrarySyncService.GetStatus(device.device_id).catch(() => null)))
+    syncingDeviceIDs.value = new Set(plans.filter(plan => plan?.status === 'active').map(plan => plan!.device_id))
     if (!usableAddresses.value.some(address => address.ip === selectedIP.value)) {
       selectedIP.value = usableAddresses.value.find(address => address.kind === 'ethernet' || address.kind === 'wifi')?.ip ?? usableAddresses.value[0]?.ip ?? ''
     }
@@ -58,7 +64,7 @@ async function load() {
 }
 
 async function revoke(deviceID: string) {
-  if (revoking.value) return
+  if (revoking.value || syncingDeviceIDs.value.has(deviceID)) return
   revoking.value = deviceID
   try { await MobilePairingService.RevokeDevice(deviceID); await load() }
   catch (error) { console.error('Failed to revoke mobile device:', error) }
@@ -124,7 +130,7 @@ function openDeviceMenu(event: MouseEvent | KeyboardEvent, device: TrustedDevice
     label: t('common.delete'),
     icon: Trash2,
     danger: true,
-    disabled: revoking.value === device.device_id,
+    disabled: revoking.value === device.device_id || syncingDeviceIDs.value.has(device.device_id),
     action: () => void revoke(device.device_id),
   }])
 }
@@ -169,6 +175,7 @@ onMounted(() => {
   void load()
   offTrustedDevicesChanged = Events.On('pairing:trusted-devices-changed', load)
   offBroadcastChanged = Events.On('pairing:broadcast-changed', load)
+  offMobileSyncUpdated = Events.On('mobile-library-sync:updated', load)
 })
 
 onUnmounted(() => {
@@ -176,6 +183,8 @@ onUnmounted(() => {
   offTrustedDevicesChanged = null
   offBroadcastChanged?.()
   offBroadcastChanged = null
+  offMobileSyncUpdated?.()
+  offMobileSyncUpdated = null
   stopBroadcastTimer()
 })
 </script>
@@ -239,7 +248,7 @@ onUnmounted(() => {
             data-testid="device-actions-button"
             class="rounded-lg p-2 text-dim transition-all hover:bg-foreground/[0.04] hover:opacity-70"
             :aria-label="t('common.delete')"
-            :disabled="revoking === device.device_id"
+            :disabled="revoking === device.device_id || syncingDeviceIDs.has(device.device_id)"
             @click.stop="openDeviceMenu($event, device)"
           >
             <LoaderCircle v-if="revoking === device.device_id" class="size-4 animate-spin" />

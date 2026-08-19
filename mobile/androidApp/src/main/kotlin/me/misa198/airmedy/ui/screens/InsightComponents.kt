@@ -121,7 +121,7 @@ internal fun BreakdownRow(label: String, value: Int, total: Int, color: Color, d
 }
 
 @Composable internal fun SectionHeader(titleRes: Int, modifier: Modifier = Modifier) = Text(stringResource(titleRes), modifier, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, color = LocalAirmedyColors.current.textMain)
-@Composable internal fun EmptyInsightText(textRes: Int) = Text(stringResource(textRes), Modifier.fillMaxWidth().padding(vertical = 36.dp), style = MaterialTheme.typography.bodyMedium, color = LocalAirmedyColors.current.textMuted)
+@Composable internal fun EmptyInsightText(textRes: Int, modifier: Modifier = Modifier) = Text(stringResource(textRes), modifier.fillMaxWidth().padding(vertical = 36.dp), style = MaterialTheme.typography.bodyMedium, color = LocalAirmedyColors.current.textMuted)
 internal fun number(value: Int): String = NumberFormat.getIntegerInstance().format(value)
 
 @Composable

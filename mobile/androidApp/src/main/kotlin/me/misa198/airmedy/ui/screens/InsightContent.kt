@@ -121,7 +121,7 @@ internal fun InsightContent(
                 contentPadding = PaddingValues(vertical = 20.dp),
                 headerPadding = PaddingValues(horizontal = 20.dp),
             ) {
-                if (state.listening.topArtists.isEmpty()) EmptyInsightText(R.string.insight_no_top_artists)
+                if (state.listening.topArtists.isEmpty()) EmptyInsightText(R.string.insight_no_top_artists, Modifier.padding(horizontal = 20.dp))
                 else LazyRow(
                     contentPadding = PaddingValues(horizontal = 20.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),

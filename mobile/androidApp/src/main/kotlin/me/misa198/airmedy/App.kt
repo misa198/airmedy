@@ -647,6 +647,10 @@ internal fun App(
                             coroutineScope.launch {
                                 homeListState.animateScrollToItem(0)
                             }
+                        } else if (destination == AppDestination.Insight) {
+                            coroutineScope.launch {
+                                insightListState.animateScrollToItem(0)
+                            }
                         } else if (destination == AppDestination.Library && currentPage == AppStackPage.Root) {
                             coroutineScope.launch {
                                 libraryListState.animateScrollToItem(0)

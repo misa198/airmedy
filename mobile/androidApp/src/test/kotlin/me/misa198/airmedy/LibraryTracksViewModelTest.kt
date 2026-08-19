@@ -3,6 +3,7 @@ package me.misa198.airmedy
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.ui.screens.SortOrder
 import me.misa198.airmedy.ui.screens.TrackSortOption
+import me.misa198.airmedy.ui.screens.LibraryTracksUiState
 import me.misa198.airmedy.ui.screens.sortTracks
 import me.misa198.airmedy.ui.screens.playbackRequestFor
 import me.misa198.airmedy.ui.screens.collectionPlaybackRequestFor
@@ -25,6 +26,11 @@ class LibraryTracksViewModelTest {
         LibraryTrack(id = "2", title = "Alpha", artists = "Beta", album = "A2", playCount = 5, createdAt = "2026-05-01T00:00:00Z", sortTitle = "Alpha", sortArtists = "Beta"),
         LibraryTrack(id = "3", title = "Bravo", artists = "Delta", album = "A3", playCount = 50, createdAt = "2025-12-01T00:00:00Z", sortTitle = "Bravo", sortArtists = "Delta"),
     )
+
+    @Test
+    fun initialStateWaitsForTheFirstLibrarySnapshot() {
+        assertFalse(LibraryTracksUiState().isLoaded)
+    }
 
     @Test
     fun filtersTracksOnlyByLabelsVisibleInTheRow() {
