@@ -2,12 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
 
-const { getStatus, getTrustedDevices, getPairingStatus, sync, cancel, eventHandlers, on } = vi.hoisted(() => {
+const { getStatus, getTrustedDevices, getPairingStatus, getAllPlaylists, sync, cancel, eventHandlers, on } = vi.hoisted(() => {
   const eventHandlers = new Map<string, (event: { data: unknown }) => void>()
   return {
     getStatus: vi.fn(),
     getTrustedDevices: vi.fn(),
     getPairingStatus: vi.fn(),
+    getAllPlaylists: vi.fn(),
     sync: vi.fn(),
     cancel: vi.fn(),
     eventHandlers,
@@ -38,7 +39,7 @@ vi.mock('../../bindings/airmedy/internal/infra/wails/libraryservice', () => ({
   GetAllGenres: vi.fn().mockResolvedValue([]),
 }))
 vi.mock('../../bindings/airmedy/internal/infra/wails/playlistservice', () => ({
-  GetAllPlaylists: vi.fn().mockResolvedValue([]),
+  GetAllPlaylists: getAllPlaylists,
 }))
 vi.mock('../../bindings/airmedy/internal/domain/models', () => ({
   MobileLibrarySyncScope: class {
@@ -57,7 +58,7 @@ function mountView() {
       plugins: [i18n],
       stubs: {
         Badge: true, Checkbox: true, ConfirmDialog: true, IconButton: true, Input: true,
-        Radio: true, RecycleScroller: true, SettingSection: { template: '<section><slot /></section>' }, TabSwitcher: true,
+        Radio: true, RecycleScroller: { props: ['items'], template: '<div><slot v-for="(item, index) in items" :item="item" :index="index" /></div>' }, SettingSection: { template: '<section><slot /></section>' }, TabSwitcher: true,
       },
     },
   })
@@ -68,6 +69,7 @@ describe('MobileLibrarySyncView', () => {
     vi.useFakeTimers()
     getTrustedDevices.mockResolvedValue([{ device_id: 'device-1', display_name: 'Phone', online: true }])
     getPairingStatus.mockResolvedValue({ addresses: [{ ip: '192.168.1.2', kind: 'wifi' }] })
+    getAllPlaylists.mockResolvedValue([])
     getStatus.mockReset()
     sync.mockReset()
     cancel.mockReset()
@@ -127,6 +129,7 @@ describe('MobileLibrarySyncView', () => {
     await flushPromises()
 
     await wrapper.get('[data-testid="cancel-sync-button"]').trigger('click')
+    await flushPromises()
 
     expect(cancel).toHaveBeenCalledWith('device-1')
     expect(wrapper.find('[data-testid="cancel-sync-button"]').exists()).toBe(false)
@@ -149,6 +152,22 @@ describe('MobileLibrarySyncView', () => {
     await flushPromises()
 
     expect(wrapper.get('main').classes()).toEqual(expect.arrayContaining(['max-w-3xl', 'p-8']))
+    wrapper.unmount()
+  })
+
+  it('only shows regular playlists in the selector', async () => {
+    getStatus.mockResolvedValue({ ...activePlan, scope: { kind: 'playlists', selected_ids: ['regular'] } })
+    getAllPlaylists.mockResolvedValue([
+      { id: 'favorites', name: 'Favorites', is_smart: false },
+      { id: 'smart', name: 'Smart', is_smart: true },
+      { id: 'regular', name: 'Regular', is_smart: false },
+    ])
+    const wrapper = mountView()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Regular')
+    expect(wrapper.text()).not.toContain('Favorites')
+    expect(wrapper.text()).not.toContain('Smart')
     wrapper.unmount()
   })
 })

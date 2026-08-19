@@ -266,6 +266,9 @@ func (s *Service) Start(ctx context.Context, deviceID string, scope domain.Mobil
 	if strings.TrimSpace(host) == "" || net.ParseIP(host) == nil {
 		return nil, fmt.Errorf("invalid desktop sync address")
 	}
+	if err := s.normalizeScope(ctx, &scope); err != nil {
+		return nil, err
+	}
 	ctx, done := s.startContext(ctx, deviceID)
 	defer done()
 	trusted, err := s.devices.GetByDeviceID(ctx, deviceID)
@@ -375,9 +378,19 @@ func sameScope(a, b domain.MobileLibrarySyncScope) bool {
 }
 
 func (s *Service) createPlan(ctx context.Context, deviceID string, scope domain.MobileLibrarySyncScope) (*domain.MobileLibrarySyncPlan, error) {
+	if err := s.normalizeScope(ctx, &scope); err != nil {
+		return nil, err
+	}
 	tracks, err := s.resolveScope(ctx, &scope)
 	if err != nil {
 		return nil, err
+	}
+	favorites, err := s.tracks.GetFavorites(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get favorite tracks for mobile sync: %w", err)
+	}
+	if scope.Kind != domain.MobileLibrarySyncScopeAll {
+		tracks = mergeTracks(tracks, favorites)
 	}
 	planID := uuid.NewString()
 	manifest := domain.MobileLibrarySyncManifest{Version: syncProtocolVersion, PlanID: planID, Scope: scope, Lyrics: map[string]*domain.Lyric{}, Analysis: map[string]*domain.TrackFeatures{}}
@@ -409,7 +422,7 @@ func (s *Service) createPlan(ctx context.Context, deviceID string, scope domain.
 		}
 		collectTrackArtwork(dto, artworkKeys)
 	}
-	if err := s.addPlaylists(ctx, scope, selected, &manifest, artworkKeys); err != nil {
+	if err := s.addPlaylists(ctx, scope, selected, favorites, &manifest, artworkKeys); err != nil {
 		return nil, err
 	}
 	keys := make([]string, 0, len(artworkKeys))
@@ -456,8 +469,6 @@ func marshalManifest(manifest domain.MobileLibrarySyncManifest) ([]byte, error) 
 }
 
 func (s *Service) resolveScope(ctx context.Context, scope *domain.MobileLibrarySyncScope) ([]*domain.TrackDTO, error) {
-	scope.Kind = strings.ToLower(strings.TrimSpace(scope.Kind))
-	sort.Strings(scope.SelectedIDs)
 	var result []*domain.TrackDTO
 	var err error
 	switch scope.Kind {
@@ -507,15 +518,45 @@ func (s *Service) resolveScope(ctx context.Context, scope *domain.MobileLibraryS
 	if scope.Kind != domain.MobileLibrarySyncScopeAll && len(scope.SelectedIDs) == 0 {
 		return nil, fmt.Errorf("select at least one item to sync")
 	}
-	seen := make(map[string]struct{}, len(result))
-	deduped := make([]*domain.TrackDTO, 0, len(result))
-	for _, track := range result {
-		if _, ok := seen[track.ID]; !ok {
-			seen[track.ID] = struct{}{}
-			deduped = append(deduped, track)
+	return mergeTracks(result, nil), nil
+}
+
+// normalizeScope keeps the wire scope limited to user-selectable playlists.
+// Favorites is synced separately and smart playlists are not mutable snapshots.
+func (s *Service) normalizeScope(ctx context.Context, scope *domain.MobileLibrarySyncScope) error {
+	scope.Kind = strings.ToLower(strings.TrimSpace(scope.Kind))
+	sort.Strings(scope.SelectedIDs)
+	if scope.Kind != domain.MobileLibrarySyncScopePlaylists {
+		return nil
+	}
+	ids := make([]string, 0, len(scope.SelectedIDs))
+	for _, id := range scope.SelectedIDs {
+		playlist, err := s.playlists.GetByID(ctx, id)
+		if err != nil {
+			return fmt.Errorf("load playlist for mobile sync scope: %w", err)
+		}
+		if playlist != nil && playlist.ID != playlistapp.FavoritesPlaylistID && !playlist.IsSmart {
+			ids = append(ids, id)
 		}
 	}
-	return deduped, nil
+	scope.SelectedIDs = ids
+	return nil
+}
+
+func mergeTracks(primary, extra []*domain.TrackDTO) []*domain.TrackDTO {
+	seen := make(map[string]struct{}, len(primary)+len(extra))
+	merged := make([]*domain.TrackDTO, 0, len(primary)+len(extra))
+	for _, tracks := range [][]*domain.TrackDTO{primary, extra} {
+		for _, track := range tracks {
+			if track != nil {
+				if _, ok := seen[track.ID]; !ok {
+					seen[track.ID] = struct{}{}
+					merged = append(merged, track)
+				}
+			}
+		}
+	}
+	return merged
 }
 
 func collectTrackArtwork(track *domain.TrackDTO, keys map[string]struct{}) {
@@ -537,9 +578,27 @@ func collectTrackArtwork(track *domain.TrackDTO, keys map[string]struct{}) {
 	}
 }
 
-func (s *Service) addPlaylists(ctx context.Context, scope domain.MobileLibrarySyncScope, selected map[string]struct{}, manifest *domain.MobileLibrarySyncManifest, artworkKeys map[string]struct{}) error {
+func (s *Service) addPlaylists(ctx context.Context, scope domain.MobileLibrarySyncScope, selected map[string]struct{}, favoriteTracks []*domain.TrackDTO, manifest *domain.MobileLibrarySyncManifest, artworkKeys map[string]struct{}) error {
 	// Playlists are an explicit sync resource. A track selected through an
 	// artist/album/genre must never pull in a playlist implicitly.
+	favorites, err := s.playlists.GetByID(ctx, playlistapp.FavoritesPlaylistID)
+	if err != nil {
+		return fmt.Errorf("load favorites playlist: %w", err)
+	}
+	if favorites == nil {
+		return fmt.Errorf("favorites playlist is unavailable")
+	}
+	members := make([]string, 0, len(favoriteTracks))
+	for _, track := range favoriteTracks {
+		if _, ok := selected[track.ID]; ok {
+			members = append(members, track.ID)
+		}
+	}
+	manifest.Playlists = append(manifest.Playlists, &domain.MobileSyncPlaylist{Playlist: favorites, TrackIDs: members})
+	if favorites.ArtworkKey != nil && *favorites.ArtworkKey != "" {
+		artworkKeys[*favorites.ArtworkKey] = struct{}{}
+	}
+
 	playlistIDs := map[string]struct{}{}
 	switch scope.Kind {
 	case domain.MobileLibrarySyncScopeAll:
@@ -548,11 +607,19 @@ func (s *Service) addPlaylists(ctx context.Context, scope domain.MobileLibrarySy
 			return fmt.Errorf("get playlists for all-library sync: %w", err)
 		}
 		for _, row := range rows {
-			playlistIDs[row.ID] = struct{}{}
+			if row.ID != playlistapp.FavoritesPlaylistID {
+				playlistIDs[row.ID] = struct{}{}
+			}
 		}
 	case domain.MobileLibrarySyncScopePlaylists:
 		for _, id := range scope.SelectedIDs {
-			playlistIDs[id] = struct{}{}
+			playlist, err := s.playlists.GetByID(ctx, id)
+			if err != nil {
+				return fmt.Errorf("load playlist for mobile sync: %w", err)
+			}
+			if playlist != nil && playlist.ID != playlistapp.FavoritesPlaylistID && !playlist.IsSmart {
+				playlistIDs[id] = struct{}{}
+			}
 		}
 	}
 	ids := make([]string, 0, len(playlistIDs))

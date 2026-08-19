@@ -5,13 +5,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.platform.app.InstrumentationRegistry
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertFalse
 
 class AirmedyBottomSheetTest {
     @get:Rule val composeTestRule = createComposeRule()
@@ -32,5 +36,24 @@ class AirmedyBottomSheetTest {
         InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
         composeTestRule.waitUntil(1_000) { dismissed }
         assertTrue(dismissed)
+    }
+
+    @Test
+    fun tappingHeaderDoesNotDismissSheet() {
+        var visible by mutableStateOf(true)
+        var dismissed = false
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                if (visible) AirmedyBottomSheet(
+                    title = { Text("Sheet") },
+                    onDismiss = { dismissed = true; visible = false },
+                ) {}
+            }
+        }
+
+        composeTestRule.onNodeWithText("Sheet").performTouchInput { click() }
+        composeTestRule.waitForIdle()
+
+        assertFalse(dismissed)
     }
 }

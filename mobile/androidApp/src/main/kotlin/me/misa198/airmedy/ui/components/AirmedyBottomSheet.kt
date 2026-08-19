@@ -33,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -111,6 +112,9 @@ fun AirmedyBottomSheet(
             )
             Column(
                 modifier = modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                    .pointerInput(Unit) {
+                        awaitPointerEventScope { while (true) awaitPointerEvent() }
+                    }
                     .graphicsLayer { alpha = sheetAlpha; translationY = sheetTranslation }
                     .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp))
                     .background(colors.glassOpaque)

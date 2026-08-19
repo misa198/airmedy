@@ -9,7 +9,8 @@ The frontend is a Vue 3 SPA built with Vite 5, TailwindCSS v4, and Pinia. It use
 An Online device in Settings → Mobile opens `/settings/mobile-devices/:deviceId/sync`.
 The desktop-only view reuses shared Radio, TabSwitcher, Input and Checkbox
 primitives and virtualizes its selector. It supports all-library sync or one
-active selected source tab: artists, albums, genres, or playlists. It owns and
+active selected source tab: artists, albums, genres, or regular playlists;
+Favorites and smart playlists are not selectable. It owns and
 disposes subscriptions to pairing and `mobile-library-sync:updated` events. An
 active plan also polls its status once per second, so percentage progress
 remains current if a desktop runtime event is missed; polling stops when the

@@ -113,7 +113,7 @@ async function load() {
       artists: (artists ?? []).filter((item): item is Artist => !!item).map(item => ({ id: item.id, label: item.name })),
       albums: (albums ?? []).filter((item): item is AlbumDTO => !!item).map(item => ({ id: item.id, label: item.title, detail: item.artists?.filter(Boolean).map(artist => artist!.name).join(', ') })),
       genres: (genres ?? []).filter((item): item is Genre => !!item).map(item => ({ id: item.id, label: item.name })),
-      playlists: (playlists ?? []).filter((item): item is Playlist => !!item).map(item => ({ id: item.id, label: item.name })),
+      playlists: (playlists ?? []).filter((item): item is Playlist => !!item && item.id !== 'favorites' && !item.is_smart).map(item => ({ id: item.id, label: item.name })),
     }
     if (plan.value?.scope.kind && plan.value.scope.kind !== 'all') {
       mode.value = 'selected'

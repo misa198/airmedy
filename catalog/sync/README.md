@@ -169,8 +169,9 @@ The manifest is a self-contained snapshot:
 ```
 
 `tracks`, `playlists`, and `assets` are collections. Desktop's Go encoder may
-emit `null` for an empty collection (notably `playlists` for a scope that does
-not include playlists); mobile must treat that form exactly as an empty array.
+emit `null` for an empty collection; mobile must treat that form exactly as an
+empty array. Favorites is always represented in `playlists`, including when it
+has no tracks.
 
 An included playlist is represented even when it has no tracks: its
 `track_ids` is an empty array. This preserves empty desktop playlists in the
@@ -193,10 +194,13 @@ ID and is absent for tracks without analysis. Artist, album, playlist and track
 artwork are represented by deduplicated `artwork:<artwork-key>` assets. Audio is
 represented by exactly one `audio:<track-id>` asset per track.
 
-Playlist membership contains only tracks included in the selected scope, in the
-desktop playlist order. A mobile database must treat this as the membership for
-the mirrored sync collection; it must not attempt to download non-manifest
-playlist tracks.
+Regular playlist membership contains only tracks included in the selected scope,
+in desktop playlist order. Favorites is always included and every favorite track
+is added to the manifest even when it is outside an artist, album, genre, or
+regular-playlist selection; duplicate track IDs are emitted once. On mobile,
+Favorites membership remains derived from each track's `is_favorite` flag rather
+than the manifest membership. A mobile database must not attempt to download
+non-manifest playlist tracks.
 
 Recommended mobile apply sequence:
 
@@ -296,11 +300,12 @@ mirror. Before the next plan is built desktop applies the delta through a
 device+mutation ledger and per-track LWW watermark, so the following scoped
 snapshot contains accepted mobile and desktop favorite changes. Favorites keeps
 its virtual membership, but accepts `SET_ARTWORK` and `REMOVE_ARTWORK` mutations
-so a mobile-selected cover remains authoritative in the following snapshot.
+independently of the selected library scope, so a mobile-selected cover remains
+authoritative in the following snapshot.
 
 ### Playlist scope boundary
 
-Playlist data is not inferred from selected tracks. A manifest includes playlists only for the `all` scope or for explicit `playlists` selections. Mutations are accepted only for `all`, or an explicitly selected playlist; artist, album, and genre scopes return `scope-conflict` and do not touch a playlist outside the selected resource set.
+Playlist data is not inferred from selected tracks. A manifest includes regular playlists only for the `all` scope or for explicit `playlists` selections; Favorites is always included. The playlist selector and playlist scope exclude Favorites and smart playlists. Regular-playlist mutations are accepted only for `all`, or an explicitly selected regular playlist; artist, album, and genre scopes return `scope-conflict` and do not touch a playlist outside the selected resource set. Favorites artwork mutations are scope-independent.
 
 ### Reconciliation security and artwork staging
 

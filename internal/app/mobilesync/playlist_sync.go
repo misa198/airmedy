@@ -65,7 +65,7 @@ func (s *Service) applyPlaylistMutation(ctx context.Context, deviceID string, sc
 			status = "duplicate"
 			return nil
 		}
-		if !playlistInScope(scope, m.PlaylistID) {
+		if !playlistMutationInScope(scope, m) {
 			status = "scope-conflict"
 		} else {
 			wins, err := s.lww.Claim(txCtx, m.PlaylistID, m.UpdatedAt, m.MutationID, m.Operation == "DELETE")
@@ -149,7 +149,7 @@ func (s *Service) applyFavoriteMutation(ctx context.Context, deviceID string, m 
 func uuidLike(id string) bool { _, err := uuid.Parse(id); return err == nil }
 
 func (s *Service) applyNewPlaylistMutation(ctx context.Context, scope domain.MobileLibrarySyncScope, m playlistMutation, uploadedArtwork map[string]string) string {
-	if !playlistInScope(scope, m.PlaylistID) {
+	if !playlistMutationInScope(scope, m) {
 		return "scope-conflict"
 	}
 	p, err := s.playlists.GetByID(ctx, m.PlaylistID)
@@ -243,6 +243,12 @@ func playlistInScope(scope domain.MobileLibrarySyncScope, id string) bool {
 		}
 	}
 	return false
+}
+
+func playlistMutationInScope(scope domain.MobileLibrarySyncScope, mutation playlistMutation) bool {
+	return playlistInScope(scope, mutation.PlaylistID) ||
+		mutation.PlaylistID == playlistapp.FavoritesPlaylistID &&
+			(mutation.Operation == "SET_ARTWORK" || mutation.Operation == "REMOVE_ARTWORK")
 }
 
 func hashBody(body []byte) string { sum := sha256.Sum256(body); return fmt.Sprintf("%x", sum) }
