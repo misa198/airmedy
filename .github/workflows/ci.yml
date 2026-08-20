@@ -7,10 +7,14 @@ on:
   push:
     branches:
       - master
+    paths-ignore:
+      - 'mobile/**'
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
       - master
+    paths-ignore:
+      - 'mobile/**'
   workflow_dispatch:
 
 concurrency:

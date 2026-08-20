@@ -4,6 +4,16 @@ import java.util.Properties
 val localProperties = Properties().apply {
     rootProject.file("local.properties").takeIf { it.isFile }?.inputStream()?.use { load(it) }
 }
+val releaseKeystoreFile = providers.environmentVariable("MOBILE_KEYSTORE_FILE").orNull
+val releaseKeystorePassword = providers.environmentVariable("MOBILE_KEYSTORE_PASSWORD").orNull
+val releaseKeyAlias = providers.environmentVariable("MOBILE_KEY_ALIAS").orNull
+val releaseKeyPassword = providers.environmentVariable("MOBILE_KEY_PASSWORD").orNull
+val hasReleaseSigning = listOf(
+    releaseKeystoreFile,
+    releaseKeystorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword,
+).all { !it.isNullOrBlank() }
 
 plugins {
     alias(libs.plugins.androidApplication)
@@ -98,10 +108,21 @@ android {
             excludes += "/META-INF/io.netty.versions.properties"
         }
     }
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(releaseKeystoreFile!!)
+                storePassword = releaseKeystorePassword!!
+                keyAlias = releaseKeyAlias!!
+                keyPassword = releaseKeyPassword!!
+            }
+        }
+    }
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            if (hasReleaseSigning) signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

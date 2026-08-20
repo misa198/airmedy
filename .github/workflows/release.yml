@@ -4,67 +4,22 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'New version (e.g., 0.0.15)'
-        required: true
-      prerelease:
-        description: 'Create as Pre-release'
-        required: true
-        type: boolean
-        default: false
+  push:
+    tags:
+      - 'v*'
 
-# The bump and release jobs override this with their own job-level
-# contents: write permission.
 permissions:
   contents: read
 
 jobs:
-  bump:
-    name: Bump version to ${{ github.event.inputs.version }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Bump app version
-        run: bash scripts/bump-version.sh ${{ github.event.inputs.version }}
-
-      - name: Bump download version
-        run: bash scripts/bump-download-version.sh ${{ github.event.inputs.version }}
-
-      - name: Commit and tag
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add \
-            build/config.yml \
-            build/darwin/Info.dev.plist \
-            build/darwin/Info.plist \
-            build/linux/nfpm/nfpm.yaml \
-            build/windows/info.json \
-            build/windows/nsis/wails_tools.nsh \
-            build/windows/wails.exe.manifest \
-            frontend/package.json \
-            internal/app/config/meta.go \
-            public/config.json
-          git commit -m "chore: bump version to ${{ github.event.inputs.version }}" || echo "Nothing to commit"
-          git push origin HEAD
-          git tag -a "v${{ github.event.inputs.version }}" -m "Release v${{ github.event.inputs.version }}"
-          git push origin "v${{ github.event.inputs.version }}"
-
   build-ffmpeg-windows:
     name: Build FFmpeg for Windows
-    needs: bump
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: v${{ github.event.inputs.version }}
+          ref: ${{ github.ref_name }}
 
       - name: Cache FFmpeg (Windows)
         id: cache-ffmpeg
@@ -101,13 +56,12 @@ jobs:
 
   build-fftw3-windows:
     name: Build FFTW3 for Windows
-    needs: bump
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: v${{ github.event.inputs.version }}
+          ref: ${{ github.ref_name }}
 
       - name: Cache FFTW3 (Windows)
         id: cache-fftw3
@@ -142,13 +96,13 @@ jobs:
 
   build-aubio-windows:
     name: Build aubio for Windows
-    needs: [bump, build-fftw3-windows]
+    needs: build-fftw3-windows
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: v${{ github.event.inputs.version }}
+          ref: ${{ github.ref_name }}
 
       - name: Cache aubio (Windows)
         id: cache-aubio
@@ -194,13 +148,12 @@ jobs:
 
   build-sfb-darwin:
     name: Build SFBAudioEngine for Darwin
-    needs: bump
     runs-on: macos-26
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: v${{ github.event.inputs.version }}
+          ref: ${{ github.ref_name }}
 
       - name: Cache SFB Audio Engine (Darwin)
         id: cache-sfb
@@ -217,13 +170,12 @@ jobs:
 
   build-ffmpeg-darwin:
     name: Build FFmpeg for Darwin
-    needs: bump
     runs-on: macos-26
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: v${{ github.event.inputs.version }}
+          ref: ${{ github.ref_name }}
 
       - name: Cache FFmpeg (Darwin)
         id: cache-ffmpeg
@@ -248,13 +200,12 @@ jobs:
 
   build-fftw3-darwin:
     name: Build FFTW3 for Darwin
-    needs: bump
     runs-on: macos-26
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: v${{ github.event.inputs.version }}
+          ref: ${{ github.ref_name }}
 
       - name: Cache FFTW3 (Darwin)
         id: cache-fftw3
@@ -278,13 +229,13 @@ jobs:
 
   build-aubio-darwin:
     name: Build aubio for Darwin
-    needs: [bump, build-fftw3-darwin]
+    needs: build-fftw3-darwin
     runs-on: macos-26
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: v${{ github.event.inputs.version }}
+          ref: ${{ github.ref_name }}
 
       - name: Cache aubio (Darwin)
         id: cache-aubio
@@ -316,13 +267,12 @@ jobs:
 
   build-ffmpeg-linux:
     name: Build FFmpeg for Linux
-    needs: bump
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: v${{ github.event.inputs.version }}
+          ref: ${{ github.ref_name }}
 
       - name: Cache FFmpeg (Linux)
         id: cache-ffmpeg
@@ -349,13 +299,12 @@ jobs:
 
   build-fftw3-linux:
     name: Build FFTW3 for Linux
-    needs: bump
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: v${{ github.event.inputs.version }}
+          ref: ${{ github.ref_name }}
 
       - name: Cache FFTW3 (Linux)
         id: cache-fftw3
@@ -385,13 +334,13 @@ jobs:
 
   build-aubio-linux:
     name: Build aubio for Linux
-    needs: [bump, build-fftw3-linux]
+    needs: build-fftw3-linux
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: v${{ github.event.inputs.version }}
+          ref: ${{ github.ref_name }}
 
       - name: Cache aubio (Linux)
         id: cache-aubio
@@ -425,7 +374,7 @@ jobs:
 
   build:
     name: Build ${{ matrix.os }}
-    needs: [bump, build-ffmpeg-windows, build-fftw3-windows, build-aubio-windows, build-sfb-darwin, build-ffmpeg-darwin, build-fftw3-darwin, build-aubio-darwin, build-ffmpeg-linux, build-fftw3-linux, build-aubio-linux]
+    needs: [build-ffmpeg-windows, build-fftw3-windows, build-aubio-windows, build-sfb-darwin, build-ffmpeg-darwin, build-fftw3-darwin, build-aubio-darwin, build-ffmpeg-linux, build-fftw3-linux, build-aubio-linux]
     strategy:
       fail-fast: false
       matrix:
@@ -442,7 +391,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: v${{ github.event.inputs.version }}
+          ref: ${{ github.ref_name }}
           fetch-depth: 0
 
       - name: Create secrets.go
@@ -687,7 +636,7 @@ jobs:
         run: |
           mkdir -p dist
           OS_INPUT="${{ matrix.os }}"
-          VERSION="${{ github.event.inputs.version }}"
+          VERSION="${GITHUB_REF_NAME#v}"
           case $OS_INPUT in
             "Windows-AMD64")
               # Installer (zipped)
@@ -775,7 +724,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: v${{ github.event.inputs.version }}
+          ref: ${{ github.ref_name }}
           fetch-depth: 0
 
       - name: Download all artifacts
@@ -803,7 +752,7 @@ jobs:
         id: changelog
         shell: bash
         run: |
-          PREV_TAG=$(git tag --sort=-version:refname | grep -v "^v${{ github.event.inputs.version }}$" | head -1 || true)
+          PREV_TAG=$(git tag --sort=-version:refname | grep -v "^${GITHUB_REF_NAME}$" | head -1 || true)
           if [ -n "$PREV_TAG" ]; then
             CHANGELOG=$(git log "${PREV_TAG}..HEAD" --pretty=format:"- %s (%h)" --no-merges | grep -E "^- (feat|fix)" || true)
             RANGE="Changes since ${PREV_TAG}"
@@ -818,11 +767,9 @@ jobs:
 
           {
             echo "body<<EOF"
-            if [ "${{ github.event.inputs.prerelease }}" = "true" ]; then
-              echo "> [!WARNING]"
-              echo "> **Beta Release** — This is a pre-release build and may be unstable. Use at your own risk."
-              echo ""
-            fi
+            echo "> [!WARNING]"
+            echo "> **Beta Release** — This is a pre-release build and may be unstable. Use at your own risk."
+            echo ""
             echo "## What's Changed"
             echo ""
             echo "${RANGE}:"
@@ -834,11 +781,11 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ github.event.inputs.version }}
-          name: Release v${{ github.event.inputs.version }}
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
           body: ${{ steps.changelog.outputs.body }}
           draft: false
-          prerelease: ${{ github.event.inputs.prerelease }}
+          prerelease: true
           files: |
             dist/*
         env:

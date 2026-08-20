@@ -275,9 +275,17 @@ Conventional Commits: `type(scope): description`
 
 ## 8. Catalog Maintenance
 
-`catalog/` contains living technical documentation. **Read before touch. Update after change.**
+`catalog/` contains living technical documentation. Treat it as a contract
+reference, not a changelog. Do not read or edit it by default for every code
+change.
 
 ### Read Before Touch
+
+Read the relevant catalog only when working in that feature area and its
+documented boundary, lifecycle, data flow, or external contract could affect
+the change. Do not read catalogs for isolated CI, build, lint, test, formatting,
+dependency, or private implementation changes unless the task explicitly needs
+the documented contract.
 
 | Feature area | Catalog |
 |---|---|
@@ -298,12 +306,24 @@ Conventional Commits: `type(scope): description`
 | Overall architecture, DI, Wails IPC | `catalog/architecture/README.md` |
 | Remote control server, WS protocol, auth, remote SPA | `catalog/remote/README.md` |
 
-### Update After Change
+### Update Threshold
 
-Update the relevant catalog entry in the **same task** when any of these change:
-interfaces/structs/methods, DB schema/migrations, Wails-exposed methods/events, algorithms, stores/composables/routes/components, infra adapters/FX modules.
+Update a catalog or README in the same task only when it would otherwise state
+something false or omit information a future engineer needs to use the changed
+contract safely. This includes public commands or setup, DB schema and
+migrations, Wails APIs/events, cross-layer ports, persisted data flow,
+lifecycle/cleanup invariants, user-visible behavior, navigation ownership, or
+meaningful algorithm semantics.
 
-**A task is not complete if the catalog is left stale.**
+Do **not** update documentation for private refactors, renamed internal
+symbols, localized bug fixes, tests, CI/build/lint changes, dependency bumps,
+formatting, or implementation details that leave those contracts unchanged.
+Do not add a documentation diff merely to demonstrate compliance.
+
+README files follow the same threshold: update them for changed public setup,
+commands, supported targets, or user-facing behavior—not for internal workflow
+details. A task is complete without a documentation edit when no documented
+contract became stale.
 
 ### Writing Catalogs
 
@@ -323,8 +343,8 @@ from source.
 - Do not turn catalogs into changelogs, exhaustive component/file lists, or
   pixel-level animation narration. Delete stale detail instead of appending a
   correction below it.
-- Keep claims source-backed. When a contract changes, update the catalog in the
-  same diff as the code and its test.
+- Keep claims source-backed. When a documented contract changes, update the
+  catalog in the same diff as the code and its test.
 
 ---
 
@@ -333,7 +353,7 @@ from source.
 1. **Research** — read relevant catalog entries, find existing patterns, reproduce bugs with a test first.
 2. **Implement** — surgical changes with accompanying tests.
 3. **Verify** — `wails3 task verify` (tests + linters).
-4. **Update catalog** — if any catalog entry is now stale.
+4. **Update docs** — only if a documented contract is now stale.
 
 ---
 

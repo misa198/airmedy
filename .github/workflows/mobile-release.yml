@@ -1,0 +1,103 @@
+name: Mobile Release
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+on:
+  push:
+    tags:
+      - 'mobile-v*'
+
+concurrency:
+  group: mobile-release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish signed ARM64 APK
+    runs-on: macos-15
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android build tools
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;30.0.15729638' 'cmake;3.22.1'
+
+      - name: Configure signing and Android SDK
+        env:
+          MOBILE_KEYSTORE_BASE64: ${{ secrets.MOBILE_KEYSTORE_BASE64 }}
+          MOBILE_KEYSTORE_PASSWORD: ${{ secrets.MOBILE_KEYSTORE_PASSWORD }}
+          MOBILE_KEY_ALIAS: ${{ secrets.MOBILE_KEY_ALIAS }}
+          MOBILE_KEY_PASSWORD: ${{ secrets.MOBILE_KEY_PASSWORD }}
+        run: |
+          test -n "$MOBILE_KEYSTORE_BASE64"
+          test -n "$MOBILE_KEYSTORE_PASSWORD"
+          test -n "$MOBILE_KEY_ALIAS"
+          test -n "$MOBILE_KEY_PASSWORD"
+          base64 -D <<< "$MOBILE_KEYSTORE_BASE64" > "$RUNNER_TEMP/mobile-release.jks"
+          echo "sdk.dir=$ANDROID_HOME" > mobile/local.properties
+
+      - name: Restore Android FFmpeg
+        id: cache-ffmpeg
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            mobile/androidApp/build/ffmpeg
+            mobile/androidApp/src/main/jniLibs
+          key: ffmpeg-android-arm64-v1-${{ hashFiles('scripts/build-ffmpeg-android.sh') }}
+
+      - name: Build Android FFmpeg
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        run: bash scripts/build-ffmpeg-android.sh arm64-v8a
+
+      - name: Save Android FFmpeg
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            mobile/androidApp/build/ffmpeg
+            mobile/androidApp/src/main/jniLibs
+          key: ffmpeg-android-arm64-v1-${{ hashFiles('scripts/build-ffmpeg-android.sh') }}
+
+      - name: Build signed ARM64 APK
+        env:
+          MOBILE_KEYSTORE_FILE: ${{ runner.temp }}/mobile-release.jks
+          MOBILE_KEYSTORE_PASSWORD: ${{ secrets.MOBILE_KEYSTORE_PASSWORD }}
+          MOBILE_KEY_ALIAS: ${{ secrets.MOBILE_KEY_ALIAS }}
+          MOBILE_KEY_PASSWORD: ${{ secrets.MOBILE_KEY_PASSWORD }}
+          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+          LASTFM_API_SECRET: ${{ secrets.LASTFM_API_SECRET }}
+        working-directory: mobile
+        run: ./gradlew :androidApp:assembleProdRelease -Pandroid.injected.build.abi=arm64-v8a
+
+      - name: Verify and stage APK
+        run: |
+          APK=$(find mobile/androidApp/build/outputs/apk/prod/release -name '*.apk' -print -quit)
+          test -n "$APK"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK"
+          unzip -l "$APK" | grep -q 'lib/arm64-v8a/libavcodec.so'
+          ! unzip -l "$APK" | grep -q 'lib/x86_64/'
+          mkdir -p dist
+          cp "$APK" "dist/Airmedy-mobile-${GITHUB_REF_NAME}.apk"
+
+      - name: Publish Mobile Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Mobile Release ${{ github.ref_name }}
+          prerelease: true
+          files: dist/*.apk

@@ -1,0 +1,84 @@
+name: Mobile CI
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'mobile/**'
+      - 'scripts/build-ffmpeg-android.sh'
+      - '.github/workflows/mobile-ci.yml'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - master
+    paths:
+      - 'mobile/**'
+      - 'scripts/build-ffmpeg-android.sh'
+      - '.github/workflows/mobile-ci.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  mobile:
+    name: Test and Build Android
+    runs-on: macos-15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android NDK
+        run: sdkmanager 'ndk;30.0.15729638' 'cmake;3.22.1'
+
+      - name: Configure Android SDK
+        working-directory: mobile
+        run: echo "sdk.dir=$ANDROID_HOME" > local.properties
+
+      - name: Restore Android FFmpeg
+        id: cache-ffmpeg
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            mobile/androidApp/build/ffmpeg
+            mobile/androidApp/src/main/jniLibs
+          key: ffmpeg-android-v1-${{ hashFiles('scripts/build-ffmpeg-android.sh') }}
+
+      - name: Build Android FFmpeg
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        run: bash scripts/build-ffmpeg-android.sh all
+
+      - name: Save Android FFmpeg
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            mobile/androidApp/build/ffmpeg
+            mobile/androidApp/src/main/jniLibs
+          key: ffmpeg-android-v1-${{ hashFiles('scripts/build-ffmpeg-android.sh') }}
+
+      - name: Test shared logic
+        working-directory: mobile
+        run: ./gradlew :sharedLogic:testAndroidHostTest
+
+      - name: Build Android app
+        working-directory: mobile
+        run: ./gradlew :androidApp:assembleDevDebug
