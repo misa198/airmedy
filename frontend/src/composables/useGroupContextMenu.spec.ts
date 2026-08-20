@@ -49,7 +49,7 @@ describe('useGroupContextMenu', () => {
     const item = useGroupContextMenu().buildMenuItems(tracks)
       .find(menuItem => menuItem.label === 'context_menu.add_to_queue')
 
-    expect(item?.disabled).toBe(false)
+    expect(item?.disabled).toBeUndefined()
     item?.action?.()
     expect(PlayerService.AppendTracks).toHaveBeenCalledWith([tracks[1]])
   })

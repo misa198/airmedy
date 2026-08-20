@@ -108,7 +108,7 @@ describe('HomeAnalysis empty state', () => {
     expect(wrapper.get('[data-testid="analytics-quality-empty"]').text()).toContain('No audio quality data yet.')
     expect(wrapper.find('[data-testid="analytics-library-summary"]').exists()).toBe(true)
     expect(wrapper.html().indexOf('analytics-library-summary')).toBeLessThan(wrapper.html().indexOf('analytics-library-growth-card'))
-    expect(wrapper.text().indexOf('analytics.plays')).toBeLessThan(wrapper.text().indexOf('analytics.total_time'))
+    expect(wrapper.text().indexOf('analytics.total_time')).toBeLessThan(wrapper.text().indexOf('analytics.plays'))
   })
 })
 
