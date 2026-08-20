@@ -296,149 +296,152 @@ class MainActivity : ComponentActivity() {
             SideEffect {
                 updateSystemBarAppearance(darkTheme, isFullScreenPlayerVisible)
             }
-            App(
-                uiState = uiState,
-                syncUiState = syncUiState,
-                homeUiState = homeUiState,
-                tracksUiState = tracksUiState,
-                insightUiState = insightUiState,
-                artistsUiState = artistsUiState,
-                albumsUiState = albumsUiState,
-                genresUiState = genresUiState,
-                composersUiState = composersUiState,
-                playlistsUiState = playlistsUiState,
-                searchUiState = searchUiState,
-                albumDetailsUiState = albumDetailsUiState,
-                playlistDetailsUiState = playlistDetailsUiState,
-                artistDetailsUiState = artistDetailsUiState,
-                genreDetailsUiState = genreDetailsUiState,
-                composerDetailsUiState = composerDetailsUiState,
-                onIntent = { intent ->
-                    if (shouldClearLibrarySearch(intent, uiState.currentPage)) searchViewModel.clear()
-                    viewModel.dispatch(intent)
-                },
-                onSortOptionSelected = tracksViewModel::setSortOption,
-                onToggleSortOrder = tracksViewModel::toggleSortOrder,
-                onTrackClick = tracksViewModel::playTrack,
-                onSearchQueryChange = searchViewModel::setQuery,
-                onSearchTrackClick = { trackId ->
-                    playbackRequestFor(searchUiState.tracks, trackId)?.let(playbackController::play)
-                },
-                onInsightLibraryPeriodSelected = insightViewModel::setLibraryPeriod,
-                onInsightListeningPeriodSelected = insightViewModel::setListeningPeriod,
-                onInsightSourceSelected = insightViewModel::setSourceFilter,
-                onInsightTrackClick = insightViewModel::playTopTrack,
-                onTracksPlayAll = tracksViewModel::playAll,
-                onTracksFilterQueryChange = tracksViewModel::setFilterQuery,
-                onRecentTrackClick = tracksViewModel::playRecentTrack,
-                onHomeTrackClick = tracksViewModel::playHomeTrack,
-                onTrackPlayNext = playbackController::playNext,
-                onTrackAddToQueue = { trackId -> playbackController.append(listOf(trackId)) },
-                onAlbumPlayNext = playbackController::playNext,
-                onAlbumAddToQueue = playbackController::append,
-                onArtistSortOptionSelected = artistsViewModel::setSortOption,
-                onArtistToggleSortOrder = artistsViewModel::toggleSortOrder,
-                onArtistsFilterQueryChange = artistsViewModel::setFilterQuery,
-                onAlbumSortOptionSelected = albumsViewModel::setSortOption,
-                onAlbumToggleSortOrder = albumsViewModel::toggleSortOrder,
-                onAlbumLayoutModeSelected = albumsViewModel::setLayoutMode,
-                onAlbumPlay = albumDetailsViewModel::play,
-                onAlbumsPlayAll = albumsViewModel::playAll,
-                onAlbumsFilterQueryChange = albumsViewModel::setFilterQuery,
-                onAlbumTrackPlay = albumDetailsViewModel::playTrack,
-                onPlaylistPlay = playlistDetailsViewModel::play,
-                onPlaylistTrackPlay = playlistDetailsViewModel::playTrack,
-                onPlaylistTrackRemove = playlistDetailsViewModel::removeTrack,
-                onPlaylistPlayNext = playbackController::playNext,
-                onPlaylistAddToQueue = playbackController::append,
-                onPlaylistUpdate = playlistsViewModel::updatePlaylist,
-                onPlaylistDelete = playlistsViewModel::deletePlaylist,
-                onCreatePlaylist = playlistsViewModel::createPlaylist,
-                onCreatePlaylistWithTracks = { name, artwork, trackIds -> playlistsViewModel.createPlaylist(name, artwork, trackIds) },
-                onPlaylistMembershipChange = playlistsViewModel::changePlaylistMembership,
-                onArtistPlay = artistDetailsViewModel::play,
-                onArtistPlayNext = playbackController::playNext,
-                onArtistAddToQueue = playbackController::append,
-                orderedTrackIdsForArtist = artistDetailsViewModel::orderedTrackIds,
-                onGenrePlay = genreDetailsViewModel::play,
-                onGenrePlayNext = playbackController::playNext,
-                onGenreAddToQueue = playbackController::append,
-                orderedTrackIdsForGenre = genreDetailsViewModel::orderedTrackIds,
-                onComposerPlay = composerDetailsViewModel::play,
-                onComposerPlayNext = playbackController::playNext,
-                onComposerAddToQueue = playbackController::append,
-                orderedTrackIdsForComposer = composerDetailsViewModel::orderedTrackIds,
-                onGenreSortOptionSelected = genresViewModel::setSortOption,
-                onGenreToggleSortOrder = genresViewModel::toggleSortOrder,
-                onGenresFilterQueryChange = genresViewModel::setFilterQuery,
-                onComposerSortOptionSelected = composersViewModel::setSortOption,
-                onComposerToggleSortOrder = composersViewModel::toggleSortOrder,
-                onComposersFilterQueryChange = composersViewModel::setFilterQuery,
-                onPairingQrScanned = { raw ->
-                    if (syncViewModel.acceptsQr(raw)) {
-                        syncViewModel.pair(raw)
-                        viewModel.dispatch(AppIntent.NavigateBack)
-                        true
-                    } else {
-                        false
-                    }
-                },
-                onUnpair = syncViewModel::unpair,
-                onSyncScreenVisible = syncViewModel::onSyncScreenVisible,
-                onSyncScreenHidden = syncViewModel::onSyncScreenHidden,
-                lastFmStatus = lastFmStatus,
-                onLastFmConnect = {
-                    lastFm.authorizationUrl()?.let { url ->
-                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                    }
-                },
-                onLastFmDisconnect = {
-                    preferenceScope.launch { lastFm.disconnect() }
-                },
-                crossfadeSeconds = crossfadeSettings.seconds,
-                lastEnabledCrossfadeSeconds = crossfadeSettings.lastEnabledSeconds,
-                onCrossfadeSecondsChanged = playbackController::setCrossfadeSeconds,
-                blendArtworkDuringCrossfade = crossfadeSettings.blendArtworkDuringCrossfade,
-                onBlendArtworkDuringCrossfadeChanged = playbackController::setBlendArtworkDuringCrossfade,
-                normalizationAvailable = normalizationAvailable,
-                normalization = normalizationSettings,
-                onNormalizationChanged = { settings ->
-                    preferenceScope.launch { normalizationPreferences.update { settings } }
-                },
-                equalizer = equalizerSettings,
-                onEqualizerEnabledChanged = { enabled ->
-                    preferenceScope.launch { equalizerPreferences.setEnabled(enabled) }
-                },
-                onEqualizerPresetSelected = { key ->
-                    preferenceScope.launch { equalizerPreferences.selectPreset(key) }
-                },
-                onEqualizerBandChanged = { index, gain ->
-                    preferenceScope.launch { equalizerPreferences.setBand(equalizerSettings, index, gain) }
-                },
-                onEqualizerProfileCreate = { name ->
-                    preferenceScope.launch { equalizerPreferences.createProfile(name) }
-                },
-                onEqualizerProfileReset = { key ->
-                    preferenceScope.launch { equalizerPreferences.resetDefault(key) }
-                },
-                onEqualizerProfileDelete = { key ->
-                    preferenceScope.launch { equalizerPreferences.deleteProfile(key) }
-                },
-                artworkCrossfade = artworkCrossfade,
-                playbackState = playbackState,
-                playbackQueue = playbackQueue,
+            val destinations = AppDestinationModels(
+                home = HomeDestinationModel(homeUiState, tracksViewModel::playHomeTrack),
+                insight = InsightDestinationModel(
+                    state = insightUiState,
+                    onLibraryPeriodSelected = insightViewModel::setLibraryPeriod,
+                    onListeningPeriodSelected = insightViewModel::setListeningPeriod,
+                    onSourceSelected = insightViewModel::setSourceFilter,
+                    onTrackClick = insightViewModel::playTopTrack,
+                ),
+                library = LibraryDestinationModel(
+                    tracks = LibraryTracksModel(
+                        state = tracksUiState,
+                        onSortOptionSelected = tracksViewModel::setSortOption,
+                        onToggleSortOrder = tracksViewModel::toggleSortOrder,
+                        onTrackClick = tracksViewModel::playTrack,
+                        onPlayAll = tracksViewModel::playAll,
+                        onFilterQueryChange = tracksViewModel::setFilterQuery,
+                        onRecentTrackClick = tracksViewModel::playRecentTrack,
+                    ),
+                    artists = LibraryArtistsModel(
+                        state = artistsUiState,
+                        onSortOptionSelected = artistsViewModel::setSortOption,
+                        onToggleSortOrder = artistsViewModel::toggleSortOrder,
+                        onFilterQueryChange = artistsViewModel::setFilterQuery,
+                        onPlay = artistDetailsViewModel::play,
+                        onPlayNext = playbackController::playNext,
+                        onAddToQueue = playbackController::append,
+                        orderedTrackIds = artistDetailsViewModel::orderedTrackIds,
+                    ),
+                    albums = LibraryAlbumsModel(
+                        state = albumsUiState,
+                        onSortOptionSelected = albumsViewModel::setSortOption,
+                        onToggleSortOrder = albumsViewModel::toggleSortOrder,
+                        onLayoutModeSelected = albumsViewModel::setLayoutMode,
+                        onPlay = albumDetailsViewModel::play,
+                        onPlayAll = albumsViewModel::playAll,
+                        onFilterQueryChange = albumsViewModel::setFilterQuery,
+                        onTrackPlay = albumDetailsViewModel::playTrack,
+                        onPlayNext = playbackController::playNext,
+                        onAddToQueue = playbackController::append,
+                        onAddToFavorites = { trackIds ->
+                            preferenceScope.launch {
+                                trackIds.forEach { trackId -> AndroidSyncRuntime.syncStore().setFavorite(trackId, true) }
+                            }
+                        },
+                    ),
+                    genres = LibraryGenresModel(
+                        state = genresUiState,
+                        onSortOptionSelected = genresViewModel::setSortOption,
+                        onToggleSortOrder = genresViewModel::toggleSortOrder,
+                        onFilterQueryChange = genresViewModel::setFilterQuery,
+                        onPlay = genreDetailsViewModel::play,
+                        onPlayNext = playbackController::playNext,
+                        onAddToQueue = playbackController::append,
+                        orderedTrackIds = genreDetailsViewModel::orderedTrackIds,
+                    ),
+                    composers = LibraryComposersModel(
+                        state = composersUiState,
+                        onSortOptionSelected = composersViewModel::setSortOption,
+                        onToggleSortOrder = composersViewModel::toggleSortOrder,
+                        onFilterQueryChange = composersViewModel::setFilterQuery,
+                        onPlay = composerDetailsViewModel::play,
+                        onPlayNext = playbackController::playNext,
+                        onAddToQueue = playbackController::append,
+                        orderedTrackIds = composerDetailsViewModel::orderedTrackIds,
+                    ),
+                    playlists = LibraryPlaylistsModel(
+                        state = playlistsUiState,
+                        onPlay = playlistDetailsViewModel::play,
+                        onTrackPlay = playlistDetailsViewModel::playTrack,
+                        onTrackRemove = playlistDetailsViewModel::removeTrack,
+                        onPlayNext = playbackController::playNext,
+                        onAddToQueue = playbackController::append,
+                        onUpdate = playlistsViewModel::updatePlaylist,
+                        onDelete = playlistsViewModel::deletePlaylist,
+                        onCreate = playlistsViewModel::createPlaylist,
+                        onCreateWithTracks = { name, artwork, trackIds -> playlistsViewModel.createPlaylist(name, artwork, trackIds) },
+                        onMembershipChange = playlistsViewModel::changePlaylistMembership,
+                    ),
+                    search = LibrarySearchModel(
+                        state = searchUiState,
+                        onQueryChange = searchViewModel::setQuery,
+                        onTrackClick = { trackId ->
+                            playbackRequestFor(searchUiState.tracks, trackId)?.let(playbackController::play)
+                        },
+                    ),
+                    details = LibraryDetailActions(
+                        albums = albumDetailsUiState,
+                        playlists = playlistDetailsUiState,
+                        artists = artistDetailsUiState,
+                        genres = genreDetailsUiState,
+                        composers = composerDetailsUiState,
+                    ),
+                ),
+                settings = SettingsDestinationModel(
+                    syncState = syncUiState,
+                    onPairingQrScanned = { raw ->
+                        if (!syncViewModel.acceptsQr(raw)) false else {
+                            syncViewModel.pair(raw)
+                            viewModel.dispatch(AppIntent.NavigateBack)
+                            true
+                        }
+                    },
+                    onUnpair = syncViewModel::unpair,
+                    onSyncScreenVisible = syncViewModel::onSyncScreenVisible,
+                    onSyncScreenHidden = syncViewModel::onSyncScreenHidden,
+                    lastFmStatus = lastFmStatus,
+                    onLastFmConnect = {
+                        lastFm.authorizationUrl()?.let { url -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+                    },
+                    onLastFmDisconnect = { preferenceScope.launch { lastFm.disconnect() } },
+                    crossfadeSeconds = crossfadeSettings.seconds,
+                    lastEnabledCrossfadeSeconds = crossfadeSettings.lastEnabledSeconds,
+                    onCrossfadeSecondsChanged = playbackController::setCrossfadeSeconds,
+                    blendArtworkDuringCrossfade = crossfadeSettings.blendArtworkDuringCrossfade,
+                    onBlendArtworkDuringCrossfadeChanged = playbackController::setBlendArtworkDuringCrossfade,
+                    normalizationAvailable = normalizationAvailable,
+                    normalization = normalizationSettings,
+                    onNormalizationChanged = { settings -> preferenceScope.launch { normalizationPreferences.update { settings } } },
+                    equalizer = equalizerSettings,
+                    onEqualizerEnabledChanged = { enabled -> preferenceScope.launch { equalizerPreferences.setEnabled(enabled) } },
+                    onEqualizerPresetSelected = { key -> preferenceScope.launch { equalizerPreferences.selectPreset(key) } },
+                    onEqualizerBandChanged = { index, gain -> preferenceScope.launch { equalizerPreferences.setBand(equalizerSettings, index, gain) } },
+                    onEqualizerProfileCreate = { name -> preferenceScope.launch { equalizerPreferences.createProfile(name) } },
+                    onEqualizerProfileReset = { key -> preferenceScope.launch { equalizerPreferences.resetDefault(key) } },
+                    onEqualizerProfileDelete = { key -> preferenceScope.launch { equalizerPreferences.deleteProfile(key) } },
+                ),
+            )
+            val playback = PlaybackModel(
+                state = playbackState,
+                queue = playbackQueue,
                 queueTracks = allTracks,
                 lyrics = lyrics,
-                onPlaybackPrevious = playbackController::previous,
-                onPlaybackPlayPause = {
+                artworkCrossfade = artworkCrossfade,
+                blendArtworkDuringCrossfade = crossfadeSettings.blendArtworkDuringCrossfade,
+                systemVolume = systemMusicVolumeState,
+                onPrevious = playbackController::previous,
+                onPlayPause = {
                     when (playbackState) {
-                        is me.misa198.airmedy.player.PlaybackState.Playing -> playbackController.pause()
-                        is me.misa198.airmedy.player.PlaybackState.Paused -> playbackController.resume()
+                        is PlaybackState.Playing -> playbackController.pause()
+                        is PlaybackState.Paused -> playbackController.resume()
                         else -> Unit
                     }
                 },
-                onPlaybackNext = playbackController::next,
-                onPlaybackSeek = playbackController::seekTo,
+                onNext = playbackController::next,
+                onSeek = playbackController::seekTo,
                 onQueueTrackSelected = playbackController::selectQueueTrack,
                 onQueueReordered = playbackController::reorderQueue,
                 onQueueTrackRemoved = playbackController::removeFromQueue,
@@ -450,21 +453,23 @@ class MainActivity : ComponentActivity() {
                         lastFm.setLoved(trackId, favorite)
                     }
                 },
-                onAlbumAddToFavorites = { trackIds ->
-                    preferenceScope.launch {
-                        trackIds.forEach { trackId -> AndroidSyncRuntime.syncStore().setFavorite(trackId, true) }
-                    }
-                },
-                systemVolume = systemMusicVolumeState,
+                onTrackPlayNext = playbackController::playNext,
+                onTrackAddToQueue = { trackId -> playbackController.append(listOf(trackId)) },
                 onSystemVolumeChange = { volume ->
                     setSystemMusicVolume(volume.coerceIn(0f, 1f))
-                    // Reflect the system's discrete stream step immediately,
-                    // so a delayed settings observer cannot snap the slider
-                    // backward after a drag ends.
                     systemMusicVolumeState = currentSystemMusicVolume()
                 },
                 onMiniPlayerDismiss = playbackController::clearQueue,
                 onOpenMediaOutputSwitcher = ::openMediaOutputSwitcher,
+            )
+            App(
+                uiState = uiState,
+                destinations = destinations,
+                playback = playback,
+                onIntent = { intent ->
+                    if (shouldClearLibrarySearch(intent, uiState.currentPage)) searchViewModel.clear()
+                    viewModel.dispatch(intent)
+                },
                 onFullScreenPlayerVisibilityChanged = { visible ->
                     isFullScreenPlayerVisible = visible
                     updateSystemBarAppearance(darkTheme, visible)

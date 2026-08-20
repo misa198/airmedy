@@ -35,8 +35,10 @@ import androidx.compose.foundation.lazy.LazyListState
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import me.misa198.airmedy.AppDestination
+import me.misa198.airmedy.AppDestinationModels
 import me.misa198.airmedy.AppIntent
 import me.misa198.airmedy.AppStackPage
+import me.misa198.airmedy.PlaybackModel
 import me.misa198.airmedy.StackPageEntry
 import me.misa198.airmedy.SyncUiState
 import me.misa198.airmedy.settings.ThemeMode
@@ -135,102 +137,104 @@ internal fun AppDestinationContent(
     genresListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     composersListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
     playlistsListState: LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
-    albumDetailsUiState: AlbumDetailsUiState = AlbumDetailsUiState(),
-    playlistDetailsUiState: PlaylistDetailsUiState = PlaylistDetailsUiState(),
-    artistDetailsUiState: ArtistDetailsUiState = ArtistDetailsUiState(),
-    genreDetailsUiState: GenreDetailsUiState = GenreDetailsUiState(),
-    composerDetailsUiState: ComposerDetailsUiState = ComposerDetailsUiState(),
     selectedAlbumId: String? = null,
     selectedPlaylistId: String? = null,
     selectedArtistId: String? = null,
     selectedGenreId: String? = null,
     selectedComposerId: String? = null,
     onIntent: (AppIntent) -> Unit,
-    syncUiState: SyncUiState,
-    homeUiState: HomeUiState = HomeUiState(),
-    tracksUiState: LibraryTracksUiState = LibraryTracksUiState(),
-    artistsUiState: LibraryArtistsUiState = LibraryArtistsUiState(),
-    albumsUiState: LibraryAlbumsUiState = LibraryAlbumsUiState(),
-    genresUiState: LibraryGenresUiState = LibraryGenresUiState(),
-    composersUiState: LibraryComposersUiState = LibraryComposersUiState(),
-    playlistsUiState: LibraryPlaylistsUiState = LibraryPlaylistsUiState(),
-    searchUiState: LibrarySearchUiState = LibrarySearchUiState(),
-    insightUiState: InsightUiState = InsightUiState(),
-    onInsightLibraryPeriodSelected: (InsightPeriod) -> Unit = {},
-    onInsightListeningPeriodSelected: (InsightPeriod) -> Unit = {},
-    onInsightSourceSelected: (InsightSourceFilter) -> Unit = {},
-    onInsightTrackClick: (String) -> Unit = {},
-    onSortOptionSelected: (TrackSortOption) -> Unit = {},
-    onToggleSortOrder: () -> Unit = {},
-    onTrackClick: (String) -> Unit = {},
-    onSearchQueryChange: (String) -> Unit = {},
-    onSearchTrackClick: (String) -> Unit = {},
-    onTracksPlayAll: (Boolean) -> Unit = {},
-    onTracksFilterQueryChange: (String) -> Unit = {},
-    onRecentTrackClick: (String) -> Unit = {},
-    onHomeTrackClick: (List<me.misa198.airmedy.sync.LibraryTrack>, String) -> Unit = { _, _ -> },
-    playbackQueue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
-    onTrackPlayNext: (String) -> Unit = {},
-    onTrackAddToQueue: (String) -> Unit = {},
-    onTrackFavoriteToggle: (String, Boolean) -> Unit = { _, _ -> },
-    onAlbumPlayNext: (List<String>) -> Unit = {},
-    onAlbumAddToQueue: (List<String>) -> Unit = {},
-    onAlbumAddToFavorites: (List<String>) -> Unit = {},
-    onAlbumSortOptionSelected: (AlbumSortOption) -> Unit = {},
-    onAlbumToggleSortOrder: () -> Unit = {},
-    onAlbumPlay: (String, Boolean) -> Unit = { _, _ -> },
-    onAlbumsPlayAll: (Boolean) -> Unit = {},
-    onAlbumsFilterQueryChange: (String) -> Unit = {},
-    onAlbumTrackPlay: (String, String) -> Unit = { _, _ -> },
-    onPlaylistPlay: (String, Boolean) -> Unit = { _, _ -> },
-    onPlaylistTrackPlay: (String, String) -> Unit = { _, _ -> },
-    onPlaylistTrackRemove: (String, String) -> Unit = { _, _ -> },
-    onPlaylistPlayNext: (List<String>) -> Unit = {},
-    onPlaylistAddToQueue: (List<String>) -> Unit = {},
-    onPlaylistUpdate: (String, String, android.net.Uri?, Boolean) -> Unit = { _, _, _, _ -> },
-    onPlaylistDelete: (String) -> Unit = {},
+    destinations: AppDestinationModels,
+    playback: PlaybackModel,
     onTrackContextBottomSheet: (me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest) -> Unit = {},
-    onArtistPlay: (String, Boolean) -> Unit = { _, _ -> },
-    onArtistPlayNext: (List<String>) -> Unit = {},
-    onArtistAddToQueue: (List<String>) -> Unit = {},
-    orderedTrackIdsForArtist: (String) -> List<String> = { emptyList() },
-    onArtistTrackContextBottomSheet: (me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest) -> Unit = {},
-    onArtistsFilterQueryChange: (String) -> Unit = {},
-    onGenrePlay: (String, Boolean) -> Unit = { _, _ -> },
-    onGenrePlayNext: (List<String>) -> Unit = {},
-    onGenreAddToQueue: (List<String>) -> Unit = {},
-    onGenreTrackContextBottomSheet: (me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest) -> Unit = {},
-    orderedTrackIdsForGenre: (String) -> List<String> = { emptyList() },
-    onGenresFilterQueryChange: (String) -> Unit = {},
-    onComposerPlay: (String, Boolean) -> Unit = { _, _ -> },
-    onComposerPlayNext: (List<String>) -> Unit = {},
-    onComposerAddToQueue: (List<String>) -> Unit = {},
-    onComposerTrackContextBottomSheet: (me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest) -> Unit = {},
-    orderedTrackIdsForComposer: (String) -> List<String> = { emptyList() },
-    onComposersFilterQueryChange: (String) -> Unit = {},
     onAlbumHeroColorChanged: (Color) -> Unit = {},
-    onPairingQrScanned: (String) -> Boolean,
-    onUnpair: () -> Unit,
-    onSyncScreenVisible: () -> Unit,
-    onSyncScreenHidden: () -> Unit,
-    lastFmStatus: LastFmStatus = LastFmStatus(),
-    onLastFmConnect: () -> Unit = {},
-    onLastFmDisconnect: () -> Unit = {},
-    crossfadeSeconds: Int = 0,
-    lastEnabledCrossfadeSeconds: Int = 4,
-    onCrossfadeSecondsChanged: (Int) -> Unit = {},
-    blendArtworkDuringCrossfade: Boolean = true,
-    onBlendArtworkDuringCrossfadeChanged: (Boolean) -> Unit = {},
-    normalizationAvailable: Boolean = false,
-    normalization: me.misa198.airmedy.player.NormalizationSettings = me.misa198.airmedy.player.NormalizationSettings(),
-    onNormalizationChanged: (me.misa198.airmedy.player.NormalizationSettings) -> Unit = {},
-    equalizer: me.misa198.airmedy.player.EqualizerSettings = me.misa198.airmedy.player.EqualizerSettings(),
-    onEqualizerEnabledChanged: (Boolean) -> Unit = {},
-    onEqualizerPresetSelected: (String) -> Unit = {},
-    onEqualizerBandChanged: (Int, Float) -> Unit = { _, _ -> },
     onSettingsContentScrolled: (Boolean) -> Unit = {},
     onContentScroll: (ContentScrollDelta) -> Unit = {},
 ) {
+    val homeUiState = destinations.home.state
+    val insightUiState = destinations.insight.state
+    val library = destinations.library
+    val tracksUiState = library.tracks.state
+    val artistsUiState = library.artists.state
+    val albumsUiState = library.albums.state
+    val genresUiState = library.genres.state
+    val composersUiState = library.composers.state
+    val playlistsUiState = library.playlists.state
+    val searchUiState = library.search.state
+    val albumDetailsUiState = library.details.albums
+    val playlistDetailsUiState = library.details.playlists
+    val artistDetailsUiState = library.details.artists
+    val genreDetailsUiState = library.details.genres
+    val composerDetailsUiState = library.details.composers
+    val settings = destinations.settings
+    val playbackQueue = playback.queue
+    val onHomeTrackClick = destinations.home.onTrackClick
+    val onInsightLibraryPeriodSelected = destinations.insight.onLibraryPeriodSelected
+    val onInsightListeningPeriodSelected = destinations.insight.onListeningPeriodSelected
+    val onInsightSourceSelected = destinations.insight.onSourceSelected
+    val onInsightTrackClick = destinations.insight.onTrackClick
+    val onSortOptionSelected = library.tracks.onSortOptionSelected
+    val onToggleSortOrder = library.tracks.onToggleSortOrder
+    val onTrackClick = library.tracks.onTrackClick
+    val onTracksPlayAll = library.tracks.onPlayAll
+    val onTracksFilterQueryChange = library.tracks.onFilterQueryChange
+    val onRecentTrackClick = library.tracks.onRecentTrackClick
+    val onSearchQueryChange = library.search.onQueryChange
+    val onSearchTrackClick = library.search.onTrackClick
+    val onTrackPlayNext = playback.onTrackPlayNext
+    val onTrackAddToQueue = playback.onTrackAddToQueue
+    val onTrackFavoriteToggle = playback.onFavoriteToggle
+    val onAlbumPlayNext = library.albums.onPlayNext
+    val onAlbumAddToQueue = library.albums.onAddToQueue
+    val onAlbumAddToFavorites = library.albums.onAddToFavorites
+    val onAlbumPlay = library.albums.onPlay
+    val onAlbumsPlayAll = library.albums.onPlayAll
+    val onAlbumsFilterQueryChange = library.albums.onFilterQueryChange
+    val onAlbumTrackPlay = library.albums.onTrackPlay
+    val onPlaylistPlay = library.playlists.onPlay
+    val onPlaylistTrackPlay = library.playlists.onTrackPlay
+    val onPlaylistTrackRemove = library.playlists.onTrackRemove
+    val onPlaylistPlayNext = library.playlists.onPlayNext
+    val onPlaylistAddToQueue = library.playlists.onAddToQueue
+    val onPlaylistUpdate = library.playlists.onUpdate
+    val onPlaylistDelete = library.playlists.onDelete
+    val onArtistPlay = library.artists.onPlay
+    val onArtistPlayNext = library.artists.onPlayNext
+    val onArtistAddToQueue = library.artists.onAddToQueue
+    val orderedTrackIdsForArtist = library.artists.orderedTrackIds
+    val onArtistsFilterQueryChange = library.artists.onFilterQueryChange
+    val onGenrePlay = library.genres.onPlay
+    val onGenrePlayNext = library.genres.onPlayNext
+    val onGenreAddToQueue = library.genres.onAddToQueue
+    val orderedTrackIdsForGenre = library.genres.orderedTrackIds
+    val onGenresFilterQueryChange = library.genres.onFilterQueryChange
+    val onComposerPlay = library.composers.onPlay
+    val onComposerPlayNext = library.composers.onPlayNext
+    val onComposerAddToQueue = library.composers.onAddToQueue
+    val orderedTrackIdsForComposer = library.composers.orderedTrackIds
+    val onComposersFilterQueryChange = library.composers.onFilterQueryChange
+    val onArtistTrackContextBottomSheet = onTrackContextBottomSheet
+    val onGenreTrackContextBottomSheet = onTrackContextBottomSheet
+    val onComposerTrackContextBottomSheet = onTrackContextBottomSheet
+    val syncUiState = settings.syncState
+    val onPairingQrScanned = settings.onPairingQrScanned
+    val onUnpair = settings.onUnpair
+    val onSyncScreenVisible = settings.onSyncScreenVisible
+    val onSyncScreenHidden = settings.onSyncScreenHidden
+    val lastFmStatus = settings.lastFmStatus
+    val onLastFmConnect = settings.onLastFmConnect
+    val onLastFmDisconnect = settings.onLastFmDisconnect
+    val crossfadeSeconds = settings.crossfadeSeconds
+    val lastEnabledCrossfadeSeconds = settings.lastEnabledCrossfadeSeconds
+    val onCrossfadeSecondsChanged = settings.onCrossfadeSecondsChanged
+    val blendArtworkDuringCrossfade = settings.blendArtworkDuringCrossfade
+    val onBlendArtworkDuringCrossfadeChanged = settings.onBlendArtworkDuringCrossfadeChanged
+    val normalizationAvailable = settings.normalizationAvailable
+    val normalization = settings.normalization
+    val onNormalizationChanged = settings.onNormalizationChanged
+    val equalizer = settings.equalizer
+    val onEqualizerEnabledChanged = settings.onEqualizerEnabledChanged
+    val onEqualizerPresetSelected = settings.onEqualizerPresetSelected
+    val onEqualizerBandChanged = settings.onEqualizerBandChanged
     val colors = LocalAirmedyColors.current
     val destination = stackPage.destination
     val page = stackPage.page
@@ -296,7 +300,8 @@ internal fun AppDestinationContent(
                         .background(colors.background),
                 ) {
                     when (currentPage.destination) {
-                        AppDestination.Home -> if (currentPage.page == AppStackPage.Root) {
+                        AppDestination.Home -> HomeDestinationContent {
+                            if (currentPage.page == AppStackPage.Root) {
                             HomeContent(
                                 modifier = Modifier.fillMaxSize(),
                                 listState = homeListState,
@@ -314,19 +319,23 @@ internal fun AppDestinationContent(
                                 onTrackArtistClick = { artist -> onIntent(AppIntent.OpenArtistDetails(artist.id)) },
                                 onTrackContextBottomSheet = onTrackContextBottomSheet,
                             )
+                            }
                         }
-                        AppDestination.Insight -> InsightContent(
-                            state = insightUiState,
-                            listState = insightListState,
-                            contentPadding = contentPadding,
-                            onLibraryPeriodSelected = onInsightLibraryPeriodSelected,
-                            onListeningPeriodSelected = onInsightListeningPeriodSelected,
-                            onSourceSelected = onInsightSourceSelected,
-                            onArtistClick = { onIntent(AppIntent.OpenArtistDetails(it)) },
-                            onTrackClick = onInsightTrackClick,
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                        AppDestination.Settings -> key(currentPage.page) {
+                        AppDestination.Insight -> InsightDestinationContent {
+                            InsightContent(
+                                state = insightUiState,
+                                listState = insightListState,
+                                contentPadding = contentPadding,
+                                onLibraryPeriodSelected = onInsightLibraryPeriodSelected,
+                                onListeningPeriodSelected = onInsightListeningPeriodSelected,
+                                onSourceSelected = onInsightSourceSelected,
+                                onArtistClick = { onIntent(AppIntent.OpenArtistDetails(it)) },
+                                onTrackClick = onInsightTrackClick,
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        }
+                        AppDestination.Settings -> SettingsDestinationContent {
+                            key(currentPage.page) {
                             val settingsScrollState = rememberScrollState()
                             LaunchedEffect(currentPage, stackPage, settingsScrollState.value) {
                                 if (currentPage == stackPage) {
@@ -432,8 +441,10 @@ internal fun AppDestinationContent(
                                 },
                             )
                             }
+                            }
                         }
-                        AppDestination.Library -> when (currentPage.page) {
+                        AppDestination.Library -> LibraryDestinationContent {
+                            when (currentPage.page) {
                             AppStackPage.LibrarySearch -> LibrarySearchContent(
                                 uiState = searchUiState,
                                 contentPadding = contentPadding,
@@ -663,6 +674,7 @@ internal fun AppDestinationContent(
                                     onIntent(AppIntent.OpenPage(AppStackPage.LibraryPlaylists))
                                 },
                             )
+                            }
                         }
                     }
                 }
@@ -670,6 +682,18 @@ internal fun AppDestinationContent(
         }
     }
 }
+
+@Composable
+internal fun HomeDestinationContent(content: @Composable () -> Unit) = content()
+
+@Composable
+internal fun InsightDestinationContent(content: @Composable () -> Unit) = content()
+
+@Composable
+internal fun LibraryDestinationContent(content: @Composable () -> Unit) = content()
+
+@Composable
+internal fun SettingsDestinationContent(content: @Composable () -> Unit) = content()
 
 internal fun isForwardTransition(target: PageKey, initial: PageKey): Boolean =
     target.index > initial.index

@@ -122,7 +122,13 @@ class AppNavigationTest {
                         AppDestination.Library to listOf(AppStackPage.Root, AppStackPage.LibraryArtists)
                     ),
                 ),
-                artistsUiState = LibraryArtistsUiState(artists = listOf(LibraryArtist("muse", "Muse"))),
+                destinations = AppDestinationModels(
+                    library = LibraryDestinationModel(
+                        artists = LibraryArtistsModel(
+                            state = LibraryArtistsUiState(artists = listOf(LibraryArtist("muse", "Muse"))),
+                        ),
+                    ),
+                ),
                 onIntent = intents::add,
             )
         }
@@ -130,6 +136,35 @@ class AppNavigationTest {
         composeTestRule.onNodeWithText("Muse").performClick()
 
         assertEquals(AppIntent.OpenArtistDetails("muse"), intents.last())
+    }
+
+    @Test
+    fun libraryTrackActionUsesDestinationModelCallback() {
+        var selectedTrackId: String? = null
+        composeTestRule.setContent {
+            App(
+                uiState = AppUiState(
+                    selectedDestination = AppDestination.Library,
+                    destinationStacks = rootDestinationStacks() + (
+                        AppDestination.Library to listOf(AppStackPage.Root, AppStackPage.LibraryTracks)
+                    ),
+                ),
+                destinations = AppDestinationModels(
+                    library = LibraryDestinationModel(
+                        tracks = LibraryTracksModel(
+                            state = LibraryTracksUiState(
+                                tracks = listOf(LibraryTrack("track-1", "Model track", "Artist")),
+                            ),
+                            onTrackClick = { selectedTrackId = it },
+                        ),
+                    ),
+                ),
+            )
+        }
+
+        composeTestRule.onNodeWithText("Model track").performClick()
+
+        assertEquals("track-1", selectedTrackId)
     }
 
     @Test
@@ -165,7 +200,13 @@ class AppNavigationTest {
                         AppDestination.Library to listOf(AppStackPage.Root, AppStackPage.LibraryGenres)
                     ),
                 ),
-                genresUiState = LibraryGenresUiState(genres = listOf(LibraryGenre("electronic", "Electronic"))),
+                destinations = AppDestinationModels(
+                    library = LibraryDestinationModel(
+                        genres = LibraryGenresModel(
+                            state = LibraryGenresUiState(genres = listOf(LibraryGenre("electronic", "Electronic"))),
+                        ),
+                    ),
+                ),
                 onIntent = intents::add,
             )
         }
@@ -197,7 +238,13 @@ class AppNavigationTest {
                         AppDestination.Library to listOf(AppStackPage.Root, AppStackPage.LibraryComposers)
                     ),
                 ),
-                composersUiState = LibraryComposersUiState(composers = listOf(LibraryComposer("glass", "Philip Glass"))),
+                destinations = AppDestinationModels(
+                    library = LibraryDestinationModel(
+                        composers = LibraryComposersModel(
+                            state = LibraryComposersUiState(composers = listOf(LibraryComposer("glass", "Philip Glass"))),
+                        ),
+                    ),
+                ),
                 onIntent = intents::add,
             )
         }
@@ -240,11 +287,15 @@ class AppNavigationTest {
         composeTestRule.setContent {
             App(
                 uiState = settingsState,
-                crossfadeSeconds = 0,
-                lastEnabledCrossfadeSeconds = 4,
-                onCrossfadeSecondsChanged = { requestedSeconds = it },
-                blendArtworkDuringCrossfade = true,
-                onBlendArtworkDuringCrossfadeChanged = { blendArtwork = it },
+                destinations = AppDestinationModels(
+                    settings = SettingsDestinationModel(
+                        crossfadeSeconds = 0,
+                        lastEnabledCrossfadeSeconds = 4,
+                        onCrossfadeSecondsChanged = { requestedSeconds = it },
+                        blendArtworkDuringCrossfade = true,
+                        onBlendArtworkDuringCrossfadeChanged = { blendArtwork = it },
+                    ),
+                ),
             )
         }
 
@@ -265,8 +316,12 @@ class AppNavigationTest {
         composeTestRule.setContent {
             App(
                 uiState = AppUiState(selectedDestination = AppDestination.Settings),
-                onEqualizerEnabledChanged = { enabled = it },
-                onEqualizerPresetSelected = { preset = it },
+                destinations = AppDestinationModels(
+                    settings = SettingsDestinationModel(
+                        onEqualizerEnabledChanged = { enabled = it },
+                        onEqualizerPresetSelected = { preset = it },
+                    ),
+                ),
             )
         }
 
@@ -285,11 +340,15 @@ class AppNavigationTest {
         composeTestRule.setContent {
             App(
                 uiState = AppUiState(selectedDestination = AppDestination.Settings),
-                equalizer = me.misa198.airmedy.player.EqualizerSettings(
-                    presetKey = "rock",
-                    editedGainsDb = mapOf("rock" to List(10) { 0f }),
+                destinations = AppDestinationModels(
+                    settings = SettingsDestinationModel(
+                        equalizer = me.misa198.airmedy.player.EqualizerSettings(
+                            presetKey = "rock",
+                            editedGainsDb = mapOf("rock" to List(10) { 0f }),
+                        ),
+                        onEqualizerProfileReset = { resetKey = it },
+                    ),
                 ),
-                onEqualizerProfileReset = { resetKey = it },
             )
         }
 
@@ -308,8 +367,12 @@ class AppNavigationTest {
         composeTestRule.setContent {
             App(
                 uiState = AppUiState(selectedDestination = AppDestination.Settings),
-                equalizer = me.misa198.airmedy.player.EqualizerSettings(presetKey = profile.key, userProfiles = listOf(profile)),
-                onEqualizerProfileDelete = { deletedKey = it },
+                destinations = AppDestinationModels(
+                    settings = SettingsDestinationModel(
+                        equalizer = me.misa198.airmedy.player.EqualizerSettings(presetKey = profile.key, userProfiles = listOf(profile)),
+                        onEqualizerProfileDelete = { deletedKey = it },
+                    ),
+                ),
             )
         }
 
@@ -329,8 +392,12 @@ class AppNavigationTest {
         composeTestRule.setContent {
             App(
                 uiState = settingsState,
-                crossfadeSeconds = 4,
-                lastEnabledCrossfadeSeconds = 4,
+                destinations = AppDestinationModels(
+                    settings = SettingsDestinationModel(
+                        crossfadeSeconds = 4,
+                        lastEnabledCrossfadeSeconds = 4,
+                    ),
+                ),
             )
         }
 
@@ -412,15 +479,19 @@ class AppNavigationTest {
 
         composeTestRule.setContent {
             App(
-                homeUiState = me.misa198.airmedy.ui.screens.HomeUiState(
-                    keepListeningTracks = keepListening,
-                    mostPlayedTracks = listOf(LibraryTrack(id = "most-1", title = "Most played", artists = "Artist")),
-                    forgottenTracks = listOf(LibraryTrack(id = "forgotten-1", title = "Forgotten", artists = "Artist")),
+                destinations = AppDestinationModels(
+                    home = HomeDestinationModel(
+                        state = me.misa198.airmedy.ui.screens.HomeUiState(
+                            keepListeningTracks = keepListening,
+                            mostPlayedTracks = listOf(LibraryTrack(id = "most-1", title = "Most played", artists = "Artist")),
+                            forgottenTracks = listOf(LibraryTrack(id = "forgotten-1", title = "Forgotten", artists = "Artist")),
+                        ),
+                        onTrackClick = { tracks, trackId ->
+                            queuedTrackIds = tracks.map(LibraryTrack::id)
+                            playedTrackId = trackId
+                        },
+                    ),
                 ),
-                onHomeTrackClick = { tracks, trackId ->
-                    queuedTrackIds = tracks.map(LibraryTrack::id)
-                    playedTrackId = trackId
-                },
             )
         }
 
@@ -437,8 +508,12 @@ class AppNavigationTest {
     fun longPressingHomeTrackOpensTheTrackContextMenu() {
         composeTestRule.setContent {
             App(
-                homeUiState = me.misa198.airmedy.ui.screens.HomeUiState(
-                    keepListeningTracks = listOf(LibraryTrack(id = "keep-1", title = "Keep listening one", artists = "Artist")),
+                destinations = AppDestinationModels(
+                    home = HomeDestinationModel(
+                        state = me.misa198.airmedy.ui.screens.HomeUiState(
+                            keepListeningTracks = listOf(LibraryTrack(id = "keep-1", title = "Keep listening one", artists = "Artist")),
+                        ),
+                    ),
                 ),
             )
         }
@@ -453,7 +528,7 @@ class AppNavigationTest {
         var fullScreenPlayerVisible = false
         composeTestRule.setContent {
             App(
-                playbackState = playingState,
+                playback = PlaybackModel(state = playingState),
                 onFullScreenPlayerVisibilityChanged = { fullScreenPlayerVisible = it },
             )
         }
@@ -483,7 +558,7 @@ class AppNavigationTest {
         val pausedState = PlaybackState.Paused(playingItem, positionMs = 42_000L, durationMs = 120_000L)
         composeTestRule.setContent {
             App(
-                playbackState = pausedState,
+                playback = PlaybackModel(state = pausedState),
                 onFullScreenPlayerVisibilityChanged = visibilityChanges::add,
             )
         }
@@ -500,7 +575,7 @@ class AppNavigationTest {
         var fullScreenPlayerVisible = false
         composeTestRule.setContent {
             App(
-                playbackState = playingState,
+                playback = PlaybackModel(state = playingState),
                 onFullScreenPlayerVisibilityChanged = { fullScreenPlayerVisible = it },
             )
         }
@@ -524,8 +599,10 @@ class AppNavigationTest {
         var outputSwitcherRequests = 0
         composeTestRule.setContent {
             App(
-                playbackState = playingState,
-                onOpenMediaOutputSwitcher = { outputSwitcherRequests += 1 },
+                playback = PlaybackModel(
+                    state = playingState,
+                    onOpenMediaOutputSwitcher = { outputSwitcherRequests += 1 },
+                ),
             )
         }
 
@@ -541,9 +618,11 @@ class AppNavigationTest {
         var previousRequests = 0
         composeTestRule.setContent {
             App(
-                playbackState = playingState,
-                onPlaybackNext = { nextRequests += 1 },
-                onPlaybackPrevious = { previousRequests += 1 },
+                playback = PlaybackModel(
+                    state = playingState,
+                    onNext = { nextRequests += 1 },
+                    onPrevious = { previousRequests += 1 },
+                ),
             )
         }
 
@@ -559,7 +638,7 @@ class AppNavigationTest {
 
     @Test
     fun fullScreenPlayerKeepsMetadataWithArtwork() {
-        composeTestRule.setContent { App(playbackState = playingState) }
+        composeTestRule.setContent { App(playback = PlaybackModel(state = playingState)) }
 
         composeTestRule.onNodeWithText(playingItem.title).performClick()
         val artworkBounds = composeTestRule.onNodeWithTag("full_screen_player_artwork")
@@ -577,7 +656,7 @@ class AppNavigationTest {
 
     @Test
     fun partialSlowMiniPlayerPullCompletesOpeningTheFullScreenPlayer() {
-        composeTestRule.setContent { App(playbackState = playingState) }
+        composeTestRule.setContent { App(playback = PlaybackModel(state = playingState)) }
 
         composeTestRule.onNodeWithText(playingItem.title).performTouchInput {
             down(center)
@@ -592,7 +671,7 @@ class AppNavigationTest {
 
     @Test
     fun systemBackClosesFullScreenPlayerBeforeNavigating() {
-        composeTestRule.setContent { App(playbackState = playingState) }
+        composeTestRule.setContent { App(playback = PlaybackModel(state = playingState)) }
 
         composeTestRule.onNodeWithText(playingItem.title).performClick()
         composeTestRule.onNodeWithContentDescription(string(R.string.full_screen_player)).assertIsDisplayed()
@@ -624,11 +703,15 @@ class AppNavigationTest {
         composeTestRule.setContent {
             App(
                 uiState = AppUiState(selectedDestination = AppDestination.Insight),
-                insightUiState = InsightUiState(
-                    listening = ListeningInsightState(
-                        topTracks = (1..20).map { index ->
-                            InsightTopTrack(LibraryTrack("track-$index", "Track $index", "Artist"), index, index * 60)
-                        },
+                destinations = AppDestinationModels(
+                    insight = InsightDestinationModel(
+                        state = InsightUiState(
+                            listening = ListeningInsightState(
+                                topTracks = (1..20).map { index ->
+                                    InsightTopTrack(LibraryTrack("track-$index", "Track $index", "Artist"), index, index * 60)
+                                },
+                            ),
+                        ),
                     ),
                 ),
             )
@@ -721,7 +804,7 @@ private class AppHarness(initialState: AppUiState = AppUiState()) {
 
     @androidx.compose.runtime.Composable
     fun Render(playbackState: PlaybackState = PlaybackState.Idle) {
-        App(uiState = state, playbackState = playbackState, onIntent = ::dispatch)
+        App(uiState = state, playback = PlaybackModel(state = playbackState), onIntent = ::dispatch)
     }
 
     private fun dispatch(intent: AppIntent) {

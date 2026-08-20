@@ -20,10 +20,19 @@ affecting the connected session.
   scroll container. In landscape, it places the instructions beside a
   height-bounded viewfinder so the frame remains within the viewport.
 
-- `App.kt` is the app shell: it owns the theme, shared Haze/list state, header,
-  and placement of the navigation chrome. `ui/navigation/AppDestinationContent.kt`
-  routes each destination's independent `AppStackPage` stack, and
-  `ui/navigation/FloatingNavigationBar.kt` owns its visual and gesture behavior.
+- `App.kt` is only the app shell: it owns theme, Haze, scroll restoration,
+  header/navigation chrome, popup and bottom-sheet hosts, and the mini/fullscreen
+  player. `MainActivity` remains the composition root and converts the existing
+  ViewModel/controller state and callbacks into immutable `HomeDestinationModel`,
+  `InsightDestinationModel`, `LibraryDestinationModel`, `SettingsDestinationModel`,
+  and `PlaybackModel` wiring. `AppDestinationModels` is the destination boundary;
+  Library keeps page-sized tracks, artists, albums, genres, composers, playlists,
+  search, and detail groups instead of one app-wide callback bag.
+  `ui/navigation/AppDestinationContent.kt` preserves the common nested-scroll and
+  transition host, then selects `HomeDestinationContent`, `InsightDestinationContent`,
+  `LibraryDestinationContent`, or `SettingsDestinationContent` for each destination's
+  independent `AppStackPage` stack. `ui/navigation/FloatingNavigationBar.kt`
+  owns its visual and gesture behavior.
   The four destinations are Home, Insight, Library, and Settings; Insight uses
   the `legend_toggle` Material Symbol and renders the mirrored library and
   listening analytics described below.

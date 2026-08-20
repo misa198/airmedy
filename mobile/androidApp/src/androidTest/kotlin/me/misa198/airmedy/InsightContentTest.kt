@@ -57,9 +57,13 @@ class InsightContentTest {
         composeTestRule.setContent {
             App(
                 uiState = AppUiState(selectedDestination = AppDestination.Insight),
-                insightUiState = state,
-                onInsightListeningPeriodSelected = { state = state.copy(listeningPeriod = it) },
-                onInsightSourceSelected = { state = state.copy(sourceFilter = it) },
+                destinations = AppDestinationModels(
+                    insight = InsightDestinationModel(
+                        state = state,
+                        onListeningPeriodSelected = { state = state.copy(listeningPeriod = it) },
+                        onSourceSelected = { state = state.copy(sourceFilter = it) },
+                    ),
+                ),
             )
         }
 

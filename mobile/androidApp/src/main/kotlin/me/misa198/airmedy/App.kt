@@ -61,28 +61,11 @@ import me.misa198.airmedy.ui.navigation.NavigationChrome
 import me.misa198.airmedy.ui.navigation.NavigationChromeScrollAccumulator
 import me.misa198.airmedy.ui.navigation.showsMiniPlayer
 import me.misa198.airmedy.ui.navigation.titleRes
-import me.misa198.airmedy.ui.screens.LibraryTracksUiState
-import me.misa198.airmedy.ui.screens.HomeUiState
-import me.misa198.airmedy.ui.screens.LibraryArtistsUiState
 import me.misa198.airmedy.ui.screens.ArtistSortOption
 import me.misa198.airmedy.ui.screens.AlbumSortOption
-import me.misa198.airmedy.ui.screens.AlbumLayoutMode
-import me.misa198.airmedy.ui.screens.LibraryAlbumsUiState
-import me.misa198.airmedy.ui.screens.LibraryGenresUiState
 import me.misa198.airmedy.ui.screens.GenreSortOption
-import me.misa198.airmedy.ui.screens.LibraryComposersUiState
 import me.misa198.airmedy.ui.screens.ComposerSortOption
 import me.misa198.airmedy.ui.screens.TrackSortOption
-import me.misa198.airmedy.ui.screens.AlbumDetailsUiState
-import me.misa198.airmedy.ui.screens.ArtistDetailsUiState
-import me.misa198.airmedy.ui.screens.GenreDetailsUiState
-import me.misa198.airmedy.ui.screens.ComposerDetailsUiState
-import me.misa198.airmedy.ui.screens.LibraryPlaylistsUiState
-import me.misa198.airmedy.ui.screens.LibrarySearchUiState
-import me.misa198.airmedy.ui.screens.InsightPeriod
-import me.misa198.airmedy.ui.screens.InsightSourceFilter
-import me.misa198.airmedy.ui.screens.InsightUiState
-import me.misa198.airmedy.ui.screens.PlaylistDetailsUiState
 import me.misa198.airmedy.ui.screens.isFavorite
 import me.misa198.airmedy.ui.screens.CreatePlaylistBottomSheet
 import me.misa198.airmedy.ui.screens.CreateEqualizerProfileBottomSheet
@@ -91,11 +74,6 @@ import me.misa198.airmedy.ui.components.TrackContextBottomSheet
 import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import me.misa198.airmedy.player.PlaybackState
-import me.misa198.airmedy.player.ArtworkCrossfadeTransition
-import me.misa198.airmedy.player.PlaybackQueueSnapshot
-import me.misa198.airmedy.player.RepeatMode
-import me.misa198.airmedy.sync.LibraryTrack
-import me.misa198.airmedy.lastfm.LastFmStatus
 
 private enum class EqualizerProfileSheet { Menu, Create, DeleteConfirmation }
 
@@ -122,124 +100,21 @@ private fun LazyListState.resetAfterPagePop(generation: Int) {
 @Composable
 internal fun App(
     uiState: AppUiState = AppUiState(),
-    syncUiState: SyncUiState = SyncUiState(),
-    homeUiState: HomeUiState = HomeUiState(),
-    tracksUiState: LibraryTracksUiState = LibraryTracksUiState(),
-    artistsUiState: LibraryArtistsUiState = LibraryArtistsUiState(),
-    albumsUiState: LibraryAlbumsUiState = LibraryAlbumsUiState(),
-    genresUiState: LibraryGenresUiState = LibraryGenresUiState(),
-    composersUiState: LibraryComposersUiState = LibraryComposersUiState(),
-    playlistsUiState: LibraryPlaylistsUiState = LibraryPlaylistsUiState(),
-    searchUiState: LibrarySearchUiState = LibrarySearchUiState(),
-    insightUiState: InsightUiState = InsightUiState(),
-    albumDetailsUiState: AlbumDetailsUiState = AlbumDetailsUiState(),
-    playlistDetailsUiState: PlaylistDetailsUiState = PlaylistDetailsUiState(),
-    artistDetailsUiState: ArtistDetailsUiState = ArtistDetailsUiState(),
-    genreDetailsUiState: GenreDetailsUiState = GenreDetailsUiState(),
-    composerDetailsUiState: ComposerDetailsUiState = ComposerDetailsUiState(),
+    destinations: AppDestinationModels = AppDestinationModels(),
+    playback: PlaybackModel = PlaybackModel(),
     onIntent: (AppIntent) -> Unit = {},
-    onSortOptionSelected: (TrackSortOption) -> Unit = {},
-    onToggleSortOrder: () -> Unit = {},
-    onTrackClick: (String) -> Unit = {},
-    onSearchQueryChange: (String) -> Unit = {},
-    onSearchTrackClick: (String) -> Unit = {},
-    onInsightLibraryPeriodSelected: (InsightPeriod) -> Unit = {},
-    onInsightListeningPeriodSelected: (InsightPeriod) -> Unit = {},
-    onInsightSourceSelected: (InsightSourceFilter) -> Unit = {},
-    onInsightTrackClick: (String) -> Unit = {},
-    onTracksPlayAll: (Boolean) -> Unit = {},
-    onTracksFilterQueryChange: (String) -> Unit = {},
-    onRecentTrackClick: (String) -> Unit = {},
-    onHomeTrackClick: (List<LibraryTrack>, String) -> Unit = { _, _ -> },
-    onTrackPlayNext: (String) -> Unit = {},
-    onTrackAddToQueue: (String) -> Unit = {},
-    onAlbumPlayNext: (List<String>) -> Unit = {},
-    onAlbumAddToQueue: (List<String>) -> Unit = {},
-    onAlbumAddToFavorites: (List<String>) -> Unit = {},
-    onArtistSortOptionSelected: (ArtistSortOption) -> Unit = {},
-    onArtistToggleSortOrder: () -> Unit = {},
-    onAlbumSortOptionSelected: (AlbumSortOption) -> Unit = {},
-    onAlbumToggleSortOrder: () -> Unit = {},
-    onAlbumLayoutModeSelected: (AlbumLayoutMode) -> Unit = {},
-    onAlbumPlay: (String, Boolean) -> Unit = { _, _ -> },
-    onAlbumsPlayAll: (Boolean) -> Unit = {},
-    onAlbumsFilterQueryChange: (String) -> Unit = {},
-    onAlbumTrackPlay: (String, String) -> Unit = { _, _ -> },
-    onPlaylistPlay: (String, Boolean) -> Unit = { _, _ -> },
-    onPlaylistTrackPlay: (String, String) -> Unit = { _, _ -> },
-    onPlaylistTrackRemove: (String, String) -> Unit = { _, _ -> },
-    onPlaylistPlayNext: (List<String>) -> Unit = {},
-    onPlaylistAddToQueue: (List<String>) -> Unit = {},
-    onPlaylistUpdate: (String, String, android.net.Uri?, Boolean) -> Unit = { _, _, _, _ -> },
-    onPlaylistDelete: (String) -> Unit = {},
-    onCreatePlaylist: (String, android.net.Uri?) -> Unit = { _, _ -> },
-    onCreatePlaylistWithTracks: (String, android.net.Uri?, List<String>) -> Unit = { _, _, _ -> },
-    onPlaylistMembershipChange: (String, List<String>, Boolean) -> Unit = { _, _, _ -> },
-    onArtistPlay: (String, Boolean) -> Unit = { _, _ -> },
-    onArtistPlayNext: (List<String>) -> Unit = {},
-    onArtistAddToQueue: (List<String>) -> Unit = {},
-    orderedTrackIdsForArtist: (String) -> List<String> = { emptyList() },
-    onArtistTrackContextBottomSheet: (me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest) -> Unit = {},
-    onArtistsFilterQueryChange: (String) -> Unit = {},
-    onGenrePlay: (String, Boolean) -> Unit = { _, _ -> },
-    onGenrePlayNext: (List<String>) -> Unit = {},
-    onGenreAddToQueue: (List<String>) -> Unit = {},
-    orderedTrackIdsForGenre: (String) -> List<String> = { emptyList() },
-    onGenresFilterQueryChange: (String) -> Unit = {},
-    onComposerPlay: (String, Boolean) -> Unit = { _, _ -> },
-    onComposerPlayNext: (List<String>) -> Unit = {},
-    onComposerAddToQueue: (List<String>) -> Unit = {},
-    orderedTrackIdsForComposer: (String) -> List<String> = { emptyList() },
-    onComposerTrackContextBottomSheet: (me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest) -> Unit = {},
-    onComposersFilterQueryChange: (String) -> Unit = {},
-    onAlbumHeroColorChanged: (Color) -> Unit = {},
-    onGenreSortOptionSelected: (GenreSortOption) -> Unit = {},
-    onGenreToggleSortOrder: () -> Unit = {},
-    onComposerSortOptionSelected: (ComposerSortOption) -> Unit = {},
-    onComposerToggleSortOrder: () -> Unit = {},
-    onPairingQrScanned: (String) -> Boolean = { false },
-    onUnpair: () -> Unit = {},
-    onSyncScreenVisible: () -> Unit = {},
-    onSyncScreenHidden: () -> Unit = {},
-    lastFmStatus: LastFmStatus = LastFmStatus(),
-    onLastFmConnect: () -> Unit = {},
-    onLastFmDisconnect: () -> Unit = {},
-    crossfadeSeconds: Int = 0,
-    lastEnabledCrossfadeSeconds: Int = 4,
-    onCrossfadeSecondsChanged: (Int) -> Unit = {},
-    blendArtworkDuringCrossfade: Boolean = true,
-    onBlendArtworkDuringCrossfadeChanged: (Boolean) -> Unit = {},
-    normalizationAvailable: Boolean = false,
-    normalization: me.misa198.airmedy.player.NormalizationSettings = me.misa198.airmedy.player.NormalizationSettings(),
-    onNormalizationChanged: (me.misa198.airmedy.player.NormalizationSettings) -> Unit = {},
-    equalizer: me.misa198.airmedy.player.EqualizerSettings = me.misa198.airmedy.player.EqualizerSettings(),
-    onEqualizerEnabledChanged: (Boolean) -> Unit = {},
-    onEqualizerPresetSelected: (String) -> Unit = {},
-    onEqualizerBandChanged: (Int, Float) -> Unit = { _, _ -> },
-    onEqualizerProfileCreate: (String) -> Unit = {},
-    onEqualizerProfileReset: (String) -> Unit = {},
-    onEqualizerProfileDelete: (String) -> Unit = {},
-    artworkCrossfade: ArtworkCrossfadeTransition? = null,
-    playbackState: PlaybackState = PlaybackState.Idle,
-    playbackQueue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
-    queueTracks: List<LibraryTrack> = emptyList(),
-    lyrics: String? = null,
-    onPlaybackPrevious: () -> Unit = {},
-    onPlaybackPlayPause: () -> Unit = {},
-    onPlaybackNext: () -> Unit = {},
-    onPlaybackSeek: (Long) -> Unit = {},
-    onQueueTrackSelected: (String) -> Unit = {},
-    onQueueReordered: (List<String>) -> Unit = {},
-    onQueueTrackRemoved: (String) -> Unit = {},
-    onShuffleChange: (Boolean) -> Unit = {},
-    onRepeatModeChange: (RepeatMode) -> Unit = {},
-    systemVolume: Float = 0f,
-    onSystemVolumeChange: (Float) -> Unit = {},
-    onMiniPlayerDismiss: () -> Unit = {},
-    onOpenMediaOutputSwitcher: () -> Unit = {},
-    onFavoriteToggle: (String, Boolean) -> Unit = { _, _ -> },
     onFullScreenPlayerVisibilityChanged: (Boolean) -> Unit = {},
 ) {
+    val library = destinations.library
+    val settings = destinations.settings
+    val tracksUiState = library.tracks.state
+    val artistsUiState = library.artists.state
+    val albumsUiState = library.albums.state
+    val genresUiState = library.genres.state
+    val composersUiState = library.composers.state
+    val playlistsUiState = library.playlists.state
+    val playbackState = playback.state
+    val playbackQueue = playback.queue
     AirmedyTheme(themeMode = uiState.themeMode) {
         val hazeState = if (uiState.reduceTransparency) null else rememberHazeState()
         val currentStackPage = uiState.stackFor(uiState.selectedDestination).currentStackPage(uiState.selectedDestination)
@@ -355,7 +230,7 @@ internal fun App(
             else -> stringResource(currentPage.titleRes(uiState.selectedDestination))
         }
         val showBack = currentPage != AppStackPage.Root
-        val showSyncAddAction = currentPage == AppStackPage.SettingsSync && syncUiState.desktop == null && !syncUiState.isPairing
+        val showSyncAddAction = currentPage == AppStackPage.SettingsSync && settings.syncState.desktop == null && !settings.syncState.isPairing
         val showLibrarySortAction = currentPage == AppStackPage.LibraryTracks ||
             currentPage == AppStackPage.LibraryArtists || currentPage == AppStackPage.LibraryAlbums ||
             currentPage == AppStackPage.LibraryGenres || currentPage == AppStackPage.LibraryComposers
@@ -426,11 +301,6 @@ internal fun App(
                 genresListState = genresListState,
                 composersListState = composersListState,
                 playlistsListState = playlistsListState,
-                albumDetailsUiState = albumDetailsUiState,
-                playlistDetailsUiState = playlistDetailsUiState,
-                artistDetailsUiState = artistDetailsUiState,
-                genreDetailsUiState = genreDetailsUiState,
-                composerDetailsUiState = composerDetailsUiState,
                 selectedAlbumId = uiState.selectedAlbumId,
                 selectedPlaylistId = uiState.selectedPlaylistId,
                 selectedArtistId = uiState.selectedArtistId,
@@ -440,91 +310,13 @@ internal fun App(
                 genreDetailsListState = genreDetailsListState,
                 composerDetailsListState = composerDetailsListState,
                 onIntent = onIntent,
-                syncUiState = syncUiState,
-                homeUiState = homeUiState,
-                tracksUiState = tracksUiState,
-                artistsUiState = artistsUiState,
-                albumsUiState = albumsUiState,
-                genresUiState = genresUiState,
-                composersUiState = composersUiState,
-                playlistsUiState = playlistsUiState,
-                searchUiState = searchUiState,
-                insightUiState = insightUiState,
-                onInsightLibraryPeriodSelected = onInsightLibraryPeriodSelected,
-                onInsightListeningPeriodSelected = onInsightListeningPeriodSelected,
-                onInsightSourceSelected = onInsightSourceSelected,
-                onInsightTrackClick = onInsightTrackClick,
-                onSortOptionSelected = onSortOptionSelected,
-                onToggleSortOrder = onToggleSortOrder,
-                onTrackClick = onTrackClick,
-                onSearchQueryChange = onSearchQueryChange,
-                onSearchTrackClick = onSearchTrackClick,
-                onTracksPlayAll = onTracksPlayAll,
-                onTracksFilterQueryChange = onTracksFilterQueryChange,
-                onRecentTrackClick = onRecentTrackClick,
-                onHomeTrackClick = onHomeTrackClick,
-                playbackQueue = playbackQueue,
-                onTrackPlayNext = onTrackPlayNext,
-                onTrackAddToQueue = onTrackAddToQueue,
-                onTrackFavoriteToggle = onFavoriteToggle,
-                onAlbumPlayNext = onAlbumPlayNext,
-                onAlbumAddToQueue = onAlbumAddToQueue,
-                onAlbumAddToFavorites = onAlbumAddToFavorites,
-                onAlbumSortOptionSelected = onAlbumSortOptionSelected,
-                onAlbumToggleSortOrder = onAlbumToggleSortOrder,
-                onAlbumPlay = onAlbumPlay,
-                onAlbumsPlayAll = onAlbumsPlayAll,
-                onAlbumsFilterQueryChange = onAlbumsFilterQueryChange,
-                onAlbumTrackPlay = onAlbumTrackPlay,
-                onPlaylistPlay = onPlaylistPlay,
-                onPlaylistTrackPlay = onPlaylistTrackPlay,
-                onPlaylistTrackRemove = onPlaylistTrackRemove,
-                onPlaylistPlayNext = onPlaylistPlayNext,
-                onPlaylistAddToQueue = onPlaylistAddToQueue,
-                onPlaylistUpdate = onPlaylistUpdate,
-                onPlaylistDelete = onPlaylistDelete,
+                destinations = destinations,
+                playback = playback,
                 onTrackContextBottomSheet = { request -> trackContextSheet = request },
-                onArtistPlay = onArtistPlay,
-                onArtistPlayNext = onArtistPlayNext,
-                onArtistAddToQueue = onArtistAddToQueue,
-                orderedTrackIdsForArtist = orderedTrackIdsForArtist,
-                onArtistTrackContextBottomSheet = { request -> trackContextSheet = request },
-                onArtistsFilterQueryChange = onArtistsFilterQueryChange,
-                onGenrePlay = onGenrePlay,
-                onGenrePlayNext = onGenrePlayNext,
-                onGenreAddToQueue = onGenreAddToQueue,
-                orderedTrackIdsForGenre = orderedTrackIdsForGenre,
-                onGenreTrackContextBottomSheet = { request -> trackContextSheet = request },
-                onGenresFilterQueryChange = onGenresFilterQueryChange,
-                onComposerPlay = onComposerPlay,
-                onComposerPlayNext = onComposerPlayNext,
-                onComposerAddToQueue = onComposerAddToQueue,
-                orderedTrackIdsForComposer = orderedTrackIdsForComposer,
-                onComposerTrackContextBottomSheet = { request -> trackContextSheet = request },
-                onComposersFilterQueryChange = onComposersFilterQueryChange,
                 onAlbumHeroColorChanged = { color ->
                     albumHeroColor = color
-                    onAlbumHeroColorChanged(color)
+                    library.details.onHeroColorChanged(color)
                 },
-                onPairingQrScanned = onPairingQrScanned,
-                onUnpair = onUnpair,
-                onSyncScreenVisible = onSyncScreenVisible,
-                onSyncScreenHidden = onSyncScreenHidden,
-                lastFmStatus = lastFmStatus,
-                onLastFmConnect = onLastFmConnect,
-                onLastFmDisconnect = onLastFmDisconnect,
-                crossfadeSeconds = crossfadeSeconds,
-                lastEnabledCrossfadeSeconds = lastEnabledCrossfadeSeconds,
-                onCrossfadeSecondsChanged = onCrossfadeSecondsChanged,
-                blendArtworkDuringCrossfade = blendArtworkDuringCrossfade,
-                onBlendArtworkDuringCrossfadeChanged = onBlendArtworkDuringCrossfadeChanged,
-                normalizationAvailable = normalizationAvailable,
-                normalization = normalization,
-                onNormalizationChanged = onNormalizationChanged,
-                equalizer = equalizer,
-                onEqualizerEnabledChanged = onEqualizerEnabledChanged,
-                onEqualizerPresetSelected = onEqualizerPresetSelected,
-                onEqualizerBandChanged = onEqualizerBandChanged,
                 onSettingsContentScrolled = { settingsContentScrolled = it },
                 onContentScroll = { delta ->
                     if (!showsMiniPlayer) return@AppDestinationContent
@@ -594,8 +386,8 @@ internal fun App(
                         ),
                         selectedOption = tracksUiState.sortOption,
                         sortOrder = tracksUiState.sortOrder,
-                        onSortOptionSelected = onSortOptionSelected,
-                        onToggleSortOrder = onToggleSortOrder,
+                        onSortOptionSelected = library.tracks.onSortOptionSelected,
+                        onToggleSortOrder = library.tracks.onToggleSortOrder,
                     )
                 } else if (currentPage == AppStackPage.LibraryArtists) {
                     LibrarySortHeaderButton(
@@ -606,8 +398,8 @@ internal fun App(
                         ),
                         selectedOption = artistsUiState.sortOption,
                         sortOrder = artistsUiState.sortOrder,
-                        onSortOptionSelected = onArtistSortOptionSelected,
-                        onToggleSortOrder = onArtistToggleSortOrder,
+                        onSortOptionSelected = library.artists.onSortOptionSelected,
+                        onToggleSortOrder = library.artists.onToggleSortOrder,
                     )
                 } else if (currentPage == AppStackPage.LibraryAlbums) {
                     LibrarySortHeaderButton(
@@ -619,10 +411,10 @@ internal fun App(
                         ),
                         selectedOption = albumsUiState.sortOption,
                         sortOrder = albumsUiState.sortOrder,
-                        onSortOptionSelected = onAlbumSortOptionSelected,
-                        onToggleSortOrder = onAlbumToggleSortOrder,
+                        onSortOptionSelected = library.albums.onSortOptionSelected,
+                        onToggleSortOrder = library.albums.onToggleSortOrder,
                         layoutMode = albumsUiState.layoutMode,
-                        onLayoutModeSelected = onAlbumLayoutModeSelected,
+                        onLayoutModeSelected = library.albums.onLayoutModeSelected,
                         glassSurfaceColor = albumHeaderGlassSurface,
                     )
                 } else if (currentPage == AppStackPage.LibraryGenres) {
@@ -634,8 +426,8 @@ internal fun App(
                         ),
                         selectedOption = genresUiState.sortOption,
                         sortOrder = genresUiState.sortOrder,
-                        onSortOptionSelected = onGenreSortOptionSelected,
-                        onToggleSortOrder = onGenreToggleSortOrder,
+                        onSortOptionSelected = library.genres.onSortOptionSelected,
+                        onToggleSortOrder = library.genres.onToggleSortOrder,
                     )
                 } else if (currentPage == AppStackPage.LibraryComposers) {
                     LibrarySortHeaderButton(
@@ -646,8 +438,8 @@ internal fun App(
                         ),
                         selectedOption = composersUiState.sortOption,
                         sortOrder = composersUiState.sortOrder,
-                        onSortOptionSelected = onComposerSortOptionSelected,
-                        onToggleSortOrder = onComposerToggleSortOrder,
+                        onSortOptionSelected = library.composers.onSortOptionSelected,
+                        onToggleSortOrder = library.composers.onToggleSortOrder,
                     )
                 }
             }
@@ -656,19 +448,19 @@ internal fun App(
                     onDismiss = { showCreatePlaylistSheet = false; createPlaylistForTracks = null },
                     onCreate = { name, artworkUri ->
                         showCreatePlaylistSheet = false
-                        createPlaylistForTracks?.let { onCreatePlaylistWithTracks(name, artworkUri, it) }
-                            ?: onCreatePlaylist(name, artworkUri)
+                        createPlaylistForTracks?.let { library.playlists.onCreateWithTracks(name, artworkUri, it) }
+                            ?: library.playlists.onCreate(name, artworkUri)
                         createPlaylistForTracks = null
                     },
                 )
             }
             when (equalizerProfileSheet) {
                 EqualizerProfileSheet.Menu -> EqualizerProfileMenuBottomSheet(
-                    isDefault = equalizer.selectedProfile.isDefault,
+                    isDefault = settings.equalizer.selectedProfile.isDefault,
                     onDismiss = { equalizerProfileSheet = null },
                     onCreate = { equalizerProfileSheet = EqualizerProfileSheet.Create },
                     onReset = {
-                        onEqualizerProfileReset(equalizer.presetKey)
+                        settings.onEqualizerProfileReset(settings.equalizer.presetKey)
                         equalizerProfileSheet = null
                     },
                     onDelete = { equalizerProfileSheet = EqualizerProfileSheet.DeleteConfirmation },
@@ -676,7 +468,7 @@ internal fun App(
                 EqualizerProfileSheet.Create -> CreateEqualizerProfileBottomSheet(
                     onDismiss = { equalizerProfileSheet = null },
                     onCreate = { name ->
-                        onEqualizerProfileCreate(name)
+                        settings.onEqualizerProfileCreate(name)
                         equalizerProfileSheet = null
                     },
                 )
@@ -687,7 +479,7 @@ internal fun App(
                     onDismiss = { equalizerProfileSheet = null },
                     confirmLabel = stringResource(R.string.equalizer_profile_delete),
                     onConfirm = {
-                        onEqualizerProfileDelete(equalizer.presetKey)
+                        settings.onEqualizerProfileDelete(settings.equalizer.presetKey)
                         equalizerProfileSheet = null
                     },
                     confirmVariant = AirmedyPillButtonVariant.Destructive,
@@ -722,13 +514,13 @@ internal fun App(
                     }
                     onIntent(AppIntent.SelectDestination(destination))
                 },
-                onPreviousClick = onPlaybackPrevious,
-                onPlayPauseClick = onPlaybackPlayPause,
-                onNextClick = onPlaybackNext,
+                onPreviousClick = playback.onPrevious,
+                onPlayPauseClick = playback.onPlayPause,
+                onNextClick = playback.onNext,
                 onMiniPlayerDismiss = {
                     isNavigationCompact = false
                     navigationScrollAccumulator.reset()
-                    onMiniPlayerDismiss()
+                    playback.onMiniPlayerDismiss()
                 },
                 onOpenFullScreenPlayer = {
                     isFullScreenPlayerOpeningFromSwipe = false
@@ -759,35 +551,35 @@ internal fun App(
                 openingFromMiniPlayerSwipe = isFullScreenPlayerOpeningFromSwipe,
                 playbackState = playbackState,
                 queue = playbackQueue,
-                queueTracks = queueTracks,
-                lyrics = lyrics,
-                artworkCrossfade = artworkCrossfade,
-                blendArtworkDuringCrossfade = blendArtworkDuringCrossfade,
-                volume = systemVolume,
-                onSeek = onPlaybackSeek,
-                onVolumeChange = onSystemVolumeChange,
-                onPrevious = onPlaybackPrevious,
-                onPlayPause = onPlaybackPlayPause,
-                onNext = onPlaybackNext,
-                onQueueTrackSelected = onQueueTrackSelected,
-                onQueueReordered = onQueueReordered,
-                onQueueTrackRemoved = onQueueTrackRemoved,
-                onShuffleChange = onShuffleChange,
-                onRepeatModeChange = onRepeatModeChange,
-                isFavorite = queueTracks.firstOrNull { track -> track.id == when (val state = playbackState) {
+                queueTracks = playback.queueTracks,
+                lyrics = playback.lyrics,
+                artworkCrossfade = playback.artworkCrossfade,
+                blendArtworkDuringCrossfade = playback.blendArtworkDuringCrossfade,
+                volume = playback.systemVolume,
+                onSeek = playback.onSeek,
+                onVolumeChange = playback.onSystemVolumeChange,
+                onPrevious = playback.onPrevious,
+                onPlayPause = playback.onPlayPause,
+                onNext = playback.onNext,
+                onQueueTrackSelected = playback.onQueueTrackSelected,
+                onQueueReordered = playback.onQueueReordered,
+                onQueueTrackRemoved = playback.onQueueTrackRemoved,
+                onShuffleChange = playback.onShuffleChange,
+                onRepeatModeChange = playback.onRepeatModeChange,
+                isFavorite = playback.queueTracks.firstOrNull { track -> track.id == when (val state = playbackState) {
                     is PlaybackState.Preparing -> state.item.trackId
                     is PlaybackState.Playing -> state.item.trackId
                     is PlaybackState.Paused -> state.item.trackId
                     else -> ""
                 } }?.isFavorite() == true,
-                onFavoriteToggle = onFavoriteToggle,
-                onTrackPlayNext = onTrackPlayNext,
-                onTrackAddToQueue = onTrackAddToQueue,
+                onFavoriteToggle = playback.onFavoriteToggle,
+                onTrackPlayNext = playback.onTrackPlayNext,
+                onTrackAddToQueue = playback.onTrackAddToQueue,
                 onTrackGoToAlbum = { albumId -> onIntent(AppIntent.OpenAlbumDetails(albumId)) },
                 onTrackGoToArtist = { artistId -> onIntent(AppIntent.OpenArtistDetails(artistId)) },
                 onTrackContextBottomSheet = { request -> trackContextSheet = request },
                 onCloseFullscreenThen = ::closeFullScreenPlayerThen,
-                onOpenMediaOutputSwitcher = onOpenMediaOutputSwitcher,
+                onOpenMediaOutputSwitcher = playback.onOpenMediaOutputSwitcher,
                 onDismiss = {
                     setFullScreenPlayerVisible(false)
                     isFullScreenPlayerOpeningFromSwipe = false
@@ -808,8 +600,8 @@ internal fun App(
                         trackContextSheet = null
                         onIntent(AppIntent.OpenArtistDetails(artist.id))
                     },
-                    playlists = playlistDetailsUiState.playlists,
-                    onPlaylistMembershipChange = onPlaylistMembershipChange,
+                    playlists = library.details.playlists.playlists,
+                    onPlaylistMembershipChange = library.playlists.onMembershipChange,
                     onCreatePlaylistRequested = { trackIds ->
                         trackContextSheet = null
                         createPlaylistForTracks = trackIds
