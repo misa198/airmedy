@@ -66,7 +66,7 @@ internal fun GenreDetailsContent(
         contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding()),
     ) {
         item("hero") {
-            ArtworkHeroBackdrop(null, Modifier.fillMaxWidth(), hazeState, onHeroColorChanged) {
+            ArtworkHeroBackdrop(null, Modifier.fillMaxWidth(), onHeroColorChanged) {
                 GenreContextMenu(
                     trackIds = uiState.tracks.map { it.id },
                     expanded = menuExpanded,

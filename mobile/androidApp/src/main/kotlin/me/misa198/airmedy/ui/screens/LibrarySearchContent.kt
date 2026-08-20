@@ -80,7 +80,7 @@ internal fun LibrarySearchContent(
         LazyColumn(contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding())) {
             if (uiState.query.isBlank()) {
                 item { SearchEmptyState(R.string.library_search_empty_title, R.string.library_search_empty_description) }
-            } else if (uiState.tracks.isEmpty() && uiState.albums.isEmpty() && uiState.artists.isEmpty() && uiState.playlists.isEmpty() && uiState.composers.isEmpty()) {
+            } else if (uiState.isLoaded && uiState.tracks.isEmpty() && uiState.albums.isEmpty() && uiState.artists.isEmpty() && uiState.playlists.isEmpty() && uiState.composers.isEmpty()) {
                 item { SearchEmptyState(R.string.library_search_no_results_title, R.string.library_search_no_results_description) }
             } else {
                 searchSection(R.string.library_tracks, uiState.tracks, { it.id }, rows = 3, topPadding = 20.dp) { track ->

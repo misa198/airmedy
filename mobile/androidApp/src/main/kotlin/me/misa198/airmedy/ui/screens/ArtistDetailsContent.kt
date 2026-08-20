@@ -67,7 +67,7 @@ internal fun ArtistDetailsContent(
         contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding()),
     ) {
         item("hero") {
-            ArtworkHeroBackdrop(artist.artworkPath, Modifier.fillMaxWidth(), hazeState, onHeroColorChanged) {
+            ArtworkHeroBackdrop(artist.artworkPath, Modifier.fillMaxWidth(), onHeroColorChanged) {
                 ArtistContextMenu(
                     trackIds = uiState.tracks.map { it.id },
                     expanded = menuExpanded,

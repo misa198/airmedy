@@ -76,12 +76,14 @@ class TrackInfoContentTest {
             "bitrate":1000,
             "sample_rate":96000,
             "bit_depth":24,
+            "copyright":"© 2026 Example Records",
             "file_size":1048576
         }"""))
 
         assertTrue(details.contains(TrackInfoValue(R.string.track_info_artist, "Artist")))
         assertTrue(details.contains(TrackInfoValue(R.string.track_info_duration, "4:05")))
         assertTrue(details.contains(TrackInfoValue(R.string.track_info_sample_rate, "96 kHz")))
+        assertTrue(details.contains(TrackInfoValue(R.string.track_info_copyright, "© 2026 Example Records")))
         assertTrue(details.contains(TrackInfoValue(R.string.track_info_file_size, "1.0 MB")))
         assertFalse(details.any { it.labelRes == R.string.track_info_isrc })
     }

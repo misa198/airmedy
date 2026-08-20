@@ -202,6 +202,19 @@ class MainViewModelTest {
         assertEquals(expected, effect.await())
     }
 
+    @Test
+    fun `popping a page emits its reset effect`() = runTest {
+        val viewModel = MainViewModel(FakeThemeModeStore())
+        activateState(viewModel)
+        viewModel.dispatch(AppIntent.OpenPage(AppStackPage.LibraryTracks))
+        advanceUntilIdle()
+        val effect = async { viewModel.effects.first() }
+
+        viewModel.dispatch(AppIntent.NavigateBack)
+
+        assertEquals(AppEffect.ResetPoppedPage(AppStackPage.LibraryTracks), effect.await())
+    }
+
     private fun TestScope.activateState(viewModel: MainViewModel) {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect()

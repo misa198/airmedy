@@ -40,6 +40,7 @@ import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 @Composable
 fun <T> LibraryVirtualList(
     items: List<T>,
+    isLoaded: Boolean = true,
     key: (T) -> Any,
     contentType: Any,
     listState: LazyListState,
@@ -143,7 +144,7 @@ fun <T> LibraryVirtualList(
                         content = filterContent,
                     )
                 }
-                if (items.isEmpty()) {
+                if (items.isEmpty() && isLoaded) {
                     item(key = "library-list-empty-state", contentType = "library-list-empty-state") {
                         Box(modifier = Modifier.fillMaxWidth().height(320.dp)) { emptyContent() }
                     }
@@ -177,7 +178,7 @@ fun <T> LibraryVirtualList(
     }
 
     if (items.isEmpty()) {
-        Box(modifier = modifier.fillMaxSize()) { emptyContent() }
+        if (isLoaded) Box(modifier = modifier.fillMaxSize()) { emptyContent() }
         return
     }
 

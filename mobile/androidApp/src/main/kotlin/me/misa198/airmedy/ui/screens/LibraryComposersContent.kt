@@ -52,6 +52,7 @@ internal fun LibraryComposersContent(
     }
     LibraryVirtualList(
         items = uiState.composers,
+        isLoaded = uiState.isLoaded,
         key = { composer -> composer.id },
         contentType = "composer_row",
         listState = listState,
@@ -60,12 +61,11 @@ internal fun LibraryComposersContent(
         dividerTestTag = "composer-row-divider",
         filterKey = "composers",
         filterActive = uiState.filterQuery.isNotBlank(),
-        filterContent = { showPlaceholderAndLeadingSymbol ->
+        filterContent = {
             LibraryTextFilter(
                 value = uiState.filterQuery,
                 onValueChange = onFilterQueryChange,
                 placeholder = stringResource(R.string.filter_placeholder_search),
-                showPlaceholderAndLeadingSymbol = showPlaceholderAndLeadingSymbol,
             )
         },
         alphabeticalIndexKey = if (uiState.sortOption == ComposerSortOption.Name) ({ composer -> composer.sortName.ifBlank { composer.name } }) else null,

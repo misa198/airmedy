@@ -93,7 +93,7 @@ internal fun PlaylistDetailsContent(
         contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding()),
     ) {
         item("hero") {
-            ArtworkHeroBackdrop(uiState.artworkPaths.firstOrNull(), Modifier.fillMaxWidth(), hazeState, onHeroColorChanged) {
+            ArtworkHeroBackdrop(uiState.artworkPaths.firstOrNull(), Modifier.fillMaxWidth(), onHeroColorChanged) {
                 PlaylistContextMenu(
                     playlistId = playlist.id,
                     trackIds = uiState.tracks.map { it.id },

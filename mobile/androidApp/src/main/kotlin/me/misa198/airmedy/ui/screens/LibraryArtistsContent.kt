@@ -51,6 +51,7 @@ internal fun LibraryArtistsContent(
     }
     LibraryVirtualList(
         items = uiState.artists,
+        isLoaded = uiState.isLoaded,
         key = { artist -> artist.id },
         contentType = "artist_row",
         listState = listState,
@@ -59,12 +60,11 @@ internal fun LibraryArtistsContent(
         dividerTestTag = "artist-row-divider",
         filterKey = "artists",
         filterActive = uiState.filterQuery.isNotBlank(),
-        filterContent = { showPlaceholderAndLeadingSymbol ->
+        filterContent = {
             LibraryTextFilter(
                 value = uiState.filterQuery,
                 onValueChange = onFilterQueryChange,
                 placeholder = stringResource(R.string.filter_placeholder_search),
-                showPlaceholderAndLeadingSymbol = showPlaceholderAndLeadingSymbol,
             )
         },
         alphabeticalIndexKey = if (uiState.sortOption == ArtistSortOption.Name) ({ artist -> artist.sortName.ifBlank { artist.name } }) else null,

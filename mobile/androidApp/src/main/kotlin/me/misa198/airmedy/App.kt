@@ -91,6 +91,28 @@ internal fun homeGreetingTitleRes(hour: Int): Int = when (hour) {
 }
 
 @Composable
+private fun AlbumHeroHeaderGradient(color: Color?, visible: Boolean) {
+    val fade by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(1500, easing = FastOutSlowInEasing),
+        label = "album-header-glass-colour-fade",
+    )
+    color?.takeIf { fade > 0.01f }?.let {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(180.dp)
+                .background(
+                    Brush.verticalGradient(
+                        0f to it.copy(alpha = 0.36f * fade),
+                        1f to it.copy(alpha = 0f),
+                    ),
+                ),
+        )
+    }
+}
+
+@Composable
 private fun LazyListState.resetAfterPagePop(generation: Int) {
     LaunchedEffect(generation) {
         if (generation > 0) scrollToItem(0)
@@ -171,13 +193,6 @@ internal fun App(
         var equalizerProfileSheet by remember { mutableStateOf<EqualizerProfileSheet?>(null) }
         var isNavigationCompact by remember { mutableStateOf(false) }
         var albumHeroColor by remember { mutableStateOf<Color?>(null) }
-        val albumHeaderFade by animateFloatAsState(
-            targetValue = if (currentPage == AppStackPage.AlbumDetails || currentPage == AppStackPage.PlaylistDetails || currentPage == AppStackPage.ArtistDetails || currentPage == AppStackPage.GenreDetails || currentPage == AppStackPage.ComposerDetails) 1f else 0f,
-            animationSpec = tween(1500, easing = FastOutSlowInEasing),
-            label = "album-header-glass-colour-fade",
-        )
-        val albumHeaderGlassSurface = albumHeroColor?.takeIf { albumHeaderFade > 0.01f }
-            ?.copy(alpha = 0.18f * albumHeaderFade)
         val navigationScrollAccumulator = remember { NavigationChromeScrollAccumulator() }
         val navigationScrollThresholdPx = with(LocalDensity.current) { 24.dp.toPx() }
         fun setFullScreenPlayerVisible(visible: Boolean) {
@@ -325,19 +340,12 @@ internal fun App(
                     }
                 },
             )
-            albumHeroColor?.takeIf { albumHeaderFade > 0.01f }?.let { color ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp)
-                        .background(
-                            Brush.verticalGradient(
-                                0f to color.copy(alpha = 0.36f * albumHeaderFade),
-                                1f to color.copy(alpha = 0f),
-                            ),
-                        ),
-                )
-            }
+            AlbumHeroHeaderGradient(
+                color = albumHeroColor,
+                visible = currentPage == AppStackPage.AlbumDetails || currentPage == AppStackPage.PlaylistDetails ||
+                    currentPage == AppStackPage.ArtistDetails || currentPage == AppStackPage.GenreDetails ||
+                    currentPage == AppStackPage.ComposerDetails,
+            )
             StackPageHeader(
                 title = pageTitle,
                 hazeState = hazeState,
@@ -352,7 +360,7 @@ internal fun App(
                 titleStackKey = "${uiState.selectedDestination.name}:${currentPage.name}",
                 isForward = isForwardHeaderTransition,
                 backGlassTintAlpha = if (currentPage == AppStackPage.AlbumDetails || currentPage == AppStackPage.PlaylistDetails || currentPage == AppStackPage.ArtistDetails || currentPage == AppStackPage.GenreDetails || currentPage == AppStackPage.ComposerDetails) 0.08f else null,
-                backHazeInputScale = if (currentPage == AppStackPage.AlbumDetails || currentPage == AppStackPage.PlaylistDetails || currentPage == AppStackPage.ArtistDetails || currentPage == AppStackPage.GenreDetails || currentPage == AppStackPage.ComposerDetails) HazeInputScale.Fixed(1f) else HazeInputScale.Auto,
+                backHazeInputScale = if (currentPage == AppStackPage.AlbumDetails || currentPage == AppStackPage.PlaylistDetails || currentPage == AppStackPage.ArtistDetails || currentPage == AppStackPage.GenreDetails || currentPage == AppStackPage.ComposerDetails) HazeInputScale.Fixed(0.20f) else HazeInputScale.Auto,
             ) {
                 if (showSyncAddAction) {
                     AirmedyGlassIconButton(
@@ -415,7 +423,6 @@ internal fun App(
                         onToggleSortOrder = library.albums.onToggleSortOrder,
                         layoutMode = albumsUiState.layoutMode,
                         onLayoutModeSelected = library.albums.onLayoutModeSelected,
-                        glassSurfaceColor = albumHeaderGlassSurface,
                     )
                 } else if (currentPage == AppStackPage.LibraryGenres) {
                     LibrarySortHeaderButton(

@@ -284,6 +284,15 @@ class MainActivity : ComponentActivity() {
                         is AppEffect.OpenExternalUrl -> {
                             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(effect.url)))
                         }
+                        is AppEffect.ResetPoppedPage -> when (effect.page) {
+                            AppStackPage.LibrarySearch -> searchViewModel.clear()
+                            AppStackPage.LibraryTracks -> tracksViewModel.setFilterQuery("")
+                            AppStackPage.LibraryArtists -> artistsViewModel.setFilterQuery("")
+                            AppStackPage.LibraryAlbums -> albumsViewModel.setFilterQuery("")
+                            AppStackPage.LibraryGenres -> genresViewModel.setFilterQuery("")
+                            AppStackPage.LibraryComposers -> composersViewModel.setFilterQuery("")
+                            else -> Unit
+                        }
                     }
                 }
             }
@@ -466,10 +475,7 @@ class MainActivity : ComponentActivity() {
                 uiState = uiState,
                 destinations = destinations,
                 playback = playback,
-                onIntent = { intent ->
-                    if (shouldClearLibrarySearch(intent, uiState.currentPage)) searchViewModel.clear()
-                    viewModel.dispatch(intent)
-                },
+                onIntent = viewModel::dispatch,
                 onFullScreenPlayerVisibilityChanged = { visible ->
                     isFullScreenPlayerVisible = visible
                     updateSystemBarAppearance(darkTheme, visible)

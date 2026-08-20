@@ -10,6 +10,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
@@ -29,6 +30,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.foundation.lazy.LazyListState
@@ -150,6 +153,7 @@ internal fun AppDestinationContent(
     onSettingsContentScrolled: (Boolean) -> Unit = {},
     onContentScroll: (ContentScrollDelta) -> Unit = {},
 ) {
+    val focusManager = LocalFocusManager.current
     val homeUiState = destinations.home.state
     val insightUiState = destinations.insight.state
     val library = destinations.library
@@ -297,7 +301,10 @@ internal fun AppDestinationContent(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(colors.background),
+                        .background(colors.background)
+                        .pointerInput(focusManager) {
+                            detectTapGestures { focusManager.clearFocus() }
+                        },
                 ) {
                     when (currentPage.destination) {
                         AppDestination.Home -> HomeDestinationContent {

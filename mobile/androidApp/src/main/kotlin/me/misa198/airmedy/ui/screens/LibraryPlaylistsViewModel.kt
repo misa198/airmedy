@@ -39,7 +39,10 @@ internal data class PlaylistListItem(
     val syncFailed: Boolean = false,
 ) { val isFavorite: Boolean get() = id == FavoritesPlaylistId }
 
-internal data class LibraryPlaylistsUiState(val playlists: List<PlaylistListItem> = emptyList())
+internal data class LibraryPlaylistsUiState(
+    val playlists: List<PlaylistListItem> = emptyList(),
+    val isLoaded: Boolean = true,
+)
 
 internal class LibraryPlaylistsViewModel(private val context: Context, syncStore: AndroidLibrarySyncStore) : ViewModel() {
     class Factory(private val context: Context, private val syncStore: AndroidLibrarySyncStore) : ViewModelProvider.Factory {
@@ -58,7 +61,7 @@ internal class LibraryPlaylistsViewModel(private val context: Context, syncStore
         syncStore.artworkPaths,
     ) { playlists, tracks, artworkPaths ->
         val availableTrackIds = tracks.mapTo(mutableSetOf(), LibraryTrack::id)
-        LibraryPlaylistsUiState(playlistsWithFavorites(playlists, tracks).map { playlist ->
+        LibraryPlaylistsUiState(isLoaded = true, playlists = playlistsWithFavorites(playlists, tracks).map { playlist ->
             PlaylistListItem(
                 playlist.id,
                 playlist.name,
@@ -68,7 +71,7 @@ internal class LibraryPlaylistsViewModel(private val context: Context, syncStore
                 playlist.syncFailed,
             )
         })
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LibraryPlaylistsUiState())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LibraryPlaylistsUiState(isLoaded = false))
 
     fun createPlaylist(rawName: String, artworkUri: Uri? = null, initialTrackIds: List<String> = emptyList()) {
         val name = rawName.trim()

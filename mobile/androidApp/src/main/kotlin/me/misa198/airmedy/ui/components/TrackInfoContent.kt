@@ -127,6 +127,7 @@ internal fun trackInfoValues(track: LibraryTrack): List<TrackInfoValue> {
         TrackInfoValue(R.string.track_info_track, trackNumberText(trackNumber, totalTracks)),
         TrackInfoValue(R.string.track_info_play_count, (number("play_count") ?: track.playCount.toLong()).takeIf { it > 0 }?.toString().orEmpty()),
         TrackInfoValue(R.string.track_info_label, text("label")),
+        TrackInfoValue(R.string.track_info_copyright, text("copyright")),
         TrackInfoValue(R.string.track_info_isrc, text("isrc")),
         TrackInfoValue(R.string.track_info_duration, formatTrackDuration(number("duration"))),
         TrackInfoValue(R.string.track_info_format, text("format").uppercase()),

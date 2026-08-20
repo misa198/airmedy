@@ -60,6 +60,7 @@ internal fun LibraryTracksContent(
     }
     LibraryVirtualList(
         items = uiState.tracks,
+        isLoaded = uiState.isLoaded,
         key = { track -> track.id.ifBlank { "${track.title}_${track.artists}" } },
         contentType = "track_row",
         listState = listState,
@@ -68,12 +69,11 @@ internal fun LibraryTracksContent(
         dividerTestTag = "track-row-divider",
         filterKey = "tracks",
         filterActive = uiState.filterQuery.isNotBlank(),
-        filterContent = { showPlaceholderAndLeadingSymbol ->
+        filterContent = {
             LibraryTextFilter(
                 value = uiState.filterQuery,
                 onValueChange = onFilterQueryChange,
                 placeholder = stringResource(R.string.filter_placeholder_search),
-                showPlaceholderAndLeadingSymbol = showPlaceholderAndLeadingSymbol,
             )
         },
         leadingContent = {

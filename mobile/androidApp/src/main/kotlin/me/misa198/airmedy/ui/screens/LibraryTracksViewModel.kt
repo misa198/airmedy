@@ -33,6 +33,7 @@ enum class SortOrder {
 }
 
 data class LibraryTracksUiState(
+    val isLoaded: Boolean = true,
     val tracks: List<LibraryTrack> = emptyList(),
     val recentTracks: List<LibraryTrack> = emptyList(),
     val filterQuery: String = "",
@@ -95,6 +96,7 @@ internal class LibraryTracksViewModel(
             .sortedWith(compareByDescending<LibraryTrack> { it.createdAt }.thenBy(libraryAlphabeticalComparator) { it.sortTitle }.thenBy { it.id })
             .take(50)
         LibraryTracksUiState(
+            isLoaded = true,
             tracks = sorted,
             recentTracks = recent,
             filterQuery = query,
@@ -104,7 +106,7 @@ internal class LibraryTracksViewModel(
     }.flowOn(Dispatchers.Default).stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = LibraryTracksUiState(),
+        initialValue = LibraryTracksUiState(isLoaded = false),
     )
 
     fun setSortOption(option: TrackSortOption) {

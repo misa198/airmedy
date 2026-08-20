@@ -30,4 +30,6 @@ sealed interface AppIntent {
 /** One-time work delegated by the app shell to the Android host. */
 sealed interface AppEffect {
     data class OpenExternalUrl(val url: String) : AppEffect
+
+    data class ResetPoppedPage(val page: AppStackPage) : AppEffect
 }

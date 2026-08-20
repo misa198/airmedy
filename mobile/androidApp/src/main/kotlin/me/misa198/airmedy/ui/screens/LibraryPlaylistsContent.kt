@@ -41,6 +41,7 @@ internal fun LibraryPlaylistsContent(
     var deletingPlaylist by remember { mutableStateOf<PlaylistListItem?>(null) }
     LibraryVirtualList(
         items = uiState.playlists,
+        isLoaded = uiState.isLoaded,
         key = { it.id },
         contentType = "playlist_row",
         listState = listState,

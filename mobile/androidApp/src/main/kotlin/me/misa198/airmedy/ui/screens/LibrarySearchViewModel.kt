@@ -28,6 +28,7 @@ import me.misa198.airmedy.sync.metadataObject
 import me.misa198.airmedy.ui.libraryAlphabeticalComparator
 
 data class LibrarySearchUiState(
+    val isLoaded: Boolean = true,
     val query: String = "",
     val tracks: List<LibraryTrack> = emptyList(),
     internal val allTracks: List<LibraryTrack> = emptyList(),
@@ -52,6 +53,7 @@ internal class LibrarySearchViewModel(syncStore: AndroidLibrarySyncStore) : View
         val text = if (queryText.isBlank()) "" else values[1] as String
         @Suppress("UNCHECKED_CAST")
         LibrarySearchUiState(
+            isLoaded = true,
             query = queryText,
             tracks = searchTracks(values[2] as List<LibraryTrack>, text),
             allTracks = values[2] as List<LibraryTrack>,
@@ -60,7 +62,11 @@ internal class LibrarySearchViewModel(syncStore: AndroidLibrarySyncStore) : View
             playlists = searchLibrary(values[5] as List<LibraryPlaylist>, text, { listOf(it.name, playlistDescription(it)) }, { it.name }, { it.id }),
             composers = searchLibrary(values[6] as List<LibraryComposer>, text, { listOf(it.name) }, { it.sortName }, { it.id }),
         )
-    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LibrarySearchUiState())
+    }.flowOn(Dispatchers.Default).stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000),
+        LibrarySearchUiState(isLoaded = false),
+    )
 
     fun setQuery(value: String) { query.value = value }
     fun clear() { query.value = "" }

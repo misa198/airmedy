@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -63,6 +64,7 @@ fun AirmedyTextField(
     onDone: () -> Unit = {},
 ) {
     val colors = LocalAirmedyColors.current
+    val focusManager = LocalFocusManager.current
     val shape = RoundedCornerShape((size.height / 2).dp)
     val showsDefaultClearAction = trailingContent == null && showClearButton && value.isNotEmpty()
     BasicTextField(
@@ -82,7 +84,10 @@ fun AirmedyTextField(
         textStyle = TextStyle(fontSize = size.textSize.sp, fontWeight = FontWeight.Medium, color = colors.textMain),
         cursorBrush = SolidColor(colors.primary),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done),
-        keyboardActions = KeyboardActions(onDone = { onDone() }),
+        keyboardActions = KeyboardActions(onDone = {
+            focusManager.clearFocus()
+            onDone()
+        }),
         decorationBox = { innerTextField ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 leadingSymbol?.takeIf { showPlaceholderAndLeadingSymbol }?.let { symbol ->

@@ -68,6 +68,7 @@ internal fun LibraryAlbumsContent(
     }
     LibraryVirtualList(
         items = uiState.albums,
+        isLoaded = uiState.isLoaded,
         key = { album -> album.id },
         contentType = "album_row",
         listState = listState,
@@ -76,12 +77,11 @@ internal fun LibraryAlbumsContent(
         dividerTestTag = "album-row-divider",
         filterKey = "albums",
         filterActive = uiState.filterQuery.isNotBlank(),
-        filterContent = { showPlaceholderAndLeadingSymbol ->
+        filterContent = {
             LibraryTextFilter(
                 value = uiState.filterQuery,
                 onValueChange = onFilterQueryChange,
                 placeholder = stringResource(R.string.filter_placeholder_search),
-                showPlaceholderAndLeadingSymbol = showPlaceholderAndLeadingSymbol,
             )
         },
         leadingContent = {

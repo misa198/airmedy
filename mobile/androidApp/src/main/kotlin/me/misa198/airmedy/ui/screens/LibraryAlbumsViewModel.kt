@@ -33,6 +33,7 @@ enum class AlbumLayoutMode(val storageValue: String) {
 }
 
 data class LibraryAlbumsUiState(
+    val isLoaded: Boolean = true,
     val albums: List<LibraryAlbum> = emptyList(),
     internal val tracks: List<LibraryTrack> = emptyList(),
     val filterQuery: String = "",
@@ -67,6 +68,7 @@ internal class LibraryAlbumsViewModel(
         filterQueryFlow,
     ) { albums, tracks, option, order, query ->
         LibraryAlbumsUiState(
+            isLoaded = true,
             albums = sortAlbums(albums.filter { matchesLibraryTextFilter(query, it.title, it.artist) }, option, order),
             tracks = tracks,
             filterQuery = query,
@@ -83,7 +85,7 @@ internal class LibraryAlbumsViewModel(
     }.flowOn(Dispatchers.Default).stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = LibraryAlbumsUiState(),
+        initialValue = LibraryAlbumsUiState(isLoaded = false),
     )
 
     fun setSortOption(option: AlbumSortOption) {

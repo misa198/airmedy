@@ -280,6 +280,7 @@
     <string name="track_info_track">Track</string>
     <string name="track_info_play_count">Play count</string>
     <string name="track_info_label">Label</string>
+    <string name="track_info_copyright">Copyright</string>
     <string name="track_info_isrc">ISRC</string>
     <string name="track_info_duration">Duration</string>
     <string name="track_info_format">Format</string>

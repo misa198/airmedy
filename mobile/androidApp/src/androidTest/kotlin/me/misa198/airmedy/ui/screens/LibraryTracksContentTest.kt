@@ -44,6 +44,21 @@ class LibraryTracksContentTest {
     }
 
     @Test
+    fun doesNotDisplayEmptyStateBeforeInitialLoad() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                LibraryTracksContent(
+                    uiState = LibraryTracksUiState(isLoaded = false),
+                    onSortOptionSelected = {},
+                    onToggleSortOrder = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("No tracks in library").assertDoesNotExist()
+    }
+
+    @Test
     fun displaysTracksList() {
         val sampleTracks = listOf(
             LibraryTrack(id = "1", title = "Song A", artists = "Artist A", album = "Album A"),

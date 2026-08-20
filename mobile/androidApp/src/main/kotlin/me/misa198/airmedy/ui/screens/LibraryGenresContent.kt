@@ -52,6 +52,7 @@ internal fun LibraryGenresContent(
     }
     LibraryVirtualList(
         items = uiState.genres,
+        isLoaded = uiState.isLoaded,
         key = { genre -> genre.id },
         contentType = "genre_row",
         listState = listState,
@@ -60,12 +61,11 @@ internal fun LibraryGenresContent(
         dividerTestTag = "genre-row-divider",
         filterKey = "genres",
         filterActive = uiState.filterQuery.isNotBlank(),
-        filterContent = { showPlaceholderAndLeadingSymbol ->
+        filterContent = {
             LibraryTextFilter(
                 value = uiState.filterQuery,
                 onValueChange = onFilterQueryChange,
                 placeholder = stringResource(R.string.filter_placeholder_search),
-                showPlaceholderAndLeadingSymbol = showPlaceholderAndLeadingSymbol,
             )
         },
         alphabeticalIndexKey = if (uiState.sortOption == GenreSortOption.Name) ({ genre -> genre.sortName.ifBlank { genre.name } }) else null,

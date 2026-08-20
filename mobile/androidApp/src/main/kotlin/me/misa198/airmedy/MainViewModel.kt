@@ -169,6 +169,7 @@ class MainViewModel(
             generations + (key to (generations[key] ?: 0) + 1)
         }
         clearPoppedPageState(page)
+        _effects.trySend(AppEffect.ResetPoppedPage(page))
     }
 
     /**

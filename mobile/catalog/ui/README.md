@@ -113,6 +113,15 @@ three call sites. Keep screen-specific composables beside their screen. A new
 component accepts explicit state and callbacks; it does not accept a ViewModel
 or Service for convenience.
 
+`LibraryTextFilter` keeps its active edit buffer locally so delayed list
+filtering cannot replay an older query into `BasicTextField` and disturb the
+cursor. It still reports every edit to the owning ViewModel. The IME Done action
+and taps outside the active field clear focus so Android dismisses the keyboard.
+Library list and search empty states render only after their ViewModel receives
+the first Room-backed snapshot; initial loading stays visually neutral.
+When a page with a library search/filter input is popped from its destination
+stack, the shell resets that page's query before it can be opened again.
+
 ## Player UI contracts
 
 `PlaybackState.showsMiniPlayer()` determines whether chrome shows the mini

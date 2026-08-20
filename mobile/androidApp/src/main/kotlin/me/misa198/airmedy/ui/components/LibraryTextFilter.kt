@@ -3,6 +3,10 @@ package me.misa198.airmedy.ui.components
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
@@ -15,9 +19,13 @@ fun LibraryTextFilter(
     showPlaceholderAndLeadingSymbol: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
+    var inputValue by rememberSaveable { mutableStateOf(value) }
     AirmedyTextField(
-        value = value,
-        onValueChange = onValueChange,
+        value = inputValue,
+        onValueChange = { newValue ->
+            inputValue = newValue
+            onValueChange(newValue)
+        },
         placeholder = placeholder,
         size = AirmedyTextFieldSize.Medium,
         leadingSymbol = MaterialSymbols.Search,

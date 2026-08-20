@@ -19,6 +19,7 @@ enum class GenreSortOption {
 }
 
 data class LibraryGenresUiState(
+    val isLoaded: Boolean = true,
     val genres: List<LibraryGenre> = emptyList(),
     val filterQuery: String = "",
     val sortOption: GenreSortOption = GenreSortOption.Name,
@@ -37,15 +38,18 @@ internal class LibraryGenresViewModel(
     private val sortOptionFlow = MutableStateFlow(GenreSortOption.Name)
     private val sortOrderFlow = MutableStateFlow(SortOrder.Ascending)
     private val filterQueryFlow = MutableStateFlow("")
+    private val appliedFilterQuery = filterQueryFlow.debouncedLibrarySearchQuery()
 
     val uiState: StateFlow<LibraryGenresUiState> = combine(
         syncStore.genres,
         sortOptionFlow,
         sortOrderFlow,
         filterQueryFlow,
-    ) { genres, option, order, query ->
+        appliedFilterQuery,
+    ) { genres, option, order, query, appliedQuery ->
         LibraryGenresUiState(
-            genres = sortGenres(genres.filter { matchesLibraryTextFilter(query, it.name) }, option, order),
+            isLoaded = true,
+            genres = sortGenres(genres.filter { matchesLibraryTextFilter(appliedQuery, it.name) }, option, order),
             filterQuery = query,
             sortOption = option,
             sortOrder = order,
@@ -53,7 +57,7 @@ internal class LibraryGenresViewModel(
     }.flowOn(Dispatchers.Default).stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = LibraryGenresUiState(),
+        initialValue = LibraryGenresUiState(isLoaded = false),
     )
 
     fun setSortOption(option: GenreSortOption) {

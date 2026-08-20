@@ -36,6 +36,7 @@ import me.misa198.airmedy.ui.components.TrackContextArtist
 import me.misa198.airmedy.ui.components.TrackContextMenu
 import me.misa198.airmedy.ui.components.TrackContextMenuActions
 import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
+import me.misa198.airmedy.ui.components.trackInfoArtworkSize
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 private const val AlbumTrackDividerTag = "album-detail-track-divider"
@@ -90,7 +91,7 @@ internal fun AlbumDetailsContent(
     )
     LazyColumn(modifier.fillMaxSize(), contentPadding = listPadding) {
         item("hero") {
-            ArtworkHeroBackdrop(album.artworkPath, Modifier.fillMaxWidth(), hazeState, onHeroColorChanged) {
+            ArtworkHeroBackdrop(album.artworkPath, Modifier.fillMaxWidth(), onHeroColorChanged) {
                 AlbumContextMenu(
                     tracks = uiState.tracks,
                     expanded = albumMenuExpanded,
@@ -118,6 +119,7 @@ internal fun AlbumDetailsContent(
                         bottom = 20.dp,
                     ),
                     album.artworkPath,
+                    artworkSize = trackInfoArtworkSize,
                     onPlayClick = onPlay,
                     onShuffleClick = onShuffle,
                     onMoreClick = { albumMenuExpanded = true },

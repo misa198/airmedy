@@ -41,8 +41,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 enum class DetailHeroArtworkShape { Square, Circle }
@@ -52,7 +50,6 @@ enum class DetailHeroArtworkShape { Square, Circle }
 fun ArtworkHeroBackdrop(
     artworkPath: String?,
     modifier: Modifier = Modifier,
-    hazeState: HazeState? = null,
     onDominantColorChanged: (Color) -> Unit = {},
     content: @Composable () -> Unit,
 ) {
@@ -64,7 +61,7 @@ fun ArtworkHeroBackdrop(
         onDominantColorChanged(dominant)
     }
     val animatedDominant by animateColorAsState(dominant, tween(280, easing = FastOutSlowInEasing), label = "detail-hero-artwork-colour")
-    Box(modifier = modifier.then(if (hazeState == null) Modifier else Modifier.hazeSource(hazeState)).background(colors.background)) {
+    Box(modifier = modifier.background(colors.background)) {
         Box(
             Modifier.matchParentSize().background(
                 Brush.verticalGradient(
