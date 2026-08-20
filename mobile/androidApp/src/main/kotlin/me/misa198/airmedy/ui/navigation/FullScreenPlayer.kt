@@ -899,6 +899,7 @@ private fun FullScreenPlayerMetadata(
     onCloseFullscreenThen: ((() -> Unit) -> Unit),
 ) {
     val colors = LocalAirmedyColors.current
+    val hapticFeedback = LocalHapticFeedback.current
     val favoriteScale = remember(item.trackId) { Animatable(1f) }
     var previousFavorite by remember(item.trackId) { mutableStateOf(isFavorite) }
     LaunchedEffect(item.trackId, isFavorite) {
@@ -943,7 +944,10 @@ private fun FullScreenPlayerMetadata(
             AirmedyIconButton(
                 symbol = if (isFavorite) MaterialSymbols.Favorite else MaterialSymbols.FavoriteBorder,
                 label = stringResource(R.string.player_heart),
-                onClick = { onFavoriteToggle(item.trackId, !isFavorite) },
+                onClick = {
+                    if (!isFavorite) hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
+                    onFavoriteToggle(item.trackId, !isFavorite)
+                },
                 modifier = Modifier.graphicsLayer {
                     scaleX = favoriteScale.value
                     scaleY = favoriteScale.value

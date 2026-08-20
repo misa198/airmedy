@@ -3,9 +3,13 @@ package me.misa198.airmedy.ui.navigation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
@@ -38,6 +42,69 @@ import org.junit.Assert.assertEquals
 class FullScreenPlayerTest {
     @get:Rule
     val composeTestRule = createComposeRule()
+
+    @Test
+    fun favoriteHeartConfirmsOnlyWhenAdding() {
+        val haptics = mutableListOf<HapticFeedbackType>()
+        var change: Boolean? = null
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                CompositionLocalProvider(LocalHapticFeedback provides object : HapticFeedback {
+                    override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) { haptics += hapticFeedbackType }
+                }) {
+                    FullScreenPlayer(
+                        visible = true,
+                        dragProgress = 0f,
+                        isDragging = false,
+                        openingFromMiniPlayerSwipe = false,
+                        playbackState = PlaybackState.Playing(item, 0L, 120_000L),
+                        volume = 0.5f,
+                        onSeek = {}, onVolumeChange = {}, onPrevious = {}, onPlayPause = {}, onNext = {},
+                        onFavoriteToggle = { _, favorite -> change = favorite },
+                        onOpenMediaOutputSwitcher = {}, onDismiss = {},
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Favorite").performClick()
+        composeTestRule.runOnIdle {
+            assertEquals(true, change)
+            assertEquals(listOf(HapticFeedbackType.Confirm), haptics)
+        }
+    }
+
+    @Test
+    fun favoriteHeartDoesNotConfirmWhenRemoving() {
+        val haptics = mutableListOf<HapticFeedbackType>()
+        var change: Boolean? = null
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                CompositionLocalProvider(LocalHapticFeedback provides object : HapticFeedback {
+                    override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) { haptics += hapticFeedbackType }
+                }) {
+                    FullScreenPlayer(
+                        visible = true,
+                        dragProgress = 0f,
+                        isDragging = false,
+                        openingFromMiniPlayerSwipe = false,
+                        playbackState = PlaybackState.Playing(item, 0L, 120_000L),
+                        volume = 0.5f,
+                        onSeek = {}, onVolumeChange = {}, onPrevious = {}, onPlayPause = {}, onNext = {},
+                        isFavorite = true,
+                        onFavoriteToggle = { _, favorite -> change = favorite },
+                        onOpenMediaOutputSwitcher = {}, onDismiss = {},
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Favorite").performClick()
+        composeTestRule.runOnIdle {
+            assertEquals(false, change)
+            assertEquals(emptyList<HapticFeedbackType>(), haptics)
+        }
+    }
 
     @Test
     fun shortScreenCentersAndCapsArtworkByAvailableHeight() {

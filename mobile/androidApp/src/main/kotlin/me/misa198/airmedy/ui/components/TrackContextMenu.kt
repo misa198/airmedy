@@ -21,6 +21,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -110,6 +112,7 @@ fun TrackContextMenu(
     onCreatePlaylistRequested: (trackIds: List<String>) -> Unit = {},
     anchor: @Composable () -> Unit,
 ) {
+    val hapticFeedback = LocalHapticFeedback.current
     var detailSheet by remember(track.id) { mutableStateOf<TrackContextBottomSheetRequest?>(null) }
     val artists = remember(track.metadataJson) { trackContextArtists(track) }
     val hasAlbum = track.albumId.isNotBlank() && track.album.isNotBlank()
@@ -159,7 +162,7 @@ fun TrackContextMenu(
             if (showAddToQueue) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_add_to_queue), MaterialSymbols.AddToQueue) { closeAfter { onAddToQueue(track) } })
             if (actions.trackInfo) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_track_info), MaterialSymbols.Info) { requestBottomSheet(TrackContextBottomSheetRequest.Info(track)) })
             if (showPlayNext || showAddToQueue || actions.trackInfo) add(ContextActionMenuEntry.Divider)
-            if (actions.favorite) add(ContextActionMenuEntry.Action(stringResource(if (favorite) R.string.track_context_remove_from_favorites else R.string.track_context_add_to_favorites), if (favorite) MaterialSymbols.HeartMinus else MaterialSymbols.HeartPlus) { closeAfter { onFavoriteChange(track, !favorite) } })
+            if (actions.favorite) add(ContextActionMenuEntry.Action(stringResource(if (favorite) R.string.track_context_remove_from_favorites else R.string.track_context_add_to_favorites), if (favorite) MaterialSymbols.HeartMinus else MaterialSymbols.HeartPlus) { closeAfter { if (!favorite) hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm); onFavoriteChange(track, !favorite) } })
             if (actions.addToPlaylist) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_add_to_playlist), MaterialSymbols.PlaylistAdd) { requestBottomSheet(TrackContextBottomSheetRequest.Playlist(listOf(track.id))) })
             if ((actions.favorite || actions.addToPlaylist) && (hasNavigationActions || actions.removeFromPlaylist)) {
                 add(ContextActionMenuEntry.Divider)
