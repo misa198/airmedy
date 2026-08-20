@@ -130,12 +130,13 @@ type Service struct {
 	reconciliationSub  bool
 	receiptsSubscribed bool
 	listeners          []func(*domain.MobileLibrarySyncPlan)
+	planCache          map[string]*domain.MobileLibrarySyncPlan
 	starting           map[string]map[uint64]context.CancelFunc
 	nextStartID        uint64
 }
 
 func NewService(plans domain.MobileLibrarySyncPlanRepository, tracks domain.TrackRepository, playlists domain.PlaylistRepository, artists domain.ArtistRepository, lyrics *lyricsapp.LyricsService, lyricCache domain.MobileSyncLyricCacheRepository, analysis domain.AnalysisRepository, artwork domain.ArtworkCache, devices domain.TrustedMobileDeviceRepository, identity domain.PairingIdentityRepository, keys domain.PairingKeyStore, broker domain.PairingBroker, ledger domain.PlaylistMutationLedger, lww domain.PlaylistMutationLWW, favoriteLedger domain.FavoriteMutationLedger, favoriteLWW domain.FavoriteMutationLWW, staging domain.PlaylistArtworkStagingRepository, tx domain.TxManager, playlistSvc *playlistapp.PlaylistService, listening domain.ListeningRepository, logger *slog.Logger) *Service {
-	return &Service{plans: plans, tracks: tracks, playlists: playlists, artists: artists, lyrics: lyrics, lyricCache: lyricCache, analysis: analysis, artwork: artwork, devices: devices, identity: identity, keys: keys, broker: broker, ledger: ledger, lww: lww, favoriteLedger: favoriteLedger, favoriteLWW: favoriteLWW, staging: staging, tx: tx, playlistSvc: playlistSvc, listening: listening, logger: logger, nonces: make(map[string]time.Time), playlistArtwork: make(map[string]string), reconciliations: make(map[string]*playlistReconciliation)}
+	return &Service{plans: plans, tracks: tracks, playlists: playlists, artists: artists, lyrics: lyrics, lyricCache: lyricCache, analysis: analysis, artwork: artwork, devices: devices, identity: identity, keys: keys, broker: broker, ledger: ledger, lww: lww, favoriteLedger: favoriteLedger, favoriteLWW: favoriteLWW, staging: staging, tx: tx, playlistSvc: playlistSvc, listening: listening, logger: logger, nonces: make(map[string]time.Time), playlistArtwork: make(map[string]string), reconciliations: make(map[string]*playlistReconciliation), planCache: make(map[string]*domain.MobileLibrarySyncPlan)}
 }
 
 func (s *Service) OnStart(ctx context.Context) error {
@@ -175,7 +176,63 @@ func (s *Service) emit(plan *domain.MobileLibrarySyncPlan) {
 }
 
 func (s *Service) GetStatus(ctx context.Context, deviceID string) (*domain.MobileLibrarySyncPlan, error) {
-	return s.plans.GetLatest(ctx, deviceID)
+	if plan := s.cachedPlan(deviceID); plan != nil {
+		return plan, nil
+	}
+	plan, err := s.plans.GetLatest(ctx, deviceID)
+	if err == nil {
+		s.cachePlan(plan)
+	}
+	return plan, err
+}
+
+func (s *Service) cachedPlan(deviceID string) *domain.MobileLibrarySyncPlan {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if plan := s.planCache[deviceID]; plan != nil {
+		copy := *plan
+		return &copy
+	}
+	return nil
+}
+
+func (s *Service) cachePlan(plan *domain.MobileLibrarySyncPlan) {
+	if plan == nil {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.planCache == nil {
+		s.planCache = make(map[string]*domain.MobileLibrarySyncPlan)
+	}
+	copy := *plan
+	if copy.Status != "active" {
+		copy.Manifest = domain.MobileLibrarySyncManifest{}
+	}
+	s.planCache[plan.DeviceID] = &copy
+}
+
+func (s *Service) updatePlanProgress(plan *domain.MobileLibrarySyncPlan, completed int, status string, at time.Time) *domain.MobileLibrarySyncPlan {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if current := s.planCache[plan.DeviceID]; current != nil && current.ID == plan.ID {
+		if current.Status != "active" || current.Completed > completed {
+			copy := *current
+			return &copy
+		}
+	}
+	copy := *plan
+	copy.Completed = completed
+	copy.Status = status
+	copy.UpdatedAt = at
+	if status != "active" {
+		copy.Manifest = domain.MobileLibrarySyncManifest{}
+	}
+	if s.planCache == nil {
+		s.planCache = make(map[string]*domain.MobileLibrarySyncPlan)
+	}
+	s.planCache[plan.DeviceID] = &copy
+	return &copy
 }
 
 func (s *Service) startContext(ctx context.Context, deviceID string) (context.Context, func()) {
@@ -220,7 +277,7 @@ func (s *Service) Cancel(ctx context.Context, deviceID string) (*domain.MobileLi
 		return nil, fmt.Errorf("invalid mobile device ID")
 	}
 	s.cancelStarts(deviceID)
-	plan, err := s.plans.GetLatest(ctx, deviceID)
+	plan, err := s.GetStatus(ctx, deviceID)
 	if err != nil {
 		return nil, err
 	}
@@ -233,10 +290,7 @@ func (s *Service) Cancel(ctx context.Context, deviceID string) (*domain.MobileLi
 	if err := s.plans.MarkSuperseded(ctx, deviceID); err != nil {
 		return nil, fmt.Errorf("cancel mobile library sync: %w", err)
 	}
-	plan, err = s.plans.GetLatest(ctx, deviceID)
-	if err != nil {
-		return nil, err
-	}
+	plan = s.updatePlanProgress(plan, plan.Completed, "superseded", time.Now().UTC())
 	s.emit(plan)
 	return plan, nil
 }
@@ -284,11 +338,12 @@ func (s *Service) Start(ctx context.Context, deviceID string, scope domain.Mobil
 	if err := s.reconcilePlaylists(ctx, deviceID, scope, host); err != nil {
 		return nil, err
 	}
-	current, err := s.plans.GetLatest(ctx, deviceID)
+	current, err := s.GetStatus(ctx, deviceID)
 	if err != nil {
 		return nil, err
 	}
 	if current != nil && current.Status == "active" {
+		s.cachePlan(current)
 		if sameScope(current.Scope, scope) {
 			return current, s.publishRequest(ctx, current, host)
 		}
@@ -298,6 +353,8 @@ func (s *Service) Start(ctx context.Context, deviceID string, scope domain.Mobil
 		if err := s.plans.MarkSuperseded(ctx, deviceID); err != nil {
 			return nil, err
 		}
+		current.Status = "superseded"
+		s.cachePlan(current)
 	}
 	plan, err := s.createPlan(ctx, deviceID, scope)
 	if err != nil {
@@ -457,6 +514,7 @@ func (s *Service) createPlan(ctx context.Context, deviceID string, scope domain.
 	if err := s.plans.Save(ctx, plan); err != nil {
 		return nil, err
 	}
+	s.cachePlan(plan)
 	return plan, nil
 }
 
@@ -885,25 +943,29 @@ func (s *Service) HandleReceipt(ctx context.Context, payload []byte) error {
 	if !ed25519.Verify(ed25519.PublicKey(device.PublicKey), input, signature) {
 		return fmt.Errorf("invalid mobile sync receipt signature")
 	}
-	plan, err := s.plans.GetLatest(ctx, receipt.MobileID)
+	plan, err := s.GetStatus(ctx, receipt.MobileID)
 	if err != nil {
 		return err
 	}
 	if plan == nil || plan.ID != receipt.PlanID || plan.Status != "active" {
 		return fmt.Errorf("unknown mobile sync plan")
 	}
+	now := time.Now().UTC()
+	var updated *domain.MobileLibrarySyncPlan
 	if receipt.Complete {
-		if err := s.plans.MarkComplete(ctx, plan.ID, time.Now().UTC()); err != nil {
+		if err := s.plans.MarkComplete(ctx, plan.ID, now); err != nil {
 			return err
 		}
-	} else if _, err := s.plans.MarkReceipt(ctx, plan.ID, receipt.AssetID, time.Now().UTC()); err != nil {
-		return err
+		updated = s.updatePlanProgress(plan, plan.Total, "complete", now)
+	} else {
+		completed, err := s.plans.MarkReceipt(ctx, plan.ID, receipt.AssetID, now)
+		if err != nil {
+			return err
+		}
+		updated = s.updatePlanProgress(plan, completed, "active", now)
 	}
-	updated, err := s.plans.GetLatest(ctx, receipt.MobileID)
-	if err == nil && updated != nil {
-		s.emit(updated)
-	}
-	return err
+	s.emit(updated)
+	return nil
 }
 
 func (s *Service) serveHTTP(w http.ResponseWriter, r *http.Request) {
@@ -1145,7 +1207,7 @@ func (s *Service) servePlaylistMutations(w http.ResponseWriter, r *http.Request,
 func (s *Service) findPlan(ctx context.Context, planID string) (*domain.MobileLibrarySyncPlan, error) {
 	// The mobile ID is authenticated in authorizeHTTP and set on the request.
 	deviceID, _ := ctx.Value(syncDeviceContextKey{}).(string)
-	plan, err := s.plans.GetLatest(ctx, deviceID)
+	plan, err := s.GetStatus(ctx, deviceID)
 	if err != nil || plan == nil || plan.ID != planID || plan.Status != "active" {
 		return nil, fmt.Errorf("plan unavailable")
 	}

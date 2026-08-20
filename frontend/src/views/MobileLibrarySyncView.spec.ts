@@ -107,6 +107,22 @@ describe('MobileLibrarySyncView', () => {
     wrapper.unmount()
   })
 
+  it('does not let a stale poll move active progress backwards', async () => {
+    let resolvePoll!: (plan: typeof activePlan) => void
+    getStatus.mockResolvedValueOnce(activePlan).mockReturnValueOnce(new Promise(resolve => { resolvePoll = resolve }))
+    const wrapper = mountView()
+    await flushPromises()
+
+    vi.advanceTimersByTime(1_000)
+    await flushPromises()
+    eventHandlers.get('mobile-library-sync:updated')!({ data: { ...activePlan, completed: 3 } })
+    resolvePoll({ ...activePlan, completed: 2 })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('75%')
+    wrapper.unmount()
+  })
+
   it('keeps Sync disabled while its plan is active', async () => {
     getStatus.mockResolvedValue(activePlan)
     const wrapper = mountView()

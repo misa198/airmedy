@@ -76,12 +76,7 @@ function startPolling() {
     try {
       const status = await MobileLibrarySyncService.GetStatus(deviceID.value)
       if (plan.value?.id !== polledPlanID || plan.value.status !== 'active') return
-      if (status) {
-        plan.value = status
-        if (status.status !== 'active') {
-          stopPolling()
-        }
-      }
+      if (status) applyPlanUpdate(status)
     } catch (error) {
       console.error('Failed to poll mobile sync status:', error)
     }
@@ -93,6 +88,16 @@ function stopPolling() {
     clearInterval(pollTimer)
     pollTimer = null
   }
+}
+
+function applyPlanUpdate(updated: MobileLibrarySyncPlan) {
+  const current = plan.value
+  if (current?.id === updated.id) {
+    if (current.status !== 'active' && updated.status === 'active') return
+    if (updated.completed < current.completed) return
+  }
+  plan.value = updated
+  if (updated.status !== 'active') stopPolling()
 }
 
 async function load() {
@@ -165,10 +170,7 @@ onMounted(() => {
     const raw = Array.isArray(event.data) ? event.data[0] : (event.data?.data ?? event.data)
     const updated = raw as MobileLibrarySyncPlan
     if (updated && updated.device_id === deviceID.value) {
-      plan.value = updated
-      if (updated.status !== 'active') {
-        stopPolling()
-      }
+      applyPlanUpdate(updated)
     }
   })
 })

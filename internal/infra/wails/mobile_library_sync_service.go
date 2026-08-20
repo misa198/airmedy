@@ -17,14 +17,15 @@ func NewMobileLibrarySyncService(svc *mobilesync.Service) *MobileLibrarySyncServ
 	adapter := &MobileLibrarySyncService{svc: svc}
 	svc.AddListener(func(plan *domain.MobileLibrarySyncPlan) {
 		if app := application.Get(); app != nil {
-			app.Event.Emit("mobile-library-sync:updated", plan)
+			app.Event.Emit("mobile-library-sync:updated", syncPlanStatus(plan))
 		}
 	})
 	return adapter
 }
 
 func (s *MobileLibrarySyncService) GetStatus(ctx context.Context, deviceID string) (*domain.MobileLibrarySyncPlan, error) {
-	return s.svc.GetStatus(ctx, deviceID)
+	plan, err := s.svc.GetStatus(ctx, deviceID)
+	return syncPlanStatus(plan), err
 }
 
 func (s *MobileLibrarySyncService) Cancel(ctx context.Context, deviceID string) (*domain.MobileLibrarySyncPlan, error) {
@@ -32,7 +33,7 @@ func (s *MobileLibrarySyncService) Cancel(ctx context.Context, deviceID string) 
 	if err != nil {
 		return nil, fmt.Errorf("cancel mobile library sync: %w", err)
 	}
-	return plan, nil
+	return syncPlanStatus(plan), nil
 }
 
 // Sync creates a new plan after a completed sync, resumes an unchanged active
@@ -42,5 +43,14 @@ func (s *MobileLibrarySyncService) Sync(ctx context.Context, deviceID string, sc
 	if err != nil {
 		return nil, fmt.Errorf("start mobile library sync: %w", err)
 	}
-	return plan, nil
+	return syncPlanStatus(plan), nil
+}
+
+func syncPlanStatus(plan *domain.MobileLibrarySyncPlan) *domain.MobileLibrarySyncPlan {
+	if plan == nil {
+		return nil
+	}
+	status := *plan
+	status.Manifest = domain.MobileLibrarySyncManifest{}
+	return &status
 }

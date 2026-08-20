@@ -245,6 +245,12 @@ progress updates, activation, and finalization remain serialized. A newer plan
 cancels and waits for the prior foreground transfer to finish cleanup before it
 can begin, preventing concurrent writers to the shared asset cache.
 
+Desktop keeps each immutable plan in memory while serving its HTTP assets, so
+asset requests and receipts do not repeatedly decode the full manifest. Wails
+status calls and events omit that manifest and transfer only plan metadata.
+Receipt and polling updates are monotonic, so an older asynchronous snapshot
+cannot move progress backward.
+
 When an already-online paired MQTT session receives a valid request, Android
 starts a `dataSync` foreground service. The service temporarily uses that
 app-owned MQTT session while it pulls assets and publishes QoS 1 receipts, so

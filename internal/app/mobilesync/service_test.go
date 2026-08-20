@@ -336,6 +336,17 @@ func TestCancelMakesTheActivePlanUnavailableAndNotifiesDesktop(t *testing.T) {
 	require.Same(t, plan, updated)
 }
 
+func TestUpdatePlanProgressNeverRegresses(t *testing.T) {
+	plan := &domain.MobileLibrarySyncPlan{ID: "plan", DeviceID: "mobile", Status: "active", Completed: 3}
+	svc := &Service{}
+	svc.cachePlan(plan)
+
+	updated := svc.updatePlanProgress(plan, 2, "active", time.Now())
+
+	require.Equal(t, 3, updated.Completed)
+	require.Equal(t, 3, svc.cachedPlan("mobile").Completed)
+}
+
 func TestOnStartSupersedesPlanInterruptedByDesktopRestart(t *testing.T) {
 	plans := &testPlanRepo{plan: &domain.MobileLibrarySyncPlan{Status: "active"}}
 	svc := &Service{plans: plans}
