@@ -1,320 +1,183 @@
-# Android Player and Queue
+# Android Player
 
-## Scope and Status
+This catalog maps Android playback ownership, command flow, and the invariants
+that must remain true. It does not describe the desktop or iOS player.
 
-Android playback is independent from the desktop player. `PlaybackController`
-is the Android-only command boundary; Compose UI supplies a synced track-ID
-queue and observes its `StateFlow<PlaybackState>`.
-
-`PlaybackService` also feeds rendered position into the shared
-`LastFmScrobbleTracker`. Each playback instance reports Now Playing after three
-seconds and scrobbles once at 50% or four minutes, provided the track is at
-least 30 seconds long. Seeking adjusts the recorded start timestamp; Last.fm
-network work is best-effort and never blocks the playback ticker.
-
-The same rendered-position ticker drives an independent `ListeningTracker` in
-`sharedLogic`; it works even when Last.fm is disconnected. Android records
-origin-tagged listening sessions, qualified plays, and playback attempts in
-Room through a serialized 64-entry writer queue. Sessions checkpoint every
-minute, flush on pause/transition/stop, and discard intervals shorter than ten
-seconds. Attempts span pause/resume and seek, ending as `completed`, `skipped`,
-or `stopped`. Open attempts are recovered as stopped after process death.
-Crossfade overlap is split equally between outgoing and incoming listening
-sessions, matching desktop attribution.
-
-`PlaybackService` owns audio focus, the platform `MediaSession`, notification,
-and the JNI `FfmpegDecoder`. The native decoder opens the private synced file,
-uses FFmpeg for demuxing and decoding, converts samples through
-`libswresample` to stereo float PCM, and sends them to AAudio through a bounded
-ring buffer. `PlaybackEngine` owns two independent source slots (active and
-preloaded) and one shared power-saving AAudio stream. Each slot has its own
-FFmpeg state, resampler and decode worker; the callback only uses atomic state
-and preallocated PCM to apply per-source normalization, equal-power mix and a
-neutral global DSP stage. It never locks, allocates, calls JNI, or performs I/O.
-Pausing also pauses the AAudio stream, so it does not keep rendering silent
-callbacks. There is no Media3, ExoPlayer, or `MediaCodec` decoder fallback.
-
-When the service is started by a new Play or Shuffle command, that new queue
-takes precedence over saved-session restoration. The service cancels restoration
-before handling the command, so DataStore reads and validation of an old queue
-cannot delay the initial `Preparing` state or the mini-player. Restoration still
-occurs when the service starts without a queue-replacing command. It reads the
-synced library once to remove missing audio assets from the saved queue, then
-resolves only the selected item (and later its immediate preload successor).
-The selected item is published as paused before FFmpeg opens it, so the mini
-player can mount without waiting for decoder preparation. If that item cannot
-be opened, the service clears the invalid saved session and returns to Idle.
-
-While playback is active, `PlaybackService` also listens for Android's
-`ACTION_AUDIO_BECOMING_NOISY` broadcast. This occurs when a wired or Bluetooth
-audio route disconnects and dispatches the same pause action as the player
-controls; the receiver is unregistered when the service is destroyed.
-
-AAudio can also report `AAUDIO_ERROR_DISCONNECTED` without that broadcast (for
-example while changing output routes). The native decoder marks that stream as
-terminal; while still playing, the service closes it and creates a fresh decoder
-for the new route at the rendered position, so manual output switching continues
-without interruption. A physical device removal also sends
-`ACTION_AUDIO_BECOMING_NOISY`; that queued action pauses playback instead, and a
-later Play recreates the invalid decoder from the retained position.
-
-`PlaybackService` publishes the active item's title, artist, artwork, duration,
-position, and transport state through the platform `MediaSession`. Android
-System Now Playing (lock screen and Quick Settings) consumes that session; the
-foreground notification is only the service companion.
-
-The service also publishes its live `MediaSession.Token` through the Android-only
-`AndroidPlaybackSession` registry. The fullscreen Output Switcher uses that token
-on Android versions exposing the session-bound platform API, so Android displays
-the Airmedy route rather than inferring another active session; it falls back to
-the Android 14 generic switcher on earlier platform versions.
-
-Seek requests clamp to the loaded duration and publish the target position to
-the media session immediately. While playing, Android refreshes the published
-position from PCM frames consumed by the AAudio callback, rather than decoded
-frame timestamps: the decoder can fill the two-second ring buffer ahead of
-audible sound, so using decoded PTS would make Now Playing and synced lyrics
-advance early.
-
-Native FFmpeg seeks use a preceding keyframe for decoder safety, then reset the
-resampler and discard decoded PCM before the requested timestamp. This keeps
-the audible position aligned with the seek bar after a crossfade promotion as
-well as during normal playback.
-
-Opening the Android System Now Playing card uses a `CLEAR_TOP | SINGLE_TOP`
-activity intent. It brings the existing `MainActivity` task forward rather than
-creating a second app UI session.
-
-The queue and listening-tracker contracts below are implemented by the
-platform-neutral shared logic. They match desktop behavior while excluding
-Wails events and direct desktop-database integration.
-
-## Native Transitions and DSP
-
-## Volume Normalization
-
-Android reads per-track `loudness_lufs` and `true_peak` values from the active desktop sync manifest's `analysis` documents. Its Android-local Playback setting uses the desktop Track/Album formula, target `-14 LUFS`, and clipping clamp by default. The decoder receives a separate gain for active and preloaded sources, and setting updates atomically refresh them. If the active manifest has no analysis documents, the persisted normalization master setting is reset to disabled and the Playback controls are disabled; an individual unanalysed track always has neutral gain.
-
-Android persists `crossfade_seconds` separately from the resumable queue
-session (`0` = disabled; values are clamped to `0..12`). The current default is
-off; `4` is the UI default when the user enables it. It also persists
-`blend_artwork_during_crossfade`, which defaults on and changes only fullscreen
-visuals, never audio. `PlaybackService` keeps a
-read-only `PlaybackQueue.peekNext()` look-ahead and asks its native decoder to
-preload that immediate next item after a hard load and after mutations which
-can change the next item (insert-next, remove, reorder, shuffle, repeat).
-
-The JNI boundary exposes load/preload status, idle-slot clearing, crossfade
-begin/finish/snap, per-source gains, active/preloaded timing, output disconnect,
-and a one-shot native transition event. At a natural end, the callback promotes
-the preloaded source on the next audio frame. At crossfade start, it promotes
-the incoming source immediately and uses equal-power `cos/sin` gains based on
-the AAudio frame clock; the outgoing worker is reclaimed after the fade.
-`PlaybackService` consumes that event outside the callback, advances the queue,
-and publishes the incoming MediaSession metadata. A gapless promotion can
-preload the new next item immediately. During a crossfade, both native source
-slots are occupied by the incoming and fading-out items, so it defers that
-preload until the callback retires the outgoing slot; this prevents the source
-being faded out from being overwritten by the queue item after next.
-
-Crossfade duration is captured when it begins and is capped by the outgoing
-track's remaining rendered time, so its gain reaches zero before that source
-ends; setting changes only resync the preload. Pause and seek snap/finish a
-fade, while Stop and manual navigation snap it. `normalizationGainDb` is applied before mix. A thread-safe immutable
-global DSP snapshot reserves preamp/EQ/stereo controls after mix; its initial
-implementation is neutral/pass-through.
-
-On every successful automatic crossfade start, `PlaybackService` publishes an
-Android-only `ArtworkCrossfadeTransition` containing a monotonic ID, source and
-destination artwork paths, and that effective duration. It clears the state at
-fade completion or when playback is snapped. This separates visual lifecycle
-from normal track-state changes so manual navigation never blends artwork.
-
-## Ownership and Public Contract
-
-Queue business rules belong in `sharedLogic`; they must be platform-neutral and
-must not depend on Android services, Compose, or decoder APIs. Android owns the
-adapter layer:
+## Architecture boundary
 
 ```text
 Compose / ViewModel
-        |
-        v
-PlaybackController ----> sharedLogic queue rules
-        |
-        v
-PlaybackService ----> MediaSession, audio focus, local persistence, FFmpeg/AAudio
+        │  PlaybackRequest + commands; observes StateFlow
+        ▼
+PlaybackController
+        │  explicit foreground-service intents
+        ▼
+PlaybackService ───── Android: audio focus, MediaSession, notification, DataStore
+        │
+        ├──── sharedLogic: PlaybackQueue, normalization, listening rules
+        └──── AndroidPlaybackRuntime → JNI FfmpegDecoder → FFmpeg + AAudio
 ```
 
-The queue operates on synced track IDs. `PlaybackService` resolves a selected
-ID to a locally available `PlaybackItem` immediately before decoding it. A
-queue snapshot exposes the active playback order, current track ID/index,
-shuffle state, repeat mode, and the normal `PlaybackState` (including position
-and duration when a track is loaded).
+`sharedLogic` contains only platform-neutral queue and tracking rules. Android
+resources, lifecycle, track-ID resolution, persistence, and native audio belong
+to `androidApp`. UI must neither access the decoder nor mutate the queue itself.
 
-The target command surface is:
+| Component | Responsibility |
+| --- | --- |
+| `PlaybackController` | Android-only UI API; converts commands into service intents and exposes read-only state/queue flows. |
+| `PlaybackService` | Sole owner of playback lifecycle, serialized queue mutation, audio focus, media session, notification, and session restoration. |
+| `PlaybackQueue` | Shared queue state machine that operates only on unique track IDs. |
+| `PlaybackItemResolver` | Resolves a synced track ID to its local file immediately before native loading. |
+| `AndroidPlaybackRuntime` | Kotlin JNI adapter; contains no queue policy. |
+| `FfmpegDecoder` / `ffmpeg_player.cpp` | Native decoding and mixing: FFmpeg demuxes/decodes and AAudio renders float PCM. |
+| `PlaybackSessionStore` | Private DataStore persistence for the queue snapshot and position. |
+| `AndroidPlaybackSession` | `MediaSession` token registry for the system Output Switcher. |
+
+Do not add a Media3, ExoPlayer, or MediaCodec fallback without a policy change.
+The only native path is FFmpeg → stereo float PCM → AAudio.
+
+## State and command contract
+
+UI observes `PlaybackService.state` (`PlaybackState`) and `queueState`
+(`PlaybackQueueSnapshot`) through the controller. `PlaybackState` is the UI
+source of truth for the current item, transport state, position, and duration;
+the queue snapshot is the source of truth for playback order, selection, shuffle,
+and repeat.
+
+The controller accepts these commands:
 
 ```kotlin
-play(request)                 // replace queue in source order and start at startIndex
-shuffle(request)              // replace queue, Fisher-Yates shuffle, and start at index 0
-pause(); resume(); stop()     // resume after natural repeat-off completion restarts at active index 0
+play(request); shuffle(request)
+pause(); resume(); stop(); clearQueue()
 next(); previous(); seekTo(positionMs)
-setShuffle(enabled)
-setRepeatMode(mode)
-clear()                       // stop playback and remove the entire queue
-playNext(trackId); playNext(trackIds)
-append(trackIds)
-removeFromQueue(trackId)
-reorderQueue(trackIds)
+setShuffle(enabled); setRepeatMode(mode)
+playNext(trackIds); append(trackIds)
+selectQueueTrack(trackId); removeFromQueue(trackId); reorderQueue(trackIds)
 ```
 
-## Tracks-list playback integration
+`play` and `shuffle` replace the current queue; the other commands operate on
+the active queue. UI settings write `PlaybackPreferences` directly for crossfade
+and artwork blending. Editing a setting must not start the foreground service
+when no track is loaded; a running service observes the setting and resynchronizes
+its preload itself.
 
-Tapping a row in Android's Library > Tracks screen replaces the queue with the
-currently visible sorted list and starts the tapped track at its visible index.
-The screen does not own queue state: it forwards the selected ID to its Android
-ViewModel, which builds the shared `PlaybackRequest` and delegates to
-`PlaybackController`. The player defaults to shuffle off and repeat off; its
-queue command/state surface is available for a future player UI.
+Every native or `MediaSession` callback returns to `PlaybackService`, never to
+the UI. The service serializes commands and publishes state only after the queue
+and native states agree.
 
-`PlaybackQueue`, `PlaybackRequest`, `PlaybackQueueSnapshot`, and `RepeatMode`
-live in `sharedLogic` so native Android and future iOS playback adapters share
-the exact same queue behavior. Android's service persists the queue snapshot
-in private DataStore and restores available synced IDs without auto-playing.
+## Queue contract (`sharedLogic/player/PlaybackQueue.kt`)
 
-`RepeatMode` has exactly three values: `off`, `one`, and `all`. A playback
-request must be non-empty and its start index must be in range. A reorder list
-must contain every active queue ID exactly once; otherwise the queue is not
-changed.
-
-## Queue Model and Invariants
-
-The queue keeps two ordered ID lists and one cursor:
+The queue maintains two orders of the same IDs and one cursor:
 
 | Field | Meaning |
 | --- | --- |
-| `originalTrackIds` | Source order supplied by an album, playlist, or track list. |
-| `activeTrackIds` | The order used for navigation: source order when shuffle is off, shuffled order when it is on. |
-| `currentIndex` | Index in `activeTrackIds`; `-1` means no current track. |
-| `shuffle` | Whether `activeTrackIds` is the shuffled order. |
-| `repeatMode` | `off`, `one`, or `all`. |
+| `originalTrackIds` | Source order supplied by an album, playlist, or list. |
+| `activeTrackIds` | Order used by Next, Previous, and the queue UI. |
+| `currentIndex` | Index in `activeTrackIds`; `-1` means no selected item. |
+| `shuffle`, `repeatMode` | Current playback modes. |
 
-Track IDs are unique within a queue. Every mutation keeps both lists as the
-same set of IDs, and it preserves the current track by ID whenever that track
-remains in the queue. The active list is the only order exposed to playback
-controls and the queue UI.
+Invariants:
 
-The maximum queue size is 1000. Replacing a queue keeps the first 1000 source
-items and clamps the start index. Starting shuffled playback first performs the
-shuffle and then keeps its first 1000 items, so the cap acts as random
-sampling; `originalTrackIds` retains those selected IDs in source order.
+- Queue IDs are unique; both orders always contain the same set of IDs.
+- The queue is capped at `MaxPlaybackQueueSize` (1,000). On overflow it retains
+  the current ID, then trims history before the most distant future entries.
+- Enabling shuffle randomizes only future items after the current one. Disabling
+  it restores source order and relocates the current item by ID. Repeat-all
+  never reshuffles at the loop boundary.
+- `reorderQueue` accepts only a complete permutation of active IDs; invalid
+  input is a no-op.
+- `playNext` inserts a batch after the current item and `append` adds it at the
+  end. Both move existing IDs rather than duplicate them. Reordering active
+  order does not change original order.
+- Removing the current item selects its logical successor. Only Repeat All wraps
+  at the end; other modes stop. `clear` resets the queue, shuffle, and repeat.
 
-When an append or play-next operation would exceed the cap, trim existing
-tracks before adding the incoming batch: remove the oldest history first, then
-the farthest future entries. The selected current track is retained whenever
-the cap is at least one. An incoming batch is itself limited to the available
-capacity, reserving one slot for a current track.
+`next` and natural end share the same `QueueTransition`. Repeat Off ends at the
+last item while preserving the queue; the UI retains the selected item and Play
+starts from the first active item. In the service, Previous restarts the current
+item when position exceeds three seconds; otherwise it uses the queue rule.
 
-## Navigation, Repeat, and Shuffle
+Any semantic change here must update
+`sharedLogic/src/commonTest/.../PlaybackQueueTest.kt`; do not duplicate queue
+rules in a ViewModel or Composable.
 
-Natural completion and the Next command use the same navigation rule:
+## Native playback, gapless transitions, and crossfade
 
-| Mode | Next | Previous at queue boundary |
-| --- | --- | --- |
-| `off` | Advance; after the final track, stop playback. | At the first track, remain on that track. |
-| `one` | Select and replay the current track. | Select and replay the current track. |
-| `all` | Advance and wrap from the final track to the first. | Move back and wrap from the first track to the final. |
+The native engine has two source slots (active/preloaded) and one AAudio stream.
+Each source has its own FFmpeg, resampler, and worker; the audio callback uses
+only atomic state and preallocated PCM. It must not lock, allocate, call JNI, or
+perform I/O.
 
-At the player-control level, Previous first restarts the current item when its
-position is greater than three seconds. At three seconds or less it performs
-the queue Previous action above. Stopping after repeat-off exhaustion leaves
-the queue intact and retains the final item as a paused player state, so its
-controls remain visible. The completed native decoder is released, and Play
-restarts at the first item in the active order (the shuffled order when shuffle
-is enabled), preserving shuffle and repeat settings. Session persistence
-captures the current position before scheduling its asynchronous DataStore
-write, so a later command cannot make that write access a closed decoder. This
-is distinct from Clear Queue, which removes every entry and returns the player
-to an idle state.
+The service uses `PlaybackQueue.peekNext()` to preload the immediate successor
+after a load or queue mutation. A natural end promotes the preloaded source; the
+service consumes that transition outside the callback, advances the queue,
+updates `MediaSession`, and preloads the new successor. Crossfade uses an
+equal-power mix and occupies both slots, so the next preload waits until the
+outgoing slot is free. Pause and seek finish a fade; Stop and manual navigation
+snap it. The duration is capped by outgoing remaining time.
 
-Shuffle uses Fisher-Yates:
+Displayed position comes from rendered PCM frames, not decoded timestamps: the
+ring buffer can decode ahead of audible audio. Seek clamps to duration; native
+seek starts at a preceding keyframe, resets the resampler, then discards PCM up
+to the target.
 
-- `play(request)` always replaces the queue in source order and turns shuffle off.
-- `shuffle(request)` always replaces the queue, turns shuffle on, shuffles the
-  complete supplied set, and starts the first shuffled item.
-- Enabling shuffle during playback preserves already played history and the
-  current item; only entries after the current index are shuffled.
-- Enabling shuffle without a current item shuffles the entire queue and selects
-  index zero.
-- Disabling shuffle restores `originalTrackIds` and relocates the cursor to the
-  same current ID.
-- Repeat-all repeats the resulting shuffled order; it never reshuffles at the
-  loop boundary.
+`crossfade_seconds` is clamped to `0..12` (`0` disables it); the UI default when
+enabled is 4. `blend_artwork_during_crossfade` affects only the fullscreen
+`ArtworkCrossfadeTransition`, never audio. Normalization applies separate gain
+to active and preloaded sources before mixing; see `catalog/normalization` for
+the formula and data contract. Global DSP is currently pass-through and is not
+where business policy belongs.
 
-## Queue Mutations
+## Android lifecycle and system integration
 
-`playNext(trackId)` inserts an item immediately after the current item. Calling
-it for the current item is a no-op; calling it for another ID already in the
-queue moves that ID to the next position rather than duplicating it.
-`playNext(trackIds)` preserves the supplied batch order. Both operations update
-the source and active orders so later unshuffle remains deterministic.
+`PlaybackService` owns:
 
-`append(trackIds)` adds IDs at the tail without changing the current item or
-the immediate next item. `removeFromQueue(trackId)` removes the ID from both
-orders. Removing the active item starts its logical successor; if none exists,
-only repeat-all wraps and every other repeat mode stops. Removing any other
-item preserves the current ID and adjusts only the cursor as needed.
+- Audio focus. Focus loss and `ACTION_AUDIO_BECOMING_NOISY` use the same pause
+  path; the receiver is unregistered when the service is destroyed.
+- `MediaSession` metadata, position, and transport callbacks. The lock screen
+  and Quick Settings use the session; the foreground notification is its service
+  companion.
+- Output-route recovery. If native audio reports a disconnected stream during
+  playback, the service recreates the decoder at the rendered position. Physical
+  unplug still pauses through the noisy broadcast.
+- The `AndroidPlaybackSession` token, so Output Switcher selects the right media
+  session.
+- `ListeningTracker` and Last.fm. The rendered-position ticker is their input;
+  Last.fm networking is best-effort and never blocks playback.
 
-`reorderQueue(trackIds)` accepts a complete ordering of the active queue's
-unique IDs, changes only the active order, and relocates the cursor to the
-same current ID. While shuffled, this does not overwrite source order, so
-turning shuffle off still restores the original order.
+The service releases the native decoder, audio focus, media session, receiver,
+coroutines, and notification with its lifecycle. UI must not retain any of these
+resources.
 
-`select(trackId)` selects an existing active entry and returns a Play transition
-without changing the active order, shuffle flag, or repeat mode. Android exposes
-it as the fullscreen Queue row-tap action.
+## Session restoration
 
-## Local Session Persistence
+The private DataStore session contains a `PlaybackQueueSnapshot` and position.
+It is never synchronized with desktop. When the service starts without a
+queue-replacing command it:
 
-Player session state is private Android app data and is never synchronized to
-the desktop application. Persist it after queue mutations and meaningful
-transport changes (track change, pause, stop, seek, repeat, and shuffle
-changes), and flush it during service shutdown. Fullscreen volume controls use
-Android's system music stream, so they are not stored in this session.
+1. Reads the session, drops track IDs no longer available locally, and validates
+   the snapshot.
+2. Resolves and loads the selected item, clamps position, and publishes paused
+   state.
+3. Never auto-plays.
 
-The persisted session contains both queue orders, the current track ID,
-position, shuffle state, and repeat mode. `MainActivity` starts
-`PlaybackService` when the app process opens so this restoration occurs before
-the Compose player state is observed. On restore:
+A new Play or Shuffle always wins over restoration: cancel restore first so the
+old DataStore read cannot delay `Preparing`. Corrupt JSON, an empty queue, or an
+unloadable selected asset clears the session and returns to Idle; a stale session
+must not break every later launch.
 
-1. Resolve IDs only from the current synced local library and drop unavailable
-   tracks while retaining the stored order.
-2. If no source-order IDs remain, restore an empty idle queue; otherwise apply
-   the 1000-item cap and restore the active order when valid, falling back to
-   source order when it is not.
-3. Restore the cursor by current ID. If it is unavailable, select the first
-   remaining active item without loading it.
-4. When the current item is available, load it, clamp the saved position to its
-   duration, and expose a paused state. Restoration never auto-plays.
-5. If session JSON is corrupt, no saved track remains, or opening the selected
-   audio asset fails, clear the saved session and expose an idle player. A bad
-   session therefore cannot make later launches fail repeatedly.
+Persist after queue mutations and meaningful transport changes (track, pause,
+stop, seek, shuffle, repeat), and flush during service shutdown.
 
-## Non-goals
+## Change and verification map
 
-This contract does not require an Analytics UI or desktop queue synchronization.
-Android's fullscreen player may locally derive a
-blurred gradient from loaded artwork; it falls back to theme colours and does not
-alter playback metadata or synchronize a palette. FFmpeg remains
-the only mobile decoder/demuxer path; adding a Media3, ExoPlayer, or MediaCodec
-fallback requires an explicit policy change.
+| Change | Read and update |
+| --- | --- |
+| Queue behaviour | `PlaybackQueue.kt`, `PlaybackQueueTest.kt`, and this catalog. |
+| Service/native lifecycle | `PlaybackService.kt`, runtime/decoder tests, and this catalog. |
+| Fullscreen or mini-player control | The UI catalog and relevant navigation/UI tests. |
+| Loudness or preamp | `catalog/normalization/README.md`. |
 
-## FFmpeg Build
-
-`scripts/build-ffmpeg-android.sh` mirrors the desktop build scripts: it fetches
-the FFmpeg 8.1 source tarball to a temporary cache, creates Android shared
-libraries for `arm64-v8a` and `x86_64`, and leaves generated artifacts ignored.
-The configuration enables FFmpeg's complete decoder/demuxer/parser registry,
-but excludes programs, encoders, muxers, filters, devices, and network
-protocols. It is LGPL-only; do not enable GPL/nonfree components without a
-licensing review.
+Run the narrowest applicable test, then `./gradlew :sharedLogic:testAndroidHostTest`
+and `./gradlew :androidApp:assembleDebug` from `mobile/`. Before an Android build,
+generate FFmpeg libraries with `bash ../scripts/build-ffmpeg-android.sh all`.

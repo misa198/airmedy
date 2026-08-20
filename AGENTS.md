@@ -305,6 +305,27 @@ interfaces/structs/methods, DB schema/migrations, Wails-exposed methods/events, 
 
 **A task is not complete if the catalog is left stale.**
 
+### Writing Catalogs
+
+Catalogs are operational architecture documents, written in English. They must
+let the next engineer change a feature safely without rediscovering its design
+from source.
+
+- Lead with ownership and boundaries: which layer/component owns state, side
+  effects, persistence, and platform integration.
+- Record the contracts that constrain future changes: public commands and data,
+  data flow, invariants, lifecycle/cleanup rules, failure handling, and the
+  relevant test or verification location.
+- Use a compact diagram or table only when it makes a relationship clearer.
+  Prefer the smallest useful map over a comprehensive file inventory.
+- Document behavior that is intentional, surprising, or easy to regress; point
+  to the source of truth rather than copying implementation details.
+- Do not turn catalogs into changelogs, exhaustive component/file lists, or
+  pixel-level animation narration. Delete stale detail instead of appending a
+  correction below it.
+- Keep claims source-backed. When a contract changes, update the catalog in the
+  same diff as the code and its test.
+
 ---
 
 ## Implementation Workflow
