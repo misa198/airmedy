@@ -41,6 +41,8 @@ import dev.chrisbanes.haze.rememberHazeState
 import dev.chrisbanes.haze.HazeInputScale
 import kotlinx.coroutines.launch
 import me.misa198.airmedy.ui.components.AirmedyGlassIconButton
+import me.misa198.airmedy.ui.components.AirmedyDialog
+import me.misa198.airmedy.ui.components.AirmedyPillButtonVariant
 import me.misa198.airmedy.ui.components.AnchoredPopupMenuHost
 import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.ui.components.StackPageHeader
@@ -83,6 +85,8 @@ import me.misa198.airmedy.ui.screens.InsightUiState
 import me.misa198.airmedy.ui.screens.PlaylistDetailsUiState
 import me.misa198.airmedy.ui.screens.isFavorite
 import me.misa198.airmedy.ui.screens.CreatePlaylistBottomSheet
+import me.misa198.airmedy.ui.screens.CreateEqualizerProfileBottomSheet
+import me.misa198.airmedy.ui.screens.EqualizerProfileMenuBottomSheet
 import me.misa198.airmedy.ui.components.TrackContextBottomSheet
 import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import me.misa198.airmedy.ui.theme.AirmedyTheme
@@ -92,6 +96,8 @@ import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.player.RepeatMode
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.lastfm.LastFmStatus
+
+private enum class EqualizerProfileSheet { Menu, Create, DeleteConfirmation }
 
 internal fun shouldShowHeaderBlur(
     isContentScrolled: Boolean,
@@ -206,6 +212,13 @@ internal fun App(
     normalizationAvailable: Boolean = false,
     normalization: me.misa198.airmedy.player.NormalizationSettings = me.misa198.airmedy.player.NormalizationSettings(),
     onNormalizationChanged: (me.misa198.airmedy.player.NormalizationSettings) -> Unit = {},
+    equalizer: me.misa198.airmedy.player.EqualizerSettings = me.misa198.airmedy.player.EqualizerSettings(),
+    onEqualizerEnabledChanged: (Boolean) -> Unit = {},
+    onEqualizerPresetSelected: (String) -> Unit = {},
+    onEqualizerBandChanged: (Int, Float) -> Unit = { _, _ -> },
+    onEqualizerProfileCreate: (String) -> Unit = {},
+    onEqualizerProfileReset: (String) -> Unit = {},
+    onEqualizerProfileDelete: (String) -> Unit = {},
     artworkCrossfade: ArtworkCrossfadeTransition? = null,
     playbackState: PlaybackState = PlaybackState.Idle,
     playbackQueue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
@@ -270,6 +283,7 @@ internal fun App(
         val destinationChanged = previousDestination != uiState.selectedDestination
         val animateHeaderChanges = !destinationChanged
         val currentPage = currentStackPage.page
+        var settingsContentScrolled by remember { mutableStateOf(false) }
         var previousStackPage by remember { mutableStateOf(currentStackPage) }
         val isForwardHeaderTransition = currentStackPage.index >= previousStackPage.index
         val showsMiniPlayer = playbackState.showsMiniPlayer()
@@ -279,6 +293,7 @@ internal fun App(
         var isFullScreenPlayerDragging by remember { mutableStateOf(false) }
         var pendingFullScreenPlayerAction by remember { mutableStateOf<(() -> Unit)?>(null) }
         var trackContextSheet by remember { mutableStateOf<TrackContextBottomSheetRequest?>(null) }
+        var equalizerProfileSheet by remember { mutableStateOf<EqualizerProfileSheet?>(null) }
         var isNavigationCompact by remember { mutableStateOf(false) }
         var albumHeroColor by remember { mutableStateOf<Color?>(null) }
         val albumHeaderFade by animateFloatAsState(
@@ -376,6 +391,7 @@ internal fun App(
                         composersListState.firstVisibleItemIndex > 0 || composersListState.firstVisibleItemScrollOffset > 0
                     currentPage == AppStackPage.LibraryPlaylists ->
                         playlistsListState.firstVisibleItemIndex > 0 || playlistsListState.firstVisibleItemScrollOffset > 0
+                    uiState.selectedDestination == AppDestination.Settings -> settingsContentScrolled
                     else -> false
                 }
             }
@@ -505,6 +521,11 @@ internal fun App(
                 normalizationAvailable = normalizationAvailable,
                 normalization = normalization,
                 onNormalizationChanged = onNormalizationChanged,
+                equalizer = equalizer,
+                onEqualizerEnabledChanged = onEqualizerEnabledChanged,
+                onEqualizerPresetSelected = onEqualizerPresetSelected,
+                onEqualizerBandChanged = onEqualizerBandChanged,
+                onSettingsContentScrolled = { settingsContentScrolled = it },
                 onContentScroll = { delta ->
                     if (!showsMiniPlayer) return@AppDestinationContent
                     if (navigationScrollAccumulator.update(delta, navigationScrollThresholdPx)) {
@@ -534,7 +555,7 @@ internal fun App(
                 } else {
                     null
                 },
-                hasActions = showSyncAddAction || showLibrarySortAction || showPlaylistAddAction,
+                hasActions = showSyncAddAction || showLibrarySortAction || showPlaylistAddAction || currentPage == AppStackPage.SettingsEqualizer,
                 animateChanges = animateHeaderChanges,
                 titleStackKey = "${uiState.selectedDestination.name}:${currentPage.name}",
                 isForward = isForwardHeaderTransition,
@@ -554,6 +575,13 @@ internal fun App(
                         symbol = MaterialSymbols.Add,
                         label = stringResource(R.string.playlist_create),
                         onClick = { showCreatePlaylistSheet = true },
+                    )
+                } else if (currentPage == AppStackPage.SettingsEqualizer) {
+                    AirmedyGlassIconButton(
+                        hazeState = hazeState,
+                        symbol = MaterialSymbols.MoreVert,
+                        label = stringResource(R.string.equalizer_profile_menu),
+                        onClick = { equalizerProfileSheet = EqualizerProfileSheet.Menu },
                     )
                 } else if (currentPage == AppStackPage.LibraryTracks) {
                     LibrarySortHeaderButton(
@@ -633,6 +661,38 @@ internal fun App(
                         createPlaylistForTracks = null
                     },
                 )
+            }
+            when (equalizerProfileSheet) {
+                EqualizerProfileSheet.Menu -> EqualizerProfileMenuBottomSheet(
+                    isDefault = equalizer.selectedProfile.isDefault,
+                    onDismiss = { equalizerProfileSheet = null },
+                    onCreate = { equalizerProfileSheet = EqualizerProfileSheet.Create },
+                    onReset = {
+                        onEqualizerProfileReset(equalizer.presetKey)
+                        equalizerProfileSheet = null
+                    },
+                    onDelete = { equalizerProfileSheet = EqualizerProfileSheet.DeleteConfirmation },
+                )
+                EqualizerProfileSheet.Create -> CreateEqualizerProfileBottomSheet(
+                    onDismiss = { equalizerProfileSheet = null },
+                    onCreate = { name ->
+                        onEqualizerProfileCreate(name)
+                        equalizerProfileSheet = null
+                    },
+                )
+                EqualizerProfileSheet.DeleteConfirmation -> AirmedyDialog(
+                    title = stringResource(R.string.equalizer_profile_delete_title),
+                    description = stringResource(R.string.equalizer_profile_delete_description),
+                    dismissLabel = stringResource(R.string.cancel),
+                    onDismiss = { equalizerProfileSheet = null },
+                    confirmLabel = stringResource(R.string.equalizer_profile_delete),
+                    onConfirm = {
+                        onEqualizerProfileDelete(equalizer.presetKey)
+                        equalizerProfileSheet = null
+                    },
+                    confirmVariant = AirmedyPillButtonVariant.Destructive,
+                )
+                null -> Unit
             }
             NavigationChrome(
                 selectedDestination = uiState.selectedDestination,

@@ -235,12 +235,16 @@ class MainActivity : ComponentActivity() {
             val playbackController = AndroidPlaybackRuntime.controller()
             val playbackPreferences = remember { me.misa198.airmedy.player.PlaybackPreferences(applicationContext) }
             val normalizationPreferences = remember { me.misa198.airmedy.player.NormalizationPreferences(applicationContext) }
+            val equalizerPreferences = remember { me.misa198.airmedy.player.EqualizerPreferences(applicationContext) }
             val preferenceScope = rememberCoroutineScope()
             val crossfadeSettings by playbackPreferences.settings.collectAsStateWithLifecycle(
                 initialValue = me.misa198.airmedy.player.CrossfadeSettings(0, 4, true),
             )
             val normalizationSettings by normalizationPreferences.settings.collectAsStateWithLifecycle(
                 initialValue = me.misa198.airmedy.player.NormalizationSettings(),
+            )
+            val equalizerSettings by equalizerPreferences.settings.collectAsStateWithLifecycle(
+                initialValue = me.misa198.airmedy.player.EqualizerSettings(),
             )
             // Avoid clearing a valid preference while Room is still loading the active manifest.
             val normalizationAvailable by AndroidSyncRuntime.syncStore().analysisAvailable.collectAsStateWithLifecycle(initialValue = true)
@@ -400,6 +404,25 @@ class MainActivity : ComponentActivity() {
                 normalization = normalizationSettings,
                 onNormalizationChanged = { settings ->
                     preferenceScope.launch { normalizationPreferences.update { settings } }
+                },
+                equalizer = equalizerSettings,
+                onEqualizerEnabledChanged = { enabled ->
+                    preferenceScope.launch { equalizerPreferences.setEnabled(enabled) }
+                },
+                onEqualizerPresetSelected = { key ->
+                    preferenceScope.launch { equalizerPreferences.selectPreset(key) }
+                },
+                onEqualizerBandChanged = { index, gain ->
+                    preferenceScope.launch { equalizerPreferences.setBand(equalizerSettings, index, gain) }
+                },
+                onEqualizerProfileCreate = { name ->
+                    preferenceScope.launch { equalizerPreferences.createProfile(name) }
+                },
+                onEqualizerProfileReset = { key ->
+                    preferenceScope.launch { equalizerPreferences.resetDefault(key) }
+                },
+                onEqualizerProfileDelete = { key ->
+                    preferenceScope.launch { equalizerPreferences.deleteProfile(key) }
                 },
                 artworkCrossfade = artworkCrossfade,
                 playbackState = playbackState,

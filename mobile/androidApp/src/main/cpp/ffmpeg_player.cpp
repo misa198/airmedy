@@ -3,6 +3,7 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -22,6 +23,7 @@ extern "C" {
 
 namespace {
     constexpr int kOutputChannels = 2;
+    constexpr int kEqBands = 10;
     constexpr size_t kRingFrames = 96'000;
     constexpr int kNoSlot = -1;
     constexpr int kTransitionNone = 0;
@@ -31,7 +33,13 @@ namespace {
     struct GlobalDspConfig {
         float preamp_gain_db = 0.0f;
         float stereo_width = 1.0f;
-        float eq_band_gains_db[10]{};
+        float eq_band_gains_db[kEqBands]{};
+    };
+
+    struct Biquad {
+        bool active = false;
+        float b0 = 1.0f, b1 = 0.0f, b2 = 0.0f, a1 = 0.0f, a2 = 0.0f;
+        float left_z1 = 0.0f, left_z2 = 0.0f, right_z1 = 0.0f, right_z2 = 0.0f;
     };
 
     struct SourceSlot {
@@ -74,6 +82,8 @@ namespace {
         // atomically reads a pointer; no allocation, ref-counting or locking occurs.
         std::vector<std::unique_ptr<GlobalDspConfig>> dsp_configs;
         std::atomic<const GlobalDspConfig *> dsp_config{nullptr};
+        const GlobalDspConfig *applied_dsp_config = nullptr;
+        std::array<Biquad, kEqBands> eq_filters{};
         int output_rate = 48'000;
     };
 
@@ -277,11 +287,42 @@ namespace {
         engine.crossfading.store(false, std::memory_order_release);
     }
 
+    constexpr float kEqFrequenciesHz[kEqBands] = {32.0f, 64.0f, 125.0f, 250.0f, 500.0f, 1000.0f, 2000.0f, 4000.0f, 8000.0f, 16000.0f};
+
+    void configure_eq(PlaybackEngine &engine, const GlobalDspConfig *config) {
+        engine.applied_dsp_config = config;
+        constexpr float q = 1.0f;
+        for (int i = 0; i < kEqBands; ++i) {
+            auto &filter = engine.eq_filters[i];
+            filter = Biquad{};
+            const float gain = config == nullptr ? 0.0f : config->eq_band_gains_db[i];
+            if (gain == 0.0f) continue;
+            filter.active = true;
+            const float omega = 2.0f * static_cast<float>(M_PI) * kEqFrequenciesHz[i] / static_cast<float>(engine.output_rate);
+            const float alpha = std::sin(omega) / (2.0f * q);
+            const float a = std::pow(10.0f, gain / 40.0f);
+            const float a0 = 1.0f + alpha / a;
+            filter.b0 = (1.0f + alpha * a) / a0;
+            filter.b1 = (-2.0f * std::cos(omega)) / a0;
+            filter.b2 = (1.0f - alpha * a) / a0;
+            filter.a1 = (-2.0f * std::cos(omega)) / a0;
+            filter.a2 = (1.0f - alpha / a) / a0;
+        }
+    }
+
+    float filter_sample(float input, float &z1, float &z2, const Biquad &filter) {
+        const float output = filter.b0 * input + z1;
+        z1 = filter.b1 * input - filter.a1 * output + z2;
+        z2 = filter.b2 * input - filter.a2 * output;
+        return output;
+    }
+
     aaudio_data_callback_result_t audio_callback(AAudioStream *, void *user, void *audio_data, int32_t frames) {
         auto &engine = *static_cast<PlaybackEngine *>(user);
         engine.callback_depth.fetch_add(1, std::memory_order_acq_rel);
         auto *output = static_cast<float *>(audio_data);
         const GlobalDspConfig *dsp = engine.dsp_config.load(std::memory_order_acquire);
+        if (dsp != engine.applied_dsp_config) configure_eq(engine, dsp);
         for (int32_t i = 0; i < frames; ++i) {
             float left = 0.0f;
             float right = 0.0f;
@@ -310,8 +351,11 @@ namespace {
                     }
                 }
             }
-            // The first DSP revision is deliberately neutral. Keeping it here makes
-            // later EQ/stereo/preamp insertion a global post-mix operation.
+            for (auto &filter : engine.eq_filters) {
+                if (!filter.active) continue;
+                left = filter_sample(left, filter.left_z1, filter.left_z2, filter);
+                right = filter_sample(right, filter.right_z1, filter.right_z2, filter);
+            }
             const float preamp = dsp == nullptr ? 1.0f : std::pow(10.0f, dsp->preamp_gain_db / 20.0f);
             const float width = dsp == nullptr ? 1.0f : dsp->stereo_width;
             const float mid = (left + right) * 0.5f;
@@ -509,10 +553,9 @@ extern "C" JNIEXPORT void JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_n
     config->preamp_gain_db = preamp;
     config->stereo_width = width;
     if (eq != nullptr) {
-        const jsize count = std::min<jsize>(env->GetArrayLength(eq), 10);
+        const jsize count = std::min<jsize>(env->GetArrayLength(eq), kEqBands);
         env->GetFloatArrayRegion(eq, 0, count, config->eq_band_gains_db);
     }
-    // EQ storage is intentionally reserved; this neutral revision does not run EQ yet.
     engine->dsp_config.store(config.get(), std::memory_order_release);
     engine->dsp_configs.push_back(std::move(config));
 }

@@ -97,6 +97,16 @@ affecting the connected session.
   its thumbs comfortably away from the edge. While enabled it also exposes a persisted Blend artwork and
   background switch, default on. Both pages apply the shared page inset outside their card, so the
   card surface does not extend edge-to-edge.
+- Settings > Playback also links to an Android-local Equalizer page. It persists
+  an enabled flag, the selected desktop-compatible built-in preset, a separate
+  10-band override for every edited built-in, and user-created named profiles.
+  The Equalizer header overflow opens Create plus Reset to default for built-ins,
+  or Delete with confirmation for user profiles. New profiles begin flat and
+  become active immediately; deleting the active user profile selects Flat.
+  Bands remain editable when EQ is off; the native AAudio post-mix stage applies
+  them only when enabled, across normal playback and crossfades. The Settings
+  content viewport reserves the floating mini-player inset, so bands never
+  render beneath that chrome.
 - About has an informational hero card using the desktop-derived
   `airmedy_about_app_icon` drawable, app name and description, followed by an
   iconless, card-contained action list. Its version is static build metadata;

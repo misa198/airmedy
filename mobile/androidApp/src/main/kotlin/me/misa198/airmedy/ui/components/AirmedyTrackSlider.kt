@@ -59,6 +59,9 @@ fun AirmedyTrackSlider(
     onValueChangeFinished: (() -> Unit)? = null,
     onInteractionChange: (Boolean) -> Unit = {},
     trackHeight: Dp = 3.dp,
+    activeTrackColor: Color? = null,
+    inactiveTrackColor: Color? = null,
+    trackAlignment: Alignment = Alignment.Center,
 ) {
     val colors = LocalAirmedyColors.current
     var isInteracting by remember { mutableStateOf(false) }
@@ -79,7 +82,7 @@ fun AirmedyTrackSlider(
         label = "airmedy-track-slider-scale-y",
     )
     val filledTrackColor by animateColorAsState(
-        targetValue = sliderFilledTrackColor(colors, isInteracting),
+        targetValue = activeTrackColor ?: sliderFilledTrackColor(colors, isInteracting),
         animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
         label = "airmedy-track-slider-fill-colour",
     )
@@ -167,7 +170,7 @@ fun AirmedyTrackSlider(
                     }
                 }
             },
-        contentAlignment = Alignment.Center,
+        contentAlignment = trackAlignment,
     ) {
         Canvas(
             modifier = Modifier
@@ -178,7 +181,7 @@ fun AirmedyTrackSlider(
                     scaleY = animatedTrackScaleY
                 }
                 .clip(CircleShape)
-                .background(colors.sliderInactive)
+                .background(inactiveTrackColor ?: colors.sliderInactive)
                 .testTag(AirmedyTrackSliderTrackTestTag),
         ) {
             // A disabled control remains discoverable; only its interaction and

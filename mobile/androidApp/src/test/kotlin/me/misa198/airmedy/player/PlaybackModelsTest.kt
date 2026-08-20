@@ -10,6 +10,45 @@ import kotlinx.serialization.json.Json
 
 class PlaybackModelsTest {
     @Test
+    fun `equalizer preset catalog matches desktop constraints`() {
+        assertEquals(31, EqualizerPresets.size)
+        assertEquals("flat", EqualizerPresets.first().key)
+        assertEquals(listOf(8f, 5f, -5.5f, -8f, -3f, 4f, 9f, 11f, 11f, 11f), presetFor("rock").gainsDb)
+        EqualizerPresets.forEach { preset ->
+            assertEquals(10, preset.gainsDb.size)
+            assertTrue(preset.gainsDb.all { it in -12f..12f && it * 2f == kotlin.math.round(it * 2f) })
+        }
+    }
+
+    @Test
+    fun `equalizer gain is clamped to half decibel steps`() {
+        assertEquals(-12f, normalizeEqGain(-13f))
+        assertEquals(1.5f, normalizeEqGain(1.26f))
+        assertEquals(0f, normalizeEqGain(-0.1f))
+        assertEquals(12f, normalizeEqGain(99f))
+    }
+
+    @Test
+    fun `equalizer keeps edits for each preset`() {
+        val editedRock = presetFor("rock").gainsDb.toMutableList().also { it[0] = 2.5f }
+        val settings = EqualizerSettings(presetKey = "rock", editedGainsDb = mapOf("rock" to editedRock))
+
+        assertEquals(2.5f, settings.gainsDb[0])
+        assertEquals(presetFor("flat").gainsDb, settings.copy(presetKey = "flat").gainsDb)
+        assertEquals(editedRock, settings.copy(presetKey = "rock").gainsDb)
+    }
+
+    @Test
+    fun `equalizer user profiles persist and become selectable`() {
+        val profile = EqualizerProfile("user_test", "My EQ", List(10) { 0f }, isDefault = false)
+        val settings = EqualizerSettings(presetKey = profile.key, userProfiles = parseUserProfiles(encodeUserProfiles(listOf(profile))))
+
+        assertEquals(profile, settings.selectedProfile)
+        assertEquals(List(10) { 0f }, settings.gainsDb)
+        assertFalse(settings.selectedProfile.isDefault)
+    }
+
+    @Test
     fun `playback session persists queue and paused position`() {
         val session = PlaybackSession(
             queue = PlaybackQueueSnapshot(originalTrackIds = listOf("track-1"), activeTrackIds = listOf("track-1"), currentIndex = 0),

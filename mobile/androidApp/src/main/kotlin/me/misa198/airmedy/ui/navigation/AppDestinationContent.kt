@@ -13,14 +13,18 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -52,6 +56,7 @@ import me.misa198.airmedy.ui.screens.IntegrationContent
 import me.misa198.airmedy.ui.screens.PlaybackSettingsContent
 import me.misa198.airmedy.ui.screens.VolumeNormalizationContent
 import me.misa198.airmedy.ui.screens.SongTransitionContent
+import me.misa198.airmedy.ui.screens.EqualizerContent
 import me.misa198.airmedy.ui.screens.SyncContent
 import me.misa198.airmedy.lastfm.LastFmStatus
 import me.misa198.airmedy.ui.screens.SyncScannerContent
@@ -91,6 +96,7 @@ import me.misa198.airmedy.ui.screens.composerDetailsUiStateFor
 import me.misa198.airmedy.sync.LibraryGenre
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalLayoutDirection
 
 internal typealias PageKey = StackPageEntry
 
@@ -218,12 +224,18 @@ internal fun AppDestinationContent(
     normalizationAvailable: Boolean = false,
     normalization: me.misa198.airmedy.player.NormalizationSettings = me.misa198.airmedy.player.NormalizationSettings(),
     onNormalizationChanged: (me.misa198.airmedy.player.NormalizationSettings) -> Unit = {},
+    equalizer: me.misa198.airmedy.player.EqualizerSettings = me.misa198.airmedy.player.EqualizerSettings(),
+    onEqualizerEnabledChanged: (Boolean) -> Unit = {},
+    onEqualizerPresetSelected: (String) -> Unit = {},
+    onEqualizerBandChanged: (Int, Float) -> Unit = { _, _ -> },
+    onSettingsContentScrolled: (Boolean) -> Unit = {},
     onContentScroll: (ContentScrollDelta) -> Unit = {},
 ) {
     val colors = LocalAirmedyColors.current
     val destination = stackPage.destination
     val page = stackPage.page
     val currentOnContentScroll = rememberUpdatedState(onContentScroll)
+    val currentOnSettingsContentScrolled = rememberUpdatedState(onSettingsContentScrolled)
     val scrollConnection = remember {
         object : NestedScrollConnection {
             override fun onPostScroll(
@@ -315,9 +327,22 @@ internal fun AppDestinationContent(
                             modifier = Modifier.fillMaxSize(),
                         )
                         AppDestination.Settings -> key(currentPage.page) {
+                            val settingsScrollState = rememberScrollState()
+                            LaunchedEffect(currentPage, stackPage, settingsScrollState.value) {
+                                if (currentPage == stackPage) {
+                                    currentOnSettingsContentScrolled.value(settingsScrollState.value > 0)
+                                }
+                            }
+                            val layoutDirection = LocalLayoutDirection.current
                             val settingsPageModifier = Modifier
-                                .padding(contentPadding)
-                                .verticalScroll(rememberScrollState())
+                                .fillMaxSize()
+                                .verticalScroll(settingsScrollState)
+                                .padding(
+                                    start = contentPadding.calculateStartPadding(layoutDirection),
+                                    top = contentPadding.calculateTopPadding(),
+                                    end = contentPadding.calculateEndPadding(layoutDirection),
+                                    bottom = contentPadding.calculateBottomPadding(),
+                                )
                                 .testTag("settings-page-scroll")
                             when (currentPage.page) {
                             AppStackPage.SettingsAppearance -> AppearanceContent(
@@ -346,6 +371,9 @@ internal fun AppDestinationContent(
                                 onVolumeNormalizationSelected = {
                                     onIntent(AppIntent.OpenPage(AppStackPage.SettingsVolumeNormalization))
                                 },
+                                onEqualizerSelected = {
+                                    onIntent(AppIntent.OpenPage(AppStackPage.SettingsEqualizer))
+                                },
                                 modifier = settingsPageModifier,
                             )
                             AppStackPage.SettingsSongTransition -> SongTransitionContent(
@@ -360,6 +388,13 @@ internal fun AppDestinationContent(
                                 normalizationAvailable = normalizationAvailable,
                                 normalization = normalization,
                                 onNormalizationChanged = onNormalizationChanged,
+                                modifier = settingsPageModifier,
+                            )
+                            AppStackPage.SettingsEqualizer -> EqualizerContent(
+                                settings = equalizer,
+                                onEnabledChanged = onEqualizerEnabledChanged,
+                                onPresetSelected = onEqualizerPresetSelected,
+                                onBandChanged = onEqualizerBandChanged,
                                 modifier = settingsPageModifier,
                             )
                             AppStackPage.SettingsSyncScanner -> SyncScannerContent(

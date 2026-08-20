@@ -259,6 +259,71 @@ class AppNavigationTest {
     }
 
     @Test
+    fun playbackSettingsOpenAndUpdateEqualizer() {
+        var enabled: Boolean? = null
+        var preset: String? = null
+        composeTestRule.setContent {
+            App(
+                uiState = AppUiState(selectedDestination = AppDestination.Settings),
+                onEqualizerEnabledChanged = { enabled = it },
+                onEqualizerPresetSelected = { preset = it },
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription(string(R.string.settings_playback)).performClick()
+        composeTestRule.onNodeWithContentDescription(string(R.string.equalizer_title)).performClick()
+        composeTestRule.onNodeWithContentDescription(string(R.string.equalizer_enable)).performClick()
+        assertEquals(true, enabled)
+        composeTestRule.onNodeWithText("Flat").performClick()
+        composeTestRule.onNodeWithText("Rock").performClick()
+        assertEquals("rock", preset)
+    }
+
+    @Test
+    fun equalizerHeaderMenuResetsBuiltInProfile() {
+        var resetKey: String? = null
+        composeTestRule.setContent {
+            App(
+                uiState = AppUiState(selectedDestination = AppDestination.Settings),
+                equalizer = me.misa198.airmedy.player.EqualizerSettings(
+                    presetKey = "rock",
+                    editedGainsDb = mapOf("rock" to List(10) { 0f }),
+                ),
+                onEqualizerProfileReset = { resetKey = it },
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription(string(R.string.settings_playback)).performClick()
+        composeTestRule.onNodeWithContentDescription(string(R.string.equalizer_title)).performClick()
+        composeTestRule.onNodeWithContentDescription(string(R.string.equalizer_profile_menu)).performClick()
+        composeTestRule.onNodeWithContentDescription(string(R.string.equalizer_profile_reset)).performClick()
+
+        assertEquals("rock", resetKey)
+    }
+
+    @Test
+    fun equalizerHeaderMenuConfirmsDeletingUserProfile() {
+        var deletedKey: String? = null
+        val profile = me.misa198.airmedy.player.EqualizerProfile("user_test", "Custom", List(10) { 0f }, isDefault = false)
+        composeTestRule.setContent {
+            App(
+                uiState = AppUiState(selectedDestination = AppDestination.Settings),
+                equalizer = me.misa198.airmedy.player.EqualizerSettings(presetKey = profile.key, userProfiles = listOf(profile)),
+                onEqualizerProfileDelete = { deletedKey = it },
+            )
+        }
+
+        composeTestRule.onNodeWithContentDescription(string(R.string.settings_playback)).performClick()
+        composeTestRule.onNodeWithContentDescription(string(R.string.equalizer_title)).performClick()
+        composeTestRule.onNodeWithContentDescription(string(R.string.equalizer_profile_menu)).performClick()
+        composeTestRule.onNodeWithContentDescription(string(R.string.equalizer_profile_delete)).performClick()
+        composeTestRule.onNodeWithText(string(R.string.equalizer_profile_delete_title)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(string(R.string.equalizer_profile_delete)).performClick()
+
+        assertEquals(profile.key, deletedKey)
+    }
+
+    @Test
     fun playbackCardsRespectThePageHorizontalInset() {
         val settingsState = AppUiState(selectedDestination = AppDestination.Settings)
         composeTestRule.setContent {

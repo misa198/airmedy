@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -125,7 +127,7 @@ private fun <T> SelectionMenu(
     val colors = LocalAirmedyColors.current
 
     androidx.compose.foundation.layout.Column(
-        modifier = Modifier.width(252.dp),
+        modifier = Modifier.width(252.dp).heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
     ) {
         options.forEachIndexed { index, option ->
             val selected = option.value == selectedValue

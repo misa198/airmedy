@@ -61,6 +61,7 @@ class PlaybackService : Service() {
     private var preloadedItem: PlaybackItem? = null
     private lateinit var sessionStore: PlaybackSessionStore
     private lateinit var playbackPreferences: PlaybackPreferences
+    private lateinit var equalizerPreferences: EqualizerPreferences
     private lateinit var normalizationPreferences: NormalizationPreferences
     private lateinit var lastFm: LastFmService
     private lateinit var listeningTracker: ListeningTracker
@@ -71,6 +72,7 @@ class PlaybackService : Service() {
     private var listeningFadeStartedElapsed = 0L
     private var listeningFadeMaxMs = 0L
     private var normalizationSettings = NormalizationSettings()
+    private var equalizerSettings = EqualizerSettings()
     private var preferencesJob: Job? = null
     private lateinit var audioManager: AudioManager
     private lateinit var mediaSession: MediaSession
@@ -96,6 +98,7 @@ class PlaybackService : Service() {
         }
         sessionStore = PlaybackSessionStore(applicationContext)
         playbackPreferences = PlaybackPreferences(applicationContext)
+        equalizerPreferences = EqualizerPreferences(applicationContext)
         normalizationPreferences = NormalizationPreferences(applicationContext)
         preferencesJob = scope.launch {
             playbackPreferences.settings.collectLatest { settings ->
@@ -106,6 +109,14 @@ class PlaybackService : Service() {
                     // A preference update must never change a fade already
                     // running, but it does refresh the idle source afterward.
                     if (decoder?.isCrossfading() != true) preloadNext()
+                }
+            }
+        }
+        scope.launch {
+            equalizerPreferences.settings.collectLatest { settings ->
+                commandMutex.withLock {
+                    equalizerSettings = settings
+                    decoder?.setGlobalDspConfig(equalizerDspConfig(settings))
                 }
             }
         }
@@ -333,6 +344,7 @@ class PlaybackService : Service() {
             decoder = null
             val preparedDecoder = FfmpegDecoder()
             try {
+                preparedDecoder.setGlobalDspConfig(equalizerDspConfig(equalizerSettings))
                 preparedDecoder.prepare(File(item.audioPath), normalizationGain(item, queue.peekNext()))
                 if (startPositionMs > 0L) preparedDecoder.seekTo(clampSeekPosition(startPositionMs, preparedDecoder.durationMs()))
                 if (startPaused) {
@@ -370,6 +382,7 @@ class PlaybackService : Service() {
         try {
             decoder?.close()
             decoder = FfmpegDecoder().also {
+                it.setGlobalDspConfig(equalizerDspConfig(equalizerSettings))
                 it.prepare(File(item.audioPath), normalizationGain(item, queue.peekNext()))
                 val positionMs = clampSeekPosition(savedPositionMs, it.durationMs())
                 if (positionMs > 0L) it.seekTo(positionMs)
