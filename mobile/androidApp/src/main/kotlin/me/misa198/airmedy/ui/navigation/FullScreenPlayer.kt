@@ -73,7 +73,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -1173,22 +1172,17 @@ private fun FullScreenPlayerBackground(
         } else {
             PlayerBackgroundGradient(dominantColor, 1f)
         }
-        Box(Modifier.fillMaxSize().background(colors.playerBackdrop.copy(alpha = 0.36f)))
+        Box(Modifier.fillMaxSize().background(colors.playerBackdrop.copy(alpha = 0.24f)))
     }
 }
 
 @Composable
 private fun PlayerBackgroundGradient(dominant: Color, alpha: Float) {
-    val colors = LocalAirmedyColors.current
     Box(
         Modifier
             .fillMaxSize()
             .alpha(alpha)
-            .background(
-                Brush.verticalGradient(
-                    listOf(dominant.copy(alpha = 0.72f), colors.playerBackdrop.copy(alpha = 0.12f)),
-                ),
-            ),
+            .background(dominant.copy(alpha = 0.66f)),
     )
 }
 

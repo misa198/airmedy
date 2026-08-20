@@ -210,7 +210,9 @@ class MainActivity : ComponentActivity() {
             val homeUiState by if (activeDestination == AppDestination.Home && activePage == AppStackPage.Root) {
                 tracksViewModel.homeUiState.collectAsStateWithLifecycle()
             } else {
-                remember { mutableStateOf(me.misa198.airmedy.ui.screens.HomeUiState()) }
+                // AnimatedContent keeps the old page composed until its slide-out completes.
+                // Preserve its last state without keeping every inactive flow subscribed.
+                remember { mutableStateOf(tracksViewModel.homeUiState.value) }
             }
             val tracksUiState by if (
                 activeDestination == AppDestination.Library &&
@@ -218,20 +220,20 @@ class MainActivity : ComponentActivity() {
             ) {
                 tracksViewModel.uiState.collectAsStateWithLifecycle()
             } else {
-                remember { mutableStateOf(me.misa198.airmedy.ui.screens.LibraryTracksUiState()) }
+                remember { mutableStateOf(tracksViewModel.uiState.value) }
             }
-            val insightUiState by if (activeDestination == AppDestination.Insight && activePage == AppStackPage.Root) insightViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.InsightUiState()) }
-            val artistsUiState by if (activePage == AppStackPage.LibraryArtists) artistsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.LibraryArtistsUiState()) }
-            val albumsUiState by if (activePage == AppStackPage.LibraryAlbums) albumsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.LibraryAlbumsUiState()) }
-            val genresUiState by if (activePage == AppStackPage.LibraryGenres) genresViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.LibraryGenresUiState()) }
-            val composersUiState by if (activePage == AppStackPage.LibraryComposers) composersViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.LibraryComposersUiState()) }
-            val playlistsUiState by if (activePage == AppStackPage.LibraryPlaylists) playlistsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.LibraryPlaylistsUiState()) }
-            val searchUiState by if (activePage == AppStackPage.LibrarySearch) searchViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.LibrarySearchUiState()) }
-            val albumDetailsUiState by if (activePage == AppStackPage.AlbumDetails) albumDetailsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.AlbumDetailsUiState()) }
-            val playlistDetailsUiState by if (activePage == AppStackPage.PlaylistDetails) playlistDetailsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.PlaylistDetailsUiState()) }
-            val artistDetailsUiState by if (activePage == AppStackPage.ArtistDetails) artistDetailsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.ArtistDetailsUiState()) }
-            val genreDetailsUiState by if (activePage == AppStackPage.GenreDetails) genreDetailsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.GenreDetailsUiState()) }
-            val composerDetailsUiState by if (activePage == AppStackPage.ComposerDetails) composerDetailsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(me.misa198.airmedy.ui.screens.ComposerDetailsUiState()) }
+            val insightUiState by if (activeDestination == AppDestination.Insight && activePage == AppStackPage.Root) insightViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(insightViewModel.uiState.value) }
+            val artistsUiState by if (activePage == AppStackPage.LibraryArtists) artistsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(artistsViewModel.uiState.value) }
+            val albumsUiState by if (activePage == AppStackPage.LibraryAlbums) albumsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(albumsViewModel.uiState.value) }
+            val genresUiState by if (activePage == AppStackPage.LibraryGenres) genresViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(genresViewModel.uiState.value) }
+            val composersUiState by if (activePage == AppStackPage.LibraryComposers) composersViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(composersViewModel.uiState.value) }
+            val playlistsUiState by if (activePage == AppStackPage.LibraryPlaylists) playlistsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(playlistsViewModel.uiState.value) }
+            val searchUiState by if (activePage == AppStackPage.LibrarySearch) searchViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(searchViewModel.uiState.value) }
+            val albumDetailsUiState by if (activePage == AppStackPage.AlbumDetails) albumDetailsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(albumDetailsViewModel.uiState.value) }
+            val playlistDetailsUiState by if (activePage == AppStackPage.PlaylistDetails) playlistDetailsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(playlistDetailsViewModel.uiState.value) }
+            val artistDetailsUiState by if (activePage == AppStackPage.ArtistDetails) artistDetailsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(artistDetailsViewModel.uiState.value) }
+            val genreDetailsUiState by if (activePage == AppStackPage.GenreDetails) genreDetailsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(genreDetailsViewModel.uiState.value) }
+            val composerDetailsUiState by if (activePage == AppStackPage.ComposerDetails) composerDetailsViewModel.uiState.collectAsStateWithLifecycle() else remember { mutableStateOf(composerDetailsViewModel.uiState.value) }
             val playbackController = AndroidPlaybackRuntime.controller()
             val playbackPreferences = remember { me.misa198.airmedy.player.PlaybackPreferences(applicationContext) }
             val normalizationPreferences = remember { me.misa198.airmedy.player.NormalizationPreferences(applicationContext) }

@@ -43,6 +43,8 @@ its own stack; switching tabs preserves the page in every other tab.
 `AppDestinationContent` is the common router and owns the transition host and
 nested-scroll signal. Page metadata (title and direction) belongs in
 `ui/navigation/AppNavigationMetadata.kt`, not in individual screens.
+During a stack transition, the outgoing page renders from its last `StateFlow`
+snapshot until its animation completes; inactive flows remain unsubscribed.
 
 `StackPageLayout` provides the screen frame, header/back affordance, and inset
 contract. Screen content must use its `contentPadding`, never estimate floating
