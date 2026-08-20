@@ -85,6 +85,11 @@ internal fun LibraryTracksContent(
                 hazeState = hazeState,
             )
         },
+        alphabeticalIndexKey = when (uiState.sortOption) {
+            TrackSortOption.Name -> { track -> track.sortTitle.ifBlank { track.title } }
+            TrackSortOption.Artist -> { track -> track.sortArtists.ifBlank { track.artists } }
+            else -> null
+        },
         emptyContent = {
             Column(
                 modifier = Modifier

@@ -16,6 +16,7 @@ import me.misa198.airmedy.sync.LibraryAlbum
 import me.misa198.airmedy.sync.LibraryGenre
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.sync.metadataObject
+import me.misa198.airmedy.ui.libraryAlphabeticalComparator
 
 data class GenreDetailsUiState(
     val genre: LibraryGenre? = null,
@@ -72,8 +73,8 @@ internal fun genreDetailsUiStateFor(
     val albums = state.allAlbums
         .filter { it.id in tracksByAlbumId }
         .sortedWith(
-            compareBy<LibraryAlbum, String>(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }
-                .thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortArtist }
+            compareBy<LibraryAlbum, String>(libraryAlphabeticalComparator) { it.sortTitle }
+                .thenBy(libraryAlphabeticalComparator) { it.sortArtist }
                 .thenBy { it.id },
         )
     val tracks = albums.flatMap { album ->

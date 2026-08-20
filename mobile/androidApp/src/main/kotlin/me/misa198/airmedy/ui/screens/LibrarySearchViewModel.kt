@@ -25,6 +25,7 @@ import me.misa198.airmedy.sync.LibraryPlaylist
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.sync.LibrarySyncProtocol
 import me.misa198.airmedy.sync.metadataObject
+import me.misa198.airmedy.ui.libraryAlphabeticalComparator
 
 data class LibrarySearchUiState(
     val query: String = "",
@@ -92,7 +93,7 @@ internal fun <T> searchLibrary(
             normalizedFields.any { it.startsWith(phrase) } -> 1
             else -> 2
         }
-    }.sortedWith(compareBy<Pair<T, Int>> { it.second }.thenBy(String.CASE_INSENSITIVE_ORDER) { sortName(it.first) }.thenBy { id(it.first) })
+    }.sortedWith(compareBy<Pair<T, Int>> { it.second }.thenBy(libraryAlphabeticalComparator) { sortName(it.first) }.thenBy { id(it.first) })
         .map(Pair<T, Int>::first)
 }
 

@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.Dispatchers
 import me.misa198.airmedy.sync.AndroidLibrarySyncStore
 import me.misa198.airmedy.sync.LibraryGenre
+import me.misa198.airmedy.ui.libraryAlphabeticalComparator
 
 enum class GenreSortOption {
     Name,
@@ -78,10 +79,10 @@ internal fun sortGenres(
     order: SortOrder,
 ): List<LibraryGenre> {
     val comparator = when (option) {
-        GenreSortOption.Name -> compareBy<LibraryGenre, String>(String.CASE_INSENSITIVE_ORDER) { it.sortName }
+        GenreSortOption.Name -> compareBy<LibraryGenre, String>(libraryAlphabeticalComparator) { it.sortName }
             .thenBy { it.id }
         GenreSortOption.DateAdded -> compareBy<LibraryGenre> { it.createdAt }
-            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortName }
+            .thenBy(libraryAlphabeticalComparator) { it.sortName }
             .thenBy { it.id }
     }
     val sorted = genres.sortedWith(comparator)

@@ -50,6 +50,8 @@ fun <T> LibraryVirtualList(
     filterActive: Boolean = false,
     filterContent: (@Composable (showPlaceholderAndLeadingSymbol: Boolean) -> Unit)? = null,
     leadingContent: (@Composable () -> Unit)? = null,
+    alphabeticalIndexKey: ((T) -> String)? = null,
+    alphabeticalIndexItemsPerLazyItem: Int = 1,
     emptyContent: @Composable () -> Unit,
     customItemsContent: (LazyListScope.() -> Unit)? = null,
     itemContent: @Composable (T) -> Unit,
@@ -113,6 +115,15 @@ fun <T> LibraryVirtualList(
     }
 
     val colors = LocalAirmedyColors.current
+    val alphabeticalIndexEntries = remember(items, alphabeticalIndexKey, filterContent, leadingContent, alphabeticalIndexItemsPerLazyItem) {
+        alphabeticalIndexKey?.let { indexKey ->
+            alphabeticalIndexEntries(
+                values = items.map(indexKey),
+                itemOffset = (if (filterContent == null) 0 else 1) + (if (leadingContent == null) 0 else 1),
+                itemsPerLazyItem = alphabeticalIndexItemsPerLazyItem,
+            )
+        }.orEmpty()
+    }
     if (filterContent != null) {
         // Keep the filter in a stable lazy item while its query changes the
         // result set. Replacing the entire list when there are no matches
@@ -156,6 +167,11 @@ fun <T> LibraryVirtualList(
                     }
                 }
             }
+            AlphabeticalIndex(
+                entries = alphabeticalIndexEntries,
+                listState = listState,
+                modifier = Modifier.align(Alignment.CenterEnd),
+            )
         }
         return
     }
@@ -189,6 +205,11 @@ fun <T> LibraryVirtualList(
                 }
             }
         }
+        AlphabeticalIndex(
+            entries = alphabeticalIndexEntries,
+            listState = listState,
+            modifier = Modifier.align(Alignment.CenterEnd),
+        )
     }
 }
 

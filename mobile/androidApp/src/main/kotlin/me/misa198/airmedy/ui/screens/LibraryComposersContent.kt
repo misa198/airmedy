@@ -68,6 +68,7 @@ internal fun LibraryComposersContent(
                 showPlaceholderAndLeadingSymbol = showPlaceholderAndLeadingSymbol,
             )
         },
+        alphabeticalIndexKey = if (uiState.sortOption == ComposerSortOption.Name) ({ composer -> composer.sortName.ifBlank { composer.name } }) else null,
         emptyContent = {
             Column(
                 modifier = Modifier

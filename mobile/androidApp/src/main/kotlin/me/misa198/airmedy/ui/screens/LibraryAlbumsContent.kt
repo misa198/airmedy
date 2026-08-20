@@ -93,6 +93,12 @@ internal fun LibraryAlbumsContent(
                 hazeState = hazeState,
             )
         },
+        alphabeticalIndexKey = when (uiState.sortOption) {
+            AlbumSortOption.Name -> { album -> album.sortTitle.ifBlank { album.title } }
+            AlbumSortOption.Artist -> { album -> album.sortArtist.ifBlank { album.artist } }
+            else -> null
+        },
+        alphabeticalIndexItemsPerLazyItem = if (uiState.layoutMode == AlbumLayoutMode.Grid) 2 else 1,
         emptyContent = {
             Column(
                 modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),

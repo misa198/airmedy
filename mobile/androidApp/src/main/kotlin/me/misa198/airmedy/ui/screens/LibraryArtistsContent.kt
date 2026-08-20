@@ -67,6 +67,7 @@ internal fun LibraryArtistsContent(
                 showPlaceholderAndLeadingSymbol = showPlaceholderAndLeadingSymbol,
             )
         },
+        alphabeticalIndexKey = if (uiState.sortOption == ArtistSortOption.Name) ({ artist -> artist.sortName.ifBlank { artist.name } }) else null,
         emptyContent = {
             Column(
                 modifier = Modifier

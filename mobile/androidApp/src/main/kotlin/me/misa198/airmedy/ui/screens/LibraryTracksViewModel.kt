@@ -17,6 +17,7 @@ import me.misa198.airmedy.player.PlaybackRequest
 import me.misa198.airmedy.player.PlaybackLogTag
 import me.misa198.airmedy.player.MaxPlaybackQueueSize
 import me.misa198.airmedy.sync.LibraryTrack
+import me.misa198.airmedy.ui.libraryAlphabeticalComparator
 import kotlin.random.Random
 
 enum class TrackSortOption {
@@ -91,7 +92,7 @@ internal class LibraryTracksViewModel(
         }
         val sorted = sortTracks(filtered, option, order)
         val recent = rawTracks
-            .sortedWith(compareByDescending<LibraryTrack> { it.createdAt }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }.thenBy { it.id })
+            .sortedWith(compareByDescending<LibraryTrack> { it.createdAt }.thenBy(libraryAlphabeticalComparator) { it.sortTitle }.thenBy { it.id })
             .take(50)
         LibraryTracksUiState(
             tracks = sorted,
@@ -156,16 +157,16 @@ internal const val HomeTrackLimit = 28
 
 internal fun keepListeningTracks(tracks: List<LibraryTrack>): List<LibraryTrack> = tracks
     .filter { it.playCount > 0 }
-    .sortedWith(compareByDescending<LibraryTrack> { it.updatedAt }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }.thenBy { it.id })
+    .sortedWith(compareByDescending<LibraryTrack> { it.updatedAt }.thenBy(libraryAlphabeticalComparator) { it.sortTitle }.thenBy { it.id })
     .take(HomeTrackLimit)
 
 internal fun mostPlayedTracks(tracks: List<LibraryTrack>): List<LibraryTrack> = tracks
     .filter { it.playCount > 0 }
-    .sortedWith(compareByDescending<LibraryTrack> { it.playCount }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }.thenBy { it.id })
+    .sortedWith(compareByDescending<LibraryTrack> { it.playCount }.thenBy(libraryAlphabeticalComparator) { it.sortTitle }.thenBy { it.id })
     .take(HomeTrackLimit)
 
 internal fun forgottenTracks(tracks: List<LibraryTrack>): List<LibraryTrack> = tracks
-    .sortedWith(compareBy<LibraryTrack> { it.playCount }.thenBy { it.updatedAt }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }.thenBy { it.id })
+    .sortedWith(compareBy<LibraryTrack> { it.playCount }.thenBy { it.updatedAt }.thenBy(libraryAlphabeticalComparator) { it.sortTitle }.thenBy { it.id })
     .take(HomeTrackLimit)
 
 /** Keeps track search aligned with the title and artist labels rendered in each row. */
@@ -198,17 +199,17 @@ internal fun sortTracks(
     order: SortOrder,
 ): List<LibraryTrack> {
     val comparator = when (option) {
-        TrackSortOption.Name -> compareBy<LibraryTrack, String>(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }
-            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortArtists }
+        TrackSortOption.Name -> compareBy<LibraryTrack, String>(libraryAlphabeticalComparator) { it.sortTitle }
+            .thenBy(libraryAlphabeticalComparator) { it.sortArtists }
             .thenBy { it.id }
-        TrackSortOption.Artist -> compareBy<LibraryTrack, String>(String.CASE_INSENSITIVE_ORDER) { it.sortArtists }
-            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }
+        TrackSortOption.Artist -> compareBy<LibraryTrack, String>(libraryAlphabeticalComparator) { it.sortArtists }
+            .thenBy(libraryAlphabeticalComparator) { it.sortTitle }
             .thenBy { it.id }
         TrackSortOption.PlayCount -> compareBy<LibraryTrack> { it.playCount }
-            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }
+            .thenBy(libraryAlphabeticalComparator) { it.sortTitle }
             .thenBy { it.id }
         TrackSortOption.DateAdded -> compareBy<LibraryTrack> { it.createdAt }
-            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }
+            .thenBy(libraryAlphabeticalComparator) { it.sortTitle }
             .thenBy { it.id }
     }
 

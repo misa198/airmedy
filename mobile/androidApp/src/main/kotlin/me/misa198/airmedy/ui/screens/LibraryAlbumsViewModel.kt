@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import me.misa198.airmedy.sync.AndroidLibrarySyncStore
 import me.misa198.airmedy.sync.LibraryAlbum
 import me.misa198.airmedy.sync.LibraryTrack
+import me.misa198.airmedy.ui.libraryAlphabeticalComparator
 import me.misa198.airmedy.player.PlaybackController
 
 enum class AlbumSortOption {
@@ -121,14 +122,14 @@ internal fun sortAlbums(
     order: SortOrder,
 ): List<LibraryAlbum> {
     val comparator = when (option) {
-        AlbumSortOption.Name -> compareBy<LibraryAlbum, String>(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }
-            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortArtist }
+        AlbumSortOption.Name -> compareBy<LibraryAlbum, String>(libraryAlphabeticalComparator) { it.sortTitle }
+            .thenBy(libraryAlphabeticalComparator) { it.sortArtist }
             .thenBy { it.id }
-        AlbumSortOption.Artist -> compareBy<LibraryAlbum, String>(String.CASE_INSENSITIVE_ORDER) { it.sortArtist }
-            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }
+        AlbumSortOption.Artist -> compareBy<LibraryAlbum, String>(libraryAlphabeticalComparator) { it.sortArtist }
+            .thenBy(libraryAlphabeticalComparator) { it.sortTitle }
             .thenBy { it.id }
         AlbumSortOption.DateAdded -> compareBy<LibraryAlbum> { it.createdAt }
-            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortTitle }
+            .thenBy(libraryAlphabeticalComparator) { it.sortTitle }
             .thenBy { it.id }
     }
     return albums.sortedWith(comparator).let { if (order == SortOrder.Descending) it.reversed() else it }

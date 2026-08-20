@@ -68,6 +68,7 @@ internal fun LibraryGenresContent(
                 showPlaceholderAndLeadingSymbol = showPlaceholderAndLeadingSymbol,
             )
         },
+        alphabeticalIndexKey = if (uiState.sortOption == GenreSortOption.Name) ({ genre -> genre.sortName.ifBlank { genre.name } }) else null,
         emptyContent = {
             Column(
                 modifier = Modifier

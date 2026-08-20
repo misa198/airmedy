@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.Dispatchers
 import me.misa198.airmedy.sync.AndroidLibrarySyncStore
 import me.misa198.airmedy.sync.LibraryComposer
+import me.misa198.airmedy.ui.libraryAlphabeticalComparator
 
 enum class ComposerSortOption {
     Name,
@@ -79,10 +80,10 @@ internal fun sortComposers(
     order: SortOrder,
 ): List<LibraryComposer> {
     val comparator = when (option) {
-        ComposerSortOption.Name -> compareBy<LibraryComposer, String>(String.CASE_INSENSITIVE_ORDER) { it.sortName }
+        ComposerSortOption.Name -> compareBy<LibraryComposer, String>(libraryAlphabeticalComparator) { it.sortName }
             .thenBy { it.id }
         ComposerSortOption.DateAdded -> compareBy<LibraryComposer> { it.createdAt }
-            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.sortName }
+            .thenBy(libraryAlphabeticalComparator) { it.sortName }
             .thenBy { it.id }
     }
     val sorted = composers.sortedWith(comparator)
