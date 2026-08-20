@@ -10,7 +10,6 @@ import (
 	"html"
 	"io"
 	"log/slog"
-	"math"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -26,6 +25,8 @@ var kugouBracketRe = regexp.MustCompile(`[(（\x{3010}\x{3014}\[{｛][^)）\x{30
 type kugouCandidate struct {
 	ID        string `json:"id"`
 	AccessKey string `json:"accesskey"`
+	Singer    string `json:"singer"`
+	Song      string `json:"song"`
 	Duration  int    `json:"duration"` // milliseconds
 	Score     int    `json:"score"`
 }
@@ -123,7 +124,7 @@ func (p *KugouProvider) Fetch(ctx context.Context, track *domain.TrackDTO) (*dom
 
 		if len(candidates) > 0 {
 			p.logger.Debug("kugou: fetch found candidates", "count", len(candidates))
-			best := p.selectBestCandidate(candidates, track.Duration)
+			best := p.selectBestCandidate(candidates, title, artist, track.Duration)
 			if best != nil {
 				p.logger.Debug("kugou: best candidate selected", "id", best.ID, "score", best.Score)
 				content, err := p.kugouDownload(ctx, best.ID, best.AccessKey)
@@ -193,26 +194,22 @@ func (p *KugouProvider) kugouSearch(ctx context.Context, keyword string, duratio
 	return result.Candidates, nil
 }
 
-func (p *KugouProvider) selectBestCandidate(candidates []kugouCandidate, trackDurationSec int) *kugouCandidate {
+func (p *KugouProvider) selectBestCandidate(candidates []kugouCandidate, title, artist string, trackDurationSec int) *kugouCandidate {
 	p.logger.Debug("kugou: selecting best candidate", "count", len(candidates), "target_duration", trackDurationSec)
 	var best *kugouCandidate
-	bestDurDiff := math.MaxInt32
-	bestScore := math.MinInt32
+	bestMatchScore := -1.0
+	bestScore := 0
 
 	for i := range candidates {
 		c := &candidates[i]
-		if trackDurationSec > 0 {
-			durDiff := absInt(c.Duration/1000 - trackDurationSec)
-			if best == nil || durDiff < bestDurDiff || (durDiff == bestDurDiff && c.Score > bestScore) {
-				best = c
-				bestDurDiff = durDiff
-				bestScore = c.Score
-			}
-		} else {
-			if best == nil || c.Score > bestScore {
-				best = c
-				bestScore = c.Score
-			}
+		matchScore := scoreCandidate(c.Song, c.Singer, float64(c.Duration)/1000, title, artist, trackDurationSec)
+		if matchScore < 0 {
+			continue
+		}
+		if best == nil || matchScore > bestMatchScore || (matchScore == bestMatchScore && c.Score > bestScore) {
+			best = c
+			bestMatchScore = matchScore
+			bestScore = c.Score
 		}
 	}
 	return best
@@ -270,11 +267,4 @@ func kugouIsSynced(content string) bool {
 
 func kugouRemoveBrackets(text string) string {
 	return kugouBracketRe.ReplaceAllString(text, "")
-}
-
-func absInt(x int) int {
-	if x < 0 {
-		return -x
-	}
-	return x
 }

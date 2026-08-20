@@ -187,6 +187,13 @@ Before sending to lrclib, the title is normalized:
 
 Synced lyrics (with timestamps) are preferred over plain text. If only plain is available, `source` is set to `"lrclib-plain"`.
 
+### KuGou Search and Rank
+
+KuGou searches with `artist - title` and ranks the returned candidates with the same title, artist,
+and duration scorer as lrclib. Candidates below the title-similarity threshold or more than 5 seconds
+from the track duration are rejected; KuGou's provider score breaks ties. If no candidate qualifies,
+the provider retries after removing bracketed metadata, then after swapping title and artist.
+
 ## Ports
 
 ```go
