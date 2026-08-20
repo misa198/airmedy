@@ -128,6 +128,7 @@ fun DetailHero(
             }
         }
         Column(
+            modifier = Modifier.padding(top = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {

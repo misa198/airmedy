@@ -36,6 +36,7 @@ import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import me.misa198.airmedy.ui.components.PlaylistContextMenu
 import me.misa198.airmedy.ui.components.AirmedyDialog
 import me.misa198.airmedy.ui.components.AirmedyPillButtonVariant
+import me.misa198.airmedy.ui.components.trackInfoArtworkSize
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
@@ -80,14 +81,16 @@ internal fun PlaylistDetailsContent(
     var showDeleteConfirmation by remember(playlist.id) { mutableStateOf(false) }
     val context = LocalContext.current
     val count = pluralStringResource(R.plurals.playlist_details_track_count, uiState.tracks.size, uiState.tracks.size)
+    val totalDurationSeconds = remember(uiState.tracks) { playlistTotalDurationSeconds(uiState.tracks) }
     val duration = formatPlaylistTotalDuration(
-        playlistTotalDurationSeconds(uiState.tracks),
+        totalDurationSeconds,
         day = { context.getString(R.string.playlist_duration_day, it) },
         hour = { context.getString(R.string.playlist_duration_hour, it) },
         minute = { context.getString(R.string.playlist_duration_minute, it) },
         second = { context.getString(R.string.playlist_duration_second, it) },
     )
     val name = if (playlist.id == FavoritesPlaylistId) stringResource(R.string.library_favorites) else playlist.name
+    val trackIds = remember(uiState.tracks) { uiState.tracks.map { it.id } }
     LazyColumn(
         modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding()),
@@ -96,7 +99,7 @@ internal fun PlaylistDetailsContent(
             ArtworkHeroBackdrop(uiState.artworkPaths.firstOrNull(), Modifier.fillMaxWidth(), onHeroColorChanged) {
                 PlaylistContextMenu(
                     playlistId = playlist.id,
-                    trackIds = uiState.tracks.map { it.id },
+                    trackIds = trackIds,
                     expanded = playlistMenuExpanded,
                     onDismiss = { playlistMenuExpanded = false },
                     hazeState = hazeState,
@@ -117,9 +120,10 @@ internal fun PlaylistDetailsContent(
                         end = 24.dp,
                         bottom = 20.dp,
                     ),
+                    artworkSize = trackInfoArtworkSize,
                     fallbackSymbol = if (playlist.id == FavoritesPlaylistId) MaterialSymbols.Favorite else MaterialSymbols.QueueMusic,
                     artworkContent = {
-                        PlaylistArtwork(playlist.id, uiState.artworkPaths, size = 248.dp)
+                        PlaylistArtwork(playlist.id, uiState.artworkPaths, size = trackInfoArtworkSize)
                     },
                     onPlayClick = onPlay,
                     onShuffleClick = onShuffle,

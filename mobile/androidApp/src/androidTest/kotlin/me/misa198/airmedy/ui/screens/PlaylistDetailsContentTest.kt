@@ -1,13 +1,16 @@
 package me.misa198.airmedy.ui.screens
 
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.performClick
 import me.misa198.airmedy.ui.components.AnchoredPopupMenuHost
+import me.misa198.airmedy.ui.components.trackInfoArtworkSize
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.sync.LibraryPlaylist
 import me.misa198.airmedy.sync.LibraryTrack
@@ -19,6 +22,22 @@ import org.junit.Assert.assertEquals
 
 class PlaylistDetailsContentTest {
     @get:Rule val composeTestRule = createComposeRule()
+
+    @Test
+    fun heroArtworkMatchesAlbumDetailsSize() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                PlaylistDetailsContent(
+                    PlaylistDetailsUiState(
+                        playlist = LibraryPlaylist("mix", "Night drive", emptyList(), "{}"),
+                        artworkPaths = listOf("one", "two", "three", "four"),
+                    ),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("playlist-artwork-mosaic").assertHeightIsEqualTo(trackInfoArtworkSize)
+    }
 
     @Test
     fun displaysTrackCountAndDesktopStyleDurationWithoutArtistOrCopyright() {

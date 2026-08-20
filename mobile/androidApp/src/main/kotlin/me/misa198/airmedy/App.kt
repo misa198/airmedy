@@ -326,7 +326,10 @@ internal fun App(
                 composerDetailsListState = composerDetailsListState,
                 onIntent = onIntent,
                 destinations = destinations,
-                playback = playback,
+                playbackQueue = playbackQueue,
+                onTrackPlayNext = playback.onTrackPlayNext,
+                onTrackAddToQueue = playback.onTrackAddToQueue,
+                onTrackFavoriteToggle = playback.onFavoriteToggle,
                 onTrackContextBottomSheet = { request -> trackContextSheet = request },
                 onAlbumHeroColorChanged = { color ->
                     albumHeroColor = color

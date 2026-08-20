@@ -71,8 +71,9 @@ internal fun AlbumDetailsContent(
     var albumMenuExpanded by remember(album.id) { mutableStateOf(false) }
     val context = LocalContext.current
     val trackCount = pluralStringResource(R.plurals.album_details_track_count, uiState.tracks.size, uiState.tracks.size)
+    val totalDurationSeconds = remember(uiState.tracks) { albumTotalDurationSeconds(uiState.tracks) }
     val duration = formatAlbumTotalDuration(
-        albumTotalDurationSeconds(uiState.tracks),
+        totalDurationSeconds,
         day = { context.getString(R.string.playlist_duration_day, it) },
         hour = { context.getString(R.string.playlist_duration_hour, it) },
         minute = { context.getString(R.string.playlist_duration_minute, it) },

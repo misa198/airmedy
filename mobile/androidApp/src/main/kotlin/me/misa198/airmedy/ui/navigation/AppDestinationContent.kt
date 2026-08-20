@@ -41,7 +41,6 @@ import me.misa198.airmedy.AppDestination
 import me.misa198.airmedy.AppDestinationModels
 import me.misa198.airmedy.AppIntent
 import me.misa198.airmedy.AppStackPage
-import me.misa198.airmedy.PlaybackModel
 import me.misa198.airmedy.StackPageEntry
 import me.misa198.airmedy.SyncUiState
 import me.misa198.airmedy.settings.ThemeMode
@@ -147,7 +146,10 @@ internal fun AppDestinationContent(
     selectedComposerId: String? = null,
     onIntent: (AppIntent) -> Unit,
     destinations: AppDestinationModels,
-    playback: PlaybackModel,
+    playbackQueue: PlaybackQueueSnapshot,
+    onTrackPlayNext: (String) -> Unit,
+    onTrackAddToQueue: (String) -> Unit,
+    onTrackFavoriteToggle: (String, Boolean) -> Unit,
     onTrackContextBottomSheet: (me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest) -> Unit = {},
     onAlbumHeroColorChanged: (Color) -> Unit = {},
     onSettingsContentScrolled: (Boolean) -> Unit = {},
@@ -169,8 +171,22 @@ internal fun AppDestinationContent(
     val artistDetailsUiState = library.details.artists
     val genreDetailsUiState = library.details.genres
     val composerDetailsUiState = library.details.composers
+    val selectedAlbumDetails = remember(albumDetailsUiState, selectedAlbumId) {
+        selectedAlbumId?.let { albumDetailsUiStateFor(albumDetailsUiState, it) } ?: AlbumDetailsUiState()
+    }
+    val selectedPlaylistDetails = remember(playlistDetailsUiState, selectedPlaylistId) {
+        selectedPlaylistId?.let { playlistDetailsUiStateFor(playlistDetailsUiState, it) } ?: PlaylistDetailsUiState()
+    }
+    val selectedArtistDetails = remember(artistDetailsUiState, selectedArtistId) {
+        selectedArtistId?.let { artistDetailsUiStateFor(artistDetailsUiState, it) } ?: ArtistDetailsUiState()
+    }
+    val selectedGenreDetails = remember(genreDetailsUiState, selectedGenreId) {
+        selectedGenreId?.let { genreDetailsUiStateFor(genreDetailsUiState, it) } ?: GenreDetailsUiState()
+    }
+    val selectedComposerDetails = remember(composerDetailsUiState, selectedComposerId) {
+        selectedComposerId?.let { composerDetailsUiStateFor(composerDetailsUiState, it) } ?: ComposerDetailsUiState()
+    }
     val settings = destinations.settings
-    val playbackQueue = playback.queue
     val onHomeTrackClick = destinations.home.onTrackClick
     val onInsightLibraryPeriodSelected = destinations.insight.onLibraryPeriodSelected
     val onInsightListeningPeriodSelected = destinations.insight.onListeningPeriodSelected
@@ -184,9 +200,6 @@ internal fun AppDestinationContent(
     val onRecentTrackClick = library.tracks.onRecentTrackClick
     val onSearchQueryChange = library.search.onQueryChange
     val onSearchTrackClick = library.search.onTrackClick
-    val onTrackPlayNext = playback.onTrackPlayNext
-    val onTrackAddToQueue = playback.onTrackAddToQueue
-    val onTrackFavoriteToggle = playback.onFavoriteToggle
     val onAlbumPlayNext = library.albums.onPlayNext
     val onAlbumAddToQueue = library.albums.onAddToQueue
     val onAlbumAddToFavorites = library.albums.onAddToFavorites
@@ -485,7 +498,7 @@ internal fun AppDestinationContent(
                                 playbackQueue = playbackQueue,
                             )
                             AppStackPage.ArtistDetails -> ArtistDetailsContent(
-                                uiState = selectedArtistId?.let { artistDetailsUiStateFor(artistDetailsUiState, it) } ?: ArtistDetailsUiState(),
+                                uiState = selectedArtistDetails,
                                 listState = artistDetailsListState,
                                 contentPadding = contentPadding,
                                 modifier = Modifier.fillMaxSize(),
@@ -500,7 +513,7 @@ internal fun AppDestinationContent(
                                 playbackQueue = playbackQueue,
                             )
                             AppStackPage.GenreDetails -> GenreDetailsContent(
-                                uiState = selectedGenreId?.let { genreDetailsUiStateFor(genreDetailsUiState, it) } ?: GenreDetailsUiState(),
+                                uiState = selectedGenreDetails,
                                 listState = genreDetailsListState,
                                 contentPadding = contentPadding,
                                 modifier = Modifier.fillMaxSize(),
@@ -515,7 +528,7 @@ internal fun AppDestinationContent(
                                 playbackQueue = playbackQueue,
                             )
                             AppStackPage.ComposerDetails -> ComposerDetailsContent(
-                                uiState = selectedComposerId?.let { composerDetailsUiStateFor(composerDetailsUiState, it) } ?: ComposerDetailsUiState(),
+                                uiState = selectedComposerDetails,
                                 listState = composerDetailsListState,
                                 contentPadding = contentPadding,
                                 modifier = Modifier.fillMaxSize(),
@@ -546,7 +559,7 @@ internal fun AppDestinationContent(
                                 onFilterQueryChange = onAlbumsFilterQueryChange,
                             )
                             AppStackPage.AlbumDetails -> AlbumDetailsContent(
-                                uiState = selectedAlbumId?.let { albumDetailsUiStateFor(albumDetailsUiState, it) } ?: AlbumDetailsUiState(),
+                                uiState = selectedAlbumDetails,
                                 contentPadding = contentPadding,
                                 modifier = Modifier.fillMaxSize(),
                                 hazeState = hazeState,
@@ -604,7 +617,7 @@ internal fun AppDestinationContent(
                                 onPlaylistDelete = onPlaylistDelete,
                             )
                             AppStackPage.PlaylistDetails -> PlaylistDetailsContent(
-                                uiState = selectedPlaylistId?.let { playlistDetailsUiStateFor(playlistDetailsUiState, it) } ?: PlaylistDetailsUiState(),
+                                uiState = selectedPlaylistDetails,
                                 contentPadding = contentPadding,
                                 modifier = Modifier.fillMaxSize(),
                                 hazeState = hazeState,
