@@ -50,7 +50,9 @@
     "offline_desc": "Connetti il dispositivo per iniziare o continuare.",
     "replace_title": "Sostituire la sincronizzazione incompleta?",
     "replace_desc": "Il piano corrente verrà sostituito.",
-    "replace": "Sostituisci"
+    "replace": "Sostituisci",
+    "insufficient_storage_title": "Spazio insufficiente",
+    "insufficient_storage_description": "Spazio insufficiente per la sincronizzazione. Servono {required}; sono disponibili {available}."
   },
   "app": {
     "update_available": "Aggiornamento disponibile",

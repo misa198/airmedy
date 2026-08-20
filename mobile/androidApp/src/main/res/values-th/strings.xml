@@ -101,6 +101,9 @@
     <string name="sync_notification_progress">กำลังซิงค์ %1$d%%</string>
     <string name="sync_notification_complete">การซิงค์คลังเพลงเสร็จสมบูรณ์</string>
     <string name="sync_notification_failed">การซิงค์คลังเพลงต้องได้รับการตรวจสอบ</string>
+    <string name="sync_insufficient_storage_title">พื้นที่จัดเก็บไม่เพียงพอ</string>
+    <string name="sync_insufficient_storage_description">พื้นที่ไม่เพียงพอสำหรับการซิงค์ ต้องใช้ %1$s และขณะนี้ใช้ได้ %2$s</string>
+    <string name="close">ปิด</string>
     <string name="playback_notification_channel">การเล่นเพลง</string>
     <string name="player_previous">ก่อนหน้า</string>
     <string name="player_play">เล่น</string>

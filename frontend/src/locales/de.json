@@ -50,7 +50,9 @@
     "offline_desc": "Verbinden Sie dieses Gerät, um die Synchronisierung zu starten oder fortzusetzen.",
     "replace_title": "Unvollständige Synchronisierung ersetzen?",
     "replace_desc": "Der aktuelle Plan wird ersetzt.",
-    "replace": "Synchronisierung ersetzen"
+    "replace": "Synchronisierung ersetzen",
+    "insufficient_storage_title": "Nicht genügend Speicherplatz",
+    "insufficient_storage_description": "Nicht genügend Speicherplatz zum Synchronisieren. Benötigt: {required}; verfügbar: {available}."
   },
   "app": {
     "update_available": "Update verfügbar",

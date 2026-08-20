@@ -50,7 +50,9 @@
     "offline_desc": "Kết nối thiết bị để bắt đầu hoặc tiếp tục đồng bộ.",
     "replace_title": "Thay thế lượt đồng bộ chưa hoàn tất?",
     "replace_desc": "Kế hoạch hiện tại sẽ được thay thế.",
-    "replace": "Thay thế đồng bộ"
+    "replace": "Thay thế đồng bộ",
+    "insufficient_storage_title": "Không đủ dung lượng",
+    "insufficient_storage_description": "Không đủ dung lượng để đồng bộ. Cần {required}, hiện có thể dùng {available}."
   },
   "app": {
     "update_available": "Có bản cập nhật mới",

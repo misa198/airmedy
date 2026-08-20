@@ -336,6 +336,73 @@ func TestCancelMakesTheActivePlanUnavailableAndNotifiesDesktop(t *testing.T) {
 	require.Same(t, plan, updated)
 }
 
+func TestInsufficientStorageReceiptSupersedesPlanAndEmitsTransientError(t *testing.T) {
+	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+	deviceID := "11111111-1111-4111-8111-111111111111"
+	plans := &testPlanRepo{plan: &domain.MobileLibrarySyncPlan{ID: "plan", DeviceID: deviceID, Status: "active"}}
+	svc := &Service{plans: plans, devices: testDeviceRepo{&domain.TrustedMobileDevice{DeviceID: deviceID, PublicKey: publicKey}}}
+	var emitted *domain.MobileLibrarySyncPlan
+	svc.AddListener(func(plan *domain.MobileLibrarySyncPlan) { emitted = plan })
+	required, available := int64(12), int64(0)
+	receipt := syncReceipt{
+		Version: 1, Type: syncReceiptType, PlanID: "plan", MobileID: deviceID,
+		ErrorCode: "insufficient_storage", RequiredBytes: &required, AvailableBytes: &available,
+		IssuedAt: time.Now().UnixMilli(),
+	}
+
+	require.NoError(t, svc.HandleReceipt(context.Background(), signedReceiptPayload(t, receipt, privateKey)))
+	require.Equal(t, 1, plans.superseded)
+	require.Equal(t, "superseded", emitted.Status)
+	require.Equal(t, "insufficient_storage", emitted.ErrorCode)
+	require.Equal(t, int64(12), *emitted.RequiredBytes)
+	require.Equal(t, int64(0), *emitted.AvailableBytes)
+	require.Equal(t, "insufficient_storage", svc.cachedPlan(deviceID).ErrorCode)
+}
+
+func TestRejectsInvalidStorageErrorReceipts(t *testing.T) {
+	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+	deviceID := "11111111-1111-4111-8111-111111111111"
+	required, available := int64(12), int64(0)
+	valid := syncReceipt{
+		Version: 1, Type: syncReceiptType, PlanID: "plan", MobileID: deviceID,
+		ErrorCode: "insufficient_storage", RequiredBytes: &required, AvailableBytes: &available,
+		IssuedAt: time.Now().UnixMilli(),
+	}
+	tests := map[string]syncReceipt{
+		"missing byte fields": {Version: 1, Type: syncReceiptType, PlanID: "plan", MobileID: deviceID, ErrorCode: "insufficient_storage", IssuedAt: time.Now().UnixMilli()},
+		"complete with error": func() syncReceipt { value := valid; value.Complete = true; return value }(),
+		"wrong plan":          func() syncReceipt { value := valid; value.PlanID = "other"; return value }(),
+	}
+	for name, receipt := range tests {
+		t.Run(name, func(t *testing.T) {
+			plans := &testPlanRepo{plan: &domain.MobileLibrarySyncPlan{ID: "plan", DeviceID: deviceID, Status: "active"}}
+			svc := &Service{plans: plans, devices: testDeviceRepo{&domain.TrustedMobileDevice{DeviceID: deviceID, PublicKey: publicKey}}}
+			require.Error(t, svc.HandleReceipt(context.Background(), signedReceiptPayload(t, receipt, privateKey)))
+			require.Zero(t, plans.superseded)
+		})
+	}
+
+	plans := &testPlanRepo{plan: &domain.MobileLibrarySyncPlan{ID: "plan", DeviceID: deviceID, Status: "active"}}
+	svc := &Service{plans: plans, devices: testDeviceRepo{&domain.TrustedMobileDevice{DeviceID: deviceID, PublicKey: publicKey}}}
+	payload := signedReceiptPayload(t, valid, privateKey)
+	payload[len(payload)-2] ^= 1
+	require.Error(t, svc.HandleReceipt(context.Background(), payload))
+	require.Zero(t, plans.superseded)
+}
+
+func signedReceiptPayload(t *testing.T, receipt syncReceipt, privateKey ed25519.PrivateKey) []byte {
+	t.Helper()
+	receipt.Signature = ""
+	input, err := json.Marshal(receipt)
+	require.NoError(t, err)
+	receipt.Signature = base64.RawURLEncoding.EncodeToString(ed25519.Sign(privateKey, input))
+	payload, err := json.Marshal(receipt)
+	require.NoError(t, err)
+	return payload
+}
+
 func TestUpdatePlanProgressNeverRegresses(t *testing.T) {
 	plan := &domain.MobileLibrarySyncPlan{ID: "plan", DeviceID: "mobile", Status: "active", Completed: 3}
 	svc := &Service{}

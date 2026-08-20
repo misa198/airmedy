@@ -74,6 +74,7 @@ import me.misa198.airmedy.ui.components.TrackContextBottomSheet
 import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import me.misa198.airmedy.player.PlaybackState
+import me.misa198.airmedy.sync.AndroidSyncState
 
 private enum class EqualizerProfileSheet { Menu, Create, DeleteConfirmation }
 
@@ -126,6 +127,7 @@ internal fun App(
     playback: PlaybackModel = PlaybackModel(),
     onIntent: (AppIntent) -> Unit = {},
     onFullScreenPlayerVisibilityChanged: (Boolean) -> Unit = {},
+    onDismissSyncFailure: () -> Unit = {},
 ) {
     val library = destinations.library
     val settings = destinations.settings
@@ -496,6 +498,20 @@ internal fun App(
                 )
                 null -> Unit
             }
+            (settings.syncState.librarySync as? AndroidSyncState.Failed)?.takeIf {
+                it.requiredBytes != null && it.availableBytes != null
+            }?.let { failure ->
+                AirmedyDialog(
+                    title = stringResource(R.string.sync_insufficient_storage_title),
+                    description = stringResource(
+                        R.string.sync_insufficient_storage_description,
+                        formatSyncStorageMegabytes(failure.requiredBytes!!),
+                        formatSyncStorageMegabytes(failure.availableBytes!!),
+                    ),
+                    dismissLabel = stringResource(R.string.close),
+                    onDismiss = onDismissSyncFailure,
+                )
+            }
             NavigationChrome(
                 selectedDestination = uiState.selectedDestination,
                 playbackState = playbackState,
@@ -627,6 +643,8 @@ internal fun App(
         }
     }
 }
+
+internal fun formatSyncStorageMegabytes(bytes: Long): String = "%,.1f MB".format(bytes / 1024.0 / 1024.0)
 
 @Preview(showBackground = true)
 @Composable

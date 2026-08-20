@@ -101,6 +101,9 @@
     <string name="sync_notification_progress">Synchronisierung %1$d%%</string>
     <string name="sync_notification_complete">Mediathek-Synchronisierung abgeschlossen</string>
     <string name="sync_notification_failed">Mediathek-Synchronisierung erfordert Aufmerksamkeit</string>
+    <string name="sync_insufficient_storage_title">Nicht genügend Speicherplatz</string>
+    <string name="sync_insufficient_storage_description">Nicht genügend Speicherplatz zum Synchronisieren. Benötigt: %1$s; verfügbar: %2$s.</string>
+    <string name="close">Schließen</string>
     <string name="playback_notification_channel">Musikwiedergabe</string>
     <string name="player_previous">Vorheriger</string>
     <string name="player_play">Abspielen</string>

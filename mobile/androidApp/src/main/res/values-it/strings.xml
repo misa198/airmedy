@@ -101,6 +101,9 @@
     <string name="sync_notification_progress">Sincronizzazione in corso %1$d%%</string>
     <string name="sync_notification_complete">Sincronizzazione libreria completata</string>
     <string name="sync_notification_failed">La sincronizzazione della libreria richiede attenzione</string>
+    <string name="sync_insufficient_storage_title">Spazio insufficiente</string>
+    <string name="sync_insufficient_storage_description">Spazio insufficiente per la sincronizzazione. Servono %1$s; sono disponibili %2$s.</string>
+    <string name="close">Chiudi</string>
     <string name="playback_notification_channel">Riproduzione musicale</string>
     <string name="player_previous">Precedente</string>
     <string name="player_play">Riproduci</string>

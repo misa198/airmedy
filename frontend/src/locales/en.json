@@ -50,7 +50,9 @@
     "offline_desc": "Connect this device to begin or continue syncing.",
     "replace_title": "Replace unfinished sync?",
     "replace_desc": "The current sync plan will be replaced. Mobile removes out-of-scope content only after the new plan finishes.",
-    "replace": "Replace sync"
+    "replace": "Replace sync",
+    "insufficient_storage_title": "Not enough storage",
+    "insufficient_storage_description": "Not enough storage to sync. Needs {required}; {available} is currently available."
   },
   "app": {
     "update_available": "Update Available",

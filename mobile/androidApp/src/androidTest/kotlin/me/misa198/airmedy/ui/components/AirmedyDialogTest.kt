@@ -36,4 +36,22 @@ class AirmedyDialogTest {
         composeTestRule.onNodeWithText("Revoke").performClick()
         assertTrue(confirmed)
     }
+
+    @Test
+    fun alertUsesItsSingleDismissAction() {
+        var dismissed by mutableStateOf(false)
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                AirmedyDialog(
+                    title = "Not enough storage",
+                    description = "Needs 2 GB, 1 GB available.",
+                    dismissLabel = "Close",
+                    onDismiss = { dismissed = true },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Close").performClick()
+        assertTrue(dismissed)
+    }
 }

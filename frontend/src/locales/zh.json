@@ -50,7 +50,9 @@
     "offline_desc": "连接设备以开始或继续同步。",
     "replace_title": "替换未完成的同步？",
     "replace_desc": "当前计划将被替换。",
-    "replace": "替换同步"
+    "replace": "替换同步",
+    "insufficient_storage_title": "存储空间不足",
+    "insufficient_storage_description": "没有足够空间进行同步。需要 {required}，当前可用 {available}。"
   },
   "app": {
     "update_available": "有可用更新",

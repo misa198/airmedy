@@ -50,7 +50,9 @@
     "offline_desc": "同期を開始または続行するには接続してください。",
     "replace_title": "未完了の同期を置き換えますか？",
     "replace_desc": "現在のプランは置き換えられます。",
-    "replace": "置き換える"
+    "replace": "置き換える",
+    "insufficient_storage_title": "空き容量が不足しています",
+    "insufficient_storage_description": "同期するための空き容量が不足しています。{required} 必要ですが、現在 {available} 使用できます。"
   },
   "app": {
     "update_available": "アップデートが利用可能です",

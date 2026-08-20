@@ -98,6 +98,7 @@ class TrackInfoContentTest {
     @Test
     fun formattersMatchDesktopDisplay() {
         assertEquals("1:05", formatTrackDuration(65))
+        assertEquals("0 B", formatFileSize(0))
         assertEquals("1.5 KB", formatFileSize(1536))
     }
 

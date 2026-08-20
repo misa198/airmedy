@@ -101,6 +101,9 @@
     <string name="sync_notification_progress">Đang đồng bộ %1$d%%</string>
     <string name="sync_notification_complete">Đồng bộ thư viện hoàn tất</string>
     <string name="sync_notification_failed">Đồng bộ thư viện gặp sự cố cần xử lý</string>
+    <string name="sync_insufficient_storage_title">Không đủ dung lượng</string>
+    <string name="sync_insufficient_storage_description">Không đủ dung lượng để đồng bộ. Cần %1$s, hiện có thể dùng %2$s.</string>
+    <string name="close">Đóng</string>
     <string name="playback_notification_channel">Phát nhạc</string>
     <string name="player_previous">Trước đó</string>
     <string name="player_play">Phát</string>

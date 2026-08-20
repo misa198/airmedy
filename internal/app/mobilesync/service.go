@@ -45,14 +45,17 @@ type syncRequest struct {
 }
 
 type syncReceipt struct {
-	Version   int    `json:"version"`
-	Type      string `json:"type"`
-	PlanID    string `json:"plan_id"`
-	MobileID  string `json:"mobile_id"`
-	AssetID   string `json:"asset_id"`
-	Complete  bool   `json:"complete"`
-	IssuedAt  int64  `json:"issued_at"`
-	Signature string `json:"signature"`
+	Version        int    `json:"version"`
+	Type           string `json:"type"`
+	PlanID         string `json:"plan_id"`
+	MobileID       string `json:"mobile_id"`
+	AssetID        string `json:"asset_id"`
+	Complete       bool   `json:"complete"`
+	ErrorCode      string `json:"error_code,omitempty"`
+	RequiredBytes  *int64 `json:"required_bytes,omitempty"`
+	AvailableBytes *int64 `json:"available_bytes,omitempty"`
+	IssuedAt       int64  `json:"issued_at"`
+	Signature      string `json:"signature"`
 }
 
 const (
@@ -921,7 +924,10 @@ func (s *Service) HandleReceipt(ctx context.Context, payload []byte) error {
 	if err := json.Unmarshal(payload, &receipt); err != nil {
 		return fmt.Errorf("decode mobile sync receipt: %w", err)
 	}
-	if receipt.Version != syncProtocolVersion || receipt.Type != syncReceiptType || receipt.PlanID == "" || receipt.MobileID == "" || (receipt.AssetID == "" && !receipt.Complete) {
+	isStorageError := receipt.ErrorCode == "insufficient_storage"
+	invalidError := receipt.ErrorCode != "" && (!isStorageError || receipt.Complete || receipt.AssetID != "" || receipt.RequiredBytes == nil || receipt.AvailableBytes == nil || *receipt.RequiredBytes < 0 || *receipt.AvailableBytes < 0)
+	invalidSuccess := receipt.ErrorCode == "" && (receipt.RequiredBytes != nil || receipt.AvailableBytes != nil || (receipt.AssetID == "" && !receipt.Complete))
+	if receipt.Version != syncProtocolVersion || receipt.Type != syncReceiptType || receipt.PlanID == "" || receipt.MobileID == "" || invalidError || invalidSuccess {
 		return fmt.Errorf("invalid mobile sync receipt")
 	}
 	if skew := time.Since(time.UnixMilli(receipt.IssuedAt)); skew > 5*time.Minute || skew < -5*time.Minute {
@@ -952,7 +958,16 @@ func (s *Service) HandleReceipt(ctx context.Context, payload []byte) error {
 	}
 	now := time.Now().UTC()
 	var updated *domain.MobileLibrarySyncPlan
-	if receipt.Complete {
+	if isStorageError {
+		if err := s.plans.MarkSuperseded(ctx, receipt.MobileID); err != nil {
+			return err
+		}
+		updated = s.updatePlanProgress(plan, plan.Completed, "superseded", now)
+		updated.ErrorCode = receipt.ErrorCode
+		updated.RequiredBytes = receipt.RequiredBytes
+		updated.AvailableBytes = receipt.AvailableBytes
+		s.cachePlan(updated)
+	} else if receipt.Complete {
 		if err := s.plans.MarkComplete(ctx, plan.ID, now); err != nil {
 			return err
 		}

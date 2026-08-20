@@ -688,6 +688,10 @@ internal class AndroidLibrarySyncStore(
             it.sha256 == asset.sha256 && it.size == asset.size && cachedAssetPath(filesDir, it) != null
         } == true
 
+    override suspend fun cachedAssetContents(): Set<LibrarySyncAssetContent> = dao.committedAssets().mapNotNull { asset ->
+        cachedAssetPath(filesDir, asset)?.let { LibrarySyncAssetContent(asset.sha256, asset.size) }
+    }.toSet()
+
     override suspend fun stageAsset(planId: String, asset: LibrarySyncAsset, pulled: PulledAsset) {
         require(pulled.sha256.equals(asset.sha256, ignoreCase = true) && pulled.size == asset.size) { "Invalid downloaded asset" }
         require(!pulled.relativePath.startsWith('/') && ".." !in pulled.relativePath.split('/')) { "Invalid asset path" }

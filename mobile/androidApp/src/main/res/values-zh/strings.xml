@@ -101,6 +101,9 @@
     <string name="sync_notification_progress">正在同步 %1$d%%</string>
     <string name="sync_notification_complete">媒体库同步完成</string>
     <string name="sync_notification_failed">媒体库同步需要注意</string>
+    <string name="sync_insufficient_storage_title">存储空间不足</string>
+    <string name="sync_insufficient_storage_description">没有足够空间进行同步。需要 %1$s，当前可用 %2$s。</string>
+    <string name="close">关闭</string>
     <string name="playback_notification_channel">音乐播放</string>
     <string name="player_previous">上一首</string>
     <string name="player_play">播放</string>

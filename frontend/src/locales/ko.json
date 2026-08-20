@@ -50,7 +50,9 @@
     "offline_desc": "동기화를 시작하거나 계속하려면 기기를 연결하세요.",
     "replace_title": "미완료 동기화를 바꿀까요?",
     "replace_desc": "현재 계획이 교체됩니다.",
-    "replace": "동기화 교체"
+    "replace": "동기화 교체",
+    "insufficient_storage_title": "저장 공간 부족",
+    "insufficient_storage_description": "동기화할 저장 공간이 부족합니다. {required}이 필요하며 현재 {available}을 사용할 수 있습니다."
   },
   "app": {
     "update_available": "업데이트 가능",

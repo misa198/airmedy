@@ -332,6 +332,11 @@ Common dialogs are consolidated under the **`Modal.vue`** primitive. It provides
 | `MetadataEditDialog`  | Manual tag and artwork editing               |
 | `ConfirmDialog`       | Generic confirmation for destructive actions |
 
+`MobileLibrarySyncView` uses `Modal` for a transient insufficient-storage
+alert. It accepts the runtime payload from both initial `GetStatus` and
+`mobile-library-sync:updated`, stops active polling, hides the superseded
+plan's stale progress, and keeps dismissal as UI-only state.
+
 ## Chip Input (`components/settings/DelimiterInput.vue`)
 
 Reusable tag/chip editor for the Library tab's tag-delimiter settings. Renders each delimiter as

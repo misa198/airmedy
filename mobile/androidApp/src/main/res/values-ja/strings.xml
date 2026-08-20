@@ -101,6 +101,9 @@
     <string name="sync_notification_progress">同期中 %1$d%%</string>
     <string name="sync_notification_complete">ライブラリの同期が完了しました</string>
     <string name="sync_notification_failed">ライブラリの同期で確認が必要です</string>
+    <string name="sync_insufficient_storage_title">空き容量が不足しています</string>
+    <string name="sync_insufficient_storage_description">同期するための空き容量が不足しています。%1$s 必要ですが、現在 %2$s 使用できます。</string>
+    <string name="close">閉じる</string>
     <string name="playback_notification_channel">音楽再生</string>
     <string name="player_previous">前へ</string>
     <string name="player_play">再生</string>

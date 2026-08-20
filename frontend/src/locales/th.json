@@ -50,7 +50,9 @@
     "offline_desc": "เชื่อมต่ออุปกรณ์เพื่อเริ่มหรือทำต่อ",
     "replace_title": "แทนที่การซิงก์ที่ยังไม่เสร็จหรือไม่?",
     "replace_desc": "แผนปัจจุบันจะถูกแทนที่",
-    "replace": "แทนที่"
+    "replace": "แทนที่",
+    "insufficient_storage_title": "พื้นที่จัดเก็บไม่เพียงพอ",
+    "insufficient_storage_description": "พื้นที่ไม่เพียงพอสำหรับการซิงค์ ต้องใช้ {required} และขณะนี้ใช้ได้ {available}"
   },
   "app": {
     "update_available": "มีการอัปเดต",

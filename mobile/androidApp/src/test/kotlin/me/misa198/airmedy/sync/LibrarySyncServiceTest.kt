@@ -1,5 +1,7 @@
 package me.misa198.airmedy.sync
 
+import java.io.File
+import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,6 +17,22 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 
 class LibrarySyncServiceTest {
+    @Test
+    fun capacityUsesTheVolumeContainingFilesDir() = runTest {
+        val filesDir = File("app-files")
+        val volume = UUID.randomUUID()
+        var requestedPath: File? = null
+
+        val available = AndroidLibrarySyncCapacity(
+            filesDir,
+            uuidForPath = { requestedPath = it; volume },
+            allocatableBytes = { assertEquals(volume, it); 42L },
+        ).availableBytes()
+
+        assertEquals(filesDir, requestedPath)
+        assertEquals(42L, available)
+    }
+
     @Test
     fun progressNotificationUsesADeterminatePercentageBar() {
         assertEquals(

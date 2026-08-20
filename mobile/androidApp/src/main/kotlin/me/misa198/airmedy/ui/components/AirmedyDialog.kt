@@ -23,15 +23,15 @@ enum class AirmedyDialogActionLayout {
     Vertical,
 }
 
-/** A compact two-action mobile dialog with the app's rounded, tactile treatment. */
+/** A compact alert or confirmation dialog with the app's rounded treatment. */
 @Composable
 fun AirmedyDialog(
     title: String,
     description: String,
     dismissLabel: String,
     onDismiss: () -> Unit,
-    confirmLabel: String,
-    onConfirm: () -> Unit,
+    confirmLabel: String? = null,
+    onConfirm: () -> Unit = {},
     confirmVariant: AirmedyPillButtonVariant = AirmedyPillButtonVariant.Primary,
     actionLayout: AirmedyDialogActionLayout = AirmedyDialogActionLayout.Horizontal,
 ) {
@@ -73,19 +73,14 @@ fun AirmedyDialog(
                         variant = AirmedyPillButtonVariant.Secondary,
                         modifier = Modifier.weight(1f),
                     )
-                    AirmedyPillButton(
-                        label = confirmLabel,
-                        onClick = onConfirm,
-                        variant = confirmVariant,
-                        modifier = Modifier.weight(1f),
-                    )
+                    confirmLabel?.let { AirmedyPillButton(label = it, onClick = onConfirm, variant = confirmVariant, modifier = Modifier.weight(1f)) }
                 }
                 AirmedyDialogActionLayout.Vertical -> Column(
                     modifier = Modifier.padding(start = 16.dp, top = 20.dp, end = 16.dp, bottom = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     AirmedyPillButton(label = dismissLabel, onClick = onDismiss, variant = AirmedyPillButtonVariant.Secondary)
-                    AirmedyPillButton(label = confirmLabel, onClick = onConfirm, variant = confirmVariant)
+                    confirmLabel?.let { AirmedyPillButton(label = it, onClick = onConfirm, variant = confirmVariant) }
                 }
             }
         }

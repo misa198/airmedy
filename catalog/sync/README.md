@@ -112,6 +112,34 @@ receipt:
 
 Only this receipt marks the desktop plan complete.
 
+After validating the signed manifest and before preparing or pulling assets,
+Android sums each unique `(sha256, size)` not already in its durable cache and
+compares the overflow-safe total directly with `StorageManager.getAllocatableBytes()`
+for the volume containing `filesDir`. An exact fit is allowed. Insufficient
+capacity discards staging without pulling an asset and publishes this signed,
+terminal error receipt (the byte fields are required, including a zero value):
+
+```json
+{
+  "version": 1,
+  "type": "library.sync.receipt",
+  "plan_id": "uuid",
+  "mobile_id": "uuid",
+  "asset_id": "",
+  "complete": false,
+  "error_code": "insufficient_storage",
+  "required_bytes": 0,
+  "available_bytes": 0,
+  "issued_at": 0,
+  "signature": "base64url-no-padding"
+}
+```
+
+Desktop verifies this receipt exactly like success receipts, supersedes the
+plan so HTTP assets stop serving, and exposes the error only through its
+process-local status cache and update event. Neither side persists the error
+across an app restart.
+
 ## Authenticated HTTP pull
 
 Desktop starts an ephemeral LAN HTTP server before publishing the request. It
@@ -250,6 +278,13 @@ asset requests and receipts do not repeatedly decode the full manifest. Wails
 status calls and events omit that manifest and transfer only plan metadata.
 Receipt and polling updates are monotonic, so an older asynchronous snapshot
 cannot move progress backward.
+
+`AndroidSyncRuntime.Failed` carries the required and allocatable byte counts.
+The app shell owns the resulting one-action alert, so it remains visible above
+any destination; dismissing it resets only runtime state to `Idle`. The desktop
+Mobile Library Sync view opens the same transient alert from either `GetStatus`
+or `mobile-library-sync:updated`, stops polling, hides stale progress, and
+re-enables Sync.
 
 When an already-online paired MQTT session receives a valid request, Android
 starts a `dataSync` foreground service. The service temporarily uses that

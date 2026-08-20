@@ -50,7 +50,9 @@
     "offline_desc": "Подключите устройство, чтобы начать или продолжить синхронизацию.",
     "replace_title": "Заменить незавершенную синхронизацию?",
     "replace_desc": "Текущий план будет заменен.",
-    "replace": "Заменить"
+    "replace": "Заменить",
+    "insufficient_storage_title": "Недостаточно места",
+    "insufficient_storage_description": "Недостаточно места для синхронизации. Требуется {required}, доступно {available}."
   },
   "app": {
     "update_available": "Доступно обновление",

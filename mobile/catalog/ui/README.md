@@ -110,6 +110,11 @@ system. Reuse the existing primitive before making another component:
 | Modal/menu | `AirmedyBottomSheet`, `AirmedyDialog`, `AnchoredPopupMenu`, context menus |
 | Artwork and status | `DetailHero`, `DiscCard`, `AirmedyPlayingIndicator`, `MaterialSymbol` |
 
+`AirmedyDialog` supports both confirmations and one-action alerts. The app
+shell renders the transient insufficient-storage sync failure above every
+destination from `AndroidSyncState.Failed`; its Close callback resets the
+runtime state to `Idle`, and the failure is never persisted.
+
 Extract a component only when it has no domain state and already has at least
 three call sites. Keep screen-specific composables beside their screen. A new
 component accepts explicit state and callbacks; it does not accept a ViewModel

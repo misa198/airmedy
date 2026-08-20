@@ -49,16 +49,19 @@ type MobileSyncPlaylist struct {
 }
 
 type MobileLibrarySyncPlan struct {
-	ID           string                    `json:"id" db:"id"`
-	DeviceID     string                    `json:"device_id" db:"device_id"`
-	Scope        MobileLibrarySyncScope    `json:"scope" db:"-"`
-	Manifest     MobileLibrarySyncManifest `json:"manifest" db:"-"`
-	ManifestHash string                    `json:"manifest_hash" db:"manifest_hash"`
-	Status       string                    `json:"status" db:"status"`
-	Completed    int                       `json:"completed" db:"completed"`
-	Total        int                       `json:"total" db:"total"`
-	CreatedAt    time.Time                 `json:"created_at" db:"created_at"`
-	UpdatedAt    time.Time                 `json:"updated_at" db:"updated_at"`
+	ID             string                    `json:"id" db:"id"`
+	DeviceID       string                    `json:"device_id" db:"device_id"`
+	Scope          MobileLibrarySyncScope    `json:"scope" db:"-"`
+	Manifest       MobileLibrarySyncManifest `json:"manifest" db:"-"`
+	ManifestHash   string                    `json:"manifest_hash" db:"manifest_hash"`
+	Status         string                    `json:"status" db:"status"`
+	Completed      int                       `json:"completed" db:"completed"`
+	Total          int                       `json:"total" db:"total"`
+	ErrorCode      string                    `json:"error_code,omitempty" db:"-"`
+	RequiredBytes  *int64                    `json:"required_bytes,omitempty" db:"-"`
+	AvailableBytes *int64                    `json:"available_bytes,omitempty" db:"-"`
+	CreatedAt      time.Time                 `json:"created_at" db:"created_at"`
+	UpdatedAt      time.Time                 `json:"updated_at" db:"updated_at"`
 }
 
 type MobileLibrarySyncPlanRepository interface {

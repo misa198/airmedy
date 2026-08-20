@@ -65,12 +65,16 @@ data class LibrarySyncReceipt(
     @SerialName("mobile_id") val mobileId: String,
     @SerialName("asset_id") val assetId: String,
     val complete: Boolean,
+    @SerialName("error_code") val errorCode: String? = null,
+    @SerialName("required_bytes") val requiredBytes: Long? = null,
+    @SerialName("available_bytes") val availableBytes: Long? = null,
     @SerialName("issued_at") val issuedAt: Long,
     val signature: String,
 )
 
 data class PulledManifest(val body: String, val sha256: String)
 data class PulledAsset(val relativePath: String, val sha256: String, val size: Long)
+data class LibrarySyncAssetContent(val sha256: String, val size: Long)
 
 sealed interface LibrarySyncFailure {
     data class InvalidRequest(val reason: String) : LibrarySyncFailure
@@ -78,6 +82,7 @@ sealed interface LibrarySyncFailure {
     data class Transport(val reason: String) : LibrarySyncFailure
     data object Superseded : LibrarySyncFailure
     data object HashMismatch : LibrarySyncFailure
+    data class InsufficientStorage(val requiredBytes: Long, val availableBytes: Long) : LibrarySyncFailure
 }
 
 sealed interface LibrarySyncResult {
@@ -97,6 +102,7 @@ interface LibrarySyncPuller {
 interface LibrarySyncStore {
     suspend fun prepare(request: LibrarySyncRequest, manifest: LibrarySyncManifest)
     suspend fun isAssetCommitted(planId: String, asset: LibrarySyncAsset): Boolean
+    suspend fun cachedAssetContents(): Set<LibrarySyncAssetContent> = emptySet()
     suspend fun stageAsset(planId: String, asset: LibrarySyncAsset, pulled: PulledAsset)
     suspend fun activate(planId: String): List<String>
     suspend fun finalize(planId: String)
@@ -109,6 +115,10 @@ fun interface LibrarySyncReceiptPublisher {
 
 fun interface LibrarySyncProgressReporter {
     fun report(completed: Int, total: Int)
+}
+
+fun interface LibrarySyncCapacity {
+    suspend fun availableBytes(): Long
 }
 
 object LibrarySyncProtocol {
@@ -136,6 +146,7 @@ class LibrarySyncCoordinator(
     private val store: LibrarySyncStore,
     private val receipts: LibrarySyncReceiptPublisher,
     private val progress: LibrarySyncProgressReporter = LibrarySyncProgressReporter { _, _ -> },
+    private val capacity: LibrarySyncCapacity = LibrarySyncCapacity { Long.MAX_VALUE },
     private val assetParallelism: Int = 1,
 ) {
     private val mutex = Mutex()
@@ -170,11 +181,28 @@ class LibrarySyncCoordinator(
         val manifestError = validateManifest(manifest, request)
         if (manifestError != null) return LibrarySyncResult.Failed(LibrarySyncFailure.InvalidManifest(manifestError))
 
+        val cachedAssets = store.cachedAssetContents()
+        val groups = manifest.assets.orEmpty().groupBy { LibrarySyncAssetContent(it.sha256, it.size) }.values
+        var overflow = false
+        val requiredBytes = groups.fold(0L) { total, group ->
+            if (LibrarySyncAssetContent(group.first().sha256, group.first().size) in cachedAssets) total
+            else if (group.first().size > Long.MAX_VALUE - total) { overflow = true; Long.MAX_VALUE }
+            else total + group.first().size
+        }
+        val availableBytes = capacity.availableBytes().coerceAtLeast(0)
+        if (overflow || requiredBytes > availableBytes) {
+            store.discard(request.planId)
+            publishReceipt(
+                request.planId, mobile, assetId = "", complete = false,
+                errorCode = "insufficient_storage", requiredBytes = requiredBytes, availableBytes = availableBytes,
+            )
+            return LibrarySyncResult.Failed(LibrarySyncFailure.InsufficientStorage(requiredBytes, availableBytes))
+        }
+
         try {
             store.prepare(request, manifest)
             val assets = manifest.assets.orEmpty()
             progress.report(0, assets.size)
-            val groups = assets.groupBy { AssetContent(it.sha256, it.size) }.values
             var completed = 0
             groups.chunked(assetParallelism).forEach { batch ->
                 coroutineScope {
@@ -205,8 +233,20 @@ class LibrarySyncCoordinator(
         }
     }
 
-    private suspend fun publishReceipt(planId: String, mobile: MobileIdentity, assetId: String, complete: Boolean) {
-        val unsigned = LibrarySyncReceipt(planId = planId, mobileId = mobile.id, assetId = assetId, complete = complete, issuedAt = clock.nowMillis(), signature = "")
+    private suspend fun publishReceipt(
+        planId: String,
+        mobile: MobileIdentity,
+        assetId: String,
+        complete: Boolean,
+        errorCode: String? = null,
+        requiredBytes: Long? = null,
+        availableBytes: Long? = null,
+    ) {
+        val unsigned = LibrarySyncReceipt(
+            planId = planId, mobileId = mobile.id, assetId = assetId, complete = complete,
+            errorCode = errorCode, requiredBytes = requiredBytes, availableBytes = availableBytes,
+            issuedAt = clock.nowMillis(), signature = "",
+        )
         val signature = identityProvider.sign(LibrarySyncProtocol.receiptSigningInput(unsigned).encodeToByteArray())
         check(signature.size == 64) { "Unable to sign sync receipt" }
         val payload = LibrarySyncProtocol.json.encodeToString(
@@ -236,7 +276,5 @@ class LibrarySyncCoordinator(
 
     private companion object { val Hash = Regex("^[0-9a-f]{64}$") }
 }
-
-private data class AssetContent(val sha256: String, val size: Long)
 
 class LibrarySyncPullException(val failure: LibrarySyncFailure) : Exception()

@@ -38,6 +38,20 @@ class LibrarySyncProtocolTest {
     }
 
     @Test
+    fun errorReceiptSigningInputKeepsZeroAvailableBytes() {
+        val receipt = LibrarySyncReceipt(
+            planId = "plan", mobileId = "mobile", assetId = "", complete = false,
+            errorCode = "insufficient_storage", requiredBytes = 12, availableBytes = 0,
+            issuedAt = 42, signature = "signature",
+        )
+
+        assertEquals(
+            "{\"version\":1,\"type\":\"library.sync.receipt\",\"plan_id\":\"plan\",\"mobile_id\":\"mobile\",\"asset_id\":\"\",\"complete\":false,\"error_code\":\"insufficient_storage\",\"required_bytes\":12,\"available_bytes\":0,\"issued_at\":42,\"signature\":\"\"}",
+            LibrarySyncProtocol.receiptSigningInput(receipt),
+        )
+    }
+
+    @Test
     fun decodesDesktopManifestWithNullOptionalCollections() {
         val manifest = LibrarySyncProtocol.json.decodeFromString(
             LibrarySyncManifest.serializer(),
@@ -161,6 +175,84 @@ class LibrarySyncProtocolTest {
         assertIs<LibrarySyncResult.Failed>(coordinator.handle(requestPayload(), PairedDesktop("desktop", "Desktop", ByteArray(32))))
         assertEquals(false, activated)
         assertEquals(emptyList(), receipts)
+    }
+
+    @Test
+    fun storagePreflightDeduplicatesContentAndSkipsCachedAssets() = kotlinx.coroutines.test.runTest {
+        val shared = LibrarySyncAsset("audio:one", "audio", "1".repeat(64), 8)
+        val result = storagePreflight(
+            listOf(shared, shared.copy(id = "artwork:one", kind = "artwork"), LibrarySyncAsset("audio:two", "audio", "2".repeat(64), 5)),
+            cachedHashes = setOf(shared.sha256),
+            availableBytes = 5,
+        )
+        assertIs<LibrarySyncResult.Completed>(result.result)
+        assertEquals(1, result.pulls)
+    }
+
+    @Test
+    fun storagePreflightAllowsAnExactFit() = kotlinx.coroutines.test.runTest {
+        val result = storagePreflight(listOf(LibrarySyncAsset("audio:one", "audio", "1".repeat(64), 5)), availableBytes = 5)
+        assertIs<LibrarySyncResult.Completed>(result.result)
+    }
+
+    @Test
+    fun insufficientStorageDoesNotPullAndPublishesErrorReceipt() = kotlinx.coroutines.test.runTest {
+        val result = storagePreflight(listOf(LibrarySyncAsset("audio:one", "audio", "1".repeat(64), 6)), availableBytes = 5)
+        val failure = assertIs<LibrarySyncFailure.InsufficientStorage>(assertIs<LibrarySyncResult.Failed>(result.result).failure)
+        assertEquals(6, failure.requiredBytes)
+        assertEquals(5, failure.availableBytes)
+        assertEquals(0, result.pulls)
+        assertEquals(true, result.discarded)
+        assertEquals("insufficient_storage", result.receipts.single().errorCode)
+    }
+
+    @Test
+    fun storagePreflightSaturatesOverflow() = kotlinx.coroutines.test.runTest {
+        val result = storagePreflight(
+            listOf(
+                LibrarySyncAsset("audio:one", "audio", "1".repeat(64), Long.MAX_VALUE),
+                LibrarySyncAsset("audio:two", "audio", "2".repeat(64), 1),
+            ),
+            availableBytes = Long.MAX_VALUE,
+        )
+        assertEquals(Long.MAX_VALUE, assertIs<LibrarySyncFailure.InsufficientStorage>(assertIs<LibrarySyncResult.Failed>(result.result).failure).requiredBytes)
+    }
+
+    private data class StoragePreflightResult(val result: LibrarySyncResult, val pulls: Int, val discarded: Boolean, val receipts: List<LibrarySyncReceipt>)
+
+    private suspend fun storagePreflight(
+        assets: List<LibrarySyncAsset>,
+        cachedHashes: Set<String> = emptySet(),
+        availableBytes: Long,
+    ): StoragePreflightResult {
+        val manifest = LibrarySyncManifest(1, "plan", "b".repeat(64), buildJsonObject { }, emptyList(), emptyList(), buildJsonObject { }, buildJsonObject { }, assets)
+        var pulls = 0
+        var discarded = false
+        val receipts = mutableListOf<LibrarySyncReceipt>()
+        val coordinator = LibrarySyncCoordinator(
+            identityProvider = FakeIdentity,
+            clock = LibrarySyncClock { 42 },
+            puller = object : LibrarySyncPuller {
+                override suspend fun manifest(request: LibrarySyncRequest) = PulledManifest(LibrarySyncProtocol.json.encodeToString(LibrarySyncManifest.serializer(), manifest), "a".repeat(64))
+                override suspend fun asset(request: LibrarySyncRequest, asset: LibrarySyncAsset): PulledAsset {
+                    pulls++
+                    return PulledAsset("asset", asset.sha256, asset.size)
+                }
+            },
+            store = object : LibrarySyncStore {
+                override suspend fun prepare(request: LibrarySyncRequest, manifest: LibrarySyncManifest) = Unit
+                override suspend fun isAssetCommitted(planId: String, asset: LibrarySyncAsset) = asset.sha256 in cachedHashes
+                override suspend fun cachedAssetContents() = assets.filter { it.sha256 in cachedHashes }
+                    .map { LibrarySyncAssetContent(it.sha256, it.size) }.toSet()
+                override suspend fun stageAsset(planId: String, asset: LibrarySyncAsset, pulled: PulledAsset) = Unit
+                override suspend fun activate(planId: String) = emptyList<String>()
+                override suspend fun finalize(planId: String) = Unit
+                override suspend fun discard(planId: String) { discarded = true }
+            },
+            receipts = LibrarySyncReceiptPublisher { receipts += LibrarySyncProtocol.json.decodeFromString(LibrarySyncReceipt.serializer(), it) },
+            capacity = LibrarySyncCapacity { availableBytes },
+        )
+        return StoragePreflightResult(coordinator.handle(requestPayload(), PairedDesktop("desktop", "Desktop", ByteArray(32))), pulls, discarded, receipts)
     }
 
     private fun requestPayload(): String {

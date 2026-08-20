@@ -101,6 +101,9 @@
     <string name="sync_notification_progress">Синхронизация: %1$d%%</string>
     <string name="sync_notification_complete">Синхронизация медиатеки завершена</string>
     <string name="sync_notification_failed">Синхронизация медиатеки требует внимания</string>
+    <string name="sync_insufficient_storage_title">Недостаточно места</string>
+    <string name="sync_insufficient_storage_description">Недостаточно места для синхронизации. Требуется %1$s, доступно %2$s.</string>
+    <string name="close">Закрыть</string>
     <string name="playback_notification_channel">Воспроизведение музыки</string>
     <string name="player_previous">Предыдущий</string>
     <string name="player_play">Играть</string>

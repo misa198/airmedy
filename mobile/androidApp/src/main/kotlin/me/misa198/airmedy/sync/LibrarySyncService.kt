@@ -9,8 +9,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.IBinder
+import android.os.storage.StorageManager
 import android.util.Log
 import java.io.File
+import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -34,16 +36,18 @@ import me.misa198.airmedy.pairing.PairingEndpoint
 import me.misa198.airmedy.pairing.PairingPreferences
 import me.misa198.airmedy.pairing.SyncSession
 import me.misa198.airmedy.sync.LibrarySyncClock
+import me.misa198.airmedy.sync.LibrarySyncCapacity
 import me.misa198.airmedy.sync.LibrarySyncCoordinator
 import me.misa198.airmedy.sync.LibrarySyncProtocol
 import me.misa198.airmedy.sync.LibrarySyncReceiptPublisher
 import me.misa198.airmedy.sync.LibrarySyncResult
 import me.misa198.airmedy.sync.LibrarySyncProgressReporter
+import me.misa198.airmedy.sync.LibrarySyncFailure
 
 sealed interface AndroidSyncState {
     data object Idle : AndroidSyncState
     data class Running(val planId: String? = null, val completed: Int = 0, val total: Int = 0) : AndroidSyncState
-    data class Failed(val message: String) : AndroidSyncState
+    data class Failed(val message: String, val requiredBytes: Long? = null, val availableBytes: Long? = null) : AndroidSyncState
     data class Completed(val planId: String) : AndroidSyncState
 }
 
@@ -72,7 +76,9 @@ internal object AndroidSyncRuntime {
     }
 
     fun running(planId: String? = null, completed: Int = 0, total: Int = 0) { _state.value = AndroidSyncState.Running(planId, completed, total) }
-    fun failed(message: String) { _state.value = AndroidSyncState.Failed(message) }
+    fun failed(message: String, requiredBytes: Long? = null, availableBytes: Long? = null) {
+        _state.value = AndroidSyncState.Failed(message, requiredBytes, availableBytes)
+    }
     fun completed(planId: String) { _state.value = AndroidSyncState.Completed(planId) }
     fun idle() { _state.value = AndroidSyncState.Idle }
     /** Reconciliation must never borrow the MQTT session while foreground sync owns it. */
@@ -150,6 +156,7 @@ class LibrarySyncService : Service() {
                 clock = object : LibrarySyncClock { override fun nowMillis(): Long = System.currentTimeMillis() },
                 puller = AndroidLibrarySyncPuller(preferences, applicationContext.filesDir),
                 store = AndroidSyncRuntime.syncStore(),
+                capacity = AndroidLibrarySyncCapacity(applicationContext),
                 receipts = LibrarySyncReceiptPublisher { receipt -> mqtt.publish(LibrarySyncProtocol.receiptTopic(desktop.desktopId, mobileId), receipt) },
                 progress = LibrarySyncProgressReporter { completed, total ->
                     Log.d(LogTag, "Sync progress: $completed/$total assets")
@@ -172,7 +179,8 @@ class LibrarySyncService : Service() {
                 is LibrarySyncResult.Failed -> {
                     val message = "Library sync failed: ${result.failure}"
                     Log.e(LogTag, message)
-                    AndroidSyncRuntime.failed(message)
+                    val storage = result.failure as? LibrarySyncFailure.InsufficientStorage
+                    AndroidSyncRuntime.failed(message, storage?.requiredBytes, storage?.availableBytes)
                     notifyTerminal(getString(R.string.sync_notification_failed))
                 }
             }
@@ -234,6 +242,20 @@ class LibrarySyncService : Service() {
             AndroidSyncRuntime.idle()
         }
     }
+}
+
+internal class AndroidLibrarySyncCapacity(
+    private val filesDir: File,
+    private val uuidForPath: (File) -> UUID,
+    private val allocatableBytes: (UUID) -> Long,
+) : LibrarySyncCapacity {
+    constructor(context: Context) : this(
+        context.filesDir,
+        context.getSystemService(StorageManager::class.java)::getUuidForPath,
+        context.getSystemService(StorageManager::class.java)::getAllocatableBytes,
+    )
+
+    override suspend fun availableBytes(): Long = allocatableBytes(uuidForPath(filesDir))
 }
 
 internal fun releaseMqttSession(session: SyncSession, wasHandedOff: Boolean) {

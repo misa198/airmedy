@@ -482,6 +482,7 @@ class MainActivity : ComponentActivity() {
                     isFullScreenPlayerVisible = visible
                     updateSystemBarAppearance(darkTheme, visible)
                 },
+                onDismissSyncFailure = AndroidSyncRuntime::idle,
             )
         }
     }

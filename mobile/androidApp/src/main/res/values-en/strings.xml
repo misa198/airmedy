@@ -101,6 +101,9 @@
     <string name="sync_notification_progress">Syncing %1$d%%</string>
     <string name="sync_notification_complete">Library sync complete</string>
     <string name="sync_notification_failed">Library sync needs attention</string>
+    <string name="sync_insufficient_storage_title">Not enough storage</string>
+    <string name="sync_insufficient_storage_description">Not enough storage to sync. Needs %1$s; %2$s is currently available.</string>
+    <string name="close">Close</string>
     <string name="playback_notification_channel">Music playback</string>
     <string name="player_previous">Previous</string>
     <string name="player_play">Play</string>

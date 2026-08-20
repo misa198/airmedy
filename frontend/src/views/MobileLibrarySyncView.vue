@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { Events } from '@wailsio/runtime'
 import { ArrowLeft, LoaderCircle, Search, RefreshCcw, X } from '@lucide/vue'
-import { Badge, Checkbox, Input, Radio, TabSwitcher } from '@airmedy/ui'
+import { Badge, Checkbox, Input, Modal, Radio, TabSwitcher } from '@airmedy/ui'
 import { RecycleScroller } from 'vue-virtual-scroller'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import SettingSection from '@/components/settings/SettingSection.vue'
@@ -21,6 +22,7 @@ type PairingStatus = { addresses: { ip: string; kind: string }[] }
 
 const route = useRoute()
 const router = useRouter()
+const { locale, t } = useI18n()
 const deviceID = computed(() => String(route.params.deviceId ?? ''))
 const device = ref<Device | null>(null)
 const plan = ref<MobileLibrarySyncPlan | null>(null)
@@ -33,6 +35,7 @@ const items = ref<Record<ScopeKind, Selectable[]>>({ artists: [], albums: [], ge
 const selected = ref<Record<ScopeKind, Set<string>>>({ artists: new Set(), albums: new Set(), genres: new Set(), playlists: new Set() })
 const host = ref('')
 const replaceOpen = ref(false)
+const storageError = ref<{ requiredBytes: number; availableBytes: number } | null>(null)
 const { rowBg } = useRowBackground()
 let offPairing: (() => void) | null = null
 let offSync: (() => void) | null = null
@@ -50,6 +53,11 @@ const progressPercent = computed(() => {
   if (!plan.value || plan.value.total <= 0) return 0
   return Math.floor((plan.value.completed / plan.value.total) * 100)
 })
+function formatBytes(bytes: number) {
+  return new Intl.NumberFormat(locale.value, {
+    style: 'unit', unit: 'megabyte', unitDisplay: 'short', maximumFractionDigits: 1,
+  }).format(bytes / 1024 ** 2)
+}
 
 function sameScope() {
   if (!plan.value || plan.value.status !== 'active') return false
@@ -97,6 +105,9 @@ function applyPlanUpdate(updated: MobileLibrarySyncPlan) {
     if (updated.completed < current.completed) return
   }
   plan.value = updated
+  if (updated.error_code === 'insufficient_storage' && updated.required_bytes != null && updated.available_bytes != null) {
+    storageError.value = { requiredBytes: updated.required_bytes, availableBytes: updated.available_bytes }
+  }
   if (updated.status !== 'active') stopPolling()
 }
 
@@ -110,7 +121,7 @@ async function load() {
     device.value = (devices ?? []).find(entry => entry?.device_id === deviceID.value) ?? null
     const network = pairing as PairingStatus
     host.value = network.addresses?.find(address => address.kind === 'ethernet' || address.kind === 'wifi')?.ip ?? network.addresses?.[0]?.ip ?? ''
-    plan.value = status
+    if (status) applyPlanUpdate(status)
     if (plan.value?.status === 'active') {
       startPolling()
     }
@@ -142,6 +153,7 @@ async function sync(replace = false) {
   if (!canSync.value || !host.value) return
   if (!replace && plan.value?.status === 'active' && !sameScope()) { replaceOpen.value = true; return }
   syncing.value = true
+  storageError.value = null
   try {
     plan.value = await MobileLibrarySyncService.Sync(deviceID.value, currentScope.value, host.value, replace)
     if (plan.value?.status === 'active') {
@@ -235,7 +247,7 @@ onUnmounted(() => {
           </label>
         </div>
       </div>
-      <div v-if="plan" class="mt-5 border-t border-foreground/[0.06] pt-4">
+      <div v-if="plan && plan.error_code !== 'insufficient_storage'" class="mt-5 border-t border-foreground/[0.06] pt-4">
         <div class="flex items-baseline justify-between gap-4">
           <p class="text-sm font-medium">{{ plan.status === 'complete' ? $t('mobile_sync.complete') :
             $t('mobile_sync.pending') }}</p>
@@ -291,5 +303,21 @@ onUnmounted(() => {
     <ConfirmDialog :open="replaceOpen" :title="$t('mobile_sync.replace_title')"
       :message="$t('mobile_sync.replace_desc')" :confirm-label="$t('mobile_sync.replace')" danger
       @cancel="replaceOpen = false" @confirm="sync(true)" />
+    <Modal width-class="w-[30rem]" :open="!!storageError" :title="t('mobile_sync.insufficient_storage_title')" @close="storageError = null">
+      <p data-testid="storage-error-message" class="text-sm leading-relaxed text-foreground/70">
+        {{ storageError ? t('mobile_sync.insufficient_storage_description', {
+          required: formatBytes(storageError.requiredBytes), available: formatBytes(storageError.availableBytes),
+        }) : '' }}
+      </p>
+      <template #footer>
+        <div class="flex justify-end">
+          <button data-testid="storage-error-close" type="button"
+            class="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-all hover:scale-[1.02]"
+            @click="storageError = null">
+            {{ t('common.close') }}
+          </button>
+        </div>
+      </template>
+    </Modal>
   </main>
 </template>

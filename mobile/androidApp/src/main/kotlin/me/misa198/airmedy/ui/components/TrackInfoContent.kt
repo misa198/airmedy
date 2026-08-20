@@ -159,7 +159,7 @@ internal fun trackInfoMaxContentHeight(availableHeight: Dp, topInset: Dp): Dp =
     (availableHeight - topInset - 8.dp).coerceAtLeast(0.dp)
 
 internal fun formatFileSize(bytes: Long): String {
-    if (bytes <= 0) return ""
+    if (bytes <= 0) return "0 B"
     val units = listOf("B", "KB", "MB", "GB")
     var size = bytes.toDouble()
     var unit = 0

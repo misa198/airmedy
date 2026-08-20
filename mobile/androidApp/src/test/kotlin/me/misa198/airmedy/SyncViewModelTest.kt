@@ -25,6 +25,7 @@ import me.misa198.airmedy.pairing.SyncSession
 import me.misa198.airmedy.pairing.TransportResult
 import me.misa198.airmedy.pairing.TrustedDesktopDiscovery
 import me.misa198.airmedy.sync.AndroidSyncRuntime
+import me.misa198.airmedy.sync.AndroidSyncState
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -161,6 +162,18 @@ class SyncViewModelTest {
 
         assertEquals(0, beforeUnpairCalls)
         assertEquals(desktop, bindings.current())
+    }
+
+    @Test
+    fun exposesInsufficientStorageByteCounts() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val viewModel = SyncViewModel(useCase(FakeBindings(null)), FakeSyncSession(), FakeDiscovery())
+        advanceUntilIdle()
+
+        AndroidSyncRuntime.failed("storage", requiredBytes = 12, availableBytes = 0)
+        advanceUntilIdle()
+
+        assertEquals(AndroidSyncState.Failed("storage", 12, 0), viewModel.uiState.value.librarySync)
     }
 
     private fun useCase(bindings: FakeBindings) = MobilePairingUseCase(

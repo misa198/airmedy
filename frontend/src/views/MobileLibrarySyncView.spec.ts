@@ -52,12 +52,16 @@ import MobileLibrarySyncView from './MobileLibrarySyncView.vue'
 const activePlan = { id: 'plan-1', device_id: 'device-1', status: 'active', completed: 0, total: 4, scope: { kind: 'all', selected_ids: [] } }
 
 function mountView() {
-  const i18n = createI18n({ legacy: false, locale: 'en', messages: { en: {} }, missingWarn: false, fallbackWarn: false })
+  const i18n = createI18n({ legacy: false, locale: 'en', messages: { en: {
+    common: { close: 'Close' },
+    mobile_sync: { insufficient_storage_title: 'Not enough storage', insufficient_storage_description: 'Needs {required}; {available} available.' },
+  } }, missingWarn: false, fallbackWarn: false })
   return mount(MobileLibrarySyncView, {
     global: {
       plugins: [i18n],
       stubs: {
         Badge: true, Checkbox: true, ConfirmDialog: true, IconButton: true, Input: true,
+        Modal: { props: ['open', 'title'], template: '<div v-if="open"><h2>{{ title }}</h2><slot /><slot name="footer" /></div>' },
         Radio: true, RecycleScroller: { props: ['items'], template: '<div><slot v-for="(item, index) in items" :item="item" :index="index" /></div>' }, SettingSection: { template: '<section><slot /></section>' }, TabSwitcher: true,
       },
     },
@@ -168,6 +172,38 @@ describe('MobileLibrarySyncView', () => {
     await flushPromises()
 
     expect(wrapper.get('main').classes()).toEqual(expect.arrayContaining(['max-w-3xl', 'p-8']))
+    wrapper.unmount()
+  })
+
+  it('opens a storage error from GetStatus, hides progress, and allows Sync after close', async () => {
+    getStatus.mockResolvedValue({
+      ...activePlan, status: 'superseded', error_code: 'insufficient_storage',
+      required_bytes: 2_000_000_000, available_bytes: 1_000_000_000,
+    })
+    const wrapper = mountView()
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="storage-error-message"]').text()).toContain('1,907.3 MB')
+    expect(wrapper.get('[data-testid="storage-error-message"]').text()).toContain('953.7 MB')
+    expect(wrapper.text()).not.toContain('0%')
+    expect(wrapper.get('[data-testid="sync-button"]').attributes('disabled')).toBeUndefined()
+    await wrapper.get('[data-testid="storage-error-close"]').trigger('click')
+    expect(wrapper.find('[data-testid="storage-error-message"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('opens a storage error from the realtime event and stops polling', async () => {
+    getStatus.mockResolvedValue(activePlan)
+    const wrapper = mountView()
+    await flushPromises()
+
+    eventHandlers.get('mobile-library-sync:updated')!({ data: {
+      ...activePlan, status: 'superseded', error_code: 'insufficient_storage', required_bytes: 12, available_bytes: 0,
+    } })
+    await vi.advanceTimersByTimeAsync(1_000)
+
+    expect(wrapper.find('[data-testid="storage-error-message"]').exists()).toBe(true)
+    expect(getStatus).toHaveBeenCalledTimes(1)
     wrapper.unmount()
   })
 
