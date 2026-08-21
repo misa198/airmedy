@@ -1,11 +1,22 @@
 package me.misa198.airmedy.player
 
 import java.io.File
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import me.misa198.airmedy.sync.LibraryTrack
 
 class AndroidPlaybackRuntimeTest {
+    @Test
+    fun `keeps every artist from playback metadata`() {
+        val metadata = Json.parseToJsonElement(
+            """{"artists":[{"name":"Artist A"},{"name":"Artist B"}]}""",
+        ) as JsonObject
+
+        assertEquals("Artist A, Artist B", playbackArtistNames(metadata, "Artist A"))
+    }
+
     @Test
     fun `resolves synced relative audio path under app files directory`() {
         val filesDir = File("/data/user/0/me.misa198.airmedy/files")
