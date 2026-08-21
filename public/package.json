@@ -1,6 +1,5 @@
 {
-  "name": "@airmedy/public",
-  "private": true,
+  "name": "public",
   "version": "0.0.0",
   "type": "module",
   "scripts": {

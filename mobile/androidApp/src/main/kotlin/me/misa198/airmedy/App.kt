@@ -651,3 +651,4 @@ internal fun formatSyncStorageMegabytes(bytes: Long): String = "%,.1f MB".format
 private fun AppPreview() {
     App()
 }
+
