@@ -65,6 +65,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -1061,6 +1062,10 @@ private fun FullScreenPlayerSwipeTarget(
 ) {
     val density = LocalDensity.current
     val hapticFeedback = LocalHapticFeedback.current
+    val latestOnPrevious by rememberUpdatedState(onPrevious)
+    val latestOnNext by rememberUpdatedState(onNext)
+    val latestCanNavigatePrevious by rememberUpdatedState(canNavigatePrevious)
+    val latestCanNavigateNext by rememberUpdatedState(canNavigateNext)
     val maximumOffsetPx = with(density) { FullScreenPlayerSwipeMaximum.toPx() }
     val thresholdPx = with(density) { FullScreenPlayerSwipeThreshold.toPx() }
     val velocityMinimumPx = with(density) { FullScreenPlayerSwipeVelocityMinimum.toPx() }
@@ -1071,7 +1076,7 @@ private fun FullScreenPlayerSwipeTarget(
             .pointerInput(maximumOffsetPx, thresholdPx, velocityMinimumPx) {
                 detectHorizontalDragGestures(
                     onDragStart = {
-                        swipeState.dragOffset = displayedOffset
+                        swipeState.dragOffset = 0f
                         swipeState.gestureHorizontalOffset = 0f
                         swipeState.verticalDragOffset = 0f
                         swipeState.dragStartedAtMs = android.os.SystemClock.uptimeMillis()
@@ -1079,7 +1084,7 @@ private fun FullScreenPlayerSwipeTarget(
                     },
                     onHorizontalDrag = { change, dragAmount ->
                         swipeState.gestureHorizontalOffset += dragAmount
-                        swipeState.dragOffset = (displayedOffset + swipeState.gestureHorizontalOffset)
+                        swipeState.dragOffset = swipeState.gestureHorizontalOffset
                             .coerceIn(-maximumOffsetPx, maximumOffsetPx)
                         change.consume()
                     },
@@ -1109,10 +1114,14 @@ private fun FullScreenPlayerSwipeTarget(
 
                         if (
                             shouldChangeTrack &&
-                            canDispatchQueueSwipe(swipeDirection, canNavigatePrevious, canNavigateNext)
+                            canDispatchQueueSwipe(
+                                swipeDirection,
+                                latestCanNavigatePrevious,
+                                latestCanNavigateNext,
+                            )
                         ) {
                             hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
-                            if (swipeDirection < 0) onNext() else onPrevious()
+                            if (swipeDirection < 0) latestOnNext() else latestOnPrevious()
                         }
                     },
                 )

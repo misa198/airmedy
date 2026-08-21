@@ -133,8 +133,9 @@ stack, the shell resets that page's query before it can be opened again.
 
 `PlaybackState.showsMiniPlayer()` determines whether chrome shows the mini
 player. The mini player and fullscreen player render the state published by the
-service, so neither has local shadow state for transport or queue. Fullscreen
-seek has an optimistic pending position but must reconcile confirmed state using
+service, so neither has local shadow state for transport or queue. Their swipe
+handlers read the latest queue availability and transport callbacks after recomposition.
+Fullscreen seek has an optimistic pending position but must reconcile confirmed state using
 `hasConfirmedSeekPosition`. The queue renders active order; a tap dispatches
 select and drag commits the entire ordered-ID list through `reorderQueue`, never
 by editing the snapshot.

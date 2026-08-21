@@ -123,7 +123,7 @@ tasks:
       - bash scripts/bump-mobile-version.sh {{.VERSION}}
 
   bump-download-version:
-    summary: "Bumps the download version in public/config.json. Usage: task bump-download-version VERSION=0.0.12"
+    summary: "Bumps the download version in public/static/config.json. Usage: task bump-download-version VERSION=0.0.12"
     cmds:
       - bash scripts/bump-download-version.sh {{.VERSION}}
 

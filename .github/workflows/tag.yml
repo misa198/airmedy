@@ -65,7 +65,7 @@ jobs:
               'build/windows/wails.exe.manifest',
               'frontend/package.json',
               'internal/app/config/meta.go',
-              'public/config.json',
+              'public/static/config.json',
             ]
             const { owner, repo } = context.repo
             const ref = await github.rest.git.getRef({ owner, repo, ref: 'heads/master' })

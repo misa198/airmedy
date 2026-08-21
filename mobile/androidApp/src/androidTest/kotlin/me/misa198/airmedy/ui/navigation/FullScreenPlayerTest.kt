@@ -24,6 +24,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
+import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.unit.dp
 import me.misa198.airmedy.player.PlaybackItem
@@ -197,6 +198,51 @@ class FullScreenPlayerTest {
             swipeDown()
         }
         composeTestRule.runOnIdle { assertEquals(1, dismissCount) }
+    }
+
+    @Test
+    fun swipeUsesTheLatestQueueNavigationAvailabilityAndCallback() {
+        var queue by mutableStateOf(PlaybackQueueSnapshot())
+        var callbackGeneration by mutableStateOf(1)
+        var invokedGeneration: Int? = null
+        composeTestRule.setContent {
+            val onNext = if (callbackGeneration == 1) {
+                { invokedGeneration = 1 }
+            } else {
+                { invokedGeneration = 2 }
+            }
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenPlayer(
+                    visible = true,
+                    dragProgress = 0f,
+                    isDragging = false,
+                    openingFromMiniPlayerSwipe = false,
+                    playbackState = PlaybackState.Playing(item, 0L, 120_000L),
+                    queue = queue,
+                    volume = 0.5f,
+                    onSeek = {},
+                    onVolumeChange = {},
+                    onPrevious = {},
+                    onPlayPause = {},
+                    onNext = onNext,
+                    onOpenMediaOutputSwitcher = {},
+                    onDismiss = {},
+                )
+            }
+        }
+
+        composeTestRule.runOnIdle {
+            queue = PlaybackQueueSnapshot(
+                originalTrackIds = listOf(item.trackId, secondItem.trackId),
+                activeTrackIds = listOf(item.trackId, secondItem.trackId),
+                currentIndex = 0,
+            )
+            callbackGeneration = 2
+        }
+        composeTestRule.onNodeWithTag("full_screen_player_artwork_swipe_target")
+            .performTouchInput { swipeLeft() }
+
+        composeTestRule.runOnIdle { assertEquals(2, invokedGeneration) }
     }
 
     @Test
