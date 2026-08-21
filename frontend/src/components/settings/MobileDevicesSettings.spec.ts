@@ -2,11 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
 
-const { getStatus, getTrustedDevices, getSyncStatus, on, revokeDevice, startBroadcast, stopBroadcast } = vi.hoisted(() => ({
+const { getStatus, getTrustedDevices, getSyncStatus, on, openURL, revokeDevice, startBroadcast, stopBroadcast } = vi.hoisted(() => ({
   getStatus: vi.fn(),
   getTrustedDevices: vi.fn(),
   getSyncStatus: vi.fn(),
   on: vi.fn((_event: string, _listener: () => void) => vi.fn()),
+  openURL: vi.fn(),
   revokeDevice: vi.fn(),
   startBroadcast: vi.fn(),
   stopBroadcast: vi.fn(),
@@ -19,7 +20,6 @@ vi.mock('../../../bindings/airmedy/internal/infra/wails/mobilepairingservice', (
   StartBroadcast: startBroadcast,
   StopBroadcast: stopBroadcast,
 }))
-const openURL = vi.fn()
 vi.mock('@wailsio/runtime', () => ({ Browser: { OpenURL: openURL }, Events: { On: on } }))
 vi.mock('../../../bindings/airmedy/internal/infra/wails/mobilelibrarysyncservice', () => ({ GetStatus: getSyncStatus }))
 
