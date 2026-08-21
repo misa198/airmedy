@@ -25,6 +25,7 @@ vi.mock('@wailsio/runtime', () => ({
   Window: {
     IsFullscreen: vi.fn().mockResolvedValue(false),
     IsMaximised: vi.fn().mockResolvedValue(false),
+    ToggleFullscreen: vi.fn().mockResolvedValue(undefined),
   }
 }))
 
@@ -75,5 +76,14 @@ describe('useDeviceStore', () => {
     expect(store.isMac).toBe(false)
     expect(store.isWindows).toBe(false)
     expect(store.isLinux).toBe(true)
+  })
+
+  it('toggles the native window fullscreen state', async () => {
+    const { Window } = await import('@wailsio/runtime')
+    const store = useDeviceStore()
+
+    await store.toggleFullscreen()
+
+    expect(Window.ToggleFullscreen).toHaveBeenCalledOnce()
   })
 })

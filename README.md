@@ -121,6 +121,7 @@ Airmedy Mobile is an Android-first companion app, built with native Jetpack Comp
 | `Ctrl/Cmd + S`       | Shuffle toggle    |
 | `Ctrl/Cmd + R`       | Cycle repeat mode |
 | `Ctrl/Cmd + F`       | Go to search      |
+| `Ctrl + Cmd + F` (macOS), `Ctrl + Alt + F` (Windows) | Toggle fullscreen |
 | `Ctrl/Cmd + ,`       | Open settings     |
 
 ---
