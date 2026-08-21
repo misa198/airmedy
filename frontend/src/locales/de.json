@@ -270,6 +270,7 @@
       "retry": "Retry",
       "scan_title": "Scan to pair",
       "scan_desc": "Choose the network address your phone can reach, then scan the QR code in the Airmedy mobile app.",
+      "sync_help": "Erfahren Sie, wie Sie sich verbinden",
       "copy_qr": "Copy pairing link",
       "trusted_title": "Trusted devices",
       "no_devices": "No mobile devices have been paired yet.",

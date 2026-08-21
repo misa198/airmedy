@@ -80,6 +80,7 @@
     <string name="sync_paired_device_description">此手机一次只能连接一台电脑。在配对新电脑之前，请先解除绑定。</string>
     <string name="sync_ready_to_connect_description">准备连接。在电脑上的 Airmedy 中启动广播，此界面将自动连接。</string>
     <string name="sync_revoke">解除绑定</string>
+    <string name="sync_help">了解如何连接</string>
     <string name="sync_waiting_title">等待桌面端确认</string>
     <string name="sync_waiting_description">请在电脑端的 Airmedy 应用中同意连接请求。</string>
     <string name="sync_camera_required">扫描桌面端二维码需要相机权限。</string>

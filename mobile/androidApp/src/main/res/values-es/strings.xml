@@ -80,6 +80,7 @@
     <string name="sync_paired_device_description">Este teléfono solo puede conectarse a un escritorio a la vez. Desvincúlalo antes de emparejar uno nuevo.</string>
     <string name="sync_ready_to_connect_description">Listo para conectar. Inicia la transmisión en Airmedy en tu escritorio; esta pantalla se conectará automáticamente.</string>
     <string name="sync_revoke">Desvincular</string>
+    <string name="sync_help">Aprende a conectarte</string>
     <string name="sync_waiting_title">Esperando aprobación del escritorio</string>
     <string name="sync_waiting_description">Aprueba este teléfono en la aplicación de escritorio de Airmedy.</string>
     <string name="sync_camera_required">Se requiere acceso a la cámara para escanear el código QR del escritorio.</string>

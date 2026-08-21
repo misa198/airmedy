@@ -80,6 +80,7 @@
     <string name="sync_paired_device_description">โทรศัพท์นี้สามารถเชื่อมต่อกับเดสก์ท็อปได้ทีละเครื่องเท่านั้น ยกเลิกการเชื่อมต่อก่อนจับคู่เครื่องใหม่</string>
     <string name="sync_ready_to_connect_description">พร้อมเชื่อมต่อแล้ว เริ่มการแพร่สัญญาณใน Airmedy บนเดสก์ท็อปของคุณ หน้าจอนี้จะเชื่อมต่อโดยอัตโนมัติ</string>
     <string name="sync_revoke">ยกเลิก</string>
+    <string name="sync_help">เรียนรู้วิธีเชื่อมต่อ</string>
     <string name="sync_waiting_title">กำลังรอการอนุมัติจากเดสก์ท็อป</string>
     <string name="sync_waiting_description">อนุมัติโทรศัพท์นี้ในแอป Airmedy บนเดสก์ท็อป</string>
     <string name="sync_camera_required">ต้องได้รับอนุญาตให้ใช้กล้องเพื่อสแกนรหัส QR บนเดสก์ท็อป</string>

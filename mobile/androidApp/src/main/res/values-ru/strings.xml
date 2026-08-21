@@ -80,6 +80,7 @@
     <string name="sync_paired_device_description">Этот телефон может быть подключен только к одному компьютеру. Отключите его перед привязкой нового.</string>
     <string name="sync_ready_to_connect_description">Готово к подключению. Запустите трансляцию в Airmedy на компьютере, и экран подключится автоматически.</string>
     <string name="sync_revoke">Отозвать</string>
+    <string name="sync_help">Узнайте, как подключиться</string>
     <string name="sync_waiting_title">Ожидание подтверждения на компьютере</string>
     <string name="sync_waiting_description">Подтвердите подключение телефона в приложении Airmedy на компьютере.</string>
     <string name="sync_camera_required">Для сканирования QR-кода необходим доступ к камере.</string>

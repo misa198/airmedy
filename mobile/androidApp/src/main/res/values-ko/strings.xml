@@ -80,6 +80,7 @@
     <string name="sync_paired_device_description">이 휴대전화는 한 번에 하나의 데스크톱에만 연결할 수 있습니다. 새 데스크톱을 페어링하기 전에 먼저 연결을 해제하세요.</string>
     <string name="sync_ready_to_connect_description">연결 준비가 완료되었습니다. 데스크톱의 Airmedy에서 브로드캐스트를 시작하면 이 화면에서 자동으로 연결됩니다.</string>
     <string name="sync_revoke">연결 해제</string>
+    <string name="sync_help">연결 방법 알아보기</string>
     <string name="sync_waiting_title">데스크톱 승인 대기 중</string>
     <string name="sync_waiting_description">데스크톱의 Airmedy 앱에서 이 휴대전화를 승인하세요.</string>
     <string name="sync_camera_required">데스크톱 QR 코드를 스캔하려면 카메라 접근 권한이 필요합니다.</string>

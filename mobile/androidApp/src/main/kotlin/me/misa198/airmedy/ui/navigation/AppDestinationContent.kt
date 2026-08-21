@@ -389,6 +389,7 @@ internal fun AppDestinationContent(
                             AppStackPage.SettingsSync -> SyncContent(
                                 syncUiState = syncUiState,
                                 onUnpair = onUnpair,
+                                onOpenExternalUrl = { url -> onIntent(AppIntent.OpenExternalUrl(url)) },
                                 onScreenVisible = onSyncScreenVisible,
                                 onScreenHidden = onSyncScreenHidden,
                                 modifier = settingsPageModifier,

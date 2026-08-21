@@ -12,6 +12,7 @@ import me.misa198.airmedy.ui.theme.AirmedyTheme
 import me.misa198.airmedy.sync.AndroidSyncState
 import org.junit.Rule
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class SyncContentTest {
     @get:Rule
@@ -115,5 +116,19 @@ class SyncContentTest {
 
         composeTestRule.onNodeWithText("100%").assertIsDisplayed()
         composeTestRule.onNodeWithText("Library sync complete").assertIsDisplayed()
+    }
+
+    @Test
+    fun mobileSyncHelpOpensTheFaq() {
+        var openedUrl: String? = null
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                SyncContent(syncUiState = SyncUiState(), onUnpair = {}, onOpenExternalUrl = { openedUrl = it })
+            }
+        }
+
+        composeTestRule.onNodeWithText("Learn how to connect").performClick()
+
+        assertEquals("https://airmedy.pages.dev/faq/mobile-sync", openedUrl)
     }
 }

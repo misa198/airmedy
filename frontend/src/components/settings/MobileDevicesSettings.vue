@@ -2,8 +2,8 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { Events } from '@wailsio/runtime'
-import { LoaderCircle, MoreHorizontal, Radio, RefreshCw, ShieldCheck, Smartphone, Trash2, Wifi, X } from '@lucide/vue'
+import { Browser, Events } from '@wailsio/runtime'
+import { ChevronRight, CircleHelp, LoaderCircle, MoreHorizontal, Radio, RefreshCw, ShieldCheck, Smartphone, Trash2, Wifi, X } from '@lucide/vue'
 import QRCodeStyling from 'qr-code-styling'
 import { Badge } from '@airmedy/ui'
 import * as MobilePairingService from '../../../bindings/airmedy/internal/infra/wails/mobilepairingservice'
@@ -35,6 +35,7 @@ let offBroadcastChanged: (() => void) | null = null
 let offMobileSyncUpdated: (() => void) | null = null
 let broadcastTimer: ReturnType<typeof setInterval> | null = null
 const deviceContextMenu = useContextMenu()
+const mobileSyncHelpURL = 'https://airmedy.pages.dev/faq/mobile-sync'
 
 const usableAddresses = computed(() => status.value?.addresses ?? [])
 const isBroadcasting = computed(() => !!status.value?.broadcasting)
@@ -140,6 +141,10 @@ function openSync(device: TrustedDevice) {
   void router?.push(`/settings/mobile-devices/${device.device_id}/sync`)
 }
 
+function openMobileSyncHelp() {
+  void Browser.OpenURL(mobileSyncHelpURL)
+}
+
 function platformLabel(platform: string) {
   switch (platform.toLowerCase()) {
     case 'android': return 'Android'
@@ -193,7 +198,13 @@ onUnmounted(() => {
   <div class="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
     <SettingSection v-if="status?.running" :icon="Wifi" :label="t('settings.mobile_pairing.scan_title')">
       <div class="flex items-center justify-between gap-4 p-5">
-        <p class="text-xs text-dim">{{ t('settings.mobile_pairing.scan_desc') }}</p>
+        <div class="min-w-0">
+          <p class="text-xs text-dim">{{ t('settings.mobile_pairing.scan_desc') }}</p>
+          <button data-testid="mobile-sync-help" type="button" class="mt-3 flex items-center gap-2 text-xs text-dim transition-opacity cursor-pointer hover:opacity-100 hover:underline" @click="openMobileSyncHelp">
+            <CircleHelp class="size-4 shrink-0" />
+            <span class="underline-offset-2">{{ t('settings.mobile_pairing.sync_help') }}</span>
+          </button>
+        </div>
         <button class="rounded-lg p-2 text-dim transition-all hover:bg-foreground/[0.04] hover:opacity-70" :disabled="loading" :aria-label="t('settings.mobile_pairing.scan_title')" @click="load"><RefreshCw class="size-4" :class="{ 'animate-spin': loading }" /></button>
       </div>
       <NetworkAddressList :entries="networkEntries" :model-value="selectedIP" :show-copy="false" @update:model-value="selectedIP = $event" />

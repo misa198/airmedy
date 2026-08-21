@@ -80,6 +80,7 @@
     <string name="sync_paired_device_description">Dieses Smartphone kann jeweils nur mit einem Desktop-Gerät verbunden sein. Trennen Sie es, bevor Sie ein neues koppeln.</string>
     <string name="sync_ready_to_connect_description">Bereit zum Verbinden. Starten Sie das Senden in Airmedy auf Ihrem Desktop; dieser Bildschirm verbindet sich automatisch.</string>
     <string name="sync_revoke">Trennen</string>
+    <string name="sync_help">Erfahren Sie, wie Sie sich verbinden</string>
     <string name="sync_waiting_title">Warten auf Desktop-Genehmigung</string>
     <string name="sync_waiting_description">Bestätigen Sie dieses Smartphone in der Airmedy Desktop-App.</string>
     <string name="sync_camera_required">Kamerazugriff ist erforderlich, um den Desktop-QR-Code zu scannen.</string>

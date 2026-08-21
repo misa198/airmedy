@@ -270,6 +270,7 @@
       "retry": "Thử lại",
       "scan_title": "Quét để ghép nối",
       "scan_desc": "Chọn địa chỉ mạng điện thoại có thể truy cập, sau đó quét mã QR trong ứng dụng Airmedy mobile.",
+      "sync_help": "Tìm hiểu cách kết nối",
       "copy_qr": "Sao chép liên kết ghép nối",
       "trusted_title": "Thiết bị tin cậy",
       "no_devices": "Chưa có thiết bị di động nào được ghép nối.",

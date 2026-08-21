@@ -94,6 +94,9 @@ While a device has an active mobile-library sync plan, its Delete action is
 disabled in both the row actions and context menu; the panel refreshes this
 state on `mobile-library-sync:updated`.
 
+The pairing QR guidance includes a theme-safe FAQ link (`?`, underlined label,
+and chevron) that opens the Mobile Sync FAQ in the system browser.
+
 ### Cached Route Data Refresh
 
 `MainLayout` and entity explorer routes use `KeepAlive` to preserve UI state.

@@ -80,6 +80,7 @@
     <string name="sync_paired_device_description">Questo telefono può connettersi a un desktop alla volta. Revocalo prima di associarne uno nuovo.</string>
     <string name="sync_ready_to_connect_description">Pronto per la connessione. Avvia la trasmissione in Airmedy sul desktop; questa schermata si connetterà automaticamente.</string>
     <string name="sync_revoke">Revoca</string>
+    <string name="sync_help">Scopri come connetterti</string>
     <string name="sync_waiting_title">In attesa dell\'approvazione del desktop</string>
     <string name="sync_waiting_description">Approva questo telefono nell\'app desktop di Airmedy.</string>
     <string name="sync_camera_required">L\'accesso alla fotocamera è necessario per scansionare il codice QR.</string>

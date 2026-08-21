@@ -35,15 +35,21 @@ import me.misa198.airmedy.sync.AndroidSyncState
 import me.misa198.airmedy.ui.components.AirmedyDialog
 import me.misa198.airmedy.ui.components.AirmedyPillButton
 import me.misa198.airmedy.ui.components.AirmedyPillButtonVariant
+import me.misa198.airmedy.ui.components.ActionList
+import me.misa198.airmedy.ui.components.ActionListContainerStyle
+import me.misa198.airmedy.ui.components.ActionListItem
 import me.misa198.airmedy.ui.components.Card
 import me.misa198.airmedy.ui.components.HeroCard
 import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
+private const val MobileSyncHelpUrl = "https://airmedy.pages.dev/faq/mobile-sync"
+
 @Composable
 internal fun SyncContent(
     syncUiState: SyncUiState,
     onUnpair: () -> Unit,
+    onOpenExternalUrl: (String) -> Unit = {},
     onScreenVisible: () -> Unit = {},
     onScreenHidden: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -101,6 +107,17 @@ internal fun SyncContent(
                 color = colors.textMuted,
             )
         }
+        Spacer(modifier = Modifier.height(24.dp))
+        ActionList(
+            items = listOf(
+                ActionListItem(
+                    labelRes = R.string.sync_help,
+                    leadingSymbol = MaterialSymbols.Info,
+                    onClick = { onOpenExternalUrl(MobileSyncHelpUrl) },
+                ),
+            ),
+            containerStyle = ActionListContainerStyle.Card,
+        )
         SyncProgressCard(
             syncState = syncUiState.librarySync,
         )
@@ -188,7 +205,7 @@ private fun SyncProgressCard(
     val percentageText = progressFloat?.let { "${(it * 100).toInt()}%" }
 
     Column(modifier = modifier) {
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
         Card(
             contentPadding = PaddingValues(20.dp),
         ) {

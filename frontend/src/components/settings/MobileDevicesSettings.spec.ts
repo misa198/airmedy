@@ -19,7 +19,8 @@ vi.mock('../../../bindings/airmedy/internal/infra/wails/mobilepairingservice', (
   StartBroadcast: startBroadcast,
   StopBroadcast: stopBroadcast,
 }))
-vi.mock('@wailsio/runtime', () => ({ Events: { On: on } }))
+const openURL = vi.fn()
+vi.mock('@wailsio/runtime', () => ({ Browser: { OpenURL: openURL }, Events: { On: on } }))
 vi.mock('../../../bindings/airmedy/internal/infra/wails/mobilelibrarysyncservice', () => ({ GetStatus: getSyncStatus }))
 
 import MobileDevicesSettings from './MobileDevicesSettings.vue'
@@ -67,6 +68,7 @@ function mountSettings() {
 
 describe('MobileDevicesSettings', () => {
   beforeEach(() => {
+    openURL.mockReset()
     getStatus.mockResolvedValue({ running: false, addresses: [], broadcasting: false, broadcasting_until: '' })
     getTrustedDevices.mockReset()
     getSyncStatus.mockResolvedValue(null)
@@ -150,5 +152,15 @@ describe('MobileDevicesSettings', () => {
     expect(menu.props('items')).toEqual(expect.arrayContaining([
       expect.objectContaining({ label: 'Delete', disabled: true }),
     ]))
+  })
+
+  it('opens the mobile sync FAQ from the pairing guidance', async () => {
+    getStatus.mockResolvedValue({ running: true, addresses: [], broadcasting: false, broadcasting_until: '' })
+    const wrapper = mountSettings()
+    await flushPromises()
+
+    await wrapper.get('[data-testid="mobile-sync-help"]').trigger('click')
+
+    expect(openURL).toHaveBeenCalledWith('https://airmedy.pages.dev/faq/mobile-sync')
   })
 })

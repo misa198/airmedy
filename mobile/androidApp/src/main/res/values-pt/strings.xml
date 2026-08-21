@@ -80,6 +80,7 @@
     <string name="sync_paired_device_description">Este telemóvel só pode estar ligado a um computador de cada vez. Revogue-o antes de emparelhar um novo.</string>
     <string name="sync_ready_to_connect_description">Pronto para ligar. Inicie a transmissão no Airmedy no seu computador; este ecrã ligar-se-á automaticamente.</string>
     <string name="sync_revoke">Revogar</string>
+    <string name="sync_help">Saiba como conectar</string>
     <string name="sync_waiting_title">A aguardar aprovação do computador</string>
     <string name="sync_waiting_description">Aprove este telemóvel na aplicação de ambiente de trabalho do Airmedy.</string>
     <string name="sync_camera_required">O acesso à câmara é necessário para ler o código QR do computador.</string>

@@ -80,6 +80,7 @@
     <string name="sync_paired_device_description">Ce téléphone ne peut être connecté qu\'à un seul ordinateur à la fois. Révoquez-le avant d\'en associer un nouveau.</string>
     <string name="sync_ready_to_connect_description">Prêt pour la connexion. Lancez la diffusion dans Airmedy sur votre ordinateur ; cet écran se connectera automatiquement.</string>
     <string name="sync_revoke">Révoquer</string>
+    <string name="sync_help">Découvrez comment vous connecter</string>
     <string name="sync_waiting_title">En attente de l\'approbation de l\'ordinateur</string>
     <string name="sync_waiting_description">Approuvez ce téléphone dans l\'application de bureau Airmedy.</string>
     <string name="sync_camera_required">L\'accès à l\'appareil photo est requis pour scanner le code QR du bureau.</string>
