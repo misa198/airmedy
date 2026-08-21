@@ -74,6 +74,12 @@ const handleKeyDown = (e: KeyboardEvent) => {
   } else if (ctrlKey && e.key.toLowerCase() === 'r') {
     e.preventDefault()
     playerStore.cycleRepeat()
+  } else if (
+    (isMac && e.ctrlKey && e.metaKey && e.key.toLowerCase() === 'f') ||
+    (deviceStore.isWindows && e.ctrlKey && e.altKey && e.key.toLowerCase() === 'f')
+  ) {
+    e.preventDefault()
+    deviceStore.toggleFullscreen()
   } else if (ctrlKey && e.key.toLowerCase() === 'f') {
     e.preventDefault()
     router.push('/search')
