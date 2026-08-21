@@ -82,15 +82,19 @@ optgroup {
 body {
   background-color: var(--bg-main);
   color: var(--text-main);
-  display: flex;
   line-height: 1.6;
-  flex-direction: column;
   min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   transition:
     background-color 0.3s ease,
     color 0.3s ease;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
 main {
