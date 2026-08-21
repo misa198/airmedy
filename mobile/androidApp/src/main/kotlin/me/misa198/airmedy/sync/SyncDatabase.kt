@@ -219,6 +219,10 @@ internal interface SyncDao {
 
     @Query("DELETE FROM listening_sessions WHERE endedAt<:before") suspend fun deleteOldListeningSessions(before: Long)
     @Query("DELETE FROM playback_attempts WHERE endedAt>0 AND endedAt<:before") suspend fun deleteOldPlaybackAttempts(before: Long)
+    @Query("DELETE FROM listening_sessions") suspend fun deleteListeningSessions()
+    @Query("DELETE FROM playback_attempts") suspend fun deletePlaybackAttempts()
+    @Query("DELETE FROM daily_track_listening_stats") suspend fun deleteDailyTrackStats()
+    @Query("DELETE FROM daily_playback_attempt_stats") suspend fun deleteDailyAttemptStats()
 
     @Query("INSERT INTO daily_track_listening_stats(sourceDeviceId,localDate,trackId,listenedSeconds,playCount) VALUES(:source,:date,:trackId,:seconds,:plays) ON CONFLICT(sourceDeviceId,localDate,trackId) DO UPDATE SET listenedSeconds=max(listenedSeconds,:seconds), playCount=max(playCount,:plays)")
     suspend fun mergeDailyTrackStat(source: String, date: String, trackId: String, seconds: Int, plays: Int)
@@ -803,9 +807,13 @@ internal class AndroidLibrarySyncStore(
 
     suspend fun clearAll() {
         val assets = database.withTransaction {
-            dao.staleAssets("__never_matches__").also {
-                dao.deleteStaleAssets("__never_matches__"); dao.deleteStaleTracks("__never_matches__"); dao.deleteStalePlaylists("__never_matches__"); dao.deleteStaleDocuments("__never_matches__"); dao.deleteStalePlans("__never_matches__")
-            }
+            val stale = dao.staleAssets("__never_matches__")
+            dao.deleteStaleAssets("__never_matches__"); dao.deleteStaleTracks("__never_matches__"); dao.deleteStalePlaylists("__never_matches__"); dao.deleteStaleDocuments("__never_matches__"); dao.deleteStalePlans("__never_matches__")
+            dao.deleteListeningSessions()
+            dao.deletePlaybackAttempts()
+            dao.deleteDailyTrackStats()
+            dao.deleteDailyAttemptStats()
+            stale
         }
         assets.forEach { it.relativePath?.let { path -> File(filesDir, path).delete() } }
     }
