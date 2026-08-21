@@ -693,7 +693,21 @@ body.light .theme-icon-dark {
 }
 
 .download-card {
+  position: relative;
+  isolation: isolate;
   padding: 80px 40px;
+}
+
+.download-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--bg-glass);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius);
 }
 
 .download-card h2 {
@@ -801,24 +815,17 @@ body.light .theme-icon-dark {
 }
 
 .platform-icon {
+  width: 48px;
   height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   margin-bottom: 8px;
-  color: var(--text-muted);
+  background: var(--text-muted);
+  mask: var(--platform-icon) center / contain no-repeat;
+  -webkit-mask: var(--platform-icon) center / contain no-repeat;
   transition: var(--transition);
 }
 
-.platform-icon svg {
-  max-height: 40px;
-  max-width: 40px;
-  width: auto;
-  height: auto;
-}
-
 .download-group:hover .platform-icon {
-  color: var(--text-main);
+  background: var(--text-main);
   transform: scale(1.1);
 }
 
