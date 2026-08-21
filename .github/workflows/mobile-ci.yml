@@ -82,3 +82,11 @@ jobs:
       - name: Build Android app
         working-directory: mobile
         run: ./gradlew :androidApp:assembleDevDebug
+
+      - name: Upload Android APK
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Airmedy-mobile-dev-debug-arm64
+          path: mobile/androidApp/build/outputs/apk/dev/debug/*.apk
+          if-no-files-found: error
