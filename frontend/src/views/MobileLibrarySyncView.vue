@@ -200,17 +200,18 @@ onUnmounted(() => {
       <ArrowLeft class="size-6" />
     </button>
     <header class="flex items-start justify-between gap-4">
-      <div class="flex gap-1 items-center gap-4">
-        <h1 class="mt-1 text-3xl font-bold tracking-[-0.02em]">{{ device?.display_name ?? $t('mobile_sync.title') }}
+      <div class="flex min-w-0 flex-1 gap-4">
+        <h1 class="mt-1 min-w-0 break-words text-3xl font-bold tracking-[-0.02em] line-clamp-2">
+          {{ device?.display_name ?? $t('mobile_sync.title') }}
         </h1>
-        <div>
+        <div class="shrink-0 h-[46px] flex items-center">
           <Badge class="gap-1" :color="device?.online ? 'var(--status-online)' : 'var(--text-muted)'">
             <span class="size-1 rounded-full bg-current" />
             {{ $t(device?.online ? 'settings.mobile_pairing.online' : 'settings.mobile_pairing.offline') }}
           </Badge>
         </div>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex shrink-0 items-center gap-2">
         <div class="flex items-center justify-end gap-2">
           <div class="flex items-center gap-2">
             <button v-if="plan?.status === 'active'" data-testid="cancel-sync-button" type="button"
@@ -247,7 +248,8 @@ onUnmounted(() => {
           </label>
         </div>
       </div>
-      <div v-if="plan && plan.error_code !== 'insufficient_storage'" class="mt-5 border-t border-foreground/[0.06] pt-4">
+      <div v-if="plan && plan.error_code !== 'insufficient_storage'"
+        class="mt-5 border-t border-foreground/[0.06] pt-4">
         <div class="flex items-baseline justify-between gap-4">
           <p class="text-sm font-medium">{{ plan.status === 'complete' ? $t('mobile_sync.complete') :
             $t('mobile_sync.pending') }}</p>
@@ -303,7 +305,8 @@ onUnmounted(() => {
     <ConfirmDialog :open="replaceOpen" :title="$t('mobile_sync.replace_title')"
       :message="$t('mobile_sync.replace_desc')" :confirm-label="$t('mobile_sync.replace')" danger
       @cancel="replaceOpen = false" @confirm="sync(true)" />
-    <Modal width-class="w-[30rem]" :open="!!storageError" :title="t('mobile_sync.insufficient_storage_title')" @close="storageError = null">
+    <Modal width-class="w-[30rem]" :open="!!storageError" :title="t('mobile_sync.insufficient_storage_title')"
+      @close="storageError = null">
       <p data-testid="storage-error-message" class="text-sm leading-relaxed text-foreground/70">
         {{ storageError ? t('mobile_sync.insufficient_storage_description', {
           required: formatBytes(storageError.requiredBytes), available: formatBytes(storageError.availableBytes),

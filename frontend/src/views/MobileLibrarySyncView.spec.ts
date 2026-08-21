@@ -175,6 +175,18 @@ describe('MobileLibrarySyncView', () => {
     wrapper.unmount()
   })
 
+  it('clamps a long device name without shrinking sync actions', async () => {
+    getStatus.mockResolvedValue(null)
+    getTrustedDevices.mockResolvedValue([{ device_id: 'device-1', display_name: 'A very long device name that must stay within two lines', online: true }])
+    const wrapper = mountView()
+    await flushPromises()
+
+    expect(wrapper.get('h1').classes()).toEqual(expect.arrayContaining(['line-clamp-2', 'break-words']))
+    expect(wrapper.get('header > div').classes()).toEqual(expect.arrayContaining(['min-w-0', 'flex-1']))
+    expect(wrapper.get('header > div:last-child').classes()).toContain('shrink-0')
+    wrapper.unmount()
+  })
+
   it('opens a storage error from GetStatus, hides progress, and allows Sync after close', async () => {
     getStatus.mockResolvedValue({
       ...activePlan, status: 'superseded', error_code: 'insufficient_storage',
