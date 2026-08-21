@@ -3,7 +3,7 @@
 # Source is downloaded to a temporary cache exactly like the desktop scripts;
 # no FFmpeg source or generated library is committed to this repository.
 #
-# Usage: bash scripts/build-ffmpeg-android.sh [arm64-v8a|x86_64|all]
+# Usage: bash scripts/build-ffmpeg-android.sh [arm64-v8a]
 set -euo pipefail
 
 FFMPEG_VERSION="8.1"
@@ -39,7 +39,6 @@ build_arch() {
     local ABI="$1" ARCH TRIPLE
     case "${ABI}" in
         arm64-v8a) ARCH="aarch64"; TRIPLE="aarch64-linux-android" ;;
-        x86_64) ARCH="x86_64"; TRIPLE="x86_64-linux-android" ;;
         *) echo "Unsupported ABI: ${ABI}" >&2; exit 1 ;;
     esac
     local SRC="${BUILD_DIR}/src-${ABI}" INSTALL="${BUILD_DIR}/install-${ABI}"
@@ -74,9 +73,8 @@ build_arch() {
 }
 
 download_source
-case "${1:-all}" in
-    arm64-v8a|x86_64) build_arch "$1" ;;
-    all) build_arch arm64-v8a; build_arch x86_64 ;;
-    *) echo "Usage: $0 [arm64-v8a|x86_64|all]" >&2; exit 1 ;;
+case "${1:-arm64-v8a}" in
+    arm64-v8a) build_arch arm64-v8a ;;
+    *) echo "Usage: $0 [arm64-v8a]" >&2; exit 1 ;;
 esac
 echo "==> Done. Generated FFmpeg libraries are in ${JNI_OUT}."

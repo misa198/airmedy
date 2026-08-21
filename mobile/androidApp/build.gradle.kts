@@ -87,7 +87,7 @@ android {
             }
         }
         ndk {
-            abiFilters += setOf("arm64-v8a", "x86_64")
+            abiFilters += setOf("arm64-v8a")
         }
     }
     flavorDimensions += "environment"

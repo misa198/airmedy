@@ -15,16 +15,17 @@
 [![MacoOS](https://shields.io/badge/MacOS--9cf?logo=Apple&style=social)](https://airmedy.pages.dev/)
 [![Windows](https://custom-icon-badges.demolab.com/badge/Windows-0078D6?logo=windows11&logoColor=white)](https://airmedy.pages.dev/)
 [![Linux](https://custom-icon-badges.demolab.com/badge/Linux-FCC624?logo=linux&logoColor=black)](https://airmedy.pages.dev/)
+[![Android](https://custom-icon-badges.demolab.com/badge/Android-A4C639?logo=android&logoColor=white)](https://airmedy.pages.dev/)
 
 [![Website](https://custom-icon-badges.demolab.com/badge/Website-0078D6?logo=website&logoColor=white)](https://airmedy.pages.dev/)
-[![Latest Release](https://img.shields.io/github/v/release/misa198/airmedy?display_name=release&style=flat-square&label=Latest%20Release&color=26a69a)](https://github.com/misa198/airmedy/releases/latest)
+[![Latest Release Desktop](https://img.shields.io/github/v/release/misa198/airmedy?display_name=release&style=flat-square&label=Latest%20Release%20Desktop&color=26a69a)](https://github.com/misa198/airmedy/releases/latest)
 
 </div>
 
 ---
 
 <div align="center">
-<img src="docs/remote-1.webp" alt="remote" width="824" />
+<img src="docs/screenshot-hero-devices.webp" alt="Airmedy - All in one offline music player" width="824" />
 </div>
 
 ---
@@ -53,6 +54,10 @@
 <td width="33%"><img src="docs/screenshots/fullscreen-player.webp" alt="Fullscreen player" width="100%" /><p align="center">Fullscreen player</p></td>
 <td width="33%"><img src="docs/screenshots/mini-player.webp" alt="Mini player" width="100%" /><p align="center">Mini player</p></td>
 <td width="33%"><img src="docs/screenshots/search.webp" alt="Search" width="100%" /><p align="center">Search</p></td>
+</tr>
+<tr>
+<td width="33%"><img src="docs/screenshots/remote-1.webp" alt="Remote control" width="100%" /><p align="center">Remote control</p></td>
+<td width="33%"><img src="docs/screenshots/mobiles.webp" alt="Mobile app" width="100%" /><p align="center">Mobile app</p></td>
 </tr>
 </table>
 
@@ -87,24 +92,36 @@
 
 ---
 
+## Mobile
+
+Airmedy Mobile is an Android-first companion app, built with native Jetpack Compose for Android 12 and newer. It is independently usable and pairs with Airmedy Desktop when you want your library on the go.
+
+- **Pair and sync your library** — scan a QR code to securely sync tracks, artwork, playlists, favorites, and listening history from a paired desktop.
+- **Offline playback** — play synced local music through the native FFmpeg + AAudio player, with a persistent mini player, playback queue, seek controls, shuffle, and repeat.
+- **Immersive player & lyrics** — open a full-screen player for artwork and controls, then follow synced bilingual lyrics or tap a line to seek directly to it.
+- **Browse your collection** — explore tracks, albums, artists, genres, composers, playlists, and listening insights in a native mobile UI.
+- **Your listening, kept in sync** — scrobbles to Last.fm directly from the app and reconciles listening activity and playlist changes with your desktop.
+
+---
+
 ## Keyboard Shortcuts
 
 `Ctrl` on Windows/Linux, `Cmd` on macOS. Ignored while typing in an input/textarea.
 
-| Shortcut                | Action                    |
-| ------------------------ | ------------------------- |
-| `Space`                  | Play / pause              |
-| `Ctrl/Cmd + →`           | Next track                |
-| `Ctrl/Cmd + Alt + →`     | Fast forward               |
-| `Ctrl/Cmd + ←`           | Previous track             |
-| `Ctrl/Cmd + Alt + ←`     | Rewind                    |
-| `Ctrl/Cmd + ↑`           | Volume up                 |
-| `Ctrl/Cmd + ↓`           | Volume down                |
-| `Ctrl/Cmd + Alt + ↓`     | Mute toggle                |
-| `Ctrl/Cmd + S`           | Shuffle toggle             |
-| `Ctrl/Cmd + R`           | Cycle repeat mode          |
-| `Ctrl/Cmd + F`           | Go to search               |
-| `Ctrl/Cmd + ,`           | Open settings              |
+| Shortcut             | Action            |
+| -------------------- | ----------------- |
+| `Space`              | Play / pause      |
+| `Ctrl/Cmd + →`       | Next track        |
+| `Ctrl/Cmd + Alt + →` | Fast forward      |
+| `Ctrl/Cmd + ←`       | Previous track    |
+| `Ctrl/Cmd + Alt + ←` | Rewind            |
+| `Ctrl/Cmd + ↑`       | Volume up         |
+| `Ctrl/Cmd + ↓`       | Volume down       |
+| `Ctrl/Cmd + Alt + ↓` | Mute toggle       |
+| `Ctrl/Cmd + S`       | Shuffle toggle    |
+| `Ctrl/Cmd + R`       | Cycle repeat mode |
+| `Ctrl/Cmd + F`       | Go to search      |
+| `Ctrl/Cmd + ,`       | Open settings     |
 
 ---
 
@@ -112,17 +129,17 @@
 
 Every format plays on **macOS · Windows · Linux**.
 
-| Format               | Extensions          |
-| -------------------- | ------------------- |
-| MP3                  | `.mp3`              |
-| AAC / ALAC           | `.m4a` `.aac` `.mp4`|
-| FLAC                 | `.flac`             |
-| WAV / AIFF           | `.wav` `.aiff`      |
-| Ogg Vorbis           | `.ogg`              |
-| Opus                 | `.opus`             |
-| APE (Monkey's Audio) | `.ape`              |
-| WavPack              | `.wv`               |
-| DSD                  | `.dsf` `.dff`       |
+| Format               | Extensions           |
+| -------------------- | -------------------- |
+| MP3                  | `.mp3`               |
+| AAC / ALAC           | `.m4a` `.aac` `.mp4` |
+| FLAC                 | `.flac`              |
+| WAV / AIFF           | `.wav` `.aiff`       |
+| Ogg Vorbis           | `.ogg`               |
+| Opus                 | `.opus`              |
+| APE (Monkey's Audio) | `.ape`               |
+| WavPack              | `.wv`                |
+| DSD                  | `.dsf` `.dff`        |
 
 ---
 
@@ -148,22 +165,34 @@ The FFmpeg libraries are statically compiled and bundled inside `internal/infra/
 
 ## Tech Stack
 
-| Layer                | Technology                        |
-| -------------------- | --------------------------------- |
-| Backend runtime      | Go 1.25, Wails v3                 |
-| Dependency injection | uber-go/fx                        |
-| Database             | SQLite via golang-migrate         |
-| Search index         | Bleve                             |
-| Audio (macOS)        | SFBAudioEngine + CGo              |
-| Audio (Win/Linux)    | miniaudio + FFmpeg (CGo)          |
-| Metadata             | go-taglib                         |
-| Frontend framework   | Vue 3 (Composition API)           |
-| State management     | Pinia 3                           |
-| UI components        | Radix Vue + Tailwind CSS v4       |
-| Monorepo             | pnpm workspaces + Turbo           |
-| UI package           | @airmedy/ui (packages/ui)         |
-| Utils package        | @airmedy/utils (packages/utils)   |
+| Layer                | Technology                                         |
+| -------------------- | -------------------------------------------------- |
+| Backend runtime      | Go 1.25, Wails v3                                  |
+| Dependency injection | uber-go/fx                                         |
+| Database             | SQLite via golang-migrate                          |
+| Search index         | Bleve                                              |
+| Audio (macOS)        | SFBAudioEngine + CGo                               |
+| Audio (Win/Linux)    | miniaudio + FFmpeg (CGo)                           |
+| Metadata             | go-taglib                                          |
+| Frontend framework   | Vue 3 (Composition API)                            |
+| State management     | Pinia 3                                            |
+| UI components        | Radix Vue + Tailwind CSS v4                        |
+| Monorepo             | pnpm workspaces + Turbo                            |
+| UI package           | @airmedy/ui (packages/ui)                          |
+| Utils package        | @airmedy/utils (packages/utils)                    |
 | Lyrics               | Local `.lrc`/`.txt`, embedded tags, LRCLIB + Kugou |
+
+---
+
+## Mobile Tech Stack
+
+| Layer         | Technology                               |
+| ------------- | ---------------------------------------- |
+| Platform      | Kotlin Multiplatform, Android 12+        |
+| UI            | Jetpack Compose                          |
+| Local storage | Room + DataStore                         |
+| Audio         | FFmpeg + AAudio                          |
+| Shared logic  | `sharedLogic` (models, use cases, ports) |
 
 ---
 
@@ -200,6 +229,10 @@ remote/                      # Browser-based remote control SPA (Vue 3)
     ├── components/          # Remote UI components
     ├── stores/              # Pinia stores (player state over WS)
     └── locales/             # i18n locale files
+
+mobile/                      # Android-first Kotlin Multiplatform app
+├── androidApp/              # Compose UI, ViewModels, Android adapters
+└── sharedLogic/             # Platform-neutral models, use cases, and ports
 ```
 
 Dependencies always point inward — `infra` depends on `app`, `app` depends on `domain`, never the reverse.
@@ -217,6 +250,9 @@ Dependencies always point inward — `infra` depends on `app`, `app` depends on 
 | pnpm         | ≥ 9                                                        |
 | Task         | [taskfile.dev](https://taskfile.dev)                       |
 | Wails CLI v3 | `go install github.com/wailsapp/wails/v3/cmd/wails@latest` |
+| JDK          | 11 (mobile builds)                                         |
+| Android SDK  | Platform 36 (mobile builds)                                |
+| Android NDK  | 30.0.15729638 (mobile audio builds)                        |
 
 > **No system FFmpeg required.** FFmpeg is the decode backend on Windows/Linux only — macOS uses SFBAudioEngine and ships no FFmpeg. Pre-built static libraries for `windows/amd64`, `windows/arm64`, `linux/amd64`, and `linux/arm64` are bundled in `internal/infra/audio/ffmpeg_libs/`.
 >
@@ -239,6 +275,9 @@ wails3 build
 
 ```bash
 wails3 task verify   # runs all Go unit tests + Vue component tests + linters
+
+# Mobile shared-logic tests
+./mobile/gradlew :sharedLogic:testAndroidHostTest
 ```
 
 ### Run task
@@ -246,6 +285,18 @@ wails3 task verify   # runs all Go unit tests + Vue component tests + linters
 ```bash
 wails3 task {task_name}
 ```
+
+### Build Mobile (Android)
+
+Build the Android FFmpeg libraries once, then assemble either installable variant:
+
+```bash
+bash scripts/build-ffmpeg-android.sh arm64-v8a
+./mobile/gradlew :androidApp:assembleDevDebug
+./mobile/gradlew :androidApp:assembleProdDebug
+```
+
+`dev` and `prod` use separate application IDs, so both can be installed on one device. Android requires API 31 (Android 12) or newer.
 
 ---
 

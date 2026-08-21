@@ -95,7 +95,7 @@ The command accepts only `X.Y.Z` versions and increments `versionCode` by one.
 Android playback uses FFmpeg directly for local synced audio: FFmpeg demuxes and
 decodes every enabled music format, then the native player sends float PCM to
 AAudio. It does not use a Media3 or platform-decoder fallback. All Android app
-variants require `../scripts/build-ffmpeg-android.sh all` to have run
+variants require `../scripts/build-ffmpeg-android.sh arm64-v8a` to have run
 first. It downloads the pinned FFmpeg 8.1 tarball to a temporary cache and writes generated
 headers and `.so` files below `androidApp/build/` and `androidApp/src/main/jniLibs/`.
 Those artifacts are ignored by Git. The build requires Android NDK 30.0.15729638.

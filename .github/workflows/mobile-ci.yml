@@ -64,7 +64,7 @@ jobs:
 
       - name: Build Android FFmpeg
         if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
-        run: bash scripts/build-ffmpeg-android.sh all
+        run: bash scripts/build-ffmpeg-android.sh arm64-v8a
 
       - name: Save Android FFmpeg
         if: steps.cache-ffmpeg.outputs.cache-hit != 'true'

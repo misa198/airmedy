@@ -180,4 +180,4 @@ stop, seek, shuffle, repeat), and flush during service shutdown.
 
 Run the narrowest applicable test, then `./gradlew :sharedLogic:testAndroidHostTest`
 and `./gradlew :androidApp:assembleDebug` from `mobile/`. Before an Android build,
-generate FFmpeg libraries with `bash ../scripts/build-ffmpeg-android.sh all`.
+generate FFmpeg libraries with `bash ../scripts/build-ffmpeg-android.sh arm64-v8a`.
