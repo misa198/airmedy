@@ -127,4 +127,44 @@ describe('SyncedLyricsView', () => {
       false,
     ])
   })
+
+  it('lets the listener browse without auto-follow, then resumes follow on lyric tap', async () => {
+    const scrollTo = vi.fn()
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      callback(0)
+      return 1
+    })
+    vi.stubGlobal('cancelAnimationFrame', vi.fn())
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', { configurable: true, value: scrollTo })
+    Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get: () => 400 })
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get: () => 400 })
+
+    const lines = [
+      { text: 'First', time: 0 },
+      { text: 'Active', time: 10 },
+      { text: 'Next', time: 20 },
+    ]
+    const wrapper = mount(SyncedLyricsView, {
+      props: { immersive: true, currentPosition: 10, lines },
+    })
+    await nextTick()
+    scrollTo.mockClear()
+
+    await wrapper.find('[data-test="lyric-line"]').trigger('wheel')
+    await wrapper.setProps({ currentPosition: 20 })
+    await nextTick()
+
+    expect(scrollTo).not.toHaveBeenCalled()
+    expect(wrapper.findAll('[data-test="lyric-line"]')[0].attributes('style')).toContain('blur(0)')
+    expect(wrapper.findAll('[data-test="lyric-line"]')[0].attributes('style')).toContain('opacity: 1')
+
+    await wrapper.findAll('[data-test="lyric-line"]')[0].trigger('click')
+    expect(wrapper.emitted('seek')).toEqual([[0]])
+    await nextTick()
+    expect(scrollTo).toHaveBeenLastCalledWith(expect.objectContaining({ behavior: 'smooth' }))
+
+    await wrapper.setProps({ currentPosition: 0 })
+    await nextTick()
+    expect(scrollTo).toHaveBeenCalled()
+  })
 })

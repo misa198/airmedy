@@ -4,6 +4,31 @@
 
 The frontend is a Vue 3 SPA built with Vite 5, TailwindCSS v4, and Pinia. It uses a glass-morphism design system with dynamic artwork-based color theming. All views are lazy-loaded except Home. Track lists use virtual scrolling for performance.
 
+## Mobile library sync
+
+An Online device in Settings → Mobile opens `/settings/mobile-devices/:deviceId/sync`.
+The desktop-only view reuses shared Radio, TabSwitcher, Input and Checkbox
+primitives and virtualizes its selector. It supports all-library sync or one
+active selected source tab: artists, albums, genres, or regular playlists;
+Favorites and smart playlists are not selectable. It owns and
+disposes subscriptions to pairing and `mobile-library-sync:updated` events. An
+active plan also polls its status once per second, so percentage progress
+remains current if a desktop runtime event is missed; polling stops when the
+plan finishes or the view unmounts. A poll response is ignored if a newer event
+has already completed, replaced, or advanced that plan, preventing stale active
+state from restarting the spinner or moving progress backward. Status IPC omits
+the immutable sync manifest. Its status is rendered inline in the
+existing sync-selection panel with a quiet divider, status label, percentage,
+and a thin progress bar rather than a separate card or technical asset counts.
+The selection panel is a headerless `SettingSection` (`panel` variant), so it
+inherits the same Settings card treatment without duplicating the page title.
+The view uses the same centered `max-w-3xl p-8` content container as Settings.
+Its Sync action and scope choices remain disabled for the full lifetime of an
+active plan, the action shows a rotating sync icon, and duplicate sync requests
+are prevented while transfer is in progress. When a selected-items table is
+shown, a light theme-safe overlay with a centered spinner blocks edits until
+that plan completes.
+
 ## Tech Stack
 
 | Library              | Version | Purpose                              |
@@ -42,6 +67,36 @@ Hash history mode (`createWebHashHistory`). All views lazy-loaded except HomeVie
 
 The `/mini-player` route bypasses the MainLayout wrapper and renders directly.
 
+## Mobile Pairing UI
+
+`MobileDevicesSettings.vue` is a separate Settings category from browser Remote
+Control. It selects one reachable LAN address for the pairing QR, lists trusted
+mobiles with broker-session Online/Offline badges, and invokes revocation. MQTT
+port selection and recovery are automatic implementation details and are never
+shown or configured in the UI. `mobilePairing.ts`
+owns the `pairing:request` Wails subscription and its cleanup; the globally mounted
+`MobilePairingDialog.vue` accepts or rejects a pending request even when Settings
+is not open. `NetworkAddressList.vue` and `useNetworkInterface.ts` are shared by
+this page and `RemoteServerSettings.vue`, so address cards, selection, copy state,
+interface icons, labels, and tooltips remain identical. The protocol itself is
+documented in [mobile pairing](../pairing/README.md).
+
+The same panel has a short-lived **Broadcast pairing signal** action. It explains
+that desktop sends the 30-second signal so ready devices can find and connect to
+it, rather than exposing the transport term “broadcast”. While mDNS is active it
+displays a pulsing status and backend-derived 30-second countdown, can stop early,
+refreshes on `pairing:broadcast-changed`, and clears its interval and Wails event
+listener on unmount.
+
+Trusted mobile-device status uses the semantic `--status-online` token for the
+Online badge (green in every theme); Offline continues to use `--text-muted`.
+While a device has an active mobile-library sync plan, its Delete action is
+disabled in both the row actions and context menu; the panel refreshes this
+state on `mobile-library-sync:updated`.
+
+The pairing QR guidance includes a theme-safe FAQ link (`?`, underlined label,
+and chevron) that opens the Mobile Sync FAQ in the system browser.
+
 ### Cached Route Data Refresh
 
 `MainLayout` and entity explorer routes use `KeepAlive` to preserve UI state.
@@ -67,6 +122,12 @@ smart playlists, whose rules can add or remove a track after its metadata is
 edited. Home Analytics silently refreshes its hydrated top-track DTOs and
 summary data, and Playlists refreshes mosaic-preview tracks even when playlist
 membership itself did not change.
+
+When `mobile-library-sync:updated` reports a completed plan, the same cached
+view invalidation runs. Mobile playlist reconciliation can change the desktop
+playlist database before that plan completes, so the playlists store reloads
+for the sidebar and list while playlist detail and mosaic data refresh through
+`useLibrarySync`.
 
 ### Mini Player Window Lifecycle
 
@@ -241,6 +302,9 @@ expand/collapse control for the full 50-track analytics ranking.
 | Edit Metadata       | Open `MetadataEditDialog`                    |
 | Show in Explorer    | `LibraryService.ShowInExplorer()`            |
 
+**`useGroupContextMenu()`**: used by artist, genre, and composer detail menus.
+It supports Play Next, Add to Queue (skipping tracks already queued), and Add to Playlist.
+
 `ContextMenu.vue` is rendered via `<Teleport to="body">`. It clamps against the layout viewport (`document.documentElement.clientWidth/clientHeight`) so menus stay inside the visible content area even when browser scrollbars reduce usable space. It handles viewport edge detection and keyboard navigation.
 It supports one hover-open submenu level, including separators within the submenu.
 
@@ -270,6 +334,11 @@ Common dialogs are consolidated under the **`Modal.vue`** primitive. It provides
 | `SyncProgressDialog`  | Library sync status and progress             |
 | `MetadataEditDialog`  | Manual tag and artwork editing               |
 | `ConfirmDialog`       | Generic confirmation for destructive actions |
+
+`MobileLibrarySyncView` uses `Modal` for a transient insufficient-storage
+alert. It accepts the runtime payload from both initial `GetStatus` and
+`mobile-library-sync:updated`, stops active polling, hides the superseded
+plan's stale progress, and keeps dismissal as UI-only state.
 
 ## Chip Input (`components/settings/DelimiterInput.vue`)
 
@@ -353,10 +422,13 @@ measurement current and is disconnected on unmount.
 ## Home Analytics
 
 `HomeView` owns the Overview/Analytics tab selection and delegates to
-`components/home/HomeOverview.vue` and `HomeAnalysis.vue`. Analytics loads
-`AnalyticsService.GetInsights('7d' | '30d' | 'all')`, supports request
-cancellation on period changes/unmount, and renders cumulative library growth,
-listening activity, audio-quality, genre, top-artist, and top-track summaries.
+`components/home/HomeOverview.vue` and `HomeAnalysis.vue`. Analytics is split
+into a Desktop Library section, loaded with `AnalyticsService.GetLibraryInsights`
+and its own range, and a Listening History section, loaded with
+`GetListeningInsights(range, sourceDeviceID)`. Their requests are cancellable
+and independent. The device selector defaults to all sources and offers this
+desktop plus every currently trusted mobile device; it applies only to Listening
+History. Library Growth, library totals, and Audio Quality remain desktop-library data.
 It also shows a Playback Outcomes donut for the selected range, splitting
 completed, skipped, and stopped attempts; the three slices total 100% and the
 card remains unavailable until at least one playback attempt has ended. The
@@ -403,7 +475,7 @@ overlay is not rendered in production builds.
 | ----------------------- | ------------------------------------------------------- |
 | `useContextMenu`        | Generic context menu state manager                      |
 | `useTrackContextMenu`   | Track-specific menu item builder                        |
-| `useGroupContextMenu`   | Multi-track selection menu (Play Next, Add to Playlist) |
+| `useGroupContextMenu`   | Artist/genre/composer menu (Play Next, Add to Queue, Add to Playlist) |
 | `useAddToPlaylistMenu`  | Shared Create Playlist submenu prefix                   |
 | `useCreatePlaylistWithTracks` | Global create-then-add-tracks dialog state        |
 | `useTrackTableSettings` | Column config with localStorage persistence             |

@@ -33,6 +33,18 @@ type Lyric struct {
 }
 ```
 
+## Mobile Library Sync Cache
+
+Mobile library-sync exports one **effective** lyric (`content` + `source`) per
+track, never the raw provider and metadata variants together. Desktop stores
+that result in `mobile_sync_lyric_cache` with an output `version` and an input
+fingerprint. A new sync plan indexes candidate lyric directories once per
+unique directory and fingerprints existing candidate files by size/mtime; it
+only reads `.lrc`/`.txt` contents again when the fingerprint changes. The
+first plan resolves every selected track. When provider lyrics are preferred
+and cached provider content exists, local sidecars are skipped because they
+cannot affect the exported result. This path never fetches online providers.
+
 ## Resolution Strategy
 
 Resolution priority (default `prefer_local_lyrics=true`) — first hit wins:
@@ -175,6 +187,13 @@ Before sending to lrclib, the title is normalized:
 
 Synced lyrics (with timestamps) are preferred over plain text. If only plain is available, `source` is set to `"lrclib-plain"`.
 
+### KuGou Search and Rank
+
+KuGou searches with `artist - title` and ranks the returned candidates with the same title, artist,
+and duration scorer as lrclib. Candidates below the title-similarity threshold or more than 5 seconds
+from the track duration are rejected; KuGou's provider score breaks ties. If no candidate qualifies,
+the provider retries after removing bracketed metadata, then after swapping title and artist.
+
 ## Ports
 
 ```go
@@ -303,9 +322,9 @@ Parsed into `{ text: "English text", secondary: "中文翻译" }`.
 
 ## Frontend Display
 
-**`LyricsDrawer.vue`** renders lines with active-line highlighting. `SyncedLyricsView` auto-scrolls to keep the current line centered as the track position advances and also schedules an initial post-mount scroll. If fullscreen lyrics is mounted while its right column is still collapsed, a `ResizeObserver` waits for the first non-zero layout before scrolling, so the panel immediately shows its active lyric.
+**`LyricsDrawer.vue`** and the fullscreen `SyncedLyricsView` render lines with active-line highlighting. Their synced view follows playback by default: the first valid layout positions the active line immediately, then subsequent transitions use smooth scrolling only while the previous active line remains visible. Scrolling or dragging the lyric surface enters browse mode, stopping follow and making every line fully readable (no fade or blur). Tapping a line seeks to it and resumes follow. If fullscreen lyrics is mounted while its right column is still collapsed, a `ResizeObserver` waits for the first non-zero layout before positioning the active lyric.
 
-**View toggle:** If synced lyrics are available, user can switch between synced (auto-scrolling with highlights) and plain (full text) views.
+**View selection:** Tracks with synchronized lyrics always use the synced view; browse mode makes the complete text readable without switching modes. Tracks with only plain lyrics use the plain-text view.
 
 **Fullscreen player:** Lyrics panel shown as the right column or via tab in the fullscreen overlay.
 

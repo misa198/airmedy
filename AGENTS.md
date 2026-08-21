@@ -20,6 +20,16 @@
 
 ---
 
+## Mobile App (Kotlin Multiplatform)
+
+The desktop rules below apply to the Wails/Go/Vue application. Before changing
+anything under [`mobile/`](mobile/), read [`mobile/AGENTS.md`](mobile/AGENTS.md).
+It defines the Android-first KMP architecture and overrides desktop-specific UI,
+testing, and platform instructions for that subtree. General repository rules
+(research, conventional commits, and preserving unrelated changes) still apply.
+
+---
+
 ## 1. Performance
 
 - Track lists/grids MUST use `vue-virtual-scroller` (56px row height, or 36px in compact/collapsed mode).
@@ -34,13 +44,13 @@
 
 - Surfaces: `background: var(--bg-glass); backdrop-filter: blur(30px)`.
 - Borders: `1px solid var(--border-glass)`. Never plain `border` without explicit opacity.
-- Row hover: `hover:bg-white/[0.04]`. Never `hover:bg-accent/50`.
-- Button inactive/active: opacity variation (`text-white/40 → text-white/70`), not color switch.
-- Play button: white circle + black icon (`bg-white text-black`).
-- Secondary/metadata text: `text-white/40` or `text-white/30`. Never `text-muted-foreground` on dark translucent backgrounds.
-- Cards: `border-radius: 12px`, hover `scale(1.02)` + border brightness, shadow `0 10px 15px -3px rgba(0,0,0,0.4)`.
+- Row hover: `hover:bg-foreground/[0.04]`. Never `hover:bg-accent/50`.
+- Button inactive/active: opacity variation of the theme foreground (`text-foreground/40 → text-foreground/70`), not a colour switch.
+- Play button: theme primary-foreground circle + theme background icon.
+- Secondary/metadata text: a muted theme token such as `text-[color:var(--text-muted)]`, optionally with opacity. Never `text-muted-foreground` on dark translucent backgrounds.
+- Cards: `border-radius: 12px`, hover `scale(1.02)` + border brightness, and a theme-defined shadow token.
 - Icons: **Lucide Vue only**. No Phosphor or others.
-- Progress bars: 4px, expands 6px on hover, white thumb.
+- Progress bars: 4px, expands 6px on hover, theme-foreground thumb.
 - Transitions: `all 0.3s cubic-bezier(0.4, 0, 0.2, 1)`. Theme color shifts: `1.5s ease-in-out`.
 
 ### TailwindCSS v4
@@ -48,6 +58,13 @@
 - Tokens defined via `@theme` directive in global CSS — **not** `tailwind.config.js extend.colors`.
 - CSS custom properties are the primary theming mechanism.
 - New design tokens go under `@theme` only.
+
+### Theme-Safe Colours
+
+- Every UI colour in a component MUST resolve from a semantic theme token or CSS custom property, so it remains correct in every supported theme. Use existing utilities such as `text-foreground`, `bg-foreground/[0.04]`, and `text-[color:var(--text-muted)]`, or add a semantic token when needed.
+- Do not use raw colour values in component markup or styles: no hex, `rgb`/`rgba`, named colours, or Tailwind palette utilities such as `white`, `black`, `red-*`, `zinc-*`, or `slate-*`. The only exceptions are token declarations in global theme CSS and explicitly documented runtime/dynamic artwork values.
+- Do not use white- or black-based opacity overlays for interaction states. Derive overlays, borders, muted text, icons, and disabled states from the active theme tokens instead.
+- After any UI colour change, verify light, dark, and black themes; add or update the relevant component test when the state can be asserted.
 
 ### Mandatory CSS Variables
 
@@ -258,9 +275,17 @@ Conventional Commits: `type(scope): description`
 
 ## 8. Catalog Maintenance
 
-`catalog/` contains living technical documentation. **Read before touch. Update after change.**
+`catalog/` contains living technical documentation. Treat it as a contract
+reference, not a changelog. Do not read or edit it by default for every code
+change.
 
 ### Read Before Touch
+
+Read the relevant catalog only when working in that feature area and its
+documented boundary, lifecycle, data flow, or external contract could affect
+the change. Do not read catalogs for isolated CI, build, lint, test, formatting,
+dependency, or private implementation changes unless the task explicitly needs
+the documented contract.
 
 | Feature area | Catalog |
 |---|---|
@@ -281,12 +306,45 @@ Conventional Commits: `type(scope): description`
 | Overall architecture, DI, Wails IPC | `catalog/architecture/README.md` |
 | Remote control server, WS protocol, auth, remote SPA | `catalog/remote/README.md` |
 
-### Update After Change
+### Update Threshold
 
-Update the relevant catalog entry in the **same task** when any of these change:
-interfaces/structs/methods, DB schema/migrations, Wails-exposed methods/events, algorithms, stores/composables/routes/components, infra adapters/FX modules.
+Update a catalog or README in the same task only when it would otherwise state
+something false or omit information a future engineer needs to use the changed
+contract safely. This includes public commands or setup, DB schema and
+migrations, Wails APIs/events, cross-layer ports, persisted data flow,
+lifecycle/cleanup invariants, user-visible behavior, navigation ownership, or
+meaningful algorithm semantics.
 
-**A task is not complete if the catalog is left stale.**
+Do **not** update documentation for private refactors, renamed internal
+symbols, localized bug fixes, tests, CI/build/lint changes, dependency bumps,
+formatting, or implementation details that leave those contracts unchanged.
+Do not add a documentation diff merely to demonstrate compliance.
+
+README files follow the same threshold: update them for changed public setup,
+commands, supported targets, or user-facing behavior—not for internal workflow
+details. A task is complete without a documentation edit when no documented
+contract became stale.
+
+### Writing Catalogs
+
+Catalogs are operational architecture documents, written in English. They must
+let the next engineer change a feature safely without rediscovering its design
+from source.
+
+- Lead with ownership and boundaries: which layer/component owns state, side
+  effects, persistence, and platform integration.
+- Record the contracts that constrain future changes: public commands and data,
+  data flow, invariants, lifecycle/cleanup rules, failure handling, and the
+  relevant test or verification location.
+- Use a compact diagram or table only when it makes a relationship clearer.
+  Prefer the smallest useful map over a comprehensive file inventory.
+- Document behavior that is intentional, surprising, or easy to regress; point
+  to the source of truth rather than copying implementation details.
+- Do not turn catalogs into changelogs, exhaustive component/file lists, or
+  pixel-level animation narration. Delete stale detail instead of appending a
+  correction below it.
+- Keep claims source-backed. When a documented contract changes, update the
+  catalog in the same diff as the code and its test.
 
 ---
 
@@ -295,7 +353,7 @@ interfaces/structs/methods, DB schema/migrations, Wails-exposed methods/events, 
 1. **Research** — read relevant catalog entries, find existing patterns, reproduce bugs with a test first.
 2. **Implement** — surgical changes with accompanying tests.
 3. **Verify** — `wails3 task verify` (tests + linters).
-4. **Update catalog** — if any catalog entry is now stale.
+4. **Update docs** — only if a documented contract is now stale.
 
 ---
 

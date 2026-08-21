@@ -415,6 +415,9 @@ flowchart TB
   lifecycle context. Startup removes raw sessions older than 180 days. Since pause
   flushes and clears its completed
   interval, a subsequent Play starts a new interval for the still-loaded track.
+  Raw rows and daily aggregates carry a stable source-device ID. Manual mobile
+  Library Sync imports Android-owned rows idempotently and returns the complete
+  multi-device union; Analytics totals continue to sum every source.
 - Records one `PlaybackAttempt` per selected track through the same bounded
   writer. Attempts span pause/resume and seek; only actual running audio time
   is counted. Natural end, gapless advance, and automatic crossfade finalize

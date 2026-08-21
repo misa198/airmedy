@@ -140,7 +140,7 @@ const getTotalDuration = (tracks: TrackDTO[]) => {
   >
     <template #top-right>
       <div class="relative w-64">
-        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground opacity-60" />
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim" />
         <Input
           v-model="searchQuery"
           type="text"
@@ -207,7 +207,7 @@ const getTotalDuration = (tracks: TrackDTO[]) => {
 
     <template #footer>
       <div v-if="album.copyright"
-        class="px-8 pb-12 text-sm text-foreground opacity-50 border-t border-foreground/[0.06] pt-8 mt-4">
+        class="px-8 pb-12 text-sm text-subdued border-t border-foreground/[0.06] pt-8 mt-4">
         {{ album.copyright }}
       </div>
     </template>

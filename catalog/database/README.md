@@ -83,8 +83,15 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000062 | `listening_insights.up.sql` | Add append-only `listening_sessions` plus per-track/day aggregate `daily_track_listening_stats`, with date indexes, for listening insights |
 | 000063 | `playback_attempts.up.sql` | Add raw playback attempts plus daily completion/skip/stop aggregates for completion and skip rates |
 | 000064 | `playback_attempt_listening_time.up.sql` | Add aggregate listened seconds to calculate average playback session length |
+| 000065 | `mobile_pairing.up.sql` | Add desktop pairing identity and trusted mobile public-key tables |
+| 000067 | `mobile_library_sync.up.sql` | Add persisted per-device library-sync plans and idempotent asset receipts |
+| 000068 | `mobile_sync_lyric_cache.up.sql` | Add desktop cache of effective lyric snapshots, output versions, and input fingerprints used while creating mobile-sync plans |
+| 000069 | `mobile_playlist_sync.up.sql` | Add durable per-device playlist-mutation ledger used to deduplicate mobile reconciliation retries |
+| 000070 | `mobile_playlist_reconciliation.up.sql` | Add global playlist LWW/tombstone watermarks and device/reconciliation-owned artwork staging with expiry index |
+| 000071 | `mobile_favorite_sync.up.sql` | Add trusted-device favorite mutation ledger and per-track last-write-wins favorite watermark for mobile reconciliation |
+| 000072 | `listening_sources.up.sql` | Add source-device identity to raw listening rows and daily aggregate keys for cross-device sync |
 
-`listeningRepository.GetInsights` returns up to 50 entries for both Top Artists
+`listeningRepository.GetListeningInsights` returns up to 50 entries for both Top Artists
 (ordered by listened seconds) and Top Tracks (ordered by play count, then listened
 seconds, then title for a stable tie-break).
 
@@ -309,6 +316,7 @@ mini_player_state (
 ```sql
 listening_sessions (
     id TEXT PRIMARY KEY,
+    source_device_id TEXT,
     track_id TEXT REFERENCES tracks(id) ON DELETE CASCADE,
     started_at DATETIME,
     ended_at DATETIME,
@@ -317,15 +325,17 @@ listening_sessions (
 )
 
 daily_track_listening_stats (
+    source_device_id TEXT,
     local_date TEXT,
     track_id TEXT REFERENCES tracks(id) ON DELETE CASCADE,
     listened_seconds INTEGER DEFAULT 0,
     play_count INTEGER DEFAULT 0,
-    PRIMARY KEY (local_date, track_id)
+    PRIMARY KEY (source_device_id, local_date, track_id)
 )
 
 playback_attempts (
     id TEXT PRIMARY KEY,
+    source_device_id TEXT,
     track_id TEXT REFERENCES tracks(id) ON DELETE CASCADE,
     started_at DATETIME,
     ended_at DATETIME,
@@ -335,14 +345,21 @@ playback_attempts (
 )
 
 daily_playback_attempt_stats (
-    local_date TEXT PRIMARY KEY,
+    source_device_id TEXT,
+    local_date TEXT,
     attempts INTEGER,
     completed INTEGER,
     skipped INTEGER,
     stopped INTEGER,
-    listened_seconds INTEGER
+    listened_seconds INTEGER,
+    PRIMARY KEY (source_device_id, local_date)
 )
 ```
+
+Analytics queries sum across sources; `source_device_id` remains available for
+a future device filter. Snapshot import uses immutable raw IDs and monotonic
+per-origin daily counters, so retrying mobile reconciliation cannot duplicate
+totals.
 
 `ListeningRepository.RecordSession` writes both tables in one transaction. It
 splits elapsed listening time across local calendar days and increments the
@@ -356,11 +373,11 @@ uses `skipped` as its numerator. Raw attempts are retained for 180 days while
 daily aggregates remain for all-time rates; startup converts unclosed attempts
 left by a crash into `stopped` attempts.
 
-`ListeningRepository.GetInsights` also returns `streak_days`: the current
+`ListeningRepository.GetListeningInsights` also returns `streak_days`: the current
 consecutive local-calendar-day listening streak, beginning today when active or
 yesterday otherwise; a second missed day resets it to zero. It is calculated
 from all listening aggregates, independently of the selected insight range.
-It also returns `library_growth`, calculated
+`ListeningRepository.GetLibraryInsights` returns `library_growth`, calculated
 from the indexed `tracks.created_at` column. Bounded periods first count tracks
 before the requested range and aggregate additions only within that range, then
 build the cumulative daily series in memory. All-time insights aggregate once

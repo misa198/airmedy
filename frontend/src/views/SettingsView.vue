@@ -3,7 +3,7 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   Folder, Settings,
-  Play, Info, Blocks, Wifi,
+  Play, Info, Blocks, Wifi, Smartphone,
 } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import GeneralSettings from '@/components/settings/GeneralSettings.vue'
@@ -12,6 +12,7 @@ import IntegrationsSettings from '@/components/settings/IntegrationsSettings.vue
 import PlaybackSettings from '@/components/settings/PlaybackSettings.vue'
 import AboutSettings from '@/components/settings/AboutSettings.vue'
 import RemoteServerSettings from '@/components/settings/RemoteServerSettings.vue'
+import MobileDevicesSettings from '@/components/settings/MobileDevicesSettings.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -23,6 +24,7 @@ const props = defineProps<{
 
 // State
 const activeCategory = ref(props.category || 'general')
+const isMobileLibrarySync = computed(() => route.name === 'mobile-library-sync')
 
 watch(() => props.category, (newCat) => {
   activeCategory.value = newCat || 'general'
@@ -34,6 +36,7 @@ const categories = computed(() => [
   { id: 'integrations', name: t('settings.categories.integrations', 'Integrations'), icon: Blocks },
   { id: 'playback', name: t('settings.categories.playback'), icon: Play },
   { id: 'remote', name: t('settings.categories.remote', 'Remote'), icon: Wifi },
+  { id: 'mobile-devices', name: t('settings.categories.mobile_devices'), icon: Smartphone },
   { id: 'about', name: t('settings.categories.about'), icon: Info },
 ])
 
@@ -78,8 +81,9 @@ watch([activeCategory, () => route.query.section], scrollToRequestedSection, { i
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 overflow-y-auto custom-scrollbar">
-      <div class="max-w-3xl p-8 mx-auto">
+    <main class="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+      <router-view v-if="isMobileLibrarySync" />
+      <div v-else class="max-w-3xl p-8 mx-auto">
         <!-- General Settings -->
         <GeneralSettings
           v-if="activeCategory === 'general'"
@@ -100,6 +104,8 @@ watch([activeCategory, () => route.query.section], scrollToRequestedSection, { i
 
         <!-- Remote Server -->
         <RemoteServerSettings v-if="activeCategory === 'remote'" />
+
+        <MobileDevicesSettings v-if="activeCategory === 'mobile-devices'" />
 
         <!-- About -->
         <AboutSettings 

@@ -1,6 +1,7 @@
-import { ListEnd, ListPlus } from '@lucide/vue'
+import { ListEnd, ListPlus, ListStart } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
+import { usePlayerStore } from '@/stores/player'
 import { useAddToPlaylistMenu } from './useAddToPlaylistMenu'
 import type { ContextMenuItem } from './useContextMenu'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
@@ -10,14 +11,24 @@ import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/pl
 export function useGroupContextMenu() {
   const { t } = useI18n()
   const playlistsStore = usePlaylistsStore()
+  const playerStore = usePlayerStore()
   const { buildCreatePlaylistItems } = useAddToPlaylistMenu()
 
   function buildMenuItems(tracks: TrackDTO[]): ContextMenuItem[] {
+    const toAdd = tracks.filter(track => !playerStore.queueIds.has(track.id))
+
     return [
       {
         label: t('context_menu.play_next'),
-        icon: ListEnd,
+        icon: ListStart,
         action: () => { PlayerService.PlayNextTracks(tracks) },
+      },
+      {
+        label: t('context_menu.add_to_queue'),
+        icon: ListEnd,
+        action: () => {
+          if (toAdd.length > 0) PlayerService.AppendTracks(toAdd)
+        },
       },
       {
         label: t('context_menu.add_to_playlist'),

@@ -39,7 +39,7 @@ func TestListeningRepositoryReturnsFiftyTopArtistsAndTracks(t *testing.T) {
 		}
 	}
 
-	insights, err := repo.GetInsights(ctx, domain.ListeningRangeAll, now)
+	insights, err := repo.GetListeningInsights(ctx, domain.ListeningRangeAll, "", now)
 	if err != nil {
 		t.Fatalf("get insights: %v", err)
 	}
@@ -77,7 +77,7 @@ func TestListeningRepositoryRanksTopTracksByPlayCountThenListeningTime(t *testin
 		}
 	}
 
-	insights, err := repo.GetInsights(ctx, domain.ListeningRangeAll, now)
+	insights, err := repo.GetListeningInsights(ctx, domain.ListeningRangeAll, "", now)
 	if err != nil {
 		t.Fatalf("get insights: %v", err)
 	}
@@ -115,15 +115,19 @@ func TestListeningRepositoryRollsUpSessions(t *testing.T) {
 			t.Fatalf("record session: %v", err)
 		}
 	}
-	insights, err := repo.GetInsights(ctx, domain.ListeningRange7D, now)
+	insights, err := repo.GetListeningInsights(ctx, domain.ListeningRange7D, "", now)
 	if err != nil {
 		t.Fatalf("get insights: %v", err)
 	}
 	if insights.ListenedSeconds != 105 || insights.Plays != 1 {
 		t.Fatalf("unexpected aggregate: %#v", insights)
 	}
-	if insights.LibraryTracks != 1 || insights.LibraryAlbums != 1 || insights.LibraryArtists != 2 || insights.LibraryPlaylists != 2 || insights.LibraryBytes != 1024 {
-		t.Fatalf("unexpected library summary: %#v", insights)
+	library, err := repo.GetLibraryInsights(ctx, domain.ListeningRange7D, now)
+	if err != nil {
+		t.Fatalf("get library insights: %v", err)
+	}
+	if library.LibraryTracks != 1 || library.LibraryAlbums != 1 || library.LibraryArtists != 2 || library.LibraryPlaylists != 2 || library.LibraryBytes != 1024 {
+		t.Fatalf("unexpected library summary: %#v", library)
 	}
 	if len(insights.TopTracks) != 1 || insights.TopTracks[0].PlayCount != 1 || insights.TopTracks[0].ListenedSeconds != 105 {
 		t.Fatalf("unexpected top tracks: %#v", insights.TopTracks)
@@ -161,7 +165,7 @@ func TestListeningRepositoryReturnsCumulativeLibraryGrowth(t *testing.T) {
 	}
 
 	repo := NewListeningRepository(db)
-	insights, err := repo.GetInsights(ctx, domain.ListeningRange7D, now)
+	insights, err := repo.GetLibraryInsights(ctx, domain.ListeningRange7D, now)
 	if err != nil {
 		t.Fatalf("get 7d insights: %v", err)
 	}
@@ -174,7 +178,7 @@ func TestListeningRepositoryReturnsCumulativeLibraryGrowth(t *testing.T) {
 		t.Fatalf("7d library growth = %#v, want %#v", got, want)
 	}
 
-	insights, err = repo.GetInsights(ctx, domain.ListeningRange30D, now)
+	insights, err = repo.GetLibraryInsights(ctx, domain.ListeningRange30D, now)
 	if err != nil {
 		t.Fatalf("get 30d insights: %v", err)
 	}
@@ -188,7 +192,7 @@ func TestListeningRepositoryReturnsCumulativeLibraryGrowth(t *testing.T) {
 	if err := trackRepo.Save(ctx, &domain.Track{ID: "year-2025", Path: "/music/year-2025.flac", Title: "2025", SortTitle: "2025", Format: "flac", CreatedAt: time.Date(2025, time.June, 1, 12, 0, 0, 0, time.Local)}); err != nil {
 		t.Fatalf("save 2025 track: %v", err)
 	}
-	insights, err = repo.GetInsights(ctx, domain.ListeningRangeAll, now)
+	insights, err = repo.GetLibraryInsights(ctx, domain.ListeningRangeAll, now)
 	if err != nil {
 		t.Fatalf("get all insights: %v", err)
 	}
@@ -226,7 +230,7 @@ func TestListeningRepositoryReturnsCurrentListeningStreak(t *testing.T) {
 
 	seedStreak(0, -1, -2, -3, -4, -5, -6, -7, -8, -9)
 	for _, period := range []domain.ListeningRange{domain.ListeningRange7D, domain.ListeningRangeAll} {
-		insights, err := repo.GetInsights(ctx, period, now)
+		insights, err := repo.GetListeningInsights(ctx, period, "", now)
 		if err != nil {
 			t.Fatalf("get insights for %s: %v", period, err)
 		}
@@ -236,7 +240,7 @@ func TestListeningRepositoryReturnsCurrentListeningStreak(t *testing.T) {
 	}
 
 	seedStreak(-1, -2)
-	insights, err := repo.GetInsights(ctx, domain.ListeningRange7D, now)
+	insights, err := repo.GetListeningInsights(ctx, domain.ListeningRange7D, "", now)
 	if err != nil {
 		t.Fatalf("get insights with yesterday streak: %v", err)
 	}
@@ -245,7 +249,7 @@ func TestListeningRepositoryReturnsCurrentListeningStreak(t *testing.T) {
 	}
 
 	seedStreak(-2)
-	insights, err = repo.GetInsights(ctx, domain.ListeningRange7D, now)
+	insights, err = repo.GetListeningInsights(ctx, domain.ListeningRange7D, "", now)
 	if err != nil {
 		t.Fatalf("get insights with broken streak: %v", err)
 	}
@@ -283,7 +287,7 @@ func TestListeningRepositoryCleanupAndQualityClassification(t *testing.T) {
 	if err := db.Get(&rawCount, `SELECT COUNT(*) FROM listening_sessions`); err != nil || rawCount != 0 {
 		t.Fatalf("raw sessions not cleaned: count=%d err=%v", rawCount, err)
 	}
-	insights, err := repo.GetInsights(ctx, domain.ListeningRangeAll, time.Now())
+	insights, err := repo.GetLibraryInsights(ctx, domain.ListeningRangeAll, time.Now())
 	if err != nil {
 		t.Fatalf("get insights: %v", err)
 	}
@@ -328,7 +332,7 @@ func TestListeningRepositoryAggregatesPlaybackAttempts(t *testing.T) {
 			t.Fatalf("finalize attempt: %v", err)
 		}
 	}
-	insights, err := repo.GetInsights(ctx, domain.ListeningRange7D, now)
+	insights, err := repo.GetListeningInsights(ctx, domain.ListeningRange7D, "", now)
 	if err != nil {
 		t.Fatalf("GetInsights: %v", err)
 	}
@@ -337,6 +341,61 @@ func TestListeningRepositoryAggregatesPlaybackAttempts(t *testing.T) {
 	}
 	if insights.CompletionRate == nil || insights.SkipRate == nil || *insights.CompletionRate != 100.0/3 || *insights.SkipRate != 100.0/3 {
 		t.Fatalf("attempt rates: %#v", insights)
+	}
+}
+
+func TestListeningRepositoryFiltersInsightsBySourceDevice(t *testing.T) {
+	db, err := NewDB(":memory:", slog.Default())
+	if err != nil {
+		t.Fatalf("NewDB: %v", err)
+	}
+	defer func() { _ = db.Close() }()
+
+	ctx := context.Background()
+	trackRepo := NewTrackRepository(db)
+	for _, track := range []*domain.Track{
+		{ID: "desktop-track", Path: "/desktop.flac", Title: "Desktop", SortTitle: "Desktop", Format: "flac"},
+		{ID: "phone-track", Path: "/phone.flac", Title: "Phone", SortTitle: "Phone", Format: "flac"},
+	} {
+		if err := trackRepo.Save(ctx, track); err != nil {
+			t.Fatalf("save track %q: %v", track.ID, err)
+		}
+	}
+
+	repo := NewListeningRepository(db)
+	now := time.Date(2026, time.July, 24, 10, 0, 0, 0, time.Local)
+	for _, session := range []domain.ListeningSession{
+		{SourceDeviceID: "desktop", TrackID: "desktop-track", StartedAt: now, EndedAt: now.Add(time.Minute), ListenedSeconds: 60, QualifiedPlay: true},
+		{SourceDeviceID: "phone", TrackID: "phone-track", StartedAt: now, EndedAt: now.Add(2 * time.Minute), ListenedSeconds: 120, QualifiedPlay: true},
+	} {
+		if err := repo.RecordSession(ctx, session); err != nil {
+			t.Fatalf("record session: %v", err)
+		}
+	}
+	attempt := domain.PlaybackAttempt{ID: "phone-attempt", SourceDeviceID: "phone", TrackID: "phone-track", StartedAt: now}
+	if err := repo.RecordAttemptStart(ctx, attempt); err != nil {
+		t.Fatalf("start attempt: %v", err)
+	}
+	attempt.EndedAt, attempt.ListenedSeconds, attempt.EndReason = now.Add(2*time.Minute), 120, domain.PlaybackEndSkipped
+	if err := repo.FinalizeAttempt(ctx, attempt); err != nil {
+		t.Fatalf("finalize attempt: %v", err)
+	}
+
+	insights, err := repo.GetListeningInsights(ctx, domain.ListeningRange7D, "phone", now)
+	if err != nil {
+		t.Fatalf("get filtered insights: %v", err)
+	}
+	if insights.ListenedSeconds != 120 || insights.Plays != 1 || insights.StreakDays != 1 {
+		t.Fatalf("filtered listening totals: %#v", insights)
+	}
+	if insights.Attempts != 1 || insights.Skipped != 1 || insights.Completed != 0 || insights.AverageSessionSeconds != 120 {
+		t.Fatalf("filtered playback attempts: %#v", insights)
+	}
+	if len(insights.Activity) != 7 || insights.Activity[len(insights.Activity)-1].ListenedSeconds != 120 {
+		t.Fatalf("filtered activity: %#v", insights.Activity)
+	}
+	if len(insights.TopTracks) != 1 || insights.TopTracks[0].ID != "phone-track" {
+		t.Fatalf("filtered top tracks: %#v", insights.TopTracks)
 	}
 }
 
@@ -362,11 +421,47 @@ func TestListeningRepositoryRecoversOpenPlaybackAttempts(t *testing.T) {
 	if err := db.Get(&reason, `SELECT end_reason FROM playback_attempts WHERE id = 'open'`); err != nil || reason != string(domain.PlaybackEndStopped) {
 		t.Fatalf("recovered reason=%q err=%v", reason, err)
 	}
-	insights, err := repo.GetInsights(ctx, domain.ListeningRangeAll, time.Now())
+	insights, err := repo.GetListeningInsights(ctx, domain.ListeningRangeAll, "", time.Now())
 	if err != nil {
 		t.Fatalf("GetInsights: %v", err)
 	}
 	if insights.Stopped != 1 || insights.CompletionRate == nil || *insights.CompletionRate != 0 {
 		t.Fatalf("recovered insights: %#v", insights)
+	}
+}
+
+func TestListeningSnapshotMergeIsOriginAwareAndIdempotent(t *testing.T) {
+	db, err := NewDB(":memory:", slog.Default())
+	if err != nil {
+		t.Fatalf("NewDB: %v", err)
+	}
+	defer func() { _ = db.Close() }()
+	ctx := context.Background()
+	if err := NewTrackRepository(db).Save(ctx, &domain.Track{ID: "synced", Path: "/synced.flac", Title: "Synced", SortTitle: "Synced", Format: "flac"}); err != nil {
+		t.Fatal(err)
+	}
+	repo := NewListeningRepository(db)
+	now := time.Now()
+	snapshot := &domain.ListeningSyncSnapshot{
+		Version:     1,
+		Sessions:    []domain.ListeningSyncSession{{ID: "session", SourceDeviceID: "phone", TrackID: "synced", StartedAt: now.Add(-time.Minute).UnixMilli(), EndedAt: now.UnixMilli(), ListenedSeconds: 60, QualifiedPlay: true}},
+		DailyTracks: []domain.DailyTrackListeningStat{{SourceDeviceID: "phone", LocalDate: now.Format("2006-01-02"), TrackID: "synced", ListenedSeconds: 60, PlayCount: 1}},
+	}
+	if err := repo.ImportSnapshot(ctx, snapshot); err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.ImportSnapshot(ctx, snapshot); err != nil {
+		t.Fatal(err)
+	}
+	exported, err := repo.ExportSnapshot(ctx, "r", now.Add(-time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(exported.Sessions) != 1 || len(exported.DailyTracks) != 1 || exported.DailyTracks[0].PlayCount != 1 {
+		t.Fatalf("unexpected export: %#v", exported)
+	}
+	var playCount int
+	if err := db.Get(&playCount, `SELECT play_count FROM tracks WHERE id='synced'`); err != nil || playCount != 1 {
+		t.Fatalf("play_count=%d err=%v", playCount, err)
 	}
 }

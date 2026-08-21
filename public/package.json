@@ -1,0 +1,31 @@
+{
+  "name": "@airmedy/public",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "lint": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@lucide/vue": "1.23.0",
+    "dompurify": "3.4.11",
+    "marked": "18.0.5",
+    "vue": "3.5.40",
+    "vue-router": "5.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "@vitejs/plugin-vue": "6.0.8",
+    "@vue/tsconfig": "0.9.1",
+    "typescript": "6.0.2",
+    "vite": "8.2.0",
+    "vitest": "1.6.0",
+    "@vue/test-utils": "2.4.6",
+    "jsdom": "24.0.0",
+    "vue-tsc": "^3.3.8"
+  }
+}

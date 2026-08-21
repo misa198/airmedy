@@ -1,0 +1,89 @@
+name: Mobile Build
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: mobile-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build signed test ARM64 APK
+    runs-on: macos-15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android build tools
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;30.0.15729638' 'cmake;3.22.1'
+
+      - name: Configure signing and Android SDK
+        env:
+          MOBILE_KEYSTORE_BASE64: ${{ secrets.MOBILE_KEYSTORE_BASE64 }}
+          MOBILE_KEYSTORE_PASSWORD: ${{ secrets.MOBILE_KEYSTORE_PASSWORD }}
+          MOBILE_KEY_ALIAS: ${{ secrets.MOBILE_KEY_ALIAS }}
+          MOBILE_KEY_PASSWORD: ${{ secrets.MOBILE_KEY_PASSWORD }}
+        run: |
+          test -n "$MOBILE_KEYSTORE_BASE64"
+          test -n "$MOBILE_KEYSTORE_PASSWORD"
+          test -n "$MOBILE_KEY_ALIAS"
+          test -n "$MOBILE_KEY_PASSWORD"
+          base64 -D <<< "$MOBILE_KEYSTORE_BASE64" > "$RUNNER_TEMP/mobile-build.jks"
+          echo "sdk.dir=$ANDROID_HOME" > mobile/local.properties
+
+      - name: Restore Android FFmpeg
+        id: cache-ffmpeg
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            mobile/androidApp/build/ffmpeg
+            mobile/androidApp/src/main/jniLibs
+          key: ffmpeg-android-arm64-v1-${{ hashFiles('scripts/build-ffmpeg-android.sh') }}
+
+      - name: Build Android FFmpeg
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        run: bash scripts/build-ffmpeg-android.sh arm64-v8a
+
+      - name: Save Android FFmpeg
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            mobile/androidApp/build/ffmpeg
+            mobile/androidApp/src/main/jniLibs
+          key: ffmpeg-android-arm64-v1-${{ hashFiles('scripts/build-ffmpeg-android.sh') }}
+
+      - name: Build signed test APK
+        env:
+          MOBILE_KEYSTORE_FILE: ${{ runner.temp }}/mobile-build.jks
+          MOBILE_KEYSTORE_PASSWORD: ${{ secrets.MOBILE_KEYSTORE_PASSWORD }}
+          MOBILE_KEY_ALIAS: ${{ secrets.MOBILE_KEY_ALIAS }}
+          MOBILE_KEY_PASSWORD: ${{ secrets.MOBILE_KEY_PASSWORD }}
+          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+          LASTFM_API_SECRET: ${{ secrets.LASTFM_API_SECRET }}
+        working-directory: mobile
+        run: ./gradlew :androidApp:assembleDevRelease -Pandroid.injected.build.abi=arm64-v8a
+
+      - name: Upload test APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Airmedy-mobile-dev-release-arm64
+          path: mobile/androidApp/build/outputs/apk/dev/release/*.apk
+          if-no-files-found: error

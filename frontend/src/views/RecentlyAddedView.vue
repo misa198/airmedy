@@ -65,7 +65,7 @@ useLibrarySync(() => loadRecentlyAdded(true))
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
 
-      <div v-else-if="tracks.length === 0" class="h-full flex flex-col items-center justify-center text-foreground opacity-60">
+      <div v-else-if="tracks.length === 0" class="h-full flex flex-col items-center justify-center text-dim">
         <Disc class="w-12 h-12 mb-4 opacity-20" />
         <p>{{ $t('library.no_tracks') }}</p>
       </div>

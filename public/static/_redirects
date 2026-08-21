@@ -1,0 +1,3 @@
+/faq /index.html 200
+/faq/* /index.html 200
+/download /index.html 200

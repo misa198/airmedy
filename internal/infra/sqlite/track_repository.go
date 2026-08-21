@@ -120,16 +120,36 @@ func (r *trackRepository) GetByPath(ctx context.Context, path string) (*domain.T
 
 type trackRow struct {
 	domain.Track
-	AlbumTitle      sql.NullString `db:"album_title"`
-	AlbumArtworkKey sql.NullString `db:"album_artwork_key"`
-	AlbumYear       sql.NullInt64  `db:"album_year"`
-	ArtistNames     sql.NullString `db:"artist_names"`
-	ArtistIDs       sql.NullString `db:"artist_ids"`
+	AlbumTitle            sql.NullString `db:"album_title"`
+	AlbumSortTitle        sql.NullString `db:"album_sort_title"`
+	AlbumNormalizationKey sql.NullString `db:"album_normalization_key"`
+	AlbumCopyright        sql.NullString `db:"album_copyright"`
+	AlbumArtworkKey       sql.NullString `db:"album_artwork_key"`
+	AlbumYear             sql.NullInt64  `db:"album_year"`
+	AlbumCreatedAt        sql.NullTime   `db:"album_created_at"`
+	AlbumUpdatedAt        sql.NullTime   `db:"album_updated_at"`
+	ArtistNames           sql.NullString `db:"artist_names"`
+	ArtistIDs             sql.NullString `db:"artist_ids"`
+}
+
+type trackArtistRelationRow struct {
+	TrackID string `db:"track_id"`
+	domain.Artist
+}
+
+type trackGenreRelationRow struct {
+	TrackID string `db:"track_id"`
+	domain.Genre
+}
+
+type trackComposerRelationRow struct {
+	TrackID string `db:"track_id"`
+	domain.Composer
 }
 
 func (r *trackRepository) GetByAlbumID(ctx context.Context, albumID string) ([]*domain.TrackDTO, error) {
 	query := fmt.Sprintf(`
-		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year, 
+		SELECT %s, a.title AS album_title, a.sort_title AS album_sort_title, a.normalization_key AS album_normalization_key, a.copyright AS album_copyright, a.artwork_key AS album_artwork_key, a.year AS album_year, a.created_at AS album_created_at, a.updated_at AS album_updated_at,
 		       GROUP_CONCAT(art.name, '; ') AS artist_names,
 		       GROUP_CONCAT(art.id, '; ') AS artist_ids
 		FROM tracks t
@@ -145,12 +165,12 @@ func (r *trackRepository) GetByAlbumID(ctx context.Context, albumID string) ([]*
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tracks by album id: %w", err)
 	}
-	return r.scanTrackRows(rows), nil
+	return r.scanTrackRowsWithArtistArtwork(ctx, rows)
 }
 
 func (r *trackRepository) GetByArtistID(ctx context.Context, artistID string) ([]*domain.TrackDTO, error) {
 	query := fmt.Sprintf(`
-		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year, 
+		SELECT %s, a.title AS album_title, a.sort_title AS album_sort_title, a.normalization_key AS album_normalization_key, a.copyright AS album_copyright, a.artwork_key AS album_artwork_key, a.year AS album_year, a.created_at AS album_created_at, a.updated_at AS album_updated_at,
 		       GROUP_CONCAT(art.name, '; ') AS artist_names,
 		       GROUP_CONCAT(art.id, '; ') AS artist_ids
 		FROM tracks t
@@ -168,12 +188,12 @@ func (r *trackRepository) GetByArtistID(ctx context.Context, artistID string) ([
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tracks by artist id: %w", err)
 	}
-	return r.scanTrackRows(rows), nil
+	return r.scanTrackRowsWithArtistArtwork(ctx, rows)
 }
 
 func (r *trackRepository) GetByGenreID(ctx context.Context, genreID string) ([]*domain.TrackDTO, error) {
 	query := fmt.Sprintf(`
-		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year, 
+		SELECT %s, a.title AS album_title, a.sort_title AS album_sort_title, a.normalization_key AS album_normalization_key, a.copyright AS album_copyright, a.artwork_key AS album_artwork_key, a.year AS album_year, a.created_at AS album_created_at, a.updated_at AS album_updated_at,
 		       GROUP_CONCAT(art.name, '; ') AS artist_names,
 		       GROUP_CONCAT(art.id, '; ') AS artist_ids
 		FROM tracks t
@@ -184,17 +204,17 @@ func (r *trackRepository) GetByGenreID(ctx context.Context, genreID string) ([]*
 		GROUP BY t.id
 		ORDER BY t.year DESC, a.title, t.disc_number, t.track_number, t.sort_title
 		`, trackSelectFields)
-		var rows []trackRow
-		err := r.db.Ext(ctx).SelectContext(ctx, &rows, query, genreID)
-		if err != nil {
+	var rows []trackRow
+	err := r.db.Ext(ctx).SelectContext(ctx, &rows, query, genreID)
+	if err != nil {
 		return nil, fmt.Errorf("failed to get tracks by genre id: %w", err)
-		}
-		return r.scanTrackRows(rows), nil
-		}
+	}
+	return r.scanTrackRowsWithArtistArtwork(ctx, rows)
+}
 
-		func (r *trackRepository) GetByComposerID(ctx context.Context, composerID string) ([]*domain.TrackDTO, error) {
-		query := fmt.Sprintf(`
-		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year,
+func (r *trackRepository) GetByComposerID(ctx context.Context, composerID string) ([]*domain.TrackDTO, error) {
+	query := fmt.Sprintf(`
+		SELECT %s, a.title AS album_title, a.sort_title AS album_sort_title, a.normalization_key AS album_normalization_key, a.copyright AS album_copyright, a.artwork_key AS album_artwork_key, a.year AS album_year, a.created_at AS album_created_at, a.updated_at AS album_updated_at,
 		       GROUP_CONCAT(art.name, '; ') AS artist_names,
 		       GROUP_CONCAT(art.id, '; ') AS artist_ids
 		FROM tracks t
@@ -211,7 +231,7 @@ func (r *trackRepository) GetByGenreID(ctx context.Context, genreID string) ([]*
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tracks by composer id: %w", err)
 	}
-	return r.scanTrackRows(rows), nil
+	return r.scanTrackRowsWithArtistArtwork(ctx, rows)
 }
 
 func (r *trackRepository) scanTrackRows(rows []trackRow) []*domain.TrackDTO {
@@ -220,10 +240,15 @@ func (r *trackRepository) scanTrackRows(rows []trackRow) []*domain.TrackDTO {
 		dtos[i] = &domain.TrackDTO{Track: row.Track}
 		if row.AlbumTitle.Valid {
 			dtos[i].Album = &domain.Album{
-				ID:         row.AlbumID,
-				Title:      row.AlbumTitle.String,
-				ArtworkKey: row.AlbumArtworkKey.String,
-				Year:       int(row.AlbumYear.Int64),
+				ID:               row.AlbumID,
+				Title:            row.AlbumTitle.String,
+				SortTitle:        row.AlbumSortTitle.String,
+				NormalizationKey: row.AlbumNormalizationKey.String,
+				Copyright:        row.AlbumCopyright.String,
+				ArtworkKey:       row.AlbumArtworkKey.String,
+				Year:             int(row.AlbumYear.Int64),
+				CreatedAt:        row.AlbumCreatedAt.Time,
+				UpdatedAt:        row.AlbumUpdatedAt.Time,
 			}
 		}
 		if row.ArtistNames.Valid && row.ArtistIDs.Valid {
@@ -241,9 +266,111 @@ func (r *trackRepository) scanTrackRows(rows []trackRow) []*domain.TrackDTO {
 	return dtos
 }
 
+// scanTrackRowsWithArtistArtwork enriches compact track-list queries with the
+// full relation objects required by mobile-sync manifests.
+func (r *trackRepository) scanTrackRowsWithArtistArtwork(ctx context.Context, rows []trackRow) ([]*domain.TrackDTO, error) {
+	dtos := r.scanTrackRows(rows)
+	if len(dtos) == 0 {
+		return dtos, nil
+	}
+
+	dtosByID := make(map[string]*domain.TrackDTO, len(dtos))
+	trackIDs := make([]string, 0, len(dtos))
+	artistIDs := make([]string, 0)
+	seenArtistIDs := make(map[string]struct{})
+	for _, dto := range dtos {
+		dtosByID[dto.ID] = dto
+		trackIDs = append(trackIDs, dto.ID)
+		for _, artist := range dto.Artists {
+			if artist != nil && artist.ID != "" {
+				if _, exists := seenArtistIDs[artist.ID]; !exists {
+					seenArtistIDs[artist.ID] = struct{}{}
+					artistIDs = append(artistIDs, artist.ID)
+				}
+			}
+		}
+	}
+
+	trackIDsJSON, err := json.Marshal(trackIDs)
+	if err != nil {
+		return nil, fmt.Errorf("marshal track ids: %w", err)
+	}
+
+	if len(artistIDs) > 0 {
+		artistIDsJSON, err := json.Marshal(artistIDs)
+		if err != nil {
+			return nil, fmt.Errorf("marshal track artist ids: %w", err)
+		}
+		var artists []*domain.Artist
+		if err := r.db.Ext(ctx).SelectContext(ctx, &artists, `SELECT * FROM artists WHERE id IN (SELECT value FROM json_each(?))`, string(artistIDsJSON)); err != nil {
+			return nil, fmt.Errorf("load track artists: %w", err)
+		}
+		artistsByID := make(map[string]*domain.Artist, len(artists))
+		for _, artist := range artists {
+			artistsByID[artist.ID] = artist
+		}
+		for _, dto := range dtos {
+			for _, artist := range dto.Artists {
+				if full, exists := artistsByID[artist.ID]; exists {
+					*artist = *full
+				}
+			}
+		}
+	}
+
+	var albumArtistRows []trackArtistRelationRow
+	if err := r.db.Ext(ctx).SelectContext(ctx, &albumArtistRows, `
+		SELECT taa.track_id, art.* FROM track_album_artists taa
+		JOIN artists art ON art.id = taa.artist_id
+		WHERE taa.track_id IN (SELECT value FROM json_each(?))
+		ORDER BY taa.track_id, taa.position
+	`, string(trackIDsJSON)); err != nil {
+		return nil, fmt.Errorf("load track album artists: %w", err)
+	}
+	for _, row := range albumArtistRows {
+		if dto := dtosByID[row.TrackID]; dto != nil {
+			artist := row.Artist
+			dto.AlbumArtists = append(dto.AlbumArtists, &artist)
+		}
+	}
+
+	var genreRows []trackGenreRelationRow
+	if err := r.db.Ext(ctx).SelectContext(ctx, &genreRows, `
+		SELECT tg.track_id, g.id, g.name, COALESCE(g.normalization_key, '') AS normalization_key FROM track_genres tg
+		JOIN genres g ON g.id = tg.genre_id
+		WHERE tg.track_id IN (SELECT value FROM json_each(?))
+		ORDER BY tg.track_id, tg.position
+	`, string(trackIDsJSON)); err != nil {
+		return nil, fmt.Errorf("load track genres: %w", err)
+	}
+	for _, row := range genreRows {
+		if dto := dtosByID[row.TrackID]; dto != nil {
+			genre := row.Genre
+			dto.Genres = append(dto.Genres, &genre)
+		}
+	}
+
+	var composerRows []trackComposerRelationRow
+	if err := r.db.Ext(ctx).SelectContext(ctx, &composerRows, `
+		SELECT tc.track_id, c.id, c.name, COALESCE(c.normalization_key, '') AS normalization_key FROM track_composers tc
+		JOIN composers c ON c.id = tc.composer_id
+		WHERE tc.track_id IN (SELECT value FROM json_each(?))
+		ORDER BY tc.track_id, tc.position
+	`, string(trackIDsJSON)); err != nil {
+		return nil, fmt.Errorf("load track composers: %w", err)
+	}
+	for _, row := range composerRows {
+		if dto := dtosByID[row.TrackID]; dto != nil {
+			composer := row.Composer
+			dto.Composers = append(dto.Composers, &composer)
+		}
+	}
+	return dtos, nil
+}
+
 func (r *trackRepository) GetByPathPrefix(ctx context.Context, prefix string) ([]*domain.TrackDTO, error) {
 	query := fmt.Sprintf(`
-		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year, 
+		SELECT %s, a.title AS album_title, a.sort_title AS album_sort_title, a.normalization_key AS album_normalization_key, a.copyright AS album_copyright, a.artwork_key AS album_artwork_key, a.year AS album_year, a.created_at AS album_created_at, a.updated_at AS album_updated_at,
 		       GROUP_CONCAT(art.name, '; ') AS artist_names,
 		       GROUP_CONCAT(art.id, '; ') AS artist_ids
 		FROM tracks t
@@ -259,7 +386,7 @@ func (r *trackRepository) GetByPathPrefix(ctx context.Context, prefix string) ([
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tracks by path prefix: %w", err)
 	}
-	return r.scanTrackRows(rows), nil
+	return r.scanTrackRowsWithArtistArtwork(ctx, rows)
 }
 
 func (r *trackRepository) AlbumArtistIDsByPathPrefix(ctx context.Context, prefix string) ([]string, error) {
@@ -287,7 +414,7 @@ func (r *trackRepository) Count(ctx context.Context) (int, error) {
 
 func (r *trackRepository) GetPaginated(ctx context.Context, offset, limit int) ([]*domain.TrackDTO, error) {
 	query := fmt.Sprintf(`
-		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year,
+		SELECT %s, a.title AS album_title, a.sort_title AS album_sort_title, a.normalization_key AS album_normalization_key, a.copyright AS album_copyright, a.artwork_key AS album_artwork_key, a.year AS album_year, a.created_at AS album_created_at, a.updated_at AS album_updated_at,
 		       GROUP_CONCAT(art.name, '; ') AS artist_names,
 		       GROUP_CONCAT(art.id, '; ') AS artist_ids
 		FROM tracks t
@@ -303,7 +430,7 @@ func (r *trackRepository) GetPaginated(ctx context.Context, offset, limit int) (
 	if err != nil {
 		return nil, fmt.Errorf("failed to get paginated tracks: %w", err)
 	}
-	return r.scanTrackRows(rows), nil
+	return r.scanTrackRowsWithArtistArtwork(ctx, rows)
 }
 
 func (r *trackRepository) GetByIDs(ctx context.Context, ids []string) ([]*domain.TrackDTO, error) {
@@ -318,7 +445,7 @@ func (r *trackRepository) GetByIDs(ctx context.Context, ids []string) ([]*domain
 		return nil, fmt.Errorf("failed to marshal track ids: %w", err)
 	}
 	q := fmt.Sprintf(`
-		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year,
+		SELECT %s, a.title AS album_title, a.sort_title AS album_sort_title, a.normalization_key AS album_normalization_key, a.copyright AS album_copyright, a.artwork_key AS album_artwork_key, a.year AS album_year, a.created_at AS album_created_at, a.updated_at AS album_updated_at,
 		       GROUP_CONCAT(art.name, '; ') AS artist_names,
 		       GROUP_CONCAT(art.id, '; ') AS artist_ids
 		FROM tracks t
@@ -333,7 +460,10 @@ func (r *trackRepository) GetByIDs(ctx context.Context, ids []string) ([]*domain
 		return nil, fmt.Errorf("failed to get tracks by ids: %w", err)
 	}
 	// Reorder to match input order (IN clause doesn't preserve order)
-	fetched := r.scanTrackRows(rows)
+	fetched, err := r.scanTrackRowsWithArtistArtwork(ctx, rows)
+	if err != nil {
+		return nil, err
+	}
 	byID := make(map[string]*domain.TrackDTO, len(fetched))
 	for _, t := range fetched {
 		byID[t.ID] = t
@@ -349,7 +479,7 @@ func (r *trackRepository) GetByIDs(ctx context.Context, ids []string) ([]*domain
 
 func (r *trackRepository) GetAll(ctx context.Context) ([]*domain.TrackDTO, error) {
 	query := fmt.Sprintf(`
-		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year,
+		SELECT %s, a.title AS album_title, a.sort_title AS album_sort_title, a.normalization_key AS album_normalization_key, a.copyright AS album_copyright, a.artwork_key AS album_artwork_key, a.year AS album_year, a.created_at AS album_created_at, a.updated_at AS album_updated_at,
 		       GROUP_CONCAT(art.name, '; ') AS artist_names,
 		       GROUP_CONCAT(art.id, '; ') AS artist_ids
 		FROM tracks t
@@ -364,12 +494,12 @@ func (r *trackRepository) GetAll(ctx context.Context) ([]*domain.TrackDTO, error
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all tracks: %w", err)
 	}
-	return r.scanTrackRows(rows), nil
+	return r.scanTrackRowsWithArtistArtwork(ctx, rows)
 }
 
 func (r *trackRepository) GetFavorites(ctx context.Context) ([]*domain.TrackDTO, error) {
 	query := fmt.Sprintf(`
-		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year,
+		SELECT %s, a.title AS album_title, a.sort_title AS album_sort_title, a.normalization_key AS album_normalization_key, a.copyright AS album_copyright, a.artwork_key AS album_artwork_key, a.year AS album_year, a.created_at AS album_created_at, a.updated_at AS album_updated_at,
 		       GROUP_CONCAT(art.name, '; ') AS artist_names,
 		       GROUP_CONCAT(art.id, '; ') AS artist_ids
 		FROM tracks t
@@ -385,7 +515,7 @@ func (r *trackRepository) GetFavorites(ctx context.Context) ([]*domain.TrackDTO,
 	if err != nil {
 		return nil, fmt.Errorf("failed to get favorite tracks: %w", err)
 	}
-	return r.scanTrackRows(rows), nil
+	return r.scanTrackRowsWithArtistArtwork(ctx, rows)
 }
 
 func (r *trackRepository) ToggleFavorite(ctx context.Context, id string) (bool, error) {
@@ -404,6 +534,21 @@ func (r *trackRepository) ToggleFavorite(ctx context.Context, id string) (bool, 
 	return val, nil
 }
 
+func (r *trackRepository) SetFavorite(ctx context.Context, id string, favorite bool) error {
+	result, err := r.db.Ext(ctx).ExecContext(ctx, "UPDATE tracks SET is_favorite = ?, updated_at = ? WHERE id = ?", favorite, time.Now(), id)
+	if err != nil {
+		return fmt.Errorf("set favorite: %w", err)
+	}
+	changed, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("check favorite update: %w", err)
+	}
+	if changed == 0 {
+		return fmt.Errorf("track not found: %s", id)
+	}
+	return nil
+}
+
 func (r *trackRepository) IncrementPlayCount(ctx context.Context, id string) error {
 	_, err := r.db.Ext(ctx).ExecContext(ctx,
 		"UPDATE tracks SET play_count = play_count + 1, updated_at = ? WHERE id = ?",
@@ -417,7 +562,7 @@ func (r *trackRepository) IncrementPlayCount(ctx context.Context, id string) err
 
 func (r *trackRepository) GetMostListened(ctx context.Context, limit int) ([]*domain.TrackDTO, error) {
 	query := fmt.Sprintf(`
-		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year, 
+		SELECT %s, a.title AS album_title, a.sort_title AS album_sort_title, a.normalization_key AS album_normalization_key, a.copyright AS album_copyright, a.artwork_key AS album_artwork_key, a.year AS album_year, a.created_at AS album_created_at, a.updated_at AS album_updated_at,
 		       GROUP_CONCAT(art.name, '; ') AS artist_names,
 		       GROUP_CONCAT(art.id, '; ') AS artist_ids
 		FROM tracks t
@@ -434,12 +579,12 @@ func (r *trackRepository) GetMostListened(ctx context.Context, limit int) ([]*do
 	if err != nil {
 		return nil, fmt.Errorf("failed to get most listened tracks: %w", err)
 	}
-	return r.scanTrackRows(rows), nil
+	return r.scanTrackRowsWithArtistArtwork(ctx, rows)
 }
 
 func (r *trackRepository) GetLeastListened(ctx context.Context, limit int) ([]*domain.TrackDTO, error) {
 	query := fmt.Sprintf(`
-		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year, 
+		SELECT %s, a.title AS album_title, a.sort_title AS album_sort_title, a.normalization_key AS album_normalization_key, a.copyright AS album_copyright, a.artwork_key AS album_artwork_key, a.year AS album_year, a.created_at AS album_created_at, a.updated_at AS album_updated_at,
 		       GROUP_CONCAT(art.name, '; ') AS artist_names,
 		       GROUP_CONCAT(art.id, '; ') AS artist_ids
 		FROM tracks t
@@ -455,12 +600,12 @@ func (r *trackRepository) GetLeastListened(ctx context.Context, limit int) ([]*d
 	if err != nil {
 		return nil, fmt.Errorf("failed to get least listened tracks: %w", err)
 	}
-	return r.scanTrackRows(rows), nil
+	return r.scanTrackRowsWithArtistArtwork(ctx, rows)
 }
 
 func (r *trackRepository) GetRecentlyPlayed(ctx context.Context, limit int) ([]*domain.TrackDTO, error) {
 	query := fmt.Sprintf(`
-		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year, 
+		SELECT %s, a.title AS album_title, a.sort_title AS album_sort_title, a.normalization_key AS album_normalization_key, a.copyright AS album_copyright, a.artwork_key AS album_artwork_key, a.year AS album_year, a.created_at AS album_created_at, a.updated_at AS album_updated_at,
 		       GROUP_CONCAT(art.name, '; ') AS artist_names,
 		       GROUP_CONCAT(art.id, '; ') AS artist_ids
 		FROM tracks t
@@ -477,12 +622,12 @@ func (r *trackRepository) GetRecentlyPlayed(ctx context.Context, limit int) ([]*
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recently played tracks: %w", err)
 	}
-	return r.scanTrackRows(rows), nil
+	return r.scanTrackRowsWithArtistArtwork(ctx, rows)
 }
 
 func (r *trackRepository) GetRecentlyAdded(ctx context.Context, limit int) ([]*domain.TrackDTO, error) {
 	query := fmt.Sprintf(`
-		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year,
+		SELECT %s, a.title AS album_title, a.sort_title AS album_sort_title, a.normalization_key AS album_normalization_key, a.copyright AS album_copyright, a.artwork_key AS album_artwork_key, a.year AS album_year, a.created_at AS album_created_at, a.updated_at AS album_updated_at,
 		       GROUP_CONCAT(art.name, '; ') AS artist_names,
 		       GROUP_CONCAT(art.id, '; ') AS artist_ids
 		FROM tracks t
@@ -498,7 +643,7 @@ func (r *trackRepository) GetRecentlyAdded(ctx context.Context, limit int) ([]*d
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recently added tracks: %w", err)
 	}
-	return r.scanTrackRows(rows), nil
+	return r.scanTrackRowsWithArtistArtwork(ctx, rows)
 }
 
 // GetByRules evaluates a smart playlist. whereSQL/args are produced by
@@ -516,7 +661,7 @@ func (r *trackRepository) GetByRules(ctx context.Context, whereSQL string, args 
 		orderBySQL = "t.sort_title"
 	}
 	query := fmt.Sprintf(`
-		SELECT %s, a.title AS album_title, a.artwork_key AS album_artwork_key, a.year AS album_year,
+		SELECT %s, a.title AS album_title, a.sort_title AS album_sort_title, a.normalization_key AS album_normalization_key, a.copyright AS album_copyright, a.artwork_key AS album_artwork_key, a.year AS album_year, a.created_at AS album_created_at, a.updated_at AS album_updated_at,
 		       GROUP_CONCAT(art.name, '; ') AS artist_names,
 		       GROUP_CONCAT(art.id, '; ') AS artist_ids
 		FROM tracks t
@@ -538,7 +683,7 @@ func (r *trackRepository) GetByRules(ctx context.Context, whereSQL string, args 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tracks by rules: %w", err)
 	}
-	return r.scanTrackRows(rows), nil
+	return r.scanTrackRowsWithArtistArtwork(ctx, rows)
 }
 
 type trackDB struct {

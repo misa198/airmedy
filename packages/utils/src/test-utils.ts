@@ -8,11 +8,11 @@ export function createTestI18n() {
     messages: {
       en: {}
     }
-  })
+  }) as any
 }
 
 export function setupTestPinia() {
   const pinia = createPinia()
   setActivePinia(pinia)
-  return pinia
+  return pinia as any
 }

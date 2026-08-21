@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { AlignLeft, Mic2, Timer, X } from '@lucide/vue'
+import { Mic2, X } from '@lucide/vue'
 import { usePlayerStore } from '../stores/player'
 import { useI18n } from 'vue-i18n'
 import { useLyrics } from '../composables/useLyrics'
@@ -11,16 +11,6 @@ const store = usePlayerStore()
 const lyricsContent = computed(() => store.lyrics?.content)
 const { isSynced, syncedLines, plainLines } = useLyrics(lyricsContent)
 
-const viewType = ref<'synced' | 'plain'>('synced')
-
-watch(isSynced, (synced) => {
-  viewType.value = synced ? 'synced' : 'plain'
-}, { immediate: true })
-
-const effectiveViewType = computed(() =>
-  viewType.value === 'synced' && !isSynced.value ? 'plain' : viewType.value
-)
-
 const activeIndex = computed(() => {
   const pos = store.position
   const idx = [...syncedLines.value].reverse().findIndex(line => line.time <= pos)
@@ -30,16 +20,27 @@ const activeIndex = computed(() => {
 const scrollContainer = ref<HTMLElement | null>(null)
 const lineRefs = ref<HTMLElement[]>([])
 const rootEl = ref<HTMLElement | null>(null)
+const isBrowsing = ref(false)
 let scrollFrame: number | undefined
 let resizeObserver: ResizeObserver | null = null
 let waitingForLayout = false
+let hasPositionedInitialLine = false
+let previousActiveIndex = -1
 
 // Reset stale refs when lines change so indexes stay aligned.
 watch(() => syncedLines.value, () => {
   lineRefs.value = []
+  isBrowsing.value = false
+  hasPositionedInitialLine = false
+  previousActiveIndex = -1
 })
 
-function scrollToActive(index: number): boolean {
+function isVisible(container: HTMLElement, el: HTMLElement) {
+  return el.offsetTop < container.scrollTop + container.clientHeight
+    && el.offsetTop + el.clientHeight > container.scrollTop
+}
+
+function scrollToActive(index: number, behavior: ScrollBehavior): boolean {
   if (index === -1) return false
   const container = scrollContainer.value
   const el = lineRefs.value[index]
@@ -48,31 +49,53 @@ function scrollToActive(index: number): boolean {
   if (!container || !el || container.clientHeight === 0 || container.clientWidth === 0) return false
   container.scrollTo({
     top: el.offsetTop - container.clientHeight / 2 + el.clientHeight / 2,
-    behavior: 'smooth',
+    behavior,
   })
+  hasPositionedInitialLine = true
   return true
 }
 
-function scheduleScrollToActive(index: number) {
+function scheduleScrollToActive(index: number, previousIndex = previousActiveIndex) {
   nextTick(() => {
     if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame)
     scrollFrame = requestAnimationFrame(() => {
       scrollFrame = undefined
-      waitingForLayout = index !== -1 && !scrollToActive(index)
+      const container = scrollContainer.value
+      const previous = lineRefs.value[previousIndex]
+      const behavior: ScrollBehavior = hasPositionedInitialLine && container && previous && isVisible(container, previous)
+        ? 'smooth'
+        : 'auto'
+      waitingForLayout = index !== -1 && !scrollToActive(index, behavior)
     })
   })
 }
 
+function enterBrowseMode() {
+  isBrowsing.value = true
+}
+
+function seekAndResume(time: number, index: number) {
+  isBrowsing.value = false
+  // The listener selected a visible line, so animate that exact line into the
+  // active position before the player position update arrives.
+  hasPositionedInitialLine = true
+  previousActiveIndex = index
+  scheduleScrollToActive(index, index)
+  store.seek(time)
+}
+
 // flush:'post' → DOM patched before measuring offsets.
 watch(activeIndex, (newIndex) => {
-  scheduleScrollToActive(newIndex)
+  const previousIndex = previousActiveIndex
+  if (!isBrowsing.value) scheduleScrollToActive(newIndex, previousIndex)
+  previousActiveIndex = newIndex
 }, { flush: 'post', immediate: true })
 
 onMounted(() => {
   scheduleScrollToActive(activeIndex.value)
   if (typeof ResizeObserver !== 'undefined') {
     resizeObserver = new ResizeObserver(() => {
-      if (waitingForLayout) scheduleScrollToActive(activeIndex.value)
+      if (waitingForLayout && !isBrowsing.value) scheduleScrollToActive(activeIndex.value)
     })
     if (scrollContainer.value) resizeObserver.observe(scrollContainer.value)
     else if (rootEl.value) resizeObserver.observe(rootEl.value)
@@ -95,33 +118,11 @@ onUnmounted(() => {
         <div class="max-w-[100px] truncate">{{ t('player.lyrics') }}</div>
       </div>
 
-      <div class="flex gap-x-1 items-center">
-        <!-- View type toggle (only when synced lyrics are available) -->
-        <div v-if="isSynced" class="relative grid grid-cols-2 bg-foreground/[0.06] rounded-full p-0.5 text-xs">
-        <!-- Sliding pill -->
-        <div
-          class="absolute inset-y-0.5 w-1/2 rounded-full bg-foreground/10 transition-transform duration-200 ease-in-out"
-          :class="viewType === 'plain' ? 'translate-x-full' : 'translate-x-0'" />
-        <button
-          class="relative z-10 p-1.5 rounded-full transition-colors duration-200 flex items-center justify-center"
-          :class="viewType === 'synced' ? 'text-foreground' : 'text-foreground opacity-60 hover:opacity-90'"
-          @click="viewType = 'synced'">
-          <Timer class="w-3.5 h-3.5" />
-        </button>
-        <button
-          class="relative z-10 p-1.5 rounded-full transition-colors duration-200 flex items-center justify-center"
-          :class="viewType === 'plain' ? 'text-foreground' : 'text-foreground opacity-60 hover:opacity-90'"
-          @click="viewType = 'plain'">
-          <AlignLeft class="w-3.5 h-3.5" />
-        </button>
-      </div>
-
       <button
-        class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-foreground opacity-60 hover:text-foreground flex-shrink-0"
+        class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-dim hover:text-foreground flex-shrink-0"
         @click="store.toggleLyrics()">
         <X class="w-4 h-4" />
       </button>
-      </div>
     </div>
 
     <!-- Body -->
@@ -140,17 +141,19 @@ onUnmounted(() => {
       </div>
 
       <!-- Synced view -->
-      <div v-else-if="effectiveViewType === 'synced'" ref="scrollContainer"
-        class="h-full overflow-y-auto px-4 py-10 scrollbar-hide">
+      <div v-else-if="isSynced" ref="scrollContainer"
+        class="h-full overflow-y-auto px-4 py-10 scrollbar-hide" @wheel.passive="enterBrowseMode" @pointerdown="enterBrowseMode">
         <div class="space-y-6">
           <div v-for="(line, index) in syncedLines" :key="index" ref="lineRefs"
             class="transition-all duration-150 cursor-pointer select-none leading-snug py-1 origin-left" :class="[
-              index === activeIndex
+              isBrowsing
+                ? 'text-foreground opacity-100'
+                : index === activeIndex
                 ? 'text-foreground'
                 : index < activeIndex
                   ? 'text-foreground/40 opacity-60 hover:text-foreground/50'
                   : 'text-foreground/40 opacity-40 hover:text-foreground/40',
-            ]" @click="store.seek(line.time)">
+            ]" @click="seekAndResume(line.time, index)">
             <div class="font-bold text-[21pt]">{{ line.text }}</div>
             <div v-if="line.secondary" class="text-[15pt] opacity-50 mt-0.5">{{ line.secondary }}</div>
           </div>

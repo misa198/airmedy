@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	_ "golang.org/x/image/webp"
 	"image"
 	_ "image/jpeg"
 	_ "image/png"
@@ -44,8 +45,11 @@ func (c *diskArtworkCache) Save(ctx context.Context, data []byte, _ string) (str
 
 	hash := fmt.Sprintf("%x", sha256.Sum256(data))
 	ext := ".jpg"
-	if format == "png" {
+	switch format {
+	case "png":
 		ext = ".png"
+	case "webp":
+		ext = ".webp"
 	}
 
 	fileName := hash + ext

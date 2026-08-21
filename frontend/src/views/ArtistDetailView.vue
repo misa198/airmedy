@@ -179,7 +179,7 @@ useDetailRouteLoader(loadArtistDetails)
               {{
                 artist.name || t('library.unknown_artist') }}</h1>
             <div
-              class="text-sm flex flex-wrap items-center justify-center md:justify-start gap-4 text-foreground opacity-60">
+              class="text-sm flex flex-wrap items-center justify-center md:justify-start gap-4 text-dim">
               <span class="flex items-center gap-1">
                 <Disc class="w-4 h-4" /> {{ t('artist.albums_count', { count: albums.length }) }}
               </span>

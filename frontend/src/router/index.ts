@@ -82,7 +82,14 @@ const routes = [
     path: '/settings/:category?',
     name: 'settings',
     component: () => import('../views/SettingsView.vue'),
-    props: true
+    props: true,
+    children: [
+      {
+        path: ':deviceId/sync',
+        name: 'mobile-library-sync',
+        component: () => import('../views/MobileLibrarySyncView.vue')
+      }
+    ]
   },
   {
     path: '/mini-player',

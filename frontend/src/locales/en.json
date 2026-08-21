@@ -1,5 +1,13 @@
 {
   "common": {
+    "mobile_pairing_broadcast": {
+      "title": "Broadcast pairing signal",
+      "description": "Broadcast a signal for 30 seconds so ready devices can find and connect to this desktop.",
+      "broadcasting_desc": "Broadcasting pairing signal for {seconds} seconds.",
+      "broadcasting": "Broadcasting pairing signal",
+      "start": "Broadcast signal",
+      "stop": "Stop broadcasting"
+    },
     "play": "Play",
     "shuffle": "Shuffle",
     "home": "Home",
@@ -23,6 +31,28 @@
     "yes": "Yes",
     "no": "No",
     "open_devtools": "Open Developer Tools"
+  },
+  "mobile_sync": {
+    "back": "Mobile devices",
+    "eyebrow": "Library sync",
+    "title": "Mobile library sync",
+    "entire_library": "Entire music library",
+    "selected_items": "Selected artists, albums, genres, or playlists",
+    "artists": "Artists",
+    "albums": "Albums",
+    "genres": "Genres",
+    "playlists": "Playlists",
+    "search": "Search {type}",
+    "sync": "Sync",
+    "pending": "Waiting for mobile",
+    "complete": "Sync complete",
+    "assets": "assets",
+    "offline_desc": "Connect this device to begin or continue syncing.",
+    "replace_title": "Replace unfinished sync?",
+    "replace_desc": "The current sync plan will be replaced. Mobile removes out-of-scope content only after the new plan finishes.",
+    "replace": "Replace sync",
+    "insufficient_storage_title": "Not enough storage",
+    "insufficient_storage_description": "Not enough storage to sync. Needs {required}; {available} is currently available."
   },
   "app": {
     "update_available": "Update Available",
@@ -75,7 +105,8 @@
       "integrations": "Integrations",
       "playback": "Playback",
       "remote": "Remote",
-      "about": "About"
+      "about": "About",
+      "mobile_devices": "Mobile"
     },
     "general": {
       "behavior": "Behavior",
@@ -229,6 +260,27 @@
       "interface_link_local": "Link-Local Network",
       "interface_virtual": "Virtual Network",
       "interface_virtual_vm": "Virtual Machine Network"
+    },
+    "mobile_pairing": {
+      "title": "Mobile Devices",
+      "connection_title": "Mobile pairing server",
+      "connection_desc": "Airmedy is ready to pair with your phone on this network.",
+      "running": "MQTT pairing server running on port {port}",
+      "unavailable": "Mobile pairing server is unavailable.",
+      "retry": "Retry",
+      "scan_title": "Scan to pair",
+      "scan_desc": "Choose the network address your phone can reach, then scan the QR code in the Airmedy mobile app.",
+      "sync_help": "Learn how to connect",
+      "copy_qr": "Copy pairing link",
+      "trusted_title": "Trusted devices",
+      "no_devices": "No mobile devices have been paired yet.",
+      "online": "Online",
+      "offline": "Offline",
+      "request_title": "Mobile device wants to connect",
+      "request_desc": "Accept only if this is your device. Its public key will be saved on this desktop.",
+      "fingerprint": "Public key fingerprint",
+      "accept": "Accept",
+      "decline": "Decline"
     },
     "equalizer": {
       "title": "Equalizer",
@@ -573,6 +625,11 @@
     "range_7d": "7D",
     "range_30d": "30D",
     "range_all": "All",
+    "all_devices": "All devices",
+    "this_device": "This device",
+    "trusted_devices": "Trusted devices",
+    "library_section": "Desktop Library",
+    "listening_section": "Listening History",
     "total_time": "Total Time",
     "streak": "Streak",
     "days": "Days",
@@ -594,7 +651,9 @@
     "total_albums": "Total Albums",
     "total_artists": "Total Artists",
     "total_playlists": "Total Playlists",
-    "genre_distribution": "Genre Distribution", "genre_other": "Other", "no_genres": "No genre listening data yet",
+    "genre_distribution": "Genre Distribution",
+    "genre_other": "Other",
+    "no_genres": "No genre listening data yet",
     "activity": "Listening Activity",
     "quality": "Audio Quality",
     "top_artists": "Top Artists",

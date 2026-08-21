@@ -29,7 +29,7 @@ const emit = defineEmits<{
 
     <div class="space-y-1 px-1">
       <h3 class="font-medium text-sm truncate group-hover:text-foreground transition-colors">{{ playlist.name || $t('library.unknown_playlist') }}</h3>
-      <p class="text-xs text-foreground opacity-60">{{ playlist.is_smart ? $t('library.smart_playlist') : $t('library.playlist') }}</p>
+      <p class="text-xs text-dim">{{ playlist.is_smart ? $t('library.smart_playlist') : $t('library.playlist') }}</p>
     </div>
   </div>
 </template>

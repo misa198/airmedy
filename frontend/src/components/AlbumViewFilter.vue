@@ -43,7 +43,7 @@ const submenuGroup = useHoverSubmenuGroup()
     </template>
 
     <!-- Layout -->
-    <p class="text-[10px] font-semibold text-foreground opacity-60 uppercase tracking-widest px-1 mb-2">
+    <p class="text-[10px] font-semibold text-dim uppercase tracking-widest px-1 mb-2">
       {{ $t('library.layout') }}
     </p>
     <div class="flex flex-col gap-0.5">

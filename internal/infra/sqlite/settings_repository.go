@@ -70,8 +70,8 @@ func NewSettingsRepository(db *DB) domain.SettingsRepository {
 
 func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSettings) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO app_settings (id, language, theme, primary_color, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator, auto_advance_notifications_enabled, library_sync_interval, library_analysis_enabled, library_analysis_worker_count, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, mood_derivation_version, max_queue_size, crossfade_seconds, blend_artwork_during_crossfade, high_contrast_lyrics, eq_preamp, stereo_width, updated_at)
-		 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+		`INSERT INTO app_settings (id, language, theme, primary_color, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, pairing_mqtt_port, show_player_indicator, auto_advance_notifications_enabled, library_sync_interval, library_analysis_enabled, library_analysis_worker_count, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, mood_derivation_version, max_queue_size, crossfade_seconds, blend_artwork_during_crossfade, high_contrast_lyrics, eq_preamp, stereo_width, updated_at)
+		 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 		 ON CONFLICT(id) DO UPDATE SET
 		   language = excluded.language,
 		   theme = excluded.theme,
@@ -95,6 +95,7 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		   remote_server_enabled = excluded.remote_server_enabled,
 		   remote_server_port = excluded.remote_server_port,
 		   remote_server_password = excluded.remote_server_password,
+		   pairing_mqtt_port = excluded.pairing_mqtt_port,
 		   show_player_indicator = excluded.show_player_indicator,
 		   auto_advance_notifications_enabled = excluded.auto_advance_notifications_enabled,
 		   library_sync_interval = excluded.library_sync_interval,
@@ -138,6 +139,7 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		settings.RemoteServerEnabled,
 		settings.RemoteServerPort,
 		settings.RemoteServerPassword,
+		settings.PairingMQTTPort,
 		settings.ShowPlayerIndicator,
 		settings.AutoAdvanceNotificationsEnabled,
 		settings.LibrarySyncInterval,
@@ -189,6 +191,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		RemoteServerEnabled             bool           `db:"remote_server_enabled"`
 		RemoteServerPort                int            `db:"remote_server_port"`
 		RemoteServerPassword            string         `db:"remote_server_password"`
+		PairingMQTTPort                 int            `db:"pairing_mqtt_port"`
 		ShowPlayerIndicator             bool           `db:"show_player_indicator"`
 		AutoAdvanceNotificationsEnabled bool           `db:"auto_advance_notifications_enabled"`
 		LibrarySyncInterval             sql.NullString `db:"library_sync_interval"`
@@ -211,7 +214,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		StereoWidth                     float64        `db:"stereo_width"`
 	}
 	err := r.db.GetContext(ctx, &row,
-		`SELECT language, theme, primary_color, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, show_player_indicator, auto_advance_notifications_enabled, library_sync_interval, library_analysis_enabled, library_analysis_worker_count, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, mood_derivation_version, max_queue_size, crossfade_seconds, blend_artwork_during_crossfade, high_contrast_lyrics, eq_preamp, stereo_width FROM app_settings WHERE id = 1`,
+		`SELECT language, theme, primary_color, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, pairing_mqtt_port, show_player_indicator, auto_advance_notifications_enabled, library_sync_interval, library_analysis_enabled, library_analysis_worker_count, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, mood_derivation_version, max_queue_size, crossfade_seconds, blend_artwork_during_crossfade, high_contrast_lyrics, eq_preamp, stereo_width FROM app_settings WHERE id = 1`,
 	)
 	if err == sql.ErrNoRows {
 		return &domain.AppSettings{
@@ -276,6 +279,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		RemoteServerEnabled:             row.RemoteServerEnabled,
 		RemoteServerPort:                row.RemoteServerPort,
 		RemoteServerPassword:            row.RemoteServerPassword,
+		PairingMQTTPort:                 row.PairingMQTTPort,
 		ShowPlayerIndicator:             row.ShowPlayerIndicator,
 		AutoAdvanceNotificationsEnabled: row.AutoAdvanceNotificationsEnabled,
 		LibrarySyncInterval:             normalizeSyncInterval(row.LibrarySyncInterval.String),

@@ -17,11 +17,11 @@ flowchart TB
     FE -.->|"Wails Bindings (auto-gen TS)<br/>Wails Events (Go → frontend push)"| WAILS
 
     subgraph WAILS["infra/wails — Adapter Layer (thin wrappers)"]
-        Adapters["PlayerService · LibraryService · AnalyticsService · SearchService · PlaylistService<br/>LyricsService · EQService · SettingsService · UpdaterService · WindowService<br/>LastfmService · RemoteServerService · GreetService"]
+        Adapters["PlayerService · LibraryService · AnalyticsService · SearchService · PlaylistService<br/>LyricsService · EQService · SettingsService · UpdaterService · WindowService<br/>LastfmService · RemoteServerService · MobileLibrarySyncService · GreetService"]
     end
 
     subgraph APP["internal/app — Application Services"]
-        AppSvc["library/ · player/ · playlist/ · moodradio/ · eq/ · lyrics/ · config/ · i18n/ · updater/<br/>lastfm/ · remoteserver/ · appsettings/ · singleinstance/<br/><i>orchestrates domain entities + ports; framework-agnostic</i>"]
+        AppSvc["library/ · player/ · playlist/ · moodradio/ · eq/ · lyrics/ · config/ · i18n/ · updater/<br/>lastfm/ · remoteserver/ · pairing/ · mobilesync/ · appsettings/ · singleinstance/<br/><i>orchestrates domain entities + ports; framework-agnostic</i>"]
     end
 
     subgraph DOMAIN["internal/domain — Core"]
@@ -196,6 +196,14 @@ another browser can control playback remotely. The Vue web client lives in `remo
 - **Sessions (`session.go`):** per-client auth/state.
 - The Wails adapter `RemoteServerService` (`infra/wails/remote_server_service.go`)
   exposes start/stop + status to the frontend.
+
+## Mobile Pairing
+
+`internal/app/pairing` owns desktop-to-mobile trust establishment. An infra MQTT
+adapter embeds the broker, SQLite persists public identities/trusted devices, and
+the OS keyring holds the desktop Ed25519 private key. The Wails adapter emits
+`pairing:request` for the global desktop confirmation dialog. See
+[mobile pairing](../pairing/README.md) for the complete cross-platform contract.
 
 ## Storage Locations (XDG-compliant)
 

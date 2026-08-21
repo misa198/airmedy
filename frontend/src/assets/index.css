@@ -1,6 +1,11 @@
 @import "tailwindcss";
 @config "../../tailwind.config.js";
 
+@theme {
+  --color-status-online: var(--status-online);
+  --color-disabled-overlay: var(--bg-disabled-overlay);
+}
+
 /* Enable CSS custom property transitions in WebKit/Safari (used by Wails on macOS) */
 @property --dynamic-primary {
   syntax: "<color>";
@@ -21,6 +26,7 @@
     --bg-glass: rgba(255, 255, 255, 0.7);
     --bg-glass-elevated: rgba(255, 255, 255, 0.9);
     --bg-glass-modal: rgba(255, 255, 255, 1);
+    --bg-disabled-overlay: rgba(0, 0, 0, 0.06);
     --border-glass: rgba(0, 0, 0, 0.1);
 
     --primary: #e11d48;
@@ -34,6 +40,7 @@
     --text-muted: #52525b;
     --text-inverse: #ffffff;
     --accent-favorite: #ef4444;
+    --status-online: #15803d;
 
     --bg-zebra: rgba(0, 0, 0, 0.02);
     --scrollbar-thumb: rgba(0, 0, 0, 0.2);
@@ -51,11 +58,13 @@
     --bg-glass: rgba(35, 35, 38, 0.6);
     --bg-glass-elevated: rgba(55, 55, 60, 0.4);
     --bg-glass-modal: rgba(36, 36, 40, 1);
+    --bg-disabled-overlay: rgba(255, 255, 255, 0.06);
     --border-glass: rgba(255, 255, 255, 0.1);
 
     --text-main: #ffffff;
     --text-muted: #a1a1aa;
     --text-inverse: #000000;
+    --status-online: #4ade80;
     --primary-foreground: #ffffff;
     --primary-100: color-mix(in srgb, var(--primary) 22%, #0f0f11);
     --primary-200: color-mix(in srgb, var(--primary) 34%, #0f0f11);
@@ -70,6 +79,7 @@
     --bg-glass: rgba(25, 25, 25, 0.6);
     --bg-glass-elevated: rgba(45, 45, 45, 0.4);
     --bg-glass-modal: rgba(30, 30, 30, 1);
+    --bg-disabled-overlay: rgba(255, 255, 255, 0.06);
   }
 
   html,
@@ -97,6 +107,25 @@
   ::placeholder {
     font-style: normal;
   }
+}
+
+/* Reusable dim-text utilities */
+/* text-dim      ≡ text-foreground opacity-60  (secondary/metadata text)       */
+/* text-subdued  ≡ text-foreground opacity-50  (tertiary / hint text)           */
+/* text-dimmer   ≡ text-foreground opacity-40  (ghost/placeholder/disabled text) */
+@utility text-dim {
+  color: var(--text-main);
+  opacity: 0.6;
+}
+
+@utility text-subdued {
+  color: var(--text-main);
+  opacity: 0.5;
+}
+
+@utility text-dimmer {
+  color: var(--text-main);
+  opacity: 0.4;
 }
 
 /* Fix WebKit rendering issues with semi-transparent backgrounds, blurs, and opacity */

@@ -4,6 +4,15 @@
 
 User-created playlists with ordered tracks, optional custom artwork, and color extraction. Playlists are persisted in SQLite and indexed in Bleve for search.
 
+## Mobile reconciliation
+
+Mobile playlist mutations are accepted only for normal playlists. Smart playlists and the system Favorites playlist are rejected. The mobile mutation ledger is keyed by trusted device plus mutation ID, so retrying an accepted or rejected operation cannot apply it twice. Library Sync does not infer playlist membership from an artist, album, or genre track scope; only `all` and an explicit playlist scope can mutate playlist data.
+
+The desktop applies mobile deltas under a global per-playlist LWW watermark.
+`updated_at` wins first and lexical `mutation_id` breaks ties. DELETE retains a
+tombstone, preventing an older CREATE from resurrecting the playlist after a
+race or restart. Ledger, watermark, and playlist writes commit atomically.
+
 ## Files
 
 | File                                           | Purpose                       |

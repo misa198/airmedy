@@ -29,6 +29,8 @@ func (m *mockTrackRepo) ToggleFavorite(ctx context.Context, id string) (bool, er
 	return false, nil
 }
 
+func (m *mockTrackRepo) SetFavorite(ctx context.Context, id string, favorite bool) error { return nil }
+
 func TestLibraryService_AnalysisListener_FiresOnImportNotOnFavoriteToggle(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "airmedy_test_analysis_listener")
 	if err != nil {

@@ -219,7 +219,7 @@ onMounted(() => {
           <template #expanded>
             <div class="flex items-center gap-3">
               <div class="p-2 bg-background rounded-lg shadow-sm shrink-0">
-                <FolderTree class="w-4 h-4 text-foreground opacity-60" />
+                <FolderTree class="w-4 h-4 text-dim" />
               </div>
               <Input type="text" class="flex-1" :model-value="subfolderInput"
                 :placeholder="t('settings.integrations.lyrics_subfolder_name', 'Folder name (e.g. lyrics)')"
@@ -231,8 +231,8 @@ onMounted(() => {
             </div>
             <p v-if="subfolderError" class="text-xs text-red-500 mt-3">{{ subfolderError }}</p>
             <template v-else>
-              <p class="text-xs text-foreground opacity-50 mt-3 truncate">{{ subfolderExample }}</p>
-              <p class="text-xs text-foreground opacity-40 mt-1">
+              <p class="text-xs text-subdued mt-3 truncate">{{ subfolderExample }}</p>
+              <p class="text-xs text-dimmer mt-1">
                 {{ t('settings.integrations.lyrics_subfolder_case', 'Folder name is matched ignoring upper/lowercase.') }}
               </p>
             </template>
@@ -249,7 +249,7 @@ onMounted(() => {
             <div class="flex items-center justify-between gap-x-4">
               <div class="flex items-center gap-3 overflow-hidden">
                 <div class="p-2 bg-background rounded-lg shadow-sm shrink-0">
-                  <Folder class="w-4 h-4 text-foreground opacity-60" />
+                  <Folder class="w-4 h-4 text-dim" />
                 </div>
                 <span class="text-sm font-medium truncate" :title="appStore.lyricsFolderPath">
                   {{ appStore.lyricsFolderPath || t('settings.integrations.lyrics_folder_none', 'No folder selected') }}

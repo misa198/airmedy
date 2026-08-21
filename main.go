@@ -107,6 +107,8 @@ func main() {
 	var updaterService *wails.UpdaterService
 	var artworkCache domain.ArtworkCache
 	var remoteServerService *wails.RemoteServerService
+	var mobilePairingService *wails.MobilePairingService
+	var mobileLibrarySyncService *wails.MobileLibrarySyncService
 	var moodRadioService *wails.MoodRadioService
 	var trackTransitionNotificationActivator domain.TrackTransitionNotificationActivator
 	var (
@@ -124,7 +126,7 @@ func main() {
 		// onto the same instance instead of constructing its own.
 		fx.Supply(logRotator, logger),
 		fx.Provide(func() remoteserver.RemoteFS { return remoteserver.RemoteFS{FS: remoteFS} }),
-		fx.Populate(&greetService, &libraryService, &playerService, &searchService, &playlistService, &lyricsService, &eqService, &normalizationService, &analysisService, &analyticsService, &windowService, &i18nService, &settingsService, &lastfmService, &updaterService, &artworkCache, &remoteServerService, &moodRadioService, &trackTransitionNotificationActivator),
+		fx.Populate(&greetService, &libraryService, &playerService, &searchService, &playlistService, &lyricsService, &eqService, &normalizationService, &analysisService, &analyticsService, &windowService, &i18nService, &settingsService, &lastfmService, &updaterService, &artworkCache, &remoteServerService, &mobilePairingService, &mobileLibrarySyncService, &moodRadioService, &trackTransitionNotificationActivator),
 		fx.NopLogger, // Keep logs clean for now
 	)
 
@@ -172,6 +174,8 @@ func main() {
 			application.NewService(settingsService),
 			application.NewService(updaterService),
 			application.NewService(remoteServerService),
+			application.NewService(mobilePairingService),
+			application.NewService(mobileLibrarySyncService),
 			application.NewService(moodRadioService),
 		},
 		Assets: application.AssetOptions{

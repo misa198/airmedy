@@ -18,7 +18,8 @@
   },
   "peerDependencies": {
     "pinia": "*",
-    "vue-i18n": "*"
+    "vue-i18n": "*",
+    "vue": "*"
   },
   "devDependencies": {
     "jsdom": "24.0.0",

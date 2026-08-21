@@ -301,7 +301,7 @@ onUnmounted(() => {
       </template>
 
       <div class="flex items-center justify-between mb-6">
-        <p class="text-sm text-foreground opacity-60">{{ t('settings.folders.description') }}</p>
+        <p class="text-sm text-dim">{{ t('settings.folders.description') }}</p>
         <button @click="addFolder" :disabled="isSyncing"
           class="flex items-center gap-2 px-4 py-2 bg-foreground/[0.04] text-foreground rounded-xl hover:bg-foreground/[0.08] transition-all text-sm font-bold disabled:opacity-50 shrink-0">
           <Plus class="w-4 h-4" />
@@ -310,13 +310,13 @@ onUnmounted(() => {
       </div>
 
       <div v-if="isLoading" class="py-12 flex justify-center">
-        <RotateCcw class="w-8 h-8 animate-spin text-foreground opacity-40" />
+        <RotateCcw class="w-8 h-8 animate-spin text-dimmer" />
       </div>
 
       <div v-else-if="folders.length === 0"
         class="py-12 text-center border-2 border-dashed border-foreground/[0.06] rounded-2xl">
         <Folder class="w-12 h-12 mx-auto text-foreground opacity-30 mb-4" />
-        <p class="text-foreground opacity-60 text-sm font-medium">{{ t('settings.folders.no_folders') }}</p>
+        <p class="text-dim text-sm font-medium">{{ t('settings.folders.no_folders') }}</p>
       </div>
 
       <ul v-else class="space-y-2">
@@ -326,8 +326,8 @@ onUnmounted(() => {
           <div class="flex items-center gap-4 overflow-hidden">
             <div class="p-2 bg-background rounded-lg shadow-sm">
               <Loader2 v-if="removingFolderIds.includes(folder.id)"
-                class="w-4 h-4 text-foreground opacity-60 animate-spin" />
-              <Folder v-else class="w-4 h-4 text-foreground opacity-60" />
+                class="w-4 h-4 text-dim animate-spin" />
+              <Folder v-else class="w-4 h-4 text-dim" />
             </div>
             <span class="text-sm font-bold truncate" :title="folder.path">
               {{ folder.path }}
@@ -361,7 +361,7 @@ onUnmounted(() => {
     </SettingSection>
 
     <SettingSection :icon="Tags" :label="t('settings.library.delimiters_title')" variant="panel">
-      <p class="text-sm text-foreground opacity-60 mb-6">{{ t('settings.library.delimiters_description') }}</p>
+      <p class="text-sm text-dim mb-6">{{ t('settings.library.delimiters_description') }}</p>
 
       <div v-if="delimitersDirty"
         class="flex items-start gap-3 mb-6 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
@@ -385,7 +385,7 @@ onUnmounted(() => {
 
     <SettingSection :icon="Gauge" :label="t('settings.library_analysis.title')">
       <template #header-extra>
-        <p v-if="appStore.libraryAnalysisEnabled" class="text-xs text-foreground opacity-50">
+        <p v-if="appStore.libraryAnalysisEnabled" class="text-xs text-subdued">
           {{ t('settings.normalization.readiness', { percent: readinessPercent }) }}
         </p>
       </template>
@@ -395,7 +395,7 @@ onUnmounted(() => {
           @update:model-value="appStore.updateLibraryAnalysisEnabled" />
       </SettingRow>
       <div v-if="appStore.libraryAnalysisEnabled && analysisState !== 'done'"
-        class="px-5 py-3 text-xs text-foreground opacity-60">
+        class="px-5 py-3 text-xs text-dim">
         {{ t('settings.normalization.analyzing', { done: analysisDone, total: analysisTotal, percent: analysisPercent })
         }}
       </div>
@@ -407,13 +407,13 @@ onUnmounted(() => {
             {{ t('settings.library_analysis.worker_count_value', { count: workerCountLive }) }}
           </p>
         </div>
-        <p class="text-xs text-foreground opacity-60 mb-3">{{ t('settings.library_analysis.worker_count_desc') }}</p>
+        <p class="text-xs text-dim mb-3">{{ t('settings.library_analysis.worker_count_desc') }}</p>
         <div class="flex items-center gap-x-3">
-          <span class="text-xs text-foreground opacity-60 tabular-nums">1</span>
+          <span class="text-xs text-dim tabular-nums">1</span>
           <Slider class="flex-1" :model-value="workerCountLive" :min="1" :max="appStore.libraryAnalysisMaxWorkerCount"
             :step="1" @update:model-value="onWorkerCountInput" @mouseup="onWorkerCountRelease"
             @touchend="onWorkerCountRelease" />
-          <span class="text-xs text-foreground opacity-60 tabular-nums">{{ appStore.libraryAnalysisMaxWorkerCount
+          <span class="text-xs text-dim tabular-nums">{{ appStore.libraryAnalysisMaxWorkerCount
             }}</span>
         </div>
       </div>

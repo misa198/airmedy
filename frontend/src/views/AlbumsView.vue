@@ -121,7 +121,7 @@ onMounted(loadAlbums)
       </div>
 
       <template v-else-if="processedAlbums.length === 0">
-        <div class="h-full flex flex-col items-center justify-center text-foreground opacity-60">
+        <div class="h-full flex flex-col items-center justify-center text-dim">
           <Disc class="w-12 h-12 mb-4 opacity-20" />
           <p>{{ $t('library.no_albums') }}</p>
         </div>

@@ -10,8 +10,10 @@ import (
 	"airmedy/internal/app/lastfm"
 	"airmedy/internal/app/library"
 	"airmedy/internal/app/lyrics"
+	"airmedy/internal/app/mobilesync"
 	"airmedy/internal/app/moodradio"
 	"airmedy/internal/app/normalization"
+	"airmedy/internal/app/pairing"
 	"airmedy/internal/app/player"
 	"airmedy/internal/app/playlist"
 	"airmedy/internal/app/remoteserver"
@@ -20,9 +22,12 @@ import (
 	"airmedy/internal/infra/artwork"
 	"airmedy/internal/infra/audio"
 	"airmedy/internal/infra/bleve"
+	keyringinfra "airmedy/internal/infra/keyring"
 	"airmedy/internal/infra/logging"
 	lyricsinfra "airmedy/internal/infra/lyrics"
+	mdnsinfra "airmedy/internal/infra/mdns"
 	"airmedy/internal/infra/metadata"
+	mqttinfra "airmedy/internal/infra/mqtt"
 	"airmedy/internal/infra/notification"
 	"airmedy/internal/infra/power"
 	"airmedy/internal/infra/sqlite"
@@ -82,12 +87,17 @@ var Module = fx.Module("app",
 		wails.NewWindowService,
 		wails.NewSettingsService,
 		wails.NewRemoteServerService,
+		wails.NewMobilePairingService,
+		wails.NewMobileLibrarySyncService,
 		wails.NewUpdaterService,
 		wails.NewMoodRadioService,
 		func(logger *slog.Logger) *updater.Service {
 			return updater.NewService(config.Version, logger)
 		},
 		func() *wails.GreetService { return &wails.GreetService{} },
+		func() domain.PairingKeyStore { return keyringinfra.NewPairingKeyStore() },
+		func(logger *slog.Logger) domain.PairingBroker { return mqttinfra.NewPairingBroker(logger) },
+		func(logger *slog.Logger) domain.PairingAdvertiser { return mdnsinfra.NewPairingAdvertiser(logger) },
 	),
 	sqlite.Module,
 	logging.Module,
@@ -103,9 +113,19 @@ var Module = fx.Module("app",
 	lastfm.Module,
 	appsettings.Module,
 	remoteserver.Module,
+	pairing.Module,
+	mobilesync.Module,
 	analysis.Module,
 	analytics.Module,
-	fx.Invoke(func(lc fx.Lifecycle, db *sqlite.DB, search domain.SearchService, lib *library.LibraryService, playerSvc *player.PlayerService, eqSvc *eq.EQService, lastfmSvc *lastfm.LastFmService, analysisSvc *analysis.AnalysisService, settingsSvc *appsettings.SettingsService, playlistSvc *playlist.PlaylistService) {
+	fx.Invoke(func(lc fx.Lifecycle, db *sqlite.DB, search domain.SearchService, lib *library.LibraryService, playerSvc *player.PlayerService, eqSvc *eq.EQService, lastfmSvc *lastfm.LastFmService, analysisSvc *analysis.AnalysisService, settingsSvc *appsettings.SettingsService, playlistSvc *playlist.PlaylistService, pairingSvc *pairing.Service, mobileSyncSvc *mobilesync.Service, logger *slog.Logger) {
+		pairingSvc.AddDeviceConnectionListener(func(deviceID string, connected bool) {
+			if connected {
+				return
+			}
+			if err := mobileSyncSvc.CancelIfActive(context.Background(), deviceID); err != nil {
+				logger.Error("cancel mobile library sync for offline device", "device_id", deviceID, "error", err)
+			}
+		})
 		lc.Append(fx.Hook{
 			OnStart: func(ctx context.Context) error {
 				// Wire library to player to sync track metadata changes (e.g. favorites)
