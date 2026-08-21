@@ -6,6 +6,7 @@ import java.io.File
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import me.misa198.airmedy.sync.AndroidLibrarySyncStore
@@ -44,7 +45,7 @@ internal object AndroidPlaybackRuntime {
                     PlaybackItem(
                         trackId = track.id,
                         title = track.title,
-                        artist = firstName("artists").ifBlank { track.artists.substringBefore(",").trim() },
+                        artist = playbackArtistNames(metadata, track.artists),
                         audioPath = audio.absolutePath,
                         artworkPath = artwork,
                         albumId = track.albumId,
@@ -70,6 +71,17 @@ internal object AndroidPlaybackRuntime {
         return PlaybackController(appContext, resolver)
     }
 }
+
+internal fun playbackArtistNames(metadata: JsonObject?, fallback: String): String =
+    ((metadata?.get("artists") as? JsonArray).orEmpty())
+        .mapNotNull { artist ->
+            ((artist as? JsonObject)?.get("name") as? JsonPrimitive)
+                ?.contentOrNull
+                ?.trim()
+                ?.takeIf(String::isNotEmpty)
+        }
+        .joinToString(", ")
+        .ifBlank { fallback }
 
 internal fun resolveSyncedAudioFile(filesDir: File, storedPath: String?): File? = storedPath?.let { path ->
     File(path).let { candidate -> if (candidate.isAbsolute) candidate else File(filesDir, path) }
