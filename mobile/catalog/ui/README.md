@@ -85,7 +85,7 @@ than hard-coded bottom padding.
 
 | Area | Entry point | Preserve |
 | --- | --- | --- |
-| Home | `HomeContent` | State comes from the Home destination model; track actions use playback callbacks. |
+| Home | `HomeContent` | State comes from the Home destination model; track actions use playback callbacks. Empty sections are omitted, and a one-track section uses one grid row. |
 | Insight | `InsightContent`, `InsightViewModel` | Derived listening/library analytics; filters and periods stay in the ViewModel. |
 | Library | `LibraryContent` and `Library*Content/ViewModel` | Virtualized lists; sort, filter, and page state belong to the ViewModel. |
 | Details | `Album/Artist/Genre/Composer/PlaylistDetailsContent` | ID selection is in `AppUiState`; playback builds its queue through the ViewModel/controller. |
