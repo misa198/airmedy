@@ -475,7 +475,7 @@ jobs:
         shell: pwsh
         run: |
           choco install nsis -y
-          Add-Content -Path $env:GITHUB_PATH -Value "C:\Program Files (x86)\NSIS"
+          (Get-ChildItem 'C:\Program Files*\NSIS\makensis.exe' | Select-Object -First 1).DirectoryName | Add-Content -Path $env:GITHUB_PATH
 
       - name: Setup MSYS2 (Windows AMD64)
         if: matrix.os == 'Windows-AMD64'
