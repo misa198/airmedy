@@ -73,7 +73,7 @@ internal fun HomeContent(
                 }
             }
         } else {
-            item {
+            if (keepListeningTracks.isNotEmpty()) item {
                 HomeTrackSection(
                     titleRes = R.string.home_keep_listening,
                     tracks = keepListeningTracks,
@@ -88,7 +88,7 @@ internal fun HomeContent(
                     titleHorizontalPadding = titleHorizontalPadding,
                 )
             }
-            item {
+            if (mostPlayedTracks.isNotEmpty()) item {
                 HomeTrackSection(
                     titleRes = R.string.home_most_played,
                     tracks = mostPlayedTracks,
@@ -103,7 +103,7 @@ internal fun HomeContent(
                     titleHorizontalPadding = titleHorizontalPadding,
                 )
             }
-            item {
+            if (forgottenTracks.isNotEmpty()) item {
                 HomeTrackSection(
                     titleRes = R.string.home_forgotten,
                     tracks = forgottenTracks,
@@ -148,10 +148,10 @@ private fun HomeTrackSection(
             modifier = Modifier.padding(horizontal = titleHorizontalPadding, vertical = 4.dp),
         )
         LazyHorizontalGrid(
-            rows = GridCells.Fixed(2),
+            rows = GridCells.Fixed(homeTrackSectionRows(tracks.size)),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(384.dp),
+                .height(homeTrackSectionHeight(tracks.size)),
             contentPadding = PaddingValues(horizontal = titleHorizontalPadding),
             horizontalArrangement = Arrangement.spacedBy(20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
@@ -184,3 +184,7 @@ private fun HomeTrackSection(
         }
     }
 }
+
+internal fun homeTrackSectionRows(trackCount: Int) = minOf(trackCount, 2)
+
+internal fun homeTrackSectionHeight(trackCount: Int) = if (homeTrackSectionRows(trackCount) == 1) 182.dp else 384.dp

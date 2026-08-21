@@ -452,7 +452,12 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          choco install nsis -y
+          for ($attempt = 1; $attempt -le 3; $attempt++) {
+            choco install nsis -y --no-progress
+            if ($LASTEXITCODE -eq 0) { break }
+            if ($attempt -eq 3) { exit $LASTEXITCODE }
+            Start-Sleep -Seconds (15 * $attempt)
+          }
           (Get-ChildItem 'C:\Program Files*\NSIS\makensis.exe' | Select-Object -First 1).DirectoryName | Add-Content -Path $env:GITHUB_PATH
 
       - name: Setup MSYS2 (Windows AMD64)

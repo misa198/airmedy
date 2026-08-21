@@ -449,9 +449,6 @@ func (s *Service) createPlan(ctx context.Context, deviceID string, scope domain.
 	if err != nil {
 		return nil, fmt.Errorf("get favorite tracks for mobile sync: %w", err)
 	}
-	if scope.Kind != domain.MobileLibrarySyncScopeAll {
-		tracks = mergeTracks(tracks, favorites)
-	}
 	planID := uuid.NewString()
 	manifest := domain.MobileLibrarySyncManifest{Version: syncProtocolVersion, PlanID: planID, Scope: scope, Lyrics: map[string]*domain.Lyric{}, Analysis: map[string]*domain.TrackFeatures{}}
 	assets := make([]domain.MobileLibrarySyncAsset, 0, len(tracks)*2)

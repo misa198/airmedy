@@ -165,6 +165,26 @@ class SyncViewModelTest {
     }
 
     @Test
+    fun unpairCleansUpBeforeRemovingTheBinding() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val events = mutableListOf<String>()
+        val bindings = FakeBindings(PairedDesktop(DesktopId, "Studio Mac", ByteArray(32)), events)
+        val viewModel = SyncViewModel(
+            useCase(bindings),
+            FakeSyncSession(),
+            FakeDiscovery(),
+            onBeforeUnpair = { events += "cleanup" },
+        )
+        advanceUntilIdle()
+
+        viewModel.unpair()
+        advanceUntilIdle()
+
+        assertEquals(listOf("cleanup", "clear"), events)
+        assertEquals(null, bindings.current())
+    }
+
+    @Test
     fun exposesInsufficientStorageByteCounts() = runTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         val viewModel = SyncViewModel(useCase(FakeBindings(null)), FakeSyncSession(), FakeDiscovery())
@@ -186,12 +206,12 @@ class SyncViewModelTest {
         ids = object : PairingIdGenerator { override fun newId() = DesktopId },
     )
 
-    private class FakeBindings(initial: PairedDesktop?) : PairingBindingStore {
+    private class FakeBindings(initial: PairedDesktop?, private val events: MutableList<String>? = null) : PairingBindingStore {
         private val state = MutableStateFlow(initial)
         override val pairedDesktop: Flow<PairedDesktop?> = state
         override suspend fun current(): PairedDesktop? = state.value
         override suspend fun save(desktop: PairedDesktop) { state.value = desktop }
-        override suspend fun clear() { state.value = null }
+        override suspend fun clear() { events?.add("clear"); state.value = null }
     }
 
     private class FakeDiscovery : TrustedDesktopDiscovery {

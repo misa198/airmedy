@@ -180,20 +180,21 @@ func TestAddPlaylistsIncludesEmptyPlaylistsAndFavorites(t *testing.T) {
 	require.Empty(t, manifest.Playlists[1].TrackIDs)
 }
 
-func TestMergeTracksAddsFavoritesOnceForEverySelectedScope(t *testing.T) {
-	primary := []*domain.TrackDTO{{Track: domain.Track{ID: "scope"}}, {Track: domain.Track{ID: "shared"}}}
-	favorites := []*domain.TrackDTO{{Track: domain.Track{ID: "shared"}}, {Track: domain.Track{ID: "favorite"}}}
-	for _, kind := range []string{
-		domain.MobileLibrarySyncScopeArtists,
-		domain.MobileLibrarySyncScopeAlbums,
-		domain.MobileLibrarySyncScopeGenres,
-		domain.MobileLibrarySyncScopePlaylists,
-	} {
-		t.Run(kind, func(t *testing.T) {
-			got := mergeTracks(primary, favorites)
-			require.Equal(t, []string{"scope", "shared", "favorite"}, trackIDs(got))
-		})
-	}
+func TestAddPlaylistsKeepsOnlySelectedFavoritesAndArtwork(t *testing.T) {
+	db, err := sqlite.NewDB(filepath.Join(t.TempDir(), "library.db"), slog.Default())
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, db.Close()) })
+	repo := sqlite.NewPlaylistRepository(db)
+	artworkKey := "favorites-artwork"
+	require.NoError(t, repo.Save(context.Background(), &domain.Playlist{ID: playlistapp.FavoritesPlaylistID, Name: "Favorites", ArtworkKey: &artworkKey}))
+
+	manifest := domain.MobileLibrarySyncManifest{}
+	artworkKeys := map[string]struct{}{}
+	err = (&Service{playlists: repo}).addPlaylists(context.Background(), domain.MobileLibrarySyncScope{Kind: domain.MobileLibrarySyncScopeArtists, SelectedIDs: []string{"artist"}}, map[string]struct{}{"selected": {}}, []*domain.TrackDTO{{Track: domain.Track{ID: "selected"}}, {Track: domain.Track{ID: "outside"}}}, &manifest, artworkKeys)
+	require.NoError(t, err)
+	require.Len(t, manifest.Playlists, 1)
+	require.Equal(t, []string{"selected"}, manifest.Playlists[0].TrackIDs)
+	require.Contains(t, artworkKeys, "favorites-artwork")
 }
 
 func TestNormalizeScopeRemovesFavoritesAndSmartPlaylists(t *testing.T) {
@@ -208,14 +209,6 @@ func TestNormalizeScopeRemovesFavoritesAndSmartPlaylists(t *testing.T) {
 
 	require.NoError(t, (&Service{playlists: repo}).normalizeScope(context.Background(), &scope))
 	require.Equal(t, []string{"regular"}, scope.SelectedIDs)
-}
-
-func trackIDs(tracks []*domain.TrackDTO) []string {
-	ids := make([]string, 0, len(tracks))
-	for _, track := range tracks {
-		ids = append(ids, track.ID)
-	}
-	return ids
 }
 
 func TestPlaylistArtworkValidatesMimeHashSizeAndOwnership(t *testing.T) {

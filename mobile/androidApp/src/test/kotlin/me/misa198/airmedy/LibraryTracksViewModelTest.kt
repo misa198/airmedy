@@ -1,5 +1,6 @@
 package me.misa198.airmedy
 
+import androidx.compose.ui.unit.dp
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.ui.screens.SortOrder
 import me.misa198.airmedy.ui.screens.TrackSortOption
@@ -11,6 +12,8 @@ import me.misa198.airmedy.ui.screens.matchesVisibleTrackTextFilter
 import me.misa198.airmedy.ui.screens.keepListeningTracks
 import me.misa198.airmedy.ui.screens.mostPlayedTracks
 import me.misa198.airmedy.ui.screens.forgottenTracks
+import me.misa198.airmedy.ui.components.homeTrackSectionHeight
+import me.misa198.airmedy.ui.components.homeTrackSectionRows
 import me.misa198.airmedy.player.MaxPlaybackQueueSize
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -20,6 +23,14 @@ import org.junit.Test
 import kotlin.random.Random
 
 class LibraryTracksViewModelTest {
+
+    @Test
+    fun homeSectionsUseOnlyTheRowsTheirTracksNeed() {
+        assertEquals(1, homeTrackSectionRows(1))
+        assertEquals(2, homeTrackSectionRows(2))
+        assertEquals(182.dp, homeTrackSectionHeight(1))
+        assertEquals(384.dp, homeTrackSectionHeight(2))
+    }
 
     private val sampleTracks = listOf(
         LibraryTrack(id = "1", title = "Charlie", artists = "Zebra", album = "A1", playCount = 10, createdAt = "2026-01-01T00:00:00Z", sortTitle = "Charlie", sortArtists = "Zebra"),

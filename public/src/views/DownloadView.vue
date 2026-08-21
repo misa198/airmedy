@@ -24,12 +24,17 @@ onMounted(async () => {
 <template>
   <main>
     <section class="download container">
-      <div class="download-card glass">
+      <div class="download-card">
         <h2>Ready to listen?</h2>
         <p>Download Airmedy for your platform and start your journey.</p>
         <div class="download-options">
           <div v-for="platform in platforms" :key="platform.name" class="download-group">
-            <img :src="platform.icon" :alt="`${platform.name} icon`" class="platform-icon" />
+            <span
+              class="platform-icon"
+              role="img"
+              :aria-label="`${platform.name} icon`"
+              :style="{ '--platform-icon': `url(${platform.icon})` }"
+            />
             <span class="platform-label">{{ platform.name }}</span>
             <div v-if="platform.files.length" class="dropdown">
               <button class="btn btn-outline dropdown-trigger">Download for {{ platform.name }} <span class="chevron">▾</span></button>
