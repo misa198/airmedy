@@ -109,12 +109,12 @@ watch(() => store.theme, (colors) => {
     <!-- Windows-only drag handle: Wails v3 uses --wails-draggable (not -webkit-app-region) -->
     <div v-if="deviceStore.isWindows" class="absolute top-0 left-0 right-0 h-10 z-20" style="--wails-draggable: drag" />
 
-    <!-- Options pill: always visible, top-right -->
-    <div class="absolute top-2 right-2 z-30" style="-webkit-app-region: no-drag">
+    <!-- Options pill: always visible, top-left -->
+    <div class="absolute top-2 left-2 z-30" style="-webkit-app-region: no-drag">
       <!-- Volume slider popup -->
       <Transition name="fade">
         <div v-if="showVolume && isHovered"
-          class="absolute top-full right-0 mt-2 px-2.5 py-2 rounded-xl bg-black/20 backdrop-blur-md border border-white/5"
+          class="absolute top-full left-0 mt-2 px-2.5 py-2 rounded-xl bg-black/20 backdrop-blur-md border border-white/5"
           @mouseenter="onVolumeEnter" @mouseleave="onVolumeLeave">
           <Slider :model-value="store.muted ? 0 : store.volume * 100" :min="0" :max="100" :step="1" :scrollable="true" class="w-20"
             @update:model-value="(v) => store.setVolume(v / 100)" />
@@ -127,9 +127,8 @@ watch(() => store.theme, (colors) => {
         :class="isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'">
         <button
           class="w-6 h-6 flex items-center justify-center rounded-full text-white/50 hover:text-white/80 transition-colors"
-          @mouseenter="onVolumeEnter" @mouseleave="onVolumeLeave" @click="showVolume = !showVolume">
-          <VolumeX v-if="store.muted" class="w-3.5 h-3.5" />
-          <Volume2 v-else class="w-3.5 h-3.5" />
+          @click="WindowService.CloseMiniPlayer()">
+          <X class="w-3.5 h-3.5" />
         </button>
         <button class="w-6 h-6 flex items-center justify-center rounded-full transition-colors"
           :class="alwaysOnTop ? 'text-white/80' : 'text-white/50 hover:text-white/80'" @click="toggleAlwaysOnTop()">
@@ -138,8 +137,9 @@ watch(() => store.theme, (colors) => {
         </button>
         <button
           class="w-6 h-6 flex items-center justify-center rounded-full text-white/50 hover:text-white/80 transition-colors"
-          @click="WindowService.CloseMiniPlayer()">
-          <X class="w-3.5 h-3.5" />
+          @mouseenter="onVolumeEnter" @mouseleave="onVolumeLeave" @click="showVolume = !showVolume">
+          <VolumeX v-if="store.muted" class="w-3.5 h-3.5" />
+          <Volume2 v-else class="w-3.5 h-3.5" />
         </button>
       </div>
     </div>

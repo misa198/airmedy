@@ -679,7 +679,7 @@ GetQueue(): TrackDTO[]
 
 ## Mini Player Window
 
-Separate Wails window (default 300×300, min 280×180, max 500×500). Route: `/mini-player`. Artwork fills the window; hover-revealed controls sit over a CSS glassmorphism panel (`backdrop-filter` blur, bottom→top mask fade — see `catalog/ui`). Has always-on-top toggle and volume slider with auto-fade timer.
+Separate square Wails window (default 300×300, min 280×280, max 500×500). Route: `/mini-player`. Artwork fills the window; hover-revealed controls sit over a CSS glassmorphism panel (`backdrop-filter` blur, bottom→top mask fade — see `catalog/ui`). Has always-on-top toggle and volume slider with auto-fade timer. The native window layer locks the 1:1 ratio on macOS, Windows, and Linux/X11; Wayland remains compositor-managed.
 
 ### Geometry & Pin Persistence
 
@@ -689,4 +689,4 @@ Separate Wails window (default 300×300, min 280×180, max 500×500). Route: `/m
 - **Capture** — `WindowDidMove`/`WindowDidResize` hooks call `WindowService.SaveMiniGeometry()`, which reads `w.Bounds()` and persists it debounced (~400ms) to coalesce drag/resize streams. `WindowClosing` flushes a final save.
 - **Pin** — frontend calls `WindowService.SetMiniAlwaysOnTop(b)` (not `Window.SetAlwaysOnTop` directly) so the toggle is persisted immediately. On mount the component reads `WindowService.GetMiniState()` to render the correct pin icon.
 - **macOS Dock activation** — `main.go` re-applies the persisted pin level through `WindowService.RestoreMiniAlwaysOnTop()` after `ApplicationDidBecomeActive` and `ApplicationShouldHandleReopen`. This preserves `NSFloatingWindowLevel` when AppKit/Wails resets the native level while the app is reactivated from the Dock.
-- **Screen-aware clamp** — `clampToScreen` clamps width/height into `[280..500]`×`[140..500]`, then positions the window and reads its screen's `WorkArea` (via `w.GetScreen()`); the pure helper `clampRectToWorkArea` shrinks/moves the rect fully inside the work area. This keeps the window reachable after a layout change (lower resolution, disconnected monitor, different screen).
+- **Screen-aware square clamp** — `clampToScreen` normalizes legacy rectangular geometry to the larger side, clamps it into `[280..500]`, then positions the window and reads its screen's `WorkArea` (via `w.GetScreen()`). `clampSquareRectToWorkArea` keeps that square inside the work area, so a layout change cannot restore it off-screen or distort its aspect ratio.

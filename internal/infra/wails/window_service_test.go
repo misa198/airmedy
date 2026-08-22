@@ -79,3 +79,46 @@ func TestClampRectToWorkArea(t *testing.T) {
 		})
 	}
 }
+
+func TestSquareMiniRect(t *testing.T) {
+	tests := []struct {
+		name string
+		in   application.Rect
+		want application.Rect
+	}{
+		{
+			name: "keeps square geometry",
+			in:   application.Rect{X: 10, Y: 20, Width: 300, Height: 300},
+			want: application.Rect{X: 10, Y: 20, Width: 300, Height: 300},
+		},
+		{
+			name: "uses the larger legacy dimension",
+			in:   application.Rect{X: 10, Y: 20, Width: 280, Height: 180},
+			want: application.Rect{X: 10, Y: 20, Width: 280, Height: 280},
+		},
+		{
+			name: "caps oversized geometry",
+			in:   application.Rect{Width: 600, Height: 400},
+			want: application.Rect{Width: 500, Height: 500},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := squareMiniRect(tt.in); got != tt.want {
+				t.Errorf("squareMiniRect(%+v) = %+v, want %+v", tt.in, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestClampSquareRectToWorkArea(t *testing.T) {
+	got := clampSquareRectToWorkArea(
+		application.Rect{X: 1800, Y: 900, Width: 500, Height: 500},
+		application.Rect{X: 0, Y: 50, Width: 400, Height: 350},
+	)
+	want := application.Rect{X: 50, Y: 50, Width: 350, Height: 350}
+	if got != want {
+		t.Errorf("clampSquareRectToWorkArea() = %+v, want %+v", got, want)
+	}
+}

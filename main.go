@@ -262,7 +262,7 @@ func main() {
 			Width:               300,
 			Height:              300,
 			MinWidth:            280,
-			MinHeight:           180,
+			MinHeight:           280,
 			MaxWidth:            500,
 			MaxHeight:           500,
 			Hidden:              true,
@@ -284,6 +284,12 @@ func main() {
 			},
 			BackgroundColour: bgRGBA(settings.Theme),
 			URL:              "/?mode=mini#/mini-player",
+		})
+		wails.LockMiniPlayerSquare(w)
+		// Hidden GTK windows have no X11 surface until shown, so retry once the
+		// native surface exists. The macOS/Windows helpers are idempotent.
+		w.RegisterHook(events.Common.WindowShow, func(_ *application.WindowEvent) {
+			wails.LockMiniPlayerSquare(w)
 		})
 		// Restore saved geometry + pin mode, clamped to the current screen layout.
 		windowService.ApplyMiniState(w)

@@ -14,9 +14,8 @@ import (
 
 // Mini player size constraints (kept in sync with the window factory options).
 const (
-	miniMinWidth  = 280
-	miniMinHeight = 180
-	miniMaxSize   = 500
+	miniMinWidth = 280
+	miniMaxSize  = 500
 )
 
 // miniSaveDebounce coalesces the stream of move/resize events into one DB write.
@@ -192,8 +191,7 @@ func (s *WindowService) ApplyMiniState(w *application.WebviewWindow) {
 // work area of the screen it lands on. This keeps the window reachable after a
 // screen layout change (lower resolution, disconnected monitor, etc.).
 func (s *WindowService) clampToScreen(w *application.WebviewWindow, rect application.Rect) application.Rect {
-	rect.Width = clampInt(rect.Width, miniMinWidth, miniMaxSize)
-	rect.Height = clampInt(rect.Height, miniMinHeight, miniMaxSize)
+	rect = squareMiniRect(rect)
 
 	// Position the window first so GetScreen resolves the nearest screen.
 	w.SetBounds(rect)
@@ -201,7 +199,27 @@ func (s *WindowService) clampToScreen(w *application.WebviewWindow, rect applica
 	if err != nil || screen == nil {
 		return rect
 	}
-	return clampRectToWorkArea(rect, screen.WorkArea)
+	return clampSquareRectToWorkArea(rect, screen.WorkArea)
+}
+
+// squareMiniRect restores legacy rectangular geometry as a square without
+// shrinking the player artwork.
+func squareMiniRect(rect application.Rect) application.Rect {
+	side := clampInt(max(rect.Width, rect.Height), miniMinWidth, miniMaxSize)
+	rect.Width = side
+	rect.Height = side
+	return rect
+}
+
+// clampSquareRectToWorkArea keeps a square rectangle reachable. A work area
+// smaller than the configured minimum is an unavoidable OS-level constraint.
+func clampSquareRectToWorkArea(rect, wa application.Rect) application.Rect {
+	side := min(rect.Width, wa.Width, wa.Height)
+	rect.Width = side
+	rect.Height = side
+	rect.X = clampInt(rect.X, wa.X, wa.X+wa.Width-side)
+	rect.Y = clampInt(rect.Y, wa.Y, wa.Y+wa.Height-side)
+	return rect
 }
 
 // clampRectToWorkArea shrinks rect to fit within the work area if needed, then

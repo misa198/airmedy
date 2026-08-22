@@ -1,0 +1,1 @@
+void LockMiniPlayerSquare(void *window);
