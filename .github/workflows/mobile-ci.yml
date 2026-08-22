@@ -43,6 +43,9 @@ jobs:
           java-version: '21'
           cache: gradle
 
+      - name: Install fonttools (font subsetting)
+        run: pip3 install --quiet --break-system-packages fonttools brotli
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
