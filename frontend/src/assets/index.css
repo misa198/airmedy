@@ -4,6 +4,11 @@
 @theme {
   --color-status-online: var(--status-online);
   --color-disabled-overlay: var(--bg-disabled-overlay);
+  --color-mini-player-pill-background: var(--mini-player-pill-background);
+  --color-mini-player-pill-border: var(--mini-player-pill-border);
+  --color-mini-player-pill-foreground: var(--mini-player-pill-foreground);
+  --color-mini-player-pill-active: var(--mini-player-pill-active);
+  --color-mini-player-pill-active-foreground: var(--mini-player-pill-active-foreground);
 }
 
 /* Enable CSS custom property transitions in WebKit/Safari (used by Wails on macOS) */
@@ -39,6 +44,12 @@
     --text-main: #0a0a0a;
     --text-muted: #52525b;
     --text-inverse: #ffffff;
+    --mini-player-pill-background: rgba(35, 35, 38, 0.6);
+    --mini-player-pill-border: rgba(255, 255, 255, 0.1);
+    --mini-player-pill-foreground: #ffffff;
+    --mini-player-pill-active: #ffffff;
+    --mini-player-pill-active-foreground: #000000;
+    --mini-player-pill-track: rgba(255, 255, 255, 0.15);
     --accent-favorite: #ef4444;
     --status-online: #15803d;
 
@@ -80,6 +91,7 @@
     --bg-glass-elevated: rgba(45, 45, 45, 0.4);
     --bg-glass-modal: rgba(30, 30, 30, 1);
     --bg-disabled-overlay: rgba(255, 255, 255, 0.06);
+    --mini-player-pill-background: rgba(25, 25, 25, 0.6);
   }
 
   html,

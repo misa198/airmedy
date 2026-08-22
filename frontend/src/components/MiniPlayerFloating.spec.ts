@@ -56,6 +56,25 @@ vi.mock('../../bindings/airmedy/internal/infra/wails/windowservice', () => ({
 }))
 
 describe('MiniPlayerFloating', () => {
+  it('keeps its pills dark while lyrics inherit the mini-player window theme', () => {
+    const wrapper = mount(MiniPlayerFloating, {
+      global: {
+        stubs: {
+          LazyImg: true,
+          Slider: true,
+          MarqueeText: true,
+          PlayerControlButton: true,
+          MiniPlayerLyrics: true,
+        },
+      },
+    })
+
+    expect(wrapper.classes()).not.toContain('dark')
+    expect(wrapper.findAll('div').filter((element) => element.classes().includes('bg-mini-player-pill-background')))
+      .toHaveLength(2)
+    expect(wrapper.get('[data-test="mini-player-lyrics"]').classes()).toContain('text-mini-player-pill-foreground')
+  })
+
   it('switches the placeholder panel and collapses when the active option is clicked again', async () => {
     const wrapper = mount(MiniPlayerFloating, {
       global: {
@@ -64,6 +83,10 @@ describe('MiniPlayerFloating', () => {
           Slider: true,
           MarqueeText: true,
           PlayerControlButton: true,
+          MiniPlayerLyrics: {
+            props: ['lyrics', 'loading', 'currentPosition'],
+            template: '<div data-test="mini-player-lyrics-content">{{ lyrics }} {{ loading }} {{ currentPosition }}</div>',
+          },
         },
       },
     })
@@ -85,12 +108,13 @@ describe('MiniPlayerFloating', () => {
       finishCollapse = resolve
     }))
     await wrapper.get('[data-test="mini-player-lyrics"]').trigger('click')
-    expect(wrapper.get('[data-test="mini-player-panel"]').text()).toBe('Lyrics')
+    expect(wrapper.get('[data-test="mini-player-panel"]').text()).toContain('[00:00.00]First line')
     finishCollapse()
     await flushPromises()
     expect(mocks.setMiniPlayerExpanded).toHaveBeenLastCalledWith(true)
-    expect(wrapper.get('[data-test="mini-player-panel"]').text()).toBe('Lyrics')
+    expect(wrapper.get('[data-test="mini-player-panel"]').text()).toContain('[00:00.00]First line')
     expect(wrapper.get('[data-test="mini-player-panel-indicator"]').classes()).toContain('translate-x-0')
+    expect(wrapper.get('[data-test="mini-player-lyrics-content"]').text()).toContain('[00:00.00]First line')
 
     await wrapper.get('[data-test="mini-player-lyrics"]').trigger('click')
     await flushPromises()

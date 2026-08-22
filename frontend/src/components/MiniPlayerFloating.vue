@@ -16,6 +16,7 @@ import { Slider } from '@airmedy/ui'
 import { MarqueeText } from '@airmedy/ui'
 import * as WindowService from '../../bindings/airmedy/internal/infra/wails/windowservice'
 import PlayerControlButton from './player/PlayerControlButton.vue'
+import MiniPlayerLyrics from './MiniPlayerLyrics.vue'
 import { useAppStore } from '@/stores/app'
 import { useDeviceStore } from '@/stores/device'
 import { useArtworkCrossfadeOpacity } from '@/composables/useArtworkCrossfadeOpacity'
@@ -99,7 +100,7 @@ watch(() => store.theme, (colors) => {
 </script>
 
 <template>
-  <div class="h-full w-full overflow-hidden select-none dark flex flex-col">
+  <div class="h-full w-full overflow-hidden select-none flex flex-col">
     <div class="relative aspect-square w-full shrink-0 overflow-hidden" style="-webkit-app-region: drag"
       @mouseenter="isHovered = true" @mouseleave="isHovered = false">
       <!-- Artwork fills entire window -->
@@ -124,23 +125,23 @@ watch(() => store.theme, (colors) => {
 
       <div class="absolute top-2 right-2 z-30" style="-webkit-app-region: no-drag">
         <div
-          class="relative inline-flex items-center gap-0.5 p-1 rounded-full bg-[color:var(--bg-glass)] backdrop-blur-md border border-[color:var(--border-glass)] h-8 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+          class="relative inline-flex items-center gap-0.5 p-1 rounded-full bg-mini-player-pill-background backdrop-blur-md border border-mini-player-pill-border h-8 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
           :class="isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'">
           <span data-test="mini-player-panel-indicator" aria-hidden="true"
-            class="absolute top-1 left-1 w-6 h-6 rounded-full bg-foreground transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+            class="absolute top-1 left-1 w-6 h-6 rounded-full bg-mini-player-pill-active transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
             :class="[
               activePanel ? 'opacity-100' : 'opacity-0',
               activePanel === 'queue' ? 'translate-x-[26px]' : 'translate-x-0',
             ]" />
           <button data-test="mini-player-lyrics"
-            class="relative z-10 w-6 h-6 flex items-center justify-center rounded-full text-foreground transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
-            :class="activePanel === 'lyrics' ? 'text-black!' : ''" :aria-label="t('player.lyrics')"
+            class="relative z-10 w-6 h-6 flex items-center justify-center rounded-full text-mini-player-pill-foreground transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+            :class="activePanel === 'lyrics' ? 'text-mini-player-pill-active-foreground!' : ''" :aria-label="t('player.lyrics')"
             :aria-pressed="activePanel === 'lyrics'" :title="t('player.lyrics')" @click="togglePanel('lyrics')">
             <Mic2 class="w-3.5 h-3.5" />
           </button>
           <button data-test="mini-player-queue"
-            class="relative z-10 w-6 h-6 flex items-center justify-center rounded-full text-foreground transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
-            :class="activePanel === 'queue' ? 'text-black!' : ''" :aria-label="t('player.queue')"
+            class="relative z-10 w-6 h-6 flex items-center justify-center rounded-full text-mini-player-pill-foreground transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+            :class="activePanel === 'queue' ? 'text-mini-player-pill-active-foreground!' : ''" :aria-label="t('player.queue')"
             :aria-pressed="activePanel === 'queue'" :title="t('player.queue')" @click="togglePanel('queue')">
             <ListMusic class="w-3.5 h-3.5" />
           </button>
@@ -152,27 +153,29 @@ watch(() => store.theme, (colors) => {
         <!-- Volume slider popup -->
         <Transition name="fade">
           <div v-if="showVolume && isHovered"
-            class="absolute top-full left-0 mt-2 px-2.5 py-2 rounded-full bg-[color:var(--bg-glass)] backdrop-blur-md border border-[color:var(--border-glass)]"
+            class="absolute top-full left-0 mt-2 px-2.5 py-2 rounded-full bg-mini-player-pill-background backdrop-blur-md border border-mini-player-pill-border"
             @mouseenter="onVolumeEnter" @mouseleave="onVolumeLeave">
             <Slider :model-value="store.muted ? 0 : store.volume * 100" :min="0" :max="100" :step="1" :scrollable="true"
-              class="w-20" @update:model-value="(v) => store.setVolume(v / 100)" />
+              class="w-20" track-color-class="bg-mini-player-pill-foreground"
+              track-background="var(--mini-player-pill-track)" thumb-color="var(--mini-player-pill-foreground)"
+              @update:model-value="(v) => store.setVolume(v / 100)" />
           </div>
         </Transition>
 
         <!-- Three-button pill -->
         <div
-          class="inline-flex items-center p-1 rounded-full bg-[color:var(--bg-glass)] backdrop-blur-md border border-[color:var(--border-glass)] h-8 select-none transition-all"
+          class="inline-flex items-center p-1 rounded-full bg-mini-player-pill-background backdrop-blur-md border border-mini-player-pill-border h-8 select-none transition-all"
           :class="isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'">
-          <button class="w-6 h-6 flex items-center justify-center rounded-full text-foreground transition-colors"
+          <button class="w-6 h-6 flex items-center justify-center rounded-full text-mini-player-pill-foreground transition-colors"
             @click="WindowService.CloseMiniPlayer()">
             <X class="w-3.5 h-3.5" />
           </button>
           <button class="w-6 h-6 flex items-center justify-center rounded-full transition-colors"
-            :class="alwaysOnTop ? 'text-white/80' : 'text-foreground'" @click="toggleAlwaysOnTop()">
+            :class="alwaysOnTop ? 'text-mini-player-pill-foreground/80' : 'text-mini-player-pill-foreground'" @click="toggleAlwaysOnTop()">
             <Pin v-if="alwaysOnTop" class="w-3.5 h-3.5" />
             <PinOff v-else class="w-3.5 h-3.5" />
           </button>
-          <button class="w-6 h-6 flex items-center justify-center rounded-full text-foreground transition-colors"
+          <button class="w-6 h-6 flex items-center justify-center rounded-full text-mini-player-pill-foreground transition-colors"
             @mouseenter="onVolumeEnter" @mouseleave="onVolumeLeave" @click="showVolume = !showVolume">
             <VolumeX v-if="store.muted" class="w-3.5 h-3.5" />
             <Volume2 v-else class="w-3.5 h-3.5" />
@@ -197,7 +200,9 @@ watch(() => store.theme, (colors) => {
             {{ formatTime(displayPosition) }}
           </span>
           <Slider :model-value="isSeeking ? seekValue : store.progressPercent" :min="0" :max="100" :step="0.1"
-            class="flex-1" @update:model-value="(v) => (seekValue = v)" @mousedown="onSeekStart" @mouseup="onSeekEnd" />
+            class="flex-1" track-color-class="bg-mini-player-pill-foreground"
+            track-background="var(--mini-player-pill-track)" thumb-color="var(--mini-player-pill-foreground)"
+            @update:model-value="(v) => (seekValue = v)" @mousedown="onSeekStart" @mouseup="onSeekEnd" />
           <span class="text-[10px] text-white/80 tabular-nums w-7 shrink-0">
             {{ formatTime(store.duration) }}
           </span>
@@ -234,9 +239,8 @@ watch(() => store.theme, (colors) => {
 
     <section v-if="activePanel" data-test="mini-player-panel" class="flex-1 min-h-0 flex flex-col overflow-hidden"
       style="-webkit-app-region: no-drag">
-      <div v-if="activePanel === 'lyrics'" class="h-full flex items-center justify-center">
-        {{ t('player.lyrics') }}
-      </div>
+      <MiniPlayerLyrics v-if="activePanel === 'lyrics'" :lyrics="store.lyrics?.content"
+        :loading="store.lyricsLoading" :current-position="store.position" @seek="store.seek" />
       <div v-else class="h-full flex items-center justify-center">
         {{ t('player.queue') }}
       </div>
