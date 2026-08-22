@@ -74,3 +74,5 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/wailsapp/wails/v3 => github.com/ChewbaccaCookie/wails/v3 v3.0.0-20260818124824-2ca26f4bf1a3

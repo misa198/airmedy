@@ -50,6 +50,12 @@ class PlaylistReconciliationHostTest {
         assertEquals(emptyList<LibraryPlaylist>(), applyPendingPlaylistMutations(listOf(edited), listOf(mutation("3", PlaylistMutationOperation.DELETE, PlaylistMutationPayload()))))
     }
 
+    @Test fun successfulMutationsStayProjectedUntilTheReplacementSnapshot() {
+        assertEquals(true, PlaylistMutationStatus.APPLIED.awaitingReplacementSnapshot())
+        assertEquals(true, PlaylistMutationStatus.DUPLICATE.awaitingReplacementSnapshot())
+        assertEquals(false, PlaylistMutationStatus.STALE.awaitingReplacementSnapshot())
+    }
+
     @Test fun pendingMutationsMergeInQueueOrderAndHonorScope() {
         val snapshot = listOf(playlist("p", "Original", listOf("a", "b", "c")))
         val pending = listOf(
