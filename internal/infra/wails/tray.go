@@ -22,6 +22,35 @@ func truncateLabel(s string, max int) string {
 	return string(runes[:max-3]) + "..."
 }
 
+// trackLabel builds a "Title — Artist1, Artist2" display string for a track.
+// Returns "Unknown" when both title and artists are empty.
+func trackLabel(track *domain.TrackDTO) string {
+	title := strings.TrimSpace(track.Title)
+
+	var artistNames []string
+	for _, a := range track.Artists {
+		if a == nil {
+			continue
+		}
+		if name := strings.TrimSpace(a.Name); name != "" {
+			artistNames = append(artistNames, name)
+		}
+	}
+
+	label := title
+	if len(artistNames) > 0 {
+		if title != "" {
+			label = fmt.Sprintf("%s — %s", title, strings.Join(artistNames, ", "))
+		} else {
+			label = strings.Join(artistNames, ", ")
+		}
+	}
+	if strings.TrimSpace(label) == "" {
+		return "Unknown"
+	}
+	return label
+}
+
 type TrayManager struct {
 	app            *application.App
 	playerService  *player.PlayerService
@@ -195,31 +224,7 @@ func (m *TrayManager) onQueueChange(queue []*domain.TrackDTO) {
 func (m *TrayManager) updateTrackLabelsInternal() {
 	track := m.playerService.GetCurrentTrack()
 	if track != nil {
-		title := strings.TrimSpace(track.Title)
-
-		artistNames := []string{}
-		for _, a := range track.Artists {
-			if a == nil {
-				continue
-			}
-			name := strings.TrimSpace(a.Name)
-			if name != "" {
-				artistNames = append(artistNames, name)
-			}
-		}
-
-		label := title
-		if len(artistNames) > 0 {
-			if title != "" {
-				label = fmt.Sprintf("%s — %s", title, strings.Join(artistNames, ", "))
-			} else {
-				label = strings.Join(artistNames, ", ")
-			}
-		}
-		if strings.TrimSpace(label) == "" {
-			label = "Unknown"
-		}
-		label = truncateLabel(label, trayLabelMaxLen)
+		label := truncateLabel(trackLabel(track), trayLabelMaxLen)
 		m.currentTrackItem.SetLabel(label)
 		m.favoriteItem.SetChecked(track.IsFavorite)
 
@@ -239,11 +244,7 @@ func (m *TrayManager) updateTrackLabelsInternal() {
 
 	nextTrack := m.playerService.PeekNextTrack()
 	if nextTrack != nil {
-		nextTitle := strings.TrimSpace(nextTrack.Title)
-		if nextTitle == "" {
-			nextTitle = "Unknown"
-		}
-		label := truncateLabel(m.i18nService.T("tray.next", nextTitle), trayLabelMaxLen)
+		label := truncateLabel(m.i18nService.T("tray.next", trackLabel(nextTrack)), trayLabelMaxLen)
 		m.nextTrackItem.SetLabel(label)
 		m.nextActionItem.SetEnabled(true)
 	} else {
