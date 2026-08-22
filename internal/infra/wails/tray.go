@@ -167,6 +167,11 @@ func (m *TrayManager) Setup(tray *application.SystemTray, mainWindow *applicatio
 	// Register listeners
 	m.playerService.AddStatusListener(m.onStatusChange)
 	m.playerService.AddQueueListener(m.onQueueChange)
+
+	// Populate labels immediately so tracks restored from a previous session
+	// are visible without waiting for the first state-change event.
+	status = m.playerService.GetStatus()
+	m.updateStatus(status)
 }
 
 func (m *TrayManager) UpdateLanguage() {
