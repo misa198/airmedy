@@ -162,7 +162,14 @@ namespace {
             const int read = av_read_frame(slot.format, slot.packet);
             if (read < 0) {
                 slot.input_exhausted.store(true, std::memory_order_release);
-                return;
+                // Keep the worker alive: short files commonly reach EOF while
+                // their PCM is still buffered, and a later seek must restart
+                // demuxing instead of letting that stale buffer finish the track.
+                while (!slot.stopping.load(std::memory_order_acquire) &&
+                        !slot.seek_pending.load(std::memory_order_acquire)) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                }
+                continue;
             }
             if (slot.packet->stream_index == slot.audio_stream && avcodec_send_packet(slot.codec, slot.packet) >= 0) {
                 while (avcodec_receive_frame(slot.codec, slot.frame) >= 0) {
@@ -259,7 +266,9 @@ namespace {
     bool read_frame(SourceSlot &slot, float &left, float &right) {
         const size_t read = slot.read_frame.load(std::memory_order_relaxed);
         if (read == slot.write_frame.load(std::memory_order_acquire)) {
-            if (slot.input_exhausted.load(std::memory_order_acquire)) slot.finished.store(true, std::memory_order_release);
+            if (slot.input_exhausted.load(std::memory_order_acquire) &&
+                    !slot.seek_pending.load(std::memory_order_acquire))
+                slot.finished.store(true, std::memory_order_release);
             left = right = 0.0f;
             return false;
         }
@@ -592,7 +601,12 @@ extern "C" JNIEXPORT void JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_n
     s.position_base_us.store(std::max<int64_t>(0, ms) * 1000);
     s.rendered_frames.store(0);
     s.seek_us.store(std::max<int64_t>(0, ms) * 1000);
-    s.seek_pending.store(true);
+    // Flush already-decoded PCM before the worker reaches the seek. Otherwise
+    // an EOF buffer can promote the preloaded track during this small window.
+    s.seek_pending.store(true, std::memory_order_release);
+    s.input_exhausted.store(false, std::memory_order_release);
+    s.finished.store(false, std::memory_order_release);
+    s.write_frame.store(s.read_frame.load(std::memory_order_acquire), std::memory_order_release);
 }
 extern "C" JNIEXPORT jlong JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativeDurationMs(JNIEnv *, jclass, jlong value) {
     auto *e = reinterpret_cast<PlaybackEngine *>(value);
