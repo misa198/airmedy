@@ -46,7 +46,7 @@ function scrollToActive(index: number, behavior: ScrollBehavior) {
   // offsetTop can otherwise be relative to the nested lyric list.
   const lineTop = line.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop
   container.scrollTo({
-    top: lineTop - container.clientHeight / 5 + line.clientHeight / 2,
+    top: lineTop - container.clientHeight / 4 + line.clientHeight / 2,
     behavior,
   })
   hasPositionedLine = true
@@ -123,28 +123,29 @@ onUnmounted(() => {
     </div>
 
     <div v-else-if="isSynced" ref="scrollContainer" data-test="mini-synced-lyrics"
-      class="h-full overflow-y-auto px-4 pr-8 py-6 scrollbar-hide" @wheel.passive="enterBrowseMode"
+      class="h-full overflow-y-auto px-4 pr-10 py-6 scrollbar-hide" @wheel.passive="enterBrowseMode"
       @pointerdown="enterBrowseMode">
-      <div class="space-y-3">
+      <div class="space-y-5">
         <button v-for="(line, index) in syncedLines" :key="`${line.time}-${index}`" ref="lineRefs" type="button"
           data-test="mini-lyric-line"
-          class="block w-full origin-left text-left font-semibold leading-snug transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+          class="block w-full origin-left text-left leading-snug transform-gpu transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] text-[20px]"
           :class="isBrowsing
             ? 'text-foreground scale-100 opacity-100'
             : index === activeIndex
-              ? 'text-foreground scale-107 opacity-100'
+              ? 'text-foreground scale-110 opacity-100'
               : index < activeIndex
                 ? 'text-foreground/40 scale-100 opacity-60 hover:text-foreground/50'
                 : 'text-foreground/40 scale-100 opacity-50 hover:text-foreground/50'"
+          @pointerdown.stop
           @click="seekAndResume(line.time, index)">
-          <span>{{ line.text }}</span>
-          <span v-if="line.secondary" class="mt-0.5 block text-xs opacity-70">{{ line.secondary }}</span>
+          <span class="font-bold">{{ line.text }}</span>
+          <span v-if="line.secondary" class="mt-0.5 block text-[14px] opacity-70">{{ line.secondary }}</span>
         </button>
       </div>
     </div>
 
     <div v-else data-test="mini-plain-lyrics" class="h-full overflow-y-auto px-4 py-6 scrollbar-hide">
-      <div class="space-y-3 text-sm leading-relaxed">
+      <div class="space-y-2 text-sm leading-relaxed">
         <div v-for="(line, index) in plainLines" :key="index" data-test="mini-plain-lyric-line"
           class="text-foreground">
           <p>{{ line.primary }}</p>

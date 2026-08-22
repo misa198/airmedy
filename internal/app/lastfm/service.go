@@ -66,11 +66,6 @@ func NewLastFmService(
 		s.username = st.LastFmUsername
 	}
 
-	// Fetch avatar if connected
-	if s.sessionKey != "" && s.username != "" {
-		go s.fetchUserAvatar(s.username)
-	}
-
 	player.AddScrobbleListener(s.handleScrobble)
 	player.AddNowPlayingListener(s.handleNowPlaying)
 
@@ -155,6 +150,18 @@ func (s *LastFmService) GetStatus() (bool, string, string) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.sessionKey != "", s.username, s.avatarURL
+}
+
+// RefreshUserAvatar fetches the connected user's avatar after Wails is ready
+// to deliver the resulting frontend event.
+func (s *LastFmService) RefreshUserAvatar() {
+	s.mu.RLock()
+	username := s.username
+	connected := s.sessionKey != ""
+	s.mu.RUnlock()
+	if connected && username != "" {
+		go s.fetchUserAvatar(username)
+	}
 }
 
 // Internal API helpers

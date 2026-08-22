@@ -248,7 +248,7 @@ watch(() => store.theme, (colors) => {
       </div>
     </div>
 
-    <section v-if="activePanel" data-test="mini-player-panel" class="flex-1 min-h-0 flex flex-col overflow-hidden"
+    <section v-if="activePanel" data-test="mini-player-panel" class="flex-1 min-h-0 flex flex-col overflow-hidden border-t border-[color:var(--border-glass)]"
       style="-webkit-app-region: no-drag">
       <MiniPlayerLyrics v-if="activePanel === 'lyrics'" :lyrics="store.lyrics?.content"
         :loading="store.lyricsLoading" :current-position="store.position" @seek="store.seek" />

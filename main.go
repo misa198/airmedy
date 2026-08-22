@@ -192,6 +192,7 @@ func main() {
 			ProgramName: "airmedy",
 		},
 	})
+	lastfmService.GetService().RefreshUserAvatar()
 
 	// Initialize i18n
 	settings, _ := settingsService.GetSettings(context.Background())

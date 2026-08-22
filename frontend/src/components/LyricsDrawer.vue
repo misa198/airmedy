@@ -153,8 +153,8 @@ onUnmounted(() => {
                 : index < activeIndex
                   ? 'text-foreground/40 opacity-60 hover:text-foreground/50'
                   : 'text-foreground/40 opacity-40 hover:text-foreground/40',
-            ]" @click="seekAndResume(line.time, index)">
-            <div class="font-bold text-[21pt]">{{ line.text }}</div>
+            ]" @pointerdown.stop @click="seekAndResume(line.time, index)">
+            <div class="text-[21pt] font-bold">{{ line.text }}</div>
             <div v-if="line.secondary" class="text-[15pt] opacity-50 mt-0.5">{{ line.secondary }}</div>
           </div>
         </div>

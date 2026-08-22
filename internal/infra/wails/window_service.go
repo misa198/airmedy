@@ -224,6 +224,13 @@ func miniRect(rect application.Rect, expanded bool) application.Rect {
 	return rect
 }
 
+func miniMinHeight(expanded bool) int {
+	if expanded {
+		return miniMinWidth * 2
+	}
+	return miniMinWidth
+}
+
 // clampMiniRectToWorkArea keeps a compact or expanded mini player reachable.
 // A work area smaller than the configured minimum is an unavoidable OS-level constraint.
 func clampMiniRectToWorkArea(rect, wa application.Rect, expanded bool) application.Rect {
@@ -308,6 +315,7 @@ func (s *WindowService) SetMiniPlayerExpanded(expanded bool) {
 		return
 	}
 
+	w.SetMinSize(miniMinWidth, miniMinHeight(expanded))
 	to := miniRect(w.Bounds(), expanded)
 	if screen, err := w.GetScreen(); err == nil && screen != nil {
 		to = clampMiniRectToWorkArea(to, screen.WorkArea, expanded)

@@ -129,6 +129,15 @@ func TestMiniRect(t *testing.T) {
 	}
 }
 
+func TestMiniMinHeight(t *testing.T) {
+	if got := miniMinHeight(false); got != 280 {
+		t.Errorf("compact min height = %d, want 280", got)
+	}
+	if got := miniMinHeight(true); got != 560 {
+		t.Errorf("expanded min height = %d, want 560", got)
+	}
+}
+
 func TestClampMiniRectToWorkArea(t *testing.T) {
 	got := clampMiniRectToWorkArea(
 		application.Rect{X: 1800, Y: 900, Width: 500, Height: 500},

@@ -19,7 +19,7 @@ describe('MiniPlayerLyrics', () => {
     else delete (HTMLElement.prototype as { clientWidth?: number }).clientWidth
   })
 
-  it('positions the measured active line one fifth down its own panel and seeks on click', async () => {
+  it('positions the measured active line one quarter down its own panel and seeks on click', async () => {
     const scrollTo = vi.fn()
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
       callback(0)
@@ -50,7 +50,8 @@ describe('MiniPlayerLyrics', () => {
 
     expect(scrollTo).toHaveBeenLastCalledWith({ top: 140, behavior: 'smooth' })
     expect(active.classes()).toContain('text-foreground')
-    expect(active.classes()).toContain('scale-107')
+    expect(active.classes()).toContain('scale-110')
+    expect(active.classes()).toContain('transform-gpu')
     expect(container.classes()).toContain('pr-8')
     expect(wrapper.findAll('[data-test="mini-lyric-line"]')[0].classes()).toContain('opacity-60')
     expect(wrapper.findAll('[data-test="mini-lyric-line"]')[2].classes()).toContain('opacity-50')
@@ -70,5 +71,19 @@ describe('MiniPlayerLyrics', () => {
     expect(mount(MiniPlayerLyrics, {
       props: { currentPosition: 0 }, global,
     }).find('[data-test="mini-lyrics-empty"]').exists()).toBe(true)
+  })
+
+  it('seeks a lyric tap without entering browse mode first', async () => {
+    const wrapper = mount(MiniPlayerLyrics, {
+      props: { lyrics: '[00:00.00]First\n[00:10.00]Active', currentPosition: 10 },
+      global: { mocks: { $t: (key: string) => key } },
+    })
+    const firstLine = wrapper.findAll('[data-test="mini-lyric-line"]')[0]
+
+    await firstLine.trigger('pointerdown')
+    expect(firstLine.classes()).toContain('opacity-60')
+    await firstLine.trigger('click')
+
+    expect(wrapper.emitted('seek')).toEqual([[0]])
   })
 })

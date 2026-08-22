@@ -105,7 +105,7 @@ wailsApp := application.New(application.Options{
 
 **Main window:** 1280×800px (min 1060×768), macOS translucent titlebar hidden (InvisibleTitleBarHeight=50, Backdrop=Translucent, TitleBar=HiddenInset).
 
-**Mini player window:** compact square (default 300×300px, min 280×280, max 500×500), hidden by default. Its temporary Lyrics/Queue selector expands the window to width:height 1:2 for a lower placeholder panel; selection resets on reopen. Position, size, and pin (always-on-top) persist to the `mini_player_state` table and restore on open via `WindowService.ApplyMiniState`, clamped to the current screen's work area. Native window APIs keep the active 1:1 or 1:2 ratio locked on macOS, Windows, and Linux/X11; Wayland keeps its compositor-managed resize behaviour.
+**Mini player window:** compact square (default 300×300px, min 280×280, max 500×500), hidden by default. Its temporary Lyrics/Queue selector expands the window to width:height 1:2 for a lower placeholder panel, with a matching minimum of 280×560; selection resets on reopen. Position, size, and pin (always-on-top) persist to the `mini_player_state` table and restore on open via `WindowService.ApplyMiniState`, clamped to the current screen's work area. Native window APIs keep the active 1:1 or 1:2 ratio locked on macOS, Windows, and Linux/X11; Wayland keeps its compositor-managed resize behaviour.
 
 ### Single Instance & Deep Links
 
