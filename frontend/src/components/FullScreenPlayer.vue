@@ -4,7 +4,7 @@ import {
   Mic2,
   Minimize2,
 } from '@lucide/vue'
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { usePlayerStore } from '../stores/player'
 import { useDeviceStore } from '../stores/device'
 import LivingArtworkBackground from './LivingArtworkBackground.vue'
@@ -31,13 +31,16 @@ const appStore = useAppStore()
 
 const trackContextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
 const quickSettingsMenu = ref<InstanceType<typeof PlayerQuickSettingsMenu> | null>(null)
+const queuePanel = ref<InstanceType<typeof PlayerQueuePanel> | null>(null)
 
 // Queue panel holds a 50k-track virtual list; keep it mounted after first
 // open (v-show toggle) instead of remounting on every open/close. Lyrics
 // panel stays fully lazy (v-if) — cheap to mount, and should reload on open.
 const hasOpenedQueue = ref(store.isQueueOpen)
 watch(() => store.isQueueOpen, (open) => {
-  if (open) hasOpenedQueue.value = true
+  if (!open) return
+  hasOpenedQueue.value = true
+  nextTick(() => queuePanel.value?.scrollToCurrentTrack())
 })
 
 function openContextMenu(e: MouseEvent) {
@@ -196,7 +199,7 @@ onUnmounted(() => {
               enter-from-class="opacity-0 translate-x-24" enter-to-class="opacity-100 translate-x-0"
               leave-active-class="transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
               leave-from-class="opacity-100 translate-x-0" leave-to-class="opacity-0 translate-x-24">
-              <PlayerQueuePanel v-if="hasOpenedQueue" v-show="store.isQueueOpen" key="queue" :queue="store.queue"
+              <PlayerQueuePanel ref="queuePanel" v-if="hasOpenedQueue" v-show="store.isQueueOpen" key="queue" :queue="store.queue"
                 @close="store.closeAllDrawers()" @play-track="(index) => store.playQueueIndex(index)" />
             </Transition>
 

@@ -28,6 +28,10 @@ function navigate(path: string) {
   router.push(path)
   emit('close')
 }
+
+defineExpose({
+  scrollToCurrentTrack: () => trackTable.value?.scrollToCurrentTrack(),
+})
 </script>
 
 <template>
@@ -54,7 +58,8 @@ function navigate(path: string) {
 
       <!-- Content Area -->
       <div class="flex-1 overflow-hidden">
-        <TrackTable ref="trackTable" :tracks="queue" :show-artwork="false" :scroll-to-current="true" :simple-mode="true"
+        <TrackTable ref="trackTable" :tracks="queue" :show-artwork="false" :scroll-to-current="true"
+          :scroll-to-current-when-visible="true" :simple-mode="true"
           :hide-header="true" variant="glass" :allow-dnd="true"
           :context-menu-options="{ showRemoveFromQueue: true }"
           class="dark"
