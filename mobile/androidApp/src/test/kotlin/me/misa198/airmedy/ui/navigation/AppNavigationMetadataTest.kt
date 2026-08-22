@@ -7,9 +7,9 @@ import org.junit.Test
 
 class AppNavigationMetadataTest {
     @Test
-    fun libraryDestinationUsesGraphicEqSymbol() {
-        assertEquals(MaterialSymbols.GraphicEq, AppDestination.Library.symbol)
-        assertEquals("graphic_eq", AppDestination.Library.symbol)
+    fun libraryDestinationUsesMusicVideoSymbol() {
+        assertEquals(MaterialSymbols.Library, AppDestination.Library.symbol)
+        assertEquals("music_video", AppDestination.Library.symbol)
     }
 
     @Test
@@ -19,8 +19,8 @@ class AppNavigationMetadataTest {
             AppDestination.entries,
         )
         assertEquals(MaterialSymbols.Home, AppDestination.Home.symbol)
-        assertEquals(MaterialSymbols.LegendToggle, AppDestination.Insight.symbol)
-        assertEquals(MaterialSymbols.GraphicEq, AppDestination.Library.symbol)
+        assertEquals(MaterialSymbols.BarChart, AppDestination.Insight.symbol)
+        assertEquals(MaterialSymbols.Library, AppDestination.Library.symbol)
         assertEquals(MaterialSymbols.Settings, AppDestination.Settings.symbol)
     }
 }

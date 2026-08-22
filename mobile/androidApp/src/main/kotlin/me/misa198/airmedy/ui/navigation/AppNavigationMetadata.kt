@@ -51,7 +51,7 @@ internal val AppDestination.placeholderRes: Int
 internal val AppDestination.symbol: String
     get() = when (this) {
         AppDestination.Home -> MaterialSymbols.Home
-        AppDestination.Insight -> MaterialSymbols.LegendToggle
-        AppDestination.Library -> MaterialSymbols.GraphicEq
+        AppDestination.Insight -> MaterialSymbols.BarChart
+        AppDestination.Library -> MaterialSymbols.Library
         AppDestination.Settings -> MaterialSymbols.Settings
     }
