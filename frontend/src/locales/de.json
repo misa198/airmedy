@@ -536,6 +536,7 @@
     "track": "Track",
     "file_path": "Dateipfad",
     "label": "Label",
+    "copyright": "Urheberrecht",
     "isrc": "ISRC",
     "play_count": "Wiedergaben",
     "lossless": "Verlustfrei",

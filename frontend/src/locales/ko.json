@@ -536,6 +536,7 @@
     "track": "트랙",
     "file_path": "파일 경로",
     "label": "레이블",
+    "copyright": "저작권",
     "isrc": "ISRC",
     "play_count": "재생 횟수",
     "lossless": "무손실",

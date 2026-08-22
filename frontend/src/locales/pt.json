@@ -536,6 +536,7 @@
     "track": "Faixa",
     "file_path": "Caminho do arquivo",
     "label": "Gravadora",
+    "copyright": "Direitos autorais",
     "isrc": "ISRC",
     "play_count": "Reproduções",
     "lossless": "Sem perdas",
