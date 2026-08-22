@@ -6,10 +6,11 @@ import {
   Pin, PinOff, X, Music,
   Shuffle, Repeat, Repeat1,
   Volume2, VolumeX,
-  Mic2, ListMusic,
+  Mic2, ListMusic, Goal, Radio,
 } from '@lucide/vue'
 import LazyImg from '@/components/LazyImg.vue'
 import { usePlayerStore } from '@/stores/player'
+import { useMoodRadioStore } from '@/stores/moodRadio'
 import { RepeatMode } from '../../bindings/airmedy/internal/domain/models'
 import { formatTime, hexToRgba, getTrackDisplayTitle } from '@airmedy/utils'
 import { Slider } from '@airmedy/ui'
@@ -17,11 +18,13 @@ import { MarqueeText } from '@airmedy/ui'
 import * as WindowService from '../../bindings/airmedy/internal/infra/wails/windowservice'
 import PlayerControlButton from './player/PlayerControlButton.vue'
 import MiniPlayerLyrics from './MiniPlayerLyrics.vue'
+import QueueTrackList from './QueueTrackList.vue'
 import { useAppStore } from '@/stores/app'
 import { useDeviceStore } from '@/stores/device'
 import { useArtworkCrossfadeOpacity } from '@/composables/useArtworkCrossfadeOpacity'
 
 const store = usePlayerStore()
+const moodRadioStore = useMoodRadioStore()
 const appStore = useAppStore()
 const deviceStore = useDeviceStore()
 const { t } = useI18n()
@@ -36,6 +39,7 @@ const seekValue = ref(0)
 const isHovered = ref(false)
 const showVolume = ref(false)
 const activePanel = ref<'lyrics' | 'queue' | null>(null)
+const queueTrackList = ref<InstanceType<typeof QueueTrackList> | null>(null)
 let volumeHideTimer: ReturnType<typeof setTimeout> | null = null
 
 const displayPosition = computed(() =>
@@ -62,8 +66,15 @@ async function toggleAlwaysOnTop() {
 
 async function togglePanel(panel: 'lyrics' | 'queue') {
   const nextPanel = activePanel.value === panel ? null : panel
+  if (nextPanel === null) {
+    activePanel.value = null
+    await WindowService.SetMiniPlayerExpanded(false)
+    return
+  }
+  if (activePanel.value === null) {
+    await WindowService.SetMiniPlayerExpanded(true)
+  }
   activePanel.value = nextPanel
-  await WindowService.SetMiniPlayerExpanded(nextPanel !== null)
 }
 
 onMounted(async () => {
@@ -241,8 +252,23 @@ watch(() => store.theme, (colors) => {
       style="-webkit-app-region: no-drag">
       <MiniPlayerLyrics v-if="activePanel === 'lyrics'" :lyrics="store.lyrics?.content"
         :loading="store.lyricsLoading" :current-position="store.position" @seek="store.seek" />
-      <div v-else class="h-full flex items-center justify-center">
-        {{ t('player.queue') }}
+      <div v-else class="h-full min-h-0 flex flex-col">
+        <div class="flex items-center justify-between shrink-0 px-3 py-2 border-b border-[color:var(--border-glass)]">
+          <div class="flex items-center gap-2 text-foreground">
+            <ListMusic class="w-4 h-4 text-primary" />
+            <span class="text-sm font-semibold">{{ t('player.up_next') }}</span>
+            <Radio v-if="moodRadioStore.active" data-test="mini-player-mood-radio" class="w-3.5 h-3.5 text-primary" :title="t('player.mood_radio_active')" />
+          </div>
+          <button
+            data-test="mini-player-scroll-to-current"
+            class="p-1.5 rounded-full text-foreground/70 hover:bg-foreground/[0.04] hover:text-foreground transition-colors"
+            :title="t('player.scroll_to_current')"
+            @click="queueTrackList?.scrollToCurrentTrack()"
+          >
+            <Goal class="w-4 h-4" />
+          </button>
+        </div>
+        <QueueTrackList ref="queueTrackList" scroll-to-current-on-mount :context-menu-options="{ miniPlayer: true, showRemoveFromQueue: true }" />
       </div>
     </section>
   </div>

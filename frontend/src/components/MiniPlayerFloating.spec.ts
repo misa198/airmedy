@@ -4,6 +4,7 @@ import MiniPlayerFloating from './MiniPlayerFloating.vue'
 
 const mocks = vi.hoisted(() => ({
   setMiniPlayerExpanded: vi.fn().mockResolvedValue(undefined),
+  moodRadioStore: { active: false },
 }))
 
 vi.mock('vue-i18n', () => ({
@@ -40,6 +41,10 @@ vi.mock('@/stores/app', () => ({
   useAppStore: () => ({ blendArtworkDuringCrossfade: false, showPlayerIndicator: false }),
 }))
 
+vi.mock('@/stores/moodRadio', () => ({
+  useMoodRadioStore: () => mocks.moodRadioStore,
+}))
+
 vi.mock('@/stores/device', () => ({
   useDeviceStore: () => ({ isWindows: false }),
 }))
@@ -56,6 +61,17 @@ vi.mock('../../bindings/airmedy/internal/infra/wails/windowservice', () => ({
 }))
 
 describe('MiniPlayerFloating', () => {
+  it('shows the radio indicator while Mood Radio is active', async () => {
+    mocks.moodRadioStore.active = true
+    const wrapper = mount(MiniPlayerFloating, {
+      global: { stubs: { LazyImg: true, Slider: true, MarqueeText: true, PlayerControlButton: true, MiniPlayerLyrics: true, QueueTrackList: true } },
+    })
+
+    await wrapper.get('[data-test="mini-player-queue"]').trigger('click')
+    expect(wrapper.find('[data-test="mini-player-mood-radio"]').exists()).toBe(true)
+    mocks.moodRadioStore.active = false
+  })
+
   it('keeps its pills dark while lyrics inherit the mini-player window theme', () => {
     const wrapper = mount(MiniPlayerFloating, {
       global: {
@@ -65,6 +81,7 @@ describe('MiniPlayerFloating', () => {
           MarqueeText: true,
           PlayerControlButton: true,
           MiniPlayerLyrics: true,
+          QueueTrackList: { props: ['scrollToCurrentOnMount'], template: '<div data-test="mini-player-queue-content">Queue</div>' },
         },
       },
     })
@@ -87,6 +104,7 @@ describe('MiniPlayerFloating', () => {
             props: ['lyrics', 'loading', 'currentPosition'],
             template: '<div data-test="mini-player-lyrics-content">{{ lyrics }} {{ loading }} {{ currentPosition }}</div>',
           },
+          QueueTrackList: { props: ['scrollToCurrentOnMount'], template: '<div data-test="mini-player-queue-content">Queue</div>' },
         },
       },
     })
@@ -96,21 +114,17 @@ describe('MiniPlayerFloating', () => {
       finishResize = resolve
     }))
     await wrapper.get('[data-test="mini-player-queue"]').trigger('click')
-    expect(wrapper.get('[data-test="mini-player-panel"]').text()).toBe('Queue')
+    expect(wrapper.find('[data-test="mini-player-panel"]').exists()).toBe(false)
     finishResize()
     await flushPromises()
+    expect(wrapper.find('[data-test="mini-player-queue-content"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="mini-player-scroll-to-current"]').exists()).toBe(true)
     expect(mocks.setMiniPlayerExpanded).toHaveBeenLastCalledWith(true)
-    expect(wrapper.get('[data-test="mini-player-panel"]').text()).toBe('Queue')
+    expect(wrapper.find('[data-test="mini-player-queue-content"]').exists()).toBe(true)
     expect(wrapper.get('[data-test="mini-player-panel-indicator"]').classes()).toContain('translate-x-[26px]')
 
-    let finishCollapse!: () => void
-    mocks.setMiniPlayerExpanded.mockImplementationOnce(() => new Promise<void>((resolve) => {
-      finishCollapse = resolve
-    }))
     await wrapper.get('[data-test="mini-player-lyrics"]').trigger('click')
     expect(wrapper.get('[data-test="mini-player-panel"]').text()).toContain('[00:00.00]First line')
-    finishCollapse()
-    await flushPromises()
     expect(mocks.setMiniPlayerExpanded).toHaveBeenLastCalledWith(true)
     expect(wrapper.get('[data-test="mini-player-panel"]').text()).toContain('[00:00.00]First line')
     expect(wrapper.get('[data-test="mini-player-panel-indicator"]').classes()).toContain('translate-x-0')

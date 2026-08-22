@@ -19,6 +19,7 @@ export interface TrackContextMenuOptions {
   excludePlayNext?: boolean
   showRemoveFromQueue?: boolean
   excludeAddToQueue?: boolean
+  miniPlayer?: boolean
   playlistId?: string
   isSmartPlaylist?: boolean
 }
@@ -44,6 +45,40 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
     }
 
     const isCurrentTrack = playerStore.currentTrack?.id === track.id
+
+    if (options.miniPlayer) {
+      if (options.showRemoveFromQueue && !isCurrentTrack) {
+        items.push({
+          label: t('context_menu.remove_from_queue'),
+          icon: ListX,
+          action: () => { PlayerService.RemoveFromQueue(track.id) },
+        })
+      }
+      if (!isCurrentTrack) {
+        if (items.length) items.push({ separator: true })
+        items.push({
+          label: t('context_menu.play_next'),
+          icon: ListStart,
+          action: () => { PlayerService.PlayNext(track) },
+        })
+      }
+      if (appStore.libraryAnalysisEnabled) {
+        if (items.length) items.push({ separator: true })
+        items.push({
+          label: t('context_menu.start_mood_radio'),
+          icon: Radio,
+          action: () => { moodRadioStore.start(track) },
+        })
+      }
+      if (items.length) items.push({ separator: true })
+      const isFavorite = favoritesStore.isFavorite(track)
+      items.push({
+        label: isFavorite ? t('context_menu.remove_from_favorites') : t('context_menu.add_to_favorites'),
+        icon: isFavorite ? HeartOff : Heart,
+        action: async () => { await favoritesStore.toggle(track.id) },
+      })
+      return items
+    }
 
     if (options.showRemoveFromQueue && !isCurrentTrack) {
       items.push({
