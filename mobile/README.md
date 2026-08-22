@@ -158,9 +158,10 @@ Playlist reconciliation arrives on a separate MQTT stream from Library Sync
 asset downloads. Android persists playlist deltas in Room and retains them
 until a terminal desktop result (`applied`, `duplicate`, `stale`, `rejected`,
 or `scope-conflict`) acknowledges the mutation.
-When a playlist deletion is `applied` or `duplicate`, its local pre-sync
-projection is removed as well; rejected or stale deletions remain available to
-the next authoritative snapshot.
+When a playlist deletion is `applied` or `duplicate`, its local projection
+remains in effect until the replacement library snapshot activates, so a
+deleted item cannot briefly reappear while assets download. Rejected or stale
+deletions remain available to the next authoritative snapshot.
 
 Artwork staging is stored in Room with its SHA-256, MIME type, byte size, and
 app-private relative path. It is verified and uploaded before `SET_ARTWORK`,

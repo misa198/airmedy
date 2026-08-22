@@ -268,8 +268,10 @@ internal interface SyncDao {
     @Query("DELETE FROM sync_documents WHERE planId = :planId") suspend fun deleteDocuments(planId: String)
     @Query("DELETE FROM sync_plans WHERE planId = :planId AND active = 0") suspend fun deleteInactivePlan(planId: String)
     @Query("SELECT * FROM playlist_mutations WHERE state = 'pending' ORDER BY updatedAt, mutationId") suspend fun pendingPlaylistMutations(): List<PlaylistMutationEntity>
-    @Query("SELECT * FROM playlist_mutations WHERE state = 'pending' ORDER BY updatedAt, mutationId") fun observePendingPlaylistMutations(): Flow<List<PlaylistMutationEntity>>
-    @Query("UPDATE playlist_mutations SET state = 'acknowledged' WHERE mutationId IN (:mutationIds)") suspend fun acknowledgePlaylistMutations(mutationIds: List<String>)
+    @Query("SELECT * FROM playlist_mutations WHERE state IN ('pending', 'awaiting_sync') ORDER BY updatedAt, mutationId") fun observeProjectedPlaylistMutations(): Flow<List<PlaylistMutationEntity>>
+    @Query("UPDATE playlist_mutations SET state = :state WHERE mutationId IN (:mutationIds)") suspend fun setPlaylistMutationState(mutationIds: List<String>, state: String)
+    @Query("DELETE FROM local_playlists WHERE playlistId IN (SELECT playlistId FROM playlist_mutations WHERE state = 'awaiting_sync' AND operation = 'DELETE')") suspend fun deleteAwaitingDeletedLocalPlaylists()
+    @Query("UPDATE playlist_mutations SET state = 'acknowledged' WHERE state = 'awaiting_sync'") suspend fun acknowledgeAwaitingPlaylistMutations()
     @Query("SELECT * FROM local_playlists ORDER BY name COLLATE NOCASE") fun observeLocalPlaylists(): Flow<List<LocalPlaylistEntity>>
     @Query("UPDATE local_playlists SET syncState = :state WHERE mutationId IN (:mutationIds)") suspend fun setLocalPlaylistSyncState(mutationIds: List<String>, state: String)
     @Query("DELETE FROM local_playlists WHERE playlistId IN (:playlistIds)") suspend fun deleteLocalPlaylists(playlistIds: List<String>)
@@ -461,7 +463,7 @@ internal class AndroidLibrarySyncStore(
     private val snapshotScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val activeTrackRows = dao.observeTracks()
         .shareIn(snapshotScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
-    private val pendingPlaylistMutations = dao.observePendingPlaylistMutations()
+    private val projectedPlaylistMutations = dao.observeProjectedPlaylistMutations()
         .shareIn(snapshotScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
     private val artworkAssets = dao.observeArtworkAssets()
         .shareIn(snapshotScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
@@ -481,7 +483,7 @@ internal class AndroidLibrarySyncStore(
         val peak = value["true_peak"]?.jsonPrimitive?.contentOrNull?.toFloatOrNull() ?: return@mapNotNull null
         document.documentKey to TrackAnalysis(lufs, peak)
     }.toMap()
-    val tracks: Flow<List<LibraryTrack>> = combine(activeTrackRows, pendingPlaylistMutations) { rows, pending ->
+    val tracks: Flow<List<LibraryTrack>> = combine(activeTrackRows, projectedPlaylistMutations) { rows, pending ->
         val overrides = pending.mapNotNull { row ->
             runCatching { LibrarySyncProtocol.json.decodeFromString(PlaylistMutationPayload.serializer(), row.payloadJson) }
                 .getOrNull()?.takeIf { row.operation == PlaylistMutationOperation.SET_FAVORITE.name }
@@ -543,7 +545,7 @@ internal class AndroidLibrarySyncStore(
     val playlists: Flow<List<LibraryPlaylist>> = combine(
         dao.observePlaylists(),
         dao.observeLocalPlaylists(),
-        pendingPlaylistMutations,
+        projectedPlaylistMutations,
     ) { rows, local, pending ->
         val synced = rows.map { row ->
             LibraryPlaylist(
@@ -648,11 +650,13 @@ internal class AndroidLibrarySyncStore(
 
     override suspend fun acknowledgePlaylistMutations(results: List<PlaylistMutationResult>) {
         if (results.isEmpty()) return
-        // Keep staged artwork visible until the replacement manifest is active.
         database.withTransaction {
-            val mutations = dao.pendingPlaylistMutations().mapNotNull(PlaylistMutationEntity::toPlaylistMutation)
-            dao.acknowledgePlaylistMutations(results.map(PlaylistMutationResult::mutationId))
-            dao.deleteLocalPlaylists(acknowledgedDeletedLocalPlaylistIds(mutations, results))
+            results.groupBy { it.status.awaitingReplacementSnapshot() }.forEach { (awaitingSnapshot, grouped) ->
+                dao.setPlaylistMutationState(
+                    grouped.map(PlaylistMutationResult::mutationId),
+                    if (awaitingSnapshot) "awaiting_sync" else "acknowledged",
+                )
+            }
         }
     }
 
@@ -711,6 +715,8 @@ internal class AndroidLibrarySyncStore(
         check(dao.missingAssetCount(planId) == 0) { "Plan has missing assets" }
         dao.deactivatePlans()
         dao.activatePlan(planId)
+        dao.deleteAwaitingDeletedLocalPlaylists()
+        dao.acknowledgeAwaitingPlaylistMutations()
         dao.assetIds(planId)
     }
 
@@ -987,15 +993,10 @@ internal fun applyPendingPlaylistMutations(
     return projected.values.toList()
 }
 
-internal fun acknowledgedDeletedLocalPlaylistIds(
-    mutations: List<PlaylistMutation>,
-    results: List<PlaylistMutationResult>,
-): List<String> {
-    val applied = results.filter { it.status in setOf(PlaylistMutationStatus.APPLIED, PlaylistMutationStatus.DUPLICATE) }
-        .mapTo(mutableSetOf(), PlaylistMutationResult::mutationId)
-    return mutations.filter { it.mutationId in applied && it.operation == PlaylistMutationOperation.DELETE }
-        .map(PlaylistMutation::playlistId)
-}
+internal fun PlaylistMutationStatus.awaitingReplacementSnapshot() = this in setOf(
+    PlaylistMutationStatus.APPLIED,
+    PlaylistMutationStatus.DUPLICATE,
+)
 
 internal fun unusedPlaylistArtworkHashes(staged: List<String>, pending: List<PlaylistMutation>, localArtwork: List<String>): List<String> {
     val referenced = pending.mapNotNull { it.payload.artworkSha256 }.toSet() + localArtwork

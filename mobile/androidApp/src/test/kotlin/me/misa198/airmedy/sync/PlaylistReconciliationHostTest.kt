@@ -50,20 +50,10 @@ class PlaylistReconciliationHostTest {
         assertEquals(emptyList<LibraryPlaylist>(), applyPendingPlaylistMutations(listOf(edited), listOf(mutation("3", PlaylistMutationOperation.DELETE, PlaylistMutationPayload()))))
     }
 
-    @Test fun acknowledgedDeleteRemovesOnlySuccessfullyDeletedLocalPlaylists() {
-        val deleted = mutation("1", PlaylistMutationOperation.DELETE, PlaylistMutationPayload())
-        val stale = mutation("2", PlaylistMutationOperation.DELETE, PlaylistMutationPayload())
-
-        assertEquals(
-            listOf("p"),
-            acknowledgedDeletedLocalPlaylistIds(
-                listOf(deleted, stale),
-                listOf(
-                    PlaylistMutationResult("1", PlaylistMutationStatus.APPLIED),
-                    PlaylistMutationResult("2", PlaylistMutationStatus.STALE),
-                ),
-            ),
-        )
+    @Test fun successfulMutationsStayProjectedUntilTheReplacementSnapshot() {
+        assertEquals(true, PlaylistMutationStatus.APPLIED.awaitingReplacementSnapshot())
+        assertEquals(true, PlaylistMutationStatus.DUPLICATE.awaitingReplacementSnapshot())
+        assertEquals(false, PlaylistMutationStatus.STALE.awaitingReplacementSnapshot())
     }
 
     @Test fun pendingMutationsMergeInQueueOrderAndHonorScope() {
