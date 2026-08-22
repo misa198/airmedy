@@ -40,8 +40,9 @@ val MaterialSymbolsOutlinedFontFamily = FontFamily(
 
 object MaterialSymbols {
     const val Home = "home"
-    const val Library = "graphic_eq"
+    const val Library = "music_video"
     const val GraphicEq = "graphic_eq"
+    const val BarChart = "bar_chart"
     const val LegendToggle = "legend_toggle"
     const val Search = "search"
     const val Settings = "settings"

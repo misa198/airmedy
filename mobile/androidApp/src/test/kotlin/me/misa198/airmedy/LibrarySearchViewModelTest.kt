@@ -12,6 +12,7 @@ import me.misa198.airmedy.sync.LibraryArtist
 import me.misa198.airmedy.sync.LibraryComposer
 import me.misa198.airmedy.sync.LibraryPlaylist
 import me.misa198.airmedy.sync.LibraryTrack
+import me.misa198.airmedy.sync.searchFtsMatch
 import me.misa198.airmedy.ui.screens.searchLibrary
 import me.misa198.airmedy.ui.screens.searchTracks
 import me.misa198.airmedy.ui.screens.searchTokens
@@ -32,10 +33,10 @@ class LibrarySearchViewModelTest {
         runCurrent()
 
         input.emit("m")
-        advanceTimeBy(299)
+        advanceTimeBy(199)
         assertTrue(values.isEmpty())
         input.emit("mu")
-        advanceTimeBy(300)
+        advanceTimeBy(200)
         runCurrent()
         assertEquals(listOf("mu"), values)
 
@@ -65,6 +66,19 @@ class LibrarySearchViewModelTest {
         val track = LibraryTrack(id = "1", title = "Song", artists = "AC/DC", metadataJson = "{\"genres\":[{\"name\":\"Electronic Pop\"}]}")
         assertEquals(listOf("1"), searchTracks(listOf(track), "dc elec").map { it.id })
         assertEquals(listOf("ac", "dc"), searchTokens("AC/DC"))
+    }
+
+    @Test fun ranksOnlyFtsCandidatesWithTheExistingSearchRules() {
+        val tracks = listOf(
+            LibraryTrack(id = "exact", title = "Muse", artists = "Artist"),
+            LibraryTrack(id = "prefix", title = "Museum", artists = "Artist"),
+        )
+        assertEquals(listOf("prefix"), searchTracks(tracks, "muse", setOf("prefix")).map { it.id })
+    }
+
+    @Test fun createsSafePrefixFtsTerms() {
+        assertEquals("ac* AND dc* AND deja*", searchFtsMatch("AC/DC Déjà"))
+        assertEquals(null, searchFtsMatch("---"))
     }
 
     @Test fun namespacesIdenticalEntityIdsBySearchSection() {

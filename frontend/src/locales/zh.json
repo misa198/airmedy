@@ -536,6 +536,7 @@
     "track": "曲号",
     "file_path": "文件路径",
     "label": "唱片公司",
+    "copyright": "版权",
     "isrc": "ISRC",
     "play_count": "播放次数",
     "lossless": "无损",

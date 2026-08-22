@@ -91,4 +91,10 @@ describe('TrackInfoDrawer quality badge', () => {
     const w = mountDrawer(makeTrack({ format: 'flac', bit_depth: 24, sample_rate: 96000 }))
     expect(w.text()).toContain('24-bit')
   })
+
+  it('shows copyright in the details list when present', () => {
+    const w = mountDrawer(makeTrack({ copyright: '© 2026 Example Records' }))
+    expect(w.text()).toContain('track_info.copyright')
+    expect(w.text()).toContain('© 2026 Example Records')
+  })
 })

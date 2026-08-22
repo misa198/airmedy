@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ListMusic, X, Goal } from '@lucide/vue'
+import { ListMusic, X, Goal, Radio } from '@lucide/vue'
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { usePlayerStore } from '../../stores/player'
+import { useMoodRadioStore } from '../../stores/moodRadio'
 import TrackTable from '../TrackTable.vue'
 import type { TrackDTO } from '../../../bindings/airmedy/internal/domain/models'
 
@@ -19,6 +20,7 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const router = useRouter()
 const playerStore = usePlayerStore()
+const moodRadioStore = useMoodRadioStore()
 const trackTable = ref<InstanceType<typeof TrackTable> | null>(null)
 
 function navigate(path: string) {
@@ -28,6 +30,10 @@ function navigate(path: string) {
   router.push(path)
   emit('close')
 }
+
+defineExpose({
+  scrollToCurrentTrack: () => trackTable.value?.scrollToCurrentTrack(),
+})
 </script>
 
 <template>
@@ -39,6 +45,7 @@ function navigate(path: string) {
         <div class="flex items-center gap-2 text-white/80">
           <ListMusic class="w-4 h-4" />
           <span class="text-sm font-semibold uppercase tracking-wider">{{ t('player.up_next') }}</span>
+          <Radio v-if="moodRadioStore.active" data-test="mood-radio-indicator" class="w-3.5 h-3.5" :title="t('player.mood_radio_active')" />
         </div>
         <div class="flex items-center gap-1">
           <button @click="trackTable?.scrollToCurrentTrack()"
@@ -54,7 +61,8 @@ function navigate(path: string) {
 
       <!-- Content Area -->
       <div class="flex-1 overflow-hidden">
-        <TrackTable ref="trackTable" :tracks="queue" :show-artwork="false" :scroll-to-current="true" :simple-mode="true"
+        <TrackTable ref="trackTable" :tracks="queue" :show-artwork="false" :scroll-to-current="true"
+          :scroll-to-current-when-visible="true" :simple-mode="true"
           :hide-header="true" variant="glass" :allow-dnd="true"
           :context-menu-options="{ showRemoveFromQueue: true }"
           class="dark"

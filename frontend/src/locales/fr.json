@@ -536,6 +536,7 @@
     "track": "Piste",
     "file_path": "Chemin du fichier",
     "label": "Label",
+    "copyright": "Droits d'auteur",
     "isrc": "ISRC",
     "play_count": "Lectures",
     "lossless": "Sans perte",

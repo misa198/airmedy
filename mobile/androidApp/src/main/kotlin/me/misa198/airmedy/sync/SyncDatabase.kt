@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
+import androidx.room.Fts4
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -18,10 +19,12 @@ import java.util.UUID
 import java.time.Instant
 import java.time.ZoneId
 import java.util.Locale
+import java.text.Normalizer
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.CoroutineScope
@@ -97,6 +100,17 @@ internal data class SyncPlaylistEntity(
     val trackIdsJson: String,
     val rawJson: String,
 )
+
+@Fts4
+@Entity(tableName = "library_search_fts")
+internal data class LibrarySearchDocumentEntity(
+    val planId: String,
+    val entityType: String,
+    val entityId: String,
+    val content: String,
+)
+
+internal data class LibrarySearchCandidate(val entityType: String, val entityId: String)
 
 @Entity(tableName = "playlist_mutations", primaryKeys = ["mutationId"])
 internal data class PlaylistMutationEntity(
@@ -188,6 +202,7 @@ internal interface SyncDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insertAssets(values: List<SyncAssetEntity>)
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insertTracks(values: List<SyncTrackEntity>)
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insertPlaylists(values: List<SyncPlaylistEntity>)
+    @Insert suspend fun insertSearchDocuments(values: List<LibrarySearchDocumentEntity>)
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insertPlaylistMutation(value: PlaylistMutationEntity)
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insertLocalPlaylist(value: LocalPlaylistEntity)
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insertPlaylistArtwork(value: PlaylistArtworkStagingEntity)
@@ -260,11 +275,13 @@ internal interface SyncDao {
     @Query("DELETE FROM sync_assets WHERE planId != :planId") suspend fun deleteStaleAssets(planId: String)
     @Query("DELETE FROM sync_tracks WHERE planId != :planId") suspend fun deleteStaleTracks(planId: String)
     @Query("DELETE FROM sync_playlists WHERE planId != :planId") suspend fun deleteStalePlaylists(planId: String)
+    @Query("DELETE FROM library_search_fts WHERE planId != :planId") suspend fun deleteStaleSearchDocuments(planId: String)
     @Query("DELETE FROM sync_documents WHERE planId != :planId") suspend fun deleteStaleDocuments(planId: String)
     @Query("DELETE FROM sync_plans WHERE planId != :planId") suspend fun deleteStalePlans(planId: String)
     @Query("DELETE FROM sync_assets WHERE planId = :planId") suspend fun deleteAssets(planId: String)
     @Query("DELETE FROM sync_tracks WHERE planId = :planId") suspend fun deleteTracks(planId: String)
     @Query("DELETE FROM sync_playlists WHERE planId = :planId") suspend fun deletePlaylists(planId: String)
+    @Query("DELETE FROM library_search_fts WHERE planId = :planId") suspend fun deleteSearchDocuments(planId: String)
     @Query("DELETE FROM sync_documents WHERE planId = :planId") suspend fun deleteDocuments(planId: String)
     @Query("DELETE FROM sync_plans WHERE planId = :planId AND active = 0") suspend fun deleteInactivePlan(planId: String)
     @Query("SELECT * FROM playlist_mutations WHERE state = 'pending' ORDER BY updatedAt, mutationId") suspend fun pendingPlaylistMutations(): List<PlaylistMutationEntity>
@@ -302,6 +319,9 @@ internal interface SyncDao {
     """)
     fun observeTracks(): Flow<List<LibraryTrackRow>>
 
+    @Query("SELECT entityType, entityId FROM library_search_fts WHERE library_search_fts MATCH :match AND planId IN (SELECT planId FROM sync_plans WHERE active = 1)")
+    fun observeSearchCandidates(match: String): Flow<List<LibrarySearchCandidate>>
+
     @Query("SELECT s.playlistId AS id, s.name AS name, s.trackIdsJson AS trackIdsJson, s.rawJson AS rawJson FROM sync_playlists s INNER JOIN sync_plans p ON p.planId = s.planId WHERE p.active = 1 ORDER BY s.name COLLATE NOCASE")
     fun observePlaylists(): Flow<List<LibraryPlaylistRow>>
 
@@ -329,8 +349,8 @@ internal interface SyncDao {
 }
 
 @Database(
-    entities = [SyncPlanEntity::class, SyncAssetEntity::class, SyncTrackEntity::class, SyncPlaylistEntity::class, PlaylistMutationEntity::class, LocalPlaylistEntity::class, PlaylistArtworkStagingEntity::class, SyncDocumentEntity::class, ListeningSessionEntity::class, PlaybackAttemptEntity::class, DailyTrackListeningStatEntity::class, DailyPlaybackAttemptStatEntity::class],
-    version = 10,
+    entities = [SyncPlanEntity::class, SyncAssetEntity::class, SyncTrackEntity::class, SyncPlaylistEntity::class, LibrarySearchDocumentEntity::class, PlaylistMutationEntity::class, LocalPlaylistEntity::class, PlaylistArtworkStagingEntity::class, SyncDocumentEntity::class, ListeningSessionEntity::class, PlaybackAttemptEntity::class, DailyTrackListeningStatEntity::class, DailyPlaybackAttemptStatEntity::class],
+    version = 11,
     exportSchema = false,
 )
 internal abstract class SyncDatabase : RoomDatabase() {
@@ -338,7 +358,7 @@ internal abstract class SyncDatabase : RoomDatabase() {
 
     companion object {
         fun create(context: Context): SyncDatabase = Room.databaseBuilder(context, SyncDatabase::class.java, "library-sync.db")
-            .addMigrations(Migration2To3, Migration3To4, Migration4To5, Migration5To6, Migration6To7, Migration7To8, Migration8To9, Migration9To10)
+            .addMigrations(Migration2To3, Migration3To4, Migration4To5, Migration5To6, Migration6To7, Migration7To8, Migration8To9, Migration9To10, Migration10To11)
             .fallbackToDestructiveMigration()
             .build()
 
@@ -384,6 +404,11 @@ internal abstract class SyncDatabase : RoomDatabase() {
                 database.execSQL("CREATE TABLE IF NOT EXISTS playback_attempts (id TEXT NOT NULL PRIMARY KEY, sourceDeviceId TEXT NOT NULL, trackId TEXT NOT NULL, startedAt INTEGER NOT NULL, endedAt INTEGER NOT NULL, startPositionMs INTEGER NOT NULL, listenedSeconds INTEGER NOT NULL, endReason TEXT)")
                 database.execSQL("CREATE TABLE IF NOT EXISTS daily_track_listening_stats (sourceDeviceId TEXT NOT NULL, localDate TEXT NOT NULL, trackId TEXT NOT NULL, listenedSeconds INTEGER NOT NULL, playCount INTEGER NOT NULL, PRIMARY KEY(sourceDeviceId,localDate,trackId))")
                 database.execSQL("CREATE TABLE IF NOT EXISTS daily_playback_attempt_stats (sourceDeviceId TEXT NOT NULL, localDate TEXT NOT NULL, attempts INTEGER NOT NULL, completed INTEGER NOT NULL, skipped INTEGER NOT NULL, stopped INTEGER NOT NULL, listenedSeconds INTEGER NOT NULL, PRIMARY KEY(sourceDeviceId,localDate))")
+            }
+        }
+        private val Migration10To11 = object : Migration(10, 11) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("CREATE VIRTUAL TABLE IF NOT EXISTS library_search_fts USING fts4(planId, entityType, entityId, content)")
             }
         }
     }
@@ -570,6 +595,10 @@ internal class AndroidLibrarySyncStore(
         (assets.map { asset -> asset.assetId.removePrefix("artwork:") to asset.relativePath } + staged.map { artwork -> artwork.sha256 to artwork.relativePath }).toMap()
     }.shareIn(snapshotScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
 
+    fun searchCandidates(query: String): Flow<List<LibrarySearchCandidate>> = searchFtsMatch(query)
+        ?.let(dao::observeSearchCandidates)
+        ?: flowOf(emptyList())
+
     /** Durable boundary for playlist mutations; list browsing remains read-only for now. */
     suspend fun queuePlaylistMutation(mutation: PlaylistMutation) {
         require(mutation.validationError() == null) { mutation.validationError() ?: "Invalid playlist mutation" }
@@ -680,7 +709,8 @@ internal class AndroidLibrarySyncStore(
                 val cachedPath = cachedPaths[asset.sha256 to asset.size]
                 SyncAssetEntity(request.planId, asset.id, asset.kind, asset.sha256, asset.size, cachedPath)
             })
-            dao.insertTracks(manifest.tracks.orEmpty().mapIndexedNotNull { index, track -> track.toTrack(request.planId, index) })
+            val tracks = manifest.tracks.orEmpty().mapIndexedNotNull { index, track -> track.toTrack(request.planId, index) }
+            dao.insertTracks(tracks)
             val pending = dao.pendingPlaylistMutations().mapNotNull { row -> runCatching {
                 PlaylistMutation(row.mutationId, row.playlistId, PlaylistMutationOperation.valueOf(row.operation), row.updatedAt,
                     LibrarySyncProtocol.json.decodeFromString(PlaylistMutationPayload.serializer(), row.payloadJson))
@@ -689,7 +719,10 @@ internal class AndroidLibrarySyncStore(
                 (item["playlist"] as? JsonObject)?.string("id")
             }
             if (authoritativeIds.isNotEmpty()) dao.deleteLocalPlaylists(authoritativeIds)
-            dao.insertPlaylists(mergePlaylistSnapshot(manifest.playlists.orEmpty(), manifest.scope, pending).mapNotNull { it.toPlaylist(request.planId) })
+            val playlists = mergePlaylistSnapshot(manifest.playlists.orEmpty(), manifest.scope, pending).mapNotNull { it.toPlaylist(request.planId) }
+            dao.insertPlaylists(playlists)
+            dao.deleteSearchDocuments(request.planId)
+            dao.insertSearchDocuments(searchDocumentsFor(request.planId, tracks, playlists))
             dao.insertDocuments(manifest.lyrics.entries.map { SyncDocumentEntity(request.planId, "lyric", it.key, it.value.toString()) })
             dao.insertDocuments(manifest.analysis.entries.map { SyncDocumentEntity(request.planId, "analysis", it.key, it.value.toString()) })
         }
@@ -727,6 +760,7 @@ internal class AndroidLibrarySyncStore(
                 dao.deleteStaleAssets(planId)
                 dao.deleteStaleTracks(planId)
                 dao.deleteStalePlaylists(planId)
+                dao.deleteStaleSearchDocuments(planId)
                 dao.deleteStaleDocuments(planId)
                 dao.deleteStalePlans(planId)
             } to active
@@ -746,6 +780,7 @@ internal class AndroidLibrarySyncStore(
             dao.deleteAssets(planId)
             dao.deleteTracks(planId)
             dao.deletePlaylists(planId)
+            dao.deleteSearchDocuments(planId)
             dao.deleteDocuments(planId)
             dao.deleteInactivePlan(planId)
             planAssets to otherPaths
@@ -818,7 +853,7 @@ internal class AndroidLibrarySyncStore(
     suspend fun clearAll() {
         val assets = database.withTransaction {
             val stale = dao.staleAssets("__never_matches__")
-            dao.deleteStaleAssets("__never_matches__"); dao.deleteStaleTracks("__never_matches__"); dao.deleteStalePlaylists("__never_matches__"); dao.deleteStaleDocuments("__never_matches__"); dao.deleteStalePlans("__never_matches__")
+            dao.deleteStaleAssets("__never_matches__"); dao.deleteStaleTracks("__never_matches__"); dao.deleteStalePlaylists("__never_matches__"); dao.deleteStaleSearchDocuments("__never_matches__"); dao.deleteStaleDocuments("__never_matches__"); dao.deleteStalePlans("__never_matches__")
             dao.deleteListeningSessions()
             dao.deletePlaybackAttempts()
             dao.deleteDailyTrackStats()
@@ -1215,3 +1250,60 @@ private fun JsonObject.arraySortNames(name: String): String = ((this[name] as? J
 private fun LibraryTrackRow.metadataObject(): JsonObject? = runCatching {
     LibrarySyncProtocol.json.parseToJsonElement(rawJson) as? JsonObject
 }.getOrNull()
+
+private fun searchDocumentsFor(
+    planId: String,
+    tracks: List<SyncTrackEntity>,
+    playlists: List<SyncPlaylistEntity>,
+): List<LibrarySearchDocumentEntity> {
+    val documents = linkedMapOf<Pair<String, String>, LibrarySearchDocumentEntity>()
+    fun add(type: String, id: String, vararg values: String) {
+        if (id.isBlank()) return
+        documents[type to id] = LibrarySearchDocumentEntity(planId, type, id, searchIndexText(values.joinToString(" ")))
+    }
+    tracks.forEach { track ->
+        val root = runCatching { LibrarySyncProtocol.json.parseToJsonElement(track.rawJson).jsonObject }.getOrNull() ?: return@forEach
+        add("track", track.trackId, track.title, track.artists, track.album, root.searchMetadataValues("genres", "genre", "raw_genre_names", "raw_genres", "genre_names").joinToString(" "))
+        (root["artists"] as? JsonArray).orEmpty().forEach { artist ->
+            (artist as? JsonObject)?.let { add("artist", it.string("id").orEmpty(), it.string("name").orEmpty()) }
+        }
+        (root["album"] as? JsonObject)?.let { album ->
+            add("album", album.string("id").orEmpty(), album.string("title").orEmpty(), root.arrayNames("album_artists").ifBlank { root.arrayNames("artists") })
+        }
+        (root["composers"] as? JsonArray).orEmpty().forEach { composer ->
+            (composer as? JsonObject)?.let { add("composer", it.string("id").orEmpty(), it.string("name") ?: it.string("title").orEmpty()) }
+        }
+    }
+    playlists.forEach { playlist ->
+        val root = runCatching { LibrarySyncProtocol.json.parseToJsonElement(playlist.rawJson).jsonObject }.getOrNull()
+        add("playlist", playlist.playlistId, playlist.name, root.searchMetadataValues("description", "playlist").joinToString(" "))
+    }
+    return documents.values.toList()
+}
+
+private fun JsonObject?.searchMetadataValues(vararg keys: String): List<String> = keys.flatMap { key ->
+    when (val value = this?.get(key)) {
+        is JsonArray -> value.flatMap { it.searchMetadataValues() }
+        else -> value.searchMetadataValues()
+    }
+}
+
+private fun JsonElement?.searchMetadataValues(): List<String> = when (this) {
+    is JsonPrimitive -> listOfNotNull(contentOrNull)
+    is JsonObject -> listOfNotNull((this["name"] as? JsonPrimitive)?.contentOrNull, (this["title"] as? JsonPrimitive)?.contentOrNull, (this["description"] as? JsonPrimitive)?.contentOrNull)
+    is JsonArray -> flatMap { it.searchMetadataValues() }
+    else -> emptyList()
+}
+
+private val SearchIndexMarks = Regex("\\p{M}+")
+private val SearchIndexTokens = Regex("[\\p{L}\\p{N}]+")
+
+private fun searchIndexText(value: String): String = Normalizer.normalize(value, Normalizer.Form.NFD)
+    .replace(SearchIndexMarks, "")
+    .lowercase(Locale.ROOT)
+    .replace('đ', 'd')
+
+internal fun searchFtsMatch(query: String): String? = SearchIndexTokens.findAll(searchIndexText(query))
+    .map { "${it.value}*" }
+    .joinToString(" AND ")
+    .takeIf(String::isNotEmpty)

@@ -536,6 +536,7 @@
     "track": "Pista",
     "file_path": "Ruta del archivo",
     "label": "Sello",
+    "copyright": "Derechos de autor",
     "isrc": "ISRC",
     "play_count": "Reproducciones",
     "lossless": "Sin pérdida",

@@ -8,6 +8,7 @@ import { PlaybackState, RepeatMode } from '../../bindings/airmedy/internal/domai
 const mocks = vi.hoisted(() => ({
   quickSettingsOpen: vi.fn(),
   trackContextOpen: vi.fn(),
+  queueScrollToCurrent: vi.fn(),
 }))
 
 vi.mock('vue-i18n', () => ({
@@ -110,6 +111,10 @@ describe('FullScreenPlayer', () => {
           PlayerQueuePanel: {
             props: ['queue'],
             emits: ['close', 'play-track'],
+            setup(_: unknown, { expose }: { expose: (value: object) => void }) {
+              expose({ scrollToCurrentTrack: mocks.queueScrollToCurrent })
+              return {}
+            },
             template: '<button data-test="queue-play" @click="$emit(\'play-track\', 1)">play</button>',
           },
         },
@@ -126,6 +131,17 @@ describe('FullScreenPlayer', () => {
     expect(store.playQueueIndex).toHaveBeenCalledOnce()
     expect(store.playQueueIndex).toHaveBeenCalledWith(1)
     expect(store.playTracks).not.toHaveBeenCalled()
+  })
+
+  it('scrolls to the current track when the queue opens', async () => {
+    const wrapper = mountPlayer({ isQueueOpen: false })
+    const store = usePlayerStore()
+
+    store.isQueueOpen = true
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+
+    expect(mocks.queueScrollToCurrent).toHaveBeenCalledOnce()
   })
 
   it('opens quick settings when right clicking an empty fullscreen area', async () => {

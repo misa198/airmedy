@@ -42,6 +42,7 @@ const details = computed(() => {
     { label: t('track_info.track'), value: track.value.total_tracks > 0 ? `${track.value.track_number} / ${track.value.total_tracks}` : track.value.track_number || '', isHyphenAuto: true },
     { label: t('track_info.play_count'), value: track.value.play_count || '', isHyphenAuto: true },
     { label: t('track_info.label'), value: track.value.label || '', isHyphenAuto: true },
+    { label: t('track_info.copyright'), value: track.value.copyright || '', isHyphenAuto: true },
     { label: t('track_info.isrc'), value: track.value.isrc || '', isHyphenAuto: true },
     { label: t('track_info.duration'), value: track.value.duration ? formatTime(track.value.duration) : '', isHyphenAuto: true },
     { label: t('track_info.format'), value: track.value.format?.toUpperCase() || '', isHyphenAuto: true },

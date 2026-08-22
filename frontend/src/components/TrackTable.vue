@@ -26,6 +26,7 @@ const props = withDefaults(defineProps<{
   isLoading?: boolean
   showArtwork?: boolean
   scrollToCurrent?: boolean
+  scrollToCurrentWhenVisible?: boolean
   simpleMode?: boolean
   simpleColumns?: ColumnKey[]
   additionalColumns?: ColumnDef[]
@@ -262,15 +263,37 @@ function scrollToCurrentTrack() {
   }
 }
 
+function isTrackVisible(track: TrackDTO | null | undefined) {
+  if (!track) return false
+  const index = displayTracks.value.findIndex(({ id }) => id === track.id)
+  if (index === -1) return false
+
+  if (props.virtualScroll) {
+    const list = scrollerRef.value?.$el as HTMLElement | undefined
+    if (!list) return false
+    const top = index * rowHeight.value
+    return top < list.scrollTop + list.clientHeight && top + rowHeight.value > list.scrollTop
+  }
+
+  const row = rowRefs.value[index]
+  const list = plainListRef.value
+  if (!row || !list) return false
+  return row.offsetTop < list.scrollTop + list.clientHeight
+    && row.offsetTop + row.offsetHeight > list.scrollTop
+}
+
 let suppressNextScroll = false
 
 watch(
   [() => props.tracks, () => playerStore.currentTrack],
-  () => {
+  ([, currentTrack], [, previousTrack]) => {
     if (suppressNextScroll) {
       suppressNextScroll = false
       return
     }
+    if (props.scrollToCurrentWhenVisible
+      && currentTrack?.id !== previousTrack?.id
+      && !isTrackVisible(previousTrack)) return
     if (props.scrollToCurrent) nextTick(scrollToCurrentTrack)
   },
   { deep: false },

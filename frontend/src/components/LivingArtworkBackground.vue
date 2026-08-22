@@ -130,7 +130,11 @@ const NOISE_GLSL = /* glsl */`
 `
 
 const FRAGMENT = /* glsl */`
+  #ifdef GL_FRAGMENT_PRECISION_HIGH
+  precision highp float;
+  #else
   precision mediump float;
+  #endif
   uniform float uTime;
   uniform vec2  uResolution;
   uniform vec3  uColor1;
@@ -305,5 +309,11 @@ onUnmounted(() => {
 .living-container {
   position: absolute;
   inset: 0;
+  overflow: hidden;
+}
+
+canvas {
+  filter: blur(64px);
+  transform: scale(1.2);
 }
 </style>

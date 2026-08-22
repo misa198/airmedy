@@ -514,7 +514,7 @@ class FullScreenPlayerTest {
     }
 
     @Test
-    fun queueScrollsCurrentTrackIntoViewWhenPlaybackAdvances() {
+    fun queueDoesNotScrollWhenPlaybackAdvances() {
         val trackIds = List(12) { "queue-$it" }
         var queue by mutableStateOf(
             PlaybackQueueSnapshot(
@@ -546,8 +546,7 @@ class FullScreenPlayerTest {
             queue = queue.copy(currentIndex = trackIds.lastIndex)
             currentTrackId = trackIds.last()
         }
-        composeTestRule.onNodeWithText("Track 11").assertExists()
-        composeTestRule.onNodeWithTag("playing_indicator").assertExists()
+        composeTestRule.onNodeWithText("Track 11").assertDoesNotExist()
     }
 
     @Test
