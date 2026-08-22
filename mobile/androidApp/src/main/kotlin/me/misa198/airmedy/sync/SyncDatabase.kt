@@ -646,10 +646,14 @@ internal class AndroidLibrarySyncStore(
 
     override suspend fun pendingPlaylistMutations(): List<PlaylistMutation> = dao.pendingPlaylistMutations().mapNotNull(PlaylistMutationEntity::toPlaylistMutation)
 
-    override suspend fun acknowledgePlaylistMutations(ids: List<String>) {
-        if (ids.isEmpty()) return
+    override suspend fun acknowledgePlaylistMutations(results: List<PlaylistMutationResult>) {
+        if (results.isEmpty()) return
         // Keep staged artwork visible until the replacement manifest is active.
-        dao.acknowledgePlaylistMutations(ids)
+        database.withTransaction {
+            val mutations = dao.pendingPlaylistMutations().mapNotNull(PlaylistMutationEntity::toPlaylistMutation)
+            dao.acknowledgePlaylistMutations(results.map(PlaylistMutationResult::mutationId))
+            dao.deleteLocalPlaylists(acknowledgedDeletedLocalPlaylistIds(mutations, results))
+        }
     }
 
     fun lyrics(trackId: String): Flow<String?> = dao.observeLyrics(trackId).map { rawJson ->
@@ -981,6 +985,16 @@ internal fun applyPendingPlaylistMutations(
         }
     }
     return projected.values.toList()
+}
+
+internal fun acknowledgedDeletedLocalPlaylistIds(
+    mutations: List<PlaylistMutation>,
+    results: List<PlaylistMutationResult>,
+): List<String> {
+    val applied = results.filter { it.status in setOf(PlaylistMutationStatus.APPLIED, PlaylistMutationStatus.DUPLICATE) }
+        .mapTo(mutableSetOf(), PlaylistMutationResult::mutationId)
+    return mutations.filter { it.mutationId in applied && it.operation == PlaylistMutationOperation.DELETE }
+        .map(PlaylistMutation::playlistId)
 }
 
 internal fun unusedPlaylistArtworkHashes(staged: List<String>, pending: List<PlaylistMutation>, localArtwork: List<String>): List<String> {

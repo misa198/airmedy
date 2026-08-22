@@ -96,12 +96,12 @@ class PlaylistReconciliationCoordinatorTest {
     private fun coordinator(
         transport: PlaylistReconciliationTransport = PlaylistReconciliationTransport { _, _, _ -> listOf(PlaylistMutationResult("mutation", PlaylistMutationStatus.APPLIED)) },
         publisher: PlaylistReconciliationPublisher = PlaylistReconciliationPublisher { },
-        acknowledge: suspend (List<String>) -> Unit = {},
+        acknowledge: suspend (List<PlaylistMutationResult>) -> Unit = {},
     ) = PlaylistReconciliationCoordinator(
         identityProvider = FakeIdentity, clock = PlaylistReconciliationClock { 1_000 },
         store = object : PlaylistMutationStore {
             override suspend fun pendingPlaylistMutations() = listOf(mutation)
-            override suspend fun acknowledgePlaylistMutations(ids: List<String>) = acknowledge(ids)
+            override suspend fun acknowledgePlaylistMutations(results: List<PlaylistMutationResult>) = acknowledge(results)
         }, transport = transport, publisher = publisher,
     )
     private fun encoded(value: PlaylistReconciliationRequest) = LibrarySyncProtocol.json.encodeToString(PlaylistReconciliationRequest.serializer(), value)

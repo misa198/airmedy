@@ -626,7 +626,7 @@ internal fun App(
                         trackContextSheet = null
                         onIntent(AppIntent.OpenArtistDetails(artist.id))
                     },
-                    playlists = library.details.playlists.playlists,
+                    playlists = library.playlists.availablePlaylists,
                     onPlaylistMembershipChange = library.playlists.onMembershipChange,
                     onCreatePlaylistRequested = { trackIds ->
                         trackContextSheet = null

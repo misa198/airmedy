@@ -207,6 +207,7 @@ class MainActivity : ComponentActivity() {
             val activePage = uiState.currentPage
             val activeDestination = uiState.selectedDestination
             val allTracks by AndroidSyncRuntime.syncStore().tracks.collectAsStateWithLifecycle(initialValue = emptyList())
+            val allPlaylists by AndroidSyncRuntime.syncStore().playlists.collectAsStateWithLifecycle(initialValue = emptyList())
             val homeUiState by if (activeDestination == AppDestination.Home && activePage == AppStackPage.Root) {
                 tracksViewModel.homeUiState.collectAsStateWithLifecycle()
             } else {
@@ -375,6 +376,7 @@ class MainActivity : ComponentActivity() {
                     ),
                     playlists = LibraryPlaylistsModel(
                         state = playlistsUiState,
+                        availablePlaylists = allPlaylists,
                         onPlay = playlistDetailsViewModel::play,
                         onTrackPlay = playlistDetailsViewModel::playTrack,
                         onTrackRemove = playlistDetailsViewModel::removeTrack,

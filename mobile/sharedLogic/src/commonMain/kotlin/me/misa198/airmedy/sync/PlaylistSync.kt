@@ -119,7 +119,7 @@ object PlaylistSyncProtocol {
 fun interface PlaylistReconciliationClock { fun nowMillis(): Long }
 interface PlaylistMutationStore {
     suspend fun pendingPlaylistMutations(): List<PlaylistMutation>
-    suspend fun acknowledgePlaylistMutations(ids: List<String>)
+    suspend fun acknowledgePlaylistMutations(results: List<PlaylistMutationResult>)
 }
 data class StagedPlaylistArtwork(val sha256: String, val mime: String, val size: Long, val relativePath: String)
 interface PlaylistArtworkStagingStore { suspend fun stagedPlaylistArtwork(sha256: String): StagedPlaylistArtwork? }
@@ -177,7 +177,7 @@ class PlaylistReconciliationCoordinator(
         }
         // A result is terminal only after the desktop has received it; failures
         // before publishing intentionally leave Room rows pending for retry.
-        store.acknowledgePlaylistMutations(results.map(PlaylistMutationResult::mutationId))
+        store.acknowledgePlaylistMutations(results)
         return PlaylistReconciliationOutcome.Completed(results)
     }
 

@@ -9,6 +9,7 @@ import me.misa198.airmedy.player.NormalizationSettings
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.player.PlaybackState
 import me.misa198.airmedy.player.RepeatMode
+import me.misa198.airmedy.sync.LibraryPlaylist
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.ui.screens.AlbumDetailsUiState
 import me.misa198.airmedy.ui.screens.AlbumLayoutMode
@@ -105,6 +106,7 @@ internal data class LibraryComposersModel(
 
 internal data class LibraryPlaylistsModel(
     val state: LibraryPlaylistsUiState = LibraryPlaylistsUiState(),
+    val availablePlaylists: List<LibraryPlaylist> = emptyList(),
     val onPlay: (String, Boolean) -> Unit = { _, _ -> },
     val onTrackPlay: (String, String) -> Unit = { _, _ -> },
     val onTrackRemove: (String, String) -> Unit = { _, _ -> },

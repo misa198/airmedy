@@ -35,6 +35,7 @@ import me.misa198.airmedy.player.PlaybackState
 import me.misa198.airmedy.ui.screens.LibraryArtistsUiState
 import me.misa198.airmedy.sync.LibraryArtist
 import me.misa198.airmedy.sync.LibraryGenre
+import me.misa198.airmedy.sync.LibraryPlaylist
 import me.misa198.airmedy.sync.AndroidSyncState
 import me.misa198.airmedy.ui.screens.LibraryGenresUiState
 import me.misa198.airmedy.ui.screens.LibraryComposersUiState
@@ -187,6 +188,37 @@ class AppNavigationTest {
         composeTestRule.onNodeWithText("Model track").performClick()
 
         assertEquals("track-1", selectedTrackId)
+    }
+
+    @Test
+    fun trackPlaylistPickerUsesSyncedPlaylistsOutsidePlaylistDetails() {
+        composeTestRule.setContent {
+            App(
+                uiState = AppUiState(
+                    selectedDestination = AppDestination.Library,
+                    destinationStacks = rootDestinationStacks() + (
+                        AppDestination.Library to listOf(AppStackPage.Root, AppStackPage.LibraryTracks)
+                    ),
+                ),
+                destinations = AppDestinationModels(
+                    library = LibraryDestinationModel(
+                        tracks = LibraryTracksModel(
+                            state = LibraryTracksUiState(
+                                tracks = listOf(LibraryTrack("track-1", "Model track", "Artist")),
+                            ),
+                        ),
+                        playlists = LibraryPlaylistsModel(
+                            availablePlaylists = listOf(LibraryPlaylist("playlist-1", "Road trip", emptyList(), "{}")),
+                        ),
+                    ),
+                ),
+            )
+        }
+
+        composeTestRule.onNodeWithText("Model track").performTouchInput { longClick() }
+        composeTestRule.onNodeWithText("Add to playlist").performClick()
+
+        composeTestRule.onNodeWithText("Road trip").assertIsDisplayed()
     }
 
     @Test
