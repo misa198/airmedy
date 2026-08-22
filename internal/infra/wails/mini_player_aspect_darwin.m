@@ -12,10 +12,10 @@ static WKWebView *miniPlayerWebView(NSView *view) {
     return nil;
 }
 
-void LockMiniPlayerSquare(void *window) {
+void LockMiniPlayerAspect(void *window, bool expanded) {
     if (window == nil) return;
     NSWindow *nsWindow = (NSWindow *)window;
-    [nsWindow setContentAspectRatio:NSMakeSize(1, 1)];
+    [nsWindow setContentAspectRatio:NSMakeSize(1, expanded ? 2 : 1)];
 
     // Wails makes translucent-backdrop WKWebViews transparent. During live
     // resize that exposes AppKit's light visual-effect view before WebKit draws
@@ -30,4 +30,14 @@ void LockMiniPlayerSquare(void *window) {
     [webView setValue:backingColor forKey:@"backgroundColor"];
     [webView setWantsLayer:YES];
     [webView setLayerContentsRedrawPolicy:NSViewLayerContentsRedrawDuringViewResize];
+}
+
+void SetMiniPlayerSizeNoAnimation(void *window, int width, int height) {
+    if (window == nil) return;
+    NSWindow *nsWindow = (NSWindow *)window;
+    NSRect frame = [nsWindow frame];
+    CGFloat top = NSMaxY(frame);
+    frame.size = NSMakeSize(width, height);
+    frame.origin.y = top - height;
+    [nsWindow setFrame:frame display:YES animate:NO];
 }

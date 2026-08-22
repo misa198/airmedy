@@ -10,12 +10,24 @@ import "C"
 
 import "github.com/wailsapp/wails/v3/pkg/application"
 
-// LockMiniPlayerSquare delegates interactive resizing to AppKit, avoiding
+// LockMiniPlayerAspect delegates interactive resizing to AppKit, avoiding
 // frontend resize feedback loops.
-func LockMiniPlayerSquare(w *application.WebviewWindow) {
+func LockMiniPlayerAspect(w *application.WebviewWindow, expanded bool) {
 	application.InvokeSync(func() {
 		if nativeWindow := w.NativeWindow(); nativeWindow != nil {
-			C.LockMiniPlayerSquare(nativeWindow)
+			C.LockMiniPlayerAspect(nativeWindow, C.bool(expanded))
 		}
 	})
+}
+
+// SetMiniPlayerSizeNoAnimation bypasses Wails' animated SetBounds path on macOS.
+func SetMiniPlayerSizeNoAnimation(w *application.WebviewWindow, width, height int) bool {
+	handled := false
+	application.InvokeSync(func() {
+		if nativeWindow := w.NativeWindow(); nativeWindow != nil {
+			C.SetMiniPlayerSizeNoAnimation(nativeWindow, C.int(width), C.int(height))
+			handled = true
+		}
+	})
+	return handled
 }

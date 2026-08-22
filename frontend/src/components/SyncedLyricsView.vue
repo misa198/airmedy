@@ -111,7 +111,7 @@ function lineClasses(index: number) {
   if (isBrowsing.value) {
     return [
       'text-white blur-none opacity-100',
-      { 'text-4xl': !props.immersive, 'text-[44px]': props.immersive },
+      { 'text-4xl': !props.immersive, 'text-[40px]': props.immersive },
     ]
   }
   const isActive = index === activeIndex.value
@@ -129,7 +129,7 @@ function lineClasses(index: number) {
           : 'text-white/30 blur-[1px] opacity-40 hover:text-white/60 hover:blur-none',
     {
       'text-4xl': !props.immersive,
-      'text-[44px]': props.immersive,
+      'text-[40px]': props.immersive,
       'transform-gpu': isNearActive,
     },
   ]
@@ -162,7 +162,7 @@ onUnmounted(() => {
 
 <template>
   <div ref="scrollContainer" class="h-full overflow-y-auto py-48 scrollbar-hide" :class="props.immersive ? 'pl-8 pr-16' : 'px-8'" @wheel.passive="enterBrowseMode" @pointerdown="enterBrowseMode">
-    <div class="max-w-2xl mx-auto space-y-6">
+    <div class="max-w-2xl mx-auto space-y-5">
       <div
         v-for="(line, index) in lines"
         :key="index"

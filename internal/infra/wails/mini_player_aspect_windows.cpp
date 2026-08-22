@@ -16,7 +16,7 @@ bool isTopEdge(WPARAM edge) {
     return edge == WMSZ_TOP || edge == WMSZ_TOPLEFT || edge == WMSZ_TOPRIGHT;
 }
 
-void setSquareRect(RECT *rect, WPARAM edge, const RECT &current) {
+void setAspectRect(RECT *rect, WPARAM edge, const RECT &current, int heightMultiplier) {
     const int width = rect->right - rect->left;
     const int height = rect->bottom - rect->top;
     const int widthDelta = std::abs(width - (current.right - current.left));
@@ -24,12 +24,14 @@ void setSquareRect(RECT *rect, WPARAM edge, const RECT &current) {
     const bool adjustHeight = widthDelta >= heightDelta;
 
     if (adjustHeight) {
-        if (isTopEdge(edge)) rect->top = rect->bottom - width;
-        else rect->bottom = rect->top + width;
+        const int height = width * heightMultiplier;
+        if (isTopEdge(edge)) rect->top = rect->bottom - height;
+        else rect->bottom = rect->top + height;
         return;
     }
-    if (isLeftEdge(edge)) rect->left = rect->right - height;
-    else rect->right = rect->left + height;
+    const int adjustedWidth = height / heightMultiplier;
+    if (isLeftEdge(edge)) rect->left = rect->right - adjustedWidth;
+    else rect->right = rect->left + adjustedWidth;
 }
 
 LRESULT CALLBACK miniPlayerAspectProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam,
@@ -37,16 +39,17 @@ LRESULT CALLBACK miniPlayerAspectProc(HWND hwnd, UINT message, WPARAM wParam, LP
     if (message == WM_SIZING) {
         RECT current{};
         if (GetWindowRect(hwnd, &current)) {
-            setSquareRect(reinterpret_cast<RECT *>(lParam), wParam, current);
+            setAspectRect(reinterpret_cast<RECT *>(lParam), wParam, current,
+                          refData == 2 ? 2 : 1);
         }
     }
     return DefSubclassProc(hwnd, message, wParam, lParam);
 }
 } // namespace
 
-void LockMiniPlayerSquare(void *window) {
+void LockMiniPlayerAspect(void *window, bool expanded) {
     if (window != nullptr) {
         SetWindowSubclass(static_cast<HWND>(window), miniPlayerAspectProc,
-                          kMiniPlayerAspectSubclassID, 0);
+                          kMiniPlayerAspectSubclassID, expanded ? 2 : 1);
     }
 }

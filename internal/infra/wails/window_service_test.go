@@ -80,7 +80,7 @@ func TestClampRectToWorkArea(t *testing.T) {
 	}
 }
 
-func TestSquareMiniRect(t *testing.T) {
+func TestCompactMiniRect(t *testing.T) {
 	tests := []struct {
 		name string
 		in   application.Rect
@@ -97,6 +97,11 @@ func TestSquareMiniRect(t *testing.T) {
 			want: application.Rect{X: 10, Y: 20, Width: 280, Height: 280},
 		},
 		{
+			name: "restores expanded geometry as its original square width",
+			in:   application.Rect{X: 10, Y: 20, Width: 300, Height: 600},
+			want: application.Rect{X: 10, Y: 20, Width: 300, Height: 300},
+		},
+		{
 			name: "caps oversized geometry",
 			in:   application.Rect{Width: 600, Height: 400},
 			want: application.Rect{Width: 500, Height: 500},
@@ -105,20 +110,43 @@ func TestSquareMiniRect(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := squareMiniRect(tt.in); got != tt.want {
-				t.Errorf("squareMiniRect(%+v) = %+v, want %+v", tt.in, got, tt.want)
+			if got := compactMiniRect(tt.in); got != tt.want {
+				t.Errorf("compactMiniRect(%+v) = %+v, want %+v", tt.in, got, tt.want)
 			}
 		})
 	}
 }
 
-func TestClampSquareRectToWorkArea(t *testing.T) {
-	got := clampSquareRectToWorkArea(
+func TestMiniRect(t *testing.T) {
+	compact := miniRect(application.Rect{Width: 300, Height: 300}, false)
+	if compact.Width != 300 || compact.Height != 300 {
+		t.Errorf("compact mini rect = %+v, want 300x300", compact)
+	}
+
+	expanded := miniRect(application.Rect{Width: 300, Height: 300}, true)
+	if expanded.Width != 300 || expanded.Height != 600 {
+		t.Errorf("expanded mini rect = %+v, want 300x600", expanded)
+	}
+}
+
+func TestClampMiniRectToWorkArea(t *testing.T) {
+	got := clampMiniRectToWorkArea(
 		application.Rect{X: 1800, Y: 900, Width: 500, Height: 500},
 		application.Rect{X: 0, Y: 50, Width: 400, Height: 350},
+		false,
 	)
 	want := application.Rect{X: 50, Y: 50, Width: 350, Height: 350}
 	if got != want {
-		t.Errorf("clampSquareRectToWorkArea() = %+v, want %+v", got, want)
+		t.Errorf("clampMiniRectToWorkArea() = %+v, want %+v", got, want)
+	}
+
+	expanded := clampMiniRectToWorkArea(
+		application.Rect{X: 1800, Y: 900, Width: 500, Height: 1000},
+		application.Rect{X: 0, Y: 50, Width: 400, Height: 700},
+		true,
+	)
+	expandedWant := application.Rect{X: 50, Y: 50, Width: 350, Height: 700}
+	if expanded != expandedWant {
+		t.Errorf("expanded clampMiniRectToWorkArea() = %+v, want %+v", expanded, expandedWant)
 	}
 }

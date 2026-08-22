@@ -10,12 +10,14 @@ import "C"
 
 import "github.com/wailsapp/wails/v3/pkg/application"
 
-// LockMiniPlayerSquare sets X11's native aspect hint. Wayland has no equivalent
+// LockMiniPlayerAspect sets X11's native aspect hint. Wayland has no equivalent
 // interactive-resize constraint, so this is deliberately a no-op there.
-func LockMiniPlayerSquare(w *application.WebviewWindow) {
+func LockMiniPlayerAspect(w *application.WebviewWindow, expanded bool) {
 	application.InvokeSync(func() {
 		if nativeWindow := w.NativeWindow(); nativeWindow != nil {
-			C.LockMiniPlayerSquare(nativeWindow)
+			C.LockMiniPlayerAspect(nativeWindow, C.bool(expanded))
 		}
 	})
 }
+
+func SetMiniPlayerSizeNoAnimation(_ *application.WebviewWindow, _, _ int) bool { return false }

@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   SkipBack, SkipForward, Play, Pause,
   Pin, PinOff, X, Music,
   Shuffle, Repeat, Repeat1,
   Volume2, VolumeX,
+  Mic2, ListMusic,
 } from '@lucide/vue'
 import LazyImg from '@/components/LazyImg.vue'
 import { usePlayerStore } from '@/stores/player'
@@ -21,6 +23,7 @@ import { useArtworkCrossfadeOpacity } from '@/composables/useArtworkCrossfadeOpa
 const store = usePlayerStore()
 const appStore = useAppStore()
 const deviceStore = useDeviceStore()
+const { t } = useI18n()
 const artworkCrossfade = computed(() =>
   appStore.blendArtworkDuringCrossfade ? store.artworkCrossfade : null,
 )
@@ -31,6 +34,7 @@ const isSeeking = ref(false)
 const seekValue = ref(0)
 const isHovered = ref(false)
 const showVolume = ref(false)
+const activePanel = ref<'lyrics' | 'queue' | null>(null)
 let volumeHideTimer: ReturnType<typeof setTimeout> | null = null
 
 const displayPosition = computed(() =>
@@ -53,6 +57,12 @@ const repeatIcon = computed(() =>
 async function toggleAlwaysOnTop() {
   alwaysOnTop.value = !alwaysOnTop.value
   await WindowService.SetMiniAlwaysOnTop(alwaysOnTop.value)
+}
+
+async function togglePanel(panel: 'lyrics' | 'queue') {
+  const nextPanel = activePanel.value === panel ? null : panel
+  activePanel.value = nextPanel
+  await WindowService.SetMiniPlayerExpanded(nextPanel !== null)
 }
 
 onMounted(async () => {
@@ -89,127 +99,155 @@ watch(() => store.theme, (colors) => {
 </script>
 
 <template>
-  <div class="relative w-full h-full overflow-hidden select-none dark" style="-webkit-app-region: drag"
-    @mouseenter="isHovered = true" @mouseleave="isHovered = false">
-    <!-- Artwork fills entire window -->
-    <div class="absolute inset-0 bg-[#0A0A0A]" style="-webkit-app-region: no-drag">
-      <template v-if="artworkCrossfade">
-        <LazyImg v-if="artworkCrossfade.fromUrl" :src="artworkCrossfade.fromUrl" :alt="trackTitle"
-          class="absolute inset-0 w-full h-full object-cover" :style="{ opacity: outgoingOpacity }" />
-        <LazyImg v-if="artworkCrossfade.toUrl" :src="artworkCrossfade.toUrl" :alt="trackTitle"
-          class="absolute inset-0 w-full h-full object-cover artwork-crossfade-incoming"
-          :style="{ opacity: incomingOpacity }" />
-      </template>
-      <LazyImg v-else-if="store.artworkUrl" :src="store.artworkUrl" :alt="trackTitle" class="w-full h-full object-cover" />
-      <div v-else class="w-full h-full flex items-center justify-center bg-white/5">
-        <Music class="w-16 h-16 text-white/20" />
-      </div>
-    </div>
-
-    <!-- Windows-only drag handle: Wails v3 uses --wails-draggable (not -webkit-app-region) -->
-    <div v-if="deviceStore.isWindows" class="absolute top-0 left-0 right-0 h-10 z-20" style="--wails-draggable: drag" />
-
-    <!-- Options pill: always visible, top-left -->
-    <div class="absolute top-2 left-2 z-30" style="-webkit-app-region: no-drag">
-      <!-- Volume slider popup -->
-      <Transition name="fade">
-        <div v-if="showVolume && isHovered"
-          class="absolute top-full left-0 mt-2 px-2.5 py-2 rounded-xl bg-black/20 backdrop-blur-md border border-white/5"
-          @mouseenter="onVolumeEnter" @mouseleave="onVolumeLeave">
-          <Slider :model-value="store.muted ? 0 : store.volume * 100" :min="0" :max="100" :step="1" :scrollable="true" class="w-20"
-            @update:model-value="(v) => store.setVolume(v / 100)" />
+  <div class="h-full w-full overflow-hidden select-none dark flex flex-col">
+    <div class="relative aspect-square w-full shrink-0 overflow-hidden" style="-webkit-app-region: drag"
+      @mouseenter="isHovered = true" @mouseleave="isHovered = false">
+      <!-- Artwork fills entire window -->
+      <div class="absolute inset-0 bg-[#0A0A0A]" style="-webkit-app-region: no-drag">
+        <template v-if="artworkCrossfade">
+          <LazyImg v-if="artworkCrossfade.fromUrl" :src="artworkCrossfade.fromUrl" :alt="trackTitle"
+            class="absolute inset-0 w-full h-full object-cover" :style="{ opacity: outgoingOpacity }" />
+          <LazyImg v-if="artworkCrossfade.toUrl" :src="artworkCrossfade.toUrl" :alt="trackTitle"
+            class="absolute inset-0 w-full h-full object-cover artwork-crossfade-incoming"
+            :style="{ opacity: incomingOpacity }" />
+        </template>
+        <LazyImg v-else-if="store.artworkUrl" :src="store.artworkUrl" :alt="trackTitle"
+          class="w-full h-full object-cover" />
+        <div v-else class="w-full h-full flex items-center justify-center bg-white/5">
+          <Music class="w-16 h-16 text-white/20" />
         </div>
-      </Transition>
+      </div>
 
-      <!-- Three-button pill -->
-      <div
-        class="inline-flex items-center p-1 rounded-full bg-black/20 backdrop-blur-md border border-white/5 h-8 select-none"
-        :class="isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'">
-        <button
-          class="w-6 h-6 flex items-center justify-center rounded-full text-white/50 hover:text-white/80 transition-colors"
-          @click="WindowService.CloseMiniPlayer()">
-          <X class="w-3.5 h-3.5" />
-        </button>
-        <button class="w-6 h-6 flex items-center justify-center rounded-full transition-colors"
-          :class="alwaysOnTop ? 'text-white/80' : 'text-white/50 hover:text-white/80'" @click="toggleAlwaysOnTop()">
-          <Pin v-if="alwaysOnTop" class="w-3.5 h-3.5" />
-          <PinOff v-else class="w-3.5 h-3.5" />
-        </button>
-        <button
-          class="w-6 h-6 flex items-center justify-center rounded-full text-white/50 hover:text-white/80 transition-colors"
-          @mouseenter="onVolumeEnter" @mouseleave="onVolumeLeave" @click="showVolume = !showVolume">
-          <VolumeX v-if="store.muted" class="w-3.5 h-3.5" />
-          <Volume2 v-else class="w-3.5 h-3.5" />
-        </button>
+      <!-- Windows-only drag handle: Wails v3 uses --wails-draggable (not -webkit-app-region) -->
+      <div v-if="deviceStore.isWindows" class="absolute top-0 left-0 right-0 h-10 z-20"
+        style="--wails-draggable: drag" />
+
+      <div class="absolute top-2 right-2 z-30" style="-webkit-app-region: no-drag">
+        <div
+          class="relative inline-flex items-center gap-0.5 p-1 rounded-full bg-[color:var(--bg-glass)] backdrop-blur-md border border-[color:var(--border-glass)] h-8 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+          :class="isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'">
+          <span data-test="mini-player-panel-indicator" aria-hidden="true"
+            class="absolute top-1 left-1 w-6 h-6 rounded-full bg-foreground transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+            :class="[
+              activePanel ? 'opacity-100' : 'opacity-0',
+              activePanel === 'queue' ? 'translate-x-[26px]' : 'translate-x-0',
+            ]" />
+          <button data-test="mini-player-lyrics"
+            class="relative z-10 w-6 h-6 flex items-center justify-center rounded-full text-foreground transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+            :class="activePanel === 'lyrics' ? 'text-black!' : ''" :aria-label="t('player.lyrics')"
+            :aria-pressed="activePanel === 'lyrics'" :title="t('player.lyrics')" @click="togglePanel('lyrics')">
+            <Mic2 class="w-3.5 h-3.5" />
+          </button>
+          <button data-test="mini-player-queue"
+            class="relative z-10 w-6 h-6 flex items-center justify-center rounded-full text-foreground transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+            :class="activePanel === 'queue' ? 'text-black!' : ''" :aria-label="t('player.queue')"
+            :aria-pressed="activePanel === 'queue'" :title="t('player.queue')" @click="togglePanel('queue')">
+            <ListMusic class="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      <!-- Options pill: always visible, top-left -->
+      <div class="absolute top-2 left-2 z-30" style="-webkit-app-region: no-drag">
+        <!-- Volume slider popup -->
+        <Transition name="fade">
+          <div v-if="showVolume && isHovered"
+            class="absolute top-full left-0 mt-2 px-2.5 py-2 rounded-full bg-[color:var(--bg-glass)] backdrop-blur-md border border-[color:var(--border-glass)]"
+            @mouseenter="onVolumeEnter" @mouseleave="onVolumeLeave">
+            <Slider :model-value="store.muted ? 0 : store.volume * 100" :min="0" :max="100" :step="1" :scrollable="true"
+              class="w-20" @update:model-value="(v) => store.setVolume(v / 100)" />
+          </div>
+        </Transition>
+
+        <!-- Three-button pill -->
+        <div
+          class="inline-flex items-center p-1 rounded-full bg-[color:var(--bg-glass)] backdrop-blur-md border border-[color:var(--border-glass)] h-8 select-none transition-all"
+          :class="isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'">
+          <button class="w-6 h-6 flex items-center justify-center rounded-full text-foreground transition-colors"
+            @click="WindowService.CloseMiniPlayer()">
+            <X class="w-3.5 h-3.5" />
+          </button>
+          <button class="w-6 h-6 flex items-center justify-center rounded-full transition-colors"
+            :class="alwaysOnTop ? 'text-white/80' : 'text-foreground'" @click="toggleAlwaysOnTop()">
+            <Pin v-if="alwaysOnTop" class="w-3.5 h-3.5" />
+            <PinOff v-else class="w-3.5 h-3.5" />
+          </button>
+          <button class="w-6 h-6 flex items-center justify-center rounded-full text-foreground transition-colors"
+            @mouseenter="onVolumeEnter" @mouseleave="onVolumeLeave" @click="showVolume = !showVolume">
+            <VolumeX v-if="store.muted" class="w-3.5 h-3.5" />
+            <Volume2 v-else class="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      <!-- Glassmorphism panel: backdrop blur fading bottom → top -->
+      <div class="glass-panel absolute bottom-0 left-0 right-0 pointer-events-none transition-opacity duration-200"
+        :class="isHovered ? 'opacity-100' : 'opacity-0'" />
+
+      <!-- Content overlay (hover-triggered) -->
+      <div class="absolute bottom-0 left-0 right-0 px-3 pb-2 transition-opacity duration-200"
+        :class="isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
+        style="-webkit-app-region: no-drag">
+        <MarqueeText :text="trackTitle" content-class="text font-semibold leading-tight text-white" />
+        <MarqueeText :text="trackArtist" content-class="text-xs text-white/90 leading-tight mt-0.5" />
+
+        <!-- Seek bar -->
+        <div class="flex items-center gap-1.5 mt-2">
+          <span class="text-[10px] text-white/80 tabular-nums w-7 text-right shrink-0">
+            {{ formatTime(displayPosition) }}
+          </span>
+          <Slider :model-value="isSeeking ? seekValue : store.progressPercent" :min="0" :max="100" :step="0.1"
+            class="flex-1" @update:model-value="(v) => (seekValue = v)" @mousedown="onSeekStart" @mouseup="onSeekEnd" />
+          <span class="text-[10px] text-white/80 tabular-nums w-7 shrink-0">
+            {{ formatTime(store.duration) }}
+          </span>
+        </div>
+
+        <!-- Controls: shuffle, prev, play/pause, next, loop -->
+        <div class="flex items-center justify-center gap-4 mt-2 mb-1">
+          <PlayerControlButton class="transition-colors"
+            :class="store.shuffle ? 'text-white/80' : 'text-white/20 hover:text-white/70'" :active="store.shuffle"
+            :show-indicator="appStore.showPlayerIndicator" dot-class="bg-white"
+            @click="store.setShuffle(!store.shuffle)">
+            <Shuffle class="w-3.5 h-3.5" />
+          </PlayerControlButton>
+          <button class="text-white/80 hover:text-white/90 transition-colors" @click="store.previous()">
+            <SkipBack class="w-4 h-4 fill-current" />
+          </button>
+          <button
+            class="w-9 h-9 bg-white rounded-full flex items-center justify-center hover:scale-105 transition-transform shrink-0"
+            @click="store.togglePlayPause()">
+            <Pause v-if="store.isPlaying" class="w-[18px] h-[18px] fill-current text-[#0A0A0A]" />
+            <Play v-else class="w-[18px] h-[18px] fill-current text-[#0A0A0A] ml-0.5" />
+          </button>
+          <button class="text-white/80 hover:text-white/90 transition-colors" @click="store.next()">
+            <SkipForward class="w-4 h-4 fill-current" />
+          </button>
+          <PlayerControlButton class="transition-colors"
+            :class="repeatActive ? 'text-white/80' : 'text-white/20 hover:text-white/70'" :active="repeatActive"
+            :show-indicator="appStore.showPlayerIndicator" dot-class="bg-white" @click="store.cycleRepeat()">
+            <component :is="repeatIcon" class="w-3.5 h-3.5" />
+          </PlayerControlButton>
+        </div>
       </div>
     </div>
 
-    <!-- Glassmorphism panel: backdrop blur fading bottom → top -->
-    <div
-      class="glass-panel absolute bottom-0 left-0 right-0 pointer-events-none transition-opacity duration-200"
-      :class="isHovered ? 'opacity-100' : 'opacity-0'"
-    />
-
-    <!-- Content overlay (hover-triggered) -->
-    <div class="absolute bottom-0 left-0 right-0 px-3 pb-2 transition-opacity duration-200"
-      :class="isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
+    <section v-if="activePanel" data-test="mini-player-panel" class="flex-1 min-h-0 flex flex-col overflow-hidden"
       style="-webkit-app-region: no-drag">
-      <MarqueeText :text="trackTitle" content-class="text font-semibold leading-tight text-white" />
-      <MarqueeText :text="trackArtist" content-class="text-xs text-white/90 leading-tight mt-0.5" />
-
-      <!-- Seek bar -->
-      <div class="flex items-center gap-1.5 mt-2">
-        <span class="text-[10px] text-white/80 tabular-nums w-7 text-right shrink-0">
-          {{ formatTime(displayPosition) }}
-        </span>
-        <Slider :model-value="isSeeking ? seekValue : store.progressPercent" :min="0" :max="100" :step="0.1"
-          class="flex-1" @update:model-value="(v) => (seekValue = v)" @mousedown="onSeekStart" @mouseup="onSeekEnd" />
-        <span class="text-[10px] text-white/80 tabular-nums w-7 shrink-0">
-          {{ formatTime(store.duration) }}
-        </span>
+      <div v-if="activePanel === 'lyrics'" class="h-full flex items-center justify-center">
+        {{ t('player.lyrics') }}
       </div>
-
-      <!-- Controls: shuffle, prev, play/pause, next, loop -->
-      <div class="flex items-center justify-center gap-4 mt-2 mb-1">
-        <PlayerControlButton
-          class="transition-colors"
-          :class="store.shuffle ? 'text-white/80' : 'text-white/20 hover:text-white/70'"
-          :active="store.shuffle"
-          :show-indicator="appStore.showPlayerIndicator"
-          dot-class="bg-white"
-          @click="store.setShuffle(!store.shuffle)"
-        >
-          <Shuffle class="w-3.5 h-3.5" />
-        </PlayerControlButton>
-        <button class="text-white/80 hover:text-white/90 transition-colors" @click="store.previous()">
-          <SkipBack class="w-4 h-4 fill-current" />
-        </button>
-        <button
-          class="w-9 h-9 bg-white rounded-full flex items-center justify-center hover:scale-105 transition-transform shrink-0"
-          @click="store.togglePlayPause()">
-          <Pause v-if="store.isPlaying" class="w-[18px] h-[18px] fill-current text-[#0A0A0A]" />
-          <Play v-else class="w-[18px] h-[18px] fill-current text-[#0A0A0A] ml-0.5" />
-        </button>
-        <button class="text-white/80 hover:text-white/90 transition-colors" @click="store.next()">
-          <SkipForward class="w-4 h-4 fill-current" />
-        </button>
-        <PlayerControlButton
-          class="transition-colors"
-          :class="repeatActive ? 'text-white/80' : 'text-white/20 hover:text-white/70'"
-          :active="repeatActive"
-          :show-indicator="appStore.showPlayerIndicator"
-          dot-class="bg-white"
-          @click="store.cycleRepeat()"
-        >
-          <component :is="repeatIcon" class="w-3.5 h-3.5" />
-        </PlayerControlButton>
+      <div v-else class="h-full flex items-center justify-center">
+        {{ t('player.queue') }}
       </div>
-    </div>
+    </section>
   </div>
 </template>
 
 <style scoped>
-.artwork-crossfade-incoming { mix-blend-mode: plus-lighter; }
+.artwork-crossfade-incoming {
+  mix-blend-mode: plus-lighter;
+}
 </style>
 
 <style scoped>
@@ -228,7 +266,7 @@ watch(() => store.theme, (colors) => {
   height: 260px;
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  background: linear-gradient(to top, rgba(10, 10, 10, 0.6), rgba(10, 10, 10, 0) 80%);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0) 90%);
   -webkit-mask-image: linear-gradient(to top, #000 0%, #000 25%, transparent 100%);
   mask-image: linear-gradient(to top, #000 0%, #000 25%, transparent 100%);
   /* Force GPU compositing layer — kills backdrop-filter repaint flicker on macOS */

@@ -6,7 +6,7 @@
 
 #include "mini_player_aspect_linux.h"
 
-void LockMiniPlayerSquare(void *window) {
+void LockMiniPlayerAspect(void *window, bool expanded) {
 #ifdef GDK_WINDOWING_X11
     GtkWindow *gtkWindow = GTK_WINDOW(window);
     GdkSurface *surface = gtk_native_get_surface(GTK_NATIVE(gtkWindow));
@@ -19,11 +19,12 @@ void LockMiniPlayerSquare(void *window) {
     long supplied = 0;
     XGetWMNormalHints(display, xid, &hints, &supplied);
     hints.flags |= PAspect;
-    hints.min_aspect.x = hints.min_aspect.y = 1;
-    hints.max_aspect.x = hints.max_aspect.y = 1;
+    hints.min_aspect.x = hints.max_aspect.x = 1;
+    hints.min_aspect.y = hints.max_aspect.y = expanded ? 2 : 1;
     XSetWMNormalHints(display, xid, &hints);
     XFlush(display);
 #else
     (void)window;
+    (void)expanded;
 #endif
 }

@@ -2,7 +2,7 @@
 extern "C" {
 #endif
 
-void LockMiniPlayerSquare(void *window);
+void LockMiniPlayerAspect(void *window, bool expanded);
 
 #ifdef __cplusplus
 }
