@@ -3,13 +3,16 @@ package me.misa198.airmedy.ui.screens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.json.JsonArray
@@ -23,6 +26,7 @@ import me.misa198.airmedy.sync.LibraryArtist
 import me.misa198.airmedy.sync.LibraryComposer
 import me.misa198.airmedy.sync.LibraryPlaylist
 import me.misa198.airmedy.sync.LibraryTrack
+import me.misa198.airmedy.sync.LibrarySearchCandidate
 import me.misa198.airmedy.sync.LibrarySyncProtocol
 import me.misa198.airmedy.sync.metadataObject
 import me.misa198.airmedy.ui.libraryAlphabeticalComparator
@@ -38,6 +42,7 @@ data class LibrarySearchUiState(
     val composers: List<LibraryComposer> = emptyList(),
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 internal class LibrarySearchViewModel(syncStore: AndroidLibrarySyncStore) : ViewModel() {
     class Factory(private val syncStore: AndroidLibrarySyncStore) : androidx.lifecycle.ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST") override fun <T : ViewModel> create(modelClass: Class<T>): T =
@@ -46,23 +51,29 @@ internal class LibrarySearchViewModel(syncStore: AndroidLibrarySyncStore) : View
 
     private val query = MutableStateFlow("")
     private val searchQuery = query.debouncedLibrarySearchQuery()
-    val uiState: StateFlow<LibrarySearchUiState> = combine(
-        query, searchQuery, syncStore.tracks, syncStore.albums, syncStore.artists, syncStore.playlists, syncStore.composers,
+    private val searchResults = combine(
+        searchQuery.flatMapLatest { text ->
+            syncStore.searchCandidates(text).map { candidates -> SearchCandidates(text, candidates.groupBy { it.entityType }.mapValues { (_, values) -> values.mapTo(mutableSetOf(), LibrarySearchCandidate::entityId) }) }
+        },
+        syncStore.tracks, syncStore.albums, syncStore.artists, syncStore.playlists, syncStore.composers,
     ) { values ->
-        val queryText = values[0] as String
-        val text = if (queryText.isBlank()) "" else values[1] as String
+        val search = values[0] as SearchCandidates
+        val text = search.query
         @Suppress("UNCHECKED_CAST")
         LibrarySearchUiState(
             isLoaded = true,
-            query = queryText,
-            tracks = searchTracks(values[2] as List<LibraryTrack>, text),
-            allTracks = values[2] as List<LibraryTrack>,
-            albums = searchLibrary(values[3] as List<LibraryAlbum>, text, { listOf(it.title, it.artist) }, { it.sortTitle }, { it.id }),
-            artists = searchLibrary(values[4] as List<LibraryArtist>, text, { listOf(it.name) }, { it.sortName }, { it.id }),
-            playlists = searchLibrary(values[5] as List<LibraryPlaylist>, text, { listOf(it.name, playlistDescription(it)) }, { it.name }, { it.id }),
-            composers = searchLibrary(values[6] as List<LibraryComposer>, text, { listOf(it.name) }, { it.sortName }, { it.id }),
+            query = text,
+            tracks = searchTracks(values[1] as List<LibraryTrack>, text, search.ids("track")),
+            allTracks = values[1] as List<LibraryTrack>,
+            albums = searchLibrary(values[2] as List<LibraryAlbum>, text, { listOf(it.title, it.artist) }, { it.sortTitle }, { it.id }, search.ids("album")),
+            artists = searchLibrary(values[3] as List<LibraryArtist>, text, { listOf(it.name) }, { it.sortName }, { it.id }, search.ids("artist")),
+            playlists = searchLibrary(values[4] as List<LibraryPlaylist>, text, { listOf(it.name, playlistDescription(it)) }, { it.name }, { it.id }, search.ids("playlist")),
+            composers = searchLibrary(values[5] as List<LibraryComposer>, text, { listOf(it.name) }, { it.sortName }, { it.id }, search.ids("composer")),
         )
-    }.flowOn(Dispatchers.Default).stateIn(
+    }.flowOn(Dispatchers.Default)
+    val uiState: StateFlow<LibrarySearchUiState> = combine(query, searchResults) { query, results ->
+        results.copy(query = query)
+    }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5_000),
         LibrarySearchUiState(isLoaded = false),
@@ -72,26 +83,30 @@ internal class LibrarySearchViewModel(syncStore: AndroidLibrarySyncStore) : View
     fun clear() { query.value = "" }
 }
 
-internal const val LibrarySearchDebounceMs = 300L
+private data class SearchCandidates(val query: String, val idsByType: Map<String, Set<String>>) {
+    fun ids(type: String): Set<String> = idsByType[type].orEmpty()
+}
+
+internal const val LibrarySearchDebounceMs = 200L
 
 @OptIn(FlowPreview::class)
 internal fun Flow<String>.debouncedLibrarySearchQuery(): Flow<String> = debounce { query ->
     if (query.isBlank()) 0L else LibrarySearchDebounceMs
 }
 
-internal fun searchTracks(tracks: List<LibraryTrack>, query: String): List<LibraryTrack> = searchLibrary(
+internal fun searchTracks(tracks: List<LibraryTrack>, query: String, candidateIds: Set<String>? = null): List<LibraryTrack> = searchLibrary(
     tracks, query,
     { track -> listOf(track.title, track.artists, track.album) + trackGenres(track) },
-    { it.sortTitle }, { it.id },
+    { it.sortTitle }, { it.id }, candidateIds,
 )
 
 internal fun <T> searchLibrary(
-    items: List<T>, query: String, fields: (T) -> List<String>, sortName: (T) -> String, id: (T) -> String,
+    items: List<T>, query: String, fields: (T) -> List<String>, sortName: (T) -> String, id: (T) -> String, candidateIds: Set<String>? = null,
 ): List<T> {
     val phrase = normalizedLibrarySearchText(query).trim()
     if (phrase.isEmpty()) return emptyList()
     val terms = searchTokens(phrase)
-    return items.mapNotNull { item ->
+    return items.asSequence().filter { candidateIds == null || id(it) in candidateIds }.mapNotNull { item ->
         val normalizedFields = fields(item).map(::normalizedLibrarySearchText)
         if (!terms.all { term -> normalizedFields.any { field -> searchTokens(field).any { it.startsWith(term) } } }) null
         else item to when {
@@ -101,6 +116,7 @@ internal fun <T> searchLibrary(
         }
     }.sortedWith(compareBy<Pair<T, Int>> { it.second }.thenBy(libraryAlphabeticalComparator) { sortName(it.first) }.thenBy { id(it.first) })
         .map(Pair<T, Int>::first)
+        .toList()
 }
 
 private val SearchTokenPattern = Regex("[\\p{L}\\p{N}]+")
