@@ -17,7 +17,7 @@ const features = [
 const screenshots = [
   ['Library Explorer', 'Beautiful glass-morphic interface that highlights your album art and metadata.', '/album-grid.png'],
   ['Synced Lyrics', 'Immersive fullscreen mode with lyrics that move with the music.', '/fullscreen-player-1.webp'],
-  ['Compact Player', 'A tiny, versatile mini-player that stays out of your way.', '/mini-player-1.webp'],
+  ['Compact Player', 'A tiny, versatile mini-player that stays out of your way.', '/mini-player-2.webp'],
   ['Artist Insights', 'Deep dive into your favorite artists with discography and bios.', '/artist.png'],
   ['Remote Control', 'Control your music from any phone or browser on your local network.', '/remote.webp'],
   ['Airmedy Mobile', 'Browse your library, control playback, and follow lyrics from your phone.', '/mobiles.webp'],
