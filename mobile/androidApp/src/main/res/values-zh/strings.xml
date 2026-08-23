@@ -161,6 +161,7 @@
     <string name="playlist_choose_artwork">选择播放列表封面</string>
     <string name="playlist_clear_artwork">清除播放列表封面</string>
     <string name="bottom_sheet_dismiss">关闭面板</string>
+    <string name="bottom_sheet_back">返回</string>
     <string name="create">创建</string>
     <string name="save">保存</string>
     <string name="playlist_sync_failed">无法将此播放列表同步到电脑端</string>
@@ -360,4 +361,12 @@
     <string name="composers_empty_title">媒体库中暂无作曲家</string>
     <string name="composers_empty_description">移动端同步完成后，已同步的作曲家将在此显示。</string>
     <string name="composers_no_match_title">无匹配的作曲家</string>
+    <string name="lyrics_title">歌词</string>
+    <string name="lyrics_data_sources">数据源</string>
+    <string name="lyrics_preferred_source">首选来源</string>
+    <string name="lyrics_source_desktop">桌面同步</string>
+    <string name="lyrics_source_auto_fetch">自动获取</string>
+    <string name="lyrics_info_action">歌词信息</string>
+    <string name="lyrics_info_title">歌词数据源</string>
+    <string name="lyrics_info_description">你可以选择优先使用桌面端的歌词，或自动获取歌词。在移动端自动获取的歌词不会同步回桌面端。</string>
 </resources>

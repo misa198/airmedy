@@ -161,6 +161,7 @@
     <string name="playlist_choose_artwork">Choose playlist artwork</string>
     <string name="playlist_clear_artwork">Clear playlist artwork</string>
     <string name="bottom_sheet_dismiss">Dismiss sheet</string>
+    <string name="bottom_sheet_back">Back</string>
     <string name="create">Create</string>
     <string name="save">Save</string>
     <string name="playlist_sync_failed">Could not sync this playlist to desktop</string>
@@ -368,4 +369,12 @@
     <string name="composers_empty_title">No composers in library</string>
     <string name="composers_empty_description">Synced composers will appear here once mobile sync completes.</string>
     <string name="composers_no_match_title">No matching composers</string>
+    <string name="lyrics_title">Lyrics</string>
+    <string name="lyrics_data_sources">Data sources</string>
+    <string name="lyrics_preferred_source">Preferred source</string>
+    <string name="lyrics_source_desktop">Desktop sync</string>
+    <string name="lyrics_source_auto_fetch">Auto fetch</string>
+    <string name="lyrics_info_action">Lyrics information</string>
+    <string name="lyrics_info_title">Lyrics sources</string>
+    <string name="lyrics_info_description">You can choose to prioritize lyrics from desktop or fetch them automatically. Lyrics fetched automatically on mobile are not synced back to desktop.</string>
 </resources>

@@ -58,6 +58,8 @@ fun AirmedyBottomSheet(
     title: @Composable () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    dismissImmediately: Boolean = false,
+    onDragDismiss: () -> Unit = onDismiss,
     leadingAction: @Composable (onDismissRequest: () -> Unit) -> Unit = { onDismissRequest ->
         AirmedyGlassIconButton(
             hazeState = null,
@@ -74,17 +76,25 @@ fun AirmedyBottomSheet(
     val backdropInteraction = remember { MutableInteractionSource() }
     var entered by remember { mutableStateOf(false) }
     var dismissing by remember { mutableStateOf(false) }
+    var dismissAction by remember { mutableStateOf<(() -> Unit)?>(null) }
     val density = LocalDensity.current
     val hiddenOffset = with(density) { 88.dp.toPx() }
     val dismissDragThreshold = with(density) { BottomSheetDismissDragThreshold.toPx() }
-    val requestDismiss = { if (!dismissing) dismissing = true }
+    fun requestDismiss(action: () -> Unit = onDismiss, immediate: Boolean = dismissImmediately) {
+        if (!dismissing) {
+            if (immediate) action() else {
+                dismissAction = action
+                dismissing = true
+            }
+        }
+    }
     var isDragging by remember { mutableStateOf(false) }
     var dragOffset by remember { mutableStateOf(0f) }
     LaunchedEffect(dismissing) {
         entered = !dismissing
         if (dismissing) {
             delay(240)
-            onDismiss()
+            requireNotNull(dismissAction).invoke()
         }
     }
     val motionEasing = if (entered) FastOutSlowInEasing else BottomSheetExitEasing
@@ -100,7 +110,7 @@ fun AirmedyBottomSheet(
         label = "sheet-drag-translation",
     )
     Dialog(
-        onDismissRequest = requestDismiss,
+        onDismissRequest = { requestDismiss() },
         properties = DialogProperties(
             usePlatformDefaultWidth = false,
             dismissOnBackPress = true,
@@ -119,7 +129,7 @@ fun AirmedyBottomSheet(
                         role = Role.Button,
                         interactionSource = backdropInteraction,
                         indication = null,
-                        onClick = requestDismiss,
+                        onClick = { requestDismiss() },
                     ),
             )
             Column(
@@ -157,7 +167,7 @@ fun AirmedyBottomSheet(
                                 onDragEnd = {
                                     isDragging = false
                                     if (dragOffset >= dismissDragThreshold) {
-                                        requestDismiss()
+                                        requestDismiss(onDragDismiss, immediate = false)
                                     } else {
                                         dragOffset = 0f
                                     }
@@ -170,7 +180,7 @@ fun AirmedyBottomSheet(
                         },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Box(Modifier.width(48.dp), contentAlignment = Alignment.Center) { leadingAction(requestDismiss) }
+                    Box(Modifier.width(48.dp), contentAlignment = Alignment.Center) { leadingAction { requestDismiss() } }
                     Box(Modifier.weight(1f), contentAlignment = Alignment.Center) { title() }
                     Box(Modifier.width(48.dp), contentAlignment = Alignment.Center) { trailingAction() }
                 }

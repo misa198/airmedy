@@ -57,6 +57,8 @@ import me.misa198.airmedy.ui.screens.InsightSourceFilter
 import me.misa198.airmedy.ui.screens.InsightUiState
 import me.misa198.airmedy.ui.screens.SettingsContent
 import me.misa198.airmedy.ui.screens.IntegrationContent
+import me.misa198.airmedy.ui.screens.LastFmContent
+import me.misa198.airmedy.ui.screens.LyricsContent
 import me.misa198.airmedy.ui.screens.PlaybackSettingsContent
 import me.misa198.airmedy.ui.screens.VolumeNormalizationContent
 import me.misa198.airmedy.ui.screens.SongTransitionContent
@@ -240,6 +242,10 @@ internal fun AppDestinationContent(
     val lastFmStatus = settings.lastFmStatus
     val onLastFmConnect = settings.onLastFmConnect
     val onLastFmDisconnect = settings.onLastFmDisconnect
+    val lyricsSettings = settings.lyricsSettings
+    val onLrclibChanged = settings.onLrclibChanged
+    val onKugouChanged = settings.onKugouChanged
+    val onLyricsSourceChanged = settings.onLyricsSourceChanged
     val crossfadeSeconds = settings.crossfadeSeconds
     val lastEnabledCrossfadeSeconds = settings.lastEnabledCrossfadeSeconds
     val onCrossfadeSecondsChanged = settings.onCrossfadeSecondsChanged
@@ -432,11 +438,17 @@ internal fun AppDestinationContent(
                                 modifier = Modifier.padding(contentPadding),
                             )
                             AppStackPage.SettingsIntegration -> IntegrationContent(
+                                onLastFmSelected = { onIntent(AppIntent.OpenPage(AppStackPage.SettingsLastFm)) },
+                                onLyricsSelected = { onIntent(AppIntent.OpenPage(AppStackPage.SettingsLyrics)) },
+                                modifier = settingsPageModifier,
+                            )
+                            AppStackPage.SettingsLastFm -> LastFmContent(
                                 status = lastFmStatus,
                                 onConnect = onLastFmConnect,
                                 onDisconnect = onLastFmDisconnect,
                                 modifier = settingsPageModifier,
                             )
+                            AppStackPage.SettingsLyrics -> LyricsContent(lyricsSettings, onLyricsSourceChanged, onLrclibChanged, onKugouChanged, settingsPageModifier)
                             AppStackPage.SettingsAbout -> AboutContent(
                                 modifier = settingsPageModifier,
                                 onOpenExternalUrl = { url ->

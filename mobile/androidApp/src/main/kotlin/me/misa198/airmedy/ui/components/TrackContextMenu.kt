@@ -48,6 +48,7 @@ data class TrackContextMenuActions(
     val playNext: Boolean = true,
     val addToQueue: Boolean = true,
     val trackInfo: Boolean = true,
+    val findLyrics: Boolean = true,
     val favorite: Boolean = true,
     val addToPlaylist: Boolean = true,
     val goToAlbum: Boolean = true,
@@ -85,8 +86,21 @@ internal fun trackContextArtists(track: LibraryTrack): List<TrackContextArtist> 
 
 sealed interface TrackContextBottomSheetRequest {
     data class Info(val track: LibraryTrack) : TrackContextBottomSheetRequest
+    data class FindLyrics(val track: LibraryTrack) : TrackContextBottomSheetRequest
     data class Playlist(val trackIds: List<String>, val addOnly: Boolean = false) : TrackContextBottomSheetRequest
     data class Artists(val artists: List<TrackContextArtist>) : TrackContextBottomSheetRequest
+}
+
+private sealed interface TrackContextSheet {
+    data class Root(
+        val request: TrackContextBottomSheetRequest,
+        val lyricsState: FindLyricsSearchState? = (request as? TrackContextBottomSheetRequest.FindLyrics)?.let { FindLyricsSearchState(it.track) },
+    ) : TrackContextSheet
+
+    data class LyricsPreview(
+        val track: LibraryTrack,
+        val lyric: me.misa198.airmedy.lyrics.LyricsSearchResult,
+    ) : TrackContextSheet
 }
 
 @Composable
@@ -161,7 +175,8 @@ fun TrackContextMenu(
             if (showPlayNext) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_play_next), MaterialSymbols.QueuePlayNext) { closeAfter { onPlayNext(track) } })
             if (showAddToQueue) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_add_to_queue), MaterialSymbols.AddToQueue) { closeAfter { onAddToQueue(track) } })
             if (actions.trackInfo) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_track_info), MaterialSymbols.Info) { requestBottomSheet(TrackContextBottomSheetRequest.Info(track)) })
-            if (showPlayNext || showAddToQueue || actions.trackInfo) add(ContextActionMenuEntry.Divider)
+            if (actions.findLyrics) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_find_lyrics), MaterialSymbols.Search) { requestBottomSheet(TrackContextBottomSheetRequest.FindLyrics(track)) })
+            if (showPlayNext || showAddToQueue || actions.trackInfo || actions.findLyrics) add(ContextActionMenuEntry.Divider)
             if (actions.favorite) add(ContextActionMenuEntry.Action(stringResource(if (favorite) R.string.track_context_remove_from_favorites else R.string.track_context_add_to_favorites), if (favorite) MaterialSymbols.HeartMinus else MaterialSymbols.HeartPlus) { closeAfter { if (!favorite) hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm); onFavoriteChange(track, !favorite) } })
             if (actions.addToPlaylist) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_add_to_playlist), MaterialSymbols.PlaylistAdd) { requestBottomSheet(TrackContextBottomSheetRequest.Playlist(listOf(track.id))) })
             if ((actions.favorite || actions.addToPlaylist) && (hasNavigationActions || actions.removeFromPlaylist)) {
@@ -197,38 +212,64 @@ internal fun TrackContextBottomSheet(
     request: TrackContextBottomSheetRequest,
     onDismiss: () -> Unit,
     onArtistSelected: (TrackContextArtist) -> Unit,
+    onSearchLyrics: suspend (LibraryTrack, String, String) -> List<me.misa198.airmedy.lyrics.LyricsSearchResult> = { _, _, _ -> emptyList() },
+    onLyricsSelected: suspend (String, me.misa198.airmedy.lyrics.LyricsSearchResult) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
     playlists: List<LibraryPlaylist> = emptyList(),
     onPlaylistMembershipChange: (playlistId: String, trackIds: List<String>, add: Boolean) -> Unit = { _, _, _ -> },
     onCreatePlaylistRequested: (trackIds: List<String>) -> Unit = {},
-) = AirmedyBottomSheet(
-    title = {
-        TrackContextSheetTitle(
-            when (request) {
-                is TrackContextBottomSheetRequest.Info -> R.string.track_context_track_info_title
-                is TrackContextBottomSheetRequest.Playlist -> R.string.track_context_playlist_picker_title
-                is TrackContextBottomSheetRequest.Artists -> R.string.track_context_artist_picker_title
-            },
-        )
-    },
-    onDismiss = onDismiss,
-    modifier = modifier,
 ) {
-    when (request) {
-        is TrackContextBottomSheetRequest.Info -> TrackInfoContent(request.track)
-        is TrackContextBottomSheetRequest.Playlist -> PlaylistPickerContent(
-            trackIds = request.trackIds,
-            addOnly = request.addOnly,
-            playlists = playlists,
-            onPlaylistMembershipChange = onPlaylistMembershipChange,
-            onCreatePlaylistRequested = onCreatePlaylistRequested,
-        )
-        is TrackContextBottomSheetRequest.Artists -> ContextActionMenu(
-            request.artists.map { artist ->
-                ContextActionMenuEntry.Action(artist.name, MaterialSymbols.Person) { onArtistSelected(artist) }
-            },
-        )
-    }
+    val root: TrackContextSheet = remember(request) { TrackContextSheet.Root(request) }
+    val stack = rememberAirmedyBottomSheetStack(root)
+    AirmedyBottomSheetStack(
+        stack = stack,
+        onDismiss = onDismiss,
+        modifier = modifier,
+        title = { sheet ->
+            TrackContextSheetTitle(
+                when (sheet) {
+                    is TrackContextSheet.Root -> when (sheet.request) {
+                        is TrackContextBottomSheetRequest.Info -> R.string.track_context_track_info_title
+                        is TrackContextBottomSheetRequest.FindLyrics -> R.string.track_context_find_lyrics_title
+                        is TrackContextBottomSheetRequest.Playlist -> R.string.track_context_playlist_picker_title
+                        is TrackContextBottomSheetRequest.Artists -> R.string.track_context_artist_picker_title
+                    }
+                    is TrackContextSheet.LyricsPreview -> R.string.find_lyrics_preview
+                },
+            )
+        },
+        content = { sheet ->
+            when (sheet) {
+                is TrackContextSheet.Root -> when (val rootRequest = sheet.request) {
+                    is TrackContextBottomSheetRequest.Info -> TrackInfoContent(rootRequest.track)
+                    is TrackContextBottomSheetRequest.FindLyrics -> FindLyricsContent(
+                        track = rootRequest.track,
+                        state = requireNotNull(sheet.lyricsState),
+                        onSearch = onSearchLyrics,
+                        onPreview = { lyric -> stack.push(TrackContextSheet.LyricsPreview(rootRequest.track, lyric)) },
+                    )
+                    is TrackContextBottomSheetRequest.Playlist -> PlaylistPickerContent(
+                        trackIds = rootRequest.trackIds,
+                        addOnly = rootRequest.addOnly,
+                        playlists = playlists,
+                        onPlaylistMembershipChange = onPlaylistMembershipChange,
+                        onCreatePlaylistRequested = onCreatePlaylistRequested,
+                    )
+                    is TrackContextBottomSheetRequest.Artists -> ContextActionMenu(
+                        rootRequest.artists.map { artist ->
+                            ContextActionMenuEntry.Action(artist.name, MaterialSymbols.Person) { onArtistSelected(artist) }
+                        },
+                    )
+                }
+                is TrackContextSheet.LyricsPreview -> FindLyricsPreviewContent(
+                    track = sheet.track,
+                    lyric = sheet.lyric,
+                    onSelected = onLyricsSelected,
+                    onDismiss = onDismiss,
+                )
+            }
+        },
+    )
 }
 
 @Composable private fun TrackContextSheetTitle(title: Int) = Text(stringResource(title), style = MaterialTheme.typography.titleMedium, color = LocalAirmedyColors.current.textMain)

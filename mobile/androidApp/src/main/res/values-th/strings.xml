@@ -161,6 +161,7 @@
     <string name="playlist_choose_artwork">เลือกภาพหน้าปกเพลย์ลิสต์</string>
     <string name="playlist_clear_artwork">ล้างภาพหน้าปกเพลย์ลิสต์</string>
     <string name="bottom_sheet_dismiss">ปิดหน้าต่าง</string>
+    <string name="bottom_sheet_back">กลับ</string>
     <string name="create">สร้าง</string>
     <string name="save">บันทึก</string>
     <string name="playlist_sync_failed">ไม่สามารถซิงค์เพลย์ลิสต์นี้กับเดสก์ท็อปได้</string>
@@ -360,4 +361,12 @@
     <string name="composers_empty_title">ไม่มีคีตกวีในคลังเพลง</string>
     <string name="composers_empty_description">คีตกวีที่ซิงค์จะปรากฏที่นี่เมื่อการซิงค์บนมือถือเสร็จสมบูรณ์</string>
     <string name="composers_no_match_title">ไม่มีคีตกวีที่ตรงกัน</string>
+    <string name="lyrics_title">เนื้อเพลง</string>
+    <string name="lyrics_data_sources">แหล่งข้อมูล</string>
+    <string name="lyrics_preferred_source">แหล่งข้อมูลที่ต้องการ</string>
+    <string name="lyrics_source_desktop">ซิงค์จากเดสก์ท็อป</string>
+    <string name="lyrics_source_auto_fetch">ดึงข้อมูลอัตโนมัติ</string>
+    <string name="lyrics_info_action">ข้อมูลเนื้อเพลง</string>
+    <string name="lyrics_info_title">แหล่งข้อมูลเนื้อเพลง</string>
+    <string name="lyrics_info_description">คุณสามารถเลือกให้เนื้อเพลงจากเดสก์ท็อปมีความสำคัญก่อน หรือให้แอปดึงเนื้อเพลงโดยอัตโนมัติ เนื้อเพลงที่ดึงโดยอัตโนมัติบนมือถือจะไม่ซิงค์กลับไปยังเดสก์ท็อป</string>
 </resources>

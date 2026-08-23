@@ -35,6 +35,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.Text
 import java.time.LocalTime
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -42,6 +43,7 @@ import dev.chrisbanes.haze.HazeInputScale
 import kotlinx.coroutines.launch
 import me.misa198.airmedy.ui.components.AirmedyGlassIconButton
 import me.misa198.airmedy.ui.components.AirmedyDialog
+import me.misa198.airmedy.ui.components.AirmedyBottomSheet
 import me.misa198.airmedy.ui.components.AirmedyPillButtonVariant
 import me.misa198.airmedy.ui.components.AnchoredPopupMenuHost
 import me.misa198.airmedy.ui.components.MaterialSymbols
@@ -73,6 +75,7 @@ import me.misa198.airmedy.ui.screens.EqualizerProfileMenuBottomSheet
 import me.misa198.airmedy.ui.components.TrackContextBottomSheet
 import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import me.misa198.airmedy.ui.theme.AirmedyTheme
+import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 import me.misa198.airmedy.player.PlaybackState
 import me.misa198.airmedy.sync.AndroidSyncState
 
@@ -253,6 +256,7 @@ internal fun App(
             currentPage == AppStackPage.LibraryGenres || currentPage == AppStackPage.LibraryComposers
         val showPlaylistAddAction = currentPage == AppStackPage.LibraryPlaylists
         var showCreatePlaylistSheet by rememberSaveable { mutableStateOf(false) }
+        var showLyricsInfoSheet by rememberSaveable { mutableStateOf(false) }
         var createPlaylistForTracks by remember { mutableStateOf<List<String>?>(null) }
         BackHandler(enabled = showBack) { onIntent(AppIntent.NavigateBack) }
 
@@ -360,7 +364,7 @@ internal fun App(
                 } else {
                     null
                 },
-                hasActions = showSyncAddAction || showLibrarySortAction || showPlaylistAddAction || currentPage == AppStackPage.SettingsEqualizer,
+                hasActions = showSyncAddAction || showLibrarySortAction || showPlaylistAddAction || currentPage == AppStackPage.SettingsEqualizer || currentPage == AppStackPage.SettingsLyrics,
                 animateChanges = animateHeaderChanges,
                 titleStackKey = "${uiState.selectedDestination.name}:${currentPage.name}",
                 isForward = isForwardHeaderTransition,
@@ -387,6 +391,13 @@ internal fun App(
                         symbol = MaterialSymbols.MoreVert,
                         label = stringResource(R.string.equalizer_profile_menu),
                         onClick = { equalizerProfileSheet = EqualizerProfileSheet.Menu },
+                    )
+                } else if (currentPage == AppStackPage.SettingsLyrics) {
+                    AirmedyGlassIconButton(
+                        hazeState = hazeState,
+                        symbol = MaterialSymbols.Info,
+                        label = stringResource(R.string.lyrics_info_action),
+                        onClick = { showLyricsInfoSheet = true },
                     )
                 } else if (currentPage == AppStackPage.LibraryTracks) {
                     LibrarySortHeaderButton(
@@ -465,6 +476,18 @@ internal fun App(
                         createPlaylistForTracks = null
                     },
                 )
+            }
+            if (showLyricsInfoSheet) {
+                AirmedyBottomSheet(
+                    title = { Text(stringResource(R.string.lyrics_info_title)) },
+                    onDismiss = { showLyricsInfoSheet = false },
+                ) {
+                    Text(
+                        text = stringResource(R.string.lyrics_info_description),
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                        color = LocalAirmedyColors.current.textMuted,
+                    )
+                }
             }
             when (equalizerProfileSheet) {
                 EqualizerProfileSheet.Menu -> EqualizerProfileMenuBottomSheet(
@@ -579,6 +602,7 @@ internal fun App(
                 queue = playbackQueue,
                 queueTracks = playback.queueTracks,
                 lyrics = playback.lyrics,
+                lyricsLoading = playback.lyricsLoading,
                 artworkCrossfade = playback.artworkCrossfade,
                 blendArtworkDuringCrossfade = playback.blendArtworkDuringCrossfade,
                 volume = playback.systemVolume,
@@ -626,6 +650,8 @@ internal fun App(
                         trackContextSheet = null
                         onIntent(AppIntent.OpenArtistDetails(artist.id))
                     },
+                    onSearchLyrics = playback.onSearchLyrics,
+                    onLyricsSelected = playback.onLyricsSelected,
                     playlists = library.playlists.availablePlaylists,
                     onPlaylistMembershipChange = library.playlists.onMembershipChange,
                     onCreatePlaylistRequested = { trackIds ->

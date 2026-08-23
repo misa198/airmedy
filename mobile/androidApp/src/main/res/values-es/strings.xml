@@ -161,6 +161,7 @@
     <string name="playlist_choose_artwork">Elegir portada de la lista</string>
     <string name="playlist_clear_artwork">Quitar portada de la lista</string>
     <string name="bottom_sheet_dismiss">Cerrar panel</string>
+    <string name="bottom_sheet_back">Atrás</string>
     <string name="create">Crear</string>
     <string name="save">Guardar</string>
     <string name="playlist_sync_failed">No se pudo sincronizar esta lista con el escritorio</string>
@@ -368,4 +369,12 @@
     <string name="composers_empty_title">Sin compositores en la biblioteca</string>
     <string name="composers_empty_description">Los compositores sincronizados aparecerán aquí una vez completada la sincronización.</string>
     <string name="composers_no_match_title">No hay compositores que coincidan</string>
+    <string name="lyrics_title">Letras</string>
+    <string name="lyrics_data_sources">Fuentes de datos</string>
+    <string name="lyrics_preferred_source">Fuente preferida</string>
+    <string name="lyrics_source_desktop">Sincronización de escritorio</string>
+    <string name="lyrics_source_auto_fetch">Obtener automáticamente</string>
+    <string name="lyrics_info_action">Información de letras</string>
+    <string name="lyrics_info_title">Fuentes de letras</string>
+    <string name="lyrics_info_description">Puedes elegir si priorizar las letras del escritorio o buscarlas automáticamente. Las letras obtenidas automáticamente en el móvil no se sincronizan con el escritorio.</string>
 </resources>

@@ -161,6 +161,7 @@
     <string name="playlist_choose_artwork">Выбрать обложку</string>
     <string name="playlist_clear_artwork">Удалить обложку</string>
     <string name="bottom_sheet_dismiss">Закрыть панель</string>
+    <string name="bottom_sheet_back">Назад</string>
     <string name="create">Создать</string>
     <string name="save">Сохранить</string>
     <string name="playlist_sync_failed">Не удалось синхронизировать этот плейлист с компьютером</string>
@@ -384,4 +385,12 @@
     <string name="composers_empty_title">В медиатеке нет композиторов</string>
     <string name="composers_empty_description">Синхронизированные композиторы появятся здесь после завершения синхронизации.</string>
     <string name="composers_no_match_title">Нет подходящих композиторов</string>
+    <string name="lyrics_title">Тексты песен</string>
+    <string name="lyrics_data_sources">Источники данных</string>
+    <string name="lyrics_preferred_source">Предпочтительный источник</string>
+    <string name="lyrics_source_desktop">Синхронизация с компьютером</string>
+    <string name="lyrics_source_auto_fetch">Загружать автоматически</string>
+    <string name="lyrics_info_action">Информация о текстах</string>
+    <string name="lyrics_info_title">Источники текстов</string>
+    <string name="lyrics_info_description">Можно выбрать: отдавать приоритет текстам с компьютера или получать их автоматически. Тексты, автоматически полученные на мобильном устройстве, не синхронизируются обратно с компьютером.</string>
 </resources>

@@ -8,6 +8,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.performClick
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.sync.LibraryTrack
@@ -71,5 +72,23 @@ class TrackContextMenuHapticTest {
             assertEquals(false, change)
             assertEquals(emptyList<HapticFeedbackType>(), haptics)
         }
+    }
+
+    @Test
+    fun findLyricsOpensTheTrackContextSheet() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                TrackContextMenu(
+                    track = LibraryTrack(id = "track", title = "Track", artists = "Artist"),
+                    expanded = true,
+                    onDismiss = {},
+                    anchor = { Box(Modifier) },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Find lyrics").performClick()
+
+        composeTestRule.onNodeWithText("Find Lyrics").assertIsDisplayed()
     }
 }

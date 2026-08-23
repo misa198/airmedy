@@ -161,6 +161,7 @@
     <string name="playlist_choose_artwork">Choisir la pochette</string>
     <string name="playlist_clear_artwork">Effacer la pochette</string>
     <string name="bottom_sheet_dismiss">Fermer le volet</string>
+    <string name="bottom_sheet_back">Retour</string>
     <string name="create">Créer</string>
     <string name="save">Enregistrer</string>
     <string name="playlist_sync_failed">Impossible de synchroniser cette playlist avec l\'ordinateur</string>
@@ -368,4 +369,12 @@
     <string name="composers_empty_title">Aucun compositeur dans la bibliothèque</string>
     <string name="composers_empty_description">Les compositeurs synchronisés apparaîtront ici une fois la synchronisation terminée.</string>
     <string name="composers_no_match_title">Aucun compositeur correspondant</string>
+    <string name="lyrics_title">Paroles</string>
+    <string name="lyrics_data_sources">Sources de données</string>
+    <string name="lyrics_preferred_source">Source privilégiée</string>
+    <string name="lyrics_source_desktop">Synchronisation du bureau</string>
+    <string name="lyrics_source_auto_fetch">Récupération automatique</string>
+    <string name="lyrics_info_action">Informations sur les paroles</string>
+    <string name="lyrics_info_title">Sources des paroles</string>
+    <string name="lyrics_info_description">Vous pouvez choisir de privilégier les paroles du bureau ou de les récupérer automatiquement. Les paroles récupérées automatiquement sur mobile ne sont pas synchronisées vers le bureau.</string>
 </resources>

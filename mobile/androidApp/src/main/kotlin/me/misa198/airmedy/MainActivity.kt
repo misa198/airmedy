@@ -62,8 +62,9 @@ import me.misa198.airmedy.player.PlaybackState
 import me.misa198.airmedy.lastfm.AndroidLastFmRuntime
 import me.misa198.airmedy.lastfm.LastFmService
 import me.misa198.airmedy.lastfm.isLastFmAuthCallback
+import me.misa198.airmedy.lyrics.AndroidLyricsService
+import me.misa198.airmedy.lyrics.LyricsPreferences
 import kotlin.math.roundToInt
-
 import me.misa198.airmedy.ui.screens.LibraryTracksViewModel
 import me.misa198.airmedy.ui.screens.LibraryArtistsViewModel
 import me.misa198.airmedy.ui.screens.LibraryAlbumsViewModel
@@ -79,6 +80,8 @@ import me.misa198.airmedy.ui.screens.ArtistDetailsViewModel
 import me.misa198.airmedy.ui.screens.GenreDetailsViewModel
 import me.misa198.airmedy.ui.screens.ComposerDetailsViewModel
 import me.misa198.airmedy.ui.screens.InsightViewModel
+
+private data class ManualLyricsOverride(val trackId: String, val content: String)
 
 class MainActivity : ComponentActivity() {
     private val reconciliationMutex = Mutex()
@@ -239,6 +242,8 @@ class MainActivity : ComponentActivity() {
             val playbackPreferences = remember { me.misa198.airmedy.player.PlaybackPreferences(applicationContext) }
             val normalizationPreferences = remember { me.misa198.airmedy.player.NormalizationPreferences(applicationContext) }
             val equalizerPreferences = remember { me.misa198.airmedy.player.EqualizerPreferences(applicationContext) }
+            val lyricsPreferences = remember { LyricsPreferences(applicationContext) }
+            val lyricsService = remember { AndroidLyricsService(AndroidSyncRuntime.syncStore()) }
             val preferenceScope = rememberCoroutineScope()
             val crossfadeSettings by playbackPreferences.settings.collectAsStateWithLifecycle(
                 initialValue = me.misa198.airmedy.player.CrossfadeSettings(0, 4, true),
@@ -249,6 +254,7 @@ class MainActivity : ComponentActivity() {
             val equalizerSettings by equalizerPreferences.settings.collectAsStateWithLifecycle(
                 initialValue = me.misa198.airmedy.player.EqualizerSettings(),
             )
+            val lyricsSettings by lyricsPreferences.settings.collectAsStateWithLifecycle(initialValue = me.misa198.airmedy.lyrics.LyricsSettings())
             // Avoid clearing a valid preference while Room is still loading the active manifest.
             val normalizationAvailable by AndroidSyncRuntime.syncStore().analysisAvailable.collectAsStateWithLifecycle(initialValue = true)
             LaunchedEffect(normalizationAvailable) {
@@ -263,10 +269,32 @@ class MainActivity : ComponentActivity() {
                 is PlaybackState.Paused -> state.item.trackId
                 else -> null
             }
-            val lyricsFlow = remember(lyricsTrackId) {
-                lyricsTrackId?.let(AndroidSyncRuntime.syncStore()::lyrics) ?: flowOf(null)
+            val desktopLyricsFlow = remember(lyricsTrackId) {
+                lyricsTrackId?.let(AndroidSyncRuntime.syncStore()::desktopLyrics) ?: flowOf(null)
             }
-            val lyrics by lyricsFlow.collectAsStateWithLifecycle(initialValue = null)
+            val providerLyricsFlow = remember(lyricsTrackId) {
+                lyricsTrackId?.let(AndroidSyncRuntime.syncStore()::providerLyrics) ?: flowOf(null)
+            }
+            val desktopLyrics by desktopLyricsFlow.collectAsStateWithLifecycle(initialValue = null)
+            val providerLyrics by providerLyricsFlow.collectAsStateWithLifecycle(initialValue = null)
+            var manualLyricsOverride by remember { mutableStateOf<ManualLyricsOverride?>(null) }
+            LaunchedEffect(lyricsTrackId) {
+                if (manualLyricsOverride?.trackId != lyricsTrackId) manualLyricsOverride = null
+            }
+            val lyrics = manualLyricsOverride?.takeIf { it.trackId == lyricsTrackId }?.content
+                ?: me.misa198.airmedy.lyrics.preferredLyrics(lyricsSettings.preferredSource, desktopLyrics, providerLyrics)
+            var lyricsLoadingTrackId by remember { mutableStateOf<String?>(null) }
+            LaunchedEffect(lyricsTrackId, desktopLyrics, providerLyrics, lyricsSettings, manualLyricsOverride) {
+                if (lyricsTrackId == null || manualLyricsOverride?.trackId == lyricsTrackId || !providerLyrics.isNullOrBlank() ||
+                    (lyricsSettings.preferredSource == me.misa198.airmedy.lyrics.LyricsSource.Desktop && !desktopLyrics.isNullOrBlank())
+                ) return@LaunchedEffect
+                lyricsLoadingTrackId = lyricsTrackId
+                try {
+                    lyricsService.fetch(lyricsTrackId, lyricsSettings)
+                } finally {
+                    if (lyricsLoadingTrackId == lyricsTrackId) lyricsLoadingTrackId = null
+                }
+            }
             DisposableEffect(Unit) {
                 val volumeObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
                     override fun onChange(selfChange: Boolean) {
@@ -420,6 +448,10 @@ class MainActivity : ComponentActivity() {
                         lastFm.authorizationUrl()?.let { url -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
                     },
                     onLastFmDisconnect = { preferenceScope.launch { lastFm.disconnect() } },
+                    lyricsSettings = lyricsSettings,
+                    onLyricsSourceChanged = { source -> preferenceScope.launch { lyricsPreferences.setPreferredSource(source) } },
+                    onLrclibChanged = { enabled -> preferenceScope.launch { lyricsPreferences.setLrclib(enabled) } },
+                    onKugouChanged = { enabled -> preferenceScope.launch { lyricsPreferences.setKugou(enabled) } },
                     crossfadeSeconds = crossfadeSettings.seconds,
                     lastEnabledCrossfadeSeconds = crossfadeSettings.lastEnabledSeconds,
                     onCrossfadeSecondsChanged = playbackController::setCrossfadeSeconds,
@@ -442,6 +474,12 @@ class MainActivity : ComponentActivity() {
                 queue = playbackQueue,
                 queueTracks = allTracks,
                 lyrics = lyrics,
+                lyricsLoading = lyricsLoadingTrackId == lyricsTrackId,
+                onSearchLyrics = { track, title, artist -> lyricsService.search(track.id, title, artist, lyricsSettings) },
+                onLyricsSelected = { trackId, lyric ->
+                    AndroidSyncRuntime.syncStore().saveProviderLyrics(trackId, lyric.content, lyric.source)
+                    if (trackId == lyricsTrackId) manualLyricsOverride = ManualLyricsOverride(trackId, lyric.content)
+                },
                 artworkCrossfade = artworkCrossfade,
                 blendArtworkDuringCrossfade = crossfadeSettings.blendArtworkDuringCrossfade,
                 systemVolume = systemMusicVolumeState,

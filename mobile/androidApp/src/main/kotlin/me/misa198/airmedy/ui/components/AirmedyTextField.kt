@@ -60,16 +60,20 @@ fun AirmedyTextField(
     leadingSymbol: String? = null,
     showPlaceholderAndLeadingSymbol: Boolean = true,
     showClearButton: Boolean = true,
+    readOnly: Boolean = false,
+    enabled: Boolean = true,
     trailingContent: (@Composable RowScope.() -> Unit)? = null,
     onDone: () -> Unit = {},
 ) {
     val colors = LocalAirmedyColors.current
     val focusManager = LocalFocusManager.current
     val shape = RoundedCornerShape((size.height / 2).dp)
-    val showsDefaultClearAction = trailingContent == null && showClearButton && value.isNotEmpty()
+    val showsDefaultClearAction = trailingContent == null && showClearButton && enabled && value.isNotEmpty()
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
+        readOnly = readOnly,
+        enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
             .height(size.height.dp)

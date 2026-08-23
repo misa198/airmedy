@@ -161,6 +161,7 @@
     <string name="playlist_choose_artwork">Scegli copertina playlist</string>
     <string name="playlist_clear_artwork">Rimuovi copertina playlist</string>
     <string name="bottom_sheet_dismiss">Chiudi pannello</string>
+    <string name="bottom_sheet_back">Indietro</string>
     <string name="create">Crea</string>
     <string name="save">Salva</string>
     <string name="playlist_sync_failed">Impossibile sincronizzare questa playlist con il desktop</string>
@@ -368,4 +369,12 @@
     <string name="composers_empty_title">Nessun compositore nella libreria</string>
     <string name="composers_empty_description">I compositori sincronizzati appariranno qui una volta completata la sincronizzazione.</string>
     <string name="composers_no_match_title">Nessun compositore corrispondente</string>
+    <string name="lyrics_title">Testi</string>
+    <string name="lyrics_data_sources">Fonti dati</string>
+    <string name="lyrics_preferred_source">Fonte preferita</string>
+    <string name="lyrics_source_desktop">Sincronizzazione desktop</string>
+    <string name="lyrics_source_auto_fetch">Recupero automatico</string>
+    <string name="lyrics_info_action">Informazioni sui testi</string>
+    <string name="lyrics_info_title">Fonti dei testi</string>
+    <string name="lyrics_info_description">Puoi scegliere se dare priorità ai testi dal desktop o recuperarli automaticamente. I testi recuperati automaticamente sul mobile non vengono sincronizzati con il desktop.</string>
 </resources>

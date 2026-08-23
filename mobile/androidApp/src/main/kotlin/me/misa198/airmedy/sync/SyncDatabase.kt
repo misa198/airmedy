@@ -55,6 +55,7 @@ import me.misa198.airmedy.player.DailyTrackListeningStat
 import me.misa198.airmedy.player.DailyPlaybackAttemptStat
 import me.misa198.airmedy.sync.ListeningSyncSnapshot
 import me.misa198.airmedy.sync.ListeningSyncStore
+import me.misa198.airmedy.lyrics.LyricsTrack
 
 @Entity(tableName = "sync_plans", primaryKeys = ["planId"])
 internal data class SyncPlanEntity(
@@ -143,6 +144,9 @@ internal data class SyncDocumentEntity(
     val rawJson: String,
 )
 
+@Entity(tableName = "provider_lyrics", primaryKeys = ["trackId"])
+internal data class ProviderLyricEntity(val trackId: String, val content: String, val source: String)
+
 @Entity(tableName = "listening_sessions")
 internal data class ListeningSessionEntity(
     @androidx.room.PrimaryKey val id: String,
@@ -207,6 +211,7 @@ internal interface SyncDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insertLocalPlaylist(value: LocalPlaylistEntity)
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insertPlaylistArtwork(value: PlaylistArtworkStagingEntity)
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insertDocuments(values: List<SyncDocumentEntity>)
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insertProviderLyric(value: ProviderLyricEntity)
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insertListeningSession(value: ListeningSessionEntity): Long
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insertPlaybackAttempt(value: PlaybackAttemptEntity): Long
 
@@ -277,6 +282,8 @@ internal interface SyncDao {
     @Query("DELETE FROM sync_playlists WHERE planId != :planId") suspend fun deleteStalePlaylists(planId: String)
     @Query("DELETE FROM library_search_fts WHERE planId != :planId") suspend fun deleteStaleSearchDocuments(planId: String)
     @Query("DELETE FROM sync_documents WHERE planId != :planId") suspend fun deleteStaleDocuments(planId: String)
+    @Query("DELETE FROM provider_lyrics WHERE trackId NOT IN (SELECT trackId FROM sync_tracks WHERE planId = :planId)") suspend fun deleteProviderLyricsNotInPlan(planId: String)
+    @Query("DELETE FROM provider_lyrics") suspend fun deleteProviderLyrics()
     @Query("DELETE FROM sync_plans WHERE planId != :planId") suspend fun deleteStalePlans(planId: String)
     @Query("DELETE FROM sync_assets WHERE planId = :planId") suspend fun deleteAssets(planId: String)
     @Query("DELETE FROM sync_tracks WHERE planId = :planId") suspend fun deleteTracks(planId: String)
@@ -341,6 +348,7 @@ internal interface SyncDao {
         LIMIT 1
     """)
     fun observeLyrics(trackId: String): Flow<String?>
+    @Query("SELECT content FROM provider_lyrics WHERE trackId = :trackId LIMIT 1") fun observeProviderLyrics(trackId: String): Flow<String?>
 
     @Query("SELECT d.documentKey, d.rawJson FROM sync_documents d INNER JOIN sync_plans p ON p.planId = d.planId WHERE p.active = 1 AND d.kind = 'analysis'")
     suspend fun activeAnalysisDocuments(): List<AnalysisDocumentRow>
@@ -349,8 +357,8 @@ internal interface SyncDao {
 }
 
 @Database(
-    entities = [SyncPlanEntity::class, SyncAssetEntity::class, SyncTrackEntity::class, SyncPlaylistEntity::class, LibrarySearchDocumentEntity::class, PlaylistMutationEntity::class, LocalPlaylistEntity::class, PlaylistArtworkStagingEntity::class, SyncDocumentEntity::class, ListeningSessionEntity::class, PlaybackAttemptEntity::class, DailyTrackListeningStatEntity::class, DailyPlaybackAttemptStatEntity::class],
-    version = 11,
+    entities = [SyncPlanEntity::class, SyncAssetEntity::class, SyncTrackEntity::class, SyncPlaylistEntity::class, LibrarySearchDocumentEntity::class, PlaylistMutationEntity::class, LocalPlaylistEntity::class, PlaylistArtworkStagingEntity::class, SyncDocumentEntity::class, ProviderLyricEntity::class, ListeningSessionEntity::class, PlaybackAttemptEntity::class, DailyTrackListeningStatEntity::class, DailyPlaybackAttemptStatEntity::class],
+    version = 12,
     exportSchema = false,
 )
 internal abstract class SyncDatabase : RoomDatabase() {
@@ -358,7 +366,7 @@ internal abstract class SyncDatabase : RoomDatabase() {
 
     companion object {
         fun create(context: Context): SyncDatabase = Room.databaseBuilder(context, SyncDatabase::class.java, "library-sync.db")
-            .addMigrations(Migration2To3, Migration3To4, Migration4To5, Migration5To6, Migration6To7, Migration7To8, Migration8To9, Migration9To10, Migration10To11)
+            .addMigrations(Migration2To3, Migration3To4, Migration4To5, Migration5To6, Migration6To7, Migration7To8, Migration8To9, Migration9To10, Migration10To11, Migration11To12)
             .fallbackToDestructiveMigration()
             .build()
 
@@ -410,6 +418,9 @@ internal abstract class SyncDatabase : RoomDatabase() {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL("CREATE VIRTUAL TABLE IF NOT EXISTS library_search_fts USING fts4(planId, entityType, entityId, content)")
             }
+        }
+        private val Migration11To12 = object : Migration(11, 12) {
+            override fun migrate(database: SupportSQLiteDatabase) { database.execSQL("CREATE TABLE IF NOT EXISTS provider_lyrics (trackId TEXT NOT NULL PRIMARY KEY, content TEXT NOT NULL, source TEXT NOT NULL)") }
         }
     }
 }
@@ -693,12 +704,19 @@ internal class AndroidLibrarySyncStore(
         }
     }
 
-    fun lyrics(trackId: String): Flow<String?> = dao.observeLyrics(trackId).map { rawJson ->
+    fun desktopLyrics(trackId: String): Flow<String?> = dao.observeLyrics(trackId).map { rawJson ->
         rawJson?.let { value ->
             runCatching {
                 LibrarySyncProtocol.json.parseToJsonElement(value).jsonObject["content"]?.jsonPrimitive?.contentOrNull
             }.getOrNull()
         }
+    }
+    fun providerLyrics(trackId: String): Flow<String?> = dao.observeProviderLyrics(trackId)
+    suspend fun saveProviderLyrics(trackId: String, content: String, source: String) = dao.insertProviderLyric(ProviderLyricEntity(trackId, content, source))
+    suspend fun lyricsTrack(trackId: String): LyricsTrack? = tracks.first().firstOrNull { it.id == trackId }?.let { track ->
+        val metadata = track.metadataObject()
+        val artist = ((metadata?.get("artists") as? JsonArray)?.firstOrNull() as? JsonObject)?.string("name").orEmpty().ifBlank { track.artists.substringBefore(',').trim() }
+        LyricsTrack(track.title, artist, track.album, metadata?.get("duration")?.jsonPrimitive?.contentOrNull?.toIntOrNull() ?: 0)
     }
 
     override suspend fun prepare(request: LibrarySyncRequest, manifest: LibrarySyncManifest) {
@@ -766,6 +784,7 @@ internal class AndroidLibrarySyncStore(
                 dao.deleteStalePlaylists(planId)
                 dao.deleteStaleSearchDocuments(planId)
                 dao.deleteStaleDocuments(planId)
+                dao.deleteProviderLyricsNotInPlan(planId)
                 dao.deleteStalePlans(planId)
             } to active
         }
@@ -859,6 +878,7 @@ internal class AndroidLibrarySyncStore(
             val stale = dao.staleAssets("__never_matches__")
             dao.deleteStaleAssets("__never_matches__"); dao.deleteStaleTracks("__never_matches__"); dao.deleteStalePlaylists("__never_matches__"); dao.deleteStaleSearchDocuments("__never_matches__"); dao.deleteStaleDocuments("__never_matches__"); dao.deleteStalePlans("__never_matches__")
             dao.deleteListeningSessions()
+            dao.deleteProviderLyrics()
             dao.deletePlaybackAttempts()
             dao.deleteDailyTrackStats()
             dao.deleteDailyAttemptStats()

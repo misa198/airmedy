@@ -89,7 +89,7 @@ than hard-coded bottom padding.
 | Insight | `InsightContent`, `InsightViewModel` | Derived listening/library analytics; filters and periods stay in the ViewModel. |
 | Library | `LibraryContent` and `Library*Content/ViewModel` | Virtualized lists; sort, filter, and page state belong to the ViewModel. |
 | Details | `Album/Artist/Genre/Composer/PlaylistDetailsContent` | ID selection is in `AppUiState`; playback builds its queue through the ViewModel/controller. |
-| Settings | `SettingsContent`, `AppearanceContent`, playback/sync/integration screens | Preferences and Android adapters are in the host/ViewModel, not shared UI. |
+| Settings | `SettingsContent`, `AppearanceContent`, playback/sync/integration screens | Preferences and Android adapters are in the host/ViewModel, not shared UI. Integration persists LRCLIB/KuGou switches and a lyrics-source preference: desktop sync is the default; auto-fetch prefers Android provider cache and falls back to desktop. |
 | Player | `MiniPlayer`, `FullScreenPlayer`, Queue/Lyrics panels | Render `PlaybackModel`; all mutations use playback actions. |
 
 Playlist, favorite, and sync UI must not infer data from a desktop local database.
@@ -150,6 +150,15 @@ Lyrics parsing and display helpers live in `FullScreenPlayerLyricsPanel.kt`.
 Playback position is authoritative for the active line; browsing or dragging
 only pauses auto-follow and changes playback only when a valid lyric tap
 dispatches seek.
+
+Bottom sheets may use `AirmedyBottomSheetStack`: only its top entry renders;
+popping removes that entry while the entry below retains its data. Find Lyrics
+uses it for a full-height, prefilled search sheet with leading input icons and
+placeholders (not separate labels), and a lyric-content-only preview sheet.
+Selecting
+a candidate saves the Android provider cache. If that track is playing, the
+shell uses the selection for the current playback session only; later plays
+continue to follow the configured Desktop sync or Auto fetch preference.
 
 ## Tests and safe changes
 
