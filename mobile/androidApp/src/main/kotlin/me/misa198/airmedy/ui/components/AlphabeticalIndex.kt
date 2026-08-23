@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -26,6 +27,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.foundation.lazy.LazyListState
@@ -47,6 +49,15 @@ internal fun alphabeticalIndexEntries(
 
 internal fun alphabeticalIndexLabel(value: String): String? = libraryAlphabeticalIndexLabel(value)
 
+internal fun alphabeticalIndexItemIndexAt(
+    y: Float,
+    labelsTop: Float,
+    labelsHeight: Int,
+    entries: List<AlphabeticalIndexEntry>,
+): Int? = entries.takeIf { labelsHeight > 0 }?.let {
+    it[((y - labelsTop) / labelsHeight * it.size).toInt().coerceIn(0, it.lastIndex)].itemIndex
+}
+
 /** Floating fast-scroll rail; its parent keeps it outside LazyColumn content. */
 @Composable
 internal fun AlphabeticalIndex(
@@ -57,6 +68,8 @@ internal fun AlphabeticalIndex(
     if (entries.isEmpty()) return
 
     var size by remember { mutableStateOf(IntSize.Zero) }
+    var labelsTop by remember { mutableStateOf(0f) }
+    var labelsHeight by remember { mutableStateOf(0) }
     var selectedEntry by remember(entries) { mutableStateOf<Int?>(null) }
     val colors = LocalAirmedyColors.current
     val hapticFeedback = LocalHapticFeedback.current
@@ -65,7 +78,7 @@ internal fun AlphabeticalIndex(
 
     fun selectAt(y: Float, haptic: Boolean = false) {
         if (size.height == 0) return
-        val entry = entries[(y / size.height * entries.size).toInt().coerceIn(0, entries.lastIndex)].itemIndex
+        val entry = alphabeticalIndexItemIndexAt(y, labelsTop, labelsHeight, entries) ?: return
         if (entry == selectedEntry) return
         selectedEntry = entry
         if (haptic) hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
@@ -91,7 +104,11 @@ internal fun AlphabeticalIndex(
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .width(18.dp)
-                .padding(vertical = 2.dp),
+                .padding(vertical = 2.dp)
+                .onGloballyPositioned { coordinates ->
+                    labelsTop = coordinates.positionInParent().y
+                    labelsHeight = coordinates.size.height
+                },
         ) {
             entries.forEach { entry ->
                 Text(
