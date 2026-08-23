@@ -118,6 +118,8 @@ shell renders the transient insufficient-storage sync failure above every
 destination from `AndroidSyncState.Failed`; its Close callback resets the
 runtime state to `Idle`, and the failure is never persisted.
 
+Settings card groups use a consistent 12dp gap between adjacent cards.
+
 Extract a component only when it has no domain state and already has at least
 three call sites. Keep screen-specific composables beside their screen. A new
 component accepts explicit state and callbacks; it does not accept a ViewModel

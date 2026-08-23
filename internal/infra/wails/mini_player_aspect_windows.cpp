@@ -16,12 +16,19 @@ bool isTopEdge(WPARAM edge) {
     return edge == WMSZ_TOP || edge == WMSZ_TOPLEFT || edge == WMSZ_TOPRIGHT;
 }
 
+bool isCorner(WPARAM edge) {
+    return edge == WMSZ_TOPLEFT || edge == WMSZ_TOPRIGHT ||
+           edge == WMSZ_BOTTOMLEFT || edge == WMSZ_BOTTOMRIGHT;
+}
+
 void setAspectRect(RECT *rect, WPARAM edge, const RECT &current, int heightMultiplier) {
     const int width = rect->right - rect->left;
     const int height = rect->bottom - rect->top;
     const int widthDelta = std::abs(width - (current.right - current.left));
     const int heightDelta = std::abs(height - (current.bottom - current.top));
-    const bool adjustHeight = widthDelta >= heightDelta;
+    // A corner drag changes both dimensions. Choosing by the previous frame's
+    // delta can alternate axes on Windows, making the window visibly flicker.
+    const bool adjustHeight = isCorner(edge) || widthDelta >= heightDelta;
 
     if (adjustHeight) {
         const int height = width * heightMultiplier;

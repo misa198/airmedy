@@ -41,7 +41,7 @@ internal fun PlaybackSettingsContent(
     onEqualizerSelected: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(20.dp)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         ActionList(
             items = listOf(
                 ActionListItem(
@@ -73,7 +73,7 @@ internal fun EqualizerContent(
 ) {
     val enabledLabel = stringResource(R.string.equalizer_enable)
     val colors = LocalAirmedyColors.current
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(20.dp)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         me.misa198.airmedy.ui.components.Card {
             ActionList(
                 items = listOf(
@@ -143,7 +143,7 @@ internal fun VolumeNormalizationContent(
     onNormalizationChanged: (me.misa198.airmedy.player.NormalizationSettings) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(20.dp)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         me.misa198.airmedy.ui.components.Card {
             ActionList(
                 items = listOf(
@@ -207,7 +207,7 @@ internal fun SongTransitionContent(
     val crossfadeLabel = stringResource(R.string.playback_crossfade)
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(20.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         me.misa198.airmedy.ui.components.Card {
             ActionList(
@@ -235,7 +235,7 @@ internal fun SongTransitionContent(
             enter = fadeIn(animationSpec = tween(durationMillis = 200)),
             exit = fadeOut(animationSpec = tween(durationMillis = 150)),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 LabeledCard(label = stringResource(R.string.playback_crossfade_duration)) {
                     Column(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),

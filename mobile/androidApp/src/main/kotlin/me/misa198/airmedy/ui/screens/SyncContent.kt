@@ -61,7 +61,10 @@ internal fun SyncContent(
     val colors = LocalAirmedyColors.current
     val isSyncRunning = syncUiState.librarySync is AndroidSyncState.Running
     var showRevokeConfirmation by remember { mutableStateOf(false) }
-    Column(modifier = modifier) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         when {
             syncUiState.desktop != null -> {
                 HeroCard(
@@ -102,12 +105,10 @@ internal fun SyncContent(
         syncUiState.failure?.let { failure ->
             Text(
                 text = stringResource(failure.messageRes()),
-                modifier = Modifier.padding(top = 16.dp),
                 style = MaterialTheme.typography.bodyMedium,
                 color = colors.textMuted,
             )
         }
-        Spacer(modifier = Modifier.height(24.dp))
         ActionList(
             items = listOf(
                 ActionListItem(
@@ -204,11 +205,10 @@ private fun SyncProgressCard(
 
     val percentageText = progressFloat?.let { "${(it * 100).toInt()}%" }
 
-    Column(modifier = modifier) {
-        Spacer(modifier = Modifier.height(24.dp))
-        Card(
-            contentPadding = PaddingValues(20.dp),
-        ) {
+    Card(
+        modifier = modifier,
+        contentPadding = PaddingValues(20.dp),
+    ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -239,7 +239,6 @@ private fun SyncProgressCard(
                     trackColor = colors.buttonSecondary,
                 )
             }
-        }
     }
 }
 
