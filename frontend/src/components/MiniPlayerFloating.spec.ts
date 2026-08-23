@@ -61,6 +61,15 @@ vi.mock('../../bindings/airmedy/internal/infra/wails/windowservice', () => ({
 }))
 
 describe('MiniPlayerFloating', () => {
+  it('keeps the artwork as the window drag region', () => {
+    const wrapper = mount(MiniPlayerFloating, {
+      global: { stubs: { LazyImg: true, Slider: true, MarqueeText: true, PlayerControlButton: true, MiniPlayerLyrics: true, QueueTrackList: true } },
+    })
+
+    expect(wrapper.get('[data-test="mini-player-artwork"]').attributes('style'))
+      .toContain('--wails-draggable: drag')
+  })
+
   it('hides the controls when the mini-player window loses focus', async () => {
     const wrapper = mount(MiniPlayerFloating, {
       global: { stubs: { LazyImg: true, Slider: true, MarqueeText: true, PlayerControlButton: true, MiniPlayerLyrics: true, QueueTrackList: true } },
