@@ -30,6 +30,8 @@ enum class AppStackPage {
     SettingsSync,
     SettingsSyncScanner,
     SettingsIntegration,
+    SettingsLastFm,
+    SettingsLyrics,
     SettingsAbout,
 }
 
@@ -64,6 +66,8 @@ val AppStackPage.destination: AppDestination
         AppStackPage.SettingsSync,
         AppStackPage.SettingsSyncScanner,
         AppStackPage.SettingsIntegration,
+        AppStackPage.SettingsLastFm,
+        AppStackPage.SettingsLyrics,
         AppStackPage.SettingsAbout,
         -> AppDestination.Settings
     }

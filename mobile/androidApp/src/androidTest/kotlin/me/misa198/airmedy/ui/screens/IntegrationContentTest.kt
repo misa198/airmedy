@@ -11,9 +11,12 @@ import androidx.compose.ui.test.performClick
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
 import me.misa198.airmedy.lastfm.LastFmStatus
+import me.misa198.airmedy.lyrics.LyricsSettings
+import me.misa198.airmedy.lyrics.LyricsSource
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
@@ -26,7 +29,7 @@ class IntegrationContentTest {
         var disconnected = false
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
-                IntegrationContent(
+                LastFmContent(
                     status = LastFmStatus(connected = true, username = "listener"),
                     onConnect = {},
                     onDisconnect = { disconnected = true },
@@ -50,7 +53,7 @@ class IntegrationContentTest {
 
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
-                IntegrationContent(
+                LastFmContent(
                     status = LastFmStatus(connected = true, username = "listener", avatarPath = avatar.absolutePath),
                     onConnect = {},
                     onDisconnect = {},
@@ -64,5 +67,24 @@ class IntegrationContentTest {
         composeTestRule.onNodeWithTag("lastfm-avatar").assertIsDisplayed()
         composeTestRule.onAllNodesWithTag("lastfm-icon").assertCountEquals(0)
         avatar.delete()
+    }
+
+    @Test
+    fun lyricsSourceSelectionReportsAutoFetch() {
+        var source = LyricsSource.Desktop
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                LyricsContent(
+                    settings = LyricsSettings(),
+                    onSourceChanged = { source = it },
+                    onLrclibChanged = {},
+                    onKugouChanged = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Desktop sync").performClick()
+        composeTestRule.onNodeWithText("Auto fetch").performClick()
+        assertEquals(LyricsSource.AutoFetch, source)
     }
 }

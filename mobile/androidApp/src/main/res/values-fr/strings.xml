@@ -368,4 +368,12 @@
     <string name="composers_empty_title">Aucun compositeur dans la bibliothèque</string>
     <string name="composers_empty_description">Les compositeurs synchronisés apparaîtront ici une fois la synchronisation terminée.</string>
     <string name="composers_no_match_title">Aucun compositeur correspondant</string>
+    <string name="lyrics_title">Paroles</string>
+    <string name="lyrics_data_sources">Sources de données</string>
+    <string name="lyrics_preferred_source">Source privilégiée</string>
+    <string name="lyrics_source_desktop">Synchronisation du bureau</string>
+    <string name="lyrics_source_auto_fetch">Récupération automatique</string>
+    <string name="lyrics_info_action">Informations sur les paroles</string>
+    <string name="lyrics_info_title">Sources des paroles</string>
+    <string name="lyrics_info_description">Si un morceau ne possède pas de paroles synchronisées depuis le bureau, l’application les récupère auprès des sources de données activées. Les paroles récupérées sur mobile ne sont pas synchronisées vers le bureau.</string>
 </resources>

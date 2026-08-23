@@ -360,4 +360,12 @@
     <string name="composers_empty_title">ไม่มีคีตกวีในคลังเพลง</string>
     <string name="composers_empty_description">คีตกวีที่ซิงค์จะปรากฏที่นี่เมื่อการซิงค์บนมือถือเสร็จสมบูรณ์</string>
     <string name="composers_no_match_title">ไม่มีคีตกวีที่ตรงกัน</string>
+    <string name="lyrics_title">เนื้อเพลง</string>
+    <string name="lyrics_data_sources">แหล่งข้อมูล</string>
+    <string name="lyrics_preferred_source">แหล่งข้อมูลที่ต้องการ</string>
+    <string name="lyrics_source_desktop">ซิงค์จากเดสก์ท็อป</string>
+    <string name="lyrics_source_auto_fetch">ดึงข้อมูลอัตโนมัติ</string>
+    <string name="lyrics_info_action">ข้อมูลเนื้อเพลง</string>
+    <string name="lyrics_info_title">แหล่งข้อมูลเนื้อเพลง</string>
+    <string name="lyrics_info_description">หากแทร็กไม่มีเนื้อเพลงที่ซิงค์จากเดสก์ท็อป แอปจะดึงเนื้อเพลงจากแหล่งข้อมูลที่เปิดใช้งาน เนื้อเพลงที่ดึงบนมือถือจะไม่ซิงค์กลับไปยังเดสก์ท็อป</string>
 </resources>

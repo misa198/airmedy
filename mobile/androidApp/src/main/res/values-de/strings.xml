@@ -368,4 +368,12 @@
     <string name="composers_empty_title">Keine Komponisten in der Mediathek</string>
     <string name="composers_empty_description">Synchronisierte Komponisten werden hier nach Abschluss der Synchronisierung angezeigt.</string>
     <string name="composers_no_match_title">Keine passenden Komponisten</string>
+    <string name="lyrics_title">Songtexte</string>
+    <string name="lyrics_data_sources">Datenquellen</string>
+    <string name="lyrics_preferred_source">Bevorzugte Quelle</string>
+    <string name="lyrics_source_desktop">Desktop-Synchronisierung</string>
+    <string name="lyrics_source_auto_fetch">Automatisch abrufen</string>
+    <string name="lyrics_info_action">Songtextinformationen</string>
+    <string name="lyrics_info_title">Songtextquellen</string>
+    <string name="lyrics_info_description">Wenn für einen Titel keine vom Desktop synchronisierten Songtexte vorliegen, ruft die App Songtexte von den aktivierten Datenquellen ab. Auf dem Mobilgerät abgerufene Songtexte werden nicht zurück zum Desktop synchronisiert.</string>
 </resources>

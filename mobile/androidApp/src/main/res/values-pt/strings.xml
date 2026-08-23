@@ -368,4 +368,12 @@
     <string name="composers_empty_title">Sem compositores na biblioteca</string>
     <string name="composers_empty_description">Os compositores sincronizados aparecerão aqui assim que a sincronização terminar.</string>
     <string name="composers_no_match_title">Nenhum compositor correspondente</string>
+    <string name="lyrics_title">Letras</string>
+    <string name="lyrics_data_sources">Fontes de dados</string>
+    <string name="lyrics_preferred_source">Fonte preferida</string>
+    <string name="lyrics_source_desktop">Sincronização do desktop</string>
+    <string name="lyrics_source_auto_fetch">Obter automaticamente</string>
+    <string name="lyrics_info_action">Informações das letras</string>
+    <string name="lyrics_info_title">Fontes das letras</string>
+    <string name="lyrics_info_description">Se uma faixa não tiver letras sincronizadas do desktop, a aplicação obtém letras das fontes de dados ativadas. As letras obtidas no telemóvel não são sincronizadas de volta para o desktop.</string>
 </resources>

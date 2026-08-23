@@ -182,6 +182,7 @@ internal fun FullScreenPlayer(
     queue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
     queueTracks: List<LibraryTrack> = emptyList(),
     lyrics: String? = null,
+    lyricsLoading: Boolean = false,
     artworkCrossfade: ArtworkCrossfadeTransition? = null,
     blendArtworkDuringCrossfade: Boolean = true,
     volume: Float,
@@ -613,6 +614,7 @@ internal fun FullScreenPlayer(
                                 FullScreenPlayerLyricsPanel(
                                     trackId = item.trackId,
                                     lyrics = lyrics,
+                                    loading = lyricsLoading,
                                     currentPositionMs = currentPositionMs,
                                     pendingSeekPositionMs = lyricsSeekPositionMs,
                                     seekRequestId = lyricsSeekRequestId,

@@ -89,7 +89,7 @@ than hard-coded bottom padding.
 | Insight | `InsightContent`, `InsightViewModel` | Derived listening/library analytics; filters and periods stay in the ViewModel. |
 | Library | `LibraryContent` and `Library*Content/ViewModel` | Virtualized lists; sort, filter, and page state belong to the ViewModel. |
 | Details | `Album/Artist/Genre/Composer/PlaylistDetailsContent` | ID selection is in `AppUiState`; playback builds its queue through the ViewModel/controller. |
-| Settings | `SettingsContent`, `AppearanceContent`, playback/sync/integration screens | Preferences and Android adapters are in the host/ViewModel, not shared UI. |
+| Settings | `SettingsContent`, `AppearanceContent`, playback/sync/integration screens | Preferences and Android adapters are in the host/ViewModel, not shared UI. Integration persists LRCLIB/KuGou switches and a lyrics-source preference: desktop sync is the default; auto-fetch prefers Android provider cache and falls back to desktop. |
 | Player | `MiniPlayer`, `FullScreenPlayer`, Queue/Lyrics panels | Render `PlaybackModel`; all mutations use playback actions. |
 
 Playlist, favorite, and sync UI must not infer data from a desktop local database.

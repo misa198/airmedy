@@ -360,4 +360,12 @@
     <string name="composers_empty_title">ライブラリに作曲者がいません</string>
     <string name="composers_empty_description">モバイル同期が完了すると、同期された作曲者がここに表示されます。</string>
     <string name="composers_no_match_title">一致する作曲者がいません</string>
+    <string name="lyrics_title">歌詞</string>
+    <string name="lyrics_data_sources">データソース</string>
+    <string name="lyrics_preferred_source">優先するソース</string>
+    <string name="lyrics_source_desktop">デスクトップ同期</string>
+    <string name="lyrics_source_auto_fetch">自動取得</string>
+    <string name="lyrics_info_action">歌詞情報</string>
+    <string name="lyrics_info_title">歌詞のデータソース</string>
+    <string name="lyrics_info_description">デスクトップから同期された歌詞がない場合、アプリは有効なデータソースから歌詞を取得します。モバイルで取得した歌詞はデスクトップへ同期されません。</string>
 </resources>

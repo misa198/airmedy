@@ -1,13 +1,22 @@
 package me.misa198.airmedy.ui.navigation
 
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -33,6 +42,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -117,6 +128,7 @@ private fun parsePlayerLyricText(text: String, timestampSeconds: Float?): Player
 internal fun FullScreenPlayerLyricsPanel(
     trackId: String,
     lyrics: String?,
+    loading: Boolean = false,
     currentPositionMs: Long,
     pendingSeekPositionMs: Long? = null,
     seekRequestId: Long = 0L,
@@ -127,6 +139,7 @@ internal fun FullScreenPlayerLyricsPanel(
     val syncedLines = remember(parsedLines) { parsedLines.filter { it.timestampSeconds != null } }
     Column(modifier = modifier.padding(top = 8.dp)) {
         when {
+            loading -> LyricsLoadingState(Modifier.fillMaxSize())
             lyrics.isNullOrBlank() -> LyricsEmptyState(Modifier.fillMaxSize())
             syncedLines.isNotEmpty() -> SyncedLyricsList(
                 trackId,
@@ -138,6 +151,38 @@ internal fun FullScreenPlayerLyricsPanel(
                 Modifier.fillMaxSize(),
             )
             else -> PlainLyricsList(parsedLines, Modifier.fillMaxSize())
+        }
+    }
+}
+
+@Composable
+private fun LyricsLoadingState(modifier: Modifier) {
+    val colors = LocalAirmedyColors.current
+    val transition = rememberInfiniteTransition(label = "lyrics-loading")
+    val shimmerOffset by transition.animateFloat(
+        initialValue = -220f,
+        targetValue = 500f,
+        animationSpec = infiniteRepeatable(tween(1_700, easing = LinearEasing), RepeatMode.Restart),
+        label = "lyrics-loading-shimmer",
+    )
+    val shimmer = Brush.linearGradient(
+        colors = listOf(
+            colors.foregroundSubtle.copy(alpha = .08f),
+            colors.foregroundSubtle.copy(alpha = .16f),
+            colors.foregroundSubtle.copy(alpha = .08f),
+        ),
+        start = Offset(shimmerOffset - 220f, 0f),
+        end = Offset(shimmerOffset, 0f),
+    )
+    Column(modifier = modifier.padding(top = 24.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)) {
+        listOf(280.dp, 108.dp, 238.dp, 84.dp, 264.dp).forEach { width ->
+            Box(
+                Modifier
+                    .height(20.dp)
+                    .width(width)
+                    .background(shimmer, RoundedCornerShape(8.dp))
+                    .testTag("lyrics_loading_skeleton"),
+            )
         }
     }
 }

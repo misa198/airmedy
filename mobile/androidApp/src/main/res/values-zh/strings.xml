@@ -360,4 +360,12 @@
     <string name="composers_empty_title">媒体库中暂无作曲家</string>
     <string name="composers_empty_description">移动端同步完成后，已同步的作曲家将在此显示。</string>
     <string name="composers_no_match_title">无匹配的作曲家</string>
+    <string name="lyrics_title">歌词</string>
+    <string name="lyrics_data_sources">数据源</string>
+    <string name="lyrics_preferred_source">首选来源</string>
+    <string name="lyrics_source_desktop">桌面同步</string>
+    <string name="lyrics_source_auto_fetch">自动获取</string>
+    <string name="lyrics_info_action">歌词信息</string>
+    <string name="lyrics_info_title">歌词数据源</string>
+    <string name="lyrics_info_description">如果曲目没有从桌面端同步的歌词，应用会从已启用的数据源获取歌词。移动端获取的歌词不会同步回桌面端。</string>
 </resources>

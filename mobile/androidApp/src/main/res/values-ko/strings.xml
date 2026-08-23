@@ -360,4 +360,12 @@
     <string name="composers_empty_title">ライ브러리에 작곡가가 없습니다</string>
     <string name="composers_empty_description">모바일 동기화가 완료되면 동기화된 작곡가가 여기에 표시됩니다.</string>
     <string name="composers_no_match_title">일치하는 작곡가가 없습니다</string>
+    <string name="lyrics_title">가사</string>
+    <string name="lyrics_data_sources">데이터 소스</string>
+    <string name="lyrics_preferred_source">우선 소스</string>
+    <string name="lyrics_source_desktop">데스크톱 동기화</string>
+    <string name="lyrics_source_auto_fetch">자동 가져오기</string>
+    <string name="lyrics_info_action">가사 정보</string>
+    <string name="lyrics_info_title">가사 데이터 소스</string>
+    <string name="lyrics_info_description">데스크톱에서 동기화된 가사가 없으면 앱이 활성화된 데이터 소스에서 가사를 가져옵니다. 모바일에서 가져온 가사는 데스크톱으로 동기화되지 않습니다.</string>
 </resources>

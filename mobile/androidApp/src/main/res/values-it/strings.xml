@@ -368,4 +368,12 @@
     <string name="composers_empty_title">Nessun compositore nella libreria</string>
     <string name="composers_empty_description">I compositori sincronizzati appariranno qui una volta completata la sincronizzazione.</string>
     <string name="composers_no_match_title">Nessun compositore corrispondente</string>
+    <string name="lyrics_title">Testi</string>
+    <string name="lyrics_data_sources">Fonti dati</string>
+    <string name="lyrics_preferred_source">Fonte preferita</string>
+    <string name="lyrics_source_desktop">Sincronizzazione desktop</string>
+    <string name="lyrics_source_auto_fetch">Recupero automatico</string>
+    <string name="lyrics_info_action">Informazioni sui testi</string>
+    <string name="lyrics_info_title">Fonti dei testi</string>
+    <string name="lyrics_info_description">Se un brano non ha testi sincronizzati dal desktop, l’app li recupera dalle fonti dati abilitate. I testi recuperati dal mobile non vengono sincronizzati con il desktop.</string>
 </resources>

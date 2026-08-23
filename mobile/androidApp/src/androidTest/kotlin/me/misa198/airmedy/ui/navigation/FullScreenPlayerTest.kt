@@ -419,6 +419,24 @@ class FullScreenPlayerTest {
     }
 
     @Test
+    fun loadingLyricsShowsAnimatedSkeleton() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenPlayerLyricsPanel(
+                    trackId = "track-1",
+                    lyrics = null,
+                    loading = true,
+                    currentPositionMs = 0L,
+                    onSeek = {},
+                    modifier = Modifier.height(180.dp),
+                )
+            }
+        }
+
+        composeTestRule.onAllNodesWithTag("lyrics_loading_skeleton").assertCountEquals(5)
+    }
+
+    @Test
     fun syncedLyricsTouchUsesTheLatestSeekCallbackAfterRecomposition() {
         var callbackGeneration by mutableStateOf(1)
         var invokedGeneration: Int? = null

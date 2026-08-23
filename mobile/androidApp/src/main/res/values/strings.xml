@@ -226,6 +226,16 @@
     <string name="lastfm_disconnect">Disconnect</string>
     <string name="lastfm_error">Could not connect to Last.fm. Try again.</string>
     <string name="lastfm_not_configured">Last.fm credentials are not configured for this build.</string>
+    <string name="lyrics_title">Lyrics</string>
+    <string name="lyrics_data_sources">Data sources</string>
+    <string name="lyrics_preferred_source">Preferred source</string>
+    <string name="lyrics_source_desktop">Desktop sync</string>
+    <string name="lyrics_source_auto_fetch">Auto fetch</string>
+    <string name="lyrics_info_action">Lyrics information</string>
+    <string name="lyrics_info_title">Lyrics sources</string>
+    <string name="lyrics_info_description">If a track has no lyrics synced from desktop, the app fetches lyrics from enabled data sources. Lyrics fetched by mobile are not synced back to desktop.</string>
+    <string name="lyrics_lrclib">LRCLIB</string>
+    <string name="lyrics_kugou">KuGou</string>
     <string name="settings_about">About</string>
     <string name="about_title">About</string>
     <string name="about_description">A modern local music player</string>

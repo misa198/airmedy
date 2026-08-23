@@ -3,6 +3,8 @@ package me.misa198.airmedy
 import android.net.Uri
 import androidx.compose.ui.graphics.Color
 import me.misa198.airmedy.lastfm.LastFmStatus
+import me.misa198.airmedy.lyrics.LyricsSettings
+import me.misa198.airmedy.lyrics.LyricsSource
 import me.misa198.airmedy.player.ArtworkCrossfadeTransition
 import me.misa198.airmedy.player.EqualizerSettings
 import me.misa198.airmedy.player.NormalizationSettings
@@ -154,6 +156,10 @@ internal data class SettingsDestinationModel(
     val lastFmStatus: LastFmStatus = LastFmStatus(),
     val onLastFmConnect: () -> Unit = {},
     val onLastFmDisconnect: () -> Unit = {},
+    val lyricsSettings: LyricsSettings = LyricsSettings(),
+    val onLyricsSourceChanged: (LyricsSource) -> Unit = {},
+    val onLrclibChanged: (Boolean) -> Unit = {},
+    val onKugouChanged: (Boolean) -> Unit = {},
     val crossfadeSeconds: Int = 0,
     val lastEnabledCrossfadeSeconds: Int = 4,
     val onCrossfadeSecondsChanged: (Int) -> Unit = {},
@@ -183,6 +189,7 @@ internal data class PlaybackModel(
     val queue: PlaybackQueueSnapshot = PlaybackQueueSnapshot(),
     val queueTracks: List<LibraryTrack> = emptyList(),
     val lyrics: String? = null,
+    val lyricsLoading: Boolean = false,
     val artworkCrossfade: ArtworkCrossfadeTransition? = null,
     val blendArtworkDuringCrossfade: Boolean = true,
     val systemVolume: Float = 0f,

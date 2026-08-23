@@ -360,4 +360,12 @@
     <string name="composers_empty_title">Chưa có nhà soạn nhạc nào trong thư viện</string>
     <string name="composers_empty_description">Các nhà soạn nhạc được đồng bộ sẽ xuất hiện ở đây sau khi hoàn tất đồng bộ.</string>
     <string name="composers_no_match_title">Không có nhà soạn nhạc phù hợp</string>
+    <string name="lyrics_title">Lời bài hát</string>
+    <string name="lyrics_data_sources">Nguồn dữ liệu</string>
+    <string name="lyrics_preferred_source">Nguồn ưu tiên</string>
+    <string name="lyrics_source_desktop">Đồng bộ từ desktop</string>
+    <string name="lyrics_source_auto_fetch">Tự động tìm</string>
+    <string name="lyrics_info_action">Thông tin lời bài hát</string>
+    <string name="lyrics_info_title">Nguồn lời bài hát</string>
+    <string name="lyrics_info_description">Nếu bản nhạc không có lời bài hát được đồng bộ từ desktop, ứng dụng sẽ tìm lời từ các nguồn dữ liệu đã bật. Lời bài hát được tìm trên mobile sẽ không đồng bộ ngược lại desktop.</string>
 </resources>
