@@ -140,7 +140,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Synced view -->
-      <div v-else-if="isSynced" ref="scrollContainer" class="h-full overflow-y-auto px-4 py-6 scrollbar-hide"
+      <div v-else-if="isSynced" ref="scrollContainer" class="h-full overflow-y-auto px-4 pt-6 scrollbar-hide"
         @wheel.passive="enterBrowseMode" @pointerdown="enterBrowseMode">
         <div class="space-y-6">
           <div v-for="(line, index) in syncedLines" :key="index" ref="lineRefs"
