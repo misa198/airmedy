@@ -3,7 +3,6 @@ import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import MiniPlayerLyrics from './MiniPlayerLyrics.vue'
 
-const originalScrollTo = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollTo')
 const originalClientHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight')
 const originalClientWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth')
 
@@ -11,22 +10,26 @@ describe('MiniPlayerLyrics', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
-    if (originalScrollTo) Object.defineProperty(HTMLElement.prototype, 'scrollTo', originalScrollTo)
-    else delete (HTMLElement.prototype as { scrollTo?: HTMLElement['scrollTo'] }).scrollTo
     if (originalClientHeight) Object.defineProperty(HTMLElement.prototype, 'clientHeight', originalClientHeight)
     else delete (HTMLElement.prototype as { clientHeight?: number }).clientHeight
     if (originalClientWidth) Object.defineProperty(HTMLElement.prototype, 'clientWidth', originalClientWidth)
     else delete (HTMLElement.prototype as { clientWidth?: number }).clientWidth
   })
 
-  it('positions the measured active line one quarter down its own panel and seeks on click', async () => {
-    const scrollTo = vi.fn()
+  it('animates the measured active line one quarter down its own panel and seeks on click', async () => {
+    let nextFrameId = 0
+    const frames = new Map<number, FrameRequestCallback>()
+    const runFrame = (timestamp: number) => {
+      const callbacks = [...frames.values()]
+      frames.clear()
+      callbacks.forEach(callback => callback(timestamp))
+    }
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
-      callback(0)
-      return 1
+      const id = ++nextFrameId
+      frames.set(id, callback)
+      return id
     })
-    vi.stubGlobal('cancelAnimationFrame', vi.fn())
-    Object.defineProperty(HTMLElement.prototype, 'scrollTo', { configurable: true, value: scrollTo })
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id))
     Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get: () => 300 })
     Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get: () => 300 })
 
@@ -35,8 +38,8 @@ describe('MiniPlayerLyrics', () => {
       global: { mocks: { $t: (key: string) => key } },
     })
     await nextTick()
+    runFrame(0)
 
-    scrollTo.mockClear()
     const container = wrapper.get('[data-test="mini-synced-lyrics"]')
     vi.spyOn(container.element, 'getBoundingClientRect').mockReturnValue({ top: 300 } as DOMRect)
     const previous = wrapper.findAll('[data-test="mini-lyric-line"]')[0]
@@ -44,11 +47,15 @@ describe('MiniPlayerLyrics', () => {
     const active = wrapper.findAll('[data-test="mini-lyric-line"]')[1]
     vi.spyOn(active.element, 'getBoundingClientRect').mockReturnValue({ top: 480 } as DOMRect)
     Object.defineProperty(active.element, 'clientHeight', { configurable: true, value: 40 })
+    container.element.scrollTop = 0
     await wrapper.setProps({ currentPosition: 10 })
     await nextTick()
     await nextTick()
+    runFrame(100)
+    runFrame(380)
+    runFrame(660)
 
-    expect(scrollTo).toHaveBeenLastCalledWith({ top: 125, behavior: 'smooth' })
+    expect(container.element.scrollTop).toBe(125)
     expect(wrapper.findAll('[data-test="mini-lyric-line"]')[0].classes()).toContain('opacity-60')
     expect(wrapper.findAll('[data-test="mini-lyric-line"]')[2].classes()).toContain('opacity-50')
     expect(wrapper.findAll('[data-test="mini-lyric-line"]')[2].classes()).toContain('transform-gpu')

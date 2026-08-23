@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, toRef, watch } from 'vue'
 import { useLyrics } from '@/composables/useLyrics'
+import { lyricsMotionClasses, useLyricsScrollMotion } from '@/composables/useLyricsScrollMotion'
 
 const props = defineProps<{
   lyrics?: string
@@ -29,8 +30,9 @@ let resizeObserver: ResizeObserver | null = null
 let waitingForLayout = false
 let hasPositionedLine = false
 let previousActiveIndex = -1
+const { scrollTo, stop: stopScrollAnimation } = useLyricsScrollMotion()
 
-function scrollToActive(index: number, behavior: ScrollBehavior) {
+function scrollToActive(index: number, animated: boolean) {
   if (index === -1) return false
   const container = scrollContainer.value
   const line = lineRefs.value[index]
@@ -39,21 +41,20 @@ function scrollToActive(index: number, behavior: ScrollBehavior) {
   // Mini player lines wrap frequently. Measure relative to this scroll panel:
   // offsetTop can otherwise be relative to the nested lyric list.
   const lineTop = line.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop
-  container.scrollTo({
-    top: lineTop - container.clientHeight / 4 + line.clientHeight / 2,
-    behavior,
-  })
+  const top = lineTop - container.clientHeight / 4 + line.clientHeight / 2
+  scrollTo(container, top, animated)
   hasPositionedLine = true
   return true
 }
 
 function scheduleScrollToActive(index: number, previousIndex = previousActiveIndex) {
+  stopScrollAnimation()
   nextTick(() => {
     if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame)
     scrollFrame = requestAnimationFrame(() => {
       scrollFrame = undefined
-      const behavior: ScrollBehavior = hasPositionedLine && previousIndex !== -1 ? 'smooth' : 'auto'
-      waitingForLayout = !scrollToActive(index, behavior)
+      const animated = hasPositionedLine && previousIndex !== -1
+      waitingForLayout = !scrollToActive(index, animated)
     })
   })
 }
@@ -96,6 +97,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame)
+  stopScrollAnimation()
   resizeObserver?.disconnect()
 })
 </script>
@@ -118,8 +120,9 @@ onUnmounted(() => {
       <div class="space-y-5">
         <button v-for="(line, index) in syncedLines" :key="`${line.time}-${index}`" ref="lineRefs" type="button"
           data-test="mini-lyric-line"
-          class="block w-full origin-left text-left leading-snug duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] text-[20px]"
+          class="block w-full origin-left text-left leading-snug text-[20px]"
           :class="[
+            lyricsMotionClasses,
             !isBrowsing && (index === activeIndex || (activeIndex > 0 && index === activeIndex - 1) || (index === activeIndex + 1)) ? 'transform-gpu' : '',
             isBrowsing
               ? 'text-foreground opacity-100'
