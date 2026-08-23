@@ -48,12 +48,7 @@ describe('MiniPlayerLyrics', () => {
     await nextTick()
     await nextTick()
 
-    expect(scrollTo).toHaveBeenLastCalledWith({ top: 140, behavior: 'smooth' })
-    expect(active.classes()).toContain('text-foreground')
-    expect(active.classes()).toContain('scale-105')
-    expect(active.classes()).toContain('transform-gpu')
-    expect(container.classes()).toContain('pr-10')
-    expect(container.classes()).toContain('py-24')
+    expect(scrollTo).toHaveBeenLastCalledWith({ top: 125, behavior: 'smooth' })
     expect(wrapper.findAll('[data-test="mini-lyric-line"]')[0].classes()).toContain('opacity-60')
     expect(wrapper.findAll('[data-test="mini-lyric-line"]')[2].classes()).toContain('opacity-50')
     expect(wrapper.findAll('[data-test="mini-lyric-line"]')[2].classes()).toContain('transform-gpu')

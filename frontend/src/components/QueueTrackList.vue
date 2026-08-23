@@ -35,22 +35,20 @@ function onContextMenu(event: MouseEvent, track: TrackDTO) {
 
 onMounted(async () => {
   if (!props.scrollToCurrentOnMount) return
-  await nextTick()
-  if (disposed) return
   const revealCurrentTrack = () => {
     scrollToCurrentTrack()
     isReady.value = true
     scrollFrame = null
   }
+  scrollFrame = requestAnimationFrame(revealCurrentTrack)
+  await nextTick()
+  if (disposed) return
   const list = scroller.value?.$el as Element | undefined
-  if (!list || typeof ResizeObserver === 'undefined') {
-    scrollFrame = requestAnimationFrame(revealCurrentTrack)
-    return
-  }
+  if (!list || typeof ResizeObserver === 'undefined') return
   scrollObserver = new ResizeObserver(() => {
     scrollObserver?.disconnect()
     scrollObserver = null
-    scrollFrame = requestAnimationFrame(revealCurrentTrack)
+    if (scrollFrame === null) scrollFrame = requestAnimationFrame(revealCurrentTrack)
   })
   scrollObserver.observe(list)
 })

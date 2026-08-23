@@ -83,6 +83,7 @@ describe('MiniPlayerFloating', () => {
     })
 
     await wrapper.get('[data-test="mini-player-queue"]').trigger('click')
+    await flushPromises()
     expect(wrapper.find('[data-test="mini-player-mood-radio"]').exists()).toBe(true)
     mocks.moodRadioStore.active = false
   })
