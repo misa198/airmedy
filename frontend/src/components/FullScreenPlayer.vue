@@ -91,7 +91,7 @@ const trackArtist = computed(() =>
 const albumTitle = computed(() => store.currentTrack?.album?.title ?? '')
 
 const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
-const artworkMaxSize = computed(() => !showRightColumn.value || !appStore.highContrastLyrics ? 22 : 20)
+const artworkMaxSize = computed(() => !showRightColumn.value || !appStore.highContrastLyrics ? 24 : 20)
 const artworkCrossfade = computed(() =>
   appStore.blendArtworkDuringCrossfade ? store.artworkCrossfade : null,
 )
