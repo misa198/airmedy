@@ -187,10 +187,10 @@ watch(() => store.theme, (colors) => {
 
       <div class="absolute top-2 right-2 z-30" style="-webkit-app-region: no-drag">
         <div data-test="mini-player-actions-pill"
-          class="relative inline-flex h-8 overflow-hidden rounded-full border border-mini-player-pill-border bg-mini-player-pill-background backdrop-blur-md transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
+          class="relative inline-flex h-8 overflow-hidden rounded-full border border-mini-player-pill-border bg-mini-player-pill-background backdrop-blur-md transition-[width,opacity] duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-[width]"
           :class="[showVolume ? 'w-[122px]' : 'w-[84px]', isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none']"
           style="-webkit-app-region: no-drag; --wails-draggable: no-drag">
-          <div class="absolute inset-0 flex items-center justify-end gap-0.5 p-1 transition-opacity duration-100"
+          <div class="absolute inset-0 flex items-center gap-0.5 p-1 transition-opacity duration-100"
             :class="showActions ? 'opacity-100' : 'opacity-0 pointer-events-none'">
             <span data-test="mini-player-panel-indicator" aria-hidden="true"
               class="absolute top-[3px] left-[4px] w-6 h-6 rounded-full bg-mini-player-pill-active"
@@ -209,20 +209,17 @@ watch(() => store.theme, (colors) => {
               :aria-label="t('player.queue')" :aria-pressed="activePanel === 'queue'" :title="t('player.queue')" @click="togglePanel('queue')">
               <ListMusic class="size-3.5" />
             </button>
-            <button data-test="mini-player-volume" class="flex size-6 items-center justify-center rounded-full text-mini-player-pill-foreground transition-colors" @click.stop="openVolume">
-              <Volume2 class="size-3.5" />
-            </button>
           </div>
-          <div data-test="mini-player-volume-pill" class="absolute inset-0 flex items-center gap-0.5 pl-3 pr-1 py-1 transition-opacity duration-100"
+          <button data-test="mini-player-volume" class="absolute right-[4px] top-[3px] z-10 flex size-6 items-center justify-center rounded-full text-mini-player-pill-foreground transition-colors"
+            @click.stop="showVolume ? closeVolume() : openVolume()">
+            <Volume2 class="size-3.5" />
+          </button>
+          <div data-test="mini-player-volume-pill" class="absolute inset-y-0 left-0 right-8 flex items-center pl-3 py-1 transition-opacity duration-100"
             :class="showVolume ? 'opacity-100' : 'opacity-0 pointer-events-none'">
             <Slider :model-value="store.muted ? 0 : store.volume * 100" :min="0" :max="100" :step="1" :scrollable="true"
               class="w-20" track-color-class="bg-mini-player-pill-foreground"
               track-background="var(--mini-player-pill-track)" thumb-color="var(--mini-player-pill-foreground)"
               @update:model-value="(v) => { store.setVolume(v / 100); resetVolumeHideTimer() }" />
-            <button data-test="mini-player-volume-close" class="flex size-6 items-center justify-center rounded-full text-mini-player-pill-foreground transition-colors"
-              :aria-label="t('player.mini_player')" :title="t('player.mini_player')" @click.stop="closeVolume">
-              <Volume2 class="size-3.5" />
-            </button>
           </div>
         </div>
       </div>
