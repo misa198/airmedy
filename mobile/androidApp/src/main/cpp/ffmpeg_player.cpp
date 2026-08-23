@@ -30,6 +30,13 @@ namespace {
     constexpr int kTransitionGaplessPromoted = 1;
     constexpr int kTransitionCrossfadeStarted = 2;
 
+    constexpr bool should_promote_gapless(bool active_finished, bool has_preloaded) {
+        return active_finished && has_preloaded;
+    }
+
+    static_assert(!should_promote_gapless(false, true));
+    static_assert(should_promote_gapless(true, true));
+
     struct GlobalDspConfig {
         float preamp_gain_db = 0.0f;
         float stereo_width = 1.0f;
@@ -350,7 +357,9 @@ namespace {
                         right = out_right * std::cos(phase) + in_right * std::sin(phase);
                         if (at + 1 >= total) finish_fade_in_callback(engine);
                     } else if (!read_frame(engine.slots[active], left, right)) {
-                        if (engine.preloaded_slot.load(std::memory_order_acquire) != kNoSlot) {
+                        if (should_promote_gapless(
+                                engine.slots[active].finished.load(std::memory_order_acquire),
+                                engine.preloaded_slot.load(std::memory_order_acquire) != kNoSlot)) {
                             promote_gapless(engine);
                             const int promoted = engine.active_slot.load(std::memory_order_acquire);
                             if (promoted != kNoSlot) read_frame(engine.slots[promoted], left, right);
