@@ -3,6 +3,7 @@ import { createTestingPinia } from '@pinia/testing'
 import { setActivePinia } from 'pinia'
 import { useTrackContextMenu } from './useTrackContextMenu'
 import { usePlayerStore } from '@/stores/player'
+import { useAppStore } from '@/stores/app'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 
 // Mock i18n
@@ -128,5 +129,24 @@ describe('useTrackContextMenu', () => {
     
     expect(removeItem).toBeDefined()
     expect(removeItem?.label).toBe('context_menu.remove_from_queue')
+  })
+
+  it('limits the mini-player menu to queue, radio, and favorite actions', () => {
+    const track: TrackDTO = { id: 'track-1', title: 'Track 1' } as any
+    const playerStore = usePlayerStore()
+    playerStore.currentTrack = { id: 'track-2' } as TrackDTO
+    useAppStore().libraryAnalysisEnabled = true
+
+    const { buildMenuItems } = useTrackContextMenu(vi.fn())
+    const labels = buildMenuItems(track, { miniPlayer: true, showRemoveFromQueue: true })
+      .filter(item => !item.separator)
+      .map(item => item.label)
+
+    expect(labels).toEqual([
+      'context_menu.remove_from_queue',
+      'context_menu.play_next',
+      'context_menu.start_mood_radio',
+      'context_menu.add_to_favorites',
+    ])
   })
 })

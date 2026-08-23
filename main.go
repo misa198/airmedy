@@ -192,6 +192,7 @@ func main() {
 			ProgramName: "airmedy",
 		},
 	})
+	lastfmService.GetService().RefreshUserAvatar()
 
 	// Initialize i18n
 	settings, _ := settingsService.GetSettings(context.Background())
@@ -262,9 +263,9 @@ func main() {
 			Width:               300,
 			Height:              300,
 			MinWidth:            280,
-			MinHeight:           180,
+			MinHeight:           280,
 			MaxWidth:            500,
-			MaxHeight:           500,
+			MaxHeight:           1000,
 			Hidden:              true,
 			AlwaysOnTop:         false,
 			DisableResize:       false,
@@ -273,7 +274,7 @@ func main() {
 			MaximiseButtonState: application.ButtonHidden,
 			CloseButtonState:    application.ButtonHidden,
 			Mac: application.MacWindow{
-				InvisibleTitleBarHeight: 28,
+				InvisibleTitleBarHeight: 0,
 				Backdrop:                application.MacBackdropTranslucent,
 				TitleBar:                application.MacTitleBarHiddenInset,
 				CollectionBehavior:      application.MacWindowCollectionBehaviorTransient,
@@ -284,6 +285,12 @@ func main() {
 			},
 			BackgroundColour: bgRGBA(settings.Theme),
 			URL:              "/?mode=mini#/mini-player",
+		})
+		wails.LockMiniPlayerAspect(w, false)
+		// Hidden GTK windows have no X11 surface until shown, so retry once the
+		// native surface exists. The macOS/Windows helpers are idempotent.
+		w.RegisterHook(events.Common.WindowShow, func(_ *application.WindowEvent) {
+			wails.LockMiniPlayerAspect(w, false)
 		})
 		// Restore saved geometry + pin mode, clamped to the current screen layout.
 		windowService.ApplyMiniState(w)

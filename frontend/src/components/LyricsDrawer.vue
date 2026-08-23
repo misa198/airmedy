@@ -141,21 +141,24 @@ onUnmounted(() => {
       </div>
 
       <!-- Synced view -->
-      <div v-else-if="isSynced" ref="scrollContainer"
-        class="h-full overflow-y-auto px-4 py-10 scrollbar-hide" @wheel.passive="enterBrowseMode" @pointerdown="enterBrowseMode">
+      <div v-else-if="isSynced" ref="scrollContainer" class="h-full overflow-y-auto px-4 py-48 scrollbar-hide"
+        @wheel.passive="enterBrowseMode" @pointerdown="enterBrowseMode">
         <div class="space-y-6">
           <div v-for="(line, index) in syncedLines" :key="index" ref="lineRefs"
-            class="transition-all duration-150 cursor-pointer select-none leading-snug py-1 origin-left" :class="[
+            class="cursor-pointer duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] opacity-100 select-none leading-snug py-1 origin-left"
+            :class="[
               isBrowsing
                 ? 'text-foreground opacity-100'
                 : index === activeIndex
-                ? 'text-foreground'
-                : index < activeIndex
-                  ? 'text-foreground/40 opacity-60 hover:text-foreground/50'
-                  : 'text-foreground/40 opacity-40 hover:text-foreground/40',
-            ]" @click="seekAndResume(line.time, index)">
-            <div class="font-bold text-[21pt]">{{ line.text }}</div>
-            <div v-if="line.secondary" class="text-[15pt] opacity-50 mt-0.5">{{ line.secondary }}</div>
+                  ? 'text-foreground opacity-100'
+                  : index < activeIndex
+                    ? 'text-foreground/40 opacity-60 hover:text-foreground/50'
+                    : 'text-foreground/40 opacity-50 hover:text-foreground/50',
+
+              !isBrowsing && (index === activeIndex || (activeIndex > 0 && index === activeIndex - 1) || (index === activeIndex + 1)) ? 'transform-gpu' : ''
+            ]" @pointerdown.stop @click="seekAndResume(line.time, index)">
+            <div class="text-[19pt] font-bold">{{ line.text }}</div>
+            <div v-if="line.secondary" class="text-[14pt] opacity-50 mt-0.5">{{ line.secondary }}</div>
           </div>
         </div>
       </div>
@@ -173,5 +176,4 @@ onUnmounted(() => {
   </div>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>

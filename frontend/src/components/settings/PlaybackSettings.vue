@@ -135,6 +135,19 @@ const sectorPath = computed(() => {
         :description="t('settings.playback.high_contrast_lyrics_desc')">
         <Switch :model-value="appStore.highContrastLyrics" @update:model-value="appStore.updateHighContrastLyrics" />
       </SettingRow>
+      <SettingRow :title="t('settings.playback.fullscreen_background')"
+        :description="t('settings.playback.fullscreen_background_desc')">
+        <Select :model-value="appStore.livingArtworkBackground ? 'living' : 'solid'"
+          @update:model-value="mode => appStore.updateLivingArtworkBackground(mode === 'living')">
+          <SelectTrigger class="w-[160px] bg-foreground/[0.04] border-0 h-9 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="living">{{ t('settings.playback.fullscreen_background_living') }}</SelectItem>
+            <SelectItem value="solid">{{ t('settings.playback.fullscreen_background_solid') }}</SelectItem>
+          </SelectContent>
+        </Select>
+      </SettingRow>
       <SettingRow :title="t('settings.playback.max_queue_size')"
         :description="t('settings.playback.max_queue_size_desc')">
         <Select :model-value="String(appStore.maxQueueSize)"

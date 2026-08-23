@@ -14,9 +14,8 @@ import (
 
 // Mini player size constraints (kept in sync with the window factory options).
 const (
-	miniMinWidth  = 280
-	miniMinHeight = 180
-	miniMaxSize   = 500
+	miniMinWidth = 280
+	miniMaxWidth = 500
 )
 
 // miniSaveDebounce coalesces the stream of move/resize events into one DB write.
@@ -192,8 +191,7 @@ func (s *WindowService) ApplyMiniState(w *application.WebviewWindow) {
 // work area of the screen it lands on. This keeps the window reachable after a
 // screen layout change (lower resolution, disconnected monitor, etc.).
 func (s *WindowService) clampToScreen(w *application.WebviewWindow, rect application.Rect) application.Rect {
-	rect.Width = clampInt(rect.Width, miniMinWidth, miniMaxSize)
-	rect.Height = clampInt(rect.Height, miniMinHeight, miniMaxSize)
+	rect = compactMiniRect(rect)
 
 	// Position the window first so GetScreen resolves the nearest screen.
 	w.SetBounds(rect)
@@ -201,7 +199,51 @@ func (s *WindowService) clampToScreen(w *application.WebviewWindow, rect applica
 	if err != nil || screen == nil {
 		return rect
 	}
-	return clampRectToWorkArea(rect, screen.WorkArea)
+	return clampMiniRectToWorkArea(rect, screen.WorkArea, false)
+}
+
+// compactMiniRect restores a compact square. Expanded 1:2 geometry deliberately
+// uses its width, because panel selection is not persisted across window opens.
+func compactMiniRect(rect application.Rect) application.Rect {
+	side := rect.Width
+	if rect.Height != rect.Width*2 {
+		side = max(rect.Width, rect.Height)
+	}
+	side = clampInt(side, miniMinWidth, miniMaxWidth)
+	rect.Width, rect.Height = side, side
+	return rect
+}
+
+func miniRect(rect application.Rect, expanded bool) application.Rect {
+	side := clampInt(rect.Width, miniMinWidth, miniMaxWidth)
+	rect.Width = side
+	rect.Height = side
+	if expanded {
+		rect.Height *= 2
+	}
+	return rect
+}
+
+func miniMinHeight(expanded bool) int {
+	if expanded {
+		return miniMinWidth * 2
+	}
+	return miniMinWidth
+}
+
+// clampMiniRectToWorkArea keeps a compact or expanded mini player reachable.
+// A work area smaller than the configured minimum is an unavoidable OS-level constraint.
+func clampMiniRectToWorkArea(rect, wa application.Rect, expanded bool) application.Rect {
+	heightMultiplier := 1
+	if expanded {
+		heightMultiplier = 2
+	}
+	side := min(rect.Width, wa.Width, wa.Height/heightMultiplier)
+	rect.Width = side
+	rect.Height = side * heightMultiplier
+	rect.X = clampInt(rect.X, wa.X, wa.X+wa.Width-rect.Width)
+	rect.Y = clampInt(rect.Y, wa.Y, wa.Y+wa.Height-rect.Height)
+	return rect
 }
 
 // clampRectToWorkArea shrinks rect to fit within the work area if needed, then
@@ -263,6 +305,26 @@ func (s *WindowService) SetMiniAlwaysOnTop(b bool) {
 	state.AlwaysOnTop = b
 	s.miniMu.Unlock()
 	s.persistMiniState()
+}
+
+// SetMiniPlayerExpanded switches the mini player between its square artwork
+// view and its 1:2 artwork-plus-panel view. Panel selection itself stays in Vue.
+func (s *WindowService) SetMiniPlayerExpanded(expanded bool) {
+	w := s.miniWindow
+	if w == nil {
+		return
+	}
+
+	w.SetMinSize(miniMinWidth, miniMinHeight(expanded))
+	to := miniRect(w.Bounds(), expanded)
+	if screen, err := w.GetScreen(); err == nil && screen != nil {
+		to = clampMiniRectToWorkArea(to, screen.WorkArea, expanded)
+	}
+	w.SetPosition(to.X, to.Y)
+	if !SetMiniPlayerSizeNoAnimation(w, to.Width, to.Height) {
+		w.SetBounds(to)
+	}
+	LockMiniPlayerAspect(w, expanded)
 }
 
 // RestoreMiniAlwaysOnTop reapplies the persisted pin level to the open mini

@@ -167,4 +167,24 @@ describe('SyncedLyricsView', () => {
     await nextTick()
     expect(scrollTo).toHaveBeenCalled()
   })
+
+  it('seeks a lyric tap without entering browse mode first', async () => {
+    const wrapper = mount(SyncedLyricsView, {
+      props: {
+        immersive: true,
+        currentPosition: 10,
+        lines: [
+          { text: 'First', time: 0 },
+          { text: 'Active', time: 10 },
+        ],
+      },
+    })
+
+    const firstLine = wrapper.findAll('[data-test="lyric-line"]')[0]
+    await firstLine.trigger('pointerdown')
+
+    expect(firstLine.attributes('style')).toContain('blur(0.35px)')
+    await firstLine.trigger('click')
+    expect(wrapper.emitted('seek')).toEqual([[0]])
+  })
 })

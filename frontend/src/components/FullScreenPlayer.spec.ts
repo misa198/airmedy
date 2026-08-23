@@ -89,6 +89,7 @@ describe('FullScreenPlayer', () => {
               app: {
                 showPlayerIndicator: false,
                 highContrastLyrics: true,
+                livingArtworkBackground: true,
                 ...appState,
               },
             },
@@ -196,5 +197,24 @@ describe('FullScreenPlayer', () => {
 
     expect(wrapper.find('player-lyrics-panel-stub').exists()).toBe(false)
     expect(wrapper.find('immersive-lyrics-panel-stub').exists()).toBe(true)
+  })
+
+  it('uses the living artwork background by default', () => {
+    const wrapper = mountPlayer()
+
+    expect(wrapper.find('living-artwork-background-stub').exists()).toBe(true)
+    expect(wrapper.find('[data-test="solid-artwork-background"]').exists()).toBe(false)
+  })
+
+  it('uses the artwork tint and crossfade duration for the solid background', () => {
+    const wrapper = mountPlayer({
+      theme: { vibrant: '#ff0000' },
+      artworkCrossfade: { transitionId: 1, durationMs: 600 },
+    }, { livingArtworkBackground: false, blendArtworkDuringCrossfade: true })
+
+    const background = wrapper.get('[data-test="solid-artwork-background"]')
+    expect(background.attributes('style')).toContain('--fullscreen-player-artwork-tint: rgba(255, 0, 0, 0.36)')
+    expect(background.attributes('style')).toContain('--fullscreen-player-artwork-tint-duration: 600ms')
+    expect(wrapper.find('living-artwork-background-stub').exists()).toBe(false)
   })
 })

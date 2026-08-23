@@ -121,7 +121,10 @@ onMounted(async () => {
     }
   })
 
-  if (isMiniPlayer.value) return
+  if (isMiniPlayer.value) {
+    moodRadioStore.init(false)
+    return
+  }
 
   playerStore.init()
   deviceStore.init()

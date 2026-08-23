@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
+import { Events } from '@wailsio/runtime'
 import * as MoodRadioService from '../../bindings/airmedy/internal/infra/wails/moodradioservice'
 import * as PlayerService from '../../bindings/airmedy/internal/infra/wails/playerservice'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
@@ -13,10 +14,23 @@ export const useMoodRadioStore = defineStore('moodRadio', () => {
   const active = ref(false)
   const seedTrackId = ref<string | null>(null)
   let refilling = false
+  let activeVersion = 0
+
+  async function syncActive() {
+    const version = activeVersion
+    const nextActive = await MoodRadioService.GetMoodRadioActive()
+    if (version === activeVersion) active.value = nextActive
+  }
+
+  function setActive(nextActive: boolean) {
+    activeVersion += 1
+    active.value = nextActive
+    void MoodRadioService.SetMoodRadioActive(nextActive)
+  }
 
   async function start(seedTrack: TrackDTO) {
     seedTrackId.value = seedTrack.id
-    active.value = true
+    setActive(true)
     try {
       // GenerateMoodRadio/FindSimilar excludes the seed track from its results
       // (it's always excluded as a candidate for itself), so it has to be
@@ -44,7 +58,7 @@ export const useMoodRadioStore = defineStore('moodRadio', () => {
   }
 
   function stop() {
-    active.value = false
+    setActive(false)
     seedTrackId.value = null
   }
 
@@ -101,19 +115,28 @@ export const useMoodRadioStore = defineStore('moodRadio', () => {
   let _initialized = false
 
   let _offLibraryAnalysis: (() => void) | null = null
+  let _offState: (() => void) | null = null
 
-  function init() {
+  function init(refill = true) {
     if (_initialized) return
     _initialized = true
-    const playerStore = usePlayerStore()
-    _stopWatch = watch(
-      // A shuffle toggle can move the current track close to the tail without
-      // changing either queue length or its ID. Watch the ordered ID sequence
-      // so an unshuffle immediately re-evaluates the remaining count and
-      // refills Mood Radio when needed.
-      [() => playerStore.queue.map(track => track.id).join('\u0000'), () => playerStore.currentTrack?.id],
-      () => refillIfNeeded(),
-    )
+    _offState = Events.On('mood-radio:state', (event: Events.WailsEvent) => {
+      activeVersion += 1
+      active.value = Boolean(event.data)
+      if (!active.value) seedTrackId.value = null
+    })
+    void syncActive()
+    if (refill) {
+      const playerStore = usePlayerStore()
+      _stopWatch = watch(
+        // A shuffle toggle can move the current track close to the tail without
+        // changing either queue length or its ID. Watch the ordered ID sequence
+        // so an unshuffle immediately re-evaluates the remaining count and
+        // refills Mood Radio when needed.
+        [() => playerStore.queue.map(track => track.id).join('\u0000'), () => playerStore.currentTrack?.id],
+        () => refillIfNeeded(),
+      )
+    }
     // Turning off library analysis mid-session must end Mood Radio right
     // away — waiting for the next refill check (queue.length/currentTrack
     // watch above) leaves the radio icon showing until the user happens to
@@ -131,6 +154,8 @@ export const useMoodRadioStore = defineStore('moodRadio', () => {
     _stopWatch = null
     _offLibraryAnalysis?.()
     _offLibraryAnalysis = null
+    _offState?.()
+    _offState = null
     _initialized = false
     active.value = false
   }

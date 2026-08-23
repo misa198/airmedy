@@ -137,6 +137,7 @@ onUnmounted(() => {
       :step="step ?? 0.01"
       :value="localValue"
       class="custom-slider absolute inset-0 w-full bg-transparent appearance-none cursor-pointer z-10"
+      style="-webkit-app-region: no-drag; --wails-draggable: no-drag"
       @input="handleInput"
       @mousedown="handleStart"
       @mouseup="handleEnd"

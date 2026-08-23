@@ -133,7 +133,7 @@ for the sidebar and list while playlist detail and mosaic data refresh through
 
 The mini player window is **destroyed on close and recreated on open** (not just hidden). `WindowService` holds a factory function (`SetMiniWindowFactory`) that creates a fresh `WebviewWindow` each time. Closing the window does not call `e.Cancel()` on the `WindowClosing` hook, so Wails destroys the native window and frees its memory. Reopening calls the factory to create a new window. This resets all Vue/Pinia state in that webview.
 
-Because state is reset on every open, window **position, size, and pin (always-on-top)** are persisted natively (not in Vue) to the `mini_player_state` table and restored by `WindowService.ApplyMiniState(w)` in the factory — clamped to the current screen's work area so the window never restores off-screen. See `catalog/player` → *Geometry & Pin Persistence*.
+Because state is reset on every open, window **position, size, and pin (always-on-top)** are persisted natively (not in Vue) to the `mini_player_state` table and restored by `WindowService.ApplyMiniState(w)` in the factory — clamped to the current screen's work area so the window never restores off-screen. The temporary mini-player Lyrics/Queue panel selection is Vue-local and resets closed on reopen. See `catalog/player` → *Geometry & Pin Persistence*.
 
 The tray **"Show Airmedy"** action calls `WindowService.ShowCurrent()`, which reveals only the currently active window — the mini player if it is open, otherwise the main window — instead of forcing both visible at once.
 
@@ -510,6 +510,7 @@ The mini player controls sit over a CSS glassmorphism panel (`.glass-panel` in `
 - Artwork requests use variants (`_sm`, `_md`) sized appropriately for each context.
 - Fullscreen `PlayerArtwork` can stack outgoing and incoming covers for an automatic audio crossfade; `requestAnimationFrame` applies equal-power `cos(t*pi/2)`/`sin(t*pi/2)` opacity weights over the backend-provided effective fade duration, using `plus-lighter` compositing. Its maximum size is explicitly set by `FullScreenPlayer`: `22rem` without a right column and `20rem` when queue or lyrics is open. Player bars and mini-player artwork do not blend.
 - Fullscreen lyrics use `PlayerLyricsPanel` when `appStore.highContrastLyrics` is on (glass surface and header) and `ImmersiveLyricsPanel` when off (transparent, headerless content over the artwork background). Both delegate lyric parsing, loading, seek, and scrolling to `PlayerLyrics`; `LyricsDrawer` is unaffected.
+- `MiniPlayerLyrics` delegates to the same renderer in compact mode, so LRC playback-follow/browse/seek behavior stays consistent while plain lyrics remain readable in the lower mini-player panel.
 - `SyncedLyricsView` applies the GPU transform hint only to the active lyric and the two lines on either side, limiting composited layers while preserving smooth nearby transitions.
 - `shallowRef` used for large reactive arrays (queue, tracks, albums).
 - Column widths cached in localStorage to avoid recalculation.

@@ -48,6 +48,8 @@ vi.mock('../../bindings/airmedy/internal/infra/wails/playerservice', () => ({
 
 vi.mock('../../bindings/airmedy/internal/infra/wails/moodradioservice', () => ({
   GenerateMoodRadio: (...args: unknown[]) => mockGenerateMoodRadio(...args),
+  GetMoodRadioActive: vi.fn().mockResolvedValue(false),
+  SetMoodRadioActive: vi.fn(),
 }))
 
 import { useAppStore } from './app'

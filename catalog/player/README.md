@@ -648,6 +648,8 @@ When `BlendArtworkDuringCrossfade` is on (default), `FullScreenPlayer` keeps the
 
 Fullscreen lyrics have two separate panel components selected by `HighContrastLyrics` (default true). `PlayerLyricsPanel` is the existing glass, bordered, headered high-contrast panel. `ImmersiveLyricsPanel` renders the same parsed/synced lyric content directly over the living artwork background without a background, border, shadow, or header. This setting does not affect `LyricsDrawer` or the mini player.
 
+`LivingArtworkBackground` selects the fullscreen background independently of the lyrics mode. It defaults to the animated artwork canvas; when disabled, the player uses the artwork's vibrant color over the mini-player-style dark base and overlay. Its tint uses the active artwork-crossfade duration, so background changes stay synchronized with the cover transition.
+
 In the fullscreen left column, `PlayerArtwork` is offset upward by `0.5rem` relative to the track-info block so the cover sits slightly higher without changing the controls layout.
 
 **Player modes:**
@@ -679,14 +681,14 @@ GetQueue(): TrackDTO[]
 
 ## Mini Player Window
 
-Separate Wails window (default 300×300, min 280×180, max 500×500). Route: `/mini-player`. Artwork fills the window; hover-revealed controls sit over a CSS glassmorphism panel (`backdrop-filter` blur, bottom→top mask fade — see `catalog/ui`). Has always-on-top toggle and volume slider with auto-fade timer.
+Separate compact square Wails window (default 300×300, min 280×280, max 500×500). Route: `/mini-player`. A hover-revealed top-right icon pill selects Lyrics or the Queue placeholder; the selected panel expands the window to width:height 1:2 and occupies the lower square half. Lyrics reuse the player lyric lifecycle: LRC lines follow playback, pause follow while browsing, and seek on line click; plain lyrics render as a compact fallback. Selecting the active icon collapses it. Size changes are immediate, avoiding WebView resize lag. Artwork fills the upper square; hover-revealed controls sit over a CSS glassmorphism panel (`backdrop-filter` blur, bottom→top mask fade — see `catalog/ui`). Has always-on-top toggle and volume slider with auto-fade timer. The native window layer locks the selected 1:1 or 1:2 ratio on macOS, Windows, and Linux/X11; Wayland remains compositor-managed.
 
 ### Geometry & Pin Persistence
 
 `WindowService` persists the mini player's position, size, and pin (always-on-top) state to the single-row `mini_player_state` table (`MiniPlayerStateRepository`), so they survive close/reopen and app restarts. The window is recreated on each open (see `catalog/ui`), so restore happens in the factory:
 
-- **Restore** — `WindowService.ApplyMiniState(w)` runs in the mini window factory before show. If `has_position` is set, it applies the saved bounds (clamped, see below) and re-applies `always_on_top`.
+- **Restore** — `WindowService.ApplyMiniState(w)` runs in the mini window factory before show. If `has_position` is set, it applies the saved bounds (clamped, see below) and re-applies `always_on_top`. Panel selection is not persisted, so a saved 1:2 rectangle restores as its compact square width.
 - **Capture** — `WindowDidMove`/`WindowDidResize` hooks call `WindowService.SaveMiniGeometry()`, which reads `w.Bounds()` and persists it debounced (~400ms) to coalesce drag/resize streams. `WindowClosing` flushes a final save.
 - **Pin** — frontend calls `WindowService.SetMiniAlwaysOnTop(b)` (not `Window.SetAlwaysOnTop` directly) so the toggle is persisted immediately. On mount the component reads `WindowService.GetMiniState()` to render the correct pin icon.
 - **macOS Dock activation** — `main.go` re-applies the persisted pin level through `WindowService.RestoreMiniAlwaysOnTop()` after `ApplicationDidBecomeActive` and `ApplicationShouldHandleReopen`. This preserves `NSFloatingWindowLevel` when AppKit/Wails resets the native level while the app is reactivated from the Dock.
-- **Screen-aware clamp** — `clampToScreen` clamps width/height into `[280..500]`×`[140..500]`, then positions the window and reads its screen's `WorkArea` (via `w.GetScreen()`); the pure helper `clampRectToWorkArea` shrinks/moves the rect fully inside the work area. This keeps the window reachable after a layout change (lower resolution, disconnected monitor, different screen).
+- **Screen-aware clamp** — `clampToScreen` normalizes saved geometry to compact square form, clamps it into `[280..500]`, then positions the window and reads its screen's `WorkArea` (via `w.GetScreen()`). The compact and expanded clamp paths keep their respective aspect ratios inside the work area, so a layout change cannot restore the window off-screen or distort it.

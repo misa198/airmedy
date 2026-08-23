@@ -331,6 +331,10 @@ below `REFILL_THRESHOLD` (3) remaining tracks, appending `SEED_BATCH_SIZE` (15)
 more similar tracks at a time. The whole existing queue is supplied as
 `excludeTrackIDs` on refill, so already queued/played tracks are removed before
 the SQL candidate limit rather than being discarded too late in the frontend.
+`MoodRadioService` owns the process-wide active flag and emits
+`mood-radio:state`, so the main and mini-player webviews show the same state.
+Only the main window runs the refill watcher; the mini player subscribes for
+state display and actions without issuing a competing refill.
 Turning off Library Analysis mid-session stops the radio immediately (watched
 reactively), since its only data source just went away.
 

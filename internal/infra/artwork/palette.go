@@ -16,7 +16,7 @@ import (
 // ExtractPalette reads an image file and returns a dominant color palette.
 // It downsamples to a 64×64 thumbnail, runs 3-cluster k-means for 10 iterations,
 // and classifies clusters as Vibrant (highest saturation×value), Dominant (largest),
-// and Muted (remaining).
+// and Muted (lowest saturation).
 func ExtractPalette(imagePath string) (*domain.ThemeColors, error) {
 	f, err := os.Open(imagePath)
 	if err != nil {
@@ -31,11 +31,13 @@ func ExtractPalette(imagePath string) (*domain.ThemeColors, error) {
 
 	thumb := downsample(src, 64, 64)
 	pixels := collectPixels(thumb)
+	backdrop := averageColor(collectPixels(downsample(src, 24, 24)))
 	if len(pixels) == 0 {
 		return &domain.ThemeColors{
 			Vibrant:  "#E11D48",
 			Muted:    "#6B7280",
 			Dominant: "#1F2937",
+			Backdrop: "#1F2937",
 		}, nil
 	}
 
@@ -50,12 +52,13 @@ func ExtractPalette(imagePath string) (*domain.ThemeColors, error) {
 
 	vibrantIdx := mostVibrant(centers)
 	dominantIdx := largest(counts)
-	mutedIdx := remaining(vibrantIdx, dominantIdx, len(centers))
+	mutedIdx := leastVibrant(centers)
 
 	return &domain.ThemeColors{
 		Vibrant:  toHex(centers[vibrantIdx]),
 		Muted:    toHex(centers[mutedIdx]),
 		Dominant: toHex(centers[dominantIdx]),
+		Backdrop: toHex(backdrop),
 	}, nil
 }
 
@@ -117,6 +120,20 @@ func collectPixels(img draw.Image) []color.RGBA {
 		}
 	}
 	return pixels
+}
+
+func averageColor(pixels []color.RGBA) color.RGBA {
+	if len(pixels) == 0 {
+		return color.RGBA{}
+	}
+	var r, g, b uint64
+	for _, pixel := range pixels {
+		r += uint64(pixel.R)
+		g += uint64(pixel.G)
+		b += uint64(pixel.B)
+	}
+	count := uint64(len(pixels))
+	return color.RGBA{R: uint8(r / count), G: uint8(g / count), B: uint8(b / count), A: 0xFF}
 }
 
 func kMeans(pixels []color.RGBA, k, iterations int) []color.RGBA {
@@ -192,6 +209,16 @@ func mostVibrant(centers []color.RGBA) int {
 	return best
 }
 
+func leastVibrant(centers []color.RGBA) int {
+	best, bestV := 0, math.MaxFloat64
+	for i, c := range centers {
+		if v := vibrance(c); v < bestV {
+			best, bestV = i, v
+		}
+	}
+	return best
+}
+
 func largest(counts []int) int {
 	best, bestN := 0, -1
 	for i, n := range counts {
@@ -200,15 +227,6 @@ func largest(counts []int) int {
 		}
 	}
 	return best
-}
-
-func remaining(a, b, total int) int {
-	for i := 0; i < total; i++ {
-		if i != a && i != b {
-			return i
-		}
-	}
-	return 0
 }
 
 // vibrance returns saturation × value (HSV) as a proxy for "how colorful" a pixel is.

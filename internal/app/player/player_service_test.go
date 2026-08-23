@@ -22,6 +22,15 @@ type fakePlayer struct {
 	loadCalls      int
 }
 
+func TestShouldApplyPalette(t *testing.T) {
+	if !shouldApplyPalette("current", "current") {
+		t.Error("current track palette should apply")
+	}
+	if shouldApplyPalette("previous", "current") {
+		t.Error("previous track palette should not apply")
+	}
+}
+
 func (p *fakePlayer) Play() error {
 	p.mu.Lock()
 	p.status.PlaybackState = domain.PlaybackStatePlaying
