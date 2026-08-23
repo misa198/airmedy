@@ -31,7 +31,7 @@ describe('MiniPlayerLyrics', () => {
     Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get: () => 300 })
 
     const wrapper = mount(MiniPlayerLyrics, {
-      props: { lyrics: '[00:00.00]First\n[00:10.00]Active\n[00:20.00]Next', currentPosition: 0 },
+      props: { lyrics: '[00:00.00]First\n[00:10.00]Active\n[00:20.00]Next\n[00:30.00]Later', currentPosition: 0 },
       global: { mocks: { $t: (key: string) => key } },
     })
     await nextTick()
@@ -40,7 +40,7 @@ describe('MiniPlayerLyrics', () => {
     const container = wrapper.get('[data-test="mini-synced-lyrics"]')
     vi.spyOn(container.element, 'getBoundingClientRect').mockReturnValue({ top: 300 } as DOMRect)
     const previous = wrapper.findAll('[data-test="mini-lyric-line"]')[0]
-    vi.spyOn(previous.element, 'getBoundingClientRect').mockReturnValue({ top: 320 } as DOMRect)
+    vi.spyOn(previous.element, 'getBoundingClientRect').mockReturnValue({ top: 700 } as DOMRect)
     const active = wrapper.findAll('[data-test="mini-lyric-line"]')[1]
     vi.spyOn(active.element, 'getBoundingClientRect').mockReturnValue({ top: 480 } as DOMRect)
     Object.defineProperty(active.element, 'clientHeight', { configurable: true, value: 40 })
@@ -50,11 +50,14 @@ describe('MiniPlayerLyrics', () => {
 
     expect(scrollTo).toHaveBeenLastCalledWith({ top: 140, behavior: 'smooth' })
     expect(active.classes()).toContain('text-foreground')
-    expect(active.classes()).toContain('scale-110')
+    expect(active.classes()).toContain('scale-105')
     expect(active.classes()).toContain('transform-gpu')
-    expect(container.classes()).toContain('pr-8')
+    expect(container.classes()).toContain('pr-10')
+    expect(container.classes()).toContain('py-24')
     expect(wrapper.findAll('[data-test="mini-lyric-line"]')[0].classes()).toContain('opacity-60')
     expect(wrapper.findAll('[data-test="mini-lyric-line"]')[2].classes()).toContain('opacity-50')
+    expect(wrapper.findAll('[data-test="mini-lyric-line"]')[2].classes()).toContain('transform-gpu')
+    expect(wrapper.findAll('[data-test="mini-lyric-line"]')[3].classes()).not.toContain('transform-gpu')
 
     await active.trigger('click')
     expect(wrapper.emitted('seek')).toEqual([[10]])

@@ -67,6 +67,7 @@ type ThemeColors struct {
 	Vibrant  string `json:"vibrant"`  // hex e.g. "#E11D48" — highest saturation cluster
 	Muted    string `json:"muted"`    // hex — lowest saturation cluster
 	Dominant string `json:"dominant"` // hex — largest pixel-count cluster
+	Backdrop string `json:"backdrop"` // hex — mean RGB of a 24×24 artwork sample
 }
 
 // NowPlayingController is an optional interface implemented by platform players

@@ -66,7 +66,7 @@ Called via `LibraryService.GetAlbumColors(albumID)` or `LibraryService.GetArtist
    - **Vibrant** — highest-scoring recurring saturated RGB bucket from the 256px accent sample. Scoring is **multiplicative**: `vibrance × areaWeight`, where `areaWeight = min(1, sqrt(ratio / 0.02))` (a sqrt curve with a 2% knee). Buckets covering less than **0.4%** of the sample (~262 px on 256×256) are outright rejected — this prevents tiny hyper-saturated logos (e.g. a red Netflix "N") from hijacking the theme color. Colors at ≥2% coverage get full weight (1.0); colors between 0.4–2% are penalised proportionally. Falls back to the k-means cluster with the highest `saturation × value` (HSV) score when no accent clears the gate.
    - **Dominant** — cluster with the largest pixel count.
    - **Muted** — the remaining cluster.
-6. Return as `ThemeColors{Vibrant, Dominant, Muted}` as hex strings (`#RRGGBB`).
+6. Return as `ThemeColors{Vibrant, Dominant, Muted, Backdrop}` as hex strings (`#RRGGBB`). `Backdrop` is the mean RGB of a 24×24 sample, used only for player background surfaces.
 
 ### ThemeColors
 
@@ -75,6 +75,7 @@ type ThemeColors struct {
     Vibrant  string  // highest saturation × value
     Muted    string  // lowest saturation
     Dominant string  // most pixels
+    Backdrop string  // mean RGB from a 24×24 sample
 }
 ```
 

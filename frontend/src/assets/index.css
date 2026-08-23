@@ -22,6 +22,11 @@
   inherits: true;
   initial-value: rgba(25, 25, 25, 0.6);
 }
+@property --mini-player-lyrics-tint {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
 
 @layer base {
   :root {
@@ -50,6 +55,11 @@
     --mini-player-pill-active: #ffffff;
     --mini-player-pill-active-foreground: #000000;
     --mini-player-pill-track: rgba(255, 255, 255, 0.15);
+    --mini-player-lyrics-overlay: rgba(10, 10, 10, 0.24);
+    --mini-player-lyrics-background: #101010;
+    --mini-player-lyrics-foreground: #ffffff;
+    --mini-player-lyrics-muted: #a1a1aa;
+    --mini-player-lyrics-tint: transparent;
     --accent-favorite: #ef4444;
     --status-online: #15803d;
 
@@ -92,6 +102,8 @@
     --bg-glass-modal: rgba(30, 30, 30, 1);
     --bg-disabled-overlay: rgba(255, 255, 255, 0.06);
     --mini-player-pill-background: rgba(25, 25, 25, 0.6);
+    --mini-player-lyrics-overlay: rgba(0, 0, 0, 0.3);
+    --mini-player-lyrics-background: #000000;
   }
 
   html,
@@ -113,6 +125,8 @@
   option,
   optgroup {
     font-family: inherit;
+    --wails-draggable: no-drag;
+    -webkit-app-region: no-drag;
   }
 
   /* WKWebView (Wails on macOS) defaults placeholder text to italic; normalize it */

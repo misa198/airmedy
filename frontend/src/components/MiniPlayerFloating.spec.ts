@@ -24,7 +24,7 @@ vi.mock('@/stores/player', () => ({
     shuffle: false,
     repeatMode: 0,
     isPlaying: false,
-    theme: null,
+    theme: { vibrant: '#ff0000', muted: '#556677', dominant: '#0000ff', backdrop: '#556677' },
     lyrics: { content: '[00:00.00]First line' },
     lyricsLoading: true,
     seek: vi.fn(),
@@ -61,6 +61,21 @@ vi.mock('../../bindings/airmedy/internal/infra/wails/windowservice', () => ({
 }))
 
 describe('MiniPlayerFloating', () => {
+  it('hides the controls when the mini-player window loses focus', async () => {
+    const wrapper = mount(MiniPlayerFloating, {
+      global: { stubs: { LazyImg: true, Slider: true, MarqueeText: true, PlayerControlButton: true, MiniPlayerLyrics: true, QueueTrackList: true } },
+    })
+
+    await wrapper.find('.aspect-square').trigger('mouseenter')
+    expect(wrapper.get('[data-test="mini-player-actions-pill"]').classes()).toContain('opacity-100')
+    window.dispatchEvent(new Event('blur'))
+    await flushPromises()
+    expect(wrapper.get('[data-test="mini-player-actions-pill"]').classes()).toContain('opacity-0')
+    window.dispatchEvent(new Event('focus'))
+    await flushPromises()
+    expect(wrapper.get('[data-test="mini-player-actions-pill"]').classes()).toContain('opacity-100')
+  })
+
   it('shows the radio indicator while Mood Radio is active', async () => {
     mocks.moodRadioStore.active = true
     const wrapper = mount(MiniPlayerFloating, {
@@ -90,6 +105,22 @@ describe('MiniPlayerFloating', () => {
     expect(wrapper.findAll('div').filter((element) => element.classes().includes('bg-mini-player-pill-background')))
       .toHaveLength(2)
     expect(wrapper.get('[data-test="mini-player-lyrics"]').classes()).toContain('text-mini-player-pill-foreground')
+  })
+
+  it('opens the volume pill on click and closes it after inactivity', async () => {
+    vi.useFakeTimers()
+    const wrapper = mount(MiniPlayerFloating, {
+      global: { stubs: { LazyImg: true, Slider: true, MarqueeText: true, PlayerControlButton: true, MiniPlayerLyrics: true, QueueTrackList: true } },
+    })
+
+    await wrapper.get('[data-test="mini-player-volume"]').trigger('click')
+    expect(wrapper.get('[data-test="mini-player-actions-pill"]').classes()).toContain('w-[122px]')
+    expect(wrapper.get('[data-test="mini-player-volume-pill"]').classes()).toContain('opacity-100')
+
+    vi.advanceTimersByTime(3000)
+    await flushPromises()
+    expect(wrapper.find('[data-test="mini-player-actions-pill"]').exists()).toBe(true)
+    vi.useRealTimers()
   })
 
   it('switches the placeholder panel and collapses when the active option is clicked again', async () => {
@@ -122,12 +153,20 @@ describe('MiniPlayerFloating', () => {
     expect(mocks.setMiniPlayerExpanded).toHaveBeenLastCalledWith(true)
     expect(wrapper.find('[data-test="mini-player-queue-content"]').exists()).toBe(true)
     expect(wrapper.get('[data-test="mini-player-panel-indicator"]').classes()).toContain('translate-x-[26px]')
+    expect(wrapper.get('[data-test="mini-player-panel-indicator"]').classes()).toContain('transition-opacity')
 
     await wrapper.get('[data-test="mini-player-lyrics"]').trigger('click')
     expect(wrapper.get('[data-test="mini-player-panel"]').text()).toContain('[00:00.00]First line')
+    expect(wrapper.get('[data-test="mini-player-panel"]').classes()).toContain('mini-player-lyrics-panel')
+    expect(wrapper.get('[data-test="mini-player-panel"]').classes()).not.toContain('mini-player-lyrics-tint-ready')
+    expect(wrapper.get('[data-test="mini-player-panel"]').classes()).toContain('backdrop-blur-[30px]')
+    expect(wrapper.get('[data-test="mini-player-panel"]').attributes('style')).toContain('background-color: var(--mini-player-lyrics-background)')
+    expect(wrapper.get('[data-test="mini-player-panel"]').attributes('style')).toContain('--mini-player-lyrics-tint: rgba(255, 0, 0, 0.36)')
+    expect(wrapper.get('[data-test="mini-player-panel"]').attributes('style')).toContain('--mini-player-lyrics-tint-duration: 1500ms')
     expect(mocks.setMiniPlayerExpanded).toHaveBeenLastCalledWith(true)
     expect(wrapper.get('[data-test="mini-player-panel"]').text()).toContain('[00:00.00]First line')
     expect(wrapper.get('[data-test="mini-player-panel-indicator"]').classes()).toContain('translate-x-0')
+    expect(wrapper.get('[data-test="mini-player-panel-indicator"]').classes()).toContain('transition-all')
     expect(wrapper.get('[data-test="mini-player-lyrics-content"]').text()).toContain('[00:00.00]First line')
 
     await wrapper.get('[data-test="mini-player-lyrics"]').trigger('click')

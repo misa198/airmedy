@@ -1119,6 +1119,9 @@ func (s *PlayerService) extractAndEmitPalette(track *domain.TrackDTO) {
 		s.logger.Warn("palette extraction failed", "error", err)
 		return
 	}
+	if !shouldApplyPalette(track.ID, s.player.GetStatus().TrackID) {
+		return
+	}
 
 	s.mu.Lock()
 	s.currentTheme = colors
@@ -1131,6 +1134,10 @@ func (s *PlayerService) extractAndEmitPalette(track *domain.TrackDTO) {
 		defer func() { _ = recover() }()
 		app.Event.Emit("player:theme", colors)
 	}
+}
+
+func shouldApplyPalette(trackID, currentTrackID string) bool {
+	return trackID != "" && trackID == currentTrackID
 }
 
 // lyricsResolveParams builds the preference + extra lyric dirs used by both the

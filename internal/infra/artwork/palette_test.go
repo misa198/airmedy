@@ -71,3 +71,22 @@ func TestToHex(t *testing.T) {
 		}
 	}
 }
+
+func TestLeastVibrant(t *testing.T) {
+	colors := []color.RGBA{
+		{R: 220, G: 10, B: 30, A: 255},
+		{R: 110, G: 110, B: 110, A: 255},
+		{R: 30, G: 100, B: 180, A: 255},
+	}
+	if got := leastVibrant(colors); got != 1 {
+		t.Errorf("leastVibrant() = %d, want 1", got)
+	}
+}
+
+func TestAverageColor(t *testing.T) {
+	got := averageColor([]color.RGBA{{R: 20, G: 40, B: 60}, {R: 40, G: 60, B: 80}})
+	want := color.RGBA{R: 30, G: 50, B: 70, A: 255}
+	if got != want {
+		t.Errorf("averageColor() = %#v, want %#v", got, want)
+	}
+}

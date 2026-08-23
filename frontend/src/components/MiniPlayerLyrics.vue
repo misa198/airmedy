@@ -30,12 +30,6 @@ let waitingForLayout = false
 let hasPositionedLine = false
 let previousActiveIndex = -1
 
-function isVisible(container: HTMLElement, line: HTMLElement) {
-  const containerTop = container.getBoundingClientRect().top
-  const lineTop = line.getBoundingClientRect().top
-  return lineTop < containerTop + container.clientHeight && lineTop + line.clientHeight > containerTop
-}
-
 function scrollToActive(index: number, behavior: ScrollBehavior) {
   if (index === -1) return false
   const container = scrollContainer.value
@@ -58,11 +52,7 @@ function scheduleScrollToActive(index: number, previousIndex = previousActiveInd
     if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame)
     scrollFrame = requestAnimationFrame(() => {
       scrollFrame = undefined
-      const container = scrollContainer.value
-      const previous = lineRefs.value[previousIndex]
-      const behavior: ScrollBehavior = hasPositionedLine && container && previous && isVisible(container, previous)
-        ? 'smooth'
-        : 'auto'
+      const behavior: ScrollBehavior = hasPositionedLine && previousIndex !== -1 ? 'smooth' : 'auto'
       waitingForLayout = !scrollToActive(index, behavior)
     })
   })
@@ -123,19 +113,22 @@ onUnmounted(() => {
     </div>
 
     <div v-else-if="isSynced" ref="scrollContainer" data-test="mini-synced-lyrics"
-      class="h-full overflow-y-auto px-4 pr-10 py-6 scrollbar-hide" @wheel.passive="enterBrowseMode"
+      class="h-full overflow-y-auto px-4 py-24 scrollbar-hide" @wheel.passive="enterBrowseMode"
       @pointerdown="enterBrowseMode">
       <div class="space-y-5">
         <button v-for="(line, index) in syncedLines" :key="`${line.time}-${index}`" ref="lineRefs" type="button"
           data-test="mini-lyric-line"
-          class="block w-full origin-left text-left leading-snug transform-gpu transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] text-[20px]"
-          :class="isBrowsing
-            ? 'text-foreground scale-100 opacity-100'
-            : index === activeIndex
-              ? 'text-foreground scale-110 opacity-100'
-              : index < activeIndex
-                ? 'text-foreground/40 scale-100 opacity-60 hover:text-foreground/50'
-                : 'text-foreground/40 scale-100 opacity-50 hover:text-foreground/50'"
+          class="block w-full origin-left text-left leading-snug duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] text-[20px]"
+          :class="[
+            !isBrowsing && (index === activeIndex || (activeIndex > 0 && index === activeIndex - 1) || (index === activeIndex + 1)) ? 'transform-gpu' : '',
+            isBrowsing
+              ? 'text-foreground opacity-100'
+              : index === activeIndex
+                ? 'text-foreground opacity-100'
+                : index < activeIndex
+                  ? 'text-foreground/40 opacity-60 hover:text-foreground/50'
+                  : 'text-foreground/40 opacity-50 hover:text-foreground/50',
+          ]"
           @pointerdown.stop
           @click="seekAndResume(line.time, index)">
           <span class="font-bold">{{ line.text }}</span>
