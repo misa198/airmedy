@@ -256,6 +256,9 @@ func TestNormalizationSettingsRoundTrip(t *testing.T) {
 	if def.HighContrastLyrics != true {
 		t.Errorf("Expected HighContrastLyrics default true, got %+v", def)
 	}
+	if def.LivingArtworkBackground != true {
+		t.Errorf("Expected LivingArtworkBackground default true, got %+v", def)
+	}
 	if def.AutoAdvanceNotificationsEnabled != true {
 		t.Errorf("Expected AutoAdvanceNotificationsEnabled default true, got %+v", def)
 	}
@@ -270,6 +273,7 @@ func TestNormalizationSettingsRoundTrip(t *testing.T) {
 		NormalizationTargetLUFS:         -18,
 		NormalizationPreventClip:        false,
 		HighContrastLyrics:              false,
+		LivingArtworkBackground:         false,
 		AutoAdvanceNotificationsEnabled: false,
 	}
 	if err := repo.Save(ctx, in); err != nil {
@@ -288,6 +292,9 @@ func TestNormalizationSettingsRoundTrip(t *testing.T) {
 	}
 	if out.HighContrastLyrics != false {
 		t.Errorf("HighContrastLyrics round-trip mismatch: %+v", out)
+	}
+	if out.LivingArtworkBackground != false {
+		t.Errorf("LivingArtworkBackground round-trip mismatch: %+v", out)
 	}
 	if out.AutoAdvanceNotificationsEnabled != false {
 		t.Errorf("AutoAdvanceNotificationsEnabled round-trip mismatch: %+v", out)

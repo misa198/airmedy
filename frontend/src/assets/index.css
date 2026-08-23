@@ -27,6 +27,11 @@
   inherits: true;
   initial-value: transparent;
 }
+@property --fullscreen-player-artwork-tint {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
 
 @layer base {
   :root {
@@ -60,6 +65,9 @@
     --mini-player-lyrics-foreground: #ffffff;
     --mini-player-lyrics-muted: #a1a1aa;
     --mini-player-lyrics-tint: transparent;
+    --fullscreen-player-solid-background: #101010;
+    --fullscreen-player-solid-overlay: rgba(10, 10, 10, 0.24);
+    --fullscreen-player-artwork-tint: transparent;
     --accent-favorite: #ef4444;
     --status-online: #15803d;
 
@@ -104,6 +112,8 @@
     --mini-player-pill-background: rgba(25, 25, 25, 0.6);
     --mini-player-lyrics-overlay: rgba(0, 0, 0, 0.3);
     --mini-player-lyrics-background: #000000;
+    --fullscreen-player-solid-background: #000000;
+    --fullscreen-player-solid-overlay: rgba(0, 0, 0, 0.3);
   }
 
   html,

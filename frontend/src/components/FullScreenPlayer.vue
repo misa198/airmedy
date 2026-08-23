@@ -10,7 +10,7 @@ import { useDeviceStore } from '../stores/device'
 import LivingArtworkBackground from './LivingArtworkBackground.vue'
 import { TabSwitcher } from '@airmedy/ui'
 import { useI18n } from 'vue-i18n'
-import { getTrackDisplayTitle } from '@airmedy/utils'
+import { getTrackDisplayTitle, hexToRgba } from '@airmedy/utils'
 
 import PlayerArtwork from './player/PlayerArtwork.vue'
 import PlayerTrackInfo from './player/PlayerTrackInfo.vue'
@@ -95,6 +95,10 @@ const artworkMaxSize = computed(() => !showRightColumn.value || !appStore.highCo
 const artworkCrossfade = computed(() =>
   appStore.blendArtworkDuringCrossfade ? store.artworkCrossfade : null,
 )
+const solidArtworkStyle = computed(() => store.theme ? {
+  '--fullscreen-player-artwork-tint': hexToRgba(store.theme.vibrant, 0.36),
+  '--fullscreen-player-artwork-tint-duration': `${artworkCrossfade.value?.durationMs ?? 1500}ms`,
+} : undefined)
 
 function handleKeyDown(event: KeyboardEvent) {
   if (event.key !== 'Escape' || store.playerMode !== 'fullscreen') return
@@ -117,8 +121,9 @@ onUnmounted(() => {
     data-test="fullscreen-player"
     class="fixed inset-0 z-100 flex flex-col overflow-hidden bg-[#0A0A0A] select-none dark"
     @contextmenu.prevent="openQuickSettingsMenu">
-    <LivingArtworkBackground :theme="store.theme" :is-playing="store.isPlaying"
+    <LivingArtworkBackground v-if="appStore.livingArtworkBackground" :theme="store.theme" :is-playing="store.isPlaying"
       :artwork-crossfade="artworkCrossfade" />
+    <div v-else data-test="solid-artwork-background" class="fullscreen-player-solid-background" :style="solidArtworkStyle" />
 
     <div class="relative z-10 flex flex-col h-full text-white">
       <!-- Top bar -->
@@ -223,3 +228,14 @@ onUnmounted(() => {
     <PlayerQuickSettingsMenu ref="quickSettingsMenu" />
   </div>
 </template>
+
+<style scoped>
+.fullscreen-player-solid-background {
+  position: absolute;
+  inset: 0;
+  background-color: var(--fullscreen-player-solid-background);
+  background-image: linear-gradient(var(--fullscreen-player-artwork-tint), var(--fullscreen-player-artwork-tint)),
+    linear-gradient(var(--fullscreen-player-solid-overlay), var(--fullscreen-player-solid-overlay));
+  transition: --fullscreen-player-artwork-tint var(--fullscreen-player-artwork-tint-duration) ease-in-out;
+}
+</style>

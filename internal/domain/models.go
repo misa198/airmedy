@@ -490,6 +490,10 @@ type AppSettings struct {
 	// fullscreen player. When false, lyrics render directly over the artwork.
 	HighContrastLyrics bool `json:"high_contrast_lyrics"`
 
+	// LivingArtworkBackground selects the animated artwork-color background in
+	// the fullscreen player. When false, it uses a solid artwork tint instead.
+	LivingArtworkBackground bool `json:"living_artwork_background"`
+
 	// Library analysis pipeline (feeds Normalization). Opt-in: off disables the
 	// background worker pool entirely (no backfill/enqueue/boost). Normalization
 	// cannot be enabled while this is off.

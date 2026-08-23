@@ -648,6 +648,8 @@ When `BlendArtworkDuringCrossfade` is on (default), `FullScreenPlayer` keeps the
 
 Fullscreen lyrics have two separate panel components selected by `HighContrastLyrics` (default true). `PlayerLyricsPanel` is the existing glass, bordered, headered high-contrast panel. `ImmersiveLyricsPanel` renders the same parsed/synced lyric content directly over the living artwork background without a background, border, shadow, or header. This setting does not affect `LyricsDrawer` or the mini player.
 
+`LivingArtworkBackground` selects the fullscreen background independently of the lyrics mode. It defaults to the animated artwork canvas; when disabled, the player uses the artwork's vibrant color over the mini-player-style dark base and overlay. Its tint uses the active artwork-crossfade duration, so background changes stay synchronized with the cover transition.
+
 In the fullscreen left column, `PlayerArtwork` is offset upward by `0.5rem` relative to the track-info block so the cover sits slightly higher without changing the controls layout.
 
 **Player modes:**

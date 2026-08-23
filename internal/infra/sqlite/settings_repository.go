@@ -70,8 +70,8 @@ func NewSettingsRepository(db *DB) domain.SettingsRepository {
 
 func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSettings) error {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO app_settings (id, language, theme, primary_color, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, pairing_mqtt_port, show_player_indicator, auto_advance_notifications_enabled, library_sync_interval, library_analysis_enabled, library_analysis_worker_count, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, mood_derivation_version, max_queue_size, crossfade_seconds, blend_artwork_during_crossfade, high_contrast_lyrics, eq_preamp, stereo_width, updated_at)
-		 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+		`INSERT INTO app_settings (id, language, theme, primary_color, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, pairing_mqtt_port, show_player_indicator, auto_advance_notifications_enabled, library_sync_interval, library_analysis_enabled, library_analysis_worker_count, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, mood_derivation_version, max_queue_size, crossfade_seconds, blend_artwork_during_crossfade, high_contrast_lyrics, living_artwork_background, eq_preamp, stereo_width, updated_at)
+		 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 		 ON CONFLICT(id) DO UPDATE SET
 		   language = excluded.language,
 		   theme = excluded.theme,
@@ -114,6 +114,7 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		   crossfade_seconds = excluded.crossfade_seconds,
 		   blend_artwork_during_crossfade = excluded.blend_artwork_during_crossfade,
 		   high_contrast_lyrics = excluded.high_contrast_lyrics,
+		   living_artwork_background = excluded.living_artwork_background,
 		   eq_preamp = excluded.eq_preamp,
 		   stereo_width = excluded.stereo_width,
 		   updated_at = excluded.updated_at`,
@@ -158,6 +159,7 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		domain.ClampCrossfadeSeconds(settings.CrossfadeSeconds),
 		settings.BlendArtworkDuringCrossfade,
 		settings.HighContrastLyrics,
+		settings.LivingArtworkBackground,
 		settings.EQPreamp,
 		settings.StereoWidth,
 	)
@@ -210,11 +212,12 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		CrossfadeSeconds                int            `db:"crossfade_seconds"`
 		BlendArtworkDuringCrossfade     bool           `db:"blend_artwork_during_crossfade"`
 		HighContrastLyrics              bool           `db:"high_contrast_lyrics"`
+		LivingArtworkBackground         bool           `db:"living_artwork_background"`
 		EQPreamp                        float64        `db:"eq_preamp"`
 		StereoWidth                     float64        `db:"stereo_width"`
 	}
 	err := r.db.GetContext(ctx, &row,
-		`SELECT language, theme, primary_color, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, pairing_mqtt_port, show_player_indicator, auto_advance_notifications_enabled, library_sync_interval, library_analysis_enabled, library_analysis_worker_count, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, mood_derivation_version, max_queue_size, crossfade_seconds, blend_artwork_during_crossfade, high_contrast_lyrics, eq_preamp, stereo_width FROM app_settings WHERE id = 1`,
+		`SELECT language, theme, primary_color, lastfm_username, auto_check_update, start_at_login, show_tray_icon, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, pairing_mqtt_port, show_player_indicator, auto_advance_notifications_enabled, library_sync_interval, library_analysis_enabled, library_analysis_worker_count, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, mood_derivation_version, max_queue_size, crossfade_seconds, blend_artwork_during_crossfade, high_contrast_lyrics, living_artwork_background, eq_preamp, stereo_width FROM app_settings WHERE id = 1`,
 	)
 	if err == sql.ErrNoRows {
 		return &domain.AppSettings{
@@ -247,6 +250,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 			CrossfadeSeconds:                0,
 			BlendArtworkDuringCrossfade:     true,
 			HighContrastLyrics:              true,
+			LivingArtworkBackground:         true,
 			AutoAdvanceNotificationsEnabled: true,
 			EQPreamp:                        0,
 			StereoWidth:                     100,
@@ -298,6 +302,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		CrossfadeSeconds:                domain.ClampCrossfadeSeconds(row.CrossfadeSeconds),
 		BlendArtworkDuringCrossfade:     row.BlendArtworkDuringCrossfade,
 		HighContrastLyrics:              row.HighContrastLyrics,
+		LivingArtworkBackground:         row.LivingArtworkBackground,
 		EQPreamp:                        row.EQPreamp,
 		StereoWidth:                     row.StereoWidth,
 	}, nil
