@@ -315,6 +315,10 @@ func (s *WindowService) SetMiniPlayerExpanded(expanded bool) {
 		return
 	}
 
+	// Update AppKit's aspect constraint before its minimum size. During a live
+	// resize, applying the expanded minimum while the compact 1:1 ratio is
+	// still active can leave the window at compact height and collapse the panel.
+	LockMiniPlayerAspect(w, expanded)
 	w.SetMinSize(miniMinWidth, miniMinHeight(expanded))
 	to := miniRect(w.Bounds(), expanded)
 	if screen, err := w.GetScreen(); err == nil && screen != nil {
@@ -324,7 +328,6 @@ func (s *WindowService) SetMiniPlayerExpanded(expanded bool) {
 	if !SetMiniPlayerSizeNoAnimation(w, to.Width, to.Height) {
 		w.SetBounds(to)
 	}
-	LockMiniPlayerAspect(w, expanded)
 }
 
 // RestoreMiniAlwaysOnTop reapplies the persisted pin level to the open mini
