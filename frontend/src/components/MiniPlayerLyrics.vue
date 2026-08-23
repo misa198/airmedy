@@ -113,7 +113,7 @@ onUnmounted(() => {
     </div>
 
     <div v-else-if="isSynced" ref="scrollContainer" data-test="mini-synced-lyrics"
-      class="h-full overflow-y-auto px-4 py-24 scrollbar-hide" @wheel.passive="enterBrowseMode"
+      class="h-full overflow-y-auto px-4 py-6 scrollbar-hide" @wheel.passive="enterBrowseMode"
       @pointerdown="enterBrowseMode">
       <div class="space-y-5">
         <button v-for="(line, index) in syncedLines" :key="`${line.time}-${index}`" ref="lineRefs" type="button"
