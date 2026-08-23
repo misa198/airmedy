@@ -151,6 +151,12 @@ h3 {
   border-radius: var(--radius);
 }
 
+@supports (backdrop-filter: blur(1px)) {
+  .glass {
+    backdrop-filter: blur(30px);
+  }
+}
+
 /* Buttons */
 .btn {
   display: inline-block;
