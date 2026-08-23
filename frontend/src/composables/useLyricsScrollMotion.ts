@@ -1,5 +1,6 @@
 import { onUnmounted } from 'vue'
 
+export const lyricsMotionDurationClasses = 'duration-[230ms] ease-[cubic-bezier(0.4,0,0.2,1)]'
 export const lyricsMotionClasses = 'transition-[color,opacity] duration-[230ms] ease-[cubic-bezier(0.4,0,0.2,1)]'
 
 const lyricsMotionDuration = 230
