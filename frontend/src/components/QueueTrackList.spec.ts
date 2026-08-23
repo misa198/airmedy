@@ -56,6 +56,7 @@ describe('QueueTrackList', () => {
 
     expect(mocks.scrollToIndex).not.toHaveBeenCalled()
     expect(wrapper.get('[data-test="queue-track-list"]').classes()).toContain('opacity-0')
+    expect(wrapper.get('[data-test="queue-track-list"]').attributes('handle')).toBeUndefined()
 
     mocks.resize?.([], {} as ResizeObserver)
     mocks.frame?.(0)

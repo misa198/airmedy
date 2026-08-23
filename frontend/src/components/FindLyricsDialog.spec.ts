@@ -7,6 +7,16 @@ const saveLyrics = vi.fn().mockResolvedValue(undefined)
 const searchLyrics = vi.fn()
 const publishCurrentLyrics = vi.fn().mockResolvedValue(3)
 
+vi.mock('@wailsio/runtime', () => ({
+  Create: {
+    Any: (value: unknown) => value,
+    Array: (create: (value: unknown) => unknown) => (values: unknown[] = []) => values.map(create),
+    ByteSlice: (value: unknown) => value,
+    Map: () => (value: unknown) => value,
+    Nullable: (create: (value: unknown) => unknown) => (value: unknown) => value == null ? null : create(value),
+  },
+}))
+
 vi.mock('../../bindings/airmedy/internal/infra/wails/lyricsservice', () => ({
   SaveLyrics: (...args: unknown[]) => saveLyrics(...args),
   SaveLyricsFile: vi.fn(),

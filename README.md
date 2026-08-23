@@ -52,7 +52,7 @@
 </tr>
 <tr>
 <td width="33%"><img src="docs/screenshots/fullscreen-player-1.webp" alt="Fullscreen player" width="100%" /><p align="center">Fullscreen player</p></td>
-<td width="33%"><img src="docs/screenshots/mini-player-1.webp" alt="Mini player" width="100%" /><p align="center">Mini player</p></td>
+<td width="33%"><img src="docs/screenshots/mini-player-2.webp" alt="Mini player" width="100%" /><p align="center">Mini player</p></td>
 <td width="33%"><img src="docs/screenshots/search.webp" alt="Search" width="100%" /><p align="center">Search</p></td>
 </tr>
 <tr>
