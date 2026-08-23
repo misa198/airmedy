@@ -161,6 +161,7 @@
     <string name="playlist_choose_artwork">Chọn ảnh bìa danh sách phát</string>
     <string name="playlist_clear_artwork">Xóa ảnh bìa danh sách phát</string>
     <string name="bottom_sheet_dismiss">Đóng bảng</string>
+    <string name="bottom_sheet_back">Quay lại</string>
     <string name="create">Tạo</string>
     <string name="save">Lưu</string>
     <string name="playlist_sync_failed">Không thể đồng bộ danh sách phát này với máy tính</string>
@@ -367,5 +368,5 @@
     <string name="lyrics_source_auto_fetch">Tự động tìm</string>
     <string name="lyrics_info_action">Thông tin lời bài hát</string>
     <string name="lyrics_info_title">Nguồn lời bài hát</string>
-    <string name="lyrics_info_description">Nếu bản nhạc không có lời bài hát được đồng bộ từ desktop, ứng dụng sẽ tìm lời từ các nguồn dữ liệu đã bật. Lời bài hát được tìm trên mobile sẽ không đồng bộ ngược lại desktop.</string>
+    <string name="lyrics_info_description">Bạn có thể chọn ưu tiên lời bài hát từ desktop hoặc tự động tìm lời. Lời bài hát được tự động tìm trên mobile sẽ không đồng bộ ngược lại desktop.</string>
 </resources>

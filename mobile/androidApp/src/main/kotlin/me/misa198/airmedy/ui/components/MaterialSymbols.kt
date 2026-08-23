@@ -46,6 +46,7 @@ object MaterialSymbols {
     const val LegendToggle = "legend_toggle"
     const val Search = "search"
     const val Settings = "settings"
+    const val Schedule = "schedule"
     const val PlayCircle = "play_circle"
     const val QueueMusic = "queue_music"
     const val PlaylistAdd = "playlist_add"

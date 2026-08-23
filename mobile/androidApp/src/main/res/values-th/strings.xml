@@ -161,6 +161,7 @@
     <string name="playlist_choose_artwork">เลือกภาพหน้าปกเพลย์ลิสต์</string>
     <string name="playlist_clear_artwork">ล้างภาพหน้าปกเพลย์ลิสต์</string>
     <string name="bottom_sheet_dismiss">ปิดหน้าต่าง</string>
+    <string name="bottom_sheet_back">กลับ</string>
     <string name="create">สร้าง</string>
     <string name="save">บันทึก</string>
     <string name="playlist_sync_failed">ไม่สามารถซิงค์เพลย์ลิสต์นี้กับเดสก์ท็อปได้</string>
@@ -367,5 +368,5 @@
     <string name="lyrics_source_auto_fetch">ดึงข้อมูลอัตโนมัติ</string>
     <string name="lyrics_info_action">ข้อมูลเนื้อเพลง</string>
     <string name="lyrics_info_title">แหล่งข้อมูลเนื้อเพลง</string>
-    <string name="lyrics_info_description">หากแทร็กไม่มีเนื้อเพลงที่ซิงค์จากเดสก์ท็อป แอปจะดึงเนื้อเพลงจากแหล่งข้อมูลที่เปิดใช้งาน เนื้อเพลงที่ดึงบนมือถือจะไม่ซิงค์กลับไปยังเดสก์ท็อป</string>
+    <string name="lyrics_info_description">คุณสามารถเลือกให้เนื้อเพลงจากเดสก์ท็อปมีความสำคัญก่อน หรือให้แอปดึงเนื้อเพลงโดยอัตโนมัติ เนื้อเพลงที่ดึงโดยอัตโนมัติบนมือถือจะไม่ซิงค์กลับไปยังเดสก์ท็อป</string>
 </resources>

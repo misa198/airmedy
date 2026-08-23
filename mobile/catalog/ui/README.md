@@ -151,6 +151,15 @@ Playback position is authoritative for the active line; browsing or dragging
 only pauses auto-follow and changes playback only when a valid lyric tap
 dispatches seek.
 
+Bottom sheets may use `AirmedyBottomSheetStack`: only its top entry renders;
+popping removes that entry while the entry below retains its data. Find Lyrics
+uses it for a full-height, prefilled search sheet with leading input icons and
+placeholders (not separate labels), and a lyric-content-only preview sheet.
+Selecting
+a candidate saves the Android provider cache. If that track is playing, the
+shell uses the selection for the current playback session only; later plays
+continue to follow the configured Desktop sync or Auto fetch preference.
+
 ## Tests and safe changes
 
 Tests follow ownership:

@@ -161,6 +161,7 @@
     <string name="playlist_choose_artwork">アートワークを選択</string>
     <string name="playlist_clear_artwork">アートワークを消去</string>
     <string name="bottom_sheet_dismiss">閉じる</string>
+    <string name="bottom_sheet_back">戻る</string>
     <string name="create">作成</string>
     <string name="save">保存</string>
     <string name="playlist_sync_failed">このプレイリストをデスクトップと同期できませんでした</string>
@@ -367,5 +368,5 @@
     <string name="lyrics_source_auto_fetch">自動取得</string>
     <string name="lyrics_info_action">歌詞情報</string>
     <string name="lyrics_info_title">歌詞のデータソース</string>
-    <string name="lyrics_info_description">デスクトップから同期された歌詞がない場合、アプリは有効なデータソースから歌詞を取得します。モバイルで取得した歌詞はデスクトップへ同期されません。</string>
+    <string name="lyrics_info_description">デスクトップの歌詞を優先するか、自動取得するかを選択できます。モバイルで自動取得した歌詞はデスクトップに同期されません。</string>
 </resources>

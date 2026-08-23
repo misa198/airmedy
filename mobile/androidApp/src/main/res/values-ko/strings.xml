@@ -161,6 +161,7 @@
     <string name="playlist_choose_artwork">아트워크 선택</string>
     <string name="playlist_clear_artwork">아트워크 삭제</string>
     <string name="bottom_sheet_dismiss">시트 닫기</string>
+    <string name="bottom_sheet_back">뒤로</string>
     <string name="create">생성</string>
     <string name="save">저장</string>
     <string name="playlist_sync_failed">이 재생 목록을 데스크톱과 동기화할 수 없습니다</string>
@@ -367,5 +368,5 @@
     <string name="lyrics_source_auto_fetch">자동 가져오기</string>
     <string name="lyrics_info_action">가사 정보</string>
     <string name="lyrics_info_title">가사 데이터 소스</string>
-    <string name="lyrics_info_description">데스크톱에서 동기화된 가사가 없으면 앱이 활성화된 데이터 소스에서 가사를 가져옵니다. 모바일에서 가져온 가사는 데스크톱으로 동기화되지 않습니다.</string>
+    <string name="lyrics_info_description">데스크톱의 가사를 우선할지 자동으로 가져올지 선택할 수 있습니다. 모바일에서 자동으로 가져온 가사는 데스크톱과 동기화되지 않습니다.</string>
 </resources>

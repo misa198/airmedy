@@ -161,6 +161,7 @@
     <string name="playlist_choose_artwork">Escolher capa da playlist</string>
     <string name="playlist_clear_artwork">Remover capa da playlist</string>
     <string name="bottom_sheet_dismiss">Fechar painel</string>
+    <string name="bottom_sheet_back">Voltar</string>
     <string name="create">Criar</string>
     <string name="save">Guardar</string>
     <string name="playlist_sync_failed">Não foi possível sincronizar esta playlist com o computador</string>
@@ -375,5 +376,5 @@
     <string name="lyrics_source_auto_fetch">Obter automaticamente</string>
     <string name="lyrics_info_action">Informações das letras</string>
     <string name="lyrics_info_title">Fontes das letras</string>
-    <string name="lyrics_info_description">Se uma faixa não tiver letras sincronizadas do desktop, a aplicação obtém letras das fontes de dados ativadas. As letras obtidas no telemóvel não são sincronizadas de volta para o desktop.</string>
+    <string name="lyrics_info_description">Pode escolher entre dar prioridade às letras do desktop ou obtê-las automaticamente. As letras obtidas automaticamente no telemóvel não são sincronizadas de volta para o desktop.</string>
 </resources>

@@ -7,6 +7,7 @@ import java.net.URL
 import java.net.URLEncoder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.cancel
@@ -26,9 +27,19 @@ import me.misa198.airmedy.sync.AndroidLibrarySyncStore
 
 internal data class FetchedLyric(val content: String, val source: String)
 
+internal data class LyricsSearchResult(
+    val provider: String,
+    val trackName: String,
+    val artistName: String,
+    val duration: Int,
+    val content: String,
+    val source: String,
+)
+
 internal abstract class LyricsProvider {
     abstract fun enabled(settings: LyricsSettings): Boolean
     abstract suspend fun fetch(track: LyricsTrack): FetchedLyric?
+    abstract suspend fun search(title: String, artist: String, duration: Int): List<LyricsSearchResult>
 }
 
 internal class AndroidLyricsService(
@@ -66,6 +77,20 @@ internal class AndroidLyricsService(
         } ?: Log.d("AirmedyLyrics", "No lyrics found for ${track.title}")
     }
 
+    suspend fun search(trackId: String, title: String, artist: String, settings: LyricsSettings): List<LyricsSearchResult> {
+        if (title.isBlank()) return emptyList()
+        val duration = library.lyricsTrack(trackId)?.duration ?: 0
+        return coroutineScope {
+            providers.filter { it.enabled(settings) }.map { provider ->
+                async {
+                    runCatching { provider.search(title.trim(), artist.trim(), duration) }
+                        .onFailure { Log.w("AirmedyLyrics", "Lyrics search provider failed", it) }
+                        .getOrDefault(emptyList())
+                }
+            }.awaitAll().flatten()
+        }
+    }
+
 }
 
 internal class LrclibLyricsProvider : LyricsProvider() {
@@ -90,6 +115,17 @@ internal class LrclibLyricsProvider : LyricsProvider() {
         return values.firstOrNull { it.trackName == best.title && it.artistName == best.artist && it.duration == best.durationSeconds }
             ?.toLyric()
     }
+
+    override suspend fun search(title: String, artist: String, duration: Int): List<LyricsSearchResult> = request(
+        "https://lrclib.net/api/search",
+        mapOf("track_name" to title, "artist_name" to artist),
+    )?.let { response ->
+        ProviderJson.decodeFromString(ListSerializer, response).mapNotNull { candidate ->
+            candidate.toLyric()?.let { lyric ->
+                LyricsSearchResult("lrclib", candidate.trackName, candidate.artistName, candidate.duration.toInt(), lyric.content, lyric.source)
+            }
+        }
+    } ?: emptyList()
 
     private suspend fun exact(
         title: String,
@@ -162,6 +198,23 @@ internal class KugouLyricsProvider : LyricsProvider() {
             }
         }
         return null
+    }
+
+    override suspend fun search(title: String, artist: String, duration: Int): List<LyricsSearchResult> = coroutineScope {
+        kugouSearch("$artist - $title", duration * 1000).take(5).map { candidate ->
+            async {
+                kugouDownload(candidate.id, candidate.accesskey)?.takeIf(String::isNotBlank)?.let { content ->
+                    LyricsSearchResult(
+                        provider = "kugou",
+                        trackName = title,
+                        artistName = artist,
+                        duration = candidate.duration / 1000,
+                        content = decodeLyricsHtml(content),
+                        source = if (SyncedLrc.containsMatchIn(content)) "kugou-synced" else "kugou-plain",
+                    )
+                }
+            }
+        }.awaitAll().filterNotNull()
     }
 
     private suspend fun kugouSearch(keyword: String, duration: Int): List<KugouCandidate> = request(

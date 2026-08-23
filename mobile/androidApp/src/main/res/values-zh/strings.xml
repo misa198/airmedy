@@ -161,6 +161,7 @@
     <string name="playlist_choose_artwork">选择播放列表封面</string>
     <string name="playlist_clear_artwork">清除播放列表封面</string>
     <string name="bottom_sheet_dismiss">关闭面板</string>
+    <string name="bottom_sheet_back">返回</string>
     <string name="create">创建</string>
     <string name="save">保存</string>
     <string name="playlist_sync_failed">无法将此播放列表同步到电脑端</string>
@@ -367,5 +368,5 @@
     <string name="lyrics_source_auto_fetch">自动获取</string>
     <string name="lyrics_info_action">歌词信息</string>
     <string name="lyrics_info_title">歌词数据源</string>
-    <string name="lyrics_info_description">如果曲目没有从桌面端同步的歌词，应用会从已启用的数据源获取歌词。移动端获取的歌词不会同步回桌面端。</string>
+    <string name="lyrics_info_description">你可以选择优先使用桌面端的歌词，或自动获取歌词。在移动端自动获取的歌词不会同步回桌面端。</string>
 </resources>

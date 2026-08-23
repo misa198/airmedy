@@ -161,6 +161,7 @@
     <string name="playlist_choose_artwork">Scegli copertina playlist</string>
     <string name="playlist_clear_artwork">Rimuovi copertina playlist</string>
     <string name="bottom_sheet_dismiss">Chiudi pannello</string>
+    <string name="bottom_sheet_back">Indietro</string>
     <string name="create">Crea</string>
     <string name="save">Salva</string>
     <string name="playlist_sync_failed">Impossibile sincronizzare questa playlist con il desktop</string>
@@ -375,5 +376,5 @@
     <string name="lyrics_source_auto_fetch">Recupero automatico</string>
     <string name="lyrics_info_action">Informazioni sui testi</string>
     <string name="lyrics_info_title">Fonti dei testi</string>
-    <string name="lyrics_info_description">Se un brano non ha testi sincronizzati dal desktop, l’app li recupera dalle fonti dati abilitate. I testi recuperati dal mobile non vengono sincronizzati con il desktop.</string>
+    <string name="lyrics_info_description">Puoi scegliere se dare priorità ai testi dal desktop o recuperarli automaticamente. I testi recuperati automaticamente sul mobile non vengono sincronizzati con il desktop.</string>
 </resources>

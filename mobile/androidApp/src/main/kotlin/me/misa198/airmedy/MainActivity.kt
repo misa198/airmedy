@@ -65,7 +65,6 @@ import me.misa198.airmedy.lastfm.isLastFmAuthCallback
 import me.misa198.airmedy.lyrics.AndroidLyricsService
 import me.misa198.airmedy.lyrics.LyricsPreferences
 import kotlin.math.roundToInt
-
 import me.misa198.airmedy.ui.screens.LibraryTracksViewModel
 import me.misa198.airmedy.ui.screens.LibraryArtistsViewModel
 import me.misa198.airmedy.ui.screens.LibraryAlbumsViewModel
@@ -81,6 +80,8 @@ import me.misa198.airmedy.ui.screens.ArtistDetailsViewModel
 import me.misa198.airmedy.ui.screens.GenreDetailsViewModel
 import me.misa198.airmedy.ui.screens.ComposerDetailsViewModel
 import me.misa198.airmedy.ui.screens.InsightViewModel
+
+private data class ManualLyricsOverride(val trackId: String, val content: String)
 
 class MainActivity : ComponentActivity() {
     private val reconciliationMutex = Mutex()
@@ -276,10 +277,15 @@ class MainActivity : ComponentActivity() {
             }
             val desktopLyrics by desktopLyricsFlow.collectAsStateWithLifecycle(initialValue = null)
             val providerLyrics by providerLyricsFlow.collectAsStateWithLifecycle(initialValue = null)
-            val lyrics = me.misa198.airmedy.lyrics.preferredLyrics(lyricsSettings.preferredSource, desktopLyrics, providerLyrics)
+            var manualLyricsOverride by remember { mutableStateOf<ManualLyricsOverride?>(null) }
+            LaunchedEffect(lyricsTrackId) {
+                if (manualLyricsOverride?.trackId != lyricsTrackId) manualLyricsOverride = null
+            }
+            val lyrics = manualLyricsOverride?.takeIf { it.trackId == lyricsTrackId }?.content
+                ?: me.misa198.airmedy.lyrics.preferredLyrics(lyricsSettings.preferredSource, desktopLyrics, providerLyrics)
             var lyricsLoadingTrackId by remember { mutableStateOf<String?>(null) }
-            LaunchedEffect(lyricsTrackId, desktopLyrics, providerLyrics, lyricsSettings) {
-                if (lyricsTrackId == null || !providerLyrics.isNullOrBlank() ||
+            LaunchedEffect(lyricsTrackId, desktopLyrics, providerLyrics, lyricsSettings, manualLyricsOverride) {
+                if (lyricsTrackId == null || manualLyricsOverride?.trackId == lyricsTrackId || !providerLyrics.isNullOrBlank() ||
                     (lyricsSettings.preferredSource == me.misa198.airmedy.lyrics.LyricsSource.Desktop && !desktopLyrics.isNullOrBlank())
                 ) return@LaunchedEffect
                 lyricsLoadingTrackId = lyricsTrackId
@@ -469,6 +475,11 @@ class MainActivity : ComponentActivity() {
                 queueTracks = allTracks,
                 lyrics = lyrics,
                 lyricsLoading = lyricsLoadingTrackId == lyricsTrackId,
+                onSearchLyrics = { track, title, artist -> lyricsService.search(track.id, title, artist, lyricsSettings) },
+                onLyricsSelected = { trackId, lyric ->
+                    AndroidSyncRuntime.syncStore().saveProviderLyrics(trackId, lyric.content, lyric.source)
+                    if (trackId == lyricsTrackId) manualLyricsOverride = ManualLyricsOverride(trackId, lyric.content)
+                },
                 artworkCrossfade = artworkCrossfade,
                 blendArtworkDuringCrossfade = crossfadeSettings.blendArtworkDuringCrossfade,
                 systemVolume = systemMusicVolumeState,

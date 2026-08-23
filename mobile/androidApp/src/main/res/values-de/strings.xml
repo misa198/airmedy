@@ -161,6 +161,7 @@
     <string name="playlist_choose_artwork">Cover auswählen</string>
     <string name="playlist_clear_artwork">Cover entfernen</string>
     <string name="bottom_sheet_dismiss">Schließen</string>
+    <string name="bottom_sheet_back">Zurück</string>
     <string name="create">Erstellen</string>
     <string name="save">Speichern</string>
     <string name="playlist_sync_failed">Diese Playlist konnte nicht mit dem Desktop synchronisiert werden</string>
@@ -375,5 +376,5 @@
     <string name="lyrics_source_auto_fetch">Automatisch abrufen</string>
     <string name="lyrics_info_action">Songtextinformationen</string>
     <string name="lyrics_info_title">Songtextquellen</string>
-    <string name="lyrics_info_description">Wenn für einen Titel keine vom Desktop synchronisierten Songtexte vorliegen, ruft die App Songtexte von den aktivierten Datenquellen ab. Auf dem Mobilgerät abgerufene Songtexte werden nicht zurück zum Desktop synchronisiert.</string>
+    <string name="lyrics_info_description">Du kannst wählen, ob Songtexte vom Desktop bevorzugt oder automatisch abgerufen werden sollen. Auf dem Mobilgerät automatisch abgerufene Songtexte werden nicht zurück zum Desktop synchronisiert.</string>
 </resources>
