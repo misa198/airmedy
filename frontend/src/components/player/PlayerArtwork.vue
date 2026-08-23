@@ -9,7 +9,7 @@ const props = defineProps<{
   trackTitle: string
   isPlaying: boolean
   crossfade?: ArtworkCrossfadeState | null
-  maxSize?: 20 | 22
+  maxSize?: 20 | 24
 }>()
 
 const outgoingOpacity = ref(1)
@@ -59,7 +59,7 @@ onUnmounted(stopCrossfadeAnimation)
     class="relative rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.6)] overflow-hidden flex-shrink-0 ring-1 ring-white/8 transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] aspect-square w-auto"
     :class="[
       isPlaying ? 'scale-100' : 'scale-[0.80]',
-      maxSize === 20 ? 'h-[clamp(8rem,34vh,20rem)]' : 'h-[clamp(8rem,34vh,22rem)]',
+      maxSize === 20 ? 'h-[clamp(8rem,34vh,20rem)]' : 'h-[clamp(8rem,34vh,24rem)]',
     ]">
     <template v-if="crossfade">
       <LazyImg v-if="crossfade.fromUrl" :src="crossfade.fromUrl" :alt="trackTitle"

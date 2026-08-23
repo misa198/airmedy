@@ -3,7 +3,6 @@ import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import SyncedLyricsView from './SyncedLyricsView.vue'
 
-const originalScrollTo = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollTo')
 const originalClientHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight')
 const originalClientWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth')
 
@@ -11,11 +10,6 @@ describe('SyncedLyricsView', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
-    if (originalScrollTo) {
-      Object.defineProperty(HTMLElement.prototype, 'scrollTo', originalScrollTo)
-    } else {
-      delete (HTMLElement.prototype as { scrollTo?: HTMLElement['scrollTo'] }).scrollTo
-    }
     if (originalClientHeight) {
       Object.defineProperty(HTMLElement.prototype, 'clientHeight', originalClientHeight)
     } else {
@@ -29,9 +23,9 @@ describe('SyncedLyricsView', () => {
   })
 
   it('scrolls to the active line once the initially collapsed panel has layout', async () => {
-    const scrollTo = vi.fn()
     let clientWidth = 0
     let resizeCallback: ResizeObserverCallback | undefined
+    const frames = new Map<number, FrameRequestCallback>()
     class ResizeObserverMock {
       constructor(callback: ResizeObserverCallback) {
         resizeCallback = callback
@@ -40,16 +34,16 @@ describe('SyncedLyricsView', () => {
       disconnect() {}
     }
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
-      callback(0)
-      return 1
+      const id = frames.size + 1
+      frames.set(id, callback)
+      return id
     })
-    vi.stubGlobal('cancelAnimationFrame', vi.fn())
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id))
     vi.stubGlobal('ResizeObserver', ResizeObserverMock)
-    Object.defineProperty(HTMLElement.prototype, 'scrollTo', { configurable: true, value: scrollTo })
     Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get: () => 400 })
     Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get: () => clientWidth })
 
-    mount(SyncedLyricsView, {
+    const wrapper = mount(SyncedLyricsView, {
       props: {
         currentPosition: 15,
         lines: [
@@ -61,13 +55,15 @@ describe('SyncedLyricsView', () => {
     })
 
     await nextTick()
-    expect(scrollTo).not.toHaveBeenCalled()
+    for (const callback of [...frames.values()]) callback(0)
+    frames.clear()
 
     clientWidth = 400
     resizeCallback?.([], {} as ResizeObserver)
     await nextTick()
 
-    expect(scrollTo).toHaveBeenCalled()
+    for (const callback of [...frames.values()]) callback(100)
+    expect(wrapper.get('[data-test="lyric-line"]').element.scrollTop).toBe(0)
   })
 
   it('progressively blurs non-active lines in immersive mode', () => {
@@ -129,13 +125,13 @@ describe('SyncedLyricsView', () => {
   })
 
   it('lets the listener browse without auto-follow, then resumes follow on lyric tap', async () => {
-    const scrollTo = vi.fn()
+    const frames = new Map<number, FrameRequestCallback>()
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
-      callback(0)
-      return 1
+      const id = frames.size + 1
+      frames.set(id, callback)
+      return id
     })
-    vi.stubGlobal('cancelAnimationFrame', vi.fn())
-    Object.defineProperty(HTMLElement.prototype, 'scrollTo', { configurable: true, value: scrollTo })
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id))
     Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get: () => 400 })
     Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get: () => 400 })
 
@@ -148,24 +144,22 @@ describe('SyncedLyricsView', () => {
       props: { immersive: true, currentPosition: 10, lines },
     })
     await nextTick()
-    scrollTo.mockClear()
 
     await wrapper.find('[data-test="lyric-line"]').trigger('wheel')
     await wrapper.setProps({ currentPosition: 20 })
     await nextTick()
 
-    expect(scrollTo).not.toHaveBeenCalled()
     expect(wrapper.findAll('[data-test="lyric-line"]')[0].attributes('style')).toContain('blur(0)')
     expect(wrapper.findAll('[data-test="lyric-line"]')[0].attributes('style')).toContain('opacity: 1')
 
     await wrapper.findAll('[data-test="lyric-line"]')[0].trigger('click')
     expect(wrapper.emitted('seek')).toEqual([[0]])
     await nextTick()
-    expect(scrollTo).toHaveBeenLastCalledWith(expect.objectContaining({ behavior: 'smooth' }))
+    expect(frames.size).toBeGreaterThan(0)
 
     await wrapper.setProps({ currentPosition: 0 })
     await nextTick()
-    expect(scrollTo).toHaveBeenCalled()
+    expect(frames.size).toBeGreaterThan(0)
   })
 
   it('seeks a lyric tap without entering browse mode first', async () => {

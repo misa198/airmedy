@@ -4,6 +4,7 @@ import { Mic2, X } from '@lucide/vue'
 import { usePlayerStore } from '../stores/player'
 import { useI18n } from 'vue-i18n'
 import { useLyrics } from '../composables/useLyrics'
+import { lyricsMotionClasses, useLyricsScrollMotion } from '../composables/useLyricsScrollMotion'
 
 const { t } = useI18n()
 const store = usePlayerStore()
@@ -26,6 +27,7 @@ let resizeObserver: ResizeObserver | null = null
 let waitingForLayout = false
 let hasPositionedInitialLine = false
 let previousActiveIndex = -1
+const { scrollTo, stop: stopScrollAnimation } = useLyricsScrollMotion()
 
 // Reset stale refs when lines change so indexes stay aligned.
 watch(() => syncedLines.value, () => {
@@ -40,32 +42,28 @@ function isVisible(container: HTMLElement, el: HTMLElement) {
     && el.offsetTop + el.clientHeight > container.scrollTop
 }
 
-function scrollToActive(index: number, behavior: ScrollBehavior): boolean {
+function scrollToActive(index: number, animated: boolean): boolean {
   if (index === -1) return false
   const container = scrollContainer.value
   const el = lineRefs.value[index]
   // The drawer animates in from zero width/height. Wait until it has a real
   // layout; otherwise offset measurements are invalid on first open.
   if (!container || !el || container.clientHeight === 0 || container.clientWidth === 0) return false
-  container.scrollTo({
-    top: el.offsetTop - container.clientHeight / 2 + el.clientHeight / 2,
-    behavior,
-  })
+  scrollTo(container, el.offsetTop - container.clientHeight / 2 + el.clientHeight / 2, animated)
   hasPositionedInitialLine = true
   return true
 }
 
 function scheduleScrollToActive(index: number, previousIndex = previousActiveIndex) {
+  stopScrollAnimation()
   nextTick(() => {
     if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame)
     scrollFrame = requestAnimationFrame(() => {
       scrollFrame = undefined
       const container = scrollContainer.value
       const previous = lineRefs.value[previousIndex]
-      const behavior: ScrollBehavior = hasPositionedInitialLine && container && previous && isVisible(container, previous)
-        ? 'smooth'
-        : 'auto'
-      waitingForLayout = index !== -1 && !scrollToActive(index, behavior)
+      const animated = !!(hasPositionedInitialLine && container && previous && isVisible(container, previous))
+      waitingForLayout = index !== -1 && !scrollToActive(index, animated)
     })
   })
 }
@@ -104,6 +102,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame)
+  stopScrollAnimation()
   resizeObserver?.disconnect()
   resizeObserver = null
 })
@@ -141,12 +140,13 @@ onUnmounted(() => {
       </div>
 
       <!-- Synced view -->
-      <div v-else-if="isSynced" ref="scrollContainer" class="h-full overflow-y-auto px-4 py-48 scrollbar-hide"
+      <div v-else-if="isSynced" ref="scrollContainer" class="h-full overflow-y-auto px-4 py-6 scrollbar-hide"
         @wheel.passive="enterBrowseMode" @pointerdown="enterBrowseMode">
         <div class="space-y-6">
           <div v-for="(line, index) in syncedLines" :key="index" ref="lineRefs"
-            class="cursor-pointer duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] opacity-100 select-none leading-snug py-1 origin-left"
+            class="cursor-pointer opacity-100 select-none leading-snug py-1 origin-left"
             :class="[
+              lyricsMotionClasses,
               isBrowsing
                 ? 'text-foreground opacity-100'
                 : index === activeIndex

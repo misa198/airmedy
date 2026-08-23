@@ -40,17 +40,19 @@ onMounted(async () => {
     isReady.value = true
     scrollFrame = null
   }
-  scrollFrame = requestAnimationFrame(revealCurrentTrack)
   await nextTick()
   if (disposed) return
   const list = scroller.value?.$el as Element | undefined
-  if (!list || typeof ResizeObserver === 'undefined') return
-  scrollObserver = new ResizeObserver(() => {
-    scrollObserver?.disconnect()
-    scrollObserver = null
-    if (scrollFrame === null) scrollFrame = requestAnimationFrame(revealCurrentTrack)
-  })
-  scrollObserver.observe(list)
+  if (list && typeof ResizeObserver !== 'undefined') {
+    scrollObserver = new ResizeObserver(() => {
+      scrollObserver?.disconnect()
+      scrollObserver = null
+      scrollFrame = requestAnimationFrame(revealCurrentTrack)
+    })
+    scrollObserver.observe(list)
+  } else {
+    scrollFrame = requestAnimationFrame(revealCurrentTrack)
+  }
 })
 
 onUnmounted(() => {
@@ -72,6 +74,7 @@ defineExpose({ scrollToCurrentTrack })
     <VirtualList
       v-show="store.queue.length > 0"
       ref="scroller"
+      data-test="queue-track-list"
       :model-value="store.queue"
       @update:model-value="store.reorderQueue"
       data-key="id"

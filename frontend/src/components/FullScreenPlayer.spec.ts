@@ -174,7 +174,7 @@ describe('FullScreenPlayer', () => {
   })
 
   it.each([
-    [false, 22],
+    [false, 24],
     [true, 20],
   ])('sets the artwork maximum size to %irem when the right column is %s', (rightColumnOpen, expectedMaxSize) => {
     const wrapper = mountPlayer({

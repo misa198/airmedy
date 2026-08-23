@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { LyricLine } from '../composables/useLyrics'
+import { useLyricsScrollMotion } from '../composables/useLyricsScrollMotion'
 
 const props = defineProps<{
   lines: LyricLine[]
@@ -27,6 +28,7 @@ let resizeObserver: ResizeObserver | null = null
 let waitingForLayout = false
 let hasPositionedInitialLine = false
 let previousActiveIndex = -1
+const { scrollTo, stop: stopScrollAnimation } = useLyricsScrollMotion()
 
 // Reset stale refs when the track's lines change so indexes stay aligned.
 watch(() => props.lines, () => {
@@ -41,7 +43,7 @@ function isVisible(container: HTMLElement, el: HTMLElement) {
     && el.offsetTop + el.clientHeight > container.scrollTop
 }
 
-function scrollToActive(index: number, behavior: ScrollBehavior) {
+function scrollToActive(index: number, animated: boolean) {
   if (index === -1) return false
   const container = scrollContainer.value
   const el = lineRefs.value[index]
@@ -49,15 +51,13 @@ function scrollToActive(index: number, behavior: ScrollBehavior) {
   // real layout; otherwise offset measurements are invalid on first open.
   if (!container || !el || container.clientHeight === 0 || container.clientWidth === 0) return false
   const activeLineViewportPosition = props.immersive ? 0.32 : 0.5
-  container.scrollTo({
-    top: el.offsetTop - container.clientHeight * activeLineViewportPosition + el.clientHeight / 2,
-    behavior,
-  })
+  scrollTo(container, el.offsetTop - container.clientHeight * activeLineViewportPosition + el.clientHeight / 2, animated)
   hasPositionedInitialLine = true
   return true
 }
 
 function scheduleScrollToActive(index: number, previousIndex = previousActiveIndex) {
+  stopScrollAnimation()
   nextTick(() => {
     if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame)
     // A watcher with `immediate` runs before mount, when the container and
@@ -67,10 +67,8 @@ function scheduleScrollToActive(index: number, previousIndex = previousActiveInd
       scrollFrame = undefined
       const container = scrollContainer.value
       const previous = lineRefs.value[previousIndex]
-      const behavior: ScrollBehavior = hasPositionedInitialLine && container && previous && isVisible(container, previous)
-        ? 'smooth'
-        : 'auto'
-      waitingForLayout = index !== -1 && !scrollToActive(index, behavior)
+      const animated = !!(hasPositionedInitialLine && container && previous && isVisible(container, previous))
+      waitingForLayout = index !== -1 && !scrollToActive(index, animated)
     })
   })
 }
@@ -120,17 +118,17 @@ function lineClasses(index: number) {
   return [
     props.immersive
       ? isActive
-        ? 'text-white scale-110'
+        ? 'text-white scale-[1.06]'
         : 'text-white'
       : isActive
-        ? 'text-white scale-105 blur-none opacity-100'
+        ? 'text-white scale-[1.03] blur-none opacity-100'
         : index < activeIndex.value
           ? 'text-white/20 blur-[0.5px] opacity-60 hover:text-white/40'
           : 'text-white/30 blur-[1px] opacity-40 hover:text-white/60 hover:blur-none',
     {
       'text-4xl': !props.immersive,
       'text-[40px]': props.immersive,
-      'transform-gpu': isNearActive,
+      'transform-gpu will-change-transform': isNearActive,
     },
   ]
 }
@@ -155,6 +153,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame)
+  stopScrollAnimation()
   resizeObserver?.disconnect()
   resizeObserver = null
 })
