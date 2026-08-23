@@ -414,6 +414,10 @@ internal abstract class SyncDatabase : RoomDatabase() {
     }
 }
 
+internal fun trackDisplayTitle(value: String): String = value.ifBlank { "Unknown song" }
+
+internal fun trackDisplayArtists(value: String): String = value.ifBlank { "Unknown artist" }
+
 data class LibraryTrack(
     val id: String = "",
     val title: String,
@@ -518,9 +522,9 @@ internal class AndroidLibrarySyncStore(
             val metadata = row.metadataObject()
             LibraryTrack(
                 id = row.id,
-                title = row.title,
+                title = trackDisplayTitle(row.title),
                 sortTitle = metadata?.string("sort_title").orEmpty(),
-                artists = row.artists,
+                artists = trackDisplayArtists(row.artists),
                 sortArtists = metadata?.arraySortNames("artists").orEmpty(),
                 album = row.album,
                 albumId = row.albumId,
@@ -885,8 +889,8 @@ internal class AndroidLibrarySyncStore(
         return SyncTrackEntity(
             planId = planId,
             trackId = id,
-            title = string("title") ?: "",
-            artists = arrayNames("artists"),
+            title = trackDisplayTitle(string("title").orEmpty()),
+            artists = trackDisplayArtists(arrayNames("artists")),
             album = (this["album"] as? JsonObject)?.string("title") ?: "",
             albumId = (this["album"] as? JsonObject)?.string("id") ?: "",
             artworkKey = string("artwork_key"),
