@@ -261,6 +261,16 @@
     <string name="track_context_add_to_queue">대기열에 추가</string>
     <string name="track_context_remove_from_queue">대기열에서 제거</string>
     <string name="track_context_track_info">트랙 정보</string>
+    <string name="track_context_find_lyrics">가사 찾기</string>
+    <string name="track_context_find_lyrics_title">가사 찾기</string>
+    <string name="find_lyrics_track_title">곡 제목</string>
+    <string name="find_lyrics_artist">아티스트 이름</string>
+    <string name="find_lyrics_duration">재생 시간</string>
+    <string name="find_lyrics_search">검색</string>
+    <string name="find_lyrics_searching">검색 중…</string>
+    <string name="find_lyrics_no_results">가사를 찾을 수 없습니다</string>
+    <string name="find_lyrics_preview">가사 미리보기</string>
+    <string name="find_lyrics_select">선택</string>
     <string name="track_context_add_to_favorites">즐겨찾기에 추가</string>
     <string name="track_context_remove_from_favorites">즐겨찾기에서 제거</string>
     <string name="track_context_add_to_playlist">재생 목록에 추가</string>

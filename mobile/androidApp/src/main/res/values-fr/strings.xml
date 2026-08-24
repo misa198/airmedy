@@ -262,6 +262,16 @@
     <string name="track_context_add_to_queue">Ajouter à la file d\'attente</string>
     <string name="track_context_remove_from_queue">Retirer de la file d\'attente</string>
     <string name="track_context_track_info">Infos sur le morceau</string>
+    <string name="track_context_find_lyrics">Rechercher les paroles</string>
+    <string name="track_context_find_lyrics_title">Rechercher les paroles</string>
+    <string name="find_lyrics_track_title">Titre du morceau</string>
+    <string name="find_lyrics_artist">Nom de l’artiste</string>
+    <string name="find_lyrics_duration">Durée</string>
+    <string name="find_lyrics_search">Rechercher</string>
+    <string name="find_lyrics_searching">Recherche en cours…</string>
+    <string name="find_lyrics_no_results">Aucune parole trouvée</string>
+    <string name="find_lyrics_preview">Aperçu des paroles</string>
+    <string name="find_lyrics_select">Sélectionner</string>
     <string name="track_context_add_to_favorites">Ajouter aux favoris</string>
     <string name="track_context_remove_from_favorites">Retirer des favoris</string>
     <string name="track_context_add_to_playlist">Ajouter à la playlist</string>

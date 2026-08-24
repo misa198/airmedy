@@ -261,6 +261,16 @@
     <string name="track_context_add_to_queue">เพิ่มลงในคิว</string>
     <string name="track_context_remove_from_queue">ลบออกจากคิว</string>
     <string name="track_context_track_info">ข้อมูลแทร็ก</string>
+    <string name="track_context_find_lyrics">ค้นหาเนื้อเพลง</string>
+    <string name="track_context_find_lyrics_title">ค้นหาเนื้อเพลง</string>
+    <string name="find_lyrics_track_title">ชื่อเพลง</string>
+    <string name="find_lyrics_artist">ชื่อศิลปิน</string>
+    <string name="find_lyrics_duration">ระยะเวลา</string>
+    <string name="find_lyrics_search">ค้นหา</string>
+    <string name="find_lyrics_searching">กำลังค้นหา…</string>
+    <string name="find_lyrics_no_results">ไม่พบเนื้อเพลง</string>
+    <string name="find_lyrics_preview">ตัวอย่างเนื้อเพลง</string>
+    <string name="find_lyrics_select">เลือก</string>
     <string name="track_context_add_to_favorites">เพิ่มในรายการโปรด</string>
     <string name="track_context_remove_from_favorites">ลบออกจากรายการโปรด</string>
     <string name="track_context_add_to_playlist">เพิ่มลงในเพลย์ลิสต์</string>

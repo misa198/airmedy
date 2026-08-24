@@ -264,6 +264,16 @@
     <string name="track_context_add_to_queue">Добавить в очередь</string>
     <string name="track_context_remove_from_queue">Удалить из очереди</string>
     <string name="track_context_track_info">Информация о треке</string>
+    <string name="track_context_find_lyrics">Найти текст песни</string>
+    <string name="track_context_find_lyrics_title">Поиск текста песни</string>
+    <string name="find_lyrics_track_title">Название трека</string>
+    <string name="find_lyrics_artist">Имя исполнителя</string>
+    <string name="find_lyrics_duration">Длительность</string>
+    <string name="find_lyrics_search">Поиск</string>
+    <string name="find_lyrics_searching">Поиск…</string>
+    <string name="find_lyrics_no_results">Текст песни не найден</string>
+    <string name="find_lyrics_preview">Предпросмотр текста</string>
+    <string name="find_lyrics_select">Выбрать</string>
     <string name="track_context_add_to_favorites">Добавить в избранное</string>
     <string name="track_context_remove_from_favorites">Удалить из избранного</string>
     <string name="track_context_add_to_playlist">Добавить в плейлист</string>
