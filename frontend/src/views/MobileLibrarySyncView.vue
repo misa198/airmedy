@@ -76,12 +76,6 @@ function selectablePlaylists(playlists: (Playlist | null | undefined)[]): Select
     .map(item => ({ id: item.id, label: item.name }))
 }
 
-async function refreshPlaylists() {
-  try {
-    items.value = { ...items.value, playlists: selectablePlaylists(await PlaylistService.GetAllPlaylists()) }
-  } catch (error) { console.error('Failed to refresh playlists:', error) }
-}
-
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
 function startPolling() {
@@ -122,7 +116,7 @@ function applyPlanUpdate(updated: MobileLibrarySyncPlan) {
     activeTab.value = 'playlists'
     selected.value = { ...selected.value, playlists: new Set(updated.scope.selected_ids) }
   }
-  if (updated.status === 'complete') void refreshPlaylists()
+  if (updated.status === 'complete' && current?.status !== 'complete') void load()
   if (updated.error_code === 'insufficient_storage' && updated.required_bytes != null && updated.available_bytes != null) {
     storageError.value = { requiredBytes: updated.required_bytes, availableBytes: updated.available_bytes }
   }

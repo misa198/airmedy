@@ -2,12 +2,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
 
-const { getStatus, getTrustedDevices, getPairingStatus, getAllPlaylists, sync, cancel, eventHandlers, on } = vi.hoisted(() => {
+const { getStatus, getTrustedDevices, getPairingStatus, getAllArtists, getAllAlbums, getAllGenres, getAllPlaylists, sync, cancel, eventHandlers, on } = vi.hoisted(() => {
   const eventHandlers = new Map<string, (event: { data: unknown }) => void>()
   return {
     getStatus: vi.fn(),
     getTrustedDevices: vi.fn(),
     getPairingStatus: vi.fn(),
+    getAllArtists: vi.fn(),
+    getAllAlbums: vi.fn(),
+    getAllGenres: vi.fn(),
     getAllPlaylists: vi.fn(),
     sync: vi.fn(),
     cancel: vi.fn(),
@@ -34,9 +37,9 @@ vi.mock('../../bindings/airmedy/internal/infra/wails/mobilepairingservice', () =
   GetStatus: getPairingStatus,
 }))
 vi.mock('../../bindings/airmedy/internal/infra/wails/libraryservice', () => ({
-  GetAllArtists: vi.fn().mockResolvedValue([]),
-  GetAllAlbums: vi.fn().mockResolvedValue([]),
-  GetAllGenres: vi.fn().mockResolvedValue([]),
+  GetAllArtists: getAllArtists,
+  GetAllAlbums: getAllAlbums,
+  GetAllGenres: getAllGenres,
 }))
 vi.mock('../../bindings/airmedy/internal/infra/wails/playlistservice', () => ({
   GetAllPlaylists: getAllPlaylists,
@@ -73,6 +76,9 @@ describe('MobileLibrarySyncView', () => {
     vi.useFakeTimers()
     getTrustedDevices.mockResolvedValue([{ device_id: 'device-1', display_name: 'Phone', online: true }])
     getPairingStatus.mockResolvedValue({ addresses: [{ ip: '192.168.1.2', kind: 'wifi' }] })
+    getAllArtists.mockReset(); getAllArtists.mockResolvedValue([])
+    getAllAlbums.mockReset(); getAllAlbums.mockResolvedValue([])
+    getAllGenres.mockReset(); getAllGenres.mockResolvedValue([])
     getAllPlaylists.mockResolvedValue([])
     getStatus.mockReset()
     sync.mockReset()
@@ -252,6 +258,9 @@ describe('MobileLibrarySyncView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('B')
+    expect(getAllArtists).toHaveBeenCalledTimes(2)
+    expect(getAllAlbums).toHaveBeenCalledTimes(2)
+    expect(getAllGenres).toHaveBeenCalledTimes(2)
     wrapper.unmount()
   })
 })
