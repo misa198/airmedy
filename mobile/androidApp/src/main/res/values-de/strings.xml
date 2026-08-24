@@ -126,6 +126,9 @@
     <string name="player_cast">Streamen</string>
     <string name="player_queue">Warteschlange</string>
     <string name="player_queue_drag_handle">Titel neu anordnen</string>
+    <string name="playlist_reorder">Playlist neu anordnen</string>
+    <string name="playlist_reorder_drag_handle">Titel zum Neuordnen ziehen</string>
+    <string name="playlist_reorder_done">Neuordnung beenden</string>
     <string name="player_queue_current">Aktuelle Wiedergabe</string>
     <string name="player_queue_unknown_track">Nicht verfügbarer Titel</string>
     <string name="sync_error_background_timeout">Synchronisierung pausiert, da das Hintergrundzeitlimit von Android erreicht wurde.</string>

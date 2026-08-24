@@ -126,6 +126,9 @@
     <string name="player_cast">Trasmetti</string>
     <string name="player_queue">Coda</string>
     <string name="player_queue_drag_handle">Riordina brano</string>
+    <string name="playlist_reorder">Riordina playlist</string>
+    <string name="playlist_reorder_drag_handle">Trascina per riordinare il brano</string>
+    <string name="playlist_reorder_done">Termina riordino</string>
     <string name="player_queue_current">In riproduzione</string>
     <string name="player_queue_unknown_track">Brano non disponibile</string>
     <string name="sync_error_background_timeout">Sincronizzazione in pausa per raggiungimento del limite in background di Android.</string>

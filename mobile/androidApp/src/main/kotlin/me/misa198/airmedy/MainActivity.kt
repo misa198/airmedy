@@ -409,6 +409,7 @@ class MainActivity : ComponentActivity() {
                         onPlay = playlistDetailsViewModel::play,
                         onTrackPlay = playlistDetailsViewModel::playTrack,
                         onTrackRemove = playlistDetailsViewModel::removeTrack,
+                        onTrackMove = playlistDetailsViewModel::moveTrack,
                         onPlayNext = playbackController::playNext,
                         onAddToQueue = playbackController::append,
                         onUpdate = playlistsViewModel::updatePlaylist,

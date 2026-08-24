@@ -126,6 +126,9 @@
     <string name="player_cast">Transmitir</string>
     <string name="player_queue">Cola</string>
     <string name="player_queue_drag_handle">Reordenar pista</string>
+    <string name="playlist_reorder">Reordenar lista</string>
+    <string name="playlist_reorder_drag_handle">Arrastra para reordenar la pista</string>
+    <string name="playlist_reorder_done">Terminar de reordenar</string>
     <string name="player_queue_current">Reproduciendo actualmente</string>
     <string name="player_queue_unknown_track">Pista no disponible</string>
     <string name="sync_error_background_timeout">Sincronización pausada debido al límite de tiempo en segundo plano de Android.</string>

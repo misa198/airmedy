@@ -126,6 +126,9 @@
     <string name="player_cast">แคสต์</string>
     <string name="player_queue">คิว</string>
     <string name="player_queue_drag_handle">จัดลำดับแทร็กใหม่</string>
+    <string name="playlist_reorder">จัดลำดับเพลย์ลิสต์ใหม่</string>
+    <string name="playlist_reorder_drag_handle">ลากเพื่อจัดลำดับแทร็กใหม่</string>
+    <string name="playlist_reorder_done">เสร็จสิ้นการจัดลำดับ</string>
     <string name="player_queue_current">กำลังเล่นอยู่</string>
     <string name="player_queue_unknown_track">แทร็กที่ไม่พร้อมใช้งาน</string>
     <string name="sync_error_background_timeout">หยุดการซิงค์ชั่วคราวเนื่องจากถึงขีดจำกัดเวลาทำงานเบื้องหลังของ Android</string>

@@ -126,6 +126,9 @@
     <string name="player_cast">キャスト</string>
     <string name="player_queue">キュー</string>
     <string name="player_queue_drag_handle">トラックの並べ替え</string>
+    <string name="playlist_reorder">プレイリストを並べ替え</string>
+    <string name="playlist_reorder_drag_handle">ドラッグしてトラックを並べ替え</string>
+    <string name="playlist_reorder_done">並べ替えを完了</string>
     <string name="player_queue_current">再生中</string>
     <string name="player_queue_unknown_track">利用できないトラック</string>
     <string name="sync_error_background_timeout">Androidのバックグラウンド時間制限に達したため同期を一時停止しました。</string>

@@ -212,6 +212,7 @@ internal fun AppDestinationContent(
     val onPlaylistPlay = library.playlists.onPlay
     val onPlaylistTrackPlay = library.playlists.onTrackPlay
     val onPlaylistTrackRemove = library.playlists.onTrackRemove
+    val onPlaylistTrackMove = library.playlists.onTrackMove
     val onPlaylistPlayNext = library.playlists.onPlayNext
     val onPlaylistAddToQueue = library.playlists.onAddToQueue
     val onPlaylistUpdate = library.playlists.onUpdate
@@ -644,6 +645,7 @@ internal fun AppDestinationContent(
                                 onTrackFavoriteToggle = onTrackFavoriteToggle,
                                 onTrackArtistClick = { artist -> onIntent(AppIntent.OpenArtistDetails(artist.id)) },
                                 onTrackRemoveFromPlaylist = { trackId -> selectedPlaylistId?.let { onPlaylistTrackRemove(it, trackId) } },
+                                onTrackMove = { trackId, previousTrackId, nextTrackId -> selectedPlaylistId?.let { onPlaylistTrackMove(it, trackId, previousTrackId, nextTrackId) } },
                                 onTrackContextBottomSheet = onTrackContextBottomSheet,
                                 onPlaylistPlayNext = onPlaylistPlayNext,
                                 onPlaylistAddToQueue = onPlaylistAddToQueue,

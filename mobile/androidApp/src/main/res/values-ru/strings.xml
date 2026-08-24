@@ -126,6 +126,9 @@
     <string name="player_cast">Трансляция</string>
     <string name="player_queue">Очередь</string>
     <string name="player_queue_drag_handle">Изменить порядок трека</string>
+    <string name="playlist_reorder">Изменить порядок плейлиста</string>
+    <string name="playlist_reorder_drag_handle">Перетащите, чтобы изменить порядок трека</string>
+    <string name="playlist_reorder_done">Завершить изменение порядка</string>
     <string name="player_queue_current">Сейчас играет</string>
     <string name="player_queue_unknown_track">Недоступный трек</string>
     <string name="sync_error_background_timeout">Синхронизация приостановлена из-за фонового лимита времени Android.</string>

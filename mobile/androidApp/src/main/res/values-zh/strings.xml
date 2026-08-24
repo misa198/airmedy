@@ -126,6 +126,9 @@
     <string name="player_cast">投播</string>
     <string name="player_queue">播放队列</string>
     <string name="player_queue_drag_handle">调整曲目顺序</string>
+    <string name="playlist_reorder">调整播放列表顺序</string>
+    <string name="playlist_reorder_drag_handle">拖动以调整曲目顺序</string>
+    <string name="playlist_reorder_done">完成排序</string>
     <string name="player_queue_current">正在播放</string>
     <string name="player_queue_unknown_track">不可用曲目</string>
     <string name="sync_error_background_timeout">因达到 Android 后台运行时间限制，同步已暂停。</string>

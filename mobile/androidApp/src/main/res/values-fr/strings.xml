@@ -126,6 +126,9 @@
     <string name="player_cast">Diffuser</string>
     <string name="player_queue">File d\'attente</string>
     <string name="player_queue_drag_handle">Réorganiser le morceau</string>
+    <string name="playlist_reorder">Réorganiser la playlist</string>
+    <string name="playlist_reorder_drag_handle">Faites glisser pour réorganiser le morceau</string>
+    <string name="playlist_reorder_done">Terminer la réorganisation</string>
     <string name="player_queue_current">En cours de lecture</string>
     <string name="player_queue_unknown_track">Morceau indisponible</string>
     <string name="sync_error_background_timeout">Synchronisation suspendue en raison de la limite d\'exécution en arrière-plan d\'Android.</string>

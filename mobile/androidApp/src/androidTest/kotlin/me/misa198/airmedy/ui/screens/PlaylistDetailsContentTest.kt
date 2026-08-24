@@ -108,6 +108,24 @@ class PlaylistDetailsContentTest {
     }
 
     @Test
+    fun reorderModeReplacesTrackOptionsWithDragHandlesAndDoneAction() {
+        val tracks = listOf(LibraryTrack("one", "One", "Artist"), LibraryTrack("two", "Two", "Artist"))
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                AnchoredPopupMenuHost(hazeState = null) {
+                    PlaylistDetailsContent(PlaylistDetailsUiState(LibraryPlaylist("mix", "Night drive", tracks.map { it.id }, "{}"), tracks))
+                }
+            }
+        }
+
+        composeTestRule.onNode(hasContentDescription("More options")).performClick()
+        composeTestRule.onNodeWithText("Reorder playlist").performClick()
+        composeTestRule.onAllNodes(hasContentDescription("Drag to reorder track")).assertCountEquals(2)
+        composeTestRule.onNode(hasContentDescription("Done reordering")).performClick()
+        composeTestRule.onNode(hasContentDescription("Track options")).assertExists()
+    }
+
+    @Test
     fun favoritesMenuOffersEditButNotDelete() {
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {

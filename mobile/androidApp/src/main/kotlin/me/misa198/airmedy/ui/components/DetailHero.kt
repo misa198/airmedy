@@ -108,6 +108,7 @@ fun DetailHero(
     onPlayClick: () -> Unit = {},
     onShuffleClick: () -> Unit = {},
     onMoreClick: () -> Unit = {},
+    moreSymbol: String = MaterialSymbols.MoreVert,
     moreAction: @Composable (@Composable () -> Unit) -> Unit = { it() },
 ) {
     val colors = LocalAirmedyColors.current
@@ -156,7 +157,7 @@ fun DetailHero(
                     Text(playLabel, style = MaterialTheme.typography.labelLarge, color = colors.background)
                 }
             }
-            moreAction { DetailHeroGlassAction(MaterialSymbols.MoreVert, moreLabel, onMoreClick) }
+            moreAction { DetailHeroGlassAction(moreSymbol, moreLabel, onMoreClick) }
         }
     }
 }

@@ -126,6 +126,9 @@
     <string name="player_cast">전송</string>
     <string name="player_queue">대기열</string>
     <string name="player_queue_drag_handle">트랙 순서 변경</string>
+    <string name="playlist_reorder">재생목록 순서 변경</string>
+    <string name="playlist_reorder_drag_handle">드래그하여 트랙 순서 변경</string>
+    <string name="playlist_reorder_done">순서 변경 완료</string>
     <string name="player_queue_current">현재 재생 중</string>
     <string name="player_queue_unknown_track">사용할 수 없는 트랙</string>
     <string name="sync_error_background_timeout">Android 백그라운드 제한 시간에 도달하여 동기화가 일시 중지되었습니다.</string>

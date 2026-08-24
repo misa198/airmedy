@@ -161,6 +161,31 @@ func TestFavoriteArtworkMutationIsApplied(t *testing.T) {
 	require.Equal(t, "artwork-key", *playlist.ArtworkKey)
 }
 
+func TestMobileMoveTrackUpdatesDesktopPlaylistOrder(t *testing.T) {
+	db, err := sqlite.NewDB(filepath.Join(t.TempDir(), "library.db"), slog.Default())
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, db.Close()) })
+	repo := sqlite.NewPlaylistRepository(db)
+	ctx := context.Background()
+	require.NoError(t, repo.Save(ctx, &domain.Playlist{ID: "playlist", Name: "Playlist"}))
+	playlistSvc := playlistapp.NewPlaylistService(repo, nil, nil, nil, slog.Default())
+	for _, trackID := range []string{"a", "b", "c"} {
+		_, err = db.Exec(`INSERT INTO tracks (id, path, title, sort_title, mtime) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`, trackID, trackID, trackID, trackID)
+		require.NoError(t, err)
+		require.NoError(t, playlistSvc.AddTrack(ctx, "playlist", trackID))
+	}
+	svc := &Service{playlists: repo, playlistSvc: playlistSvc}
+
+	result := svc.applyNewPlaylistMutation(ctx, domain.MobileLibrarySyncScope{Kind: domain.MobileLibrarySyncScopeAll}, playlistMutation{
+		PlaylistID: "playlist", Operation: "MOVE_TRACK", Payload: playlistMutationPayload{TrackID: "a", PreviousTrackID: "c"},
+	}, nil)
+
+	require.Equal(t, "applied", result)
+	tracks, err := repo.GetTracks(ctx, "playlist")
+	require.NoError(t, err)
+	require.Equal(t, []string{"b", "c", "a"}, []string{tracks[0].ID, tracks[1].ID, tracks[2].ID})
+}
+
 func TestAddPlaylistsIncludesEmptyPlaylistsAndFavorites(t *testing.T) {
 	db, err := sqlite.NewDB(filepath.Join(t.TempDir(), "library.db"), slog.Default())
 	require.NoError(t, err)
