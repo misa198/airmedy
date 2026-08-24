@@ -71,5 +71,8 @@ describe('TrackTable', () => {
 
     expect(wrapper.find('.overflow-auto').exists()).toBe(false)
     expect(wrapper.find('.overflow-visible').exists()).toBe(true)
+    const list = wrapper.get('[data-testid="track-table-plain-list"]')
+    expect(list.classes()).toContain('overflow-x-auto')
+    expect(list.attributes('style')).toBeUndefined()
   })
 })
