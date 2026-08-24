@@ -578,7 +578,7 @@ func (s *Service) resolveScope(ctx context.Context, scope *domain.MobileLibraryS
 	if err != nil {
 		return nil, fmt.Errorf("resolve mobile library sync scope: %w", err)
 	}
-	if scope.Kind != domain.MobileLibrarySyncScopeAll && len(scope.SelectedIDs) == 0 {
+	if scope.Kind != domain.MobileLibrarySyncScopeAll && scope.Kind != domain.MobileLibrarySyncScopePlaylists && len(scope.SelectedIDs) == 0 {
 		return nil, fmt.Errorf("select at least one item to sync")
 	}
 	return mergeTracks(result, nil), nil

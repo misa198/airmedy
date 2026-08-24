@@ -173,7 +173,10 @@ async function sync(replace = false) {
     }
   }
   catch (error) { console.error('Failed to start mobile library sync:', error) }
-  finally { syncing.value = false }
+  finally {
+    syncing.value = false
+    void load()
+  }
 }
 
 async function cancelSync() {

@@ -264,6 +264,25 @@ describe('MobileLibrarySyncView', () => {
     wrapper.unmount()
   })
 
+  it('refreshes selected playlists when reconciliation leaves the sync scope empty', async () => {
+    getStatus.mockResolvedValue(null)
+    getAllPlaylists.mockResolvedValueOnce([{ id: 'playlist-a', name: 'A', is_smart: false }])
+      .mockResolvedValueOnce([])
+    sync.mockRejectedValue(new Error('select at least one item to sync'))
+    const wrapper = mountView()
+    await flushPromises()
+
+    await wrapper.get('[data-testid="scope-selected"]').trigger('click')
+    await wrapper.get('[data-testid="playlists-tab"]').trigger('click')
+    await wrapper.get('button.h-14').trigger('click')
+    await wrapper.get('[data-testid="sync-button"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('A')
+    expect(getAllPlaylists).toHaveBeenCalledTimes(2)
+    wrapper.unmount()
+  })
+
   it('keeps only the most recently synced scope selected', async () => {
     getStatus.mockResolvedValue(null)
     getAllArtists.mockResolvedValue([{ id: 'artist-a', name: 'Artist A' }])

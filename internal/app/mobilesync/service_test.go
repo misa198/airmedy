@@ -236,6 +236,16 @@ func TestNormalizeScopeRemovesFavoritesAndSmartPlaylists(t *testing.T) {
 	require.Equal(t, []string{"regular"}, scope.SelectedIDs)
 }
 
+func TestResolveScopeAllowsAnEmptyPlaylistSnapshot(t *testing.T) {
+	db, err := sqlite.NewDB(filepath.Join(t.TempDir(), "library.db"), slog.Default())
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, db.Close()) })
+
+	tracks, err := (&Service{playlists: sqlite.NewPlaylistRepository(db)}).resolveScope(context.Background(), &domain.MobileLibrarySyncScope{Kind: domain.MobileLibrarySyncScopePlaylists})
+	require.NoError(t, err)
+	require.Empty(t, tracks)
+}
+
 func TestPlaylistArtworkValidatesMimeHashSizeAndOwnership(t *testing.T) {
 	var body bytes.Buffer
 	img := image.NewRGBA(image.Rect(0, 0, 1, 1))

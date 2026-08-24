@@ -12,6 +12,8 @@ The desktop applies mobile deltas under a global per-playlist LWW watermark.
 `updated_at` wins first and lexical `mutation_id` breaks ties. DELETE retains a
 tombstone, preventing an older CREATE from resurrecting the playlist after a
 race or restart. Ledger, watermark, and playlist writes commit atomically.
+If reconciliation removes the last selected playlist, desktop still sends an
+empty playlist snapshot so Android activates it and clears the stale tracks.
 
 ## Files
 
