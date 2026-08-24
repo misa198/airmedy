@@ -1,21 +1,27 @@
 package me.misa198.airmedy.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
@@ -27,6 +33,7 @@ import me.misa198.airmedy.ui.components.ArtworkHeroBackdrop
 import me.misa198.airmedy.ui.components.DetailHero
 import me.misa198.airmedy.ui.components.HeroCard
 import me.misa198.airmedy.ui.components.MaterialSymbols
+import me.misa198.airmedy.ui.components.MaterialSymbol
 import me.misa198.airmedy.ui.components.PlaylistArtwork
 import me.misa198.airmedy.ui.components.TrackRow
 import me.misa198.airmedy.ui.components.TrackContextMenu
@@ -37,8 +44,12 @@ import me.misa198.airmedy.ui.components.PlaylistContextMenu
 import me.misa198.airmedy.ui.components.AirmedyDialog
 import me.misa198.airmedy.ui.components.AirmedyPillButtonVariant
 import me.misa198.airmedy.ui.components.trackInfoArtworkSize
+import me.misa198.airmedy.ui.components.liquidGlassBackground
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.ReorderableCollectionItemScope
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 private const val PlaylistTrackDividerTag = "playlist-detail-track-divider"
 
@@ -58,6 +69,7 @@ internal fun PlaylistDetailsContent(
     onTrackFavoriteToggle: (String, Boolean) -> Unit = { _, _ -> },
     onTrackArtistClick: (TrackContextArtist) -> Unit = {},
     onTrackRemoveFromPlaylist: (String) -> Unit = {},
+    onTrackMove: (String, String?, String?) -> Unit = { _, _, _ -> },
     onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit = {},
     onPlaylistPlayNext: (List<String>) -> Unit = {},
     onPlaylistAddToQueue: (List<String>) -> Unit = {},
@@ -79,6 +91,20 @@ internal fun PlaylistDetailsContent(
     var playlistMenuExpanded by remember(playlist.id) { mutableStateOf(false) }
     var showPlaylistEditor by remember(playlist.id) { mutableStateOf(false) }
     var showDeleteConfirmation by remember(playlist.id) { mutableStateOf(false) }
+    var isReordering by remember(playlist.id) { mutableStateOf(false) }
+    var orderedTrackIds by remember(playlist.id) { mutableStateOf(uiState.tracks.map { it.id }) }
+    var draggedTrackId by remember { mutableStateOf<String?>(null) }
+    var draggedTrackInitialIndex by remember { mutableStateOf(-1) }
+    val latestOrderedTrackIds = rememberUpdatedState(orderedTrackIds)
+    val latestOnTrackMove = rememberUpdatedState(onTrackMove)
+    val haptics = LocalHapticFeedback.current
+    val listState = rememberLazyListState()
+    val reorderableState = rememberReorderableLazyListState(listState) { from, to ->
+        if (from.index != to.index) {
+            orderedTrackIds = movePlaylistTrack(orderedTrackIds, playlistTrackIndex(from.index), playlistTrackIndex(to.index))
+            haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+        }
+    }
     val context = LocalContext.current
     val count = pluralStringResource(R.plurals.playlist_details_track_count, uiState.tracks.size, uiState.tracks.size)
     val totalDurationSeconds = remember(uiState.tracks) { playlistTotalDurationSeconds(uiState.tracks) }
@@ -91,29 +117,24 @@ internal fun PlaylistDetailsContent(
     )
     val name = if (playlist.id == FavoritesPlaylistId) stringResource(R.string.library_favorites) else playlist.name
     val trackIds = remember(uiState.tracks) { uiState.tracks.map { it.id } }
+    val tracksById = remember(uiState.tracks) { uiState.tracks.associateBy { it.id } }
+    androidx.compose.runtime.LaunchedEffect(uiState.tracks, isReordering) {
+        if (!isReordering) orderedTrackIds = uiState.tracks.map { it.id }
+    }
     LazyColumn(
         modifier.fillMaxSize(),
+        state = listState,
         contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding()),
     ) {
         item("hero") {
             ArtworkHeroBackdrop(uiState.artworkPaths.firstOrNull(), Modifier.fillMaxWidth(), onHeroColorChanged) {
-                PlaylistContextMenu(
-                    playlistId = playlist.id,
-                    trackIds = trackIds,
-                    expanded = playlistMenuExpanded,
-                    onDismiss = { playlistMenuExpanded = false },
-                    hazeState = hazeState,
-                    onPlayNext = onPlaylistPlayNext,
-                    onAddToQueue = onPlaylistAddToQueue,
-                    onEdit = { showPlaylistEditor = true },
-                    onDelete = { showDeleteConfirmation = true },
-                ) {
-                    DetailHero(
+                DetailHero(
                     title = name,
                     metadata = stringResource(R.string.playlist_details_metadata, count, duration),
                     playLabel = stringResource(R.string.player_play),
                     shuffleLabel = stringResource(R.string.player_shuffle),
-                    moreLabel = stringResource(R.string.album_row_more_options),
+                    moreLabel = stringResource(if (isReordering) R.string.playlist_reorder_done else R.string.album_row_more_options),
+                    moreSymbol = if (isReordering) MaterialSymbols.Check else MaterialSymbols.MoreVert,
                     modifier = Modifier.fillMaxWidth().padding(
                         start = 24.dp,
                         top = contentPadding.calculateTopPadding(),
@@ -127,38 +148,86 @@ internal fun PlaylistDetailsContent(
                     },
                     onPlayClick = onPlay,
                     onShuffleClick = onShuffle,
-                    onMoreClick = { playlistMenuExpanded = true },
+                    onMoreClick = { if (isReordering) isReordering = false else playlistMenuExpanded = true },
+                    moreAction = { action ->
+                        if (isReordering) action()
+                        else PlaylistContextMenu(
+                            playlistId = playlist.id,
+                            trackIds = trackIds,
+                            expanded = playlistMenuExpanded,
+                            onDismiss = { playlistMenuExpanded = false },
+                            hazeState = hazeState,
+                            onPlayNext = onPlaylistPlayNext,
+                            onAddToQueue = onPlaylistAddToQueue,
+                            onReorder = { isReordering = true },
+                            onEdit = { showPlaylistEditor = true },
+                            onDelete = { showDeleteConfirmation = true },
+                            anchor = action,
+                        )
+                    },
+                )
+            }
+        }
+        items(orderedTrackIds, key = { it }) { trackId ->
+            val track = tracksById[trackId] ?: return@items
+            Box(Modifier.fillMaxWidth().padding(horizontal = 22.dp).height(1.dp).background(colors.borderGlass).testTag(PlaylistTrackDividerTag))
+            if (isReordering) {
+                ReorderableItem(reorderableState, key = trackId) { isDragging ->
+                    TrackRow(
+                        title = track.title,
+                        artist = track.artists,
+                        artworkPath = track.artworkPath,
+                        modifier = Modifier.fillMaxWidth().then(
+                            if (isDragging) Modifier.liquidGlassBackground(
+                                hazeState, colors, hazeBlurRadius = 30.dp, glassTint = colors.glassElevated,
+                            ).border(1.dp, colors.borderGlass) else Modifier,
+                        ),
+                        trailingContent = {
+                            PlaylistDragHandle(
+                                isDragged = isDragging,
+                                modifier = playlistDragHandleModifier(
+                                    onStart = {
+                                        draggedTrackId = trackId
+                                        draggedTrackInitialIndex = orderedTrackIds.indexOf(trackId)
+                                    },
+                                    onStop = {
+                                        draggedTrackId?.let { movedTrackId ->
+                                            if (latestOrderedTrackIds.value.indexOf(movedTrackId) != draggedTrackInitialIndex) {
+                                                val (previous, next) = playlistMoveAnchors(latestOrderedTrackIds.value, movedTrackId)
+                                                latestOnTrackMove.value(movedTrackId, previous, next)
+                                            }
+                                        }
+                                        draggedTrackId = null
+                                        draggedTrackInitialIndex = -1
+                                    },
+                                ),
+                            )
+                        },
+                    )
+                }
+            } else {
+                TrackContextMenu(
+                    track = track,
+                    expanded = contextTrack == track.id,
+                    onDismiss = { if (contextTrack == track.id) contextTrack = null },
+                    actions = TrackContextMenuActions(removeFromPlaylist = playlist.id != FavoritesPlaylistId),
+                    hazeState = hazeState,
+                    playbackQueue = playbackQueue,
+                    onPlayNext = { onTrackPlayNext(it.id) },
+                    onAddToQueue = { onTrackAddToQueue(it.id) },
+                    onFavoriteChange = { item, favorite -> onTrackFavoriteToggle(item.id, favorite) },
+                    onGoToArtist = onTrackArtistClick,
+                    onRemoveFromPlaylist = { onTrackRemoveFromPlaylist(it.id) },
+                    onBottomSheetRequested = onTrackContextBottomSheet,
+                ) {
+                    TrackRow(
+                        title = track.title, artist = track.artists, artworkPath = track.artworkPath,
+                        modifier = Modifier.fillMaxWidth(), onClick = { onTrackClick(track.id) },
+                        onMoreClick = { contextTrack = track.id }, onLongClick = { contextTrack = track.id },
                     )
                 }
             }
-        }
-        itemsIndexed(uiState.tracks, key = { index, track -> "${track.id}:$index" }) { index, track ->
-            Box(Modifier.fillMaxWidth().padding(horizontal = 22.dp).height(1.dp).background(colors.borderGlass).testTag(PlaylistTrackDividerTag))
-            TrackContextMenu(
-                track = track,
-                expanded = contextTrack == track.id,
-                onDismiss = { if (contextTrack == track.id) contextTrack = null },
-                actions = TrackContextMenuActions(removeFromPlaylist = playlist.id != FavoritesPlaylistId),
-                hazeState = hazeState,
-                playbackQueue = playbackQueue,
-                onPlayNext = { onTrackPlayNext(it.id) },
-                onAddToQueue = { onTrackAddToQueue(it.id) },
-                onFavoriteChange = { item, favorite -> onTrackFavoriteToggle(item.id, favorite) },
-                onGoToArtist = onTrackArtistClick,
-                onRemoveFromPlaylist = { onTrackRemoveFromPlaylist(it.id) },
-                onBottomSheetRequested = onTrackContextBottomSheet,
-            ) {
-                TrackRow(
-                    title = track.title,
-                    artist = track.artists,
-                    artworkPath = track.artworkPath,
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { onTrackClick(track.id) },
-                    onMoreClick = { contextTrack = track.id },
-                    onLongClick = { contextTrack = track.id },
-                )
-            }
-            if (index == uiState.tracks.lastIndex) {
+            if (trackId == orderedTrackIds.lastOrNull()) {
                 Box(Modifier.fillMaxWidth().padding(horizontal = 22.dp).height(1.dp).background(colors.borderGlass).testTag(PlaylistTrackDividerTag))
             }
         }
@@ -184,3 +253,23 @@ internal fun PlaylistDetailsContent(
         )
     }
 }
+
+@Composable
+private fun PlaylistDragHandle(isDragged: Boolean, modifier: Modifier) {
+    val colors = LocalAirmedyColors.current
+    androidx.compose.foundation.layout.Box(
+        Modifier.size(48.dp).then(modifier),
+        contentAlignment = androidx.compose.ui.Alignment.Center,
+    ) {
+        MaterialSymbol(MaterialSymbols.Menu, stringResource(R.string.playlist_reorder_drag_handle), size = 24.dp, tint = if (isDragged) colors.textMain else colors.textMuted)
+    }
+}
+
+private fun ReorderableCollectionItemScope.playlistDragHandleModifier(onStart: () -> Unit, onStop: () -> Unit) =
+    Modifier.longPressDraggableHandle(onDragStarted = { onStart() }, onDragStopped = onStop)
+
+internal fun movePlaylistTrack(trackIds: List<String>, fromIndex: Int, toIndex: Int): List<String> =
+    trackIds.toMutableList().apply { if (fromIndex in indices && toIndex in indices && fromIndex != toIndex) add(toIndex, removeAt(fromIndex)) }
+
+// The playlist hero occupies LazyColumn index 0; track rows begin immediately after it.
+internal fun playlistTrackIndex(lazyListIndex: Int): Int = lazyListIndex - 1

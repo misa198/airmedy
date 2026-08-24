@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"sort"
 	"time"
 
 	playlistapp "airmedy/internal/app/playlist"
@@ -249,6 +250,29 @@ func playlistMutationInScope(scope domain.MobileLibrarySyncScope, mutation playl
 	return playlistInScope(scope, mutation.PlaylistID) ||
 		mutation.PlaylistID == playlistapp.FavoritesPlaylistID &&
 			(mutation.Operation == "SET_ARTWORK" || mutation.Operation == "REMOVE_ARTWORK")
+}
+
+// A mobile-created playlist becomes part of the selected playlist sync before
+// its following mutations are applied and before the desktop builds its plan.
+func expandPlaylistScope(scope domain.MobileLibrarySyncScope, mutations []playlistMutation) domain.MobileLibrarySyncScope {
+	if scope.Kind != domain.MobileLibrarySyncScopePlaylists {
+		return scope
+	}
+	selected := make(map[string]struct{}, len(scope.SelectedIDs)+len(mutations))
+	for _, id := range scope.SelectedIDs {
+		selected[id] = struct{}{}
+	}
+	for _, mutation := range mutations {
+		if mutation.Operation == "CREATE" && uuidLike(mutation.PlaylistID) && mutation.PlaylistID != playlistapp.FavoritesPlaylistID && mutation.Payload.Name != "" {
+			selected[mutation.PlaylistID] = struct{}{}
+		}
+	}
+	scope.SelectedIDs = scope.SelectedIDs[:0]
+	for id := range selected {
+		scope.SelectedIDs = append(scope.SelectedIDs, id)
+	}
+	sort.Strings(scope.SelectedIDs)
+	return scope
 }
 
 func hashBody(body []byte) string { sum := sha256.Sum256(body); return fmt.Sprintf("%x", sum) }

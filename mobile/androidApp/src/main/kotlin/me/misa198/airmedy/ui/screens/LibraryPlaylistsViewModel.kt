@@ -158,6 +158,7 @@ internal class LibraryPlaylistsViewModel(private val context: Context, syncStore
     fun deletePlaylist(playlistId: String) {
         if (playlistId == FavoritesPlaylistId) return
         viewModelScope.launch {
+            if (syncStore.discardFailedLocalPlaylist(playlistId)) return@launch
             syncStore.queuePlaylistMutation(
                 PlaylistMutation(UUID.randomUUID().toString(), playlistId, PlaylistMutationOperation.DELETE, System.currentTimeMillis()),
             )

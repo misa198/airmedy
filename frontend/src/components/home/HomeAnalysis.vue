@@ -408,7 +408,7 @@ onUnmounted(() => {
           <TopArtistsCarousel :artists="insights.top_artists" />
           <div class="grid gap-4">
             <article
-              class="flex min-h-[17rem] flex-col rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px]">
+              class="flex min-w-0 min-h-[17rem] flex-col rounded-xl border border-[var(--border-glass)] bg-[var(--bg-glass)] p-5 backdrop-blur-[30px]">
               <h2 class="mb-4 flex items-center gap-2 text-xs font-medium text-[color:var(--text-muted)]">
                 <Music class="h-4 w-4" />{{ t('analytics.top_tracks') }}
                 <button v-if="topTrackQueue.length > topTracksPreviewLimit" data-testid="analytics-top-tracks-toggle"
@@ -419,7 +419,7 @@ onUnmounted(() => {
                   <ChevronDown v-else class="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
               </h2>
-              <div v-if="topTrackQueue.length" class="mt-3">
+              <div v-if="topTrackQueue.length" class="mt-3 min-w-0">
                 <TrackTable :tracks="visibleTopTracks" :show-artwork="true" simple-mode
                   :simple-columns="['index', 'title', 'artist', 'listened_seconds', 'play_count']"
                   :additional-columns="topTrackColumns" :virtual-scroll="false" variant="glass"

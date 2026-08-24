@@ -126,6 +126,9 @@
     <string name="player_cast">キャスト</string>
     <string name="player_queue">キュー</string>
     <string name="player_queue_drag_handle">トラックの並べ替え</string>
+    <string name="playlist_reorder">プレイリストを並べ替え</string>
+    <string name="playlist_reorder_drag_handle">ドラッグしてトラックを並べ替え</string>
+    <string name="playlist_reorder_done">並べ替えを完了</string>
     <string name="player_queue_current">再生中</string>
     <string name="player_queue_unknown_track">利用できないトラック</string>
     <string name="sync_error_background_timeout">Androidのバックグラウンド時間制限に達したため同期を一時停止しました。</string>
@@ -258,6 +261,16 @@
     <string name="track_context_add_to_queue">キューに追加</string>
     <string name="track_context_remove_from_queue">キューから削除</string>
     <string name="track_context_track_info">トラック情報</string>
+    <string name="track_context_find_lyrics">歌詞を検索</string>
+    <string name="track_context_find_lyrics_title">歌詞を検索</string>
+    <string name="find_lyrics_track_title">曲名</string>
+    <string name="find_lyrics_artist">アーティスト名</string>
+    <string name="find_lyrics_duration">再生時間</string>
+    <string name="find_lyrics_search">検索</string>
+    <string name="find_lyrics_searching">検索中…</string>
+    <string name="find_lyrics_no_results">歌詞が見つかりません</string>
+    <string name="find_lyrics_preview">歌詞のプレビュー</string>
+    <string name="find_lyrics_select">選択</string>
     <string name="track_context_add_to_favorites">お気に入りに追加</string>
     <string name="track_context_remove_from_favorites">お気に入りから削除</string>
     <string name="track_context_add_to_playlist">プレイリストに追加</string>

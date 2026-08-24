@@ -264,6 +264,8 @@ store. It saves complete metadata JSON plus indexed track fields, playlist
 membership, lyrics, analysis, plan checkpoints, and asset paths in app-private
 storage. A prepared plan is activated atomically; old mirrored content is
 removed only after the replacement is complete and before the final receipt.
+If activation removes Android's current playback track, Android cancels
+playback and clears its queue before reporting completion.
 Assets are content-addressed by SHA-256 and shared across plan revisions, so a
 fresh plan reuses unchanged verified files rather than downloading them again.
 Distinct content hashes download concurrently in bounded batches of two to four
@@ -346,7 +348,7 @@ authoritative in the following snapshot.
 
 ### Playlist scope boundary
 
-Playlist data is not inferred from selected tracks. A manifest includes regular playlists only for the `all` scope or for explicit `playlists` selections; Favorites is always included. The playlist selector and playlist scope exclude Favorites and smart playlists. Regular-playlist mutations are accepted only for `all`, or an explicitly selected regular playlist; artist, album, and genre scopes return `scope-conflict` and do not touch a playlist outside the selected resource set. Favorites artwork mutations are scope-independent.
+Playlist data is not inferred from selected tracks. A manifest includes regular playlists only for the `all` scope or for explicit `playlists` selections; Favorites is always included. The playlist selector and playlist scope exclude Favorites and smart playlists. Regular-playlist mutations are accepted only for `all`, or an explicitly selected regular playlist. A valid mobile `CREATE` during a playlist-scoped reconciliation adds that new playlist to the in-flight selection before its following mutations and the desktop plan are built. Artist, album, and genre scopes return `scope-conflict` and do not touch a playlist outside the selected resource set. Favorites artwork mutations are scope-independent.
 
 ### Reconciliation security and artwork staging
 
@@ -367,3 +369,12 @@ It verifies and uploads the artwork before its `SET_ARTWORK` batch mutation.
 Acknowledged staging stays visible until the replacement plan activates, avoiding
 a temporary desktop-cover flash; it is then removed when no pending or local
 playlist still references the hash.
+
+A failed local-only playlist can be deleted on Android. That action clears its
+local row and every mutation for that playlist instead of queuing a desktop
+`DELETE`, because the rejected playlist has no desktop resource to delete.
+
+Preparing a replacement plan does not remove a local playlist that the new
+manifest now contains. The local row stays available to playlist-detail UI
+until the plan activates; activation then removes it after the synced row is
+visible, preventing a transient “Playlist unavailable” state.

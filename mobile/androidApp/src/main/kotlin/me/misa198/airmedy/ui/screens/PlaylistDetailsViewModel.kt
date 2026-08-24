@@ -83,6 +83,26 @@ internal class PlaylistDetailsViewModel(
             )
         }
     }
+
+    fun moveTrack(playlistId: String, trackId: String, previousTrackId: String?, nextTrackId: String?) {
+        if (playlistId == FavoritesPlaylistId || trackId.isBlank()) return
+        viewModelScope.launch {
+            syncStore.queuePlaylistMutation(
+                PlaylistMutation(
+                    mutationId = UUID.randomUUID().toString(),
+                    playlistId = playlistId,
+                    operation = PlaylistMutationOperation.MOVE_TRACK,
+                    updatedAt = System.currentTimeMillis(),
+                    payload = PlaylistMutationPayload(trackId = trackId, previousTrackId = previousTrackId, nextTrackId = nextTrackId),
+                ),
+            )
+        }
+    }
+}
+
+internal fun playlistMoveAnchors(trackIds: List<String>, trackId: String): Pair<String?, String?> {
+    val index = trackIds.indexOf(trackId)
+    return trackIds.getOrNull(index - 1) to trackIds.getOrNull(index + 1)
 }
 
 internal fun playlistDetailsUiStateFor(

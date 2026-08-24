@@ -126,6 +126,9 @@
     <string name="player_cast">投播</string>
     <string name="player_queue">播放队列</string>
     <string name="player_queue_drag_handle">调整曲目顺序</string>
+    <string name="playlist_reorder">调整播放列表顺序</string>
+    <string name="playlist_reorder_drag_handle">拖动以调整曲目顺序</string>
+    <string name="playlist_reorder_done">完成排序</string>
     <string name="player_queue_current">正在播放</string>
     <string name="player_queue_unknown_track">不可用曲目</string>
     <string name="sync_error_background_timeout">因达到 Android 后台运行时间限制，同步已暂停。</string>
@@ -258,6 +261,16 @@
     <string name="track_context_add_to_queue">添加到队列</string>
     <string name="track_context_remove_from_queue">从队列中移除</string>
     <string name="track_context_track_info">曲目信息</string>
+    <string name="track_context_find_lyrics">查找歌词</string>
+    <string name="track_context_find_lyrics_title">查找歌词</string>
+    <string name="find_lyrics_track_title">歌曲名称</string>
+    <string name="find_lyrics_artist">艺术家名称</string>
+    <string name="find_lyrics_duration">时长</string>
+    <string name="find_lyrics_search">搜索</string>
+    <string name="find_lyrics_searching">正在搜索…</string>
+    <string name="find_lyrics_no_results">未找到歌词</string>
+    <string name="find_lyrics_preview">歌词预览</string>
+    <string name="find_lyrics_select">选择</string>
     <string name="track_context_add_to_favorites">添加到收藏</string>
     <string name="track_context_remove_from_favorites">取消收藏</string>
     <string name="track_context_add_to_playlist">添加到播放列表</string>

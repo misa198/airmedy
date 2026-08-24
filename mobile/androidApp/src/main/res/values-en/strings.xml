@@ -126,6 +126,9 @@
     <string name="player_cast">Cast</string>
     <string name="player_queue">Queue</string>
     <string name="player_queue_drag_handle">Reorder track</string>
+    <string name="playlist_reorder">Reorder playlist</string>
+    <string name="playlist_reorder_drag_handle">Drag to reorder track</string>
+    <string name="playlist_reorder_done">Done reordering</string>
     <string name="player_queue_current">Currently playing</string>
     <string name="player_queue_unknown_track">Unavailable track</string>
     <string name="sync_error_background_timeout">Sync paused because Android reached its background time limit.</string>
@@ -259,6 +262,16 @@
     <string name="track_context_add_to_queue">Add to queue</string>
     <string name="track_context_remove_from_queue">Remove from queue</string>
     <string name="track_context_track_info">Track info</string>
+    <string name="track_context_find_lyrics">Find lyrics</string>
+    <string name="track_context_find_lyrics_title">Find Lyrics</string>
+    <string name="find_lyrics_track_title">Track title</string>
+    <string name="find_lyrics_artist">Artist name</string>
+    <string name="find_lyrics_duration">Duration</string>
+    <string name="find_lyrics_search">Search</string>
+    <string name="find_lyrics_searching">Searching…</string>
+    <string name="find_lyrics_no_results">No lyrics found</string>
+    <string name="find_lyrics_preview">Lyrics preview</string>
+    <string name="find_lyrics_select">Select</string>
     <string name="track_context_add_to_favorites">Add to favorites</string>
     <string name="track_context_remove_from_favorites">Remove from favorites</string>
     <string name="track_context_add_to_playlist">Add to playlist</string>

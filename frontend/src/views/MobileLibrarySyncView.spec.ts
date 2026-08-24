@@ -2,12 +2,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
 
-const { getStatus, getTrustedDevices, getPairingStatus, getAllPlaylists, sync, cancel, eventHandlers, on } = vi.hoisted(() => {
+const { getStatus, getTrustedDevices, getPairingStatus, getAllArtists, getAllAlbums, getAllGenres, getAllPlaylists, sync, cancel, eventHandlers, on } = vi.hoisted(() => {
   const eventHandlers = new Map<string, (event: { data: unknown }) => void>()
   return {
     getStatus: vi.fn(),
     getTrustedDevices: vi.fn(),
     getPairingStatus: vi.fn(),
+    getAllArtists: vi.fn(),
+    getAllAlbums: vi.fn(),
+    getAllGenres: vi.fn(),
     getAllPlaylists: vi.fn(),
     sync: vi.fn(),
     cancel: vi.fn(),
@@ -34,9 +37,9 @@ vi.mock('../../bindings/airmedy/internal/infra/wails/mobilepairingservice', () =
   GetStatus: getPairingStatus,
 }))
 vi.mock('../../bindings/airmedy/internal/infra/wails/libraryservice', () => ({
-  GetAllArtists: vi.fn().mockResolvedValue([]),
-  GetAllAlbums: vi.fn().mockResolvedValue([]),
-  GetAllGenres: vi.fn().mockResolvedValue([]),
+  GetAllArtists: getAllArtists,
+  GetAllAlbums: getAllAlbums,
+  GetAllGenres: getAllGenres,
 }))
 vi.mock('../../bindings/airmedy/internal/infra/wails/playlistservice', () => ({
   GetAllPlaylists: getAllPlaylists,
@@ -60,9 +63,9 @@ function mountView() {
     global: {
       plugins: [i18n],
       stubs: {
-        Badge: true, Checkbox: true, ConfirmDialog: true, IconButton: true, Input: true,
+        Badge: true, Checkbox: { props: ['checked'], template: '<span :data-checked="checked" />' }, ConfirmDialog: true, IconButton: true, Input: true,
         Modal: { props: ['open', 'title'], template: '<div v-if="open"><h2>{{ title }}</h2><slot /><slot name="footer" /></div>' },
-        Radio: true, RecycleScroller: { props: ['items'], template: '<div><slot v-for="(item, index) in items" :item="item" :index="index" /></div>' }, SettingSection: { template: '<section><slot /></section>' }, TabSwitcher: true,
+        Radio: { props: ['modelValue', 'value'], emits: ['update:modelValue'], template: '<button :data-testid="`scope-${value}`" @click="$emit(\'update:modelValue\', value)" />' }, RecycleScroller: { props: ['items'], template: '<div><slot v-for="(item, index) in items" :item="item" :index="index" /></div>' }, SettingSection: { template: '<section><slot /></section>' }, TabSwitcher: { props: ['modelValue'], emits: ['update:modelValue'], template: '<button data-testid="artists-tab" @click="$emit(\'update:modelValue\', \'artists\')" /><button data-testid="playlists-tab" @click="$emit(\'update:modelValue\', \'playlists\')" />' },
       },
     },
   })
@@ -73,7 +76,10 @@ describe('MobileLibrarySyncView', () => {
     vi.useFakeTimers()
     getTrustedDevices.mockResolvedValue([{ device_id: 'device-1', display_name: 'Phone', online: true }])
     getPairingStatus.mockResolvedValue({ addresses: [{ ip: '192.168.1.2', kind: 'wifi' }] })
-    getAllPlaylists.mockResolvedValue([])
+    getAllArtists.mockReset(); getAllArtists.mockResolvedValue([])
+    getAllAlbums.mockReset(); getAllAlbums.mockResolvedValue([])
+    getAllGenres.mockReset(); getAllGenres.mockResolvedValue([])
+    getAllPlaylists.mockReset(); getAllPlaylists.mockResolvedValue([])
     getStatus.mockReset()
     sync.mockReset()
     cancel.mockReset()
@@ -232,6 +238,82 @@ describe('MobileLibrarySyncView', () => {
     expect(wrapper.text()).toContain('Regular')
     expect(wrapper.text()).not.toContain('Favorites')
     expect(wrapper.text()).not.toContain('Smart')
+    wrapper.unmount()
+  })
+
+  it('adds a mobile-created playlist to the selected scope when its plan completes', async () => {
+    getStatus.mockResolvedValue({ ...activePlan, scope: { kind: 'playlists', selected_ids: ['playlist-a'] } })
+    getAllPlaylists.mockResolvedValueOnce([{ id: 'playlist-a', name: 'A', is_smart: false }])
+      .mockResolvedValueOnce([
+        { id: 'playlist-a', name: 'A', is_smart: false },
+        { id: 'playlist-b', name: 'B', is_smart: false },
+      ])
+    const wrapper = mountView()
+    await flushPromises()
+
+    eventHandlers.get('mobile-library-sync:updated')!({ data: {
+      ...activePlan, status: 'complete', completed: 4,
+      scope: { kind: 'playlists', selected_ids: ['playlist-a', 'playlist-b'] },
+    } })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('B')
+    expect(getAllArtists).toHaveBeenCalledTimes(2)
+    expect(getAllAlbums).toHaveBeenCalledTimes(2)
+    expect(getAllGenres).toHaveBeenCalledTimes(2)
+    wrapper.unmount()
+  })
+
+  it('refreshes selected playlists when reconciliation leaves the sync scope empty', async () => {
+    getStatus.mockResolvedValue(null)
+    getAllPlaylists.mockResolvedValueOnce([{ id: 'playlist-a', name: 'A', is_smart: false }])
+      .mockResolvedValueOnce([])
+    sync.mockRejectedValue(new Error('select at least one item to sync'))
+    const wrapper = mountView()
+    await flushPromises()
+
+    await wrapper.get('[data-testid="scope-selected"]').trigger('click')
+    await wrapper.get('[data-testid="playlists-tab"]').trigger('click')
+    await wrapper.get('button.h-14').trigger('click')
+    await wrapper.get('[data-testid="sync-button"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('A')
+    expect(getAllPlaylists).toHaveBeenCalledTimes(2)
+    wrapper.unmount()
+  })
+
+  it('keeps only the most recently synced scope selected', async () => {
+    getStatus.mockResolvedValue(null)
+    getAllArtists.mockResolvedValue([{ id: 'artist-a', name: 'Artist A' }])
+    getAllPlaylists.mockResolvedValue([{ id: 'playlist-a', name: 'Playlist A', is_smart: false }])
+    sync.mockResolvedValue({ ...activePlan, scope: { kind: 'playlists', selected_ids: ['playlist-a'] } })
+    const wrapper = mountView()
+    await flushPromises()
+
+    await wrapper.get('[data-testid="scope-selected"]').trigger('click')
+    await wrapper.get('[data-testid="playlists-tab"]').trigger('click')
+    await wrapper.get('button.h-14').trigger('click')
+    await wrapper.get('[data-testid="sync-button"]').trigger('click')
+    eventHandlers.get('mobile-library-sync:updated')!({ data: { ...activePlan, status: 'complete', completed: 4, scope: { kind: 'playlists', selected_ids: ['playlist-a'] } } })
+    await flushPromises()
+    eventHandlers.get('mobile-library-sync:updated')!({ data: { ...activePlan, id: 'plan-2', status: 'complete', completed: 4, scope: { kind: 'artists', selected_ids: ['artist-a'] } } })
+    await flushPromises()
+    expect(wrapper.get('span[data-checked]').attributes('data-checked')).toBe('true')
+    await wrapper.get('[data-testid="playlists-tab"]').trigger('click')
+
+    expect(wrapper.get('span[data-checked]').attributes('data-checked')).toBe('false')
+    wrapper.unmount()
+  })
+
+  it('keeps the completed selected scope when reopening the view', async () => {
+    getStatus.mockResolvedValue({ ...activePlan, status: 'complete', completed: 4, scope: { kind: 'artists', selected_ids: ['artist-a'] } })
+    getAllArtists.mockResolvedValue([{ id: 'artist-a', name: 'Artist A' }])
+    const wrapper = mountView()
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="artists-tab"]').exists()).toBe(true)
+    expect(wrapper.get('span[data-checked]').attributes('data-checked')).toBe('true')
     wrapper.unmount()
   })
 })

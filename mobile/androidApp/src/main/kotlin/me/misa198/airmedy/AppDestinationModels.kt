@@ -113,6 +113,7 @@ internal data class LibraryPlaylistsModel(
     val onPlay: (String, Boolean) -> Unit = { _, _ -> },
     val onTrackPlay: (String, String) -> Unit = { _, _ -> },
     val onTrackRemove: (String, String) -> Unit = { _, _ -> },
+    val onTrackMove: (String, String, String?, String?) -> Unit = { _, _, _, _ -> },
     val onPlayNext: (List<String>) -> Unit = {},
     val onAddToQueue: (List<String>) -> Unit = {},
     val onUpdate: (String, String, Uri?, Boolean) -> Unit = { _, _, _, _ -> },

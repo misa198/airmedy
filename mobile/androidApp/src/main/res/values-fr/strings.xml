@@ -126,6 +126,9 @@
     <string name="player_cast">Diffuser</string>
     <string name="player_queue">File d\'attente</string>
     <string name="player_queue_drag_handle">Réorganiser le morceau</string>
+    <string name="playlist_reorder">Réorganiser la playlist</string>
+    <string name="playlist_reorder_drag_handle">Faites glisser pour réorganiser le morceau</string>
+    <string name="playlist_reorder_done">Terminer la réorganisation</string>
     <string name="player_queue_current">En cours de lecture</string>
     <string name="player_queue_unknown_track">Morceau indisponible</string>
     <string name="sync_error_background_timeout">Synchronisation suspendue en raison de la limite d\'exécution en arrière-plan d\'Android.</string>
@@ -259,6 +262,16 @@
     <string name="track_context_add_to_queue">Ajouter à la file d\'attente</string>
     <string name="track_context_remove_from_queue">Retirer de la file d\'attente</string>
     <string name="track_context_track_info">Infos sur le morceau</string>
+    <string name="track_context_find_lyrics">Rechercher les paroles</string>
+    <string name="track_context_find_lyrics_title">Rechercher les paroles</string>
+    <string name="find_lyrics_track_title">Titre du morceau</string>
+    <string name="find_lyrics_artist">Nom de l’artiste</string>
+    <string name="find_lyrics_duration">Durée</string>
+    <string name="find_lyrics_search">Rechercher</string>
+    <string name="find_lyrics_searching">Recherche en cours…</string>
+    <string name="find_lyrics_no_results">Aucune parole trouvée</string>
+    <string name="find_lyrics_preview">Aperçu des paroles</string>
+    <string name="find_lyrics_select">Sélectionner</string>
     <string name="track_context_add_to_favorites">Ajouter aux favoris</string>
     <string name="track_context_remove_from_favorites">Retirer des favoris</string>
     <string name="track_context_add_to_playlist">Ajouter à la playlist</string>

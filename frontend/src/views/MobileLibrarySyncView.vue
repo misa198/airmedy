@@ -44,7 +44,9 @@ const tabs = [
   { value: 'artists', label: 'Artists' }, { value: 'albums', label: 'Albums' },
   { value: 'genres', label: 'Genres' }, { value: 'playlists', label: 'Playlists' },
 ]
-const activeItems = computed(() => items.value[activeTab.value].filter(item => item.label.toLocaleLowerCase().includes(query.value.trim().toLocaleLowerCase())))
+const activeItems = computed(() => items.value[activeTab.value]
+  .filter(item => item.label.toLocaleLowerCase().includes(query.value.trim().toLocaleLowerCase()))
+  .map(item => ({ ...item, rowKey: `${activeTab.value}:${item.id}`, checked: selected.value[activeTab.value].has(item.id) })))
 const activeSelected = computed(() => selected.value[activeTab.value])
 const currentScope = computed(() => new MobileLibrarySyncScope({ kind: mode.value === 'all' ? 'all' : activeTab.value, selected_ids: mode.value === 'all' ? [] : Array.from(activeSelected.value).sort() }))
 const isSyncInProgress = computed(() => syncing.value || plan.value?.status === 'active')
@@ -69,6 +71,11 @@ function toggle(id: string) {
   const set = activeSelected.value
   if (set.has(id)) set.delete(id); else set.add(id)
   selected.value = { ...selected.value, [activeTab.value]: new Set(set) }
+}
+
+function selectablePlaylists(playlists: (Playlist | null | undefined)[]): Selectable[] {
+  return playlists.filter((item): item is Playlist => !!item && item.id !== 'favorites' && !item.is_smart)
+    .map(item => ({ id: item.id, label: item.name }))
 }
 
 let pollTimer: ReturnType<typeof setInterval> | null = null
@@ -105,6 +112,16 @@ function applyPlanUpdate(updated: MobileLibrarySyncPlan) {
     if (updated.completed < current.completed) return
   }
   plan.value = updated
+
+  if (updated.scope.kind === 'all') {
+    mode.value = 'all'
+    selected.value = { artists: new Set(), albums: new Set(), genres: new Set(), playlists: new Set() }
+  } else {
+    mode.value = 'selected'
+    activeTab.value = updated.scope.kind as ScopeKind
+    selected.value = { artists: new Set(), albums: new Set(), genres: new Set(), playlists: new Set(), [activeTab.value]: new Set(updated.scope.selected_ids) }
+  }
+  if (updated.status === 'complete' && current?.status !== 'complete') void load()
   if (updated.error_code === 'insufficient_storage' && updated.required_bytes != null && updated.available_bytes != null) {
     storageError.value = { requiredBytes: updated.required_bytes, availableBytes: updated.available_bytes }
   }
@@ -129,12 +146,7 @@ async function load() {
       artists: (artists ?? []).filter((item): item is Artist => !!item).map(item => ({ id: item.id, label: item.name })),
       albums: (albums ?? []).filter((item): item is AlbumDTO => !!item).map(item => ({ id: item.id, label: item.title, detail: item.artists?.filter(Boolean).map(artist => artist!.name).join(', ') })),
       genres: (genres ?? []).filter((item): item is Genre => !!item).map(item => ({ id: item.id, label: item.name })),
-      playlists: (playlists ?? []).filter((item): item is Playlist => !!item && item.id !== 'favorites' && !item.is_smart).map(item => ({ id: item.id, label: item.name })),
-    }
-    if (plan.value?.scope.kind && plan.value.scope.kind !== 'all') {
-      mode.value = 'selected'
-      activeTab.value = plan.value.scope.kind as ScopeKind
-      selected.value = { ...selected.value, [activeTab.value]: new Set(plan.value.scope.selected_ids) }
+      playlists: selectablePlaylists(playlists ?? []),
     }
   } catch (error) { console.error('Failed to load mobile library sync:', error) }
   finally { loading.value = false }
@@ -161,7 +173,10 @@ async function sync(replace = false) {
     }
   }
   catch (error) { console.error('Failed to start mobile library sync:', error) }
-  finally { syncing.value = false }
+  finally {
+    syncing.value = false
+    void load()
+  }
 }
 
 async function cancelSync() {
@@ -282,13 +297,13 @@ onUnmounted(() => {
             <span class="px-3">{{ $t(`mobile_sync.${activeTab}`) }}</span>
             <span class="px-3" />
           </div>
-          <RecycleScroller class="h-[calc(100%-2.25rem)] custom-scrollbar" :items="activeItems" :item-size="56"
-            key-field="id" v-slot="{ item, index }">
-            <button type="button"
+          <RecycleScroller :key="activeTab" class="h-[calc(100%-2.25rem)] custom-scrollbar" :items="activeItems" :item-size="56"
+            key-field="rowKey" v-slot="{ item, index }">
+            <button :key="item.rowKey" type="button"
               class="grid h-14 w-full grid-cols-[2.25rem_minmax(0,1fr)_minmax(0,0.8fr)] items-center text-left text-sm transition-colors hover:bg-foreground/[0.04]"
               :style="{ background: rowBg(index) }" :disabled="isSyncInProgress" @click="toggle(item.id)">
               <span class="flex justify-center">
-                <Checkbox :checked="activeSelected.has(item.id)" :disabled="isSyncInProgress" />
+                <Checkbox :checked="item.checked" :disabled="isSyncInProgress" />
               </span>
               <span class="truncate px-3 font-medium">{{ item.label }}</span>
               <span class="truncate px-3 text-xs text-foreground opacity-80">{{ item.detail ?? '' }}</span>

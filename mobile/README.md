@@ -50,6 +50,8 @@ storage, authenticated HTTP asset pulling, MQTT, notifications, and the
 MQTT session during an active transfer, then returns it connected, so the
 desktop starts a plan only after Android is already online.
 Android supplies camera, encrypted identity storage, and Compose UI adapters.
+If the active playback track is absent from an activated library snapshot,
+Android stops playback and clears its queue.
 Android makes one opportunistic MQTT connection using
 the QR-verified route when the app starts, without background retries. Its
 connection state drives the desktop Online/Offline badge and provides the
@@ -158,6 +160,8 @@ Playlist reconciliation arrives on a separate MQTT stream from Library Sync
 asset downloads. Android persists playlist deltas in Room and retains them
 until a terminal desktop result (`applied`, `duplicate`, `stale`, `rejected`,
 or `scope-conflict`) acknowledges the mutation.
+When switching away from a playlist scope, a local-only playlist that receives
+`scope-conflict` is removed with its queued mutations.
 When a playlist deletion is `applied` or `duplicate`, its local projection
 remains in effect until the replacement library snapshot activates, so a
 deleted item cannot briefly reappear while assets download. Rejected or stale

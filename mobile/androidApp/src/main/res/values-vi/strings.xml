@@ -126,6 +126,9 @@
     <string name="player_cast">Phát truyền</string>
     <string name="player_queue">Hàng chờ</string>
     <string name="player_queue_drag_handle">Sắp xếp lại bài hát</string>
+    <string name="playlist_reorder">Sắp xếp danh sách phát</string>
+    <string name="playlist_reorder_drag_handle">Kéo để sắp xếp bài hát</string>
+    <string name="playlist_reorder_done">Hoàn tất sắp xếp</string>
     <string name="player_queue_current">Đang phát</string>
     <string name="player_queue_unknown_track">Bài hát không khả dụng</string>
     <string name="sync_error_background_timeout">Tạm dừng đồng bộ vì đã đạt giới hạn thời gian chạy nền của Android.</string>
@@ -258,6 +261,16 @@
     <string name="track_context_add_to_queue">Thêm vào hàng chờ</string>
     <string name="track_context_remove_from_queue">Xóa khỏi hàng chờ</string>
     <string name="track_context_track_info">Thông tin bài hát</string>
+    <string name="track_context_find_lyrics">Tìm lời bài hát</string>
+    <string name="track_context_find_lyrics_title">Tìm lời bài hát</string>
+    <string name="find_lyrics_track_title">Tên bài hát</string>
+    <string name="find_lyrics_artist">Tên nghệ sĩ</string>
+    <string name="find_lyrics_duration">Thời lượng</string>
+    <string name="find_lyrics_search">Tìm kiếm</string>
+    <string name="find_lyrics_searching">Đang tìm kiếm…</string>
+    <string name="find_lyrics_no_results">Không tìm thấy lời bài hát</string>
+    <string name="find_lyrics_preview">Xem trước lời bài hát</string>
+    <string name="find_lyrics_select">Chọn</string>
     <string name="track_context_add_to_favorites">Thêm vào yêu thích</string>
     <string name="track_context_remove_from_favorites">Xóa khỏi yêu thích</string>
     <string name="track_context_add_to_playlist">Thêm vào danh sách phát</string>

@@ -126,6 +126,9 @@
     <string name="player_cast">Transmitir</string>
     <string name="player_queue">Fila</string>
     <string name="player_queue_drag_handle">Reordenar faixa</string>
+    <string name="playlist_reorder">Reordenar playlist</string>
+    <string name="playlist_reorder_drag_handle">Arraste para reordenar a faixa</string>
+    <string name="playlist_reorder_done">Concluir reordenação</string>
     <string name="player_queue_current">A reproduzir</string>
     <string name="player_queue_unknown_track">Faixa indisponível</string>
     <string name="sync_error_background_timeout">Sincronização pausada devido ao limite de tempo em segundo plano do Android.</string>
@@ -259,6 +262,16 @@
     <string name="track_context_add_to_queue">Adicionar à fila</string>
     <string name="track_context_remove_from_queue">Remover da fila</string>
     <string name="track_context_track_info">Informações da faixa</string>
+    <string name="track_context_find_lyrics">Procurar letras</string>
+    <string name="track_context_find_lyrics_title">Procurar letras</string>
+    <string name="find_lyrics_track_title">Título da faixa</string>
+    <string name="find_lyrics_artist">Nome do artista</string>
+    <string name="find_lyrics_duration">Duração</string>
+    <string name="find_lyrics_search">Pesquisar</string>
+    <string name="find_lyrics_searching">Pesquisando…</string>
+    <string name="find_lyrics_no_results">Nenhuma letra encontrada</string>
+    <string name="find_lyrics_preview">Prévia da letra</string>
+    <string name="find_lyrics_select">Selecionar</string>
     <string name="track_context_add_to_favorites">Adicionar aos favoritos</string>
     <string name="track_context_remove_from_favorites">Remover dos favoritos</string>
     <string name="track_context_add_to_playlist">Adicionar à playlist</string>

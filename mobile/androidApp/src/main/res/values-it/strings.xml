@@ -126,6 +126,9 @@
     <string name="player_cast">Trasmetti</string>
     <string name="player_queue">Coda</string>
     <string name="player_queue_drag_handle">Riordina brano</string>
+    <string name="playlist_reorder">Riordina playlist</string>
+    <string name="playlist_reorder_drag_handle">Trascina per riordinare il brano</string>
+    <string name="playlist_reorder_done">Termina riordino</string>
     <string name="player_queue_current">In riproduzione</string>
     <string name="player_queue_unknown_track">Brano non disponibile</string>
     <string name="sync_error_background_timeout">Sincronizzazione in pausa per raggiungimento del limite in background di Android.</string>
@@ -259,6 +262,16 @@
     <string name="track_context_add_to_queue">Aggiungi alla coda</string>
     <string name="track_context_remove_from_queue">Rimuovi dalla coda</string>
     <string name="track_context_track_info">Informazioni brano</string>
+    <string name="track_context_find_lyrics">Cerca testo</string>
+    <string name="track_context_find_lyrics_title">Cerca testo</string>
+    <string name="find_lyrics_track_title">Titolo del brano</string>
+    <string name="find_lyrics_artist">Nome artista</string>
+    <string name="find_lyrics_duration">Durata</string>
+    <string name="find_lyrics_search">Cerca</string>
+    <string name="find_lyrics_searching">Ricerca in corso…</string>
+    <string name="find_lyrics_no_results">Nessun testo trovato</string>
+    <string name="find_lyrics_preview">Anteprima del testo</string>
+    <string name="find_lyrics_select">Seleziona</string>
     <string name="track_context_add_to_favorites">Aggiungi ai preferiti</string>
     <string name="track_context_remove_from_favorites">Rimuovi dai preferiti</string>
     <string name="track_context_add_to_playlist">Aggiungi alla playlist</string>
