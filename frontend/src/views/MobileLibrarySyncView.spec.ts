@@ -79,7 +79,7 @@ describe('MobileLibrarySyncView', () => {
     getAllArtists.mockReset(); getAllArtists.mockResolvedValue([])
     getAllAlbums.mockReset(); getAllAlbums.mockResolvedValue([])
     getAllGenres.mockReset(); getAllGenres.mockResolvedValue([])
-    getAllPlaylists.mockResolvedValue([])
+    getAllPlaylists.mockReset(); getAllPlaylists.mockResolvedValue([])
     getStatus.mockReset()
     sync.mockReset()
     cancel.mockReset()
