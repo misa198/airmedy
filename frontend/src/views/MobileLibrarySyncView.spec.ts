@@ -234,4 +234,24 @@ describe('MobileLibrarySyncView', () => {
     expect(wrapper.text()).not.toContain('Smart')
     wrapper.unmount()
   })
+
+  it('adds a mobile-created playlist to the selected scope when its plan completes', async () => {
+    getStatus.mockResolvedValue({ ...activePlan, scope: { kind: 'playlists', selected_ids: ['playlist-a'] } })
+    getAllPlaylists.mockResolvedValueOnce([{ id: 'playlist-a', name: 'A', is_smart: false }])
+      .mockResolvedValueOnce([
+        { id: 'playlist-a', name: 'A', is_smart: false },
+        { id: 'playlist-b', name: 'B', is_smart: false },
+      ])
+    const wrapper = mountView()
+    await flushPromises()
+
+    eventHandlers.get('mobile-library-sync:updated')!({ data: {
+      ...activePlan, status: 'complete', completed: 4,
+      scope: { kind: 'playlists', selected_ids: ['playlist-a', 'playlist-b'] },
+    } })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('B')
+    wrapper.unmount()
+  })
 })

@@ -299,6 +299,9 @@ internal interface SyncDao {
     @Query("SELECT * FROM local_playlists ORDER BY name COLLATE NOCASE") fun observeLocalPlaylists(): Flow<List<LocalPlaylistEntity>>
     @Query("UPDATE local_playlists SET syncState = :state WHERE mutationId IN (:mutationIds)") suspend fun setLocalPlaylistSyncState(mutationIds: List<String>, state: String)
     @Query("DELETE FROM local_playlists WHERE playlistId IN (:playlistIds)") suspend fun deleteLocalPlaylists(playlistIds: List<String>)
+    @Query("DELETE FROM local_playlists WHERE playlistId IN (SELECT playlistId FROM sync_playlists WHERE planId = :planId)") suspend fun deleteLocalPlaylistsInPlan(planId: String)
+    @Query("DELETE FROM local_playlists WHERE playlistId = :playlistId AND syncState = 'failed'") suspend fun deleteFailedLocalPlaylist(playlistId: String): Int
+    @Query("DELETE FROM playlist_mutations WHERE playlistId = :playlistId") suspend fun deletePlaylistMutations(playlistId: String)
     @Query("SELECT * FROM playlist_artwork_staging WHERE sha256 = :sha256 LIMIT 1") suspend fun playlistArtwork(sha256: String): PlaylistArtworkStagingEntity?
     @Query("SELECT * FROM playlist_artwork_staging") fun observePlaylistArtwork(): Flow<List<PlaylistArtworkStagingEntity>>
     @Query("DELETE FROM playlist_artwork_staging WHERE sha256 IN (:hashes)") suspend fun deletePlaylistArtwork(hashes: List<String>)
@@ -682,6 +685,13 @@ internal class AndroidLibrarySyncStore(
         if (ids.isNotEmpty()) dao.setLocalPlaylistSyncState(ids, "failed")
     }
 
+    /** A rejected local-only playlist has no desktop state to delete; discard its failed queue instead. */
+    suspend fun discardFailedLocalPlaylist(playlistId: String): Boolean = database.withTransaction {
+        if (dao.deleteFailedLocalPlaylist(playlistId) == 0) return@withTransaction false
+        dao.deletePlaylistMutations(playlistId)
+        true
+    }.also { discarded -> if (discarded) cleanupAcknowledgedPlaylistArtwork() }
+
     suspend fun stagePlaylistArtwork(value: StagedPlaylistArtwork) {
         require(value.sha256.matches(Regex("^[0-9a-f]{64}$")) && value.mime in setOf("image/jpeg", "image/png", "image/webp"))
         require(!value.relativePath.startsWith('/') && ".." !in value.relativePath.split('/'))
@@ -737,10 +747,6 @@ internal class AndroidLibrarySyncStore(
                 PlaylistMutation(row.mutationId, row.playlistId, PlaylistMutationOperation.valueOf(row.operation), row.updatedAt,
                     LibrarySyncProtocol.json.decodeFromString(PlaylistMutationPayload.serializer(), row.payloadJson))
             }.getOrNull() }
-            val authoritativeIds = manifest.playlists.orEmpty().mapNotNull { item ->
-                (item["playlist"] as? JsonObject)?.string("id")
-            }
-            if (authoritativeIds.isNotEmpty()) dao.deleteLocalPlaylists(authoritativeIds)
             val playlists = mergePlaylistSnapshot(manifest.playlists.orEmpty(), manifest.scope, pending).mapNotNull { it.toPlaylist(request.planId) }
             dao.insertPlaylists(playlists)
             dao.deleteSearchDocuments(request.planId)
@@ -770,6 +776,7 @@ internal class AndroidLibrarySyncStore(
         check(dao.missingAssetCount(planId) == 0) { "Plan has missing assets" }
         dao.deactivatePlans()
         dao.activatePlan(planId)
+        dao.deleteLocalPlaylistsInPlan(planId)
         dao.deleteAwaitingDeletedLocalPlaylists()
         dao.acknowledgeAwaitingPlaylistMutations()
         dao.assetIds(planId)

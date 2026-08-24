@@ -338,8 +338,10 @@ func (s *Service) Start(ctx context.Context, deviceID string, scope domain.Mobil
 	if err := s.ensureHTTPServer(); err != nil {
 		return nil, err
 	}
-	if err := s.reconcilePlaylists(ctx, deviceID, scope, host); err != nil {
-		return nil, err
+	var reconciliationErr error
+	scope, reconciliationErr = s.reconcilePlaylists(ctx, deviceID, scope, host)
+	if reconciliationErr != nil {
+		return nil, reconciliationErr
 	}
 	current, err := s.GetStatus(ctx, deviceID)
 	if err != nil {
@@ -373,23 +375,23 @@ func (s *Service) Start(ctx context.Context, deviceID string, scope domain.Mobil
 	return plan, nil
 }
 
-func (s *Service) reconcilePlaylists(ctx context.Context, deviceID string, scope domain.MobileLibrarySyncScope, host string) error {
+func (s *Service) reconcilePlaylists(ctx context.Context, deviceID string, scope domain.MobileLibrarySyncScope, host string) (domain.MobileLibrarySyncScope, error) {
 	identity, err := s.identity.Load(ctx)
 	if err != nil {
-		return fmt.Errorf("load pairing identity: %w", err)
+		return scope, fmt.Errorf("load pairing identity: %w", err)
 	}
 	if identity == nil {
-		return fmt.Errorf("pairing identity unavailable")
+		return scope, fmt.Errorf("pairing identity unavailable")
 	}
 	if err := s.ensureReconciliationSubscription(ctx, identity.DeviceID); err != nil {
-		return err
+		return scope, err
 	}
 	key, ok, err := s.keys.Load(ctx)
 	if err != nil {
-		return fmt.Errorf("load pairing key: %w", err)
+		return scope, fmt.Errorf("load pairing key: %w", err)
 	}
 	if !ok {
-		return fmt.Errorf("pairing key unavailable")
+		return scope, fmt.Errorf("pairing key unavailable")
 	}
 	reconciliation := &playlistReconciliation{ID: uuid.NewString(), DeviceID: deviceID, Scope: scope, Expires: time.Now().UTC().Add(reconciliationTimeout), result: make(chan playlistReconciliationResult, 1), artwork: make(map[string]string)}
 	s.mu.Lock()
@@ -413,17 +415,20 @@ func (s *Service) reconcilePlaylists(ctx context.Context, deviceID string, scope
 	request.Signature = base64.RawURLEncoding.EncodeToString(ed25519.Sign(key, input))
 	payload, _ := json.Marshal(request)
 	if err := s.broker.Publish(ctx, playlistRequestTopic(identity.DeviceID, deviceID), payload); err != nil {
-		return fmt.Errorf("publish playlist reconciliation request: %w", err)
+		return scope, fmt.Errorf("publish playlist reconciliation request: %w", err)
 	}
 	timer := time.NewTimer(reconciliationTimeout)
 	defer timer.Stop()
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
+		return scope, ctx.Err()
 	case <-timer.C:
-		return fmt.Errorf("playlist reconciliation timed out after %s", reconciliationTimeout)
+		return scope, fmt.Errorf("playlist reconciliation timed out after %s", reconciliationTimeout)
 	case <-reconciliation.result:
-		return nil
+		s.mu.Lock()
+		scope = reconciliation.Scope
+		s.mu.Unlock()
+		return scope, nil
 	}
 }
 
@@ -1202,6 +1207,8 @@ func (s *Service) servePlaylistMutations(w http.ResponseWriter, r *http.Request,
 	}
 	deviceID, _ := r.Context().Value(syncDeviceContextKey{}).(string)
 	s.mu.Lock()
+	reconciliation.Scope = expandPlaylistScope(reconciliation.Scope, batch.Mutations)
+	scope := reconciliation.Scope
 	uploadedArtwork := make(map[string]string, len(reconciliation.artwork))
 	for hash, key := range reconciliation.artwork {
 		uploadedArtwork[hash] = key
@@ -1209,7 +1216,7 @@ func (s *Service) servePlaylistMutations(w http.ResponseWriter, r *http.Request,
 	s.mu.Unlock()
 	result := playlistMutationBatchResult{Version: playlistSyncVersion, ReconciliationID: batch.ReconciliationID, Results: make([]playlistMutationResult, 0, len(batch.Mutations))}
 	for _, mutation := range batch.Mutations {
-		status := s.applyPlaylistMutation(r.Context(), deviceID, reconciliation.Scope, mutation, uploadedArtwork)
+		status := s.applyPlaylistMutation(r.Context(), deviceID, scope, mutation, uploadedArtwork)
 		result.Results = append(result.Results, playlistMutationResult{MutationID: mutation.MutationID, Status: status})
 	}
 	w.Header().Set("Content-Type", "application/json")

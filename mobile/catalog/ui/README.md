@@ -96,6 +96,10 @@ Playlist, favorite, and sync UI must not infer data from a desktop local databas
 They read the Android mirror/state exposed by adapters. Context menus receive
 action callbacks; they do not mutate Room or the queue themselves.
 
+While a replacement sync plan is staging, playlist details continue to render
+the local playlist projection. That projection is removed only after the new
+plan activates, when its synced replacement is already available.
+
 The Sync settings page provides a single ActionList FAQ row. It emits
 `AppIntent.OpenExternalUrl`; the Android host owns opening the browser.
 

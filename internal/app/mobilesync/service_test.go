@@ -483,7 +483,7 @@ func TestReconciliationOfflineAndTimeoutReturnWithoutPlanWork(t *testing.T) {
 	t.Run("offline", func(t *testing.T) {
 		broker := &testBroker{publishErr: errors.New("offline")}
 		svc := &Service{identity: identity, keys: testKeyStore{desktopKey}, broker: broker, reconciliations: map[string]*playlistReconciliation{}}
-		err := svc.reconcilePlaylists(context.Background(), "mobile", domain.MobileLibrarySyncScope{Kind: "all"}, "127.0.0.1")
+		_, err := svc.reconcilePlaylists(context.Background(), "mobile", domain.MobileLibrarySyncScope{Kind: "all"}, "127.0.0.1")
 		require.ErrorContains(t, err, "publish playlist reconciliation request")
 	})
 	t.Run("start does not create a plan when reconciliation fails", func(t *testing.T) {
@@ -509,7 +509,7 @@ func TestReconciliationOfflineAndTimeoutReturnWithoutPlanWork(t *testing.T) {
 		defer func() { reconciliationTimeout = old }()
 		broker := &testBroker{}
 		svc := &Service{identity: identity, keys: testKeyStore{desktopKey}, broker: broker, reconciliations: map[string]*playlistReconciliation{}}
-		err := svc.reconcilePlaylists(context.Background(), "mobile", domain.MobileLibrarySyncScope{Kind: "all"}, "127.0.0.1")
+		_, err := svc.reconcilePlaylists(context.Background(), "mobile", domain.MobileLibrarySyncScope{Kind: "all"}, "127.0.0.1")
 		require.ErrorContains(t, err, "timed out")
 		var request playlistReconciliationRequest
 		require.NoError(t, json.Unmarshal(broker.payload, &request))
@@ -593,6 +593,18 @@ func TestPlaylistMutationScopeIsExplicit(t *testing.T) {
 	require.False(t, playlistInScope(playlistScope, "playlist-b"))
 	require.True(t, playlistInScope(domain.MobileLibrarySyncScope{Kind: domain.MobileLibrarySyncScopeAll}, "playlist-b"))
 	require.False(t, playlistInScope(domain.MobileLibrarySyncScope{Kind: domain.MobileLibrarySyncScopeArtists, SelectedIDs: []string{"artist-a"}}, "playlist-a"))
+}
+
+func TestCreatedPlaylistExtendsSelectedPlaylistScope(t *testing.T) {
+	scope := expandPlaylistScope(
+		domain.MobileLibrarySyncScope{Kind: domain.MobileLibrarySyncScopePlaylists, SelectedIDs: []string{"playlist-a"}},
+		[]playlistMutation{
+			{PlaylistID: "00000000-0000-4000-8000-000000000002", Operation: "CREATE", Payload: playlistMutationPayload{Name: "B"}},
+			{PlaylistID: "favorites", Operation: "CREATE", Payload: playlistMutationPayload{Name: "Favorites"}},
+		},
+	)
+	require.Equal(t, []string{"00000000-0000-4000-8000-000000000002", "playlist-a"}, scope.SelectedIDs)
+	require.True(t, playlistMutationInScope(scope, playlistMutation{PlaylistID: "00000000-0000-4000-8000-000000000002", Operation: "ADD_TRACK"}))
 }
 
 func TestFavoriteArtworkMutationBypassesSelectedLibraryScope(t *testing.T) {

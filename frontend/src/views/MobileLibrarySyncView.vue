@@ -71,6 +71,17 @@ function toggle(id: string) {
   selected.value = { ...selected.value, [activeTab.value]: new Set(set) }
 }
 
+function selectablePlaylists(playlists: (Playlist | null | undefined)[]): Selectable[] {
+  return playlists.filter((item): item is Playlist => !!item && item.id !== 'favorites' && !item.is_smart)
+    .map(item => ({ id: item.id, label: item.name }))
+}
+
+async function refreshPlaylists() {
+  try {
+    items.value = { ...items.value, playlists: selectablePlaylists(await PlaylistService.GetAllPlaylists()) }
+  } catch (error) { console.error('Failed to refresh playlists:', error) }
+}
+
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
 function startPolling() {
@@ -105,6 +116,13 @@ function applyPlanUpdate(updated: MobileLibrarySyncPlan) {
     if (updated.completed < current.completed) return
   }
   plan.value = updated
+
+  if (updated.scope.kind === 'playlists') {
+    mode.value = 'selected'
+    activeTab.value = 'playlists'
+    selected.value = { ...selected.value, playlists: new Set(updated.scope.selected_ids) }
+  }
+  if (updated.status === 'complete') void refreshPlaylists()
   if (updated.error_code === 'insufficient_storage' && updated.required_bytes != null && updated.available_bytes != null) {
     storageError.value = { requiredBytes: updated.required_bytes, availableBytes: updated.available_bytes }
   }
@@ -129,7 +147,7 @@ async function load() {
       artists: (artists ?? []).filter((item): item is Artist => !!item).map(item => ({ id: item.id, label: item.name })),
       albums: (albums ?? []).filter((item): item is AlbumDTO => !!item).map(item => ({ id: item.id, label: item.title, detail: item.artists?.filter(Boolean).map(artist => artist!.name).join(', ') })),
       genres: (genres ?? []).filter((item): item is Genre => !!item).map(item => ({ id: item.id, label: item.name })),
-      playlists: (playlists ?? []).filter((item): item is Playlist => !!item && item.id !== 'favorites' && !item.is_smart).map(item => ({ id: item.id, label: item.name })),
+      playlists: selectablePlaylists(playlists ?? []),
     }
     if (plan.value?.scope.kind && plan.value.scope.kind !== 'all') {
       mode.value = 'selected'
