@@ -18,6 +18,7 @@ import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import org.junit.Rule
 import org.junit.Test
+import org.junit.Assert.assertTrue
 
 class AlbumDetailsContentTest {
     @get:Rule val composeTestRule = createComposeRule()
@@ -125,6 +126,29 @@ class AlbumDetailsContentTest {
         composeTestRule.onNodeWithText("Add to favourites").performClick()
 
         org.junit.Assert.assertEquals(listOf("one"), favoriteIds)
+    }
+
+    @Test
+    fun heroOverflowMenuIsAnchoredToAlbumOptions() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                AnchoredPopupMenuHost(hazeState = null) {
+                    AlbumDetailsContent(
+                        uiState = AlbumDetailsUiState(
+                            album = LibraryAlbum("album", "Absolution", "Muse"),
+                            tracks = listOf(LibraryTrack("one", "One", "Muse")),
+                        ),
+                    )
+                }
+            }
+        }
+
+        val options = composeTestRule.onNode(hasContentDescription("Album options"))
+        val optionsBounds = options.fetchSemanticsNode().boundsInRoot
+        options.performClick()
+        val menuBounds = composeTestRule.onNodeWithText("Play next").fetchSemanticsNode().boundsInRoot
+
+        assertTrue(menuBounds.top >= optionsBounds.bottom)
     }
 
     @Test

@@ -93,20 +93,7 @@ internal fun AlbumDetailsContent(
     LazyColumn(modifier.fillMaxSize(), contentPadding = listPadding) {
         item("hero") {
             ArtworkHeroBackdrop(album.artworkPath, Modifier.fillMaxWidth(), onHeroColorChanged) {
-                AlbumContextMenu(
-                    tracks = uiState.tracks,
-                    expanded = albumMenuExpanded,
-                    onDismiss = { albumMenuExpanded = false },
-                    hazeState = hazeState,
-                    playbackQueue = playbackQueue,
-                    onPlay = onPlay,
-                    onShuffle = onShuffle,
-                    onPlayNext = onAlbumPlayNext,
-                    onAddToQueue = onAlbumAddToQueue,
-                    onAddToFavorites = onAlbumAddToFavorites,
-                    onBottomSheetRequested = onTrackContextBottomSheet,
-                ) {
-                    DetailHero(
+                DetailHero(
                     album.title,
                     album.artist.ifBlank { stringResource(R.string.album_unknown_artist) },
                     metadata,
@@ -124,8 +111,23 @@ internal fun AlbumDetailsContent(
                     onPlayClick = onPlay,
                     onShuffleClick = onShuffle,
                     onMoreClick = { albumMenuExpanded = true },
-                    )
-                }
+                    moreAction = { moreButton ->
+                        AlbumContextMenu(
+                            tracks = uiState.tracks,
+                            expanded = albumMenuExpanded,
+                            onDismiss = { albumMenuExpanded = false },
+                            hazeState = hazeState,
+                            playbackQueue = playbackQueue,
+                            onPlay = onPlay,
+                            onShuffle = onShuffle,
+                            onPlayNext = onAlbumPlayNext,
+                            onAddToQueue = onAlbumAddToQueue,
+                            onAddToFavorites = onAlbumAddToFavorites,
+                            onBottomSheetRequested = onTrackContextBottomSheet,
+                            anchor = moreButton,
+                        )
+                    },
+                )
             }
         }
         itemsIndexed(uiState.tracks, key = { _, track -> track.id }) { index, track ->
