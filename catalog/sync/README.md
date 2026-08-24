@@ -264,6 +264,8 @@ store. It saves complete metadata JSON plus indexed track fields, playlist
 membership, lyrics, analysis, plan checkpoints, and asset paths in app-private
 storage. A prepared plan is activated atomically; old mirrored content is
 removed only after the replacement is complete and before the final receipt.
+If activation removes Android's current playback track, Android cancels
+playback and clears its queue before reporting completion.
 Assets are content-addressed by SHA-256 and shared across plan revisions, so a
 fresh plan reuses unchanged verified files rather than downloading them again.
 Distinct content hashes download concurrently in bounded batches of two to four

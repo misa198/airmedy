@@ -124,10 +124,11 @@ class MainActivity : ComponentActivity() {
                     )
                     when (val outcome = coordinator.handle(payload, desktop)) {
                         is PlaylistReconciliationOutcome.Completed -> {
-                            val rejected = outcome.results.filter {
-                                it.status == PlaylistMutationStatus.REJECTED || it.status == PlaylistMutationStatus.SCOPE_CONFLICT
-                            }.map { it.mutationId }
+                            val rejected = outcome.results.filter { it.status == PlaylistMutationStatus.REJECTED }.map { it.mutationId }
                             AndroidSyncRuntime.syncStore().markLocalPlaylistMutationsFailed(rejected)
+                            AndroidSyncRuntime.syncStore().discardLocalPlaylistsForMutations(
+                                outcome.results.filter { it.status == PlaylistMutationStatus.SCOPE_CONFLICT }.map { it.mutationId },
+                            )
                         }
                         else -> Unit
                     }

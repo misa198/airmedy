@@ -31,6 +31,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 import me.misa198.airmedy.MainActivity
 import me.misa198.airmedy.R
+import me.misa198.airmedy.player.PlaybackService
 import me.misa198.airmedy.pairing.HiveMqSyncSession
 import me.misa198.airmedy.pairing.PairingEndpoint
 import me.misa198.airmedy.pairing.PairingPreferences
@@ -172,6 +173,7 @@ class LibrarySyncService : Service() {
             )
             when (val result = coordinator.handle(payload, desktop)) {
                 is LibrarySyncResult.Completed -> {
+                    clearPlaybackIfCurrentTrackWasRemoved()
                     Log.i(LogTag, "Library sync completed successfully! Plan ID=${result.planId}")
                     AndroidSyncRuntime.completed(result.planId)
                     notifyTerminal(getString(R.string.sync_notification_complete))
@@ -201,6 +203,14 @@ class LibrarySyncService : Service() {
     private fun showForeground(text: String, indeterminate: Boolean, progressPercent: Int? = null) {
         createChannel()
         startForeground(NotificationId, notification(text, indeterminate, progressPercent, ongoing = true), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+    }
+
+    private suspend fun clearPlaybackIfCurrentTrackWasRemoved() {
+        val currentTrackId = PlaybackService.queueState.value.currentTrackId
+        val syncedTrackIds = AndroidSyncRuntime.syncStore().tracks.first().map { it.id }.toSet()
+        if (clearPlaybackForRemovedTrack(currentTrackId, syncedTrackIds)) {
+            startForegroundService(PlaybackService.intent(applicationContext, PlaybackService.ActionClearQueue))
+        }
     }
 
     private fun notifyTerminal(text: String) {
@@ -275,3 +285,6 @@ internal fun syncNotificationProgress(percent: Int?, indeterminate: Boolean): Sy
 }
 
 internal fun syncDownloadParallelism(availableProcessors: Int): Int = (availableProcessors / 2).coerceIn(2, 4)
+
+internal fun clearPlaybackForRemovedTrack(currentTrackId: String?, syncedTrackIds: Set<String>) =
+    currentTrackId != null && currentTrackId !in syncedTrackIds

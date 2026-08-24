@@ -57,6 +57,13 @@ class LibrarySyncServiceTest {
     }
 
     @Test
+    fun clearsPlaybackOnlyWhenTheCurrentTrackWasRemovedBySync() {
+        assertEquals(true, clearPlaybackForRemovedTrack("removed", setOf("kept")))
+        assertEquals(false, clearPlaybackForRemovedTrack("kept", setOf("kept")))
+        assertEquals(false, clearPlaybackForRemovedTrack(null, emptySet()))
+    }
+
+    @Test
     fun retainsTheUiMqttSessionAfterSyncServiceStops() {
         val session = FakeSyncSession()
 
