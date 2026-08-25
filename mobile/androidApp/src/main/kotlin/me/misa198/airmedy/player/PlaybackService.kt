@@ -15,6 +15,7 @@ import android.content.pm.ServiceInfo
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
+import android.media.MediaDescription
 import android.media.MediaMetadata
 import android.media.session.MediaSession
 import android.media.session.PlaybackState as AndroidMediaPlaybackState
@@ -140,6 +141,9 @@ class PlaybackService : Service() {
                 override fun onPause() { dispatch(ActionPause) }
                 override fun onSkipToNext() { dispatch(ActionNext) }
                 override fun onSkipToPrevious() { dispatch(ActionPrevious) }
+                override fun onSkipToQueueItem(id: Long) {
+                    queue.snapshot().activeTrackIds.getOrNull(id.toInt())?.let { dispatch(ActionSelect, trackIds = listOf(it)) }
+                }
                 override fun onSeekTo(pos: Long) { dispatch(ActionSeek, positionMs = pos) }
                 override fun onStop() { dispatch(ActionStop) }
             })
@@ -537,9 +541,24 @@ class PlaybackService : Service() {
         stopForeground(STOP_FOREGROUND_REMOVE)
     }
 
-    private fun publishQueue() {
+    private suspend fun publishQueue() {
         val snapshot = queue.snapshot()
         queueState.value = snapshot
+        val tracks = AndroidSyncRuntime.syncStore().tracks.first().associateBy { it.id }
+        mediaSession.setQueue(snapshot.activeTrackIds.mapIndexedNotNull { index, trackId ->
+            tracks[trackId]?.let { track ->
+                MediaSession.QueueItem(
+                    MediaDescription.Builder()
+                        .setMediaId(track.id)
+                        .setTitle(track.title)
+                        .setSubtitle(track.artists)
+                        .setDescription(track.album)
+                        .build(),
+                    index.toLong(),
+                )
+            }
+        })
+        updateNowPlayingTransportState()
         // Capture before the asynchronous DataStore write. A later command can
         // close the decoder, but cannot change this immutable session snapshot.
         val session = currentSession(snapshot)
@@ -559,6 +578,7 @@ class PlaybackService : Service() {
         decoder?.close(); decoder = null; preloadedItem = null
         queue.clear()
         queueState.value = queue.snapshot()
+        mediaSession.setQueue(emptyList())
         state.value = PlaybackState.Idle
         mediaSession.setPlaybackState(androidPlaybackState(AndroidMediaPlaybackState.STATE_NONE, 0L))
         mediaSession.isActive = false
@@ -777,6 +797,7 @@ class PlaybackService : Service() {
                     AndroidMediaPlaybackState.ACTION_SEEK_TO or
                     AndroidMediaPlaybackState.ACTION_STOP,
             )
+            .setActiveQueueItemId(activeQueueItemId(queue.snapshot()))
             .setState(state, positionMs, if (state == AndroidMediaPlaybackState.STATE_PLAYING) 1f else 0f)
             .build()
 

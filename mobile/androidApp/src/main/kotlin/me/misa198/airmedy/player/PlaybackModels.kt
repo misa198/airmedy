@@ -7,6 +7,10 @@ internal const val PlaybackLogTag = "AirmedyPlayback"
 internal fun clampSeekPosition(positionMs: Long, durationMs: Long): Long =
     positionMs.coerceAtLeast(0L).let { position -> if (durationMs > 0L) position.coerceAtMost(durationMs) else position }
 
+/** Queue item IDs are their active-order indexes, as required by Android's MediaSession. */
+internal fun activeQueueItemId(snapshot: PlaybackQueueSnapshot): Long =
+    snapshot.currentIndex.takeIf { it in snapshot.activeTrackIds.indices }?.toLong() ?: -1L
+
 /** Drops queue entries no longer represented by the current synced library. */
 internal fun queueForAvailableTracks(
     snapshot: PlaybackQueueSnapshot,
