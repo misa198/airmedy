@@ -58,7 +58,7 @@ function mountView() {
   const i18n = createI18n({ legacy: false, locale: 'en', messages: { en: {
     common: { close: 'Close' },
     mobile_sync: { preparing: 'Preparing...', insufficient_storage_title: 'Not enough storage', insufficient_storage_description: 'Needs {required}; {available} available.' },
-    settings: { mobile_pairing: { last_synced: 'Last synced: {time}', never_synced: 'Never synced' } },
+    settings: { sync: { syncing: 'Syncing...' }, mobile_pairing: { last_synced: 'Last synced: {time}', never_synced: 'Never synced' } },
   } }, missingWarn: false, fallbackWarn: false })
   return mount(MobileLibrarySyncView, {
     global: {

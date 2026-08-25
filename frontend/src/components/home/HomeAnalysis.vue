@@ -290,6 +290,10 @@ onUnmounted(() => {
         <header class="flex flex-wrap items-center justify-between gap-3">
           <h2 class="text-xl font-semibold">{{ t('analytics.listening_section') }}</h2>
           <div class="flex flex-wrap items-center justify-end gap-2">
+            <button data-testid="analytics-refresh" type="button" :aria-label="t('analytics.refresh')" :title="t('analytics.refresh')" :disabled="loading"
+              class="flex h-10 w-10 items-center justify-center rounded-full border border-foreground/[0.08] bg-foreground/[0.05] text-sm text-foreground opacity-80 transition-colors hover:bg-foreground/[0.1] hover:text-foreground" @click="load">
+              <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': loading }" />
+            </button>
             <Select v-model="sourceDeviceID">
               <SelectTrigger data-testid="analytics-device-filter" class="h-10 w-[180px] border border-foreground/[0.08] bg-foreground/[0.05] text-sm">
                 <SelectValue :placeholder="t('analytics.all_devices')" />
@@ -304,10 +308,6 @@ onUnmounted(() => {
                 </template>
               </SelectContent>
             </Select>
-            <button data-testid="analytics-refresh" type="button" :aria-label="t('analytics.refresh')" :title="t('analytics.refresh')" :disabled="loading"
-              class="flex h-10 w-10 items-center justify-center rounded-full border border-foreground/[0.08] bg-foreground/[0.05] text-sm text-foreground opacity-80 transition-colors hover:bg-foreground/[0.1] hover:text-foreground" @click="load">
-              <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': loading }" />
-            </button>
             <TabSwitcher v-model="listeningPeriod" :options="periodOptions" variant="label" mandatory data-testid="analytics-listening-range-tabs" />
           </div>
         </header>
