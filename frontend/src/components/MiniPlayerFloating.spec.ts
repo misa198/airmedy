@@ -171,7 +171,7 @@ describe('MiniPlayerFloating', () => {
     expect(wrapper.get('[data-test="mini-player-panel"]').classes()).not.toContain('mini-player-lyrics-tint-ready')
     expect(wrapper.get('[data-test="mini-player-panel"]').classes()).toContain('backdrop-blur-[30px]')
     expect(wrapper.get('[data-test="mini-player-panel"]').attributes('style')).toContain('background-color: var(--mini-player-lyrics-background)')
-    expect(wrapper.get('[data-test="mini-player-panel"]').attributes('style')).toContain('--mini-player-lyrics-tint: rgba(255, 0, 0, 0.36)')
+    expect(wrapper.get('[data-test="mini-player-panel"]').attributes('style')).toContain('--mini-player-lyrics-tint: rgba(85, 102, 119, 0.4)')
     expect(wrapper.get('[data-test="mini-player-panel"]').attributes('style')).toContain('--mini-player-lyrics-tint-duration: 1500ms')
     expect(mocks.setMiniPlayerExpanded).toHaveBeenLastCalledWith(true)
     expect(wrapper.get('[data-test="mini-player-panel"]').text()).toContain('[00:00.00]First line')

@@ -96,7 +96,7 @@ const artworkCrossfade = computed(() =>
   appStore.blendArtworkDuringCrossfade ? store.artworkCrossfade : null,
 )
 const solidArtworkStyle = computed(() => store.theme ? {
-  '--fullscreen-player-artwork-tint': hexToRgba(store.theme.vibrant, 0.36),
+  '--fullscreen-player-artwork-tint': hexToRgba(store.theme.backdrop, 0.4),
   '--fullscreen-player-artwork-tint-duration': `${artworkCrossfade.value?.durationMs ?? 1500}ms`,
 } : undefined)
 

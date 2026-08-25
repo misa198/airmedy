@@ -67,7 +67,7 @@ const lyricsPanelStyle = computed(() =>
       store.theme
     ? {
         backgroundColor: 'var(--mini-player-lyrics-background)',
-        '--mini-player-lyrics-tint': hexToRgba(store.theme.vibrant, 0.36),
+        '--mini-player-lyrics-tint': hexToRgba(store.theme.backdrop, 0.4),
         '--mini-player-lyrics-tint-duration': `${store.artworkCrossfade?.durationMs ?? 1500}ms`,
       }
     : undefined,
