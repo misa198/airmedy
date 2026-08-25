@@ -77,6 +77,8 @@
     <string name="sync_status_connected">Verbunden</string>
     <string name="sync_status_online">Online</string>
     <string name="sync_status_offline">Offline</string>
+    <string name="sync_last_synced">Zuletzt synchronisiert: %1$s</string>
+    <string name="sync_never_synced">Noch nie synchronisiert</string>
     <string name="sync_paired_device_description">Dieses Smartphone kann jeweils nur mit einem Desktop-Gerät verbunden sein. Trennen Sie es, bevor Sie ein neues koppeln.</string>
     <string name="sync_ready_to_connect_description">Bereit zum Verbinden. Starten Sie das Senden in Airmedy auf Ihrem Desktop; dieser Bildschirm verbindet sich automatisch.</string>
     <string name="sync_revoke">Trennen</string>

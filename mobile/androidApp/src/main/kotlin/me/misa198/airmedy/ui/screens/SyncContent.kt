@@ -28,6 +28,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import java.text.DateFormat
+import java.util.Date
 import me.misa198.airmedy.R
 import me.misa198.airmedy.SyncUiState
 import me.misa198.airmedy.pairing.PairingFailure
@@ -121,6 +123,7 @@ internal fun SyncContent(
         )
         SyncProgressCard(
             syncState = syncUiState.librarySync,
+            lastSyncedAtMillis = syncUiState.lastSyncedAtMillis,
         )
     }
     if (showRevokeConfirmation && !isSyncRunning) {
@@ -174,6 +177,7 @@ private fun PairingFailure.messageRes(): Int = when (this) {
 @Composable
 private fun SyncProgressCard(
     syncState: AndroidSyncState,
+    lastSyncedAtMillis: Long?,
     modifier: Modifier = Modifier,
 ) {
     if (syncState is AndroidSyncState.Idle) return
@@ -237,6 +241,16 @@ private fun SyncProgressCard(
                     progress = progressFloat,
                     color = colors.textMain,
                     trackColor = colors.buttonSecondary,
+                )
+                Text(
+                    text = lastSyncedAtMillis?.let { timestamp ->
+                        stringResource(
+                            R.string.sync_last_synced,
+                            DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(timestamp)),
+                        )
+                    } ?: stringResource(R.string.sync_never_synced),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.textMuted,
                 )
             }
     }

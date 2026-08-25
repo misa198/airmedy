@@ -13,7 +13,7 @@ import { useContextMenu } from '@/composables/useContextMenu'
 import SettingSection from './SettingSection.vue'
 import NetworkAddressList, { type NetworkAddressEntry } from './NetworkAddressList.vue'
 
-const { t } = useI18n()
+const { locale, t } = useI18n()
 const router = useRouter()
 
 interface LocalAddress { ip: string; iface: string; kind: string }
@@ -28,6 +28,7 @@ const revoking = ref('')
 const broadcastingAction = ref(false)
 const broadcastSecondsRemaining = ref(0)
 const syncingDeviceIDs = ref(new Set<string>())
+const lastSyncedAtByDeviceID = ref(new Map<string, string>())
 const qrContainer = ref<HTMLElement | null>(null)
 let qr: QRCodeStyling | null = null
 let offTrustedDevicesChanged: (() => void) | null = null
@@ -54,6 +55,9 @@ async function load() {
     devices.value = trustedDevices
     const plans = await Promise.all(trustedDevices.map(device => MobileLibrarySyncService.GetStatus(device.device_id).catch(() => null)))
     syncingDeviceIDs.value = new Set(plans.filter(plan => plan?.status === 'active').map(plan => plan!.device_id))
+    lastSyncedAtByDeviceID.value = new Map(plans.flatMap(plan =>
+      plan?.last_completed_at ? [[plan.device_id, plan.last_completed_at] as const] : [],
+    ))
     if (!usableAddresses.value.some(address => address.ip === selectedIP.value)) {
       selectedIP.value = usableAddresses.value.find(address => address.kind === 'ethernet' || address.kind === 'wifi')?.ip ?? usableAddresses.value[0]?.ip ?? ''
     }
@@ -152,6 +156,14 @@ function platformLabel(platform: string) {
     case 'ipados': return 'iPadOS'
     default: return platform
   }
+}
+
+function lastSyncedLabel(deviceID: string) {
+  const timestamp = lastSyncedAtByDeviceID.value.get(deviceID)
+  if (!timestamp) return t('settings.mobile_pairing.never_synced')
+  return t('settings.mobile_pairing.last_synced', {
+    time: new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(timestamp)),
+  })
 }
 
 watch([pairingURL, qrContainer], ([url, container]) => {
@@ -254,6 +266,7 @@ onUnmounted(() => {
           <div class="min-w-0 flex-1 flex flex-col gap-y-1">
             <div class="flex items-center gap-2"><p class="truncate text-sm font-medium text-foreground opacity-80">{{ device.display_name }}</p><Badge data-testid="device-status-badge" class="gap-1" :color="device.online ? 'var(--status-online)' : 'var(--text-muted)'"><span class="size-1 rounded-full bg-current" />{{ t(device.online ? 'settings.mobile_pairing.online' : 'settings.mobile_pairing.offline') }}</Badge></div>
             <p class="mt-0.5 text-xs text-dim">{{ platformLabel(device.platform) }} · {{ device.fingerprint }}</p>
+            <p data-testid="device-last-synced" class="text-xs text-dim">{{ lastSyncedLabel(device.device_id) }}</p>
           </div>
           <button
             data-testid="device-actions-button"

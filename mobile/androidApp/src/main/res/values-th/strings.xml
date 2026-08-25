@@ -77,6 +77,8 @@
     <string name="sync_status_connected">เชื่อมต่อแล้ว</string>
     <string name="sync_status_online">ออนไลน์</string>
     <string name="sync_status_offline">ออฟไลน์</string>
+    <string name="sync_last_synced">ซิงค์ล่าสุด: %1$s</string>
+    <string name="sync_never_synced">ยังไม่เคยซิงค์</string>
     <string name="sync_paired_device_description">โทรศัพท์นี้สามารถเชื่อมต่อกับเดสก์ท็อปได้ทีละเครื่องเท่านั้น ยกเลิกการเชื่อมต่อก่อนจับคู่เครื่องใหม่</string>
     <string name="sync_ready_to_connect_description">พร้อมเชื่อมต่อแล้ว เริ่มการแพร่สัญญาณใน Airmedy บนเดสก์ท็อปของคุณ หน้าจอนี้จะเชื่อมต่อโดยอัตโนมัติ</string>
     <string name="sync_revoke">ยกเลิก</string>

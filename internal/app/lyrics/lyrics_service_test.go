@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -154,9 +155,6 @@ func TestResolveForMobileSyncCachesAndInvalidatesLocalLyrics(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "Song.mp3")
 	lyricPath := filepath.Join(dir, "Song.lrc")
-	if err := os.WriteFile(lyricPath, []byte("first"), 0o600); err != nil {
-		t.Fatal(err)
-	}
 	service := NewLyricsService(&stubRepo{lyric: &domain.Lyric{TrackID: "track", Content: "provider", Source: "lrclib"}}, slog.New(slog.NewTextHandler(io.Discard, nil)), nil, nil, &stubSettingsRepo{settings: &domain.AppSettings{PreferLocalLyrics: true}})
 	cache := &stubMobileSyncCache{entries: map[string]*domain.MobileSyncLyricCache{}}
 	tracks := []*domain.TrackDTO{{Track: domain.Track{ID: "track", Path: path}}}
@@ -165,8 +163,19 @@ func TestResolveForMobileSyncCachesAndInvalidatesLocalLyrics(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if got := first["track"]; got == nil || got.Content != "provider" || got.Source != "lrclib" {
+		t.Fatalf("unexpected fallback lyric: %+v", got)
+	}
+
+	if err := os.WriteFile(lyricPath, []byte("first"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	first, err = service.ResolveForMobileSync(context.Background(), tracks, cache)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if got := first["track"]; got == nil || got.Content != "first" || got.Source != "local-lrc" {
-		t.Fatalf("unexpected first lyric: %+v", got)
+		t.Fatalf("unexpected created local lyric: %+v", got)
 	}
 	firstVersion := cache.entries["track"].Version
 
@@ -186,5 +195,25 @@ func TestResolveForMobileSyncCachesAndInvalidatesLocalLyrics(t *testing.T) {
 	}
 	if cache.entries["track"].Version == firstVersion {
 		t.Fatal("expected lyric version to change after local file edit")
+	}
+}
+
+func TestResolveForMobileSyncUsesNormalizedMacOSSidecarName(t *testing.T) {
+	if runtime.GOOS != "darwin" {
+		t.Skip("macOS normalizes equivalent Unicode filenames")
+	}
+	dir := t.TempDir()
+	trackPath := filepath.Join(dir, "Nhonhô.mp3")
+	lyricPath := filepath.Join(dir, "Nhonhô.lrc")
+	if err := os.WriteFile(lyricPath, []byte("local lyric"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	service := NewLyricsService(&stubRepo{}, slog.New(slog.NewTextHandler(io.Discard, nil)), nil, nil, &stubSettingsRepo{settings: &domain.AppSettings{PreferLocalLyrics: true}})
+	resolved, err := service.ResolveForMobileSync(context.Background(), []*domain.TrackDTO{{Track: domain.Track{ID: "track", Path: trackPath}}}, &stubMobileSyncCache{entries: map[string]*domain.MobileSyncLyricCache{}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := resolved["track"]; got == nil || got.Content != "local lyric" {
+		t.Fatalf("expected normalized sidecar lyric, got %+v", got)
 	}
 }

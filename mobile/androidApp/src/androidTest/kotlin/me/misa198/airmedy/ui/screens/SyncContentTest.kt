@@ -10,9 +10,9 @@ import me.misa198.airmedy.pairing.PairedDesktop
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import me.misa198.airmedy.sync.AndroidSyncState
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
-import kotlin.test.assertEquals
 
 class SyncContentTest {
     @get:Rule
@@ -108,6 +108,7 @@ class SyncContentTest {
                 SyncContent(
                     syncUiState = SyncUiState(
                         librarySync = AndroidSyncState.Completed("plan-1"),
+                        lastSyncedAtMillis = 1_772_100_000_000,
                     ),
                     onUnpair = {},
                 )
@@ -116,6 +117,7 @@ class SyncContentTest {
 
         composeTestRule.onNodeWithText("100%").assertIsDisplayed()
         composeTestRule.onNodeWithText("Library sync complete").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Last synced:", substring = true).assertIsDisplayed()
     }
 
     @Test

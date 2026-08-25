@@ -280,6 +280,10 @@ asset requests and receipts do not repeatedly decode the full manifest. Wails
 status calls and events omit that manifest and transfer only plan metadata.
 Receipt and polling updates are monotonic, so an older asynchronous snapshot
 cannot move progress backward.
+Status metadata also includes the most recent successful completion timestamp
+for the paired device; it remains available while a newer plan is active or
+fails, and Android persists the same timestamp with its pairing data until
+unpairing.
 
 `AndroidSyncRuntime.Failed` carries the required and allocatable byte counts.
 The app shell owns the resulting one-action alert, so it remains visible above

@@ -77,6 +77,8 @@
     <string name="sync_status_connected">Conectado</string>
     <string name="sync_status_online">En línea</string>
     <string name="sync_status_offline">Desconectado</string>
+    <string name="sync_last_synced">Última sincronización: %1$s</string>
+    <string name="sync_never_synced">Aún no sincronizado</string>
     <string name="sync_paired_device_description">Este teléfono solo puede conectarse a un escritorio a la vez. Desvincúlalo antes de emparejar uno nuevo.</string>
     <string name="sync_ready_to_connect_description">Listo para conectar. Inicia la transmisión en Airmedy en tu escritorio; esta pantalla se conectará automáticamente.</string>
     <string name="sync_revoke">Desvincular</string>

@@ -57,7 +57,8 @@ const activePlan = { id: 'plan-1', device_id: 'device-1', status: 'active', comp
 function mountView() {
   const i18n = createI18n({ legacy: false, locale: 'en', messages: { en: {
     common: { close: 'Close' },
-    mobile_sync: { insufficient_storage_title: 'Not enough storage', insufficient_storage_description: 'Needs {required}; {available} available.' },
+    mobile_sync: { preparing: 'Preparing...', insufficient_storage_title: 'Not enough storage', insufficient_storage_description: 'Needs {required}; {available} available.' },
+    settings: { sync: { syncing: 'Syncing...' }, mobile_pairing: { last_synced: 'Last synced: {time}', never_synced: 'Never synced' } },
   } }, missingWarn: false, fallbackWarn: false })
   return mount(MobileLibrarySyncView, {
     global: {
@@ -117,6 +118,24 @@ describe('MobileLibrarySyncView', () => {
     wrapper.unmount()
   })
 
+  it('shows the last successful sync below the progress bar', async () => {
+    getStatus.mockResolvedValue({ ...activePlan, status: 'complete', completed: 4, last_completed_at: '2026-08-25T07:30:00Z' })
+    const wrapper = mountView()
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="sync-last-synced"]').text()).toContain('Last synced:')
+    wrapper.unmount()
+  })
+
+  it('shows syncing below the progress bar until the first sync succeeds', async () => {
+    getStatus.mockResolvedValue(activePlan)
+    const wrapper = mountView()
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="sync-last-synced"]').text()).toBe('Syncing...')
+    wrapper.unmount()
+  })
+
   it('does not let a stale poll move active progress backwards', async () => {
     let resolvePoll!: (plan: typeof activePlan) => void
     getStatus.mockResolvedValueOnce(activePlan).mockReturnValueOnce(new Promise(resolve => { resolvePoll = resolve }))
@@ -145,6 +164,22 @@ describe('MobileLibrarySyncView', () => {
     expect(wrapper.get('[data-testid="scope-selected"]').attributes('disabled')).toBeDefined()
     await syncButton.trigger('click')
     expect(sync).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('shows indeterminate progress while creating a sync plan', async () => {
+    let resolveSync!: (plan: typeof activePlan) => void
+    getStatus.mockResolvedValue({ ...activePlan, status: 'complete', completed: 4 })
+    sync.mockReturnValue(new Promise(resolve => { resolveSync = resolve }))
+    const wrapper = mountView()
+    await flushPromises()
+
+    await wrapper.get('[data-testid="sync-button"]').trigger('click')
+    expect(wrapper.find('[data-testid="sync-plan-progress"]').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('100%')
+
+    resolveSync(activePlan)
+    await flushPromises()
     wrapper.unmount()
   })
 

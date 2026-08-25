@@ -139,6 +139,7 @@ class MainActivity : ComponentActivity() {
                 LibrarySyncService.cancel(applicationContext)
                 AndroidSyncRuntime.clearAll()
             },
+            lastSyncedAt = preferences.lastSyncedAt,
         )
     }
     private val tracksViewModel: LibraryTracksViewModel by viewModels {

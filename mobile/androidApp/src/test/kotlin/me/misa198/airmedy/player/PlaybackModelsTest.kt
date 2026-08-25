@@ -85,6 +85,12 @@ class PlaybackModelsTest {
     }
 
     @Test
+    fun `media queue selection follows the active queue`() {
+        assertEquals(1L, activeQueueItemId(PlaybackQueueSnapshot(activeTrackIds = listOf("one", "two"), currentIndex = 1)))
+        assertEquals(-1L, activeQueueItemId(PlaybackQueueSnapshot(activeTrackIds = listOf("one"), currentIndex = -1)))
+    }
+
+    @Test
     fun `crossfade policy only starts inside the valid automatic transition window`() {
         assertTrue(shouldStartCrossfade(4, positionMs = 116_000, durationMs = 120_000, hasPreloadedNext = true))
         assertFalse(shouldStartCrossfade(4, positionMs = 119_700, durationMs = 120_000, hasPreloadedNext = true))

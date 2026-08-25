@@ -77,6 +77,8 @@
     <string name="sync_status_connected">Ligado</string>
     <string name="sync_status_online">Online</string>
     <string name="sync_status_offline">Offline</string>
+    <string name="sync_last_synced">Última sincronização: %1$s</string>
+    <string name="sync_never_synced">Nunca sincronizado</string>
     <string name="sync_paired_device_description">Este telemóvel só pode estar ligado a um computador de cada vez. Revogue-o antes de emparelhar um novo.</string>
     <string name="sync_ready_to_connect_description">Pronto para ligar. Inicie a transmissão no Airmedy no seu computador; este ecrã ligar-se-á automaticamente.</string>
     <string name="sync_revoke">Revogar</string>
