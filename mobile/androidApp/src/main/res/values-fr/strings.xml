@@ -77,6 +77,8 @@
     <string name="sync_status_connected">Connecté</string>
     <string name="sync_status_online">En ligne</string>
     <string name="sync_status_offline">Hors ligne</string>
+    <string name="sync_last_synced">Dernière synchronisation : %1$s</string>
+    <string name="sync_never_synced">Jamais synchronisé</string>
     <string name="sync_paired_device_description">Ce téléphone ne peut être connecté qu\'à un seul ordinateur à la fois. Révoquez-le avant d\'en associer un nouveau.</string>
     <string name="sync_ready_to_connect_description">Prêt pour la connexion. Lancez la diffusion dans Airmedy sur votre ordinateur ; cet écran se connectera automatiquement.</string>
     <string name="sync_revoke">Révoquer</string>

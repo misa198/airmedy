@@ -25,7 +25,9 @@ inherits the same Settings card treatment without duplicating the page title.
 The view uses the same centered `max-w-3xl p-8` content container as Settings.
 Its Sync action and scope choices remain disabled for the full lifetime of an
 active plan, the action shows a rotating sync icon, and duplicate sync requests
-are prevented while transfer is in progress. When a selected-items table is
+are prevented while transfer is in progress. While a new sync plan is being
+created, the previous completion percentage is replaced with an indeterminate
+progress bar. When a selected-items table is
 shown, a light theme-safe overlay with a centered spinner blocks edits until
 that plan completes.
 

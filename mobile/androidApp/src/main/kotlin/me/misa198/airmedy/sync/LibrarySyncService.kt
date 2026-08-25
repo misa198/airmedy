@@ -175,6 +175,7 @@ class LibrarySyncService : Service() {
                 is LibrarySyncResult.Completed -> {
                     clearPlaybackIfCurrentTrackWasRemoved()
                     Log.i(LogTag, "Library sync completed successfully! Plan ID=${result.planId}")
+                    preferences.markSyncCompleted(System.currentTimeMillis())
                     AndroidSyncRuntime.completed(result.planId)
                     notifyTerminal(getString(R.string.sync_notification_complete))
                 }

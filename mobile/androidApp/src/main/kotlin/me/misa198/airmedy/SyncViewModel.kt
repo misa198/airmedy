@@ -4,9 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import me.misa198.airmedy.pairing.PairingFailure
@@ -34,6 +36,7 @@ data class SyncUiState(
     val isPairing: Boolean = false,
     val failure: PairingFailure? = null,
     val librarySync: AndroidSyncState = AndroidSyncState.Idle,
+    val lastSyncedAtMillis: Long? = null,
 )
 
 class SyncViewModel(
@@ -44,6 +47,7 @@ class SyncViewModel(
     private val onPlaylistReconciliationRequest: suspend (String) -> Unit = {},
     private val onBeforeUnpair: suspend () -> Unit = {},
     private val isForegroundSyncRunning: () -> Boolean = { AndroidSyncRuntime.state.value is AndroidSyncState.Running },
+    lastSyncedAt: Flow<Long?> = flowOf(null),
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SyncUiState())
     val uiState: StateFlow<SyncUiState> = _uiState.asStateFlow()
@@ -54,6 +58,11 @@ class SyncViewModel(
     private var syncWasRunning = false
 
     init {
+        viewModelScope.launch {
+            lastSyncedAt.collectLatest { timestamp ->
+                _uiState.update { it.copy(lastSyncedAtMillis = timestamp) }
+            }
+        }
         viewModelScope.launch {
             pairing.pairedDesktop.collectLatest { desktop ->
                 Log.d(LogTag, "Paired desktop updated: ${desktop?.desktopId} (${desktop?.displayName})")
@@ -187,11 +196,12 @@ class SyncViewModel(
         private val onSyncRequest: (String, PairingEndpoint, SyncSession) -> Unit = { _, _, _ -> },
         private val onPlaylistReconciliationRequest: suspend (String) -> Unit = {},
         private val onBeforeUnpair: suspend () -> Unit = {},
+        private val lastSyncedAt: Flow<Long?> = flowOf(null),
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             check(modelClass.isAssignableFrom(SyncViewModel::class.java))
-            return SyncViewModel(pairing, mqttSession, discovery, onSyncRequest, onPlaylistReconciliationRequest, onBeforeUnpair) as T
+            return SyncViewModel(pairing, mqttSession, discovery, onSyncRequest, onPlaylistReconciliationRequest, onBeforeUnpair, lastSyncedAt = lastSyncedAt) as T
         }
     }
 }

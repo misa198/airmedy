@@ -45,7 +45,6 @@ func (s *LyricsService) ResolveForMobileSync(ctx context.Context, tracks []*doma
 	}
 
 	candidates := make(map[string][]syncLyricCandidate, len(tracks))
-	dirNames := make(map[string]map[string]struct{})
 	for _, track := range tracks {
 		// Provider content is the final display result in this mode, so local
 		// sidecars cannot affect the mobile snapshot and need no filesystem I/O.
@@ -64,27 +63,15 @@ func (s *LyricsService) ResolveForMobileSync(ctx context.Context, tracks []*doma
 			for _, ext := range []struct{ ext, source string }{{".lrc", "local-lrc"}, {".txt", "local-txt"}} {
 				path := filepath.Join(dir, base+ext.ext)
 				candidates[track.ID] = append(candidates[track.ID], syncLyricCandidate{path, ext.source})
-				if dirNames[dir] == nil {
-					dirNames[dir] = map[string]struct{}{}
-				}
-				dirNames[dir][base+ext.ext] = struct{}{}
 			}
 		}
 	}
 
 	states := make(map[string]syncLyricFileState)
-	for dir, names := range dirNames {
-		entries, readErr := os.ReadDir(dir)
-		if readErr != nil {
-			continue
-		}
-		for _, entry := range entries {
-			if _, wanted := names[entry.Name()]; !wanted {
-				continue
-			}
-			info, infoErr := entry.Info()
-			if infoErr == nil && !info.IsDir() {
-				states[filepath.Join(dir, entry.Name())] = syncLyricFileState{true, info.Size(), info.ModTime().UnixNano()}
+	for _, trackCandidates := range candidates {
+		for _, candidate := range trackCandidates {
+			if info, statErr := os.Stat(candidate.path); statErr == nil && !info.IsDir() {
+				states[candidate.path] = syncLyricFileState{true, info.Size(), info.ModTime().UnixNano()}
 			}
 		}
 	}

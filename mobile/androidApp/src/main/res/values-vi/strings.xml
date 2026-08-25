@@ -77,6 +77,8 @@
     <string name="sync_status_connected">Đã kết nối</string>
     <string name="sync_status_online">Trực tuyến</string>
     <string name="sync_status_offline">Ngoại tuyến</string>
+    <string name="sync_last_synced">Đồng bộ lần cuối: %1$s</string>
+    <string name="sync_never_synced">Chưa từng đồng bộ</string>
     <string name="sync_paired_device_description">Điện thoại này chỉ có thể kết nối với một máy tính tại một thời điểm. Hủy kết nối trước khi ghép nối máy tính mới.</string>
     <string name="sync_ready_to_connect_description">Sẵn sàng kết nối. Bật phát tín hiệu trong Airmedy trên máy tính; màn hình này sẽ tự động kết nối.</string>
     <string name="sync_revoke">Hủy kết nối</string>

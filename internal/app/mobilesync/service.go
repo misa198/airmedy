@@ -183,10 +183,11 @@ func (s *Service) GetStatus(ctx context.Context, deviceID string) (*domain.Mobil
 		return plan, nil
 	}
 	plan, err := s.plans.GetLatest(ctx, deviceID)
-	if err == nil {
-		s.cachePlan(plan)
+	if err != nil || plan == nil {
+		return plan, err
 	}
-	return plan, err
+	s.cachePlan(plan)
+	return plan, nil
 }
 
 func (s *Service) cachedPlan(deviceID string) *domain.MobileLibrarySyncPlan {
@@ -228,6 +229,10 @@ func (s *Service) updatePlanProgress(plan *domain.MobileLibrarySyncPlan, complet
 	copy.Completed = completed
 	copy.Status = status
 	copy.UpdatedAt = at
+	if status == "complete" {
+		completedAt := at
+		copy.LastCompletedAt = &completedAt
+	}
 	if status != "active" {
 		copy.Manifest = domain.MobileLibrarySyncManifest{}
 	}
@@ -314,8 +319,8 @@ func (s *Service) CancelIfActive(ctx context.Context, deviceID string) error {
 	return nil
 }
 
-// Start starts a new immutable snapshot, or re-announces the active snapshot
-// when the user presses Sync again with unchanged scope.
+// Start creates a new immutable snapshot when the user presses Sync. This lets
+// changes outside the database, such as sibling lyric files, enter the plan.
 func (s *Service) Start(ctx context.Context, deviceID string, scope domain.MobileLibrarySyncScope, host string, replace bool) (*domain.MobileLibrarySyncPlan, error) {
 	if _, err := uuid.Parse(deviceID); err != nil {
 		return nil, fmt.Errorf("invalid mobile device ID")
@@ -349,10 +354,7 @@ func (s *Service) Start(ctx context.Context, deviceID string, scope domain.Mobil
 	}
 	if current != nil && current.Status == "active" {
 		s.cachePlan(current)
-		if sameScope(current.Scope, scope) {
-			return current, s.publishRequest(ctx, current, host)
-		}
-		if !replace {
+		if !sameScope(current.Scope, scope) && !replace {
 			return nil, fmt.Errorf("an incomplete mobile sync plan must be replaced explicitly")
 		}
 		if err := s.plans.MarkSuperseded(ctx, deviceID); err != nil {
@@ -364,6 +366,9 @@ func (s *Service) Start(ctx context.Context, deviceID string, scope domain.Mobil
 	plan, err := s.createPlan(ctx, deviceID, scope)
 	if err != nil {
 		return nil, err
+	}
+	if current != nil {
+		plan.LastCompletedAt = current.LastCompletedAt
 	}
 	if err := s.ensureHTTPServer(); err != nil {
 		return nil, err

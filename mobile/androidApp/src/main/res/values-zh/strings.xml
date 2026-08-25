@@ -77,6 +77,8 @@
     <string name="sync_status_connected">已连接</string>
     <string name="sync_status_online">在线</string>
     <string name="sync_status_offline">离线</string>
+    <string name="sync_last_synced">上次同步：%1$s</string>
+    <string name="sync_never_synced">从未同步过</string>
     <string name="sync_paired_device_description">此手机一次只能连接一台电脑。在配对新电脑之前，请先解除绑定。</string>
     <string name="sync_ready_to_connect_description">准备连接。在电脑上的 Airmedy 中启动广播，此界面将自动连接。</string>
     <string name="sync_revoke">解除绑定</string>

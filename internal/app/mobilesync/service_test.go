@@ -349,6 +349,19 @@ func (*testPlanRepo) MarkReceipt(context.Context, string, string, time.Time) (in
 }
 func (*testPlanRepo) MarkComplete(context.Context, string, time.Time) error { return nil }
 
+func TestGetStatusIncludesLastSuccessfulSyncForActivePlan(t *testing.T) {
+	deviceID := "11111111-1111-4111-8111-111111111111"
+	completedAt := time.Date(2026, time.August, 25, 7, 30, 0, 0, time.UTC)
+	svc := &Service{plans: &testPlanRepo{
+		plan: &domain.MobileLibrarySyncPlan{ID: "active", DeviceID: deviceID, Status: "active", LastCompletedAt: &completedAt},
+	}}
+
+	plan, err := svc.GetStatus(context.Background(), deviceID)
+
+	require.NoError(t, err)
+	require.Equal(t, &completedAt, plan.LastCompletedAt)
+}
+
 func TestCancelMakesTheActivePlanUnavailableAndNotifiesDesktop(t *testing.T) {
 	deviceID := "11111111-1111-4111-8111-111111111111"
 	plans := &testPlanRepo{plan: &domain.MobileLibrarySyncPlan{ID: "plan", DeviceID: deviceID, Status: "active"}}

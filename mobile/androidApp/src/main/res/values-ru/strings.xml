@@ -77,6 +77,8 @@
     <string name="sync_status_connected">Подключено</string>
     <string name="sync_status_online">В сети</string>
     <string name="sync_status_offline">Не в сети</string>
+    <string name="sync_last_synced">Последняя синхронизация: %1$s</string>
+    <string name="sync_never_synced">Еще не синхронизировано</string>
     <string name="sync_paired_device_description">Этот телефон может быть подключен только к одному компьютеру. Отключите его перед привязкой нового.</string>
     <string name="sync_ready_to_connect_description">Готово к подключению. Запустите трансляцию в Airmedy на компьютере, и экран подключится автоматически.</string>
     <string name="sync_revoke">Отозвать</string>

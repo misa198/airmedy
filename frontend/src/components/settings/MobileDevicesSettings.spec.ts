@@ -46,6 +46,8 @@ function mountSettings() {
             no_devices: 'No mobile devices have been paired yet.',
             online: 'Online',
             offline: 'Offline',
+            last_synced: 'Last synced: {time}',
+            never_synced: 'Never synced',
           },
         },
         common: {
@@ -116,6 +118,21 @@ describe('MobileDevicesSettings', () => {
     expect(badges[0].attributes('style')).toContain('--badge-color: var(--status-online)')
     expect(badges[1].attributes('style')).toContain('--badge-color: var(--text-muted)')
     expect(on).toHaveBeenCalledWith('pairing:trusted-devices-changed', expect.any(Function))
+  })
+
+  it('shows the latest successful sync time or never synced for each device', async () => {
+    getTrustedDevices.mockResolvedValue([{ ...device, online: true }, { ...device, device_id: 'device-2', online: false }])
+    getSyncStatus
+      .mockResolvedValueOnce({ device_id: 'device-1', status: 'active', last_completed_at: '2026-08-25T07:30:00Z' })
+      .mockResolvedValueOnce({ device_id: 'device-2', status: 'superseded' })
+
+    const wrapper = mountSettings()
+    await flushPromises()
+
+    const timestamps = wrapper.findAll('[data-testid="device-last-synced"]')
+    expect(timestamps[0].text()).toContain('Last synced:')
+    expect(timestamps[1].text()).toBe('Never synced')
+    wrapper.unmount()
   })
 
   it('opens the delete action from a clickable device row or its actions button', async () => {

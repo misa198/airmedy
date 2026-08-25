@@ -128,6 +128,13 @@ function applyPlanUpdate(updated: MobileLibrarySyncPlan) {
   if (updated.status !== 'active') stopPolling()
 }
 
+function lastSyncedLabel(timestamp?: string | null) {
+  if (!timestamp) return isSyncInProgress.value ? t('settings.sync.syncing') : t('settings.mobile_pairing.never_synced')
+  return t('settings.mobile_pairing.last_synced', {
+    time: new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(timestamp)),
+  })
+}
+
 async function load() {
   loading.value = true
   try {
@@ -266,18 +273,20 @@ onUnmounted(() => {
       <div v-if="plan && plan.error_code !== 'insufficient_storage'"
         class="mt-5 border-t border-foreground/[0.06] pt-4">
         <div class="flex items-baseline justify-between gap-4">
-          <p class="text-sm font-medium">{{ plan.status === 'complete' ? $t('mobile_sync.complete') :
-            $t('mobile_sync.pending') }}</p>
-          <span class="w-10 text-right text-sm font-semibold tabular-nums text-foreground/70">
+          <p class="text-sm font-medium">{{ syncing ? $t('mobile_sync.preparing') : plan.status === 'complete' ?
+            $t('mobile_sync.complete') : $t('mobile_sync.pending') }}</p>
+          <span v-if="!syncing" class="w-10 text-right text-sm font-semibold tabular-nums text-foreground/70">
             {{ progressPercent }}%
           </span>
         </div>
         <div v-if="plan" class="mt-2 flex items-center gap-2">
           <div
             class="h-1 flex-1 overflow-hidden rounded-full bg-foreground/[0.06] transition-all duration-300 hover:h-1.5">
-            <div class="h-full bg-foreground transition-all duration-300" :style="{ width: `${progressPercent}%` }" />
+            <div v-if="syncing" data-testid="sync-plan-progress" class="h-full w-1/3 bg-foreground sync-plan-progress" />
+            <div v-else class="h-full bg-foreground transition-all duration-300" :style="{ width: `${progressPercent}%` }" />
           </div>
         </div>
+        <p data-testid="sync-last-synced" class="mt-2 text-xs text-dim">{{ lastSyncedLabel(plan.last_completed_at) }}</p>
       </div>
       <div v-if="mode === 'selected'"
         class="relative mt-6 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[var(--border-glass)] bg-foreground/[0.03] p-4">
@@ -339,3 +348,12 @@ onUnmounted(() => {
     </Modal>
   </main>
 </template>
+
+<style scoped>
+@keyframes sync-plan-progress {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(400%); }
+}
+
+.sync-plan-progress { animation: sync-plan-progress 1.2s ease-in-out infinite; }
+</style>

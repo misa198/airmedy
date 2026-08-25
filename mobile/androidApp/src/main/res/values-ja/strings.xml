@@ -77,6 +77,8 @@
     <string name="sync_status_connected">接続済み</string>
     <string name="sync_status_online">オンライン</string>
     <string name="sync_status_offline">オフライン</string>
+    <string name="sync_last_synced">最終同期: %1$s</string>
+    <string name="sync_never_synced">まだ同期されていません</string>
     <string name="sync_paired_device_description">このスマートフォンは一度に1台のデスクトップと接続できます。新しいデスクトップとペアリングする前に接続を解除してください。</string>
     <string name="sync_ready_to_connect_description">接続準備完了。デスクトップのAirmedyでブロードキャストを開始すると、この画面が自動的に接続されます。</string>
     <string name="sync_revoke">ペアリング解除</string>

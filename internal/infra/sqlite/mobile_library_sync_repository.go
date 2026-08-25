@@ -18,18 +18,19 @@ func NewMobileLibrarySyncPlanRepository(db *DB) domain.MobileLibrarySyncPlanRepo
 
 func (r *mobileLibrarySyncPlanRepository) GetLatest(ctx context.Context, deviceID string) (*domain.MobileLibrarySyncPlan, error) {
 	var row struct {
-		ID           string    `db:"id"`
-		DeviceID     string    `db:"device_id"`
-		Scope        string    `db:"scope_json"`
-		Manifest     string    `db:"manifest_json"`
-		ManifestHash string    `db:"manifest_hash"`
-		Status       string    `db:"status"`
-		Completed    int       `db:"completed"`
-		Total        int       `db:"total"`
-		CreatedAt    time.Time `db:"created_at"`
-		UpdatedAt    time.Time `db:"updated_at"`
+		ID              string       `db:"id"`
+		DeviceID        string       `db:"device_id"`
+		Scope           string       `db:"scope_json"`
+		Manifest        string       `db:"manifest_json"`
+		ManifestHash    string       `db:"manifest_hash"`
+		Status          string       `db:"status"`
+		Completed       int          `db:"completed"`
+		Total           int          `db:"total"`
+		CreatedAt       time.Time    `db:"created_at"`
+		UpdatedAt       time.Time    `db:"updated_at"`
+		LastCompletedAt sql.NullTime `db:"last_completed_at"`
 	}
-	err := r.db.GetContext(ctx, &row, `SELECT id, device_id, scope_json, manifest_json, manifest_hash, status, completed, total, created_at, updated_at FROM mobile_library_sync_plans WHERE device_id = ? ORDER BY updated_at DESC LIMIT 1`, deviceID)
+	err := r.db.GetContext(ctx, &row, `SELECT id, device_id, scope_json, manifest_json, manifest_hash, status, completed, total, created_at, updated_at, (SELECT updated_at FROM mobile_library_sync_plans completed WHERE completed.device_id = mobile_library_sync_plans.device_id AND completed.status = 'complete' ORDER BY updated_at DESC LIMIT 1) AS last_completed_at FROM mobile_library_sync_plans WHERE device_id = ? ORDER BY updated_at DESC LIMIT 1`, deviceID)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -37,6 +38,9 @@ func (r *mobileLibrarySyncPlanRepository) GetLatest(ctx context.Context, deviceI
 		return nil, fmt.Errorf("get latest mobile library sync plan: %w", err)
 	}
 	plan := &domain.MobileLibrarySyncPlan{ID: row.ID, DeviceID: row.DeviceID, ManifestHash: row.ManifestHash, Status: row.Status, Completed: row.Completed, Total: row.Total, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt}
+	if row.LastCompletedAt.Valid {
+		plan.LastCompletedAt = &row.LastCompletedAt.Time
+	}
 	if err := json.Unmarshal([]byte(row.Scope), &plan.Scope); err != nil {
 		return nil, fmt.Errorf("decode mobile library sync scope: %w", err)
 	}

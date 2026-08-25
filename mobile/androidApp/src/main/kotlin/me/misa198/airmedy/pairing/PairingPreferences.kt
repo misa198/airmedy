@@ -5,6 +5,7 @@ import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import java.security.KeyStore
@@ -39,6 +40,7 @@ private val DesktopNameKey = stringPreferencesKey("desktop_name")
 private val DesktopPublicKey = stringPreferencesKey("desktop_public_key")
 private val DesktopHostKey = stringPreferencesKey("desktop_host")
 private val DesktopPortKey = stringPreferencesKey("desktop_port")
+private val LastSyncedAtKey = longPreferencesKey("last_synced_at")
 
 class PairingPreferences(private val context: Context) : PairingIdentityProvider, PairingBindingStore {
     private val mutex = Mutex()
@@ -55,6 +57,12 @@ class PairingPreferences(private val context: Context) : PairingIdentityProvider
 
     override suspend fun current(): PairedDesktop? = pairedDesktop.first()
 
+    val lastSyncedAt: Flow<Long?> = context.pairingDataStore.data.map { it[LastSyncedAtKey] }
+
+    suspend fun markSyncCompleted(atMillis: Long) {
+        context.pairingDataStore.edit { it[LastSyncedAtKey] = atMillis }
+    }
+
     override suspend fun save(desktop: PairedDesktop) {
         context.pairingDataStore.edit { preferences ->
             preferences[DesktopIdKey] = desktop.desktopId
@@ -68,6 +76,7 @@ class PairingPreferences(private val context: Context) : PairingIdentityProvider
     override suspend fun clear() {
         context.pairingDataStore.edit { preferences ->
             listOf(DesktopIdKey, DesktopNameKey, DesktopPublicKey, DesktopHostKey, DesktopPortKey).forEach(preferences::remove)
+            preferences.remove(LastSyncedAtKey)
         }
     }
 
