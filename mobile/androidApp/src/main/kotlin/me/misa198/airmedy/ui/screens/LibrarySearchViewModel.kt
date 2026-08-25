@@ -84,7 +84,7 @@ internal class LibrarySearchViewModel(syncStore: AndroidLibrarySyncStore) : View
 }
 
 private data class SearchCandidates(val query: String, val idsByType: Map<String, Set<String>>) {
-    fun ids(type: String): Set<String> = idsByType[type].orEmpty()
+    fun ids(type: String): Set<String>? = idsByType[type]
 }
 
 internal const val LibrarySearchDebounceMs = 200L

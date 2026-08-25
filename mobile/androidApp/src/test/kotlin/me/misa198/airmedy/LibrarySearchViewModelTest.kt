@@ -46,8 +46,9 @@ class LibrarySearchViewModelTest {
     }
 
     @Test fun foldsDiacriticsAndRequiresEveryPrefixTerm() {
-        val tracks = listOf(LibraryTrack(id = "1", title = "Déjà Vu", artists = "Beyoncé", album = "Renaissance"), LibraryTrack(id = "2", title = "Deja", artists = "Other", album = "Elsewhere"))
+        val tracks = listOf(LibraryTrack(id = "1", title = "Déjà Vu", artists = "Beyoncé", album = "Renaissance"), LibraryTrack(id = "2", title = "Say Yes", artists = "Other", album = "Elsewhere"))
         assertEquals(listOf("1"), searchTracks(tracks, "deja bey").map { it.id })
+        assertEquals(listOf("2"), searchTracks(tracks, "say yes").map { it.id })
     }
 
     @Test fun ranksExactPhraseBeforePrefixAndSearchesEachEntityField() {
