@@ -610,6 +610,36 @@ func TestPrevious_Threshold(t *testing.T) {
 	}
 }
 
+func TestQueueNavigationPreservesPlaybackState(t *testing.T) {
+	tests := []struct {
+		name        string
+		state       domain.PlaybackState
+		startIndex  int
+		navigate    func(*PlayerService) error
+		wantTrackID string
+	}{
+		{"next while paused", domain.PlaybackStatePaused, 0, (*PlayerService).Next, "t2"},
+		{"previous while stopped", domain.PlaybackStateStopped, 1, (*PlayerService).Previous, "t1"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fp := &fakePlayer{status: domain.PlayerStatus{Volume: 1, PlaybackState: tt.state}}
+			s, _ := newTestService(t, fp)
+			t1 := &domain.TrackDTO{Track: domain.Track{ID: "t1", Duration: 300}}
+			t2 := &domain.TrackDTO{Track: domain.Track{ID: "t2", Duration: 300}}
+			s.queue.SetQueue([]*domain.TrackDTO{t1, t2}, tt.startIndex)
+
+			if err := tt.navigate(s); err != nil {
+				t.Fatalf("navigate: %v", err)
+			}
+			if status := fp.GetStatus(); status.TrackID != tt.wantTrackID || status.PlaybackState != tt.state {
+				t.Fatalf("status = %+v, want track %q in state %q", status, tt.wantTrackID, tt.state)
+			}
+		})
+	}
+}
+
 func TestPlayerShortcuts(t *testing.T) {
 	fp := &fakePlayer{status: domain.PlayerStatus{Volume: 0.5, Position: 50.0, Duration: 300.0, PlaybackState: domain.PlaybackStatePlaying}}
 	s, _ := newTestService(t, fp)
