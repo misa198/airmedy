@@ -69,6 +69,14 @@ class FullScreenPlayerTest {
 
         composeTestRule.onNodeWithTag(FullScreenPlayerQualityBadgeTestTag).assertExists()
         composeTestRule.onNodeWithText("Lossless").assertExists()
+        val elapsedTimeBounds = composeTestRule
+            .onNodeWithTag(FullScreenPlayerElapsedTimeTestTag)
+            .fetchSemanticsNode()
+            .boundsInRoot
+        val durationBounds = composeTestRule
+            .onNodeWithTag(FullScreenPlayerDurationTestTag)
+            .fetchSemanticsNode()
+            .boundsInRoot
         composeTestRule.onNodeWithTag(FullScreenPlayerQualityBadgeTestTag).performClick()
         composeTestRule.onNodeWithText("Sample rate").assertExists()
         composeTestRule.onNodeWithText("44.1 kHz").assertExists()
@@ -92,6 +100,16 @@ class FullScreenPlayerTest {
             track = track.copy(metadataJson = "{\"format\":\"mp3\"}")
         }
         composeTestRule.onAllNodesWithTag(FullScreenPlayerQualityBadgeTestTag).assertCountEquals(0)
+        assertEquals(
+            elapsedTimeBounds.left,
+            composeTestRule.onNodeWithTag(FullScreenPlayerElapsedTimeTestTag).fetchSemanticsNode().boundsInRoot.left,
+            0.5f,
+        )
+        assertEquals(
+            durationBounds.right,
+            composeTestRule.onNodeWithTag(FullScreenPlayerDurationTestTag).fetchSemanticsNode().boundsInRoot.right,
+            0.5f,
+        )
 
         composeTestRule.runOnIdle {
             track = track.copy(metadataJson = "{\"format\":\"dsf\"}")

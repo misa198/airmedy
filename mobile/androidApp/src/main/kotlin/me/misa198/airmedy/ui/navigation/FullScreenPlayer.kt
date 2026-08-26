@@ -83,6 +83,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -156,6 +157,8 @@ private const val QueueButtonSelectionTransitionDurationMs = 220
 internal const val QueueStatusBadgeRevealDelayMs = QueueButtonSelectionTransitionDurationMs + 16
 internal const val FullScreenQueueStatusBadgeTestTag = "full_screen_queue_status_badge"
 internal const val FullScreenPlayerQualityBadgeTestTag = "full_screen_player_quality_badge"
+internal const val FullScreenPlayerElapsedTimeTestTag = "full_screen_player_elapsed_time"
+internal const val FullScreenPlayerDurationTestTag = "full_screen_player_duration"
 
 /** Controls are hidden only for an active Queue reorder, never for a normal Queue view. */
 internal fun areFullScreenPlayerControlsVisible(isQueueReordering: Boolean): Boolean = !isQueueReordering
@@ -385,6 +388,8 @@ internal fun FullScreenPlayer(
             else -> null
         }
     }
+    val qualityBadgeSlot = qualityBadge ?: (R.string.track_info_quality_lossless to MaterialSymbols.GraphicEq)
+    val isQualityBadgeVisible = showQualityBadge && qualityBadge != null
     val qualityDetails = contextTrack?.let(::trackInfoValues).orEmpty().filter {
         it.labelRes == R.string.track_info_sample_rate ||
             it.labelRes == R.string.track_info_bit_depth ||
@@ -720,44 +725,57 @@ internal fun FullScreenPlayer(
                             style = MaterialTheme.typography.labelSmall,
                             modifier = Modifier
                                 .align(Alignment.CenterStart)
-                                .offset(x = -seekSupportingOffset, y = (-12).dp + seekSupportingOffset),
+                                .offset(x = -seekSupportingOffset, y = (-12).dp + seekSupportingOffset)
+                                .semantics { testTag = FullScreenPlayerElapsedTimeTestTag },
                         )
-                        if (showQualityBadge && qualityBadge != null) {
-                            Row(
+                        Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(3.dp),
                                 modifier = Modifier
                                     .align(Alignment.Center)
                                     .offset(y = (-12).dp + seekSupportingOffset)
+                                    .alpha(if (isQualityBadgeVisible) 1f else 0f)
                                     .graphicsLayer {
                                         scaleX = seekSupportingScaleX
                                         scaleY = seekSupportingScaleY
                                     }
-                                    .semantics { testTag = FullScreenPlayerQualityBadgeTestTag }
+                                    .then(
+                                        if (isQualityBadgeVisible) {
+                                            Modifier.semantics { testTag = FullScreenPlayerQualityBadgeTestTag }
+                                        } else {
+                                            Modifier.clearAndSetSemantics { }
+                                        },
+                                    )
                                     .clip(RoundedCornerShape(6.dp))
                                     .background(fullScreenSecondaryControlBackground(colors))
-                                    .clickable(
-                                        role = Role.Button,
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null,
-                                    ) { isQualityDialogVisible = true }
+                                    .then(
+                                        if (isQualityBadgeVisible) {
+                                            Modifier.clickable(
+                                                role = Role.Button,
+                                                interactionSource = remember { MutableInteractionSource() },
+                                                indication = null,
+                                            ) { isQualityDialogVisible = true }
+                                        } else {
+                                            Modifier
+                                        },
+                                    )
                                     .padding(horizontal = 8.dp, vertical = 3.dp),
                             ) {
-                                MaterialSymbol(qualityBadge.second, null, size = 12.dp, tint = colors.foregroundSubtle)
+                                MaterialSymbol(qualityBadgeSlot.second, null, size = 12.dp, tint = colors.foregroundSubtle)
                                 Text(
-                                    stringResource(qualityBadge.first),
+                                    stringResource(qualityBadgeSlot.first),
                                     color = colors.foregroundSubtle,
                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
                                 )
                             }
-                        }
                         Text(
                             formatPlaybackTime(durationMs),
                             color = seekTimeLabelColor,
                             style = MaterialTheme.typography.labelSmall,
                             modifier = Modifier
                                 .align(Alignment.CenterEnd)
-                                .offset(x = seekSupportingOffset, y = (-12).dp + seekSupportingOffset),
+                                .offset(x = seekSupportingOffset, y = (-12).dp + seekSupportingOffset)
+                                .semantics { testTag = FullScreenPlayerDurationTestTag },
                         )
                     }
                     if (isQualityDialogVisible && qualityBadge != null) {
