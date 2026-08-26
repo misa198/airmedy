@@ -126,7 +126,9 @@ const prev = () => {
           :key="currentPage"
           class="grid gap-x-6 gap-y-8 w-full"
           :style="{
-            gridTemplateColumns: `repeat(${columnsPerPage}, minmax(0, 1fr))`
+            gridAutoFlow: 'column',
+            gridTemplateColumns: `repeat(${columnsPerPage}, minmax(0, 1fr))`,
+            gridTemplateRows: 'repeat(2, minmax(0, auto))',
           }"
         >
           <div 
