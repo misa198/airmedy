@@ -45,6 +45,35 @@ class FullScreenPlayerTest {
     val composeTestRule = createComposeRule()
 
     @Test
+    fun preparingPlaybackUsesMetadataDuration() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenPlayer(
+                    visible = true,
+                    dragProgress = 0f,
+                    isDragging = false,
+                    openingFromMiniPlayerSwipe = false,
+                    playbackState = PlaybackState.Preparing(item),
+                    queueTracks = listOf(
+                        LibraryTrack(
+                            id = item.trackId,
+                            title = item.title,
+                            artists = item.artist,
+                            metadataJson = "{\"duration\":245}",
+                        ),
+                    ),
+                    volume = 0.5f,
+                    onSeek = {}, onVolumeChange = {}, onPrevious = {}, onPlayPause = {}, onNext = {},
+                    onOpenMediaOutputSwitcher = {}, onDismiss = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(FullScreenPlayerDurationTestTag).assertExists()
+        composeTestRule.onNodeWithText("4:05").assertExists()
+    }
+
+    @Test
     fun qualityBadgeShowsSupportedFormatsAndRespectsSetting() {
         var showQualityBadge by mutableStateOf(true)
         var track by mutableStateOf(
@@ -69,6 +98,14 @@ class FullScreenPlayerTest {
 
         composeTestRule.onNodeWithTag(FullScreenPlayerQualityBadgeTestTag).assertExists()
         composeTestRule.onNodeWithText("Lossless").assertExists()
+        val elapsedTimeBounds = composeTestRule
+            .onNodeWithTag(FullScreenPlayerElapsedTimeTestTag)
+            .fetchSemanticsNode()
+            .boundsInRoot
+        val durationBounds = composeTestRule
+            .onNodeWithTag(FullScreenPlayerDurationTestTag)
+            .fetchSemanticsNode()
+            .boundsInRoot
         composeTestRule.onNodeWithTag(FullScreenPlayerQualityBadgeTestTag).performClick()
         composeTestRule.onNodeWithText("Sample rate").assertExists()
         composeTestRule.onNodeWithText("44.1 kHz").assertExists()
@@ -92,6 +129,16 @@ class FullScreenPlayerTest {
             track = track.copy(metadataJson = "{\"format\":\"mp3\"}")
         }
         composeTestRule.onAllNodesWithTag(FullScreenPlayerQualityBadgeTestTag).assertCountEquals(0)
+        assertEquals(
+            elapsedTimeBounds.left,
+            composeTestRule.onNodeWithTag(FullScreenPlayerElapsedTimeTestTag).fetchSemanticsNode().boundsInRoot.left,
+            0.5f,
+        )
+        assertEquals(
+            durationBounds.right,
+            composeTestRule.onNodeWithTag(FullScreenPlayerDurationTestTag).fetchSemanticsNode().boundsInRoot.right,
+            0.5f,
+        )
 
         composeTestRule.runOnIdle {
             track = track.copy(metadataJson = "{\"format\":\"dsf\"}")

@@ -408,6 +408,7 @@ func (s *PlayerService) Stop() error {
 
 // Next plays the next track in the queue.
 func (s *PlayerService) Next() error {
+	status := s.player.GetStatus()
 	track := s.queue.Next()
 	if track == nil {
 		// Queue exhausted (repeat off). Mark ended so a subsequent Play() reloads
@@ -418,7 +419,7 @@ func (s *PlayerService) Next() error {
 		s.mu.Unlock()
 		return s.Stop()
 	}
-	return s.loadAndPlay(track)
+	return s.loadWithPlaybackState(track, status.PlaybackState)
 }
 
 // Previous plays the previous track in the queue.
@@ -432,7 +433,7 @@ func (s *PlayerService) Previous() error {
 	if track == nil {
 		return s.Stop()
 	}
-	return s.loadAndPlay(track)
+	return s.loadWithPlaybackState(track, status.PlaybackState)
 }
 
 // TogglePause toggles between playing and paused states.
@@ -889,6 +890,13 @@ func (s *PlayerService) loadAndPlay(track *domain.TrackDTO) error {
 
 func (s *PlayerService) loadAndPlayWithEndReason(track *domain.TrackDTO, previousReason domain.PlaybackEndReason) error {
 	return s.loadAndPlayAtPosition(track, 0, previousReason)
+}
+
+func (s *PlayerService) loadWithPlaybackState(track *domain.TrackDTO, state domain.PlaybackState) error {
+	if state == domain.PlaybackStatePlaying {
+		return s.loadAndPlay(track)
+	}
+	return s.loadInactiveAtPosition(track, 0, state == domain.PlaybackStatePaused)
 }
 
 func (s *PlayerService) loadInactiveAtPosition(track *domain.TrackDTO, position float64, paused bool) error {
