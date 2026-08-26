@@ -95,6 +95,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -114,6 +116,8 @@ import me.misa198.airmedy.player.PlaybackState
 import me.misa198.airmedy.player.RepeatMode
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.ui.components.AirmedyIconButton
+import me.misa198.airmedy.ui.components.AirmedyPillButton
+import me.misa198.airmedy.ui.components.AirmedyPillButtonVariant
 import me.misa198.airmedy.ui.components.AnimatedPlayPauseSymbol
 import me.misa198.airmedy.ui.components.AnimatedSkipSymbol
 import me.misa198.airmedy.ui.components.AirmedyIconButtonVariant
@@ -125,6 +129,9 @@ import me.misa198.airmedy.ui.components.TrackContextMenu
 import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import me.misa198.airmedy.ui.components.rememberArtworkThumbnail
 import me.misa198.airmedy.ui.components.sliderFilledTrackColor
+import me.misa198.airmedy.ui.components.trackAudioQuality
+import me.misa198.airmedy.ui.components.trackInfoValues
+import me.misa198.airmedy.ui.components.TrackAudioQuality
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
 private val FullScreenArtworkShape = RoundedCornerShape(16.dp)
@@ -148,6 +155,7 @@ private const val QueueReorderControlsFadeDurationMs = 300
 private const val QueueButtonSelectionTransitionDurationMs = 220
 internal const val QueueStatusBadgeRevealDelayMs = QueueButtonSelectionTransitionDurationMs + 16
 internal const val FullScreenQueueStatusBadgeTestTag = "full_screen_queue_status_badge"
+internal const val FullScreenPlayerQualityBadgeTestTag = "full_screen_player_quality_badge"
 
 /** Controls are hidden only for an active Queue reorder, never for a normal Queue view. */
 internal fun areFullScreenPlayerControlsVisible(isQueueReordering: Boolean): Boolean = !isQueueReordering
@@ -185,6 +193,7 @@ internal fun FullScreenPlayer(
     lyricsLoading: Boolean = false,
     artworkCrossfade: ArtworkCrossfadeTransition? = null,
     blendArtworkDuringCrossfade: Boolean = true,
+    showQualityBadge: Boolean = true,
     volume: Float,
     onSeek: (Long) -> Unit,
     onVolumeChange: (Float) -> Unit,
@@ -354,10 +363,34 @@ internal fun FullScreenPlayer(
         label = "full-screen-seek-supporting-offset",
     )
     val seekTimeLabelColor by animateColorAsState(
-        targetValue = sliderFilledTrackColor(colors, isSeekSliderInteracting),
+        targetValue = if (isSeekSliderInteracting) colors.onPrimary else colors.foregroundSubtle,
         animationSpec = tween(220, easing = FastOutSlowInEasing),
         label = "full-screen-seek-time-label-colour",
     )
+    val seekSupportingScaleX by animateFloatAsState(
+        targetValue = if (isSeekSliderInteracting) 1.03f else 1f,
+        animationSpec = tween(220, easing = FastOutSlowInEasing),
+        label = "full-screen-seek-supporting-scale-x",
+    )
+    val seekSupportingScaleY by animateFloatAsState(
+        targetValue = if (isSeekSliderInteracting) 1.10f else 1f,
+        animationSpec = tween(220, easing = FastOutSlowInEasing),
+        label = "full-screen-seek-supporting-scale-y",
+    )
+    val qualityBadge = contextTrack?.let(::trackAudioQuality)?.let { quality ->
+        when (quality) {
+            TrackAudioQuality.Lossless -> R.string.track_info_quality_lossless to MaterialSymbols.GraphicEq
+            TrackAudioQuality.HiRes -> R.string.track_info_quality_hi_res to MaterialSymbols.Bolt
+            TrackAudioQuality.Dsd -> R.string.track_info_quality_dsd to MaterialSymbols.Crown
+            else -> null
+        }
+    }
+    val qualityDetails = contextTrack?.let(::trackInfoValues).orEmpty().filter {
+        it.labelRes == R.string.track_info_sample_rate ||
+            it.labelRes == R.string.track_info_bit_depth ||
+            it.labelRes == R.string.track_info_codec
+    }
+    var isQualityDialogVisible by remember(item.trackId) { mutableStateOf(false) }
     val volumeIconOffset by animateDpAsState(
         targetValue = if (isVolumeSliderInteracting) 4.dp else 0.dp,
         animationSpec = tween(220, easing = FastOutSlowInEasing),
@@ -675,23 +708,64 @@ internal fun FullScreenPlayer(
                         },
                         enabled = durationMs > 0 && !isPreparing,
                         onInteractionChange = { isSeekSliderInteracting = it },
-                        trackHeight = 6.dp,
+                        trackHeight = 7.dp,
                         modifier = Modifier.semantics { contentDescription = seekLabel },
                     )
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Box(Modifier.fillMaxWidth()) {
                         Text(
                             formatPlaybackTime(
                                 pendingSeekFraction?.let { (durationMs * it).toLong() } ?: currentPositionMs,
                             ),
                             color = seekTimeLabelColor,
                             style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier.offset(x = -seekSupportingOffset, y = (-8).dp + seekSupportingOffset),
+                            modifier = Modifier
+                                .align(Alignment.CenterStart)
+                                .offset(x = -seekSupportingOffset, y = (-12).dp + seekSupportingOffset),
                         )
+                        if (showQualityBadge && qualityBadge != null) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                                    .offset(y = (-12).dp + seekSupportingOffset)
+                                    .graphicsLayer {
+                                        scaleX = seekSupportingScaleX
+                                        scaleY = seekSupportingScaleY
+                                    }
+                                    .semantics { testTag = FullScreenPlayerQualityBadgeTestTag }
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(fullScreenSecondaryControlBackground(colors))
+                                    .clickable(
+                                        role = Role.Button,
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                    ) { isQualityDialogVisible = true }
+                                    .padding(horizontal = 8.dp, vertical = 3.dp),
+                            ) {
+                                MaterialSymbol(qualityBadge.second, null, size = 12.dp, tint = colors.foregroundSubtle)
+                                Text(
+                                    stringResource(qualityBadge.first),
+                                    color = colors.foregroundSubtle,
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+                                )
+                            }
+                        }
                         Text(
                             formatPlaybackTime(durationMs),
                             color = seekTimeLabelColor,
                             style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier.offset(x = seekSupportingOffset, y = (-8).dp + seekSupportingOffset),
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .offset(x = seekSupportingOffset, y = (-12).dp + seekSupportingOffset),
+                        )
+                    }
+                    if (isQualityDialogVisible && qualityBadge != null) {
+                        FullScreenQualityDialog(
+                            labelRes = qualityBadge.first,
+                            symbol = qualityBadge.second,
+                            details = qualityDetails,
+                            onDismiss = { isQualityDialogVisible = false },
                         )
                     }
                 }
@@ -742,7 +816,7 @@ internal fun FullScreenPlayer(
                             value = volume,
                             onValueChange = onVolumeChange,
                             onInteractionChange = { isVolumeSliderInteracting = it },
-                            trackHeight = 6.dp,
+                            trackHeight = 7.dp,
                             modifier = Modifier
                                 .weight(1f)
                                 .semantics { contentDescription = volumeLabel },
@@ -1020,6 +1094,58 @@ private fun FullScreenPlayerPanelPlaceholder(
             color = colors.foregroundSubtle,
             style = MaterialTheme.typography.titleMedium,
         )
+    }
+}
+
+@Composable
+private fun FullScreenQualityDialog(
+    labelRes: Int,
+    symbol: String,
+    details: List<me.misa198.airmedy.ui.components.TrackInfoValue>,
+    onDismiss: () -> Unit,
+) {
+    val colors = LocalAirmedyColors.current
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true, usePlatformDefaultWidth = false),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(colors.card),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Column(
+                modifier = Modifier.padding(start = 24.dp, top = 24.dp, end = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    MaterialSymbol(symbol, null, size = 32.dp, tint = colors.textMain)
+                    Text(
+                        stringResource(labelRes),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = colors.textMain,
+                    )
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    details.forEach { detail ->
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(stringResource(detail.labelRes), style = MaterialTheme.typography.bodyMedium, color = colors.textMuted)
+                            Text(detail.value, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium), color = colors.textMain)
+                        }
+                    }
+                }
+            }
+            AirmedyPillButton(
+                label = stringResource(R.string.ok),
+                onClick = onDismiss,
+                variant = AirmedyPillButtonVariant.Primary,
+                modifier = Modifier.padding(start = 16.dp, top = 20.dp, end = 16.dp, bottom = 16.dp),
+            )
+        }
     }
 }
 

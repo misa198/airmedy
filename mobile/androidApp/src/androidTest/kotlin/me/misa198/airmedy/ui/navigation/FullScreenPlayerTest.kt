@@ -45,6 +45,62 @@ class FullScreenPlayerTest {
     val composeTestRule = createComposeRule()
 
     @Test
+    fun qualityBadgeShowsSupportedFormatsAndRespectsSetting() {
+        var showQualityBadge by mutableStateOf(true)
+        var track by mutableStateOf(
+            LibraryTrack(id = item.trackId, title = item.title, artists = item.artist, metadataJson = "{\"format\":\"flac\",\"bit_depth\":16,\"sample_rate\":44100}"),
+        )
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenPlayer(
+                    visible = true,
+                    dragProgress = 0f,
+                    isDragging = false,
+                    openingFromMiniPlayerSwipe = false,
+                    playbackState = PlaybackState.Playing(item, 0L, 120_000L),
+                    queueTracks = listOf(track),
+                    showQualityBadge = showQualityBadge,
+                    volume = 0.5f,
+                    onSeek = {}, onVolumeChange = {}, onPrevious = {}, onPlayPause = {}, onNext = {},
+                    onOpenMediaOutputSwitcher = {}, onDismiss = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(FullScreenPlayerQualityBadgeTestTag).assertExists()
+        composeTestRule.onNodeWithText("Lossless").assertExists()
+        composeTestRule.onNodeWithTag(FullScreenPlayerQualityBadgeTestTag).performClick()
+        composeTestRule.onNodeWithText("Sample rate").assertExists()
+        composeTestRule.onNodeWithText("44.1 kHz").assertExists()
+        composeTestRule.onNodeWithText("Bit depth").assertExists()
+        composeTestRule.onNodeWithText("16-bit").assertExists()
+        composeTestRule.onAllNodesWithText("Codec").assertCountEquals(0)
+        composeTestRule.onNodeWithContentDescription("OK").performClick()
+        composeTestRule.onAllNodesWithText("Sample rate").assertCountEquals(0)
+
+        composeTestRule.runOnIdle {
+            track = track.copy(metadataJson = "{\"format\":\"flac\",\"bit_depth\":24,\"sample_rate\":96000}")
+        }
+        composeTestRule.onNodeWithText("Hi-Res").assertExists()
+
+        composeTestRule.runOnIdle {
+            track = track.copy(metadataJson = "{\"format\":\"dsf\"}")
+        }
+        composeTestRule.onNodeWithText("DSD").assertExists()
+
+        composeTestRule.runOnIdle {
+            track = track.copy(metadataJson = "{\"format\":\"mp3\"}")
+        }
+        composeTestRule.onAllNodesWithTag(FullScreenPlayerQualityBadgeTestTag).assertCountEquals(0)
+
+        composeTestRule.runOnIdle {
+            track = track.copy(metadataJson = "{\"format\":\"dsf\"}")
+            showQualityBadge = false
+        }
+        composeTestRule.onAllNodesWithTag(FullScreenPlayerQualityBadgeTestTag).assertCountEquals(0)
+    }
+
+    @Test
     fun favoriteHeartConfirmsOnlyWhenAdding() {
         val haptics = mutableListOf<HapticFeedbackType>()
         var change: Boolean? = null
