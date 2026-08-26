@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { hexToRgbChannels, normalizeHexColor, primaryForeground } from './color'
+import { backgroundMutedColor, hexToRgbChannels, normalizeHexColor, primaryForeground } from './color'
 
 describe('color helpers', () => {
   it('normalizes valid hex colors and rejects invalid values', () => {
@@ -15,5 +15,10 @@ describe('color helpers', () => {
     expect(primaryForeground('#EA580C')).toBe('#FFFFFF')
     expect(primaryForeground('#E11D48')).toBe('#FFFFFF')
     expect(primaryForeground('#FEF3C7')).toBe('#18181B')
+  })
+
+  it('ignores dark ink only when the overall artwork is light', () => {
+    expect(backgroundMutedColor('#0A0A0A', '#F4E6E6')).toBe('#F4E6E6')
+    expect(backgroundMutedColor('#0E2022', '#3E7863')).toBe('#0E2022')
   })
 })

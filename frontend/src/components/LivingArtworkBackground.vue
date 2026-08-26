@@ -2,6 +2,7 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { Renderer, Program, Mesh, Triangle } from 'ogl'
 import type { ThemeColors } from '../../bindings/airmedy/internal/domain/models'
+import { backgroundMutedColor } from '../lib/color'
 
 type ArtworkCrossfadeTiming = {
   transitionId: number
@@ -51,7 +52,7 @@ function colorsFromTheme(theme: ThemeColors | null) {
   if (!theme) return { ...FALLBACK }
   const c1 = clampLuminance(hexToVec3(theme.vibrant), MAX_LUMINANCE)
   const c2 = clampLuminance(hexToVec3(theme.dominant), MAX_LUMINANCE)
-  const c3 = clampLuminance(hexToVec3(theme.muted), MAX_LUMINANCE)
+  const c3 = clampLuminance(hexToVec3(backgroundMutedColor(theme.muted, theme.backdrop)), MAX_LUMINANCE)
   return {
     c1,
     c2,
@@ -163,6 +164,8 @@ const FRAGMENT = /* glsl */`
     vec3 color = uColor1*(e1/total) + uColor2*(e2/total) + uColor3*(e3/total);
 
     color = mix(uBase, color, 0.88);
+    float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
+    color *= 1.0 - smoothstep(0.55, 0.9, luma) * 0.22;
     gl_FragColor = vec4(color, 1.0);
   }
 `
