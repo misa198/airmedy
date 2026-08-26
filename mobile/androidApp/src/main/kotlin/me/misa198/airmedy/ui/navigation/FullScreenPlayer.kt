@@ -106,6 +106,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import kotlin.math.roundToInt
 import kotlin.math.absoluteValue
 import kotlin.math.abs
@@ -116,6 +118,7 @@ import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.player.PlaybackState
 import me.misa198.airmedy.player.RepeatMode
 import me.misa198.airmedy.sync.LibraryTrack
+import me.misa198.airmedy.sync.metadataObject
 import me.misa198.airmedy.ui.components.AirmedyIconButton
 import me.misa198.airmedy.ui.components.AirmedyPillButton
 import me.misa198.airmedy.ui.components.AirmedyPillButtonVariant
@@ -277,13 +280,19 @@ internal fun FullScreenPlayer(
     }
     val isArtworkCrossfading = activeArtworkCrossfade != null &&
         outgoingArtwork != null && incomingArtwork != null
+    val contextTrack = queueTracks.firstOrNull { it.id == item.trackId }
+    val metadataDurationMs = (contextTrack?.metadataObject()?.get("duration") as? JsonPrimitive)
+        ?.contentOrNull
+        ?.toLongOrNull()
+        ?.takeIf { it > 0L }
+        ?.times(1_000L)
     val currentPositionMs = playbackState.positionMsOrZero()
     val durationMs = playbackState.durationMsOrZero()
+    val displayedDurationMs = durationMs.takeIf { it > 0L } ?: metadataDurationMs
     val isPreparing = playbackState is PlaybackState.Preparing
     val isPlaying = playbackState is PlaybackState.Playing
     val canNavigatePrevious = queue.canNavigatePrevious()
     val canNavigateNext = queue.canNavigateNext()
-    val contextTrack = queueTracks.firstOrNull { it.id == item.trackId }
     var isTrackContextMenuExpanded by remember(item.trackId) { mutableStateOf(false) }
     var selectedPanel by remember { mutableStateOf<FullScreenPlayerPanel?>(null) }
     val isPanelOpen = selectedPanel != null
@@ -769,7 +778,7 @@ internal fun FullScreenPlayer(
                                 )
                             }
                         Text(
-                            formatPlaybackTime(durationMs),
+                            displayedDurationMs?.let(::formatPlaybackTime) ?: "--:--",
                             color = seekTimeLabelColor,
                             style = MaterialTheme.typography.labelSmall,
                             modifier = Modifier

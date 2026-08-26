@@ -45,6 +45,35 @@ class FullScreenPlayerTest {
     val composeTestRule = createComposeRule()
 
     @Test
+    fun preparingPlaybackUsesMetadataDuration() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenPlayer(
+                    visible = true,
+                    dragProgress = 0f,
+                    isDragging = false,
+                    openingFromMiniPlayerSwipe = false,
+                    playbackState = PlaybackState.Preparing(item),
+                    queueTracks = listOf(
+                        LibraryTrack(
+                            id = item.trackId,
+                            title = item.title,
+                            artists = item.artist,
+                            metadataJson = "{\"duration\":245}",
+                        ),
+                    ),
+                    volume = 0.5f,
+                    onSeek = {}, onVolumeChange = {}, onPrevious = {}, onPlayPause = {}, onNext = {},
+                    onOpenMediaOutputSwitcher = {}, onDismiss = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(FullScreenPlayerDurationTestTag).assertExists()
+        composeTestRule.onNodeWithText("4:05").assertExists()
+    }
+
+    @Test
     fun qualityBadgeShowsSupportedFormatsAndRespectsSetting() {
         var showQualityBadge by mutableStateOf(true)
         var track by mutableStateOf(
