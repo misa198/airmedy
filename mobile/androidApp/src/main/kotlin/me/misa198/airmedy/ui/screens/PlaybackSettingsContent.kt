@@ -36,6 +36,8 @@ import me.misa198.airmedy.player.normalizeEqGain
 
 @Composable
 internal fun PlaybackSettingsContent(
+    showFullscreenQualityBadge: Boolean,
+    onShowFullscreenQualityBadgeChanged: (Boolean) -> Unit,
     onSongTransitionSelected: () -> Unit,
     onVolumeNormalizationSelected: () -> Unit,
     onEqualizerSelected: () -> Unit,
@@ -55,6 +57,16 @@ internal fun PlaybackSettingsContent(
                 ActionListItem(
                     labelRes = R.string.equalizer_title,
                     onClick = onEqualizerSelected,
+                ),
+                ActionListItem(
+                    labelRes = R.string.playback_show_quality_badge,
+                    trailingContent = {
+                        Switch(
+                            checked = showFullscreenQualityBadge,
+                            onCheckedChange = onShowFullscreenQualityBadgeChanged,
+                        )
+                    },
+                    onClick = { onShowFullscreenQualityBadgeChanged(!showFullscreenQualityBadge) },
                 ),
             ),
             containerStyle = ActionListContainerStyle.Card,

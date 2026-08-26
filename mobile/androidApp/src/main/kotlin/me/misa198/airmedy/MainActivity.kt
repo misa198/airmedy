@@ -250,6 +250,7 @@ class MainActivity : ComponentActivity() {
             val crossfadeSettings by playbackPreferences.settings.collectAsStateWithLifecycle(
                 initialValue = me.misa198.airmedy.player.CrossfadeSettings(0, 4, true),
             )
+            val showFullscreenQualityBadge by playbackPreferences.showFullscreenQualityBadge.collectAsStateWithLifecycle(initialValue = true)
             val normalizationSettings by normalizationPreferences.settings.collectAsStateWithLifecycle(
                 initialValue = me.misa198.airmedy.player.NormalizationSettings(),
             )
@@ -460,6 +461,8 @@ class MainActivity : ComponentActivity() {
                     onCrossfadeSecondsChanged = playbackController::setCrossfadeSeconds,
                     blendArtworkDuringCrossfade = crossfadeSettings.blendArtworkDuringCrossfade,
                     onBlendArtworkDuringCrossfadeChanged = playbackController::setBlendArtworkDuringCrossfade,
+                    showFullscreenQualityBadge = showFullscreenQualityBadge,
+                    onShowFullscreenQualityBadgeChanged = { enabled -> preferenceScope.launch { playbackPreferences.setShowFullscreenQualityBadge(enabled) } },
                     normalizationAvailable = normalizationAvailable,
                     normalization = normalizationSettings,
                     onNormalizationChanged = { settings -> preferenceScope.launch { normalizationPreferences.update { settings } } },
@@ -485,6 +488,7 @@ class MainActivity : ComponentActivity() {
                 },
                 artworkCrossfade = artworkCrossfade,
                 blendArtworkDuringCrossfade = crossfadeSettings.blendArtworkDuringCrossfade,
+                showFullscreenQualityBadge = showFullscreenQualityBadge,
                 systemVolume = systemMusicVolumeState,
                 onPrevious = playbackController::previous,
                 onPlayPause = {

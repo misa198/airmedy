@@ -107,6 +107,7 @@
     <string name="sync_insufficient_storage_title">พื้นที่จัดเก็บไม่เพียงพอ</string>
     <string name="sync_insufficient_storage_description">พื้นที่ไม่เพียงพอสำหรับการซิงค์ ต้องใช้ %1$s และขณะนี้ใช้ได้ %2$s</string>
     <string name="close">ปิด</string>
+    <string name="ok">ตกลง</string>
     <string name="playback_notification_channel">การเล่นเพลง</string>
     <string name="player_previous">ก่อนหน้า</string>
     <string name="player_play">เล่น</string>
@@ -194,6 +195,7 @@
     <string name="playback_crossfade_minimum">1 วินาที</string>
     <string name="playback_crossfade_maximum">12 วินาที</string>
     <string name="playback_blend_artwork_during_crossfade">ผสมผสานภาพหน้าปกและพื้นหลัง</string>
+    <string name="playback_show_quality_badge">แสดงป้ายคุณภาพเสียง</string>
     <string name="equalizer_title">อีควอไลเซอร์</string>
     <string name="equalizer_enable">เปิดใช้งานอีควอไลเซอร์</string>
     <string name="equalizer_preset">พรีเซ็ต</string>

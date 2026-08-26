@@ -64,8 +64,8 @@ type LyricsEvent struct {
 
 // ThemeColors holds extracted palette data from the current track's artwork
 type ThemeColors struct {
-	Vibrant  string `json:"vibrant"`  // hex e.g. "#E11D48" — highest saturation cluster
-	Muted    string `json:"muted"`    // hex — lowest saturation cluster
+	Vibrant  string `json:"vibrant"`  // hex e.g. "#E11D48" — colorfulness weighted by cluster area
+	Muted    string `json:"muted"`    // hex — prominent remaining cluster, or backdrop
 	Dominant string `json:"dominant"` // hex — largest pixel-count cluster
 	Backdrop string `json:"backdrop"` // hex — mean RGB of a 24×24 artwork sample
 }

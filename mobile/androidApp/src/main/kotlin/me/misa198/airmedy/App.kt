@@ -605,6 +605,7 @@ internal fun App(
                 lyricsLoading = playback.lyricsLoading,
                 artworkCrossfade = playback.artworkCrossfade,
                 blendArtworkDuringCrossfade = playback.blendArtworkDuringCrossfade,
+                showQualityBadge = playback.showFullscreenQualityBadge,
                 volume = playback.systemVolume,
                 onSeek = playback.onSeek,
                 onVolumeChange = playback.onSystemVolumeChange,

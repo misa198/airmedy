@@ -107,6 +107,7 @@
     <string name="sync_insufficient_storage_title">Недостаточно места</string>
     <string name="sync_insufficient_storage_description">Недостаточно места для синхронизации. Требуется %1$s, доступно %2$s.</string>
     <string name="close">Закрыть</string>
+    <string name="ok">ОК</string>
     <string name="playback_notification_channel">Воспроизведение музыки</string>
     <string name="player_previous">Предыдущий</string>
     <string name="player_play">Играть</string>
@@ -197,6 +198,7 @@
     <string name="playback_crossfade_minimum">1 с</string>
     <string name="playback_crossfade_maximum">12 с</string>
     <string name="playback_blend_artwork_during_crossfade">Смешивать обложку и фон</string>
+    <string name="playback_show_quality_badge">Показывать значок качества звука</string>
     <string name="equalizer_title">Эквалайзер</string>
     <string name="equalizer_enable">Включить эквалайзер</string>
     <string name="equalizer_preset">Пресет</string>

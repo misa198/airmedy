@@ -15,8 +15,8 @@ import (
 
 // ExtractPalette reads an image file and returns a dominant color palette.
 // It downsamples to a 64×64 thumbnail, runs 3-cluster k-means for 10 iterations,
-// and classifies clusters as Vibrant (highest saturation×value), Dominant (largest),
-// and Muted (lowest saturation).
+// and classifies clusters as Vibrant (colorfulness weighted by area), Dominant (largest),
+// and Muted (the remaining distinct cluster).
 func ExtractPalette(imagePath string) (*domain.ThemeColors, error) {
 	f, err := os.Open(imagePath)
 	if err != nil {
@@ -50,13 +50,13 @@ func ExtractPalette(imagePath string) (*domain.ThemeColors, error) {
 		counts[closest]++
 	}
 
-	vibrantIdx := mostVibrant(centers)
+	vibrantIdx := mostVibrant(centers, counts)
 	dominantIdx := largest(counts)
-	mutedIdx := leastVibrant(centers)
+	muted := mutedColor(centers, counts, vibrantIdx, dominantIdx, backdrop)
 
 	return &domain.ThemeColors{
 		Vibrant:  toHex(centers[vibrantIdx]),
-		Muted:    toHex(centers[mutedIdx]),
+		Muted:    toHex(muted),
 		Dominant: toHex(centers[dominantIdx]),
 		Backdrop: toHex(backdrop),
 	}, nil
@@ -140,14 +140,25 @@ func kMeans(pixels []color.RGBA, k, iterations int) []color.RGBA {
 	if len(pixels) < k {
 		k = len(pixels)
 	}
-	// Seed centers evenly across pixels
+	// Spread seeds across the color space so large flat backgrounds cannot
+	// initialize every cluster to the same color.
 	centers := make([]color.RGBA, k)
-	step := len(pixels) / k
-	for i := range centers {
-		centers[i] = pixels[i*step]
+	centers[0] = pixels[0]
+	for i := 1; i < k; i++ {
+		bestDistance := -1.0
+		for _, p := range pixels {
+			c := centers[nearestCenter(p, centers[:i])]
+			dr, dg, db := float64(p.R)-float64(c.R), float64(p.G)-float64(c.G), float64(p.B)-float64(c.B)
+			if distance := dr*dr + dg*dg + db*db; distance > bestDistance {
+				centers[i], bestDistance = p, distance
+			}
+		}
 	}
 
 	assignments := make([]int, len(pixels))
+	for i := range assignments {
+		assignments[i] = -1
+	}
 	for iter := 0; iter < iterations; iter++ {
 		changed := false
 		for i, p := range pixels {
@@ -198,22 +209,20 @@ func nearestCenter(p color.RGBA, centers []color.RGBA) int {
 	return best
 }
 
-func mostVibrant(centers []color.RGBA) int {
-	best, bestV := 0, -1.0
-	for i, c := range centers {
-		v := vibrance(c)
-		if v > bestV {
-			best, bestV = i, v
-		}
+func mostVibrant(centers []color.RGBA, counts []int) int {
+	total := 0
+	for _, count := range counts {
+		total += count
 	}
-	return best
-}
-
-func leastVibrant(centers []color.RGBA) int {
-	best, bestV := 0, math.MaxFloat64
+	best, bestScore := largest(counts), -1.0
 	for i, c := range centers {
-		if v := vibrance(c); v < bestV {
-			best, bestV = i, v
+		ratio := float64(counts[i]) / float64(total)
+		if ratio < 0.004 {
+			continue
+		}
+		score := vibrance(c) * math.Min(1, math.Sqrt(ratio/0.02))
+		if score > bestScore {
+			best, bestScore = i, score
 		}
 	}
 	return best
@@ -227,6 +236,20 @@ func largest(counts []int) int {
 		}
 	}
 	return best
+}
+
+func mutedColor(centers []color.RGBA, counts []int, vibrant, dominant int, backdrop color.RGBA) color.RGBA {
+	best, bestCount, total := -1, -1, 0
+	for i, count := range counts {
+		total += count
+		if i != vibrant && i != dominant && count > bestCount {
+			best, bestCount = i, count
+		}
+	}
+	if best == -1 || bestCount*50 < total {
+		return backdrop
+	}
+	return centers[best]
 }
 
 // vibrance returns saturation × value (HSV) as a proxy for "how colorful" a pixel is.

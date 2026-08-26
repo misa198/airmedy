@@ -107,6 +107,7 @@
     <string name="sync_insufficient_storage_title">Nicht genügend Speicherplatz</string>
     <string name="sync_insufficient_storage_description">Nicht genügend Speicherplatz zum Synchronisieren. Benötigt: %1$s; verfügbar: %2$s.</string>
     <string name="close">Schließen</string>
+    <string name="ok">OK</string>
     <string name="playback_notification_channel">Musikwiedergabe</string>
     <string name="player_previous">Vorheriger</string>
     <string name="player_play">Abspielen</string>
@@ -195,6 +196,7 @@
     <string name="playback_crossfade_minimum">1s</string>
     <string name="playback_crossfade_maximum">12s</string>
     <string name="playback_blend_artwork_during_crossfade">Cover und Hintergrund überblenden</string>
+    <string name="playback_show_quality_badge">Audioqualitäts-Badge anzeigen</string>
     <string name="equalizer_title">Equalizer</string>
     <string name="equalizer_enable">Equalizer aktivieren</string>
     <string name="equalizer_preset">Voreinstellung</string>

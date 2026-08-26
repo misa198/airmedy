@@ -154,6 +154,11 @@ Fullscreen seek has an optimistic pending position but must reconcile confirmed 
 current track only when the panel opens; afterward it preserves the listener's
 viewport. A tap dispatches select and drag commits the entire ordered-ID list
 through `reorderQueue`, never by editing the snapshot.
+Its centered seek-row quality badge uses the current `LibraryTrack` metadata and
+appears only for Lossless, Hi-Res, or DSD playback when enabled in Playback
+settings; the preference defaults to enabled and persists in DataStore.
+Tapping it opens a centered metadata dialog with the quality icon and only the
+available sample-rate, bit-depth, and codec values.
 
 Lyrics parsing and display helpers live in `FullScreenPlayerLyricsPanel.kt`.
 Playback position is authoritative for the active line; browsing or dragging

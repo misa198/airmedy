@@ -48,6 +48,32 @@ func TestExtractPalette_SolidColor(t *testing.T) {
 	}
 }
 
+func TestKMeans_LargeWhiteBackgroundKeepsAccent(t *testing.T) {
+	pixels := make([]color.RGBA, 100)
+	for i := range pixels {
+		pixels[i] = color.RGBA{R: 254, G: 254, B: 254, A: 255}
+	}
+	for i := 90; i < len(pixels); i++ {
+		pixels[i] = color.RGBA{R: 190, G: 35, B: 55, A: 255}
+	}
+
+	centers := kMeans(pixels, 3, 10)
+	if got := centers[mostVibrant(centers, []int{90, 10, 0})]; got.R < 150 || got.G > 100 || got.B > 100 {
+		t.Fatalf("vibrant center = %#v, want the red accent", got)
+	}
+}
+
+func TestMostVibrant_RejectsMicroAccent(t *testing.T) {
+	centers := []color.RGBA{
+		{R: 164, G: 198, B: 233, A: 255},
+		{R: 56, G: 94, B: 112, A: 255},
+		{R: 183, G: 94, B: 96, A: 255},
+	}
+	if got := mostVibrant(centers, []int{3993, 90, 13}); got != 0 {
+		t.Fatalf("mostVibrant() = %d, want the prevalent blue cluster", got)
+	}
+}
+
 func TestExtractPalette_MissingFile(t *testing.T) {
 	_, err := ExtractPalette("/nonexistent/path/image.jpg")
 	if err == nil {
@@ -72,14 +98,18 @@ func TestToHex(t *testing.T) {
 	}
 }
 
-func TestLeastVibrant(t *testing.T) {
-	colors := []color.RGBA{
-		{R: 220, G: 10, B: 30, A: 255},
-		{R: 110, G: 110, B: 110, A: 255},
-		{R: 30, G: 100, B: 180, A: 255},
+func TestMutedColor_IgnoresTinyRemainingCluster(t *testing.T) {
+	centers := []color.RGBA{
+		{R: 8, G: 9, B: 68, A: 255},
+		{R: 253, G: 253, B: 163, A: 255},
+		{R: 161, G: 115, B: 135, A: 255},
 	}
-	if got := leastVibrant(colors); got != 1 {
-		t.Errorf("leastVibrant() = %d, want 1", got)
+	backdrop := color.RGBA{R: 32, G: 34, B: 76, A: 255}
+	if got := mutedColor(centers, []int{3690, 381, 25}, 1, 0, backdrop); got != backdrop {
+		t.Fatalf("mutedColor() = %#v, want backdrop %#v", got, backdrop)
+	}
+	if got := mutedColor(centers, []int{2043, 1473, 580}, 2, 0, backdrop); got != centers[1] {
+		t.Fatalf("mutedColor() = %#v, want prominent remaining cluster %#v", got, centers[1])
 	}
 }
 

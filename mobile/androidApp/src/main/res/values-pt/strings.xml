@@ -107,6 +107,7 @@
     <string name="sync_insufficient_storage_title">Espaço insuficiente</string>
     <string name="sync_insufficient_storage_description">Não há espaço suficiente para sincronizar. São necessários %1$s; %2$s estão disponíveis.</string>
     <string name="close">Fechar</string>
+    <string name="ok">OK</string>
     <string name="playback_notification_channel">Reprodução de música</string>
     <string name="player_previous">Anterior</string>
     <string name="player_play">Reproduzir</string>
@@ -195,6 +196,7 @@
     <string name="playback_crossfade_minimum">1s</string>
     <string name="playback_crossfade_maximum">12s</string>
     <string name="playback_blend_artwork_during_crossfade">Misturar capa e fundo</string>
+    <string name="playback_show_quality_badge">Mostrar emblema de qualidade de áudio</string>
     <string name="equalizer_title">Equalizador</string>
     <string name="equalizer_enable">Ativar equalizador</string>
     <string name="equalizer_preset">Predefinição</string>

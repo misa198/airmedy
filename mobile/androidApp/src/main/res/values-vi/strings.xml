@@ -107,6 +107,7 @@
     <string name="sync_insufficient_storage_title">Không đủ dung lượng</string>
     <string name="sync_insufficient_storage_description">Không đủ dung lượng để đồng bộ. Cần %1$s, hiện có thể dùng %2$s.</string>
     <string name="close">Đóng</string>
+    <string name="ok">OK</string>
     <string name="playback_notification_channel">Phát nhạc</string>
     <string name="player_previous">Trước đó</string>
     <string name="player_play">Phát</string>
@@ -194,6 +195,7 @@
     <string name="playback_crossfade_minimum">1 giây</string>
     <string name="playback_crossfade_maximum">12 giây</string>
     <string name="playback_blend_artwork_during_crossfade">Hòa trộn ảnh bìa và hình nền</string>
+    <string name="playback_show_quality_badge">Hiển thị huy hiệu chất lượng âm thanh</string>
     <string name="equalizer_title">Bộ cân bằng âm</string>
     <string name="equalizer_enable">Bật bộ cân bằng âm</string>
     <string name="equalizer_preset">Cài đặt sẵn</string>

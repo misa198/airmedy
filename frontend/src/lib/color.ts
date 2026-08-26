@@ -22,6 +22,14 @@ function perceivedBrightness(color: string): number {
   )
 }
 
+export function backgroundMutedColor(muted: string, backdrop: string): string {
+  // ponytail: brightness gates ignore dark ink on light covers; use pixel-area
+  // weighting if mixed-light artwork exposes a false positive.
+  return perceivedBrightness(backdrop) >= 220 && perceivedBrightness(muted) < 40
+    ? backdrop
+    : muted
+}
+
 // Accent controls favor white text unless a color is visibly light (especially
 // yellow or pastel). This keeps saturated colors such as orange visually cohesive.
 const lightForegroundThreshold = 165
