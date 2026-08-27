@@ -322,7 +322,7 @@ internal fun FullScreenTransportButton(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        val iconTint = tint ?: if (enabled || isPlaying != null) colors.onPrimary else colors.textMuted
+        val iconTint = tint ?: if (enabled || isPlaying != null) colors.onPrimary else colors.foregroundSubtle
         when {
             isPlaying != null -> AnimatedPlayPauseSymbol(isPlaying, !enabled, isPressed, iconTint, iconSize, 64.dp)
             skipForward != null -> AnimatedSkipSymbol(skipForward, isPressed, iconTint, iconSize, 64.dp)

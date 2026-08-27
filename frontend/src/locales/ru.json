@@ -15,6 +15,7 @@
     "loading": "Загрузка...",
     "error": "Ошибка",
     "cancel": "Отмена",
+    "ok": "ОК",
     "close": "Закрыть",
     "change": "Изменить",
     "save": "Сохранить",
@@ -309,7 +310,12 @@
       "requires_enable": "Включите анализ библиотеки, чтобы использовать нормализацию громкости",
       "worker_count": "Количество параллельных воркеров",
       "worker_count_desc": "Большее число воркеров ускоряет анализ, но сильнее нагружает процессор и может привести к большему нагреву компьютера.",
-      "worker_count_value": "{count} воркеров"
+      "worker_count_value": "{count} воркеров",
+      "progress": "Analysis progress",
+      "analyzed": "Analyzed {done}/{total} tracks ({percent}%)",
+      "retry_failed": "Retry failed tracks",
+      "view_failed": "View failed tracks",
+      "failed_tracks": "Failed analysis tracks"
     },
     "normalization": {
       "title": "Нормализация громкости",

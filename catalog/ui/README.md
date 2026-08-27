@@ -359,7 +359,8 @@ The Library Analysis section contains:
 
 - An enable switch.
 - A live `analysis:progress` status line.
-- A library-readiness percentage (`libraryDone / libraryTotal`).
+- An `Analyzed x/y tracks (a%)` line, where `x` includes only tracks whose required analysis components completed successfully and `y` includes failures.
+- Failed-track retry and virtual-list dialog actions, visible only while Library Sync and Optimize Search are idle.
 - A worker-count slider when more than one worker is available.
 
 `LibrarySettings.vue` subscribes to `analysis:progress` on mount, stores the

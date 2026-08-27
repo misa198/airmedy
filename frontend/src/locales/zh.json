@@ -15,6 +15,7 @@
     "loading": "加载中...",
     "error": "错误",
     "cancel": "取消",
+    "ok": "确定",
     "close": "关闭",
     "change": "更改",
     "save": "保存",
@@ -309,7 +310,12 @@
       "requires_enable": "请先启用媒体库分析以使用音量均衡",
       "worker_count": "并发工作线程",
       "worker_count_desc": "更多工作线程可以加快分析速度，但会占用更多 CPU，也可能让电脑更热。",
-      "worker_count_value": "{count} 个工作线程"
+      "worker_count_value": "{count} 个工作线程",
+      "progress": "Analysis progress",
+      "analyzed": "Analyzed {done}/{total} tracks ({percent}%)",
+      "retry_failed": "Retry failed tracks",
+      "view_failed": "View failed tracks",
+      "failed_tracks": "Failed analysis tracks"
     },
     "normalization": {
       "title": "音量标准化",

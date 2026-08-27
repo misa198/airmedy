@@ -8,6 +8,16 @@ import kotlin.test.assertNull
 
 class PlaybackQueueTest {
     @Test
+    fun `replace keeping current drops old upcoming tracks without replaying current`() {
+        val queue = PlaybackQueue()
+        queue.play(PlaybackRequest(listOf("old", "seed", "later"), 1))
+
+        assertEquals(QueueTransition.Unchanged, queue.replaceKeepingCurrent(listOf("seed", "radio")))
+        assertEquals(listOf("seed", "radio"), queue.snapshot().activeTrackIds)
+        assertEquals("seed", queue.snapshot().currentTrackId)
+    }
+
+    @Test
     fun `restore selects first available item when saved current item is gone`() {
         val queue = PlaybackQueue()
 

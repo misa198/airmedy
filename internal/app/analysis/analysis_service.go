@@ -930,6 +930,30 @@ func (s *AnalysisService) GetProgress() domain.AnalysisProgress {
 	return s.currentProgress(state)
 }
 
+func (s *AnalysisService) ListFailedTracks(ctx context.Context) ([]domain.FailedAnalysisTrack, error) {
+	repo, ok := s.analysisRepo.(domain.ComponentAnalysisRepository)
+	if !ok {
+		return nil, nil
+	}
+	return repo.ListFailedComponentTracks(ctx, requiredAnalysisComponents)
+}
+
+func (s *AnalysisService) RetryFailedTracks(ctx context.Context) error {
+	repo, ok := s.analysisRepo.(domain.ComponentAnalysisRepository)
+	if !ok {
+		return nil
+	}
+	ids, err := repo.ResetFailedComponents(ctx, requiredAnalysisComponents)
+	if err != nil {
+		return err
+	}
+	for _, id := range ids {
+		s.Enqueue(id, false)
+	}
+	s.emitProgress(s.GetProgress().State)
+	return nil
+}
+
 func (s *AnalysisService) emitProgress(state string) {
 	progress := s.currentProgress(state)
 	if app := application.Get(); app != nil && app.Event != nil {
@@ -957,9 +981,15 @@ func (s *AnalysisService) currentProgress(state string) domain.AnalysisProgress 
 	}
 	total, state := resolveProgress(pending, done, state)
 
-	libraryTotal, libraryDone := s.libraryTotalCached(), 0
+	libraryTotal, libraryDone, failed := s.libraryTotalCached(), 0, 0
+	if componentRepo, ok := s.analysisRepo.(domain.ComponentAnalysisRepository); ok {
+		failed, err = componentRepo.CountFailedComponentTracks(context.Background(), requiredAnalysisComponents)
+		if err != nil {
+			failed = 0
+		}
+	}
 	if libraryTotal >= 0 && pending >= 0 {
-		libraryDone = libraryTotal - pending
+		libraryDone = libraryTotal - pending - failed
 	}
 	if libraryTotal < 0 {
 		libraryTotal = 0
@@ -971,6 +1001,7 @@ func (s *AnalysisService) currentProgress(state string) domain.AnalysisProgress 
 		State:        state,
 		LibraryDone:  libraryDone,
 		LibraryTotal: libraryTotal,
+		Failed:       failed,
 	}
 }
 

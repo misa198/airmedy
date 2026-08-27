@@ -59,6 +59,13 @@ class LibrarySyncProtocolTest {
         )
 
         assertEquals(emptyList(), manifest.playlists.orEmpty())
+        assertEquals(false, manifest.libraryAnalysisEnabled)
+    }
+
+    @Test
+    fun roundTripsLibraryAnalysisFlag() {
+        val manifest = LibrarySyncManifest(1, "plan", "b".repeat(64), buildJsonObject { }, lyrics = buildJsonObject { }, analysis = buildJsonObject { }, libraryAnalysisEnabled = true)
+        assertEquals(true, LibrarySyncProtocol.json.decodeFromString(LibrarySyncManifest.serializer(), LibrarySyncProtocol.json.encodeToString(LibrarySyncManifest.serializer(), manifest)).libraryAnalysisEnabled)
     }
 
     @Test

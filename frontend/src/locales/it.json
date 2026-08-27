@@ -15,6 +15,7 @@
     "loading": "Caricamento...",
     "error": "Errore",
     "cancel": "Annulla",
+    "ok": "OK",
     "close": "Chiudi",
     "change": "Modifica",
     "save": "Salva",
@@ -309,7 +310,12 @@
       "requires_enable": "Attiva l'analisi della libreria per usare la normalizzazione del volume",
       "worker_count": "Worker simultanei",
       "worker_count_desc": "Più worker accelerano l'analisi, ma usano più CPU e possono far scaldare di più il computer.",
-      "worker_count_value": "{count} worker"
+      "worker_count_value": "{count} worker",
+      "progress": "Analysis progress",
+      "analyzed": "Analyzed {done}/{total} tracks ({percent}%)",
+      "retry_failed": "Retry failed tracks",
+      "view_failed": "View failed tracks",
+      "failed_tracks": "Failed analysis tracks"
     },
     "normalization": {
       "title": "Normalizzazione del volume",

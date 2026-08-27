@@ -54,6 +54,7 @@ import me.misa198.airmedy.ui.components.MaterialSymbol
 import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import me.misa198.airmedy.ui.components.TrackContextMenu
+import me.misa198.airmedy.ui.components.TrackContextMenuActions
 import me.misa198.airmedy.ui.components.TrackInfoValue
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
@@ -75,6 +76,8 @@ internal fun FullScreenPlayerMetadataTransition(
     playbackQueue: PlaybackQueueSnapshot,
     onTrackPlayNext: (String) -> Unit,
     onTrackAddToQueue: (String) -> Unit,
+    moodRadioEligibleTrackIds: Set<String>,
+    onStartMoodRadio: (String) -> Unit,
     onTrackGoToAlbum: (String) -> Unit,
     onTrackGoToArtist: (String) -> Unit,
     onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit,
@@ -93,7 +96,7 @@ internal fun FullScreenPlayerMetadataTransition(
         FullScreenPlayerMetadata(
             animatedItem, displayedHorizontalSwipeOffset, hazeState, compact, isFavorite, onFavoriteToggle,
             contextTrack, contextMenuExpanded, onContextMenuOpen, onContextMenuDismiss, playbackQueue,
-            onTrackPlayNext, onTrackAddToQueue, onTrackGoToAlbum, onTrackGoToArtist,
+            onTrackPlayNext, onTrackAddToQueue, moodRadioEligibleTrackIds, onStartMoodRadio, onTrackGoToAlbum, onTrackGoToArtist,
             onTrackContextBottomSheet, onCloseFullscreenThen,
         )
     }
@@ -114,6 +117,8 @@ private fun FullScreenPlayerMetadata(
     playbackQueue: PlaybackQueueSnapshot,
     onTrackPlayNext: (String) -> Unit,
     onTrackAddToQueue: (String) -> Unit,
+    moodRadioEligibleTrackIds: Set<String>,
+    onStartMoodRadio: (String) -> Unit,
     onTrackGoToAlbum: (String) -> Unit,
     onTrackGoToArtist: (String) -> Unit,
     onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit,
@@ -157,6 +162,7 @@ private fun FullScreenPlayerMetadata(
         if (contextTrack == null) moreButton({}) else TrackContextMenu(
             track = contextTrack, expanded = contextMenuExpanded, onDismiss = onContextMenuDismiss, hazeState = hazeState,
             playbackQueue = playbackQueue, onPlayNext = { onTrackPlayNext(it.id) }, onAddToQueue = { onTrackAddToQueue(it.id) },
+            actions = TrackContextMenuActions(moodRadio = contextTrack.id in moodRadioEligibleTrackIds), onStartMoodRadio = { onStartMoodRadio(it.id) },
             onFavoriteChange = { track, favorite -> onFavoriteToggle(track.id, favorite) }, onGoToAlbum = { onTrackGoToAlbum(it.albumId) },
             onGoToArtist = { onTrackGoToArtist(it.id) },
             onBottomSheetRequested = { onCloseFullscreenThen { onTrackContextBottomSheet(it) } },

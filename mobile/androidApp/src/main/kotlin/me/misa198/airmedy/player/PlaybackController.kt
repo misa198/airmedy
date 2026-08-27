@@ -20,6 +20,7 @@ internal class PlaybackController(
     val state: StateFlow<PlaybackState> get() = PlaybackService.state
     val queue: StateFlow<PlaybackQueueSnapshot> get() = PlaybackService.queueState
     val artworkCrossfade: StateFlow<ArtworkCrossfadeTransition?> get() = PlaybackService.artworkCrossfade
+    val moodRadioActive: StateFlow<Boolean> get() = PlaybackService.moodRadioActive
     val crossfadeSeconds: Flow<Int> get() = PlaybackService.crossfadeSeconds
 
     fun play(request: PlaybackRequest) {
@@ -51,6 +52,9 @@ internal class PlaybackController(
     fun playNext(trackId: String) = playNext(listOf(trackId))
     fun playNext(trackIds: List<String>) = tracksCommand(PlaybackService.ActionPlayNext, trackIds)
     fun append(trackIds: List<String>) = tracksCommand(PlaybackService.ActionAppend, trackIds)
+    fun startMoodRadio(seedTrackId: String) = context.startForegroundService(
+        PlaybackService.intent(context, PlaybackService.ActionStartMoodRadio).putExtra(PlaybackService.TrackIdExtra, seedTrackId),
+    )
     fun selectQueueTrack(trackId: String) = context.startForegroundService(
         PlaybackService.intent(context, PlaybackService.ActionSelect).putExtra(PlaybackService.TrackIdExtra, trackId),
     )

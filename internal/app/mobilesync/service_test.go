@@ -611,18 +611,27 @@ func TestSameScopeIgnoresSelectionOrder(t *testing.T) {
 
 func TestMarshalManifestProducesCompactWireBytes(t *testing.T) {
 	manifest := domain.MobileLibrarySyncManifest{
-		Version:  1,
-		PlanID:   "plan-1",
-		Revision: "a",
-		Scope:    domain.MobileLibrarySyncScope{Kind: domain.MobileLibrarySyncScopeAll, SelectedIDs: []string{}},
-		Lyrics:   map[string]*domain.Lyric{},
-		Analysis: map[string]*domain.TrackFeatures{},
-		Assets:   []domain.MobileLibrarySyncAsset{},
+		Version:                1,
+		PlanID:                 "plan-1",
+		Revision:               "a",
+		LibraryAnalysisEnabled: true,
+		Scope:                  domain.MobileLibrarySyncScope{Kind: domain.MobileLibrarySyncScopeAll, SelectedIDs: []string{}},
+		Lyrics:                 map[string]*domain.Lyric{},
+		Analysis:               map[string]*domain.TrackFeatures{},
+		Assets:                 []domain.MobileLibrarySyncAsset{},
 	}
 
 	body, err := marshalManifest(manifest)
 	require.NoError(t, err)
 	require.NotEqual(t, byte('\n'), body[len(body)-1], "manifest wire bytes must not have Encoder's trailing newline")
+	require.JSONEq(t, `true`, string(jsonValue(t, body, "library_analysis_enabled")))
+}
+
+func jsonValue(t *testing.T, body []byte, key string) []byte {
+	t.Helper()
+	var manifest map[string]json.RawMessage
+	require.NoError(t, json.Unmarshal(body, &manifest))
+	return manifest[key]
 }
 
 func TestFileAssetIncludesStableContentHash(t *testing.T) {

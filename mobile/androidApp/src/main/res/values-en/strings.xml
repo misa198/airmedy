@@ -27,6 +27,7 @@
     <string name="insight_total_albums">Albums</string>
     <string name="insight_total_artists">Artists</string>
     <string name="insight_total_playlists">Playlists</string>
+    <string name="sync_library_analysis">Library analysis</string>
     <string name="insight_total_time">Total time</string>
     <string name="insight_streak">Streak</string>
     <string name="insight_average_session">Average session</string>
@@ -264,6 +265,7 @@
     <string name="track_context_menu_title">Track options</string>
     <string name="track_context_play_next">Play next</string>
     <string name="track_context_add_to_queue">Add to queue</string>
+    <string name="track_context_start_mood_radio">Start Mood Radio</string>
     <string name="track_context_remove_from_queue">Remove from queue</string>
     <string name="track_context_track_info">Track info</string>
     <string name="track_context_find_lyrics">Find lyrics</string>

@@ -27,6 +27,7 @@
     <string name="insight_total_albums">Albums</string>
     <string name="insight_total_artists">Artistes</string>
     <string name="insight_total_playlists">Playlists</string>
+    <string name="sync_library_analysis">Analyse de la bibliothèque</string>
     <string name="insight_total_time">Durée totale</string>
     <string name="insight_streak">Série</string>
     <string name="insight_average_session">Session moyenne</string>
@@ -264,6 +265,7 @@
     <string name="track_context_menu_title">Options du morceau</string>
     <string name="track_context_play_next">Lire ensuite</string>
     <string name="track_context_add_to_queue">Ajouter à la file d\'attente</string>
+    <string name="track_context_start_mood_radio">Démarrer la Radio d\'Ambiance</string>
     <string name="track_context_remove_from_queue">Retirer de la file d\'attente</string>
     <string name="track_context_track_info">Infos sur le morceau</string>
     <string name="track_context_find_lyrics">Rechercher les paroles</string>

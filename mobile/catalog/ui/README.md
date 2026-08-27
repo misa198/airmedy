@@ -92,6 +92,12 @@ than hard-coded bottom padding.
 | Settings | `SettingsContent`, `AppearanceContent`, playback/sync/integration screens | Preferences and Android adapters are in the host/ViewModel, not shared UI. Integration persists LRCLIB/KuGou switches and a lyrics-source preference: desktop sync is the default; auto-fetch prefers Android provider cache and falls back to desktop. |
 | Player | `MiniPlayer`, `FullScreenPlayer`, Queue/Lyrics panels | Render `PlaybackModel`; all mutations use playback actions. |
 
+Mood Radio is enabled only by the active sync manifest's
+`library_analysis_enabled` flag. A disabled replacement snapshot ends the
+in-memory radio session and stops refills without changing the current queue.
+The fullscreen track menu exposes Start Mood Radio only for tracks whose active
+analysis includes energy, danceability, brightness, and tempo.
+
 Playlist, favorite, and sync UI must not infer data from a desktop local database.
 They read the Android mirror/state exposed by adapters. Context menus receive
 action callbacks; they do not mutate Room or the queue themselves.
@@ -105,7 +111,7 @@ While a replacement sync plan is staging, playlist details continue to render
 the local playlist projection. That projection is removed only after the new
 plan activates, when its synced replacement is already available.
 
-The Sync settings page provides a single ActionList FAQ row. It emits
+The Sync settings page provides a single ActionList FAQ row and, when the active snapshot enables library analysis, its library-analysis percentage. It emits
 `AppIntent.OpenExternalUrl`; the Android host owns opening the browser.
 
 ## Shared composables

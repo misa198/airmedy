@@ -108,6 +108,7 @@ type Service struct {
 	lyrics         *lyricsapp.LyricsService
 	lyricCache     domain.MobileSyncLyricCacheRepository
 	analysis       domain.AnalysisRepository
+	settings       domain.SettingsRepository
 	artwork        domain.ArtworkCache
 	devices        domain.TrustedMobileDeviceRepository
 	identity       domain.PairingIdentityRepository
@@ -138,8 +139,8 @@ type Service struct {
 	nextStartID        uint64
 }
 
-func NewService(plans domain.MobileLibrarySyncPlanRepository, tracks domain.TrackRepository, playlists domain.PlaylistRepository, artists domain.ArtistRepository, lyrics *lyricsapp.LyricsService, lyricCache domain.MobileSyncLyricCacheRepository, analysis domain.AnalysisRepository, artwork domain.ArtworkCache, devices domain.TrustedMobileDeviceRepository, identity domain.PairingIdentityRepository, keys domain.PairingKeyStore, broker domain.PairingBroker, ledger domain.PlaylistMutationLedger, lww domain.PlaylistMutationLWW, favoriteLedger domain.FavoriteMutationLedger, favoriteLWW domain.FavoriteMutationLWW, staging domain.PlaylistArtworkStagingRepository, tx domain.TxManager, playlistSvc *playlistapp.PlaylistService, listening domain.ListeningRepository, logger *slog.Logger) *Service {
-	return &Service{plans: plans, tracks: tracks, playlists: playlists, artists: artists, lyrics: lyrics, lyricCache: lyricCache, analysis: analysis, artwork: artwork, devices: devices, identity: identity, keys: keys, broker: broker, ledger: ledger, lww: lww, favoriteLedger: favoriteLedger, favoriteLWW: favoriteLWW, staging: staging, tx: tx, playlistSvc: playlistSvc, listening: listening, logger: logger, nonces: make(map[string]time.Time), playlistArtwork: make(map[string]string), reconciliations: make(map[string]*playlistReconciliation), planCache: make(map[string]*domain.MobileLibrarySyncPlan)}
+func NewService(plans domain.MobileLibrarySyncPlanRepository, tracks domain.TrackRepository, playlists domain.PlaylistRepository, artists domain.ArtistRepository, lyrics *lyricsapp.LyricsService, lyricCache domain.MobileSyncLyricCacheRepository, analysis domain.AnalysisRepository, settings domain.SettingsRepository, artwork domain.ArtworkCache, devices domain.TrustedMobileDeviceRepository, identity domain.PairingIdentityRepository, keys domain.PairingKeyStore, broker domain.PairingBroker, ledger domain.PlaylistMutationLedger, lww domain.PlaylistMutationLWW, favoriteLedger domain.FavoriteMutationLedger, favoriteLWW domain.FavoriteMutationLWW, staging domain.PlaylistArtworkStagingRepository, tx domain.TxManager, playlistSvc *playlistapp.PlaylistService, listening domain.ListeningRepository, logger *slog.Logger) *Service {
+	return &Service{plans: plans, tracks: tracks, playlists: playlists, artists: artists, lyrics: lyrics, lyricCache: lyricCache, analysis: analysis, settings: settings, artwork: artwork, devices: devices, identity: identity, keys: keys, broker: broker, ledger: ledger, lww: lww, favoriteLedger: favoriteLedger, favoriteLWW: favoriteLWW, staging: staging, tx: tx, playlistSvc: playlistSvc, listening: listening, logger: logger, nonces: make(map[string]time.Time), playlistArtwork: make(map[string]string), reconciliations: make(map[string]*playlistReconciliation), planCache: make(map[string]*domain.MobileLibrarySyncPlan)}
 }
 
 func (s *Service) OnStart(ctx context.Context) error {
@@ -448,6 +449,10 @@ func sameScope(a, b domain.MobileLibrarySyncScope) bool {
 }
 
 func (s *Service) createPlan(ctx context.Context, deviceID string, scope domain.MobileLibrarySyncScope) (*domain.MobileLibrarySyncPlan, error) {
+	settings, err := s.settings.Load(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("load settings for mobile sync: %w", err)
+	}
 	if err := s.normalizeScope(ctx, &scope); err != nil {
 		return nil, err
 	}
@@ -460,7 +465,7 @@ func (s *Service) createPlan(ctx context.Context, deviceID string, scope domain.
 		return nil, fmt.Errorf("get favorite tracks for mobile sync: %w", err)
 	}
 	planID := uuid.NewString()
-	manifest := domain.MobileLibrarySyncManifest{Version: syncProtocolVersion, PlanID: planID, Scope: scope, Lyrics: map[string]*domain.Lyric{}, Analysis: map[string]*domain.TrackFeatures{}}
+	manifest := domain.MobileLibrarySyncManifest{Version: syncProtocolVersion, PlanID: planID, LibraryAnalysisEnabled: settings.LibraryAnalysisEnabled, Scope: scope, Lyrics: map[string]*domain.Lyric{}, Analysis: map[string]*domain.TrackFeatures{}}
 	assets := make([]domain.MobileLibrarySyncAsset, 0, len(tracks)*2)
 	resolvedLyrics, err := s.lyrics.ResolveForMobileSync(ctx, tracks, s.lyricCache)
 	if err != nil {

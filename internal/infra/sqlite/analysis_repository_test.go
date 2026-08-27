@@ -197,4 +197,18 @@ func TestAnalysisRepositoryComponentVersions(t *testing.T) {
 	if pending, complete, err := repo.ComponentStatus(ctx, "aubio-only", required); err != nil || pending != 0 || complete {
 		t.Fatalf("combined failed status: pending=%d complete=%v err=%v", pending, complete, err)
 	}
+	if failed, err := repo.CountFailedComponentTracks(ctx, required); err != nil || failed != 1 {
+		t.Fatalf("failed count: got %d, err %v", failed, err)
+	}
+	rows, err := repo.ListFailedComponentTracks(ctx, required)
+	if err != nil || len(rows) != 1 || rows[0].ID != "aubio-only" || len(rows[0].FailedComponents) != 1 || rows[0].FailedComponents[0] != "ffmpeg" {
+		t.Fatalf("failed rows: got %+v, err %v", rows, err)
+	}
+	ids, err := repo.ResetFailedComponents(ctx, required)
+	if err != nil || len(ids) != 1 || ids[0] != "aubio-only" {
+		t.Fatalf("reset failed: ids=%v err=%v", ids, err)
+	}
+	if pending, err := repo.PendingComponents(ctx, "aubio-only", required); err != nil || pending != domain.AnalysisComponentFFmpeg {
+		t.Fatalf("failed component was not restored to pending: got %d, err %v", pending, err)
+	}
 }

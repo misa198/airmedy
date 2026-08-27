@@ -125,6 +125,7 @@ internal fun SyncContent(
             syncState = syncUiState.librarySync,
             lastSyncedAtMillis = syncUiState.lastSyncedAtMillis,
         )
+        if (syncUiState.libraryAnalysisEnabled) LibraryAnalysisCard(syncUiState.libraryAnalysis)
     }
     if (showRevokeConfirmation && !isSyncRunning) {
         AirmedyDialog(
@@ -135,6 +136,21 @@ internal fun SyncContent(
             confirmLabel = stringResource(R.string.sync_revoke),
             onConfirm = { showRevokeConfirmation = false; onUnpair() },
             confirmVariant = AirmedyPillButtonVariant.Destructive,
+        )
+    }
+}
+
+@Composable
+private fun LibraryAnalysisCard(progress: me.misa198.airmedy.sync.LibraryAnalysisProgress) {
+    if (progress.totalTracks == 0) return
+    Card(contentPadding = PaddingValues(20.dp)) {
+        Text(stringResource(R.string.sync_library_analysis), style = MaterialTheme.typography.labelMedium, color = LocalAirmedyColors.current.textMuted)
+        Text(
+            stringResource(R.string.insight_percent_value, progress.analyzedTracks * 100 / progress.totalTracks),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = LocalAirmedyColors.current.textMain,
+            modifier = Modifier.padding(top = 8.dp),
         )
     }
 }

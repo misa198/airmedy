@@ -55,6 +55,7 @@ data class LibrarySyncManifest(
     val lyrics: JsonObject,
     val analysis: JsonObject,
     val assets: List<LibrarySyncAsset>? = null,
+    @SerialName("library_analysis_enabled") val libraryAnalysisEnabled: Boolean = false,
 )
 
 @Serializable

@@ -27,6 +27,7 @@
     <string name="insight_total_albums">Album</string>
     <string name="insight_total_artists">Nghệ sĩ</string>
     <string name="insight_total_playlists">Danh sách phát</string>
+    <string name="sync_library_analysis">Phân tích thư viện</string>
     <string name="insight_total_time">Tổng thời gian</string>
     <string name="insight_streak">Chuỗi nghe liên tục</string>
     <string name="insight_average_session">Phiên nghe trung bình</string>
@@ -263,6 +264,7 @@
     <string name="track_context_menu_title">Tùy chọn bài hát</string>
     <string name="track_context_play_next">Phát tiếp theo</string>
     <string name="track_context_add_to_queue">Thêm vào hàng chờ</string>
+    <string name="track_context_start_mood_radio">Bắt đầu Radio Tâm trạng</string>
     <string name="track_context_remove_from_queue">Xóa khỏi hàng chờ</string>
     <string name="track_context_track_info">Thông tin bài hát</string>
     <string name="track_context_find_lyrics">Tìm lời bài hát</string>

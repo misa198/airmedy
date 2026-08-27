@@ -15,6 +15,7 @@
     "loading": "Lädt...",
     "error": "Fehler",
     "cancel": "Abbrechen",
+    "ok": "OK",
     "close": "Schließen",
     "change": "Ändern",
     "save": "Speichern",
@@ -309,7 +310,12 @@
       "requires_enable": "Aktiviere die Bibliotheksanalyse, um die Lautstärkenormalisierung zu nutzen",
       "worker_count": "Gleichzeitige Worker",
       "worker_count_desc": "Mehr Worker beschleunigen die Analyse, verbrauchen aber mehr CPU und können den Computer stärker erhitzen.",
-      "worker_count_value": "{count} Worker"
+      "worker_count_value": "{count} Worker",
+      "progress": "Analysis progress",
+      "analyzed": "Analyzed {done}/{total} tracks ({percent}%)",
+      "retry_failed": "Retry failed tracks",
+      "view_failed": "View failed tracks",
+      "failed_tracks": "Failed analysis tracks"
     },
     "normalization": {
       "title": "Lautstärkenormalisierung",

@@ -15,6 +15,7 @@
     "loading": "Loading...",
     "error": "Error",
     "cancel": "Cancel",
+    "ok": "OK",
     "close": "Close",
     "change": "Change",
     "save": "Save",
@@ -309,7 +310,12 @@
       "requires_enable": "Enable Library Analysis to use Volume Normalization",
       "worker_count": "Concurrent Workers",
       "worker_count_desc": "More workers speed up analysis, but use more CPU and can make your computer run hotter.",
-      "worker_count_value": "{count} workers"
+      "worker_count_value": "{count} workers",
+      "progress": "Analysis progress",
+      "analyzed": "Analyzed {done}/{total} tracks ({percent}%)",
+      "retry_failed": "Retry failed tracks",
+      "view_failed": "View failed tracks",
+      "failed_tracks": "Failed analysis tracks"
     },
     "normalization": {
       "title": "Volume Normalization",
