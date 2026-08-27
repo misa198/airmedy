@@ -43,8 +43,8 @@ const repeatActive = computed(
 <template>
   <div class="flex items-center gap-7">
     <PlayerControlButton
-      :class="shuffle ? 'text-white/80' : 'text-white/30 hover:text-white/80'"
-      class="transition-colors"
+      :class="shuffle ? 'text-white opacity-80' : 'text-white opacity-30 hover:opacity-80'"
+      class="transition-opacity"
       :active="shuffle"
       :show-indicator="showIndicator"
       dot-class="bg-white"
@@ -53,7 +53,7 @@ const repeatActive = computed(
     >
       <Shuffle class="w-5 h-5" />
     </PlayerControlButton>
-    <button class="text-white/80 hover:text-white transition-colors" @click="emit('previous')" :title="t('player.previous')">
+    <button class="text-white opacity-80 hover:opacity-100 transition-opacity" @click="emit('previous')" :title="t('player.previous')">
       <SkipBack class="w-7 h-7 fill-current" />
     </button>
     <button
@@ -62,12 +62,12 @@ const repeatActive = computed(
       <Pause v-if="isPlaying" class="w-6 h-6 fill-current text-[#0A0A0A]" />
       <Play v-else class="w-6 h-6 fill-current text-[#0A0A0A] ml-0.5" />
     </button>
-    <button class="text-white/80 hover:text-white transition-colors" @click="emit('next')" :title="t('player.next')">
+    <button class="text-white opacity-80 hover:opacity-100 transition-opacity" @click="emit('next')" :title="t('player.next')">
       <SkipForward class="w-7 h-7 fill-current" />
     </button>
     <PlayerControlButton
-      :class="repeatActive ? 'text-white/80' : 'text-white/30 hover:text-white/80'"
-      class="transition-colors"
+      :class="repeatActive ? 'text-white opacity-80' : 'text-white opacity-30 hover:opacity-80'"
+      class="transition-opacity"
       :active="repeatActive"
       :show-indicator="showIndicator"
       dot-class="bg-white"
