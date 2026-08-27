@@ -215,4 +215,7 @@ internal data class PlaybackModel(
     val onFavoriteToggle: (String, Boolean) -> Unit = { _, _ -> },
     val onTrackPlayNext: (String) -> Unit = {},
     val onTrackAddToQueue: (String) -> Unit = {},
+    val moodRadioEligibleTrackIds: Set<String> = emptySet(),
+    val onStartMoodRadio: (String) -> Unit = {},
+    val moodRadioActive: Boolean = false,
 )

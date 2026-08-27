@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -143,6 +144,11 @@ internal fun App(
     val playbackState = playback.state
     val playbackQueue = playback.queue
     AirmedyTheme(themeMode = uiState.themeMode) {
+        CompositionLocalProvider(
+            me.misa198.airmedy.ui.components.LocalMoodRadioMenuActions provides me.misa198.airmedy.ui.components.MoodRadioMenuActions(
+                playback.moodRadioEligibleTrackIds, playback.onStartMoodRadio,
+            ),
+        ) {
         val hazeState = if (uiState.reduceTransparency) null else rememberHazeState()
         val currentStackPage = uiState.stackFor(uiState.selectedDestination).currentStackPage(uiState.selectedDestination)
         val homeListState = remember(uiState.pageStateGenerationFor(AppDestination.Home, AppStackPage.Root)) { LazyListState() }
@@ -617,6 +623,9 @@ internal fun App(
                 onQueueTrackRemoved = playback.onQueueTrackRemoved,
                 onShuffleChange = playback.onShuffleChange,
                 onRepeatModeChange = playback.onRepeatModeChange,
+                moodRadioEligibleTrackIds = playback.moodRadioEligibleTrackIds,
+                onStartMoodRadio = playback.onStartMoodRadio,
+                moodRadioActive = playback.moodRadioActive,
                 isFavorite = playback.queueTracks.firstOrNull { track -> track.id == when (val state = playbackState) {
                     is PlaybackState.Preparing -> state.item.trackId
                     is PlaybackState.Playing -> state.item.trackId
@@ -667,6 +676,7 @@ internal fun App(
         BackHandler(enabled = isFullScreenPlayerVisible) {
             setFullScreenPlayerVisible(false)
             isFullScreenPlayerOpeningFromSwipe = false
+        }
         }
     }
 }

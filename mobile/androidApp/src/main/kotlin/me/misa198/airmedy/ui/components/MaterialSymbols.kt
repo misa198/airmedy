@@ -49,6 +49,7 @@ object MaterialSymbols {
     const val Schedule = "schedule"
     const val PlayCircle = "play_circle"
     const val QueueMusic = "queue_music"
+    const val Sensors = "sensors"
     const val PlaylistAdd = "playlist_add"
     const val PlaylistRemove = "playlist_remove"
     const val QueuePlayNext = "queue_play_next"

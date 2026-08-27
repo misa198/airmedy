@@ -27,6 +27,7 @@
     <string name="insight_total_albums">앨범</string>
     <string name="insight_total_artists">아티스트</string>
     <string name="insight_total_playlists">재생 목록</string>
+    <string name="sync_library_analysis">라이브러리 분석</string>
     <string name="insight_total_time">총 시간</string>
     <string name="insight_streak">연속 청취</string>
     <string name="insight_average_session">평균 세션</string>
@@ -263,6 +264,7 @@
     <string name="track_context_menu_title">트랙 옵션</string>
     <string name="track_context_play_next">다음 재생</string>
     <string name="track_context_add_to_queue">대기열에 추가</string>
+    <string name="track_context_start_mood_radio">무드 라디오 시작</string>
     <string name="track_context_remove_from_queue">대기열에서 제거</string>
     <string name="track_context_track_info">트랙 정보</string>
     <string name="track_context_find_lyrics">가사 찾기</string>

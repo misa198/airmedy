@@ -27,6 +27,7 @@
     <string name="insight_total_albums">专辑</string>
     <string name="insight_total_artists">艺术家</string>
     <string name="insight_total_playlists">播放列表</string>
+    <string name="sync_library_analysis">媒体库分析</string>
     <string name="insight_total_time">总时长</string>
     <string name="insight_streak">连续听歌</string>
     <string name="insight_average_session">平均播放会话</string>
@@ -263,6 +264,7 @@
     <string name="track_context_menu_title">曲目选项</string>
     <string name="track_context_play_next">下一首播放</string>
     <string name="track_context_add_to_queue">添加到队列</string>
+    <string name="track_context_start_mood_radio">开始心情电台</string>
     <string name="track_context_remove_from_queue">从队列中移除</string>
     <string name="track_context_track_info">曲目信息</string>
     <string name="track_context_find_lyrics">查找歌词</string>

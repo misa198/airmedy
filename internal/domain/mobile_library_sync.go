@@ -30,15 +30,18 @@ type MobileLibrarySyncAsset struct {
 // MobileLibrarySyncManifest is an immutable snapshot. Track.Path is always
 // blank in this wire object: desktop source paths must never leave the host.
 type MobileLibrarySyncManifest struct {
-	Version   int                       `json:"version"`
-	PlanID    string                    `json:"plan_id"`
-	Revision  string                    `json:"revision"`
-	Scope     MobileLibrarySyncScope    `json:"scope"`
-	Tracks    []*TrackDTO               `json:"tracks"`
-	Playlists []*MobileSyncPlaylist     `json:"playlists"`
-	Lyrics    map[string]*Lyric         `json:"lyrics"`
-	Analysis  map[string]*TrackFeatures `json:"analysis"`
-	Assets    []MobileLibrarySyncAsset  `json:"assets"`
+	Version  int    `json:"version"`
+	PlanID   string `json:"plan_id"`
+	Revision string `json:"revision"`
+	// LibraryAnalysisEnabled is snapshotted with the library. Mobile must not
+	// infer availability from stale analysis documents.
+	LibraryAnalysisEnabled bool                      `json:"library_analysis_enabled"`
+	Scope                  MobileLibrarySyncScope    `json:"scope"`
+	Tracks                 []*TrackDTO               `json:"tracks"`
+	Playlists              []*MobileSyncPlaylist     `json:"playlists"`
+	Lyrics                 map[string]*Lyric         `json:"lyrics"`
+	Analysis               map[string]*TrackFeatures `json:"analysis"`
+	Assets                 []MobileLibrarySyncAsset  `json:"assets"`
 }
 
 // MobileSyncPlaylist keeps the source playlist data plus only the track IDs

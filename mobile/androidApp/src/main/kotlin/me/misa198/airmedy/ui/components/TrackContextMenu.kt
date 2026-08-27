@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -54,7 +55,15 @@ data class TrackContextMenuActions(
     val goToAlbum: Boolean = true,
     val goToArtists: Boolean = true,
     val removeFromPlaylist: Boolean = false,
+    val moodRadio: Boolean = false,
 )
+
+data class MoodRadioMenuActions(
+    val eligibleTrackIds: Set<String> = emptySet(),
+    val onStart: (String) -> Unit = {},
+)
+
+val LocalMoodRadioMenuActions = staticCompositionLocalOf { MoodRadioMenuActions() }
 
 data class TrackContextArtist(val id: String, val name: String)
 
@@ -115,6 +124,7 @@ fun TrackContextMenu(
     onRemoveFromQueue: (LibraryTrack) -> Unit = {},
     onPlayNext: (LibraryTrack) -> Unit = {},
     onAddToQueue: (LibraryTrack) -> Unit = {},
+    onStartMoodRadio: (LibraryTrack) -> Unit = {},
     onFavoriteChange: (LibraryTrack, Boolean) -> Unit = { _, _ -> },
     onRemoveFromPlaylist: (LibraryTrack) -> Unit = {},
     onGoToAlbum: (LibraryTrack) -> Unit = {},
@@ -136,6 +146,8 @@ fun TrackContextMenu(
         trackContextQueueAvailability(track.id, playbackQueue)
     }
     val favorite = track.isFavorite()
+    val moodRadio = LocalMoodRadioMenuActions.current
+    val showMoodRadio = actions.moodRadio || track.id in moodRadio.eligibleTrackIds
     val dismissAll = {
         detailSheet = null
         onDismiss()
@@ -176,7 +188,10 @@ fun TrackContextMenu(
             if (showAddToQueue) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_add_to_queue), MaterialSymbols.AddToQueue) { closeAfter { onAddToQueue(track) } })
             if (actions.trackInfo) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_track_info), MaterialSymbols.Info) { requestBottomSheet(TrackContextBottomSheetRequest.Info(track)) })
             if (actions.findLyrics) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_find_lyrics), MaterialSymbols.Search) { requestBottomSheet(TrackContextBottomSheetRequest.FindLyrics(track)) })
-            if (showPlayNext || showAddToQueue || actions.trackInfo || actions.findLyrics) add(ContextActionMenuEntry.Divider)
+            if (showMoodRadio && (showPlayNext || showAddToQueue || actions.trackInfo || actions.findLyrics)) add(ContextActionMenuEntry.Divider)
+            if (showMoodRadio) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_start_mood_radio), MaterialSymbols.Sensors) { closeAfter { if (actions.moodRadio) onStartMoodRadio(track) else moodRadio.onStart(track.id) } })
+            if (showMoodRadio && (actions.favorite || actions.addToPlaylist || hasNavigationActions || actions.removeFromPlaylist)) add(ContextActionMenuEntry.Divider)
+            if (!showMoodRadio && (showPlayNext || showAddToQueue || actions.trackInfo || actions.findLyrics)) add(ContextActionMenuEntry.Divider)
             if (actions.favorite) add(ContextActionMenuEntry.Action(stringResource(if (favorite) R.string.track_context_remove_from_favorites else R.string.track_context_add_to_favorites), if (favorite) MaterialSymbols.HeartMinus else MaterialSymbols.HeartPlus) { closeAfter { if (!favorite) hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm); onFavoriteChange(track, !favorite) } })
             if (actions.addToPlaylist) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_add_to_playlist), MaterialSymbols.PlaylistAdd) { requestBottomSheet(TrackContextBottomSheetRequest.Playlist(listOf(track.id))) })
             if ((actions.favorite || actions.addToPlaylist) && (hasNavigationActions || actions.removeFromPlaylist)) {

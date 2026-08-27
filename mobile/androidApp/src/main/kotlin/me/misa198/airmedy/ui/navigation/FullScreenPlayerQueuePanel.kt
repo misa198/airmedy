@@ -77,6 +77,7 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 @Composable
 internal fun FullScreenQueuePanel(
     queue: PlaybackQueueSnapshot,
+    moodRadioActive: Boolean = false,
     tracks: List<LibraryTrack>,
     currentTrackId: String,
     isPlaying: Boolean,
@@ -139,13 +140,31 @@ internal fun FullScreenQueuePanel(
                 text = stringResource(R.string.player_queue),
                 color = colors.onPrimary,
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f),
             )
-            PlayerModeButton(MaterialSymbols.Shuffle, stringResource(if (queue.shuffle) R.string.player_shuffle_on else R.string.player_shuffle), queue.shuffle) {
+            if (moodRadioActive) {
+                Spacer(Modifier.width(6.dp))
+                MaterialSymbol(
+                    MaterialSymbols.Sensors,
+                    contentDescription = null,
+                    tint = colors.onPrimary,
+                    size = 18.dp,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+            Spacer(Modifier.weight(1f))
+            PlayerModeButton(
+                MaterialSymbols.Shuffle,
+                stringResource(if (queue.shuffle) R.string.player_shuffle_on else R.string.player_shuffle),
+                queue.shuffle
+            ) {
                 onShuffleChange(!queue.shuffle)
             }
             Spacer(Modifier.width(8.dp))
-            PlayerModeButton(if (queue.repeatMode == RepeatMode.One) MaterialSymbols.RepeatOne else MaterialSymbols.Repeat, repeatLabel, queue.repeatMode != RepeatMode.Off) {
+            PlayerModeButton(
+                if (queue.repeatMode == RepeatMode.One) MaterialSymbols.RepeatOne else MaterialSymbols.Repeat,
+                repeatLabel,
+                queue.repeatMode != RepeatMode.Off
+            ) {
                 onRepeatModeChange(queue.repeatMode.next())
             }
         }
@@ -165,7 +184,12 @@ internal fun FullScreenQueuePanel(
                             dragHandleModifier = queueDragHandleModifier(
                                 haptics,
                                 onReorderDragStateChange,
-                                onReorder = { commitQueueReorder(latestOrderedIds, latestOnReorder) },
+                                onReorder = {
+                                    commitQueueReorder(
+                                        latestOrderedIds,
+                                        latestOnReorder
+                                    )
+                                },
                             ),
                             onClick = {
                                 onTrackSelected(trackId)
@@ -181,7 +205,12 @@ internal fun FullScreenQueuePanel(
                             playbackQueue = queue,
                             onRemoveFromQueue = { onTrackRemoved(it.id) },
                             onPlayNext = { onTrackPlayNext(it.id) },
-                            onFavoriteChange = { contextTrack, favorite -> onFavoriteChange(contextTrack.id, favorite) },
+                            onFavoriteChange = { contextTrack, favorite ->
+                                onFavoriteChange(
+                                    contextTrack.id,
+                                    favorite
+                                )
+                            },
                             onGoToAlbum = { onTrackGoToAlbum(it.albumId) },
                             onGoToArtist = { artist: TrackContextArtist -> onTrackGoToArtist(artist.id) },
                             onBottomSheetRequested = { request ->
@@ -199,7 +228,12 @@ internal fun FullScreenQueuePanel(
                                 dragHandleModifier = queueDragHandleModifier(
                                     haptics,
                                     onReorderDragStateChange,
-                                    onReorder = { commitQueueReorder(latestOrderedIds, latestOnReorder) },
+                                    onReorder = {
+                                        commitQueueReorder(
+                                            latestOrderedIds,
+                                            latestOnReorder
+                                        )
+                                    },
                                 ),
                                 onClick = {
                                     onTrackSelected(trackId)
@@ -245,10 +279,37 @@ internal fun PlayerModeButton(symbol: String, label: String, active: Boolean, on
         animationSpec = tween(220, easing = FastOutSlowInEasing),
         label = "queue-mode-background",
     )
-    val iconColor by animateColorAsState(if (active) colors.playerBackdrop.copy(alpha = 0.72f) else colors.onPrimary, tween(220, easing = FastOutSlowInEasing), label = "queue-mode-icon")
-    Box(Modifier.width(72.dp).height(48.dp).semantics { contentDescription = label; selected = active }.clickable(onClick = onClick, role = Role.Button, interactionSource = remember { MutableInteractionSource() }, indication = null), contentAlignment = Alignment.Center) {
-        Box(Modifier.width(72.dp).height(36.dp).clip(CircleShape).background(backgroundColor).border(1.dp, colors.borderGlass, CircleShape), contentAlignment = Alignment.Center) {
-            MaterialSymbol(symbol = symbol, contentDescription = null, tint = iconColor, size = 22.dp)
+    val iconColor by animateColorAsState(
+        if (active) colors.playerBackdrop.copy(alpha = 0.72f) else colors.onPrimary,
+        tween(220, easing = FastOutSlowInEasing),
+        label = "queue-mode-icon"
+    )
+    Box(
+        Modifier
+            .width(72.dp)
+            .height(48.dp)
+            .semantics { contentDescription = label; selected = active }
+            .clickable(
+                onClick = onClick,
+                role = Role.Button,
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ), contentAlignment = Alignment.Center
+    ) {
+        Box(
+            Modifier
+                .width(72.dp)
+                .height(36.dp)
+                .clip(CircleShape)
+                .background(backgroundColor)
+                .border(1.dp, colors.borderGlass, CircleShape), contentAlignment = Alignment.Center
+        ) {
+            MaterialSymbol(
+                symbol = symbol,
+                contentDescription = null,
+                tint = iconColor,
+                size = 22.dp
+            )
         }
     }
 }
@@ -286,7 +347,8 @@ private fun FullScreenQueueTrackRow(
         label = "queue-row-hover-background",
     )
     Box(
-        modifier.fillMaxWidth()
+        modifier
+            .fillMaxWidth()
             .height(56.dp)
             .then(
                 if (isDragged) {
@@ -313,7 +375,12 @@ private fun FullScreenQueueTrackRow(
                 detectTapGestures(
                     onTap = { latestOnClick.value() },
                     onLongPress = { position ->
-                        if (shouldOpenQueueTrackContextMenu(position.x, size.width, dragHandleWidthPx)) {
+                        if (shouldOpenQueueTrackContextMenu(
+                                position.x,
+                                size.width,
+                                dragHandleWidthPx
+                            )
+                        ) {
                             latestOnLongClick.value?.invoke()
                         }
                     },
@@ -331,18 +398,56 @@ private fun FullScreenQueueTrackRow(
                 .semantics { testTag = "$QueuePanelRowContentTestTag-$trackId" },
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)).background(colors.glassElevated).border(1.dp, colors.borderGlass, RoundedCornerShape(8.dp)), contentAlignment = Alignment.Center) {
-                if (artwork != null) Image(artwork, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                else MaterialSymbol(MaterialSymbols.MusicNote, tint = colors.textMuted, size = 20.dp)
+            Box(
+                Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(colors.glassElevated)
+                    .border(1.dp, colors.borderGlass, RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (artwork != null) Image(
+                    artwork,
+                    null,
+                    Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+                else MaterialSymbol(
+                    MaterialSymbols.MusicNote,
+                    tint = colors.textMuted,
+                    size = 20.dp
+                )
                 if (isCurrent) {
-                    Box(Modifier.fillMaxSize().background(colors.playerBackdrop.copy(alpha = 0.64f)), contentAlignment = Alignment.Center) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(colors.playerBackdrop.copy(alpha = 0.64f)),
+                        contentAlignment = Alignment.Center
+                    ) {
                         AirmedyPlayingIndicator(isPlaying = isPlaying)
                     }
                 }
             }
-            Column(Modifier.weight(1f).padding(horizontal = 12.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center) {
-                Text(text = title, color = colors.onPrimary, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(text = artist, color = colors.foregroundSubtle, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Column(
+                Modifier
+                    .weight(1f)
+                    .padding(horizontal = 12.dp),
+                verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
+            ) {
+                Text(
+                    text = title,
+                    color = colors.onPrimary,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = artist,
+                    color = colors.foregroundSubtle,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
             Box(
                 Modifier

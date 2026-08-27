@@ -27,6 +27,7 @@
     <string name="insight_total_albums">Album</string>
     <string name="insight_total_artists">Artisti</string>
     <string name="insight_total_playlists">Playlist</string>
+    <string name="sync_library_analysis">Analisi della libreria</string>
     <string name="insight_total_time">Tempo totale</string>
     <string name="insight_streak">Serie</string>
     <string name="insight_average_session">Sessione media</string>
@@ -264,6 +265,7 @@
     <string name="track_context_menu_title">Opzioni brano</string>
     <string name="track_context_play_next">Riproduci come successivo</string>
     <string name="track_context_add_to_queue">Aggiungi alla coda</string>
+    <string name="track_context_start_mood_radio">Avvia Radio Mood</string>
     <string name="track_context_remove_from_queue">Rimuovi dalla coda</string>
     <string name="track_context_track_info">Informazioni brano</string>
     <string name="track_context_find_lyrics">Cerca testo</string>

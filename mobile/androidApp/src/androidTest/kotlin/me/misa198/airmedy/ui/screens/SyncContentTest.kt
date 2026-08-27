@@ -10,6 +10,7 @@ import me.misa198.airmedy.pairing.PairedDesktop
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import me.misa198.airmedy.sync.AndroidSyncState
+import me.misa198.airmedy.sync.LibraryAnalysisProgress
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -82,6 +83,29 @@ class SyncContentTest {
         }
 
         composeTestRule.onNodeWithText("45%").assertIsDisplayed()
+    }
+
+    @Test
+    fun syncShowsActiveLibraryAnalysisPercentage() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                SyncContent(syncUiState = SyncUiState(libraryAnalysis = LibraryAnalysisProgress(2, 3), libraryAnalysisEnabled = true), onUnpair = {})
+            }
+        }
+
+        composeTestRule.onNodeWithText("Library analysis").assertIsDisplayed()
+        composeTestRule.onNodeWithText("66%").assertIsDisplayed()
+    }
+
+    @Test
+    fun syncHidesLibraryAnalysisWhenDisabled() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                SyncContent(syncUiState = SyncUiState(libraryAnalysis = LibraryAnalysisProgress(2, 3)), onUnpair = {})
+            }
+        }
+
+        composeTestRule.onNodeWithText("Library analysis").assertDoesNotExist()
     }
 
     @Test

@@ -50,6 +50,9 @@ import me.misa198.airmedy.lastfm.AndroidLastFmRuntime
 import me.misa198.airmedy.lastfm.LastFmService
 import me.misa198.airmedy.lastfm.LastFmTrack
 import me.misa198.airmedy.pairing.PairingPreferences
+import me.misa198.airmedy.mood.MoodRadioBatchSize
+import me.misa198.airmedy.mood.MoodRadioRefillThreshold
+import me.misa198.airmedy.mood.selectMoodRadio
 
 /** Owns Android transport; queue semantics are delegated to sharedLogic. */
 class PlaybackService : Service() {
@@ -75,6 +78,9 @@ class PlaybackService : Service() {
     private var normalizationSettings = NormalizationSettings()
     private var equalizerSettings = EqualizerSettings()
     private var preferencesJob: Job? = null
+    private var moodRadioJob: Job? = null
+    private var moodRadioSeedId: String? = null
+    private var moodRadioLastRefillAttempt: Pair<String?, Int>? = null
     private lateinit var audioManager: AudioManager
     private lateinit var mediaSession: MediaSession
     private lateinit var focusRequest: AudioFocusRequest
@@ -101,6 +107,11 @@ class PlaybackService : Service() {
         playbackPreferences = PlaybackPreferences(applicationContext)
         equalizerPreferences = EqualizerPreferences(applicationContext)
         normalizationPreferences = NormalizationPreferences(applicationContext)
+        moodRadioJob = scope.launch {
+            AndroidSyncRuntime.syncStore().libraryAnalysisEnabled.collectLatest { enabled ->
+                if (!enabled) commandMutex.withLock { stopMoodRadio() }
+            }
+        }
         preferencesJob = scope.launch {
             playbackPreferences.settings.collectLatest { settings ->
                 commandMutex.withLock {
@@ -199,6 +210,7 @@ class PlaybackService : Service() {
                         handleTransition(queue.next(), PlaybackEndReason.COMPLETED)
                         publishQueue()
                     }
+                    if (refillMoodRadioIfNeeded()) publishQueue()
                     // A crossfade occupies both native source slots. Once its
                     // callback retires the outgoing item, populate that slot
                     // with the queue's new immediate successor.
@@ -237,6 +249,7 @@ class PlaybackService : Service() {
                 action = intent.action!!,
                 trackIds = intent.getStringArrayExtra(TrackIdsExtra).orEmpty().toList(),
             )
+            ActionStartMoodRadio -> dispatch(ActionStartMoodRadio, trackIds = listOfNotNull(intent.getStringExtra(TrackIdExtra)))
             ActionSelect -> dispatch(ActionSelect, trackIds = listOfNotNull(intent.getStringExtra(TrackIdExtra)))
             ActionRemove -> dispatch(ActionRemove, trackIds = listOfNotNull(intent.getStringExtra(TrackIdExtra)))
             null -> Unit
@@ -257,6 +270,7 @@ class PlaybackService : Service() {
         runBlocking { sessionStore.save(currentSession()) }
         decoder?.close()
         preferencesJob?.cancel()
+        moodRadioJob?.cancel()
         unregisterReceiver(noisyAudioReceiver)
         AndroidPlaybackSession.clear()
         mediaSession.release()
@@ -279,6 +293,7 @@ class PlaybackService : Service() {
         commandMutex.withLock {
             consumeNativeTransition()
             Log.d(PlaybackLogTag, "Handling action=$action queueSize=${queue.snapshot().activeTrackIds.size}")
+            if (action in MoodRadioStoppingActions) stopMoodRadio()
             when (action) {
                 ActionPlay -> handleTransition(runCatching { queue.play(PlaybackRequest(trackIds, startIndex)) }
                     .getOrElse { QueueTransition.Stop }, PlaybackEndReason.SKIPPED)
@@ -298,6 +313,7 @@ class PlaybackService : Service() {
                 ActionSetRepeat -> repeat?.let(queue::setRepeatMode)
                 ActionPlayNext -> queue.playNext(trackIds)
                 ActionAppend -> queue.append(trackIds)
+                ActionStartMoodRadio -> trackIds.firstOrNull()?.let { startMoodRadio(it) }
                 ActionSelect -> trackIds.firstOrNull()?.let { handleTransition(queue.select(it), PlaybackEndReason.SKIPPED) }
                 ActionRemove -> trackIds.firstOrNull()?.let { handleTransition(queue.removeFromQueue(it), PlaybackEndReason.SKIPPED) }
                 ActionReorder -> queue.reorderQueue(trackIds)
@@ -314,6 +330,44 @@ class PlaybackService : Service() {
             publishQueue()
         }
     }
+
+    private suspend fun startMoodRadio(seedId: String) {
+        val store = AndroidSyncRuntime.syncStore()
+        if (!store.libraryAnalysisEnabled.first()) {
+            Log.d(PlaybackLogTag, "Mood Radio ignored: library analysis is disabled")
+            return
+        }
+        val tracks = store.moodRadioTracks()
+        val selected = selectMoodRadio(seedId, tracks, emptySet(), MoodRadioBatchSize)
+        if (selected.isEmpty()) {
+            Log.d(PlaybackLogTag, "Mood Radio has no candidates seed=$seedId analyzed=${tracks.count { it.energy != null && it.danceability != null && it.brightness != null && it.tempo != null }}")
+            return
+        }
+        moodRadioSeedId = seedId
+        moodRadioLastRefillAttempt = null
+        moodRadioActive.value = true
+        if (queue.snapshot().currentTrackId == seedId) queue.replaceKeepingCurrent(listOf(seedId) + selected.map { it.id })
+        else handleTransition(queue.play(PlaybackRequest(listOf(seedId) + selected.map { it.id })), PlaybackEndReason.SKIPPED)
+        Log.d(PlaybackLogTag, "Mood Radio started seed=$seedId added=${selected.size} queueSize=${queue.snapshot().activeTrackIds.size}")
+    }
+
+    private suspend fun refillMoodRadioIfNeeded(): Boolean {
+        val seedId = moodRadioSeedId ?: return false
+        val snapshot = queue.snapshot()
+        if (snapshot.activeTrackIds.size - snapshot.currentIndex - 1 >= MoodRadioRefillThreshold) return false
+        val attempt = snapshot.currentTrackId to snapshot.activeTrackIds.size
+        if (attempt == moodRadioLastRefillAttempt) return false
+        moodRadioLastRefillAttempt = attempt
+        val store = AndroidSyncRuntime.syncStore()
+        if (!store.libraryAnalysisEnabled.first()) return false
+        val selected = selectMoodRadio(seedId, store.moodRadioTracks(), snapshot.activeTrackIds.toSet(), MoodRadioBatchSize)
+        if (selected.isEmpty()) return false
+        queue.append(selected.map { it.id })
+        Log.d(PlaybackLogTag, "Mood Radio refilled seed=$seedId added=${selected.size} queueSize=${queue.snapshot().activeTrackIds.size}")
+        return true
+    }
+
+    private fun stopMoodRadio() { moodRadioSeedId = null; moodRadioLastRefillAttempt = null; moodRadioActive.value = false }
 
     private suspend fun handleTransition(
         transition: QueueTransition,
@@ -864,6 +918,7 @@ class PlaybackService : Service() {
         internal const val ActionSelect = "me.misa198.airmedy.player.SELECT"
         internal const val ActionRemove = "me.misa198.airmedy.player.REMOVE"
         internal const val ActionReorder = "me.misa198.airmedy.player.REORDER"
+        internal const val ActionStartMoodRadio = "me.misa198.airmedy.player.START_MOOD_RADIO"
         internal const val TrackIdsExtra = "track_ids"
         internal const val TrackIdExtra = "track_id"
         internal const val StartIndexExtra = "start_index"
@@ -876,7 +931,10 @@ class PlaybackService : Service() {
         private const val NowPlayingArtworkSizePx = 512
         private const val ListeningRetentionMs = 180L * 24 * 60 * 60 * 1_000
         private val PreloadResyncActions = setOf(
-            ActionSetShuffle, ActionSetRepeat, ActionPlayNext, ActionRemove, ActionReorder,
+            ActionSetShuffle, ActionSetRepeat, ActionPlayNext, ActionRemove, ActionReorder, ActionStartMoodRadio,
+        )
+        private val MoodRadioStoppingActions = setOf(
+            ActionPlay, ActionShuffle, ActionStop, ActionClearQueue, ActionPlayNext, ActionAppend, ActionRemove, ActionReorder,
         )
         private val nowPlayingArtworkCache = LruCache<String, Bitmap>(20)
         internal val state = MutableStateFlow<PlaybackState>(PlaybackState.Idle)
@@ -884,6 +942,7 @@ class PlaybackService : Service() {
         internal val crossfadeSeconds = MutableStateFlow(CrossfadeDisabledSeconds)
         internal val blendArtworkDuringCrossfade = MutableStateFlow(true)
         internal val artworkCrossfade = MutableStateFlow<ArtworkCrossfadeTransition?>(null)
+        internal val moodRadioActive = MutableStateFlow(false)
         private var nextArtworkCrossfadeId = 0L
         internal const val ActionSetCrossfade = "me.misa198.airmedy.player.SET_CROSSFADE"
         internal const val CrossfadeSecondsExtra = "crossfade_seconds"

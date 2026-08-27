@@ -61,6 +61,11 @@ Settings is visible; a discovered route is transient and never replaces the
 QR-verified saved endpoint. See the repository pairing catalog for the wire
 contract.
 
+Each activated library snapshot also carries `library_analysis_enabled`. It is
+the Android source of truth for Mood Radio: existing analysis documents never
+enable radio by themselves, and changing the desktop setting takes effect on
+the next completed sync.
+
 ## Prerequisites
 
 - JDK 11, as configured by the Gradle modules.

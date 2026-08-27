@@ -27,6 +27,7 @@
     <string name="insight_total_albums">อัลบั้ม</string>
     <string name="insight_total_artists">ศิลปิน</string>
     <string name="insight_total_playlists">เพลย์ลิสต์</string>
+    <string name="sync_library_analysis">การวิเคราะห์คลังเพลง</string>
     <string name="insight_total_time">เวลารวม</string>
     <string name="insight_streak">สถิติต่อเนื่อง</string>
     <string name="insight_average_session">เซสชันเฉลี่ย</string>
@@ -263,6 +264,7 @@
     <string name="track_context_menu_title">ตัวเลือกแทร็ก</string>
     <string name="track_context_play_next">เล่นเป็นเพลงถัดไป</string>
     <string name="track_context_add_to_queue">เพิ่มลงในคิว</string>
+    <string name="track_context_start_mood_radio">เริ่มมู้ดเรดิโอ</string>
     <string name="track_context_remove_from_queue">ลบออกจากคิว</string>
     <string name="track_context_track_info">ข้อมูลแทร็ก</string>
     <string name="track_context_find_lyrics">ค้นหาเนื้อเพลง</string>

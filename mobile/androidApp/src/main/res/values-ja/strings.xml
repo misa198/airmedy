@@ -27,6 +27,7 @@
     <string name="insight_total_albums">アルバム</string>
     <string name="insight_total_artists">アーティスト</string>
     <string name="insight_total_playlists">プレイリスト</string>
+    <string name="sync_library_analysis">ライブラリの解析</string>
     <string name="insight_total_time">合計時間</string>
     <string name="insight_streak">連続記録</string>
     <string name="insight_average_session">平均セッション</string>
@@ -263,6 +264,7 @@
     <string name="track_context_menu_title">トラックのオプション</string>
     <string name="track_context_play_next">次に再生</string>
     <string name="track_context_add_to_queue">キューに追加</string>
+    <string name="track_context_start_mood_radio">ムードラジオを開始</string>
     <string name="track_context_remove_from_queue">キューから削除</string>
     <string name="track_context_track_info">トラック情報</string>
     <string name="track_context_find_lyrics">歌詞を検索</string>

@@ -94,6 +94,19 @@ class PlaybackQueue(private val random: Random = Random.Default) {
         return QueueTransition.Play(active.first())
     }
 
+    /** Swaps the queue without replaying its already-loaded current track. */
+    fun replaceKeepingCurrent(trackIds: List<String>): QueueTransition {
+        val current = currentTrackId() ?: return QueueTransition.Unchanged
+        val replacement = distinct(trackIds).take(MaxPlaybackQueueSize)
+        val index = replacement.indexOf(current)
+        if (index < 0) return QueueTransition.Unchanged
+        original = replacement.toMutableList()
+        active = replacement.toMutableList()
+        shuffle = false
+        currentIndex = index
+        return QueueTransition.Unchanged
+    }
+
     fun setShuffle(enabled: Boolean): QueueTransition {
         if (enabled == shuffle) return QueueTransition.Unchanged
         val current = snapshot().currentTrackId

@@ -27,6 +27,7 @@ import me.misa198.airmedy.sync.PlaylistReconciliationClock
 import me.misa198.airmedy.sync.PlaylistReconciliationCoordinator
 import me.misa198.airmedy.sync.PlaylistReconciliationPublisher
 import me.misa198.airmedy.sync.PlaylistSyncProtocol
+import me.misa198.airmedy.sync.LibraryAnalysisProgress
 
 import android.util.Log
 
@@ -37,6 +38,8 @@ data class SyncUiState(
     val failure: PairingFailure? = null,
     val librarySync: AndroidSyncState = AndroidSyncState.Idle,
     val lastSyncedAtMillis: Long? = null,
+    val libraryAnalysis: LibraryAnalysisProgress = LibraryAnalysisProgress(),
+    val libraryAnalysisEnabled: Boolean = false,
 )
 
 class SyncViewModel(
@@ -48,6 +51,8 @@ class SyncViewModel(
     private val onBeforeUnpair: suspend () -> Unit = {},
     private val isForegroundSyncRunning: () -> Boolean = { AndroidSyncRuntime.state.value is AndroidSyncState.Running },
     lastSyncedAt: Flow<Long?> = flowOf(null),
+    libraryAnalysis: Flow<LibraryAnalysisProgress> = flowOf(LibraryAnalysisProgress()),
+    libraryAnalysisEnabled: Flow<Boolean> = flowOf(false),
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SyncUiState())
     val uiState: StateFlow<SyncUiState> = _uiState.asStateFlow()
@@ -61,6 +66,16 @@ class SyncViewModel(
         viewModelScope.launch {
             lastSyncedAt.collectLatest { timestamp ->
                 _uiState.update { it.copy(lastSyncedAtMillis = timestamp) }
+            }
+        }
+        viewModelScope.launch {
+            libraryAnalysis.collectLatest { progress ->
+                _uiState.update { it.copy(libraryAnalysis = progress) }
+            }
+        }
+        viewModelScope.launch {
+            libraryAnalysisEnabled.collectLatest { enabled ->
+                _uiState.update { it.copy(libraryAnalysisEnabled = enabled) }
             }
         }
         viewModelScope.launch {
@@ -197,11 +212,13 @@ class SyncViewModel(
         private val onPlaylistReconciliationRequest: suspend (String) -> Unit = {},
         private val onBeforeUnpair: suspend () -> Unit = {},
         private val lastSyncedAt: Flow<Long?> = flowOf(null),
+        private val libraryAnalysis: Flow<LibraryAnalysisProgress> = flowOf(LibraryAnalysisProgress()),
+        private val libraryAnalysisEnabled: Flow<Boolean> = flowOf(false),
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             check(modelClass.isAssignableFrom(SyncViewModel::class.java))
-            return SyncViewModel(pairing, mqttSession, discovery, onSyncRequest, onPlaylistReconciliationRequest, onBeforeUnpair, lastSyncedAt = lastSyncedAt) as T
+            return SyncViewModel(pairing, mqttSession, discovery, onSyncRequest, onPlaylistReconciliationRequest, onBeforeUnpair, lastSyncedAt = lastSyncedAt, libraryAnalysis = libraryAnalysis, libraryAnalysisEnabled = libraryAnalysisEnabled) as T
         }
     }
 }

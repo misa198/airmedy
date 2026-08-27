@@ -140,6 +140,8 @@ class MainActivity : ComponentActivity() {
                 AndroidSyncRuntime.clearAll()
             },
             lastSyncedAt = preferences.lastSyncedAt,
+            libraryAnalysis = AndroidSyncRuntime.syncStore().analysisProgress,
+            libraryAnalysisEnabled = AndroidSyncRuntime.syncStore().libraryAnalysisEnabled,
         )
     }
     private val tracksViewModel: LibraryTracksViewModel by viewModels {
@@ -212,6 +214,7 @@ class MainActivity : ComponentActivity() {
             val activePage = uiState.currentPage
             val activeDestination = uiState.selectedDestination
             val allTracks by AndroidSyncRuntime.syncStore().tracks.collectAsStateWithLifecycle(initialValue = emptyList())
+            val moodRadioEligibleTrackIds by AndroidSyncRuntime.syncStore().moodRadioEligibleTrackIds.collectAsStateWithLifecycle(initialValue = emptySet())
             val allPlaylists by AndroidSyncRuntime.syncStore().playlists.collectAsStateWithLifecycle(initialValue = emptyList())
             val homeUiState by if (activeDestination == AppDestination.Home && activePage == AppStackPage.Root) {
                 tracksViewModel.homeUiState.collectAsStateWithLifecycle()
@@ -265,6 +268,7 @@ class MainActivity : ComponentActivity() {
             }
             val playbackState by playbackController.state.collectAsStateWithLifecycle()
             val playbackQueue by playbackController.queue.collectAsStateWithLifecycle()
+            val moodRadioActive by playbackController.moodRadioActive.collectAsStateWithLifecycle()
             val artworkCrossfade by playbackController.artworkCrossfade.collectAsStateWithLifecycle()
             val lyricsTrackId = when (val state = playbackState) {
                 is PlaybackState.Preparing -> state.item.trackId
@@ -513,6 +517,9 @@ class MainActivity : ComponentActivity() {
                 },
                 onTrackPlayNext = playbackController::playNext,
                 onTrackAddToQueue = { trackId -> playbackController.append(listOf(trackId)) },
+                moodRadioEligibleTrackIds = moodRadioEligibleTrackIds,
+                onStartMoodRadio = playbackController::startMoodRadio,
+                moodRadioActive = moodRadioActive,
                 onSystemVolumeChange = { volume ->
                     setSystemMusicVolume(volume.coerceIn(0f, 1f))
                     systemMusicVolumeState = currentSystemMusicVolume()

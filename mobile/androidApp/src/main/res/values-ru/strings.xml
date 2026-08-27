@@ -27,6 +27,7 @@
     <string name="insight_total_albums">Альбомы</string>
     <string name="insight_total_artists">Исполнители</string>
     <string name="insight_total_playlists">Плейлисты</string>
+    <string name="sync_library_analysis">Анализ библиотеки</string>
     <string name="insight_total_time">Общее время</string>
     <string name="insight_streak">Серия</string>
     <string name="insight_average_session">Средняя сессия</string>
@@ -266,6 +267,7 @@
     <string name="track_context_menu_title">Параметры трека</string>
     <string name="track_context_play_next">Воспроизвести следующим</string>
     <string name="track_context_add_to_queue">Добавить в очередь</string>
+    <string name="track_context_start_mood_radio">Запустить Mood Radio</string>
     <string name="track_context_remove_from_queue">Удалить из очереди</string>
     <string name="track_context_track_info">Информация о треке</string>
     <string name="track_context_find_lyrics">Найти текст песни</string>

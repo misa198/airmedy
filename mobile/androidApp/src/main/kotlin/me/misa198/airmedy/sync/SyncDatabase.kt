@@ -23,6 +23,7 @@ import java.text.Normalizer
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -56,6 +57,7 @@ import me.misa198.airmedy.player.DailyPlaybackAttemptStat
 import me.misa198.airmedy.sync.ListeningSyncSnapshot
 import me.misa198.airmedy.sync.ListeningSyncStore
 import me.misa198.airmedy.lyrics.LyricsTrack
+import me.misa198.airmedy.mood.MoodRadioTrack
 
 @Entity(tableName = "sync_plans", primaryKeys = ["planId"])
 internal data class SyncPlanEntity(
@@ -356,8 +358,14 @@ internal interface SyncDao {
 
     @Query("SELECT d.documentKey, d.rawJson FROM sync_documents d INNER JOIN sync_plans p ON p.planId = d.planId WHERE p.active = 1 AND d.kind = 'analysis'")
     suspend fun activeAnalysisDocuments(): List<AnalysisDocumentRow>
+    @Query("SELECT d.documentKey, d.rawJson FROM sync_documents d INNER JOIN sync_plans p ON p.planId = d.planId WHERE p.active = 1 AND d.kind = 'analysis'")
+    fun observeActiveAnalysisDocuments(): Flow<List<AnalysisDocumentRow>>
     @Query("SELECT COUNT(*) > 0 FROM sync_documents d INNER JOIN sync_plans p ON p.planId = d.planId WHERE p.active = 1 AND d.kind = 'analysis'")
     fun observeAnalysisAvailable(): Flow<Boolean>
+    // The manifest can exceed CursorWindow. Extract the one scalar needed for
+    // Mood Radio in SQLite instead of materialising its full JSON in Room.
+    @Query("SELECT COALESCE(json_extract(manifestJson, '$.library_analysis_enabled'), 0) FROM sync_plans WHERE active = 1 LIMIT 1")
+    fun observeLibraryAnalysisEnabled(): Flow<Boolean?>
 }
 
 @Database(
@@ -497,6 +505,8 @@ data class LibraryComposer(
     val sortName: String = "",
 )
 
+data class LibraryAnalysisProgress(val analyzedTracks: Int = 0, val totalTracks: Int = 0)
+
 internal class AndroidLibrarySyncStore(
     private val database: SyncDatabase,
     private val filesDir: File,
@@ -512,6 +522,16 @@ internal class AndroidLibrarySyncStore(
     private val artworkAssets = dao.observeArtworkAssets()
         .shareIn(snapshotScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
     val analysisAvailable: Flow<Boolean> = dao.observeAnalysisAvailable()
+    private val analyzedTrackIds: Flow<Set<String>> = dao.observeActiveAnalysisDocuments()
+        .map { documents -> documents.mapTo(mutableSetOf(), AnalysisDocumentRow::documentKey) }
+        .distinctUntilChanged()
+    val libraryAnalysisEnabled: Flow<Boolean> = dao.observeLibraryAnalysisEnabled().map { it == true }.distinctUntilChanged()
+    val moodRadioEligibleTrackIds: Flow<Set<String>> = combine(libraryAnalysisEnabled, dao.observeActiveAnalysisDocuments()) { enabled, documents ->
+        if (!enabled) emptySet() else documents.mapNotNull { document ->
+            val value = runCatching { LibrarySyncProtocol.json.parseToJsonElement(document.rawJson).jsonObject }.getOrNull()
+            document.documentKey.takeIf { value != null && listOf("energy", "danceability", "brightness", "tempo").all { key -> value[key]?.jsonPrimitive?.contentOrNull?.toDoubleOrNull() != null } }
+        }.toSet()
+    }.distinctUntilChanged()
     val dailyTrackListeningStats: Flow<List<DailyTrackListeningStat>> = dao.observeDailyTrackStats().map { rows ->
         rows.map { DailyTrackListeningStat(it.sourceDeviceId, it.localDate, it.trackId, it.listenedSeconds, it.playCount) }
     }
@@ -527,6 +547,17 @@ internal class AndroidLibrarySyncStore(
         val peak = value["true_peak"]?.jsonPrimitive?.contentOrNull?.toFloatOrNull() ?: return@mapNotNull null
         document.documentKey to TrackAnalysis(lufs, peak)
     }.toMap()
+    suspend fun moodRadioTracks(): List<MoodRadioTrack> {
+        val features = dao.activeAnalysisDocuments().associate { document ->
+            val value = runCatching { LibrarySyncProtocol.json.parseToJsonElement(document.rawJson).jsonObject }.getOrDefault(JsonObject(emptyMap()))
+            document.documentKey to listOf("energy", "danceability", "brightness", "tempo").map { key -> value[key]?.jsonPrimitive?.contentOrNull?.toDoubleOrNull() }
+        }
+        return tracks.first().map { track ->
+            val mood = features[track.id].orEmpty()
+            val artist = (track.metadataObject()?.get("artists") as? JsonArray)?.firstOrNull() as? JsonObject
+            MoodRadioTrack(track.id, track.albumId, artist?.string("id").orEmpty(), mood.getOrNull(0), mood.getOrNull(1), mood.getOrNull(2), mood.getOrNull(3))
+        }
+    }
     val tracks: Flow<List<LibraryTrack>> = combine(activeTrackRows, projectedPlaylistMutations) { rows, pending ->
         val overrides = pending.mapNotNull { row ->
             runCatching { LibrarySyncProtocol.json.decodeFromString(PlaylistMutationPayload.serializer(), row.payloadJson) }
@@ -559,6 +590,9 @@ internal class AndroidLibrarySyncStore(
             )
         }
     }.shareIn(snapshotScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
+    val analysisProgress: Flow<LibraryAnalysisProgress> = combine(tracks, analyzedTrackIds) { tracks, analyzedIds ->
+        LibraryAnalysisProgress(tracks.count { it.id in analyzedIds }, tracks.size)
+    }.distinctUntilChanged()
     val artists: Flow<List<LibraryArtist>> = combine(
         activeTrackRows,
         artworkAssets,
