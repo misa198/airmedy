@@ -15,6 +15,7 @@
     "loading": "로딩 중...",
     "error": "오류",
     "cancel": "취소",
+    "ok": "OK",
     "close": "닫기",
     "change": "변경",
     "save": "저장",
@@ -309,7 +310,12 @@
       "requires_enable": "음량 정규화를 사용하려면 라이브러리 분석을 활성화하세요",
       "worker_count": "동시 작업자 수",
       "worker_count_desc": "작업자 수를 늘리면 분석 속도는 빨라지지만 CPU 사용량이 늘고 컴퓨터가 더 뜨거워질 수 있습니다.",
-      "worker_count_value": "작업자 {count}개"
+      "worker_count_value": "작업자 {count}개",
+      "progress": "Analysis progress",
+      "analyzed": "Analyzed {done}/{total} tracks ({percent}%)",
+      "retry_failed": "Retry failed tracks",
+      "view_failed": "View failed tracks",
+      "failed_tracks": "Failed analysis tracks"
     },
     "normalization": {
       "title": "음량 정규화",

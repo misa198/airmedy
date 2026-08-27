@@ -374,6 +374,8 @@ running; replaying a current track costs only component-version lookups.
 
 ```go
 SetLibraryAnalysisEnabled(enabled bool) error
+ListFailedTracks() ([]domain.FailedAnalysisTrack, error)
+RetryFailedTracks() error
 GetWorkerCountInfo() WorkerCountInfo
 SetWorkerCount(count int) error
 ```
@@ -387,9 +389,9 @@ gain must be cleared immediately.
 
 | Event | Payload | When |
 | ----- | ------- | ---- |
-| `analysis:progress` | `{ done, total, state, libraryDone, libraryTotal }`, `state ∈ analyzing\|paused\|done` | On enable/disable, throttle change, and after each track finishes |
+| `analysis:progress` | `{ done, total, state, libraryDone, libraryTotal, failed }`, `state ∈ analyzing\|paused\|done` | On enable/disable, throttle change, retry, and after each track finishes |
 
-`done`/`total` track only the tracks pending in the current pool run; `libraryDone`/`libraryTotal` report library-wide analysis readiness (analyzed vs. all tracks). The library total is served from a short-TTL cache (`libraryTotalCached`, ~3s) so per-track `emitProgress` during a bulk scan doesn't issue a full-table `COUNT(*)` per row.
+`done`/`total` track only the tracks pending in the current pool run. `libraryDone` is the number of library tracks whose required components all completed successfully; `failed` tracks remain in `libraryTotal` but are excluded from `libraryDone`. Retry atomically restores every failed component to pending, enqueues those tracks on the enabled pool, and immediately emits progress. The library total is served from a short-TTL cache (`libraryTotalCached`, ~3s) so per-track `emitProgress` during a bulk scan doesn't issue a full-table `COUNT(*)` per row.
 
 ## Frontend
 

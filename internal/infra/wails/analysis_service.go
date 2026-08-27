@@ -35,6 +35,14 @@ func (s *AnalysisService) GetProgress() domain.AnalysisProgress {
 	return s.service.GetProgress()
 }
 
+func (s *AnalysisService) ListFailedTracks() ([]domain.FailedAnalysisTrack, error) {
+	return s.service.ListFailedTracks(context.Background())
+}
+
+func (s *AnalysisService) RetryFailedTracks() error {
+	return s.service.RetryFailedTracks(context.Background())
+}
+
 // WorkerCountInfo is the current + max worker count, for the settings slider.
 type WorkerCountInfo struct {
 	Count int `json:"count"`

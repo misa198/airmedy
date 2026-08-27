@@ -15,6 +15,7 @@
     "loading": "Đang tải...",
     "error": "Lỗi",
     "cancel": "Hủy",
+    "ok": "OK",
     "close": "Đóng",
     "change": "Thay đổi",
     "save": "Lưu",
@@ -309,7 +310,12 @@
       "requires_enable": "Bật Phân tích thư viện để dùng Chuẩn hóa âm lượng",
       "worker_count": "Số luồng xử lý đồng thời",
       "worker_count_desc": "Nhiều luồng xử lý hơn giúp tăng tốc quá trình phân tích, nhưng dùng nhiều CPU hơn và có thể làm máy nóng hơn.",
-      "worker_count_value": "{count} luồng"
+      "worker_count_value": "{count} luồng",
+      "progress": "Analysis progress",
+      "analyzed": "Analyzed {done}/{total} tracks ({percent}%)",
+      "retry_failed": "Retry failed tracks",
+      "view_failed": "View failed tracks",
+      "failed_tracks": "Failed analysis tracks"
     },
     "normalization": {
       "title": "Chuẩn hóa âm lượng",

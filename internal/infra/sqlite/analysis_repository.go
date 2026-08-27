@@ -318,6 +318,55 @@ func (r *analysisRepository) CountPendingComponentTracks(ctx context.Context, re
 	return count, nil
 }
 
+func (r *analysisRepository) CountFailedComponentTracks(ctx context.Context, required map[domain.AnalysisComponents]int) (int, error) {
+	var count int
+	if err := r.db.Ext(ctx).GetContext(ctx, &count, `SELECT COUNT(DISTINCT track_id) FROM track_analysis_components WHERE status = 'failed'`); err != nil {
+		return 0, fmt.Errorf("failed to count failed component analysis: %w", err)
+	}
+	return count, nil
+}
+
+func (r *analysisRepository) ListFailedComponentTracks(ctx context.Context, required map[domain.AnalysisComponents]int) ([]domain.FailedAnalysisTrack, error) {
+	type row struct {
+		domain.FailedAnalysisTrack
+		Components string `db:"components"`
+	}
+	var rows []row
+	if err := r.db.Ext(ctx).SelectContext(ctx, &rows, `SELECT t.id, t.title, COALESCE(GROUP_CONCAT(DISTINCT a.name), '') AS artists, t.path, t.artwork_key AS artwork_key, GROUP_CONCAT(DISTINCT c.component) AS components FROM tracks t JOIN track_analysis_components c ON c.track_id = t.id AND c.status = 'failed' LEFT JOIN track_artists ta ON ta.track_id = t.id LEFT JOIN artists a ON a.id = ta.artist_id GROUP BY t.id ORDER BY t.title, t.id`); err != nil {
+		return nil, fmt.Errorf("failed to list failed component analysis: %w", err)
+	}
+	out := make([]domain.FailedAnalysisTrack, len(rows))
+	for i, row := range rows {
+		out[i] = row.FailedAnalysisTrack
+		out[i].FailedComponents = strings.Split(row.Components, ",")
+	}
+	return out, nil
+}
+
+func (r *analysisRepository) ResetFailedComponents(ctx context.Context, required map[domain.AnalysisComponents]int) ([]string, error) {
+	var ids []string
+	err := r.db.RunTx(ctx, func(ctx context.Context) error {
+		ex := r.db.Ext(ctx)
+		if err := ex.SelectContext(ctx, &ids, `SELECT DISTINCT track_id FROM track_analysis_components WHERE status = 'failed'`); err != nil {
+			return fmt.Errorf("failed to list failed component analysis for retry: %w", err)
+		}
+		if len(ids) == 0 {
+			return nil
+		}
+		if _, err := ex.ExecContext(ctx, `UPDATE tracks SET analysis_pending_mask = analysis_pending_mask | 1 WHERE id IN (SELECT track_id FROM track_analysis_components WHERE status = 'failed' AND component = 'ffmpeg')`); err != nil {
+			return fmt.Errorf("failed to restore pending analysis components: %w", err)
+		}
+		if _, err := ex.ExecContext(ctx, `UPDATE tracks SET analysis_pending_mask = analysis_pending_mask | 2 WHERE id IN (SELECT track_id FROM track_analysis_components WHERE status = 'failed' AND component = 'aubio')`); err != nil {
+			return fmt.Errorf("failed to restore pending analysis components: %w", err)
+		}
+		if _, err := ex.ExecContext(ctx, `DELETE FROM track_analysis_components WHERE status = 'failed'`); err != nil {
+			return fmt.Errorf("failed to clear failed component analysis for retry: %w", err)
+		}
+		return nil
+	})
+	return ids, err
+}
+
 func (r *analysisRepository) UpsertComponentFeatures(ctx context.Context, f *domain.TrackFeatures, components domain.AnalysisComponents, versions map[domain.AnalysisComponents]int) error {
 	return r.db.RunTx(ctx, func(ctx context.Context) error {
 		ex := r.db.Ext(ctx)

@@ -3,8 +3,8 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import * as LibraryService from '../../../bindings/airmedy/internal/infra/wails/libraryservice'
-import { GetProgress } from '../../../bindings/airmedy/internal/infra/wails/analysisservice'
-import { RotateCcw, Plus, Trash2, Folder, Loader2, DatabaseZap, Info, Tags, RefreshCw, Gauge } from '@lucide/vue'
+import { GetProgress, ListFailedTracks, RetryFailedTracks } from '../../../bindings/airmedy/internal/infra/wails/analysisservice'
+import { RotateCcw, Plus, Trash2, Folder, Loader2, DatabaseZap, Info, Tags, RefreshCw, Gauge, Music } from '@lucide/vue'
 import type { WatchedFolder, SyncProgress } from '../../../bindings/airmedy/internal/domain/models'
 import { Events } from '@wailsio/runtime'
 import ConfirmDialog from '../ConfirmDialog.vue'
@@ -20,7 +20,11 @@ import {
   SelectValue,
   Switch,
   Slider,
+  Modal,
 } from '@airmedy/ui'
+import VirtualList from 'vue-virtual-sortable'
+import LazyImg from '../LazyImg.vue'
+import { buildArtworkUrl } from '@airmedy/utils'
 import { VISIBLE_SYNC_INTERVALS, type SyncInterval } from '@/lib/librarySync'
 import { useAppStore } from '../../stores/app'
 
@@ -30,20 +34,15 @@ const appStore = useAppStore()
 const { artistDelimiters, albumArtistDelimiters, genreDelimiters, composerDelimiters, librarySyncInterval } = storeToRefs(appStore)
 
 // Library analysis progress + worker-count slider.
-const analysisDone = ref(0)
-const analysisTotal = ref(0)
 const analysisState = ref<'analyzing' | 'paused' | 'done'>('done')
 const libraryDone = ref(0)
 const libraryTotal = ref(0)
+const failedCount = ref(0)
+const failedTracks = ref<{ id: string; title: string; artists: string; path: string; artworkKey: string; failedComponents: string[] }[]>([])
+const showFailedTracks = ref(false)
+const isRetrying = ref(false)
+const retryProgressActive = ref(false)
 
-// Session progress: how far the current analysis run has gotten through the
-// tracks it found pending when it started.
-const analysisPercent = computed(() =>
-  analysisTotal.value > 0 ? Math.round((analysisDone.value / analysisTotal.value) * 100) : 100
-)
-// Library readiness: how much of the whole library has ever been analyzed.
-// Distinct from analysisPercent — adding new tracks drops this but resets
-// analysisPercent's own session to 0%, so the two must not share one number.
 const readinessPercent = computed(() =>
   libraryTotal.value > 0 ? Math.round((libraryDone.value / libraryTotal.value) * 100) : 100
 )
@@ -54,14 +53,40 @@ type AnalysisProgressData = {
   state: 'analyzing' | 'paused' | 'done'
   libraryDone: number
   libraryTotal: number
+  failed: number
 }
 
 const applyAnalysisProgress = (data: AnalysisProgressData) => {
-  analysisDone.value = data.done
-  analysisTotal.value = data.total
   analysisState.value = data.state
   libraryDone.value = data.libraryDone
   libraryTotal.value = data.libraryTotal
+  failedCount.value = data.failed
+	if (isRetrying.value && data.state === 'analyzing') retryProgressActive.value = true
+	if (isRetrying.value && retryProgressActive.value && data.state === 'done') {
+		isRetrying.value = false
+		retryProgressActive.value = false
+		loadFailedTracks()
+  }
+}
+
+const loadFailedTracks = async () => {
+  try {
+    failedTracks.value = (await ListFailedTracks()).filter((track): track is NonNullable<typeof track> => track !== null)
+  } catch (error) {
+    console.error('Failed to load failed analysis tracks:', error)
+  }
+}
+
+const retryFailedTracks = async () => {
+  if (isRetrying.value) return
+  isRetrying.value = true
+	retryProgressActive.value = false
+  try {
+    await RetryFailedTracks()
+  } catch (error) {
+    isRetrying.value = false
+    console.error('Failed to retry analysis tracks:', error)
+  }
 }
 
 // Set once a live event has landed, so the initial GetProgress fetch (below)
@@ -74,6 +99,7 @@ const handleAnalysisProgress = (ev: Events.WailsEvent) => {
   const data = ev.data as AnalysisProgressData
   receivedLiveEvent = true
   applyAnalysisProgress(data)
+  if (showFailedTracks.value && !isRetrying.value) loadFailedTracks()
 }
 
 let offAnalysisProgress: (() => void) | null = null
@@ -325,8 +351,7 @@ onUnmounted(() => {
           :class="removingFolderIds.includes(folder.id) ? 'opacity-50 pointer-events-none' : 'hover:bg-foreground/[0.04]'">
           <div class="flex items-center gap-4 overflow-hidden">
             <div class="p-2 bg-background rounded-lg shadow-sm">
-              <Loader2 v-if="removingFolderIds.includes(folder.id)"
-                class="w-4 h-4 text-dim animate-spin" />
+              <Loader2 v-if="removingFolderIds.includes(folder.id)" class="w-4 h-4 text-dim animate-spin" />
               <Folder v-else class="w-4 h-4 text-dim" />
             </div>
             <span class="text-sm font-bold truncate" :title="folder.path">
@@ -384,21 +409,30 @@ onUnmounted(() => {
     </SettingSection>
 
     <SettingSection :icon="Gauge" :label="t('settings.library_analysis.title')">
-      <template #header-extra>
-        <p v-if="appStore.libraryAnalysisEnabled" class="text-xs text-subdued">
-          {{ t('settings.normalization.readiness', { percent: readinessPercent }) }}
-        </p>
-      </template>
       <SettingRow :title="t('settings.library_analysis.enable')"
         :description="t('settings.library_analysis.enable_desc')">
         <Switch :model-value="appStore.libraryAnalysisEnabled"
           @update:model-value="appStore.updateLibraryAnalysisEnabled" />
       </SettingRow>
-      <div v-if="appStore.libraryAnalysisEnabled && analysisState !== 'done'"
-        class="px-5 py-3 text-xs text-dim">
-        {{ t('settings.normalization.analyzing', { done: analysisDone, total: analysisTotal, percent: analysisPercent })
-        }}
-      </div>
+      <SettingRow v-if="appStore.libraryAnalysisEnabled" :title="t('settings.library_analysis.progress')"
+        :description="t('settings.library_analysis.analyzed', { done: libraryDone, total: libraryTotal, percent: readinessPercent })">
+        <template v-if="failedCount > 0 && !isSyncing && !isRetrying" #content>
+          <div class="px-5 pb-5 flex justify-end gap-3">
+            <button data-testid="view-failed-tracks"
+              class="flex items-center justify-center px-4 py-2 bg-foreground/[0.04] text-foreground rounded-xl hover:bg-foreground/[0.08] transition-all text-sm font-bold"
+              @click="showFailedTracks = true; loadFailedTracks()">
+              {{ t('settings.library_analysis.view_failed') }}
+            </button>
+            <button data-testid="retry-failed-tracks"
+              class="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-all disabled:opacity-50 text-sm font-bold"
+              :disabled="isRetrying" @click="retryFailedTracks">
+              <Loader2 v-if="isRetrying" class="w-4 h-4 animate-spin" />
+              <RotateCcw v-else class="w-4 h-4" />
+              {{ t('settings.library_analysis.retry_failed') }}
+            </button>
+          </div>
+        </template>
+      </SettingRow>
       <div v-if="appStore.libraryAnalysisMaxWorkerCount > 1" class="p-5 transition-opacity"
         :class="!appStore.libraryAnalysisEnabled && 'opacity-40 pointer-events-none'">
         <div class="flex items-center justify-between gap-x-2 mb-1">
@@ -414,7 +448,7 @@ onUnmounted(() => {
             :step="1" @update:model-value="onWorkerCountInput" @mouseup="onWorkerCountRelease"
             @touchend="onWorkerCountRelease" />
           <span class="text-xs text-dim tabular-nums">{{ appStore.libraryAnalysisMaxWorkerCount
-            }}</span>
+          }}</span>
         </div>
       </div>
     </SettingSection>
@@ -425,5 +459,40 @@ onUnmounted(() => {
 
     <SyncProgressDialog :open="showSyncDialog" :type="removingFolderIds.length > 0 ? 'deleting' : (syncType || 'sync')"
       :progress="syncProgress" :complete="syncComplete" />
+
+    <Modal :open="showFailedTracks" :title="t('settings.library_analysis.failed_tracks')" width-class="w-[42rem]"
+      @close="showFailedTracks = false">
+
+      <VirtualList :model-value="failedTracks" data-key="id" :size="56" :force-fallback="true"
+        class="h-[24rem] overflow-y-auto">
+        <template #item="{ record: track }">
+          <div class="w-full py-1">
+            <div
+              class="h-13 mx-2 px-3 flex items-center gap-3 bg-foreground/[0.02] border border-foreground/[0.04] rounded-xl hover:bg-foreground/[0.04] transition-all">
+              <div class="w-9 h-9 shrink-0 overflow-hidden rounded-[8px] bg-foreground/[0.04]">
+                <LazyImg v-if="track.artworkKey" :src="buildArtworkUrl(track.artworkKey, 'sm')" :alt="track.title"
+                  class="w-full h-full object-cover" />
+                <div v-else class="w-full h-full flex items-center justify-center">
+                  <Music class="w-4 h-4 text-dim" />
+                </div>
+              </div>
+              <div class="min-w-0">
+                <p class="text-sm font-bold truncate">{{ track.title }}</p>
+                <p class="text-xs text-[color:var(--text-muted)] truncate">{{ track.artists }}</p>
+              </div>
+            </div>
+          </div>
+        </template>
+      </VirtualList>
+      <template #footer>
+        <div class="flex justify-end">
+          <button
+            class="min-w-24 px-4 py-2 text-sm text-primary-foreground bg-primary hover:opacity-90 rounded-lg transition-all font-medium"
+            @click="showFailedTracks = false">
+            {{ t('common.ok') }}
+          </button>
+        </div>
+      </template>
+    </Modal>
   </div>
 </template>

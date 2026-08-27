@@ -257,6 +257,9 @@ type ComponentAnalysisRepository interface {
 	ComponentStatus(ctx context.Context, trackID string, required map[AnalysisComponents]int) (pending AnalysisComponents, complete bool, err error)
 	ListPendingComponentTracks(ctx context.Context, required map[AnalysisComponents]int, limit int) ([]string, error)
 	CountPendingComponentTracks(ctx context.Context, required map[AnalysisComponents]int) (int, error)
+	CountFailedComponentTracks(ctx context.Context, required map[AnalysisComponents]int) (int, error)
+	ListFailedComponentTracks(ctx context.Context, required map[AnalysisComponents]int) ([]FailedAnalysisTrack, error)
+	ResetFailedComponents(ctx context.Context, required map[AnalysisComponents]int) ([]string, error)
 	UpsertComponentFeatures(ctx context.Context, f *TrackFeatures, components AnalysisComponents, versions map[AnalysisComponents]int) error
 	MarkComponentsFailed(ctx context.Context, trackID string, components AnalysisComponents, versions map[AnalysisComponents]int) error
 }

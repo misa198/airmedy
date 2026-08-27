@@ -278,6 +278,17 @@ type AnalysisProgress struct {
 	// session's 0% instead of the library's true readiness.
 	LibraryDone  int `json:"libraryDone"`
 	LibraryTotal int `json:"libraryTotal"`
+	Failed       int `json:"failed"`
+}
+
+// FailedAnalysisTrack is the compact row shown for an analysis failure.
+type FailedAnalysisTrack struct {
+	ID               string   `json:"id"`
+	Title            string   `json:"title"`
+	Artists          string   `json:"artists"`
+	Path             string   `json:"path"`
+	ArtworkKey       string   `json:"artworkKey" db:"artwork_key"`
+	FailedComponents []string `json:"failedComponents"`
 }
 
 const (

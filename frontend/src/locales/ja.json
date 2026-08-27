@@ -15,6 +15,7 @@
     "loading": "読み込み中...",
     "error": "エラー",
     "cancel": "キャンセル",
+    "ok": "OK",
     "close": "閉じる",
     "change": "変更",
     "save": "保存",
@@ -309,7 +310,12 @@
       "requires_enable": "音量正規化を使うには、ライブラリ分析を有効にしてください",
       "worker_count": "同時ワーカー数",
       "worker_count_desc": "ワーカー数を増やすと解析は速くなりますが、CPU 使用率が上がり、コンピューターが熱くなりやすくなります。",
-      "worker_count_value": "{count} ワーカー"
+      "worker_count_value": "{count} ワーカー",
+      "progress": "Analysis progress",
+      "analyzed": "Analyzed {done}/{total} tracks ({percent}%)",
+      "retry_failed": "Retry failed tracks",
+      "view_failed": "View failed tracks",
+      "failed_tracks": "Failed analysis tracks"
     },
     "normalization": {
       "title": "音量正規化",

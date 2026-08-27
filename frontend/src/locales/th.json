@@ -15,6 +15,7 @@
     "loading": "กำลังโหลด...",
     "error": "เกิดข้อผิดพลาด",
     "cancel": "ยกเลิก",
+    "ok": "ตกลง",
     "close": "ปิด",
     "change": "เปลี่ยน",
     "save": "บันทึก",
@@ -309,7 +310,12 @@
       "requires_enable": "เปิดใช้งานการวิเคราะห์ไลบรารีเพื่อใช้การปรับระดับเสียงให้เท่ากัน",
       "worker_count": "จำนวนเวิร์กเกอร์พร้อมกัน",
       "worker_count_desc": "เวิร์กเกอร์ที่มากขึ้นช่วยให้การวิเคราะห์เร็วขึ้น แต่จะใช้ CPU มากขึ้นและอาจทำให้คอมพิวเตอร์ร้อนขึ้นได้",
-      "worker_count_value": "{count} เวิร์กเกอร์"
+      "worker_count_value": "{count} เวิร์กเกอร์",
+      "progress": "Analysis progress",
+      "analyzed": "Analyzed {done}/{total} tracks ({percent}%)",
+      "retry_failed": "Retry failed tracks",
+      "view_failed": "View failed tracks",
+      "failed_tracks": "Failed analysis tracks"
     },
     "normalization": {
       "title": "การปรับระดับเสียงให้เป็นมาตรฐาน",
