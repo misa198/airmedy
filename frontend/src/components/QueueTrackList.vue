@@ -73,7 +73,7 @@ defineExpose({ scrollToCurrentTrack })
     </div>
 
     <VirtualList v-show="store.queue.length > 0" ref="scroller" data-test="queue-track-list" :model-value="store.queue"
-      @update:model-value="store.reorderQueue" data-key="id" :size="64" :force-fallback="true"
+      @update:model-value="store.reorderQueue" data-key="id" :size="64" :delay="120" :force-fallback="true"
       fallback-class="drag-chosen" chosen-class="drag-chosen" :ghost-style="{ display: 'none' }"
       class="h-full overflow-y-auto select-none" :class="{ 'opacity-0': !isReady }" @scroll="trackContextMenu?.close()">
       <template #item="{ record: item, index }">
