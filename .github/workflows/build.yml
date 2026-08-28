@@ -9,6 +9,8 @@ on:
   push:
     branches:
       - master
+    paths-ignore:
+      - 'mobile/**'
   workflow_dispatch:
 
 concurrency:
