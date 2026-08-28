@@ -127,7 +127,7 @@ android {
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 6
+        versionCode = 7
         versionName = "1.0.0"
 
         val lastFmApiKey = localProperties.getProperty("LASTFM_API_KEY")
