@@ -155,6 +155,9 @@ stack, the shell resets that page's query before it can be opened again.
 player. The mini player and fullscreen player render the state published by the
 service, so neither has local shadow state for transport or queue. Their swipe
 handlers read the latest queue availability and transport callbacks after recomposition.
+Previous and next remain interactive at queue boundaries: previous rewinds the
+current track while preserving play/pause state, and next retains it paused at
+the beginning. Buttons and artwork/metadata swipes share this behavior.
 Fullscreen seek has an optimistic pending position but must reconcile confirmed state using
 `hasConfirmedSeekPosition`. The queue renders active order and scrolls to the
 current track only when the panel opens; afterward it preserves the listener's

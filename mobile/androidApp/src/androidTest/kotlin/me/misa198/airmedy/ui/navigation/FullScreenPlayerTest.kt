@@ -304,7 +304,7 @@ class FullScreenPlayerTest {
     }
 
     @Test
-    fun swipeUsesTheLatestQueueNavigationAvailabilityAndCallback() {
+    fun boundarySwipeUsesTheLatestQueueAndCallback() {
         var queue by mutableStateOf(PlaybackQueueSnapshot())
         var callbackGeneration by mutableStateOf(1)
         var invokedGeneration: Int? = null
@@ -336,8 +336,8 @@ class FullScreenPlayerTest {
 
         composeTestRule.runOnIdle {
             queue = PlaybackQueueSnapshot(
-                originalTrackIds = listOf(item.trackId, secondItem.trackId),
-                activeTrackIds = listOf(item.trackId, secondItem.trackId),
+                originalTrackIds = listOf(item.trackId),
+                activeTrackIds = listOf(item.trackId),
                 currentIndex = 0,
             )
             callbackGeneration = 2

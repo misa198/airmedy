@@ -165,6 +165,12 @@ class PlaybackModelsTest {
     }
 
     @Test
+    fun `manual queue exhaustion rewinds while natural completion retains the end position`() {
+        assertEquals(0L, stoppedCurrentPosition(PlaybackEndReason.SKIPPED, 120_000L))
+        assertEquals(120_000L, stoppedCurrentPosition(PlaybackEndReason.COMPLETED, 120_000L))
+    }
+
+    @Test
     fun `new play actions take precedence over session restoration`() {
         assertTrue(playbackActionReplacesRestoredQueue(PlaybackService.ActionPlay))
         assertTrue(playbackActionReplacesRestoredQueue(PlaybackService.ActionShuffle))
