@@ -144,6 +144,14 @@ class PlaybackModelsTest {
     }
 
     @Test
+    fun `audio focus changes preserve pause duck and restore behavior`() {
+        assertEquals(AudioFocusChangeAction.Pause, audioFocusChangeAction(AudioManager.AUDIOFOCUS_LOSS))
+        assertEquals(AudioFocusChangeAction.PauseAndResumeOnGain, audioFocusChangeAction(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT))
+        assertEquals(AudioFocusChangeAction.Duck, audioFocusChangeAction(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK))
+        assertEquals(AudioFocusChangeAction.Restore, audioFocusChangeAction(AudioManager.AUDIOFOCUS_GAIN))
+    }
+
+    @Test
     fun `disconnected AAudio output recreates the stream`() {
         assertTrue(audioOutputDisconnectRequiresRecovery(isOutputDisconnected = true))
         assertFalse(audioOutputDisconnectRequiresRecovery(isOutputDisconnected = false))
