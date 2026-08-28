@@ -29,6 +29,17 @@ namespace {
     constexpr int kTransitionNone = 0;
     constexpr int kTransitionGaplessPromoted = 1;
     constexpr int kTransitionCrossfadeStarted = 2;
+    constexpr int kFocusDuckFadeOutMs = 120;
+    constexpr int kFocusDuckFadeInMs = 240;
+
+    constexpr float next_focus_gain(float current, float target, int output_rate) {
+        const int duration_ms = target < current ? kFocusDuckFadeOutMs : kFocusDuckFadeInMs;
+        const float step = 1.0f / static_cast<float>(std::max(1, output_rate * duration_ms / 1000));
+        return target < current ? std::max(target, current - step) : std::min(target, current + step);
+    }
+
+    static_assert(next_focus_gain(1.0f, 0.2f, 48'000) < 1.0f);
+    static_assert(next_focus_gain(0.2f, 1.0f, 48'000) > 0.2f);
 
     constexpr bool should_promote_gapless(bool active_finished, bool has_preloaded) {
         return active_finished && has_preloaded;
@@ -76,6 +87,8 @@ namespace {
         SourceSlot slots[2];
         AAudioStream *stream = nullptr;
         std::atomic<bool> playing{false};
+        std::atomic<float> focus_gain{1.0f};
+        float applied_focus_gain = 1.0f;
         std::atomic<bool> output_disconnected{false};
         std::atomic<int> active_slot{kNoSlot};
         std::atomic<int> preloaded_slot{kNoSlot};
@@ -378,8 +391,13 @@ namespace {
             const float width = dsp == nullptr ? 1.0f : dsp->stereo_width;
             const float mid = (left + right) * 0.5f;
             const float side = (left - right) * 0.5f * width;
-            output[i * kOutputChannels] = (mid + side) * preamp;
-            output[i * kOutputChannels + 1] = (mid - side) * preamp;
+            engine.applied_focus_gain = next_focus_gain(
+                engine.applied_focus_gain,
+                engine.focus_gain.load(std::memory_order_relaxed),
+                engine.output_rate
+            );
+            output[i * kOutputChannels] = (mid + side) * preamp * engine.applied_focus_gain;
+            output[i * kOutputChannels + 1] = (mid - side) * preamp * engine.applied_focus_gain;
         }
         engine.callback_depth.fetch_sub(1, std::memory_order_release);
         return AAUDIO_CALLBACK_RESULT_CONTINUE;
@@ -518,6 +536,10 @@ extern "C" JNIEXPORT void JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_n
     if (active != kNoSlot) engine->slots[active].normalization_gain_db.store(active_gain, std::memory_order_release);
     const int preloaded = engine->preloaded_slot.load(std::memory_order_acquire);
     if (preloaded != kNoSlot) engine->slots[preloaded].normalization_gain_db.store(preloaded_gain, std::memory_order_release);
+}
+extern "C" JNIEXPORT void JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativeSetFocusGain(JNIEnv *, jclass, jlong value, jfloat gain) {
+    auto *engine = reinterpret_cast<PlaybackEngine *>(value);
+    if (engine != nullptr) engine->focus_gain.store(std::clamp(gain, 0.0f, 1.0f), std::memory_order_release);
 }
 
 extern "C" JNIEXPORT void JNICALL Java_me_misa198_airmedy_player_FfmpegDecoder_nativeClearPreloaded(JNIEnv *, jclass, jlong value) {

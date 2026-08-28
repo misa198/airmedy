@@ -30,6 +30,8 @@ internal class FfmpegDecoder : Closeable {
         nativeSetNormalizationGains(requireHandle(), activeDb, preloadedDb)
     }
 
+    fun setFocusGain(gain: Float) = nativeSetFocusGain(requireHandle(), gain)
+
     fun clearPreloaded() = nativeClearPreloaded(requireHandle())
     fun hasPreloaded(): Boolean = nativeHasPreloaded(requireHandle())
     fun beginCrossfade(durationMs: Long) = nativeBeginCrossfade(requireHandle(), durationMs)
@@ -72,6 +74,7 @@ internal class FfmpegDecoder : Closeable {
         @JvmStatic private external fun nativePrepare(handle: Long, fd: Int, normalizationGainDb: Float)
         @JvmStatic private external fun nativePreload(handle: Long, fd: Int, normalizationGainDb: Float): Boolean
         @JvmStatic private external fun nativeSetNormalizationGains(handle: Long, activeDb: Float, preloadedDb: Float)
+        @JvmStatic private external fun nativeSetFocusGain(handle: Long, gain: Float)
         @JvmStatic private external fun nativeClearPreloaded(handle: Long)
         @JvmStatic private external fun nativeHasPreloaded(handle: Long): Boolean
         @JvmStatic private external fun nativeBeginCrossfade(handle: Long, durationMs: Long)

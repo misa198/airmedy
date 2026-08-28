@@ -24,6 +24,16 @@ internal fun queueForAvailableTracks(
 internal fun audioBecomingNoisyRequiresPause(action: String?): Boolean =
     action == AudioManager.ACTION_AUDIO_BECOMING_NOISY
 
+internal enum class AudioFocusChangeAction { Pause, PauseAndResumeOnGain, Duck, Restore, Ignore }
+
+internal fun audioFocusChangeAction(change: Int): AudioFocusChangeAction = when (change) {
+    AudioManager.AUDIOFOCUS_LOSS -> AudioFocusChangeAction.Pause
+    AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> AudioFocusChangeAction.PauseAndResumeOnGain
+    AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> AudioFocusChangeAction.Duck
+    AudioManager.AUDIOFOCUS_GAIN -> AudioFocusChangeAction.Restore
+    else -> AudioFocusChangeAction.Ignore
+}
+
 /** AAudio streams cannot be restarted after Android disconnects their output route. */
 internal fun audioOutputDisconnectRequiresRecovery(isOutputDisconnected: Boolean): Boolean = isOutputDisconnected
 

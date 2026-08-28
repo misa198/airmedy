@@ -81,6 +81,8 @@ class PlaybackService : Service() {
     private var moodRadioJob: Job? = null
     private var moodRadioSeedId: String? = null
     private var moodRadioLastRefillAttempt: Pair<String?, Int>? = null
+    private var resumeOnFocusGain = false
+    private var isDucked = false
     private lateinit var audioManager: AudioManager
     private lateinit var mediaSession: MediaSession
     private lateinit var focusRequest: AudioFocusRequest
@@ -144,7 +146,15 @@ class PlaybackService : Service() {
         registerNoisyAudioReceiver()
         focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
             .setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
-            .setOnAudioFocusChangeListener { change -> if (change <= AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) dispatch(ActionPause) }
+            .setOnAudioFocusChangeListener { change ->
+                when (audioFocusChangeAction(change)) {
+                    AudioFocusChangeAction.Pause -> dispatch(ActionPause)
+                    AudioFocusChangeAction.PauseAndResumeOnGain -> dispatch(ActionPauseForTransientFocusLoss)
+                    AudioFocusChangeAction.Duck -> dispatch(ActionDuck)
+                    AudioFocusChangeAction.Restore -> dispatch(ActionRestoreFocus)
+                    AudioFocusChangeAction.Ignore -> Unit
+                }
+            }
             .build()
         mediaSession = MediaSession(this, "AirmedyPlayback").apply {
             setCallback(object : MediaSession.Callback() {
@@ -299,8 +309,18 @@ class PlaybackService : Service() {
                     .getOrElse { QueueTransition.Stop }, PlaybackEndReason.SKIPPED)
                 ActionShuffle -> handleTransition(runCatching { queue.playShuffled(PlaybackRequest(trackIds, startIndex)) }
                     .getOrElse { QueueTransition.Stop }, PlaybackEndReason.SKIPPED)
-                ActionPause -> pauseCurrent()
-                ActionResume -> resumeCurrent()
+                ActionPause -> {
+                    resumeOnFocusGain = false
+                    restoreFocusGain()
+                    pauseCurrent()
+                }
+                ActionPauseForTransientFocusLoss -> pauseForTransientFocusLoss()
+                ActionDuck -> duckForFocusLoss()
+                ActionRestoreFocus -> restoreAfterFocusGain()
+                ActionResume -> {
+                    resumeOnFocusGain = false
+                    resumeCurrent()
+                }
                 ActionStop -> stopPlayback()
                 ActionClearQueue -> handleTransition(queue.clear())
                 ActionNext -> handleTransition(queue.next(), PlaybackEndReason.SKIPPED, preservePlaybackState = true)
@@ -395,6 +415,7 @@ class PlaybackService : Service() {
         state.value = PlaybackState.Preparing(item)
         publishNowPlaying(item, AndroidMediaPlaybackState.STATE_BUFFERING, positionMs = 0L, durationMs = 0L)
         if (audioManager.requestAudioFocus(focusRequest) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) return fail(trackId, "Audio focus was not granted")
+        restoreFocusGain()
         try {
             decoder?.close()
             // A normalization lookup can suspend. Do not leave a closed decoder
@@ -403,6 +424,7 @@ class PlaybackService : Service() {
             val preparedDecoder = FfmpegDecoder()
             try {
                 preparedDecoder.setGlobalDspConfig(equalizerDspConfig(equalizerSettings))
+                preparedDecoder.setFocusGain(if (isDucked) DuckedFocusGain else 1f)
                 preparedDecoder.prepare(File(item.audioPath), normalizationGain(item, queue.peekNext()))
                 if (startPositionMs > 0L) preparedDecoder.seekTo(clampSeekPosition(startPositionMs, preparedDecoder.durationMs()))
                 if (startPaused) {
@@ -441,6 +463,7 @@ class PlaybackService : Service() {
             decoder?.close()
             decoder = FfmpegDecoder().also {
                 it.setGlobalDspConfig(equalizerDspConfig(equalizerSettings))
+                it.setFocusGain(if (isDucked) DuckedFocusGain else 1f)
                 it.prepare(File(item.audioPath), normalizationGain(item, queue.peekNext()))
                 val positionMs = clampSeekPosition(savedPositionMs, it.durationMs())
                 if (positionMs > 0L) it.seekTo(positionMs)
@@ -472,6 +495,29 @@ class PlaybackService : Service() {
         updateNotification()
     }
 
+    private fun pauseForTransientFocusLoss() {
+        resumeOnFocusGain = state.value is PlaybackState.Playing
+        restoreFocusGain()
+        pauseCurrent()
+    }
+
+    private fun duckForFocusLoss() {
+        isDucked = true
+        decoder?.setFocusGain(DuckedFocusGain)
+    }
+
+    private fun restoreFocusGain() {
+        isDucked = false
+        decoder?.setFocusGain(1f)
+    }
+
+    private suspend fun restoreAfterFocusGain() {
+        restoreFocusGain()
+        if (!resumeOnFocusGain) return
+        resumeOnFocusGain = false
+        resumeCurrent()
+    }
+
     private suspend fun resumeCurrent() {
         val paused = state.value as? PlaybackState.Paused
         val currentDecoder = decoder
@@ -491,6 +537,7 @@ class PlaybackService : Service() {
             fail(paused.item.trackId, "Audio focus was not granted")
             return
         }
+        restoreFocusGain()
         currentDecoder.play()
         val positionMs = currentDecoder.positionMs()
         if (listeningTracker.activeTrackId == paused.item.trackId) {
@@ -905,6 +952,9 @@ class PlaybackService : Service() {
         internal const val ActionPlay = "me.misa198.airmedy.player.PLAY"
         internal const val ActionShuffle = "me.misa198.airmedy.player.SHUFFLE"
         internal const val ActionPause = "me.misa198.airmedy.player.PAUSE"
+        private const val ActionPauseForTransientFocusLoss = "me.misa198.airmedy.player.PAUSE_FOR_TRANSIENT_FOCUS_LOSS"
+        private const val ActionDuck = "me.misa198.airmedy.player.DUCK"
+        private const val ActionRestoreFocus = "me.misa198.airmedy.player.RESTORE_FOCUS"
         internal const val ActionResume = "me.misa198.airmedy.player.RESUME"
         internal const val ActionStop = "me.misa198.airmedy.player.STOP"
         internal const val ActionClearQueue = "me.misa198.airmedy.player.CLEAR_QUEUE"
@@ -926,6 +976,7 @@ class PlaybackService : Service() {
         internal const val EnabledExtra = "enabled"
         internal const val RepeatModeExtra = "repeat_mode"
         private const val PreviousRestartThresholdMs = 3_000L
+        private const val DuckedFocusGain = 0.2f
         private const val ChannelId = "playback"
         private const val NotificationId = 2002
         private const val NowPlayingArtworkSizePx = 512
