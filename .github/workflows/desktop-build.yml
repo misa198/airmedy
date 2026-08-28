@@ -1,12 +1,26 @@
-name: Release
+name: Desktop Build
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 on:
+  # A merged PR creates a push to master. Unlike pull_request: closed, this is
+  # a trusted trigger and can populate the default branch's cache scope.
   push:
-    tags:
-      - 'v*'
+    branches:
+      - master
+    paths-ignore:
+      - 'mobile/**'
+      - 'docs/**'
+      - 'catalog/**'
+      - 'public/**'
+      - 'agents/**'
+      - 'README.md'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -14,12 +28,13 @@ permissions:
 jobs:
   build-ffmpeg-windows:
     name: Build FFmpeg for Windows
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
 
       - name: Cache FFmpeg (Windows)
         id: cache-ffmpeg
@@ -56,12 +71,13 @@ jobs:
 
   build-fftw3-windows:
     name: Build FFTW3 for Windows
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
 
       - name: Cache FFTW3 (Windows)
         id: cache-fftw3
@@ -97,12 +113,13 @@ jobs:
   build-aubio-windows:
     name: Build aubio for Windows
     needs: build-fftw3-windows
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
 
       - name: Cache aubio (Windows)
         id: cache-aubio
@@ -148,12 +165,13 @@ jobs:
 
   build-sfb-darwin:
     name: Build SFBAudioEngine for Darwin
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: macos-26
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
 
       - name: Cache SFB Audio Engine (Darwin)
         id: cache-sfb
@@ -170,12 +188,13 @@ jobs:
 
   build-ffmpeg-darwin:
     name: Build FFmpeg for Darwin
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: macos-26
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
 
       - name: Cache FFmpeg (Darwin)
         id: cache-ffmpeg
@@ -200,12 +219,13 @@ jobs:
 
   build-fftw3-darwin:
     name: Build FFTW3 for Darwin
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: macos-26
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
 
       - name: Cache FFTW3 (Darwin)
         id: cache-fftw3
@@ -230,12 +250,13 @@ jobs:
   build-aubio-darwin:
     name: Build aubio for Darwin
     needs: build-fftw3-darwin
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: macos-26
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
 
       - name: Cache aubio (Darwin)
         id: cache-aubio
@@ -267,12 +288,13 @@ jobs:
 
   build-ffmpeg-linux:
     name: Build FFmpeg for Linux
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
 
       - name: Cache FFmpeg (Linux)
         id: cache-ffmpeg
@@ -299,12 +321,13 @@ jobs:
 
   build-fftw3-linux:
     name: Build FFTW3 for Linux
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
 
       - name: Cache FFTW3 (Linux)
         id: cache-fftw3
@@ -335,12 +358,13 @@ jobs:
   build-aubio-linux:
     name: Build aubio for Linux
     needs: build-fftw3-linux
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
 
       - name: Cache aubio (Linux)
         id: cache-aubio
@@ -391,8 +415,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'master' }}
           fetch-depth: 0
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: echo "version=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Create secrets.go
         shell: bash
@@ -446,7 +475,7 @@ jobs:
             echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports $(lsb_release -cs)-security main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.list
           fi
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libgtk-4-dev libwebkitgtk-6.0-dev build-essential nsis nasm gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross pkg-config qemu-user-static binfmt-support
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libgtk-4-dev libwebkitgtk-6.0-dev build-essential nsis gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross pkg-config qemu-user-static binfmt-support
 
       - name: Install Windows Dependencies
         if: runner.os == 'Windows'
@@ -641,7 +670,7 @@ jobs:
         run: |
           mkdir -p dist
           OS_INPUT="${{ matrix.os }}"
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${{ steps.version.outputs.version }}"
           case $OS_INPUT in
             "Windows-AMD64")
               # Installer (zipped)
@@ -718,80 +747,3 @@ jobs:
           name: dist-${{ matrix.os }}
           path: dist/*
           if-no-files-found: error
-
-  release:
-    name: Publish Release
-    needs: [build]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref_name }}
-          fetch-depth: 0
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: dist-*
-          path: dist
-          merge-multiple: true
-
-      - name: Generate SHA256SUMS
-        shell: bash
-        run: |
-          cd dist
-          # Write to a temp file outside the glob, then move in, so SHA256SUMS
-          # never hashes itself.
-          TMP="$(mktemp)"
-          if command -v sha256sum >/dev/null 2>&1; then
-            sha256sum * > "$TMP"
-          else
-            shasum -a 256 * | awk '{print $1, $2}' > "$TMP"
-          fi
-          mv "$TMP" SHA256SUMS
-
-      - name: Generate Changelog
-        id: changelog
-        shell: bash
-        run: |
-          PREV_TAG=$(git tag --sort=-version:refname | grep -v "^${GITHUB_REF_NAME}$" | head -1 || true)
-          if [ -n "$PREV_TAG" ]; then
-            CHANGELOG=$(git log "${PREV_TAG}..HEAD" --pretty=format:"- %s (%h)" --no-merges | grep -E "^- (feat|fix)" || true)
-            RANGE="Changes since ${PREV_TAG}"
-          else
-            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges | grep -E "^- (feat|fix)" || true)
-            RANGE="All commits"
-          fi
-
-          if [ -z "$CHANGELOG" ]; then
-            CHANGELOG="No major changes (features or fixes) in this release."
-          fi
-
-          {
-            echo "body<<EOF"
-            echo "> [!WARNING]"
-            echo "> **Beta Release** — This is a pre-release build and may be unstable. Use at your own risk."
-            echo ""
-            echo "## What's Changed"
-            echo ""
-            echo "${RANGE}:"
-            echo ""
-            echo "${CHANGELOG}"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
-          body: ${{ steps.changelog.outputs.body }}
-          draft: false
-          prerelease: true
-          files: |
-            dist/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
