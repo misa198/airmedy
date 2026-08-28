@@ -1,4 +1,4 @@
-name: Tag
+name: Desktop Tag
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"

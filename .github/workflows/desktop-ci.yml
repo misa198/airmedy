@@ -1,4 +1,4 @@
-name: CI
+name: Desktop CI
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -9,12 +9,22 @@ on:
       - master
     paths-ignore:
       - 'mobile/**'
+      - 'docs/**'
+      - 'catalog/**'
+      - 'public/**'
+      - 'agents/**'
+      - 'README.md'
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
       - master
     paths-ignore:
       - 'mobile/**'
+      - 'docs/**'
+      - 'catalog/**'
+      - 'public/**'
+      - 'agents/**'
+      - 'README.md'
   workflow_dispatch:
 
 concurrency:
