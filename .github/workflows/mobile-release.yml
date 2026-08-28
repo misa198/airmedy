@@ -86,12 +86,14 @@ jobs:
           LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
           LASTFM_API_SECRET: ${{ secrets.LASTFM_API_SECRET }}
         working-directory: mobile
-        run: ./gradlew :androidApp:assembleProdRelease -Pandroid.injected.build.abi=arm64-v8a
+        run: ./gradlew :androidApp:assembleProdRelease
 
       - name: Verify and stage APK
         run: |
           APK=$(find mobile -type f -name '*prod*release*.apk' -print -quit)
           test -n "$APK"
+          BADGING=$("$ANDROID_HOME/build-tools/36.0.0/aapt2" dump badging "$APK")
+          ! grep -q "testOnly='-1'" <<< "$BADGING"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK"
           unzip -l "$APK" | grep -q 'lib/arm64-v8a/libavcodec.so'
           ! unzip -l "$APK" | grep -q 'lib/x86_64/'
