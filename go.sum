@@ -2,8 +2,6 @@ filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
 filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
 github.com/BurntSushi/toml v1.6.0 h1:dRaEfpa2VI55EwlIW72hMRHdWouJeRF7TPYhI+AUQjk=
 github.com/BurntSushi/toml v1.6.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
-github.com/ChewbaccaCookie/wails/v3 v3.0.0-20260818124824-2ca26f4bf1a3 h1:+mvEkKi46KVEIpQIOUrycEtOVUp2xgI7hadmmxWaE/E=
-github.com/ChewbaccaCookie/wails/v3 v3.0.0-20260818124824-2ca26f4bf1a3/go.mod h1:zKZYhB3WjrN5LhJWbnOAVMN0Xf8qTozbw2nf5micKl4=
 github.com/RoaringBitmap/roaring/v2 v2.4.5 h1:uGrrMreGjvAtTBobc0g5IrW1D5ldxDQYe2JW2gggRdg=
 github.com/RoaringBitmap/roaring/v2 v2.4.5/go.mod h1:FiJcsfkGje/nZBZgCu0ZxCPOKD/hVXDS2dXi7/eUFE0=
 github.com/adrg/xdg v0.5.3 h1:xRnxJXne7+oWDatRhR1JLnvuccuIeCoBu2rtuLqQB78=
@@ -109,6 +107,8 @@ github.com/misa198/go-taglib v1.0.0 h1:4zPdIRvLWTihIPcWoXmZyk00T+lYWIYCWZwfbqulv
 github.com/misa198/go-taglib v1.0.0/go.mod h1:M4DZZa7beNOs4a88yo6O2+QmG5lvxHP8PN70B4MsUz0=
 github.com/misa198/lexorank-go v1.0.2 h1:cvB2LvtNyN9O+2rb1NwMO8eJh7w3/g/M7zqkyclKy0c=
 github.com/misa198/lexorank-go v1.0.2/go.mod h1:PPEFbnNEwmr8KlefwmkT6nG8sSN510txV6Kow0c+Xt0=
+github.com/misa198/wails/v3 v3.0.0-beta.15.0.20260828143735-889bcf26c939 h1:YefxTTq7xrvl3BUWx5AKdlaMUzLhrTsQhexWXbvCV8c=
+github.com/misa198/wails/v3 v3.0.0-beta.15.0.20260828143735-889bcf26c939/go.mod h1:zKZYhB3WjrN5LhJWbnOAVMN0Xf8qTozbw2nf5micKl4=
 github.com/mochi-mqtt/server/v2 v2.7.9 h1:y0g4vrSLAag7T07l2oCzOa/+nKVLoazKEWAArwqBNYI=
 github.com/mochi-mqtt/server/v2 v2.7.9/go.mod h1:lZD3j35AVNqJL5cezlnSkuG05c0FCHSsfAKSPBOSbqc=
 github.com/mschoch/smat v0.2.0 h1:8imxQsjDm8yFEAVBe7azKmKSgzSkZXDuKkSq9374khM=

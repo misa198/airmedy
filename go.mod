@@ -75,4 +75,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/wailsapp/wails/v3 => github.com/ChewbaccaCookie/wails/v3 v3.0.0-20260818124824-2ca26f4bf1a3
+replace github.com/wailsapp/wails/v3 => github.com/misa198/wails/v3 v3.0.0-beta.15.0.20260828143735-889bcf26c939
