@@ -325,7 +325,7 @@ class PlaybackService : Service() {
                 ActionClearQueue -> handleTransition(queue.clear())
                 ActionNext -> handleTransition(queue.next(), PlaybackEndReason.SKIPPED, preservePlaybackState = true)
                 ActionPrevious -> {
-                    if ((decoder?.positionMs() ?: 0L) > PreviousRestartThresholdMs) decoder?.seekTo(0)
+                    if ((decoder?.positionMs() ?: 0L) > PreviousRestartThresholdMs) seekCurrent(0L)
                     else handleTransition(queue.previous(), PlaybackEndReason.SKIPPED, preservePlaybackState = true)
                 }
                 ActionSeek -> seekCurrent(positionMs)
@@ -613,21 +613,32 @@ class PlaybackService : Service() {
         stopForeground(STOP_FOREGROUND_REMOVE)
     }
 
-    /**
-     * Natural repeat-off exhaustion is distinct from clearing or stopping the queue:
-     * retain the final item so its player controls remain available for replay.
-     */
+    /** Retains the final item when repeat-off playback or manual navigation exhausts the queue. */
     private fun stopAtCurrentTrack(reason: PlaybackEndReason = PlaybackEndReason.COMPLETED) {
-        val current = state.value as? PlaybackState.Playing ?: return stopPlayback()
+        val current = state.value
+        val item: PlaybackItem
+        val durationMs: Long
+        when (current) {
+            is PlaybackState.Playing -> {
+                item = current.item
+                durationMs = current.durationMs
+            }
+            is PlaybackState.Paused -> {
+                item = current.item
+                durationMs = current.durationMs
+            }
+            else -> return stopPlayback()
+        }
         enqueueListening(listeningTracker.finish(reason, System.currentTimeMillis(), SystemClock.elapsedRealtime()))
         clearArtworkCrossfade()
         decoder?.snapCrossfade()
         decoder?.close(); decoder = null
         audioManager.abandonAudioFocusRequest(focusRequest)
-        state.value = PlaybackState.Paused(current.item, current.durationMs, current.durationMs)
-        publishNowPlaying(current.item, AndroidMediaPlaybackState.STATE_PAUSED, current.durationMs, current.durationMs)
+        val positionMs = stoppedCurrentPosition(reason, durationMs)
+        state.value = PlaybackState.Paused(item, positionMs, durationMs)
+        publishNowPlaying(item, AndroidMediaPlaybackState.STATE_PAUSED, positionMs, durationMs)
         updateNotification()
-        Log.d(PlaybackLogTag, "Playback reached final queue track id=${current.item.trackId}")
+        Log.d(PlaybackLogTag, "Playback stopped at final queue track id=${item.trackId} positionMs=$positionMs")
     }
 
     private fun fail(trackId: String?, reason: String) {

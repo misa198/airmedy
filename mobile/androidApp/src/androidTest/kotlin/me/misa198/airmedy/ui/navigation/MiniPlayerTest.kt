@@ -51,6 +51,7 @@ class MiniPlayerTest {
         composeTestRule.setContent {
             NavigationChromeForTest(
                 state = PlaybackState.Playing(item, positionMs = 0L, durationMs = 120_000L),
+                queue = PlaybackQueueSnapshot(activeTrackIds = listOf(item.trackId), currentIndex = 0),
                 onPrevious = { calls += "previous" },
                 onPlayPause = { calls += "pause" },
                 onNext = { calls += "next" },

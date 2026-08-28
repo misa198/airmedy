@@ -44,6 +44,10 @@ internal fun shouldRestartQueueOnResume(
     hasDecoder: Boolean,
 ): Boolean = !hasDecoder && durationMs > 0L && pausedPositionMs >= durationMs
 
+/** Manual exhaustion rewinds the retained track; natural exhaustion leaves it completed. */
+internal fun stoppedCurrentPosition(reason: PlaybackEndReason, durationMs: Long): Long =
+    if (reason == PlaybackEndReason.COMPLETED) durationMs else 0L
+
 /** Pure policy shared by the service ticker and host tests. */
 internal fun shouldStartCrossfade(
     crossfadeSeconds: Int,

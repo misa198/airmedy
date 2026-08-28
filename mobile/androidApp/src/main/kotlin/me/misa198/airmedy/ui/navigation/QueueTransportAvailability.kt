@@ -1,14 +1,13 @@
 package me.misa198.airmedy.ui.navigation
 
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
-import me.misa198.airmedy.player.RepeatMode
 
 /** Transport affordance policy for the active queue order. */
 internal fun PlaybackQueueSnapshot.canNavigatePrevious(): Boolean =
-    activeTrackIds.isEmpty() || repeatMode != RepeatMode.Off || currentIndex > 0
+    activeTrackIds.isEmpty() || currentTrackId != null
 
 internal fun PlaybackQueueSnapshot.canNavigateNext(): Boolean =
-    activeTrackIds.isEmpty() || repeatMode != RepeatMode.Off || currentIndex in 0 until activeTrackIds.lastIndex
+    activeTrackIds.isEmpty() || currentTrackId != null
 
 internal fun canDispatchQueueSwipe(
     swipeDirection: Int,

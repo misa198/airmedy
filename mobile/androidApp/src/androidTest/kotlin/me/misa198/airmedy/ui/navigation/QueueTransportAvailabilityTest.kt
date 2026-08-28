@@ -8,14 +8,14 @@ import org.junit.Test
 
 class QueueTransportAvailabilityTest {
     @Test
-    fun disablesBoundaryTransportWhenRepeatIsOff() {
+    fun keepsBoundaryTransportEnabledWhenRepeatIsOff() {
         val first = PlaybackQueueSnapshot(activeTrackIds = listOf("one", "two"), currentIndex = 0)
         val last = first.copy(currentIndex = 1)
 
-        assertFalse(first.canNavigatePrevious())
+        assertTrue(first.canNavigatePrevious())
         assertTrue(first.canNavigateNext())
         assertTrue(last.canNavigatePrevious())
-        assertFalse(last.canNavigateNext())
+        assertTrue(last.canNavigateNext())
     }
 
     @Test
@@ -31,10 +31,10 @@ class QueueTransportAvailabilityTest {
     }
 
     @Test
-    fun doesNotDispatchSwipesForDisabledTransportDirections() {
+    fun dispatchesBoundarySwipesAndRejectsUnavailableTransport() {
+        assertTrue(canDispatchQueueSwipe(swipeDirection = 1, canNavigatePrevious = true, canNavigateNext = true))
+        assertTrue(canDispatchQueueSwipe(swipeDirection = -1, canNavigatePrevious = true, canNavigateNext = true))
         assertFalse(canDispatchQueueSwipe(swipeDirection = 1, canNavigatePrevious = false, canNavigateNext = true))
         assertFalse(canDispatchQueueSwipe(swipeDirection = -1, canNavigatePrevious = true, canNavigateNext = false))
-        assertTrue(canDispatchQueueSwipe(swipeDirection = -1, canNavigatePrevious = false, canNavigateNext = true))
-        assertTrue(canDispatchQueueSwipe(swipeDirection = 1, canNavigatePrevious = true, canNavigateNext = false))
     }
 }
