@@ -90,7 +90,7 @@ jobs:
 
       - name: Verify and stage APK
         run: |
-          APK=$(find mobile/androidApp/build/outputs/apk -type f -name '*prod*release*.apk' -print -quit)
+          APK=$(find mobile -type f -name '*prod*release*.apk' -print -quit)
           test -n "$APK"
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK"
           unzip -l "$APK" | grep -q 'lib/arm64-v8a/libavcodec.so'

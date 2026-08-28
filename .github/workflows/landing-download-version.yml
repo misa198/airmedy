@@ -6,13 +6,16 @@ env:
 on:
   workflow_dispatch:
     inputs:
-      target:
-        description: Download target to update
-        required: true
-        type: choice
-        options:
-          - desktop
-          - mobile
+      desktop:
+        description: Update the desktop download version
+        required: false
+        type: boolean
+        default: false
+      mobile:
+        description: Update the Android download version
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: landing-download-version
@@ -37,27 +40,25 @@ jobs:
         with:
           ref: master
 
-      - name: Read released version from master
-        id: version
+      - name: Bump selected landing download versions
         run: |
-          if [[ "${{ inputs.target }}" == mobile ]]; then
-            VERSION=$(sed -nE 's/^[[:space:]]*versionName = "([0-9]+\.[0-9]+\.[0-9]+)"/\1/p' mobile/androidApp/build.gradle.kts)
-            TARGET=mobile
-          else
+          UPDATED=false
+          if [[ "${{ inputs.desktop }}" == true ]]; then
             VERSION=$(sed -nE '/^info:/,/^[^[:space:]]/ s/^[[:space:]]+version: "([0-9]+\.[0-9]+\.[0-9]+)".*/\1/p' build/config.yml)
-            TARGET=desktop
+            test -n "$VERSION"
+            bash scripts/bump-download-version.sh "$VERSION" desktop
+            UPDATED=true
           fi
-          test -n "$VERSION"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "target=$TARGET" >> "$GITHUB_OUTPUT"
-
-      - name: Bump landing download version
-        run: bash scripts/bump-download-version.sh "${{ steps.version.outputs.version }}" "${{ steps.version.outputs.target }}"
+          if [[ "${{ inputs.mobile }}" == true ]]; then
+            VERSION=$(sed -nE 's/^[[:space:]]*versionName = "([0-9]+\.[0-9]+\.[0-9]+)"/\1/p' mobile/androidApp/build.gradle.kts)
+            test -n "$VERSION"
+            bash scripts/bump-download-version.sh "$VERSION" mobile
+            UPDATED=true
+          fi
+          test "$UPDATED" = true
 
       - name: Commit landing download version
         uses: actions/github-script@v7
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
@@ -80,7 +81,7 @@ jobs:
             const commit = await github.rest.git.createCommit({
               owner,
               repo,
-              message: `chore: bump landing download version to ${process.env.VERSION}`,
+              message: 'chore: bump selected landing download versions',
               tree: tree.data.sha,
               parents: [parent.data.sha],
             })
