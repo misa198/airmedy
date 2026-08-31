@@ -21,7 +21,7 @@ require (
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/stretchr/testify v1.11.1
-	github.com/wailsapp/wails/v3 v3.0.0-beta.9
+	github.com/wailsapp/wails/v3 v3.0.0-beta.16
 	github.com/zalando/go-keyring v0.2.8
 	go.uber.org/fx v1.24.0
 	golang.org/x/image v0.41.0
@@ -74,5 +74,3 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/wailsapp/wails/v3 => github.com/misa198/wails/v3 v3.0.0-beta.15.0.20260828143735-889bcf26c939

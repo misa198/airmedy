@@ -566,7 +566,7 @@ jobs:
         run: bash scripts/fetch-miniaudio.sh
 
       - name: Install Wails v3
-        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.15
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.16
 
       - name: Install Linux ARM64 Cross-compile Dependencies
         if: runner.os == 'Linux' && matrix.os == 'Linux-ARM64'
