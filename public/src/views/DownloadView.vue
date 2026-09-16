@@ -10,7 +10,7 @@ type Platform = { name: string, icon: string, files: [string, string][], mobile?
 const platforms: Platform[] = [
   { name: 'Windows', icon: '/windows.svg', files: [['Windows (x64)', 'windows-amd64_installer.zip'], ['Windows (ARM64)', 'windows-arm64_installer.zip']] },
   { name: 'Linux', icon: '/linux.svg', files: [['Debian / Ubuntu (x64)', 'linux-amd64.deb'], ['Debian / Ubuntu (ARM64)', 'linux-arm64.deb'], ['Fedora / RHEL (x64)', 'linux-amd64.rpm'], ['Fedora / RHEL (ARM64)', 'linux-arm64.rpm'], ['Arch (x64)', 'linux-amd64.pkg.tar.zst'], ['Arch (ARM64)', 'linux-arm64.pkg.tar.zst']] },
-  { name: 'macOS', icon: '/apple.svg', files: [['Apple Silicon', 'darwin-arm64.dmg'], ['Intel Chip', 'darwin-amd64.dmg']] },
+  { name: 'macOS', icon: '/apple.svg', files: [['Apple Silicon', 'darwin-arm64.zip'], ['Intel Chip', 'darwin-amd64.zip']] },
   { name: 'Android', icon: '/android.svg', files: [['Android (ARM64)', '']], mobile: true },
 ]
 
