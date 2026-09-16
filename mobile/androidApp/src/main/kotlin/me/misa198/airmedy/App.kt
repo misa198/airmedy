@@ -40,7 +40,6 @@ import androidx.compose.material3.Text
 import java.time.LocalTime
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
-import dev.chrisbanes.haze.HazeInputScale
 import kotlinx.coroutines.launch
 import me.misa198.airmedy.ui.components.AirmedyGlassIconButton
 import me.misa198.airmedy.ui.components.AirmedyDialog
@@ -375,7 +374,6 @@ internal fun App(
                 titleStackKey = "${uiState.selectedDestination.name}:${currentPage.name}",
                 isForward = isForwardHeaderTransition,
                 backGlassTintAlpha = if (currentPage == AppStackPage.AlbumDetails || currentPage == AppStackPage.PlaylistDetails || currentPage == AppStackPage.ArtistDetails || currentPage == AppStackPage.GenreDetails || currentPage == AppStackPage.ComposerDetails) 0.08f else null,
-                backHazeInputScale = if (currentPage == AppStackPage.AlbumDetails || currentPage == AppStackPage.PlaylistDetails || currentPage == AppStackPage.ArtistDetails || currentPage == AppStackPage.GenreDetails || currentPage == AppStackPage.ComposerDetails) HazeInputScale.Fixed(0.20f) else HazeInputScale.Auto,
             ) {
                 if (showSyncAddAction) {
                     AirmedyGlassIconButton(

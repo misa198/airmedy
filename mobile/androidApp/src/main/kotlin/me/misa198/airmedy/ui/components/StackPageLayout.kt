@@ -60,7 +60,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeInputScale
 import me.misa198.airmedy.R
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 
@@ -150,7 +149,6 @@ fun StackPageHeader(
     isForward: Boolean = true,
     solidBackButton: Boolean = false,
     backGlassTintAlpha: Float? = null,
-    backHazeInputScale: HazeInputScale = HazeInputScale.Auto,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     val colors = LocalAirmedyColors.current
@@ -258,7 +256,6 @@ fun StackPageHeader(
                     hazeState = hazeState,
                     solid = solidBackButton,
                     glassTint = backGlassTintAlpha?.let { colors.glass.copy(alpha = it) },
-                    hazeInputScale = backHazeInputScale,
                     onClick = onBackClick ?: {},
                 )
             }
@@ -298,7 +295,6 @@ fun AirmedyBackButton(
     modifier: Modifier = Modifier,
     solid: Boolean = false,
     glassTint: Color? = null,
-    hazeInputScale: HazeInputScale = HazeInputScale.Auto,
 ) {
     val label = stringResource(R.string.navigate_back)
     val colors = LocalAirmedyColors.current
@@ -311,7 +307,6 @@ fun AirmedyBackButton(
         surfaceColor = if (solid) colors.background else null,
         borderColor = if (solid) colors.textMuted.copy(alpha = 0.55f) else null,
         glassTint = glassTint,
-        hazeInputScale = hazeInputScale,
     )
 }
 
@@ -325,7 +320,6 @@ fun AirmedyGlassIconButton(
     surfaceColor: Color? = null,
     borderColor: Color? = null,
     glassTint: Color? = null,
-    hazeInputScale: HazeInputScale = HazeInputScale.Auto,
 ) {
     val colors = LocalAirmedyColors.current
     Box(
@@ -333,7 +327,7 @@ fun AirmedyGlassIconButton(
             .size(HeaderHeight)
             .clip(CircleShape)
             .then(
-                if (surfaceColor == null) Modifier.liquidGlassBackground(hazeState, colors, hazeInputScale, 30.dp, glassTint)
+                if (surfaceColor == null) Modifier.liquidGlassBackground(hazeState, colors, 30.dp, glassTint)
                 else Modifier.background(surfaceColor),
             )
             .border(1.dp, borderColor ?: colors.borderGlass, CircleShape)

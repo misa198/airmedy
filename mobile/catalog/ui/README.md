@@ -73,7 +73,11 @@ than an unrelated accent.
 Glass uses `liquidGlassBackground` or existing glass primitives and applies Haze
 only with a `hazeSource`. With `reduceTransparency`, the shell creates no Haze
 state; a new feature must remain legible on that path. Strong blur belongs only
-to persistent navigation, never each row or card.
+to persistent navigation, never each row or card. Backdrop sampling stays at
+full resolution (`HazeInputScale.None`) in the shared helper, including header
+and Back controls; per-screen downsampling causes visible low-resolution
+artifacts. `LiquidGlassTest` guards the configured input scale on the host;
+visual quality and GPU cost require an authorized device check.
 
 Icons use `MaterialSymbol` and the Material Symbols Rounded font. Display text
 and content descriptions come from Android resources. Interactions retain a
