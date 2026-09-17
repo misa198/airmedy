@@ -5,16 +5,26 @@ import (
 
 	"airmedy/internal/app/appsettings"
 	"airmedy/internal/app/lyrics"
+	"airmedy/internal/app/romanization"
 	"airmedy/internal/domain"
 )
 
 type LyricsService struct {
 	service         *lyrics.LyricsService
 	settingsService *appsettings.SettingsService
+	romanization    *romanization.Service
 }
 
-func NewLyricsService(service *lyrics.LyricsService, settingsService *appsettings.SettingsService) *LyricsService {
-	return &LyricsService{service: service, settingsService: settingsService}
+func NewLyricsService(service *lyrics.LyricsService, settingsService *appsettings.SettingsService, romanizer *romanization.Service) *LyricsService {
+	return &LyricsService{service: service, settingsService: settingsService, romanization: romanizer}
+}
+
+func (s *LyricsService) InspectRomanization(lines []string) (domain.RomanizationInspection, error) {
+	return romanization.Inspect(lines)
+}
+
+func (s *LyricsService) RomanizeLyrics(ctx context.Context, lines []string) ([]domain.RomanizedLine, error) {
+	return s.romanization.Romanize(ctx, lines)
 }
 
 func (s *LyricsService) GetLyrics(trackID string) (*domain.Lyric, error) {

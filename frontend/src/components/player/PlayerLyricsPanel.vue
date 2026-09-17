@@ -37,6 +37,7 @@ const { t } = useI18n()
       <div class="flex-1 overflow-hidden">
         <LyricsView
           :lyrics="lyrics"
+          romanization
           :is-loading="loading"
           :current-position="position"
           class="dark"

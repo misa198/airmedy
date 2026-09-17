@@ -398,7 +398,12 @@
     "synced": "Đồng bộ",
     "plain": "Văn bản",
     "lyrics_not_available": "Không có lời bài hát cho bài hát này.",
-    "lyrics_coming_soon": "Chúng tôi đang nỗ lực mang lời bài hát đến với bộ sưu tập của bạn sớm."
+    "lyrics_coming_soon": "Chúng tôi đang nỗ lực mang lời bài hát đến với bộ sưu tập của bạn sớm.",
+    "romanization": "Phiên âm",
+    "romanization_loading": "Đang phiên âm…",
+    "romanization_retry": "Phiên âm lỗi — thử lại",
+    "romanization_hint": "Phiên âm offline: tiếng Trung, Nhật và Hàn.",
+    "romanization_mandarin": "Lời chỉ có chữ Hán mặc định dùng Mandarin. Tên riêng có thể có cách đọc khác."
   },
   "home": {
     "title": "Trang chủ",

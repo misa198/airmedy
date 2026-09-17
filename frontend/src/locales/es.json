@@ -398,7 +398,12 @@
     "synced": "Sincronizada",
     "plain": "Texto plano",
     "lyrics_not_available": "Las letras no están disponibles para esta pista.",
-    "lyrics_coming_soon": "Estamos trabajando para traer las letras a tu colección pronto."
+    "lyrics_coming_soon": "Estamos trabajando para traer las letras a tu colección pronto.",
+    "romanization": "Romanizar",
+    "romanization_loading": "Romanizing…",
+    "romanization_retry": "Romanization failed — retry",
+    "romanization_hint": "Offline romanization: Chinese, Japanese and Korean.",
+    "romanization_mandarin": "Han-only lyrics default to Mandarin. Readings may differ for names."
   },
   "home": {
     "title": "Inicio",

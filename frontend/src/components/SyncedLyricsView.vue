@@ -4,6 +4,7 @@ import type { LyricLine } from '../composables/useLyrics'
 import { useLyricsScrollMotion } from '../composables/useLyricsScrollMotion'
 
 const props = defineProps<{
+  secondary?: (string | undefined)[]
   lines: LyricLine[]
   currentPosition: number
   immersive?: boolean
@@ -37,6 +38,10 @@ watch(() => props.lines, () => {
   hasPositionedInitialLine = false
   previousActiveIndex = -1
 })
+
+watch(() => props.secondary, () => {
+  if (!isBrowsing.value) scheduleScrollToActive(activeIndex.value)
+}, { flush: 'post' })
 
 function isVisible(container: HTMLElement, el: HTMLElement) {
   return el.offsetTop < container.scrollTop + container.clientHeight
@@ -174,7 +179,7 @@ onUnmounted(() => {
         @click="seekAndResume(line.time, index)"
       >
         <div>{{ line.text }}</div>
-        <div v-if="line.secondary" class="text-lg md:text-2xl font-bold mt-1 opacity-80">{{ line.secondary }}</div>
+        <div v-if="secondary?.[index] || line.secondary" class="text-lg md:text-2xl font-bold mt-1 opacity-80">{{ secondary?.[index] || line.secondary }}</div>
       </div>
     </div>
   </div>

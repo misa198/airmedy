@@ -398,7 +398,12 @@
     "synced": "已同步",
     "plain": "纯文本",
     "lyrics_not_available": "此曲目无歌词。",
-    "lyrics_coming_soon": "我们正致力于尽快为您的收藏提供歌词。"
+    "lyrics_coming_soon": "我们正致力于尽快为您的收藏提供歌词。",
+    "romanization": "罗马化",
+    "romanization_loading": "Romanizing…",
+    "romanization_retry": "Romanization failed — retry",
+    "romanization_hint": "Offline romanization: Chinese, Japanese and Korean.",
+    "romanization_mandarin": "Han-only lyrics default to Mandarin. Readings may differ for names."
   },
   "home": {
     "title": "首页",

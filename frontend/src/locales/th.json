@@ -398,7 +398,12 @@
     "synced": "ซิงค์แล้ว",
     "plain": "ข้อความธรรมดา",
     "lyrics_not_available": "ไม่มีเนื้อเพลงสำหรับเพลงนี้",
-    "lyrics_coming_soon": "เรากำลังพัฒนาเพื่อนำเนื้อเพลงมาสู่คอลเลกชันของคุณเร็ว ๆ นี้"
+    "lyrics_coming_soon": "เรากำลังพัฒนาเพื่อนำเนื้อเพลงมาสู่คอลเลกชันของคุณเร็ว ๆ นี้",
+    "romanization": "ถอดเสียง",
+    "romanization_loading": "Romanizing…",
+    "romanization_retry": "Romanization failed — retry",
+    "romanization_hint": "Offline romanization: Chinese, Japanese and Korean.",
+    "romanization_mandarin": "Han-only lyrics default to Mandarin. Readings may differ for names."
   },
   "home": {
     "title": "หน้าแรก",

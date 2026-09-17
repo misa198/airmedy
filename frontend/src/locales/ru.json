@@ -398,7 +398,12 @@
     "synced": "Синхронизированный",
     "plain": "Обычный текст",
     "lyrics_not_available": "Текст для этого трека недоступен.",
-    "lyrics_coming_soon": "Мы работаем над тем, чтобы тексты песен скоро появились в вашей коллекции."
+    "lyrics_coming_soon": "Мы работаем над тем, чтобы тексты песен скоро появились в вашей коллекции.",
+    "romanization": "Транслитерация",
+    "romanization_loading": "Romanizing…",
+    "romanization_retry": "Romanization failed — retry",
+    "romanization_hint": "Offline romanization: Chinese, Japanese and Korean.",
+    "romanization_mandarin": "Han-only lyrics default to Mandarin. Readings may differ for names."
   },
   "home": {
     "title": "Главная",

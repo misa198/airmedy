@@ -398,7 +398,12 @@
     "synced": "同期済み",
     "plain": "プレーン",
     "lyrics_not_available": "このトラックの歌詞は利用できません。",
-    "lyrics_coming_soon": "近日中にライブラリで歌詞を利用できるように取り組んでいます。"
+    "lyrics_coming_soon": "近日中にライブラリで歌詞を利用できるように取り組んでいます。",
+    "romanization": "ローマ字",
+    "romanization_loading": "Romanizing…",
+    "romanization_retry": "Romanization failed — retry",
+    "romanization_hint": "Offline romanization: Chinese, Japanese and Korean.",
+    "romanization_mandarin": "Han-only lyrics default to Mandarin. Readings may differ for names."
   },
   "home": {
     "title": "ホーム",

@@ -144,3 +144,23 @@ The WavPack source code is available at https://github.com/dbry/WavPack
 License text: https://opensource.org/licenses/BSD-3-Clause
 
 
+
+--------------------------------------------------------------------------------
+Offline lyric romanization
+--------------------------------------------------------------------------------
+go-pinyin v0.21.0 (MIT): https://github.com/mozillazg/go-pinyin
+phrase-pinyin-data cee0ed6e6e4898580cafd2bd5e3723e20b214aa0 (MIT):
+https://github.com/mozillazg/phrase-pinyin-data
+Kagome v2.11.0 (Apache-2.0): https://github.com/ikawaha/kagome
+kagome-dict v1.1.7 and IPA a5b2073b8f66980d8b14e9e7aa433da06a2e732d:
+https://github.com/ikawaha/kagome-dict (MIT plus IPADIC terms)
+hebon b6abdeeaa6e8 (MIT): https://github.com/doxuta/hebon
+koroman e529729b923f8a9d9acc62b2c9c0887b00e9bd88 (MIT, rules ported to Go):
+https://github.com/gerosyab/koroman
+OpenCC 5c764a5a886f46eb365656ed91a0410d7162fac6 (Apache-2.0, TSCharacters table):
+https://github.com/BYVoid/OpenCC
+
+Full license texts, embedded alongside the offline dictionaries, are in
+internal/infra/romanization/data/*LICENSE and IPA-NOTICE.txt.
+The standalone Korean port's MIT license is in github.com/misa198/koreanromanizer.
+Pinned sources and data update rules: internal/infra/romanization/ATTRIBUTION.md.

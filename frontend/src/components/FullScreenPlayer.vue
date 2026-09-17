@@ -131,7 +131,7 @@ onUnmounted(() => {
         style="-webkit-app-region: drag"
         @dblclick="deviceStore.toggleMaximize"
       >
-        <div class="w-[120px]" style="-webkit-app-region: no-drag">
+        <div class="w-[160px]" style="-webkit-app-region: no-drag">
           <button class="p-2 rounded-full hover:bg-white/8 transition-all text-white/60 hover:text-white"
             :class="{ 'mt-8': deviceStore.isMac && !deviceStore.isWindowFullscreen }"
             @click="store.setPlayerMode('sticky')">
@@ -141,7 +141,8 @@ onUnmounted(() => {
         <span class="text-xs font-semibold text-white/40 uppercase tracking-[0.2em]">
           {{ t('player.now_playing') }}
         </span>
-        <div data-fullscreen-player-interactive="true" class="flex items-center gap-2 w-[120px] justify-end" style="-webkit-app-region: no-drag">
+        <div data-fullscreen-player-interactive="true" class="flex items-center gap-2 w-[160px] justify-end" style="-webkit-app-region: no-drag">
+          <div id="fullscreen-lyrics-actions" class="contents" />
           <TabSwitcher v-model="activeTab" :options="tabOptions" />
         </div>
       </div>
