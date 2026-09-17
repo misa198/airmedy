@@ -2,6 +2,7 @@
 const features = [
   ['Your whole library', 'Add any folder and Airmedy scans it instantly, even with tens of thousands of tracks.'],
   ['Lyrics that follow', 'Synced lyrics scroll line-by-line as the song plays.'],
+  ['Offline Romanization', 'Read Chinese, Japanese, and Korean lyrics in Latin script without sending them anywhere.'],
   ['Fast Search', 'Find any track, album, or artist in milliseconds.'],
   ['Playlists', 'Create, import, export, and browse playlists.'],
   ['Mood Radio & Smart Playlists', 'Build mood-based or rule-based playlists automatically.'],
@@ -17,6 +18,7 @@ const features = [
 const screenshots = [
   ['Library Explorer', 'Beautiful glass-morphic interface that highlights your album art and metadata.', '/album-grid.png'],
   ['Synced Lyrics', 'Immersive fullscreen mode with lyrics that move with the music.', '/fullscreen-player-1.webp'],
+  ['Offline Romanization', 'Read Chinese, Japanese, and Korean lyrics in Latin script, right beside the original.', '/romanization.webp'],
   ['Compact Player', 'A tiny, versatile mini-player that stays out of your way.', '/mini-player-2.webp'],
   ['Artist Insights', 'Deep dive into your favorite artists with discography and bios.', '/artist.png'],
   ['Remote Control', 'Control your music from any phone or browser on your local network.', '/remote.webp'],
