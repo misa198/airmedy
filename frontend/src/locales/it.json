@@ -398,7 +398,12 @@
     "synced": "Sincronizzato",
     "plain": "Testo semplice",
     "lyrics_not_available": "I testi non sono disponibili per questo brano.",
-    "lyrics_coming_soon": "Stiamo lavorando per portare presto i testi nella tua collezione."
+    "lyrics_coming_soon": "Stiamo lavorando per portare presto i testi nella tua collezione.",
+    "romanization": "Romanizza",
+    "romanization_loading": "Romanizzazione in corso…",
+    "romanization_retry": "Romanizzazione non riuscita — riprova",
+    "romanization_hint": "Romanizzazione offline: cinese e coreano.",
+    "romanization_mandarin": "I testi solo in caratteri Han usano il mandarino per impostazione predefinita. La lettura dei nomi può variare."
   },
   "home": {
     "title": "Home",

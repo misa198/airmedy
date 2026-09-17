@@ -398,7 +398,12 @@
     "synced": "동기화됨",
     "plain": "일반 텍스트",
     "lyrics_not_available": "이 트랙의 가사를 사용할 수 없습니다.",
-    "lyrics_coming_soon": "곧 가사 기능을 제공하기 위해 노력하고 있습니다."
+    "lyrics_coming_soon": "곧 가사 기능을 제공하기 위해 노력하고 있습니다.",
+    "romanization": "로마자",
+    "romanization_loading": "로마자 표기 중…",
+    "romanization_retry": "로마자 표기에 실패했습니다 — 다시 시도",
+    "romanization_hint": "오프라인 로마자 표기: 중국어 및 한국어.",
+    "romanization_mandarin": "한자만 있는 가사는 기본적으로 중국어 표준어로 처리됩니다. 이름의 발음은 다를 수 있습니다."
   },
   "home": {
     "title": "홈",

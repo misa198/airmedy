@@ -518,3 +518,19 @@ The mini player controls sit over a CSS glassmorphism panel (`.glass-panel` in `
 - `shallowRef` used for large reactive arrays (queue, tracks, albums).
 - Column widths cached in localStorage to avoid recalculation.
 - Mini player glass panel uses `backdrop-filter` on a GPU-composited layer (no rendered artwork copy).
+
+### Fullscreen romanization
+
+Fullscreen, mini-player, and drawer lyric panels use the same session-only
+romanization preference.
+`useRomanization` sends only parsed primary lines to `LyricsService`, keeps
+cancellable requests and generation guards scoped to the mounted surface, and
+passes secondary strings separately to synced/plain views. `stores/romanization`
+holds the backend-owned, app-lifetime preference, so it synchronizes between
+the main and mini-player webviews without surviving an app restart. The fullscreen icon control is teleported into its toolbar beside the
+lyrics/queue pill; the mini-player control sits beside its action pill while its
+lyrics panel is open, and the drawer uses a header icon beside Close. The native
+button retains keyboard access, `aria-pressed`, loading status and retry on error. Synced browse mode survives
+secondary text changes; auto-follow remeasures only when following playback.
+See [lyrics contracts](../lyrics/README.md#offline-fullscreen-romanization) for
+language defaults, fallback behavior and memory ownership.

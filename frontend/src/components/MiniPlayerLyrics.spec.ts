@@ -91,4 +91,5 @@ describe('MiniPlayerLyrics', () => {
 
     expect(wrapper.emitted('seek')).toEqual([[0]])
   })
+
 })

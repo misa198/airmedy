@@ -398,7 +398,12 @@
     "synced": "Sincronizada",
     "plain": "Texto simples",
     "lyrics_not_available": "As letras não estão disponíveis para esta faixa.",
-    "lyrics_coming_soon": "Estamos trabalhando para trazer as letras para sua coleção em breve."
+    "lyrics_coming_soon": "Estamos trabalhando para trazer as letras para sua coleção em breve.",
+    "romanization": "Romanizar",
+    "romanization_loading": "Romanizando…",
+    "romanization_retry": "Falha na romanização — tentar novamente",
+    "romanization_hint": "Romanização offline: chinês e coreano.",
+    "romanization_mandarin": "Letras apenas com caracteres Han usam mandarim por padrão. A leitura de nomes pode variar."
   },
   "home": {
     "title": "Início",

@@ -335,3 +335,63 @@ Parsed into `{ text: "English text", secondary: "中文翻译" }`.
 For the currently playing track, the dialog then calls `PlayerService.PublishCurrentLyrics`. This advances the lyric request ID, cancels any in-flight automatic lookup, and emits the selected lyric as `ready`; a late provider response therefore cannot overwrite or hide the manual selection.
 
 **Manual Edit:** Users can manually edit lyrics in the `MetadataEditDialog`. These edits are written to the file's `LYRICS` tag and stored as `meta_content` in the database.
+
+## Offline fullscreen romanization
+
+`internal/app/romanization.Service` owns a single sequential worker, one running
+request and one latest pending request. Matching concurrent lyric inputs join the
+same job and receive independent copies of its result; different inputs retain
+latest-request-wins cancellation. `domain.RomanizationEngine` is implemented
+by `internal/infra/romanization`; engine instances and dictionaries are confined
+to the worker. FX wiring owns shutdown via `Service.Close`.
+
+The Wails `LyricsService` exposes:
+
+- `InspectRomanization(lines)` → `{supported, languages, mandarinDefault}` without
+  loading dictionaries.
+- `RomanizeLyrics(ctx, lines)` → ordered `{text, status}` entries; status is
+  `converted`, `unsupported`, or `failed`. Wails cancellation reaches the context.
+
+Inputs are primary lyric lines only, parsed by the existing frontend parser.
+Requests over 128 KiB, 2,000 lines or 2,048 Unicode runes per line are rejected;
+invalid UTF-8 is rejected. Unicode-normalized detection supports Korean modern
+Hangul and Mandarin Han; lines containing kana are unsupported. Mixed script
+runs preserve Latin and punctuation. Names and ambiguous readings are not
+guaranteed; Cantonese and manual language overrides are unsupported.
+
+Chinese conversion uses tone-marked go-pinyin with longest phrase matching.
+Korean uses the standalone, standard-library-only
+[`github.com/misa198/koreanromanizer`](https://github.com/misa198/koreanromanizer). Pinned data and
+licenses live in the adapter's `ATTRIBUTION.md` and `data/` directory.
+Conversion performs no network access and does not change lyrics or timestamps.
+
+The worker releases dictionary references after two idle minutes and on shutdown.
+Cancellation is checked between lines/runs and before/after loading; a dictionary
+loader already running must finish before the next request can load. Release
+allows GC reclamation; it does not promise immediate RSS reduction. No production
+forced GC or global memory-limit changes are used. The backend caches at most
+one successful result, keyed by content and engine version, with a 1 MiB encoded
+payload cap. Cached strings cannot retain dictionary/token references. Failed
+results are not cached so retry can recover.
+
+Romanization's preference is backend-owned for the app lifetime, initially off,
+and broadcast to every webview; it is not persisted across app restarts. The
+mounted lyric renderer owns only its current results, cancels on input
+change, disabling and unmount, and rejects stale responses. Converted lines
+replace bilingual secondary text; unsupported/failed lines retain bilingual.
+While conversion is pending or fails, existing text stays visible. The primary
+line arrays remain unchanged, preserving browse mode. Only auto-follow is
+repositioned after secondary text changes. Fullscreen places its icon beside the
+lyrics/queue pill via a toolbar Teleport target; the mini player places it beside
+its action pill while lyrics are open, and the drawer places an icon beside its
+Close action; its enabled icon uses the primary color.
+
+Verification: standalone Korean upstream regression/race/fuzz tests,
+`internal/app/romanization` queue/cancellation/cache/limits tests,
+`internal/infra/romanization` offline fixtures and opt-in memory acceptance test,
+and `frontend/src/components/PlayerLyrics.spec.ts` interaction tests.
+Run memory acceptance in a fresh non-race process with
+`AIRMEDY_ROMANIZATION_MEMORY=1 go test -mod=mod ./internal/infra/romanization -run TestMemoryBudget -count=1 -v`.
+It checks ten load/release cycles, 100 songs, worker lifecycle and the 128 MiB
+live-heap / 256 MiB peak-RSS incremental budgets. Set
+`AIRMEDY_ROMANIZATION_HEAP_PROFILE` to keep the post-release heap profile.

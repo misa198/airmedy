@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { toRef } from 'vue'
+import { computed, toRef } from 'vue'
+import { useRomanization } from '../composables/useRomanization'
 import PlainLyricsView from './PlainLyricsView.vue'
+import RomanizationToggle from './RomanizationToggle.vue'
 import SyncedLyricsView from './SyncedLyricsView.vue'
 import { useLyrics } from '../composables/useLyrics'
 
@@ -9,6 +11,7 @@ const props = defineProps<{
   isLoading?: boolean
   currentPosition?: number
   immersive?: boolean
+  romanization?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -16,6 +19,10 @@ const emit = defineEmits<{
 }>()
 
 const { isSynced, syncedLines, plainLines } = useLyrics(toRef(props, 'lyrics'))
+const mainLines = computed(() => isSynced.value ? syncedLines.value.map(line => line.text) : plainLines.value.map(line => line.primary))
+const { supported, mandarinDefault, loading, error, enabled, secondary, toggle, retry } = useRomanization(
+  mainLines, computed(() => !!props.romanization && !props.isLoading),
+)
 </script>
 
 <template>
@@ -44,8 +51,9 @@ const { isSynced, syncedLines, plainLines } = useLyrics(toRef(props, 'lyrics'))
     <!-- Synced lyrics -->
     <SyncedLyricsView
       v-else-if="isSynced"
-      class="flex-1"
+      class="flex-1 min-h-0"
       :lines="syncedLines"
+      :secondary="secondary"
       :current-position="currentPosition ?? 0"
       :immersive="immersive"
       @seek="(time) => emit('seek', time)"
@@ -54,8 +62,15 @@ const { isSynced, syncedLines, plainLines } = useLyrics(toRef(props, 'lyrics'))
     <!-- Plain lyrics -->
     <PlainLyricsView
       v-else
-      class="flex-1"
+      class="flex-1 min-h-0"
       :lines="plainLines"
+      :secondary="secondary"
     />
+    <Teleport v-if="romanization && supported" to="#fullscreen-lyrics-actions">
+      <RomanizationToggle
+        :enabled="enabled" :loading="loading" :error="error" :mandarin-default="mandarinDefault"
+        @activate="error && enabled ? retry() : toggle()"
+      />
+    </Teleport>
   </div>
 </template>

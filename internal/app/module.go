@@ -17,6 +17,7 @@ import (
 	"airmedy/internal/app/player"
 	"airmedy/internal/app/playlist"
 	"airmedy/internal/app/remoteserver"
+	"airmedy/internal/app/romanization"
 	"airmedy/internal/app/updater"
 	"airmedy/internal/domain"
 	"airmedy/internal/infra/artwork"
@@ -30,6 +31,7 @@ import (
 	mqttinfra "airmedy/internal/infra/mqtt"
 	"airmedy/internal/infra/notification"
 	"airmedy/internal/infra/power"
+	romanizationinfra "airmedy/internal/infra/romanization"
 	"airmedy/internal/infra/sqlite"
 	"airmedy/internal/infra/wails"
 	"context"
@@ -79,6 +81,11 @@ var Module = fx.Module("app",
 		wails.NewSearchService,
 		wails.NewPlaylistService,
 		wails.NewLyricsService,
+		func(lc fx.Lifecycle) *romanization.Service {
+			service := romanization.New(romanizationinfra.New())
+			lc.Append(fx.Hook{OnStop: service.Close})
+			return service
+		},
 		wails.NewEQService,
 		wails.NewNormalizationService,
 		wails.NewAnalysisService,

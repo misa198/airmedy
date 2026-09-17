@@ -398,7 +398,12 @@
     "synced": "Synced",
     "plain": "Plain",
     "lyrics_not_available": "Lyrics are not available for this track.",
-    "lyrics_coming_soon": "We're working on bringing lyrics to your collection soon."
+    "lyrics_coming_soon": "We're working on bringing lyrics to your collection soon.",
+    "romanization": "Romanize",
+    "romanization_loading": "Romanizing…",
+    "romanization_retry": "Romanization failed — retry",
+    "romanization_hint": "Offline romanization: Chinese and Korean.",
+    "romanization_mandarin": "Han-only lyrics default to Mandarin. Readings may differ for names."
   },
   "home": {
     "title": "Home",

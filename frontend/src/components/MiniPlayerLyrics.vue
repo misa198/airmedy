@@ -7,6 +7,7 @@ const props = defineProps<{
   lyrics?: string
   loading?: boolean
   currentPosition: number
+  secondary?: (string | undefined)[]
 }>()
 
 const emit = defineEmits<{
@@ -135,7 +136,7 @@ onUnmounted(() => {
           @pointerdown.stop
           @click="seekAndResume(line.time, index)">
           <span class="font-bold">{{ line.text }}</span>
-          <span v-if="line.secondary" class="mt-0.5 block text-[14px] opacity-70">{{ line.secondary }}</span>
+          <span v-if="props.secondary?.[index] ?? line.secondary" class="mt-0.5 block text-[14px] opacity-70">{{ props.secondary?.[index] ?? line.secondary }}</span>
         </button>
       </div>
     </div>
@@ -145,7 +146,7 @@ onUnmounted(() => {
         <div v-for="(line, index) in plainLines" :key="index" data-test="mini-plain-lyric-line"
           class="text-foreground">
           <p>{{ line.primary }}</p>
-          <p v-if="line.secondary" class="mt-0.5 text-xs text-[color:var(--text-muted)]">{{ line.secondary }}</p>
+          <p v-if="props.secondary?.[index] ?? line.secondary" class="mt-0.5 text-xs text-[color:var(--text-muted)]">{{ props.secondary?.[index] ?? line.secondary }}</p>
         </div>
       </div>
     </div>

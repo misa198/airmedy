@@ -17,6 +17,7 @@ const emit = defineEmits<{
   <div class="absolute left-0 top-[2%] bottom-[8%] flex flex-col overflow-hidden w-[50cqw] max-w-2xl">
     <LyricsView
       :lyrics="lyrics"
+          romanization
       :is-loading="loading"
       :current-position="position"
       immersive

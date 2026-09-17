@@ -2,6 +2,7 @@
 import type { PlainLine } from '../composables/useLyrics'
 
 defineProps<{
+  secondary?: (string | undefined)[]
   lines: PlainLine[]
 }>()
 </script>
@@ -15,7 +16,7 @@ defineProps<{
         class="leading-relaxed select-text"
       >
         <p class="text-lg md:text-xl font-medium text-white/70">{{ line.primary }}</p>
-        <p v-if="line.secondary" class="text-base md:text-lg font-medium text-white/40 mt-0.5">{{ line.secondary }}</p>
+        <p v-if="secondary?.[index] || line.secondary" class="text-base md:text-lg font-medium text-white/40 mt-0.5">{{ secondary?.[index] || line.secondary }}</p>
       </div>
     </div>
   </div>
