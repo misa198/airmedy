@@ -400,10 +400,10 @@
     "lyrics_not_available": "Текст для этого трека недоступен.",
     "lyrics_coming_soon": "Мы работаем над тем, чтобы тексты песен скоро появились в вашей коллекции.",
     "romanization": "Транслитерация",
-    "romanization_loading": "Romanizing…",
-    "romanization_retry": "Romanization failed — retry",
-    "romanization_hint": "Offline romanization: Chinese, Japanese and Korean.",
-    "romanization_mandarin": "Han-only lyrics default to Mandarin. Readings may differ for names."
+    "romanization_loading": "Романизация…",
+    "romanization_retry": "Не удалось выполнить романизацию — повторить",
+    "romanization_hint": "Офлайн-романизация: китайский, японский и корейский.",
+    "romanization_mandarin": "Для текстов только с иероглифами Han по умолчанию используется мандаринское чтение. Чтение имён может отличаться."
   },
   "home": {
     "title": "Главная",

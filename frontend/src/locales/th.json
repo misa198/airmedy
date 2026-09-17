@@ -400,10 +400,10 @@
     "lyrics_not_available": "ไม่มีเนื้อเพลงสำหรับเพลงนี้",
     "lyrics_coming_soon": "เรากำลังพัฒนาเพื่อนำเนื้อเพลงมาสู่คอลเลกชันของคุณเร็ว ๆ นี้",
     "romanization": "ถอดเสียง",
-    "romanization_loading": "Romanizing…",
-    "romanization_retry": "Romanization failed — retry",
-    "romanization_hint": "Offline romanization: Chinese, Japanese and Korean.",
-    "romanization_mandarin": "Han-only lyrics default to Mandarin. Readings may differ for names."
+    "romanization_loading": "กำลังถอดเสียง…",
+    "romanization_retry": "ถอดเสียงไม่สำเร็จ — ลองอีกครั้ง",
+    "romanization_hint": "การถอดเสียงออฟไลน์: จีน ญี่ปุ่น และเกาหลี",
+    "romanization_mandarin": "เนื้อเพลงที่มีเฉพาะอักษรฮั่นจะใช้ภาษาจีนกลางเป็นค่าเริ่มต้น การอ่านชื่ออาจแตกต่างกัน"
   },
   "home": {
     "title": "หน้าแรก",

@@ -400,10 +400,10 @@
     "lyrics_not_available": "このトラックの歌詞は利用できません。",
     "lyrics_coming_soon": "近日中にライブラリで歌詞を利用できるように取り組んでいます。",
     "romanization": "ローマ字",
-    "romanization_loading": "Romanizing…",
-    "romanization_retry": "Romanization failed — retry",
-    "romanization_hint": "Offline romanization: Chinese, Japanese and Korean.",
-    "romanization_mandarin": "Han-only lyrics default to Mandarin. Readings may differ for names."
+    "romanization_loading": "ローマ字表記に変換中…",
+    "romanization_retry": "ローマ字表記に失敗しました — 再試行",
+    "romanization_hint": "オフラインのローマ字表記: 中国語、日本語、韓国語。",
+    "romanization_mandarin": "漢字のみの歌詞は既定で中国語（標準語）として扱います。名前の読み方は異なる場合があります。"
   },
   "home": {
     "title": "ホーム",

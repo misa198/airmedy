@@ -400,10 +400,10 @@
     "lyrics_not_available": "I testi non sono disponibili per questo brano.",
     "lyrics_coming_soon": "Stiamo lavorando per portare presto i testi nella tua collezione.",
     "romanization": "Romanizza",
-    "romanization_loading": "Romanizing…",
-    "romanization_retry": "Romanization failed — retry",
-    "romanization_hint": "Offline romanization: Chinese, Japanese and Korean.",
-    "romanization_mandarin": "Han-only lyrics default to Mandarin. Readings may differ for names."
+    "romanization_loading": "Romanizzazione in corso…",
+    "romanization_retry": "Romanizzazione non riuscita — riprova",
+    "romanization_hint": "Romanizzazione offline: cinese, giapponese e coreano.",
+    "romanization_mandarin": "I testi solo in caratteri Han usano il mandarino per impostazione predefinita. La lettura dei nomi può variare."
   },
   "home": {
     "title": "Home",
