@@ -69,7 +69,15 @@ vi.mock('../../bindings/airmedy/internal/infra/wails', () => ({
   },
 }))
 
-vi.mock('@wailsio/runtime', () => ({ Events: { On: vi.fn(() => vi.fn()) } }))
+vi.mock('@wailsio/runtime', () => ({
+  Events: { On: vi.fn(() => vi.fn()) },
+  Create: {
+    Nullable: (fn: (value: unknown) => unknown) => (value: unknown) => value == null ? null : fn(value),
+    Array: (fn: (value: unknown) => unknown) => (value: unknown[]) => (value ?? []).map(fn),
+    Struct: (ctor: new (value: unknown) => unknown) => (value: unknown) => value == null ? null : new ctor(value),
+    Map: () => (value: unknown) => value,
+  },
+}))
 
 describe('MiniPlayerFloating', () => {
   beforeEach(() => {

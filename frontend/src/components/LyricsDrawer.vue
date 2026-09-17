@@ -94,6 +94,15 @@ watch(activeIndex, (newIndex) => {
   previousActiveIndex = newIndex
 }, { flush: 'post', immediate: true })
 
+// The desktop drawer is CSS-hidden instead of unmounted, so restore auto-scroll
+// whenever it becomes visible again.
+watch(() => store.isLyricsOpen, (isOpen, wasOpen) => {
+  if (!isOpen || wasOpen) return
+  isBrowsing.value = false
+  hasPositionedInitialLine = false
+  scheduleScrollToActive(activeIndex.value)
+})
+
 onMounted(() => {
   scheduleScrollToActive(activeIndex.value)
   if (typeof ResizeObserver !== 'undefined') {

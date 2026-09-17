@@ -17,7 +17,7 @@ describe('romanization store', () => {
     api.SetRomanizationEnabled.mockResolvedValue(undefined)
     setActivePinia(createPinia())
     const store = useRomanizationStore()
-    await Promise.resolve()
+    await vi.waitFor(() => expect(store.enabled).toBe(true))
     expect(store.enabled).toBe(true)
     await store.setEnabled(false)
     expect(api.SetRomanizationEnabled).toHaveBeenCalledWith(false)

@@ -4,9 +4,14 @@ import { describe, expect, it, vi } from 'vitest'
 import ArtistCard from './ArtistCard.vue'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 
-vi.mock('@wailsio/runtime', async (importOriginal) => ({
-  ...await importOriginal<typeof import('@wailsio/runtime')>(),
+vi.mock('@wailsio/runtime', () => ({
   Events: { On: vi.fn(() => vi.fn()) },
+  Create: {
+    Nullable: (fn: (value: unknown) => unknown) => (value: unknown) => value == null ? null : fn(value),
+    Array: (fn: (value: unknown) => unknown) => (value: unknown[]) => (value ?? []).map(fn),
+    Struct: (ctor: new (value: unknown) => unknown) => (value: unknown) => value == null ? null : new ctor(value),
+    Map: () => (value: unknown) => value,
+  },
 }))
 
 vi.mock('../../bindings/airmedy/internal/infra/wails/libraryservice', () => ({

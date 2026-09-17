@@ -6,7 +6,15 @@ import { useRomanizationStore } from '../stores/romanization'
 
 const api = vi.hoisted(() => ({ InspectRomanization: vi.fn(), RomanizeLyrics: vi.fn() }))
 vi.mock('../../bindings/airmedy/internal/infra/wails', () => ({ LyricsService: api }))
-vi.mock('@wailsio/runtime', () => ({ Events: { On: vi.fn(() => vi.fn()) } }))
+vi.mock('@wailsio/runtime', () => ({
+  Events: { On: vi.fn(() => vi.fn()) },
+  Create: {
+    Nullable: (fn: (value: unknown) => unknown) => (value: unknown) => value == null ? null : fn(value),
+    Array: (fn: (value: unknown) => unknown) => (value: unknown[]) => (value ?? []).map(fn),
+    Struct: (ctor: new (value: unknown) => unknown) => (value: unknown) => value == null ? null : new ctor(value),
+    Map: () => (value: unknown) => value,
+  },
+}))
 
 function request<T>() {
   let resolve!: (value: T) => void
