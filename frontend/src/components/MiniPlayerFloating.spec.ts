@@ -1,10 +1,12 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 import MiniPlayerFloating from './MiniPlayerFloating.vue'
 
 const mocks = vi.hoisted(() => ({
   setMiniPlayerExpanded: vi.fn().mockResolvedValue(undefined),
   moodRadioStore: { active: false },
+  inspectRomanization: vi.fn(),
 }))
 
 vi.mock('vue-i18n', () => ({
@@ -60,7 +62,21 @@ vi.mock('../../bindings/airmedy/internal/infra/wails/windowservice', () => ({
   SetMiniPlayerExpanded: mocks.setMiniPlayerExpanded,
 }))
 
+vi.mock('../../bindings/airmedy/internal/infra/wails', () => ({
+  LyricsService: {
+    InspectRomanization: mocks.inspectRomanization,
+    RomanizeLyrics: vi.fn(),
+  },
+}))
+
+vi.mock('@wailsio/runtime', () => ({ Events: { On: vi.fn(() => vi.fn()) } }))
+
 describe('MiniPlayerFloating', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    mocks.inspectRomanization.mockImplementation(() => Object.assign(Promise.resolve({ supported: false, mandarinDefault: false }), { cancel: vi.fn().mockResolvedValue(undefined) }))
+  })
+
   it('keeps the artwork as the window drag region', () => {
     const wrapper = mount(MiniPlayerFloating, {
       global: { stubs: { LazyImg: true, Slider: true, MarqueeText: true, PlayerControlButton: true, MiniPlayerLyrics: true, QueueTrackList: true } },

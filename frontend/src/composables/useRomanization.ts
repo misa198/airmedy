@@ -75,7 +75,7 @@ export function useRomanization(lines: Ref<string[]>, available: Ref<boolean>) {
   })
 
   function toggle() {
-    store.enabled = !store.enabled
+    void store.setEnabled(!store.enabled)
   }
 
   return {

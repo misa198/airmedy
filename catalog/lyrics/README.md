@@ -339,7 +339,9 @@ For the currently playing track, the dialog then calls `PlayerService.PublishCur
 ## Offline fullscreen romanization
 
 `internal/app/romanization.Service` owns a single sequential worker, one running
-request and one latest pending request. `domain.RomanizationEngine` is implemented
+request and one latest pending request. Matching concurrent lyric inputs join the
+same job and receive independent copies of its result; different inputs retain
+latest-request-wins cancellation. `domain.RomanizationEngine` is implemented
 by `internal/infra/romanization`; engine instances and dictionaries are confined
 to the worker. FX wiring owns shutdown via `Service.Close`.
 
@@ -374,14 +376,17 @@ one successful result, keyed by content and engine version, with a 1 MiB encoded
 payload cap. Cached strings cannot retain dictionary/token references. Failed
 results are not cached so retry can recover.
 
-Fullscreen's romanization preference is a Pinia session-only boolean, initially
-off. The mounted lyric renderer owns only its current results, cancels on input
+Romanization's preference is backend-owned for the app lifetime, initially off,
+and broadcast to every webview; it is not persisted across app restarts. The
+mounted lyric renderer owns only its current results, cancels on input
 change, disabling and unmount, and rejects stale responses. Converted lines
 replace bilingual secondary text; unsupported/failed lines retain bilingual.
 While conversion is pending or fails, existing text stays visible. The primary
 line arrays remain unchanged, preserving browse mode. Only auto-follow is
-repositioned after secondary text changes. The icon control sits beside the fullscreen lyrics/queue pill via a toolbar
-Teleport target; it is absent from the drawer and mini player.
+repositioned after secondary text changes. Fullscreen places its icon beside the
+lyrics/queue pill via a toolbar Teleport target; the mini player places it beside
+its action pill while lyrics are open, and the drawer places an icon beside its
+Close action; its enabled icon uses the primary color.
 
 Verification: standalone Korean upstream regression/race/fuzz tests,
 `internal/app/romanization` queue/cancellation/cache/limits tests,

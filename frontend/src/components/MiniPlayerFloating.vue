@@ -21,6 +21,9 @@ import MiniPlayerLyrics from './MiniPlayerLyrics.vue'
 import QueueTrackList from './QueueTrackList.vue'
 import { useAppStore } from '@/stores/app'
 import { useArtworkCrossfadeOpacity } from '@/composables/useArtworkCrossfadeOpacity'
+import { useLyrics } from '@/composables/useLyrics'
+import { useRomanization } from '@/composables/useRomanization'
+import RomanizationToggle from './RomanizationToggle.vue'
 
 const store = usePlayerStore()
 const moodRadioStore = useMoodRadioStore()
@@ -39,6 +42,12 @@ const isPointerOverArtwork = ref(false)
 const showVolume = ref(false)
 const showActions = ref(true)
 const activePanel = ref<'lyrics' | 'queue' | null>(null)
+const lyricsContent = computed(() => store.lyrics?.content)
+const { isSynced, syncedLines, plainLines } = useLyrics(lyricsContent)
+const romanizationLines = computed(() => isSynced.value ? syncedLines.value.map(line => line.text) : plainLines.value.map(line => line.primary))
+const { supported: romanizationSupported, mandarinDefault, loading: romanizationLoading, error: romanizationError, enabled: romanizationEnabled, secondary: romanizationSecondary, toggle: toggleRomanization, retry: retryRomanization } = useRomanization(
+  romanizationLines, computed(() => activePanel.value === 'lyrics' && !store.lyricsLoading),
+)
 const lyricsTintReady = ref(false)
 const animatePanelIndicator = ref(false)
 const indicatorPanel = ref<'lyrics' | 'queue'>('lyrics')
@@ -183,7 +192,13 @@ watch(() => store.theme, (colors) => {
         </div>
       </div>
 
-      <div class="absolute top-2 right-2 z-30" style="-webkit-app-region: no-drag">
+      <div class="absolute top-2 right-2 z-30 flex items-center gap-1" style="-webkit-app-region: no-drag">
+        <RomanizationToggle v-if="romanizationSupported && activePanel === 'lyrics'"
+          data-test="mini-player-romanization-toggle"
+          mini class="shrink-0 transition-opacity duration-200! ease-[cubic-bezier(0.4,0,0.2,1)]"
+          :class="isHovered && showActions ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
+          :enabled="romanizationEnabled" :loading="romanizationLoading" :error="romanizationError"
+          :mandarin-default="mandarinDefault" @activate="romanizationError && romanizationEnabled ? retryRomanization() : toggleRomanization()" />
         <div data-test="mini-player-actions-pill"
           class="relative inline-flex h-8 overflow-hidden rounded-full border border-mini-player-pill-border bg-mini-player-pill-background backdrop-blur-md transition-[width,opacity] duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-[width]"
           :class="[showVolume ? 'w-[122px]' : 'w-[84px]', isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none']"
@@ -301,7 +316,7 @@ watch(() => store.theme, (colors) => {
       :class="activePanel === 'lyrics' ? ['mini-player-lyrics-panel bg-[color:var(--mini-player-lyrics-background)] backdrop-blur-[30px]', { 'mini-player-lyrics-tint-ready': lyricsTintReady }] : ''"
       :style="activePanel === 'lyrics' ? lyricsPanelStyle : undefined">
       <MiniPlayerLyrics v-if="activePanel === 'lyrics'" :lyrics="store.lyrics?.content" :loading="store.lyricsLoading"
-        :current-position="store.position" @seek="store.seek" />
+        :current-position="store.position" :secondary="romanizationSecondary" @seek="store.seek" />
       <div v-else class="h-full min-h-0 flex flex-col">
         <div class="flex items-center justify-between shrink-0 px-3 py-2 border-b border-[color:var(--border-glass)]">
           <div class="flex items-center gap-2 text-foreground">

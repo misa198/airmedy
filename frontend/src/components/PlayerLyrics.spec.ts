@@ -6,6 +6,7 @@ import { useRomanizationStore } from '../stores/romanization'
 
 const api = vi.hoisted(() => ({ InspectRomanization: vi.fn(), RomanizeLyrics: vi.fn() }))
 vi.mock('../../bindings/airmedy/internal/infra/wails', () => ({ LyricsService: api }))
+vi.mock('@wailsio/runtime', () => ({ Events: { On: vi.fn(() => vi.fn()) } }))
 
 function request<T>() {
   let resolve!: (value: T) => void
@@ -51,7 +52,7 @@ describe('fullscreen romanization', () => {
     expect(wrapper.text()).not.toContain('Translation')
     expect(wrapper.text().match(/Hello/g)).toHaveLength(1)
     expect(wrapper.get('button').classes()).not.toContain('bg-foreground')
-    expect(wrapper.get('[data-test="romanization-fill"]').classes()).toEqual(expect.arrayContaining(['inset-1', 'bg-foreground', 'opacity-100']))
+    expect(wrapper.get('[data-test="romanization-fill"]').classes()).toEqual(expect.arrayContaining(['inset-0', 'bg-foreground', 'opacity-100']))
     expect(wrapper.get('button').classes()).toContain('text-background')
     expect(wrapper.get('button').classes().join(' ')).not.toMatch(/text-white|text-black|bg-white|bg-black/)
     await wrapper.get('button').trigger('click')

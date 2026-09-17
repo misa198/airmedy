@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { Mic2, X } from '@lucide/vue'
+import { Languages, LoaderCircle, Mic2, RotateCcw, X } from '@lucide/vue'
 import { usePlayerStore } from '../stores/player'
 import { useI18n } from 'vue-i18n'
 import { useLyrics } from '../composables/useLyrics'
+import { useRomanization } from '../composables/useRomanization'
 import { lyricsMotionClasses, useLyricsScrollMotion } from '../composables/useLyricsScrollMotion'
 
 const { t } = useI18n()
@@ -11,6 +12,10 @@ const store = usePlayerStore()
 
 const lyricsContent = computed(() => store.lyrics?.content)
 const { isSynced, syncedLines, plainLines } = useLyrics(lyricsContent)
+const mainLines = computed(() => isSynced.value ? syncedLines.value.map(line => line.text) : plainLines.value.map(line => line.primary))
+const { supported, mandarinDefault, loading: romanizationLoading, error: romanizationError, enabled, secondary, toggle, retry } = useRomanization(
+  mainLines, computed(() => !store.lyricsLoading),
+)
 
 const activeIndex = computed(() => {
   const pos = store.position
@@ -117,11 +122,24 @@ onUnmounted(() => {
         <div class="max-w-[100px] truncate">{{ t('player.lyrics') }}</div>
       </div>
 
-      <button
-        class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-dim hover:text-foreground flex-shrink-0"
-        @click="store.toggleLyrics()">
-        <X class="w-4 h-4" />
-      </button>
+      <div class="flex items-center gap-1 flex-shrink-0">
+        <button v-if="supported" type="button" data-test="drawer-romanization-toggle"
+          class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors"
+          :class="enabled ? 'text-primary' : 'text-dim hover:text-foreground'"
+          :aria-pressed="enabled" :aria-busy="romanizationLoading"
+          :aria-label="t(romanizationError && enabled ? 'player.romanization_retry' : romanizationLoading ? 'player.romanization_loading' : 'player.romanization')"
+          :title="[t(romanizationError && enabled ? 'player.romanization_retry' : 'player.romanization'), t(mandarinDefault ? 'player.romanization_mandarin' : 'player.romanization_hint')].join(' — ')"
+          @click="romanizationError && enabled ? retry() : toggle()">
+          <LoaderCircle v-if="romanizationLoading" class="w-4 h-4 animate-spin" aria-hidden="true" />
+          <RotateCcw v-else-if="romanizationError && enabled" class="w-4 h-4" aria-hidden="true" />
+          <Languages v-else class="w-4 h-4" aria-hidden="true" />
+        </button>
+        <button
+          class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-dim hover:text-foreground"
+          @click="store.toggleLyrics()">
+          <X class="w-4 h-4" />
+        </button>
+      </div>
     </div>
 
     <!-- Body -->
@@ -158,7 +176,7 @@ onUnmounted(() => {
               !isBrowsing && (index === activeIndex || (activeIndex > 0 && index === activeIndex - 1) || (index === activeIndex + 1)) ? 'transform-gpu' : ''
             ]" @pointerdown.stop @click="seekAndResume(line.time, index)">
             <div class="text-[19pt] font-bold">{{ line.text }}</div>
-            <div v-if="line.secondary" class="text-[14pt] opacity-50 mt-0.5">{{ line.secondary }}</div>
+            <div v-if="secondary[index] ?? line.secondary" class="text-[14pt] opacity-50 mt-0.5">{{ secondary[index] ?? line.secondary }}</div>
           </div>
         </div>
       </div>
@@ -168,7 +186,7 @@ onUnmounted(() => {
         <div class="space-y-3.5">
           <div v-for="(line, index) in plainLines" :key="index" class="leading-relaxed select-text">
             <p class="text-sm text-foreground/80">{{ line.primary }}</p>
-            <p v-if="line.secondary" class="text-xs text-foreground/40 mt-0.5">{{ line.secondary }}</p>
+            <p v-if="secondary[index] ?? line.secondary" class="text-xs text-foreground/40 mt-0.5">{{ secondary[index] ?? line.secondary }}</p>
           </div>
         </div>
       </div>

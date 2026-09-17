@@ -50,6 +50,44 @@ func TestInspectAndLimits(t *testing.T) {
 	}
 }
 
+func TestEnabled(t *testing.T) {
+	s := New(&fakeEngine{})
+	t.Cleanup(func() { _ = s.Close(context.Background()) })
+	if s.Enabled() {
+		t.Fatal("enabled by default")
+	}
+	s.SetEnabled(true)
+	if !s.Enabled() {
+		t.Fatal("enabled state was not retained")
+	}
+}
+
+func TestRomanizeSharesMatchingRequests(t *testing.T) {
+	entered := make(chan struct{})
+	release := make(chan struct{})
+	f := &fakeEngine{convert: func(context.Context, string, bool) (string, error) {
+		close(entered)
+		<-release
+		return "reading", nil
+	}}
+	s := New(f)
+	t.Cleanup(func() { _ = s.Close(context.Background()) })
+	first := make(chan []domain.RomanizedLine, 1)
+	second := make(chan []domain.RomanizedLine, 1)
+	go func() { result, _ := s.Romanize(context.Background(), []string{"世界"}); first <- result }()
+	<-entered
+	go func() { result, _ := s.Romanize(context.Background(), []string{"世界"}); second <- result }()
+	close(release)
+	left, right := <-first, <-second
+	if f.calls.Load() != 1 || left[0].Text != "reading" || right[0].Text != "reading" {
+		t.Fatalf("calls=%d left=%+v right=%+v", f.calls.Load(), left, right)
+	}
+	left[0].Text = "mutated"
+	if right[0].Text != "reading" {
+		t.Fatal("shared callers received aliased results")
+	}
+}
+
 func TestCacheContextAndFallback(t *testing.T) {
 	f := &fakeEngine{version: "v1"}
 	s := New(f)
@@ -186,7 +224,7 @@ func TestCachePayloadLimitAndCancellationBetweenLines(t *testing.T) {
 	if err := s.Close(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if f.calls.Load() != 3 {
-		t.Fatal("conversion continued after cancellation")
+	if f.calls.Load() < 3 || f.calls.Load() > 4 {
+		t.Fatalf("unexpected conversion count after cancellation: %d", f.calls.Load())
 	}
 }

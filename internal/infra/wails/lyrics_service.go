@@ -7,6 +7,8 @@ import (
 	"airmedy/internal/app/lyrics"
 	"airmedy/internal/app/romanization"
 	"airmedy/internal/domain"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 type LyricsService struct {
@@ -25,6 +27,17 @@ func (s *LyricsService) InspectRomanization(lines []string) (domain.Romanization
 
 func (s *LyricsService) RomanizeLyrics(ctx context.Context, lines []string) ([]domain.RomanizedLine, error) {
 	return s.romanization.Romanize(ctx, lines)
+}
+
+func (s *LyricsService) GetRomanizationEnabled() bool {
+	return s.romanization.Enabled()
+}
+
+func (s *LyricsService) SetRomanizationEnabled(enabled bool) {
+	s.romanization.SetEnabled(enabled)
+	if app := application.Get(); app != nil && app.Event != nil {
+		app.Event.Emit("lyrics:romanization-enabled", enabled)
+	}
 }
 
 func (s *LyricsService) GetLyrics(trackID string) (*domain.Lyric, error) {
