@@ -402,7 +402,7 @@
     "romanization": "Romaniser",
     "romanization_loading": "Romanisation en cours…",
     "romanization_retry": "Échec de la romanisation — réessayer",
-    "romanization_hint": "Romanisation hors ligne : chinois, japonais et coréen.",
+    "romanization_hint": "Romanisation hors ligne : chinois et coréen.",
     "romanization_mandarin": "Les paroles composées uniquement de caractères Han utilisent le mandarin par défaut. La lecture des noms peut varier."
   },
   "home": {

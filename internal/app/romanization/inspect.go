@@ -32,21 +32,22 @@ func Inspect(lines []string) (domain.RomanizationInspection, error) {
 	if err := validate(lines); err != nil {
 		return result, err
 	}
-	var kana, hangul, han bool
+	var hangul, han bool
 	for _, line := range lines {
+		var kana, lineHan bool
 		for _, r := range norm.NFKC.String(line) {
 			kana = kana || unicode.In(r, unicode.Hiragana, unicode.Katakana)
 			hangul = hangul || (r >= 0xAC00 && r <= 0xD7A3)
-			han = han || unicode.Is(unicode.Han, r)
+			lineHan = lineHan || unicode.Is(unicode.Han, r)
 		}
-	}
-	if kana {
-		result.Languages = append(result.Languages, "ja")
+		if !kana {
+			han = han || lineHan
+		}
 	}
 	if hangul {
 		result.Languages = append(result.Languages, "ko")
 	}
-	if han && !kana {
+	if han {
 		result.Languages = append(result.Languages, "zh")
 		result.MandarinDefault = true
 	}

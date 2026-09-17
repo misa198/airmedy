@@ -402,7 +402,7 @@
     "romanization": "罗马化",
     "romanization_loading": "正在罗马化…",
     "romanization_retry": "罗马化失败 — 重试",
-    "romanization_hint": "离线罗马化：中文、日语和韩语。",
+    "romanization_hint": "离线罗马化：中文和韩语。",
     "romanization_mandarin": "仅含汉字的歌词默认按普通话处理。姓名的读音可能不同。"
   },
   "home": {

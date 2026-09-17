@@ -402,7 +402,7 @@
     "romanization": "Romanize",
     "romanization_loading": "Romanizing…",
     "romanization_retry": "Romanization failed — retry",
-    "romanization_hint": "Offline romanization: Chinese, Japanese and Korean.",
+    "romanization_hint": "Offline romanization: Chinese and Korean.",
     "romanization_mandarin": "Han-only lyrics default to Mandarin. Readings may differ for names."
   },
   "home": {

@@ -354,15 +354,13 @@ The Wails `LyricsService` exposes:
 
 Inputs are primary lyric lines only, parsed by the existing frontend parser.
 Requests over 128 KiB, 2,000 lines or 2,048 Unicode runes per line are rejected;
-invalid UTF-8 is rejected. Unicode-normalized detection chooses Japanese for
-kana and Korean for modern Hangul. Han uses Japanese when the song contains
-kana, otherwise Mandarin (explicitly disclosed in the control tooltip). Mixed
-script runs preserve Latin and punctuation. Names and ambiguous readings are
-not guaranteed; Cantonese and manual language overrides are unsupported.
+invalid UTF-8 is rejected. Unicode-normalized detection supports Korean modern
+Hangul and Mandarin Han; lines containing kana are unsupported. Mixed script
+runs preserve Latin and punctuation. Names and ambiguous readings are not
+guaranteed; Cantonese and manual language overrides are unsupported.
 
-Chinese conversion uses tone-marked go-pinyin with longest phrase matching;
-Japanese uses privately loaded Kagome IPA pronunciation/reading and hebon
-macrons. Korean uses the standalone, standard-library-only
+Chinese conversion uses tone-marked go-pinyin with longest phrase matching.
+Korean uses the standalone, standard-library-only
 [`github.com/misa198/koreanromanizer`](https://github.com/misa198/koreanromanizer). Pinned data and
 licenses live in the adapter's `ATTRIBUTION.md` and `data/` directory.
 Conversion performs no network access and does not change lyrics or timestamps.

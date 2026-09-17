@@ -402,7 +402,7 @@
     "romanization": "Romanizar",
     "romanization_loading": "Romanizando…",
     "romanization_retry": "Falha na romanização — tentar novamente",
-    "romanization_hint": "Romanização offline: chinês, japonês e coreano.",
+    "romanization_hint": "Romanização offline: chinês e coreano.",
     "romanization_mandarin": "Letras apenas com caracteres Han usam mandarim por padrão. A leitura de nomes pode variar."
   },
   "home": {

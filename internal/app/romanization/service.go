@@ -223,11 +223,6 @@ func (s *Service) respondLocked(job *job, result response) {
 }
 
 func (s *Service) convert(ctx context.Context, lines []string) ([]domain.RomanizedLine, error) {
-	inspection, _ := Inspect(lines)
-	japanese := false
-	for _, lang := range inspection.Languages {
-		japanese = japanese || lang == "ja"
-	}
 	result := make([]domain.RomanizedLine, len(lines))
 	for i, line := range lines {
 		if err := ctx.Err(); err != nil {
@@ -238,7 +233,7 @@ func (s *Service) convert(ctx context.Context, lines []string) ([]domain.Romaniz
 		if !info.Supported {
 			continue
 		}
-		text, err := s.engine.Romanize(ctx, line, japanese)
+		text, err := s.engine.Romanize(ctx, line)
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
 		}

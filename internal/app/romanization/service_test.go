@@ -14,15 +14,15 @@ type fakeEngine struct {
 	calls    atomic.Int32
 	releases atomic.Int32
 	version  string
-	convert  func(context.Context, string, bool) (string, error)
+	convert  func(context.Context, string) (string, error)
 }
 
 func (f *fakeEngine) Version() string { return f.version }
 func (f *fakeEngine) Release()        { f.releases.Add(1) }
-func (f *fakeEngine) Romanize(ctx context.Context, s string, ja bool) (string, error) {
+func (f *fakeEngine) Romanize(ctx context.Context, s string) (string, error) {
 	f.calls.Add(1)
 	if f.convert != nil {
-		return f.convert(ctx, s, ja)
+		return f.convert(ctx, s)
 	}
 	return "reading " + s, nil
 }
@@ -35,8 +35,9 @@ func TestInspectAndLimits(t *testing.T) {
 	}{
 		{[]string{"Hello world", "123"}, "", false},
 		{[]string{"你好", "世界"}, "zh", true},
-		{[]string{"世界", "こんにちは", "한글"}, "ja,ko", false},
-		{[]string{"ﾊﾛｰ", "한"}, "ja,ko", false},
+		{[]string{"東京へ行く"}, "", false},
+		{[]string{"世界", "こんにちは", "한글"}, "ko,zh", true},
+		{[]string{"ﾊﾛｰ", "한"}, "ko", false},
 	} {
 		got, err := Inspect(tc.lines)
 		if err != nil || strings.Join(got.Languages, ",") != tc.languages || got.MandarinDefault != tc.mandarin {
@@ -65,7 +66,7 @@ func TestEnabled(t *testing.T) {
 func TestRomanizeSharesMatchingRequests(t *testing.T) {
 	entered := make(chan struct{})
 	release := make(chan struct{})
-	f := &fakeEngine{convert: func(context.Context, string, bool) (string, error) {
+	f := &fakeEngine{convert: func(context.Context, string) (string, error) {
 		close(entered)
 		<-release
 		return "reading", nil
@@ -96,13 +97,10 @@ func TestCacheContextAndFallback(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	f.convert = func(_ context.Context, text string, ja bool) (string, error) {
-		if !ja {
-			t.Error("Han-only line lost song Japanese context")
-		}
+	f.convert = func(_ context.Context, text string) (string, error) {
 		return "romaji", nil
 	}
-	lines := []string{"世界", "かな", "Latin"}
+	lines := []string{"世界", "你好", "Latin"}
 	first, err := s.Romanize(context.Background(), lines)
 	if err != nil || first[2].Status != "unsupported" {
 		t.Fatalf("%+v %v", first, err)
@@ -112,22 +110,22 @@ func TestCacheContextAndFallback(t *testing.T) {
 	if f.calls.Load() != 2 || second[0].Text != "romaji" {
 		t.Fatal("cache miss or aliased cache")
 	}
-	_, _ = s.Romanize(context.Background(), []string{"かな"})
+	_, _ = s.Romanize(context.Background(), []string{"你好"})
 	if f.calls.Load() != 3 {
 		t.Fatal("content did not invalidate cache")
 	}
 	// Requests are complete before changing the fake's version or behavior.
 	f.version = "v2"
-	_, _ = s.Romanize(context.Background(), []string{"かな"})
+	_, _ = s.Romanize(context.Background(), []string{"你好"})
 	if f.calls.Load() != 4 {
 		t.Fatal("version did not invalidate cache")
 	}
-	f.convert = func(context.Context, string, bool) (string, error) { return "", errors.New("no reading") }
-	failed, _ := s.Romanize(context.Background(), []string{"違う"})
+	f.convert = func(context.Context, string) (string, error) { return "", errors.New("no reading") }
+	failed, _ := s.Romanize(context.Background(), []string{"重庆"})
 	if failed[0].Status != "failed" {
 		t.Fatal(failed)
 	}
-	_, _ = s.Romanize(context.Background(), []string{"違う"})
+	_, _ = s.Romanize(context.Background(), []string{"重庆"})
 	if f.calls.Load() != 6 {
 		t.Fatal("failure was cached; retry cannot succeed")
 	}
@@ -137,7 +135,7 @@ func TestCancellationLatestPendingAndShutdown(t *testing.T) {
 	entered := make(chan string, 3)
 	release := make(chan struct{})
 	f := &fakeEngine{}
-	f.convert = func(ctx context.Context, text string, _ bool) (string, error) {
+	f.convert = func(ctx context.Context, text string) (string, error) {
 		entered <- text
 		if text == "一" {
 			<-release
@@ -198,7 +196,7 @@ func TestIdleRelease(t *testing.T) {
 }
 
 func TestCachePayloadLimitAndCancellationBetweenLines(t *testing.T) {
-	f := &fakeEngine{convert: func(context.Context, string, bool) (string, error) {
+	f := &fakeEngine{convert: func(context.Context, string) (string, error) {
 		return strings.Repeat("a", 1<<20), nil
 	}}
 	s := New(f)
@@ -216,7 +214,7 @@ func TestCachePayloadLimitAndCancellationBetweenLines(t *testing.T) {
 		t.Fatal("oversized payload cached")
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	f.convert = func(context.Context, string, bool) (string, error) { cancel(); return "reading", nil }
+	f.convert = func(context.Context, string) (string, error) { cancel(); return "reading", nil }
 	if _, err := s.Romanize(ctx, []string{"一", "二"}); !errors.Is(err, context.Canceled) {
 		t.Fatal(err)
 	}

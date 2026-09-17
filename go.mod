@@ -7,14 +7,11 @@ require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/blevesearch/bleve/v2 v2.5.7
 	github.com/coder/websocket v1.8.14
-	github.com/doxuta/hebon v0.0.0-20260916020438-b6abdeeaa6e8
 	github.com/emersion/go-autostart v0.0.0-20250403115856-34830d6457d2
 	github.com/godbus/dbus/v5 v5.2.2
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/google/uuid v1.6.0
 	github.com/grandcat/zeroconf v1.0.0
-	github.com/ikawaha/kagome-dict v1.1.7
-	github.com/ikawaha/kagome/v2 v2.11.0
 	github.com/inconshreveable/go-update v0.0.0-20160112193335-8152e7eb6ccf
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/mattn/go-sqlite3 v1.14.42

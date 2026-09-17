@@ -17,6 +17,6 @@ type RomanizedLine struct {
 // Release drops dictionaries; returned strings must not retain dictionary storage.
 type RomanizationEngine interface {
 	Version() string
-	Romanize(ctx context.Context, text string, japaneseContext bool) (string, error)
+	Romanize(ctx context.Context, text string) (string, error)
 	Release()
 }

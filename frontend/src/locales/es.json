@@ -402,7 +402,7 @@
     "romanization": "Romanizar",
     "romanization_loading": "Romanizando…",
     "romanization_retry": "Error al romanizar — reintentar",
-    "romanization_hint": "Romanización sin conexión: chino, japonés y coreano.",
+    "romanization_hint": "Romanización sin conexión: chino y coreano.",
     "romanization_mandarin": "Las letras solo con caracteres Han usan mandarín de forma predeterminada. La lectura de los nombres puede variar."
   },
   "home": {

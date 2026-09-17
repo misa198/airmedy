@@ -41,8 +41,8 @@ func TestMemoryBudget(t *testing.T) {
 	for cycle := 0; cycle < 10; cycle++ {
 		start := time.Now()
 		for song := 0; song < 10; song++ {
-			for language, text := range []string{"東京へ行く、私は学生です Hello!", "重庆银行你好世界", "같이 꽃잎 한글"} {
-				if _, err := e.Romanize(ctx, fmt.Sprintf("%d %s", song, text), language == 0); err != nil {
+			for _, text := range []string{"重庆银行你好世界", "같이 꽃잎 한글"} {
+				if _, err := e.Romanize(ctx, fmt.Sprintf("%d %s", song, text)); err != nil {
 					t.Fatal(err)
 				}
 			}
