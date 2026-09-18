@@ -383,6 +383,7 @@
     <string name="lyrics_title">歌词</string>
     <string name="lyrics_data_sources">数据源</string>
     <string name="lyrics_preferred_source">首选来源</string>
+    <string name="lyrics_romanization">启用罗马化</string>
     <string name="lyrics_source_desktop">桌面同步</string>
     <string name="lyrics_source_auto_fetch">自动获取</string>
     <string name="lyrics_info_action">歌词信息</string>

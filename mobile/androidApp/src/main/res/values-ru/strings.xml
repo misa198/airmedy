@@ -407,6 +407,7 @@
     <string name="lyrics_title">Тексты песен</string>
     <string name="lyrics_data_sources">Источники данных</string>
     <string name="lyrics_preferred_source">Предпочтительный источник</string>
+    <string name="lyrics_romanization">Включить романизацию</string>
     <string name="lyrics_source_desktop">Синхронизация с компьютером</string>
     <string name="lyrics_source_auto_fetch">Загружать автоматически</string>
     <string name="lyrics_info_action">Информация о текстах</string>

@@ -92,4 +92,34 @@ class RomanizationTest {
             Dispatchers.resetMain()
         }
     }
+
+    @Test
+    fun disabledGatePreventsRomanization() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        Dispatchers.setMain(dispatcher)
+        val store = ViewModelStore()
+        val vm = RomanizationViewModel(RomanizeLyrics(object : RomanizationEngine {
+            override val version = "test"
+            override fun inspect(line: String) = RomanizationInspection(true)
+            override suspend fun romanize(line: String) = "reading"
+            override fun release() = Unit
+        }), dispatcher)
+        store.put("romanization", vm)
+        try {
+            vm.setInput(listOf("你好"), true)
+            runCurrent()
+            vm.toggle()
+            runCurrent()
+            assertTrue(vm.state.value.enabled)
+            vm.setAllowed(false)
+            assertFalse(vm.state.value.enabled)
+            assertFalse(vm.state.value.loading)
+            assertTrue(vm.state.value.secondary.isEmpty())
+            vm.toggle()
+            assertFalse(vm.state.value.enabled)
+        } finally {
+            store.clear()
+            Dispatchers.resetMain()
+        }
+    }
 }

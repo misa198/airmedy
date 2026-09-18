@@ -383,6 +383,7 @@
     <string name="lyrics_title">가사</string>
     <string name="lyrics_data_sources">데이터 소스</string>
     <string name="lyrics_preferred_source">우선 소스</string>
+    <string name="lyrics_romanization">로마자 표기 사용</string>
     <string name="lyrics_source_desktop">데스크톱 동기화</string>
     <string name="lyrics_source_auto_fetch">자동 가져오기</string>
     <string name="lyrics_info_action">가사 정보</string>

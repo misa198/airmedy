@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.map
 private val Context.lyricsDataStore by preferencesDataStore("lyrics")
 private val LrclibKey = booleanPreferencesKey("enable_lrclib")
 private val KugouKey = booleanPreferencesKey("enable_kugou")
+private val RomanizationKey = booleanPreferencesKey("enable_romanization")
 private val PreferredSourceKey = stringPreferencesKey("preferred_source")
 
 internal enum class LyricsSource(val storageValue: String) {
@@ -26,6 +27,7 @@ internal data class LyricsSettings(
     val preferredSource: LyricsSource = LyricsSource.Desktop,
     val lrclib: Boolean = true,
     val kugou: Boolean = true,
+    val romanizationEnabled: Boolean = false,
 )
 
 internal fun preferredLyrics(source: LyricsSource, desktop: String?, provider: String?): String? = when (source) {
@@ -39,9 +41,11 @@ internal class LyricsPreferences(private val context: Context) {
             preferredSource = LyricsSource.fromStorage(it[PreferredSourceKey]),
             lrclib = it[LrclibKey] ?: true,
             kugou = it[KugouKey] ?: true,
+            romanizationEnabled = it[RomanizationKey] ?: false,
         )
     }
     suspend fun setPreferredSource(source: LyricsSource) = context.lyricsDataStore.edit { it[PreferredSourceKey] = source.storageValue }
     suspend fun setLrclib(enabled: Boolean) = context.lyricsDataStore.edit { it[LrclibKey] = enabled }
     suspend fun setKugou(enabled: Boolean) = context.lyricsDataStore.edit { it[KugouKey] = enabled }
+    suspend fun setRomanizationEnabled(enabled: Boolean) = context.lyricsDataStore.edit { it[RomanizationKey] = enabled }
 }

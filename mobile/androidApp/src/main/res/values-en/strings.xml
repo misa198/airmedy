@@ -391,6 +391,7 @@
     <string name="lyrics_title">Lyrics</string>
     <string name="lyrics_data_sources">Data sources</string>
     <string name="lyrics_preferred_source">Preferred source</string>
+    <string name="lyrics_romanization">Enable romanization</string>
     <string name="lyrics_source_desktop">Desktop sync</string>
     <string name="lyrics_source_auto_fetch">Auto fetch</string>
     <string name="lyrics_info_action">Lyrics information</string>

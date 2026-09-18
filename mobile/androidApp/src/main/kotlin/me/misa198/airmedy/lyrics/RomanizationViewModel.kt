@@ -34,6 +34,7 @@ internal class RomanizationViewModel(
     val state = mutableState.asStateFlow()
     private var input: List<String> = emptyList()
     private var active = false
+    private var allowed = true
     private var generation = 0L
     private var conversion: Job? = null
     private var idle: Job? = null
@@ -46,12 +47,28 @@ internal class RomanizationViewModel(
     }
 
     fun toggle() {
+        if (!allowed) return
         RomanizationSession.enabled = !mutableState.value.enabled
         mutableState.value = mutableState.value.copy(enabled = RomanizationSession.enabled)
         refresh()
     }
 
+    fun setAllowed(value: Boolean) {
+        if (allowed == value) return
+        allowed = value
+        if (!allowed) {
+            generation++
+            conversion?.cancel()
+            RomanizationSession.enabled = false
+            mutableState.value = RomanizationUiState(input = input)
+            scheduleRelease()
+        } else {
+            refresh()
+        }
+    }
+
     private fun refresh() {
+        if (!allowed) return
         val request = ++generation
         conversion?.cancel()
         idle?.cancel()

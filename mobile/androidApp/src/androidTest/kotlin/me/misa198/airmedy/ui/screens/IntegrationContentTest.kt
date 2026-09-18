@@ -79,6 +79,7 @@ class IntegrationContentTest {
                     onSourceChanged = { source = it },
                     onLrclibChanged = {},
                     onKugouChanged = {},
+                    onRomanizationEnabledChanged = {},
                 )
             }
         }
@@ -86,5 +87,24 @@ class IntegrationContentTest {
         composeTestRule.onNodeWithText("Desktop sync").performClick()
         composeTestRule.onNodeWithText("Auto fetch").performClick()
         assertEquals(LyricsSource.AutoFetch, source)
+    }
+
+    @Test
+    fun romanizationSettingReportsItsNewValue() {
+        var enabled = false
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                LyricsContent(
+                    settings = LyricsSettings(),
+                    onSourceChanged = {},
+                    onLrclibChanged = {},
+                    onKugouChanged = {},
+                    onRomanizationEnabledChanged = { enabled = it },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Enable romanization").performClick()
+        assertTrue(enabled)
     }
 }

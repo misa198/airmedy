@@ -608,6 +608,7 @@ internal fun App(
                 lyrics = playback.lyrics,
                 lyricsLoading = playback.lyricsLoading,
                 romanization = playback.romanization,
+                romanizationAllowed = playback.romanizationAllowed,
                 onRomanizationInput = playback.onRomanizationInput,
                 onRomanizationToggle = playback.onRomanizationToggle,
                 artworkCrossfade = playback.artworkCrossfade,

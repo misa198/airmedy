@@ -270,6 +270,9 @@ class MainActivity : ComponentActivity() {
                 initialValue = me.misa198.airmedy.player.EqualizerSettings(),
             )
             val lyricsSettings by lyricsPreferences.settings.collectAsStateWithLifecycle(initialValue = me.misa198.airmedy.lyrics.LyricsSettings())
+            LaunchedEffect(lyricsSettings.romanizationEnabled) {
+                romanizationViewModel.setAllowed(lyricsSettings.romanizationEnabled)
+            }
             // Avoid clearing a valid preference while Room is still loading the active manifest.
             val normalizationAvailable by AndroidSyncRuntime.syncStore().analysisAvailable.collectAsStateWithLifecycle(initialValue = true)
             LaunchedEffect(normalizationAvailable) {
@@ -469,6 +472,7 @@ class MainActivity : ComponentActivity() {
                     onLyricsSourceChanged = { source -> preferenceScope.launch { lyricsPreferences.setPreferredSource(source) } },
                     onLrclibChanged = { enabled -> preferenceScope.launch { lyricsPreferences.setLrclib(enabled) } },
                     onKugouChanged = { enabled -> preferenceScope.launch { lyricsPreferences.setKugou(enabled) } },
+                    onRomanizationEnabledChanged = { enabled -> preferenceScope.launch { lyricsPreferences.setRomanizationEnabled(enabled) } },
                     crossfadeSeconds = crossfadeSettings.seconds,
                     lastEnabledCrossfadeSeconds = crossfadeSettings.lastEnabledSeconds,
                     onCrossfadeSecondsChanged = playbackController::setCrossfadeSeconds,
@@ -495,6 +499,7 @@ class MainActivity : ComponentActivity() {
                 lyrics = lyrics,
                 lyricsLoading = lyricsLoadingTrackId == lyricsTrackId,
                 romanization = romanization,
+                romanizationAllowed = lyricsSettings.romanizationEnabled,
                 onRomanizationInput = romanizationViewModel::setInput,
                 onRomanizationToggle = romanizationViewModel::toggle,
                 onSearchLyrics = { track, title, artist -> lyricsService.search(track.id, title, artist, lyricsSettings) },

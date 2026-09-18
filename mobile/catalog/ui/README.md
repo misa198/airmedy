@@ -178,11 +178,14 @@ Playback position is authoritative for the active line; browsing or dragging
 only pauses auto-follow and changes playback only when a valid lyric tap
 dispatches seek.
 
-Chinese/Korean romanization runs offline while fullscreen lyrics are visible
-and the lifecycle is started. `RomanizationViewModel` owns inspection,
-cancellable conversion and current results. A process-local preference defaults
-off and survives Activity/player recreation, not process restart. The Android
-engine implements the shared `RomanizationEngine` port; `RomanizeLyrics`
+Chinese/Korean romanization is gated by the persisted Lyrics Settings switch,
+which defaults off. Disabling it cancels conversion, restores the original
+secondary lyrics, and hides the fullscreen toggle. While enabled, it runs
+offline while fullscreen lyrics are visible and the lifecycle is started.
+`RomanizationViewModel` owns inspection, cancellable conversion and current
+results; its process-local show/hide preference defaults off and survives
+Activity/player recreation, not process restart. The Android engine implements
+the shared `RomanizationEngine` port; `RomanizeLyrics`
 validates input and caches only the last successful result. Dictionaries load
 lazily and are released after two idle minutes.
 

@@ -144,6 +144,7 @@ internal fun FullScreenPlayerLyricsPanel(
     loading: Boolean = false,
     visible: Boolean = true,
     romanization: RomanizationUiState = RomanizationUiState(),
+    romanizationAllowed: Boolean = false,
     onRomanizationInput: (List<String>, Boolean) -> Unit = { _, _ -> },
     onRomanizationToggle: () -> Unit = {},
     currentPositionMs: Long,
@@ -170,8 +171,8 @@ internal fun FullScreenPlayerLyricsPanel(
         }
     }
     val current = romanization.input == primary && !loading
-    val secondary = if (current && romanization.enabled) romanization.secondary else emptyList()
-    val showToggle = current && romanization.supported
+    val secondary = if (romanizationAllowed && current && romanization.enabled) romanization.secondary else emptyList()
+    val showToggle = romanizationAllowed && current && romanization.supported
     Box(modifier = modifier.padding(top = 8.dp)) {
         when {
             loading -> LyricsLoadingState(Modifier.fillMaxSize())

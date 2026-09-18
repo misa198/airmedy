@@ -383,6 +383,7 @@
     <string name="lyrics_title">Lời bài hát</string>
     <string name="lyrics_data_sources">Nguồn dữ liệu</string>
     <string name="lyrics_preferred_source">Nguồn ưu tiên</string>
+    <string name="lyrics_romanization">Bật phiên âm</string>
     <string name="lyrics_source_desktop">Đồng bộ từ desktop</string>
     <string name="lyrics_source_auto_fetch">Tự động tìm</string>
     <string name="lyrics_info_action">Thông tin lời bài hát</string>

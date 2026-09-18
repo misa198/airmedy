@@ -134,8 +134,9 @@ feature-specific Android host or UI test task.
 
 ## Offline lyric romanization
 
-The fullscreen lyrics panel offers a floating show/hide button for Chinese and
-Korean romanization. It works offline with synced or plain lyrics and preserves
+Lyrics Settings keeps Chinese and Korean romanization disabled by default;
+enabling it reveals a floating show/hide button in the fullscreen lyrics panel.
+It works offline with synced or plain lyrics and preserves
 the original text and timing. Converted text replaces the bilingual secondary
 line; disabling it restores that line. The choice lasts for the app process and
 defaults off at the next launch. Han-only lyrics use Mandarin; Japanese/kana

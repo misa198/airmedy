@@ -54,6 +54,7 @@ class FullScreenPlayerTest {
                     romanization = me.misa198.airmedy.lyrics.RomanizationUiState(
                         input = listOf("你好"), supported = true, enabled = enabled, secondary = listOf("nǐ hǎo"),
                     ),
+                    romanizationAllowed = true,
                     onRomanizationToggle = { enabled = !enabled },
                     modifier = Modifier.width(320.dp).height(400.dp),
                 )
@@ -65,6 +66,28 @@ class FullScreenPlayerTest {
         composeTestRule.onNodeWithText("Hello").assertDoesNotExist()
         composeTestRule.onNodeWithTag("romanization_toggle").performClick()
         composeTestRule.onNodeWithText("Hello").assertExists()
+    }
+
+    @Test
+    fun disabledRomanizationHidesTheToggleAndRestoresSecondaryLyrics() {
+        var allowed by mutableStateOf(true)
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenPlayerLyricsPanel(
+                    trackId = "test", lyrics = "你好 ^ Hello", currentPositionMs = 0L, onSeek = {},
+                    romanization = me.misa198.airmedy.lyrics.RomanizationUiState(
+                        input = listOf("你好"), supported = true, enabled = true, secondary = listOf("nǐ hǎo"),
+                    ),
+                    romanizationAllowed = allowed,
+                    modifier = Modifier.width(320.dp).height(400.dp),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("nǐ hǎo").assertExists()
+        allowed = false
+        composeTestRule.onNodeWithText("Hello").assertExists()
+        composeTestRule.onAllNodesWithTag("romanization_toggle").assertCountEquals(0)
     }
 
     @Test
