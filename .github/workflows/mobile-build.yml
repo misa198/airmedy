@@ -5,6 +5,16 @@ env:
 
 on:
   workflow_dispatch:
+    inputs:
+      variant:
+        description: 'Build variant'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+          - debug
+          - prod
+          - both
 
 concurrency:
   group: mobile-build-${{ github.ref }}
@@ -15,7 +25,7 @@ permissions:
 
 jobs:
   build:
-    name: Build signed test ARM64 APK
+    name: Build ARM64 APK (${{ github.event.inputs.variant }})
     runs-on: macos-15
     steps:
       - name: Checkout code
@@ -75,7 +85,9 @@ jobs:
             mobile/androidApp/src/main/jniLibs
           key: ffmpeg-android-arm64-v1-${{ hashFiles('scripts/build-ffmpeg-android.sh') }}
 
-      - name: Build signed test APK
+      # ── Debug APK (dev flavor, debug build type) ──────────────────────────
+      - name: Build debug APK
+        if: ${{ github.event.inputs.variant == 'debug' || github.event.inputs.variant == 'both' }}
         env:
           MOBILE_KEYSTORE_FILE: ${{ runner.temp }}/mobile-build.jks
           MOBILE_KEYSTORE_PASSWORD: ${{ secrets.MOBILE_KEYSTORE_PASSWORD }}
@@ -84,11 +96,33 @@ jobs:
           LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
           LASTFM_API_SECRET: ${{ secrets.LASTFM_API_SECRET }}
         working-directory: mobile
-        run: ./gradlew :androidApp:assembleDevRelease -Pandroid.injected.build.abi=arm64-v8a
+        run: ./gradlew :androidApp:assembleDevDebug -Pandroid.injected.build.abi=arm64-v8a
 
-      - name: Upload test APK
+      - name: Upload debug APK
+        if: ${{ github.event.inputs.variant == 'debug' || github.event.inputs.variant == 'both' }}
         uses: actions/upload-artifact@v4
         with:
-          name: Airmedy-mobile-dev-release-arm64
-          path: mobile/androidApp/build/outputs/apk/dev/release/*.apk
+          name: Airmedy-mobile-dev-debug-arm64
+          path: mobile/androidApp/build/outputs/apk/dev/debug/*.apk
+          if-no-files-found: error
+
+      # ── Production APK (prod flavor, release build type) ─────────────────
+      - name: Build prod APK
+        if: ${{ github.event.inputs.variant == 'prod' || github.event.inputs.variant == 'both' }}
+        env:
+          MOBILE_KEYSTORE_FILE: ${{ runner.temp }}/mobile-build.jks
+          MOBILE_KEYSTORE_PASSWORD: ${{ secrets.MOBILE_KEYSTORE_PASSWORD }}
+          MOBILE_KEY_ALIAS: ${{ secrets.MOBILE_KEY_ALIAS }}
+          MOBILE_KEY_PASSWORD: ${{ secrets.MOBILE_KEY_PASSWORD }}
+          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+          LASTFM_API_SECRET: ${{ secrets.LASTFM_API_SECRET }}
+        working-directory: mobile
+        run: ./gradlew :androidApp:assembleProdRelease -Pandroid.injected.build.abi=arm64-v8a
+
+      - name: Upload prod APK
+        if: ${{ github.event.inputs.variant == 'prod' || github.event.inputs.variant == 'both' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Airmedy-mobile-prod-release-arm64
+          path: mobile/androidApp/build/outputs/apk/prod/release/*.apk
           if-no-files-found: error
