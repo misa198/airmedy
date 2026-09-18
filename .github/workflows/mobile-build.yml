@@ -117,7 +117,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Airmedy-mobile-dev-debug-arm64
-          path: mobile/androidApp/build/outputs/apk/dev/debug/**/*.apk
+          path: mobile/androidApp/build/intermediates/apk/dev/debug/*.apk
           if-no-files-found: error
 
       # ── Production APK (prod flavor, release build type) ─────────────────
@@ -138,5 +138,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Airmedy-mobile-prod-release-arm64
-          path: mobile/androidApp/build/outputs/apk/prod/release/**/*.apk
+          path: mobile/androidApp/build/intermediates/apk/prod/release/*.apk
           if-no-files-found: error
