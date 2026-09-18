@@ -43,6 +43,13 @@ androidApp (Android Compose UI, ViewModels, navigation, Android adapters)
   decoder fallback unless a task explicitly changes that policy. Build its
   generated Android libraries first with `bash ../scripts/build-ffmpeg-android.sh arm64-v8a`.
 
+Offline lyric romanization uses the shared `RomanizationEngine` port and
+`RomanizeLyrics` use case. Keep Korean rules and input validation in shared
+logic; Android owns Unicode normalization, dictionary assets and the ViewModel.
+Pinned data and regeneration instructions live in `tools/romanization/ATTRIBUTION.md`.
+The Android build packages desktop dictionary files as assets; there is no
+runtime desktop dependency or change to the sync protocol.
+
 ## Mobile UI philosophy
 
 The mobile app should feel calm, tactile, and intentionally lightweight: dark

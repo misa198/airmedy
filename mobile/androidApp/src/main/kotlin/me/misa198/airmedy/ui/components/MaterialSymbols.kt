@@ -82,6 +82,7 @@ object MaterialSymbols {
     const val Reorder = "reorder"
     const val Mic = "mic"
     const val Chat = "chat"
+    const val Translate = "translate"
     const val Cast = "cast"
     const val Airplay = "airplay"
     const val VolumeDown = "volume_down"

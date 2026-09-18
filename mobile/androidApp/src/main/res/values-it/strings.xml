@@ -396,4 +396,10 @@
     <string name="lyrics_info_action">Informazioni sui testi</string>
     <string name="lyrics_info_title">Fonti dei testi</string>
     <string name="lyrics_info_description">Puoi scegliere se dare priorità ai testi dal desktop o recuperarli automaticamente. I testi recuperati automaticamente sul mobile non vengono sincronizzati con il desktop.</string>
+    <string name="player_romanization_show">Mostra romanizzazione</string>
+    <string name="player_romanization_hide">Nascondi romanizzazione</string>
+    <string name="player_romanization_loading">Romanizzazione in corso…</string>
+    <string name="player_romanization_error">Romanizzazione non riuscita. Disattiva e riattiva per riprovare.</string>
+    <string name="player_romanization_hint">Romanizzazione offline: cinese e coreano.</string>
+    <string name="player_romanization_mandarin">I testi con soli caratteri Han usano il mandarino. I nomi possono avere letture diverse.</string>
 </resources>

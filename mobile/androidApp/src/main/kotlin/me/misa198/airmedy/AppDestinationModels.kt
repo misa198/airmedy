@@ -1,5 +1,7 @@
 package me.misa198.airmedy
 
+import me.misa198.airmedy.lyrics.RomanizationUiState
+
 import android.net.Uri
 import androidx.compose.ui.graphics.Color
 import me.misa198.airmedy.lastfm.LastFmStatus
@@ -194,6 +196,9 @@ internal data class PlaybackModel(
     val queueTracks: List<LibraryTrack> = emptyList(),
     val lyrics: String? = null,
     val lyricsLoading: Boolean = false,
+    val romanization: RomanizationUiState = RomanizationUiState(),
+    val onRomanizationInput: (List<String>, Boolean) -> Unit = { _, _ -> },
+    val onRomanizationToggle: () -> Unit = {},
     val onSearchLyrics: suspend (LibraryTrack, String, String) -> List<LyricsSearchResult> = { _, _, _ -> emptyList() },
     val onLyricsSelected: suspend (String, LyricsSearchResult) -> Unit = { _, _ -> },
     val artworkCrossfade: ArtworkCrossfadeTransition? = null,

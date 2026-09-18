@@ -1,5 +1,8 @@
 package me.misa198.airmedy
 
+import me.misa198.airmedy.lyrics.AndroidRomanizationEngine
+import me.misa198.airmedy.lyrics.RomanizationViewModel
+
 import android.os.Bundle
 import android.os.Build
 import android.Manifest
@@ -84,6 +87,11 @@ import me.misa198.airmedy.ui.screens.InsightViewModel
 private data class ManualLyricsOverride(val trackId: String, val content: String)
 
 class MainActivity : ComponentActivity() {
+    private val romanizationViewModel: RomanizationViewModel by viewModels {
+        RomanizationViewModel.Factory(
+            AndroidRomanizationEngine { applicationContext.assets.open(it) },
+        )
+    }
     private val reconciliationMutex = Mutex()
     private lateinit var lastFm: LastFmService
     private var systemMusicVolumeState by mutableFloatStateOf(0f)
@@ -208,6 +216,7 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
+            val romanization by romanizationViewModel.state.collectAsStateWithLifecycle()
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
             val lastFmStatus by lastFm.status.collectAsStateWithLifecycle()
             val syncUiState by syncViewModel.uiState.collectAsStateWithLifecycle()
@@ -485,6 +494,9 @@ class MainActivity : ComponentActivity() {
                 queueTracks = allTracks,
                 lyrics = lyrics,
                 lyricsLoading = lyricsLoadingTrackId == lyricsTrackId,
+                romanization = romanization,
+                onRomanizationInput = romanizationViewModel::setInput,
+                onRomanizationToggle = romanizationViewModel::toggle,
                 onSearchLyrics = { track, title, artist -> lyricsService.search(track.id, title, artist, lyricsSettings) },
                 onLyricsSelected = { trackId, lyric ->
                     AndroidSyncRuntime.syncStore().saveProviderLyrics(trackId, lyric.content, lyric.source)

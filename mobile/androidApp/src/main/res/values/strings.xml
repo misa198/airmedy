@@ -398,4 +398,10 @@
     <string name="composers_empty_title">No composers in library</string>
     <string name="composers_empty_description">Synced composers will appear here once mobile sync completes.</string>
     <string name="composers_no_match_title">No matching composers</string>
+    <string name="player_romanization_show">Show romanization</string>
+    <string name="player_romanization_hide">Hide romanization</string>
+    <string name="player_romanization_loading">Romanizing…</string>
+    <string name="player_romanization_error">Romanization failed. Toggle off and on to retry.</string>
+    <string name="player_romanization_hint">Offline romanization: Chinese and Korean.</string>
+    <string name="player_romanization_mandarin">Han-only lyrics default to Mandarin. Names may have different readings.</string>
 </resources>

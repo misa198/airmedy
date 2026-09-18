@@ -412,4 +412,10 @@
     <string name="lyrics_info_action">Информация о текстах</string>
     <string name="lyrics_info_title">Источники текстов</string>
     <string name="lyrics_info_description">Можно выбрать: отдавать приоритет текстам с компьютера или получать их автоматически. Тексты, автоматически полученные на мобильном устройстве, не синхронизируются обратно с компьютером.</string>
+    <string name="player_romanization_show">Показать романизацию</string>
+    <string name="player_romanization_hide">Скрыть романизацию</string>
+    <string name="player_romanization_loading">Романизация…</string>
+    <string name="player_romanization_error">Ошибка романизации. Выключите и включите, чтобы повторить.</string>
+    <string name="player_romanization_hint">Романизация офлайн: китайский и корейский.</string>
+    <string name="player_romanization_mandarin">Текст только с иероглифами Han читается на мандаринском. Имена могут читаться иначе.</string>
 </resources>

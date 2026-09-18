@@ -388,4 +388,10 @@
     <string name="lyrics_info_action">歌词信息</string>
     <string name="lyrics_info_title">歌词数据源</string>
     <string name="lyrics_info_description">你可以选择优先使用桌面端的歌词，或自动获取歌词。在移动端自动获取的歌词不会同步回桌面端。</string>
+    <string name="player_romanization_show">显示罗马化</string>
+    <string name="player_romanization_hide">隐藏罗马化</string>
+    <string name="player_romanization_loading">正在罗马化…</string>
+    <string name="player_romanization_error">罗马化失败。关闭后重新开启以重试。</string>
+    <string name="player_romanization_hint">离线罗马化：中文和韩语。</string>
+    <string name="player_romanization_mandarin">仅含汉字的歌词默认按普通话处理。姓名的读音可能不同。</string>
 </resources>

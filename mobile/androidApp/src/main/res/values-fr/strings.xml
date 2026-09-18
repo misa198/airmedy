@@ -396,4 +396,10 @@
     <string name="lyrics_info_action">Informations sur les paroles</string>
     <string name="lyrics_info_title">Sources des paroles</string>
     <string name="lyrics_info_description">Vous pouvez choisir de privilégier les paroles du bureau ou de les récupérer automatiquement. Les paroles récupérées automatiquement sur mobile ne sont pas synchronisées vers le bureau.</string>
+    <string name="player_romanization_show">Afficher la romanisation</string>
+    <string name="player_romanization_hide">Masquer la romanisation</string>
+    <string name="player_romanization_loading">Romanisation en cours…</string>
+    <string name="player_romanization_error">Échec de la romanisation. Désactivez puis réactivez pour réessayer.</string>
+    <string name="player_romanization_hint">Romanisation hors ligne : chinois et coréen.</string>
+    <string name="player_romanization_mandarin">Les paroles en caractères Han seuls utilisent le mandarin. Les noms peuvent avoir une autre lecture.</string>
 </resources>

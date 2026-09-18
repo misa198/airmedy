@@ -132,6 +132,21 @@ The repository-root `task verify` command covers desktop Go/Vue code only.
 Mobile changes must run the relevant Gradle build and tests above, plus any
 feature-specific Android host or UI test task.
 
+## Offline lyric romanization
+
+The fullscreen lyrics panel offers a floating show/hide button for Chinese and
+Korean romanization. It works offline with synced or plain lyrics and preserves
+the original text and timing. Converted text replaces the bilingual secondary
+line; disabling it restores that line. The choice lasts for the app process and
+defaults off at the next launch. Han-only lyrics use Mandarin; Japanese/kana
+lines are unsupported. Names can have different readings.
+
+Shared logic owns validation, conversion contracts and Korean rules; Android
+owns dictionary loading, Unicode normalization and presentation. The build
+packages pinned desktop phrase/OpenCC data without requiring a desktop
+connection. Provenance and the optional regeneration command are in
+[`tools/romanization/ATTRIBUTION.md`](tools/romanization/ATTRIBUTION.md).
+
 ## Last.fm
 
 Android authenticates independently from desktop through the browser and the

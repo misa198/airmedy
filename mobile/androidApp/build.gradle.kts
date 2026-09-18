@@ -74,7 +74,14 @@ val subsetMaterialSymbolsFont =
         localProperties.getProperty("python3")?.let { python3Executable = it }
     }
 
-tasks.named("preBuild") { dependsOn(subsetMaterialSymbolsFont) }
+val romanizationAssets = tasks.register<Sync>("romanizationAssets") {
+    from(rootProject.file("../internal/infra/romanization/data"))
+    from(rootProject.file("tools/romanization/ATTRIBUTION.md"))
+    from(rootProject.file("tools/romanization/LICENSE-OpenCC.txt"))
+    into(layout.buildDirectory.dir("generated/romanizationAssets/romanization"))
+}
+
+tasks.named("preBuild") { dependsOn(subsetMaterialSymbolsFont, romanizationAssets) }
 
 kotlin {
     compilerOptions {
@@ -119,6 +126,7 @@ dependencies {
 }
 
 android {
+    sourceSets.getByName("main").assets.directories.add(layout.buildDirectory.dir("generated/romanizationAssets").get().asFile.path)
     namespace = "me.misa198.airmedy"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     ndkVersion = "30.0.15729638"

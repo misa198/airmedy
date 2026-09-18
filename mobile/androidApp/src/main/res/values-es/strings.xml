@@ -396,4 +396,10 @@
     <string name="lyrics_info_action">Información de letras</string>
     <string name="lyrics_info_title">Fuentes de letras</string>
     <string name="lyrics_info_description">Puedes elegir si priorizar las letras del escritorio o buscarlas automáticamente. Las letras obtenidas automáticamente en el móvil no se sincronizan con el escritorio.</string>
+    <string name="player_romanization_show">Mostrar romanización</string>
+    <string name="player_romanization_hide">Ocultar romanización</string>
+    <string name="player_romanization_loading">Romanizando…</string>
+    <string name="player_romanization_error">Error de romanización. Desactiva y activa para reintentar.</string>
+    <string name="player_romanization_hint">Romanización sin conexión: chino y coreano.</string>
+    <string name="player_romanization_mandarin">Las letras solo con caracteres Han usan mandarín. Los nombres pueden tener otras lecturas.</string>
 </resources>

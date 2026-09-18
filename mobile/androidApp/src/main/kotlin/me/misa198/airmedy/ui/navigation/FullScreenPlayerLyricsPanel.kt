@@ -10,6 +10,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,6 +39,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.BlurredEdgeTreatment
@@ -58,10 +61,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import me.misa198.airmedy.R
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.awaitCancellation
+import me.misa198.airmedy.lyrics.RomanizationUiState
 import kotlin.math.roundToInt
 
 internal data class PlayerLyricLine(
@@ -129,6 +135,10 @@ internal fun FullScreenPlayerLyricsPanel(
     trackId: String,
     lyrics: String?,
     loading: Boolean = false,
+    visible: Boolean = true,
+    romanization: RomanizationUiState = RomanizationUiState(),
+    onRomanizationInput: (List<String>, Boolean) -> Unit = { _, _ -> },
+    onRomanizationToggle: () -> Unit = {},
     currentPositionMs: Long,
     pendingSeekPositionMs: Long? = null,
     seekRequestId: Long = 0L,
@@ -137,7 +147,25 @@ internal fun FullScreenPlayerLyricsPanel(
 ) {
     val parsedLines = remember(lyrics) { lyrics?.let(::parsePlayerLyrics).orEmpty() }
     val syncedLines = remember(parsedLines) { parsedLines.filter { it.timestampSeconds != null } }
-    Column(modifier = modifier.padding(top = 8.dp)) {
+    val primary = remember(parsedLines, syncedLines) { (syncedLines.ifEmpty { parsedLines }).map { it.primary } }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val currentOnInput by rememberUpdatedState(onRomanizationInput)
+    LaunchedEffect(trackId, primary, visible, loading, lifecycleOwner) {
+        if (visible && !loading) {
+            lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                currentOnInput(primary, true)
+                try {
+                    awaitCancellation()
+                } finally {
+                    currentOnInput(emptyList(), false)
+                }
+            }
+        }
+    }
+    val current = romanization.input == primary && !loading
+    val secondary = if (current && romanization.enabled) romanization.secondary else emptyList()
+    val showToggle = current && romanization.supported
+    Box(modifier = modifier.padding(top = 8.dp)) {
         when {
             loading -> LyricsLoadingState(Modifier.fillMaxSize())
             lyrics.isNullOrBlank() -> LyricsEmptyState(Modifier.fillMaxSize())
@@ -149,8 +177,17 @@ internal fun FullScreenPlayerLyricsPanel(
                 seekRequestId,
                 onSeek,
                 Modifier.fillMaxSize(),
+                secondary,
+                showToggle,
             )
-            else -> PlainLyricsList(parsedLines, Modifier.fillMaxSize())
+            else -> PlainLyricsList(parsedLines, Modifier.fillMaxSize(), secondary, showToggle)
+        }
+        if (showToggle) {
+            RomanizationToggle(
+                state = romanization,
+                onClick = onRomanizationToggle,
+                modifier = Modifier.align(Alignment.BottomEnd),
+            )
         }
     }
 }
@@ -196,6 +233,8 @@ private fun SyncedLyricsList(
     seekRequestId: Long,
     onSeek: (Long) -> Unit,
     modifier: Modifier,
+    secondary: List<String?>,
+    showToggle: Boolean,
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val listState = rememberLazyListState()
@@ -362,14 +401,24 @@ private fun SyncedLyricsList(
         }
         previousActiveIndex = activeIndex
     }
+    LaunchedEffect(secondary) {
+        // Let row/text measurements settle without resetting browse or tap-to-seek state.
+        withFrameNanos { }
+        withFrameNanos { }
+        if (hasPositionedInitialLine && !isBrowsing && selectedLineIndex == null && activeIndex >= 0 &&
+            listState.layoutInfo.visibleItemsInfo.any { it.index == activeIndex }
+        ) positionInitialLine(activeIndex)
+    }
     LazyColumn(
         state = listState,
+        contentPadding = PaddingValues(bottom = if (showToggle) 72.dp else 0.dp),
         userScrollEnabled = true,
         modifier = modifier.testTag("synced_lyrics_list"),
     ) {
         itemsIndexed(lines, key = { index, _ -> index }) { index, line ->
             SyncedLyricRow(
                 line = line,
+                secondary = secondary.getOrNull(index) ?: line.secondary,
                 distance = if (activeIndex >= 0) kotlin.math.abs(index - activeIndex) else Int.MAX_VALUE,
                 onClick = {
                     isBrowsing = false
@@ -391,6 +440,7 @@ private fun SyncedLyricsList(
 @Composable
 private fun SyncedLyricRow(
     line: PlayerLyricLine,
+    secondary: String?,
     distance: Int,
     onClick: () -> Unit,
     onRowHeightChanged: (Int) -> Unit,
@@ -479,10 +529,10 @@ private fun SyncedLyricRow(
             // weight here would re-wrap the same text during scale animation.
             fontWeight = FontWeight.Bold,
             onTextLayout = { layout ->
-                if (line.secondary == null) onTrailingLineHeightChanged((layout.getLineBottom(layout.lineCount - 1) - layout.getLineTop(layout.lineCount - 1)).roundToInt())
+                if (secondary == null) onTrailingLineHeightChanged((layout.getLineBottom(layout.lineCount - 1) - layout.getLineTop(layout.lineCount - 1)).roundToInt())
             },
         )
-        line.secondary?.let {
+        secondary?.let {
             Text(
                 text = it,
                 color = colors.foregroundSubtle.copy(alpha = opacity),
@@ -497,13 +547,13 @@ private fun SyncedLyricRow(
 }
 
 @Composable
-private fun PlainLyricsList(lines: List<PlayerLyricLine>, modifier: Modifier) {
+private fun PlainLyricsList(lines: List<PlayerLyricLine>, modifier: Modifier, secondary: List<String?>, showToggle: Boolean) {
     val colors = LocalAirmedyColors.current
-    LazyColumn(modifier = modifier.testTag("plain_lyrics_list")) {
-        itemsIndexed(lines, key = { index, _ -> index }) { _, line ->
+    LazyColumn(modifier = modifier.testTag("plain_lyrics_list"), contentPadding = PaddingValues(bottom = if (showToggle) 72.dp else 0.dp)) {
+        itemsIndexed(lines, key = { index, _ -> index }) { index, line ->
             Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
                 Text(text = line.primary, color = colors.onPrimary, style = MaterialTheme.typography.bodyLarge)
-                line.secondary?.let {
+                (secondary.getOrNull(index) ?: line.secondary)?.let {
                     Text(text = it, color = colors.foregroundSubtle, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 2.dp))
                 }
             }

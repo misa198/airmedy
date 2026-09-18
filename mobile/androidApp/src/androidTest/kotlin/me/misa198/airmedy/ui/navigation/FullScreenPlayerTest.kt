@@ -45,6 +45,29 @@ class FullScreenPlayerTest {
     val composeTestRule = createComposeRule()
 
     @Test
+    fun romanizationToggleReplacesAndRestoresSecondary() {
+        var enabled by mutableStateOf(false)
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenPlayerLyricsPanel(
+                    trackId = "test", lyrics = "你好 ^ Hello", currentPositionMs = 0L, onSeek = {},
+                    romanization = me.misa198.airmedy.lyrics.RomanizationUiState(
+                        input = listOf("你好"), supported = true, enabled = enabled, secondary = listOf("nǐ hǎo"),
+                    ),
+                    onRomanizationToggle = { enabled = !enabled },
+                    modifier = Modifier.width(320.dp).height(400.dp),
+                )
+            }
+        }
+        composeTestRule.onNodeWithText("Hello").assertExists()
+        composeTestRule.onNodeWithTag("romanization_toggle").performClick().assertIsSelected()
+        composeTestRule.onNodeWithText("nǐ hǎo").assertExists()
+        composeTestRule.onNodeWithText("Hello").assertDoesNotExist()
+        composeTestRule.onNodeWithTag("romanization_toggle").performClick()
+        composeTestRule.onNodeWithText("Hello").assertExists()
+    }
+
+    @Test
     fun preparingPlaybackUsesMetadataDuration() {
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {

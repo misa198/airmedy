@@ -388,4 +388,10 @@
     <string name="lyrics_info_action">Thông tin lời bài hát</string>
     <string name="lyrics_info_title">Nguồn lời bài hát</string>
     <string name="lyrics_info_description">Bạn có thể chọn ưu tiên lời bài hát từ desktop hoặc tự động tìm lời. Lời bài hát được tự động tìm trên mobile sẽ không đồng bộ ngược lại desktop.</string>
+    <string name="player_romanization_show">Hiện phiên âm</string>
+    <string name="player_romanization_hide">Ẩn phiên âm</string>
+    <string name="player_romanization_loading">Đang phiên âm…</string>
+    <string name="player_romanization_error">Phiên âm lỗi. Tắt rồi bật lại để thử lại.</string>
+    <string name="player_romanization_hint">Phiên âm offline: tiếng Trung và Hàn.</string>
+    <string name="player_romanization_mandarin">Lời chỉ có chữ Hán mặc định dùng Mandarin. Tên riêng có thể có cách đọc khác.</string>
 </resources>
