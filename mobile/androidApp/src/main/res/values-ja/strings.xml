@@ -383,9 +383,16 @@
     <string name="lyrics_title">歌詞</string>
     <string name="lyrics_data_sources">データソース</string>
     <string name="lyrics_preferred_source">優先するソース</string>
+    <string name="lyrics_romanization">ローマ字表記を有効にする</string>
     <string name="lyrics_source_desktop">デスクトップ同期</string>
     <string name="lyrics_source_auto_fetch">自動取得</string>
     <string name="lyrics_info_action">歌詞情報</string>
     <string name="lyrics_info_title">歌詞のデータソース</string>
     <string name="lyrics_info_description">デスクトップの歌詞を優先するか、自動取得するかを選択できます。モバイルで自動取得した歌詞はデスクトップに同期されません。</string>
+    <string name="player_romanization_show">ローマ字を表示</string>
+    <string name="player_romanization_hide">ローマ字を非表示</string>
+    <string name="player_romanization_loading">ローマ字に変換中…</string>
+    <string name="player_romanization_error">変換に失敗しました。オフにしてからオンにして再試行してください。</string>
+    <string name="player_romanization_hint">オフラインのローマ字表記：中国語と韓国語。</string>
+    <string name="player_romanization_mandarin">漢字のみの歌詞は中国語（標準語）として扱います。名前の読み方は異なる場合があります。</string>
 </resources>

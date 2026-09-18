@@ -1,5 +1,7 @@
 package me.misa198.airmedy.ui.navigation
 
+import me.misa198.airmedy.lyrics.RomanizationUiState
+
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -79,6 +81,10 @@ internal fun FullScreenPlayer(
     queueTracks: List<LibraryTrack> = emptyList(),
     lyrics: String? = null,
     lyricsLoading: Boolean = false,
+    romanization: RomanizationUiState = RomanizationUiState(),
+    romanizationAllowed: Boolean = false,
+    onRomanizationInput: (List<String>, Boolean) -> Unit = { _, _ -> },
+    onRomanizationToggle: () -> Unit = {},
     artworkCrossfade: ArtworkCrossfadeTransition? = null,
     blendArtworkDuringCrossfade: Boolean = true,
     showQualityBadge: Boolean = true,
@@ -439,6 +445,11 @@ internal fun FullScreenPlayer(
                                     trackId = item.trackId,
                                     lyrics = lyrics,
                                     loading = lyricsLoading,
+                                    visible = visible && selectedPanel == FullScreenPlayerPanel.Lyrics,
+                                    romanization = romanization,
+                                    romanizationAllowed = romanizationAllowed,
+                                    onRomanizationInput = onRomanizationInput,
+                                    onRomanizationToggle = onRomanizationToggle,
                                     currentPositionMs = currentPositionMs,
                                     pendingSeekPositionMs = lyricsSeekPositionMs,
                                     seekRequestId = lyricsSeekRequestId,

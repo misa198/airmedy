@@ -391,9 +391,16 @@
     <string name="lyrics_title">Songtexte</string>
     <string name="lyrics_data_sources">Datenquellen</string>
     <string name="lyrics_preferred_source">Bevorzugte Quelle</string>
+    <string name="lyrics_romanization">Romanisierung aktivieren</string>
     <string name="lyrics_source_desktop">Desktop-Synchronisierung</string>
     <string name="lyrics_source_auto_fetch">Automatisch abrufen</string>
     <string name="lyrics_info_action">Songtextinformationen</string>
     <string name="lyrics_info_title">Songtextquellen</string>
     <string name="lyrics_info_description">Du kannst wählen, ob Songtexte vom Desktop bevorzugt oder automatisch abgerufen werden sollen. Auf dem Mobilgerät automatisch abgerufene Songtexte werden nicht zurück zum Desktop synchronisiert.</string>
+    <string name="player_romanization_show">Romanisierung anzeigen</string>
+    <string name="player_romanization_hide">Romanisierung ausblenden</string>
+    <string name="player_romanization_loading">Romanisierung läuft…</string>
+    <string name="player_romanization_error">Romanisierung fehlgeschlagen. Zum Wiederholen aus- und einschalten.</string>
+    <string name="player_romanization_hint">Offline-Romanisierung: Chinesisch und Koreanisch.</string>
+    <string name="player_romanization_mandarin">Reine Han-Texte werden als Mandarin gelesen. Namen können anders ausgesprochen werden.</string>
 </resources>

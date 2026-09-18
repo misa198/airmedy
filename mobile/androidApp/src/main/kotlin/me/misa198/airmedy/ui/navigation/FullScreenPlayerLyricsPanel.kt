@@ -10,6 +10,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,6 +39,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.BlurredEdgeTreatment
@@ -58,10 +61,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import me.misa198.airmedy.R
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.awaitCancellation
+import me.misa198.airmedy.lyrics.RomanizationUiState
 import kotlin.math.roundToInt
 
 internal data class PlayerLyricLine(
@@ -118,6 +124,13 @@ internal fun shouldEnterLyricsBrowseMode(isUserDragging: Boolean, isFollowingSel
 /** Small finger drift on a lyric row is still a seek, not a manual browse. */
 internal fun shouldSeekFromLyricTap(dragDistancePx: Float, tapSlopPx: Float): Boolean = dragDistancePx <= tapSlopPx
 
+internal fun syncedLyricBlurRadius(distance: Int) = when (distance) {
+    0 -> 0.dp
+    1 -> 0.35.dp
+    2 -> 1.25.dp
+    else -> 2.dp
+}
+
 private fun parsePlayerLyricText(text: String, timestampSeconds: Float?): PlayerLyricLine {
     val parts = BilingualSeparator.split(text, limit = 2)
     val secondary = parts.getOrNull(1)?.trim()?.takeIf(String::isNotEmpty)
@@ -129,6 +142,11 @@ internal fun FullScreenPlayerLyricsPanel(
     trackId: String,
     lyrics: String?,
     loading: Boolean = false,
+    visible: Boolean = true,
+    romanization: RomanizationUiState = RomanizationUiState(),
+    romanizationAllowed: Boolean = false,
+    onRomanizationInput: (List<String>, Boolean) -> Unit = { _, _ -> },
+    onRomanizationToggle: () -> Unit = {},
     currentPositionMs: Long,
     pendingSeekPositionMs: Long? = null,
     seekRequestId: Long = 0L,
@@ -137,7 +155,25 @@ internal fun FullScreenPlayerLyricsPanel(
 ) {
     val parsedLines = remember(lyrics) { lyrics?.let(::parsePlayerLyrics).orEmpty() }
     val syncedLines = remember(parsedLines) { parsedLines.filter { it.timestampSeconds != null } }
-    Column(modifier = modifier.padding(top = 8.dp)) {
+    val primary = remember(parsedLines, syncedLines) { (syncedLines.ifEmpty { parsedLines }).map { it.primary } }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val currentOnInput by rememberUpdatedState(onRomanizationInput)
+    LaunchedEffect(trackId, primary, visible, loading, lifecycleOwner) {
+        if (visible && !loading) {
+            lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                currentOnInput(primary, true)
+                try {
+                    awaitCancellation()
+                } finally {
+                    currentOnInput(emptyList(), false)
+                }
+            }
+        }
+    }
+    val current = romanization.input == primary && !loading
+    val secondary = if (romanizationAllowed && current && romanization.enabled) romanization.secondary else emptyList()
+    val showToggle = romanizationAllowed && current && romanization.supported
+    Box(modifier = modifier.padding(top = 8.dp)) {
         when {
             loading -> LyricsLoadingState(Modifier.fillMaxSize())
             lyrics.isNullOrBlank() -> LyricsEmptyState(Modifier.fillMaxSize())
@@ -149,8 +185,17 @@ internal fun FullScreenPlayerLyricsPanel(
                 seekRequestId,
                 onSeek,
                 Modifier.fillMaxSize(),
+                secondary,
+                showToggle,
             )
-            else -> PlainLyricsList(parsedLines, Modifier.fillMaxSize())
+            else -> PlainLyricsList(parsedLines, Modifier.fillMaxSize(), secondary, showToggle)
+        }
+        if (showToggle) {
+            RomanizationToggle(
+                state = romanization,
+                onClick = onRomanizationToggle,
+                modifier = Modifier.align(Alignment.BottomEnd),
+            )
         }
     }
 }
@@ -196,6 +241,8 @@ private fun SyncedLyricsList(
     seekRequestId: Long,
     onSeek: (Long) -> Unit,
     modifier: Modifier,
+    secondary: List<String?>,
+    showToggle: Boolean,
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val listState = rememberLazyListState()
@@ -362,14 +409,24 @@ private fun SyncedLyricsList(
         }
         previousActiveIndex = activeIndex
     }
+    LaunchedEffect(secondary) {
+        // Let row/text measurements settle without resetting browse or tap-to-seek state.
+        withFrameNanos { }
+        withFrameNanos { }
+        if (hasPositionedInitialLine && !isBrowsing && selectedLineIndex == null && activeIndex >= 0 &&
+            listState.layoutInfo.visibleItemsInfo.any { it.index == activeIndex }
+        ) positionInitialLine(activeIndex)
+    }
     LazyColumn(
         state = listState,
+        contentPadding = PaddingValues(bottom = if (showToggle) 72.dp else 0.dp),
         userScrollEnabled = true,
         modifier = modifier.testTag("synced_lyrics_list"),
     ) {
         itemsIndexed(lines, key = { index, _ -> index }) { index, line ->
             SyncedLyricRow(
                 line = line,
+                secondary = secondary.getOrNull(index) ?: line.secondary,
                 distance = if (activeIndex >= 0) kotlin.math.abs(index - activeIndex) else Int.MAX_VALUE,
                 onClick = {
                     isBrowsing = false
@@ -382,7 +439,6 @@ private fun SyncedLyricsList(
                 onRowHeightChanged = { rowHeights[index] = it },
                 onTrailingLineHeightChanged = { trailingLineHeights[index] = it },
                 focusMode = !isBrowsing,
-                blurEnabled = !isBrowsing && !listState.isScrollInProgress,
             )
         }
     }
@@ -391,12 +447,12 @@ private fun SyncedLyricsList(
 @Composable
 private fun SyncedLyricRow(
     line: PlayerLyricLine,
+    secondary: String?,
     distance: Int,
     onClick: () -> Unit,
     onRowHeightChanged: (Int) -> Unit,
     onTrailingLineHeightChanged: (Int) -> Unit,
     focusMode: Boolean,
-    blurEnabled: Boolean,
 ) {
     val colors = LocalAirmedyColors.current
     // The pointer coroutine remains alive across playback-position and track
@@ -411,17 +467,9 @@ private fun SyncedLyricRow(
         2 -> 0.15f
         else -> 0.10f
     }
-    val targetBlur = when (distance) {
-        0 -> 0.dp
-        1 -> 0.35.dp
-        2 -> 1.25.dp
-        else -> 2.dp
-    }
+    val targetBlur = if (focusMode) syncedLyricBlurRadius(distance) else 0.dp
     val opacity by animateFloatAsState(targetOpacity, tween(300, easing = FastOutSlowInEasing), label = "synced-lyric-opacity")
-    // An incoming active line removes blur immediately to avoid clipping its
-    // scale animation. An outgoing line fades blur in smoothly instead.
     val animatedBlur by animateDpAsState(targetBlur, tween(300, easing = FastOutSlowInEasing), label = "synced-lyric-blur")
-    val blur = if (distance == 0) 0.dp else animatedBlur
     val scale by animateFloatAsState(if (focusMode && distance == 0) 1.04f else 1f, tween(300, easing = FastOutSlowInEasing), label = "synced-lyric-scale")
     val activeOffsetPx = with(LocalDensity.current) { 4.dp.toPx() }
     val lyricTapSlopPx = with(LocalDensity.current) { 20.dp.toPx() }
@@ -436,10 +484,7 @@ private fun SyncedLyricRow(
             // Reserve room for active-line scaling without changing wrapping
             // only when the active state changes.
             .padding(top = 10.dp, bottom = 10.dp, end = 16.dp)
-            .then(
-                if (blurEnabled) Modifier.blur(blur, edgeTreatment = BlurredEdgeTreatment.Unbounded)
-                else Modifier,
-            )
+            .blur(animatedBlur, edgeTreatment = BlurredEdgeTreatment.Unbounded)
             // Transform after text layout so the active line grows subtly
             // without changing its wrapping or displacing adjacent lyrics.
             .graphicsLayer {
@@ -479,10 +524,10 @@ private fun SyncedLyricRow(
             // weight here would re-wrap the same text during scale animation.
             fontWeight = FontWeight.Bold,
             onTextLayout = { layout ->
-                if (line.secondary == null) onTrailingLineHeightChanged((layout.getLineBottom(layout.lineCount - 1) - layout.getLineTop(layout.lineCount - 1)).roundToInt())
+                if (secondary == null) onTrailingLineHeightChanged((layout.getLineBottom(layout.lineCount - 1) - layout.getLineTop(layout.lineCount - 1)).roundToInt())
             },
         )
-        line.secondary?.let {
+        secondary?.let {
             Text(
                 text = it,
                 color = colors.foregroundSubtle.copy(alpha = opacity),
@@ -497,13 +542,13 @@ private fun SyncedLyricRow(
 }
 
 @Composable
-private fun PlainLyricsList(lines: List<PlayerLyricLine>, modifier: Modifier) {
+private fun PlainLyricsList(lines: List<PlayerLyricLine>, modifier: Modifier, secondary: List<String?>, showToggle: Boolean) {
     val colors = LocalAirmedyColors.current
-    LazyColumn(modifier = modifier.testTag("plain_lyrics_list")) {
-        itemsIndexed(lines, key = { index, _ -> index }) { _, line ->
+    LazyColumn(modifier = modifier.testTag("plain_lyrics_list"), contentPadding = PaddingValues(bottom = if (showToggle) 72.dp else 0.dp)) {
+        itemsIndexed(lines, key = { index, _ -> index }) { index, line ->
             Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
                 Text(text = line.primary, color = colors.onPrimary, style = MaterialTheme.typography.bodyLarge)
-                line.secondary?.let {
+                (secondary.getOrNull(index) ?: line.secondary)?.let {
                     Text(text = it, color = colors.foregroundSubtle, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 2.dp))
                 }
             }

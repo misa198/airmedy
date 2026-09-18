@@ -391,9 +391,16 @@
     <string name="lyrics_title">Letras</string>
     <string name="lyrics_data_sources">Fontes de dados</string>
     <string name="lyrics_preferred_source">Fonte preferida</string>
+    <string name="lyrics_romanization">Ativar romanização</string>
     <string name="lyrics_source_desktop">Sincronização do desktop</string>
     <string name="lyrics_source_auto_fetch">Obter automaticamente</string>
     <string name="lyrics_info_action">Informações das letras</string>
     <string name="lyrics_info_title">Fontes das letras</string>
     <string name="lyrics_info_description">Pode escolher entre dar prioridade às letras do desktop ou obtê-las automaticamente. As letras obtidas automaticamente no telemóvel não são sincronizadas de volta para o desktop.</string>
+    <string name="player_romanization_show">Mostrar romanização</string>
+    <string name="player_romanization_hide">Ocultar romanização</string>
+    <string name="player_romanization_loading">Romanizando…</string>
+    <string name="player_romanization_error">Falha na romanização. Desative e ative para tentar novamente.</string>
+    <string name="player_romanization_hint">Romanização offline: chinês e coreano.</string>
+    <string name="player_romanization_mandarin">Letras apenas com caracteres Han usam mandarim. Nomes podem ter outras leituras.</string>
 </resources>

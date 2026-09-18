@@ -383,9 +383,16 @@
     <string name="lyrics_title">가사</string>
     <string name="lyrics_data_sources">데이터 소스</string>
     <string name="lyrics_preferred_source">우선 소스</string>
+    <string name="lyrics_romanization">로마자 표기 사용</string>
     <string name="lyrics_source_desktop">데스크톱 동기화</string>
     <string name="lyrics_source_auto_fetch">자동 가져오기</string>
     <string name="lyrics_info_action">가사 정보</string>
     <string name="lyrics_info_title">가사 데이터 소스</string>
     <string name="lyrics_info_description">데스크톱의 가사를 우선할지 자동으로 가져올지 선택할 수 있습니다. 모바일에서 자동으로 가져온 가사는 데스크톱과 동기화되지 않습니다.</string>
+    <string name="player_romanization_show">로마자 표시</string>
+    <string name="player_romanization_hide">로마자 숨기기</string>
+    <string name="player_romanization_loading">로마자 표기 중…</string>
+    <string name="player_romanization_error">로마자 표기에 실패했습니다. 껐다 켜서 다시 시도하세요.</string>
+    <string name="player_romanization_hint">오프라인 로마자 표기: 중국어 및 한국어.</string>
+    <string name="player_romanization_mandarin">한자만 있는 가사는 기본적으로 중국어 표준어로 처리됩니다. 이름의 발음은 다를 수 있습니다.</string>
 </resources>

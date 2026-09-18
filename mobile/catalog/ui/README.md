@@ -178,6 +178,28 @@ Playback position is authoritative for the active line; browsing or dragging
 only pauses auto-follow and changes playback only when a valid lyric tap
 dispatches seek.
 
+Chinese/Korean romanization is gated by the persisted Lyrics Settings switch,
+which defaults off. Disabling it cancels conversion, restores the original
+secondary lyrics, and hides the fullscreen toggle. While enabled, it runs
+offline while fullscreen lyrics are visible and the lifecycle is started.
+`RomanizationViewModel` owns inspection, cancellable conversion and current
+results; its process-local show/hide preference defaults off and survives
+Activity/player recreation, not process restart. The Android engine implements
+the shared `RomanizationEngine` port; `RomanizeLyrics`
+validates input and caches only the last successful result. Dictionaries load
+lazily and are released after two idle minutes.
+
+The panel sends only displayed primary lines and passes romanization separately
+to its rows. Converted lines replace bilingual secondary text; unsupported or
+failed lines retain it. Primary identity, timestamps and browse/seek state are
+preserved. Secondary height changes reposition only auto-follow. The show/hide
+button stays at the viewport's bottom-right, outside the scroll list. Active
+styling matches the bottom lyrics control; inactive styling matches track More.
+Loading does not disable toggling; after errors, toggling off/on retries. Han
+defaults to Mandarin; kana-containing lines are unsupported. Host fixtures live
+in shared/Android lyrics tests; the fullscreen Compose test covers replacement
+and restoration of secondary text.
+
 Bottom sheets may use `AirmedyBottomSheetStack`: only its top entry renders;
 popping removes that entry while the entry below retains its data. Find Lyrics
 uses it for a full-height, prefilled search sheet with leading input icons and
