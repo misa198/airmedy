@@ -124,6 +124,13 @@ internal fun shouldEnterLyricsBrowseMode(isUserDragging: Boolean, isFollowingSel
 /** Small finger drift on a lyric row is still a seek, not a manual browse. */
 internal fun shouldSeekFromLyricTap(dragDistancePx: Float, tapSlopPx: Float): Boolean = dragDistancePx <= tapSlopPx
 
+internal fun syncedLyricBlurRadius(distance: Int) = when (distance) {
+    0 -> 0.dp
+    1 -> 0.35.dp
+    2 -> 1.25.dp
+    else -> 2.dp
+}
+
 private fun parsePlayerLyricText(text: String, timestampSeconds: Float?): PlayerLyricLine {
     val parts = BilingualSeparator.split(text, limit = 2)
     val secondary = parts.getOrNull(1)?.trim()?.takeIf(String::isNotEmpty)
@@ -431,7 +438,6 @@ private fun SyncedLyricsList(
                 onRowHeightChanged = { rowHeights[index] = it },
                 onTrailingLineHeightChanged = { trailingLineHeights[index] = it },
                 focusMode = !isBrowsing,
-                blurEnabled = !isBrowsing && !listState.isScrollInProgress,
             )
         }
     }
@@ -446,7 +452,6 @@ private fun SyncedLyricRow(
     onRowHeightChanged: (Int) -> Unit,
     onTrailingLineHeightChanged: (Int) -> Unit,
     focusMode: Boolean,
-    blurEnabled: Boolean,
 ) {
     val colors = LocalAirmedyColors.current
     // The pointer coroutine remains alive across playback-position and track
@@ -461,17 +466,9 @@ private fun SyncedLyricRow(
         2 -> 0.15f
         else -> 0.10f
     }
-    val targetBlur = when (distance) {
-        0 -> 0.dp
-        1 -> 0.35.dp
-        2 -> 1.25.dp
-        else -> 2.dp
-    }
+    val targetBlur = if (focusMode) syncedLyricBlurRadius(distance) else 0.dp
     val opacity by animateFloatAsState(targetOpacity, tween(300, easing = FastOutSlowInEasing), label = "synced-lyric-opacity")
-    // An incoming active line removes blur immediately to avoid clipping its
-    // scale animation. An outgoing line fades blur in smoothly instead.
     val animatedBlur by animateDpAsState(targetBlur, tween(300, easing = FastOutSlowInEasing), label = "synced-lyric-blur")
-    val blur = if (distance == 0) 0.dp else animatedBlur
     val scale by animateFloatAsState(if (focusMode && distance == 0) 1.04f else 1f, tween(300, easing = FastOutSlowInEasing), label = "synced-lyric-scale")
     val activeOffsetPx = with(LocalDensity.current) { 4.dp.toPx() }
     val lyricTapSlopPx = with(LocalDensity.current) { 20.dp.toPx() }
@@ -486,10 +483,7 @@ private fun SyncedLyricRow(
             // Reserve room for active-line scaling without changing wrapping
             // only when the active state changes.
             .padding(top = 10.dp, bottom = 10.dp, end = 16.dp)
-            .then(
-                if (blurEnabled) Modifier.blur(blur, edgeTreatment = BlurredEdgeTreatment.Unbounded)
-                else Modifier,
-            )
+            .blur(animatedBlur, edgeTreatment = BlurredEdgeTreatment.Unbounded)
             // Transform after text layout so the active line grows subtly
             // without changing its wrapping or displacing adjacent lyrics.
             .graphicsLayer {

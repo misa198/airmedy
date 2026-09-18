@@ -1,5 +1,6 @@
 package me.misa198.airmedy.ui.navigation
 
+import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -23,6 +24,13 @@ class PlayerLyricsParserTest {
     fun treatsSmallFingerDriftOnALyricAsATap() {
         assertTrue(shouldSeekFromLyricTap(dragDistancePx = 12f, tapSlopPx = 20f))
         assertFalse(shouldSeekFromLyricTap(dragDistancePx = 24f, tapSlopPx = 20f))
+    }
+
+    @Test
+    fun keepsBlurTargetsContinuousWhenTheActiveLineChanges() {
+        assertEquals(0.dp, syncedLyricBlurRadius(0))
+        assertEquals(0.35.dp, syncedLyricBlurRadius(1))
+        assertEquals(1.25.dp, syncedLyricBlurRadius(2))
     }
 
     @Test
