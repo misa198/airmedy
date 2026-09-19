@@ -239,6 +239,7 @@ static AVAudioUnitEffect *MakeStereoWidenerNode(void) {
 @property (strong, nonatomic) AirmedyDeck     *outgoingDeck;      // fading-out deck while fading
 @property (strong, nonatomic) dispatch_queue_t fadeQueue;
 @property (strong, nonatomic) dispatch_source_t fadeTimer;
+- (void)applyPendingSeekForPlayer:(SFBAudioPlayer *)audioPlayer;
 @end
 
 @implementation AirmedyPlayer
@@ -272,9 +273,21 @@ static AVAudioUnitEffect *MakeStereoWidenerNode(void) {
 - (void)audioPlayer:(SFBAudioPlayer *)audioPlayer
       decodingStarted:(id<SFBPCMDecoding>)decoder
 {
-    if (audioPlayer != self.activeDeck.sfbPlayer || !self.hasPendingSeek) {
-        return;
-    }
+    [self applyPendingSeekForPlayer:audioPlayer];
+}
+
+// SFBAudioEngine 0.14 publishes its transport snapshot after decodingStarted
+// while playing. Retry at renderingWillStart, when seekToTime: is valid but
+// before the first frame reaches the output device.
+- (void)audioPlayer:(SFBAudioPlayer *)audioPlayer
+ renderingWillStart:(id<SFBPCMDecoding>)decoder
+         atHostTime:(uint64_t)hostTime
+{
+    [self applyPendingSeekForPlayer:audioPlayer];
+}
+
+- (void)applyPendingSeekForPlayer:(SFBAudioPlayer *)audioPlayer {
+    if (audioPlayer != self.activeDeck.sfbPlayer || !self.hasPendingSeek) return;
 
     const NSTimeInterval position = self.pendingSeekPosition;
     if ([audioPlayer seekToTime:position]) {
