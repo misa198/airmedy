@@ -15,7 +15,7 @@
 
 set -euo pipefail
 
-FFMPEG_VERSION="8.1"
+FFMPEG_VERSION="8.1.2"
 FFMPEG_URL="https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
