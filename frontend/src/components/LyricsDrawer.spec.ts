@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 import { reactive } from 'vue'
 import LyricsDrawer from './LyricsDrawer.vue'
 import { usePlayerStore } from '../stores/player'
@@ -32,6 +33,7 @@ describe('LyricsDrawer romanization', () => {
   let store: typeof player
 
   beforeEach(() => {
+    setActivePinia(createPinia())
     store = usePlayerStore() as unknown as typeof player
     store.lyrics = { content: '[00:00.00]你好 ^ Translation' }
     store.lyricsLoading = false

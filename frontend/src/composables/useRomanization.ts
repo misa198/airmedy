@@ -1,9 +1,12 @@
 import { computed, onUnmounted, ref, shallowRef, watch, type Ref } from 'vue'
 import { LyricsService } from '../../bindings/airmedy/internal/infra/wails'
 import { useRomanizationStore } from '../stores/romanization'
+import { useAppStore } from '../stores/app'
 
 export function useRomanization(lines: Ref<string[]>, available: Ref<boolean>) {
   const store = useRomanizationStore()
+  const appStore = useAppStore()
+  const isAvailable = computed(() => available.value && appStore.romanizationEnabled)
   const supported = ref(false)
   const mandarinDefault = ref(false)
   const loading = ref(false)
@@ -23,7 +26,7 @@ export function useRomanization(lines: Ref<string[]>, available: Ref<boolean>) {
 
   async function convert() {
     invalidate()
-    if (!available.value || !supported.value || !store.enabled) return
+    if (!isAvailable.value || !supported.value || !store.enabled) return
     const current = generation
     loading.value = true
     error.value = false
@@ -41,7 +44,7 @@ export function useRomanization(lines: Ref<string[]>, available: Ref<boolean>) {
     }
   }
 
-  watch([lines, available], async () => {
+  watch([lines, isAvailable], async () => {
     invalidate()
     cancelInspection?.()
     const current = ++inspectionGeneration
@@ -49,7 +52,7 @@ export function useRomanization(lines: Ref<string[]>, available: Ref<boolean>) {
     supported.value = false
     mandarinDefault.value = false
     error.value = false
-    if (!available.value) return
+    if (!isAvailable.value) return
     const request = LyricsService.InspectRomanization(lines.value)
     cancelInspection = () => { void request.cancel().catch(() => {}) }
     try {
@@ -75,12 +78,13 @@ export function useRomanization(lines: Ref<string[]>, available: Ref<boolean>) {
   })
 
   function toggle() {
+    if (!appStore.romanizationEnabled) return
     void store.setEnabled(!store.enabled)
   }
 
   return {
-    supported, mandarinDefault, loading, error, toggle, retry: convert,
-    enabled: computed(() => store.enabled),
-    secondary: computed(() => store.enabled ? result.value : []),
+    supported: computed(() => appStore.romanizationEnabled && supported.value), mandarinDefault, loading, error, toggle, retry: convert,
+    enabled: computed(() => appStore.romanizationEnabled && store.enabled),
+    secondary: computed(() => isAvailable.value && store.enabled ? result.value : []),
   }
 }

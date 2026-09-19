@@ -467,6 +467,7 @@ type AppSettings struct {
 	LyricsFolderPath         string  `json:"lyrics_folder_path"`
 	LyricsSubfolderEnabled   bool    `json:"lyrics_subfolder_enabled"`
 	LyricsSubfolderName      string  `json:"lyrics_subfolder_name"`
+	RomanizationEnabled      bool    `json:"romanization_enabled"`
 	UseOnlineArtistArtwork   bool    `json:"use_online_artist_artwork"`
 	PreferLocalArtistArtwork bool    `json:"prefer_local_artist_artwork"`
 	LastScanVersion          string  `json:"last_scan_version"`

@@ -258,7 +258,7 @@ Dependencies always point inward — `infra` depends on `app`, `app` depends on 
 
 > **No system FFmpeg required.** FFmpeg is the decode backend on Windows/Linux only — macOS uses SFBAudioEngine and ships no FFmpeg. Pre-built static libraries for `windows/amd64`, `windows/arm64`, `linux/amd64`, and `linux/arm64` are bundled in `internal/infra/audio/ffmpeg_libs/`.
 >
-> To rebuild them: `scripts/build-ffmpeg-linux.sh` and `scripts/build-ffmpeg-windows.sh` (the latter cross-compiles `amd64` + `arm64` from Linux via `gcc-mingw-w64`). `scripts/build-ffmpeg-windows-msys2.sh` builds Windows `amd64` natively inside an MSYS2 MINGW64 shell. All produce minimal static `.a` libs (FFmpeg 8.1, decoders only).
+> To rebuild them: `scripts/build-ffmpeg-linux.sh` and `scripts/build-ffmpeg-windows.sh` (the latter cross-compiles `amd64` + `arm64` from Linux via `gcc-mingw-w64`). `scripts/build-ffmpeg-windows-msys2.sh` builds Windows `amd64` natively inside an MSYS2 MINGW64 shell. All produce minimal static `.a` libs (FFmpeg 8.1.2, decoders only).
 
 ### Clone & Run
 

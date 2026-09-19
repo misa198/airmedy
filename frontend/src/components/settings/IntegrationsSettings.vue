@@ -204,8 +204,8 @@ onMounted(() => {
         <Switch :model-value="appStore.enableKugou" @update:model-value="appStore.updateEnableKugou" />
       </SettingRow>
       <SettingRow
-        :title="t('settings.integrations.prefer_local_lyrics', 'Prefer Local Lyrics')"
-        :description="t('settings.integrations.prefer_local_lyrics_desc', 'Use local lyric files or embedded lyrics when available')"
+        :title="t('settings.integrations.prefer_local_lyrics')"
+        :description="t('settings.integrations.prefer_local_lyrics_desc')"
       >
         <Switch :model-value="appStore.preferLocalLyrics"
           @update:model-value="appStore.updatePreferLocalLyrics" />
@@ -262,6 +262,13 @@ onMounted(() => {
             </div>
           </template>
         </SettingExpandableRow>
+        <SettingRow
+        :title="t('settings.integrations.romanization')"
+        :description="t('settings.integrations.romanization_desc')"
+      >
+        <Switch :model-value="appStore.romanizationEnabled"
+          @update:model-value="appStore.updateRomanizationEnabled" />
+      </SettingRow>
     </SettingSection>
   </div>
 </template>

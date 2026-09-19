@@ -18,7 +18,13 @@ type LyricsService struct {
 }
 
 func NewLyricsService(service *lyrics.LyricsService, settingsService *appsettings.SettingsService, romanizer *romanization.Service) *LyricsService {
-	return &LyricsService{service: service, settingsService: settingsService, romanization: romanizer}
+	result := &LyricsService{service: service, settingsService: settingsService, romanization: romanizer}
+	settingsService.AddChangeListener(func(settings *domain.AppSettings) {
+		if app := application.Get(); app != nil && app.Event != nil {
+			app.Event.Emit("lyrics:romanization-availability", settings.RomanizationEnabled)
+		}
+	})
+	return result
 }
 
 func (s *LyricsService) InspectRomanization(lines []string) (domain.RomanizationInspection, error) {

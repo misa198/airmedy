@@ -374,9 +374,12 @@ one successful result, keyed by content and engine version, with a 1 MiB encoded
 payload cap. Cached strings cannot retain dictionary/token references. Failed
 results are not cached so retry can recover.
 
-Romanization's preference is backend-owned for the app lifetime, initially off,
-and broadcast to every webview; it is not persisted across app restarts. The
-mounted lyric renderer owns only its current results, cancels on input
+Romanization availability is persisted in `app_settings.romanization_enabled`
+(default on) and broadcast to every webview. When disabled, it hides every
+romanization control, cancels active conversion, removes converted secondary
+lines, and resets the backend-owned session preference to off. The session
+preference itself is initially off and is not persisted across app restarts.
+The mounted lyric renderer owns only its current results, cancels on input
 change, disabling and unmount, and rejects stale responses. Converted lines
 replace bilingual secondary text; unsupported/failed lines retain bilingual.
 While conversion is pending or fails, existing text stays visible. The primary
