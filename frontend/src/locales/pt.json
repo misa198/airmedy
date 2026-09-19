@@ -135,6 +135,8 @@
       "enable_kugou_desc": "Buscar letras do KuGou Music",
       "prefer_local_lyrics": "Preferir letras locais",
       "prefer_local_lyrics_desc": "Usar ficheiros de letras (.lrc/.txt) ou letras incorporadas quando disponíveis",
+      "romanization": "Romanização",
+      "romanization_desc": "Mostrar controles para letras romanizadas",
       "lyrics_folder": "Pasta de letras dedicada",
       "lyrics_folder_desc": "Procurar também ficheiros .lrc/.txt (correspondidos pelo nome da faixa) numa pasta escolhida",
       "lyrics_folder_none": "Nenhuma pasta selecionada",

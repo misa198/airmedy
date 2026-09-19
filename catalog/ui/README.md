@@ -521,8 +521,10 @@ The mini player controls sit over a CSS glassmorphism panel (`.glass-panel` in `
 
 ### Fullscreen romanization
 
-Fullscreen, mini-player, and drawer lyric panels use the same session-only
-romanization preference.
+Fullscreen, mini-player, and drawer lyric panels share the persisted
+`romanization_enabled` availability setting and the same session-only
+romanization preference. Disabling availability hides every control and
+converted line immediately, then resets the session preference.
 `useRomanization` sends only parsed primary lines to `LyricsService`, keeps
 cancellable requests and generation guards scoped to the mounted surface, and
 passes secondary strings separately to synced/plain views. `stores/romanization`

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import PlayerLyrics from './PlayerLyrics.vue'
+import { useAppStore } from '../stores/app'
 import { useRomanizationStore } from '../stores/romanization'
 
 const api = vi.hoisted(() => ({ InspectRomanization: vi.fn(), RomanizeLyrics: vi.fn() }))
@@ -145,6 +146,24 @@ describe('fullscreen romanization', () => {
     expect(wrapper.find('button').exists()).toBe(false)
     await wrapper.setProps({ romanization: false })
     expect(wrapper.find('button').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('hides active romanization when the feature is disabled', async () => {
+    api.RomanizeLyrics.mockReturnValue(Object.assign(
+      Promise.resolve([{ text: 'nǐ hǎo', status: 'converted' }, { text: '', status: 'unsupported' }]),
+      { cancel: vi.fn().mockResolvedValue(undefined) },
+    ))
+    const wrapper = create()
+    await flushPromises()
+    await wrapper.get('button').trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('nǐ hǎo')
+
+    useAppStore().romanizationEnabled = false
+    await flushPromises()
+    expect(wrapper.find('[data-test="romanization-toggle"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Translation')
     wrapper.unmount()
   })
 })

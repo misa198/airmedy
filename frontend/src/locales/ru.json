@@ -135,6 +135,8 @@
       "enable_kugou_desc": "Загружать тексты с KuGou Music",
       "prefer_local_lyrics": "Предпочитать локальные тексты",
       "prefer_local_lyrics_desc": "Использовать локальные файлы текстов (.lrc/.txt) или встроенные тексты, если доступны",
+      "romanization": "Романизация",
+      "romanization_desc": "Показывать элементы управления романизированными текстами",
       "lyrics_folder": "Отдельная папка текстов",
       "lyrics_folder_desc": "Также искать файлы .lrc/.txt (по имени трека) в выбранной папке",
       "lyrics_folder_none": "Папка не выбрана",

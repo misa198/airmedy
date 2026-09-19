@@ -7,6 +7,7 @@ import * as WindowService from '../../bindings/airmedy/internal/infra/wails/wind
 import * as NormalizationService from '../../bindings/airmedy/internal/infra/wails/normalizationservice'
 import * as AnalysisService from '../../bindings/airmedy/internal/infra/wails/analysisservice'
 import * as EQService from '../../bindings/airmedy/internal/infra/wails/eqservice'
+import { useRomanizationStore } from './romanization'
 import { UpdateInfo } from '../../bindings/airmedy/internal/app/updater/models'
 import { DEFAULT_SYNC_INTERVAL, isSyncInterval, type SyncInterval } from '@/lib/librarySync'
 import { DEFAULT_MAX_QUEUE_SIZE, isMaxQueueSize, type MaxQueueSize } from '@/lib/queue'
@@ -42,6 +43,7 @@ export const useAppStore = defineStore('app', () => {
   const lyricsFolderPath = ref('')
   const lyricsSubfolderEnabled = ref(false)
   const lyricsSubfolderName = ref('')
+  const romanizationEnabled = ref(true)
   const useOnlineArtistArtwork = ref(true)
   const preferLocalArtistArtwork = ref(true)
   // Round-tripped only (set by the backend's version-gated rescan); never edited
@@ -141,6 +143,7 @@ export const useAppStore = defineStore('app', () => {
         lyricsFolderPath.value = settings.lyrics_folder_path || ''
         lyricsSubfolderEnabled.value = !!settings.lyrics_subfolder_enabled
         lyricsSubfolderName.value = settings.lyrics_subfolder_name || ''
+        romanizationEnabled.value = settings.romanization_enabled !== false
         useOnlineArtistArtwork.value = settings.use_online_artist_artwork !== false
         preferLocalArtistArtwork.value = settings.prefer_local_artist_artwork !== false
         lastScanVersion.value = settings.last_scan_version || ''
@@ -255,6 +258,7 @@ export const useAppStore = defineStore('app', () => {
         lyrics_folder_path: lyricsFolderPath.value,
         lyrics_subfolder_enabled: lyricsSubfolderEnabled.value,
         lyrics_subfolder_name: lyricsSubfolderName.value,
+        romanization_enabled: romanizationEnabled.value,
         use_online_artist_artwork: useOnlineArtistArtwork.value,
         prefer_local_artist_artwork: preferLocalArtistArtwork.value,
         last_scan_version: lastScanVersion.value,
@@ -387,6 +391,12 @@ export const useAppStore = defineStore('app', () => {
 
   const updateLyricsSubfolderName = async (name: string) => {
     lyricsSubfolderName.value = name
+    await saveSettings()
+  }
+
+  const updateRomanizationEnabled = async (enabled: boolean) => {
+    romanizationEnabled.value = enabled
+    if (!enabled) await useRomanizationStore().setEnabled(false)
     await saveSettings()
   }
 
@@ -538,12 +548,16 @@ export const useAppStore = defineStore('app', () => {
       updateProgress.value = Math.round((data.downloaded / data.total) * 100)
     }
   })
+  const _offRomanizationAvailability = Events.On('lyrics:romanization-availability', (event: Events.WailsEvent) => {
+    romanizationEnabled.value = Boolean(event.data)
+  })
 
   function dispose() {
     if (_primaryColorSaveTimer) clearTimeout(_primaryColorSaveTimer)
     _primaryColorSaveTimer = null
     _darkMQ?.removeEventListener('change', _onDarkMQChange)
     _offUpdaterProgress()
+    _offRomanizationAvailability()
   }
 
   return {
@@ -562,6 +576,7 @@ export const useAppStore = defineStore('app', () => {
     lyricsFolderPath,
     lyricsSubfolderEnabled,
     lyricsSubfolderName,
+    romanizationEnabled,
     useOnlineArtistArtwork,
     preferLocalArtistArtwork,
     preventSleepWhilePlaying,
@@ -606,6 +621,7 @@ export const useAppStore = defineStore('app', () => {
     updateLyricsFolderPath,
     updateLyricsSubfolderEnabled,
     updateLyricsSubfolderName,
+    updateRomanizationEnabled,
     updateUseOnlineArtistArtwork,
     updatePreferLocalArtistArtwork,
     updatePreventSleepWhilePlaying,
