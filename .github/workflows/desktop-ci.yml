@@ -37,6 +37,7 @@ permissions:
 jobs:
   ci:
     name: Lint, Test, and Build
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && !contains(github.event.pull_request.title, 'skip-ci')) || (github.event_name == 'push' && !contains(github.event.head_commit.message, 'skip-ci'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

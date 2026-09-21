@@ -148,7 +148,7 @@ jobs:
 
   build-sfb-darwin:
     name: Build SFBAudioEngine for Darwin
-    runs-on: macos-27
+    runs-on: xcode-27
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -170,7 +170,7 @@ jobs:
 
   build-ffmpeg-darwin:
     name: Build FFmpeg for Darwin
-    runs-on: macos-27
+    runs-on: xcode-27
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -200,7 +200,7 @@ jobs:
 
   build-fftw3-darwin:
     name: Build FFTW3 for Darwin
-    runs-on: macos-27
+    runs-on: xcode-27
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -230,7 +230,7 @@ jobs:
   build-aubio-darwin:
     name: Build aubio for Darwin
     needs: build-fftw3-darwin
-    runs-on: macos-27
+    runs-on: xcode-27
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -385,7 +385,7 @@ jobs:
           - Linux-ARM64
           - Darwin-AMD64
           - Darwin-ARM64
-    runs-on: ${{ matrix.os == 'Linux-ARM64' && 'ubuntu-24.04-arm' || (contains(matrix.os, 'Windows') && 'windows-latest') || (contains(matrix.os, 'Darwin') && 'macos-27') || 'ubuntu-latest' }}
+    runs-on: ${{ matrix.os == 'Linux-ARM64' && 'ubuntu-24.04-arm' || (contains(matrix.os, 'Windows') && 'windows-latest') || (contains(matrix.os, 'Darwin') && 'xcode-27') || 'ubuntu-latest' }}
 
     steps:
       - name: Checkout code
