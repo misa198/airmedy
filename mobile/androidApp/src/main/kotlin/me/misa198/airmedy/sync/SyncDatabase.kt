@@ -178,6 +178,8 @@ internal data class DailyTrackListeningStatEntity(val sourceDeviceId: String, va
 @Entity(tableName = "daily_playback_attempt_stats", primaryKeys = ["sourceDeviceId", "localDate"])
 internal data class DailyPlaybackAttemptStatEntity(val sourceDeviceId: String, val localDate: String, val attempts: Int, val completed: Int, val skipped: Int, val stopped: Int, val listenedSeconds: Int)
 
+internal data class LastListenedTrackRow(val trackId: String, val lastListenedAt: Long)
+
 internal data class AnalysisDocumentRow(val documentKey: String, val rawJson: String)
 
 internal data class LibraryTrackRow(
@@ -238,6 +240,7 @@ internal interface SyncDao {
     @Query("SELECT * FROM daily_playback_attempt_stats") suspend fun dailyAttemptStats(): List<DailyPlaybackAttemptStatEntity>
     @Query("SELECT * FROM daily_track_listening_stats") fun observeDailyTrackStats(): Flow<List<DailyTrackListeningStatEntity>>
     @Query("SELECT * FROM daily_playback_attempt_stats") fun observeDailyAttemptStats(): Flow<List<DailyPlaybackAttemptStatEntity>>
+    @Query("SELECT trackId, MAX(endedAt) AS lastListenedAt FROM listening_sessions GROUP BY trackId") fun observeLastListenedTracks(): Flow<List<LastListenedTrackRow>>
 
     @Query("DELETE FROM listening_sessions WHERE endedAt<:before") suspend fun deleteOldListeningSessions(before: Long)
     @Query("DELETE FROM playback_attempts WHERE endedAt>0 AND endedAt<:before") suspend fun deleteOldPlaybackAttempts(before: Long)
@@ -537,6 +540,9 @@ internal class AndroidLibrarySyncStore(
     }
     val dailyPlaybackAttemptStats: Flow<List<DailyPlaybackAttemptStat>> = dao.observeDailyAttemptStats().map { rows ->
         rows.map { DailyPlaybackAttemptStat(it.sourceDeviceId, it.localDate, it.attempts, it.completed, it.skipped, it.stopped, it.listenedSeconds) }
+    }
+    val lastListenedAt: Flow<Map<String, Long>> = dao.observeLastListenedTracks().map { rows ->
+        rows.associate { it.trackId to it.lastListenedAt }
     }
 
     suspend fun analysis(trackId: String): TrackAnalysis? = activeAnalyses()[trackId]

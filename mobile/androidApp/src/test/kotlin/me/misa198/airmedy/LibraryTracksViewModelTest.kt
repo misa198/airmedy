@@ -158,7 +158,7 @@ class LibraryTracksViewModelTest {
     }
 
     @Test
-    fun homeSectionsMatchDesktopListeningOrderingAndLimit() {
+    fun homeSectionsUseListeningHistoryForKeepListeningOrderingAndLimit() {
         val tracks = (1..30).map { index ->
             LibraryTrack(
                 id = "t$index",
@@ -170,8 +170,11 @@ class LibraryTracksViewModelTest {
             )
         }
 
-        assertEquals(28, keepListeningTracks(tracks).size)
-        assertEquals("t30", keepListeningTracks(tracks).first().id)
+        val lastListenedAt = (2..30).associate { "t$it" to it.toLong() }
+
+        assertEquals(28, keepListeningTracks(tracks, lastListenedAt).size)
+        assertEquals("t30", keepListeningTracks(tracks, lastListenedAt).first().id)
+        assertFalse(keepListeningTracks(tracks, lastListenedAt).any { it.id == "t1" })
         assertEquals("t30", mostPlayedTracks(tracks).first().id)
         assertEquals("t1", forgottenTracks(tracks).first().id)
         assertEquals(28, forgottenTracks(tracks).size)

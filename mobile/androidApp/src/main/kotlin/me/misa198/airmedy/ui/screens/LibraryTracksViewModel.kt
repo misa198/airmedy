@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.Dispatchers
 import me.misa198.airmedy.sync.AndroidLibrarySyncStore
@@ -66,11 +65,10 @@ internal class LibraryTracksViewModel(
     private val sortOrderFlow = MutableStateFlow(SortOrder.Ascending)
     private val filterQueryFlow = MutableStateFlow("")
 
-    val homeUiState: StateFlow<HomeUiState> = syncStore.tracks
-        .map { rawTracks ->
+    val homeUiState: StateFlow<HomeUiState> = combine(syncStore.tracks, syncStore.lastListenedAt) { rawTracks, lastListenedAt ->
             HomeUiState(
                 isLoaded = true,
-                keepListeningTracks = keepListeningTracks(rawTracks),
+                keepListeningTracks = keepListeningTracks(rawTracks, lastListenedAt),
                 mostPlayedTracks = mostPlayedTracks(rawTracks),
                 forgottenTracks = forgottenTracks(rawTracks),
             )
@@ -157,9 +155,9 @@ internal class LibraryTracksViewModel(
 
 internal const val HomeTrackLimit = 28
 
-internal fun keepListeningTracks(tracks: List<LibraryTrack>): List<LibraryTrack> = tracks
-    .filter { it.playCount > 0 }
-    .sortedWith(compareByDescending<LibraryTrack> { it.updatedAt }.thenBy(libraryAlphabeticalComparator) { it.sortTitle }.thenBy { it.id })
+internal fun keepListeningTracks(tracks: List<LibraryTrack>, lastListenedAt: Map<String, Long>): List<LibraryTrack> = tracks
+    .filter { it.id in lastListenedAt }
+    .sortedWith(compareByDescending<LibraryTrack> { lastListenedAt.getValue(it.id) }.thenBy(libraryAlphabeticalComparator) { it.sortTitle }.thenBy { it.id })
     .take(HomeTrackLimit)
 
 internal fun mostPlayedTracks(tracks: List<LibraryTrack>): List<LibraryTrack> = tracks
