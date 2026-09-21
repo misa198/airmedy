@@ -9,8 +9,11 @@
 [![License](https://img.shields.io/badge/license-GPL--3.0-0d1117?style=flat-square)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.25-00ADD8?style=flat-square&logo=go&logoColor=white)](https://go.dev)
 [![Wails](https://img.shields.io/badge/Wails-3-da0b0b?style=flat-square&logo=wails&logoColor=white)](https://wails.io/)
+[![KMP](https://img.shields.io/badge/Kotlin-Multiplatform-%237f52ff?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Last.fm](https://img.shields.io/badge/last.fm-da0b0b?style=flat-square&logo=last.fm&logoColor=white)](https://last.fm/)
-[![CI](https://img.shields.io/badge/CI-pass-00ADD8?style=flat-square&logo=githubactions)](https://github.com/misa198/airmedy/actions)
+
+[![Desktop CI](https://github.com/misa198/airmedy/actions/workflows/desktop-ci.yml/badge.svg)](https://github.com/misa198/airmedy/actions/workflows/desktop-ci.yml)
+[![Mobile CI](https://github.com/misa198/airmedy/actions/workflows/mobile-ci.yml/badge.svg)](https://github.com/misa198/airmedy/actions/workflows/mobile-ci.yml)
 
 [![MacoOS](https://shields.io/badge/MacOS--9cf?logo=Apple&style=social)](https://airmedy.pages.dev/)
 [![Windows](https://custom-icon-badges.demolab.com/badge/Windows-0078D6?logo=windows11&logoColor=white)](https://airmedy.pages.dev/)
@@ -19,6 +22,7 @@
 
 [![Website](https://custom-icon-badges.demolab.com/badge/Website-0078D6?logo=website&logoColor=white)](https://airmedy.pages.dev/)
 [![Latest Release Desktop](https://img.shields.io/github/v/release/misa198/airmedy?display_name=release&style=flat-square&label=Latest%20Release%20Desktop&color=26a69a)](https://github.com/misa198/airmedy/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/misa198/airmedy/total?label=Downloads&style=flat-square&color=ba68c8)](https://airmedy.pages.dev/download/)
 
 </div>
 
