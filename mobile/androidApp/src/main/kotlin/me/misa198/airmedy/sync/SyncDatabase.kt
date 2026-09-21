@@ -234,6 +234,18 @@ internal interface SyncDao {
     @Query("UPDATE sync_tracks SET playCount=playCount+1 WHERE trackId=:trackId AND planId IN (SELECT planId FROM sync_plans WHERE active=1)")
     suspend fun incrementActiveTrackPlayCount(trackId: String)
 
+    @Query("""
+        UPDATE sync_tracks
+        SET playCount = MAX(playCount, COALESCE((
+            SELECT activeTrack.playCount
+            FROM sync_tracks activeTrack
+            INNER JOIN sync_plans activePlan ON activePlan.planId = activeTrack.planId
+            WHERE activePlan.active = 1 AND activeTrack.trackId = sync_tracks.trackId
+        ), 0))
+        WHERE planId = :planId
+    """)
+    suspend fun mergeActiveTrackPlayCounts(planId: String)
+
     @Query("SELECT * FROM listening_sessions WHERE endedAt>=:since") suspend fun listeningSessionsSince(since: Long): List<ListeningSessionEntity>
     @Query("SELECT * FROM playback_attempts WHERE endedAt>=:since AND endReason IS NOT NULL") suspend fun playbackAttemptsSince(since: Long): List<PlaybackAttemptEntity>
     @Query("SELECT * FROM daily_track_listening_stats") suspend fun dailyTrackStats(): List<DailyTrackListeningStatEntity>
@@ -790,6 +802,7 @@ internal class AndroidLibrarySyncStore(
             })
             val tracks = manifest.tracks.orEmpty().mapIndexedNotNull { index, track -> track.toTrack(request.planId, index) }
             dao.insertTracks(tracks)
+            dao.mergeActiveTrackPlayCounts(request.planId)
             val pending = dao.pendingPlaylistMutations().mapNotNull { row -> runCatching {
                 PlaylistMutation(row.mutationId, row.playlistId, PlaylistMutationOperation.valueOf(row.operation), row.updatedAt,
                     LibrarySyncProtocol.json.decodeFromString(PlaylistMutationPayload.serializer(), row.payloadJson))
