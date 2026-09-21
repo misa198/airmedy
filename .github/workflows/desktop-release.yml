@@ -148,7 +148,7 @@ jobs:
 
   build-sfb-darwin:
     name: Build SFBAudioEngine for Darwin
-    runs-on: macos-26
+    runs-on: macos-27
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -170,7 +170,7 @@ jobs:
 
   build-ffmpeg-darwin:
     name: Build FFmpeg for Darwin
-    runs-on: macos-26
+    runs-on: macos-27
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -200,7 +200,7 @@ jobs:
 
   build-fftw3-darwin:
     name: Build FFTW3 for Darwin
-    runs-on: macos-26
+    runs-on: macos-27
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -230,7 +230,7 @@ jobs:
   build-aubio-darwin:
     name: Build aubio for Darwin
     needs: build-fftw3-darwin
-    runs-on: macos-26
+    runs-on: macos-27
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -385,7 +385,7 @@ jobs:
           - Linux-ARM64
           - Darwin-AMD64
           - Darwin-ARM64
-    runs-on: ${{ (contains(matrix.os, 'Windows') && 'windows-latest') || (contains(matrix.os, 'Darwin') && 'macos-26') || 'ubuntu-latest' }}
+    runs-on: ${{ matrix.os == 'Linux-ARM64' && 'ubuntu-24.04-arm' || (contains(matrix.os, 'Windows') && 'windows-latest') || (contains(matrix.os, 'Darwin') && 'macos-27') || 'ubuntu-latest' }}
 
     steps:
       - name: Checkout code
@@ -431,22 +431,8 @@ jobs:
       - name: Install Linux Dependencies
         if: runner.os == 'Linux'
         run: |
-          if [[ "${{ matrix.os }}" == "Linux-ARM64" ]]; then
-            sudo dpkg --add-architecture arm64
-            # Update existing sources to be amd64 only to avoid 404s on mirrors that don't have arm64
-            if [ -f /etc/apt/sources.list ]; then
-              sudo sed -i 's/^deb http/deb [arch=amd64] http/g' /etc/apt/sources.list
-            fi
-            if ls /etc/apt/sources.list.d/*.sources 1> /dev/null 2>&1; then
-              sudo sed -i 's/Types: deb/Types: deb\nArchitectures: amd64/g' /etc/apt/sources.list.d/*.sources
-            fi
-            # Add Ubuntu Ports for arm64
-            echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports $(lsb_release -cs) main restricted universe multiverse" | sudo tee /etc/apt/sources.list.d/arm64.list
-            echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports $(lsb_release -cs)-updates main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.list
-            echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports $(lsb_release -cs)-security main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.list
-          fi
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libgtk-4-dev libwebkitgtk-6.0-dev build-essential nsis nasm gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross pkg-config qemu-user-static binfmt-support
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libgtk-4-dev libwebkitgtk-6.0-dev build-essential nsis nasm pkg-config
 
       - name: Install Windows Dependencies
         if: runner.os == 'Windows'
@@ -568,11 +554,6 @@ jobs:
       - name: Install Wails v3
         run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.23
 
-      - name: Install Linux ARM64 Cross-compile Dependencies
-        if: runner.os == 'Linux' && matrix.os == 'Linux-ARM64'
-        run: |
-          sudo apt-get install -y -o Dpkg::Options::="--force-overwrite" --no-install-recommends libgtk-3-dev:arm64 libwebkit2gtk-4.1-dev:arm64 libgtk-4-dev:arm64 libwebkitgtk-6.0-dev:arm64
-
       - name: Build and Package (Windows)
         if: runner.os == 'Windows'
         shell: bash
@@ -616,7 +597,6 @@ jobs:
               ;;
             "Linux-ARM64")
               export CGO_LDFLAGS="-L${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/linux/arm64"
-              export CC=aarch64-linux-gnu-gcc
               export CGO_ENABLED=1
               export GOARCH=arm64
               export GOOS=linux
