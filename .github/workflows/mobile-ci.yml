@@ -31,6 +31,7 @@ permissions:
 jobs:
   mobile:
     name: Test and Build Android
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && !contains(github.event.pull_request.title, 'skip-ci')) || (github.event_name == 'push' && !contains(github.event.head_commit.message, 'skip-ci'))
     runs-on: macos-15
     steps:
       - name: Checkout code
