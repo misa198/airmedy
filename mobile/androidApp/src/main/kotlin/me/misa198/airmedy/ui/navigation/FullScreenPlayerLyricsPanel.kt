@@ -484,7 +484,6 @@ private fun SyncedLyricRow(
             // Reserve room for active-line scaling without changing wrapping
             // only when the active state changes.
             .padding(top = 10.dp, bottom = 10.dp, end = 16.dp)
-            .blur(animatedBlur, edgeTreatment = BlurredEdgeTreatment.Unbounded)
             // Transform after text layout so the active line grows subtly
             // without changing its wrapping or displacing adjacent lyrics.
             .graphicsLayer {
@@ -494,6 +493,9 @@ private fun SyncedLyricRow(
                 transformOrigin = TransformOrigin(0f, 0.5f)
                 clip = false
             }
+            // Blur at the original size, then scale the result. An outer blur
+            // layer would crop the enlarged text to its offscreen buffer.
+            .blur(animatedBlur, edgeTreatment = BlurredEdgeTreatment.Unbounded)
             .onSizeChanged { onRowHeightChanged(it.height) }
             .pointerInput(line.timestampSeconds) {
                 awaitEachGesture {
