@@ -39,6 +39,20 @@ describe('fullscreen romanization', () => {
     global: { mocks: { $t: (key: string) => key }, stubs: { Teleport: !teleport } },
   })
 
+  it('sweeps enhanced lyrics and sends only clean primary text to romanization', async () => {
+    const wrapper = create('[00:01]你<00:02>好<00:03> ^ Translation\n[00:04]Next')
+    await wrapper.setProps({ currentPosition: 1.5 })
+    await flushPromises()
+    expect(api.InspectRomanization).toHaveBeenCalledWith(['你好', 'Next'])
+    expect(wrapper.get('.karaoke-word').attributes('style')).toContain('50%')
+    await wrapper.get('[data-test="lyric-line"]').trigger('wheel')
+    expect(wrapper.find('.karaoke-word').exists()).toBe(false)
+    await wrapper.get('[data-test="lyric-line"]').trigger('click')
+    expect(wrapper.emitted('seek')).toEqual([[1]])
+    expect(wrapper.find('.karaoke-word').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
   it.each(['light', 'dark', 'black'])('replaces bilingual without copying Latin in %s theme', async (theme) => {
     const task = request<{ text: string; status: string }[]>()
     api.RomanizeLyrics.mockReturnValue(task.promise)

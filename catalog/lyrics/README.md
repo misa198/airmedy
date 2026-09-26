@@ -322,6 +322,35 @@ Parsed into `{ text: "English text", secondary: "中文翻译" }`.
 
 ## Frontend Display
 
+### Enhanced LRC
+
+`useLyrics` parses optional inline `<mm:ss.xx>` word timestamps into
+`LyricLine.words` (`text`, `start`, `end`, in seconds). Timestamps accept zero
+to three fractional digits. Text before the first inline tag starts at the line
+timestamp; each tag starts the following text. A trailing tag without text is
+an explicit end. Explicit ends take precedence; without one, the final word
+ends at the earlier of the next line timestamp (including empty lines) and
+one second after its start. This fallback is a visual heuristic, not inferred
+audio timing. Non-monotonic or malformed inline timing falls back to ordinary
+line highlighting. Equal timestamps are allowed and complete instantaneously.
+
+`KaraokeText` is shared by fullscreen `SyncedLyricsView`, `LyricsDrawer`, and
+`MiniPlayerLyrics`. Only the active line in follow mode receives playback
+position. It sweeps foreground color left-to-right through each timed segment,
+keeping completed words bright until the line changes. It uses the existing
+interpolated player position, with no separate clock: pause freezes the fill
+and seek updates it immediately. Browse mode retains fully readable text.
+Segments can wrap without adding guessed word timings. Ordinary LRC keeps
+line highlighting; secondary translations/romanization remain line-level.
+Both primary and secondary text are stripped of inline timing tags before
+display or romanization. Backend storage and lyric transport remain raw text.
+
+Verification: `useLyrics.spec.ts`, `KaraokeText.spec.ts`, and the fullscreen,
+drawer and mini-player component tests cover parsing, sweep progress and
+follow/browse behavior.
+
+### Follow and browse
+
 **`LyricsDrawer.vue`** and the fullscreen `SyncedLyricsView` render lines with active-line highlighting. Their synced view follows playback by default: the first valid layout positions the active line immediately, then subsequent transitions use smooth scrolling only while the previous active line remains visible. Scrolling or dragging the lyric surface enters browse mode, stopping follow and making every line fully readable (no fade or blur). Tapping a line seeks to it and resumes follow. If fullscreen lyrics is mounted while its right column is still collapsed, a `ResizeObserver` waits for the first non-zero layout before positioning the active lyric.
 
 **View selection:** Tracks with synchronized lyrics always use the synced view; browse mode makes the complete text readable without switching modes. Tracks with only plain lyrics use the plain-text view.

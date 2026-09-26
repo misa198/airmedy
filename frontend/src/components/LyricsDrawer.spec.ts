@@ -45,6 +45,23 @@ describe('LyricsDrawer romanization', () => {
 
   afterEach(() => { vi.clearAllMocks() })
 
+  it('sweeps enhanced lyrics only while open and following playback', async () => {
+    store.lyrics = { content: '[00:01]Người <00:02>hỏi<00:03>\n[00:04]Next' }
+    store.position = 1.5
+    const wrapper = mount(LyricsDrawer, { global: { mocks: { $t: (key: string) => key } } })
+    await flushPromises()
+    expect(wrapper.get('.karaoke-word').attributes('style')).toContain('50%')
+    store.isLyricsOpen = false
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('.karaoke-word').exists()).toBe(false)
+    store.isLyricsOpen = true
+    await wrapper.vm.$nextTick()
+    expect(wrapper.get('.karaoke-word').attributes('style')).toContain('50%')
+    await wrapper.get('.scrollbar-hide').trigger('wheel')
+    expect(wrapper.find('.karaoke-word').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
   it('replaces bilingual text through its sticky CJK control', async () => {
     const wrapper = mount(LyricsDrawer, { global: { mocks: { $t: (key: string) => key } } })
     await flushPromises()

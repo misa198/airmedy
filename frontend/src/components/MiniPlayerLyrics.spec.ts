@@ -7,6 +7,22 @@ const originalClientHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototy
 const originalClientWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth')
 
 describe('MiniPlayerLyrics', () => {
+  it('sweeps enhanced lyrics, preserves browsing, and resets on a new track', async () => {
+    const wrapper = mount(MiniPlayerLyrics, {
+      props: { lyrics: '[00:01]Người <00:02>hỏi<00:03>\n[00:04]Next', currentPosition: 1.5 },
+    })
+    expect(wrapper.get('.karaoke-word').attributes('style')).toContain('50%')
+    await wrapper.get('[data-test="mini-synced-lyrics"]').trigger('wheel')
+    expect(wrapper.find('.karaoke-word').exists()).toBe(false)
+    await wrapper.get('[data-test="mini-lyric-line"]').trigger('click')
+    expect(wrapper.emitted('seek')).toEqual([[1]])
+    expect(wrapper.find('.karaoke-word').exists()).toBe(true)
+    await wrapper.setProps({ lyrics: '[00:00]Other song', currentPosition: 0 })
+    expect(wrapper.find('.karaoke-word').exists()).toBe(false)
+    expect(wrapper.text()).toBe('Other song')
+    wrapper.unmount()
+  })
+
   afterEach(() => {
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
