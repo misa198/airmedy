@@ -8,8 +8,11 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -44,8 +48,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -74,9 +80,14 @@ internal data class PlayerLyricLine(
     val primary: String,
     val secondary: String? = null,
     val timestampSeconds: Float? = null,
+    val words: List<PlayerLyricWord>? = null,
 )
 
-private val TimestampedLyricLine = Regex("^\\[(\\d+):(\\d+(?:\\.\\d+)?)\\](.*)$")
+internal data class PlayerLyricWord(val text: String, val startSeconds: Float, val endSeconds: Float)
+
+private val TimestampedLyricLine = Regex("^\\[(\\d+):([0-5]\\d(?:\\.\\d{1,3})?)\\](.*)$")
+private val InlineTimingTag = Regex("<\\d+:[^<>]*>")
+private val WordTimingTag = Regex("^<(\\d+):([0-5]\\d(?:\\.\\d{1,3})?)>$")
 private val BilingualSeparator = Regex("\\s*\\^\\s*|\\s*/\\s*")
 private const val ForwardSeekAnimatedApproachRows = 3
 
@@ -85,14 +96,17 @@ internal enum class LyricsSeekDirection { Backward, Forward }
 internal fun lyricsSeekDirection(targetIndex: Int, firstVisibleIndex: Int): LyricsSeekDirection =
     if (targetIndex < firstVisibleIndex) LyricsSeekDirection.Backward else LyricsSeekDirection.Forward
 
-internal fun parsePlayerLyrics(content: String): List<PlayerLyricLine> = content.lineSequence()
-    .mapNotNull { rawLine ->
+internal fun parsePlayerLyrics(content: String): List<PlayerLyricLine> {
+    val lines = content.lineSequence().mapNotNull { rawLine ->
         val match = TimestampedLyricLine.matchEntire(rawLine)
         val timestamp = match?.let { it.groupValues[1].toFloat() * 60f + it.groupValues[2].toFloat() }
         val text = match?.groupValues?.get(3) ?: rawLine
-        text.trim().takeIf(String::isNotEmpty)?.let { parsePlayerLyricText(it, timestamp) }
+        if (timestamp != null || text.trim().isNotEmpty()) PlayerLyricLine(text, timestampSeconds = timestamp) else null
+    }.toList()
+    return lines.mapIndexed { index, line ->
+        parsePlayerLyricText(line.primary, line.timestampSeconds, lines.getOrNull(index + 1)?.timestampSeconds)
     }
-    .toList()
+}
 
 internal fun hasSyncedPlayerLyrics(content: String?): Boolean = content != null && parsePlayerLyrics(content).any { it.timestampSeconds != null }
 
@@ -131,10 +145,50 @@ internal fun syncedLyricBlurRadius(distance: Int) = when (distance) {
     else -> 2.dp
 }
 
-private fun parsePlayerLyricText(text: String, timestampSeconds: Float?): PlayerLyricLine {
+internal fun syncedLyricScale(distance: Int, focusMode: Boolean, enhanced: Boolean): Float =
+    if (focusMode && distance == 0 && !enhanced) 1.04f else 1f
+
+private fun parsePlayerLyricText(text: String, timestampSeconds: Float?, nextTimestampSeconds: Float?): PlayerLyricLine {
     val parts = BilingualSeparator.split(text, limit = 2)
-    val secondary = parts.getOrNull(1)?.trim()?.takeIf(String::isNotEmpty)
-    return PlayerLyricLine(primary = parts.first().trim(), secondary = secondary, timestampSeconds = timestampSeconds)
+    val primary = parts.first()
+    val secondary = parts.getOrNull(1)?.let(::cleanPlayerLyricText)?.takeIf(String::isNotEmpty)
+    return PlayerLyricLine(
+        primary = cleanPlayerLyricText(primary),
+        secondary = secondary,
+        timestampSeconds = timestampSeconds,
+        words = timestampSeconds?.let { parsePlayerLyricWords(primary, it, nextTimestampSeconds) },
+    )
+}
+
+private fun cleanPlayerLyricText(text: String): String = text.replace(InlineTimingTag, "").trim()
+
+private fun parsePlayerLyricWords(text: String, startSeconds: Float, nextTimestampSeconds: Float?): List<PlayerLyricWord>? {
+    val markers = InlineTimingTag.findAll(text).toList()
+    if (markers.isEmpty()) return null
+    val words = mutableListOf<PlayerLyricWord>()
+    var start = startSeconds
+    var cursor = 0
+    for (marker in markers) {
+        val match = WordTimingTag.matchEntire(marker.value) ?: return null
+        val end = match.groupValues[1].toFloat() * 60f + match.groupValues[2].toFloat()
+        if (end < start) return null
+        val segment = text.substring(cursor, marker.range.first)
+        if (segment.isNotBlank()) words += PlayerLyricWord(segment, start, end)
+        else if (words.isNotEmpty()) words[words.lastIndex] = words.last().copy(text = words.last().text + segment)
+        start = end
+        cursor = marker.range.last + 1
+    }
+    val tail = text.substring(cursor)
+    if (tail.isNotBlank()) {
+        // ponytail: missing final-word ends use at most 1s; explicit tags avoid this heuristic.
+        val end = minOf(start + 1f, nextTimestampSeconds ?: Float.POSITIVE_INFINITY)
+        if (end < start) return null
+        words += PlayerLyricWord(tail, start, end)
+    }
+    if (words.isEmpty()) return null
+    words[0] = words.first().copy(text = words.first().text.trimStart())
+    words[words.lastIndex] = words.last().copy(text = words.last().text.trimEnd())
+    return words
 }
 
 @Composable
@@ -428,6 +482,7 @@ private fun SyncedLyricsList(
                 line = line,
                 secondary = secondary.getOrNull(index) ?: line.secondary,
                 distance = if (activeIndex >= 0) kotlin.math.abs(index - activeIndex) else Int.MAX_VALUE,
+                karaokePositionSeconds = if (!isBrowsing && index == activeIndex) displayedPositionMs / 1_000f else null,
                 onClick = {
                     isBrowsing = false
                     activeIndexWhenLineSelected = activeIndex
@@ -449,6 +504,7 @@ private fun SyncedLyricRow(
     line: PlayerLyricLine,
     secondary: String?,
     distance: Int,
+    karaokePositionSeconds: Float?,
     onClick: () -> Unit,
     onRowHeightChanged: (Int) -> Unit,
     onTrailingLineHeightChanged: (Int) -> Unit,
@@ -459,6 +515,7 @@ private fun SyncedLyricRow(
     // recompositions. Read the newest callback when a tap finishes so it
     // cannot dispatch through the callback captured for an earlier track.
     val latestOnClick = rememberUpdatedState(onClick)
+    val enhanced = line.words != null
     val targetOpacity = if (!focusMode) {
         1f
     } else when (distance) {
@@ -468,14 +525,14 @@ private fun SyncedLyricRow(
         else -> 0.10f
     }
     val targetBlur = if (focusMode) syncedLyricBlurRadius(distance) else 0.dp
-    val opacity by animateFloatAsState(targetOpacity, tween(300, easing = FastOutSlowInEasing), label = "synced-lyric-opacity")
+    val opacity = syncedLyricOpacity(targetOpacity, enhanced)
     val animatedBlur by animateDpAsState(targetBlur, tween(300, easing = FastOutSlowInEasing), label = "synced-lyric-blur")
-    val scale by animateFloatAsState(if (focusMode && distance == 0) 1.04f else 1f, tween(300, easing = FastOutSlowInEasing), label = "synced-lyric-scale")
+    val scale by animateFloatAsState(syncedLyricScale(distance, focusMode, enhanced), tween(300, easing = FastOutSlowInEasing), label = "synced-lyric-scale")
     val activeOffsetPx = with(LocalDensity.current) { 4.dp.toPx() }
     val lyricTapSlopPx = with(LocalDensity.current) { 20.dp.toPx() }
     val animatedTranslationY by animateFloatAsState(
-        if (focusMode && distance == 0) -activeOffsetPx else 0f,
-        tween(300, easing = FastOutSlowInEasing),
+        if (!enhanced && focusMode && distance == 0) -activeOffsetPx else 0f,
+        if (enhanced) snap() else tween(300, easing = FastOutSlowInEasing),
         label = "synced-lyric-offset",
     )
     Column(
@@ -518,13 +575,10 @@ private fun SyncedLyricRow(
             }
             .testTag("synced_lyric_${line.timestampSeconds}"),
     ) {
-        Text(
-            text = line.primary,
+        KaraokeLyricText(
+            line = line,
+            positionSeconds = karaokePositionSeconds,
             color = colors.onPrimary.copy(alpha = opacity),
-            style = MaterialTheme.typography.headlineSmall,
-            // Keep glyph metrics stable when the line becomes active; changing
-            // weight here would re-wrap the same text during scale animation.
-            fontWeight = FontWeight.Bold,
             onTextLayout = { layout ->
                 if (secondary == null) onTrailingLineHeightChanged((layout.getLineBottom(layout.lineCount - 1) - layout.getLineTop(layout.lineCount - 1)).roundToInt())
             },
@@ -541,6 +595,90 @@ private fun SyncedLyricRow(
             )
         }
     }
+}
+
+@Composable
+internal fun syncedLyricOpacity(targetOpacity: Float, enhanced: Boolean): Float {
+    // Even snap() updates after composition. Karaoke switches its fill immediately,
+    // so retaining the previous opacity for that frame flashes the outgoing row.
+    if (enhanced) return targetOpacity
+    val opacity by animateFloatAsState(
+        targetOpacity,
+        tween(300, easing = FastOutSlowInEasing),
+        label = "synced-lyric-opacity",
+    )
+    return opacity
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun KaraokeLyricText(
+    line: PlayerLyricLine,
+    positionSeconds: Float?,
+    color: androidx.compose.ui.graphics.Color,
+    onTextLayout: (androidx.compose.ui.text.TextLayoutResult) -> Unit,
+) {
+    val words = line.words
+    if (words == null) {
+        Text(
+            text = line.primary,
+            color = color,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            onTextLayout = onTextLayout,
+        )
+        return
+    }
+    // Re-entering follow mode must start at the real playback position, not the
+    // inactive row's zero position; otherwise the first words visibly lag.
+    val animatedPositionSeconds = key(positionSeconds != null) {
+        val position by animateFloatAsState(
+            positionSeconds ?: 0f,
+            animationSpec = tween(220, easing = LinearEasing),
+            label = "karaoke-line-position",
+        )
+        position
+    }
+    FlowRow {
+        words.forEachIndexed { index, word ->
+            KaraokeWord(word, positionSeconds?.let { animatedPositionSeconds }, color, index, onTextLayout)
+        }
+    }
+}
+
+@Composable
+private fun KaraokeWord(
+    word: PlayerLyricWord,
+    positionSeconds: Float?,
+    color: androidx.compose.ui.graphics.Color,
+    index: Int,
+    onTextLayout: (androidx.compose.ui.text.TextLayoutResult) -> Unit,
+) {
+    val active = positionSeconds != null
+    val progress = positionSeconds?.let { karaokeWordProgress(word, it) } ?: 1f
+    Box(Modifier.testTag("karaoke_word_$index")) {
+        Text(
+            text = word.text,
+            color = if (active) color.copy(alpha = color.alpha * .35f) else androidx.compose.ui.graphics.Color.Transparent,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            onTextLayout = onTextLayout,
+        )
+        Text(
+            text = word.text,
+            color = color,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.drawWithContent {
+                clipRect(right = size.width * progress) { this@drawWithContent.drawContent() }
+            },
+        )
+    }
+}
+
+internal fun karaokeWordProgress(word: PlayerLyricWord, positionSeconds: Float): Float = when {
+    word.endSeconds == word.startSeconds -> if (positionSeconds >= word.startSeconds) 1f else 0f
+    else -> ((positionSeconds - word.startSeconds) / (word.endSeconds - word.startSeconds)).coerceIn(0f, 1f)
 }
 
 @Composable

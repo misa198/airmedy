@@ -177,6 +177,16 @@ Lyrics parsing and display helpers live in `FullScreenPlayerLyricsPanel.kt`.
 Playback position is authoritative for the active line; browsing or dragging
 only pauses auto-follow and changes playback only when a valid lyric tap
 dispatches seek.
+Enhanced LRC inline `<mm:ss.xxx>` timestamps are parsed into primary-word
+segments for the active follow-mode row only. The existing playback position
+sweeps each segment, pauses freeze it, and seeks update it immediately;
+ordinary or malformed timing retains normal line highlighting. Timing tags are
+removed before display and romanization, while translations remain line-level.
+Enhanced rows use the target opacity directly in the same composition as the
+active/fill change. Do not route it through `animateFloatAsState`, even with
+`snap()`: its deferred update can flash a fully filled outgoing row at the old
+active opacity. Blur remains animated. `FullScreenPlayerTest` checks opacity
+on every committed composition when entering and leaving the active state.
 
 Chinese/Korean romanization is gated by the persisted Lyrics Settings switch,
 which defaults off. Disabling it cancels conversion, restores the original

@@ -34,6 +34,12 @@ class PlayerLyricsParserTest {
     }
 
     @Test
+    fun doesNotScaleTheActiveEnhancedLyric() {
+        assertEquals(1f, syncedLyricScale(distance = 0, focusMode = true, enhanced = true))
+        assertEquals(1.04f, syncedLyricScale(distance = 0, focusMode = true, enhanced = false))
+    }
+
+    @Test
     fun resetsLyricsForRepeatOrReplayAtTrackStart() {
         assertTrue(shouldResetLyricsForReplay(previousPositionMs = 84_000L, currentPositionMs = 0L))
         assertFalse(shouldResetLyricsForReplay(previousPositionMs = 84_000L, currentPositionMs = 4_000L))
@@ -82,6 +88,37 @@ class PlayerLyricsParserTest {
         assertEquals("Primary", lines[0].primary)
         assertEquals("Translation", lines[0].secondary)
         assertTrue(hasSyncedPlayerLyrics("[01:02.50]Primary"))
+    }
+
+    @Test
+    fun parsesEnhancedLrcWordsAndCleansTimingTags() {
+        val lines = parsePlayerLyrics("[00:01.62]Người <00:01.79>hỏi <00:02.05>anh <00:02.30>rằng\n[00:02.58]")
+
+        assertEquals("Người hỏi anh rằng", lines[0].primary)
+        assertEquals(
+            listOf(
+                PlayerLyricWord("Người ", 1.62f, 1.79f),
+                PlayerLyricWord("hỏi ", 1.79f, 2.05f),
+                PlayerLyricWord("anh ", 2.05f, 2.30f),
+                PlayerLyricWord("rằng", 2.30f, 2.58f),
+            ),
+            lines[0].words,
+        )
+        assertEquals("", lines[1].primary)
+    }
+
+    @Test
+    fun fallsBackToLineLyricsForInvalidEnhancedTiming() {
+        val line = parsePlayerLyrics("[00:01]one <00:bad>two").single()
+
+        assertEquals("one two", line.primary)
+        assertEquals(null, line.words)
+    }
+
+    @Test
+    fun calculatesKaraokeProgressIncludingInstantWords() {
+        assertEquals(0.5f, karaokeWordProgress(PlayerLyricWord("one", 1f, 2f), 1.5f))
+        assertEquals(1f, karaokeWordProgress(PlayerLyricWord("one", 1f, 1f), 1f))
     }
 
     @Test

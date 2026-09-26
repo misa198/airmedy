@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
@@ -565,6 +566,49 @@ class FullScreenPlayerTest {
         composeTestRule.onNodeWithText("Translation").assertExists()
         composeTestRule.onNodeWithTag("synced_lyric_3.0").performClick()
         composeTestRule.runOnIdle { assertEquals(3_000L, seekPositionMs) }
+    }
+
+    @Test
+    fun enhancedLyricsRenderTimedWordsAndKeepLineSeeking() {
+        var seekPositionMs: Long? = null
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenPlayerLyricsPanel(
+                    trackId = "track-1",
+                    lyrics = "[00:01]Hello <00:02>world<00:03>",
+                    currentPositionMs = 1_500L,
+                    onSeek = { seekPositionMs = it },
+                    modifier = Modifier.height(180.dp),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("karaoke_word_0").assertExists()
+        composeTestRule.onNodeWithTag("karaoke_word_1").assertExists()
+        composeTestRule.onNodeWithTag("synced_lyric_1.0").performClick()
+        composeTestRule.runOnIdle { assertEquals(1_000L, seekPositionMs) }
+    }
+
+    @Test
+    fun enhancedOpacityChangesInTheSameCompositionAsActiveLine() {
+        var active by mutableStateOf(false)
+        val observed = mutableListOf<Pair<Float, Float>>()
+        composeTestRule.setContent {
+            val target = if (active) 1f else .25f
+            val opacity = syncedLyricOpacity(target, enhanced = true)
+            // Record every committed composition, not just the final idle value:
+            // animateFloatAsState(snap()) briefly pairs a new target with old alpha.
+            SideEffect { observed += target to opacity }
+        }
+        composeTestRule.mainClock.autoAdvance = false
+        for (next in listOf(true, false, true, false)) {
+            composeTestRule.runOnIdle { active = next }
+            composeTestRule.mainClock.advanceTimeByFrame()
+            composeTestRule.runOnIdle {
+                assertEquals(if (next) 1f else .25f, observed.last().first)
+                observed.forEach { (target, actual) -> assertEquals(target, actual) }
+            }
+        }
     }
 
     @Test
