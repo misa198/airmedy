@@ -1,5 +1,6 @@
 package me.misa198.airmedy.ui.navigation
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -35,7 +36,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -525,7 +525,6 @@ private fun SyncedLyricRow(
         else -> 0.10f
     }
     val targetBlur = if (focusMode) syncedLyricBlurRadius(distance) else 0.dp
-    val opacity = syncedLyricOpacity(targetOpacity, enhanced)
     val animatedBlur by animateDpAsState(targetBlur, tween(300, easing = FastOutSlowInEasing), label = "synced-lyric-blur")
     val scale by animateFloatAsState(syncedLyricScale(distance, focusMode, enhanced), tween(300, easing = FastOutSlowInEasing), label = "synced-lyric-scale")
     val activeOffsetPx = with(LocalDensity.current) { 4.dp.toPx() }
@@ -578,7 +577,8 @@ private fun SyncedLyricRow(
         KaraokeLyricText(
             line = line,
             positionSeconds = karaokePositionSeconds,
-            color = colors.onPrimary.copy(alpha = opacity),
+            color = colors.onPrimary,
+            targetOpacity = targetOpacity,
             onTextLayout = { layout ->
                 if (secondary == null) onTrailingLineHeightChanged((layout.getLineBottom(layout.lineCount - 1) - layout.getLineTop(layout.lineCount - 1)).roundToInt())
             },
@@ -586,7 +586,7 @@ private fun SyncedLyricRow(
         secondary?.let {
             Text(
                 text = it,
-                color = colors.foregroundSubtle.copy(alpha = opacity),
+                color = colors.foregroundSubtle.copy(alpha = syncedLyricOpacity(targetOpacity)),
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(top = 4.dp),
                 onTextLayout = { layout ->
@@ -598,10 +598,7 @@ private fun SyncedLyricRow(
 }
 
 @Composable
-internal fun syncedLyricOpacity(targetOpacity: Float, enhanced: Boolean): Float {
-    // Even snap() updates after composition. Karaoke switches its fill immediately,
-    // so retaining the previous opacity for that frame flashes the outgoing row.
-    if (enhanced) return targetOpacity
+private fun syncedLyricOpacity(targetOpacity: Float): Float {
     val opacity by animateFloatAsState(
         targetOpacity,
         tween(300, easing = FastOutSlowInEasing),
@@ -610,38 +607,58 @@ internal fun syncedLyricOpacity(targetOpacity: Float, enhanced: Boolean): Float 
     return opacity
 }
 
+internal data class KaraokeLinePresentation(
+    val positionSeconds: Float,
+    val sungOpacity: Float,
+    val unsungOpacity: Float,
+)
+
+@Composable
+internal fun rememberKaraokeLinePresentation(positionSeconds: Float?, targetOpacity: Float): KaraokeLinePresentation {
+    val position = remember { Animatable(positionSeconds ?: 0f) }
+    var wasActive by remember { mutableStateOf(positionSeconds != null) }
+    LaunchedEffect(positionSeconds) {
+        if (positionSeconds != null) {
+            // A newly focused row starts at playback, including after browsing or a seek.
+            if (!wasActive) position.snapTo(positionSeconds)
+            wasActive = true
+            position.animateTo(positionSeconds, tween(220, easing = LinearEasing))
+        } else {
+            // Cancelling the position animation freezes the outgoing fill while it fades.
+            wasActive = false
+        }
+    }
+    return KaraokeLinePresentation(
+        positionSeconds = position.value,
+        sungOpacity = syncedLyricOpacity(targetOpacity),
+        unsungOpacity = syncedLyricOpacity(if (positionSeconds != null) targetOpacity * .35f else targetOpacity),
+    )
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun KaraokeLyricText(
     line: PlayerLyricLine,
     positionSeconds: Float?,
     color: androidx.compose.ui.graphics.Color,
+    targetOpacity: Float,
     onTextLayout: (androidx.compose.ui.text.TextLayoutResult) -> Unit,
 ) {
     val words = line.words
     if (words == null) {
         Text(
             text = line.primary,
-            color = color,
+            color = color.copy(alpha = syncedLyricOpacity(targetOpacity)),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             onTextLayout = onTextLayout,
         )
         return
     }
-    // Re-entering follow mode must start at the real playback position, not the
-    // inactive row's zero position; otherwise the first words visibly lag.
-    val animatedPositionSeconds = key(positionSeconds != null) {
-        val position by animateFloatAsState(
-            positionSeconds ?: 0f,
-            animationSpec = tween(220, easing = LinearEasing),
-            label = "karaoke-line-position",
-        )
-        position
-    }
+    val presentation = rememberKaraokeLinePresentation(positionSeconds, targetOpacity)
     FlowRow {
         words.forEachIndexed { index, word ->
-            KaraokeWord(word, positionSeconds?.let { animatedPositionSeconds }, color, index, onTextLayout)
+            KaraokeWord(word, presentation, color, index, onTextLayout)
         }
     }
 }
@@ -649,24 +666,27 @@ private fun KaraokeLyricText(
 @Composable
 private fun KaraokeWord(
     word: PlayerLyricWord,
-    positionSeconds: Float?,
+    presentation: KaraokeLinePresentation,
     color: androidx.compose.ui.graphics.Color,
     index: Int,
     onTextLayout: (androidx.compose.ui.text.TextLayoutResult) -> Unit,
 ) {
-    val active = positionSeconds != null
-    val progress = positionSeconds?.let { karaokeWordProgress(word, it) } ?: 1f
+    val progress = karaokeWordProgress(word, presentation.positionSeconds)
     Box(Modifier.testTag("karaoke_word_$index")) {
         Text(
             text = word.text,
-            color = if (active) color.copy(alpha = color.alpha * .35f) else androidx.compose.ui.graphics.Color.Transparent,
+            color = color.copy(alpha = presentation.unsungOpacity),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             onTextLayout = onTextLayout,
+            // Keep the two regions disjoint so translucent text never doubles in brightness.
+            modifier = Modifier.drawWithContent {
+                clipRect(left = size.width * progress) { this@drawWithContent.drawContent() }
+            },
         )
         Text(
             text = word.text,
-            color = color,
+            color = color.copy(alpha = presentation.sungOpacity),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.drawWithContent {

@@ -186,11 +186,15 @@ segments for the active follow-mode row only. The existing playback position
 sweeps each segment, pauses freeze it, and seeks update it immediately;
 ordinary or malformed timing retains normal line highlighting. Timing tags are
 removed before display and romanization, while translations remain line-level.
-Enhanced rows use the target opacity directly in the same composition as the
-active/fill change. Do not route it through `animateFloatAsState`, even with
-`snap()`: its deferred update can flash a fully filled outgoing row at the old
-active opacity. Blur remains animated. `FullScreenPlayerTest` checks opacity
-on every committed composition when entering and leaving the active state.
+Enhanced rows animate sung and unsung opacity independently over 300ms. Leaving
+the active state cancels the position animation and holds its last displayed
+fill while both regions fade to the inactive opacity; never replace that fill
+with a fully highlighted line at the old active opacity. The two text regions
+use complementary clips so translucent glyphs do not overlap and brighten.
+Entering follow mode starts at the current playback position; browsing fades
+both regions to full opacity. Blur remains animated. `FullScreenPlayerTest`
+samples the presentation through outgoing/incoming fades and interrupted
+browse transitions.
 
 Chinese/Korean romanization is gated by the persisted Lyrics Settings switch,
 which defaults off. Disabling it cancels conversion, restores the original

@@ -634,24 +634,78 @@ class FullScreenPlayerTest {
     }
 
     @Test
-    fun enhancedOpacityChangesInTheSameCompositionAsActiveLine() {
-        var active by mutableStateOf(false)
-        val observed = mutableListOf<Pair<Float, Float>>()
+    fun enhancedLyricsFadeWithoutFillingTheOutgoingWords() {
+        var position by mutableStateOf<Float?>(1.5f)
+        val observed = mutableListOf<KaraokeLinePresentation>()
         composeTestRule.setContent {
-            val target = if (active) 1f else .25f
-            val opacity = syncedLyricOpacity(target, enhanced = true)
-            // Record every committed composition, not just the final idle value:
-            // animateFloatAsState(snap()) briefly pairs a new target with old alpha.
-            SideEffect { observed += target to opacity }
+            val presentation = rememberKaraokeLinePresentation(position, if (position != null) 1f else .25f)
+            SideEffect { observed += presentation }
         }
         composeTestRule.mainClock.autoAdvance = false
-        for (next in listOf(true, false, true, false)) {
-            composeTestRule.runOnIdle { active = next }
-            composeTestRule.mainClock.advanceTimeByFrame()
-            composeTestRule.runOnIdle {
-                assertEquals(if (next) 1f else .25f, observed.last().first)
-                observed.forEach { (target, actual) -> assertEquals(target, actual) }
+        composeTestRule.runOnIdle { position = 1.9f }
+        composeTestRule.mainClock.advanceTimeBy(80)
+        // Leave while the word sweep is still running, as at a normal line boundary.
+        composeTestRule.runOnIdle { position = null; observed.clear() }
+        composeTestRule.mainClock.advanceTimeBy(160)
+        composeTestRule.runOnIdle {
+            assertEquals(1f, observed.first().sungOpacity)
+            assertTrue(observed.last().sungOpacity > .25f && observed.last().sungOpacity < 1f)
+        }
+        composeTestRule.mainClock.advanceTimeBy(400)
+        composeTestRule.runOnIdle {
+            val frozenPosition = observed.first().positionSeconds
+            assertTrue(frozenPosition > 1.5f && frozenPosition < 1.9f)
+            observed.forEach {
+                assertEquals(frozenPosition, it.positionSeconds)
+                assertTrue(it.sungOpacity in .25f..1f)
+                assertTrue(it.unsungOpacity >= .25f && it.unsungOpacity <= .35f)
             }
+            observed.zipWithNext().forEach { (before, after) ->
+                assertTrue(after.sungOpacity <= before.sungOpacity)
+                assertTrue(after.unsungOpacity <= before.unsungOpacity)
+            }
+            assertEquals(.25f, observed.last().sungOpacity)
+            assertEquals(.25f, observed.last().unsungOpacity)
+        }
+
+        // Seeking back into this row starts at the new position while brightness fades in.
+        composeTestRule.runOnIdle { position = 1.2f; observed.clear() }
+        composeTestRule.mainClock.advanceTimeBy(160)
+        composeTestRule.runOnIdle {
+            assertEquals(.25f, observed.first().sungOpacity)
+            assertTrue(observed.last().sungOpacity > .25f && observed.last().sungOpacity < 1f)
+            assertEquals(1.2f, observed.last().positionSeconds)
+        }
+        composeTestRule.mainClock.advanceTimeBy(400)
+        composeTestRule.runOnIdle {
+            assertEquals(1f, observed.last().sungOpacity)
+            assertEquals(.35f, observed.last().unsungOpacity)
+        }
+    }
+
+    @Test
+    fun enhancedLyricsBrowseAndResumeWithoutResettingTheFill() {
+        var position by mutableStateOf<Float?>(1.5f)
+        val observed = mutableListOf<KaraokeLinePresentation>()
+        composeTestRule.setContent {
+            val presentation = rememberKaraokeLinePresentation(position, 1f)
+            SideEffect { observed += presentation }
+        }
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.runOnIdle { position = null; observed.clear() }
+        composeTestRule.mainClock.advanceTimeBy(160)
+        composeTestRule.runOnIdle {
+            assertEquals(.35f, observed.first().unsungOpacity)
+            assertTrue(observed.last().unsungOpacity > .35f && observed.last().unsungOpacity < 1f)
+            observed.forEach { assertEquals(1.5f, it.positionSeconds) }
+        }
+        // Reverse the transition before browsing has finished fading in.
+        composeTestRule.runOnIdle { position = 1.8f }
+        composeTestRule.mainClock.advanceTimeBy(400)
+        composeTestRule.runOnIdle {
+            assertEquals(1.8f, observed.last().positionSeconds)
+            assertEquals(1f, observed.last().sungOpacity)
+            assertEquals(.35f, observed.last().unsungOpacity)
         }
     }
 
