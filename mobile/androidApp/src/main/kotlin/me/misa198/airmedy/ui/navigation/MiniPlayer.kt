@@ -71,15 +71,20 @@ import me.misa198.airmedy.ui.components.AnimatedPlayPauseSymbol
 import me.misa198.airmedy.ui.components.AnimatedSkipSymbol
 import me.misa198.airmedy.ui.components.MaterialSymbol
 import me.misa198.airmedy.ui.components.MaterialSymbols
+import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
+import me.misa198.airmedy.ui.components.TrackContextMenu
+import me.misa198.airmedy.ui.components.TrackContextMenuActions
 import me.misa198.airmedy.player.PlaybackItem
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.player.PlaybackState
+import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.ui.components.liquidGlassBackground
 import me.misa198.airmedy.ui.components.rememberArtworkThumbnail
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 import kotlin.math.absoluteValue
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 internal val MiniPlayerHeight = 56.dp
@@ -102,6 +107,15 @@ internal fun MiniPlayer(
     onOpenFullScreenPlayer: () -> Unit,
     onFullScreenPlayerDrag: (Float) -> Unit,
     onFullScreenPlayerDragEnd: (Boolean) -> Unit,
+    contextTrack: LibraryTrack? = null,
+    onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit = {},
+    onTrackFavoriteToggle: (String, Boolean) -> Unit = { _, _ -> },
+    onTrackPlayNext: (String) -> Unit = {},
+    onTrackAddToQueue: (String) -> Unit = {},
+    moodRadioEligibleTrackIds: Set<String> = emptySet(),
+    onStartMoodRadio: (String) -> Unit = {},
+    onTrackGoToAlbum: (String) -> Unit = {},
+    onTrackGoToArtist: (String) -> Unit = {},
     stableGlassWidth: Dp? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -116,6 +130,8 @@ internal fun MiniPlayer(
     val latestCanNavigateNext by rememberUpdatedState(canNavigateNext)
     val latestOnPreviousClick by rememberUpdatedState(onPreviousClick)
     val latestOnNextClick by rememberUpdatedState(onNextClick)
+    var isTrackContextMenuExpanded by remember(item.trackId) { mutableStateOf(false) }
+    val latestOnTrackContextMenuOpen by rememberUpdatedState { isTrackContextMenuExpanded = true }
     val artwork = rememberArtworkThumbnail(item.artworkPath)
     val density = LocalDensity.current
     val hapticFeedback = LocalHapticFeedback.current
@@ -142,6 +158,8 @@ internal fun MiniPlayer(
     val miniPlayerAlpha = 1f - upwardPullProgress
     var fullScreenPullPx by remember { mutableStateOf(0f) }
     var miniPlayerTopPx by remember { mutableStateOf(0f) }
+    @Composable
+    fun MiniPlayerSurface() {
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -154,6 +172,7 @@ internal fun MiniPlayer(
                 maximumOpenPullPx,
                 dismissTargetPx,
                 miniPlayerTopPx,
+                contextTrack?.id,
             ) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
@@ -170,11 +189,22 @@ internal fun MiniPlayer(
                     var fullScreenCatchUpPx = 0f
                     var wasCancelled = false
                     var change = down
+                    var pointerDown = true
+                    var longPressHandled = false
+                    val longPressJob = if (contextTrack == null) null else coroutineScope.launch {
+                        delay(viewConfiguration.longPressTimeoutMillis)
+                        if (pointerDown && !isVerticalDrag && !isHorizontalDrag) {
+                            longPressHandled = true
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                            latestOnTrackContextMenuOpen()
+                        }
+                    }
 
                     while (change.pressed) {
                         val event = awaitPointerEvent()
                         change = event.changes.firstOrNull { it.id == down.id } ?: break
                         if (change.isConsumed) {
+                            longPressJob?.cancel()
                             wasCancelled = true
                             break
                         }
@@ -187,6 +217,7 @@ internal fun MiniPlayer(
                                 abs(totalDragY) > viewConfiguration.touchSlop &&
                                     abs(totalDragY) > abs(totalDragX) -> {
                                     isVerticalDrag = true
+                                    longPressJob?.cancel()
                                     isOpeningFullscreen = totalDragY < 0f
                                     if (isOpeningFullscreen) {
                                         val fingerStartY = miniPlayerTopPx + down.position.y
@@ -198,6 +229,7 @@ internal fun MiniPlayer(
                                 }
                                 abs(totalDragX) > viewConfiguration.touchSlop -> {
                                     isHorizontalDrag = true
+                                    longPressJob?.cancel()
                                 }
                             }
                         }
@@ -233,6 +265,8 @@ internal fun MiniPlayer(
                             }
                         }
                     }
+                    pointerDown = false
+                    longPressJob?.cancel()
 
                     when {
                         isVerticalDrag && wasCancelled -> {
@@ -270,7 +304,7 @@ internal fun MiniPlayer(
                                 }
                             }
                         }
-                        !wasCancelled && !isHorizontalDrag && !change.pressed &&
+                        !longPressHandled && !wasCancelled && !isHorizontalDrag && !change.pressed &&
                             abs(totalDragX) <= viewConfiguration.touchSlop &&
                             abs(totalDragY) <= viewConfiguration.touchSlop -> onOpenFullScreenPlayer()
                     }
@@ -427,6 +461,26 @@ internal fun MiniPlayer(
         )
         }
         }
+    }
+    }
+    if (contextTrack == null) {
+        MiniPlayerSurface()
+    } else {
+        TrackContextMenu(
+            track = contextTrack,
+            expanded = isTrackContextMenuExpanded,
+            onDismiss = { isTrackContextMenuExpanded = false },
+            hazeState = hazeState,
+            playbackQueue = playbackQueue,
+            actions = TrackContextMenuActions(moodRadio = contextTrack.id in moodRadioEligibleTrackIds),
+            onPlayNext = { onTrackPlayNext(it.id) },
+            onAddToQueue = { onTrackAddToQueue(it.id) },
+            onStartMoodRadio = { onStartMoodRadio(it.id) },
+            onFavoriteChange = { track, favorite -> onTrackFavoriteToggle(track.id, favorite) },
+            onGoToAlbum = { onTrackGoToAlbum(it.albumId) },
+            onGoToArtist = { onTrackGoToArtist(it.id) },
+            onBottomSheetRequested = onTrackContextBottomSheet,
+        ) { MiniPlayerSurface() }
     }
 }
 

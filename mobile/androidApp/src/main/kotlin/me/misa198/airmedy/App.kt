@@ -539,6 +539,13 @@ internal fun App(
                     onDismiss = onDismissSyncFailure,
                 )
             }
+            val currentPlaybackTrackId = when (val state = playbackState) {
+                is PlaybackState.Preparing -> state.item.trackId
+                is PlaybackState.Playing -> state.item.trackId
+                is PlaybackState.Paused -> state.item.trackId
+                else -> ""
+            }
+            val currentPlaybackTrack = playback.queueTracks.firstOrNull { it.id == currentPlaybackTrackId }
             NavigationChrome(
                 selectedDestination = uiState.selectedDestination,
                 playbackState = playbackState,
@@ -592,6 +599,15 @@ internal fun App(
                     isFullScreenPlayerOpeningFromSwipe = shouldOpen
                     setFullScreenPlayerVisible(shouldOpen)
                 },
+                contextTrack = currentPlaybackTrack,
+                onTrackContextBottomSheet = { request -> trackContextSheet = request },
+                onTrackFavoriteToggle = playback.onFavoriteToggle,
+                onTrackPlayNext = playback.onTrackPlayNext,
+                onTrackAddToQueue = playback.onTrackAddToQueue,
+                moodRadioEligibleTrackIds = playback.moodRadioEligibleTrackIds,
+                onStartMoodRadio = playback.onStartMoodRadio,
+                onTrackGoToAlbum = { albumId -> onIntent(AppIntent.OpenAlbumDetails(albumId)) },
+                onTrackGoToArtist = { artistId -> onIntent(AppIntent.OpenArtistDetails(artistId)) },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()
@@ -629,12 +645,7 @@ internal fun App(
                 moodRadioEligibleTrackIds = playback.moodRadioEligibleTrackIds,
                 onStartMoodRadio = playback.onStartMoodRadio,
                 moodRadioActive = playback.moodRadioActive,
-                isFavorite = playback.queueTracks.firstOrNull { track -> track.id == when (val state = playbackState) {
-                    is PlaybackState.Preparing -> state.item.trackId
-                    is PlaybackState.Playing -> state.item.trackId
-                    is PlaybackState.Paused -> state.item.trackId
-                    else -> ""
-                } }?.isFavorite() == true,
+                isFavorite = currentPlaybackTrack?.isFavorite() == true,
                 onFavoriteToggle = playback.onFavoriteToggle,
                 onTrackPlayNext = playback.onTrackPlayNext,
                 onTrackAddToQueue = playback.onTrackAddToQueue,

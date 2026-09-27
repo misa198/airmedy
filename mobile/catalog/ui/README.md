@@ -159,6 +159,8 @@ stack, the shell resets that page's query before it can be opened again.
 player. The mini player and fullscreen player render the state published by the
 service, so neither has local shadow state for transport or queue. Their swipe
 handlers read the latest queue availability and transport callbacks after recomposition.
+Long-pressing the mini player opens the current track's shared context menu;
+it must not trigger the tap-to-open-fullscreen action or a swipe action.
 Previous and next remain interactive at queue boundaries: previous rewinds the
 current track while preserving play/pause state, and next retains it paused at
 the beginning. Buttons and artwork/metadata swipes share this behavior.
