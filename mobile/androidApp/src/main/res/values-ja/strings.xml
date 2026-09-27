@@ -197,6 +197,7 @@
     <string name="playback_crossfade_maximum">12秒</string>
     <string name="playback_blend_artwork_during_crossfade">アートワークと背景をブレンド</string>
     <string name="playback_show_quality_badge">オーディオ品質バッジを表示</string>
+    <string name="playback_keep_screen_on_for_lyrics">歌詞の表示中は画面をオンにする</string>
     <string name="equalizer_title">イコライザー</string>
     <string name="equalizer_enable">イコライザーを有効化</string>
     <string name="equalizer_preset">プリセット</string>

@@ -197,6 +197,7 @@
     <string name="playback_crossfade_maximum">12 秒</string>
     <string name="playback_blend_artwork_during_crossfade">渐变时融合封面与背景</string>
     <string name="playback_show_quality_badge">显示音频质量徽章</string>
+    <string name="playback_keep_screen_on_for_lyrics">查看歌词时保持屏幕常亮</string>
     <string name="equalizer_title">均衡器</string>
     <string name="equalizer_enable">启用均衡器</string>
     <string name="equalizer_preset">预设</string>

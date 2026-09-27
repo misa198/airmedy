@@ -198,6 +198,7 @@
     <string name="playback_crossfade_maximum">12s</string>
     <string name="playback_blend_artwork_during_crossfade">Fondre la pochette et l\'arrière-plan</string>
     <string name="playback_show_quality_badge">Afficher le badge de qualité audio</string>
+    <string name="playback_keep_screen_on_for_lyrics">Garder l’écran allumé pendant l’affichage des paroles</string>
     <string name="equalizer_title">Égaliseur</string>
     <string name="equalizer_enable">Activer l\'égaliseur</string>
     <string name="equalizer_preset">Préréglage</string>

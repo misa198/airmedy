@@ -2,6 +2,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { LyricLine } from '../composables/useLyrics'
 import { useLyricsScrollMotion } from '../composables/useLyricsScrollMotion'
+import KaraokeText from './KaraokeText.vue'
 
 const props = defineProps<{
   secondary?: (string | undefined)[]
@@ -113,7 +114,7 @@ function immersiveLineStyle(index: number) {
 function lineClasses(index: number) {
   if (isBrowsing.value) {
     return [
-      'text-white blur-none opacity-100',
+      'text-foreground blur-none opacity-100',
       { 'text-4xl': !props.immersive, 'text-[40px]': props.immersive },
     ]
   }
@@ -123,13 +124,13 @@ function lineClasses(index: number) {
   return [
     props.immersive
       ? isActive
-        ? 'text-white scale-[1.06]'
-        : 'text-white'
+        ? 'text-foreground scale-[1.06]'
+        : 'text-foreground'
       : isActive
-        ? 'text-white scale-[1.03] blur-none opacity-100'
+        ? 'text-foreground scale-[1.03] blur-none opacity-100'
         : index < activeIndex.value
-          ? 'text-white/20 blur-[0.5px] opacity-60 hover:text-white/40'
-          : 'text-white/30 blur-[1px] opacity-40 hover:text-white/60 hover:blur-none',
+          ? 'text-foreground/20 blur-[0.5px] opacity-60 hover:text-foreground/40'
+          : 'text-foreground/30 blur-[1px] opacity-40 hover:text-foreground/60 hover:blur-none',
     {
       'text-4xl': !props.immersive,
       'text-[40px]': props.immersive,
@@ -172,13 +173,13 @@ onUnmounted(() => {
         :key="index"
         ref="lineRefs"
         data-test="lyric-line"
-        class="blur-container font-bold transition-[filter,opacity,transform,scale] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] cursor-pointer select-none origin-left py-2"
+        class="blur-container font-bold transition-[color,filter,opacity,transform,scale] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] cursor-pointer select-none origin-left py-2"
         :class="lineClasses(index)"
         :style="props.immersive ? immersiveLineStyle(index) : undefined"
         @pointerdown.stop
         @click="seekAndResume(line.time, index)"
       >
-        <div>{{ line.text }}</div>
+        <div><KaraokeText :line="line" :position="!isBrowsing && index === activeIndex ? currentPosition : undefined" /></div>
         <div v-if="secondary?.[index] || line.secondary" class="text-lg md:text-2xl font-bold mt-1 opacity-80">{{ secondary?.[index] || line.secondary }}</div>
       </div>
     </div>

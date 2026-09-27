@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n'
 import { useLyrics } from '../composables/useLyrics'
 import { useRomanization } from '../composables/useRomanization'
 import { lyricsMotionClasses, useLyricsScrollMotion } from '../composables/useLyricsScrollMotion'
+import KaraokeText from './KaraokeText.vue'
 
 const { t } = useI18n()
 const store = usePlayerStore()
@@ -184,7 +185,7 @@ onUnmounted(() => {
 
               !isBrowsing && (index === activeIndex || (activeIndex > 0 && index === activeIndex - 1) || (index === activeIndex + 1)) ? 'transform-gpu' : ''
             ]" @pointerdown.stop @click="seekAndResume(line.time, index)">
-            <div class="text-[19pt] font-bold">{{ line.text }}</div>
+            <div class="text-[19pt] font-bold"><KaraokeText :line="line" :position="store.isLyricsOpen && !isBrowsing && index === activeIndex ? store.position : undefined" /></div>
             <div v-if="secondary[index] ?? line.secondary" class="text-[14pt] opacity-50 mt-0.5">{{ secondary[index] ?? line.secondary }}</div>
           </div>
         </div>

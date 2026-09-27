@@ -27,6 +27,12 @@ export function useLyricsScrollMotion() {
 
   function scrollTo(container: HTMLElement, top: number, animated: boolean) {
     stop()
+    // Leave room below the last lyric for every panel's active-line position.
+    // Otherwise the browser clamps the animation at the bottom before it settles.
+    // Pad the inner list, not the fixed-height viewport (border-box padding
+    // can otherwise enlarge that viewport and make its height grow each call).
+    const list = container.firstElementChild as HTMLElement | null
+    if (list) list.style.paddingBottom = `${container.clientHeight}px`
     if (!animated) {
       container.scrollTop = top
       return

@@ -4,12 +4,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
@@ -39,10 +41,53 @@ import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import android.view.View
+import androidx.test.platform.app.InstrumentationRegistry
+import me.misa198.airmedy.R
 
 class FullScreenPlayerTest {
     @get:Rule
     val composeTestRule = createComposeRule()
+
+    @Test
+    fun lyricsPanelKeepsScreenOnOnlyWhileEnabledAndVisible() {
+        var enabled by mutableStateOf(false)
+        var visible by mutableStateOf(true)
+        lateinit var view: View
+        composeTestRule.setContent {
+            view = LocalView.current
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenPlayer(
+                    visible = visible,
+                    dragProgress = 0f,
+                    isDragging = false,
+                    openingFromMiniPlayerSwipe = false,
+                    playbackState = PlaybackState.Playing(item, 0L, 120_000L),
+                    keepScreenOnForLyrics = enabled,
+                    volume = 0.5f,
+                    onSeek = {}, onVolumeChange = {}, onPrevious = {}, onPlayPause = {}, onNext = {},
+                    onOpenMediaOutputSwitcher = {}, onDismiss = {},
+                )
+            }
+        }
+
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        composeTestRule.onNodeWithContentDescription(context.getString(R.string.player_lyrics)).performClick()
+        composeTestRule.runOnIdle { assertFalse(view.keepScreenOn) }
+        composeTestRule.runOnIdle { enabled = true }
+        composeTestRule.runOnIdle { assertTrue(view.keepScreenOn) }
+        composeTestRule.onNodeWithContentDescription(context.getString(R.string.player_queue)).performClick()
+        composeTestRule.runOnIdle { assertFalse(view.keepScreenOn) }
+        composeTestRule.onNodeWithContentDescription(context.getString(R.string.player_lyrics)).performClick()
+        composeTestRule.runOnIdle { assertTrue(view.keepScreenOn) }
+        composeTestRule.runOnIdle { enabled = false }
+        composeTestRule.runOnIdle { assertFalse(view.keepScreenOn) }
+        composeTestRule.runOnIdle { enabled = true }
+        composeTestRule.runOnIdle { visible = false }
+        composeTestRule.runOnIdle { assertFalse(view.keepScreenOn) }
+    }
 
     @Test
     fun romanizationToggleReplacesAndRestoresSecondary() {
@@ -565,6 +610,103 @@ class FullScreenPlayerTest {
         composeTestRule.onNodeWithText("Translation").assertExists()
         composeTestRule.onNodeWithTag("synced_lyric_3.0").performClick()
         composeTestRule.runOnIdle { assertEquals(3_000L, seekPositionMs) }
+    }
+
+    @Test
+    fun enhancedLyricsRenderTimedWordsAndKeepLineSeeking() {
+        var seekPositionMs: Long? = null
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenPlayerLyricsPanel(
+                    trackId = "track-1",
+                    lyrics = "[00:01]Hello <00:02>world<00:03>",
+                    currentPositionMs = 1_500L,
+                    onSeek = { seekPositionMs = it },
+                    modifier = Modifier.height(180.dp),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("karaoke_word_0").assertExists()
+        composeTestRule.onNodeWithTag("karaoke_word_1").assertExists()
+        composeTestRule.onNodeWithTag("synced_lyric_1.0").performClick()
+        composeTestRule.runOnIdle { assertEquals(1_000L, seekPositionMs) }
+    }
+
+    @Test
+    fun enhancedLyricsFadeWithoutFillingTheOutgoingWords() {
+        var position by mutableStateOf<Float?>(1.5f)
+        val observed = mutableListOf<KaraokeLinePresentation>()
+        composeTestRule.setContent {
+            val presentation = rememberKaraokeLinePresentation(position, if (position != null) 1f else .25f)
+            SideEffect { observed += presentation }
+        }
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.runOnIdle { position = 1.9f }
+        composeTestRule.mainClock.advanceTimeBy(80)
+        // Leave while the word sweep is still running, as at a normal line boundary.
+        composeTestRule.runOnIdle { position = null; observed.clear() }
+        composeTestRule.mainClock.advanceTimeBy(160)
+        composeTestRule.runOnIdle {
+            assertEquals(1f, observed.first().sungOpacity)
+            assertTrue(observed.last().sungOpacity > .25f && observed.last().sungOpacity < 1f)
+        }
+        composeTestRule.mainClock.advanceTimeBy(400)
+        composeTestRule.runOnIdle {
+            val frozenPosition = observed.first().positionSeconds
+            assertTrue(frozenPosition > 1.5f && frozenPosition < 1.9f)
+            observed.forEach {
+                assertEquals(frozenPosition, it.positionSeconds)
+                assertTrue(it.sungOpacity in .25f..1f)
+                assertTrue(it.unsungOpacity >= .25f && it.unsungOpacity <= .35f)
+            }
+            observed.zipWithNext().forEach { (before, after) ->
+                assertTrue(after.sungOpacity <= before.sungOpacity)
+                assertTrue(after.unsungOpacity <= before.unsungOpacity)
+            }
+            assertEquals(.25f, observed.last().sungOpacity)
+            assertEquals(.25f, observed.last().unsungOpacity)
+        }
+
+        // Seeking back into this row starts at the new position while brightness fades in.
+        composeTestRule.runOnIdle { position = 1.2f; observed.clear() }
+        composeTestRule.mainClock.advanceTimeBy(160)
+        composeTestRule.runOnIdle {
+            assertEquals(.25f, observed.first().sungOpacity)
+            assertTrue(observed.last().sungOpacity > .25f && observed.last().sungOpacity < 1f)
+            assertEquals(1.2f, observed.last().positionSeconds)
+        }
+        composeTestRule.mainClock.advanceTimeBy(400)
+        composeTestRule.runOnIdle {
+            assertEquals(1f, observed.last().sungOpacity)
+            assertEquals(.35f, observed.last().unsungOpacity)
+        }
+    }
+
+    @Test
+    fun enhancedLyricsBrowseAndResumeWithoutResettingTheFill() {
+        var position by mutableStateOf<Float?>(1.5f)
+        val observed = mutableListOf<KaraokeLinePresentation>()
+        composeTestRule.setContent {
+            val presentation = rememberKaraokeLinePresentation(position, 1f)
+            SideEffect { observed += presentation }
+        }
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.runOnIdle { position = null; observed.clear() }
+        composeTestRule.mainClock.advanceTimeBy(160)
+        composeTestRule.runOnIdle {
+            assertEquals(.35f, observed.first().unsungOpacity)
+            assertTrue(observed.last().unsungOpacity > .35f && observed.last().unsungOpacity < 1f)
+            observed.forEach { assertEquals(1.5f, it.positionSeconds) }
+        }
+        // Reverse the transition before browsing has finished fading in.
+        composeTestRule.runOnIdle { position = 1.8f }
+        composeTestRule.mainClock.advanceTimeBy(400)
+        composeTestRule.runOnIdle {
+            assertEquals(1.8f, observed.last().positionSeconds)
+            assertEquals(1f, observed.last().sungOpacity)
+            assertEquals(.35f, observed.last().unsungOpacity)
+        }
     }
 
     @Test

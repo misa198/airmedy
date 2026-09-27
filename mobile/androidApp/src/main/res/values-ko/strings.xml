@@ -197,6 +197,7 @@
     <string name="playback_crossfade_maximum">12초</string>
     <string name="playback_blend_artwork_during_crossfade">아트워크 및 배경 블렌딩</string>
     <string name="playback_show_quality_badge">오디오 품질 배지 표시</string>
+    <string name="playback_keep_screen_on_for_lyrics">가사를 보는 동안 화면 켜두기</string>
     <string name="equalizer_title">이퀄라이저</string>
     <string name="equalizer_enable">이퀄라이저 활성화</string>
     <string name="equalizer_preset">프리셋</string>

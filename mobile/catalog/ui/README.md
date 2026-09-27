@@ -172,11 +172,29 @@ appears only for Lossless, Hi-Res, or DSD playback when enabled in Playback
 settings; the preference defaults to enabled and persists in DataStore.
 Tapping it opens a centered metadata dialog with the quality icon and only the
 available sample-rate, bit-depth, and codec values.
+Playback settings also persists an off-by-default keep-screen-on preference.
+The fullscreen player keeps the Android view awake only while its lyrics panel
+is open and that preference is enabled; changing panels, closing fullscreen, or
+disabling the preference releases it immediately, including when lyrics are absent.
 
 Lyrics parsing and display helpers live in `FullScreenPlayerLyricsPanel.kt`.
 Playback position is authoritative for the active line; browsing or dragging
 only pauses auto-follow and changes playback only when a valid lyric tap
 dispatches seek.
+Enhanced LRC inline `<mm:ss.xxx>` timestamps are parsed into primary-word
+segments for the active follow-mode row only. The existing playback position
+sweeps each segment, pauses freeze it, and seeks update it immediately;
+ordinary or malformed timing retains normal line highlighting. Timing tags are
+removed before display and romanization, while translations remain line-level.
+Enhanced rows animate sung and unsung opacity independently over 300ms. Leaving
+the active state cancels the position animation and holds its last displayed
+fill while both regions fade to the inactive opacity; never replace that fill
+with a fully highlighted line at the old active opacity. The two text regions
+use complementary clips so translucent glyphs do not overlap and brighten.
+Entering follow mode starts at the current playback position; browsing fades
+both regions to full opacity. Blur remains animated. `FullScreenPlayerTest`
+samples the presentation through outgoing/incoming fades and interrupted
+browse transitions.
 
 Chinese/Korean romanization is gated by the persisted Lyrics Settings switch,
 which defaults off. Disabling it cancels conversion, restores the original

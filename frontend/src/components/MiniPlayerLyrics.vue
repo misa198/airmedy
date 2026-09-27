@@ -2,6 +2,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, toRef, watch } from 'vue'
 import { useLyrics } from '@/composables/useLyrics'
 import { lyricsMotionClasses, useLyricsScrollMotion } from '@/composables/useLyricsScrollMotion'
+import KaraokeText from './KaraokeText.vue'
 
 const props = defineProps<{
   lyrics?: string
@@ -135,7 +136,7 @@ onUnmounted(() => {
           ]"
           @pointerdown.stop
           @click="seekAndResume(line.time, index)">
-          <span class="font-bold">{{ line.text }}</span>
+          <KaraokeText class="font-bold" :line="line" :position="!isBrowsing && index === activeIndex ? currentPosition : undefined" />
           <span v-if="props.secondary?.[index] ?? line.secondary" class="mt-0.5 block text-[14px] opacity-70">{{ props.secondary?.[index] ?? line.secondary }}</span>
         </button>
       </div>
