@@ -25,6 +25,8 @@ import dev.chrisbanes.haze.HazeState
 import me.misa198.airmedy.AppDestination
 import me.misa198.airmedy.player.PlaybackState
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
+import me.misa198.airmedy.sync.LibraryTrack
+import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 
 internal fun PlaybackState.showsMiniPlayer(): Boolean = when (this) {
     PlaybackState.Idle, is PlaybackState.Failed -> false
@@ -47,6 +49,15 @@ internal fun NavigationChrome(
     onOpenFullScreenPlayer: () -> Unit = {},
     onFullScreenPlayerDrag: (Float) -> Unit = {},
     onFullScreenPlayerDragEnd: (Boolean) -> Unit = {},
+    contextTrack: LibraryTrack? = null,
+    onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit = {},
+    onTrackFavoriteToggle: (String, Boolean) -> Unit = { _, _ -> },
+    onTrackPlayNext: (String) -> Unit = {},
+    onTrackAddToQueue: (String) -> Unit = {},
+    moodRadioEligibleTrackIds: Set<String> = emptySet(),
+    onStartMoodRadio: (String) -> Unit = {},
+    onTrackGoToAlbum: (String) -> Unit = {},
+    onTrackGoToArtist: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val isCompact = compact && playbackState.showsMiniPlayer()
@@ -118,6 +129,15 @@ internal fun NavigationChrome(
                     onOpenFullScreenPlayer = onOpenFullScreenPlayer,
                     onFullScreenPlayerDrag = onFullScreenPlayerDrag,
                     onFullScreenPlayerDragEnd = onFullScreenPlayerDragEnd,
+                    contextTrack = contextTrack,
+                    onTrackContextBottomSheet = onTrackContextBottomSheet,
+                    onTrackFavoriteToggle = onTrackFavoriteToggle,
+                    onTrackPlayNext = onTrackPlayNext,
+                    onTrackAddToQueue = onTrackAddToQueue,
+                    moodRadioEligibleTrackIds = moodRadioEligibleTrackIds,
+                    onStartMoodRadio = onStartMoodRadio,
+                    onTrackGoToAlbum = onTrackGoToAlbum,
+                    onTrackGoToArtist = onTrackGoToArtist,
                     stableGlassWidth = maxWidth,
                     modifier = Modifier,
                 )

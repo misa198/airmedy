@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
@@ -26,6 +27,7 @@ import me.misa198.airmedy.player.PlaybackItem
 import me.misa198.airmedy.player.PlaybackQueueSnapshot
 import me.misa198.airmedy.player.PlaybackState
 import me.misa198.airmedy.settings.ThemeMode
+import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -173,6 +175,23 @@ class MiniPlayerTest {
     }
 
     @Test
+    fun longPressingMiniPlayerOpensTheCurrentTrackContextMenu() {
+        var opens = 0
+        composeTestRule.setContent {
+            NavigationChromeForTest(
+                state = PlaybackState.Playing(item, positionMs = 0L, durationMs = 120_000L),
+                contextTrack = LibraryTrack(id = item.trackId, title = item.title, artists = item.artist),
+                onOpenFullScreenPlayer = { opens += 1 },
+            )
+        }
+
+        composeTestRule.onNodeWithText(item.title).performTouchInput { longClick() }
+
+        composeTestRule.onNodeWithText("Track info").assertExists()
+        assertEquals(0, opens)
+    }
+
+    @Test
     fun reversingAnUpwardMiniPlayerDragToASubSlopRemainderDoesNotOpenFullscreen() {
         var opens = 0
         composeTestRule.setContent {
@@ -317,6 +336,7 @@ class MiniPlayerTest {
         onNext: () -> Unit = {},
         onDismiss: () -> Unit = {},
         onOpenFullScreenPlayer: () -> Unit = {},
+        contextTrack: LibraryTrack? = null,
     ) {
         AirmedyTheme(themeMode = ThemeMode.Dark) {
             NavigationChrome(
@@ -330,6 +350,7 @@ class MiniPlayerTest {
                 onNextClick = onNext,
                 onMiniPlayerDismiss = onDismiss,
                 onOpenFullScreenPlayer = onOpenFullScreenPlayer,
+                contextTrack = contextTrack,
             )
         }
     }
