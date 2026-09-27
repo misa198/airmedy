@@ -198,6 +198,7 @@
     <string name="playback_crossfade_maximum">12s</string>
     <string name="playback_blend_artwork_during_crossfade">Sfuma copertina e sfondo</string>
     <string name="playback_show_quality_badge">Mostra badge qualità audio</string>
+    <string name="playback_keep_screen_on_for_lyrics">Mantieni lo schermo acceso mentre visualizzi il testo</string>
     <string name="equalizer_title">Equalizzatore</string>
     <string name="equalizer_enable">Attiva equalizzatore</string>
     <string name="equalizer_preset">Preimpostazione</string>

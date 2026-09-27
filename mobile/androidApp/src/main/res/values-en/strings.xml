@@ -198,6 +198,7 @@
     <string name="playback_crossfade_maximum">12s</string>
     <string name="playback_blend_artwork_during_crossfade">Blend artwork and background</string>
     <string name="playback_show_quality_badge">Show audio quality badge</string>
+    <string name="playback_keep_screen_on_for_lyrics">Keep screen on while viewing lyrics</string>
     <string name="equalizer_title">Equalizer</string>
     <string name="equalizer_enable">Enable Equalizer</string>
     <string name="equalizer_preset">Preset</string>

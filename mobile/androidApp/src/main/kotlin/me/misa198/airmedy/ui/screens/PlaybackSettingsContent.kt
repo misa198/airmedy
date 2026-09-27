@@ -38,6 +38,8 @@ import me.misa198.airmedy.player.normalizeEqGain
 internal fun PlaybackSettingsContent(
     showFullscreenQualityBadge: Boolean,
     onShowFullscreenQualityBadgeChanged: (Boolean) -> Unit,
+    keepScreenOnForLyrics: Boolean,
+    onKeepScreenOnForLyricsChanged: (Boolean) -> Unit,
     onSongTransitionSelected: () -> Unit,
     onVolumeNormalizationSelected: () -> Unit,
     onEqualizerSelected: () -> Unit,
@@ -67,6 +69,13 @@ internal fun PlaybackSettingsContent(
                         )
                     },
                     onClick = { onShowFullscreenQualityBadgeChanged(!showFullscreenQualityBadge) },
+                ),
+                ActionListItem(
+                    labelRes = R.string.playback_keep_screen_on_for_lyrics,
+                    trailingContent = {
+                        Switch(checked = keepScreenOnForLyrics, onCheckedChange = onKeepScreenOnForLyricsChanged)
+                    },
+                    onClick = { onKeepScreenOnForLyricsChanged(!keepScreenOnForLyrics) },
                 ),
             ),
             containerStyle = ActionListContainerStyle.Card,

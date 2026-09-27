@@ -172,6 +172,10 @@ appears only for Lossless, Hi-Res, or DSD playback when enabled in Playback
 settings; the preference defaults to enabled and persists in DataStore.
 Tapping it opens a centered metadata dialog with the quality icon and only the
 available sample-rate, bit-depth, and codec values.
+Playback settings also persists an off-by-default keep-screen-on preference.
+The fullscreen player keeps the Android view awake only while its lyrics panel
+is open and that preference is enabled; changing panels, closing fullscreen, or
+disabling the preference releases it immediately, including when lyrics are absent.
 
 Lyrics parsing and display helpers live in `FullScreenPlayerLyricsPanel.kt`.
 Playback position is authoritative for the active line; browsing or dragging

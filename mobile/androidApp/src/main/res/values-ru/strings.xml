@@ -200,6 +200,7 @@
     <string name="playback_crossfade_maximum">12 с</string>
     <string name="playback_blend_artwork_during_crossfade">Смешивать обложку и фон</string>
     <string name="playback_show_quality_badge">Показывать значок качества звука</string>
+    <string name="playback_keep_screen_on_for_lyrics">Не выключать экран при просмотре текста песни</string>
     <string name="equalizer_title">Эквалайзер</string>
     <string name="equalizer_enable">Включить эквалайзер</string>
     <string name="equalizer_preset">Пресет</string>

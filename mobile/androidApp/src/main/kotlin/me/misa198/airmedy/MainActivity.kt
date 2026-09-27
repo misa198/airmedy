@@ -263,6 +263,7 @@ class MainActivity : ComponentActivity() {
                 initialValue = me.misa198.airmedy.player.CrossfadeSettings(0, 4, true),
             )
             val showFullscreenQualityBadge by playbackPreferences.showFullscreenQualityBadge.collectAsStateWithLifecycle(initialValue = true)
+            val keepScreenOnForLyrics by playbackPreferences.keepScreenOnForLyrics.collectAsStateWithLifecycle(initialValue = false)
             val normalizationSettings by normalizationPreferences.settings.collectAsStateWithLifecycle(
                 initialValue = me.misa198.airmedy.player.NormalizationSettings(),
             )
@@ -480,6 +481,8 @@ class MainActivity : ComponentActivity() {
                     onBlendArtworkDuringCrossfadeChanged = playbackController::setBlendArtworkDuringCrossfade,
                     showFullscreenQualityBadge = showFullscreenQualityBadge,
                     onShowFullscreenQualityBadgeChanged = { enabled -> preferenceScope.launch { playbackPreferences.setShowFullscreenQualityBadge(enabled) } },
+                    keepScreenOnForLyrics = keepScreenOnForLyrics,
+                    onKeepScreenOnForLyricsChanged = { enabled -> preferenceScope.launch { playbackPreferences.setKeepScreenOnForLyrics(enabled) } },
                     normalizationAvailable = normalizationAvailable,
                     normalization = normalizationSettings,
                     onNormalizationChanged = { settings -> preferenceScope.launch { normalizationPreferences.update { settings } } },
@@ -510,6 +513,7 @@ class MainActivity : ComponentActivity() {
                 artworkCrossfade = artworkCrossfade,
                 blendArtworkDuringCrossfade = crossfadeSettings.blendArtworkDuringCrossfade,
                 showFullscreenQualityBadge = showFullscreenQualityBadge,
+                keepScreenOnForLyrics = keepScreenOnForLyrics,
                 systemVolume = systemMusicVolumeState,
                 onPrevious = playbackController::previous,
                 onPlayPause = {

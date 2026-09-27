@@ -197,6 +197,7 @@
     <string name="playback_crossfade_maximum">12 giây</string>
     <string name="playback_blend_artwork_during_crossfade">Hòa trộn ảnh bìa và hình nền</string>
     <string name="playback_show_quality_badge">Hiển thị huy hiệu chất lượng âm thanh</string>
+    <string name="playback_keep_screen_on_for_lyrics">Giữ màn hình sáng khi xem lời bài hát</string>
     <string name="equalizer_title">Bộ cân bằng âm</string>
     <string name="equalizer_enable">Bật bộ cân bằng âm</string>
     <string name="equalizer_preset">Cài đặt sẵn</string>

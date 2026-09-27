@@ -197,6 +197,7 @@
     <string name="playback_crossfade_maximum">12 วินาที</string>
     <string name="playback_blend_artwork_during_crossfade">ผสมผสานภาพหน้าปกและพื้นหลัง</string>
     <string name="playback_show_quality_badge">แสดงป้ายคุณภาพเสียง</string>
+    <string name="playback_keep_screen_on_for_lyrics">เปิดหน้าจอไว้ขณะดูเนื้อเพลง</string>
     <string name="equalizer_title">อีควอไลเซอร์</string>
     <string name="equalizer_enable">เปิดใช้งานอีควอไลเซอร์</string>
     <string name="equalizer_preset">พรีเซ็ต</string>

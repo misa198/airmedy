@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -42,6 +43,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -88,6 +90,7 @@ internal fun FullScreenPlayer(
     artworkCrossfade: ArtworkCrossfadeTransition? = null,
     blendArtworkDuringCrossfade: Boolean = true,
     showQualityBadge: Boolean = true,
+    keepScreenOnForLyrics: Boolean = false,
     volume: Float,
     onSeek: (Long) -> Unit,
     onVolumeChange: (Float) -> Unit,
@@ -184,6 +187,13 @@ internal fun FullScreenPlayer(
     val canNavigateNext = queue.canNavigateNext()
     var isTrackContextMenuExpanded by remember(item.trackId) { mutableStateOf(false) }
     var selectedPanel by remember { mutableStateOf<FullScreenPlayerPanel?>(null) }
+    val view = LocalView.current
+    if (keepScreenOnForLyrics && visible && selectedPanel == FullScreenPlayerPanel.Lyrics) {
+        DisposableEffect(view) {
+            view.keepScreenOn = true
+            onDispose { view.keepScreenOn = false }
+        }
+    }
     val isPanelOpen = selectedPanel != null
     var isQueueReordering by remember { mutableStateOf(false) }
     // The reorderable library reports the end of a normal drag, but a panel

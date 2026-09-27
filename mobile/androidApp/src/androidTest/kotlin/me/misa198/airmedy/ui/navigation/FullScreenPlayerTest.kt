@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
@@ -40,10 +41,53 @@ import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import android.view.View
+import androidx.test.platform.app.InstrumentationRegistry
+import me.misa198.airmedy.R
 
 class FullScreenPlayerTest {
     @get:Rule
     val composeTestRule = createComposeRule()
+
+    @Test
+    fun lyricsPanelKeepsScreenOnOnlyWhileEnabledAndVisible() {
+        var enabled by mutableStateOf(false)
+        var visible by mutableStateOf(true)
+        lateinit var view: View
+        composeTestRule.setContent {
+            view = LocalView.current
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenPlayer(
+                    visible = visible,
+                    dragProgress = 0f,
+                    isDragging = false,
+                    openingFromMiniPlayerSwipe = false,
+                    playbackState = PlaybackState.Playing(item, 0L, 120_000L),
+                    keepScreenOnForLyrics = enabled,
+                    volume = 0.5f,
+                    onSeek = {}, onVolumeChange = {}, onPrevious = {}, onPlayPause = {}, onNext = {},
+                    onOpenMediaOutputSwitcher = {}, onDismiss = {},
+                )
+            }
+        }
+
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        composeTestRule.onNodeWithContentDescription(context.getString(R.string.player_lyrics)).performClick()
+        composeTestRule.runOnIdle { assertFalse(view.keepScreenOn) }
+        composeTestRule.runOnIdle { enabled = true }
+        composeTestRule.runOnIdle { assertTrue(view.keepScreenOn) }
+        composeTestRule.onNodeWithContentDescription(context.getString(R.string.player_queue)).performClick()
+        composeTestRule.runOnIdle { assertFalse(view.keepScreenOn) }
+        composeTestRule.onNodeWithContentDescription(context.getString(R.string.player_lyrics)).performClick()
+        composeTestRule.runOnIdle { assertTrue(view.keepScreenOn) }
+        composeTestRule.runOnIdle { enabled = false }
+        composeTestRule.runOnIdle { assertFalse(view.keepScreenOn) }
+        composeTestRule.runOnIdle { enabled = true }
+        composeTestRule.runOnIdle { visible = false }
+        composeTestRule.runOnIdle { assertFalse(view.keepScreenOn) }
+    }
 
     @Test
     fun romanizationToggleReplacesAndRestoresSecondary() {

@@ -13,6 +13,7 @@ private val CrossfadeSecondsKey = intPreferencesKey("crossfade_seconds")
 private val LastEnabledCrossfadeSecondsKey = intPreferencesKey("last_enabled_crossfade_seconds")
 private val BlendArtworkDuringCrossfadeKey = booleanPreferencesKey("blend_artwork_during_crossfade")
 private val ShowFullscreenQualityBadgeKey = booleanPreferencesKey("show_fullscreen_quality_badge")
+private val KeepScreenOnForLyricsKey = booleanPreferencesKey("keep_screen_on_for_lyrics")
 
 internal data class CrossfadeSettings(
     val seconds: Int,
@@ -37,6 +38,9 @@ internal class PlaybackPreferences(private val context: Context) {
     val showFullscreenQualityBadge: Flow<Boolean> = context.playbackPreferencesDataStore.data.map {
         it[ShowFullscreenQualityBadgeKey] ?: true
     }
+    val keepScreenOnForLyrics: Flow<Boolean> = context.playbackPreferencesDataStore.data.map {
+        it[KeepScreenOnForLyricsKey] ?: false
+    }
 
     suspend fun setCrossfadeSeconds(seconds: Int) {
         context.playbackPreferencesDataStore.edit { preferences ->
@@ -56,6 +60,10 @@ internal class PlaybackPreferences(private val context: Context) {
 
     suspend fun setShowFullscreenQualityBadge(enabled: Boolean) {
         context.playbackPreferencesDataStore.edit { it[ShowFullscreenQualityBadgeKey] = enabled }
+    }
+
+    suspend fun setKeepScreenOnForLyrics(enabled: Boolean) {
+        context.playbackPreferencesDataStore.edit { it[KeepScreenOnForLyricsKey] = enabled }
     }
 }
 
