@@ -5,7 +5,7 @@ export const lyricsMotionClasses = 'transition-[color,opacity] duration-[230ms] 
 
 const lyricsMotionDuration = 230
 
-function lyricsMotionProgress(progress: number) {
+export function lyricsMotionProgress(progress: number) {
   const sample = (a: number, b: number, t: number) => 3 * (1 - t) * (1 - t) * t * a + 3 * (1 - t) * t * t * b + t * t * t
   let lower = 0
   let upper = 1
