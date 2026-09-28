@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { LyricLine } from '../composables/useLyrics'
 import { useLyricsScrollMotion } from '../composables/useLyricsScrollMotion'
 import KaraokeText from './KaraokeText.vue'
+import { useGpuLyrics } from '../composables/useGpuLyrics'
 
 const props = defineProps<{
   secondary?: (string | undefined)[]
@@ -25,9 +26,15 @@ const activeIndex = computed(() => {
 const scrollContainer = ref<HTMLElement | null>(null)
 const lineRefs = ref<HTMLElement[]>([])
 const isBrowsing = ref(false)
+const canvas = ref<HTMLCanvasElement | null>(null)
+const hovered = ref(-1)
+const { ready: gpuReady, draw, layout } = useGpuLyrics(canvas, scrollContainer, lineRefs, computed(() => ({
+  lines: props.lines, active: activeIndex.value, browsing: isBrowsing.value,
+  immersive: !!props.immersive, hovered: hovered.value, position: props.currentPosition, reducedMotion: false,
+})))
 let scrollFrame: number | undefined
 let resizeObserver: ResizeObserver | null = null
-let waitingForLayout = false
+let disposed = false
 let hasPositionedInitialLine = false
 let previousActiveIndex = -1
 const { scrollTo, stop: stopScrollAnimation } = useLyricsScrollMotion()
@@ -41,8 +48,11 @@ watch(() => props.lines, () => {
 })
 
 watch(() => props.secondary, () => {
+  layout()
   if (!isBrowsing.value) scheduleScrollToActive(activeIndex.value)
 }, { flush: 'post' })
+
+watch([() => props.lines, () => props.immersive], () => nextTick(layout), { flush: 'post' })
 
 function isVisible(container: HTMLElement, el: HTMLElement) {
   return el.offsetTop < container.scrollTop + container.clientHeight
@@ -65,6 +75,7 @@ function scrollToActive(index: number, animated: boolean) {
 function scheduleScrollToActive(index: number, previousIndex = previousActiveIndex) {
   stopScrollAnimation()
   nextTick(() => {
+    if (disposed || isBrowsing.value) return
     if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame)
     // A watcher with `immediate` runs before mount, when the container and
     // line refs do not exist yet. Defer to the first painted frame so opening
@@ -74,13 +85,15 @@ function scheduleScrollToActive(index: number, previousIndex = previousActiveInd
       const container = scrollContainer.value
       const previous = lineRefs.value[previousIndex]
       const animated = !!(hasPositionedInitialLine && container && previous && isVisible(container, previous))
-      waitingForLayout = index !== -1 && !scrollToActive(index, animated)
+      scrollToActive(index, animated)
     })
   })
 }
 
 function enterBrowseMode() {
   isBrowsing.value = true
+  stopScrollAnimation()
+  if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame)
 }
 
 function seekAndResume(time: number, index: number) {
@@ -92,51 +105,6 @@ function seekAndResume(time: number, index: number) {
   previousActiveIndex = index
   scheduleScrollToActive(index, index)
   emit('seek', time)
-}
-
-function immersiveLineStyle(index: number) {
-  if (isBrowsing.value) return { filter: 'blur(0)', opacity: '1' }
-  const distance = Math.abs(index - activeIndex.value)
-  if (distance === 0) return { filter: 'blur(0)', opacity: '1' }
-
-  // Keep the lines beside the current lyric legible. Far lines fade away more
-  // than they blur, avoiding the visually noisy, out-of-focus wall of text.
-  const blurByDistance = [0, 0.35, 1.25, 2]
-  const opacityByDistance = [1, 0.25, 0.15, 0.1]
-  const level = Math.min(distance, blurByDistance.length - 1)
-
-  return {
-    filter: `blur(${blurByDistance[level]}px)`,
-    opacity: String(opacityByDistance[level]),
-  }
-}
-
-function lineClasses(index: number) {
-  if (isBrowsing.value) {
-    return [
-      'text-foreground blur-none opacity-100',
-      { 'text-4xl': !props.immersive, 'text-[40px]': props.immersive },
-    ]
-  }
-  const isActive = index === activeIndex.value
-  const isNearActive = activeIndex.value !== -1 && Math.abs(index - activeIndex.value) <= 2
-
-  return [
-    props.immersive
-      ? isActive
-        ? 'text-foreground scale-[1.06]'
-        : 'text-foreground'
-      : isActive
-        ? 'text-foreground scale-[1.03] blur-none opacity-100'
-        : index < activeIndex.value
-          ? 'text-foreground/20 blur-[0.5px] opacity-60 hover:text-foreground/40'
-          : 'text-foreground/30 blur-[1px] opacity-40 hover:text-foreground/60 hover:blur-none',
-    {
-      'text-4xl': !props.immersive,
-      'text-[40px]': props.immersive,
-      'transform-gpu will-change-transform': isNearActive,
-    },
-  ]
 }
 
 // flush:'post' → DOM patched before measuring offsets. The mounted hook is
@@ -151,13 +119,15 @@ onMounted(() => {
   scheduleScrollToActive(activeIndex.value)
   if (typeof ResizeObserver !== 'undefined') {
     resizeObserver = new ResizeObserver(() => {
-      if (waitingForLayout && !isBrowsing.value) scheduleScrollToActive(activeIndex.value)
+      layout()
+      if (!isBrowsing.value) scheduleScrollToActive(activeIndex.value)
     })
     if (scrollContainer.value) resizeObserver.observe(scrollContainer.value)
   }
 })
 
 onUnmounted(() => {
+  disposed = true
   if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame)
   stopScrollAnimation()
   resizeObserver?.disconnect()
@@ -166,30 +136,37 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="scrollContainer" class="h-full overflow-y-auto py-48 scrollbar-hide" :class="props.immersive ? 'pl-8 pr-16' : 'px-8'" @wheel.passive="enterBrowseMode" @pointerdown="enterBrowseMode">
+  <div class="relative h-full min-h-0 text-foreground">
+  <div ref="scrollContainer" class="h-full overflow-y-auto py-48 scrollbar-hide text-foreground [overflow-anchor:none]" :class="props.immersive ? 'pl-8 pr-16' : 'px-8'" @scroll.passive="draw" @wheel.passive="enterBrowseMode" @pointerdown="enterBrowseMode">
     <div class="max-w-2xl mx-auto space-y-5">
       <div
         v-for="(line, index) in lines"
         :key="index"
         ref="lineRefs"
         data-test="lyric-line"
-        class="blur-container font-bold transition-[color,filter,opacity,transform,scale] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] cursor-pointer select-none origin-left py-2"
-        :class="lineClasses(index)"
-        :style="props.immersive ? immersiveLineStyle(index) : undefined"
+        role="button"
+        tabindex="0"
+        :aria-current="index === activeIndex ? 'true' : undefined"
+        class="font-bold cursor-pointer select-none focus-visible:outline-none focus-visible:underline focus-visible:decoration-foreground/60 focus-visible:underline-offset-4"
+        @mouseenter="hovered = index"
+        @mouseleave="hovered = -1"
+        @keydown.enter.prevent="seekAndResume(line.time, index)"
+        @keydown.space.prevent="seekAndResume(line.time, index)"
         @pointerdown.stop
         @click="seekAndResume(line.time, index)"
       >
-        <div><KaraokeText :line="line" :position="!isBrowsing && index === activeIndex ? currentPosition : undefined" /></div>
-        <div v-if="secondary?.[index] || line.secondary" class="text-lg md:text-2xl font-bold mt-1 opacity-80">{{ secondary?.[index] || line.secondary }}</div>
+        <div
+          data-test="lyric-content"
+          class="py-2"
+          :class="props.immersive ? 'text-[40px]' : 'text-4xl'"
+          :style="{ opacity: gpuReady ? 0 : 1 }"
+        >
+          <div><KaraokeText :line="line" :position="!gpuReady && !isBrowsing && index === activeIndex ? currentPosition : undefined" /></div>
+          <div v-if="secondary?.[index] || line.secondary" data-lyric-secondary class="text-lg md:text-2xl font-bold mt-1 opacity-80">{{ secondary?.[index] || line.secondary }}</div>
+        </div>
       </div>
     </div>
   </div>
+  <canvas ref="canvas" aria-hidden="true" class="absolute inset-0 pointer-events-none" :style="{ visibility: gpuReady ? 'visible' : 'hidden' }" />
+  </div>
 </template>
-
-<style scoped>
-.blur-container {
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  transform: translate3d(0, 0, 0);
-}
-</style>

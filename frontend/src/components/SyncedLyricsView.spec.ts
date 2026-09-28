@@ -1,184 +1,105 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import SyncedLyricsView from './SyncedLyricsView.vue'
+import { useGpuLyrics } from '../composables/useGpuLyrics'
 
-const originalClientHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight')
-const originalClientWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth')
+vi.mock('../composables/useGpuLyrics', async () => {
+  const { ref } = await import('vue')
+  return { useGpuLyrics: vi.fn(() => ({ ready: ref(false), draw: vi.fn(), layout: vi.fn() })) }
+})
 
 describe('SyncedLyricsView', () => {
+  const wrappers: ReturnType<typeof mount>[] = []
+  const frames = new Map<number, FrameRequestCallback>()
+  const lines = [{ text: 'First', time: 0 }, { text: 'Active', time: 10 }, { text: 'Next', secondary: 'Translation', time: 20 }]
+  const create = () => {
+    const wrapper = mount(SyncedLyricsView, { props: { immersive: true, currentPosition: 10, lines } })
+    wrappers.push(wrapper)
+    return wrapper
+  }
+  const state = () => vi.mocked(useGpuLyrics).mock.calls.at(-1)![3].value
+  const gpu = () => vi.mocked(useGpuLyrics).mock.results.at(-1)!.value
+  beforeEach(() => {
+    let id = 0
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { frames.set(++id, callback); return id })
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id))
+  })
   afterEach(() => {
+    wrappers.splice(0).forEach(wrapper => wrapper.unmount())
+    frames.clear()
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
-    if (originalClientHeight) {
-      Object.defineProperty(HTMLElement.prototype, 'clientHeight', originalClientHeight)
-    } else {
-      delete (HTMLElement.prototype as { clientHeight?: number }).clientHeight
-    }
-    if (originalClientWidth) {
-      Object.defineProperty(HTMLElement.prototype, 'clientWidth', originalClientWidth)
-    } else {
-      delete (HTMLElement.prototype as { clientWidth?: number }).clientWidth
-    }
+    vi.clearAllMocks()
   })
 
-  it('scrolls to the active line once the initially collapsed panel has layout', async () => {
-    let clientWidth = 0
-    let resizeCallback: ResizeObserverCallback | undefined
-    const frames = new Map<number, FrameRequestCallback>()
-    class ResizeObserverMock {
-      constructor(callback: ResizeObserverCallback) {
-        resizeCallback = callback
-      }
+  it('keeps accessible DOM text until the first GPU frame, with no CSS blur', async () => {
+    const wrapper = create()
+    expect(wrapper.get('[data-test="lyric-content"]').attributes('style')).toContain('opacity: 1')
+    expect(wrapper.get('[aria-current="true"]').text()).toBe('Active')
+    expect(wrapper.get('canvas').attributes('aria-hidden')).toBe('true')
+    expect(wrapper.html()).not.toContain('filter:')
+    expect(wrapper.get('[role="button"]').classes()).toContain('focus-visible:outline-none')
+    gpu().ready.value = true
+    await nextTick()
+    expect(wrapper.get('[data-test="lyric-content"]').attributes('style')).toContain('opacity: 0')
+    expect(wrapper.get('[role="button"]').attributes('tabindex')).toBe('0')
+    expect(wrapper.text()).toContain('Translation')
+    gpu().ready.value = false
+    await nextTick()
+    expect(wrapper.get('[data-test="lyric-content"]').attributes('style')).toContain('opacity: 1')
+  })
+
+  it('preserves browse across position/translation changes and resumes on keyboard seek', async () => {
+    const wrapper = create()
+    await wrapper.get('[data-test="lyric-line"]').trigger('wheel')
+    expect(state().browsing).toBe(true)
+    await wrapper.setProps({ currentPosition: 20, secondary: ['Romanized'] })
+    expect(state().browsing).toBe(true)
+    expect(state().active).toBe(2)
+    await wrapper.get('[role="button"]').trigger('keydown', { key: 'Enter' })
+    expect(wrapper.emitted('seek')).toEqual([[0]])
+    expect(state().browsing).toBe(false)
+    await wrapper.get('[role="button"]').trigger('focus')
+    expect(state().browsing).toBe(false)
+    await wrapper.get('[role="button"]').trigger('keydown', { key: 'Meta' })
+    expect(state().browsing).toBe(false)
+    await wrapper.setProps({ lines: [{ text: 'New', time: 0 }] })
+    expect(state().browsing).toBe(false)
+  })
+
+  it('passes exact word timing and seeks through a translation click', async () => {
+    const wrapper = create()
+    const words = [{ text: 'Hello', start: 1, end: 2 }]
+    await wrapper.setProps({ lines: [{ text: 'Hello', time: 1, words, secondary: '你好' }], currentPosition: 1.5 })
+    expect(state().lines[0].words).toEqual(words)
+    expect(state().position).toBe(1.5)
+    await wrapper.get('[data-lyric-secondary]').trigger('click')
+    expect(wrapper.emitted('seek')).toEqual([[1]])
+  })
+
+  it('waits for layout then places the current lyric at the immersive anchor', async () => {
+    let width = 0
+    let resize!: ResizeObserverCallback
+    vi.stubGlobal('ResizeObserver', class {
+      constructor(callback: ResizeObserverCallback) { resize = callback }
       observe() {}
       disconnect() {}
-    }
-    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
-      const id = frames.size + 1
-      frames.set(id, callback)
-      return id
     })
-    vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id))
-    vi.stubGlobal('ResizeObserver', ResizeObserverMock)
-    Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get: () => 400 })
-    Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get: () => clientWidth })
-
-    const wrapper = mount(SyncedLyricsView, {
-      props: {
-        currentPosition: 15,
-        lines: [
-          { text: 'First', time: 0 },
-          { text: 'Active', time: 15 },
-          { text: 'Next', time: 20 },
-        ],
-      },
-    })
-
+    const wrapper = create()
+    const viewport = wrapper.get('.overflow-y-auto').element as HTMLElement
+    Object.defineProperties(viewport, { clientHeight: { get: () => 400 }, clientWidth: { get: () => width } })
+    const row = wrapper.findAll('[data-test="lyric-line"]')[1].element
+    Object.defineProperties(row, { offsetTop: { get: () => 500 }, clientHeight: { get: () => 80 } })
     await nextTick()
     for (const callback of [...frames.values()]) callback(0)
     frames.clear()
-
-    clientWidth = 400
-    resizeCallback?.([], {} as ResizeObserver)
+    expect(viewport.scrollTop).toBe(0)
+    width = 600
+    resize([], {} as ResizeObserver)
     await nextTick()
-
     for (const callback of [...frames.values()]) callback(100)
-    expect(wrapper.get('[data-test="lyric-line"]').element.scrollTop).toBe(0)
-  })
-
-  it('progressively blurs non-active lines in immersive mode', () => {
-    const wrapper = mount(SyncedLyricsView, {
-      props: {
-        immersive: true,
-        currentPosition: 15,
-        lines: [
-          { text: 'Zero', time: 0 },    // distance 3 → blur(2px),   opacity 0.1
-          { text: 'First', time: 5 },   // distance 2 → blur(1.25px), opacity 0.15
-          { text: 'Second', time: 10 }, // distance 1 → blur(0.35px), opacity 0.25
-          { text: 'Active', time: 15 }, // distance 0 → blur(0),      opacity 1
-          { text: 'Fourth', time: 20 }, // distance 1 → blur(0.35px), opacity 0.25
-          { text: 'Fifth', time: 25 },  // distance 2 → blur(1.25px), opacity 0.15
-        ],
-      },
-    })
-
-    const lines = wrapper.findAll('[data-test="lyric-line"]')
-    // blur
-    expect(lines[3].attributes('style')).toContain('blur(0)')
-    expect(lines[2].attributes('style')).toContain('blur(0.35px)')
-    expect(lines[4].attributes('style')).toContain('blur(0.35px)')
-    expect(lines[1].attributes('style')).toContain('blur(1.25px)')
-    expect(lines[5].attributes('style')).toContain('blur(1.25px)')
-    expect(lines[0].attributes('style')).toContain('blur(2px)')
-    // opacity
-    expect(lines[2].attributes('style')).toContain('opacity: 0.25')
-    expect(lines[4].attributes('style')).toContain('opacity: 0.25')
-    expect(lines[1].attributes('style')).toContain('opacity: 0.15')
-    expect(lines[5].attributes('style')).toContain('opacity: 0.15')
-    expect(lines[0].attributes('style')).toContain('opacity: 0.1')
-  })
-
-  it('uses GPU transforms only for the active lyric and two surrounding lines', () => {
-    const wrapper = mount(SyncedLyricsView, {
-      props: {
-        currentPosition: 15,
-        lines: [
-          { text: 'First', time: 0 },
-          { text: 'Previous', time: 10 },
-          { text: 'Active', time: 15 },
-          { text: 'Next', time: 20 },
-          { text: 'Second next', time: 25 },
-          { text: 'Last', time: 30 },
-        ],
-      },
-    })
-
-    const lines = wrapper.findAll('[data-test="lyric-line"]')
-    expect(lines.map(line => line.classes('transform-gpu'))).toEqual([
-      true,
-      true,
-      true,
-      true,
-      true,
-      false,
-    ])
-  })
-
-  it('lets the listener browse without auto-follow, then resumes follow on lyric tap', async () => {
-    const frames = new Map<number, FrameRequestCallback>()
-    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
-      const id = frames.size + 1
-      frames.set(id, callback)
-      return id
-    })
-    vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id))
-    Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get: () => 400 })
-    Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get: () => 400 })
-
-    const lines = [
-      { text: 'First', time: 0 },
-      { text: 'Active', time: 10 },
-      { text: 'Next', time: 20 },
-    ]
-    const wrapper = mount(SyncedLyricsView, {
-      props: { immersive: true, currentPosition: 10, lines },
-    })
-    await nextTick()
-
-    await wrapper.find('[data-test="lyric-line"]').trigger('wheel')
-    await wrapper.setProps({ currentPosition: 20 })
-    await nextTick()
-
-    expect(wrapper.findAll('[data-test="lyric-line"]')[0].attributes('style')).toContain('blur(0)')
-    expect(wrapper.findAll('[data-test="lyric-line"]')[0].attributes('style')).toContain('opacity: 1')
-
-    await wrapper.findAll('[data-test="lyric-line"]')[0].trigger('click')
-    expect(wrapper.emitted('seek')).toEqual([[0]])
-    await nextTick()
-    expect(frames.size).toBeGreaterThan(0)
-
-    await wrapper.setProps({ currentPosition: 0 })
-    await nextTick()
-    expect(frames.size).toBeGreaterThan(0)
-  })
-
-  it('seeks a lyric tap without entering browse mode first', async () => {
-    const wrapper = mount(SyncedLyricsView, {
-      props: {
-        immersive: true,
-        currentPosition: 10,
-        lines: [
-          { text: 'First', time: 0 },
-          { text: 'Active', time: 10 },
-        ],
-      },
-    })
-
-    const firstLine = wrapper.findAll('[data-test="lyric-line"]')[0]
-    await firstLine.trigger('pointerdown')
-
-    expect(firstLine.attributes('style')).toContain('blur(0.35px)')
-    await firstLine.trigger('click')
-    expect(wrapper.emitted('seek')).toEqual([[0]])
+    expect(viewport.scrollTop).toBe(412)
+    expect(gpu().layout).toHaveBeenCalled()
   })
 })

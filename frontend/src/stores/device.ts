@@ -68,6 +68,11 @@ export const useDeviceStore = defineStore('device', () => {
 
   async function toggleMaximize() {
     try {
+      if (isMac.value) {
+        await Window.Zoom()
+        await checkFullscreen()
+        return
+      }
       if (await Window.IsMaximised()) {
         await Window.UnMaximise()
       } else {

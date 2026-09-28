@@ -6,6 +6,10 @@ import { useAppStore } from '../stores/app'
 import { useRomanizationStore } from '../stores/romanization'
 
 const api = vi.hoisted(() => ({ InspectRomanization: vi.fn(), RomanizeLyrics: vi.fn() }))
+vi.mock('../composables/useGpuLyrics', async () => {
+  const { ref } = await import('vue')
+  return { useGpuLyrics: () => ({ ready: ref(false), draw: vi.fn(), layout: vi.fn() }) }
+})
 vi.mock('../../bindings/airmedy/internal/infra/wails', () => ({ LyricsService: api }))
 vi.mock('@wailsio/runtime', () => ({
   Events: { On: vi.fn(() => vi.fn()) },
@@ -110,7 +114,7 @@ describe('fullscreen romanization', () => {
     await wrapper.get('button').trigger('click')
     task.resolve([{ text: 'nǐ hǎo', status: 'converted' }, { text: '', status: 'failed' }])
     await flushPromises()
-    expect(wrapper.get('[data-test="lyric-line"]').attributes('style')).toContain('opacity: 1')
+    expect(wrapper.get('[data-test="lyric-content"]').attributes('style')).toContain('opacity: 1')
     await wrapper.get('[data-test="lyric-line"]').trigger('click')
     expect(wrapper.emitted('seek')).toEqual([[1]])
     wrapper.unmount()

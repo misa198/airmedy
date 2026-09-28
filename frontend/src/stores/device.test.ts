@@ -26,6 +26,7 @@ vi.mock('@wailsio/runtime', () => ({
     IsFullscreen: vi.fn().mockResolvedValue(false),
     IsMaximised: vi.fn().mockResolvedValue(false),
     ToggleFullscreen: vi.fn().mockResolvedValue(undefined),
+    Zoom: vi.fn().mockResolvedValue(undefined),
   }
 }))
 
@@ -85,5 +86,16 @@ describe('useDeviceStore', () => {
     await store.toggleFullscreen()
 
     expect(Window.ToggleFullscreen).toHaveBeenCalledOnce()
+  })
+
+  it('uses native zoom on macOS without disabling size constraints', async () => {
+    mockGetPlatform.mockResolvedValue('darwin')
+    const { Window } = await import('@wailsio/runtime')
+    const store = useDeviceStore()
+
+    await store.init()
+    await store.toggleMaximize()
+
+    expect(Window.Zoom).toHaveBeenCalledOnce()
   })
 })
