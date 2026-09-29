@@ -15,6 +15,10 @@ export function lyricAppearance(index: number, active: number, browsing: boolean
   }
 }
 
+export function initialLyricAppearance(appearance: ReturnType<typeof lyricAppearance>) {
+  return { ...appearance, scale: 1 }
+}
+
 export function wordProgress(word: LyricWord, position: number) {
   if (word.end === word.start) return position >= word.start ? 1 : 0
   return Math.max(0, Math.min(1, (position - word.start) / (word.end - word.start)))
@@ -22,6 +26,14 @@ export function wordProgress(word: LyricWord, position: number) {
 
 export function fragmentFill(progress: number, offset: number, width: number, total: number) {
   return Math.max(0, Math.min(width, progress * total - offset))
+}
+
+export function karaokeBaseAlpha(rowAlpha: number) {
+  return Math.min(1, 0.35 / rowAlpha)
+}
+
+export function brightLayerVisible(activeWord: boolean, width: number) {
+  return activeWord && width > 0
 }
 
 export interface LyricFragment {

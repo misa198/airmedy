@@ -134,6 +134,7 @@ onUnmounted(() => {
                   ? 'text-foreground/40 opacity-60 hover:text-foreground/50'
                   : 'text-foreground/40 opacity-50 hover:text-foreground/50',
           ]"
+          :style="line.words && !isBrowsing && index === activeIndex ? { transition: 'none' } : undefined"
           @pointerdown.stop
           @click="seekAndResume(line.time, index)">
           <KaraokeText class="font-bold" :line="line" :position="!isBrowsing && index === activeIndex ? currentPosition : undefined" />

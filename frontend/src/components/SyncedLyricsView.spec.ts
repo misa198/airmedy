@@ -33,12 +33,14 @@ describe('SyncedLyricsView', () => {
     vi.clearAllMocks()
   })
 
-  it('keeps accessible DOM text until the first GPU frame, with no CSS blur', async () => {
+  it('matches the lyric effects before the first GPU frame', async () => {
     const wrapper = create()
-    expect(wrapper.get('[data-test="lyric-content"]').attributes('style')).toContain('opacity: 1')
+    const content = wrapper.findAll('[data-test="lyric-content"]')
+    expect(content[0].attributes('style')).toContain('opacity: 0.25')
+    expect(content[0].attributes('style')).toContain('filter: blur(0.35px)')
+    expect(content[1].attributes('style')).toContain('opacity: 1')
     expect(wrapper.get('[aria-current="true"]').text()).toBe('Active')
     expect(wrapper.get('canvas').attributes('aria-hidden')).toBe('true')
-    expect(wrapper.html()).not.toContain('filter:')
     expect(wrapper.get('[role="button"]').classes()).toContain('focus-visible:outline-none')
     gpu().ready.value = true
     await nextTick()
@@ -47,7 +49,7 @@ describe('SyncedLyricsView', () => {
     expect(wrapper.text()).toContain('Translation')
     gpu().ready.value = false
     await nextTick()
-    expect(wrapper.get('[data-test="lyric-content"]').attributes('style')).toContain('opacity: 1')
+    expect(content[0].attributes('style')).toContain('opacity: 0.25')
   })
 
   it('preserves browse across position/translation changes and resumes on keyboard seek', async () => {

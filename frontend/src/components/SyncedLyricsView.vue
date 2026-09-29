@@ -4,6 +4,7 @@ import type { LyricLine } from '../composables/useLyrics'
 import { useLyricsScrollMotion } from '../composables/useLyricsScrollMotion'
 import KaraokeText from './KaraokeText.vue'
 import { useGpuLyrics } from '../composables/useGpuLyrics'
+import { lyricAppearance } from '../lib/lyricsGpuLayout'
 
 const props = defineProps<{
   secondary?: (string | undefined)[]
@@ -32,6 +33,12 @@ const { ready: gpuReady, draw, layout } = useGpuLyrics(canvas, scrollContainer, 
   lines: props.lines, active: activeIndex.value, browsing: isBrowsing.value,
   immersive: !!props.immersive, hovered: hovered.value, position: props.currentPosition, reducedMotion: false,
 })))
+
+function domAppearance(index: number) {
+  if (gpuReady.value) return { opacity: 0 }
+  const appearance = lyricAppearance(index, activeIndex.value, isBrowsing.value, !!props.immersive, hovered.value)
+  return { opacity: appearance.alpha, filter: appearance.blur ? `blur(${appearance.blur}px)` : undefined }
+}
 let scrollFrame: number | undefined
 let resizeObserver: ResizeObserver | null = null
 let disposed = false
@@ -159,7 +166,7 @@ onUnmounted(() => {
           data-test="lyric-content"
           class="py-2"
           :class="props.immersive ? 'text-[40px]' : 'text-4xl'"
-          :style="{ opacity: gpuReady ? 0 : 1 }"
+          :style="domAppearance(index)"
         >
           <div><KaraokeText :line="line" :position="!gpuReady && !isBrowsing && index === activeIndex ? currentPosition : undefined" /></div>
           <div v-if="secondary?.[index] || line.secondary" data-lyric-secondary class="text-lg md:text-2xl font-bold mt-1 opacity-80">{{ secondary?.[index] || line.secondary }}</div>

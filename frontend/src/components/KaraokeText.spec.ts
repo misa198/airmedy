@@ -19,6 +19,12 @@ describe('KaraokeText', () => {
     }
     wrapper.unmount()
   })
+  it('applies the unsung opacity immediately when a line becomes active', async () => {
+    const wrapper = mount(KaraokeText, { props: { line } })
+    await wrapper.setProps({ position: 1 })
+    expect([...document.head.querySelectorAll('style')].some(style => style.textContent?.includes('transition: --karaoke-unsung-opacity'))).toBe(false)
+    wrapper.unmount()
+  })
   it('sweeps within words, holds without playback updates, and seeks in both directions', async () => {
     const wrapper = mount(KaraokeText, { props: { line, position: 1.5 } })
     const fills = () => wrapper.findAll('.karaoke-word').map(el => (el.element as HTMLElement).style.getPropertyValue('--word-progress'))
