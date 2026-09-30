@@ -431,8 +431,9 @@ Romanization availability is persisted in `app_settings.romanization_enabled`
 romanization control, cancels active conversion, removes converted secondary
 lines, and resets the backend-owned session preference to off. The session
 preference itself is initially off and is not persisted across app restarts.
-The mounted lyric renderer owns only its current results, cancels on input
-change, disabling and unmount, and rejects stale responses. Converted lines
+The romanization session store retains only the latest successful frontend result
+so another lyric surface can render it on its first frame; each mounted renderer
+still cancels on input change, disabling and unmount, and rejects stale responses. Converted lines
 replace bilingual secondary text; unsupported/failed lines retain bilingual.
 While conversion is pending or fails, existing text stays visible. The primary
 line arrays remain unchanged, preserving browse mode. Only auto-follow is

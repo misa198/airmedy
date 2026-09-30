@@ -27,6 +27,12 @@ export function useRomanization(lines: Ref<string[]>, available: Ref<boolean>) {
   async function convert() {
     invalidate()
     if (!isAvailable.value || !supported.value || !store.enabled) return
+    const cached = store.getCached(lines.value)
+    if (cached) {
+      result.value = cached
+      error.value = false
+      return
+    }
     const current = generation
     loading.value = true
     error.value = false
@@ -37,6 +43,7 @@ export function useRomanization(lines: Ref<string[]>, available: Ref<boolean>) {
       if (current !== generation) return
       result.value = converted.map(line => line.status === 'converted' ? line.text : undefined)
       error.value = converted.some(line => line.status === 'failed')
+      if (!error.value) store.cache(lines.value, result.value)
     } catch {
       if (current === generation) error.value = true
     } finally {
@@ -48,7 +55,7 @@ export function useRomanization(lines: Ref<string[]>, available: Ref<boolean>) {
     invalidate()
     cancelInspection?.()
     const current = ++inspectionGeneration
-    result.value = []
+    result.value = store.getCached(lines.value) ?? []
     supported.value = false
     mandarinDefault.value = false
     error.value = false

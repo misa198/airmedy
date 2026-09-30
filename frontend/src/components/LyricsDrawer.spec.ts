@@ -17,7 +17,9 @@ const player = vi.hoisted(() => ({
 
 vi.mock('../../bindings/airmedy/internal/infra/wails', () => ({ LyricsService: api }))
 vi.mock('../stores/player', () => ({ usePlayerStore: () => reactive(player) }))
-vi.mock('../stores/romanization', () => ({ useRomanizationStore: () => ({ enabled: true, setEnabled: vi.fn() }) }))
+vi.mock('../stores/romanization', () => ({
+  useRomanizationStore: () => ({ enabled: true, setEnabled: vi.fn(), getCached: () => undefined, cache: vi.fn() }),
+}))
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (key: string) => key }) }))
 vi.mock('@wailsio/runtime', () => ({
   Events: { On: vi.fn(() => vi.fn()) },

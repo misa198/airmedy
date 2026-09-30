@@ -70,6 +70,16 @@ describe('SyncedLyricsView', () => {
     expect(state().browsing).toBe(false)
   })
 
+  it('leaves Space to the global play/pause shortcut', () => {
+    const wrapper = create()
+    const space = new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true, cancelable: true })
+
+    wrapper.get('[role="button"]').element.dispatchEvent(space)
+
+    expect(wrapper.emitted('seek')).toBeUndefined()
+    expect(space.defaultPrevented).toBe(false)
+  })
+
   it('passes exact word timing and seeks through a translation click', async () => {
     const wrapper = create()
     const words = [{ text: 'Hello', start: 1, end: 2 }]

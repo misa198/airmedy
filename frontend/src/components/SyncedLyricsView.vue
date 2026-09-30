@@ -158,7 +158,6 @@ onUnmounted(() => {
         @mouseenter="hovered = index"
         @mouseleave="hovered = -1"
         @keydown.enter.prevent="seekAndResume(line.time, index)"
-        @keydown.space.prevent="seekAndResume(line.time, index)"
         @pointerdown.stop
         @click="seekAndResume(line.time, index)"
       >

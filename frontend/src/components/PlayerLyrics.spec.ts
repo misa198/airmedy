@@ -104,6 +104,25 @@ describe('fullscreen romanization', () => {
     }
   })
 
+  it('renders cached romanization on the first frame after reopening', async () => {
+    useRomanizationStore().enabled = true
+    api.RomanizeLyrics.mockReturnValue(Object.assign(
+      Promise.resolve([{ text: 'nǐ hǎo', status: 'converted' }, { text: '', status: 'unsupported' }]),
+      { cancel: vi.fn().mockResolvedValue(undefined) },
+    ))
+    const first = create()
+    await flushPromises()
+    expect(first.text()).toContain('nǐ hǎo')
+    first.unmount()
+    api.RomanizeLyrics.mockClear()
+
+    const reopened = create()
+    expect(reopened.text()).toContain('nǐ hǎo')
+    await flushPromises()
+    expect(api.RomanizeLyrics).not.toHaveBeenCalled()
+    reopened.unmount()
+  })
+
   it('preserves synced browsing and seeks original timestamps', async () => {
     const task = request<{ text: string; status: string }[]>()
     api.RomanizeLyrics.mockReturnValue(task.promise)
