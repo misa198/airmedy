@@ -7,6 +7,8 @@ import * as LyricsService from '../../bindings/airmedy/internal/infra/wails/lyri
 export const useRomanizationStore = defineStore('romanization', () => {
   const enabled = ref(false)
   let revision = 0
+  let cachedLines: string[] = []
+  let cachedResult: (string | undefined)[] | undefined
   const off = Events.On('lyrics:romanization-enabled', (event: Events.WailsEvent) => {
     revision++
     enabled.value = Boolean(event.data)
@@ -32,9 +34,20 @@ export const useRomanizationStore = defineStore('romanization', () => {
     }
   }
 
+  function getCached(lines: string[]) {
+    return cachedResult && lines.length === cachedLines.length && lines.every((line, index) => line === cachedLines[index])
+      ? [...cachedResult]
+      : undefined
+  }
+
+  function cache(lines: string[], result: (string | undefined)[]) {
+    cachedLines = [...lines]
+    cachedResult = [...result]
+  }
+
   function dispose() {
     off()
   }
 
-  return { enabled, setEnabled, dispose }
+  return { enabled, setEnabled, getCached, cache, dispose }
 })

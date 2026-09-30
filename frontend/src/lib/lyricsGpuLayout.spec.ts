@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fragmentFill, lyricAppearance, wordProgress } from './lyricsGpuLayout'
+import { brightLayerVisible, fragmentFill, initialLyricAppearance, karaokeBaseAlpha, lyricAppearance, wordProgress } from './lyricsGpuLayout'
 
 describe('GPU lyric effects', () => {
   it('preserves immersive distance effects and makes browse text fully readable', () => {
@@ -11,6 +11,7 @@ describe('GPU lyric effects', () => {
     ])
     expect(lyricAppearance(9, 0, true, true, -1)).toEqual({ blur: 0, alpha: 1, scale: 1 })
     expect(lyricAppearance(1, 0, false, false, 1)).toEqual({ blur: 0, alpha: 0.24, scale: 1 })
+    expect(initialLyricAppearance(lyricAppearance(0, 0, false, true, -1))).toEqual({ blur: 0, alpha: 1, scale: 1 })
   })
   it('sweeps a timed phrase across wrapped fragments and responds to seeks', () => {
     const word = { text: 'A phrase that wraps', start: 10, end: 12 }
@@ -22,5 +23,10 @@ describe('GPU lyric effects', () => {
     expect(wordProgress(word, 13)).toBe(1)
     expect(wordProgress({ ...word, end: 10 }, 10)).toBe(1)
     expect(wordProgress({ ...word, end: 10 }, 9)).toBe(0)
+  })
+  it('keeps unsung text from dimming while an adjacent row becomes active', () => {
+    expect([0.25, 0.5, 1].map(alpha => alpha * karaokeBaseAlpha(alpha))).toEqual([0.25, 0.35, 0.35])
+    expect(brightLayerVisible(false, 100)).toBe(false)
+    expect(brightLayerVisible(true, 100)).toBe(true)
   })
 })

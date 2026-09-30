@@ -12,8 +12,10 @@ describe('MiniPlayerLyrics', () => {
       props: { lyrics: '[00:01]Người <00:02>hỏi<00:03>\n[00:04]Next', currentPosition: 1.5 },
     })
     expect(wrapper.get('.karaoke-word').attributes('style')).toContain('50%')
+    expect(wrapper.get('[data-test="mini-lyric-line"]').attributes('style')).toContain('transition: none')
     await wrapper.get('[data-test="mini-synced-lyrics"]').trigger('wheel')
     expect(wrapper.find('.karaoke-word').exists()).toBe(false)
+    expect(wrapper.get('[data-test="mini-lyric-line"]').attributes('style')).toBeUndefined()
     await wrapper.get('[data-test="mini-lyric-line"]').trigger('click')
     expect(wrapper.emitted('seek')).toEqual([[1]])
     expect(wrapper.find('.karaoke-word').exists()).toBe(true)

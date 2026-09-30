@@ -301,17 +301,19 @@ When fullscreen High Contrast Lyrics is off, `ImmersiveLyricsPanel` passes
 `immersive=true` to `PlayerLyrics`. For synced lyrics, `SyncedLyricsView` keeps
 the active line sharp; its immediate neighbors have only a `0.35px` blur, then
 lines farther away use `1.25px` and `2px` blur while fading from 25% to 10%
-opacity. The active line uses 106% scale. The
+opacity. The active line smoothly enters from 100% to 106% scale when its GPU
+row is first rendered. The
 high-contrast fullscreen panel and `LyricsDrawer` retain their existing styling.
 Immersive auto-scroll positions the active line at 32% of the lyric viewport;
 other lyric surfaces keep it centered.
 
 Fullscreen synced lyrics use a lazily loaded PixiJS WebGL canvas. The DOM owns
 wrapping, native scrolling, accessible text and keyboard/click seek targets;
-its text becomes transparent only after the first successful GPU frame.
+until the first successful GPU frame it mirrors the renderer's line opacity and
+blur, then becomes transparent.
 `gpuLyricsRenderer` measures DOM text fragments on layout changes, caches text
 textures near the viewport, and applies blur, scale, opacity and karaoke masks
-on the GPU. No CSS blur is applied to fullscreen lyric rows. `KaraokeText` spans
+on the GPU. `KaraokeText` spans
 provide the word boundaries for measurement; secondary text is marked separately.
 Browse mode cancels follow motion; browser scroll anchoring is disabled so it
 cannot compete with lyric positioning. Resize, font loading and translation
@@ -322,7 +324,7 @@ preference disables the GPU effect transitions.
 theme/font listeners and context-loss fallback. Closing the panel destroys its
 text textures, filters, renderer and WebGL context, including initialization
 that finishes after unmount. Initialization/render failure or context loss
-restores readable DOM lyrics without blur. Plain lyrics, drawer and mini-player
+restores the styled DOM lyrics. Plain lyrics, drawer and mini-player
 rendering remain DOM-based. Verify effects/timing in `lyricsGpuLayout.spec.ts`,
 lifecycle in `useGpuLyrics.spec.ts`, and interactions in `SyncedLyricsView.spec.ts`;
 visual artifacts still require checking the macOS WKWebView.
@@ -429,8 +431,9 @@ Romanization availability is persisted in `app_settings.romanization_enabled`
 romanization control, cancels active conversion, removes converted secondary
 lines, and resets the backend-owned session preference to off. The session
 preference itself is initially off and is not persisted across app restarts.
-The mounted lyric renderer owns only its current results, cancels on input
-change, disabling and unmount, and rejects stale responses. Converted lines
+The romanization session store retains only the latest successful frontend result
+so another lyric surface can render it on its first frame; each mounted renderer
+still cancels on input change, disabling and unmount, and rejects stale responses. Converted lines
 replace bilingual secondary text; unsupported/failed lines retain bilingual.
 While conversion is pending or fails, existing text stays visible. The primary
 line arrays remain unchanged, preserving browse mode. Only auto-follow is

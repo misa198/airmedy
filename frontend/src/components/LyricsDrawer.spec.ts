@@ -17,7 +17,9 @@ const player = vi.hoisted(() => ({
 
 vi.mock('../../bindings/airmedy/internal/infra/wails', () => ({ LyricsService: api }))
 vi.mock('../stores/player', () => ({ usePlayerStore: () => reactive(player) }))
-vi.mock('../stores/romanization', () => ({ useRomanizationStore: () => ({ enabled: true, setEnabled: vi.fn() }) }))
+vi.mock('../stores/romanization', () => ({
+  useRomanizationStore: () => ({ enabled: true, setEnabled: vi.fn(), getCached: () => undefined, cache: vi.fn() }),
+}))
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (key: string) => key }) }))
 vi.mock('@wailsio/runtime', () => ({
   Events: { On: vi.fn(() => vi.fn()) },
@@ -51,9 +53,11 @@ describe('LyricsDrawer romanization', () => {
     const wrapper = mount(LyricsDrawer, { global: { mocks: { $t: (key: string) => key } } })
     await flushPromises()
     expect(wrapper.get('.karaoke-word').attributes('style')).toContain('50%')
+    expect(wrapper.get('.cursor-pointer').attributes('style')).toContain('transition: none')
     store.isLyricsOpen = false
     await wrapper.vm.$nextTick()
     expect(wrapper.find('.karaoke-word').exists()).toBe(false)
+    expect(wrapper.get('.cursor-pointer').attributes('style')).toBeUndefined()
     store.isLyricsOpen = true
     await wrapper.vm.$nextTick()
     expect(wrapper.get('.karaoke-word').attributes('style')).toContain('50%')

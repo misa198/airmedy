@@ -35,13 +35,23 @@ const queuePanel = ref<InstanceType<typeof PlayerQueuePanel> | null>(null)
 
 // Queue panel holds a 50k-track virtual list; keep it mounted after first
 // open (v-show toggle) instead of remounting on every open/close. Lyrics
-// panel stays fully lazy (v-if) — cheap to mount, and should reload on open.
+// panel mounts fresh on open, but keeps its GPU renderer alive through leave.
 const hasOpenedQueue = ref(store.isQueueOpen)
+const renderLyrics = ref(store.isLyricsOpen)
+watch(() => store.isLyricsOpen, (open) => {
+  if (open) renderLyrics.value = true
+})
 watch(() => store.isQueueOpen, (open) => {
   if (!open) return
   hasOpenedQueue.value = true
   nextTick(() => queuePanel.value?.scrollToCurrentTrack())
 })
+
+function finishLyricsClose(event: TransitionEvent) {
+  if (event.target === event.currentTarget && event.propertyName === 'opacity' && !store.isLyricsOpen) {
+    renderLyrics.value = false
+  }
+}
 
 function openContextMenu(e: MouseEvent) {
   if (!store.currentTrack) return
@@ -91,7 +101,6 @@ const trackArtist = computed(() =>
 const albumTitle = computed(() => store.currentTrack?.album?.title ?? '')
 
 const showRightColumn = computed(() => store.isQueueOpen || store.isLyricsOpen)
-const artworkMaxSize = computed(() => !showRightColumn.value || !appStore.highContrastLyrics ? 24 : 20)
 const artworkCrossfade = computed(() =>
   appStore.blendArtworkDuringCrossfade ? store.artworkCrossfade : null,
 )
@@ -148,19 +157,19 @@ onUnmounted(() => {
       </div>
 
       <!-- Main content -->
-      <div class="flex-1 flex items-center justify-center px-8 w-full max-w-[1400px] mx-auto overflow-hidden">
-        <div
-          class="flex-1 flex flex-row items-center justify-center h-full transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] relative @container"
-          :class="!showRightColumn ? 'gap-0' : 'gap-12 lg:gap-16 xl:gap-20 2xl:gap-24 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]'">
+      <div data-test="fullscreen-player-content"
+        class="flex-1 flex items-center justify-center px-8 w-full max-w-[1400px] mx-auto overflow-visible">
+        <div class="relative h-full w-full @container">
           <!-- Left Column: Cover and Controls -->
           <div
-            class="flex flex-col items-center justify-center transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
-            :class="!showRightColumn ? 'w-full max-w-lg' : 'w-1/2 max-w-md'">
-            <div class="flex flex-col items-center justify-center gap-[clamp(0.75rem,2.5vh,1.5rem)] w-full min-h-0">
+            data-test="fullscreen-player-left-column"
+            class="fullscreen-player-motion absolute inset-y-0 left-0 w-1/2 flex flex-col items-center justify-center transform-gpu"
+            :class="showRightColumn ? 'translate-x-0' : 'translate-x-1/2'">
+            <div class="flex flex-col items-center justify-center gap-[clamp(0.75rem,2.5vh,1.5rem)] w-full max-w-lg min-h-0">
               <!-- Artwork -->
               <PlayerArtwork :artwork-url="store.artworkUrl" :track-title="trackTitle" :is-playing="store.isPlaying"
                 :crossfade="artworkCrossfade"
-                :max-size="artworkMaxSize"
+                :max-size="24"
                 data-fullscreen-player-interactive="true"
                 class="-translate-y-4 cursor-pointer"
                 @click="openTrackInfo"
@@ -192,34 +201,34 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <!-- Right Column Spacer (animates layout) -->
+          <!-- Fixed geometry keeps panel motion on the compositor. -->
           <div
+            data-test="fullscreen-player-right-column"
             data-fullscreen-player-interactive="true"
-            class="h-full transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] relative flex items-center justify-center"
-            :class="!showRightColumn ? 'w-0' : 'w-1/2 max-w-2xl'">
+            class="absolute inset-y-0 right-0 w-1/2 max-w-2xl [contain:layout]"
+            :class="showRightColumn ? 'pointer-events-auto' : 'pointer-events-none'">
 
             <!-- Right Column Content (Queue or Lyrics) -->
-            <!-- Two separate Transitions (each with exactly one child) so the queue panel can stay
-                 mounted after first open (v-show toggle) while lyrics keeps mounting fresh on open. -->
-            <Transition enter-active-class="transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
-              enter-from-class="opacity-0 translate-x-24" enter-to-class="opacity-100 translate-x-0"
-              leave-active-class="transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
-              leave-from-class="opacity-100 translate-x-0" leave-to-class="opacity-0 translate-x-24">
-              <PlayerQueuePanel ref="queuePanel" v-if="hasOpenedQueue" v-show="store.isQueueOpen" key="queue" :queue="store.queue"
+            <div data-test="fullscreen-queue-panel-motion"
+              class="fullscreen-player-motion absolute inset-0"
+              :class="store.isQueueOpen ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-1/2'"
+              :inert="!store.isQueueOpen" :aria-hidden="!store.isQueueOpen">
+              <PlayerQueuePanel v-if="hasOpenedQueue" ref="queuePanel" :queue="store.queue"
                 @close="store.closeAllDrawers()" @play-track="(index) => store.playQueueIndex(index)" />
-            </Transition>
+            </div>
 
-            <Transition enter-active-class="transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
-              enter-from-class="opacity-0 translate-x-24" enter-to-class="opacity-100 translate-x-0"
-              leave-active-class="transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
-              leave-from-class="opacity-100 translate-x-0" leave-to-class="opacity-0 translate-x-24">
-              <PlayerLyricsPanel v-if="store.isLyricsOpen && appStore.highContrastLyrics" key="high-contrast-lyrics"
+            <div data-test="fullscreen-lyrics-panel-motion"
+              class="fullscreen-player-motion absolute inset-0"
+              :class="store.isLyricsOpen ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-1/2'"
+              :inert="!store.isLyricsOpen" :aria-hidden="!store.isLyricsOpen"
+              @transitionend="finishLyricsClose">
+              <PlayerLyricsPanel v-if="renderLyrics && appStore.highContrastLyrics" key="high-contrast-lyrics"
                 :lyrics="store.lyrics?.content" :loading="store.lyricsLoading" :position="store.position"
                 @close="store.closeAllDrawers()" @seek="(time) => store.seek(time)" />
-              <ImmersiveLyricsPanel v-else-if="store.isLyricsOpen" key="immersive-lyrics"
+              <ImmersiveLyricsPanel v-else-if="renderLyrics" key="immersive-lyrics"
                 :lyrics="store.lyrics?.content" :loading="store.lyricsLoading" :position="store.position"
                 @close="store.closeAllDrawers()" @seek="(time) => store.seek(time)" />
-            </Transition>
+            </div>
           </div>
         </div>
       </div>
@@ -238,5 +247,10 @@ onUnmounted(() => {
   background-image: linear-gradient(var(--fullscreen-player-artwork-tint), var(--fullscreen-player-artwork-tint)),
     linear-gradient(var(--fullscreen-player-solid-overlay), var(--fullscreen-player-solid-overlay));
   transition: --fullscreen-player-artwork-tint var(--fullscreen-player-artwork-tint-duration) ease-in-out;
+}
+
+.fullscreen-player-motion {
+  transition: translate 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: translate, opacity;
 }
 </style>

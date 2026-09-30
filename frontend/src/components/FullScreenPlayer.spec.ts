@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { h, onUnmounted } from 'vue'
 import { createTestingPinia } from '@pinia/testing'
 import FullScreenPlayer from './FullScreenPlayer.vue'
 import { usePlayerStore } from '../stores/player'
@@ -9,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   quickSettingsOpen: vi.fn(),
   trackContextOpen: vi.fn(),
   queueScrollToCurrent: vi.fn(),
+  lyricsUnmounted: vi.fn(),
 }))
 
 vi.mock('vue-i18n', () => ({
@@ -105,8 +107,12 @@ describe('FullScreenPlayer', () => {
           PlayerSeekBar: true,
           PlayerPlaybackControls: true,
           PlayerVolumeControl: true,
-          PlayerLyricsPanel: true,
-          ImmersiveLyricsPanel: true,
+          ...Object.fromEntries(['PlayerLyricsPanel', 'ImmersiveLyricsPanel'].map(name => [name, {
+            setup() {
+              onUnmounted(mocks.lyricsUnmounted)
+              return () => h(name === 'PlayerLyricsPanel' ? 'player-lyrics-panel-stub' : 'immersive-lyrics-panel-stub')
+            },
+          }])),
           TabSwitcher: true,
           Transition: false,
           PlayerQueuePanel: {
@@ -173,16 +179,71 @@ describe('FullScreenPlayer', () => {
     expect(mocks.quickSettingsOpen).not.toHaveBeenCalled()
   })
 
-  it.each([
-    [false, 24],
-    [true, 20],
-  ])('sets the artwork maximum size to %irem when the right column is %s', (rightColumnOpen, expectedMaxSize) => {
-    const wrapper = mountPlayer({
-      isQueueOpen: rightColumnOpen,
-      isLyricsOpen: false,
-    })
+  it('moves fixed columns with compositor-only properties', async () => {
+    const wrapper = mountPlayer({ isQueueOpen: false })
+    const store = usePlayerStore()
+    const left = wrapper.get('[data-test="fullscreen-player-left-column"]')
+    const right = wrapper.get('[data-test="fullscreen-player-right-column"]')
 
-    expect(wrapper.get('[data-test="artwork"]').attributes('data-max-size')).toBe(String(expectedMaxSize))
+    expect(left.classes()).toEqual(expect.arrayContaining([
+      'w-1/2', 'translate-x-1/2', 'fullscreen-player-motion', 'transform-gpu',
+    ]))
+    expect(right.classes()).toEqual(expect.arrayContaining([
+      'w-1/2', '[contain:layout]', 'pointer-events-none',
+    ]))
+    expect(wrapper.get('[data-test="fullscreen-player-content"]').classes()).toContain('overflow-visible')
+    expect(wrapper.get('[data-test="artwork"]').attributes('data-max-size')).toBe('24')
+    expect(wrapper.get('[data-test="fullscreen-queue-panel-motion"]').classes()).toContain('translate-x-1/2')
+    expect(wrapper.find('[data-test="queue-play"]').exists()).toBe(false)
+
+    store.isQueueOpen = true
+    await wrapper.vm.$nextTick()
+
+    expect(left.classes()).toContain('translate-x-0')
+    expect(right.classes()).toContain('pointer-events-auto')
+    expect(wrapper.get('[data-test="fullscreen-queue-panel-motion"]').classes()).toContain('translate-x-0')
+  })
+
+  it('moves the queue and artwork in the same render', async () => {
+    const wrapper = mountPlayer()
+    const store = usePlayerStore()
+    const queue = () => wrapper.get('[data-test="fullscreen-queue-panel-motion"]')
+    const left = wrapper.get('[data-test="fullscreen-player-left-column"]')
+
+    store.isQueueOpen = false
+    await wrapper.vm.$nextTick()
+    expect(queue().classes()).toContain('translate-x-1/2')
+    expect(left.classes()).toContain('translate-x-1/2')
+
+    store.isQueueOpen = true
+    await wrapper.vm.$nextTick()
+    expect(queue().classes()).toContain('translate-x-0')
+    expect(left.classes()).toContain('translate-x-0')
+  })
+
+  it.each([true, false])('keeps lyrics alive until leave finishes (high contrast: %s)', async (highContrastLyrics) => {
+    const wrapper = mountPlayer({ isQueueOpen: false, isLyricsOpen: true }, { highContrastLyrics })
+    const store = usePlayerStore()
+    const selector = highContrastLyrics ? 'player-lyrics-panel-stub' : 'immersive-lyrics-panel-stub'
+    const lyrics = () => wrapper.get('[data-test="fullscreen-lyrics-panel-motion"]')
+
+    store.isLyricsOpen = false
+    await wrapper.vm.$nextTick()
+    expect(lyrics().classes()).toContain('translate-x-1/2')
+    expect(mocks.lyricsUnmounted).not.toHaveBeenCalled()
+    await lyrics().trigger('transitionend', { propertyName: 'opacity' })
+    expect(mocks.lyricsUnmounted).toHaveBeenCalledOnce()
+    expect(wrapper.find(selector).exists()).toBe(false)
+
+    store.isLyricsOpen = true
+    await wrapper.vm.$nextTick()
+    store.isLyricsOpen = false
+    await wrapper.vm.$nextTick()
+    store.isLyricsOpen = true
+    await wrapper.vm.$nextTick()
+    await lyrics().trigger('transitionend', { propertyName: 'opacity' })
+    expect(wrapper.find(selector).exists()).toBe(true)
+    expect(mocks.lyricsUnmounted).toHaveBeenCalledOnce()
   })
 
   it('uses the high-contrast lyrics panel when enabled', () => {

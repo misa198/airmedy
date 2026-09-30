@@ -22,12 +22,6 @@ function progress(word: LyricWord, position: number) {
 </template>
 
 <style scoped>
-@property --karaoke-unsung-opacity {
-  syntax: '<number>';
-  inherits: false;
-  initial-value: 1;
-}
-
 .karaoke-text {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -44,7 +38,6 @@ function progress(word: LyricWord, position: number) {
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  transition: --karaoke-unsung-opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .karaoke-word {

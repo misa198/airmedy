@@ -184,7 +184,9 @@ onUnmounted(() => {
                     : 'text-foreground/40 opacity-50 hover:text-foreground/50',
 
               !isBrowsing && (index === activeIndex || (activeIndex > 0 && index === activeIndex - 1) || (index === activeIndex + 1)) ? 'transform-gpu' : ''
-            ]" @pointerdown.stop @click="seekAndResume(line.time, index)">
+            ]"
+            :style="line.words && store.isLyricsOpen && !isBrowsing && index === activeIndex ? { transition: 'none' } : undefined"
+            @pointerdown.stop @click="seekAndResume(line.time, index)">
             <div class="text-[19pt] font-bold"><KaraokeText :line="line" :position="store.isLyricsOpen && !isBrowsing && index === activeIndex ? store.position : undefined" /></div>
             <div v-if="secondary[index] ?? line.secondary" class="text-[14pt] opacity-50 mt-0.5">{{ secondary[index] ?? line.secondary }}</div>
           </div>
