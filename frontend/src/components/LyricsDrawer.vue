@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { Languages, LoaderCircle, Mic2, RotateCcw, X } from '@lucide/vue'
+import { Languages, Mic2, X } from '@lucide/vue'
 import { usePlayerStore } from '../stores/player'
 import { useI18n } from 'vue-i18n'
 import { useLyrics } from '../composables/useLyrics'
@@ -14,7 +14,7 @@ const store = usePlayerStore()
 const lyricsContent = computed(() => store.lyrics?.content)
 const { isSynced, syncedLines, plainLines } = useLyrics(lyricsContent)
 const mainLines = computed(() => isSynced.value ? syncedLines.value.map(line => line.text) : plainLines.value.map(line => line.primary))
-const { supported, mandarinDefault, loading: romanizationLoading, error: romanizationError, enabled, secondary, toggle, retry } = useRomanization(
+const { supported, mandarinDefault, enabled, secondary, toggle } = useRomanization(
   mainLines, computed(() => !store.lyricsLoading),
 )
 
@@ -136,13 +136,10 @@ onUnmounted(() => {
         <button v-if="supported" type="button" data-test="drawer-romanization-toggle"
           class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors"
           :class="enabled ? 'text-primary' : 'text-dim hover:text-foreground'"
-          :aria-pressed="enabled" :aria-busy="romanizationLoading"
-          :aria-label="t(romanizationError && enabled ? 'player.romanization_retry' : romanizationLoading ? 'player.romanization_loading' : 'player.romanization')"
-          :title="[t(romanizationError && enabled ? 'player.romanization_retry' : 'player.romanization'), t(mandarinDefault ? 'player.romanization_mandarin' : 'player.romanization_hint')].join(' — ')"
-          @click="romanizationError && enabled ? retry() : toggle()">
-          <LoaderCircle v-if="romanizationLoading" class="w-4 h-4 animate-spin" aria-hidden="true" />
-          <RotateCcw v-else-if="romanizationError && enabled" class="w-4 h-4" aria-hidden="true" />
-          <Languages v-else class="w-4 h-4" aria-hidden="true" />
+          :aria-pressed="enabled" :aria-label="t('player.romanization')"
+          :title="[t('player.romanization'), t(mandarinDefault ? 'player.romanization_mandarin' : 'player.romanization_hint')].join(' — ')"
+          @click="toggle()">
+          <Languages class="w-4 h-4" aria-hidden="true" />
         </button>
         <button
           class="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-dim hover:text-foreground"

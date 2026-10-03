@@ -2,11 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import MiniPlayerFloating from './MiniPlayerFloating.vue'
+import RomanizationToggle from './RomanizationToggle.vue'
 
 const mocks = vi.hoisted(() => ({
   setMiniPlayerExpanded: vi.fn().mockResolvedValue(undefined),
   moodRadioStore: { active: false },
   inspectRomanization: vi.fn(),
+  lyricsLoading: true,
 }))
 
 vi.mock('vue-i18n', () => ({
@@ -28,7 +30,7 @@ vi.mock('@/stores/player', () => ({
     isPlaying: false,
     theme: { vibrant: '#ff0000', muted: '#556677', dominant: '#0000ff', backdrop: '#556677' },
     lyrics: { content: '[00:00.00]First line' },
-    lyricsLoading: true,
+    lyricsLoading: mocks.lyricsLoading,
     seek: vi.fn(),
     setVolume: vi.fn(),
     setShuffle: vi.fn(),
@@ -40,7 +42,7 @@ vi.mock('@/stores/player', () => ({
 }))
 
 vi.mock('@/stores/app', () => ({
-  useAppStore: () => ({ blendArtworkDuringCrossfade: false, showPlayerIndicator: false }),
+  useAppStore: () => ({ blendArtworkDuringCrossfade: false, showPlayerIndicator: false, romanizationEnabled: true }),
 }))
 
 vi.mock('@/stores/moodRadio', () => ({
@@ -82,6 +84,7 @@ vi.mock('@wailsio/runtime', () => ({
 describe('MiniPlayerFloating', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
+    mocks.lyricsLoading = true
     mocks.inspectRomanization.mockImplementation(() => Object.assign(Promise.resolve({ supported: false, mandarinDefault: false }), { cancel: vi.fn().mockResolvedValue(undefined) }))
   })
 
@@ -119,6 +122,52 @@ describe('MiniPlayerFloating', () => {
     await flushPromises()
     expect(wrapper.find('[data-test="mini-player-mood-radio"]').exists()).toBe(true)
     mocks.moodRadioStore.active = false
+  })
+
+  it('fades the romanization action independently of the mini-player panel', async () => {
+    mocks.lyricsLoading = false
+    mocks.inspectRomanization.mockImplementation(() => Object.assign(Promise.resolve({ supported: true, mandarinDefault: false }), { cancel: vi.fn().mockResolvedValue(undefined) }))
+    const wrapper = mount(MiniPlayerFloating, {
+      global: {
+        mocks: { $t: (key: string) => key },
+        stubs: { LazyImg: true, Slider: true, MarqueeText: true, PlayerControlButton: true, MiniPlayerLyrics: true, QueueTrackList: true, Transition: false },
+      },
+    })
+
+    await wrapper.get('[data-test="mini-player-lyrics"]').trigger('click')
+    await flushPromises()
+    const action = wrapper.get('[data-test="mini-player-romanization-action"]')
+    expect(action.classes()).toEqual(expect.arrayContaining(['absolute', 'right-full']))
+    expect(action.element.parentElement?.classList.contains('flex')).toBe(true)
+    expect(wrapper.get('[data-test="mini-player-romanization-toggle"]').classes()).toContain('size-8')
+    expect(wrapper.get('[data-test="mini-player-actions-pill"]').classes()).toContain('h-8')
+    expect(wrapper.get('[data-test="mini-player-romanization-toggle"]').classes()).toContain('opacity-0')
+    expect(wrapper.getComponent(RomanizationToggle).props()).not.toHaveProperty('loading')
+    expect(wrapper.get('[data-test="mini-player-romanization-toggle"]').attributes('aria-busy')).toBeUndefined()
+    expect(wrapper.find('[data-test="mini-player-romanization-toggle"] .lucide-languages').exists()).toBe(true)
+
+    await wrapper.find('.aspect-square').trigger('mouseenter')
+    const toggle = wrapper.get('[data-test="mini-player-romanization-toggle"]')
+    const pillActions = wrapper.get('[data-test="mini-player-lyrics"]').element.parentElement!
+    expect(toggle.classes()).toContain('opacity-100')
+    expect(toggle.classes()).toContain('duration-100!')
+    expect(pillActions.classList.contains('duration-100')).toBe(true)
+
+    await wrapper.get('[data-test="mini-player-volume"]').trigger('click')
+    expect(toggle.classes()).toContain('opacity-0')
+    expect(pillActions.classList.contains('opacity-0')).toBe(true)
+
+    vi.useFakeTimers()
+    await wrapper.get('[data-test="mini-player-volume"]').trigger('click')
+    vi.advanceTimersByTime(200)
+    await wrapper.vm.$nextTick()
+    expect(toggle.classes()).toContain('opacity-100')
+    expect(pillActions.classList.contains('opacity-100')).toBe(true)
+    vi.useRealTimers()
+
+    await wrapper.get('[data-test="mini-player-queue"]').trigger('click')
+    expect(wrapper.get('[data-test="mini-player-romanization-action"]').classes()).toContain('mini-romanization-leave-active')
+    wrapper.unmount()
   })
 
   it('keeps its pills dark while lyrics inherit the mini-player window theme', () => {

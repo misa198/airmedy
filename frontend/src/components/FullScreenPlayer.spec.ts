@@ -246,6 +246,34 @@ describe('FullScreenPlayer', () => {
     expect(mocks.lyricsUnmounted).toHaveBeenCalledOnce()
   })
 
+  it('fades the romanization action with the lyrics panel when switching tabs', async () => {
+    const wrapper = mountPlayer({ isQueueOpen: false, isLyricsOpen: true })
+    const store = usePlayerStore()
+    const actions = wrapper.get('#fullscreen-lyrics-actions')
+
+    expect(actions.classes()).toContain('opacity-100')
+    expect(actions.classes()).toContain('absolute')
+    expect(actions.classes()).toContain('right-full')
+    expect(actions.classes()).toContain('transition-opacity')
+    expect(actions.classes()).not.toContain('transition-all')
+
+    store.isLyricsOpen = false
+    store.isQueueOpen = true
+    await wrapper.vm.$nextTick()
+
+    expect(actions.classes()).toContain('opacity-0')
+    expect(actions.classes()).toContain('pointer-events-none')
+    expect(wrapper.find('player-lyrics-panel-stub').exists()).toBe(true)
+
+    await wrapper.get('[data-test="fullscreen-lyrics-panel-motion"]').trigger('transitionend', { propertyName: 'opacity' })
+    expect(wrapper.find('player-lyrics-panel-stub').exists()).toBe(false)
+
+    store.isQueueOpen = false
+    store.isLyricsOpen = true
+    await wrapper.vm.$nextTick()
+    expect(actions.classes()).toContain('opacity-100')
+  })
+
   it('uses the high-contrast lyrics panel when enabled', () => {
     const wrapper = mountPlayer({ isQueueOpen: false, isLyricsOpen: true })
 
