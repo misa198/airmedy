@@ -45,7 +45,7 @@ const activePanel = ref<'lyrics' | 'queue' | null>(null)
 const lyricsContent = computed(() => store.lyrics?.content)
 const { isSynced, syncedLines, plainLines } = useLyrics(lyricsContent)
 const romanizationLines = computed(() => isSynced.value ? syncedLines.value.map(line => line.text) : plainLines.value.map(line => line.primary))
-const { supported: romanizationSupported, mandarinDefault, loading: romanizationLoading, error: romanizationError, enabled: romanizationEnabled, secondary: romanizationSecondary, toggle: toggleRomanization, retry: retryRomanization } = useRomanization(
+const { supported: romanizationSupported, mandarinDefault, enabled: romanizationEnabled, secondary: romanizationSecondary, toggle: toggleRomanization } = useRomanization(
   romanizationLines, computed(() => activePanel.value === 'lyrics' && !store.lyricsLoading),
 )
 const lyricsTintReady = ref(false)
@@ -192,13 +192,18 @@ watch(() => store.theme, (colors) => {
         </div>
       </div>
 
-      <div class="absolute top-2 right-2 z-30 flex items-center gap-1" style="-webkit-app-region: no-drag">
-        <RomanizationToggle v-if="romanizationSupported && activePanel === 'lyrics'"
-          data-test="mini-player-romanization-toggle"
-          mini class="shrink-0 transition-opacity duration-200! ease-[cubic-bezier(0.4,0,0.2,1)]"
-          :class="isHovered && showActions ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
-          :enabled="romanizationEnabled" :loading="romanizationLoading" :error="romanizationError"
-          :mandarin-default="mandarinDefault" @activate="romanizationError && romanizationEnabled ? retryRomanization() : toggleRomanization()" />
+      <div class="absolute top-2 right-2 z-30 flex items-center" style="-webkit-app-region: no-drag">
+        <Transition name="mini-romanization">
+          <div v-if="romanizationSupported && activePanel === 'lyrics'"
+            data-test="mini-player-romanization-action"
+            class="absolute right-full top-1/2 -translate-y-1/2 mr-1">
+            <RomanizationToggle data-test="mini-player-romanization-toggle"
+              mini class="transition-opacity duration-100! ease-[cubic-bezier(0.4,0,0.2,1)]"
+              :class="isHovered && showActions ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
+              :enabled="romanizationEnabled" :mandarin-default="mandarinDefault"
+              @activate="toggleRomanization()" />
+          </div>
+        </Transition>
         <div data-test="mini-player-actions-pill"
           class="relative inline-flex h-8 overflow-hidden rounded-full border border-mini-player-pill-border bg-mini-player-pill-background backdrop-blur-md transition-[width,opacity] duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-[width]"
           :class="[showVolume ? 'w-[122px]' : 'w-[84px]', isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none']"
@@ -341,6 +346,20 @@ watch(() => store.theme, (colors) => {
 <style scoped>
 .artwork-crossfade-incoming {
   mix-blend-mode: plus-lighter;
+}
+
+.mini-romanization-enter-active,
+.mini-romanization-leave-active {
+  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mini-romanization-enter-from,
+.mini-romanization-leave-to {
+  opacity: 0;
+}
+
+.mini-romanization-leave-active {
+  pointer-events: none;
 }
 
 .mini-player-panel {

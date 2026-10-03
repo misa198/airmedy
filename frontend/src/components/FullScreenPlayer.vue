@@ -150,9 +150,13 @@ onUnmounted(() => {
         <span class="text-xs font-semibold text-white/40 uppercase tracking-[0.2em]">
           {{ t('player.now_playing') }}
         </span>
-        <div data-fullscreen-player-interactive="true" class="flex items-center gap-2 w-[160px] justify-end" style="-webkit-app-region: no-drag">
-          <div id="fullscreen-lyrics-actions" class="contents" />
-          <TabSwitcher v-model="activeTab" :options="tabOptions" />
+        <div data-fullscreen-player-interactive="true" class="flex items-center w-[160px] justify-end" style="-webkit-app-region: no-drag">
+          <div class="relative">
+            <div id="fullscreen-lyrics-actions"
+              class="absolute right-full top-1/2 -translate-y-1/2 mr-2 w-10 h-10 transition-opacity duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
+              :class="store.isLyricsOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'" />
+            <TabSwitcher v-model="activeTab" :options="tabOptions" />
+          </div>
         </div>
       </div>
 
@@ -253,4 +257,5 @@ onUnmounted(() => {
   transition: translate 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: translate, opacity;
 }
+
 </style>

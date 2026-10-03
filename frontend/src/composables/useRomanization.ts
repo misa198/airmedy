@@ -26,7 +26,7 @@ export function useRomanization(lines: Ref<string[]>, available: Ref<boolean>) {
 
   async function convert() {
     invalidate()
-    if (!isAvailable.value || !supported.value || !store.enabled) return
+    if (!isAvailable.value || cancelInspection || !supported.value || !store.enabled) return
     const cached = store.getCached(lines.value)
     if (cached) {
       result.value = cached
@@ -54,10 +54,9 @@ export function useRomanization(lines: Ref<string[]>, available: Ref<boolean>) {
   watch([lines, isAvailable], async () => {
     invalidate()
     cancelInspection?.()
+    cancelInspection = undefined
     const current = ++inspectionGeneration
     result.value = store.getCached(lines.value) ?? []
-    supported.value = false
-    mandarinDefault.value = false
     error.value = false
     if (!isAvailable.value) return
     const request = LyricsService.InspectRomanization(lines.value)
@@ -70,7 +69,12 @@ export function useRomanization(lines: Ref<string[]>, available: Ref<boolean>) {
       mandarinDefault.value = inspection.mandarinDefault
       await convert()
     } catch {
-      if (current === inspectionGeneration) error.value = true
+      if (current === inspectionGeneration) {
+        cancelInspection = undefined
+        supported.value = false
+        mandarinDefault.value = false
+        error.value = true
+      }
     }
   }, { immediate: true })
 

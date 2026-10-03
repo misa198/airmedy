@@ -71,7 +71,8 @@ describe('fullscreen romanization', () => {
     expect(button.text()).toBe('')
     expect(button.classes()).toContain('h-10')
     await button.trigger('click')
-    expect(wrapper.get('button').attributes('aria-busy')).toBe('true')
+    expect(wrapper.get('button').attributes('aria-busy')).toBeUndefined()
+    expect(wrapper.find('.lucide-languages').exists()).toBe(true)
     expect(wrapper.text()).toContain('Translation')
     task.resolve([{ text: 'nǐ hǎo', status: 'converted' }, { text: '', status: 'unsupported' }])
     await flushPromises()
@@ -102,6 +103,24 @@ describe('fullscreen romanization', () => {
     } finally {
       toolbar.remove()
     }
+  })
+
+  it('keeps the control visible until the next track is confirmed unsupported', async () => {
+    const wrapper = create()
+    await flushPromises()
+    expect(wrapper.find('[data-test="romanization-toggle"]').exists()).toBe(true)
+
+    const inspection = request<{ supported: boolean; mandarinDefault: boolean }>()
+    api.InspectRomanization.mockReturnValue(inspection.promise)
+    await wrapper.setProps({ lyrics: '새 노래', isLoading: true })
+    expect(wrapper.find('[data-test="romanization-toggle"]').exists()).toBe(true)
+
+    await wrapper.setProps({ isLoading: false })
+    expect(wrapper.find('[data-test="romanization-toggle"]').exists()).toBe(true)
+    inspection.resolve({ supported: false, mandarinDefault: false })
+    await flushPromises()
+    expect(wrapper.find('[data-test="romanization-toggle"]').exists()).toBe(false)
+    wrapper.unmount()
   })
 
   it('renders cached romanization on the first frame after reopening', async () => {
@@ -158,7 +177,7 @@ describe('fullscreen romanization', () => {
     expect(useRomanizationStore().enabled).toBe(true)
   })
 
-  it('keeps bilingual on failure and retries', async () => {
+  it('keeps the binary control on failure and retries after toggling off and on', async () => {
     const failure = request<never>()
     api.RomanizeLyrics.mockReturnValue(failure.promise)
     const wrapper = create()
@@ -167,10 +186,14 @@ describe('fullscreen romanization', () => {
     failure.reject(new Error('failed'))
     await flushPromises()
     expect(wrapper.text()).toContain('Translation')
-    expect(wrapper.get('button').attributes('aria-label')).toBe('player.romanization_retry')
+    expect(wrapper.get('button').attributes('aria-label')).toBe('player.romanization')
+    expect(wrapper.find('.lucide-languages').exists()).toBe(true)
     const retry = request<{ text: string; status: string }[]>()
     api.RomanizeLyrics.mockReturnValue(retry.promise)
     await wrapper.get('[data-test="romanization-toggle"]').trigger('click')
+    expect(wrapper.get('button').attributes('aria-pressed')).toBe('false')
+    await wrapper.get('[data-test="romanization-toggle"]').trigger('click')
+    await flushPromises()
     expect(api.RomanizeLyrics).toHaveBeenCalledTimes(2)
     wrapper.unmount()
   })

@@ -79,6 +79,28 @@ describe('LyricsDrawer romanization', () => {
     wrapper.unmount()
   })
 
+  it('keeps the drawer control binary during conversion and after failure', async () => {
+    let reject!: (error: Error) => void
+    api.RomanizeLyrics.mockReturnValue(Object.assign(
+      new Promise((_, no) => { reject = no }),
+      { cancel: vi.fn().mockResolvedValue(undefined) },
+    ))
+    const wrapper = mount(LyricsDrawer, { global: { mocks: { $t: (key: string) => key } } })
+    await flushPromises()
+
+    const button = wrapper.get('[data-test="drawer-romanization-toggle"]')
+    expect(button.attributes('aria-pressed')).toBe('true')
+    expect(button.attributes('aria-busy')).toBeUndefined()
+    expect(button.attributes('aria-label')).toBe('player.romanization')
+    expect(button.find('.lucide-languages').exists()).toBe(true)
+
+    reject(new Error('failed'))
+    await flushPromises()
+    expect(button.attributes('aria-label')).toBe('player.romanization')
+    expect(button.find('.lucide-languages').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
   it('restores auto-scroll when the drawer reopens', async () => {
     store.lyrics = { content: '[00:00.00]First\n[00:05.00]Second' }
     const wrapper = mount(LyricsDrawer, { global: { mocks: { $t: (key: string) => key } } })

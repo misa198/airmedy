@@ -531,8 +531,12 @@ passes secondary strings separately to synced/plain views. `stores/romanization`
 holds the backend-owned, app-lifetime preference, so it synchronizes between
 the main and mini-player webviews without surviving an app restart. The fullscreen icon control is teleported into its toolbar beside the
 lyrics/queue pill; the mini-player control sits beside its action pill while its
-lyrics panel is open, and the drawer uses a header icon beside Close. The native
-button retains keyboard access, `aria-pressed`, loading status and retry on error. Synced browse mode survives
+lyrics panel is open, and the drawer uses a header icon beside Close. All three
+controls show only on/off state with `aria-pressed`; loading and conversion
+errors do not change the icon. Toggling off and on retries a failed conversion.
+The control stays visible while the next track is inspected, then hides if that
+track does not support romanization.
+Synced browse mode survives
 secondary text changes; auto-follow remeasures only when following playback.
 See [lyrics contracts](../lyrics/README.md#offline-fullscreen-romanization) for
 language defaults, fallback behavior and memory ownership.

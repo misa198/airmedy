@@ -20,7 +20,7 @@ const emit = defineEmits<{
 
 const { isSynced, syncedLines, plainLines } = useLyrics(toRef(props, 'lyrics'))
 const mainLines = computed(() => isSynced.value ? syncedLines.value.map(line => line.text) : plainLines.value.map(line => line.primary))
-const { supported, mandarinDefault, loading, error, enabled, secondary, toggle, retry } = useRomanization(
+const { supported, mandarinDefault, enabled, secondary, toggle } = useRomanization(
   mainLines, computed(() => !!props.romanization && !props.isLoading),
 )
 </script>
@@ -68,8 +68,7 @@ const { supported, mandarinDefault, loading, error, enabled, secondary, toggle, 
     />
     <Teleport v-if="romanization && supported" to="#fullscreen-lyrics-actions">
       <RomanizationToggle
-        :enabled="enabled" :loading="loading" :error="error" :mandarin-default="mandarinDefault"
-        @activate="error && enabled ? retry() : toggle()"
+        :enabled="enabled" :mandarin-default="mandarinDefault" @activate="toggle()"
       />
     </Teleport>
   </div>
