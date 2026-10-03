@@ -7,6 +7,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 
 	"airmedy/internal/domain"
@@ -46,8 +47,9 @@ func NewAssetHandler(assets embed.FS, artworkCache domain.ArtworkCache) http.Han
 			size := r.URL.Query().Get("size")
 			if size == "sm" || size == "md" {
 				variantPath := artworkCache.GetVariantPath(key, size)
-				if _, err := os.Stat(variantPath); err == nil {
-					http.ServeFile(w, r, variantPath)
+				if data, err := os.ReadFile(variantPath); err == nil {
+					// A single write avoids exposing a partly streamed JPEG to WKWebView.
+					serveArtworkVariant(w, r, data)
 					return
 				}
 				// variant missing (pre-existing track) — fall back to original
@@ -77,4 +79,14 @@ func NewAssetHandler(assets embed.FS, artworkCache domain.ArtworkCache) http.Han
 
 		embeddedHandler.ServeHTTP(w, r)
 	})
+}
+
+func serveArtworkVariant(w http.ResponseWriter, r *http.Request, data []byte) {
+	w.Header().Set("Content-Type", "image/jpeg")
+	w.Header().Set("Content-Length", strconv.Itoa(len(data)))
+	if r.Method == http.MethodHead {
+		w.WriteHeader(http.StatusOK)
+	} else {
+		_, _ = w.Write(data)
+	}
 }
