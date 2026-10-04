@@ -3,7 +3,7 @@ import { onUnmounted } from 'vue'
 export const lyricsMotionDurationClasses = 'duration-[230ms] ease-[cubic-bezier(0.4,0,0.2,1)]'
 export const lyricsMotionClasses = 'transition-[color,opacity] duration-[230ms] ease-[cubic-bezier(0.4,0,0.2,1)]'
 
-const lyricsMotionDuration = 230
+export const fullscreenLyricsMotionDuration = 320
 
 export function lyricsMotionProgress(progress: number) {
   const sample = (a: number, b: number, t: number) => 3 * (1 - t) * (1 - t) * t * a + 3 * (1 - t) * t * t * b + t * t * t
@@ -17,7 +17,7 @@ export function lyricsMotionProgress(progress: number) {
   return sample(0, 1, (lower + upper) / 2)
 }
 
-export function useLyricsScrollMotion() {
+export function useLyricsScrollMotion(duration = 230) {
   let frame: number | undefined
 
   function stop() {
@@ -42,7 +42,7 @@ export function useLyricsScrollMotion() {
     let startTime: number | undefined
     const step = (timestamp: number) => {
       startTime ??= timestamp
-      const progress = Math.min((timestamp - startTime) / lyricsMotionDuration, 1)
+      const progress = Math.min((timestamp - startTime) / duration, 1)
       container.scrollTop = progress === 1 ? top : from + distance * lyricsMotionProgress(progress)
       if (progress < 1) frame = requestAnimationFrame(step)
       else frame = undefined

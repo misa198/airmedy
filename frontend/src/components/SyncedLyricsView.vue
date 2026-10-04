@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { LyricLine } from '../composables/useLyrics'
-import { useLyricsScrollMotion } from '../composables/useLyricsScrollMotion'
+import { fullscreenLyricsMotionDuration, useLyricsScrollMotion } from '../composables/useLyricsScrollMotion'
 import KaraokeText from './KaraokeText.vue'
 import { useGpuLyrics } from '../composables/useGpuLyrics'
 import { lyricAppearance } from '../lib/lyricsGpuLayout'
@@ -36,7 +36,7 @@ const { ready: gpuReady, draw, layout } = useGpuLyrics(canvas, scrollContainer, 
 
 function domAppearance(index: number) {
   if (gpuReady.value) return { opacity: 0 }
-  const appearance = lyricAppearance(index, activeIndex.value, isBrowsing.value, !!props.immersive, hovered.value)
+  const appearance = lyricAppearance(index, activeIndex.value, isBrowsing.value, !!props.immersive, hovered.value, !!props.lines[index]?.words?.length)
   return { opacity: appearance.alpha, filter: appearance.blur ? `blur(${appearance.blur}px)` : undefined }
 }
 let scrollFrame: number | undefined
@@ -44,7 +44,7 @@ let resizeObserver: ResizeObserver | null = null
 let disposed = false
 let hasPositionedInitialLine = false
 let previousActiveIndex = -1
-const { scrollTo, stop: stopScrollAnimation } = useLyricsScrollMotion()
+const { scrollTo, stop: stopScrollAnimation } = useLyricsScrollMotion(fullscreenLyricsMotionDuration)
 
 // Reset stale refs when the track's lines change so indexes stay aligned.
 watch(() => props.lines, () => {

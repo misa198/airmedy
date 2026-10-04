@@ -1,7 +1,30 @@
 import { describe, expect, it } from 'vitest'
-import { brightLayerVisible, fragmentFill, initialLyricAppearance, karaokeBaseAlpha, lyricAppearance, wordProgress } from './lyricsGpuLayout'
+import { brightLayerVisible, fragmentFill, initialLyricAppearance, karaokeBaseAlpha, lyricAppearance, wordEmphasis, wordGlow, wordProgress } from './lyricsGpuLayout'
 
 describe('GPU lyric effects', () => {
+  it('lifts progressively across a word and holds after it ends', () => {
+    const word = { text: 'Hello', start: 10, end: 11 }
+    expect([9, 10, 10.25, 10.5, 11, 12].map(position =>
+      wordEmphasis(word, position),
+    )).toEqual([0, 0, 0.5, 1, 1, 1])
+    // The middle is partly lifted while the beginning is up and the end is still down.
+    expect(wordEmphasis(word, 10.5, 0, 100)).toBe(1)
+    expect(wordEmphasis(word, 10.5, 50, 100)).toBeCloseTo(0.5)
+    expect(wordEmphasis(word, 10.5, 80, 100)).toBe(0)
+    expect(wordEmphasis(word, 12, 100, 100)).toBe(1)
+    expect(wordEmphasis(word, 10, 80, 100)).toBe(0) // Backward seek resets.
+    expect(wordEmphasis({ ...word, end: 10 }, 10)).toBe(0)
+    expect(wordEmphasis(word, 10.5, 0, 0)).toBe(0)
+    const short = { ...word, end: 10.1 }
+    expect(wordEmphasis(short, 10.1)).toBeCloseTo(1 / 3.5)
+    expect(wordEmphasis(short, 12)).toBeCloseTo(1 / 3.5)
+    expect(wordGlow(word, 11.25)).toBeCloseTo(0.5)
+    expect(wordGlow(word, 11.5)).toBe(0)
+    for (const immersive of [false, true]) {
+      expect(lyricAppearance(0, 0, false, immersive, -1, true).scale).toBe(1)
+      expect(lyricAppearance(0, 0, false, immersive, -1).scale).toBeGreaterThan(1)
+    }
+  })
   it('preserves immersive distance effects and makes browse text fully readable', () => {
     expect([0, 1, 2, 3].map(index => lyricAppearance(index, 0, false, true, -1))).toEqual([
       { blur: 0, alpha: 1, scale: 1.06 },

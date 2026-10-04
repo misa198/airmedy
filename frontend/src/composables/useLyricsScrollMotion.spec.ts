@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
-import { useLyricsScrollMotion } from './useLyricsScrollMotion'
+import { fullscreenLyricsMotionDuration, useLyricsScrollMotion } from './useLyricsScrollMotion'
 
 describe('lyrics end-of-list scrolling', () => {
   afterEach(() => { vi.unstubAllGlobals() })
 
-  it.each([0.25, 0.32, 0.5])('smoothly reaches the last line at viewport fraction %s, also after resize', (anchor) => {
+  it.each([0.25, 0.32, 0.5].flatMap(anchor => [230, fullscreenLyricsMotionDuration].map(duration => ({ anchor, duration }))))('reaches the last line at $anchor over $duration ms, also after resize', ({ anchor, duration }) => {
     const frames = new Map<number, FrameRequestCallback>()
     let id = 0
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
@@ -21,7 +21,7 @@ describe('lyrics end-of-list scrolling', () => {
     }
     let motion!: ReturnType<typeof useLyricsScrollMotion>
     const wrapper = mount(defineComponent({ setup() {
-      motion = useLyricsScrollMotion()
+      motion = useLyricsScrollMotion(duration)
       return () => h('div', [h('div')])
     } }))
     const container = wrapper.element as HTMLElement
@@ -44,10 +44,10 @@ describe('lyrics end-of-list scrolling', () => {
       motion.scrollTo(container, target, true)
       tick(0)
       expect(position).toBeCloseTo(start)
-      tick(115)
+      tick(duration / 2)
       expect(position).toBeGreaterThan(Math.min(start, target))
       expect(position).toBeLessThan(Math.max(start, target))
-      tick(230)
+      tick(duration)
       expect(position).toBeCloseTo(target)
       expect(container.scrollHeight - height).toBeGreaterThanOrEqual(target)
     }
