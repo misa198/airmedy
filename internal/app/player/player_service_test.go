@@ -840,6 +840,37 @@ func TestHandleTrackEnd_RepeatOneRepeatsCurrentTrack(t *testing.T) {
 	}
 }
 
+func TestPlayAfterQueueEndRestoresRepeatOnePrequeue(t *testing.T) {
+	fp := &fakeGaplessPlayer{fakePlayer: fakePlayer{status: domain.PlayerStatus{Volume: 1.0}}}
+	s, _ := newTestService(t, fp)
+	track := makeTrack("t1")
+	s.queue.SetQueue([]*domain.TrackDTO{track}, 0)
+	s.mu.Lock()
+	s.currentTrack = track
+	s.mu.Unlock()
+
+	s.HandleTrackEnd()
+	if err := s.SetRepeatMode(domain.RepeatModeOne); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Play(); err != nil {
+		t.Fatal(err)
+	}
+	if next := s.queue.PeekNext(); next != track {
+		t.Fatalf("expected current track available to repeat, got %v", next)
+	}
+	fp.mu.Lock()
+	enqueued := fp.enqueuedTrack
+	fp.mu.Unlock()
+	if enqueued != track {
+		t.Fatalf("expected current track pre-queued, got %v", enqueued)
+	}
+	s.HandleTrackEnd()
+	if current := s.GetCurrentTrack(); current != track {
+		t.Fatalf("expected repeated track after end, got %v", current)
+	}
+}
+
 func TestHandleTrackEnd_RepeatOffAdvancesToNext(t *testing.T) {
 	fp := &fakeGaplessPlayer{fakePlayer: fakePlayer{status: domain.PlayerStatus{Volume: 1.0}}}
 	s, _ := newTestService(t, fp)

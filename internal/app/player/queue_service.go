@@ -276,6 +276,9 @@ func (s *QueueService) Next() *domain.TrackDTO {
 		// Stay on current track
 		if s.currentIndex < 0 {
 			s.currentIndex = 0
+		} else if s.currentIndex >= len(list) {
+			// Repeat may have been enabled after the queue reached its end.
+			s.currentIndex = len(list) - 1
 		}
 	} else {
 		s.currentIndex++

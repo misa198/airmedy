@@ -21,6 +21,19 @@ func queueIDs(q *QueueService) []string {
 	return ids
 }
 
+func TestNext_RepeatOneAfterQueueExhausted(t *testing.T) {
+	q := NewQueueService(slog.Default())
+	track := makeTrack("A")
+	q.SetQueue([]*domain.TrackDTO{track}, 0)
+	if next := q.Next(); next != nil {
+		t.Fatalf("expected exhausted queue, got %v", next)
+	}
+	q.SetRepeatMode(domain.RepeatModeOne)
+	if next := q.Next(); next != track {
+		t.Fatalf("expected repeat of A, got %v", next)
+	}
+}
+
 func TestInsertAfterCurrent_EmptyQueue(t *testing.T) {
 	q := NewQueueService(slog.Default())
 	q.InsertAfterCurrent(makeTrack("A"))
