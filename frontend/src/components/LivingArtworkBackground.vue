@@ -156,7 +156,7 @@ const FRAGMENT = /* glsl */`
     float n3 = snoise(vec3(uv * 0.8 + vec2( 8.7, 23.4), t + 12.7)) * 0.5 + 0.5;
 
     // Softmax: amplifies differences so each region is dominated by one color
-    const float SHARP = 8.0;
+    const float SHARP = 10.0;
     float e1 = exp((n1 - 0.5) * SHARP);
     float e2 = exp((n2 - 0.5) * SHARP);
     float e3 = exp((n3 - 0.5) * SHARP);
@@ -316,7 +316,7 @@ onUnmounted(() => {
 }
 
 canvas {
-  filter: blur(64px);
+  filter: blur(32px);
   transform: scale(1.2);
 }
 </style>
