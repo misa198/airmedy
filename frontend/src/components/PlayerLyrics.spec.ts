@@ -4,11 +4,12 @@ import { createPinia, setActivePinia } from 'pinia'
 import PlayerLyrics from './PlayerLyrics.vue'
 import { useAppStore } from '../stores/app'
 import { useRomanizationStore } from '../stores/romanization'
+import { useGpuLyrics } from '../composables/useGpuLyrics'
 
 const api = vi.hoisted(() => ({ InspectRomanization: vi.fn(), RomanizeLyrics: vi.fn() }))
 vi.mock('../composables/useGpuLyrics', async () => {
   const { ref } = await import('vue')
-  return { useGpuLyrics: () => ({ ready: ref(false), draw: vi.fn(), layout: vi.fn() }) }
+  return { useGpuLyrics: vi.fn(() => ({ ready: ref(false), draw: vi.fn(), layout: vi.fn() })) }
 })
 vi.mock('../../bindings/airmedy/internal/infra/wails', () => ({ LyricsService: api }))
 vi.mock('@wailsio/runtime', () => ({
@@ -54,6 +55,21 @@ describe('fullscreen romanization', () => {
     await wrapper.get('[data-test="lyric-line"]').trigger('click')
     expect(wrapper.emitted('seek')).toEqual([[1]])
     expect(wrapper.find('.karaoke-word').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it.each([true, false])('applies the glow setting in fullscreen lyrics (immersive: %s)', async (immersive) => {
+    const appStore = useAppStore()
+    appStore.lyricsGlow = false
+    const wrapper = mount(PlayerLyrics, {
+      props: { lyrics: '[00:01]Hello<00:02> world', immersive },
+      global: { mocks: { $t: (key: string) => key } },
+    })
+    const state = vi.mocked(useGpuLyrics).mock.calls.at(-1)![3]
+    expect(state.value.lyricsGlow).toBe(false)
+    appStore.lyricsGlow = true
+    await wrapper.vm.$nextTick()
+    expect(state.value.lyricsGlow).toBe(true)
     wrapper.unmount()
   })
 

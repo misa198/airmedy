@@ -52,6 +52,7 @@ type AppSettings struct {
     CrossfadeSeconds        int                // track-transition overlap in seconds, clamped to [0, domain.MaxCrossfadeSeconds]=12; 0 = off (gapless), default 0
     BlendArtworkDuringCrossfade bool           // fullscreen cover blend during automatic crossfade, default true
     HighContrastLyrics       bool              // fullscreen glass lyrics panel; false renders lyrics directly over artwork, default true
+    LyricsGlow               bool              // enhanced lyric glow; default true, currently used by fullscreen lyrics
     LivingArtworkBackground  bool              // fullscreen animated artwork background; false uses a solid artwork tint, default true
     AutoAdvanceNotificationsEnabled bool       // macOS-only silent notification when playback automatically advances, default true
 }
@@ -113,6 +114,7 @@ interface AppStore {
   crossfadeSeconds: number; // 0–CROSSFADE_MAX_SECONDS (12); 0 = off; slider in PlaybackSettings.vue
   blendArtworkDuringCrossfade: boolean; // default true; fullscreen only
   highContrastLyrics: boolean; // default true; fullscreen lyrics only
+  lyricsGlow: boolean; // default true; fullscreen enhanced lyrics glow
   livingArtworkBackground: boolean; // default true; fullscreen background only
   autoAdvanceNotificationsEnabled: boolean; // default true; macOS-only automatic track-change notification
   artistDelimiters: string[];
@@ -149,6 +151,7 @@ interface AppStore {
   updateUseOnlineArtistArtwork(enabled: boolean): Promise<void>;
   updatePreferLocalArtistArtwork(enabled: boolean): Promise<void>;
   updatePreventSleepWhilePlaying(enabled: boolean): Promise<void>;
+  updateLyricsGlow(enabled: boolean): Promise<void>;
   updateDelimiters(field: "artist" | "albumArtist" | "genre" | "composer", value: string[]): Promise<void>;
   updateLibraryAnalysisWorkerCount(count: number): Promise<void>;
   checkForUpdate(): Promise<void>;
@@ -195,7 +198,7 @@ Version constant moved from `internal/domain/version.go` (deleted) to `internal/
 | General      | Language picker, Theme selector, primary accent color, Start at Login, Auto-check updates toggle |
 | Library      | Watched folders list, Add/Remove folder, Sync All, Reindex; **Tag Delimiters** section — 4 chip inputs (`DelimiterInput.vue`) for artist/album-artist/genre/composer split delimiters with inline validation, plus a persistent "Sync Library to apply" hint (`DelimitersPendingResync`) shown while pending; **Library Analysis** section — enable toggle, live progress/readiness text, and a concurrent-worker slider when more than one worker is available |
 | Integrations | Last.fm account + lyrics providers (LRClib, Kugou), prefer-local toggle, lyrics-subfolder toggle + validated name input (matched case-insensitively, with a hint), and dedicated lyrics folder toggle + picker (reuses `LibraryService.SelectFolder`). Toggles with conditional sub-settings use `SettingExpandableRow.vue` (header + `#control` slot + animated, inset `#expanded` slot) so the sub-setting reads as nested under its toggle. |
-| Playback     | EQ profiles and band sliders, prevent-sleep toggle, Fullscreen High Contrast Lyrics toggle, and Volume Normalization controls (`PlaybackSettings.vue`) |
+| Playback     | EQ profiles and band sliders, prevent-sleep toggle, Fullscreen High Contrast Lyrics and Lyrics Glow toggles, and Volume Normalization controls (`PlaybackSettings.vue`) |
 | Remote       | Control remote server (enable/disable), change or regenerate access PIN, show QR code, and choose between reachable IP addresses grouped by network interface (`RemoteServerSettings.vue`) |
 | Mobile devices | Pair phones through an Ed25519-signed MQTT handshake, choose the QR network address, and manage/revoke trusted mobile devices from each row's context menu (`MobileDevicesSettings.vue`) |
 | About        | App version, GitHub link, License, Open Data Folder button                 |
@@ -260,6 +263,7 @@ Settings evolved across multiple migrations:
 | 000049    | Add `blend_artwork_during_crossfade BOOLEAN NOT NULL DEFAULT 1` |
 | 000060    | Add `auto_advance_notifications_enabled BOOLEAN NOT NULL DEFAULT 1` for the macOS silent automatic-track notification |
 | 000061    | Add `primary_color TEXT NOT NULL DEFAULT '#E11D48'` for the user-selected accent color |
+| 000075    | Add `lyrics_glow BOOLEAN NOT NULL DEFAULT 1` for enhanced lyric glow |
 | 000030    | Add `artist_delimiters`, `album_artist_delimiters`, `genre_delimiters`, `composer_delimiters` (TEXT JSON arrays, default `'[";","\\",","]'`) |
 | 000032    | Add `,` to the default delimiter set for rows still on the previous default `'[";","\\"]'` |
 | 000033    | Update default delimiters: change single backslash `\` to double backslash `\\` (JSON `'[";","\\\\",","]'`) for rows still on the previous default |

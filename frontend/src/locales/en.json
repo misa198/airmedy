@@ -221,6 +221,8 @@
       "auto_advance_notifications_desc": "Show a silent macOS notification when playback automatically moves to the next track",
       "high_contrast_lyrics": "High Contrast Lyrics",
       "high_contrast_lyrics_desc": "Show fullscreen lyrics in a prominent glass panel",
+      "lyrics_glow": "Lyrics glow",
+      "lyrics_glow_desc": "Show glow on each sung word in enhanced LRC lyrics",
       "fullscreen_background": "Fullscreen background",
       "fullscreen_background_desc": "Choose the artwork background style for the fullscreen player",
       "fullscreen_background_living": "Living artwork",

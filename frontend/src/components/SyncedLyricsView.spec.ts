@@ -90,6 +90,14 @@ describe('SyncedLyricsView', () => {
     expect(wrapper.emitted('seek')).toEqual([[1]])
   })
 
+  it('passes the glow setting to the GPU without changing the lyric sweep', async () => {
+    const wrapper = create()
+    expect(state().lyricsGlow).toBe(true)
+    await wrapper.setProps({ lyricsGlow: false })
+    expect(state().lyricsGlow).toBe(false)
+    expect(wrapper.find('[data-test="lyric-line"]').exists()).toBe(true)
+  })
+
   it('waits for layout then places the current lyric at the immersive anchor', async () => {
     let width = 0
     let resize!: ResizeObserverCallback

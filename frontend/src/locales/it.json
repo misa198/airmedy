@@ -221,6 +221,8 @@
       "auto_advance_notifications_desc": "Mostra una notifica macOS silenziosa quando la riproduzione passa automaticamente alla traccia successiva",
       "high_contrast_lyrics": "Testi ad alto contrasto",
       "high_contrast_lyrics_desc": "Mostra i testi a schermo intero in un pannello di vetro in evidenza",
+      "lyrics_glow": "Bagliore dei testi",
+      "lyrics_glow_desc": "Mostra un bagliore su ogni parola cantata nei testi LRC avanzati",
       "fullscreen_background": "Sfondo a schermo intero",
       "fullscreen_background_desc": "Scegli lo stile di sfondo della copertina per il lettore a schermo intero",
       "fullscreen_background_living": "Copertina animata",

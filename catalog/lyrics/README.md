@@ -302,20 +302,20 @@ When fullscreen High Contrast Lyrics is off, `ImmersiveLyricsPanel` passes
 the active line sharp; its immediate neighbors have only a `0.35px` blur, then
 lines farther away use `1.25px` and `2px` blur while fading from 25% to 10%
 opacity. Ordinary active lines smoothly enter from 100% to 106% scale when their GPU
-row is first rendered. Enhanced lines stay at 100% scale: each shaped word
-fragment bends upward in a continuous wave from left to right, by up to 0.03em.
-The wave follows the sung-color sweep without separating letters into textures.
-Sung text stays raised after the word and line end; a backward seek
-recomputes the lift. Words shorter than 350ms lift proportionally less.
-Glow uses an independent, subtler envelope with a 500ms release. A shared alpha
+row is first rendered. Enhanced lines stay at 100% scale and at a fixed vertical
+position. Each shaped word fragment keeps natural letter spacing while its sung
+portion brightens and, when `lyrics_glow` is enabled, glows. Glow is enabled by
+default and has a subtle envelope with a 500ms release. A shared alpha
 ramp softens the GPU highlight edge. Fullscreen scrolling and row opacity/blur
 transitions share a 320ms eased duration so the old line dims as the new line arrives;
 adjacent words and the next active line can overlap the glow tail without
 delaying the sung-color sweep. Wrapped fragments continue the same word sweep.
 The effect follows playback position, so pause freezes it and seek updates it
-immediately; browse mode and reduced motion disable the lift and glow.
+immediately; the setting, browse mode, and reduced motion can disable the glow
+without changing the sung-color sweep. `Settings → Playback` controls the setting
+for both fullscreen lyrics layouts.
 Translation/romanization stays at line level; DOM fallback retains the color sweep
-without the lift or glow. The
+without the glow. The
 high-contrast fullscreen panel and `LyricsDrawer` retain their existing styling.
 Immersive auto-scroll positions the active line at 32% of the lyric viewport;
 other lyric surfaces keep it centered.

@@ -501,6 +501,8 @@ type AppSettings struct {
 	// HighContrastLyrics selects the glass, headered lyrics panel in the
 	// fullscreen player. When false, lyrics render directly over the artwork.
 	HighContrastLyrics bool `json:"high_contrast_lyrics"`
+	// LyricsGlow controls the animated glow on enhanced lyrics.
+	LyricsGlow bool `json:"lyrics_glow"`
 
 	// LivingArtworkBackground selects the animated artwork-color background in
 	// the fullscreen player. When false, it uses a solid artwork tint instead.

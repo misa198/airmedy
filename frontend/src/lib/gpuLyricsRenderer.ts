@@ -1,7 +1,7 @@
-import { BlurFilter, BufferImageSource, Color, Container, Mesh, MeshGeometry, Rectangle, Sprite, Text, Texture, WebGLRenderer } from 'pixi.js'
+import { BlurFilter, BufferImageSource, Color, Container, Sprite, Text, Texture, WebGLRenderer } from 'pixi.js'
 import type { LyricLine } from '../composables/useLyrics'
 import { fullscreenLyricsMotionDuration, lyricsMotionProgress } from '../composables/useLyricsScrollMotion'
-import { brightLayerVisible, fragmentFill, initialLyricAppearance, karaokeBaseAlpha, lyricAppearance, measureLyricFragments, wordEmphasis, wordGlow, wordProgress } from './lyricsGpuLayout'
+import { brightLayerVisible, fragmentFill, initialLyricAppearance, karaokeBaseAlpha, lyricAppearance, measureLyricFragments, wordGlow, wordProgress } from './lyricsGpuLayout'
 
 export interface GpuLyricsState {
   lines: LyricLine[]
@@ -11,10 +11,11 @@ export interface GpuLyricsState {
   hovered: number
   position: number
   reducedMotion: boolean
+  lyricsGlow: boolean
 }
 
 type Appearance = ReturnType<typeof lyricAppearance>
-type Run = { base: Text | Mesh; texture?: Texture; geometry?: MeshGeometry; y: number; height: number; fontSize: number; bright?: Mesh; mask?: Sprite; glow?: Mesh; glowMask?: Sprite; word?: number; offset: number; width: number; total: number; secondary: boolean }
+type Run = { base: Text; bright?: Text; mask?: Sprite; glow?: Text; glowMask?: Sprite; word?: number; offset: number; width: number; total: number; secondary: boolean }
 type Row = {
   container: Container
   blur: BlurFilter
@@ -44,31 +45,13 @@ export async function createGpuLyricsRenderer(canvas: HTMLCanvasElement, viewpor
   const rows = new Map<number, Row>()
   let layout: { element: HTMLElement; top: number; left: number; height: number }[] = []
 
-  function waveGeometry(width: number, height: number) {
-    const columns = Math.max(2, Math.ceil(width / 6))
-    const positions = new Float32Array((columns + 1) * 4)
-    const uvs = new Float32Array(positions.length)
-    const indices = new Uint32Array(columns * 6)
-    for (let i = 0; i <= columns; i++) {
-      const x = i / columns
-      positions.set([x * width, 0, x * width, height], i * 4)
-      uvs.set([x, 0, x, 1], i * 4)
-      if (i < columns) indices.set([i * 2, i * 2 + 1, i * 2 + 2, i * 2 + 1, i * 2 + 3, i * 2 + 2], i * 6)
-    }
-    return new MeshGeometry({ positions, uvs, indices })
-  }
-
   function removeRow(index: number) {
     const row = rows.get(index)!
     for (const run of row.runs) {
       run.mask?.destroy()
       run.glowMask?.destroy()
     }
-    row.container.destroy({ children: true })
-    for (const run of row.runs) {
-      run.geometry?.destroy()
-      run.texture?.destroy(true)
-    }
+    row.container.destroy({ children: true, texture: true, textureSource: true })
     row.blur.destroy()
     row.glowBlur.destroy()
     rows.delete(index)
@@ -109,31 +92,21 @@ export async function createGpuLyricsRenderer(canvas: HTMLCanvasElement, viewpor
           fill: 0xffffff,
         },
       }
-      const word = fragment.word
-      const text = new Text(options)
-      const height = text.height
-      // Pixi rounds generated texture bounds down; leave room for descenders.
-      const texture = word === undefined ? undefined : renderer.generateTexture({
-        target: text, resolution: renderer.resolution,
-        frame: new Rectangle(0, 0, Math.ceil(text.width), Math.ceil(height) + 4),
-      })
-      const meshHeight = texture?.height ?? height
-      const geometry = texture ? waveGeometry(fragment.width, meshHeight) : undefined
-      const base = texture && geometry ? new Mesh({ texture, geometry }) : text
-      if (texture) text.destroy()
-      base.position.set(fragment.x, fragment.y + (fragment.height - height) / 2)
+      const base = new Text(options)
+      base.position.set(fragment.x, fragment.y + (fragment.height - base.height) / 2)
       container.addChild(base)
+      const word = fragment.word
       const run: Run = {
-        base, texture, geometry, y: base.y, height: meshHeight, fontSize: fragment.fontSize, word, offset: word === undefined ? 0 : offsets.get(word) ?? 0,
+        base, word, offset: word === undefined ? 0 : offsets.get(word) ?? 0,
         width: fragment.width, total: word === undefined ? fragment.width : totals.get(word)!, secondary: fragment.secondary,
       }
-      if (word !== undefined && texture && geometry) {
-        run.bright = new Mesh({ texture, geometry })
+      if (word !== undefined) {
+        run.bright = new Text(options)
         run.bright.position.copyFrom(base.position)
         run.mask = new Sprite(maskTexture)
         run.bright.mask = run.mask
         container.addChild(run.bright, run.mask)
-        run.glow = new Mesh({ texture, geometry })
+        run.glow = new Text(options)
         run.glow.position.copyFrom(base.position)
         run.glowMask = new Sprite(maskTexture)
         run.glow.mask = run.glowMask
@@ -184,25 +157,17 @@ export async function createGpuLyricsRenderer(canvas: HTMLCanvasElement, viewpor
       for (const run of row.runs) {
         run.base.tint = color
         run.base.alpha = run.secondary ? 0.8 : run.word === undefined ? 1 : activeWord ? karaokeBaseAlpha(row.current.alpha) : 1
-        if (!run.bright || !run.mask || !run.geometry || run.word === undefined) continue
+        if (!run.bright || !run.mask || run.word === undefined) continue
         run.bright.tint = color
         const word = state.lines[index]?.words?.[run.word]
         const fill = activeWord && word ? wordProgress(word, state.position) : 1
         const effects = word && !state.browsing && !state.reducedMotion && index <= state.active
-        const glow = effects ? wordGlow(word, state.position) : 0
-        const positions = run.geometry.positions
-        for (let i = 0; i < positions.length / 4; i++) {
-          const x = positions[i * 4]
-          const lift = effects ? wordEmphasis(word, state.position, run.offset + x, run.total) * run.fontSize * 0.03 : 0
-          positions[i * 4 + 1] = -lift
-          positions[i * 4 + 3] = run.height - lift
-        }
-        run.geometry.getAttribute('aPosition').buffer.update()
+        const glow = effects && state.lyricsGlow ? wordGlow(word, state.position) : 0
         const width = fragmentFill(fill, run.offset, run.width, run.total)
         const maskWidth = fragmentFill(fill, run.offset, run.width / 0.875, run.total / 0.875)
-        run.mask.position.set(run.base.x - 2, run.y - 6)
+        run.mask.position.set(run.base.x - 2, run.base.y - 6)
         run.mask.width = width > 0 ? maskWidth + 2 : 0
-        run.mask.height = run.height + 12
+        run.mask.height = run.base.height + 12
         run.bright.visible = brightLayerVisible(activeWord, width)
         if (run.glow && run.glowMask) {
           run.glow.tint = color

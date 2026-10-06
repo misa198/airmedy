@@ -1,0 +1,1 @@
+ALTER TABLE app_settings ADD COLUMN lyrics_glow BOOLEAN NOT NULL DEFAULT 1;

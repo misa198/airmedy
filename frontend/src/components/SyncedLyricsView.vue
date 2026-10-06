@@ -6,12 +6,13 @@ import KaraokeText from './KaraokeText.vue'
 import { useGpuLyrics } from '../composables/useGpuLyrics'
 import { lyricAppearance } from '../lib/lyricsGpuLayout'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   secondary?: (string | undefined)[]
   lines: LyricLine[]
   currentPosition: number
   immersive?: boolean
-}>()
+  lyricsGlow?: boolean
+}>(), { lyricsGlow: true })
 
 const emit = defineEmits<{
   seek: [time: number]
@@ -32,6 +33,7 @@ const hovered = ref(-1)
 const { ready: gpuReady, draw, layout } = useGpuLyrics(canvas, scrollContainer, lineRefs, computed(() => ({
   lines: props.lines, active: activeIndex.value, browsing: isBrowsing.value,
   immersive: !!props.immersive, hovered: hovered.value, position: props.currentPosition, reducedMotion: false,
+  lyricsGlow: props.lyricsGlow,
 })))
 
 function domAppearance(index: number) {

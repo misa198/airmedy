@@ -80,6 +80,7 @@ class IntegrationContentTest {
                     onLrclibChanged = {},
                     onKugouChanged = {},
                     onRomanizationEnabledChanged = {},
+                    onGlowChanged = {},
                 )
             }
         }
@@ -100,11 +101,32 @@ class IntegrationContentTest {
                     onLrclibChanged = {},
                     onKugouChanged = {},
                     onRomanizationEnabledChanged = { enabled = it },
+                    onGlowChanged = {},
                 )
             }
         }
 
         composeTestRule.onNodeWithText("Enable romanization").performClick()
         assertTrue(enabled)
+    }
+
+    @Test
+    fun glowSettingReportsItsNewValue() {
+        var enabled = true
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                LyricsContent(
+                    settings = LyricsSettings(),
+                    onSourceChanged = {},
+                    onLrclibChanged = {},
+                    onKugouChanged = {},
+                    onRomanizationEnabledChanged = {},
+                    onGlowChanged = { enabled = it },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Lyrics glow").performClick()
+        org.junit.Assert.assertFalse(enabled)
     }
 }

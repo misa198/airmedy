@@ -29,15 +29,6 @@ function smooth(value: number) {
   return t * t * (3 - 2 * t)
 }
 
-// A narrow wave lifts the shaped word continuously, then holds until a backward seek.
-export function wordEmphasis(word: LyricWord, position: number, x = 0, total = 1) {
-  const duration = word.end - word.start
-  if (duration <= 0 || total <= 0) return 0
-  const wave = Math.min(total, Math.max(12, total * 0.16))
-  return Math.min(1, duration / 0.35)
-    * smooth((wordProgress(word, position) * (total + wave) - x) / wave)
-}
-
 export function wordGlow(word: LyricWord, position: number) {
   if (word.end <= word.start) return 0
   return smooth((position - word.start) / Math.min(0.18, word.end - word.start))
@@ -70,7 +61,7 @@ export interface LyricFragment {
 }
 
 // Let browser shaping/wrapping handle CJK, combining marks and bilingual text.
-// Keep each shaped line fragment intact; the renderer bends its texture for the lift sweep.
+// Keep each shaped line fragment intact so letter spacing stays natural.
 export function measureLyricFragments(row: HTMLElement): LyricFragment[] {
   const origin = row.getBoundingClientRect()
   const walker = document.createTreeWalker(row, NodeFilter.SHOW_TEXT)

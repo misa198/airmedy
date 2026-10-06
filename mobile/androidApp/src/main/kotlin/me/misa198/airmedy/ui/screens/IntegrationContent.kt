@@ -2,6 +2,7 @@ package me.misa198.airmedy.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -120,27 +121,42 @@ internal fun LyricsContent(
     onLrclibChanged: (Boolean) -> Unit,
     onKugouChanged: (Boolean) -> Unit,
     onRomanizationEnabledChanged: (Boolean) -> Unit,
+    onGlowChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    LabeledCard(label = stringResource(R.string.lyrics_data_sources), modifier = modifier) {
-        Selection(
-            labelRes = R.string.lyrics_preferred_source,
-            options = listOf(
-                SelectionOption(LyricsSource.Desktop, R.string.lyrics_source_desktop),
-                SelectionOption(LyricsSource.AutoFetch, R.string.lyrics_source_auto_fetch),
-            ),
-            selectedValue = settings.preferredSource,
-            onValueSelected = onSourceChanged,
-        )
-        me.misa198.airmedy.ui.components.ActionListDivider(style = ActionListDividerStyle.FullWidth)
-        ActionList(
-            items = listOf(
-                ActionListItem(R.string.lyrics_lrclib, trailingContent = { Switch(checked = settings.lrclib, onCheckedChange = onLrclibChanged) }, onClick = { onLrclibChanged(!settings.lrclib) }),
-                ActionListItem(R.string.lyrics_kugou, trailingContent = { Switch(checked = settings.kugou, onCheckedChange = onKugouChanged) }, onClick = { onKugouChanged(!settings.kugou) }),
-                ActionListItem(R.string.lyrics_romanization, trailingContent = { Switch(checked = settings.romanizationEnabled, onCheckedChange = onRomanizationEnabledChanged) }, onClick = { onRomanizationEnabledChanged(!settings.romanizationEnabled) }),
-            ),
-            containerStyle = ActionListContainerStyle.Plain,
-            dividerStyle = ActionListDividerStyle.FullWidth,
-        )
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LabeledCard(label = stringResource(R.string.lyrics_data_sources)) {
+            Selection(
+                labelRes = R.string.lyrics_preferred_source,
+                options = listOf(
+                    SelectionOption(LyricsSource.Desktop, R.string.lyrics_source_desktop),
+                    SelectionOption(LyricsSource.AutoFetch, R.string.lyrics_source_auto_fetch),
+                ),
+                selectedValue = settings.preferredSource,
+                onValueSelected = onSourceChanged,
+            )
+            me.misa198.airmedy.ui.components.ActionListDivider(style = ActionListDividerStyle.FullWidth)
+            ActionList(
+                items = listOf(
+                    ActionListItem(R.string.lyrics_lrclib, trailingContent = { Switch(checked = settings.lrclib, onCheckedChange = onLrclibChanged) }, onClick = { onLrclibChanged(!settings.lrclib) }),
+                    ActionListItem(R.string.lyrics_kugou, trailingContent = { Switch(checked = settings.kugou, onCheckedChange = onKugouChanged) }, onClick = { onKugouChanged(!settings.kugou) }),
+                    ActionListItem(R.string.lyrics_romanization, trailingContent = { Switch(checked = settings.romanizationEnabled, onCheckedChange = onRomanizationEnabledChanged) }, onClick = { onRomanizationEnabledChanged(!settings.romanizationEnabled) }),
+                ),
+                containerStyle = ActionListContainerStyle.Plain,
+                dividerStyle = ActionListDividerStyle.FullWidth,
+            )
+        }
+        LabeledCard(label = stringResource(R.string.lyrics_display)) {
+            ActionList(
+                items = listOf(
+                    ActionListItem(
+                        R.string.lyrics_glow,
+                        trailingContent = { Switch(checked = settings.glowEnabled, onCheckedChange = onGlowChanged) },
+                        onClick = { onGlowChanged(!settings.glowEnabled) },
+                    ),
+                ),
+                containerStyle = ActionListContainerStyle.Plain,
+            )
+        }
     }
 }
