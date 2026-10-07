@@ -3,9 +3,12 @@ package logging
 import (
 	"airmedy/internal/app/config"
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
+	"path/filepath"
+	"runtime/debug"
 	"time"
 
 	"github.com/natefinch/lumberjack"
@@ -22,12 +25,23 @@ func NewFileLogger(c *config.Config) (*lumberjack.Logger, *slog.Logger, error) {
 	if err := os.MkdirAll(logDir, 0755); err != nil {
 		return nil, nil, err
 	}
+	crashFile, err := os.OpenFile(filepath.Join(logDir, "crash.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+	if err != nil {
+		return nil, nil, fmt.Errorf("open crash log: %w", err)
+	}
+	// The runtime writes unhandled panics directly, bypassing slog. It keeps
+	// its own descriptor after this file is closed.
+	err = debug.SetCrashOutput(crashFile, debug.CrashOptions{})
+	_ = crashFile.Close()
+	if err != nil {
+		return nil, nil, fmt.Errorf("configure crash log: %w", err)
+	}
 
 	rotator := &lumberjack.Logger{
 		Filename:   c.LogPath(),
 		MaxSize:    10, // Megabytes
 		MaxBackups: 7,
-		MaxAge:     7,    // Days
+		MaxAge:     7, // Days
 		Compress:   true,
 		LocalTime:  true,
 	}

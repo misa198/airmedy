@@ -314,6 +314,12 @@ func (s *PlayerService) Play() error {
 	// Track ended naturally (queue ran out): SFBAudioEngine won't restart a finished
 	// item via Play() alone — reload from the beginning.
 	if ended {
+		for i, track := range s.queue.GetQueue() {
+			if track.ID == ct.ID {
+				s.queue.SetCurrentIndex(i)
+				break
+			}
+		}
 		return s.loadAndPlay(ct)
 	}
 

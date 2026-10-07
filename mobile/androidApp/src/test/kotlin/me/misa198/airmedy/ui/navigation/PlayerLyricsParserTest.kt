@@ -122,6 +122,23 @@ class PlayerLyricsParserTest {
     }
 
     @Test
+    fun enhancedWordGlowRisesAndFadesAfterTheWordEnds() {
+        val word = PlayerLyricWord("Hello", 10f, 11f)
+        assertEquals(0f, karaokeWordGlow(word, 9f))
+        assertEquals(1f, karaokeWordGlow(word, 10.5f))
+        assertEquals(.5f, karaokeWordGlow(word, 11.25f), .001f)
+        assertEquals(0f, karaokeWordGlow(word, 11.5f))
+        assertEquals(0f, karaokeWordGlow(word.copy(endSeconds = 10f), 10f))
+    }
+
+    @Test
+    fun enhancedWordFillContinuesAcrossWrappedFragments() {
+        assertEquals(50f, karaokeFragmentFill(.5f, offset = 0f, width = 60f, total = 100f))
+        assertEquals(0f, karaokeFragmentFill(.5f, offset = 60f, width = 40f, total = 100f))
+        assertEquals(15f, karaokeFragmentFill(.75f, offset = 60f, width = 40f, total = 100f))
+    }
+
+    @Test
     fun treatsUntimedLyricsAsPlainAndSupportsSlashBilingualText() {
         val lines = parsePlayerLyrics("Primary / Translation\nSecond line")
 

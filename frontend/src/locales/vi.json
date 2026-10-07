@@ -221,6 +221,8 @@
       "auto_advance_notifications_desc": "Hiển thị thông báo macOS im lặng khi phát nhạc tự động chuyển sang bài hát tiếp theo",
       "high_contrast_lyrics": "Lời bài hát tương phản cao",
       "high_contrast_lyrics_desc": "Hiển thị lời bài hát toàn màn hình trong bảng kính nổi bật",
+      "lyrics_glow": "Hiệu ứng phát sáng lời bài hát",
+      "lyrics_glow_desc": "Hiển thị hiệu ứng phát sáng theo từng từ đang hát trong lời bài hát LRC nâng cao",
       "fullscreen_background": "Nền toàn màn hình",
       "fullscreen_background_desc": "Chọn kiểu nền artwork cho trình phát toàn màn hình",
       "fullscreen_background_living": "Artwork sống động",

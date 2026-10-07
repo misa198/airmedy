@@ -213,6 +213,10 @@ the OS keyring holds the desktop Ed25519 private key. The Wails adapter emits
 | Bleve search index | `$XDG_DATA_HOME/airmedy/airmedy.bleve`    |
 | Artwork cache      | `$XDG_DATA_HOME/airmedy/artwork/`         |
 | Log file           | `$XDG_DATA_HOME/airmedy/logs/airmedy.log` |
+| Crash log          | `$XDG_DATA_HOME/airmedy/logs/crash.log`   |
+
+The Go runtime appends unhandled panic and fatal error stacks to `crash.log`
+directly. Ordinary application logs remain in the rotated `airmedy.log`.
 
 ## Frontend Architecture
 

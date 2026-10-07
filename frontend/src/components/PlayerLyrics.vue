@@ -5,6 +5,7 @@ import PlainLyricsView from './PlainLyricsView.vue'
 import RomanizationToggle from './RomanizationToggle.vue'
 import SyncedLyricsView from './SyncedLyricsView.vue'
 import { useLyrics } from '../composables/useLyrics'
+import { useAppStore } from '../stores/app'
 
 const props = defineProps<{
   lyrics?: string
@@ -19,6 +20,7 @@ const emit = defineEmits<{
 }>()
 
 const { isSynced, syncedLines, plainLines } = useLyrics(toRef(props, 'lyrics'))
+const appStore = useAppStore()
 const mainLines = computed(() => isSynced.value ? syncedLines.value.map(line => line.text) : plainLines.value.map(line => line.primary))
 const { supported, mandarinDefault, enabled, secondary, toggle } = useRomanization(
   mainLines, computed(() => !!props.romanization && !props.isLoading),
@@ -56,6 +58,7 @@ const { supported, mandarinDefault, enabled, secondary, toggle } = useRomanizati
       :secondary="secondary"
       :current-position="currentPosition ?? 0"
       :immersive="immersive"
+      :lyrics-glow="appStore.lyricsGlow"
       @seek="(time) => emit('seek', time)"
     />
 

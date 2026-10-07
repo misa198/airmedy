@@ -221,6 +221,8 @@
       "auto_advance_notifications_desc": "Eine stille macOS-Benachrichtigung anzeigen, wenn die Wiedergabe automatisch zum nächsten Titel wechselt",
       "high_contrast_lyrics": "Kontrastreiche Liedtexte",
       "high_contrast_lyrics_desc": "Liedtexte im Vollbildplayer in einem hervorgehobenen Glas-Panel anzeigen",
+      "lyrics_glow": "Liedtext-Glow",
+      "lyrics_glow_desc": "Zeigt einen Leuchteffekt für jedes gesungene Wort in erweiterten LRC-Liedtexten",
       "fullscreen_background": "Vollbildhintergrund",
       "fullscreen_background_desc": "Artwork-Hintergrundstil für den Vollbildplayer auswählen",
       "fullscreen_background_living": "Lebendiges Artwork",

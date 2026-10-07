@@ -135,6 +135,10 @@ const sectorPath = computed(() => {
         :description="t('settings.playback.high_contrast_lyrics_desc')">
         <Switch :model-value="appStore.highContrastLyrics" @update:model-value="appStore.updateHighContrastLyrics" />
       </SettingRow>
+      <SettingRow :title="t('settings.playback.lyrics_glow')"
+        :description="t('settings.playback.lyrics_glow_desc')">
+        <Switch :model-value="appStore.lyricsGlow" @update:model-value="appStore.updateLyricsGlow" />
+      </SettingRow>
       <SettingRow :title="t('settings.playback.fullscreen_background')"
         :description="t('settings.playback.fullscreen_background_desc')">
         <Select :model-value="appStore.livingArtworkBackground ? 'living' : 'solid'"

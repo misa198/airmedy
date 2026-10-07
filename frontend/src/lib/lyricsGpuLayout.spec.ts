@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { brightLayerVisible, fragmentFill, initialLyricAppearance, karaokeBaseAlpha, lyricAppearance, wordProgress } from './lyricsGpuLayout'
+import { brightLayerVisible, fragmentFill, initialLyricAppearance, karaokeBaseAlpha, lyricAppearance, wordGlow, wordProgress } from './lyricsGpuLayout'
 
 describe('GPU lyric effects', () => {
+  it('keeps the enhanced line at its normal scale while glow fades after each word', () => {
+    const word = { text: 'Hello', start: 10, end: 11 }
+    expect(wordGlow(word, 11.25)).toBeCloseTo(0.5)
+    expect(wordGlow(word, 11.5)).toBe(0)
+    for (const immersive of [false, true]) {
+      expect(lyricAppearance(0, 0, false, immersive, -1, true).scale).toBe(1)
+      expect(lyricAppearance(0, 0, false, immersive, -1).scale).toBeGreaterThan(1)
+    }
+  })
   it('preserves immersive distance effects and makes browse text fully readable', () => {
     expect([0, 1, 2, 3].map(index => lyricAppearance(index, 0, false, true, -1))).toEqual([
       { blur: 0, alpha: 1, scale: 1.06 },

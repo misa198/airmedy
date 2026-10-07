@@ -184,13 +184,20 @@ Playback position is authoritative for the active line; browsing or dragging
 only pauses auto-follow and changes playback only when a valid lyric tap
 dispatches seek.
 Enhanced LRC inline `<mm:ss.xxx>` timestamps are parsed into primary-word
-segments for the active follow-mode row only. The existing playback position
-sweeps each segment, pauses freeze it, and seeks update it immediately;
+segments for the active follow-mode row only. A shared lyrics clock advances
+between playback samples and drives both the word sweep and active line, so
+the last word completes at the next line boundary. Pauses freeze it and seeks
+update it immediately;
 ordinary or malformed timing retains normal line highlighting. Timing tags are
 removed before display and romanization, while translations remain line-level.
-Enhanced rows animate sung and unsung opacity independently over 300ms. Leaving
-the active state cancels the position animation and holds its last displayed
-fill while both regions fade to the inactive opacity; never replace that fill
+Enhanced rows animate sung and unsung opacity independently over 320ms. While
+following, the sung region has a short glow that fades after the word ends.
+Lyrics Settings persists a glow switch in Android DataStore; it defaults on
+and changes only the glow layer, leaving the timed word fill visible. The glow
+follows the displayed playback position, stops in browse mode, and is disabled
+when Android's animation scale is zero; the karaoke fill remains visible.
+Leaving the active state holds its last displayed fill while both regions fade
+to the inactive opacity; never replace that fill
 with a fully highlighted line at the old active opacity. The two text regions
 use complementary clips so translucent glyphs do not overlap and brighten.
 Entering follow mode starts at the current playback position; browsing fades

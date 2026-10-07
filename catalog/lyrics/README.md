@@ -301,8 +301,21 @@ When fullscreen High Contrast Lyrics is off, `ImmersiveLyricsPanel` passes
 `immersive=true` to `PlayerLyrics`. For synced lyrics, `SyncedLyricsView` keeps
 the active line sharp; its immediate neighbors have only a `0.35px` blur, then
 lines farther away use `1.25px` and `2px` blur while fading from 25% to 10%
-opacity. The active line smoothly enters from 100% to 106% scale when its GPU
-row is first rendered. The
+opacity. Ordinary active lines smoothly enter from 100% to 106% scale when their GPU
+row is first rendered. Enhanced lines stay at 100% scale and at a fixed vertical
+position. Each shaped word fragment keeps natural letter spacing while its sung
+portion brightens and, when `lyrics_glow` is enabled, glows. Glow is enabled by
+default and has a subtle envelope with a 500ms release. A shared alpha
+ramp softens the GPU highlight edge. Fullscreen scrolling and row opacity/blur
+transitions share a 320ms eased duration so the old line dims as the new line arrives;
+adjacent words and the next active line can overlap the glow tail without
+delaying the sung-color sweep. Wrapped fragments continue the same word sweep.
+The effect follows playback position, so pause freezes it and seek updates it
+immediately; the setting, browse mode, and reduced motion can disable the glow
+without changing the sung-color sweep. `Settings → Playback` controls the setting
+for both fullscreen lyrics layouts.
+Translation/romanization stays at line level; DOM fallback retains the color sweep
+without the glow. The
 high-contrast fullscreen panel and `LyricsDrawer` retain their existing styling.
 Immersive auto-scroll positions the active line at 32% of the lyric viewport;
 other lyric surfaces keep it centered.

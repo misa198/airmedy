@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { LyricLine } from '../composables/useLyrics'
-import { useLyricsScrollMotion } from '../composables/useLyricsScrollMotion'
+import { fullscreenLyricsMotionDuration, useLyricsScrollMotion } from '../composables/useLyricsScrollMotion'
 import KaraokeText from './KaraokeText.vue'
 import { useGpuLyrics } from '../composables/useGpuLyrics'
 import { lyricAppearance } from '../lib/lyricsGpuLayout'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   secondary?: (string | undefined)[]
   lines: LyricLine[]
   currentPosition: number
   immersive?: boolean
-}>()
+  lyricsGlow?: boolean
+}>(), { lyricsGlow: true })
 
 const emit = defineEmits<{
   seek: [time: number]
@@ -32,11 +33,12 @@ const hovered = ref(-1)
 const { ready: gpuReady, draw, layout } = useGpuLyrics(canvas, scrollContainer, lineRefs, computed(() => ({
   lines: props.lines, active: activeIndex.value, browsing: isBrowsing.value,
   immersive: !!props.immersive, hovered: hovered.value, position: props.currentPosition, reducedMotion: false,
+  lyricsGlow: props.lyricsGlow,
 })))
 
 function domAppearance(index: number) {
   if (gpuReady.value) return { opacity: 0 }
-  const appearance = lyricAppearance(index, activeIndex.value, isBrowsing.value, !!props.immersive, hovered.value)
+  const appearance = lyricAppearance(index, activeIndex.value, isBrowsing.value, !!props.immersive, hovered.value, !!props.lines[index]?.words?.length)
   return { opacity: appearance.alpha, filter: appearance.blur ? `blur(${appearance.blur}px)` : undefined }
 }
 let scrollFrame: number | undefined
@@ -44,7 +46,7 @@ let resizeObserver: ResizeObserver | null = null
 let disposed = false
 let hasPositionedInitialLine = false
 let previousActiveIndex = -1
-const { scrollTo, stop: stopScrollAnimation } = useLyricsScrollMotion()
+const { scrollTo, stop: stopScrollAnimation } = useLyricsScrollMotion(fullscreenLyricsMotionDuration)
 
 // Reset stale refs when the track's lines change so indexes stay aligned.
 watch(() => props.lines, () => {

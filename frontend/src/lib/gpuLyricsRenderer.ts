@@ -1,8 +1,7 @@
-import { BlurFilter, Color, Container, Graphics, Text, WebGLRenderer } from 'pixi.js'
-import type { TextStyleFontWeight } from 'pixi.js'
+import { BlurFilter, BufferImageSource, Color, Container, Sprite, Text, Texture, WebGLRenderer } from 'pixi.js'
 import type { LyricLine } from '../composables/useLyrics'
-import { lyricsMotionProgress } from '../composables/useLyricsScrollMotion'
-import { brightLayerVisible, fragmentFill, initialLyricAppearance, karaokeBaseAlpha, lyricAppearance, measureLyricFragments, wordProgress } from './lyricsGpuLayout'
+import { fullscreenLyricsMotionDuration, lyricsMotionProgress } from '../composables/useLyricsScrollMotion'
+import { brightLayerVisible, fragmentFill, initialLyricAppearance, karaokeBaseAlpha, lyricAppearance, measureLyricFragments, wordGlow, wordProgress } from './lyricsGpuLayout'
 
 export interface GpuLyricsState {
   lines: LyricLine[]
@@ -12,13 +11,16 @@ export interface GpuLyricsState {
   hovered: number
   position: number
   reducedMotion: boolean
+  lyricsGlow: boolean
 }
 
 type Appearance = ReturnType<typeof lyricAppearance>
-type Run = { base: Text; bright?: Text; mask?: Graphics; word?: number; offset: number; width: number; total: number; secondary: boolean }
+type Run = { base: Text; bright?: Text; mask?: Sprite; glow?: Text; glowMask?: Sprite; word?: number; offset: number; width: number; total: number; secondary: boolean }
 type Row = {
   container: Container
   blur: BlurFilter
+  glowLayer: Container
+  glowBlur: BlurFilter
   runs: Run[]
   current: Appearance
   from: Appearance
@@ -35,14 +37,23 @@ export async function createGpuLyricsRenderer(canvas: HTMLCanvasElement, viewpor
     canvas.getContext('webgl2')?.getExtension('WEBGL_lose_context')?.loseContext()
     throw error
   }
+  // Neutral alpha ramp, shared by every word mask; tint still comes from the theme.
+  const pixels = new Uint8Array(256 * 4).fill(255)
+  for (let x = 224; x < 256; x++) pixels[x * 4 + 3] = Math.round((255 - x) / 31 * 255)
+  const maskTexture = new Texture({ source: new BufferImageSource({ resource: pixels, width: 256, height: 1 }) })
   const stage = new Container()
   const rows = new Map<number, Row>()
   let layout: { element: HTMLElement; top: number; left: number; height: number }[] = []
 
   function removeRow(index: number) {
     const row = rows.get(index)!
+    for (const run of row.runs) {
+      run.mask?.destroy()
+      run.glowMask?.destroy()
+    }
     row.container.destroy({ children: true, texture: true, textureSource: true })
     row.blur.destroy()
+    row.glowBlur.destroy()
     rows.delete(index)
   }
 
@@ -59,6 +70,10 @@ export async function createGpuLyricsRenderer(canvas: HTMLCanvasElement, viewpor
   function createRow(index: number, appearance: Appearance) {
     const container = new Container()
     const blur = new BlurFilter({ strength: 0, quality: 4, resolution: renderer.resolution })
+    const glowLayer = new Container()
+    const glowBlur = new BlurFilter({ strength: 0, quality: 4, resolution: renderer.resolution })
+    glowLayer.filters = [glowBlur]
+    container.addChild(glowLayer)
     const runs: Run[] = []
     const fragments = measureLyricFragments(layout[index].element)
     const totals = new Map<number, number>()
@@ -88,16 +103,22 @@ export async function createGpuLyricsRenderer(canvas: HTMLCanvasElement, viewpor
       if (word !== undefined) {
         run.bright = new Text(options)
         run.bright.position.copyFrom(base.position)
-        run.mask = new Graphics()
+        run.mask = new Sprite(maskTexture)
         run.bright.mask = run.mask
         container.addChild(run.bright, run.mask)
+        run.glow = new Text(options)
+        run.glow.position.copyFrom(base.position)
+        run.glowMask = new Sprite(maskTexture)
+        run.glow.mask = run.glowMask
+        glowLayer.addChild(run.glow, run.glowMask)
+        glowBlur.strength = Math.max(glowBlur.strength, fragment.fontSize * 0.12)
         offsets.set(word, run.offset + run.width)
       }
       runs.push(run)
     }
     stage.addChild(container)
     const initial = initialLyricAppearance(appearance)
-    const row: Row = { container, blur, runs, current: initial, from: initial, target: initial, started: 0 }
+    const row: Row = { container, blur, glowLayer, glowBlur, runs, current: initial, from: initial, target: initial, started: 0 }
     rows.set(index, row)
     return row
   }
@@ -113,7 +134,7 @@ export async function createGpuLyricsRenderer(canvas: HTMLCanvasElement, viewpor
         return
       }
       const activeWord = !state.browsing && index === state.active && !!state.lines[index]?.words
-      const target = lyricAppearance(index, state.active, state.browsing, state.immersive, state.hovered)
+      const target = lyricAppearance(index, state.active, state.browsing, state.immersive, state.hovered, !!state.lines[index]?.words?.length)
       const row = rows.get(index) ?? createRow(index, target)
       const keys = Object.keys(target) as (keyof Appearance)[]
       if (keys.some(key => row.target[key] !== target[key])) {
@@ -121,7 +142,7 @@ export async function createGpuLyricsRenderer(canvas: HTMLCanvasElement, viewpor
         row.target = target
         row.started = now
       }
-      const progress = state.reducedMotion ? 1 : Math.min(1, (now - row.started) / 300)
+      const progress = state.reducedMotion ? 1 : Math.min(1, (now - row.started) / fullscreenLyricsMotionDuration)
       const eased = lyricsMotionProgress(progress)
       row.current = { ...target }
       for (const key of keys) row.current[key] = row.from[key] + (target[key] - row.from[key]) * eased
@@ -132,6 +153,7 @@ export async function createGpuLyricsRenderer(canvas: HTMLCanvasElement, viewpor
       row.container.alpha = row.current.alpha
       row.blur.strength = row.current.blur
       row.container.filters = row.current.blur > 0.001 ? [row.blur] : []
+      row.glowLayer.visible = false
       for (const run of row.runs) {
         run.base.tint = color
         run.base.alpha = run.secondary ? 0.8 : run.word === undefined ? 1 : activeWord ? karaokeBaseAlpha(row.current.alpha) : 1
@@ -139,9 +161,23 @@ export async function createGpuLyricsRenderer(canvas: HTMLCanvasElement, viewpor
         run.bright.tint = color
         const word = state.lines[index]?.words?.[run.word]
         const fill = activeWord && word ? wordProgress(word, state.position) : 1
+        const effects = word && !state.browsing && !state.reducedMotion && index <= state.active
+        const glow = effects && state.lyricsGlow ? wordGlow(word, state.position) : 0
         const width = fragmentFill(fill, run.offset, run.width, run.total)
-        run.mask.clear().rect(run.base.x - 2, run.base.y - 4, width > 0 ? width + 2 : 0, run.base.height + 8).fill(0xffffff)
+        const maskWidth = fragmentFill(fill, run.offset, run.width / 0.875, run.total / 0.875)
+        run.mask.position.set(run.base.x - 2, run.base.y - 6)
+        run.mask.width = width > 0 ? maskWidth + 2 : 0
+        run.mask.height = run.base.height + 12
         run.bright.visible = brightLayerVisible(activeWord, width)
+        if (run.glow && run.glowMask) {
+          run.glow.tint = color
+          run.glow.alpha = glow * 0.42
+          run.glow.visible = width > 0 && glow > 0
+          run.glowMask.position.copyFrom(run.mask.position)
+          run.glowMask.width = run.mask.width
+          run.glowMask.height = run.mask.height
+          row.glowLayer.visible ||= run.glow.visible
+        }
       }
     })
     renderer.render(stage)
@@ -151,6 +187,7 @@ export async function createGpuLyricsRenderer(canvas: HTMLCanvasElement, viewpor
   function destroy() {
     for (const index of rows.keys()) removeRow(index)
     stage.destroy()
+    maskTexture.destroy(true)
     const gl = renderer.gl
     renderer.destroy({ removeView: false })
     gl.getExtension('WEBGL_lose_context')?.loseContext()

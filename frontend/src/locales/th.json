@@ -221,6 +221,8 @@
       "auto_advance_notifications_desc": "แสดงการแจ้งเตือน macOS แบบเงียบเมื่อการเล่นเปลี่ยนไปยังเพลงถัดไปโดยอัตโนมัติ",
       "high_contrast_lyrics": "เนื้อเพลงคอนทราสต์สูง",
       "high_contrast_lyrics_desc": "แสดงเนื้อเพลงเต็มหน้าจอในแผงกระจกที่โดดเด่น",
+      "lyrics_glow": "เอฟเฟกต์เรืองแสงเนื้อเพลง",
+      "lyrics_glow_desc": "แสดงแสงเรืองรองให้แต่ละคำที่ร้องในเนื้อเพลง LRC แบบขั้นสูง",
       "fullscreen_background": "พื้นหลังเต็มหน้าจอ",
       "fullscreen_background_desc": "เลือกรูปแบบพื้นหลังอาร์ตเวิร์กสำหรับเครื่องเล่นเต็มหน้าจอ",
       "fullscreen_background_living": "อาร์ตเวิร์กมีชีวิต",

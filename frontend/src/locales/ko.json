@@ -221,6 +221,8 @@
       "auto_advance_notifications_desc": "재생이 자동으로 다음 트랙으로 넘어갈 때 macOS 알림을 조용히 표시합니다",
       "high_contrast_lyrics": "고대비 가사",
       "high_contrast_lyrics_desc": "전체 화면 가사를 눈에 띄는 글래스 패널에 표시합니다",
+      "lyrics_glow": "가사 빛 효과",
+      "lyrics_glow_desc": "향상된 LRC 가사에서 노래되는 각 단어에 빛 효과를 표시합니다",
       "fullscreen_background": "전체 화면 배경",
       "fullscreen_background_desc": "전체 화면 플레이어의 앨범 아트 배경 스타일을 선택합니다",
       "fullscreen_background_living": "리빙 아트워크",

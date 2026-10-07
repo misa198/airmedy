@@ -247,6 +247,7 @@ internal fun AppDestinationContent(
     val onLrclibChanged = settings.onLrclibChanged
     val onKugouChanged = settings.onKugouChanged
     val onRomanizationEnabledChanged = settings.onRomanizationEnabledChanged
+    val onLyricsGlowChanged = settings.onLyricsGlowChanged
     val onLyricsSourceChanged = settings.onLyricsSourceChanged
     val crossfadeSeconds = settings.crossfadeSeconds
     val lastEnabledCrossfadeSeconds = settings.lastEnabledCrossfadeSeconds
@@ -458,7 +459,7 @@ internal fun AppDestinationContent(
                                 onDisconnect = onLastFmDisconnect,
                                 modifier = settingsPageModifier,
                             )
-                            AppStackPage.SettingsLyrics -> LyricsContent(lyricsSettings, onLyricsSourceChanged, onLrclibChanged, onKugouChanged, onRomanizationEnabledChanged, settingsPageModifier)
+                            AppStackPage.SettingsLyrics -> LyricsContent(lyricsSettings, onLyricsSourceChanged, onLrclibChanged, onKugouChanged, onRomanizationEnabledChanged, onLyricsGlowChanged, settingsPageModifier)
                             AppStackPage.SettingsAbout -> AboutContent(
                                 modifier = settingsPageModifier,
                                 onOpenExternalUrl = { url ->

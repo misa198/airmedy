@@ -134,6 +134,10 @@ feature-specific Android host or UI test task.
 
 ## Offline lyric romanization
 
+Lyrics Settings also has a Lyrics glow switch. It defaults on and persists on
+Android; turning it off removes the enhanced LRC word glow while keeping the
+timed word highlight.
+
 Lyrics Settings keeps Chinese and Korean romanization disabled by default;
 enabling it reveals a floating show/hide button in the fullscreen lyrics panel.
 It works offline with synced or plain lyrics and preserves

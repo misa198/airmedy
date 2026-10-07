@@ -9,7 +9,7 @@ vi.mock('../lib/gpuLyricsRenderer', () => ({ createGpuLyricsRenderer: mock.creat
 describe('GPU lyrics lifecycle', () => {
   const frames = new Map<number, FrameRequestCallback>()
   const renderer = { render: vi.fn(() => false), resize: vi.fn(), destroy: vi.fn() }
-  const state = ref({ lines: [], active: -1, browsing: false, immersive: true, hovered: -1, position: 0, reducedMotion: false })
+  const state = ref({ lines: [], active: -1, browsing: false, immersive: true, hovered: -1, position: 0, reducedMotion: false, lyricsGlow: true })
   let controls: ReturnType<typeof useGpuLyrics>
   const Host = defineComponent({
     setup() {

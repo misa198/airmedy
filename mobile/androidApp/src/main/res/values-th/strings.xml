@@ -385,6 +385,8 @@
     <string name="lyrics_data_sources">แหล่งข้อมูล</string>
     <string name="lyrics_preferred_source">แหล่งข้อมูลที่ต้องการ</string>
     <string name="lyrics_romanization">เปิดใช้การถอดเสียง</string>
+    <string name="lyrics_display">การแสดงผล</string>
+    <string name="lyrics_glow">เอฟเฟกต์เรืองแสงเนื้อเพลง</string>
     <string name="lyrics_source_desktop">ซิงค์จากเดสก์ท็อป</string>
     <string name="lyrics_source_auto_fetch">ดึงข้อมูลอัตโนมัติ</string>
     <string name="lyrics_info_action">ข้อมูลเนื้อเพลง</string>

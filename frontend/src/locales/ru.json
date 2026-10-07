@@ -221,6 +221,8 @@
       "auto_advance_notifications_desc": "Показывать тихое уведомление macOS, когда воспроизведение автоматически переходит к следующему треку",
       "high_contrast_lyrics": "Высококонтрастный текст",
       "high_contrast_lyrics_desc": "Показывать текст на весь экран в заметной стеклянной панели",
+      "lyrics_glow": "Свечение текста",
+      "lyrics_glow_desc": "Подсвечивать каждое пропеваемое слово в расширенных LRC-текстах",
       "fullscreen_background": "Полноэкранный фон",
       "fullscreen_background_desc": "Выберите стиль фона обложки для полноэкранного плеера",
       "fullscreen_background_living": "Живая обложка",

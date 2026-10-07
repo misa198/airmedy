@@ -1,8 +1,8 @@
 import type { LyricWord } from '../composables/useLyrics'
 
-export function lyricAppearance(index: number, active: number, browsing: boolean, immersive: boolean, hovered: number) {
+export function lyricAppearance(index: number, active: number, browsing: boolean, immersive: boolean, hovered: number, enhanced = false) {
   if (browsing) return { blur: 0, alpha: 1, scale: 1 }
-  if (index === active) return { blur: 0, alpha: 1, scale: immersive ? 1.06 : 1.03 }
+  if (index === active) return { blur: 0, alpha: 1, scale: enhanced ? 1 : immersive ? 1.06 : 1.03 }
   if (immersive) {
     const distance = Math.min(Math.abs(index - active), 3)
     return { blur: [0, 0.35, 1.25, 2][distance], alpha: [1, 0.25, 0.15, 0.1][distance], scale: 1 }
@@ -22,6 +22,17 @@ export function initialLyricAppearance(appearance: ReturnType<typeof lyricAppear
 export function wordProgress(word: LyricWord, position: number) {
   if (word.end === word.start) return position >= word.start ? 1 : 0
   return Math.max(0, Math.min(1, (position - word.start) / (word.end - word.start)))
+}
+
+function smooth(value: number) {
+  const t = Math.max(0, Math.min(1, value))
+  return t * t * (3 - 2 * t)
+}
+
+export function wordGlow(word: LyricWord, position: number) {
+  if (word.end <= word.start) return 0
+  return smooth((position - word.start) / Math.min(0.18, word.end - word.start))
+    * (1 - smooth((position - word.end) / 0.5))
 }
 
 export function fragmentFill(progress: number, offset: number, width: number, total: number) {
@@ -50,7 +61,7 @@ export interface LyricFragment {
 }
 
 // Let browser shaping/wrapping handle CJK, combining marks and bilingual text.
-// Only measure on layout changes, never on a playback-position update.
+// Keep each shaped line fragment intact so letter spacing stays natural.
 export function measureLyricFragments(row: HTMLElement): LyricFragment[] {
   const origin = row.getBoundingClientRect()
   const walker = document.createTreeWalker(row, NodeFilter.SHOW_TEXT)
@@ -73,7 +84,7 @@ export function measureLyricFragments(row: HTMLElement): LyricFragment[] {
       if (!rect.height) continue
       const x = rect.left - origin.left
       const y = rect.top - origin.top
-      if (!fragment || Math.abs(fragment.y - y) > 1) {
+      if (!fragment || Math.abs(fragment.y - y) > 1 || fragment.word !== (wordIndex < 0 ? undefined : wordIndex)) {
         fragment = {
           text: segment, x, y, width: rect.width, height: rect.height,
           fontFamily: style.fontFamily, fontSize: parseFloat(style.fontSize), fontWeight: style.fontWeight, secondary,

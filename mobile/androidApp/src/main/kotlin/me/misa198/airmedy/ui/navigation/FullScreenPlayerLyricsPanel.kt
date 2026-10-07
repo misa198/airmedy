@@ -1,5 +1,6 @@
 package me.misa198.airmedy.ui.navigation
 
+import android.provider.Settings
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -57,6 +58,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -64,6 +66,7 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -75,6 +78,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.awaitCancellation
 import me.misa198.airmedy.lyrics.RomanizationUiState
 import kotlin.math.roundToInt
+import kotlin.math.abs
 
 internal data class PlayerLyricLine(
     val primary: String,
@@ -90,6 +94,8 @@ private val InlineTimingTag = Regex("<\\d+:[^<>]*>")
 private val WordTimingTag = Regex("^<(\\d+):([0-5]\\d(?:\\.\\d{1,3})?)>$")
 private val BilingualSeparator = Regex("\\s*\\^\\s*|\\s*/\\s*")
 private const val ForwardSeekAnimatedApproachRows = 3
+private const val LyricsMotionDurationMs = 320
+private const val LyricsPlaybackTickMs = 200
 
 internal enum class LyricsSeekDirection { Backward, Forward }
 
@@ -199,9 +205,11 @@ internal fun FullScreenPlayerLyricsPanel(
     visible: Boolean = true,
     romanization: RomanizationUiState = RomanizationUiState(),
     romanizationAllowed: Boolean = false,
+    glowEnabled: Boolean = true,
     onRomanizationInput: (List<String>, Boolean) -> Unit = { _, _ -> },
     onRomanizationToggle: () -> Unit = {},
     currentPositionMs: Long,
+    isPlaying: Boolean = false,
     pendingSeekPositionMs: Long? = null,
     seekRequestId: Long = 0L,
     onSeek: (Long) -> Unit,
@@ -235,12 +243,14 @@ internal fun FullScreenPlayerLyricsPanel(
                 trackId,
                 syncedLines,
                 currentPositionMs,
+                isPlaying,
                 pendingSeekPositionMs,
                 seekRequestId,
                 onSeek,
                 Modifier.fillMaxSize(),
                 secondary,
                 showToggle,
+                glowEnabled,
             )
             else -> PlainLyricsList(parsedLines, Modifier.fillMaxSize(), secondary, showToggle)
         }
@@ -287,18 +297,45 @@ private fun LyricsLoadingState(modifier: Modifier) {
 }
 
 @Composable
+internal fun rememberLyricsDisplayPosition(
+    trackId: String,
+    currentPositionMs: Long,
+    pendingSeekPositionMs: Long?,
+    isPlaying: Boolean,
+): Long {
+    val lyricClock = remember(trackId) { Animatable(currentPositionMs.toFloat()) }
+    LaunchedEffect(trackId, currentPositionMs, pendingSeekPositionMs, isPlaying) {
+        val position = displayedLyricsPositionMs(currentPositionMs, pendingSeekPositionMs).toFloat()
+        lyricClock.snapTo(position)
+        if (isPlaying && pendingSeekPositionMs == null) {
+            lyricClock.animateTo(position + LyricsPlaybackTickMs, tween(LyricsPlaybackTickMs, easing = LinearEasing))
+        }
+    }
+    val clockPositionMs = lyricClock.value.toLong()
+    return pendingSeekPositionMs ?: if (isPlaying && abs(clockPositionMs - currentPositionMs) <= LyricsPlaybackTickMs) {
+        clockPositionMs
+    } else {
+        currentPositionMs
+    }
+}
+
+@Composable
 private fun SyncedLyricsList(
     trackId: String,
     lines: List<PlayerLyricLine>,
     currentPositionMs: Long,
+    isPlaying: Boolean,
     pendingSeekPositionMs: Long?,
     seekRequestId: Long,
     onSeek: (Long) -> Unit,
     modifier: Modifier,
     secondary: List<String?>,
     showToggle: Boolean,
+    glowEnabled: Boolean,
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
+    val context = LocalContext.current
+    val motionEnabled = Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f
     val listState = rememberLazyListState()
     val rowHeights = remember(lines) { mutableStateMapOf<Int, Int>() }
     val trailingLineHeights = remember(lines) { mutableStateMapOf<Int, Int>() }
@@ -314,7 +351,7 @@ private fun SyncedLyricsList(
     var returnedToForeground by remember(lines) { mutableStateOf(false) }
     var previousPositionMs by remember(trackId) { mutableLongStateOf(currentPositionMs) }
     val isUserDragging by listState.interactionSource.collectIsDraggedAsState()
-    val displayedPositionMs = displayedLyricsPositionMs(currentPositionMs, pendingSeekPositionMs)
+    val displayedPositionMs = rememberLyricsDisplayPosition(trackId, currentPositionMs, pendingSeekPositionMs, isPlaying)
     val activeIndex = remember(lines, displayedPositionMs) {
         lines.indexOfLast { (it.timestampSeconds ?: Float.MAX_VALUE) <= displayedPositionMs / 1_000f }
     }
@@ -375,7 +412,7 @@ private fun SyncedLyricsList(
             val offset = previousLineOffset(activeLineIndex)
             listState.animateScrollBy(
                 (target.offset + offset).toFloat(),
-                animationSpec = tween(280, easing = FastOutSlowInEasing),
+                animationSpec = tween(LyricsMotionDurationMs, easing = FastOutSlowInEasing),
             )
         } else {
             // Do not animate through a long remote list: it makes a fast seek
@@ -390,7 +427,7 @@ private fun SyncedLyricsList(
                     if (alignedTarget != null) {
                         listState.animateScrollBy(
                             (alignedTarget.offset + previousLineOffset(activeLineIndex)).toFloat(),
-                            animationSpec = tween(280, easing = FastOutSlowInEasing),
+                            animationSpec = tween(LyricsMotionDurationMs, easing = FastOutSlowInEasing),
                         )
                     } else {
                         listState.scrollToItem(previousIndex, previousLineOffset(activeLineIndex))
@@ -404,7 +441,7 @@ private fun SyncedLyricsList(
                     listState.scrollToItem(previousIndex, focusOffset + backwardSeekApproachPx)
                     listState.animateScrollBy(
                         -backwardSeekApproachPx.toFloat(),
-                        animationSpec = tween(280, easing = FastOutSlowInEasing),
+                        animationSpec = tween(LyricsMotionDurationMs, easing = FastOutSlowInEasing),
                     )
                 }
             }
@@ -494,6 +531,7 @@ private fun SyncedLyricsList(
                 onRowHeightChanged = { rowHeights[index] = it },
                 onTrailingLineHeightChanged = { trailingLineHeights[index] = it },
                 focusMode = !isBrowsing,
+                motionEnabled = motionEnabled && glowEnabled,
             )
         }
     }
@@ -509,6 +547,7 @@ private fun SyncedLyricRow(
     onRowHeightChanged: (Int) -> Unit,
     onTrailingLineHeightChanged: (Int) -> Unit,
     focusMode: Boolean,
+    motionEnabled: Boolean,
 ) {
     val colors = LocalAirmedyColors.current
     // The pointer coroutine remains alive across playback-position and track
@@ -525,13 +564,13 @@ private fun SyncedLyricRow(
         else -> 0.10f
     }
     val targetBlur = if (focusMode) syncedLyricBlurRadius(distance) else 0.dp
-    val animatedBlur by animateDpAsState(targetBlur, tween(300, easing = FastOutSlowInEasing), label = "synced-lyric-blur")
-    val scale by animateFloatAsState(syncedLyricScale(distance, focusMode, enhanced), tween(300, easing = FastOutSlowInEasing), label = "synced-lyric-scale")
+    val animatedBlur by animateDpAsState(targetBlur, tween(LyricsMotionDurationMs, easing = FastOutSlowInEasing), label = "synced-lyric-blur")
+    val scale by animateFloatAsState(syncedLyricScale(distance, focusMode, enhanced), tween(LyricsMotionDurationMs, easing = FastOutSlowInEasing), label = "synced-lyric-scale")
     val activeOffsetPx = with(LocalDensity.current) { 4.dp.toPx() }
     val lyricTapSlopPx = with(LocalDensity.current) { 20.dp.toPx() }
     val animatedTranslationY by animateFloatAsState(
         if (!enhanced && focusMode && distance == 0) -activeOffsetPx else 0f,
-        if (enhanced) snap() else tween(300, easing = FastOutSlowInEasing),
+        if (enhanced) snap() else tween(LyricsMotionDurationMs, easing = FastOutSlowInEasing),
         label = "synced-lyric-offset",
     )
     Column(
@@ -579,6 +618,7 @@ private fun SyncedLyricRow(
             positionSeconds = karaokePositionSeconds,
             color = colors.onPrimary,
             targetOpacity = targetOpacity,
+            motionEnabled = motionEnabled,
             onTextLayout = { layout ->
                 if (secondary == null) onTrailingLineHeightChanged((layout.getLineBottom(layout.lineCount - 1) - layout.getLineTop(layout.lineCount - 1)).roundToInt())
             },
@@ -601,7 +641,7 @@ private fun SyncedLyricRow(
 private fun syncedLyricOpacity(targetOpacity: Float): Float {
     val opacity by animateFloatAsState(
         targetOpacity,
-        tween(300, easing = FastOutSlowInEasing),
+        tween(LyricsMotionDurationMs, easing = FastOutSlowInEasing),
         label = "synced-lyric-opacity",
     )
     return opacity
@@ -616,20 +656,15 @@ internal data class KaraokeLinePresentation(
 @Composable
 internal fun rememberKaraokeLinePresentation(positionSeconds: Float?, targetOpacity: Float): KaraokeLinePresentation {
     val position = remember { Animatable(positionSeconds ?: 0f) }
-    var wasActive by remember { mutableStateOf(positionSeconds != null) }
     LaunchedEffect(positionSeconds) {
         if (positionSeconds != null) {
-            // A newly focused row starts at playback, including after browsing or a seek.
-            if (!wasActive) position.snapTo(positionSeconds)
-            wasActive = true
-            position.animateTo(positionSeconds, tween(220, easing = LinearEasing))
-        } else {
-            // Cancelling the position animation freezes the outgoing fill while it fades.
-            wasActive = false
+            // The list clock already advances between playback samples. Keep
+            // the last position only for the outgoing row's opacity fade.
+            position.snapTo(positionSeconds)
         }
     }
     return KaraokeLinePresentation(
-        positionSeconds = position.value,
+        positionSeconds = positionSeconds ?: position.value,
         sungOpacity = syncedLyricOpacity(targetOpacity),
         unsungOpacity = syncedLyricOpacity(if (positionSeconds != null) targetOpacity * .35f else targetOpacity),
     )
@@ -642,6 +677,7 @@ private fun KaraokeLyricText(
     positionSeconds: Float?,
     color: androidx.compose.ui.graphics.Color,
     targetOpacity: Float,
+    motionEnabled: Boolean,
     onTextLayout: (androidx.compose.ui.text.TextLayoutResult) -> Unit,
 ) {
     val words = line.words
@@ -658,7 +694,7 @@ private fun KaraokeLyricText(
     val presentation = rememberKaraokeLinePresentation(positionSeconds, targetOpacity)
     FlowRow {
         words.forEachIndexed { index, word ->
-            KaraokeWord(word, presentation, color, index, onTextLayout)
+            KaraokeWord(word, presentation, color, index, positionSeconds != null && motionEnabled, onTextLayout)
         }
     }
 }
@@ -669,36 +705,109 @@ private fun KaraokeWord(
     presentation: KaraokeLinePresentation,
     color: androidx.compose.ui.graphics.Color,
     index: Int,
+    motionEnabled: Boolean,
     onTextLayout: (androidx.compose.ui.text.TextLayoutResult) -> Unit,
 ) {
     val progress = karaokeWordProgress(word, presentation.positionSeconds)
+    val glow = if (motionEnabled) karaokeWordGlow(word, presentation.positionSeconds) else 0f
+    var textLayout by remember(word.text) { mutableStateOf<TextLayoutResult?>(null) }
+    val fragments = remember(textLayout) { textLayout?.let(::karaokeWordFragments) }
     Box(Modifier.testTag("karaoke_word_$index")) {
+        if (glow > 0f && progress > 0f) {
+            Text(
+                text = word.text,
+                color = color.copy(alpha = glow * .72f),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .testTag("karaoke_glow_$index")
+                    .blur(with(LocalDensity.current) { MaterialTheme.typography.headlineSmall.fontSize.toDp() * .20f }, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+                    .karaokeWordClip(fragments, progress, bright = true),
+            )
+        }
         Text(
             text = word.text,
             color = color.copy(alpha = presentation.unsungOpacity),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
-            onTextLayout = onTextLayout,
+            onTextLayout = { layout -> textLayout = layout; onTextLayout(layout) },
             // Keep the two regions disjoint so translucent text never doubles in brightness.
-            modifier = Modifier.drawWithContent {
-                clipRect(left = size.width * progress) { this@drawWithContent.drawContent() }
-            },
+            modifier = Modifier.karaokeWordClip(fragments, progress, bright = false),
         )
         Text(
             text = word.text,
             color = color.copy(alpha = presentation.sungOpacity),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.drawWithContent {
-                clipRect(right = size.width * progress) { this@drawWithContent.drawContent() }
-            },
+            modifier = Modifier.karaokeWordClip(fragments, progress, bright = true),
         )
     }
 }
 
+private data class KaraokeWordFragment(
+    val left: Float,
+    val width: Float,
+    val top: Float,
+    val bottom: Float,
+    val offset: Float,
+    val total: Float,
+)
+
+private fun karaokeWordFragments(layout: TextLayoutResult): List<KaraokeWordFragment> {
+    val widths = (0 until layout.lineCount).map { (layout.getLineRight(it) - layout.getLineLeft(it)).coerceAtLeast(0f) }
+    val total = widths.sum()
+    var offset = 0f
+    return widths.mapIndexed { index, width ->
+        val fragment = KaraokeWordFragment(
+            left = layout.getLineLeft(index), width = width,
+            top = layout.getLineTop(index), bottom = layout.getLineBottom(index),
+            offset = offset, total = total,
+        )
+        offset += width
+        fragment
+    }
+}
+
+private fun Modifier.karaokeWordClip(fragments: List<KaraokeWordFragment>?, progress: Float, bright: Boolean): Modifier =
+    drawWithContent {
+        if (fragments == null || fragments.isEmpty() || fragments.first().total <= 0f) {
+            val split = size.width * progress
+            if (bright) clipRect(right = split) { this@drawWithContent.drawContent() }
+            else clipRect(left = split) { this@drawWithContent.drawContent() }
+        } else {
+            for (fragment in fragments) {
+                val split = fragment.left + karaokeFragmentFill(progress, fragment.offset, fragment.width, fragment.total)
+                if (bright) {
+                    clipRect(left = fragment.left, right = split, top = fragment.top, bottom = fragment.bottom) {
+                        this@drawWithContent.drawContent()
+                    }
+                } else {
+                    clipRect(left = split, right = fragment.left + fragment.width, top = fragment.top, bottom = fragment.bottom) {
+                        this@drawWithContent.drawContent()
+                    }
+                }
+            }
+        }
+    }
+
+internal fun karaokeFragmentFill(progress: Float, offset: Float, width: Float, total: Float): Float =
+    (progress * total - offset).coerceIn(0f, width)
+
 internal fun karaokeWordProgress(word: PlayerLyricWord, positionSeconds: Float): Float = when {
     word.endSeconds == word.startSeconds -> if (positionSeconds >= word.startSeconds) 1f else 0f
     else -> ((positionSeconds - word.startSeconds) / (word.endSeconds - word.startSeconds)).coerceIn(0f, 1f)
+}
+
+private fun karaokeSmooth(value: Float): Float {
+    val t = value.coerceIn(0f, 1f)
+    return t * t * (3f - 2f * t)
+}
+
+internal fun karaokeWordGlow(word: PlayerLyricWord, positionSeconds: Float): Float {
+    val duration = word.endSeconds - word.startSeconds
+    if (duration <= 0f) return 0f
+    return karaokeSmooth((positionSeconds - word.startSeconds) / minOf(.18f, duration)) *
+        (1f - karaokeSmooth((positionSeconds - word.endSeconds) / .5f))
 }
 
 @Composable

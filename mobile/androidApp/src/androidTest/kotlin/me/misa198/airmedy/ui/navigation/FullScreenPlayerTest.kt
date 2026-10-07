@@ -545,6 +545,7 @@ class FullScreenPlayerTest {
     @Test
     fun lyricsAndQueuePanelsToggleAndPersistAcrossTrackChanges() {
         val playbackState = mutableStateOf<PlaybackState>(PlaybackState.Playing(item, 0L, 120_000L))
+        val emptyLyrics = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.player_lyrics_not_available)
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 FullScreenPlayer(
@@ -567,12 +568,12 @@ class FullScreenPlayerTest {
 
         composeTestRule.onNodeWithContentDescription("Lyrics").performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithText("Lyrics").assertExists()
+        composeTestRule.onNodeWithText(emptyLyrics).assertExists()
 
         composeTestRule.runOnIdle {
             playbackState.value = PlaybackState.Playing(secondItem, 0L, 120_000L)
         }
-        composeTestRule.onNodeWithText("Lyrics").assertExists()
+        composeTestRule.onNodeWithText(emptyLyrics).assertExists()
 
         composeTestRule.onNodeWithContentDescription("Queue").performClick()
         composeTestRule.waitForIdle()
@@ -584,11 +585,11 @@ class FullScreenPlayerTest {
 
         composeTestRule.onNodeWithContentDescription("Lyrics").performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithText("Lyrics").assertExists()
+        composeTestRule.onNodeWithText(emptyLyrics).assertExists()
 
         composeTestRule.onNodeWithTag("full_screen_player_artwork").performClick()
         composeTestRule.waitForIdle()
-        composeTestRule.onAllNodesWithText("Lyrics").assertCountEquals(0)
+        composeTestRule.onAllNodesWithText(emptyLyrics).assertCountEquals(0)
     }
 
     @Test
@@ -634,6 +635,78 @@ class FullScreenPlayerTest {
     }
 
     @Test
+    fun fullScreenPlayerShowsEnhancedLyricsAndSeeks() {
+        var seekPositionMs: Long? = null
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenPlayer(
+                    visible = true,
+                    dragProgress = 0f,
+                    isDragging = false,
+                    openingFromMiniPlayerSwipe = false,
+                    playbackState = PlaybackState.Playing(item, 1_500L, 120_000L),
+                    lyrics = "[00:01]Hello <00:02>world<00:03>",
+                    volume = 0.5f,
+                    onSeek = { seekPositionMs = it },
+                    onVolumeChange = {}, onPrevious = {}, onPlayPause = {}, onNext = {},
+                    onOpenMediaOutputSwitcher = {}, onDismiss = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Lyrics").performClick()
+        composeTestRule.onNodeWithTag("karaoke_word_0").assertExists()
+        composeTestRule.onNodeWithTag("karaoke_glow_0").assertExists()
+        composeTestRule.onNodeWithTag("synced_lyric_1.0").performClick()
+        composeTestRule.runOnIdle { assertEquals(1_000L, seekPositionMs) }
+    }
+
+    @Test
+    fun disablingGlowKeepsEnhancedWordFill() {
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenPlayer(
+                    visible = true,
+                    dragProgress = 0f,
+                    isDragging = false,
+                    openingFromMiniPlayerSwipe = false,
+                    playbackState = PlaybackState.Playing(item, 1_500L, 120_000L),
+                    lyrics = "[00:01]Hello <00:02>world<00:03>",
+                    lyricsGlowEnabled = false,
+                    volume = 0.5f,
+                    onSeek = {},
+                    onVolumeChange = {}, onPrevious = {}, onPlayPause = {}, onNext = {},
+                    onOpenMediaOutputSwitcher = {}, onDismiss = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription("Lyrics").performClick()
+        composeTestRule.onNodeWithTag("karaoke_word_0").assertExists()
+        composeTestRule.onAllNodesWithTag("karaoke_glow_0").assertCountEquals(0)
+    }
+
+    @Test
+    fun wrappedEnhancedLyricKeepsTheWholeWordAndSeekTarget() {
+        var seekPositionMs: Long? = null
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenPlayerLyricsPanel(
+                    trackId = "wrapped",
+                    lyrics = "[00:01]A long phrase with several words that wraps<00:03>",
+                    currentPositionMs = 2_000L,
+                    onSeek = { seekPositionMs = it },
+                    modifier = Modifier.width(180.dp).height(300.dp),
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("karaoke_word_0").assertExists()
+        composeTestRule.onNodeWithTag("synced_lyric_1.0").performClick()
+        composeTestRule.runOnIdle { assertEquals(1_000L, seekPositionMs) }
+    }
+
+    @Test
     fun enhancedLyricsFadeWithoutFillingTheOutgoingWords() {
         var position by mutableStateOf<Float?>(1.5f)
         val observed = mutableListOf<KaraokeLinePresentation>()
@@ -643,8 +716,9 @@ class FullScreenPlayerTest {
         }
         composeTestRule.mainClock.autoAdvance = false
         composeTestRule.runOnIdle { position = 1.9f }
-        composeTestRule.mainClock.advanceTimeBy(80)
-        // Leave while the word sweep is still running, as at a normal line boundary.
+        composeTestRule.mainClock.advanceTimeByFrame()
+        // A line boundary must use the latest playback position, with no trailing fill animation.
+        composeTestRule.runOnIdle { assertEquals(1.9f, observed.last().positionSeconds) }
         composeTestRule.runOnIdle { position = null; observed.clear() }
         composeTestRule.mainClock.advanceTimeBy(160)
         composeTestRule.runOnIdle {
@@ -654,7 +728,7 @@ class FullScreenPlayerTest {
         composeTestRule.mainClock.advanceTimeBy(400)
         composeTestRule.runOnIdle {
             val frozenPosition = observed.first().positionSeconds
-            assertTrue(frozenPosition > 1.5f && frozenPosition < 1.9f)
+            assertEquals(1.9f, frozenPosition)
             observed.forEach {
                 assertEquals(frozenPosition, it.positionSeconds)
                 assertTrue(it.sungOpacity in .25f..1f)
@@ -684,6 +758,21 @@ class FullScreenPlayerTest {
     }
 
     @Test
+    fun lyricsClockFinishesLastWordAtNextLineBoundary() {
+        var displayedPositionMs = 0L
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            val position = rememberLyricsDisplayPosition("track-1", 1_800L, null, true)
+            SideEffect { displayedPositionMs = position }
+        }
+        composeTestRule.mainClock.advanceTimeBy(240)
+        composeTestRule.runOnIdle {
+            assertEquals(2_000L, displayedPositionMs)
+            assertEquals(1f, karaokeWordProgress(PlayerLyricWord("last", 1.8f, 2f), displayedPositionMs / 1_000f))
+        }
+    }
+
+    @Test
     fun enhancedLyricsBrowseAndResumeWithoutResettingTheFill() {
         var position by mutableStateOf<Float?>(1.5f)
         val observed = mutableListOf<KaraokeLinePresentation>()
@@ -707,6 +796,20 @@ class FullScreenPlayerTest {
             assertEquals(1f, observed.last().sungOpacity)
             assertEquals(.35f, observed.last().unsungOpacity)
         }
+    }
+
+    @Test
+    fun enhancedLyricsJumpToNewPositionOnSeek() {
+        var position by mutableStateOf<Float?>(1.5f)
+        var presented = 0f
+        composeTestRule.setContent {
+            val presentation = rememberKaraokeLinePresentation(position, 1f)
+            SideEffect { presented = presentation.positionSeconds }
+        }
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.runOnIdle { position = 8f }
+        composeTestRule.mainClock.advanceTimeByFrame()
+        composeTestRule.runOnIdle { assertEquals(8f, presented) }
     }
 
     @Test
