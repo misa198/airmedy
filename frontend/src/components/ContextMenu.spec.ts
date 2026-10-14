@@ -58,6 +58,13 @@ describe('ContextMenu', () => {
     expect(dangerEl.length).toBeGreaterThan(0)
   })
 
+  it('does not animate menu item hover states', () => {
+    const w = mountMenu()
+    const menuItems = w.findAll('[class*="cursor-default"]')
+    expect(menuItems).not.toHaveLength(0)
+    expect(menuItems.every(item => !item.classes().some(className => className.startsWith('transition-')))).toBe(true)
+  })
+
   it('emits close when overlay is clicked', async () => {
     const w = mountMenu()
     const overlay = w.find('.fixed.inset-0')

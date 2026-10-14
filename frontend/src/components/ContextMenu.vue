@@ -126,7 +126,7 @@ function handleSubmenuItemClick(item: ContextMenuItem) {
           />
           <div
             v-else
-            class="relative flex items-center gap-3 px-3 py-1.5 text-sm cursor-default transition-all rounded-lg mx-0.5"
+            class="relative flex items-center gap-3 px-3 py-1.5 text-sm cursor-default rounded-lg mx-0.5"
             :class="[
               item.disabled
                 ? 'text-dimmer cursor-not-allowed'
@@ -158,7 +158,7 @@ function handleSubmenuItemClick(item: ContextMenuItem) {
               <div v-if="child.separator" class="my-1 mx-2 border-t border-border-glass" />
               <div
                 v-else
-                class="flex items-center gap-3 px-3 py-1.5 text-sm cursor-default transition-all rounded-lg mx-0.5"
+                class="flex items-center gap-3 px-3 py-1.5 text-sm cursor-default rounded-lg mx-0.5"
                 :class="child.disabled ? 'text-dimmer' : 'text-foreground opacity-80 hover:text-foreground hover:bg-foreground/15'"
                 @click="handleSubmenuItemClick(child)"
               >
