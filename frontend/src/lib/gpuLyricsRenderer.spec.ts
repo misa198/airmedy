@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Container, Text } from 'pixi.js'
 import { createGpuLyricsRenderer, type GpuLyricsState } from './gpuLyricsRenderer'
+import { gpuLyricsFontWeight } from './lyricsGpuLayout'
 import * as layout from './lyricsGpuLayout'
 
 const gpu = vi.hoisted(() => ({ render: vi.fn(), loseContext: vi.fn() }))
@@ -23,6 +24,11 @@ vi.mock('pixi.js', async importOriginal => {
 afterEach(() => { vi.restoreAllMocks(); vi.clearAllMocks() })
 
 describe('enhanced lyric rendering', () => {
+  it('uses a slightly heavier GPU font texture on Windows only', () => {
+    expect(gpuLyricsFontWeight(true)).toBe('650')
+    expect(gpuLyricsFontWeight(false)).toBe('600')
+  })
+
   it('keeps shaped word fragments still while the sung mask and glow advance', async () => {
     vi.spyOn(layout, 'measureLyricFragments').mockReturnValue([
       { text: 'going ', x: 0, y: 0, width: 60, height: 48, fontFamily: 'Arial', fontSize: 40, fontWeight: '600', secondary: false, word: 0 },
@@ -36,7 +42,7 @@ describe('enhanced lyric rendering', () => {
     renderer.resize([document.createElement('div')])
     const state: GpuLyricsState = {
       lines: [{ time: 10, text: 'going gypsy', words: [{ text: 'going gypsy', start: 10, end: 12 }] }],
-      active: 0, browsing: false, immersive: true, hovered: -1, position: 10, reducedMotion: false, lyricsGlow: true,
+      active: 0, browsing: false, immersive: true, hovered: -1, position: 10, reducedMotion: false, lyricsGlow: true, fontWeight: '600',
     }
     renderer.render(state, 1000)
     const stage = gpu.render.mock.lastCall![0] as Container

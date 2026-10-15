@@ -4,7 +4,8 @@ import type { LyricLine } from '../composables/useLyrics'
 import { fullscreenLyricsMotionDuration, useLyricsScrollMotion } from '../composables/useLyricsScrollMotion'
 import KaraokeText from './KaraokeText.vue'
 import { useGpuLyrics } from '../composables/useGpuLyrics'
-import { lyricAppearance } from '../lib/lyricsGpuLayout'
+import { gpuLyricsFontWeight, lyricAppearance } from '../lib/lyricsGpuLayout'
+import { useDeviceStore } from '../stores/device'
 
 const props = withDefaults(defineProps<{
   secondary?: (string | undefined)[]
@@ -30,10 +31,11 @@ const lineRefs = ref<HTMLElement[]>([])
 const isBrowsing = ref(false)
 const canvas = ref<HTMLCanvasElement | null>(null)
 const hovered = ref(-1)
+const deviceStore = useDeviceStore()
 const { ready: gpuReady, draw, layout } = useGpuLyrics(canvas, scrollContainer, lineRefs, computed(() => ({
   lines: props.lines, active: activeIndex.value, browsing: isBrowsing.value,
   immersive: !!props.immersive, hovered: hovered.value, position: props.currentPosition, reducedMotion: false,
-  lyricsGlow: props.lyricsGlow,
+  lyricsGlow: props.lyricsGlow, fontWeight: gpuLyricsFontWeight(deviceStore.isWindows),
 })))
 
 function domAppearance(index: number) {
@@ -167,7 +169,7 @@ onUnmounted(() => {
           data-test="lyric-content"
           class="py-2"
           :class="props.immersive ? 'text-[40px]' : 'text-4xl'"
-          :style="domAppearance(index)"
+          :style="{ ...domAppearance(index), fontWeight: deviceStore.isWindows ? 650 : undefined }"
         >
           <div><KaraokeText :line="line" :position="!gpuReady && !isBrowsing && index === activeIndex ? currentPosition : undefined" /></div>
           <div v-if="secondary?.[index] || line.secondary" data-lyric-secondary class="text-lg md:text-2xl font-bold mt-1 opacity-80">{{ secondary?.[index] || line.secondary }}</div>

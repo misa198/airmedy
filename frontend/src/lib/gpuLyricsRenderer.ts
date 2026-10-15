@@ -1,4 +1,4 @@
-import { BlurFilter, BufferImageSource, Color, Container, Sprite, Text, Texture, WebGLRenderer } from 'pixi.js'
+import { BlurFilter, BufferImageSource, Color, Container, Sprite, Text, Texture, WebGLRenderer, type TextStyleFontWeight } from 'pixi.js'
 import type { LyricLine } from '../composables/useLyrics'
 import { fullscreenLyricsMotionDuration, lyricsMotionProgress } from '../composables/useLyricsScrollMotion'
 import { brightLayerVisible, fragmentFill, initialLyricAppearance, karaokeBaseAlpha, lyricAppearance, measureLyricFragments, wordGlow, wordProgress } from './lyricsGpuLayout'
@@ -12,6 +12,7 @@ export interface GpuLyricsState {
   position: number
   reducedMotion: boolean
   lyricsGlow: boolean
+  fontWeight: string
 }
 
 type Appearance = ReturnType<typeof lyricAppearance>
@@ -26,6 +27,7 @@ type Row = {
   from: Appearance
   target: Appearance
   started: number
+  fontWeight: string
 }
 
 export async function createGpuLyricsRenderer(canvas: HTMLCanvasElement, viewport: HTMLElement) {
@@ -67,7 +69,7 @@ export async function createGpuLyricsRenderer(canvas: HTMLCanvasElement, viewpor
     renderer.resize(Math.max(1, viewport.clientWidth), Math.max(1, viewport.clientHeight), window.devicePixelRatio || 1)
   }
 
-  function createRow(index: number, appearance: Appearance) {
+  function createRow(index: number, appearance: Appearance, fontWeight: string) {
     const container = new Container()
     const blur = new BlurFilter({ strength: 0, quality: 4, resolution: renderer.resolution })
     const glowLayer = new Container()
@@ -87,7 +89,7 @@ export async function createGpuLyricsRenderer(canvas: HTMLCanvasElement, viewpor
         resolution: renderer.resolution,
         style: {
           fontFamily: fragment.fontFamily.split(',').map(font => font.trim().replace(/^['"]|['"]$/g, '')),
-          fontSize: fragment.fontSize, fontWeight: 600, padding: 4,
+          fontSize: fragment.fontSize, fontWeight: fontWeight as TextStyleFontWeight, padding: 4,
           // Neutral texture; runtime theme foreground is applied via GPU tint.
           fill: 0xffffff,
         },
@@ -118,7 +120,7 @@ export async function createGpuLyricsRenderer(canvas: HTMLCanvasElement, viewpor
     }
     stage.addChild(container)
     const initial = initialLyricAppearance(appearance)
-    const row: Row = { container, blur, glowLayer, glowBlur, runs, current: initial, from: initial, target: initial, started: 0 }
+    const row: Row = { container, blur, glowLayer, glowBlur, runs, current: initial, from: initial, target: initial, started: 0, fontWeight }
     rows.set(index, row)
     return row
   }
@@ -135,7 +137,11 @@ export async function createGpuLyricsRenderer(canvas: HTMLCanvasElement, viewpor
       }
       const activeWord = !state.browsing && index === state.active && !!state.lines[index]?.words
       const target = lyricAppearance(index, state.active, state.browsing, state.immersive, state.hovered, !!state.lines[index]?.words?.length)
-      const row = rows.get(index) ?? createRow(index, target)
+      let row = rows.get(index)
+      if (!row || row.fontWeight !== state.fontWeight) {
+        if (row) removeRow(index)
+        row = createRow(index, target, state.fontWeight)
+      }
       const keys = Object.keys(target) as (keyof Appearance)[]
       if (keys.some(key => row.target[key] !== target[key])) {
         row.from = { ...row.current }

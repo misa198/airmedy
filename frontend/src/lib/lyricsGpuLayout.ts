@@ -47,6 +47,10 @@ export function brightLayerVisible(activeWord: boolean, width: number) {
   return activeWord && width > 0
 }
 
+export function gpuLyricsFontWeight(isWindows: boolean) {
+  return isWindows ? '650' : '600'
+}
+
 export interface LyricFragment {
   text: string
   x: number

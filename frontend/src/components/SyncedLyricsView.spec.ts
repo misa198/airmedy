@@ -4,10 +4,12 @@ import { nextTick } from 'vue'
 import SyncedLyricsView from './SyncedLyricsView.vue'
 import { useGpuLyrics } from '../composables/useGpuLyrics'
 
+const device = vi.hoisted(() => ({ isWindows: false }))
 vi.mock('../composables/useGpuLyrics', async () => {
   const { ref } = await import('vue')
   return { useGpuLyrics: vi.fn(() => ({ ready: ref(false), draw: vi.fn(), layout: vi.fn() })) }
 })
+vi.mock('../stores/device', () => ({ useDeviceStore: () => device }))
 
 describe('SyncedLyricsView', () => {
   const wrappers: ReturnType<typeof mount>[] = []
@@ -21,6 +23,7 @@ describe('SyncedLyricsView', () => {
   const state = () => vi.mocked(useGpuLyrics).mock.calls.at(-1)![3].value
   const gpu = () => vi.mocked(useGpuLyrics).mock.results.at(-1)!.value
   beforeEach(() => {
+    device.isWindows = false
     let id = 0
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { frames.set(++id, callback); return id })
     vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id))
@@ -96,6 +99,13 @@ describe('SyncedLyricsView', () => {
     await wrapper.setProps({ lyricsGlow: false })
     expect(state().lyricsGlow).toBe(false)
     expect(wrapper.find('[data-test="lyric-line"]').exists()).toBe(true)
+  })
+
+  it('uses the backend-provided Windows platform for GPU font weight', () => {
+    device.isWindows = true
+    const wrapper = create()
+    expect(state().fontWeight).toBe('650')
+    expect(wrapper.get('[data-test="lyric-content"]').attributes('style')).toContain('font-weight: 650')
   })
 
   it('waits for layout then places the current lyric at the immersive anchor', async () => {
