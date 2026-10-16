@@ -140,8 +140,8 @@ private fun FullScreenPlayerMetadata(
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f).clipToBounds().graphicsLayer { translationX = displayedHorizontalSwipeOffset }
             .semantics { testTag = FullScreenPlayerMetadataSwipeTestTag }) {
-            AirmedyMarqueeText(item.title, colors.onPrimary, if (compact) MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold) else MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
-            AirmedyMarqueeText(item.artist, colors.foregroundSubtle, if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium)
+            AirmedyMarqueeText(item.title, colors.onPrimary, if (compact) MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold) else MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), fade = true)
+            AirmedyMarqueeText(item.artist, colors.foregroundSubtle, if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium, fade = true)
         }
         Spacer(Modifier.width(4.dp))
         if (!compact) AirmedyIconButton(

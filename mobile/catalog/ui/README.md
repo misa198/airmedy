@@ -161,7 +161,12 @@ It uses Compose `basicMarquee`: overflowing text loops in one direction with a
 Text that fits stays still, and system-disabled animations disable scrolling.
 Changing text restarts the initial pause. Compose owns measurement, repeated
 drawing, and animation cleanup. Only the original text is exposed to accessibility.
-`AirmedyMarqueeTextTest` covers overflow motion, its initial pause, and fitting text.
+Mini-player and fullscreen title/artist labels enable its optional trailing alpha
+mask when text overflows, softening the edge beside playback controls and
+Favorite/More in expanded and compact modes.
+The mask reveals the existing background and leaves fitting text unchanged.
+`AirmedyMarqueeTextTest` covers overflow motion, its initial pause, fitting text,
+and the trailing fade in light and dark themes.
 
 ## Player UI contracts
 

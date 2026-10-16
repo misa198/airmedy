@@ -1,5 +1,9 @@
 package me.misa198.airmedy.ui.components
 
+import android.graphics.Bitmap
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +33,47 @@ class AirmedyMarqueeTextTest {
     @Test
     fun fittingTextRemainsStill() {
         checkMotion("Title", scrolls = false)
+    }
+
+    @Test
+    fun fadeSoftensOnlyTheTrailingEdgeOfOverflowingText() {
+        checkFade("████████████████████████████████", overflows = true)
+    }
+
+    @Test
+    fun fadeLeavesFittingTextUnchanged() {
+        checkFade("Title", overflows = false)
+    }
+
+    private fun checkFade(text: String, overflows: Boolean) {
+        var fade by mutableStateOf(false)
+        var theme by mutableStateOf(ThemeMode.Dark)
+        var fadeWidth = 0
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = theme) {
+                fadeWidth = with(androidx.compose.ui.platform.LocalDensity.current) { 16.dp.roundToPx() }
+                Box(Modifier.width(120.dp)) {
+                    AirmedyMarqueeText(text, MaterialTheme.colorScheme.onSurface, MaterialTheme.typography.bodyMedium, fade = fade)
+                }
+            }
+        }
+
+        for (mode in listOf(ThemeMode.Dark, ThemeMode.Light)) {
+            composeTestRule.runOnIdle { theme = mode; fade = false }
+            composeTestRule.mainClock.advanceTimeBy(300)
+            val node = composeTestRule.onNodeWithText(text).assertIsDisplayed()
+            val original = node.captureToImage().asAndroidBitmap()
+            composeTestRule.runOnIdle { fade = true }
+            composeTestRule.mainClock.advanceTimeByFrame()
+            val faded = node.captureToImage().asAndroidBitmap()
+            val unchangedWidth = original.width - fadeWidth
+            assertTrue("Fade must preserve text before the trailing edge in $mode",
+                Bitmap.createBitmap(original, 0, 0, unchangedWidth, original.height)
+                    .sameAs(Bitmap.createBitmap(faded, 0, 0, unchangedWidth, faded.height)))
+            if (overflows) assertFalse("Overflowing text must fade in $mode", original.sameAs(faded))
+            else assertTrue("Fitting text must not fade in $mode", original.sameAs(faded))
+        }
     }
 
     private fun checkMotion(text: String, scrolls: Boolean) {
