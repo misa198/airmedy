@@ -64,7 +64,7 @@ export function useGpuLyrics(
     motion = window.matchMedia?.('(prefers-reduced-motion: reduce)')
     motion?.addEventListener('change', draw)
     themeObserver = new MutationObserver(layout)
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'style'] })
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'style', 'lang'] })
     document.fonts?.addEventListener('loadingdone', layout)
     try {
       const { createGpuLyricsRenderer } = await import('../lib/gpuLyricsRenderer')

@@ -60,6 +60,7 @@ tasks:
           DEV: '{{.DEV}}'
       - task: common:build:frontend
         vars:
+          AIRMEDY_TARGET_OS: windows
           BUILD_FLAGS: '{{.BUILD_FLAGS}}'
           DEV: '{{.DEV}}'
       - task: common:generate:icons
@@ -88,6 +89,8 @@ tasks:
     deps:
       - task: common:build:remote
       - task: common:build:frontend
+        vars:
+          AIRMEDY_TARGET_OS: windows
       - task: common:generate:icons
     preconditions:
       - sh: docker info > /dev/null 2>&1

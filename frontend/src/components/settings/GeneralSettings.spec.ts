@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
+import { createPinia, setActivePinia } from 'pinia'
+import { Events } from '@wailsio/runtime'
+import { useAppStore } from '../../stores/app'
 import GeneralSettings from './GeneralSettings.vue'
 
 vi.mock('vue-i18n', () => ({
@@ -8,7 +11,7 @@ vi.mock('vue-i18n', () => ({
 }))
 
 vi.mock('@wailsio/runtime', () => ({
-  Events: { On: vi.fn(() => () => {}) },
+  Events: { On: vi.fn(() => vi.fn()) },
   Create: {
     Nullable: (create: (value: unknown) => unknown) => (value: unknown) => value == null ? null : create(value),
     Array: (create: (value: unknown) => unknown) => (values: unknown[]) => (values ?? []).map(create),
@@ -20,6 +23,18 @@ vi.mock('@wailsio/runtime', () => ({
 }))
 
 describe('GeneralSettings primary color', () => {
+  it('receives language changes from another desktop window and removes its listener', () => {
+    setActivePinia(createPinia())
+    const store = useAppStore()
+    const index = vi.mocked(Events.On).mock.calls.findLastIndex(([name]) => name === 'language:changed')
+    const handler = vi.mocked(Events.On).mock.calls[index][1]
+    const off = vi.mocked(Events.On).mock.results[index].value
+    handler({ data: 'ja' } as Events.WailsEvent)
+    expect(store.language).toBe('ja')
+    store.dispose()
+    expect(off).toHaveBeenCalledOnce()
+  })
+
   it('shows the language setting before the theme and primary color settings', () => {
     const wrapper = mount(GeneralSettings, {
       global: { plugins: [createTestingPinia({ createSpy: vi.fn, initialState: { app: { primaryColor: '#E11D48' } } })] },

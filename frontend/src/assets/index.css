@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "airmedy-target-fonts";
 @config "../../tailwind.config.js";
 
 @theme {

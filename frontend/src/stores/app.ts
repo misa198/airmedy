@@ -69,7 +69,7 @@ export const useAppStore = defineStore('app', () => {
   const crossfadeSeconds = ref(0)
   const blendArtworkDuringCrossfade = ref(true)
   const highContrastLyrics = ref(true)
-  const lyricsGlow = ref(true)
+  const lyricsGlow = ref(false)
   const livingArtworkBackground = ref(true)
   const remoteServerEnabled = ref(false)
   const remoteServerPort = ref(0)
@@ -161,7 +161,7 @@ export const useAppStore = defineStore('app', () => {
         crossfadeSeconds.value = Math.min(CROSSFADE_MAX_SECONDS, Math.max(0, Math.round(settings.crossfade_seconds ?? 0)))
         blendArtworkDuringCrossfade.value = settings.blend_artwork_during_crossfade !== false
         highContrastLyrics.value = settings.high_contrast_lyrics !== false
-        lyricsGlow.value = settings.lyrics_glow !== false
+        lyricsGlow.value = settings.lyrics_glow ?? false
         livingArtworkBackground.value = settings.living_artwork_background !== false
         libraryAnalysisEnabled.value = !!settings.library_analysis_enabled
         normalizationEnabled.value = !!settings.normalization_enabled
@@ -559,6 +559,9 @@ export const useAppStore = defineStore('app', () => {
   const _offRomanizationAvailability = Events.On('lyrics:romanization-availability', (event: Events.WailsEvent) => {
     romanizationEnabled.value = Boolean(event.data)
   })
+  const _offLanguage = Events.On('language:changed', (event: Events.WailsEvent) => {
+    language.value = event.data
+  })
 
   function dispose() {
     if (_primaryColorSaveTimer) clearTimeout(_primaryColorSaveTimer)
@@ -566,6 +569,7 @@ export const useAppStore = defineStore('app', () => {
     _darkMQ?.removeEventListener('change', _onDarkMQChange)
     _offUpdaterProgress()
     _offRomanizationAvailability()
+    _offLanguage()
   }
 
   return {

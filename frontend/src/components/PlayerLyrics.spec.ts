@@ -60,7 +60,7 @@ describe('fullscreen romanization', () => {
 
   it.each([true, false])('applies the glow setting in fullscreen lyrics (immersive: %s)', async (immersive) => {
     const appStore = useAppStore()
-    appStore.lyricsGlow = false
+    expect(appStore.lyricsGlow).toBe(false)
     const wrapper = mount(PlayerLyrics, {
       props: { lyrics: '[00:01]Hello<00:02> world', immersive },
       global: { mocks: { $t: (key: string) => key } },

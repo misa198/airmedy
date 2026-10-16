@@ -12,7 +12,7 @@ const props = withDefaults(defineProps<{
   currentPosition: number
   immersive?: boolean
   lyricsGlow?: boolean
-}>(), { lyricsGlow: true })
+}>(), { lyricsGlow: false })
 
 const emit = defineEmits<{
   seek: [time: number]

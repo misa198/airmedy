@@ -92,9 +92,9 @@ describe('SyncedLyricsView', () => {
 
   it('passes the glow setting to the GPU without changing the lyric sweep', async () => {
     const wrapper = create()
-    expect(state().lyricsGlow).toBe(true)
-    await wrapper.setProps({ lyricsGlow: false })
     expect(state().lyricsGlow).toBe(false)
+    await wrapper.setProps({ lyricsGlow: true })
+    expect(state().lyricsGlow).toBe(true)
     expect(wrapper.find('[data-test="lyric-line"]').exists()).toBe(true)
   })
 

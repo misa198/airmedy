@@ -68,6 +68,20 @@ describe('GPU lyrics lifecycle', () => {
     expect(renderer.render).not.toHaveBeenCalled()
   })
 
+  it('remeasures fonts after language changes and disconnects on unmount', async () => {
+    const wrapper = mount(Host)
+    await flushPromises()
+    paint()
+    document.documentElement.lang = 'ja'
+    await flushPromises()
+    paint()
+    expect(renderer.resize).toHaveBeenCalledTimes(2)
+    wrapper.unmount()
+    document.documentElement.lang = 'en'
+    await flushPromises()
+    expect(frames.size).toBe(0)
+  })
+
   it('keeps readable DOM when initialization fails', async () => {
     mock.create.mockRejectedValue(new Error('WebGL unavailable'))
     const wrapper = mount(Host)

@@ -51,11 +51,6 @@ tasks:
     label: build:frontend (DEV={{.DEV}})
     summary: Build the frontend project
     dir: frontend
-    sources:
-      - "**/*"
-      - exclude: node_modules/**/*
-    generates:
-      - dist/**/*
     deps:
       - task: install:deps
       - task: generate:bindings
@@ -65,6 +60,7 @@ tasks:
     cmds:
       - pnpm run {{.BUILD_COMMAND}}
     env:
+      AIRMEDY_TARGET_OS: '{{.AIRMEDY_TARGET_OS | default OS}}'
       PRODUCTION: '{{if eq .DEV "true"}}false{{else}}true{{end}}'
     vars:
       BUILD_COMMAND: '{{if eq .DEV "true"}}build:dev{{else}}build{{end}}'

@@ -4,7 +4,7 @@
   "packageManager": "pnpm@12.8.1",
   "scripts": {
     "dev": "turbo dev",
-    "build": "turbo build",
+    "build": "node scripts/build.mjs",
     "test": "turbo test",
     "lint": "turbo lint"
   },

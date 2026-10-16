@@ -1,0 +1,21 @@
+@import "./inter/inter.css";
+
+@theme inline {
+  --font-sans: var(--desktop-font-sans);
+}
+
+:root {
+  --desktop-font-sans: "Inter Variable", sans-serif;
+}
+
+:root:lang(zh) {
+  --desktop-font-sans: "Inter Variable", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif;
+}
+
+:root:lang(ja) {
+  --desktop-font-sans: "Inter Variable", "Noto Sans CJK JP", "Source Han Sans JP", sans-serif;
+}
+
+:root:lang(ko) {
+  --desktop-font-sans: "Inter Variable", "Noto Sans CJK KR", "Source Han Sans KR", sans-serif;
+}

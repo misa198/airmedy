@@ -1,0 +1,21 @@
+@import "./inter/inter.css";
+
+@theme inline {
+  --font-sans: var(--desktop-font-sans);
+}
+
+:root {
+  --desktop-font-sans: "Inter Variable", sans-serif;
+}
+
+:root:lang(zh) {
+  --desktop-font-sans: "Inter Variable", "Microsoft YaHei UI", sans-serif;
+}
+
+:root:lang(ja) {
+  --desktop-font-sans: "Inter Variable", "Yu Gothic UI", "Meiryo UI", sans-serif;
+}
+
+:root:lang(ko) {
+  --desktop-font-sans: "Inter Variable", "Malgun Gothic", sans-serif;
+}

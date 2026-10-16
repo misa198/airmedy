@@ -3,6 +3,7 @@ import vue from "@vitejs/plugin-vue";
 import wails from "@wailsio/runtime/plugins/vite";
 import path from "path";
 import { existsSync } from "node:fs";
+import { desktopFonts, desktopTarget } from "./build/desktopFonts";
 
 // Stubs missing Wails bindings during the brief deletion window when
 // `wails3 generate bindings -clean=true` wipes and regenerates the dir.
@@ -29,14 +30,19 @@ function wailsBindingsStub(): Plugin {
 }
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  plugins: [wailsBindingsStub(), vue(), wails("./bindings")],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-      "@airmedy/ui": path.resolve(__dirname, "../packages/ui/src"),
-      "@airmedy/utils": path.resolve(__dirname, "../packages/utils/src"),
+export default defineConfig(({ mode }) => {
+  const fonts = desktopFonts(desktopTarget());
+  return {
+    plugins: [wailsBindingsStub(), vue(), wails("./bindings"), fonts.license],
+    build: { emptyOutDir: true, assetsInlineLimit: file => file.endsWith(".woff2") ? false : undefined },
+    resolve: {
+      alias: {
+        "airmedy-target-fonts": fonts.stylesheet,
+        "@": path.resolve(__dirname, "./src"),
+        "@airmedy/ui": path.resolve(__dirname, "../packages/ui/src"),
+        "@airmedy/utils": path.resolve(__dirname, "../packages/utils/src"),
+      },
     },
-  },
-  esbuild: mode === 'production' ? { drop: ['console', 'debugger'] } : {},
-}));
+    esbuild: mode === 'production' ? { drop: ['console', 'debugger'] } : {},
+  };
+});

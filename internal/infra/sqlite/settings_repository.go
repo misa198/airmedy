@@ -257,7 +257,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 			CrossfadeSeconds:                0,
 			BlendArtworkDuringCrossfade:     true,
 			HighContrastLyrics:              true,
-			LyricsGlow:                      true,
+			LyricsGlow:                      false,
 			LivingArtworkBackground:         true,
 			AutoAdvanceNotificationsEnabled: true,
 			EQPreamp:                        0,
