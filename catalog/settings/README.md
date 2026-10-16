@@ -52,7 +52,7 @@ type AppSettings struct {
     CrossfadeSeconds        int                // track-transition overlap in seconds, clamped to [0, domain.MaxCrossfadeSeconds]=12; 0 = off (gapless), default 0
     BlendArtworkDuringCrossfade bool           // fullscreen cover blend during automatic crossfade, default true
     HighContrastLyrics       bool              // fullscreen glass lyrics panel; false renders lyrics directly over artwork, default true
-    LyricsGlow               bool              // enhanced lyric glow; default true, currently used by fullscreen lyrics
+    LyricsGlow               bool              // enhanced lyric glow; default false, currently used by fullscreen lyrics
     LivingArtworkBackground  bool              // fullscreen animated artwork background; false uses a solid artwork tint, default true
     AutoAdvanceNotificationsEnabled bool       // macOS-only silent notification when playback automatically advances, default true
 }
@@ -114,7 +114,7 @@ interface AppStore {
   crossfadeSeconds: number; // 0–CROSSFADE_MAX_SECONDS (12); 0 = off; slider in PlaybackSettings.vue
   blendArtworkDuringCrossfade: boolean; // default true; fullscreen only
   highContrastLyrics: boolean; // default true; fullscreen lyrics only
-  lyricsGlow: boolean; // default true; fullscreen enhanced lyrics glow
+  lyricsGlow: boolean; // default false; fullscreen enhanced lyrics glow
   livingArtworkBackground: boolean; // default true; fullscreen background only
   autoAdvanceNotificationsEnabled: boolean; // default true; macOS-only automatic track-change notification
   artistDelimiters: string[];

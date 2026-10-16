@@ -256,8 +256,8 @@ func TestNormalizationSettingsRoundTrip(t *testing.T) {
 	if def.HighContrastLyrics != true {
 		t.Errorf("Expected HighContrastLyrics default true, got %+v", def)
 	}
-	if !def.LyricsGlow {
-		t.Errorf("Expected LyricsGlow default true, got %+v", def)
+	if def.LyricsGlow {
+		t.Errorf("Expected LyricsGlow default false, got %+v", def)
 	}
 	if def.LivingArtworkBackground != true {
 		t.Errorf("Expected LivingArtworkBackground default true, got %+v", def)
@@ -279,7 +279,7 @@ func TestNormalizationSettingsRoundTrip(t *testing.T) {
 		NormalizationTargetLUFS:         -18,
 		NormalizationPreventClip:        false,
 		HighContrastLyrics:              false,
-		LyricsGlow:                      false,
+		LyricsGlow:                      true,
 		LivingArtworkBackground:         false,
 		RomanizationEnabled:             false,
 		AutoAdvanceNotificationsEnabled: false,
@@ -301,7 +301,7 @@ func TestNormalizationSettingsRoundTrip(t *testing.T) {
 	if out.HighContrastLyrics != false {
 		t.Errorf("HighContrastLyrics round-trip mismatch: %+v", out)
 	}
-	if out.LyricsGlow {
+	if !out.LyricsGlow {
 		t.Errorf("LyricsGlow round-trip mismatch: %+v", out)
 	}
 	if out.LivingArtworkBackground != false {
