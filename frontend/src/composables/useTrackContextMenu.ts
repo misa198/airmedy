@@ -1,4 +1,4 @@
-import { Heart, HeartOff, ListStart, ListEnd, ListPlus, Disc, User, Pencil, FolderOpen, Info, RefreshCw, ListX, Check, Trash2, Search, Radio } from '@lucide/vue'
+import { Star, StarMinus, ListStart, ListEnd, ListPlus, Disc, User, Pencil, FolderOpen, Info, RefreshCw, ListX, Check, Trash2, Search, Radio } from '@lucide/vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
@@ -74,7 +74,7 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
       const isFavorite = favoritesStore.isFavorite(track)
       items.push({
         label: isFavorite ? t('context_menu.remove_from_favorites') : t('context_menu.add_to_favorites'),
-        icon: isFavorite ? HeartOff : Heart,
+        icon: isFavorite ? StarMinus : Star,
         action: async () => { await favoritesStore.toggle(track.id) },
       })
       return items
@@ -160,7 +160,7 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
     const isFavorite = favoritesStore.isFavorite(track)
     items.push({
       label: isFavorite ? t('context_menu.remove_from_favorites') : t('context_menu.add_to_favorites'),
-      icon: isFavorite ? HeartOff : Heart,
+      icon: isFavorite ? StarMinus : Star,
       action: async () => {
         await favoritesStore.toggle(track.id)
       },
@@ -306,7 +306,7 @@ export function useTrackContextMenu(onEditMetadata: (track: TrackDTO) => void) {
 
     items.push({
       label: t('context_menu.add_to_favorites'),
-      icon: Heart,
+      icon: Star,
       action: async () => {
         for (const track of tracks) {
           if (!favoritesStore.isFavorite(track)) {

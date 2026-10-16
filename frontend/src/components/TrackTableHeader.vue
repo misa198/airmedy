@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onBeforeUnmount } from 'vue'
-import { Heart } from '@lucide/vue'
+import { Star } from '@lucide/vue'
 import { type ColumnDef, type ColumnKey, useTrackTableSettings } from '@/composables/useTrackTableSettings'
 import SortableHeaderCell from './SortableHeaderCell.vue'
 
@@ -199,7 +199,7 @@ onBeforeUnmount(() => {
         @drop="onDrop($event, col.key)"
         @dragend="onDragEnd"
       >
-        <Heart v-if="col.key === 'favorite'" class="w-1 h-3 flex-shrink-0 pointer-events-none" draggable="false" />
+        <Star v-if="col.key === 'favorite'" class="w-1 h-3 flex-shrink-0 pointer-events-none" draggable="false" />
         <span v-else class="truncate min-w-0 pointer-events-none" draggable="false">{{ $t(col.labelKey) }}</span>
         <!-- Column divider / resize handle -->
         <div
@@ -229,7 +229,7 @@ onBeforeUnmount(() => {
         @drop="!simpleMode && onDrop($event, col.key)"
         @dragend="!simpleMode && onDragEnd"
       >
-        <Heart v-if="col.key === 'favorite'" class="w-3 h-3 flex-shrink-0 pointer-events-none" draggable="false" />
+        <Star v-if="col.key === 'favorite'" class="w-3 h-3 flex-shrink-0 pointer-events-none" draggable="false" />
         <span v-else class="truncate min-w-0 pointer-events-none" draggable="false">{{ $t(col.labelKey) }}</span>
         <!-- Column divider / resize handle -->
         <div

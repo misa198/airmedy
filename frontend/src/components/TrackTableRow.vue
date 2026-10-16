@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Heart, Music, Play, MoreVertical, GripVertical } from '@lucide/vue'
+import { Star, Music, Play, MoreVertical, GripVertical } from '@lucide/vue'
 import type { Artist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import { formatTime, buildArtworkUrl, getTrackDisplayTitle } from '@airmedy/utils'
 import LazyImg from '@/components/LazyImg.vue'
@@ -167,7 +167,7 @@ const isCurrentTrack = (trackId: string) => playerStore.currentTrack?.id === tra
         v-else-if="col.key === 'favorite'"
         class="flex items-center justify-center px-2"
       >
-        <Heart
+        <Star
           class="w-3.5 h-3.5 transition-colors"
           :class="favoritesStore.isFavorite(track)
             ? 'text-primary fill-current'

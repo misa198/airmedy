@@ -126,6 +126,11 @@ const sectorPath = computed(() => {
         :description="t('settings.playback.show_player_indicator_desc')">
         <Switch :model-value="appStore.showPlayerIndicator" @update:model-value="appStore.updateShowPlayerIndicator" />
       </SettingRow>
+      <SettingRow data-test="show-player-favorite-button" :title="t('settings.playback.show_player_favorite_button')"
+        :description="t('settings.playback.show_player_favorite_button_desc')">
+        <Switch :model-value="appStore.showPlayerFavoriteButton"
+          @update:model-value="appStore.updateShowPlayerFavoriteButton" />
+      </SettingRow>
       <SettingRow v-if="deviceStore.isMac" :title="t('settings.playback.auto_advance_notifications')"
         :description="t('settings.playback.auto_advance_notifications_desc')">
         <Switch :model-value="appStore.autoAdvanceNotificationsEnabled"

@@ -217,6 +217,8 @@
       "prevent_sleep_desc": "Keep your computer awake while music is playing",
       "show_player_indicator": "Show active indicator",
       "show_player_indicator_desc": "Show a dot below shuffle and repeat buttons when active",
+      "show_player_favorite_button": "Show favorite button",
+      "show_player_favorite_button_desc": "Show the favorite button in the player footer and mini player",
       "auto_advance_notifications": "Track change notifications",
       "auto_advance_notifications_desc": "Show a silent macOS notification when playback automatically moves to the next track",
       "high_contrast_lyrics": "High Contrast Lyrics",

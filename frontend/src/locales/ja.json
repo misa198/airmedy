@@ -217,6 +217,8 @@
       "prevent_sleep_desc": "音楽再生中はコンピュータをスリープさせません",
       "show_player_indicator": "アクティブインジケーターを表示",
       "show_player_indicator_desc": "シャッフルとリピートボタンがオンのとき、ボタンの下にドットを表示します",
+      "show_player_favorite_button": "お気に入りボタンを表示",
+      "show_player_favorite_button_desc": "プレーヤーバーとミニプレーヤーにお気に入りボタンを表示します",
       "auto_advance_notifications": "曲の切り替え通知",
       "auto_advance_notifications_desc": "再生が自動的に次の曲へ移ったときに、macOSのサイレント通知を表示します",
       "high_contrast_lyrics": "高コントラスト歌詞",

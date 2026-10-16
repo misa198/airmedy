@@ -312,6 +312,17 @@ It supports one hover-open submenu level, including separators within the submen
 
 ### Player Footer Quick Settings
 
+`PlayerFavoriteButton` is shared by the desktop footer and floating mini player.
+It is hidden by default; Settings → Playback → Show favorite button controls
+both windows and persists the choice (see [settings](../settings/README.md)).
+It sits beside the footer's track information and at the right of the mini
+player's track-information row, inside the hover controls. The mini variant uses
+the existing glass pill tokens and retains its translucent background on hover.
+It reads and toggles favorite state through `useFavoritesStore`, reflects changes
+made elsewhere, uses an outlined/filled star and `aria-pressed`, and is disabled
+without a track or while a toggle is pending. Only clicking the button enables
+its state transition; changing tracks resets the transition immediately.
+
 `PlayerQuickSettingsMenu.vue` opens from a right click on a non-interactive area of
 the sticky player footer or fullscreen player. Artwork, track information, sliders,
 buttons, tabs, and queue/lyrics panels retain their own interactions and do not open
@@ -391,6 +402,17 @@ The EQ section is identified by `#equalizer`; `SettingsView` recognizes the
 `section=equalizer` query on the Playback route and scrolls that section into view.
 
 ## UI Primitives (`@airmedy/ui`)
+
+### MarqueeText (`packages/ui/src/MarqueeText.vue`)
+
+Overflowing text scrolls left at 20px/s, resting for three seconds whenever the
+start of the text returns to the left edge, including the initial display. An
+inert, aria-hidden copy follows with a 32px gap; each loop travels the text width
+plus that gap so the seam is continuous. Changing text or resizing remeasures
+and restarts the animation. Reduced-motion preferences disable scrolling.
+The optional `fade` prop softens the last 16px of overflowing text; fitting text
+remains unmasked. Desktop footer and mini-player titles and artist rows enable
+it beside the favorite button; both rows use the same scrolling behavior.
 
 ### Slider (`packages/ui/src/slider/Slider.vue`)
 

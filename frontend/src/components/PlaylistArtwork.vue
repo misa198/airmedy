@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ListMusic, Heart } from '@lucide/vue'
+import { ListMusic, Star } from '@lucide/vue'
 import type { Playlist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import { buildArtworkUrl } from '@airmedy/utils'
 import LazyImg from '@/components/LazyImg.vue'
@@ -45,7 +45,7 @@ const playlistArtworks = computed(() => {
 
     <!-- Default Icon -->
     <div v-else class="w-full h-full flex items-center justify-center text-foreground opacity-30">
-      <Heart v-if="playlist.id === 'favorites'" class="w-1/2 h-1/2" />
+      <Star v-if="playlist.id === 'favorites'" class="w-1/2 h-1/2" />
       <ListMusic v-else class="w-1/2 h-1/2" />
     </div>
 

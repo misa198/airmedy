@@ -17,6 +17,7 @@ import { Slider } from '@airmedy/ui'
 import { MarqueeText } from '@airmedy/ui'
 import * as WindowService from '../../bindings/airmedy/internal/infra/wails/windowservice'
 import PlayerControlButton from './player/PlayerControlButton.vue'
+import PlayerFavoriteButton from './player/PlayerFavoriteButton.vue'
 import MiniPlayerLyrics from './MiniPlayerLyrics.vue'
 import QueueTrackList from './QueueTrackList.vue'
 import { useAppStore } from '@/stores/app'
@@ -270,8 +271,13 @@ watch(() => store.theme, (colors) => {
       <div class="absolute bottom-0 left-0 right-0 px-3 pb-2 transition-opacity duration-200"
         :class="isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
         style="-webkit-app-region: no-drag">
-        <MarqueeText :text="trackTitle" content-class="text font-semibold leading-tight text-white" />
-        <MarqueeText :text="trackArtist" content-class="text-xs text-white/90 leading-tight mt-0.5" />
+        <div class="flex items-center gap-3">
+          <div class="min-w-0 flex-1">
+            <MarqueeText :text="trackTitle" fade content-class="text font-semibold leading-tight text-white" />
+            <MarqueeText :text="trackArtist" fade content-class="text-xs text-mini-player-pill-foreground/90 leading-tight mt-0.5" />
+          </div>
+          <PlayerFavoriteButton v-if="appStore.showPlayerFavoriteButton" mini data-test="mini-player-favorite" />
+        </div>
 
         <!-- Seek bar -->
         <div class="flex items-center gap-1.5 mt-2">
