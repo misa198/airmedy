@@ -5,6 +5,11 @@ package me.misa198.airmedy.ui.components
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.ClipOp
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -100,6 +105,7 @@ object MaterialSymbols {
     const val Add = "add"
     const val Image = "image"
     const val Star = "star"
+    val StarMinus = "star_minus" // Composed below; exclude from the font subset of const glyphs.
     const val FilterList = "filter_list"
     const val GridView = "grid_view"
     const val ViewList = "view_list"
@@ -118,7 +124,7 @@ fun MaterialSymbol(
     filled: Boolean = false,
 ) {
     Text(
-        text = symbol,
+        text = if (symbol == MaterialSymbols.StarMinus) MaterialSymbols.Star else symbol,
         fontFamily = if (filled) MaterialSymbolsFilledFontFamily else MaterialSymbolsOutlinedFontFamily,
         style = TextStyle(
             fontSize = size.value.sp,
@@ -126,6 +132,20 @@ fun MaterialSymbol(
             textAlign = TextAlign.Center,
         ),
         modifier = modifier.then(
+            if (symbol == MaterialSymbols.StarMinus) Modifier.drawWithContent {
+                // The bundled font has no star-minus glyph; retain its star and add the minus.
+                clipRect(left = this.size.width * 0.55f, top = this.size.height * 0.55f, clipOp = ClipOp.Difference) {
+                    this@drawWithContent.drawContent()
+                }
+                drawLine(
+                    color = tint,
+                    start = Offset(this.size.width * 0.64f, this.size.height * 0.75f),
+                    end = Offset(this.size.width * 0.94f, this.size.height * 0.75f),
+                    strokeWidth = size.toPx() / 12f,
+                    cap = StrokeCap.Round,
+                )
+            } else Modifier,
+        ).then(
             if (contentDescription != null) {
                 Modifier.semantics { this.contentDescription = contentDescription }
             } else Modifier,
