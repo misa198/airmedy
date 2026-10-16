@@ -155,6 +155,14 @@ the first Room-backed snapshot; initial loading stays visually neutral.
 When a page with a library search/filter input is popped from its destination
 stack, the shell resets that page's query before it can be opened again.
 
+`AirmedyMarqueeText` is shared by mini-player and fullscreen title/artist labels.
+It uses Compose `basicMarquee`: overflowing text loops in one direction with a
+32dp trailing gap, 20dp/s motion, and a three-second pause before each cycle.
+Text that fits stays still, and system-disabled animations disable scrolling.
+Changing text restarts the initial pause. Compose owns measurement, repeated
+drawing, and animation cleanup. Only the original text is exposed to accessibility.
+`AirmedyMarqueeTextTest` covers overflow motion, its initial pause, and fitting text.
+
 ## Player UI contracts
 
 `PlaybackState.showsMiniPlayer()` determines whether chrome shows the mini
