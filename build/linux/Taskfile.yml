@@ -71,6 +71,7 @@ tasks:
             ref: .DEV
       - task: common:build:frontend
         vars:
+          AIRMEDY_TARGET_OS: linux
           BUILD_FLAGS:
             ref: .BUILD_FLAGS
           DEV:
@@ -94,6 +95,8 @@ tasks:
     deps:
       - task: common:build:remote
       - task: common:build:frontend
+        vars:
+          AIRMEDY_TARGET_OS: linux
       - task: common:generate:icons
       - task: generate:dotdesktop
     preconditions:
