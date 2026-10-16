@@ -63,6 +63,7 @@ export const useAppStore = defineStore('app', () => {
   const normalizationTargetLufs = ref(-14)
   const normalizationPreventClip = ref(true)
   const showPlayerIndicator = ref(true)
+  const showPlayerFavoriteButton = ref(false)
   const autoAdvanceNotificationsEnabled = ref(true)
   const librarySyncInterval = ref<SyncInterval>(DEFAULT_SYNC_INTERVAL)
   const maxQueueSize = ref<MaxQueueSize>(DEFAULT_MAX_QUEUE_SIZE)
@@ -151,6 +152,7 @@ export const useAppStore = defineStore('app', () => {
         moodDerivationVersion.value = settings.mood_derivation_version ?? 0
         preventSleepWhilePlaying.value = !!settings.prevent_sleep_while_playing
         showPlayerIndicator.value = settings.show_player_indicator !== false
+        showPlayerFavoriteButton.value = settings.show_player_favorite_button === true
         autoAdvanceNotificationsEnabled.value = settings.auto_advance_notifications_enabled !== false
         if (isSyncInterval(settings.library_sync_interval)) {
           librarySyncInterval.value = settings.library_sync_interval
@@ -267,6 +269,7 @@ export const useAppStore = defineStore('app', () => {
         mood_derivation_version: moodDerivationVersion.value,
         prevent_sleep_while_playing: preventSleepWhilePlaying.value,
         show_player_indicator: showPlayerIndicator.value,
+        show_player_favorite_button: showPlayerFavoriteButton.value,
         auto_advance_notifications_enabled: autoAdvanceNotificationsEnabled.value,
         library_sync_interval: librarySyncInterval.value,
         max_queue_size: maxQueueSize.value,
@@ -418,6 +421,11 @@ export const useAppStore = defineStore('app', () => {
     await saveSettings()
   }
 
+  const updateShowPlayerFavoriteButton = async (enabled: boolean) => {
+    showPlayerFavoriteButton.value = enabled
+    await saveSettings()
+  }
+
   const updateShowPlayerIndicator = async (enabled: boolean) => {
     showPlayerIndicator.value = enabled
     await saveSettings()
@@ -563,6 +571,10 @@ export const useAppStore = defineStore('app', () => {
     language.value = event.data
   })
 
+  const _offPlayerFavoriteButton = Events.On('settings:player-favorite-button', (event: Events.WailsEvent) => {
+    showPlayerFavoriteButton.value = event.data === true
+  })
+
   function dispose() {
     if (_primaryColorSaveTimer) clearTimeout(_primaryColorSaveTimer)
     _primaryColorSaveTimer = null
@@ -570,6 +582,7 @@ export const useAppStore = defineStore('app', () => {
     _offUpdaterProgress()
     _offRomanizationAvailability()
     _offLanguage()
+    _offPlayerFavoriteButton()
   }
 
   return {
@@ -593,6 +606,7 @@ export const useAppStore = defineStore('app', () => {
     preferLocalArtistArtwork,
     preventSleepWhilePlaying,
     showPlayerIndicator,
+    showPlayerFavoriteButton,
     autoAdvanceNotificationsEnabled,
     librarySyncInterval,
     maxQueueSize,
@@ -639,6 +653,7 @@ export const useAppStore = defineStore('app', () => {
     updatePreferLocalArtistArtwork,
     updatePreventSleepWhilePlaying,
     updateShowPlayerIndicator,
+    updateShowPlayerFavoriteButton,
     updateAutoAdvanceNotificationsEnabled,
     updateLibrarySyncInterval,
     updateMaxQueueSize,

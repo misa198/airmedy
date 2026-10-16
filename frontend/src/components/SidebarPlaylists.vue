@@ -5,7 +5,7 @@ import {
   Plus,
   Music,
   Sparkles,
-  Heart,
+  Star,
   MoreHorizontal,
 } from '@lucide/vue'
 import { computed, ref } from 'vue'
@@ -141,7 +141,7 @@ function openFavoritesContextMenu(e: MouseEvent) {
       <SidebarItem
         v-if="playlistsStore.favoritesPinned"
         to="/playlists/favorites"
-        :icon="Heart"
+        :icon="Star"
         :label="t('sidebar.favorites')"
         @contextmenu="openFavoritesContextMenu"
       >

@@ -8,6 +8,12 @@ import org.junit.Test
 
 class TrackContextMenuTest {
     @Test
+    fun favoriteActionUsesMinusOnlyWhenRemoving() {
+        assertEquals(MaterialSymbols.Star, trackContextFavoriteSymbol(false))
+        assertEquals(MaterialSymbols.StarMinus, trackContextFavoriteSymbol(true))
+    }
+
+    @Test
     fun mirrorsDesktopQueueActionAvailability() {
         val queue = PlaybackQueueSnapshot(
             activeTrackIds = listOf("current", "queued"),

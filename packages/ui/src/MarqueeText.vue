@@ -7,13 +7,15 @@ const props = defineProps<{
   containerClass?: string
   contentClass?: string
   pauseOnHover?: boolean
+  fade?: boolean
 }>()
 
 const containerRef = ref<HTMLElement | null>(null)
 const contentRef = ref<HTMLElement | null>(null)
 const isOverflowing = ref(false)
 const scrollDistance = ref(0)
-const duration = ref(0)
+const pauseDuration = 3
+const duration = ref(pauseDuration)
 
 const updateMarquee = async () => {
   await nextTick()
@@ -28,9 +30,8 @@ const updateMarquee = async () => {
 
   if (contentWidth > containerWidth + 1) { // +1 for subpixel rounding issues
     isOverflowing.value = true
-    scrollDistance.value = contentWidth - containerWidth
-    // Base duration on distance: approx 20px/sec + 4s total pause time
-    duration.value = (scrollDistance.value / 20) + 4
+    scrollDistance.value = contentWidth + 32
+    duration.value = scrollDistance.value / 20 + pauseDuration
   } else {
     isOverflowing.value = false
     scrollDistance.value = 0
@@ -51,7 +52,7 @@ onUnmounted(() => {
   if (resizeObserver) resizeObserver.disconnect()
 })
 
-watch(() => props.text, () => {
+watch(() => [props.text, props.fade], () => {
   updateMarquee()
 })
 </script>
@@ -59,35 +60,45 @@ watch(() => props.text, () => {
 <template>
   <div
     ref="containerRef"
-    :class="cn('overflow-hidden whitespace-nowrap min-w-0 w-full', props.containerClass)"
+    :class="cn('overflow-hidden whitespace-nowrap min-w-0 w-full', props.fade && isOverflowing && 'marquee-fade', props.containerClass)"
     :title="text"
   >
     <div
-      ref="contentRef"
       :class="cn(
-        'w-fit min-w-full inline-block',
+        'relative w-fit min-w-full inline-block',
         isOverflowing && 'marquee-anim',
         props.pauseOnHover && 'hover:[animation-play-state:paused]',
         props.contentClass
       )"
       :style="{
         '--scroll-dist': `-${scrollDistance}px`,
-        '--duration': `${duration}s`
+        '--duration': `${duration}s`,
+        '--pause-end': `${pauseDuration / duration * 100}%`,
       }"
     >
-      <slot>{{ text }}</slot>
+      <span ref="contentRef" class="inline-block"><slot>{{ text }}</slot></span>
+      <span v-if="isOverflowing" aria-hidden="true" inert class="absolute left-full top-0 pl-8"><slot>{{ text }}</slot></span>
     </div>
   </div>
 </template>
 
 <style scoped>
-.marquee-anim {
-  animation: pingpong var(--duration) ease-in-out infinite;
+.marquee-fade {
+  mask-image: linear-gradient(to right, currentColor calc(100% - 16px), transparent);
 }
 
-@keyframes pingpong {
-  0%, 15% { transform: translateX(0); }
-  45%, 55% { transform: translateX(var(--scroll-dist)); }
-  85%, 100% { transform: translateX(0); }
+.marquee-anim {
+  animation: marquee-scroll var(--duration) linear(0, 0 var(--pause-end), 1) infinite;
+}
+
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(var(--scroll-dist)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-anim {
+    animation: none;
+  }
 }
 </style>

@@ -29,7 +29,7 @@ internal data class LyricsSettings(
     val lrclib: Boolean = true,
     val kugou: Boolean = true,
     val romanizationEnabled: Boolean = false,
-    val glowEnabled: Boolean = true,
+    val glowEnabled: Boolean = false,
 )
 
 internal fun preferredLyrics(source: LyricsSource, desktop: String?, provider: String?): String? = when (source) {
@@ -44,7 +44,7 @@ internal class LyricsPreferences(private val context: Context) {
             lrclib = it[LrclibKey] ?: true,
             kugou = it[KugouKey] ?: true,
             romanizationEnabled = it[RomanizationKey] ?: false,
-            glowEnabled = it[GlowKey] ?: true,
+            glowEnabled = it[GlowKey] ?: false,
         )
     }
     suspend fun setPreferredSource(source: LyricsSource) = context.lyricsDataStore.edit { it[PreferredSourceKey] = source.storageValue }

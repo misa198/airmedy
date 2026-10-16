@@ -6,14 +6,21 @@ import (
 	"airmedy/internal/app/appsettings"
 	"airmedy/internal/app/player"
 	"airmedy/internal/domain"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 type SettingsService struct {
-	svc          *appsettings.SettingsService
+	svc           *appsettings.SettingsService
 	playerService *player.PlayerService
 }
 
 func NewSettingsService(svc *appsettings.SettingsService, playerService *player.PlayerService) *SettingsService {
+	svc.AddChangeListener(func(settings *domain.AppSettings) {
+		if app := application.Get(); app != nil && app.Event != nil {
+			app.Event.Emit("settings:player-favorite-button", settings.ShowPlayerFavoriteButton)
+		}
+	})
 	return &SettingsService{svc: svc, playerService: playerService}
 }
 

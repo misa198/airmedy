@@ -38,6 +38,7 @@ type AppSettings struct {
     PreferLocalArtistArtwork bool              // nested (online on only): local/manual image suppresses online
     LastScanVersion        string              // app version of last artist-image rescan
     PreventSleepWhilePlaying bool             // prevent OS sleep during playback
+    ShowPlayerFavoriteButton bool             // show favorite button in desktop footer and mini player; default false
     LibraryAnalysisEnabled  bool               // opt-in: gates the analysis worker pool entirely (default off)
     LibraryAnalysisWorkerCount int             // desired concurrent analysis workers; default 2, runtime-clamped to [1, numCPU/2]
     NormalizationEnabled    bool               // volume normalization on/off; cannot be true while LibraryAnalysisEnabled is false
@@ -111,6 +112,7 @@ interface AppStore {
   lyricsSubfolderName: string;
   useOnlineArtistArtwork: boolean;
   preventSleepWhilePlaying: boolean;
+  showPlayerFavoriteButton: boolean; // default false; shared by footer and mini player
   crossfadeSeconds: number; // 0–CROSSFADE_MAX_SECONDS (12); 0 = off; slider in PlaybackSettings.vue
   blendArtworkDuringCrossfade: boolean; // default true; fullscreen only
   highContrastLyrics: boolean; // default true; fullscreen lyrics only
@@ -151,6 +153,7 @@ interface AppStore {
   updateUseOnlineArtistArtwork(enabled: boolean): Promise<void>;
   updatePreferLocalArtistArtwork(enabled: boolean): Promise<void>;
   updatePreventSleepWhilePlaying(enabled: boolean): Promise<void>;
+  updateShowPlayerFavoriteButton(enabled: boolean): Promise<void>;
   updateLyricsGlow(enabled: boolean): Promise<void>;
   updateDelimiters(field: "artist" | "albumArtist" | "genre" | "composer", value: string[]): Promise<void>;
   updateLibraryAnalysisWorkerCount(count: number): Promise<void>;
@@ -162,6 +165,14 @@ interface AppStore {
 ```
 
 Each `update*()` method calls `SettingsService.SaveSettings()` with the full settings object (all fields at once, not partial).
+
+Playback Settings exposes the favorite-button visibility switch. The value is
+persisted as `app_settings.show_player_favorite_button` (migration 000076), defaulting
+to hidden for both new and existing installs. After a successful settings save,
+the Wails adapter emits `settings:player-favorite-button` with the persisted boolean.
+Each window's app store updates its visibility immediately and removes this
+subscription in `dispose()`. The setting hides the control without changing any
+track's favorite state.
 
 `loadSettings()` also fetches `AnalysisService.GetWorkerCountInfo()` separately to
 hydrate the library-analysis worker slider's current value and its runtime max.

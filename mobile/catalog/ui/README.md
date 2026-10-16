@@ -105,6 +105,10 @@ analysis includes energy, danceability, brightness, and tempo.
 Playlist, favorite, and sync UI must not infer data from a desktop local database.
 They read the Android mirror/state exposed by adapters. Context menus receive
 action callbacks; they do not mutate Room or the queue themselves.
+Favorites use the rounded star glyph throughout the player, playlist artwork
+fallbacks, and track/album menus; the player star is filled only when selected. The track menu uses a star with
+a minus for Remove from favorites and a plain star for Add. `MaterialSymbol`
+composes the minus with the bundled star because the font has no star-minus glyph.
 
 Normal playlist detail menus expose a reorder mode. Its grips emit one
 `MOVE_TRACK` mutation when a drag ends; the Android optimistic projection
@@ -153,6 +157,19 @@ the first Room-backed snapshot; initial loading stays visually neutral.
 When a page with a library search/filter input is popped from its destination
 stack, the shell resets that page's query before it can be opened again.
 
+`AirmedyMarqueeText` is shared by mini-player and fullscreen title/artist labels.
+It uses Compose `basicMarquee`: overflowing text loops in one direction with a
+32dp trailing gap, 20dp/s motion, and a three-second pause before each cycle.
+Text that fits stays still, and system-disabled animations disable scrolling.
+Changing text restarts the initial pause. Compose owns measurement, repeated
+drawing, and animation cleanup. Only the original text is exposed to accessibility.
+Mini-player and fullscreen title/artist labels enable its optional trailing alpha
+mask when text overflows, softening the edge beside playback controls and
+Favorite/More in expanded and compact modes.
+The mask reveals the existing background and leaves fitting text unchanged.
+`AirmedyMarqueeTextTest` covers overflow motion, its initial pause, fitting text,
+and the trailing fade in light and dark themes.
+
 ## Player UI contracts
 
 `PlaybackState.showsMiniPlayer()` determines whether chrome shows the mini
@@ -192,7 +209,7 @@ ordinary or malformed timing retains normal line highlighting. Timing tags are
 removed before display and romanization, while translations remain line-level.
 Enhanced rows animate sung and unsung opacity independently over 320ms. While
 following, the sung region has a short glow that fades after the word ends.
-Lyrics Settings persists a glow switch in Android DataStore; it defaults on
+Lyrics Settings persists a glow switch in Android DataStore; it defaults off
 and changes only the glow layer, leaving the timed word fill visible. The glow
 follows the displayed playback position, stops in browse mode, and is disabled
 when Android's animation scale is zero; the karaoke fill remains visible.

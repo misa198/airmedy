@@ -134,7 +134,7 @@ feature-specific Android host or UI test task.
 
 ## Offline lyric romanization
 
-Lyrics Settings also has a Lyrics glow switch. It defaults on and persists on
+Lyrics Settings also has a Lyrics glow switch. It defaults off and persists on
 Android; turning it off removes the enhanced LRC word glow while keeping the
 timed word highlight.
 

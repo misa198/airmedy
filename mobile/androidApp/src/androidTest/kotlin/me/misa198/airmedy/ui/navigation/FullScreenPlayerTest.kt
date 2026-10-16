@@ -12,6 +12,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
@@ -239,7 +240,7 @@ class FullScreenPlayerTest {
     }
 
     @Test
-    fun favoriteHeartConfirmsOnlyWhenAdding() {
+    fun favoriteStarConfirmsOnlyWhenAdding() {
         val haptics = mutableListOf<HapticFeedbackType>()
         var change: Boolean? = null
         composeTestRule.setContent {
@@ -262,7 +263,7 @@ class FullScreenPlayerTest {
             }
         }
 
-        composeTestRule.onNodeWithContentDescription("Favorite").performClick()
+        composeTestRule.onNodeWithContentDescription("Favorite").assertTextEquals("star").performClick()
         composeTestRule.runOnIdle {
             assertEquals(true, change)
             assertEquals(listOf(HapticFeedbackType.Confirm), haptics)
@@ -270,7 +271,7 @@ class FullScreenPlayerTest {
     }
 
     @Test
-    fun favoriteHeartDoesNotConfirmWhenRemoving() {
+    fun favoriteStarDoesNotConfirmWhenRemoving() {
         val haptics = mutableListOf<HapticFeedbackType>()
         var change: Boolean? = null
         composeTestRule.setContent {
@@ -294,7 +295,7 @@ class FullScreenPlayerTest {
             }
         }
 
-        composeTestRule.onNodeWithContentDescription("Favorite").performClick()
+        composeTestRule.onNodeWithContentDescription("Favorite").assertTextEquals("star").performClick()
         composeTestRule.runOnIdle {
             assertEquals(false, change)
             assertEquals(emptyList<HapticFeedbackType>(), haptics)
@@ -646,6 +647,7 @@ class FullScreenPlayerTest {
                     openingFromMiniPlayerSwipe = false,
                     playbackState = PlaybackState.Playing(item, 1_500L, 120_000L),
                     lyrics = "[00:01]Hello <00:02>world<00:03>",
+                    lyricsGlowEnabled = true,
                     volume = 0.5f,
                     onSeek = { seekPositionMs = it },
                     onVolumeChange = {}, onPrevious = {}, onPlayPause = {}, onNext = {},
@@ -662,7 +664,7 @@ class FullScreenPlayerTest {
     }
 
     @Test
-    fun disablingGlowKeepsEnhancedWordFill() {
+    fun glowDefaultsOffAndKeepsEnhancedWordFill() {
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 FullScreenPlayer(
@@ -672,7 +674,6 @@ class FullScreenPlayerTest {
                     openingFromMiniPlayerSwipe = false,
                     playbackState = PlaybackState.Playing(item, 1_500L, 120_000L),
                     lyrics = "[00:01]Hello <00:02>world<00:03>",
-                    lyricsGlowEnabled = false,
                     volume = 0.5f,
                     onSeek = {},
                     onVolumeChange = {}, onPrevious = {}, onPlayPause = {}, onNext = {},

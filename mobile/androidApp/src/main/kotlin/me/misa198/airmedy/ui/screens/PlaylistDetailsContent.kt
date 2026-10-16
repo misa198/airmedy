@@ -142,7 +142,7 @@ internal fun PlaylistDetailsContent(
                         bottom = 20.dp,
                     ),
                     artworkSize = trackInfoArtworkSize,
-                    fallbackSymbol = if (playlist.id == FavoritesPlaylistId) MaterialSymbols.Favorite else MaterialSymbols.QueueMusic,
+                    fallbackSymbol = if (playlist.id == FavoritesPlaylistId) MaterialSymbols.Star else MaterialSymbols.QueueMusic,
                     artworkContent = {
                         PlaylistArtwork(playlist.id, uiState.artworkPaths, size = trackInfoArtworkSize)
                     },

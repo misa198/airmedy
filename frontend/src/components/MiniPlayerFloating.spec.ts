@@ -3,12 +3,16 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import MiniPlayerFloating from './MiniPlayerFloating.vue'
 import RomanizationToggle from './RomanizationToggle.vue'
+import { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
+import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 
 const mocks = vi.hoisted(() => ({
   setMiniPlayerExpanded: vi.fn().mockResolvedValue(undefined),
   moodRadioStore: { active: false },
   inspectRomanization: vi.fn(),
   lyricsLoading: true,
+  showPlayerFavoriteButton: true,
+  currentTrack: null as TrackDTO | null,
 }))
 
 vi.mock('vue-i18n', () => ({
@@ -18,7 +22,7 @@ vi.mock('vue-i18n', () => ({
 vi.mock('@/stores/player', () => ({
   usePlayerStore: () => ({
     artworkCrossfade: null,
-    currentTrack: null,
+    currentTrack: mocks.currentTrack,
     artworkUrl: '',
     duration: 0,
     position: 0,
@@ -42,7 +46,7 @@ vi.mock('@/stores/player', () => ({
 }))
 
 vi.mock('@/stores/app', () => ({
-  useAppStore: () => ({ blendArtworkDuringCrossfade: false, showPlayerIndicator: false, romanizationEnabled: true }),
+  useAppStore: () => ({ blendArtworkDuringCrossfade: false, showPlayerIndicator: false, romanizationEnabled: true, showPlayerFavoriteButton: mocks.showPlayerFavoriteButton }),
 }))
 
 vi.mock('@/stores/moodRadio', () => ({
@@ -62,6 +66,10 @@ vi.mock('../../bindings/airmedy/internal/infra/wails/windowservice', () => ({
   GetMiniState: vi.fn().mockResolvedValue({ always_on_top: false }),
   SetMiniAlwaysOnTop: vi.fn(),
   SetMiniPlayerExpanded: mocks.setMiniPlayerExpanded,
+}))
+
+vi.mock('../../bindings/airmedy/internal/infra/wails/libraryservice', () => ({
+  ToggleFavorite: vi.fn(),
 }))
 
 vi.mock('../../bindings/airmedy/internal/infra/wails', () => ({
@@ -85,7 +93,47 @@ describe('MiniPlayerFloating', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     mocks.lyricsLoading = true
+    mocks.showPlayerFavoriteButton = true
+    mocks.currentTrack = null
     mocks.inspectRomanization.mockImplementation(() => Object.assign(Promise.resolve({ supported: false, mandarinDefault: false }), { cancel: vi.fn().mockResolvedValue(undefined) }))
+  })
+
+  it('hides the favorite button when the playback setting is off', () => {
+    mocks.showPlayerFavoriteButton = false
+    const wrapper = mount(MiniPlayerFloating, {
+      global: { stubs: { LazyImg: true, Slider: true, MarqueeText: true, PlayerControlButton: true, MiniPlayerLyrics: true, QueueTrackList: true } },
+    })
+    expect(wrapper.find('[data-test="mini-player-favorite"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('places the favorite action to the right of track information and disables it without a track', () => {
+    const wrapper = mount(MiniPlayerFloating, {
+      global: { stubs: { LazyImg: true, Slider: true, MarqueeText: true, PlayerControlButton: true, MiniPlayerLyrics: true, QueueTrackList: true } },
+    })
+    const button = wrapper.get('[data-test="mini-player-favorite"]')
+    expect(button.attributes('disabled')).toBeDefined()
+    expect(button.element.previousElementSibling?.classList.contains('flex-1')).toBe(true)
+    expect(button.element.parentElement?.classList.contains('items-center')).toBe(true)
+    expect(button.classes()).toContain('shrink-0')
+    expect(button.attributes('title')).toBeUndefined()
+    wrapper.unmount()
+  })
+
+  it('toggles the current track favorite from the mini player', async () => {
+    mocks.currentTrack = new TrackDTO({ id: 'mini-track', is_favorite: false })
+    vi.mocked(LibraryService.ToggleFavorite).mockResolvedValue(true)
+    const wrapper = mount(MiniPlayerFloating, {
+      global: { stubs: { LazyImg: true, Slider: true, MarqueeText: true, PlayerControlButton: true, MiniPlayerLyrics: true, QueueTrackList: true } },
+    })
+    const button = wrapper.get('[data-test="mini-player-favorite"]')
+    expect(button.attributes('aria-pressed')).toBe('false')
+    await button.trigger('click')
+    await flushPromises()
+    expect(LibraryService.ToggleFavorite).toHaveBeenCalledWith('mini-track')
+    expect(button.attributes('aria-pressed')).toBe('true')
+    expect(button.get('svg').classes()).toContain('fill-current')
+    wrapper.unmount()
   })
 
   it('keeps the artwork as the window drag region', () => {

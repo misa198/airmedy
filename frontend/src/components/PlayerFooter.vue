@@ -28,11 +28,11 @@ import { MarqueeText } from '@airmedy/ui'
 import PlayerControlButton from './player/PlayerControlButton.vue'
 import PlayerQuickSettingsMenu from './player/PlayerQuickSettingsMenu.vue'
 import { useAppStore } from '../stores/app'
+import PlayerFavoriteButton from './player/PlayerFavoriteButton.vue'
 
 const { t } = useI18n()
 const store = usePlayerStore()
 const appStore = useAppStore()
-
 const trackContextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
 const quickSettingsMenu = ref<InstanceType<typeof PlayerQuickSettingsMenu> | null>(null)
 
@@ -97,10 +97,11 @@ async function onSeekEnd() {
           <Music class="w-5 h-5 text-dimmer" />
         </div>
       </div>
-      <div class="flex flex-col min-w-0 flex-1">
-        <MarqueeText :text="trackTitle" content-class="font-medium text-sm leading-tight" />
-        <MarqueeText :text="trackArtist" content-class="text-xs text-dim leading-tight mt-0.5" />
+      <div class="flex flex-col min-w-0">
+        <MarqueeText :text="trackTitle" fade content-class="font-medium text-sm leading-tight" />
+        <MarqueeText :text="trackArtist" fade content-class="text-xs text-dim leading-tight mt-0.5" />
       </div>
+      <PlayerFavoriteButton v-if="appStore.showPlayerFavoriteButton" class="-ml-1" />
     </div>
 
     <!-- Playback Controls -->

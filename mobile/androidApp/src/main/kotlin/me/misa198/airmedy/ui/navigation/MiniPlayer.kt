@@ -366,7 +366,7 @@ internal fun MiniPlayer(
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(start = 10.dp, end = 4.dp),
+                .padding(start = 10.dp),
             verticalArrangement = Arrangement.Center,
         ) {
             Box(
@@ -426,8 +426,9 @@ internal fun MiniPlayer(
                         item.title,
                         colors.textMain,
                         MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                        fade = true,
                     )
-                    AirmedyMarqueeText(item.artist, colors.textMuted, MaterialTheme.typography.bodySmall)
+                    AirmedyMarqueeText(item.artist, colors.textMuted, MaterialTheme.typography.bodySmall, fade = true)
                 }
             }
         }
@@ -440,7 +441,7 @@ internal fun MiniPlayer(
                 symbol = MaterialSymbols.SkipPrevious,
                 label = stringResource(R.string.player_previous),
                 onClick = onPreviousClick,
-                horizontalOffset = 16.dp,
+                horizontalOffset = 8.dp,
                 skipForward = false,
                 enabled = canNavigatePrevious,
             )
@@ -449,7 +450,7 @@ internal fun MiniPlayer(
             label = stringResource(if (isPlaying) R.string.player_pause else R.string.player_play),
             onClick = onPlayPauseClick,
             enabled = !isPreparing,
-            horizontalOffset = 8.dp,
+            horizontalOffset = 4.dp,
             isPlaying = isPlaying,
         )
         MiniPlayerControl(

@@ -90,6 +90,7 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000070 | `mobile_playlist_reconciliation.up.sql` | Add global playlist LWW/tombstone watermarks and device/reconciliation-owned artwork staging with expiry index |
 | 000071 | `mobile_favorite_sync.up.sql` | Add trusted-device favorite mutation ledger and per-track last-write-wins favorite watermark for mobile reconciliation |
 | 000072 | `listening_sources.up.sql` | Add source-device identity to raw listening rows and daily aggregate keys for cross-device sync |
+| 000076 | `show_player_favorite_button.up.sql` | Add `app_settings.show_player_favorite_button BOOLEAN NOT NULL DEFAULT 0`; down removes the column |
 
 `listeningRepository.GetListeningInsights` returns up to 50 entries for both Top Artists
 (ordered by listened seconds) and Top Tracks (ordered by play count, then listened
@@ -288,6 +289,7 @@ app_settings (
     crossfade_seconds INTEGER NOT NULL DEFAULT 0,                     -- track-transition overlap in seconds; 0 = off/gapless (000048)
     blend_artwork_during_crossfade BOOLEAN NOT NULL DEFAULT 1,        -- fullscreen cover blend during automatic crossfade (000049)
     high_contrast_lyrics BOOLEAN NOT NULL DEFAULT 1,                  -- fullscreen lyrics glass panel; false is immersive (000050)
+    show_player_favorite_button BOOLEAN NOT NULL DEFAULT 0,           -- favorite control visibility in desktop footer and mini player (000076)
     updated_at DATETIME
     -- (also: show_tray_icon, prevent_sleep_while_playing, remote_server_*, show_player_indicator, max_queue_size)
 )
