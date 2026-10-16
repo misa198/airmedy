@@ -1,3 +1,4 @@
+import { watch } from 'vue'
 import { createI18n } from 'vue-i18n'
 import en from './en.json'
 import zh from './zh.json'
@@ -33,5 +34,10 @@ const i18n = createI18n({
   fallbackLocale: 'en',
   messages,
 })
+
+// App-lifetime locale synchronization applies to both desktop webviews.
+watch(i18n.global.locale, locale => {
+  document.documentElement.lang = locale
+}, { immediate: true, flush: 'sync' })
 
 export default i18n

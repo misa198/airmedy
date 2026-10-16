@@ -127,6 +127,56 @@ This means:
 
 In production builds, Turbo's topological order ensures `@airmedy/ui` builds before `@airmedy/frontend`.
 
+### Desktop typography and build target
+
+The desktop Vite build selects one font stylesheet using `AIRMEDY_TARGET_OS`
+(`windows`, `linux`, or `darwin`). When unset, it uses the build host's OS;
+invalid values, including an empty string, fail the build. Native and Docker
+cross-build Task targets pass their destination explicitly. `common:build:frontend`
+always runs before embedding desktop assets, and Vite clears `frontend/dist` so
+switching targets cannot retain old fonts or licenses. The root `pnpm build`
+resolves the host default before invoking Turbo; the resolved target participates
+in Turbo's build cache key. It also clears desktop output before Turbo restores
+cached assets, since cache restoration overlays existing files. Use that entry
+point for cached monorepo builds.
+
+Windows/Linux bundle four Inter Variable WOFF2 subsets (about 159 KiB): Latin,
+Latin Extended, Vietnamese and Cyrillic, normal style, weights 100–900.
+`unicode-range` and `font-display: swap` allow selective loading. Version, source,
+checksums and SIL OFL 1.1 live in `frontend/src/assets/fonts/inter/`; builds emit
+the license and provenance under `dist/licenses/inter/`. Fonts live outside
+`public/`. Darwin retains the existing system font stack and includes neither
+Inter declarations, font data nor its license. Remote and mobile typography are
+independent of this policy.
+
+The selected stylesheet owns the `@theme` sans token. Windows/Linux CJK fallback
+follows the document's UI locale:
+
+| Locale | Windows | Linux |
+| --- | --- | --- |
+| `zh` | Microsoft YaHei UI | Noto Sans CJK SC, Source Han Sans SC |
+| `ja` | Yu Gothic UI, Meiryo UI | Noto Sans CJK JP, Source Han Sans JP |
+| `ko` | Malgun Gothic | Noto Sans CJK KR, Source Han Sans KR |
+| Others | System `sans-serif` fallback | System `sans-serif` fallback |
+
+Every stack ends in `sans-serif`. No CJK font or italic face is bundled.
+Missing CJK glyphs depend on installed system fonts; small differences between
+machines are expected. Metadata and lyrics inherit the same stack without
+inferring a track's language. `locales/index.ts` synchronizes `<html lang>` with
+vue-i18n immediately, and the app store receives language changes from other
+desktop windows. This covers both the main window and mini player. GPU lyrics
+read computed DOM fonts, wait for font readiness, and invalidate their measured
+textures after font loading or a document language change.
+
+Tests: `frontend/build/desktopFonts*.spec.ts`, `frontend/src/locales/index.spec.ts`,
+`GeneralSettings.spec.ts` and `useGpuLyrics.spec.ts`. Release checks must also
+build Windows → Darwin → Linux in one workspace and inspect CSS, font bytes and
+licenses. Verify mixed Latin/Vietnamese/CJK text at 12/14/20px and weights
+400/500/600/700 in track tables, settings, lyrics and mini player, in
+light/dark/black themes. Check Windows at 100%/125% scaling and Linux with and
+without Noto CJK; automated tests cannot establish glyph clipping or visual
+weight harmony on those native webviews.
+
 ### Importing in `frontend`
 
 ```typescript

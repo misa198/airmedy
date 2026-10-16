@@ -559,6 +559,9 @@ export const useAppStore = defineStore('app', () => {
   const _offRomanizationAvailability = Events.On('lyrics:romanization-availability', (event: Events.WailsEvent) => {
     romanizationEnabled.value = Boolean(event.data)
   })
+  const _offLanguage = Events.On('language:changed', (event: Events.WailsEvent) => {
+    language.value = event.data
+  })
 
   function dispose() {
     if (_primaryColorSaveTimer) clearTimeout(_primaryColorSaveTimer)
@@ -566,6 +569,7 @@ export const useAppStore = defineStore('app', () => {
     _darkMQ?.removeEventListener('change', _onDarkMQChange)
     _offUpdaterProgress()
     _offRomanizationAvailability()
+    _offLanguage()
   }
 
   return {
