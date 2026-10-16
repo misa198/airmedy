@@ -105,6 +105,8 @@ analysis includes energy, danceability, brightness, and tempo.
 Playlist, favorite, and sync UI must not infer data from a desktop local database.
 They read the Android mirror/state exposed by adapters. Context menus receive
 action callbacks; they do not mutate Room or the queue themselves.
+Favorites use the rounded star glyph throughout the player, playlist artwork
+fallbacks, and track/album menus; the player star is filled only when selected.
 
 Normal playlist detail menus expose a reorder mode. Its grips emit one
 `MOVE_TRACK` mutation when a drag ends; the Android optimistic projection

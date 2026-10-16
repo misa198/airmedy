@@ -98,7 +98,7 @@ internal fun PlaylistArtwork(playlistId: String, artworkPaths: List<String>, mod
             }
             artworkPaths.isNotEmpty() -> PlaylistArtworkImage(artworkPaths.first(), Modifier.fillMaxSize(), targetPx)
             else -> MaterialSymbol(
-                symbol = if (playlistId == "favorites") MaterialSymbols.Favorite else MaterialSymbols.QueueMusic,
+                symbol = if (playlistId == "favorites") MaterialSymbols.Star else MaterialSymbols.QueueMusic,
                 contentDescription = null,
                 size = 30.dp,
                 tint = colors.textMuted,

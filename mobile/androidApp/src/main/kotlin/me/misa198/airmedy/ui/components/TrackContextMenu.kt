@@ -192,7 +192,7 @@ fun TrackContextMenu(
             if (showMoodRadio) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_start_mood_radio), MaterialSymbols.Sensors) { closeAfter { if (actions.moodRadio) onStartMoodRadio(track) else moodRadio.onStart(track.id) } })
             if (showMoodRadio && (actions.favorite || actions.addToPlaylist || hasNavigationActions || actions.removeFromPlaylist)) add(ContextActionMenuEntry.Divider)
             if (!showMoodRadio && (showPlayNext || showAddToQueue || actions.trackInfo || actions.findLyrics)) add(ContextActionMenuEntry.Divider)
-            if (actions.favorite) add(ContextActionMenuEntry.Action(stringResource(if (favorite) R.string.track_context_remove_from_favorites else R.string.track_context_add_to_favorites), if (favorite) MaterialSymbols.HeartMinus else MaterialSymbols.HeartPlus) { closeAfter { if (!favorite) hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm); onFavoriteChange(track, !favorite) } })
+            if (actions.favorite) add(ContextActionMenuEntry.Action(stringResource(if (favorite) R.string.track_context_remove_from_favorites else R.string.track_context_add_to_favorites), MaterialSymbols.Star) { closeAfter { if (!favorite) hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm); onFavoriteChange(track, !favorite) } })
             if (actions.addToPlaylist) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_add_to_playlist), MaterialSymbols.PlaylistAdd) { requestBottomSheet(TrackContextBottomSheetRequest.Playlist(listOf(track.id))) })
             if ((actions.favorite || actions.addToPlaylist) && (hasNavigationActions || actions.removeFromPlaylist)) {
                 add(ContextActionMenuEntry.Divider)

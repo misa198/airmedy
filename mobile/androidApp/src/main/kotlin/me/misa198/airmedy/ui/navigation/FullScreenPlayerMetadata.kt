@@ -145,7 +145,7 @@ private fun FullScreenPlayerMetadata(
         }
         Spacer(Modifier.width(4.dp))
         if (!compact) AirmedyIconButton(
-            symbol = if (isFavorite) MaterialSymbols.Favorite else MaterialSymbols.FavoriteBorder,
+            symbol = MaterialSymbols.Star,
             label = stringResource(R.string.player_heart),
             onClick = { if (!isFavorite) hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm); onFavoriteToggle(item.trackId, !isFavorite) },
             modifier = Modifier.graphicsLayer { scaleX = favoriteScale.value; scaleY = favoriteScale.value },

@@ -53,7 +53,7 @@ internal fun AlbumContextMenu(
             add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_play_next), MaterialSymbols.QueuePlayNext) { closeAfter { onPlayNext(trackIds) } })
             if (showAddToQueue) add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_add_to_queue), MaterialSymbols.AddToQueue) { closeAfter { onAddToQueue(trackIds) } })
             add(ContextActionMenuEntry.Divider)
-            add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_add_to_favorites), MaterialSymbols.HeartPlus) {
+            add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_add_to_favorites), MaterialSymbols.Star) {
                 closeAfter { onAddToFavorites(tracks.filterNot(LibraryTrack::isFavorite).map(LibraryTrack::id)) }
             })
             add(ContextActionMenuEntry.Action(stringResource(R.string.track_context_add_to_playlist), MaterialSymbols.PlaylistAdd) {
