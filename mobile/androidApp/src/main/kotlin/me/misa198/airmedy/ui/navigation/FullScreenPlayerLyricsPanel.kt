@@ -205,7 +205,7 @@ internal fun FullScreenPlayerLyricsPanel(
     visible: Boolean = true,
     romanization: RomanizationUiState = RomanizationUiState(),
     romanizationAllowed: Boolean = false,
-    glowEnabled: Boolean = true,
+    glowEnabled: Boolean = false,
     onRomanizationInput: (List<String>, Boolean) -> Unit = { _, _ -> },
     onRomanizationToggle: () -> Unit = {},
     currentPositionMs: Long,

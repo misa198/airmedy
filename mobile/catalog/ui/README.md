@@ -207,7 +207,7 @@ ordinary or malformed timing retains normal line highlighting. Timing tags are
 removed before display and romanization, while translations remain line-level.
 Enhanced rows animate sung and unsung opacity independently over 320ms. While
 following, the sung region has a short glow that fades after the word ends.
-Lyrics Settings persists a glow switch in Android DataStore; it defaults on
+Lyrics Settings persists a glow switch in Android DataStore; it defaults off
 and changes only the glow layer, leaving the timed word fill visible. The glow
 follows the displayed playback position, stops in browse mode, and is disabled
 when Android's animation scale is zero; the karaoke fill remains visible.

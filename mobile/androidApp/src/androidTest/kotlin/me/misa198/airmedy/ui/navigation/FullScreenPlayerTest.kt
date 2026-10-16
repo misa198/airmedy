@@ -647,6 +647,7 @@ class FullScreenPlayerTest {
                     openingFromMiniPlayerSwipe = false,
                     playbackState = PlaybackState.Playing(item, 1_500L, 120_000L),
                     lyrics = "[00:01]Hello <00:02>world<00:03>",
+                    lyricsGlowEnabled = true,
                     volume = 0.5f,
                     onSeek = { seekPositionMs = it },
                     onVolumeChange = {}, onPrevious = {}, onPlayPause = {}, onNext = {},
@@ -663,7 +664,7 @@ class FullScreenPlayerTest {
     }
 
     @Test
-    fun disablingGlowKeepsEnhancedWordFill() {
+    fun glowDefaultsOffAndKeepsEnhancedWordFill() {
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 FullScreenPlayer(
@@ -673,7 +674,6 @@ class FullScreenPlayerTest {
                     openingFromMiniPlayerSwipe = false,
                     playbackState = PlaybackState.Playing(item, 1_500L, 120_000L),
                     lyrics = "[00:01]Hello <00:02>world<00:03>",
-                    lyricsGlowEnabled = false,
                     volume = 0.5f,
                     onSeek = {},
                     onVolumeChange = {}, onPrevious = {}, onPlayPause = {}, onNext = {},

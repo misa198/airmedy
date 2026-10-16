@@ -85,7 +85,7 @@ internal fun FullScreenPlayer(
     lyricsLoading: Boolean = false,
     romanization: RomanizationUiState = RomanizationUiState(),
     romanizationAllowed: Boolean = false,
-    lyricsGlowEnabled: Boolean = true,
+    lyricsGlowEnabled: Boolean = false,
     onRomanizationInput: (List<String>, Boolean) -> Unit = { _, _ -> },
     onRomanizationToggle: () -> Unit = {},
     artworkCrossfade: ArtworkCrossfadeTransition? = null,

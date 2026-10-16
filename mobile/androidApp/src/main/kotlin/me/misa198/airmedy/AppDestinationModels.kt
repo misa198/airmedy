@@ -202,7 +202,7 @@ internal data class PlaybackModel(
     val lyricsLoading: Boolean = false,
     val romanization: RomanizationUiState = RomanizationUiState(),
     val romanizationAllowed: Boolean = false,
-    val lyricsGlowEnabled: Boolean = true,
+    val lyricsGlowEnabled: Boolean = false,
     val onRomanizationInput: (List<String>, Boolean) -> Unit = { _, _ -> },
     val onRomanizationToggle: () -> Unit = {},
     val onSearchLyrics: suspend (LibraryTrack, String, String) -> List<LyricsSearchResult> = { _, _, _ -> emptyList() },
