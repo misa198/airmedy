@@ -1,9 +1,14 @@
-import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { afterEach, describe, it, expect, vi } from 'vitest'
+import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { createPinia } from 'pinia'
 import { createI18n } from 'vue-i18n'
 import PlaylistDetailView from './PlaylistDetailView.vue'
+import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
+import type { Playlist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
+import { CancellablePromise, Events } from '@wailsio/runtime'
+
+enableAutoUnmount(afterEach)
 
 vi.mock('../../bindings/airmedy/internal/infra/wails/playlistservice', () => {
   const playlists: Record<string, any> = {
@@ -99,5 +104,57 @@ describe('PlaylistDetailView navigation between two playlists', () => {
 
     expect(wrapper.text()).toContain('Playlist B')
     expect(wrapper.text()).not.toContain('Playlist A')
+  })
+})
+
+describe('PlaylistDetailView background refresh', () => {
+  it.each([false, true])('preserves the track list when a favorite changes (smart: %s)', async (isSmart) => {
+    vi.mocked(Events.On).mockClear()
+    vi.stubGlobal('ResizeObserver', class {
+      observe() {}
+      disconnect() {}
+    })
+    const track = { id: 'track-1', title: 'Track 1', duration: 120, is_favorite: false } as TrackDTO
+    vi.mocked(PlaylistService.GetPlaylistByID).mockResolvedValue({
+      id: 'A', name: 'Playlist A', is_smart: isSmart,
+    } as Playlist)
+    let finishRefresh!: (tracks: TrackDTO[]) => void
+    vi.mocked(PlaylistService.GetPlaylistTracks)
+      .mockResolvedValueOnce([track])
+      .mockImplementationOnce(() => new CancellablePromise(resolve => { finishRefresh = resolve }))
+    await router.push('/playlists/A')
+
+    const wrapper = mount(PlaylistDetailView, {
+      global: {
+        plugins: [router, createPinia(), createI18n({ legacy: false, locale: 'en', messages: { en: {} } })],
+        stubs: {
+          ContextMenu: true, PlaylistArtwork: true, ConfirmDialog: true,
+          CreatePlaylistDialog: true, SmartPlaylistDialog: true,
+          TrackTableHeader: true, TrackTableRow: true, TrackContextMenu: true,
+        },
+      },
+    })
+    await flushPromises()
+
+    const list = wrapper.get('.track-table-virtual-list').element as HTMLElement
+    list.scrollTop = 560
+    const updated = { ...track, is_favorite: true }
+    for (const [name, handler] of vi.mocked(Events.On).mock.calls) {
+      if (name === 'library:track-updated') handler({ data: updated } as Events.WailsEvent)
+    }
+    await new Promise(resolve => setTimeout(resolve, 75))
+    await flushPromises()
+
+    try {
+      expect(finishRefresh).toBeTypeOf('function')
+      expect(wrapper.get('.track-table-virtual-list').element).toBe(list)
+      expect(list.scrollTop).toBe(560)
+      expect(wrapper.text()).not.toContain('--')
+    } finally {
+      finishRefresh([updated])
+      await flushPromises()
+      vi.unstubAllGlobals()
+    }
+    expect(wrapper.get('.track-table-virtual-list').element).toBe(list)
   })
 })

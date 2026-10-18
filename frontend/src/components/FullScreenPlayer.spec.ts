@@ -1,9 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { h, onUnmounted } from 'vue'
 import { createTestingPinia } from '@pinia/testing'
 import FullScreenPlayer from './FullScreenPlayer.vue'
 import { usePlayerStore } from '../stores/player'
+import { useAppStore } from '../stores/app'
+import { useFavoritesStore } from '../stores/favorites'
+import PlayerTrackInfo from './player/PlayerTrackInfo.vue'
 import { PlaybackState, RepeatMode } from '../../bindings/airmedy/internal/domain/models'
 
 const mocks = vi.hoisted(() => ({
@@ -54,56 +57,60 @@ describe('FullScreenPlayer', () => {
   })
 
   function mountPlayer(storeState = {}, appState = {}) {
+    const pinia = createTestingPinia({
+      createSpy: vi.fn,
+      initialState: {
+        player: {
+          theme: null,
+          queue: [
+            { id: 't1', title: 'Track 1', duration: 180, artists: [] },
+            { id: 't2', title: 'Track 2', duration: 200, artists: [] },
+          ],
+          currentTrack: { id: 't1', title: 'Track 1', duration: 180, artists: [] },
+          status: {
+            track_id: 't1',
+            playback_state: PlaybackState.PlaybackStatePlaying,
+            position: 0,
+            duration: 180,
+            volume: 1,
+            muted: false,
+            repeat_mode: RepeatMode.RepeatModeOff,
+            shuffle: false,
+          },
+          isQueueOpen: true,
+          isLyricsOpen: false,
+          playerMode: 'fullscreen',
+          lyrics: null,
+          lyricsLoading: false,
+          ...storeState,
+        },
+        device: {
+          isMac: false,
+          isWindowFullscreen: false,
+        },
+        app: {
+          showPlayerIndicator: false,
+          highContrastLyrics: true,
+          livingArtworkBackground: true,
+          ...appState,
+        },
+      },
+    })
+    vi.mocked(useFavoritesStore(pinia).isFavorite).mockImplementation(track => track.is_favorite)
     return mount(FullScreenPlayer, {
       global: {
-        plugins: [
-          createTestingPinia({
-            createSpy: vi.fn,
-            initialState: {
-              player: {
-                theme: null,
-                queue: [
-                  { id: 't1', title: 'Track 1', duration: 180, artists: [] },
-                  { id: 't2', title: 'Track 2', duration: 200, artists: [] },
-                ],
-                currentTrack: { id: 't1', title: 'Track 1', duration: 180, artists: [] },
-                status: {
-                  track_id: 't1',
-                  playback_state: PlaybackState.PlaybackStatePlaying,
-                  position: 0,
-                  duration: 180,
-                  volume: 1,
-                  muted: false,
-                  repeat_mode: RepeatMode.RepeatModeOff,
-                  shuffle: false,
-                },
-                isQueueOpen: true,
-                isLyricsOpen: false,
-                playerMode: 'fullscreen',
-                lyrics: null,
-                lyricsLoading: false,
-                ...storeState,
-              },
-              device: {
-                isMac: false,
-                isWindowFullscreen: false,
-              },
-              app: {
-                showPlayerIndicator: false,
-                highContrastLyrics: true,
-                livingArtworkBackground: true,
-                ...appState,
-              },
-            },
-          }),
-        ],
+        plugins: [pinia],
         stubs: {
           LivingArtworkBackground: true,
           PlayerArtwork: {
             props: ['maxSize'],
             template: '<div data-test="artwork" :data-max-size="maxSize" />',
           },
-          PlayerTrackInfo: true,
+          MarqueeText: {
+            name: 'MarqueeText',
+            props: { text: String, contentClass: String, fade: Boolean },
+            template: '<div :class="contentClass">{{ text }}</div>',
+          },
           PlayerSeekBar: true,
           PlayerPlaybackControls: true,
           PlayerVolumeControl: true,
@@ -128,6 +135,60 @@ describe('FullScreenPlayer', () => {
       },
     })
   }
+
+  it('switches fullscreen metadata layout with the favorite setting', async () => {
+    const wrapper = mountPlayer({
+      currentTrack: { id: 't1', title: 'Track 1', artists: [{ name: 'Artist' }], album: { title: 'Album' }, is_favorite: false },
+    })
+    const info = () => wrapper.getComponent(PlayerTrackInfo)
+    const fades = () => info().findAllComponents({ name: 'MarqueeText' }).map(text => text.props('fade'))
+    expect(fades()).toEqual([false, false, false])
+    expect(info().text()).toContain('Album')
+    expect(info().classes()).toContain('text-center')
+    expect(wrapper.find('button[aria-pressed]').exists()).toBe(false)
+
+    useAppStore().showPlayerFavoriteButton = true
+    await wrapper.vm.$nextTick()
+    expect(info().text()).toContain('Track 1')
+    expect(info().text()).toContain('Artist')
+    expect(info().text()).not.toContain('Album')
+    expect(fades()).toEqual([true, true])
+    expect(info().classes()).toEqual(expect.arrayContaining(['text-left', 'min-w-0', 'flex-1']))
+    expect(info().findAllComponents({ name: 'MarqueeText' }).every(text => text.classes().includes('text-left'))).toBe(true)
+    const row = wrapper.get('[data-test="fullscreen-track-info"]')
+    expect(row.classes()).toEqual(expect.arrayContaining(['w-full', 'max-w-sm', 'flex', 'items-center']))
+    expect(row.find('button[aria-pressed]').exists()).toBe(true)
+
+    useAppStore().showPlayerFavoriteButton = false
+    await wrapper.vm.$nextTick()
+    expect(fades()).toEqual([false, false, false])
+    expect(info().text()).toContain('Album')
+    expect(info().classes()).toContain('text-center')
+    expect(wrapper.find('button[aria-pressed]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it.each([false, true])('toggles fullscreen favorite without opening track info (favorite: %s)', async (isFavorite) => {
+    const wrapper = mountPlayer({
+      currentTrack: { id: 't1', title: 'Track 1', artists: [], is_favorite: isFavorite },
+    }, { showPlayerFavoriteButton: true })
+    const favorites = useFavoritesStore()
+    const button = wrapper.get('button[aria-pressed]')
+    expect(button.classes()).toEqual(expect.arrayContaining(['h-9', 'w-9']))
+    expect(button.get('svg').classes()).toEqual(expect.arrayContaining(['h-5', 'w-5']))
+    expect(button.attributes('aria-pressed')).toBe(String(isFavorite))
+    await button.trigger('click')
+    await flushPromises()
+    expect(favorites.toggle).toHaveBeenCalledWith('t1')
+    expect(favorites.toggle).toHaveBeenCalledOnce()
+    expect(usePlayerStore().openTrackInfo).not.toHaveBeenCalled()
+    expect(usePlayerStore().setPlayerMode).not.toHaveBeenCalled()
+
+    usePlayerStore().currentTrack = { ...usePlayerStore().currentTrack!, is_favorite: !isFavorite }
+    await wrapper.vm.$nextTick()
+    expect(button.attributes('aria-pressed')).toBe(String(!isFavorite))
+    wrapper.unmount()
+  })
 
   it('routes fullscreen queue clicks through playQueueIndex', async () => {
     const wrapper = mountPlayer()

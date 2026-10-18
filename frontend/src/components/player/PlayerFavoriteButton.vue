@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '@/stores/player'
 import { useFavoritesStore } from '@/stores/favorites'
 
-defineProps<{ mini?: boolean }>()
+defineProps<{ mini?: boolean; large?: boolean }>()
 
 const { t } = useI18n()
 const store = usePlayerStore()
@@ -49,9 +49,10 @@ async function toggleFavorite() {
 <template>
   <button
     type="button"
-    class="flex shrink-0 h-7 w-7 items-center justify-center rounded-full disabled:pointer-events-none focus-visible:outline-2 duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+    class="flex shrink-0 items-center justify-center rounded-full disabled:pointer-events-none focus-visible:outline-2 duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
     :class="[
       { 'opacity-30': !store.currentTrack },
+      large ? 'h-9 w-9' : 'h-7 w-7',
       mini
         ? 'focus-visible:outline-mini-player-pill-foreground/70'
         : 'hover:bg-foreground/[0.04] focus-visible:outline-foreground/70',
@@ -65,6 +66,6 @@ async function toggleFavorite() {
     :disabled="!store.currentTrack || isTogglingFavorite"
     @click="toggleFavorite"
   >
-    <Star class="h-4 w-4" :class="{ 'fill-current': isFavorite }" />
+    <Star :class="[large ? 'h-5 w-5' : 'h-4 w-4', { 'fill-current': isFavorite }]" />
   </button>
 </template>

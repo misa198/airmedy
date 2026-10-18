@@ -218,7 +218,7 @@
       "show_player_indicator": "Показывать активный индикатор",
       "show_player_indicator_desc": "Показывать точку под кнопками перемешивания и повтора, когда они активны",
       "show_player_favorite_button": "Показывать кнопку избранного",
-      "show_player_favorite_button_desc": "Показывать кнопку избранного на панели проигрывателя и в мини-плеере",
+      "show_player_favorite_button_desc": "Показывать кнопку избранного в проигрывателях",
       "auto_advance_notifications": "Уведомления о смене трека",
       "auto_advance_notifications_desc": "Показывать тихое уведомление macOS, когда воспроизведение автоматически переходит к следующему треку",
       "high_contrast_lyrics": "Высококонтрастный текст",
