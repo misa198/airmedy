@@ -20,6 +20,13 @@ vi.mock('@/stores/favorites', () => ({
 }))
 
 describe('PlayerFavoriteButton', () => {
+  it.each([false, true])('uses the requested button and icon size (large: %s)', (large) => {
+    const wrapper = mount(PlayerFavoriteButton, { props: { large } })
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(large ? ['h-9', 'w-9'] : ['h-7', 'w-7']))
+    expect(wrapper.get('svg').classes()).toEqual(expect.arrayContaining(large ? ['h-5', 'w-5'] : ['h-4', 'w-4']))
+    wrapper.unmount()
+  })
+
   it.each([false, true])('has no mini-player hover state when favorite is %s', (favorite) => {
     mocks.track.is_favorite = favorite
     const wrapper = mount(PlayerFavoriteButton, { props: { mini: true } })

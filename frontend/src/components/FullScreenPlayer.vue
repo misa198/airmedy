@@ -14,6 +14,7 @@ import { getTrackDisplayTitle, hexToRgba } from '@airmedy/utils'
 
 import PlayerArtwork from './player/PlayerArtwork.vue'
 import PlayerTrackInfo from './player/PlayerTrackInfo.vue'
+import PlayerFavoriteButton from './player/PlayerFavoriteButton.vue'
 import PlayerSeekBar from './player/PlayerSeekBar.vue'
 import PlayerPlaybackControls from './player/PlayerPlaybackControls.vue'
 import PlayerVolumeControl from './player/PlayerVolumeControl.vue'
@@ -180,11 +181,17 @@ onUnmounted(() => {
                 @contextmenu.prevent.stop="openContextMenu" />
 
               <!-- Track info -->
-              <PlayerTrackInfo :title="trackTitle" :artist="trackArtist" :album="albumTitle"
-                data-fullscreen-player-interactive="true"
-                class="cursor-pointer"
-                @click="openTrackInfo"
-                @contextmenu.prevent.stop="openContextMenu" />
+              <div data-test="fullscreen-track-info" class="flex items-center gap-4 w-full max-w-sm">
+                <PlayerTrackInfo :title="trackTitle" :artist="trackArtist"
+                  :album="appStore.showPlayerFavoriteButton ? undefined : albumTitle"
+                  :align="appStore.showPlayerFavoriteButton ? 'left' : 'center'"
+                  :fade="appStore.showPlayerFavoriteButton"
+                  data-fullscreen-player-interactive="true"
+                  class="min-w-0 flex-1 cursor-pointer"
+                  @click="openTrackInfo"
+                  @contextmenu.prevent.stop="openContextMenu" />
+                <PlayerFavoriteButton v-if="appStore.showPlayerFavoriteButton" large />
+              </div>
 
               <!-- Seek bar -->
               <PlayerSeekBar :progress-percent="store.progressPercent" :position="store.position"

@@ -38,7 +38,7 @@ type AppSettings struct {
     PreferLocalArtistArtwork bool              // nested (online on only): local/manual image suppresses online
     LastScanVersion        string              // app version of last artist-image rescan
     PreventSleepWhilePlaying bool             // prevent OS sleep during playback
-    ShowPlayerFavoriteButton bool             // show favorite button in desktop footer and mini player; default false
+    ShowPlayerFavoriteButton bool             // show favorite button in desktop footer, mini player, and fullscreen player; default false
     LibraryAnalysisEnabled  bool               // opt-in: gates the analysis worker pool entirely (default off)
     LibraryAnalysisWorkerCount int             // desired concurrent analysis workers; default 2, runtime-clamped to [1, numCPU/2]
     NormalizationEnabled    bool               // volume normalization on/off; cannot be true while LibraryAnalysisEnabled is false
@@ -112,7 +112,7 @@ interface AppStore {
   lyricsSubfolderName: string;
   useOnlineArtistArtwork: boolean;
   preventSleepWhilePlaying: boolean;
-  showPlayerFavoriteButton: boolean; // default false; shared by footer and mini player
+  showPlayerFavoriteButton: boolean; // default false; shared by footer, mini player, and fullscreen player
   crossfadeSeconds: number; // 0–CROSSFADE_MAX_SECONDS (12); 0 = off; slider in PlaybackSettings.vue
   blendArtworkDuringCrossfade: boolean; // default true; fullscreen only
   highContrastLyrics: boolean; // default true; fullscreen lyrics only
@@ -172,7 +172,9 @@ to hidden for both new and existing installs. After a successful settings save,
 the Wails adapter emits `settings:player-favorite-button` with the persisted boolean.
 Each window's app store updates its visibility immediately and removes this
 subscription in `dispose()`. The setting hides the control without changing any
-track's favorite state.
+track's favorite state. In fullscreen, enabling it hides the album line and
+left-aligns title and artist beside the favorite control, with the row aligned
+to the progress bar; disabling it restores the centered metadata and album line.
 
 `loadSettings()` also fetches `AnalysisService.GetWorkerCountInfo()` separately to
 hydrate the library-analysis worker slider's current value and its runtime max.

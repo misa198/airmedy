@@ -218,7 +218,7 @@
       "show_player_indicator": "Hiển thị chỉ báo kích hoạt",
       "show_player_indicator_desc": "Hiện chấm nhỏ bên dưới nút xáo trộn và lặp lại khi được kích hoạt",
       "show_player_favorite_button": "Hiển thị nút yêu thích",
-      "show_player_favorite_button_desc": "Hiển thị nút yêu thích trên thanh phát nhạc và trình phát thu nhỏ",
+      "show_player_favorite_button_desc": "Hiển thị nút yêu thích trong các trình phát",
       "auto_advance_notifications": "Thông báo chuyển bài hát",
       "auto_advance_notifications_desc": "Hiển thị thông báo macOS im lặng khi phát nhạc tự động chuyển sang bài hát tiếp theo",
       "high_contrast_lyrics": "Lời bài hát tương phản cao",

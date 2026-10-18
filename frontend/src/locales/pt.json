@@ -218,7 +218,7 @@
       "show_player_indicator": "Mostrar indicador ativo",
       "show_player_indicator_desc": "Mostrar um ponto abaixo dos botões de aleatório e repetição quando estiverem ativos",
       "show_player_favorite_button": "Mostrar botão de favoritos",
-      "show_player_favorite_button_desc": "Mostrar o botão de favoritos na barra do leitor e no minileitor",
+      "show_player_favorite_button_desc": "Mostrar o botão de favoritos nos leitores",
       "auto_advance_notifications": "Notificações de mudança de faixa",
       "auto_advance_notifications_desc": "Mostrar uma notificação silenciosa do macOS quando a reprodução avançar automaticamente para a próxima faixa",
       "high_contrast_lyrics": "Letras de alto contraste",
