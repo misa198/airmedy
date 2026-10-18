@@ -170,7 +170,7 @@ async function load(silent = false, idOverride?: string) {
 
   if (isStale(id)) return
 
-  tracksLoading.value = true
+  if (!silent) tracksLoading.value = true
   try {
     const t = await PlaylistService.GetPlaylistTracks(id)
     if (isStale(id)) return
