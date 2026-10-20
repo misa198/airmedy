@@ -579,6 +579,22 @@ func (s *QueueService) UpdateTrack(track *domain.TrackDTO) {
 	}
 }
 
+// UpdateFavorite preserves queue order and metadata without publishing a new queue.
+func (s *QueueService) UpdateFavorite(track *domain.TrackDTO) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, list := range [][]*domain.TrackDTO{s.originalList, s.shuffledList} {
+		for i, current := range list {
+			if current.ID == track.ID {
+				updated := *current
+				updated.IsFavorite = track.IsFavorite
+				updated.UpdatedAt = track.UpdatedAt
+				list[i] = &updated
+			}
+		}
+	}
+}
+
 // RemoveTrack removes a track from the queue by its ID.
 func (s *QueueService) RemoveTrack(trackID string) {
 	s.mu.Lock()

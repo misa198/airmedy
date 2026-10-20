@@ -88,9 +88,21 @@ func TestLibraryService_AnalysisListener_FiresOnImportNotOnFavoriteToggle(t *tes
 		t.Errorf("expected notification for track ID %q, got %q", track.ID, fired[0])
 	}
 
-	// Favorite toggling must NOT trigger re-analysis (DSP features don't change).
+	var trackUpdates, favoriteChanges int
+	s.AddTrackUpdateListener(func(*domain.TrackDTO) { trackUpdates++ })
+	s.AddFavoriteChangeListener(func(updated *domain.TrackDTO) {
+		favoriteChanges++
+		if !updated.IsFavorite {
+			t.Error("favorite listener received stale state")
+		}
+	})
+
+	// Favorite toggling must NOT trigger re-analysis or a metadata update.
 	if _, err := s.ToggleFavorite(context.Background(), track.ID); err != nil {
 		t.Fatalf("ToggleFavorite: %v", err)
+	}
+	if trackUpdates != 0 || favoriteChanges != 1 {
+		t.Fatalf("favorite toggle: track updates=%d, favorite changes=%d", trackUpdates, favoriteChanges)
 	}
 	if len(fired) != 1 {
 		t.Fatalf("expected no additional analysis-pending notification after favorite toggle, got %d: %v", len(fired), fired)

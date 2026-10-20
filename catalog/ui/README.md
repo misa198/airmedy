@@ -131,6 +131,23 @@ playlist database before that plan completes, so the playlists store reloads
 for the sidebar and list while playlist detail and mosaic data refresh through
 `useLibrarySync`.
 
+### Favorite-only invalidation
+
+`library:favorite-changed` updates the favorites store and matching player track
+data without refreshing Home, Search, or library browse/detail queries.
+`useLibrarySync` consumers opt into favorite invalidation using a version getter
+and relevance predicate. The same 50ms debounce and KeepAlive lifecycle apply;
+metadata refresh takes precedence when both kinds are pending. Async refreshes
+are serialized, with changes during a request coalesced into one pending follow-up.
+Pending timers and event subscriptions are removed on unmount.
+
+Only Favorites and live smart playlists containing an `is_favorite` rule
+(including nested groups) refresh membership. The playlist grid refreshes only
+affected mosaics without custom artwork. Playlist-specific request/version guards
+reject superseded responses. Playlist themes follow their actual artwork source,
+not every track-array replacement. Verification covers the favorites/player
+stores, `useLibrarySync`, and both playlist views.
+
 ### Mini Player Window Lifecycle
 
 The mini player window is **destroyed on close and recreated on open** (not just hidden). `WindowService` holds a factory function (`SetMiniWindowFactory`) that creates a fresh `WebviewWindow` each time. Closing the window does not call `e.Cancel()` on the `WindowClosing` hook, so Wails destroys the native window and frees its memory. Reopening calls the factory to create a new window. This resets all Vue/Pinia state in that webview.

@@ -4,6 +4,23 @@
 
 User-created playlists with ordered tracks, optional custom artwork, and color extraction. Playlists are persisted in SQLite and indexed in Bleve for search.
 
+## Favorite-dependent refresh
+
+Desktop favorite changes use `library:favorite-changed`, separate from metadata
+invalidation. Favorites detail refreshes only its track list; live smart playlists
+refresh membership only when their recursive rules contain `is_favorite`.
+Frozen snapshots and unrelated rules retain membership. The frontend debounces
+these refreshes for 50ms, defers cached views until activation, and ignores
+superseded responses. Metadata changes retain the broader refresh path.
+
+`GetPlaylistTracksPreview("favorites", limit)` queries favorite tracks directly,
+ordered by sort title with a SQL limit; Favorites is virtual and must not use
+`playlist_tracks` membership. Grid mosaics request at most four tracks, only for
+Favorites and affected live smart playlists without custom covers. Removing a
+custom Favorites cover schedules a fresh mosaic. Detail themes are reloaded only
+when the custom cover or fallback album artwork source changes. Tests cover the
+preview query, nested-rule dependency checks, and detail/grid refresh behavior.
+
 ## Mobile reconciliation
 
 Mobile playlist mutations are accepted only for normal playlists. Smart playlists and the system Favorites playlist are rejected. The mobile mutation ledger is keyed by trusted device plus mutation ID, so retrying an accepted or rejected operation cannot apply it twice. Library Sync does not infer playlist membership from an artist, album, or genre track scope; only `all` and an explicit playlist scope can mutate playlist data.

@@ -19,7 +19,7 @@ import PlaylistArtwork from '@/components/PlaylistArtwork.vue'
 import CreatePlaylistDialog from '@/components/CreatePlaylistDialog.vue'
 import SmartPlaylistDialog from '@/components/SmartPlaylistDialog.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
-import { emptyConfig, type SmartPlaylistConfig } from '@/lib/smartPlaylistFields'
+import { emptyConfig, playlistDependsOnFavorites, type SmartPlaylistConfig } from '@/lib/smartPlaylistFields'
 import { Input } from '@airmedy/ui'
 import { useLibraryUpdates } from '@/composables/useLibraryUpdates'
 import { useLibrarySync } from '@/composables/useLibrarySync'
@@ -118,12 +118,16 @@ function openContextMenu(e: MouseEvent) {
 // against vue-router's reactive route.params.id instead is racy: it may not
 // have finished updating yet by the time a quick fetch resolves).
 let currentPlaylistId: string | null = null
+let trackRequest = 0
 const isStale = (id: string) => currentPlaylistId !== id
 
 async function load(silent = false, idOverride?: string) {
   const id = idOverride ?? (route.params.id as string)
   if (!id) return
   currentPlaylistId = id
+  const request = ++trackRequest
+  const favoriteVersion = favoritesStore.version
+  const isCurrentRequest = () => !isStale(id) && request === trackRequest
 
   // Switching to a different playlist: drop the old track list so a
   // track-derived artwork mosaic (no custom artwork_key) doesn't flash the
@@ -143,48 +147,50 @@ async function load(silent = false, idOverride?: string) {
         PlaylistService.GetPlaylistByID(id),
         LibraryService.GetFavoriteTracks(),
       ])
-      if (isStale(id)) return
+      if (!isCurrentRequest()) return
       playlist.value = p ?? ({ id: 'favorites', name: t('sidebar.favorites'), description: '', artwork_key: null } as Playlist)
       if (playlist.value.name === 'Favorites') {
         playlist.value = { ...playlist.value, name: t('sidebar.favorites') }
       }
-      tracks.value = result.filter((t): t is TrackDTO => t !== null)
-      await loadTheme()
+      if (favoritesStore.version !== favoriteVersion) await refreshFavoriteTracks()
+      else tracks.value = result.filter((t): t is TrackDTO => t !== null)
     } catch (e) {
       console.error('Failed to load favorite tracks', e)
     } finally {
-      if (!silent && !isStale(id)) isLoading.value = false
+      if (!silent && isCurrentRequest()) isLoading.value = false
     }
     return
   }
 
   try {
     const p = await PlaylistService.GetPlaylistByID(id)
-    if (isStale(id)) return
+    if (!isCurrentRequest()) return
     playlist.value = p
   } catch (e) {
     console.error('Failed to load playlist', e)
   } finally {
-    if (!silent && !isStale(id)) isLoading.value = false
+    if (!silent && isCurrentRequest()) isLoading.value = false
   }
 
-  if (isStale(id)) return
+  if (!isCurrentRequest()) return
 
   if (!silent) tracksLoading.value = true
   try {
     const t = await PlaylistService.GetPlaylistTracks(id)
-    if (isStale(id)) return
-    tracks.value = t.filter((t): t is TrackDTO => t !== null)
+    if (!isCurrentRequest()) return
+    if (playlist.value && playlistDependsOnFavorites(playlist.value) && favoritesStore.version !== favoriteVersion) await refreshFavoriteTracks()
+    else tracks.value = t.filter((t): t is TrackDTO => t !== null)
   } catch (e) {
     console.error('Failed to load playlist tracks', e)
   } finally {
-    if (!isStale(id)) tracksLoading.value = false
+    if (isCurrentRequest()) tracksLoading.value = false
   }
 }
 
 async function loadTheme() {
   if (!playlist.value) return
   const id = playlist.value.id
+  const source = themeSource.value
 
   try {
     // 1. Try playlist custom theme
@@ -198,23 +204,52 @@ async function loadTheme() {
       }
     }
 
-    if (playlist.value?.id !== id) return
+    if (playlist.value?.id !== id || themeSource.value !== source) return
     playlistTheme.value = colors
   } catch (e) {
     console.warn('Failed to load playlist theme', e)
   }
 }
 
-watch(tracks, () => loadTheme())
-useDetailRouteLoader((id) => load(false, id))
-// Smart playlist rules can gain or lose tracks after a metadata edit. A full
-// silent reload keeps both smart and regular playlist membership authoritative.
-useLibrarySync(() => {
-  const id = playlist.value?.id
-  if (id) void load(true, id)
+const themeSource = computed(() => {
+  const p = playlist.value
+  if (!p) return null
+  if (p.artwork_key) return JSON.stringify([p.id, p.artwork_key])
+  const track = tracks.value.find(t => t.album_id)
+  return JSON.stringify([p.id, track?.album_id ?? null, track?.album?.artwork_key ?? null])
 })
-watch(() => favoritesStore.version, () => {
-  if (playlist.value?.id === 'favorites') load(true, 'favorites')
+watch(themeSource, () => { void loadTheme() })
+useDetailRouteLoader((id) => load(false, id))
+
+async function refreshFavoriteTracks() {
+  const p = playlist.value
+  if (!p || !playlistDependsOnFavorites(p)) return
+  const version = favoritesStore.version
+  const request = ++trackRequest
+  try {
+    const result = p.id === 'favorites'
+      ? await LibraryService.GetFavoriteTracks()
+      : await PlaylistService.GetPlaylistTracks(p.id)
+    if (isStale(p.id) || request !== trackRequest || favoritesStore.version !== version) return
+    tracks.value = result.filter((track): track is TrackDTO => track !== null)
+  } catch (error) {
+    console.error('Failed to refresh favorite-dependent playlist', error)
+  } finally {
+    if (!isStale(p.id) && request === trackRequest) {
+      isLoading.value = false
+      tracksLoading.value = false
+    }
+  }
+}
+
+useLibrarySync(async (reason) => {
+  if (reason === 'favorite') await refreshFavoriteTracks()
+  else if (playlist.value) await load(true, playlist.value.id)
+}, {
+  favorites: {
+    version: () => favoritesStore.version,
+    relevant: () => playlist.value ? playlistDependsOnFavorites(playlist.value) : currentPlaylistId === 'favorites',
+  },
 })
 
 const sessionId = Math.random().toString(36).substring(2, 15)

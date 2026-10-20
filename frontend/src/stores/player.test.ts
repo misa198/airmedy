@@ -64,6 +64,37 @@ describe('usePlayerStore', () => {
     vi.clearAllMocks()
   })
 
+  it('patches only favorite data without status, theme or lyrics changes', async () => {
+    mockGetStatus.mockResolvedValue({ track_id: 'a' })
+    mockGetQueue.mockResolvedValue([{ id: 'a', title: 'Original', is_favorite: false }, { id: 'b' }, { id: 'a', is_favorite: false }])
+    mockGetCurrentLyrics.mockResolvedValue(null)
+    const store = usePlayerStore()
+    await store.init()
+    const status = store.status
+    const theme = { vibrant: 'palette' } as any
+    store.theme = theme
+    const savedTheme = store.theme
+    const lyric = { track_id: 'a', content: 'lyric' } as any
+    store.lyrics = lyric
+    const savedLyrics = store.lyrics
+    const unrelated = store.queue[1]
+    const handler = vi.mocked(Events.On).mock.calls.find(([name]) => name === 'library:favorite-changed')![1]
+    handler({ data: { id: 'a', title: 'Ignored', is_favorite: true, updated_at: 'updated' } } as any)
+    expect(store.currentTrack?.title).toBe('Original')
+    expect(store.currentTrack?.is_favorite).toBe(true)
+    expect(store.queue.filter(track => track.id === 'a').every(track => track.is_favorite)).toBe(true)
+    expect(store.queue[1]).toBe(unrelated)
+    expect(store.status).toBe(status)
+    expect(store.theme).toBe(savedTheme)
+    expect(store.lyrics).toBe(savedLyrics)
+    const queue = store.queue
+    const current = store.currentTrack
+    handler({ data: { id: 'a', is_favorite: true, updated_at: 'updated' } } as any)
+    expect(store.queue).toBe(queue)
+    expect(store.currentTrack).toBe(current)
+    store.dispose()
+  })
+
   it('starts with no status', () => {
     const store = usePlayerStore()
     expect(store.status).toBeNull()

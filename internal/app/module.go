@@ -135,7 +135,7 @@ var Module = fx.Module("app",
 		})
 		lc.Append(fx.Hook{
 			OnStart: func(ctx context.Context) error {
-				// Wire library to player to sync track metadata changes (e.g. favorites)
+				// Wire metadata changes to player state; favorites use their own listener.
 				lib.AddTrackUpdateListener(func(track *domain.TrackDTO) {
 					playerSvc.SyncTrack(track)
 				})
@@ -145,6 +145,7 @@ var Module = fx.Module("app",
 				// and metadata edits, which would spam track.unlove for every
 				// freshly imported non-favorite track.
 				lib.AddFavoriteChangeListener(func(track *domain.TrackDTO) {
+					playerSvc.SyncFavorite(track)
 					lastfmSvc.SetLoveStatus(track, track.IsFavorite)
 				})
 

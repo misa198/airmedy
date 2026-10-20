@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Events } from '@wailsio/runtime'
 import { useFavoritesStore } from '@/stores/favorites'
 import { Library, Plus, ListPlus, Sparkles, Upload } from '@lucide/vue'
@@ -11,11 +11,10 @@ import CreatePlaylistDialog from '../components/CreatePlaylistDialog.vue'
 import SmartPlaylistDialog from '../components/SmartPlaylistDialog.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import FilterDropdown from '../components/FilterDropdown.vue'
-import { emptyConfig, type SmartPlaylistConfig } from '@/lib/smartPlaylistFields'
+import { emptyConfig, playlistDependsOnFavorites, type SmartPlaylistConfig } from '@/lib/smartPlaylistFields'
 import { usePlaylistsStore } from '@/stores/playlists'
 import type { Playlist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
-import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import { foldUnicode } from '@airmedy/utils'
 import { useI18n } from 'vue-i18n'
 import { useLibrarySync } from '@/composables/useLibrarySync'
@@ -171,45 +170,53 @@ async function handleImportConfirm(name: string) {
   }
 }
 
-async function loadArtworkTracks() {
-  const map: Record<string, TrackDTO[]> = {}
+let artworkRequest = 0
+const latestArtworkRequests = new Map<string, number>()
 
-  try {
-    const favTracks = await LibraryService.GetFavoriteTracks()
-    map.favorites = favTracks.filter((t): t is TrackDTO => t !== null)
-  } catch {
-    map.favorites = []
+async function loadArtworkTracks(favoritesOnly = false) {
+  const version = favoritesStore.version
+  const targets = [
+    ...(!favoritesArtworkKey.value ? [favoritesPlaylist.value] : []),
+    ...playlistsStore.playlists.filter(p => !p.artwork_key && (!favoritesOnly || playlistDependsOnFavorites(p))),
+  ]
+  const results = await Promise.all(targets.map(async (p) => {
+    const request = ++artworkRequest
+    latestArtworkRequests.set(p.id, request)
+    try {
+      const tracks = await PlaylistService.GetPlaylistTracksPreview(p.id, 4)
+      return { playlist: p, request, tracks: tracks.filter((track): track is TrackDTO => track !== null) }
+    } catch (error) {
+      console.error('Failed to refresh playlist artwork', error)
+      return null
+    }
+  }))
+  const updates: Record<string, TrackDTO[]> = {}
+  for (const result of results) {
+    if (!result || latestArtworkRequests.get(result.playlist.id) !== result.request) continue
+    if (playlistDependsOnFavorites(result.playlist) && favoritesStore.version !== version) continue
+    updates[result.playlist.id] = result.tracks
   }
-
-  await Promise.all(
-    playlistsStore.playlists
-      .filter((p) => !p.artwork_key)
-      .map(async (p) => {
-        try {
-          // Only the first 4 are ever rendered (mosaic thumbnail,
-          // PlaylistArtwork.vue), so fetch just those — fetching a smart
-          // playlist's full (possibly uncapped) match here would run/
-          // serialize its entire result just to throw most of it away.
-          const tracks = await PlaylistService.GetPlaylistTracksPreview(p.id, 4)
-          map[p.id] = tracks.filter((t): t is TrackDTO => t !== null)
-        } catch {
-          map[p.id] = []
-        }
-      })
-  )
-
-  tracksByPlaylist.value = map
+  tracksByPlaylist.value = { ...tracksByPlaylist.value, ...updates }
 }
 
 // A metadata edit can change the artwork source of a track used by a playlist
 // mosaic without changing playlist membership, so no playlist event is sent.
-useLibrarySync(() => {
-  void loadArtworkTracks()
+const artworkSync = useLibrarySync(async (reason) => {
+  if (reason === 'favorite') await loadArtworkTracks(true)
+  else await loadArtworkTracks()
+}, {
+  favorites: {
+    version: () => favoritesStore.version,
+    relevant: () => !favoritesArtworkKey.value || playlistsStore.playlists.some(p => !p.artwork_key && playlistDependsOnFavorites(p)),
+  },
 })
 
 const offArtworkChanged = Events.On('playlist:artwork-changed', (ev: Events.WailsEvent) => {
   const payload = ev.data as { playlist_id: string; artwork_key: string | null }
-  if (payload.playlist_id === 'favorites') favoritesArtworkKey.value = payload.artwork_key
+  if (payload.playlist_id === 'favorites') {
+    favoritesArtworkKey.value = payload.artwork_key
+    if (!payload.artwork_key) artworkSync.invalidate('favorite')
+  }
 })
 
 // Keep the track-mosaic fallback (playlists with no custom cover) fresh too —
@@ -217,7 +224,7 @@ const offArtworkChanged = Events.On('playlist:artwork-changed', (ev: Events.Wail
 // every playlist.
 const offTracksChanged = Events.On('playlist:tracks-changed', async (ev: Events.WailsEvent) => {
   const payload = ev.data as { playlist_id: string; sender_id: string }
-  if (payload.playlist_id === 'favorites') return // favorites mosaic handled by the version watcher below
+  if (payload.playlist_id === 'favorites') return // favorites mosaic handled by useLibrarySync
   const p = playlistsStore.playlists.find((x) => x.id === payload.playlist_id)
   if (p && p.artwork_key) return // has a custom cover, mosaic irrelevant
   try {
@@ -231,18 +238,6 @@ const offTracksChanged = Events.On('playlist:tracks-changed', async (ev: Events.
   }
 })
 
-watch(() => favoritesStore.version, async () => {
-  try {
-    const favTracks = await LibraryService.GetFavoriteTracks()
-    tracksByPlaylist.value = {
-      ...tracksByPlaylist.value,
-      favorites: favTracks.filter((t): t is TrackDTO => t !== null),
-    }
-  } catch (e) {
-    console.error('Failed to refresh favorites mosaic tracks', e)
-  }
-})
-
 onUnmounted(() => {
   offArtworkChanged()
   offTracksChanged()
@@ -252,14 +247,13 @@ onMounted(async () => {
   isLoading.value = true
   await playlistsStore.loadAll()
   isLoading.value = false
-  loadArtworkTracks()
-
   try {
     const favorites = await PlaylistService.GetPlaylistByID('favorites')
     favoritesArtworkKey.value = favorites?.artwork_key ?? null
   } catch (e) {
     console.error('Failed to load favorites artwork', e)
   }
+  await loadArtworkTracks()
 })
 </script>
 

@@ -827,6 +827,19 @@ func (s *PlayerService) SyncTrack(track *domain.TrackDTO) {
 	s.queue.UpdateTrack(track)
 }
 
+// SyncFavorite updates only favorite data without emitting playback or theme events.
+func (s *PlayerService) SyncFavorite(track *domain.TrackDTO) {
+	s.mu.Lock()
+	if s.currentTrack != nil && s.currentTrack.ID == track.ID {
+		updated := *s.currentTrack
+		updated.IsFavorite = track.IsFavorite
+		updated.UpdatedAt = track.UpdatedAt
+		s.currentTrack = &updated
+	}
+	s.mu.Unlock()
+	s.queue.UpdateFavorite(track)
+}
+
 // ReloadCurrentTrackAfterFileMutation reloads a currently selected track from
 // disk after an operation (such as a tag write) changed its media file. The
 // caller must have stopped playback before modifying the file. A previously

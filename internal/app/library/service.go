@@ -1534,10 +1534,9 @@ func (s *LibraryService) ToggleFavorite(ctx context.Context, id string) (bool, e
 	}
 	dto, err := s.trackRepo.GetByID(ctx, id)
 	if err == nil && dto != nil {
-		s.notifyTrackUpdated(dto)
 		s.notifyFavoriteChanged(dto)
 		if app := application.Get(); app != nil && app.Event != nil {
-			app.Event.Emit("library:track-updated", dto)
+			app.Event.Emit("library:favorite-changed", dto)
 		}
 	}
 	return newState, nil
