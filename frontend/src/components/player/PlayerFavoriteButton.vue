@@ -57,9 +57,9 @@ async function toggleFavorite() {
         ? 'focus-visible:outline-mini-player-pill-foreground/70'
         : 'hover:bg-foreground/[0.04] focus-visible:outline-foreground/70',
       isFavorite
-        ? (mini ? 'text-mini-player-pill-foreground/90' : 'text-foreground/70')
-        : (mini ? 'text-mini-player-pill-foreground/60' : 'text-foreground/40 hover:text-foreground/70'),
-      animateFavorite ? 'transition-colors' : 'transition-none',
+        ? (mini ? 'text-mini-player-pill-foreground opacity-90' : 'text-foreground opacity-70')
+        : (mini ? 'text-mini-player-pill-foreground opacity-60' : 'text-foreground opacity-40 hover:opacity-70'),
+      animateFavorite ? 'transition-opacity' : 'transition-none',
     ]"
     :aria-label="favoriteLabel"
     :aria-pressed="isFavorite"
