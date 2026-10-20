@@ -3,6 +3,8 @@ import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { createPinia } from 'pinia'
 import { createI18n } from 'vue-i18n'
+import { useFavoritesStore } from '@/stores/favorites'
+import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import PlaylistDetailView from './PlaylistDetailView.vue'
 import * as PlaylistService from '../../bindings/airmedy/internal/infra/wails/playlistservice'
 import type { Playlist, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
@@ -156,5 +158,69 @@ describe('PlaylistDetailView background refresh', () => {
       vi.unstubAllGlobals()
     }
     expect(wrapper.get('.track-table-virtual-list').element).toBe(list)
+  })
+})
+
+describe('favorite-only playlist invalidation', () => {
+  async function mountPlaylist(id: string, playlist: Partial<Playlist>) {
+    vi.mocked(Events.On).mockClear()
+    vi.mocked(PlaylistService.GetPlaylistByID).mockResolvedValue({ id, name: 'Test', ...playlist } as Playlist)
+    vi.mocked(PlaylistService.GetPlaylistTracks).mockResolvedValue([])
+    vi.mocked(LibraryService.GetFavoriteTracks).mockResolvedValue([])
+    await router.push(`/playlists/${id}`)
+    const pinia = createPinia()
+    const wrapper = mount(PlaylistDetailView, { global: {
+      plugins: [router, pinia, createI18n({ legacy: false, locale: 'en', messages: { en: {} } })],
+      stubs: { TrackTable: true, ContextMenu: true, PlaylistArtwork: true, ConfirmDialog: true,
+        CreatePlaylistDialog: true, SmartPlaylistDialog: true },
+    } })
+    await flushPromises()
+    vi.mocked(PlaylistService.GetPlaylistByID).mockClear()
+    vi.mocked(PlaylistService.GetPlaylistTracks).mockClear()
+    vi.mocked(PlaylistService.GetPlaylistColors).mockClear()
+    vi.mocked(LibraryService.GetFavoriteTracks).mockClear()
+    const toggle = async () => {
+      useFavoritesStore(pinia).version++
+      await new Promise(resolve => setTimeout(resolve, 75))
+      await flushPromises()
+    }
+    return { wrapper, toggle, pinia }
+  }
+
+  it('refreshes Favorites tracks once while retaining header and theme', async () => {
+    const { toggle } = await mountPlaylist('favorites', { artwork_key: 'custom' })
+    await toggle()
+    expect(LibraryService.GetFavoriteTracks).toHaveBeenCalledTimes(1)
+    expect(PlaylistService.GetPlaylistByID).not.toHaveBeenCalled()
+    expect(PlaylistService.GetPlaylistColors).not.toHaveBeenCalled()
+  })
+
+  it.each(['regular', 'snapshot', 'unrelated', 'nested-live'])('refreshes only live favorite membership (%s)', async (kind) => {
+    const { toggle } = await mountPlaylist('A', {
+      is_smart: kind !== 'regular',
+      rules: JSON.stringify({ live_updating: kind !== 'snapshot', root: {
+        groups: [{ rules: [{ field: kind === 'unrelated' ? 'genre' : 'is_favorite', value: false }] }],
+      } }),
+    })
+    await toggle()
+    expect(PlaylistService.GetPlaylistTracks).toHaveBeenCalledTimes(kind === 'nested-live' ? 1 : 0)
+    expect(PlaylistService.GetPlaylistByID).not.toHaveBeenCalled()
+    expect(PlaylistService.GetPlaylistColors).not.toHaveBeenCalled()
+  })
+
+  it('discards stale favorite responses and schedules one follow-up', async () => {
+    const { wrapper, toggle, pinia } = await mountPlaylist('favorites', {})
+    let finish!: (tracks: TrackDTO[]) => void
+    vi.mocked(LibraryService.GetFavoriteTracks).mockImplementationOnce(() => new CancellablePromise(resolve => { finish = resolve }))
+    await toggle()
+    useFavoritesStore(pinia).version++
+    await flushPromises()
+    const latest = { id: 'latest' } as TrackDTO
+    vi.mocked(LibraryService.GetFavoriteTracks).mockResolvedValue([latest])
+    finish([{ id: 'stale' } as TrackDTO])
+    await new Promise(resolve => setTimeout(resolve, 75))
+    await flushPromises()
+    expect(LibraryService.GetFavoriteTracks).toHaveBeenCalledTimes(2)
+    expect(wrapper.getComponent({ name: 'TrackTable' }).props('tracks')).toEqual([latest])
   })
 })

@@ -8,6 +8,7 @@ import MobilePairingDialog from './components/MobilePairingDialog.vue'
 import DevToolsOverlay from './components/DevToolsOverlay.vue'
 import { hexToRgba } from '@airmedy/utils'
 import { usePlayerStore } from './stores/player'
+import { useFavoritesStore } from './stores/favorites'
 import { useDeviceStore } from './stores/device'
 import { usePlaylistsStore } from './stores/playlists'
 import { useMoodRadioStore } from './stores/moodRadio'
@@ -21,6 +22,7 @@ const route = useRoute()
 const router = useRouter()
 const { locale } = useI18n()
 const playerStore = usePlayerStore()
+const favoritesStore = useFavoritesStore()
 const deviceStore = useDeviceStore()
 const playlistsStore = usePlaylistsStore()
 const moodRadioStore = useMoodRadioStore()
@@ -150,6 +152,7 @@ onUnmounted(() => {
   offSearch?.()
   offCycleRepeat?.()
   playerStore.dispose()
+  favoritesStore.dispose()
   deviceStore.dispose()
   playlistsStore.dispose()
   moodRadioStore.dispose()

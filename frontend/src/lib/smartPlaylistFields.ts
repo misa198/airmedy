@@ -181,3 +181,20 @@ export function isGroupValid(group: SmartRuleGroup): boolean {
   const groups = group?.groups ?? []
   return rules.every(isRuleValid) && groups.every(isGroupValid)
 }
+
+/** Only live membership queries containing a favorite rule depend on a toggle. */
+export function playlistDependsOnFavorites(playlist: { id: string; is_smart?: boolean; rules?: string | null }): boolean {
+  if (playlist.id === 'favorites') return true
+  if (!playlist.is_smart || !playlist.rules) return false
+  try {
+    const config = JSON.parse(playlist.rules)
+    if (config.live_updating !== true) return false
+    const hasFavorite = (group: SmartRuleGroup): boolean =>
+      (group.rules ?? []).some(rule => rule.field === 'is_favorite') ||
+      (group.groups ?? []).some(hasFavorite)
+    return hasFavorite(config.root ?? config)
+  } catch {
+    // Malformed persisted rules must not silently leave an open playlist stale.
+    return true
+  }
+}

@@ -585,7 +585,19 @@ Entry points enforce the cap differently depending on how they grow the queue:
 | `ReorderQueue(trackIDs []string)` | Reorders the active list by ID slice; maintains current track index |
 | `GetOriginalQueue()` | Returns the unshuffled `originalList` |
 | `Restore(original, shuffled, currentIndex, shuffle, repeatMode)` | Bulk-sets all queue state; used on app startup to restore persisted queue |
-| `UpdateTrack(track)` | Updates `IsFavorite` in-place for matching entries in both lists |
+| `UpdateTrack(track)` | Replaces matching track metadata in both lists |
+| `UpdateFavorite(track)` | Copies only `IsFavorite` and `UpdatedAt` into matching entries in both lists, preserving order |
+
+### Favorite synchronization
+
+Library favorite-change listeners call `PlayerService.SyncFavorite` to patch the
+current track and queue without publishing status, theme, or queue events.
+Metadata updates continue through `SyncTrack`. The tray listens directly to
+`library:favorite-changed` and updates its current-track checkbox on the UI
+thread; its listener is removed on app shutdown. Each webview patches matching
+current-track/queue favorite fields from the same event, preserving unrelated
+track objects and status/theme/lyrics state. Duplicate payloads do not replace
+those references. Tests live in the player service and frontend player store.
 
 ## State Persistence
 

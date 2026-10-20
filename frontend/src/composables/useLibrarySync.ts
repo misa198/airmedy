@@ -1,4 +1,4 @@
-import { onActivated, onDeactivated, onMounted, onUnmounted } from 'vue'
+import { onActivated, onDeactivated, onMounted, onUnmounted, watch } from 'vue'
 import { Events } from '@wailsio/runtime'
 
 const RELOAD_DEBOUNCE_MS = 50
@@ -7,29 +7,52 @@ const RELOAD_DEBOUNCE_MS = 50
 // database work. A cached view is marked dirty while inactive, then refreshes
 // once when the user returns to it. The visible view refreshes promptly, with
 // the paired `library:track-updated` / `library:updated` events coalesced.
-export function useLibrarySync(reloadFn: () => void) {
+type ReloadReason = 'library' | 'favorite'
+
+export function useLibrarySync(
+  reloadFn: (reason: ReloadReason) => void | Promise<void>,
+  options: { favorites?: { version: () => number; relevant: () => boolean } } = {},
+) {
   let offSyncFinished: (() => void) | null = null
   let offLibraryUpdated: (() => void) | null = null
   let offTrackUpdated: (() => void) | null = null
   let offMobileSyncUpdated: (() => void) | null = null
   let reloadTimer: ReturnType<typeof setTimeout> | null = null
   let isActive = false
-  let isDirty = false
+  let disposed = false
+  let running = false
+  let pending: ReloadReason | null = null
 
   const scheduleReload = () => {
-    if (reloadTimer !== null) return
-    reloadTimer = setTimeout(() => {
+    if (!isActive || disposed || running || reloadTimer !== null || pending === null) return
+    reloadTimer = setTimeout(async () => {
       reloadTimer = null
-      reloadFn()
+      const reason = pending!
+      pending = null
+      running = true
+      try {
+        await reloadFn(reason)
+      } catch (error) {
+        console.error('Failed to refresh library view', error)
+      } finally {
+        running = false
+        scheduleReload()
+      }
     }, RELOAD_DEBOUNCE_MS)
   }
 
-  const handleLibraryChange = () => {
-    if (isActive) {
-      scheduleReload()
-      return
-    }
-    isDirty = true
+  const invalidate = (reason: ReloadReason) => {
+    // Metadata changes require the broader refresh when both arrive together.
+    pending = pending === 'library' ? pending : reason
+    scheduleReload()
+  }
+  const handleLibraryChange = () => invalidate('library')
+
+  if (options.favorites) {
+    const { version, relevant } = options.favorites
+    watch(version, () => {
+      if (relevant()) invalidate('favorite')
+    })
   }
 
   onMounted(() => {
@@ -52,25 +75,23 @@ export function useLibrarySync(reloadFn: () => void) {
 
   onActivated(() => {
     isActive = true
-    if (!isDirty) return
-    isDirty = false
     scheduleReload()
   })
 
   onDeactivated(() => {
     isActive = false
-    if (reloadTimer !== null) {
-      clearTimeout(reloadTimer)
-      reloadTimer = null
-      isDirty = true
-    }
+    if (reloadTimer !== null) clearTimeout(reloadTimer)
+    reloadTimer = null
   })
 
   onUnmounted(() => {
+    disposed = true
     if (reloadTimer !== null) clearTimeout(reloadTimer)
     offSyncFinished?.()
     offLibraryUpdated?.()
     offTrackUpdated?.()
     offMobileSyncUpdated?.()
   })
+
+  return { invalidate }
 }

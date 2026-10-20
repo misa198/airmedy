@@ -1708,3 +1708,32 @@ func TestCrossfadeListeningSplitsOverlap(t *testing.T) {
 		t.Fatalf("expected roughly half the 4s overlap moved from incoming, got %d", remaining)
 	}
 }
+
+func TestSyncFavoriteDoesNotEmitPlaybackUpdates(t *testing.T) {
+	s, statusEvents := newTestService(t, &fakePlayer{})
+	first := &domain.TrackDTO{Track: domain.Track{ID: "a", Title: "Original"}}
+	other := &domain.TrackDTO{Track: domain.Track{ID: "b"}}
+	s.queue.SetQueue([]*domain.TrackDTO{first, other, first}, 0)
+	s.queue.SetShuffle(true)
+	s.currentTrack = first
+	queueEvents := 0
+	s.AddQueueListener(func([]*domain.TrackDTO) { queueEvents++ })
+	updatedAt := time.Now()
+	s.SyncFavorite(&domain.TrackDTO{Track: domain.Track{ID: "a", Title: "Ignored", IsFavorite: true, UpdatedAt: updatedAt}})
+	if atomic.LoadInt64(statusEvents) != 0 || queueEvents != 0 {
+		t.Fatal("favorite sync emitted playback updates")
+	}
+	if !s.currentTrack.IsFavorite || s.currentTrack.Title != "Original" || !s.currentTrack.UpdatedAt.Equal(updatedAt) {
+		t.Fatalf("current track not patched correctly: %+v", s.currentTrack)
+	}
+	for _, list := range [][]*domain.TrackDTO{s.queue.originalList, s.queue.shuffledList} {
+		for _, track := range list {
+			if track.ID == "a" && (!track.IsFavorite || track.Title != "Original") {
+				t.Fatalf("queue track not patched: %+v", track)
+			}
+		}
+	}
+	if other.IsFavorite {
+		t.Fatal("unrelated track changed")
+	}
+}

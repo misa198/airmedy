@@ -20,6 +20,16 @@ vi.mock('@/stores/favorites', () => ({
 }))
 
 describe('PlayerFavoriteButton', () => {
+  it.each([false, true])('composites the star fill and stroke before applying opacity (mini: %s)', (mini) => {
+    mocks.track.is_favorite = true
+    const wrapper = mount(PlayerFavoriteButton, { props: { mini } })
+    expect(wrapper.classes()).toContain(mini ? 'text-mini-player-pill-foreground' : 'text-foreground')
+    expect(wrapper.classes()).toContain(mini ? 'opacity-90' : 'opacity-70')
+    expect(wrapper.classes().some(value => /^text-.*\//.test(value))).toBe(false)
+    expect(wrapper.get('svg').classes()).toContain('fill-current')
+    wrapper.unmount()
+  })
+
   it.each([false, true])('uses the requested button and icon size (large: %s)', (large) => {
     const wrapper = mount(PlayerFavoriteButton, { props: { large } })
     expect(wrapper.classes()).toEqual(expect.arrayContaining(large ? ['h-9', 'w-9'] : ['h-7', 'w-7']))

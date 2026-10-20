@@ -322,6 +322,17 @@ export const usePlayerStore = defineStore('player', () => {
         }
       }),
 
+      Events.On('library:favorite-changed', (ev: Events.WailsEvent) => {
+        const updated = ev.data as TrackDTO
+        if (!updated?.id) return
+        const patch = (track: TrackDTO): TrackDTO =>
+          track.id === updated.id && (track.is_favorite !== updated.is_favorite || track.updated_at !== updated.updated_at)
+            ? { ...track, is_favorite: updated.is_favorite, updated_at: updated.updated_at } as TrackDTO
+            : track
+        if (queue.value.some(track => patch(track) !== track)) queue.value = queue.value.map(patch)
+        if (currentTrack.value) currentTrack.value = patch(currentTrack.value)
+      }),
+
       Events.On('library:track-updated', (ev: Events.WailsEvent) => {
         const updated = ev.data as TrackDTO
         if (!updated?.id) return

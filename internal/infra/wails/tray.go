@@ -167,6 +167,19 @@ func (m *TrayManager) Setup(tray *application.SystemTray, mainWindow *applicatio
 	// Register listeners
 	m.playerService.AddStatusListener(m.onStatusChange)
 	m.playerService.AddQueueListener(m.onQueueChange)
+	offFavorite := m.app.Event.On("library:favorite-changed", func(event *application.CustomEvent) {
+		track, ok := event.Data.(*domain.TrackDTO)
+		if !ok {
+			return
+		}
+		application.InvokeSync(func() {
+			current := m.playerService.GetCurrentTrack()
+			if current != nil && current.ID == track.ID {
+				m.favoriteItem.SetChecked(current.IsFavorite)
+			}
+		})
+	})
+	m.app.OnShutdown(offFavorite)
 
 	// Populate labels immediately so tracks restored from a previous session
 	// are visible without waiting for the first state-change event.

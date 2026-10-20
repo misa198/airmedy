@@ -142,6 +142,9 @@ func (s *PlaylistService) GetTracksPreview(ctx context.Context, playlistID strin
 	if p == nil {
 		return nil, fmt.Errorf("playlist not found: %s", playlistID)
 	}
+	if p.ID == FavoritesPlaylistID {
+		return s.trackRepo.GetByRules(ctx, "t.is_favorite = ?", []any{true}, limit, "t.sort_title")
+	}
 	if !p.IsSmart {
 		return s.repo.GetTracksPreview(ctx, playlistID, limit)
 	}

@@ -153,7 +153,7 @@ describe('PlayerFooter', () => {
     expect(LibraryService.ToggleFavorite).toHaveBeenCalledWith('t1')
     expect(button.attributes('aria-pressed')).toBe(String(!isFavorite))
     expect(button.get('svg').classes('fill-current')).toBe(!isFavorite)
-    expect(button.classes('transition-colors')).toBe(true)
+    expect(button.classes('transition-opacity')).toBe(true)
     expect(button.attributes('aria-label')).toBe(!isFavorite ? 'context_menu.remove_from_favorites' : 'context_menu.add_to_favorites')
   })
 
@@ -176,7 +176,7 @@ describe('PlayerFooter', () => {
     const wrapper = mountFooter({ currentTrack: new TrackDTO({ id: 't1', is_favorite: false }) })
     await favoriteButton(wrapper).trigger('click')
     await flushPromises()
-    expect(favoriteButton(wrapper).classes('transition-colors')).toBe(true)
+    expect(favoriteButton(wrapper).classes('transition-opacity')).toBe(true)
 
     usePlayerStore().currentTrack = new TrackDTO({ id: 't2', is_favorite: false })
     await wrapper.vm.$nextTick()
@@ -191,7 +191,7 @@ describe('PlayerFooter', () => {
       vi.mocked(LibraryService.ToggleFavorite).mockResolvedValue(true)
       await favoriteButton(wrapper).trigger('click')
       await flushPromises()
-      expect(favoriteButton(wrapper).classes('transition-colors')).toBe(true)
+      expect(favoriteButton(wrapper).classes('transition-opacity')).toBe(true)
       await vi.advanceTimersByTimeAsync(300)
       expect(favoriteButton(wrapper).classes('transition-none')).toBe(true)
 

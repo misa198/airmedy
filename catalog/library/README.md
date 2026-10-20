@@ -186,13 +186,22 @@ GetComposerByID(id: string): Composer
 | `library:sync-started`  | `{ total: number }`        | Before scan begins (user-triggered sync only; suppressed for periodic background scans) |
 | `library:sync-progress` | `{ current, total, path }` | Per file imported (user-triggered sync only) |
 | `library:sync-finished` | `{}`                       | Scan complete (user-triggered sync only) |
-| `library:track-updated` | `TrackDTO`                 | Metadata written to file (fires for background scans too) |
+| `library:track-updated` | `TrackDTO`                 | Track import/metadata update (fires for background scans too); excludes favorite toggles |
+| `library:favorite-changed` | `TrackDTO` | Successful desktop/tray favorite toggle, after DB persistence and player/Last.fm listeners |
 | `library:updated`       | `{}`                       | General library change (fires for background scans too) |
 | `artist-artwork-updated`| `{ artist_id, source, key }` | One artwork source's key changed (empty `key` = cleared) |
 
 ## Frontend Integration
 
 **`useLibraryUpdates(tracks)` composable** listens for `library:track-updated` and `library:track-deleted` events and mutates the provided reactive array in-place, so all views stay current without re-fetching.
+
+Favorite changes use a separate event so they do not invalidate unrelated
+library queries. `ToggleFavorite` retains its boolean return value; the event
+carries the persisted track including `is_favorite` and `updated_at`. The
+favorites store deduplicates the event and API response, with an event received
+during a request taking precedence over that response. Metadata events still
+seed favorite icon state without incrementing the favorite invalidation version.
+See `frontend/src/stores/favorites.spec.ts` and the library listener tests.
 
 **Home overview** fetches `GetRecentlyPlayedTracks`, `GetMostListenedTracks`, and
 `GetLeastListenedTracks` for carousel sections. The analytics tab uses
