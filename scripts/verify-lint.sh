@@ -9,7 +9,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-LINT_VERSION="${1:-v2.5.0}" # Using version specified by user
+LINT_VERSION="${1:-v2.10.1}"
 
 echo "==> Preparing environment..."
 
