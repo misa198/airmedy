@@ -256,6 +256,13 @@ Lyrics only in Wide without changing Phone/Square's Main selection. Tapping an
 active panel button does nothing. Queue reordering stays in the right column,
 leaving left controls visible; lyrics keep-awake and romanization work normally.
 
+Wide supports swipe left for Next and right for Previous in the left column's
+artwork/metadata region, using Phone's thresholds, haptics, and metadata drag
+feedback. This applies to both the stacked and compact side-by-side arrangements
+and remains available with either Lyrics or Queue open. The controls below and
+the right panel do not receive track-swipe gestures. Resize, layout changes, and
+fullscreen dismissal cancel active swipes; swipe-down still dismisses the player.
+
 Square shows exactly one mode: Main (null selected panel), Lyrics, or Queue.
 Only Main uses cropped artwork with a 60% themed dark overlay; Lyrics and Queue
 keep the dominant-color backdrop. Main places metadata near the top and groups
@@ -296,8 +303,9 @@ its service do not depend on layout or orientation. Android/OEM window policy ca
 override orientation requests, so layouts always use actual constraints.
 
 Host tests: `AdaptivePlayerContentTest`, `PlayerOrientationTest` and existing
-player helpers. Compose coverage: `AdaptivePlayerTest`, `FullScreenPlayerTest`
-and fullscreen shell cases in `AppNavigationTest`. UI tests must only be run on
+player helpers. Compose coverage: `AdaptivePlayerTest`, `FullScreenPlayerTest`,
+`WidePlayerSwipeTest` (left-only swipes, independent right-panel interactions,
+controls, and gesture cancellation), and fullscreen shell cases in `AppNavigationTest`. UI tests must only be run on
 an emulator/device when explicitly authorized; building their APK is host-only.
 
 

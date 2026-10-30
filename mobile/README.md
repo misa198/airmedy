@@ -83,6 +83,13 @@ When width/height reaches 0.60 (using half the width in Wide), control gaps shri
 to free space for artwork instead of hiding volume.
 Below 480dp safe height, Wide reduces spacing and places artwork beside metadata
 above the controls.
+
+Wide supports swipe left for Next and right for Previous in the left column's
+artwork/metadata region, using Phone's thresholds, haptics, and metadata drag
+feedback. This applies to both the stacked and compact side-by-side arrangements
+and remains available with either Lyrics or Queue open. The controls below and
+the right panel do not receive track-swipe gestures. Resize, layout changes, and
+fullscreen dismissal cancel active swipes; swipe-down still dismisses the player.
 Smaller near-square windows show one of Main, Lyrics, or Queue, with a persistent
 top drag handle and bottom Lyrics/Queue buttons. Main places metadata near the
 top and seek/playback controls near the bottom over cropped, darkened artwork;

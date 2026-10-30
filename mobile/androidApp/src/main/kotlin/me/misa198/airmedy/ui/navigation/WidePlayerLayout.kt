@@ -28,6 +28,13 @@ import androidx.compose.ui.unit.dp
 @Composable
 internal fun WidePlayerLayout(
     selectedPanel: FullScreenPlayerPanel,
+    horizontalSwipeState: FullScreenPlayerSwipeState,
+    displayedHorizontalSwipeOffset: Float,
+    canNavigatePrevious: Boolean,
+    canNavigateNext: Boolean,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    swipeEnabled: Boolean,
     artwork: @Composable (Modifier) -> Unit,
     metadata: @Composable () -> Unit,
     controls: @Composable () -> Unit,
@@ -49,21 +56,35 @@ internal fun WidePlayerLayout(
                         .padding(horizontal = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(spacing),
                 ) {
-                    if (compact) {
-                        Row(Modifier.weight(1f).fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(spacing),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            BoxWithConstraints(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
-                                artwork(Modifier.size(minOf(maxWidth, maxHeight)).testTag(FullScreenPlayerArtworkTestTag))
+                    FullScreenPlayerSwipeTarget(
+                        testTag = "wide_player_swipe_target",
+                        swipeState = horizontalSwipeState,
+                        displayedOffset = displayedHorizontalSwipeOffset,
+                        onPrevious = onPrevious,
+                        onNext = onNext,
+                        canNavigatePrevious = canNavigatePrevious,
+                        canNavigateNext = canNavigateNext,
+                        enabled = swipeEnabled,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        if (compact) {
+                            Row(Modifier.fillMaxSize(),
+                                horizontalArrangement = Arrangement.spacedBy(spacing),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                BoxWithConstraints(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
+                                    artwork(Modifier.size(minOf(maxWidth, maxHeight)).testTag(FullScreenPlayerArtworkTestTag))
+                                }
+                                Box(Modifier.weight(1f)) { metadata() }
                             }
-                            Box(Modifier.weight(1f)) { metadata() }
+                        } else {
+                            Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(spacing)) {
+                                BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                    artwork(Modifier.size(minOf(maxWidth, maxHeight)).testTag(FullScreenPlayerArtworkTestTag))
+                                }
+                                metadata()
+                            }
                         }
-                    } else {
-                        BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                            artwork(Modifier.size(minOf(maxWidth, maxHeight)).testTag(FullScreenPlayerArtworkTestTag))
-                        }
-                        metadata()
                     }
                     controls()
                 }

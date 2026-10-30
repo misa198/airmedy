@@ -371,6 +371,13 @@ internal fun FullScreenPlayer(
                 layoutState.SaveableStateProvider("wide") {
                     WidePlayerLayout(
                         selectedPanel = requireNotNull(displayedPanel),
+                        horizontalSwipeState = horizontalSwipeState,
+                        displayedHorizontalSwipeOffset = displayedHorizontalSwipeOffset,
+                        canNavigatePrevious = canNavigatePrevious,
+                        canNavigateNext = canNavigateNext,
+                        onPrevious = onPrevious,
+                        onNext = onNext,
+                        swipeEnabled = visible,
                         artwork = { artworkModifier ->
                             FullScreenPlayerArtwork(
                                 artwork = artwork, outgoingArtwork = outgoingArtwork,
