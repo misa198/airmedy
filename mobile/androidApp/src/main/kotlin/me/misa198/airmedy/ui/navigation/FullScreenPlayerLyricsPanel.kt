@@ -69,6 +69,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.repeatOnLifecycle
@@ -215,6 +216,7 @@ internal fun FullScreenPlayerLyricsPanel(
     seekRequestId: Long = 0L,
     onSeek: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    useLargeText: Boolean = false,
 ) {
     val parsedLines = remember(lyrics) { lyrics?.let(::parsePlayerLyrics).orEmpty() }
     val syncedLines = remember(parsedLines) { parsedLines.filter { it.timestampSeconds != null } }
@@ -240,20 +242,29 @@ internal fun FullScreenPlayerLyricsPanel(
         when {
             loading -> LyricsLoadingState(Modifier.fillMaxSize())
             lyrics.isNullOrBlank() -> LyricsEmptyState(Modifier.fillMaxSize())
-            syncedLines.isNotEmpty() -> SyncedLyricsList(
-                trackId,
-                syncedLines,
-                currentPositionMs,
-                isPlaying,
-                pendingSeekPositionMs,
-                seekRequestId,
-                onSeek,
-                Modifier.fillMaxSize(),
-                secondary,
-                showToggle,
-                glowEnabled,
-            )
-            else -> PlainLyricsList(parsedLines, Modifier.fillMaxSize(), secondary, showToggle)
+            else -> {
+                val typography = MaterialTheme.typography
+                MaterialTheme(typography = if (useLargeText) typography.copy(
+                    headlineSmall = typography.headlineSmall.copy(fontSize = 28.sp, lineHeight = 38.sp),
+                    bodyLarge = typography.bodyLarge.copy(fontSize = 20.sp, lineHeight = 30.sp),
+                    bodyMedium = typography.bodyMedium.copy(fontSize = 20.sp, lineHeight = 30.sp),
+                ) else typography) {
+                    if (syncedLines.isNotEmpty()) SyncedLyricsList(
+                        trackId,
+                        syncedLines,
+                        currentPositionMs,
+                        isPlaying,
+                        pendingSeekPositionMs,
+                        seekRequestId,
+                        onSeek,
+                        Modifier.fillMaxSize(),
+                        secondary,
+                        showToggle,
+                        glowEnabled,
+                    )
+                    else PlainLyricsList(parsedLines, Modifier.fillMaxSize(), secondary, showToggle)
+                }
+            }
         }
         if (showToggle) {
             RomanizationToggle(

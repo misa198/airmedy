@@ -337,6 +337,12 @@ is open and that preference is enabled; changing panels, closing fullscreen, or
 disabling the preference releases it immediately, including when lyrics are absent.
 
 Lyrics parsing and display helpers live in `FullScreenPlayerLyricsPanel.kt`.
+
+Wide with at least 480dp safe height uses 28sp synced lyrics and 20sp secondary
+or plain lyrics, with 38sp and 30sp line heights respectively. Karaoke text and glow use the
+same typography. Compact Wide, Phone, and Square retain their existing sizes;
+loading and empty states are unchanged. `AdaptivePlayerTest` covers typography
+across resize, bilingual/plain lyrics, and karaoke layers.
 Playback position is authoritative for the active line; browsing or dragging
 only pauses auto-follow and changes playback only when a valid lyric tap
 dispatches seek.

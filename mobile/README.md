@@ -90,6 +90,9 @@ feedback. This applies to both the stacked and compact side-by-side arrangements
 and remains available with either Lyrics or Queue open. The controls below and
 the right panel do not receive track-swipe gestures. Resize, layout changes, and
 fullscreen dismissal cancel active swipes; swipe-down still dismisses the player.
+
+Wide at least 480dp high uses slightly larger lyrics: 28sp synced lyrics and
+20sp secondary/plain lyrics. Compact Wide, Phone, and Square keep their sizes.
 Smaller near-square windows show one of Main, Lyrics, or Queue, with a persistent
 top drag handle and bottom Lyrics/Queue buttons. Main places metadata near the
 top and seek/playback controls near the bottom over cropped, darkened artwork;

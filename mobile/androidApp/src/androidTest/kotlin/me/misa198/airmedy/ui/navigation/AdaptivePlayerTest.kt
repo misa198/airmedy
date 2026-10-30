@@ -15,8 +15,13 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.junit4.StateRestorationTester
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.assertIsSelected
@@ -228,6 +233,60 @@ class AdaptivePlayerTest {
         compose.runOnIdle {
             assertTrue(view.keepScreenOn)
             assertEquals(0, playbackActions)
+        }
+    }
+
+    @Test fun largerLyricsApplyOnlyToWideAtLeast480DpHigh() {
+        var size by mutableStateOf(1000.dp to 600.dp)
+        compose.setContent { Player(size, lyricContent = "[00:00]Primary") }
+        assertLyricTypography("Primary", 28.sp, 38.sp)
+        compose.runOnIdle { size = 1000.dp to 479.dp }
+        assertLyricTypography("Primary", 24.sp, 32.sp)
+        compose.runOnIdle { size = 1000.dp to 480.dp }
+        assertLyricTypography("Primary", 28.sp, 38.sp)
+        compose.runOnIdle { size = 400.dp to 900.dp }
+        val lyricsLabel = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.player_lyrics)
+        compose.onNodeWithContentDescription(lyricsLabel).performClick()
+        assertLyricTypography("Primary", 24.sp, 32.sp)
+        compose.runOnIdle { size = 360.dp to 360.dp }
+        assertLyricTypography("Primary", 24.sp, 32.sp)
+    }
+
+    @Test fun wideLyricsResizeTranslationsPlainTextAndEveryKaraokeLayer() {
+        var lyrics by mutableStateOf("[00:00]Primary ^ Translation")
+        var theme by mutableStateOf(ThemeMode.Dark)
+        var seekPosition: Long? = null
+        compose.setContent {
+            Player(1000.dp to 600.dp, theme, lyricContent = lyrics, onSeekRequested = { seekPosition = it })
+        }
+        assertLyricTypography("Primary", 28.sp, 38.sp)
+        assertLyricTypography("Translation", 20.sp, 30.sp)
+        compose.onNodeWithTag("synced_lyric_0.0").performClick()
+        compose.runOnIdle { assertEquals(0L, seekPosition) }
+        compose.runOnIdle { lyrics = "[00:00]Hello <00:01>world<00:02> ^ Translation" }
+        assertLyricTypography("Hello", 28.sp, 38.sp)
+        assertLyricTypography("world", 28.sp, 38.sp)
+        assertLyricTypography("Translation", 20.sp, 30.sp)
+        compose.runOnIdle { lyrics = "Plain lyric ^ Plain translation"; theme = ThemeMode.Light }
+        assertLyricTypography("Plain lyric", 20.sp, 30.sp)
+        assertLyricTypography("Plain translation", 20.sp, 30.sp)
+        val longLine = "A long lyric line that must wrap comfortably. ".repeat(3).trim()
+        compose.runOnIdle { lyrics = longLine }
+        assertTrue(assertLyricTypography(longLine, 20.sp, 30.sp).all { it.lineCount > 1 })
+    }
+
+    private fun assertLyricTypography(text: String, fontSize: TextUnit, lineHeight: TextUnit): List<TextLayoutResult> {
+        val nodes = compose.onAllNodesWithText(text, substring = true, useUnmergedTree = true).fetchSemanticsNodes()
+        assertTrue("Expected rendered lyric: $text", nodes.isNotEmpty())
+        return nodes.flatMap { node ->
+            val layouts = mutableListOf<TextLayoutResult>()
+            assertTrue(node.config[SemanticsActions.GetTextLayoutResult].action!!.invoke(layouts))
+            assertTrue(layouts.isNotEmpty())
+            layouts.forEach {
+                assertEquals(fontSize, it.layoutInput.style.fontSize)
+                assertEquals(lineHeight, it.layoutInput.style.lineHeight)
+            }
+            layouts
         }
     }
 

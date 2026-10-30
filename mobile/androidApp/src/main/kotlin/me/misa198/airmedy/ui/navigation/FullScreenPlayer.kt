@@ -351,6 +351,7 @@ internal fun FullScreenPlayer(
                             trackId = item.trackId,
                             lyrics = lyrics,
                             loading = lyricsLoading,
+                            useLargeText = layoutMode == PlayerLayoutMode.Wide && safeHeight >= 480.dp,
                             visible = visible && panel == FullScreenPlayerPanel.Lyrics,
                             romanization = romanization,
                             romanizationAllowed = romanizationAllowed,
