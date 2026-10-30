@@ -398,4 +398,9 @@
     <string name="player_romanization_error">変換に失敗しました。オフにしてからオンにして再試行してください。</string>
     <string name="player_romanization_hint">オフラインのローマ字表記：中国語と韓国語。</string>
     <string name="player_romanization_mandarin">漢字のみの歌詞は中国語（標準語）として扱います。名前の読み方は異なる場合があります。</string>
+    <string name="player_layout_square">Square player layout</string>
+    <string name="player_layout_wide">Wide player layout</string>
+    <string name="player_posture_normal">Normal</string>
+    <string name="player_posture_tabletop">Tabletop</string>
+    <string name="player_posture_book">Book</string>
 </resources>

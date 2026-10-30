@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -123,7 +124,10 @@ internal fun FullScreenQueuePanel(
 
     // The panel enters composition only while open; position it once without
     // interrupting a listener who scrolls the queue afterward.
+    var initiallyPositioned by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
+        if (initiallyPositioned) return@LaunchedEffect
+        initiallyPositioned = true
         val targetIndex = orderedIds.indexOf(currentTrackId)
         if (targetIndex >= 0) listState.scrollToItem(targetIndex)
     }
@@ -169,7 +173,7 @@ internal fun FullScreenQueuePanel(
             }
         }
         Spacer(Modifier.height(8.dp))
-        LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        LazyColumn(state = listState, modifier = Modifier.fillMaxSize().semantics { testTag = "full_screen_queue_list" }) {
             items(orderedIds, key = { it }, contentType = { "queue-track" }) { trackId ->
                 ReorderableItem(reorderableState, key = trackId) { isDragging ->
                     val track = tracksById[trackId]

@@ -398,4 +398,9 @@
     <string name="player_romanization_error">Phiên âm lỗi. Tắt rồi bật lại để thử lại.</string>
     <string name="player_romanization_hint">Phiên âm offline: tiếng Trung và Hàn.</string>
     <string name="player_romanization_mandarin">Lời chỉ có chữ Hán mặc định dùng Mandarin. Tên riêng có thể có cách đọc khác.</string>
+    <string name="player_layout_square">Square player layout</string>
+    <string name="player_layout_wide">Wide player layout</string>
+    <string name="player_posture_normal">Normal</string>
+    <string name="player_posture_tabletop">Tabletop</string>
+    <string name="player_posture_book">Book</string>
 </resources>

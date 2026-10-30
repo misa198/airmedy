@@ -29,6 +29,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import me.misa198.airmedy.player.ArtworkCrossfadeTransition
@@ -52,6 +54,7 @@ internal fun FullScreenPlayerBackground(
     crossfadeProgress: Float,
     isArtworkCrossfading: Boolean,
     modifier: Modifier,
+    showArtwork: Boolean = false,
 ) {
     val colors = LocalAirmedyColors.current
     val dominantColor by animateColorAsState(
@@ -60,13 +63,22 @@ internal fun FullScreenPlayerBackground(
         label = "full-screen-background-colour",
     )
     Box(modifier.background(colors.playerBackdrop)) {
-        if (isArtworkCrossfading) {
+        if (showArtwork) {
+            Box(Modifier.fillMaxSize().semantics { testTag = "square_player_artwork_background" }) {
+                if (isArtworkCrossfading) {
+                    ArtworkLayer(outgoingArtwork, equalPowerOutgoing(crossfadeProgress))
+                    ArtworkLayer(incomingArtwork, equalPowerIncoming(crossfadeProgress))
+                } else if (artwork != null) {
+                    ArtworkLayer(artwork, 1f)
+                }
+            }
+        } else if (isArtworkCrossfading) {
             PlayerBackgroundGradient(outgoingArtwork?.dominant ?: colors.playerBackdrop, equalPowerOutgoing(crossfadeProgress))
             PlayerBackgroundGradient(incomingArtwork?.dominant ?: colors.playerBackdrop, equalPowerIncoming(crossfadeProgress))
         } else {
             PlayerBackgroundGradient(dominantColor, 1f)
         }
-        Box(Modifier.fillMaxSize().background(colors.playerBackdrop.copy(alpha = 0.24f)))
+        Box(Modifier.fillMaxSize().background(colors.playerBackdrop.copy(alpha = if (showArtwork) 0.60f else 0.24f)))
     }
 }
 

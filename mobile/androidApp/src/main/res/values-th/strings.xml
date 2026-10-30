@@ -398,4 +398,9 @@
     <string name="player_romanization_error">ถอดเสียงไม่สำเร็จ ปิดแล้วเปิดเพื่อลองอีกครั้ง</string>
     <string name="player_romanization_hint">ถอดเสียงออฟไลน์: จีนและเกาหลี</string>
     <string name="player_romanization_mandarin">เนื้อเพลงที่มีเฉพาะอักษรฮั่นใช้ภาษาจีนกลางเป็นค่าเริ่มต้น ชื่ออาจมีการอ่านที่ต่างกัน</string>
+    <string name="player_layout_square">Square player layout</string>
+    <string name="player_layout_wide">Wide player layout</string>
+    <string name="player_posture_normal">Normal</string>
+    <string name="player_posture_tabletop">Tabletop</string>
+    <string name="player_posture_book">Book</string>
 </resources>

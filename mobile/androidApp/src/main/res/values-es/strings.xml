@@ -406,4 +406,9 @@
     <string name="player_romanization_error">Error de romanización. Desactiva y activa para reintentar.</string>
     <string name="player_romanization_hint">Romanización sin conexión: chino y coreano.</string>
     <string name="player_romanization_mandarin">Las letras solo con caracteres Han usan mandarín. Los nombres pueden tener otras lecturas.</string>
+    <string name="player_layout_square">Square player layout</string>
+    <string name="player_layout_wide">Wide player layout</string>
+    <string name="player_posture_normal">Normal</string>
+    <string name="player_posture_tabletop">Tabletop</string>
+    <string name="player_posture_book">Book</string>
 </resources>

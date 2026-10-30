@@ -406,4 +406,9 @@
     <string name="player_romanization_error">Romanisierung fehlgeschlagen. Zum Wiederholen aus- und einschalten.</string>
     <string name="player_romanization_hint">Offline-Romanisierung: Chinesisch und Koreanisch.</string>
     <string name="player_romanization_mandarin">Reine Han-Texte werden als Mandarin gelesen. Namen können anders ausgesprochen werden.</string>
+    <string name="player_layout_square">Square player layout</string>
+    <string name="player_layout_wide">Wide player layout</string>
+    <string name="player_posture_normal">Normal</string>
+    <string name="player_posture_tabletop">Tabletop</string>
+    <string name="player_posture_book">Book</string>
 </resources>

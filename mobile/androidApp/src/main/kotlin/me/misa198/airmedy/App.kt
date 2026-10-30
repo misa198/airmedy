@@ -56,6 +56,7 @@ import me.misa198.airmedy.ui.navigation.ContentScrollDirection
 import me.misa198.airmedy.ui.navigation.FloatingNavigationBottomMargin
 import me.misa198.airmedy.ui.navigation.FloatingNavigationContentGap
 import me.misa198.airmedy.ui.navigation.FloatingNavigationHeight
+import me.misa198.airmedy.ui.navigation.PlayerFoldingFeature
 import me.misa198.airmedy.ui.navigation.FullScreenPlayer
 import me.misa198.airmedy.ui.navigation.MiniPlayerHeight
 import me.misa198.airmedy.ui.navigation.MiniPlayerNavigationGap
@@ -131,6 +132,8 @@ internal fun App(
     onIntent: (AppIntent) -> Unit = {},
     onFullScreenPlayerVisibilityChanged: (Boolean) -> Unit = {},
     onDismissSyncFailure: () -> Unit = {},
+    playerFoldingFeatures: List<PlayerFoldingFeature> = emptyList(),
+    onPlayerRotationAllowedChanged: (Boolean) -> Unit = {},
 ) {
     val library = destinations.library
     val settings = destinations.settings
@@ -195,6 +198,15 @@ internal fun App(
         val isForwardHeaderTransition = currentStackPage.index >= previousStackPage.index
         val showsMiniPlayer = playbackState.showsMiniPlayer()
         var isFullScreenPlayerVisible by rememberSaveable { mutableStateOf(false) }
+        var playerRotationAllowed by rememberSaveable { mutableStateOf(false) }
+        LaunchedEffect(playerRotationAllowed, isFullScreenPlayerVisible) {
+            onPlayerRotationAllowedChanged(playerRotationAllowed || isFullScreenPlayerVisible)
+        }
+        LaunchedEffect(Unit) {
+            // Restore host policy after Activity recreation, including recreation during dismissal.
+            if (isFullScreenPlayerVisible) onFullScreenPlayerVisibilityChanged(true)
+            else playerRotationAllowed = false
+        }
         var isFullScreenPlayerOpeningFromSwipe by remember { mutableStateOf(false) }
         var fullScreenPlayerDragProgress by remember { mutableFloatStateOf(0f) }
         var isFullScreenPlayerDragging by remember { mutableStateOf(false) }
@@ -208,6 +220,7 @@ internal fun App(
         fun setFullScreenPlayerVisible(visible: Boolean) {
             if (isFullScreenPlayerVisible == visible) return
             isFullScreenPlayerVisible = visible
+            if (visible) playerRotationAllowed = true
             // System-bar content must be updated in the same user interaction as
             // the panel. Deferring this callback to LaunchedEffect can leave it
             // stale until an unrelated playback-state recomposition occurs.
@@ -232,6 +245,7 @@ internal fun App(
                 isNavigationCompact = false
                 navigationScrollAccumulator.reset()
                 setFullScreenPlayerVisible(false)
+                playerRotationAllowed = false
                 isFullScreenPlayerOpeningFromSwipe = false
                 isFullScreenPlayerDragging = false
                 fullScreenPlayerDragProgress = 0f
@@ -614,6 +628,7 @@ internal fun App(
                     .padding(start = 20.dp, end = 20.dp, bottom = FloatingNavigationBottomMargin),
             )
             FullScreenPlayer(
+                foldingFeatures = playerFoldingFeatures,
                 visible = isFullScreenPlayerVisible,
                 dragProgress = fullScreenPlayerDragProgress,
                 isDragging = isFullScreenPlayerDragging,
@@ -660,6 +675,7 @@ internal fun App(
                     isFullScreenPlayerOpeningFromSwipe = false
                 },
                 onDismissAnimationFinished = {
+                    playerRotationAllowed = false
                     pendingFullScreenPlayerAction?.let { action ->
                         pendingFullScreenPlayerAction = null
                         action()

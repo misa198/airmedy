@@ -422,4 +422,9 @@
     <string name="player_romanization_error">Ошибка романизации. Выключите и включите, чтобы повторить.</string>
     <string name="player_romanization_hint">Романизация офлайн: китайский и корейский.</string>
     <string name="player_romanization_mandarin">Текст только с иероглифами Han читается на мандаринском. Имена могут читаться иначе.</string>
+    <string name="player_layout_square">Square player layout</string>
+    <string name="player_layout_wide">Wide player layout</string>
+    <string name="player_posture_normal">Normal</string>
+    <string name="player_posture_tabletop">Tabletop</string>
+    <string name="player_posture_book">Book</string>
 </resources>

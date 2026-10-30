@@ -398,4 +398,9 @@
     <string name="player_romanization_error">로마자 표기에 실패했습니다. 껐다 켜서 다시 시도하세요.</string>
     <string name="player_romanization_hint">오프라인 로마자 표기: 중국어 및 한국어.</string>
     <string name="player_romanization_mandarin">한자만 있는 가사는 기본적으로 중국어 표준어로 처리됩니다. 이름의 발음은 다를 수 있습니다.</string>
+    <string name="player_layout_square">Square player layout</string>
+    <string name="player_layout_wide">Wide player layout</string>
+    <string name="player_posture_normal">Normal</string>
+    <string name="player_posture_tabletop">Tabletop</string>
+    <string name="player_posture_book">Book</string>
 </resources>

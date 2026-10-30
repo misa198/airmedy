@@ -3,6 +3,12 @@ package me.misa198.airmedy
 import me.misa198.airmedy.lyrics.AndroidRomanizationEngine
 import me.misa198.airmedy.lyrics.RomanizationViewModel
 
+import android.content.pm.ActivityInfo
+import androidx.window.layout.WindowInfoTracker
+import androidx.window.layout.WindowLayoutInfo
+import androidx.window.layout.FoldingFeature
+import me.misa198.airmedy.ui.navigation.PlayerFoldingFeature
+import me.misa198.airmedy.ui.navigation.PlayerFoldOrientation
 import android.os.Bundle
 import android.os.Build
 import android.Manifest
@@ -216,6 +222,20 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
+            val windowInfo = remember(this@MainActivity) {
+                WindowInfoTracker.getOrCreate(this@MainActivity).windowLayoutInfo(this@MainActivity)
+            }.collectAsStateWithLifecycle(initialValue = WindowLayoutInfo(emptyList()))
+            val playerFolds = remember(windowInfo.value) {
+                windowInfo.value.displayFeatures.filterIsInstance<FoldingFeature>().map { fold ->
+                    PlayerFoldingFeature(
+                        fold.bounds.left, fold.bounds.top, fold.bounds.right, fold.bounds.bottom,
+                        if (fold.orientation == FoldingFeature.Orientation.HORIZONTAL) PlayerFoldOrientation.Horizontal else PlayerFoldOrientation.Vertical,
+                        fold.state == FoldingFeature.State.HALF_OPENED,
+                        fold.isSeparating,
+                        fold.occlusionType == FoldingFeature.OcclusionType.FULL,
+                    )
+                }
+            }
             val romanization by romanizationViewModel.state.collectAsStateWithLifecycle()
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
             val lastFmStatus by lastFm.status.collectAsStateWithLifecycle()
@@ -555,6 +575,11 @@ class MainActivity : ComponentActivity() {
                 destinations = destinations,
                 playback = playback,
                 onIntent = viewModel::dispatch,
+                playerFoldingFeatures = playerFolds,
+                onPlayerRotationAllowedChanged = { allowed ->
+                    val orientation = playerRequestedOrientation(allowed)
+                    if (requestedOrientation != orientation) requestedOrientation = orientation
+                },
                 onFullScreenPlayerVisibilityChanged = { visible ->
                     isFullScreenPlayerVisible = visible
                     updateSystemBarAppearance(darkTheme, visible)
@@ -683,3 +708,7 @@ internal fun showSystemOutputSwitcher(router: MediaRouter2, sessionToken: MediaS
 fun AppAndroidPreview() {
     App()
 }
+
+/** USER respects the system auto-rotate setting; the rest of the app stays portrait. */
+internal fun playerRequestedOrientation(allowed: Boolean): Int =
+    if (allowed) ActivityInfo.SCREEN_ORIENTATION_USER else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT

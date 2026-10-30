@@ -122,7 +122,7 @@ internal fun FullScreenPlayerSwipeTarget(
     }
 }
 
-private fun FullScreenPlayerSwipeState.reset() {
+internal fun FullScreenPlayerSwipeState.reset() {
     isDragging = false
     dragOffset = 0f
     gestureHorizontalOffset = 0f

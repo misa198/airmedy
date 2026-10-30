@@ -18,6 +18,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -82,6 +83,7 @@ internal fun FullScreenPlayerMetadataTransition(
     onTrackGoToArtist: (String) -> Unit,
     onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit,
     onCloseFullscreenThen: ((() -> Unit) -> Unit),
+    showMore: Boolean = true,
 ) {
     androidx.compose.animation.AnimatedContent(
         targetState = item,
@@ -97,7 +99,7 @@ internal fun FullScreenPlayerMetadataTransition(
             animatedItem, displayedHorizontalSwipeOffset, hazeState, compact, isFavorite, onFavoriteToggle,
             contextTrack, contextMenuExpanded, onContextMenuOpen, onContextMenuDismiss, playbackQueue,
             onTrackPlayNext, onTrackAddToQueue, moodRadioEligibleTrackIds, onStartMoodRadio, onTrackGoToAlbum, onTrackGoToArtist,
-            onTrackContextBottomSheet, onCloseFullscreenThen,
+            onTrackContextBottomSheet, onCloseFullscreenThen, showMore,
         )
     }
 }
@@ -123,6 +125,7 @@ private fun FullScreenPlayerMetadata(
     onTrackGoToArtist: (String) -> Unit,
     onTrackContextBottomSheet: (TrackContextBottomSheetRequest) -> Unit,
     onCloseFullscreenThen: ((() -> Unit) -> Unit),
+    showMore: Boolean = true,
 ) {
     val colors = LocalAirmedyColors.current
     val hapticFeedback = androidx.compose.ui.platform.LocalHapticFeedback.current
@@ -153,21 +156,23 @@ private fun FullScreenPlayerMetadata(
             glassColor = fullScreenSecondaryControlBackground(colors), hazeState = hazeState, showGlassBorder = false,
             circleSize = 36.dp, iconSize = 20.dp, filled = isFavorite, suppressPressedIndication = true,
         )
-        @Composable fun moreButton(onClick: () -> Unit) = AirmedyIconButton(
-            MaterialSymbols.MoreVert, stringResource(R.string.player_more), onClick,
-            variant = AirmedyIconButtonVariant.Glass, tint = colors.onPrimary,
-            glassColor = fullScreenSecondaryControlBackground(colors), hazeState = hazeState, showGlassBorder = false,
-            circleSize = if (compact) 32.dp else 36.dp, iconSize = if (compact) 18.dp else 20.dp,
-        )
-        if (contextTrack == null) moreButton({}) else TrackContextMenu(
-            track = contextTrack, expanded = contextMenuExpanded, onDismiss = onContextMenuDismiss, hazeState = hazeState,
-            playbackQueue = playbackQueue, onPlayNext = { onTrackPlayNext(it.id) }, onAddToQueue = { onTrackAddToQueue(it.id) },
-            actions = TrackContextMenuActions(moodRadio = contextTrack.id in moodRadioEligibleTrackIds), onStartMoodRadio = { onStartMoodRadio(it.id) },
-            onFavoriteChange = { track, favorite -> onFavoriteToggle(track.id, favorite) }, onGoToAlbum = { onTrackGoToAlbum(it.albumId) },
-            onGoToArtist = { onTrackGoToArtist(it.id) },
-            onBottomSheetRequested = { onCloseFullscreenThen { onTrackContextBottomSheet(it) } },
-            onCloseFullscreenThen = onCloseFullscreenThen,
-        ) { moreButton(onContextMenuOpen) }
+        if (showMore) {
+            @Composable fun moreButton(onClick: () -> Unit) = AirmedyIconButton(
+                MaterialSymbols.MoreVert, stringResource(R.string.player_more), onClick,
+                variant = AirmedyIconButtonVariant.Glass, tint = colors.onPrimary,
+                glassColor = fullScreenSecondaryControlBackground(colors), hazeState = hazeState, showGlassBorder = false,
+                circleSize = if (compact) 32.dp else 36.dp, iconSize = if (compact) 18.dp else 20.dp,
+            )
+            if (contextTrack == null) moreButton({}) else TrackContextMenu(
+                track = contextTrack, expanded = contextMenuExpanded, onDismiss = onContextMenuDismiss, hazeState = hazeState,
+                playbackQueue = playbackQueue, onPlayNext = { onTrackPlayNext(it.id) }, onAddToQueue = { onTrackAddToQueue(it.id) },
+                actions = TrackContextMenuActions(moodRadio = contextTrack.id in moodRadioEligibleTrackIds), onStartMoodRadio = { onStartMoodRadio(it.id) },
+                onFavoriteChange = { track, favorite -> onFavoriteToggle(track.id, favorite) }, onGoToAlbum = { onTrackGoToAlbum(it.albumId) },
+                onGoToArtist = { onTrackGoToArtist(it.id) },
+                onBottomSheetRequested = { onCloseFullscreenThen { onTrackContextBottomSheet(it) } },
+                onCloseFullscreenThen = onCloseFullscreenThen,
+            ) { moreButton(onContextMenuOpen) }
+        }
     }
 }
 
@@ -175,7 +180,8 @@ private fun FullScreenPlayerMetadata(
 internal fun FullScreenQualityDialog(labelRes: Int, symbol: String, details: List<TrackInfoValue>, onDismiss: () -> Unit) {
     val colors = LocalAirmedyColors.current
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true, usePlatformDefaultWidth = false)) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).background(colors.card, RoundedCornerShape(24.dp)), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(Modifier.widthIn(max = 420.dp).fillMaxWidth().semantics { testTag = "full_screen_quality_dialog" }
+            .padding(horizontal = 20.dp).background(colors.card, RoundedCornerShape(24.dp)), horizontalAlignment = Alignment.CenterHorizontally) {
             Column(
                 Modifier.padding(start = 24.dp, top = 24.dp, end = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,

@@ -33,6 +33,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -341,15 +342,15 @@ private fun SyncedLyricsList(
     val trailingLineHeights = remember(lines) { mutableStateMapOf<Int, Int>() }
     val rowBottomPaddingPx = with(LocalDensity.current) { 10.dp.roundToPx() }
     val backwardSeekApproachPx = with(LocalDensity.current) { 72.dp.roundToPx() }
-    var hasPositionedInitialLine by remember(lines) { mutableStateOf(false) }
-    var previousActiveIndex by remember(lines) { mutableStateOf<Int?>(null) }
-    var isBrowsing by remember(lines) { mutableStateOf(false) }
-    var selectedLineIndex by remember(lines) { mutableStateOf<Int?>(null) }
-    var activeIndexWhenLineSelected by remember(lines) { mutableStateOf<Int?>(null) }
-    var selectedLineAnimationComplete by remember(lines) { mutableStateOf(false) }
-    var isFollowingSelectedLine by remember(lines) { mutableStateOf(false) }
-    var returnedToForeground by remember(lines) { mutableStateOf(false) }
-    var previousPositionMs by remember(trackId) { mutableLongStateOf(currentPositionMs) }
+    var hasPositionedInitialLine by rememberSaveable(lines) { mutableStateOf(false) }
+    var previousActiveIndex by rememberSaveable(lines) { mutableStateOf<Int?>(null) }
+    var isBrowsing by rememberSaveable(lines) { mutableStateOf(false) }
+    var selectedLineIndex by rememberSaveable(lines) { mutableStateOf<Int?>(null) }
+    var activeIndexWhenLineSelected by rememberSaveable(lines) { mutableStateOf<Int?>(null) }
+    var selectedLineAnimationComplete by rememberSaveable(lines) { mutableStateOf(false) }
+    var isFollowingSelectedLine by rememberSaveable(lines) { mutableStateOf(false) }
+    var returnedToForeground by rememberSaveable(lines) { mutableStateOf(false) }
+    var previousPositionMs by rememberSaveable(trackId) { mutableLongStateOf(currentPositionMs) }
     val isUserDragging by listState.interactionSource.collectIsDraggedAsState()
     val displayedPositionMs = rememberLyricsDisplayPosition(trackId, currentPositionMs, pendingSeekPositionMs, isPlaying)
     val activeIndex = remember(lines, displayedPositionMs) {
