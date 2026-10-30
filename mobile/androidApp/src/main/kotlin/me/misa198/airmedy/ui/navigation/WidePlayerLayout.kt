@@ -68,14 +68,15 @@ internal fun WidePlayerLayout(
                         modifier = Modifier.weight(1f),
                     ) {
                         if (compact) {
-                            Row(Modifier.fillMaxSize(),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                BoxWithConstraints(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
-                                    artwork(Modifier.size(minOf(maxWidth, maxHeight)).testTag(FullScreenPlayerArtworkTestTag))
+                            BoxWithConstraints(Modifier.fillMaxSize()) {
+                                val artworkSize = minOf(maxHeight, (maxWidth - 16.dp).coerceAtLeast(0.dp) / 2)
+                                Row(Modifier.fillMaxSize(),
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    artwork(Modifier.size(artworkSize).testTag(FullScreenPlayerArtworkTestTag))
+                                    Box(Modifier.weight(1f)) { metadata() }
                                 }
-                                Box(Modifier.weight(1f)) { metadata() }
                             }
                         } else {
                             Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(32.dp)) {

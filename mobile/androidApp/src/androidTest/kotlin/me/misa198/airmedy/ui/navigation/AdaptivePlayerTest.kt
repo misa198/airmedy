@@ -491,12 +491,15 @@ class AdaptivePlayerTest {
             val controls = compose.onNodeWithTag(FullScreenPlayerControlsTestTag).fetchSemanticsNode().boundsInRoot
             val main = compose.onNodeWithTag("wide_player_main").fetchSemanticsNode().boundsInRoot
             assertTrue("Compact artwork must stay useful", artwork.width >= 96f * density)
-            assertTrue("Compact Wide artwork must leave at least 16dp beside metadata", artwork.right <= metadata.left - 16f * density + 1f)
+            assertEquals("Compact Wide artwork must align with the content's left inset", main.left + 24f * density, artwork.left, 1f)
+            assertEquals("Compact Wide must keep only the 16dp gap beside artwork", artwork.right + 16f * density, metadata.left, 1f)
             assertTrue(artwork.bottom <= seek.top)
             assertTrue(controls.bottom <= main.bottom + 1f)
         }
         assertCompactWide()
         compose.runOnIdle { theme = ThemeMode.Dark }
+        assertCompactWide()
+        compose.runOnIdle { size = 1100.dp to 400.dp }
         assertCompactWide()
         compose.runOnIdle { size = 700.dp to 400.dp }
         compose.onNodeWithTag("square_player_main").assertExists()

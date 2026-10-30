@@ -258,7 +258,10 @@ The left column contains a square artwork sized to remaining height, metadata,
 seek, playback buttons, volume, and Lyrics/Output/Queue buttons. Volume
 is always visible, along with Output.
 Below 480dp safe height, Wide places artwork beside metadata above the controls
-and reduces outer spacing to 8dp. This preserves artwork height without reducing
+and reduces outer spacing to 8dp. The artwork's slot matches its square size,
+aligns to the left content inset, and leaves the remaining row width to metadata
+after the 16dp gap. Its size is capped by available height and half the row width
+after the gap. This preserves artwork height without reducing
 control touch targets. Volume remains visible in this compact arrangement;
 its height is reserved before sizing artwork. The 400dp minimum safe height
 reserves room for this compact arrangement.
