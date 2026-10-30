@@ -27,6 +27,11 @@ internal fun resolvePlayerLayout(widthDp: Float, heightDp: Float): PlayerLayoutM
     }
 }
 
+internal fun phonePlayerHorizontalPadding(widthDp: Float, heightDp: Float): Float {
+    if (!widthDp.isFinite() || !heightDp.isFinite() || widthDp < 600f || heightDp <= 0f) return 20f
+    return if (widthDp / heightDp >= 0.6f) widthDp * 0.1f else 20f
+}
+
 internal fun usesCompactPlayerControls(widthDp: Float, heightDp: Float): Boolean {
     if (!widthDp.isFinite() || !heightDp.isFinite() || widthDp <= 0f || heightDp <= 0f) return false
     return when (resolvePlayerLayout(widthDp, heightDp)) {

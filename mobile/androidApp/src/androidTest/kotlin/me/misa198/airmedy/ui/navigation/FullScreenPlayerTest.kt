@@ -371,8 +371,8 @@ class FullScreenPlayerTest {
             val topBlock = composeTestRule.onNodeWithTag(FullScreenPlayerArtworkSwipeTestTag).fetchSemanticsNode().boundsInRoot
             assertEquals("Metadata must sit just above seek controls", controls.top, metadata.bottom, 1f)
             assertEquals("Artwork must center in the space above metadata",
-                (topBlock.top + metadata.top - 16f * density) / 2f, artwork.center.y, 1f)
-            assertTrue(artwork.bottom <= metadata.top)
+                (topBlock.top + metadata.top - 24f * density) / 2f, artwork.center.y, 1f)
+            assertTrue("Artwork must leave at least 24dp above metadata", artwork.bottom <= metadata.top - 24f * density + 1f)
         }
         assertArtworkLeavesRoomForControls()
         composeTestRule.runOnIdle { size = 475.dp to 751.dp }

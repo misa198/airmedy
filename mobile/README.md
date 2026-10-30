@@ -108,6 +108,9 @@ Queue do not support track swipes in Square. Panel/layout changes and dismissal
 cancel transient swipes; vertical swipe-down still dismisses the player.
 
 Phone retains volume in Main, Lyrics and Queue at every window size.
+Its horizontal content padding stays at 20dp on narrow or tall windows. At safe
+widths of at least 600dp and width/height of at least 0.60, padding becomes 10%
+of safe width per side across Main, Lyrics and Queue.
 Large square windows use
 the same Phone artwork and metadata placement. Landscape windows below the
 Wide minimum size use Square, avoiding a tiny Phone cover above the controls.

@@ -4,6 +4,21 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class AdaptivePlayerContentTest {
+    @Test fun phonePaddingOnlyGrowsOnLargeBroadWindows() {
+        listOf(390f to 844f, 475f to 751f, 599f to 700f, 600f to 1200f,
+            600f to 1001f).forEach { (w, h) ->
+            assertEquals(20f, phonePlayerHorizontalPadding(w, h), 0.001f)
+        }
+        listOf(600f to 1000f, 700f to 700f, 900f to 1200f).forEach { (w, h) ->
+            assertEquals(w * 0.1f, phonePlayerHorizontalPadding(w, h), 0.001f)
+        }
+    }
+    @Test fun invalidPhoneDimensionsKeepDefaultPadding() {
+        listOf(0f to 800f, 700f to 0f, -1f to 500f, Float.NaN to 500f,
+            700f to Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY to 800f).forEach { (w, h) ->
+            assertEquals(20f, phonePlayerHorizontalPadding(w, h), 0.001f)
+        }
+    }
     @Test fun narrowPortraitWindowsFallBackToSquare() {
         listOf(280f to 800f, 320f to 800f, 359f to 800f).forEach { (w, h) ->
             assertEquals(PlayerLayoutMode.Square, resolvePlayerLayout(w, h))

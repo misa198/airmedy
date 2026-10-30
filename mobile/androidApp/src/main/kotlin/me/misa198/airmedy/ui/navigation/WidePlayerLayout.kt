@@ -69,7 +69,7 @@ internal fun WidePlayerLayout(
                     ) {
                         if (compact) {
                             Row(Modifier.fillMaxSize(),
-                                horizontalArrangement = Arrangement.spacedBy(spacing),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 BoxWithConstraints(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
@@ -78,7 +78,7 @@ internal fun WidePlayerLayout(
                                 Box(Modifier.weight(1f)) { metadata() }
                             }
                         } else {
-                            Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(spacing)) {
+                            Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(32.dp)) {
                                 BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                                     artwork(Modifier.size(minOf(maxWidth, maxHeight)).testTag(FullScreenPlayerArtworkTestTag))
                                 }

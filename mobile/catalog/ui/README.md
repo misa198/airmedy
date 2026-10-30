@@ -228,13 +228,22 @@ touch targets and volume stays visible, releasing 20dp for artwork. Invalid
 sizes keep normal spacing. The phone control stack aligns to the bottom above
 safe-area padding; extra height must not spread these controls apart.
 
+Phone keeps 20dp horizontal content padding on narrow or tall windows. When
+safe width is at least 600dp and safe width/height is at least 0.60, it uses 10%
+of safe width on each side in Main, Lyrics and Queue. Queue retains its own
+20dp row/header insets inside that adaptive frame; compact metadata may extend
+through the base 20dp right inset but not the extra adaptive margin. Layout
+selection and compact-control spacing still use the original safe window size.
+`AdaptivePlayerContentTest` guards padding thresholds; `AdaptivePlayerTest`
+guards content margins across panels, resize and both themes.
+
 Phone computes artwork size inside safe drawing insets and bottom padding,
 reserving height for metadata and the measured control stack, including volume,
 before choosing the cover's square size. Wider covers must not grow into the
 volume or footer controls.
 In Phone mode, expanded metadata sits immediately above the seek controls with
 bottom spacing, and artwork is centered horizontally and vertically in the
-remaining area above metadata. Opening Lyrics/Queue keeps the compact top header
+remaining area above metadata with a minimum 24dp gap. Opening Lyrics/Queue keeps the compact top header
 and panel layout. The same geometry applies to every window using Phone.
 The short-screen artwork regression in `FullScreenPlayerTest` also covers the
 475×751dp Fold cover profile. `AdaptivePlayerContentTest` covers landscape
@@ -243,6 +252,8 @@ artwork/control bounds in both themes and Square fallback. Its fixture sizes
 represent safe space and add system insets to the outer player dimensions.
 
 Wide places its drag handle above both columns, centered across the safe window.
+Artwork and metadata have a minimum 32dp vertical gap, or 16dp horizontal gap
+in the compact side-by-side arrangement.
 The left column contains a square artwork sized to remaining height, metadata,
 seek, playback buttons, volume, and Lyrics/Output/Queue buttons. Volume
 is always visible, along with Output.

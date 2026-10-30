@@ -64,27 +64,29 @@ internal fun PhonePlayerLayout(
         Modifier.fillMaxSize().safeDrawingPadding().padding(bottom = 16.dp)
             .semantics { testTag = "phone_player_layout" },
     ) {
+        val horizontalPadding = phonePlayerHorizontalPadding(maxWidth.value, (maxHeight + 16.dp).value).dp
+        val contentWidth = maxWidth - horizontalPadding * 2
         val density = LocalDensity.current
         var controlsHeightPx by remember { mutableIntStateOf(0) }
         val controlsHeight = if (controlsHeightPx > 0) with(density) { controlsHeightPx.toDp() } else 300.dp
         val restingTopBlockHeight = (maxHeight - controlsHeight - 32.dp).coerceAtLeast(0.dp)
         var metadataHeightPx by remember { mutableIntStateOf(0) }
         val metadataHeight = if (metadataHeightPx > 0) with(density) { metadataHeightPx.toDp() } else 64.dp
-        val artworkAreaHeight = (restingTopBlockHeight - metadataHeight - 16.dp).coerceAtLeast(0.dp)
+        val artworkAreaHeight = (restingTopBlockHeight - metadataHeight - 24.dp).coerceAtLeast(0.dp)
         // Leave metadata next to seek and center the cover in the space above it.
         val expandedArtworkSize = minOf(
-            maxWidth - 40.dp,
+            contentWidth,
             artworkAreaHeight,
         )
-        val compactMetadataWidth = maxWidth - 20.dp
-        val queuePanelWidth = maxWidth
+        val compactMetadataWidth = contentWidth + 20.dp
+        val queuePanelWidth = contentWidth + 40.dp
         val artworkSize by animateDpAsState(
             targetValue = if (isPanelOpen) FullScreenPlayerCompactArtworkSize else expandedArtworkSize,
             animationSpec = tween(320, easing = FastOutSlowInEasing),
             label = "full-screen-artwork-size",
         )
         val artworkHorizontalOffset by animateDpAsState(
-            targetValue = if (isPanelOpen) 0.dp else ((maxWidth - 40.dp) - expandedArtworkSize) / 2,
+            targetValue = if (isPanelOpen) 0.dp else (contentWidth - expandedArtworkSize) / 2,
             animationSpec = tween(320, easing = FastOutSlowInEasing),
             label = "full-screen-artwork-horizontal-offset",
         )
@@ -104,7 +106,7 @@ internal fun PhonePlayerLayout(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = horizontalPadding),
         ) {
             Spacer(Modifier.height(8.dp))
             FullScreenPlayerDragHandle()
@@ -153,7 +155,7 @@ internal fun PhonePlayerLayout(
                         visible = isPanelOpen,
                         modifier = Modifier
                             // Extend only the compact metadata into the outer
-                            // column's right inset, leaving it flush to screen edge.
+                            // column's base right inset, preserving the adaptive margin.
                             .requiredWidth(compactMetadataWidth)
                             .padding(start = FullScreenPlayerCompactArtworkSize + FullScreenPlayerCompactGap)
                             .height(FullScreenPlayerCompactArtworkSize),

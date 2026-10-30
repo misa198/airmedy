@@ -19,6 +19,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.onAllNodesWithText
@@ -292,6 +293,7 @@ class AdaptivePlayerTest {
 
     @Test fun wideKeepsOnePanelAndLeftControlsWithCenteredGrip() {
         var size by mutableStateOf(1100.dp to 1000.dp)
+        var density = 1f
         var playbackActions = 0
         lateinit var playLabel: String
         lateinit var lyricsLabel: String
@@ -300,6 +302,7 @@ class AdaptivePlayerTest {
         lateinit var outputLabel: String
         lateinit var seekLabel: String
         compose.setContent {
+            density = LocalDensity.current.density
             val context = LocalContext.current
             lyricsLabel = context.getString(R.string.player_lyrics)
             queueLabel = context.getString(R.string.player_queue)
@@ -318,11 +321,13 @@ class AdaptivePlayerTest {
         val panel = compose.onNodeWithTag("wide_player_panel").fetchSemanticsNode().boundsInRoot
         val grip = compose.onNodeWithTag("full_screen_player_drag_handle").fetchSemanticsNode().boundsInRoot
         val artwork = compose.onNodeWithTag(FullScreenPlayerArtworkTestTag).fetchSemanticsNode().boundsInRoot
+        val metadata = compose.onNodeWithTag(FullScreenPlayerMetadataSwipeTestTag).fetchSemanticsNode().boundsInRoot
         val seek = compose.onNodeWithContentDescription(seekLabel).fetchSemanticsNode().boundsInRoot
         assertTrue(main.right <= panel.left)
         assertEquals(main.width, panel.width, 1f)
         assertEquals((main.left + panel.right) / 2f, grip.center.x, 1f)
         assertTrue(artwork.bottom <= seek.top)
+        assertTrue("Wide artwork must leave at least 32dp above metadata", artwork.bottom <= metadata.top - 32f * density + 1f)
         assertTrue(seek.right <= panel.left)
         compose.onNodeWithContentDescription(playLabel).performClick()
         compose.onNodeWithContentDescription(seekLabel).performTouchInput { click(center) }
@@ -486,7 +491,7 @@ class AdaptivePlayerTest {
             val controls = compose.onNodeWithTag(FullScreenPlayerControlsTestTag).fetchSemanticsNode().boundsInRoot
             val main = compose.onNodeWithTag("wide_player_main").fetchSemanticsNode().boundsInRoot
             assertTrue("Compact artwork must stay useful", artwork.width >= 96f * density)
-            assertTrue(artwork.right <= metadata.left)
+            assertTrue("Compact Wide artwork must leave at least 16dp beside metadata", artwork.right <= metadata.left - 16f * density + 1f)
             assertTrue(artwork.bottom <= seek.top)
             assertTrue(controls.bottom <= main.bottom + 1f)
         }
@@ -569,6 +574,46 @@ class AdaptivePlayerTest {
         compose.onNodeWithTag("square_player_main").assertExists()
         compose.onNodeWithTag("full_screen_queue_list").assertDoesNotExist()
         compose.onNodeWithTag("square_player_artwork_background").assertExists()
+    }
+
+    @Test fun phoneMarginsFollowSafeSizeAcrossPanelsResizeAndThemes() {
+        var size by mutableStateOf(700.dp to 700.dp)
+        var theme by mutableStateOf(ThemeMode.Light)
+        lateinit var lyricsLabel: String
+        lateinit var queueLabel: String
+        compose.setContent {
+            val context = LocalContext.current
+            lyricsLabel = context.getString(R.string.player_lyrics)
+            queueLabel = context.getString(R.string.player_queue)
+            Player(size, theme)
+        }
+        fun assertMargins(tag: String, padding: Float) {
+            val layout = compose.onNodeWithTag("phone_player_layout").getUnclippedBoundsInRoot()
+            val content = compose.onNodeWithTag(tag).getUnclippedBoundsInRoot()
+            assertEquals(padding, (content.left - layout.left).value, 0.5f)
+            assertEquals(padding, (layout.right - content.right).value, 0.5f)
+        }
+        for (mode in listOf(ThemeMode.Light, ThemeMode.Dark)) {
+            compose.runOnIdle { theme = mode }
+            for ((dimensions, padding) in listOf(
+                (700.dp to 700.dp) to 70f,
+                (390.dp to 844.dp) to 20f,
+                (475.dp to 751.dp) to 20f,
+                (900.dp to 1200.dp) to 90f,
+                (600.dp to 1200.dp) to 20f,
+            )) {
+                compose.runOnIdle { size = dimensions }
+                assertMargins("phone_player_expanded_metadata", padding)
+                assertMargins(FullScreenPlayerControlsTestTag, padding)
+                compose.onNodeWithContentDescription(lyricsLabel).performClick()
+                assertMargins("plain_lyrics_list", padding)
+                assertMargins(FullScreenPlayerControlsTestTag, padding)
+                compose.onNodeWithContentDescription(queueLabel).performClick()
+                assertMargins("full_screen_queue_panel_header", padding)
+                assertMargins(FullScreenPlayerControlsTestTag, padding)
+                compose.onNodeWithContentDescription(queueLabel).performClick()
+            }
+        }
     }
 
     @Test fun phoneCompactsSpacingWhileKeepingVolumeAcrossPanelsAndResize() {
