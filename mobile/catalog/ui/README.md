@@ -148,6 +148,17 @@ three call sites. Keep screen-specific composables beside their screen. A new
 component accepts explicit state and callbacks; it does not accept a ViewModel
 or Service for convenience.
 
+The Albums Grid and Library Recently added section share `discGridItems` inside
+virtualized `LazyColumn` rows. Each screen measures its available width and
+subtracts its horizontal content padding before calling `discGridColumnCount`:
+minimum card width 150dp, horizontal gap 12dp, and at least one column. Cards
+share row width equally; empty slots keep the last row from stretching. Width
+changes recompute the columns without resetting list state. Albums passes the
+same column count to the alphabetical index so letter jumps target the correct
+lazy row. Home/Search horizontal carousels retain their existing layouts.
+`DiscGridTest` covers column thresholds and alphabetical row mapping; the two
+Library screen Compose tests cover resize and incomplete rows.
+
 `LibraryTextFilter` keeps its active edit buffer locally so delayed list
 filtering cannot replay an older query into `BasicTextField` and disturb the
 cursor. It still reports every edit to the owning ViewModel. The IME Done action
