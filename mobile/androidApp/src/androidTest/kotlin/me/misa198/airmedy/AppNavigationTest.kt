@@ -608,27 +608,27 @@ class AppNavigationTest {
     }
 
     @Test
-    fun fullscreenRotationPolicySurvivesRestorationAndBackRestoresPortrait() {
-        var rotationAllowed = false
+    fun fullscreenSystemBarsSurviveRestorationAndBack() {
+        var fullscreenVisible = false
         val restoration = StateRestorationTester(composeTestRule)
         restoration.setContent {
             App(
                 playback = PlaybackModel(state = playingState),
-                onPlayerRotationAllowedChanged = { rotationAllowed = it },
+                onFullScreenPlayerVisibilityChanged = { fullscreenVisible = it },
             )
         }
         composeTestRule.waitForIdle()
-        assertEquals(false, rotationAllowed)
+        assertEquals(false, fullscreenVisible)
         composeTestRule.onNodeWithText(playingItem.title).performClick()
         composeTestRule.waitForIdle()
-        assertEquals(true, rotationAllowed)
+        assertEquals(true, fullscreenVisible)
         restoration.emulateSavedInstanceStateRestore()
         composeTestRule.onNodeWithContentDescription(string(R.string.full_screen_player)).assertExists()
         composeTestRule.waitForIdle()
-        assertEquals(true, rotationAllowed)
+        assertEquals(true, fullscreenVisible)
         InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
         composeTestRule.waitForIdle()
-        assertEquals(false, rotationAllowed)
+        assertEquals(false, fullscreenVisible)
     }
 
     @Test

@@ -30,7 +30,7 @@
             android:exported="true"
             android:launchMode="singleTop"
             android:name=".MainActivity"
-            android:screenOrientation="portrait">
+            android:screenOrientation="user">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

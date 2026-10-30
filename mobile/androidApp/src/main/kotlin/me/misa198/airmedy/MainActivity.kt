@@ -3,7 +3,6 @@ package me.misa198.airmedy
 import me.misa198.airmedy.lyrics.AndroidRomanizationEngine
 import me.misa198.airmedy.lyrics.RomanizationViewModel
 
-import android.content.pm.ActivityInfo
 import androidx.window.layout.WindowInfoTracker
 import androidx.window.layout.WindowLayoutInfo
 import androidx.window.layout.FoldingFeature
@@ -12,6 +11,7 @@ import me.misa198.airmedy.ui.navigation.PlayerFoldOrientation
 import android.os.Bundle
 import android.os.Build
 import android.Manifest
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.content.Intent
@@ -209,6 +209,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        updateRequestedOrientation(resources.configuration)
         AndroidSyncRuntime.initialize(applicationContext)
         lastFm = AndroidLastFmRuntime.initialize(applicationContext, AndroidSyncRuntime.syncStore())
         handleLastFmIntent(intent)
@@ -576,10 +577,6 @@ class MainActivity : ComponentActivity() {
                 playback = playback,
                 onIntent = viewModel::dispatch,
                 playerFoldingFeatures = playerFolds,
-                onPlayerRotationAllowedChanged = { allowed ->
-                    val orientation = playerRequestedOrientation(allowed)
-                    if (requestedOrientation != orientation) requestedOrientation = orientation
-                },
                 onFullScreenPlayerVisibilityChanged = { visible ->
                     isFullScreenPlayerVisible = visible
                     updateSystemBarAppearance(darkTheme, visible)
@@ -587,6 +584,16 @@ class MainActivity : ComponentActivity() {
                 onDismissSyncFailure = AndroidSyncRuntime::idle,
             )
         }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        updateRequestedOrientation(newConfig)
+    }
+
+    private fun updateRequestedOrientation(configuration: Configuration) {
+        val orientation = appRequestedOrientation(configuration.smallestScreenWidthDp)
+        if (requestedOrientation != orientation) requestedOrientation = orientation
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -709,6 +716,6 @@ fun AppAndroidPreview() {
     App()
 }
 
-/** USER respects the system auto-rotate setting; the rest of the app stays portrait. */
-internal fun playerRequestedOrientation(allowed: Boolean): Int =
-    if (allowed) ActivityInfo.SCREEN_ORIENTATION_USER else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+internal fun appRequestedOrientation(smallestScreenWidthDp: Int): Int =
+    if (smallestScreenWidthDp >= 600) ActivityInfo.SCREEN_ORIENTATION_USER
+    else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT

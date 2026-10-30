@@ -116,8 +116,9 @@ the same Phone artwork and metadata placement. Landscape windows below the
 Wide minimum size use Square, avoiding a tiny Phone cover above the controls.
 Detection does not depend on device brand, physical inches, or hinge angle.
 Fold posture does not split the player into hinge-aware panes yet.
-Fullscreen allows rotation following the system auto-rotate setting and restores
-the app's portrait policy after closing. Back and swipe-down close every layout.
+The Android app stays portrait below 600dp smallest width. At 600dp and above
+(tablets and large foldable screens), it follows the system auto-rotate setting.
+This policy applies throughout the app, including fullscreen playback. Back and swipe-down close every player layout.
 
 ## Prerequisites
 

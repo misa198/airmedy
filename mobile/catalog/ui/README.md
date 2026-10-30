@@ -310,10 +310,14 @@ UI is actually present.
 awareness, passing pixel bounds, orientation, half-open state, separation and
 occlusion through the shell. Layout selection uses window size. Hinge-aware pane placement is not implemented. Never divide an OEM-reduced window a second time.
 
-The Android host allows system-user rotation only while fullscreen is open or
-its dismissal animation is running, then restores portrait. The shell restores
-this policy and fullscreen system bars after Activity recreation; playback and
-its service do not depend on layout or orientation. Android/OEM window policy can
+`MainActivity` sets `requestedOrientation` at creation and on configuration
+changes using `Configuration.smallestScreenWidthDp`: below 600dp requests portrait;
+600dp and above requests user rotation, respecting the system auto-rotate setting.
+Rotating a phone does not classify it as a tablet; large foldable screens also
+qualify. The manifest uses a literal `user` value because orientation resources
+referenced by the manifest cannot vary by screen size. Opening or closing
+fullscreen does not change orientation policy. The shell restores fullscreen system bars after Activity
+recreation; playback and its service do not depend on layout or orientation. Android/OEM window policy can
 override orientation requests, so layouts always use actual constraints.
 
 Host tests: `AdaptivePlayerContentTest`, `PlayerOrientationTest` and existing
