@@ -91,6 +91,7 @@ kotlin {
 dependencies {
     implementation(project(":sharedLogic"))
 
+    implementation(libs.androidx.window)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.lifecycle.runtimeCompose)

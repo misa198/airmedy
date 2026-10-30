@@ -406,4 +406,9 @@
     <string name="player_romanization_error">Romanization failed. Toggle off and on to retry.</string>
     <string name="player_romanization_hint">Offline romanization: Chinese and Korean.</string>
     <string name="player_romanization_mandarin">Han-only lyrics default to Mandarin. Names may have different readings.</string>
+    <string name="player_layout_square">Square player layout</string>
+    <string name="player_layout_wide">Wide player layout</string>
+    <string name="player_posture_normal">Normal</string>
+    <string name="player_posture_tabletop">Tabletop</string>
+    <string name="player_posture_book">Book</string>
 </resources>

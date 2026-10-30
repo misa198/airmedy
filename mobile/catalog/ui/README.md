@@ -148,6 +148,17 @@ three call sites. Keep screen-specific composables beside their screen. A new
 component accepts explicit state and callbacks; it does not accept a ViewModel
 or Service for convenience.
 
+The Albums Grid and Library Recently added section share `discGridItems` inside
+virtualized `LazyColumn` rows. Each screen measures its available width and
+subtracts its horizontal content padding before calling `discGridColumnCount`:
+minimum card width 150dp, horizontal gap 12dp, and at least one column. Cards
+share row width equally; empty slots keep the last row from stretching. Width
+changes recompute the columns without resetting list state. Albums passes the
+same column count to the alphabetical index so letter jumps target the correct
+lazy row. Home/Search horizontal carousels retain their existing layouts.
+`DiscGridTest` covers column thresholds and alphabetical row mapping; the two
+Library screen Compose tests cover resize and incomplete rows.
+
 `LibraryTextFilter` keeps its active edit buffer locally so delayed list
 filtering cannot replay an older query into `BasicTextField` and disturb the
 cursor. It still reports every edit to the owning ViewModel. The IME Done action
@@ -172,6 +183,150 @@ and the trailing fade in light and dark themes.
 
 ## Player UI contracts
 
+### Adaptive fullscreen layout
+
+The `dev` product flavor overlays the current `PlayerLayoutMode` enum name in
+an inset-safe top-right badge. It follows resize without reserving content space
+or adding a tap handler. The `prod` flavor never renders this diagnostic badge,
+including debug builds.
+
+`FullScreenPlayer` owns the background, open/close animation, dismiss handling,
+selected panel, and pending seek. Layout components arrange artwork, metadata,
+panels and controls supplied as slots. Classification uses the current window's
+available dp after `WindowInsets.safeDrawing` (including display cutouts), before
+content padding; animation transforms do not affect detection.
+
+| Selection order | Layout |
+| --- | --- |
+| Invalid/unmeasured dimensions | Phone |
+| Width below 360dp | Square (narrow-window fallback) |
+| Width at least 840dp, height at least 400dp, and width greater than height | Wide (two columns) |
+| Remaining width greater than height | Square (compact fallback) |
+| Remaining width at least 600dp and height at least 480dp | Phone |
+| Remaining width/height from 0.8 through 1.25 inclusive | Square |
+| Remaining windows | Phone |
+
+`AdaptivePlayerContentTest` locks the 360dp minimum Phone width and the narrow
+portrait fallback; height alone cannot select Phone below this width.
+
+There are only three layout modes: Phone, Square and Wide. Small Flip covers
+use Square; large square and portrait windows, including Fold inner screens,
+use the same Phone layout. Wide requires landscape orientation and enough
+space for both columns; landscape windows without that space use Square, never
+Phone. The compact fallback uses Square's artwork backdrop and single-panel UI
+instead of shrinking a separate cover above the Phone controls. Rotation
+from 900×1200dp to 1200×900dp switches Phone to Wide, while 1000×1000dp stays
+Phone. Breakpoints use actual available space, not inches, PPI, or model names.
+
+Phone and Wide always show the volume row (slider and both icons), including
+Main, Lyrics and Queue and after resize. The output switcher stays available.
+The previous volume-hiding thresholds now compact spacing instead: Phone uses
+`safeWidth / safeHeight >= 0.60`; Wide uses `(safeWidth / 2) / safeHeight >= 0.60`.
+The gaps between seek, playback and the volume/footer group shrink from 16dp to
+8dp, and the volume-to-footer gap shrinks from 4dp to 0dp. Controls retain their
+touch targets and volume stays visible, releasing 20dp for artwork. Invalid
+sizes keep normal spacing. The phone control stack aligns to the bottom above
+safe-area padding; extra height must not spread these controls apart.
+
+Phone keeps 20dp horizontal content padding on narrow or tall windows. When
+safe width is at least 600dp and safe width/height is at least 0.60, it uses 10%
+of safe width on each side in Main, Lyrics and Queue. Queue retains its own
+20dp row/header insets inside that adaptive frame; compact metadata may extend
+through the base 20dp right inset but not the extra adaptive margin. Layout
+selection and compact-control spacing still use the original safe window size.
+`AdaptivePlayerContentTest` guards padding thresholds; `AdaptivePlayerTest`
+guards content margins across panels, resize and both themes.
+
+Phone computes artwork size inside safe drawing insets and bottom padding,
+reserving height for metadata and the measured control stack, including volume,
+before choosing the cover's square size. Wider covers must not grow into the
+volume or footer controls.
+In Phone mode, expanded metadata sits immediately above the seek controls with
+bottom spacing, and artwork is centered horizontally and vertically in the
+remaining area above metadata with a minimum 24dp gap. Opening Lyrics/Queue keeps the compact top header
+and panel layout. The same geometry applies to every window using Phone.
+The short-screen artwork regression in `FullScreenPlayerTest` also covers the
+475×751dp Fold cover profile. `AdaptivePlayerContentTest` covers landscape
+selection and minimum dimensions; `AdaptivePlayerTest` covers compact Wide
+artwork/control bounds in both themes and Square fallback. Its fixture sizes
+represent safe space and add system insets to the outer player dimensions.
+
+Wide places its drag handle above both columns, centered across the safe window.
+Artwork and metadata have a minimum 32dp vertical gap, or 16dp horizontal gap
+in the compact side-by-side arrangement.
+The left column contains a square artwork sized to remaining height, metadata,
+seek, playback buttons, volume, and Lyrics/Output/Queue buttons. Volume
+is always visible, along with Output.
+Below 480dp safe height, Wide places artwork beside metadata above the controls
+and reduces outer spacing to 8dp. The artwork's slot matches its square size,
+aligns to the left content inset, and leaves the remaining row width to metadata
+after the 16dp gap. Its size is capped by available height and half the row width
+after the gap. This preserves artwork height without reducing
+control touch targets. Volume remains visible in this compact arrangement;
+its height is reserved before sizing artwork. The 400dp minimum safe height
+reserves room for this compact arrangement.
+The right column always shows Lyrics or Queue. A null shared selection displays
+Lyrics only in Wide without changing Phone/Square's Main selection. Tapping an
+active panel button does nothing. Queue reordering stays in the right column,
+leaving left controls visible; lyrics keep-awake and romanization work normally.
+
+Wide supports swipe left for Next and right for Previous in the left column's
+artwork/metadata region, using Phone's thresholds, haptics, and metadata drag
+feedback. This applies to both the stacked and compact side-by-side arrangements
+and remains available with either Lyrics or Queue open. The controls below and
+the right panel do not receive track-swipe gestures. Resize, layout changes, and
+fullscreen dismissal cancel active swipes; swipe-down still dismisses the player.
+
+Square shows exactly one mode: Main (null selected panel), Lyrics, or Queue.
+Only Main uses cropped artwork with a 60% themed dark overlay; Lyrics and Queue
+keep the dominant-color backdrop. Main places metadata near the top and groups
+seek/quality badge with three playback controls near the bottom, above the fixed
+footer. Both groups are capped at 480dp with at least 24dp side insets. Square has
+no volume/output or metadata More button. The top drag handle and bottom panel
+buttons remain visible in every mode, including queue reordering. Tapping an
+active button returns to Main; tapping the other switches directly. Content is
+replaced before a 220ms fade-in, without overlapping modes.
+
+Square Main supports swipe left for Next and right for Previous using Phone's
+thresholds and haptic feedback. The entire content, including margins and gaps
+between controls, is swipeable except the progress slider and button touch
+targets (including disabled buttons and the interactive quality badge). Exclusion
+is determined at pointer-down and remains in effect until release. Lyrics and
+Queue do not support track swipes in Square. Panel/layout changes and dismissal
+cancel transient swipes; vertical swipe-down still dismisses the player.
+
+
+Back and swipe-down dismiss every layout. Layout changes do not dispatch playback
+actions. The host's `SaveableStateHolder` retains the rendered Phone/Square/Wide queue/lyrics
+viewport and browsing across layout visits and Activity recreation. Selected
+panel is shared across layouts. Queue scroll is independent of the current track;
+lyrics state is scoped to track and text. Initial queue positioning runs once per
+panel opening, not on layout restoration. Pending seek confirmation runs in the
+host even when controls are absent. Layout/size changes reset transient gestures
+and context menus; queue commits after closing the panel/fullscreen are ignored. Lyrics keep-awake and romanization run only while their
+UI is actually present.
+
+`MainActivity` collects Jetpack WindowManager folding features with lifecycle
+awareness, passing pixel bounds, orientation, half-open state, separation and
+occlusion through the shell. Layout selection uses window size. Hinge-aware pane placement is not implemented. Never divide an OEM-reduced window a second time.
+
+`MainActivity` sets `requestedOrientation` at creation and on configuration
+changes using `Configuration.smallestScreenWidthDp`: below 600dp requests portrait;
+600dp and above requests user rotation, respecting the system auto-rotate setting.
+Rotating a phone does not classify it as a tablet; large foldable screens also
+qualify. The manifest uses a literal `user` value because orientation resources
+referenced by the manifest cannot vary by screen size. Opening or closing
+fullscreen does not change orientation policy. The shell restores fullscreen system bars after Activity
+recreation; playback and its service do not depend on layout or orientation. Android/OEM window policy can
+override orientation requests, so layouts always use actual constraints.
+
+Host tests: `AdaptivePlayerContentTest`, `PlayerOrientationTest` and existing
+player helpers. Compose coverage: `AdaptivePlayerTest`, `FullScreenPlayerTest`,
+`WidePlayerSwipeTest` (left-only swipes, independent right-panel interactions,
+controls, and gesture cancellation), and fullscreen shell cases in `AppNavigationTest`. UI tests must only be run on
+an emulator/device when explicitly authorized; building their APK is host-only.
+
+
 `PlaybackState.showsMiniPlayer()` determines whether chrome shows the mini
 player. The mini player and fullscreen player render the state published by the
 service, so neither has local shadow state for transport or queue. Their swipe
@@ -190,13 +345,22 @@ Its centered seek-row quality badge uses the current `LibraryTrack` metadata and
 appears only for Lossless, Hi-Res, or DSD playback when enabled in Playback
 settings; the preference defaults to enabled and persists in DataStore.
 Tapping it opens a centered metadata dialog with the quality icon and only the
-available sample-rate, bit-depth, and codec values.
+available sample-rate, bit-depth, and codec values. The dialog is capped at
+420dp including its 20dp side margins, so Wide keeps phone-sized content rather
+than stretching across the window. `FullScreenPlayerTest` covers this width cap,
+the theme variants, details and dismissal.
 Playback settings also persists an off-by-default keep-screen-on preference.
 The fullscreen player keeps the Android view awake only while its lyrics panel
 is open and that preference is enabled; changing panels, closing fullscreen, or
 disabling the preference releases it immediately, including when lyrics are absent.
 
 Lyrics parsing and display helpers live in `FullScreenPlayerLyricsPanel.kt`.
+
+Wide with at least 480dp safe height uses 28sp synced lyrics and 20sp secondary
+or plain lyrics, with 38sp and 30sp line heights respectively. Karaoke text and glow use the
+same typography. Compact Wide, Phone, and Square retain their existing sizes;
+loading and empty states are unchanged. `AdaptivePlayerTest` covers typography
+across resize, bilingual/plain lyrics, and karaoke layers.
 Playback position is authoritative for the active line; browsing or dragging
 only pauses auto-follow and changes playback only when a valid lyric tap
 dispatches seek.

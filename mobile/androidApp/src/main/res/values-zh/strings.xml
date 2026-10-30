@@ -398,4 +398,9 @@
     <string name="player_romanization_error">罗马化失败。关闭后重新开启以重试。</string>
     <string name="player_romanization_hint">离线罗马化：中文和韩语。</string>
     <string name="player_romanization_mandarin">仅含汉字的歌词默认按普通话处理。姓名的读音可能不同。</string>
+    <string name="player_layout_square">Square player layout</string>
+    <string name="player_layout_wide">Wide player layout</string>
+    <string name="player_posture_normal">Normal</string>
+    <string name="player_posture_tabletop">Tabletop</string>
+    <string name="player_posture_book">Book</string>
 </resources>

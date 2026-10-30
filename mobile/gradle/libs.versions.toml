@@ -1,4 +1,5 @@
 [versions]
+androidx-window = "1.5.1"
 agp = "9.3.1"
 android-compileSdk = "36"
 android-minSdk = "31"
@@ -29,6 +30,7 @@ reorderable = "3.1.0"
 vico = "3.2.1"
 
 [libraries]
+androidx-window = { module = "androidx.window:window", version.ref = "androidx-window" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }

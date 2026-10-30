@@ -22,6 +22,7 @@ data class DiscGridItem(
 
 fun LazyListScope.discGridItems(
     items: List<DiscGridItem>,
+    columns: Int,
     verticalItemPadding: Dp = 4.dp,
     horizontalGap: Dp = 12.dp,
     horizontalContentPadding: Dp = 0.dp,
@@ -31,16 +32,16 @@ fun LazyListScope.discGridItems(
         Box(modifier) { content() }
     },
 ) {
-    val pairs = items.chunked(2)
-    items(pairs.size, key = { index -> pairs[index].first().id }) { index ->
-        val pair = pairs[index]
+    val rows = items.chunked(columns)
+    items(rows.size, key = { index -> rows[index].first().id }) { index ->
+        val row = rows[index]
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = horizontalContentPadding, vertical = verticalItemPadding),
             horizontalArrangement = Arrangement.spacedBy(horizontalGap),
         ) {
-            for (item in pair) {
+            for (item in row) {
                 itemWrapper(item, Modifier.weight(1f)) {
                     DiscCard(
                         title = item.title,
@@ -53,9 +54,12 @@ fun LazyListScope.discGridItems(
                     )
                 }
             }
-            if (pair.size == 1) {
+            repeat(columns - row.size) {
                 Spacer(modifier = Modifier.weight(1f))
             }
         }
     }
 }
+
+internal fun discGridColumnCount(contentWidth: Dp): Int =
+    ((contentWidth + 12.dp) / (150.dp + 12.dp)).toInt().coerceAtLeast(1)

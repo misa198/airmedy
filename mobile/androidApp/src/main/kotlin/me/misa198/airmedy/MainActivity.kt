@@ -3,9 +3,15 @@ package me.misa198.airmedy
 import me.misa198.airmedy.lyrics.AndroidRomanizationEngine
 import me.misa198.airmedy.lyrics.RomanizationViewModel
 
+import androidx.window.layout.WindowInfoTracker
+import androidx.window.layout.WindowLayoutInfo
+import androidx.window.layout.FoldingFeature
+import me.misa198.airmedy.ui.navigation.PlayerFoldingFeature
+import me.misa198.airmedy.ui.navigation.PlayerFoldOrientation
 import android.os.Bundle
 import android.os.Build
 import android.Manifest
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.content.Intent
@@ -203,6 +209,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        updateRequestedOrientation(resources.configuration)
         AndroidSyncRuntime.initialize(applicationContext)
         lastFm = AndroidLastFmRuntime.initialize(applicationContext, AndroidSyncRuntime.syncStore())
         handleLastFmIntent(intent)
@@ -216,6 +223,20 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
+            val windowInfo = remember(this@MainActivity) {
+                WindowInfoTracker.getOrCreate(this@MainActivity).windowLayoutInfo(this@MainActivity)
+            }.collectAsStateWithLifecycle(initialValue = WindowLayoutInfo(emptyList()))
+            val playerFolds = remember(windowInfo.value) {
+                windowInfo.value.displayFeatures.filterIsInstance<FoldingFeature>().map { fold ->
+                    PlayerFoldingFeature(
+                        fold.bounds.left, fold.bounds.top, fold.bounds.right, fold.bounds.bottom,
+                        if (fold.orientation == FoldingFeature.Orientation.HORIZONTAL) PlayerFoldOrientation.Horizontal else PlayerFoldOrientation.Vertical,
+                        fold.state == FoldingFeature.State.HALF_OPENED,
+                        fold.isSeparating,
+                        fold.occlusionType == FoldingFeature.OcclusionType.FULL,
+                    )
+                }
+            }
             val romanization by romanizationViewModel.state.collectAsStateWithLifecycle()
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
             val lastFmStatus by lastFm.status.collectAsStateWithLifecycle()
@@ -555,6 +576,7 @@ class MainActivity : ComponentActivity() {
                 destinations = destinations,
                 playback = playback,
                 onIntent = viewModel::dispatch,
+                playerFoldingFeatures = playerFolds,
                 onFullScreenPlayerVisibilityChanged = { visible ->
                     isFullScreenPlayerVisible = visible
                     updateSystemBarAppearance(darkTheme, visible)
@@ -562,6 +584,16 @@ class MainActivity : ComponentActivity() {
                 onDismissSyncFailure = AndroidSyncRuntime::idle,
             )
         }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        updateRequestedOrientation(newConfig)
+    }
+
+    private fun updateRequestedOrientation(configuration: Configuration) {
+        val orientation = appRequestedOrientation(configuration.smallestScreenWidthDp)
+        if (requestedOrientation != orientation) requestedOrientation = orientation
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -683,3 +715,7 @@ internal fun showSystemOutputSwitcher(router: MediaRouter2, sessionToken: MediaS
 fun AppAndroidPreview() {
     App()
 }
+
+internal fun appRequestedOrientation(smallestScreenWidthDp: Int): Int =
+    if (smallestScreenWidthDp >= 600) ActivityInfo.SCREEN_ORIENTATION_USER
+    else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT

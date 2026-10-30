@@ -66,6 +66,60 @@ the Android source of truth for Mood Radio: existing analysis documents never
 enable radio by themselves, and changing the desktop setting takes effect on
 the next completed sync.
 
+## Fullscreen player layouts
+
+The Android fullscreen player adapts to its available window size in dp after
+system-bar and display-cutout insets. Safe widths below 360dp always use Square,
+including tall, narrow cover-screen windows. It has three layouts: Square for small
+near-square windows and landscape windows without room for two columns,
+Phone for large square and portrait windows, and Wide for landscape windows at least
+840dp wide and 400dp high. Wide requires width greater than height; rotating a
+large portrait window can therefore switch Phone to Wide. Windows at least
+600dp wide and 480dp high use Phone when square or portrait. Wide uses equal columns: artwork,
+metadata and controls on the left; Lyrics or Queue on the right. Lyrics is the
+default and the active panel cannot be closed. Its drag handle is centered above
+both columns. Phone and Wide always show the volume slider and output switcher.
+When width/height reaches 0.60 (using half the width in Wide), control gaps shrink
+to free space for artwork instead of hiding volume.
+Below 480dp safe height, Wide reduces spacing and places artwork beside metadata
+above the controls.
+
+Wide supports swipe left for Next and right for Previous in the left column's
+artwork/metadata region, using Phone's thresholds, haptics, and metadata drag
+feedback. This applies to both the stacked and compact side-by-side arrangements
+and remains available with either Lyrics or Queue open. The controls below and
+the right panel do not receive track-swipe gestures. Resize, layout changes, and
+fullscreen dismissal cancel active swipes; swipe-down still dismisses the player.
+
+Wide at least 480dp high uses slightly larger lyrics: 28sp synced lyrics and
+20sp secondary/plain lyrics. Compact Wide, Phone, and Square keep their sizes.
+Smaller near-square windows show one of Main, Lyrics, or Queue, with a persistent
+top drag handle and bottom Lyrics/Queue buttons. Main places metadata near the
+top and seek/playback controls near the bottom over cropped, darkened artwork;
+Lyrics and Queue retain the colored player backdrop. Tapping the selected panel
+button returns to Main. Square has no volume slider or output switcher.
+
+Square Main supports swipe left for Next and right for Previous using Phone's
+thresholds and haptic feedback. The entire content, including margins and gaps
+between controls, is swipeable except the progress slider and button touch
+targets (including disabled buttons and the interactive quality badge). Exclusion
+is determined at pointer-down and remains in effect until release. Lyrics and
+Queue do not support track swipes in Square. Panel/layout changes and dismissal
+cancel transient swipes; vertical swipe-down still dismisses the player.
+
+Phone retains volume in Main, Lyrics and Queue at every window size.
+Its horizontal content padding stays at 20dp on narrow or tall windows. At safe
+widths of at least 600dp and width/height of at least 0.60, padding becomes 10%
+of safe width per side across Main, Lyrics and Queue.
+Large square windows use
+the same Phone artwork and metadata placement. Landscape windows below the
+Wide minimum size use Square, avoiding a tiny Phone cover above the controls.
+Detection does not depend on device brand, physical inches, or hinge angle.
+Fold posture does not split the player into hinge-aware panes yet.
+The Android app stays portrait below 600dp smallest width. At 600dp and above
+(tablets and large foldable screens), it follows the system auto-rotate setting.
+This policy applies throughout the app, including fullscreen playback. Back and swipe-down close every player layout.
+
 ## Prerequisites
 
 - JDK 11, as configured by the Gradle modules.

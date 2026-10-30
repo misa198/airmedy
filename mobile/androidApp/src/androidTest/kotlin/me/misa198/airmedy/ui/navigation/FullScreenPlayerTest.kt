@@ -11,12 +11,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
-import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -37,6 +37,7 @@ import me.misa198.airmedy.player.RepeatMode
 import me.misa198.airmedy.settings.ThemeMode
 import me.misa198.airmedy.sync.LibraryTrack
 import me.misa198.airmedy.ui.theme.AirmedyTheme
+import me.misa198.airmedy.ui.components.MaterialSymbols
 import me.misa198.airmedy.ui.components.TrackContextArtist
 import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import org.junit.Rule
@@ -61,6 +62,7 @@ class FullScreenPlayerTest {
             view = LocalView.current
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 FullScreenPlayer(
+                    modifier = Modifier.width(400.dp).height(900.dp),
                     visible = visible,
                     dragProgress = 0f,
                     isDragging = false,
@@ -141,6 +143,7 @@ class FullScreenPlayerTest {
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 FullScreenPlayer(
+                    modifier = Modifier.width(400.dp).height(900.dp),
                     visible = true,
                     dragProgress = 0f,
                     isDragging = false,
@@ -166,6 +169,30 @@ class FullScreenPlayerTest {
     }
 
     @Test
+    fun qualityDialogKeepsPhoneWidthInBothThemes() {
+        var theme by mutableStateOf(ThemeMode.Light)
+        var density = 1f
+        var dismissed = false
+        composeTestRule.setContent {
+            density = LocalDensity.current.density
+            AirmedyTheme(themeMode = theme) {
+                FullScreenQualityDialog(R.string.track_info_quality_lossless, MaterialSymbols.GraphicEq, emptyList()) {
+                    dismissed = true
+                }
+            }
+        }
+        fun assertCompactDialog() {
+            val bounds = composeTestRule.onNodeWithTag("full_screen_quality_dialog").fetchSemanticsNode().boundsInRoot
+            assertTrue("Quality dialog must stay within phone width", bounds.width <= 420f * density + 1f)
+        }
+        assertCompactDialog()
+        composeTestRule.runOnIdle { theme = ThemeMode.Dark }
+        assertCompactDialog()
+        composeTestRule.onNodeWithContentDescription("OK").performClick()
+        composeTestRule.runOnIdle { assertTrue(dismissed) }
+    }
+
+    @Test
     fun qualityBadgeShowsSupportedFormatsAndRespectsSetting() {
         var showQualityBadge by mutableStateOf(true)
         var track by mutableStateOf(
@@ -174,6 +201,7 @@ class FullScreenPlayerTest {
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 FullScreenPlayer(
+                    modifier = Modifier.width(400.dp).height(900.dp),
                     visible = true,
                     dragProgress = 0f,
                     isDragging = false,
@@ -249,6 +277,7 @@ class FullScreenPlayerTest {
                     override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) { haptics += hapticFeedbackType }
                 }) {
                     FullScreenPlayer(
+                    modifier = Modifier.width(400.dp).height(900.dp),
                         visible = true,
                         dragProgress = 0f,
                         isDragging = false,
@@ -280,6 +309,7 @@ class FullScreenPlayerTest {
                     override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) { haptics += hapticFeedbackType }
                 }) {
                     FullScreenPlayer(
+                    modifier = Modifier.width(400.dp).height(900.dp),
                         visible = true,
                         dragProgress = 0f,
                         isDragging = false,
@@ -304,7 +334,10 @@ class FullScreenPlayerTest {
 
     @Test
     fun shortScreenCentersAndCapsArtworkByAvailableHeight() {
+        var size by mutableStateOf(360.dp to 568.dp)
+        var density = 1f
         composeTestRule.setContent {
+            density = LocalDensity.current.density
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 FullScreenPlayer(
                     visible = true,
@@ -320,14 +353,34 @@ class FullScreenPlayerTest {
                     onNext = {},
                     onOpenMediaOutputSwitcher = {},
                     onDismiss = {},
-                    modifier = Modifier.width(360.dp).height(568.dp),
+                    modifier = Modifier.width(size.first).height(size.second),
                 )
             }
         }
 
-        composeTestRule.onNodeWithTag("full_screen_player_artwork")
-            .assertHeightIsEqualTo(120.dp)
-            .assertLeftPositionInRootIsEqualTo(120.dp)
+        fun assertArtworkLeavesRoomForControls() {
+            val layout = composeTestRule.onNodeWithTag("phone_player_layout").fetchSemanticsNode().boundsInRoot
+            val artwork = composeTestRule.onNodeWithTag(FullScreenPlayerArtworkTestTag).fetchSemanticsNode().boundsInRoot
+            val controls = composeTestRule.onNodeWithTag(FullScreenPlayerControlsTestTag).fetchSemanticsNode().boundsInRoot
+            assertEquals(layout.center.x, artwork.center.x, 1f)
+            assertTrue("Compact controls must retain their touch targets", controls.height >= 160f * density)
+            assertTrue("Compact controls must release their old height reserve", controls.height < 300f * density)
+            assertTrue(controls.bottom <= layout.bottom + 1f)
+            assertTrue(artwork.bottom <= controls.top)
+            val metadata = composeTestRule.onNodeWithTag("phone_player_expanded_metadata").fetchSemanticsNode().boundsInRoot
+            val topBlock = composeTestRule.onNodeWithTag(FullScreenPlayerArtworkSwipeTestTag).fetchSemanticsNode().boundsInRoot
+            assertEquals("Metadata must sit just above seek controls", controls.top, metadata.bottom, 1f)
+            assertEquals("Artwork must center in the space above metadata",
+                (topBlock.top + metadata.top - 24f * density) / 2f, artwork.center.y, 1f)
+            assertTrue("Artwork must leave at least 24dp above metadata", artwork.bottom <= metadata.top - 24f * density + 1f)
+        }
+        assertArtworkLeavesRoomForControls()
+        composeTestRule.runOnIdle { size = 475.dp to 751.dp }
+        assertArtworkLeavesRoomForControls()
+        val artwork = composeTestRule.onNodeWithTag(FullScreenPlayerArtworkTestTag).fetchSemanticsNode().boundsInRoot
+        assertTrue("Fold cover artwork must grow into the space released by compact controls", artwork.width >= 240f * density)
+        composeTestRule.runOnIdle { size = 390.dp to 1000.dp }
+        assertArtworkLeavesRoomForControls()
     }
 
     @Test
@@ -336,6 +389,7 @@ class FullScreenPlayerTest {
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 FullScreenPlayer(
+                    modifier = Modifier.width(400.dp).height(900.dp),
                     visible = true,
                     dragProgress = 0f,
                     isDragging = false,
@@ -372,6 +426,7 @@ class FullScreenPlayerTest {
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 FullScreenPlayer(
+                    modifier = Modifier.width(400.dp).height(900.dp),
                     visible = true,
                     dragProgress = 0f,
                     isDragging = false,
@@ -408,6 +463,7 @@ class FullScreenPlayerTest {
             }
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 FullScreenPlayer(
+                    modifier = Modifier.width(400.dp).height(900.dp),
                     visible = true,
                     dragProgress = 0f,
                     isDragging = false,
@@ -445,6 +501,7 @@ class FullScreenPlayerTest {
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 FullScreenPlayer(
+                    modifier = Modifier.width(400.dp).height(900.dp),
                     visible = true,
                     dragProgress = 0f,
                     isDragging = false,
@@ -504,6 +561,7 @@ class FullScreenPlayerTest {
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 FullScreenPlayer(
+                    modifier = Modifier.width(400.dp).height(900.dp),
                     visible = true,
                     dragProgress = 0f,
                     isDragging = false,
@@ -550,6 +608,7 @@ class FullScreenPlayerTest {
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 FullScreenPlayer(
+                    modifier = Modifier.width(400.dp).height(900.dp),
                     visible = true,
                     dragProgress = 0f,
                     isDragging = false,
@@ -641,6 +700,7 @@ class FullScreenPlayerTest {
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 FullScreenPlayer(
+                    modifier = Modifier.width(400.dp).height(900.dp),
                     visible = true,
                     dragProgress = 0f,
                     isDragging = false,
@@ -668,6 +728,7 @@ class FullScreenPlayerTest {
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 FullScreenPlayer(
+                    modifier = Modifier.width(400.dp).height(900.dp),
                     visible = true,
                     dragProgress = 0f,
                     isDragging = false,
@@ -873,6 +934,7 @@ class FullScreenPlayerTest {
         composeTestRule.setContent {
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 FullScreenPlayer(
+                    modifier = Modifier.width(400.dp).height(900.dp),
                     visible = true,
                     dragProgress = 0f,
                     isDragging = false,

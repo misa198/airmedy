@@ -56,6 +56,7 @@ import me.misa198.airmedy.ui.navigation.ContentScrollDirection
 import me.misa198.airmedy.ui.navigation.FloatingNavigationBottomMargin
 import me.misa198.airmedy.ui.navigation.FloatingNavigationContentGap
 import me.misa198.airmedy.ui.navigation.FloatingNavigationHeight
+import me.misa198.airmedy.ui.navigation.PlayerFoldingFeature
 import me.misa198.airmedy.ui.navigation.FullScreenPlayer
 import me.misa198.airmedy.ui.navigation.MiniPlayerHeight
 import me.misa198.airmedy.ui.navigation.MiniPlayerNavigationGap
@@ -131,6 +132,7 @@ internal fun App(
     onIntent: (AppIntent) -> Unit = {},
     onFullScreenPlayerVisibilityChanged: (Boolean) -> Unit = {},
     onDismissSyncFailure: () -> Unit = {},
+    playerFoldingFeatures: List<PlayerFoldingFeature> = emptyList(),
 ) {
     val library = destinations.library
     val settings = destinations.settings
@@ -195,6 +197,10 @@ internal fun App(
         val isForwardHeaderTransition = currentStackPage.index >= previousStackPage.index
         val showsMiniPlayer = playbackState.showsMiniPlayer()
         var isFullScreenPlayerVisible by rememberSaveable { mutableStateOf(false) }
+        LaunchedEffect(Unit) {
+            // Restore fullscreen system bars after Activity recreation.
+            if (isFullScreenPlayerVisible) onFullScreenPlayerVisibilityChanged(true)
+        }
         var isFullScreenPlayerOpeningFromSwipe by remember { mutableStateOf(false) }
         var fullScreenPlayerDragProgress by remember { mutableFloatStateOf(0f) }
         var isFullScreenPlayerDragging by remember { mutableStateOf(false) }
@@ -614,6 +620,7 @@ internal fun App(
                     .padding(start = 20.dp, end = 20.dp, bottom = FloatingNavigationBottomMargin),
             )
             FullScreenPlayer(
+                foldingFeatures = playerFoldingFeatures,
                 visible = isFullScreenPlayerVisible,
                 dragProgress = fullScreenPlayerDragProgress,
                 isDragging = isFullScreenPlayerDragging,

@@ -33,6 +33,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -68,6 +69,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.repeatOnLifecycle
@@ -214,6 +216,7 @@ internal fun FullScreenPlayerLyricsPanel(
     seekRequestId: Long = 0L,
     onSeek: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    useLargeText: Boolean = false,
 ) {
     val parsedLines = remember(lyrics) { lyrics?.let(::parsePlayerLyrics).orEmpty() }
     val syncedLines = remember(parsedLines) { parsedLines.filter { it.timestampSeconds != null } }
@@ -239,20 +242,29 @@ internal fun FullScreenPlayerLyricsPanel(
         when {
             loading -> LyricsLoadingState(Modifier.fillMaxSize())
             lyrics.isNullOrBlank() -> LyricsEmptyState(Modifier.fillMaxSize())
-            syncedLines.isNotEmpty() -> SyncedLyricsList(
-                trackId,
-                syncedLines,
-                currentPositionMs,
-                isPlaying,
-                pendingSeekPositionMs,
-                seekRequestId,
-                onSeek,
-                Modifier.fillMaxSize(),
-                secondary,
-                showToggle,
-                glowEnabled,
-            )
-            else -> PlainLyricsList(parsedLines, Modifier.fillMaxSize(), secondary, showToggle)
+            else -> {
+                val typography = MaterialTheme.typography
+                MaterialTheme(typography = if (useLargeText) typography.copy(
+                    headlineSmall = typography.headlineSmall.copy(fontSize = 28.sp, lineHeight = 38.sp),
+                    bodyLarge = typography.bodyLarge.copy(fontSize = 20.sp, lineHeight = 30.sp),
+                    bodyMedium = typography.bodyMedium.copy(fontSize = 20.sp, lineHeight = 30.sp),
+                ) else typography) {
+                    if (syncedLines.isNotEmpty()) SyncedLyricsList(
+                        trackId,
+                        syncedLines,
+                        currentPositionMs,
+                        isPlaying,
+                        pendingSeekPositionMs,
+                        seekRequestId,
+                        onSeek,
+                        Modifier.fillMaxSize(),
+                        secondary,
+                        showToggle,
+                        glowEnabled,
+                    )
+                    else PlainLyricsList(parsedLines, Modifier.fillMaxSize(), secondary, showToggle)
+                }
+            }
         }
         if (showToggle) {
             RomanizationToggle(
@@ -341,15 +353,15 @@ private fun SyncedLyricsList(
     val trailingLineHeights = remember(lines) { mutableStateMapOf<Int, Int>() }
     val rowBottomPaddingPx = with(LocalDensity.current) { 10.dp.roundToPx() }
     val backwardSeekApproachPx = with(LocalDensity.current) { 72.dp.roundToPx() }
-    var hasPositionedInitialLine by remember(lines) { mutableStateOf(false) }
-    var previousActiveIndex by remember(lines) { mutableStateOf<Int?>(null) }
-    var isBrowsing by remember(lines) { mutableStateOf(false) }
-    var selectedLineIndex by remember(lines) { mutableStateOf<Int?>(null) }
-    var activeIndexWhenLineSelected by remember(lines) { mutableStateOf<Int?>(null) }
-    var selectedLineAnimationComplete by remember(lines) { mutableStateOf(false) }
-    var isFollowingSelectedLine by remember(lines) { mutableStateOf(false) }
-    var returnedToForeground by remember(lines) { mutableStateOf(false) }
-    var previousPositionMs by remember(trackId) { mutableLongStateOf(currentPositionMs) }
+    var hasPositionedInitialLine by rememberSaveable(lines) { mutableStateOf(false) }
+    var previousActiveIndex by rememberSaveable(lines) { mutableStateOf<Int?>(null) }
+    var isBrowsing by rememberSaveable(lines) { mutableStateOf(false) }
+    var selectedLineIndex by rememberSaveable(lines) { mutableStateOf<Int?>(null) }
+    var activeIndexWhenLineSelected by rememberSaveable(lines) { mutableStateOf<Int?>(null) }
+    var selectedLineAnimationComplete by rememberSaveable(lines) { mutableStateOf(false) }
+    var isFollowingSelectedLine by rememberSaveable(lines) { mutableStateOf(false) }
+    var returnedToForeground by rememberSaveable(lines) { mutableStateOf(false) }
+    var previousPositionMs by rememberSaveable(trackId) { mutableLongStateOf(currentPositionMs) }
     val isUserDragging by listState.interactionSource.collectIsDraggedAsState()
     val displayedPositionMs = rememberLyricsDisplayPosition(trackId, currentPositionMs, pendingSeekPositionMs, isPlaying)
     val activeIndex = remember(lines, displayedPositionMs) {

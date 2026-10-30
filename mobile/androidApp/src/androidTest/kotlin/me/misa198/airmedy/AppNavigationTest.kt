@@ -15,6 +15,7 @@ import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -604,6 +605,30 @@ class AppNavigationTest {
         composeTestRule.waitForIdle()
         composeTestRule.onAllNodesWithContentDescription(string(R.string.full_screen_player)).assertCountEquals(0)
         assertEquals(false, fullScreenPlayerVisible)
+    }
+
+    @Test
+    fun fullscreenSystemBarsSurviveRestorationAndBack() {
+        var fullscreenVisible = false
+        val restoration = StateRestorationTester(composeTestRule)
+        restoration.setContent {
+            App(
+                playback = PlaybackModel(state = playingState),
+                onFullScreenPlayerVisibilityChanged = { fullscreenVisible = it },
+            )
+        }
+        composeTestRule.waitForIdle()
+        assertEquals(false, fullscreenVisible)
+        composeTestRule.onNodeWithText(playingItem.title).performClick()
+        composeTestRule.waitForIdle()
+        assertEquals(true, fullscreenVisible)
+        restoration.emulateSavedInstanceStateRestore()
+        composeTestRule.onNodeWithContentDescription(string(R.string.full_screen_player)).assertExists()
+        composeTestRule.waitForIdle()
+        assertEquals(true, fullscreenVisible)
+        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+        composeTestRule.waitForIdle()
+        assertEquals(false, fullscreenVisible)
     }
 
     @Test
