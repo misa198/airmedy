@@ -151,7 +151,7 @@ private fun FullScreenPlayerMetadata(
             symbol = MaterialSymbols.Star,
             label = stringResource(R.string.player_heart),
             onClick = { if (!isFavorite) hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm); onFavoriteToggle(item.trackId, !isFavorite) },
-            modifier = Modifier.graphicsLayer { scaleX = favoriteScale.value; scaleY = favoriteScale.value },
+            modifier = Modifier.excludeFullScreenSwipe().graphicsLayer { scaleX = favoriteScale.value; scaleY = favoriteScale.value },
             variant = AirmedyIconButtonVariant.Glass, tint = colors.onPrimary,
             glassColor = fullScreenSecondaryControlBackground(colors), hazeState = hazeState, showGlassBorder = false,
             circleSize = 36.dp, iconSize = 20.dp, filled = isFavorite, suppressPressedIndication = true,

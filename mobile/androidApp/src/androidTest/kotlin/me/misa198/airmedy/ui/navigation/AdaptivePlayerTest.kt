@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.platform.LocalContext
@@ -25,8 +26,11 @@ import androidx.compose.ui.test.click
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
+import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import me.misa198.airmedy.BuildConfig
@@ -44,6 +48,143 @@ import org.junit.Test
 class AdaptivePlayerTest {
     @get:Rule val compose = createComposeRule()
     private val item = PlaybackItem("track-1", "Title", "Artist", "/audio.flac")
+
+    @Test fun squareMainSwipesOnMetadataBackgroundMarginsAndButtonGaps() {
+        var previous = 0
+        var next = 0
+        lateinit var previousLabel: String
+        lateinit var playLabel: String
+        compose.setContent {
+            previousLabel = LocalContext.current.getString(R.string.player_previous)
+            playLabel = LocalContext.current.getString(R.string.player_play)
+            Player(360.dp to 360.dp, onPrevious = { previous++ }, onNext = { next++ })
+        }
+        val target = compose.onNodeWithTag("square_player_swipe_target")
+        val bounds = target.fetchSemanticsNode().boundsInRoot
+        val metadata = compose.onNodeWithTag(FullScreenPlayerMetadataSwipeTestTag).fetchSemanticsNode().boundsInRoot
+        target.performTouchInput {
+            val y = metadata.center.y - bounds.top
+            swipe(Offset(width * 0.55f, y), Offset(width * 0.05f, y), 400)
+        }
+        val background = squareBackgroundPoint()
+        target.performTouchInput {
+            swipe(Offset(width * 0.1f, background.y), Offset(width * 0.9f, background.y), 400)
+        }
+        target.performTouchInput {
+            swipe(Offset(width - 2f, background.y), Offset(width * 0.2f, background.y), 400)
+        }
+        val previousBounds = compose.onNodeWithContentDescription(previousLabel).fetchSemanticsNode().boundsInRoot
+        val playBounds = compose.onNodeWithContentDescription(playLabel).fetchSemanticsNode().boundsInRoot
+        val gap = Offset((previousBounds.right + playBounds.left) / 2, playBounds.center.y) - bounds.topLeft
+        target.performTouchInput { swipe(gap, Offset(width * 0.95f, gap.y), 400) }
+        compose.runOnIdle { assertEquals(2, previous); assertEquals(2, next) }
+    }
+
+    @Test fun squareControlsExcludeSwipeStartsAndSeekStillWorks() {
+        var transport = 0
+        var seek = 0
+        var favorite = 0
+        lateinit var labels: List<String>
+        lateinit var seekLabel: String
+        compose.setContent {
+            val context = LocalContext.current
+            labels = listOf(R.string.player_previous, R.string.player_play, R.string.player_next,
+                R.string.player_heart, R.string.player_lyrics, R.string.player_queue).map(context::getString)
+            seekLabel = context.getString(R.string.player_seek)
+            Player(360.dp to 360.dp, onPrevious = { transport++ }, onNext = { transport++ },
+                onTransport = { transport++ }, onSeekRequested = { seek++ }, onFavorite = { favorite++ })
+        }
+        labels.forEach(::swipeFromControl)
+        compose.runOnIdle { assertEquals(0, transport); assertEquals(0, favorite) }
+        swipeFromControl(seekLabel)
+        compose.runOnIdle { assertEquals(1, seek); assertEquals(1, transport) }
+        compose.onNodeWithContentDescription(labels[1]).performClick()
+        compose.onNodeWithContentDescription(labels[3]).performClick()
+        compose.runOnIdle { assertEquals(2, transport); assertEquals(1, favorite) }
+    }
+
+    @Test fun squareDisabledControlsStillExcludeSwipes() {
+        var transport = 0
+        lateinit var playLabel: String
+        lateinit var seekLabel: String
+        compose.setContent {
+            playLabel = LocalContext.current.getString(R.string.player_play)
+            seekLabel = LocalContext.current.getString(R.string.player_seek)
+            Player(360.dp to 360.dp, preparing = true, onTransport = { transport++ })
+        }
+        swipeFromControl(playLabel)
+        swipeFromControl(seekLabel)
+        compose.runOnIdle { assertEquals(0, transport) }
+    }
+
+    @Test fun squarePanelsDoNotSwipeTracksAndMainReadsLatestCallbacks() {
+        var generation by mutableStateOf(1)
+        var invoked = 0
+        lateinit var lyricsLabel: String
+        lateinit var queueLabel: String
+        compose.setContent {
+            lyricsLabel = LocalContext.current.getString(R.string.player_lyrics)
+            queueLabel = LocalContext.current.getString(R.string.player_queue)
+            val capturedGeneration = generation
+            Player(360.dp to 360.dp, onNext = { invoked = capturedGeneration })
+        }
+        compose.onNodeWithContentDescription(lyricsLabel).performClick()
+        compose.onNodeWithTag("square_player_swipe_target").performTouchInput { swipeLeft() }
+        compose.onNodeWithContentDescription(queueLabel).performClick()
+        compose.onNodeWithTag("square_player_swipe_target").performTouchInput { swipeLeft() }
+        compose.runOnIdle { assertEquals(0, invoked); generation = 2 }
+        compose.onNodeWithContentDescription(queueLabel).performClick()
+        val point = squareBackgroundPoint()
+        compose.onNodeWithTag("square_player_swipe_target").performTouchInput {
+            swipe(Offset(width * 0.9f, point.y), Offset(width * 0.1f, point.y), 400)
+        }
+        compose.runOnIdle { assertEquals(2, invoked) }
+    }
+
+    @Test fun squareCancelledShortAndInterruptedSwipesDoNotDispatch() {
+        var size by mutableStateOf(360.dp to 360.dp)
+        var transport = 0
+        lateinit var lyricsLabel: String
+        compose.setContent {
+            lyricsLabel = LocalContext.current.getString(R.string.player_lyrics)
+            Player(size, onTransport = { transport++ })
+        }
+        val target = compose.onNodeWithTag("square_player_swipe_target")
+        val point = squareBackgroundPoint()
+        target.performTouchInput {
+            swipe(point, point + Offset(5f, 0f), 400)
+            down(point)
+            moveTo(point + Offset(width * 0.6f, 0f))
+            cancel()
+        }
+        target.performTouchInput { down(point); moveTo(point + Offset(width * 0.6f, 0f)) }
+        compose.onNodeWithContentDescription(lyricsLabel).performClick()
+        target.performTouchInput { up() }
+        compose.onNodeWithContentDescription(lyricsLabel).performClick()
+        target.performTouchInput { down(point); moveTo(point + Offset(width * 0.6f, 0f)) }
+        compose.runOnIdle { size = 340.dp to 360.dp }
+        target.performTouchInput { up() }
+        compose.runOnIdle { assertEquals(0, transport) }
+    }
+
+    private fun squareBackgroundPoint(): Offset {
+        val target = compose.onNodeWithTag("square_player_swipe_target").fetchSemanticsNode().boundsInRoot
+        val metadata = compose.onNodeWithTag(FullScreenPlayerMetadataSwipeTestTag).fetchSemanticsNode().boundsInRoot
+        val seekLabel = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.player_seek)
+        val slider = compose.onNodeWithContentDescription(seekLabel).fetchSemanticsNode().boundsInRoot
+        assertTrue("Fixture must leave a swipeable gap", slider.top > metadata.bottom)
+        return Offset(target.width * 0.3f, (metadata.bottom + slider.top) / 2 - target.top)
+    }
+
+    private fun swipeFromControl(label: String) {
+        val target = compose.onNodeWithTag("square_player_swipe_target")
+        val bounds = target.fetchSemanticsNode().boundsInRoot
+        val start = compose.onNodeWithContentDescription(label).fetchSemanticsNode().boundsInRoot.center - bounds.topLeft
+        target.performTouchInput {
+            val endX = if (start.x > width / 2f) width * 0.05f else width * 0.95f
+            swipe(start, Offset(endX, start.y), 400)
+        }
+    }
 
     @Test fun resizePreservesQueueViewportAndUpdatesLyricsKeepAwake() {
         var size by mutableStateOf(400.dp to 900.dp)
@@ -458,6 +599,10 @@ class AdaptivePlayerTest {
         currentTrackId: String = "track-1",
         lyricContent: String = "First line\nSecond line",
         onSeekRequested: (Long) -> Unit = {},
+        onPrevious: () -> Unit = onTransport,
+        onNext: () -> Unit = onTransport,
+        onFavorite: () -> Unit = {},
+        preparing: Boolean = false,
     ) {
         val insets = WindowInsets.safeDrawing
         val horizontalInsets = with(LocalDensity.current) {
@@ -467,11 +612,13 @@ class AdaptivePlayerTest {
         AirmedyTheme(themeMode = theme) {
             FullScreenPlayer(
                 visible = true, dragProgress = 0f, isDragging = false, openingFromMiniPlayerSwipe = false,
-                playbackState = PlaybackState.Paused(item.copy(trackId = currentTrackId), positionMs, 120_000L),
+                playbackState = if (preparing) PlaybackState.Preparing(item.copy(trackId = currentTrackId))
+                    else PlaybackState.Paused(item.copy(trackId = currentTrackId), positionMs, 120_000L),
                 queue = PlaybackQueueSnapshot(activeTrackIds = (1..40).map { "track-$it" }, currentIndex = 0),
                 lyrics = lyricContent, keepScreenOnForLyrics = true,
                 volume = 0.5f, onSeek = { onTransport(); onSeekRequested(it) }, onVolumeChange = {},
-                onPrevious = onTransport, onPlayPause = onTransport, onNext = onTransport,
+                onPrevious = onPrevious, onPlayPause = onTransport, onNext = onNext,
+                onFavoriteToggle = { _, _ -> onFavorite() },
                 onQueueReordered = { onTransport() }, onOpenMediaOutputSwitcher = {}, onDismiss = onDismiss,
                 // Test sizes describe available space after system insets, as the resolver expects.
                 foldingFeatures = folds, modifier = Modifier.requiredSize(size.first + horizontalInsets, size.second + verticalInsets),

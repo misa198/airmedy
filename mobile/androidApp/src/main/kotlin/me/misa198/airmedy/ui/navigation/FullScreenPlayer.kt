@@ -48,6 +48,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.ui.unit.LayoutDirection
@@ -406,29 +407,42 @@ internal fun FullScreenPlayer(
                 }
             }, square = {
                 layoutState.SaveableStateProvider("square") {
-                    SquarePlayerLayout(
-                        selectedPanel = selectedPanel,
-                        metadata = { metadataContent(false) },
-                        controls = {
-                            FullScreenSeekControls(
-                                item.trackId, seekState, currentPositionMs, durationMs, displayedDurationMs,
-                                isPreparing, contextTrack, showQualityBadge,
-                                onSeekRequested = { positionMs ->
-                                    lyricsSeekPositionMs = positionMs
-                                    lyricsSeekRequestId += 1
-                                    onSeek(positionMs)
-                                },
-                                onSeekConfirmed = { lyricsSeekPositionMs = null },
-                            )
-                            FullScreenPlaybackButtons(isPreparing, isPlaying, canNavigatePrevious, canNavigateNext, onPrevious, onPlayPause, onNext)
-                        },
-                        panelContent = { width -> panelContent(selectedPanel, width) },
-                        footer = {
-                            FullScreenPanelButtons(
-                                selectedPanel, queue, { selectedPanel = it },
-                            )
-                        },
-                    )
+                    val minimumTouchSize = with(density) { LocalViewConfiguration.current.minimumTouchTargetSize.toSize() }
+                    val swipeExclusions = remember(minimumTouchSize) { FullScreenSwipeExclusions(minimumTouchSize) }
+                    FullScreenPlayerSwipeTarget(
+                        testTag = "square_player_swipe_target",
+                        swipeState = horizontalSwipeState,
+                        displayedOffset = displayedHorizontalSwipeOffset,
+                        onPrevious = onPrevious, onNext = onNext,
+                        canNavigatePrevious = canNavigatePrevious, canNavigateNext = canNavigateNext,
+                        enabled = visible && selectedPanel == null,
+                        exclusions = swipeExclusions,
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        SquarePlayerLayout(
+                            selectedPanel = selectedPanel,
+                            metadata = { metadataContent(false) },
+                            controls = {
+                                FullScreenSeekControls(
+                                    item.trackId, seekState, currentPositionMs, durationMs, displayedDurationMs,
+                                    isPreparing, contextTrack, showQualityBadge,
+                                    onSeekRequested = { positionMs ->
+                                        lyricsSeekPositionMs = positionMs
+                                        lyricsSeekRequestId += 1
+                                        onSeek(positionMs)
+                                    },
+                                    onSeekConfirmed = { lyricsSeekPositionMs = null },
+                                )
+                                FullScreenPlaybackButtons(isPreparing, isPlaying, canNavigatePrevious, canNavigateNext, onPrevious, onPlayPause, onNext)
+                            },
+                            panelContent = { width -> panelContent(selectedPanel, width) },
+                            footer = {
+                                FullScreenPanelButtons(
+                                    selectedPanel, queue, { selectedPanel = it },
+                                )
+                            },
+                        )
+                    }
                 }
             }) {
                 layoutState.SaveableStateProvider("phone") {

@@ -226,7 +226,7 @@ internal fun FullScreenSeekControls(
             enabled = durationMs > 0 && !isPreparing,
             onInteractionChange = { seekInteracting = it },
             trackHeight = 7.dp,
-            modifier = Modifier.semantics { contentDescription = seekLabel },
+            modifier = Modifier.excludeFullScreenSwipe().semantics { contentDescription = seekLabel },
         )
         Box(Modifier.fillMaxWidth()) {
             Text(
@@ -241,7 +241,7 @@ internal fun FullScreenSeekControls(
                 horizontalArrangement = Arrangement.spacedBy(3.dp),
                 modifier = Modifier.align(Alignment.Center).offset(y = (-12).dp + seekOffset).alpha(if (qualityVisible) 1f else 0f)
                     .graphicsLayer { scaleX = seekScaleX; scaleY = seekScaleY }
-                    .then(if (qualityVisible) Modifier.semantics { testTag = FullScreenPlayerQualityBadgeTestTag } else Modifier.clearAndSetSemantics {})
+                    .then(if (qualityVisible) Modifier.excludeFullScreenSwipe().semantics { testTag = FullScreenPlayerQualityBadgeTestTag } else Modifier.clearAndSetSemantics {})
                     .clip(RoundedCornerShape(6.dp)).background(fullScreenSecondaryControlBackground(colors))
                     .then(if (qualityVisible) Modifier.clickable(role = Role.Button, interactionSource = remember { MutableInteractionSource() }, indication = null) { qualityDialogVisible = true } else Modifier)
                     .padding(horizontal = 8.dp, vertical = 3.dp),
@@ -358,7 +358,7 @@ internal fun FullScreenTransportButton(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     Box(
-        Modifier.size(64.dp).then(if (containerColor == null) Modifier else Modifier.padding(8.dp).background(containerColor, CircleShape))
+        Modifier.excludeFullScreenSwipe().size(64.dp).then(if (containerColor == null) Modifier else Modifier.padding(8.dp).background(containerColor, CircleShape))
             .semantics { contentDescription = label; selected?.let { this.selected = it } }
             .clickable(
                 enabled = enabled,

@@ -266,6 +266,15 @@ buttons remain visible in every mode, including queue reordering. Tapping an
 active button returns to Main; tapping the other switches directly. Content is
 replaced before a 220ms fade-in, without overlapping modes.
 
+Square Main supports swipe left for Next and right for Previous using Phone's
+thresholds and haptic feedback. The entire content, including margins and gaps
+between controls, is swipeable except the progress slider and button touch
+targets (including disabled buttons and the interactive quality badge). Exclusion
+is determined at pointer-down and remains in effect until release. Lyrics and
+Queue do not support track swipes in Square. Panel/layout changes and dismissal
+cancel transient swipes; vertical swipe-down still dismisses the player.
+
+
 Back and swipe-down dismiss every layout. Layout changes do not dispatch playback
 actions. The host's `SaveableStateHolder` retains the rendered Phone/Square/Wide queue/lyrics
 viewport and browsing across layout visits and Activity recreation. Selected

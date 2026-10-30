@@ -88,6 +88,15 @@ top drag handle and bottom Lyrics/Queue buttons. Main places metadata near the
 top and seek/playback controls near the bottom over cropped, darkened artwork;
 Lyrics and Queue retain the colored player backdrop. Tapping the selected panel
 button returns to Main. Square has no volume slider or output switcher.
+
+Square Main supports swipe left for Next and right for Previous using Phone's
+thresholds and haptic feedback. The entire content, including margins and gaps
+between controls, is swipeable except the progress slider and button touch
+targets (including disabled buttons and the interactive quality badge). Exclusion
+is determined at pointer-down and remains in effect until release. Lyrics and
+Queue do not support track swipes in Square. Panel/layout changes and dismissal
+cancel transient swipes; vertical swipe-down still dismisses the player.
+
 Phone retains volume in Main, Lyrics and Queue at every window size.
 Large square windows use
 the same Phone artwork and metadata placement. Landscape windows below the
