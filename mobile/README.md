@@ -169,6 +169,21 @@ task bump-mobile-version VERSION=0.0.2
 
 The command accepts only `X.Y.Z` versions and increments `versionCode` by one.
 
+### Android update notices
+
+The `prod` flavor checks the repository's release manifest at startup, independently
+of the landing-page domain. A newer Android version opens a dismissible dialog
+with its version and rendered Markdown release notes, including images; Update
+opens that release in the browser.
+Each version is persisted before presentation and is never announced twice while
+that app data remains. The `dev` flavor does not check. Errors are logged without
+blocking startup and can be retried at the next app session.
+
+The shared `CheckForAppUpdate` use case owns version comparisons and eligibility;
+Android owns HTTP, Preferences DataStore, ViewModel state and Compose UI.
+See [release discovery](../releases/README.md) for the manifest contract and the
+**Bump Landing Download Version** workflow that publishes its pointers.
+
 ### FFmpeg player build
 
 Android playback uses FFmpeg directly for local synced audio: FFmpeg demuxes and

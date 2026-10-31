@@ -415,4 +415,9 @@
     <string name="playback_background_solid">Tinta unita</string>
     <string name="playback_background_living">Copertina animata</string>
     <string name="playback_background_helper">%1$s utilizza più risorse della GPU. Per i dispositivi meno potenti, si consiglia %2$s.</string>
+    <string name="app_update_title">Aggiornamento disponibile</string>
+    <string name="app_update_version">Versione %1$s</string>
+    <string name="app_update_no_notes">Note di rilascio non disponibili.</string>
+    <string name="app_update_later">Più tardi</string>
+    <string name="app_update_action">Aggiorna</string>
 </resources>

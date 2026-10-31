@@ -407,4 +407,9 @@
     <string name="playback_background_solid">Màu đơn</string>
     <string name="playback_background_living">Artwork sống động</string>
     <string name="playback_background_helper">%1$s sử dụng nhiều tài nguyên GPU hơn. Nếu thiết bị có cấu hình yếu, bạn nên chọn %2$s.</string>
+    <string name="app_update_title">Có bản cập nhật mới</string>
+    <string name="app_update_version">Phiên bản %1$s</string>
+    <string name="app_update_no_notes">Chưa có nội dung cập nhật.</string>
+    <string name="app_update_later">Để sau</string>
+    <string name="app_update_action">Cập nhật</string>
 </resources>

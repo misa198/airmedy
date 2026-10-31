@@ -431,4 +431,9 @@
     <string name="playback_background_solid">Сплошной</string>
     <string name="playback_background_living">Живая обложка</string>
     <string name="playback_background_helper">%1$s использует больше ресурсов GPU. На менее мощных устройствах рекомендуется %2$s.</string>
+    <string name="app_update_title">Доступно обновление</string>
+    <string name="app_update_version">Версия %1$s</string>
+    <string name="app_update_no_notes">Описание обновления недоступно.</string>
+    <string name="app_update_later">Позже</string>
+    <string name="app_update_action">Обновить</string>
 </resources>

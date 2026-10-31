@@ -407,4 +407,9 @@
     <string name="playback_background_solid">단색</string>
     <string name="playback_background_living">리빙 아트워크</string>
     <string name="playback_background_helper">%1$s는 GPU 리소스를 더 많이 사용합니다. 성능이 낮은 기기에서는 %2$s을 권장합니다.</string>
+    <string name="app_update_title">업데이트가 있습니다</string>
+    <string name="app_update_version">버전 %1$s</string>
+    <string name="app_update_no_notes">릴리스 노트가 없습니다.</string>
+    <string name="app_update_later">나중에</string>
+    <string name="app_update_action">업데이트</string>
 </resources>

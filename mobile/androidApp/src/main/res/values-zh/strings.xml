@@ -407,4 +407,9 @@
     <string name="playback_background_solid">纯色</string>
     <string name="playback_background_living">动态封面</string>
     <string name="playback_background_helper">%1$s 会占用更多 GPU 资源。性能较低的设备建议选择%2$s。</string>
+    <string name="app_update_title">有可用更新</string>
+    <string name="app_update_version">版本 %1$s</string>
+    <string name="app_update_no_notes">暂无更新说明。</string>
+    <string name="app_update_later">稍后</string>
+    <string name="app_update_action">更新</string>
 </resources>

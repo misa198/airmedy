@@ -6,11 +6,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -34,6 +39,7 @@ fun AirmedyDialog(
     onConfirm: () -> Unit = {},
     confirmVariant: AirmedyPillButtonVariant = AirmedyPillButtonVariant.Primary,
     actionLayout: AirmedyDialogActionLayout = AirmedyDialogActionLayout.Horizontal,
+    content: (@Composable () -> Unit)? = null,
 ) {
     val colors = LocalAirmedyColors.current
     Dialog(
@@ -42,12 +48,17 @@ fun AirmedyDialog(
     ) {
         Column(
             modifier = Modifier
+                .widthIn(max = 420.dp)
                 .fillMaxWidth()
+                .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * 0.85f)
                 .clip(RoundedCornerShape(36.dp))
                 .background(colors.card),
         ) {
             Column(
-                modifier = Modifier.padding(start = 20.dp, top = 28.dp, end = 20.dp),
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 20.dp, top = 28.dp, end = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
@@ -61,6 +72,7 @@ fun AirmedyDialog(
                     style = MaterialTheme.typography.bodyMedium,
                     color = colors.textMuted,
                 )
+                content?.invoke()
             }
             when (actionLayout) {
                 AirmedyDialogActionLayout.Horizontal -> Row(

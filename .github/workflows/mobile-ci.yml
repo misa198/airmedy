@@ -85,6 +85,10 @@ jobs:
         working-directory: mobile
         run: ./gradlew :sharedLogic:testAndroidHostTest
 
+      - name: Test Android update checks
+        working-directory: mobile
+        run: ./gradlew :androidApp:testDevDebugUnitTest --tests 'me.misa198.airmedy.update.*'
+
       - name: Build Android app
         working-directory: mobile
         run: ./gradlew :androidApp:assembleDevDebug

@@ -1,5 +1,9 @@
 package me.misa198.airmedy
 
+import me.misa198.airmedy.update.AppUpdateViewModel
+import me.misa198.airmedy.update.CheckForAppUpdate
+import me.misa198.airmedy.update.GitHubAppReleaseSource
+import me.misa198.airmedy.update.UpdateNoticePreferences
 import me.misa198.airmedy.lyrics.AndroidRomanizationEngine
 import me.misa198.airmedy.lyrics.RomanizationViewModel
 
@@ -93,6 +97,16 @@ import me.misa198.airmedy.ui.screens.InsightViewModel
 private data class ManualLyricsOverride(val trackId: String, val content: String)
 
 class MainActivity : ComponentActivity() {
+    private val appUpdateViewModel: AppUpdateViewModel by viewModels {
+        AppUpdateViewModel.Factory(
+            CheckForAppUpdate(
+                GitHubAppReleaseSource(),
+                UpdateNoticePreferences(applicationContext),
+            ),
+            BuildConfig.VERSION_NAME,
+            { error -> android.util.Log.w("AirmedyUpdate", "Update check failed", error) },
+        )
+    }
     private val romanizationViewModel: RomanizationViewModel by viewModels {
         RomanizationViewModel.Factory(
             AndroidRomanizationEngine { applicationContext.assets.open(it) },
@@ -223,6 +237,10 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
+            val appUpdate by appUpdateViewModel.update.collectAsStateWithLifecycle()
+            LaunchedEffect(Unit) {
+                if (BuildConfig.FLAVOR == "prod") appUpdateViewModel.checkOnce()
+            }
             val windowInfo = remember(this@MainActivity) {
                 WindowInfoTracker.getOrCreate(this@MainActivity).windowLayoutInfo(this@MainActivity)
             }.collectAsStateWithLifecycle(initialValue = WindowLayoutInfo(emptyList()))
@@ -577,6 +595,8 @@ class MainActivity : ComponentActivity() {
             )
             App(
                 uiState = uiState,
+                appUpdate = appUpdate,
+                onDismissAppUpdate = appUpdateViewModel::dismiss,
                 destinations = destinations,
                 playback = playback,
                 onIntent = viewModel::dispatch,

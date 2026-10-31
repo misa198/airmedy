@@ -90,6 +90,9 @@
 -dontwarn io.netty.internal.tcnative.SessionTicketKey
 -dontwarn io.netty.internal.tcnative.SniHostNameMatcher
 
+# Markwon's optional animated-GIF decoder is not bundled; bitmap GIF decoding remains available.
+-dontwarn pl.droidsonroids.gif.GifDrawable
+
 # Log4j (optional logging backends)
 -dontwarn org.apache.log4j.Level
 -dontwarn org.apache.log4j.Logger

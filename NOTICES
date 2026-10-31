@@ -1,6 +1,15 @@
 This software includes third-party components with the following licenses:
 
 --------------------------------------------------------------------------------
+Android Markdown release notes
+--------------------------------------------------------------------------------
+The Android app uses Markwon 4.6.2 (https://github.com/noties/Markwon) and
+AndroidSVG 1.4 (https://bigbadaboom.github.io/androidsvg/) to render release
+notes and images. Both are licensed under the Apache License, Version 2.0.
+
+License text: https://www.apache.org/licenses/LICENSE-2.0
+
+--------------------------------------------------------------------------------
 Wails
 https://wails.io
 --------------------------------------------------------------------------------

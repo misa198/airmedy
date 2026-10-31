@@ -102,9 +102,18 @@ jobs:
           mkdir -p dist
           cp "$APK" "dist/Airmedy-mobile-${GITHUB_REF_NAME}.apk"
 
+      - name: Generate SHA256SUMS
+        shell: bash
+        working-directory: dist
+        run: |
+          shasum -a 256 -- *.apk > SHA256SUMS
+          shasum -a 256 -c SHA256SUMS
+
       - name: Publish Mobile Release
         uses: softprops/action-gh-release@v2
         with:
           name: Mobile Release ${{ github.ref_name }}
           prerelease: true
-          files: dist/*.apk
+          files: |
+            dist/*.apk
+            dist/SHA256SUMS

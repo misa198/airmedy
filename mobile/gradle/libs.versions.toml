@@ -28,6 +28,8 @@ room = "2.8.4"
 ksp = "2.3.11"
 reorderable = "3.1.0"
 vico = "3.2.1"
+markwon = "4.6.2"
+androidsvg = "1.4"
 
 [libraries]
 androidx-window = { module = "androidx.window:window", version.ref = "androidx-window" }
@@ -70,6 +72,13 @@ room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 room-testing = { module = "androidx.room:room-testing", version.ref = "room" }
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 vico-compose = { module = "com.patrykandpatrick.vico:compose", version.ref = "vico" }
+markwon-core = { module = "io.noties.markwon:core", version.ref = "markwon" }
+markwon-image = { module = "io.noties.markwon:image", version.ref = "markwon" }
+markwon-html = { module = "io.noties.markwon:html", version.ref = "markwon" }
+markwon-strikethrough = { module = "io.noties.markwon:ext-strikethrough", version.ref = "markwon" }
+markwon-tables = { module = "io.noties.markwon:ext-tables", version.ref = "markwon" }
+markwon-tasklist = { module = "io.noties.markwon:ext-tasklist", version.ref = "markwon" }
+androidsvg = { module = "com.caverock:androidsvg-aar", version.ref = "androidsvg" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
