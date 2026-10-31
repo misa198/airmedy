@@ -53,10 +53,14 @@ class RomanizationTest {
         RomanizationSession.enabled = false
         val store = ViewModelStore()
         var releases = 0
+        var inspections = 0
         val old = CompletableDeferred<String>()
         val vm = RomanizationViewModel(RomanizeLyrics(object : RomanizationEngine {
             override val version = "test"
-            override fun inspect(line: String) = RomanizationInspection(true)
+            override fun inspect(line: String): RomanizationInspection {
+                inspections++
+                return RomanizationInspection(true)
+            }
             override suspend fun romanize(line: String) = if (line == "old") old.await() else "new reading"
             override fun release() { releases++ }
         }), dispatcher)
@@ -69,15 +73,21 @@ class RomanizationTest {
             runCurrent()
             assertTrue(vm.state.value.loading)
             vm.setInput(listOf("new"), true)
+            assertTrue(vm.state.value.secondary.isEmpty())
             runCurrent()
             old.complete("old reading")
             runCurrent()
             assertEquals(listOf("new reading"), vm.state.value.secondary)
+            val completedInspections = inspections
             vm.toggle()
             runCurrent()
-            assertTrue(vm.state.value.secondary.isEmpty())
+            assertEquals(completedInspections, inspections)
+            assertEquals(listOf("new reading"), vm.state.value.secondary)
             vm.toggle()
+            assertEquals(listOf("new reading"), vm.state.value.secondary)
+            assertFalse(vm.state.value.loading)
             runCurrent()
+            assertEquals(completedInspections, inspections)
             vm.setInput(emptyList(), false)
             advanceTimeBy(120_000)
             runCurrent()
@@ -86,6 +96,45 @@ class RomanizationTest {
             vm.setInput(listOf("new"), true)
             runCurrent()
             assertEquals(listOf("new reading"), vm.state.value.secondary)
+        } finally {
+            store.clear()
+            RomanizationSession.enabled = false
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test
+    fun togglingAfterFailureRetriesConversion() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        Dispatchers.setMain(dispatcher)
+        RomanizationSession.enabled = false
+        val store = ViewModelStore()
+        var attempts = 0
+        val vm = RomanizationViewModel(RomanizeLyrics(object : RomanizationEngine {
+            override val version = "test"
+            override fun inspect(line: String) = RomanizationInspection(true)
+            override suspend fun romanize(line: String): String {
+                attempts++
+                if (attempts == 1) error("conversion failed")
+                return "reading"
+            }
+            override fun release() = Unit
+        }), dispatcher)
+        store.put("romanization", vm)
+        try {
+            vm.setInput(listOf("你好"), true)
+            runCurrent()
+            vm.toggle()
+            runCurrent()
+            assertTrue(vm.state.value.error)
+            vm.toggle()
+            vm.toggle()
+            runCurrent()
+            assertEquals(2, attempts)
+            assertFalse(vm.state.value.error)
+            assertEquals(listOf("reading"), vm.state.value.secondary)
+            vm.setInput(listOf("世界"), true)
+            assertTrue(vm.state.value.secondary.isEmpty())
         } finally {
             store.clear()
             RomanizationSession.enabled = false
@@ -116,6 +165,7 @@ class RomanizationTest {
             assertFalse(vm.state.value.loading)
             assertTrue(vm.state.value.secondary.isEmpty())
             vm.toggle()
+            assertTrue(vm.state.value.secondary.isEmpty())
             assertFalse(vm.state.value.enabled)
         } finally {
             store.clear()

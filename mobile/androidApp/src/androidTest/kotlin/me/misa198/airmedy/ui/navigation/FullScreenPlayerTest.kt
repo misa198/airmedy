@@ -117,6 +117,60 @@ class FullScreenPlayerTest {
     }
 
     @Test
+    fun romanizationHeightChangesMoveFollowingRowsSmoothly() {
+        var enabled by mutableStateOf(false)
+        var visible by mutableStateOf(true)
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = ThemeMode.Dark) {
+                FullScreenPlayerLyricsPanel(
+                    trackId = "test", lyrics = "你好\nNext line\nLast line", currentPositionMs = 0L, onSeek = {},
+                    romanization = me.misa198.airmedy.lyrics.RomanizationUiState(
+                        input = listOf("你好", "Next line", "Last line"), supported = true,
+                        enabled = enabled, secondary = listOf("nǐ hǎo", null, null),
+                    ),
+                    visible = visible,
+                    romanizationAllowed = true,
+                    onRomanizationToggle = { enabled = !enabled },
+                    modifier = Modifier.width(320.dp).height(400.dp),
+                )
+            }
+        }
+        fun nextLineTop() = composeTestRule.onNodeWithText("Next line").fetchSemanticsNode().boundsInRoot.top
+        val before = nextLineTop()
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.onNodeWithTag("romanization_toggle").performClick()
+        composeTestRule.mainClock.advanceTimeByFrame()
+        composeTestRule.waitForIdle()
+        composeTestRule.mainClock.advanceTimeBy(96L)
+        val during = nextLineTop()
+        composeTestRule.mainClock.advanceTimeBy(500L)
+        val after = nextLineTop()
+        assertTrue("Following rows should move through intermediate positions", during > before && during < after)
+        composeTestRule.onNodeWithTag("romanization_toggle").performClick()
+        composeTestRule.mainClock.advanceTimeByFrame()
+        composeTestRule.waitForIdle()
+        composeTestRule.mainClock.advanceTimeBy(96L)
+        val hiding = nextLineTop()
+        composeTestRule.mainClock.advanceTimeBy(500L)
+        assertTrue(hiding > before && hiding < after)
+        assertEquals(before, nextLineTop(), 1f)
+
+        // Closing/reopening clears the toggle animation even if results arrive later.
+        composeTestRule.runOnIdle { visible = false }
+        composeTestRule.mainClock.advanceTimeByFrame()
+        composeTestRule.waitForIdle()
+        composeTestRule.runOnIdle { visible = true }
+        composeTestRule.mainClock.advanceTimeByFrame()
+        composeTestRule.waitForIdle()
+        composeTestRule.runOnIdle { enabled = true }
+        composeTestRule.mainClock.advanceTimeByFrame()
+        composeTestRule.waitForIdle()
+        assertEquals(after, nextLineTop(), 1f)
+        composeTestRule.mainClock.advanceTimeBy(500L)
+        assertEquals(after, nextLineTop(), 1f)
+    }
+
+    @Test
     fun disabledRomanizationHidesTheToggleAndRestoresSecondaryLyrics() {
         var allowed by mutableStateOf(true)
         composeTestRule.setContent {
