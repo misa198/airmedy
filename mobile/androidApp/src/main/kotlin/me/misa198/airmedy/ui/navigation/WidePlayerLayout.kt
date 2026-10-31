@@ -7,12 +7,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
@@ -21,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -40,17 +44,29 @@ internal fun WidePlayerLayout(
     controls: @Composable () -> Unit,
     panelContent: @Composable (Dp) -> Unit,
 ) {
-    BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
+    BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding().testTag("wide_player_safe_area")) {
+        val density = LocalDensity.current
+        val insets = WindowInsets.safeDrawing
+        val topInset = with(density) { insets.getTop(this).toDp() }
+        val bottomInset = with(density) { insets.getBottom(this).toDp() }
+        val extraTop = widePlayerExtraVerticalPadding(maxWidth.value, maxHeight.value, topInset.value).dp
+        val extraBottom = widePlayerExtraVerticalPadding(maxWidth.value, maxHeight.value, bottomInset.value).dp
         val compact = maxHeight < 480.dp
         val spacing = if (compact) 8.dp else 16.dp
+        val columnGap = if (compact) 0.dp else 48.dp * ((maxWidth - 840.dp) / 440.dp).coerceIn(0f, 1f)
         Column(
-            Modifier.fillMaxSize().padding(bottom = spacing).testTag("wide_player_layout"),
+            Modifier.fillMaxSize().padding(top = extraTop, bottom = spacing + extraBottom).testTag("wide_player_layout"),
         ) {
             Box(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = if (compact) 8.dp else 20.dp)
                 .testTag("wide_player_grip")) {
                 FullScreenPlayerDragHandle()
             }
-            Row(Modifier.weight(1f).fillMaxWidth()) {
+            Row(
+                Modifier.weight(1f)
+                    .then(if (compact) Modifier else Modifier.widthIn(max = 1280.dp))
+                    .fillMaxWidth().align(Alignment.CenterHorizontally),
+                horizontalArrangement = Arrangement.spacedBy(columnGap),
+            ) {
                 Column(
                     Modifier.weight(1f).fillMaxHeight().testTag("wide_player_main")
                         .padding(horizontal = 24.dp),

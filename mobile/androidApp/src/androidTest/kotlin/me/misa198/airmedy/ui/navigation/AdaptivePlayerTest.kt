@@ -275,6 +275,71 @@ class AdaptivePlayerTest {
         assertLyricTypography("Primary", 24.sp, 32.sp)
     }
 
+    @Test fun largeWideScalesEveryLyricsLayerAndRestoresAfterResize() {
+        var size by mutableStateOf(1279.dp to 720.dp)
+        var lyrics by mutableStateOf("[00:00]Primary ^ Translation")
+        var theme by mutableStateOf(ThemeMode.Light)
+        compose.setContent { Player(size, theme, lyricContent = lyrics) }
+        assertLyricTypography("Primary", 28.sp, 38.sp)
+        assertLyricTypography("Translation", 20.sp, 30.sp)
+        for (mode in listOf(ThemeMode.Light, ThemeMode.Dark)) {
+            compose.runOnIdle { theme = mode; size = 1280.dp to 720.dp }
+            assertLyricTypography("Primary", 28.sp * 1.6f, 38.sp * 1.6f)
+            assertLyricTypography("Translation", 20.sp * 1.6f, 30.sp * 1.6f)
+            compose.runOnIdle { lyrics = "[00:00]Hello <00:01>world<00:02> ^ Translation" }
+            assertLyricTypography("Hello", 28.sp * 1.6f, 38.sp * 1.6f)
+            assertLyricTypography("world", 28.sp * 1.6f, 38.sp * 1.6f)
+            assertLyricTypography("Translation", 20.sp * 1.6f, 30.sp * 1.6f)
+            compose.runOnIdle { lyrics = "Plain lyric ^ Plain translation"; size = 1920.dp to 1080.dp }
+            assertLyricTypography("Plain lyric", 20.sp * 1.6f, 30.sp * 1.6f)
+            assertLyricTypography("Plain translation", 20.sp * 1.6f, 30.sp * 1.6f)
+            compose.runOnIdle { lyrics = "[00:00]Primary ^ Translation"; size = 1920.dp to 719.dp }
+            assertLyricTypography("Primary", 28.sp, 38.sp)
+            compose.runOnIdle { size = 1920.dp to 479.dp }
+            assertLyricTypography("Primary", 24.sp, 32.sp)
+            compose.runOnIdle { size = 400.dp to 900.dp }
+            val label = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.player_lyrics)
+            compose.onNodeWithContentDescription(label).performClick()
+            assertLyricTypography("Primary", 24.sp, 32.sp)
+            compose.onNodeWithContentDescription(label).performClick()
+        }
+    }
+
+    @Test fun largeWideAddsOnlyMissingTopAndBottomInsetSpace() {
+        var size by mutableStateOf(1920.dp to 1080.dp)
+        var topInset = 0.dp
+        var bottomInset = 0.dp
+        compose.setContent {
+            val insets = WindowInsets.safeDrawing
+            with(LocalDensity.current) {
+                topInset = insets.getTop(this).toDp()
+                bottomInset = insets.getBottom(this).toDp()
+            }
+            Player(size)
+        }
+        fun assertPadding(large: Boolean) {
+            val safe = compose.onNodeWithTag("wide_player_safe_area").getUnclippedBoundsInRoot()
+            val content = compose.onNodeWithTag("wide_player_layout").getUnclippedBoundsInRoot()
+            val extraTop = if (large) maxOf(0.dp, 32.dp - topInset) else 0.dp
+            val extraBottom = if (large) maxOf(0.dp, 32.dp - bottomInset) else 0.dp
+            assertEquals(extraTop.value, (content.top - safe.top).value, 0.5f)
+            val spacing = if (size.second < 480.dp) 8.dp else 16.dp
+            assertEquals((extraBottom + spacing).value, (safe.bottom - content.bottom).value, 0.5f)
+        }
+        assertPadding(large = true)
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        compose.onNodeWithContentDescription(context.getString(R.string.player_queue)).performClick()
+        assertPadding(large = true)
+        compose.runOnIdle { size = 1279.dp to 1080.dp }
+        assertPadding(large = false)
+        compose.runOnIdle { size = 1920.dp to 719.dp }
+        assertPadding(large = false)
+        compose.runOnIdle { size = 1920.dp to 479.dp }
+        assertPadding(large = false)
+        compose.runOnIdle { size = 1280.dp to 720.dp }
+        assertPadding(large = true)
+    }
+
     @Test fun wideLyricsResizeTranslationsPlainTextAndEveryKaraokeLayer() {
         var lyrics by mutableStateOf("[00:00]Primary ^ Translation")
         var theme by mutableStateOf(ThemeMode.Dark)
@@ -363,6 +428,63 @@ class AdaptivePlayerTest {
         compose.onNodeWithContentDescription(volumeLabel).assertExists()
         compose.onNodeWithContentDescription(outputLabel).assertExists()
         assertFooterAtControlsBottom(outputLabel, compact = true)
+    }
+
+    @Test fun regularWideCapsAndCentersBothColumnsAcrossResizeAndPanels() {
+        var size by mutableStateOf(840.dp to 600.dp)
+        var theme by mutableStateOf(ThemeMode.Light)
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val queueLabel = context.getString(R.string.player_queue)
+        val lyricsLabel = context.getString(R.string.player_lyrics)
+        compose.setContent { Player(size, theme) }
+
+        fun assertGeometry(width: Float, gap: Float, compact: Boolean = false) {
+            val layout = compose.onNodeWithTag("wide_player_layout").getUnclippedBoundsInRoot()
+            val main = compose.onNodeWithTag("wide_player_main").getUnclippedBoundsInRoot()
+            val panel = compose.onNodeWithTag("wide_player_panel").getUnclippedBoundsInRoot()
+            val artwork = compose.onNodeWithTag(FullScreenPlayerArtworkTestTag).getUnclippedBoundsInRoot()
+            val controls = compose.onNodeWithTag(FullScreenPlayerControlsTestTag).getUnclippedBoundsInRoot()
+            val metadata = compose.onNodeWithTag(FullScreenPlayerMetadataSwipeTestTag).getUnclippedBoundsInRoot()
+            assertEquals(width, (panel.right - main.left).value, 0.5f)
+            assertEquals(gap, (panel.left - main.right).value, 0.5f)
+            assertEquals((main.right - main.left).value, (panel.right - panel.left).value, 0.5f)
+            assertEquals(((layout.left + layout.right) / 2).value, ((main.left + panel.right) / 2).value, 0.5f)
+            assertEquals((artwork.right - artwork.left).value, (artwork.bottom - artwork.top).value, 0.5f)
+            assertTrue(artwork.left >= main.left && artwork.right <= main.right)
+            assertTrue(controls.left >= main.left && controls.right <= main.right)
+            assertTrue(artwork.bottom <= controls.top)
+            if (!compact) {
+                assertTrue(artwork.left >= controls.left - 0.5.dp && artwork.right <= controls.right + 0.5.dp)
+                assertTrue(artwork.bottom <= metadata.top - 32.dp + 0.5.dp)
+            }
+        }
+
+        for (mode in listOf(ThemeMode.Light, ThemeMode.Dark)) {
+            compose.runOnIdle { theme = mode }
+            for ((dimensions, gap) in listOf(
+                (840.dp to 600.dp) to 0f,
+                (1060.dp to 700.dp) to 24f,
+                (1280.dp to 900.dp) to 48f,
+                (1920.dp to 1200.dp) to 48f,
+                (2560.dp to 1440.dp) to 48f,
+            )) {
+                compose.runOnIdle { size = dimensions }
+                assertGeometry(minOf(dimensions.first.value, 1280f), gap)
+                if (dimensions.first >= 1920.dp) {
+                    val artwork = compose.onNodeWithTag(FullScreenPlayerArtworkTestTag).getUnclippedBoundsInRoot()
+                    val controls = compose.onNodeWithTag(FullScreenPlayerControlsTestTag).getUnclippedBoundsInRoot()
+                    assertEquals((controls.right - controls.left).value, (artwork.right - artwork.left).value, 0.5f)
+                }
+                compose.onNodeWithContentDescription(queueLabel).performClick()
+                compose.onNodeWithTag("full_screen_queue_list").assertExists()
+                assertGeometry(minOf(dimensions.first.value, 1280f), gap)
+                compose.onNodeWithContentDescription(lyricsLabel).performClick()
+            }
+            compose.runOnIdle { size = 1920.dp to 479.dp }
+            assertGeometry(1920f, 0f, compact = true)
+            compose.runOnIdle { size = 1920.dp to 480.dp }
+            assertGeometry(1280f, 48f)
+        }
     }
 
     @Test fun wideRestoresQueueAcrossThemeChangesAndDismisses() {
