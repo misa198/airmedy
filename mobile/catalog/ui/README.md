@@ -577,7 +577,7 @@ reinspection or an intermediate loading state; input changes and disabling the
 setting clear them, and failed conversion still retries on the next show.
 Secondary height changes animate row placement in synced and plain lists only
 after a show/hide tap in the visible panel. Opening/reopening the panel or
-loading another track resets this opt-in, so initial/restored results use no
+loading another track or stopping the Activity resets this opt-in, so initial/restored results use no
 placement animation and auto-follow aligns immediately. After a toggle,
 auto-follow realigns with the normal scroll animation. Browse and tap-to-seek state remain unchanged. The show/hide
 button stays at the viewport's bottom-right, outside the scroll list. Active
