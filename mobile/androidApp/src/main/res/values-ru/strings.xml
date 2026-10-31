@@ -427,4 +427,8 @@
     <string name="player_posture_normal">Normal</string>
     <string name="player_posture_tabletop">Tabletop</string>
     <string name="player_posture_book">Book</string>
+    <string name="playback_fullscreen_background">Полноэкранный фон</string>
+    <string name="playback_background_solid">Сплошной</string>
+    <string name="playback_background_living">Живая обложка</string>
+    <string name="playback_background_helper">%1$s использует больше ресурсов GPU. На менее мощных устройствах рекомендуется %2$s.</string>
 </resources>

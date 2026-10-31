@@ -403,4 +403,8 @@
     <string name="player_posture_normal">Normal</string>
     <string name="player_posture_tabletop">Tabletop</string>
     <string name="player_posture_book">Book</string>
+    <string name="playback_fullscreen_background">全屏背景</string>
+    <string name="playback_background_solid">纯色</string>
+    <string name="playback_background_living">动态封面</string>
+    <string name="playback_background_helper">%1$s 会占用更多 GPU 资源。性能较低的设备建议选择%2$s。</string>
 </resources>

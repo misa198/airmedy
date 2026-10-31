@@ -55,6 +55,28 @@ class AdaptivePlayerTest {
     @get:Rule val compose = createComposeRule()
     private val item = PlaybackItem("track-1", "Title", "Artist", "/audio.flac")
 
+    @Test fun livingBackgroundFollowsLayoutAndPreservesSquareMainArtwork() {
+        var size by mutableStateOf(400.dp to 900.dp)
+        var living by mutableStateOf(false)
+        var theme by mutableStateOf(ThemeMode.Light)
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        compose.setContent { Player(size, theme = theme, livingArtworkBackground = living) }
+        compose.onNodeWithTag("living_artwork_background").assertDoesNotExist()
+        compose.runOnIdle { living = true }
+        compose.onNodeWithTag("living_artwork_background").assertExists()
+        compose.runOnIdle { theme = ThemeMode.Dark; size = 1000.dp to 600.dp }
+        compose.onNodeWithTag("living_artwork_background").assertExists()
+        compose.runOnIdle { size = 360.dp to 360.dp }
+        compose.onNodeWithTag("living_artwork_background").assertDoesNotExist()
+        compose.onNodeWithTag("square_player_artwork_background").assertExists()
+        compose.onNodeWithContentDescription(context.getString(R.string.player_lyrics)).performClick()
+        compose.onNodeWithTag("living_artwork_background").assertExists()
+        compose.onNodeWithContentDescription(context.getString(R.string.player_queue)).performClick()
+        compose.onNodeWithTag("living_artwork_background").assertExists()
+        compose.runOnIdle { living = false }
+        compose.onNodeWithTag("living_artwork_background").assertDoesNotExist()
+    }
+
     @Test fun squareMainSwipesOnMetadataBackgroundMarginsAndButtonGaps() {
         var previous = 0
         var next = 0
@@ -710,6 +732,7 @@ class AdaptivePlayerTest {
         onNext: () -> Unit = onTransport,
         onFavorite: () -> Unit = {},
         preparing: Boolean = false,
+        livingArtworkBackground: Boolean = false,
     ) {
         val insets = WindowInsets.safeDrawing
         val horizontalInsets = with(LocalDensity.current) {
@@ -723,6 +746,7 @@ class AdaptivePlayerTest {
                     else PlaybackState.Paused(item.copy(trackId = currentTrackId), positionMs, 120_000L),
                 queue = PlaybackQueueSnapshot(activeTrackIds = (1..40).map { "track-$it" }, currentIndex = 0),
                 lyrics = lyricContent, keepScreenOnForLyrics = true,
+                livingArtworkBackground = livingArtworkBackground,
                 volume = 0.5f, onSeek = { onTransport(); onSeekRequested(it) }, onVolumeChange = {},
                 onPrevious = onPrevious, onPlayPause = onTransport, onNext = onNext,
                 onFavoriteToggle = { _, _ -> onFavorite() },

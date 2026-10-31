@@ -65,6 +65,13 @@ platform API call from a composable.
 ## Theme, glass, and accessibility
 
 `AirmedyTheme.kt` and `AirmedyColors` are the single source of truth for colour.
+`AirmedyTheme` also provides Material `LocalContentColor` from `textMain`.
+`MaterialTheme` alone does not update this ambient, so uncolored Text/Icon slots
+would otherwise retain Material's dark default in Dark mode. Dialogs and bottom
+sheets inherit the themed foreground; explicit muted/primary colors still win.
+`AirmedyBottomSheetTest` checks default and explicit slot colors while switching
+Light/Dark, and `AppNavigationTest` covers the actual Lyrics info action.
+
 Composables use `LocalAirmedyColors.current` or `MaterialTheme`; feature code
 must not introduce raw `Color(...)` values. Supported modes are System, Light,
 and Dark. Primary remains rose; inactive controls use themed foreground rather
@@ -131,7 +138,8 @@ system. Reuse the existing primitive before making another component:
 | --- | --- |
 | Page frame/header | `StackPageLayout`, `StackPageHeader`, `AirmedyBackButton` |
 | Floating glass/buttons | `liquidGlassBackground`, `AirmedyIconButton`, `AirmedyPillButton` |
-| Text input / slider / selection | `AirmedyTextField`, `AirmedyTrackSlider`, `Selection` |
+| Text input / slider / selection | `AirmedyTextField`, `AirmedyTrackSlider`, `Selection`, `RadioList` |
+| Settings annotation | `TextHelper` |
 | Rows/lists | `TrackRow`, collection rows, `LibraryVirtualList`, `InsetListDivider` |
 | Modal/menu | `AirmedyBottomSheet`, `AirmedyDialog`, `AnchoredPopupMenu`, context menus |
 | Artwork and status | `DetailHero`, `DiscCard`, `AirmedyPlayingIndicator`, `MaterialSymbol` |
@@ -142,6 +150,25 @@ destination from `AndroidSyncState.Failed`; its Close callback resets the
 runtime state to `Idle`, and the failure is never persisted.
 
 Settings card groups use a consistent 12dp gap between adjacent cards.
+`ActionList` also reserves 12dp between row titles and custom trailing content,
+including switches, so wrapping labels cannot touch the control.
+
+`TextHelper(text, modifier)` renders non-interactive, wrapping annotations in
+body-small typography and theme `textMuted`, with horizontal insets aligned to
+section labels. Place it outside the card it explains; it does not own strings
+or settings state. Playback Settings uses it below the background radio card
+to explain GPU cost and recommend Solid for less powerful devices, in every
+supported locale. `TextHelperTest` covers wrapping and theme typography/color.
+
+
+`RadioList<T>` is a controlled single-choice list using the existing
+`SelectionOption<T>` resource/dynamic labels, `selectedValue` and
+`onValueSelected`. It owns selectable-group/radio semantics, row touch targets,
+inset dividers and a trailing primary-color check. The caller owns the card and
+section title; Playback Settings wraps it in `LabeledCard`. `RadioListTest`
+covers generic values, resource labels, external state changes and the check
+color in light/dark themes.
+
 
 Extract a component only when it has no domain state and already has at least
 three call sites. Keep screen-specific composables beside their screen. A new
@@ -182,6 +209,59 @@ The mask reveals the existing background and leaves fitting text unchanged.
 and the trailing fade in light and dark themes.
 
 ## Player UI contracts
+
+### Fullscreen artwork background
+
+Playback Settings owns a persisted Solid/Living artwork selection in Android
+`PlaybackPreferences`; its absent/default value is Living artwork. The selection
+is a separate labeled card below the main Playback Settings card. Its Solid
+and Living artwork rows form a radio group: the whole row selects the value,
+and the selected row shows a trailing check in theme primary. Existing saved
+choices are preserved. The host collects it
+lifecycle-aware and supplies it through the Settings and Playback models.
+Solid retains the existing average-artwork-color backdrop. Living applies to
+Phone, Wide, and Square Lyrics/Queue. Square Main always retains its cropped,
+darkened artwork regardless of this preference.
+
+Fullscreen artwork decoding also extracts a small three-cluster palette on a
+background dispatcher using the desktop area-weighted vibrant/muted rules.
+`LivingArtworkBackground` renders the desktop simplex-noise color fields through
+an offscreen OpenGL ES pbuffer, at reduced resolution and at most 30fps.
+The GL thread reads each small frame into an immutable bitmap; a Compose Image
+owns the displayed pixels. There is no AndroidView/TextureView in the player
+background, so Haze recording and panel transforms use the same Compose draw
+graph. Readback happens off the UI thread; frame delivery keeps only the latest
+pending image. Published bitmaps must not be mutated or recycled manually.
+It uses the existing artwork crossfade progress and equal-power weights when
+artwork blending is enabled; ordinary track changes approach the next
+palette smoothly. Paused playback slows the field to one tenth speed.
+
+The renderer exists only while its background is composed. It stops scheduling
+frames below lifecycle STARTED, renders statically when system animations are
+disabled, and releases its callbacks, GL thread, EGL resources and surface on
+disposal. Until the first artwork palette is decoded, the renderer stays idle
+and transparent over the themed player backdrop; its first colored frame uses
+the decoded palette immediately. Before any palette is available, missing
+artwork remains neutral. Compose clips the scaled and blurred Image to its
+background bounds during open/close and drag transforms. High-precision shading
+with sub-LSB dithering limits quantization in the small source frame.
+`ArtworkDither` adds stable achromatic noise at display-pixel resolution after
+the Image blur; it must not share the image's scale or blur layer, which would
+average the noise away and expose 8-bit contour bands again. Its pixel values
+are procedural post-processing data, not theme colors. Shader/EGL failures
+fall back to Solid without changing the saved preference. Artwork palettes are
+Android UI presentation data, not shared playback or sync state.
+
+Host coverage lives in `ArtworkPaletteTest`; Android tests cover preference
+persistence, Playback Settings selection and adaptive player background choice.
+`LivingArtworkBackgroundTest` samples the GPU output before/after the first
+palette to guard against placeholder-color flashes, and above a moving panel
+with Haze recording enabled to guard against artwork escaping its bounds.
+It also checks that a flat-color frame retains subtle pixel-level dither after
+blur, without changing its mean artwork color. `ArtworkDitherTest` checks the
+noise distribution, achromatic channels and stable seed on the host.
+The test APK can be built on the host; GPU appearance, Haze integration and power
+usage require explicitly authorized device/emulator verification.
 
 ### Adaptive fullscreen layout
 

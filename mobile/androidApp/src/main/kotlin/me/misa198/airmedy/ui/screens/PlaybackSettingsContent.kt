@@ -27,6 +27,8 @@ import me.misa198.airmedy.ui.components.ActionListDividerStyle
 import me.misa198.airmedy.ui.components.ActionListItem
 import me.misa198.airmedy.ui.components.LabeledCard
 import me.misa198.airmedy.ui.components.Selection
+import me.misa198.airmedy.ui.components.TextHelper
+import me.misa198.airmedy.ui.components.RadioList
 import me.misa198.airmedy.ui.components.SelectionOption
 import me.misa198.airmedy.ui.components.AirmedyTrackSlider
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
@@ -43,43 +45,66 @@ internal fun PlaybackSettingsContent(
     onSongTransitionSelected: () -> Unit,
     onVolumeNormalizationSelected: () -> Unit,
     onEqualizerSelected: () -> Unit,
+    livingArtworkBackground: Boolean = true,
+    onLivingArtworkBackgroundChanged: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        ActionList(
-            items = listOf(
-                ActionListItem(
-                    labelRes = R.string.song_transition_title,
-                    onClick = onSongTransitionSelected,
+        me.misa198.airmedy.ui.components.Card {
+            ActionList(
+                items = listOf(
+                    ActionListItem(
+                        labelRes = R.string.song_transition_title,
+                        onClick = onSongTransitionSelected,
+                    ),
+                    ActionListItem(
+                        labelRes = R.string.playback_volume_normalization,
+                        onClick = onVolumeNormalizationSelected,
+                    ),
+                    ActionListItem(
+                        labelRes = R.string.equalizer_title,
+                        onClick = onEqualizerSelected,
+                    ),
+                    ActionListItem(
+                        labelRes = R.string.playback_show_quality_badge,
+                        trailingContent = {
+                            Switch(
+                                checked = showFullscreenQualityBadge,
+                                onCheckedChange = onShowFullscreenQualityBadgeChanged,
+                            )
+                        },
+                        onClick = { onShowFullscreenQualityBadgeChanged(!showFullscreenQualityBadge) },
+                    ),
+                    ActionListItem(
+                        labelRes = R.string.playback_keep_screen_on_for_lyrics,
+                        trailingContent = {
+                            Switch(checked = keepScreenOnForLyrics, onCheckedChange = onKeepScreenOnForLyricsChanged)
+                        },
+                        onClick = { onKeepScreenOnForLyricsChanged(!keepScreenOnForLyrics) },
+                    ),
                 ),
-                ActionListItem(
-                    labelRes = R.string.playback_volume_normalization,
-                    onClick = onVolumeNormalizationSelected,
+                containerStyle = ActionListContainerStyle.Plain,
+                dividerStyle = ActionListDividerStyle.FullWidth,
+            )
+        }
+        LabeledCard(
+            label = stringResource(R.string.playback_fullscreen_background),
+        ) {
+            RadioList(
+                options = listOf(
+                    SelectionOption(false, R.string.playback_background_solid),
+                    SelectionOption(true, R.string.playback_background_living),
                 ),
-                ActionListItem(
-                    labelRes = R.string.equalizer_title,
-                    onClick = onEqualizerSelected,
-                ),
-                ActionListItem(
-                    labelRes = R.string.playback_show_quality_badge,
-                    trailingContent = {
-                        Switch(
-                            checked = showFullscreenQualityBadge,
-                            onCheckedChange = onShowFullscreenQualityBadgeChanged,
-                        )
-                    },
-                    onClick = { onShowFullscreenQualityBadgeChanged(!showFullscreenQualityBadge) },
-                ),
-                ActionListItem(
-                    labelRes = R.string.playback_keep_screen_on_for_lyrics,
-                    trailingContent = {
-                        Switch(checked = keepScreenOnForLyrics, onCheckedChange = onKeepScreenOnForLyricsChanged)
-                    },
-                    onClick = { onKeepScreenOnForLyricsChanged(!keepScreenOnForLyrics) },
-                ),
+                selectedValue = livingArtworkBackground,
+                onValueSelected = onLivingArtworkBackgroundChanged,
+            )
+        }
+        TextHelper(
+            text = stringResource(
+                R.string.playback_background_helper,
+                stringResource(R.string.playback_background_living),
+                stringResource(R.string.playback_background_solid),
             ),
-            containerStyle = ActionListContainerStyle.Card,
-            dividerStyle = ActionListDividerStyle.FullWidth,
         )
     }
 }

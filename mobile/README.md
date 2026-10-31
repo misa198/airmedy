@@ -68,6 +68,12 @@ the next completed sync.
 
 ## Fullscreen player layouts
 
+Playback Settings offers Solid and Living artwork (default) backgrounds.
+Living artwork animates colors extracted from the playing cover, slows while
+paused, and blends with song transitions when artwork blending is enabled.
+It applies to Phone, Wide and Square Lyrics/Queue; Square Main always keeps its
+cropped artwork background. The selection persists locally on Android.
+
 The Android fullscreen player adapts to its available window size in dp after
 system-bar and display-cutout insets. Safe widths below 360dp always use Square,
 including tall, narrow cover-screen windows. It has three layouts: Square for small

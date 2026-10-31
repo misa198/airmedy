@@ -1,6 +1,7 @@
 package me.misa198.airmedy.ui.theme
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -115,7 +116,10 @@ fun AirmedyTheme(
         )
     }
 
-    CompositionLocalProvider(LocalAirmedyColors provides colors) {
+    CompositionLocalProvider(
+        LocalAirmedyColors provides colors,
+        LocalContentColor provides colors.textMain,
+    ) {
         MaterialTheme(colorScheme = colorScheme, content = content)
     }
 }

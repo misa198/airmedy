@@ -5,6 +5,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -54,6 +58,25 @@ import org.junit.Test
 class AppNavigationTest {
     @get:Rule
     val composeTestRule = createComposeRule()
+
+    @Test
+    fun darkLyricsInfoSheetTitleUsesALegibleForeground() {
+        val harness = AppHarness(AppUiState(
+            selectedDestination = AppDestination.Settings,
+            themeMode = ThemeMode.Dark,
+            destinationStacks = mapOf(AppDestination.Settings to listOf(
+                AppStackPage.Root, AppStackPage.SettingsIntegration, AppStackPage.SettingsLyrics,
+            )),
+        ))
+        composeTestRule.setContent { harness.Render() }
+        composeTestRule.onNodeWithContentDescription(string(R.string.lyrics_info_action)).performClick()
+        val results = mutableListOf<TextLayoutResult>()
+        composeTestRule.onNodeWithText(string(R.string.lyrics_info_title)).assertIsDisplayed()
+            .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(results) }
+        assertTrue("Dark lyrics info title must not inherit Material's default dark text",
+            results.single().layoutInput.style.color.luminance() > 0.5f)
+        composeTestRule.onNodeWithText(string(R.string.lyrics_info_description)).assertIsDisplayed()
+    }
 
     @Test
     fun navigationExposesOneAccessibleTargetPerDestination() {

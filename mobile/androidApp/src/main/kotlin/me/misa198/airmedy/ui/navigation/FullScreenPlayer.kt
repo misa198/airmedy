@@ -89,6 +89,7 @@ internal fun FullScreenPlayer(
     onRomanizationToggle: () -> Unit = {},
     artworkCrossfade: ArtworkCrossfadeTransition? = null,
     blendArtworkDuringCrossfade: Boolean = true,
+    livingArtworkBackground: Boolean = true,
     showQualityBadge: Boolean = true,
     keepScreenOnForLyrics: Boolean = false,
     volume: Float,
@@ -287,6 +288,9 @@ internal fun FullScreenPlayer(
                 incomingArtwork = incomingArtwork,
                 crossfadeProgress = crossfadeProgress,
                 isArtworkCrossfading = isArtworkCrossfading,
+                crossfade = activeArtworkCrossfade,
+                livingArtworkBackground = livingArtworkBackground,
+                isPlaying = playbackState is PlaybackState.Playing,
                 showArtwork = layoutMode == PlayerLayoutMode.Square && selectedPanel == null,
                 modifier = Modifier
                     .fillMaxSize()

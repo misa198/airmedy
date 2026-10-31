@@ -403,4 +403,8 @@
     <string name="player_posture_normal">Normal</string>
     <string name="player_posture_tabletop">Tabletop</string>
     <string name="player_posture_book">Book</string>
+    <string name="playback_fullscreen_background">Nền toàn màn hình</string>
+    <string name="playback_background_solid">Màu đơn</string>
+    <string name="playback_background_living">Artwork sống động</string>
+    <string name="playback_background_helper">%1$s sử dụng nhiều tài nguyên GPU hơn. Nếu thiết bị có cấu hình yếu, bạn nên chọn %2$s.</string>
 </resources>
