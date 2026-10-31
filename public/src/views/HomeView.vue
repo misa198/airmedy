@@ -38,7 +38,7 @@ const screenshots = [
         </div>
       </div>
       <div class="hero-mockup">
-        <div class="mockup-wrapper"><img src="/screenshot-hero-devices-v2.webp" alt="Airmedy on desktop and mobile"
+        <div class="mockup-wrapper"><img src="/screenshot-hero-devices-v3.webp" alt="Airmedy on desktop and mobile"
             class="app-window-mockup" /></div>
       </div>
     </section>
