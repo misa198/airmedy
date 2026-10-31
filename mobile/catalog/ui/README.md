@@ -336,6 +336,25 @@ artwork/control bounds in both themes and Square fallback. Its fixture sizes
 represent safe space and add system insets to the outer player dimensions.
 
 Wide places its drag handle above both columns, centered across the safe window.
+At safe heights of at least 480dp, `WidePlayerLayout` centers the equal-column
+content group with a maximum width of 1280dp. Its column gap grows linearly from
+0dp at 840dp safe width to 48dp at 1280dp and stays capped at 48dp. Artwork grows
+to the smaller of the metadata/control group width and remaining height, without
+a separate fixed size cap. Backgrounds and
+the drag handle retain the full safe-window frame. Compact Wide below 480dp
+keeps full-width columns without the added gap.
+`AdaptivePlayerTest` covers capped geometry, small/large/ultrawide resize, the
+480dp boundary, and Lyrics/Queue in both themes.
+`isLargeWidePlayer` additionally requires at least 1280dp safe width and 720dp
+safe height. This uses the real safe window before content caps and extra
+padding, so resizing changes the policy without device/DeX detection.
+On those large Wide windows, `WidePlayerLayout` adds only the shortfall between
+each vertical system inset and 32dp, preserving larger insets and the existing
+grip/footer spacing. Backgrounds still reach the window edges. Compact Wide,
+Phone, Square, and smaller regular Wide windows do not receive this padding.
+`AdaptivePlayerContentTest` covers thresholds and zero/small/large inset
+shortfalls; `AdaptivePlayerTest` checks the rendered padding across panel
+switches and resizing.
 Artwork and metadata have a minimum 32dp vertical gap, or 16dp horizontal gap
 in the compact side-by-side arrangement.
 The left column contains a square artwork sized to remaining height, metadata,
@@ -442,8 +461,13 @@ Lyrics parsing and display helpers live in `FullScreenPlayerLyricsPanel.kt`.
 
 Wide with at least 480dp safe height uses 28sp synced lyrics and 20sp secondary
 or plain lyrics, with 38sp and 30sp line heights respectively. Karaoke text and glow use the
-same typography. Compact Wide, Phone, and Square retain their existing sizes;
-loading and empty states are unchanged. `AdaptivePlayerTest` covers typography
+same typography. When `isLargeWidePlayer` is true, the lyrics panel multiplies
+these font sizes and line heights by 1.6: synced lyrics use 44.8sp/60.8sp,
+secondary/plain lyrics use 32sp/48sp. The override applies to primary,
+translation/romanization, plain text and every karaoke/glow layer, and resets
+when resizing below either large-window threshold. Compact Wide, Phone, and
+Square retain their existing sizes; loading/empty states and the romanization
+toggle are unchanged. `AdaptivePlayerTest` covers typography
 across resize, bilingual/plain lyrics, and karaoke layers.
 Playback position is authoritative for the active line; browsing or dragging
 only pauses auto-follow and changes playback only when a valid lyric tap

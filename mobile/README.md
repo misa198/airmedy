@@ -87,7 +87,16 @@ default and the active panel cannot be closed. Its drag handle is centered above
 both columns. Phone and Wide always show the volume slider and output switcher.
 When width/height reaches 0.60 (using half the width in Wide), control gaps shrink
 to free space for artwork instead of hiding volume.
-Below 480dp safe height, Wide reduces spacing and places artwork beside metadata
+At safe heights of at least 480dp, Wide centers both columns in a group capped at
+1280dp. Artwork grows to the metadata/control group width or the remaining
+height, whichever is smaller; it has no separate fixed size cap.
+The column gap grows linearly from 0dp at 840dp safe width to 48dp at 1280dp,
+then stays fixed. The background continues to fill the window.
+Wide with at least 1280×720dp safe space also tops up each vertical system inset
+to a minimum of 32dp before the existing content spacing; larger insets are
+preserved. This provides breathing room on large windows such as DeX without
+assuming a particular device or display density.
+Below 480dp safe height, Wide keeps its full-width columns, reduces spacing and places artwork beside metadata
 above the controls.
 
 Wide supports swipe left for Next and right for Previous in the left column's
@@ -98,7 +107,10 @@ the right panel do not receive track-swipe gestures. Resize, layout changes, and
 fullscreen dismissal cancel active swipes; swipe-down still dismisses the player.
 
 Wide at least 480dp high uses slightly larger lyrics: 28sp synced lyrics and
-20sp secondary/plain lyrics. Compact Wide, Phone, and Square keep their sizes.
+20sp secondary/plain lyrics. At 1280×720dp safe space or larger, both lyric font
+sizes and line heights scale by 1.6 (44.8sp synced and 32sp secondary/plain).
+Resizing below either threshold restores regular Wide typography.
+Compact Wide, Phone, and Square keep their sizes.
 Smaller near-square windows show one of Main, Lyrics, or Queue, with a persistent
 top drag handle and bottom Lyrics/Queue buttons. Main places metadata near the
 top and seek/playback controls near the bottom over cropped, darkened artwork;

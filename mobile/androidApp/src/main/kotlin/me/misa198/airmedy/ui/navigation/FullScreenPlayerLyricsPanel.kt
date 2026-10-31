@@ -217,6 +217,7 @@ internal fun FullScreenPlayerLyricsPanel(
     onSeek: (Long) -> Unit,
     modifier: Modifier = Modifier,
     useLargeText: Boolean = false,
+    textScale: Float = 1f,
 ) {
     val parsedLines = remember(lyrics) { lyrics?.let(::parsePlayerLyrics).orEmpty() }
     val syncedLines = remember(parsedLines) { parsedLines.filter { it.timestampSeconds != null } }
@@ -246,9 +247,9 @@ internal fun FullScreenPlayerLyricsPanel(
             else -> {
                 val typography = MaterialTheme.typography
                 MaterialTheme(typography = if (useLargeText) typography.copy(
-                    headlineSmall = typography.headlineSmall.copy(fontSize = 28.sp, lineHeight = 38.sp),
-                    bodyLarge = typography.bodyLarge.copy(fontSize = 20.sp, lineHeight = 30.sp),
-                    bodyMedium = typography.bodyMedium.copy(fontSize = 20.sp, lineHeight = 30.sp),
+                    headlineSmall = typography.headlineSmall.copy(fontSize = 28.sp * textScale, lineHeight = 38.sp * textScale),
+                    bodyLarge = typography.bodyLarge.copy(fontSize = 20.sp * textScale, lineHeight = 30.sp * textScale),
+                    bodyMedium = typography.bodyMedium.copy(fontSize = 20.sp * textScale, lineHeight = 30.sp * textScale),
                 ) else typography) {
                     if (syncedLines.isNotEmpty()) SyncedLyricsList(
                         trackId,

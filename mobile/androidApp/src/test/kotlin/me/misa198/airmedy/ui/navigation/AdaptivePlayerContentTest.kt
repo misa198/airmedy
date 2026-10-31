@@ -4,6 +4,24 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class AdaptivePlayerContentTest {
+    @Test fun largeWideRequiresBothDimensionsAndLandscape() {
+        listOf(1280f to 720f, 1920f to 1080f, 2560f to 1440f).forEach { (w, h) ->
+            assertEquals(true, isLargeWidePlayer(w, h))
+        }
+        listOf(1279f to 720f, 1280f to 719f, 2560f to 479f, 1280f to 1280f,
+            1440f to 2560f, 0f to 1080f, Float.NaN to 1080f,
+            1920f to Float.POSITIVE_INFINITY).forEach { (w, h) ->
+            assertEquals(false, isLargeWidePlayer(w, h))
+        }
+    }
+    @Test fun largeWideOnlyAddsMissingVerticalInsetSpace() {
+        listOf(0f to 32f, 8f to 24f, 31f to 1f, 32f to 0f, 48f to 0f).forEach { (inset, extra) ->
+            assertEquals(extra, widePlayerExtraVerticalPadding(1920f, 1080f, inset), 0.001f)
+            assertEquals(0f, widePlayerExtraVerticalPadding(1279f, 1080f, inset), 0.001f)
+            assertEquals(0f, widePlayerExtraVerticalPadding(1920f, 719f, inset), 0.001f)
+        }
+    }
+
     @Test fun phonePaddingOnlyGrowsOnLargeBroadWindows() {
         listOf(390f to 844f, 475f to 751f, 599f to 700f, 600f to 1200f,
             600f to 1001f).forEach { (w, h) ->

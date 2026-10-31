@@ -356,6 +356,7 @@ internal fun FullScreenPlayer(
                             lyrics = lyrics,
                             loading = lyricsLoading,
                             useLargeText = layoutMode == PlayerLayoutMode.Wide && safeHeight >= 480.dp,
+                            textScale = if (isLargeWidePlayer(safeWidth.value, safeHeight.value)) 1.6f else 1f,
                             visible = visible && panel == FullScreenPlayerPanel.Lyrics,
                             romanization = romanization,
                             romanizationAllowed = romanizationAllowed,

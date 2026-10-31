@@ -27,6 +27,12 @@ internal fun resolvePlayerLayout(widthDp: Float, heightDp: Float): PlayerLayoutM
     }
 }
 
+internal fun isLargeWidePlayer(widthDp: Float, heightDp: Float): Boolean =
+    widthDp >= 1280f && heightDp >= 720f && resolvePlayerLayout(widthDp, heightDp) == PlayerLayoutMode.Wide
+
+internal fun widePlayerExtraVerticalPadding(widthDp: Float, heightDp: Float, insetDp: Float): Float =
+    if (isLargeWidePlayer(widthDp, heightDp)) (32f - insetDp).coerceAtLeast(0f) else 0f
+
 internal fun phonePlayerHorizontalPadding(widthDp: Float, heightDp: Float): Float {
     if (!widthDp.isFinite() || !heightDp.isFinite() || widthDp < 600f || heightDp <= 0f) return 20f
     return if (widthDp / heightDp >= 0.6f) widthDp * 0.1f else 20f
