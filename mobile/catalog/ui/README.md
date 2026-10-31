@@ -221,7 +221,11 @@ choices are preserved. The host collects it
 lifecycle-aware and supplies it through the Settings and Playback models.
 Solid retains the existing average-artwork-color backdrop. Living applies to
 Phone, Wide, and Square Lyrics/Queue. Square Main always retains its cropped,
-darkened artwork regardless of this preference.
+darkened artwork regardless of this preference. Phone and Wide give the foreground
+cover a soft, rounded 24dp elevation shadow only with Living artwork selected.
+The shadow uses the themed player backdrop and sits outside the image clip, so
+artwork crossfades share one stable silhouette. `FullScreenPlayerArtworkTest`
+compares pixels outside the cover for Living/Solid in Light and Dark themes.
 
 Fullscreen artwork decoding also extracts a small three-cluster palette on a
 background dispatcher using the desktop area-weighted vibrant/muted rules.

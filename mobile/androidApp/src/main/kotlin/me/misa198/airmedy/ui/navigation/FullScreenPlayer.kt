@@ -388,6 +388,7 @@ internal fun FullScreenPlayer(
                                 artwork = artwork, outgoingArtwork = outgoingArtwork,
                                 incomingArtwork = incomingArtwork, crossfadeProgress = crossfadeProgress,
                                 isArtworkCrossfading = isArtworkCrossfading, modifier = artworkModifier,
+                                livingArtworkBackground = livingArtworkBackground,
                             )
                         },
                         metadata = { metadataContent(false) },
@@ -474,6 +475,7 @@ internal fun FullScreenPlayer(
                                 artwork = artwork, outgoingArtwork = outgoingArtwork,
                                 incomingArtwork = incomingArtwork, crossfadeProgress = crossfadeProgress,
                                 isArtworkCrossfading = isArtworkCrossfading, modifier = artworkModifier,
+                                livingArtworkBackground = livingArtworkBackground,
                             )
                         },
                         metadata = metadataContent,
