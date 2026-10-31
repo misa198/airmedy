@@ -102,6 +102,25 @@ device/emulator authorization to run; compiling their APK remains host-only.
 screen height. Its title/body region scrolls while the action buttons remain
 outside that region, so long release notes do not hide the actions.
 
+### Local network permission
+
+Android 17+ Sync Settings shows a themed permission card before pairing or LAN
+connections are available. The host owns the Activity Result permission request,
+persists whether a request has been made, offers app settings after permanent
+denial, and refreshes permission state on resume. The UI never requests LAN
+access at startup; offline playback remains available. The scanner/add action
+is gated by permission, including a restored scanner destination.
+
+`SyncViewModel` gates saved-route MQTT, mDNS, pairing and incoming sync and
+reconciliation requests. Revocation cancels pairing/reconciliation, disconnects
+MQTT, stops discovery and asks the host to cancel the foreground sync service;
+it never clears the binding or local library. Granting access attempts the saved
+route once and resumes discovery only under the existing visible-screen rules.
+The sync runtime and service also check permission before accepting a transfer.
+`LocalNetworkAccessTest` and `SyncViewModelTest` cover permission states and
+network lifecycle on the host. `SyncContentTest` covers retry/settings actions
+and card removal in Light/Dark; its APK can be built without running a device.
+
 ### Theme tokens
 
 `AirmedyTheme.kt` and `AirmedyColors` are the single source of truth for colour.

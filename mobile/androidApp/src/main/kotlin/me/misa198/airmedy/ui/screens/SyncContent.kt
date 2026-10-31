@@ -32,6 +32,7 @@ import java.text.DateFormat
 import java.util.Date
 import me.misa198.airmedy.R
 import me.misa198.airmedy.SyncUiState
+import me.misa198.airmedy.LocalNetworkAccess
 import me.misa198.airmedy.pairing.PairingFailure
 import me.misa198.airmedy.sync.AndroidSyncState
 import me.misa198.airmedy.ui.components.AirmedyDialog
@@ -55,6 +56,7 @@ internal fun SyncContent(
     onScreenVisible: () -> Unit = {},
     onScreenHidden: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onRequestLocalNetworkAccess: () -> Unit = {},
 ) {
     DisposableEffect(Unit) {
         onScreenVisible()
@@ -67,6 +69,24 @@ internal fun SyncContent(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        if (syncUiState.localNetworkAccess != LocalNetworkAccess.Granted) {
+            HeroCard(
+                symbol = MaterialSymbols.Info,
+                title = stringResource(R.string.sync_local_network_title),
+                description = stringResource(R.string.sync_local_network_description),
+                bottomContent = {
+                    AirmedyPillButton(
+                        label = stringResource(
+                            if (syncUiState.localNetworkAccess == LocalNetworkAccess.Settings) R.string.sync_local_network_settings
+                            else R.string.sync_local_network_allow,
+                        ),
+                        onClick = onRequestLocalNetworkAccess,
+                        variant = AirmedyPillButtonVariant.Primary,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                    )
+                },
+            )
+        }
         when {
             syncUiState.desktop != null -> {
                 HeroCard(

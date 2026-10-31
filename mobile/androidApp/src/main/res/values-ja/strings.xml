@@ -412,4 +412,8 @@
     <string name="app_update_no_notes">リリースノートはありません。</string>
     <string name="app_update_later">後で</string>
     <string name="app_update_action">更新</string>
+    <string name="sync_local_network_title">ローカルネットワークへのアクセス</string>
+    <string name="sync_local_network_description">パソコンの検出、ペア設定、同期のためにローカルネットワークへのアクセスを許可してください。オフライン再生は引き続き利用できます。</string>
+    <string name="sync_local_network_allow">アクセスを許可</string>
+    <string name="sync_local_network_settings">アプリの設定を開く</string>
 </resources>

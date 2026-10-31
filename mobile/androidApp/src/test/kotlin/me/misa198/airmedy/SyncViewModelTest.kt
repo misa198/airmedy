@@ -12,6 +12,9 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.CancellationException
+import java.util.Base64
 import me.misa198.airmedy.pairing.MobileIdentity
 import me.misa198.airmedy.pairing.MobilePairingUseCase
 import me.misa198.airmedy.pairing.PairingBindingStore
@@ -196,11 +199,134 @@ class SyncViewModelTest {
         assertEquals(AndroidSyncState.Failed("storage", 12, 0), viewModel.uiState.value.librarySync)
     }
 
-    private fun useCase(bindings: FakeBindings) = MobilePairingUseCase(
+    @Test
+    fun missingPermissionBlocksStartupDiscoveryAndIncomingSyncUntilGranted() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val desktop = PairedDesktop(DesktopId, "Studio Mac", ByteArray(32), "192.168.1.20", 1883)
+        val bindings = FakeBindings(desktop)
+        val session = FakeSyncSession()
+        val discovery = FakeDiscovery()
+        var syncRequests = 0
+        var reconciliationRequests = 0
+        val viewModel = SyncViewModel(
+            useCase(bindings), session, discovery,
+            onSyncRequest = { _, _, _ -> syncRequests++ },
+            onPlaylistReconciliationRequest = { reconciliationRequests++ },
+            initialLocalNetworkAccess = LocalNetworkAccess.Required,
+        )
+        advanceUntilIdle()
+        viewModel.onSyncScreenVisible()
+        session.setEndpoint(PairingEndpoint("192.168.1.20", 1883))
+        discovery.emit(PairingEndpoint("192.168.1.21", 1883))
+        session.emitRequest("request")
+        session.emitReconciliation("request")
+        advanceUntilIdle()
+
+        assertEquals(emptyList<FakeSyncSession.Connect>(), session.connects)
+        assertEquals(0, discovery.active)
+        assertEquals(0, syncRequests)
+        assertEquals(0, reconciliationRequests)
+        assertEquals(desktop, bindings.current())
+
+        viewModel.setLocalNetworkAccess(LocalNetworkAccess.Granted)
+        advanceUntilIdle()
+        assertEquals(PairingEndpoint("192.168.1.20", 1883), session.connects.single().endpoint)
+        assertEquals(1, discovery.active)
+        session.emitRequest("request")
+        session.emitReconciliation("request")
+        advanceUntilIdle()
+        assertEquals(1, syncRequests)
+        assertEquals(1, reconciliationRequests)
+
+        viewModel.setLocalNetworkAccess(LocalNetworkAccess.Granted)
+        advanceUntilIdle()
+        assertEquals(1, session.connects.size)
+    }
+
+    @Test
+    fun revokingPermissionStopsNetworkWorkAndRetainsThePairing() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val desktop = PairedDesktop(DesktopId, "Studio Mac", ByteArray(32), "192.168.1.20", 1883)
+        val bindings = FakeBindings(desktop)
+        val session = FakeSyncSession()
+        val discovery = FakeDiscovery()
+        var revokedCalls = 0
+        var reconciliationCancelled = false
+        val viewModel = SyncViewModel(
+            useCase(bindings), session, discovery,
+            onPlaylistReconciliationRequest = {
+                try { awaitCancellation() } finally { reconciliationCancelled = true }
+            },
+            onLocalNetworkAccessRevoked = { revokedCalls++ },
+        )
+        advanceUntilIdle()
+        viewModel.onSyncScreenVisible()
+        session.emitReconciliation("request")
+        advanceUntilIdle()
+        val priorDisconnects = session.disconnectCalls
+
+        viewModel.setLocalNetworkAccess(LocalNetworkAccess.Settings)
+        advanceUntilIdle()
+        assertEquals(priorDisconnects + 1, session.disconnectCalls)
+        assertEquals(0, discovery.active)
+        assertEquals(1, revokedCalls)
+        assertEquals(true, reconciliationCancelled)
+        assertEquals(false, viewModel.uiState.value.isMqttConnected)
+        assertEquals(desktop, bindings.current())
+
+        AndroidSyncRuntime.running()
+        advanceUntilIdle()
+        AndroidSyncRuntime.idle()
+        discovery.emit(PairingEndpoint("192.168.1.22", 1883))
+        advanceUntilIdle()
+        assertEquals(1, session.connects.size)
+    }
+
+    @Test
+    fun pairingNeedsPermissionAndRevocationCancelsAnActivePairing() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        var exchanges = 0
+        var cancelled = false
+        val viewModel = SyncViewModel(
+            useCase(FakeBindings(null)) {
+                exchanges++
+                try { awaitCancellation() } catch (_: CancellationException) {
+                    // A transport may translate cancellation into a failure; it must not reach the UI.
+                    cancelled = true
+                    TransportResult.Failure("cancelled")
+                }
+            },
+            FakeSyncSession(), FakeDiscovery(),
+            initialLocalNetworkAccess = LocalNetworkAccess.Required,
+        )
+        val key = Base64.getUrlEncoder().withoutPadding().encodeToString(ByteArray(32))
+        val qr = "airmedy://pair/v1?host=192.168.1.20&port=1883&desktop_id=$DesktopId&public_key=$key"
+        advanceUntilIdle()
+        assertEquals(true, viewModel.acceptsQr(qr))
+        viewModel.pair(qr)
+        advanceUntilIdle()
+        assertEquals(0, exchanges)
+        assertEquals(false, viewModel.uiState.value.isPairing)
+
+        viewModel.setLocalNetworkAccess(LocalNetworkAccess.Granted)
+        viewModel.pair(qr)
+        advanceUntilIdle()
+        assertEquals(1, exchanges)
+        assertEquals(true, viewModel.uiState.value.isPairing)
+
+        viewModel.setLocalNetworkAccess(LocalNetworkAccess.Required)
+        advanceUntilIdle()
+        assertEquals(true, cancelled)
+        assertEquals(false, viewModel.uiState.value.isPairing)
+        assertEquals(null, viewModel.uiState.value.desktop)
+        assertEquals(null, viewModel.uiState.value.failure)
+    }
+
+    private fun useCase(bindings: FakeBindings, exchange: suspend () -> TransportResult = { TransportResult.Timeout }) = MobilePairingUseCase(
         identityProvider = FakeIdentity,
         bindingStore = bindings,
         transport = object : PairingTransport {
-            override suspend fun exchange(endpoint: me.misa198.airmedy.pairing.DesktopDiscovery, responseTopic: String, requestTopic: String, requestPayload: String) = TransportResult.Timeout
+            override suspend fun exchange(endpoint: me.misa198.airmedy.pairing.DesktopDiscovery, responseTopic: String, requestTopic: String, requestPayload: String) = exchange()
         },
         clock = object : PairingClock { override fun nowMillis() = 0L },
         ids = object : PairingIdGenerator { override fun newId() = DesktopId },
@@ -232,17 +358,20 @@ class SyncViewModelTest {
         override val connectedEndpoint: StateFlow<PairingEndpoint?> = endpoint.asStateFlow()
         private val requests = MutableSharedFlow<String>()
         override val syncRequests: Flow<String> = requests
-        override val playlistReconciliationRequests: Flow<String> = MutableSharedFlow()
+        private val reconciliationRequests = MutableSharedFlow<String>()
+        override val playlistReconciliationRequests: Flow<String> = reconciliationRequests
         data class Connect(val endpoint: PairingEndpoint, val reconnect: Boolean)
         val connects = mutableListOf<Connect>()
         var stopReconnectCalls = 0
+        var disconnectCalls = 0
         override fun connect(desktop: PairedDesktop, endpoint: PairingEndpoint, mobileId: String, reconnect: Boolean) { connects += Connect(endpoint, reconnect) }
         override fun stopReconnecting() { stopReconnectCalls++ }
         override suspend fun publish(topic: String, payload: String) = Unit
-        override fun disconnect() = Unit
+        override fun disconnect() { disconnectCalls++; state.value = false; endpoint.value = null }
         fun setConnected(connected: Boolean) { state.value = connected }
         fun setEndpoint(value: PairingEndpoint?) { endpoint.value = value }
         suspend fun emitRequest(value: String) { requests.emit(value) }
+        suspend fun emitReconciliation(value: String) { reconciliationRequests.emit(value) }
     }
 
     private object FakeIdentity : PairingIdentityProvider {

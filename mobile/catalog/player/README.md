@@ -149,6 +149,12 @@ The service releases the native decoder, audio focus, media session, receiver,
 coroutines, and notification with its lifecycle. UI must not retain any of these
 resources.
 
+Before requesting audio focus or starting native playback, the service promotes
+itself to `mediaPlayback` foreground status. Keep this ordering: Android 17
+requires a foreground service with while-in-use capabilities for background
+audio. Start playback from the visible app or a system-recognized user action;
+never auto-play during restoration or a background sync.
+
 ## Session restoration
 
 The private DataStore session contains a `PlaybackQueueSnapshot` and position.

@@ -108,7 +108,10 @@ intent using native Android Compose.
 - Use the Gradle version catalog in `gradle/libs.versions.toml`; do not hardcode
   dependency or plugin versions in module build files.
 - Keep the existing Android SDK policy unless a task explicitly changes it:
-  `minSdk 31`, `compileSdk 36`, and `targetSdk 36`.
+  `minSdk 31`, `compileSdk 37`, and `targetSdk 37`.
+- Android 17+ LAN operations require `ACCESS_LOCAL_NETWORK`. Keep permission
+  requests in the Android host and Sync UI; gate pairing, discovery, MQTT and
+  sync service entry points. Denial must preserve pairing and offline playback.
 - Expose asynchronous shared work as `suspend` functions and `Flow` where state
   updates are needed. Use structured concurrency and propagate cancellation;
   common code must not rely on `Dispatchers.Main`.

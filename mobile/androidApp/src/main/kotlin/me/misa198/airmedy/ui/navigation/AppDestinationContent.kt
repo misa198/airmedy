@@ -401,6 +401,7 @@ internal fun AppDestinationContent(
                             )
                             AppStackPage.SettingsSync -> SyncContent(
                                 syncUiState = syncUiState,
+                                onRequestLocalNetworkAccess = settings.onRequestLocalNetworkAccess,
                                 onUnpair = onUnpair,
                                 onOpenExternalUrl = { url -> onIntent(AppIntent.OpenExternalUrl(url)) },
                                 onScreenVisible = onSyncScreenVisible,
@@ -446,7 +447,12 @@ internal fun AppDestinationContent(
                                 onBandChanged = onEqualizerBandChanged,
                                 modifier = settingsPageModifier,
                             )
-                            AppStackPage.SettingsSyncScanner -> SyncScannerContent(
+                            AppStackPage.SettingsSyncScanner -> if (syncUiState.localNetworkAccess != me.misa198.airmedy.LocalNetworkAccess.Granted) SyncContent(
+                                syncUiState = syncUiState,
+                                onUnpair = onUnpair,
+                                onRequestLocalNetworkAccess = settings.onRequestLocalNetworkAccess,
+                                modifier = settingsPageModifier,
+                            ) else SyncScannerContent(
                                 onQrScanned = onPairingQrScanned,
                                 modifier = Modifier.padding(contentPadding),
                             )

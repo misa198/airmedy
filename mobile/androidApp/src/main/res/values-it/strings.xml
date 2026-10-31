@@ -420,4 +420,8 @@
     <string name="app_update_no_notes">Note di rilascio non disponibili.</string>
     <string name="app_update_later">Più tardi</string>
     <string name="app_update_action">Aggiorna</string>
+    <string name="sync_local_network_title">Accesso alla rete locale</string>
+    <string name="sync_local_network_description">Consenti l’accesso alla rete locale per trovare, associare e sincronizzare il computer. La riproduzione offline resta disponibile.</string>
+    <string name="sync_local_network_allow">Consenti accesso</string>
+    <string name="sync_local_network_settings">Apri impostazioni app</string>
 </resources>

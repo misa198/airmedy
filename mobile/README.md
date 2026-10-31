@@ -9,6 +9,7 @@ database, Wails bindings, or Remote API.
 - Android development is active and uses native Jetpack Compose UI.
 - Android supports API 31 (Android 12) and newer; this baseline allows the
   floating navigation to use true backdrop blur.
+- Android compiles and targets API 37 (Android 17).
 - `sharedLogic` is the future cross-platform business-logic module.
 - iOS is intentionally frozen. Do not modify `iosApp` or iOS targets unless a
   task explicitly enables iOS work.
@@ -65,6 +66,13 @@ Each activated library snapshot also carries `library_analysis_enabled`. It is
 the Android source of truth for Mood Radio: existing analysis documents never
 enable radio by themselves, and changing the desktop setting takes effect on
 the next completed sync.
+
+On Android 17 and newer, open Sync Settings and allow local network access
+before pairing or connecting to a desktop. If permission is permanently denied,
+the Sync screen offers app settings. Permission is checked again when the app
+resumes; granting it reconnects the saved QR route, while revoking it stops
+discovery, MQTT, and active sync work. Pairing and downloaded music are retained,
+so offline playback remains available. Android 12–16 need no new permission.
 
 ## Fullscreen player layouts
 
@@ -141,7 +149,7 @@ This policy applies throughout the app, including fullscreen playback. Back and 
 ## Prerequisites
 
 - JDK 11, as configured by the Gradle modules.
-- Android SDK Platform 36 and an Android device or emulator for runtime testing.
+- Android SDK Platform 37 stable and an Android device or emulator for runtime testing.
 - Android Studio is recommended for running and inspecting the Android app.
 
 ## Commands
@@ -192,7 +200,7 @@ AAudio. It does not use a Media3 or platform-decoder fallback. All Android app
 variants require `../scripts/build-ffmpeg-android.sh arm64-v8a` to have run
 first. It downloads the pinned FFmpeg 8.1.2 tarball to a temporary cache and writes generated
 headers and `.so` files below `androidApp/build/` and `androidApp/src/main/jniLibs/`.
-Those artifacts are ignored by Git. The build requires Android NDK 30.0.15729638.
+Those artifacts are ignored by Git. The build requires Android NDK 30.0.16248370.
 
 For a manual rebuild, run from the repository root:
 

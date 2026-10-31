@@ -412,4 +412,8 @@
     <string name="app_update_no_notes">ไม่มีบันทึกประจำรุ่น</string>
     <string name="app_update_later">ภายหลัง</string>
     <string name="app_update_action">อัปเดต</string>
+    <string name="sync_local_network_title">การเข้าถึงเครือข่ายภายใน</string>
+    <string name="sync_local_network_description">อนุญาตให้เข้าถึงเครือข่ายภายในเพื่อค้นหา จับคู่ และซิงค์กับคอมพิวเตอร์ คุณยังคงฟังเพลงแบบออฟไลน์ได้</string>
+    <string name="sync_local_network_allow">อนุญาตการเข้าถึง</string>
+    <string name="sync_local_network_settings">เปิดการตั้งค่าแอป</string>
 </resources>

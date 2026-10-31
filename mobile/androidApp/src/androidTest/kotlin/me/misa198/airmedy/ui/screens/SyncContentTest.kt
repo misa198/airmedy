@@ -5,6 +5,8 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.runtime.mutableStateOf
+import me.misa198.airmedy.LocalNetworkAccess
 import me.misa198.airmedy.SyncUiState
 import me.misa198.airmedy.pairing.PairedDesktop
 import me.misa198.airmedy.settings.ThemeMode
@@ -156,5 +158,31 @@ class SyncContentTest {
         composeTestRule.onNodeWithText("Learn how to connect").performClick()
 
         assertEquals("https://airmedy.pages.dev/faq/mobile-sync", openedUrl)
+    }
+
+    @Test
+    fun localNetworkPermissionOffersRetryAndSettingsInBothThemes() {
+        val theme = mutableStateOf(ThemeMode.Light)
+        val access = mutableStateOf(LocalNetworkAccess.Required)
+        var requests = 0
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = theme.value) {
+                SyncContent(
+                    syncUiState = SyncUiState(localNetworkAccess = access.value),
+                    onUnpair = {},
+                    onRequestLocalNetworkAccess = { requests++ },
+                )
+            }
+        }
+        for (mode in listOf(ThemeMode.Light, ThemeMode.Dark)) {
+            composeTestRule.runOnIdle { theme.value = mode; access.value = LocalNetworkAccess.Required }
+            composeTestRule.onNodeWithText("Local network access").assertIsDisplayed()
+            composeTestRule.onNodeWithText("Allow access").performClick()
+            composeTestRule.runOnIdle { access.value = LocalNetworkAccess.Settings }
+            composeTestRule.onNodeWithText("Open app settings").performClick()
+            composeTestRule.runOnIdle { access.value = LocalNetworkAccess.Granted }
+            composeTestRule.onNodeWithText("Local network access").assertDoesNotExist()
+        }
+        assertEquals(4, requests)
     }
 }
