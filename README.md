@@ -29,7 +29,7 @@
 ---
 
 <div align="center">
-<img src="docs/screenshot-hero-devices.webp" alt="Airmedy - All in one offline music player" width="824" />
+<img src="docs/screenshot-hero-devices-v2.webp" alt="Airmedy - All in one offline music player" width="824" />
 </div>
 
 ---
@@ -60,8 +60,12 @@
 <td width="33%"><img src="docs/screenshots/search.webp" alt="Search" width="100%" /><p align="center">Search</p></td>
 </tr>
 <tr>
-<td width="33%"><img src="docs/screenshots/remote-1.webp" alt="Remote control" width="100%" /><p align="center">Remote control</p></td>
 <td width="33%"><img src="docs/screenshots/mobiles.webp" alt="Mobile app" width="100%" /><p align="center">Mobile app</p></td>
+<td width="33%"><img src="docs/screenshots/fold.webp" alt="Mobile app" width="100%" /><p align="center">Fold</p></td>
+<td width="33%"><img src="docs/screenshots/flip.webp" alt="Mobile app" width="100%" /><p align="center">Flip</p></td>
+</tr>
+<tr>
+<td width="33%"><img src="docs/screenshots/remote-1.webp" alt="Remote control" width="100%" /><p align="center">Remote control</p></td>
 </tr>
 </table>
 
