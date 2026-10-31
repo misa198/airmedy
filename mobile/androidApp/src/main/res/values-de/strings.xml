@@ -411,4 +411,8 @@
     <string name="player_posture_normal">Normal</string>
     <string name="player_posture_tabletop">Tabletop</string>
     <string name="player_posture_book">Book</string>
+    <string name="playback_fullscreen_background">Vollbildhintergrund</string>
+    <string name="playback_background_solid">Einfarbig</string>
+    <string name="playback_background_living">Lebendiges Artwork</string>
+    <string name="playback_background_helper">%1$s benötigt mehr GPU-Ressourcen. Für leistungsschwächere Geräte wird %2$s empfohlen.</string>
 </resources>

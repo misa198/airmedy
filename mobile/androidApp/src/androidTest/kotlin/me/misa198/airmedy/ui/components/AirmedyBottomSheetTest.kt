@@ -2,6 +2,14 @@ package me.misa198.airmedy.ui.components
 
 import android.view.KeyEvent
 import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.text.TextLayoutResult
+import me.misa198.airmedy.ui.theme.AirmedyColors
+import me.misa198.airmedy.ui.theme.LocalAirmedyColors
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -22,6 +30,36 @@ import org.junit.Assert.assertFalse
 
 class AirmedyBottomSheetTest {
     @get:Rule val composeTestRule = createComposeRule()
+
+    @Test
+    fun implicitTitleAndBodyFollowThemeChangesWhileExplicitColorsArePreserved() {
+        var theme by mutableStateOf(ThemeMode.Dark)
+        lateinit var colors: AirmedyColors
+        composeTestRule.setContent {
+            AirmedyTheme(themeMode = theme) {
+                colors = LocalAirmedyColors.current
+                AirmedyBottomSheet(title = { Text("Sheet title") }, onDismiss = {}) {
+                    Text("Default body")
+                    Text("Muted body", color = colors.textMuted)
+                    Text("Explicit accent", color = colors.primary)
+                }
+            }
+        }
+        for (mode in listOf(ThemeMode.Dark, ThemeMode.Light, ThemeMode.Dark)) {
+            composeTestRule.runOnIdle { theme = mode }
+            assertEquals("Sheet title must use $mode foreground", colors.textMain, textColor("Sheet title"))
+            assertEquals(colors.textMain, textColor("Default body"))
+            assertNotEquals("Title must remain distinct from the sheet surface", colors.glassOpaque, textColor("Sheet title"))
+            assertEquals(colors.textMuted, textColor("Muted body"))
+            assertEquals(colors.primary, textColor("Explicit accent"))
+        }
+    }
+
+    private fun textColor(label: String): Color {
+        val results = mutableListOf<TextLayoutResult>()
+        composeTestRule.onNodeWithText(label).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(results) }
+        return results.single().layoutInput.style.color
+    }
 
     @Test
     fun systemBackDismissesSheet() {

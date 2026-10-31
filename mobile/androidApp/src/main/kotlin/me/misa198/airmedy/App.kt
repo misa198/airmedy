@@ -637,6 +637,7 @@ internal fun App(
                 onRomanizationToggle = playback.onRomanizationToggle,
                 artworkCrossfade = playback.artworkCrossfade,
                 blendArtworkDuringCrossfade = playback.blendArtworkDuringCrossfade,
+                livingArtworkBackground = playback.livingArtworkBackground,
                 showQualityBadge = playback.showFullscreenQualityBadge,
                 keepScreenOnForLyrics = playback.keepScreenOnForLyrics,
                 volume = playback.systemVolume,

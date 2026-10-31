@@ -1,6 +1,15 @@
 package me.misa198.airmedy.ui.components
 
 import androidx.compose.material3.Text
+import androidx.compose.material3.Switch
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.performClick
+import org.junit.Assert.assertTrue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertHasClickAction
@@ -72,6 +81,40 @@ class ActionListTest {
         composeTestRule
             .onNodeWithContentDescription(string(R.string.appearance_theme_title))
             .assertHasNoClickAction()
+    }
+
+    @Test
+    fun longSettingTitlesLeaveTwelveDpBeforeTheirSwitchAtDifferentWidths() {
+        var width by mutableStateOf(280.dp)
+        var checked by mutableStateOf(false)
+        var minimumGap = 0f
+        val label = string(R.string.playback_keep_screen_on_for_lyrics)
+        composeTestRule.setContent {
+            minimumGap = with(LocalDensity.current) { 12.dp.toPx() }
+            AirmedyTheme(themeMode = ThemeMode.Light) {
+                Box(Modifier.width(width)) {
+                    ActionList(
+                        items = listOf(ActionListItem(
+                            labelRes = R.string.playback_keep_screen_on_for_lyrics,
+                            trailingContent = {
+                                Switch(checked = checked, onCheckedChange = { checked = it },
+                                    modifier = Modifier.testTag("settings_switch"))
+                            },
+                            onClick = { checked = !checked },
+                        )),
+                        containerStyle = ActionListContainerStyle.Card,
+                    )
+                }
+            }
+        }
+        for (availableWidth in listOf(280.dp, 360.dp)) {
+            composeTestRule.runOnIdle { width = availableWidth }
+            val titleBounds = composeTestRule.onNodeWithText(label, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+            val switchBounds = composeTestRule.onNodeWithTag("settings_switch").fetchSemanticsNode().boundsInRoot
+            assertTrue("Title must not touch the switch", switchBounds.left - titleBounds.right >= minimumGap - 1f)
+        }
+        composeTestRule.onNodeWithTag("settings_switch").performClick()
+        composeTestRule.runOnIdle { assertTrue(checked) }
     }
 
     private fun string(resourceId: Int): String =

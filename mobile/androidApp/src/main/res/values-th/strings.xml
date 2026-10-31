@@ -403,4 +403,8 @@
     <string name="player_posture_normal">Normal</string>
     <string name="player_posture_tabletop">Tabletop</string>
     <string name="player_posture_book">Book</string>
+    <string name="playback_fullscreen_background">พื้นหลังเต็มหน้าจอ</string>
+    <string name="playback_background_solid">สีทึบ</string>
+    <string name="playback_background_living">อาร์ตเวิร์กมีชีวิต</string>
+    <string name="playback_background_helper">%1$s ใช้ทรัพยากร GPU มากกว่า สำหรับอุปกรณ์ที่มีประสิทธิภาพต่ำ แนะนำให้เลือก %2$s</string>
 </resources>

@@ -408,6 +408,8 @@ internal fun AppDestinationContent(
                                 modifier = settingsPageModifier,
                             )
                             AppStackPage.SettingsPlayback -> PlaybackSettingsContent(
+                                livingArtworkBackground = settings.livingArtworkBackground,
+                                onLivingArtworkBackgroundChanged = settings.onLivingArtworkBackgroundChanged,
                                 showFullscreenQualityBadge = showFullscreenQualityBadge,
                                 onShowFullscreenQualityBadgeChanged = onShowFullscreenQualityBadgeChanged,
                                 keepScreenOnForLyrics = keepScreenOnForLyrics,

@@ -121,7 +121,7 @@ private fun ActionListRow(
             color = colors.textMain,
         )
         when {
-            item.trailingContent != null -> Row(content = item.trailingContent)
+            item.trailingContent != null -> Row(modifier = Modifier.padding(start = 12.dp), content = item.trailingContent)
             item.onClick != null -> MaterialSymbol(
                 symbol = MaterialSymbols.ChevronRight,
                 contentDescription = null,

@@ -403,4 +403,8 @@
     <string name="player_posture_normal">Normal</string>
     <string name="player_posture_tabletop">Tabletop</string>
     <string name="player_posture_book">Book</string>
+    <string name="playback_fullscreen_background">フルスクリーン背景</string>
+    <string name="playback_background_solid">単色</string>
+    <string name="playback_background_living">リビングアートワーク</string>
+    <string name="playback_background_helper">%1$s はGPUリソースをより多く使用します。性能が低い端末では %2$s をおすすめします。</string>
 </resources>

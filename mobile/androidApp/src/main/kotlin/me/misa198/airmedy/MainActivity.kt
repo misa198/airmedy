@@ -283,6 +283,7 @@ class MainActivity : ComponentActivity() {
             val crossfadeSettings by playbackPreferences.settings.collectAsStateWithLifecycle(
                 initialValue = me.misa198.airmedy.player.CrossfadeSettings(0, 4, true),
             )
+            val livingArtworkBackground by playbackPreferences.livingArtworkBackground.collectAsStateWithLifecycle(initialValue = true)
             val showFullscreenQualityBadge by playbackPreferences.showFullscreenQualityBadge.collectAsStateWithLifecycle(initialValue = true)
             val keepScreenOnForLyrics by playbackPreferences.keepScreenOnForLyrics.collectAsStateWithLifecycle(initialValue = false)
             val normalizationSettings by normalizationPreferences.settings.collectAsStateWithLifecycle(
@@ -501,6 +502,8 @@ class MainActivity : ComponentActivity() {
                     onCrossfadeSecondsChanged = playbackController::setCrossfadeSeconds,
                     blendArtworkDuringCrossfade = crossfadeSettings.blendArtworkDuringCrossfade,
                     onBlendArtworkDuringCrossfadeChanged = playbackController::setBlendArtworkDuringCrossfade,
+                    livingArtworkBackground = livingArtworkBackground,
+                    onLivingArtworkBackgroundChanged = { enabled -> preferenceScope.launch { playbackPreferences.setLivingArtworkBackground(enabled) } },
                     showFullscreenQualityBadge = showFullscreenQualityBadge,
                     onShowFullscreenQualityBadgeChanged = { enabled -> preferenceScope.launch { playbackPreferences.setShowFullscreenQualityBadge(enabled) } },
                     keepScreenOnForLyrics = keepScreenOnForLyrics,
@@ -535,6 +538,7 @@ class MainActivity : ComponentActivity() {
                 },
                 artworkCrossfade = artworkCrossfade,
                 blendArtworkDuringCrossfade = crossfadeSettings.blendArtworkDuringCrossfade,
+                livingArtworkBackground = livingArtworkBackground,
                 showFullscreenQualityBadge = showFullscreenQualityBadge,
                 keepScreenOnForLyrics = keepScreenOnForLyrics,
                 systemVolume = systemMusicVolumeState,
