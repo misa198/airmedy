@@ -53,7 +53,7 @@ jobs:
           packages: platform-tools
 
       - name: Install Android NDK
-        run: sdkmanager 'ndk;30.0.15729638' 'cmake;3.22.1'
+        run: sdkmanager 'ndk;30.0.16248370' 'cmake;3.22.1'
 
       - name: Configure Android SDK
         working-directory: mobile

@@ -200,7 +200,7 @@ AAudio. It does not use a Media3 or platform-decoder fallback. All Android app
 variants require `../scripts/build-ffmpeg-android.sh arm64-v8a` to have run
 first. It downloads the pinned FFmpeg 8.1.2 tarball to a temporary cache and writes generated
 headers and `.so` files below `androidApp/build/` and `androidApp/src/main/jniLibs/`.
-Those artifacts are ignored by Git. The build requires Android NDK 30.0.15729638.
+Those artifacts are ignored by Git. The build requires Android NDK 30.0.16248370.
 
 For a manual rebuild, run from the repository root:
 

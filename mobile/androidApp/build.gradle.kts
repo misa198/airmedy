@@ -138,7 +138,7 @@ android {
     sourceSets.getByName("main").assets.directories.add(layout.buildDirectory.dir("generated/romanizationAssets").get().asFile.path)
     namespace = "me.misa198.airmedy"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
-    ndkVersion = "30.0.15729638"
+    ndkVersion = "30.0.16248370"
 
 
     defaultConfig {
