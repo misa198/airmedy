@@ -171,6 +171,59 @@ class FullScreenPlayerTest {
     }
 
     @Test
+    fun returningToForegroundRestoresRomanizationWithoutPlacementAnimation() {
+        val lifecycleOwner = object : androidx.lifecycle.LifecycleOwner {
+            override val lifecycle = androidx.lifecycle.LifecycleRegistry(this)
+        }
+        composeTestRule.runOnIdle {
+            lifecycleOwner.lifecycle.currentState = androidx.lifecycle.Lifecycle.State.RESUMED
+        }
+        val primary = listOf("你好", "Next line", "Last line")
+        var state by mutableStateOf(me.misa198.airmedy.lyrics.RomanizationUiState(
+            input = primary, supported = true, secondary = listOf("nǐ hǎo", null, null),
+        ))
+        composeTestRule.setContent {
+            CompositionLocalProvider(androidx.lifecycle.compose.LocalLifecycleOwner provides lifecycleOwner) {
+                AirmedyTheme(themeMode = ThemeMode.Dark) {
+                    FullScreenPlayerLyricsPanel(
+                        trackId = "test", lyrics = "你好\nNext line\nLast line", currentPositionMs = 0L, onSeek = {},
+                        romanization = state,
+                        romanizationAllowed = true,
+                        onRomanizationToggle = { state = state.copy(enabled = !state.enabled) },
+                        onRomanizationInput = { lines, visible ->
+                            state = state.copy(input = lines, secondary = emptyList(), supported = visible)
+                        },
+                        modifier = Modifier.width(320.dp).height(400.dp),
+                    )
+                }
+            }
+        }
+        composeTestRule.onNodeWithTag("romanization_toggle").performClick()
+        composeTestRule.runOnIdle { state = state.copy(secondary = listOf("nǐ hǎo", null, null)) }
+        fun nextLineTop() = composeTestRule.onNodeWithText("Next line").fetchSemanticsNode().boundsInRoot.top
+        val restoredTop = nextLineTop()
+        composeTestRule.runOnIdle {
+            lifecycleOwner.lifecycle.currentState = androidx.lifecycle.Lifecycle.State.CREATED
+        }
+        composeTestRule.waitForIdle()
+        composeTestRule.runOnIdle {
+            lifecycleOwner.lifecycle.currentState = androidx.lifecycle.Lifecycle.State.RESUMED
+        }
+        composeTestRule.waitForIdle()
+        assertTrue(state.enabled)
+        assertTrue(state.secondary.isEmpty())
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.runOnIdle { state = state.copy(secondary = listOf("nǐ hǎo", null, null)) }
+        composeTestRule.mainClock.advanceTimeByFrame()
+        composeTestRule.waitForIdle()
+        assertEquals(restoredTop, nextLineTop(), 1f)
+        composeTestRule.mainClock.advanceTimeBy(96L)
+        assertEquals(restoredTop, nextLineTop(), 1f)
+        composeTestRule.mainClock.advanceTimeBy(500L)
+        assertEquals(restoredTop, nextLineTop(), 1f)
+    }
+
+    @Test
     fun disabledRomanizationHidesTheToggleAndRestoresSecondaryLyrics() {
         var allowed by mutableStateOf(true)
         composeTestRule.setContent {

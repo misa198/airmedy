@@ -222,6 +222,7 @@ internal fun FullScreenPlayerLyricsPanel(
     val parsedLines = remember(lyrics) { lyrics?.let(::parsePlayerLyrics).orEmpty() }
     val syncedLines = remember(parsedLines) { parsedLines.filter { it.timestampSeconds != null } }
     val primary = remember(parsedLines, syncedLines) { (syncedLines.ifEmpty { parsedLines }).map { it.primary } }
+    var animateSecondaryChanges by remember(trackId, primary, visible, loading) { mutableStateOf(false) }
     val lifecycleOwner = LocalLifecycleOwner.current
     val currentOnInput by rememberUpdatedState(onRomanizationInput)
     LaunchedEffect(trackId, primary, visible, loading, lifecycleOwner) {
@@ -231,12 +232,12 @@ internal fun FullScreenPlayerLyricsPanel(
                 try {
                     awaitCancellation()
                 } finally {
+                    animateSecondaryChanges = false
                     currentOnInput(emptyList(), false)
                 }
             }
         }
     }
-    var animateSecondaryChanges by remember(trackId, primary, visible, loading) { mutableStateOf(false) }
     val current = romanization.input == primary && !loading
     val secondary = if (romanizationAllowed && current && romanization.enabled) romanization.secondary else emptyList()
     val showToggle = romanizationAllowed && current && romanization.supported
