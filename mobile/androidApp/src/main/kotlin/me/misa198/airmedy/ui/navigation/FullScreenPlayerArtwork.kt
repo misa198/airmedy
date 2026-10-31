@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -110,10 +111,17 @@ internal fun FullScreenPlayerArtwork(
     crossfadeProgress: Float,
     isArtworkCrossfading: Boolean,
     modifier: Modifier,
+    livingArtworkBackground: Boolean,
 ) {
     val colors = LocalAirmedyColors.current
     Box(
-        modifier.clip(FullScreenArtworkShape).background(colors.glassElevated)
+        modifier.shadow(
+            elevation = if (livingArtworkBackground) 24.dp else 0.dp,
+            shape = FullScreenArtworkShape,
+            clip = false,
+            ambientColor = colors.playerBackdrop.copy(alpha = 0.60f),
+            spotColor = colors.playerBackdrop.copy(alpha = 0.85f),
+        ).clip(FullScreenArtworkShape).background(colors.glassElevated)
             .border(1.dp, colors.borderGlass, FullScreenArtworkShape),
         contentAlignment = Alignment.Center,
     ) {

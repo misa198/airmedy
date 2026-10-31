@@ -221,7 +221,11 @@ choices are preserved. The host collects it
 lifecycle-aware and supplies it through the Settings and Playback models.
 Solid retains the existing average-artwork-color backdrop. Living applies to
 Phone, Wide, and Square Lyrics/Queue. Square Main always retains its cropped,
-darkened artwork regardless of this preference.
+darkened artwork regardless of this preference. Phone and Wide give the foreground
+cover a soft, rounded 24dp elevation shadow only with Living artwork selected.
+The shadow uses the themed player backdrop and sits outside the image clip, so
+artwork crossfades share one stable silhouette. `FullScreenPlayerArtworkTest`
+compares pixels outside the cover for Living/Solid in Light and Dark themes.
 
 Fullscreen artwork decoding also extracts a small three-cluster palette on a
 background dispatcher using the desktop area-weighted vibrant/muted rules.
@@ -480,13 +484,20 @@ lazily and are released after two idle minutes.
 The panel sends only displayed primary lines and passes romanization separately
 to its rows. Converted lines replace bilingual secondary text; unsupported or
 failed lines retain it. Primary identity, timestamps and browse/seek state are
-preserved. Secondary height changes reposition only auto-follow. The show/hide
+preserved. Show/hide retains completed results for the current input, without
+reinspection or an intermediate loading state; input changes and disabling the
+setting clear them, and failed conversion still retries on the next show.
+Secondary height changes animate row placement in synced and plain lists only
+after a show/hide tap in the visible panel. Opening/reopening the panel or
+loading another track resets this opt-in, so initial/restored results use no
+placement animation and auto-follow aligns immediately. After a toggle,
+auto-follow realigns with the normal scroll animation. Browse and tap-to-seek state remain unchanged. The show/hide
 button stays at the viewport's bottom-right, outside the scroll list. Active
 styling matches the bottom lyrics control; inactive styling matches track More.
 Loading does not disable toggling; after errors, toggling off/on retries. Han
 defaults to Mandarin; kana-containing lines are unsupported. Host fixtures live
 in shared/Android lyrics tests; the fullscreen Compose test covers replacement
-and restoration of secondary text.
+and restoration of secondary text and intermediate row positions during toggles.
 
 Bottom sheets may use `AirmedyBottomSheetStack`: only its top entry renders;
 popping removes that entry while the entry below retains its data. Find Lyrics

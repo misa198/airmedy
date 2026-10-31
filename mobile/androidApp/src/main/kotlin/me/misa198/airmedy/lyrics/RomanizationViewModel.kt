@@ -76,6 +76,12 @@ internal class RomanizationViewModel(
         val enabled = mutableState.value.enabled
         val previous = mutableState.value
         val sameInput = active && previous.input == lines
+        // Hiding a completed result must not clear it or restart background work.
+        if (sameInput && (!enabled || (previous.secondary.isNotEmpty() && !previous.error))) {
+            mutableState.value = previous.copy(loading = false)
+            scheduleRelease()
+            return
+        }
         mutableState.value = RomanizationUiState(
             input = lines, enabled = enabled,
             supported = sameInput && previous.supported,

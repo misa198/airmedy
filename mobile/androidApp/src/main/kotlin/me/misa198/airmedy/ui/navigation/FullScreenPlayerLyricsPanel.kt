@@ -235,6 +235,7 @@ internal fun FullScreenPlayerLyricsPanel(
             }
         }
     }
+    var animateSecondaryChanges by remember(trackId, primary, visible, loading) { mutableStateOf(false) }
     val current = romanization.input == primary && !loading
     val secondary = if (romanizationAllowed && current && romanization.enabled) romanization.secondary else emptyList()
     val showToggle = romanizationAllowed && current && romanization.supported
@@ -261,15 +262,19 @@ internal fun FullScreenPlayerLyricsPanel(
                         secondary,
                         showToggle,
                         glowEnabled,
+                        animateSecondaryChanges,
                     )
-                    else PlainLyricsList(parsedLines, Modifier.fillMaxSize(), secondary, showToggle)
+                    else PlainLyricsList(parsedLines, Modifier.fillMaxSize(), secondary, showToggle, animateSecondaryChanges)
                 }
             }
         }
         if (showToggle) {
             RomanizationToggle(
                 state = romanization,
-                onClick = onRomanizationToggle,
+                onClick = {
+                    animateSecondaryChanges = visible
+                    onRomanizationToggle()
+                },
                 modifier = Modifier.align(Alignment.BottomEnd),
             )
         }
@@ -344,6 +349,7 @@ private fun SyncedLyricsList(
     secondary: List<String?>,
     showToggle: Boolean,
     glowEnabled: Boolean,
+    animateSecondaryChanges: Boolean,
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val context = LocalContext.current
@@ -518,7 +524,9 @@ private fun SyncedLyricsList(
         withFrameNanos { }
         if (hasPositionedInitialLine && !isBrowsing && selectedLineIndex == null && activeIndex >= 0 &&
             listState.layoutInfo.visibleItemsInfo.any { it.index == activeIndex }
-        ) positionInitialLine(activeIndex)
+        ) {
+            if (animateSecondaryChanges) animateToActiveLine(activeIndex) else positionInitialLine(activeIndex)
+        }
     }
     LazyColumn(
         state = listState,
@@ -529,6 +537,10 @@ private fun SyncedLyricsList(
         itemsIndexed(lines, key = { index, _ -> index }) { index, line ->
             SyncedLyricRow(
                 line = line,
+                modifier = Modifier.animateItem(
+                    fadeInSpec = null, fadeOutSpec = null,
+                    placementSpec = if (animateSecondaryChanges) tween(LyricsMotionDurationMs, easing = FastOutSlowInEasing) else null,
+                ),
                 secondary = secondary.getOrNull(index) ?: line.secondary,
                 distance = if (activeIndex >= 0) kotlin.math.abs(index - activeIndex) else Int.MAX_VALUE,
                 karaokePositionSeconds = if (!isBrowsing && index == activeIndex) displayedPositionMs / 1_000f else null,
@@ -552,6 +564,7 @@ private fun SyncedLyricsList(
 @Composable
 private fun SyncedLyricRow(
     line: PlayerLyricLine,
+    modifier: Modifier,
     secondary: String?,
     distance: Int,
     karaokePositionSeconds: Float?,
@@ -586,7 +599,7 @@ private fun SyncedLyricRow(
         label = "synced-lyric-offset",
     )
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             // Reserve room for active-line scaling without changing wrapping
             // only when the active state changes.
@@ -823,11 +836,20 @@ internal fun karaokeWordGlow(word: PlayerLyricWord, positionSeconds: Float): Flo
 }
 
 @Composable
-private fun PlainLyricsList(lines: List<PlayerLyricLine>, modifier: Modifier, secondary: List<String?>, showToggle: Boolean) {
+private fun PlainLyricsList(
+    lines: List<PlayerLyricLine>,
+    modifier: Modifier,
+    secondary: List<String?>,
+    showToggle: Boolean,
+    animateSecondaryChanges: Boolean,
+) {
     val colors = LocalAirmedyColors.current
     LazyColumn(modifier = modifier.testTag("plain_lyrics_list"), contentPadding = PaddingValues(bottom = if (showToggle) 72.dp else 0.dp)) {
         itemsIndexed(lines, key = { index, _ -> index }) { index, line ->
-            Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+            Column(Modifier.animateItem(
+                fadeInSpec = null, fadeOutSpec = null,
+                placementSpec = if (animateSecondaryChanges) tween(LyricsMotionDurationMs, easing = FastOutSlowInEasing) else null,
+            ).fillMaxWidth().padding(vertical = 8.dp)) {
                 Text(text = line.primary, color = colors.onPrimary, style = MaterialTheme.typography.bodyLarge)
                 (secondary.getOrNull(index) ?: line.secondary)?.let {
                     Text(text = it, color = colors.foregroundSubtle, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 2.dp))
