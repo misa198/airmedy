@@ -115,6 +115,13 @@ dependencies {
     implementation(libs.room.ktx)
     implementation(libs.reorderable)
     implementation(libs.vico.compose)
+    implementation(libs.markwon.core)
+    implementation(libs.markwon.image)
+    implementation(libs.markwon.html)
+    implementation(libs.markwon.strikethrough)
+    implementation(libs.markwon.tables)
+    implementation(libs.markwon.tasklist)
+    implementation(libs.androidsvg)
     ksp(libs.room.compiler)
 
     testImplementation(libs.junit)
@@ -122,6 +129,7 @@ dependencies {
     testImplementation(libs.room.testing)
     androidTestImplementation(libs.androidx.testExt.junit)
     androidTestImplementation(libs.compose.uiTestJunit4)
+    androidTestImplementation(libs.androidx.espresso.core)
     debugImplementation(libs.compose.uiTooling)
     debugImplementation(libs.compose.uiTestManifest)
 }

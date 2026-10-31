@@ -415,4 +415,9 @@
     <string name="playback_background_solid">Uni</string>
     <string name="playback_background_living">Pochette animée</string>
     <string name="playback_background_helper">%1$s utilise davantage de ressources GPU. Pour les appareils moins puissants, %2$s est recommandé.</string>
+    <string name="app_update_title">Mise à jour disponible</string>
+    <string name="app_update_version">Version %1$s</string>
+    <string name="app_update_no_notes">Les notes de version ne sont pas disponibles.</string>
+    <string name="app_update_later">Plus tard</string>
+    <string name="app_update_action">Mettre à jour</string>
 </resources>

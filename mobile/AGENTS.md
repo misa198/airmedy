@@ -50,6 +50,11 @@ Pinned data and regeneration instructions live in `tools/romanization/ATTRIBUTIO
 The Android build packages desktop dictionary files as assets; there is no
 runtime desktop dependency or change to the sync protocol.
 
+Update notices use the shared `AppReleaseSource` and `UpdateNoticeStore` ports
+and `CheckForAppUpdate` use case. Android owns GitHub HTTP access, DataStore
+history and presentation; do not move those effects into common logic. The
+public manifest and its publishing contract are documented in `../releases/README.md`.
+
 ## Mobile UI philosophy
 
 The mobile app should feel calm, tactile, and intentionally lightweight: dark

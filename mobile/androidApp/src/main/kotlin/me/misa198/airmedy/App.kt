@@ -78,6 +78,8 @@ import me.misa198.airmedy.ui.components.TrackContextBottomSheetRequest
 import me.misa198.airmedy.ui.theme.AirmedyTheme
 import me.misa198.airmedy.ui.theme.LocalAirmedyColors
 import me.misa198.airmedy.player.PlaybackState
+import me.misa198.airmedy.update.AppUpdate
+import me.misa198.airmedy.update.AppUpdateDialog
 import me.misa198.airmedy.sync.AndroidSyncState
 
 private enum class EqualizerProfileSheet { Menu, Create, DeleteConfirmation }
@@ -133,6 +135,8 @@ internal fun App(
     onFullScreenPlayerVisibilityChanged: (Boolean) -> Unit = {},
     onDismissSyncFailure: () -> Unit = {},
     playerFoldingFeatures: List<PlayerFoldingFeature> = emptyList(),
+    appUpdate: AppUpdate? = null,
+    onDismissAppUpdate: () -> Unit = {},
 ) {
     val library = destinations.library
     val settings = destinations.settings
@@ -145,6 +149,13 @@ internal fun App(
     val playbackState = playback.state
     val playbackQueue = playback.queue
     AirmedyTheme(themeMode = uiState.themeMode) {
+        appUpdate?.let { update ->
+            AppUpdateDialog(
+                update = update,
+                onDismiss = onDismissAppUpdate,
+                onUpdate = { onIntent(AppIntent.OpenExternalUrl(it)) },
+            )
+        }
         CompositionLocalProvider(
             me.misa198.airmedy.ui.components.LocalMoodRadioMenuActions provides me.misa198.airmedy.ui.components.MoodRadioMenuActions(
                 playback.moodRadioEligibleTrackIds, playback.onStartMoodRadio,

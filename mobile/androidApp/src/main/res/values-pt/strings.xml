@@ -415,4 +415,9 @@
     <string name="playback_background_solid">Sólido</string>
     <string name="playback_background_living">Capa viva</string>
     <string name="playback_background_helper">%1$s usa mais recursos da GPU. Para dispositivos menos potentes, recomenda-se %2$s.</string>
+    <string name="app_update_title">Atualização disponível</string>
+    <string name="app_update_version">Versão %1$s</string>
+    <string name="app_update_no_notes">As notas da versão não estão disponíveis.</string>
+    <string name="app_update_later">Mais tarde</string>
+    <string name="app_update_action">Atualizar</string>
 </resources>

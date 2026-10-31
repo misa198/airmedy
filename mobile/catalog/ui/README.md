@@ -64,6 +64,46 @@ platform API call from a composable.
 
 ## Theme, glass, and accessibility
 
+### Startup update notice
+
+`MainActivity` constructs the Android release source, DataStore notice history,
+and `AppUpdateViewModel`. The `prod` flavor starts one check per Activity/ViewModel
+session; recomposition, configuration changes, and foreground returns retain that
+check and pending dialog. The `dev` flavor does not start it. Shared
+`CheckForAppUpdate` owns numeric version comparison and already-shown eligibility.
+The version is persisted atomically before exposing dialog state; errors skip
+presentation, log through the Android host, and permit retry next session.
+
+`App` receives immutable `AppUpdate` state and a dismiss callback. `AppUpdateDialog`
+shows a localized title, version and Markdown GitHub notes (or a localized empty
+fallback) through `AirmedyDialog`'s optional content slot. Later, Back and outside taps dismiss it; Update
+dismisses and emits the existing external-URL intent to the release page.
+Dismissal does not erase history. See `releases/README.md` for publication and
+at-most-once persistence semantics. Android host tests cover parsing, state and
+history; `AppUpdateDialogTest` covers Light/Dark, long notes and both actions.
+
+`ReleaseNotesMarkdown` uses Markwon in a native Android `TextView`, with HTML,
+image, table, task-list and strikethrough plugins. Standard headings, emphasis,
+lists, quotes, links and code are supported. Markdown images and HTML `<img>`
+load asynchronously (including SVG through AndroidSVG) and fit the available
+width even when HTML specifies an oversized width; relative image paths resolve
+against the repository at the mobile release tag. Text, links, code, tables and
+checkboxes follow `AirmedyColors`, including after theme changes. Only HTTP(S)
+image/link destinations are accepted. Links use the existing external-URL host
+action, with no embedded browser or JavaScript. Failed Markdown images retain
+alternative text while notes remain usable. Removing the view cancels Markwon's image/table
+callbacks and shuts down its image executor; network waits are bounded.
+`ReleaseNotesUrlTest` guards destination resolution; `ReleaseNotesMarkdownTest`
+covers formatted spans, links, theme changes and both Markdown/HTML images using
+a local test server, including an image failure. These UI tests require explicit
+device/emulator authorization to run; compiling their APK remains host-only.
+
+`AirmedyDialog` caps its surface width at 420dp and height at 85% of the configured
+screen height. Its title/body region scrolls while the action buttons remain
+outside that region, so long release notes do not hide the actions.
+
+### Theme tokens
+
 `AirmedyTheme.kt` and `AirmedyColors` are the single source of truth for colour.
 `AirmedyTheme` also provides Material `LocalContentColor` from `textMain`.
 `MaterialTheme` alone does not update this ambient, so uncolored Text/Icon slots

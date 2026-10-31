@@ -415,4 +415,9 @@
     <string name="playback_background_solid">Einfarbig</string>
     <string name="playback_background_living">Lebendiges Artwork</string>
     <string name="playback_background_helper">%1$s benötigt mehr GPU-Ressourcen. Für leistungsschwächere Geräte wird %2$s empfohlen.</string>
+    <string name="app_update_title">Update verfügbar</string>
+    <string name="app_update_version">Version %1$s</string>
+    <string name="app_update_no_notes">Keine Versionshinweise verfügbar.</string>
+    <string name="app_update_later">Später</string>
+    <string name="app_update_action">Aktualisieren</string>
 </resources>

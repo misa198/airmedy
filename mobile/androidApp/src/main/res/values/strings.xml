@@ -417,4 +417,9 @@
     <string name="playback_background_solid">Solid</string>
     <string name="playback_background_living">Living artwork</string>
     <string name="playback_background_helper">%1$s uses more GPU resources. For less powerful devices, %2$s is recommended.</string>
+    <string name="app_update_title">Update available</string>
+    <string name="app_update_version">Version %1$s</string>
+    <string name="app_update_no_notes">Release notes are not available.</string>
+    <string name="app_update_later">Later</string>
+    <string name="app_update_action">Update</string>
 </resources>
