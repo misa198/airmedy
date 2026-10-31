@@ -370,6 +370,11 @@ no volume/output or metadata More button. The top drag handle and bottom panel
 buttons remain visible in every mode, including queue reordering. Tapping an
 active button returns to Main; tapping the other switches directly. Content is
 replaced before a 220ms fade-in, without overlapping modes.
+Main's artwork fades over the panel backdrop while the themed overlay blends
+with it, including when a transition reverses. The living renderer is released
+once Main's artwork is fully visible; a dominant-color fallback remains behind
+it while its first frame is loading. `FullScreenPlayerArtworkTest` samples the
+blend in both themes, in both directions and during an interrupted transition.
 
 Square Main supports swipe left for Next and right for Previous using Phone's
 thresholds and haptic feedback. The entire content, including margins and gaps

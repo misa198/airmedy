@@ -3,6 +3,7 @@ package me.misa198.airmedy.ui.navigation
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -67,10 +68,35 @@ internal fun FullScreenPlayerBackground(
         animationSpec = tween(280, easing = FastOutSlowInEasing),
         label = "full-screen-background-colour",
     )
+    val artworkAlpha by animateFloatAsState(
+        targetValue = if (showArtwork) 1f else 0f,
+        animationSpec = tween(220),
+        label = "square-background-artwork-alpha",
+    )
     var livingFailed by remember(livingArtworkBackground) { mutableStateOf(false) }
     Box(modifier.background(colors.playerBackdrop)) {
-        if (showArtwork) {
-            Box(Modifier.fillMaxSize().semantics { testTag = "square_player_artwork_background" }) {
+        if (artworkAlpha < 1f || !showArtwork) {
+            // Keep a colored fallback visible while the living renderer produces its first frame.
+            if (isArtworkCrossfading) {
+                PlayerBackgroundGradient(outgoingArtwork?.dominant ?: colors.playerBackdrop, equalPowerOutgoing(crossfadeProgress))
+                PlayerBackgroundGradient(incomingArtwork?.dominant ?: colors.playerBackdrop, equalPowerIncoming(crossfadeProgress))
+            } else {
+                PlayerBackgroundGradient(dominantColor, 1f)
+            }
+            if (livingArtworkBackground && !livingFailed) {
+                val palette = if (crossfade != null) incomingArtwork?.palette ?: artwork?.palette else artwork?.palette
+                LivingArtworkBackground(
+                    palette = palette?.shaderColors(),
+                    outgoingPalette = (outgoingArtwork?.palette ?: artwork?.palette)?.shaderColors(),
+                    isPlaying = isPlaying,
+                    crossfadeId = crossfade?.id,
+                    crossfadeProgress = crossfadeProgress,
+                    onFailure = { livingFailed = true },
+                )
+            }
+        }
+        if (artworkAlpha > 0f || showArtwork) {
+            Box(Modifier.fillMaxSize().alpha(artworkAlpha).semantics { testTag = "square_player_artwork_background" }) {
                 if (isArtworkCrossfading) {
                     ArtworkLayer(outgoingArtwork, equalPowerOutgoing(crossfadeProgress))
                     ArtworkLayer(incomingArtwork, equalPowerIncoming(crossfadeProgress))
@@ -78,23 +104,8 @@ internal fun FullScreenPlayerBackground(
                     ArtworkLayer(artwork, 1f)
                 }
             }
-        } else if (livingArtworkBackground && !livingFailed) {
-            val palette = if (crossfade != null) incomingArtwork?.palette ?: artwork?.palette else artwork?.palette
-            LivingArtworkBackground(
-                palette = palette?.shaderColors(),
-                outgoingPalette = (outgoingArtwork?.palette ?: artwork?.palette)?.shaderColors(),
-                isPlaying = isPlaying,
-                crossfadeId = crossfade?.id,
-                crossfadeProgress = crossfadeProgress,
-                onFailure = { livingFailed = true },
-            )
-        } else if (isArtworkCrossfading) {
-            PlayerBackgroundGradient(outgoingArtwork?.dominant ?: colors.playerBackdrop, equalPowerOutgoing(crossfadeProgress))
-            PlayerBackgroundGradient(incomingArtwork?.dominant ?: colors.playerBackdrop, equalPowerIncoming(crossfadeProgress))
-        } else {
-            PlayerBackgroundGradient(dominantColor, 1f)
         }
-        Box(Modifier.fillMaxSize().background(colors.playerBackdrop.copy(alpha = if (showArtwork) 0.60f else 0.24f)))
+        Box(Modifier.fillMaxSize().background(colors.playerBackdrop.copy(alpha = 0.24f + 0.36f * artworkAlpha)))
     }
 }
 
