@@ -420,4 +420,8 @@
     <string name="app_update_no_notes">Release notes are not available.</string>
     <string name="app_update_later">Later</string>
     <string name="app_update_action">Update</string>
+    <string name="sync_local_network_title">Local network access</string>
+    <string name="sync_local_network_description">Allow local network access to find, pair with, and sync your desktop. Offline playback remains available.</string>
+    <string name="sync_local_network_allow">Allow access</string>
+    <string name="sync_local_network_settings">Open app settings</string>
 </resources>

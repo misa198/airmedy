@@ -420,4 +420,8 @@
     <string name="app_update_no_notes">Keine Versionshinweise verfügbar.</string>
     <string name="app_update_later">Später</string>
     <string name="app_update_action">Aktualisieren</string>
+    <string name="sync_local_network_title">Zugriff auf das lokale Netzwerk</string>
+    <string name="sync_local_network_description">Erlaube den Zugriff auf das lokale Netzwerk, um deinen Computer zu finden, zu koppeln und zu synchronisieren. Offline-Wiedergabe bleibt verfügbar.</string>
+    <string name="sync_local_network_allow">Zugriff erlauben</string>
+    <string name="sync_local_network_settings">App-Einstellungen öffnen</string>
 </resources>

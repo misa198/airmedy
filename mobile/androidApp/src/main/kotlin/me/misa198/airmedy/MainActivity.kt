@@ -28,6 +28,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.edit
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.compose.runtime.Composable
@@ -97,6 +99,9 @@ import me.misa198.airmedy.ui.screens.InsightViewModel
 private data class ManualLyricsOverride(val trackId: String, val content: String)
 
 class MainActivity : ComponentActivity() {
+    private val localNetworkPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+        syncViewModel.setLocalNetworkAccess(currentLocalNetworkAccess())
+    }
     private val appUpdateViewModel: AppUpdateViewModel by viewModels {
         AppUpdateViewModel.Factory(
             CheckForAppUpdate(
@@ -135,6 +140,7 @@ class MainActivity : ComponentActivity() {
             onPlaylistReconciliationRequest = { payload ->
                 reconciliationMutex.withLock {
                 AndroidSyncRuntime.awaitNoForegroundSync()
+                if (!hasLocalNetworkAccess()) return@withLock
                 preferences.current()?.let { desktop ->
                     AndroidSyncRuntime.initialize(applicationContext)
                     val coordinator = PlaylistReconciliationCoordinator(
@@ -170,6 +176,8 @@ class MainActivity : ComponentActivity() {
             lastSyncedAt = preferences.lastSyncedAt,
             libraryAnalysis = AndroidSyncRuntime.syncStore().analysisProgress,
             libraryAnalysisEnabled = AndroidSyncRuntime.syncStore().libraryAnalysisEnabled,
+            initialLocalNetworkAccess = currentLocalNetworkAccess(),
+            onLocalNetworkAccessRevoked = { LibrarySyncService.cancel(applicationContext) },
         )
     }
     private val tracksViewModel: LibraryTracksViewModel by viewModels {
@@ -218,6 +226,33 @@ class MainActivity : ComponentActivity() {
     }
     private val composerDetailsViewModel: ComposerDetailsViewModel by viewModels {
         ComposerDetailsViewModel.Factory(AndroidSyncRuntime.syncStore(), AndroidPlaybackRuntime.controller())
+    }
+
+    override fun onResume() {
+        super.onResume()
+        syncViewModel.setLocalNetworkAccess(currentLocalNetworkAccess())
+    }
+
+    private fun currentLocalNetworkAccess(): LocalNetworkAccess = localNetworkAccessState(
+        granted = hasLocalNetworkAccess(),
+        requested = getPreferences(MODE_PRIVATE).getBoolean("local_network_requested", false),
+        showRationale = Build.VERSION.SDK_INT >= 37 && shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_LOCAL_NETWORK),
+    )
+
+    private fun requestLocalNetworkAccess() {
+        if (Build.VERSION.SDK_INT < 37) return
+        val access = currentLocalNetworkAccess()
+        syncViewModel.setLocalNetworkAccess(access)
+        when (access) {
+            LocalNetworkAccess.Granted -> Unit
+            LocalNetworkAccess.Required -> {
+                getPreferences(MODE_PRIVATE).edit { putBoolean("local_network_requested", true) }
+                localNetworkPermission.launch(Manifest.permission.ACCESS_LOCAL_NETWORK)
+            }
+            LocalNetworkAccess.Settings -> startActivity(
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")),
+            )
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -494,8 +529,9 @@ class MainActivity : ComponentActivity() {
                 ),
                 settings = SettingsDestinationModel(
                     syncState = syncUiState,
+                    onRequestLocalNetworkAccess = ::requestLocalNetworkAccess,
                     onPairingQrScanned = { raw ->
-                        if (!syncViewModel.acceptsQr(raw)) false else {
+                        if (!hasLocalNetworkAccess() || !syncViewModel.acceptsQr(raw)) false else {
                             syncViewModel.pair(raw)
                             viewModel.dispatch(AppIntent.NavigateBack)
                             true

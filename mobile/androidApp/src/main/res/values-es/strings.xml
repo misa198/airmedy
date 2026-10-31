@@ -420,4 +420,8 @@
     <string name="app_update_no_notes">No hay notas de la versión disponibles.</string>
     <string name="app_update_later">Más tarde</string>
     <string name="app_update_action">Actualizar</string>
+    <string name="sync_local_network_title">Acceso a la red local</string>
+    <string name="sync_local_network_description">Permite el acceso a la red local para encontrar, vincular y sincronizar tu ordenador. La reproducción sin conexión sigue disponible.</string>
+    <string name="sync_local_network_allow">Permitir acceso</string>
+    <string name="sync_local_network_settings">Abrir ajustes de la app</string>
 </resources>

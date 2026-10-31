@@ -414,6 +414,8 @@ class PlaybackService : Service() {
         val item = AndroidPlaybackRuntime.controller().resolve(trackId) ?: return fail(trackId, "Audio asset is not available")
         state.value = PlaybackState.Preparing(item)
         publishNowPlaying(item, AndroidMediaPlaybackState.STATE_BUFFERING, positionMs = 0L, durationMs = 0L)
+        // Promote before audio APIs so a user-started session can continue after the UI leaves.
+        showForeground(item)
         if (audioManager.requestAudioFocus(focusRequest) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) return fail(trackId, "Audio focus was not granted")
         restoreFocusGain()
         try {
@@ -445,7 +447,6 @@ class PlaybackService : Service() {
                 throw error
             }
             preloadNext()
-            showForeground(item)
             Log.d(PlaybackLogTag, "Playback started id=$trackId durationMs=${decoder?.durationMs()}")
         } catch (error: Throwable) {
             fail(trackId, error.message ?: "Unable to decode audio")

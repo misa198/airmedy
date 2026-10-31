@@ -31,6 +31,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 import me.misa198.airmedy.MainActivity
 import me.misa198.airmedy.R
+import me.misa198.airmedy.hasLocalNetworkAccess
 import me.misa198.airmedy.player.PlaybackService
 import me.misa198.airmedy.pairing.HiveMqSyncSession
 import me.misa198.airmedy.pairing.PairingEndpoint
@@ -66,6 +67,11 @@ internal object AndroidSyncRuntime {
     }
 
     fun start(context: Context, payload: String, endpoint: PairingEndpoint, mqttSession: SyncSession) {
+        if (!context.hasLocalNetworkAccess()) {
+            mqttSession.disconnect()
+            failed(context.getString(R.string.sync_local_network_description))
+            return
+        }
         initialize(context)
         handoffSession = mqttSession
         running()
@@ -97,6 +103,12 @@ class LibrarySyncService : Service() {
     private var session: SyncSession? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (!hasLocalNetworkAccess()) {
+            AndroidSyncRuntime.takeMqttSession()?.disconnect()
+            AndroidSyncRuntime.failed(getString(R.string.sync_local_network_description))
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
         val payload = intent?.getStringExtra(RequestExtra) ?: return START_NOT_STICKY
         val host = intent.getStringExtra(HostExtra) ?: return START_NOT_STICKY
         val port = intent.getIntExtra(PortExtra, 0)

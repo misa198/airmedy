@@ -91,6 +91,12 @@ screen, but mobile never performs mDNS discovery in the background. Android's
 saved QR route is attempted once at app start and does not retry in the
 background after a failed or lost connection.
 
+On Android 17+ (target API 37), local network permission must be granted before
+any pairing, saved-route MQTT, mDNS, or sync transfer starts. Android requests it
+from Sync Settings; permanent denial offers app settings. Revocation cancels LAN
+work without deleting the trusted binding or downloaded library. Granting it
+retries the saved QR route once. Older Android versions keep the existing flow.
+
 ## Discovery QR
 
 The QR text is a URI with this exact shape:
