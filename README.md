@@ -29,7 +29,7 @@
 ---
 
 <div align="center">
-<img src="docs/screenshot-hero-devices-v2.webp" alt="Airmedy - All in one offline music player" width="824" />
+<img src="docs/screenshot-hero-devices-v3.webp" alt="Airmedy - All in one offline music player" width="824" />
 </div>
 
 ---
