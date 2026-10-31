@@ -420,4 +420,8 @@
     <string name="app_update_no_notes">Les notes de version ne sont pas disponibles.</string>
     <string name="app_update_later">Plus tard</string>
     <string name="app_update_action">Mettre à jour</string>
+    <string name="sync_local_network_title">Accès au réseau local</string>
+    <string name="sync_local_network_description">Autorisez l’accès au réseau local pour trouver, associer et synchroniser votre ordinateur. La lecture hors ligne reste disponible.</string>
+    <string name="sync_local_network_allow">Autoriser l’accès</string>
+    <string name="sync_local_network_settings">Ouvrir les paramètres</string>
 </resources>

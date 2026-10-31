@@ -41,7 +41,7 @@ jobs:
           packages: platform-tools
 
       - name: Install Android build tools
-        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;30.0.15729638' 'cmake;3.22.1'
+        run: sdkmanager 'platforms;android-37.0' 'build-tools;36.0.0' 'ndk;30.0.15729638' 'cmake;3.22.1'
 
       - name: Configure signing and Android SDK
         env:

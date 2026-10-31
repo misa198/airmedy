@@ -412,4 +412,8 @@
     <string name="app_update_no_notes">Chưa có nội dung cập nhật.</string>
     <string name="app_update_later">Để sau</string>
     <string name="app_update_action">Cập nhật</string>
+    <string name="sync_local_network_title">Truy cập mạng cục bộ</string>
+    <string name="sync_local_network_description">Cho phép truy cập mạng cục bộ để tìm, ghép nối và đồng bộ với máy tính. Bạn vẫn có thể nghe nhạc ngoại tuyến.</string>
+    <string name="sync_local_network_allow">Cho phép truy cập</string>
+    <string name="sync_local_network_settings">Mở cài đặt ứng dụng</string>
 </resources>

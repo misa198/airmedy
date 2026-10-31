@@ -412,4 +412,8 @@
     <string name="app_update_no_notes">暂无更新说明。</string>
     <string name="app_update_later">稍后</string>
     <string name="app_update_action">更新</string>
+    <string name="sync_local_network_title">本地网络访问</string>
+    <string name="sync_local_network_description">允许访问本地网络以查找、配对和同步电脑。离线播放仍然可用。</string>
+    <string name="sync_local_network_allow">允许访问</string>
+    <string name="sync_local_network_settings">打开应用设置</string>
 </resources>

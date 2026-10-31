@@ -436,4 +436,8 @@
     <string name="app_update_no_notes">Описание обновления недоступно.</string>
     <string name="app_update_later">Позже</string>
     <string name="app_update_action">Обновить</string>
+    <string name="sync_local_network_title">Доступ к локальной сети</string>
+    <string name="sync_local_network_description">Разрешите доступ к локальной сети для поиска, сопряжения и синхронизации с компьютером. Воспроизведение офлайн останется доступным.</string>
+    <string name="sync_local_network_allow">Разрешить доступ</string>
+    <string name="sync_local_network_settings">Открыть настройки приложения</string>
 </resources>

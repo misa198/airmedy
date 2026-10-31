@@ -11,6 +11,10 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import me.misa198.airmedy.pairing.PairingFailure
 import me.misa198.airmedy.pairing.PairingEndpoint
 import me.misa198.airmedy.pairing.PairingQrParser
@@ -32,6 +36,7 @@ import me.misa198.airmedy.sync.LibraryAnalysisProgress
 import android.util.Log
 
 data class SyncUiState(
+    val localNetworkAccess: LocalNetworkAccess = LocalNetworkAccess.Granted,
     val desktop: PairedDesktop? = null,
     val isMqttConnected: Boolean = false,
     val isPairing: Boolean = false,
@@ -53,14 +58,18 @@ class SyncViewModel(
     lastSyncedAt: Flow<Long?> = flowOf(null),
     libraryAnalysis: Flow<LibraryAnalysisProgress> = flowOf(LibraryAnalysisProgress()),
     libraryAnalysisEnabled: Flow<Boolean> = flowOf(false),
+    initialLocalNetworkAccess: LocalNetworkAccess = LocalNetworkAccess.Granted,
+    private val onLocalNetworkAccessRevoked: () -> Unit = {},
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(SyncUiState())
+    private val _uiState = MutableStateFlow(SyncUiState(localNetworkAccess = initialLocalNetworkAccess))
     val uiState: StateFlow<SyncUiState> = _uiState.asStateFlow()
 
     private var syncScreenVisible = false
     private var discoverySession = false
     private var discoveryEndpoint: PairingEndpoint? = null
     private var syncWasRunning = false
+    private var pairingJob: Job? = null
+    private var reconciliationJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -81,34 +90,29 @@ class SyncViewModel(
         viewModelScope.launch {
             pairing.pairedDesktop.collectLatest { desktop ->
                 Log.d(LogTag, "Paired desktop updated: ${desktop?.desktopId} (${desktop?.displayName})")
+                _uiState.update { it.copy(desktop = desktop, isPairing = false, failure = null) }
                 if (desktop == null) {
                     discoverySession = false
                     discoveryEndpoint = null
                     discovery.stop()
                     mqttSession.disconnect()
-                } else if (!isForegroundSyncRunning()) {
-                    val host = desktop.host
-                    val port = desktop.port
-                    if (host != null && port != null) {
-                        discoverySession = false
-                        discoveryEndpoint = null
-                        mqttSession.connect(desktop, PairingEndpoint(host, port), pairing.mobileId(), reconnect = false)
-                    }
-                }
-                _uiState.update { it.copy(desktop = desktop, isPairing = false, failure = null) }
+                } else connectSavedDesktop()
                 updateDiscovery()
             }
         }
         viewModelScope.launch {
             mqttSession.syncRequests.collectLatest { request ->
+                if (!hasNetworkAccess()) return@collectLatest
                 Log.i(LogTag, "Handling sync request in ViewModel")
                 mqttSession.connectedEndpoint.value?.let { endpoint -> onSyncRequest(request, endpoint, mqttSession) }
             }
         }
         viewModelScope.launch {
             mqttSession.playlistReconciliationRequests.collectLatest { request ->
+                reconciliationJob?.cancelAndJoin()
+                if (!hasNetworkAccess()) return@collectLatest
                 Log.i(LogTag, "Handling playlist reconciliation request")
-                onPlaylistReconciliationRequest(request)
+                reconciliationJob = viewModelScope.launch { onPlaylistReconciliationRequest(request) }
             }
         }
         viewModelScope.launch {
@@ -119,11 +123,7 @@ class SyncViewModel(
                     syncWasRunning = true
                 } else if (syncWasRunning) {
                     syncWasRunning = false
-                    _uiState.value.desktop?.let { desktop ->
-                        desktop.host?.let { host -> desktop.port?.let { port ->
-                            mqttSession.connect(desktop, PairingEndpoint(host, port), pairing.mobileId(), reconnect = false)
-                        } }
-                    }
+                    connectSavedDesktop()
                 }
                 updateDiscovery()
             }
@@ -138,11 +138,12 @@ class SyncViewModel(
         viewModelScope.launch {
             discovery.endpoints.collectLatest { endpoint ->
                 val desktop = _uiState.value.desktop ?: return@collectLatest
-                if (!syncScreenVisible || _uiState.value.isMqttConnected) return@collectLatest
+                if (!hasNetworkAccess() || !syncScreenVisible || _uiState.value.isMqttConnected) return@collectLatest
                 Log.i(LogTag, "Discovered trusted desktop endpoint via mDNS: $endpoint")
                 discoverySession = true
                 discoveryEndpoint = endpoint
-                mqttSession.connect(desktop, endpoint, pairing.mobileId(), reconnect = true)
+                val mobileId = pairing.mobileId()
+                if (hasNetworkAccess()) mqttSession.connect(desktop, endpoint, mobileId, reconnect = true)
             }
         }
         viewModelScope.launch {
@@ -162,10 +163,12 @@ class SyncViewModel(
     fun acceptsQr(raw: String): Boolean = PairingQrParser.parse(raw).isSuccess
 
     fun pair(raw: String) {
-        if (_uiState.value.desktop != null || _uiState.value.isPairing) return
-        viewModelScope.launch {
+        if (!hasNetworkAccess() || _uiState.value.desktop != null || _uiState.value.isPairing) return
+        pairingJob = viewModelScope.launch {
             _uiState.update { it.copy(isPairing = true, failure = null) }
-            when (val result = pairing.pair(raw)) {
+            val result = pairing.pair(raw)
+            currentCoroutineContext().ensureActive()
+            when (result) {
                 is PairingResult.Paired -> _uiState.update { it.copy(desktop = result.desktop, isPairing = false) }
                 is PairingResult.Failed -> _uiState.update { it.copy(isPairing = false, failure = result.failure) }
             }
@@ -173,6 +176,38 @@ class SyncViewModel(
     }
 
     fun clearFailure() = _uiState.update { it.copy(failure = null) }
+
+    fun setLocalNetworkAccess(access: LocalNetworkAccess) {
+        if (_uiState.value.localNetworkAccess == access) return
+        val wasGranted = hasNetworkAccess()
+        _uiState.update { it.copy(localNetworkAccess = access, isPairing = false) }
+        if (hasNetworkAccess()) {
+            viewModelScope.launch { connectSavedDesktop(); updateDiscovery() }
+        } else {
+            pairingJob?.cancel()
+            reconciliationJob?.cancel()
+            discovery.stop()
+            discoverySession = false
+            discoveryEndpoint = null
+            mqttSession.disconnect()
+            _uiState.update { it.copy(isMqttConnected = false) }
+            if (wasGranted) onLocalNetworkAccessRevoked()
+        }
+    }
+
+    private fun hasNetworkAccess() = _uiState.value.localNetworkAccess == LocalNetworkAccess.Granted
+
+    private suspend fun connectSavedDesktop() {
+        if (!hasNetworkAccess() || isForegroundSyncRunning()) return
+        val desktop = _uiState.value.desktop ?: return
+        val host = desktop.host ?: return
+        val port = desktop.port ?: return
+        val mobileId = pairing.mobileId()
+        if (!hasNetworkAccess()) return
+        discoverySession = false
+        discoveryEndpoint = null
+        mqttSession.connect(desktop, PairingEndpoint(host, port), mobileId, reconnect = false)
+    }
 
     fun onSyncScreenVisible() {
         syncScreenVisible = true
@@ -196,7 +231,7 @@ class SyncViewModel(
 
     private fun updateDiscovery() {
         val desktop = _uiState.value.desktop
-        if (syncScreenVisible && desktop != null && !_uiState.value.isMqttConnected && _uiState.value.librarySync !is AndroidSyncState.Running) {
+        if (hasNetworkAccess() && syncScreenVisible && desktop != null && !_uiState.value.isMqttConnected && _uiState.value.librarySync !is AndroidSyncState.Running) {
             discovery.start(desktop)
         } else {
             discovery.stop()
@@ -214,11 +249,13 @@ class SyncViewModel(
         private val lastSyncedAt: Flow<Long?> = flowOf(null),
         private val libraryAnalysis: Flow<LibraryAnalysisProgress> = flowOf(LibraryAnalysisProgress()),
         private val libraryAnalysisEnabled: Flow<Boolean> = flowOf(false),
+        private val initialLocalNetworkAccess: LocalNetworkAccess = LocalNetworkAccess.Granted,
+        private val onLocalNetworkAccessRevoked: () -> Unit = {},
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             check(modelClass.isAssignableFrom(SyncViewModel::class.java))
-            return SyncViewModel(pairing, mqttSession, discovery, onSyncRequest, onPlaylistReconciliationRequest, onBeforeUnpair, lastSyncedAt = lastSyncedAt, libraryAnalysis = libraryAnalysis, libraryAnalysisEnabled = libraryAnalysisEnabled) as T
+            return SyncViewModel(pairing, mqttSession, discovery, onSyncRequest, onPlaylistReconciliationRequest, onBeforeUnpair, lastSyncedAt = lastSyncedAt, libraryAnalysis = libraryAnalysis, libraryAnalysisEnabled = libraryAnalysisEnabled, initialLocalNetworkAccess = initialLocalNetworkAccess, onLocalNetworkAccessRevoked = onLocalNetworkAccessRevoked) as T
         }
     }
 }

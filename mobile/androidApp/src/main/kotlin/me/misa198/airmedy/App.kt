@@ -272,7 +272,7 @@ internal fun App(
             else -> stringResource(currentPage.titleRes(uiState.selectedDestination))
         }
         val showBack = currentPage != AppStackPage.Root
-        val showSyncAddAction = currentPage == AppStackPage.SettingsSync && settings.syncState.desktop == null && !settings.syncState.isPairing
+        val showSyncAddAction = currentPage == AppStackPage.SettingsSync && settings.syncState.localNetworkAccess == LocalNetworkAccess.Granted && settings.syncState.desktop == null && !settings.syncState.isPairing
         val showLibrarySortAction = currentPage == AppStackPage.LibraryTracks ||
             currentPage == AppStackPage.LibraryArtists || currentPage == AppStackPage.LibraryAlbums ||
             currentPage == AppStackPage.LibraryGenres || currentPage == AppStackPage.LibraryComposers
