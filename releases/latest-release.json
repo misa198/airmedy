@@ -1,4 +1,8 @@
 {
-  "desktop": { "tag": "v1.3.3" },
-  "android": { "tag": "mobile-v1.2.1" }
+  "desktop": {
+    "tag": "v1.3.3"
+  },
+  "android": {
+    "tag": "mobile-v1.3.0"
+  }
 }
