@@ -8,6 +8,7 @@ on:
     branches:
       - master
     paths-ignore:
+      - 'releases/**'
       - 'mobile/**'
       - 'docs/**'
       - 'catalog/**'
@@ -19,6 +20,7 @@ on:
     branches:
       - master
     paths-ignore:
+      - 'releases/**'
       - 'mobile/**'
       - 'docs/**'
       - 'catalog/**'
