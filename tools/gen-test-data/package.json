@@ -8,6 +8,6 @@
     "generate": "node generate-mp3.js"
   },
   "dependencies": {
-    "node-id3": "^0.2.6"
+    "node-id3": "0.2.6"
   }
 }
