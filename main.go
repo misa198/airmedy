@@ -218,6 +218,9 @@ func main() {
 			Theme:       winTheme(settings.Theme),
 			CustomTheme: winCustomTheme(settings.Theme),
 		},
+		Linux: application.LinuxWindow{
+			Menu: application.NewMenu(),
+		},
 		BackgroundColour: bgRGBA(settings.Theme),
 		URL:              "/",
 	})
@@ -269,7 +272,7 @@ func main() {
 			Hidden:              true,
 			AlwaysOnTop:         false,
 			DisableResize:       false,
-			Frameless:           runtime.GOOS == "windows",
+			Frameless:           runtime.GOOS == "windows" || runtime.GOOS == "linux",
 			MinimiseButtonState: application.ButtonHidden,
 			MaximiseButtonState: application.ButtonHidden,
 			CloseButtonState:    application.ButtonHidden,
@@ -282,6 +285,9 @@ func main() {
 			Windows: application.WindowsWindow{
 				Theme:       winTheme(settings.Theme),
 				CustomTheme: winCustomTheme(settings.Theme),
+			},
+			Linux: application.LinuxWindow{
+				Menu: application.NewMenu(),
 			},
 			BackgroundColour: bgRGBA(settings.Theme),
 			URL:              "/?mode=mini#/mini-player",

@@ -72,6 +72,7 @@ describe('MainLayout title bar', () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.findComponent(WindowTitleBar).exists()).toBe(true)
+    expect(wrapper.findComponent(WindowTitleBar).classes()).toContain('z-[1002]')
     expect(wrapper.find('.pointer-events-none').exists()).toBe(false)
 
     await wrapper.findComponent(WindowTitleBar).trigger('dblclick')
@@ -79,6 +80,10 @@ describe('MainLayout title bar', () => {
 
     await wrapper.find('main').trigger('dblclick', { clientY: 35 })
     expect(deviceStore.toggleMaximize).toHaveBeenCalledOnce()
+
+    usePlayerStore().playerMode = 'fullscreen'
+    await wrapper.vm.$nextTick()
+    expect(wrapper.findComponent(WindowTitleBar).exists()).toBe(true)
 
     deviceStore.isWindowFullscreen = true
     await wrapper.vm.$nextTick()
@@ -94,7 +99,7 @@ describe('MainLayout title bar', () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.findComponent(WindowTitleBar).exists()).toBe(false)
-    expect(wrapper.find('.pointer-events-none').exists()).toBe(true)
+    expect(wrapper.get('.pointer-events-none').classes()).toContain('z-[1002]')
 
     await wrapper.trigger('dblclick', { clientY: 20 })
     expect(deviceStore.toggleMaximize).toHaveBeenCalledOnce()

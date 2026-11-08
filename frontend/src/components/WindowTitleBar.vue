@@ -21,7 +21,7 @@ updateNavigation()
 const removeAfterEach = router.afterEach(updateNavigation)
 onUnmounted(removeAfterEach)
 
-const windowControlClass = 'flex h-full w-10 items-center justify-center text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-foreground transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]'
+const windowControlClass = 'flex h-full w-10 items-center justify-center text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-foreground transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] outline-none'
 const shortcuts = [
   { path: '/settings/mobile-devices', label: 'settings.categories.mobile_devices', icon: Smartphone },
   { path: '/settings/library', label: 'settings.categories.library', icon: Folder },
@@ -47,12 +47,12 @@ async function close() {
 
 <template>
   <div
-    class="flex h-8 w-full shrink-0 select-none justify-end bg-background"
+    class="relative z-[1002] flex h-8 w-full shrink-0 select-none justify-end bg-background"
     style="--wails-draggable: drag"
     @dblclick.stop="deviceStore.toggleMaximize"
   >
     <span
-      class="ml-5 size-6 shrink-0 self-center bg-foreground"
+      class="ml-5 size-5 shrink-0 self-center bg-foreground"
       style="-webkit-mask: url(/airmedy.svg) center / contain no-repeat; mask: url(/airmedy.svg) center / contain no-repeat"
       aria-hidden="true"
     />

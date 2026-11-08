@@ -9,7 +9,6 @@ export function useCustomTitleBar() {
   return computed(() =>
     (deviceStore.isWindows || deviceStore.isLinux)
     && !deviceStore.isWindowFullscreen
-    && playerStore.playerMode !== 'fullscreen'
     && playerStore.playerMode !== 'mini',
   )
 }

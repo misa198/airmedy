@@ -33,8 +33,9 @@ function onClickClose() {
 <template>
   <Teleport to="body">
     <Transition name="modal-fade">
-      <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center transform-gpu will-change-[opacity]" @pointerdown.self="onPointerDown" @click.self="onClickClose">
+      <div v-if="open" class="modal-root fixed inset-0 z-[1004] flex items-center justify-center transform-gpu will-change-[opacity]" @pointerdown.self="onPointerDown" @click.self="onClickClose">
         <div class="backdrop absolute inset-0 bg-background/60 backdrop-blur-sm transform-gpu" @pointerdown="onBackdropPointerDown" @click="onClickClose" />
+        <div data-test="modal-drag-region" class="absolute inset-x-0 top-0 h-10" style="-webkit-app-region: drag; --wails-draggable: drag" />
         <div
           class="modal-content relative z-10 rounded-3xl bg-glass-modal backdrop-blur-3xl ring-1 ring-border-glass shadow-2xl transform-gpu isolate max-h-[85vh] overflow-hidden"
           :class="widthClass || 'w-72'"

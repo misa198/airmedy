@@ -20,6 +20,9 @@ it.each(['windows', 'darwin', 'linux'])('emits only the fonts and licenses for %
   const fonts = assets.filter(asset => asset.fileName.endsWith('.woff2'))
   const css = assets.filter(asset => asset.fileName.endsWith('.css')).map(asset => String(asset.source)).join('\n')
   const license = assets.find(asset => asset.fileName === 'licenses/inter/OFL.txt')
+  expect(css).toContain('html:not(.platform-linux)')
+  expect(css).toContain('html.platform-linux .modal-root')
+  expect(css).toContain('backdrop-filter:none')
   if (target === 'darwin') {
     expect(fonts).toHaveLength(0)
     expect(license).toBeUndefined()

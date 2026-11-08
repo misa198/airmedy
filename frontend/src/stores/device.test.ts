@@ -42,6 +42,7 @@ describe('useDeviceStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    document.documentElement.classList.remove('platform-linux')
   })
 
   it('starts with default values', () => {
@@ -77,6 +78,7 @@ describe('useDeviceStore', () => {
     expect(store.isMac).toBe(false)
     expect(store.isWindows).toBe(false)
     expect(store.isLinux).toBe(true)
+    expect(document.documentElement.classList).toContain('platform-linux')
   })
 
   it('toggles the native window fullscreen state', async () => {

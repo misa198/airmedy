@@ -43,7 +43,7 @@ describe('WindowTitleBar', () => {
     expect(wrapper.element.style.getPropertyValue('--wails-draggable')).toBe('drag')
     const logo = wrapper.get('span[aria-hidden="true"]')
     expect(wrapper.element.firstElementChild).toBe(logo.element)
-    expect(logo.classes()).toEqual(expect.arrayContaining(['bg-foreground', 'size-6', 'self-center']))
+    expect(logo.classes()).toEqual(expect.arrayContaining(['bg-foreground', 'size-5', 'self-center']))
     expect(logo.attributes('style')).toContain('mask: url(/airmedy.svg) center / contain no-repeat')
     expect(wrapper.get('div.flex.h-full').attributes('style')).toContain('--wails-draggable: no-drag')
     const buttons = windowButtons(wrapper)

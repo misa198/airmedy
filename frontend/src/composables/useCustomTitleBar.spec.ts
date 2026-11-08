@@ -49,12 +49,14 @@ describe('useCustomTitleBar', () => {
     deviceStore.isWindowFullscreen = false
     expect(hasCustomTitleBar.value).toBe(true)
 
-    for (const mode of ['fullscreen', 'mini'] as const) {
-      playerStore.playerMode = mode
-      expect(hasCustomTitleBar.value).toBe(false)
-      playerStore.playerMode = 'sticky'
-      expect(hasCustomTitleBar.value).toBe(true)
-    }
+    playerStore.playerMode = 'fullscreen'
+    expect(hasCustomTitleBar.value).toBe(true)
+
+    playerStore.playerMode = 'mini'
+    expect(hasCustomTitleBar.value).toBe(false)
+
+    playerStore.playerMode = 'sticky'
+    expect(hasCustomTitleBar.value).toBe(true)
 
     deviceStore[platform] = false
     expect(hasCustomTitleBar.value).toBe(false)

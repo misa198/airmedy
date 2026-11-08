@@ -103,7 +103,7 @@ onUnmounted(() => {
     -->
     <div
       v-if="deviceStore.isMac && !deviceStore.isWindowFullscreen && playerStore.playerMode !== 'fullscreen' && playerStore.playerMode !== 'mini'"
-      class="fixed top-0 left-0 right-0 h-10 z-[60] select-none pointer-events-none"
+      class="fixed top-0 left-0 right-0 h-10 z-[1002] select-none pointer-events-none"
       style="-webkit-app-region: drag; --wails-draggable: drag"
     />
 
@@ -113,7 +113,9 @@ onUnmounted(() => {
       <aside :style="{ width: playerStore.sidebarWidth + 'px' }"
         class="h-full overflow-hidden flex-shrink-0 select-none">
         <Sidebar
-          :class="deviceStore.isMac && !deviceStore.isWindowFullscreen ? 'pt-10' : 'pt-4'" />
+          :class="deviceStore.isMac && !deviceStore.isWindowFullscreen 
+          ? 'pt-10' 
+          : hasCustomTitleBar ? 'pt-0' : 'pt-4'" />
       </aside>
 
       <!-- Resizer Handle -->

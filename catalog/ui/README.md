@@ -22,10 +22,12 @@ Window controls use the default cursor and a theme foreground hover overlay;
 Close instead uses a red background and white icon on hover.
 All buttons are excluded from dragging and double-click maximization; their accessible labels and tooltips
 are localized. Close uses the existing close-to-tray hook, so playback continues.
-The layout hides it in native fullscreen and fullscreen/mini
-player modes, but keeps it when maximized. macOS retains its existing 40px drag
-overlay and native inset title bar. Separate mini-player and tray-popup windows
-bypass this layout. Component and layout behavior are covered by
+The layout hides it in native fullscreen and mini-player mode, but keeps it
+mounted behind the fullscreen player overlay and when maximized. The fullscreen
+overlay owns its visible Wails drag region, so the covered title bar does not
+need to receive pointer input. macOS retains its existing 40px drag overlay and
+native inset title bar outside fullscreen player mode. Separate mini-player and
+tray-popup windows bypass this layout. Component and layout behavior are covered by
 `WindowTitleBar.spec.ts` and `MainLayout.spec.ts`.
 
 ## Mobile library sync
