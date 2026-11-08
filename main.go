@@ -25,7 +25,6 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
-	"github.com/wailsapp/wails/v3/pkg/icons"
 	"go.uber.org/fx"
 )
 
@@ -360,12 +359,11 @@ func main() {
 
 	var trayManager *wails.TrayManager
 	settings, err = settingsService.GetSettings(context.Background())
-	if err == nil && settings.ShowTrayIcon {
+	if err == nil && wails.UseTrayPill(runtime.GOOS, settings) {
+		wails.SetupTrayPill(wailsApp, playerService.GetService(), artworkCache, i18nService, windowService, settings.TrayTheme, settings.TrayMode, macTrayIcon)
+	} else if err == nil && settings.ShowTrayIcon {
 		systemTray := wailsApp.SystemTray.New()
 		switch runtime.GOOS {
-		case "darwin":
-			systemTray.SetTemplateIcon(icons.SystrayMacTemplate)
-			systemTray.SetIcon(macTrayIcon)
 		case "linux":
 			systemTray.SetIcon(linuxTrayIcon)
 		case "windows":

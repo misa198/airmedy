@@ -125,8 +125,8 @@ On macOS, `infra/notification` uses `UNUserNotificationCenter`; other platforms 
 When `AppSettings.AutoAdvanceNotificationsEnabled` is true (default), the service sends a silent
 notification only after an automatic advance to a different track: standard queue advance,
 gapless/preloaded advance, or crossfade start. Manual navigation and repeat-one do not notify.
-The title is the track title (falling back to filename), the body is `artist - album`, and cached
-artwork is attached when present. The macOS authorization request happens on the first attempted
+The title is the track title (falling back to filename, then a localized unknown title); the body is
+`artist • album` with localized fallbacks for missing artist or album, and cached artwork is attached when present. The macOS authorization request happens on the first attempted
 notification; a denial never affects playback.
 Clicking the notification invokes `TrackTransitionNotificationActivator`, which calls
 `WindowService.ShowMain()` to bring the main window to front (or open it if closed).

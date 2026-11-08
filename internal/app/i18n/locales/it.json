@@ -24,6 +24,9 @@
   },
   "tray": {
     "no_track": "Nessun brano in riproduzione",
+    "unknown_track": "Brano sconosciuto",
+    "unknown_artist": "Artista sconosciuto",
+    "unknown_album": "Album sconosciuto",
     "next_none": "Successivo: Nessuno",
     "next": "Successivo: %s",
     "play": "Riproduci",

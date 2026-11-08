@@ -19,6 +19,9 @@ func NewSettingsService(svc *appsettings.SettingsService, playerService *player.
 	svc.AddChangeListener(func(settings *domain.AppSettings) {
 		if app := application.Get(); app != nil && app.Event != nil {
 			app.Event.Emit("settings:player-favorite-button", settings.ShowPlayerFavoriteButton)
+			app.Event.Emit("settings:tray-theme", settings.TrayTheme)
+			app.Event.Emit("settings:theme", settings.Theme)
+			app.Event.Emit("settings:tray-background", settings.TrayBackgroundMode)
 		}
 	})
 	return &SettingsService{svc: svc, playerService: playerService}

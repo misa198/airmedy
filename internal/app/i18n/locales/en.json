@@ -24,6 +24,9 @@
   },
   "tray": {
     "no_track": "No track playing",
+    "unknown_track": "Unknown track",
+    "unknown_artist": "Unknown Artist",
+    "unknown_album": "Unknown Album",
     "next_none": "Next: None",
     "next": "Next: %s",
     "play": "Play",

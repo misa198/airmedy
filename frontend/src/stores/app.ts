@@ -13,6 +13,8 @@ import { DEFAULT_SYNC_INTERVAL, isSyncInterval, type SyncInterval } from '@/lib/
 import { DEFAULT_MAX_QUEUE_SIZE, isMaxQueueSize, type MaxQueueSize } from '@/lib/queue'
 import { DEFAULT_PRIMARY_COLOR, hexToRgbChannels, normalizeHexColor, primaryForeground } from '@/lib/color'
 
+export type TrayBackgroundMode = 'living' | 'solid' | 'monochrome'
+
 export const NORMALIZATION_TARGET_LUFS_MIN = -24
 export const NORMALIZATION_TARGET_LUFS_MAX = -6
 
@@ -33,6 +35,8 @@ export const useAppStore = defineStore('app', () => {
   const language = ref('en')
   const startAtLogin = ref(false)
   const showTrayIcon = ref(true)
+  const trayMode = ref<'menu' | 'pill'>('menu')
+  const trayTheme = ref<'system' | 'light' | 'dark'>('system')
   const autoCheckUpdate = ref(true)
   const lastfmUsername = ref('')
   const eqEnabled = ref(true)
@@ -72,6 +76,8 @@ export const useAppStore = defineStore('app', () => {
   const highContrastLyrics = ref(true)
   const lyricsGlow = ref(false)
   const livingArtworkBackground = ref(true)
+  const miniLivingArtworkBackground = ref(false)
+  const trayBackgroundMode = ref<TrayBackgroundMode>('solid')
   const remoteServerEnabled = ref(false)
   const remoteServerPort = ref(0)
   const remoteServerPassword = ref('')
@@ -135,6 +141,8 @@ export const useAppStore = defineStore('app', () => {
         if (settings.language) language.value = settings.language
         startAtLogin.value = !!settings.start_at_login
         showTrayIcon.value = settings.show_tray_icon !== false
+        trayMode.value = settings.tray_mode === 'pill' ? 'pill' : 'menu'
+        trayTheme.value = settings.tray_theme === 'light' || settings.tray_theme === 'dark' ? settings.tray_theme : 'system'
         autoCheckUpdate.value = !!settings.auto_check_update
         lastfmUsername.value = settings.lastfm_username || ''
         eqEnabled.value = settings.eq_enabled !== false
@@ -165,6 +173,8 @@ export const useAppStore = defineStore('app', () => {
         highContrastLyrics.value = settings.high_contrast_lyrics !== false
         lyricsGlow.value = settings.lyrics_glow ?? false
         livingArtworkBackground.value = settings.living_artwork_background !== false
+        miniLivingArtworkBackground.value = settings.mini_living_artwork_background === true
+        trayBackgroundMode.value = settings.tray_background_mode === 'living' || settings.tray_background_mode === 'monochrome' ? settings.tray_background_mode : 'solid'
         libraryAnalysisEnabled.value = !!settings.library_analysis_enabled
         normalizationEnabled.value = !!settings.normalization_enabled
         // DB default is 'track'; the mode select only offers Track/Album (never 'off').
@@ -252,6 +262,8 @@ export const useAppStore = defineStore('app', () => {
         language: language.value,
         start_at_login: startAtLogin.value,
         show_tray_icon: showTrayIcon.value,
+        tray_mode: trayMode.value,
+        tray_theme: trayTheme.value,
         auto_check_update: autoCheckUpdate.value,
         lastfm_username: lastfmUsername.value,
         eq_enabled: eqEnabled.value,
@@ -278,6 +290,8 @@ export const useAppStore = defineStore('app', () => {
         high_contrast_lyrics: highContrastLyrics.value,
         lyrics_glow: lyricsGlow.value,
         living_artwork_background: livingArtworkBackground.value,
+        mini_living_artwork_background: miniLivingArtworkBackground.value,
+        tray_background_mode: trayBackgroundMode.value,
         library_analysis_enabled: libraryAnalysisEnabled.value,
         library_analysis_worker_count: libraryAnalysisWorkerCount.value,
         normalization_enabled: normalizationEnabled.value,
@@ -347,6 +361,16 @@ export const useAppStore = defineStore('app', () => {
 
   const updateShowTrayIcon = async (enabled: boolean) => {
     showTrayIcon.value = enabled
+    await saveSettings()
+  }
+
+  const updateTrayTheme = async (value: 'system' | 'light' | 'dark') => {
+    trayTheme.value = value
+    await saveSettings()
+  }
+
+  const updateTrayMode = async (mode: 'menu' | 'pill') => {
+    trayMode.value = mode
     await saveSettings()
   }
 
@@ -471,6 +495,16 @@ export const useAppStore = defineStore('app', () => {
     await saveSettings()
   }
 
+  const updateMiniLivingArtworkBackground = async (enabled: boolean) => {
+    miniLivingArtworkBackground.value = enabled
+    await saveSettings()
+  }
+
+  const updateTrayBackgroundMode = async (mode: TrayBackgroundMode) => {
+    trayBackgroundMode.value = mode
+    await saveSettings()
+  }
+
   const updateLibraryAnalysisEnabled = async (enabled: boolean) => {
     libraryAnalysisEnabled.value = enabled
     // Mirrors the backend cross-toggle (AnalysisService.SetEnabled forces
@@ -571,6 +605,23 @@ export const useAppStore = defineStore('app', () => {
     language.value = event.data
   })
 
+  const _offTheme = Events.On('settings:theme', (event: Events.WailsEvent) => {
+    const value = event.data
+    if ((value === 'system' || value === 'light' || value === 'dark' || value === 'black') && theme.value !== value) {
+      theme.value = value
+      applyTheme(value)
+    }
+  })
+
+  const _offTrayBackground = Events.On('settings:tray-background', (event: Events.WailsEvent) => {
+    const value = event.data
+    if (value === 'living' || value === 'solid' || value === 'monochrome') trayBackgroundMode.value = value
+  })
+
+  const _offTrayTheme = Events.On('settings:tray-theme', (event: Events.WailsEvent) => {
+    trayTheme.value = event.data === 'light' || event.data === 'dark' ? event.data : 'system'
+  })
+
   const _offPlayerFavoriteButton = Events.On('settings:player-favorite-button', (event: Events.WailsEvent) => {
     showPlayerFavoriteButton.value = event.data === true
   })
@@ -583,6 +634,9 @@ export const useAppStore = defineStore('app', () => {
     _offRomanizationAvailability()
     _offLanguage()
     _offPlayerFavoriteButton()
+    _offTrayTheme()
+    _offTheme()
+    _offTrayBackground()
   }
 
   return {
@@ -591,6 +645,8 @@ export const useAppStore = defineStore('app', () => {
     language,
     startAtLogin,
     showTrayIcon,
+    trayMode,
+    trayTheme,
     autoCheckUpdate,
     lastfmUsername,
     eqEnabled,
@@ -615,6 +671,8 @@ export const useAppStore = defineStore('app', () => {
     highContrastLyrics,
     lyricsGlow,
     livingArtworkBackground,
+    miniLivingArtworkBackground,
+    trayBackgroundMode,
     libraryAnalysisEnabled,
     libraryAnalysisWorkerCount,
     libraryAnalysisMaxWorkerCount,
@@ -638,6 +696,8 @@ export const useAppStore = defineStore('app', () => {
     updateLanguage,
     updateStartAtLogin,
     updateShowTrayIcon,
+    updateTrayMode,
+    updateTrayTheme,
     updateAutoCheckUpdate,
     updateEQEnabled,
     updateLastFmUsername,
@@ -662,6 +722,8 @@ export const useAppStore = defineStore('app', () => {
     updateHighContrastLyrics,
     updateLyricsGlow,
     updateLivingArtworkBackground,
+    updateMiniLivingArtworkBackground,
+    updateTrayBackgroundMode,
     updateLibraryAnalysisEnabled,
     updateLibraryAnalysisWorkerCount,
     updateNormalizationEnabled,

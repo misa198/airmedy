@@ -24,6 +24,9 @@
   },
   "tray": {
     "no_track": "Kein Titel wird abgespielt",
+    "unknown_track": "Unbekannter Titel",
+    "unknown_artist": "Unbekannter Künstler",
+    "unknown_album": "Unbekanntes Album",
     "next_none": "Nächster: Keiner",
     "next": "Nächster: %s",
     "play": "Wiedergabe",

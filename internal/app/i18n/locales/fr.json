@@ -24,6 +24,9 @@
   },
   "tray": {
     "no_track": "Aucun morceau en lecture",
+    "unknown_track": "Titre inconnu",
+    "unknown_artist": "Artiste inconnu",
+    "unknown_album": "Album inconnu",
     "next_none": "Suivant : Aucun",
     "next": "Suivant : %s",
     "play": "Lecture",

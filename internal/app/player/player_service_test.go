@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"airmedy/internal/app/i18n"
 	"airmedy/internal/app/normalization"
 	"airmedy/internal/domain"
 )
@@ -240,6 +241,7 @@ func newTestService(t *testing.T, player domain.AudioPlayer) (*PlayerService, *i
 		player:                          player,
 		queue:                           queue,
 		logger:                          slog.Default(),
+		translations:                    i18n.NewService(slog.Default()),
 		artworkCache:                    &fakeArtworkCache{},
 		trackRepo:                       &fakeTrackRepo{},
 		stateRepo:                       &fakePlayerStateRepo{},
@@ -255,6 +257,29 @@ func newTestService(t *testing.T, player domain.AudioPlayer) (*PlayerService, *i
 	s.emitStatusHook = func() { atomic.AddInt64(&emitCount, 1) }
 
 	return s, &emitCount
+}
+
+func TestTrackNotificationFallbacks(t *testing.T) {
+	s, _ := newTestService(t, &fakePlayer{})
+	notifier := &fakeTrackTransitionNotifier{}
+	s.notifier = notifier
+	track := &domain.TrackDTO{Track: domain.Track{ID: "next", Path: "/music/Song.mp3", RawArtistNames: "  "}, Artists: []*domain.Artist{nil, {Name: " "}}, Album: &domain.Album{Title: " "}}
+	s.notifyTrackAutoAdvanced(track, "previous")
+	if got, want := notifier.calls[0], (notificationCall{title: "Song", body: "Unknown Artist • Unknown Album"}); got != want {
+		t.Fatalf("notification = %#v, want %#v", got, want)
+	}
+	s.translations.SetLocale("vi")
+	track.Path = ""
+	s.notifyTrackAutoAdvanced(track, "previous")
+	if got, want := notifier.calls[1], (notificationCall{title: "Bài hát không rõ tên", body: "Nghệ sĩ không xác định • Album không xác định"}); got != want {
+		t.Fatalf("localized notification = %#v, want %#v", got, want)
+	}
+	for _, locale := range []string{"de", "en", "es", "fr", "it", "ja", "ko", "pt", "ru", "th", "vi", "zh"} {
+		s.translations.SetLocale(locale)
+		if album := s.translations.T("tray.unknown_album"); album == "" || album == "tray.unknown_album" || (locale != "en" && album == "Unknown Album") {
+			t.Errorf("missing album translation for %s: %q", locale, album)
+		}
+	}
 }
 
 func TestPositionTicker_StartsOnPlay(t *testing.T) {
@@ -919,7 +944,7 @@ func TestHandleTrackEnd_NotifiesForAutomaticAdvanceOnly(t *testing.T) {
 	if len(notifier.calls) != 1 {
 		t.Fatalf("expected one automatic-advance notification, got %#v", notifier.calls)
 	}
-	if got, want := notifier.calls[0], (notificationCall{title: "Second", body: "Artist A, Artist B - Album A", artworkPath: "artwork-key"}); got != want {
+	if got, want := notifier.calls[0], (notificationCall{title: "Second", body: "Artist A, Artist B • Album A", artworkPath: "artwork-key"}); got != want {
 		t.Fatalf("notification payload = %#v, want %#v", got, want)
 	}
 
