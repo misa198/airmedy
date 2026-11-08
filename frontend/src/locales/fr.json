@@ -1,5 +1,7 @@
 {
   "common": {
+    "back": "Précédent",
+    "forward": "Suivant",
     "mobile_pairing_broadcast": {
       "title": "Diffuser le signal d’association",
       "description": "Diffuse un signal pendant 30 secondes afin que les appareils prêts puissent trouver et se connecter à cet ordinateur.",
@@ -16,6 +18,9 @@
     "error": "Erreur",
     "cancel": "Annuler",
     "ok": "OK",
+    "minimize": "Réduire",
+    "maximize": "Agrandir",
+    "restore": "Restaurer",
     "close": "Fermer",
     "change": "Modifier",
     "save": "Enregistrer",

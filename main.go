@@ -207,6 +207,7 @@ func main() {
 		Height:             800,
 		MinWidth:           1200,
 		MinHeight:          768,
+		Frameless:          runtime.GOOS == "windows" || runtime.GOOS == "linux",
 		UseApplicationMenu: runtime.GOOS == "darwin",
 		Mac: application.MacWindow{
 			InvisibleTitleBarHeight: 50,

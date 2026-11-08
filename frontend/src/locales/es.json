@@ -1,5 +1,7 @@
 {
   "common": {
+    "back": "Atrás",
+    "forward": "Adelante",
     "mobile_pairing_broadcast": {
       "title": "Emitir señal de emparejamiento",
       "description": "Emite una señal durante 30 segundos para que los dispositivos listos puedan encontrar y conectarse a este escritorio.",
@@ -16,6 +18,9 @@
     "error": "Error",
     "cancel": "Cancelar",
     "ok": "OK",
+    "minimize": "Minimizar",
+    "maximize": "Maximizar",
+    "restore": "Restaurar",
     "close": "Cerrar",
     "change": "Cambiar",
     "save": "Guardar",

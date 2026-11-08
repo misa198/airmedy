@@ -1,5 +1,7 @@
 {
   "common": {
+    "back": "Zurück",
+    "forward": "Vorwärts",
     "mobile_pairing_broadcast": {
       "title": "Kopplungssignal senden",
       "description": "Sendet 30 Sekunden lang ein Signal, damit bereite Geräte diesen Desktop finden und verbinden können.",
@@ -16,6 +18,9 @@
     "error": "Fehler",
     "cancel": "Abbrechen",
     "ok": "OK",
+    "minimize": "Minimieren",
+    "maximize": "Maximieren",
+    "restore": "Wiederherstellen",
     "close": "Schließen",
     "change": "Ändern",
     "save": "Speichern",

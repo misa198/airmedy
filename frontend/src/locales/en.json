@@ -1,5 +1,7 @@
 {
   "common": {
+    "back": "Back",
+    "forward": "Forward",
     "mobile_pairing_broadcast": {
       "title": "Broadcast pairing signal",
       "description": "Broadcast a signal for 30 seconds so ready devices can find and connect to this desktop.",
@@ -16,6 +18,9 @@
     "error": "Error",
     "cancel": "Cancel",
     "ok": "OK",
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "restore": "Restore",
     "close": "Close",
     "change": "Change",
     "save": "Save",

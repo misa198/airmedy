@@ -1,5 +1,7 @@
 {
   "common": {
+    "back": "戻る",
+    "forward": "進む",
     "mobile_pairing_broadcast": {
       "title": "ペアリング信号を送信",
       "description": "30 秒間信号を送信して、準備ができたデバイスがこのデスクトップを見つけて接続できるようにします。",
@@ -16,6 +18,9 @@
     "error": "エラー",
     "cancel": "キャンセル",
     "ok": "OK",
+    "minimize": "最小化",
+    "maximize": "最大化",
+    "restore": "元に戻す",
     "close": "閉じる",
     "change": "変更",
     "save": "保存",

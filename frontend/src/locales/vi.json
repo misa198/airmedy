@@ -1,5 +1,7 @@
 {
   "common": {
+    "back": "Quay lại",
+    "forward": "Tiến tới",
     "mobile_pairing_broadcast": {
       "title": "Phát tín hiệu ghép nối",
       "description": "Phát tín hiệu trong 30 giây để các thiết bị đang sẵn sàng có thể tìm thấy và kết nối với máy tính này.",
@@ -16,6 +18,9 @@
     "error": "Lỗi",
     "cancel": "Hủy",
     "ok": "OK",
+    "minimize": "Thu nhỏ",
+    "maximize": "Phóng to",
+    "restore": "Khôi phục kích thước",
     "close": "Đóng",
     "change": "Thay đổi",
     "save": "Lưu",

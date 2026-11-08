@@ -6,6 +6,28 @@ The macOS tray pill is rendered into the native status button image so AppKit ca
 
 The frontend is a Vue 3 SPA built with Vite 5, TailwindCSS v4, and Pinia. It uses a glass-morphism design system with dynamic artwork-based color theming. All views are lazy-loaded except Home. Track lists use virtual scrolling for performance.
 
+## Main window title bar
+
+On Windows and Linux, the main window is frameless. `MainLayout` places a
+32px `WindowTitleBar` above the content, using the same `bg-background` theme token
+as the window. The component owns the Wails drag region and double-click
+maximize/restore action through the device store. Back/Forward buttons beside the
+Airmedy logo navigate Vue Router history; unavailable directions are disabled and
+use reduced foreground opacity. Their availability follows browser history state
+on mount and after navigation; the router hook is removed on unmount. Right-aligned Lucide icon
+buttons minimize, maximize/restore, and close the window. A shortcut row to their left opens
+Mobile settings, Library settings, and general Settings, in that order.
+Shortcuts use a pointer cursor and keep their background unchanged on hover.
+Window controls use the default cursor and a theme foreground hover overlay;
+Close instead uses a red background and white icon on hover.
+All buttons are excluded from dragging and double-click maximization; their accessible labels and tooltips
+are localized. Close uses the existing close-to-tray hook, so playback continues.
+The layout hides it in native fullscreen and fullscreen/mini
+player modes, but keeps it when maximized. macOS retains its existing 40px drag
+overlay and native inset title bar. Separate mini-player and tray-popup windows
+bypass this layout. Component and layout behavior are covered by
+`WindowTitleBar.spec.ts` and `MainLayout.spec.ts`.
+
 ## Mobile library sync
 
 An Online device in Settings → Mobile opens `/settings/mobile-devices/:deviceId/sync`.

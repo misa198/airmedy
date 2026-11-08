@@ -1,5 +1,7 @@
 {
   "common": {
+    "back": "Indietro",
+    "forward": "Avanti",
     "mobile_pairing_broadcast": {
       "title": "Trasmetti segnale di associazione",
       "description": "Trasmette un segnale per 30 secondi affinché i dispositivi pronti possano trovare e connettersi a questo computer.",
@@ -16,6 +18,9 @@
     "error": "Errore",
     "cancel": "Annulla",
     "ok": "OK",
+    "minimize": "Riduci a icona",
+    "maximize": "Ingrandisci",
+    "restore": "Ripristina",
     "close": "Chiudi",
     "change": "Modifica",
     "save": "Salva",

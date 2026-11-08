@@ -3,6 +3,8 @@
 @config "../../tailwind.config.js";
 
 @theme {
+  --color-window-close: #c42b1c;
+  --color-window-close-foreground: #ffffff;
   --color-status-online: var(--status-online);
   --color-disabled-overlay: var(--bg-disabled-overlay);
   --color-mini-player-pill-background: var(--mini-player-pill-background);

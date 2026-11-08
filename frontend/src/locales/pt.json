@@ -1,5 +1,7 @@
 {
   "common": {
+    "back": "Voltar",
+    "forward": "Avançar",
     "mobile_pairing_broadcast": {
       "title": "Transmitir sinal de emparelhamento",
       "description": "Transmite um sinal por 30 segundos para que dispositivos prontos possam encontrar e conectar-se a este computador.",
@@ -16,6 +18,9 @@
     "error": "Erro",
     "cancel": "Cancelar",
     "ok": "OK",
+    "minimize": "Minimizar",
+    "maximize": "Maximizar",
+    "restore": "Restaurar",
     "close": "Fechar",
     "change": "Alterar",
     "save": "Salvar",
