@@ -9,6 +9,7 @@ import {
   Mic2, ListMusic, Goal, Radio,
 } from '@lucide/vue'
 import LazyImg from '@/components/LazyImg.vue'
+import LivingArtworkBackground from '@/components/LivingArtworkBackground.vue'
 import { usePlayerStore } from '@/stores/player'
 import { useMoodRadioStore } from '@/stores/moodRadio'
 import { RepeatMode } from '../../bindings/airmedy/internal/domain/models'
@@ -296,7 +297,7 @@ watch(() => store.theme, (colors) => {
         <!-- Controls: shuffle, prev, play/pause, next, loop -->
         <div class="flex items-center justify-center gap-4 mt-2 mb-1">
           <PlayerControlButton class="transition-colors"
-            :class="store.shuffle ? 'text-white/80' : 'text-white/20 hover:text-white/70'" :active="store.shuffle"
+            :class="store.shuffle ? 'text-white/80' : 'text-white/20'" :active="store.shuffle"
             :show-indicator="appStore.showPlayerIndicator" dot-class="bg-white"
             @click="store.setShuffle(!store.shuffle)">
             <Shuffle class="w-3.5 h-3.5" />
@@ -314,7 +315,7 @@ watch(() => store.theme, (colors) => {
             <SkipForward class="w-4 h-4 fill-current" />
           </button>
           <PlayerControlButton class="transition-colors"
-            :class="repeatActive ? 'text-white/80' : 'text-white/20 hover:text-white/70'" :active="repeatActive"
+            :class="repeatActive ? 'text-white/80' : 'text-white/20'" :active="repeatActive"
             :show-indicator="appStore.showPlayerIndicator" dot-class="bg-white" @click="store.cycleRepeat()">
             <component :is="repeatIcon" class="w-3.5 h-3.5" />
           </PlayerControlButton>
@@ -323,10 +324,12 @@ watch(() => store.theme, (colors) => {
     </div>
 
     <section v-if="activePanel" data-test="mini-player-panel"
-      class="mini-player-panel flex-1 min-h-0 flex flex-col overflow-hidden border-t border-[color:var(--border-glass)]"
+      class="mini-player-panel relative flex-1 min-h-0 flex flex-col overflow-hidden border-t border-[color:var(--border-glass)]"
       :class="activePanel === 'lyrics' ? ['mini-player-lyrics-panel bg-[color:var(--mini-player-lyrics-background)] backdrop-blur-[30px]', { 'mini-player-lyrics-tint-ready': lyricsTintReady }] : ''"
       :style="activePanel === 'lyrics' ? lyricsPanelStyle : undefined">
-      <MiniPlayerLyrics v-if="activePanel === 'lyrics'" :lyrics="store.lyrics?.content" :loading="store.lyricsLoading"
+      <LivingArtworkBackground v-if="activePanel === 'lyrics' && appStore.miniLivingArtworkBackground"
+        :theme="store.theme" :is-playing="store.isPlaying" :artwork-crossfade="artworkCrossfade" />
+      <MiniPlayerLyrics v-if="activePanel === 'lyrics'" class="relative z-10" :lyrics="store.lyrics?.content" :loading="store.lyricsLoading"
         :current-position="store.position" :secondary="romanizationSecondary" @seek="store.seek" />
       <div v-else class="h-full min-h-0 flex flex-col">
         <div class="flex items-center justify-between shrink-0 px-3 py-2 border-b border-[color:var(--border-glass)]">

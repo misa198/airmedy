@@ -144,7 +144,24 @@ const sectorPath = computed(() => {
         :description="t('settings.playback.lyrics_glow_desc')">
         <Switch :model-value="appStore.lyricsGlow" @update:model-value="appStore.updateLyricsGlow" />
       </SettingRow>
-      <SettingRow :title="t('settings.playback.fullscreen_background')"
+      <SettingRow :title="t('settings.playback.max_queue_size')"
+        :description="t('settings.playback.max_queue_size_desc')">
+        <Select :model-value="String(appStore.maxQueueSize)"
+          @update:model-value="val => appStore.updateMaxQueueSize(Number(val) as MaxQueueSize)">
+          <SelectTrigger class="w-[120px] bg-foreground/[0.04] border-0 h-9 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="size in MAX_QUEUE_SIZE_OPTIONS" :key="size" :value="String(size)">
+              {{ size }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </SettingRow>
+    </SettingSection>
+
+    <SettingSection :icon="AudioLines" :label="t('settings.playback.player_backgrounds')">
+      <SettingRow data-test="fullscreen-background" :title="t('settings.playback.fullscreen_background')"
         :description="t('settings.playback.fullscreen_background_desc')">
         <Select :model-value="appStore.livingArtworkBackground ? 'living' : 'solid'"
           @update:model-value="mode => appStore.updateLivingArtworkBackground(mode === 'living')">
@@ -157,17 +174,16 @@ const sectorPath = computed(() => {
           </SelectContent>
         </Select>
       </SettingRow>
-      <SettingRow :title="t('settings.playback.max_queue_size')"
-        :description="t('settings.playback.max_queue_size_desc')">
-        <Select :model-value="String(appStore.maxQueueSize)"
-          @update:model-value="val => appStore.updateMaxQueueSize(Number(val) as MaxQueueSize)">
-          <SelectTrigger class="w-[120px] bg-foreground/[0.04] border-0 h-9 text-sm">
+      <SettingRow data-test="mini-background" :title="t('settings.playback.mini_background')"
+        :description="t('settings.playback.mini_background_desc')">
+        <Select :model-value="appStore.miniLivingArtworkBackground ? 'living' : 'solid'"
+          @update:model-value="mode => appStore.updateMiniLivingArtworkBackground(mode === 'living')">
+          <SelectTrigger class="w-[160px] bg-foreground/[0.04] border-0 h-9 text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem v-for="size in MAX_QUEUE_SIZE_OPTIONS" :key="size" :value="String(size)">
-              {{ size }}
-            </SelectItem>
+            <SelectItem value="living">{{ t('settings.playback.fullscreen_background_living') }}</SelectItem>
+            <SelectItem value="solid">{{ t('settings.playback.fullscreen_background_solid') }}</SelectItem>
           </SelectContent>
         </Select>
       </SettingRow>

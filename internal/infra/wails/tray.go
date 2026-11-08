@@ -13,6 +13,14 @@ import (
 
 const trayLabelMaxLen = 40
 
+func UseTrayPill(platform string, settings *domain.AppSettings) bool {
+	return platform == "darwin" && settings.ShowTrayIcon
+}
+
+func hideTrayPopupAfterFocusLoss(isFocused, pointerOverTray bool) bool {
+	return !isFocused && !pointerOverTray
+}
+
 // truncateLabel trims s to at most max runes, appending "..." if truncated.
 func truncateLabel(s string, max int) string {
 	runes := []rune(s)
@@ -40,7 +48,7 @@ func trackLabel(track *domain.TrackDTO) string {
 	label := title
 	if len(artistNames) > 0 {
 		if title != "" {
-			label = fmt.Sprintf("%s — %s", title, strings.Join(artistNames, ", "))
+			label = fmt.Sprintf("%s • %s", title, strings.Join(artistNames, ", "))
 		} else {
 			label = strings.Join(artistNames, ", ")
 		}

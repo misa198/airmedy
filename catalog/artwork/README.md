@@ -97,6 +97,12 @@ document.documentElement.style.setProperty(
 
 Transitions use `1.5s ease-in-out` for a smooth color wash effect.
 
+The macOS menu bar pill also uses the current track's `Vibrant` and `Muted` colors
+for its playback indicator. It refreshes when track metadata arrives because
+palette extraction can finish after the playback status update. Without a
+palette, the indicator uses the system text color; artwork colors are adjusted
+for contrast against the menu bar pill in light and dark appearance.
+
 ## Asset Handler (`assets.go`)
 
 Custom Wails v3 asset handler registered at app startup. Maps incoming requests for artwork keys to file paths:

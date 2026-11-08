@@ -24,6 +24,9 @@
   },
   "tray": {
     "no_track": "未在播放",
+    "unknown_track": "未知歌曲",
+    "unknown_artist": "未知艺术家",
+    "unknown_album": "未知专辑",
     "next_none": "下一首: 无",
     "next": "下一首: %s",
     "play": "播放",

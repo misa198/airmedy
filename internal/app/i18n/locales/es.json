@@ -24,6 +24,9 @@
   },
   "tray": {
     "no_track": "No se está reproduciendo ninguna pista",
+    "unknown_track": "Pista desconocida",
+    "unknown_artist": "Artista desconocido",
+    "unknown_album": "Álbum desconocido",
     "next_none": "Siguiente: Ninguno",
     "next": "Siguiente: %s",
     "play": "Reproducir",

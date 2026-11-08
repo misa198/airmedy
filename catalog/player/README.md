@@ -125,8 +125,8 @@ On macOS, `infra/notification` uses `UNUserNotificationCenter`; other platforms 
 When `AppSettings.AutoAdvanceNotificationsEnabled` is true (default), the service sends a silent
 notification only after an automatic advance to a different track: standard queue advance,
 gapless/preloaded advance, or crossfade start. Manual navigation and repeat-one do not notify.
-The title is the track title (falling back to filename), the body is `artist - album`, and cached
-artwork is attached when present. The macOS authorization request happens on the first attempted
+The title is the track title (falling back to filename, then a localized unknown title); the body is
+`artist • album` with localized fallbacks for missing artist or album, and cached artwork is attached when present. The macOS authorization request happens on the first attempted
 notification; a denial never affects playback.
 Clicking the notification invokes `TrackTransitionNotificationActivator`, which calls
 `WindowService.ShowMain()` to bring the main window to front (or open it if closed).
@@ -658,7 +658,7 @@ To ensure smooth 60fps progress updates and reduce IPC overhead, the store uses 
 
 When `BlendArtworkDuringCrossfade` is on (default), `FullScreenPlayer` keeps the outgoing cover below the preloaded incoming cover and advances both layers with the same equal-power curve as audio: outgoing opacity `cos(t*pi/2)`, incoming opacity `sin(t*pi/2)`. The incoming layer uses `plus-lighter` compositing so both weights contribute visually over the event's exact effective audio fade duration. This is fullscreen-only; player bars and mini players switch immediately. Disabling the setting settles an active transition on the incoming cover.
 
-Fullscreen lyrics have two separate panel components selected by `HighContrastLyrics` (default true). `PlayerLyricsPanel` is the existing glass, bordered, headered high-contrast panel. `ImmersiveLyricsPanel` renders the same parsed/synced lyric content directly over the living artwork background without a background, border, shadow, or header. This setting does not affect `LyricsDrawer` or the mini player.
+Fullscreen lyrics have two separate panel components selected by `HighContrastLyrics` (default false). `PlayerLyricsPanel` is the existing glass, bordered, headered high-contrast panel. `ImmersiveLyricsPanel` renders the same parsed/synced lyric content directly over the living artwork background without a background, border, shadow, or header. This setting does not affect `LyricsDrawer` or the mini player.
 
 `LivingArtworkBackground` selects the fullscreen background independently of the lyrics mode. It defaults to the animated artwork canvas; when disabled, the player uses the artwork's vibrant color over the mini-player-style dark base and overlay. Its tint uses the active artwork-crossfade duration, so background changes stay synchronized with the cover transition.
 

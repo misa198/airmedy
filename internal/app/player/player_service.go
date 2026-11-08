@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"airmedy/internal/app/i18n"
 	"airmedy/internal/app/lyrics"
 	"airmedy/internal/app/normalization"
 	"airmedy/internal/domain"
@@ -41,6 +42,7 @@ type PlayerService struct {
 	settingsRepo                    domain.SettingsRepository
 	normSvc                         *normalization.NormalizationService
 	notifier                        domain.TrackTransitionNotifier
+	translations                    *i18n.Service
 	listeningRepo                   domain.ListeningRepository
 	autoAdvanceNotificationsEnabled bool
 
@@ -118,6 +120,7 @@ func NewPlayerService(
 	sleepInhibitor domain.SleepInhibitor,
 	normSvc *normalization.NormalizationService,
 	notifier domain.TrackTransitionNotifier,
+	translations *i18n.Service,
 	listeningRepo domain.ListeningRepository,
 	lc fx.Lifecycle,
 ) *PlayerService {
@@ -133,6 +136,7 @@ func NewPlayerService(
 		sleepInhibitor:                  sleepInhibitor,
 		normSvc:                         normSvc,
 		notifier:                        notifier,
+		translations:                    translations,
 		listeningRepo:                   listeningRepo,
 		autoAdvanceNotificationsEnabled: true,
 		tickInterval:                    500 * time.Millisecond,
@@ -1109,31 +1113,42 @@ func (s *PlayerService) notifyTrackAutoAdvanced(track *domain.TrackDTO, previous
 		return
 	}
 
-	title := track.Title
+	title := strings.TrimSpace(track.Title)
 	if title == "" {
-		title = fallbackTitle(track.Path)
+		if strings.TrimSpace(track.Path) != "" {
+			title = fallbackTitle(track.Path)
+		}
+		if strings.TrimSpace(title) == "" || title == "." {
+			title = s.translations.T("tray.unknown_track")
+		}
 	}
-	artist := track.RawArtistNames
+	artist := strings.TrimSpace(track.RawArtistNames)
 	if len(track.Artists) > 0 {
 		names := make([]string, 0, len(track.Artists))
 		for _, a := range track.Artists {
-			if a != nil && a.Name != "" {
-				names = append(names, a.Name)
+			if a != nil && strings.TrimSpace(a.Name) != "" {
+				names = append(names, strings.TrimSpace(a.Name))
 			}
 		}
 		if len(names) > 0 {
 			artist = strings.Join(names, ", ")
 		}
 	}
+	if artist == "" {
+		artist = s.translations.T("tray.unknown_artist")
+	}
 	album := ""
 	if track.Album != nil {
-		album = track.Album.Title
+		album = strings.TrimSpace(track.Album.Title)
+	}
+	if album == "" {
+		album = s.translations.T("tray.unknown_album")
 	}
 	artworkPath := ""
 	if track.ArtworkKey != "" {
 		artworkPath = s.artworkCache.GetPath(track.ArtworkKey)
 	}
-	s.notifier.NotifyTrackAdvanced(title, fmt.Sprintf("%s - %s", artist, album), artworkPath)
+	s.notifier.NotifyTrackAdvanced(title, fmt.Sprintf("%s • %s", artist, album), artworkPath)
 }
 
 func (s *PlayerService) extractAndEmitPalette(track *domain.TrackDTO) {

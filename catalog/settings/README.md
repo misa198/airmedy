@@ -52,7 +52,7 @@ type AppSettings struct {
     MaxQueueSize            int                // play queue cap, incl. current track; one of domain.ValidMaxQueueSizes (100/500/1000/2000/3000), default 1000
     CrossfadeSeconds        int                // track-transition overlap in seconds, clamped to [0, domain.MaxCrossfadeSeconds]=12; 0 = off (gapless), default 0
     BlendArtworkDuringCrossfade bool           // fullscreen cover blend during automatic crossfade, default true
-    HighContrastLyrics       bool              // fullscreen glass lyrics panel; false renders lyrics directly over artwork, default true
+    HighContrastLyrics       bool              // fullscreen glass lyrics panel; false renders lyrics directly over artwork, default false
     LyricsGlow               bool              // enhanced lyric glow; default false, currently used by fullscreen lyrics
     LivingArtworkBackground  bool              // fullscreen animated artwork background; false uses a solid artwork tint, default true
     AutoAdvanceNotificationsEnabled bool       // macOS-only silent notification when playback automatically advances, default true
@@ -65,6 +65,8 @@ entries). See [metadata](../metadata/README.md) for `SplitNames` and [library](.
 for the delimiter-aware re-sync that applies changes to existing tracks.
 
 Stored in the `app_settings` table (single-row, id always = 1). Sensitive session keys are stored in the OS-native secure vault (Keychain, Credential Manager, etc.) via `github.com/zalando/go-keyring`.
+
+On macOS, `show_tray_icon` gates the menu bar item. `tray_mode` selects the menu bar appearance: the default icon (`menu`) or the Now Playing pill (`pill`). In both modes, left-click toggles the player popup and right-click opens a native menu with Show Airmedy and Quit. The General Settings selector appears only while the tray icon is enabled. Tray visibility and style changes take effect after restart; other platforms continue to use the existing tray. The General tray section also selects the Now Playing menu bar pill theme: system (default), light, or dark. The native pill applies changes immediately; system follows the OS appearance. This setting does not change the tray popup window theme. The same General tray section offers the tray popup background selector (living artwork, solid, or monochrome) while the tray icon is enabled; Playback retains the fullscreen and mini-player background selectors.
 
 ## Config (Data Paths)
 
@@ -115,9 +117,11 @@ interface AppStore {
   showPlayerFavoriteButton: boolean; // default false; shared by footer, mini player, and fullscreen player
   crossfadeSeconds: number; // 0–CROSSFADE_MAX_SECONDS (12); 0 = off; slider in PlaybackSettings.vue
   blendArtworkDuringCrossfade: boolean; // default true; fullscreen only
-  highContrastLyrics: boolean; // default true; fullscreen lyrics only
+  highContrastLyrics: boolean; // default false; fullscreen lyrics only
   lyricsGlow: boolean; // default false; fullscreen enhanced lyrics glow
-  livingArtworkBackground: boolean; // default true; fullscreen background only
+  livingArtworkBackground: boolean; // default true; fullscreen background
+  miniLivingArtworkBackground: boolean; // default false; mini-player lyrics background
+  trayBackgroundMode: "living" | "solid" | "monochrome"; // default solid; macOS tray player background
   autoAdvanceNotificationsEnabled: boolean; // default true; macOS-only automatic track-change notification
   artistDelimiters: string[];
   albumArtistDelimiters: string[];
@@ -163,6 +167,15 @@ interface AppStore {
   dispose(): void;
 }
 ```
+
+The tray popup persists `tray_background_mode` as `living`, `solid` (default), or
+`monochrome`. Migration 000080 preserves the former boolean choice; rollback maps
+Monochrome to Solid. Monochrome uses the main window's `--bg-main` and semantic
+foreground colors for text, controls, and progress, without artwork tint or animation;
+cover artwork keeps its colors. After a successful save, `settings:tray-background`
+(the mode string) and `settings:theme` (the app theme string) synchronize window
+stores immediately. Listeners update state without saving again and are removed
+in `dispose()`. The native pill's `tray_theme` remains independent.
 
 Each `update*()` method calls `SettingsService.SaveSettings()` with the full settings object (all fields at once, not partial).
 

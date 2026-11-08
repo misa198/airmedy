@@ -1,10 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { nextTick } from 'vue'
 import { createTestingPinia } from '@pinia/testing'
 import { createPinia, setActivePinia } from 'pinia'
 import { Events } from '@wailsio/runtime'
 import { useAppStore } from '../../stores/app'
 import GeneralSettings from './GeneralSettings.vue'
+
+vi.mock('../../../bindings/airmedy/internal/infra/wails/windowservice', () => ({ SetTitleBarTheme: vi.fn().mockResolvedValue(undefined) }))
 
 vi.mock('vue-i18n', () => ({
   useI18n: () => ({ t: (key: string, values?: Record<string, string>) => values?.color ? `${key}:${values.color}` : key }),
@@ -23,6 +26,63 @@ vi.mock('@wailsio/runtime', () => ({
 }))
 
 describe('GeneralSettings primary color', () => {
+  it('shows the tray style only when macOS tray is enabled', async () => {
+    const pinia = createTestingPinia({ createSpy: vi.fn, initialState: { app: { showTrayIcon: true, trayMode: 'menu' }, device: { isMac: true } } })
+    const wrapper = mount(GeneralSettings, { global: { plugins: [pinia] } })
+    expect(wrapper.text()).toContain('settings.behavior.tray_mode')
+    expect(wrapper.text()).toContain('settings.behavior.tray_theme')
+    useAppStore().showTrayIcon = false
+    await nextTick()
+    expect(wrapper.text()).not.toContain('settings.behavior.tray_mode')
+    expect(wrapper.text()).not.toContain('settings.behavior.tray_theme')
+  })
+  it.each([
+    [true, true, true],
+    [true, false, false],
+    [false, true, false],
+  ])('shows the tray background only for an enabled macOS tray (%s, %s)', (isMac, showTrayIcon, visible) => {
+    const pinia = createTestingPinia({ createSpy: vi.fn, initialState: { app: { showTrayIcon, trayBackgroundMode: 'solid' }, device: { isMac } } })
+    const wrapper = mount(GeneralSettings, { global: { plugins: [pinia] } })
+    const row = wrapper.find('[data-test="tray-background"]')
+    expect(row.exists()).toBe(visible)
+    if (visible) {
+      expect(row.text()).toContain('settings.playback.tray_background')
+      const select = row.getComponent({ name: 'SelectRoot' })
+      expect(select.props('modelValue')).toBe('solid')
+      for (const mode of ['living', 'solid', 'monochrome']) {
+        select.vm.$emit('update:modelValue', mode)
+        expect(useAppStore().updateTrayBackgroundMode).toHaveBeenLastCalledWith(mode)
+      }
+    }
+    wrapper.unmount()
+  })
+
+  it('syncs the menu bar pill theme without changing the popup window theme', () => {
+    window.history.replaceState({}, '', '/?mode=tray-popup')
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })))
+    setActivePinia(createPinia())
+    const store = useAppStore()
+    const index = vi.mocked(Events.On).mock.calls.findLastIndex(([name]) => name === 'settings:tray-theme')
+    const handler = vi.mocked(Events.On).mock.calls[index][1]
+    const off = vi.mocked(Events.On).mock.results[index].value
+    document.documentElement.classList.add('dark')
+    handler({ data: 'light' } as Events.WailsEvent)
+    expect(store.trayTheme).toBe('light')
+    expect(document.documentElement.classList.contains('dark')).toBe(true)
+    document.documentElement.classList.remove('dark')
+    handler({ data: 'dark' } as Events.WailsEvent)
+    expect(store.trayTheme).toBe('dark')
+    expect(document.documentElement.classList.contains('dark')).toBe(false)
+    handler({ data: 'system' } as Events.WailsEvent)
+    expect(store.trayTheme).toBe('system')
+    expect(document.documentElement.classList.contains('dark')).toBe(false)
+    store.dispose()
+    expect(off).toHaveBeenCalledOnce()
+    document.documentElement.classList.remove('dark')
+    window.history.replaceState({}, '', '/')
+    vi.unstubAllGlobals()
+  })
+
   it('receives language changes from another desktop window and removes its listener', () => {
     setActivePinia(createPinia())
     const store = useAppStore()

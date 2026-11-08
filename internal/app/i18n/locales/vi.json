@@ -24,6 +24,9 @@
   },
   "tray": {
     "no_track": "Không có bài hát đang phát",
+    "unknown_track": "Bài hát không rõ tên",
+    "unknown_artist": "Nghệ sĩ không xác định",
+    "unknown_album": "Album không xác định",
     "next_none": "Tiếp theo: Không có",
     "next": "Tiếp theo: %s",
     "play": "Phát",

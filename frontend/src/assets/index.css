@@ -10,6 +10,9 @@
   --color-mini-player-pill-foreground: var(--mini-player-pill-foreground);
   --color-mini-player-pill-active: var(--mini-player-pill-active);
   --color-mini-player-pill-active-foreground: var(--mini-player-pill-active-foreground);
+  --tray-player-background: #101010;
+  --tray-player-overlay: rgba(10, 10, 10, 0.24);
+  --tray-artwork-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
 /* Enable CSS custom property transitions in WebKit/Safari (used by Wails on macOS) */

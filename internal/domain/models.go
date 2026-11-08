@@ -455,6 +455,8 @@ type AppSettings struct {
 	PrimaryColor             string  `json:"primary_color"`
 	StartAtLogin             bool    `json:"start_at_login"`
 	ShowTrayIcon             bool    `json:"show_tray_icon"`
+	TrayMode                 string  `json:"tray_mode"`
+	TrayTheme                string  `json:"tray_theme"`
 	AutoCheckUpdate          bool    `json:"auto_check_update"`
 	LastFmUsername           string  `json:"lastfm_username"`
 	EQEnabled                bool    `json:"eq_enabled"`
@@ -507,7 +509,9 @@ type AppSettings struct {
 
 	// LivingArtworkBackground selects the animated artwork-color background in
 	// the fullscreen player. When false, it uses a solid artwork tint instead.
-	LivingArtworkBackground bool `json:"living_artwork_background"`
+	LivingArtworkBackground     bool   `json:"living_artwork_background"`
+	MiniLivingArtworkBackground bool   `json:"mini_living_artwork_background"`
+	TrayBackgroundMode          string `json:"tray_background_mode"`
 
 	// Library analysis pipeline (feeds Normalization). Opt-in: off disables the
 	// background worker pool entirely (no backfill/enqueue/boost). Normalization

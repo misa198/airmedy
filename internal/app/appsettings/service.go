@@ -79,11 +79,14 @@ func (s *SettingsService) GetSettings(ctx context.Context) (*domain.AppSettings,
 			PrimaryColor:                    domain.DefaultPrimaryColor,
 			StartAtLogin:                    false,
 			ShowTrayIcon:                    true,
+			TrayMode:                        "menu",
+			TrayTheme:                       "system",
+			TrayBackgroundMode:              "solid",
 			AutoCheckUpdate:                 true,
 			EQEnabled:                       true,
 			RomanizationEnabled:             true,
 			BlendArtworkDuringCrossfade:     true,
-			HighContrastLyrics:              true,
+			HighContrastLyrics:              false,
 			LyricsGlow:                      false,
 			LivingArtworkBackground:         true,
 			AutoAdvanceNotificationsEnabled: true,
@@ -107,6 +110,27 @@ func (s *SettingsService) SaveSettings(ctx context.Context, settings *domain.App
 
 	if runtime.GOOS == "windows" || runtime.GOOS == "linux" {
 		settings.ShowTrayIcon = true
+	}
+	if settings.TrayTheme == "" {
+		settings.TrayTheme = "system"
+	}
+	if settings.TrayTheme != "system" && settings.TrayTheme != "light" && settings.TrayTheme != "dark" {
+		return fmt.Errorf("invalid tray theme: %q", settings.TrayTheme)
+	}
+	if settings.TrayMode == "" {
+		settings.TrayMode = "menu"
+	}
+	if settings.TrayMode != "menu" && settings.TrayMode != "pill" {
+		return fmt.Errorf("invalid tray mode: %q", settings.TrayMode)
+	}
+
+	if settings.TrayBackgroundMode == "" {
+		settings.TrayBackgroundMode = "solid"
+	}
+	switch settings.TrayBackgroundMode {
+	case "living", "solid", "monochrome":
+	default:
+		return fmt.Errorf("invalid tray background mode: %q", settings.TrayBackgroundMode)
 	}
 
 	primaryColor, err := domain.NormalizePrimaryColor(settings.PrimaryColor)

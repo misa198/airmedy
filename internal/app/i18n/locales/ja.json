@@ -24,6 +24,9 @@
   },
   "tray": {
     "no_track": "再生していません",
+    "unknown_track": "不明な曲",
+    "unknown_artist": "不明なアーティスト",
+    "unknown_album": "不明なアルバム",
     "next_none": "次: なし",
     "next": "次: %s",
     "play": "再生",

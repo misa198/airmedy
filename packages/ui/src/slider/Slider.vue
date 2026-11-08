@@ -14,6 +14,7 @@ const props = defineProps<{
   trackBackground?: string
   thumbColor?: string
   alwaysShowThumb?: boolean
+  ariaLabel?: string
 }>()
 
 const emit = defineEmits<{
@@ -132,6 +133,7 @@ onUnmounted(() => {
     <!-- Native input with custom thumb styling -->
     <input
       type="range"
+      :aria-label="ariaLabel"
       :min="resolvedMin"
       :max="resolvedMax"
       :step="step ?? 0.01"

@@ -22,6 +22,8 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 - Write serialization: single write connection with WAL mode enabled.
 - Migrations run automatically on startup before any service initializes.
 
+Player background preferences use separate `app_settings` columns for fullscreen, mini-player lyrics, and the macOS tray popup. Migration 000078 adds mini and tray preferences as solid by default, preserving the existing fullscreen preference.
+
 ## Migration History
 
 | #      | File                           | Change                                                                                                                             |
@@ -91,6 +93,7 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | 000071 | `mobile_favorite_sync.up.sql` | Add trusted-device favorite mutation ledger and per-track last-write-wins favorite watermark for mobile reconciliation |
 | 000072 | `listening_sources.up.sql` | Add source-device identity to raw listening rows and daily aggregate keys for cross-device sync |
 | 000076 | `show_player_favorite_button.up.sql` | Add `app_settings.show_player_favorite_button BOOLEAN NOT NULL DEFAULT 0`; down removes the column |
+| 000080 | `tray_background_mode.up.sql` | Replace the tray background boolean with `tray_background_mode` (`living`, `solid`, `monochrome`; default `solid`), preserving existing choices; down restores the boolean and maps Monochrome to Solid |
 
 `listeningRepository.GetListeningInsights` returns up to 50 entries for both Top Artists
 (ordered by listened seconds) and Top Tracks (ordered by play count, then listened

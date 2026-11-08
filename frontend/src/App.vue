@@ -31,6 +31,8 @@ const mobilePairingStore = useMobilePairingStore()
 const isDevelopment = import.meta.env.DEV
 
 const isRouterReady = ref(false)
+const isTrayPopup = window.location.search.includes('mode=tray-popup')
+if (isTrayPopup) document.documentElement.classList.add('tray-popup-window')
 const isMiniPlayer = computed(() => {
   return route.name === 'mini-player' || 
          route.path === '/mini-player' || 
@@ -99,6 +101,15 @@ onMounted(async () => {
 
   isRouterReady.value = true
 
+  if (isTrayPopup) {
+    if (route.name !== 'tray-popup') await router.replace('/tray-popup')
+    await appStore.loadSettings(true)
+    locale.value = appStore.language
+    await playerStore.init()
+    window.addEventListener('focus', refreshTraySettings)
+    return
+  }
+
   // Load settings
   await appStore.loadSettings(isMiniPlayer.value)
   locale.value = appStore.language
@@ -146,7 +157,13 @@ let offSettings: (() => void) | null = null
 let offSearch: (() => void) | null = null
 let offCycleRepeat: (() => void) | null = null
 
+function refreshTraySettings() {
+  void appStore.loadSettings(true)
+}
+
 onUnmounted(() => {
+  window.removeEventListener('focus', refreshTraySettings)
+  if (isTrayPopup) document.documentElement.classList.remove('tray-popup-window')
   window.removeEventListener('keydown', handleKeyDown)
   offSettings?.()
   offSearch?.()
@@ -200,17 +217,23 @@ watch(() => playerStore.playerMode, (newMode) => {
 <template>
   <div v-if="!isRouterReady" class="h-full w-full bg-background" />
   <template v-else>
-    <RouterView v-if="isMiniPlayer" />
+    <RouterView v-if="isTrayPopup || isMiniPlayer" />
     <MainLayout v-else />
   </template>
-  <DevToolsOverlay v-if="isDevelopment && !isMiniPlayer" />
-  <FindLyricsDialog />
-  <CreatePlaylistWithTracksDialog v-if="!isMiniPlayer" />
-  <MobilePairingDialog v-if="!isMiniPlayer" />
+  <DevToolsOverlay v-if="isDevelopment && !isMiniPlayer && !isTrayPopup" />
+  <FindLyricsDialog v-if="!isTrayPopup" />
+  <CreatePlaylistWithTracksDialog v-if="!isMiniPlayer && !isTrayPopup" />
+  <MobilePairingDialog v-if="!isMiniPlayer && !isTrayPopup" />
 </template>
 
 <style>
 /* Global styles */
+html.tray-popup-window,
+html.tray-popup-window body,
+html.tray-popup-window #app {
+  background: transparent;
+}
+
 html,
 body,
 #app {

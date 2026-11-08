@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   inspectRomanization: vi.fn(),
   lyricsLoading: true,
   showPlayerFavoriteButton: true,
+  miniLivingArtworkBackground: false,
   currentTrack: null as TrackDTO | null,
 }))
 
@@ -46,7 +47,7 @@ vi.mock('@/stores/player', () => ({
 }))
 
 vi.mock('@/stores/app', () => ({
-  useAppStore: () => ({ blendArtworkDuringCrossfade: false, showPlayerIndicator: false, romanizationEnabled: true, showPlayerFavoriteButton: mocks.showPlayerFavoriteButton }),
+  useAppStore: () => ({ blendArtworkDuringCrossfade: false, showPlayerIndicator: false, romanizationEnabled: true, showPlayerFavoriteButton: mocks.showPlayerFavoriteButton, miniLivingArtworkBackground: mocks.miniLivingArtworkBackground }),
 }))
 
 vi.mock('@/stores/moodRadio', () => ({
@@ -94,6 +95,7 @@ describe('MiniPlayerFloating', () => {
     setActivePinia(createPinia())
     mocks.lyricsLoading = true
     mocks.showPlayerFavoriteButton = true
+    mocks.miniLivingArtworkBackground = false
     mocks.currentTrack = null
     mocks.inspectRomanization.mockImplementation(() => Object.assign(Promise.resolve({ supported: false, mandarinDefault: false }), { cancel: vi.fn().mockResolvedValue(undefined) }))
   })
@@ -105,6 +107,22 @@ describe('MiniPlayerFloating', () => {
     })
     expect(wrapper.find('[data-test="mini-player-favorite"]').exists()).toBe(false)
     wrapper.unmount()
+  })
+
+  it('uses the fullscreen background setting for the lyrics panel', async () => {
+    for (const enabled of [false, true]) {
+      mocks.miniLivingArtworkBackground = enabled
+      const wrapper = mount(MiniPlayerFloating, {
+        global: { stubs: { LivingArtworkBackground: true, LazyImg: true, Slider: true, MarqueeText: true, PlayerControlButton: true, MiniPlayerLyrics: true, QueueTrackList: true } },
+      })
+      await wrapper.get('[data-test="mini-player-lyrics"]').trigger('click')
+      await flushPromises()
+      expect(wrapper.find('living-artwork-background-stub').exists()).toBe(enabled)
+      await wrapper.get('[data-test="mini-player-queue"]').trigger('click')
+      await flushPromises()
+      expect(wrapper.find('living-artwork-background-stub').exists()).toBe(false)
+      wrapper.unmount()
+    }
   })
 
   it('places the favorite action to the right of track information and disables it without a track', () => {
