@@ -176,7 +176,8 @@ fallbacks, and track/album menus; the player star is filled only when selected. 
 a minus for Remove from favorites and a plain star for Add. `MaterialSymbol`
 composes the minus with the bundled star because the font has no star-minus glyph.
 
-Normal playlist detail menus expose a reorder mode. Its grips emit one
+Only normal playlist detail menus expose a reorder mode; playlist list menus
+omit it. Its grips emit one
 `MOVE_TRACK` mutation when a drag ends; the Android optimistic projection
 renders the resulting order while desktop reconciliation confirms it. Favorites
 and smart playlists do not expose manual reordering.

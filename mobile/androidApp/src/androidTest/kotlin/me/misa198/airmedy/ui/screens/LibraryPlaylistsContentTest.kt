@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -130,6 +131,7 @@ class LibraryPlaylistsContentTest {
 
         composeTestRule.onNodeWithText("Night Drive").performSemanticsAction(SemanticsActions.OnLongClick)
         composeTestRule.onNodeWithText("Play next").assertExists()
+        composeTestRule.onAllNodesWithText("Reorder playlist").assertCountEquals(0)
         composeTestRule.onNodeWithText("Edit playlist").assertExists()
         composeTestRule.onNodeWithText("Delete playlist").assertExists()
     }
