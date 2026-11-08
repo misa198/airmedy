@@ -7,9 +7,8 @@ export function useCustomTitleBar() {
   const playerStore = usePlayerStore()
 
   return computed(() =>
-    // (deviceStore.isWindows || deviceStore.isLinux)
-    // &&
-     !deviceStore.isWindowFullscreen
+    (deviceStore.isWindows || deviceStore.isLinux)
+    && !deviceStore.isWindowFullscreen
     && playerStore.playerMode !== 'fullscreen'
     && playerStore.playerMode !== 'mini',
   )

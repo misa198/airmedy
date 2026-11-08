@@ -7,9 +7,11 @@ import { useLyrics } from '../composables/useLyrics'
 import { useRomanization } from '../composables/useRomanization'
 import { lyricsMotionClasses, useLyricsScrollMotion } from '../composables/useLyricsScrollMotion'
 import KaraokeText from './KaraokeText.vue'
+import { useCustomTitleBar } from '@/composables/useCustomTitleBar'
 
 const { t } = useI18n()
 const store = usePlayerStore()
+const hasCustomTitleBar = useCustomTitleBar()
 
 const lyricsContent = computed(() => store.lyrics?.content)
 const { isSynced, syncedLines, plainLines } = useLyrics(lyricsContent)
@@ -126,7 +128,8 @@ onUnmounted(() => {
 <template>
   <div ref="rootEl" class="h-full w-full bg-background flex flex-col">
     <!-- Header -->
-    <div class="flex items-center justify-between px-4 py-3 border-b border-foreground/[0.06] select-none">
+    <div class="flex items-center justify-between px-4 pb-3 border-b border-foreground/[0.06] select-none"
+      :class="hasCustomTitleBar ? 'pt-0' : 'pt-3'">
       <div class="flex items-center gap-2 font-semibold flex-shrink-0">
         <Mic2 class="w-4 h-4 text-primary" />
         <div class="max-w-[100px] truncate">{{ t('player.lyrics') }}</div>

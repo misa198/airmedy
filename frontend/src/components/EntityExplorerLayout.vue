@@ -3,6 +3,7 @@ import { ref, computed, watch, nextTick, onActivated } from 'vue'
 import { Search, Play } from '@lucide/vue'
 import { Input } from '@airmedy/ui'
 import { foldUnicode } from '@airmedy/utils'
+import { useCustomTitleBar } from '@/composables/useCustomTitleBar';
 
 const props = defineProps<{
   title: string
@@ -22,6 +23,7 @@ const searchQuery = ref('')
 const clickedFromList = ref(false)
 const scrollerRef = ref<any>(null)
 const lastScrollTop = ref(0)
+const hasCustomTitleBar = useCustomTitleBar()
 
 const handleScroll = (event: Event) => {
   const target = event.target as HTMLElement
@@ -90,7 +92,7 @@ watch(() => [props.selectedId, props.isLoading, filteredItems.value] as const, (
   <div class="h-full flex overflow-hidden bg-background">
     <!-- Left Column: Navigation List -->
     <div class="w-[280px] border-r border-foreground/[0.06] flex flex-col overflow-hidden bg-background select-none">
-      <div class="p-6 pb-4">
+      <div class="p-6 pb-4" :class="hasCustomTitleBar ? 'pt-2' : 'pt-6'">
         <h1 class="text-2xl font-bold mb-4">{{ title }}</h1>
         <div class="relative">
           <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dim" />

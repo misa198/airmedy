@@ -5,8 +5,10 @@ import { useI18n } from 'vue-i18n'
 import HomeOverview from '@/components/home/HomeOverview.vue'
 import HomeAnalysis from '@/components/home/HomeAnalysis.vue'
 import HomeHeader from '@/components/home/HomeHeader.vue'
+import { useCustomTitleBar } from '@/composables/useCustomTitleBar'
 
 const { t } = useI18n()
+const hasCustomTitleBar = useCustomTitleBar()
 const activeTab = ref('overview')
 const tabs = computed(() => [
   { value: 'overview', label: t('sidebar.home'), icon: House },
@@ -23,7 +25,8 @@ const header = computed(() => activeTab.value === 'overview'
 </script>
 
 <template>
-  <div class="h-full overflow-y-scroll p-8 [scrollbar-gutter:stable] custom-scrollbar select-none">
+  <div class="h-full overflow-y-scroll px-8 pb-8 [scrollbar-gutter:stable] custom-scrollbar select-none"
+    :class="hasCustomTitleBar ? 'pt-2' : 'pt-8'">
     <HomeHeader :title="header.title" :subtitle="header.subtitle" :model-value="activeTab" :tabs="tabs" @update:model-value="activeTab = $event" />
     <div v-if="activeTab === 'overview'" class="mt-16">
       <HomeOverview />
