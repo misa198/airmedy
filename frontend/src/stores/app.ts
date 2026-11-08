@@ -73,7 +73,7 @@ export const useAppStore = defineStore('app', () => {
   const maxQueueSize = ref<MaxQueueSize>(DEFAULT_MAX_QUEUE_SIZE)
   const crossfadeSeconds = ref(0)
   const blendArtworkDuringCrossfade = ref(true)
-  const highContrastLyrics = ref(true)
+  const highContrastLyrics = ref(false)
   const lyricsGlow = ref(false)
   const livingArtworkBackground = ref(true)
   const miniLivingArtworkBackground = ref(false)
@@ -170,7 +170,7 @@ export const useAppStore = defineStore('app', () => {
         }
         crossfadeSeconds.value = Math.min(CROSSFADE_MAX_SECONDS, Math.max(0, Math.round(settings.crossfade_seconds ?? 0)))
         blendArtworkDuringCrossfade.value = settings.blend_artwork_during_crossfade !== false
-        highContrastLyrics.value = settings.high_contrast_lyrics !== false
+        highContrastLyrics.value = settings.high_contrast_lyrics === true
         lyricsGlow.value = settings.lyrics_glow ?? false
         livingArtworkBackground.value = settings.living_artwork_background !== false
         miniLivingArtworkBackground.value = settings.mini_living_artwork_background === true

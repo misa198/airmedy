@@ -274,7 +274,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 			MaxQueueSize:                    domain.DefaultMaxQueueSize,
 			CrossfadeSeconds:                0,
 			BlendArtworkDuringCrossfade:     true,
-			HighContrastLyrics:              true,
+			HighContrastLyrics:              false,
 			LyricsGlow:                      false,
 			LivingArtworkBackground:         true,
 			AutoAdvanceNotificationsEnabled: true,

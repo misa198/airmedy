@@ -52,7 +52,7 @@ type AppSettings struct {
     MaxQueueSize            int                // play queue cap, incl. current track; one of domain.ValidMaxQueueSizes (100/500/1000/2000/3000), default 1000
     CrossfadeSeconds        int                // track-transition overlap in seconds, clamped to [0, domain.MaxCrossfadeSeconds]=12; 0 = off (gapless), default 0
     BlendArtworkDuringCrossfade bool           // fullscreen cover blend during automatic crossfade, default true
-    HighContrastLyrics       bool              // fullscreen glass lyrics panel; false renders lyrics directly over artwork, default true
+    HighContrastLyrics       bool              // fullscreen glass lyrics panel; false renders lyrics directly over artwork, default false
     LyricsGlow               bool              // enhanced lyric glow; default false, currently used by fullscreen lyrics
     LivingArtworkBackground  bool              // fullscreen animated artwork background; false uses a solid artwork tint, default true
     AutoAdvanceNotificationsEnabled bool       // macOS-only silent notification when playback automatically advances, default true
@@ -117,7 +117,7 @@ interface AppStore {
   showPlayerFavoriteButton: boolean; // default false; shared by footer, mini player, and fullscreen player
   crossfadeSeconds: number; // 0–CROSSFADE_MAX_SECONDS (12); 0 = off; slider in PlaybackSettings.vue
   blendArtworkDuringCrossfade: boolean; // default true; fullscreen only
-  highContrastLyrics: boolean; // default true; fullscreen lyrics only
+  highContrastLyrics: boolean; // default false; fullscreen lyrics only
   lyricsGlow: boolean; // default false; fullscreen enhanced lyrics glow
   livingArtworkBackground: boolean; // default true; fullscreen background
   miniLivingArtworkBackground: boolean; // default false; mini-player lyrics background
