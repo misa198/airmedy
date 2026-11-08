@@ -21,7 +21,7 @@ internal fun PlaylistContextMenu(
     hazeState: HazeState? = null,
     onPlayNext: (List<String>) -> Unit = {},
     onAddToQueue: (List<String>) -> Unit = {},
-    onReorder: () -> Unit = {},
+    onReorder: (() -> Unit)? = null,
     onEdit: () -> Unit = {},
     onDelete: () -> Unit = {},
     anchor: @Composable () -> Unit,
@@ -49,7 +49,7 @@ internal fun PlaylistContextMenu(
                 closeAfter { onAddToQueue(playableIds) }
             })
             add(ContextActionMenuEntry.Divider)
-            if (canDelete) {
+            if (canDelete && onReorder != null) {
                 add(ContextActionMenuEntry.Action(stringResource(R.string.playlist_reorder), MaterialSymbols.Menu) { closeAfter(onReorder) })
                 add(ContextActionMenuEntry.Divider)
             }
