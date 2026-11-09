@@ -71,7 +71,7 @@ export const useAppStore = defineStore('app', () => {
   const normalizationTargetLufs = ref(-14)
   const normalizationPreventClip = ref(true)
   const showPlayerIndicator = ref(true)
-  const showPlayerFavoriteButton = ref(false)
+  const showPlayerFavoriteButton = ref(true)
   const autoAdvanceNotificationsEnabled = ref(true)
   const librarySyncInterval = ref<SyncInterval>(DEFAULT_SYNC_INTERVAL)
   const maxQueueSize = ref<MaxQueueSize>(DEFAULT_MAX_QUEUE_SIZE)
@@ -166,7 +166,7 @@ export const useAppStore = defineStore('app', () => {
         moodDerivationVersion.value = settings.mood_derivation_version ?? 0
         preventSleepWhilePlaying.value = !!settings.prevent_sleep_while_playing
         showPlayerIndicator.value = settings.show_player_indicator !== false
-        showPlayerFavoriteButton.value = settings.show_player_favorite_button === true
+        showPlayerFavoriteButton.value = settings.show_player_favorite_button !== false
         autoAdvanceNotificationsEnabled.value = settings.auto_advance_notifications_enabled !== false
         if (isSyncInterval(settings.library_sync_interval)) {
           librarySyncInterval.value = settings.library_sync_interval

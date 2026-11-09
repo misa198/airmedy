@@ -103,7 +103,7 @@ tasks:
     deps:
       - task: install:deps
     cmds:
-      - pnpm run dev --port {{.VITE_PORT}} --strictPort
+      - pnpm run dev --host 127.0.0.1 --port {{.VITE_PORT}} --strictPort
 
   update:build-assets:
     summary: Updates the build assets

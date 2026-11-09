@@ -43,12 +43,8 @@ func TestTrayClickHandler(t *testing.T) {
 			click := trayClickHandler(mode, func() { shown++ }, func() { toggled++ })
 			click()
 			click()
-			if mode == "pill" {
-				if shown != 0 || toggled != 2 {
-					t.Fatal("pill clicks must toggle the player popup")
-				}
-			} else if shown != 2 || toggled != 0 {
-				t.Fatal("icon clicks must always show the app window")
+			if shown != 0 || toggled != 2 {
+				t.Fatal("tray clicks must toggle the player popup")
 			}
 		})
 	}

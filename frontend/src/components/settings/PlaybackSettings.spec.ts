@@ -44,9 +44,9 @@ describe('player favorite visibility setting', () => {
     document.documentElement.classList.remove('dark', 'black')
   })
 
-  it('defaults to hidden and saves both visibility choices', async () => {
+  it('defaults to shown and saves both visibility choices', async () => {
     const store = useAppStore()
-    expect(store.showPlayerFavoriteButton).toBe(false)
+    expect(store.showPlayerFavoriteButton).toBe(true)
     for (const enabled of [true, false]) {
       await store.updateShowPlayerFavoriteButton(enabled)
       expect(store.showPlayerFavoriteButton).toBe(enabled)
@@ -59,7 +59,7 @@ describe('player favorite visibility setting', () => {
     api.GetSettings.mockResolvedValue({ theme: 'dark', show_player_favorite_button: enabled })
     const store = useAppStore()
     await store.loadSettings(true)
-    expect(store.showPlayerFavoriteButton).toBe(enabled === true)
+    expect(store.showPlayerFavoriteButton).toBe(enabled !== false)
     store.dispose()
   })
 
@@ -142,9 +142,9 @@ describe('player favorite visibility setting', () => {
     const row = wrapper.get('[data-test="show-player-favorite-button"]')
     expect(row.text()).toContain('settings.playback.show_player_favorite_button')
     const toggle = row.getComponent(Switch)
-    expect(toggle.props('modelValue')).toBe(false)
-    toggle.vm.$emit('update:modelValue', true)
-    expect(useAppStore().updateShowPlayerFavoriteButton).toHaveBeenCalledWith(true)
+    expect(toggle.props('modelValue')).toBe(true)
+    toggle.vm.$emit('update:modelValue', false)
+    expect(useAppStore().updateShowPlayerFavoriteButton).toHaveBeenCalledWith(false)
     wrapper.unmount()
   })
 })

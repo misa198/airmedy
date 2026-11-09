@@ -38,7 +38,7 @@ type AppSettings struct {
     PreferLocalArtistArtwork bool              // nested (online on only): local/manual image suppresses online
     LastScanVersion        string              // app version of last artist-image rescan
     PreventSleepWhilePlaying bool             // prevent OS sleep during playback
-    ShowPlayerFavoriteButton bool             // show favorite button in desktop footer, mini player, and fullscreen player; default false
+    ShowPlayerFavoriteButton bool             // show favorite button in desktop footer, mini player, and fullscreen player; default true
     LibraryAnalysisEnabled  bool               // opt-in: gates the analysis worker pool entirely (default off)
     LibraryAnalysisWorkerCount int             // desired concurrent analysis workers; default 2, runtime-clamped to [1, numCPU/2]
     NormalizationEnabled    bool               // volume normalization on/off; cannot be true while LibraryAnalysisEnabled is false
@@ -66,7 +66,7 @@ for the delimiter-aware re-sync that applies changes to existing tracks.
 
 Stored in the `app_settings` table (single-row, id always = 1). Sensitive session keys are stored in the OS-native secure vault (Keychain, Credential Manager, etc.) via `github.com/zalando/go-keyring`.
 
-On macOS, `show_tray_icon` gates the menu bar item. `tray_mode` selects the menu bar appearance: the default icon (`menu`) or the Now Playing pill (`pill`). Left-click on the default icon shows the current app window (main or mini player); left-click on the pill toggles the player popup. In both modes, right-click opens a native menu with Show Airmedy and Quit. On Windows/Linux, left-click also shows the current app window and right-click retains the tray menu. The General Settings selector appears only while the tray icon is enabled. Tray visibility and style changes take effect after restart; other platforms continue to use the existing tray. The General tray section also selects the Now Playing menu bar pill theme: system (default), light, or dark. The native pill applies changes immediately; system follows the OS appearance. This setting does not change the tray popup window theme. The same General tray section offers the tray popup background selector (living artwork, solid, or monochrome) while the tray icon is enabled; Playback retains the fullscreen and mini-player background selectors.
+On macOS, `show_tray_icon` gates the menu bar item. `tray_mode` selects the menu bar appearance: the default icon (`menu`) or the Now Playing pill (`pill`). Left-click in either mode toggles the player popup. In both modes, right-click opens a native menu with Show Airmedy and Quit. On Windows/Linux, left-click shows the current app window and right-click retains the tray menu. The General Settings selector appears only while the tray icon is enabled. Tray visibility and style changes take effect after restart; other platforms continue to use the existing tray. The General tray section also selects the Now Playing menu bar pill theme: system (default), light, or dark. The native pill applies changes immediately; system follows the OS appearance. This setting does not change the tray popup window theme. The same General tray section offers the tray popup background selector (living artwork, solid, or monochrome) while the tray icon is enabled; Playback retains the fullscreen and mini-player background selectors.
 
 General Settings includes a Custom title bar section only on Windows/Linux while
 `useCustomTitleBar().canConfigureTitleBar` is true. The hook returns reactive
@@ -137,7 +137,7 @@ interface AppStore {
   lyricsSubfolderName: string;
   useOnlineArtistArtwork: boolean;
   preventSleepWhilePlaying: boolean;
-  showPlayerFavoriteButton: boolean; // default false; shared by footer, mini player, and fullscreen player
+  showPlayerFavoriteButton: boolean; // default true; shared by footer, mini player, and fullscreen player
   crossfadeSeconds: number; // 0–CROSSFADE_MAX_SECONDS (12); 0 = off; slider in PlaybackSettings.vue
   blendArtworkDuringCrossfade: boolean; // default true; fullscreen only
   highContrastLyrics: boolean; // default false; fullscreen lyrics only
@@ -204,7 +204,7 @@ Each `update*()` method calls `SettingsService.SaveSettings()` with the full set
 
 Playback Settings exposes the favorite-button visibility switch. The value is
 persisted as `app_settings.show_player_favorite_button` (migration 000076), defaulting
-to hidden for both new and existing installs. After a successful settings save,
+to shown for new installs; existing saved choices are preserved. After a successful settings save,
 the Wails adapter emits `settings:player-favorite-button` with the persisted boolean.
 Each window's app store updates its visibility immediately and removes this
 subscription in `dispose()`. The setting hides the control without changing any

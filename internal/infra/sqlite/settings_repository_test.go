@@ -22,8 +22,8 @@ func TestPlayerFavoriteButtonSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if settings.ShowPlayerFavoriteButton {
-		t.Fatal("favorite button should be hidden by default")
+	if !settings.ShowPlayerFavoriteButton {
+		t.Fatal("favorite button should be shown by default")
 	}
 	settings.Language = "vi"
 	for _, enabled := range []bool{true, false, true} {
@@ -54,8 +54,8 @@ func TestPlayerFavoriteButtonSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if loaded.ShowPlayerFavoriteButton || loaded.Language != "vi" {
-		t.Fatal("upgrade should hide the favorite button and preserve existing settings")
+	if !loaded.ShowPlayerFavoriteButton || loaded.Language != "vi" {
+		t.Fatal("upgrade should show the favorite button and preserve existing settings")
 	}
 }
 

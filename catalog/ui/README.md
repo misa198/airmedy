@@ -361,7 +361,7 @@ It supports one hover-open submenu level, including separators within the submen
 ### Player Footer Quick Settings
 
 `PlayerFavoriteButton` is shared by the desktop footer and floating mini player.
-It is hidden by default; Settings → Playback → Show favorite button controls
+It is shown by default; Settings → Playback → Show favorite button controls
 both windows and persists the choice (see [settings](../settings/README.md)).
 It sits beside the footer's track information and at the right of the mini
 player's track-information row, inside the hover controls. The mini variant uses

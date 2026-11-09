@@ -22,7 +22,7 @@ func hideTrayPopupAfterFocusLoss(isFocused, pointerOverTray bool) bool {
 }
 
 func trayClickHandler(mode string, showWindow, togglePopup func()) func() {
-	if mode == "pill" {
+	if mode == "pill" || mode == "menu" {
 		return togglePopup
 	}
 	return showWindow
