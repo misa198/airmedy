@@ -70,6 +70,9 @@ func BuildAppMenu(wailsApp *application.App, i18nService *i18n.Service, playerSe
 	})
 
 	menu.AddRole(application.WindowMenu)
+	if runtime.GOOS == "darwin" {
+		menu.FindByRole(application.WindowMenu).GetSubmenu().AddRole(application.CloseWindow)
+	}
 	helpMenu := menu.AddSubmenu(i18nService.T("menu.help"))
 	helpMenu.Add(i18nService.T("menu.github")).OnClick(func(_ *application.Context) {
 		if err := wailsApp.Browser.OpenURL("https://github.com/misa198/airmedy"); err != nil {

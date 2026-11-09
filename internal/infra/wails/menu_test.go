@@ -14,6 +14,13 @@ func TestBuildAppMenuStructure(t *testing.T) {
 	i18nService := i18n.NewService(slog.New(slog.NewTextHandler(io.Discard, nil)))
 	wailsApp := application.New(application.Options{Name: "Airmedy"})
 	menu := BuildAppMenu(wailsApp, i18nService, nil)
+	closeItem := menu.FindByRole(application.CloseWindow)
+	if closeItem == nil {
+		t.Fatal("native Close window action is missing")
+	}
+	if want := application.NewRole(application.CloseWindow).GetAccelerator(); closeItem.GetAccelerator() != want {
+		t.Errorf("Close accelerator = %q, want %q", closeItem.GetAccelerator(), want)
+	}
 
 	wantTopLevel := []string{"Edit", "Playback", "Window", "Help"}
 	if runtime.GOOS == "darwin" {

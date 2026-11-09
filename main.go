@@ -257,7 +257,15 @@ func main() {
 			application.InvokeAsync(windowService.RestoreMiniAlwaysOnTop)
 		}
 		wailsApp.Event.OnApplicationEvent(events.Mac.ApplicationDidBecomeActive, restoreMiniPin)
-		wailsApp.Event.OnApplicationEvent(events.Mac.ApplicationShouldHandleReopen, restoreMiniPin)
+		wailsApp.Event.RegisterApplicationEventHook(events.Mac.ApplicationShouldHandleReopen, func(e *application.ApplicationEvent) {
+			// Wails otherwise shows every hidden window, including the tray popup.
+			e.Cancel()
+			application.InvokeAsync(func() {
+				wailsApp.Event.Emit("tray-popup:hide")
+				windowService.ShowCurrent()
+				windowService.RestoreMiniAlwaysOnTop()
+			})
+		})
 	}
 
 	windowService.SetMiniWindowFactory(func() *application.WebviewWindow {

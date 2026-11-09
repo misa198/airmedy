@@ -256,13 +256,20 @@ The frontend lives inside a **pnpm + Turbo monorepo** rooted at the repo root. S
 | Main title bar      | Hidden (translucent)       | Frameless; DOM bar follows app background |
 | Single instance     | Wails default              | Loopback-socket guard + arg/deep-link relay (`singleinstance/`) |
 
-The macOS-only **Airmedy** menu contains the standard application actions. On all
-desktop platforms, **Help** contains GitHub and Sponsor actions that open the
+The macOS-only **Airmedy** menu contains the standard application actions.
+**Window** includes the native Close action on all desktop platforms. On macOS,
+`Cmd+W` follows the same close-to-tray hook as the main window's close button,
+so playback continues after the window hides. On all desktop platforms,
+**Help** contains GitHub and Sponsor actions that open the
 project repository and GitHub Sponsors page in the default browser. The menu is
 rebuilt when `language:changed` is emitted so these labels follow the selected
 backend locale. `infra/wails.BuildAppMenu` owns the menu construction behind a
 small playback-controller interface; keeping its test outside the root `main`
 package avoids linking the native audio archives into the menu test binary.
+
+On macOS, the Dock reopen hook cancels Wails' default restoration of every hidden
+window. It restores only the current main/mini player, reapplies the mini-player
+pin state, and dismisses the tray popup. The popup opens only through the tray.
 
 ## Native Build Artifacts (audio)
 

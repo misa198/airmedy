@@ -164,9 +164,6 @@ func SetupTrayPill(app *application.App, service *player.PlayerService, artwork 
 		e.Cancel()
 	})
 	offHide := app.Event.On("tray-popup:hide", func(_ *application.CustomEvent) {
-		application.InvokeAsync(hidePopup)
-	})
-	offReopen := app.Event.OnApplicationEvent(events.Mac.ApplicationShouldHandleReopen, func(_ *application.ApplicationEvent) {
 		application.InvokeAsync(func() {
 			reopen = false
 			hidePopup()
@@ -223,7 +220,6 @@ func SetupTrayPill(app *application.App, service *player.PlayerService, artwork 
 		offTrayTheme()
 		offLanguage()
 		offHide()
-		offReopen()
 		popup.Hide()
 		trayPillClick = nil
 		trayPillHidden = nil
