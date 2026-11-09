@@ -1,19 +1,17 @@
 package wails
 
 import (
-	"embed"
 	"io/fs"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"os"
 	"strconv"
 	"strings"
 
 	"airmedy/internal/domain"
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-func NewAssetHandler(assets embed.FS, artworkCache domain.ArtworkCache) http.Handler {
+func NewAssetHandler(assets fs.FS, artworkCache domain.ArtworkCache) http.Handler {
 	distFS, err := fs.Sub(assets, "frontend/dist")
 	if err != nil {
 		panic(err)
@@ -23,11 +21,7 @@ func NewAssetHandler(assets embed.FS, artworkCache domain.ArtworkCache) http.Han
 
 	var devProxy http.Handler
 	if !IsProduction {
-		target, err := url.Parse("http://localhost:9245")
-		if err != nil {
-			panic(err)
-		}
-		devProxy = httputil.NewSingleHostReverseProxy(target)
+		devProxy = application.AssetFileServerFS(distFS)
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

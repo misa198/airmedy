@@ -180,7 +180,7 @@ state changes; the frontend interpolates the playback position locally with
 
 ## Asset Serving
 
-Album artwork is served via a custom Wails asset handler (`infra/wails/assets.go`). The frontend requests artwork at a URL like `wails://artwork/{key}` or via relative path. The handler maps the key to a cached file path via `ArtworkCache.GetPath()` or `GetVariantPath()`.
+Album artwork is served via a custom Wails asset handler (`infra/wails/assets.go`). The frontend requests artwork at a URL like `wails://artwork/{key}` or via relative path. The handler maps the key to a cached file path via `ArtworkCache.GetPath()` or `GetVariantPath()`. In dev mode, other requests use Wails' asset file server, which proxies to `FRONTEND_DEVSERVER_URL`; the Vite task binds to `127.0.0.1` so Wails' IPv4 proxy can reach it.
 
 ## Remote Control Server
 
