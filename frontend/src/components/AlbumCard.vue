@@ -26,15 +26,16 @@ const emit = defineEmits<{
     @contextmenu.prevent="emit('contextmenu', $event, album)"
   >
     <div class="aspect-square bg-foreground/5 rounded-lg ring-1 ring-foreground/[0.06] overflow-hidden relative mb-3 transition-all">
-      <div v-if="album.artwork_key" class="w-full h-full">
+      <div class="album-artwork w-full h-full">
         <LazyImg
+          v-if="album.artwork_key"
           :src="buildArtworkUrl(album.artwork_key, 'md')"
           :alt="album.title"
-          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          class="w-full h-full object-cover"
         />
-      </div>
-      <div v-else class="w-full h-full flex items-center justify-center text-dimmer group-hover:scale-105 transition-transform duration-500">
-        <Disc class="w-1/3 h-1/3" />
+        <div v-else class="w-full h-full flex items-center justify-center text-dimmer">
+          <Disc class="w-1/3 h-1/3" />
+        </div>
       </div>
 
       <div v-if="showPlay" class="absolute inset-0 bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -69,3 +70,14 @@ const emit = defineEmits<{
     </div>
   </div>
 </template>
+
+<style scoped>
+.album-artwork {
+  transform: scale(1);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.group:hover .album-artwork {
+  transform: scale(1.05);
+}
+</style>

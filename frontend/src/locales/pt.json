@@ -1,5 +1,7 @@
 {
   "common": {
+    "back": "Voltar",
+    "forward": "Avançar",
     "mobile_pairing_broadcast": {
       "title": "Transmitir sinal de emparelhamento",
       "description": "Transmite um sinal por 30 segundos para que dispositivos prontos possam encontrar e conectar-se a este computador.",
@@ -16,6 +18,9 @@
     "error": "Erro",
     "cancel": "Cancelar",
     "ok": "OK",
+    "minimize": "Minimizar",
+    "maximize": "Maximizar",
+    "restore": "Restaurar",
     "close": "Fechar",
     "change": "Alterar",
     "save": "Salvar",
@@ -65,6 +70,15 @@
     "restart_now": "Reiniciar agora"
   },
   "settings": {
+    "title_bar": {
+      "title": "Custom title bar",
+      "navigation": "Show navigation buttons",
+      "navigation_desc": "Show Back and Forward buttons beside the app logo.",
+      "actions": "Quick actions",
+      "actions_desc": "Choose which actions to show. Drag the handle or use its Up and Down arrow keys to reorder.",
+      "reorder": "Reorder {action}",
+      "save_error": "Could not save title bar settings. Please try again."
+    },
     "title": "Configurações",
     "sync": {
       "syncing": "Sincronizando...",

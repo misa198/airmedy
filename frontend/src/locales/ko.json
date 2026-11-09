@@ -1,5 +1,7 @@
 {
   "common": {
+    "back": "뒤로",
+    "forward": "앞으로",
     "mobile_pairing_broadcast": {
       "title": "페어링 신호 브로드캐스트",
       "description": "준비된 기기가 이 데스크톱을 찾아 연결할 수 있도록 30초 동안 신호를 브로드캐스트합니다.",
@@ -16,6 +18,9 @@
     "error": "오류",
     "cancel": "취소",
     "ok": "OK",
+    "minimize": "최소화",
+    "maximize": "최대화",
+    "restore": "이전 크기로 복원",
     "close": "닫기",
     "change": "변경",
     "save": "저장",
@@ -65,6 +70,15 @@
     "restart_now": "지금 재시작"
   },
   "settings": {
+    "title_bar": {
+      "title": "Custom title bar",
+      "navigation": "Show navigation buttons",
+      "navigation_desc": "Show Back and Forward buttons beside the app logo.",
+      "actions": "Quick actions",
+      "actions_desc": "Choose which actions to show. Drag the handle or use its Up and Down arrow keys to reorder.",
+      "reorder": "Reorder {action}",
+      "save_error": "Could not save title bar settings. Please try again."
+    },
     "title": "설정",
     "sync": {
       "syncing": "동기화 중...",

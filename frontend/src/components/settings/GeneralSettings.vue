@@ -8,6 +8,8 @@ import { ColorPicker, Switch } from '@airmedy/ui'
 import RestartModal from '../RestartModal.vue'
 import SettingSection from './SettingSection.vue'
 import SettingRow from './SettingRow.vue'
+import TitleBarSettings from './TitleBarSettings.vue'
+import { useCustomTitleBar } from '@/composables/useCustomTitleBar'
 import {
   Select,
   SelectContent,
@@ -19,6 +21,7 @@ import {
 const { t } = useI18n()
 const appStore = useAppStore()
 const deviceStore = useDeviceStore()
+const { canConfigureTitleBar } = useCustomTitleBar()
 const showRestartDialog = ref(false)
 const primaryColorPresets = ['#E11D48', '#2563EB', '#7E22CE', '#DB2777', '#EA580C', '#CA8A04', '#15803D']
 
@@ -58,7 +61,7 @@ const toggleAutoCheckUpdate = async (enabled: boolean) => {
 </script>
 
 <template>
-  <div class="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
+  <div class="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500 select-none">
     <SettingSection :icon="AppWindow" :label="t('settings.general.behavior', 'Behavior')">
       <SettingRow :title="t('settings.behavior.start_at_login')" :description="t('settings.behavior.start_at_login_desc')">
         <Switch
@@ -177,6 +180,8 @@ const toggleAutoCheckUpdate = async (enabled: boolean) => {
       </SettingRow>
 
     </SettingSection>
+
+    <TitleBarSettings v-if="canConfigureTitleBar" />
 
     <SettingSection v-if="deviceStore.isMac" :icon="Monitor" :label="t('settings.behavior.tray_section')">
       <SettingRow

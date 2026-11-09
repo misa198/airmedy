@@ -1,5 +1,7 @@
 {
   "common": {
+    "back": "Atrás",
+    "forward": "Adelante",
     "mobile_pairing_broadcast": {
       "title": "Emitir señal de emparejamiento",
       "description": "Emite una señal durante 30 segundos para que los dispositivos listos puedan encontrar y conectarse a este escritorio.",
@@ -16,6 +18,9 @@
     "error": "Error",
     "cancel": "Cancelar",
     "ok": "OK",
+    "minimize": "Minimizar",
+    "maximize": "Maximizar",
+    "restore": "Restaurar",
     "close": "Cerrar",
     "change": "Cambiar",
     "save": "Guardar",
@@ -65,6 +70,15 @@
     "restart_now": "Reiniciar ahora"
   },
   "settings": {
+    "title_bar": {
+      "title": "Custom title bar",
+      "navigation": "Show navigation buttons",
+      "navigation_desc": "Show Back and Forward buttons beside the app logo.",
+      "actions": "Quick actions",
+      "actions_desc": "Choose which actions to show. Drag the handle or use its Up and Down arrow keys to reorder.",
+      "reorder": "Reorder {action}",
+      "save_error": "Could not save title bar settings. Please try again."
+    },
     "title": "Ajustes",
     "sync": {
       "syncing": "Sincronizando...",

@@ -5,9 +5,11 @@ import { usePlayerStore } from '../stores/player'
 import { useMoodRadioStore } from '../stores/moodRadio'
 import { useI18n } from 'vue-i18n'
 import QueueTrackList from './QueueTrackList.vue'
+import { useCustomTitleBar } from '@/composables/useCustomTitleBar'
 
 const { t } = useI18n()
 const store = usePlayerStore()
+const { hasCustomTitleBar } = useCustomTitleBar()
 const moodRadioStore = useMoodRadioStore()
 const queueTrackList = ref<InstanceType<typeof QueueTrackList> | null>(null)
 
@@ -32,7 +34,8 @@ onUnmounted(() => {
 <template>
   <div class="h-full w-full bg-background flex flex-col">
     <!-- Header -->
-    <div class="flex items-center justify-between px-4 py-3 border-b border-foreground/[0.06] select-none">
+    <div class="flex items-center justify-between px-4 pb-3 border-b border-foreground/[0.06] select-none"
+      :class="hasCustomTitleBar ? 'pt-0' : 'pt-3'">
       <div class="flex items-center gap-2 font-semibold">
         <ListMusic class="w-4 h-4 text-primary" />
         <span>{{ t('player.queue') }}</span>

@@ -1,5 +1,7 @@
 {
   "common": {
+    "back": "Назад",
+    "forward": "Вперёд",
     "mobile_pairing_broadcast": {
       "title": "Передать сигнал сопряжения",
       "description": "Передаёт сигнал в течение 30 секунд, чтобы готовые устройства могли найти этот компьютер и подключиться к нему.",
@@ -16,6 +18,9 @@
     "error": "Ошибка",
     "cancel": "Отмена",
     "ok": "ОК",
+    "minimize": "Свернуть",
+    "maximize": "Развернуть",
+    "restore": "Восстановить",
     "close": "Закрыть",
     "change": "Изменить",
     "save": "Сохранить",
@@ -65,6 +70,15 @@
     "restart_now": "Перезапустить сейчас"
   },
   "settings": {
+    "title_bar": {
+      "title": "Custom title bar",
+      "navigation": "Show navigation buttons",
+      "navigation_desc": "Show Back and Forward buttons beside the app logo.",
+      "actions": "Quick actions",
+      "actions_desc": "Choose which actions to show. Drag the handle or use its Up and Down arrow keys to reorder.",
+      "reorder": "Reorder {action}",
+      "save_error": "Could not save title bar settings. Please try again."
+    },
     "title": "Настройки",
     "sync": {
       "syncing": "Синхронизация...",

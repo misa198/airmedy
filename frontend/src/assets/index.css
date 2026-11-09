@@ -3,6 +3,8 @@
 @config "../../tailwind.config.js";
 
 @theme {
+  --color-window-close: #c42b1c;
+  --color-window-close-foreground: #ffffff;
   --color-status-online: var(--status-online);
   --color-disabled-overlay: var(--bg-disabled-overlay);
   --color-mini-player-pill-background: var(--mini-player-pill-background);
@@ -168,12 +170,12 @@
   opacity: 0.4;
 }
 
-/* Fix WebKit rendering issues with semi-transparent backgrounds, blurs, and opacity */
-[class*="bg-"][class*="/"],
-[class*="bg-"][class*="\\["],
-[class*="backdrop-blur"],
-[class*="opacity-"]:not(.opacity-100),
-.custom-scrollbar {
+/* Fix WKWebView rendering issues without triggering WebKitGTK backdrop artifacts. */
+html:not(.platform-linux) [class*="bg-"][class*="/"],
+html:not(.platform-linux) [class*="bg-"][class*="\\["],
+html:not(.platform-linux) [class*="backdrop-blur"],
+html:not(.platform-linux) [class*="opacity-"]:not(.opacity-100),
+html:not(.platform-linux) .custom-scrollbar {
   -webkit-transform: translate3d(0, 0, 0);
   transform: translate3d(0, 0, 0);
   -webkit-backface-visibility: hidden;
@@ -182,8 +184,28 @@
 }
 
 /* Ensure backdrop-blur elements have their own stacking context */
-[class*="backdrop-blur"] {
+html:not(.platform-linux) [class*="backdrop-blur"] {
   isolation: isolate;
+}
+
+/* WebKitGTK clips modal backdrop repaints when an ancestor owns a GPU layer. */
+html.platform-linux .modal-root,
+html.platform-linux .modal-root .backdrop,
+html.platform-linux .modal-root .modal-content {
+  transform: none;
+  backface-visibility: visible;
+  will-change: auto;
+  isolation: auto;
+}
+
+html.platform-linux .modal-root .backdrop,
+html.platform-linux .modal-root .modal-content {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.platform-linux .modal-root .backdrop {
+  background-color: color-mix(in srgb, var(--bg-main) 86%, transparent);
 }
 
 img {

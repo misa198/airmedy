@@ -207,6 +207,7 @@ func main() {
 		Height:             800,
 		MinWidth:           1200,
 		MinHeight:          768,
+		Frameless:          runtime.GOOS == "windows" || runtime.GOOS == "linux",
 		UseApplicationMenu: runtime.GOOS == "darwin",
 		Mac: application.MacWindow{
 			InvisibleTitleBarHeight: 50,
@@ -216,6 +217,9 @@ func main() {
 		Windows: application.WindowsWindow{
 			Theme:       winTheme(settings.Theme),
 			CustomTheme: winCustomTheme(settings.Theme),
+		},
+		Linux: application.LinuxWindow{
+			Menu: application.NewMenu(),
 		},
 		BackgroundColour: bgRGBA(settings.Theme),
 		URL:              "/",
@@ -253,7 +257,15 @@ func main() {
 			application.InvokeAsync(windowService.RestoreMiniAlwaysOnTop)
 		}
 		wailsApp.Event.OnApplicationEvent(events.Mac.ApplicationDidBecomeActive, restoreMiniPin)
-		wailsApp.Event.OnApplicationEvent(events.Mac.ApplicationShouldHandleReopen, restoreMiniPin)
+		wailsApp.Event.RegisterApplicationEventHook(events.Mac.ApplicationShouldHandleReopen, func(e *application.ApplicationEvent) {
+			// Wails otherwise shows every hidden window, including the tray popup.
+			e.Cancel()
+			application.InvokeAsync(func() {
+				wailsApp.Event.Emit("tray-popup:hide")
+				windowService.ShowCurrent()
+				windowService.RestoreMiniAlwaysOnTop()
+			})
+		})
 	}
 
 	windowService.SetMiniWindowFactory(func() *application.WebviewWindow {
@@ -268,7 +280,7 @@ func main() {
 			Hidden:              true,
 			AlwaysOnTop:         false,
 			DisableResize:       false,
-			Frameless:           runtime.GOOS == "windows",
+			Frameless:           runtime.GOOS == "windows" || runtime.GOOS == "linux",
 			MinimiseButtonState: application.ButtonHidden,
 			MaximiseButtonState: application.ButtonHidden,
 			CloseButtonState:    application.ButtonHidden,
@@ -281,6 +293,9 @@ func main() {
 			Windows: application.WindowsWindow{
 				Theme:       winTheme(settings.Theme),
 				CustomTheme: winCustomTheme(settings.Theme),
+			},
+			Linux: application.LinuxWindow{
+				Menu: application.NewMenu(),
 			},
 			BackgroundColour: bgRGBA(settings.Theme),
 			URL:              "/?mode=mini#/mini-player",

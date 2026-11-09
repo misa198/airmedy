@@ -101,34 +101,22 @@ onUnmounted(() => {
 <template>
   <!-- Avatar only variant -->
   <div v-if="variant === 'avatar'" class="w-full h-full flex items-center justify-center">
-    <div v-if="imageUrl" class="w-full h-full">
-      <img 
-        :src="imageUrl" 
-        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-        @error="imageUrl = null"
-      />
-    </div>
-    <div v-else class="w-full h-full flex items-center justify-center text-dimmer group-hover:bg-foreground/10 transition-colors">
-      <User class="w-1/2 h-1/2" />
+    <div class="artist-artwork w-full h-full">
+      <img v-if="imageUrl" :src="imageUrl" class="w-full h-full object-cover" @error="imageUrl = null" />
+      <div v-else class="w-full h-full flex items-center justify-center text-dimmer group-hover:bg-foreground/10 transition-colors">
+        <User class="w-1/2 h-1/2" />
+      </div>
     </div>
   </div>
 
   <!-- Full card variant (default) -->
-  <div 
-    v-else
-    class="group cursor-pointer text-center"
-    @click="emit('click', artist.id)"
-  >
+  <div v-else class="group cursor-pointer text-center" @click="emit('click', artist.id)">
     <div class="aspect-square bg-foreground/5 rounded-full ring-1 ring-foreground/[0.06] overflow-hidden relative mb-3 transition-all flex items-center justify-center">
-      <div v-if="imageUrl" class="w-full h-full">
-        <img
-          :src="imageUrl"
-          class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-          @error="imageUrl = null"
-        />
-      </div>
-      <div v-else class="w-full h-full flex items-center justify-center text-dimmer group-hover:bg-foreground/10 transition-colors">
-        <User class="w-1/2 h-1/2" />
+      <div class="artist-artwork w-full h-full">
+        <img v-if="imageUrl" :src="imageUrl" class="w-full h-full object-cover" @error="imageUrl = null" />
+        <div v-else class="w-full h-full flex items-center justify-center text-dimmer group-hover:bg-foreground/10 transition-colors">
+          <User class="w-1/2 h-1/2" />
+        </div>
       </div>
     </div>
 
@@ -138,3 +126,14 @@ onUnmounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.artist-artwork {
+  transform: scale(1);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:global(.group:hover .artist-artwork) {
+  transform: scale(1.1);
+}
+</style>

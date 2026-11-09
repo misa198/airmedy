@@ -33,6 +33,7 @@ export const useDeviceStore = defineStore('device', () => {
       isMac.value = platform === 'darwin'
       isWindows.value = platform === 'windows'
       isLinux.value = platform === 'linux'
+      document.documentElement.classList.toggle('platform-linux', isLinux.value)
       await checkFullscreen()
     } catch (e) {
       console.error('Failed to init device store', e)
@@ -55,6 +56,7 @@ export const useDeviceStore = defineStore('device', () => {
     _offFns.forEach(off => off())
     _offFns = []
     _initialized = false
+    document.documentElement.classList.remove('platform-linux')
   }
 
   async function toggleFullscreen() {

@@ -68,6 +68,29 @@ Stored in the `app_settings` table (single-row, id always = 1). Sensitive sessio
 
 On macOS, `show_tray_icon` gates the menu bar item. `tray_mode` selects the menu bar appearance: the default icon (`menu`) or the Now Playing pill (`pill`). In both modes, left-click toggles the player popup and right-click opens a native menu with Show Airmedy and Quit. The General Settings selector appears only while the tray icon is enabled. Tray visibility and style changes take effect after restart; other platforms continue to use the existing tray. The General tray section also selects the Now Playing menu bar pill theme: system (default), light, or dark. The native pill applies changes immediately; system follows the OS appearance. This setting does not change the tray popup window theme. The same General tray section offers the tray popup background selector (living artwork, solid, or monochrome) while the tray icon is enabled; Playback retains the fullscreen and mini-player background selectors.
 
+General Settings includes a Custom title bar section only on Windows/Linux while
+`useCustomTitleBar().canConfigureTitleBar` is true. The hook returns reactive
+`hasCustomTitleBar` for layout visibility and `canConfigureTitleBar` for settings
+availability (Windows/Linux plus title bar visibility). `title_bar_show_navigation` (default true)
+controls Back/Forward together. `title_bar_actions` is an ordered JSON list of
+`{id, visible}` entries containing each of `mobile`, `library`, `settings`,
+`playback`, and `remote` exactly once. The default order is that sequence, with
+only the first three visible. Hidden actions retain their position; all five may
+be hidden. Actions navigate to the corresponding Settings category (Settings
+opens General). Changes apply immediately and persist across launches.
+
+Migration 000081 adds the boolean and JSON TEXT columns without altering other
+settings; rollback removes only these preferences. The app service validates the
+five unique IDs before saving. Invalid stored action JSON falls back to the default
+actions without resetting other preferences. The app store round-trips both fields on every
+full settings save. After persistence, `settings:title-bar` carries
+`{show_navigation, actions}` to window stores without saving again; its listener
+is removed in `dispose()`. Failed title bar saves restore the previous local
+configuration and show an inline error. `TitleBarSettings.vue` uses the existing
+`vue-virtual-sortable` list with a dedicated drag handle and arrow-key reordering.
+Tests are in `TitleBarSettings.spec.ts`, `WindowTitleBar.spec.ts`, and the settings
+service/repository tests.
+
 ## Config (Data Paths)
 
 ```go

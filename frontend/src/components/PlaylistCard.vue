@@ -20,11 +20,9 @@ const emit = defineEmits<{
     @contextmenu.prevent="emit('contextmenu', $event, playlist)"
   >
     <div class="aspect-square bg-foreground/5 rounded-lg ring-1 ring-foreground/[0.06] overflow-hidden relative mb-3 transition-all flex items-center justify-center">
-      <PlaylistArtwork 
-        :playlist="playlist" 
-        :tracks="tracks" 
-        class="group-hover:scale-105 transition-transform duration-500"
-      />
+      <div class="playlist-artwork w-full h-full">
+        <PlaylistArtwork :playlist="playlist" :tracks="tracks" />
+      </div>
     </div>
 
     <div class="space-y-1 px-1">
@@ -33,4 +31,15 @@ const emit = defineEmits<{
     </div>
   </div>
 </template>
+
+<style scoped>
+.playlist-artwork {
+  transform: scale(1);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.group:hover .playlist-artwork {
+  transform: scale(1.05);
+}
+</style>
 

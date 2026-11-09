@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { nextTick } from 'vue'
+import { nextTick, ref } from 'vue'
 import { createTestingPinia } from '@pinia/testing'
 import { createPinia, setActivePinia } from 'pinia'
 import { Events } from '@wailsio/runtime'
@@ -8,6 +8,8 @@ import { useAppStore } from '../../stores/app'
 import GeneralSettings from './GeneralSettings.vue'
 
 vi.mock('../../../bindings/airmedy/internal/infra/wails/windowservice', () => ({ SetTitleBarTheme: vi.fn().mockResolvedValue(undefined) }))
+
+vi.mock('@/composables/useCustomTitleBar', () => ({ useCustomTitleBar: () => ({ canConfigureTitleBar: titleBarAvailable }) }))
 
 vi.mock('vue-i18n', () => ({
   useI18n: () => ({ t: (key: string, values?: Record<string, string>) => values?.color ? `${key}:${values.color}` : key }),
@@ -25,7 +27,21 @@ vi.mock('@wailsio/runtime', () => ({
   Call: { ByID: vi.fn() },
 }))
 
+const titleBarAvailable = ref(true)
+
 describe('GeneralSettings primary color', () => {
+  it.each([true, false])('follows title bar configuration availability (%s)', async (available) => {
+    titleBarAvailable.value = available
+    const pinia = createTestingPinia({ createSpy: vi.fn })
+    const wrapper = mount(GeneralSettings, { global: { plugins: [pinia], stubs: { TitleBarSettings: { template: '<div data-test="title-bar-settings" />' } } } })
+    expect(wrapper.find('[data-test="title-bar-settings"]').exists()).toBe(available)
+    titleBarAvailable.value = !available
+    await nextTick()
+    expect(wrapper.find('[data-test="title-bar-settings"]').exists()).toBe(!available)
+    wrapper.unmount()
+    titleBarAvailable.value = true
+  })
+
   it('shows the tray style only when macOS tray is enabled', async () => {
     const pinia = createTestingPinia({ createSpy: vi.fn, initialState: { app: { showTrayIcon: true, trayMode: 'menu' }, device: { isMac: true } } })
     const wrapper = mount(GeneralSettings, { global: { plugins: [pinia] } })

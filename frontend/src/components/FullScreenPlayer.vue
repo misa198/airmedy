@@ -129,7 +129,7 @@ onUnmounted(() => {
 <template>
   <div
     data-test="fullscreen-player"
-    class="fixed inset-0 z-100 flex flex-col overflow-hidden bg-[#0A0A0A] select-none dark"
+    class="fixed inset-0 z-[1003] flex flex-col overflow-hidden bg-[#0A0A0A] select-none dark"
     @contextmenu.prevent="openQuickSettingsMenu">
     <LivingArtworkBackground v-if="appStore.livingArtworkBackground" :theme="store.theme" :is-playing="store.isPlaying"
       :artwork-crossfade="artworkCrossfade" />
@@ -137,11 +137,11 @@ onUnmounted(() => {
 
     <div class="relative z-10 flex flex-col h-full text-white">
       <!-- Top bar -->
-      <div class="flex items-center justify-between px-6 py-4" 
-        style="-webkit-app-region: drag"
+      <div data-test="fullscreen-player-titlebar" class="flex items-center justify-between px-6 py-4" 
+        style="-webkit-app-region: drag; --wails-draggable: drag"
         @dblclick="deviceStore.toggleMaximize"
       >
-        <div class="w-[160px]" style="-webkit-app-region: no-drag">
+        <div class="w-[160px]" style="-webkit-app-region: no-drag; --wails-draggable: no-drag">
           <button class="p-2 rounded-full hover:bg-white/8 transition-all text-white/60 hover:text-white"
             :class="{ 'mt-8': deviceStore.isMac && !deviceStore.isWindowFullscreen }"
             @click="store.setPlayerMode('sticky')">
@@ -151,7 +151,7 @@ onUnmounted(() => {
         <span class="text-xs font-semibold text-white/40 uppercase tracking-[0.2em]">
           {{ t('player.now_playing') }}
         </span>
-        <div data-fullscreen-player-interactive="true" class="flex items-center w-[160px] justify-end" style="-webkit-app-region: no-drag">
+        <div data-fullscreen-player-interactive="true" class="flex items-center w-[160px] justify-end" style="-webkit-app-region: no-drag; --wails-draggable: no-drag">
           <div class="relative">
             <div id="fullscreen-lyrics-actions"
               class="absolute right-full top-1/2 -translate-y-1/2 mr-2 w-10 h-10 transition-opacity duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"

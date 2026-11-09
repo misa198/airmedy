@@ -326,7 +326,7 @@ onUnmounted(() => {
         </div>
       </template>
 
-      <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center justify-between mb-6 select-none">
         <p class="text-sm text-dim">{{ t('settings.folders.description') }}</p>
         <button @click="addFolder" :disabled="isSyncing"
           class="flex items-center gap-2 px-4 py-2 bg-foreground/[0.04] text-foreground rounded-xl hover:bg-foreground/[0.08] transition-all text-sm font-bold disabled:opacity-50 shrink-0">
@@ -340,7 +340,7 @@ onUnmounted(() => {
       </div>
 
       <div v-else-if="folders.length === 0"
-        class="py-12 text-center border-2 border-dashed border-foreground/[0.06] rounded-2xl">
+        class="py-12 text-center border-2 border-dashed border-foreground/[0.06] rounded-2xl select-none">
         <Folder class="w-12 h-12 mx-auto text-foreground opacity-30 mb-4" />
         <p class="text-dim text-sm font-medium">{{ t('settings.folders.no_folders') }}</p>
       </div>
@@ -386,17 +386,17 @@ onUnmounted(() => {
     </SettingSection>
 
     <SettingSection :icon="Tags" :label="t('settings.library.delimiters_title')" variant="panel">
-      <p class="text-sm text-dim mb-6">{{ t('settings.library.delimiters_description') }}</p>
+      <p class="text-sm text-dim mb-6 select-none">{{ t('settings.library.delimiters_description') }}</p>
 
       <div v-if="delimitersDirty"
-        class="flex items-start gap-3 mb-6 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+        class="flex items-start gap-3 mb-6 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 select-none">
         <Info class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
         <p class="text-xs text-amber-600 dark:text-amber-400 font-medium leading-relaxed">
           {{ t('settings.delimiters.resync_hint') }}
         </p>
       </div>
 
-      <div class="grid gap-5 grid-cols-1">
+      <div class="grid gap-5 grid-cols-1 select-none">
         <DelimiterInput :label="t('settings.delimiters.artists')" :model-value="artistDelimiters" :disabled="isSyncing"
           @update:model-value="(v) => onDelimitersChange('artist', v)" />
         <DelimiterInput :label="t('settings.delimiters.album_artists')" :model-value="albumArtistDelimiters"
@@ -433,7 +433,7 @@ onUnmounted(() => {
           </div>
         </template>
       </SettingRow>
-      <div v-if="appStore.libraryAnalysisMaxWorkerCount > 1" class="p-5 transition-opacity"
+      <div v-if="appStore.libraryAnalysisMaxWorkerCount > 1" class="p-5 transition-opacity select-none"
         :class="!appStore.libraryAnalysisEnabled && 'opacity-40 pointer-events-none'">
         <div class="flex items-center justify-between gap-x-2 mb-1">
           <p class="text-sm font-semibold">{{ t('settings.library_analysis.worker_count') }}</p>

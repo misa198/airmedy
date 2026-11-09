@@ -183,7 +183,7 @@ onMounted(loadStatus)
 </script>
 
 <template>
-  <div class="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
+  <div class="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500 select-none">
     <SettingSection :icon="Wifi" :label="t('settings.remote.title')">
         <!-- Toggle -->
         <SettingRow :title="t('settings.remote.enable')" :description="t('settings.remote.enable_desc')">

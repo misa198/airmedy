@@ -142,7 +142,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div
-    class="grid sticky top-0 z-10 border-b border-foreground/[0.06] text-[10px] font-semibold text-foreground opacity-80 uppercase tracking-widest overflow-visible"
+    class="grid sticky top-0 z-10 border-b border-foreground/[0.06] text-[10px] font-semibold text-foreground opacity-80 uppercase tracking-widest overflow-visible select-none"
     :class="variant === 'glass' ? 'bg-transparent' : 'bg-background'"
     :style="{ gridTemplateColumns, height: headerHeight + 'px' }"
   >

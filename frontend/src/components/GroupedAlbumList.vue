@@ -12,7 +12,9 @@ import ContextMenu from './ContextMenu.vue'
 import { useContextMenu } from '@/composables/useContextMenu'
 import { useAlbumContextMenu } from '@/composables/useAlbumContextMenu'
 import { useTrackTableSettings } from '@/composables/useTrackTableSettings'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const playerStore = usePlayerStore()
 const router = useRouter()
 const contextMenu = useContextMenu()
@@ -102,10 +104,12 @@ function tableHeight(trackCount: number): string {
               class="w-32 h-32 md:w-40 md:h-40 rounded-xl shadow-xl ring-1 ring-foreground/8 bg-foreground/5 flex-shrink-0 group relative cursor-pointer"
               @click="group.album && router.push(`/albums/${group.album.id}`)">
               <div class="w-full h-full rounded-xl overflow-hidden">
-                <LazyImg v-if="group.album?.artwork_key" :src="buildArtworkUrl(group.album.artwork_key, 'md')"
-                  class="w-full h-full object-cover" />
-                <div v-else class="w-full h-full flex items-center justify-center text-foreground opacity-30">
-                  <Disc class="w-16 h-16" />
+                <div class="album-artwork w-full h-full">
+                  <LazyImg v-if="group.album?.artwork_key" :src="buildArtworkUrl(group.album.artwork_key, 'md')"
+                    class="w-full h-full object-cover" />
+                  <div v-else class="w-full h-full flex items-center justify-center text-foreground opacity-30">
+                    <Disc class="w-16 h-16" />
+                  </div>
                 </div>
               </div>
               <div v-if="group.album"
@@ -126,7 +130,7 @@ function tableHeight(trackCount: number): string {
               <div class="flex items-center gap-3 text-sm text-dim">
                 <span v-if="group.album?.year" class="font-medium">{{ group.album.year }}</span>
                 <span v-if="group.album?.year">•</span>
-                <span>{{ group.tracks.length }} tracks</span>
+                <span>{{ group.tracks.length }} {{ t('library.songs') }}</span>
               </div>
             </div>
           </div>
@@ -163,6 +167,15 @@ function tableHeight(trackCount: number): string {
 </template>
 
 <style scoped>
+.album-artwork {
+  transform: scale(1);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.group:hover .album-artwork {
+  transform: scale(1.05);
+}
+
 /* vue-virtual-scroller hardcodes overflow:hidden on each item wrapper,
    which clips album artwork shadow and track table border/ring. */
 :deep(.vue-recycle-scroller__item-wrapper) {

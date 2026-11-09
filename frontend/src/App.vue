@@ -99,16 +99,18 @@ onMounted(async () => {
     await router.replace('/mini-player')
   }
 
-  isRouterReady.value = true
-
   if (isTrayPopup) {
     if (route.name !== 'tray-popup') await router.replace('/tray-popup')
     await appStore.loadSettings(true)
     locale.value = appStore.language
     await playerStore.init()
     window.addEventListener('focus', refreshTraySettings)
+    isRouterReady.value = true
     return
   }
+
+  await deviceStore.init()
+  isRouterReady.value = true
 
   // Load settings
   await appStore.loadSettings(isMiniPlayer.value)
@@ -140,8 +142,6 @@ onMounted(async () => {
   }
 
   playerStore.init()
-  deviceStore.init()
-  deviceStore.checkFullscreen()
   playlistsStore.loadAll()
   moodRadioStore.init()
   mobilePairingStore.init()

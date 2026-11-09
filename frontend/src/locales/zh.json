@@ -1,5 +1,7 @@
 {
   "common": {
+    "back": "后退",
+    "forward": "前进",
     "mobile_pairing_broadcast": {
       "title": "广播配对信号",
       "description": "广播信号 30 秒，让准备就绪的设备能够发现并连接到此桌面端。",
@@ -16,6 +18,9 @@
     "error": "错误",
     "cancel": "取消",
     "ok": "确定",
+    "minimize": "最小化",
+    "maximize": "最大化",
+    "restore": "还原",
     "close": "关闭",
     "change": "更改",
     "save": "保存",
@@ -65,6 +70,15 @@
     "restart_now": "立即重启"
   },
   "settings": {
+    "title_bar": {
+      "title": "Custom title bar",
+      "navigation": "Show navigation buttons",
+      "navigation_desc": "Show Back and Forward buttons beside the app logo.",
+      "actions": "Quick actions",
+      "actions_desc": "Choose which actions to show. Drag the handle or use its Up and Down arrow keys to reorder.",
+      "reorder": "Reorder {action}",
+      "save_error": "Could not save title bar settings. Please try again."
+    },
     "title": "设置",
     "sync": {
       "syncing": "同步中...",

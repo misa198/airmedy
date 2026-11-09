@@ -7,6 +7,8 @@ import QueueDrawer from '@/components/QueueDrawer.vue'
 import TrackInfoDrawer from '@/components/TrackInfoDrawer.vue'
 import UpdateDialog from '@/components/UpdateDialog.vue'
 import Sidebar from '@/components/Sidebar.vue'
+import WindowTitleBar from '@/components/WindowTitleBar.vue'
+import { useCustomTitleBar } from '@/composables/useCustomTitleBar'
 import { usePlayerStore } from '@/stores/player'
 import { useDeviceStore } from '@/stores/device'
 import { useAppStore } from '@/stores/app'
@@ -32,6 +34,7 @@ function loadSidebarWidth(): number {
 const playerStore = usePlayerStore()
 const deviceStore = useDeviceStore()
 const appStore = useAppStore()
+const { hasCustomTitleBar } = useCustomTitleBar()
 
 playerStore.sidebarWidth = loadSidebarWidth()
 
@@ -43,6 +46,7 @@ const TITLEBAR_HEIGHT = 40 // matches drag overlay h-10
 // pointer-events-none, so listen on the root and guard: only top strip, and
 // not when the target is an interactive element (button/input/etc).
 const onTitlebarDblClick = (e: MouseEvent) => {
+  if (!deviceStore.isMac) return
   if (deviceStore.isWindowFullscreen) return
   if (playerStore.playerMode === 'fullscreen' || playerStore.playerMode === 'mini') return
   if (e.clientY > TITLEBAR_HEIGHT) return
@@ -88,17 +92,18 @@ onUnmounted(() => {
 
 <template>
   <div class="h-full w-full flex flex-col overflow-hidden bg-background text-foreground" @dblclick="onTitlebarDblClick">
+    <WindowTitleBar v-if="hasCustomTitleBar" />
     <!-- Window Drag Area (Double click to toggle maximize) -->
     <!--
       pointer-events-none: overlay must NOT block clicks on buttons sitting in
       the top 40px (view header actions, sidebar). Window dragging still works:
-      -webkit-app-region (macOS) / --wails-draggable (Windows) are resolved from
+      -webkit-app-region (macOS) / --wails-draggable are resolved from
       layout, independent of pointer-events. Double-click-to-zoom is handled by
       the OS over the drag region.
     -->
     <div
-      v-if="!deviceStore.isWindowFullscreen && playerStore.playerMode !== 'fullscreen' && playerStore.playerMode !== 'mini'"
-      class="fixed top-0 left-0 right-0 h-10 z-[60] select-none pointer-events-none"
+      v-if="deviceStore.isMac && !deviceStore.isWindowFullscreen && playerStore.playerMode !== 'fullscreen' && playerStore.playerMode !== 'mini'"
+      class="fixed top-0 left-0 right-0 h-10 z-[1002] select-none pointer-events-none"
       style="-webkit-app-region: drag; --wails-draggable: drag"
     />
 
@@ -108,7 +113,9 @@ onUnmounted(() => {
       <aside :style="{ width: playerStore.sidebarWidth + 'px' }"
         class="h-full overflow-hidden flex-shrink-0 select-none">
         <Sidebar
-          :class="deviceStore.isMac && !deviceStore.isWindowFullscreen ? 'pt-10' : 'pt-4'" />
+          :class="deviceStore.isMac && !deviceStore.isWindowFullscreen 
+          ? 'pt-10' 
+          : hasCustomTitleBar ? 'pt-0' : 'pt-4'" />
       </aside>
 
       <!-- Resizer Handle -->

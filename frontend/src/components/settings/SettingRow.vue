@@ -16,7 +16,7 @@ defineProps<{
       >
         <slot name="leading" />
         <div :class="noTitleWrap && 'min-w-0'">
-          <p class="text-sm font-semibold" :class="noTitleWrap && 'truncate'">
+          <p class="text-sm font-semibold select-none" :class="noTitleWrap && 'truncate'">
             <slot name="title">{{ title }}</slot>
           </p>
           <div v-if="description || $slots.description"
@@ -26,11 +26,11 @@ defineProps<{
         </div>
       </div>
       <div v-else :class="noTitleWrap && 'min-w-0 flex-1'">
-        <p class="text-sm font-semibold" :class="noTitleWrap && 'truncate'">
+        <p class="text-sm font-semibold select-none" :class="noTitleWrap && 'truncate'">
           <slot name="title">{{ title }}</slot>
         </p>
         <div v-if="description || $slots.description"
-          class="text-xs text-dim mt-1 whitespace-pre-line">
+          class="text-xs text-dim mt-1 whitespace-pre-line select-none">
           <slot name="description">{{ description }}</slot>
         </div>
       </div>

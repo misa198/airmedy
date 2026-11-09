@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import ArtistCard from '@/components/ArtistCard.vue'
 import { useContextMenu } from '@/composables/useContextMenu'
+import { useDetailRouteLoader } from '@/composables/useDetailRouteLoader'
 import { useGroupContextMenu } from '@/composables/useGroupContextMenu'
+import { useLibrarySync } from '@/composables/useLibrarySync'
 import { sortTracksGrouped } from '@/lib/trackSort'
 import { DetailsButton } from '@airmedy/ui'
 import { hexToRgba } from '@airmedy/utils'
@@ -9,18 +11,14 @@ import { Disc, ImagePlus, MoreVertical, Music, Play, Shuffle, Trash2 } from '@lu
 import { Events } from '@wailsio/runtime'
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
 import type { AlbumDTO, Artist, ThemeColors, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import ContextMenu from '../components/ContextMenu.vue'
 import GroupedAlbumList from '../components/GroupedAlbumList.vue'
 import { usePlayerStore } from '../stores/player'
-import { useLibrarySync } from '@/composables/useLibrarySync'
-import { useDetailRouteLoader } from '@/composables/useDetailRouteLoader'
 
 const { t } = useI18n()
 
-const router = useRouter()
 const playerStore = usePlayerStore()
 const artist = ref<Artist | null>(null)
 const albums = shallowRef<AlbumDTO[]>([])

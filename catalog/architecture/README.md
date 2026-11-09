@@ -103,7 +103,7 @@ wailsApp := application.New(application.Options{
 
 ### Windows
 
-**Main window:** 1280×800px (min 1060×768), macOS translucent titlebar hidden (InvisibleTitleBarHeight=50, Backdrop=Translucent, TitleBar=HiddenInset).
+**Main window:** 1280×800px (min 1200×768), macOS translucent titlebar hidden (InvisibleTitleBarHeight=50, Backdrop=Translucent, TitleBar=HiddenInset). Windows/Linux use `Frameless` with an empty 32px DOM title bar owned by the main Vue layout; see [UI title bar contract](../ui/README.md#main-window-title-bar).
 
 **Mini player window:** compact square (default 300×300px, min 280×280, max 500×500), hidden by default. Its temporary Lyrics/Queue selector expands the window to width:height 1:2 for a lower placeholder panel, with a matching minimum of 280×560; selection resets on reopen. Position, size, and pin (always-on-top) persist to the `mini_player_state` table and restore on open via `WindowService.ApplyMiniState`, clamped to the current screen's work area. Native window APIs keep the active 1:1 or 1:2 ratio locked on macOS, Windows, and Linux/X11; Wayland keeps its compositor-managed resize behaviour.
 
@@ -253,16 +253,23 @@ The frontend lives inside a **pnpm + Turbo monorepo** rooted at the repo root. S
 | Taskbar controls    | Not applicable             | Windows: thumbnail toolbar (`ITaskbarList3`, `infra/wails/thumbbar_*`) |
 | App menu            | Airmedy, Edit, Playback, Window, Help | Edit, Playback, Window, Help |
 | Translucent window  | NSVisualEffectView         | Not applicable        |
-| Title bar colour    | Hidden (translucent)       | Windows: `DwmSetWindowAttribute` (Linux n/a) |
+| Main title bar      | Hidden (translucent)       | Frameless; DOM bar follows app background |
 | Single instance     | Wails default              | Loopback-socket guard + arg/deep-link relay (`singleinstance/`) |
 
-The macOS-only **Airmedy** menu contains the standard application actions. On all
-desktop platforms, **Help** contains GitHub and Sponsor actions that open the
+The macOS-only **Airmedy** menu contains the standard application actions.
+**Window** includes the native Close action on all desktop platforms. On macOS,
+`Cmd+W` follows the same close-to-tray hook as the main window's close button,
+so playback continues after the window hides. On all desktop platforms,
+**Help** contains GitHub and Sponsor actions that open the
 project repository and GitHub Sponsors page in the default browser. The menu is
 rebuilt when `language:changed` is emitted so these labels follow the selected
 backend locale. `infra/wails.BuildAppMenu` owns the menu construction behind a
 small playback-controller interface; keeping its test outside the root `main`
 package avoids linking the native audio archives into the menu test binary.
+
+On macOS, the Dock reopen hook cancels Wails' default restoration of every hidden
+window. It restores only the current main/mini player, reapplies the mini-player
+pin state, and dismisses the tray popup. The popup opens only through the tray.
 
 ## Native Build Artifacts (audio)
 

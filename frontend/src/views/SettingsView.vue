@@ -13,6 +13,7 @@ import PlaybackSettings from '@/components/settings/PlaybackSettings.vue'
 import AboutSettings from '@/components/settings/AboutSettings.vue'
 import RemoteServerSettings from '@/components/settings/RemoteServerSettings.vue'
 import MobileDevicesSettings from '@/components/settings/MobileDevicesSettings.vue'
+import { useCustomTitleBar } from '@/composables/useCustomTitleBar'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -22,6 +23,7 @@ const props = defineProps<{
   category?: string
 }>()
 
+const { hasCustomTitleBar } = useCustomTitleBar()
 // State
 const activeCategory = ref(props.category || 'general')
 const isMobileLibrarySync = computed(() => route.name === 'mobile-library-sync')
@@ -59,7 +61,7 @@ watch([activeCategory, () => route.query.section], scrollToRequestedSection, { i
   <div class="h-full flex flex-col md:flex-row bg-background text-foreground overflow-hidden">
     <!-- Sidebar -->
     <aside class="w-full md:w-56 border-r border-foreground/[0.06] bg-foreground/[0.02] flex-shrink-0 select-none">
-      <div class="p-6">
+      <div class="p-6" :class="hasCustomTitleBar ? 'pt-4' : 'pt-6'">
         <h1 class="text-2xl font-bold mb-6 px-2">{{ t('settings.title') }}</h1>
         <nav class="space-y-1">
           <button
@@ -83,7 +85,7 @@ watch([activeCategory, () => route.query.section], scrollToRequestedSection, { i
     <!-- Main Content -->
     <main class="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
       <router-view v-if="isMobileLibrarySync" />
-      <div v-else class="max-w-3xl p-8 mx-auto">
+      <div v-else class="max-w-3xl p-8 mx-auto" :class="hasCustomTitleBar ? 'pt-4' : 'pt-8'">
         <!-- General Settings -->
         <GeneralSettings
           v-if="activeCategory === 'general'"

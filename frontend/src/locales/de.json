@@ -1,5 +1,7 @@
 {
   "common": {
+    "back": "Zurück",
+    "forward": "Vorwärts",
     "mobile_pairing_broadcast": {
       "title": "Kopplungssignal senden",
       "description": "Sendet 30 Sekunden lang ein Signal, damit bereite Geräte diesen Desktop finden und verbinden können.",
@@ -16,6 +18,9 @@
     "error": "Fehler",
     "cancel": "Abbrechen",
     "ok": "OK",
+    "minimize": "Minimieren",
+    "maximize": "Maximieren",
+    "restore": "Wiederherstellen",
     "close": "Schließen",
     "change": "Ändern",
     "save": "Speichern",
@@ -65,6 +70,15 @@
     "restart_now": "Jetzt neu starten"
   },
   "settings": {
+    "title_bar": {
+      "title": "Custom title bar",
+      "navigation": "Show navigation buttons",
+      "navigation_desc": "Show Back and Forward buttons beside the app logo.",
+      "actions": "Quick actions",
+      "actions_desc": "Choose which actions to show. Drag the handle or use its Up and Down arrow keys to reorder.",
+      "reorder": "Reorder {action}",
+      "save_error": "Could not save title bar settings. Please try again."
+    },
     "title": "Einstellungen",
     "sync": {
       "syncing": "Synchronisierung...",

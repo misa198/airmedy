@@ -231,6 +231,17 @@ describe('FullScreenPlayer', () => {
     wrapper.unmount()
   })
 
+  it('covers the title bar while keeping its own drag region', () => {
+    const wrapper = mountPlayer()
+    const player = wrapper.get('[data-test="fullscreen-player"]')
+    const titlebar = wrapper.get('[data-test="fullscreen-player-titlebar"]')
+
+    expect(player.classes()).toContain('z-[1003]')
+    expect(titlebar.attributes('style')).toContain('--wails-draggable: drag')
+    expect(titlebar.findAll('[style]').filter(node => node.attributes('style')?.includes('no-drag'))).toHaveLength(2)
+    wrapper.unmount()
+  })
+
   it('keeps the track context menu on artwork right click', async () => {
     const wrapper = mountPlayer()
 

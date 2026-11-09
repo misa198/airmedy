@@ -1,5 +1,7 @@
 {
   "common": {
+    "back": "Indietro",
+    "forward": "Avanti",
     "mobile_pairing_broadcast": {
       "title": "Trasmetti segnale di associazione",
       "description": "Trasmette un segnale per 30 secondi affinché i dispositivi pronti possano trovare e connettersi a questo computer.",
@@ -16,6 +18,9 @@
     "error": "Errore",
     "cancel": "Annulla",
     "ok": "OK",
+    "minimize": "Riduci a icona",
+    "maximize": "Ingrandisci",
+    "restore": "Ripristina",
     "close": "Chiudi",
     "change": "Modifica",
     "save": "Salva",
@@ -65,6 +70,15 @@
     "restart_now": "Riavvia ora"
   },
   "settings": {
+    "title_bar": {
+      "title": "Custom title bar",
+      "navigation": "Show navigation buttons",
+      "navigation_desc": "Show Back and Forward buttons beside the app logo.",
+      "actions": "Quick actions",
+      "actions_desc": "Choose which actions to show. Drag the handle or use its Up and Down arrow keys to reorder.",
+      "reorder": "Reorder {action}",
+      "save_error": "Could not save title bar settings. Please try again."
+    },
     "title": "Impostazioni",
     "sync": {
       "syncing": "Sincronizzazione...",

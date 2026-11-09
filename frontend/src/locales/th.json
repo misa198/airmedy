@@ -1,5 +1,7 @@
 {
   "common": {
+    "back": "ย้อนกลับ",
+    "forward": "ไปข้างหน้า",
     "mobile_pairing_broadcast": {
       "title": "ส่งสัญญาณจับคู่",
       "description": "ส่งสัญญาณเป็นเวลา 30 วินาทีเพื่อให้อุปกรณ์ที่พร้อมใช้งานค้นหาและเชื่อมต่อกับเดสก์ท็อปนี้ได้",
@@ -16,6 +18,9 @@
     "error": "เกิดข้อผิดพลาด",
     "cancel": "ยกเลิก",
     "ok": "ตกลง",
+    "minimize": "ย่อหน้าต่าง",
+    "maximize": "ขยายหน้าต่าง",
+    "restore": "คืนขนาดหน้าต่าง",
     "close": "ปิด",
     "change": "เปลี่ยน",
     "save": "บันทึก",
@@ -65,6 +70,15 @@
     "restart_now": "รีสตาร์ทเดี๋ยวนี้"
   },
   "settings": {
+    "title_bar": {
+      "title": "Custom title bar",
+      "navigation": "Show navigation buttons",
+      "navigation_desc": "Show Back and Forward buttons beside the app logo.",
+      "actions": "Quick actions",
+      "actions_desc": "Choose which actions to show. Drag the handle or use its Up and Down arrow keys to reorder.",
+      "reorder": "Reorder {action}",
+      "save_error": "Could not save title bar settings. Please try again."
+    },
     "title": "การตั้งค่า",
     "sync": {
       "syncing": "กำลังซิงค์...",
