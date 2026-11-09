@@ -49,6 +49,17 @@ beforeEach(() => {
 afterEach(() => { store.dispose(); vi.unstubAllGlobals() })
 
 describe('TitleBarSettings', () => {
+  it('hides navigation by default and when older settings omit the preference', async () => {
+    expect(store.titleBarShowNavigation).toBe(false)
+    const wrapper = mount(TitleBarSettings)
+    expect(wrapper.getComponent(Switch).props('modelValue')).toBe(false)
+    store.titleBarShowNavigation = true
+    vi.mocked(SettingsService.GetSettings).mockResolvedValue({} as any)
+    await store.loadSettings(true)
+    expect(store.titleBarShowNavigation).toBe(false)
+    wrapper.unmount()
+  })
+
   it.each(['light', 'dark', 'black'])('renders five themed rows with a dedicated drag handle in %s', (theme) => {
     const wrapper = mount(TitleBarSettings, { attrs: { class: theme } })
     expect(wrapper.findAll('[data-action]')).toHaveLength(5)
@@ -177,12 +188,12 @@ describe('TitleBarSettings', () => {
 
   it('loads persisted settings and preserves them when saving an unrelated setting', async () => {
     const actions = defaultTitleBarActions().reverse().map(action => ({ ...action, visible: false }))
-    vi.mocked(SettingsService.GetSettings).mockResolvedValue({ title_bar_show_navigation: false, title_bar_actions: actions } as any)
+    vi.mocked(SettingsService.GetSettings).mockResolvedValue({ title_bar_show_navigation: true, title_bar_actions: actions } as any)
     await store.loadSettings(true)
-    expect(store.titleBarShowNavigation).toBe(false)
+    expect(store.titleBarShowNavigation).toBe(true)
     expect(store.titleBarActions).toEqual(actions)
     await store.updateStartAtLogin(true)
-    expect(SettingsService.SaveSettings).toHaveBeenLastCalledWith(expect.objectContaining({ title_bar_show_navigation: false, title_bar_actions: actions }))
+    expect(SettingsService.SaveSettings).toHaveBeenLastCalledWith(expect.objectContaining({ title_bar_show_navigation: true, title_bar_actions: actions }))
   })
 
   it('receives cross-window changes without saving and removes the listener', () => {

@@ -21,6 +21,13 @@ func hideTrayPopupAfterFocusLoss(isFocused, pointerOverTray bool) bool {
 	return !isFocused && !pointerOverTray
 }
 
+func trayClickHandler(mode string, showWindow, togglePopup func()) func() {
+	if mode == "pill" {
+		return togglePopup
+	}
+	return showWindow
+}
+
 // truncateLabel trims s to at most max runes, appending "..." if truncated.
 func truncateLabel(s string, max int) string {
 	runes := []rune(s)
@@ -171,6 +178,7 @@ func (m *TrayManager) Setup(tray *application.SystemTray, mainWindow *applicatio
 	})
 
 	tray.SetMenu(menu)
+	tray.OnClick(m.windowService.ShowCurrent)
 
 	// Register listeners
 	m.playerService.AddStatusListener(m.onStatusChange)

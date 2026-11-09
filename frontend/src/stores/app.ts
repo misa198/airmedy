@@ -32,7 +32,7 @@ export const STEREO_WIDTH_MAX = 200
 export const PRIMARY_COLOR_SAVE_DEBOUNCE_MS = 250
 
 export const useAppStore = defineStore('app', () => {
-  const titleBarShowNavigation = ref(true)
+  const titleBarShowNavigation = ref(false)
   const titleBarActions = ref<TitleBarAction[]>(defaultTitleBarActions())
   const theme = ref<'system' | 'light' | 'dark' | 'black'>('system')
   const primaryColor = ref(DEFAULT_PRIMARY_COLOR)
@@ -140,7 +140,7 @@ export const useAppStore = defineStore('app', () => {
     try {
       const settings = await SettingsService.GetSettings()
       if (settings) {
-        titleBarShowNavigation.value = settings.title_bar_show_navigation !== false
+        titleBarShowNavigation.value = settings.title_bar_show_navigation === true
         titleBarActions.value = settings.title_bar_actions ? settings.title_bar_actions.map(action => ({ ...action, id: action.id as TitleBarAction['id'] })) : defaultTitleBarActions()
         if (settings.theme) theme.value = settings.theme as any
         primaryColor.value = normalizeHexColor(settings.primary_color) ?? DEFAULT_PRIMARY_COLOR

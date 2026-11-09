@@ -83,3 +83,19 @@ func TestSaveSettingsValidatesTitleBarActions(t *testing.T) {
 		})
 	}
 }
+
+func (r *backgroundSettingsRepository) Load(context.Context) (*domain.AppSettings, error) {
+	return nil, r.err
+}
+
+func TestGetSettingsDefaultsHideTitleBarNavigation(t *testing.T) {
+	repo := &backgroundSettingsRepository{err: errors.New("load failed")}
+	svc := NewSettingsService(repo, nil, slog.Default())
+	settings, err := svc.GetSettings(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if settings.TitleBarShowNavigation {
+		t.Fatal("fallback defaults must hide title bar navigation")
+	}
+}

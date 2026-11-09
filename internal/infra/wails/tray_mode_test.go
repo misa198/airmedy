@@ -35,3 +35,21 @@ func TestHideTrayPopupAfterFocusLoss(t *testing.T) {
 		t.Fatal("clicking away from the popup must hide it")
 	}
 }
+
+func TestTrayClickHandler(t *testing.T) {
+	for _, mode := range []string{"menu", "pill"} {
+		t.Run(mode, func(t *testing.T) {
+			shown, toggled := 0, 0
+			click := trayClickHandler(mode, func() { shown++ }, func() { toggled++ })
+			click()
+			click()
+			if mode == "pill" {
+				if shown != 0 || toggled != 2 {
+					t.Fatal("pill clicks must toggle the player popup")
+				}
+			} else if shown != 2 || toggled != 0 {
+				t.Fatal("icon clicks must always show the app window")
+			}
+		})
+	}
+}

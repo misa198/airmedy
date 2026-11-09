@@ -228,11 +228,11 @@ func TestTitleBarSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !settings.TitleBarShowNavigation || !reflect.DeepEqual(settings.TitleBarActions, domain.DefaultTitleBarActions()) {
+	if settings.TitleBarShowNavigation || !reflect.DeepEqual(settings.TitleBarActions, domain.DefaultTitleBarActions()) {
 		t.Fatalf("unexpected defaults: %+v", settings)
 	}
 	settings.Language = "vi"
-	settings.TitleBarShowNavigation = false
+	settings.TitleBarShowNavigation = true
 	settings.TitleBarActions[0], settings.TitleBarActions[4] = settings.TitleBarActions[4], settings.TitleBarActions[0]
 	for i := range settings.TitleBarActions {
 		settings.TitleBarActions[i].Visible = false
@@ -244,7 +244,7 @@ func TestTitleBarSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if loaded.TitleBarShowNavigation || !reflect.DeepEqual(loaded.TitleBarActions, settings.TitleBarActions) {
+	if !loaded.TitleBarShowNavigation || !reflect.DeepEqual(loaded.TitleBarActions, settings.TitleBarActions) {
 		t.Fatalf("round trip: %+v", loaded)
 	}
 	// Saving another field must retain hidden actions and their order.
@@ -285,7 +285,7 @@ func TestTitleBarSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !loaded.TitleBarShowNavigation || !reflect.DeepEqual(loaded.TitleBarActions, domain.DefaultTitleBarActions()) || loaded.Language != "vi" || loaded.Theme != "black" {
+	if loaded.TitleBarShowNavigation || !reflect.DeepEqual(loaded.TitleBarActions, domain.DefaultTitleBarActions()) || loaded.Language != "vi" || loaded.Theme != "black" {
 		t.Fatalf("upgrade: %+v", loaded)
 	}
 }
