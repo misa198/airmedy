@@ -192,7 +192,7 @@ function openProfileMenu(e: MouseEvent) {
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div class="space-y-4 select-none">
     <!-- Header row: enable toggle + profile selector + menu -->
     <div class="flex items-center gap-2">
       <!-- Enable/Disable toggle -->

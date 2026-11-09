@@ -6,9 +6,16 @@ export function useCustomTitleBar() {
   const deviceStore = useDeviceStore()
   const playerStore = usePlayerStore()
 
-  return computed(() =>
+  const hasCustomTitleBar = computed(() =>
     (deviceStore.isWindows || deviceStore.isLinux)
+  // true
     && !deviceStore.isWindowFullscreen
     && playerStore.playerMode !== 'mini',
   )
+  const canConfigureTitleBar = computed(() =>
+    (deviceStore.isWindows || deviceStore.isLinux) && hasCustomTitleBar.value,
+  // true
+  )
+
+  return { hasCustomTitleBar, canConfigureTitleBar }
 }

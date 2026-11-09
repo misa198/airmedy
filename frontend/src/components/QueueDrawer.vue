@@ -9,7 +9,7 @@ import { useCustomTitleBar } from '@/composables/useCustomTitleBar'
 
 const { t } = useI18n()
 const store = usePlayerStore()
-const hasCustomTitleBar = useCustomTitleBar()
+const { hasCustomTitleBar } = useCustomTitleBar()
 const moodRadioStore = useMoodRadioStore()
 const queueTrackList = ref<InstanceType<typeof QueueTrackList> | null>(null)
 

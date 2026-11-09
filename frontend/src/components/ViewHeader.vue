@@ -8,7 +8,7 @@ const props = defineProps<{
   searchPlaceholder?: string
 }>()
 
-const hasCustomTitleBar = useCustomTitleBar()
+const { hasCustomTitleBar } = useCustomTitleBar()
 const searchQuery = defineModel<string>({ default: '' })
 </script>
 

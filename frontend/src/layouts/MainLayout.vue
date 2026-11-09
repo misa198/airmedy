@@ -34,7 +34,7 @@ function loadSidebarWidth(): number {
 const playerStore = usePlayerStore()
 const deviceStore = useDeviceStore()
 const appStore = useAppStore()
-const hasCustomTitleBar = useCustomTitleBar()
+const { hasCustomTitleBar } = useCustomTitleBar()
 
 playerStore.sidebarWidth = loadSidebarWidth()
 

@@ -256,7 +256,7 @@ onMounted(() => {
                 </span>
               </div>
               <button @click="chooseLyricsFolder"
-                class="shrink-0 px-4 py-2 bg-foreground/[0.04] text-foreground rounded-xl hover:bg-foreground/[0.08] transition-all text-sm font-bold">
+                class="shrink-0 px-4 py-2 bg-foreground/[0.04] text-foreground rounded-xl hover:bg-foreground/[0.08] transition-all text-sm font-bold select-none">
                 {{ t('settings.integrations.lyrics_folder_choose', 'Choose Folder') }}
               </button>
             </div>

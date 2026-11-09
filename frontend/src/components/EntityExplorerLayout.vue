@@ -23,7 +23,7 @@ const searchQuery = ref('')
 const clickedFromList = ref(false)
 const scrollerRef = ref<any>(null)
 const lastScrollTop = ref(0)
-const hasCustomTitleBar = useCustomTitleBar()
+const { hasCustomTitleBar } = useCustomTitleBar()
 
 const handleScroll = (event: Event) => {
   const target = event.target as HTMLElement

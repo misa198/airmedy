@@ -207,7 +207,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
+  <div class="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500 select-none">
     <SettingSection v-if="status?.running" :icon="Wifi" :label="t('settings.mobile_pairing.scan_title')">
       <div class="flex items-center justify-between gap-4 p-5">
         <div class="min-w-0">

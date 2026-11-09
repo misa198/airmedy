@@ -48,3 +48,38 @@ func TestSaveSettingsValidatesTrayBackgroundMode(t *testing.T) {
 		})
 	}
 }
+
+func TestSaveSettingsValidatesTitleBarActions(t *testing.T) {
+	for _, name := range []string{"default", "reordered", "empty", "duplicate", "unknown"} {
+		t.Run(name, func(t *testing.T) {
+			actions := domain.DefaultTitleBarActions()
+			switch name {
+			case "default":
+				actions = nil
+			case "reordered":
+				actions[0], actions[4] = actions[4], actions[0]
+				actions[0].Visible = true
+			case "empty":
+				actions = []domain.TitleBarAction{}
+			case "duplicate":
+				actions[0].ID = actions[1].ID
+			case "unknown":
+				actions[0].ID = "unknown"
+			}
+			stop := errors.New("persistence sentinel")
+			repo := &backgroundSettingsRepository{err: stop}
+			svc := NewSettingsService(repo, nil, slog.Default())
+			err := svc.SaveSettings(context.Background(), &domain.AppSettings{PrimaryColor: domain.DefaultPrimaryColor, TitleBarActions: actions})
+			valid := name == "default" || name == "reordered"
+			if valid && !errors.Is(err, stop) {
+				t.Fatalf("valid actions rejected: %v", err)
+			}
+			if !valid && (err == nil || repo.saved != nil) {
+				t.Fatal("invalid actions reached persistence")
+			}
+			if valid && len(repo.saved.TitleBarActions) != 5 {
+				t.Fatal("missing defaults")
+			}
+		})
+	}
+}

@@ -28,37 +28,47 @@ describe('useCustomTitleBar', () => {
   })
 
   it('returns false before the platform is known and on macOS', () => {
-    const hasCustomTitleBar = useCustomTitleBar()
+    const { hasCustomTitleBar, canConfigureTitleBar } = useCustomTitleBar()
     expect(hasCustomTitleBar.value).toBe(false)
+    expect(canConfigureTitleBar.value).toBe(false)
 
     deviceStore.isMac = true
     expect(hasCustomTitleBar.value).toBe(false)
+    expect(canConfigureTitleBar.value).toBe(false)
   })
 
   it.each(['isWindows', 'isLinux'] as const)('reacts to window and player modes on %s', (platform) => {
-    const hasCustomTitleBar = useCustomTitleBar()
+    const { hasCustomTitleBar, canConfigureTitleBar } = useCustomTitleBar()
     deviceStore[platform] = true
     expect(hasCustomTitleBar.value).toBe(true)
+    expect(canConfigureTitleBar.value).toBe(true)
 
     deviceStore.isWindowMaximized = true
     expect(hasCustomTitleBar.value).toBe(true)
+    expect(canConfigureTitleBar.value).toBe(true)
 
     deviceStore.isWindowFullscreen = true
     expect(hasCustomTitleBar.value).toBe(false)
+    expect(canConfigureTitleBar.value).toBe(false)
 
     deviceStore.isWindowFullscreen = false
     expect(hasCustomTitleBar.value).toBe(true)
+    expect(canConfigureTitleBar.value).toBe(true)
 
     playerStore.playerMode = 'fullscreen'
     expect(hasCustomTitleBar.value).toBe(true)
+    expect(canConfigureTitleBar.value).toBe(true)
 
     playerStore.playerMode = 'mini'
     expect(hasCustomTitleBar.value).toBe(false)
+    expect(canConfigureTitleBar.value).toBe(false)
 
     playerStore.playerMode = 'sticky'
     expect(hasCustomTitleBar.value).toBe(true)
+    expect(canConfigureTitleBar.value).toBe(true)
 
     deviceStore[platform] = false
     expect(hasCustomTitleBar.value).toBe(false)
+    expect(canConfigureTitleBar.value).toBe(false)
   })
 })

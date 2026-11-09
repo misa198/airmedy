@@ -1,11 +1,14 @@
 <script setup lang="ts">
+import { useAppStore } from '@/stores/app'
+import { TITLE_BAR_ACTIONS } from '@/lib/titleBar'
 import { useDeviceStore } from '@/stores/device'
-import { ChevronLeft, ChevronRight, Copy, Folder, Minus, Settings, Smartphone, Square, X } from '@lucide/vue'
+import { ChevronLeft, ChevronRight, Copy, Minus, Square, X } from '@lucide/vue'
 import { Window } from '@wailsio/runtime'
-import { onUnmounted, ref } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
+const appStore = useAppStore()
 const deviceStore = useDeviceStore()
 const router = useRouter()
 const { t } = useI18n()
@@ -22,11 +25,7 @@ const removeAfterEach = router.afterEach(updateNavigation)
 onUnmounted(removeAfterEach)
 
 const windowControlClass = 'flex h-full w-10 items-center justify-center text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-foreground transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] outline-none'
-const shortcuts = [
-  { path: '/settings/mobile-devices', label: 'settings.categories.mobile_devices', icon: Smartphone },
-  { path: '/settings/library', label: 'settings.categories.library', icon: Folder },
-  { path: '/settings', label: 'settings.title', icon: Settings },
-]
+const shortcuts = computed(() => appStore.titleBarActions.filter(action => action.visible).map(action => TITLE_BAR_ACTIONS[action.id]))
 
 async function minimize() {
   try {
@@ -58,6 +57,7 @@ async function close() {
     />
     <div class="ml-2 mr-auto flex h-full" style="--wails-draggable: no-drag" @dblclick.stop>
       <button
+        v-if="appStore.titleBarShowNavigation"
         :class="windowControlClass"
         class="disabled:cursor-default disabled:opacity-30 w-8!"
         type="button"
@@ -69,6 +69,7 @@ async function close() {
         <ChevronLeft class="size-5.5" :stroke-width="1.5" aria-hidden="true" />
       </button>
       <button
+        v-if="appStore.titleBarShowNavigation"
         :class="windowControlClass"
         class="disabled:cursor-default disabled:opacity-30 w-8!"
         type="button"
@@ -80,7 +81,7 @@ async function close() {
         <ChevronRight class="size-5.5" :stroke-width="1.5" aria-hidden="true" />
       </button>
     </div>
-    <div class="mr-3 flex h-full" style="--wails-draggable: no-drag" @dblclick.stop>
+    <div v-if="shortcuts.length" class="mr-3 flex h-full" style="--wails-draggable: no-drag" @dblclick.stop>
       <button
         v-for="shortcut in shortcuts"
         :key="shortcut.path"

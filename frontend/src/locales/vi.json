@@ -70,6 +70,15 @@
     "restart_now": "Khởi động lại ngay"
   },
   "settings": {
+    "title_bar": {
+      "title": "Thanh tiêu đề tùy chỉnh",
+      "navigation": "Hiện nút điều hướng",
+      "navigation_desc": "Hiện nút Quay lại và Tiến tới bên cạnh biểu tượng ứng dụng.",
+      "actions": "Thao tác nhanh",
+      "actions_desc": "Chọn các thao tác muốn hiển thị. Kéo tay nắm hoặc dùng phím mũi tên lên và xuống trên tay nắm để đổi thứ tự.",
+      "reorder": "Đổi thứ tự {action}",
+      "save_error": "Không thể lưu cấu hình thanh tiêu đề. Vui lòng thử lại."
+    },
     "title": "Cài đặt",
     "sync": {
       "syncing": "Đang đồng bộ...",

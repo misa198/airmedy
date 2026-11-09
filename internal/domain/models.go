@@ -449,7 +449,15 @@ type FeaturePercentileRow struct {
 }
 
 // AppSettings holds general application settings
+type TitleBarAction struct {
+	ID      string `json:"id"`
+	Visible bool   `json:"visible"`
+}
+
 type AppSettings struct {
+	TitleBarShowNavigation bool             `json:"title_bar_show_navigation"`
+	TitleBarActions        []TitleBarAction `json:"title_bar_actions"`
+
 	Language                 string  `json:"language"`
 	Theme                    string  `json:"theme"` // "system", "light", "dark"
 	PrimaryColor             string  `json:"primary_color"`

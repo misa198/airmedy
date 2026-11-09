@@ -1,10 +1,12 @@
 package sqlite
 
 import (
+	"airmedy/internal/domain"
 	"context"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -211,5 +213,79 @@ func TestTrayBackgroundModeMigration(t *testing.T) {
 		if loaded.TrayBackgroundMode != expected {
 			t.Fatalf("upgrade: got %q, want %q", loaded.TrayBackgroundMode, expected)
 		}
+	}
+}
+
+func TestTitleBarSettings(t *testing.T) {
+	db, err := NewDB(filepath.Join(t.TempDir(), "title-bar.db"), slog.Default())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+	repo := NewSettingsRepository(db)
+	ctx := context.Background()
+	settings, err := repo.Load(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !settings.TitleBarShowNavigation || !reflect.DeepEqual(settings.TitleBarActions, domain.DefaultTitleBarActions()) {
+		t.Fatalf("unexpected defaults: %+v", settings)
+	}
+	settings.Language = "vi"
+	settings.TitleBarShowNavigation = false
+	settings.TitleBarActions[0], settings.TitleBarActions[4] = settings.TitleBarActions[4], settings.TitleBarActions[0]
+	for i := range settings.TitleBarActions {
+		settings.TitleBarActions[i].Visible = false
+	}
+	if err := repo.Save(ctx, settings); err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := repo.Load(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if loaded.TitleBarShowNavigation || !reflect.DeepEqual(loaded.TitleBarActions, settings.TitleBarActions) {
+		t.Fatalf("round trip: %+v", loaded)
+	}
+	// Saving another field must retain hidden actions and their order.
+	loaded.Theme = "black"
+	if err := repo.Save(ctx, loaded); err != nil {
+		t.Fatal(err)
+	}
+	loaded, err = repo.Load(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(loaded.TitleBarActions, settings.TitleBarActions) {
+		t.Fatal("unrelated save lost title bar settings")
+	}
+	for _, invalid := range []string{"invalid json", "[]", `[{"id":"unknown","visible":true}]`} {
+		if _, err := db.Exec("UPDATE app_settings SET title_bar_actions = ? WHERE id = 1", invalid); err != nil {
+			t.Fatal(err)
+		}
+		recovered, err := repo.Load(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(recovered.TitleBarActions, domain.DefaultTitleBarActions()) || recovered.Language != "vi" || recovered.Theme != "black" {
+			t.Fatal("invalid title bar actions should not reset other settings")
+		}
+	}
+
+	for _, direction := range []string{"down", "up"} {
+		migration, err := os.ReadFile("migrations/000081_title_bar." + direction + ".sql")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := db.Exec(string(migration)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	loaded, err = repo.Load(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !loaded.TitleBarShowNavigation || !reflect.DeepEqual(loaded.TitleBarActions, domain.DefaultTitleBarActions()) || loaded.Language != "vi" || loaded.Theme != "black" {
+		t.Fatalf("upgrade: %+v", loaded)
 	}
 }

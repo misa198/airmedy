@@ -14,6 +14,13 @@ SQLite database managed via `golang-migrate` for schema versioning and `sqlx` fo
 | `internal/infra/sqlite/*_repository.go` | Repository implementations   |
 | `internal/infra/sqlite/listening_repository.go` | Listening session persistence and analytics aggregates |
 
+Title bar preferences are stored in `app_settings.title_bar_show_navigation`
+(BOOLEAN, default true) and `title_bar_actions` (JSON TEXT containing five ordered
+`{id, visible}` records). Migration 000081 initializes existing installations with
+Mobile, Library, Settings visible and Playback, Remote hidden; its down migration
+removes only these two columns. The settings app service validates action IDs and
+uniqueness. See [settings](../settings/README.md) for behavior and synchronization.
+
 ## Connection Setup
 
 - Driver: `github.com/mattn/go-sqlite3` (cgo)

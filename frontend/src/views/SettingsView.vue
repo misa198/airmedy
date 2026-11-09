@@ -23,7 +23,7 @@ const props = defineProps<{
   category?: string
 }>()
 
-const hasCustomTitleBar = useCustomTitleBar()
+const { hasCustomTitleBar } = useCustomTitleBar()
 // State
 const activeCategory = ref(props.category || 'general')
 const isMobileLibrarySync = computed(() => route.name === 'mobile-library-sync')

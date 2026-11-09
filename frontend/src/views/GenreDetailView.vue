@@ -21,7 +21,7 @@ const playerStore = usePlayerStore()
 const genre = ref<Genre | null>(null)
 const tracks = shallowRef<TrackDTO[]>([])
 const isLoading = ref(true)
-const hasCustomTitleBar = useCustomTitleBar()
+const { hasCustomTitleBar } = useCustomTitleBar()
 
 const contextMenu = useContextMenu()
 const { buildMenuItems } = useGroupContextMenu()

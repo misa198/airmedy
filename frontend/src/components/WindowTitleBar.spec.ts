@@ -5,7 +5,9 @@ import { Copy, Square } from '@lucide/vue'
 import { Window } from '@wailsio/runtime'
 import { createRouter, createWebHashHistory, type Router } from 'vue-router'
 import WindowTitleBar from './WindowTitleBar.vue'
+import { defaultTitleBarActions } from '@/lib/titleBar'
 
+vi.mock('@/stores/app', () => ({ useAppStore: () => appStore }))
 vi.mock('@/stores/device', () => ({ useDeviceStore: () => deviceStore }))
 vi.mock('vue-router', async (importOriginal) => ({
   ...await importOriginal<typeof import('vue-router')>(),
@@ -15,6 +17,7 @@ vi.mock('@wailsio/runtime', () => ({
   Window: { Minimise: vi.fn(), Close: vi.fn() },
 }))
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (key: string) => key }) }))
+const appStore = reactive({ titleBarShowNavigation: true, titleBarActions: defaultTitleBarActions() })
 const deviceStore = reactive({ isWindowMaximized: false, toggleMaximize: vi.fn() })
 const push = vi.fn()
 const back = vi.fn()
@@ -31,6 +34,8 @@ function windowButtons(wrapper: ReturnType<typeof mount>) {
 describe('WindowTitleBar', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    appStore.titleBarShowNavigation = true
+    appStore.titleBarActions = defaultTitleBarActions()
     deviceStore.isWindowMaximized = false
     activeRouter = routerMock
     window.history.replaceState(null, '', '/')
@@ -142,6 +147,28 @@ describe('WindowTitleBar', () => {
       '/settings/mobile-devices', '/settings/library', '/settings',
     ])
     expect(deviceStore.toggleMaximize).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('applies visibility and ordering immediately while keeping window controls', async () => {
+    const wrapper = mount(WindowTitleBar)
+    appStore.titleBarShowNavigation = false
+    appStore.titleBarActions = [
+      { id: 'remote', visible: true }, { id: 'playback', visible: true },
+      { id: 'settings', visible: false }, { id: 'library', visible: false }, { id: 'mobile', visible: false },
+    ]
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('[aria-label="common.back"]').exists()).toBe(false)
+    expect(wrapper.find('[aria-label="common.forward"]').exists()).toBe(false)
+    expect(wrapper.findAll('button').slice(0, 2).map(button => button.attributes('aria-label')))
+      .toEqual(['settings.categories.remote', 'settings.categories.playback'])
+    for (const button of wrapper.findAll('button').slice(0, 2)) await button.trigger('click')
+    expect(push.mock.calls.map(([path]) => path)).toEqual(['/settings/remote', '/settings/playback'])
+    appStore.titleBarActions = appStore.titleBarActions.map(action => ({ ...action, visible: false }))
+    await wrapper.vm.$nextTick()
+    expect(wrapper.findAll('button')).toHaveLength(3)
+    expect(wrapper.find('div.mr-auto').exists()).toBe(true)
+    expect(wrapper.element.style.getPropertyValue('--wails-draggable')).toBe('drag')
     wrapper.unmount()
   })
 

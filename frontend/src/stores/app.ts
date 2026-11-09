@@ -13,6 +13,8 @@ import { DEFAULT_SYNC_INTERVAL, isSyncInterval, type SyncInterval } from '@/lib/
 import { DEFAULT_MAX_QUEUE_SIZE, isMaxQueueSize, type MaxQueueSize } from '@/lib/queue'
 import { DEFAULT_PRIMARY_COLOR, hexToRgbChannels, normalizeHexColor, primaryForeground } from '@/lib/color'
 
+import { defaultTitleBarActions, type TitleBarAction } from '@/lib/titleBar'
+
 export type TrayBackgroundMode = 'living' | 'solid' | 'monochrome'
 
 export const NORMALIZATION_TARGET_LUFS_MIN = -24
@@ -30,6 +32,8 @@ export const STEREO_WIDTH_MAX = 200
 export const PRIMARY_COLOR_SAVE_DEBOUNCE_MS = 250
 
 export const useAppStore = defineStore('app', () => {
+  const titleBarShowNavigation = ref(true)
+  const titleBarActions = ref<TitleBarAction[]>(defaultTitleBarActions())
   const theme = ref<'system' | 'light' | 'dark' | 'black'>('system')
   const primaryColor = ref(DEFAULT_PRIMARY_COLOR)
   const language = ref('en')
@@ -136,6 +140,8 @@ export const useAppStore = defineStore('app', () => {
     try {
       const settings = await SettingsService.GetSettings()
       if (settings) {
+        titleBarShowNavigation.value = settings.title_bar_show_navigation !== false
+        titleBarActions.value = settings.title_bar_actions ? settings.title_bar_actions.map(action => ({ ...action, id: action.id as TitleBarAction['id'] })) : defaultTitleBarActions()
         if (settings.theme) theme.value = settings.theme as any
         primaryColor.value = normalizeHexColor(settings.primary_color) ?? DEFAULT_PRIMARY_COLOR
         if (settings.language) language.value = settings.language
@@ -257,6 +263,8 @@ export const useAppStore = defineStore('app', () => {
   const saveSettings = async () => {
     try {
       await SettingsService.SaveSettings({
+        title_bar_show_navigation: titleBarShowNavigation.value,
+        title_bar_actions: titleBarActions.value,
         theme: theme.value,
         primary_color: primaryColor.value,
         language: language.value,
@@ -352,6 +360,20 @@ export const useAppStore = defineStore('app', () => {
     language.value = newLanguage
     await saveSettings()
     Events.Emit('language:changed', newLanguage)
+  }
+
+  const updateTitleBar = async (showNavigation: boolean, actions: TitleBarAction[]) => {
+    const previousNavigation = titleBarShowNavigation.value
+    const previousActions = titleBarActions.value
+    titleBarShowNavigation.value = showNavigation
+    titleBarActions.value = actions.map(action => ({ ...action }))
+    try {
+      await saveSettings()
+    } catch (error) {
+      titleBarShowNavigation.value = previousNavigation
+      titleBarActions.value = previousActions
+      throw error
+    }
   }
 
   const updateStartAtLogin = async (enabled: boolean) => {
@@ -626,7 +648,13 @@ export const useAppStore = defineStore('app', () => {
     showPlayerFavoriteButton.value = event.data === true
   })
 
+  const _offTitleBar = Events.On('settings:title-bar', (event: Events.WailsEvent) => {
+    titleBarShowNavigation.value = event.data.show_navigation
+    titleBarActions.value = event.data.actions.map((action: TitleBarAction) => ({ ...action }))
+  })
+
   function dispose() {
+    _offTitleBar()
     if (_primaryColorSaveTimer) clearTimeout(_primaryColorSaveTimer)
     _primaryColorSaveTimer = null
     _darkMQ?.removeEventListener('change', _onDarkMQChange)
@@ -640,6 +668,9 @@ export const useAppStore = defineStore('app', () => {
   }
 
   return {
+    titleBarShowNavigation,
+    titleBarActions,
+    updateTitleBar,
     theme,
     primaryColor,
     language,

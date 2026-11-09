@@ -15,8 +15,13 @@ maximize/restore action through the device store. Back/Forward buttons beside th
 Airmedy logo navigate Vue Router history; unavailable directions are disabled and
 use reduced foreground opacity. Their availability follows browser history state
 on mount and after navigation; the router hook is removed on unmount. Right-aligned Lucide icon
-buttons minimize, maximize/restore, and close the window. A shortcut row to their left opens
-Mobile settings, Library settings, and general Settings, in that order.
+buttons minimize, maximize/restore, and close the window. A configurable shortcut row to their left opens Settings categories. Its
+five actions are Mobile, Library, Settings, Playback, and Remote; the first three
+are visible by default in that order. General Settings on Windows/Linux exposes
+Back/Forward visibility and a checkbox/drag-handle list for action visibility and
+order. Hidden actions keep their order, and all actions may be hidden without
+removing the title bar drag region or window controls. Changes apply immediately;
+see [settings](../settings/README.md) for persistence and event contracts.
 Shortcuts use a pointer cursor and keep their background unchanged on hover.
 Window controls use the default cursor and a theme foreground hover overlay;
 Close instead uses a red background and white icon on hover.

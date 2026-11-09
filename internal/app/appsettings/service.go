@@ -74,6 +74,8 @@ func (s *SettingsService) GetSettings(ctx context.Context) (*domain.AppSettings,
 	if err != nil {
 		s.logger.Error("failed to load app settings, using defaults", "error", err)
 		s.cache = &domain.AppSettings{
+			TitleBarShowNavigation:          true,
+			TitleBarActions:                 domain.DefaultTitleBarActions(),
 			Language:                        "en",
 			Theme:                           "system",
 			PrimaryColor:                    domain.DefaultPrimaryColor,
@@ -131,6 +133,13 @@ func (s *SettingsService) SaveSettings(ctx context.Context, settings *domain.App
 	case "living", "solid", "monochrome":
 	default:
 		return fmt.Errorf("invalid tray background mode: %q", settings.TrayBackgroundMode)
+	}
+
+	if settings.TitleBarActions == nil {
+		settings.TitleBarActions = domain.DefaultTitleBarActions()
+	}
+	if err := domain.ValidateTitleBarActions(settings.TitleBarActions); err != nil {
+		return fmt.Errorf("invalid title bar actions: %w", err)
 	}
 
 	primaryColor, err := domain.NormalizePrimaryColor(settings.PrimaryColor)

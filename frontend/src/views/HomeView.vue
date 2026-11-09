@@ -8,7 +8,7 @@ import HomeHeader from '@/components/home/HomeHeader.vue'
 import { useCustomTitleBar } from '@/composables/useCustomTitleBar'
 
 const { t } = useI18n()
-const hasCustomTitleBar = useCustomTitleBar()
+const { hasCustomTitleBar } = useCustomTitleBar()
 const activeTab = ref('overview')
 const tabs = computed(() => [
   { value: 'overview', label: t('sidebar.home'), icon: House },

@@ -191,7 +191,7 @@ const sectorPath = computed(() => {
 
     <SettingSection id="equalizer" :icon="AudioLines" :label="t('settings.equalizer.title')" variant="panel">
       <EQPanel />
-      <div class="p-5">
+      <div class="p-5 select-none">
         <div class="flex items-center justify-between gap-x-2 mb-3">
           <p class="text-sm font-semibold">{{ t('settings.equalizer.stereo_width') }}</p>
           <p class="text-sm font-semibold tabular-nums">{{ stereoWidthLive }}%</p>
@@ -289,7 +289,7 @@ const sectorPath = computed(() => {
         <Switch :model-value="appStore.blendArtworkDuringCrossfade"
           @update:model-value="appStore.updateBlendArtworkDuringCrossfade" />
       </SettingRow>
-      <div class="p-5 transition-opacity" :class="!crossfadeEnabled && 'opacity-40 pointer-events-none'">
+      <div class="p-5 transition-opacity select-none" :class="!crossfadeEnabled && 'opacity-40 pointer-events-none'">
         <div class="flex items-center justify-between gap-x-2 mb-3">
           <p class="text-sm font-semibold">{{ t('settings.playback.crossfade_duration') }}</p>
           <p class="text-sm font-semibold tabular-nums">{{ crossfadeSliderValue }} s</p>
@@ -330,7 +330,7 @@ const sectorPath = computed(() => {
           </SelectContent>
         </Select>
       </SettingRow>
-      <div class="p-5 transition-opacity"
+      <div class="p-5 transition-opacity select-none"
         :class="(!appStore.libraryAnalysisEnabled || !appStore.normalizationEnabled) && 'opacity-40 pointer-events-none'">
         <div class="flex items-center justify-between gap-x-2 mb-3">
           <p class="text-sm font-semibold">{{ t('settings.normalization.target_lufs') }}</p>
