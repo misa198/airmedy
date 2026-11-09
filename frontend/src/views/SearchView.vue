@@ -18,10 +18,12 @@ import { useAlbumContextMenu } from '@/composables/useAlbumContextMenu'
 import { useLibrarySync } from '@/composables/useLibrarySync'
 import type { AlbumDTO, TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import { buildArtworkUrl } from '@airmedy/utils'
+import { useCustomTitleBar } from '@/composables/useCustomTitleBar'
 
 const router = useRouter()
 const store = useSearchStore()
 const playerStore = usePlayerStore()
+const { hasCustomTitleBar } = useCustomTitleBar()
 
 const inputValue = ref(store.query)
 const searchInput = ref<InstanceType<typeof Input>>()
@@ -90,7 +92,7 @@ const hasResults = () => hasTracks() || hasAlbums() || hasArtists() || hasPlayli
 <template>
   <div class="flex flex-col h-full overflow-hidden">
     <!-- Search bar -->
-    <div class="px-8 pt-8 pb-4 flex-shrink-0">
+    <div class="px-8 pb-4 flex-shrink-0" :class="hasCustomTitleBar ? 'pt-2' : 'pt-8'">
       <div class="relative max-w-xl">
         <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-subdued pointer-events-none" />
         <Input ref="searchInput" v-model="inputValue" :placeholder="$t('library.search_placeholder')" class="pl-10 pr-4" clearable />
