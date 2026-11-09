@@ -130,7 +130,7 @@ func SetupTrayPill(app *application.App, service *player.PlayerService, artwork 
 			showPopup()
 		}
 	}
-	trayPillClick = func() {
+	trayPillClick = trayClickHandler(mode, windowService.ShowCurrent, func() {
 		if closing {
 			reopen = !reopen
 			return
@@ -140,7 +140,7 @@ func SetupTrayPill(app *application.App, service *player.PlayerService, artwork 
 			return
 		}
 		showPopup()
-	}
+	})
 	trayPillMenu = func() {
 		reopen = false
 		hidePopup()
