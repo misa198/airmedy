@@ -76,7 +76,7 @@ useDetailRouteLoader(loadGenreDetails)
     <div v-else-if="genre" class="flex-1 flex flex-col overflow-hidden">
       <!-- Genre Header -->
       <div class="p-8 border-b border-foreground/[0.06] bg-gradient-to-b from-dynamic-surface to-transparent flex items-end gap-6 flex-shrink-0"
-      :class="hasCustomTitleBar ? 'pt-2' : 'pt-8'"
+      :class="hasCustomTitleBar ? 'pt-6' : 'pt-8'"
       >
         <div class="w-24 h-24 rounded-2xl bg-foreground/5 flex items-center justify-center ring-1 ring-foreground/[0.08] flex-shrink-0">
           <Tag class="w-12 h-12 text-foreground opacity-70" />
