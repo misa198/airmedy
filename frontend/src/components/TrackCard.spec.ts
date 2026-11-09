@@ -14,6 +14,24 @@ const mockTrack = {
 } as any as TrackDTO
 
 describe('TrackCard', () => {
+  it('keeps the animated wrapper across track artwork, album artwork, and placeholder', async () => {
+    const wrapper = mount(TrackCard, {
+      props: { track: mockTrack },
+      global: { mocks: { $t: (key: string) => key } },
+    })
+    const artwork = wrapper.get('.track-artwork').element
+
+    for (const track of [
+      { ...mockTrack, artwork_key: '', album: { ...mockTrack.album!, artwork_key: 'album-cover' } },
+      { ...mockTrack, artwork_key: '', album: null },
+      mockTrack,
+    ]) {
+      await wrapper.setProps({ track: track as TrackDTO })
+      expect(wrapper.get('.track-artwork').element).toBe(artwork)
+      expect(wrapper.find('img').exists()).toBe(Boolean(track.artwork_key || track.album?.artwork_key))
+    }
+  })
+
   it('emits contextmenu when right clicked', async () => {
     const wrapper = mount(TrackCard, {
       props: {

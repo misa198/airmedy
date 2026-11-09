@@ -29,15 +29,16 @@ const artistNames = (artists: (Artist | null)[] | undefined) => {
     @contextmenu.prevent="emit('contextmenu', $event, track)"
   >
     <div class="aspect-square bg-foreground/5 rounded-lg ring-1 ring-foreground/[0.06] overflow-hidden relative mb-3 transition-all">
-      <div v-if="track.artwork_key || (track.album && track.album.artwork_key)" class="w-full h-full">
+      <div class="track-artwork w-full h-full">
         <LazyImg
+          v-if="track.artwork_key || track.album?.artwork_key"
           :src="buildArtworkUrl(track.artwork_key || track.album?.artwork_key, 'md')"
           :alt="track.title"
-          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          class="w-full h-full object-cover"
         />
-      </div>
-      <div v-else class="w-full h-full flex items-center justify-center text-dimmer group-hover:scale-105 transition-transform duration-500">
-        <Music class="w-1/3 h-1/3" />
+        <div v-else class="w-full h-full flex items-center justify-center text-dimmer">
+          <Music class="w-1/3 h-1/3" />
+        </div>
       </div>
 
       <div class="absolute inset-0 bg-background/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -83,3 +84,14 @@ const artistNames = (artists: (Artist | null)[] | undefined) => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.track-artwork {
+  transform: scale(1);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.group:hover .track-artwork {
+  transform: scale(1.05);
+}
+</style>
