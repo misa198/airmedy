@@ -71,7 +71,7 @@ On macOS, `show_tray_icon` gates the menu bar item. `tray_mode` selects the menu
 General Settings includes a Custom title bar section only on Windows/Linux while
 `useCustomTitleBar().canConfigureTitleBar` is true. The hook returns reactive
 `hasCustomTitleBar` for layout visibility and `canConfigureTitleBar` for settings
-availability (Windows/Linux plus title bar visibility). `title_bar_show_navigation` (default true)
+availability (Windows/Linux plus title bar visibility). `title_bar_show_navigation` (default false)
 controls Back/Forward together. `title_bar_actions` is an ordered JSON list of
 `{id, visible}` entries containing each of `mobile`, `library`, `settings`,
 `playback`, and `remote` exactly once. The default order is that sequence, with

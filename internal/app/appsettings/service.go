@@ -74,7 +74,7 @@ func (s *SettingsService) GetSettings(ctx context.Context) (*domain.AppSettings,
 	if err != nil {
 		s.logger.Error("failed to load app settings, using defaults", "error", err)
 		s.cache = &domain.AppSettings{
-			TitleBarShowNavigation:          true,
+			TitleBarShowNavigation:          false,
 			TitleBarActions:                 domain.DefaultTitleBarActions(),
 			Language:                        "en",
 			Theme:                           "system",

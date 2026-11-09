@@ -256,7 +256,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 	)
 	if err == sql.ErrNoRows {
 		return &domain.AppSettings{
-			TitleBarShowNavigation:          true,
+			TitleBarShowNavigation:          false,
 			TitleBarActions:                 domain.DefaultTitleBarActions(),
 			Language:                        "en",
 			Theme:                           "system",
