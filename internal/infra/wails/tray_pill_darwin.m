@@ -196,7 +196,7 @@ static NSColor *PillBarColor(NSColor *from, NSColor *to, NSColor *foreground, NS
 			barFromEndColor = nil;
 		}
 	}
-    CGFloat titleWidth = NSWidth(self.bounds) - 36 - (16 + height * 0.7);
+    CGFloat titleWidth = NSWidth(self.bounds) - 30 - (16 + height * 0.7);
     CGFloat fontSize = MIN(11, MAX(6, height * 0.5));
     NSDictionary *attrs = @{NSFontAttributeName: [NSFont systemFontOfSize:fontSize weight:NSFontWeightMedium]};
     CGFloat textWidth = [self.title sizeWithAttributes:attrs].width;
@@ -260,7 +260,7 @@ static NSColor *PillBarColor(NSColor *from, NSColor *to, NSColor *foreground, NS
     NSRect pillRect = bounds;
     CGFloat artSize = height * 0.7;
     CGFloat titleX = 16 + artSize;
-    CGFloat titleWidth = NSWidth(bounds) - 36 - titleX;
+    CGFloat titleWidth = NSWidth(bounds) - 30 - titleX;
     NSColor *foreground = NSColor.labelColor;
     [[NSColor.controlBackgroundColor colorWithAlphaComponent:0.9] setFill];
     [[NSBezierPath bezierPathWithRoundedRect:pillRect xRadius:NSHeight(pillRect)/2 yRadius:NSHeight(pillRect)/2] fill];
