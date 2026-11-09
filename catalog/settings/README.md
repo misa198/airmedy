@@ -38,7 +38,7 @@ type AppSettings struct {
     PreferLocalArtistArtwork bool              // nested (online on only): local/manual image suppresses online
     LastScanVersion        string              // app version of last artist-image rescan
     PreventSleepWhilePlaying bool             // prevent OS sleep during playback
-    ShowPlayerFavoriteButton bool             // show favorite button in desktop footer, mini player, and fullscreen player; default false
+    ShowPlayerFavoriteButton bool             // show favorite button in desktop footer, mini player, and fullscreen player; default true
     LibraryAnalysisEnabled  bool               // opt-in: gates the analysis worker pool entirely (default off)
     LibraryAnalysisWorkerCount int             // desired concurrent analysis workers; default 2, runtime-clamped to [1, numCPU/2]
     NormalizationEnabled    bool               // volume normalization on/off; cannot be true while LibraryAnalysisEnabled is false
@@ -137,7 +137,7 @@ interface AppStore {
   lyricsSubfolderName: string;
   useOnlineArtistArtwork: boolean;
   preventSleepWhilePlaying: boolean;
-  showPlayerFavoriteButton: boolean; // default false; shared by footer, mini player, and fullscreen player
+  showPlayerFavoriteButton: boolean; // default true; shared by footer, mini player, and fullscreen player
   crossfadeSeconds: number; // 0–CROSSFADE_MAX_SECONDS (12); 0 = off; slider in PlaybackSettings.vue
   blendArtworkDuringCrossfade: boolean; // default true; fullscreen only
   highContrastLyrics: boolean; // default false; fullscreen lyrics only
@@ -204,7 +204,7 @@ Each `update*()` method calls `SettingsService.SaveSettings()` with the full set
 
 Playback Settings exposes the favorite-button visibility switch. The value is
 persisted as `app_settings.show_player_favorite_button` (migration 000076), defaulting
-to hidden for both new and existing installs. After a successful settings save,
+to shown for new installs; existing saved choices are preserved. After a successful settings save,
 the Wails adapter emits `settings:player-favorite-button` with the persisted boolean.
 Each window's app store updates its visibility immediately and removes this
 subscription in `dispose()`. The setting hides the control without changing any

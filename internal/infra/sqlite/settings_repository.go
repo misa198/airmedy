@@ -276,6 +276,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 			PreferLocalArtistArtwork:        true,
 			PreventSleepWhilePlaying:        false,
 			ShowPlayerIndicator:             true,
+			ShowPlayerFavoriteButton:        true,
 			LibrarySyncInterval:             domain.DefaultSyncInterval,
 			LibraryAnalysisEnabled:          false,
 			LibraryAnalysisWorkerCount:      domain.DefaultLibraryAnalysisWorkerCount,

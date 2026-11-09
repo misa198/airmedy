@@ -139,7 +139,7 @@ describe('FullScreenPlayer', () => {
   it('switches fullscreen metadata layout with the favorite setting', async () => {
     const wrapper = mountPlayer({
       currentTrack: { id: 't1', title: 'Track 1', artists: [{ name: 'Artist' }], album: { title: 'Album' }, is_favorite: false },
-    })
+    }, { showPlayerFavoriteButton: false })
     const info = () => wrapper.getComponent(PlayerTrackInfo)
     const fades = () => info().findAllComponents({ name: 'MarqueeText' }).map(text => text.props('fade'))
     expect(fades()).toEqual([false, false, false])
