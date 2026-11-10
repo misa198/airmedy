@@ -111,12 +111,12 @@ function handleSubmenuItemClick(item: ContextMenuItem) {
   <Teleport to="body">
     <template v-if="visible">
       <!-- Invisible overlay to catch outside clicks -->
-      <div class="fixed inset-0 z-[998]" @click="emit('close')" @contextmenu.prevent="emit('close')" />
+      <div class="fixed inset-0 z-[1005]" @click="emit('close')" @contextmenu.prevent="emit('close')" />
 
       <!-- Menu panel -->
       <div
         ref="menuEl"
-        class="fixed z-[999] min-w-[200px] rounded-2xl bg-glass-elevated backdrop-blur-xl ring-1 ring-border-glass shadow-2xl p-1.5 select-none transform-gpu isolate"
+        class="fixed z-[1006] min-w-[200px] rounded-2xl bg-glass-elevated backdrop-blur-xl ring-1 ring-border-glass shadow-2xl p-1.5 select-none transform-gpu isolate"
         :style="{ left: adjustedX + 'px', top: adjustedY + 'px' }"
       >
         <template v-for="(item, index) in items" :key="index">
@@ -150,7 +150,7 @@ function handleSubmenuItemClick(item: ContextMenuItem) {
             <div
             v-if="activeSubmenuIndex !== null && items[activeSubmenuIndex]?.children?.length"
             ref="submenuEl"
-            class="fixed z-[1000] min-w-[180px] max-h-64 overflow-y-auto rounded-2xl bg-glass-elevated backdrop-blur-xl ring-1 ring-border-glass shadow-2xl p-1.5 select-none transform-gpu isolate"
+            class="fixed z-[1007] min-w-[180px] max-h-64 overflow-y-auto rounded-2xl bg-glass-elevated backdrop-blur-xl ring-1 ring-border-glass shadow-2xl p-1.5 select-none transform-gpu isolate"
             :style="{ left: submenuX + 'px', top: submenuY + 'px' }"
             @mouseleave="activeSubmenuIndex = null"
             >

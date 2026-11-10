@@ -52,6 +52,12 @@ describe('ContextMenu', () => {
     expect(w.text()).toContain('Delete')
   })
 
+  it('renders above the fullscreen player', () => {
+    const w = mountMenu()
+    expect(w.get('.fixed.inset-0').classes()).toContain('z-[1005]')
+    expect(w.get('[class*="min-w-[200px]"]').classes()).toContain('z-[1006]')
+  })
+
   it('applies danger class to danger items', () => {
     const w = mountMenu()
     const dangerEl = w.findAll('[class*="text-red"]')
@@ -97,7 +103,7 @@ describe('ContextMenu', () => {
 
   it('renders nothing when not visible', () => {
     const w = mountMenu({ visible: false })
-    expect(w.find('.z-\\[999\\]').exists()).toBe(false)
+    expect(w.find('.z-\\[1006\\]').exists()).toBe(false)
   })
 
   it('renders separators inside a submenu without making them clickable items', async () => {
@@ -116,6 +122,7 @@ describe('ContextMenu', () => {
     expect(w.text()).toContain('Flat')
     expect(w.text()).toContain('Settings')
     expect(w.findAll('.border-t.border-border-glass').length).toBeGreaterThan(0)
+    expect(w.get('[class*="min-w-[180px]"]').classes()).toContain('z-[1007]')
   })
 
   it('updates position when x and y props change', async () => {
