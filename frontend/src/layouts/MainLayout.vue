@@ -166,7 +166,8 @@ onUnmounted(() => {
 
     <!-- Player (mode-dependent) -->
     <MiniPlayer v-if="playerStore.playerMode === 'mini'" />
-    <PlayerFooter v-else-if="playerStore.playerMode === 'sticky'" />
+    <PlayerFooter v-else :inert="playerStore.playerMode === 'fullscreen' ? '' : null"
+      :aria-hidden="playerStore.playerMode === 'fullscreen'" />
 
     <!-- FullScreen player overlays the entire UI -->
     <Transition name="slide-up">

@@ -41,7 +41,7 @@ vi.mock('@/stores/favorites', () => ({
   }),
 }))
 vi.mock('@wailsio/runtime', () => ({
-  Events: { Emit: vi.fn() },
+  Events: { Emit: vi.fn(), On: vi.fn(() => vi.fn()) },
   Create: {
     Nullable: (fn: (value: unknown) => unknown) => (value: unknown) => value == null ? null : fn(value),
     Array: (fn: (value: unknown) => unknown) => (values: unknown[]) => (values ?? []).map(fn),
@@ -69,6 +69,43 @@ describe('TrayPopupView', () => {
     app.showPlayerIndicator = false
     app.trayBackgroundMode = 'living'
     vi.clearAllMocks()
+  })
+
+  it('updates the solid tint when the track palette changes', async () => {
+    const frames: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => frames.push(callback))
+    vi.stubGlobal('cancelAnimationFrame', vi.fn())
+    app.trayBackgroundMode = 'solid'
+    player.theme = { backdrop: '#112233' }
+    const wrapper = mount(TrayPopupView)
+    const visibility = vi.mocked(Events.On).mock.calls.find(([name]) => name === 'tray-popup:visibility')?.[1]
+    expect(visibility).toBeDefined()
+    expect(wrapper.classes()).not.toContain('tray-solid-tint-ready')
+    visibility?.({ data: true } as Events.WailsEvent)
+    await nextTick()
+    frames.shift()?.(0)
+    frames.shift()?.(16)
+    await nextTick()
+    expect(wrapper.classes()).toContain('tray-solid-tint-ready')
+    player.theme = { backdrop: '#445566' }
+    await nextTick()
+    expect(wrapper.attributes('style')).toContain('rgba(68, 85, 102, 0.4)')
+    expect(wrapper.classes()).toContain('tray-solid-tint-ready')
+    visibility?.({ data: false } as Events.WailsEvent)
+    await nextTick()
+    expect(wrapper.classes()).not.toContain('tray-solid-tint-ready')
+    player.theme = { backdrop: '#778899' }
+    await nextTick()
+    visibility?.({ data: true } as Events.WailsEvent)
+    await nextTick()
+    expect(wrapper.attributes('style')).toContain('rgba(119, 136, 153, 0.4)')
+    expect(wrapper.classes()).not.toContain('tray-solid-tint-ready')
+    frames.shift()?.(32)
+    frames.shift()?.(48)
+    await nextTick()
+    expect(wrapper.classes()).toContain('tray-solid-tint-ready')
+    wrapper.unmount()
+    vi.unstubAllGlobals()
   })
 
   it('shows an empty state with disabled controls', () => {

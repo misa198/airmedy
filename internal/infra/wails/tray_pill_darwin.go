@@ -109,6 +109,7 @@ func SetupTrayPill(app *application.App, service *player.PlayerService, artwork 
 		popup.SetPosition(int(x), int(y))
 		C.TrayPillPreparePopup(popup.NativeWindow())
 		popup.Show()
+		app.Event.Emit("tray-popup:visibility", true)
 		popup.Focus()
 		C.TrayPillAnimatePopup(popup.NativeWindow())
 	}
@@ -116,6 +117,7 @@ func SetupTrayPill(app *application.App, service *player.PlayerService, artwork 
 		if closing || !popup.IsVisible() {
 			return
 		}
+		app.Event.Emit("tray-popup:visibility", false)
 		closing = true
 		C.TrayPillAnimatePopupOut(popup.NativeWindow())
 	}

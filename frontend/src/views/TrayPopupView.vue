@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { Events } from '@wailsio/runtime'
 import { Music, SquareArrowOutUpRight } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
@@ -25,6 +25,21 @@ const backgroundStyle = computed(() => app.trayBackgroundMode !== 'monochrome' &
   '--fullscreen-player-artwork-tint': hexToRgba(player.theme.backdrop, 0.4),
 } : undefined)
 const windowFocused = ref(document.hasFocus())
+const windowVisible = ref(false)
+const solidTintReady = ref(false)
+let solidTintFrame = 0
+let offVisibility: (() => void) | undefined
+watch([() => app.trayBackgroundMode, () => player.theme, windowVisible], ([mode, theme, visible]) => {
+  if (mode !== 'solid' || !visible) {
+    cancelAnimationFrame(solidTintFrame)
+    solidTintReady.value = false
+  } else if (theme && !solidTintReady.value) {
+    cancelAnimationFrame(solidTintFrame)
+    solidTintFrame = requestAnimationFrame(() => {
+      solidTintFrame = requestAnimationFrame(() => { solidTintReady.value = true })
+    })
+  }
+}, { immediate: true, flush: 'post' })
 
 async function finishSeek() {
   if (!isSeeking.value) return
@@ -53,11 +68,14 @@ function onFocus() { windowFocused.value = true }
 function onBlur() { windowFocused.value = false }
 
 onMounted(() => {
+  offVisibility = Events.On('tray-popup:visibility', (event: Events.WailsEvent) => { windowVisible.value = event.data === true })
   window.addEventListener('keydown', onKeydown)
   window.addEventListener('focus', onFocus)
   window.addEventListener('blur', onBlur)
 })
 onUnmounted(() => {
+  offVisibility?.()
+  cancelAnimationFrame(solidTintFrame)
   window.removeEventListener('keydown', onKeydown)
   window.removeEventListener('focus', onFocus)
   window.removeEventListener('blur', onBlur)
@@ -67,7 +85,7 @@ onUnmounted(() => {
 <template>
   <div
     class="tray-artwork-background relative flex h-full w-full flex-col overflow-hidden px-4 py-4 text-mini-player-pill-foreground select-none"
-    :class="{ 'tray-monochrome': app.trayBackgroundMode === 'monochrome' }"
+    :class="{ 'tray-monochrome': app.trayBackgroundMode === 'monochrome', 'tray-solid-tint-ready': app.trayBackgroundMode === 'solid' && solidTintReady }"
     :style="backgroundStyle">
     <LivingArtworkBackground v-if="windowFocused && app.trayBackgroundMode === 'living'" :theme="player.theme" :is-playing="player.isPlaying" />
     <div class="relative z-10 flex min-w-0 items-center gap-3 mb-2">
@@ -122,6 +140,9 @@ onUnmounted(() => {
   background-color: var(--tray-player-background);
   background-image: linear-gradient(var(--fullscreen-player-artwork-tint), var(--fullscreen-player-artwork-tint)),
     linear-gradient(var(--tray-player-overlay), var(--tray-player-overlay));
+}
+.tray-solid-tint-ready {
+  transition: --fullscreen-player-artwork-tint 2s cubic-bezier(0.33, 0.64, 0.67, 0.87);
 }
 .tray-monochrome {
   --tray-artwork-shadow: none;
