@@ -15,12 +15,12 @@
 
 set -euo pipefail
 
-FFMPEG_VERSION="8.1.2"
+FFMPEG_VERSION="9.0.2"
 FFMPEG_URL="https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 OUT_BASE="${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/windows"
-BUILD_DIR="/tmp/ffmpeg-build-airmedy-windows"
+BUILD_DIR="/tmp/ffmpeg-build-airmedy-windows-${FFMPEG_VERSION}"
 
 CONFIGURE_FLAGS=(
     --disable-everything
@@ -138,7 +138,6 @@ build_arch() {
         cp "${INSTALL_DIR}/lib/${LIB}.a" "${OUT_BASE}/${OUT_DIR}/${LIB}.a"
         echo "    copied ${LIB}.a -> ffmpeg_libs/windows/${OUT_DIR}/"
     done
-
     # Confirm the analysis filters were compiled into libavfilter.a.
     echo "==> Verifying analysis filters in libavfilter.a (${OUT_DIR})..."
     local NM="${CROSS_PREFIX}nm"
@@ -150,6 +149,7 @@ build_arch() {
         grep -q "ff_af_${F}" <<<"${SYMS}" || { echo "    ERROR: filter '${F}' missing from libavfilter.a"; exit 1; }
     done
     echo "    OK: ebur128 + aspectralstats + astats present in libavfilter.a"
+    printf '%s\n' "${FFMPEG_VERSION}" > "${OUT_BASE}/${OUT_DIR}/VERSION"
 
     cd "${REPO_ROOT}"
 }
@@ -183,18 +183,15 @@ case "$TARGET" in
         ;;
 esac
 
-# Copy headers if not already present (shared across architectures).
 # Use whichever arch was built — both installs have identical headers.
 INCLUDE_OUT="${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/include"
-if [[ ! -d "${INCLUDE_OUT}" ]]; then
-    echo "==> Copying FFmpeg headers..."
-    for _arch in amd64 arm64; do
-        if [[ -d "${BUILD_DIR}/install-${_arch}/include" ]]; then
-            cp -R "${BUILD_DIR}/install-${_arch}/include" "${INCLUDE_OUT}"
-            break
-        fi
-    done
-fi
+for _arch in amd64 arm64; do
+    if [[ -d "${BUILD_DIR}/install-${_arch}/include" ]]; then
+        rm -rf "${INCLUDE_OUT}"
+        cp -R "${BUILD_DIR}/install-${_arch}/include" "${INCLUDE_OUT}"
+        break
+    fi
+done
 
 echo ""
 echo "==> Done."

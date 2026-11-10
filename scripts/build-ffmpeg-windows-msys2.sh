@@ -15,13 +15,13 @@
 
 set -euo pipefail
 
-FFMPEG_VERSION="8.1.2"
+FFMPEG_VERSION="9.0.2"
 FFMPEG_URL="https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 OUT_DIR="${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/windows/amd64"
 INCLUDE_OUT="${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/include"
-BUILD_DIR="/tmp/ffmpeg-build-airmedy-windows-msys2"
+BUILD_DIR="/tmp/ffmpeg-build-airmedy-windows-msys2-${FFMPEG_VERSION}"
 
 CONFIGURE_FLAGS=(
     --disable-everything
@@ -128,7 +128,6 @@ for LIB in "${LIBS[@]}"; do
     cp "${INSTALL_DIR}/lib/${LIB}.a" "${OUT_DIR}/${LIB}.a"
     echo "    copied ${LIB}.a -> ffmpeg_libs/windows/amd64/"
 done
-
 # Confirm the analysis filters were compiled into libavfilter.a.
 echo "==> Verifying analysis filters in libavfilter.a..."
 SYMS="$(nm "${OUT_DIR}/libavfilter.a" 2>/dev/null || true)"
@@ -138,10 +137,9 @@ done
 echo "    OK: ebur128 + aspectralstats + astats present in libavfilter.a"
 
 # Copy headers (shared across arches)
-if [[ ! -d "${INCLUDE_OUT}" ]]; then
-    echo "==> Copying FFmpeg headers..."
-    cp -R "${INSTALL_DIR}/include" "${INCLUDE_OUT}"
-fi
+rm -rf "${INCLUDE_OUT}"
+cp -R "${INSTALL_DIR}/include" "${INCLUDE_OUT}"
+printf '%s\n' "${FFMPEG_VERSION}" > "${OUT_DIR}/VERSION"
 
 cd "${REPO_ROOT}"
 echo ""

@@ -37,6 +37,7 @@ tasks:
     summary: Builds FFmpeg static libs (incl. libavfilter) for the target arch if not already present
     status:
       - test -f {{.ROOT_DIR}}/internal/infra/audio/ffmpeg_libs/darwin/{{.ARCH | default ARCH}}/libavfilter.a
+      - grep -qx '9.0.2' {{.ROOT_DIR}}/internal/infra/audio/ffmpeg_libs/darwin/{{.ARCH | default ARCH}}/VERSION
     cmds:
       - bash {{.ROOT_DIR}}/scripts/build-ffmpeg-darwin.sh {{.ARCH | default ARCH}}
 

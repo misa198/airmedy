@@ -18,13 +18,13 @@
 
 set -euo pipefail
 
-FFMPEG_VERSION="8.1.2"
+FFMPEG_VERSION="9.0.2"
 FFMPEG_URL="https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 OUT_BASE="${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/darwin"
 INCLUDE_OUT="${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/include"
-BUILD_DIR="${TMPDIR:-/tmp}/ffmpeg-build-airmedy-darwin"
+BUILD_DIR="${TMPDIR:-/tmp}/ffmpeg-build-airmedy-darwin-${FFMPEG_VERSION}"
 MIN_MACOS="14.0"
 
 HOST_ARCH="$(uname -m)"   # arm64 or x86_64
@@ -132,14 +132,12 @@ build_arch() {
         cp "${INSTALL_DIR}/lib/${LIB}.a" "${OUT_BASE}/${OUT_ARCH}/${LIB}.a"
         echo "    copied ${LIB}.a -> ffmpeg_libs/darwin/${OUT_ARCH}/"
     done
-
     verify_avfilter "${OUT_BASE}/${OUT_ARCH}/libavfilter.a"
 
-    # Copy headers once (identical across arches).
-    if [[ ! -d "${INCLUDE_OUT}" ]]; then
-        echo "==> Copying FFmpeg headers to ffmpeg_libs/include/..."
-        cp -R "${INSTALL_DIR}/include" "${INCLUDE_OUT}"
-    fi
+    # Keep headers in sync with the rebuilt libraries.
+    rm -rf "${INCLUDE_OUT}"
+    cp -R "${INSTALL_DIR}/include" "${INCLUDE_OUT}"
+    printf '%s\n' "${FFMPEG_VERSION}" > "${OUT_BASE}/${OUT_ARCH}/VERSION"
 }
 
 # Asserts the ebur128/aspectralstats/astats filters are present in libavfilter.a.
