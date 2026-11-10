@@ -185,6 +185,8 @@ The mini player window is **destroyed on close and recreated on open** (not just
 
 Because state is reset on every open, window **position, size, and pin (always-on-top)** are persisted natively (not in Vue) to the `mini_player_state` table and restored by `WindowService.ApplyMiniState(w)` in the factory — clamped to the current screen's work area so the window never restores off-screen. The temporary mini-player Lyrics/Queue panel selection is Vue-local and resets closed on reopen. See `catalog/player` → *Geometry & Pin Persistence*.
 
+On Linux, `GetMiniState()` reports whether the active GTK display is X11. The pin button is rendered only for X11 and is hidden on native Wayland, where always-on-top cannot be requested by a client. macOS and Windows always retain the pin button.
+
 The tray **"Show Airmedy"** action calls `WindowService.ShowCurrent()`, which reveals only the currently active window — the mini player if it is open, otherwise the main window — instead of forcing both visible at once.
 
 ## CSS Variables & Theming

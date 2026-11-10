@@ -105,7 +105,7 @@ wailsApp := application.New(application.Options{
 
 **Main window:** 1280×800px (min 1200×768), macOS translucent titlebar hidden (InvisibleTitleBarHeight=50, Backdrop=Translucent, TitleBar=HiddenInset). Windows/Linux use `Frameless` with an empty 32px DOM title bar owned by the main Vue layout; see [UI title bar contract](../ui/README.md#main-window-title-bar).
 
-**Mini player window:** compact square (default 300×300px, min 280×280, max 500×500), hidden by default. Its temporary Lyrics/Queue selector expands the window to width:height 1:2 for a lower placeholder panel, with a matching minimum of 280×560; selection resets on reopen. Position, size, and pin (always-on-top) persist to the `mini_player_state` table and restore on open via `WindowService.ApplyMiniState`, clamped to the current screen's work area. Native window APIs keep the active 1:1 or 1:2 ratio locked on macOS, Windows, and Linux/X11; Wayland keeps its compositor-managed resize behaviour.
+**Mini player window:** compact square (default 300×300px, min 280×280, max 500×500), hidden by default. Its temporary Lyrics/Queue selector expands the window to width:height 1:2 for a lower placeholder panel, with a matching minimum of 280×560; selection resets on reopen. Position, size, and pin (always-on-top) persist to the `mini_player_state` table and restore on open via `WindowService.ApplyMiniState`, clamped to the current screen's work area. Native window APIs keep the active 1:1 or 1:2 ratio locked on macOS and Windows; Linux window managers may ignore the X11 aspect hint. On Linux the pin control is available only when GTK is actually using X11; native Wayland keeps its compositor-managed stacking and hides the unsupported control.
 
 ### Single Instance & Deep Links
 
