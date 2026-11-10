@@ -117,3 +117,10 @@ jobs:
           files: |
             dist/*.apk
             dist/SHA256SUMS
+
+  changelog:
+    needs: release
+    uses: ./.github/workflows/changelog.yml
+    with:
+      tag: ${{ github.ref_name }}
+    secrets: inherit

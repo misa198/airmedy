@@ -17,6 +17,27 @@ contains SHA-256 hashes of the staged APKs under their published filenames.
 After downloading both assets into the same directory, verify them with
 `shasum -a 256 -c SHA256SUMS` (or `sha256sum -c SHA256SUMS` on Linux).
 
+## Changelogs and release notes
+
+The full Desktop changelog is [`../CHANGELOG.md`](../CHANGELOG.md); Mobile's is
+[`../mobile/CHANGELOG.md`](../mobile/CHANGELOG.md). Each file groups commits by
+its own tag series in tag creation order. The **Publish Changelog** workflow
+runs after either release workflow. It can also be dispatched with an existing
+`vX.Y.Z` or `mobile-vX.Y.Z` tag, or `all` to backfill every published release.
+It rebuilds both files from tagged Git history, commits changed files to
+`master`, and adds a `What's Changed` heading, previous tag, and file link to
+that GitHub release. Existing hand-written notes are preserved. An old
+Desktop notes section consisting solely of the generated commit list is removed.
+The workflow requires the Release GitHub App with Contents write permission.
+
+Release notes link to the changelog file on `master`, so historical entries remain
+reachable after a backfill. Do not edit generated changelog entries by hand;
+they are rebuilt on the next run. The Desktop list covers commits touching files
+outside `mobile/`; the Mobile list covers `mobile/` and its Android build and
+version scripts. The changelog files themselves are excluded from both lists.
+Two early Desktop tag pairs have divergent Git ancestry, so their commit ranges
+show commits newly reachable at each tag rather than a linear history.
+
 ## Publishing a download version
 
 After publishing a release, run **Bump Landing Download Version**

@@ -733,45 +733,24 @@ jobs:
           fi
           mv "$TMP" SHA256SUMS
 
-      - name: Generate Changelog
-        id: changelog
-        shell: bash
-        run: |
-          PREV_TAG=$(git tag --sort=-version:refname | grep -v "^${GITHUB_REF_NAME}$" | head -1 || true)
-          if [ -n "$PREV_TAG" ]; then
-            CHANGELOG=$(git log "${PREV_TAG}..HEAD" --pretty=format:"- %s (%h)" --no-merges | grep -E "^- (feat|fix)" || true)
-            RANGE="Changes since ${PREV_TAG}"
-          else
-            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges | grep -E "^- (feat|fix)" || true)
-            RANGE="All commits"
-          fi
-
-          if [ -z "$CHANGELOG" ]; then
-            CHANGELOG="No major changes (features or fixes) in this release."
-          fi
-
-          {
-            echo "body<<EOF"
-            echo "> [!WARNING]"
-            echo "> **Beta Release** — This is a pre-release build and may be unstable. Use at your own risk."
-            echo ""
-            echo "## What's Changed"
-            echo ""
-            echo "${RANGE}:"
-            echo ""
-            echo "${CHANGELOG}"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
-          body: ${{ steps.changelog.outputs.body }}
+          body: |
+            > [!WARNING]
+            > **Beta Release** — This is a pre-release build and may be unstable. Use at your own risk.
           draft: false
           prerelease: true
           files: |
             dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  changelog:
+    needs: release
+    uses: ./.github/workflows/changelog.yml
+    with:
+      tag: ${{ github.ref_name }}
+    secrets: inherit
