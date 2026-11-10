@@ -3,7 +3,7 @@
 set -e
 
 # Version and paths
-VERSION="0.11.25"
+VERSION="0.11.26"
 REPO_URL="https://github.com/mackron/miniaudio"
 DEST_DIR="internal/infra/audio/miniaudio"
 DEST_FILE="${DEST_DIR}/miniaudio.h"

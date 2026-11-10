@@ -45,6 +45,7 @@ tasks:
     summary: Builds FFTW3 static libs for the target arch if not already present
     status:
       - test -f {{.ROOT_DIR}}/internal/infra/audio/fftw3_libs/darwin/{{.ARCH | default ARCH}}/libfftw3f.a
+      - grep -qx '3.3.11' {{.ROOT_DIR}}/internal/infra/audio/fftw3_libs/darwin/{{.ARCH | default ARCH}}/VERSION
     cmds:
       - bash {{.ROOT_DIR}}/scripts/build-fftw3-darwin.sh {{.ARCH | default ARCH}}
 
