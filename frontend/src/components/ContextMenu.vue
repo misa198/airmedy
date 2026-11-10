@@ -22,6 +22,15 @@ const activeSubmenuIndex = ref<number | null>(null)
 const submenuX = ref(0)
 const submenuY = ref(0)
 
+watch(() => props.visible, (visible, _, onCleanup) => {
+  if (!visible) return
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') emit('close')
+  }
+  window.addEventListener('keydown', onKeyDown)
+  onCleanup(() => window.removeEventListener('keydown', onKeyDown))
+}, { immediate: true })
+
 function getViewportWidth() {
   return document.documentElement.clientWidth || window.innerWidth
 }

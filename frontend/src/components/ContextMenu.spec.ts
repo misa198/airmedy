@@ -1,5 +1,5 @@
 import { afterEach, describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import ContextMenu from './ContextMenu.vue'
 import type { ContextMenuItem } from '@/composables/useContextMenu'
@@ -9,6 +9,8 @@ const originalInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight
 const originalClientWidth = Object.getOwnPropertyDescriptor(document.documentElement, 'clientWidth')
 const originalClientHeight = Object.getOwnPropertyDescriptor(document.documentElement, 'clientHeight')
 const originalGetBoundingClientRect = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'getBoundingClientRect')
+
+enableAutoUnmount(afterEach)
 
 const makeItems = (): ContextMenuItem[] => [
   { label: 'Play', action: vi.fn() },
@@ -76,6 +78,38 @@ describe('ContextMenu', () => {
     const overlay = w.find('.fixed.inset-0')
     await overlay.trigger('click')
     expect(w.emitted('close')).toBeTruthy()
+  })
+
+  it('closes on Escape while allowing the fullscreen player to handle the same key', () => {
+    const w = mountMenu()
+    const closeFullscreen = vi.fn()
+    window.addEventListener('keydown', closeFullscreen)
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }))
+    expect(w.emitted('close')).toBeUndefined()
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }))
+
+    expect(w.emitted('close')).toHaveLength(1)
+    expect(closeFullscreen).toHaveBeenCalledTimes(2)
+    window.removeEventListener('keydown', closeFullscreen)
+  })
+
+  it('ignores Escape when hidden and removes its listener after unmount', async () => {
+    const w = mountMenu({ visible: false })
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    expect(w.emitted('close')).toBeUndefined()
+
+    await w.setProps({ visible: true })
+    await w.setProps({ visible: false })
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    expect(w.emitted('close')).toBeUndefined()
+
+    await w.setProps({ visible: true })
+    w.unmount()
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    expect(w.emitted('close')).toBeUndefined()
   })
 
   it('calls action and emits close when item is clicked', async () => {
