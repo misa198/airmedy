@@ -5,6 +5,7 @@ import MainLayout from './MainLayout.vue'
 import { usePlayerStore } from '@/stores/player'
 import { useDeviceStore } from '@/stores/device'
 import WindowTitleBar from '@/components/WindowTitleBar.vue'
+import PlayerFooter from '@/components/PlayerFooter.vue'
 
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (key: string) => key }) }))
 vi.mock('vue-router', async (importOriginal) => ({
@@ -60,6 +61,33 @@ describe('MainLayout sidebar width persistence', () => {
 
     expect(usePlayerStore().sidebarWidth).toBe(260)
     expect(localStorage.getItem('airmedy:sidebar-width')).toBe('260')
+  })
+})
+
+describe('MainLayout player modes', () => {
+  it('keeps the footer in the layout but inert behind fullscreen', async () => {
+    const wrapper = mountLayout()
+    const playerStore = usePlayerStore()
+    const footer = wrapper.findComponent(PlayerFooter)
+
+    expect(footer.exists()).toBe(true)
+    expect(footer.attributes('inert')).toBeUndefined()
+
+    playerStore.playerMode = 'fullscreen'
+    await wrapper.vm.$nextTick()
+    expect(wrapper.findComponent(PlayerFooter).exists()).toBe(true)
+    expect(footer.attributes('inert')).toBe('')
+    expect(footer.attributes('aria-hidden')).toBe('true')
+
+    playerStore.playerMode = 'sticky'
+    await wrapper.vm.$nextTick()
+    expect(footer.attributes('inert')).toBeUndefined()
+    expect(footer.attributes('aria-hidden')).toBe('false')
+
+    playerStore.playerMode = 'mini'
+    await wrapper.vm.$nextTick()
+    expect(wrapper.findComponent(PlayerFooter).exists()).toBe(false)
+    wrapper.unmount()
   })
 })
 
