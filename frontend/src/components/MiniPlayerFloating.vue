@@ -328,7 +328,7 @@ watch(() => store.theme, (colors) => {
     </div>
 
     <section v-if="activePanel" data-test="mini-player-panel"
-      class="mini-player-panel relative flex-1 min-h-0 flex flex-col overflow-hidden border-t border-[color:var(--border-glass)]"
+      class="mini-player-panel relative flex-1 min-h-0 flex flex-col overflow-hidden"
       :class="activePanel === 'lyrics' ? ['mini-player-lyrics-panel bg-[color:var(--mini-player-lyrics-background)] backdrop-blur-[30px]', { 'mini-player-lyrics-tint-ready': lyricsTintReady }] : ''"
       :style="activePanel === 'lyrics' ? lyricsPanelStyle : undefined">
       <LivingArtworkBackground v-if="activePanel === 'lyrics' && appStore.miniLivingArtworkBackground"
