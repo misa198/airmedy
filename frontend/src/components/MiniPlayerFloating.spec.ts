@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   lyricsLoading: true,
   showPlayerFavoriteButton: true,
   miniLivingArtworkBackground: false,
+  miniAlwaysOnTopSupported: true,
   currentTrack: null as TrackDTO | null,
 }))
 
@@ -64,7 +65,10 @@ vi.mock('@/composables/useArtworkCrossfadeOpacity', () => ({
 
 vi.mock('../../bindings/airmedy/internal/infra/wails/windowservice', () => ({
   CloseMiniPlayer: vi.fn(),
-  GetMiniState: vi.fn().mockResolvedValue({ always_on_top: false }),
+  GetMiniState: vi.fn(() => Promise.resolve({
+    always_on_top: false,
+    always_on_top_supported: mocks.miniAlwaysOnTopSupported,
+  })),
   SetMiniAlwaysOnTop: vi.fn(),
   SetMiniPlayerExpanded: mocks.setMiniPlayerExpanded,
 }))
@@ -96,8 +100,22 @@ describe('MiniPlayerFloating', () => {
     mocks.lyricsLoading = true
     mocks.showPlayerFavoriteButton = true
     mocks.miniLivingArtworkBackground = false
+    mocks.miniAlwaysOnTopSupported = true
     mocks.currentTrack = null
     mocks.inspectRomanization.mockImplementation(() => Object.assign(Promise.resolve({ supported: false, mandarinDefault: false }), { cancel: vi.fn().mockResolvedValue(undefined) }))
+  })
+
+  it.each([[true, true], [false, false]])('shows pin only when always-on-top is supported (%s)', async (supported, visible) => {
+    mocks.miniAlwaysOnTopSupported = supported
+    const wrapper = mount(MiniPlayerFloating, {
+      global: { stubs: { LazyImg: true, Slider: true, MarqueeText: true, PlayerControlButton: true, MiniPlayerLyrics: true, QueueTrackList: true } },
+    })
+
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="mini-player-pin"]').exists()).toBe(visible)
+    expect(wrapper.get('[data-test="mini-player-options-pill"]').classes()).toContain('p-[3px]')
+    wrapper.unmount()
   })
 
   it('hides the favorite button when the playback setting is off', () => {

@@ -342,14 +342,18 @@ func (s *WindowService) RestoreMiniAlwaysOnTop() {
 
 // MiniState is the subset of mini player state the frontend needs on open.
 type MiniState struct {
-	AlwaysOnTop bool `json:"always_on_top"`
+	AlwaysOnTop          bool `json:"always_on_top"`
+	AlwaysOnTopSupported bool `json:"always_on_top_supported"`
 }
 
 // GetMiniState returns the persisted mini player state for the frontend so the
 // pin icon reflects the restored always-on-top setting.
 func (s *WindowService) GetMiniState() MiniState {
 	state := s.loadMiniState()
-	return MiniState{AlwaysOnTop: state.AlwaysOnTop}
+	return MiniState{
+		AlwaysOnTop:          state.AlwaysOnTop,
+		AlwaysOnTopSupported: supportsMiniAlwaysOnTop(s.miniWindow),
+	}
 }
 
 func clampInt(v, lo, hi int) int {

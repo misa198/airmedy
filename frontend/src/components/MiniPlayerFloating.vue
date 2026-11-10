@@ -37,6 +37,7 @@ const artworkCrossfade = computed(() =>
 const { outgoingOpacity, incomingOpacity } = useArtworkCrossfadeOpacity(artworkCrossfade)
 
 const alwaysOnTop = ref(false)
+const alwaysOnTopSupported = ref(false)
 const isSeeking = ref(false)
 const seekValue = ref(0)
 const isHovered = ref(false)
@@ -131,6 +132,7 @@ onMounted(async () => {
   // Reflect the restored pin state (Go already re-applied it to the native window).
   const state = await WindowService.GetMiniState()
   alwaysOnTop.value = state.always_on_top
+  alwaysOnTopSupported.value = state.always_on_top_supported
 })
 
 function onSeekStart() { isSeeking.value = true }
@@ -248,14 +250,16 @@ watch(() => store.theme, (colors) => {
       <div class="absolute top-2 left-2 z-30" style="-webkit-app-region: no-drag">
         <!-- Options pill -->
         <div
-          class="inline-flex items-center p-1 rounded-full bg-mini-player-pill-background backdrop-blur-md border border-mini-player-pill-border h-8 select-none transition-all"
+          data-test="mini-player-options-pill"
+          class="inline-flex items-center p-[3px] rounded-full bg-mini-player-pill-background backdrop-blur-md border border-mini-player-pill-border h-8 select-none transition-all"
           :class="isHovered ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'">
           <button
             class="w-6 h-6 flex items-center justify-center rounded-full text-mini-player-pill-foreground transition-colors"
             @click="WindowService.CloseMiniPlayer()">
             <X class="w-3.5 h-3.5" />
           </button>
-          <button class="w-6 h-6 flex items-center justify-center rounded-full transition-colors"
+          <button v-if="alwaysOnTopSupported" data-test="mini-player-pin"
+            class="w-6 h-6 flex items-center justify-center rounded-full transition-colors"
             :class="alwaysOnTop ? 'text-mini-player-pill-foreground/80' : 'text-mini-player-pill-foreground'"
             @click="toggleAlwaysOnTop()">
             <Pin v-if="alwaysOnTop" class="w-3.5 h-3.5" />
