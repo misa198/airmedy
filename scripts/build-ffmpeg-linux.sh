@@ -16,11 +16,11 @@
 
 set -euo pipefail
 
-FFMPEG_VERSION="8.1.2"
+FFMPEG_VERSION="9.0.2"
 FFMPEG_URL="https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT_BASE="${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/linux"
-BUILD_DIR="${TMPDIR:-/tmp}/ffmpeg-build-airmedy-linux"
+BUILD_DIR="${TMPDIR:-/tmp}/ffmpeg-build-airmedy-linux-${FFMPEG_VERSION}"
 
 CONFIGURE_FLAGS=(
     --disable-everything
@@ -119,9 +119,9 @@ build_arch() {
         cp "${INSTALL_DIR}/lib/${LIB}.a" "${OUT_BASE}/${OUT_ARCH}/${LIB}.a"
         echo "    copied ${LIB}.a -> ffmpeg_libs/linux/${OUT_ARCH}/"
     done
-
     # Confirm the analysis filters were compiled into libavfilter.a.
     verify_avfilter "${OUT_BASE}/${OUT_ARCH}/libavfilter.a" "${CROSS_PREFIX:-}"
+    printf '%s\n' "${FFMPEG_VERSION}" > "${OUT_BASE}/${OUT_ARCH}/VERSION"
 }
 
 # Asserts that the ebur128/aspectralstats/astats filters are present in
@@ -180,10 +180,8 @@ esac
 
 # Copy headers (shared across arches)
 INCLUDE_OUT="${REPO_ROOT}/internal/infra/audio/ffmpeg_libs/include"
-if [[ ! -d "${INCLUDE_OUT}" ]]; then
-    echo "==> Copying FFmpeg headers to ffmpeg_libs/include/..."
-    cp -R "${BUILD_DIR}/install-${NATIVE_INSTALL_ARCH}/include" "${INCLUDE_OUT}"
-fi
+rm -rf "${INCLUDE_OUT}"
+cp -R "${BUILD_DIR}/install-${NATIVE_INSTALL_ARCH}/include" "${INCLUDE_OUT}"
 
 echo ""
 echo "==> Done. Output:"

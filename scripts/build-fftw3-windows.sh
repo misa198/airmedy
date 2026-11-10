@@ -15,13 +15,13 @@
 
 set -euo pipefail
 
-FFTW_VERSION="3.3.10"
+FFTW_VERSION="3.3.11"
 FFTW_URL="https://www.fftw.org/fftw-${FFTW_VERSION}.tar.gz"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT_BASE="${REPO_ROOT}/internal/infra/audio/fftw3_libs/windows"
 INCLUDE_OUT="${REPO_ROOT}/internal/infra/audio/fftw3_libs/include"
 PKGCONFIG_BASE="${REPO_ROOT}/internal/infra/audio/fftw3_libs/pkgconfig/windows"
-BUILD_DIR="/tmp/fftw3-build-airmedy-windows"
+BUILD_DIR="/tmp/fftw3-build-airmedy-windows-${FFTW_VERSION}"
 
 resolve_amd64_tools() {
     local CC AR
@@ -92,6 +92,9 @@ build_arch() {
     cp "${LIB}" "${OUT_DIR}/libfftw3f.a"
     echo "    copied libfftw3f.a -> fftw3_libs/windows/${ARCH}/"
     write_pkgconfig "${ARCH}"
+    mkdir -p "${INCLUDE_OUT}"
+    cp "${WORK_DIR}/install/include/fftw3.h" "${INCLUDE_OUT}/fftw3.h"
+    printf '%s\n' "${FFTW_VERSION}" > "${OUT_DIR}/VERSION"
 }
 
 write_pkgconfig() {
@@ -147,13 +150,6 @@ case "$TARGET" in
         ;;
     *) echo "Usage: $0 [amd64|arm64|all]" >&2; exit 1 ;;
 esac
-
-if [[ ! -d "${INCLUDE_OUT}" ]]; then
-    echo "==> Copying fftw3.h to fftw3_libs/include/..."
-    mkdir -p "${INCLUDE_OUT}"
-    cp "${BUILD_DIR}/work-amd64/install/include/fftw3.h" "${INCLUDE_OUT}/fftw3.h" 2>/dev/null || \
-    cp "${BUILD_DIR}/work-arm64/install/include/fftw3.h" "${INCLUDE_OUT}/fftw3.h"
-fi
 
 echo ""
 echo "==> Done."

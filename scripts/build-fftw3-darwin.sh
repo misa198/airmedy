@@ -15,14 +15,14 @@
 
 set -euo pipefail
 
-FFTW_VERSION="3.3.10"
+FFTW_VERSION="3.3.11"
 FFTW_URL="https://www.fftw.org/fftw-${FFTW_VERSION}.tar.gz"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 OUT_BASE="${REPO_ROOT}/internal/infra/audio/fftw3_libs/darwin"
 INCLUDE_OUT="${REPO_ROOT}/internal/infra/audio/fftw3_libs/include"
 PKGCONFIG_BASE="${REPO_ROOT}/internal/infra/audio/fftw3_libs/pkgconfig/darwin"
-BUILD_DIR="${TMPDIR:-/tmp}/fftw3-build-airmedy-darwin"
+BUILD_DIR="${TMPDIR:-/tmp}/fftw3-build-airmedy-darwin-${FFTW_VERSION}"
 MIN_MACOS="14.0"
 
 HOST_ARCH="$(uname -m)"
@@ -75,11 +75,9 @@ build_arch() {
     verify_fftw3 "${OUT_BASE}/${OUT_ARCH}/libfftw3f.a"
     write_pkgconfig "${OUT_ARCH}"
 
-    if [[ ! -d "${INCLUDE_OUT}" ]]; then
-        echo "==> Copying fftw3.h to fftw3_libs/include/..."
-        mkdir -p "${INCLUDE_OUT}"
-        cp "${INSTALL_DIR}/include/fftw3.h" "${INCLUDE_OUT}/fftw3.h"
-    fi
+    mkdir -p "${INCLUDE_OUT}"
+    cp "${INSTALL_DIR}/include/fftw3.h" "${INCLUDE_OUT}/fftw3.h"
+    printf '%s\n' "${FFTW_VERSION}" > "${OUT_BASE}/${OUT_ARCH}/VERSION"
 }
 
 verify_fftw3() {
