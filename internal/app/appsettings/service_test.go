@@ -60,13 +60,13 @@ func TestSaveSettingsAcceptsBlackTrayTheme(t *testing.T) {
 }
 
 func TestSaveSettingsValidatesTrayPanelTheme(t *testing.T) {
-	for _, theme := range []string{"", "light", "dark", "black", "system"} {
+	for _, theme := range []string{"", "light", "dark", "black", "system", "invalid"} {
 		t.Run(theme, func(t *testing.T) {
 			stop := errors.New("persistence sentinel")
 			repo := &backgroundSettingsRepository{err: stop}
 			svc := NewSettingsService(repo, nil, slog.Default())
 			err := svc.SaveSettings(context.Background(), &domain.AppSettings{TrayPanelTheme: theme, PrimaryColor: domain.DefaultPrimaryColor})
-			if theme == "system" {
+			if theme == "invalid" {
 				if err == nil || repo.saved != nil {
 					t.Fatal("invalid theme reached persistence")
 				}
@@ -76,7 +76,7 @@ func TestSaveSettingsValidatesTrayPanelTheme(t *testing.T) {
 				t.Fatalf("valid theme rejected: %v", err)
 			}
 			if theme == "" {
-				theme = "black"
+				theme = "system"
 			}
 			if repo.saved.TrayPanelTheme != theme {
 				t.Fatalf("saved theme = %q, want %q", repo.saved.TrayPanelTheme, theme)

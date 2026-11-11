@@ -245,6 +245,12 @@ star.performClick(nil)
 precondition(favoriteClicks == 1)
 precondition(star.state == .on)
 
+app.appearance = NSAppearance(named: .aqua)
+"system".withCString(setTheme)
+precondition(panel.appearance == nil && panel.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .aqua)
+app.appearance = NSAppearance(named: .darkAqua)
+precondition(panel.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua)
+app.appearance = nil
 "dark".withCString(setTheme)
 precondition(panel.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua)
 precondition(colorHex(title.textColor, .darkAqua) == colorHex(playbackButtons[2].contentTintColor, .darkAqua))

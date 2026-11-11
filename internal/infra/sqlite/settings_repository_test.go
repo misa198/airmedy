@@ -77,7 +77,7 @@ func TestTrayModeSettings(t *testing.T) {
 	if settings.TrayTheme != "system" {
 		t.Fatalf("default tray theme = %q", settings.TrayTheme)
 	}
-	if settings.TrayPanelTheme != "black" {
+	if settings.TrayPanelTheme != "system" {
 		t.Fatalf("default tray panel theme = %q", settings.TrayPanelTheme)
 	}
 	settings.TrayTheme = "black"

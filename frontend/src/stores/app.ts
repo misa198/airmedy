@@ -41,7 +41,7 @@ export const useAppStore = defineStore('app', () => {
   const showTrayIcon = ref(true)
   const trayMode = ref<'menu' | 'pill'>('menu')
   const trayTheme = ref<'system' | 'light' | 'dark' | 'black'>('system')
-  const trayPanelTheme = ref<'light' | 'dark' | 'black'>('black')
+  const trayPanelTheme = ref<'system' | 'light' | 'dark' | 'black'>('system')
   const autoCheckUpdate = ref(true)
   const lastfmUsername = ref('')
   const eqEnabled = ref(true)
@@ -150,7 +150,7 @@ export const useAppStore = defineStore('app', () => {
         showTrayIcon.value = settings.show_tray_icon !== false
         trayMode.value = settings.tray_mode === 'pill' ? 'pill' : 'menu'
         trayTheme.value = settings.tray_theme === 'light' || settings.tray_theme === 'dark' || settings.tray_theme === 'black' ? settings.tray_theme : 'system'
-        trayPanelTheme.value = settings.tray_panel_theme === 'light' || settings.tray_panel_theme === 'dark' ? settings.tray_panel_theme : 'black'
+        trayPanelTheme.value = settings.tray_panel_theme === 'light' || settings.tray_panel_theme === 'dark' || settings.tray_panel_theme === 'black' ? settings.tray_panel_theme : 'system'
         autoCheckUpdate.value = !!settings.auto_check_update
         lastfmUsername.value = settings.lastfm_username || ''
         eqEnabled.value = settings.eq_enabled !== false
@@ -394,7 +394,7 @@ export const useAppStore = defineStore('app', () => {
     await saveSettings()
   }
 
-  const updateTrayPanelTheme = async (value: 'light' | 'dark' | 'black') => {
+  const updateTrayPanelTheme = async (value: 'system' | 'light' | 'dark' | 'black') => {
     trayPanelTheme.value = value
     await saveSettings()
   }
@@ -653,7 +653,7 @@ export const useAppStore = defineStore('app', () => {
   })
 
   const _offTrayPanelTheme = Events.On('settings:tray-panel-theme', (event: Events.WailsEvent) => {
-    if (event.data === 'light' || event.data === 'dark' || event.data === 'black') trayPanelTheme.value = event.data
+    if (event.data === 'system' || event.data === 'light' || event.data === 'dark' || event.data === 'black') trayPanelTheme.value = event.data
   })
 
   const _offPlayerFavoriteButton = Events.On('settings:player-favorite-button', (event: Events.WailsEvent) => {

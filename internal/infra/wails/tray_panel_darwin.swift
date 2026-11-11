@@ -575,7 +575,7 @@ private var panelArtworkPath = ""
 private var panelHasTrack = false
 private var panelFavorite = false
 private var panelFavoriteLabel = ""
-private var panelTheme = "black"
+private var panelTheme = "system"
 private var panelPosition = 0.0
 private var panelDuration = 0.0
 private var panelTrackID = ""
@@ -615,13 +615,13 @@ public func trayPanelSetProgress(_ position: Double, _ duration: Double, _ track
 
 private func applyPanelTheme() {
     let dark = panelTheme != "light"
-    trayPanel?.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+    trayPanel?.appearance = panelTheme == "system" ? nil : NSAppearance(named: dark ? .darkAqua : .aqua)
     trayContent?.refreshColors()
 }
 
 @_cdecl("TrayPanelSetTheme")
 public func trayPanelSetTheme(_ theme: UnsafePointer<CChar>?) {
-    panelTheme = theme.map { String(cString: $0) } ?? "black"
+    panelTheme = theme.map { String(cString: $0) } ?? "system"
     applyPanelTheme()
 }
 

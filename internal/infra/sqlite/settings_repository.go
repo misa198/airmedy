@@ -269,7 +269,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 			ShowTrayIcon:                    true,
 			TrayMode:                        "menu",
 			TrayTheme:                       "system",
-			TrayPanelTheme:                  "black",
+			TrayPanelTheme:                  "system",
 			TrayBackgroundMode:              "solid",
 			EQEnabled:                       true,
 			EnableLrclib:                    true,

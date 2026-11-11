@@ -83,7 +83,7 @@ func (s *SettingsService) GetSettings(ctx context.Context) (*domain.AppSettings,
 			ShowTrayIcon:                    true,
 			TrayMode:                        "menu",
 			TrayTheme:                       "system",
-			TrayPanelTheme:                  "black",
+			TrayPanelTheme:                  "system",
 			TrayBackgroundMode:              "solid",
 			AutoCheckUpdate:                 true,
 			EQEnabled:                       true,
@@ -121,9 +121,9 @@ func (s *SettingsService) SaveSettings(ctx context.Context, settings *domain.App
 		return fmt.Errorf("invalid tray theme: %q", settings.TrayTheme)
 	}
 	if settings.TrayPanelTheme == "" {
-		settings.TrayPanelTheme = "black"
+		settings.TrayPanelTheme = "system"
 	}
-	if settings.TrayPanelTheme != "light" && settings.TrayPanelTheme != "dark" && settings.TrayPanelTheme != "black" {
+	if settings.TrayPanelTheme != "system" && settings.TrayPanelTheme != "light" && settings.TrayPanelTheme != "dark" && settings.TrayPanelTheme != "black" {
 		return fmt.Errorf("invalid tray panel theme: %q", settings.TrayPanelTheme)
 	}
 	if settings.TrayMode == "" {

@@ -224,9 +224,10 @@ const toggleAutoCheckUpdate = async (enabled: boolean) => {
       </SettingRow>
 
       <SettingRow v-if="deviceStore.isMac && appStore.showTrayIcon" :title="t('settings.behavior.tray_panel_theme')" :description="t('settings.behavior.tray_panel_theme_desc')">
-        <Select :model-value="appStore.trayPanelTheme" @update:model-value="val => appStore.updateTrayPanelTheme(val as 'light' | 'dark' | 'black')">
+        <Select :model-value="appStore.trayPanelTheme" @update:model-value="val => appStore.updateTrayPanelTheme(val as 'system' | 'light' | 'dark' | 'black')">
           <SelectTrigger class="w-[170px] bg-foreground/[0.04] border-0 h-9 text-sm"><SelectValue /></SelectTrigger>
           <SelectContent>
+            <SelectItem value="system">{{ t('settings.appearance.system') }}</SelectItem>
             <SelectItem value="light">{{ t('settings.appearance.light') }}</SelectItem>
             <SelectItem value="dark">{{ t('settings.appearance.dark') }}</SelectItem>
             <SelectItem value="black">{{ t('settings.appearance.black') }}</SelectItem>

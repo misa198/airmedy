@@ -68,7 +68,7 @@ describe('GeneralSettings primary color', () => {
     handler({ data: 'light' } as Events.WailsEvent)
     expect(store.trayPanelTheme).toBe('light')
     handler({ data: 'system' } as Events.WailsEvent)
-    expect(store.trayPanelTheme).toBe('light')
+    expect(store.trayPanelTheme).toBe('system')
     store.dispose()
     expect(off).toHaveBeenCalledOnce()
     vi.unstubAllGlobals()
