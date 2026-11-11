@@ -104,7 +104,8 @@ static NSColor *PillBarColor(NSColor *from, NSColor *to, NSColor *foreground, NS
 		titleSlideProgress = 1;
         barStep = 18;
         for (int i = 0; i < 5; i++) barHeights[i] = 2;
-        self.timer = [NSTimer scheduledTimerWithTimeInterval:1.0/60.0 target:self selector:@selector(tick:) userInfo:nil repeats:YES];
+        self.timer = [NSTimer timerWithTimeInterval:1.0/60.0 target:self selector:@selector(tick:) userInfo:nil repeats:YES];
+        [NSRunLoop.mainRunLoop addTimer:self.timer forMode:NSRunLoopCommonModes];
     }
     return self;
 }
