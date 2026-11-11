@@ -68,6 +68,7 @@ Run `pnpm --filter @airmedy/ui build` (or `pnpm dev` from root for watch mode).
 
 | Export              | File                              | Primitive             |
 | ------------------- | --------------------------------- | --------------------- |
+| `BackwardFill`, `ForwardFill` | `icons/` | Filled transport icons; accept `size` and `color` props |
 | `MarqueeText`       | `MarqueeText.vue`                 | Custom CSS animation  |
 | `Modal`             | `Modal.vue`                       | Custom dialog         |
 | `DetailsButton`     | `DetailsButton.vue`               | Button variant        |

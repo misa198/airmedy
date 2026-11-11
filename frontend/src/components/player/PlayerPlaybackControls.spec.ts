@@ -35,7 +35,7 @@ describe('PlayerPlaybackControls', () => {
       props: { isPlaying: false, shuffle: true, repeatMode: RepeatMode.RepeatModeAll, showIndicator: true, compact: true },
     })
     expect(wrapper.classes()).toContain('gap-5')
-    expect(wrapper.findAll('button')[2].classes()).toEqual(expect.arrayContaining(['w-9', 'h-9']))
-    expect(wrapper.findAll('button')[1].get('svg').classes()).toEqual(expect.arrayContaining(['w-6', 'h-6']))
+    expect(wrapper.findAll('button')[2].classes()).toEqual(expect.arrayContaining(['w-9', 'h-9', 'scale-100', 'hover:scale-105', 'transition-transform', 'duration-300']))
+    expect(wrapper.findAll('button')[1].get('svg').classes()).toEqual(expect.arrayContaining(['w-7', 'h-7']))
   })
 })

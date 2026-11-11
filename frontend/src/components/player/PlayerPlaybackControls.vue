@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { BackwardFill, ForwardFill } from '@airmedy/ui'
 import { computed } from 'vue'
 import {
   Pause,
@@ -6,8 +7,6 @@ import {
   Repeat,
   Repeat1,
   Shuffle,
-  SkipBack,
-  SkipForward,
 } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { RepeatMode } from '../../../bindings/airmedy/internal/domain/models'
@@ -59,17 +58,17 @@ const repeatActive = computed(
       <Shuffle :class="compact ? 'w-4 h-4' : 'w-5 h-5'" />
     </PlayerControlButton>
     <button class="text-mini-player-pill-foreground opacity-80 hover:opacity-100 transition-opacity" @click="emit('previous')" :title="t('player.previous')" :aria-label="t('player.previous')" :disabled="disabled">
-      <SkipBack class="fill-current" :class="compact ? 'w-6 h-6' : 'w-7 h-7'" />
+      <BackwardFill class="fill-current" :class="compact ? 'w-7 h-7' : 'w-8 h-8'" />
     </button>
     <button
-      class="bg-mini-player-pill-active rounded-full flex items-center justify-center hover:scale-105 transition-transform shadow-xl"
+      class="bg-mini-player-pill-active rounded-full flex items-center justify-center scale-100 hover:scale-105 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-xl"
       :class="compact ? 'w-9 h-9' : 'w-14 h-14'"
       @click="emit('togglePlay')" :title="isPlaying ? t('player.pause') : t('player.play')" :aria-label="isPlaying ? t('player.pause') : t('player.play')" :disabled="disabled">
       <Pause v-if="isPlaying" class="fill-current text-mini-player-pill-active-foreground" :class="compact ? 'w-[18px] h-[18px]' : 'w-6 h-6'" />
       <Play v-else class="fill-current text-mini-player-pill-active-foreground ml-0.5" :class="compact ? 'w-[18px] h-[18px]' : 'w-6 h-6'" />
     </button>
     <button class="text-mini-player-pill-foreground opacity-80 hover:opacity-100 transition-opacity" @click="emit('next')" :title="t('player.next')" :aria-label="t('player.next')" :disabled="disabled">
-      <SkipForward class="fill-current" :class="compact ? 'w-6 h-6' : 'w-7 h-7'" />
+      <ForwardFill class="fill-current" :class="compact ? 'w-7 h-7' : 'w-8 h-8'" />
     </button>
     <PlayerControlButton
       :class="repeatActive ? 'text-mini-player-pill-foreground opacity-80' : 'text-mini-player-pill-foreground opacity-30'"
