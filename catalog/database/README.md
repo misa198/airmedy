@@ -21,6 +21,8 @@ Mobile, Library, Settings visible and Playback, Remote hidden; its down migratio
 removes only these two columns. The settings app service validates action IDs and
 uniqueness. See [settings](../settings/README.md) for behavior and synchronization.
 
+The macOS tray window theme is stored separately in `app_settings.tray_panel_theme`. Migration 000082 defaults it to dark and carries over an explicitly light tray theme; its down migration removes the new column.
+
 ## Connection Setup
 
 - Driver: `github.com/mattn/go-sqlite3` (cgo)

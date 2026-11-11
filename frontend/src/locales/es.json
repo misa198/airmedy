@@ -175,6 +175,8 @@
       "tray_section": "System tray",
       "tray_theme": "Tray theme",
       "tray_theme_desc": "Choose the menu bar pill appearance",
+      "tray_panel_theme": "Tray window theme",
+      "tray_panel_theme_desc": "Choose the menu bar window appearance",
       "tray_mode": "Estilo de bandeja",
       "tray_mode_desc": "Elige cómo aparece Airmedy en la barra de menús",
       "tray_mode_menu": "Icono",

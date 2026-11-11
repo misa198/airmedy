@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useAppStore, type TrayBackgroundMode } from '@/stores/app'
+import { useAppStore } from '@/stores/app'
 import { useDeviceStore } from '@/stores/device'
 import { AppWindow, Sun, Moon, Monitor, Languages, Circle, Palette } from '@lucide/vue'
 import { ColorPicker, Switch } from '@airmedy/ui'
@@ -212,30 +212,29 @@ const toggleAutoCheckUpdate = async (enabled: boolean) => {
       </SettingRow>
 
       <SettingRow v-if="appStore.showTrayIcon" :title="t('settings.behavior.tray_theme')" :description="t('settings.behavior.tray_theme_desc')">
-        <Select :model-value="appStore.trayTheme" @update:model-value="val => appStore.updateTrayTheme(val as 'system' | 'light' | 'dark')">
+        <Select :model-value="appStore.trayTheme" @update:model-value="val => appStore.updateTrayTheme(val as 'system' | 'light' | 'dark' | 'black')">
           <SelectTrigger class="w-[170px] bg-foreground/[0.04] border-0 h-9 text-sm"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="system">{{ t('settings.appearance.system') }}</SelectItem>
             <SelectItem value="light">{{ t('settings.appearance.light') }}</SelectItem>
             <SelectItem value="dark">{{ t('settings.appearance.dark') }}</SelectItem>
+            <SelectItem value="black">{{ t('settings.appearance.black') }}</SelectItem>
           </SelectContent>
         </Select>
       </SettingRow>
 
-      <SettingRow v-if="appStore.showTrayIcon" data-test="tray-background" :title="t('settings.playback.tray_background')"
-        :description="t('settings.playback.tray_background_desc')">
-        <Select :model-value="appStore.trayBackgroundMode"
-          @update:model-value="mode => appStore.updateTrayBackgroundMode(mode as TrayBackgroundMode)">
-          <SelectTrigger class="w-[170px] bg-foreground/[0.04] border-0 h-9 text-sm">
-            <SelectValue />
-          </SelectTrigger>
+      <SettingRow v-if="deviceStore.isMac && appStore.showTrayIcon" :title="t('settings.behavior.tray_panel_theme')" :description="t('settings.behavior.tray_panel_theme_desc')">
+        <Select :model-value="appStore.trayPanelTheme" @update:model-value="val => appStore.updateTrayPanelTheme(val as 'system' | 'light' | 'dark' | 'black')">
+          <SelectTrigger class="w-[170px] bg-foreground/[0.04] border-0 h-9 text-sm"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="living">{{ t('settings.playback.fullscreen_background_living') }}</SelectItem>
-            <SelectItem value="solid">{{ t('settings.playback.fullscreen_background_solid') }}</SelectItem>
-            <SelectItem value="monochrome">{{ t('settings.playback.tray_background_monochrome') }}</SelectItem>
+            <SelectItem value="system">{{ t('settings.appearance.system') }}</SelectItem>
+            <SelectItem value="light">{{ t('settings.appearance.light') }}</SelectItem>
+            <SelectItem value="dark">{{ t('settings.appearance.dark') }}</SelectItem>
+            <SelectItem value="black">{{ t('settings.appearance.black') }}</SelectItem>
           </SelectContent>
         </Select>
       </SettingRow>
+
     </SettingSection>
 
     <RestartModal v-model:open="showRestartDialog" />

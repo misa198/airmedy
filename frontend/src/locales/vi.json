@@ -173,6 +173,8 @@
       "tray_section": "Khay hệ thống",
       "tray_theme": "Giao diện khay",
       "tray_theme_desc": "Chọn giao diện pill trên thanh menu",
+      "tray_panel_theme": "Giao diện cửa sổ khay",
+      "tray_panel_theme_desc": "Chọn giao diện cửa sổ điều khiển trên thanh menu",
       "tray_mode": "Kiểu khay",
       "tray_mode_desc": "Chọn cách Airmedy hiển thị trên thanh menu",
       "tray_mode_menu": "Biểu tượng",

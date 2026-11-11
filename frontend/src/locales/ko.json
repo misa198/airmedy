@@ -175,6 +175,8 @@
       "tray_section": "System tray",
       "tray_theme": "Tray theme",
       "tray_theme_desc": "Choose the menu bar pill appearance",
+      "tray_panel_theme": "Tray window theme",
+      "tray_panel_theme_desc": "Choose the menu bar window appearance",
       "tray_mode": "트레이 스타일",
       "tray_mode_desc": "메뉴 막대에 Airmedy가 표시되는 방식 선택",
       "tray_mode_menu": "아이콘",

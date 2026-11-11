@@ -40,7 +40,8 @@ export const useAppStore = defineStore('app', () => {
   const startAtLogin = ref(false)
   const showTrayIcon = ref(true)
   const trayMode = ref<'menu' | 'pill'>('menu')
-  const trayTheme = ref<'system' | 'light' | 'dark'>('system')
+  const trayTheme = ref<'system' | 'light' | 'dark' | 'black'>('system')
+  const trayPanelTheme = ref<'system' | 'light' | 'dark' | 'black'>('system')
   const autoCheckUpdate = ref(true)
   const lastfmUsername = ref('')
   const eqEnabled = ref(true)
@@ -148,7 +149,8 @@ export const useAppStore = defineStore('app', () => {
         startAtLogin.value = !!settings.start_at_login
         showTrayIcon.value = settings.show_tray_icon !== false
         trayMode.value = settings.tray_mode === 'pill' ? 'pill' : 'menu'
-        trayTheme.value = settings.tray_theme === 'light' || settings.tray_theme === 'dark' ? settings.tray_theme : 'system'
+        trayTheme.value = settings.tray_theme === 'light' || settings.tray_theme === 'dark' || settings.tray_theme === 'black' ? settings.tray_theme : 'system'
+        trayPanelTheme.value = settings.tray_panel_theme === 'light' || settings.tray_panel_theme === 'dark' || settings.tray_panel_theme === 'black' ? settings.tray_panel_theme : 'system'
         autoCheckUpdate.value = !!settings.auto_check_update
         lastfmUsername.value = settings.lastfm_username || ''
         eqEnabled.value = settings.eq_enabled !== false
@@ -272,6 +274,7 @@ export const useAppStore = defineStore('app', () => {
         show_tray_icon: showTrayIcon.value,
         tray_mode: trayMode.value,
         tray_theme: trayTheme.value,
+        tray_panel_theme: trayPanelTheme.value,
         auto_check_update: autoCheckUpdate.value,
         lastfm_username: lastfmUsername.value,
         eq_enabled: eqEnabled.value,
@@ -386,8 +389,13 @@ export const useAppStore = defineStore('app', () => {
     await saveSettings()
   }
 
-  const updateTrayTheme = async (value: 'system' | 'light' | 'dark') => {
+  const updateTrayTheme = async (value: 'system' | 'light' | 'dark' | 'black') => {
     trayTheme.value = value
+    await saveSettings()
+  }
+
+  const updateTrayPanelTheme = async (value: 'system' | 'light' | 'dark' | 'black') => {
+    trayPanelTheme.value = value
     await saveSettings()
   }
 
@@ -641,7 +649,11 @@ export const useAppStore = defineStore('app', () => {
   })
 
   const _offTrayTheme = Events.On('settings:tray-theme', (event: Events.WailsEvent) => {
-    trayTheme.value = event.data === 'light' || event.data === 'dark' ? event.data : 'system'
+    trayTheme.value = event.data === 'light' || event.data === 'dark' || event.data === 'black' ? event.data : 'system'
+  })
+
+  const _offTrayPanelTheme = Events.On('settings:tray-panel-theme', (event: Events.WailsEvent) => {
+    if (event.data === 'system' || event.data === 'light' || event.data === 'dark' || event.data === 'black') trayPanelTheme.value = event.data
   })
 
   const _offPlayerFavoriteButton = Events.On('settings:player-favorite-button', (event: Events.WailsEvent) => {
@@ -663,6 +675,7 @@ export const useAppStore = defineStore('app', () => {
     _offLanguage()
     _offPlayerFavoriteButton()
     _offTrayTheme()
+    _offTrayPanelTheme()
     _offTheme()
     _offTrayBackground()
   }
@@ -678,6 +691,7 @@ export const useAppStore = defineStore('app', () => {
     showTrayIcon,
     trayMode,
     trayTheme,
+    trayPanelTheme,
     autoCheckUpdate,
     lastfmUsername,
     eqEnabled,
@@ -729,6 +743,7 @@ export const useAppStore = defineStore('app', () => {
     updateShowTrayIcon,
     updateTrayMode,
     updateTrayTheme,
+    updateTrayPanelTheme,
     updateAutoCheckUpdate,
     updateEQEnabled,
     updateLastFmUsername,

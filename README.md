@@ -60,12 +60,12 @@
 <td width="33%"><img src="docs/screenshots/search.webp" alt="Search" width="100%" /><p align="center">Search</p></td>
 </tr>
 <tr>
+<td width="33%"><img src="docs/screenshots/tray-menu-macos.webp" alt="MacOS Tray menu" width="100%" /><p align="center">MacOS Tray menu</p></td>
+<td width="33%"><img src="docs/screenshots/remote-1.webp" alt="Remote control" width="100%" /><p align="center">Remote control</p></td>
 <td width="33%"><img src="docs/screenshots/mobiles.webp" alt="Mobile app" width="100%" /><p align="center">Mobile app</p></td>
+</tr>
 <td width="33%"><img src="docs/screenshots/fold.webp" alt="Mobile app" width="100%" /><p align="center">Fold</p></td>
 <td width="33%"><img src="docs/screenshots/flip.webp" alt="Mobile app" width="100%" /><p align="center">Flip</p></td>
-</tr>
-<tr>
-<td width="33%"><img src="docs/screenshots/remote-1.webp" alt="Remote control" width="100%" /><p align="center">Remote control</p></td>
 </tr>
 </table>
 

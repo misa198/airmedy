@@ -9,21 +9,7 @@ import (
 
 	"airmedy/internal/app/i18n"
 	"airmedy/internal/domain"
-	"github.com/wailsapp/wails/v3/pkg/application"
 )
-
-func TestTrayPillPopupDoesNotActivateMainWindow(t *testing.T) {
-	opts := trayPillWindowOptions("dark")
-	if opts.Mac.WindowClass != application.MacWindowClassPanel || !opts.Mac.PanelPreferences.NonActivating {
-		t.Fatal("tray popup must be a non-activating panel")
-	}
-	if opts.Width != 300 || opts.Height != 170 || opts.BackgroundType != application.BackgroundTypeTransparent {
-		t.Fatal("tray popup must have the compact transparent player geometry")
-	}
-	if opts.Mac.CornerType != application.MacWindowCornerTypeRounded {
-		t.Fatal("tray popup must keep the native rounded corners")
-	}
-}
 
 func TestTrayPillTitleWithoutArtwork(t *testing.T) {
 	translations := i18n.NewService(slog.Default())
@@ -36,6 +22,28 @@ func TestTrayPillTitleWithoutArtwork(t *testing.T) {
 		translations.SetLocale(locale)
 		if got := trayPillTitle(track, translations); got == "" || got == "tray.unknown_track" || strings.TrimSpace(got) == "" || (locale != "en" && got == "Unknown track") {
 			t.Errorf("missing unknown track title for %s: %q", locale, got)
+		}
+	}
+}
+
+func TestTrayPanelMetadataFallbacks(t *testing.T) {
+	translations := i18n.NewService(slog.Default())
+	translations.SetLocale("en")
+	if title, artist := trayTrackMetadata(nil, translations); title != "No track playing" || artist != "" {
+		t.Fatalf("no track metadata = %q, %q", title, artist)
+	}
+	track := &domain.TrackDTO{Track: domain.Track{Title: " "}, Artists: []*domain.Artist{nil, {Name: " "}}}
+	if title, artist := trayTrackMetadata(track, translations); title != "Unknown track" || artist != "Unknown Artist" {
+		t.Fatalf("missing metadata = %q, %q", title, artist)
+	}
+}
+
+func TestTrayRepeatCycle(t *testing.T) {
+	mode := domain.RepeatModeOff
+	for _, want := range []domain.RepeatMode{domain.RepeatModeAll, domain.RepeatModeOne, domain.RepeatModeOff} {
+		mode = nextTrayRepeatMode(mode)
+		if mode != want {
+			t.Fatalf("repeat mode = %q, want %q", mode, want)
 		}
 	}
 }
@@ -71,7 +79,7 @@ func TestTrayMenuLabelsAreTranslated(t *testing.T) {
 	translations := i18n.NewService(slog.Default())
 	for _, locale := range []string{"de", "en", "es", "fr", "it", "ja", "ko", "pt", "ru", "th", "vi", "zh"} {
 		translations.SetLocale(locale)
-		for _, key := range []string{"tray.show_airmedy", "tray.quit"} {
+		for _, key := range []string{"tray.show_airmedy", "tray.quit", "tray.seek"} {
 			if label := translations.T(key); strings.TrimSpace(label) == "" || label == key {
 				t.Errorf("missing %s translation for %s: %q", key, locale, label)
 			}

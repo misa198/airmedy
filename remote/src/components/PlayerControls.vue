@@ -3,8 +3,6 @@ import { computed, ref } from 'vue'
 import {
   Play,
   Pause,
-  SkipBack,
-  SkipForward,
   Repeat,
   Repeat1,
   Shuffle,
@@ -12,7 +10,7 @@ import {
   VolumeX,
 } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
-import { Slider } from '@airmedy/ui'
+import { Slider, BackwardFill, ForwardFill } from '@airmedy/ui'
 import { send } from '../ws'
 import { usePlayerStore } from '../stores/player'
 
@@ -75,7 +73,7 @@ function onVolumeUpdate(v: number) {
         class="p-2 text-white opacity-80 hover:text-white transition-colors"
         :title="t('player.previous')"
       >
-        <SkipBack class="w-7 h-7 fill-current" />
+        <BackwardFill class="w-7 h-7 fill-current" />
       </button>
 
       <!-- Play/Pause -->
@@ -94,7 +92,7 @@ function onVolumeUpdate(v: number) {
         class="p-2 text-white opacity-80 hover:text-white transition-colors"
         :title="t('player.next')"
       >
-        <SkipForward class="w-7 h-7 fill-current" />
+        <ForwardFill class="w-7 h-7 fill-current" />
       </button>
 
       <!-- Repeat -->

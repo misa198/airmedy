@@ -38,6 +38,7 @@
     "repeat_one": "单曲循环",
     "shuffle": "随机",
     "favorite": "收藏",
+    "seek": "调整播放进度",
     "show_airmedy": "显示 Airmedy",
     "quit": "退出"
   }

@@ -2,7 +2,6 @@
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
-  SkipBack, SkipForward, Play, Pause,
   Pin, PinOff, X, Music,
   Shuffle, Repeat, Repeat1,
   Volume2,
@@ -14,10 +13,11 @@ import { usePlayerStore } from '@/stores/player'
 import { useMoodRadioStore } from '@/stores/moodRadio'
 import { RepeatMode } from '../../bindings/airmedy/internal/domain/models'
 import { formatTime, hexToRgba, getTrackDisplayTitle } from '@airmedy/utils'
-import { Slider } from '@airmedy/ui'
+import { Slider, BackwardFill, ForwardFill } from '@airmedy/ui'
 import { MarqueeText } from '@airmedy/ui'
 import * as WindowService from '../../bindings/airmedy/internal/infra/wails/windowservice'
 import PlayerControlButton from './player/PlayerControlButton.vue'
+import PlayPauseCutout from './player/PlayPauseCutout.vue'
 import PlayerFavoriteButton from './player/PlayerFavoriteButton.vue'
 import MiniPlayerLyrics from './MiniPlayerLyrics.vue'
 import QueueTrackList from './QueueTrackList.vue'
@@ -307,16 +307,15 @@ watch(() => store.theme, (colors) => {
             <Shuffle class="w-3.5 h-3.5" />
           </PlayerControlButton>
           <button class="text-white/80 hover:text-white/90 transition-colors" @click="store.previous()">
-            <SkipBack class="w-4 h-4 fill-current" />
+            <BackwardFill class="w-5 h-5 fill-current" />
           </button>
           <button
-            class="w-9 h-9 bg-white rounded-full flex items-center justify-center hover:scale-105 transition-transform shrink-0"
+            class="w-9 h-9 text-mini-player-pill-active rounded-full flex items-center justify-center scale-100 hover:scale-105 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shrink-0"
             @click="store.togglePlayPause()">
-            <Pause v-if="store.isPlaying" class="w-[18px] h-[18px] fill-current text-[#0A0A0A]" />
-            <Play v-else class="w-[18px] h-[18px] fill-current text-[#0A0A0A] ml-0.5" />
+            <PlayPauseCutout :is-playing="store.isPlaying" />
           </button>
           <button class="text-white/80 hover:text-white/90 transition-colors" @click="store.next()">
-            <SkipForward class="w-4 h-4 fill-current" />
+            <ForwardFill class="w-5 h-5 fill-current" />
           </button>
           <PlayerControlButton class="transition-colors"
             :class="repeatActive ? 'text-white/80' : 'text-white/20'" :active="repeatActive"

@@ -258,7 +258,7 @@ func main() {
 		}
 		wailsApp.Event.OnApplicationEvent(events.Mac.ApplicationDidBecomeActive, restoreMiniPin)
 		wailsApp.Event.RegisterApplicationEventHook(events.Mac.ApplicationShouldHandleReopen, func(e *application.ApplicationEvent) {
-			// Wails otherwise shows every hidden window, including the tray popup.
+			// Wails otherwise shows every hidden window on Dock reopen.
 			e.Cancel()
 			application.InvokeAsync(func() {
 				wailsApp.Event.Emit("tray-popup:hide")
@@ -375,7 +375,7 @@ func main() {
 	var trayManager *wails.TrayManager
 	settings, err = settingsService.GetSettings(context.Background())
 	if err == nil && wails.UseTrayPill(runtime.GOOS, settings) {
-		wails.SetupTrayPill(wailsApp, playerService.GetService(), artworkCache, i18nService, windowService, settings.TrayTheme, settings.TrayMode, macTrayIcon)
+		wails.SetupTrayPill(wailsApp, playerService.GetService(), libraryService, artworkCache, i18nService, windowService, settings.TrayTheme, settings.TrayPanelTheme, settings.TrayMode, settings.ShowPlayerIndicator, macTrayIcon)
 	} else if err == nil && settings.ShowTrayIcon {
 		systemTray := wailsApp.SystemTray.New()
 		switch runtime.GOOS {

@@ -175,6 +175,8 @@
       "tray_section": "System tray",
       "tray_theme": "Tray theme",
       "tray_theme_desc": "Choose the menu bar pill appearance",
+      "tray_panel_theme": "Tray window theme",
+      "tray_panel_theme_desc": "Choose the menu bar window appearance",
       "tray_mode": "รูปแบบถาด",
       "tray_mode_desc": "เลือกวิธีแสดง Airmedy ในแถบเมนู",
       "tray_mode_menu": "ไอคอน",

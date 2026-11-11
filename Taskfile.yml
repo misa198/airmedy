@@ -77,6 +77,8 @@ tasks:
   test:go:
     summary: Runs all Go unit tests
     cmds:
+      - '{{if eq OS "darwin"}}bash scripts/build-traypanel-darwin.sh{{else}}true{{end}}'
+      - '{{if eq OS "darwin"}}bash scripts/test-traypanel-darwin.sh{{else}}true{{end}}'
       - go test ./...
 
   test:ui:

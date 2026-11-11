@@ -66,7 +66,7 @@ for the delimiter-aware re-sync that applies changes to existing tracks.
 
 Stored in the `app_settings` table (single-row, id always = 1). Sensitive session keys are stored in the OS-native secure vault (Keychain, Credential Manager, etc.) via `github.com/zalando/go-keyring`.
 
-On macOS, `show_tray_icon` gates the menu bar item. `tray_mode` selects the menu bar appearance: the default icon (`menu`) or the Now Playing pill (`pill`). Left-click in either mode toggles the player popup. In both modes, right-click opens a native menu with Show Airmedy and Quit. On Windows/Linux, left-click shows the current app window and right-click retains the tray menu. The General Settings selector appears only while the tray icon is enabled. Tray visibility and style changes take effect after restart; other platforms continue to use the existing tray. The General tray section also selects the Now Playing menu bar pill theme: system (default), light, or dark. The native pill applies changes immediately; system follows the OS appearance. This setting does not change the tray popup window theme. The same General tray section offers the tray popup background selector (living artwork, solid, or monochrome) while the tray icon is enabled; Playback retains the fullscreen and mini-player background selectors.
+On macOS, `show_tray_icon` gates the menu bar item. `tray_mode` selects the menu bar appearance: the default icon (`menu`) or the Now Playing pill (`pill`). Left-click in either mode toggles the player popup. In both modes, right-click opens a native menu with Show Airmedy and Quit. On Windows/Linux, left-click shows the current app window and right-click retains the tray menu. The General Settings selector appears only while the tray icon is enabled. Tray visibility and style changes take effect after restart; other platforms continue to use the existing tray. The General tray section also selects the Now Playing menu bar pill theme: system (default), light, or dark. The native pill applies changes immediately; system follows the OS appearance. This setting does not change the tray popup window theme. The tray window has a separate system/light/dark/black theme selector; Playback retains the fullscreen and mini-player background selectors.
 
 General Settings includes a Custom title bar section only on Windows/Linux while
 `useCustomTitleBar().canConfigureTitleBar` is true. The hook returns reactive
@@ -191,14 +191,7 @@ interface AppStore {
 }
 ```
 
-The tray popup persists `tray_background_mode` as `living`, `solid` (default), or
-`monochrome`. Migration 000080 preserves the former boolean choice; rollback maps
-Monochrome to Solid. Monochrome uses the main window's `--bg-main` and semantic
-foreground colors for text, controls, and progress, without artwork tint or animation;
-cover artwork keeps its colors. After a successful save, `settings:tray-background`
-(the mode string) and `settings:theme` (the app theme string) synchronize window
-stores immediately. Listeners update state without saving again and are removed
-in `dispose()`. The native pill's `tray_theme` remains independent.
+The legacy `tray_background_mode` value remains persisted (`living`, `solid`, or `monochrome`) so existing preferences are preserved for future use. The native panel does not use it. The native pill uses `tray_theme` (`system`, `light`, `dark`, `black`); the macOS panel independently uses `tray_panel_theme` (`system`, `light`, `dark`, `black`). Both apply immediately and system follows macOS appearance. New users default to system. Existing saved panel themes are preserved; the original migration assigned light to explicit light tray themes and dark to other installations.
 
 Each `update*()` method calls `SettingsService.SaveSettings()` with the full settings object (all fields at once, not partial).
 

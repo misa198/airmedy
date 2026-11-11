@@ -78,8 +78,8 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		return fmt.Errorf("encode title bar actions: %w", err)
 	}
 	_, err = r.db.ExecContext(ctx,
-		`INSERT INTO app_settings (id, language, theme, primary_color, lastfm_username, auto_check_update, start_at_login, show_tray_icon, tray_mode, tray_theme, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, romanization_enabled, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, pairing_mqtt_port, show_player_indicator, show_player_favorite_button, auto_advance_notifications_enabled, library_sync_interval, library_analysis_enabled, library_analysis_worker_count, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, mood_derivation_version, max_queue_size, crossfade_seconds, blend_artwork_during_crossfade, high_contrast_lyrics, lyrics_glow, living_artwork_background, mini_living_artwork_background, tray_background_mode, eq_preamp, stereo_width, title_bar_show_navigation, title_bar_actions, updated_at)
-		 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+		`INSERT INTO app_settings (id, language, theme, primary_color, lastfm_username, auto_check_update, start_at_login, show_tray_icon, tray_mode, tray_theme, tray_panel_theme, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, romanization_enabled, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, pairing_mqtt_port, show_player_indicator, show_player_favorite_button, auto_advance_notifications_enabled, library_sync_interval, library_analysis_enabled, library_analysis_worker_count, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, mood_derivation_version, max_queue_size, crossfade_seconds, blend_artwork_during_crossfade, high_contrast_lyrics, lyrics_glow, living_artwork_background, mini_living_artwork_background, tray_background_mode, eq_preamp, stereo_width, title_bar_show_navigation, title_bar_actions, updated_at)
+		 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 		 ON CONFLICT(id) DO UPDATE SET
 		   language = excluded.language,
 		   theme = excluded.theme,
@@ -90,6 +90,7 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		   show_tray_icon = excluded.show_tray_icon,
 		   tray_mode = excluded.tray_mode,
 		   tray_theme = excluded.tray_theme,
+		   tray_panel_theme = excluded.tray_panel_theme,
 		   eq_enabled = excluded.eq_enabled,
 		   use_online_artist_artwork = excluded.use_online_artist_artwork,
 		   prefer_local_artist_artwork = excluded.prefer_local_artist_artwork,
@@ -144,6 +145,7 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		settings.ShowTrayIcon,
 		settings.TrayMode,
 		settings.TrayTheme,
+		settings.TrayPanelTheme,
 		settings.EQEnabled,
 		settings.UseOnlineArtistArtwork,
 		settings.PreferLocalArtistArtwork,
@@ -208,6 +210,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		ShowTrayIcon                    bool           `db:"show_tray_icon"`
 		TrayMode                        string         `db:"tray_mode"`
 		TrayTheme                       string         `db:"tray_theme"`
+		TrayPanelTheme                  string         `db:"tray_panel_theme"`
 		EQEnabled                       bool           `db:"eq_enabled"`
 		UseOnlineArtistArtwork          bool           `db:"use_online_artist_artwork"`
 		PreferLocalArtistArtwork        bool           `db:"prefer_local_artist_artwork"`
@@ -252,7 +255,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		StereoWidth                     float64        `db:"stereo_width"`
 	}
 	err := r.db.GetContext(ctx, &row,
-		`SELECT language, theme, primary_color, lastfm_username, auto_check_update, start_at_login, show_tray_icon, tray_mode, tray_theme, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, romanization_enabled, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, pairing_mqtt_port, show_player_indicator, show_player_favorite_button, auto_advance_notifications_enabled, library_sync_interval, library_analysis_enabled, library_analysis_worker_count, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, mood_derivation_version, max_queue_size, crossfade_seconds, blend_artwork_during_crossfade, high_contrast_lyrics, lyrics_glow, living_artwork_background, mini_living_artwork_background, tray_background_mode, eq_preamp, stereo_width, title_bar_show_navigation, title_bar_actions FROM app_settings WHERE id = 1`,
+		`SELECT language, theme, primary_color, lastfm_username, auto_check_update, start_at_login, show_tray_icon, tray_mode, tray_theme, tray_panel_theme, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, romanization_enabled, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, pairing_mqtt_port, show_player_indicator, show_player_favorite_button, auto_advance_notifications_enabled, library_sync_interval, library_analysis_enabled, library_analysis_worker_count, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, mood_derivation_version, max_queue_size, crossfade_seconds, blend_artwork_during_crossfade, high_contrast_lyrics, lyrics_glow, living_artwork_background, mini_living_artwork_background, tray_background_mode, eq_preamp, stereo_width, title_bar_show_navigation, title_bar_actions FROM app_settings WHERE id = 1`,
 	)
 	if err == sql.ErrNoRows {
 		return &domain.AppSettings{
@@ -266,6 +269,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 			ShowTrayIcon:                    true,
 			TrayMode:                        "menu",
 			TrayTheme:                       "system",
+			TrayPanelTheme:                  "system",
 			TrayBackgroundMode:              "solid",
 			EQEnabled:                       true,
 			EnableLrclib:                    true,
@@ -319,6 +323,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		ShowTrayIcon:                    row.ShowTrayIcon,
 		TrayMode:                        row.TrayMode,
 		TrayTheme:                       row.TrayTheme,
+		TrayPanelTheme:                  row.TrayPanelTheme,
 		EQEnabled:                       row.EQEnabled,
 		EnableLrclib:                    row.EnableLrclib,
 		EnableKugou:                     row.EnableKugou,

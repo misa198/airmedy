@@ -77,7 +77,11 @@ func TestTrayModeSettings(t *testing.T) {
 	if settings.TrayTheme != "system" {
 		t.Fatalf("default tray theme = %q", settings.TrayTheme)
 	}
-	settings.TrayTheme = "light"
+	if settings.TrayPanelTheme != "system" {
+		t.Fatalf("default tray panel theme = %q", settings.TrayPanelTheme)
+	}
+	settings.TrayTheme = "black"
+	settings.TrayPanelTheme = "black"
 	settings.TrayMode = "pill"
 	if err := repo.Save(ctx, settings); err != nil {
 		t.Fatal(err)
@@ -86,8 +90,11 @@ func TestTrayModeSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if loaded.TrayTheme != "light" {
+	if loaded.TrayTheme != "black" {
 		t.Fatalf("saved tray theme = %q", loaded.TrayTheme)
+	}
+	if loaded.TrayPanelTheme != "black" {
+		t.Fatalf("saved tray panel theme = %q", loaded.TrayPanelTheme)
 	}
 	if loaded.TrayMode != "pill" {
 		t.Fatalf("saved tray mode = %q", loaded.TrayMode)
@@ -107,6 +114,43 @@ func TestTrayModeSettings(t *testing.T) {
 	}
 	if loaded.TrayMode != "menu" {
 		t.Fatalf("upgraded tray mode = %q", loaded.TrayMode)
+	}
+}
+
+func TestTrayPanelThemeMigration(t *testing.T) {
+	for _, tc := range []struct{ old, want string }{{"light", "light"}, {"system", "dark"}, {"dark", "dark"}} {
+		t.Run(tc.old, func(t *testing.T) {
+			db, err := NewDB(filepath.Join(t.TempDir(), "tray-panel.db"), slog.Default())
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() { _ = db.Close() })
+			repo := NewSettingsRepository(db)
+			settings, err := repo.Load(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
+			settings.TrayTheme = tc.old
+			if err := repo.Save(context.Background(), settings); err != nil {
+				t.Fatal(err)
+			}
+			for _, direction := range []string{"down", "up"} {
+				migration, err := os.ReadFile("migrations/000082_tray_panel_theme." + direction + ".sql")
+				if err != nil {
+					t.Fatal(err)
+				}
+				if _, err := db.Exec(string(migration)); err != nil {
+					t.Fatal(err)
+				}
+			}
+			loaded, err := repo.Load(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if loaded.TrayPanelTheme != tc.want || loaded.TrayTheme != tc.old {
+				t.Fatalf("migrated themes = %q, %q", loaded.TrayPanelTheme, loaded.TrayTheme)
+			}
+		})
 	}
 }
 

@@ -18,8 +18,10 @@ type SettingsService struct {
 func NewSettingsService(svc *appsettings.SettingsService, playerService *player.PlayerService) *SettingsService {
 	svc.AddChangeListener(func(settings *domain.AppSettings) {
 		if app := application.Get(); app != nil && app.Event != nil {
+			app.Event.Emit("settings:player-indicator", settings.ShowPlayerIndicator)
 			app.Event.Emit("settings:player-favorite-button", settings.ShowPlayerFavoriteButton)
 			app.Event.Emit("settings:tray-theme", settings.TrayTheme)
+			app.Event.Emit("settings:tray-panel-theme", settings.TrayPanelTheme)
 			app.Event.Emit("settings:theme", settings.Theme)
 			app.Event.Emit("settings:tray-background", settings.TrayBackgroundMode)
 			app.Event.Emit("settings:title-bar", map[string]any{"show_navigation": settings.TitleBarShowNavigation, "actions": settings.TitleBarActions})

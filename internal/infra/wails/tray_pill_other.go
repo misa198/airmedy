@@ -9,5 +9,5 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-func SetupTrayPill(_ *application.App, _ *player.PlayerService, _ domain.ArtworkCache, _ *i18n.Service, _ *WindowService, _, _ string, _ []byte) {
+func SetupTrayPill(_ *application.App, _ *player.PlayerService, _ *LibraryService, _ domain.ArtworkCache, _ *i18n.Service, _ *WindowService, _, _, _ string, _ bool, _ []byte) {
 }

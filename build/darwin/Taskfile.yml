@@ -33,6 +33,11 @@ tasks:
     cmds:
       - bash {{.ROOT_DIR}}/scripts/build-sfbaudioengine-darwin.sh
 
+  build:traypanel:
+    summary: Builds the native Swift tray panel for the target architecture
+    cmds:
+      - bash {{.ROOT_DIR}}/scripts/build-traypanel-darwin.sh {{.ARCH | default ARCH}}
+
   build:ffmpeg:
     summary: Builds FFmpeg static libs (incl. libavfilter) for the target arch if not already present
     status:
@@ -64,6 +69,9 @@ tasks:
     summary: Builds the application natively on macOS
     internal: true
     deps:
+      - task: build:traypanel
+        vars:
+          ARCH: '{{.ARCH}}'
       - task: build:sfbaudioengine
       - task: build:ffmpeg
         vars:

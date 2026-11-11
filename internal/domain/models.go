@@ -465,6 +465,7 @@ type AppSettings struct {
 	ShowTrayIcon             bool    `json:"show_tray_icon"`
 	TrayMode                 string  `json:"tray_mode"`
 	TrayTheme                string  `json:"tray_theme"`
+	TrayPanelTheme           string  `json:"tray_panel_theme"`
 	AutoCheckUpdate          bool    `json:"auto_check_update"`
 	LastFmUsername           string  `json:"lastfm_username"`
 	EQEnabled                bool    `json:"eq_enabled"`

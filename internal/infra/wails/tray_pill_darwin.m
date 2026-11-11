@@ -4,7 +4,6 @@
 #include "tray_pill_darwin.h"
 
 extern void goTrayPillClicked(void);
-extern void goTrayPillHidden(void);
 extern void goTrayPillMenu(void);
 extern void goTrayPillShow(void);
 extern void goTrayPillQuit(void);
@@ -17,12 +16,11 @@ static NSColor *barEndColor;
 static NSColor *barFromStartColor;
 static NSColor *barFromEndColor;
 static CGFloat barColorProgress = 1;
-static BOOL popupPrepared;
 static int trayTheme;
 
 static NSAppearance *PillAppearance(void) {
     if (trayTheme == 1) return [NSAppearance appearanceNamed:NSAppearanceNameAqua];
-    if (trayTheme == 2) return [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
+    if (trayTheme == 2 || trayTheme == 3) return [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
     NSString *style = [NSUserDefaults.standardUserDefaults stringForKey:@"AppleInterfaceStyle"];
     return [NSAppearance appearanceNamed:[style isEqualToString:@"Dark"] ? NSAppearanceNameDarkAqua : NSAppearanceNameAqua];
 }
@@ -106,7 +104,8 @@ static NSColor *PillBarColor(NSColor *from, NSColor *to, NSColor *foreground, NS
 		titleSlideProgress = 1;
         barStep = 18;
         for (int i = 0; i < 5; i++) barHeights[i] = 2;
-        self.timer = [NSTimer scheduledTimerWithTimeInterval:1.0/60.0 target:self selector:@selector(tick:) userInfo:nil repeats:YES];
+        self.timer = [NSTimer timerWithTimeInterval:1.0/60.0 target:self selector:@selector(tick:) userInfo:nil repeats:YES];
+        [NSRunLoop.mainRunLoop addTimer:self.timer forMode:NSRunLoopCommonModes];
     }
     return self;
 }
@@ -262,7 +261,8 @@ static NSColor *PillBarColor(NSColor *from, NSColor *to, NSColor *foreground, NS
     CGFloat titleX = 16 + artSize;
     CGFloat titleWidth = NSWidth(bounds) - 30 - titleX;
     NSColor *foreground = NSColor.labelColor;
-    [[NSColor.controlBackgroundColor colorWithAlphaComponent:0.9] setFill];
+    NSColor *background = trayTheme == 3 ? NSColor.blackColor : [NSColor.controlBackgroundColor colorWithAlphaComponent:0.9];
+    [background setFill];
     [[NSBezierPath bezierPathWithRoundedRect:pillRect xRadius:NSHeight(pillRect)/2 yRadius:NSHeight(pillRect)/2] fill];
     NSRect artRect = NSMakeRect(9, midY - artSize/2, artSize, artSize);
 	if (artworkFadeProgress < 1) [self drawArtwork:previousArtwork inRect:artRect foreground:foreground opacity:1];
@@ -297,7 +297,6 @@ static NSColor *PillBarColor(NSColor *from, NSColor *to, NSColor *foreground, NS
     if (barStartColor || barEndColor || barFromStartColor || barFromEndColor) {
         [NSGraphicsContext saveGraphicsState];
         [bars addClip];
-        NSColor *background = NSColor.controlBackgroundColor;
         NSGradient *gradient = [[NSGradient alloc] initWithStartingColor:PillBarColor(barFromStartColor, barStartColor, foreground, background)
             endingColor:PillBarColor(barFromEndColor, barEndColor, foreground, background)];
         [gradient drawInRect:NSMakeRect(NSWidth(bounds)-24, midY-height/2, 14, height) angle:0];
@@ -414,7 +413,7 @@ void TrayPillUpdate(const char *title, const char *artworkPath, const char *trac
     [pill refreshImage];
 }
 void TrayPillSetTheme(const char *theme) {
-    trayTheme = strcmp(theme, "light") == 0 ? 1 : strcmp(theme, "dark") == 0 ? 2 : 0;
+    trayTheme = strcmp(theme, "light") == 0 ? 1 : strcmp(theme, "dark") == 0 ? 2 : strcmp(theme, "black") == 0 ? 3 : 0;
     if (pill) [pill refreshImage];
 }
 void TrayPillRefreshTheme(void) {
@@ -438,48 +437,6 @@ void TrayPillPosition(int popupWidth, int *x, int *y) {
     if (menuHeight <= 0) menuHeight = NSHeight(item.button.window.frame);
     *x = (int)MAX(NSMinX(visible), MIN(centerX - popupWidth / 2, NSMaxX(visible) - popupWidth));
     *y = (int)(NSMaxY(NSScreen.screens.firstObject.frame) - NSMaxY(clickedScreen.frame) + menuHeight + 4);
-}
-void TrayPillPreparePopup(void *window) {
-    popupPrepared = NO;
-    if (!window) return;
-    NSWindow *panel = (NSWindow *)window;
-    if (NSWorkspace.sharedWorkspace.accessibilityDisplayShouldReduceMotion) {
-        panel.alphaValue = 1;
-        return;
-    }
-    panel.alphaValue = 0;
-    [panel setFrameOrigin:NSMakePoint(panel.frame.origin.x, panel.frame.origin.y + 8)];
-    popupPrepared = YES;
-}
-void TrayPillAnimatePopup(void *window) {
-    if (!window || !popupPrepared) return;
-    popupPrepared = NO;
-    NSWindow *panel = (NSWindow *)window;
-    NSPoint destination = NSMakePoint(panel.frame.origin.x, panel.frame.origin.y - 8);
-    if (NSWorkspace.sharedWorkspace.accessibilityDisplayShouldReduceMotion) {
-        [panel setFrameOrigin:destination];
-        panel.alphaValue = 1;
-        return;
-    }
-    [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
-        context.duration = 0.22;
-        [[panel animator] setFrameOrigin:destination];
-        [[panel animator] setAlphaValue:1];
-    } completionHandler:nil];
-}
-void TrayPillAnimatePopupOut(void *window) {
-    if (!window || NSWorkspace.sharedWorkspace.accessibilityDisplayShouldReduceMotion) {
-        goTrayPillHidden();
-        return;
-    }
-    NSWindow *panel = (NSWindow *)window;
-    [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
-        context.duration = 0.22;
-        [[panel animator] setFrameOrigin:NSMakePoint(panel.frame.origin.x, panel.frame.origin.y + 8)];
-        [[panel animator] setAlphaValue:0];
-    } completionHandler:^{
-        goTrayPillHidden();
-    }];
 }
 bool TrayPillPointerOverItem(void) {
     return item && item.button.window &&
