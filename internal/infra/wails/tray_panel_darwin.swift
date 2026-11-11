@@ -210,11 +210,14 @@ private final class MarqueeText: NSView {
         effectiveAppearance.performAsCurrentDrawingAppearance {
             contents = image.cgImage(forProposedRect: &rect, context: nil, hints: nil)
         }
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
         for (index, textLayer) in textLayers.enumerated() {
             textLayer.frame = NSRect(x: CGFloat(index) * (textWidth + 32), y: 0, width: textWidth, height: bounds.height)
             textLayer.contents = contents
             textLayer.contentsScale = window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 1
         }
+        CATransaction.commit()
     }
 
     func start() {
@@ -330,7 +333,7 @@ private final class TrayPanelContent: NSView {
     let artwork = NSImageView(frame: NSRect(x: 18, y: 94, width: 58, height: 58))
     let title = MarqueeText(frame: NSRect(x: 90, y: 120, width: 164, height: 20), font: .systemFont(ofSize: 13, weight: .semibold), color: TrayColors.active)
     let artist = MarqueeText(frame: NSRect(x: 90, y: 98, width: 164, height: 20), font: .systemFont(ofSize: 12), color: TrayColors.artist)
-    let favorite = NSButton(frame: NSRect(x: 272, y: 111, width: 24, height: 24))
+    let favorite = NSButton(frame: NSRect(x: 270, y: 111, width: 24, height: 24))
     let elapsed = NSTextField(labelWithString: "0:00")
     let total = NSTextField(labelWithString: "0:00")
     let seek = SeekSlider(frame: NSRect(x: 56, y: 63.5, width: 198, height: 20))
