@@ -269,7 +269,7 @@ package avoids linking the native audio archives into the menu test binary.
 
 On macOS, the Dock reopen hook cancels Wails' default restoration of every hidden
 window. It restores only the current main/mini player, reapplies the mini-player
-pin state, and dismisses the tray popup. The popup opens only through the tray.
+pin state, and dismisses the native tray panel. The panel opens only through the tray.
 
 ## Native Build Artifacts (audio)
 

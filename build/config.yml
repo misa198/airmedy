@@ -33,6 +33,7 @@ dev_mode:
       - .gitkeep
     watched_extension:
       - "*.go"
+      - "*.swift"
       - "*.js" # Watch for changes to JS/TS files included using the //wails:include directive.
       - "*.ts" # The frontend directory will be excluded entirely by the setting above.
     git_ignore: true

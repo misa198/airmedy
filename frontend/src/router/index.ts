@@ -92,11 +92,6 @@ const routes = [
     ]
   },
   {
-    path: '/tray-popup',
-    name: 'tray-popup',
-    component: () => import('../views/TrayPopupView.vue')
-  },
-  {
     path: '/mini-player',
     name: 'mini-player',
     component: () => import('../views/MiniPlayerWindowView.vue')
