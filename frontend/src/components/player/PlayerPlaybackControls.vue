@@ -2,8 +2,6 @@
 import { BackwardFill, ForwardFill } from '@airmedy/ui'
 import { computed } from 'vue'
 import {
-  Pause,
-  Play,
   Repeat,
   Repeat1,
   Shuffle,
@@ -11,6 +9,7 @@ import {
 import { useI18n } from 'vue-i18n'
 import { RepeatMode } from '../../../bindings/airmedy/internal/domain/models'
 import PlayerControlButton from './PlayerControlButton.vue'
+import PlayPauseCutout from './PlayPauseCutout.vue'
 
 const props = defineProps<{
   isPlaying: boolean
@@ -42,7 +41,7 @@ const repeatActive = computed(
 </script>
 
 <template>
-  <div class="flex items-center gap-5">
+  <div class="flex items-center gap-6">
     <PlayerControlButton
       :class="shuffle ? 'text-mini-player-pill-foreground opacity-80' : 'text-mini-player-pill-foreground opacity-30'"
       class="transition-opacity"
@@ -61,11 +60,10 @@ const repeatActive = computed(
       <BackwardFill class="fill-current" :class="compact ? 'w-7 h-7' : 'w-8 h-8'" />
     </button>
     <button
-      class="bg-mini-player-pill-active rounded-full flex items-center justify-center scale-100 hover:scale-105 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-xl"
+      class="text-mini-player-pill-active rounded-full flex items-center justify-center scale-100 hover:scale-105 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-xl"
       :class="compact ? 'w-9 h-9' : 'w-14 h-14'"
       @click="emit('togglePlay')" :title="isPlaying ? t('player.pause') : t('player.play')" :aria-label="isPlaying ? t('player.pause') : t('player.play')" :disabled="disabled">
-      <Pause v-if="isPlaying" class="fill-current text-mini-player-pill-active-foreground" :class="compact ? 'w-[18px] h-[18px]' : 'w-6 h-6'" />
-      <Play v-else class="fill-current text-mini-player-pill-active-foreground ml-0.5" :class="compact ? 'w-[18px] h-[18px]' : 'w-6 h-6'" />
+      <PlayPauseCutout :is-playing="isPlaying" :icon-size="compact ? 16 : 104 / 7" />
     </button>
     <button class="text-mini-player-pill-foreground opacity-80 hover:opacity-100 transition-opacity" @click="emit('next')" :title="t('player.next')" :aria-label="t('player.next')" :disabled="disabled">
       <ForwardFill class="fill-current" :class="compact ? 'w-7 h-7' : 'w-8 h-8'" />
