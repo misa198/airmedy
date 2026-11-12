@@ -272,9 +272,20 @@ describe('PlayerFooter', () => {
         shuffle: false,
       },
     })
-    // Play icon should be present (not Pause)
-    const buttons = wrapper.findAll('button')
-    expect(buttons.length).toBeGreaterThan(0)
+    const button = wrapper.get('button[title="player.play"]')
+    expect(button.classes()).toContain('bg-primary')
+    expect(button.get('svg').classes()).toContain('text-primary-foreground')
+    expect(button.find('mask').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('fills the pause icon with the primary foreground color', () => {
+    const wrapper = mountFooter({ status: { playback_state: PlaybackState.PlaybackStatePlaying } })
+    const button = wrapper.get('button[title="player.pause"]')
+    expect(button.classes()).toContain('bg-primary')
+    expect(button.get('svg').classes()).toContain('text-primary-foreground')
+    expect(button.find('mask').exists()).toBe(false)
+    wrapper.unmount()
   })
 
   it('calls togglePlayPause when play button is clicked', async () => {
