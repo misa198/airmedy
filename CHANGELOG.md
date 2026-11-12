@@ -1,5 +1,70 @@
 # Desktop changelog
 
+## v1.4.0
+
+Changes since v1.3.3.
+
+- chore: bump version to 1.4.0 (13299ea5)
+- fix(ui): stabilize macOS mini player resizing (be1550ae)
+- fix(ui): smooth detail button scaling (ca19f30f)
+- fix(ui): restore footer play button foreground (59c25c82)
+- fix(ui): prevent tray marquee fade in (bef271d5)
+- fix(ui): sharpen tray play pause transition (bdf64e15)
+- fix(ui): restore outlined play icons and hover animation (e9d74d1c)
+- feat(ui): update play and pause icons (957b5df0)
+- style(ui): reorder tray and sidebar settings (9ebfa3d3)
+- fix(ui): stabilize track info artwork transition (212ca59e)
+- fix(ui): speed up sidebar hover transition (fd86ad27)
+- fix(ui): keep albums sidebar active on detail (3398fafd)
+- feat(ui): add configurable sidebar navigation (300b098a)
+- fix(ui): disable play pause scaling on linux (f1c56ae8)
+- feat(ui): follow system theme in tray window (3a20a0b9)
+- fix(ui): keep tray pill animation running during interaction (05c86625)
+- fix(ui): correct tray panel text animation and star position (c138d51d)
+- docs: update readme (ab492fe1)
+- style(desktop): play pause button cutout (2c9c50ac)
+- chore: update icon forward and rewind for desktop to ensure a consistent style with those on mobile. (788ea5a8)
+- feat(macos): native macos pill tray window (912918ec)
+- fix(ui): prevent tray solid tint transition on reopen (f7d69090)
+- style(ui): remove mini player panel divider (1143696a)
+- fix(ui): prevent layout jump when opening fullscreen player (664c1b29)
+- chore(infra): upgrade miniaudio and FFTW (a4e84c98)
+- chore(infra): upgrade FFmpeg to 9.0.2 (86ea6dba)
+- feat(meta): automate release changelogs (037523d2)
+- fix(ui): gate mini player pin by Linux runtime (515a534e)
+- fix(ui): close context menu on Escape (f4deff64)
+- fix(ui): keep context menus above fullscreen player (8715cb6e)
+- fix(ui): open tray popup from macOS icon mode (6f85108b)
+- fix(infra): stabilize Wails dev asset loading (9d044dc4)
+- fix(ui): show favorite button by default (6ed1cbec)
+- fix(ui): align headers with custom title bar (00bebf2d)
+- fix(ui): hide title bar navigation by default (723b590f)
+- feat(windows): left click to open app (b9bfdc56)
+- fix(ui): reduce tray pill title spacing (4bfa6f98)
+- chore: update app icon (da0b1a95)
+- chore: upgrade wails to 3.1.0 (736853a1)
+- feat: custom title bar settings (b8fa7f3a)
+- fix(app): handle macOS window close and Dock reopen correctly (b16d3847)
+- fix(ui): stabilize artwork hover transitions on album and track cards (5f91ed7b)
+- feat: hide menu bar on linux and windows (6f1fbd67)
+- feat: update layout for custom title bar (ef18d9fa)
+- feat: custom title bar for windows and linux (1385e955)
+- fix(app): disable high contrast lyrics by default (05fcf13d)
+- feat(macos): macos tray pill (ec55bd4f)
+- docs: update banner img (8e6a4fad)
+- chore: strict npm dep version (14f6943c)
+- ci: update ci to skip release update (5de5c108)
+- docs: update banner img (ba6c56bc)
+- chore(app): update download versions and release manifest (b4e718d4)
+- chore(app): upgrade Android NDK to r30 stable (9cc74ea6)
+- feat(app): upgrade Android to API 37 (56c10fe0)
+- feat(app): add Android release update notices (118639a1)
+- docs(landing-page): update banner img (cd706ee1)
+- feat(ui): add public social preview metadata (b239c982)
+- docs: update screenshots (fe78e1d5)
+- feat(android): living artwork (779ea866)
+- chore: bump selected landing download versions (304ef809)
+
 ## v1.3.3
 
 Changes since v1.3.2.
@@ -55,17 +120,12 @@ Changes since v1.2.0.
 
 ## v1.2.0
 
-Changes since v1.1.1.
+Changes since v1.1.0.
 
 - chore: bump version to 1.2.0 (a1870f59)
 - ci: add skip-ci option (0496f15a)
 - ci: update macos to 27 (3f513c06)
 - fix: linux arm64 ci (c9c54d07)
-
-## v1.1.1
-
-Changes since v1.1.0.
-
 - chore: bump version to 1.1.1 (e42c2100)
 - fix(audio): restore playback position on macOS (bc2330cb)
 - chore: upgrade ffmpeg to 8.1.2 (425c3711)
@@ -324,12 +384,12 @@ Changes since v1.0.2.
 - perf: virtualize album/track list in artist/genre/composer detail views (b99bcad5)
 - feat: add max queue size setting (133cb6e7)
 - fix: teleport filter submenu panel to match level-1 glass background (9462b42b)
-- fix: add missing aubio-windows build job to release workflow (ac5f856e)
 
 ## v1.0.2
 
 Changes since v1.0.1.
 
+- fix: add missing aubio-windows build job to release workflow (ac5f856e)
 - chore: bump version to 1.0.2 (2d92f47d)
 - fix: remove heatmap rounding and selection border clipping (9cb74043)
 - docs: remove tracks image in hero docs (2460b8ed)
@@ -476,13 +536,13 @@ Changes since v0.1.14.
 - chore: bump version to 1.0.0 (613e500d)
 - feat: recently added shows tracks instead of albums (f4fc2a3c)
 - fix: restart playback after Next on last track with repeat off (ef66f389)
-- ci: build windows (225bfeea)
-- chore: fix ci build windows (e8edc30c)
 
 ## v0.1.14
 
 Changes since v0.1.3.
 
+- ci: build windows (225bfeea)
+- chore: fix ci build windows (e8edc30c)
 - chore: bump version to 0.1.14 (dbfb2e5e)
 - feat(player): now playing windows (bf685db8)
 - fix: single instance linux windows (80fbbe0c)
@@ -499,15 +559,10 @@ Changes since v0.1.2.
 
 ## v0.1.2
 
-Changes since v0.1.12.
+Changes since v0.1.1.
 
 - chore: bump version to 0.1.2 (1144d7be)
 - fix(ci): serialize pnpm install and dedupe AppImage StartupWMClass (ef6346f7)
-
-## v0.1.12
-
-Changes since v0.1.1.
-
 - chore: bump version to 0.1.12 (932852fc)
 - fix(auto-update): fix auto update on windows and linux (7b97d474)
 

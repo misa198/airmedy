@@ -59,6 +59,11 @@ Changes since mobile-v1.0.0.
 - feat(app): add android romanization for chinese and korean (f8b991b4)
 - fix(ui): preserve full-resolution Android glass backdrops (8541173d)
 - fix(app): handle playback queue boundaries (857fcc0c)
+
+## mobile-v1.0.0
+
+Initial release.
+
 - chore(mobile): bump version to 1.0.0 (1945e991)
 - chore(mobile): bump version to 1.0.0 (e51e8480)
 - chore(mobile): bump version to 1.0.0 (e1f06748)
@@ -66,11 +71,6 @@ Changes since mobile-v1.0.0.
 - chore(mobile): bump version to 1.0.0 (ef7db7de)
 - chore(mobile): bump version to 1.0.0 (a5fd783e)
 - chore(mobile): bump version to 1.0.0 (ae74a504)
-
-## mobile-v1.0.0
-
-Initial release.
-
 - chore(mobile): bump version to 1.0.0 (f7f965d5)
 - fix(app): handle Android audio focus (8320fc65)
 - fix(ui): align disabled player controls (f53e7050)
