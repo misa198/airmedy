@@ -60,7 +60,7 @@ func (s *LyricsService) ResolveForMobileSync(ctx context.Context, tracks []*doma
 		}
 		base := strings.TrimSuffix(filepath.Base(track.Path), filepath.Ext(track.Path))
 		for _, dir := range dirs {
-			for _, ext := range []struct{ ext, source string }{{".lrc", "local-lrc"}, {".txt", "local-txt"}} {
+			for _, ext := range []struct{ ext, source string }{{".lrc", "local-lrc"}, {".ttml", "local-ttml"}, {".txt", "local-txt"}} {
 				path := filepath.Join(dir, base+ext.ext)
 				candidates[track.ID] = append(candidates[track.ID], syncLyricCandidate{path, ext.source})
 			}
@@ -124,14 +124,14 @@ func resolveSyncLyric(trackID string, dbLyric *domain.Lyric, candidates []syncLy
 		if err != nil {
 			continue
 		}
-		value := strings.TrimSpace(strings.TrimPrefix(string(content), "\ufeff"))
+		value := normalizeLyricContent(strings.TrimSpace(strings.TrimPrefix(string(content), "\ufeff")))
 		if value != "" {
 			local = &domain.Lyric{TrackID: trackID, Content: value, Source: candidate.source}
 			break
 		}
 	}
 	if local == nil && dbLyric != nil && dbLyric.MetaContent != "" {
-		local = &domain.Lyric{TrackID: trackID, Content: dbLyric.MetaContent, Source: dbLyric.MetaSource}
+		local = &domain.Lyric{TrackID: trackID, Content: normalizeLyricContent(dbLyric.MetaContent), Source: dbLyric.MetaSource}
 	}
 	var provider *domain.Lyric
 	if dbLyric != nil && dbLyric.Content != "" {

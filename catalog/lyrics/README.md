@@ -2,7 +2,7 @@
 
 ## Summary
 
-Fetches and displays synchronized (LRC) or plain-text lyrics for the current track. Lyrics are sourced from **sibling local files** (`.lrc` / `.txt` next to the audio file, read live at play time), an optional **subfolder next to the track** (gated by `lyrics_subfolder_enabled` + `lyrics_subfolder_name`, e.g. `<album>/lyrics/Song.lrc`), an optional **dedicated lyrics folder** (a single user-chosen folder searched by track basename, gated by `lyrics_folder_enabled`), embedded **file metadata** (`LYRICS` tag, read at scan time), and the external providers **lrclib.net** and **KuGou Music** (cached in SQLite). The frontend parses LRC timestamps and auto-scrolls to the current line.
+Fetches and displays synchronized (LRC) or plain-text lyrics for the current track. Lyrics are sourced from **sibling local files** (`.lrc` / `.txt` next to the audio file, read live at play time), an optional **subfolder next to the track** (gated by `lyrics_subfolder_enabled` + `lyrics_subfolder_name`, e.g. `<album>/lyrics/Song.lrc`), an optional **dedicated lyrics folder** (a single user-chosen folder searched by track basename, gated by `lyrics_folder_enabled`), embedded **file metadata** (`LYRICS` tag, read at scan time), and the external providers **lrclib.net**, **KuGou Music** and **lrc.red** (cached in SQLite). TTML lyrics (sidecar `.ttml`, embedded tags, lrc.red) are converted to (enhanced) LRC in Go by `internal/ttml`, so every consumer only ever sees LRC. The frontend parses LRC timestamps and auto-scrolls to the current line.
 
 ## Files
 
@@ -11,9 +11,11 @@ Fetches and displays synchronized (LRC) or plain-text lyrics for the current tra
 | `internal/domain/repositories.go`           | `LyricsProvider` + `LocalLyricsReader` port interfaces |
 | `internal/app/lyrics/lyrics_service.go`     | Use-case orchestration, CRUD, racing, resolution, manual `.lrc` file save |
 | `internal/app/lyrics/subfolder.go`          | `ValidSubfolderName` / `ResolveSubdir` — shared subfolder name validation and case-insensitive resolution, used for both read (`PlayerService`) and write (`LyricsService.SaveLyricsFile`) |
-| `internal/infra/lyrics/local.go`            | Sibling `.lrc`/`.txt` file reader    |
+| `internal/infra/lyrics/local.go`            | Sibling `.lrc`/`.ttml`/`.txt` file reader |
 | `internal/infra/lyrics/lrclib.go`           | lrclib.net HTTP adapter              |
 | `internal/infra/lyrics/kugou.go`            | KuGou Music HTTP adapter             |
+| `internal/infra/lyrics/lrcred.go`           | lrc.red HTTP adapter (ISRC lookup, TTML/LRC) |
+| `internal/ttml/ttml.go`                     | TTML → enhanced LRC converter, `lrc:byModel` detection |
 | `internal/infra/lyrics/module.go`           | FX wiring for provider group + local reader |
 | `internal/infra/sqlite/lyric_repository.go` | SQLite persistence                   |
 | `internal/infra/wails/lyrics_service.go`    | Wails binding                        |
@@ -86,15 +88,19 @@ Both `ResolveLyrics(ctx, trackID, audioPath, preferLocal, extraDirs...)` and
 | `lyrics_folder_enabled=true` | Also search `lyrics_folder_path` (flat, by basename) for `.lrc`/`.txt`, after the subfolder. Default off. |
 | `enable_lrclib=false` | lrclib.net provider disabled; not queried on fetch. |
 | `enable_kugou=false` | KuGou provider disabled; not queried on fetch. |
+| `enable_lrcred=false` | lrc.red provider disabled; not queried on fetch. |
+| `lrcred_model_syncs=false` | lrc.red TTML marked `lrc:byModel="true"` is skipped and `/s/{isrc}.lrc` is used instead; human-made TTML (word-synced or not) is still used. Default on. |
 
 **Full priority (default `prefer_local_lyrics=true`):**
 `Sibling .lrc` → `Sibling .txt` → `Subfolder .lrc` → `Subfolder .txt` (when `lyrics_subfolder_enabled`) →
-`Folder .lrc` → `Folder .txt` (when `lyrics_folder_enabled`) → `Metadata tag` → `LRClib / KuGou`.
+`Folder .lrc` → `Folder .txt` (when `lyrics_folder_enabled`) → `Metadata tag` → `LRClib / KuGou / lrc.red`.
+In every directory `.ttml` is checked between `.lrc` and `.txt` (`.lrc` stays first because it is what
+`SaveLyricsFile` writes).
 
 The setting was renamed from `prefer_metadata_lyrics` (migration `000022_prefer_local_lyrics`,
 `RENAME COLUMN` preserves the existing value).
 
-If both `enable_lrclib` and `enable_kugou` are false, no external fetch is attempted. If resolution returns no cached result and at least one provider is enabled, `PlayerService` triggers an external fetch.
+If all of `enable_lrclib`, `enable_kugou` and `enable_lrcred` are false, no external fetch is attempted. If resolution returns no cached result and at least one provider is enabled, `PlayerService` triggers an external fetch.
 
 ### Local Lyric Files
 
@@ -187,6 +193,23 @@ Before sending to lrclib, the title is normalized:
 
 Synced lyrics (with timestamps) are preferred over plain text. If only plain is available, `source` is set to `"lrclib-plain"`.
 
+### Provider Race
+
+When several providers are enabled, `fetchRace` queries them concurrently and ranks results by
+`lyricQuality`: word-synced (`<mm:ss.xx>` tags) > line-synced > plain. A word-synced result is
+returned immediately and the rest are cancelled; otherwise the best result received within
+`raceGracePeriod` (3s) of the first result wins (ties go to the earliest). This keeps a fast plain
+result from beating a slightly slower synced one.
+
+### lrc.red
+
+`LrcredProvider` looks up the track's ISRC tag first (`/s/{isrc}`), then falls back to
+`/search.json?q=artist title` ranked with the shared scorer. TTML is preferred and converted to
+enhanced LRC (word/syllable timing, background vocals in parentheses, translations as the ` ^ `
+secondary line); `/s/{isrc}.lrc` is the fallback. With `lrcred_model_syncs=false` a TTML marked
+`lrc:byModel="true"` is skipped in favour of the `.lrc`. Requests send a `User-Agent` naming the app with
+the repository link, as required by the lrc.red API terms.
+
 ### KuGou Search and Rank
 
 KuGou searches with `artist - title` and ranks the returned candidates with the same title, artist,
@@ -228,8 +251,9 @@ Providers live in `internal/infra/lyrics/` and implement `domain.LyricsProvider`
 |----------|--------|---------|
 | `LrclibProvider` | `"lrclib"` | `https://lrclib.net/api/` |
 | `KugouProvider` | `"kugou"` | `http://krcs.kugou.com/search` + `https://lyrics.kugou.com/download` |
+| `LrcredProvider` | `"lrcred"` | `https://lrc.red/search.json` + `/s/{isrc}.ttml` / `.lrc` |
 
-Providers are wired via FX value group `lyrics_providers`. `LyricsService` receives `[]domain.LyricsProvider` and filters by name based on enabled flags.
+Providers are wired via FX value group `lyrics_providers`. `LyricsService` receives `[]domain.LyricsProvider` and filters by name using `domain.LyricsProviderToggles` (derived from settings).
 
 ## Wails-Exposed Methods
 

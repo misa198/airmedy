@@ -6,9 +6,12 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
+	"time"
 
 	"airmedy/internal/domain"
+	"airmedy/internal/ttml"
 )
 
 type LyricsService struct {
@@ -27,7 +30,22 @@ func (s *LyricsService) GetLyrics(ctx context.Context, trackID string) (*domain.
 	return s.repo.GetByTrackID(ctx, trackID)
 }
 
+// normalizeLyricContent converts TTML documents to LRC so that every consumer
+// (renderer, mobile sync, .lrc export) sees a single format. Other content is
+// returned unchanged, as is TTML that fails to convert.
+func normalizeLyricContent(content string) string {
+	if !ttml.IsTTML(content) {
+		return content
+	}
+	converted, _, err := ttml.ToLRC(content)
+	if err != nil || strings.TrimSpace(converted) == "" {
+		return content
+	}
+	return converted
+}
+
 func (s *LyricsService) SaveLyrics(ctx context.Context, trackID, content, source string) error {
+	content = normalizeLyricContent(content)
 	existing, _ := s.repo.GetByTrackID(ctx, trackID)
 	if existing != nil {
 		existing.Content = content
@@ -85,10 +103,10 @@ func (s *LyricsService) SaveLyricsFile(ctx context.Context, audioPath, content s
 	return os.WriteFile(filepath.Join(targetDir, base+".lrc"), []byte(content), 0o644)
 }
 
-func (s *LyricsService) SearchLyrics(ctx context.Context, title, artist string, duration int, enableLrclib, enableKugou bool) ([]*domain.LyricsSearchResult, error) {
+func (s *LyricsService) SearchLyrics(ctx context.Context, title, artist string, duration int, toggles domain.LyricsProviderToggles) ([]*domain.LyricsSearchResult, error) {
 	var active []domain.LyricsProvider
 	for _, p := range s.providers {
-		if (p.Name() == "lrclib" && enableLrclib) || (p.Name() == "kugou" && enableKugou) {
+		if toggles.Enabled(p.Name()) {
 			active = append(active, p)
 		}
 	}
@@ -174,7 +192,7 @@ func (s *LyricsService) ResolveWithLocal(ctx context.Context, trackID, audioPath
 		}
 	}
 	if localContent == "" && lyric != nil && lyric.MetaContent != "" {
-		localContent, localSource = lyric.MetaContent, lyric.MetaSource
+		localContent, localSource = normalizeLyricContent(lyric.MetaContent), lyric.MetaSource
 		s.logger.Debug("using metadata tag lyrics", "track_id", trackID, "source", localSource)
 	}
 
@@ -234,11 +252,11 @@ func (s *LyricsService) HasLocalLyrics(ctx context.Context, trackID, audioPath s
 }
 
 // FetchFromProviders fetches lyrics from enabled providers concurrently.
-// When both are enabled, the first non-nil result wins and the other request is cancelled.
-func (s *LyricsService) FetchFromProviders(ctx context.Context, track *domain.TrackDTO, enableLrclib, enableKugou bool) (*domain.Lyric, error) {
+// When several are enabled, the best-quality result wins (see fetchRace).
+func (s *LyricsService) FetchFromProviders(ctx context.Context, track *domain.TrackDTO, toggles domain.LyricsProviderToggles) (*domain.Lyric, error) {
 	var active []domain.LyricsProvider
 	for _, p := range s.providers {
-		if (p.Name() == "lrclib" && enableLrclib) || (p.Name() == "kugou" && enableKugou) {
+		if toggles.Enabled(p.Name()) {
 			active = append(active, p)
 		}
 	}
@@ -257,6 +275,31 @@ func (s *LyricsService) FetchFromProviders(ctx context.Context, track *domain.Tr
 	}
 }
 
+// raceGracePeriod is how long fetchRace keeps waiting for a better result
+// after receiving one that is not word-synced.
+var raceGracePeriod = 3 * time.Second
+
+var (
+	lrcLineTagRe = regexp.MustCompile(`(?m)^\[\d+:\d+(?:[.:]\d+)?\]`)
+	lrcWordTagRe = regexp.MustCompile(`<\d+:\d+(?:[.:]\d+)?>`)
+)
+
+// lyricQuality ranks lyric content: 2 = word-synced, 1 = line-synced, 0 = plain.
+func lyricQuality(content string) int {
+	switch {
+	case !lrcLineTagRe.MatchString(content):
+		return 0
+	case lrcWordTagRe.MatchString(content):
+		return 2
+	default:
+		return 1
+	}
+}
+
+// fetchRace queries providers concurrently and keeps the best result. A
+// word-synced result wins immediately; otherwise the best result received
+// within raceGracePeriod of the first one is used (word > line > plain, ties
+// go to whichever arrived first).
 func (s *LyricsService) fetchRace(ctx context.Context, track *domain.TrackDTO, providers []domain.LyricsProvider) (*domain.Lyric, error) {
 	raceCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -274,18 +317,46 @@ func (s *LyricsService) fetchRace(ctx context.Context, track *domain.TrackDTO, p
 		}(p)
 	}
 
-	var lastErr error
-	for range len(providers) {
-		r := <-ch
-		if r.lyric != nil {
-			cancel()
-			return s.saveLyric(ctx, r.lyric.TrackID, r.lyric.Content, r.lyric.Source)
+	var (
+		best        *domain.Lyric
+		bestQuality = -1
+		lastErr     error
+		grace       <-chan time.Time
+	)
+	finish := func() (*domain.Lyric, error) {
+		cancel()
+		if best == nil {
+			return nil, lastErr
 		}
-		if r.err != nil && !errors.Is(r.err, context.Canceled) {
-			lastErr = r.err
+		return s.saveLyric(ctx, best.TrackID, best.Content, best.Source)
+	}
+
+	for pending := len(providers); pending > 0; {
+		select {
+		case r := <-ch:
+			pending--
+			if r.lyric != nil {
+				if q := lyricQuality(r.lyric.Content); q > bestQuality {
+					best, bestQuality = r.lyric, q
+				}
+				if bestQuality == 2 {
+					return finish()
+				}
+				if grace == nil {
+					timer := time.NewTimer(raceGracePeriod)
+					defer timer.Stop()
+					grace = timer.C
+				}
+			} else if r.err != nil && !errors.Is(r.err, context.Canceled) {
+				lastErr = r.err
+			}
+		case <-grace:
+			return finish()
+		case <-ctx.Done():
+			return nil, ctx.Err()
 		}
 	}
-	return nil, lastErr
+	return finish()
 }
 
 func (s *LyricsService) saveLyric(ctx context.Context, trackID, content, source string) (*domain.Lyric, error) {
