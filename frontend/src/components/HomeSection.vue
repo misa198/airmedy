@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
-import { ChevronLeft, ChevronRight, Play } from '@lucide/vue'
+import { ChevronLeft, ChevronRight } from '@lucide/vue'
+import { PlayFill as Play } from '@airmedy/ui'
 
 const props = defineProps<{
   title: string

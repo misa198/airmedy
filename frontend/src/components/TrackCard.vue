@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Music, Play, User, Disc } from '@lucide/vue'
+import { Music, User, Disc } from '@lucide/vue'
+import { PlayFill as Play } from '@airmedy/ui'
 import type { TrackDTO, Artist } from '../../bindings/airmedy/internal/domain/models'
 import { buildArtworkUrl, getTrackDisplayTitle } from '@airmedy/utils'
 import LazyImg from '@/components/LazyImg.vue'

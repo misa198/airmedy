@@ -35,15 +35,16 @@ describe('PlayerPlaybackControls', () => {
       props: { isPlaying: false, shuffle: true, repeatMode: RepeatMode.RepeatModeAll, showIndicator: true, compact: true },
     })
     expect(wrapper.classes()).toContain('gap-6')
-    expect(wrapper.findAll('button')[2].classes()).toEqual(expect.arrayContaining(['w-9', 'h-9', 'scale-100', 'hover:scale-105', 'transition-transform', 'duration-300']))
+    expect(wrapper.findAll('button')[2].classes()).toEqual(expect.arrayContaining(['w-9', 'h-9']))
     expect(wrapper.findAll('button')[1].get('svg').classes()).toEqual(expect.arrayContaining(['w-7', 'h-7']))
   })
 
-  it('does not scale the play/pause button when requested', () => {
+  it('does not scale the play/pause button', () => {
     const wrapper = mount(PlayerPlaybackControls, {
-      props: { isPlaying: false, shuffle: false, repeatMode: RepeatMode.RepeatModeOff, showIndicator: false, disablePlayPauseScale: true },
+      props: { isPlaying: false, shuffle: false, repeatMode: RepeatMode.RepeatModeOff, showIndicator: false },
     })
 
     expect(wrapper.findAll('button')[2].classes()).not.toContain('hover:scale-105')
+    expect(wrapper.findAll('button')[2].classes()).not.toContain('transition-transform')
   })
 })

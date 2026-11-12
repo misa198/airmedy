@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import {
-  Folder, Settings,
-  Play, Info, Blocks, Wifi, Smartphone,
-} from '@lucide/vue'
+import { Folder, Settings, Info, Blocks, Wifi, Smartphone } from '@lucide/vue'
+import { PlayFill as Play } from '@airmedy/ui'
 import { useI18n } from 'vue-i18n'
 import GeneralSettings from '@/components/settings/GeneralSettings.vue'
 import LibrarySettings from '@/components/settings/LibrarySettings.vue'

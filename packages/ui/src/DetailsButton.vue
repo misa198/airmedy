@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { LucideProps } from '@lucide/vue';
-import { FunctionalComponent, PropType, toRef } from 'vue';
+import { type Component, type PropType, toRef } from 'vue';
 
 const props = defineProps({
     label: {
@@ -8,7 +7,7 @@ const props = defineProps({
         default: ''
     },
     icon: {
-        type: Object as PropType<FunctionalComponent<LucideProps, {}, any, {}>>,
+        type: [Object, Function] as PropType<Component>,
         required: true
     },
     filledIcon: {

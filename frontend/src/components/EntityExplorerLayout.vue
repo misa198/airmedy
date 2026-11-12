@@ -1,6 +1,7 @@
 <script setup lang="ts" generic="T extends { id: string; name: string }">
 import { ref, computed, watch, nextTick, onActivated } from 'vue'
-import { Search, Play } from '@lucide/vue'
+import { Search } from '@lucide/vue'
+import { PlayFill as Play } from '@airmedy/ui'
 import { Input } from '@airmedy/ui'
 import { foldUnicode } from '@airmedy/utils'
 import { useCustomTitleBar } from '@/composables/useCustomTitleBar';
