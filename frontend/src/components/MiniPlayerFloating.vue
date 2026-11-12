@@ -180,8 +180,7 @@ watch(() => store.theme, (colors) => {
     <div class="relative aspect-square w-full shrink-0 overflow-hidden"
       @mouseenter="showControls" @pointerdown="showControls" @mouseleave="leaveArtwork">
       <!-- Artwork fills entire window -->
-      <div data-test="mini-player-artwork" class="absolute inset-0 bg-[#0A0A0A]"
-        style="-webkit-app-region: drag; --wails-draggable: drag">
+      <div data-test="mini-player-artwork" class="absolute inset-0 bg-[color:var(--mini-player-lyrics-background)]">
         <template v-if="artworkCrossfade">
           <LazyImg v-if="artworkCrossfade.fromUrl" :src="artworkCrossfade.fromUrl" :alt="trackTitle"
             class="absolute inset-0 w-full h-full object-cover" :style="{ opacity: outgoingOpacity }" />
@@ -195,6 +194,8 @@ watch(() => store.theme, (colors) => {
           <Music class="w-16 h-16 text-white/20" />
         </div>
       </div>
+      <div data-test="mini-player-drag-region" class="absolute inset-2"
+        style="-webkit-app-region: drag; --wails-draggable: drag" />
 
       <div class="absolute top-2 right-2 z-30 flex items-center" style="-webkit-app-region: no-drag">
         <Transition name="mini-romanization">

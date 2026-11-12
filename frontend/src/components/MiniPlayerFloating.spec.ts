@@ -172,12 +172,15 @@ describe('MiniPlayerFloating', () => {
     wrapper.unmount()
   })
 
-  it('keeps the artwork as the window drag region', () => {
+  it('keeps window dragging away from the resize edges', () => {
     const wrapper = mount(MiniPlayerFloating, {
       global: { stubs: { LazyImg: true, Slider: true, MarqueeText: true, PlayerControlButton: true, MiniPlayerLyrics: true, QueueTrackList: true } },
     })
 
-    expect(wrapper.get('[data-test="mini-player-artwork"]').attributes('style'))
+    expect(wrapper.get('[data-test="mini-player-artwork"]').attributes('style') ?? '')
+      .not.toContain('--wails-draggable: drag')
+    expect(wrapper.get('[data-test="mini-player-drag-region"]').classes()).toContain('inset-2')
+    expect(wrapper.get('[data-test="mini-player-drag-region"]').attributes('style'))
       .toContain('--wails-draggable: drag')
   })
 

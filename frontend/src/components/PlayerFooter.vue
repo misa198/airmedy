@@ -16,13 +16,12 @@ import LazyImg from '@/components/LazyImg.vue'
 import { usePlayerStore } from '../stores/player'
 import { RepeatMode } from '../../bindings/airmedy/internal/domain/models'
 import { formatTime, getTrackDisplayTitle } from '@airmedy/utils'
-import { Slider, BackwardFill, ForwardFill } from '@airmedy/ui'
+import { Slider, BackwardFill, ForwardFill, PlayFill, PauseFill } from '@airmedy/ui'
 import * as WindowService from '../../bindings/airmedy/internal/infra/wails/windowservice'
 import { useI18n } from 'vue-i18n'
 import TrackContextMenu from './TrackContextMenu.vue'
 import { MarqueeText } from '@airmedy/ui'
 import PlayerControlButton from './player/PlayerControlButton.vue'
-import PlayPauseCutout from './player/PlayPauseCutout.vue'
 import PlayerQuickSettingsMenu from './player/PlayerQuickSettingsMenu.vue'
 import { useAppStore } from '../stores/app'
 import PlayerFavoriteButton from './player/PlayerFavoriteButton.vue'
@@ -119,9 +118,10 @@ async function onSeekEnd() {
           <BackwardFill class="w-6 h-6 fill-current" />
         </button>
         <button
-          class="w-8 h-8 text-primary rounded-full flex items-center justify-center"
+          class="w-8 h-8 bg-primary rounded-full flex items-center justify-center"
           @click="store.togglePlayPause()" :title="store.isPlaying ? t('player.pause') : t('player.play')">
-          <PlayPauseCutout :is-playing="store.isPlaying" />
+          <PauseFill v-if="store.isPlaying" class="w-4 h-4 text-primary-foreground" />
+          <PlayFill v-else class="w-4 h-4 text-primary-foreground ml-0.5" />
         </button>
         <button class="text-subdued hover:text-foreground transition-colors" @click="store.next()"
           :title="t('player.next')">

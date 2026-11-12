@@ -37,10 +37,11 @@ const Icon = toRef(props, 'icon')
 </template>
 <style scoped>
 .details-button-contained {
-    transform: scale(1);
+    transform: translateZ(0) scale(1);
+    will-change: transform;
 }
 
 .details-button-contained:hover {
-    transform: scale(1.05);
+    transform: translateZ(0) scale(1.05);
 }
 </style>
