@@ -184,8 +184,6 @@ const toggleAutoCheckUpdate = async (enabled: boolean) => {
 
     <TitleBarSettings v-if="canConfigureTitleBar" />
 
-    <SidebarSettings />
-
     <SettingSection v-if="deviceStore.isMac" :icon="Monitor" :label="t('settings.behavior.tray_section')">
       <SettingRow
         v-if="!deviceStore.isWindows && !deviceStore.isLinux"
@@ -239,6 +237,8 @@ const toggleAutoCheckUpdate = async (enabled: boolean) => {
       </SettingRow>
 
     </SettingSection>
+
+    <SidebarSettings />
 
     <RestartModal v-model:open="showRestartDialog" />
   </div>

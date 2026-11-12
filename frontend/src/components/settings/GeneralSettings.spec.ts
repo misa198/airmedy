@@ -45,6 +45,7 @@ describe('GeneralSettings primary color', () => {
   it('shows the tray style only when macOS tray is enabled', async () => {
     const pinia = createTestingPinia({ createSpy: vi.fn, initialState: { app: { showTrayIcon: true, trayMode: 'menu' }, device: { isMac: true } } })
     const wrapper = mount(GeneralSettings, { global: { plugins: [pinia] } })
+    expect(wrapper.text().indexOf('settings.behavior.tray_section')).toBeLessThan(wrapper.text().indexOf('settings.sidebar.title'))
     expect(wrapper.text()).toContain('settings.behavior.tray_mode')
     expect(wrapper.text()).toContain('settings.behavior.tray_theme')
     expect(wrapper.text()).toContain('settings.behavior.tray_panel_theme')
