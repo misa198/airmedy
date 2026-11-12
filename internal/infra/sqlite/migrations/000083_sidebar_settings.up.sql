@@ -1,0 +1,1 @@
+ALTER TABLE app_settings ADD COLUMN sidebar_items TEXT NOT NULL DEFAULT '[{"id":"home","visible":true},{"id":"recently_added","visible":true},{"id":"artists","visible":true},{"id":"albums","visible":true},{"id":"tracks","visible":true},{"id":"genres","visible":true},{"id":"composers","visible":true}]';

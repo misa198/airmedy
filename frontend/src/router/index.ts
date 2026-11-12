@@ -20,6 +20,7 @@ const routes = [
   {
     path: '/albums/:id',
     name: 'album-detail',
+    meta: { sidebarPath: '/albums' },
     component: () => import('../views/AlbumDetailView.vue')
   },
   {

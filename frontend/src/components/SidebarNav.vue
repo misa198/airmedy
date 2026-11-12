@@ -1,32 +1,25 @@
 <script setup lang="ts">
-import {
-  Clock,
-  Disc,
-  Home,
-  ListMusic,
-  Music,
-  PenTool,
-  Users
-} from '@lucide/vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { TrackDTO } from '../../bindings/airmedy/internal/domain/models'
 import * as LibraryService from '../../bindings/airmedy/internal/infra/wails/libraryservice'
 import { usePlayerStore } from '../stores/player'
+import { SIDEBAR_ITEMS, type SidebarItemId } from '../lib/sidebar'
+import { useAppStore } from '../stores/app'
 import SidebarItem from './SidebarItem.vue'
 
 const { t } = useI18n()
 const playerStore = usePlayerStore()
+const appStore = useAppStore()
 
-const navItems = computed(() => [
-  { name: t('sidebar.home'), icon: Home, to: '/' },
-  { name: t('sidebar.recently_added'), icon: Clock, to: '/recently-added' },
-  { name: t('sidebar.artists'), icon: Users, to: '/artists' },
-  { name: t('sidebar.albums'), icon: Disc, to: '/albums' },
-  { name: t('sidebar.tracks'), icon: Music, to: '/tracks' },
-  { name: t('sidebar.genres'), icon: ListMusic, to: '/genres' },
-  { name: t('sidebar.composers'), icon: PenTool, to: '/composers' },
-])
+const navItems = computed(() => appStore.sidebarItems
+  .filter(item => item.visible)
+  .map(item => ({
+    id: item.id,
+    name: t(SIDEBAR_ITEMS[item.id as SidebarItemId].label),
+    icon: SIDEBAR_ITEMS[item.id as SidebarItemId].icon,
+    to: SIDEBAR_ITEMS[item.id as SidebarItemId].path,
+  })))
 
 const handleItemDblClick = async (item: any) => {
   if (item.to === '/tracks') {
@@ -45,7 +38,7 @@ const handleItemDblClick = async (item: any) => {
 
 <template>
   <nav class="px-3 py-2 space-y-0.5">
-    <SidebarItem v-for="item in navItems" :key="item.name" :to="item.to" :icon="item.icon" :label="item.name"
+    <SidebarItem v-for="item in navItems" :key="item.id" :to="item.to" :icon="item.icon" :label="item.name"
       @dblclick="handleItemDblClick(item)" />
   </nav>
 </template>

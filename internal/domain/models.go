@@ -454,9 +454,15 @@ type TitleBarAction struct {
 	Visible bool   `json:"visible"`
 }
 
+type SidebarItem struct {
+	ID      string `json:"id"`
+	Visible bool   `json:"visible"`
+}
+
 type AppSettings struct {
 	TitleBarShowNavigation bool             `json:"title_bar_show_navigation"`
 	TitleBarActions        []TitleBarAction `json:"title_bar_actions"`
+	SidebarItems           []SidebarItem    `json:"sidebar_items"`
 
 	Language                 string  `json:"language"`
 	Theme                    string  `json:"theme"` // "system", "light", "dark"

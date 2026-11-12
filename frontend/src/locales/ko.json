@@ -71,14 +71,15 @@
   },
   "settings": {
     "title_bar": {
-      "title": "Custom title bar",
-      "navigation": "Show navigation buttons",
-      "navigation_desc": "Show Back and Forward buttons beside the app logo.",
-      "actions": "Quick actions",
-      "actions_desc": "Choose which actions to show. Drag the handle or use its Up and Down arrow keys to reorder.",
-      "reorder": "Reorder {action}",
-      "save_error": "Could not save title bar settings. Please try again."
+      "title": "사용자 지정 제목 표시줄",
+      "navigation": "탐색 버튼 표시",
+      "navigation_desc": "앱 로고 옆에 뒤로 및 앞으로 버튼을 표시합니다.",
+      "actions": "빠른 작업",
+      "actions_desc": "표시할 작업을 선택하세요. 핸들을 끌거나 위쪽 및 아래쪽 화살표 키를 사용하여 순서를 바꿀 수 있습니다.",
+      "reorder": "{action} 순서 변경",
+      "save_error": "제목 표시줄 설정을 저장하지 못했습니다. 다시 시도해 주세요."
     },
+    "sidebar": { "title": "사이드바", "items": "탐색 항목", "items_desc": "표시할 항목을 선택하세요. 핸들을 끌거나 위쪽 및 아래쪽 화살표 키를 사용하여 순서를 바꿀 수 있습니다.", "reorder": "{item} 순서 변경", "save_error": "사이드바 설정을 저장하지 못했습니다. 다시 시도해 주세요." },
     "title": "설정",
     "sync": {
       "syncing": "동기화 중...",

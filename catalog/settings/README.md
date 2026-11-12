@@ -91,6 +91,15 @@ configuration and show an inline error. `TitleBarSettings.vue` uses the existing
 Tests are in `TitleBarSettings.spec.ts`, `WindowTitleBar.spec.ts`, and the settings
 service/repository tests.
 
+General Settings also includes Sidebar configuration for the primary navigation
+items. `sidebar_items` is an ordered JSON list of `{id, visible}` entries for
+`home`, `recently_added`, `artists`, `albums`, `tracks`, `genres`, and
+`composers`; Home must remain visible. The app service validates the complete
+set, invalid stored data falls back to defaults, and `settings:sidebar` updates
+other window stores without a second save. The sidebar and Custom title bar
+share the same sortable visibility-list component, including drag-handle and
+arrow-key ordering.
+
 ## Config (Data Paths)
 
 ```go

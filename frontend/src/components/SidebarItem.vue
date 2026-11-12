@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import type { Component } from 'vue'
+
+const route = useRoute()
 
 defineProps<{
   to: string
@@ -18,7 +20,10 @@ defineEmits<{
   <div class="relative group">
     <RouterLink :to="to"
       class="flex min-w-0 items-center gap-3 px-3 py-2 rounded-lg transition-colors text-foreground opacity-80 hover:text-foreground hover:bg-foreground/[0.05]"
-      :class="{ 'pr-8': $slots.actions }"
+      :class="{
+        'pr-8': $slots.actions,
+        'bg-foreground/[0.08] !text-primary font-medium': route.meta.sidebarPath === to,
+      }"
       active-class="bg-foreground/[0.08] !text-primary font-medium"
       @contextmenu="$emit('contextmenu', $event)"
       @dblclick="$emit('dblclick', $event)">

@@ -120,6 +120,40 @@ func TestSaveSettingsValidatesTitleBarActions(t *testing.T) {
 	}
 }
 
+func TestSaveSettingsValidatesSidebarItems(t *testing.T) {
+	for _, name := range []string{"default", "reordered", "hidden", "hidden_home", "unknown"} {
+		t.Run(name, func(t *testing.T) {
+			items := domain.DefaultSidebarItems()
+			switch name {
+			case "default":
+				items = nil
+			case "reordered":
+				items[0], items[6] = items[6], items[0]
+			case "hidden":
+				items[1].Visible = false
+			case "hidden_home":
+				items[0].Visible = false
+			case "unknown":
+				items[0].ID = "unknown"
+			}
+			stop := errors.New("persistence sentinel")
+			repo := &backgroundSettingsRepository{err: stop}
+			svc := NewSettingsService(repo, nil, slog.Default())
+			err := svc.SaveSettings(context.Background(), &domain.AppSettings{PrimaryColor: domain.DefaultPrimaryColor, SidebarItems: items})
+			valid := name == "default" || name == "reordered" || name == "hidden"
+			if valid && !errors.Is(err, stop) {
+				t.Fatalf("valid sidebar items rejected: %v", err)
+			}
+			if !valid && (err == nil || repo.saved != nil) {
+				t.Fatal("invalid sidebar items reached persistence")
+			}
+			if valid && len(repo.saved.SidebarItems) != 7 {
+				t.Fatal("missing defaults")
+			}
+		})
+	}
+}
+
 func (r *backgroundSettingsRepository) Load(context.Context) (*domain.AppSettings, error) {
 	return nil, r.err
 }

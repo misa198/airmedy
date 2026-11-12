@@ -275,12 +275,17 @@ func TestTitleBarSettings(t *testing.T) {
 	if settings.TitleBarShowNavigation || !reflect.DeepEqual(settings.TitleBarActions, domain.DefaultTitleBarActions()) {
 		t.Fatalf("unexpected defaults: %+v", settings)
 	}
+	if !reflect.DeepEqual(settings.SidebarItems, domain.DefaultSidebarItems()) {
+		t.Fatalf("unexpected sidebar defaults: %+v", settings)
+	}
 	settings.Language = "vi"
 	settings.TitleBarShowNavigation = true
 	settings.TitleBarActions[0], settings.TitleBarActions[4] = settings.TitleBarActions[4], settings.TitleBarActions[0]
 	for i := range settings.TitleBarActions {
 		settings.TitleBarActions[i].Visible = false
 	}
+	settings.SidebarItems[0], settings.SidebarItems[6] = settings.SidebarItems[6], settings.SidebarItems[0]
+	settings.SidebarItems[1].Visible = false
 	if err := repo.Save(ctx, settings); err != nil {
 		t.Fatal(err)
 	}
@@ -290,6 +295,9 @@ func TestTitleBarSettings(t *testing.T) {
 	}
 	if !loaded.TitleBarShowNavigation || !reflect.DeepEqual(loaded.TitleBarActions, settings.TitleBarActions) {
 		t.Fatalf("round trip: %+v", loaded)
+	}
+	if !reflect.DeepEqual(loaded.SidebarItems, settings.SidebarItems) {
+		t.Fatalf("sidebar round trip: %+v", loaded)
 	}
 	// Saving another field must retain hidden actions and their order.
 	loaded.Theme = "black"
@@ -303,6 +311,9 @@ func TestTitleBarSettings(t *testing.T) {
 	if !reflect.DeepEqual(loaded.TitleBarActions, settings.TitleBarActions) {
 		t.Fatal("unrelated save lost title bar settings")
 	}
+	if !reflect.DeepEqual(loaded.SidebarItems, settings.SidebarItems) {
+		t.Fatal("unrelated save lost sidebar settings")
+	}
 	for _, invalid := range []string{"invalid json", "[]", `[{"id":"unknown","visible":true}]`} {
 		if _, err := db.Exec("UPDATE app_settings SET title_bar_actions = ? WHERE id = 1", invalid); err != nil {
 			t.Fatal(err)
@@ -313,6 +324,18 @@ func TestTitleBarSettings(t *testing.T) {
 		}
 		if !reflect.DeepEqual(recovered.TitleBarActions, domain.DefaultTitleBarActions()) || recovered.Language != "vi" || recovered.Theme != "black" {
 			t.Fatal("invalid title bar actions should not reset other settings")
+		}
+	}
+	for _, invalid := range []string{"invalid json", "[]", `[{"id":"home","visible":false}]`} {
+		if _, err := db.Exec("UPDATE app_settings SET sidebar_items = ? WHERE id = 1", invalid); err != nil {
+			t.Fatal(err)
+		}
+		recovered, err := repo.Load(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(recovered.SidebarItems, domain.DefaultSidebarItems()) || recovered.Language != "vi" || recovered.Theme != "black" {
+			t.Fatal("invalid sidebar items should not reset other settings")
 		}
 	}
 
@@ -331,5 +354,21 @@ func TestTitleBarSettings(t *testing.T) {
 	}
 	if loaded.TitleBarShowNavigation || !reflect.DeepEqual(loaded.TitleBarActions, domain.DefaultTitleBarActions()) || loaded.Language != "vi" || loaded.Theme != "black" {
 		t.Fatalf("upgrade: %+v", loaded)
+	}
+	for _, direction := range []string{"down", "up"} {
+		migration, err := os.ReadFile("migrations/000083_sidebar_settings." + direction + ".sql")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := db.Exec(string(migration)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	loaded, err = repo.Load(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(loaded.SidebarItems, domain.DefaultSidebarItems()) || loaded.Language != "vi" || loaded.Theme != "black" {
+		t.Fatalf("sidebar upgrade: %+v", loaded)
 	}
 }

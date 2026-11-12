@@ -71,14 +71,15 @@
   },
   "settings": {
     "title_bar": {
-      "title": "Custom title bar",
-      "navigation": "Show navigation buttons",
-      "navigation_desc": "Show Back and Forward buttons beside the app logo.",
-      "actions": "Quick actions",
-      "actions_desc": "Choose which actions to show. Drag the handle or use its Up and Down arrow keys to reorder.",
-      "reorder": "Reorder {action}",
-      "save_error": "Could not save title bar settings. Please try again."
+      "title": "Настраиваемая строка заголовка",
+      "navigation": "Показывать кнопки навигации",
+      "navigation_desc": "Показывает кнопки «Назад» и «Вперёд» рядом с логотипом приложения.",
+      "actions": "Быстрые действия",
+      "actions_desc": "Выберите действия для отображения. Перетащите маркер или используйте клавиши со стрелками вверх и вниз, чтобы изменить их порядок.",
+      "reorder": "Изменить порядок: {action}",
+      "save_error": "Не удалось сохранить настройки строки заголовка. Попробуйте ещё раз."
     },
+    "sidebar": { "title": "Боковая панель", "items": "Элементы навигации", "items_desc": "Выберите элементы для отображения. Перетащите маркер или используйте клавиши со стрелками вверх и вниз, чтобы изменить их порядок.", "reorder": "Изменить порядок: {item}", "save_error": "Не удалось сохранить настройки боковой панели. Попробуйте ещё раз." },
     "title": "Настройки",
     "sync": {
       "syncing": "Синхронизация...",
