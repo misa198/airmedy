@@ -88,7 +88,7 @@ function formatFileSize(bytes: number) {
       <div v-if="track" class="py-8 px-4 flex flex-col items-center">
         <!-- Artwork -->
         <div
-          class="w-48 h-48 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-foreground/10 mb-8 transition-transform hover:scale-[1.02] duration-300">
+          class="artwork w-48 h-48 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-foreground/10 mb-8">
           <LazyImg v-if="artworkUrl" :src="artworkUrl" class="w-full h-full object-cover" />
           <div v-else class="w-full h-full bg-foreground/5 flex items-center justify-center">
             <Music class="w-16 h-16 text-foreground opacity-30" />
@@ -142,4 +142,12 @@ function formatFileSize(bytes: number) {
 </template>
 
 <style scoped>
+.artwork {
+  transform: scale(1);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.artwork:hover {
+  transform: scale(1.02);
+}
 </style>
