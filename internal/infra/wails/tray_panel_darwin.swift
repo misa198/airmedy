@@ -226,7 +226,10 @@ private final class MarqueeText: NSView {
         let scroll = textWidth > bounds.width + 1 && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         label.isHidden = scroll
         copy.isHidden = true
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
         for textLayer in textLayers { textLayer.isHidden = !scroll }
+        CATransaction.commit()
         guard scroll else { return }
         let mask = CAGradientLayer()
         mask.frame = bounds

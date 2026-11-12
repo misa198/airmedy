@@ -232,7 +232,7 @@ precondition(titleMoving.layer?.animation(forKey: "marquee") == nil)
                 precondition(animation != nil)
                 let copies = titleMoving.layer?.sublayers?.filter { !($0.delegate is NSView) && !$0.isHidden } ?? []
                 precondition(copies.count == 2 && copies.allSatisfy { $0.contents != nil })
-                precondition(copies.allSatisfy { !($0.animationKeys() ?? []).contains("bounds") && !($0.animationKeys() ?? []).contains("position") && !($0.animationKeys() ?? []).contains("contents") })
+                precondition(copies.allSatisfy { ($0.animationKeys() ?? []).isEmpty })
                 precondition(abs(copies[1].frame.minX - copies[0].frame.maxX - 32) < 0.01)
                 precondition(artistMoving.layer?.animation(forKey: "marquee") != nil)
                 precondition(abs((animation?.keyTimes?[1].doubleValue ?? 0) * (animation?.duration ?? 0) - 5) < 0.001)
