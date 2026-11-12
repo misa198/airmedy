@@ -19,7 +19,7 @@ defineEmits<{
 <template>
   <div class="relative group">
     <RouterLink :to="to"
-      class="flex min-w-0 items-center gap-3 px-3 py-2 rounded-lg transition-colors text-foreground opacity-80 hover:text-foreground hover:bg-foreground/[0.05]"
+      class="flex min-w-0 items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-75 text-foreground opacity-80 hover:text-foreground hover:bg-foreground/[0.05]"
       :class="{
         'pr-8': $slots.actions,
         'bg-foreground/[0.08] !text-primary font-medium': route.meta.sidebarPath === to,
