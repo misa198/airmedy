@@ -204,6 +204,19 @@ onMounted(() => {
         <Switch :model-value="appStore.enableKugou" @update:model-value="appStore.updateEnableKugou" />
       </SettingRow>
       <SettingRow
+        :title="t('settings.integrations.enable_lrcred')"
+        :description="t('settings.integrations.enable_lrcred_desc')"
+      >
+        <Switch :model-value="appStore.enableLrcred" @update:model-value="appStore.updateEnableLrcred" />
+      </SettingRow>
+      <SettingRow
+        v-if="appStore.enableLrcred"
+        :title="t('settings.integrations.lrcred_model_syncs')"
+        :description="t('settings.integrations.lrcred_model_syncs_desc')"
+      >
+        <Switch :model-value="appStore.lrcredModelSyncs" @update:model-value="appStore.updateLrcredModelSyncs" />
+      </SettingRow>
+      <SettingRow
         :title="t('settings.integrations.prefer_local_lyrics')"
         :description="t('settings.integrations.prefer_local_lyrics_desc')"
       >

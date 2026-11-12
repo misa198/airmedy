@@ -86,8 +86,8 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		return fmt.Errorf("encode sidebar items: %w", err)
 	}
 	_, err = r.db.ExecContext(ctx,
-		`INSERT INTO app_settings (id, language, theme, primary_color, lastfm_username, auto_check_update, start_at_login, show_tray_icon, tray_mode, tray_theme, tray_panel_theme, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, romanization_enabled, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, pairing_mqtt_port, show_player_indicator, show_player_favorite_button, auto_advance_notifications_enabled, library_sync_interval, library_analysis_enabled, library_analysis_worker_count, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, mood_derivation_version, max_queue_size, crossfade_seconds, blend_artwork_during_crossfade, high_contrast_lyrics, lyrics_glow, living_artwork_background, mini_living_artwork_background, tray_background_mode, eq_preamp, stereo_width, title_bar_show_navigation, title_bar_actions, sidebar_items, updated_at)
-		 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+		`INSERT INTO app_settings (id, language, theme, primary_color, lastfm_username, auto_check_update, start_at_login, show_tray_icon, tray_mode, tray_theme, tray_panel_theme, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, enable_lrcred, lrcred_model_syncs, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, romanization_enabled, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, pairing_mqtt_port, show_player_indicator, show_player_favorite_button, auto_advance_notifications_enabled, library_sync_interval, library_analysis_enabled, library_analysis_worker_count, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, mood_derivation_version, max_queue_size, crossfade_seconds, blend_artwork_during_crossfade, high_contrast_lyrics, lyrics_glow, living_artwork_background, mini_living_artwork_background, tray_background_mode, eq_preamp, stereo_width, title_bar_show_navigation, title_bar_actions, sidebar_items, updated_at)
+		 VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 		 ON CONFLICT(id) DO UPDATE SET
 		   language = excluded.language,
 		   theme = excluded.theme,
@@ -105,6 +105,8 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		   last_scan_version = excluded.last_scan_version,
 		   enable_lrclib = excluded.enable_lrclib,
 		   enable_kugou = excluded.enable_kugou,
+		   enable_lrcred = excluded.enable_lrcred,
+		   lrcred_model_syncs = excluded.lrcred_model_syncs,
 		   prefer_local_lyrics = excluded.prefer_local_lyrics,
 		   lyrics_folder_enabled = excluded.lyrics_folder_enabled,
 		   lyrics_folder_path = excluded.lyrics_folder_path,
@@ -161,6 +163,8 @@ func (r *settingsRepository) Save(ctx context.Context, settings *domain.AppSetti
 		settings.LastScanVersion,
 		settings.EnableLrclib,
 		settings.EnableKugou,
+		settings.EnableLrcred,
+		settings.LrcredModelSyncs,
 		settings.PreferLocalLyrics,
 		settings.LyricsFolderEnabled,
 		settings.LyricsFolderPath,
@@ -228,6 +232,8 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		LastScanVersion                 string         `db:"last_scan_version"`
 		EnableLrclib                    bool           `db:"enable_lrclib"`
 		EnableKugou                     bool           `db:"enable_kugou"`
+		EnableLrcred                    bool           `db:"enable_lrcred"`
+		LrcredModelSyncs                bool           `db:"lrcred_model_syncs"`
 		PreferLocalLyrics               bool           `db:"prefer_local_lyrics"`
 		LyricsFolderEnabled             bool           `db:"lyrics_folder_enabled"`
 		LyricsFolderPath                sql.NullString `db:"lyrics_folder_path"`
@@ -266,7 +272,7 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		StereoWidth                     float64        `db:"stereo_width"`
 	}
 	err := r.db.GetContext(ctx, &row,
-		`SELECT language, theme, primary_color, lastfm_username, auto_check_update, start_at_login, show_tray_icon, tray_mode, tray_theme, tray_panel_theme, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, romanization_enabled, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, pairing_mqtt_port, show_player_indicator, show_player_favorite_button, auto_advance_notifications_enabled, library_sync_interval, library_analysis_enabled, library_analysis_worker_count, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, mood_derivation_version, max_queue_size, crossfade_seconds, blend_artwork_during_crossfade, high_contrast_lyrics, lyrics_glow, living_artwork_background, mini_living_artwork_background, tray_background_mode, eq_preamp, stereo_width, title_bar_show_navigation, title_bar_actions, sidebar_items FROM app_settings WHERE id = 1`,
+		`SELECT language, theme, primary_color, lastfm_username, auto_check_update, start_at_login, show_tray_icon, tray_mode, tray_theme, tray_panel_theme, eq_enabled, use_online_artist_artwork, prefer_local_artist_artwork, last_scan_version, enable_lrclib, enable_kugou, enable_lrcred, lrcred_model_syncs, prefer_local_lyrics, lyrics_folder_enabled, lyrics_folder_path, lyrics_subfolder_enabled, lyrics_subfolder_name, romanization_enabled, prevent_sleep_while_playing, remote_server_enabled, remote_server_port, remote_server_password, pairing_mqtt_port, show_player_indicator, show_player_favorite_button, auto_advance_notifications_enabled, library_sync_interval, library_analysis_enabled, library_analysis_worker_count, normalization_enabled, normalization_mode, normalization_target_lufs, normalization_prevent_clip, artist_delimiters, album_artist_delimiters, genre_delimiters, composer_delimiters, mood_derivation_version, max_queue_size, crossfade_seconds, blend_artwork_during_crossfade, high_contrast_lyrics, lyrics_glow, living_artwork_background, mini_living_artwork_background, tray_background_mode, eq_preamp, stereo_width, title_bar_show_navigation, title_bar_actions, sidebar_items FROM app_settings WHERE id = 1`,
 	)
 	if err == sql.ErrNoRows {
 		return &domain.AppSettings{
@@ -286,6 +292,8 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 			EQEnabled:                       true,
 			EnableLrclib:                    true,
 			EnableKugou:                     true,
+			EnableLrcred:                    true,
+			LrcredModelSyncs:                true,
 			PreferLocalLyrics:               true,
 			RomanizationEnabled:             true,
 			UseOnlineArtistArtwork:          true,
@@ -344,6 +352,8 @@ func (r *settingsRepository) Load(ctx context.Context) (*domain.AppSettings, err
 		EQEnabled:                       row.EQEnabled,
 		EnableLrclib:                    row.EnableLrclib,
 		EnableKugou:                     row.EnableKugou,
+		EnableLrcred:                    row.EnableLrcred,
+		LrcredModelSyncs:                row.LrcredModelSyncs,
 		PreferLocalLyrics:               row.PreferLocalLyrics,
 		LyricsFolderEnabled:             row.LyricsFolderEnabled,
 		LyricsFolderPath:                row.LyricsFolderPath.String,

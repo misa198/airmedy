@@ -158,3 +158,39 @@ func TestLocalReader_Read(t *testing.T) {
 		}
 	})
 }
+
+func TestLocalReader_TTML(t *testing.T) {
+	r := NewLocalLyricsReader()
+	const doc = `<tt xmlns="http://www.w3.org/ns/ttml"><body><div><p begin="1" end="2"><span begin="1" end="2">hi</span></p></div></body></tt>`
+
+	t.Run("ttml converted to lrc", func(t *testing.T) {
+		dir := t.TempDir()
+		writeFile(t, filepath.Join(dir, "Song.ttml"), doc)
+		content, source, found := r.Read(filepath.Join(dir, "Song.mp3"))
+		if !found || source != "local-ttml" || content != "[00:01.000]hi<00:02.000>" {
+			t.Fatalf("got (%q,%q,%v)", content, source, found)
+		}
+	})
+
+	t.Run("lrc beats ttml beats txt", func(t *testing.T) {
+		dir := t.TempDir()
+		writeFile(t, filepath.Join(dir, "Song.ttml"), doc)
+		writeFile(t, filepath.Join(dir, "Song.txt"), "plain")
+		if _, source, _ := r.Read(filepath.Join(dir, "Song.mp3")); source != "local-ttml" {
+			t.Fatalf("ttml should beat txt, got %q", source)
+		}
+		writeFile(t, filepath.Join(dir, "Song.lrc"), "[00:01.00]lrc")
+		if _, source, _ := r.Read(filepath.Join(dir, "Song.mp3")); source != "local-lrc" {
+			t.Fatalf("lrc should beat ttml, got %q", source)
+		}
+	})
+
+	t.Run("malformed ttml skipped", func(t *testing.T) {
+		dir := t.TempDir()
+		writeFile(t, filepath.Join(dir, "Song.ttml"), "<tt><body><p>")
+		writeFile(t, filepath.Join(dir, "Song.txt"), "plain")
+		if _, source, _ := r.Read(filepath.Join(dir, "Song.mp3")); source != "local-txt" {
+			t.Fatalf("expected txt fallback, got %q", source)
+		}
+	})
+}
