@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useId } from 'vue'
-import { Play, Pause } from '@lucide/vue'
+import { PlayFill as Play, PauseFill as Pause } from '@airmedy/ui'
 
 withDefaults(defineProps<{ isPlaying: boolean; iconSize?: number }>(), { iconSize: 16 })
 const maskId = useId()

@@ -2,11 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import BackwardFill from './BackwardFill.vue'
 import ForwardFill from './ForwardFill.vue'
+import PlayFill from './PlayFill.vue'
+import PlayOutline from './PlayOutline.vue'
+import PauseFill from './PauseFill.vue'
 
-describe.each([BackwardFill, ForwardFill])('transport icon', (icon) => {
+describe.each([BackwardFill, ForwardFill, PlayFill, PauseFill, PlayOutline])('transport icon', (icon) => {
   it('uses current color and a 24px size by default', () => {
     const svg = mount(icon)
-    expect(svg.attributes()).toMatchObject({ width: '24', height: '24', fill: 'currentColor', viewBox: '0 0 56 56' })
+    expect(svg.attributes()).toMatchObject({ width: '24', height: '24', fill: 'currentColor', viewBox: icon === PlayFill || icon === PauseFill || icon === PlayOutline ? '4 4 48 48' : '0 0 56 56' })
   })
 
   it('accepts Lucide-style size and color props and CSS classes', () => {

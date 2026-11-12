@@ -200,7 +200,6 @@ onUnmounted(() => {
               <!-- Controls -->
               <PlayerPlaybackControls :is-playing="store.isPlaying" :shuffle="store.shuffle"
                 :repeat-mode="store.repeatMode" :show-indicator="appStore.showPlayerIndicator"
-                :disable-play-pause-scale="deviceStore.isLinux"
                 data-fullscreen-player-interactive="true"
                 @toggle-play="store.togglePlayPause()" @next="store.next()"
                 @previous="store.previous()" @toggle-shuffle="store.setShuffle(!store.shuffle)"

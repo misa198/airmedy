@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { LucideProps } from '@lucide/vue';
-import { FunctionalComponent, PropType, toRef } from 'vue';
+import { type Component, type PropType, toRef } from 'vue';
 
 const props = defineProps({
     label: {
@@ -8,7 +7,7 @@ const props = defineProps({
         default: ''
     },
     icon: {
-        type: Object as PropType<FunctionalComponent<LucideProps, {}, any, {}>>,
+        type: [Object, Function] as PropType<Component>,
         required: true
     },
     filledIcon: {
@@ -26,8 +25,8 @@ const Icon = toRef(props, 'icon')
 </script>
 
 <template>
-    <button class="h-10 flex items-center justify-center shadow-lg rounded-full transition-colors" :class="{
-        'bg-foreground text-background hover:scale-105 transition-transform': variant === 'contained',
+    <button class="h-10 flex items-center justify-center shadow-lg rounded-full transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" :class="{
+        'bg-foreground text-background details-button-contained': variant === 'contained',
         'bg-background text-foreground ring-1 ring-foreground/[0.08] hover:bg-foreground/[0.06]': variant === 'outline',
         'w-10': !label,
         'px-4 gap-x-2': label
@@ -36,3 +35,12 @@ const Icon = toRef(props, 'icon')
         <span class="text-sm @lg:text-medium font-bold">{{ label }}</span>
     </button>
 </template>
+<style scoped>
+.details-button-contained {
+    transform: scale(1);
+}
+
+.details-button-contained:hover {
+    transform: scale(1.05);
+}
+</style>

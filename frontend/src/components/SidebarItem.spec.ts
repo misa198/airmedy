@@ -23,6 +23,7 @@ describe('SidebarItem', () => {
     })
 
     expect(wrapper.find('svg').classes()).toContain('flex-shrink-0')
+    expect(wrapper.get('a').classes()).toContain('duration-75')
     expect(wrapper.find('span').classes()).toEqual(expect.arrayContaining(['min-w-0', 'flex-1', 'truncate']))
   })
 

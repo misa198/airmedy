@@ -118,8 +118,14 @@ for (index, button) in playbackButtons.enumerated() {
 if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
     RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
     let progress = (playbackButtons[2].value(forKey: "pauseProgress") as? CGFloat) ?? 0
-    precondition(progress > 0 && progress < 1)
-    RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.3))
+    precondition(progress > 0.5 && progress < 1)
+    "Control".withCString { controls(false, true, 2, $0, $0, $0, $0, $0) }
+    precondition((playbackButtons[2].value(forKey: "pauseProgress") as? CGFloat) == progress)
+    RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
+    let reversed = (playbackButtons[2].value(forKey: "pauseProgress") as? CGFloat) ?? 0
+    precondition(reversed > 0 && reversed < progress)
+    "Control".withCString { controls(true, true, 2, $0, $0, $0, $0, $0) }
+    RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.25))
 }
 precondition((playbackButtons[2].value(forKey: "pauseProgress") as? CGFloat) == 1)
 for button in playbackButtons { button.performClick(nil) }
@@ -226,7 +232,7 @@ precondition(titleMoving.layer?.animation(forKey: "marquee") == nil)
                 precondition(animation != nil)
                 let copies = titleMoving.layer?.sublayers?.filter { !($0.delegate is NSView) && !$0.isHidden } ?? []
                 precondition(copies.count == 2 && copies.allSatisfy { $0.contents != nil })
-                precondition(copies.allSatisfy { !($0.animationKeys() ?? []).contains("bounds") && !($0.animationKeys() ?? []).contains("position") && !($0.animationKeys() ?? []).contains("contents") })
+                precondition(copies.allSatisfy { ($0.animationKeys() ?? []).isEmpty })
                 precondition(abs(copies[1].frame.minX - copies[0].frame.maxX - 32) < 0.01)
                 precondition(artistMoving.layer?.animation(forKey: "marquee") != nil)
                 precondition(abs((animation?.keyTimes?[1].doubleValue ?? 0) * (animation?.duration ?? 0) - 5) < 0.001)

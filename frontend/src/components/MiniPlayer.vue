@@ -1,17 +1,16 @@
 <script setup lang="ts">
-import { Play, Pause, Maximize, Music } from '@lucide/vue'
+import { Maximize, Music } from '@lucide/vue'
+import { PlayFill as Play, PauseFill as Pause } from '@airmedy/ui'
 import { usePlayerStore } from '../stores/player'
 import { formatTime, getTrackDisplayTitle } from '@airmedy/utils'
 import { MarqueeText, ForwardFill } from '@airmedy/ui'
 import LazyImg from '@/components/LazyImg.vue'
 import { computed } from 'vue'
 import { useAppStore } from '@/stores/app'
-import { useDeviceStore } from '@/stores/device'
 import { useArtworkCrossfadeOpacity } from '@/composables/useArtworkCrossfadeOpacity'
 
 const store = usePlayerStore()
 const appStore = useAppStore()
-const deviceStore = useDeviceStore()
 const artworkCrossfade = computed(() =>
   appStore.blendArtworkDuringCrossfade ? store.artworkCrossfade : null,
 )
@@ -51,8 +50,7 @@ const { outgoingOpacity, incomingOpacity } = useArtworkCrossfadeOpacity(artworkC
     <!-- Controls -->
     <div class="flex items-center gap-3">
       <button
-        class="w-7 h-7 bg-foreground rounded-full flex items-center justify-center scale-100 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
-        :class="!deviceStore.isLinux && 'hover:scale-105'"
+        class="w-7 h-7 bg-foreground rounded-full flex items-center justify-center"
         @click="store.togglePlayPause()"
       >
         <Pause v-if="store.isPlaying" class="w-3.5 h-3.5 fill-current text-background" />
