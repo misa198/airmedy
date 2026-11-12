@@ -22,6 +22,7 @@ import PlayerFavoriteButton from './player/PlayerFavoriteButton.vue'
 import MiniPlayerLyrics from './MiniPlayerLyrics.vue'
 import QueueTrackList from './QueueTrackList.vue'
 import { useAppStore } from '@/stores/app'
+import { useDeviceStore } from '@/stores/device'
 import { useArtworkCrossfadeOpacity } from '@/composables/useArtworkCrossfadeOpacity'
 import { useLyrics } from '@/composables/useLyrics'
 import { useRomanization } from '@/composables/useRomanization'
@@ -30,6 +31,7 @@ import RomanizationToggle from './RomanizationToggle.vue'
 const store = usePlayerStore()
 const moodRadioStore = useMoodRadioStore()
 const appStore = useAppStore()
+const deviceStore = useDeviceStore()
 const { t } = useI18n()
 const artworkCrossfade = computed(() =>
   appStore.blendArtworkDuringCrossfade ? store.artworkCrossfade : null,
@@ -310,7 +312,8 @@ watch(() => store.theme, (colors) => {
             <BackwardFill class="w-5 h-5 fill-current" />
           </button>
           <button
-            class="w-9 h-9 text-mini-player-pill-active rounded-full flex items-center justify-center scale-100 hover:scale-105 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shrink-0"
+            class="w-9 h-9 text-mini-player-pill-active rounded-full flex items-center justify-center scale-100 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shrink-0"
+            :class="!deviceStore.isLinux && 'hover:scale-105'"
             @click="store.togglePlayPause()">
             <PlayPauseCutout :is-playing="store.isPlaying" />
           </button>
