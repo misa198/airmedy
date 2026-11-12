@@ -9,6 +9,7 @@ on:
       - master
     paths:
       - 'mobile/**'
+      - '!mobile/CHANGELOG.md'
       - 'scripts/build-ffmpeg-android.sh'
       - '.github/workflows/mobile-build.yml'
   workflow_dispatch:
