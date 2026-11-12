@@ -79,6 +79,7 @@
       "reorder": "Reorder {action}",
       "save_error": "Could not save title bar settings. Please try again."
     },
+    "sidebar": { "title": "Sidebar", "items": "Navigation items", "items_desc": "Choose which items to show. Drag the handle or use its Up and Down arrow keys to reorder.", "reorder": "Reorder {item}", "save_error": "Could not save sidebar settings. Please try again." },
     "title": "Settings",
     "sync": {
       "syncing": "Syncing...",

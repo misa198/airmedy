@@ -25,6 +25,7 @@ func NewSettingsService(svc *appsettings.SettingsService, playerService *player.
 			app.Event.Emit("settings:theme", settings.Theme)
 			app.Event.Emit("settings:tray-background", settings.TrayBackgroundMode)
 			app.Event.Emit("settings:title-bar", map[string]any{"show_navigation": settings.TitleBarShowNavigation, "actions": settings.TitleBarActions})
+			app.Event.Emit("settings:sidebar", settings.SidebarItems)
 		}
 	})
 	return &SettingsService{svc: svc, playerService: playerService}

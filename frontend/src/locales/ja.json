@@ -71,14 +71,15 @@
   },
   "settings": {
     "title_bar": {
-      "title": "Custom title bar",
-      "navigation": "Show navigation buttons",
-      "navigation_desc": "Show Back and Forward buttons beside the app logo.",
-      "actions": "Quick actions",
-      "actions_desc": "Choose which actions to show. Drag the handle or use its Up and Down arrow keys to reorder.",
-      "reorder": "Reorder {action}",
-      "save_error": "Could not save title bar settings. Please try again."
+      "title": "カスタムタイトルバー",
+      "navigation": "ナビゲーションボタンを表示",
+      "navigation_desc": "アプリのロゴの横に戻るボタンと進むボタンを表示します。",
+      "actions": "クイックアクション",
+      "actions_desc": "表示するアクションを選択します。ハンドルをドラッグするか、上矢印キーと下矢印キーで並べ替えます。",
+      "reorder": "{action} を並べ替え",
+      "save_error": "タイトルバーの設定を保存できませんでした。もう一度お試しください。"
     },
+    "sidebar": { "title": "サイドバー", "items": "ナビゲーション項目", "items_desc": "表示する項目を選択します。ハンドルをドラッグするか、上矢印キーと下矢印キーで並べ替えます。", "reorder": "{item} を並べ替え", "save_error": "サイドバーの設定を保存できませんでした。もう一度お試しください。" },
     "title": "設定",
     "sync": {
       "syncing": "同期中...",

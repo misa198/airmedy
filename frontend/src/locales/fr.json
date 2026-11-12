@@ -71,14 +71,15 @@
   },
   "settings": {
     "title_bar": {
-      "title": "Custom title bar",
-      "navigation": "Show navigation buttons",
-      "navigation_desc": "Show Back and Forward buttons beside the app logo.",
-      "actions": "Quick actions",
-      "actions_desc": "Choose which actions to show. Drag the handle or use its Up and Down arrow keys to reorder.",
-      "reorder": "Reorder {action}",
-      "save_error": "Could not save title bar settings. Please try again."
+      "title": "Barre de titre personnalisée",
+      "navigation": "Afficher les boutons de navigation",
+      "navigation_desc": "Affiche les boutons Précédent et Suivant à côté du logo de l’application.",
+      "actions": "Actions rapides",
+      "actions_desc": "Choisissez les actions à afficher. Faites glisser la poignée ou utilisez les flèches haut et bas pour les réorganiser.",
+      "reorder": "Réorganiser {action}",
+      "save_error": "Impossible d’enregistrer les paramètres de la barre de titre. Veuillez réessayer."
     },
+    "sidebar": { "title": "Barre latérale", "items": "Éléments de navigation", "items_desc": "Choisissez les éléments à afficher. Faites glisser la poignée ou utilisez les flèches haut et bas pour les réorganiser.", "reorder": "Réorganiser {item}", "save_error": "Impossible d’enregistrer les paramètres de la barre latérale. Veuillez réessayer." },
     "title": "Paramètres",
     "sync": {
       "syncing": "Synchronisation...",

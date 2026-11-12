@@ -9,6 +9,7 @@ import RestartModal from '../RestartModal.vue'
 import SettingSection from './SettingSection.vue'
 import SettingRow from './SettingRow.vue'
 import TitleBarSettings from './TitleBarSettings.vue'
+import SidebarSettings from './SidebarSettings.vue'
 import { useCustomTitleBar } from '@/composables/useCustomTitleBar'
 import {
   Select,
@@ -182,6 +183,8 @@ const toggleAutoCheckUpdate = async (enabled: boolean) => {
     </SettingSection>
 
     <TitleBarSettings v-if="canConfigureTitleBar" />
+
+    <SidebarSettings />
 
     <SettingSection v-if="deviceStore.isMac" :icon="Monitor" :label="t('settings.behavior.tray_section')">
       <SettingRow

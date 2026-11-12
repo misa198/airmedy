@@ -71,14 +71,15 @@
   },
   "settings": {
     "title_bar": {
-      "title": "Custom title bar",
-      "navigation": "Show navigation buttons",
-      "navigation_desc": "Show Back and Forward buttons beside the app logo.",
-      "actions": "Quick actions",
-      "actions_desc": "Choose which actions to show. Drag the handle or use its Up and Down arrow keys to reorder.",
-      "reorder": "Reorder {action}",
-      "save_error": "Could not save title bar settings. Please try again."
+      "title": "自定义标题栏",
+      "navigation": "显示导航按钮",
+      "navigation_desc": "在应用徽标旁显示后退和前进按钮。",
+      "actions": "快捷操作",
+      "actions_desc": "选择要显示的操作。拖动拖柄，或使用向上和向下箭头键重新排序。",
+      "reorder": "重新排序 {action}",
+      "save_error": "无法保存标题栏设置。请重试。"
     },
+    "sidebar": { "title": "侧边栏", "items": "导航项目", "items_desc": "选择要显示的项目。拖动拖柄，或使用向上和向下箭头键重新排序。", "reorder": "重新排序 {item}", "save_error": "无法保存侧边栏设置。请重试。" },
     "title": "设置",
     "sync": {
       "syncing": "同步中...",

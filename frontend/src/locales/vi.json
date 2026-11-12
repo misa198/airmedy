@@ -79,6 +79,7 @@
       "reorder": "Đổi thứ tự {action}",
       "save_error": "Không thể lưu cấu hình thanh tiêu đề. Vui lòng thử lại."
     },
+    "sidebar": { "title": "Thanh bên", "items": "Mục điều hướng", "items_desc": "Chọn các mục muốn hiển thị. Kéo tay nắm hoặc dùng phím mũi tên lên và xuống để đổi thứ tự.", "reorder": "Đổi thứ tự {item}", "save_error": "Không thể lưu cấu hình thanh bên. Vui lòng thử lại." },
     "title": "Cài đặt",
     "sync": {
       "syncing": "Đang đồng bộ...",

@@ -14,6 +14,7 @@ import { DEFAULT_MAX_QUEUE_SIZE, isMaxQueueSize, type MaxQueueSize } from '@/lib
 import { DEFAULT_PRIMARY_COLOR, hexToRgbChannels, normalizeHexColor, primaryForeground } from '@/lib/color'
 
 import { defaultTitleBarActions, type TitleBarAction } from '@/lib/titleBar'
+import { defaultSidebarItems, type SidebarItem } from '@/lib/sidebar'
 
 export type TrayBackgroundMode = 'living' | 'solid' | 'monochrome'
 
@@ -34,6 +35,7 @@ export const PRIMARY_COLOR_SAVE_DEBOUNCE_MS = 250
 export const useAppStore = defineStore('app', () => {
   const titleBarShowNavigation = ref(false)
   const titleBarActions = ref<TitleBarAction[]>(defaultTitleBarActions())
+  const sidebarItems = ref<SidebarItem[]>(defaultSidebarItems())
   const theme = ref<'system' | 'light' | 'dark' | 'black'>('system')
   const primaryColor = ref(DEFAULT_PRIMARY_COLOR)
   const language = ref('en')
@@ -143,6 +145,7 @@ export const useAppStore = defineStore('app', () => {
       if (settings) {
         titleBarShowNavigation.value = settings.title_bar_show_navigation === true
         titleBarActions.value = settings.title_bar_actions ? settings.title_bar_actions.map(action => ({ ...action, id: action.id as TitleBarAction['id'] })) : defaultTitleBarActions()
+        sidebarItems.value = settings.sidebar_items ? settings.sidebar_items.map(item => ({ ...item, id: item.id as SidebarItem['id'] })) : defaultSidebarItems()
         if (settings.theme) theme.value = settings.theme as any
         primaryColor.value = normalizeHexColor(settings.primary_color) ?? DEFAULT_PRIMARY_COLOR
         if (settings.language) language.value = settings.language
@@ -267,6 +270,7 @@ export const useAppStore = defineStore('app', () => {
       await SettingsService.SaveSettings({
         title_bar_show_navigation: titleBarShowNavigation.value,
         title_bar_actions: titleBarActions.value,
+        sidebar_items: sidebarItems.value,
         theme: theme.value,
         primary_color: primaryColor.value,
         language: language.value,
@@ -375,6 +379,17 @@ export const useAppStore = defineStore('app', () => {
     } catch (error) {
       titleBarShowNavigation.value = previousNavigation
       titleBarActions.value = previousActions
+      throw error
+    }
+  }
+
+  const updateSidebarItems = async (items: SidebarItem[]) => {
+    const previousItems = sidebarItems.value
+    sidebarItems.value = items.map(item => ({ ...item }))
+    try {
+      await saveSettings()
+    } catch (error) {
+      sidebarItems.value = previousItems
       throw error
     }
   }
@@ -665,8 +680,13 @@ export const useAppStore = defineStore('app', () => {
     titleBarActions.value = event.data.actions.map((action: TitleBarAction) => ({ ...action }))
   })
 
+  const _offSidebar = Events.On('settings:sidebar', (event: Events.WailsEvent) => {
+    sidebarItems.value = event.data.map((item: SidebarItem) => ({ ...item }))
+  })
+
   function dispose() {
     _offTitleBar()
+    _offSidebar()
     if (_primaryColorSaveTimer) clearTimeout(_primaryColorSaveTimer)
     _primaryColorSaveTimer = null
     _darkMQ?.removeEventListener('change', _onDarkMQChange)
@@ -684,6 +704,8 @@ export const useAppStore = defineStore('app', () => {
     titleBarShowNavigation,
     titleBarActions,
     updateTitleBar,
+    sidebarItems,
+    updateSidebarItems,
     theme,
     primaryColor,
     language,

@@ -76,6 +76,7 @@ func (s *SettingsService) GetSettings(ctx context.Context) (*domain.AppSettings,
 		s.cache = &domain.AppSettings{
 			TitleBarShowNavigation:          false,
 			TitleBarActions:                 domain.DefaultTitleBarActions(),
+			SidebarItems:                    domain.DefaultSidebarItems(),
 			Language:                        "en",
 			Theme:                           "system",
 			PrimaryColor:                    domain.DefaultPrimaryColor,
@@ -147,6 +148,12 @@ func (s *SettingsService) SaveSettings(ctx context.Context, settings *domain.App
 	}
 	if err := domain.ValidateTitleBarActions(settings.TitleBarActions); err != nil {
 		return fmt.Errorf("invalid title bar actions: %w", err)
+	}
+	if settings.SidebarItems == nil {
+		settings.SidebarItems = domain.DefaultSidebarItems()
+	}
+	if err := domain.ValidateSidebarItems(settings.SidebarItems); err != nil {
+		return fmt.Errorf("invalid sidebar items: %w", err)
 	}
 
 	primaryColor, err := domain.NormalizePrimaryColor(settings.PrimaryColor)

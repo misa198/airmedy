@@ -71,14 +71,15 @@
   },
   "settings": {
     "title_bar": {
-      "title": "Custom title bar",
-      "navigation": "Show navigation buttons",
-      "navigation_desc": "Show Back and Forward buttons beside the app logo.",
-      "actions": "Quick actions",
-      "actions_desc": "Choose which actions to show. Drag the handle or use its Up and Down arrow keys to reorder.",
-      "reorder": "Reorder {action}",
-      "save_error": "Could not save title bar settings. Please try again."
+      "title": "แถบชื่อแบบกำหนดเอง",
+      "navigation": "แสดงปุ่มนำทาง",
+      "navigation_desc": "แสดงปุ่มย้อนกลับและไปข้างหน้าข้างโลโก้แอป",
+      "actions": "การดำเนินการด่วน",
+      "actions_desc": "เลือกการดำเนินการที่ต้องการแสดง ลากที่จับหรือใช้ปุ่มลูกศรขึ้นและลงเพื่อจัดลำดับใหม่",
+      "reorder": "จัดลำดับ {action} ใหม่",
+      "save_error": "ไม่สามารถบันทึกการตั้งค่าแถบชื่อได้ โปรดลองอีกครั้ง"
     },
+    "sidebar": { "title": "แถบด้านข้าง", "items": "รายการนำทาง", "items_desc": "เลือกรายการที่ต้องการแสดง ลากที่จับหรือใช้ปุ่มลูกศรขึ้นและลงเพื่อจัดลำดับใหม่", "reorder": "จัดลำดับ {item} ใหม่", "save_error": "ไม่สามารถบันทึกการตั้งค่าแถบด้านข้างได้ โปรดลองอีกครั้ง" },
     "title": "การตั้งค่า",
     "sync": {
       "syncing": "กำลังซิงค์...",

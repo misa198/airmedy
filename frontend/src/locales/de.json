@@ -71,14 +71,15 @@
   },
   "settings": {
     "title_bar": {
-      "title": "Custom title bar",
-      "navigation": "Show navigation buttons",
-      "navigation_desc": "Show Back and Forward buttons beside the app logo.",
-      "actions": "Quick actions",
-      "actions_desc": "Choose which actions to show. Drag the handle or use its Up and Down arrow keys to reorder.",
-      "reorder": "Reorder {action}",
-      "save_error": "Could not save title bar settings. Please try again."
+      "title": "Benutzerdefinierte Titelleiste",
+      "navigation": "Navigationsschaltflächen anzeigen",
+      "navigation_desc": "Schaltflächen für Zurück und Vorwärts neben dem App-Logo anzeigen.",
+      "actions": "Schnellaktionen",
+      "actions_desc": "Wählen Sie die anzuzeigenden Aktionen. Ziehen Sie den Griff oder verwenden Sie die Pfeiltasten nach oben und unten, um sie neu anzuordnen.",
+      "reorder": "{action} neu anordnen",
+      "save_error": "Die Einstellungen der Titelleiste konnten nicht gespeichert werden. Bitte versuchen Sie es erneut."
     },
+    "sidebar": { "title": "Seitenleiste", "items": "Navigationselemente", "items_desc": "Wählen Sie die anzuzeigenden Elemente. Ziehen Sie den Griff oder verwenden Sie die Pfeiltasten nach oben und unten, um sie neu anzuordnen.", "reorder": "{item} neu anordnen", "save_error": "Die Einstellungen der Seitenleiste konnten nicht gespeichert werden. Bitte versuchen Sie es erneut." },
     "title": "Einstellungen",
     "sync": {
       "syncing": "Synchronisierung...",
