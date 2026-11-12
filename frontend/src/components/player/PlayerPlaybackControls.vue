@@ -18,6 +18,7 @@ const props = defineProps<{
   showIndicator: boolean
   disabled?: boolean
   compact?: boolean
+  disablePlayPauseScale?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -60,8 +61,8 @@ const repeatActive = computed(
       <BackwardFill class="fill-current" :class="compact ? 'w-7 h-7' : 'w-8 h-8'" />
     </button>
     <button
-      class="text-mini-player-pill-active rounded-full flex items-center justify-center scale-100 hover:scale-105 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-xl"
-      :class="compact ? 'w-9 h-9' : 'w-14 h-14'"
+      class="text-mini-player-pill-active rounded-full flex items-center justify-center scale-100 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-xl"
+      :class="[compact ? 'w-9 h-9' : 'w-14 h-14', !disablePlayPauseScale && 'hover:scale-105']"
       @click="emit('togglePlay')" :title="isPlaying ? t('player.pause') : t('player.play')" :aria-label="isPlaying ? t('player.pause') : t('player.play')" :disabled="disabled">
       <PlayPauseCutout :is-playing="isPlaying" :icon-size="compact ? 16 : 104 / 7" />
     </button>

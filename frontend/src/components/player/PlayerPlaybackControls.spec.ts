@@ -38,4 +38,12 @@ describe('PlayerPlaybackControls', () => {
     expect(wrapper.findAll('button')[2].classes()).toEqual(expect.arrayContaining(['w-9', 'h-9', 'scale-100', 'hover:scale-105', 'transition-transform', 'duration-300']))
     expect(wrapper.findAll('button')[1].get('svg').classes()).toEqual(expect.arrayContaining(['w-7', 'h-7']))
   })
+
+  it('does not scale the play/pause button when requested', () => {
+    const wrapper = mount(PlayerPlaybackControls, {
+      props: { isPlaying: false, shuffle: false, repeatMode: RepeatMode.RepeatModeOff, showIndicator: false, disablePlayPauseScale: true },
+    })
+
+    expect(wrapper.findAll('button')[2].classes()).not.toContain('hover:scale-105')
+  })
 })

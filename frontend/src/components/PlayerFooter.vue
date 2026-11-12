@@ -25,11 +25,13 @@ import PlayerControlButton from './player/PlayerControlButton.vue'
 import PlayPauseCutout from './player/PlayPauseCutout.vue'
 import PlayerQuickSettingsMenu from './player/PlayerQuickSettingsMenu.vue'
 import { useAppStore } from '../stores/app'
+import { useDeviceStore } from '../stores/device'
 import PlayerFavoriteButton from './player/PlayerFavoriteButton.vue'
 
 const { t } = useI18n()
 const store = usePlayerStore()
 const appStore = useAppStore()
+const deviceStore = useDeviceStore()
 const trackContextMenu = ref<InstanceType<typeof TrackContextMenu> | null>(null)
 const quickSettingsMenu = ref<InstanceType<typeof PlayerQuickSettingsMenu> | null>(null)
 
@@ -119,7 +121,8 @@ async function onSeekEnd() {
           <BackwardFill class="w-6 h-6 fill-current" />
         </button>
         <button
-          class="w-8 h-8 text-primary rounded-full flex items-center justify-center scale-100 hover:scale-105 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+          class="w-8 h-8 text-primary rounded-full flex items-center justify-center scale-100 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+          :class="!deviceStore.isLinux && 'hover:scale-105'"
           @click="store.togglePlayPause()" :title="store.isPlaying ? t('player.pause') : t('player.play')">
           <PlayPauseCutout :is-playing="store.isPlaying" />
         </button>
