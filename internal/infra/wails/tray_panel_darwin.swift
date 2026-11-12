@@ -264,8 +264,8 @@ private final class PlayPauseButton: NSButton {
         let start = ProcessInfo.processInfo.systemUptime
         let timer = Timer(timeInterval: 1.0 / 60, repeats: true) { [weak self] timer in
             guard let self else { timer.invalidate(); return }
-            let progress = min(1, (ProcessInfo.processInfo.systemUptime - start) / 0.15)
-            let eased = progress * progress * (3 - 2 * progress)
+            let progress = min(1, (ProcessInfo.processInfo.systemUptime - start) / 0.2)
+            let eased = 1 - pow(1 - progress, 3)
             self.pauseProgress = initial + (target - initial) * eased
             self.needsDisplay = true
             if progress >= 1 { timer.invalidate(); self.transition = nil }
@@ -322,10 +322,10 @@ private final class PlayPauseButton: NSButton {
             path.fill()
         }
         let p = pauseProgress
-        drawShape([(6, 3.5), (20, 12), (6, 20.5)], scale: 1 - p * 0.48, alpha: 1 - p, radius: 0.10)
+        drawShape([(6, 3.5), (20, 12), (6, 20.5)], scale: 1 - p * 0.48, alpha: min(1, (1 - p) * 2), radius: 0.10)
         let scale = 0.52 + p * 0.48
-        drawShape([(5.5, 4), (10.2, 4), (10.2, 20), (5.5, 20)], scale: scale, alpha: p, radius: 0.075)
-        drawShape([(13.8, 4), (18.5, 4), (18.5, 20), (13.8, 20)], scale: scale, alpha: p, radius: 0.075)
+        drawShape([(5.5, 4), (10.2, 4), (10.2, 20), (5.5, 20)], scale: scale, alpha: min(1, p * 2), radius: 0.075)
+        drawShape([(13.8, 4), (18.5, 4), (18.5, 20), (13.8, 20)], scale: scale, alpha: min(1, p * 2), radius: 0.075)
     }
 }
 

@@ -118,8 +118,14 @@ for (index, button) in playbackButtons.enumerated() {
 if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
     RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
     let progress = (playbackButtons[2].value(forKey: "pauseProgress") as? CGFloat) ?? 0
-    precondition(progress > 0 && progress < 1)
-    RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.3))
+    precondition(progress > 0.5 && progress < 1)
+    "Control".withCString { controls(false, true, 2, $0, $0, $0, $0, $0) }
+    precondition((playbackButtons[2].value(forKey: "pauseProgress") as? CGFloat) == progress)
+    RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
+    let reversed = (playbackButtons[2].value(forKey: "pauseProgress") as? CGFloat) ?? 0
+    precondition(reversed > 0 && reversed < progress)
+    "Control".withCString { controls(true, true, 2, $0, $0, $0, $0, $0) }
+    RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.25))
 }
 precondition((playbackButtons[2].value(forKey: "pauseProgress") as? CGFloat) == 1)
 for button in playbackButtons { button.performClick(nil) }
