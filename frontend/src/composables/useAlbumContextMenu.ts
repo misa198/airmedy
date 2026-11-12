@@ -1,5 +1,5 @@
 import { ListStart, ListEnd, ListPlus, Shuffle, Star, StarMinus } from '@lucide/vue'
-import { PlayFill as Play } from '@airmedy/ui'
+import { PlayOutline as Play } from '@airmedy/ui'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
 import { usePlayerStore } from '@/stores/player'

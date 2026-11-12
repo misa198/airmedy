@@ -1,5 +1,5 @@
 import { Music, Pencil, Trash2, ListStart, ListEnd, ListPlus, Download, Pin, PinOff, Shuffle, Sparkles } from '@lucide/vue'
-import { PlayFill as Play } from '@airmedy/ui'
+import { PlayOutline as Play } from '@airmedy/ui'
 import { useI18n } from 'vue-i18n'
 import { usePlaylistsStore } from '@/stores/playlists'
 import { usePlayerStore } from '@/stores/player'

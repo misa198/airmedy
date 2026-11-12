@@ -1,5 +1,5 @@
 import { Folder, Settings, Smartphone, Wifi } from '@lucide/vue'
-import { PlayFill as Play } from '@airmedy/ui'
+import { PlayOutline as Play } from '@airmedy/ui'
 
 export type TitleBarActionId = 'mobile' | 'library' | 'settings' | 'playback' | 'remote'
 export interface TitleBarAction { id: TitleBarActionId; visible: boolean }
