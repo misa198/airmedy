@@ -2,12 +2,18 @@ import { afterEach, describe, it, expect, vi } from 'vitest'
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import ContextMenu from './ContextMenu.vue'
+import { readFileSync } from 'node:fs'
+
+const menuSource = readFileSync('src/components/ContextMenu.vue', 'utf8')
+const globalStyles = readFileSync('src/assets/index.css', 'utf8')
 import type { ContextMenuItem } from '@/composables/useContextMenu'
 
 const originalInnerWidth = Object.getOwnPropertyDescriptor(window, 'innerWidth')
 const originalInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight')
 const originalClientWidth = Object.getOwnPropertyDescriptor(document.documentElement, 'clientWidth')
 const originalClientHeight = Object.getOwnPropertyDescriptor(document.documentElement, 'clientHeight')
+const originalOffsetWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth')
+const originalOffsetHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')
 const originalGetBoundingClientRect = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'getBoundingClientRect')
 
 enableAutoUnmount(afterEach)
@@ -43,8 +49,43 @@ describe('ContextMenu', () => {
     if (originalClientHeight) {
       Object.defineProperty(document.documentElement, 'clientHeight', originalClientHeight)
     }
+    if (originalOffsetWidth) Object.defineProperty(HTMLElement.prototype, 'offsetWidth', originalOffsetWidth)
+    if (originalOffsetHeight) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', originalOffsetHeight)
     if (originalGetBoundingClientRect) {
       Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', originalGetBoundingClientRect)
+    }
+  })
+
+  it('scales on enter and leave despite the WKWebView compositing transform', async () => {
+    const style = document.createElement('style')
+    const compositingRule = globalStyles.slice(globalStyles.indexOf('html:not(.platform-linux) [class*="bg-"]'), globalStyles.indexOf('/* Ensure backdrop-blur'))
+    style.textContent = compositingRule + menuSource.split('<style scoped>')[1]!.split('</style>')[0]
+    document.head.appendChild(style)
+    const w = mount(ContextMenu, {
+      props: { items: makeItems(), x: 100, y: 100, visible: false },
+      attachTo: document.body,
+      global: { stubs: { Teleport: true, transition: false } },
+    })
+    try {
+      await w.setProps({ visible: true })
+      const panel = w.get('.context-menu-panel').element
+      expect(getComputedStyle(panel).transformOrigin).toBe('0px 0px')
+      expect(getComputedStyle(panel).scale).toBe('1')
+      for (const [active, phase] of [
+        ['context-menu-enter-active', 'context-menu-enter-from'],
+        ['context-menu-leave-active', 'context-menu-leave-to'],
+      ] as const) {
+        panel.classList.add(active, phase)
+        expect(getComputedStyle(panel).transformOrigin).toBe('0px 0px')
+        expect(getComputedStyle(panel).scale).toBe('0.8')
+        expect(getComputedStyle(panel).transform).toBe('translate3d(0, 0, 0)')
+        panel.classList.remove(active, phase)
+        expect(getComputedStyle(panel).transformOrigin).toBe('0px 0px')
+        expect(getComputedStyle(panel).scale).toBe('1')
+      }
+    } finally {
+      w.unmount()
+      style.remove()
     }
   })
 
@@ -191,12 +232,19 @@ describe('ContextMenu', () => {
       })),
     })
 
-    const w = mountMenu({ x: 1000, y: 100, visible: true })
+    Object.defineProperty(HTMLElement.prototype, 'offsetWidth', { configurable: true, get: () => 200 })
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', { configurable: true, get: () => 140 })
+
+    const w = mountMenu({ x: 1000, y: 750, visible: true })
 
     await nextTick()
     await nextTick()
 
-    expect((w.vm as any).adjustedX).toBe(850)
-    expect((w.vm as any).adjustedY).toBe(100)
+    expect((w.vm as any).adjustedX).toBe(800)
+    expect((w.vm as any).adjustedY).toBe(610)
+    expect(w.get('.context-menu-panel').attributes('style')).toContain('transform-origin: 200px 140px')
+    await w.setProps({ visible: false })
+    expect((w.vm as any).transformOrigin).toBe('200px 140px')
   })
+
 })
