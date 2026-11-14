@@ -6,6 +6,7 @@ import LyricsDrawer from './LyricsDrawer.vue'
 import { usePlayerStore } from '../stores/player'
 
 const api = vi.hoisted(() => ({ InspectRomanization: vi.fn(), RomanizeLyrics: vi.fn() }))
+const romanization = vi.hoisted(() => ({ enabled: true }))
 const player = vi.hoisted(() => ({
   lyrics: { content: '[00:00.00]你好 ^ Translation' },
   lyricsLoading: false,
@@ -18,7 +19,7 @@ const player = vi.hoisted(() => ({
 vi.mock('../../bindings/airmedy/internal/infra/wails', () => ({ LyricsService: api }))
 vi.mock('../stores/player', () => ({ usePlayerStore: () => reactive(player) }))
 vi.mock('../stores/romanization', () => ({
-  useRomanizationStore: () => ({ enabled: true, setEnabled: vi.fn(), getCached: () => undefined, cache: vi.fn() }),
+  useRomanizationStore: () => Object.assign(reactive(romanization), { setEnabled: vi.fn(), getCached: () => undefined, cache: vi.fn() }),
 }))
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (key: string) => key }) }))
 vi.mock('@wailsio/runtime', () => ({
@@ -41,11 +42,12 @@ describe('LyricsDrawer romanization', () => {
     store.lyricsLoading = false
     store.position = 0
     store.isLyricsOpen = true
+    reactive(romanization).enabled = true
     api.InspectRomanization.mockImplementation(() => Object.assign(Promise.resolve({ supported: true, mandarinDefault: true }), { cancel: vi.fn().mockResolvedValue(undefined) }))
     api.RomanizeLyrics.mockReturnValue(Object.assign(Promise.resolve([{ text: 'nǐ hǎo', status: 'converted' }]), { cancel: vi.fn().mockResolvedValue(undefined) }))
   })
 
-  afterEach(() => { vi.clearAllMocks() })
+  afterEach(() => { vi.clearAllMocks(); vi.restoreAllMocks(); vi.useRealTimers(); vi.unstubAllGlobals() })
 
   it('sweeps enhanced lyrics only while open and following playback', async () => {
     store.lyrics = { content: '[00:01]Người <00:02>hỏi<00:03>\n[00:04]Next' }
@@ -98,6 +100,44 @@ describe('LyricsDrawer romanization', () => {
     await flushPromises()
     expect(button.attributes('aria-label')).toBe('player.romanization')
     expect(button.find('.lucide-languages').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('remeasures after secondary text changes without interrupting browsing', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => window.setTimeout(() => callback(Date.now()), 16))
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => window.clearTimeout(id))
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(200)
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(300)
+    store.lyrics = { content: '[00:00]你好\n[00:10]你好' }
+    store.position = 10
+    api.RomanizeLyrics.mockReturnValue(Object.assign(Promise.resolve([
+      { text: 'nǐ hǎo', status: 'converted' }, { text: 'nǐ hǎo', status: 'converted' },
+    ]), { cancel: vi.fn().mockResolvedValue(undefined) }))
+    const wrapper = mount(LyricsDrawer, { global: { mocks: { $t: (key: string) => key } } })
+    const container = wrapper.get('.scrollbar-hide').element
+    const active = wrapper.findAll<HTMLElement>('.cursor-pointer')[1].element
+    vi.spyOn(active, 'offsetTop', 'get').mockImplementation(() => active.textContent?.includes('nǐ hǎo') ? 600 : 300)
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(container.scrollTop).toBe(600)
+
+    reactive(romanization).enabled = false
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(container.scrollTop).toBe(300)
+
+    reactive(romanization).enabled = true
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(container.scrollTop).toBe(600)
+
+    await wrapper.get('.scrollbar-hide').trigger('wheel')
+    container.scrollTop = 100
+    reactive(romanization).enabled = false
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(container.scrollTop).toBe(100)
     wrapper.unmount()
   })
 

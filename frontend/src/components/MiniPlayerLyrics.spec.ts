@@ -7,6 +7,41 @@ const originalClientHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototy
 const originalClientWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth')
 
 describe('MiniPlayerLyrics', () => {
+  it('remeasures after secondary text changes without interrupting browsing', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => window.setTimeout(() => callback(Date.now()), 16))
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => window.clearTimeout(id))
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(200)
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(300)
+    const wrapper = mount(MiniPlayerLyrics, {
+      props: { lyrics: '[00:00]First\n[00:10]Active', currentPosition: 10, secondary: ['First translation', 'Active translation'] },
+    })
+    const container = wrapper.get('[data-test="mini-synced-lyrics"]').element
+    const active = wrapper.findAll('[data-test="mini-lyric-line"]')[1].element
+    vi.spyOn(container, 'getBoundingClientRect').mockReturnValue({ top: 0 } as DOMRect)
+    vi.spyOn(active, 'getBoundingClientRect').mockImplementation(() => ({
+      top: (active.textContent?.includes('Active translation') ? 600 : 300) - container.scrollTop,
+    }) as DOMRect)
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(container.scrollTop).toBe(650)
+
+    await wrapper.setProps({ secondary: [] })
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(container.scrollTop).toBe(350)
+
+    await wrapper.setProps({ secondary: ['First translation', 'Active translation'] })
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(container.scrollTop).toBe(650)
+
+    await wrapper.get('[data-test="mini-synced-lyrics"]').trigger('wheel')
+    container.scrollTop = 100
+    await wrapper.setProps({ secondary: [] })
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(container.scrollTop).toBe(100)
+    wrapper.unmount()
+  })
+
   it('sweeps enhanced lyrics, preserves browsing, and resets on a new track', async () => {
     const wrapper = mount(MiniPlayerLyrics, {
       props: { lyrics: '[00:01]Người <00:02>hỏi<00:03>\n[00:04]Next', currentPosition: 1.5 },
@@ -26,6 +61,7 @@ describe('MiniPlayerLyrics', () => {
   })
 
   afterEach(() => {
+    vi.useRealTimers()
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
     if (originalClientHeight) Object.defineProperty(HTMLElement.prototype, 'clientHeight', originalClientHeight)

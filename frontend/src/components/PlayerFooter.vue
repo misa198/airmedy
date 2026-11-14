@@ -85,7 +85,7 @@ async function onSeekEnd() {
     <div class="flex items-center justify-start gap-3 w-1/4 min-w-[200px]">
       <div
         data-player-footer-interactive="true"
-        class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 shadow-lg ring-1 ring-foreground/10 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+        class="footer-artwork w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 shadow-lg ring-1 ring-foreground/10 cursor-pointer"
         @click="store.openTrackInfo(store.currentTrack)" @contextmenu.prevent="openArtworkContextMenu">
         <LazyImg v-if="store.artworkUrlSm" :src="store.artworkUrlSm" :alt="trackTitle"
           class="w-full h-full object-cover" />
@@ -188,3 +188,21 @@ async function onSeekEnd() {
   <TrackContextMenu ref="trackContextMenu" />
   <PlayerQuickSettingsMenu ref="quickSettingsMenu" />
 </template>
+
+<style scoped>
+.footer-artwork {
+  scale: 1;
+  transition: scale 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: scale;
+}
+
+@media (hover: hover) {
+  .footer-artwork:hover {
+    scale: 1.05;
+  }
+}
+
+.footer-artwork:active {
+  scale: 0.95;
+}
+</style>

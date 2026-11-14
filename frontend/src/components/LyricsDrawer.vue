@@ -90,6 +90,10 @@ function seekAndResume(time: number, index: number) {
   store.seek(time)
 }
 
+watch(secondary, () => {
+  if (!isBrowsing.value) scheduleScrollToActive(activeIndex.value)
+}, { flush: 'post' })
+
 // flush:'post' → DOM patched before measuring offsets.
 watch(activeIndex, (newIndex) => {
   const previousIndex = previousActiveIndex
