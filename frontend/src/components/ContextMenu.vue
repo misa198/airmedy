@@ -18,6 +18,7 @@ const menuEl = ref<HTMLElement | null>(null)
 const submenuEl = ref<HTMLElement | null>(null)
 const adjustedX = ref(props.x)
 const adjustedY = ref(props.y)
+const transformOrigin = ref('0px 0px')
 const activeSubmenuIndex = ref<number | null>(null)
 const submenuX = ref(0)
 const submenuY = ref(0)
@@ -46,11 +47,12 @@ watch(
       activeSubmenuIndex.value = null
       adjustedX.value = x
       adjustedY.value = y
+      transformOrigin.value = '0px 0px'
 
       await nextTick()
       if (!menuEl.value) return
       
-      const rect = menuEl.value.getBoundingClientRect()
+      const rect = { width: menuEl.value.offsetWidth, height: menuEl.value.offsetHeight }
       const vw = getViewportWidth()
       const vh = getViewportHeight()
       
@@ -65,6 +67,7 @@ watch(
       } else {
         adjustedY.value = Math.max(0, Math.min(y, vh - rect.height))
       }
+      transformOrigin.value = `${Math.max(0, Math.min(x - adjustedX.value, rect.width))}px ${Math.max(0, Math.min(y - adjustedY.value, rect.height))}px`
     }
   },
   { immediate: true }
@@ -118,15 +121,14 @@ function handleSubmenuItemClick(item: ContextMenuItem) {
 
 <template>
   <Teleport to="body">
-    <template v-if="visible">
-      <!-- Invisible overlay to catch outside clicks -->
-      <div class="fixed inset-0 z-[1005]" @click="emit('close')" @contextmenu.prevent="emit('close')" />
+    <div v-if="visible" class="fixed inset-0 z-[1005]" @click="emit('close')" @contextmenu.prevent="emit('close')" />
 
-      <!-- Menu panel -->
+    <Transition name="context-menu">
       <div
+        v-if="visible"
         ref="menuEl"
-        class="fixed z-[1006] min-w-[200px] rounded-2xl bg-glass-elevated backdrop-blur-xl ring-1 ring-border-glass shadow-2xl p-1.5 select-none transform-gpu isolate"
-        :style="{ left: adjustedX + 'px', top: adjustedY + 'px' }"
+        class="context-menu-panel fixed z-[1006] min-w-[200px] rounded-2xl bg-glass-elevated backdrop-blur-xl ring-1 ring-border-glass shadow-2xl p-1.5 select-none transform-gpu isolate"
+        :style="{ left: adjustedX + 'px', top: adjustedY + 'px', transformOrigin }"
       >
         <template v-for="(item, index) in items" :key="index">
           <div
@@ -155,9 +157,11 @@ function handleSubmenuItemClick(item: ContextMenuItem) {
             </template>
             </div>
 
+    </Transition>
+
             <!-- Submenu panel -->
             <div
-            v-if="activeSubmenuIndex !== null && items[activeSubmenuIndex]?.children?.length"
+            v-if="visible && activeSubmenuIndex !== null && items[activeSubmenuIndex]?.children?.length"
             ref="submenuEl"
             class="fixed z-[1007] min-w-[180px] max-h-64 overflow-y-auto rounded-2xl bg-glass-elevated backdrop-blur-xl ring-1 ring-border-glass shadow-2xl p-1.5 select-none transform-gpu isolate"
             :style="{ left: submenuX + 'px', top: submenuY + 'px' }"
@@ -181,6 +185,34 @@ function handleSubmenuItemClick(item: ContextMenuItem) {
           No playlists
         </div>
       </div>
-    </template>
   </Teleport>
 </template>
+
+<style scoped>
+.context-menu-panel {
+  scale: 1;
+}
+
+.context-menu-enter-active {
+  transition: opacity 0.16s ease-out, scale 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.context-menu-enter-from,
+.context-menu-leave-to {
+  opacity: 0;
+  /* The global WKWebView compositing rule owns transform on blurred surfaces. */
+  scale: 0.8;
+}
+
+.context-menu-leave-active {
+  transition: opacity 0.1s ease-in, scale 0.1s cubic-bezier(0.4, 0, 1, 1);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .context-menu-enter-active,
+  .context-menu-leave-active {
+    transition: none;
+  }
+}
+</style>

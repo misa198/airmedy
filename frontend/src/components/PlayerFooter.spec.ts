@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
+import { readFileSync } from 'node:fs'
 import { createTestingPinia } from '@pinia/testing'
 import PlayerFooter from './PlayerFooter.vue'
 import { usePlayerStore } from '../stores/player'
@@ -113,6 +114,29 @@ describe('PlayerFooter', () => {
   }
 
   const favoriteButton = (wrapper: ReturnType<typeof mountFooter>) => wrapper.get('button[aria-pressed]')
+
+  it('keeps artwork scale and its transition initialized across track changes', async () => {
+    const source = readFileSync('src/components/PlayerFooter.vue', 'utf8')
+    const style = document.createElement('style')
+    style.textContent = source.split('<style scoped>')[1]?.split('</style>')[0] ?? ''
+    document.head.appendChild(style)
+    const wrapper = mountFooter()
+    document.body.appendChild(wrapper.element)
+    try {
+      const artwork = wrapper.get('[data-player-footer-interactive="true"]')
+      for (const track of [null, new TrackDTO({ id: 't1', artwork_key: 'cover' })]) {
+        usePlayerStore().currentTrack = track
+        await wrapper.vm.$nextTick()
+        const computed = getComputedStyle(artwork.element)
+        expect(computed.scale).toBe('1')
+        expect(computed.transition).toBe('scale 0.3s cubic-bezier(0.4, 0, 0.2, 1)')
+        expect(computed.willChange).toBe('scale')
+      }
+    } finally {
+      wrapper.unmount()
+      style.remove()
+    }
+  })
 
   it('shows and hides the favorite button with the playback setting', async () => {
     const wrapper = mountFooter({}, false)

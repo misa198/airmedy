@@ -80,6 +80,10 @@ watch(syncedLines, () => {
   previousActiveIndex = -1
 })
 
+watch(() => props.secondary, () => {
+  if (!isBrowsing.value) scheduleScrollToActive(activeIndex.value)
+}, { flush: 'post' })
+
 watch(activeIndex, (index) => {
   const previousIndex = previousActiveIndex
   if (!isBrowsing.value) scheduleScrollToActive(index, previousIndex)
