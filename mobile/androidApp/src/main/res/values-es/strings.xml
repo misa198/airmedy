@@ -250,6 +250,7 @@
     <string name="theme_system">Sistema</string>
     <string name="theme_light">Claro</string>
     <string name="theme_dark">Oscuro</string>
+    <string name="theme_oled">OLED</string>
     <string name="navigate_back">Atrás</string>
     <string name="home_keep_listening">Seguir escuchando</string>
     <string name="home_most_played">Más reproducidas</string>

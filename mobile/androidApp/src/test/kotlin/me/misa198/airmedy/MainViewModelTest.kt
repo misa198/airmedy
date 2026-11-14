@@ -171,11 +171,11 @@ class MainViewModelTest {
         val viewModel = MainViewModel(store)
         activateState(viewModel)
 
-        viewModel.dispatch(AppIntent.SetThemeMode(ThemeMode.Dark))
+        viewModel.dispatch(AppIntent.SetThemeMode(ThemeMode.Oled))
         advanceUntilIdle()
 
-        assertEquals(listOf(ThemeMode.Dark), store.savedModes)
-        assertEquals(ThemeMode.Dark, viewModel.uiState.value.themeMode)
+        assertEquals(listOf(ThemeMode.Oled), store.savedModes)
+        assertEquals(ThemeMode.Oled, viewModel.uiState.value.themeMode)
     }
 
     @Test

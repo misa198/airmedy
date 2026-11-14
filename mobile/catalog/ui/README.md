@@ -133,7 +133,14 @@ Light/Dark, and `AppNavigationTest` covers the actual Lyrics info action.
 
 Composables use `LocalAirmedyColors.current` or `MaterialTheme`; feature code
 must not introduce raw `Color(...)` values. Supported modes are System, Light,
-and Dark. Primary remains rose; inactive controls use themed foreground rather
+Dark, and OLED. OLED persists as `oled` through `ThemePreferences`, uses light
+system-bar icons, and inherits Dark foreground/accent tokens.
+Its app and player base backgrounds are pure black; cards and glass use darker
+neutral surfaces inspired by desktop Black. System continues to follow Light/Dark.
+`ThemeModeTest`, `MainViewModelTest`, and `AirmedyThemeTest` cover restoration,
+selection persistence, and palette invariants on the host; `AppearanceContentTest`
+covers OLED selection and Compose/Material token propagation.
+Primary remains rose; inactive controls use themed foreground rather
 than an unrelated accent.
 
 Glass uses `liquidGlassBackground` or existing glass primitives and applies Haze
@@ -592,6 +599,9 @@ Bottom sheets may use `AirmedyBottomSheetStack`: only its top entry renders;
 popping removes that entry while the entry below retains its data. Find Lyrics
 uses it for a full-height, prefilled search sheet with leading input icons and
 placeholders (not separate labels), and a lyric-content-only preview sheet.
+The read-only duration field sizes to its displayed value or localized placeholder;
+the artist field takes the remaining row width. `FindLyricsContentTest` covers
+long placeholders and duration values at increased font scale.
 Selecting
 a candidate saves the Android provider cache. If that track is playing, the
 shell uses the selection for the current playback session only; later plays
