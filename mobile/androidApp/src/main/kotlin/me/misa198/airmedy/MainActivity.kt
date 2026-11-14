@@ -735,7 +735,7 @@ class MainActivity : ComponentActivity() {
             resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
         }
         ThemeMode.Light -> false
-        ThemeMode.Dark -> true
+        ThemeMode.Dark, ThemeMode.Oled -> true
     }
 }
 

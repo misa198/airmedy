@@ -60,7 +60,7 @@ private val LightColors = AirmedyColors(
     qualityDsdSurface = Color(0xFFD946EF),
 )
 
-private val DarkColors = AirmedyColors(
+internal val DarkColors = AirmedyColors(
     background = Color(0xFF18181B),
     playerBackdrop = Color(0xFF0A0A0A),
     card = Color(0xFF27272A),
@@ -83,6 +83,17 @@ private val DarkColors = AirmedyColors(
     qualityDsdSurface = Color(0xFFD946EF),
 )
 
+internal val OledColors = DarkColors.copy(
+    background = Color.Black,
+    playerBackdrop = Color.Black,
+    card = Color(0xFF191919),
+    glass = Color(0xFF191919).copy(alpha = 0.4f),
+    glassOpaque = Color(0xFF191919),
+    glassElevated = Color(0xFF2D2D2D).copy(alpha = 0.40f),
+    buttonSecondary = Color(0xFF2D2D2D),
+    textFieldClear = Color(0xFF2D2D2D),
+)
+
 val LocalAirmedyColors = staticCompositionLocalOf { LightColors }
 
 @Composable
@@ -93,9 +104,13 @@ fun AirmedyTheme(
     val darkTheme = when (themeMode) {
         ThemeMode.System -> isSystemInDarkTheme()
         ThemeMode.Light -> false
-        ThemeMode.Dark -> true
+        ThemeMode.Dark, ThemeMode.Oled -> true
     }
-    val colors = if (darkTheme) DarkColors else LightColors
+    val colors = when {
+        themeMode == ThemeMode.Oled -> OledColors
+        darkTheme -> DarkColors
+        else -> LightColors
+    }
     val colorScheme = if (darkTheme) {
         darkColorScheme(
             primary = colors.primary,

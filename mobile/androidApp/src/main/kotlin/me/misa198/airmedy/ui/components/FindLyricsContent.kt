@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.MaterialTheme
@@ -74,7 +76,7 @@ internal fun FindLyricsContent(
             })
             Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 FindLyricsField(stringResource(R.string.find_lyrics_artist), MaterialSymbols.Person, state.artist, { state.artist = it }, Modifier.weight(1f), enabled = !state.searching)
-                FindLyricsField(stringResource(R.string.find_lyrics_duration), MaterialSymbols.Schedule, duration, {}, Modifier.weight(0.42f), readOnly = true)
+                FindLyricsField(stringResource(R.string.find_lyrics_duration), MaterialSymbols.Schedule, duration, {}, Modifier.width(IntrinsicSize.Max), readOnly = true)
             }
             AirmedyPillButton(
                 label = stringResource(if (state.searching) R.string.find_lyrics_searching else R.string.find_lyrics_search),

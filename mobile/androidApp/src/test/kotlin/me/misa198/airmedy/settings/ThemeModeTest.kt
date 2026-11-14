@@ -7,7 +7,7 @@ class ThemeModeTest {
     @Test
     fun `uses system mode for missing or unknown stored values`() {
         assertEquals(ThemeMode.System, ThemeMode.fromStorage(null))
-        assertEquals(ThemeMode.System, ThemeMode.fromStorage("oled"))
+        assertEquals(ThemeMode.System, ThemeMode.fromStorage("unknown"))
     }
 
     @Test

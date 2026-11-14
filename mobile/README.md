@@ -74,6 +74,12 @@ resumes; granting it reconnects the saved QR route, while revoking it stops
 discovery, MQTT, and active sync work. Pairing and downloaded music are retained,
 so offline playback remains available. Android 12–16 need no new permission.
 
+## Appearance
+
+Appearance Settings offers System, Light, Dark, and OLED themes. OLED keeps
+Dark's foreground and accent colors, uses pure black app and player base
+backgrounds, and darkens card/glass surfaces. The selection persists locally.
+
 ## Fullscreen player layouts
 
 Playback Settings offers Solid and Living artwork (default) backgrounds.

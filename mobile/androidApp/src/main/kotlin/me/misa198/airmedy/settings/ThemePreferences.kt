@@ -17,6 +17,7 @@ enum class ThemeMode(val storageValue: String, val labelRes: Int) {
     System("system", me.misa198.airmedy.R.string.theme_system),
     Light("light", me.misa198.airmedy.R.string.theme_light),
     Dark("dark", me.misa198.airmedy.R.string.theme_dark),
+    Oled("oled", me.misa198.airmedy.R.string.theme_oled),
     ;
 
     companion object {

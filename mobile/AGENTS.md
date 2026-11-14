@@ -68,9 +68,10 @@ intent using native Android Compose.
 - `androidApp/ui/theme/AirmedyTheme.kt` and `AirmedyColors` are the single
   source of truth for app colours. Feature composables must consume these
   tokens rather than introducing raw `Color(...)` values.
-- The supported modes are `System`, `Light`, and `Dark`; persist the choice
-  through `ThemePreferences`. Do not add OLED/black or dynamic artwork colours
-  unless the task explicitly asks for them.
+- The supported modes are `System`, `Light`, `Dark`, and `Oled`; persist the choice
+  through `ThemePreferences`. OLED inherits Dark foregrounds with pure black
+  backgrounds and darker surfaces. Do not add dynamic artwork colours unless
+  the task explicitly asks for them.
 - Primary is always `#E11D48`. Selected controls use it for foreground colour,
   while inactive controls retain the normal theme foreground rather than
   switching to an unrelated accent.
