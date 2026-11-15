@@ -10,6 +10,8 @@ export function useGpuLyrics(
   let disposed = false
   let frame: number | undefined
   let needsLayout = true
+  let animateLayout = false
+  let layoutScrollDelta = 0
   let themeObserver: MutationObserver | undefined
   let motion: MediaQueryList | undefined
   let element: HTMLCanvasElement | null = null
@@ -21,7 +23,9 @@ export function useGpuLyrics(
       if (!renderer || !viewport.value?.clientWidth || !viewport.value.clientHeight) return
       try {
         if (needsLayout) {
-          renderer.resize(rows.value)
+          renderer.resize(rows.value, animateLayout, layoutScrollDelta)
+          layoutScrollDelta = 0
+          animateLayout = false
           needsLayout = false
         }
         const animating = renderer.render({ ...state.value, reducedMotion: motion?.matches ?? false }, now)
@@ -33,10 +37,14 @@ export function useGpuLyrics(
     })
   }
 
-  function layout() {
+  function layout(animate = false, scrollDelta = 0) {
+    layoutScrollDelta = animate ? layoutScrollDelta + scrollDelta : 0
+    animateLayout = animate
     needsLayout = true
     draw()
   }
+
+  function refreshLayout() { layout() }
 
   function release() {
     if (frame !== undefined) cancelAnimationFrame(frame)
@@ -63,9 +71,9 @@ export function useGpuLyrics(
     element = canvas.value
     motion = window.matchMedia?.('(prefers-reduced-motion: reduce)')
     motion?.addEventListener('change', draw)
-    themeObserver = new MutationObserver(layout)
+    themeObserver = new MutationObserver(refreshLayout)
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'style', 'lang'] })
-    document.fonts?.addEventListener('loadingdone', layout)
+    document.fonts?.addEventListener('loadingdone', refreshLayout)
     try {
       const { createGpuLyricsRenderer } = await import('../lib/gpuLyricsRenderer')
       await document.fonts?.ready
@@ -84,7 +92,7 @@ export function useGpuLyrics(
     disposed = true
     element?.removeEventListener('webglcontextlost', contextLost)
     motion?.removeEventListener('change', draw)
-    document.fonts?.removeEventListener('loadingdone', layout)
+    document.fonts?.removeEventListener('loadingdone', refreshLayout)
     themeObserver?.disconnect()
     release()
   })

@@ -449,9 +449,19 @@ so another lyric surface can render it on its first frame; each mounted renderer
 still cancels on input change, disabling and unmount, and rejects stale responses. Converted lines
 replace bilingual secondary text; unsupported/failed lines retain bilingual.
 While conversion is pending or fails, existing text stays visible. The primary
-line arrays remain unchanged, preserving browse mode. Only auto-follow is
-repositioned after secondary text changes. Fullscreen places its icon beside the
-lyrics/queue pill via a toolbar Teleport target; the mini player places it beside
+line arrays remain unchanged, preserving browse mode. In fullscreen, the drawer,
+and the floating mini player, secondary text changes during auto-follow preserve
+the active primary line's viewport position before the next paint. GPU row placement
+uses the same scroll compensation, so
+the active line stays fixed throughout the animation rather than scrolling away
+and returning. The drawer and mini player use `useLyricsLayoutMotion` to animate
+surrounding DOM rows relative to the pinned active line; interrupted transitions
+start from their current visual positions, and animations are canceled on unmount.
+Manual browsing does not trigger active-line compensation.
+Secondary layout changes animate row placement over 320 ms, matching Android,
+without resetting browse state or the GPU active-line appearance; reduced motion
+skips placement animation. Initial cached content is positioned without animation.
+Fullscreen places its icon beside the lyrics/queue pill via a toolbar Teleport target; the mini player places it beside
 its action pill while lyrics are open, and the drawer places an icon beside its
 Close action; its enabled icon uses the primary color.
 

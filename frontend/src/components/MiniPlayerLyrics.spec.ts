@@ -7,7 +7,7 @@ const originalClientHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototy
 const originalClientWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth')
 
 describe('MiniPlayerLyrics', () => {
-  it('remeasures after secondary text changes without interrupting browsing', async () => {
+  it('pins the active line before painting secondary changes and preserves browsing', async () => {
     vi.useFakeTimers()
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => window.setTimeout(() => callback(Date.now()), 16))
     vi.stubGlobal('cancelAnimationFrame', (id: number) => window.clearTimeout(id))
@@ -22,17 +22,22 @@ describe('MiniPlayerLyrics', () => {
     vi.spyOn(active, 'getBoundingClientRect').mockImplementation(() => ({
       top: (active.textContent?.includes('Active translation') ? 600 : 300) - container.scrollTop,
     }) as DOMRect)
+    vi.spyOn(active, 'clientHeight', 'get').mockImplementation(() => active.textContent?.includes('Active translation') ? 80 : 40)
     await nextTick()
     await vi.advanceTimersByTimeAsync(1000)
-    expect(container.scrollTop).toBe(650)
+    expect(container.scrollTop).toBe(590)
 
     await wrapper.setProps({ secondary: [] })
+    await nextTick()
+    expect(container.scrollTop).toBe(290)
     await vi.advanceTimersByTimeAsync(1000)
-    expect(container.scrollTop).toBe(350)
+    expect(container.scrollTop).toBe(290)
 
     await wrapper.setProps({ secondary: ['First translation', 'Active translation'] })
+    await nextTick()
+    expect(container.scrollTop).toBe(590)
     await vi.advanceTimersByTimeAsync(1000)
-    expect(container.scrollTop).toBe(650)
+    expect(container.scrollTop).toBe(590)
 
     await wrapper.get('[data-test="mini-synced-lyrics"]').trigger('wheel')
     container.scrollTop = 100

@@ -98,6 +98,42 @@ describe('SyncedLyricsView', () => {
     expect(wrapper.find('[data-test="lyric-line"]').exists()).toBe(true)
   })
 
+  it('pins the active primary line before painting when romanization changes row heights', async () => {
+    const wrapper = create()
+    const viewport = wrapper.get('.overflow-y-auto').element as HTMLElement
+    Object.defineProperties(viewport, { clientHeight: { value: 400 }, clientWidth: { value: 600 } })
+    const row = wrapper.findAll('[data-test="lyric-line"]')[1].element
+    Object.defineProperties(row, {
+      offsetTop: { get: () => row.querySelector('[data-lyric-secondary]') ? 1500 : 500 },
+      clientHeight: { value: 80 },
+    })
+    let requestedScrollTop = 0
+    Object.defineProperty(viewport, 'scrollTop', {
+      get: () => Math.min(requestedScrollTop, row.querySelector('[data-lyric-secondary]') ? 2000 : 800),
+      set: value => { requestedScrollTop = value },
+    })
+    await wrapper.setProps({ secondary: ['First romanized', 'Active romanized'] })
+    await nextTick()
+    const pending = [...frames.values()]
+    frames.clear()
+    pending.forEach(callback => callback(0))
+    expect(viewport.scrollTop).toBe(1412)
+    const activeTop = () => (row as HTMLElement).offsetTop - viewport.scrollTop
+    const originalTop = activeTop()
+
+    await wrapper.setProps({ secondary: [] })
+    await nextTick()
+    expect(activeTop()).toBe(originalTop)
+    expect(gpu().layout).toHaveBeenLastCalledWith(true, -1000)
+    expect(frames.size).toBe(0)
+
+    await wrapper.setProps({ secondary: ['First romanized', 'Active romanized'] })
+    await nextTick()
+    expect(activeTop()).toBe(originalTop)
+    expect(gpu().layout).toHaveBeenLastCalledWith(true, 1000)
+    expect(frames.size).toBe(0)
+  })
+
   it('waits for layout then places the current lyric at the immersive anchor', async () => {
     let width = 0
     let resize!: ResizeObserverCallback
@@ -121,5 +157,18 @@ describe('SyncedLyricsView', () => {
     for (const callback of [...frames.values()]) callback(100)
     expect(viewport.scrollTop).toBe(412)
     expect(gpu().layout).toHaveBeenCalled()
+    frames.clear()
+    await wrapper.setProps({ secondary: ['First romanized', 'Active romanized'] })
+    await nextTick()
+    expect(gpu().layout).toHaveBeenLastCalledWith(true, 0)
+    await nextTick()
+    for (const callback of [...frames.values()]) callback(200)
+    frames.clear()
+    await wrapper.get('.overflow-y-auto').trigger('wheel')
+    viewport.scrollTop = 1200
+    await wrapper.setProps({ secondary: [] })
+    await nextTick()
+    expect(frames.size).toBe(0)
+    expect(viewport.scrollTop).toBe(1200)
   })
 })

@@ -55,7 +55,7 @@ describe('LyricsDrawer romanization', () => {
     const wrapper = mount(LyricsDrawer, { global: { mocks: { $t: (key: string) => key } } })
     await flushPromises()
     expect(wrapper.get('.karaoke-word').attributes('style')).toContain('50%')
-    expect(wrapper.get('.cursor-pointer').attributes('style')).toContain('transition: none')
+    expect(wrapper.get('.cursor-pointer').attributes('style')).toBeUndefined()
     store.isLyricsOpen = false
     await wrapper.vm.$nextTick()
     expect(wrapper.find('.karaoke-word').exists()).toBe(false)
@@ -103,7 +103,7 @@ describe('LyricsDrawer romanization', () => {
     wrapper.unmount()
   })
 
-  it('remeasures after secondary text changes without interrupting browsing', async () => {
+  it('pins the active line before painting secondary changes and preserves browsing', async () => {
     vi.useFakeTimers()
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => window.setTimeout(() => callback(Date.now()), 16))
     vi.stubGlobal('cancelAnimationFrame', (id: number) => window.clearTimeout(id))
@@ -118,19 +118,23 @@ describe('LyricsDrawer romanization', () => {
     const container = wrapper.get('.scrollbar-hide').element
     const active = wrapper.findAll<HTMLElement>('.cursor-pointer')[1].element
     vi.spyOn(active, 'offsetTop', 'get').mockImplementation(() => active.textContent?.includes('nǐ hǎo') ? 600 : 300)
+    vi.spyOn(active, 'clientHeight', 'get').mockImplementation(() => active.textContent?.includes('nǐ hǎo') ? 80 : 40)
+    vi.spyOn(active, 'getBoundingClientRect').mockImplementation(() => ({ top: active.offsetTop - container.scrollTop }) as DOMRect)
     await flushPromises()
     await vi.advanceTimersByTimeAsync(1000)
-    expect(container.scrollTop).toBe(600)
+    expect(container.scrollTop).toBe(540)
 
     reactive(romanization).enabled = false
     await flushPromises()
+    expect(container.scrollTop).toBe(240)
     await vi.advanceTimersByTimeAsync(1000)
-    expect(container.scrollTop).toBe(300)
+    expect(container.scrollTop).toBe(240)
 
     reactive(romanization).enabled = true
     await flushPromises()
+    expect(container.scrollTop).toBe(540)
     await vi.advanceTimersByTimeAsync(1000)
-    expect(container.scrollTop).toBe(600)
+    expect(container.scrollTop).toBe(540)
 
     await wrapper.get('.scrollbar-hide').trigger('wheel')
     container.scrollTop = 100
