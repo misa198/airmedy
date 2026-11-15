@@ -23,6 +23,85 @@ vi.mock('pixi.js', async importOriginal => {
 afterEach(() => { vi.restoreAllMocks(); vi.clearAllMocks() })
 
 describe('enhanced lyric rendering', () => {
+  it('animates secondary layout changes without restarting the active appearance', async () => {
+    vi.spyOn(layout, 'measureLyricFragments').mockReturnValue([])
+    const viewport = document.createElement('div')
+    viewport.style.color = 'rgb(240, 240, 240)'
+    Object.defineProperty(viewport, 'clientHeight', { value: 800 })
+    const element = document.createElement('div')
+    let top = 100
+    vi.spyOn(element, 'getBoundingClientRect').mockImplementation(() => ({ top, left: 0, height: 60 }) as DOMRect)
+    const renderer = await createGpuLyricsRenderer(document.createElement('canvas'), viewport)
+    const state: GpuLyricsState = {
+      lines: [{ time: 0, text: '你好' }], active: 0, browsing: false, immersive: true,
+      hovered: -1, position: 0, reducedMotion: false, lyricsGlow: false,
+    }
+    renderer.resize([element])
+    renderer.render(state, 0)
+    renderer.render(state, 1000)
+    const stage = gpu.render.mock.lastCall![0] as Container
+    const originalY = stage.children[0].y
+    top = 220
+    renderer.resize([element], true)
+    expect(renderer.render(state, 1100)).toBe(true)
+    expect(stage.children[0].y).toBeCloseTo(originalY)
+    expect(stage.children[0].scale.x).toBeCloseTo(1.06)
+    renderer.render(state, 1260)
+    expect(stage.children[0].y).toBeGreaterThan(originalY)
+    expect(stage.children[0].y).toBeLessThan(originalY + 120)
+    const interruptedY = stage.children[0].y
+    top = 100
+    renderer.resize([element], true)
+    renderer.render(state, 1260)
+    expect(stage.children[0].y).toBeCloseTo(interruptedY)
+    renderer.render(state, 1580)
+    expect(stage.children[0].y).toBeCloseTo(originalY)
+    top = 220
+    renderer.resize([element], true)
+    expect(renderer.render({ ...state, reducedMotion: true }, 1600)).toBe(false)
+    expect(stage.children[0].y).toBeCloseTo(originalY + 120)
+    renderer.destroy()
+  })
+
+  it('keeps the active GPU row fixed throughout a compensated layout change', async () => {
+    vi.spyOn(layout, 'measureLyricFragments').mockReturnValue([])
+    const viewport = document.createElement('div')
+    viewport.style.color = 'rgb(240, 240, 240)'
+    Object.defineProperty(viewport, 'clientHeight', { value: 800 })
+    const elements = [document.createElement('div'), document.createElement('div')]
+    let tops = [100, 300]
+    let height = 120
+    elements.forEach((element, index) => {
+      const primary = document.createElement('div')
+      primary.setAttribute('data-lyric-primary', '')
+      element.append(primary)
+      vi.spyOn(primary, 'getBoundingClientRect').mockImplementation(() => ({ top: tops[index] - viewport.scrollTop, height: 40 }) as DOMRect)
+      vi.spyOn(element, 'getBoundingClientRect').mockImplementation(() => ({ top: tops[index] - viewport.scrollTop, left: 0, height }) as DOMRect)
+    })
+    const renderer = await createGpuLyricsRenderer(document.createElement('canvas'), viewport)
+    const state: GpuLyricsState = {
+      lines: [{ time: 0, text: '你好' }, { time: 10, text: '世界' }], active: 1, browsing: false,
+      immersive: true, hovered: -1, position: 10, reducedMotion: false, lyricsGlow: false,
+    }
+    viewport.scrollTop = 200
+    renderer.resize(elements)
+    renderer.render(state, 0)
+    renderer.render(state, 1000)
+    const stage = gpu.render.mock.lastCall![0] as Container
+    const activeY = stage.children[1].y
+    const previousY = stage.children[0].y
+    tops = [80, 200]
+    height = 60
+    viewport.scrollTop = 100
+    renderer.resize(elements, true, -100)
+    for (const now of [1100, 1260, 1420]) {
+      renderer.render(state, now)
+      expect(stage.children[1].y).toBeCloseTo(activeY)
+    }
+    expect(stage.children[0].y).not.toBe(previousY)
+    renderer.destroy()
+  })
+
   it('keeps shaped word fragments still while the sung mask and glow advance', async () => {
     vi.spyOn(layout, 'measureLyricFragments').mockReturnValue([
       { text: 'going ', x: 0, y: 0, width: 60, height: 48, fontFamily: 'Arial', fontSize: 40, fontWeight: '600', secondary: false, word: 0 },

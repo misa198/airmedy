@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, toRef, watch } from 'vue'
 import { useLyrics } from '@/composables/useLyrics'
-import { lyricsMotionClasses, useLyricsScrollMotion } from '@/composables/useLyricsScrollMotion'
+import { lyricsMotionClasses, lyricsPlacementMotionClasses, useLyricsScrollMotion } from '@/composables/useLyricsScrollMotion'
+import { useLyricsLayoutMotion } from '../composables/useLyricsLayoutMotion'
 import KaraokeText from './KaraokeText.vue'
 
 const props = defineProps<{
@@ -61,8 +62,15 @@ function scheduleScrollToActive(index: number, previousIndex = previousActiveInd
   })
 }
 
+function stopFollowing() {
+  stopScrollAnimation()
+  if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame)
+  scrollFrame = undefined
+}
+
 function enterBrowseMode() {
   isBrowsing.value = true
+  stopFollowing()
 }
 
 function seekAndResume(time: number, index: number) {
@@ -80,9 +88,11 @@ watch(syncedLines, () => {
   previousActiveIndex = -1
 })
 
-watch(() => props.secondary, () => {
-  if (!isBrowsing.value) scheduleScrollToActive(activeIndex.value)
-}, { flush: 'post' })
+useLyricsLayoutMotion({
+  secondary: () => props.secondary, viewport: scrollContainer, rows: lineRefs, activeIndex,
+  following: () => hasPositionedLine && !isBrowsing.value,
+  stop: stopFollowing,
+})
 
 watch(activeIndex, (index) => {
   const previousIndex = previousActiveIndex
@@ -121,7 +131,7 @@ onUnmounted(() => {
     </div>
 
     <div v-else-if="isSynced" ref="scrollContainer" data-test="mini-synced-lyrics"
-      class="h-full overflow-y-auto px-4 py-6 scrollbar-hide" @wheel.passive="enterBrowseMode"
+      class="h-full overflow-y-auto px-4 py-6 scrollbar-hide [overflow-anchor:none]" @wheel.passive="enterBrowseMode"
       @pointerdown="enterBrowseMode">
       <div class="space-y-5">
         <button v-for="(line, index) in syncedLines" :key="`${line.time}-${index}`" ref="lineRefs" type="button"
@@ -147,14 +157,14 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div v-else data-test="mini-plain-lyrics" class="h-full overflow-y-auto px-4 py-6 scrollbar-hide">
-      <div class="space-y-2 text-sm leading-relaxed">
+    <div v-else data-test="mini-plain-lyrics" class="h-full overflow-y-auto px-4 py-6 scrollbar-hide [overflow-anchor:none]">
+      <TransitionGroup tag="div" :move-class="lyricsPlacementMotionClasses" class="space-y-2 text-sm leading-relaxed">
         <div v-for="(line, index) in plainLines" :key="index" data-test="mini-plain-lyric-line"
           class="text-foreground">
           <p>{{ line.primary }}</p>
           <p v-if="props.secondary?.[index] ?? line.secondary" class="mt-0.5 text-xs text-[color:var(--text-muted)]">{{ props.secondary?.[index] ?? line.secondary }}</p>
         </div>
-      </div>
+      </TransitionGroup>
     </div>
   </div>
 </template>

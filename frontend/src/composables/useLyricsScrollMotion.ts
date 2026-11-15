@@ -3,6 +3,8 @@ import { onUnmounted } from 'vue'
 export const lyricsMotionDurationClasses = 'duration-[230ms] ease-[cubic-bezier(0.4,0,0.2,1)]'
 export const lyricsMotionClasses = 'transition-[color,opacity] duration-[230ms] ease-[cubic-bezier(0.4,0,0.2,1)]'
 
+export const lyricsPlacementMotionClasses = 'transition-[color,opacity,transform] duration-[320ms] ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none'
+
 export const fullscreenLyricsMotionDuration = 320
 
 export function lyricsMotionProgress(progress: number) {

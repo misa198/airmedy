@@ -43,7 +43,7 @@ export async function createGpuLyricsRenderer(canvas: HTMLCanvasElement, viewpor
   const maskTexture = new Texture({ source: new BufferImageSource({ resource: pixels, width: 256, height: 1 }) })
   const stage = new Container()
   const rows = new Map<number, Row>()
-  let layout: { element: HTMLElement; top: number; left: number; height: number }[] = []
+  let layout: { element: HTMLElement; top: number; left: number; height: number; pivot: number; currentTop: number; fromTop: number; started?: number }[] = []
 
   function removeRow(index: number) {
     const row = rows.get(index)!
@@ -57,17 +57,29 @@ export async function createGpuLyricsRenderer(canvas: HTMLCanvasElement, viewpor
     rows.delete(index)
   }
 
-  function resize(elements: HTMLElement[]) {
+  function resize(elements: HTMLElement[], animate = false, scrollDelta = 0) {
+    const previousLayout = layout
+    const appearances = new Map([...rows].map(([index, row]) => [index, row.current]))
     for (const index of rows.keys()) removeRow(index)
     const origin = viewport.getBoundingClientRect()
-    layout = elements.map(element => {
+    layout = elements.map((element, index) => {
       const rect = element.getBoundingClientRect()
-      return { element, top: rect.top - origin.top + viewport.scrollTop, left: rect.left - origin.left, height: rect.height }
+      const top = rect.top - origin.top + viewport.scrollTop
+      const primary = element.querySelector('[data-lyric-primary]')?.getBoundingClientRect()
+      const pivot = primary ? primary.top - rect.top + primary.height / 2 : rect.height / 2
+      const previous = previousLayout[index]
+      const fromTop = animate && previous?.element === element ? previous.currentTop + scrollDelta : top
+      return { element, top, left: rect.left - origin.left, height: rect.height, pivot, currentTop: fromTop, fromTop }
     })
+    if (animate) {
+      for (const [index, appearance] of appearances) {
+        if (layout[index]?.element === previousLayout[index]?.element) createRow(index, appearance, appearance)
+      }
+    }
     renderer.resize(Math.max(1, viewport.clientWidth), Math.max(1, viewport.clientHeight), window.devicePixelRatio || 1)
   }
 
-  function createRow(index: number, appearance: Appearance) {
+  function createRow(index: number, appearance: Appearance, initial = initialLyricAppearance(appearance)) {
     const container = new Container()
     const blur = new BlurFilter({ strength: 0, quality: 4, resolution: renderer.resolution })
     const glowLayer = new Container()
@@ -117,7 +129,6 @@ export async function createGpuLyricsRenderer(canvas: HTMLCanvasElement, viewpor
       runs.push(run)
     }
     stage.addChild(container)
-    const initial = initialLyricAppearance(appearance)
     const row: Row = { container, blur, glowLayer, glowBlur, runs, current: initial, from: initial, target: initial, started: 0 }
     rows.set(index, row)
     return row
@@ -127,7 +138,12 @@ export async function createGpuLyricsRenderer(canvas: HTMLCanvasElement, viewpor
     const color = new Color(getComputedStyle(viewport).color).toNumber()
     let animating = false
     layout.forEach((item, index) => {
-      const y = item.top - viewport.scrollTop
+      item.started ??= now
+      const placementProgress = state.reducedMotion ? 1 : Math.min(1, (now - item.started) / fullscreenLyricsMotionDuration)
+      item.currentTop = item.fromTop === item.top || placementProgress === 1 ? item.top
+        : item.fromTop + (item.top - item.fromTop) * lyricsMotionProgress(placementProgress)
+      if (placementProgress < 1 && item.fromTop !== item.top) animating = true
+      const y = item.currentTop - viewport.scrollTop
       // Keep textures only around the viewport; a long LRC must not fill GPU memory.
       if (y + item.height < -100 || y > viewport.clientHeight + 100) {
         if (rows.has(index)) removeRow(index)
@@ -147,8 +163,8 @@ export async function createGpuLyricsRenderer(canvas: HTMLCanvasElement, viewpor
       row.current = { ...target }
       for (const key of keys) row.current[key] = row.from[key] + (target[key] - row.from[key]) * eased
       if (progress < 1 && keys.some(key => row.from[key] !== target[key])) animating = true
-      row.container.position.set(item.left, y + item.height / 2)
-      row.container.pivot.y = item.height / 2
+      row.container.position.set(item.left, y + item.pivot)
+      row.container.pivot.y = item.pivot
       row.container.scale.set(row.current.scale)
       row.container.alpha = row.current.alpha
       row.blur.strength = row.current.blur

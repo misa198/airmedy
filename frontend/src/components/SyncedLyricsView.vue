@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { LyricLine } from '../composables/useLyrics'
-import { fullscreenLyricsMotionDuration, useLyricsScrollMotion } from '../composables/useLyricsScrollMotion'
+import { fullscreenLyricsMotionDuration, lyricsPlacementMotionClasses, useLyricsScrollMotion } from '../composables/useLyricsScrollMotion'
 import KaraokeText from './KaraokeText.vue'
 import { useGpuLyrics } from '../composables/useGpuLyrics'
 import { lyricAppearance } from '../lib/lyricsGpuLayout'
@@ -57,9 +57,24 @@ watch(() => props.lines, () => {
 })
 
 watch(() => props.secondary, () => {
-  layout()
-  if (!isBrowsing.value) scheduleScrollToActive(activeIndex.value)
-}, { flush: 'post' })
+  const container = scrollContainer.value
+  const active = lineRefs.value[activeIndex.value]
+  const following = hasPositionedInitialLine && !isBrowsing.value && container && active
+  const scrollTop = container?.scrollTop ?? 0
+  const activeTop = active ? active.offsetTop - scrollTop : 0
+  if (following) {
+    stopScrollAnimation()
+    if (scrollFrame !== undefined) cancelAnimationFrame(scrollFrame)
+    scrollFrame = undefined
+  }
+  nextTick(() => {
+    if (disposed) return
+    // Compensate before paint, including any browser scroll clamping as rows shrink.
+    if (following && !isBrowsing.value) container.scrollTop = active.offsetTop - activeTop
+    const scrollDelta = following && !isBrowsing.value ? container.scrollTop - scrollTop : 0
+    layout(hasPositionedInitialLine, scrollDelta)
+  })
+})
 
 watch([() => props.lines, () => props.immersive], () => nextTick(layout), { flush: 'post' })
 
@@ -147,7 +162,7 @@ onUnmounted(() => {
 <template>
   <div class="relative h-full min-h-0 text-foreground">
   <div ref="scrollContainer" class="h-full overflow-y-auto py-48 scrollbar-hide text-foreground [overflow-anchor:none]" :class="props.immersive ? 'pl-8 pr-16' : 'px-8'" @scroll.passive="draw" @wheel.passive="enterBrowseMode" @pointerdown="enterBrowseMode">
-    <div class="max-w-2xl mx-auto space-y-5">
+    <TransitionGroup tag="div" :move-class="gpuReady || !isBrowsing ? 'lyric-gpu-move' : lyricsPlacementMotionClasses" class="max-w-2xl mx-auto space-y-5">
       <div
         v-for="(line, index) in lines"
         :key="index"
@@ -169,11 +184,11 @@ onUnmounted(() => {
           :class="props.immersive ? 'text-[40px]' : 'text-4xl'"
           :style="domAppearance(index)"
         >
-          <div><KaraokeText :line="line" :position="!gpuReady && !isBrowsing && index === activeIndex ? currentPosition : undefined" /></div>
+          <div data-lyric-primary><KaraokeText :line="line" :position="!gpuReady && !isBrowsing && index === activeIndex ? currentPosition : undefined" /></div>
           <div v-if="secondary?.[index] || line.secondary" data-lyric-secondary class="text-lg md:text-2xl font-bold mt-1 opacity-80">{{ secondary?.[index] || line.secondary }}</div>
         </div>
       </div>
-    </div>
+    </TransitionGroup>
   </div>
   <canvas ref="canvas" aria-hidden="true" class="absolute inset-0 pointer-events-none" :style="{ visibility: gpuReady ? 'visible' : 'hidden' }" />
   </div>
