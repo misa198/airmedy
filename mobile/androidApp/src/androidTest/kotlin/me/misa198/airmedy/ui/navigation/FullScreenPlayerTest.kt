@@ -12,7 +12,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalView
+import androidx.activity.compose.LocalActivity
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsSelected
@@ -45,7 +45,8 @@ import org.junit.Test
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import android.view.View
+import android.view.Window
+import android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
 import androidx.test.platform.app.InstrumentationRegistry
 import me.misa198.airmedy.R
 
@@ -54,12 +55,13 @@ class FullScreenPlayerTest {
     val composeTestRule = createComposeRule()
 
     @Test
-    fun lyricsPanelKeepsScreenOnOnlyWhileEnabledAndVisible() {
+    fun lyricsPanelKeepsScreenOnOnlyWhileEnabledVisibleAndPlaying() {
         var enabled by mutableStateOf(false)
         var visible by mutableStateOf(true)
-        lateinit var view: View
+        var playing by mutableStateOf(true)
+        lateinit var window: Window
         composeTestRule.setContent {
-            view = LocalView.current
+            window = checkNotNull(LocalActivity.current).window
             AirmedyTheme(themeMode = ThemeMode.Dark) {
                 FullScreenPlayer(
                     modifier = Modifier.width(400.dp).height(900.dp),
@@ -67,7 +69,8 @@ class FullScreenPlayerTest {
                     dragProgress = 0f,
                     isDragging = false,
                     openingFromMiniPlayerSwipe = false,
-                    playbackState = PlaybackState.Playing(item, 0L, 120_000L),
+                    playbackState = if (playing) PlaybackState.Playing(item, 0L, 120_000L)
+                        else PlaybackState.Paused(item, 0L, 120_000L),
                     keepScreenOnForLyrics = enabled,
                     volume = 0.5f,
                     onSeek = {}, onVolumeChange = {}, onPrevious = {}, onPlayPause = {}, onNext = {},
@@ -78,18 +81,22 @@ class FullScreenPlayerTest {
 
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         composeTestRule.onNodeWithContentDescription(context.getString(R.string.player_lyrics)).performClick()
-        composeTestRule.runOnIdle { assertFalse(view.keepScreenOn) }
+        composeTestRule.runOnIdle { assertFalse(window.attributes.flags and FLAG_KEEP_SCREEN_ON != 0) }
         composeTestRule.runOnIdle { enabled = true }
-        composeTestRule.runOnIdle { assertTrue(view.keepScreenOn) }
+        composeTestRule.runOnIdle { assertTrue(window.attributes.flags and FLAG_KEEP_SCREEN_ON != 0) }
+        composeTestRule.runOnIdle { playing = false }
+        composeTestRule.runOnIdle { assertFalse(window.attributes.flags and FLAG_KEEP_SCREEN_ON != 0) }
+        composeTestRule.runOnIdle { playing = true }
+        composeTestRule.runOnIdle { assertTrue(window.attributes.flags and FLAG_KEEP_SCREEN_ON != 0) }
         composeTestRule.onNodeWithContentDescription(context.getString(R.string.player_queue)).performClick()
-        composeTestRule.runOnIdle { assertFalse(view.keepScreenOn) }
+        composeTestRule.runOnIdle { assertFalse(window.attributes.flags and FLAG_KEEP_SCREEN_ON != 0) }
         composeTestRule.onNodeWithContentDescription(context.getString(R.string.player_lyrics)).performClick()
-        composeTestRule.runOnIdle { assertTrue(view.keepScreenOn) }
+        composeTestRule.runOnIdle { assertTrue(window.attributes.flags and FLAG_KEEP_SCREEN_ON != 0) }
         composeTestRule.runOnIdle { enabled = false }
-        composeTestRule.runOnIdle { assertFalse(view.keepScreenOn) }
+        composeTestRule.runOnIdle { assertFalse(window.attributes.flags and FLAG_KEEP_SCREEN_ON != 0) }
         composeTestRule.runOnIdle { enabled = true }
         composeTestRule.runOnIdle { visible = false }
-        composeTestRule.runOnIdle { assertFalse(view.keepScreenOn) }
+        composeTestRule.runOnIdle { assertFalse(window.attributes.flags and FLAG_KEEP_SCREEN_ON != 0) }
     }
 
     @Test

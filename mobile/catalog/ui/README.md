@@ -525,9 +525,13 @@ available sample-rate, bit-depth, and codec values. The dialog is capped at
 than stretching across the window. `FullScreenPlayerTest` covers this width cap,
 the theme variants, details and dismissal.
 Playback settings also persists an off-by-default keep-screen-on preference.
-The fullscreen player keeps the Android view awake only while its lyrics panel
-is open and that preference is enabled; changing panels, closing fullscreen, or
-disabling the preference releases it immediately, including when lyrics are absent.
+The fullscreen player owns the Activity window's `FLAG_KEEP_SCREEN_ON` only while its lyrics panel
+is open, playback is playing, and that preference is enabled; pausing playback,
+changing panels, closing fullscreen, or disabling the preference releases it
+immediately, including when lyrics are absent.
+Update the window flag directly rather than `View.keepScreenOn` during
+`BoxWithConstraints` subcomposition; tests assert the window flag across
+play/pause, panel changes, fullscreen dismissal, and layout changes.
 
 Lyrics parsing and display helpers live in `FullScreenPlayerLyricsPanel.kt`.
 
