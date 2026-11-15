@@ -1,5 +1,7 @@
 package me.misa198.airmedy.ui.navigation
 
+import android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+import androidx.activity.compose.LocalActivity
 import me.misa198.airmedy.lyrics.RomanizationUiState
 
 import androidx.compose.animation.fadeIn
@@ -44,7 +46,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -188,7 +189,7 @@ internal fun FullScreenPlayer(
     val canNavigateNext = queue.canNavigateNext()
     var isTrackContextMenuExpanded by remember(item.trackId) { mutableStateOf(false) }
     var selectedPanel by rememberSaveable { mutableStateOf<FullScreenPlayerPanel?>(null) }
-    val view = LocalView.current
+    val window = LocalActivity.current?.window
     val isPanelOpen = selectedPanel != null
     var isQueueReordering by remember { mutableStateOf(false) }
     // The reorderable library reports the end of a normal drag, but a panel
@@ -248,11 +249,12 @@ internal fun FullScreenPlayer(
             if (!seekState.awaitingConfirmation.value) seekState.pendingFraction.value = null
             dragOffset.snapTo(0f)
         }
-        if (keepScreenOnForLyrics && visible && displayedPanel == FullScreenPlayerPanel.Lyrics) {
-            DisposableEffect(view) {
-                view.keepScreenOn = true
-                onDispose { view.keepScreenOn = false }
-            }
+        val keepScreenOn = keepScreenOnForLyrics && visible && isPlaying && displayedPanel == FullScreenPlayerPanel.Lyrics
+        // Set the window flag directly; View attributes can lag during subcomposition/layout.
+        DisposableEffect(window, keepScreenOn) {
+            if (keepScreenOn) window?.addFlags(FLAG_KEEP_SCREEN_ON)
+            else window?.clearFlags(FLAG_KEEP_SCREEN_ON)
+            onDispose { window?.clearFlags(FLAG_KEEP_SCREEN_ON) }
         }
         val panelHeightPx = with(density) { maxHeight.toPx() }
         val panelOffsetPx = panelHeightPx * (1f - expansionProgress.value)

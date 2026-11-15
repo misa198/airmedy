@@ -1,6 +1,7 @@
 package me.misa198.airmedy.ui.navigation
 
-import android.view.View
+import android.view.Window
+import android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.requiredSize
@@ -13,7 +14,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
+import androidx.activity.compose.LocalActivity
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.text.TextLayoutResult
@@ -216,16 +217,16 @@ class AdaptivePlayerTest {
 
     @Test fun resizePreservesQueueViewportAndUpdatesLyricsKeepAwake() {
         var size by mutableStateOf(400.dp to 900.dp)
-        lateinit var view: View
+        lateinit var window: Window
         lateinit var queueLabel: String
         lateinit var lyricsLabel: String
         var playbackActions = 0
         var currentTrackId by mutableStateOf("track-1")
         compose.setContent {
-            view = LocalView.current
+            window = checkNotNull(LocalActivity.current).window
             queueLabel = LocalContext.current.getString(R.string.player_queue)
             lyricsLabel = LocalContext.current.getString(R.string.player_lyrics)
-            Player(size, currentTrackId = currentTrackId, onTransport = { playbackActions++ })
+            Player(size, currentTrackId = currentTrackId, onTransport = { playbackActions++ }, playing = true)
         }
         compose.onNodeWithTag("phone_player_layout").assertExists()
         compose.onNodeWithContentDescription(queueLabel).performClick()
@@ -244,17 +245,17 @@ class AdaptivePlayerTest {
         compose.onNodeWithTag("full_screen_queue_list").assertExists()
         assertEquals(queueOffset, queueScrollOffset(), 0.01f)
         compose.onNodeWithContentDescription(lyricsLabel).performClick()
-        compose.runOnIdle { assertTrue(view.keepScreenOn) }
+        compose.runOnIdle { assertTrue(window.attributes.flags and FLAG_KEEP_SCREEN_ON != 0) }
         compose.runOnIdle { size = 500.dp to 500.dp }
         compose.onNodeWithTag("square_player_layout").assertExists()
-        compose.runOnIdle { assertTrue(view.keepScreenOn) }
+        compose.runOnIdle { assertTrue(window.attributes.flags and FLAG_KEEP_SCREEN_ON != 0) }
         compose.runOnIdle { size = 1000.dp to 600.dp }
         compose.onNodeWithTag("wide_player_layout").assertExists()
-        compose.runOnIdle { assertTrue(view.keepScreenOn) }
+        compose.runOnIdle { assertTrue(window.attributes.flags and FLAG_KEEP_SCREEN_ON != 0) }
         compose.runOnIdle { size = 400.dp to 900.dp }
         compose.onNodeWithTag("plain_lyrics_list").assertExists()
         compose.runOnIdle {
-            assertTrue(view.keepScreenOn)
+            assertTrue(window.attributes.flags and FLAG_KEEP_SCREEN_ON != 0)
             assertEquals(0, playbackActions)
         }
     }
@@ -854,6 +855,7 @@ class AdaptivePlayerTest {
         onNext: () -> Unit = onTransport,
         onFavorite: () -> Unit = {},
         preparing: Boolean = false,
+        playing: Boolean = false,
         livingArtworkBackground: Boolean = false,
     ) {
         val insets = WindowInsets.safeDrawing
@@ -865,6 +867,7 @@ class AdaptivePlayerTest {
             FullScreenPlayer(
                 visible = true, dragProgress = 0f, isDragging = false, openingFromMiniPlayerSwipe = false,
                 playbackState = if (preparing) PlaybackState.Preparing(item.copy(trackId = currentTrackId))
+                    else if (playing) PlaybackState.Playing(item.copy(trackId = currentTrackId), positionMs, 120_000L)
                     else PlaybackState.Paused(item.copy(trackId = currentTrackId), positionMs, 120_000L),
                 queue = PlaybackQueueSnapshot(activeTrackIds = (1..40).map { "track-$it" }, currentIndex = 0),
                 lyrics = lyricContent, keepScreenOnForLyrics = true,
