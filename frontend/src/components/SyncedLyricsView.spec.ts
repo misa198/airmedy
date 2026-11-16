@@ -13,8 +13,8 @@ describe('SyncedLyricsView', () => {
   const wrappers: ReturnType<typeof mount>[] = []
   const frames = new Map<number, FrameRequestCallback>()
   const lines = [{ text: 'First', time: 0 }, { text: 'Active', time: 10 }, { text: 'Next', secondary: 'Translation', time: 20 }]
-  const create = () => {
-    const wrapper = mount(SyncedLyricsView, { props: { immersive: true, currentPosition: 10, lines } })
+  const create = (currentPosition = 10) => {
+    const wrapper = mount(SyncedLyricsView, { props: { immersive: true, currentPosition, lines } })
     wrappers.push(wrapper)
     return wrapper
   }
@@ -96,6 +96,25 @@ describe('SyncedLyricsView', () => {
     await wrapper.setProps({ lyricsGlow: true })
     expect(state().lyricsGlow).toBe(true)
     expect(wrapper.find('[data-test="lyric-line"]').exists()).toBe(true)
+  })
+
+  it('animates secondary lines in both directions before any lyric is active without scrolling', async () => {
+    const wrapper = create(-1)
+    await nextTick()
+    const viewport = wrapper.get('.overflow-y-auto').element as HTMLElement
+    Object.defineProperties(viewport, { clientHeight: { value: 400 }, clientWidth: { value: 600 } })
+    const pending = [...frames.values()]
+    frames.clear()
+    pending.forEach(callback => callback(0))
+    expect(state().active).toBe(-1)
+
+    for (const secondary of [['First romanized', 'Active romanized'], []]) {
+      await wrapper.setProps({ secondary })
+      await nextTick()
+      expect(gpu().layout).toHaveBeenLastCalledWith(true, 0)
+      expect(viewport.scrollTop).toBe(0)
+      expect(frames.size).toBe(0)
+    }
   })
 
   it('pins the active primary line before painting when romanization changes row heights', async () => {

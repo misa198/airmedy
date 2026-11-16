@@ -23,7 +23,7 @@ vi.mock('pixi.js', async importOriginal => {
 afterEach(() => { vi.restoreAllMocks(); vi.clearAllMocks() })
 
 describe('enhanced lyric rendering', () => {
-  it('animates secondary layout changes without restarting the active appearance', async () => {
+  it.each([-1, 0])('animates secondary layout changes without restarting appearance with active index %i', async active => {
     vi.spyOn(layout, 'measureLyricFragments').mockReturnValue([])
     const viewport = document.createElement('div')
     viewport.style.color = 'rgb(240, 240, 240)'
@@ -33,7 +33,7 @@ describe('enhanced lyric rendering', () => {
     vi.spyOn(element, 'getBoundingClientRect').mockImplementation(() => ({ top, left: 0, height: 60 }) as DOMRect)
     const renderer = await createGpuLyricsRenderer(document.createElement('canvas'), viewport)
     const state: GpuLyricsState = {
-      lines: [{ time: 0, text: '你好' }], active: 0, browsing: false, immersive: true,
+      lines: [{ time: 0, text: '你好' }], active, browsing: false, immersive: true,
       hovered: -1, position: 0, reducedMotion: false, lyricsGlow: false,
     }
     renderer.resize([element])
@@ -45,7 +45,7 @@ describe('enhanced lyric rendering', () => {
     renderer.resize([element], true)
     expect(renderer.render(state, 1100)).toBe(true)
     expect(stage.children[0].y).toBeCloseTo(originalY)
-    expect(stage.children[0].scale.x).toBeCloseTo(1.06)
+    expect(stage.children[0].scale.x).toBeCloseTo(active === 0 ? 1.06 : 1)
     renderer.render(state, 1260)
     expect(stage.children[0].y).toBeGreaterThan(originalY)
     expect(stage.children[0].y).toBeLessThan(originalY + 120)
