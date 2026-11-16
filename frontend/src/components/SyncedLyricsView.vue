@@ -72,7 +72,7 @@ watch(() => props.secondary, () => {
     // Compensate before paint, including any browser scroll clamping as rows shrink.
     if (following && !isBrowsing.value) container.scrollTop = active.offsetTop - activeTop
     const scrollDelta = following && !isBrowsing.value ? container.scrollTop - scrollTop : 0
-    layout(hasPositionedInitialLine, scrollDelta)
+    layout(true, scrollDelta)
   })
 })
 
