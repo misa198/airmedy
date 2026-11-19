@@ -64,22 +64,12 @@ func (s *LyricsService) SaveLyricsFile(audioPath, content string) error {
 
 func (s *LyricsService) SearchLyrics(title, artist string, duration int) ([]*domain.LyricsSearchResult, error) {
 	settings, _ := s.settingsService.GetSettings(context.Background())
-	enableLrclib, enableKugou := true, true
-	if settings != nil {
-		enableLrclib = settings.EnableLrclib
-		enableKugou = settings.EnableKugou
-	}
-	return s.service.SearchLyrics(context.Background(), title, artist, duration, enableLrclib, enableKugou)
+	return s.service.SearchLyrics(context.Background(), title, artist, duration, domain.LyricsProviderTogglesFrom(settings))
 }
 
 // FetchLyrics fetches lyrics from all enabled providers for the given track.
-// Enabled state is read from settings; both providers are queried when both are enabled.
+// Enabled state is read from settings; all enabled providers are queried.
 func (s *LyricsService) FetchLyrics(trackID string, track *domain.TrackDTO) (*domain.Lyric, error) {
 	settings, _ := s.settingsService.GetSettings(context.Background())
-	enableLrclib, enableKugou := true, true
-	if settings != nil {
-		enableLrclib = settings.EnableLrclib
-		enableKugou = settings.EnableKugou
-	}
-	return s.service.FetchFromProviders(context.Background(), track, enableLrclib, enableKugou)
+	return s.service.FetchFromProviders(context.Background(), track, domain.LyricsProviderTogglesFrom(settings))
 }

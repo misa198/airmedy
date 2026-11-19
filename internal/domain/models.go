@@ -244,6 +244,41 @@ type MobileSyncLyricCache struct {
 	UpdatedAt   time.Time `db:"updated_at"`
 }
 
+// LyricsProviderToggles selects which online lyrics providers are queried,
+// keyed by LyricsProvider.Name().
+type LyricsProviderToggles struct {
+	Lrclib bool
+	Kugou  bool
+	Lrcred bool
+}
+
+// AllLyricsProviders enables every provider (used when settings are unavailable).
+var AllLyricsProviders = LyricsProviderToggles{Lrclib: true, Kugou: true, Lrcred: true}
+
+// LyricsProviderTogglesFrom derives provider toggles from app settings.
+func LyricsProviderTogglesFrom(s *AppSettings) LyricsProviderToggles {
+	if s == nil {
+		return AllLyricsProviders
+	}
+	return LyricsProviderToggles{Lrclib: s.EnableLrclib, Kugou: s.EnableKugou, Lrcred: s.EnableLrcred}
+}
+
+// Enabled reports whether the provider with the given name is enabled.
+func (t LyricsProviderToggles) Enabled(name string) bool {
+	switch name {
+	case "lrclib":
+		return t.Lrclib
+	case "kugou":
+		return t.Kugou
+	case "lrcred":
+		return t.Lrcred
+	}
+	return false
+}
+
+// Any reports whether at least one provider is enabled.
+func (t LyricsProviderToggles) Any() bool { return t.Lrclib || t.Kugou || t.Lrcred }
+
 // LyricsSearchResult represents a single search result from a lyrics provider
 type LyricsSearchResult struct {
 	Provider   string `json:"provider"`
@@ -479,6 +514,8 @@ type AppSettings struct {
 	StereoWidth              float64 `json:"stereo_width"` // 0=mono, 100=neutral, up to 200=wider
 	EnableLrclib             bool    `json:"enable_lrclib"`
 	EnableKugou              bool    `json:"enable_kugou"`
+	EnableLrcred             bool    `json:"enable_lrcred"`
+	LrcredModelSyncs         bool    `json:"lrcred_model_syncs"` // allow lrc.red lrc:byModel TTML; when false, use .lrc for those tracks
 	PreferLocalLyrics        bool    `json:"prefer_local_lyrics"`
 	LyricsFolderEnabled      bool    `json:"lyrics_folder_enabled"`
 	LyricsFolderPath         string  `json:"lyrics_folder_path"`

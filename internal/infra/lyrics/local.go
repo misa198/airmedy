@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"airmedy/internal/domain"
+	"airmedy/internal/ttml"
 )
 
 // localReader reads sibling lyric files (.lrc preferred, then .txt) located next
@@ -18,12 +19,14 @@ func NewLocalLyricsReader() domain.LocalLyricsReader {
 }
 
 // localCandidates pairs a file extension with the source label emitted when matched.
-// Order is the priority order: .lrc before .txt.
+// Order is the priority order: .lrc, then .ttml, then .txt. .lrc stays first
+// because it is the format Airmedy writes when saving lyrics to disk.
 var localCandidates = []struct {
 	ext    string
 	source string
 }{
 	{".lrc", "local-lrc"},
+	{".ttml", "local-ttml"},
 	{".txt", "local-txt"},
 }
 
@@ -54,6 +57,14 @@ func (r *localReader) Read(audioPath string, extraDirs ...string) (string, strin
 			content := strings.TrimSpace(strings.TrimPrefix(string(data), "\ufeff"))
 			if content == "" {
 				continue
+			}
+			if c.ext == ".ttml" {
+				// TTML is converted to (enhanced) LRC so every consumer can render it.
+				converted, _, convErr := ttml.ToLRC(content)
+				if convErr != nil || strings.TrimSpace(converted) == "" {
+					continue
+				}
+				content = converted
 			}
 			return content, c.source, true
 		}

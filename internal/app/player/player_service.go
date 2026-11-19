@@ -1335,7 +1335,7 @@ func (s *PlayerService) fetchAndEmitLyrics(ctx context.Context, requestID uint64
 	// Check if we will fetch online lyrics.
 	dbLyric, _ := s.lyricsService.GetLyrics(ctx, track.ID)
 	hasExternal := dbLyric != nil && dbLyric.Content != ""
-	anyProviderEnabled := settings.EnableLrclib || settings.EnableKugou
+	anyProviderEnabled := domain.LyricsProviderTogglesFrom(settings).Any()
 	willFetch := (forceFetch || ((!preferLocal || !hasLocal) && !hasExternal)) && anyProviderEnabled
 
 	if !willFetch {
@@ -1346,7 +1346,7 @@ func (s *PlayerService) fetchAndEmitLyrics(ctx context.Context, requestID uint64
 	// Fetch from providers when enabled. A forced refresh fetches even when a
 	// local/cached lyric exists, but final resolution still honors preference.
 	if willFetch {
-		if _, err := s.lyricsService.FetchFromProviders(ctx, track, settings.EnableLrclib, settings.EnableKugou); err != nil {
+		if _, err := s.lyricsService.FetchFromProviders(ctx, track, domain.LyricsProviderTogglesFrom(settings)); err != nil {
 			if s.handleLyricsRequestContext(track.ID, requestID, ctx) {
 				return
 			}

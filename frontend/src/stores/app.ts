@@ -49,6 +49,8 @@ export const useAppStore = defineStore('app', () => {
   const eqEnabled = ref(true)
   const enableLrclib = ref(true)
   const enableKugou = ref(true)
+  const enableLrcred = ref(true)
+  const lrcredModelSyncs = ref(true)
   const preferLocalLyrics = ref(true)
   const lyricsFolderEnabled = ref(false)
   const lyricsFolderPath = ref('')
@@ -159,6 +161,8 @@ export const useAppStore = defineStore('app', () => {
         eqEnabled.value = settings.eq_enabled !== false
         enableLrclib.value = settings.enable_lrclib !== false
         enableKugou.value = settings.enable_kugou !== false
+        enableLrcred.value = settings.enable_lrcred !== false
+        lrcredModelSyncs.value = settings.lrcred_model_syncs !== false
         preferLocalLyrics.value = settings.prefer_local_lyrics !== false
         lyricsFolderEnabled.value = !!settings.lyrics_folder_enabled
         lyricsFolderPath.value = settings.lyrics_folder_path || ''
@@ -284,6 +288,8 @@ export const useAppStore = defineStore('app', () => {
         eq_enabled: eqEnabled.value,
         enable_lrclib: enableLrclib.value,
         enable_kugou: enableKugou.value,
+        enable_lrcred: enableLrcred.value,
+        lrcred_model_syncs: lrcredModelSyncs.value,
         prefer_local_lyrics: preferLocalLyrics.value,
         lyrics_folder_enabled: lyricsFolderEnabled.value,
         lyrics_folder_path: lyricsFolderPath.value,
@@ -441,6 +447,16 @@ export const useAppStore = defineStore('app', () => {
 
   const updateEnableKugou = async (enabled: boolean) => {
     enableKugou.value = enabled
+    await saveSettings()
+  }
+
+  const updateEnableLrcred = async (enabled: boolean) => {
+    enableLrcred.value = enabled
+    await saveSettings()
+  }
+
+  const updateLrcredModelSyncs = async (enabled: boolean) => {
+    lrcredModelSyncs.value = enabled
     await saveSettings()
   }
 
@@ -719,6 +735,8 @@ export const useAppStore = defineStore('app', () => {
     eqEnabled,
     enableLrclib,
     enableKugou,
+    enableLrcred,
+    lrcredModelSyncs,
     preferLocalLyrics,
     lyricsFolderEnabled,
     lyricsFolderPath,
@@ -771,6 +789,8 @@ export const useAppStore = defineStore('app', () => {
     updateLastFmUsername,
     updateEnableLrclib,
     updateEnableKugou,
+    updateEnableLrcred,
+    updateLrcredModelSyncs,
     updatePreferLocalLyrics,
     updateLyricsFolderEnabled,
     updateLyricsFolderPath,

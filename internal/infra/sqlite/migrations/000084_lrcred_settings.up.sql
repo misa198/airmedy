@@ -1,0 +1,2 @@
+ALTER TABLE app_settings ADD COLUMN enable_lrcred BOOLEAN NOT NULL DEFAULT 1;
+ALTER TABLE app_settings ADD COLUMN lrcred_model_syncs BOOLEAN NOT NULL DEFAULT 1;
